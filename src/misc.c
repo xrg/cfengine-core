@@ -959,7 +959,6 @@ int linux_redhat_version(void)
 #define CENTOS_ID "CentOS"
 #define SCIENTIFIC_SL_ID "Scientific Linux SL"
 #define SCIENTIFIC_CERN_ID "Scientific Linux CERN"
-#define SCIENTIFIC_FERMI_ID "Scientific Linux FERMI" 
 #define RELEASE_FLAG "release "
 
 /* We are looking for one of the following strings...
@@ -1057,11 +1056,6 @@ Verbose("Looking for redhat linux info in \"%s\"\n",relstring);
     {
     vendor = "scientific";
     edition = "cern";
-    }
- else if(!strncmp(relstring, SCIENTIFIC_FERMI_ID, strlen(SCIENTIFIC_FERMI_ID)))
-    {
-    vendor = "scientific";
-    edition = "fermi";
     }
  else if(!strncmp(relstring, CENTOS_ID, strlen(CENTOS_ID)))
     {

@@ -155,7 +155,7 @@ for (ptr = VSTRATEGYLIST; ptr != NULL; ptr=ptr->next)
       count++;
       array = (double *)malloc(count*sizeof(double));
       cumulative = (double *)malloc(count*sizeof(double));
-      count = 1;
+      count = 0;
       cum = 0.0;
       cumulative[0] = 0;
       
