@@ -9740,8 +9740,23 @@ line to the root crontab file of each system:
 <pre class="smallexample">     0,30 * * * * /usr/local/sbin/cfexecd -F
 </pre>
    <p>This is enough to ensure that cfengine will get run. Any output generated
-by this job, will be stored in <span class="file">/var/cfengine/outputs</span>. 
-<a name="index-_002fvar_002fcfengine_002foutput-620"></a><a name="index-_002fvar_002fcfengine_002foutput-621"></a><a name="index-Output-logs-622"></a>In addition, if you add the following to the file <span class="file">cfagent.conf</span>,
+by this job, will be stored in <span class="file">/var/cfengine/outputs</span>.
+
+   <p>The program <code>cfexecd</code> operates as a wrapper for cfagent.  It has the
+following options:
+
+<pre class="smallexample">     -h (--help)
+     -d (--debug)
+     -v (--verbose)
+     -f (--file)
+     -q (--no-splay)
+     -F (--no-fork)
+     -1 (--once)
+     -g (--foreground)
+     -p (--parse-only)
+     -L (--ld-library-path)
+</pre>
+   <p><a name="index-_002fvar_002fcfengine_002foutput-620"></a><a name="index-_002fvar_002fcfengine_002foutput-621"></a><a name="index-Output-logs-622"></a>In addition, if you add the following to the file <span class="file">cfagent.conf</span>,
 the system administrator will be emailed a summary of any output:
 
 <pre class="smallexample">     
@@ -9774,12 +9789,12 @@ order to make the daemon execute cfagent every half-hour:
    <p>Note that the time specifications are the basic cfengine <em>time classes</em>. 
 Although one of these methods should suffice,
 no harm will arise from running both cron and the cfexecd side-by-side. 
-Cfagents locking mechanisms ensure that no contention will occur. 
+Locking mechanisms are used by <code>cfagent</code> to ensure that no contention will occur. 
 <a name="index-Mailing-output-628"></a><a name="index-smtpserver-629"></a><a name="index-sysadm-630"></a><a name="index-cfexecd-631"></a>
-Note, that if problems with library path for compiled in libraries occur, an
+Note, that if problems with library path for compiled-in libraries occur, an
 explicit library path can be specified with the <span class="samp">-L</span> option.
 
-<pre class="smallexample">     0,30 * * * * /usr/local/sbin/cfexecd -F -L /local/iu/lib:/local/lib/mysql:/local/lib:/local/gnu/lib
+<pre class="smallexample">     0,30 * * * * /usr/local/sbin/cfexecd -F -L /local/iu/lib:/local/lib:/local/gnu/lib
 </pre>
    <!-- ********************************************************************** -->
 <!-- CHAPTER -->

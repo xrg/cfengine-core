@@ -35,7 +35,7 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   Edition 2.1.13 for version 2.1.13 as last updated 30 January 2005.
+   Edition 2.1.14 for version 2.1.14 as last updated 17 February 2005.
 
 * Menu:
 
@@ -169,7 +169,7 @@ File: cfengine-Anomalies.info,  Node: cfenvd,  Next: Anomaly research,  Prev: Cr
 ===================================
 
 The `cfenvd' program serves two purposes: as an anomaly detection engine
-and as a source of entropy for generating random numbers, such as for
+and as a source of `entropy' for generating random numbers, such as for
 encryption keys. Although it is not a compulsory part of cfengine, it is
 highly recommended to run this daemon. It requires few resources and
 poses no vulnerability to the system. It will play an increasingly
@@ -206,7 +206,7 @@ value of 5. This is a small number, and anomalies of these kinds are
 generally noise.  
 
    Simply specifying statistical number anomalies is not sufficient to
-provide well honed anomaly characteristics. Cfengine tries to organize
+provide well-honed anomaly characteristics. Cfengine tries to organize
 the information surrounding an anomaly first in terms of statistical
 significance and then only later in terms of event characteristics.
 There are too many events in which the numerical values exceed
@@ -672,13 +672,160 @@ File: cfengine-Anomalies.info,  Node: Anomaly response,  Next: Variable Index,  
 
 * Menu:
 
+* Anomaly Classes::
+* Entropy::
 * Log utilities::
 * Persistent alerts::
 
 
-File: cfengine-Anomalies.info,  Node: Log utilities,  Next: Persistent alerts,  Prev: Anomaly response,  Up: Anomaly response
+File: cfengine-Anomalies.info,  Node: Anomaly Classes,  Next: Entropy,  Prev: Anomaly response,  Up: Anomaly response
 
-2.1 Log utilities
+2.1 Anomaly Classes
+===================
+
+When cfengine detects an anomaly, it classified the current statistical
+state of the system into a number of classes.
+
+   Cfengine classifies anomalies by whether the currently measured
+state of the system is higher or lower than the average for the current
+time of week. The amount of deviation is based on an estimate of the
+`standard deviation'. The precise definition of the average and standard
+deviations is complex, and is discussed in the paper "M. Burgess,
+Probabilistic anomaly detection in distributed computer networks",
+(submitted to Science of Computer Programming, and available on the
+web).
+
+   The list of measured attributes is currently fixed to the following:
+
+   The first part of the string is from the list:
+
+     Users
+     RootProcs
+     UserProcs
+     DiskFree
+     LoadAvg
+   Socket counts of network services distinguish between incoming and
+outgoing sockets (to a service or from a client).
+`netbiosns'
+     Registers traffic to/from port 137.
+
+`netbiosdgm'
+     Registers traffic to/from port 138.
+
+`netbiosssn'
+     Registers traffic to/from port 139.
+
+`irc'
+     Registers traffic to/from port 194.
+
+`cfengine'
+     Registers traffic to/from port 5308.
+
+`nfsd'
+     Registers traffic to/from port 2049.
+
+`smtp'
+     Registers traffic to/from port 25.
+
+`www'
+     Registers traffic to/from port 80.
+
+`ftp'
+     Registers traffic to/from port 21.
+
+`ssh'
+     Registers traffic to/from port 22.
+
+`wwws'
+     Registers traffic to/from port 443.
+
+   If you have tcpdump program installed in a standard location, then
+`cfenvd -T' collects data about the network flows to your host.
+
+`icmp'
+     Traffic belonging to the ICMP protocol (ping etc).
+
+`dns'
+     Traffic to port 53, the Domain Name Service (usually a special
+     case of UDP).
+
+`udp'
+     Miscellaneous UDP traffic that is not related to DNS.
+
+`tcpsyn'
+     Registers TCP packets with SYN flag set.
+
+`tcpack'
+     Registers TCP packets with ACK flag set.
+
+`tcpfin'
+     Registers TCP packers with FIN flag set.
+
+`misc'
+     Registers all other packets, not covered above.
+
+   When it has accurate knowledge of statistics, `cfenvd' classifies
+the current state into 3 levels:
+
+`normal'
+     means that the current level is less than one standard deviation
+     above normal.
+
+`dev1'
+     means that the current level is at least one standard deviation
+     about the average.
+
+`dev2'
+     means that the current level is at least two standard deviations
+     about the average.
+
+`anomaly'
+     means that the current level is more than 3 standard deviations
+     above average.
+
+
+Each of these charaxterizations assumes that there are good data
+available. The `cfenvd' evaluates its data and decides whether or not
+the data are too noisy to be really useful.  If the data are too noisy
+but the level appears to be more than two standard deviations above
+aaverage, then the category `microanomaly' is used.
+
+   Here are some example classes:
+
+     UserProcs_high_dev2
+     UserProcs_low_dev1
+     www_in_high_anomaly
+     smtp_out_high_dev2
+
+
+File: cfengine-Anomalies.info,  Node: Entropy,  Next: Log utilities,  Prev: Anomaly Classes,  Up: Anomaly response
+
+2.2 Entropy
+===========
+
+Entropy is a statistical characterization of the distribution digits in
+an arrival process over long times. You can learn more about entropy in
+Mark Burgess, Analytical Network and System Administration.
+
+   For network related data, cfengine evaluates the entropy in the
+currently measured sample of measurements, with respect to the
+different IP addresses of the sources.  You can use these to predicate
+the appearance of an anomaly, e.g.  
+      entropy_www_in_high
+      entropy_smtp_in_low
+
+   For example, if you only want to know when a huge amount of SMTP
+traffic arrives from a single IP source, you would label your anomaly
+response:
+     entropy_smtp_in_low.smtp_in_high_anomaly::
+   since the entropy is low when the majority of traffic comes from
+only a small number of IP addresses (e.g. one). The entropy is maximal
+when activity comes equally from several different sources.
+
+
+File: cfengine-Anomalies.info,  Node: Log utilities,  Next: Persistent alerts,  Prev: Entropy,  Up: Anomaly response
+
+2.3 Log utilities
 =================
 
 How shall we respond to an anomalous event?  Alerts can be channelled
@@ -691,7 +838,7 @@ syslog interface.
 
 File: cfengine-Anomalies.info,  Node: Persistent alerts,  Prev: Log utilities,  Up: Anomaly response
 
-2.2 Persistent alerts
+2.4 Persistent alerts
 =====================
 
 DEFCON 1
@@ -736,11 +883,17 @@ Concept Index
  [index ]
 * Menu:
 
+* anomaly:                               Anomaly Classes.      (line 90)
+* dev1:                                  Anomaly Classes.      (line 90)
+* dev2:                                  Anomaly Classes.      (line 90)
 * Encryption keys:                       cfenvd.               (line 11)
+* Entropy <1>:                           Entropy.              (line 13)
 * Entropy:                               cfenvd.               (line 57)
 * Entropy source:                        cfenvd.               (line 11)
 * Micro-anomaly:                         cfenvd.               (line 41)
+* microanomaly:                          Anomaly Classes.      (line 90)
 * Microanomaly:                          cfenvd.               (line 41)
+* normal:                                Anomaly Classes.      (line 90)
 * Random numbers:                        cfenvd.               (line 11)
 
 
@@ -755,19 +908,21 @@ FAQ Index
 
 Tag Table:
 Node: Top478
-Node: Overview1640
-Node: Intrusion detection2605
-Node: Cryptographic checksums4751
-Node: cfenvd6621
-Node: Anomaly research11412
-Node: cfenvgraph14112
-Node: Fluctuation profiles18110
-Node: Starting with anomaly detection18743
-Node: Anomaly response29132
-Node: Log utilities29329
-Node: Persistent alerts29718
-Node: Variable Index30905
-Node: Concept Index31069
-Node: FAQ Index31664
+Node: Overview1641
+Node: Intrusion detection2606
+Node: Cryptographic checksums4752
+Node: cfenvd6622
+Node: Anomaly research11415
+Node: cfenvgraph14115
+Node: Fluctuation profiles18113
+Node: Starting with anomaly detection18746
+Node: Anomaly response29135
+Node: Anomaly Classes29364
+Node: Entropy32555
+Node: Log utilities33590
+Node: Persistent alerts33970
+Node: Variable Index35157
+Node: Concept Index35321
+Node: FAQ Index36354
 
 End Tag Table

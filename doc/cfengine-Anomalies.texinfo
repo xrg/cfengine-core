@@ -21,7 +21,7 @@
 @include version3.texi
 
 @titlepage
-@title  Anomaly detection with cfenvd and cfenvgraph
+@title  Anomaly detection with cfenvd
 @subtitle Edition @value{EDITION} for version @value{VERSION}
 @author Mark Burgess
 @author Faculty of Engineering, Oslo University College, Norway
@@ -240,7 +240,7 @@ files:
 @section An environment detector: cfenvd
 
 The @file{cfenvd} program serves two purposes: as an anomaly detection engine
-and as a source of entropy for generating random numbers, such as for
+and as a source of `entropy' for generating random numbers, such as for
 encryption keys. Although it is not a compulsory part of cfengine, it is
 highly recommended to run this daemon. It requires few resources and poses
 no vulnerability to the system. It will play an increasingly important
@@ -285,7 +285,7 @@ generally noise.
 @cindex Microanomaly
 
 Simply specifying statistical number anomalies is not sufficient to
-provide well honed anomaly characteristics. Cfengine tries to organize
+provide well-honed anomaly characteristics. Cfengine tries to organize
 the information surrounding an anomaly first in terms of statistical
 significance and then only later in terms of event characteristics.
 There are too many events in which the numerical values exceed thresholds
@@ -792,11 +792,157 @@ cf:cube: State of incoming.www peaked at Fri Feb 20 19:57:23 2004
 @chapter Anomaly response
 
 @menu
+* Anomaly Classes::             
+* Entropy::                     
 * Log utilities::               
 * Persistent alerts::           
 @end menu
 
-@node Log utilities, Persistent alerts, Anomaly response, Anomaly response
+@node Anomaly Classes, Entropy, Anomaly response, Anomaly response
+@section Anomaly Classes
+
+When cfengine detects an anomaly, it classified the current statistical
+state of the system into a number of classes.
+
+Cfengine classifies anomalies by whether the currently measured state of
+the system is higher or lower than the average for the current time of
+week. The amount of deviation is based on an estimate of the `standard
+deviation'. The precise definition of the average and standard
+deviations is complex, and is discussed in the paper "M. Burgess,
+Probabilistic anomaly detection in distributed computer
+networks", (submitted to Science of Computer Programming, and available
+on the web).
+
+The list of measured attributes is currently fixed to the following:
+
+
+The first part of the string is from the list:
+
+@smallexample
+Users 
+RootProcs 
+UserProcs 
+DiskFree 
+LoadAvg 
+@end smallexample
+Socket counts of network services distinguish between incoming and outgoing
+sockets (to a service or from a client).
+@table @code
+@item netbiosns
+Registers traffic to/from port 137.
+@item netbiosdgm
+Registers traffic to/from port 138.
+@item netbiosssn 
+Registers traffic to/from port 139.
+@item irc 
+Registers traffic to/from port 194.
+@item cfengine 
+Registers traffic to/from port 5308.
+@item nfsd 
+Registers traffic to/from port 2049.
+@item smtp 
+Registers traffic to/from port 25.
+@item www 
+Registers traffic to/from port 80.
+@item ftp 
+Registers traffic to/from port 21.
+@item ssh 
+Registers traffic to/from port 22.
+@item wwws 
+Registers traffic to/from port 443.
+@end table
+
+If you have tcpdump program installed in a standard location, then @code{cfenvd -T}
+collects data about the network flows to your host.
+
+@table @code
+@item icmp
+Traffic belonging to the ICMP protocol (ping etc).
+@item dns
+Traffic to port 53, the Domain Name Service (usually a special case of UDP).
+@item udp
+Miscellaneous UDP traffic that is not related to DNS.
+@item tcpsyn
+Registers TCP packets with SYN flag set.
+@item tcpack
+Registers TCP packets with ACK flag set.
+@item tcpfin
+Registers TCP packers with FIN flag set.
+@item misc
+Registers all other packets, not covered above.
+@end table
+
+When it has accurate knowledge of statistics, @file{cfenvd} classifies
+the current state into 3 levels:
+
+@cindex normal
+@cindex dev1
+@cindex dev2
+@cindex anomaly
+@cindex microanomaly
+
+@table @code
+@item normal 
+means that the current level is less
+than one standard deviation above normal.  
+@item dev1 
+means that the
+current level is at least one standard deviation about the average.
+
+@item dev2 
+means that the current level is at least two standard
+deviations about the average.
+
+@item anomaly    
+means that the current level is more than 3 standard deviations above average. 
+
+@end table
+
+@noindent
+Each of these charaxterizations assumes that there are good data
+available. The @file{cfenvd} evaluates its data and decides whether or
+not the data are too noisy to be really useful.  If the data are too
+noisy but the level @i{appears} to be more than two standard deviations
+above aaverage, then the category @code{microanomaly} is used.
+
+Here are some example classes:
+
+@smallexample
+UserProcs_high_dev2
+UserProcs_low_dev1
+www_in_high_anomaly
+smtp_out_high_dev2
+@end smallexample
+
+@node Entropy, Log utilities, Anomaly Classes, Anomaly response
+@section Entropy
+
+Entropy is a statistical characterization of the distribution 
+digits in an arrival process over long times. You can learn more about entropy
+in Mark Burgess, @i{Analytical Network and System Administration}.
+
+For network related data,
+cfengine evaluates the entropy in the currently measured sample of 
+measurements, with respect to the different IP addresses of the sources.
+You can use these to predicate the appearance of an anomaly, e.g.
+@cindex Entropy
+@smallexample
+ entropy_www_in_high
+ entropy_smtp_in_low
+@end smallexample
+
+For example, if you only want to know when a huge amount of SMTP traffic arrives from a 
+single IP source, you would label your anomaly response:
+@smallexample
+entropy_smtp_in_low.smtp_in_high_anomaly::
+@end smallexample
+@noindent
+since the entropy is low when the majority of traffic
+comes from only a small number of IP addresses (e.g. one). The entropy is maximal
+when activity comes equally from several different sources.
+
+
+@node Log utilities, Persistent alerts, Entropy, Anomaly response
 @section Log utilities
 
 How shall we respond to an anomalous event?
