@@ -2040,10 +2040,11 @@ if (IsSocketType(service))
          }
       }
    
-   p = (double *) malloc((total+1)*sizeof(double));
    
    if (total > min_signal_diversity)
       {
+      p = (double *) malloc((total+1)*sizeof(double));
+      
       for (i = 0,ip = addresses; ip != NULL; i++,ip=ip->next)
          {
          p[i] = ((double)(ip->counter))/((double)total);
