@@ -33,8 +33,6 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
-char EDITBUFF[bufsize];
-
 /********************************************************************/
 /* EDIT Data structure routines                                     */
 /********************************************************************/
@@ -357,6 +355,7 @@ char *filename;
 { struct Edlist *ep, *loopstart, *loopend, *ThrowAbort();
   struct Item *filestart = NULL, *newlineptr;
   char currenteditscript[bufsize], searchstr[bufsize], expdata[bufsize];
+  char *sp, currentitem[maxvarsize];
   struct stat tmpstat;
   char spliton = ':';
   mode_t maskval;
@@ -459,6 +458,16 @@ while (ep != NULL)
 		  }
 	       break;
 
+      case DefineInGroup:
+                  for (sp = expdata; *sp != '\0'; sp++)
+                      {
+                      currentitem[0] = '\0';
+                      sscanf(sp,"%[^,:.]",currentitem);
+                      sp += strlen(currentitem);
+                      AddClassToHeap(currentitem);
+                      }
+                  break;
+
       case CatchAbort:
 	          EditVerbose("Caught Exception\n");
 	          break;
@@ -518,16 +527,29 @@ while (ep != NULL)
 
       case AppendIfNoLineMatching:
 
+
+    	       Debug("AppendIfNoLineMatching : %s\n",EDITBUFF);
+
                if (strcmp(EDITBUFF,"") == 0)
                   {
                   snprintf(OUTPUT,bufsize*2,"SetLine not set when calling AppendIfNoLineMatching %s\n",expdata);
 		  CfLog(cferror,OUTPUT,"");
                   continue;
                   }
+
+	       if (strcmp(expdata,"ThisLine") == 0)
+		  {
+		  if (LocateNextItemMatching(filestart,EDITBUFF) == NULL)
+		     {
+		     AppendItem(&filestart,EDITBUFF,NULL);
+		     }		 
+
+		  break;
+		  }
 	       
                if (LocateNextItemMatching(filestart,expdata) == NULL)
 	          {
-                  AppendItem(&filestart,EDITBUFF,NULL);
+                  AppendItem(&filestart,expdata,NULL);
                   }
                break;
 
@@ -697,8 +719,16 @@ while (ep != NULL)
                break;
 
       case LocateLineMatching:
-               newlineptr = LocateItemMatchingRegExp(CURRENTLINEPTR,expdata);
 
+               if (CURRENTLINEPTR == NULL)
+                  {
+                  newlineptr == NULL;
+                  }
+               else
+                  {
+                  newlineptr = LocateItemMatchingRegExp(CURRENTLINEPTR,expdata);
+                  }
+	       
                if (newlineptr == NULL)
                   {
                   EditVerbose("LocateLineMatchingRegexp failed in %s, aborting editing\n",filename);
@@ -862,6 +892,12 @@ while (ep != NULL)
                break;
 
       case BreakIfLineMatches:
+	       if (CURRENTLINEPTR == NULL || CURRENTLINEPTR->name == NULL )
+		  {
+		  EditVerbose("(BreakIfLIneMatches - no match for %s - file empty)\n",expdata);
+		  break;
+		  }
+	  
                if (LineMatches(CURRENTLINEPTR->name,expdata))
                   {
                   EditVerbose("Break! %s\n",expdata);
@@ -1052,6 +1088,8 @@ while (ep != NULL)
 			   }
 			EditVerbose("EndForEachLineIn, set current line to: %s\n",EDITBUFF);
 			}
+
+		     Debug("ForeachLine: %s\n",EDITBUFF);
 		     }
 		  else
 		     {

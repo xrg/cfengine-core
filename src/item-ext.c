@@ -37,6 +37,7 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
+
 /*********************************************************************/
 
 int OrderedListsMatch(list1,list2)
@@ -524,25 +525,43 @@ return true;
  * -They all delete the first item meeting their criteria, as below.
  *  function			deletes item
  *  ------------------------------------------------------------------------
- *  DeleteItemStarting		literally equal to string item spec
+ *  DeleteItemStarting		start is literally equal to string item spec
+ *  DeleteItemLiteral		literally equal to string item spec
  *  DeleteItemMatching		fully matched by regex item spec
  *  DeleteItemContaining	containing string item spec
  */
 
 /*********************************************************************/
 
-int DeleteItemStarting(list,string) /* delete 1st item fully matching string */
+int DeleteItemGeneral(list,string,type)
 
 struct Item **list;
 char *string;
+enum matchtypes type;
 
 { struct Item *ip,*last = NULL;
+  int match = 0, matchlen = 0;
+  regex_t rx,rxcache;
+  regmatch_t pmatch;
 
 if (list == NULL)
    {
    return false;
    }
- 
+
+switch (type)
+   {
+   case literalStart:
+       matchlen = strlen(string);
+       break;
+   case regexComplete:
+       if (CfRegcomp(&rxcache,string, REG_EXTENDED) != 0)
+           {
+           return false;
+           }
+       break;
+   }
+
 for (ip = *list; ip != NULL; ip=ip->next)
    {
    if (ip->name == NULL)
@@ -555,9 +574,29 @@ for (ip = *list; ip != NULL; ip=ip->next)
       Verbose("Aborting search, regex %s matches line\n",VEDITABORT);
       return false;
       }
-      
-   if (strncmp(ip->name,string,strlen(string)) == 0)
+
+   switch(type)
       {
+      case literalStart:
+          match = (strncmp(ip->name, string, matchlen) == 0);
+          break;
+      case literalComplete:
+          match = (strcmp(ip->name, string) == 0);
+          break;
+      case literalSomewhere:
+          match = (strstr(ip->name, string) != NULL);
+          break;
+      case regexComplete:
+          /* To fix a bug on some implementations where rx gets emptied */
+          bcopy(&rxcache,&rx,sizeof(rx));
+          match = (regexec(&rx,ip->name,1,&pmatch,0) == 0) && \
+              (pmatch.rm_so == 0) && (pmatch.rm_eo == strlen(ip->name));
+          break;
+      }
+          
+   if (match)
+      {
+      if (type == regexComplete) regfree(&rx);
       EditVerbose("Deleted item %s\n",ip->name);
       if (ip == *list)
          {
@@ -595,76 +634,35 @@ return false;
 
 /*********************************************************************/
 
+int DeleteItemStarting(list,string)  /* delete 1st item starting with string */
+
+struct Item **list;
+char *string;
+
+{
+return DeleteItemGeneral(list,string,literalStart);
+}
+
+/*********************************************************************/
+
+int DeleteItemLiteral(list,string)  /* delete 1st item which is string */
+
+struct Item **list;
+char *string;
+
+{
+return DeleteItemGeneral(list,string,literalComplete);
+}
+
+/*********************************************************************/
+
 int DeleteItemMatching(list,string)  /* delete 1st item fully matching regex */
 
 struct Item **list;
 char *string;
 
-{ struct Item *ip,*last = NULL;
-  regex_t rx,rxcache;
-  regmatch_t pmatch;
-
-if (CfRegcomp(&rxcache,string, REG_EXTENDED) != 0)
-   {
-   return false;
-   }
-
-for (ip = *list; ip != NULL; ip=ip->next)
-   {
-   if (ip->name == NULL)
-      {
-      continue;
-      }
-
-   if (EDABORTMODE && ItemMatchesRegEx(ip->name,VEDITABORT))
-      {
-      Verbose("Aborting search, regex %s matches line\n",VEDITABORT);
-      regfree(&rx);
-      return false;
-      }
-
-   bcopy(&rxcache,&rx,sizeof(rx)); /* To fix a bug on some implementations where rx gets emptied */
-   if (regexec(&rx,ip->name,1,&pmatch,0) == 0)
-      {
-      if ((pmatch.rm_so == 0) && (pmatch.rm_eo == strlen(ip->name)))
-	 {
-	 if (ip == *list)
-	    {
-	    free((*list)->name);
-	    if (ip->classes != NULL) 
-	       {
-	       free(ip->classes);
-	       }
-	    *list = ip->next;
-	    free((char *)ip);
-	    
-	    EditVerbose("Deleted item %s\n",string);
-	    NUMBEROFEDITS++;
-            regfree(&rx);
-	    return true;
-	    }
-	 else
-	    {
-	    last->next = ip->next; 
-	    free(ip->name);
-	    if (ip->classes != NULL) 
-	       {
-	       free(ip->classes);
-	       }
-	    free((char *)ip);
-	    
-	    EditVerbose("Deleted item %s\n",string);
-	    NUMBEROFEDITS++;
-	    regfree(&rx);
-	    return true;
-	    }
-	 }
-      }
-   last = ip;
-   }
-
-/* regfree(&rx); */
-return false;
+{
+return DeleteItemGeneral(list,string,regexComplete);
 }
 
 /*********************************************************************/
@@ -674,64 +672,8 @@ int DeleteItemContaining(list,string) /* delete first item containing string */
 struct Item **list;
 char *string;
 
-{ struct Item *ip,*last = NULL;
-
-Debug("DeleteItemContaining(%s)\n",string);
- 
-for (ip = *list; ip != NULL; ip=ip->next)
-   {
-   if (ip->name == NULL)
-      {
-      continue;
-      }
-
-   if (EDABORTMODE && ItemMatchesRegEx(ip->name,VEDITABORT))
-      {
-      Verbose("Aborting search, regex %s matches line\n",VEDITABORT);
-      return false;
-      }
-
-   if (ip->name == NULL)
-      {
-      continue;
-      }
-      
-   if (strstr(ip->name,string))
-      {
-      if (ip == *list)
-         {
-         free((*list)->name);
-         *list = ip->next;
-         if (ip->classes != NULL) 
-	    {
-            free(ip->classes);
-	    }
-         free((char *)ip);
-
-         EditVerbose("Deleted item %s\n",string);
-         NUMBEROFEDITS++;
-         return true;
-         }
-      else
-         {
-         last->next = ip->next; 
-         free(ip->name);
-         if (ip->classes != NULL) 
-	    {
-            free(ip->classes);
-	    }
-         free((char *)ip);
-
-         EditVerbose("Deleted item %s\n",string);
-         NUMBEROFEDITS++;
-         return true;
-         }
-
-      }
-   last = ip;
-   }
-
-return false;
+{
+return DeleteItemGeneral(list,string,literalSomewhere);
 }
 
 
@@ -1317,6 +1259,7 @@ if (CfRegcomp(&rxcache,regexp, REG_EXTENDED) != 0)
    }
 
 bcopy(&rxcache,&rx,sizeof(rx)); /* To fix a bug on some implementations where rx gets emptied */ 
+
 if (regexec(&rx,line,1,&pmatch,0) == 0)
    {
    /* Exact match of whole line */

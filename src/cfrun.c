@@ -560,16 +560,23 @@ void ReadCfrunConf()
   struct Item *ip; 
 
 bzero(filename,bufsize);
-  
-if (((sp=getenv(CFINPUTSVAR)) != NULL) && (!strchr(VCFRUNHOSTS, '/')))
+
+if (!strchr(VCFRUNHOSTS, '/'))
    {
-   strcpy(filename,sp);
-   if (filename[strlen(filename)-1] != '/')
+   if ((sp=getenv(CFINPUTSVAR)) != NULL)
       {
-      strcat(filename,"/");
+      strcpy(filename,sp);
+      if (filename[strlen(filename)-1] != '/')
+         {
+         strcat(filename,"/");
+         }
+      }
+   else
+      {
+      snprintf(filename, bufsize, "%s/inputs/", WORKDIR);
       }
    }
-
+ 
 strcat(filename,VCFRUNHOSTS);
 
 if ((fp = fopen(filename,"r")) == NULL)      /* Open root file */

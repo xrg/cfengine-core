@@ -54,7 +54,7 @@ if (forceipv4 == 'n')
    query.ai_family = AF_UNSPEC;
    query.ai_socktype = SOCK_STREAM;
    
-   if ((err = getaddrinfo(host,"cfengine",&query,&response)) != 0)
+   if ((err = getaddrinfo(host,"5308",&query,&response)) != 0)
       {
       snprintf(OUTPUT,bufsize,"Unable to lookup hostname or cfengine service: %s",gai_strerror(err));
       CfLog(cferror,OUTPUT,"");

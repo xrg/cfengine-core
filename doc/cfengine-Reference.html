@@ -3082,6 +3082,8 @@ With the following file structure on a host running cfservd:
      /dist/all/etc/syslog.conf being copied to all other systems
      </pre>
 
+   <p>CAUTION: this feature is necessarily memory intensive.
+
 <div class="node">
 <p><hr>
 Node:<a name="site">site</a>,
@@ -4403,11 +4405,26 @@ decision structures <code>BeginGroupIfNoLineMatching</code> and
      <dd>Add a line containing the quoted string to the end of the file
 if the file doesn't contain the exact line already.
 
-     <br><dt><code>AppendIfNoLineMatching  </code><var>quoted-regex</var><code></code>
+     <br><dt><code>AppendIfNoLineMatching  </code><var>quoted-regex</var><code>/ "ThisLine"</code>
      <dd>A new version of the older <code>AppendIfNoSuchLine</code>
 which uses a regular expression instead of a literal
 string. The line which gets appended must be set
-previously using <code>SetLine</code>.
+previously using <code>SetLine</code>. If <code>"ThisLine"</code> is
+given as the argument, the current value of then line buffer
+is assumed. This allows constructions for merging files
+on a convergent line-by-line basis:
+
+     <pre class="smallexample">          
+          editfiles:
+          
+           { /tmp/bla
+          
+           ForEachLineIn "/tmp/in"
+              AppendIfNoLineMatching "ThisLine"
+           EndLoop
+           }
+          
+          </pre>
 
      <br><dt><code>AppendToLineIfNotContains </code><var>quoted-string</var><code></code>
      <dd>This commands looks for an exact match of the quoted string
@@ -4522,6 +4539,31 @@ expression in quotes.
      <br><dt><code>DefineClasses "</code><var>class1</var><code>:</code><var>class2</var><code>:..."</code>
      <dd>Activate the following colon, comma or dot-separated list of classes if
 and only if the file is edited.
+
+     <br><dt><code>DefineInGroup "</code><var>class1</var><code>:</code><var>class2</var><code>:..."</code>
+     <dd>Activate the following colon, comma or dot-separated list of classes if
+the edit group is entered. This can be combined with other classes
+to identify what particular edits took place. 
+Use DefineInGroup if you want to define a class or list of classes
+conditional on entry to a BeginGroup ... EngGroup block. For example,
+
+     <pre class="smallexample">          editfiles:
+              { /etc/inetd.conf
+                BeginGroupIfNoSuchLine "$(myservice1)"
+                  Append "$(myservice1)"
+          	DefineInGroup "myservice1_added"
+                EndGroup
+          
+                BeginGroupIfNoSuchLine "$(myservice2)"
+                  Append "$(myservice2)"
+          	DefineInGroup "myservice2_added"
+                EndGroup
+              }
+          </pre>
+
+     <p>This will define service_added and service_added_another_way if
+either line is added, but additionally myservice1_added if myservice1
+was added and likewise for myservice2_added.
 
      <br><dt><code>DeleteLinesAfterThisMatching </code><var>quoted-regex</var><code></code>
      <dd>Delete lines after the current position which match the quoted expression.
@@ -9840,7 +9882,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Device boundaries: <a href="#copy">copy</a>
 <li>Device boundaries and files: <a href="#Recursion">Recursion</a>
 <li>DFS: <a href="#nfstype">nfstype</a>
-<li>DHCP: <a href="#actionsequence">actionsequence</a>, <a href="#DynamicAddresses">DynamicAddresses</a>
+<li>DHCP: <a href="#DynamicAddresses">DynamicAddresses</a>, <a href="#actionsequence">actionsequence</a>
 <li>Directories, deleting: <a href="#tidy">tidy</a>
 <li>Directories, hidden: <a href="#fileextension">fileextension</a>
 <li>Directories, making: <a href="#directories">directories</a>
@@ -9883,12 +9925,12 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Files, syntax: <a href="#Syntax">Syntax</a>
 <li>Force copying: <a href="#copy">copy</a>
 <li>freespace=: <a href="#disks">disks</a>, <a href="#required">required</a>
-<li>Full disk warnings: <a href="#disks">disks</a>, <a href="#required">required</a>
+<li>Full disk warnings: <a href="#required">required</a>, <a href="#disks">disks</a>
 <li>Fully qualified names: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Group dependencies: <a href="#groups">groups</a>
 <li>Group field, editing: <a href="#editfiles">editfiles</a>
-<li><code>groups</code>: <a href="#groups">groups</a>
 <li>groups: <a href="#classes">classes</a>
+<li><code>groups</code>: <a href="#groups">groups</a>
 <li>Groups, defining: <a href="#groups">groups</a>
 <li>Hard class name collision: <a href="#Special%20variables">Special variables</a>
 <li>Hardlinks: <a href="#Hard%20links">Hard links</a>
@@ -9917,7 +9959,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Key, ACL: <a href="#DFS%20ACLs">DFS ACLs</a>
 <li>Kilobyte, filesize unit: <a href="#tidy">tidy</a>
 <li>Linkchildren: <a href="#Link%20Children">Link Children</a>, <a href="#Files%20linkchildren">Files linkchildren</a>
-<li>Links and binary servers: <a href="#Link%20Children">Link Children</a>, <a href="#Single%20links">Single links</a>
+<li>Links and binary servers: <a href="#Single%20links">Single links</a>, <a href="#Link%20Children">Link Children</a>
 <li>Links, absolute: <a href="#Single%20links">Single links</a>
 <li>Links, deleting stale: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li>Links, forcing for non-existent files: <a href="#Single%20links">Single links</a>
@@ -9925,7 +9967,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Links, multiple: <a href="#Multiple%20Links">Multiple Links</a>
 <li>Links, removing dead: <a href="#Single%20links">Single links</a>
 <li>Links, single: <a href="#Single%20links">Single links</a>
-<li>Links, traversing in searches: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
+<li>Links, traversing in searches: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li>Local disk space, make use of: <a href="#Link%20Children">Link Children</a>
 <li>Log files, controlling the size of: <a href="#disable">disable</a>
 <li>Logical NOT: <a href="#Cfengine%20classes">Cfengine classes</a>
@@ -9938,12 +9980,13 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Making use of local disk space: <a href="#Link%20Children">Link Children</a>
 <li><code>MaxConnections</code> variable: <a href="#MaxConnections">MaxConnections</a>
 <li>Megabytes, filesize unit: <a href="#tidy">tidy</a>
-<li>Message digests: <a href="#Syntax">Syntax</a>, <a href="#ChecksumDatabase">ChecksumDatabase</a>
+<li>Merging files.: <a href="#editfiles">editfiles</a>
+<li>Message digests: <a href="#ChecksumDatabase">ChecksumDatabase</a>, <a href="#Syntax">Syntax</a>
 <li>Miscellaneous mount operations: <a href="#miscmounts">miscmounts</a>
 <li>Module directory: <a href="#moduledirectory">moduledirectory</a>
 <li>Modules, user defined: <a href="#actionsequence">actionsequence</a>
 <li>Mount paths: <a href="#mountpattern">mountpattern</a>
-<li>Mountable resources, defining: <a href="#homeservers">homeservers</a>, <a href="#mountables">mountables</a>
+<li>Mountable resources, defining: <a href="#mountables">mountables</a>, <a href="#homeservers">homeservers</a>
 <li>Mounted filesystems: <a href="#copy">copy</a>
 <li>Mounting filesystems.: <a href="#miscmounts">miscmounts</a>
 <li>mtime tidies: <a href="#tidy">tidy</a>

@@ -868,7 +868,7 @@ if (stat(VBUFF,&statbuf) == -1)               /* link points nowhere */
    if (KILLOLDLINKS || DEBUG || D2)
       {
       snprintf(OUTPUT,bufsize*2,"%s is a link which points to %s, but that file doesn't seem to exist\n",name,VBUFF);
-      CfLog(cfsilent,OUTPUT,"");
+      CfLog(cfverbose,OUTPUT,"");
       }
 
    if (KILLOLDLINKS)

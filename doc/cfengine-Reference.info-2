@@ -1099,6 +1099,8 @@ Would result in:
      /dist/solaris/etc/syslog.conf being copied to Solaris systems
      /dist/all/etc/syslog.conf being copied to all other systems
 
+   CAUTION: this feature is necessarily memory intensive.
+
 
 File: cfengine-Reference.info,  Node: site,  Next: Smtpserver,  Prev: singlecopy,  Up: control
 

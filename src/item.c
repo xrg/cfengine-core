@@ -643,7 +643,10 @@ if (isv4)
       
       for (i = 0; i < 4; i++)
 	 {
-	 sscanf(sp1,"%[^.]",buffer1);
+         if (sscanf(sp1,"%[^.]",buffer1) <= 0)
+            {
+            break;
+            }
 	 sp1 += strlen(buffer1)+1;
 	 sscanf(sp2,"%[^.]",buffer2);
 	 sp2 += strlen(buffer2)+1;

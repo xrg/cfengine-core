@@ -1,9 +1,9 @@
-CFLAGS = @GCC_CFLAG@ @CFLAGS@  
+CFLAGS = $(GCC_CFLAG) @CFLAGS@  
 YFLAGS = -d
 LEXLIB = @LEXLIB@
-LDADD = -L../pub -lpub @BERKELEY_DB_LDFLAGS@ @BERKELEY_DB_LIB@ @OPENSSL_LIB_LDFLAGS@ @OPENSSL_LIB_LIB@
-INCLUDES = @BERKELEY_DB_CFLAGS@ @OPENSSL_LIB_CPPFLAGS@
-LDFLAGS = @BERKELEY_DB_LDFLAGS@ @OPENSSL_LIB_LDFLAGS@ @LDFLAGS@
+LDADD = -L../pub -lpub $(BERKELEY_DB_LDFLAGSD) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LDFLAGS) $(OPENSSL_LIB_LIB)
+INCLUDES = $(BERKELEY_DB_CFLAGS) $(OPENSSL_LIB_CPPFLAGS)
+LDFLAGS = $(BERKELEY_DB_LDFLAGS) $(OPENSSL_LIB_LDFLAGS) @LDFLAGS@
 
 sbin_PROGRAMS = cfagent cfservd cfrun cfkey cfenvd cfenvgraph cfexecd
 
@@ -66,7 +66,7 @@ cfagent_SOURCES =							\
 	nameinfo.c							\
 	strategies.c
 
-cfagent_LDADD = $(LEXLIB) @BERKELEY_DB_LIB@ @OPENSSL_LIB_LIB@
+cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 
 cfservd_SOURCES =							\
 	cfservd.c							\
@@ -109,7 +109,7 @@ cfservd_SOURCES =							\
 	nameinfo.c							\
 	strategies.c
 
-cfservd_LDADD = $(LEXLIB)  @BERKELEY_DB_LIB@ @OPENSSL_LIB_LIB@
+cfservd_LDADD = $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 
 cfexecd_SOURCES =							\
 	cfexecd.c							\
@@ -130,7 +130,7 @@ cfexecd_SOURCES =							\
 	item.c								\
 	init.c
 
-cfexecd_LDADD = $(LEXLIB)  @BERKELEY_DB_LIB@ @OPENSSL_LIB_LIB@
+cfexecd_LDADD = $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 
 cfrun_SOURCES =								\
 	cfrun.c								\
@@ -166,6 +166,7 @@ cfkey_SOURCES =								\
 	errors.c							\
         patches.c                                                       \
 	log.c
+
 
 cfenvd_SOURCES =							\
 	cfenvd.c							\

@@ -103,6 +103,8 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PUBLIC char FAILOVERBUFFER[bufsize];
   PUBLIC char CHROOT[bufsize];
 
+  PUBLIC char EDITBUFF[bufsize];
+
   PUBLIC short DEBUG = false;
   PUBLIC short D1 = false;
   PUBLIC short D2 = false;
@@ -122,7 +124,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
 
   PUBLIC char FORK = 'n';
 
-  PRIVATE   int RPCTIMEOUT = 30;          /* seconds */
+  PRIVATE   int RPCTIMEOUT = 60;          /* seconds */
   PROTECTED int SENSIBLEFILECOUNT = 2;
   PROTECTED int SENSIBLEFSSIZE = 1000;
 
@@ -152,6 +154,8 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PUBLIC struct cfagent_connection *CONN = NULL;
   PUBLIC struct Item *VEXCLUDECACHE = NULL;
 
+  PUBLIC struct cfObject *OBJECTLIST = NULL;
+
 /*******************************************************************/
  /* Data structures - root pointers                                 */
  /*******************************************************************/
@@ -177,6 +181,9 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
 
   PROTECTED  struct Mountables *VMOUNTABLES = NULL;         /* Points to the list of mountables */
   PROTECTED  struct Mountables *VMOUNTABLESTOP = NULL;
+
+  PUBLIC struct cfObject *VOBJTOP = NULL;
+  PUBLIC struct cfObject *VOBJ = NULL;
 
   PROTECTED  struct Item *VALERTS = NULL;
   PROTECTED  struct Item *VMOUNTED = NULL;
@@ -886,6 +893,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
      "Umask",
      "UseShell",
      "Filter",
+     "DefineInGroup",
      NULL
      };
 

@@ -238,7 +238,7 @@ while ((c=getopt_long(argc,argv,"d:f:vhHFV",CFDENVOPTIONS,&optindex)) != EOF)
                    }
 		
 		NO_FORK = true;
-		printf("cfd: Debug mode: running in foreground\n");
+		printf("cfenvd: Debug mode: running in foreground\n");
                 break;
 
       case 'f': /* This is for us Oslo folks to test against old data in batch */
@@ -274,24 +274,26 @@ LOGGING = true;                    /* Do output to syslog */
  
 sprintf(VBUFF,"%s/test",WORKDIR);
 MakeDirectoriesFor(VBUFF,'y');
+sprintf(VBUFF,"%s/state/test",WORKDIR);
+MakeDirectoriesFor(VBUFF,'y');
 strncpy(VLOCKDIR,WORKDIR,bufsize-1);
 strncpy(VLOGDIR,WORKDIR,bufsize-1);
 
 for (i = 0; i < ATTR; i++)
    {
-   sprintf(VBUFF,"%s/cf_incoming.%s",WORKDIR,ECGSOCKS[i][1]);
+   sprintf(VBUFF,"%s/state/cf_incoming.%s",WORKDIR,ECGSOCKS[i][1]);
    CreateEmptyFile(VBUFF);
-   sprintf(VBUFF,"%s/cf_outgoing.%s",WORKDIR,ECGSOCKS[i][1]);
+   sprintf(VBUFF,"%s/state/cf_outgoing.%s",WORKDIR,ECGSOCKS[i][1]);
    CreateEmptyFile(VBUFF);
    }
 
-sprintf(VBUFF,"%s/cf_users",WORKDIR);
+sprintf(VBUFF,"%s/state/cf_users",WORKDIR);
 CreateEmptyFile(VBUFF);
  
-snprintf(AVDB,bufsize,"%s/%s",WORKDIR,AVDB_FILE);
-snprintf(STATELOG,bufsize,"%s/%s",WORKDIR,STATELOG_FILE);
-snprintf(ENV_NEW,bufsize,"%s/%s",WORKDIR,ENV_NEW_FILE);
-snprintf(ENV,bufsize,"%s/%s",WORKDIR,ENV_FILE);
+snprintf(AVDB,bufsize,"%s/state/%s",WORKDIR,AVDB_FILE);
+snprintf(STATELOG,bufsize,"%s/state/%s",WORKDIR,STATELOG_FILE);
+snprintf(ENV_NEW,bufsize,"%s/state/%s",WORKDIR,ENV_NEW_FILE);
+snprintf(ENV,bufsize,"%s/state/%s",WORKDIR,ENV_FILE);
 
 if (!BATCH_MODE)
    {
@@ -435,7 +437,7 @@ if (HISTO)
    {
    char filename[bufsize];
    
-   snprintf(filename,bufsize,"%s/histograms",WORKDIR);
+   snprintf(filename,bufsize,"%s/state/histograms",WORKDIR);
    
    if ((fp = fopen(filename,"r")) == NULL)
       {
@@ -629,6 +631,7 @@ void GetQ()
 {
 Debug("========================= GET Q ==============================\n");
 GatherProcessData();
+GatherLoadData(); 
 GatherDiskData();
 GatherSocketData();
 GatherPhData(); 
@@ -1009,6 +1012,8 @@ if ((pp = cfpopen(pscomm,"r")) == NULL)
    return;
    }
 
+ReadLine(VBUFF,bufsize,pp); 
+
 while (!feof(pp))
    {
    ReadLine(VBUFF,bufsize,pp);
@@ -1032,7 +1037,7 @@ while (!feof(pp))
 
 cfpclose(pp);
 
-snprintf(VBUFF,maxvarsize,"%s/cf_users",WORKDIR);
+snprintf(VBUFF,maxvarsize,"%s/state/cf_users",WORKDIR);
 SaveItemList(list,VBUFF,"none");
  
 Verbose("(Users,root,other) = (%d,%d,%d)\n",NUMBER_OF_USERS,ROOTPROCS,OTHERPROCS);
@@ -1052,23 +1057,30 @@ Verbose("Disk free = %d %%\n",DISKFREE);
 
 void GatherLoadData()
 
-{ double load[4] = {0,0,0,0}, sum=0; 
- int i,n;
- 
- if ((n = getloadavg(load,LOADAVG_5MIN)) == -1)
-    {
-    LOADAVG = 0.0;
-    }
- else
-    {
-    for (i = 0; i < n; i++)
-       {
-       sum += load[i];
-       }
-    }
+{ double load[4] = {0,0,0,0}, sum = 0.0; 
+ int i,n = 1;
 
-    LOADAVG = sum/(double)n;
-Verbose("Load Average = %d %%\n",LOADAVG);
+Debug("GatherLoadData\n\n");
+
+#ifdef HAVE_GETLOADAVG 
+if ((n = getloadavg(load,LOADAVG_5MIN)) == -1)
+   {
+   LOADAVG = 0.0;
+   }
+else
+   {
+   for (i = 0; i < n; i++)
+      {
+      Debug("Found load average to be %lf of %d samples\n", load[i],n);
+      sum += load[i];
+      }
+   }
+#endif
+
+/* Scale load average by 100 to make it visible */
+ 
+LOADAVG = (int) (100.0 * sum);
+Verbose("100 x Load Average = %d\n",LOADAVG);
 }
 
 /*****************************************************************************/
@@ -1187,10 +1199,10 @@ for (i = 0; i < ATTR; i++)
    {
    Verbose("%s = (%d,%d)\n",ECGSOCKS[i][1],INCOMING[i],OUTGOING[i]);
  
-   snprintf(VBUFF,maxvarsize,"%s/cf_incoming.%s",WORKDIR,ECGSOCKS[i][1]);
+   snprintf(VBUFF,maxvarsize,"%s/state/cf_incoming.%s",WORKDIR,ECGSOCKS[i][1]);
    SaveItemList(in[i],VBUFF,"none");
    Debug("Saved netstat data in %s\n",VBUFF); 
-   snprintf(VBUFF,maxvarsize,"%s/cf_outgoing.%s",WORKDIR,ECGSOCKS[i][1]);
+   snprintf(VBUFF,maxvarsize,"%s/state/cf_outgoing.%s",WORKDIR,ECGSOCKS[i][1]);
    SaveItemList(out[i],VBUFF,"none");
    DeleteItemList(in[i]);
    DeleteItemList(out[i]);
@@ -1531,7 +1543,7 @@ if (HISTO)
       FILE *fp;
       char filename[bufsize];
       
-      snprintf(filename,bufsize,"%s/histograms",WORKDIR);
+      snprintf(filename,bufsize,"%s/state/histograms",WORKDIR);
       
       if ((fp = fopen(filename,"w")) == NULL)
 	 {

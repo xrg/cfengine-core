@@ -137,8 +137,8 @@ Concept Index
 * Device boundaries:                     copy.
 * Device boundaries and files:           Recursion.
 * DFS:                                   nfstype.
-* DHCP <1>:                              actionsequence.
-* DHCP:                                  DynamicAddresses.
+* DHCP <1>:                              DynamicAddresses.
+* DHCP:                                  actionsequence.
 * Directories, deleting:                 tidy.
 * Directories, hidden:                   fileextension.
 * Directories, making:                   directories.
@@ -182,13 +182,13 @@ Concept Index
 * Force copying:                         copy.
 * freespace= <1>:                        disks.
 * freespace=:                            required.
-* Full disk warnings <1>:                disks.
-* Full disk warnings:                    required.
+* Full disk warnings <1>:                required.
+* Full disk warnings:                    disks.
 * Fully qualified names:                 Cfengine classes.
 * Group dependencies:                    groups.
 * Group field, editing:                  editfiles.
-* groups <1>:                            groups.
-* groups:                                classes.
+* groups <1>:                            classes.
+* groups:                                groups.
 * Groups, defining:                      groups.
 * Hard class name collision:             Special variables.
 * Hardlinks:                             Hard links.
@@ -219,8 +219,8 @@ Concept Index
 * Kilobyte, filesize unit:               tidy.
 * Linkchildren <1>:                      Link Children.
 * Linkchildren:                          Files linkchildren.
-* Links and binary servers <1>:          Link Children.
-* Links and binary servers:              Single links.
+* Links and binary servers <1>:          Single links.
+* Links and binary servers:              Link Children.
 * Links, absolute:                       Single links.
 * Links, deleting stale <1>:             Syntax.
 * Links, deleting stale:                 tidy.
@@ -229,8 +229,8 @@ Concept Index
 * Links, multiple:                       Multiple Links.
 * Links, removing dead:                  Single links.
 * Links, single:                         Single links.
-* Links, traversing in searches <1>:     tidy.
-* Links, traversing in searches:         Syntax.
+* Links, traversing in searches <1>:     Syntax.
+* Links, traversing in searches:         tidy.
 * Local disk space, make use of:         Link Children.
 * Log files, controlling the size of:    disable.
 * Logical NOT:                           Cfengine classes.
@@ -243,14 +243,15 @@ Concept Index
 * Making use of local disk space:        Link Children.
 * MaxConnections variable:               MaxConnections.
 * Megabytes, filesize unit:              tidy.
-* Message digests <1>:                   Syntax.
-* Message digests:                       ChecksumDatabase.
+* Merging files.:                        editfiles.
+* Message digests <1>:                   ChecksumDatabase.
+* Message digests:                       Syntax.
 * Miscellaneous mount operations:        miscmounts.
 * Module directory:                      moduledirectory.
 * Modules, user defined:                 actionsequence.
 * Mount paths:                           mountpattern.
-* Mountable resources, defining <1>:     homeservers.
-* Mountable resources, defining:         mountables.
+* Mountable resources, defining <1>:     mountables.
+* Mountable resources, defining:         homeservers.
 * Mounted filesystems:                   copy.
 * Mounting filesystems.:                 miscmounts.
 * mtime tidies:                          tidy.

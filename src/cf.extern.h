@@ -41,6 +41,7 @@ extern char CFLOCK[bufsize];
 extern char CFLOG[bufsize];
 extern char CFLAST[bufsize];
 extern char LOCKDB[bufsize];
+extern char EDITBUFF[bufsize];
 
 extern char *tzname[2];
 extern char *optarg;
@@ -225,6 +226,10 @@ extern struct Item *VNEGHEAP;
 /* HvB : Bas van der Vlies */
 extern struct Mountables *VMOUNTABLES;  /* Points to the list of mountables */
 extern struct Mountables *VMOUNTABLESTOP;
+
+extern struct cfObject *VOBJTOP;
+extern struct cfObject *VOBJ;
+
 extern flag  MOUNT_RO;                  /* mount directory readonly */
 
 extern struct Item *VALERTS;

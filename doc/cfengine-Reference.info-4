@@ -174,10 +174,23 @@ expressions.
      Add a line containing the quoted string to the end of the file if
      the file doesn't contain the exact line already.
 
-`AppendIfNoLineMatching  QUOTED-REGEX'
+`AppendIfNoLineMatching  QUOTED-REGEX/ "ThisLine"'
      A new version of the older `AppendIfNoSuchLine' which uses a
      regular expression instead of a literal string. The line which
-     gets appended must be set previously using `SetLine'.
+     gets appended must be set previously using `SetLine'. If
+     `"ThisLine"' is given as the argument, the current value of then
+     line buffer is assumed. This allows constructions for merging files
+     on a convergent line-by-line basis:
+
+
+          editfiles:
+          
+           { /tmp/bla
+          
+           ForEachLineIn "/tmp/in"
+              AppendIfNoLineMatching "ThisLine"
+           EndLoop
+           }
 
 `AppendToLineIfNotContains QUOTED-STRING'
      This commands looks for an exact match of the quoted string in the
@@ -292,6 +305,31 @@ expressions.
 `DefineClasses "CLASS1:CLASS2:..."'
      Activate the following colon, comma or dot-separated list of
      classes if and only if the file is edited.
+
+`DefineInGroup "CLASS1:CLASS2:..."'
+     Activate the following colon, comma or dot-separated list of
+     classes if the edit group is entered. This can be combined with
+     other classes to identify what particular edits took place.  Use
+     DefineInGroup if you want to define a class or list of classes
+     conditional on entry to a BeginGroup ... EngGroup block. For
+     example,
+
+          editfiles:
+              { /etc/inetd.conf
+                BeginGroupIfNoSuchLine "$(myservice1)"
+                  Append "$(myservice1)"
+          	DefineInGroup "myservice1_added"
+                EndGroup
+          
+                BeginGroupIfNoSuchLine "$(myservice2)"
+                  Append "$(myservice2)"
+          	DefineInGroup "myservice2_added"
+                EndGroup
+              }
+
+     This will define service_added and service_added_another_way if
+     either line is added, but additionally myservice1_added if
+     myservice1 was added and likewise for myservice2_added.
 
 `DeleteLinesAfterThisMatching QUOTED-REGEX'
      Delete lines after the current position which match the quoted

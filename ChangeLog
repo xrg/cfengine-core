@@ -1,3 +1,28 @@
+2.0.6
+	SKIPVERIFY removed from AccessControl checks. This was wrongly allowing
+	access to files if they only had an accepted encryption key.
+
+
+	SetLine added to AppendIfNoLineMatching to allow current line to be added.
+	
+	 ForEachLineIn "/tmp/in"
+            AppendIfNoLineMatching "ThisLine"
+         EndLoop
+
+	Changed /etc/services reference to port 5308 in ipv6 compatible calls.
+
+	Efficiency, removed getpwnam from GetFile(). Was unnecessarily looking
+	up the uid multiple times, which delays copying speed. Copy rates improved
+	by five to ten times!!
+
+        Single copy uses too much cache memory. Optimize by only caching
+	copies that use the singlecopy keyword.
+
+	Message status change: %s is a link which points to %s, but that file doesn't seem to exist
+	Verbose only
+
+        Patches to editfiles to check empty files. DefineinGroup added.
+	
 2.0.5
 
 	Cfrun ipv6 patch

@@ -1270,10 +1270,10 @@ char *filename,*crit;
   char buffer[bufsize],expr[bufsize],line[bufsize],*sp;
   FILE *pp;
 
-AddMacroValue("this",filename);
+AddMacroValue(CONTEXTID,"this",filename);
 VBUFF[0] = '\0'; 
 ExpandVarstring(crit,VBUFF,NULL);
-DeleteMacro("this");
+DeleteMacro(CONTEXTID,"this");
   
 bzero(buffer,bufsize);
 bzero(line,bufsize); 
@@ -1362,10 +1362,10 @@ char *filename, *crit;
   /* command can include $(this) for the name of the file */
 
 {
-AddMacroValue("this",filename);
+AddMacroValue(CONTEXTID,"this",filename);
 VBUFF[0] = '\0'; 
 ExpandVarstring(crit,VBUFF,NULL);
-DeleteMacro("this");
+DeleteMacro(CONTEXTID,"this");
 
 Debug("Executing filter command [%s]\n",VBUFF);
 

@@ -552,7 +552,7 @@ the help of @code{cron} and/or @code{cfexecd}.
 * Building a distributed configuration ::  
 * Options::                     spices and conveniences
 * Invoking cfagent::            from the command line
-* Running cfengine permanently::  
+* Running cfengine permanently monitoring and restarting cfexecd::  
 * CFINPUTS environment variable::  the cfengine search path
 * What to aim for::             
 @end menu
@@ -1151,7 +1151,7 @@ answer some questions in more depth.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node Invoking cfagent, Running cfengine permanently, Options, Getting started
+@node Invoking cfagent, Running cfengine permanently monitoring and restarting cfexecd, Options, Getting started
 @section Invoking cfagent
 @cindex Invoking cfagent
 @cindex Starting cfagent
@@ -1223,8 +1223,8 @@ yourself to doing it.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node Running cfengine permanently, CFINPUTS environment variable, Invoking cfagent, Getting started
-@section  Running cfengine permanently
+@node Running cfengine permanently monitoring and restarting cfexecd, CFINPUTS environment variable, Invoking cfagent, Getting started
+@section  Running cfengine permanently, monitoring and restarting cfexecd
 
 Once you are happy using cfengine, you will want it to run least once
 per hour on your systems. This is easily achieved by adding the following
@@ -1281,12 +1281,24 @@ processes:
  "cfservd" restart "/usr/local/sbin/cfservd"
 
 @end smallexample
+Note that, to start cfexecd by cfengine, one must do this
+@smallexample
+processes:
+
+ "cfexecd$"  restart "/usr/local/sbin/cfexecd"
+
+@end smallexample
+If cfagent is run by @code{cfexecd -F} then this process will match and prevent
+execution unless the @code{$} regular expression is used to make the match exact.
+@cindex Restarting cfexecd
+@cindex cfexecd restarting by processes
+@cindex processes cannot start cfexecd
 
 @c -------------------------------------------------------------------------------
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node CFINPUTS environment variable, What to aim for, Running cfengine permanently, Getting started
+@node CFINPUTS environment variable, What to aim for, Running cfengine permanently monitoring and restarting cfexecd, Getting started
 @section CFINPUTS environment variable
 
 Whenever cfengine looks for a file it asks a question: is the filename

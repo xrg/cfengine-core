@@ -397,9 +397,6 @@ for (ip = procdata; ip != NULL; ip=ip->next)
       
       if (pp->signal != cfnosignal)
 	 {
-	 snprintf(OUTPUT,bufsize*2,"Signalling process %d (%s) with %s\n",pid,pp->expr,SIGNALS[pp->signal]);
-	 CfLog(cfinform,OUTPUT,"");
-	 
 	 if (!DONTDO)
 	    {
 	    if (pid == cfengine_pid)
@@ -423,6 +420,9 @@ for (ip = procdata; ip != NULL; ip=ip->next)
 		  continue;
 		  }
 	       
+	       snprintf(OUTPUT,bufsize*2,"Signalled process %d (%s) with %s\n",pid,pp->expr,SIGNALS[pp->signal]);
+	       CfLog(cfinform,OUTPUT,"");
+	 
 	       if ((pp->signal == cfkill || pp->signal == cfterm) && ret >= 0)
 		  {
 		  snprintf(OUTPUT,bufsize*2,"Killed: %s\n",ip->name);

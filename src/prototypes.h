@@ -393,6 +393,7 @@ void HandleOptionalScriptAttribute ARGLIST((char *item));
 void HandleChDir ARGLIST((char *value));
 void HandleChRoot ARGLIST((char *value));
 void HandleFileItem ARGLIST((char *item));
+void InstallObject ARGLIST((char *name));
 void InstallBroadcastItem ARGLIST((char *item));
 void InstallDefaultRouteItem ARGLIST((char *item));
 void HandleGroupItem ARGLIST((char *item, enum itemtypes type));
@@ -494,6 +495,8 @@ struct Item *LocateNextItemStarting ARGLIST((struct Item *list,char *string));
 struct Item *LocateItemMatchingRegExp ARGLIST((struct Item *list,char *string));
 struct Item *LocateItemContainingRegExp ARGLIST((struct Item *list,char *string));
 int DeleteToRegExp ARGLIST((struct Item **filestart, char *string));
+int DeleteItemGeneral ARGLIST((struct Item **filestart, char *string, enum matchtypes type));
+int DeleteItemLiteral ARGLIST((struct Item **filestart, char *string));
 int DeleteItemStarting ARGLIST((struct Item **list,char *string));
 int DeleteItemMatching ARGLIST((struct Item **list,char *string));
 int DeleteItemContaining ARGLIST((struct Item **list,char *string));
@@ -579,17 +582,17 @@ void ShowAction ARGLIST((void));
 
 /* macro.c */
 
-void InitHashTable ARGLIST((void));
-void PrintHashTable ARGLIST((void));
+void InitHashTable ARGLIST((char **table));
+void PrintHashTable ARGLIST((char **table));
 int Hash ARGLIST((char *name));
 int ElfHash ARGLIST((char *name));
-void AddMacroValue ARGLIST((char *name, char *value));
-char *GetMacroValue ARGLIST((char *name));
+void AddMacroValue ARGLIST((char *scope, char *name, char *value));
+char *GetMacroValue ARGLIST((char *scope,char *name));
 void RecordMacroId ARGLIST((char *name));
 int CompareMacro ARGLIST((char *name, char *macro));
-void DeleteMacros ARGLIST((void));
-void DeleteMacro  ARGLIST((char *name));
-
+void DeleteMacros ARGLIST((char *scope));
+void DeleteMacro  ARGLIST((char *scope,char *name));
+struct cfObject *ObjectContext ARGLIST((char *scope));
 
 /* misc.c */
 
@@ -808,3 +811,8 @@ void TidyWrapper ARGLIST((char *startpath, void *vp));
 void RecHomeTidyWrapper ARGLIST((char *startpath, void *vp));
 void CheckFileWrapper ARGLIST((char *startpath, void *vp));
 void DirectoriesWrapper ARGLIST((char *dir, void *vp));
+
+
+#ifdef HPuUX
+int Error;
+#endif

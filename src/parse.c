@@ -835,7 +835,7 @@ else
                        {
 		       if (IsDefinedClass(CLASSBUFF))
 			  {
-			  AddMacroValue(CURRENTITEM,path);
+			  AddMacroValue(CONTEXTID,CURRENTITEM,path);
 			  }
                        }
 
@@ -1141,7 +1141,7 @@ switch (ACTION)
                      {
 		     if (IsDefinedClass(CLASSBUFF))
 			{
-			AddMacroValue(CURRENTITEM,wildcard);
+			AddMacroValue(CONTEXTID,CURRENTITEM,wildcard);
 			}
                      }
                  else if ( CONTROLVAR == cfexcludecp ||

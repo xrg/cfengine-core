@@ -3318,6 +3318,7 @@ copy:
 /dist/all/etc/syslog.conf being copied to all other systems
 @end smallexample
 
+CAUTION: this feature is necessarily memory intensive. 
 
 @c .....................................................
 @c SUBSECTION
@@ -4722,11 +4723,29 @@ decision structures @code{BeginGroupIfNoLineMatching} and
 Add a line containing the quoted string to the end of the file
 if the file doesn't contain the exact line already.
 
-@item AppendIfNoLineMatching  @var{quoted-regex}
+@item AppendIfNoLineMatching  @var{quoted-regex}/ "ThisLine"
 A new version of the older @code{AppendIfNoSuchLine}
 which uses a regular expression instead of a literal
 string. The line which gets appended must be set
-previously using @code{SetLine}.
+previously using @code{SetLine}. If @code{"ThisLine"} is
+given as the argument, the current value of then line buffer
+is assumed. This allows constructions for merging files
+on a convergent line-by-line basis:
+
+@smallexample
+
+editfiles:
+
+ @{ /tmp/bla
+
+ ForEachLineIn "/tmp/in"
+    AppendIfNoLineMatching "ThisLine"
+ EndLoop
+ @}
+
+@end smallexample
+@cindex Merging files.
+
 
 @item AppendToLineIfNotContains @var{quoted-string}
 This commands looks for an exact match of the quoted string
@@ -4850,6 +4869,32 @@ expression in quotes.
 @item DefineClasses "@var{class1}:@var{class2}:..."
 Activate the following colon, comma or dot-separated list of classes if
 and only if the file is edited. 
+
+@item DefineInGroup "@var{class1}:@var{class2}:..."
+Activate the following colon, comma or dot-separated list of classes if
+the edit group is entered. This can be combined with other classes
+to identify what particular edits took place.
+Use DefineInGroup if you want to define a class or list of classes
+conditional on entry to a BeginGroup ... EngGroup block. For example,
+
+@smallexample
+editfiles:
+    @{ /etc/inetd.conf
+      BeginGroupIfNoSuchLine "$(myservice1)"
+        Append "$(myservice1)"
+	DefineInGroup "myservice1_added"
+      EndGroup
+
+      BeginGroupIfNoSuchLine "$(myservice2)"
+        Append "$(myservice2)"
+	DefineInGroup "myservice2_added"
+      EndGroup
+    @}
+@end smallexample
+@noindent
+This will define service_added and service_added_another_way if
+either line is added, but additionally myservice1_added if myservice1
+was added and likewise for myservice2_added.
 
 
 @item DeleteLinesAfterThisMatching @var{quoted-regex}

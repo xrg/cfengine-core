@@ -576,6 +576,8 @@ n_read_total = 0;
 
 while (!done)
    {
+   cipherlen = 0;
+
    if ((size - n_read_total)/buf_size > 0)
       {
       toget = towrite = buf_size;
@@ -625,12 +627,17 @@ while (!done)
 	 }
       }
 
+
    /* If the first thing we get is an error message, break. */
-   
+
    if (n_read_total == 0 && strncmp(buf,CFFAILEDSTR,strlen(CFFAILEDSTR)) == 0)
       {
       snprintf(OUTPUT,bufsize*2,"Network access to %s:%s denied\n",ip->server,source);
-      RecvSocketStream(CONN->sd,buf,buf_size-n_read,0); /* flush rest of transaction */
+      if (ip->encrypt != 'y')
+	 {
+	 RecvSocketStream(CONN->sd,buf,buf_size-n_read,0); /* flush rest of transaction */
+	 }
+      
       CfLog(cfinform,OUTPUT,"");
       close(dd);
       free(buf);
@@ -685,7 +692,7 @@ while (!done)
       return false;  
       }
 */   
-   n_read_total += towrite; /*n_read;*/
+   n_read_total += towrite; /* n_read; */
 
    if (ip->encrypt == 'n')
       {

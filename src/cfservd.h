@@ -50,6 +50,7 @@ struct cfd_connection
    unsigned char *session_key;
    char hostname[maxvarsize];
    char username[maxvarsize];
+   uid_t uid;
    char ipaddr[cfmaxiplen];
    char output[bufsize*2];   /* Threadsafe output channel */
    };

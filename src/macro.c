@@ -28,34 +28,51 @@
 #include "cf.extern.h"
 
 
-char *HASH[hashtablesize];
-
-
 /*******************************************************************/
 /* Macro substitution based on HASH-table                          */
 /*******************************************************************/
 
-void InitHashTable()
+
+void SetContext(id)
+
+char *id;
+
+{
+InstallObject(id);
+ 
+Verbose("\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
+Verbose(" * (Changing context state to: %s) *",id);
+Verbose("\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n\n"); 
+strncpy(CONTEXTID,id,31);
+}
+
+/*******************************************************************/
+
+void InitHashTable(table)
+
+char **table;
 
 { int i;
 
 for (i = 0; i < hashtablesize; i++)
    {
-   HASH[i] = NULL;
+   table[i] = NULL;
    }
 }
 
 /*******************************************************************/
 
-void PrintHashTable()
+void PrintHashTable(table)
+
+char **table;
 
 { int i;
 
 for (i = 0; i < hashtablesize; i++)
    {
-   if (HASH[i] != NULL)
+   if (table[i] != NULL)
       {
-      printf ("%d : %s\n",i,HASH[i]);
+      printf ("%d : %s\n",i,table[i]);
       }
    }
 }
@@ -104,18 +121,19 @@ return (h % hashtablesize);
 
 /*******************************************************************/
 
-void AddMacroValue(name,value)                           /* Like putenv */
+void AddMacroValue(scope,name,value)
 
-char *name,*value;
+char *scope,*name,*value;
 
 { char *sp, buffer[bufsize],exp[bufsize];
+  struct cfObject *ptr; 
   int slot;
 
-Debug("AddMacroValue(%s=%s)\n",name,value);
+Debug("AddMacroValue(%s.%s=%s)\n",scope,name,value);
 
-if (name == NULL || value == NULL)
+if (name == NULL || value == NULL || scope == NULL)
    {
-   yyerror("Bad macro");
+   yyerror("Bad macro or scope");
    CfLog(cferror,"Empty macro","");
    }
 
@@ -127,6 +145,8 @@ if (strlen(name) > maxvarsize)
 
 ExpandVarstring(value,exp,NULL);
 
+ptr = ObjectContext(scope);
+ 
 snprintf(buffer,bufsize,"%s=%s",name,exp);
 
 if ((sp = malloc(strlen(buffer)+1)) == NULL)
@@ -139,22 +159,22 @@ strcpy(sp,buffer);
 
 slot = Hash(name);
  
-if (HASH[slot] != 0)
+if (ptr->hashtable[slot] != 0)
    {
    Debug("Macro Collision!\n");
-   if (CompareMacro(name,HASH[slot]) == 0)
+   if (CompareMacro(name,ptr->hashtable[slot]) == 0)
       {
       if (PARSING && !IsItemIn(VREDEFINES,name))
 	 {
 	 snprintf(VBUFF,bufsize,"Redefinition of macro %s=%s",name,exp);
 	 Warning(VBUFF);
 	 }
-      free(HASH[slot]);
-      HASH[slot] = sp;
+      free(ptr->hashtable[slot]);
+      ptr->hashtable[slot] = sp;
       return;
       }
 
-   while ((HASH[++slot % hashtablesize] != 0))
+   while ((ptr->hashtable[++slot % hashtablesize] != 0))
       {
       if (slot == hashtablesize-1)
          {
@@ -165,34 +185,44 @@ if (HASH[slot] != 0)
          FatalError("AddMacroValue - internal error #1");
          }
 
-      if (CompareMacro(name,HASH[slot]) == 0)
+      if (CompareMacro(name,ptr->hashtable[slot]) == 0)
 	 {
 	 snprintf(VBUFF,bufsize,"Redefinition of macro %s=%s",name,exp);
 	 Warning(VBUFF);
-	 free(HASH[slot]);
-	 HASH[slot] = sp;
+	 free(ptr->hashtable[slot]);
+	 ptr->hashtable[slot] = sp;
 	 return;
 	 }
       }
    }
 
-HASH[slot] = sp;
+ptr->hashtable[slot] = sp;
 
-Debug("Added Macro at hash address %d: %s\n",slot,sp);
+Debug("Added Macro at hash address %d to object %s with value %s\n",slot,scope,sp);
 }
 
 /*******************************************************************/
 
-char *GetMacroValue(name)
+char *GetMacroValue(scope,name)
 
-char *name;
+char *scope,*name;
 
 { char *sp;
   int slot,i;
+  struct cfObject *ptr;
+  
+/* Check the class.id identity to see if this is private ..
+    and replace
 
+     HASH[slot] by objectptr->hash[slot]
+
+*/
+
+  
+ptr = ObjectContext(scope);	     
 i = slot = Hash(name);
  
-if (CompareMacro(name,HASH[slot]) != 0)
+if (CompareMacro(name,ptr->hashtable[slot]) != 0)
    {
    while (true)
       {
@@ -203,9 +233,9 @@ if (CompareMacro(name,HASH[slot]) != 0)
          i = 0;
          }
 
-      if (CompareMacro(name,HASH[i]) == 0)
+      if (CompareMacro(name,ptr->hashtable[i]) == 0)
          {
-         for(sp = HASH[i]; *sp != '='; sp++)
+         for(sp = ptr->hashtable[i]; *sp != '='; sp++)
             {
             }
 
@@ -220,7 +250,7 @@ if (CompareMacro(name,HASH[slot]) != 0)
    }
 else
    {
-   for(sp = HASH[slot]; *sp != '='; sp++)
+   for(sp = ptr->hashtable[slot]; *sp != '='; sp++)
       {
       }
 
@@ -230,15 +260,17 @@ else
 
 /*******************************************************************/
 
-void DeleteMacro(id)
+void DeleteMacro(scope,id)
 
-char *id;
+char *id, *scope;
 
 { int slot,i;
-
+  struct cfObject *ptr;
+  
 i = slot = Hash(id);
+ptr = ObjectContext(scope);
  
-if (CompareMacro(id,HASH[slot]) != 0)
+if (CompareMacro(id,ptr->hashtable[slot]) != 0)
    {
    while (true)
       {
@@ -255,17 +287,17 @@ if (CompareMacro(id,HASH[slot]) != 0)
          i = 0;
          }
 
-      if (CompareMacro(id,HASH[i]) == 0)
+      if (CompareMacro(id,ptr->hashtable[i]) == 0)
          {
-         free(HASH[i]);
-	 HASH[i] = NULL;
+         free(ptr->hashtable[i]);
+	 ptr->hashtable[i] = NULL;
          }
       }
    }
 else
    {
-   free(HASH[i]);
-   HASH[i] = NULL;
+   free(ptr->hashtable[i]);
+   ptr->hashtable[i] = NULL;
    }   
 }
 
@@ -291,16 +323,41 @@ return(strcmp(buffer,name));
 
 /*******************************************************************/
 
-void DeleteMacros()
+void DeleteMacros(scope)
+
+char *scope;
 
 { int i;
-
+  struct cfObject *ptr;
+  
+ptr = ObjectContext(scope);
+ 
 for (i = 0; i < hashtablesize; i++)
    {
-   if (HASH[i] != NULL)
+   if (ptr->hashtable[i] != NULL)
       {
-      free(HASH[i]);
-      HASH[i] = NULL;
+      free(ptr->hashtable[i]);
+      ptr->hashtable[i] = NULL;
       }
    }
 }
+
+/*******************************************************************/
+
+struct cfObject *ObjectContext(scope)
+
+char *scope;
+
+{ struct cfObject *cp = NULL;
+
+ for (cp = VOBJ; cp != NULL; cp=cp->next)
+    {
+    if (strcmp(cp->scope,scope) == 0)
+       {
+       break;
+       }
+    }
+
+return cp;
+}
+

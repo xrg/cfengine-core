@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.0.5 for version 2.0.5
-as last updated 9 February 2003.
+   This manual corresponds to CFENGINE Edition 2.0.6 for version 2.0.6
+as last updated 5 March 2003.
 
 * Menu:
 
@@ -444,7 +444,7 @@ Getting started
 * Building a distributed configuration ::
 * Options::                     spices and conveniences
 * Invoking cfagent::            from the command line
-* Running cfengine permanently::
+* Running cfengine permanently monitoring and restarting cfexecd::
 * CFINPUTS environment variable::  the cfengine search path
 * What to aim for::
 
@@ -977,7 +977,7 @@ for.  If it looks mysterious, then the next chapter should answer some
 questions in more depth.
 
 
-File: cfengine-Tutorial.info,  Node: Invoking cfagent,  Next: Running cfengine permanently,  Prev: Options,  Up: Getting started
+File: cfengine-Tutorial.info,  Node: Invoking cfagent,  Next: Running cfengine permanently monitoring and restarting cfexecd,  Prev: Options,  Up: Getting started
 
 Invoking cfagent
 ================
@@ -1026,10 +1026,10 @@ you to see what cfengine wants to do, without actually committing
 yourself to doing it.
 
 
-File: cfengine-Tutorial.info,  Node: Running cfengine permanently,  Next: CFINPUTS environment variable,  Prev: Invoking cfagent,  Up: Getting started
+File: cfengine-Tutorial.info,  Node: Running cfengine permanently monitoring and restarting cfexecd,  Next: CFINPUTS environment variable,  Prev: Invoking cfagent,  Up: Getting started
 
-Running cfengine permanently
-============================
+Running cfengine permanently, monitoring and restarting cfexecd
+===============================================================
 
    Once you are happy using cfengine, you will want it to run least once
 per hour on your systems. This is easily achieved by adding the
@@ -1068,9 +1068,16 @@ no contention will occur.
      
       "cfenvd"  restart "/usr/local/sbin/cfenvd"
       "cfservd" restart "/usr/local/sbin/cfservd"
+   Note that, to start cfexecd by cfengine, one must do this
+     processes:
+     
+      "cfexecd$"  restart "/usr/local/sbin/cfexecd"
+   If cfagent is run by `cfexecd -F' then this process will match and
+prevent execution unless the `$' regular expression is used to make the
+match exact.
 
 
-File: cfengine-Tutorial.info,  Node: CFINPUTS environment variable,  Next: What to aim for,  Prev: Running cfengine permanently,  Up: Getting started
+File: cfengine-Tutorial.info,  Node: CFINPUTS environment variable,  Next: What to aim for,  Prev: Running cfengine permanently monitoring and restarting cfexecd,  Up: Getting started
 
 CFINPUTS environment variable
 =============================

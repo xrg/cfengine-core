@@ -447,7 +447,7 @@ switch (ScanVariable(CURRENTITEM))
 		   break;
 
    default:
-                  AddMacroValue(CURRENTITEM,value);
+                  AddMacroValue(CONTEXTID,CURRENTITEM,value);
                   break;
    }
 }
@@ -1584,6 +1584,53 @@ ExpandVarstring(item,VBUFF,"");
 AppendItem(&VIMPORT,VBUFF,CLASSBUFF);
 }
 
+/*******************************************************************/
+
+void InstallObject(name)
+
+char *name;
+
+{ struct cfObject *ptr;
+  
+Debug1("Adding object %s", name);
+
+/*
+  if ( ! IsInstallable(CLASSBUFF))
+   {
+   return;
+   }
+*/
+
+for (ptr = VOBJ; ptr != NULL; ptr=ptr->next)
+   {
+   if (strcmp(ptr->scope,name) == 0)
+      {
+      Debug("Object %s already exists\n",name);
+      return;
+      }
+   }
+
+if ((ptr = (struct cfObject *)malloc(sizeof(struct cfObject))) == NULL)
+   {
+   FatalError("Memory Allocation failed for cfObject");
+   }
+ 
+if (VOBJTOP == NULL)
+   {
+   VOBJ = ptr;
+   }
+else
+   {
+   VOBJTOP->next = ptr;
+   }
+
+InitHashTable(ptr->hashtable);
+ 
+ptr->next = NULL;
+ptr->scope = strdup(name);
+VOBJTOP = ptr; 
+}
+
 
 /*******************************************************************/
 
@@ -2683,6 +2730,12 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
 		   yyerror("EndLoop without ForEachLineIn");
 		   }
 		break;
+         case DefineInGroup:
+                if (EDITGROUPLEVEL < 0)
+                   {
+                   yyerror("DefineInGroup outside a group");
+                   }
+                break;
 	 case SetLine:
 	        if (FOREACHLEVEL > 0)
 		   {

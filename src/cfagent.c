@@ -58,8 +58,10 @@ void Syntax ARGLIST((void));
 void EmptyActionSequence ARGLIST((void));
 void GetEnvironment ARGLIST((void));
 int NothingLeftToDo ARGLIST((void));
+void SummarizeObjects ARGLIST((void));
 void CheckClass ARGLIST((char *class, char *source));
 void SetContext ARGLIST((char *id));
+void DeleteCaches ARGLIST((void));
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -107,12 +109,14 @@ if (IsPrivileged() && !MINUSF && !PRMAILSERVER)
 	 SetStrategies(); 
 	 DoTree(1,"Update");
 	 EmptyActionSequence();
-	 DeleteMacros();
 	 DeleteClassesFromContext("update");
+	 DeleteCaches();
 	 }
       }
    }
 
+DeleteMacros(CONTEXTID);
+ 
 if (UPDATEONLY)
    {
    return 0;
@@ -138,9 +142,9 @@ if (PRSYSADM)                                           /* -a option */
 
 if (PRMAILSERVER)
    {
-   if (GetMacroValue("smtpserver"))
+   if (GetMacroValue(CONTEXTID,"smtpserver"))
       {
-      printf("%s\n",GetMacroValue("smtpserver"));
+      printf("%s\n",GetMacroValue(CONTEXTID,"smtpserver"));
       }
    else
       {
@@ -149,6 +153,16 @@ if (PRMAILSERVER)
    printf("%s\n",VSYSADM);
    printf("%s\n",VFQNAME);
    printf("%s\n",VIPADDRESS);
+
+   if (GetMacroValue(CONTEXTID,"EmailMaxLines"))
+      {
+      printf("%s\n", GetMacroValue(CONTEXTID,"EmailMaxLines"));
+      }
+   else
+      {
+      /* User has not expressed a preference -- let cfexecd decide */
+      printf("%s", "-1\n");
+      }
 
    for (ip = SCHEDULE; ip != NULL; ip=ip->next)
       {
@@ -171,29 +185,16 @@ CheckSystemVariables();
 SetReferenceTime(false); /* Reset */
 
 DoTree(2,"Main Tree"); 
-
 DoAlerts();
+
+SummarizeObjects();
  
 closelog();
-exit(0);
 return 0;
 }
 
 /*******************************************************************/
 /* Level 1                                                         */
-/*******************************************************************/
-
-void SetContext(id)
-
-char *id;
-
-{
-Verbose("\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
-Verbose(" * (Changing context state to: %s) *",id);
-Verbose("\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n\n"); 
-strncpy(CONTEXTID,id,31);
-}
-
 /*******************************************************************/
  
 void Initialize(argc,argv)
@@ -209,21 +210,18 @@ int argc;
 strcpy(VDOMAIN,CF_START_DOMAIN);
 
 PreLockState();
-
 SetSignals(); 
  
 ISCFENGINE = true;
-
 VFACULTY[0] = '\0';
 VSYSADM[0] = '\0';
 VNETMASK[0]= '\0';
 VBROADCAST[0] = '\0';
 VMAILSERVER[0] = '\0';
 VDEFAULTROUTE[0] = '\0';
-
 ALLCLASSBUFFER[0] = '\0';
-
 VREPOSITORY = strdup("\0");
+
  
 #ifndef HAVE_REGCOMP
 re_syntax_options |= RE_INTERVALS;
@@ -231,8 +229,6 @@ re_syntax_options |= RE_INTERVALS;
  
 strcpy(VINPUTFILE,"cfagent.conf");
 strcpy(VNFSTYPE,"nfs");
-
-InitHashTable();
 
 AddClassToHeap("any");      /* This is a reserved word / wildcard */
 
@@ -339,6 +335,9 @@ if (NOPRECONFIG)
    return;
    }
 
+strcpy(VPREFIX,"cfengine:");
+strcat(VPREFIX,VUQNAME);
+ 
 if ((sp=getenv(CFINPUTSVAR)) != NULL)
    {
    snprintf(comm,bufsize,"%s/%s",sp,VPRECONFIG);
@@ -353,7 +352,7 @@ if ((sp=getenv(CFINPUTSVAR)) != NULL)
    }
 else
    {
-   snprintf(comm,bufsize,"./%s",VPRECONFIG);
+   snprintf(comm,bufsize,"%s/%s",WORKDIR,VPRECONFIG);
 
    if (stat(comm,&buf) == -1)
        {
@@ -361,7 +360,7 @@ else
        return;
        }
       
-   snprintf(comm,bufsize,"./%s %s",VPRECONFIG,CLASSTEXT[VSYSTEMHARDCLASS]);
+   snprintf(comm,bufsize,"%s/%s %s",WORKDIR,VPRECONFIG,CLASSTEXT[VSYSTEMHARDCLASS]);
    }
 
 if (S_ISDIR(buf.st_mode) || S_ISCHR(buf.st_mode) || S_ISBLK(buf.st_mode))
@@ -405,6 +404,14 @@ while (!feof(pp))
    }
 
 cfpclose(pp);
+}
+
+/*******************************************************************/
+
+void DeleteCaches()
+
+{
+/* DeleteItemList(VEXCLUDECACHE); ?? */
 }
 
 /*******************************************************************/
@@ -548,10 +555,11 @@ if (stat(env,&statbuf) == -1)
    return;
    }
 
- if (!GetMacroValue("env_time"))
+ if (!GetMacroValue(CONTEXTID,"env_time"))
     {
-    snprintf(env,maxvarsize-1,"%s",ctime(&statbuf.st_mtime));
-    AddMacroValue("env_time",value);
+    snprintf(value,maxvarsize-1,"%s",ctime(&statbuf.st_mtime));
+    Chop(value);
+    AddMacroValue(CONTEXTID,"env_time",value);
     }
  else
     {
@@ -579,9 +587,9 @@ while (!feof(fp))
    if (strstr(class,"="))
       {
       sscanf(class,"%255[^=]=%255s",name,value);
-      if (!GetMacroValue(name))
+      if (!GetMacroValue(CONTEXTID,name))
 	 {
-	 AddMacroValue(name,value);
+	 AddMacroValue(CONTEXTID,name,value);
 	 }
       }
    else
@@ -619,7 +627,7 @@ else
 Verbose("Accepted domain name: %s\n\n",VDOMAIN); 
 bzero(VBUFF,bufsize);
 
-if (GetMacroValue("OutputPrefix"))
+if (GetMacroValue(CONTEXTID,"OutputPrefix"))
    {
    ExpandVarstring("$(OutputPrefix)",VBUFF,NULL);
    }
@@ -822,12 +830,12 @@ if (ERRORCOUNT > 0)
  
 VCANONICALFILE = strdup(CanonifyName(VINPUTFILE));
 
-if (GetMacroValue("LockDirectory"))
+if (GetMacroValue(CONTEXTID,"LockDirectory"))
    {
    Verbose("\n[LockDirectory is no longer used - same as LogDirectory]\n\n");
    }
 
-if (GetMacroValue("LogDirectory"))
+if (GetMacroValue(CONTEXTID,"LogDirectory"))
    {
    Verbose("\n[LogDirectory is no longer runtime configurable: use configure --with-workdir=WORKDIR ]\n\n");
    }
@@ -836,15 +844,15 @@ Verbose("LogDirectory = %s\n",VLOGDIR);
   
 LoadSecretKeys();
  
-if (GetMacroValue("libpath"))
+if (GetMacroValue(CONTEXTID,"libpath"))
    { 
-   snprintf(VBUFF,bufsize,"LD_LIBRARY_PATH=%s",GetMacroValue("libpath"));
+   snprintf(VBUFF,bufsize,"LD_LIBRARY_PATH=%s",GetMacroValue(CONTEXTID,"libpath"));
    putenv(VBUFF);
    }
 
-if (GetMacroValue("MaxCfengines"))
+if (GetMacroValue(CONTEXTID,"MaxCfengines"))
    {
-   activecfs = atoi(GetMacroValue("MaxCfengines"));
+   activecfs = atoi(GetMacroValue(CONTEXTID,"MaxCfengines"));
  
    locks = CountActiveLocks();
  
@@ -857,39 +865,39 @@ if (GetMacroValue("MaxCfengines"))
       }
    }
 
-if (GetMacroValue("Verbose") && (strcmp(GetMacroValue("Verbose"),"on") == 0))
+if (GetMacroValue(CONTEXTID,"Verbose") && (strcmp(GetMacroValue(CONTEXTID,"Verbose"),"on") == 0))
    {
    VERBOSE = true;
    }
 
-if (GetMacroValue("Inform") && (strcmp(GetMacroValue("Inform"),"on") == 0))
+if (GetMacroValue(CONTEXTID,"Inform") && (strcmp(GetMacroValue(CONTEXTID,"Inform"),"on") == 0))
    {
    INFORM = true;
    } 
 
- if (GetMacroValue("Exclamation") && (strcmp(GetMacroValue("Exclamation"),"off") == 0))
+ if (GetMacroValue(CONTEXTID,"Exclamation") && (strcmp(GetMacroValue(CONTEXTID,"Exclamation"),"off") == 0))
    {
    EXCLAIM = false;
    } 
 
 INFORM_save = INFORM;
  
-if (GetMacroValue("Syslog") && (strcmp(GetMacroValue("Syslog"),"on") == 0))
+if (GetMacroValue(CONTEXTID,"Syslog") && (strcmp(GetMacroValue(CONTEXTID,"Syslog"),"on") == 0))
    {
    LOGGING = true;
    }
 
 LOGGING_save = LOGGING;
 
-if (GetMacroValue("DryRun") && (strcmp(GetMacroValue("DryRun"),"on") == 0))
+if (GetMacroValue(CONTEXTID,"DryRun") && (strcmp(GetMacroValue(CONTEXTID,"DryRun"),"on") == 0))
    {
    DONTDO = true;
    AddClassToHeap("opt_dry_run");
    }
 
-if (GetMacroValue("BinaryPaddingChar"))
+if (GetMacroValue(CONTEXTID,"BinaryPaddingChar"))
    {
-   strcpy(VBUFF,GetMacroValue("BinaryPaddingChar"));
+   strcpy(VBUFF,GetMacroValue(CONTEXTID,"BinaryPaddingChar"));
    
    if (VBUFF[0] == '\\')
       {
@@ -910,30 +918,30 @@ if (GetMacroValue("BinaryPaddingChar"))
    }
 
  
-if (GetMacroValue("Warnings") && (strcmp(GetMacroValue("Warnings"),"on") == 0))
+if (GetMacroValue(CONTEXTID,"Warnings") && (strcmp(GetMacroValue(CONTEXTID,"Warnings"),"on") == 0))
    {
    WARNINGS = true;
    }
 
-if (GetMacroValue("NonAlphaNumFiles") && (strcmp(GetMacroValue("NonAlphaNumFiles"),"on") == 0))
+if (GetMacroValue(CONTEXTID,"NonAlphaNumFiles") && (strcmp(GetMacroValue(CONTEXTID,"NonAlphaNumFiles"),"on") == 0))
    {
    NONALPHAFILES = true;
    }
 
-if (GetMacroValue("SecureInput") && (strcmp(GetMacroValue("SecureInput"),"on") == 0))
+if (GetMacroValue(CONTEXTID,"SecureInput") && (strcmp(GetMacroValue(CONTEXTID,"SecureInput"),"on") == 0))
    {
    CFPARANOID = true;
    }
 
-if (GetMacroValue("ShowActions") && (strcmp(GetMacroValue("ShowActions"),"on") == 0))
+if (GetMacroValue(CONTEXTID,"ShowActions") && (strcmp(GetMacroValue(CONTEXTID,"ShowActions"),"on") == 0))
    {
    SHOWACTIONS = true;
    }
 
- if (GetMacroValue("Umask"))
+ if (GetMacroValue(CONTEXTID,"Umask"))
    {
    mode_t val;
-   val = (mode_t)atoi(GetMacroValue("Umask"));
+   val = (mode_t)atoi(GetMacroValue(CONTEXTID,"Umask"));
    if (umask(val) == (mode_t)-1)
       {
       snprintf(OUTPUT,bufsize*2,"Can't set umask to %o\n",val);
@@ -941,27 +949,27 @@ if (GetMacroValue("ShowActions") && (strcmp(GetMacroValue("ShowActions"),"on") =
       }
    }
 
-if (GetMacroValue("DefaultCopyType"))
+if (GetMacroValue(CONTEXTID,"DefaultCopyType"))
    {
-   if (strcmp(GetMacroValue("DefaultCopyType"),"mtime") == 0)
+   if (strcmp(GetMacroValue(CONTEXTID,"DefaultCopyType"),"mtime") == 0)
       {
       DEFAULTCOPYTYPE = 'm';
       }
-   if (strcmp(GetMacroValue("DefaultCopyType"),"checksum") == 0)
+   if (strcmp(GetMacroValue(CONTEXTID,"DefaultCopyType"),"checksum") == 0)
       {
       DEFAULTCOPYTYPE = 'c';
       }
-   if (strcmp(GetMacroValue("DefaultCopyType"),"binary") == 0)
+   if (strcmp(GetMacroValue(CONTEXTID,"DefaultCopyType"),"binary") == 0)
       {
       DEFAULTCOPYTYPE = 'b';
       }
-   if (strcmp(GetMacroValue("DefaultCopyType"),"ctime") == 0)
+   if (strcmp(GetMacroValue(CONTEXTID,"DefaultCopyType"),"ctime") == 0)
       {
       DEFAULTCOPYTYPE = 't';
       }
    }
  
-if (GetMacroValue("ChecksumDatabase"))
+if (GetMacroValue(CONTEXTID,"ChecksumDatabase"))
    {
    ExpandVarstring("$(ChecksumDatabase)",VBUFF,NULL);
 
@@ -980,7 +988,7 @@ else
 
 Verbose("Checksum database is %s\n",CHECKSUMDB); 
 
-if (GetMacroValue("CompressCommand"))
+if (GetMacroValue(CONTEXTID,"CompressCommand"))
    {
    ExpandVarstring("$(CompressCommand)",VBUFF,NULL);
 
@@ -993,14 +1001,14 @@ if (GetMacroValue("CompressCommand"))
    }
 
  
-if (GetMacroValue("ChecksumUpdates") && (strcmp(GetMacroValue("ChecksumUpdates"),"on") == 0))
+if (GetMacroValue(CONTEXTID,"ChecksumUpdates") && (strcmp(GetMacroValue(CONTEXTID,"ChecksumUpdates"),"on") == 0))
    {
    CHECKSUMUPDATES = true;
    } 
  
-if (GetMacroValue("TimeOut"))
+if (GetMacroValue(CONTEXTID,"TimeOut"))
    {
-   time = atoi(GetMacroValue("TimeOut"));
+   time = atoi(GetMacroValue(CONTEXTID,"TimeOut"));
 
    if (time < 3 || time > 60)
       {
@@ -1022,9 +1030,9 @@ hash = Hash(VFQNAME);
 
 if (!NOSPLAY)
    {
-   if (GetMacroValue("SplayTime"))
+   if (GetMacroValue(CONTEXTID,"SplayTime"))
       {
-      time = atoi(GetMacroValue("SplayTime"));
+      time = atoi(GetMacroValue(CONTEXTID,"SplayTime"));
       
       if (time < 0)
 	 {
@@ -1048,7 +1056,7 @@ if (!NOSPLAY)
       }
    } 
 
-if (GetMacroValue("LogTidyHomeFiles") && (strcmp(GetMacroValue("LogTidyHomeFiles"),"off") == 0))
+if (GetMacroValue(CONTEXTID,"LogTidyHomeFiles") && (strcmp(GetMacroValue(CONTEXTID,"LogTidyHomeFiles"),"off") == 0))
    {
    LOGTIDYHOMEFILES = false;
    }
@@ -1464,6 +1472,23 @@ return(non);
 
 
 /*******************************************************************/
+
+void SummarizeObjects()
+
+{ struct cfObject *op;
+
+ Verbose("\n\n++++++++++++++++++++++++++++++++++++++++\n");
+ Verbose("Summary of objects involved\n");
+ Verbose("++++++++++++++++++++++++++++++++++++++++\n\n");
+ 
+for (op = VOBJ; op != NULL; op=op->next)
+   {
+   Verbose("    %s\n",op->scope);
+   }
+}
+
+
+/*******************************************************************/
 /* Level 2                                                         */
 /*******************************************************************/
 
@@ -1756,7 +1781,7 @@ if (NOMODULES)
   
 bzero(VBUFF,bufsize);
 
-if (GetMacroValue("moduledirectory"))
+if (GetMacroValue(CONTEXTID,"moduledirectory"))
    {
    ExpandVarstring("$(moduledirectory)",VBUFF,NULL);
    }
@@ -1858,7 +1883,7 @@ while (!feof(pp))
 	  break;
       case '=':
           sscanf(line+1,"%[^=]=%[^\n]",name,content);
-	  AddMacroValue(name,content);
+	  AddMacroValue(CONTEXTID,name,content);
 	  break;
 
       default:

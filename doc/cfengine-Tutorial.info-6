@@ -72,7 +72,7 @@ Variable Index
 * -v option:                             Invoking cfagent.
 * /etc/exports:                          Using netgroups.
 * /var/cfengine/cfengine.log:            Log files.
-* /var/cfengine/output:                  Running cfengine permanently.
+* /var/cfengine/output:                  Running cfengine permanently monitoring and restarting cfexecd.
 * `:                                     Quoted strings.
 * acl:                                   ACLs.
 * any:                                   The generic class any.
@@ -91,11 +91,11 @@ Variable Index
 * OutputPrefix:                          Variable substitution.
 * repchar:                               Variable substitution.
 * site:                                  Variable substitution.
-* smtpserver:                            Running cfengine permanently.
+* smtpserver:                            Running cfengine permanently monitoring and restarting cfexecd.
 * split <1>:                             Iterating over lists.
 * split:                                 Variable substitution.
 * sysadm <1>:                            Variable substitution.
-* sysadm:                                Running cfengine permanently.
+* sysadm:                                Running cfengine permanently monitoring and restarting cfexecd.
 * timezone:                              Variable substitution.
 * underscoreclasses:                     Variable substitution.
 
@@ -120,7 +120,7 @@ Concept Index
 * /users:                                Using the automounter.
 * /var/adm/wtmpx:                        Disabling and the file repository.
 * /var/cfengine/cfengine.log:            Log files.
-* /var/cfengine/output:                  Running cfengine permanently.
+* /var/cfengine/output:                  Running cfengine permanently monitoring and restarting cfexecd.
 * /var/log/cfengine/cfengine.log:        Log files.
 * /var/lp/logs/lpsched:                  Disabling and the file repository.
 * Access control:                        Access control.
@@ -151,8 +151,9 @@ Concept Index
 * CFALLCLASSES:                          Variable substitution.
 * cfengine model:                        NFS resources.
 * cfengine model, how it works:          How does it work?.
-* cfexecd <1>:                           Functionality.
-* cfexecd:                               Running cfengine permanently.
+* cfexecd <1>:                           Running cfengine permanently monitoring and restarting cfexecd.
+* cfexecd:                               Functionality.
+* cfexecd restarting by processes:       Running cfengine permanently monitoring and restarting cfexecd.
 * CFINPUTS variable <1>:                 CFINPUTS environment variable.
 * CFINPUTS variable:                     Configuration file cfservd.conf.
 * cfrun:                                 Access control.
@@ -162,8 +163,8 @@ Concept Index
 * cfservd and access keyword:            Access control.
 * cfservd daemon:                        What services?.
 * cfservd dameon:                        Remote execution of cfagent.
-* cfservd.conf file <1>:                 What services?.
-* cfservd.conf file:                     Configuration file cfservd.conf.
+* cfservd.conf file <1>:                 Configuration file cfservd.conf.
+* cfservd.conf file:                     What services?.
 * cfwatcher program:                     What services?.
 * Class data and scripts:                Variable substitution.
 * Class, generic any:                    The generic class any.
@@ -242,7 +243,7 @@ Concept Index
 * Log files, rotating:                   Disabling and the file repository.
 * Logical NOT:                           Classes basics.
 * Macros:                                Variable substitution.
-* Mailing output:                        Running cfengine permanently.
+* Mailing output:                        Running cfengine permanently monitoring and restarting cfexecd.
 * moduledirectory:                       Writing plugin modules.
 * Modules, user defined plug-ins:        Defining classes.
 * Monitoring important files:            Monitoring important files.
@@ -266,7 +267,7 @@ Concept Index
 * Optional features in cfagent:          Options.
 * Order of actions:                      Program structure.
 * Ordinary users, lock files:            Spamming and security.
-* Output logs:                           Running cfengine permanently.
+* Output logs:                           Running cfengine permanently monitoring and restarting cfexecd.
 * Package configuration, multiple:       Iterating over lists.
 * Path to input files:                   CFINPUTS environment variable.
 * Patterns:                              Wildcards in directory names.
@@ -275,6 +276,7 @@ Concept Index
 * Plug-in modules:                       Defining classes.
 * Policy for running the system:         General considerations.
 * Privileged ports:                      Trust and key races.
+* processes cannot start cfexecd:        Running cfengine permanently monitoring and restarting cfexecd.
 * Program format:                        Program structure.
 * Program structure:                     Program structure.
 * Quoting strings:                       Quoted strings.
@@ -286,6 +288,7 @@ Concept Index
 * Remote execution of cfagent <1>:       What services?.
 * Remote execution of cfagent:           Remote execution of cfagent.
 * Rereading cfservd.conf:                Installation of cfservd.
+* Restarting cfexecd:                    Running cfengine permanently monitoring and restarting cfexecd.
 * Restarting cfservd:                    Installation of cfservd.
 * Restricting access:                    Access control.
 * Rotating files:                        Disabling and the file repository.

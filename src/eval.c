@@ -321,7 +321,7 @@ void DeleteClassFromHeap(class)
 char *class;
 
 {
-DeleteItemMatching(&VHEAP,class);
+DeleteItemLiteral(&VHEAP,class);
 }
 
 /*********************************************************************/

@@ -445,6 +445,8 @@ enum PROTOS
 
 #define CF_WORDSIZE 8 /* Number of bytes in a word */
 
+/*******************************************************************/
+
 enum cf_filetype
    {
    cf_reg,
@@ -456,6 +458,7 @@ enum cf_filetype
    cf_sock
    };
 
+/*******************************************************************/
 
 struct cfstat
    {
@@ -478,6 +481,8 @@ struct cfstat
    struct cfstat    *next;
    };
 
+/*******************************************************************/
+
 struct cfdir
    {
    DIR         *cf_dirh;
@@ -487,12 +492,16 @@ struct cfdir
 
 typedef struct cfdir CFDIR;
 
+/*******************************************************************/
+
 struct cfdirent
    {
    struct dirent *cf_dirp;
    char   d_name[bufsize];   /* This is bigger than POSIX */
    };
 
+
+/*******************************************************************/
 
 enum cfsizes
    {
@@ -911,7 +920,8 @@ enum editnames
    EditRepos,
    EditUmask,
    EditUseShell,
-   EditFilter
+   EditFilter,
+   DefineInGroup
    };
 
 enum RegExpTypes
@@ -990,6 +1000,26 @@ struct cfagent_connection
    unsigned char *session_key;
    short error;
    };
+
+/*******************************************************************/
+
+struct cfObject
+   {
+   char *scope;                       /* Name of object (scope) */
+   char *hashtable[hashtablesize];    /* Variable heap  */
+   char *classlist;                   /* Private classes -- ? */
+   struct Item *actionsequence;
+   struct cfObject *next;
+   };
+
+
+/*
+
+ $(globalvar)
+
+ $(obj.name)
+
+*/
 
 /*******************************************************************/
 
@@ -1312,6 +1342,17 @@ enum cffstype
    ntfs,
    badfs
    };
+
+/*******************************************************************/
+
+enum matchtypes
+    {
+    literalStart,
+    literalComplete,
+    literalSomewhere,
+    regexComplete
+    };
+
 
 /*******************************************************************/
 

@@ -33,7 +33,6 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
-
 void FatalError(s)
 
 char *s;

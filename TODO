@@ -1,4 +1,6 @@
 
+
+
 1. Out of processes strategy. Get cfexecd to remember processes
    which might be killed, as well as highest process number
    Put policy into cfagent.conf and save after each run a list
@@ -35,3 +37,7 @@ splint *.c +unixlib
 
 with cutting out header files - non parsable..
 splint -weak client.c +unixlib
+
+11: Reverse check md5 database for files that are no longer there -- purge and report.
+
+12: Keep database of things that were "done once only" - with expiry date.

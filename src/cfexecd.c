@@ -77,6 +77,8 @@ struct option CFDOPTIONS[] =
    };
 
 char MAILTO[bufsize];
+int MAXLINES = -1;
+const int INF_LINES = -2;
 
 /*******************************************************************/
 /* Functions internal to cfservd.c                                 */
@@ -154,13 +156,10 @@ ld_library_path[0] = '\0';
 sprintf(VPREFIX, "cfexecd"); 
 openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_DAEMON);
 
-while ((c=getopt_long(argc,argv,"L:d:f:vhpFV1g",CFDOPTIONS,&optindex)) != EOF)
+while ((c=getopt_long(argc,argv,"L:d:vhpFV1g",CFDOPTIONS,&optindex)) != EOF)
   {
   switch ((char) c)
       {
-      case 'f': strncpy(VINPUTFILE,optarg,bufsize-1);
-                break;
-
       case 'd': 
 
                 switch ((optarg==NULL)?3:*optarg)
@@ -225,6 +224,7 @@ chmod(VBUFF,0700);
 strncpy(VLOCKDIR,WORKDIR,bufsize-1);
 strncpy(VLOGDIR,WORKDIR,bufsize-1);
 
+VCANONICALFILE = strdup(CanonifyName(VINPUTFILE));
 GetNameInfo();
 
 strcpy(VUQNAME,VSYSNAME.nodename);
@@ -316,7 +316,7 @@ else
 	    CfLog(cferror,"Can't spawn run","spawnvp");
 	    }
 	 
-#elseif (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+#elsif (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
 	 
 	 pthread_attr_init(&PTHREADDEFAULTS);
 	 pthread_attr_setdetachstate(&PTHREADDEFAULTS,PTHREAD_CREATE_DETACHED);
@@ -419,13 +419,35 @@ line[0] = '\0';
 fgets(line,bufsize,pp); 
 Chop(line); 
 strcpy(VFQNAME,line); 
-Debug("Got full qualified name (%s)\n",VFQNAME); 
+Debug("Got fully qualified name (%s)\n",VFQNAME); 
 
 line[0] = '\0'; 
 fgets(line,bufsize,pp); 
 Chop(line); 
 strcpy(VIPADDRESS,line); 
 Debug("Got IP (%s)\n",VIPADDRESS); 
+
+if ((ungetc(fgetc(pp), pp)) != '[')
+   {
+   line[0] = '\0';
+   fgets(line,bufsize,pp);
+   Chop(line);
+   if (sscanf(line, "%d", &MAXLINES) == 1)
+      {
+      Debug("Got max lines (%d)\n", MAXLINES); 
+      }
+   else if (strcmp(line, "inf") == 0)
+      {
+      Debug("Infinite lines\n");
+      MAXLINES = INF_LINES;
+      }
+   }
+
+if (MAXLINES == -1)
+   {
+   MAXLINES = 100;
+   Debug("Defaulting to max lines (%d)\n", MAXLINES);
+   }
 
 /* Now get scheduling constraints */
 
@@ -774,10 +796,16 @@ if (statbuf.st_size == 0)
 */
 if ( CompareResult(file,prev_file) == 0 ) 
    {
-         Verbose("Previous output is the same as current so do not mail it\n");
-	 return;
+   Verbose("Previous output is the same as current so do not mail it\n");
+   return;
    }
 
+if (MAXLINES == 0)
+   {
+   Debug("Not mailing: EmailMaxLines was zero\n");
+   return;
+   }
+ 
 Debug("Mailing results of (%s) to (%s)\n",file,to);
  
 if (strlen(to) == 0)
@@ -855,7 +883,7 @@ while(!feof(fp))
       count++;
       sent=send(sd,VBUFF,strlen(VBUFF),0);
       }
-   if (count > 100)
+   if ((MAXLINES != INF_LINES) && (count > MAXLINES))
       {
       sprintf(VBUFF,"\r\n[Mail truncated by cfengine. File is at %s on %s]\r\n",file,VFQNAME);
       sent=send(sd,VBUFF,strlen(VBUFF),0);

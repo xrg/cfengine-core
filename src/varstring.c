@@ -112,7 +112,7 @@ char *var;
 { char buff[bufsize];
   char varbuf[maxvarsize]; 
  
-if (GetMacroValue(var))
+if (GetMacroValue(CONTEXTID,var))
    {
    bzero(buff,bufsize);
    snprintf(varbuf,maxvarsize,"$(%s)",var);
@@ -518,7 +518,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
 		      }
 	           strcat(buffer,"\015");
 		   break;
-
+		   
          case cfn:
 	     	   if (BufferOverflow(buffer," "))
 		      { 
@@ -583,8 +583,9 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
 		   buffer[len+1] = '\0';
                    break;
 
-         default:  
-                   if ((env = GetMacroValue(currentitem)) != NULL)
+         default:
+
+                   if ((env = GetMacroValue(CONTEXTID,currentitem)) != NULL)
                       {
  		      if (BufferOverflow(buffer,env))
 	   	         {

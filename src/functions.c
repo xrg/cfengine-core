@@ -443,7 +443,7 @@ if (ACTION != groups)
 
 Debug("HandleIsDefined(%s)\n",args); 
  
-if (GetMacroValue(args))
+if (GetMacroValue(CONTEXTID,args))
    {
    strcpy(value,CF_ANYCLASS);
    return;
@@ -526,7 +526,7 @@ if (ACTION != alerts)
 
 Debug("ShowState(%s)\n",args); 
 
-snprintf(buffer,bufsize,"%s/cf_%s",WORKDIR,args);
+snprintf(buffer,bufsize,"%s/state/cf_%s",WORKDIR,args);
 
 if (stat(buffer,&statbuf) == 0)
    {

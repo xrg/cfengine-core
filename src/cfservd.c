@@ -187,8 +187,9 @@ ISCFENGINE = false;   /* Switch for the parser */
 PARSEONLY  = false;
 
 ld_library_path[0] = '\0';
- 
-InitHashTable();
+
+InstallObject("server"); 
+SetContext("server");
 
 AddClassToHeap("any");      /* This is a reserved word / wildcard */
 
@@ -329,22 +330,22 @@ if ((CFDSTARTTIME = time((time_t *)NULL)) == -1)
    printf("Couldn't read system clock\n");
    }
 
-if (GetMacroValue("CheckIdent") && (strcmp(GetMacroValue("CheckIdent"),"on") == 0))
+if (GetMacroValue(CONTEXTID,"CheckIdent") && (strcmp(GetMacroValue(CONTEXTID,"CheckIdent"),"on") == 0))
    {
    CHECK_RFC931 = true;
    }
 
-if (GetMacroValue("DenyBadClocks") && (strcmp(GetMacroValue("DenyBadClocks"),"off") == 0))
+if (GetMacroValue(CONTEXTID,"DenyBadClocks") && (strcmp(GetMacroValue(CONTEXTID,"DenyBadClocks"),"off") == 0))
    {
    DENYBADCLOCKS = false;
    }
  
-if (GetMacroValue("LogAllConnections") && (strcmp(GetMacroValue("LogAllConnections"),"on") == 0))
+if (GetMacroValue(CONTEXTID,"LogAllConnections") && (strcmp(GetMacroValue(CONTEXTID,"LogAllConnections"),"on") == 0))
    {
    LOGCONNS = true;
    }
 
-if (GetMacroValue("ChecksumDatabase"))
+if (GetMacroValue(CONTEXTID,"ChecksumDatabase"))
    {
    ExpandVarstring("$(ChecksumDatabase)",VBUFF,NULL);
 
@@ -360,7 +361,7 @@ if (GetMacroValue("ChecksumDatabase"))
 bzero(VBUFF,bufsize);
 bzero(CFRUNCOMMAND,bufsize);
  
-if (GetMacroValue("cfrunCommand"))
+if (GetMacroValue(CONTEXTID,"cfrunCommand"))
    {
    ExpandVarstring("$(cfrunCommand)",VBUFF,NULL);
 
@@ -378,7 +379,7 @@ if (GetMacroValue("cfrunCommand"))
       }
    }
 
-if (GetMacroValue("MaxConnections"))
+if (GetMacroValue(CONTEXTID,"MaxConnections"))
    {
    bzero(VBUFF,bufsize);
    ExpandVarstring("$(MaxConnections)",VBUFF,NULL);
@@ -405,7 +406,7 @@ Debug("MaxConnections = %d\n",CFD_MAXPROCESSES);
 
 CHECKSUMUPDATES = true;
  
-if (GetMacroValue("ChecksumUpdates") && (strcmp(GetMacroValue("ChecksumUpdates"),"off") == 0))
+if (GetMacroValue(CONTEXTID,"ChecksumUpdates") && (strcmp(GetMacroValue(CONTEXTID,"ChecksumUpdates"),"off") == 0))
   {
   CHECKSUMUPDATES = false;
   } 
@@ -684,7 +685,7 @@ query.ai_flags = AI_PASSIVE;
 query.ai_family = AF_UNSPEC;
 query.ai_socktype = SOCK_STREAM;
 
-if (getaddrinfo(NULL,"cfengine",&query,&response) != 0)
+if (getaddrinfo(NULL,"5308",&query,&response) != 0)
    {
    CfLog(cferror,"DNS/service lookup failure","getaddrinfo");
    return -1;   
@@ -936,24 +937,17 @@ if (CFDSTARTTIME < newstat.st_mtime)
 
    /* Free & reload -- lock this to avoid access errors during reload */
 
-   for (i = 0; i < hashtablesize; i++)
-      {
-      if (HASH[i] != NULL)
-	 {
-	 free(HASH[i]);
-	 HASH[i] = NULL;
-	 }
-      }
-
    DeleteItemList(VHEAP);
    DeleteItemList(VNEGHEAP);
+   DeleteItemList(TRUSTKEYLIST);
    DeleteAuthList(VADMIT);
    DeleteAuthList(VDENY);
    strcpy(VDOMAIN,"undefined.domain");
-   
+
    VADMIT = VADMITTOP = NULL;
    VDENY  = VDENYTOP  = NULL;
    VHEAP  = VNEGHEAP  = NULL;
+   TRUSTKEYLIST = NULL;
 
    AddClassToHeap("any");
    GetNameInfo();
@@ -1489,7 +1483,7 @@ if ((CFSTARTTIME = time((time_t *)NULL)) == -1)
    CfLog(cferror,"Couldn't read system clock\n","time");
    }
 
-if (GetMacroValue("cfrunCommand") == NULL)
+if (GetMacroValue(CONTEXTID,"cfrunCommand") == NULL)
    {
    Verbose("cfservd exec request: no cfrunCommand defined\n");
    sprintf(sendbuffer,"Exec request: no cfrunCommand defined\n");
@@ -1637,6 +1631,7 @@ char buf[bufsize];
 { char ipstring[maxvarsize], fqname[maxvarsize], username[maxvarsize];
   char dns_assert[maxvarsize],ip_assert[maxvarsize];
   int matched = false;
+  struct passwd *pw;
 #ifdef HAVE_GETADDRINFO
   struct addrinfo query, *response=NULL, *ap;
   int err;
@@ -1668,6 +1663,18 @@ if (IsFuzzyItemIn(SKIPVERIFY,MapAddress(conn->ipaddr)))
    strncpy(conn->hostname,dns_assert,maxvarsize); 
    Verbose("Non-verified User ID seems to be %s (Using skipverify)\n",username); 
    strncpy(conn->username,username,maxvarsize);
+
+   if ((pw=getpwnam(username)) == NULL) /* Keep this inside mutex */
+      {
+      
+      printf("username was");
+      conn->uid = -2;
+      }
+   else
+      {
+      conn->uid = pw->pw_uid;
+      }
+   
    return true;
    }
  
@@ -1795,6 +1802,19 @@ else
       matched = false;
       }   
    }
+
+
+if ((pw=getpwnam(username)) == NULL) /* Keep this inside mutex */
+   {
+
+   printf("username was");
+   conn->uid = -2;
+   }
+else
+   {
+   conn->uid = pw->pw_uid;
+   }
+
  
 # ifdef HAVE_PTHREAD_H  
  if (pthread_mutex_unlock(&MUTEX_HOSTNAME) != 0)
@@ -1820,6 +1840,7 @@ strncpy(conn->hostname,dns_assert,maxvarsize-1);
  
 Verbose("User ID seems to be %s\n",username); 
 strncpy(conn->username,username,maxvarsize-1);
+ 
 return true;   
 }
 
@@ -1933,8 +1954,7 @@ for (ap = VADMIT; ap != NULL; ap=ap->next)
 	 
 	 if (IsWildItemIn(ap->accesslist,conn->hostname) ||
 	     IsWildItemIn(ap->accesslist,MapAddress(conn->ipaddr)) ||
-	     IsFuzzyItemIn(ap->accesslist,MapAddress(conn->ipaddr)) ||
-	     IsFuzzyItemIn(SKIPVERIFY,MapAddress(conn->ipaddr)))
+	     IsFuzzyItemIn(ap->accesslist,MapAddress(conn->ipaddr)))
 	    {
 	    access = true;
 	    Debug("Access privileges - match found\n");
@@ -1950,8 +1970,7 @@ for (ap = VDENY; ap != NULL; ap=ap->next)
       {
       if (IsWildItemIn(ap->accesslist,conn->hostname) ||
 	  IsWildItemIn(ap->accesslist,MapAddress(conn->ipaddr)) ||
-	  IsFuzzyItemIn(ap->accesslist,MapAddress(conn->ipaddr)) ||
-	  IsFuzzyItemIn(SKIPVERIFY,MapAddress(conn->ipaddr)))
+	  IsFuzzyItemIn(ap->accesslist,MapAddress(conn->ipaddr)))
          {
          access = false;
 	 Debug("Denied access privileges\n");
@@ -2426,7 +2445,6 @@ struct cfd_get_arg *args;
 { int sd,fd,n_read,total=0,cipherlen,sendlen=0;
   char sendbuffer[bufsize+1],out[bufsize],*filename;
   struct stat statbuf;
-  struct passwd *pw;
   uid_t uid;
   unsigned char iv[] = {1,2,3,4,5,6,7,8}, *key;
   EVP_CIPHER_CTX ctx;
@@ -2434,15 +2452,7 @@ struct cfd_get_arg *args;
 sd         = (args->connect)->sd_reply;
 filename   = args->replyfile;
 key        = (args->connect)->session_key;
- 
-if ((pw=getpwnam((args->connect)->username)) == NULL)
-   {
-   uid = -2;
-   }
-else
-   {
-   uid = pw->pw_uid;
-   }
+uid        = (args->connect)->uid;
 
 stat(filename,&statbuf);
 Debug("CfGetFile(%s on sd=%d), size=%d\n",filename,sd,statbuf.st_size);

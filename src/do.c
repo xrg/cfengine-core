@@ -805,9 +805,6 @@ if (!IsPrivileged())
    return;
    }
 
-signal(SIGALRM,(void *)TimeOut);
-alarm(RPCTIMEOUT);
-
 if (VSYSTEMHARDCLASS == cfnt)
    {
    /* This is a shell script. Make sure it hasn't been compromised. */
@@ -829,6 +826,9 @@ if (VSYSTEMHARDCLASS == cfnt)
 	 }
       }
    }
+
+signal(SIGALRM,(void *)TimeOut);
+alarm(RPCTIMEOUT);
  
 if ((pp = cfpopen(VMOUNTCOMM[VSYSTEMHARDCLASS],"r")) == NULL)
    {
@@ -2230,6 +2230,10 @@ for (ip = filebase; ip != NULL; ip=ip->next)
       }
    }
 
+while(DeleteItemStarting(&filebase,"search"))
+   {
+   }
+ 
 snprintf(VBUFF,bufsize,"search %s",ToLowerStr(VDOMAIN));
 
 /* if (IsItemIn(filebase,VBUFF))
@@ -2251,7 +2255,7 @@ DeleteItemStarting(&filebase,"domain");
 snprintf(VBUFF,bufsize,"domain %s",ToLowerStr(VDOMAIN));
 PrependItem(&filebase,VBUFF,NULL);
 
-if (GetMacroValue("EmptyResolvConf") && (strcmp(GetMacroValue("EmptyResolvConf"),"true") == 0))
+if (GetMacroValue(CONTEXTID,"EmptyResolvConf") && (strcmp(GetMacroValue(CONTEXTID,"EmptyResolvConf"),"true") == 0))
    {
    while (DeleteItemStarting(&filebase,"nameserver "))
       {
@@ -2317,12 +2321,9 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
       ExpandVarstring(ip->path,path,NULL);
       ExpandVarstring(ip->destination,destination,NULL);
       
-      Verbose("Checking copy from %s:%s to %s\n",server,path,destination);
-      
-
       if (strcmp(svp->name,server) != 0)  /* group together similar hosts so */
-	 {                                    /* can can do multiple transactions */
-	 continue;                            /* on one connection */
+	 {                                /* can can do multiple transactions */
+	 continue;                        /* on one connection */
 	 }
       
       if (IsExcluded(ip->classes))
@@ -2339,6 +2340,8 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
 	 ip->done = 'y';
 	 }
 
+      Verbose("Checking copy from %s:%s to %s\n",server,path,destination);
+      
       if (!OpenServerConnection(ip))
 	 {
 	 snprintf(OUTPUT,bufsize*2,"Unable to establish connection with %s\n",svp->name);
