@@ -49,11 +49,11 @@ snprintf(VBUFF,CF_BUFSIZE,"%s/randseed",VLOGDIR);
 
  if (stat(VBUFF,&statbuf) == -1)
     {
-    snprintf(AVDB,CF_MAXVARSIZE,"%s/%s",CFWORKDIR,CF_AVDB_FILE);
+    snprintf(AVDB,CF_MAXVARSIZE-1,"%s/%s",CFWORKDIR,CF_AVDB_FILE);
     }
  else
     {
-    strcpy(AVDB,VBUFF);
+    strncpy(AVDB,VBUFF,CF_MAXVARSIZE-1);
     }
 
 Verbose("Looking for a source of entropy in %s\n",AVDB);
