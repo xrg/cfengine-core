@@ -395,7 +395,7 @@ char *TCPNAMES[CF_NETATTR] =
   /* GNU STUFF FOR LATER #include "getopt.h" */
  
  
- PRIVATE struct option OPTIONS[] =
+ PRIVATE struct option OPTIONS[49] =
       {
       { "help",no_argument,0,'h' },
       { "debug",optional_argument,0,'d' },
