@@ -980,7 +980,7 @@ while (ep != NULL)
 	       break;
 
       case AutoMountDirectResources:
-	       HandleAutomountRescources(&filestart,expdata);
+	       HandleAutomountResources(&filestart,expdata);
 	       break;
 
       case ForEachLineIn:
@@ -1009,23 +1009,23 @@ while (ep != NULL)
 
 		     while (ReadLine(EDITBUFF,bufsize,loop_fp)) /* Like SetLine */
 			{
-			if (strlen(ACTIONBUFF) == 0)
+			if (strlen(EDITBUFF) == 0)
 			   {
 			   EditVerbose("ForEachLineIn skipping blank line");
 			   continue;
 			   }
 			break;
 			}
-		     if (strlen(ACTIONBUFF) == 0)
+		     if (strlen(EDITBUFF) == 0)
 			{
-			EditVerbose("EndForEachLineIn");
+			EditVerbose("EndForEachLineIn\n");
 			fclose(loop_fp);
 			loopstart = NULL;
 			while(ep->code != EndLoop)
 			   {
 			   ep = ep->next;
 			   }
-			EditVerbose("EndForEachLineIn, set current line to: %s\n",ACTIONBUFF);
+			EditVerbose("EndForEachLineIn, set current line to: %s\n",EDITBUFF);
 			}
 		     }
 		  else
@@ -1387,23 +1387,23 @@ printf("Unknown file format: %s\n",type);
 
 /**************************************************************/
 
-void HandleAutomountRescources(filestart,opts)
+void HandleAutomountResources(filestart,opts)
 
 struct Item **filestart;
 char *opts;
 
-{ struct Item *ip;
+{ struct Mountables *mp;
   char buffer[bufsize];
   char *sp;
 
-for (ip = VMOUNTABLES; ip != NULL; ip=ip->next)
+for (mp = VMOUNTABLES; mp != NULL; mp=mp->next)
    {
-   for (sp = ip->name; *sp != ':'; sp++)
+   for (sp = mp->filesystem; *sp != ':'; sp++)
       {
       }
 
    sp++;
-   snprintf(buffer,bufsize,"%s\t%s\t%s",sp,opts,ip->name);
+   snprintf(buffer,bufsize,"%s\t%s\t%s",sp,opts,mp->filesystem);
 
    if (LocateNextItemContaining(*filestart,sp) == NULL)
       {

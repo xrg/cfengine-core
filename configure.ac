@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.0.1)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.0.2)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -76,61 +76,53 @@ dnl AC_CHECK_FUNC(yp_get_default_domain, , AC_CHECK_LIB(nsl, yp_get_default_doma
 AC_SEARCH_LIBS(socket, socket, ,
     [AC_CHECK_LIB(nsl, socket, LIBS="$LIBS -lsocket -lnsl", , -lsocket)])
 
-dnl AC_CHECK_LIB(db, db_create)
 
-dnl Check for whether the user wants to compile with BerkeleyDB, and if so
-dnl what the path to the various components of it is.
+dnl
+dnl  Look for Berkeley DB.
+dnl 
 
-AC_DEFUN([CFENGINE_LIB_BERKELEYDB],
-[AC_ARG_WITH(berkeleydb,
+AC_ARG_WITH(berkeleydb,
     [  --with-berkeleydb[=PATH] directory where BerkeleyDB exists],
     BERKELEY_DB_DIR=$with_berkeleydb,
     BERKELEY_DB_DIR=yes)
-AC_MSG_CHECKING(whether BerkeleyDB is desired)
-if test x"$BERKELEY_DB_DIR" = xno ; then
-    AC_MSG_RESULT(no)
-    BERKELEY_DB_LDFLAGS=
-    BERKELEY_DB_CFLAGS=
-    BERKELEY_DB_LIB=
+AC_MSG_CHECKING(for BerkeleyDB location)
+if test "x$BERKELEY_DB_DIR" = "xno" ; then
+    AC_MSG_RESULT( )
+    AC_MSG_ERROR(This release of cfengine requires BerkeleyDB 3.2 or later)
 else
-    AC_MSG_RESULT(yes)
-    AC_MSG_CHECKING(for BerkeleyDB location)
-    if test x"$BERKELEY_DB_DIR" = xyes ; then
+    if test "x$BERKELEY_DB_DIR" = "xyes" ; then
         for v in BerkeleyDB.3.2 BerkeleyDB.3.3 BerkeleyDB.4.0; do
             for d in /opt /usr/local /usr; do
                 test -d "$d/$v" && BERKELEY_DB_DIR="$d/$v"
             done
         done
     fi
-    if test x"$BERKELEY_DB_DIR" = xyes ; then
-        for v in db4 db3 db2 db; do
-            if test -d "$BERKELEY_DB_DIR/include/$v" ; then
-                BERKELEY_DB_LDFLAGS="-L/usr/local/lib"
-                BERKELEY_DB_CFLAGS="-I/usr/local/include/$v"
-                BERKELEY_DB_LIB="-l$v"
-                AC_MSG_RESULT(FreeBSD locations)
-                break
-            fi
-        done
-        if test x"$BERKELEY_DB_LIB" = x ; then
-            for v in db4 db3 db2 db; do
-                if test -d "$BERKELEY_DB_DIR/$v" ; then
-                    if test -f "/usr/include/$v/$v" ; then
-                       BERKELEY_DB_CFLAGS="-I/usr/include/$v"
-                       BERKELEY_DB_LIB="-l$v"
-                    else
-                       BERKELEY_DB_CFLAGS="-I/usr/include/$v"
-                       BERKELEY_DB_LIB="-ldb"
-                    fi
-                    AC_MSG_RESULT(Linux locations)
+    if test "x$BERKELEY_DB_DIR" = "xyes" ; then
+        for d in /opt /usr/local /usr; do
+            for v in db4 db3 db; do
+                if test -f "$d/include/$v/db.h" ; then
+                    test "x$d" != "x/usr" && BERKELEY_DB_LDFLAGS="-L$d/lib"
+                    BERKELEY_DB_CFLAGS="-I$d/include/$v"
+                    BERKELEY_DB_LIB="-l$v"
+                    AC_MSG_RESULT($d)
                     break
                 fi
             done
-            if test x"$BERKELEY_DB_LIB" = x ; then
-                AC_MSG_ERROR(Cannot find BerkeleyDB)
+	    test "x$BERKELEY_DB_LIB" != "x" && break
+            if test -f "$d/include/db.h"; then
+                if test "x$d" != "x/usr"; then
+                    BERKELEY_DB_LDFLAGS="-L$d/lib"
+                    BERKELEY_DB_CFLAGS="-I$d/include"
+                fi
+                BERKELEY_DB_LIB="-ldb"
+                AC_MSG_RESULT($d)
+                break
             fi
+	done
+        if test "x$BERKELEY_DB_LIB" = "x" ; then
+            AC_MSG_ERROR(Cannot find BerkeleyDB)
         fi
-    else
+    elif test -f "$BERKELEY_DB_DIR/include/db.h";then
         case "$target_os" in
         solaris*)  BERKELEY_DB_LDFLAGS="-L$BERKELEY_DB_DIR/lib -R$BERKELEY_DB_DIR/lib";;
         *)         BERKELEY_DB_LDFLAGS="-L$BERKELEY_DB_DIR/lib";;
@@ -139,35 +131,76 @@ else
         BERKELEY_DB_CFLAGS="-I$BERKELEY_DB_DIR/include"
         BERKELEY_DB_LIB="-ldb"
         AC_MSG_RESULT($BERKELEY_DB_DIR)
+    else
+        AC_MSG_ERROR(Cannot find BerkeleyDB)
     fi
     AC_DEFINE(USE_BERKELEY_DB, 1, [Define if BerkeleyDB is available.])
+
+    BERKELEY_DB_SAVE_LDFLAGS=$LDFLAGS
+    BERKELEY_DB_SAVE_CPPFLAGS=$CPPFLAGS
+    BERKELEY_DB_SAVE_LIBS=$LIBS
+    LDFLAGS="$LDFLAGS $BERKELEY_DB_LDFLAGS"
+    CFLAGS="$CFLAGS $BERKELEY_DB_CFLAGS"
+    LIBS="$LIBS $BERKELEY_DB_LIB"
+
+    AC_MSG_CHECKING(Berkeley DB Version)
+
+    AC_TRY_RUN(
+       [
+#include <db.h>
+#include <stdio.h>
+int main(void)
+{
+    printf("%d.%d.%d ",DB_VERSION_MAJOR,DB_VERSION_MINOR,DB_VERSION_PATCH);
+    if (DB_VERSION_MAJOR < 3 || (DB_VERSION_MAJOR == 3 && DB_VERSION_MINOR < 2))
+        exit(1);
+    exit(0);
+}
+       ],
+       [AC_MSG_RESULT(OK)],
+       [AC_MSG_ERROR(This release of cfengine requires BerkeleyDB 3.2 or later)]
+    )
+
+    AC_CHECK_LIB(db, db_create)
+
+    LDFLAGS=$BERKELEY_DB_SAVE_LDFLAGS
+    CPPFLAGS=$BERKELEY_DB_SAVE_CPPFLAGS
+    LIBS=$BERKELEY_DB_SAVE_LIBS
+
 fi
 AC_SUBST(BERKELEY_DB_LDFLAGS)
 AC_SUBST(BERKELEY_DB_CFLAGS)
-AC_SUBST(BERKELEY_DB_LIB)])
+AC_SUBST(BERKELEY_DB_LIB)
 
-CFENGINE_LIB_BERKELEYDB
 
-AC_DEFUN([CFENGINE_LIB_OPENSSL],
-[AC_ARG_WITH(openssl,
+###
+### Search for openssl
+###
+
+
+AC_ARG_WITH(openssl,
     [  --with-openssl[=PATH] directory where OpenSSL exists],
     OPENSSL_LIB_DIR=$with_openssl,
-    OPENSSL_LIB_DIR=/usr/local/ssl)
-AC_MSG_CHECKING(whether OpenSSL is desired)
+    OPENSSL_LIB_DIR=yes)
+AC_MSG_CHECKING(for OpenSSL location)
 if test x"$OPENSSL_LIB_DIR" = xno ; then
     AC_MSG_RESULT(no)
-    OPENSSL_LIB_LDFLAGS=
-    OPENSSL_LIB_CFLAGS=
-    OPENSSL_LIB_LIB=
-    AC_MSG_ERROR(OpenSSL is required for building)
+    AC_MSG_ERROR(This release of cfengine requires OpenSSL 0.9.6b or later)
 else
-    AC_MSG_RESULT(yes)
-    AC_MSG_CHECKING(for OpenSSL location)
     if test x"$OPENSSL_LIB_DIR" = xyes ; then
+        for d in /opt/ssl /usr/local/ssl /usr/local /usr; do
+            if test -f "$d/include/openssl/opensslv.h"; then
+                OPENSSL_LIB_LDFLAGS="-L$d/lib"
+                OPENSSL_LIB_CPPFLAGS="-I$d/include"
+                OPENSSL_LIB_LIB="-lcrypto"
+                AC_MSG_RESULT($d)
+                break
+            fi
+        done
         if test x"$OPENSSL_LIB_LIB" = x ; then
             AC_MSG_ERROR(Cannot find OpenSSL)
         fi
-    else
+    elif test -f "$OPENSSL_LIB_DIR/include/openssl/ssl.h";then
         case "$target_os" in
         solaris*)  OPENSSL_LIB_LDFLAGS="-L$OPENSSL_LIB_DIR/lib -R$OPENSSL_LIB_DIR/lib";;
         *)         OPENSSL_LIB_LDFLAGS="-L$OPENSSL_LIB_DIR/lib";;
@@ -176,6 +209,8 @@ else
         OPENSSL_LIB_CPPFLAGS="-I$OPENSSL_LIB_DIR/include"
         OPENSSL_LIB_LIB="-lcrypto"
         AC_MSG_RESULT($OPENSSL_LIB_DIR)
+    else
+        AC_MSG_ERROR(Cannot find OpenSSL)
     fi
     AC_DEFINE(USE_OPENSSL_LIB, 1, [Define if OpenSSL is available.])
 
@@ -187,24 +222,28 @@ else
     CPPFLAGS="$CPPFLAGS $OPENSSL_LIB_CPPFLAGS"
     LIBS="$LIBS $OPENSSL_LIB_LIB"
 
+    AC_MSG_CHECKING(OpenSSL Version)
+
+    AC_TRY_RUN(
+       [
+#include <openssl/opensslv.h>
+int main(void)
+{
+    if (OPENSSL_VERSION_NUMBER < 0x0090602fL)
+        exit(1);
+    exit(0);
+}
+       ],
+       [AC_MSG_RESULT(OK)],
+       [AC_MSG_ERROR(This release of cfengine requires openssl 0.9.6b or later)]
+    )
+
     dnl ######################################################################
     dnl Checks for OpenSSL crypto lib
     dnl ######################################################################
 
     AC_CHECK_LIB(crypto,main)
-    
 
-
-
-    version=`(test -f $OPENSSL_LIB_DIR/bin/openssl && $OPENSSL_LIB_DIR/bin/openssl version || openssl version) | cut -f2 -d" "`
-
-    if test $version = 0.9.6b -o $version = 0.9.6c; then
-       echo Version $version of OpenSSL is acceptable
-    else
-       AC_MSG_WARN(!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
-       echo Version $version should be 0.9.6b or later
-       AC_MSG_WARN(!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
-    fi
 
     LDFLAGS=$OPENSSL_SAVE_LDFLAGS
     CPPFLAGS=$OPENSSL_SAVE_CPPFLAGS
@@ -213,8 +252,9 @@ else
 fi
 AC_SUBST(OPENSSL_LIB_LDFLAGS)
 AC_SUBST(OPENSSL_LIB_CPPFLAGS)
-AC_SUBST(OPENSSL_LIB_LIB)])
-CFENGINE_LIB_OPENSSL
+AC_SUBST(OPENSSL_LIB_LIB)
+
+
 
 dnl ######################################################################
 dnl Checks for regular expressions
@@ -242,7 +282,7 @@ AC_CHECK_HEADERS(sys/param.h)
 AC_CHECK_HEADERS(fcntl.h)
 AC_CHECK_HEADERS(sys/filesys.h)
 AC_CHECK_HEADERS(dustat.h)
-AC_CHECK_HEADERS(db.h regex.h rxposix.h)
+AC_CHECK_HEADERS(regex.h rxposix.h)
 AC_CHECK_HEADERS(sys/systeminfo.h)
 AC_CHECK_HEADERS(sys/acl.h)
 
@@ -502,14 +542,14 @@ AC_SUBST(NOWRAP)
 
 LIBS="$LIBS -L../pub -lpub"
 
-dnl ##########
+dnl ####################################################################
 dnl Set GCC CFLAGS only if using GCC.
-dnl ##########
+dnl ####################################################################
 
 AC_MSG_CHECKING(Checking for GCC Specific compile flags)
 if test x"$GCC" = "xyes"; then
 	dnl This is a really bad default
-	GCC_CFLAG="-Wreturn-type -Wmissing-prototypes -Wuninitialized"		
+	GCC_CFLAG="-g -O2 -Wreturn-type -Wmissing-prototypes -Wuninitialized"		
 	AC_MSG_RESULT(yes)
 	AC_SUBST(GCC_CFLAG)
 else 
@@ -541,12 +581,12 @@ AC_MSG_WARN(=====================================================)
 AC_MSG_WARN( )
 AC_MSG_WARN( DFS users should use --enable-DCE)
 AC_MSG_WARN( )
-AC_MSG_WARN( This version requires Berkeley db version 3.2 or later )
-AC_MSG_WARN(   installed at /usr/local/BerkeleyDB from www.sleepycat.com.)
+AC_MSG_WARN( This version requires Berkeley db version 3.2 or)
+AC_MSG_WARN(   later from www.sleepycat.com)
+AC_MSG_WARN( This version requires OpenSSL 0.9.6b or later)
+AC_MSG_WARN(   from www.openssl.org)
 AC_MSG_WARN( )
-AC_MSG_WARN( This version requires the latest OpenSSL from www.openssl.org)
-AC_MSG_WARN( )
-AC_MSG_WARN(=====================================================")
+AC_MSG_WARN(=====================================================)
 
 
 AC_MSG_RESULT(DONE: Configuration done. Run make/gmake to build cfengine.)

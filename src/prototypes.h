@@ -201,7 +201,8 @@ void CheckTimeZone ARGLIST((void));
 void CheckProcesses ARGLIST((void));
 int RequiredFileSystemOkay ARGLIST((char *name));
 void InstallMountedItem ARGLIST((char *host, char *mountdir));
-void AddToFstab ARGLIST((char *host, char *mountpt, char *rmountpt, char *mode, int ismounted));
+void InstallMountableItem ARGLIST((char *path, char *mnt_opts, flag readonly));
+void AddToFstab ARGLIST((char *host, char *mountpt, char *rmountpt, char *mode, char *options, int ismounted));
 int CheckFreeSpace ARGLIST((char *file, int kilobytes));
 void CheckHome ARGLIST((struct File *ptr));
 void EditItemsInResolvConf ARGLIST((struct Item *from, struct Item **list));
@@ -222,7 +223,7 @@ int ResetEditSearch  ARGLIST((char *str, struct Item *list));
 int ReplaceEditLineWith  ARGLIST((char *string));
 int RunEditScript  ARGLIST((char *script, char *fname, struct Item **filestart, struct Edit *ptr));
 void DoFixEndOfLine ARGLIST((struct Item *list, char *type));
-void HandleAutomountRescources ARGLIST((struct Item **filestart, char *opts));
+void HandleAutomountResources ARGLIST((struct Item **filestart, char *opts));
 void CheckEditSwitches ARGLIST((char *filename, struct Edlist *actions));
 void AddEditfileClasses  ARGLIST((struct Edit *list, int editsdone));
 struct Edlist *ThrowAbort ARGLIST((struct Edlist *from));
@@ -242,6 +243,7 @@ int EncryptString ARGLIST((char *in, char *out, unsigned char *key, int len));
 int DecryptString ARGLIST((char *in, char *out, unsigned char *key, int len));
 RSA *HavePublicKey ARGLIST((char *ipaddress));
 void SavePublicKey ARGLIST((char *ipaddress, RSA *key));
+void DeletePublicKey ARGLIST((char *ipaddress));
 void GenerateRandomSessionKey ARGLIST((void));
 
 /* errors.c */
@@ -325,7 +327,7 @@ int FilterTypeMatch ARGLIST((struct stat *ptr,char *match));
 int FilterOwnerMatch ARGLIST((struct stat *lstatptr,char *crit));
 int FilterGroupMatch ARGLIST((struct stat *lstatptr,char *crit));
 int FilterModeMatch ARGLIST((struct stat *lstatptr,char *crit));
-int FilterTimeMatch ARGLIST((struct stat *lstatptr,char *from,char *to));
+int FilterTimeMatch ARGLIST((time_t stattime,char *from,char *to));
 int FilterNameRegexMatch ARGLIST((char *file,char *crit));
 int FilterExecRegexMatch ARGLIST((char *file,char *crit));
 int FilterExecMatch ARGLIST((char *file,char *crit));
@@ -351,7 +353,7 @@ void SetDefaultRoute ARGLIST((void));
 void RecursiveImage ARGLIST((struct Image *ip, char *from, char *to, int maxrecurse));
 void CheckHomeImages ARGLIST((struct Image *ip));
 void CheckImage ARGLIST((char *source, char *destination, struct Image *ip));
-void PurgeFiles ARGLIST((struct Item *filelist, char *directory));
+void PurgeFiles ARGLIST((struct Item *filelist, char *directory, struct Item *exclusions));
 void ImageCopy ARGLIST((char *sourcefile, char *destfile, struct stat sourcestatbuf, struct Image *ip));
 int cfstat ARGLIST((char *file, struct stat *buf, struct Image *ip));
 int cflstat ARGLIST((char *file, struct stat *buf, struct Image *ip));
@@ -366,12 +368,14 @@ void RegisterHardLink ARGLIST((int i, char *value, struct Image *ip));
 
 void CheckWorkDirectories ARGLIST((void));
 void RandomSeed ARGLIST((void));
+void SetSignals ARGLIST((void));
 
 /* install.c */
 
 void InstallLocalInfo  ARGLIST((char *varvalue));
 void HandleEdit ARGLIST((char *file, char *edit, char *string));
 void HandleOptionalFileAttribute ARGLIST((char *item));
+void HandleOptionalMountablesAttribute ARGLIST((char *item));
 void HandleOptionalImageAttribute ARGLIST((char *item));
 void HandleOptionalRequired ARGLIST((char *item));
 void HandleOptionalInterface ARGLIST((char *item));
@@ -456,8 +460,8 @@ struct GidList *MakeGidList ARGLIST((char *gidnames));
 void InstallTidyPath ARGLIST((char *path, char *wild, int rec, short int age, char travlinks, int tidysize, char type, char ldirs, short int tidydirs, char *classes));
 void AddTidyItem ARGLIST((char *path, char *wild, int rec, short int age, char travlinks, int tidysize, char type, char ldirs, short int tidydirs, char *classes));
 int TidyPathExists ARGLIST((char *path));
-void AddSimpleUidItem ARGLIST((struct UidList **uidlist, int uid));
-void AddSimpleGidItem ARGLIST((struct GidList **gidlist, int gid));
+void AddSimpleUidItem ARGLIST((struct UidList **uidlist, int uid, char *uidname));
+void AddSimpleGidItem ARGLIST((struct GidList **gidlist, int gid, char *gidname));
 void InstallAuthPath ARGLIST((char *path, char *hostname, char *classes, struct Auth **list, struct Auth **listtop));
 void AddAuthHostItem ARGLIST((char *path, char *attribute, char *classes, struct Auth **list));
 int AuthPathExists ARGLIST((char *path, struct Auth *list));
@@ -469,6 +473,7 @@ void HandleCharSwitch ARGLIST((char *name,char *value,char *flag));
 /* ip.c */
 
 char *sockaddr_ntop ARGLIST((struct sockaddr *sa));
+void *sockaddr_pton ARGLIST((int af,void *src));
 short CfenginePort ARGLIST((void));
 int IsIPV6Address ARGLIST((char *name));
 
@@ -516,6 +521,8 @@ int CompareToFile ARGLIST((struct Item *liststart, char *file));
 int IsItemIn ARGLIST((struct Item *list, char *item));
 int IsClassedItemIn ARGLIST((struct Item *list, char *item));
 int IsFuzzyItemIn ARGLIST((struct Item *list, char *item));
+int FuzzySetMatch ARGLIST((char *s1, char *s2));
+int FuzzyMatchParse ARGLIST((char *item));
 void PrependItem  ARGLIST((struct Item **liststart, char *itemstring, char *classes));
 void AppendItem  ARGLIST((struct Item **liststart, char *itemstring, char *classes));
 void DeleteItemList ARGLIST((struct Item *item));

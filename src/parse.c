@@ -390,9 +390,11 @@ if (ACTION == groups)
 switch(ACTION)   /* Check for IP names in cfd */
    {
    case admit:
+                 FuzzyMatchParse(id);       
                  InstallAuthItem(CURRENTAUTHPATH,id,&VADMIT,&VADMITTOP,CLASSBUFF);
 		 break;
    case deny:
+                 FuzzyMatchParse(id);       
                  InstallAuthItem(CURRENTAUTHPATH,id,&VDENY,&VDENYTOP,CLASSBUFF);
 		 break;
 
@@ -568,8 +570,12 @@ else
       case required:    yyerror("Required filesystem must be an absolute path");
                         FatalError("Fatal error");
                         break;
-      case mountables:  yyerror("Mountables should be specified by an absolute pathname");
-                        break;
+      case mountables:  
+	                InstallPending(ACTION);
+			strcpy(CURRENTPATH,item);
+			ACTIONPENDING = true;
+			break;
+
       case links:       if (ACTION_IS_LINKCHILDREN && strcmp (item,"linkchildren") == 0)
                            {
                            strcpy(LINKTO,item);
@@ -829,8 +835,11 @@ else
                        break;
       case shellcommands:
                        break;
-      case mountables: AppendMountable(path);
-                       break;
+
+      /* HvB : Bas van der Vlies */
+      case mountables: 
+		       break;
+
       case mailserver: InstallMailserverPath(path);
                        break;
       case tidy:       strcpy(CURRENTITEM,path);
@@ -1169,6 +1178,11 @@ switch (ACTION)
 		    }
 		 break;
 
+   /* HvB : Bas van der Vlies */
+   case mountables:
+                 HandleOptionalMountablesAttribute(wildcard);
+		 break;
+
    case unmounta:
                  HandleOptionalUnMountAttribute(wildcard);
 		 break;
@@ -1187,9 +1201,11 @@ switch (ACTION)
 		 break;
 
    case admit:
+                 FuzzyMatchParse(wildcard);
                  InstallAuthItem(CURRENTAUTHPATH,wildcard,&VADMIT,&VADMITTOP,CLASSBUFF);
 		 break;
    case deny:
+                 FuzzyMatchParse(wildcard);       
                  InstallAuthItem(CURRENTAUTHPATH,wildcard,&VDENY,&VDENYTOP,CLASSBUFF);
 		 break;
 
@@ -1222,6 +1238,7 @@ switch (ACTION)
 		    strcpy(CURRENTITEM,wildcard);
 		    }
 		 break;
+
 		 
    default:
                  yyerror("Wildcards cannot be used in this context:");
@@ -1418,6 +1435,12 @@ void InitializeAction()                                   /* Set defaults */
     *MOUNTFROM = '\0';
     *MOUNTONTO = '\0';
     }
+
+ /* 
+  * HvB: Bas van der Vlies
+ */
+ MOUNT_RO=false;
+ MOUNTOPTS[0]='\0';
  
  /* Make sure we don't clean the buffer in the middle of a link! */
 

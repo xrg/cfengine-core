@@ -323,6 +323,7 @@ char *file, force;
   struct stat statbuf;
   mode_t mask;
   int rootlen;
+  char Path_File_Separator;
     
 if (!IsAbsoluteFileName(file))
    {
@@ -450,6 +451,7 @@ for (sp = file+rootlen, spc = currentpath+rootlen; *sp != '\0'; sp++)
       }
    else
       {
+      Path_File_Separator = *sp;
       *spc = '\0';
 
       if (strlen(currentpath) == 0)
@@ -483,7 +485,8 @@ for (sp = file+rootlen, spc = currentpath+rootlen; *sp != '\0'; sp++)
             }
          }
 
-      *spc = FILE_SEPARATOR;
+      /* *spc = FILE_SEPARATOR; */
+      *spc = Path_File_Separator;
       spc++;
       }
    }

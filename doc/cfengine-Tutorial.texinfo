@@ -101,6 +101,11 @@ as last updated @value{UPDATED}.
 
 @end ifinfo
 
+@ifhtml
+@html
+<a href="#Contents">COMPLETE TABLE OF CONTENTS</a>
+@end html
+@end ifhtml
 
 @c **********************************************************************
 @c CHAPTER
@@ -5047,7 +5052,7 @@ file on your system however.
 The restricted functionality of the daemon protects your system from
 attempts to execute general commands as the root user using @code{rsh}.
 
-To remotely access files on a server, you add the keywork @code{server=@var{host}}
+To remotely access files on a server, you add the keyword @code{server=@var{host}}
 @cindex @code{server=} 
 to a copy command. Consider the following example
 which illustrates how you might distribute a password file from a masterhost
@@ -5210,8 +5215,8 @@ sequence:
 @item
 The minimum time which should have passed since the last time
 that action was executed. It will not be executed again until
-this amount of time has elapsed. (Default time is 0 minutes so
-that users un-aware of this feature will not be confused by it.)
+this amount of time has elapsed. 
+(Default time is 1 minute.)
 
 @item
 The maximum amount of time cfagent should wait for an old
@@ -7102,6 +7107,12 @@ hosts *converge* to a desired, correct state.
 @unnumbered FAQ Index
 
 @printindex mb
+
+@ifhtml
+@html
+<a name="Contents">
+@end html
+@end ifhtml
 
 @contents
 

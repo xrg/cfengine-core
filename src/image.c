@@ -198,7 +198,8 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
 
 if (ip->purge == 'y')
    {
-   PurgeFiles(namecache,to);
+   PurgeFiles(namecache,to,ip->inclusions); /* inclusions not exclusions, since exclude
+					       from purge means include */
    DeleteItemList(namecache);
    }
  
@@ -478,10 +479,11 @@ FlushClientCache(ip);
 
 /*********************************************************************/
 
-void PurgeFiles(filelist,directory)
+void PurgeFiles(filelist,directory,inclusions)
 
 struct Item *filelist;
 char *directory;
+struct Item *inclusions;
 
 { DIR *dirh;
   struct stat statbuf; 
@@ -536,7 +538,7 @@ Debug("PurgeFiles(%s)\n",directory);
 	  snprintf(OUTPUT,bufsize*2,"Purging %s in copy dest directory\n",filename);
 	  CfLog(cfsilent,OUTPUT,"");
 	  
-	  if (stat(filename,&statbuf) == -1)
+	  if (lstat(filename,&statbuf) == -1)
 	     {
 	     snprintf(OUTPUT,bufsize*2,"Couldn't stat %s while purging\n",filename);
 	     CfLog(cfverbose,OUTPUT,"stat");
@@ -551,7 +553,7 @@ Debug("PurgeFiles(%s)\n",directory);
 	     tp.tidylist = &tpat;
 	     tp.next = NULL;
 	     tp.path = filename;
-	     tp.exclusions = NULL;
+	     tp.exclusions = inclusions; /* exclude means don't purge, i.e. include here */
              tp.ignores = NULL;
 	     
 	     tpat.recurse = INFINITERECURSE;
@@ -1314,7 +1316,7 @@ if (IMAGEBACKUP == 'y')
       if (S_ISDIR(s.st_mode))
 	 {
 	 backupisdir = true;
-	 PurgeFiles(NULL,backup);
+	 PurgeFiles(NULL,backup,NULL);
 	 rmdir(backup);
 	 }
 
@@ -1334,7 +1336,7 @@ else
       {
       if (S_ISDIR(s.st_mode))
 	 {
-	 PurgeFiles(NULL,dest);
+	 PurgeFiles(NULL,dest,NULL);
 	 rmdir(dest);
 	 }
       }

@@ -244,6 +244,12 @@ if (CompareMacro(id,HASH[slot]) != 0)
       {
       i++;
 
+      if (i == slot)
+	 {
+	 Debug("No macro matched\n");
+	 break;
+	 }
+      
       if (i >= hashtablesize-1)
          {
          i = 0;

@@ -179,7 +179,7 @@ return server->s_port;
 
 int IsIPV6Address(name)
 
-/* make this more reliable ... does anyone have : in hostnams? */
+/* make this more reliable ... does anyone have : in hostname? */
 
 char *name;
 

@@ -1,4 +1,76 @@
 
+2.0.2
+	New option -b --update-only
+        Runs only the update.conf script
+	
+        Host ranges in IP addresses 128.39.89.10-34 or CIDR notation 129.39.89.1/24
+	to specify groups / classes or host lists in cfservd.conf.
+        groups:
+
+	   myseries = ( IpRange(128.39.74-75.10-20) )
+	   myseries = ( IpRange(128.39.74.10/24) )
+	
+	128.39.74.10/23 == 128.39.75.56	
+	128.39.74-75.10-20 == 128.39.75.12
+	2001:700:700:3:290:27ff:fea2:4730-4790 == 2001:700:700:3:290:27ff:fea2:477b
+	2001:700:700:3:290:27ff:fea2:4730/64 == 2001:700:700:3:290:27ff:fea2:477b
+
+	New list in cfservd.conf, DynamicAddresses = ( ipranges )
+	this assumes that hosts get IP addresses from DHCP or someting
+	and can change over time. This changes the security model somewhat.
+	(see reference manual)
+
+	Bug in cfservd for files which were unreadably by the daemon.
+	Could lead to incorrect file being transmitted instead of rejection.
+	
+        Changes to mount list. Can now include mount options in the
+	cfengine mount model (see reference manual) 
+	Bug in classification of variable assignment and authorization
+	assignments fixed.
+        Structures for convergence analysis added. Option -g (future work)
+	NAT handling in cfservd.c patch
+	Signal names were wrong in some cases due to differing conventions - OS dependent.
+	Incorrect code in file time filter comparisons fixed.
+
+	License ammendment in COPYING makes it clear that users are encouraged to
+	use the OpenSSL library. I see no problems with this.
+
+	Purge exclusions segfault bug fix.
+	Purge should not purge patterns in include= (fixed)
+	Purge symbolic link error fixed. (Bas)
+
+	/* Bas
+	The following patch helps with the, for me at least, irritating
+	problem where I have a cf.<conf> file which has sections depending
+	upon classes which do file checks or copy based upon a user/group
+	which doesn't exist on certain machines :-
+
+        flagisoff::
+           file owner=user group=group
+
+	cfengine complains about this even though flagisoff is off :-)
+
+	It also means that a user can be created earlier in a configuration
+	and used later on without the warnings.
+	Anyway patch does :-
+	- don't complain about missing uid/gid while parsing
+	- set uid/gid to -2 if missing and copy the name to the uid/gid
+	  structure
+	- when actually doing things, recheck to see if the user exists use it
+	  if its now found, otherwise complain
+	*/
+
+	SMTP \r added to cfexecd, caused problems for stricter mailers.
+	(I wasn't reading RFC2822!!)
+
+	Connection from version 1 client could cause version 2 server to segfault.
+	Fixed uninitialized field.
+
+	If we specify purge, then the following options will also be set
+	and cannot be altered: forcedirs=true typecheck=false - for safety sake.
+
+        Some windows patches.
+	
 2.0.1
         Some error messages demoted to verbose only
         Some documentation corrections

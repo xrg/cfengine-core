@@ -100,6 +100,11 @@ as last updated @value{UPDATED}.
 
 @end ifinfo
 
+@ifhtml
+@html
+<a href="#Contents">COMPLETE TABLE OF CONTENTS</a>
+@end html
+@end ifhtml
 
 @c **********************************************************************
 @c CHAPTER
@@ -380,7 +385,7 @@ continuous viewing. The data are averages, not time-series.
 For example, with gnuplot
 
 @smallexample
-host$ cfenvgaph -s
+host$ cfenvgraph -s
 host$ gnuplot
 gnuplot> plot "www-in.cfenv" with errorbars
 gnuplot> plot "www-in.cfenv" with lines
@@ -504,6 +509,12 @@ $(value_smtp_out) average $(average_smtp_out) pm $(stddev_smtp_out)"
 @unnumbered FAQ Index
 
 @printindex mb
+
+@ifhtml
+@html
+<a name="Contents">
+@end html
+@end ifhtml
 
 @contents
 

@@ -542,6 +542,13 @@ if (buf_size < 2048)
  
 if (ip->encrypt == 'y')
    {
+   if (size < 17)
+      {
+      snprintf(OUTPUT,bufsize,"Cannot encrypt files smaller than 17 bytes with OpenSSL/Blowfish (%s)",source);
+      CfLog(cferror,OUTPUT,"");
+      return false;
+      }
+   
    snprintf(in,bufsize-CF_PROTO_OFFSET,"GET dummykey %s",source);
    cipherlen = EncryptString(in,out,CONN->session_key,strlen(in));
    snprintf(sendbuffer,bufsize,"SGET %4d %4d",cipherlen,buf_size);
@@ -615,7 +622,7 @@ while (!done)
 	 return false;
 	 }
       }
-   
+
    /* If the first thing we get is an error message, break. */
    
    if (n_read_total == 0 && strncmp(buf,CFFAILEDSTR,strlen(CFFAILEDSTR)) == 0)
@@ -655,6 +662,27 @@ while (!done)
       break;
       }
 
+   if (n_read == size)
+      {
+      if (n_read_total == 0 && strncmp(buf,CFFAILEDSTR,size) == 0)
+	 {
+	 snprintf(OUTPUT,bufsize*2,"Network access to %s:%s denied\n",ip->server,source);
+	 CfLog(cfinform,OUTPUT,"");
+	 close(dd);
+	 free(buf);
+	 return false;      
+	 }
+      }
+
+/*   if (n_read < toget)
+      {
+      snprintf(OUTPUT,bufsize*2,"Network error getting %s:%s\n",ip->server,source);
+      CfLog(cfinform,OUTPUT,"");
+      close(dd);
+      free(buf);
+      return false;  
+      }
+*/   
    n_read_total += towrite; /*n_read;*/
 
    if (ip->encrypt == 'n')

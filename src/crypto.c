@@ -205,6 +205,33 @@ fclose(fp);
 
 /*********************************************************************/
 
+void DeletePublicKey(name)
+
+char *name;
+
+{ char filename[bufsize],*sp;
+  int err;
+
+if (!IsPrivileged())
+   {
+   Verbose("\n(Non privileged user...)\n\n");
+   
+   if ((sp = getenv("HOME")) == NULL)
+      {
+      FatalError("You do not have a HOME variable pointing to your home directory");
+      }  
+   snprintf(filename,bufsize,"%s/.cfengine/ppkeys/%s.pub",sp,name);
+   }
+else
+   {
+   snprintf(filename,bufsize,"%s/ppkeys/%s.pub",WORKDIR,name);
+   }
+
+unlink(filename);
+}
+
+/*********************************************************************/
+
 void MD5Random(digest)
 
 unsigned char digest[EVP_MAX_MD_SIZE+1];

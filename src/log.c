@@ -125,11 +125,11 @@ switch(level)
    case cflogonly:
                      if (LOGGING && IsPrivileged())
 			{
-			syslog(LOG_ERR,"cfagent: %s",buffer);    
+			syslog(LOG_ERR," %s",buffer);    
 			
 			if ((errstr == NULL) || (strlen(errstr) > 0))
 			   {
-			   syslog(LOG_ERR,"cfagent: %s",errstr);  
+			   syslog(LOG_ERR," %s",errstr);  
 			   }
 			}
 		     
@@ -140,7 +140,7 @@ switch(level)
 
 		     if (LOGGING && IsPrivileged())
 			{
-			syslog(LOG_ERR,"cfagent: %s",buffer);    
+			syslog(LOG_ERR," %s",buffer);    
 			}
  
 		     if (buffer[strlen(buffer)-1] != '\n')
@@ -156,7 +156,7 @@ switch(level)
 			
 			if (LOGGING && IsPrivileged())
 			   {
-			   syslog(LOG_ERR, "cfagent: %s: %s",errstr,strerror(errno));   
+			   syslog(LOG_ERR, " %s: %s",errstr,strerror(errno));   
 			   }
                         }
 		     return;

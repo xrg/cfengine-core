@@ -21,9 +21,9 @@ Concept Index
 * !:                                     Cfengine classes.
 * --dry-run option:                      shellcommands.
 * -D option:                             addclasses.
+* -l option <1>:                         Syntax.
 * -l option:                             tidy.
 * -L option:                             Single links.
-* -l option:                             Syntax.
 * -x option:                             cf.preconf bootstrap file.
 * .cfdisabled:                           disable.
 * .cfengine.rm:                          tidy.
@@ -69,11 +69,11 @@ Concept Index
 * cf.main:                               cf.main.
 * cf.motd:                               cf.motd.
 * cf.preconf bootstrap file:             cf.preconf bootstrap file.
-* cf.site <1>:                           cfservd.conf.
-* cf.site:                               cf.site.
+* cf.site <1>:                           cf.site.
+* cf.site:                               cfservd.conf.
 * cfagent.conf:                          cfagent.conf.
-* CFALLCLASSES <1>:                      shellcommands.
-* CFALLCLASSES:                          Special variables.
+* CFALLCLASSES <1>:                      Special variables.
+* CFALLCLASSES:                          shellcommands.
 * cfenvd and key entropy:                Cfkey.
 * cfexecd:                               Cfexecd reference.
 * cfrc resource file:                    cfrc resource file.
@@ -85,17 +85,19 @@ Concept Index
 * ChecksumDatabase:                      ChecksumDatabase.
 * ChecksumDatabase variable:             ChecksumDatabase in cfservd.
 * ChecksumUpdates:                       ChecksumUpdates.
+* CIDR:                                  groups.
 * Class data and scripts:                Special variables.
 * Class decided by shell command:        groups.
 * Class dependencies:                    groups.
 * Class information, passing to scripts: shellcommands.
 * classes <1>:                           groups.
-* classes <2>:                           classes.
-* classes:                               Cfengine classes.
+* classes <2>:                           Cfengine classes.
+* classes:                               classes.
 * Classes, adding and defining:          addclasses.
 * Classes, compound:                     Cfengine classes.
 * Classes, defining and undefining:      Cfengine classes.
 * Classes, inbuilt functions:            Evaluated classes.
+* Classless IP addresses:                groups.
 * Comparing file objects:                Evaluated classes.
 * Compound classes:                      Cfengine classes.
 * Contacting specific hosts with cfrun:  cfrun.
@@ -124,14 +126,15 @@ Concept Index
 * DeleteNonUserMail DeleteNonUserFiles:  deletenonuserfiles.
 * Deleting directories:                  tidy.
 * Deleting files:                        tidy.
-* Deleting stale links <1>:              tidy.
-* Deleting stale links:                  Syntax.
+* Deleting stale links <1>:              Syntax.
+* Deleting stale links:                  tidy.
 * DenyBadClocks variable:                DenyBadClocks.
 * DenyConnectionsFrom variable:          DenyConnectionsFrom.
 * Dependencies:                          groups.
 * Device boundaries:                     copy.
 * Device boundaries and files:           Recursion.
 * DFS:                                   nfstype.
+* DHCP <1>:                              DynamicAddresses.
 * DHCP:                                  actionsequence.
 * Directories, deleting:                 tidy.
 * Directories, hidden:                   fileextension.
@@ -148,6 +151,8 @@ Concept Index
 * Double quotes:                         editfiles.
 * DryRun:                                dryrun.
 * Dual homed hosts:                      interfaces.
+* Dynamic addresses:                     DynamicAddresses.
+* DynamicAddresses variable:             DynamicAddresses.
 * Empty files:                           tidy.
 * Emptying old nameservers from /etc/resolv.conf: emptyresolvconf.
 * Environment variable CFALLCLASSES:     Cfagent Runtime Options.
@@ -182,8 +187,8 @@ Concept Index
 * Groups, defining:                      groups.
 * Hard class name collision:             Special variables.
 * Hardlinks:                             Hard links.
-* Hashes of files <1>:                   Syntax.
-* Hashes of files:                       ChecksumDatabase.
+* Hashes of files <1>:                   ChecksumDatabase.
+* Hashes of files:                       Syntax.
 * home directive:                        home directive.
 * Home path:                             homepattern.
 * Home servers, defining:                homeservers.
@@ -207,10 +212,10 @@ Concept Index
 * Key security of users:                 AllowUsers.
 * Key, ACL:                              DFS ACLs.
 * Kilobyte, filesize unit:               tidy.
-* Linkchildren <1>:                      Link Children.
-* Linkchildren:                          Files linkchildren.
-* Links and binary servers <1>:          Link Children.
-* Links and binary servers:              Single links.
+* Linkchildren <1>:                      Files linkchildren.
+* Linkchildren:                          Link Children.
+* Links and binary servers <1>:          Single links.
+* Links and binary servers:              Link Children.
 * Links, absolute:                       Single links.
 * Links, deleting stale <1>:             tidy.
 * Links, deleting stale:                 Syntax.
@@ -238,8 +243,8 @@ Concept Index
 * Module directory:                      moduledirectory.
 * Modules, user defined:                 actionsequence.
 * Mount paths:                           mountpattern.
-* Mountable resources, defining <1>:     mountables.
-* Mountable resources, defining:         homeservers.
+* Mountable resources, defining <1>:     homeservers.
+* Mountable resources, defining:         mountables.
 * Mounted filesystems:                   copy.
 * Mounting filesystems.:                 miscmounts.
 * mtime tidies:                          tidy.
@@ -250,8 +255,8 @@ Concept Index
 * Negating entries from netgroups:       groups.
 * Netgroups:                             groups.
 * Netgroups, negating entries:           groups.
-* Netmask:                               netmask.
 * netmask:                               netmask.
+* Netmask:                               netmask.
 * Network address translator:            Firewalls and NATs.
 * Network Address Translators:           SkipVerify.
 * Network interfaces, several:           interfaces.
@@ -271,6 +276,7 @@ Concept Index
 * Path to mounted filesystems:           mountpattern.
 * Paths, making:                         directories.
 * Pattern matching in file sweeps:       Syntax.
+* Percentage disk space:                 required.
 * Permissions, directories:              Directory permissions.
 * Port, connecting to different:         Firewalls and NATs.
 * Preserving file times in copy:         copy.
@@ -345,9 +351,9 @@ Concept Index
 * Truncating log files:                  disable.
 * Trusted hosts:                         copy.
 * TrustKeysFrom variable:                TrustKeysFrom.
-* umask <1>:                             shellcommands.
+* umask <1>:                             editfiles.
 * umask <2>:                             processes.
-* umask:                                 editfiles.
+* umask:                                 shellcommands.
 * underscoreclasses:                     Special variables.
 * Unmounting filesystems:                unmount.
 * Variables in import files:             import.

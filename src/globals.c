@@ -107,6 +107,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PUBLIC short D3 = false;
   PUBLIC short VERBOSE = false;
   PUBLIC short INFORM = false;
+  PUBLIC short CHECK = false;
   PUBLIC short EXCLAIM = true;
   PUBLIC short COMPATIBILITY_MODE = false;
   PUBLIC short LOGGING = false;
@@ -115,6 +116,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PUBLIC short CFPARANOID = false;
   PUBLIC short SHOWACTIONS = false;
   PUBLIC short LOGTIDYHOMEFILES = true;
+  PUBLIC short UPDATEONLY = false;
 
   PUBLIC char FORK = 'n';
 
@@ -165,7 +167,12 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
 
   PROTECTED  struct Item *VHEAP = NULL;      /* Points to the base of the attribute heap */
   PROTECTED  struct Item *VNEGHEAP = NULL;
-  PROTECTED  struct Item *VMOUNTABLES = NULL;         /* Points to the list of mountables */
+
+
+  PROTECTED  struct Mountables *VMOUNTABLES = NULL;         /* Points to the list of mountables */
+  PROTECTED  struct Mountables *VMOUNTABLESTOP = NULL;
+
+
   PROTECTED  struct Item *VMOUNTED = NULL;
   PROTECTED  struct Tidy *VTIDY = NULL;               /* Points to the list of tidy specs */
   PROTECTED  struct Tidy *VTIDYTOP = NULL;
@@ -203,6 +210,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PROTECTED  struct Item *NONATTACKERLIST = NULL;
   PROTECTED  struct Item *MULTICONNLIST = NULL;
   PROTECTED  struct Item *TRUSTKEYLIST = NULL;
+  PROTECTED  struct Item *DHCPLIST = NULL;
   PROTECTED  struct Item *ALLOWUSERLIST = NULL;
   PROTECTED  struct Item *SKIPVERIFY = NULL;
   PROTECTED  struct Item *ATTACKERLIST = NULL;
@@ -325,6 +333,8 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
       { "force-net-copy",no_argument,0,'b'},
       { "secure-input",no_argument,0,'Y'},
       { "zone-info",no_argument,0,'z'},
+      { "update-only",no_argument,0,'b'},
+      { "check-contradictions",no_argument,0,'g'},
       { NULL,0,0,0 }
       };
 
@@ -420,6 +430,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
       "isplain",
       "execresult",
       "returnszero",
+      "iprange",
       NULL
       };
 
@@ -520,6 +531,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PRIVATE short UNDERSCORE_CLASSES=false;
   PRIVATE short NOHARDCLASSES=false;
   PRIVATE short NOSPLAY = false;
+  PRIVATE short DONESPLAY = false;
 
   PROTECTED  struct Item *VACLBUILD = NULL;
   PROTECTED  struct Item *VFILTERBUILD = NULL;
@@ -621,6 +633,11 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PRIVATE char VERIFY = 'n';
   PRIVATE char COMPATIBILITY = 'n';
 
+  /*
+   * HvB: Bas van der Vlies
+  */
+  PRIVATE flag MOUNT_RO = false;
+
   PRIVATE char *COMMATTRIBUTES[] =
      {
      "recurse",
@@ -683,8 +700,11 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
      "timestamps",
      "trustkey",
      "oldserver",
+     "mountoptions",      /* HvB : Bas van der Vlies */
+     "readonly",          /* HvB : Bas van der Vlies */
      NULL
      };
+
 
 
   PUBLIC char *VFILTERNAMES[] =
@@ -861,42 +881,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
 /*                                                                 */
 /*******************************************************************/
 
-  PUBLIC char *SIGNALS[] =
-     {
-     "NOSIG",
-     "SIGHUP",        /* hangup */
-     "SIGINT",        /* interrupt */
-     "SIGQUIT",       /* quit */
-     "SIGILL",        /* illegal instruction (not reset when caught) */
-     "SIGTRAP",       /* trace trap (not reset when caught) */
-     "SIGIOT",        /* IOT instruction */
-     "SIGEMT",        /* EMT instruction */
-     "SIGFPE",        /* floating point exception */
-     "SIGKILL",       /* kill (cannot be caught or ignored) */
-     "SIGBUS",        /* bus error */
-     "SIGSEGV",       /* segmentation violation */
-     "SIGSYS",        /* bad argument to system call */
-     "SIGPIPE",       /* write on a pipe with no one to read it */
-     "SIGALRM",       /* alarm clock */
-     "SIGTERM",       /* software termination signal from kill */
-     "SIGURG",        /* urgent condition on IO channel */
-     "SIGSTOP",       /* sendable stop signal not from tty */
-     "SIGTSTP",       /* stop signal from tty */
-     "SIGCONT",       /* continue a stopped process */
-     "SIGCHLD",       /* to parent on child stop or exit */
-     "SIGTTIN",       /* to readers pgrp upon background tty read */
-     "SIGTTOU",       /* like TTIN for output if (tp->t_local&LTOSTOP) */
-     "SIGIO",         /* input/output possible signal */
-     "SIGXCPU",       /* exceeded CPU time limit */
-     "SIGXFSZ",       /* exceeded file size limit */
-     "SIGVTALRM",     /* virtual time alarm */
-     "SIGPROF",       /* profiling time alarm */
-     "SIGWINCH",      /* window changed */
-     "SIGLOST",       /* resource lost (eg, record-lock lost) */
-     "SIGUSR1",       /* user defined signal 1 */
-     "SIGUSR2"
-     };
-
+ PUBLIC char *SIGNALS[highest_signal];  /* This is initialized to zero */
 
 /*******************************************************************/
 /*                                                                 */

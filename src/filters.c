@@ -715,7 +715,7 @@ if (crit[filtermode] != NULL)
 
  if (crit[filterfromatime] != NULL)
    {
-   if (FilterTimeMatch(lstatptr,crit[filterfromatime],crit[filtertoatime]))
+   if (FilterTimeMatch(lstatptr->st_atime,crit[filterfromatime],crit[filtertoatime]))
       {
       PrependItem(attr,"Atime","");
       }
@@ -723,7 +723,7 @@ if (crit[filtermode] != NULL)
 
 if (crit[filterfromctime] != NULL)
    {
-   if (FilterTimeMatch(lstatptr,crit[filterfromctime],crit[filtertoctime]))
+   if (FilterTimeMatch(lstatptr->st_ctime,crit[filterfromctime],crit[filtertoctime]))
       {
       PrependItem(attr,"Ctime","");
       }
@@ -731,7 +731,7 @@ if (crit[filterfromctime] != NULL)
 
 if (crit[filterfrommtime] != NULL)
    {
-   if (FilterTimeMatch(lstatptr,crit[filterfrommtime],crit[filtertomtime]))
+   if (FilterTimeMatch(lstatptr->st_mtime,crit[filterfrommtime],crit[filtertomtime]))
       {
       PrependItem(attr,"Mtime","");
       }
@@ -1215,17 +1215,17 @@ return ((lstatptr->st_mode & plusmask) && !(lstatptr->st_mode & minusmask));
 
 /*******************************************************************/
 
-int FilterTimeMatch(lstatptr,from,to)
+int FilterTimeMatch(stattime,from,to)
 
 char *from,*to;
-struct stat *lstatptr;
+time_t stattime;
 
 { time_t fromtime,totime, now = CFSTARTTIME;
 
 fromtime = Date2Number(from,now);
 totime = Date2Number(to,now);
 
-return ((fromtime < now) && (now < totime));
+return ((fromtime < stattime) && (stattime < totime));
 } 
 
 /*******************************************************************/

@@ -289,6 +289,8 @@ expressions.
      classes if and only if the file is edited.
 
 `DeleteLinesAfterThisMatching QUOTED-REGEX'
+     Delete lines after the current position which match the quoted
+     expression.
 
 `DeleteLinesContaining QUOTED-STRING'
      Delete all lines containing the exact string quoted.
@@ -741,15 +743,15 @@ trailing dot signifies a directory. This then becomes the same as the
      This is a list of allowed owners, or uids by number, separated by
      commas.  For example `root,2,3,sysadm'.  In cases where you ask
      cfengine to fix the ownership automatically, the owner will be set
-     to the first owner in the list if and only if it is not one of the
-     named uids in the list.
+     to the first recogized owner in the list if and only if it is not
+     one of the named uids in the list.
 
 `group=GROUP LIST'
      This is a list of allowed groups, or gids by number, separated by
      commas.  For example `wheel,2,3,sysadm'.  In cases where you ask
      cfengine to fix the ownership automatically, the group will be set
-     to the first group in the list if and only if it is not one of the
-     named gids in the list.
+     to the first recognized group in the list if and only if it is not
+     one of the named gids in the list.
 
 `action=ACTION'
      The action is one of the following keywords.

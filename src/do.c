@@ -675,7 +675,7 @@ printf("\n%s: Trying to mount %s\n",VPREFIX,VMAILSERVER);
 
 if (! DONTDO)
    {
-   AddToFstab(mailhost,rmailpath,VMAILDIR[VSYSTEMHARDCLASS],"rw",false);
+   AddToFstab(mailhost,rmailpath,VMAILDIR[VSYSTEMHARDCLASS],"rw",NULL,false);
    }
 else
    {
@@ -1750,14 +1750,21 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
    }
 }
 
+
 /*******************************************************************/
+
 
 void MountHomeBinServers()
 
-{ struct Item *mp;
+{ struct Mountables *mp;
   char host[maxvarsize];
   char mountdir[bufsize];
   char maketo[bufsize];
+
+  /*
+   * HvB: Bas van der Vlies
+  */
+  char mountmode[bufsize];
 
 if (! GOTMOUNTINFO)
    {
@@ -1777,7 +1784,7 @@ Banner("Checking home and binservers");
 
 for (mp = VMOUNTABLES; mp != NULL; mp=mp->next)
    {
-   sscanf(mp->name,"%[^:]:%s",host,mountdir);
+   sscanf(mp->filesystem,"%[^:]:%s",host,mountdir);
 
    if (mp->done == 'y')
       {
@@ -1788,7 +1795,7 @@ for (mp = VMOUNTABLES; mp != NULL; mp=mp->next)
       mp->done = 'y';
       }
    
-   Debug("Mount: checking %s\n",mp->name);
+   Debug("Mount: checking %s\n",mp->filesystem);
 
    strcpy(maketo,mountdir);
 
@@ -1807,28 +1814,38 @@ for (mp = VMOUNTABLES; mp != NULL; mp=mp->next)
       continue;
       }
 
+   /* HvB: Bas van der Vlies */
+   if ( mp->readonly ) 
+      {
+      strcpy(mountmode, "ro");
+      }
+   else
+      {
+      strcpy(mountmode, "rw");
+      }
+
    if (IsHomeDir(mountdir))
       {
-      if (!IsItemIn(VMOUNTED,mp->name) && IsClassedItemIn(VHOMESERVERS,host))
+      if (!IsItemIn(VMOUNTED,mp->filesystem) && IsClassedItemIn(VHOMESERVERS,host))
          {
          MakeDirectoriesFor(maketo,'n');
-         AddToFstab(host,mountdir,mountdir,"rw",false);
+         AddToFstab(host,mountdir,mountdir,mountmode,mp->mountopts,false);
          }
       else if (IsClassedItemIn(VHOMESERVERS,host))
 	 {
-	 AddToFstab(host,mountdir,mountdir,"rw",true);
+	 AddToFstab(host,mountdir,mountdir,mountmode,mp->mountopts,true);
 	 }
       }
    else
       {
-      if (!IsItemIn(VMOUNTED,mp->name) && IsClassedItemIn(VBINSERVERS,host))
+      if (!IsItemIn(VMOUNTED,mp->filesystem) && IsClassedItemIn(VBINSERVERS,host))
          {
          MakeDirectoriesFor(maketo,'n');
-         AddToFstab(host,mountdir,mountdir,"rw",false);
+         AddToFstab(host,mountdir,mountdir,mountmode,mp->mountopts,false);
          }
       else if (IsClassedItemIn(VBINSERVERS,host))
          {
-	 AddToFstab(host,mountdir,mountdir,"rw",true);
+	 AddToFstab(host,mountdir,mountdir,mountmode,mp->mountopts,true);
          }
       }
    }
@@ -1895,11 +1912,11 @@ for (mp = VMISCMOUNT; mp != NULL; mp=mp->next)
    if (!IsItemIn(VMOUNTED,mtpt))
       {
       MakeDirectoriesFor(maketo,'n');
-      AddToFstab(host,mountdir,mp->onto,mp->options,false);
+      AddToFstab(host,mountdir,mp->onto,mp->options,NULL,false);
       }
    else
       {
-      AddToFstab(host,mountdir,mp->onto,mp->options,true);
+      AddToFstab(host,mountdir,mp->onto,mp->options,NULL,true);
       }
    }
 }
@@ -1993,7 +2010,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
 	 CfLog(cfinform,OUTPUT,"");
          CfLog(cfinform,"was busy. Cannot unmount that device.\n","");
 	 /* don't delete the mount dir when unmount's failed */
-	 ptr->deletedir = ptr->deletefstab = 'n';
+	 ptr->deletedir = 'n';
 	 }
       else
 	 {
@@ -2664,9 +2681,9 @@ AppendItem(&VMOUNTED,buf,NULL);
 /*******************************************************************/
 
 
-void AddToFstab(host,rmountpt,mountpt,mode,ismounted)
+void AddToFstab(host,rmountpt,mountpt,mode,options,ismounted)
 
-char *host, *mountpt, *rmountpt, *mode;
+char *host, *mountpt, *rmountpt, *mode, *options;
 int ismounted;
 
 { char fstab[bufsize];
@@ -2675,7 +2692,15 @@ int ismounted;
 
 Debug("AddToFstab(%s)\n",mountpt);
 
-opts = VMOUNTOPTS[VSYSTEMHARDCLASS];
+
+if ( options != NULL)
+   {
+   opts = options;
+   }
+else
+   {
+   opts = VMOUNTOPTS[VSYSTEMHARDCLASS];
+   }
 
 switch (VSYSTEMHARDCLASS)
    {

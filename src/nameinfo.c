@@ -466,6 +466,9 @@ DeleteClassFromHeap("undefined_domain");
 }
 
 /*****************************************************************************/
+/* TOOLKIT                                                                   */
+/* INET independent address/struct conversion routines                       */
+/*****************************************************************************/
 
 char *sockaddr_ntop(struct sockaddr *sa)
 
@@ -499,4 +502,65 @@ switch (sa->sa_family)
 
 Debug("sockaddr_ntop(%s)\n",addrbuf);
 return addrbuf;
+}
+
+/*****************************************************************************/
+
+ /* Example:
+   
+ struct sockaddr_in *p;
+ struct sockaddr_in6 *p6;
+ 
+ p = (struct sockaddr_in *) sockaddr_pton(AF_INET,"128.39.89.10");
+ p6 = (struct sockaddr_in6 *) sockaddr_pton(AF_INET6,"2001:700:700:3:290:27ff:fea2:477b");
+
+ printf("Coded %s\n",sockaddr_ntop((struct sockaddr *)p));
+
+ */
+
+/*****************************************************************************/
+
+void *sockaddr_pton(af,src)
+
+int af;
+void *src;
+
+{ int err;
+#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+  static struct sockaddr_in6 adr6;
+#endif
+  static struct sockaddr_in adr; 
+  
+switch (af)
+   {
+   case AF_INET:
+       bzero(&adr,sizeof(adr));
+       adr.sin_family = AF_INET;
+       adr.sin_addr.s_addr = inet_addr(src);
+       Debug("Coded ipv4 %s\n",sockaddr_ntop((struct sockaddr *)&adr));
+       return (void *)&adr;
+       
+#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+   case AF_INET6:
+       memset(&adr6,0,sizeof(adr6)); 
+       adr6.sin6_family = AF_INET6;
+       err = inet_pton(AF_INET6,src,&(adr6.sin6_addr));
+
+       if (err > 0)
+	  {
+	  Debug("Coded ipv6 %s\n",sockaddr_ntop((struct sockaddr *)&adr6));
+	  return (void *)&adr6;
+	  }
+       else
+	  {
+	  return NULL;
+	  }
+       break;
+#endif
+   default:
+       Debug("Address family was %d\n",af);
+       FatalError("Software failure in sockaddr_ntop\n");
+   }
+
+ return NULL; 
 }

@@ -505,13 +505,22 @@ for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
 
 void ListDefinedMountables()
 
-{ struct Item *ptr;
+{ struct Mountables *ptr;
 
 printf ("\nDEFINED MOUNTABLES\n\n");
 
 for (ptr = VMOUNTABLES; ptr != NULL; ptr=ptr->next)
    {
-   printf("%s\n",ptr->name);
+   /* HvB: Bas van der Vlies */
+   printf("%s ",ptr->filesystem);
+
+   if ( ptr->readonly )
+      printf(" ro\n");
+   else
+      printf(" rw\n");
+
+   if ( ptr->mountopts != NULL )
+      printf("\t %s\n", ptr->mountopts );
    }
 }
 

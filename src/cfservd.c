@@ -32,6 +32,7 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 #include "cfservd.h"
+#include <db.h>
 
 /*******************************************************************/
 /* Pthreads                                                        */
@@ -126,6 +127,7 @@ void SetAuto ARGLIST((int seconds));
 int cfscanf ARGLIST((char *in, int len1, int len2, char *out1, char *out2, char *out3));
 int AuthenticationDialogue ARGLIST((struct cfd_connection *conn,char *buffer));
 char *MapAddress ARGLIST((char *addr));
+int IsWildKnownHost ARGLIST((RSA *oldkey,RSA *newkey,char *addr,char *user));
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -157,6 +159,31 @@ return 0;
 /********************************************************************/
 /* Level 1                                                          */
 /********************************************************************/
+
+void HandleSignal(signum)
+ 
+int signum;
+ 
+{
+snprintf(OUTPUT,bufsize*2,"Received signal %d while doing [%s]",signum,CFLOCK);
+Chop(OUTPUT);
+CfLog(cferror,OUTPUT,"");
+snprintf(OUTPUT,bufsize*2,"Logical start time %s ",ctime(&CFDSTARTTIME));
+Chop(OUTPUT);
+CfLog(cferror,OUTPUT,"");
+snprintf(OUTPUT,bufsize*2,"This sub-task started really at %s\n",ctime(&CFDSTARTTIME));
+
+CfLog(cferror,OUTPUT,"");
+ 
+if (signum == SIGTERM || signum == SIGINT || signum == SIGHUP || signum == SIGSEGV || signum == SIGKILL)
+   {
+   ReleaseCurrentLock();
+   closelog();
+   exit(0);
+   }
+}
+
+/*******************************************************************/
 
 void CheckOptsAndInit(argc,argv)
 
@@ -453,6 +480,14 @@ if (DEBUG || D2 || D3)
       {
       printf("IP: %s\n",ip->name);
       }
+
+   printf("Dynamical Host IPs (e.g. DHCP) whose bindings could vary over time :\n\n");
+
+   for (ip = DHCPLIST; ip != NULL; ip=ip->next)
+      {
+      printf("IP: %s\n",ip->name);
+      }
+
    }
 
 
@@ -472,6 +507,7 @@ char **argv;
 
 { char ipaddr[maxvarsize],intime[64];
   int sd,sd_reply,ageing;
+  fd_set rset;
   time_t now;
 
 #ifdef HAVE_GETADDRINFO
@@ -530,16 +566,19 @@ if (listen(sd,queuesize) == -1)
 Verbose("Listening for connections ...\n");
 
 ageing = 0;
-
+FD_ZERO(&rset);
+FD_SET(sd,&rset);
+ 
 while (true)
    {
    CheckFileChanges(argc,argv,sd);
-
+   select((sd+1),&rset,NULL,NULL,NULL);
+   
    if ((sd_reply = accept(sd,(struct sockaddr *)&cin,&addrlen)) != -1)
       {
-      if (ageing++ > CFD_MAXPROCESSES*4) /* Insurance against stale db */
-	 {                               /* estimate number of clients */
-	 unlink(CHECKSUMDB);             /* arbitrary policy ..        */
+      if (ageing++ > CFD_MAXPROCESSES*50) /* Insurance against stale db */
+	 {                                /* estimate number of clients */
+	 unlink(CHECKSUMDB);              /* arbitrary policy ..        */
 	 ageing = 0;
 	 }
 
@@ -1123,6 +1162,11 @@ switch (GetCommand(recvbuffer))
 			}
 
 		     bzero(sendbuffer,bufsize);
+
+		     if (get_args.buf_size >= bufsize)
+			{
+			get_args.buf_size = 2048;
+			}
 		     
 		     get_args.connect = conn;
 		     get_args.encrypt = false;
@@ -1156,6 +1200,11 @@ switch (GetCommand(recvbuffer))
 			{
 			RefuseAccess(conn,sendbuffer,0);
 			return false;
+			}
+
+		     if (get_args.buf_size >= bufsize)
+			{
+			get_args.buf_size = 2048;
 			}
 		     
 		     Debug("Confirm decryption, and thus validity of caller\n");
@@ -1599,6 +1648,10 @@ if (IsFuzzyItemIn(SKIPVERIFY,MapAddress(conn->ipaddr)))
    {
    snprintf(conn->output,bufsize*2,"Allowing %s to connect without checking ID (NAT)\n",ip_assert);
    CfLog(cfinform,conn->output,"");
+   Verbose("Host ID is %s\n",dns_assert);
+   strncpy(conn->hostname,dns_assert,maxvarsize); 
+   Verbose("User ID seems to be %s\n",username); 
+   strncpy(conn->username,username,maxvarsize);
    return true;
    }
  
@@ -1784,7 +1837,7 @@ bzero(realname,bufsize);
 if (lstat(filename,&statbuf) == -1)
    {
    snprintf(conn->output,bufsize*2,"Couldn't stat filename %s from host %s\n",filename,conn->hostname);
-   CfLog(cflogonly,conn->output,"lstat");   
+   CfLog(cfverbose,conn->output,"lstat");   
    return false;
    }
 
@@ -1798,7 +1851,7 @@ if (S_ISLNK(statbuf.st_mode))
     if (realpath(filename,realname) == NULL)
        {
        snprintf(conn->output,bufsize*2,"Couldn't resolve filename %s from host %s\n",filename,conn->hostname);
-       CfLog(cflogonly,conn->output,"lstat");   
+       CfLog(cfverbose,conn->output,"lstat");   
        return false;
        }
 #else
@@ -2342,13 +2395,21 @@ if (args->encrypt)
    {
    EVP_CIPHER_CTX_init(&ctx);
    EVP_EncryptInit(&ctx,EVP_bf_cbc(),key,iv);
+
+   if (statbuf.st_size < 17)
+      {
+      snprintf(OUTPUT,bufsize,"Cannot encrypt files smaller than 17 bytes with OpenSSL/Blowfish (%s)",filename);
+      CfLog(cferror,OUTPUT,"");
+      return;
+      }
    }
  
 if ((fd = open(filename,O_RDONLY)) == -1)
    {
-   RefuseAccess(args->connect,sendbuffer,args->buf_size);
    snprintf(sendbuffer,bufsize,"Open error of file [%s]\n",filename);
    CfLog(cferror,sendbuffer,"open");
+   snprintf(sendbuffer,bufsize,"%s",CFFAILEDSTR);
+   SendSocketStream(sd,sendbuffer,args->buf_size,0);
    }
 else
    {
@@ -2675,13 +2736,27 @@ if (savedkey = HavePublicKey(keyname))
       {
       Verbose("The public key identity was confirmed as %s@%s\n",conn->username,conn->hostname);
       SendTransaction(conn->sd_reply,"OK: key accepted",0,CF_DONE);
+      RSA_free(savedkey);
       return true;
       }
    else
       {
-      Verbose("The new public key does not match the old one! Spoofing attempt!\n");
-      SendTransaction(conn->sd_reply,"BAD: keys did not match",0,CF_DONE);
-      return false;
+      /* If we find a key, but it doesn't match, see if we permit dynamical IP addressing */
+      
+      if ((DHCPLIST != NULL) && IsFuzzyItemIn(DHCPLIST,MapAddress(conn->ipaddr)))
+	 {
+	 int result;
+	 result = IsWildKnownHost(savedkey,key,MapAddress(conn->ipaddr),conn->username);
+	 RSA_free(savedkey);
+	 return result;
+	 }
+      else /* if not, reject it */
+	 {
+	 Verbose("The new public key does not match the old one! Spoofing attempt!\n");
+	 SendTransaction(conn->sd_reply,"BAD: keys did not match",0,CF_DONE);
+	 RSA_free(savedkey);
+	 return false;
+	 }
       }
    return true;
    }
@@ -2700,6 +2775,97 @@ else
    SendTransaction(conn->sd_reply,"BAD: key could not be accepted on trust",0,CF_DONE);
    return false; 
    }
+}
+
+/***************************************************************/
+
+int IsWildKnownHost(oldkey,newkey,mipaddr,username)
+
+RSA *oldkey, *newkey;
+char *mipaddr, *username;
+
+{ DBT key,value;
+  DB *dbp;
+  int trust = false;
+  char keyname[maxvarsize];
+  char keydb[maxvarsize];
+
+snprintf(keyname,maxvarsize,"%s-%s",username,mipaddr);
+snprintf(keydb,maxvarsize,"%s/ppkeys/dynamic",WORKDIR); 
+ 
+if ((TRUSTKEYLIST != NULL) && IsFuzzyItemIn(TRUSTKEYLIST,mipaddr))
+   {
+   trust = true;
+   }
+
+/* If the host is allowed to have a variable IP range, we can
+   accept the new key on trust provided we have seen it before.
+   Check for it in a database .. */ 
+  
+if ((errno = db_create(&dbp,NULL,0)) != 0)
+   {
+   sprintf(OUTPUT,"Couldn't open average database %s\n",keydb);
+   CfLog(cferror,OUTPUT,"db_open");
+   return 0;
+   }
+ 
+if ((errno = dbp->open(dbp,keydb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+   {
+   sprintf(OUTPUT,"Couldn't open average database %s\n",keydb);
+   CfLog(cferror,OUTPUT,"db_open");
+   return 0;
+   }
+
+bzero(&key,sizeof(key));       
+bzero(&value,sizeof(value));
+      
+key.data = oldkey;
+key.size = sizeof(RSA);
+
+if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
+   {
+   if (errno != DB_NOTFOUND)
+      {
+      dbp->err(dbp,errno,NULL);
+      dbp->close(dbp,0);
+      return 0;
+      }
+   }
+else
+   {
+   snprintf(OUTPUT,bufsize,"Public key was previously owned by IP address %s - now by %s\n",value.data,mipaddr);
+   CfLog(cfverbose,OUTPUT,"");
+   DeletePublicKey(keyname);
+   SavePublicKey(keyname,newkey);
+   trust = true;
+   }
+
+/* save this value in the database, for future reference, regardless
+   of whether we accept, but only change IP if trusted  */ 
+
+if (trust)
+   {
+   bzero(&key,sizeof(key));       
+   bzero(&value,sizeof(value));
+ 
+   key.data = newkey;
+   key.size = sizeof(RSA);
+   
+   value.data = mipaddr;
+   value.size = strlen(mipaddr)+1;
+   
+   if ((errno = dbp->put(dbp,NULL,&key,&value,0)) != 0)
+      {
+      dbp->err(dbp,errno,NULL);
+      dbp->close(dbp,0);
+      return trust;
+      }
+   }
+
+dbp->close(dbp,0);
+chmod(keydb,0644); 
+ 
+return trust; 
 }
 
 /***************************************************************/
@@ -2743,9 +2909,12 @@ struct cfd_connection *conn;
 
 {
 Debug("***Closing socket %d from %s\n",conn->sd_reply,conn->ipaddr);
- 
-DeleteItemMatching(&CONNECTIONLIST,MapAddress(conn->ipaddr)); 
 
+if (conn->ipaddr != NULL)
+   {
+   DeleteItemMatching(&CONNECTIONLIST,MapAddress(conn->ipaddr)); 
+   }
+ 
 close(conn->sd_reply);
 free ((char *)conn);
 }

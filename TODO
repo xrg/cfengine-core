@@ -13,11 +13,16 @@
    anomalies
 
 4. cfenvd save netstat record when there is an anomaly?, or save
-   last process table and netstat
+   last process table and netstat, so we can get addresses.
+
 
 5. What about remembering the stable core of processes, regardless
    of who owns them? i.e. like pH og cfenvd on the ps table?? Then
    kill the least permanent ones.
+
+6. subroutines with private space:
+
+   import: subroutine xxx
 
 6. UDP packets in cfenvd
 

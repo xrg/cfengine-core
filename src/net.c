@@ -101,6 +101,12 @@ if (RecvSocketStream(sd,proto,8,0) == -1)   /* Get control channel */
 sscanf(proto,"%c %u",&status,&len);
 Debug("Transaction Receive [%s][%s]\n",proto,proto+8);
 
+if (strncmp(proto,"CAUTH",5) == 0)
+   {
+   Debug("Version 1 protocol connection attempted - no you don't!!\n");
+   return -1;
+   }
+ 
 if (more != NULL)
    {
    switch(status)

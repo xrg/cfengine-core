@@ -1219,7 +1219,7 @@ if (CURRENTLINEPTR == NULL)  /* Shouldn't happen */
    return true;
    }
 
-for (ip_prev = *filestart; ip_prev->next != CURRENTLINEPTR; ip_prev=ip_prev->next)
+for (ip_prev = *filestart; ip_prev && ip_prev->next != CURRENTLINEPTR; ip_prev=ip_prev->next)
    {
    }
 
@@ -1248,7 +1248,7 @@ for (ip = CURRENTLINEPTR; ip != NULL; ip = CURRENTLINEPTR)
    NUMBEROFEDITS++;
    CURRENTLINEPTR = ip->next;
 
-   if (ip == *filestart)
+   if (ip_prev == NULL)
       {
       *filestart = ip->next;
       }

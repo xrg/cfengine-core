@@ -134,6 +134,7 @@ extern char FORK;
 
 extern short COMPATIBILITY_MODE;
 extern short LINKSILENT;
+extern short UPDATEONLY;
 extern char  LINKTYPE;
 extern char  AGETYPE;
 extern char  COPYTYPE;
@@ -216,7 +217,12 @@ extern struct Item *VSTRATEGYBUILD;
 extern struct Item *VMOUNTLIST;
 extern struct Item *VHEAP;      /* Points to the base of the attribute heap */
 extern struct Item *VNEGHEAP;
-extern struct Item *VMOUNTABLES;         /* Points to the list of mountables */
+
+/* HvB : Bas van der Vlies */
+extern struct Mountables *VMOUNTABLES;  /* Points to the list of mountables */
+extern struct Mountables *VMOUNTABLESTOP;
+extern flag  MOUNT_RO;                  /* mount directory readonly */
+
 extern struct Item *VMOUNTED;
 extern struct Tidy *VTIDY;               /* Points to the list of tidy specs */
 extern struct Disk *VREQUIRED;              /* List of required file systems */
@@ -246,6 +252,7 @@ extern struct Item *SPOOLDIRLIST;
 extern struct Item *NONATTACKERLIST;
 extern struct Item *MULTICONNLIST;
 extern struct Item *TRUSTKEYLIST;
+extern struct Item *DHCPLIST;
 extern struct Item *ALLOWUSERLIST;
 extern struct Item *SKIPVERIFY;
 extern struct Item *ATTACKERLIST;
@@ -303,6 +310,7 @@ extern short ISCFENGINE;
 extern short VERBOSE;
 extern short EXCLAIM;
 extern short INFORM;
+extern short CHECK;
 
 extern short LOGGING;
 extern short INFORM_save;
@@ -351,6 +359,7 @@ extern short NOPROCS;
 extern short UNDERSCORE_CLASSES;
 extern short NOHARDCLASSES;
 extern short NOSPLAY;
+extern short DONESPLAY;
 extern char TYPECHECK;
 
 extern enum actions ACTION;

@@ -95,16 +95,26 @@ void *vp;
 
 {  struct stat statbuf;
    mode_t filemode;
-   char *lastnode;
+   char *lastnode, lock[maxvarsize];
    int fd;
    struct File *ptr;
 
-if (!GetLock(ASUniqueName("files"),CanonifyName(startpath),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+ptr = (struct File *)vp;
+
+if (ptr->uid != NULL)
+   {
+   snprintf(lock,maxvarsize-1,"%s_%o_%o_%d",startpath,ptr->plus,ptr->minus,ptr->uid->uid);
+   }
+else
+   {
+   snprintf(lock,maxvarsize-1,"%s_%o_%o",startpath,ptr->plus,ptr->minus);
+   }
+ 
+ 
+if (!GetLock(ASUniqueName("files"),CanonifyName(lock),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
    {
    return;
    }
-
-ptr = (struct File *)vp;
 
 if ((strlen(startpath) == 0) || (startpath == NULL))
    {
@@ -172,10 +182,12 @@ if (stat(startpath,&statbuf) == -1)
                        if ((fd = creat(ptr->path,filemode)) == -1)
 			  { 
 			  perror("creat");
+			  AddMultipleClasses(ptr->elsedef);
 			  return;
 			  }
 		       else
 			  {
+			  AddMultipleClasses(ptr->defines);
 			  close(fd);
 			  }
 
@@ -203,12 +215,13 @@ if (stat(startpath,&statbuf) == -1)
    }
 else
    {
-   if (TouchDirectory(ptr))  /* Don't check just touch */
+/*
+   if (TouchDirectory(ptr)) Don't check, just touch..
       {
       ReleaseCurrentLock();
       return;
       }
-
+*/
    if (ptr->action == create)
       {
       ReleaseCurrentLock();

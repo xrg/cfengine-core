@@ -245,7 +245,10 @@ extern int errno;
 #define macroalphabet 61    /* a-z, A-Z plus a bit */
 #define maxshellargs 30
 #define samemode 0
-#define sameowner -1
+#define sameowner (uid_t)-1
+#define unknown_owner (uid_t)-2
+#define samegroup (gid_t)-1
+#define unknown_group (gid_t)-2
 #define cfnosize    -1
 #define extra_space 8      /* pads items during AppendItem for eol handling in editfiles */
 #define cfinfinity (int)999999999
@@ -335,7 +338,7 @@ extern int errno;
 
 #define BYTEWIDTH 8
 
-#define GRAINS 32
+#define GRAINS 64
 #define ATTR   11
 #define CFWEEK (7.0*24.0*3600.0)
 #define MEASURE_INTERVAL (5.0*60.0)
@@ -502,7 +505,8 @@ enum builtin
    fn_islink,
    fn_isplain,
    fn_execresult,
-   fn_returnszero
+   fn_returnszero,
+   fn_iprange
    };
 
 /*******************************************************************/
@@ -664,7 +668,9 @@ enum fileattr  /* See COMMATTRIBUTES[] in globals.c  for matching entry */
    cftimestamps,
    cftrustkey,
    cfcompat,
-   cfbad
+   cfmountoptions,
+   cfreadonly,
+   cfbad                        /* HvB must be as last */		
    };
 
 
@@ -741,6 +747,7 @@ enum vnames
    cfattackers,
    cfmulticonn,
    cftrustkeys,
+   cfdynamic,
    cfallowusers,
    cfskipverify,
    cfdefcopy,
@@ -918,25 +925,9 @@ enum SignalNames
    cfpipe,
    cfalrm,
    cfterm,
-   cfurg,
-   cfstop,
-   cftstp,
-   cfcont,
-   cfchld,
-   cfgttin,
-   cfgttou,
-   cfio,
-   cfxcpu,
-   cfxfsz,
-   cfvtalrm,
-   cfprof,
-   cfwinch,
-   cflost,
-   cfusr1,
-   cfusr2
    };
 
-#define highest_signal 31
+#define highest_signal 64
 
 /*******************************************************************/
 
@@ -1056,10 +1047,16 @@ struct Process
 
 /*******************************************************************/
 
+/*
+ * HvB : Bas van der Vlies
+*/
 struct Mountables
    {
-   char *filesystem;
-   struct Mountables *next;
+   char         	done;
+   char			readonly;	/* y/n - true false */
+   char			*filesystem;
+   char			*mountopts;
+   struct Mountables	*next;
    };
 
 /*******************************************************************/
@@ -1259,6 +1256,7 @@ struct Image
 struct UidList
    {
    uid_t uid;
+   char *uidname;				/* when uid is -2 */
    struct UidList *next;
    };
 
@@ -1267,6 +1265,7 @@ struct UidList
 struct GidList
    {
    gid_t gid;
+   char *gidname;				/* when gid is -2 */
    struct GidList *next;
    };
 

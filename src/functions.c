@@ -37,6 +37,7 @@ void HandleFunctionExec ARGLIST((char* args,char *value));
 void HandleStatInfo ARGLIST((enum builtin fn,char* args,char *value));
 void HandleCompareStat ARGLIST((enum builtin fn,char* args,char *value));
 void HandleReturnsZero ARGLIST((char* args,char *value));
+void HandleIPRange ARGLIST((char* args,char *value));
 
 /*********************************************************************/
 
@@ -92,6 +93,9 @@ switch (fn = FunctionStringToCode(name))
        break;
    case fn_returnszero:
        HandleReturnsZero(args,value);
+       break;
+   case fn_iprange:
+       HandleIPRange(args,value);
        break;
    }
  
@@ -244,6 +248,33 @@ strcpy(value,CF_NOCLASS);
     }
  
 strcpy(value,CF_NOCLASS);
+}
+
+/*********************************************************************/
+
+void HandleIPRange(args,value)
+
+char *args,*value;
+
+{ struct stat statbuf;
+ 
+if (strchr(args,','))
+   {
+   yyerror("Illegal argument to unary class-function");
+   return;
+   }
+ 
+strcpy(value,CF_NOCLASS);
+
+if (!FuzzyMatchParse(args))
+   {
+   return;
+   }
+
+if (FuzzySetMatch(args,VIPADDRESS) == 0)
+   {
+   strcpy(value,CF_ANYCLASS);
+   }
 }
 
 /*********************************************************************/

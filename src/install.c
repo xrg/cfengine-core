@@ -86,8 +86,18 @@ if (IsBuiltinFunction(value))
    strcpy(value,EvaluateFunction(value,VBUFF));
    }
  
-Debug1("\n(Action is control, storing variable [%s=%s])\n",CURRENTITEM,value);
+Debug1("\n(Action is control, variable [%s=%s])\n",CURRENTITEM,value);
 
+if (!IsDefinedClass(CLASSBUFF))
+   {
+   Debug("Class %s not defined, not defining\n",CLASSBUFF);
+   return;
+   }
+ else
+    {
+    Debug1("Define:: variable [%s=%s])\n",CURRENTITEM,value);
+    }
+ 
 switch (ScanVariable(CURRENTITEM))
    {
    case cfsite:
@@ -203,6 +213,9 @@ switch (ScanVariable(CURRENTITEM))
 		  break;
    case cftrustkeys:
                   AppendItem(&TRUSTKEYLIST,value,CLASSBUFF);
+		  break;
+   case cfdynamic:
+                  AppendItem(&DHCPLIST,value,CLASSBUFF);
 		  break;
    case cfallowusers:
                   AppendItem(&ALLOWUSERLIST,value,CLASSBUFF);
@@ -426,10 +439,7 @@ switch (ScanVariable(CURRENTITEM))
 		   break;
 
    default:
-                  if (IsDefinedClass(CLASSBUFF))
-		     {
-		     AddMacroValue(CURRENTITEM,value);
-		     }
+                  AddMacroValue(CURRENTITEM,value);
                   break;
    }
 }
@@ -704,6 +714,43 @@ switch(GetCommAttribute(item))
    default:        yyerror("Illegal interfaces attribute");
    }
 
+}
+
+/***********************************************************************/
+
+void HandleOptionalMountablesAttribute(item) /* HvB: Bas van der Vlies */
+
+char *item;
+
+{ char value[maxvarsize];
+
+VBUFF[0] = value[0] = '\0';
+ExpandVarstring(item,VBUFF,NULL);
+sscanf(VBUFF,"%*[^=]=%s",value);
+
+if (value[0] == '\0')
+   {
+   yyerror("mount attribute with no value");
+   }
+
+Debug1("HandleOptionalMountItem(%s)\n",value);
+
+switch(GetCommAttribute(item))
+   {
+   case cfmountoptions: 
+      strcpy(MOUNTOPTS, value);
+      break; 
+
+   case cfreadonly: 
+      if ((strcmp(value,"on")==0) || (strcmp(value,"true")==0))
+	 {
+	 MOUNT_RO=true;
+	 }
+      break; 
+
+   default:         yyerror("Illegal mount option"
+                            "(mountoptions/readonly)");
+   }
 }
 
 
@@ -1241,8 +1288,7 @@ void HandleFileItem(item)
 
 char *item;
 
-{ char err[100];
-
+{
 if (strcmp(item,"home") == 0)
    {
    ACTIONPENDING=true;
@@ -1250,8 +1296,8 @@ if (strcmp(item,"home") == 0)
    return;
    }
 
-snprintf(err,100,"Unknown attribute %s",item);
-yyerror(err);
+snprintf(OUTPUT,100,"Unknown attribute %s",item);
+yyerror(OUTPUT);
 }
 
 
@@ -1859,21 +1905,75 @@ InitializeAction();
 
 /*******************************************************************/
 
-void AppendMountable(path)
+void InstallMountableItem(path, mnt_opts, readonly)
 
 char *path;
+char *mnt_opts;
+flag readonly;
 
-{
+
+{ struct Mountables *ptr;
+
 Debug1("Adding mountable %s to list\n",path);
 
-if (!IsInstallable(CLASSBUFF))
+if (!IsDefinedClass(CLASSBUFF))
    {
    return;
    }
  
-ExpandVarstring(path,VBUFF,"");
+ ExpandVarstring(path,VBUFF,"");
  
-AppendItem(&VMOUNTABLES,VBUFF,CLASSBUFF);
+/* 
+ * Check if mount entry already exists
+ */
+ if ( VMOUNTABLES != NULL )
+    {
+    for (ptr = VMOUNTABLES; ptr != NULL; ptr = ptr->next)
+       {
+       if ( strcmp(ptr->filesystem, VBUFF) == 0 )
+	  {
+	  snprintf(OUTPUT,bufsize*2,"Only one definition per mount allowed: %s\n",ptr->filesystem);
+	  yyerror(OUTPUT); 
+	  return;
+          }
+       }
+    }
+ 
+if ((ptr = (struct Mountables *)malloc(sizeof(struct Mountables))) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallMountableItem() #1");
+   }
+ 
+if ((ptr->filesystem = strdup(VBUFF)) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallMountableItem() #2");
+   }
+
+if ( mnt_opts[0] != '\0' )
+   {
+   if ( (ptr->mountopts = strdup(mnt_opts)) == NULL )
+      {
+      FatalError("Memory Allocation failed for InstallMountableItem() #3");
+      }
+   }
+else
+   {
+   ptr->mountopts = NULL;
+   }
+
+ptr->readonly = readonly;
+ptr->next = NULL;
+
+if (VMOUNTABLESTOP == NULL)                 /* First element in the list */
+   {
+   VMOUNTABLES = ptr;
+   }
+else
+   {
+   VMOUNTABLESTOP->next = ptr;
+   }
+
+VMOUNTABLESTOP=ptr;
 }
 
 /*******************************************************************/
@@ -2082,6 +2182,11 @@ switch (action)
    case required:
                   InstallRequiredPath(CURRENTPATH,IMGSIZE);
                   break;
+
+   /* HvB: Bas van der Vlies */
+   case mountables:
+		  InstallMountableItem(CURRENTPATH,MOUNTOPTS,MOUNT_RO);
+		  break;
 
    case misc_mounts:
                   if ((strlen(MOUNTFROM) != 0) && (strlen(MOUNTONTO) != 0))
@@ -2720,7 +2825,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
 
    if (*uidname == '*')
       {
-      ptr->uid = -1;      
+      ptr->uid = sameowner;      
       }
    else if (isdigit((int)*uidname))
       {
@@ -2747,7 +2852,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
 
    if (*gidname == '*')
       {
-      ptr->gid = -1;
+      ptr->gid = samegroup;
       }
    else if (isdigit((int)*gidname))
       {
@@ -3135,7 +3240,7 @@ void HandleUmask(value)
 
 char *value;
 
-{ mode_t num = -1;
+{ int num = -1;
 
 Debug("HandleUmask(%s)",value);
  
@@ -3146,7 +3251,7 @@ if (num <= 0)
    yyerror("umask value must be an octal number >= zero");
    }
 
-UMASK = num;
+UMASK = (mode_t) num;
 }
 
 /*******************************************************************/
@@ -3889,7 +3994,6 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
    ptr->uid = MakeUidList(uidnames);
    ptr->gid = MakeGidList(gidnames);
    ptr->force = FORCE;
-   ptr->forcedirs = FORCEDIRS;
    ptr->next = NULL;
    ptr->backup = IMAGEBACKUP;
    ptr->done = 'n';
@@ -3920,11 +4024,22 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
    ptr->ignores = VIGNOREPARSE;
    ptr->cache = NULL;
    ptr->purge = PURGE;
+
+   if (PURGE == 'y')
+      {
+      ptr->forcedirs = 'y';
+      ptr->typecheck = 'y';
+      }
+   else
+      {
+      ptr->forcedirs = FORCEDIRS;
+      ptr->typecheck = TYPECHECK;
+      }
+   
    ptr->log = LOGP;
    ptr->inform = INFORMP;
    ptr->plus_flags = PLUSFLAG;
    ptr->minus_flags = MINUSFLAG;
-   ptr->typecheck = TYPECHECK;
    ptr->trustkey = TRUSTKEY;
    ptr->compat = COMPATIBILITY;
    ptr->forceipv4 = FORCEIPV4;
@@ -4227,11 +4342,16 @@ char *value;
 { int i;
   char *sp;
 
-for (i = 1; SIGNALS[i] != 0; i++)
+for (i = 1; i < highest_signal; i++)
    {
    for (sp = value; *sp != '\0'; sp++)
       {
       *sp = ToUpper(*sp);
+      }
+
+   if (strcmp(SIGNALS[i],"no signal") == 0)
+      {
+      continue;
       }
    
    if (strcmp(SIGNALS[i]+3,value) == 0)  /* 3 to cut off "sig" */
@@ -4245,9 +4365,9 @@ i = 0;
 
 sscanf(value,"%d",&i);
 
-if (i < 1 && i > highest_signal)
+if (i < 1 && i >= highest_signal)
    {
-   yyerror("Unknown signal in attribute");
+   yyerror("Unknown signal in attribute - try using a number");
    }
 
 PROSIGNAL = (short) i;
@@ -4574,9 +4694,9 @@ char *uidnames;
   char *sp;
   int offset;
   struct passwd *pw;
-  char *machine, *user, *domain, buffer[bufsize];
+  char *machine, *user, *domain, buffer[bufsize], *usercopy=NULL;
   int uid;
-  int tmp;
+  int tmp = -1;
 
 uidlist = NULL;
 buffer[0] = '\0';
@@ -4617,15 +4737,19 @@ for (sp = buffer; *sp != '\0'; sp+=strlen(uidbuff))
             {
             if ((pw = getpwnam(ip->name)) == NULL)
                {
-	       snprintf(OUTPUT,bufsize*2,"Unknown user [%s]\n",ip->name);
-	       CfLog(cfverbose,OUTPUT,"getpwnam");
-               continue;
+	       if (!PARSING)
+		  {
+		  snprintf(OUTPUT,bufsize*2,"Unknown user [%s]\n",ip->name);
+		  CfLog(cfverbose,OUTPUT,"getpwnam");
+		  }
+	       uid = unknown_owner;	/* signal user not found */
+	       usercopy = ip->name;
                }
             else
                {
                uid = pw->pw_uid;
                }
-            AddSimpleUidItem(&uidlist,uid); 
+            AddSimpleUidItem(&uidlist,uid,usercopy); 
             }
 
          DeleteItemList(tmplist);
@@ -4641,26 +4765,30 @@ for (sp = buffer; *sp != '\0'; sp+=strlen(uidbuff))
          {
          if (strcmp(uidbuff,"*") == 0)
             {
-            uid = -1;                     /* signals wildcard */
+            uid = sameowner;                     /* signals wildcard */
             }
          else if ((pw = getpwnam(uidbuff)) == NULL)
             {
-            printf("Unknown user %s\n",uidbuff);
-            Warning("User is not known in this passwd domain");
-            continue;
+	    if (!PARSING)
+	       {
+	       snprintf(OUTPUT,bufsize,"Unknown user %s\n",uidbuff);
+	       yyerror(OUTPUT);
+	       }
+	    uid = unknown_owner;		/* signal user not found */
+	    usercopy = uidbuff;
             }
          else
             {
             uid = pw->pw_uid;
             }
          }
-      AddSimpleUidItem(&uidlist,uid);
+      AddSimpleUidItem(&uidlist,uid,usercopy);
       }
    }
 
 if (uidlist == NULL)
    {
-   AddSimpleUidItem(&uidlist,(uid_t) -1);
+   AddSimpleUidItem(&uidlist,sameowner,(char *) NULL);
    }
 
 return (uidlist);
@@ -4674,11 +4802,10 @@ char *gidnames;
 
 { struct GidList *gidlist;
   char gidbuff[bufsize],buffer[bufsize];
-  char err[bufsize];
-  char *sp;
+  char *sp, *groupcopy=NULL;
   struct group *gr;
   int gid;
-  int tmp;
+  int tmp = -1;
 
 gidlist = NULL;
 buffer[0] = '\0';
@@ -4703,26 +4830,32 @@ for (sp = buffer; *sp != '\0'; sp+=strlen(gidbuff))
          {
          if (strcmp(gidbuff,"*") == 0)
             {
-            gid = -1;                     /* signals wildcard */
+            gid = samegroup;                     /* signals wildcard */
             }
          else if ((gr = getgrnam(gidbuff)) == NULL)
             {
-            sprintf(err,"Unknown group %s\n",gidbuff);
-            Warning(err);
-            continue;
+	    if (!PARSING)
+	       {
+	       snprintf(OUTPUT,bufsize,"Unknown group %s\n",gidbuff);
+	       yyerror(OUTPUT);
+	       }
+	    
+	    gid = unknown_group;
+	    groupcopy = gidbuff;
             }
          else
             {
             gid = gr->gr_gid;
             }
          }
-      AddSimpleGidItem(&gidlist,gid);
+
+      AddSimpleGidItem(&gidlist,gid,groupcopy);
       }
    }
 
 if (gidlist == NULL)
    {
-   AddSimpleGidItem(&gidlist,(gid_t) -1);
+   AddSimpleGidItem(&gidlist,samegroup,NULL);
    }
 
 return(gidlist);
@@ -4868,12 +5001,14 @@ return false;
 /* Level 5                                                         */
 /*******************************************************************/
 
-void AddSimpleUidItem(uidlist,uid)
+void AddSimpleUidItem(uidlist,uid,uidname)
 
 struct UidList **uidlist;
 int uid;
+char *uidname;
 
 { struct UidList *ulp, *u;
+  char *copyuser;
 
 if ((ulp = (struct UidList *)malloc(sizeof(struct UidList))) == NULL)
    {
@@ -4881,8 +5016,23 @@ if ((ulp = (struct UidList *)malloc(sizeof(struct UidList))) == NULL)
    }
 
 ulp->uid = uid;
-ulp->next = NULL;
+ 
+ if (uid == unknown_owner)			/* unknown user */
+    {
+    if ((copyuser = strdup(uidname)) == NULL)
+       {
+       FatalError("cfengine: malloc() failed #2 in AddSimpleUidItem()");
+       }
 
+    ulp->uidname = copyuser;
+    }
+ else
+    {
+    ulp->uidname = NULL;
+    }
+ 
+ulp->next = NULL;
+ 
 if (*uidlist == NULL)
    {
    *uidlist = ulp;
@@ -4898,12 +5048,14 @@ else
 
 /*******************************************************************/
 
-void AddSimpleGidItem(gidlist,gid)
+void AddSimpleGidItem(gidlist,gid,gidname)
 
 struct GidList **gidlist;
 int gid;
+char *gidname;
 
 { struct GidList *glp,*g;
+  char *copygroup;
 
 if ((glp = (struct GidList *)malloc(sizeof(struct GidList))) == NULL)
    {
@@ -4911,6 +5063,21 @@ if ((glp = (struct GidList *)malloc(sizeof(struct GidList))) == NULL)
    }
  
 glp->gid = gid;
+ 
+if (gid == unknown_group)			/* unknown group */
+   {
+   if ((copygroup = strdup(gidname)) == NULL)
+      {
+      FatalError("cfengine: malloc() failed #2 in AddSimpleGidItem()");
+      }
+   
+   glp->gidname = copygroup;
+   }
+else
+   {
+   glp->gidname = NULL;
+   }
+ 
 glp->next = NULL;
 
 if (*gidlist == NULL)
@@ -4936,7 +5103,7 @@ struct Auth **list, **listtop;
 
 { struct Auth *ptr;
 
-if (!IsInstallable(classes))
+if (!IsDefinedClass(classes))
    {
    Debug1("Not installing Auth path, no match\n");
    return;
@@ -4992,9 +5159,9 @@ struct Auth **list;
 
 Debug1("AddAuthHostItem(%s,%s)\n",path,attribute);
 
-if (!IsInstallable(CLASSBUFF))
+if (!IsDefinedClass(CLASSBUFF))
    {
-   Debug1("Not installing TidyItem no match\n");
+   Debug1("Not installing AuthItem no match\n");
    return;
    }
 

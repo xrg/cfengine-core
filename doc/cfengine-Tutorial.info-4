@@ -600,7 +600,7 @@ to the `/etc/inetd.conf' file on your system however.  The restricted
 functionality of the daemon protects your system from attempts to
 execute general commands as the root user using `rsh'.
 
-   To remotely access files on a server, you add the keywork
+   To remotely access files on a server, you add the keyword
 `server=HOST' to a copy command. Consider the following example which
 illustrates how you might distribute a password file from a masterhost
 to some clients.
@@ -730,8 +730,7 @@ control two things about each kind of action in the action sequence:
 
    * The minimum time which should have passed since the last time that
      action was executed. It will not be executed again until this
-     amount of time has elapsed. (Default time is 0 minutes so that
-     users un-aware of this feature will not be confused by it.)
+     amount of time has elapsed.  (Default time is 1 minute.)
 
    * The maximum amount of time cfagent should wait for an old
      instantiation of cfagent to finish before killing it and starting

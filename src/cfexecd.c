@@ -683,39 +683,43 @@ if (connect(sd,(void *) &raddr,sizeof(raddr)) == -1)
    return;
    }
 
-sprintf(VBUFF,"HELO %s\n",VFQNAME); 
+sprintf(VBUFF,"HELO %s\r\n",VFQNAME); 
 Dialogue(sd,VBUFF);
 
-sprintf(VBUFF,"MAIL FROM: <cfengine@%s>\n",VFQNAME);
+sprintf(VBUFF,"MAIL FROM: <cfengine@%s>\r\n",VFQNAME);
 Dialogue(sd,VBUFF);
 
-sprintf(VBUFF,"RCPT TO: <%s>\n",to);
+sprintf(VBUFF,"RCPT TO: <%s>\r\n",to);
 Dialogue(sd,VBUFF);
 
-Dialogue(sd,"DATA\n"); 
+Dialogue(sd,"DATA\r\n"); 
 
-sprintf(VBUFF,"Subject: (%s/%s)\n",VFQNAME,VIPADDRESS); 
+sprintf(VBUFF,"Subject: (%s/%s)\r\n",VFQNAME,VIPADDRESS); 
 sent=send(sd,VBUFF,strlen(VBUFF),0);
-sprintf(VBUFF,"To: %s\n\n",to); 
+sprintf(VBUFF,"To: %s\r\n\r\n",to); 
 sent=send(sd,VBUFF,strlen(VBUFF),0);
 
 while(!feof(fp))
    {
    VBUFF[0] = '\0';
    fgets(VBUFF,bufsize,fp);
-   count++;
-   sent=send(sd,VBUFF,strlen(VBUFF),0);
-   
+   if (strlen(VBUFF) > 0)
+      {
+      VBUFF[strlen(VBUFF)-1] = '\r';
+      strcat(VBUFF, "\n");
+      count++;
+      sent=send(sd,VBUFF,strlen(VBUFF),0);
+      }
    if (count > 100)
       {
-      sprintf(VBUFF,"\n[Mail truncated by cfengine. File is at %s on %s]\n",file,VFQNAME);
+      sprintf(VBUFF,"\r\n[Mail truncated by cfengine. File is at %s on %s]\r\n",file,VFQNAME);
       sent=send(sd,VBUFF,strlen(VBUFF),0);
       break;
       }
    } 
 
-Dialogue(sd,".\n"); 
-Dialogue(sd,"QUIT\n");
+Dialogue(sd,".\r\n"); 
+Dialogue(sd,"QUIT\r\n");
 
  
 fclose(fp);

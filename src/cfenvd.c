@@ -357,6 +357,7 @@ if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
    if (errno != DB_NOTFOUND)
       {
       dbp->err(dbp,errno,NULL);
+      dbp->close(dbp,0);
       return;
       }
    }
@@ -576,6 +577,32 @@ exit(1);
 
 /*********************************************************************/
 /* Level 2                                                           */
+/*********************************************************************/
+
+void HandleSignal(signum)
+ 
+int signum;
+ 
+{
+snprintf(OUTPUT,bufsize*2,"Received signal %d while doing [%s]",signum,CFLOCK);
+Chop(OUTPUT);
+CfLog(cferror,OUTPUT,"");
+snprintf(OUTPUT,bufsize*2,"Logical start time %s ",ctime(&CFSTARTTIME));
+Chop(OUTPUT);
+CfLog(cferror,OUTPUT,"");
+snprintf(OUTPUT,bufsize*2,"This sub-task started really at %s\n",ctime(&CFINITSTARTTIME));
+
+CfLog(cferror,OUTPUT,"");
+ 
+if (signum == SIGTERM || signum == SIGINT || signum == SIGHUP || signum == SIGSEGV || signum == SIGKILL)
+   {
+   ReleaseCurrentLock();
+   closelog();
+   exit(0);
+   }
+}
+
+
 /*********************************************************************/
 
 void GetQ()
@@ -831,7 +858,29 @@ PREVIOUS_STATE = classlist;
  
 for (ip = ALL_INCOMING; ip != NULL; ip=ip->next)
    { char *sp;
+     int print=true;
    
+   for (sp = ip->name; *sp != '\0'; sp++)
+      {
+      if (!isdigit((int)*sp))
+	 {
+	 print = false;
+	 }
+      }
+
+   if (print)
+      {
+      Debug("Port(in,%s) ",ip->name);
+      fprintf(fp,"pin-%s\n",ip->name);
+      }
+   }
+
+Debug("\n\n"); 
+
+for (ip = ALL_OUTGOING; ip != NULL; ip=ip->next)
+   { char *sp;
+     int print=true;
+     
    for (sp = ip->name; *sp != '\0'; sp++)
       {
       if (!isdigit((int)*sp))
@@ -839,22 +888,12 @@ for (ip = ALL_INCOMING; ip != NULL; ip=ip->next)
 	 continue;
 	 }
       }
-   Debug("Port(in,%s) ",ip->name);
-   fprintf(fp,"pin-%s\n",ip->name);
-   }
 
-Debug("\n\n"); 
-
-for (ip = ALL_OUTGOING; ip != NULL; ip=ip->next)
-   { char *sp;
-   for (sp = ip->name; *sp != '\0'; sp++)
-   if (!isdigit((int)*sp))
+   if (print)
       {
-      continue;
+      Debug("Port(out,%s) ",ip->name);
+      /* fprintf(fp,"pout-%s\n",ip->name);   */
       }
-
-   Debug("Port(out,%s) ",ip->name);
-   /* fprintf(fp,"pout-%s\n",ip->name);   */
    }
 
 Debug("\n\n");  
@@ -922,7 +961,7 @@ Verbose("Disk free = %d %%\n",DISKFREE);
 
 void GatherSocketData()
 
-{ FILE *pp;
+{ FILE *pp,*fpout;
   char local[bufsize],remote[bufsize],comm[bufsize];
   int i;
   char *sp;
@@ -1069,6 +1108,7 @@ if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
    if (errno != DB_NOTFOUND)
       {
       dbp->err(dbp,errno,NULL);
+      dbp->close(dbp,0);
       return NULL;
       }
    }
@@ -1161,34 +1201,35 @@ struct Averages *av;
 { int position,olddist[GRAINS],newdist[GRAINS]; 
   int day,i,time_to_update = true;
  
-/* Now update the histogram in units of half stddev either side of local mean
-   and save to a file in columns, each representing the dist from a day/variable */
-
+/* Take an interval of 4 standard deviations from -2 to +2, divided into GRAINS
+   parts. Centre each measurement on GRAINS/2 and scale each measurement by the
+   std-deviation for the current time.
+ */
 if (HISTO)
    {
    time_to_update = (int) (3600.0*rand()/(RAND_MAX+1.0)) > 2400;
    
    day = Day2Number(timekey);
    
-   position = GRAINS/2 + (int)(NUMBER_OF_USERS - av->expect_number_of_users)/(GRAINS/4*sqrt((av->var_number_of_users)));
+   position = GRAINS/2 + (int)(0.5+(NUMBER_OF_USERS - av->expect_number_of_users)*GRAINS/(4*sqrt((av->var_number_of_users))));
    if (0 <= position && position < GRAINS)
       {
       HISTOGRAM[0][day][position]++;
       }
    
-   position = GRAINS/2 + (int)(ROOTPROCS - av->expect_rootprocs)/(GRAINS/4*sqrt((av->var_rootprocs)));
+   position = GRAINS/2 + (int)(0.5+(ROOTPROCS - av->expect_rootprocs)*GRAINS/(4*sqrt((av->var_rootprocs))));
    if (0 <= position && position < GRAINS)
       {
       HISTOGRAM[1][day][position]++;
       }
    
-   position = GRAINS/2 + (int)(OTHERPROCS - av->expect_otherprocs)/(GRAINS/4*sqrt((av->var_otherprocs)));
+   position = GRAINS/2 + (int)(0.5+(OTHERPROCS - av->expect_otherprocs)*GRAINS/(4*sqrt((av->var_otherprocs))));
    if (0 <= position && position < GRAINS)
       {
       HISTOGRAM[2][day][position]++;
       }
    
-   position = GRAINS/2 + (int)(DISKFREE - av->expect_diskfree)/(GRAINS/4*sqrt((av->var_diskfree)));
+   position = GRAINS/2 + (int)(0.5+(DISKFREE - av->expect_diskfree)*GRAINS/(4*sqrt((av->var_diskfree))));
    if (0 <= position && position < GRAINS)
       {
       HISTOGRAM[3][day][position]++;
@@ -1196,13 +1237,13 @@ if (HISTO)
    
    for (i = 0; i < ATTR; i++)
       {
-      position = GRAINS/2 + (int)(INCOMING[i] - av->expect_incoming[i])/(GRAINS/4*sqrt((av->var_incoming[i])));
+      position = GRAINS/2 + (int)(0.5+(INCOMING[i] - av->expect_incoming[i])*GRAINS/(4*sqrt((av->var_incoming[i]))));
       if (0 <= position && position < GRAINS)
 	 {
 	 HISTOGRAM[4+i][day][position]++;
 	 }
       
-      position = GRAINS/2 + (int)(OUTGOING[i] - av->expect_outgoing[i])/(GRAINS/4*sqrt((av->var_outgoing[i])));
+      position = GRAINS/2 + (int)(0.5+(OUTGOING[i] - av->expect_outgoing[i])*GRAINS/(4*sqrt((av->var_outgoing[i]))));
       if (0 <= position && position < GRAINS)
 	 {
 	 HISTOGRAM[4+ATTR+i][day][position]++;

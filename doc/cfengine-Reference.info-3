@@ -83,9 +83,8 @@ copying. Cfengine attempts to prevent this during remote copies._
      explicit name of a plain file. An implicit `copy file to
      directory' syntax is not allowed.  Symbolic links are copied as
      symbolic links, plain files are copied as plain files and special
-     files are copied as special files. If the master and image are
-     directories then all of the child files _which are not
-     directories_ are copied from source to destination.
+     files are copied as special files.  The `recurse' option is
+     required to copy the contents of subdirectories.
 
 `mode, owner, group'
      The file mode, owner and group of the images are specified as in
@@ -281,15 +280,18 @@ copying. Cfengine attempts to prevent this during remote copies._
      This allows exact images of filesystems to be mantained. Note that
      if the copy command has includes or excludes or ignored files,
      cfengine will purge only those files on the client machine which
-     are also on the server. This means that some files (such as system
-     specific work files) can be excluded from copies without them
-     being destroyed.  Note that purging is disallowed if contant with
-     a remote server fails.  This means that local files will not be
-     destroyed by a denial of service attack. _You should not use this
-     option to synchronize NFS mounted file systems. If the NFS server
-     goes down, cfengine cannot then tell the difference between a
-     valid empty directory and a missing NFS file system.  If you use
-     purge, use a remote copy also._
+     are also on the server. Included files are not purged.  This means
+     that some files (such as system specific work files) can be
+     excluded from copies without them being destroyed.  Note that
+     purging is disallowed if contant with a remote server fails.  This
+     means that local files will not be destroyed by a denial of service
+     attack. _You should not use this option to synchronize NFS mounted
+     file systems. If the NFS server goes down, cfengine cannot then
+     tell the difference between a valid empty directory and a missing
+     NFS file system.  If you use purge, use a remote copy also._ If we
+     specify purge, then the following options will also be set and
+     cannot be altered: `forcedirs=true', `typecheck=false', since any
+     other default could be very destructive.
 
 Example:
 

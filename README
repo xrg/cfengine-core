@@ -58,5 +58,8 @@ make install
 
 Please read the detailed information at http://www.cfengine.org
 
+Users with mixed solaris/sparc mileux and new gcc, will need
+to compile on older machines with CFLAGS="-g -O2 -mv8"
+
 MB 2002
 

@@ -98,16 +98,16 @@ struct stat *childstat;
 int rlevel;
 
 { struct stat parentstat;
-  struct Item *ip;
+  struct Mountables *mp;
   char host[maxvarsize];
 
-for (ip = VMOUNTABLES; ip !=NULL; ip=ip->next)
+for (mp = VMOUNTABLES; mp !=NULL; mp=mp->next)
    {
-   if (strstr(ip->name,dir))
+   if (strstr(mp->filesystem,dir))
       {
-      sscanf(ip->name,"%[^:]",host);
+      sscanf(mp->filesystem,"%[^:]",host);
 
-      Debug("Looking at filesystem %s on %s\n",ip->name,host);
+      Debug("Looking at filesystem %s on %s\n",mp->filesystem,host);
 
       if (strncmp(host,VFQNAME,strlen(host)) == 0)
 	 {

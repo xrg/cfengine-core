@@ -1028,9 +1028,9 @@ Variable Index
 * +:                                     groups.
 * -D option <1>:                         addclasses.
 * -D option:                             Cfengine classes.
-* -l:                                    tidy.
-* -L:                                    Single links.
+* -l <1>:                                tidy.
 * -l:                                    Syntax.
+* -L:                                    Single links.
 * -N option <1>:                         addclasses.
 * -N option:                             Cfengine classes.
 * -x option:                             cf.preconf bootstrap file.
@@ -1065,22 +1065,22 @@ Variable Index
 * control:                               control.
 * create:                                create.
 * directories:                           actionsequence.
-* disable <1>:                           disable.
-* disable:                               actionsequence.
-* domain <1>:                            domain.
-* domain:                                control.
+* disable <1>:                           actionsequence.
+* disable:                               disable.
+* domain <1>:                            control.
+* domain:                                domain.
 * DryRun:                                dryrun.
 * editbinaryfilesize:                    editbinaryfilesize.
 * editfiles:                             actionsequence.
-* editfilesize <1>:                      editfilesize.
-* editfilesize:                          control.
+* editfilesize <1>:                      control.
+* editfilesize:                          editfilesize.
 * empty:                                 disable.
 * EmptyResolvConf:                       emptyresolvconf.
 * Exclamation:                           exclamation.
 * exclude=:                              Syntax.
 * FileExtensions:                        fileextension.
-* files <1>:                             files.
-* files:                                 actionsequence.
+* files <1>:                             actionsequence.
+* files:                                 files.
 * filter:                                filters.
 * force=:                                copy.
 * freespace= <1>:                        required.
@@ -1116,16 +1116,16 @@ Variable Index
 * mode:                                  Syntax.
 * module::                               actionsequence.
 * moduledirectory:                       moduledirectory.
-* mountables <1>:                        mountables.
-* mountables:                            homeservers.
+* mountables <1>:                        homeservers.
+* mountables:                            mountables.
 * mountall:                              actionsequence.
 * mountinfo:                             actionsequence.
 * mountpattern:                          mountpattern.
 * netconfig:                             actionsequence.
-* netmask <1>:                           netmask.
-* netmask:                               control.
-* nfstype <1>:                           nfstype.
-* nfstype:                               control.
+* netmask <1>:                           control.
+* netmask:                               netmask.
+* nfstype <1>:                           control.
+* nfstype:                               nfstype.
 * o=:                                    Syntax.
 * ones:                                  broadcast.
 * OutputPrefix:                          Special variables.
@@ -1134,22 +1134,22 @@ Variable Index
 * pattern:                               tidy.
 * processes:                             actionsequence.
 * purge=:                                copy.
-* r= <1>:                                tidy.
-* r=:                                    Syntax.
+* r= <1>:                                Syntax.
+* r=:                                    tidy.
 * recurse <1>:                           tidy.
 * recurse:                               Syntax.
-* RepChar:                               repchar.
 * repchar:                               Special variables.
+* RepChar:                               repchar.
 * required:                              actionsequence.
-* resolve <1>:                           resolve.
-* resolve:                               actionsequence.
+* resolve <1>:                           actionsequence.
+* resolve:                               resolve.
 * Restricting access:                    access.
 * ReturnsZero():                         Evaluated classes.
 * rotate=:                               disable.
 * scheduling:                            schedule.
 * SecureInput:                           secureinput.
-* SensibleCount:                         sensiblecount.
 * sensiblecount:                         control.
+* SensibleCount:                         sensiblecount.
 * SensibleSize:                          sensiblesize.
 * sensiblesize:                          control.
 * shellcommands:                         actionsequence.
@@ -1163,15 +1163,15 @@ Variable Index
 * SpoolDirectories:                      spooldirectories.
 * SuspiciousNames:                       suspiciousnames.
 * sysadm <1>:                            Cfexecd reference.
-* sysadm <2>:                            sysadm.
-* sysadm:                                control.
+* sysadm <2>:                            control.
+* sysadm:                                sysadm.
 * tidy <1>:                              tidy.
 * tidy:                                  actionsequence.
 * timezone:                              control.
 * touch:                                 touch.
 * truncate:                              disable.
-* type= <1>:                             Hard links.
-* type=:                                 disable.
+* type= <1>:                             disable.
+* type=:                                 Hard links.
 * underscoreclasses:                     Special variables.
 * unmount <1>:                           unmount.
 * unmount:                               actionsequence.

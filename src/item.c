@@ -66,6 +66,13 @@ return(false);
 
 int IsFuzzyItemIn(list,item)
 
+ /* This is for matching ranges of IP addresses, like CIDR e.g.
+
+ Range1 = ( 128.39.89.250/24 )
+ Range2 = ( 128.39.89.100-101 )
+ 
+ */
+
 struct Item *list;
 char *item;
 
@@ -80,7 +87,7 @@ if ((item == NULL) || (strlen(item) == 0))
  
 for (ptr = list; ptr != NULL; ptr=ptr->next)
    {
-   if (strncmp(ptr->name,item,strlen(ptr->name)) == 0)
+   if (FuzzySetMatch(ptr->name,item) == 0)
       {
       return(true);
       }
@@ -312,6 +319,395 @@ while (true)
    ip1 = ip1->next;
    ip2 = ip2->next;
    }
+}
+
+/*********************************************************************/
+/* Fuzzy Match                                                       */
+/*********************************************************************/
+
+int FuzzyMatchParse(s)
+
+char *s;
+
+{ char *sp;
+  short isCIDR = false, isrange = false, isv6 = false, isv4 = false; 
+  char address[128];
+  int mask;
+
+  Debug("ParsingIPRange(%s)\n",s);
+  
+if (strstr(s,"/") != 0)
+   {
+   isCIDR = true;
+   }
+
+if (strstr(s,"-") != 0)
+   {
+   isrange = true;
+   }
+
+if (strstr(s,".") != 0)
+   {
+   isv4 = true;
+   }
+
+if (strstr(s,":") != 0)
+   {
+   isv6 = true;
+   }
+
+if (isv4 && isv6)
+   {
+   yyerror("Mixture of IPv6 and IPv4 addresses");
+   return false;
+   }
+
+if (isCIDR && isrange)
+   {
+   yyerror("Cannot mix CIDR notation with xx-yy range notation");
+   return false;
+   }
+
+if (isv4 && isCIDR)
+   {
+   if (strlen(s) > 4+3*4+1+2)  /* xxx.yyy.zzz.mmm/cc */
+      {
+      yyerror("IPv4 address looks too long");
+      return false;
+      }
+   
+   address[0] = '\0';
+   mask = 0;
+   sscanf(s,"%16[^/]/%d",address,&mask);
+
+   if (mask < 8)
+      {
+      snprintf(OUTPUT,bufsize,"Mask value %d in %s is less than 8",mask,s);
+      yyerror(OUTPUT);
+      return false;
+      }
+
+   if (mask > 30)
+      {
+      snprintf(OUTPUT,bufsize,"Mask value %d in %s is silly (> 30)",mask,s);
+      yyerror(OUTPUT);
+      return false;
+      }
+   }
+
+
+if (isv4 && isrange)
+   {
+   long i, from = -1, to = -1, cmp = -1;
+   char *sp1,buffer1[8],buffer2[8];
+   
+   sp1 = s;
+   
+   for (i = 0; i < 4; i++)
+      {
+      sscanf(sp1,"%[^.]",buffer1);
+      sp1 += strlen(buffer1)+1;
+      
+      if (strstr(buffer1,"-"))
+	 {
+	 sscanf(buffer1,"%ld-%ld",&from,&to);
+	 sscanf(buffer2,"%ld",&cmp);
+	 if (from < 0 || to < 0)
+	    {
+	    yyerror("Error in IP range");
+	    return false;
+	    }
+	 
+	 if (to < from)
+	    {
+	    yyerror("Bad IP range");
+	    return false;
+	    }
+	 
+	 if ((from >= cmp) || (cmp > to))
+	    {
+	    return false;
+	    }
+	 }
+      else
+	 {
+	 sscanf(buffer1,"%ld",&from);
+	 sscanf(buffer2,"%ld",&cmp);
+	 
+	 if (from != cmp)
+	    {
+	    return false;
+	    }
+	 }
+      }
+   }
+
+if (isv6 && isCIDR)
+   {
+   char address[128];
+   int mask,blocks;
+
+   if (strlen(s) < 20)
+      {
+      yyerror("IPv6 address looks too short");
+      return false;
+      }
+
+   if (strlen(s) > 42)
+      {
+      yyerror("IPv6 address looks too long");
+      return false;
+      }
+
+   address[0] = '\0';
+   mask = 0;
+   sscanf(s,"%40[^/]/%d",address,&mask);
+   blocks = mask/8;
+   
+   if (mask % 8 != 0)
+      {
+      CfLog(cferror,"Cannot handle ipv6 masks which are not 8 bit multiples (fix me)","");
+      return false;
+      }
+   
+   if (mask > 15)
+      {
+      yyerror("IPv6 CIDR mask is too large");
+      return false;
+      }
+   }
+
+return true; 
+}
+
+/*********************************************************************/
+
+int FuzzySetMatch(s1,s2)
+
+/* Match two IP strings - with : or . in hex or decimal
+   s1 is the test string, and s2 is the reference e.g.
+   FuzzySetMatch("128.39.74.10/23","128.39.75.56") == 0 */
+
+char *s1,*s2;
+
+{ char *sp;
+  short isCIDR = false, isrange = false, isv6 = false, isv4 = false;
+  char address[128];
+  int mask,significant;
+  unsigned long a1,a2;
+
+if (strstr(s1,"/") != 0)
+   {
+   isCIDR = true;
+   }
+
+if (strstr(s1,"-") != 0)
+   {
+   isrange = true;
+   }
+
+if (strstr(s1,".") != 0)
+   {
+   isv4 = true;
+   }
+
+if (strstr(s1,":") != 0)
+   {
+   isv6 = true;
+   }
+
+if (isv4 && isv6)
+   {
+   yyerror("Mixture of IPv6 and IPv4 addresses");
+   return -1;
+   }
+
+if (isCIDR && isrange)
+   {
+   yyerror("Cannot mix CIDR notation with xxx-yyy range notation");
+   return -1;
+   }
+
+if (!(isv6 || isv4))
+   {
+   yyerror("Not a valid address range");
+   return -1;
+   }
+
+if (!(isrange||isCIDR)) 
+   {
+   return strncmp(s1,s2,strlen(s1)); /* do partial string match */
+   }
+
+ 
+if (isv4)
+   {
+   struct sockaddr_in addr1,addr2;
+   int shift;
+
+   bzero(&addr1,sizeof(struct sockaddr_in));
+   bzero(&addr2,sizeof(struct sockaddr_in));
+   
+   if (isCIDR)
+      {
+      address[0] = '\0';
+      mask = 0;
+      sscanf(s1,"%16[^/]/%d",address,&mask);
+      shift = 32 - mask;
+      
+      bcopy((struct sockaddr_in *) sockaddr_pton(AF_INET,address),&addr1,sizeof(struct sockaddr_in));
+      bcopy((struct sockaddr_in *) sockaddr_pton(AF_INET,s2),&addr2,sizeof(struct sockaddr_in));
+
+      a1 = htonl(addr1.sin_addr.s_addr);
+      a2 = htonl(addr2.sin_addr.s_addr);
+
+      a1 = a1 >> shift;
+      a2 = a2 >> shift;
+
+      if (a1 == a2)
+	 {
+	 return 0;
+	 }
+      else
+	 {
+	 return -1;
+	 }
+      }
+   else
+      {
+      long i, from = -1, to = -1, cmp = -1;
+      char *sp1,*sp2,buffer1[8],buffer2[8];
+
+      sp1 = s1;
+      sp2 = s2;
+      
+      for (i = 0; i < 4; i++)
+	 {
+	 sscanf(sp1,"%[^.]",buffer1);
+	 sp1 += strlen(buffer1)+1;
+	 sscanf(sp2,"%[^.]",buffer2);
+	 sp2 += strlen(buffer2)+1;
+
+	 if (strstr(buffer1,"-"))
+	    {
+	    sscanf(buffer1,"%ld-%ld",&from,&to);
+	    sscanf(buffer2,"%ld",&cmp);
+
+	    if (from < 0 || to < 0)
+	       {
+	       Debug("Couldn't read range\n");
+	       return -1;
+	       }
+
+	    if ((from >= cmp) || (cmp > to))
+	       {
+	       Debug("Out of range\n");
+	       return -1;
+	       }
+	    }
+	 else
+	    {
+	    sscanf(buffer1,"%ld",&from);
+	    sscanf(buffer2,"%ld",&cmp);
+
+	    if (from != cmp)
+	       {
+	       Debug("Unequal\n");
+	       return -1;
+	       }
+	    }
+
+	 Debug("Matched octet %s with %s\n",buffer1,buffer2);
+	 }
+
+      Debug("Matched IP range\n");
+      return 0;
+      }
+   }
+
+#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+if (isv6)
+   {
+   struct sockaddr_in6 addr1,addr2;
+   int blocks, i;
+
+   bzero(&addr1,sizeof(struct sockaddr_in6));
+   bzero(&addr2,sizeof(struct sockaddr_in6));
+   
+   if (isCIDR)
+      {
+      address[0] = '\0';
+      mask = 0;
+      sscanf(s1,"%40[^/]/%d",address,&mask);
+      blocks = mask/8;
+
+      if (mask % 8 != 0)
+	 {
+	 CfLog(cferror,"Cannot handle ipv6 masks which are not 8 bit multiples (fix me)","");
+	 return -1;
+	 }
+
+      bcopy((struct sockaddr_in6 *) sockaddr_pton(AF_INET6,address),&addr1,sizeof(struct sockaddr_in6));
+      bcopy((struct sockaddr_in6 *) sockaddr_pton(AF_INET6,s2),&addr2,sizeof(struct sockaddr_in6));
+
+      for (i = 0; i < blocks; i++) /* blocks < 16 */
+	 {
+	 if (addr1.sin6_addr.s6_addr[i] != addr2.sin6_addr.s6_addr[i])
+	    {
+	    return -1;
+	    }
+	 }
+      return 0;
+      }
+   else
+      {
+      long i, from = -1, to = -1, cmp = -1;
+      char *sp1,*sp2,buffer1[16],buffer2[16];
+
+      sp1 = s1;
+      sp2 = s2;
+      
+      for (i = 0; i < 8; i++)
+	 {
+	 sscanf(sp1,"%[^:]",buffer1);
+	 sp1 += strlen(buffer1)+1;
+	 sscanf(sp2,"%[^:]",buffer2);
+	 sp2 += strlen(buffer2)+1;
+
+	 if (strstr(buffer1,"-"))
+	    {
+	    sscanf(buffer1,"%lx-%lx",&from,&to);
+	    sscanf(buffer2,"%lx",&cmp);
+
+	    if (from < 0 || to < 0)
+	       {
+	       return -1;
+	       }
+
+	    if ((from >= cmp) || (cmp > to))
+	       {
+	       printf("%x < %x < %x\n",from,cmp,to);
+	       return -1;
+	       }
+	    }
+	 else
+	    {
+	    sscanf(buffer1,"%ld",&from);
+	    sscanf(buffer2,"%ld",&cmp);
+
+	    if (from != cmp)
+	       {
+	       return -1;
+	       }
+	    }
+	 }
+      
+      return 0;
+      }
+   }
+#endif 
+
+return -1; 
 }
 
 /*********************************************************************/

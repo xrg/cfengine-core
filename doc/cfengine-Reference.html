@@ -15,6 +15,8 @@ Up:<a rel=up href="#(dir)">(dir)</a>
 
 <h1>Cfengine-Reference</h1>
 
+<a href="#Contents">COMPLETE TABLE OF CONTENTS</a>
+
 <ul>
 <li><a href="#Reference%20introduction">Reference introduction</a>: 
 <li><a href="#Cfkey">Cfkey</a>: 
@@ -201,6 +203,8 @@ arguments in chronological order.
 <dd>True if file 1's attributes were changed in any way before file 2's (ctime). 
 <br><dt><code>FileExists(<var>file</var>)</code>
 <dd>True if the named file object exists. 
+<br><dt><code>IPRange(<var>address-range</var>)</code>
+<dd>True if the current host lies within the specified range
 <br><dt><code>IsDir(<var>f</var>)</code>
 <dd>True if the named file object is a directory. 
 <br><dt><code>IsLink(<var>f</var>)</code>
@@ -218,6 +222,8 @@ classes:
  access_to_dir = ( ReturnsZero(/bin/cd /mydir) )
  compare       = ( ChangedBefore(/etc/passwd_master,/etc/passwd) )
  isplain       = ( IsPlain(/tmp/import) )
+ inrange       = ( IPRange(128.39.89.10-15) )
+ CIDR          = ( IPRange(128.39.89.10/24) )
 
 </pre>
 
@@ -3191,9 +3197,8 @@ of an object which matches the type of the master object i.e. if the
 master is a plain file, the destination must also be the explicit name
 of a plain file. An implicit `copy file to directory' syntax is not
 allowed.  Symbolic links are copied as symbolic links, plain files are
-copied as plain files and special files are copied as special files. If
-the master and image are directories then all of the child files
-<em>which are not directories</em> are copied from source to destination.
+copied as plain files and special files are copied as special files. 
+The <code>recurse</code> option is required to copy the contents of subdirectories.
 
 <br><dt><code>mode, owner, group</code>
 <dd>The file mode, owner
@@ -3392,7 +3397,8 @@ destination directory which are not also in the source directory.  This
 allows exact images of filesystems to be mantained. Note that if the
 copy command has includes or excludes or ignored files, cfengine will
 purge only those files on the client machine which are also on the
-server. This means that some files (such as system specific work files)
+server. Included files are not purged. 
+This means that some files (such as system specific work files)
 can be excluded from copies without them being destroyed. 
 Note that purging is disallowed if contant with a remote server fails. 
 This means that local files will not be destroyed by a denial of service
@@ -3400,6 +3406,9 @@ attack. <em>You should not use this option to synchronize NFS mounted
 file systems. If the NFS server goes down, cfengine cannot then tell the
 difference between a valid empty directory and a missing NFS file system. 
 If you use purge, use a remote copy also.</em>
+If we specify purge, then the following options will also be set and
+cannot be altered: <code>forcedirs=true</code>, <code>typecheck=false</code>, since
+any other default could be very destructive.
 
 </dl>
 
@@ -4129,7 +4138,8 @@ expression in quotes.
 and only if the file is edited.
 
 <br><dt><code>DeleteLinesAfterThisMatching <var>quoted-regex</var></code>
-<dd>
+<dd>Delete lines after the current position which match the quoted expression.
+
 <br><dt><code>DeleteLinesContaining <var>quoted-string</var></code>
 <dd>Delete all lines containing the exact string quoted.
 
@@ -4620,14 +4630,14 @@ from the specified filename.See <a href="#Recursion">Recursion</a>.
 <dd>This is a list of allowed owners, or uids by number, separated by
 commas.  For example <code>root,2,3,sysadm</code>.  In cases where you ask
 cfengine to fix the ownership automatically, the owner will be set to
-the first owner in the list if and only if it is not one of the named
+the first recogized owner in the list if and only if it is not one of the named
 uids in the list.
 
 <br><dt><code>group=<var>group list</var></code>
 <dd>This is a list of allowed groups, or gids by number, separated by
 commas.  For example <code>wheel,2,3,sysadm</code>.  In cases where you ask
 cfengine to fix the ownership automatically, the group will be set to
-the first group in the list if and only if it is not one of the named
+the first recognized group in the list if and only if it is not one of the named
 gids in the list.
 
 <br><dt><code>action=<var>action</var></code>
@@ -5186,6 +5196,9 @@ groups:
 
    notthis = ( !this )
 
+   ip_in_range = ( IPRange(129.0.0.1-15) )  # host is in ip address range
+   ip_in_range = ( IPRange(129.0.0.1/24) )  # host is in ip address range (CIDR notation)
+
 </pre>
 
 <p>To include a list of hosts from a NIS netgroup, you use the <code>+</code> symbol, or
@@ -5310,8 +5323,8 @@ wildcard value <code>home?</code> and the mountables list is given by
 <pre>mountables:
 
    einstein:/mysite/einstein/home1
-   einstein:/mysite/einstein/home2
-   riemann:/mysite/riemann/local
+   einstein:/mysite/einstein/home2  mountoptions=soft,bg,intr,rsize=8192,wsize=8192
+   riemann:/mysite/riemann/local    readonly=true
    euler:/mysite/euler/home1
 
 </pre>
@@ -5955,6 +5968,15 @@ mount, according to the cfengine model.
 
 <p>The syntax of the list is:
 
+<pre>mountables:
+
+   <var>class</var>::
+       "filesystem to mount"
+	   readonly=<b>false/off</b>/<var>true/on</var>
+	   mountoptions=<var>nfs-options</var>
+
+</pre>
+e.g.
 <pre>
 mountables:
 
@@ -6306,6 +6328,7 @@ but you may specify bytes or megabytes), e.g.
 required:
 
   /site/host/home1 freespace=50mb define=dotidy
+  /site/host/home2 freespace=10% define=dotidy
 
 </pre>
 
@@ -6830,6 +6853,7 @@ Up:<a rel=up href="#Cfservd.conf%20and%20cfrun%20reference">Cfservd.conf and cfr
 <h2>control</h2>
 
 <ul>
+<li><a href="#IP%20address%20ranges">IP address ranges</a>: 
 <li><a href="#AllowConnectionsFrom">AllowConnectionsFrom</a>: 
 <li><a href="#AllowMultipleConnectionsFrom">AllowMultipleConnectionsFrom</a>: 
 <li><a href="#AllowUsers">AllowUsers</a>: 
@@ -6843,12 +6867,43 @@ Up:<a rel=up href="#Cfservd.conf%20and%20cfrun%20reference">Cfservd.conf and cfr
 <li><a href="#LogAllConnections">LogAllConnections</a>: 
 <li><a href="#MaxConnections">MaxConnections</a>: 
 <li><a href="#TrustKeysFrom">TrustKeysFrom</a>: 
+<li><a href="#DynamicAddresses">DynamicAddresses</a>: 
 </ul>
+
+<p><hr>
+Node:<a name="IP%20address%20ranges">IP address ranges</a>,
+Next:<a rel=next href="#AllowConnectionsFrom">AllowConnectionsFrom</a>,
+Previous:<a rel=previous href="#cfservd%20control">cfservd control</a>,
+Up:<a rel=up href="#cfservd%20control">cfservd control</a>
+<br>
+
+<h3>IP address ranges</h3>
+
+<p>In the access control lists below, host ranges can be specified in a
+number of ways i) as substrings, ii) as address ranges denoted by the
+"-" hyphen, or iii) as CIDR (Classless Inter Domain Routing) notation. 
+For example
+<pre>128.39.73
+128.39.74.10/23
+128.39.74-75.10-22
+2001:700:700:3:290:27ff:fea2:4730-4790
+2001:700:700:3:290:27ff:fea2:4730/64
+</pre>
+In the CIDR notation, the slash followed by a number indicates the
+netmask, or the number of bits which are common to a group of hosts. 
+Normally, this is connected to a specific subnet, but here it simply
+represents the number of bits from the left which are fixed for matching;
+all remaining bits are wildcards. 
+The following forms are equivalent:
+<pre>128.39.74.
+128.39.74.10/24
+128.39.74.1-254
+</pre>
 
 <p><hr>
 Node:<a name="AllowConnectionsFrom">AllowConnectionsFrom</a>,
 Next:<a rel=next href="#AllowMultipleConnectionsFrom">AllowMultipleConnectionsFrom</a>,
-Previous:<a rel=previous href="#cfservd%20control">cfservd control</a>,
+Previous:<a rel=previous href="#IP%20address%20ranges">IP address ranges</a>,
 Up:<a rel=up href="#cfservd%20control">cfservd control</a>
 <br>
 
@@ -6900,11 +6955,11 @@ Up:<a rel=up href="#cfservd%20control">cfservd control</a>
 Note that there is no way of identifying users except by their public keys. 
 If a malicious asserts their identity, when no public key for the named
 user is known to the server, then they could spoof the identity of that
-user.  If users other than root are allowed to connect, they need to be here. 
+user.  All users who should be allowed to connect need to be here. 
 This applies to use of cfrun.
 
 <pre>
-AllowUsers = ( mark )
+AllowUsers = ( mark root )
 
 </pre>
 
@@ -7044,6 +7099,7 @@ to handle remote requests. The default value is ten.
 
 <p><hr>
 Node:<a name="TrustKeysFrom">TrustKeysFrom</a>,
+Next:<a rel=next href="#DynamicAddresses">DynamicAddresses</a>,
 Previous:<a rel=previous href="#MaxConnections">MaxConnections</a>,
 Up:<a rel=up href="#cfservd%20control">cfservd control</a>
 <br>
@@ -7060,9 +7116,42 @@ will never be updated, unless the existing key is deleted by hand.
 
 <pre>     control:
 
-      TrustKeysFrom = ( 128.39.89.76 )  # trusted host
+      TrustKeysFrom = ( 128.39.89.76 )     # trusted host
+      TrustKeysFrom = ( 128.39.89.76/24 )  # trusted subnet
 
 </pre>
+
+<p><hr>
+Node:<a name="DynamicAddresses">DynamicAddresses</a>,
+Previous:<a rel=previous href="#TrustKeysFrom">TrustKeysFrom</a>,
+Up:<a rel=up href="#cfservd%20control">cfservd control</a>
+<br>
+
+<h3>DynamicAddresses</h3>
+
+<p>Hosts which are included in this list are assumed to have IP addresses which
+can change with time, e.g. hosts which are given IP addresses by DHCP
+or a BOOTP like protocol.
+
+<pre>     control:
+
+      DynamicAddresses = ( 128.39.74.100-200 )  # DHCP range
+
+</pre>
+
+<p>If cfservd receives a connection from an IP address that is in this list,
+and trustkey is <em>true</em>, the existing key for that IP address can be
+replaced with a new key, and the old key is recorded in a "used keys"
+list, access is granted. If trust is switched off, the server looks
+in the "used key list" to see if the key has been seen before. If not
+access is refused. If it has been seen before - it uses this earlier
+trust to accept the connection and replace the IP-key binding.
+
+<p>Note that used keys are kept in a database for easy lookup, whereas
+fixed keys are kept in files for easy administration. If host keys
+change or are reinstalled on the dynamically allocated hosts, then
+this database should probably be deleted to purge keys that become
+illegal.
 
 <p><hr>
 Node:<a name="admit%20grant%20and%20deny">admit grant and deny</a>,
@@ -8939,9 +9028,8 @@ Up:<a rel=up href="#Top">Top</a>
 <li><code>$(year)</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>+</code>: <a href="#groups">groups</a>
 <li><code>-D option</code>: <a href="#addclasses">addclasses</a>, <a href="#Cfengine%20classes">Cfengine classes</a>
-<li><code>-l</code>: <a href="#tidy">tidy</a>
+<li><code>-l</code>: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li><code>-L</code>: <a href="#Single%20links">Single links</a>
-<li><code>-l</code>: <a href="#Syntax">Syntax</a>
 <li><code>-N option</code>: <a href="#addclasses">addclasses</a>, <a href="#Cfengine%20classes">Cfengine classes</a>
 <li><code>-x option</code>: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>.cfengine.rm</code>: <a href="#tidy">tidy</a>
@@ -8971,18 +9059,18 @@ Up:<a rel=up href="#Top">Top</a>
 <li><code>control</code>: <a href="#control">control</a>
 <li><code>create</code>: <a href="#create">create</a>
 <li><code>directories</code>: <a href="#actionsequence">actionsequence</a>
-<li><code>disable</code>: <a href="#disable">disable</a>, <a href="#actionsequence">actionsequence</a>
-<li><code>domain</code>: <a href="#domain">domain</a>, <a href="#control">control</a>
+<li><code>disable</code>: <a href="#actionsequence">actionsequence</a>, <a href="#disable">disable</a>
+<li><code>domain</code>: <a href="#control">control</a>, <a href="#domain">domain</a>
 <li><code>DryRun</code>: <a href="#dryrun">dryrun</a>
 <li><code>editbinaryfilesize</code>: <a href="#editbinaryfilesize">editbinaryfilesize</a>
 <li><code>editfiles</code>: <a href="#actionsequence">actionsequence</a>
-<li><code>editfilesize</code>: <a href="#editfilesize">editfilesize</a>, <a href="#control">control</a>
+<li><code>editfilesize</code>: <a href="#control">control</a>, <a href="#editfilesize">editfilesize</a>
 <li><code>empty</code>: <a href="#disable">disable</a>
 <li><code>EmptyResolvConf</code>: <a href="#emptyresolvconf">emptyresolvconf</a>
 <li><code>Exclamation</code>: <a href="#exclamation">exclamation</a>
 <li><code>exclude=</code>: <a href="#Syntax">Syntax</a>
 <li><code>FileExtensions</code>: <a href="#fileextension">fileextension</a>
-<li><code>files</code>: <a href="#files">files</a>, <a href="#actionsequence">actionsequence</a>
+<li><code>files</code>: <a href="#actionsequence">actionsequence</a>, <a href="#files">files</a>
 <li><code>filter</code>: <a href="#filters">filters</a>
 <li><code>force=</code>: <a href="#copy">copy</a>
 <li><code>freespace=</code>: <a href="#required">required</a>, <a href="#disks">disks</a>
@@ -9014,13 +9102,13 @@ Up:<a rel=up href="#Top">Top</a>
 <li><code>mode</code>: <a href="#Syntax">Syntax</a>
 <li><code>module:</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>moduledirectory</code>: <a href="#moduledirectory">moduledirectory</a>
-<li><code>mountables</code>: <a href="#mountables">mountables</a>, <a href="#homeservers">homeservers</a>
+<li><code>mountables</code>: <a href="#homeservers">homeservers</a>, <a href="#mountables">mountables</a>
 <li><code>mountall</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>mountinfo</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>mountpattern</code>: <a href="#mountpattern">mountpattern</a>
 <li><code>netconfig</code>: <a href="#actionsequence">actionsequence</a>
-<li><code>netmask</code>: <a href="#netmask">netmask</a>, <a href="#control">control</a>
-<li><code>nfstype</code>: <a href="#nfstype">nfstype</a>, <a href="#control">control</a>
+<li><code>netmask</code>: <a href="#control">control</a>, <a href="#netmask">netmask</a>
+<li><code>nfstype</code>: <a href="#control">control</a>, <a href="#nfstype">nfstype</a>
 <li><code>o=</code>: <a href="#Syntax">Syntax</a>
 <li><code>ones</code>: <a href="#broadcast">broadcast</a>
 <li><code>OutputPrefix</code>: <a href="#Special%20variables">Special variables</a>
@@ -9029,19 +9117,19 @@ Up:<a rel=up href="#Top">Top</a>
 <li><code>pattern</code>: <a href="#tidy">tidy</a>
 <li><code>processes</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>purge=</code>: <a href="#copy">copy</a>
-<li><code>r=</code>: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
+<li><code>r=</code>: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li><code>recurse</code>: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
-<li><code>RepChar</code>: <a href="#repchar">repchar</a>
 <li><code>repchar</code>: <a href="#Special%20variables">Special variables</a>
+<li><code>RepChar</code>: <a href="#repchar">repchar</a>
 <li><code>required</code>: <a href="#actionsequence">actionsequence</a>
-<li><code>resolve</code>: <a href="#resolve">resolve</a>, <a href="#actionsequence">actionsequence</a>
+<li><code>resolve</code>: <a href="#actionsequence">actionsequence</a>, <a href="#resolve">resolve</a>
 <li><code>Restricting access</code>: <a href="#access">access</a>
 <li><code>ReturnsZero()</code>: <a href="#Evaluated%20classes">Evaluated classes</a>
 <li><code>rotate=</code>: <a href="#disable">disable</a>
 <li><code>scheduling</code>: <a href="#schedule">schedule</a>
 <li><code>SecureInput</code>: <a href="#secureinput">secureinput</a>
-<li><code>SensibleCount</code>: <a href="#sensiblecount">sensiblecount</a>
 <li><code>sensiblecount</code>: <a href="#control">control</a>
+<li><code>SensibleCount</code>: <a href="#sensiblecount">sensiblecount</a>
 <li><code>SensibleSize</code>: <a href="#sensiblesize">sensiblesize</a>
 <li><code>sensiblesize</code>: <a href="#control">control</a>
 <li><code>shellcommands</code>: <a href="#actionsequence">actionsequence</a>
@@ -9052,12 +9140,12 @@ Up:<a rel=up href="#Top">Top</a>
 <li><code>split</code>: <a href="#split">split</a>, <a href="#Special%20variables">Special variables</a>
 <li><code>SpoolDirectories</code>: <a href="#spooldirectories">spooldirectories</a>
 <li><code>SuspiciousNames</code>: <a href="#suspiciousnames">suspiciousnames</a>
-<li><code>sysadm</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>, <a href="#sysadm">sysadm</a>, <a href="#control">control</a>
+<li><code>sysadm</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>, <a href="#control">control</a>, <a href="#sysadm">sysadm</a>
 <li><code>tidy</code>: <a href="#tidy">tidy</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>timezone</code>: <a href="#control">control</a>
 <li><code>touch</code>: <a href="#touch">touch</a>
 <li><code>truncate</code>: <a href="#disable">disable</a>
-<li><code>type=</code>: <a href="#Hard%20links">Hard links</a>, <a href="#disable">disable</a>
+<li><code>type=</code>: <a href="#disable">disable</a>, <a href="#Hard%20links">Hard links</a>
 <li><code>underscoreclasses</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>unmount</code>: <a href="#unmount">unmount</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>Wildcards</code>: <a href="#tidy">tidy</a>
@@ -9077,9 +9165,8 @@ Up:<a rel=up href="#Top">Top</a>
 <li>!: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li><code>--dry-run</code> option: <a href="#shellcommands">shellcommands</a>
 <li>-D option: <a href="#addclasses">addclasses</a>
-<li>-l option: <a href="#tidy">tidy</a>
+<li>-l option: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li><code>-L</code> option: <a href="#Single%20links">Single links</a>
-<li>-l option: <a href="#Syntax">Syntax</a>
 <li>-x option: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>.cfdisabled</code>: <a href="#disable">disable</a>
 <li>.cfengine.rm: <a href="#tidy">tidy</a>
@@ -9123,9 +9210,9 @@ Up:<a rel=up href="#Top">Top</a>
 <li><code>cf.main</code>: <a href="#cf.main">cf.main</a>
 <li><code>cf.motd</code>: <a href="#cf.motd">cf.motd</a>
 <li>cf.preconf bootstrap file: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
-<li><code>cf.site</code>: <a href="#cfservd.conf">cfservd.conf</a>, <a href="#cf.site">cf.site</a>
+<li><code>cf.site</code>: <a href="#cf.site">cf.site</a>, <a href="#cfservd.conf">cfservd.conf</a>
 <li><code>cfagent.conf</code>: <a href="#cfagent.conf">cfagent.conf</a>
-<li>CFALLCLASSES: <a href="#shellcommands">shellcommands</a>, <a href="#Special%20variables">Special variables</a>
+<li>CFALLCLASSES: <a href="#Special%20variables">Special variables</a>, <a href="#shellcommands">shellcommands</a>
 <li>cfenvd and key entropy: <a href="#Cfkey">Cfkey</a>
 <li>cfexecd: <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li>cfrc resource file: <a href="#cfrc%20resource%20file">cfrc resource file</a>
@@ -9137,16 +9224,19 @@ Up:<a rel=up href="#Top">Top</a>
 <li>ChecksumDatabase: <a href="#ChecksumDatabase">ChecksumDatabase</a>
 <li><code>ChecksumDatabase</code> variable: <a href="#ChecksumDatabase%20in%20cfservd">ChecksumDatabase in cfservd</a>
 <li>ChecksumUpdates: <a href="#ChecksumUpdates">ChecksumUpdates</a>
+<li>CIDR: <a href="#groups">groups</a>
 <li>Class data and scripts: <a href="#Special%20variables">Special variables</a>
 <li>Class decided by shell command: <a href="#groups">groups</a>
 <li>Class dependencies: <a href="#groups">groups</a>
 <li>Class information, passing to scripts: <a href="#shellcommands">shellcommands</a>
-<li><code>classes</code>: <a href="#groups">groups</a>, <a href="#classes">classes</a>
+<li><code>classes</code>: <a href="#groups">groups</a>
 <li>classes: <a href="#Cfengine%20classes">Cfengine classes</a>
+<li><code>classes</code>: <a href="#classes">classes</a>
 <li>Classes, adding and defining: <a href="#addclasses">addclasses</a>
 <li>Classes, compound: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Classes, defining and undefining: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Classes, inbuilt functions: <a href="#Evaluated%20classes">Evaluated classes</a>
+<li>Classless IP addresses: <a href="#groups">groups</a>
 <li>Comparing file objects: <a href="#Evaluated%20classes">Evaluated classes</a>
 <li>Compound classes: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Contacting specific hosts with cfrun: <a href="#cfrun">cfrun</a>
@@ -9174,14 +9264,14 @@ Up:<a rel=up href="#Top">Top</a>
 <li>DeleteNonUserMail DeleteNonUserFiles: <a href="#deletenonuserfiles">deletenonuserfiles</a>
 <li>Deleting directories: <a href="#tidy">tidy</a>
 <li>Deleting files: <a href="#tidy">tidy</a>
-<li>Deleting stale links: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
+<li>Deleting stale links: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li><code>DenyBadClocks</code> variable: <a href="#DenyBadClocks">DenyBadClocks</a>
 <li><code>DenyConnectionsFrom</code> variable: <a href="#DenyConnectionsFrom">DenyConnectionsFrom</a>
 <li>Dependencies: <a href="#groups">groups</a>
 <li>Device boundaries: <a href="#copy">copy</a>
 <li>Device boundaries and files: <a href="#Recursion">Recursion</a>
 <li>DFS: <a href="#nfstype">nfstype</a>
-<li>DHCP: <a href="#actionsequence">actionsequence</a>
+<li>DHCP: <a href="#DynamicAddresses">DynamicAddresses</a>, <a href="#actionsequence">actionsequence</a>
 <li>Directories, deleting: <a href="#tidy">tidy</a>
 <li>Directories, hidden: <a href="#fileextension">fileextension</a>
 <li>Directories, making: <a href="#directories">directories</a>
@@ -9197,6 +9287,8 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Double quotes: <a href="#editfiles">editfiles</a>
 <li>DryRun: <a href="#dryrun">dryrun</a>
 <li>Dual homed hosts: <a href="#interfaces">interfaces</a>
+<li>Dynamic addresses: <a href="#DynamicAddresses">DynamicAddresses</a>
+<li><code>DynamicAddresses</code> variable: <a href="#DynamicAddresses">DynamicAddresses</a>
 <li>Empty files: <a href="#tidy">tidy</a>
 <li>Emptying old nameservers from <code>/etc/resolv.conf</code>: <a href="#emptyresolvconf">emptyresolvconf</a>
 <li>Environment variable CFALLCLASSES: <a href="#Cfagent%20Runtime%20Options">Cfagent Runtime Options</a>
@@ -9229,7 +9321,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Groups, defining: <a href="#groups">groups</a>
 <li>Hard class name collision: <a href="#Special%20variables">Special variables</a>
 <li>Hardlinks: <a href="#Hard%20links">Hard links</a>
-<li>Hashes of files: <a href="#Syntax">Syntax</a>, <a href="#ChecksumDatabase">ChecksumDatabase</a>
+<li>Hashes of files: <a href="#ChecksumDatabase">ChecksumDatabase</a>, <a href="#Syntax">Syntax</a>
 <li>home directive: <a href="#home%20directive">home directive</a>
 <li>Home path: <a href="#homepattern">homepattern</a>
 <li>Home servers, defining: <a href="#homeservers">homeservers</a>
@@ -9253,8 +9345,8 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Key security of users: <a href="#AllowUsers">AllowUsers</a>
 <li>Key, ACL: <a href="#DFS%20ACLs">DFS ACLs</a>
 <li>Kilobyte, filesize unit: <a href="#tidy">tidy</a>
-<li>Linkchildren: <a href="#Link%20Children">Link Children</a>, <a href="#Files%20linkchildren">Files linkchildren</a>
-<li>Links and binary servers: <a href="#Link%20Children">Link Children</a>, <a href="#Single%20links">Single links</a>
+<li>Linkchildren: <a href="#Files%20linkchildren">Files linkchildren</a>, <a href="#Link%20Children">Link Children</a>
+<li>Links and binary servers: <a href="#Single%20links">Single links</a>, <a href="#Link%20Children">Link Children</a>
 <li>Links, absolute: <a href="#Single%20links">Single links</a>
 <li>Links, deleting stale: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li>Links, forcing for non-existent files: <a href="#Single%20links">Single links</a>
@@ -9279,7 +9371,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Module directory: <a href="#moduledirectory">moduledirectory</a>
 <li>Modules, user defined: <a href="#actionsequence">actionsequence</a>
 <li>Mount paths: <a href="#mountpattern">mountpattern</a>
-<li>Mountable resources, defining: <a href="#mountables">mountables</a>, <a href="#homeservers">homeservers</a>
+<li>Mountable resources, defining: <a href="#homeservers">homeservers</a>, <a href="#mountables">mountables</a>
 <li>Mounted filesystems: <a href="#copy">copy</a>
 <li>Mounting filesystems.: <a href="#miscmounts">miscmounts</a>
 <li>mtime tidies: <a href="#tidy">tidy</a>
@@ -9290,8 +9382,8 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Negating entries from netgroups: <a href="#groups">groups</a>
 <li>Netgroups: <a href="#groups">groups</a>
 <li>Netgroups, negating entries: <a href="#groups">groups</a>
-<li>Netmask: <a href="#netmask">netmask</a>
 <li>netmask: <a href="#netmask">netmask</a>
+<li>Netmask: <a href="#netmask">netmask</a>
 <li>Network address translator: <a href="#Firewalls%20and%20NATs">Firewalls and NATs</a>
 <li>Network Address Translators: <a href="#SkipVerify">SkipVerify</a>
 <li>Network interfaces, several: <a href="#interfaces">interfaces</a>
@@ -9311,6 +9403,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Path to mounted filesystems: <a href="#mountpattern">mountpattern</a>
 <li>Paths, making: <a href="#directories">directories</a>
 <li>Pattern matching in file sweeps: <a href="#Syntax">Syntax</a>
+<li>Percentage disk space: <a href="#required">required</a>
 <li>Permissions, directories: <a href="#Directory%20permissions">Directory permissions</a>
 <li>Port, connecting to different: <a href="#Firewalls%20and%20NATs">Firewalls and NATs</a>
 <li>Preserving file times in copy: <a href="#copy">copy</a>
@@ -9384,7 +9477,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Truncating log files: <a href="#disable">disable</a>
 <li>Trusted hosts: <a href="#copy">copy</a>
 <li><code>TrustKeysFrom</code> variable: <a href="#TrustKeysFrom">TrustKeysFrom</a>
-<li>umask: <a href="#shellcommands">shellcommands</a>, <a href="#processes">processes</a>, <a href="#editfiles">editfiles</a>
+<li>umask: <a href="#editfiles">editfiles</a>, <a href="#processes">processes</a>, <a href="#shellcommands">shellcommands</a>
 <li>underscoreclasses: <a href="#Special%20variables">Special variables</a>
 <li>Unmounting filesystems: <a href="#unmount">unmount</a>
 <li>Variables in import files: <a href="#import">import</a>
@@ -9423,6 +9516,8 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Remote copy problems, can't stat: <a href="#copy">copy</a>
 <li>Too many open files error: <a href="#Too%20many%20open%20files">Too many open files</a>
 </ul>
+<a name="Contents">
+
 
 <h1>Table of Contents</h1>
 <ul>
@@ -9572,6 +9667,7 @@ Up:<a rel=up href="#Top">Top</a>
 <ul>
 <li><a href="#cfservd%20control">control</a>
 <ul>
+<li><a href="#IP%20address%20ranges">IP address ranges</a>
 <li><a href="#AllowConnectionsFrom">AllowConnectionsFrom</a>
 <li><a href="#AllowMultipleConnectionsFrom">AllowMultipleConnectionsFrom</a>
 <li><a href="#AllowUsers">AllowUsers</a>
@@ -9585,6 +9681,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li><a href="#LogAllConnections">LogAllConnections</a>
 <li><a href="#MaxConnections">MaxConnections</a>
 <li><a href="#TrustKeysFrom">TrustKeysFrom</a>
+<li><a href="#DynamicAddresses">DynamicAddresses</a>
 </ul>
 <li><a href="#admit%20grant%20and%20deny">admit, grant and deny</a>
 <ul>
@@ -9618,7 +9715,6 @@ Up:<a rel=up href="#Top">Top</a>
 <li><a href="#Concept%20Index">Concept Index</a>
 <li><a href="#FAQ%20Index">FAQ Index</a>
 </ul>
-
 
 </body></html>
 

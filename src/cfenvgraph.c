@@ -31,10 +31,6 @@
 /*                                                                           */
 /* Author: Mark                                      >                       */
 /*                                                                           */
-/* Revision: $Id$                                                            */
-/*                                                                           */
-/* Description:                                                              */
-/*                                                                           */
 /*****************************************************************************/
 
 #include "../pub/getopt.h"
@@ -51,6 +47,10 @@
 int main ARGLIST((int argc, char **argv));
 void CheckOpts ARGLIST((int argc, char **argv));
 void Syntax ARGLIST((void));
+void ReadAverages ARGLIST((void));
+void SummarizeAverages ARGLIST((void));
+void WriteGraphFiles ARGLIST((void));
+void WriteHistograms ARGLIST((void));
 
 /*****************************************************************************/
 
@@ -77,6 +77,7 @@ int ERRORBARS = true;
 int NOSCALING = true;
 char FILENAME[bufsize];
 int HISTOGRAM[ATTR*2+4][7][GRAINS];
+int SMOOTHHISTOGRAM[ATTR*2+4][7][GRAINS];
 
 /*****************************************************************************/
 
@@ -95,6 +96,16 @@ char *ECGSOCKS[ATTR][2] =
    {".23","telnet"},
    };
 
+int errno,i,j,k,count=0, its;
+time_t NOW; 
+DBT key,value;
+DB *DBP;
+static struct Averages ENTRY,MAX,DET;
+char TIMEKEY[64],FNAME[256],*sp;
+double AGE;
+FILE *FPAV=NULL,*FPVAR=NULL,*FPROOT=NULL,*FPUSER=NULL,*FPOTHER=NULL;
+FILE *FPDISK=NULL,*FPIN[ATTR],*FPOUT[ATTR],*fp;
+
 /*****************************************************************************/
 
 int main (argc,argv)
@@ -102,173 +113,185 @@ int main (argc,argv)
 int argc;
 char **argv;
 
-{ int errno,i,j,k,count=0, its;
-  time_t now; 
-  DBT key,value;
-  DB *dbp;
-  static struct Averages entry,max,det;
-  char timekey[64],filename[256],*sp;
-  double age;
-  FILE *fpav=NULL,*fpvar=NULL,*fproot=NULL,*fpuser=NULL,*fpother=NULL;
-  FILE *fpdisk=NULL,*fpin[ATTR],*fpout[ATTR],*fp;
-
+{
 CheckOpts(argc,argv);
+ReadAverages(); 
+SummarizeAverages();
+WriteGraphFiles();
+WriteHistograms();
+return 0;
+}
 
+/*****************************************************************************/
+/* Level 1                                                                   */
+/*****************************************************************************/
+
+void ReadAverages()
+
+{
 printf("\nLooking for database %s\n",FILENAME);
-printf("\nFinding maximum values...\n\n");
+printf("\nFinding MAXimum values...\n\n");
 printf("N.B. socket values are numbers in CLOSE_WAIT. See documentation.\n"); 
   
-if ((errno = db_create(&dbp,NULL,0)) != 0)
+if ((errno = db_create(&DBP,NULL,0)) != 0)
    {
    printf("Couldn't create average database %s\n",FILENAME);
-   return 1;
+   exit(1);
    }
  
-if ((errno = dbp->open(dbp,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
+if ((errno = DBP->open(DBP,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
    {
    printf("Couldn't open average database %s\n",FILENAME);
-   dbp->err(dbp,errno,NULL);
-   return 1;
+   DBP->err(DBP,errno,NULL);
+   exit(1);
    }
 
 bzero(&key,sizeof(key));       
 bzero(&value,sizeof(value));
 
-max.expect_number_of_users = 0.1;
-max.expect_rootprocs = 0.1;
-max.expect_otherprocs = 0.1;
-max.expect_diskfree = 0.1;
+MAX.expect_number_of_users = 0.1;
+MAX.expect_rootprocs = 0.1;
+MAX.expect_otherprocs = 0.1;
+MAX.expect_diskfree = 0.1;
 
-max.var_number_of_users = 0.1;
-max.var_rootprocs = 0.1;
-max.var_otherprocs = 0.1;
-max.var_diskfree = 0.1;
+MAX.var_number_of_users = 0.1;
+MAX.var_rootprocs = 0.1;
+MAX.var_otherprocs = 0.1;
+MAX.var_diskfree = 0.1;
 
 for (i = 0; i < ATTR; i++)
    {
-   max.var_incoming[i] = 0.1;
-   max.var_outgoing[i] = 0.1;
-   max.expect_incoming[i] = 0.1;
-   max.expect_outgoing[i] = 0.1;
+   MAX.var_incoming[i] = 0.1;
+   MAX.var_outgoing[i] = 0.1;
+   MAX.expect_incoming[i] = 0.1;
+   MAX.expect_outgoing[i] = 0.1;
    }
 
-for (now = cf_monday_morning; now < cf_monday_morning+CFWEEK; now += MEASURE_INTERVAL)
+for (NOW = cf_monday_morning; NOW < cf_monday_morning+CFWEEK; NOW += MEASURE_INTERVAL)
    {
    bzero(&key,sizeof(key));       
    bzero(&value,sizeof(value));
-   bzero(&entry,sizeof(entry));
+   bzero(&ENTRY,sizeof(ENTRY));
 
-   strcpy(timekey,GenTimeKey(now));
+   strcpy(TIMEKEY,GenTimeKey(NOW));
 
-   key.data = timekey;
-   key.size = strlen(timekey)+1;
+   key.data = TIMEKEY;
+   key.size = strlen(TIMEKEY)+1;
    
-   if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
+   if ((errno = DBP->get(DBP,NULL,&key,&value,0)) != 0)
       {
       if (errno != DB_NOTFOUND)
 	 {
-	 dbp->err(dbp,errno,NULL);
-	 return 1;
+	 DBP->err(DBP,errno,NULL);
+	 exit(1);
 	 }
       }
    
    
    if (value.data != NULL)
       {
-      bcopy(value.data,&entry,sizeof(entry));
+      bcopy(value.data,&ENTRY,sizeof(ENTRY));
       
-      if (fabs(entry.expect_number_of_users) > max.expect_number_of_users)
+      if (fabs(ENTRY.expect_number_of_users) > MAX.expect_number_of_users)
 	 {
-	 max.expect_number_of_users = fabs(entry.expect_number_of_users);
+	 MAX.expect_number_of_users = fabs(ENTRY.expect_number_of_users);
 	 }
-      if (fabs(entry.expect_number_of_users) > max.expect_number_of_users)
+      if (fabs(ENTRY.expect_number_of_users) > MAX.expect_number_of_users)
 	 {
-	 max.expect_number_of_users = fabs(entry.expect_number_of_users);
+	 MAX.expect_number_of_users = fabs(ENTRY.expect_number_of_users);
 	 }      
-      if (fabs(entry.expect_rootprocs) > max.expect_rootprocs)
+      if (fabs(ENTRY.expect_rootprocs) > MAX.expect_rootprocs)
 	 {
-	 max.expect_rootprocs = fabs(entry.expect_rootprocs);
+	 MAX.expect_rootprocs = fabs(ENTRY.expect_rootprocs);
 	 }
-      if (fabs(entry.expect_otherprocs) >  max.expect_otherprocs)
+      if (fabs(ENTRY.expect_otherprocs) >  MAX.expect_otherprocs)
 	 {
-	 max.expect_otherprocs = fabs(entry.expect_otherprocs);
+	 MAX.expect_otherprocs = fabs(ENTRY.expect_otherprocs);
 	 }      
-      if (fabs(entry.expect_diskfree) > max.expect_diskfree)
+      if (fabs(ENTRY.expect_diskfree) > MAX.expect_diskfree)
 	 {
-	 max.expect_diskfree = fabs(entry.expect_diskfree);
+	 MAX.expect_diskfree = fabs(ENTRY.expect_diskfree);
 	 }
       
       for (i = 0; i < ATTR; i++)
 	 {
-	 if (fabs(entry.expect_incoming[i]) > max.expect_incoming[i])
+	 if (fabs(ENTRY.expect_incoming[i]) > MAX.expect_incoming[i])
 	    {
-	    max.expect_incoming[i] = fabs(entry.expect_incoming[i]);
+	    MAX.expect_incoming[i] = fabs(ENTRY.expect_incoming[i]);
 	    }
-	 if (fabs(entry.expect_outgoing[i]) > max.expect_outgoing[i])
+	 if (fabs(ENTRY.expect_outgoing[i]) > MAX.expect_outgoing[i])
 	    {
-	    max.expect_outgoing[i] = fabs(entry.expect_outgoing[i]);
+	    MAX.expect_outgoing[i] = fabs(ENTRY.expect_outgoing[i]);
 	    }
 	 }
 
-      if (fabs(entry.var_number_of_users) > max.var_number_of_users)
+      if (fabs(ENTRY.var_number_of_users) > MAX.var_number_of_users)
 	 {
-	 max.var_number_of_users = fabs(entry.var_number_of_users);
+	 MAX.var_number_of_users = fabs(ENTRY.var_number_of_users);
 	 }
-      if (fabs(entry.var_number_of_users) > max.var_number_of_users)
+      if (fabs(ENTRY.var_number_of_users) > MAX.var_number_of_users)
 	 {
-	 max.var_number_of_users = fabs(entry.var_number_of_users);
+	 MAX.var_number_of_users = fabs(ENTRY.var_number_of_users);
 	 }      
-      if (fabs(entry.var_rootprocs) > max.var_rootprocs)
+      if (fabs(ENTRY.var_rootprocs) > MAX.var_rootprocs)
 	 {
-	 max.var_rootprocs = fabs(entry.var_rootprocs);
+	 MAX.var_rootprocs = fabs(ENTRY.var_rootprocs);
 	 }
-      if (fabs(entry.var_otherprocs) >  max.var_otherprocs)
+      if (fabs(ENTRY.var_otherprocs) >  MAX.var_otherprocs)
 	 {
-	 max.var_otherprocs = fabs(entry.var_otherprocs);
+	 MAX.var_otherprocs = fabs(ENTRY.var_otherprocs);
 	 }      
-      if (fabs(entry.var_diskfree) > max.var_diskfree)
+      if (fabs(ENTRY.var_diskfree) > MAX.var_diskfree)
 	 {
-	 max.var_diskfree = fabs(entry.var_diskfree);
+	 MAX.var_diskfree = fabs(ENTRY.var_diskfree);
 	 }
       
       for (i = 0; i < ATTR; i++)
 	 {
-	 if (fabs(entry.var_incoming[i]) > max.var_incoming[i])
+	 if (fabs(ENTRY.var_incoming[i]) > MAX.var_incoming[i])
 	    {
-	    max.var_incoming[i] = fabs(entry.var_incoming[i]);
+	    MAX.var_incoming[i] = fabs(ENTRY.var_incoming[i]);
 	    }
-	 if (fabs(entry.var_outgoing[i]) > max.var_outgoing[i])
+	 if (fabs(ENTRY.var_outgoing[i]) > MAX.var_outgoing[i])
 	    {
-	    max.var_outgoing[i] = fabs(entry.var_outgoing[i]);
+	    MAX.var_outgoing[i] = fabs(ENTRY.var_outgoing[i]);
 	    }
 	 }
 
       }
    }
 
-dbp->close(dbp,0);
+DBP->close(DBP,0);
+}
+
+/*****************************************************************************/
+
+void SummarizeAverages()
+
+{
+ 
 printf(" x  yN (Variable content)\n---------------------------------------------------------\n");
-printf(" 1. Max <number of users> = %10f +/- %10f\n",max.expect_number_of_users,sqrt(max.var_number_of_users));
-printf(" 2. Max <rootprocs>       = %10f +/- %10f\n",max.expect_rootprocs,sqrt(max.var_rootprocs));
-printf(" 3. Max <otherprocs>      = %10f +/- %10f\n",max.expect_otherprocs,sqrt(max.var_otherprocs));
-printf(" 4. Max <diskfree>        = %10f +/- %10f\n",max.expect_diskfree,sqrt(max.var_diskfree));
+printf(" 1. MAX <number of users> = %10f +/- %10f\n",MAX.expect_number_of_users,sqrt(MAX.var_number_of_users));
+printf(" 2. MAX <rootprocs>       = %10f +/- %10f\n",MAX.expect_rootprocs,sqrt(MAX.var_rootprocs));
+printf(" 3. MAX <otherprocs>      = %10f +/- %10f\n",MAX.expect_otherprocs,sqrt(MAX.var_otherprocs));
+printf(" 4. MAX <diskfree>        = %10f +/- %10f\n",MAX.expect_diskfree,sqrt(MAX.var_diskfree));
 
  for (i = 0; i < ATTR*2; i+=2)
    {
-   printf("%2d. Max <%-10s-in>   = %10f +/- %10f\n",5+i,ECGSOCKS[i/2][1],max.expect_incoming[i/2],sqrt(max.var_incoming[i/2]));
-   printf("%2d. Max <%-10s-out>  = %10f +/- %10f\n",6+i,ECGSOCKS[i/2][1],max.expect_outgoing[i/2],sqrt(max.var_outgoing[i/2]));
+   printf("%2d. MAX <%-10s-in>   = %10f +/- %10f\n",5+i,ECGSOCKS[i/2][1],MAX.expect_incoming[i/2],sqrt(MAX.var_incoming[i/2]));
+   printf("%2d. MAX <%-10s-out>  = %10f +/- %10f\n",6+i,ECGSOCKS[i/2][1],MAX.expect_outgoing[i/2],sqrt(MAX.var_outgoing[i/2]));
    }
 
-if ((errno = db_create(&dbp,NULL,0)) != 0)
+if ((errno = db_create(&DBP,NULL,0)) != 0)
    {
    printf("Couldn't open average database %s\n",FILENAME);
-   return 1;
+   exit(1);
    }
  
-if ((errno = dbp->open(dbp,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
+if ((errno = DBP->open(DBP,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
    {
    printf("Couldn't open average database %s\n",FILENAME);
-   return 1;
+   exit(1);
    }
 
 bzero(&key,sizeof(key));       
@@ -277,31 +300,38 @@ bzero(&value,sizeof(value));
 key.data = "DATABASE_AGE";
 key.size = strlen("DATABASE_AGE")+1;
 
-if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
+if ((errno = DBP->get(DBP,NULL,&key,&value,0)) != 0)
    {
    if (errno != DB_NOTFOUND)
       {
-      dbp->err(dbp,errno,NULL);
-      return 1;
+      DBP->err(DBP,errno,NULL);
+      exit(1);
       }
    }
  
 if (value.data != NULL)
    {
-   age = *(double *)(value.data);
-   printf("\n\nDATABASE_AGE %.1f (weeks)\n\n",age/CFWEEK*MEASURE_INTERVAL);
+   AGE = *(double *)(value.data);
+   printf("\n\nDATABASE_AGE %.1f (weeks)\n\n",AGE/CFWEEK*MEASURE_INTERVAL);
    }
 
+}
+
+/*****************************************************************************/
+
+void WriteGraphFiles()
+
+{
 if (TIMESTAMPS)
    {
-   if ((now = time((time_t *)NULL)) == -1)
+   if ((NOW = time((time_t *)NULL)) == -1)
       {
       printf("Couldn't read system clock\n");
       }
      
-   sprintf(filename,"cfenvgraphs-%s",ctime(&now));
+   sprintf(FNAME,"cfenvgraphs-%s",ctime(&NOW));
 
-   for (sp = filename; *sp != '\0'; sp++)
+   for (sp = FNAME; *sp != '\0'; sp++)
       {
       if (isspace((int)*sp))
          {
@@ -311,39 +341,39 @@ if (TIMESTAMPS)
    }
  else
    {
-   sprintf(filename,"cfenvgraphs-snapshot");
+   sprintf(FNAME,"cfenvgraphs-snapshot");
    }
 
-printf("Creating sub-directory %s\n",filename);
+printf("Creating sub-directory %s\n",FNAME);
 
-if (mkdir(filename,0755) == -1)
+if (mkdir(FNAME,0755) == -1)
    {
    perror("mkdir");
    printf("Aborting\n");
    exit(0);
    }
  
-if (chdir(filename))
+if (chdir(FNAME))
    {
    perror("chdir");
    exit(0);
    }
 
 
-printf("Writing data to sub-directory %s: \n   x,y1,y2,y3...\n ",filename);
+printf("Writing data to sub-directory %s: \n   x,y1,y2,y3...\n ",FNAME);
 
 
-sprintf(filename,"cfenv-average");
+sprintf(FNAME,"cfenv-average");
 
-if ((fpav = fopen(filename,"w")) == NULL)
+if ((FPAV = fopen(FNAME,"w")) == NULL)
    {
    perror("fopen");
    exit(1);
    }
 
-sprintf(filename,"cfenv-stddev"); 
+sprintf(FNAME,"cfenv-stddev"); 
 
-if ((fpvar = fopen(filename,"w")) == NULL)
+if ((FPVAR = fopen(FNAME,"w")) == NULL)
    {
    perror("fopen");
    exit(1);
@@ -354,26 +384,26 @@ if ((fpvar = fopen(filename,"w")) == NULL)
 
 if (SEPARATE)
    {
-   sprintf(filename,"users.cfenv"); 
-   if ((fpuser = fopen(filename,"w")) == NULL)
+   sprintf(FNAME,"users.cfenv"); 
+   if ((FPUSER = fopen(FNAME,"w")) == NULL)
       {
       perror("fopen");
       exit(1);
       }
-   sprintf(filename,"rootprocs.cfenv"); 
-   if ((fproot = fopen(filename,"w")) == NULL)
+   sprintf(FNAME,"rootprocs.cfenv"); 
+   if ((FPROOT = fopen(FNAME,"w")) == NULL)
       {
       perror("fopen");
       exit(1);
       }
-   sprintf(filename,"otherprocs.cfenv"); 
-   if ((fpother = fopen(filename,"w")) == NULL)
+   sprintf(FNAME,"otherprocs.cfenv"); 
+   if ((FPOTHER = fopen(FNAME,"w")) == NULL)
       {
       perror("fopen");
       exit(1);
       }
-   sprintf(filename,"freedisk.cfenv"); 
-   if ((fpdisk = fopen(filename,"w")) == NULL)
+   sprintf(FNAME,"freedisk.cfenv"); 
+   if ((FPDISK = fopen(FNAME,"w")) == NULL)
       {
       perror("fopen");
       exit(1);
@@ -381,15 +411,15 @@ if (SEPARATE)
 
    for (i = 0; i < ATTR; i++)
       {
-      sprintf(filename,"%s-in.cfenv",ECGSOCKS[i][1]); 
-      if ((fpin[i] = fopen(filename,"w")) == NULL)
+      sprintf(FNAME,"%s-in.cfenv",ECGSOCKS[i][1]); 
+      if ((FPIN[i] = fopen(FNAME,"w")) == NULL)
          {
          perror("fopen");
          exit(1);
          }
 
-      sprintf(filename,"%s-out.cfenv",ECGSOCKS[i][1]); 
-      if ((fpout[i] = fopen(filename,"w")) == NULL)
+      sprintf(FNAME,"%s-out.cfenv",ECGSOCKS[i][1]); 
+      if ((FPOUT[i] = fopen(FNAME,"w")) == NULL)
          {
          perror("fopen");
          exit(1);
@@ -399,29 +429,29 @@ if (SEPARATE)
 
 if (TITLES)
    {
-   fprintf(fpav,"# Column 1: Users\n");
-   fprintf(fpav,"# Column 2: Root Processes\n");
-   fprintf(fpav,"# Column 3: Non-root Processes 3\n");
-   fprintf(fpav,"# Column 4: Percent free disk\n");
+   fprintf(FPAV,"# Column 1: Users\n");
+   fprintf(FPAV,"# Column 2: Root Processes\n");
+   fprintf(FPAV,"# Column 3: Non-root Processes 3\n");
+   fprintf(FPAV,"# Column 4: Percent free disk\n");
      
    for (i = 0; i < ATTR*2; i+=2)
       {
-      fprintf(fpav,"# Column %d: Incoming %s sockets\n",5+i,ECGSOCKS[i/2][1]);
-      fprintf(fpav,"# Column %d: Outgoing %s sockets\n",6+i,ECGSOCKS[i/2][1]);
+      fprintf(FPAV,"# Column %d: Incoming %s sockets\n",5+i,ECGSOCKS[i/2][1]);
+      fprintf(FPAV,"# Column %d: Outgoing %s sockets\n",6+i,ECGSOCKS[i/2][1]);
       }
-   fprintf(fpav,"##############################################\n");
+   fprintf(FPAV,"##############################################\n");
      
-   fprintf(fpvar,"# Column 1: Users\n");
-   fprintf(fpvar,"# Column 2: Root Processes\n");
-   fprintf(fpvar,"# Column 3: Non-root Processes 3\n");
-   fprintf(fpvar,"# Column 4: Percent free disk\n");
+   fprintf(FPVAR,"# Column 1: Users\n");
+   fprintf(FPVAR,"# Column 2: Root Processes\n");
+   fprintf(FPVAR,"# Column 3: Non-root Processes 3\n");
+   fprintf(FPVAR,"# Column 4: Percent free disk\n");
      
    for (i = 0; i < ATTR*2; i+=2)
       {
-      fprintf(fpvar,"# Column %d: Incoming %s sockets\n",5+i,ECGSOCKS[i/2][1]);
-      fprintf(fpvar,"# Column %d: Outgoing %s sockets\n",6+i,ECGSOCKS[i/2][1]);
+      fprintf(FPVAR,"# Column %d: Incoming %s sockets\n",5+i,ECGSOCKS[i/2][1]);
+      fprintf(FPVAR,"# Column %d: Outgoing %s sockets\n",6+i,ECGSOCKS[i/2][1]);
       }
-   fprintf(fpvar,"##############################################\n");
+   fprintf(FPVAR,"##############################################\n");
    }
 
 if (HIRES)
@@ -433,137 +463,144 @@ else
    its = 12;
    }
 
-now = cf_monday_morning;
-bzero(&entry,sizeof(entry)); 
+NOW = cf_monday_morning;
+bzero(&ENTRY,sizeof(ENTRY)); 
  
-while (now < cf_monday_morning+CFWEEK)
+while (NOW < cf_monday_morning+CFWEEK)
    {
    for (j = 0; j < its; j++)
       {
       bzero(&key,sizeof(key));       
       bzero(&value,sizeof(value));
       
-      strcpy(timekey,GenTimeKey(now));
-      key.data = timekey;
-      key.size = strlen(timekey)+1;
+      strcpy(TIMEKEY,GenTimeKey(NOW));
+      key.data = TIMEKEY;
+      key.size = strlen(TIMEKEY)+1;
       
-      if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
+      if ((errno = DBP->get(DBP,NULL,&key,&value,0)) != 0)
 	 {
 	 if (errno != DB_NOTFOUND)
 	    {
-	    dbp->err(dbp,errno,NULL);
-	    return 1;
+	    DBP->err(DBP,errno,NULL);
+	    exit(1);
 	    }
 	 }
       
       if (value.data != NULL)
 	 {
-	 bcopy(value.data,&det,sizeof(det));
+	 bcopy(value.data,&DET,sizeof(DET));
 	 
-	 entry.expect_number_of_users += det.expect_number_of_users/(double)its;
-	 entry.expect_rootprocs += det.expect_rootprocs/(double)its;
-	 entry.expect_otherprocs += det.expect_otherprocs/(double)its;
-	 entry.expect_diskfree += det.expect_diskfree/(double)its;
-	 entry.var_number_of_users += det.var_number_of_users/(double)its;
-	 entry.var_rootprocs += det.var_rootprocs/(double)its;
-	 entry.var_otherprocs += det.var_otherprocs/(double)its;
-	 entry.var_diskfree += det.var_diskfree/(double)its;
+	 ENTRY.expect_number_of_users += DET.expect_number_of_users/(double)its;
+	 ENTRY.expect_rootprocs += DET.expect_rootprocs/(double)its;
+	 ENTRY.expect_otherprocs += DET.expect_otherprocs/(double)its;
+	 ENTRY.expect_diskfree += DET.expect_diskfree/(double)its;
+	 ENTRY.var_number_of_users += DET.var_number_of_users/(double)its;
+	 ENTRY.var_rootprocs += DET.var_rootprocs/(double)its;
+	 ENTRY.var_otherprocs += DET.var_otherprocs/(double)its;
+	 ENTRY.var_diskfree += DET.var_diskfree/(double)its;
 
 	 for (i = 0; i < ATTR; i++)
 	    {
-	    entry.expect_incoming[i] += det.expect_incoming[i]/(double)its;
-	    entry.expect_outgoing[i] += det.expect_outgoing[i]/(double)its;
-	    entry.var_incoming[i] += det.var_incoming[i]/(double)its;
-	    entry.var_outgoing[i] += det.var_outgoing[i]/(double)its;
+	    ENTRY.expect_incoming[i] += DET.expect_incoming[i]/(double)its;
+	    ENTRY.expect_outgoing[i] += DET.expect_outgoing[i]/(double)its;
+	    ENTRY.var_incoming[i] += DET.var_incoming[i]/(double)its;
+	    ENTRY.var_outgoing[i] += DET.var_outgoing[i]/(double)its;
 	    }
 
 
 	 if (NOSCALING)
 	    {
-	    max.expect_number_of_users = 1;
-	    max.expect_rootprocs = 1;
-	    max.expect_otherprocs = 1;
-	    max.expect_diskfree = 1;
+	    MAX.expect_number_of_users = 1;
+	    MAX.expect_rootprocs = 1;
+	    MAX.expect_otherprocs = 1;
+	    MAX.expect_diskfree = 1;
 
             for (i = 1; i < ATTR; i++)
 	      {
-	      max.expect_incoming[i] = 1;
-	      max.expect_outgoing[i] = 1;
+	      MAX.expect_incoming[i] = 1;
+	      MAX.expect_outgoing[i] = 1;
               }
             }
 	 
 	 if (j == its-1)
 	    {
-	    fprintf(fpav,"%d %f %f %f %f ",count++,
-		 entry.expect_number_of_users/max.expect_number_of_users,
-		 entry.expect_rootprocs/max.expect_rootprocs,
-		 entry.expect_otherprocs/max.expect_otherprocs,
-		 entry.expect_diskfree/max.expect_diskfree);
+	    fprintf(FPAV,"%d %f %f %f %f ",count++,
+		 ENTRY.expect_number_of_users/MAX.expect_number_of_users,
+		 ENTRY.expect_rootprocs/MAX.expect_rootprocs,
+		 ENTRY.expect_otherprocs/MAX.expect_otherprocs,
+		 ENTRY.expect_diskfree/MAX.expect_diskfree);
 	 
 	    for (i = 0; i < ATTR; i++)
 	       {
-	       fprintf(fpav,"%f %f "
-		       ,entry.expect_incoming[i]/max.expect_incoming[i]
-		       ,entry.expect_outgoing[i]/max.expect_outgoing[i]);
+	       fprintf(FPAV,"%f %f "
+		       ,ENTRY.expect_incoming[i]/MAX.expect_incoming[i]
+		       ,ENTRY.expect_outgoing[i]/MAX.expect_outgoing[i]);
 	       }
 	    
-	    fprintf(fpav,"\n");
+	    fprintf(FPAV,"\n");
 	    
-	    fprintf(fpvar,"%d %f %f %f %f ",count,
-		    sqrt(entry.var_number_of_users)/max.expect_number_of_users,
-		    sqrt(entry.var_rootprocs)/max.expect_rootprocs,
-		    sqrt(entry.var_otherprocs)/max.expect_otherprocs,
-		    sqrt(entry.var_diskfree)/max.expect_diskfree);
+	    fprintf(FPVAR,"%d %f %f %f %f ",count,
+		    sqrt(ENTRY.var_number_of_users)/MAX.expect_number_of_users,
+		    sqrt(ENTRY.var_rootprocs)/MAX.expect_rootprocs,
+		    sqrt(ENTRY.var_otherprocs)/MAX.expect_otherprocs,
+		    sqrt(ENTRY.var_diskfree)/MAX.expect_diskfree);
 	    
 	    for (i = 0; i < ATTR; i++)
 	       {
-	       fprintf(fpvar,"%f %f ",
-		       sqrt(entry.var_incoming[i])/max.expect_incoming[i],
-		       sqrt(entry.var_outgoing[i])/max.expect_outgoing[i]);
+	       fprintf(FPVAR,"%f %f ",
+		       sqrt(ENTRY.var_incoming[i])/MAX.expect_incoming[i],
+		       sqrt(ENTRY.var_outgoing[i])/MAX.expect_outgoing[i]);
 	       }
 	    
-	    fprintf(fpvar,"\n");
+	    fprintf(FPVAR,"\n");
 
             if (SEPARATE)
 	       {
-               fprintf(fpuser,"%d %f %f\n",count,entry.expect_number_of_users/max.expect_number_of_users,sqrt(entry.var_number_of_users)/max.expect_number_of_users);
-               fprintf(fproot,"%d %f %f\n",count,entry.expect_rootprocs/max.expect_rootprocs,sqrt(entry.var_rootprocs)/max.expect_rootprocs);
-               fprintf(fpother,"%d %f %f\n",count,entry.expect_otherprocs/max.expect_otherprocs,sqrt(entry.var_otherprocs)/max.expect_otherprocs);
-               fprintf(fpdisk,"%d %f %f\n",count,entry.expect_diskfree/max.expect_diskfree,sqrt(entry.var_diskfree)/max.expect_diskfree);
+               fprintf(FPUSER,"%d %f %f\n",count,ENTRY.expect_number_of_users/MAX.expect_number_of_users,sqrt(ENTRY.var_number_of_users)/MAX.expect_number_of_users);
+               fprintf(FPROOT,"%d %f %f\n",count,ENTRY.expect_rootprocs/MAX.expect_rootprocs,sqrt(ENTRY.var_rootprocs)/MAX.expect_rootprocs);
+               fprintf(FPOTHER,"%d %f %f\n",count,ENTRY.expect_otherprocs/MAX.expect_otherprocs,sqrt(ENTRY.var_otherprocs)/MAX.expect_otherprocs);
+               fprintf(FPDISK,"%d %f %f\n",count,ENTRY.expect_diskfree/MAX.expect_diskfree,sqrt(ENTRY.var_diskfree)/MAX.expect_diskfree);
 
                for (i = 0; i < ATTR; i++)
 		  {
-                  fprintf(fpin[i],"%d %f %f\n",count,entry.expect_incoming[i]/max.expect_incoming[i],sqrt(entry.var_incoming[i])/max.expect_incoming[i]);
-                  fprintf(fpout[i],"%d %f %f\n",count,entry.expect_outgoing[i]/max.expect_outgoing[i],sqrt(entry.var_outgoing[i])/max.expect_outgoing[i]);
+                  fprintf(FPIN[i],"%d %f %f\n",count,ENTRY.expect_incoming[i]/MAX.expect_incoming[i],sqrt(ENTRY.var_incoming[i])/MAX.expect_incoming[i]);
+                  fprintf(FPOUT[i],"%d %f %f\n",count,ENTRY.expect_outgoing[i]/MAX.expect_outgoing[i],sqrt(ENTRY.var_outgoing[i])/MAX.expect_outgoing[i]);
 		  }
 	       }
  
-	    bzero(&entry,sizeof(entry)); 
+	    bzero(&ENTRY,sizeof(ENTRY)); 
 	    }
 	 }
       
-      now += MEASURE_INTERVAL;
+      NOW += MEASURE_INTERVAL;
       }
    }
  
-dbp->close(dbp,0);
+DBP->close(DBP,0);
 
-fclose(fpav);
-fclose(fpvar); 
+fclose(FPAV);
+fclose(FPVAR); 
 
 if (SEPARATE)
    {
-   fclose(fproot);
-   fclose(fpother);
-   fclose(fpuser);
-   fclose(fpdisk);
+   fclose(FPROOT);
+   fclose(FPOTHER);
+   fclose(FPUSER);
+   fclose(FPDISK);
    for (i = 0; i < ATTR; i++)
       {
-      fclose(fpin[i]);
-      fclose(fpout[i]);
+      fclose(FPIN[i]);
+      fclose(FPOUT[i]);
       }
    }
 
+}
+
+/*****************************************************************************/
+
+void WriteHistograms()
+
+{
 /* Finally, look at the histograms */
 
 for (i = 0; i < 7; i++)
@@ -582,9 +619,9 @@ if (SEPARATE)
    int position,day;
    int weekly[ATTR*2+4][GRAINS];
    
-   snprintf(filename,bufsize,"%s/histograms",WORKDIR);
+   snprintf(FNAME,bufsize,"%s/histograms",WORKDIR);
    
-   if ((fp = fopen(filename,"r")) == NULL)
+   if ((fp = fopen(FNAME,"r")) == NULL)
       {
       printf("Unable to load histogram data\n");
       exit(1);
@@ -607,26 +644,58 @@ if (SEPARATE)
    
    fclose(fp);
 
-   sprintf(filename,"users.distr"); 
-   if ((fpuser = fopen(filename,"w")) == NULL)
+   if (!HIRES)
+      {
+      /* Smooth daily and weekly histograms */
+      for (k = 1; k < GRAINS-1; k++)
+	 {
+	 int a;
+	 
+	 for (j = 0; j < ATTR*2+4; j++)
+	    {
+	    for (i = 0; i < 7; i++)	 
+	       {
+	       SMOOTHHISTOGRAM[j][i][k] = ((double)(HISTOGRAM[j][i][k-1] + HISTOGRAM[j][i][k] + HISTOGRAM[j][i][k+1]))/3.0;
+	       }
+	    }
+	 }
+      }
+   else
+      {
+      for (k = 1; k < GRAINS-1; k++)
+	 {
+	 int a;
+	 
+	 for (j = 0; j < ATTR*2+4; j++)
+	    {
+	    for (i = 0; i < 7; i++)	 
+	       {
+	       SMOOTHHISTOGRAM[j][i][k] = (double) HISTOGRAM[j][i][k];
+	       }
+	    }
+	 }
+      }
+
+   sprintf(FNAME,"users.distr"); 
+   if ((FPUSER = fopen(FNAME,"w")) == NULL)
       {
       perror("fopen");
       exit(1);
       }
-   sprintf(filename,"rootprocs.distr"); 
-   if ((fproot = fopen(filename,"w")) == NULL)
+   sprintf(FNAME,"rootprocs.distr"); 
+   if ((FPROOT = fopen(FNAME,"w")) == NULL)
       {
       perror("fopen");
       exit(1);
       }
-   sprintf(filename,"otherprocs.distr"); 
-   if ((fpother = fopen(filename,"w")) == NULL)
+   sprintf(FNAME,"otherprocs.distr"); 
+   if ((FPOTHER = fopen(FNAME,"w")) == NULL)
       {
       perror("fopen");
       exit(1);
       }
-   sprintf(filename,"freedisk.distr"); 
-   if ((fpdisk = fopen(filename,"w")) == NULL)
+   sprintf(FNAME,"freedisk.distr"); 
+   if ((FPDISK = fopen(FNAME,"w")) == NULL)
       {
       perror("fopen");
       exit(1);
@@ -634,15 +703,15 @@ if (SEPARATE)
 
    for (i = 0; i < ATTR; i++)
       {
-      sprintf(filename,"%s-in.distr",ECGSOCKS[i][1]); 
-      if ((fpin[i] = fopen(filename,"w")) == NULL)
+      sprintf(FNAME,"%s-in.distr",ECGSOCKS[i][1]); 
+      if ((FPIN[i] = fopen(FNAME,"w")) == NULL)
          {
          perror("fopen");
          exit(1);
          }
 
-      sprintf(filename,"%s-out.distr",ECGSOCKS[i][1]); 
-      if ((fpout[i] = fopen(filename,"w")) == NULL)
+      sprintf(FNAME,"%s-out.distr",ECGSOCKS[i][1]); 
+      if ((FPOUT[i] = fopen(FNAME,"w")) == NULL)
          {
          perror("fopen");
          exit(1);
@@ -658,35 +727,33 @@ if (SEPARATE)
 	 {
 	 for (i = 0; i < 7; i++)	 
 	    {
-	    weekly[j][k] += HISTOGRAM[j][i][k];
+	    weekly[j][k] += (int) (SMOOTHHISTOGRAM[j][i][k]+0.5);
 	    }
 	 }
 
-      fprintf(fpuser,"%d %d\n",k,weekly[0][k]);
-      fprintf(fproot,"%d %d\n",k,weekly[1][k]);
-      fprintf(fpother,"%d %d\n",k,weekly[2][k]);
-      fprintf(fpdisk,"%d %d\n",k,weekly[3][k]);
+      fprintf(FPUSER,"%d %d\n",k,weekly[0][k]);
+      fprintf(FPROOT,"%d %d\n",k,weekly[1][k]);
+      fprintf(FPOTHER,"%d %d\n",k,weekly[2][k]);
+      fprintf(FPDISK,"%d %d\n",k,weekly[3][k]);
 
       for (a = 0; a < ATTR; a++)
 	 {
-	 fprintf(fpin[a],"%d %d\n",k,weekly[4+a][k]);
-	 fprintf(fpout[a],"%d %d\n",k,weekly[4+ATTR+a][k]);
+	 fprintf(FPIN[a],"%d %d\n",k,weekly[4+a][k]);
+	 fprintf(FPOUT[a],"%d %d\n",k,weekly[4+ATTR+a][k]);
 	 }
       }
    
-   fclose(fproot);
-   fclose(fpother);
-   fclose(fpuser);
-   fclose(fpdisk);
+   fclose(FPROOT);
+   fclose(FPOTHER);
+   fclose(FPUSER);
+   fclose(FPDISK);
 
    for (i = 0; i < ATTR; i++)
       {
-      fclose(fpin[i]);
-      fclose(fpout[i]);
+      fclose(FPIN[i]);
+      fclose(FPOUT[i]);
       }
    }
- 
-return (0); 
 }
 
 /*****************************************************************************/

@@ -156,9 +156,9 @@ Concept Index
 * CFINPUTS variable <1>:                 Configuration file cfservd.conf.
 * CFINPUTS variable:                     CFINPUTS environment variable.
 * cfrun:                                 Access control.
-* cfrun program <1>:                     Remote execution of cfagent.
-* cfrun program <2>:                     Emulating rdist.
-* cfrun program:                         What services?.
+* cfrun program <1>:                     What services?.
+* cfrun program <2>:                     Remote execution of cfagent.
+* cfrun program:                         Emulating rdist.
 * cfservd and access keyword:            Access control.
 * cfservd daemon:                        What services?.
 * cfservd dameon:                        Remote execution of cfagent.
@@ -200,8 +200,8 @@ Concept Index
 * exclude=, problems:                    File sweeps.
 * Excluding actions in a controlled way: Defining classes.
 * ExpireAfter, caution setting to zero!: Deadlocks and runaway loops.
-* Exporting filesystems <1>:             Special variables.
-* Exporting filesystems:                 Using netgroups.
+* Exporting filesystems <1>:             Using netgroups.
+* Exporting filesystems:                 Special variables.
 * File search paths:                     CFINPUTS environment variable.
 * Files, checking permissions:           Monitoring important files.
 * Files, configuration:                  Control files.
@@ -282,8 +282,8 @@ Concept Index
 * Random numbers:                        Variable substitution.
 * rdist program:                         What services?.
 * Remote distribution of files:          What services?.
-* Remote execution of cfagent <1>:       Remote execution of cfagent.
-* Remote execution of cfagent:           What services?.
+* Remote execution of cfagent <1>:       What services?.
+* Remote execution of cfagent:           Remote execution of cfagent.
 * Rereading cfservd.conf:                Installation of cfservd.
 * Restarting cfservd:                    Installation of cfservd.
 * Restricting access:                    Access control.

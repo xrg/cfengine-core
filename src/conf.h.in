@@ -101,9 +101,6 @@
 /* Define if you have the `chflags' function. */
 #undef HAVE_CHFLAGS
 
-/* Define if you have the <db.h> header file. */
-#undef HAVE_DB_H
-
 /* Define if you have the <dce/daclif.h> header file. */
 #undef HAVE_DCE_DACLIF_H
 
@@ -139,6 +136,9 @@
 
 /* Define if you have the `crypto' library (-lcrypto). */
 #undef HAVE_LIBCRYPTO
+
+/* Define if you have the `db' library (-ldb). */
+#undef HAVE_LIBDB
 
 /* Define if you have the `dce' library (-ldce). */
 #undef HAVE_LIBDCE

@@ -835,19 +835,30 @@ struct stat *statbuf;
 
 { struct passwd *pw;
   struct group *gp;
-  struct UidList *ulp;
-  struct GidList *glp;
+  struct UidList *ulp, *unknownulp;
+  struct GidList *glp, *unknownglp;
   short uidmatch = false, gidmatch = false;
-  uid_t uid = (uid_t)-1; 
-  gid_t gid = (gid_t)-1;
+  uid_t uid = sameowner; 
+  gid_t gid = samegroup;
 
 Debug("CheckOwner: %d\n",statbuf->st_uid);
   
 for (ulp = uidlist; ulp != NULL; ulp=ulp->next)
    {
    Debug(" uid %d\n",ulp->uid);
-
-   if (ulp->uid == (uid_t) -1 || statbuf->st_uid == ulp->uid)   /* -1 matches anything */
+   
+   if (ulp->uid == unknown_owner) /* means not found while parsing */
+      {
+      unknownulp = MakeUidList (ulp->uidname);	/* Will only match one */
+      if (unknownulp != NULL && statbuf->st_uid == unknownulp->uid)
+	 {
+	 uid = unknownulp->uid;
+	 uidmatch = true;
+	 break;
+	 }
+      }
+   
+   if (ulp->uid == sameowner || statbuf->st_uid == ulp->uid)   /* "same" matches anything */
       {
       uid = ulp->uid;
       uidmatch = true;
@@ -857,7 +868,17 @@ for (ulp = uidlist; ulp != NULL; ulp=ulp->next)
 
 for (glp = gidlist; glp != NULL; glp=glp->next)
    {
-   if (glp->gid == (gid_t) -1 || statbuf->st_gid == glp->gid)  /* -1 matches anything */
+   if (glp->gid == unknown_group) /* means not found while parsing */
+      {
+      unknownglp = MakeGidList (glp->gidname);	/* Will only match one */
+      if (unknownglp != NULL && statbuf->st_gid == unknownglp->gid)
+	 {
+	 gid = unknownglp->gid;
+	 gidmatch = true;
+	 break;
+	 }
+      }
+   if (glp->gid == samegroup || statbuf->st_gid == glp->gid)  /* "same" matches anything */
       {
       gid = glp->gid;
       gidmatch = true;
@@ -872,14 +893,28 @@ if (uidmatch && gidmatch)
    }
 else
    {
-   if ((! uidmatch) && (uidlist != NULL))
+   if (! uidmatch)
       {
-      uid = uidlist->uid;    /* default is first item in list */
+      for (ulp = uidlist; ulp != NULL; ulp=ulp->next)
+	 {
+	 if (uidlist->uid != unknown_owner)
+	    {
+	    uid = uidlist->uid;    /* default is first (not unknown) item in list */
+	    break;
+	    }
+	 }
       }
-
-   if ((! gidmatch) && (gidlist != NULL))
+   
+   if (! gidmatch)
       {
-      gid = gidlist->gid;
+      for (glp = gidlist; glp != NULL; glp=glp->next)
+	 {
+	 if (gidlist->gid != unknown_group)
+	    {
+	    gid = gidlist->gid;    /* default is first (not unknown) item in list */
+	    break;
+	    }
+	 }
       }
 
    if (S_ISLNK(statbuf->st_mode) && (action == fixdirs || action == fixplain))
@@ -900,24 +935,22 @@ else
       case fixdirs:
       case fixall: 
       case touch:
-                  if (VERBOSE || DEBUG || D2)
-                     {
-                     if (uid == (uid_t) -1 && gid == (gid_t) -1)
+          	  if (VERBOSE || DEBUG || D2)
+		     {
+		     if (uid == sameowner && gid == samegroup)
+			{
+			printf("%s:   touching %s\n",VPREFIX,file);
+			}
+		     else
                         {
-                        printf("%s:   touching %s\n",VPREFIX,file);
-                        }
-                     else
-                        {
-                        if (uid != (uid_t) -1)
+                        if (uid != sameowner)
                            {
-                           snprintf(OUTPUT,bufsize*2,"  (Change owner to uid %d if possible)\n",uid);
-                           CfLog(cfverbose,OUTPUT,"");
+                           Debug("(Change owner to uid %d if possible)\n",uid);
                            }
 
-                        if (gid != (gid_t) -1)
+                        if (gid != samegroup)
                            {
-                           snprintf(OUTPUT,bufsize*2,"  (Change group to gid %d if possible)\n",gid);
-                           CfLog(cfverbose,OUTPUT,"");
+                           Debug("Change group to gid %d if possible)\n",gid);
                            }
                         }
                      }

@@ -419,6 +419,7 @@ struct Link *ptr;
   struct Image ip;
 
 bzero(to,bufsize);
+bzero(&ip, sizeof(ip));
   
 if ((*to_tmp != '/') && (*to_tmp != '.'))  /* links without a directory reference */
    {
@@ -466,6 +467,8 @@ if (IsWildItemIn(VCOPYLINKS,lastnode) || IsWildItemIn(copy,lastnode))
    ip.symlink = NULL;
    ip.classes = NULL;
    ip.plus_flags = 0;
+   ip.size = cfnosize;
+   ip.linktype = 's';
    ip.minus_flags = 0;
    ip.server = strdup("localhost");
    Verbose("%s: Link item %s marked for copying instead\n",VPREFIX,from);

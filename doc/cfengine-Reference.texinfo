@@ -102,6 +102,12 @@ as last updated @value{UPDATED}.
 
 @end ifinfo
 
+@ifhtml
+@html
+<a href="#Contents">COMPLETE TABLE OF CONTENTS</a>
+@end html
+@end ifhtml
+
 @c **********************************************************************
 @c CHAPTER
 @c **********************************************************************
@@ -284,6 +290,8 @@ True if file 1 had its last access earlier than file 2 (atime)
 True if file 1's attributes were changed in any way before file 2's (ctime).
 @item FileExists(@var{file})
 True if the named file object exists.
+@item IPRange(@var{address-range})
+True if the current host lies within the specified range
 @item IsDir(@var{f})
 True if the named file object is a directory.
 @item IsLink(@var{f})
@@ -303,6 +311,8 @@ classes:
  access_to_dir = ( ReturnsZero(/bin/cd /mydir) )
  compare       = ( ChangedBefore(/etc/passwd_master,/etc/passwd) )
  isplain       = ( IsPlain(/tmp/import) )
+ inrange       = ( IPRange(128.39.89.10-15) )
+ CIDR          = ( IPRange(128.39.89.10/24) )
 
 @end smallexample
 @cindex Classes, inbuilt functions
@@ -3586,9 +3596,8 @@ of an object which matches the type of the master object i.e. if the
 master is a plain file, the destination must also be the explicit name
 of a plain file. An implicit `copy file to directory' syntax is not
 allowed.  Symbolic links are copied as symbolic links, plain files are
-copied as plain files and special files are copied as special files. If
-the master and image are directories then all of the child files
-@emph{which are not directories} are copied from source to destination.
+copied as plain files and special files are copied as special files.
+The @code{recurse} option is required to copy the contents of subdirectories.
 
 @item mode, owner, group
 The file mode, owner
@@ -3803,7 +3812,8 @@ destination directory which are not also in the source directory.  This
 allows exact images of filesystems to be mantained. Note that if the
 copy command has includes or excludes or ignored files, cfengine will
 purge only those files on the client machine which are also on the
-server. This means that some files (such as system specific work files)
+server. Included files are not purged. 
+This means that some files (such as system specific work files)
 can be excluded from copies without them being destroyed.
 @vindex purge=
 @cindex Copy, exact filetree images
@@ -3815,6 +3825,9 @@ attack. @emph{You should not use this option to synchronize NFS mounted
 file systems. If the NFS server goes down, cfengine cannot then tell the
 difference between a valid empty directory and a missing NFS file system.
 If you use purge, use a remote copy also.}
+If we specify purge, then the following options will also be set and
+cannot be altered: @code{forcedirs=true}, @code{typecheck=false}, since
+any other default could be very destructive.
 
 @end table
 
@@ -4635,6 +4648,7 @@ Activate the following colon, comma or dot-separated list of classes if
 and only if the file is edited.
 
 @item DeleteLinesAfterThisMatching @var{quoted-regex}
+Delete lines after the current position which match the quoted expression.
 
 @item   DeleteLinesContaining @var{quoted-string}
 Delete all lines containing the exact string quoted.
@@ -5175,14 +5189,14 @@ from the specified filename.@xref{Recursion}.
 This is a list of allowed owners, or uids by number, separated by
 commas.  For example @code{root,2,3,sysadm}.  In cases where you ask
 cfengine to fix the ownership automatically, the owner will be set to
-the first owner in the list if and only if it is not one of the named
+the first recogized owner in the list if and only if it is not one of the named
 uids in the list.
 
 @item group=@var{group list}
 This is a list of allowed groups, or gids by number, separated by
 commas.  For example @code{wheel,2,3,sysadm}.  In cases where you ask
 cfengine to fix the ownership automatically, the group will be set to
-the first group in the list if and only if it is not one of the named
+the first recognized group in the list if and only if it is not one of the named
 gids in the list.
 
 @item action=@var{action}
@@ -5785,7 +5799,12 @@ groups:
 
    notthis = ( !this )
 
+   ip_in_range = ( IPRange(129.0.0.1-15) )  # host is in ip address range
+   ip_in_range = ( IPRange(129.0.0.1/24) )  # host is in ip address range (CIDR notation)
+
 @end smallexample 
+@cindex CIDR
+@cindex Classless IP addresses
 
 @noindent
 To include a list of hosts from a NIS netgroup, you use the @samp{+} symbol, or
@@ -5943,8 +5962,8 @@ wildcard value @samp{home?} and the mountables list is given by
 mountables:
    
    einstein:/mysite/einstein/home1
-   einstein:/mysite/einstein/home2
-   riemann:/mysite/riemann/local
+   einstein:/mysite/einstein/home2  mountoptions=soft,bg,intr,rsize=8192,wsize=8192
+   riemann:/mysite/riemann/local    readonly=true
    euler:/mysite/euler/home1
   
 @end smallexample 
@@ -6686,6 +6705,16 @@ mount, according to the cfengine model.
 The syntax of the list is:
 
 @smallexample
+mountables:
+
+   @var{class}::
+       "filesystem to mount"
+	   readonly=@b{false/off}/@var{true/on}
+	   mountoptions=@var{nfs-options}
+
+@end smallexample
+e.g.
+@smallexample
 
 mountables:
 
@@ -7070,8 +7099,10 @@ but you may specify bytes or megabytes), e.g.
 required:
 
   /site/host/home1 freespace=50mb define=dotidy
+  /site/host/home2 freespace=10% define=dotidy
 
 @end smallexample
+@cindex Percentage disk space
 
 @noindent
 then cfengine will warn when the filesystem concerned has less than this
@@ -7692,6 +7723,7 @@ The file consists of a control section and access information.
 @c ...........................................
 
 @menu
+* IP address ranges::           
 * AllowConnectionsFrom::        
 * AllowMultipleConnectionsFrom::  
 * AllowUsers::                  
@@ -7705,9 +7737,46 @@ The file consists of a control section and access information.
 * LogAllConnections::           
 * MaxConnections::              
 * TrustKeysFrom::               
+* DynamicAddresses::            
 @end menu
 
-@node AllowConnectionsFrom, AllowMultipleConnectionsFrom, cfservd control, cfservd control
+@c ...........................................
+@c SUBSECTION
+@c ...........................................
+
+
+@node IP address ranges, AllowConnectionsFrom, cfservd control, cfservd control
+@subsection IP address ranges
+
+In the access control lists below, host ranges can be specified in a
+number of ways i) as substrings, ii) as address ranges denoted by the
+"-" hyphen, or iii) as CIDR (Classless Inter Domain Routing) notation.
+For example
+@smallexample
+128.39.73
+128.39.74.10/23
+128.39.74-75.10-22
+2001:700:700:3:290:27ff:fea2:4730-4790
+2001:700:700:3:290:27ff:fea2:4730/64
+@end smallexample
+In the CIDR notation, the slash followed by a number indicates the
+netmask, or the number of bits which are common to a group of hosts.
+Normally, this is connected to a specific subnet, but here it simply
+represents the number of bits from the left which are fixed for matching;
+all remaining bits are wildcards.
+The following forms are equivalent:
+@smallexample
+128.39.74.
+128.39.74.10/24
+128.39.74.1-254
+@end smallexample
+
+@c ...........................................
+@c SUBSECTION
+@c ...........................................
+
+
+@node AllowConnectionsFrom, AllowMultipleConnectionsFrom, IP address ranges, cfservd control
 @subsection AllowConnectionsFrom
 This variable allows a list
 of numerical IP masks to be specified, which cfservd will allow connections from.
@@ -7757,14 +7826,14 @@ This list determines which users are to be allowed to connect to the daemon.
 Note that there is no way of identifying users except by their public keys.
 If a malicious asserts their identity, when no public key for the named
 user is known to the server, then they could spoof the identity of that
-user.  If users other than root are allowed to connect, they need to be here.
+user.  All users who should be allowed to connect need to be here.
 This applies to use of cfrun.
 @cindex cfrun, limiting users on server
 @cindex Key security of users
 
 @smallexample
 
-AllowUsers = ( mark )
+AllowUsers = ( mark root )
 
 @end smallexample
 
@@ -7903,7 +7972,7 @@ to handle remote requests. The default value is ten.
 @c SUBSECTION
 @c ...........................................
 
-@node TrustKeysFrom,  , MaxConnections, cfservd control
+@node TrustKeysFrom, DynamicAddresses, MaxConnections, cfservd control
 @subsection TrustKeysFrom
 
 Hosts which are included in this list are automatically
@@ -7917,10 +7986,47 @@ will never be updated, unless the existing key is deleted by hand.
 @smallexample
      control:
 
-      TrustKeysFrom = ( 128.39.89.76 )  # trusted host
+      TrustKeysFrom = ( 128.39.89.76 )     # trusted host
+      TrustKeysFrom = ( 128.39.89.76/24 )  # trusted subnet
 
 @end smallexample
 @cindex @code{TrustKeysFrom} variable
+
+
+@c ...........................................
+@c SUBSECTION
+@c ...........................................
+
+@node DynamicAddresses,  , TrustKeysFrom, cfservd control
+@subsection DynamicAddresses
+
+Hosts which are included in this list are assumed to have IP addresses which
+can change with time, e.g. hosts which are given IP addresses by DHCP
+or a BOOTP like protocol.
+
+@smallexample
+     control:
+
+      DynamicAddresses = ( 128.39.74.100-200 )  # DHCP range
+
+@end smallexample
+@cindex @code{DynamicAddresses} variable
+
+If cfservd receives a connection from an IP address that is in this list,
+and trustkey is @emph{true}, the existing key for that IP address can be
+replaced with a new key, and the old key is recorded in a "used keys"
+list, access is granted. If trust is switched off, the server looks
+in the "used key list" to see if the key has been seen before. If not
+access is refused. If it has been seen before -- it uses this earlier
+trust to accept the connection and replace the IP-key binding.
+@cindex DHCP
+@cindex Dynamic addresses
+
+Note that used keys are kept in a database for easy lookup, whereas
+fixed keys are kept in files for easy administration. If host keys
+change or are reinstalled on the dynamically allocated hosts, then
+this database should probably be deleted to purge keys that become
+illegal.
 
 @c -------------------------------------------------------------------------------
 @c SECTION
@@ -9841,6 +9947,12 @@ deny:
 @unnumbered FAQ Index
 
 @printindex mb
+
+@ifhtml
+@html
+<a name="Contents">
+@end html
+@end ifhtml
 
 @contents
 

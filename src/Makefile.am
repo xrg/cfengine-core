@@ -1,4 +1,4 @@
-CFLAGS = @CFLAGS@  @GCC_CFLAG@
+CFLAGS = @GCC_CFLAG@ @CFLAGS@  
 YFLAGS = -d
 LEXLIB = @LEXLIB@
 LDADD = -L../pub -lpub @BERKELEY_DB_LDFLAGS@ @BERKELEY_DB_LIB@ @OPENSSL_LIB_LDFLAGS@ @OPENSSL_LIB_LIB@
@@ -64,7 +64,6 @@ cfagent_SOURCES =							\
 	dce_acl.c							\
 	nameinfo.c							\
 	strategies.c
-
 
 cfagent_LDADD = $(LEXLIB) @BERKELEY_DB_LIB@ @OPENSSL_LIB_LIB@
 

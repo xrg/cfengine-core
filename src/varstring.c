@@ -91,6 +91,7 @@ char *VVNAMES[] =
    "denyconnectionsfrom",
    "allowmultipleconnectionsfrom",
    "trustkeysfrom",
+   "dynamicaddresses",
    "allowusers",
    "skipverify",
    "defaultcopytype",
@@ -589,7 +590,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
                       break;
                       }
 
-                   Verbose("Currently non existent variable $(%s)\n",currentitem);
+                   Debug("Currently non existent variable $(%s)\n",currentitem);
 
 		   snprintf(name,maxvarsize,"${%s}",currentitem);
                    strcat(buffer,name);

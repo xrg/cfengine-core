@@ -321,6 +321,7 @@ control
 
 * Menu:
 
+* IP address ranges::
 * AllowConnectionsFrom::
 * AllowMultipleConnectionsFrom::
 * AllowUsers::
@@ -334,9 +335,35 @@ control
 * LogAllConnections::
 * MaxConnections::
 * TrustKeysFrom::
+* DynamicAddresses::
 
 
-File: cfengine-Reference.info,  Node: AllowConnectionsFrom,  Next: AllowMultipleConnectionsFrom,  Prev: cfservd control,  Up: cfservd control
+File: cfengine-Reference.info,  Node: IP address ranges,  Next: AllowConnectionsFrom,  Prev: cfservd control,  Up: cfservd control
+
+IP address ranges
+-----------------
+
+   In the access control lists below, host ranges can be specified in a
+number of ways i) as substrings, ii) as address ranges denoted by the
+"-" hyphen, or iii) as CIDR (Classless Inter Domain Routing) notation.
+For example
+     128.39.73
+     128.39.74.10/23
+     128.39.74-75.10-22
+     2001:700:700:3:290:27ff:fea2:4730-4790
+     2001:700:700:3:290:27ff:fea2:4730/64
+   In the CIDR notation, the slash followed by a number indicates the
+netmask, or the number of bits which are common to a group of hosts.
+Normally, this is connected to a specific subnet, but here it simply
+represents the number of bits from the left which are fixed for
+matching; all remaining bits are wildcards.  The following forms are
+equivalent:
+     128.39.74.
+     128.39.74.10/24
+     128.39.74.1-254
+
+
+File: cfengine-Reference.info,  Node: AllowConnectionsFrom,  Next: AllowMultipleConnectionsFrom,  Prev: IP address ranges,  Up: cfservd control
 
 AllowConnectionsFrom
 --------------------
@@ -377,11 +404,11 @@ AllowUsers
 daemon.  Note that there is no way of identifying users except by their
 public keys.  If a malicious asserts their identity, when no public key
 for the named user is known to the server, then they could spoof the
-identity of that user.  If users other than root are allowed to
-connect, they need to be here.  This applies to use of cfrun.
+identity of that user.  All users who should be allowed to connect need
+to be here.  This applies to use of cfrun.
 
 
-     AllowUsers = ( mark )
+     AllowUsers = ( mark root )
 
    In other words, this is a "security by obscurity" first defence
 against picking up bad keys, when the server is in trust mode, with
@@ -487,7 +514,7 @@ daemon threads which cfservd will `fork' in order to handle remote
 requests. The default value is ten.
 
 
-File: cfengine-Reference.info,  Node: TrustKeysFrom,  Prev: MaxConnections,  Up: cfservd control
+File: cfengine-Reference.info,  Node: TrustKeysFrom,  Next: DynamicAddresses,  Prev: MaxConnections,  Up: cfservd control
 
 TrustKeysFrom
 -------------
@@ -502,7 +529,35 @@ by hand.
 
           control:
      
-           TrustKeysFrom = ( 128.39.89.76 )  # trusted host
+           TrustKeysFrom = ( 128.39.89.76 )     # trusted host
+           TrustKeysFrom = ( 128.39.89.76/24 )  # trusted subnet
+
+
+File: cfengine-Reference.info,  Node: DynamicAddresses,  Prev: TrustKeysFrom,  Up: cfservd control
+
+DynamicAddresses
+----------------
+
+   Hosts which are included in this list are assumed to have IP
+addresses which can change with time, e.g. hosts which are given IP
+addresses by DHCP or a BOOTP like protocol.
+
+          control:
+     
+           DynamicAddresses = ( 128.39.74.100-200 )  # DHCP range
+
+   If cfservd receives a connection from an IP address that is in this
+list, and trustkey is _true_, the existing key for that IP address can
+be replaced with a new key, and the old key is recorded in a "used keys"
+list, access is granted. If trust is switched off, the server looks in
+the "used key list" to see if the key has been seen before. If not
+access is refused. If it has been seen before - it uses this earlier
+trust to accept the connection and replace the IP-key binding.
+
+   Note that used keys are kept in a database for easy lookup, whereas
+fixed keys are kept in files for easy administration. If host keys
+change or are reinstalled on the dynamically allocated hosts, then this
+database should probably be deleted to purge keys that become illegal.
 
 
 File: cfengine-Reference.info,  Node: admit grant and deny,  Next: cfrun,  Prev: cfservd control,  Up: Cfservd.conf and cfrun reference

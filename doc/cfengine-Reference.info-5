@@ -39,6 +39,9 @@ Here is an example of the syntax:
         OIH_clients = ( tor odin )
      
         notthis = ( !this )
+     
+        ip_in_range = ( IPRange(129.0.0.1-15) )  # host is in ip address range
+        ip_in_range = ( IPRange(129.0.0.1/24) )  # host is in ip address range (CIDR notation)
 
 To include a list of hosts from a NIS netgroup, you use the `+' symbol,
 or the `+@' construction.  For example:
@@ -146,8 +149,8 @@ wildcard value `home?' and the mountables list is given by
      mountables:
      
         einstein:/mysite/einstein/home1
-        einstein:/mysite/einstein/home2
-        riemann:/mysite/riemann/local
+        einstein:/mysite/einstein/home2  mountoptions=soft,bg,intr,rsize=8192,wsize=8192
+        riemann:/mysite/riemann/local    readonly=true
         euler:/mysite/euler/home1
 
    Any host in the group `Physics' would now want to mount all home
@@ -709,6 +712,13 @@ cfengine model.
 
    The syntax of the list is:
 
+     mountables:
+     
+        CLASS::
+            "filesystem to mount"
+     	   readonly=false/off/TRUE/ON
+     	   mountoptions=NFS-OPTIONS
+   e.g.
 
      mountables:
      
@@ -1032,6 +1042,7 @@ are kilobytes, but you may specify bytes or megabytes), e.g.
      required:
      
        /site/host/home1 freespace=50mb define=dotidy
+       /site/host/home2 freespace=10% define=dotidy
 
 then cfengine will warn when the filesystem concerned has less than this
 amount of free space. By adding a `define' tag, you can switch on any

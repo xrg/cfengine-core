@@ -70,7 +70,7 @@ char *argv[];
 int argc;
 
 { struct Item *ip;
- 
+   
 signal (SIGTERM,HandleSignal);                   /* Signal Handler */
 signal (SIGHUP,HandleSignal);
 signal (SIGINT,HandleSignal);
@@ -102,8 +102,14 @@ if (IsPrivileged() && !MINUSF)
 	 {
 	 DoTree(1,"Update");
 	 EmptyActionSequence();
+	 DeleteMacro("SplayTime");
 	 }
       }
+   }
+
+if (UPDATEONLY)
+   {
+   return 0;
    }
 
 ParseInputFiles();
@@ -163,6 +169,31 @@ return 0;
 /* Level 1                                                         */
 /*******************************************************************/
 
+void HandleSignal(signum)
+ 
+int signum;
+ 
+{
+snprintf(OUTPUT,bufsize*2,"Received signal %d while doing [%s]",signum,CFLOCK);
+Chop(OUTPUT);
+CfLog(cferror,OUTPUT,"");
+snprintf(OUTPUT,bufsize*2,"Logical start time %s ",ctime(&CFSTARTTIME));
+Chop(OUTPUT);
+CfLog(cferror,OUTPUT,"");
+snprintf(OUTPUT,bufsize*2,"This sub-task started really at %s\n",ctime(&CFINITSTARTTIME));
+
+CfLog(cferror,OUTPUT,"");
+ 
+if (signum == SIGTERM || signum == SIGINT || signum == SIGHUP || signum == SIGSEGV || signum == SIGKILL)
+   {
+   ReleaseCurrentLock();
+   closelog();
+   exit(0);
+   }
+}
+
+/********************************************************************/
+ 
 void Initialize(argc,argv)
 
 char *argv[];
@@ -176,6 +207,8 @@ int argc;
 strcpy(VDOMAIN,CF_START_DOMAIN);
 
 PreLockState();
+
+SetSignals(); 
  
 ISCFENGINE = true;
 
@@ -961,8 +994,16 @@ if (GetMacroValue("SplayTime"))
       return;
       }
 
-   Verbose("Sleeping for SplayTime %d seconds\n\n",(int)(time*60*hash/hashtablesize));
-   sleep((int)(time*60*hash/hashtablesize));
+   if (!DONESPLAY)
+      {
+      DONESPLAY = true;
+      Verbose("Sleeping for SplayTime %d seconds\n\n",(int)(time*60*hash/hashtablesize));
+      sleep((int)(time*60*hash/hashtablesize));
+      }
+   else
+      {
+      Verbose("Time splayed once already - not repeating\n");
+      }
    }
 
 if (GetMacroValue("LogTidyHomeFiles") && (strcmp(GetMacroValue("LogTidyHomeFiles"),"off") == 0))
@@ -1377,7 +1418,7 @@ int argc;
   int optindex = 0;
   int c;
 
-while ((c=getopt_long(argc,argv,"zMAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuU",OPTIONS,&optindex)) != EOF)
+while ((c=getopt_long(argc,argv,"bzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuU",OPTIONS,&optindex)) != EOF)
   {
   switch ((char) c)
       {
@@ -1396,6 +1437,9 @@ while ((c=getopt_long(argc,argv,"zMAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuU",OPTI
       case 'f': strcpy(VINPUTFILE,optarg);
                 MINUSF = true;
                 break;
+
+      case 'g': CHECK  = true;
+	        break;
 
       case 'd': 
 	        AddClassToHeap("opt_debug");
@@ -1762,7 +1806,7 @@ void Syntax()
 
 { int i;
 
-printf("GNU cfengine: A system configuration engine \n%s\n%s\n",VERSION,COPYRIGHT);
+printf("GNU cfengine: A system configuration engine (cfagent)\n%s\n%s\n",VERSION,COPYRIGHT);
 printf("\n");
 printf("Options:\n\n");
 
