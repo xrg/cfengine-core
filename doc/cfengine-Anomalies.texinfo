@@ -518,6 +518,19 @@ gnuplot> plot "www-in.cfenv" with errorbars
 gnuplot> plot "www-in.cfenv" with lines
 @end smallexample
 
+@cindex xmgrace
+
+The new version of @code{xmgr} is called @code{xmgrace}. It can be invoked as follows:
+
+@smallexample
+host$ xmgrace -nxy cfenv-averages
+host$ xmgrace  rootprocs.cfenv
+host$ xmgrace -settype xydy  rootprocs.cfenv
+host$ xmgrace -settype xydy  rootprocs.cfenv -hardcopy -hdevice JPEG
+@end smallexample
+
+If you see the error "Strings are not allowed", it might be because some "nan" values
+have come into the text file. 
 
 @c -------------------------------------------------------------------------------
 @c SECTION
