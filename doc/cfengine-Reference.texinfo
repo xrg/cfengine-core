@@ -38,14 +38,14 @@ preserved on all copies.
 
    Permission is granted to copy and distribute modified versions of
 this manual under the conditions for verbatim copying, provided also
-that the section entitled "GNU General Public License" is included
+that the section entitled ``GNU General Public License'' is included
 exactly as in the original, and provided that the entire resulting
 derived work is distributed under the terms of a permission notice
 identical to this one.
 
    Permission is granted to copy and distribute translations of this
 manual into another language, under the above conditions for modified
-versions, except that the section entitled "GNU General Public License"
+versions, except that the section entitled ``GNU General Public License''
 may be included in a translation approved by the author instead of in
 the original English.
 
@@ -85,14 +85,14 @@ preserved on all copies.
 
    Permission is granted to copy and distribute modified versions of
 this manual under the conditions for verbatim copying, provided also
-that the section entitled "GNU General Public License" is included
+that the section entitled ``GNU General Public License'' is included
 exactly as in the original, and provided that the entire resulting
 derived work is distributed under the terms of a permission notice
 identical to this one.
 
    Permission is granted to copy and distribute translations of this
 manual into another language, under the above conditions for modified
-versions, except that the section entitled "GNU General Public License"
+versions, except that the section entitled ``GNU General Public License''
 may be included in a translation approved by the author instead of in
 the original English.
 
@@ -157,13 +157,17 @@ implement configurations in practice.
 In order to install cfengine, you should first ensure that the following
 packages are installed.
 
-@smallexample
-OpenSSL                   http://www.openssl.org
-Berkeley DB 3.2 or later  http://www.sleepycat.com
-@end smallexample
+@table @r
+@item @b{OpenSSL}
+Open source Secure Sockets Layer for encryption.@*URL: @url{http://www.openssl.org}
+@item @b{BerkeleyDB} (version 3.2 or later)
+Light-weight flat-file database system.@*URL: @url{http://www.sleepycat.com}
+@end table
+
 
 @noindent
 The preferred method of installation is then
+
 @smallexample
 tar zxf cfengine-x.x.x.tar.gz
 cd cfengine-x.x.x
@@ -184,10 +188,11 @@ the cfengine trusted work directory.
 In order to achieve the desired simplifications, it was decided to
 reserve a private work area for the cfengine tool-set. In cfengine 1.x,
 the administrator could choose the locations of configuration files, locks,
-and logging data independently. In cfengine 2.x, this diversity has been rationalized
-to a single directory which defaults to @file{/var/cfengine} (by analogy with
+and logging data independently. In cfengine 2.x, this diversity has been simplified
+to a single directory which defaults to @file{/var/cfengine} (similar to
 @file{/var/cron}):
 
+@w{}
 @smallexample
 /var/cfengine
 /var/cfengine/bin
@@ -197,11 +202,11 @@ to a single directory which defaults to @file{/var/cfengine} (by analogy with
 
 The installation location
 @file{/usr/local/sbin} is not necessarily a local file system, and cannot
-therefore be trusted i) to be present, and ii) to be authentic on an
+therefore be trusted to a) be present, and b) be authentic on an
 arbitrary system.
 
 Similarly, a trusted cache of the input files must now be maintained
-in the @file{inputs} sub-directory. When cfengine is invoked by the
+in the @file{inputs} subdirectory. When cfengine is invoked by the
 scheduler, it reads only from this directory. It is up to the user to
 keep this cache updated, on each host. This simplifies and
 consolidates the cfengine resources in a single place. The environment
@@ -234,16 +239,15 @@ A single class can be one of several things:
 
 @itemize @bullet
 
-@item The name of an operating system architecture e.g.  @code{ultrix}, @code{sun4} etc.
-This is referred to henceforth as a @emph{hard class}.
+@item The name of an operating system architecture e.g.  @code{ultrix}, @code{sun4}, etc.
+This is referred to as a @emph{hard class}.
 
-@item The (unqualified) name of a particular host. If your system returns a fully
-qualified domain name for your host, cfagent truncates it so as to unqualify
-the name.
+@item The unqualified name of a particular host. If your system returns a fully
+qualified domain name for your host, cfagent truncates it at the first dot.
 
 @item The name of a user-defined group of hosts.
 
-@item A day of the week (in the form @code{Monday Tuesday Wednesday..}).
+@item A day of the week (in the form @code{Monday, Tuesday, Wednesday, ..}).
 
 @item An hour of the day (in the form @code{Hr00, Hr01 ... Hr23}).
 
@@ -257,14 +261,15 @@ the name.
 
 @item A year (in the form @code{Yr1997, Yr2004}).
 
-@item An arbitrary user-defined string.  (see the reference manual).
+@item An arbitrary user-defined string.
 
-@item The ip-address octets of any active interface, in the form (@code{ipv4_192_0_0_1},
-@code{ipv4_192_0_0},@code{ipv4_192_0},@code{ipv4_192}).
+@item The IP address octets of any active interface (in the form @code{@w{ipv4_192_0_0_1}},
+@code{@w{ipv4_192_0_0}}, @code{@w{ipv4_192_0}}, @code{@w{ipv4_192}}).
 
 @end itemize
 
 To see all of the classes define on a particular host, run
+
 @smallexample
 host# cfagent -p -v
 @end smallexample
@@ -280,33 +285,34 @@ file is secure.
 @node Evaluated classes and special functions, Filenames and paths, Hard classes, Reference introduction
 @section Evaluated classes and special functions
 
-Cfengine provides a number of in-built functions for evaluating classes,
-based on file tests. Using these internal functions is quicker than
+Cfengine provides a number of built-in functions for evaluating classes,
+based on file tests. Using these built-in functions is quicker than
 calling the shell @code{test} function. The time functions place their
 arguments in chronological order.
 
 @table @code
 @item IsNewerThan(@var{f1},@var{f2})
-True if file 2 is modified more recently than file 1. (mtime)
+True if file 2 was modified more recently than file 1 (UNIX mtime)
 @item AccessedBefore(@var{f1},@var{f2})
-True if file 1 had its last access earlier than file 2 (atime)
+True if file 1 was accessed more recently than file 2 (UNIX atime)
 @item ChangedBefore(@var{f1},@var{f2})
-True if file 1's attributes were changed in any way before file 2's (ctime).
+True if file 1's attributes were changed in any way more recently than file 2's (UNIX ctime)
 @item FileExists(@var{file})
 True if the named file object exists.
 @item IPRange(@var{address-range})
-True if the current host lies within the specified range
+True if the current host lies within the specified IP range
 @item HostRange(@var{basename,start-stop})
 True if the current relative domain name begins with basename and ends with an integer
 between start and stop
 @item IsDefined(@var{variable-id})
-True of the named variable is defined. NB: @code{IsDefined(var)}, not @code{IsDefined($@{var@})}
+True if the named variable is defined. Note well: use the variable name, not its contents (that is,
+@code{IsDefined(var)}, and not @code{IsDefined($@{var@})})
 @item IsDir(@var{f})
-True if the named file object is a directory.
+True if the file f is a directory
 @item IsLink(@var{f})
-True if the named file object is a symbolic link.
+True if the file f is a symbolic link
 @item IsPlain(@var{f})
-True if the named file object is a plain file.
+True if the file f is a plain file
 @item PrepModule(@var{module},@var{arg1 arg2...})
 True if the named module exists and can be executed. The module is assumed to
 follow the standard programming interface for modules (see Writing plugin modules in tutorial).
@@ -316,16 +322,17 @@ Note that the module should be specified relative to the authorized module direc
 @cindex PrepModule
 @cindex Modules executed immediately
 @item Regcmp(@var{regexp},@var{string or list separated string})
-True if the string matched the regular expression.
+True if the string matched the regular expression regexp.
 @item ReturnsZero(@var{command})
-True if the named shell command returns with exit code zero (okay).
+True if the named shell command returns with exit code zero (success).
 @item Strcmp(@var{s1},@var{s2})
-True if the strings match exactly.
+True if the string s1 exactly matches s2
 @end table
 
 
 @noindent
 For example:
+
 @smallexample
 
 classes:
@@ -339,7 +346,7 @@ classes:
  gotinit       = ( PrepModule(startup2,"arg1 arg2") )
 
 @end smallexample
-@cindex Classes, inbuilt functions
+@cindex Classes, built-in functions
 @cindex Testing files
 @cindex File types
 @cindex Comparing file objects
@@ -361,7 +368,7 @@ classes:
 Filenames in Unix-like operating systems
 
 The directory separator is the forward slash '/' character. All references
-to file locations must be absolute names in cfengine, i.e. they must begin
+to file locations must be absolute pathnames in cfengine, i.e. they must begin
 with a complete specification of which directory they are in. For example:
 
 @smallexample
@@ -372,6 +379,7 @@ with a complete specification of which directory they are in. For example:
 The only place where it makes sense to refer to a file without a complete
 directory specification is when searching through directories for different
 kinds of file, e.g.
+
 @smallexample
 tidy:
 
@@ -387,15 +395,17 @@ Cfengine was implemented primarily on Unix-like operating systems, but
 has since been ported to Windows operating systems and MacOS X. The Windows
 operating systems traditionally use a different filename convention.
 The following are all valid absolute file names under Windows:
+
 @smallexample
  c:\winnt
  c:/winnt
  /var/cfengine/inputs
- //@var{fileserver}/share2\dir
+ //@var{fileserver}/share2/dir
 @end smallexample
-The `drive' name "C:" in Windows refers to a partition or device. Unlike Unix,
+The `drive' name ``C:'' in Windows refers to a partition or device. Unlike Unix,
 Windows does not integrate these seamlessly into a single file-tree.
 This is not a valid absolute filename:
+
 @smallexample
 \var\cfengine\inputs
 @end smallexample
@@ -439,6 +449,7 @@ Note that this output is often quite verbose.
 
 The very first thing you should do on every host is to establish a
 public-private key pair. To do this, you need to run the program
+
 @smallexample
 everyhost# cfkey
 @end smallexample
@@ -451,7 +462,7 @@ of entropy for random number generation.
 @cindex Key entropy and cfenvd
 @cindex cfenvd and key entropy
 
-If you get the error message "PRNG not seeded", it means that insufficient
+If you get the error message ``PRNG not seeded'', it means that insufficient
 data were found in order to make a random key. In that case, run @file{cfenvd}
 for a few days more and try again.
 @cindex PRNG not seeded
@@ -477,6 +488,7 @@ for a few days more and try again.
 The @code{cfshow} command was introduced in cfengine 2.1.11 in order to
 provide a simple command line query of the various databases used to store
 operational state by cfagent.
+
 @smallexample
 everyhost# cfshow -a
 everyhost# cfshow -l
@@ -499,6 +511,7 @@ This lists the IP addresses of all known peers and the times they were last enga
 communication with the current host. The expected interval between communications is also
 printed. See FriendStatus. The output format is in a form that can easily be parsed by
 user scripts. e.g.
+
 @smallexample
 192.0.2.1 (answered us) at [Wed May 26 16:39:03 2004] i.e. not seen for !2860.08! hours; <delta_t> = @{63325.64@} hours
 192.0.2.3 (answered us) at [Wed May 26 16:39:03 2004] i.e. not seen for !2860.08! hours; <delta_t> = @{90465.20@} hours
@@ -589,7 +602,7 @@ possibility that an action ordering dilemma might occur, it runs a
 second pass of the actionsequence to more quickly resolve the dependency
 (avoiding the wait for next scheduled run).  No actions are performed
 twice however, since the agent checks off actions that have already been
-performed to avoid unnecessary multiplicity.
+performed to avoid unnecessary duplication.
 
 @menu
 * The file cfagent.conf::       
@@ -600,6 +613,8 @@ performed to avoid unnecessary multiplicity.
 @subsection The file cfagent.conf
 
 @cartouche
+
+@w{}
 @smallexample
 
  control:
@@ -645,9 +660,9 @@ development.
 
 @item -b
 (@code{--force-net-copy}) Normally cfengine detects attempts to copy
-from a server via the network, if they loop back to the localhost.
+from a server via the network that will loop back to the localhost.
 It then avoids using the network to make the copy. This option forces
-cfengine to copy using the network. (Yes, someone thinks this is useful!)
+cfengine to copy using the network. @emph{Yes, someone thinks this is useful!}
 
 @item -c 
 (@code{--no-check-files}) Do not check file systems for ownership / permissions etc.
@@ -692,10 +707,10 @@ looks for a file called @emph{cfengine.conf} in the current directory.
 summary.
 
 @item -H
-(@code{--no-hard-classes}). Prevents cfengine from generating any internal
+(@code{--no-hard-classes}). Prevents cfengine from generating any built-in
 class name information. Can be used for emulation purposes.
 @cindex Internal classes, switching off
-@cindex Switching off internal classes
+@cindex Switching off built-in classes
  
 @item -i 
 (@code{--no-ifconfig}) Do not attempt to configure the local area
@@ -762,9 +777,9 @@ option.
 (@code{--use-env}) Causes cfengine to generate an environment variable
 @samp{CFALLCLASSES} which can be read by child processes (scripts). This
 variable contains a summary of all the currently defined classes at any
-given time. This option causes some system 5 systems to generate a Bus
+given time. This option causes some System V systems to generate a Bus
 Error or segmentation fault. The same information is available from the
-cfengine internal variable @code{$(allclasses)} and can be passed as a
+cfengine built-in variable @code{$(allclasses)} and can be passed as a
 parameter to scripts.
 @cindex Environment variable CFALLCLASSES
 @vindex CFALLCLASSES
@@ -804,6 +819,7 @@ messages.
 In version 2.0.4, an abbreviation for actionsequence exclusions was
 added:
 
+@w{}
 @smallexample
 $ cfagent --avoid resolve,copy
 $ cfagent --just tidy --just shellcommands
@@ -819,16 +835,19 @@ $ cfagent --just tidy --just shellcommands
 Variables in cfengine 2 are defined in contexts. Variables in a given context
 refer to the different phases of execution of cfengine: global, update and main.
 In the "current" context, variables have the form
+
 @smallexample
 $(variable) $@{variable@}
 @end smallexample
 and are expanded either on parsing or at execution. Variables that cannot be
 expanded remain as dollar strings. Variables belonging to a context that is not
 the current one may be referred to as
+
 @smallexample
 $(@var{context}.variable) $@{@var{context}.variable@}
 @end smallexample
 e.g.
+
 @smallexample
 $(global.env_time)
 @end smallexample
@@ -863,10 +882,11 @@ around variable names. Unlike in the shell, they cannot be omitted.
 A number of special functions can be used to set variables in cfengine.
 You can import values from the execution of a shell command
 by prefixing a command with the word @code{exec}. This method is deprecated
-in version 2 an replaced by a function.
+as of cfengine version 2; use the @code{ExecResult} function instead.
 
 @cindex Variables, setting to result of a shell command
 @vindex @code{exec}
+
 @smallexample
 
   control:
@@ -884,15 +904,16 @@ in version 2 an replaced by a function.
 @noindent
 This sets the variable `listing' to the output of the command in the
 quotes.
-@cindex In-built functions
-@cindex Functions, in-built
+@cindex Built-in functions
+@cindex Functions, built-in
 @cindex Random numbers
 
-Some other internal functions are
+Some other built-in functions are
 
 @table @code
 @item A(@var{X},@var{Y})
 Makes an associative array entry, associating @var{X} and @var{Y}. For instance:
+
 @smallexample
 control:
 
@@ -901,6 +922,7 @@ control:
 @end smallexample
 @noindent
 results in:
+
 @smallexample
 
 OBJECT: main
@@ -910,6 +932,7 @@ OBJECT: main
 @end smallexample
 @cindex Associative arrays.
 Another example:
+
 @smallexample
 control:
 
@@ -926,7 +949,7 @@ copy:
 
 @item ExecResult(@var{command})
 Executes the named shell command and inserts the output into the
-variable. Note that, when this is used in cfengine internal list
+variable. Note that, when this is used in cfengine built-in list
 variables, any spaces are interpreted as list separators. In other
 lists, normal rules for iteration apply.
 
@@ -943,13 +966,14 @@ are:
 If this format is specified, @code{ReadArray} tries to interpret the file as a table of
 items separated with the separator character. Blank lines and comments (to end of line) are ignored.
 Items are keyed numerically starting from 1 to the maximum number in the file.
-If the separation character is not a newline @code{$(n)}, then the newline is assumed
-to be a separator also.
+The newline @code{$(n)} is always considered to be a separator, no matter what the current
+separator is.
 @cindex Associative arrays.
 
 @item textkey
 If this format is specified, @code{ReadArray} tries to interpret the file as a list
 of lines of the form:
+
 @smallexample
   key,value
 @end smallexample
@@ -976,6 +1000,7 @@ function to fail without making any assignment.
 @item textkey
 If this format is specified, @code{ReadArray} tries to interpret the file as a list
 of lines of the form:
+
 @smallexample
   key1,key2,,value
 @end smallexample
@@ -991,6 +1016,8 @@ If this format is specified, @code{ReadList} tries to interpret the file as a li
 items on separate lines. The value returned is a list formatted by the @code{Split} character.
 @cindex Associative arrays.
 @end table
+
+@w{}
 @smallexample
  
 hosts = ( ReadList(/var/cfengine/inputs/datafile,lines,#,1000) )
@@ -1000,10 +1027,12 @@ hosts = ( ReadList(/var/cfengine/inputs/datafile,lines,#,1000) )
 @item SelectPartitionGroup(@var{filename},@var{comment},@var{Policy},@var{group size})
 
 This function is for use in peer to peer monitoring applications. It allows individual
-hosts to identify themselves as part of a clique and find their peers. The function
+hosts to identify themselves as part of a group and find their peers. The function
 returns a list variable, delimited by the list separation character, for use with Split.
 @cindex SelectPartitionGroup
 @cindex Peer to peer methods
+
+@w{}
 @smallexample
 
  control:
@@ -1018,12 +1047,14 @@ returns a list variable, delimited by the list separation character, for use wit
 @item SelectPartitionLeader(@var{filename},@var{comment},@var{Policy},@var{group size})
 
 This function is for use in peer to peer monitoring applications. It allows individual
-hosts to identify themselves as part of a clique and select a leader.
+hosts to identify themselves as part of a group and select a leader.
 This function reads a text file of hostnames or IP addresses, one host per line, with blank
 lines and comments and partitions it into groups of a fixed size. It then returns picks
 a leader for the the group and returns its name as the value of the function.
 @cindex SelectPartitionLeader
 @cindex Peer to peer methods
+
+@w{}
 @smallexample
 
  control:
@@ -1057,6 +1088,7 @@ control:
 @end smallexample
 
 In the latter case, the file could look like this:
+
 @smallexample
 host$ more /tmp/array
 one,String to tbe read
@@ -1065,6 +1097,7 @@ three,Everything comes in threes
 @end smallexample
 @noindent
 and results in the definition of (verify with @code{cfagent -p -d3}):
+
 @smallexample
 OBJECT: main
    960 : listvar[one]=String to tbe read
@@ -1093,7 +1126,7 @@ Variables are referred to in either of two different ways, depending on
 your taste.  You can use the forms @code{$(variable)} or
 @code{$@{variable@}}.  The variable in braces or parentheses can be the
 name of any user defined macro, environment variable or one of the
-following special internal variables.
+following special built-in variables.
 
 @table @code
 
@@ -1109,12 +1142,11 @@ class data.
 
 @item arch
 The current detailed architecture string---an amalgamation of the
-information from @emph{uname}. Non-definable.
+information from @emph{uname}. @emph{A constant}.
 @vindex $(arch)
 
 @item binserver
-The default server for binary data. 
-Non definable.
+The default server for binary data. @emph{A constant}.
 @vindex $(binserver) 
 
 @item ChecksumDatabase
@@ -1125,8 +1157,7 @@ files, and give `tripwire functionality', @xref{ChecksumDatabase}.
 If set to `on', security information is automatically updated, @xref{ChecksumUpdates}.
 
 @item class
-The currently defined system hard-class (e.g. @code{sun4}, @code{hpux}).
-Non-definable.
+The currently defined system hard-class (e.g. @code{sun4}, @code{hpux}). @emph{A constant}.
 @vindex $(class)
 
 @item date
@@ -1140,24 +1171,23 @@ The currently defined domain.
 @vindex $(domain)
 
 @item EmailFrom
-The E-mail address from whom E-mail from cfexecd should appear to originate.
+The email address from whom email from cfexecd should appear to originate.
 
 @item EmailMaxLines
 Most lines of output to email from a single cfexecd-induced run of
-cfagent. If undefined, defaults to 100. Set to 0, no email is sent by
-cfexecd. Set to @code{inf}, no maximum is enforced.
+cfagent. If undefined, defaults to 100. If set to 0, no email is sent by
+cfexecd. If set to @code{inf}, no maximum is enforced.
 @vindex $@{EmailMaxLines@}
 
 @item EmailTo
-The E-mail address to whom mail should be sent (overrides sysadm variable).
+The E-mail address to whom mail should be sent (overrides @code{sysadm} variable).
 
 @item faculty
-The faculty or site as defined in control (see site).
+The faculty or site as defined in control (see @code{site}).
 @vindex $(faculty)
 
 @item fqhost
-The fully qualified (DNS/BIND) hostname of the system, which
-includes the domain name as well.
+The fully qualified hostname of the system.
 @vindex $(fqhost)
 
 @item host
@@ -1165,14 +1195,15 @@ The hostname of the machine running the program.
 @vindex $(host)
 
 @item ipaddress
-The numerical form of the internet address of the host currently running
-cfengine, found by lookup in DNS.
+The numerical form of the Internet address of the host currently running
+cfengine found by a reverse lookup in DNS.
 @vindex $(ipaddress)
 
 @item ipv4[@var{interface}]
-The IPv4 address of the named interface, determined from a probe of the
+The IPv4 address of the named interface as determined from a probe of the
 interfaces. This variable belongs in the global context and refers to
 as in the following examples:
+
 @smallexample
 
 $@{global.ipv4[hme0]@}
@@ -1182,7 +1213,7 @@ $@{global.ipv4[eth0]@}
 
 @item MaxCfengines
 The maximum number of cfengines which should be allowed to
-co-exist concurrently on the system. This can prevent excessive
+run concurrently on the system. This can prevent excessive
 load due to unintentional spamming in situations where several
 cfengines are started independently. The default value is unlimited.
 @vindex MaxCfengines
@@ -1196,6 +1227,7 @@ prefix on output lines to something else. You might wish to shorten
 the string, or have a different prefix for different hosts. The value
 in this variable is appended with the name of the host. The default is
 equivalent to,
+
 @smallexample
   OutputPrefix = ( "cfengine:$(host):")
 @end smallexample
@@ -1204,7 +1236,7 @@ equivalent to,
 @item RepChar
 The character value of the string used by the file repository in
 constructing unique filenames from path names. This is the character which
-replaces @samp{/} (see the reference manual).
+replaces @samp{/}.
 @vindex repchar
 
 @item site
@@ -1215,7 +1247,7 @@ This variable is identical to @code{$(faculty)} and may be used interchangeably.
 The name of the host to which mail output should be sent.
 
 @item split
-The character on which list variables are split (see the reference manual).
+The character on which list variables are split.
 @vindex split
 
 @item sysadm
@@ -1228,9 +1260,8 @@ The current timezone as defined in @code{control}.
 
 
 @item UnderscoreClasses
-If this is set to `on' cfengine uses hard-classes which begin with
-an underscore, so as to avoid name collisions. See also Runtime Options in the
-Reference manual.
+If this is set to `on' cfengine uses hard classes which begin with
+an underscore to avoid name collisions. See also the section Runtime Options.
 @vindex underscoreclasses
 @cindex underscoreclasses
 @cindex Name collision
@@ -1269,7 +1300,7 @@ troublesome special characters in strings.
 @table @code
 
 @item cr
-Expands to the carriage-return character.
+Expands to the carriage return character.
 @vindex $(cr)
 
 @item dblquote
@@ -1317,6 +1348,7 @@ is currently rather limited in cfengine and is something to be improved on
 in a future version. When a variable is used as an iterator, a character
 is chosen to represent a list separator, as in the shell @samp{IFS} variable.
 The default separator is the colon @samp{:} character:
+
 @smallexample
 control:
 
@@ -1325,12 +1357,14 @@ control:
 @end smallexample
 The action that contains a variable to be interpreted as a list appears
 as separate actions, one for each case:
+
 @smallexample
 shellcommand:
 
   "/bin/echo $(listvar)"
 @end smallexample
 is equivalent to
+
 @smallexample
 shellcommand:
 
@@ -1340,6 +1374,7 @@ shellcommand:
   "/bin/echo four"
 @end smallexample
 If multiple iterators are used, these are handled as nested loops:
+
 @smallexample
 cfengine::/bin/echo one 1:     one 1
 cfengine::/bin/echo one 2:     one 2
@@ -1359,6 +1394,7 @@ cfengine::/bin/echo four :     four 3
 cfengine::/bin/echo four :     four 4
 @end smallexample
 Where iterators are not allowed, the implied lists are treated as scalars:
+
 @smallexample
 
 alerts:
@@ -1368,6 +1404,7 @@ alerts:
   "do $(list1) $(list2)"
 @end smallexample
 e.g.
+
 @smallexample
 
 cfengine:: do one:two:three:four 1:2:3:4
@@ -1440,16 +1477,15 @@ A single class can be one of several things:
 
 @itemize @bullet
 
-@item The name of an operating system architecture e.g.  @code{ultrix}, @code{sun4} etc.
-This is referred to henceforth as a @emph{hard class}.
+@item The name of an operating system architecture e.g.  @code{ultrix}, @code{sun4}, etc.
+This is referred to as a @emph{hard class}.
 
-@item The (unqualified) name of a particular host. If your system returns a fully
-qualified domain name for your host, cfagent truncates it so as to unqualify
-the name.
+@item The unqualified name of a particular host. If your system returns a fully
+qualified domain name for your host, cfagent truncates it at the first dot.
 
 @item The name of a user-defined group of hosts.
 
-@item A day of the week (in the form @code{Monday Tuesday Wednesday..}).
+@item A day of the week (in the form @code{Monday, Tuesday, Wednesday, ..}).
 
 @item An hour of the day (in the form @code{Hr00, Hr01 ... Hr23}).
 
@@ -1467,10 +1503,10 @@ the name.
 
 @item A year (in the form @code{Yr1997, Yr2004}).
 
-@item An arbitrary user-defined string.  (see the reference manual).
+@item An arbitrary user-defined string.
 
-@item The ip-address octets of any active interface, in the form (@code{ipv4_192_0_0_1},
-@code{ipv4_192_0_0},@code{ipv4_192_0},@code{ipv4_192}).
+@item The IP address octets of any active interface (in the form @code{@w{ipv4_192_0_0_1}},
+@code{@w{ipv4_192_0_0}}, @code{@w{ipv4_192_0}}, @code{@w{ipv4_192}}).
 
 @end itemize
 
@@ -1479,6 +1515,8 @@ A compound class is a sequence of simple classes connected by dots or
 
 @cindex Compound classes
 @cindex Classes, compound
+
+@w{}
 @smallexample
 
 myclass.sun4.Monday::
@@ -1557,6 +1595,7 @@ following example would allow all hosts except for @code{myhost}:
 and similarly, so allow all hosts in a user-defined group @code{mygroup},
 @emph{except} for @code{myhost}, you would write
 
+@w{}
 @smallexample
    @var{action}:
 
@@ -1604,7 +1643,7 @@ what these look like for your systems you can run cfengine in
 
 @end smallexample
 @noindent
-and these will be displayed. For example, solaris 2.4 systems
+and these will be displayed. For example, Solaris 2.4 systems
 generate the additional classes @code{sunos_5_4} and @code{sunos_sun4m},
 @code{sunos_sun4m_5_4}.
 
@@ -1654,6 +1693,8 @@ OR is the weakest operator.
 @cindex ACLs
 
 @cartouche
+
+@w{}
 @smallexample
 
    acl:
@@ -1714,7 +1755,7 @@ ACL entries in practice. The method entry tells cfengine how to
 interpret the entries: should a file's ACLs be overwritten or only
 adjusted?  Since the filesystems from different developers all use
 different models for ACLs, you must also tell cfengine what kind of
-filesystem the file resides on. Currently only solaris and DCE/DFS ACLs
+filesystem the file resides on. Currently only Solaris and DCE/DFS ACLs
 are implemented.
 
 NOTE: if you set both file permissions and ACLs the file permissions
@@ -1749,7 +1790,7 @@ The user or group is sometimes referred to as a @emph{key}.
 For an explanation of ACL types and their use, refer to your local
 manual page.  However, note that for each type of filesystem, there are
 certain entries which must exist in an ACL. If you are creating a new
-ACL from scratch, you must specify these.  For example, in solaris ACLs
+ACL from scratch, you must specify these.  For example, in Solaris ACLs
 you must have entries for @code{user}, @code{group} and @code{other}.
 Under DFS you need what DFS calls a @code{user_obj}, @code{group_obj}
 and an @code{other_obj}, and in some cases @code{mask_obj}. In cfengine
@@ -1784,6 +1825,7 @@ The individual bits in an ACE may be either added subtracted or
 set equal to a specified mask. The @samp{+} symbol means add,
 the @samp{-} symbol subtract and @samp{=} means set equal to.
 Here are some examples:
+
 @smallexample
 
   @var{acltype}:@var{id/*}:@var{mask}
@@ -1873,6 +1915,8 @@ the ACL applies to the owner of the file object.
 
 DFS permissions are comprised of the bits
 @samp{crwxid}, where:
+
+@w{}
 @smallexample
         @b{c} - Grants control privileges, to modify an acl.
         @b{r} - Grants read  privileges.
@@ -1903,6 +1947,7 @@ because you must have a valid security ticket.
 @cindex NT, ACL
 
 NT ACEs are written as follows:
+
 @smallexample
        acl_type:user/group:permissions:accesstype
 @end smallexample
@@ -1913,6 +1958,7 @@ normally imply that the ACL applies to the owner of the file
 object. However this functionality is as of today not yet implemented.
 
 In NT, the ACL type can be one of the following:
+
 @smallexample
            user
            group
@@ -1920,6 +1966,7 @@ In NT, the ACL type can be one of the following:
 Both types require that you specify the name of a user or a group. 
 
 NT permissions are comprised of the bits @samp{rwxdpo}, where:
+
 @smallexample
     r - Read privileges
     w - Write privileges
@@ -1935,6 +1982,7 @@ a predefined combination of the different bits specified above and are
 provided with cfengine as well. You can use the standards by setting the
 permission to @code{read}, @code{change} or @code{all}. The bit
 implementation of each standard is as on NT:
+
 @smallexample
            read   - rx
            change - rwxd
@@ -1947,6 +1995,7 @@ above can only be used alone, and not in combination with @samp{+},
 NT defines several different access types, of which only two are used in
 connection with the ACL type that is implemented in cfengine for NT. The
 access type can be one of the following:
+
 @smallexample
            allowed
            denied
@@ -2067,6 +2116,7 @@ Alerts cannot belong to the class @code{any}, that would generate a message from
 every host. In a huge network this could result in vast amounts of Email. This behaviour
 can be forced, however, by creating an alias for the class `any' that is defined on
 the affected hosts.
+
 @smallexample
 
 alerts:
@@ -2087,6 +2137,7 @@ For example:
 @cindex SetState()
 @cindex UnsetState()
 
+@w{}
 @smallexample
 
 alerts:
@@ -2109,6 +2160,7 @@ alerts:
 
 The @code{ShowState()} function reports on state gathered by the cfenvd
 daemon.
+
 @smallexample
 ShowState(incoming.tcpsyn)
 ShowState(outgoing.smtp)
@@ -2119,6 +2171,7 @@ ShowState(users)
 @end smallexample
 
 To limit the frequency of alerts, you can set locking times:
+
 @smallexample
  # ROOT PROCS
 
@@ -2130,6 +2183,7 @@ To limit the frequency of alerts, you can set locking times:
 
 @end smallexample
 Alerts can also be channeled directly to syslog, to avoid extraneous console messages or email.
+
 @smallexample
 
   SysLog(LOG_ERR,"Test syslog message")
@@ -2147,6 +2201,7 @@ added through a system alert functions to give timer behaviour.
 For example, consider setting 
 a class that acts like a non-resettable timer. It is defined for exactly 10
 minutes before expiring.
+
 @smallexample
 
   SetState("preserved_class",10,Preserve)
@@ -2154,12 +2209,14 @@ minutes before expiring.
 @end smallexample
 Or to set a class that acts as a resettable timer. It is defined for 60 minutes unless
 the SetState call is called again to extend its lifetime.
+
 @smallexample
 
   SetState(non_preserved_class,60,Reset)
 
 @end smallexample
 Existing persistent classes can be deleted with:
+
 @smallexample
 
           UnsetState(myclass)
@@ -2296,6 +2353,8 @@ in the file does not necessarily reflect the order in which they are
 executed. The syntax of declarations here is:
 
 @cartouche
+
+@w{}
 @smallexample
   control:
 
@@ -2343,14 +2402,14 @@ control:
 
 @noindent
 Parentheses are required when making a declaring information in cfengine.
-Note that a limited number of in-built functions exists:
+Note that a limited number of built-in functions exists:
 @cindex RandomInt() function
 @cindex ReadFile() function
 @itemize @bullet
 @item 
 @code{ExecResult}(@var{command}) Executes the named shell command and
 inserts the output into the variable.  Note that, when this is used in
-cfengine internal list variables, any spaces are interpreted as list
+cfengine built-in list variables, any spaces are interpreted as list
 separators. In other lists, normal rules for iteration apply.
 @item 
 @code{RandomInt(a,b)}
@@ -2598,6 +2657,7 @@ takes to correct a problem. To increase the flexibility of cfengine, a
 mechanism has been introduced in version 1.5 which allows you to include
 a module of your own making in order to define or undefine a number of classes.
 The syntax
+
 @smallexample
   module:mytests
 
@@ -2850,6 +2910,7 @@ made in imported files always come later than things in the main program.
 Normally cfagent warns about redefinitions of variables during parsing.
 This is presumed to be a mistake. To avoid this behaviour, add the name
 of the variable to this list, and the warning disappears.
+
 @smallexample
 control:
 
@@ -2871,6 +2932,7 @@ cfrep = ( blo )
 @node AutoDefine, BinaryPaddingChar, AllowRedefinitionOf, control
 @subsection AutoDefine
 
+@w{}
 @smallexample
 
 control:
@@ -2892,6 +2954,8 @@ configured.
 
 @node BinaryPaddingChar, ChecksumDatabase, AutoDefine, control
 @subsection BinaryPaddingChar
+
+@w{}
 @smallexample
 BinaryPaddingChar = ( \0 )
 @end smallexample
@@ -2908,6 +2972,7 @@ or text messages within program code.
 @node ChecksumDatabase, BindToInterface(cfagent), BinaryPaddingChar, control
 @subsection ChecksumDatabase
 
+@w{}
 @smallexample
 ChecksumDatabase = ( /var/cfengine/cfdb )
 
@@ -2947,7 +3012,7 @@ This feature is not available for old operating systems.
 @node ChecksumPurge, ChecksumUpdates, BindToInterface(cfagent), control
 @subsection ChecksumPurge
 
-
+@w{}
 @smallexample
 ChecksumPurge = ( on )
 
@@ -2962,6 +3027,7 @@ is removed from the database and a warning is issued.
 
 To purge files now and then, but at no particular time, one could do
 something like this:
+
 @smallexample
 
 strategies:
@@ -2988,7 +3054,7 @@ control:
 @node ChecksumUpdates, childlibpath, ChecksumPurge, control
 @subsection ChecksumUpdates
 
-
+@w{}
 @smallexample
 ChecksumUpdates = ( on )
 
@@ -3047,6 +3113,7 @@ Copying is performed using a file age comparison.
 
 Note that all entries defined under a specified class
 are valid only as long as that class is defined. For instance
+
 @smallexample
   @var{class}::
 
@@ -3086,6 +3153,7 @@ e.g.
 Sets the default value of the @code{pkgmgr} attribute for
 @code{packages} items.
 
+@w{}
 @smallexample
 DefaultPkgMgr = ( rpm )
 @end smallexample
@@ -3113,7 +3181,7 @@ SpoolDirectories = ( /var/spool/cron/crontabs )
 
 @cindex DeleteNonUserMail DeleteNonUserFiles
 This is an generalization of DeleteNonUserMail and makes it redundant.
-it is formally executed as a part of the "tidy" action.
+it is formally executed as a part of the ``tidy'' action.
 
 @c .....................................................
 @c SUBSECTION
@@ -3191,6 +3259,8 @@ can fail to be defined if cfengine is not able to figure out the domain name.
 @subsection DryRun
 @cindex DryRun
 @vindex DryRun
+
+@w{}
 @smallexample
 
   DryRun = ( @var{on/}@b{off} )
@@ -3200,6 +3270,7 @@ can fail to be defined if cfengine is not able to figure out the domain name.
 This variable has the same effect as the command line options
 @kbd{--dry-run} or @kbd{-n}. It tells cfengine to only report
 what it should do without actually doing it.
+
 @smallexample
 
  @var{classes}::
@@ -3281,7 +3352,7 @@ file.
 @node exclamation, excludecopy, emptyresolvconf, control
 @subsection Exclamation
 
-This variable defaults to "on". If set to "off", no exclamation marks
+This variable defaults to ``on''. If set to ``off'', no exclamation marks
 (Br. pling, Am: shriek) are printed during security alerts, e.g. for
 checksum violations.
 
@@ -3310,6 +3381,7 @@ link operation using the @code{exclude} option @xref{copy}.
 
 Note that all entries defined under a specified class
 are valid only as long as that class is defined. For instance
+
 @smallexample
   @var{class}::
 
@@ -3336,6 +3408,7 @@ link operation using the @code{exclude} option @xref{links}.
 
 Note that all entries defined under a specified class
 are valid only as long as that class is defined. For instance
+
 @smallexample
   @var{class}::
 
@@ -3363,6 +3436,8 @@ cfengine will try to kill the cfengine which seems to have hung and
 attempt to restart the action.
 
 @cartouche
+
+@w{}
 @smallexample
  
  ExpireAfter = ( @var{time-in-minutes} )
@@ -3419,6 +3494,8 @@ In this case you would define @code{homepattern} to match these numbers:
 
 @cindex Wildcards in homepattern
 @cindex Searching for home directories
+
+@w{}
 @smallexample
 homepattern = ( u? )
 @end smallexample 
@@ -3487,6 +3564,8 @@ which must have elapsed for an action in the action sequence before
 which it will be executed again.
 
 @cartouche
+
+@w{}
 @smallexample
  
  IfElapsed = ( @var{time-in-minutes} )
@@ -3520,6 +3599,7 @@ as options of the form @code{ifelapsed=15}.
 @node Inform, interfacename, IfElapsed, control
 @subsection Inform
 
+@w{}
 @smallexample
 
   Inform = ( @var{on/}@b{off} )
@@ -3635,7 +3715,7 @@ useful when processes appear to hang on connecting.
 @cindex LastSeen
 @cindex Hanging processes
 
-
+@w{}
 @smallexample
 
   LastSeen = ( off )
@@ -3661,6 +3741,7 @@ link operation using the @code{symlink} option @xref{copy}.
 
 Note that all entries defined under a specified class
 are valid only as long as that class is defined. For instance
+
 @smallexample
   @var{class}::
 
@@ -3684,6 +3765,7 @@ Specify an alternative directory for keeping cfengine's
 log data. This defaults to @file{/var/run/cfengine} or
 @file{/var/cfengine}.
 
+@w{}
 @smallexample
 
   LogDirectory = ( /var/cfengine )
@@ -3697,13 +3779,14 @@ log data. This defaults to @file{/var/run/cfengine} or
 @node LogTidyHomeFiles, moduledirectory, LogDirectory, control
 @subsection LogTidyHomeFiles
 
+@w{}
 @smallexample
 
   LogTidyHomeFiles = ( off ) 
 
 @end smallexample
 
-If set to "off", no log is made of user files, in their
+If set to ``off'', no log is made of user files, in their
 home directories, of the files which are tidied by cfengine.
 
 @cindex Tidy log files for users
@@ -4090,6 +4173,7 @@ the cfengine output. It will be of little interest to humans.
 @node singlecopy, site, showactions, control
 @subsection SingleCopy
 
+@w{}
 @smallexample
 
 	singlecopy = ( on )
@@ -4097,7 +4181,7 @@ the cfengine output. It will be of little interest to humans.
 @end smallexample
 
 If @code{singlecopy} is defined the behavior of copy: is modified so that a file will
-only be copied once, helping to achieve hierarchical or "most specific"
+only be copied once, helping to achieve hierarchical or ``most specific''
 file copy overrides, provided that the most specific file occurs first. 
 With the following file structure on a host running cfservd:
 
@@ -4121,6 +4205,7 @@ copy:
 
 @noindent Would result in:
 
+@w{}
 @smallexample
 /dist/hosts/loghost1.example.com/etc/syslog.conf being copied to loghost1.example.com
 /dist/solaris/etc/syslog.conf being copied to Solaris systems
@@ -4301,6 +4386,7 @@ should make this an address which users can mail if they have troubles.
 @node Syslog, SyslogFacility, sysadm, control
 @subsection Syslog
 
+@w{}
 @smallexample
 
   Syslog = ( @var{on/}@b{off} )
@@ -4327,6 +4413,7 @@ To set this output level one writes:
 @node SyslogFacility, timezone, Syslog, control
 @subsection SyslogFacility
 
+@w{}
 @smallexample
 
   SyslogFacility = ( @var{facility} )
@@ -4343,6 +4430,7 @@ e.g.
 @end smallexample
 
 Valid arguments are 
+
 @smallexample
 LOG_USER
 LOG_DAEMON
@@ -4393,6 +4481,7 @@ shellcommands:
 @node TimeOut, Verbose, timezone, control
 @subsection TimeOut
 
+@w{}
 @smallexample
 
   TimeOut = ( 10 )
@@ -4411,6 +4500,7 @@ this variable smaller than 3 seconds or larger than 60 seconds.
 @node Verbose, Warnings, TimeOut, control
 @subsection Verbose
 
+@w{}
 @smallexample
 
   Verbose = ( @var{on/}@b{off} )
@@ -4442,7 +4532,7 @@ For related more limited output, @xref{Inform}.
 @node Warnings, warnnonuserfiles, Verbose, control
 @subsection Warnings
 
-
+@w{}
 @smallexample
 
   Warnings = ( @var{on/}@b{off} )
@@ -4563,6 +4653,8 @@ attempts to prevent this during remote copies.}
 The syntax summary is:
 
 @cartouche
+
+@w{}
 @smallexample
 
 copy:
@@ -4647,6 +4739,7 @@ To split the data and resource forks of a file into two parts,
 open up a terminal.  The following commands will copy MyFile 's data and
 resource forks into two separate files which can then be recombined by
 cfengine:
+
 @smallexample
 	cp MyFile MyFile-datafork
 	cp MyFile/..namedfork/rsrc MyFile-rsrcfork
@@ -4680,9 +4773,9 @@ aside forcably. A single non-supressable warning is given when this
 occurs; the file is moved to filename@file{.cf-moved}.
 
 @item backup
-If the @code{backup} option is set to "false", cfengine
-will not make a backup copy of the file before copying. The default value is "true".
-If the option "timestamp" is chosen, a unique timestamp will be appended
+If the @code{backup} option is set to ``false'', cfengine
+will not make a backup copy of the file before copying. The default value is ``true''.
+If the option ``timestamp'' is chosen, a unique timestamp will be appended
 to the saved filename.
 @cindex Backup of files in copy
 @vindex backup=
@@ -4690,7 +4783,7 @@ to the saved filename.
 
 @item repository
 This allows a local override of the @code{Repository} variable, on an item
-by item basis. If set to "off" or "none" it cancels the value of a global repository.
+by item basis. If set to ``off'' or ``none'' it cancels the value of a global repository.
 
 Copy makes a literal image of the master file at the destination,
 checking whether the master is newer than the image. If the image needs
@@ -4849,6 +4942,7 @@ source file meets a size critereon. This could be used to avoid
 installing a corrupted file (the copying of an empty password file, for
 instance). Sizes are in bytes by default, but may also be quoted in
 kilobytes or megabytes using the notation:
+
 @smallexample
 
 @var{number}bytes
@@ -4947,7 +5041,7 @@ is newer than @file{/etc/aliases}. In the second example, @file{backup-etc}
 is a directory containing master configuration files (for instance, @file{services},
 @file{aliases}, @file{passwd}...). Each of the files in @file{backup-etc}
 is installed or updated under @file{/etc}. Finally, a global
-@file{nsswitch.conf} file is kept up to date for solaris systems.
+@file{nsswitch.conf} file is kept up to date for Solaris systems.
 
 The @code{home} directive can be used as a destination, in which
 case cfengine will copy files to every user on the system. This is
@@ -5092,6 +5186,8 @@ be called after all NFS filesystems have been mounted.  You may use the
 special variable @code{$(binserver)} here.
 
 @cartouche
+
+@w{}
 @smallexample
 
   disks:
@@ -5188,6 +5284,8 @@ the @code{touch} option in the @code{files} actions.  @xref{files}.
 The form of a declaration is:
 
 @cartouche
+
+@w{}
 @smallexample
 
   directories:
@@ -5250,6 +5348,8 @@ being around, but you don't want to delete them--- a deleted file cannot
 be examined later.  The syntax is
 
 @cartouche
+
+@w{}
 @smallexample
 
  disable:
@@ -5309,6 +5409,7 @@ Hint: The last example disables a file which restricts access to the
 @code{at} utility.  Such a command could be followed by a file action,
 @xref{files},
 
+@w{}
 @smallexample
 files:
 
@@ -5401,6 +5502,7 @@ The @code{size=} option in disable allows you to carry out a disable
 operation only if the size of the file is less than, equal to or greater
 than some specified size. Sizes are in bytes by default, but
 may also be quoted in kilobytes or megabytes using the notation:
+
 @smallexample
 
 @var{number}bytes
@@ -5431,8 +5533,8 @@ list of classes becomes can be switched on with the aid of a statement
 @code{define=@var{classlist}} in order to trigger knock-on actions.
 
 The @code{repository} declaration allows a local override of the
-@code{Repository} variable, on an item by item basis. If set to "off" or
-"none" it cancels the value of a global repository and leaves the disabled
+@code{Repository} variable, on an item by item basis. If set to ``off'' or
+``none'' it cancels the value of a global repository and leaves the disabled
 file in the same directory.
 
 @page
@@ -5457,6 +5559,8 @@ and edit all files matching a pattern, using @code{Include}, @code{Exclude}, and
 @code{Ignore} (see Recursive File Sweeps in the tutorial).
 
 @cartouche
+
+@w{}
 @smallexample
 
 editfiles:
@@ -5559,6 +5663,7 @@ comment of the type
 @noindent
 @code{Slash} implies a comment of the C++ type:
 
+@w{}
 @smallexample
 // comment
 @end smallexample 
@@ -5566,6 +5671,7 @@ comment of the type
 @noindent
 @code{Percent} implies a comment of the type:
 
+@w{}
 @smallexample
 % comment
 @end smallexample
@@ -5578,7 +5684,7 @@ functions.
 A special group of editing commands is based on the POSIX Regular
 Expression package. These use regular expressions to search line by
 line through text and perform various editing functions. Searches are of two
-different types: "LineMatching" and "LineContaining". In the first case
+different types: ``LineMatching'' and ``LineContaining''. In the first case
 the regular expression must match the entire line exactly; in the latter,
 a substring is searched for in the file.
 
@@ -5651,11 +5757,11 @@ decision structures @code{BeginGroupIfNoLineMatching} and
 @code{BreakIfLineMatches}.
 
 
-@item AppendIfNoLineMatching  @var{quoted-regex}/ "ThisLine"
+@item AppendIfNoLineMatching  @var{quoted-regex}/ ``ThisLine''
 A new version of the older @code{AppendIfNoSuchLine}
 which uses a regular expression instead of a literal
 string. The line which gets appended must be set
-previously using @code{SetLine}. If @code{"ThisLine"} is
+previously using @code{SetLine}. If @code{``ThisLine''} is
 given as the argument, the current value of then line buffer
 is assumed. This allows constructions for merging files
 on a convergent line-by-line basis:
@@ -5711,7 +5817,7 @@ Applied to the current file, it is equivalent to saying: for each of the
 mountable resources in the list @xref{mountables}, append if not found a
 line for a direct automount map command, to the current file.  The
 string which follows can be used to specify any special mount options
-e.g. @code{"-nosuid"} for non setuid mounting (of all the
+e.g. @code{``-nosuid''} for non setuid mounting (of all the
 mountables). Note that this is added to the current file and not to a
 file named @file{/etc/auto_direct}.
 
@@ -5719,10 +5825,11 @@ file named @file{/etc/auto_direct}.
 Set to true or false, on or off to set inform level for this file.
 Default is on.
 The default is to produce time-stamped backups of files; this may be
-coded explicitly by setting to "timestamp" or "stamp". If set to "false"
-or "off", no backup is kept of the edited file. If the value is set to
-"single" or "one" then only the last version of the file is kept, overwriting
+coded explicitly by setting to ``timestamp'' or ``stamp''. If set to ``false''
+or ``off'', no backup is kept of the edited file. If the value is set to
+``single'' or ``one'' then only the last version of the file is kept, overwriting
 any previously saved versions.
+
 @smallexample
    Backup "single"
 @end smallexample 
@@ -5813,11 +5920,11 @@ Use the current value of the comment delimiters set using
 from the current position in a file to a line matching the given regular
 expression in quotes.
 
-@item DefineClasses "@var{class1}:@var{class2}:..."
+@item DefineClasses ``@var{class1}:@var{class2}:...''
 Activate the following colon, comma or dot-separated list of classes if
 and only if the file is edited. 
 
-@item DefineInGroup "@var{class1}:@var{class2}:..."
+@item DefineInGroup ``@var{class1}:@var{class2}:...''
 Activate the following colon, comma or dot-separated list of classes if
 the edit group is entered. This can be combined with other classes
 to identify what particular edits took place.
@@ -5843,7 +5950,7 @@ This will define service_added and service_added_another_way if
 either line is added, but additionally myservice1_added if myservice1
 was added and likewise for myservice2_added.
 
-@item DefineInGroup "@var{class1}:@var{class2}:..."
+@item DefineInGroup ``@var{class1}:@var{class2}:...''
 Activate the following colon, comma or dot-separated list of classes
 if execution reaches the @code{BeginGroup} ... @code{EndGroup}
 section(s) containing this command. If you think you want to put
@@ -5884,9 +5991,10 @@ verbose mode, but all edits are immediately
 abandoned.
 
 
-@item EditMode "Binary"
+@item EditMode ``Binary''
 If set to binary, the file will be edited as if it were a non-ASCII file.
 See discussion below.
+
 @smallexample
    EditMode "Binary"
 @end smallexample
@@ -5939,7 +6047,7 @@ As usual.
 @item IncrementPointer @var{quoted-number}
 Increments the value (in lines) of the file pointer
 by the number of lines specified in the quoted
-string (as a denary number). e.g. @samp{"4"}.
+string (as a denary number). e.g. @samp{``4''}.
 Negative values are equivalent to decrementing the
 pointer. If a request is made to increment/decrement
 outside of the file boundaries the pointer `bumps'
@@ -6036,9 +6144,9 @@ For each line of the current file, replace the first string matching the
 regular expression in the first quotes (@var{quoted-regex}) with the
 string given in the second set of quotes (@var{quoted-string}).
 Matching is done left to right.  For example, if you replace
-@samp{"YY = [[:digit:]][[:digit:]]"} with @samp{"YY = 04"} and
-cfengine encounters @samp{"YY = 03 but old YY = 70"} then it will
-be replaced with @samp{"YY = 04 but old YY = 70"}
+@samp{``YY = [[:digit:]][[:digit:]]''} with @samp{``YY = 04''} and
+cfengine encounters @samp{``YY = 03 but old YY = 70''} then it will
+be replaced with @samp{``YY = 04 but old YY = 70''}
 
 @item ReplaceLinesMatchingField @var{quoted-number}
 This command replaces any lines in the current file with the current line
@@ -6054,7 +6162,7 @@ this simply overrides the entries with the new ones.
 
 @item Repository @var{quoted string}
 This allows a local override of the @code{Repository} variable, on an item
-by item basis. If set to "off" or "none" it cancels the value of a global repository.
+by item basis. If set to ``off'' or ``none'' it cancels the value of a global repository.
 
 
 @item ResetSearch @var{quoted-string}
@@ -6167,6 +6275,7 @@ they are not matched, so that a comment may be spread over
 several lines. e.g. If using C style @samp{/*} and @samp{*/}
 comments, the command @code{UnCommentNLines "3"} would
 uncomment
+
 @smallexample
  /* 1 */
  /* 2 */
@@ -6174,6 +6283,7 @@ uncomment
 @end smallexample
 @noindent
 and also
+
 @smallexample
  /* 1 
     2
@@ -6183,7 +6293,7 @@ and also
 @item UnsetAbort  @var{quoted-string}
 Switches off the feature @code{AbortAtLineMatching}.
 
-@item UseShell "false"
+@item UseShell ``false''
 Normally cfengine uses a shell based exec function to run
 scripts during editing. This involves the inheritance of
 environment variables and path, which carries with it an
@@ -6307,6 +6417,8 @@ A files-statement can have several options.  We can begin by examining
 the form of the statement in pseudo-code:
 
 @cartouche
+
+@w{}
 @smallexample
   files:
 
@@ -6408,6 +6520,7 @@ mode 755.
 The free BSD Unices have additional filesystem flags which can be seton
 files.  Refer to the BSD @code{chflags} documentation for this.  For
 example,
+
 @smallexample
 
    /tmp/flags.01  mode=0600 owner=0 group=0
@@ -6441,6 +6554,7 @@ gids in the list.
 
 @item action=@var{action}
 The action is one of the following keywords.
+
 @smallexample
 warnall warndirs warnplain
  fixall fixdirs fixplain
@@ -6636,6 +6750,7 @@ It ensures automatically that no user has files which can be written to
 by other arbitrary users.
 
 As a corollary to this, you may write something like
+
 @smallexample
 
   any::
@@ -6742,11 +6857,13 @@ applied in different contexts.
 Filter objects can be used in @code{copy}, @code{editfiles},
 @code{files}, @code{tidy} and @code{processes}. In most cases one
 writes
+
 @smallexample
 .. filter=<i>filteralias</i>
 @end smallexample
 in the appropriate command. The exception is @code{editfiles}, where the syntax
 is 
+
 @smallexample
 @{
 ..
@@ -6767,6 +6884,7 @@ files:
 Filters are defined in a separate section. Filters for files
 and processes are defined together. They differ only in the
 criteria they contain. Here is are examples of file filters:
+
 @smallexample
 Filters:
 
@@ -6824,7 +6942,7 @@ File filters:
 @table @code 
 @item Owner:
  and Group can use numerical id's or
-names, or @code{"none"} for users or groups which are undefined in
+names, or @code{``none''} for users or groups which are undefined in
 the system passwd/group file.
 
 @item
@@ -6838,6 +6956,7 @@ apply only to file objects.
 These specify ranges From and To. If the file's time stamps
 lie in the specified range, this returns true. Times are
 specfied by a six component vector
+
 @smallexample
 (year,month,day,hour,minutes,seconds)
 @end smallexample
@@ -6860,6 +6979,7 @@ applies only to file objects may be a list of file types
 which are to be matched. The list should be separated by the OR symbol
 `|', since these types are mutually exclusive. The possible values are
 currently
+
 @smallexample
 file|reg|link|dir|socket|fifo|door|char|block
 @end smallexample
@@ -6913,6 +7033,7 @@ NLWP field for SVR4 (quoted regex)
 logical combination of above returned by filter (quoted regex)
 @end table
 Examples: processes started between 18th Nov 2000 and now.
+
 @smallexample
   @{ filteralias
 
@@ -6921,6 +7042,7 @@ Examples: processes started between 18th Nov 2000 and now.
   @}
 @end smallexample
 All processes which have accumulated between 1 and 20 hours of CPU time.
+
 @smallexample
   @{ filteralias
 
@@ -6938,6 +7060,7 @@ All processes which have accumulated between 1 and 20 hours of CPU time.
 
 Here is an example filter to search for all files which are either directories or links,
 or any kind of file owned by mark, in group cfengine.
+
 @smallexample
 
 control:
@@ -6963,6 +7086,7 @@ filters:
 @end smallexample
 Find all ELF executables using data from the Unix @code{file} command.
 Caution, this takes a long time if used indescriminately.
+
 @smallexample
 
 control:
@@ -7065,6 +7189,7 @@ the @samp{+@@} construction.  For example:
 @cindex NIS, netgroup support
 @vindex +
 
+@w{}
 @smallexample
 
 groups:
@@ -7092,6 +7217,8 @@ list by using the minus `-' symbol.  For example:
 @cindex Removing entries from netgroups
 @cindex Negating entries from netgroups
 @cindex Netgroups, negating entries
+
+@w{}
 @smallexample
 
 group = ( +mynetgroup -specialhost -otherhost )
@@ -7145,7 +7272,6 @@ all day Monday and all day on the first day of every month.
 
 If you apply a class predicate before a definition then the result
 is effectively the AND of the classes:
-
 
 @smallexample
 
@@ -7271,6 +7397,8 @@ can be accomplished by adding the directory to the ignore-list.  The syntax
 is
 
 @cartouche
+
+@w{}
 @smallexample
 
   ignore:
@@ -7283,6 +7411,7 @@ is
 For example:
 @cindex ignore command
 
+@w{}
 @smallexample
 
 ignore:
@@ -7387,6 +7516,8 @@ files are inherited by later includes, but not @emph{vice-versa}.
 
 
 @cartouche
+
+@w{}
 @smallexample
 
  interfaces:
@@ -7438,6 +7569,8 @@ children.  The @code{linkchildren} feature is also available from the
 @code{files} action  @xref{files}. The syntax of a link item is:
 
 @cartouche
+
+@w{}
 @smallexample
 
   @var{from-link} ->[!] @var{to-object} 
@@ -7782,6 +7915,7 @@ When specifying symbolic linking, you can ask cfengine
 to change the link type to be either relative to the
 source or to be an absolute path. What this means is the
 following. Consider the following link:
+
 @smallexample
 
    /var/tmp/cfengine -> /local/cfengine
@@ -7836,7 +7970,7 @@ links:
 Cfengine will not create hard links to directories or other special files.
 This is always a slightly dubious practice and is best avoided anyway.
 POSIX says that the hard link can be on a different device to the file
-it points to, but both BSD and System 5 restrict hard links to be on
+it points to, but both BSD and System V restrict hard links to be on
 the same device as their predecessors. Cfengine has no policy on this,
 but---in the theoretical case in which the hard link and the predecessor
 were on different file systems---it becomes near impossible to determine
@@ -7934,6 +8068,8 @@ The order of method exeuction is not guaranteed. This results from the
 decoupling between client request and service provision.
 
 @cartouche
+
+@w{}
 @smallexample
 
   methods:
@@ -7993,6 +8129,7 @@ still be defined in the child by independent local definitions.
 The function arguments may not be empty, but a null value
 can be transmitted with a dummy value, e.g. @code{Function(null)} or @code{function(void)}.
 Here is an example method call.
+
 @smallexample
 
  # cfagent.conf
@@ -8017,6 +8154,7 @@ methods:
 
 @end smallexample
 With method file (located in the ModulesDirectory),
+
 @smallexample
 
  # cf.simple
@@ -8069,6 +8207,7 @@ If the server name is a wildcard, e.g. @code{*} then this acts as a multicast or
 The following example
 collects the tar file, unpacks it,
 configures and compiles it, then tidies its files.
+
 @smallexample
 ####################################################
 #
@@ -8187,6 +8326,7 @@ alerts:
 
 
 A more complex example is given below:
+
 @smallexample
   GetAnalysis("$@{parent1@}",param2,ReadFile("/etc/passwd",300))
 
@@ -8220,6 +8360,7 @@ It is passed three arguments: the contents of variable @var{parent1}, the litera
 string "param2" and the first 300 bytes of the file @file{/etc/passwd}.
 On return, if the method gets executed, the values will be placed in the four
 variables:
+
 @smallexample
 $(GetAnalysis.a) $(GetAnalysis.b) $(GetAnalysis.c) $(GetAnalysis.d)
 @end smallexample
@@ -8256,6 +8397,7 @@ declarations:
 
 @end cartouche
 e.g.
+
 @smallexample
 control:
 
@@ -8351,6 +8493,8 @@ into the bounds of that model) then you can still statically mount
 miscellaneous filesystems using a statement of the form:
 
 @cartouche
+
+@w{}
 @smallexample
 
 miscmounts:
@@ -8368,6 +8512,7 @@ miscmounts:
 
 @noindent
 For example
+
 @smallexample
 
    physics::
@@ -8425,6 +8570,7 @@ mountables:
 
 @end smallexample
 e.g.
+
 @smallexample
 
 mountables:
@@ -8476,6 +8622,8 @@ have to be an exact match, only a substring of the process line.  The
 form of a process command is
 
 @cartouche
+
+@w{}
 @smallexample
 processes:
 
@@ -8511,7 +8659,7 @@ processes:
 @cindex umask
 
 By default, the options sent to ps are "-aux" for BSD systems and "-ef"
-for system 5.  You can use the @code{SetOptionString} command to redefine
+for System V.  You can use the @code{SetOptionString} command to redefine
 the option string. Cfengine assumes only that the first identifiable number
 on each line is the process identifier for the processes, so you must not
 choose options for ps which change this basic requirement (this is not a
@@ -8687,7 +8835,7 @@ processes:
 
 @noindent
 Here is a second example which may be used to restart the nameservice
-on a solaris system:
+on a Solaris system:
 
 @smallexample
 
@@ -8774,6 +8922,8 @@ RPM on a Solaris box.
 The syntax summary is:
 
 @cartouche
+
+@w{}
 @smallexample
 
 packages:
@@ -8950,6 +9100,8 @@ be called after all NFS filesystems have been mounted.  You may use the
 special variable @code{$(binserver)} here.
 
 @cartouche
+
+@w{}
 @smallexample
 
   required:
@@ -8983,6 +9135,7 @@ fails the `required' test.  If a directory does not exist, or contains
 fewer than @code{sensiblecount} files, then it also fails the test and a
 warning is issued.
 
+@w{}
 @smallexample
 
 required:
@@ -9000,6 +9153,7 @@ but you may specify bytes or megabytes), e.g.
 @cindex Warning about full disks
 @cindex Full disk warnings
 
+@w{}
 @smallexample
 
 required:
@@ -9060,6 +9214,7 @@ declares a list of nameservers for hosts in the group or class
 variable (set here to @code{uio.no}) results in a
 @code{/etc/resolv.conf} file of the form:
 
+@w{}
 @smallexample
 
 domain uio.no
@@ -9112,6 +9267,8 @@ commands from this section.
 The syntax is simply to quote the command you wish to be executed.
 
 @cartouche
+
+@w{}
 @smallexample
 shellcommands:
 
@@ -9320,6 +9477,8 @@ out @code{core} files from users' home directories.  The form of an
 entry is:
 
 @cartouche
+
+@w{}
 @smallexample
 tidy:
 
@@ -9561,6 +9720,8 @@ appropriate entry from the filesystem table (@code{/etc/fstab} or
 equivalent).  The syntax is simply
 
 @cartouche
+
+@w{}
 @smallexample
 unmount:
 
@@ -9644,6 +9805,8 @@ the @file{/etc/exports} file on most Unix systems. The syntax for the
 file is as follows:
 
 @cartouche
+
+@w{}
 @smallexample
 
  control:
@@ -9714,6 +9877,8 @@ file is as follows:
 @cindex cfservd.conf iteration
 Iteration of variables is allowed, hence:
 @noindent
+
+@w{}
 @smallexample
 	control:
 	  Split = ( " " )
@@ -9727,6 +9892,7 @@ Iteration of variables is allowed, hence:
 	   $(base)/$(dirs)   $(hostlist)
 @end smallexample
 results in:
+
 @smallexample
 	Path: /usr/bin (encrypt=0)
 	   Admit: 10.10.10.1 10.10.10.2 10.10.10.3 root=
@@ -9782,6 +9948,7 @@ In the access control lists below, host ranges can be specified in a
 number of ways i) as substrings, ii) as address ranges denoted by the
 "-" hyphen, or iii) as CIDR (Classless Inter Domain Routing) notation.
 For example
+
 @smallexample
 128.39.73
 128.39.74.10/23
@@ -9795,6 +9962,7 @@ Normally, this is connected to a specific subnet, but here it simply
 represents the number of bits from the left which are fixed for matching;
 all remaining bits are wildcards.
 The following forms are equivalent:
+
 @smallexample
 128.39.74.
 128.39.74.10/24
@@ -9816,6 +9984,7 @@ immediately.
   This can be used to prevent hanging connection attacks from malicous
 hosts and other denial of service attacks which would bind thread
 resources.
+
 @smallexample
      control:
 
@@ -9861,6 +10030,7 @@ This applies to use of cfrun.
 @cindex cfrun, limiting users on server
 @cindex Key security of users
 
+@w{}
 @smallexample
 
 AllowUsers = ( mark root )
@@ -9970,6 +10140,7 @@ messages of the form `Can't stat' file when remote copying.
 
 Hosts which are included by the allow-list above can be explicitly
 denied access using this list.
+
 @smallexample
      control:
 
@@ -10184,6 +10355,8 @@ for sites which require a high level of security.
 The general syntactic form of the @code{cfrun} command is
 
 @cartouche
+
+@w{}
 @smallexample
 
   cfrun -@var{option} --@var{longoption} @var{class1} @var{class2 ...}
@@ -10198,6 +10371,8 @@ host, or whether they are to be passed on to the agent on the remote hosts.
 To clarify this distinction, the arguments are organized as follows:
 
 @cartouche
+
+@w{}
 @smallexample
 
   cfrun -@var{local options} -- @var{remote options} -- @var{remote classes}
@@ -10247,6 +10422,8 @@ when you use the @code{cfrun} command. The format of the file
 is as follows
 
 @cartouche
+
+@w{}
 @smallexample
 
  #
@@ -10334,6 +10511,7 @@ of two.
 If the port command is given cfrun uses this to connect to the client
 instead of the default (5308) one.
 Here is an example (@file{cfrun.hosts}): 
+
 @smallexample 
 domain=example.org
 access=mark,sigmund
@@ -10363,6 +10541,7 @@ and, 3) node2 with port 22000.
 
 In wrapper mode (non-forking, non-daemon mode), cfagent is run by adding a
 line to the root crontab file of each system:
+
 @smallexample
 0,30 * * * * /usr/local/sbin/cfexecd -F
 @end smallexample
@@ -10373,6 +10552,7 @@ by this job, will be stored in @file{/var/cfengine/outputs}.
 @cindex Output logs
 In addition, if you add the following to the file @file{cfagent.conf},
 the system administrator will be emailed a summary of any output:
+
 @smallexample
 
 control:
@@ -10401,6 +10581,7 @@ lives in the background and sleeps, activating only in accordance with
 a scheduling policy. The default policy is to run once every hour (equivalent
 to @code{Min00_05}). Here is how you would modify @file{cfagent.conf} in
 order to make the daemon execute cfagent every half-hour:
+
 @smallexample
   control:
 
@@ -10419,6 +10600,7 @@ Cfagents locking mechanisms ensure that no contention will occur.
 
 Note, that if problems with library path for compiled in libraries occur, an
 explicit library path can be specified with the @samp{-L} option.
+
 @smallexample
 0,30 * * * * /usr/local/sbin/cfexecd -F -L /local/iu/lib:/local/lib/mysql:/local/lib:/local/gnu/lib
 @end smallexample
@@ -10566,6 +10748,7 @@ hpux.maildir: /usr/spool/mail
 
 @noindent
 To redefine the filesystem table for GNU/linux, you would write:
+
 @smallexample
 linux.fstab: /etc/linuxfstab
 @end smallexample 
@@ -10656,6 +10839,7 @@ convenience.
 @section cfagent.conf
 @cindex @file{cfagent.conf}
 
+@w{}
 @smallexample
 #####################################################################
 # 
@@ -10712,6 +10896,7 @@ import:
 @section cf.groups
 @cindex @file{cf.groups}
 
+@w{}
 @smallexample
 ##############################################################
 #
@@ -10773,6 +10958,7 @@ groups:
 @section cf.main
 @cindex @file{cf.main}
 
+@w{}
 @smallexample
 ##############################################################
 #
@@ -11013,6 +11199,7 @@ disable:
 @section cf.site
 @cindex @file{cf.site}
 
+@w{}
 @smallexample
 ##############################################################
 #
@@ -11130,7 +11317,7 @@ files:
       # Make sure anonymous ftp areas have the correct
       # protection, or logins won't be able to read
       # files - or perhaps a security risk. This is
-      # solaris 2 specific...
+      # Solaris 2 specific...
       #
 
       $(ftp)/pub        mode=755 o=ftp  g=ftp  r=inf act=fixall
@@ -11197,7 +11384,7 @@ shellcommands:
    PasswdServer::
 
       # Build and install the BSD compatible passwd file
-      # from the master passwd/shadow file on solaris
+      # from the master passwd/shadow file on Solaris
 
       "/local/iu/bin/BuildPasswdFiles"
       "/local/iu/bin/BuildGroupFiles"
@@ -11392,6 +11579,7 @@ processes:
 @section cf.motd
 @cindex @file{cf.motd}
 
+@w{}
 @smallexample
 
 ##################################################################
@@ -11454,6 +11642,7 @@ irresponsible.  This file shows you what you could do in an environment
 with inexperienced users, but please don't feel as though you have to be
 this totalitarian.
 
+@w{}
 @smallexample
 #################################################################
 #
@@ -11565,12 +11754,13 @@ copy:
 @node cf.solaris, cf.linux, cf.users, Example configuration file
 @section cf.solaris
 
+@w{}
 @smallexample
 #################################################################
 #
 # cf.solaris - for iu.hioslo.no
 #
-# This file contains solaris specific patches
+# This file contains Solaris specific patches
 #
 #################################################################
 
@@ -11628,7 +11818,7 @@ copy:
   #
   # Our named server uses a newer BIND
   # Put this here so that it will be preserved under
-  # solaris reinstallation
+  # Solaris reinstallation
   #
 
   NameServers::
@@ -11743,7 +11933,7 @@ editfiles:
 
       #
       # A painless way to add an rc.local script to the rc files
-      # under solaris without having to fight though inittab
+      # under Solaris without having to fight though inittab
       #
 
       @{ /etc/rc3.d/S15nfs.server
@@ -11778,6 +11968,7 @@ editfiles:
 @node cf.linux, cf.freebsd, cf.solaris, Example configuration file
 @section cf.linux
 
+@w{}
 @smallexample
 #################################################################
 #
@@ -11981,6 +12172,7 @@ shellcommands:
 @section cfservd.conf
 @cindex @file{cf.site}
 
+@w{}
 @smallexample
 #########################################################
 #

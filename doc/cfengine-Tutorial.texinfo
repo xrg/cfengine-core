@@ -38,14 +38,14 @@ preserved on all copies.
 
    Permission is granted to copy and distribute modified versions of
 this manual under the conditions for verbatim copying, provided also
-that the section entitled "GNU General Public License" is included
+that the section entitled ``GNU General Public License'' is included
 exactly as in the original, and provided that the entire resulting
 derived work is distributed under the terms of a permission notice
 identical to this one.
 
    Permission is granted to copy and distribute translations of this
 manual into another language, under the above conditions for modified
-versions, except that the section entitled "GNU General Public License"
+versions, except that the section entitled ``GNU General Public License''
 may be included in a translation approved by the author instead of in
 the original English.
 
@@ -84,14 +84,14 @@ preserved on all copies.
 
    Permission is granted to copy and distribute modified versions of
 this manual under the conditions for verbatim copying, provided also
-that the section entitled "GNU General Public License" is included
+that the section entitled ``GNU General Public License'' is included
 exactly as in the original, and provided that the entire resulting
 derived work is distributed under the terms of a permission notice
 identical to this one.
 
    Permission is granted to copy and distribute translations of this
 manual into another language, under the above conditions for modified
-versions, except that the section entitled "GNU General Public License"
+versions, except that the section entitled ``GNU General Public License''
 may be included in a translation approved by the author instead of in
 the original English.
 
@@ -148,14 +148,21 @@ system -- i.e.  a single machine which has a name termed its ``hostname''.}
 Cfengine is a tool for setting up and maintaining computer systems.  It
 consists of several components:
 
-@smallexample
- cfagent     - An autonomous configuration agent (required)
- cfservd     - A file server and remote activation service (optional)
- cfexecd     - A scheduling and report service (recommended)
- cfenvd      - An anomaly detection service (strongly recommended)
- cfenvgraph  - Ancillary tool for cfenvd (helper)
- cfkey       - Key generation tool (run once on every host)
-@end smallexample
+@table @r
+@item @b{cfagent}
+An autonomous configuration agent (required)
+@item @b{cfservd}
+A file server and remote activation service (optional)
+@item @b{cfexecd}
+A scheduling and report service (recommended)
+@item @b{cfenvd}
+An anomaly detection service (strongly recommended)
+@item @b{cfenvgraph}
+Ancillary tool for cfenvd (helper)
+@item @b{cfkey}
+Key generation tool (run once on every host)
+@end table
+
 The agent @file{cfagent} can be used without the other components,
 but not all of the functionality of cfengine will be available unless
 the components are deployed appropriately.
@@ -166,14 +173,14 @@ of operations being performed on multiple hosts. Cfengine is good at
 performing a lot of common system administration tasks, and allows you
 to build on its strengths with your own scripts. You can also use it as
 a netwide front-end for @code{cron}.  Once you have set up cfengine,
-you'll be free to use your time being like a human being, instead of
-playing R2-D2 with the system.
+you'll be free to use your time doing other things instead of manual
+configuration.
 
 The main purpose of cfengine is to allow you to create a single, central
 system configuration which will define how every host on your network
 should be configured in an intuitive way.  An interpreter runs on every
-host on your network and parses the master file (or file-set); the
-configuration of each host is checked against this file and then, if you
+host on your network and parses the master file (or file set). The
+configuration of each host is checked against this file; then, if you
 request it, any deviations from the defined configuration are fixed
 automatically.  You do not have to mention every host specifically by
 name in order to configure them: instead you can refer to the
@@ -183,15 +190,16 @@ group of hosts with a single statement.
 
 Cfengine grew out of the need to control the accumulation of complex
 shell scripts used in the automation of key system maintenance at
-Oslo. There were very many scripts, written in shell and in perl,
-performing tasks such as file tidying, find-database updates, process
+Unversity College in Oslo. There were a lot of
+scripts, written in shell and in Perl,
+performing system administration tasks such as file tidying, find-database updates, process
 checking and several other tasks.  In a heterogeneous environment,
-shell-scripts work very poorly: shell commands have differing syntax
-across different operating systems, the locations and names of key files
+shell scripts work very poorly: shell commands have differing syntax
+across different operating systems, and the locations and names of key files
 differ. In fact, the non-uniformity of Unix was a major
 headache. Scripts were filled with tests to determine what kind of
 operating system they were being run on, to the point where they became
-so complicated an unreadable that no-one was quite sure what they did
+so complicated and unreadable that no one was quite sure what they did
 anymore. Other scripts were placed only on the systems where they were
 relevant, out of sight and out of mind.  It quickly became clear that
 our dream solution would be to replace this proliferation of scripts by
@@ -202,16 +210,16 @@ operations and improve the readability greatly. The gradual refinement
 of this idea resulted in the present day cfengine.
 
 As an inexperienced cfengine user, you will probably find yourself
-trying to do things as you would have tried to do them i Shell or Perl.
-This is probably not the right way to think, when using cfengine. You will
+trying to do things as you would have tried to do them in shell or Perl.
+This is probably not the right way to think when using cfengine. You will
 need to think in a more `cfengine way'. When reading the manual, keep
 in mind that cfengine's way of working is to think about what the final
-result should be like, rather than on how to get there (with Shell and Perl
+result should be like, rather than on how to get there (with shell and Perl
 you specify what to do, rather than what you would like).
 
 The remainder of this manual assumes that you know a little about
-BSD/System-5 systems and have everyday experience in using either the
-C-shell or the Bourne shell, or their derivatives.  If you are
+BSD and UNIX System V systems and have everyday experience in using either the
+C shell or the Bourne shell, or their derivatives.  If you are
 experienced in system administration, you might like to skip the earlier
 chapters and turn straight to the example in the section @emph{Example
 configuration file} of the Reference manual.  This is the probably
@@ -238,7 +246,7 @@ types of operating system and each type of system has to be configured
 in a special way, you have to make patches to each system and you can't
 remember whether you fixed that host on the other side of the
 building...  Also, you discover fairly quickly that what you thought of
-as BSD or System 5 is not as standard as you thought and that none of
+as BSD or System V is not as standard as you thought and that none of
 your simple scripts that worked on one system work on the others without
 a considerable amount of hacking and testing.  You try writing a script
 to help you automate the task, but end up with an enormous number of
@@ -249,7 +257,7 @@ To manage a network with many different flavours of operating system, in
 a systematic way, what is needed is a more disciplined way of making
 changes which is robust against re-installation.  After all, it would be
 tragic to spend many hours setting up a system by hand only to lose
-everything in an unfortunate disk-crash a week or even a year later when
+everything in an unfortunate disk crash a week or even a year later when
 you have forgotten what you had to do.  Upgrades of the operating system
 software might delete your carefully worked out configuration.  What is
 needed is a separate record of all of the patches required on all of the
@@ -295,10 +303,10 @@ administration which cfengine can help with.}
 @cindex Files, control
 @cindex Files, configuration
 
-One of the endearing characteristics of BSD and system 5 systems is
+One of the endearing characteristics of BSD and System V systems is
 that they are configured through human-readable text files.  To add a
 new user to the system you edit @file{/etc/passwd}, to add a new
-disk you must edit @file{/etc/fstab} etc.  Many applications are also
+disk you must edit @file{/etc/fstab}, etc.  Many applications are also
 configured with the help of text files.  When installing a new system
 for the first time, or when changing updating the setup of an old system
 you are faced with having to edit lots of files.  In some cases you will
@@ -308,9 +316,9 @@ automating this procedure so that you don't have to load every file into
 an editor by hand and make the changes yourself.  This is one of the
 tasks which cfagent will automate for you.
 
-On Windows systems, configuration data are stored in a system registery.
-This can also be edited by cfengine, with the right tools, but this
-requires more care.
+On Windows systems, configuration data are stored in a system registry.
+With the right tools, the Windows system registry can also be edited
+by cfengine, but this requires more care.
 
 @c .....................................................
 @c SUBSECTION
@@ -435,25 +443,25 @@ without having to do any editing yourself!
 @cindex Files, checking permissions
 
 Security is an important issue on any system.  In the busy life of a
-system administrator it is not always easy to remember to set the correct
-access rights on every file and this can result in either a security
+system administrator, it is not always easy to remember to set the correct
+access rights on every file; this can result in either a security
 breach or problems in accessing files.
 
 A common scenario is that you, as administrator, fetch a new package
-using ftp, compile it and install it without thinking too carefully.
-Since the owner and permissions of the files in an ftp archive remains
+using FTP, compile it and install it without thinking too carefully.
+Since the owner and permissions of the files in an FTP archive remains
 those of the program author, it often happens that the software is left
 lying around with the owner and permissions as set by the author of the
-program rather than any user-name on @emph{your} system.  The user-id of
+program rather than any user name on @emph{your} system.  The userid of
 the author might be anybody on your system --- or perhaps nobody at all!
-The files should clearly be owned by root and made readable and
-unwritable to normal users.
+The files should clearly be owned by root and made readable but
+unwritable by normal users.
 
-Simple accidents and careless actions under stress could result in, say,
+Simple accidents and careless actions under stress could result in, for example,
 the password file being writable to ordinary users.  If this were the
 case, the security of the entire system would be compromised.  Cfagent
-therefore allows you to monitor the permissions, ownership and general
-existence of files and directories and, if you wish, correct them or
+therefore allows you to monitor the permissions, ownership, and general
+existence of files and directories and, if you wish, to either correct them or
 warn about them automatically.
 
 @c .....................................................
@@ -465,7 +473,7 @@ warn about them automatically.
 @cindex Links
 
 One of the difficulties with having so many different variations on the
-theme of BSD and system 5 based operating systems is that similar files
+theme of BSD and System V based operating systems is that similar files
 are not always where you expect to find them.  They have different names
 or lie in different directories.  The usual solution to the problem is
 to make an alias for these files, or a pointer from one filename to
@@ -474,6 +482,7 @@ another.  The name for such an alias is a @emph{symbolic link}.
 It is often very convenient to make symbolic links.  For example, you
 might want the sendmail configuration file @file{/etc/sendmail.cf} to be
 a link to a global configuration file, say,
+
 @smallexample
 @file{/usr/local/mail/etc/sendmail.cf}
 @end smallexample
@@ -484,7 +493,7 @@ edit.  If you had to make all of these links yourself, it would take a
 lifetime.  Cfagent will make such a link automatically and check it
 each time it is run.  You can also ask it to tidy up old links which
 have been left around and no longer point to existing files.  If you
-reinstall your operating system later it doesn't matter because all your
+reinstall your operating system later, it doesn't matter because all your
 links are defined in your cfagent configuration file, recorded for all
 time.  Cfengine won't forget it, and you won't forget it because the
 setup is defined in one central place.
@@ -931,6 +940,7 @@ they key word here is @emph{reliability}.
 
 The file @file{update.conf} can have more or less
 the same form for all sites, looking something like this. 
+
 @smallexample
 #######
 #
@@ -1163,7 +1173,6 @@ answer some questions in more depth.
 Cfagent may be invoked in a number of ways.  Here are some examples:
  
 @example
-@cartouche
 host% cfagent
 
 host% cfagent --file myfile
@@ -1171,7 +1180,6 @@ host% cfagent --file myfile
 host% cfagent -f myfile -v -n
 
 host% cfagent --help
-@end cartouche
 @end example
 
 @cindex Default file
@@ -1200,6 +1208,7 @@ of this manual, or you can see it by giving the @code{-h} option,
 In addition to running cfagent with a filename, you can also treat
 cfagent files as scripts by starting your cfagent program with the
 standard shell line:
+
 @smallexample
 #!/usr/local/sbin/cfagent -f
 #
@@ -1232,6 +1241,7 @@ yourself to doing it.
 Once you are happy using cfengine, you will want it to run least once
 per hour on your systems. This is easily achieved by adding the following
 line to the root crontab file of each system:
+
 @smallexample
 0,30 * * * * /usr/local/sbin/cfexecd -F
 @end smallexample
@@ -1242,6 +1252,7 @@ by this job, will be stored in @file{/var/cfengine/outputs}.
 @cindex Output logs
 In addition, if you add the following to the file @file{cfagent.conf},
 the system administrator will be emailed a summary of any output:
+
 @smallexample
 
 control:
@@ -1263,6 +1274,7 @@ lives in the background and sleeps, activating only in accordance with
 a scheduling policy. The default policy is to run once every hour (equivalent
 to @code{Min00_05}). Here is how you would modify @file{cfagent.conf} in
 order to make the daemon execute cfagent every half-hour:
+
 @smallexample
  control:
 
@@ -1270,6 +1282,7 @@ order to make the daemon execute cfagent every half-hour:
 
    schedule   = ( Min00_05 Min30_35 )
 @end smallexample
+
 Note that the time specifications are the basic cfengine @emph{time classes},
 @xref{Building flexible time classes}.
 Although one of these methods should suffice,
@@ -1277,6 +1290,7 @@ no harm will arise from running both cron and the cfexecd side-by-side.
 Cfagents locking mechanisms ensure that no contention will occur.
 
 The other components of cfengine can be started by cfagent itself:
+
 @smallexample
 processes:
 
@@ -1285,6 +1299,7 @@ processes:
 
 @end smallexample
 Note that, to start cfexecd by cfengine, one must do this
+
 @smallexample
 processes:
 
@@ -1333,18 +1348,18 @@ you to keep your configuration in a standard place, pointed to by
 @code{CFINPUTS}.  For example:
 
 @example
-@cartouche
 
 host# setenv CFINPUTS /usr/local/masterfiles/cfengine/inputs
 
 host# cfagent -f myfile
 
-@end cartouche
 @end example
 
 @noindent 
 In this example, cfengine tries to open 
-@file{/usr/local/masterfiles/cfengine/inputs/myfile}.
+@file{myfile}.
+in the directory
+@file{/usr/local/masterfiles/cfengine/inputs}.
 If no value is set for @code{CFINPUTS}, then the default location
 is the trusted cfengine directory
 @file{/var/cfengine/inputs}.
@@ -1499,28 +1514,28 @@ the name.
 
 @item The name of a user-defined group of hosts.
 
-@item A day of the week (in the form @code{Monday Tuesday Wednesday..}).
+@item A day of the week (in the form @code{Monday}, @code{Tuesday}, @code{Wednesday}...).
 
-@item An hour of the day (in the form @code{Hr00, Hr01 ... Hr23}).
+@item An hour of the day (in the form @code{Hr00}, @code{Hr01}, ... @code{Hr23}).
 
-@item Minutes in the hour (in the form @code{Min00, Min17 ... Min45}).
+@item Minutes in the hour (in the form @code{Min00}, @code{Min17}, ... @code{Min45}).
 
-@item A five minute interval in the hour (in the form @code{Min00_05, Min05_10 ... Min55_00})
+@item A five minute interval in the hour (in the form @code{Min00_05}, @code{Min05_10}, ... @code{Min55_00})
 
 @item A quart hour (in the form @code{Q1, Q2, Q3, Q4})
 
-@item An abbreviated time with quarter hour specified (in the form @code{Hr00_Q1, Hr23_Q4} etc.)
+@item An abbreviated time with quarter hour specified (in the form @code{Hr00_Q1}, @code{Hr23_Q4}, etc.)
 
 @item A day of the month (in the form @code{Day1 ... Day31}).
 
-@item A month (in the form @code{January, February, ... December}).
+@item A month (in the form @code{January}, @code{February}, ... @code{December}).
 
-@item A year (in the form @code{Yr1997, Yr2001}).
+@item A year (in the form @code{Yr1997}, @code{Yr2001}).
 
 @item An arbitrary user-defined string.  (see the reference manual).
 
-@item The ip-address octets of any active interface, in the form (@code{ipv4_192_0_0_1},
-@code{ipv4_192_0_0},@code{ipv4_192_0},@code{ipv4_192}).
+@item The ip-address octets of any active interface (in the form @code{@w{ipv4_192_0_0_1}},
+@code{@w{ipv4_192_0_0}}, @code{@w{ipv4_192_0},@code{ipv4_192}}).
 
 @end itemize
 
@@ -1529,6 +1544,8 @@ A compound class is a sequence of simple classes connected by dots or
 
 @cindex Compound classes
 @cindex Classes, compound
+
+@w{}
 @smallexample
 
 myclass.sun4.Monday::
@@ -1653,7 +1670,7 @@ what these look like for your systems you can run cfengine in
 
 @end smallexample
 @noindent
-and these will be displayed. For example, solaris 2.4 systems
+and these will be displayed. For example, Solaris 2.4 systems
 generate the additional classes @code{sunos_5_4} and @code{sunos_sun4m},
 @code{sunos_sun4m_5_4}.
 
@@ -1774,6 +1791,7 @@ expands a variable it looks first at the name in its list of special
 variables, then in the list of user-defined macros and finally in the
 shell environment for a match.  If none of these are found it expands to
 the empty string. If you nest macros, 
+
 @smallexample
 
 control:
@@ -1796,6 +1814,8 @@ in version 2 an replaced by a function.
 
 @cindex Variables, setting to result of a shell command
 @vindex @code{exec}
+
+@w{}
 @smallexample
 
   control:
@@ -1916,6 +1936,7 @@ prefix on output lines to something else. You might wish to shorten
 the string, or have a different prefix for different hosts. The value
 in this variable is appended with the name of the host. The default is
 equivalent to,
+
 @smallexample
   OutputPrefix = ( "cfengine:$(host):")
 @end smallexample
@@ -2036,6 +2057,8 @@ links:
 @itemize @bullet
 @item In any quoted string. (See @code{shellcommands} in the Reference manual).
 @end itemize
+
+@w{}
 @smallexample
 shellcommands:
 
@@ -2072,6 +2095,7 @@ Here the value assigned to @code{$(my_macro)} depends on which of the
 classes evaluates to true.  This feature can be used to good effect to
 define the mail address of a suitable system administrator for different
 groups of host.
+
 @smallexample
 control:
 
@@ -2095,6 +2119,7 @@ Note that macro-variables which are undefined are not expanded as of version
 1.6 of cfengine. In earlier versions, undefined variables would be replaced
 by an empty string, as in Perl. In versions 1.6.x and later, the variable string
 remains un-substituted, if the varaiable does not exist. For instance, 
+
 @smallexample
 
 control:
@@ -2109,6 +2134,7 @@ shellcommands:
 
 @end smallexample
 results in:
+
 @smallexample
 
 cfengine:host: Executing script /bin/echo test string  $(myvar2)
@@ -2228,6 +2254,7 @@ a class name to one on the actions in action sequence by using a dot
 @samp{.} to separate the words.  In this case the symbol only evaluates
 to `true' for the duration of the action to which it attached.  Here
 is an example:
+
 @smallexample
 
   links.onlysome
@@ -2365,6 +2392,7 @@ Note that the class definitions for the module should also be defined in as
 declare the classes before using them in the cfagent configuration, or else
 those actions will be ignored.
 Next we write the plugin itself.
+
 @smallexample
 #!/usr/bin/perl
 #
@@ -2382,6 +2410,7 @@ if (@var{special-condition})
 
 Modules inherit the environment variables from cfagent and accept arguments, just
 as a regular shellcommand does.
+
 @smallexample
 #!/bin/sh
 #
@@ -2410,6 +2439,7 @@ while ($c=shift(@@allclasses))
 @end smallexample
 
 Modules can define macros in cfagent by outputting strings of the form
+
 @smallexample
 
 =@var{variablename}=@var{value}
@@ -2429,6 +2459,7 @@ Modules can define macros in cfagent by outputting strings of the form
 The generic wildcard @code{any} may be used to stand for any class.
 Thus instead of assigning actions for the class @code{sun4} only you
 might define actions for any architecture by specifying:
+
 @smallexample
 
   any::
@@ -2623,6 +2654,7 @@ and @code{exclude=} and as of version 1.6.x @code{filter=}.
 @vindex  @code{exclude=}
 @vindex  @code{filter=}
 For example,
+
 @smallexample
 files:
 
@@ -2647,6 +2679,7 @@ If you exclude a pattern or a directory and wish to treat it in
 some special way, you need to code an explicit check for that pattern
 as a separate entity. For example, to handle the exluded  @file{.ps}
 files above, you would need to code something like this:
+
 @smallexample
 files:
 
@@ -3254,6 +3287,7 @@ defaults exist for these directives so that in practice they may be
 treated as options.
 
 For example,
+
 @smallexample
 files:
 
@@ -4086,7 +4120,7 @@ filesystems while it is running.
 @node Editing files, Disabling and the file repository, Using the automounter, Global configurations
 @section Editing Files
 
-A very convenient characteristic of BSD/System 5 systems is that they
+A very convenient characteristic of BSD and UNIX System V systems is that they
 are configured primarily by human-readable textfiles. This makes it easy
 for humans to configure the system and it also simplifies the automation
 of the procedure.  Most configuration files are line-based text files, a
@@ -4221,7 +4255,7 @@ want to disable this file by renaming it, or simply deleting it.
 @noindent
 Other files compromise the system because they grow so large that they
 fill an entire disk partition. This is typically true of log files such as
-the system 5 files @file{/var/adm/wtmpx} and
+the System V files @file{/var/adm/wtmpx} and
 @file{/var/lp/logs/lpsched}. Other files like @var{/var/adm/messages}
 get "rotated" by the system so that they do not grow so large as to
 fill the disk. You can make cfagent rotate these files too, by
@@ -4353,7 +4387,7 @@ classes.
 Use the command line option @samp{-u} or @samp{--use-env}. When this
 is defined, cfagent defines an internal environment variable
 called @samp{CFALLCLASSES} which contains the same list as above.
-Unfortunately, system 5 boxes don't seem to like having to update
+Unfortunately, System V boxes don't seem to like having to update
 an environment variable continuously and tend to dump core, so
 this is not the default behaviour!
 
@@ -4604,7 +4638,7 @@ the ACLs may be removed for @code{jacobs} with the syntax
 In Solaris, files inherit default ACLs from the directory they
 lie in; these are modified by the umask setting to generate
 their own default mask.
-@cindex ACLs, solaris
+@cindex ACLs, Solaris
 
 DFS ACLs look a little different. They are examined with the 
 @samp{acl_edit} command or with
@@ -6047,7 +6081,7 @@ with your configuration.
 Let us step through
 some basic idioms which can repeated in different contexts.
 
-As representative examples we shall take solaris and GNU/Linux
+As representative examples we shall take Solaris and GNU/Linux
 as example operating systems. This is not to single them out
 as being particularly secure or insecure, it is merely due to their
 widespread use and for definiteness.
@@ -6710,7 +6744,7 @@ program to ls.cf-saved and immediately replace it with the correct
 version without waiting for the adminstrator to act. The inform and
 syslog options ask for an explicit warning to be made about this copy.
 Here is a complete anonymous ftp setup and maintenance program for
-solaris hosts.
+Solaris hosts.
 @smallexample
 
 control:
