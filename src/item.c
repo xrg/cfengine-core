@@ -1013,15 +1013,16 @@ int FuzzyHostParse(char *s)
 
 /*********************************************************************/
 
+
 int FuzzyHostMatch(s1,s2)
 
 /*
  * do something like...
  *   @args = split(/,/,$s1);
- *   if ( $s2 !~ /(\d+)$/ ) { 
+ *   if ( $s2 !~ /(\d+)$/ ) {
  *     return 1; # failure: no num in hostname
  *   }
- *   if ( $1 < $args[1] || $1 > $args[2] ) { 
+ *   if ( $1 < $args[1] || $1 > $args[2] ) {
  *     return 1; # failure: hostname num not in range
  *   }
  *   $s2 =~ s/^(.*?)\d.*$/$1/;
@@ -1036,10 +1037,10 @@ char *s1, *s2;
 { struct Item *args;
   char *sp;
   long cmp = -1, start = -1, end = -1;
-  char host_basename[CF_MAXVARSIZE];
   Debug("SRDEBUG in FuzzyHostMatch(): %s vs %s\n",s2,s1);
   args = SplitStringAsItemList(s1,',');
   sp = s2;
+  char host_basename[CF_MAXVARSIZE];
   
   for (sp = s2+strlen(s2)-1; sp > s2; sp--)
      {
@@ -1047,7 +1048,7 @@ char *s1, *s2;
         {
         sp++;
         if ( sp != s2+strlen(s2) )
-           { 
+           {
            Debug("SRDEBUG extracted string %s\n",sp);
            }
         break;
@@ -1055,37 +1056,40 @@ char *s1, *s2;
      }
   
   if ( sp == s2+strlen(s2) )
-     { 
+     {
      Debug("SRDEBUG FuzzyHostMatch() failed: did not extract int from the end of %s\n",s2);
      return 1;
      }
-  
   sscanf(sp,"%ld",&cmp);
   Debug("SRDEBUG extracted int %d\n",cmp,sp);
-  
+
+  /* HvB basename is */
+  strncpy(host_basename, s2, strlen(s2) - strlen(sp));
+  Debug("SRDEBUG host basename is  %s\n",host_basename,sp);
+
   if ( cmp < 0 )
-     { 
+     {
      Debug("SRDEBUG FuzzyHostMatch() failed: %s doesn't have an int in it's domain name\n",s2);
      return 1;
      }
+
   sscanf(args->next->name,"%ld-%ld",&start,&end);
-  
   if ( cmp < start || cmp > end )
-     { 
+     {
      Debug("SRDEBUG FuzzyHostMatch() failed: %ld is not in (%ld..%ld)\n",cmp,start,end);
      return 1;
      }
-  
+  Debug("SRDEBUG FuzzyHostMatch() %s is in (%ld..%ld)\n",s2,start,end);
+
+
   Debug("SRDEBUG host basename check: %s vs %s...\n",host_basename,args->name);
-
-
- if ( strcmp(host_basename,args->name) != 0)
-    {
-    Debug("SRDEBUG FuzzyHostMatch() failed: basename %s does not match %s\n",s2,args->name);
-    return 1;
-    }
-
+  if ( strcmp(host_basename,args->name) != 0 )
+     {
+     Debug("SRDEBUG FuzzyHostMatch() failed: basename %s does not match %s\n",s2,args->name);
+     return 1;
+     }
   Debug("SRDEBUG basename matches\n");
+
   Debug("SRDEBUG FuzzyHostMatch() succeeded\n");
   return 0;
 }
