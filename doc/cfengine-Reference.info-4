@@ -1,0 +1,1236 @@
+This is cfengine-Reference.info, produced by makeinfo version 4.0 from
+cfengine-Reference.texinfo.
+
+INFO-DIR-SECTION System Utilities
+START-INFO-DIR-ENTRY
+* cfengine Reference: (cfengine-Reference.info).
+                        Cfengine is a language based tool specifically
+                        designed for configuring and maintaining BSD
+                        and System-5-like operating systems attached
+                        to a TCP/IP network.
+END-INFO-DIR-ENTRY
+
+
+File: cfengine-Reference.info,  Node: editfiles,  Next: files,  Prev: disable,  Up: Cfagent reference
+
+editfiles
+=========
+
+   Performs ascii (line-based) editing on text-files or limited binary
+editing of files.  If editing a file which has hard links to it, be
+aware that editing the file will destroy the hard link references. This
+is also the case with shell commands. You should avoid hard links
+whenever possible.  The form of an editing command is `editfiles' can
+also search directories recursively through directories and edit all
+files matching a pattern, using `Include', `Exclude', and `Ignore' (see
+Recursive File Sweeps in the tutorial).
+
+
+     editfiles:
+     
+        CLASS::
+     
+           { FILE-TO-BE-EDITED
+     
+           ACTION "QUOTED-STRING..."
+           }
+     
+           { DIRECTORY-TO-BE-EDITED
+     
+           Recurse "inf"
+           Filter  "filteralias"
+           Include ".cshrc"
+           Ignore  "bin"
+           Ignore  ".netscape"
+           ACTION "QUOTED-STRING..."
+           }
+
+Here are some examples:
+
+     editfiles:
+     
+        sun4::
+     
+           { /etc/netmasks
+     
+           DeleteLinesContaining "255.255.254.0"
+           AppendIfNoSuchLine "128.39  255.255.255.0"
+           }
+     
+        PrintServers::
+           { /etc/hosts.lpd
+     
+           AppendIfNoSuchLine "tor"
+           AppendIfNoSuchLine "odin"
+           AppendIfNoSuchLine "borg"
+           }
+
+The first of these affects the file `/etc/netmasks' on all SunOS 4
+systems, deleting any lines containing the string "255.255.254.0" and
+Appending a single line to the file containing "128.39 255.255.255.0"
+if none exists already.  The second affects only hosts in the class
+`PrintServers' and adds the names of three hosts: tor, odin and borg to
+the file `/etc/hosts.lpd' which specifies that they are allowed to
+connect to the printer services on any host in the class `PrintServers'.
+
+Note that single or double quotes may be used to enclose strings in
+cfengine. If you use single quotes, your strings may contain double
+quotes and vice-versa. Otherwise a double quoted string may not
+currently contain double quotes and likewise for single quoted strings.
+
+   As of version 1.3.0, you can use the `home' directive in edit
+filenames, enabling you to edit files for every user on the system,
+provided they exist. For example, to edit every user's login files, you
+would write
+
+
+       { home/.cshrc
+     
+        AppendIfNoSuchLine "setenv PRINTER default-printer"
+        AppendIfNoSuchLine "set path = ( $path /new/directory )"
+       }
+
+If a user does not possess the named file, cfengine just skips that
+user. A new file is not created.
+
+The meanings of the file-editing actions should be self-explanatory.
+Commands containing the word 'comment' are used to `comment out' certain
+lines in a file rather than deleting them.  `Hash' implies a shell
+comment of the type
+
+     # comment
+
+`Slash' implies a comment of the C++ type:
+
+     // comment
+
+`Percent' implies a comment of the type:
+
+     % comment
+
+   More general comment types may be defined using the
+`SetCommentStart', `SetCommentEnd' and `CommentLinesMatching',
+`CommentLinesStarting' functions.
+
+   A special group of editing commands is based on the GNU Regular
+Expression package. These use GNU regular expressions to search line by
+line through text and perform various editing functions.  Some of these
+commands are based on the concept of a file pointer. The pointer starts
+at line one of the file and can be reset by 'locating' a certain line,
+or by using the reset-pointer commands. The current position of the
+pointer is used by commands such as `InsertLine' to allow a flexible
+way of editing the middle of files.
+
+   A simple decision mechanism is incorporated to allow certain editing
+actions to be excluded. For instance, to insert a number of lines in a
+file once only, you could write:
+
+
+        { FILE
+     
+         LocateLineMatching "INSERT POINT..."
+         IncrementPointer   "1"
+     
+         BeginGroupIfNoMatch "# cfengine - 2/Jan/95"
+           IncremenetPointer "-1"
+           InsertLine "# cfengine - 2/Jan/95"
+           InsertLine "/local/bin/start-xdm"
+     
+         EndGroup
+        }
+
+Since the first inserted line matches the predicate on subsequent calls,
+the grouped lines will only be carried out once.
+
+   The full list of editing actions is given below in alphabetical
+order.  Note that some commands refer to regular expressions and some
+refer to 'literal strings' (i.e. any string which is not a regular
+expression). Variable substitution is performed on all strings.  Be
+aware that symbols such as `.', `*' and so on are meta-characters in
+regular expressions and a backslash must be used to make them literal.
+The regular expression matching functions are POSIX extended regular
+expressions.  *Note Regular expressions: (cfengine-Tutorial)Regular
+expressions.
+
+`AbortAtLineMatching QUOTED-REGEX'
+     This command sets the value of a regular expression. In all editing
+     operations (except `FixEndOfLine' and `GotoLastLine') which
+     involve multiple replacements and searches, this expression marks
+     a boundary beyond which cfengine will cease to look any further.
+     In other words, if cfengine encounters a line matching this regular
+     expression, it aborts the current action. BE CAREFUL with this
+     feature: once set, the string remains set for the remainder of the
+     current file. It might therefore interact in unsuspected ways with
+     other search parameters. Editing actions are always aborted as
+     soon as the abort expression is matched.  Use `UnsetAbort' to
+     unset the feature.
+
+`Append QUOTED-STRING'
+     Add a line containing the quoted string to the end of the file.
+     This should be used in conjunction with the decision structures
+     `BeginGroupIfNoLineMatching' and `BreakIfLineMatches'.
+
+`AppendIfNoSuchLine QUOTED-STRING'
+     Add a line containing the quoted string to the end of the file if
+     the file doesn't contain the exact line already.
+
+`AppendIfNoLineMatching  QUOTED-REGEX'
+     A new version of the older `AppendIfNoSuchLine' which uses a
+     regular expression instead of a literal string. The line which
+     gets appended must be set previously using `SetLine'.
+
+`AppendToLineIfNotContains QUOTED-STRING'
+     This commands looks for an exact match of the quoted string in the
+     current line. If the quoted string is not contained in the line,
+     it is appended. This may be used for adding entries to a list.
+
+`AutoCreate'
+     If this command is listed anywhere in the file action list,
+     cfengine will create the named file if it doesn't exist. Normally
+     cfengine issues an error if the named file does not exist, but if
+     this is set, notification of the file's absence is only in verbose
+     output. New files are created with mode 644 (see also Umask), read
+     access for everyone and write access for the cfengine user
+     (normally root). Note that if you set this,
+     BeginGroupIfFileIsNewer will always be true.
+
+`AutomountDirectResources QUOTED-STRING'
+     This command is designed to assist with automounter configuration
+     for users wishing to use the automounter for NFS filesystems, but
+     still use the cfengine mount model.  Applied to the current file,
+     it is equivalent to saying: for each of the mountable resources in
+     the list *Note mountables::, append if not found a line for a
+     direct automount map command, to the current file.  The string
+     which follows can be used to specify any special mount options
+     e.g. `"-nosuid"' for non setuid mounting (of all the mountables).
+     Note that this is added to the current file and not to a file
+     named `/etc/auto_direct'.
+
+`Backup QUOTED-STRING'
+     Set to true or false, on or off to set inform level for this file.
+     Default is on.
+
+`BeginGroupIfDefined QUOTED-STRING'
+     The lines following, up to the first `EndGroup' are executed if
+     the quoted class is defined.
+
+`BeginGroupIfNotDefined QUOTED-STRING'
+     The lines following, up to the first `EndGroup' are executed if
+     the quoted class is not defined.
+
+`BeginGroupIfFileExists QUOTED-STRING'
+     The lines following, up to the first `EndGroup' are executed if
+     the quoted filename exists (can be statted).  Files which are not
+     readable by the running process are for all intents and purposes
+     non-existent.
+
+`BeginGroupIfFileIsNewer QUOTED-STRING'
+     The lines following, up to the first `EndGroup' are executed if
+     the quoted filename is newer than the file being edited.
+
+`BeginGroupIfNoLineContaining QUOTED-STRING'
+     The lines following, up to the first `EndGroup' are executed if
+     the quoted string does not appear in any line in the file.
+
+`BeginGroupIfNoLineMatching QUOTED-REGEX'
+     The lines following, up to the first `EndGroup' are executed if
+     the quoted regular expression does not match any line in the file.
+
+`BeginGroupIfNoMatch QUOTED-REGEX'
+     The lines following, up to the first `EndGroup' are executed if
+     the quoted regular expression does not match the current line.
+
+`BeginGroupIfNoSuchLine QUOTED-STRING'
+     The lines following, up to the first `EndGroup' are executed if
+     the quoted literal string does not match any line in the file.
+
+`BreakIfLineMatches  QUOTED-REGEX'
+     Terminates further editing of the current file if the current line
+     matches the quoted regular expression.
+
+`CatchAbort'
+     Edit actions which abort on failure (such as `LocateLineMatching')
+     will jump to the first instance of this marker instead of
+     completely aborting an edit if this keyword occurs in an editing
+     script.  You can catch the exceptions thrown by the following
+     commands:
+     `CommentNLines',`CommentToLineMatching',`DeleteNLines',`DeleteToLineMatching',
+     `HashCommentToLineMatching',`IncrementPointer',
+     `LocateLineMatching',`PercentCommentToLineMatching',
+     `RunScriptIf(No)LineMatching',`UnCommentNLines'.
+
+`CommentLinesMatching  QUOTED-REGEX'
+     Use the current value of the comment delimiters set using
+     `SetCommentStart' and `SetCommentEnd' to comment out lines
+     matching the given regular expression in quotes.
+
+`CommentLinesStarting  QUOTED-STRING'
+     Use the current value of the comment delimiters set using
+     `SetCommentStart' and `SetCommentEnd' to comment out lines
+     starting with the quoted literal string.
+
+`CommentNLines QUOTED-STRING'
+     Comments up to N lines from the current file, starting from the
+     location of the current line pointer. If the end of the file is
+     reached and less than N lines are deleted, a warning is issued, but
+     editing continues. The current value of the comment delimiters is
+     used to determine the method of commenting, (see
+     `SetCommentStart').  After the operation the pointer points to the
+     line after the commented lines.
+
+`CommentToLineMatching  QUOTED-REGEX'
+     Use the current value of the comment delimiters set using
+     `SetCommentStart' and `SetCommentEnd' to comment out lines from
+     the current position in a file to a line matching the given regular
+     expression in quotes.
+
+`DefineClasses "CLASS1:CLASS2:..."'
+     Activate the following colon, comma or dot-separated list of
+     classes if and only if the file is edited.
+
+`DeleteLinesAfterThisMatching QUOTED-REGEX'
+
+`DeleteLinesContaining QUOTED-STRING'
+     Delete all lines containing the exact string quoted.
+
+`DeleteLinesMatching QUOTED-REGEX'
+     Delete all lines matching the quoted regular expression.
+
+`DeleteLinesStarting QUOTED-STRING'
+     Delete all lines beginning with the exact string quoted.
+
+`DeleteNLines QUOTED-STRING'
+     Deletes up to N lines from the current file, starting from the
+     location of the current line pointer. If the end of the file is
+     reached and less than N lines are deleted, a warning is issued, but
+     editing continues.
+
+`DeleteToLineMatching QUOTED-REGEX'
+     Delete lines from the current position, up to but not including a
+     line matching the regular expression in the quoted string. If no
+     line matches the given expression, a warning is only printed in
+     verbose mode, but all edits are immediately abandoned.
+
+`EditMode "Binary"'
+     If set to binary, the file will be edited as if it were a
+     non-ASCII file.  See discussion below.
+             EditMode "Binary"
+
+`EmptyEntireFilePlease'
+     Deletes all lines from the current file.
+
+`ElseDefineClasses'
+     See `DefineClasses'
+
+`EndGroup'
+     Terminates a begin-end conditional structure.
+
+`EndLoop'
+     Terminates a loop. See `ForEachLineIn'
+
+`Filter FILTERALIAS'
+     Name a fiter for pruning file searches.
+
+`FixEndOfLine'
+     The quoted string which follows may be either `dos' or `Unix' to
+     fix the end of line character conventions to match these systems.
+     This command should be executed last of all, since cfengine
+     appends new lines with the conventions of the system on which is
+     was complied during edit operations.
+
+`ForEachLineIn QUOTED-FILENAME'
+     This marks the beginning of a for-loop which reads successive
+     lines from a named file. The result is like using `SetLine' for
+     each line in the file. Nested loops are not permitted.
+
+`GotoLastLine'
+     Moves the file pointer to the last line in the current file.
+
+`HashCommentLinesContaining QUOTED-STRING'
+     Add a `#' to the start of any line containing the quoted string.
+
+`HashCommentLinesMatching QUOTED-REGEX'
+     Add a `#' to the start of any line exactly matching the quoted
+     regular expression.
+
+`HashCommentLinesStarting QUOTED-STRING'
+     Add a `#' to the start of any line starting with the quoted string.
+
+`IncrementPointer QUOTED-NUMBER'
+     Increments the value (in lines) of the file pointer by the number
+     of lines specified in the quoted string (as a denary number). e.g.
+     `"4"'.  Negative values are equivalent to decrementing the
+     pointer. If a request is made to increment/decrement outside of
+     the file boundaries the pointer `bumps' into the boundary and
+     remains there, i.e. either at start of file or end of file.
+
+`Inform QUOTED-STRING'
+     Set to true or false, on or off to set inform level for this file.
+     Default is off.
+
+`InsertFile QUOTED-STRING'
+     Inserts the named file after the current line position in the
+     file. This should be used in conjunction with a begin-end
+     construction in order to avoid including the file every time
+     cfengine is run.  If the file does not exist, or cannot be opened,
+     there is only a warning issued in verbose mode.  Note if the file
+     is empty, or if the current line pointer is not set, the file is
+     inserted at the start of the file.
+
+`InsertLine QUOTED-STRING'
+     Inserts the quoted string as a line at the current position in the
+     file. After the insert, the file pointer is incremented by one so
+     that subsequent inserted lines are placed after the first.  This
+     should probably be used in conjunction with the conditional
+     begin-end tests to avoid lines being inserted on every run.
+
+`LocateLineMatching QUOTED-REGEX'
+     Moves the current-position pointer to the start of the line
+     matching the quoted regular expression.  If there is no match, a
+     warning is only issued in verbose mode, but all editing is
+     immediately aborted. See also `WarnIfNoLineMatching' so that you
+     can get an explicit warning, even out of verbose mode.
+
+`PercentCommentLinesContaining QUOTED-STRING'
+     Add a `%' to the start of any line containing the quoted string.
+
+`PercentCommentLinesMatching QUOTED-REGEX'
+     Add a `%' to the start of any line exactly matching the quoted
+     regular.
+
+`PercentCommentLinesStarting QUOTED-STRING'
+     Add a `%' to the start of any line starting with the quoted string.
+
+`Prepend QUOTED-STRING'
+     Add a line containing the quoted string to the start of the file.
+     This should be used in conjunction with the decision structures
+     `BeginGroupIfNoLineMatching' and `BreakIfLineMatches'.
+
+`PrependIfNoLineMatching QUOTED-REGEX'
+     A new version of the older `PrependIfNoSuchLine' with uses a
+     regular expression instead of a literal string.  The string
+     prepended is the one set using `SetLine'.
+
+`PrependIfNoSuchLine QUOTED-STRING'
+     Add a line containing the quoted string to the start of the file
+     if the file doesn't contain the exact line already.
+
+`Recurse DIGIT/INF'
+     For recursive descents when editing whole file trees.
+
+`ReplaceLineWith QUOTED-STRING'
+     Replace the line at the current position with the text in the
+     quoted string. The file pointer remains pointing to this line
+     after the change.
+
+`ReplaceAll QUOTED-REGEX With QUOTED-STRING'
+     Replace all instances of strings matching the regular expression
+     in the first quotes with the exact string in the second set of
+     quotes, throughout the current file. Note that cfengine matches on
+     a left to right basis, with the first match taking precedence, so
+     if your regular expression matches text ambiguously it is the
+     first occurrence which is replaced. For example, if you replace
+     `cf.*' with `CFENGINE' and cfengine encounters a line `hello
+     cfengine cfengine', then this will be replaced with `hello
+     CFENGINE' even though two possible strings match the regular
+     expression. On the other hand if the expression is not ambiguous,
+     say replacing `cfengine' with `CFENGINE', then the result would be
+     `hello CFENGINE CFENGINE'.
+
+`ReplaceLinesMatchingField QUOTED-NUMBER'
+     This command replaces any lines in the current file with the
+     current line set by `SetLine' or `ForEachLineIn', if the lines are
+     split into fields (e.g. the password file) separated by the
+     `SplitOn' character (':' by default), and the corresponding fields
+     match.
+
+     The idea behind this command was to be able to override global
+     passwords (from a file which gets distributed) by new passwords in
+     a local file. Rather than maintaining the files separately, this
+     simply overrides the entries with the new ones.
+
+`Repository QUOTED STRING'
+     This allows a local override of the `Repository' variable, on an
+     item by item basis. If set to "off" or "none" it cancels the value
+     of a global repository.
+
+`ResetSearch QUOTED-STRING'
+     Sets the current-position pointer to the line number in the quoted
+     string. `EOF' indicates the end of the file.
+
+`RunScript QUOTED-STRING'
+     Executes the named script command. Before executing the script any
+     edits are saved to disk. After the script has executed, cfengine
+     reloads the file for any further editing operations. The script
+     (which may be any executable program) is appended with two
+     arguments: the name of the file which is being edited and the
+     system hard class (e.g. sun4, ultrix etc.) of the system executing
+     the script.
+
+     CAUTION: cfengine knows nothing about the success or failure of
+     anything that is done during the execution of user scripts. This
+     feature is to be used at the users own peril!
+
+`RunScriptIfLineMatching QUOTED-STRING'
+     Executes the script named with the `SetScript' command only if the
+     current file contains a line matching the quoted regular
+     expression.
+
+     CAUTION: cfengine knows nothing about the success or failure of
+     anything that is done during the execution of user scripts. This
+     feature is to be used at the users own peril!
+
+`RunScriptIfNoLineMatching QUOTED-REGEX'
+     Executes the script named with the `SetScript' command if the
+     current file contains no line matching the quoted regular
+     expression.
+
+     CAUTION: cfengine knows nothing about the success or failure of
+     anything that is done during the execution of user scripts. This
+     feature is to be used at the users own peril!
+
+`SetCommentStart QUOTED-STRING'
+     Specify which string should be used for starting a comment using
+     the commands `CommentLineMatching' and `CommentLineStarting'. The
+     default is the hash symbol `#' followed by a single space.
+
+`SetCommentEnd  QUOTED-STRING'
+     Specify which string should be used for ending a comment using the
+     commands `CommentLineMatching' and `CommentLineStarting'. The
+     default is the empty string. For example, you could make C style
+     comments by setting CommentStart to `/*' and comment end to `*/'.
+
+`SetLine QUOTED-STRING'
+     Sets a current line value which can be appended using
+     `AppendIfNoLineMatching' using a regular expression.
+
+`SetScript QUOTED-STRING'
+     Sets the name of a user-supplied script for editing the current
+     file.
+
+`SlashCommentLinesContaining QUOTED-STRING'
+     Add a `//' to the start of any line containing the quoted string.
+
+`SlashCommentLinesMatching QUOTED-REGEX'
+     Add a `//' to the start of any line exactly matching the quoted
+     regular expression.
+
+`SlashCommentLinesStarting QUOTED-STRING'
+     Add a `//' to the start of any line starting with the quoted
+     string.
+
+`SplitOn QUOTED-STRING'
+     This defines a single character which is to be interpreted as a
+     field separator for editing files with columns. The default value
+     for this is `:', as is used in the password and group files.  It
+     is used in conjunction with `ReplaceLinesMatchingField'.
+
+`Syslog QUOTED-STRING'
+     Set to true or false, on or off to set inform level for this file.
+     Default is off.
+
+`Umask QUOTE MODE'
+     Set local umask for file creation and script execution.
+
+`UnCommentLinesContaining  QUOTED-STRING'
+     Uncomment all lines in file containing the quoted string as a
+     substring. The comment delimiters are assumed to be those set
+     using SetCommentStart and SetCommentEnd.
+
+`UnCommentLinesMatching  QUOTED-REGEX'
+     Uncomment all lines in file matching the quoted regular
+     expression.  The comment delimiters are assumed to be those set
+     using SetCommentStart and SetCommentEnd.
+
+`UnCommentNLines QUOTED-STRING'
+     Uncomments N lines starting from the current position, using the
+     currently defined method for commenting. Note that the comment
+     start and end symbols are removed independently, i.e.  they are
+     not matched, so that a comment may be spread over several lines.
+     e.g. If using C style `/*' and `*/' comments, the command
+     `UnCommentNLines "3"' would uncomment
+           /* 1 */
+           /* 2 */
+           /* 3 */
+
+     and also
+           /* 1
+              2
+              3 */
+
+`UnsetAbort  QUOTED-STRING'
+     Switches off the feature `AbortAtLineMatching'.
+
+`UseShell "false"'
+     Normally cfengine uses a shell based exec function to run scripts
+     during editing. This involves the inheritance of environment
+     variables and path, which carries with it an inherent security
+     risk. Setting this value to false causes execution to execute
+     without an encapsulating shell.
+
+`WarnIfLineContaining QUOTED-STRING'
+     Issue a warning if the quoted string is found as a substring of
+     one or more lines in the file.
+
+`WarnIfLineMatching QUOTED-REGEX'
+     Issue a warning if the quoted regular expression matches one or
+     more lines in the file.
+
+`WarnIfLineStarting QUOTED-STRING'
+     Issue a warning if the quoted string matches the start of one or
+     more lines in the file.
+
+`WarnIfNoLineContaining QUOTED-STRING'
+     Issue a warning if the quoted string is not contained in one or
+     more lines in the file.
+
+`WarnIfNoLineMatching REG-EX'
+     Issue a warning if the quoted regular expression does not match
+     one or more lines in the file.
+
+`WarnIfNoLineStarting QUOTED-STRING'
+     Issue a warning if the quoted string is not found at the start of
+     one or more lines in the file.
+
+`WarnIfNoSuchLine QUOTED-REGEX'
+     Issue a warning if the quoted regular expression does not match
+     one or more lines in the file.
+
+A limited number of operations can also be performed on purely binary
+files, e.g.  compiled programs, in order to search for strings or viral
+code, or to modify strings within a program. Binary mode is a mutually
+exclusive, separate mode to normal editing. The limit on the size of
+binary files is set by `editbinaryfilesize' in `control'.
+`ReplaceAll REGEX With LITERAL'
+     Replaces occurrences of the matched regular expression with\ the
+     provided literal text, only if the length of the literal substitute
+     is less than or equal to the length of the located string. If the
+     replacement string is shorter, it is padded with ascii spaces
+     (character 32) by default.  The padding character can be changed
+     by setting `BinaryPaddingChar' in `control'.  Padding with a null
+     byte would lead to corruption of text within a program.
+
+`WarnIfContainsString REGEX/LITERAL'
+     Yields a warning if the literal string or regular expression
+     matches.  Cfengine first attempts a literal match and then a
+     regular expression match.
+
+`WarnIfContainsFile FILENAME'
+     Yields a warning if the contents of the named file exactly match
+     part of the file which is being edited. This can be used to search
+     for binary data which cannot be typed directly into the cfengine
+     program, e.g. virus signatures.
+
+It is suggested that you use these editing functions with caution.
+Although all possible safeguards have been incorporated into them, it
+is still possible through carelessness to do damage to important files
+on your system. Always test editing programs carefully before
+committing them to your global site configuration.
+
+
+File: cfengine-Reference.info,  Node: files,  Next: filters,  Prev: editfiles,  Up: Cfagent reference
+
+files
+=====
+
+   The `files' facility allows you to touch (create), check for the
+existence, owner and permissions of files, change the permissions and
+test for setuid root programs.
+
+* Menu:
+
+* Syntax::
+* Recursion::
+* Directory permissions::
+* home directive::
+* Owner and group wildcards::
+* Files linkchildren::
+* touch::
+* create::
+
+
+File: cfengine-Reference.info,  Node: Syntax,  Next: Recursion,  Prev: files,  Up: files
+
+Syntax
+------
+
+   A files-statement can have several options.  We can begin by
+examining the form of the statement in pseudo-code:
+
+       files:
+     
+          CLASSES::
+     
+             /FILE-OBJECT
+                               mode=MODE
+                               owner=UID-LIST
+                               group=GID-LIST
+                               action=FIXALL/OTHER-OPTIONS/warnall
+                               links=false/stop/TRAVERSE/FOLLOW/TIDY
+     
+                               ignore=PATTERN
+                               include=PATTERN
+                               exclude=PATTERN
+                               filter=FILTER ALIAS
+     
+                               define=CLASSLIST
+                               elsedefine=CLASSLIST
+     
+                               checksum=MD5
+                               flags=BSD FLAGS
+                               syslog=TRUE/ON/FALSE/OFF
+                               inform=TRUE/ON/FALSE/OFF
+
+An example would be the following:
+
+        any::
+     
+           /var/spool/printQ  mode=0775  r=0 o=daemon g=daemon  act=fixdirs
+
+The meaning of these item is sketched out below and becomes clearer on
+looking at a number of examples.  Note that, each of the options below
+can be written in either upper or lower case and abbreviated by any
+unique abbreviation.  A file object is interpreted as a directory if
+you write it in the following form: `/directory-path/.'. i.e. a
+trailing dot signifies a directory. This then becomes the same as the
+`directory' command.
+
+`/DIRECTORY'
+     This is the only obligatory part of a file action.  This is a
+     directory at which a file search should begin.  This may be a
+     single file or a directory.  The recursion specifier may be used
+     to force cfengine to descend into subdirectories in a controlled
+     fashion, starting from this point, checking files there also.  The
+     wildcard `home' may also be used.  *Note home directive::.
+
+`mode=MODESTRING'
+     Specifies what the allowed permissions for files are.  If cfengine
+     finds that a file's mode is incorrect, the value of the `action'
+     option determines what will be done about it.  The modestring
+     should consist of either a three digit octal numbers with `+', `-'
+     or `=' symbols, or a text string like that used by the command
+     `chmod'.  For instance: `mode=u=rwx,og+rx' would mean set the
+     read/write and execute flags for the user (file owner) and add the
+     read/execute flags for others and group bits.  An example of the
+     numerical form might be `-002' which would mean that the
+     read-for-others flag should either not be set or should be unset,
+     depending on the action you choose.  `+2000' would mean that the
+     setuid flag should be present or set, depending on the action.
+     `+2000,-002' would be a combination of these.  The `=' sign sets
+     to an absolute value, so `=755' would set the file mode to mode
+     755.
+
+`flags=BSD FLAGS'
+     The free BSD Unices have additional filesystem flags which can be
+     seton files.  Refer to the BSD `chflags' documentation for this.
+     For example,
+
+             /tmp/flags.01  mode=0600 owner=0 group=0
+                            flags=uappnd,uchg,uunlnk,nodump,opaque,sappnd,schg,sunlnk
+                            action=touch
+
+`recurse=NUMBER/INF'
+     This specifier tells cfengine whether or not to recurse into
+     subdirectories.  If the value is zero, only the named file or
+     directory is affected.  If the value is 1, it will open at most
+     one level of subdirectory and affect the files within this scope.
+     If the value is `inf' then cfengine opens all subdirectories and
+     files beginning from the specified filename.*Note Recursion::.
+
+`owner=OWNER LIST'
+     This is a list of allowed owners, or uids by number, separated by
+     commas.  For example `root,2,3,sysadm'.  In cases where you ask
+     cfengine to fix the ownership automatically, the owner will be set
+     to the first owner in the list if and only if it is not one of the
+     named uids in the list.
+
+`group=GROUP LIST'
+     This is a list of allowed groups, or gids by number, separated by
+     commas.  For example `wheel,2,3,sysadm'.  In cases where you ask
+     cfengine to fix the ownership automatically, the group will be set
+     to the first group in the list if and only if it is not one of the
+     named gids in the list.
+
+`action=ACTION'
+     The action is one of the following keywords.
+          warnall warndirs warnplain
+           fixall fixdirs fixplain
+          touch linkchildren create compress alert
+
+     The upper line results only in warnings being issued.  The actions
+     beginning `fix' prompt cfengine to fix encountered problems without
+     bothering the user.  No message is issued unless in verbose mode.
+     The special features on the third line will be explained
+     separately.  Alert is like `-print' in the find command, it
+     triggers on the existence of files which have not been ignored,
+     excluded or filtered. This should normally be used together
+     `filter', in order to locate files of particular types.
+
+`include=WILDCARD/PATTERN'
+     You can include this option several times to specify specific
+     patterns which are to be included in the search. Once you specify
+     one pattern you exclude all files not matching at least one of the
+     patterns. The case be useful for restricting a search, or for
+     modifying the permissions of only certain files.
+
+`exclude=WILDCARD/PATTERN'
+     You can include this option several times to specify specific
+     patterns which are to be excluded from the search. This overrides
+     any patterns given in the `include=' list.
+
+`ignore'
+     This works like the global ignore directive but here you may
+     provide a private list of ignorable directories and files.  Unlike
+     include, exclude this affects the way cfengine parses directory
+     trees.
+
+`links=STOP/TRAVERSE/TIDY'
+     Normally cfengine does not descend into subdirectories which are
+     pointed to by symbolic links.  If you wish to force it to do so
+     (without using the `-l' command line option) you may give this
+     option the value `true', or `traverse', or `follow'.  To specify no
+     recursion you set the value `false' or `stop'.  Note that the
+     value set here in the cfengine program _always overrides_ the
+     value set by the `-l' command line option, so you can protect
+     certain actions from this command line option by specifying a
+     negative value here.  If you specify no value here, the behaviour
+     is determined by what you specify on the command line.
+
+     The value `links=tidy' has the same effect as the `-L' command
+     line option except that here it may be specified per item rather
+     than globally.  Setting this value causes links which point to
+     non-existent files to be deleted.
+
+     If the warn directive is used (for directories, plain files or
+     both) then only a warning message is issued if the file being
+     tested does not match the specification given.  If the fix
+     directives are used then cfengine does not issue a warning, it
+     simply fixes the value silently.  Non-existent files are created
+     by the `touch' command.  A directory may be touched (created) by
+     writing the filename `/a/b/c/.' with a dot as the last character.
+     (This may also be achieved with the `directories' directive, *Note
+     directories::.)
+
+`define=CLASSLIST'
+     If a file operation results in action being taken to fix a file,
+     the colon, comma or dot separated list of classes becomes defined.
+     Warnings do not activate the classes.
+
+`checksum=MD5/SHA'
+     If set this option causes cfengine to add a checksum for the named
+     file to a database. Changes in the value of this checksum are then
+     warned as a security issue. This should normally only be used to
+     monitor binary files which one would not expect to change often.
+     Note also that the use of this option can mean a significant
+     performance penalty. The variable `ChecksumDatabase' should be set
+     in `control:' to the filename of a database file which is used to
+     cache checksum values. Note that it is also possible to use a
+     database file for cfservd's remote copying by checksum.  If you
+     use the same file for both purposes you risk losing warnings.
+     Security warning messages are issued only once and the value in
+     the database is then changed to the new value of the file
+     automatically i.e. the behaviour is similar to that of setuid root
+     program detection, *Note ChecksumDatabase::.
+
+   The default values are `mode=+000', `recurse=0', `action=warnall'
+and any owner or group is acceptable.  The default for `links' is to
+not traverse links unless the `-l' option is set on the command line.
+
+
+File: cfengine-Reference.info,  Node: Recursion,  Next: Directory permissions,  Prev: Syntax,  Up: files
+
+Recursion
+---------
+
+   The recursion specifier tells cfengine what to do, starting from
+`/directory name'.  A value of `r=0' means `no recursion' and any
+checking is limited only to the named file or directory.  A value of
+`r=inf' implies unlimited recursion.  Cfengine then descends into all
+subdirectories checking or setting the permissions of files until it
+`bottoms out' at a plain file.  A value such as `R=4' means descend
+recursively into subdirectories, but no more than four levels.  This is
+a useful safety net in preventing unforeseen accidents.  A recursive
+search also bottoms out on device boundaries and symbolic links
+(provided the `-l' option is not used).
+
+
+File: cfengine-Reference.info,  Node: Directory permissions,  Next: home directive,  Prev: Recursion,  Up: files
+
+Directory permissions
+---------------------
+
+   When you specify the permissions for a whole file tree, using the
+recursion specifier it is awkward to have to remember that directories
+must be executable.  cfengine will do this for you automatically.  If
+you specify that a file tree is to have a read flag set, cfengine will
+ensure that the corresponding execute flag is also set for directories
+which live in the tree.  So the command
+
+     files:
+     
+       myclass::
+     
+           /dir  mode=a+rw r=inf fixall
+
+would set all plain files to mode 644 and all directories to 755, that
+is read/write for everyone on plain files and read/write/execute for
+everyone on directories.
+
+
+File: cfengine-Reference.info,  Node: home directive,  Next: Owner and group wildcards,  Prev: Directory permissions,  Up: files
+
+`home' directive
+----------------
+
+   If you want to check the files of all the users who have their login
+areas on the current host, you can use a wildcard directive `home'
+instead of a directory name.  In this case the file action iterates over
+all home directories physically on the current host.  The home
+directories are, of course, located by searching for files which match
+
+     $(mountpattern)/$(homepattern)
+
+i.e.  the values which are specified in the `control' part of the
+program.  For example the following line is a very useful service to
+ignorant users.
+
+     files:
+     
+       any::
+     
+         home mode=o-w r=inf act=fixall
+
+It ensures automatically that no user has files which can be written to
+by other arbitrary users.
+
+   As a corollary to this, you may write something like
+
+       any::
+     
+          home/www mode=a+r fixall
+
+to specify a special subdirectory of every users' home directory.  This
+statement would check that all of the files in users' world wide web
+directories were readable for everyone.
+
+
+File: cfengine-Reference.info,  Node: Owner and group wildcards,  Next: Files linkchildren,  Prev: home directive,  Up: files
+
+Owner and group wildcards
+-------------------------
+
+   If you do not want to explicitly state the owner or group of a file
+you may simply omit the group or owner options.
+
+
+       /FILE-OBJECT m=0664 r=inf
+   This example generate a warning if any files under the named
+directory do not have permission read/write for all users.
+
+
+File: cfengine-Reference.info,  Node: Files linkchildren,  Next: touch,  Prev: Owner and group wildcards,  Up: files
+
+Files linkchildren
+------------------
+
+   The `linkchildren' facility is almost identical to that already
+described under `links'.  *Note Link Children::.  The only difference
+here is that the ownership and permissions on the links are set all in
+one operation.  For example:
+
+     MYCLASS::
+     
+        /local/lib/emacs m=0770 o=me g=mygroup act=linkchildren
+
+
+File: cfengine-Reference.info,  Node: touch,  Next: create,  Prev: Files linkchildren,  Up: files
+
+touch
+-----
+
+   The `touch' facility creates a new file with the specified
+permissions and ownership, or corrects the permissions and ownership of
+an existing file, in addition to updating the time stamps.
+
+     MYCLASS::
+     
+        /NEWFILE mode=0644 action=touch
+
+
+File: cfengine-Reference.info,  Node: create,  Prev: touch,  Up: files
+
+create
+------
+
+   This is like `touch' except that an existing file's time stamps,
+permissions and ownership will not be modified if the file already
+exists. If the file does not exist, the attributes are set to the
+values specified, or to the default values of `0644'.
+
+
+File: cfengine-Reference.info,  Node: filters,  Next: groups,  Prev: files,  Up: Cfagent reference
+
+filters
+=======
+
+   A filter is a way of selecting or pruning during a search over files
+or processes. Since filter rules could apply to several objects,
+cfengine allows you to define filter conditions as separate objects to
+be applied in different contexts.
+
+   Filter objects can be used in `copy', `editfiles', `files', `tidy'
+and `processes'. In most cases one writes
+     .. filter=<i>filteralias</i>
+   in the appropriate command. The exception is `editfiles', where the
+syntax is
+     {
+     ..
+     Filter "filteralias"
+     ..
+     }
+   Example:
+
+
+     files:
+     
+      /tmp filter=testfilteralias action=alert r=inf
+
+   Filters are defined in a separate section. Filters for files and
+processes are defined together. They differ only in the criteria they
+contain. Here is are examples of file filters:
+     Filters:
+     
+       { filteralias1
+     
+       Owner:     "mark|cell|motd"
+       Group:     "ecg|mark"
+       Mode:      "700"
+     
+       FromCtime: "date(2000,1,1,0,0,0)"    # absolute date
+       ToCtime:   "now"
+     
+       FromMtime: "tminus(1,0,0,2,30,0)"    # relative "ago" from now
+       ToMtime:   "inf"                     # end of time
+     
+       FromAtime: "date(1997,2,22,0,0,0)"
+       ToAtime:   "inf"
+     
+       FromSize:  "10000"                   # File size interval
+       ToSize:    "10mb"
+     
+       ExecRegex: "/usr/bin/file(.*ascii.*)"# Result from "files" command
+     
+       Type:      "dir|link"                # reg|link|dir|socket|fifo|door|char|block
+     
+       NameRegex: ".*.asc"                  # regex matching file name
+     
+       IsSymLinkTo: "/dev/null"             # True if file is a link to object name regex
+     
+       Result:    "Type"                    # Result which shouldbe returned
+     
+       }
+     
+      #########################################
+     
+       { testfilteralias2
+     
+       ExecProgram: "/bin/ls $(this)"       # True if the program returns true. $(this) is the current object
+       }
+     
+      #########################################
+     
+       { testfilteralias3
+     
+       Owner: "mark"
+       }
+
+   Filters are evaluated like classes. In fact, the filtering works by
+evaluating the class attributes for each file.
+
+   File filters:
+
+`Owner:'
+     and Group can use numerical id's or names, or `"none"' for users
+     or groups which are undefined in the system passwd/group file.
+
+`'
+     Mode: applies only to file objects. It shares syntax with the
+     `mode=' strings in the files command. This test returns true if
+     the bits which are specified as `should be set' are indeed set,
+     and those which are specified as `should not be set' are not set.
+
+`Atime:,Ctime:,Mtime:'
+     apply only to file objects.  These specify ranges From and To. If
+     the file's time stamps lie in the specified range, this returns
+     true. Times are specfied by a six component vector
+          (year,month,day,hour,minutes,seconds)
+     This may be evaluated as two functions: date() or tminus() which
+     give absolute times and times relative to the current time
+     respectively.  In addition, the words now and inf may be used.
+     e.g.
+
+            FromCtime: "date(2000,1,1,0,0,0)"   # absolute date
+            ToCtime:   "now"
+          
+            FromMtime: "tminus(1,0,0,2,30,0)"     # relative "ago" from now
+            ToMtime:   "inf"                     # end of time
+
+`Type:'
+     applies only to file objects may be a list of file types which are
+     to be matched. The list should be separated by the OR symbol `|',
+     since these types are mutually exclusive. The possible values are
+     currently
+          reg|link|dir|socket|fifo|door|char|block
+
+`ExecRegex:'
+     matches the test string against the output of the specified
+     command.
+
+`NameRegex:'
+     matches the name of the file with a regular expression.
+
+`IsSymLinkTo:'
+     applies only when the file object $(this) is a symbolic link. It
+     is true if the regular expression matches the contents of the link.
+
+`ExecProgram:'
+     matches if the command returns successfully (with return code 0).
+     Note that this feature introduces an implicit dependency on the
+     command being called. This might be exploitable as a security
+     weakness by advanced intruders.
+
+`Result:'
+     specifies the way in which the above elements are combined into a
+     single filter.
+
+   Process filters:
+
+`Owner'
+     process owner UID (quoted regex)
+
+`PID:'
+     process ID (quoted regex)
+
+`PPID:'
+     parent process ID (quoted regex)
+
+`PGID:'
+     process group ID (quoted regex)
+
+`RSize:'
+     resident size (quoted regex)
+
+`VSize:'
+     virtual memory size (quoted regex)
+
+`Status:'
+     status (quoted regex)
+
+`Command:'
+     CMD or COMMAND fields (quoted regex)
+
+`(From/To)TTime:'
+     Total elasped time in TIME field (accumulated time)
+
+`(From/To)STime:'
+     Starting time for process in STIME or START field (accumulated
+     time)
+
+`TTY:'
+     terminal type, or none (quoted regex)
+
+`Priority:'
+     PRI or NI field (quoted regex)
+
+`Threads:'
+     NLWP field for SVR4 (quoted regex)
+
+`Result:'
+     logical combination of above returned by filter (quoted regex)
+Examples: processes started between 18th Nov 2000 and now.
+       { filteralias
+     
+       FromSTime: "date(2000,11,18,0,0,0)"
+       ToSTime:   "now"
+       }
+   All processes which have accumulated between 1 and 20 hours of CPU
+time.
+       { filteralias
+     
+       FromTTime:  "accumulated(0,0,0,1,0,0)"
+       ToTTime:    "accumulated(0,0,0,20,0,0)"
+       }
+
+* Menu:
+
+* Complete filter examples::
+
+
+File: cfengine-Reference.info,  Node: Complete filter examples,  Prev: filters,  Up: filters
+
+Complete filter examples
+------------------------
+
+   Here is an example filter to search for all files which are either
+directories or links, or any kind of file owned by mark, in group
+cfengine.
+
+     control:
+     
+      actionsequence = ( files )
+     
+     files:
+     
+      /tmp       filter=testfilteralias action=alert r=inf
+      /cfengine  filter=testfilteralias action=fixall r=inf mode=644
+     
+     filters:
+     
+       { testfilteralias
+     
+       Owner:     "mark"
+       Group:     "cfengine"
+       Type:      "dir|link"
+     
+       Result:    "Type|(Owner.Group)"  # Both owner AND group required correct
+       }
+   Find all ELF executables using data from the Unix `file' command.
+Caution, this takes a long time if used indescriminately.
+
+     control:
+     
+      actionsequence = ( files )
+     
+     files:
+     
+      /tmp       filter=testfilteralias action=alert r=inf
+      /cfengine  filter=testfilteralias action=fixall r=inf mode=644
+     
+     filters:
+     
+       { testfilteralias
+     
+       ExecRegex: "/bin/file (.*ELF.*)"
+     
+       Result: "ExecRegex"
+       }
+   Here is an example which warns of any process coupled to a terminal
+started in November:
+
+     control:
+     
+      actionsequence = ( processes )
+     
+     filters:
+     
+       { filteralias
+       FromSTime: "date(2000,11,0,0,0,0)"
+       ToSTime:   "date(2000,11,30,0,0,0)"
+       TTY: ".*pt.*"
+       Result: "TTY.STime"
+       }
+     
+     processes:
+     
+      "." filter=filteralias action=warn
+

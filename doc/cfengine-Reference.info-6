@@ -1,0 +1,1248 @@
+This is cfengine-Reference.info, produced by makeinfo version 4.0 from
+cfengine-Reference.texinfo.
+
+INFO-DIR-SECTION System Utilities
+START-INFO-DIR-ENTRY
+* cfengine Reference: (cfengine-Reference.info).
+                        Cfengine is a language based tool specifically
+                        designed for configuring and maintaining BSD
+                        and System-5-like operating systems attached
+                        to a TCP/IP network.
+END-INFO-DIR-ENTRY
+
+
+File: cfengine-Reference.info,  Node: tidy,  Next: unmount,  Prev: shellcommands,  Up: Cfagent reference
+
+tidy
+====
+
+   The tidy function is used to delete (remove permanently) unwanted
+files from a system.  It is useful for tidying up in `/tmp' or cleaning
+out `core' files from users' home directories.  The form of an entry is:
+
+     tidy:
+     
+       CLASS::
+     
+           /DIRECTORY
+                            pattern/include=WILDCARD
+     
+                            recurse=NUMBER/INF
+                            age=DAYS
+                            size=NUMBER/EMPTY
+                            type=CTIME/MTIME/atime
+                            dirlinks=KEEP/TIDY/DELETE
+                            rmdirs=TRUE/FALSE/ALL/SUB
+                            links=stop/keep/TRAVERSE/TIDY
+     
+                            define=CLASSLIST
+                            elsedefine=CLASSLIST
+     
+                            syslog=TRUE/ON/FALSE/OFF
+                            inform=TRUE/ON/FALSE/OFF
+     
+                            filter=FILTER ALIAS
+                            ignore=PATTERN
+                            exclude=PATTERN
+
+Note that, each of the options below can be written in either upper or
+lower case and abbreviated by any unique abbreviation.
+
+`/DIRECTORY'
+     This is the directory name to directories which mark the start of a
+     search for files matching certain wildcards.  The wildcard `home'
+     may be used instead of an explicit directory, in which case
+     cfengine iterates over all home directories.  It is compulsory to
+     specify a directory.
+
+`pattern=WILDCARD or include=WILDCARD'
+     A wildcard or filename to match the files you wish to be deleted.
+     The pattern may contain the special symbols `?' which matches a
+     single character and `*' which matches any number of characters as
+     in the shell. These two options are synonymous, as of version
+     2.0.x.
+
+`exclude=WILDCARD'
+     This does not work for the home directive; use the global ignore
+     list for this.
+
+`ignore=WILDCARD'
+     This does not work for the home directive; use the global ignore
+     list for this.
+
+`recurse=NUMBER/INF'
+     This specifier tells cfengine whether or not to recurse into
+     subdirectories.  If the value is zero, only the named file or
+     directory is affected.  If the value is 1, it will open at most
+     one level of subdirectory and affect the files within this scope.
+     If the value is `inf' then cfengine opens all subdirectories and
+     files beginning from the specified filename. *Note Recursion::.
+
+`age=DAYS'
+     The age of a file in days represents a minimum _access_ time
+     elapsed before the file will be deleted.  In other word a file
+     will be deleted if it has not been accessed for DAYS days.
+
+`links=STOP/TRAVERSE/TIDY'
+     Normally cfengine does not descend into subdirectories which are
+     pointed to by symbolic links.  If you wish to force it to do so
+     (without using the `-l' command line option) you may give this
+     option the value `true', or `traverse', or `follow'.  To specify no
+     recursion you set the value `false' or `stop'.  Note that the
+     value set here in the cfengine program _always overrides_ the
+     value set by the `-l' command line option, so you can protect
+     certain actions from this command line option by specifying a
+     negative value here.  If you specify no value here, the behaviour
+     is determined by what you specify on the command line.
+
+     The value `links=tidy' has the same effect as the `-L' command
+     line option except that here it may be specified per item rather
+     than globally.  Setting this value causes links which point to
+     non-existent files to be deleted. This feature will not work on
+     commands with the `home' wildcard feature.  If you want to clean
+     up old links you should either user a `files' command or the
+     command line option which sets the tidy feature globally.
+
+`size=>NUMBER/EMPTY'
+     Old syntax `size=NUMBER/EMPTY'.  The value of this parameter
+     decides the size of files to be deleted.  Files larger than this
+     value will be deleted if they also are older than the time
+     specified in `age'. The default size is zero so that any file
+     which gets matched by another critereon is deleted. However, if you
+     want to single out only totally empty files, the `empty' may be
+     used.  With this option only empty files, nevery files with
+     anything in them,  will be deleted, if older than `age'. By
+     default, the filesizes are in kilobytes, but kilobytes and
+     megabytes may also be specified by appending b,k,m to the numbers.
+     Only the first character after the number is significant so you
+     may write the numbers however it might be convenient, e.g. `14k',
+     `14kB', `14kilobytes', the same as for `disable'.
+
+`type=CTIME/MTIME/ATIME'
+     This value is used to set the type of time comparison made using
+     `age'. The default is to compare access times (atime) or the last
+     time the file was read. A comparison by modification time (mtime)
+     uses the last time the contents of the file was changed. The ctime
+     parameter is the last time the contents, owner or permissions of
+     the file were changed.
+
+`dirlinks=KEEP/TIDY/DELETE'
+     This value is used to decide whether cfengine will delete links
+     which point to directories. The default value is to keep the
+     links. Note that, if the travlinks option is switched on, cfengine
+     will not tidy or delete links which point to directories, instead
+     it follows them into the subdirectory. This is a supplement to the
+     `rmdirs' option. You need both to make links to directories
+     disappear.
+
+`rmdirs=TRUE/FALSE/ALL/SUB'
+     Normally cfengine will not delete directories. If this option is
+     set to `true' then cfengine will delete any directories which are
+     _empty_. Non-empty directories will not be touched and no message
+     will be given unless in verbose mode. Note that this option
+     overrides the above option `dirlinks', so that even links which
+     point to empty directories will be removed.  If this is set to
+     `sub' then the topmost directory will not be removed, only
+     sub-directories.
+
+`define=CLASSLIST'
+     The colon, comma or dot separated list of classes becomes defined
+     if any file matching the specified pattern is deleted.
+
+   Take a look at the following example:
+
+     tidy:
+     
+        AllHomeServers::
+     
+            home     pattern=core   R=inf age=0
+            home     pattern=*~     R=inf age=7
+            home     pattern=#*     R=inf age=30
+     
+     
+        any::
+     
+            /tmp/    pat=*            R=inf   age=1
+            /        pat=core         R=2     age=0
+            /etc     pat=hosts.equiv  r=0     age=0
+
+   In the first example, all hosts in the group `AllHomeServers'
+iterate a search over all user home directories looking for `core' files
+(older than zero days) and `emacs' backup files `*~', `#*' older than
+seven days.
+
+   The default values for these options are the empty string for the
+wildcard pattern, zero for the recursion and a specification of the age
+is compulsory.
+
+   When cfengine tidies users' home directories, it keeps a log of all
+the files it deletes each time it is run.  This means that, in case of
+accidents, the user can see that the file has been deleted and restore
+it from backup.  The log file is called `.cfengine.rm' and it is placed
+in the home directory of each user.  The file is owned by root, but is
+readable to the user concerned.
+
+
+File: cfengine-Reference.info,  Node: unmount,  Prev: tidy,  Up: Cfagent reference
+
+unmount
+=======
+
+   The unmount function unmounts non-required filesystems and removes
+the appropriate entry from the filesystem table (`/etc/fstab' or
+equivalent).  The syntax is simply
+
+     unmount:
+     
+        CLASS::
+     
+           MOUNTHOST:FILESYSTEM
+     
+             deletedir=TRUE/FALSE
+             deletefstab=TRUE/FALSE
+             force=TRUE/FALSE
+
+The options allow you to temporarily unmount a directory without
+actually removing it from the filesystem table. The option `force' is
+not currently implemented and will likely have to be system dependent.
+For example:
+
+     unmount:
+     
+        physics::
+     
+           libraryserver:/$(site)/libraryserver/data
+
+If the device is busy then the actual unmount will not take place until
+it becomes free, or the machine is rebooted.  This feature should work
+on AIX systems, in spite of these machines inherent peculiarities in the
+form of the filesystem table.
+
+   Some users do not mount filesystems on a directory of the same name
+as the source directory. This can lead to confusion.  Note, if you have
+problems removing a mounted filesystem, try using the mountpoint of the
+filesystem, rather than the name of the filesystem itself, in the
+unmount command.
+
+
+File: cfengine-Reference.info,  Node: Cfservd.conf and cfrun reference,  Next: Cfexecd reference,  Prev: Cfagent reference,  Up: Top
+
+Cfservd and cfrun reference
+***************************
+
+* Menu:
+
+* cfservd control::
+* admit grant and deny::
+* cfrun::
+* Firewalls and NATs::
+
+   The server daemon is controlled by a file called `cfservd.conf'.
+The syntax of this configuration file is deliberately modelled on
+cfengine's own configuration file, but despite the similarities, they
+are separate.
+
+   You can use `groups' and `import' in both files to break up files
+into convenient modules and to import common resources, such as lists
+of groups.
+
+   Note that the classes in the `cfservd.conf' file do not tell you the
+classes of host which have access to files and directories, but rather
+which classes of host pay attention to the access and deny commands when
+the file is parsed.
+
+   Authentication is not by class or group but by hostname, like the
+`/etc/exports' file on most Unix systems. The syntax for the file is as
+follows:
+
+
+      control:
+     
+        CLASSES::
+     
+            domain = ( DNS-DOMAIN-NAME )
+     
+            cfrunCommand = ( "SCRIPT/FILENAME" )  # Quoted
+     
+            MaxConnections = ( MAXIMUM NUMBER OF FORKED DAEMONS )
+     
+            ChecksumDatabase = ( FILENAME )
+     
+            IfElapsed = ( TIME-IN-MINUTES )
+     
+            DenyBadClocks = ( FALSE )
+     
+            AllowConnectionsFrom = ( IP NUMBERS )
+     
+            DenyConnectionsFrom = ( IP NUMBERS )
+     
+            AllMultipleConnectionsFrom = ( IP NUMBERS )
+     
+            TrustKeysFrom  = ( IP NUMBERS )
+     
+            AllowUsers = ( mark systemuser )
+     
+            LogAllConnections = ( FALSE/TRUE )
+     
+            SkipVerify = ( IP NUMBERS )
+     
+      groups:
+     
+        GROUP DEFINITIONS
+     
+      import:
+     
+        FILES TO IMPORT
+     
+      admit: | grant:
+     
+        CLASSES::
+     
+           /FILE-OR-DIRECTORY
+     
+             WILDCARDS/HOSTNAMES
+     
+      deny:
+     
+        CLASSES::
+     
+           /FILE-OR-DIRECTORY
+     
+             WILDCARDS/HOSTNAMES root=HOSTLIST encrypt=TRUE/ON
+
+
+The file consists of a control section and access information.
+
+
+File: cfengine-Reference.info,  Node: cfservd control,  Next: admit grant and deny,  Prev: Cfservd.conf and cfrun reference,  Up: Cfservd.conf and cfrun reference
+
+control
+=======
+
+* Menu:
+
+* AllowConnectionsFrom::
+* AllowMultipleConnectionsFrom::
+* AllowUsers::
+* AutoExecCommand::
+* AutoExecInterval::
+* ChecksumDatabase in cfservd::
+* cfrunCommand::
+* DenyBadClocks::
+* DenyConnectionsFrom::
+* cfservd IfElapsed::
+* LogAllConnections::
+* MaxConnections::
+* TrustKeysFrom::
+
+
+File: cfengine-Reference.info,  Node: AllowConnectionsFrom,  Next: AllowMultipleConnectionsFrom,  Prev: cfservd control,  Up: cfservd control
+
+AllowConnectionsFrom
+--------------------
+
+   This variable allows a list of numerical IP masks to be specified,
+which cfservd will allow connections from.  If the list is not empty
+and a host whose IP address is not specified attempts to connect to the
+daemon, its connection will be closed immediately.    This can be used
+to prevent hanging connection attacks from malicous hosts and other
+denial of service attacks which would bind thread resources.
+          control:
+     
+           AllowConnectionsFrom = ( 128.39.89  192.2.0.10 )
+
+
+File: cfengine-Reference.info,  Node: AllowMultipleConnectionsFrom,  Next: AllowUsers,  Prev: AllowConnectionsFrom,  Up: cfservd control
+
+AllowMultipleConnectionsFrom
+----------------------------
+
+   This variable should contain a list of IP wildcards to hosts which
+are allowed simultaneous sessions on the server. Hosts which are not in
+this list are allowed to connect only once, i.e. they must terminate and
+reconnect in order to establish a new session. This is to prevent a
+possible attacker from opening multiple sockets and never closing them,
+resulting in a denial of service attack. Hosts IP's can be placed here
+if they could have overlapping copy sessions (e.g. long backup transfers
+which can run over time). This prevents the error message "Multiple
+connections denied/spam shield".
+
+
+File: cfengine-Reference.info,  Node: AllowUsers,  Next: AutoExecCommand,  Prev: AllowMultipleConnectionsFrom,  Up: cfservd control
+
+AllowUsers
+----------
+
+   This list determines which users are to be allowed to connect to the
+daemon.  Note that there is no way of identifying users except by their
+public keys.  If a malicious asserts their identity, when no public key
+for the named user is known to the server, then they could spoof the
+identity of that user.  If users other than root are allowed to
+connect, they need to be here.  This applies to use of cfrun.
+
+
+     AllowUsers = ( mark )
+
+   In other words, this is a "security by obscurity" first defence
+against picking up bad keys, when the server is in trust mode, with
+respect to a host. The attacker must know a valid user name in order to
+even try their luck entering into a key dialogue.
+
+   This reduces the probability that spoofing can be successful. The
+only real defence against spoofing is to make sure that all required
+public keys are installed in advance, and to switch off trust.
+
+
+File: cfengine-Reference.info,  Node: AutoExecCommand,  Next: AutoExecInterval,  Prev: AllowUsers,  Up: cfservd control
+
+AutoExecCommand
+---------------
+
+   This variable no longer exists in cfengine version 2.
+
+
+File: cfengine-Reference.info,  Node: AutoExecInterval,  Next: ChecksumDatabase in cfservd,  Prev: AutoExecCommand,  Up: cfservd control
+
+AutoExecInterval
+----------------
+
+   This variable no longer exists in version 2 of cfengine.
+
+
+File: cfengine-Reference.info,  Node: ChecksumDatabase in cfservd,  Next: cfrunCommand,  Prev: AutoExecInterval,  Up: cfservd control
+
+ChecksumDatabase
+----------------
+
+   This is the path and filename to a database which will cache MD5
+checksum values server-side. This optimization is only available if you
+have the Berkeley database library `libdb' on your system. If this
+variable is not defined, no database caching will be used and checksum
+values will be computed directly on request. The utility of this
+solution is a trade-off between the time it takes to compute the
+checksum versus the time for a disk-based lookup.
+
+
+File: cfengine-Reference.info,  Node: cfrunCommand,  Next: DenyBadClocks,  Prev: ChecksumDatabase in cfservd,  Up: cfservd control
+
+cfrunCommand
+------------
+
+   This string is the command which you would like to be executed
+remotely by the `cfrun' command.
+
+
+File: cfengine-Reference.info,  Node: DenyBadClocks,  Next: DenyConnectionsFrom,  Prev: cfrunCommand,  Up: cfservd control
+
+DenyBadClocks
+-------------
+
+   If this is set to `off', cfservd will not deny access to clients
+whose clocks are off by more than one hour. The default is to deny
+access to systems whose clocks differ by more than one hour. This can
+prevent messages of the form `Can't stat' file when remote copying.
+
+
+File: cfengine-Reference.info,  Node: DenyConnectionsFrom,  Next: cfservd IfElapsed,  Prev: DenyBadClocks,  Up: cfservd control
+
+DenyConnectionsFrom
+-------------------
+
+   Hosts which are included by the allow-list above can be explicitly
+denied access using this list.
+          control:
+     
+           DenyConnectionsFrom = ( 128.39.89.76 )  # rogue host
+
+
+File: cfengine-Reference.info,  Node: cfservd IfElapsed,  Next: LogAllConnections,  Prev: DenyConnectionsFrom,  Up: cfservd control
+
+IfElapsed
+---------
+
+   The `IfElapsed' anti-spamming filter is also built into `cfservd' so
+that a remote user cannot even get as far as causing cfengine to parse
+its input files (which could be used for spamming in itself). The time
+is in minutes, the default is one hour.
+
+
+File: cfengine-Reference.info,  Node: LogAllConnections,  Next: MaxConnections,  Prev: cfservd IfElapsed,  Up: cfservd control
+
+LogAllConnections
+-----------------
+
+   If set to true, every successful connection will be logged to syslog.
+This could be useful for identifying abuses of the service, if the
+server should come under attack, e.g. a denial of service attack. The
+IP address can then be excluded from the allowed connections list.
+
+
+File: cfengine-Reference.info,  Node: MaxConnections,  Next: TrustKeysFrom,  Prev: LogAllConnections,  Up: cfservd control
+
+MaxConnections
+--------------
+
+   This integer value sets a limit on the maximum number of child
+daemon threads which cfservd will `fork' in order to handle remote
+requests. The default value is ten.
+
+
+File: cfengine-Reference.info,  Node: TrustKeysFrom,  Prev: MaxConnections,  Up: cfservd control
+
+TrustKeysFrom
+-------------
+
+   Hosts which are included in this list are automatically trusted, if
+cfservd does not know their public key. This allows public keys to be
+exchanged. Cfservd will not automatically accept a public key from a
+host it does not know, since the key will be used to assert strong
+authentication later.  Once a pubic key has been associated with an IP
+address, it will never be updated, unless the existing key is deleted
+by hand.
+
+          control:
+     
+           TrustKeysFrom = ( 128.39.89.76 )  # trusted host
+
+
+File: cfengine-Reference.info,  Node: admit grant and deny,  Next: cfrun,  Prev: cfservd control,  Up: Cfservd.conf and cfrun reference
+
+admit, grant and deny
+=====================
+
+* Menu:
+
+* root=::
+* encrypt=::
+* SkipVerify::
+
+
+File: cfengine-Reference.info,  Node: root=,  Next: encrypt=,  Prev: admit grant and deny,  Up: admit grant and deny
+
+`root='
+-------
+
+   This list specificies the names of hosts which are to have read
+access to files, regardless of the owner of the file. This effectively
+gives root users on connecting hosts privileges to non-root owned files
+on the server, but not vice-versa, similar to the NFS root mapping,
+except that there is no question of a client being able to modify files
+on the server. Caution: cfservd trusts the DNS service, so be aware that
+cache poisoning attacks are a possible way of bypassing access controls.
+
+
+File: cfengine-Reference.info,  Node: encrypt=,  Next: SkipVerify,  Prev: root=,  Up: admit grant and deny
+
+`encrypt=true'
+--------------
+
+   If this option is set, cfservd will only serve the named files if
+the copy access type is `secure', i.e. on an encrypted link. This
+presupposes that cfengine has been compiled with a working OpenSSL
+library.
+
+
+File: cfengine-Reference.info,  Node: SkipVerify,  Prev: encrypt=,  Up: admit grant and deny
+
+SkipVerify
+----------
+
+   If connecting hosts use a Network Address Translator in order to
+share an IP address, reverse lookup will fail to give a correct
+verification of host identity.  You can switch off cfservd's
+verification of host identity for specific IP addresses or patterns
+using this command. E.g.
+
+
+     SkipVerify = ( 192.0.0.10  192.0.2.  )
+
+   NOTE!! This is a security risk because it means that cfservd
+implicitly trusts the connecting hosts! You should be very careful in
+using Network Address Translators in a secure environment. It is not
+recommended for sites which require a high level of security.
+
+
+File: cfengine-Reference.info,  Node: cfrun,  Next: Firewalls and NATs,  Prev: admit grant and deny,  Up: Cfservd.conf and cfrun reference
+
+`cfrun'
+=======
+
+   The general syntactic form of the `cfrun' command is
+
+
+       cfrun -OPTION --LONGOPTION CLASS1 CLASS2 ...
+
+Since `cfrun' addresses remote hosts, there is an ambiguity in whether
+options are intended for the `cfrun' command itself, on the local host,
+or whether they are to be passed on to the agent on the remote hosts.
+To clarify this distinction, the arguments are organized as follows:
+
+
+       cfrun -LOCAL OPTIONS -- REMOTE OPTIONS -- REMOTE CLASSES
+
+Local options are processed by `cfrun' on the local host; remote options
+are passed on as options to the remote `cfagent' (actually to the
+command defined in `cfrunCommand' in the file `cfservd.conf'; remote
+classes are processed by the remote `cfservd' service, and specifiy
+classes which must be satisfied by the remote host in order to invoke
+the remote command.
+
+   The `-q' and `-I' options are always assumed when executing cfengine
+remotely, so that `SplayTime' is effectively zero when polling hosts
+serially, and the output always shows what is happening on the remote
+hosts.
+
+   Each host evaluates the classes sent by `cfrun' and decides whether
+cfengine should be invoked.  Only hosts which belong to the classes
+defined on the `cfrun' command line are executed. This allows you to
+single out groups of hosts which should execute cfengine, based on the
+very classes which you have defined for your configuration.  If no
+classes are sent on the command line, then all hosts are run.
+
+   `cfrun' uses a configuration file which is located under the
+`CFINPUTS' directory in order to determine which hosts and in which
+order it should try to connect. Because cfengine always uses a reliable
+TCP protocol for connections, it verifies each connection rather than
+simply broadcasting openly. Using this file you can even simulate
+broadcasting to hosts outside your subnet.
+
+   This file should contain every host name you ever want to configure
+remotely, because you can still select subsets of the file by
+specifying classes which the remote host will understand.  If the
+remote host is not in one of the classes you specify when you run
+`cfrun', then it will simply ignore the request. Conversely, if you do
+not place a host in this file, it will never be contacted when you use
+the `cfrun' command. The format of the file is as follows
+
+
+      #
+      # Comment ..
+      #
+      domain=MY.DOMAIN
+      access=USER1,USER2
+      outputdir=DIRECTORY
+      maxchild=NUMBER LIMIT
+     
+      HOSTNAME1            OPTIONS
+      HOSTNAME2:PORT OPTIONS
+      ...
+
+If the option `outputdir' is present, cfrun forks a separate process
+for each host and passes the output to files in a named directory.  The
+`maxchild' line limits the number of forked processes.
+
+   It is important to add the domain-name to this file.  The options
+you specifiy in this file, per host, are added to those you might
+specify on the command line when invoking cfengine remotely.  For
+instance, you might know of a bug on one host and decide not to perform
+interface configuration on that one machine. You would write a line
+like this:
+
+
+       funny.domain -- -i  # problem host
+
+   You could use `cfrun' inside one of your cfengine configuration
+files in order to remotely execute cfengine on all of the other network
+machines, by setting up a host list. The disadvantage however is that
+cfengine has to poll the systems on the network, which means that
+cfengine cannot be working in parallel on all hosts.
+
+   Some other examples:
+
+
+     e.g.  cfrun -- -- linux          Run on all linux machines
+           cfrun -- -p                Ping and parse on all hosts
+           cfrun -v -- -p             Ping all, local verbose
+           cfrun -v -- -k -- solaris  Local verbose, all solaris, but no copy
+
+   Amongst the local options, one may specify a subset of the hosts
+which are to be contacted by cfrun, i.e. to avoid processing the entire
+list of hosts. For example, to contact only host1 and host2, given that
+they are already in the list of hosts.
+
+
+     cfrun -v host1 host2
+     cfrun -v host1 host2 -- -p
+
+
+File: cfengine-Reference.info,  Node: Firewalls and NATs,  Prev: cfrun,  Up: Cfservd.conf and cfrun reference
+
+Firewalls and NATs
+==================
+
+   Firewalls and Network Address Translators (NAT) can be a problem for
+addressing.  Suppose you have a firewall and with a private IP-range
+behind the firewall.  You want to update the nodes from a central host.
+You can do a two stage configuration: first update the firewall and
+then update from the firewall to the nodes.
+
+   But suppose you already use SNAT (Source Network Address
+Translation) and DNAT (Destination ...) for the nodes. With DNAT you
+can say that socket 22000 on the firewall is routed to HOST-NAME:5308.
+DNAT gives us the possibilty to update the nodes from a central server
+in one step instead of two.
+
+   If the port command is given cfrun uses this to connect to the client
+instead of the default (5308) one.  Here is an example (`cfrun.hosts'):
+
+     node1.example.org
+     node2.example.org:22000 -DNis
+     node2.example.org:22001
+
+   This connects to: 1) node1 with standard port, 2) node2 with port
+22000 and extra options -DNis and, 3) node2 with port 22000.
+
+
+File: cfengine-Reference.info,  Node: Cfexecd reference,  Next: Problem solving,  Prev: Cfservd.conf and cfrun reference,  Up: Top
+
+Cfexecd reference
+*****************
+
+   In wrapper mode (non-forking, non-daemon mode), cfagent is run by
+adding a line to the root crontab file of each system:
+     0,30 * * * * /usr/local/sbin/cfexecd -F
+   This is enough to ensure that cfengine will get run. Any output
+generated by this job, will be stored in `/var/cfengine/outputs'.  In
+addition, if you add the following to the file `cfagent.conf', the
+system administrator will be emailed a summary of any output:
+
+     control:
+     
+     smtpserver = ( mailhub.example.org ) # site MTA which can talk smtp
+     sysadm     = ( mark@example.org )   # mail address of sysadm
+
+Fill in suitable values for these variables.  An alternative, or
+additional way to run cfengine, is to run the `cfexecd' program is
+daemon mode (without the `-F') option. In this mode, the daemon lives
+in the background and sleeps, activating only in accordance with a
+scheduling policy. The default policy is to run once every hour
+(equivalent to `Min00_05'). Here is how you would modify `cfagent.conf'
+in order to make the daemon execute cfagent every half-hour:
+       control:
+     
+        # When should cfexecd in daemon mode wake up the agent?
+     
+        schedule   = ( Min00_05 Min30_35 )
+   Note that the time specifications are the basic cfengine _time
+classes_.  Although one of these methods should suffice, no harm will
+arise from running both cron and the cfexecd side-by-side.  Cfagents
+locking mechanisms ensure that no contention will occur.
+
+   Note, that if problems with library path for compiled in libraries
+occur, an explicit library path can be specified with the `-L' option.
+     0,30 * * * * /usr/local/sbin/cfexecd -F -L /local/iu/lib:/local/lib/mysql:/local/lib:/local/gnu/lib
+
+
+File: cfengine-Reference.info,  Node: Problem solving,  Next: Example configuration file,  Prev: Cfexecd reference,  Up: Top
+
+Problem solving
+***************
+
+* Menu:
+
+* cf.preconf bootstrap file::
+* cfrc resource file::
+
+
+File: cfengine-Reference.info,  Node: cf.preconf bootstrap file,  Next: cfrc resource file,  Prev: Problem solving,  Up: Problem solving
+
+`cf.preconf' bootstrap file
+===========================
+
+   In some cases you will want to run cfengine on a system to configure
+it from scratch.  If the system is in a very bad way, it might not even
+be able to parse the cfengine configuration file, perhaps because the
+network was not properly configured or the DNS (Domain Name Service) was
+out of action.  To help prevent this situation, cfengine looks for a
+script called `cf.preconf' which gets executed prior to parsing and can
+be used to perform any emergency tests.  This file needs only contain
+enough to get the system to parse the configuration files.
+
+   `cf.preconf' may be any script in any language.  It need not exist
+at all! It is fed one argument by cfengine, namely the system hard-class
+for the current system (e.g.  `ultrix').  Here is an example:
+
+     #!/bin/sh
+     #
+     # cf.preconf is an emergency/bootstrap file to get things going
+     # in case cfengine is unable to parse its config file
+     #
+     
+     backupdir=/iu/nexus/local/iu/etc
+     
+      #
+      # If these files don't exist, you might not be able to parse cfagent.conf
+      #
+     
+     if [ ! -s /etc/resolv.conf ]; then
+     
+      echo Patching basics resolv.conf file
+      cat > /etc/resolv.conf << XX
+     domain iu.hioslo.no
+     nameserver 128.39.89.10
+     XX
+     
+     fi
+     
+     #
+     # SVR4
+     #
+     
+     if [ "$1" = "solaris" ]; then
+     
+       if [ ! -s "/etc/passwd" ]; then
+     
+       echo Patching missing passwd file
+         /bin/cp $backupdir/passwd /etc/passwd
+       fi
+     
+       if [ ! -s "/etc/shadow" ]; then
+     
+        echo Patching missing passwd file
+        /bin/cp $backupdir/shadow /etc/shadow
+       fi
+     fi
+     
+     #
+     # BSD 4.3
+     #
+     
+     if [ "$1" = "linux" ]; then
+     
+        if [ ! -s "/etc/passwd"  ]
+        then
+     
+         echo Patching missing passwd file
+         /bin/cp $backupdir/passwd.linux /etc/passwd
+        fi
+     fi
+
+
+File: cfengine-Reference.info,  Node: cfrc resource file,  Prev: cf.preconf bootstrap file,  Up: Problem solving
+
+`cfrc' resource file
+====================
+
+   If, for some reason you are not satisfied with the defaults which
+cfengine uses, then you can change them by making an entry in the
+resource file.  The default values are defined in the source code file
+`classes.c' in the distribution.  The format of the resource file is:
+
+     hardclass.variable: value
+
+For example, you might want to forget about where your HPUX system
+mounts its mail directory and mount it under `/usr/spool/mail'.  In
+this case you would add the line:
+
+     hpux.maildir: /usr/spool/mail
+
+To redefine the filesystem table for GNU/linux, you would write:
+     linux.fstab: /etc/linuxfstab
+
+The full list of re-definable resources is:
+
+        mountcomm       # command used to mount filesystems
+        unmountcomm     # command used to unmount filesystems
+        ethernet        # name of the ethernet device
+        mountopts       # options to above mount command
+        fstab           # the name of the filesystemtable
+        maildir         # the location of the mail directory
+        netstat         # the full path to netstat and options
+        pscomm          # the path to the system's ps command
+        psopts          # the options used by ps (default aux/ef)
+
+   You should never need to redefine resources unless you decide to do
+something non-standard.  Interested readers are referred to the values
+in `classes.c'.
+
+   Cfengine is easily extensible so as to support a variety of
+architectures.  You can even add your own.  To do so you need, first of
+all, to define a new class for the operating system concerned.  The file
+_classes.c_ has been separated off from the remainder of the source
+code so that you can easily see which data structures need to be
+extended.
+
+   To make life as straightforward as possible, three unused classes
+have been defined.  They are called (unremarkably) _unused1_, _unused2_
+and _unused3_.  If you add any further classes, it will be necessary to
+increase the constant _clssattr_ defined in _cf.defs.h_ by one for
+every new addition.  You do not need to change _clssattr_ if you simple
+replace one of the unused classes by a real class.
+
+   To see fully the impact of what you need to do, you should make a
+search for the strings _unused?_ in all of the source files.  Certain
+special cases need to be handled for each operating system.  For
+example, the form of the filesystem table is quite radically different
+on some systems such as AIX.  One thing you must do is to fill in the
+default values for the new operating system in the file _classes.c_.
+
+   If you fill in the details for a new operating system before it finds
+its way into a new release, you might consider sending the details to
+the bug list in the next paragraph.
+
+
+File: cfengine-Reference.info,  Node: Example configuration file,  Next: Variable Index,  Prev: Problem solving,  Up: Top
+
+Example configuration files
+***************************
+
+   Here is a sample from a large configuration file, just to give you
+some ideas. The file is broken up into manageable pieces for
+convenience.
+
+* Menu:
+
+* cfagent.conf::
+* cf.groups::
+* cf.main::
+* cf.site::
+* cf.motd::
+* cf.users::
+* cf.solaris::
+* cf.linux::
+* cf.freebsd::
+* cfservd.conf::
+
+
+File: cfengine-Reference.info,  Node: cfagent.conf,  Next: cf.groups,  Prev: Example configuration file,  Up: Example configuration file
+
+cfagent.conf
+============
+
+     #####################################################################
+     #
+     #  CFENGINE CONFIGURATION FOR site = iu.hioslo.no
+     #
+     #  This file is for root only.
+     #
+     ######################################################################
+     
+     ###
+     #
+     # BEGIN cfagent.conf
+     #
+     ###
+     
+     import:
+     
+        #
+        # Split things up to keep things tidy
+        #
+     
+        any::
+                         cf.groups
+                         cf.main
+                         cf.site
+                         cf.motd
+     
+        hpux::           cf.hpux
+        linux::          cf.linux
+        solaris::        cf.solaris
+        sun4::           cf.sun4
+        ultrix::         cf.ultrix
+        freebsd::        cf.freebsd
+     
+        #
+        # Do you want to do this ?
+        #
+     
+        AllHomeServers:: cf.users
+     
+     
+     ###
+     #
+     # END cfengine.conf
+     #
+     ###
+
+
+File: cfengine-Reference.info,  Node: cf.groups,  Next: cf.main,  Prev: cfagent.conf,  Up: Example configuration file
+
+cf.groups
+=========
+
+     ##############################################################
+     #
+     # cf.groups - for iu.hioslo.no
+     #
+     # This file contains  all group/class definitions
+     #
+     #################################################################
+     
+     ###
+     #
+     # BEGIN cf.groups
+     #
+     ###
+     
+     groups:
+     
+        #
+        # Define some groups
+        #
+     
+        iu = ( nexus ferengi regula borg dax lore axis worf daystrom voyager
+               aud1 aud2 aud3 aud4 bajor ds9 takpah takpeh nostromo galron
+               thistledown rama chaos pc-steinarj pc-hildeh way jart kosh )
+     
+        diskless   = ( regula ferengi lore )
+     
+        standalone = ( nexus axis dax borg worf daystrom voyager
+                       aud1 aud2 aud3 aud4 bajor ds9 takpah takpeh
+                       nostromo galron thistledown rama pc-torejo
+                       pc-steinarj pc-hildeh )
+     
+        AllHomeServers   = ( nexus )
+        AllBinaryServers = ( nexus borg )
+     
+        XBootServer  = ( nexus )
+        WWWServers   = ( nexus )
+        FTPserver    = ( nexus )
+        NameServers  = ( nexus )
+        PasswdServer = ( nexus )
+        BackupHost   = ( nexus )
+     
+        MailHub      = ( nexus )
+        MailClients  = ( iu -nexus )
+     
+     ###
+     #
+     # END cf.groups
+     #
+     ###
+
+
+File: cfengine-Reference.info,  Node: cf.main,  Next: cf.site,  Prev: cf.groups,  Up: Example configuration file
+
+cf.main
+=======
+
+     ##############################################################
+     #
+     # cf.main - for iu.hioslo.no
+     #
+     # This file contains generic config stuff
+     #
+     #################################################################
+     
+     ###
+     #
+     # BEGIN cf.main
+     #
+     ###
+     
+     control:
+     
+        access    = ( root )        # Only root should run this
+     
+        site      = ( iu )
+        domain    = ( iu.hioslo.no )
+        sysadm    = ( drift@iu.hioslo.no )
+     
+        repository = ( /var/spool/cfengine )
+     
+        netmask   = ( 255.255.255.0 )
+        timezone  = ( MET )
+        nfstype   = ( nfs )
+     
+        sensiblesize  = ( 1000 )
+        sensiblecount = ( 2 )
+        editfilesize  = ( 20000 )
+     
+        mountpattern = ( /$(site)/$(host) )
+        homepattern  = ( u? )
+     
+        #
+        # If we undefine this with cfengine -N longjob
+        # then we switch off all jobs labelled with this class
+        #
+     
+        addclasses = ( longjob )
+     
+        #
+        # Macros & constants are inherited downwards in imports
+        # but are not passed up to parent files. Good idea to
+        # define them all here
+        #
+     
+        masterfiles = ( /iu/nexus/local/iu )
+        main_server = ( nexus )
+        cfbin       = ( /iu/nexus/local/gnu/lib/cfengine/bin )
+        gnu         = ( /local/gnu )
+        ftp         = ( /local/iu/ftp )
+        nisslave    = ( dax )
+        nisfiles    = ( /iu/nexus/local/iu/etc )
+     
+        #
+        # The action sequence for daily (full) runs and
+        # for hourly updates (called with -DHourly)
+        #
+     
+        Hr00::
+     
+           actionsequence =
+              (
+              copy
+              mountall
+              mountinfo
+              checktimezone
+              netconfig
+              resolve
+              unmount
+              shellcommands
+              addmounts
+              links.Prepare
+              files.Prepare
+              directories
+              links.Rest
+              mailcheck
+              mountall
+              required
+              tidy
+              disable
+              editfiles
+              files.Rest
+              processes
+              )
+     
+        !Hr00::
+     
+           actionsequence =
+              (
+              resolve
+              shellcommands
+              copy
+              editfiles
+              processes
+     	 links
+              )
+     
+        force::
+     
+           actionsequence =
+              (
+              files.Prepare.Rest
+              tidy
+              )
+     
+     ######################################################################
+     
+     homeservers:
+     
+        iu:: nexus
+     
+     binservers:
+     
+        iu.solaris::                 nexus
+        iu.linux::                   borg
+     
+     mailserver:
+     
+        any:: nexus:/var/mail
+     
+     mountables:
+     
+        any::
+              nexus:/iu/nexus/u1
+              nexus:/iu/nexus/u2
+              nexus:/iu/nexus/u3
+              nexus:/iu/nexus/u4
+              nexus:/iu/nexus/u5
+              nexus:/iu/nexus/u6
+              nexus:/iu/nexus/ua
+              nexus:/iu/nexus/ud
+              nexus:/iu/nexus/local
+              nexus:/opt/NeWSprint
+              nexus:/opt/AcroRead
+              borg:/iu/borg/local
+              dax:/iu/dax/local
+     
+     miscmounts:
+     
+        linux||freebsd::   nexus:/iu/nexus/local /iu/nexus/local ro
+     
+     ######################################################################
+     
+     broadcast:
+     
+       ones
+     
+     defaultroute:
+     
+        cadeler30-gw
+     
+     ######################################################################
+     
+     resolve:
+     
+           128.39.89.10  # nexus
+           158.36.85.10  # samson.hioslo.no
+           129.241.1.99
+     
+     ######################################################################
+     
+     tidy:
+     
+        #
+        # Some global tidy-ups
+        #
+     
+           /tmp/                    pat=*             r=inf     A=1
+           /var/tmp                 pat=*             r=inf     A=1
+           /                        pat=core          r=1       A=0
+           /etc                     pat=core          r=1       A=0
+     
+     ######################################################################
+     
+     ignore:                       # Don't check or tidy these directories
+     
+           /local/lib/gnu/emacs/lock/
+           /local/tmp
+           ftp
+           projects
+           /local/bin/top
+           /local/lib/tex/fonts
+           /local/iu/etc
+           /local/etc
+           /local/iu/httpd/conf
+           /usr/tmp/locktelelogic
+           /usr/tmp/lockIDE
+           RootMailLog
+     
+           #
+           # Emacs lock files etc
+           #
+     
+           !*
+           /local/lib/xemacs
+     
+           #
+           # X11 keeps X server data in /tmp/.X11
+           # better not delete this!
+           #
+     
+           .X11
+     
+           #
+           # Some users like to give a file or two 777 protection here
+           # so netsurfers can update a log or counter when running as
+           # `nobody'
+           #
+     
+           www
+     
+     #####################################################################
+     
+     disable:
+     
+        /etc/hosts.equiv
+        /etc/nologin
+        /usr/lib/sendmail.fc
+     
+     
+     ###
+     #
+     # END cf.main
+     #
+     ###
+

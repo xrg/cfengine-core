@@ -1,0 +1,1204 @@
+This is cfengine-Reference.info, produced by makeinfo version 4.0 from
+cfengine-Reference.texinfo.
+
+INFO-DIR-SECTION System Utilities
+START-INFO-DIR-ENTRY
+* cfengine Reference: (cfengine-Reference.info).
+                        Cfengine is a language based tool specifically
+                        designed for configuring and maintaining BSD
+                        and System-5-like operating systems attached
+                        to a TCP/IP network.
+END-INFO-DIR-ENTRY
+
+
+File: cfengine-Reference.info,  Node: groups,  Next: homeservers,  Prev: filters,  Up: Cfagent reference
+
+groups/classes
+==============
+
+   The `groups' action (equivalently referred to as `classes' as of
+version 1.4.0) is used to define classes which stand for groups of
+hosts.  If you use the NIS (network information service) facility for
+defining _netgroups_ then this idea will already be familiar to you and
+you can probably use your already-defined netgroups in cfengine.
+
+   To define a group, you simply make a list and assign it a name.
+Here is an example of the syntax:
+
+
+     groups:
+     
+        science = ( saga tor odin )
+     
+        packages = ( saga )
+     
+        AllHomeServers   = ( saga )
+        AllBinaryServers = ( saga )
+     
+        OIH_servers = ( saga )
+        OIH_clients = ( tor odin )
+     
+        notthis = ( !this )
+
+To include a list of hosts from a NIS netgroup, you use the `+' symbol,
+or the `+@' construction.  For example:
+
+
+     groups:
+     
+        science = ( +science-allhosts )
+     
+        physics = ( +physics-allhosts )
+     
+        physics_theory = ( +@physics-theory-sun4 dirac feynman schwinger )
+
+Using an enormous netgroup does not use up any space.  A group
+declaration results in the storage of only the class name regardless of
+how many hosts are in the list.  The rule is that the left hand side of
+the assignment becomes defined (true) if the list on the right hand side
+includes the host which is parsing the file -- i.e.  `$(host)'.
+
+   In some cases your netgroups will not correspond exactly to the list
+you want, but it might be more convenient to use a netgroup _except_
+for certain hosts.  You can `undefine' or remove hosts from the netgroup
+list by using the minus `-' symbol.  For example:
+
+
+     group = ( +mynetgroup -specialhost -otherhost )
+
+which means, of course, all hosts in netgroup `mynetgroup' except for
+`specialhost' and `otherhost'.  Finally, you may also subtract two
+netgroups in the following manner.
+
+     group = ( +bignetgroup -smallnetgroup )
+
+The `minus' command effectively eliminates its members from
+`bignetgroup' if they exist within that group.  If none of the hosts in
+`smallnetgroup' exist in `bignetgroup' then the command has no effect.
+
+   Groups may now contain previously defined cfengine groups too. This
+allows one class to inherit the attributes of another class, for
+instance:
+
+
+       AllSun4Hosts   = ( sonny sunny solar stella )
+       AllUltrixHosts = ( ully olly wally golly )
+     
+       AllBSD = ( AllSun4Hosts AllUltrixHosts )
+
+The classes on the right hand side are effectively ORed together into
+the left hand side.  This enables complex classes to be constructed from
+several other basic classes, e.g.
+
+
+       SpecialTimes = ( Hr00 Monday Day1 )
+
+which evaluates to true every day when it between 00:00 hours and 00:59,
+all day Monday and all day on the first day of every month.
+
+   Finally, you can define groups (strictly classes) by the result of a
+shell command. A shell command or program is deemed to be `true' if it
+exits with a status of zero, i.e. it calls `exit(0)'. Any other value
+is taken to be false. You can include shell commands as the members of
+groups in order to define classes based on the outcomes of your own
+scripts by enclosing the script in single or double quotes:
+
+
+        have_cc = ( '/bin/test -f /usr/ucb/cc' )
+
+The class `have_cc' will then be defined if the shell command returns
+true. Of course, you can put any script or program in the single quotes
+as long as they adhere to the convention that zero exit status means
+true.  If you have several members which are shell commands, then the
+effect is to make the class the logical OR of the scripts' results.
+
+   As of version 1.4.0, you may use the synonym `classes' for `groups'.
+
+
+File: cfengine-Reference.info,  Node: homeservers,  Next: ignore,  Prev: groups,  Up: Cfagent reference
+
+homeservers
+===========
+
+   The `homeservers' declaration need only be used if you are using
+cfengine's model for mounting NFS filesystems.  This declaration informs
+hosts of which other hosts on the network possess filesystems containing
+home directories (login areas) which client hosts should mount.
+
+   A sample homeserver declaration looks like this:
+
+
+     homeservers:
+     
+        Physics::  einstein
+        Math::     riemann euler
+
+The meaning of this declaration is the following.  Any host which finds
+itself to be a member of the classes on the left hand side of the
+assignment need to mount all home directory resources from the hosts on
+the right hand side of the assignment.  The pattern variable
+`homepattern' is used to determine which resources are home directories
+in the list of `mountables'.  *Note mountables::.
+
+   Let us consider an example in which `homepattern' is set to the
+wildcard value `home?' and the mountables list is given by
+
+     mountables:
+     
+        einstein:/mysite/einstein/home1
+        einstein:/mysite/einstein/home2
+        riemann:/mysite/riemann/local
+        euler:/mysite/euler/home1
+
+   Any host in the group `Physics' would now want to mount all home
+directories from the host `einstein'.  There are two of these.  Both
+the filesystems listed for `einstein' match the `homepattern' variable
+since they end in `home?'.  cfengine would therefore take this to mean
+that all hosts in `Physics' should mount both of these filesystems.
+
+   Hosts in `Math', on the other hand, should mount only
+homedirectories from the hosts `riemann' and `euler'.  There is only a
+single filesystem on `riemann' and it does not match `homepattern', so
+it is not mounted.  On `euler' there is a match, so this filesystem
+will be added to the appropriate hosts.
+
+   _Cfengine picks out home directory resources from the `mountables'
+list by trying to match the `homepattern' variable, starting from the
+end of the directory name.  You do not therefore have to use the
+designation `/site/host/home?'  but this is a simple choice and is
+highly recommended._
+
+
+File: cfengine-Reference.info,  Node: ignore,  Next: import,  Prev: homeservers,  Up: Cfagent reference
+
+ignore
+======
+
+   When you specify a recursive search as part of a `files', `tidy' or
+`copy' action, you would sometimes like to exclude certain directories
+from the list of sub directories.  In most cases you will want to do
+this on a per-command basis (see the pages for these actions
+separately), but you can also make a global ignore list.  This can be
+accomplished by adding the directory to the ignore-list.  The syntax is
+
+
+       ignore:
+     
+          WILDCARDS/DIRECTORIES/FILENAMES
+
+   For example:
+
+
+     ignore:
+     
+        any::
+     
+           #
+           # Prevent tidying .X11 directories in /tmp where
+           # window managers write semaphores
+           #
+     
+           .X11
+     
+           #
+           # Don't tidy emacs locks
+           #
+     
+           !*
+           /local/lib/gnu/emacs/lock/
+           /local/tmp
+           /local/bin/top
+           /local/lib/tex/fonts
+           /local/etc
+           /local/www
+           /local/mutils/etc/finger.log
+
+None of the above directories will be checked or entered during
+recursive descents unless a specific command is initiated to search
+those directories with their names as the top of the search tree.
+
+   A handy tip if you are tidying `/tmp' recursively is to include the
+directory `.X11' here.  This directory is used by the X-windows system
+and deleting it while a window manager has an open session can cause
+the user some trouble.
+
+   Ignore refers to all recursive searches in tidy, files, copy and
+links.
+
+
+File: cfengine-Reference.info,  Node: import,  Next: interfaces,  Prev: ignore,  Up: Cfagent reference
+
+import
+======
+
+   To break up a large configuration file into smaller files you can use
+the include directive.  This conditionally reads in files if the class
+on the left hand side of the assignment matches the host parsing the
+file.  This enables also a variety of cfengine configuration scripts to
+read in a standard set of default settings.  The syntax of the statement
+is:
+
+
+     import:
+     
+        any::
+     
+           cf.global_classes
+     
+     
+        linux::
+     
+           cf.linux_classes
+
+   Note that, if you define variables in an imported file they will not
+be defined for operations in their parent files. This because cfengine
+reads in all the import files after the main file has been parsed--not
+at the place where you call import in your script. This means that
+variables or macros defined in imported files are only defined after
+the main program. Variables from earlier files are inherited by later
+includes, but not _vice-versa_.
+
+
+File: cfengine-Reference.info,  Node: interfaces,  Next: links,  Prev: import,  Up: Cfagent reference
+
+interfaces
+==========
+
+
+      interfaces:
+     
+        CLASSES::
+     
+          INTERFACENAME netmask=NETMASK broadcast=BROADCAST
+
+   If you have more than one network interface, or you do not wish to
+use the default interface name, this section may be used to define
+further interfaces to be checked. This feature can replace the older
+method of setting netmask and broadcast address in `control:'. If the
+`netmask' variable is not set, cfengine ignores the default interface
+configuration.  Example:
+
+
+       interfaces:
+     
+         "le1" netmask=255.255.255.0 broadcast=ones
+         "le2" netmask=255.255.255.0 broadcast=ones
+
+
+File: cfengine-Reference.info,  Node: links,  Next: mailserver,  Prev: interfaces,  Up: Cfagent reference
+
+links
+=====
+
+   The symbolic links function is one of the greatest plusses in
+cfengine as a system administration tool.  It allows you to do two
+things: check single links for correctness and consistency (or make
+them if they do not exist), and check or make links to every file in a
+designated directory.  This latter feature is called multiple linking
+or linking children.  The `linkchildren' feature is also available from
+the `files' action  *Note files::. The syntax of a link item is:
+
+
+       FROM-LINK ->[!] TO-OBJECT
+      OR
+       FROM-LINK +>[!] TO-OBJECT
+     
+                 type=symbolic/absolute/abs/HARD/RELATIVE/REL
+                 copy=PATTERN
+                 recurse=NUMBER/INF/0
+                 copytype=CHECKSUM/ctime
+                 include=PATTERN
+                 exclude=PATTERN
+                 ignore=PATTERN
+                 action=SILENT
+                 deadlinks=kill/FORCE
+                 define=CLASSLIST
+                 nofile=kill/FORCE
+                 syslog=TRUE/ON/FALSE/OFF
+                 inform=TRUE/ON/FALSE/OFF
+
+_The special variable `$(binserver)' can be used in `links'._
+
+* Menu:
+
+* Single links::
+* Multiple Links::
+* Link Children::
+* Relative and absolute links::
+* Hard links::
+
+
+File: cfengine-Reference.info,  Node: Single links,  Next: Multiple Links,  Prev: links,  Up: links
+
+Single links
+------------
+
+   To define a single link, you create an entry of the following form:
+
+
+     links:
+     
+       CLASS::
+     
+          LINKNAME -> OBJECT_TO_LINK_TO
+          LINKNAME -> ./RELATIVE_LINK
+          LINKNAME -> ../RELATIVE_LINK
+
+If links exists and point to their intended destinations then no action
+is taken.  If a link exists but points incorrectly then a warning is
+issued, unless the pling operator `!' is given, in which case the
+correct value is forced.  If the link exists and points to a file which
+does not exist a warning is issued unless the command line option `-L'
+is used, in which case the link is deleted.
+
+   Here is an example of some valid link statements.
+
+
+     links:
+     
+       Physics.sun4::
+     
+        /usr/local       -> /$(site)/$(host)/local
+        /home            -> /$(site)/$(host)/u1
+        /etc/sendmail.cf -> /usr/local/mail/etc/global-sendmail.cf
+     
+        /usr/lib/sendmail ->! /local/lib/sendmail
+
+cfengine makes any directories which are required leading up to the link
+name on the left hand side of the arrow automatically. In the last
+example the `pling' forces cfengine to make the link even if a file for
+link exists previously. Plain files are saved by appending `.cfsaved'
+to the filename, or by moving to a repository, whereas old links are
+removed.  The same effect can be enforced globally using the `-E'
+option, but only if the program is run interactively. (In this case a
+prompt is issued to make sure that you wish to use such a big hammer on
+your system!)
+
+   The link operation accepts a number of parameters
+
+`type=HARD/RELATIVE/ABSOLUTE'
+     If the link type is hard, a hard link is created *Note Hard
+     links::.  Symbolic links may specify two special types. If
+     `relative' is selected, and the `to' object is an absolute path
+     name, the link name will be rewritten as a pathname relative to
+     the source file, using `.' and `..' to move relative to the
+     current directory. For instance, a link from `/usr/local/file' to
+     `/usr/file' would be linked as `./../file'.  If the `to' object is
+     already relative, this has no effect.
+
+     If `absolute' is specified, cfengine will try to resolve the true
+     path location of the `to' object, expanding any symbolic links or
+     dots in the path name, up to a maximum of four levels of symbolic
+     links.
+
+`copy=PATTERN'
+     This option can be repeated any number of times to build up a list
+     of filenames or wildcards which are to be copied rather than linked
+     symbolically. The copy is made on an age-comparison basis. A global
+     variable may also be set to invoke this feature *Note copylinks::.
+     Directories cannot be copied in this way.
+
+`copytype=CHECKSUM/CTIME'
+     This specifies the basis for deciding whether to update a file
+     which is to be copied instead of linked *Note copy::.
+
+`nofile=kill/FORCE'
+     This decides what happens to links which point to non-existent
+     files. The default action is to remove such links, or refuse to
+     create them. By setting the FORCE option you can force cfengine to
+     make symbolic links to files which do not exist.  This is useful
+     for setting up links to filesystems which are not permanently
+     mounted.
+
+`exclude=PATTERN'
+     This option can be repeated any number of times to build up a list
+     of filenames or wildcards which are to be excluded from the linking
+     process. A global variable may also be set to invoke this feature
+     *Note excludelinks::.
+
+`ignore'
+     This works like the global ignore directive but here you may
+     provide a private list of ignorable directories and files.  Unlike
+     include, exclude this affects the way cfengine parses directory
+     trees.
+
+`recurse=NUMBER/inf'
+     This option can only be used with multiple link operations *Note
+     Multiple Links::.  If this option is specified, cfengine links
+     only non-directory objects. Directories are instead created and
+     links within those directories are also created. The value of this
+     option specifies the maximum number of levels to which cfengine
+     should recursively descend a link tree. `inf' means infinite
+     recursion. Cfengine also ignores files and directories in the
+     ignore list *Note ignore::.
+
+`define=CLASSLIST'
+     If a link is created or replaced, the colon, comma or dot separated
+     list of classes becomes defined.
+
+   The final feature of the links facility is connected to the use of
+the cfengine model for mounting NFS filesystems.  In particular it
+concerns the variable `$(binserver)'.  The easiest way to understand
+this feature is to illustrate a couple of examples.  Consider the
+following:
+
+     links:
+     
+        any::
+     
+           /local -> /${site}/${binserver}/local
+
+The result of this command is quite different depending on which host is
+executing it.  The variable `$(site)' clearly has a fixed value, but
+the variable `$(binserver)' might expand to any valid binary server for
+the host executing the program.  *Note binservers::.  The procedure
+cfengine adopts is to go through its list of mountables, keeping only
+those mountable resources which belong to defined binary servers for
+the current host.  It then attempts to match a filesystem by
+substituting `$(binserver)' with each of its valid binservers in turn
+and it matches the first one binary server which yields an existing
+file.
+
+   Note that every host is a binary server for itself, so that the
+value of `$(binserver)' which has absolute priority is alway the same
+as the value of `$(host)'.  This ensures that the link will always be
+made to a local filesystem if the rules of the model are upheld.
+
+
+File: cfengine-Reference.info,  Node: Multiple Links,  Next: Link Children,  Prev: Single links,  Up: links
+
+Multiple Links
+--------------
+
+   With the link symbol `+>', you opt to link all of the files in a
+directory to corresponding files in another directory.  This procedure
+is sometimes useful for installing software.  In the example
+
+
+     links:
+     
+       myclass::
+     
+          /usr/local/bin +>  /usr/local/lib/perl/bin
+          /opt           +>! /local
+
+every file in the directory `/usr/local/lib/perl/bin' is linked
+symbolically to a corresponding file in `/usr/local/bin'. The `pling'
+character forces cfengine to replace old links or plain files already
+existing. Old links are removed, whereas old files are saved by
+appending `.cfsaved' to the filename *Note repository::.
+
+   Each time cfengine runs it goes through all of the files in the
+directory concerned and checks the appropriate link accordingly.  If new
+files appear, new links will be added.  If a file disappears but the
+link to it remains, a warning will be issued, unless the `-L' command
+line option is used, in which case the link is deleted.
+
+
+File: cfengine-Reference.info,  Node: Link Children,  Next: Relative and absolute links,  Prev: Multiple Links,  Up: links
+
+Link Children
+-------------
+
+   The linkchildren directive is a closely related to the cfengine model
+for NFS filesystems.  It is a way of making links which embodies a
+rudimentary kind of `intelligence'.
+
+   Consider the following:
+
+     links:
+     
+        any::
+     
+           /usr/local/lib/emacs +> linkchildren
+
+The word `linkchildren' automatically tells cfengine that it should
+look for an appropriate file to link to on a binary server for the
+current host.  The exact meaning of the above statement is as follows.
+cfengine begins searching though the list of mountable resources,
+discarding any filesystems which do not belong to valid binary servers.
+It looks for a filesystem ending in `emacs' (the last link of the left
+hand side).  If all is well, these file systems are already mounted and
+they can be searched.  If no resource is found ending in `emacs', we go
+to the next link `lib' and look for a filesystem ending in `lib'.  If
+this is not found we go to `local' and so on.  When a match is made,
+cfengine then tries to locate the file by checking whether it exists
+relative to the matched filesystem.  For example, suppose `local'
+matched with `host:/site/host/local'.  It would then try to locate
+`host:/site/host/local/lib/emacs' and link all of the children therein
+to the local file directory `/usr/local/lib/emacs'.
+
+   Here is another example which makes reference to the cfengine model
+for mounting NFS filesystems.  Suppose you have a host with some spare
+disk space.  You want to mount `/usr/local' from the binary architecture
+server, but you also want to use the disk you have locally.  The
+following lines
+
+     links:
+     
+        electron::
+     
+           /$(site)/electron/local +> linkchildren
+     
+        any::
+     
+           /usr/local              -> /$(site)/$(binserver)/local
+
+have the effect of creating a directory `/$(site)/electron/local' and
+filling it with links to all of the files and directories on the binary
+server's mounted filesystem.  It results in an exact copy (by linkage)
+on the local disk, but does not use up your local disk space.  The
+space you have remaining could, for example, be used for software with
+a special license for that host.  The second link links `/usr/local' to
+the `nearest' binary server.  But the nearest binary server is always
+`$(host)' which means this evaluates to a file which now exists because
+of the first command, so on the host `electron' the directory
+`/usr/local' ends up being a link to `/$(site)/electron/local' which is
+full of links to the binary server.
+
+   If you've caught your breath after that mouthful you probably have
+mixed feelings about creating a bunch of links in this way.  What
+happens if the files they point to are removed? Then you are left with
+a lot of useless links.  Actually this is no problem for cfengine,
+since you can ask cfengine to simply remove links which point to
+non-existent files *Note files::.  Nevertheless, this feature clearly
+requires some caution and is mainly a spice for advanced users of the
+cfengine model.
+
+
+File: cfengine-Reference.info,  Node: Relative and absolute links,  Next: Hard links,  Prev: Link Children,  Up: links
+
+Relative and absolute links
+---------------------------
+
+   When specifying symbolic linking, you can ask cfengine to change the
+link type to be either relative to the source or to be an absolute
+path. What this means is the following. Consider the following link:
+
+        /var/tmp/cfengine -> /local/cfengine
+
+If we add the option `type=relative', then instead of creating a link
+which points to `/local/cfengine', the link is created pointing to the
+location
+
+       ./../../local/cfengine
+
+In other words, the link is relative to the calling directory
+`/var/tmp'.
+
+   If a link is specified as being absolute with the option
+`type=absolute', then cfengine attempts to resolve to value of the link
+so as to be the true path of the target. If the target name contains a
+symbolic link, then this is expanded as far as possible to give the true
+path to the file. For example, if `/local' is really a link to
+`/site/myhost/local' then the link would point to
+`/site/myhost/local/cfengine'.
+
+
+File: cfengine-Reference.info,  Node: Hard links,  Prev: Relative and absolute links,  Up: links
+
+Hard Links
+----------
+
+   Cfengine will also allow you to create hard links to regular files.
+A hard link is in every way identical to the original file, it merely
+has a different name (technically, it is a duplicate inode). To create a
+hard link you use the link-option `type=hard'. For example:
+
+
+     links:
+     
+        /DIRECTORY/NEWNAME -> /DIRECTORY/OTHERNAME type=hard
+
+Cfengine will not create hard links to directories or other special
+files.  This is always a slightly dubious practice and is best avoided
+anyway.  POSIX says that the hard link can be on a different device to
+the file it points to, but both BSD and System 5 restrict hard links to
+be on the same device as their predecessors. Cfengine has no policy on
+this, but--in the theoretical case in which the hard link and the
+predecessor were on different file systems--it becomes near impossible
+to determine with certainly between a hard link and a very similar
+regular file, and thus cfengine issues a warning in verbose mode about
+this eventuality.  Provided both link and predecessor are on the same
+filesystem cfengine determines the status of hard links by comparing
+the device and inode numbers of the file pointed to.
+
+
+File: cfengine-Reference.info,  Node: mailserver,  Next: miscmounts,  Prev: links,  Up: Cfagent reference
+
+mailserver
+==========
+
+   The `mailserver' declaration need only be used if you are using
+cfengine's model for mounting NFS filesystems.  This declaration informs
+hosts of which NFS filesystem contains mail for its users.  All hosts
+apart from the mail-host itself must then mount the mail spool directory
+across the network.  The declaration looks like this:
+
+
+     mailserver:
+     
+        CLASS::      mailhost:/var/spool/mail
+
+The result of the `mailcheck' command in the action-sequence is now to
+mount the filesystem `/var/spool/mail' on the host `mailhost'.  This
+action is carried out on any machine which does not already have that
+filesystem mounted.
+
+   The mail spool directory is mounted, by default, onto the official
+mail spool directory for the system which is parsing the program.  In
+other words, on an HPUX system, the spool directory is mounted on
+`/usr/mail' by default, whereas on a Sun system it would be mounted on
+`/var/spool/mail'.  The default location can be changed by using the
+resource file.  *Note cfrc resource file::.
+
+
+File: cfengine-Reference.info,  Node: miscmounts,  Next: mountables,  Prev: mailserver,  Up: Cfagent reference
+
+miscmounts
+==========
+
+   If you do not use the cfengine model for statically mounting NFS
+filesystems (or if there are filesystems which do not naturally fall
+into the bounds of that model) then you can still statically mount
+miscellaneous filesystems using a statement of the form:
+
+
+     miscmounts:
+     
+        CLASS::
+     
+           INFOHOST:SOURCE-DIRECTORY DESTINATION MODE
+     
+           INFOHOST:SOURCE-DIRECTORY DESTINATION mode=MODE
+
+For example
+
+        physics::
+     
+         # old syntax
+     
+           libraryserver:/$(site)/libraryserver/data1
+                               /$(site)/libraryserver/data1 ro
+     
+         # consistent syntax
+     
+           libraryserver:/$(site)/libraryserver/data2
+                               /$(site)/libraryserver/data2 mode=ro
+     
+           host:/foo /foo mode=rw,bg,hard,intr
+
+This statement would mount the directory `/$(site)/libraryserver/data'
+physically attached to host libraryserver onto a directory of the same
+name on all hosts in the group `physics'.  The modes `ro' and `rw'
+signify read-only and read-write respectively.  If no mode is given,
+read-write is assumed.
+
+
+File: cfengine-Reference.info,  Node: mountables,  Next: processes,  Prev: miscmounts,  Up: Cfagent reference
+
+mountables
+==========
+
+   The `mountables' declaration need only be used if you are using
+cfengine's model for mounting NFS filesystems.  This declaration informs
+hosts of what filesystem resources are available for mounting.  This
+list is used in conjunction with `binservers' and `homeservers' to
+determine which filesystems a given host should mount, according to the
+cfengine model.
+
+   The syntax of the list is:
+
+
+     mountables:
+     
+        CLASS::
+     
+        server:/site/server/u1
+        server:/site/server/local
+        linuxhost:/site/linuxhost/local
+        linuxhost:/site/linuxhost/u1
+
+Notice that binary and home-directory filesystems are mixed freely here.
+Cfengine determines which of the entries are homedirectories using the
+`homepattern' variable.
+
+   Every time you add a disk or a mountable partition to your network,
+you should add the partition to the list of mountables.
+
+   _NOTE: This list is read in order, top down.  Cfengine looks for the
+first filesystem matching a given binary server when expanding the
+variable `$(binserver)', so sometimes the ordering of filesystems
+matters._
+
+   This list can be accessed in editfiles, to allow straightforward
+configuration of the automounter, using the command
+`AutomountDirectResources'.
+
+
+File: cfengine-Reference.info,  Node: processes,  Next: required,  Prev: mountables,  Up: Cfagent reference
+
+processes
+=========
+
+   Using the processes facility, you can test for the existence of
+processes, signal (kill) processes and optionally restart them again.
+Cfengine opens a pipe from the system ps command and searches through
+the output from this command using regular expressions to match the
+lines of output from `ps'.  The regular expression does not have to be
+an exact match, only a substring of the process line.  The form of a
+process command is
+
+     processes:
+     
+         "QUOTED REGULAR EXPRESSION"
+     
+                             restart "SHELL COMMAND"
+                             useshell=true/FALSE/DUMB
+                             owner=RESTART-UID
+                             group=RESTART-GID
+                             chroot=DIRECTORY
+                             chdir=DIRECTORY
+                             umask=MASK
+     
+                             signal=SIGNAL NAME
+                             matches=NUMBER
+                             define=CLASSLIST
+                             action=signal/DO/WARN/BYMATCH
+                             include=LITERAL
+                             exclude=LITERAL
+                             syslog=TRUE/ON/FALSE/OFF
+                             inform=TRUE/ON/FALSE/OFF
+     
+         SetOptionString "QUOTED OPTION STRING"
+
+   By default, the options sent to ps are "-aux" for BSD systems and
+"-ef" for system 5.  You can use the `SetOptionString' command to
+redefine the option string. Cfengine assumes only that the first
+identifiable number on each line is the process identifier for the
+processes, so you must not choose options for ps which change this
+basic requirement (this is not a problem in practice). Cfengine reads
+the output of the ps-command normally only once, and searches through
+it in memory. The process table is only re-consulted if
+`SetOptionString' is called. The options have the following meanings:
+
+`signal=SIGNAL NAME'
+     This option defines the name of a signal which is to be sent to
+     all processes matching the quoted regular expression. If this
+     option is omitted, no signal is sent. The signal names have the
+     usual meanings. The full list, with largely standardized meanings,
+     is
+
+             hup       1   hang-up
+             int       2   interrupt
+             quit      3   quit
+             ill       4   illegal instruction
+             trap      5   trace trap
+             iot       6   iot instruction
+             emt       7   emt instruction
+             fpe       8   floating point exception
+             kill      9   kill signal
+             bus      10   bus error
+             segv     11   segmentation fault
+             sys      12   bad argument to system call
+             pipe     13   write to non existent pipe
+             alrm     14   alarm clock
+             term     15   software termination signal
+             urg      16   urgent condition on I/O channel
+             stop     17   stop signal (not from tty)
+             tstp     18   stop from tty
+             cont     19   continue
+             chld     20   to parent on child exit/stop
+             gttin    21   to readers pgrp upon background tty read
+             gttou    22   like TTIN for output if (tp->t_local&LTOSTOP)
+             io       23   input/output possible signal
+             xcpu     24   exceeded CPU time limit
+             xfsz     25   exceeded file size limit
+             vtalrm   26   virtual time alarm
+             prof     27   profiling time alarm
+             winch    28   window changed
+             lost     29   resource lost (eg, record-lock lost)
+             usr1     30   user defined signal 1
+             usr2     31   user defined signal 2
+
+     Note that cfengine will not attempt to signal or restart processes
+     0 to 3 on any system since such an attempt could bring down the
+     system. The only exception is that the hangup (hup) signal may be
+     sent to process 1 (init) which normally forces init to reread its
+     terminal configuration files.
+
+`restart "SHELL COMMAND"'
+     Note the syntax: there is no equals sign here.  If the keyword
+     `restart' appears, then the next quoted string is interpreted as a
+     shell command which is to be executed after any signals have been
+     sent.  This command is only issued if the number of processes
+     matching the specified regular expression is zero, or if the
+     signal sent was signal 9 (sigkill) or 15 (sigterm) , i.e.  the
+     normal termination signals.  This could be used to restart a
+     daemon for instance. Cfengine executes this command and _waits_
+     for its completion so you should normally only use this feature to
+     execute non-blocking commands, such as daemons which dissociate
+     themselves from the I/O stream and place themselves in the
+     background. Some unices leave a hanging pipe on restart (they never
+     manage to detect the end of file condition). This occurs on
+     POSIX.1 and SVR4 popen calls which use wait4. For some reason they
+     fail to find and end-of-file for an exiting child process and go
+     into a deadlock trying to read from an already dead process. This
+     leaves a zombie behind (the parent daemon process which forked and
+     was supposed to exit) though the child continues.  A way around
+     this is to use a wrapper script which prints the line
+     "cfengine-die" to STDOUT after restarting the process. This causes
+     cfengine to close the pipe forcibly and continue.  Cfengine places
+     a timeout on the restart process and attempts to clean up zombies,
+     but you should be aware of this possibility.
+
+`owner=,group='
+     Sets the process uid and gid (setuid,gid) for processes which are
+     restarted. This applies only to cfengine run by root.
+
+`chroot'
+     Changes the process root directory of the restarted process,
+     creating a `sandbox' which the process cannot escape from. Best
+     used together with a change of owner, since a root process can
+     break out of such a confinement in principle.
+
+`chdir'
+     Change the current working directory of the restarted process.
+
+`useshell=TRUE/FALSE/DUMB'
+     When restarting processes, cfengine normally uses a shell to
+     interpret and execute the restart command. This has inherent
+     security problems associated with it. If you set this option to
+     true, cfengine executes restart commands without using a shell.
+     This is recommended, but it does mean that you cannot use any
+     shell operators or features in the restart command-line.
+
+     Some programs (like cron) do not handle I/O properly when they fork
+     their daemon parts, this causes a zombie process and normally
+     hangs cfengine. By choosing the value `dumb' for this, cfengine
+     ignores all output from a program and does not use a startup shell.
+     This prevents programs like cron from hanging cfengine.
+
+`matches=NUMBER'
+     This option may be used to set a maximum, minimum or exact number
+     of matches. If cfengine doesn't find a number of matches to the
+     regular expression which is in accordance with this value it
+     signals a warning.  The `<', `>' symbols are used  to specify
+     upper and lower limits. For example,
+
+            matches=<6  # warn number of matches is greater than or equal to 6
+            matches=1   # warn if not exactly 1 matching process
+            matches=>2  # warn if there are less than or equal to 2 matching processes
+
+`include=LITERAL'
+     Items listed as includes provide an extra level of selection after
+     the regular expression matches have been expanded. If you include
+     one include option, then only lines containing one or more of the
+     literal strings or wildcards will be matched.
+
+`exclude=LITERAL'
+     Process lines containing literal strings or wildcards in exclude
+     statements are not matched. Excludes are processed after regular
+     expression matching and after includes.
+
+`define=CLASSLIST'
+     The colon, command or dot separated list of classes becomes
+     activated if the number of regular expression matches is non zero.
+
+`action=SIGNAL/DO/WARN'
+     The default value of this option is to silently send a signal (if
+     one was defined using the `signal' option) to matching processes.
+     This is equivalent to setting the value of this parameter to
+     `signal' or `do'. If you set this option to `warn', cfengine sends
+     no signal, but prints a message detailing the processes which
+     match the regular expression.  If the option is set to `bymatch',
+     then signals are only sent to the processes if the matches
+     criteria fail.
+
+   Here is an example script which sends the hang-up signal to cron,
+forcing it to reread its crontab files:
+
+
+     processes:
+     
+        "cron" signal=hup
+
+Here is a second example which may be used to restart the nameservice
+on a solaris system:
+
+
+     processes:
+     
+        solaris::
+     
+            "named" signal=kill restart "/usr/sbin/in.named"
+
+A more complex match could be used to look for processes belonging to a
+particular user. Here is a script which kills ftp related processes
+belonging to a particular user who is known to spend the whole day
+FTP-ing files:
+
+
+     control:
+     
+         actionsequence = ( processes )
+     
+       #
+       # Set a kill signal here for convenience
+       #
+     
+         sig = ( kill )
+     
+       #
+       # Better not find that dumpster here!
+       #
+     
+         matches = ( 1 )
+     
+     processes:
+     
+        #
+        #  Look for Johnny Mnemonic trying to dump his head, user = jmnemon
+        #
+     
+        ".*jmnemon.*ftp.*" signal=$(sig) matches=<$(matches) action=$(do)
+     
+        # No mercy!
+
+The regular expression `.*' matches any number of characters, so this
+command searches for a line containing both the username and something
+to do with ftp and sends these processes the kill signal.
+
+   You can arrange for signals to be sent, only if the number of matches
+fails the test. The `action=bymatch' option is used for this.  For
+instance, to kill process `XXX' only if the number of matches is
+greater than 20, one would write:
+
+
+     processes:
+     
+     "XXX" matches=<20  action=bymatch signal=kill
+
+   See also filters *Note filters::, for more complex searches.
+
+
+File: cfengine-Reference.info,  Node: required,  Next: resolve,  Prev: processes,  Up: Cfagent reference
+
+required
+========
+
+   This is a synonym for disks, *Note disks::.  This action tests for
+the existence of a file or filesystem.  It should be called after all
+NFS filesystems have been mounted.  You may use the special variable
+`$(binserver)' here.
+
+
+       required:
+     
+         /FILESYSTEM freespace=SIZE-LIMIT define=CLASS-LIST(,:.)
+
+   Files or filesystems which you consider to be essential to the
+operation of the system can be declared as `required'.  Cfengine will
+warn if such files are not found, or if they look funny.
+
+   Suppose you mount your filesystem `/usr/local' via NFS from some
+binary server.  You might want to check that this filesystem is not
+empty! This might occur if the filesystem was actually _not_ mounted as
+expected, but failed for some reason.  It is therefore not enough to
+check whether the directory `/usr/local' exists, one must also check
+whether it contains anything sensible.
+
+   Cfengine uses two variables: `sensiblesize' and `sensiblecount' to
+figure out whether a file or filesystem is sensible or not.  You can
+change the default values of these variables (which are 1000 and 2
+respectively) in the `control' section.  *Note control::.
+
+   If a file is smaller than `sensiblesize' or does not exist, it fails
+the `required' test.  If a directory does not exist, or contains fewer
+than `sensiblecount' files, then it also fails the test and a warning
+is issued.
+
+
+     required:
+     
+        any::
+     
+           /$(site)/$(binserver)/local
+
+   If you set the `freespace' variable to a value (the default units
+are kilobytes, but you may specify bytes or megabytes), e.g.
+
+
+     required:
+     
+       /site/host/home1 freespace=50mb define=dotidy
+
+then cfengine will warn when the filesystem concerned has less than this
+amount of free space. By adding a `define' tag, you can switch on any
+number of classes if this happens. This allows you to activate special
+measures for dealing with a filesystem which is in danger of becoming
+full.
+
+
+File: cfengine-Reference.info,  Node: resolve,  Next: shellcommands,  Prev: required,  Up: Cfagent reference
+
+resolve
+=======
+
+   The file `/etc/resolv.conf' specifies the default nameserver for
+each host, as well as the local domain name.  This file can also contain
+other information, but these are the only two things cfengine currently
+cares about.  In specifying nameservers you should use the dotted
+numerical form of the IP addresses since your system may not understand
+the text form if it is not correctly configured.  You may list as many
+nameservers as you wish, with the default server at the top of the list.
+The resolver normally ignores entries if you add more than three.  The
+statement:
+
+
+     resolve:
+     
+       mygroup::
+     
+          129.240.22.35
+          129.240.22.222
+          129.240.2.3
+
+declares a list of nameservers for hosts in the group or class
+`mygroup'.  When you add the `resolve' command to the `actionsequence',
+this declaration together with the `domain' variable (set here to
+`uio.no') results in a `/etc/resolv.conf' file of the form:
+
+
+     domain uio.no
+     nameserver 129.240.22.35
+     nameserver 129.240.22.222
+     nameserver 129.240.2.3
+
+Note that the `resolve' action does not delete anything from the file
+`/etc/resolv.conf'.  It adds nameservers which do not previously exist
+and reorders the lines of servers which do exist.
+
+   As of version 1.3.11, you may use a quoted string to add
+non-nameserver lines to this file. For example:
+
+
+     resolve:
+     
+       mygroup::
+     
+          129.240.22.35
+          129.240.22.222
+          "# Comment line"
+          "order bind, files"
+
+If the line begins with a non-numeric character, the word `nameserver'
+is not added to the line.
+
+
+File: cfengine-Reference.info,  Node: shellcommands,  Next: tidy,  Prev: resolve,  Up: Cfagent reference
+
+shellcommands
+=============
+
+   Cfengine focuses on fairly simple minded tasks in order to be as
+general as possible.  In many cases you will therefore want to write a
+script to do something special on your system.  You can still take
+advantage of the classes you have defined by executing these scripts or
+shell commands from this section.
+
+   The syntax is simply to quote the command you wish to be executed.
+
+     shellcommands:
+     
+       "COMMAND-STRING"
+     
+               timeout=SECONDS
+               useshell=true/FALSE
+               umask=OCTAL NUMBER
+               owner=UID
+               group=GID
+               define=CLASS-LIST
+               background=false/TRUE
+               chdir=DIRECTORY
+               chroot=DIRECTORY
+               preview=TRUE/false
+
+The user and group ID's of the process can be set to restrict the
+permissions of the shellcommand to another user only if cfengine is
+executed by root. If you set the optional timeout string, then cfengine
+will abort the shellcommand if it exceeds the specified time-limit in
+seconds. This can be useful for avoiding situations caused by hung
+network connections etc.
+
+   Variable substitution works within the strings.  Here are some
+examples.
+
+
+     shellcommands:
+     
+        sun4::
+     
+            "/usr/lib/find/updatedb"
+     
+        AllHomeServers.Sunday::
+     
+            "/dir/noseyparker /$(site)/$(host)/u1 $(sysadm) nomail"
+     
+        AllBinaryServers.sun4.Saturday::
+     
+           "/usr/etc/catman -w -M /usr/local/man"
+           "/usr/etc/catman -w -M /usr/local/X11R5/man"
+           "/usr/etc/catman -w -M /usr/man"
+           "/usr/etc/catman -w -M /usr/local/gnu/man"
+
+If you need to write more advanced scripts, which make detailed use of
+the classes defined by cfengine, use the `$(allclasses)' variable to
+send a complete list of classes to your script in the format
+
+
+     CFALLCLASSES=class1:class2:class3...
+
+This variable is kept up-to-date at any given time with only the classes
+which are defined.  The command line option `-u' or `--use-env' can be
+used to define an environment variable which will be inherited by all
+scripts and contains the same information.  This is not the standard
+approach, since some systems cannot cope with this rapid change of
+environment and generate a Bus Error.
+
+   Commands can be iterated over variable lists, provided there is at
+least one space between each variable. For example:
+
+
+     control:
+     
+           actionsequence =
+              (
+              shellcommands
+              )
+     
+      var1 = ( a:b:c )
+      var2 = ( x:y:z )
+     
+     shellcommands:
+     
+        "/bin/echo $(var1) $(var2)"
+
+This iterates over all values of the list variables. *Note Iterating
+over lists: (cfengine-Tutorial)Iterating over lists.  If you are
+iterating over a list, the timeout applies to each separate iteration,
+not to the sum of all the iterations.
+
+   The `chroot' option changes the process root directory of the
+command, creating a `sandbox' which the process cannot escape from. Best
+used together with a change of owner, since a root process can break out
+of such a confinement in principle. The `chdir' option changes the
+current working directory of the restarted process.
+
+   The `preview' option means that the shellcommand will also be
+executed during the `--dry-run' (`-n') options. This allows cfengine to
+be more aware of the results of scripts which define classes. This
+option should be used with care.  Scripts should conform to the
+protocol of not executing unnecessary commands when the classes
+`opt_dry_run' is defined.
+

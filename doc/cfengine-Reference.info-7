@@ -1,0 +1,1181 @@
+This is cfengine-Reference.info, produced by makeinfo version 4.0 from
+cfengine-Reference.texinfo.
+
+INFO-DIR-SECTION System Utilities
+START-INFO-DIR-ENTRY
+* cfengine Reference: (cfengine-Reference.info).
+                        Cfengine is a language based tool specifically
+                        designed for configuring and maintaining BSD
+                        and System-5-like operating systems attached
+                        to a TCP/IP network.
+END-INFO-DIR-ENTRY
+
+
+File: cfengine-Reference.info,  Node: cf.site,  Next: cf.motd,  Prev: cf.main,  Up: Example configuration file
+
+cf.site
+=======
+
+     ##############################################################
+     #
+     # cf.site - for iu.hioslo.no
+     #
+     # This file contains site specific data
+     #
+     #################################################################
+     
+     ###
+     #
+     # BEGIN cf.site
+     #
+     ###
+     
+     links:
+     
+        Prepare::
+     
+           /local     -> /$(site)/$(binserver)/local
+           /usr/local -> /local
+     
+        dax::
+     
+           /iu/dax/local             +> /iu/nexus/local
+           /projects                 -> /iu/dax/local/projects
+           /iu/nexus/u1/sowille/data -> /iu/dax/scratch/data
+     
+        XBootServer::
+     
+           #
+           # Set up a /local/tftpboot area where all X terminal
+           # stuff will be kept.
+           #
+     
+           /tftpboot                  -> /local/tftpboot
+           /local/tftpboot/td/configs -> /local/tftpboot/td/examples/configs
+           /etc/bootptab              -> /tftpboot/bootptab
+           /tftpboot/usr/lib/X11/td   -> /tftpboot/td
+     
+        NameServers::
+     
+           /etc/named.boot -> /local/iu/named/named.boot
+     
+        MailHub::
+     
+           /etc/mail/sendmail.cf ->! /iu/nexus/local/mail/sendmail.cf
+     
+        MailClients.solaris::
+     
+           /etc/mail/sendmail.cf ->! /iu/nexus/local/mail/client.cf
+     
+        nexus::
+     
+     	/local/bin +> /local/latex/bin
+     
+     #############################################################
+     
+     disable:
+     
+       #
+       # We run Berkeley sendmail and the config files are
+       # all under /iu/nexus/local/lib/mail
+       #
+     
+         /etc/aliases
+     
+      WWWServers.Sunday::
+     
+        #
+        # Disabling these log files weekly prevents them from
+        # growing so enormous that they fill the disk!
+        #
+     
+        /local/iu/httpd/logs/access_log   rotate=empty
+        /local/iu/httpd/logs/agent_log    rotate=empty
+        /local/iu/httpd/logs/error_log    rotate=empty
+        /local/iu/httpd/logs/referer_log  rotate=empty
+     
+        #
+        # CERT warning, security fix
+        #
+     
+       any::
+     
+         /usr/lib/expreserve
+     
+       FTPserver.Sunday.Hr00::
+     
+        /local/iu/xferlog rotate=3
+     
+     #################################################################
+     
+     files:
+     
+       Prepare::
+     
+           /etc/motd              m=0644 r=0 o=root act=touch
+           /.cshrc                m=0644 r=0 o=root act=touch
+     
+        PasswdServer::
+     
+           /local/iu/etc/passwd m=0644 o=root g=other action=fixplain
+           /local/iu/etc/shadow m=0644 o=root g=other action=fixplain
+     
+        WWWServers.Rest::
+     
+           /local/iu/www                           m=775        g=www act=fixall r=inf
+           /local/iu/httpd/conf                    m=664 o=root g=www act=fixall r=inf
+           /local/iu/www/cgi-bin-public/count_file m=777 o=root g=www act=fixplain
+     
+        FTPserver::
+     
+           #
+           # Make sure anonymous ftp areas have the correct
+           # protection, or logins won't be able to read
+           # files - or perhaps a security risk. This is
+           # solaris 2 specific...
+           #
+     
+           $(ftp)/pub        mode=755 o=ftp  g=ftp  r=inf act=fixall
+           $(ftp)/Obin       mode=111 o=root g=other      act=fixall
+           $(ftp)/etc        mode=111 o=root g=other      act=fixdirs
+           $(ftp)/usr/bin/ls mode=111 o=root g=other      act=fixall
+           $(ftp)/dev        mode=555 o=root g=other      act=fixall
+           $(ftp)/usr        mode=555 o=root g=other      act=fixdirs
+     
+        Prepare::
+     
+           /etc/shells mode=0644 action=touch
+     
+        AllBinaryServers.Rest.longjob::
+     
+          /local mode=-0002 r=inf owner=root,bin group=0,1,2,3,4,5,6,7,staff
+                 links=tidy action=fixall
+     
+          /local/iu/RootMailLog  m=0666 action=touch
+     
+        dax.Rest::
+     
+         /iu/dax/scratch        r=0 o=root mode=1777 action=fixall
+         /iu/dax/local/projects r=0 o=root mode=755  action=fixdirs
+     
+        nexus::
+     
+         /local/mail/sendmail.cf o=root m=444 act=fixplain
+     
+         /iu/nexus/ua/robot/.rhosts o=robot m=600 act=touch
+     
+         /local/iu/named/pz         o=root  m=644 act=fixall r=1
+     
+         /local/latex/lib/tex/texmf/fonts  owner=root
+                                           mode=1666
+                                           recurse=inf
+                                           action=fixall
+     
+     #################################################################
+     
+     tidy:
+     
+           #
+           # Make sure the file repository doesn't fill up
+           #
+     
+           /var/spool/cfengine pattern=*    age=3
+     
+           /var                pattern=core age=0  r=inf
+           /var/spool/mqueue   pattern=*    age=14 type=mtime
+     
+        BackupHost::
+     
+           # Here we tidy old backup tar files from the backup area
+           # A special tmp area gets cleared every 4 days. The files
+           # are created by Audun's backup help script (see shellcommands)
+     
+           /iu/nexus/backup1      pat=*  age=7
+     
+     #################################################################
+     
+     shellcommands:
+     
+        PasswdServer::
+     
+           # Build and install the BSD compatible passwd file
+           # from the master passwd/shadow file on solaris
+     
+           "/local/iu/bin/BuildPasswdFiles"
+           "/local/iu/bin/BuildGroupFiles"
+     
+       BackupHost.Sunday.Hr00|BackupHost.Wednesday.Hr00::
+     
+           #
+           # Make a system backup of /iu/nexus/u? with Audun's script
+           #
+     
+           "$(cfbin)/cfbackup -p -f /iu/nexus/backup1 -s /iu/nexus/ud"
+           "$(cfbin)/cfbackup -p -f /iu/nexus/backup1 -s /iu/nexus/ua"
+           "$(cfbin)/cfbackup -p -f /iu/nexus/backup1 -s /iu/nexus/u1"
+           "$(cfbin)/cfbackup -p -f /iu/nexus/backup1 -s /iu/nexus/u2"
+           "$(cfbin)/cfbackup -p -f /iu/nexus/backup2 -s /iu/nexus/u3"
+           "$(cfbin)/cfbackup -p -f /iu/nexus/backup2 -s /iu/nexus/u4"
+           "$(cfbin)/cfbackup -p -f /iu/nexus/backup2 -s /iu/nexus/u5"
+           "$(cfbin)/cfbackup -p -f /iu/nexus/backup2 -s /iu/nexus/u6"
+     
+       nexus.Sunday.longjob.Hr00::
+     
+           #
+           # See how much rubbish users have accumulated each Sunday
+           #
+     
+           "$(cfbin)/noseyparker /iu/nexus/u1 $(sysadm) "
+           "$(cfbin)/noseyparker /iu/nexus/u2 $(sysadm) "
+           "$(cfbin)/noseyparker /iu/nexus/u3 $(sysadm) "
+           "$(cfbin)/noseyparker /iu/nexus/u4 $(sysadm) "
+           "$(cfbin)/noseyparker /iu/nexus/u5 $(sysadm) "
+           "$(cfbin)/noseyparker /iu/nexus/u6 $(sysadm) "
+           "$(cfbin)/noseyparker /iu/nexus/ua $(sysadm) nomail"
+           "$(cfbin)/noseyparker /iu/nexus/ud $(sysadm) nomail"
+     
+        nexus.longjob.Hr00::
+     
+           #
+           # Update the GNU find/locate database each night
+           #
+     
+           "$(gnu)/lib/locate/updatedb"
+           "/local/iu/bin/newhomepage.sh"
+     
+     ###############################################################
+     
+     editfiles:
+     
+         #
+         # cfengine installs itself as a cron job - sneaky! :)
+         #
+     
+         { /var/spool/cron/crontabs/root
+     
+         AppendIfNoSuchLine "0 * * * * $(cfbin)/cfwrap $(cfbin)/cfhourly"
+         }
+     
+        FTPserver::
+     
+           { /etc/shells
+     
+           AppendIfNoSuchLine "/bin/tcsh"
+           AppendIfNoSuchLine "/local/gnu/bin/bash"
+           }
+     
+     
+        XBootServer::
+     
+           { /etc/inetd.conf
+     
+           AppendIfNoSuchLine
+               "bootp dgram udp wait root /local/bin/bootpd bootpd -i -d"
+           }
+     
+        nexus::
+     
+           { /iu/nexus/ua/robot/.rhosts
+     
+           AppendIfNoSuchLine "borg"
+           AppendIfNoSuchLine "borg.iu.hioslo.no"
+           AppendIfNoSuchLine "aud4"
+           AppendIfNoSuchLine "aud4.iu.hioslo.no"
+           }
+     
+        dax::
+     
+           { /etc/system
+     
+           AppendIfNoSuchLine "set pt_cnt=128"
+           }
+     
+     
+     ######################################################################
+     
+     required:
+     
+        #
+        # Any host must have a /local, /usr/local fs. Check that
+        # it exists and looks sensible. (i.e. not empty)
+        #
+     
+        /$(site)/$(binserver)/local
+     
+     
+     ######################################################################
+     
+     copy:
+     
+        #
+        # NIS seems broken at IU, so here we use NFS to fudge
+        # a file distribution as a temporary solution. Actually
+        # this makes the system work faster without NIS!
+        #
+     
+           $(nisfiles)/services dest=/etc/services o=root g=other mode=0644
+           $(nisfiles)/hosts.deny dest=/etc/hosts.deny o=root mode=0644
+     
+        !debian::
+     
+           $(nisfiles)/hosts    dest=/etc/hosts o=root g=other mode=0644
+     
+        PasswdServer::
+     
+           /etc/passwd dest=$(nisfiles)/passwd o=root g=other mode=0644
+           /etc/shadow dest=$(nisfiles)/shadow o=root g=other mode=0644
+     
+        nexus::
+     
+           /local/iu/etc/dfstab dest=/etc/dfs/dfstab  o=root  mode=0744
+     
+        solaris.!PasswdServer::
+     
+           $(nisfiles)/passwd dest=/etc/passwd o=root g=other mode=0644
+           $(nisfiles)/shadow dest=/etc/shadow o=root g=other mode=0600
+           $(nisfiles)/group.solaris dest=/etc/group o=root g=other mode=0644
+     
+        linux::
+     
+           $(nisfiles)/passwd.linux dest=/etc/passwd o=root g=other mode=0644
+           $(nisfiles)/group.linux dest=/etc/group o=root g=other mode=0644
+     
+     ###############################################################
+     
+     processes:
+     
+           "eggdrop"                           signal=kill
+           "irc"                               signal=kill
+           "ping"                              signal=kill
+           "NetXRay"                           signal=kill
+           "netxray"                           signal=kill
+           "ypserv"                            signal=kill
+           "ypbind"                            signal=kill
+           "rarpd"                             signal=kill
+           "rpc.boot"                          signal=kill
+           "README"                            signal=kill # You don't sh README !
+     
+        !XBootServer::
+     
+           "bootp"                             signal=kill
+     
+        #
+        # These processes are not killed every hour, but once a day
+        # when cfengine runs at night. Note that there are often
+        # hanging pine and elm processes. These programs crash and
+        # go berserk, using hundreds of hours of CPU time.
+        #
+     
+        Hr00::
+     
+           "cron"                 signal=hup  # HUP these to update their config
+           "inetd"                signal=hup
+     
+           "/local/sdt/sdt/bin"   signal=term # For those elektro dudes who forget
+                                              # to log out
+           "netscape"             signal=kill
+           "pine"                 signal=kill
+           "elm"                  signal=kill
+     
+     
+     ###
+     #
+     # END cf.site
+     #
+     ###
+
+
+File: cfengine-Reference.info,  Node: cf.motd,  Next: cf.users,  Prev: cf.site,  Up: Example configuration file
+
+cf.motd
+=======
+
+
+     ##################################################################
+     #
+     # cf.motd
+     #
+     # This file is used to set the message of the day file on
+     # each host
+     #
+     ##################################################################
+     
+      #####
+      #
+      # BEGIN cf.motd
+      #
+      #####
+     
+     
+     control:
+     
+        #
+        # This points to the file containing general text
+        #
+     
+        masterfile      = ( /iu/nexus/local/iu/etc/motd-master )
+        local_message   = ( /etc/motd.local )
+     
+     editfiles:
+     
+           { /etc/motd
+     
+           BeginGroupIfFileIsNewer "$(masterfile)"
+             EmptyEntireFilePlease
+             InsertFile "$(masterfile)"
+             InsertFile "$(local_message)"
+             PrependIfNoSuchLine "This system is running $(class):$(arch)"
+           EndGroup
+           }
+     
+      #####
+      #
+      # BEGIN cf.motd
+      #
+      #####
+
+
+File: cfengine-Reference.info,  Node: cf.users,  Next: cf.solaris,  Prev: cf.motd,  Up: Example configuration file
+
+cf.users
+========
+
+   Whether or not you perform any special services for users, with or
+without their consent is entirely a matter of local policy. In a school
+or college situation, users are often uncooperative and some are even
+irresponsible.  This file shows you what you could do in an environment
+with inexperienced users, but please don't feel as though you have to be
+this totalitarian.
+
+     #################################################################
+     #
+     # cf.users - for iu.hioslo.no
+     #
+     # This file contains user specific actions
+     #
+     #################################################################
+     
+     ###
+     #
+     # BEGIN cf.users
+     #
+     ###
+     
+     ignore:
+     
+         robot
+     
+     tidy:
+     
+        longjob::
+     
+          #
+          # Some users just don't understand what they are doing
+          # and this is safest, allbeit totalitarian
+          #
+     
+          home                 pat=.rhosts                      age=0
+     
+          #
+          # Tidy up users' home dirs
+          #
+     
+          home                 pat=core             r=inf       age=0
+          home                 pat=a.out            r=inf       age=1
+          home                 p=*%                 r=inf       age=2
+          home                 p=*~                 r=inf       age=2
+          home                 p=#*                 r=inf       age=1
+          home                 p=*.dvi              r=inf       age=14   type=ctime
+          home                 p=*.log              r=inf       age=2
+          home                 p=Log.*              r=inf       age=3
+          home                 p=CKP                r=inf       age=1
+          home                 p=BAK                r=inf       age=1
+          home                 p=log                r=inf       age=0
+          home                 p=*.o                r=inf       age=0
+          home                 p=*.aux              r=inf       age=3
+          home                 p=*.zip              r=inf       age=7
+          home/.deleted        p=*                  r=inf       age=0
+          home/.wastebacket    p=*                  r=inf       age=14
+          home/www             p=*~                 r=inf       age=1
+     
+          #
+          # Clear the big cache files netscape creates
+          #
+     
+          home/.netscape-cache  p=cache????*         r=inf       age=0
+          home/.MCOM-cache      p=cache????*         r=inf       age=0
+          home/.netscape/cache  p=*                  r=inf       age=0
+     
+     
+     #################################################################
+     
+     files:
+     
+        AllHomeServers.longjob.rest::
+     
+          #
+          # Check users files are not writable to the world
+          # and there are no stale links (pointing nowhere)
+          #
+     
+          home mode=o-w recurse=inf action=fixall # links=tidy
+     
+          home/.xsession mode=755 action=fixall
+          home/.cshrc    mode=755 action=fixall
+     
+     #################################################################
+     
+     copy:
+     
+        Hr00.longjob::
+     
+        #
+        # Make sure each user has an up to date standard
+        # setup.  Cshrc just sources in a big standard file
+        # which is kept in ~user/../.setupfiles/cshrc
+        # to reduce disk wastage
+        #
+     
+        $(masterfiles)/lib/Cshrc   dest=home/.cshrc
+        $(masterfiles)/lib/tkgrc   dest=home/.tkgrc
+        $(masterfiles)/lib/fvwm2rc dest=home/.fvwm2rc
+     
+     
+     ###
+     #
+     # END cf.users
+     #
+     ###
+
+
+File: cfengine-Reference.info,  Node: cf.solaris,  Next: cf.linux,  Prev: cf.users,  Up: Example configuration file
+
+cf.solaris
+==========
+
+     #################################################################
+     #
+     # cf.solaris - for iu.hioslo.no
+     #
+     # This file contains solaris specific patches
+     #
+     #################################################################
+     
+     ###
+     #
+     # BEGIN cf.solaris
+     #
+     ###
+     
+     directories:
+     
+          #
+          # httpd/netscape want this to exist for some bizarre reason
+          #
+     
+           /usr/lib/X11/nls
+     
+     ################################################################
+     
+     tidy:
+     
+          /var/log  pattern=syslog.* age=0
+     
+        MailHub::
+     
+          /var/mail pattern=lp       age=0
+     
+     #################################################################
+     
+     files:
+     
+       #
+       # If this doesn't exist fork will not work and the
+       # system will not even be able to run the /etc/rc
+       # scripts at boottime
+       #
+     
+       /etc/system     o=root g=root m=644 action=touch
+     
+       /var/log/syslog o=root        m=666 action=touch
+     
+     #############################################################
+     
+     copy:
+     
+        #
+        # Some standard setup files, can't link because
+        # machine won't boot if their not on / partition.
+        #
+     
+        /local/bin/tcsh dest=/bin/tcsh mode=755
+     
+        /local/iu/etc/nsswitch.standalone dest=/etc/nsswitch.conf
+     
+       #
+       # Our named server uses a newer BIND
+       # Put this here so that it will be preserved under
+       # solaris reinstallation
+       #
+     
+       NameServers::
+     
+        /local/iu/sbin/in.named         dest=/usr/sbin/in.named         mode=555
+        /local/iu/sbin/in.named.reload  dest=/usr/sbin/in.named.reload  mode=555
+        /local/iu/sbin/in.named.restart dest=/usr/sbin/in.named.restart mode=555
+        /local/iu/sbin/in.ndc           dest=/usr/sbin/in.ndc           mode=555
+        /local/iu/sbin/named-xfer       dest=/usr/sbin/named-xfer       mode=555
+        /local/iu/lib/nslookup.help     dest=/usr/lib/nslookup.help     mode=444
+     
+       any::
+        /local/iu/lib/libresolv.a        dest=/usr/lib/libresolv.a      mode=444
+        /local/iu/lib/libresolv.so.2     dest=/usr/lib/libresolv.so.2   mode=444
+        /local/bin/nslookup              dest=/usr/sbin/nslookup        mode=444
+     
+     ##############################################################
+     
+     editfiles:
+     
+           { /etc/netmasks
+     
+           AppendIfNoSuchLine "128.39  255.255.255.0"
+           }
+     
+           { /etc/defaultrouter
+     
+           AppendIfNoSuchLine "128.39.89.1"
+           }
+     
+           { /usr/openwin/lib/app-defaults/XConsole
+     
+           AppendIfNoSuchLine "XConsole.autoRaise: on"
+           }
+     
+        #
+        # CERT security patch for vold vulnerability
+        #
+     
+        { /etc/rmmount.conf
+     
+        HashCommentLinesContaining "action cdrom"
+        HashCommentLinesContaining "action floppy"
+        }
+     
+     ##############################################################
+     
+     disable:
+     
+         /etc/.login  type=file
+         /etc/aliases
+     
+        #
+        # These files are ENORMOUS, don't let them fill the disk
+        #
+     
+        Wednesday::
+     
+           /var/lp/logs/lpsched rotate=empty
+     
+           /var/adm/wtmpx       rotate=empty
+           /var/adm/wtmp        rotate=empty
+     
+     ##############################################################
+     
+     files:
+     
+         /etc/passwd        m=0644 o=root g=other action=fixplain
+         /etc/shadow        m=0600 o=root g=other action=fixplain
+         /etc/defaultrouter m=0644 o=root g=other action=touch
+         /var/adm/wtmpx     m=0664 o=adm  g=adm   action=touch
+         /var/adm/wtmp      m=0644 o=root g=adm   action=touch
+         /var/adm/utmp      m=0644 o=root g=adm   action=fixplain
+         /var/adm/utmpx     m=0664 o=adm  g=adm   action=fixplain
+     
+         /tmp m=1777                              action=fixdirs
+     
+     ##############################################################
+     
+     disable:
+     
+        #
+        # CERT security patch
+        #
+     
+        /usr/openwin/bin/kcms_calibrate
+        /usr/openwin/bin/kcms_configure
+        /usr/bin/admintool
+     
+     ################################################################
+     
+     shellcommands:
+     
+        AllBinaryServers.Saturday.longjob.Hr00::
+     
+           #
+           # Make sure the man -k / apropos data are up to date
+           #
+     
+           "/usr/bin/catman  -M /local/man"
+           "/usr/bin/catman  -M /local/X11R5/man"
+           "/usr/bin/catman  -M /usr/man"
+           "/usr/bin/catman  -M /local/gnu/man"
+           "/usr/bin/catman  -M /usr/openwin/share/man"
+           "/usr/bin/catman  -M /local/X11R5/man"
+           "/usr/bin/catman  -M /usr/share/man"
+     
+     ################################################################
+     
+     editfiles:
+     
+     
+           #
+           # A painless way to add an rc.local script to the rc files
+           # under solaris without having to fight though inittab
+           #
+     
+           { /etc/rc3.d/S15nfs.server
+     
+           AppendIfNoSuchLine "sh /local/iu/etc/rc.local"
+           }
+     
+           #
+           # umask defined when inetd starts is inherited by all subprocesses
+           # including ftpd which saves with mode 666 (!) unless we do this
+           #
+     
+           { /etc/rc2.d/S72inetsvc
+     
+           PrependIfNoSuchLine "umask 022"
+           }
+     
+     
+     ###
+     #
+     # END cf.solaris
+     #
+     ###
+
+
+File: cfengine-Reference.info,  Node: cf.linux,  Next: cf.freebsd,  Prev: cf.solaris,  Up: Example configuration file
+
+cf.linux
+========
+
+     #################################################################
+     #
+     # cf.linux - for iu.hioslo.no
+     #
+     # This file contains debian linux specific patches
+     #
+     #################################################################
+     
+     ###
+     #
+     # BEGIN cf.linux
+     #
+     ###
+     
+     files:
+     
+           /etc/printcap m=644 o=root action=fixplain
+     
+          #
+          # Cert advisories
+          #
+     
+           /bin/mount         m=755 o=root action=fixall
+           /bin/umount        m=755 o=root action=fixall
+     
+     #######################################################################
+     
+       disable:
+     
+          #
+          # Cert advisories
+          #
+     
+           /sbin/dip-3.3.7n
+     
+     ########################################################################
+     
+     links:
+     
+         /local/bin/tcsh   ->  /bin/tcsh
+     
+         /local/lib/mail   ->  /$(site)/$(main_server)/local/lib/mail
+     
+     ########################################################################
+     
+     editfiles:
+     
+       #
+       # Samba default mode needs to be set...
+       #
+     
+        { /etc/smb.conf
+     
+        ReplaceAll "700" With "644"
+        }
+     
+       #
+       # Linux date is very stupid and needs a very careful
+       # TZ definition, otherwise it loses
+       #
+     
+        { /etc/csh.cshrc
+     
+        AppendIfNoSuchLine "setenv TZ 'MET-1MET DST-2,M3.5.0/2,M10.5.0/3'"
+        }
+     
+       #
+       # resolv+ ordering
+       #
+     
+        { /etc/host.conf
+     
+        PrependIfNoSuchLine "order bind"
+        }
+     
+     
+       #
+       # Should have been configured already (!)
+       #
+     
+        { /etc/ld.so.conf
+     
+        AppendIfNoSuchLine "/usr/X11R6/lib"
+        }
+     
+       #
+       # Kill annoying messages
+       #
+     
+        { /etc/cron.daily/standard
+     
+        HashCommentLinesContaining "security"
+        }
+     
+     #########################################################################
+     
+     shellcommands:
+     
+       Hr00::
+     
+          #
+          # Find/locate database
+          #
+     
+          "/usr/bin/updatedb"
+     
+     ###
+     #
+     # END cf.linux
+     #
+     ###
+
+
+File: cfengine-Reference.info,  Node: cf.freebsd,  Next: cfservd.conf,  Prev: cf.linux,  Up: Example configuration file
+
+cf.freebsd / cf.netbsd
+======================
+
+   FreeBSD, OpenBSD and NetBSD are sufficiently similar to have a single
+file for all.
+
+     #################################################################
+     #
+     # cf.bsd - for iu.hioslo.no
+     #
+     # This file contains bsd specific patches
+     #
+     #################################################################
+     
+     ###
+     #
+     # BEGIN cf.bsd
+     #
+     ###
+     
+     links:
+     
+         /usr/spool        ->  /var/spool
+         /local/bin/tcsh   ->  /bin/tcsh
+         /local/bin/perl   ->  /usr/bin/perl
+         /usr/lib/sendmail ->  /usr/sbin/sendmail
+     
+     #################################################################
+     
+     files:
+     
+        /usr/tmp mode=1777 owner=root action=fixall
+     
+     #################################################################
+     
+     editfiles:
+     
+        #
+        # Comment out all lines to shut up this annoying cfengine-like
+        # script, which sends mail every day!!!
+        #
+     
+        { /etc/crontab
+     
+        HashCommentLinesContaining "daily"
+        HashCommentLinesContaining "weekly"
+        HashCommentLinesContaining "monthly"
+        }
+     
+     #################################################################
+     
+     copy:
+     
+           $(masterfiles)/etc/printcap.client      dest=/etc/printcap mode=0644
+     
+     #########################################################################
+     
+     shellcommands:
+     
+       Hr00::
+     
+         "/usr/libexec/locate.updatedb"
+         "/usr/bin/makewhatis /usr/share/man:/usr/X11R6/man"
+     
+     ###
+     #
+     # END cf.bsd
+     #
+     ###
+
+
+File: cfengine-Reference.info,  Node: cfservd.conf,  Prev: cf.freebsd,  Up: Example configuration file
+
+cfservd.conf
+============
+
+     #########################################################
+     #
+     # This is a cfservd config file
+     #
+     # The access control here follows after any tcpd
+     # control in /etc/hosts.allow and /etc/hosts.deny
+     #
+     #########################################################
+     
+      #
+      # Could import cf.groups here and use a structure like
+      # in cfengine.conf, cf.main, cf.groups
+      #
+     
+     control:
+     
+       public = ( /usr/local/publicfiles )
+     
+       almost_public = ( /usr/local/almostpublicfiles )
+     
+       cfrunCommand = ( /iu/nexus/ud/mark/comp/Tests/cfrun-command )
+     
+       MaxConnections = ( 10 )
+     
+     #########################################################
+     
+     admit:   # or grant:
+     
+          $(public) *
+     
+          $(almost_public) *.iu.hioslo.no *.gnu.ai.mit.edu
+     
+          /etc/passwd *.iu.hioslo.no
+     
+          #
+          # Who can exec cfengine remotely?
+          #
+     
+          $(cfrunCommand) *.iu.hioslo.no
+     
+     #########################################################
+     
+     deny:
+     
+          $(public)/special *.moneyworld.com
+
+
+File: cfengine-Reference.info,  Node: Variable Index,  Next: Concept Index,  Prev: Example configuration file,  Up: Top
+
+Variable Index
+**************
+
+* Menu:
+
+* $(arch):                               Special variables.
+* $(binserver):                          Special variables.
+* $(class):                              Special variables.
+* $(cr):                                 Special variables.
+* $(date):                               Special variables.
+* $(dblquote):                           Special variables.
+* $(dollar):                             Special variables.
+* $(domain):                             Special variables.
+* $(faculty):                            Special variables.
+* $(fqhost):                             Special variables.
+* $(host):                               Special variables.
+* $(ipaddress):                          Special variables.
+* $(lf):                                 Special variables.
+* $(n):                                  Special variables.
+* $(quote):                              Special variables.
+* $(site):                               Special variables.
+* $(spc):                                Special variables.
+* $(sysadm):                             Special variables.
+* $(tab):                                Special variables.
+* $(timezone):                           Special variables.
+* $(year):                               Special variables.
+* +:                                     groups.
+* -D option:                             addclasses.
+* -l:                                    tidy.
+* -L:                                    Single links.
+* -l:                                    Syntax.
+* -N option:                             addclasses.
+* -x option:                             cf.preconf bootstrap file.
+* .cfengine.rm:                          tidy.
+* /etc/host.conf:                        cf.preconf bootstrap file.
+* /var/cfengine/output:                  Cfexecd reference.
+* a= <1>:                                tidy.
+* a=:                                    Syntax.
+* AccessedBefore():                      Evaluated classes.
+* action:                                Syntax.
+* actionsequence <1>:                    actionsequence.
+* actionsequence:                        control.
+* AddClasses:                            addclasses.
+* AddInstallable:                        addinstallable.
+* addmounts:                             actionsequence.
+* age:                                   tidy.
+* AllowUsers:                            AllowUsers.
+* backup=:                               copy.
+* binserver <1>:                         Link Children.
+* binserver:                             Single links.
+* binservers:                            binservers.
+* broadcast:                             broadcast.
+* cf.preconf:                            cf.preconf bootstrap file.
+* CFALLCLASSES <1>:                      Special variables.
+* CFALLCLASSES:                          Cfagent Runtime Options.
+* cfrc:                                  cfrc resource file.
+* ChangedBefore():                       Evaluated classes.
+* ChecksumDatabase:                      ChecksumDatabase.
+* ChecksumUpdates:                       ChecksumUpdates.
+* checktimezone:                         actionsequence.
+* childlinks:                            actionsequence.
+* control:                               control.
+* create:                                create.
+* directories:                           actionsequence.
+* disable <1>:                           disable.
+* disable:                               actionsequence.
+* domain <1>:                            domain.
+* domain:                                control.
+* DryRun:                                dryrun.
+* editbinaryfilesize:                    editbinaryfilesize.
+* editfiles:                             actionsequence.
+* editfilesize <1>:                      editfilesize.
+* editfilesize:                          control.
+* empty:                                 disable.
+* EmptyResolvConf:                       emptyresolvconf.
+* Exclamation:                           exclamation.
+* exclude=:                              Syntax.
+* FileExtensions:                        fileextension.
+* files <1>:                             files.
+* files:                                 actionsequence.
+* filter:                                filters.
+* force=:                                copy.
+* freespace= <1>:                        required.
+* freespace=:                            disks.
+* g=:                                    Syntax.
+* group:                                 Syntax.
+* groups:                                groups.
+* home:                                  Syntax.
+* homepattern:                           mountables.
+* HomePattern:                           homepattern.
+* homeservers:                           homeservers.
+* import:                                import.
+* include=:                              Syntax.
+* interface configuration:               interfaces.
+* InterfaceName:                         interfacename.
+* IsDir():                               Evaluated classes.
+* IsLink():                              Evaluated classes.
+* IsNewerThan():                         Evaluated classes.
+* IsPlain():                             Evaluated classes.
+* l=:                                    Syntax.
+* LD_LIBRARY_PATH:                       control.
+* link:                                  Syntax.
+* linkchildren <1>:                      Link Children.
+* linkchildren:                          Files linkchildren.
+* links <1>:                             links.
+* links:                                 actionsequence.
+* m=:                                    Syntax.
+* mailcheck <1>:                         mailserver.
+* mailcheck:                             actionsequence.
+* mailserver:                            mailserver.
+* MaxCfengines:                          Special variables.
+* miscmounts:                            miscmounts.
+* mode:                                  Syntax.
+* module::                               actionsequence.
+* moduledirectory:                       moduledirectory.
+* mountables <1>:                        mountables.
+* mountables:                            homeservers.
+* mountall:                              actionsequence.
+* mountinfo:                             actionsequence.
+* mountpattern:                          mountpattern.
+* netconfig:                             actionsequence.
+* netmask <1>:                           netmask.
+* netmask:                               control.
+* nfstype <1>:                           nfstype.
+* nfstype:                               control.
+* o=:                                    Syntax.
+* ones:                                  broadcast.
+* OutputPrefix:                          Special variables.
+* owner:                                 Syntax.
+* p=:                                    tidy.
+* pattern:                               tidy.
+* processes:                             actionsequence.
+* purge=:                                copy.
+* r= <1>:                                tidy.
+* r=:                                    Syntax.
+* recurse <1>:                           tidy.
+* recurse:                               Syntax.
+* RepChar:                               repchar.
+* repchar:                               Special variables.
+* required:                              actionsequence.
+* resolve <1>:                           resolve.
+* resolve:                               actionsequence.
+* Restricting access:                    access.
+* ReturnsZero():                         Evaluated classes.
+* rotate=:                               disable.
+* scheduling:                            schedule.
+* SecureInput:                           secureinput.
+* SensibleCount:                         sensiblecount.
+* sensiblecount:                         control.
+* SensibleSize:                          sensiblesize.
+* sensiblesize:                          control.
+* shellcommands:                         actionsequence.
+* ShowActions:                           showactions.
+* singlelinks:                           actionsequence.
+* site <1>:                              site.
+* site:                                  control.
+* smtpserver:                            Cfexecd reference.
+* split <1>:                             split.
+* split:                                 Special variables.
+* SpoolDirectories:                      spooldirectories.
+* SuspiciousNames:                       suspiciousnames.
+* sysadm <1>:                            Cfexecd reference.
+* sysadm <2>:                            sysadm.
+* sysadm:                                control.
+* tidy <1>:                              tidy.
+* tidy:                                  actionsequence.
+* timezone:                              control.
+* touch:                                 touch.
+* truncate:                              disable.
+* type= <1>:                             Hard links.
+* type=:                                 disable.
+* underscoreclasses:                     Special variables.
+* unmount <1>:                           unmount.
+* unmount:                               actionsequence.
+* Wildcards:                             tidy.
+* zeroes:                                broadcast.
+* zeros:                                 broadcast.
+

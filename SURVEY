@@ -1,0 +1,65 @@
+
+Please consider filling in this questionaire about cfengine. It
+will help me to evaluate its performance and in the development
+of new work in the future. Thanks.
+
+--------------------------------------------------------------------
+
+1. Are you using cfengine? If not, are you interested in using it?
+What are your reasons? If so, what version of cfengine are you using?
+
+2. Approximately how many hosts does your cfengine configuration
+cover? What OSes?
+         
+3. Have you used any other system administration tools (e.g. Tivoli,
+Openview, Solstice?) If so, in what way were these tools good or bad
+compared to cfengine?
+
+  *  ease of configuration 
+  *  power of expression 
+  *  limitations 
+  *  efficiency 
+  *  security
+         
+4. How would rate on a scale of 1 to 10 (where 10 is good) the
+following features of cfengine
+
+  *  Central configuration file 
+  *  Classes 
+  *  Pull rather than push in copying 
+  *  Convergence towards an ideal state
+  *  Mount model 
+  *  Its basic functionality 
+  *  Its reliabilty 
+  *  The idea of feedback through classes 
+  *  Anything else (please specify)
+
+5. Do you feel that cfengine is missing any important/pressing
+features? If so please mention these.
+         
+6. Do you use cfengine mainly to warn about problems or to fix them
+automatically?
+         
+7. Do you think that it is desirable to minimize the amount of
+cfengine output (faults, etc) which is sent to the administrator? Or
+would you prefer to see more?
+
+8. Briefly, what kind of network model do you have? - Firewall. Would
+you use cfengine on the firewall? - Central file server with NFS
+clients (other file systems) - Many distributed fileservers.
+
+9. Do you use cfengine for garbage collection? i.e. file and process
+tidying. If so, what kind of policy do you use to decide which types
+of file should be deleted?
+
+10. Do you run NT? If so would you like to have the same kind of
+administrative model there, or is the domain server administration
+model adequate? How do you deal with garbage collection in NT?
+
+11. Do you feel that cfengine saves you time in performing routine tasks?
+ 
+12. Does cfengine simplify communication of system policy between
+cooperating administrators, by having a single configuration file(set)
+which is self-documenting?
+
+

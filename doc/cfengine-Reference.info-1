@@ -1,0 +1,1476 @@
+This is cfengine-Reference.info, produced by makeinfo version 4.0 from
+cfengine-Reference.texinfo.
+
+INFO-DIR-SECTION System Utilities
+START-INFO-DIR-ENTRY
+* cfengine Reference: (cfengine-Reference.info).
+                        Cfengine is a language based tool specifically
+                        designed for configuring and maintaining BSD
+                        and System-5-like operating systems attached
+                        to a TCP/IP network.
+END-INFO-DIR-ENTRY
+
+
+File: cfengine-Reference.info,  Node: Top,  Next: Reference introduction,  Prev: (dir),  Up: (dir)
+
+Cfengine-Reference
+******************
+
+   Copyright (C) 1995/96/97/98/99/2000 Mark Burgess
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the section entitled "GNU General Public License" is included
+exactly as in the original, and provided that the entire resulting
+derived work is distributed under the terms of a permission notice
+identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "GNU General Public License"
+may be included in a translation approved by the author instead of in
+the original English.
+
+   This manual corresponds to CFENGINE Edition 2.0.0 for version 2.0.0
+as last updated 8 March 2002.
+
+* Menu:
+
+* Reference introduction::
+* Cfkey::
+* Cfagent reference::
+* Cfservd.conf and cfrun reference::
+* Cfexecd reference::
+* Problem solving::
+* Example configuration file::
+* Variable Index::
+* Concept Index::
+* FAQ Index::
+
+
+File: cfengine-Reference.info,  Node: Reference introduction,  Next: Cfkey,  Prev: Top,  Up: Top
+
+Inroduction to reference manual
+*******************************
+
+   The purpose of the cfengine reference manual is to collect together
+and document the raw facts about the different components of cfengine.
+Once you have become proficient in the use of cfengine, you will no
+longer have need of the tutorial. The reference manual, on the other
+hand, changes with each version of cfengine. You will be able to use it
+online, or in printed form to find out the details you require to
+implement configurations in practice.
+
+* Menu:
+
+* Installation::
+* Work directory::
+* Hard classes::
+* Evaluated classes::
+* Filenames and paths::
+
+
+File: cfengine-Reference.info,  Node: Installation,  Next: Work directory,  Prev: Reference introduction,  Up: Reference introduction
+
+Installation
+============
+
+   In order to install cfengine, you should first ensure that the
+following packages are installed.
+
+     OpenSSL                   http://www.openssl.org
+     Berkeley DB 3.2 or later  http://www.sleepycat.com
+
+The preferred method of installation is then
+     tar zxf cfengine-x.x.x.tar.gz
+     cd cfengine-x.x.x
+     ./configure
+     make
+     make install
+
+This results in binaries being installed in `/usr/local/sbin'.  Since
+this is not necessarily a local file system on all hosts, users are
+encouraged to keep local copies of the binaries on each host, inside
+the cfengine trusted work directory.
+
+
+File: cfengine-Reference.info,  Node: Work directory,  Next: Hard classes,  Prev: Installation,  Up: Reference introduction
+
+Work directory
+==============
+
+   In order to achieve the desired simplifications, it was decided to
+reserve a private work area for the cfengine tool-set. In cfengine 1.x,
+the administrator could choose the locations of configuration files,
+locks, and logging data independently. In cfengine 2.x, this diversity
+has been rationalized to a single directory which defaults to
+`/var/cfengine' (by analogy with `/var/cron'):
+
+     /var/cfengine
+     /var/cfengine/bin
+     /var/cfengine/inputs
+     /var/cfengine/outputs
+
+   The installation location `/usr/local/sbin' is not necessarily a
+local file system, and cannot therefore be trusted i) to be present,
+and ii) to be authentic on an arbitrary system.
+
+   Similarly, a trusted cache of the input files must now be maintained
+in the `inputs' sub-directory. When cfengine is invoked by the
+scheduler, it reads only from this directory. It is up to the user to
+keep this cache updated, on each host. This simplifies and consolidates
+the cfengine resources in a single place. The environment variable
+`CFINPUTS' still overrides this default location, as before, but in its
+absence or when called from the scheduler, this becomes the location of
+trusted files.  A special configuration file cf.update is parsed and
+run before the main configuration is parsed, which is used to ensure
+that the currently caches policy is up-to-date.  If no value is set for
+`CFINPUTS', then the default location is the trusted cfengine directory
+`/var/cfengine/inputs'.
+
+   The `outputs' directory is now a record of spooled run-reports. These
+are mailed to the administrator, as previously, or can be copied to
+another central location and viewed in an alternative browser..
+
+
+File: cfengine-Reference.info,  Node: Hard classes,  Next: Evaluated classes,  Prev: Work directory,  Up: Reference introduction
+
+Cfengine hard classes
+=====================
+
+   A single class can be one of several things:
+
+   * The name of an operating system architecture e.g.  `ultrix',
+     `sun4' etc.  This is referred to henceforth as a _hard class_.
+
+   * The (unqualified) name of a particular host. If your system
+     returns a fully qualified domain name for your host, cfagent
+     truncates it so as to unqualify the name.
+
+   * The name of a user-defined group of hosts.
+
+   * A day of the week (in the form `Monday Tuesday Wednesday..').
+
+   * An hour of the day (in the form `Hr00, Hr01 ... Hr23').
+
+   * Minutes in the hour (in the form `Min00, Min17 ... Min45').
+
+   * A five minute interval in the hour (in the form `Min00_05,
+     Min05_10 ... Min55_00')
+
+   * A day of the month (in the form `Day1 ... Day31').
+
+   * A month (in the form `January, February, ... December').
+
+   * A year (in the form `Yr1997, Yr2001').
+
+   * An arbitrary user-defined string.  (see the reference manual).
+
+   * The ip-address octets of any active interface, in the form
+     (`ipv4_192_0_0_1', `ipv4_192_0_0',`ipv4_192_0',`ipv4_192').
+
+
+   To see all of the classes define on a particular host, run
+     host# cfagent -p -v
+   as a privileged user. Note that some of the classes are set only if
+a trusted link can be established with cfenvd, i.e. if both are running
+with privilege, and the `/var/cfengine/env_data' file is secure.
+
+
+File: cfengine-Reference.info,  Node: Evaluated classes,  Next: Filenames and paths,  Prev: Hard classes,  Up: Reference introduction
+
+Evaluated classes
+=================
+
+   Cfengine provides a number of in-built functions for evaluating
+classes, based on file tests. Using these internal functions is quicker
+than calling the shell `test' function. The time functions place their
+arguments in chronological order.
+
+`IsNewerThan(F1,F2)'
+     True if file 2 is modified more recently than file 1. (mtime)
+
+`AccessedBefore(F1,F2)'
+     True if file 1 had its last access earlier than file 2 (atime)
+
+`ChangedBefore(F1,F2)'
+     True if file 1's attributes were changed in any way before file
+     2's (ctime).
+
+`FileExists(FILE)'
+     True if the named file object exists.
+
+`IsDir(F)'
+     True if the named file object is a directory.
+
+`IsLink(F)'
+     True if the named file object is a symbolic link.
+
+`IsPlain(F)'
+     True if the named file object is a plain file.
+
+`ReturnsZero(COMMAND)'
+     True if the named shell command returns with exit code zero (okay).
+
+For example:
+
+     classes:
+     
+      access_to_dir = ( ReturnsZero(/bin/cd /mydir) )
+      compare       = ( ChangedBefore(/etc/passwd_master,/etc/passwd) )
+      isplain       = ( IsPlain(/tmp/import) )
+
+
+File: cfengine-Reference.info,  Node: Filenames and paths,  Prev: Evaluated classes,  Up: Reference introduction
+
+Filenames and paths
+===================
+
+   Filenames in Unix-lik operating systems
+
+   The directory separator is the forward slash '/' character. All
+references to file locations must be absolute names in cfengine, i.e.
+they must begin with a complete specification of which directory they
+are in. For example:
+
+     /etc/passwd
+     /usr/local/masterfiles/distfile
+
+The only place where it makes sense to refer to a file without a
+complete directory specification is when searching through directories
+for different kinds of file, e.g.
+     tidy:
+     
+       /home/user pattern=core age=0 recurse=inf
+
+Here, one can write `core' without a path, because one is looking for
+any file of that name in a number of directories.
+
+   Cfengine was implemented primarily on Unix-like operating systems,
+but has since been ported to Windows operating systems and MacOS X. The
+Windows operating systems traditionally use a different filename
+convention.  The following are all valid absolute file names under
+Windows:
+      c:\winnt
+      c:/winnt
+      /var/cfengine/inputs
+      //FILESERVER/share2\dir
+   The `drive' name "C:" in Windows refers to a partition or device.
+Unlike Unix, Windows does not integrate these seamlessly into a single
+file-tree.  This is not a valid absolute filename:
+     \var\cfengine\inputs
+   Paths beginning with a backslash are assumed to be win32 paths.  They
+must begin with a drive letter or double-slash server name.
+
+* Menu:
+
+* Cfagent reference::
+* Cfservd.conf and cfrun reference::
+* Cfexecd reference::
+* Problem solving::
+* Example configuration file::
+* Variable Index::
+* Concept Index::
+* FAQ Index::
+
+
+File: cfengine-Reference.info,  Node: Cfkey,  Next: Cfagent reference,  Prev: Reference introduction,  Up: Top
+
+Cfkey reference
+***************
+
+   The very first thing you should do on every host is to establish a
+public-private key pair. To do this, you need to run the program
+     everyhost# cfkey
+
+on every host. This program needs to produce random numbers, and needs a
+source of randomness. A good strategy is to install and run the
+`cfenvd' program for a week or two in advance of deploying cfengine 2,
+since `cfenvd' collects random events, which are an excellent source of
+entropy for random number generation.
+
+   If you get the error message "PRNG not seeded", it means that
+insufficient data were found in order to make a random key. In that
+case, run `cfenvd' for a few days more and try again.
+
+* Menu:
+
+* Cfagent reference::
+* Cfservd.conf and cfrun reference::
+* Cfexecd reference::
+* Problem solving::
+* Example configuration file::
+* Variable Index::
+* Concept Index::
+* FAQ Index::
+
+
+File: cfengine-Reference.info,  Node: Cfagent reference,  Next: Cfservd.conf and cfrun reference,  Prev: Cfkey,  Up: Top
+
+Cfagent reference
+*****************
+
+* Menu:
+
+* Cfagent intro::
+* Special variables::
+* acl::
+* binservers::
+* broadcast::
+* control::
+* classes::
+* copy::
+* defaultroute::
+* disks::
+* directories::
+* disable::
+* editfiles::
+* files::
+* filters::
+* groups::
+* homeservers::
+* ignore::
+* import::
+* interfaces::
+* links::
+* mailserver::
+* miscmounts::
+* mountables::
+* processes::
+* required::
+* resolve::
+* shellcommands::
+* tidy::
+* unmount::
+
+
+File: cfengine-Reference.info,  Node: Cfagent intro,  Next: Special variables,  Prev: Cfagent reference,  Up: Cfagent reference
+
+Cfagent intro
+=============
+
+* Menu:
+
+* The file cfagent.conf::
+* Cfagent Runtime Options::
+
+
+File: cfengine-Reference.info,  Node: The file cfagent.conf,  Next: Cfagent Runtime Options,  Prev: Cfagent intro,  Up: Cfagent intro
+
+The file cfagent.conf
+---------------------
+
+
+      control:
+     
+        CLASSES::
+     
+            domain = ( DNS-DOMAIN-NAME )
+     
+      classes:
+     
+        CLASS/GROUP DEFINITIONS
+     
+      import:
+     
+        FILES TO IMPORT
+     
+      # other items
+
+
+
+File: cfengine-Reference.info,  Node: Cfagent Runtime Options,  Prev: The file cfagent.conf,  Up: Cfagent intro
+
+Cfagent runtime options
+-----------------------
+
+Note that GNU long options are available with the syntax
+`--longoption'.  The long names are given in brackets.
+
+`-a'
+     (`--sysadm') Print only the name of the system administrator then
+     quit.
+
+`-A'
+     (`--auto') Can be used to signify an automatic run of cfengine, as
+     opposed to a manual run. The distinction is not predetermined. Use
+     of this option currently causes cfengine to ignore locks. This
+     option is reserved for future development.
+
+`-b'
+     (`--force-net-copy') Normally cfengine detects attempts to copy
+     from a server via the network, if they loop back to the localhost.
+     It then avoids using the network to make the copy. This option
+     forces cfengine to copy using the network. (Yes, someone thinks
+     this is useful!)
+
+`-c'
+     (`--no-check-files') Do not check file systems for ownership /
+     permissions etc.
+
+`-C'
+     (`--no-check-mounts') Check mount points for consistency.  If this
+     option is specified then directories which lie in the "mount point"
+     area are checked to see whether there is anything mounted on them.
+     Normally this is _off_ since not all machines use mounted file
+     systems in the same way.  e.g.  HPUX does not generally operate
+     with partitions, but nevertheless one might wish to mimick a
+     partition-like environment there, but it would be irritating to be
+     informed that nothing was mounted on the mount point.
+
+`-d'
+     (`--debug') Enable debugging output.  Normally you will want to
+     send this to a file using the shell script command or a pipe.
+     -d1 shows only parsing output.  -d2 shows only runtime action
+     output.  -d0 shows both levels. Debugging ouput is intended mainly
+     for the author's convenience and is not a supported feature. The
+     details of this output may change at any time.
+
+`-D'
+     (`--define') Define a compound class symbol of the form
+     _alpha.beta.gamma_.
+
+`-e'
+     (`--no-edits') Suppress file editing.
+
+`-E'
+     (`--enforce-links') Globally force links to be created where plain
+     files or links already exist. Since this option is a big hammer,
+     you have to use it in interactive mode and answer a yes/no query
+     before cfengine will run like this.
+
+`-f'
+     (`--file') Parse filename after this switch.  By default cfengine
+     looks for a file called _cfengine.conf_ in the current directory.
+
+`-h'
+     (`--help') Help information.  Display version banner and options
+     summary.
+
+`-H'
+     (`--no-hard-classes'). Prevents cfengine from generating any
+     internal class name information. Can be used for emulation
+     purposes.
+
+`-i'
+     (`--no-ifconfig') Do not attempt to configure the local area
+     network interface.
+
+`-I'
+     (`--inform') Switches on the inform output level, whereby cfengine
+     reports everything it changes..
+
+`-k'
+     (`--no-copy') Do not copy/image any files.
+
+`-K'
+     (`--no-lock') Ignore locks when running.
+
+`-l'
+     (`--traverse-links') Normally cfengine does not follow symbolic
+     links when recursively parsing directories.  This option will
+     force it to do so.
+
+`-L'
+     (`--delete-stale-links') Delete links which do not point to
+     existing files (except in user home directories, which are not
+     touched).
+
+`-m'
+     (`--no-mount') Do not attempt to mount file systems or edit the
+     filesystem table.
+
+`-M'
+     (`--no-modules') Ignore modules in actionsequence.
+
+`-n'
+     (`--recon',`--dry-run',`--just-print') No action.  Only print what
+     has to be done without actually doing it.
+
+`-N'
+     (`--negate',`--undefine') Cancel a set of classes, or undefine
+     (set value to _false_) a compound class of the form
+     _alpha.beta.gamma_.
+
+`-p'
+     (`--parse-only') Parse file and then stop.  Used for checking the
+     syntax of a program.  You do not have to be superuser to use this
+     option.
+
+`-q'
+     (`--no-splay') Switch off host splaying (sleeping).
+
+`-s'
+     (`--no-commands') Do not execute scripts or shell commands.
+
+`-S'
+     (`--silent') Silence run time warnings.
+
+`-t'
+     (`--no-tidy') Do not tidy file systems.
+
+`-u'
+     (`--use-env') Causes cfengine to generate an environment variable
+     `CFALLCLASSES' which can be read by child processes (scripts). This
+     variable contains a summary of all the currently defined classes
+     at any given time. This option causes some system 5 systems to
+     generate a Bus Error or segmentation fault. The same information
+     is available from the cfengine internal variable `$(allclasses)'
+     and can be passed as a parameter to scripts.
+
+`-U'
+     (`--underscore-classes'). When this option is set, cfengine adds
+     an underscore to the beginning of the hard system classes (like
+     `_sun4', `_linux' etc. The longer compound classes are not
+     underscored, since these are already complex and would unlikely
+     result in collisions.) This can be used to avoid naming conflicts
+     if you are so unjudicious as to name a host by the name of a hard
+     class. Other classes are not affected.
+
+`-v'
+     (`--verbose') Verbose mode.  Prints detailed information about
+     actions and state.
+
+`-V'
+     (`--version') Print only the version string and then quit.
+
+`-x'
+     (`--no-preconf') Do not execute the `cf.preconf' net configuration
+     file.
+
+`-X'
+     (`--no-links') Do not execute the `links' section of a program.
+
+`-w'
+     (`--no-warn',`--quiet') Do not print warning messages.
+
+`-z'
+     (`--smtp') Print the SMTP server for the LAN (used by cfexecd).
+
+
+File: cfengine-Reference.info,  Node: Special variables,  Next: acl,  Prev: Cfagent intro,  Up: Cfagent reference
+
+Special variables
+=================
+
+   Variables are referred to in either of two different ways, depending
+on your taste.  You can use the forms `$(variable)' or `${variable}'.
+The variable in braces or parentheses can be the name of any user
+defined macro, environment variable or one of the following special
+internal variables.
+
+`AllClasses'
+     A long string in the form `CFALLCLASSES=class1:class2...'.  This
+     variable is a summary of all the defined classes at any given
+     time. It is always kept up to date so that scripts can make use of
+     cfengine's class data.
+
+`arch'
+     The current detailed architecture string--an amalgamation of the
+     information from _uname_. Non-definable.
+
+`binserver'
+     The default server for binary data.  Non definable.
+
+`ChecksumDatabase'
+     If set to the name of a file, cfagent will use this to store
+     checksums of important files, and give `tripwire functionality',
+     *Note ChecksumDatabase::.
+
+`ChecksumUpdates'
+     If set to `on', security information is automatically updated,
+     *Note ChecksumUpdates::.
+
+`class'
+     The currently defined system hard-class (e.g. `sun4', `hpux').
+     Non-definable.
+
+`date'
+     The current date string. Note that if you use this in a shell
+     command it might be interpreted as a list variable, since it
+     contains the default separator `:'.
+
+`domain'
+     The currently defined domain.
+
+`faculty'
+     The faculty or site as defined in control (see site).
+
+`fqhost'
+     The fully qualified (DNS/BIND) hostname of the system, which
+     includes the domain name as well.
+
+`host'
+     The hostname of the machine running the program.
+
+`ipaddress'
+     The numerical form of the internet address of the host currently
+     running cfengine.
+
+`MaxCfengines'
+     The maximum number of cfengines which should be allowed to
+     co-exist concurrently on the system. This can prevent excessive
+     load due to unintentional spamming in situations where several
+     cfengines are started independently. The default value is
+     unlimited.
+
+`ostype'
+     A short for of `$(arch)'.
+
+`OutputPrefix'
+     This quoted string can be used to change the default `cfengine:'
+     prefix on output lines to something else. You might wish to shorten
+     the string, or have a different prefix for different hosts. The
+     value in this variable is appended with the name of the host. The
+     default is equivalent to,
+            OutputPrefix = ( "cfengine:$(host):")
+
+`RepChar'
+     The character value of the string used by the file repository in
+     constructing unique filenames from path names. This is the
+     character which replaces `/' (see the reference manual).
+
+`site'
+     This variable is identical to `$(faculty)' and may be used
+     interchangeably.
+
+`split'
+     The character on which list variables are split (see the reference
+     manual).
+
+`sysadm'
+     The name or mail address of the system administrator.
+
+`timezone'
+     The current timezone as defined in `control'.
+
+`UnderscoreClasses'
+     If this is set to `on' cfengine uses hard-classes which begin with
+     an underscore, so as to avoid name collisions. See also Runtime
+     Options in the Reference manual.
+
+`year'
+     The current year.
+
+These variables are kept special because they play a special role in
+setting up a system configuration.  You are encouraged to use them to
+define fully generalized rules in your programs.  Variables can be used
+to advantage in defining filenames, directory names and in passing
+arguments to shell commands.  The judicious use of variables can reduce
+many definitions to a single one if you plan carefully.
+
+   _NOTE: the above control variables are not case sensitive, unlike
+user macros, so you should not define your own macros with these names._
+
+
+   The following variables are also reserved and may be used to produce
+troublesome special characters in strings.
+`cr'
+     Expands to the carriage-return character.
+
+`dblquote'
+     Expands to a double quote `"'
+
+`dollar'
+     Expands to `$'.
+
+`lf'
+     Expands to a line-feed character (Unix end of line).
+
+`n'
+     Expands to a newline character.
+
+`quote'
+     Expands to a single quote `''.
+
+`spc'
+     Expands simply to a single space. This can be used to place spaces
+     in filenames etc.
+
+`tab'
+     Expands to a single tab character.
+
+
+File: cfengine-Reference.info,  Node: acl,  Next: binservers,  Prev: Special variables,  Up: Cfagent reference
+
+acl
+===
+
+
+        acl:
+     
+           CLASS::
+     
+              { ACL-ALIAS
+     
+              ACTION
+              }
+
+Cfengine's `ACL' feature is a common interface for managing filesystem
+access control lists (ACLs). An access control list is an extended file
+permission. It allows you to open or close a file to a named list of
+users (without having to create a group for those users); similarly, it
+allows you to open or close a file for a list of groups.  Several
+operating systems have access control lists, but each typically has a
+different syntax and different user interface to this facility, making
+it very awkward to use.  This part of a cfengine configuration
+simplifies the management of ACLs by providing a more convenient user
+interface for controlling them and--as far as possible--a common syntax.
+
+   An ACL may, by its very nature, contain a lot of information.
+Normally you would set ACLs in a `files' command, *Note files::, or a
+`copy' command, *Note copy::. It would be too cumbersome to repeat all
+of the information in every command in your configuration, so cfengine
+simplifies this by first associating an alias together with a complex
+list of ACL information. This alias is then used to represent the whole
+bundle of ACL entries in a `files' or `copy' command.  The form of an
+ACL is similar to the form of an `editfiles' command.  It is a bundle
+of information concerning a file's permissions.
+
+
+      { ACL-ALIAS
+     
+       method:overwrite/APPEND
+       fstype:POSIX/SOLARIS/DFS/AFS/HPUX/NT
+     
+       ACL_TYPE:USER/GROUP:PERMISSIONS
+       ACL_TYPE:USER/GROUP:PERMISSIONS
+       ...
+      }
+
+The name ACL-ALIAS can be any identifier containing alphanumeric
+characters and underscores. This is what you will use to refer to the
+ACL entries in practice. The method entry tells cfengine how to
+interpret the entries: should a file's ACLs be overwritten or only
+adjusted?  Since the filesystems from different developers all use
+different models for ACLs, you must also tell cfengine what kind of
+filesystem the file resides on. Currently only solaris and DCE/DFS ACLs
+are implemented.
+
+   NOTE: if you set both file permissions and ACLs the file permissions
+override the ACLs.
+
+* Menu:
+
+* ACEs::
+* Solaris ACLs::
+* DFS ACLs::
+* NT ACLs::
+* ACL Example::
+
+
+File: cfengine-Reference.info,  Node: ACEs,  Next: Solaris ACLs,  Prev: acl,  Up: acl
+
+Access control entries
+----------------------
+
+   An access control list is build of any number of individual access
+control entries (ACEs). The ACEs has the following general syntax:
+
+         ACL_TYPE:USER/GROUP:PERMISSIONS
+
+The user or group is sometimes referred to as a _key_.
+
+   For an explanation of ACL types and their use, refer to your local
+manual page.  However, note that for each type of filesystem, there are
+certain entries which must exist in an ACL. If you are creating a new
+ACL from scratch, you must specify these.  For example, in solaris ACLs
+you must have entries for `user', `group' and `other'.  Under DFS you
+need what DFS calls a `user_obj', `group_obj' and an `other_obj', and
+in some cases `mask_obj'. In cfengine syntax these are called
+`user:*:', `other:*:' and `mask:*:', as described below.  If you are
+appending to an existing entry, you do not have to re-specify these
+unless you want to change them.
+
+   Cfengine can overwrite (replace) or append to one or more ACL
+entries.
+
+`overwrite'
+     `method:overwrite' is the default. This sets the ACL according to
+     the specified entries which follow.  The existing ACL will be
+     overwritten completely.
+
+`append'
+     `method:append' adds or modifies one or more specified ACL entries.
+     If an entry already exists for the specified type and user/group,
+     the specified permission bits will be added to the old
+     permissions. If there is no ACL entry for the given type and
+     user/group, a new entry will be appended.
+
+If the new ACL exactly matches the existing ACL, the ACL is not
+replaced.
+
+   The individual bits in an ACE may be either added subtracted or set
+equal to a specified mask. The `+' symbol means add, the `-' symbol
+subtract and `=' means set equal to.  Here are some examples:
+
+       ACLTYPE:ID/*:MASK
+     
+       user:mark:+rx,-w
+       user:ds:=r
+       user:jacobs:noaccess
+       user:forgiven:default
+     
+       user:*:rw
+       group:*:r
+       other:*:r
+
+The keyword `noaccess' means set all access bits to zero for that user,
+i.e. remove all permissions. The keyword `default' means remove the
+named user from the access crontrol list altogether, so that the
+default permissions apply. A star/asterisk in the centre field
+indicates that the user or group ID is implicitly specified as of the
+owner of the file, or that no ID is applicable at all (as is the case
+for `other').
+
+
+File: cfengine-Reference.info,  Node: Solaris ACLs,  Next: DFS ACLs,  Prev: ACEs,  Up: acl
+
+Solaris ACLs
+------------
+
+   Under Solaris, the ACL type can be one of the following:
+
+             user
+             group
+             mask
+             other
+             default_user
+             default_group
+             default_mask
+             default_other
+
+A user or group can be specified to the user, group, default_user and
+default_group types.  Solaris ACL permissions are the normal UNIX
+permissions bits `rwx', where:
+
+         
+             R - GRANTS READ PRIVILEGES.
+             W - GRANTS WRITE PRIVILEGES.
+             X - GRANTS EXECUTE PRIVILEGES.
+
+
+File: cfengine-Reference.info,  Node: DFS ACLs,  Next: NT ACLs,  Prev: Solaris ACLs,  Up: acl
+
+DFS ACLs
+--------
+
+In DCE, the ACL type can be one of the following:
+
+             other
+             mask
+             any
+             unauthenticated
+             user
+             group
+             foreign_other
+             foreign_user
+             foreign_group
+
+The `user', `group', `foreign_user' and `foreign_group'  types require
+that you specify a user or group. The DCE documentation refers to types
+`user_obj', `group_obj' and so on. In the cfengine implementation, the
+ugly `_obj' suffix has been dropped to make these more in keeping with
+the POSIX names. `user_obj::', is equivalent to `user:*:' is cfengine.
+The star/asterisk implies that the ACL applies to the owner of the file
+object.
+
+   DFS permissions are comprised of the bits `crwxid', where:
+             c - Grants control privileges, to modify an acl.
+             r - Grants read  privileges.
+             w - Grants write privileges.
+             x - Grants execute privileges.
+             i - Grants insert privileges.
+             d - Grants delete privileges.
+
+See the DCE/DFS documentation for more information about this.
+
+   It is not possible to set ACLs in foreign cells currently using
+cfengine, but you can still have all of your ACL definitions in the same
+file. You must however arrange for the file to be executed on the server
+for the cell concerned.  Note also that you must perform a DCE login
+(normally as user `cell_admin') in order to set ACLs on files which are
+not owned by the owner of the cfengine-process.  This is because you
+must have a valid security ticket.
+
+
+File: cfengine-Reference.info,  Node: NT ACLs,  Next: ACL Example,  Prev: DFS ACLs,  Up: acl
+
+NT ACLs
+-------
+
+   NT ACEs are written as follows:
+            acl_type:user/group:permissions:accesstype
+
+   The actual change consists of the extra field containing the access
+type. A star/asterisk in the field for USER/GROUP would normally imply
+that the ACL applies to the owner of the file object. However this
+functionality is as of today not yet implemented.
+
+   In NT, the ACL type can be one of the following:
+                user
+                group
+   Both types require that you specify the name of a user or a group.
+
+   NT permissions are comprised of the bits `rwxdpo', where:
+         r - Read privileges
+         w - Write privileges
+         x - Execute privileges
+         d - Delete privileges
+         p - Privileges to change the permissions on the file
+         o - Privileges to take ownership of the file
+   In addition to any combination of these bits, the word `noaccess' or
+`default' can be used as explained in the previous section. NT comes
+with some standard, predefined permissions. The standards are only a
+predefined combination of the different bits specified above and are
+provided with cfengine as well. You can use the standards by setting the
+permission to `read', `change' or `all'. The bit implementation of each
+standard is as on NT:
+                read   - rx
+                change - rwxd
+                all    - rwxdpo
+   where the bits follow the earlier definition. The keywords mentioned
+above can only be used alone, and not in combination with `+', `-', `='
+and/or other permission bits.
+
+   NT defines several different access types, of which only two are
+used in connection with the ACL type that is implemented in cfengine
+for NT. The access type can be one of the following:
+                allowed
+                denied
+   Intuitively, `allowed' access grants the specified permissions to
+the user, whilst `denied' denies the user the specified permissions. If
+no access type is specified, the default is `allowed'. This enables
+cfengine's behaviour as on UNIX systems without any changes to the
+configuration file. If the permissions `noaccess' or `default' is used,
+the access type will be irrelevant.
+
+ACL Example
+===========
+
+   Here is an example of a configuration file for an NT ACL:
+
+     control:
+             actionsequence = ( files )
+             domain = ( iu.hioslo.no )
+     
+     files:
+             $(HOME)/tt    acl=acl_alias1    action=fixall
+     
+     acl:
+             { acl_alias1
+     
+             method:overwrite
+             fstype:nt
+     
+             user:gustafb:rwx:allowed
+             user:mark:all:allowed
+             user:toreo:read:allowed
+             user:torej:default:allowed
+             user:ds2:+rwx:allowed
+     
+             group:dummy:all:denied
+             group:iu:read:allowed
+             group:root:all:allowed
+             group:guest:dpo:denied
+             }
+
+
+File: cfengine-Reference.info,  Node: ACL Example,  Prev: NT ACLs,  Up: acl
+
+ACL Example
+-----------
+
+   Here is an example of a configuration file for one Solaris ACL and
+one DCE/DFS ACL:
+
+     control:
+             actionsequence = ( files )
+             domain = ( iu.hioslo.no )
+     
+     files:
+             $(HOME)/tt    acl=acl_alias1    action=fixall
+             /:/bigfile    acl=acl_alias2    action=fixall
+     
+     acl:
+             { acl_alias1
+     
+             method:overwrite
+             fstype:posix
+     
+             user:*:rwx
+             user:mark:=rwx
+             user:sowille:=rx
+             user:toreo:=rx
+             user:torej:default
+             user:ds2:+rwx
+             group:*:rx
+             group:iu:r
+             group:root:x
+             mask:*:rx
+             other:*:rx
+     
+             default_user:*:=rw
+             default_user:mark:+rwx
+             default_user:ds:=rwx
+             default_group::=r
+             default_group:iu:+r
+             default_mask::w
+             default_other::rwx
+             }
+     
+             { acl_alias2
+     
+             method:overwrite
+             fstype:dfs
+     
+             user:*:rwxcid
+             group:*:rxd
+             other:*:wxir
+             mask:*:rxw
+             user:/.../iu.hioslo.no/cell_admin:rc
+             group:/.../iu.hioslo.no/acct-admin:rwxcid
+             user:/.../iu.hioslo.no/root:rx
+             }
+
+
+File: cfengine-Reference.info,  Node: binservers,  Next: broadcast,  Prev: acl,  Up: Cfagent reference
+
+binservers
+==========
+
+   The `binservers' declaration need only be used if you are using
+cfengine's model for mounting NFS filesystems.  This declaration informs
+hosts of which other hosts on the network possess filesystems containing
+software (binary files) which client hosts should mount.  This includes
+resources like programs in `/usr/local' and so on.  A host may have
+several binary servers, since there may be several machines to which
+disks are physically attached.  In most cases, on a well organized
+network, there will be only one _architecture server_ per UNIX platform
+type, for instance a SunOS server, an ULTRIX server and so on.
+
+   Binary servers are defined as follows:
+
+
+     binservers:
+     
+        physics.sun4::   sunserver sunserver2
+        physics.linux::  linuxserver
+
+The meaning of this declaration is the following.  All hosts of type
+`sun4' which are members of the group `physics' should mount any
+binaries declared in the `mountables' resource list which belong to
+hosts `sunserver' or `sunserver2'.  Similarly all `linux' machines
+should mount binary filesystems in the mountables list from
+`linuxserver'.
+
+   Cfengine knows the difference between binaries and home directories
+in the `mountables' list, because home directories match the pattern
+given by `homepattern'.  *Note homepattern::.  *Note homeservers::.
+
+   Note that every host is a binary server for itself, so that the first
+binary server (and that with highest priority) is always the current
+host.  This ensures that local filesystems are always used in preference
+to NFS mounted filesystems.  This is only relevant in connection with
+the variable `$(binserver)'.
+
+
+File: cfengine-Reference.info,  Node: broadcast,  Next: control,  Prev: binservers,  Up: Cfagent reference
+
+broadcast
+=========
+
+   This information is used to configure the network interface for each
+host.
+
+   Every local area network has a convention for determining which
+internet address is used for broadcast requests.  Normally this is an
+address of the form `aaa.bbb.ccc.255' or `aaa.bbb.ccc.0'.  The
+difference between these two forms is whether all of the bits in the
+last number are ones or zeroes respectively.  You must find out which
+convention is used at your establishment and tell cfengine using a
+declaration of the form:
+
+     broadcast:
+     
+       any::
+     
+          ones     # or zeros, or zeroes
+
+In most cases you can use the generic class `any', since all of the
+hosts on the same subnet have to use the same convention.  If your
+configuration file encompasses several different subnets with different
+conventions then you will need to use a more specific.
+
+   Cfengine computes the actual value of the broadcast address using the
+value specified above and the netmask *Note netmask::.
+
+
+File: cfengine-Reference.info,  Node: control,  Next: classes,  Prev: broadcast,  Up: Cfagent reference
+
+control
+=======
+
+   The fundamental piece of any cfengine script or configuration file is
+the control section.  If you omit this part of a cfengine script, it
+will not do anything! The control section is used to define certain
+variables, set default values and define the order in which the various
+actions you have defined will be carried out.  Because cfengine is a
+declarative or descriptive language, the order in which actions appear
+in the file does not necessarily reflect the order in which they are
+executed. The syntax of declarations here is:
+
+       control:
+     
+          CLASSES::
+     
+             VARIABLE = ( LIST OR VALUE )
+
+   The control section is a sequence of declarations which looks
+something like the following example:
+
+
+     control:
+     
+       site     = ( univ )
+       domain   = ( univ.edu )
+       sysadm   = ( admin@computing.univ.edu )
+       netmask  = ( 255.255.252.0 )
+       timezone = ( EDT )
+       nfstype  = ( nfs )
+     
+       childlibpath = ( /usr/local:/mylibs )
+     
+       sensiblesize  = ( 1000 )
+       sensiblecount = ( 2 )
+       editfilesize  = ( 4000 )
+     
+       actionsequence =
+          (
+          links.some
+          mountall
+          links.others
+          files
+          )
+     
+       myvariable = ( something )
+       mymacro    = ( somethingelse )
+
+Parentheses are required when making a declaring information in
+cfengine.
+
+   The meaning of each of these lines is described below.
+
+* Menu:
+
+* access::
+* actionsequence::
+* addclasses::
+* addinstallable::
+* BinaryPaddingChar::
+* ChecksumDatabase::
+* ChecksumUpdates::
+* childlibpath::
+* copylinks::
+* defaultcopytype::
+* deletenonuserfiles::
+* deletenonownerfiles::
+* deletenonusermail::
+* deletenonownermail::
+* domain::
+* dryrun::
+* editbinaryfilesize::
+* editfilesize::
+* emptyresolvconf::
+* exclamation::
+* excludecopy::
+* excludelinks::
+* ExpireAfter::
+* homepattern::
+* IfElapsed::
+* Inform::
+* interfacename::
+* fileextension::
+* linkcopies::
+* LogDirectory::
+* LogTidyHomeFiles::
+* moduledirectory::
+* mountpattern::
+* netmask::
+* nonalphanumfiles::
+* nfstype::
+* repchar::
+* repository::
+* schedule::
+* secureinput::
+* sensiblecount::
+* sensiblesize::
+* showactions::
+* site::
+* SplayTime::
+* split::
+* spooldirectories::
+* suspiciousnames::
+* sysadm::
+* Syslog::
+* timezone::
+* TimeOut::
+* Verbose::
+* Warnings::
+* warnnonuserfiles::
+* warnnonownerfiles::
+* warnnonusermail::
+* warnnonownermail::
+
+
+File: cfengine-Reference.info,  Node: access,  Next: actionsequence,  Prev: control,  Up: control
+
+access
+------
+
+   The `access' list is a list of users who are to be allowed to
+execute a cfengine program.  If the list does not exist then all users
+are allowed to run a program.
+
+        access = ( USER1 USER2 ...  )
+
+The list may consist of either numerical user identifiers or valid
+usernames from the password database.  For example:
+
+        access = ( mark aurora 22 456 )
+
+would restrict a script to users mark, aurora and user id 22 and 456.
+
+
+File: cfengine-Reference.info,  Node: actionsequence,  Next: addclasses,  Prev: access,  Up: control
+
+actionsequence
+--------------
+
+   The action sequence determines the order in which collective actions
+are carried out.  Here is an example containing the full list of
+possibilities:
+
+        actionsequence =
+           (
+           mountall               # mount filesystems in fstab
+           mountinfo              # scan mounted filesystems
+           checktimezone          # check timezone
+           netconfig              # check net interface config
+           resolve                # check resolver setup
+           unmount                # unmount any filesystems
+           shellcommands          # execute shell commands
+           editfiles              # edit files
+           addmounts              # add new filesystems to system
+           directories            # make any directories
+           links                  # check and maintain links (single and child)
+           mailcheck              # check mailserver
+           mountall               # (again)
+           required               # check required filesystems
+           tidy                   # tidy files
+           disable                # disable files
+           files                  # check file permissions
+           copy                   # make a copy/image of a master file
+           processes              # signal / check processes
+           module:name            # execute a user-defined module
+           )
+
+Here is a more complete description of the meaning of these keywords.
+
+`addmounts'
+     causes cfengine to compute which NFS filesystems are missing from
+     the current host and add them. This includes editing the
+     filesystem table, creating the mount-directory, if required.  This
+     command relies on information provided by `mountinfo', so it
+     should normally only be called after `mountinfo'. If the
+     filesystem already appears to be in the filesystem table, a
+     warning is issued.
+
+`checktimezone'
+     runs a check on the timezone defined for the shell running
+     cfengine.
+
+`directories'
+     executes all the commands defined under the `directories' section
+     of the program. It builds new directories.
+
+`disable'
+     executes all the commands defined under the `disable' section of
+     the program.
+
+`editfiles'
+     executes all the commands defined under the `editfiles' section of
+     the program.
+
+`files'
+     executes all the commands defined under the `files' section of the
+     program.
+
+`links'
+     executes all the commands defined under the `links' section of the
+     program.
+
+`mailcheck'
+     tests for the presence of the NFS-mounted mail spooling directory
+     on the current host. The name of the mail spool directory is
+     defined in the `mailserver' section of the cfengine program. If
+     the current host is the same as the mailserver (the host which has
+     the physical spool directory disk) nothing is done. Otherwise the
+     filesystem table is edited so as to include the mail directory.
+
+`module'
+     Normally cfengine's ability to detect the systems condition is
+     limited to what it is able to determine while excuting predefined
+     actions. Classes may be switched on as a result of actions cfengine
+     takes to correct a problem. To increase the flexibility of
+     cfengine, a mechanism has been introduced in version 1.5 which
+     allows you to include a module of your own making in order to
+     define or undefine a number of classes.  The syntax
+            module:mytests.CLASS1.CLASS2.CLASS3
+          
+            "module:mytests.CLASS1.CLASS2.CLASS3 arg1 arg2 .."
+     declares a user defined module which can potentially set the
+     classes CLASS1 etc. Classes returned by the module must be
+     declared so that cfengine knows to pay attention to rules which
+     use these classes when parsing. Note might actually be preferable
+     to define classes returned by modules under `AddInstallables'
+     which is equivalent. If arguments are passed to the module, the
+     whole string must be quoted like a shellcommand.  *Note Writing
+     plugin modules: (cfengine-Tutorial)Writing plugin modules.
+     Whether or not these classes become set or not depends on the
+     behaviour of your module. The classes continue to apply for all
+     actions which occur after the module's execution. The module must
+     be owned by the user executing cfengine or root (for security
+     reasons), it must be named `module:MODULE-NAME' and must lie in a
+     special directory, *Note moduledirectory::.
+
+`mountall'
+     mounts all filesystems defined in the hosts filesystem table.  This
+     causes new NFS filesystems added by `addmounts' and `mailcheck' to
+     be actually mounted. This should probably be called both before
+     `mountinfo' and after `addmounts' etc.  A short timeout is placed
+     on this operation to avoid hanging RPC connections when parsing
+     NFS mounted file systems.
+
+`mountinfo'
+     builds internal information about which filesystems are presently
+     mounted on the current host.  Cfengine assumes that
+     required-filesystems which are not found need to be mounted. A
+     short timeout is placed on this operation to avoid hanging RPC
+     connections when parsing NFS mounted file systems. If this times
+     out, no further mount operations are considered reliable and are
+     summarily cancelled.
+
+`netconfig'
+     checks the netmask, hostname, IP address and broadcast address for
+     the current host. The correct values for the netmask and broadcast
+     address are set if there is an error. The defaultroute is matched
+     against the static routing table and added if no default route
+     exists. This does not apply to DHCP clients, which set a default
+     route automatically.
+
+`required'
+     executes all the commands defined under the `required' section of
+     the program. It checks for the absence of important NFS resources.
+
+`resolve'
+     checks and corrects the DNS domain name and the order of
+     nameservers in the file `/etc/resolv.conf'.
+
+`shellcommands'
+     executes all the commands defined under the `shellcommands'
+     section of the program.
+
+`tidy'
+     executes all the commands defined under the `tidy' section of the
+     program.
+
+`unmount'
+     executes all the commands defined under the `unmount' section of
+     the program. The filesystem table is edited so as to remove the
+     unwanted filesystems and the unmount operation is executed.
+
+`processes'
+     executes commands defined under the `processes' section of the
+     program.
+
+   Under normal circumstances this coarse ordering is enough to suit
+most purposes.  In some cases you might want to, say, only perform half
+the link operations before mounting filesystems and then, say, perform
+the remainder.  You can do this (and similar things) by using the idea
+of defining and undefining classes. *Note Defining classes:
+(cfengine-Tutorial)Defining classes.
+
+   The syntax
+
+
+     actionsequence =
+        (
+        links.firstpass.include
+        ...
+        links.secondpass
+        )
+
+means that cfengine first executes `links' with the classes `firstpass'
+and `include' _defined_.  Later it executes `links' with `secondpass'
+defined.  You can use this method of adding classes to distinguish more
+finely the flow of control in programs.
+
+   A note about style: if you define and undefine lots of classes to do
+what you want to do, you might stop and ask yourself if your `groups'
+are defined as well as they should be.  *Note groups::.  Programming in
+cfengine is about doing a lot for only a little writing.  If you find
+yourself writing a lot, you are probably not going about things in the
+right way.
+
+
+File: cfengine-Reference.info,  Node: addclasses,  Next: addinstallable,  Prev: actionsequence,  Up: control
+
+AddClasses
+----------
+
+        AddClasses  = ( LIST OF IDENTIFIERS )
+
+   The `AddClasses' directive is used to define a list of class
+attributes for the current host.  Normally only the hard classes defined
+by the system are `true' for a given host.  It is convenient though to
+be able to define classes of your own to label certain actions, mainly
+so that they can later be excluded so as to cut short or filter out
+certain actions.  This can be done in two ways.  *Note actionsequence::.
+
+   To define a list of classes for the current session, you write:
+
+     AddClasses = ( exclude shortversion )
+
+This is equivalent to (though more permanent than) defining classes on
+the command line with the `-D' option.  You can now use these to
+qualify actions.  For example
+
+
+       any.exclude::
+           ...
+
+   Under normal circumstances `exclude' is always true -- because you
+have defined it to be so, but you can _undefine_ it in two ways so as
+to prevent the action from being carried out.  One way is to undefine a
+class on the command line when you invoke cfengine:
+
+     host#  cfengine -N exclude
+
+or
+
+     host#  cfengine -N exclude.shortversion
+     
+     host#  cfengine -N a.b.c.d
+
+These commands run cfengine with the named classes _undefined_.  That
+means that actions labelled with these classes are excluded during that
+run.
+
+   Another way to restrict classes is to add a list of classes to be
+undefined in the actionsequence.  See next section.
+

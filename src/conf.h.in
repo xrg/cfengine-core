@@ -1,0 +1,367 @@
+/* src/conf.h.in.  Generated automatically from configure.ac by autoheader.  */
+/* cfengine for GNU
+ 
+        Copyright (C) 1995/6
+        Free Software Foundation, Inc.
+ 
+   This file is part of GNU cfengine - written and maintained 
+   by Mark Burgess, Dept of Computing and Engineering, Oslo College,
+   Dept. of Theoretical physics, University of Oslo
+ 
+   This program is free software; you can redistribute it and/or modify it
+   under the terms of the GNU General Public License as published by the
+   Free Software Foundation; either version 2, or (at your option) any
+   later version.
+ 
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+ 
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+
+*/
+
+/* The old route entry structure in newer BSDs */
+#undef HAVE_ORTENTRY
+
+/* Do we ahve any route entry structure ? */
+#undef HAVE_RTENTRY
+
+/* Whether to use the local REGEX functions */
+#undef REGEX_MALLOC
+
+/* Whether to use LCHOWN to change ownerships */
+#undef HAVE_LCHOWN
+
+/* Whether the thread library has setmask */
+#undef HAVE_PTHREAD_SIGMASK
+
+/* Whether the thread library has setstacksize */
+#undef HAVE_PTHREAD_ATTR_SETSTACKSIZE
+
+/* Whether libdb has db_open */
+#undef HAVE_DB_CREATE
+
+/* Does the host have /var/run directory? */
+#undef HAVE_VAR_RUN
+
+
+/* Special OS defines */
+#undef SUN3
+#undef SUN4
+#undef SOLARIS
+#undef ULTRIX
+#undef HPuUX
+#undef AIX
+#undef OSF
+#undef IRIX
+#undef LINUX
+#undef DEBIAN
+#undef FREEBSD
+#undef NETBSD
+#undef NEWS_OS
+#undef BSDOS
+#undef BSD43
+#undef AOS
+#undef SCO
+#undef NEXTSTEP
+#undef CFCRAY
+#undef CFGNU
+#undef UNIXWARE
+#undef OPENBSD
+#undef HAVE_SYS_ACL_H
+#undef NOTBROKEN
+#undef NT
+#undef DARWIN
+
+/* SVR4 header stuff */
+
+#undef __EXTENSIONS__
+#undef _POSIX_C_SOURCE
+
+/* Solaris 2.6 */
+
+#undef __BIT_TYPES_DEFINED__
+
+/* LOCK and LOG directories */
+
+#undef WORKDIR
+
+/* Special CFEngine symbols */
+
+#undef AUTOCONF_HOSTNAME
+#undef AUTOCONF_SYSNAME
+
+/* Define if you have the `bcopy' function. */
+#undef HAVE_BCOPY
+
+/* Define if you have the `chflags' function. */
+#undef HAVE_CHFLAGS
+
+/* Define if you have the <db.h> header file. */
+#undef HAVE_DB_H
+
+/* Define if you have the <dce/daclif.h> header file. */
+#undef HAVE_DCE_DACLIF_H
+
+/* Define if you have the <dirent.h> header file, and it defines `DIR'. */
+#undef HAVE_DIRENT_H
+
+/* Define if you have the `door' function. */
+#undef HAVE_DOOR
+
+/* Define if you have the `drand48' function. */
+#undef HAVE_DRAND48
+
+/* Define if you have the <dustat.h> header file. */
+#undef HAVE_DUSTAT_H
+
+/* Define if you have the <fcntl.h> header file. */
+#undef HAVE_FCNTL_H
+
+/* Define if you have the `getaddrinfo' function. */
+#undef HAVE_GETADDRINFO
+
+/* Define if you have the `getcwd' function. */
+#undef HAVE_GETCWD
+
+/* Define if you have the `gethostname' function. */
+#undef HAVE_GETHOSTNAME
+
+/* Define if you have the `getnetgrent' function. */
+#undef HAVE_GETNETGRENT
+
+/* Define if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define if you have the `crypto' library (-lcrypto). */
+#undef HAVE_LIBCRYPTO
+
+/* Define if you have the `dce' library (-ldce). */
+#undef HAVE_LIBDCE
+
+/* Define if you have the `m' library (-lm). */
+#undef HAVE_LIBM
+
+/* Define if you have the `nsl' library (-lnsl). */
+#undef HAVE_LIBNSL
+
+/* Define if you have the `nss_nis' library (-lnss_nis). */
+#undef HAVE_LIBNSS_NIS
+
+/* Define if you have the `pthread' library (-lpthread). */
+#undef HAVE_LIBPTHREAD
+
+/* Define if you have the `pthreads' library (-lpthreads). */
+#undef HAVE_LIBPTHREADS
+
+/* Define if you have the `PW' library (-lPW). */
+#undef HAVE_LIBPW
+
+/* Define if you have the `rx' library (-lrx). */
+#undef HAVE_LIBRX
+
+/* Define if you have the `socket' library (-lsocket). */
+#undef HAVE_LIBSOCKET
+
+/* Define if you have the `thread' library (-lthread). */
+#undef HAVE_LIBTHREAD
+
+/* Define if you have the <malloc.h> header file. */
+#undef HAVE_MALLOC_H
+
+/* Define if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define if you have the `mkfifo' function. */
+#undef HAVE_MKFIFO
+
+/* Define if you have the <ndir.h> header file, and it defines `DIR'. */
+#undef HAVE_NDIR_H
+
+/* Define if you have the <pthread.h> header file. */
+#undef HAVE_PTHREAD_H
+
+/* Define if you have the `putenv' function. */
+#undef HAVE_PUTENV
+
+/* Define if you have the `realpath' function. */
+#undef HAVE_REALPATH
+
+/* Define if you have the `regcomp' function. */
+#undef HAVE_REGCOMP
+
+/* Define if you have the <regex.h> header file. */
+#undef HAVE_REGEX_H
+
+/* Define if you have the <rxposix.h> header file. */
+#undef HAVE_RXPOSIX_H
+
+/* Define if you have the <sched.h> header file. */
+#undef HAVE_SCHED_H
+
+/* Define if you have the `setegid' function. */
+#undef HAVE_SETEGID
+
+/* Define if you have the `seteuid' function. */
+#undef HAVE_SETEUID
+
+/* Define if you have the `setregid' function. */
+#undef HAVE_SETREGID
+
+/* Define if you have the `setreuid' function. */
+#undef HAVE_SETREUID
+
+/* Define if you have the `setsid' function. */
+#undef HAVE_SETSID
+
+/* Define if you have the `snprintf' function. */
+#undef HAVE_SNPRINTF
+
+/* Define if you have the `srand48' function. */
+#undef HAVE_SRAND48
+
+/* Define if you have the `statfs' function. */
+#undef HAVE_STATFS
+
+/* Define if you have the `statvfs' function. */
+#undef HAVE_STATVFS
+
+/* Define if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define if you have the `strdup' function. */
+#undef HAVE_STRDUP
+
+/* Define if you have the `strerror' function. */
+#undef HAVE_STRERROR
+
+/* Define if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define if you have the `strrchr' function. */
+#undef HAVE_STRRCHR
+
+/* Define if you have the `strstr' function. */
+#undef HAVE_STRSTR
+
+/* Define if you have the `sysinfo' function. */
+#undef HAVE_SYSINFO
+
+/* Define if you have the <sys/acl.h> header file. */
+#undef HAVE_SYS_ACL_H
+
+/* Define if you have the <sys/dir.h> header file, and it defines `DIR'. */
+#undef HAVE_SYS_DIR_H
+
+/* Define if you have the <sys/filesys.h> header file. */
+#undef HAVE_SYS_FILESYS_H
+
+/* Define if you have the <sys/mount.h> header file. */
+#undef HAVE_SYS_MOUNT_H
+
+/* Define if you have the <sys/ndir.h> header file, and it defines `DIR'. */
+#undef HAVE_SYS_NDIR_H
+
+/* Define if you have the <sys/param.h> header file. */
+#undef HAVE_SYS_PARAM_H
+
+/* Define if you have the <sys/sockio.h> header file. */
+#undef HAVE_SYS_SOCKIO_H
+
+/* Define if you have the <sys/statfs.h> header file. */
+#undef HAVE_SYS_STATFS_H
+
+/* Define if you have the <sys/statvfs.h> header file. */
+#undef HAVE_SYS_STATVFS_H
+
+/* Define if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define if you have the <sys/systeminfo.h> header file. */
+#undef HAVE_SYS_SYSTEMINFO_H
+
+/* Define if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
+/* Define if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define if you have the <sys/vfs.h> header file. */
+#undef HAVE_SYS_VFS_H
+
+/* Define if you have <sys/wait.h> that is POSIX.1 compatible. */
+#undef HAVE_SYS_WAIT_H
+
+/* Define if you have the <tcpd.h> header file. */
+#undef HAVE_TCPD_H
+
+/* Define if you have the <thread.h> header file. */
+#undef HAVE_THREAD_H
+
+/* Define if you have the <time.h> header file. */
+#undef HAVE_TIME_H
+
+/* Define if you have the `uname' function. */
+#undef HAVE_UNAME
+
+/* Define if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define if you have the <utime.h> header file. */
+#undef HAVE_UTIME_H
+
+/* Define if you have the <vfs.h> header file. */
+#undef HAVE_VFS_H
+
+/* Define if you have the `waitpid' function. */
+#undef HAVE_WAITPID
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define if you can safely include both <sys/time.h> and <time.h>. */
+#undef TIME_WITH_SYS_TIME
+
+/* Define if BerkeleyDB is available. */
+#undef USE_BERKELEY_DB
+
+/* Define if OpenSSL is available. */
+#undef USE_OPENSSL_LIB
+
+/* Version number of package */
+#undef VERSION
+
+/* Define if `lex' declares `yytext' as a `char *' by default, not a `char[]'.
+   */
+#undef YYTEXT_POINTER
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* Define to `int' if <sys/types.h> doesn't define. */
+#undef gid_t
+
+/* Define to `int' if <sys/types.h> does not define. */
+#undef mode_t
+
+/* Define to `int' if <sys/types.h> does not define. */
+#undef pid_t
+
+/* Define to `unsigned' if <sys/types.h> does not define. */
+#undef size_t
+
+/* Define to `int' if <sys/types.h> doesn't define. */
+#undef uid_t

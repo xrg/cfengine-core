@@ -1,0 +1,109 @@
+#!/bin/sh
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+sbindir=@sbindir@
+EDITOR="${EDITOR-vi}"
+CFINPUTS="${CFINPUTS-"@pkgdata@"}
+export EDITOR CFINPUTS
+NOPARSE="cf.preconf|cfd.conf"
+
+if [ "`hostname`" != "sentral" ]
+then
+	echo $0 can only be run on host sentral.
+	exit 1
+fi
+
+EdFile () {
+    if [ ! -f ${CFINPUTS}/${file} ]
+    then
+	echo "File not found: ${file}"
+	echo "Only these files are eligible for editing:"
+	\ls $CFINPUTS
+	/usr/ucb/echo -n "Create new file? (Y/n) "
+	read answer
+	if [ "$answer" = "n" ]
+	then
+		echo Okay, exiting...
+		exit 0
+	fi
+    fi
+
+    if [ -f ${CFINPUTS}/.${file}.lock -a "$force" = "n" ]
+    then
+	i=30
+	/usr/ucb/echo -n "File ${file} is busy -- waiting up to $i seconds..."
+	while [ -f ${CFINPUTS}/.${file}.lock ]
+	do
+		/usr/ucb/echo -n .
+		i=`expr $i - 1`
+		if [ $i = 0 ]
+		then
+			echo "\nSorry, file is busy -- try again later."
+			exit 0
+		fi
+		sleep 1
+	done
+    fi
+
+    if [ -f ${CFINPUTS}/${file} ]
+    then
+	cp -p ${CFINPUTS}/${file} ${CFINPUTS}/.${file}.lock 
+    fi
+
+    editfile=n
+
+    while [ "$editfile" = "n" ]
+    do
+	${EDITOR} ${CFINPUTS}/.${file}.lock
+	cp /dev/null /tmp/cfparse.$$
+	$sbindir/cfengine --no-warn --parse-only --file ${CFINPUTS}/.${file}.lock > /tmp/cfparse.$$ 2>&1
+	if [ -s /tmp/cfparse.$$ ]
+	then
+		echo PARSE ERROR IN NEW INPUT-FILE:
+		cat /tmp/cfparse.$$
+		/usr/ucb/echo -n "Re-edit file? (Y/n) "
+		read answer
+		if [ "$answer" = "n" ]
+		then
+			echo Okay, exiting...
+			editfile="y"
+		fi
+	else
+		mv ${CFINPUTS}/.${file}.lock  ${CFINPUTS}/${file}
+		editfile="y"
+	fi
+    done
+
+    rm -f /tmp/cfparse.$$ ${CFINPUTS}/.${file}.lock
+}
+
+force=n
+
+if [ $# -eq 0 ]
+then
+	echo Usage: $0 [ -f ] filename
+	echo "These files are eligible for editing:"
+	/bin/ls $CFINPUTS
+	exit 0
+fi
+
+if [ "$1" = "-f" ]
+then
+	force=y
+	echo $*	
+	shift
+	echo $*	
+fi
+
+cd $CFINPUTS
+
+while [ $# -ne 0 ]
+do
+	file=`basename $1`
+	EdFile
+	shift
+done
+
+exit 0
+

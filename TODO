@@ -1,0 +1,19 @@
+
+1. Improve documentation
+
+2. Rewrite ifconfig stuff
+    - routing sockets
+    - find out the configured IP address for DHCP clients
+    - what happens on multi-homed hosts
+
+3. ipv6 - in next release
+
+--
+splint checking
+
+
+
+splint *.c +unixlib
+
+with cutting out header files - non parsable..
+splint -weak client.c +unixlib

@@ -1,0 +1,1068 @@
+This is cfengine-Reference.info, produced by makeinfo version 4.0 from
+cfengine-Reference.texinfo.
+
+INFO-DIR-SECTION System Utilities
+START-INFO-DIR-ENTRY
+* cfengine Reference: (cfengine-Reference.info).
+                        Cfengine is a language based tool specifically
+                        designed for configuring and maintaining BSD
+                        and System-5-like operating systems attached
+                        to a TCP/IP network.
+END-INFO-DIR-ENTRY
+
+
+File: cfengine-Reference.info,  Node: addinstallable,  Next: BinaryPaddingChar,  Prev: addclasses,  Up: control
+
+AddInstallable
+--------------
+
+        AddInstallable  = ( LIST OF IDENTIFIERS )
+
+   Some actions in your cfengine program will be labelled by classes
+which only become defined at run time using a `define=' option. Cfengine
+is not always able to see these classes until it meets them and tries to
+save space by only loading actions for classes which is believes will
+become defined at some point in the program. This can lead to some
+actions being missed if the action is parsed before the place where the
+class gets switched on, since cfengine is a one-pass interpreter,.  To
+help cfengine determine classes which _might become defined_ during a
+run, you can declare them in this list. It does no harm to declare
+classes here anyway.  Here is an example where you need to declare a
+class because of the ordering of the actions.
+
+
+     control:
+     
+         AddInstallable  = ( myclass )
+     
+     files:
+     
+        myclass::
+     
+          /tmp/test mode=644 action=fixall
+     
+     copy:
+     
+          /tmp/foo dest=/tmp/test define=myclass
+
+If we remove the declaration, then when cfengine meets the files
+command, it skips it because it knows nothing about the class
+`myclass'--when the copy command follows, it is too late.  Remember
+that imported files are always parsed after the main program so
+definitions made in imported files always come later than things in the
+main program.
+
+
+File: cfengine-Reference.info,  Node: BinaryPaddingChar,  Next: ChecksumDatabase,  Prev: addinstallable,  Up: control
+
+BinaryPaddingChar
+-----------------
+
+     BinaryPaddingChar = ( \0 )
+   This specifies the type of character used to pad strings of unequal
+length in `editfiles' during binary editing.  The default value is the
+space character, since this is normally used to edit filenames or text
+messages within program code.
+
+
+File: cfengine-Reference.info,  Node: ChecksumDatabase,  Next: ChecksumUpdates,  Prev: BinaryPaddingChar,  Up: control
+
+ChecksumDatabase
+----------------
+
+   If this parameter is set to true, cfengine will delete files which
+do not have a name belonging to a known user id.
+
+     ChecksumDatabase = ( /var/cfengine/cfdb )
+
+   If this filename is defined, cfengine will use it to store message
+digests (i.e. cryptographic checksums) of files for security purposes,
+*Note files::, `checksum='.
+
+
+File: cfengine-Reference.info,  Node: ChecksumUpdates,  Next: childlibpath,  Prev: ChecksumDatabase,  Up: control
+
+ChecksumUpdates
+---------------
+
+   If this parameter is set to true, cfengine will delete files which
+do not have a name belonging to a known user id.
+
+     ChecksumUpdates = ( on )
+
+   This variable defaults to `off'. If set to true, cfagent will
+automatically update the checksum of a file, if it changes on the disk.
+This means that a security warning will be issued only once about files
+which have changed, and the changed version will be re-registered as
+the correct version. This option could be switched on after a system
+upgrade, for instance, in order to update the database, and then
+switched to `off' again to reduce the risk of missing a security alert.
+Alternatively, if you are confident that the first message is
+sufficient, it can be left as `on' so that only one message is given.
+
+
+File: cfengine-Reference.info,  Node: childlibpath,  Next: copylinks,  Prev: ChecksumUpdates,  Up: control
+
+ChildLibPath
+------------
+
+   Sets a value for LD_LIBRARY_PATH in child processes:
+
+      childlibpath = ( /usr/local/lib:/local/mysql/lib )
+   Note that the variables LD_LIBRARY_PATH is special. This library
+path is needed to run processes as children of cfengine.  Often, if the
+agent is started from cron (which is started by init), there is no
+suitable library path set, and shellcommands will fail with strange
+errors about not being able to load shared objects. Setting a library
+path here is a useful way of correcting this problem.
+
+
+File: cfengine-Reference.info,  Node: copylinks,  Next: defaultcopytype,  Prev: childlibpath,  Up: control
+
+CopyLinks
+---------
+
+   This list is used to define a global list of names or patterns which
+are to be copied rather than linked symbolically. For example
+
+     CopyLinks = ( *.config )
+   The same facility can be specified for each individual link
+operation using the `copy' option *Note links::.  Copying is performed
+using a file age comparison.
+
+   Note that all entries defined under a specified class are valid only
+as long as that class is defined. For instance
+       CLASS::
+     
+           CopyLinks = ( PATTERN )
+
+would define a pattern which was only valid when CLASS is defined.
+
+
+File: cfengine-Reference.info,  Node: defaultcopytype,  Next: deletenonuserfiles,  Prev: copylinks,  Up: control
+
+DefaultCopyType
+---------------
+
+   This parameter determines the default form of copying for all copy
+operations parsed after this variable. The legal values are `ctime'
+(intial default), `mtime', `checksum' and `binary'.  e.g.
+
+
+      DefaultCopyType = ( mtime )
+
+
+File: cfengine-Reference.info,  Node: deletenonuserfiles,  Next: deletenonownerfiles,  Prev: defaultcopytype,  Up: control
+
+DeleteNonUserFiles
+------------------
+
+   If this parameter is set to true, cfengine will delete files which
+do not have a name belonging to a known user id.
+
+     DeleteNonUserFiles = ( true )
+     
+     SpoolDirectories = ( /var/spool/cron/crontabs )
+
+   This is an generalization of DeleteNonUserMail and makes it
+redundant.  it is formally executed as a part of the "tidy" action.
+
+
+File: cfengine-Reference.info,  Node: deletenonownerfiles,  Next: deletenonusermail,  Prev: deletenonuserfiles,  Up: control
+
+DeleteNonOwnerFiles
+-------------------
+
+   If this parameter is set to true, cfengine will delete files on
+mailservers whose names do not correspond to a known user name, but
+might be owned by a known user.
+
+     DeleteNonOwnerFiles = ( true )
+     
+     SpoolDirectories = ( /var/spool/cron/crontabs )
+
+   This is an generalization of DeleteNonOwnerMail and makes it
+redundant.
+
+
+File: cfengine-Reference.info,  Node: deletenonusermail,  Next: deletenonownermail,  Prev: deletenonownerfiles,  Up: control
+
+DeleteNonUserMail
+-----------------
+
+   If this parameter is set to true, cfengine will delete mail files on
+mailservers which do not have a name belonging to a known user id. This
+does not include lock files.
+
+
+File: cfengine-Reference.info,  Node: deletenonownermail,  Next: domain,  Prev: deletenonusermail,  Up: control
+
+DeleteNonOwnerMail
+------------------
+
+   If this parameter is set to true, cfengine will delete files on
+mailservers whose names do not correspond to a known user name, but
+might be owned by a known user.
+
+
+File: cfengine-Reference.info,  Node: domain,  Next: dryrun,  Prev: deletenonownermail,  Up: control
+
+domain
+------
+
+       domain = ( DOMAIN NAME )
+
+   This variable defines the domainname for your site.  You must define
+it here, because your system might not know its domainname when you run
+cfengine for the first time.  The domainname can be used as a cfengine
+variable subsequently by referring to $(domain).  The domainname
+variable is used by the action `resolve'. The domain is also used
+implicitly by other matching routines. You should define the domain as
+early as possible in your configuration file so as to avoid problems,
+especially if you have the strange practice of naming hosts with their
+fully qualified host names since groups which use fully qualified names
+can fail to be defined if cfengine is not able to figure out the domain
+name.
+
+
+File: cfengine-Reference.info,  Node: dryrun,  Next: editbinaryfilesize,  Prev: domain,  Up: control
+
+DryRun
+------
+
+
+       DryRun = ( ON/off )
+
+   This variable has the same effect as the command line options
+`--dry-run' or `-n'. It tells cfengine to only report what it should do
+without actually doing it.
+
+      CLASSES::
+     
+        DryRun = ( on )
+
+
+File: cfengine-Reference.info,  Node: editbinaryfilesize,  Next: editfilesize,  Prev: dryrun,  Up: control
+
+editbinaryfilesize
+------------------
+
+        EditBinaryFileSize  = ( SIZE )
+
+   Cfengine will refuse to edit a file which is larger than the value of
+`editbinaryfilesize' in bytes.  This is to prevent possible accidents
+from occurring.  The default value for this variable is 10000000 bytes.
+If you don't like this feature, simply set the value to be a very
+large number or to zero.  If the value is zero, cfengine will ignore it.
+
+
+File: cfengine-Reference.info,  Node: editfilesize,  Next: emptyresolvconf,  Prev: editbinaryfilesize,  Up: control
+
+editfilesize
+------------
+
+        EditfileSize  = ( SIZE )
+
+   This variable is used by cfengine every time it becomes necessary to
+edit a file.  Since file editing applies only to text files, the files
+are probably going to be relatively small in most cases.  Asking to edit
+a very large (perhaps binary) file could therefore be the result of an
+error.
+
+   A check is therefore made as a security feature.  Cfengine will
+refuse to edit a file which is larger than the value of `editfilesize'
+in bytes.  This is to prevent possible accidents from occurring.  The
+default value for this variable is 10000 bytes.  If you don't like this
+feature, simply set the value to be a very large number or to zero.  If
+the value is zero, cfengine will ignore it.
+
+
+File: cfengine-Reference.info,  Node: emptyresolvconf,  Next: exclamation,  Prev: editfilesize,  Up: control
+
+EmptyResolvConf
+---------------
+
+        EmptyResolvConf  = ( true )
+
+   Normally cfengine does not tidy up old entries in the
+`/etc/resolv.conf' file. This option causes cfengine to remove old
+nameserver entries.
+
+
+File: cfengine-Reference.info,  Node: exclamation,  Next: excludecopy,  Prev: emptyresolvconf,  Up: control
+
+Exclamation
+-----------
+
+   This variable defaults to "on". If set to "off", no exclaimation
+marks are printed during security alerts, e.g. for checksum violations.
+
+        Exclamation  = ( off )
+
+
+File: cfengine-Reference.info,  Node: excludecopy,  Next: excludelinks,  Prev: exclamation,  Up: control
+
+ExcludeCopy
+-----------
+
+   This list is used to define a global list of names or patterns which
+are to be excluded from copy operations. For example
+
+      ExcludeCopy = ( *~ *% core )
+   The same facility can be specified for each individual link
+operation using the `exclude' option *Note copy::.
+
+   Note that all entries defined under a specified class are valid only
+as long as that class is defined. For instance
+       CLASS::
+     
+           ExcludeCopy = ( PATTERN )
+
+would define a pattern which was only valid when CLASS is defined.
+
+
+File: cfengine-Reference.info,  Node: excludelinks,  Next: ExpireAfter,  Prev: excludecopy,  Up: control
+
+ExcludeLinks
+------------
+
+   This list is used to define a global list of names or patterns which
+are to be excluded from linking operations. For example
+
+      ExcludeLinks = ( *~ *% core )
+   The same facility can be specified for each individual link
+operation using the `exclude' option *Note links::.
+
+   Note that all entries defined under a specified class are valid only
+as long as that class is defined. For instance
+       CLASS::
+     
+           ExcludeLinks = ( PATTERN )
+
+would define a pattern which was only valid when CLASS is defined.
+
+
+File: cfengine-Reference.info,  Node: ExpireAfter,  Next: homepattern,  Prev: excludelinks,  Up: control
+
+ExpireAfter
+-----------
+
+   This parameter controls the global value of the ExpireAfter
+parameter.  *Note Spamming and security: (cfengine-Tutorial)Spamming
+and security. This parameter controls the maximum time in minutes which
+a cfengine action is allowed to live. After this time cfengine will try
+to kill the cfengine which seems to have hung and attempt to restart
+the action.
+
+
+      ExpireAfter = ( TIME-IN-MINUTES )
+
+This parameter may also be set per action in the action sequence by
+appending a pseudo-class called `ExpireAfterTIME'.  For instance,
+
+
+      actionsequence = ( copy.ExpireAfter15 )
+
+sets the expiry time parameter to 15 minutes for this copy command.
+
+
+File: cfengine-Reference.info,  Node: homepattern,  Next: IfElapsed,  Prev: ExpireAfter,  Up: control
+
+HomePattern
+-----------
+
+        HomePattern  = ( LIST OF PATTERNS )
+
+   The `homepattern' variable is used by the cfengine model for
+mounting nfs filesystems.  *Note NFS resources: (cfengine-Tutorial)NFS
+resources.  It is also used in the evaluation of the pseudo variable
+`home', See *Note files::, *Note tidy::.
+
+   `homepattern' is in fact a list and is used like a wildcard or
+_pattern_ to determine which filesystems in the list of mountables are
+home directories.  *Note mountables::.  This relies on your sticking to
+a rigid naming convention as described in the first reference above.
+
+   For example, you might wish to mount (or locate directly if you are
+not using a separate partition for home directories) your home
+directories under `mountpattern' in directories `u1', `u2' and so on.
+In this case you would define `homepattern' to match these numbers:
+
+     homepattern = ( u? )
+
+Cfengine now regards any directory matching `$(mountpattern)/u?' as
+being a user login directory.
+
+   Suppose you want to create mount home directories under
+`$(mountpattern)/home' and make subdirectories for staff and students.
+Then you would be tempted to write:
+
+      HomePattern = ( home/staff home/students )
+
+Unfortunately this is not presently possible. (This is, in principle, a
+bug which should be fixed in the future.) What you can do instead is to
+achieve the same this as follows:
+
+      MountPattern = ( /$(site)/$(host) /$(site)/$(host)/home )
+      HomePattern = ( staff students )
+
+
+File: cfengine-Reference.info,  Node: IfElapsed,  Next: Inform,  Prev: homepattern,  Up: control
+
+IfElapsed
+---------
+
+   This parameter controls the global value of the IfElapsed parameter,
+*Note Spamming and security: (cfengine-Tutorial)Spamming and security.
+This parameter controls the minimum time which must have elapsed for an
+action in the action sequence before which it will be executed again.
+
+
+      IfElapsed = ( TIME-IN-MINUTES )
+
+This parameter may also be set per action in the action sequence by
+appending a pseudo-class called `IfElapsedTIME'.  For instance,
+
+
+      ActionSequence = ( copy.IfElapsed15 )
+
+sets the elapsed time parameter to 15 minutes for this copy command.
+
+
+File: cfengine-Reference.info,  Node: Inform,  Next: interfacename,  Prev: IfElapsed,  Up: control
+
+Inform
+------
+
+
+       Inform = ( ON/off )
+
+   This variable switches on the output level whereby cfengine reports
+changes it makes during a run. Normally only urgent messages or clear
+errors are printed. Setting `Inform' to `on' makes cfengine report on
+all actions not explicitly cancelled with a `silent' option.  To set
+this output level one writes:
+
+
+      CLASSES::
+     
+        Inform = ( on )
+
+
+File: cfengine-Reference.info,  Node: interfacename,  Next: fileextension,  Prev: Inform,  Up: control
+
+InterfaceName
+-------------
+
+   If you have an operating system which is installed on some
+non-standard hardware, you might have to specifically set the name of
+the network interface. For example:
+
+
+       control:
+     
+         nextstep.some::
+     
+            InterfaceName = ( en0 )
+     
+         nextstep.others::
+     
+            InterfaceName = ( ec0 )
+
+It is only necessary to set the interface name in this fashion if you
+have an operating system which is running on special hardware. Most
+users will not need this.  The choice set here overrides the system
+defaults and the choices made in the `cfrc' file, *Note cfrc resource
+file::.
+
+
+File: cfengine-Reference.info,  Node: fileextension,  Next: linkcopies,  Prev: interfacename,  Up: control
+
+FileExtensions
+--------------
+
+   This list may be used to define a number of extensions which are
+regarded as being plain files by the system.  As part of the general
+security checking cfengine will warn about any directories which have
+names using these extensions. They may be used to conceal directories.
+
+
+       FileExtensions = ( c o gif jpg html )
+
+
+File: cfengine-Reference.info,  Node: linkcopies,  Next: LogDirectory,  Prev: fileextension,  Up: control
+
+LinkCopies
+----------
+
+   This list is used to define a global list of names or patterns which
+are to be linked symbolically rather than copied. For example
+
+     excludelinks = ( *.gif *.jpg )
+   The same facility can be specified for each individual link
+operation using the `symlink' option *Note copy::.
+
+   Note that all entries defined under a specified class are valid only
+as long as that class is defined. For instance
+       CLASS::
+     
+           LinkCopies = ( PATTERN )
+
+would define a pattern which was only valid when CLASS is defined.
+
+
+File: cfengine-Reference.info,  Node: LogDirectory,  Next: LogTidyHomeFiles,  Prev: linkcopies,  Up: control
+
+LogDirectory
+------------
+
+   Specify an alternative directory for keeping cfengine's log data.
+This defaults to `/var/run/cfengine' or `/var/cfengine'.
+
+
+       LogDirectory = ( /var/cfengine )
+
+
+File: cfengine-Reference.info,  Node: LogTidyHomeFiles,  Next: moduledirectory,  Prev: LogDirectory,  Up: control
+
+LogTidyHomeFiles
+----------------
+
+
+       LogTidyHomeFiles = ( off )
+
+   If set to "off", no log is made of user files, in their home
+directories, of the files which are tidied by cfengine.
+
+
+File: cfengine-Reference.info,  Node: moduledirectory,  Next: mountpattern,  Prev: LogTidyHomeFiles,  Up: control
+
+moduledirectory
+---------------
+
+        moduledirectory  = ( DIRECTORY FOR PLUGIN MODULES )
+
+   This is the directory where cfengine will look for plug-in modules
+for the actionsequence, *Note actionsequence::. Plugin modules may be
+used to activate classes using special algorithms.  *Note Writing
+plugin modules: (cfengine-Tutorial)Writing plugin modules.
+
+
+File: cfengine-Reference.info,  Node: mountpattern,  Next: netmask,  Prev: moduledirectory,  Up: control
+
+mountpattern
+------------
+
+        mountpattern  = ( MOUNT-POINT )
+
+   The `mountpattern' list is used by the cfengine model for mounting
+nfs filesystems.  *Note NFS resources: (cfengine-Tutorial)NFS
+resources.  It is also used in the evaluation of the pseudo variable
+`home', See *Note files::, *Note tidy::.
+
+   It is used together with the value of `homepattern' to locate and
+identify what filesystems are local to a given host and which are
+mounted over the network.  For this list to make sense you need to
+stick to a rigid convention for mounting your filesystems under a single
+naming scheme as described in the section mentioned above.  If you
+follow the recommended naming scheme then you will want to set the value
+of mountpattern to
+
+     mountpattern = ( /$(site)/$(host) )
+
+which implies that cfengine will look for local disk partitions under a
+unique directory given by the name of the host and site.  Any
+filesystems which are physically located on the current host lie in this
+directory.  All mounted filesystems should lie elsewhere. If you insist
+on keeping mounted file systems in more than one location, you can make
+a list like this:
+
+     mountpattern = ( /$(site)/users /$(site)/projects )
+
+
+File: cfengine-Reference.info,  Node: netmask,  Next: nonalphanumfiles,  Prev: mountpattern,  Up: control
+
+netmask
+-------
+
+        netmask = ( AAA.BBB.CCC.DDD )
+
+   The netmask variable defines the partitioning of the subnet
+addresses on your network.  Its value is defined by your network
+administrator.  On most systems it is likely to be `255.255.255.0'.
+This is used to configure the network interface in `netconfig'.  *Note
+actionsequence::.
+
+   Every host on the internet has its own unique address.  The addresses
+are assigned hierarchically.  Each network gets a _domain name_ and can
+attach something like 65,000 hosts to that network.  Since this is
+usually too many to handle in one go, every such network may be divided
+up into subnets.  The administrator of the network can decide how the
+division into subnets is made.  The decision is a trade-off between
+having many subnets with few hosts, or many hosts on few subnets.  This
+choice is made by setting the value of a variable called `netmask'.
+The netmask looks like an internet address.  It takes the form:
+
+
+        aaa.bbb.ccc.mmm
+
+The first two numbers `aaa.bbb' are the address of the domain.  The
+remainder `ccc.mmm' specifies both the subnet and the hostname.  The
+value of `netmask' tells all hosts on the network: how many of the bits
+in the second half label different subnets and how many label different
+hosts on each of the subnets?
+
+   The most common value for the netmask is `255.255.255.0'.  It is
+most helpful to think of the netmask in terms of bits.  Each base-10
+number between 0-255 represents 8 bits which are either set or not set.
+Every bit which is set is a network address and every bit which is zero
+is part of a host address.  The first two parts of the address
+`255.255' always takes these values.  If the third number is `255', it
+means that the domain is divided up into 256 sub networks and then the
+remaining bits which are zero can be used to give 255 different host
+addresses on each of the subnets.
+
+   If the value had been `255.255.255.254', the network would be
+divided up into 2^15 subnets, since fifteen of the sixteen bits are
+one.  The remaining bit leaves enough room for two addresses 0 and 1.
+One of those is reserved for _broadcasts_ to all hosts, the other can
+be an actual host -- there would only be room for one host per subnet.
+This is a stupid example of course, the main point with the subnet mask
+is that it can be used to trade subnets for hosts per subnet.  A value
+of `255.255.254.0' would allow 128 different subnets with 2*256-1 = 511
+hosts on each.
+
+   We needn't be concerned with the details of the netmask here.
+Suffice it to say that its value is determined for your entire domain
+by the network administrator and each host has to be told what the
+value is.
+
+   Each host must also know what convention is used for the _broadcast
+address_.  This is an address which hosts can send to if they wish to
+send a message to every other host on their subnet simultaneously.  It
+is used a lot by services like NIS to ask if any hosts are willing to
+perform a particular service.  There are two main conventions for the
+broadcast address: address zero (all host bits are zero) and the highest
+address on the subnet (all host bits are ones).  The convention can be
+different on every subnet and it is decided by the network
+administrator.  When you write a cfengine program you just specify the
+convention used on your subnet and cfengine works out the value of the
+broadcast address from the netmask and the host address *Note
+broadcast::.  Cfengine works out the value of the broadcast address
+using the value of the netmask.
+
+
+File: cfengine-Reference.info,  Node: nonalphanumfiles,  Next: nfstype,  Prev: netmask,  Up: control
+
+NonAlphaNumFiles
+----------------
+
+   If enabled, this option causes cfengine to detect and disable files
+which have purely non-alphanumeric filenames, i.e. files which might be
+accidental or deliberately concealed. The files are then marked with a
+suffix `.cf-nonalpha' and are rendered visible.
+
+
+       NonAlphaNumFiles = ( on )
+
+   These files can then be tidied by searching for the suffix. Note
+that alphanumeric means ascii codes less than 32 and greater than 126.
+
+
+File: cfengine-Reference.info,  Node: nfstype,  Next: repchar,  Prev: nonalphanumfiles,  Up: control
+
+nfstype
+-------
+
+        nfstype = ( NFS-TYPE )
+
+   This variable is included only for future expansion.  If you do not
+define this variable, its value defaults to "nfs".
+
+   At present cfengine operates only with NFS (the network file system).
+When cfengine looks for network file systems to mount, it adds lines in
+the filesystem table (`/etc/fstab',`/etc/checklist' etc.)  to try to
+mount filesystems of type "nfs".  In principle you might want to use a
+completely different system for mounting filesystems over the network,
+in which case the `mount type' would not be "nfs" but something else.
+
+   At the time of writing certain institutions are replacing NFS with
+AFS (the Andrew filesystem) and DFS (from the distributed computing
+environment).  The use of these filesystems really excludes the need to
+use the mount protocol at all.  In other words if you are using AFS or
+DFS, you don't need to use cfengine's mounting commands at all.
+
+
+File: cfengine-Reference.info,  Node: repchar,  Next: repository,  Prev: nfstype,  Up: control
+
+RepChar
+-------
+
+        RepChar  = ( CHARACTER )
+
+   The value of this variable determines the characters which is used by
+cfengine in creating the unique filenames in the file repository.
+Normally, its value is set to `_' and each `/' in the path name of the
+file is changed to `_' and stored in the repository. If you prefer a
+different character, define it here. Note that the character can be
+quoted with either single or double quotes in order to encompass spaces
+etc.
+
+
+File: cfengine-Reference.info,  Node: repository,  Next: schedule,  Prev: repchar,  Up: control
+
+Repository
+----------
+
+        Repository  = ( DIRECTORY )
+
+   Defines a special directory where all backup and junk files are
+collected. Files are assigned a unique filename which identifies the
+path from which they originate.  This affects files saved using
+`disable', `copy', `links' and `editfiles' *Note Disabling and the file
+repository: (cfengine-Tutorial)Disabling and the file repository.
+
+
+File: cfengine-Reference.info,  Node: schedule,  Next: secureinput,  Prev: repository,  Up: control
+
+Schedule
+--------
+
+        schedule  = (  Min00_05 Min30_35  )
+
+   When `cfexecd' is used in daemon mode, it defaults to running once
+an hour, on the hour, i.e..
+        schedule  = (  Min00_05 )
+   This can be extended to make the agent run more often. The time
+specifiers are cfengine classes, and are written as intervals of time
+rather the precise times.  Cfengine's time resolution is purposely
+limited to five minutes because the auto-correlation time of user
+resources is generally greater than this. Thus, it is assumed that
+precision timing is not required and the start time of cfengine, when
+scheduled in daemon mode, is not better than a few minutes.  The daemon
+does not require precision, but offers many other strategic features
+for load balancing and security.
+
+
+File: cfengine-Reference.info,  Node: secureinput,  Next: sensiblecount,  Prev: schedule,  Up: control
+
+SecureInput
+-----------
+
+        SecureInput = ( on )
+
+   If this is set cfengine will not import files which are not owned by
+the uid running the program, or    which are writable by groups or
+others.
+
+
+File: cfengine-Reference.info,  Node: sensiblecount,  Next: sensiblesize,  Prev: secureinput,  Up: control
+
+SensibleCount
+-------------
+
+        SensibleCount  = ( COUNT )
+
+   This variable is used by the action `required'.  It defines for
+cfengine what you consider to be the minimum number of files in a
+`required' directory.  If you declare a directory as being required,
+cfengine will check to see if it exists.  Then, if the directory
+contains fewer than the value of `sensiblecount' files, a warning is
+issued.  The default value for this variable is 2.
+
+
+File: cfengine-Reference.info,  Node: sensiblesize,  Next: showactions,  Prev: sensiblecount,  Up: control
+
+SensibleSize
+------------
+
+        SensibleSize  = ( SIZE )
+
+   This variable is used by the action `required'.  It defines for
+cfengine what you consider to be the minimum size for a `required' file.
+If you declare a file as being required, cfengine will check to see if
+the file exists.  Of course, the file may exist but be empty, so the
+size of the file is also checked against this constant.  If the file is
+smaller than the value of `sensiblesize' a warning is issued.  The
+default value for this variable is 1000 bytes.
+
+
+File: cfengine-Reference.info,  Node: showactions,  Next: site,  Prev: sensiblesize,  Up: control
+
+ShowActions
+-----------
+
+        ShowActions  = ( ON )
+
+   This causes cfengine to produce detailed output of what action is
+being carried out as part of the prefix information during output.
+This is intended only for third party tools which collect and parse the
+cfengine output. It will be of little interest to humans.
+
+
+File: cfengine-Reference.info,  Node: site,  Next: SplayTime,  Prev: showactions,  Up: control
+
+site/faculty
+------------
+
+       site    = ( SITENAME )
+       faculty = ( FACULTYNAME )
+
+   This variable defines a convenient name for your site configuration.
+It is useful for making generic rules later on, because it means for
+instance that you can define the name of a directory to be
+
+     /$(site)/$(host)/local
+
+without having to redefine the rule for a specific site.  This is a
+handy trick for making generic rules in your files which can be imported
+into a configuration for any site.
+
+   `faculty' is a synonym for `site'.  The two names may be used
+interchangeably.
+
+
+File: cfengine-Reference.info,  Node: SplayTime,  Next: split,  Prev: site,  Up: control
+
+SplayTime
+---------
+
+       SplayTime = ( TIME-IN-MINUTES )
+
+   This variable is used to set the maximum time over which cfengine
+will share its load on a server, *Note Splaying host times:
+(cfengine-Tutorial)Splaying host times.
+
+
+File: cfengine-Reference.info,  Node: split,  Next: spooldirectories,  Prev: SplayTime,  Up: control
+
+Split
+-----
+
+        Split  = ( CHARACTER )
+
+   The value of this variable is used to define the list separator in
+variables which are expected to be treated as lists. The default value
+of this variable is the colon `:'.  Cfengine treats variables
+containing this character as lists to be broken up and iterated over in
+the following cases:
+
+   * in the `to' field of a multiple link action,
+
+   * in the `from' field of a copy action,
+
+   * in the directory field of a tidy action,
+
+   * in the directory field of the files action,
+
+   * in the ignore action.
+
+
+   This typically allows communication with PATH-like environment
+variables in the shell.
+
+
+File: cfengine-Reference.info,  Node: spooldirectories,  Next: suspiciousnames,  Prev: split,  Up: control
+
+SpoolDirectories
+----------------
+
+   A list of additional spool directories for cfengine to police. In
+these directories, filenames should correspond to existing users of the
+system.  When users lost their accounts, this list plus the mail spool
+directory will be checked for files owned by deprecated users.  See
+also: `DeleteNonOwnerFiles', `DeleteNonUserFiles'.
+
+       SpoolDirectories = ( /var/spool/cron/crontabs /var/spool/cron/atjobs )
+
+
+File: cfengine-Reference.info,  Node: suspiciousnames,  Next: sysadm,  Prev: spooldirectories,  Up: control
+
+suspiciousnames
+---------------
+
+       SuspiciousNames = ( .mo lrk3 )
+
+   Filenames in this list are treated as suspicious and generate a
+warning as cfengine scans directories. This might be used to detect
+hacked systems or concealed programs. Checks are only made in
+directories which cfengine scans in connection with a command such as
+files, tidy or copy.
+
+
+File: cfengine-Reference.info,  Node: sysadm,  Next: Syslog,  Prev: suspiciousnames,  Up: control
+
+sysadm
+------
+
+        sysadm = ( MAIL ADDRESS )
+
+   The mail address of your system administrator should be placed here.
+This is used in two instances.  If cfengine is invoked with the option
+`-a', then it simply prints out this value.  This is a handy feature
+for making scripts.
+
+   The administrators mail address is also written into the personal log
+files which cfengine creates for each user after tidying files, so you
+should make this an address which users can mail if they have troubles.
+
+
+File: cfengine-Reference.info,  Node: Syslog,  Next: timezone,  Prev: sysadm,  Up: control
+
+Syslog
+------
+
+
+       Syslog = ( ON/off )
+
+   This variable activates syslog logging of cfengine output at the
+`inform' level.
+
+   To set this output level one writes:
+
+
+      CLASSES::
+     
+        Syslog = ( on )
+
+
+File: cfengine-Reference.info,  Node: timezone,  Next: TimeOut,  Prev: Syslog,  Up: control
+
+timezone
+--------
+
+        timezone = ( 3-CHARACTER TIMEZONE )
+
+   The timezone variable is a list of character strings which define
+your local timezone.  Normally you will only need a single timezone,
+but sometimes there are several aliases for a given timezone e.g. MET
+and CET are synonymous.  Currently only the first three characters of
+this string are checked against the timezone which cfengine manages to
+glean from the system.  If a mismatch is detected a warning message is
+printed.  cfengine does not attempt to configure the timezone.  This
+feature works only as a reminder, since the timezone should really be
+set once and for all at the time the system is installed.  On some
+systems you can set the timezone by editing a file, a procedure which
+you can automate with cfengine *Note editfiles::.
+
+   The value of the `timezone' can be accessed by variable substitution
+in the usual way. It expands to the first item in your list.
+
+     shellcommands:
+     
+            "echo ${timezone} | mail ${sysadm}"
+
+
+File: cfengine-Reference.info,  Node: TimeOut,  Next: Verbose,  Prev: timezone,  Up: control
+
+TimeOut
+-------
+
+
+       TimeOut = ( 10 )
+
+   The default timeout for network connections is 10 seconds. This is
+too short on some routed networks. It is not permitted to set this
+variable smaller than 3 seconds or larger than 60 seconds.
+
+
+File: cfengine-Reference.info,  Node: Verbose,  Next: Warnings,  Prev: TimeOut,  Up: control
+
+Verbose
+-------
+
+
+       Verbose = ( ON/off )
+
+   This variable switches on the output level whereby cfengine reports
+everything it does during a run in great detail. Normally only urgent
+messages or clear errors are printed, *Note Inform::.  This option is
+almost equivalent to using the `--verbose' of `-v' command-line
+options. The only difference is that system environment reporting
+information, which is printed prior to parsing, is not shown.  To set
+this output level on selected hosts one writes:
+
+
+      CLASSES::
+     
+        Verbose = ( on )
+
+   For related more limited output, *Note Inform::.
+
+
+File: cfengine-Reference.info,  Node: Warnings,  Next: warnnonuserfiles,  Prev: Verbose,  Up: control
+
+Warnings
+--------
+
+
+       Warnings = ( ON/off )
+
+   This variable switches on the parser-output level whereby cfengine
+reports non-fatal warnings.  This is equivalent to setting the command
+line switch `--no-warn', or `-w'.  To set this output level on selected
+hosts one writes:
+
+
+      CLASSES::
+     
+        Warnings = ( on )
+
+
+File: cfengine-Reference.info,  Node: warnnonuserfiles,  Next: warnnonownerfiles,  Prev: Warnings,  Up: control
+
+WarnNonUserFiles
+----------------
+
+   If this parameter is set to true, cfengine will warn about files in
+spool directories which do not have a name belonging to a known user id.
+
+   See also `DeleteNonUserFiles'.
+
+
+File: cfengine-Reference.info,  Node: warnnonownerfiles,  Next: warnnonusermail,  Prev: warnnonuserfiles,  Up: control
+
+WarnNonOwnerFiles
+-----------------
+
+   If this parameter is set to true, cfengine will warn about files on
+mailservers whose names do not correspond to a known user name, but
+might be owned by a known user.
+
+
+     SpoolDirectories = ( /var/spool/cron/crontabs )
+     
+     WarnNonOwnerFiles = ( true )
+
+   See also `DeleteNonOwnerFiles'. This generalizes and succeeds
+`DeleteNonOwnerMail'.
+
+
+File: cfengine-Reference.info,  Node: warnnonusermail,  Next: warnnonownermail,  Prev: warnnonownerfiles,  Up: control
+
+WarnNonUserMail
+---------------
+
+   If this parameter is set to true, cfengine will warn about mail
+files on mailservers which do not have a name belonging to a known user
+id. This does not include lock files.
+
+
+File: cfengine-Reference.info,  Node: warnnonownermail,  Prev: warnnonusermail,  Up: control
+
+WarnNonOwnerMail
+----------------
+
+   If this parameter is set to true, cfengine will warn about files on
+mailservers whose names do not correspond to a known user name, but
+might be owned by a known user.
+
+
+File: cfengine-Reference.info,  Node: classes,  Next: copy,  Prev: control,  Up: Cfagent reference
+
+classes
+=======
+
+   The `classes' keyword is an alias for `groups' as of version 1.4.0
+of cfengine.
+

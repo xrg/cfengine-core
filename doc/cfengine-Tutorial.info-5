@@ -1,0 +1,1207 @@
+This is cfengine-Tutorial.info, produced by makeinfo version 4.0 from
+cfengine-Tutorial.texinfo.
+
+INFO-DIR-SECTION System Utilities
+START-INFO-DIR-ENTRY
+* cfengine Tutorial: (cfengine-Tutorial.info).
+                        Cfengine is a language based tool specifically
+                        designed for configuring and maintaining BSD
+                        and System-5-like operating systems attached
+                        to a TCP/IP network.
+END-INFO-DIR-ENTRY
+
+
+File: cfengine-Tutorial.info,  Node: Automation,  Next: Trust,  Prev: A word of warning,  Up: Security and cfengine
+
+Automation
+==========
+
+   Even in the smallest local area network you will want to build a
+scheme for automating host configuration and maintenance, because
+networks have a way of growing from one host into many quite quickly.
+It is therefore important to build a model which scales. A major reason
+for using cfengine is precisely for scalability. Whether you have one
+host or a hundred makes little difference. Cfengine is instructed from
+a central location, but its operation is completely and evenly spread
+across the network. Each host is responsible for obtaining a copy of
+the network model from a trusted source and is then responsible for
+configuring itself without intervention from outside. Unlike some
+models, cfengine does not have to rely on network communication or
+remote object models.
+
+   We also need integration, or the ability to manage the
+interrelationships between hosts.  It is no good having complete
+control of one important host and thinking that you are secure. If an
+intruder can get into any host, he or she is almost certain to get into
+the ones that matter, especially if you are not looking at all of them.
+Using cfengine is a good way of forcing yourself to formulate a
+configuration/security policy and then stick to it.  Why cfengine?
+There are three reasons: i) it forces a discipline of preparation which
+focuses you on the problems at the right level of detail, ii) it
+provides you with `secure' scalable automation and a common interface
+to all your hosts, and iii) it scales to any number of hosts without
+additional burdens.  We'll need to qualify some of these points below.
+
+   The first step in security management is to figure out a security
+policy. That way, you know what *you* mean by security and if that
+security is breached, you will know what to do. In many cases you can
+formulate a large part of your security policy as cfengine code. That
+makes it formal, accurate and it means that it will get done by the
+robot without requiring any more work on your part.
+
+   As an immune system, cfengine will even work fine in a partially
+connected environment it makes each host responsible for its own state.
+It is not reliant on network connectivty for remote method invocations
+or CORBA-style object requests as is, say, Tivoli. All it needs is an
+authentic copy of the network configuration document stored locally on
+each host.  If this is the case, a detached host will not be left
+unprotected, at worst it might lag behind in its version of the network
+configuration.
+
+
+File: cfengine-Tutorial.info,  Node: Trust,  Next: Why trust cfengine?,  Prev: Automation,  Up: Security and cfengine
+
+Trust
+=====
+
+   There are many implicit trust relationships in computer systems.  It
+is crucial to understand them. If you do not understand where you are
+placing your trust, your trust can be exploited by attackers who have
+thought more carefully than you have.
+
+   For example, any NFS server of users' home-directories trusts the
+root user on the hosts which mount those directories.  Some bad
+accidents are prevented by mapping root to the user nobody on remote
+systems, but this is not security, only convenience.  The root user can
+always use `su' to becomes any user in its password file and
+access/change any data within those filesystems. The .rlogin and
+hosts.equiv files on Unix machines grant root (or other user)
+privileges to other hosts without the need for authentication.
+
+   If you are collecting software from remote servers, you should make
+sure that they come from a machine that you trust, particularly if they
+are files which could lead to privileged access to your system.  Even
+checksums are no good unless they also are trustworthy.  For example,
+it would be an extremely foolish idea to copy a binary program such as
+/bin/ps from a host you know nothing about.  This program runs with
+root privileges. If someone were to replace that version of ps with a
+Trojan horse command, you would have effectively opened your system to
+attack. Most users trust anonymous FTP servers where they collect free
+software.  In any remote copy you are setting up an implicit trust
+relationship.  First of all you trust integrity of the host you are
+collecting files from.  Secondly you trust that they have the same
+username database with regard to access control. The root user on the
+collecting host has the same rights to read files as the root user on
+the server. The same applies to any matched user name.
+
+
+File: cfengine-Tutorial.info,  Node: Why trust cfengine?,  Next: Configuration,  Prev: Trust,  Up: Security and cfengine
+
+Why trust cfengine?
+===================
+
+   Cfengine has a very simple trust model. It trusts the integrity of
+its input file and any data which is explicitly chooses to download.
+Cfengine places the responsibility on root on the localhost not on any
+outsiders. *You* can make cfengine destroy your system, just as you can
+destroy it yourself, but no one else can, so as long as you are careful
+with the input file you are trusting essentially no-one.  We shall
+qualify this below for remote file copying.
+
+   Cfengine assumes that its input file is secure. Apart from that input
+file, no part of cfengine accepts or uses any configuration information
+from outside sources.  The most one could do from an authenticated
+network connection is to ask cfengine to carry out (or not) certain
+parts of its model, thus in the worst case scanario an outside attacker
+could spoof cfengine into configuring the host correctly.  In short, no
+one except root on the localhost can force cfengine to do anything
+(unless root access to your system has already been compromised by
+another route). This means that there is a single point of failure. The
+input file does not even have to be private as long as it is authentic.
+No one except you can tell cfengine what to do.
+
+   There is a catch though. Cfengine can be used to perform remote file
+transfer.  In remote file transfer one is also forced to trust the
+integrity of the data received, just as in any remote copy scheme.
+Although cfengine works hard to authenticate the identity of the host,
+once the host's identity is verified it cannot verify the accuracy of
+unknown data it has been asked to receive.  Also, as with all remote
+file transfers, cfengine could be tricked by a DNS spoofing into
+connecting to an imposter host, so use the IP addresses of hosts, not
+their names if you don't trust your DNS service.  In short, these
+faults are implicit in remote copying. They do not have to do with
+cfengine itself.  This has nothing to do with encryption as users
+sometimes believe: encrypted connections do not change these trust
+relationships--they improve the privacy of the data being transmitted
+not their accuracy or trustworthiness.
+
+   The point of cfengine is normally to have only one global
+configuration for every host. This needs to be distributed somehow
+which means that hosts must collect this file from a remote server.
+This in turn means that you must trust the host which has the master
+copy of the cfengine configuration file.
+
+
+File: cfengine-Tutorial.info,  Node: Configuration,  Next: Disabling and replacing software,  Prev: Why trust cfengine?,  Up: Security and cfengine
+
+Configuration
+=============
+
+   The beginning of security is correct host configuration. Even if you
+have a firewall shielding you from outside intrusion, an incorrectly
+configured host is a security risk. Host configuration is what cfengine
+is about, so we could easily write a book on this.  Rather than
+reiterating the extensive documentation, let's just consider a few
+examples which address actual problems and get down to business without
+further ado.
+
+   A cfengine configuration file is composed of objects with the
+following syntax (see the cfengine documentation):
+       rule-type:
+     
+         classes-of-host-this-applies-to::
+     
+               Actual rule 1
+               Actual rule 2 ...
+   The rule-types include checking file permissions, editing textfiles,
+disabling (renaming and removing permissions to) files, controlled
+execution of scripts and a variety of other things relating to host
+configuration. Some of the `control' rules are simply flags which
+switch on complex (read `smart') behaviour.  Every cfengine program
+needs an actionsequence which tells it the order in which bulk
+configuration operations should be evaluated. e.g.
+
+
+     control:
+     
+       actionsequence = ( netconfig copy processes editfiles )
+   You should look at the cfengine manual to get started with your
+configuration.
+
+   Let us step through some basic idioms which can repeated in
+different contexts.
+
+   As representative examples we shall take solaris and GNU/Linux as
+example operating systems. This is not to single them out as being
+particularly secure or insecure, it is merely due to their widespread
+use and for definiteness.
+
+
+File: cfengine-Tutorial.info,  Node: Disabling and replacing software,  Next: Process monitoring,  Prev: Configuration,  Up: Security and cfengine
+
+Disabling and replacing software
+================================
+
+   One of the simplest things which we are asked to do constantly is to
+disable dangerous programs as bugs are discovered. CERT security
+warnings frequently warn about programs with flaws which can compromise
+a system. In cfengine, disabling a file means renaming it to
+*.cf-disabled and setting its permission to 400.
+      disable:
+     
+        #
+        # CERT security patches
+        #
+     
+        solaris::
+     
+          /usr/openwin/bin/kcms_calibrate
+          /usr/openwin/bin/kcms_configure
+          /usr/bin/admintool
+          /etc/rc2.d/S99dtlogin
+          /usr/lib/expreserve
+     
+        linux::
+     
+           /sbin/dip-3.3.7n
+           /etc/sudoers
+           /usr/bin/sudoers
+   Although this is a trivial matter, the fact that it is automated
+means that cfengine is checking for this all the time. As long as a
+host is up and running (connected to the network or not) cfengine will
+be ensuring the named file is not present.
+
+   Another issue is to replace standard vendor programs with drop-in
+replacements.  For example, most admins would like to replace their
+vendor sendmail with the latest update from Eric Allman's site. One way
+to do this is to compile the new sendmail into a special directory,
+separate from vendor files and then to symbolically link the new
+program into place.
+
+      links:
+     
+        solaris||linux::
+     
+         /usr/lib/sendmail      ->!  /usr/local/lib/mail/bin/sendmail-8.9.3
+         /usr/sbin/sendmail     ->!  /usr/local/lib/mail/bin/sendmail-8.9.3
+         /etc/mail/sendmail.cf  ->!  /usr/local/lib/mail/etc/sendmail.cf
+   The exclamation marks mean (by analogy with the csh) that existing
+file objects should be replaced by links to the named files. Again the
+integrity of these links is tested every time cfengine runs.  If the
+object /usr/lib/sendmail is not a link to the named file, the old file
+is moved and a link is made. If the link is okay, nothing happens.
+After putting the new sendmail in place, you will need to make sure
+that the restricted shell configuration is in order.
+
+        #
+        # Sendmail, restricted shell needs these links
+        #
+     
+        solaris::
+     
+          # Most of these will only be run on the MailHost
+          # but flist (procmail) is run during sending...
+     
+          /usr/adm/sm.bin/vacation -> /usr/ucb/vacation
+          /usr/adm/sm.bin/flist   ->  /home/listmgr/.bin/flist
+     
+        linux::
+     
+          /usr/adm/sm.bin/vacation -> /usr/bin/vacation
+
+   Link management is a particularly useful feature of cfengine.  By
+putting links (actually all system modifications) into the cfengine
+configuration and never doing anything by hand, you build up a system
+which is robust to reinstallation. If you lose your host, you just have
+to run cfengine once or twice to reconstruct it.
+
+   Of course, the fundamental tenet of security is to be able to
+restrict privilege to resources. We therefore need to check the
+permissions on files. For instance, a recent CERT advisory warned of
+problems with some free unix mount commands which were setuid root. If
+we suppose there is a group of hosts called `securehosts' which we
+don't need to worry about, then we could remove the setuid bits on all
+other hosts as follows:
+
+      files:
+     
+        !securehosts.linux::
+     
+           /bin/mount     mode=555 owner=root action=fixall
+           /bin/umount    mode=555 owner=root action=fixall
+     
+        securehosts.linux::
+     
+           /bin/mount      m=6555 o=root action=fixall
+           /bin/umount     m=6555 o=root action=fixall
+   One area where cfengine excels over other tools is in its ascii file
+editing abilities. Editing textfiles in a non-destructive way is such
+an important operation that having used it you will wonder how you
+every managed without it! Here are some simple but real examples of how
+file editing can be used.
+
+      editfiles:
+     
+        # sun4, who are they kidding?
+     
+        { /etc/hosts.equiv
+     
+        HashCommentLinesContaining "+"
+        }
+     
+        #
+        # CERT security patch for vold vulnerability
+        #
+     
+        sunos_5_4::
+     
+           { /etc/rmmount.conf
+     
+           HashCommentLinesContaining "action cdrom"
+           HashCommentLinesContaining "action floppy"
+           }
+   TCP wrapper configuration can be managed easily by maintaining a
+pair of master files on a trusted host. Files of the form
+
+      # /etc/hosts.allow (exceptions)
+      #
+      # Public services
+     
+      sendmail: ALL
+      in.ftpd:  ALL
+      sshd:     ALL
+     
+      # Private services
+     
+      in.fingerd:  .example.org LOCAL
+      in.cfingerd: .example.org LOCAL
+      cfd:         .example.org LOCAL
+      sshdfwd-X11: .example.org LOCAL
+     
+      # Portmapper has to use IP series
+     
+      portmap: 128.39.89. 128.39.74. 128.39.75.
+   and
+
+      # /etc/hosts.deny (default)
+     
+      ALL: ALL
+   may be distributed to each host by cfengine
+     copy:
+     
+      /masterfiles/hosts.deny dest=/etc/hosts.deny
+                              mode=644
+                              server=trusted
+      /masterfiles/hosts.allow dest=/etc/hosts.allow
+                               mode=644
+                               server=trusted
+   and installed as follows
+      editfiles:
+     
+           { /etc/inet/inetd.conf
+     
+           # Make sure we're using tcp wrappers
+     
+           ReplaceAll "/usr/sbin/in.ftpd"    With "/local/sbin/tcpd"
+           ReplaceAll "/usr/sbin/in.telnetd" With "/local/sbin/tcpd"
+           ReplaceAll "/usr/sbin/in.rshd"    With "/local/sbin/tcpd"
+           ReplaceAll "/usr/sbin/in.rlogind" With "/local/sbin/tcpd"
+     
+      processes:
+     
+           "inetd" signal=hup
+   The services which we do not need should be removed altogether.
+There's no sense in tempting fate:
+
+     editfiles:
+     
+           { /etc/inetd.conf
+     
+           # Eliminate unwanted services
+     
+           HashCommentLinesContaining "rwall"
+           HashCommentLinesContaining "/usr/sbin/in.fingerd"
+           HashCommentLinesContaining "comsat"
+           HashCommentLinesContaining "exec"
+           HashCommentLinesContaining "talk"
+           HashCommentLinesContaining "echo"
+           HashCommentLinesContaining "discard"
+           HashCommentLinesContaining "charge"
+           HashCommentLinesContaining "quotas"
+           HashCommentLinesContaining "users"
+           HashCommentLinesContaining "spray"
+           HashCommentLinesContaining "sadmin"
+           HashCommentLinesContaining "rstat"
+           HashCommentLinesContaining "kcms"
+           HashCommentLinesContaining "comsat"
+           HashCommentLinesContaining "xaudio"
+           HashCommentLinesContaining "uucp"
+           }
+
+
+File: cfengine-Tutorial.info,  Node: Process monitoring,  Next: Monitoring files,  Prev: Disabling and replacing software,  Up: Security and cfengine
+
+Process monitoring
+==================
+
+   When it comes to process management we are usually interested in
+three things: i) making sure certain processes are running, ii) making
+sure some processes are NOT running and iii) sending HUP signals to
+force configuration updates.  To HUP a daemon and make sure that it is
+running, we write
+     processes:
+     
+      linux::
+     
+       "inetd"  signal=hup restart "/usr/sbin/inetd"   useshell=false
+       "xntp"              restart "/local/sbin/xntpd" useshell=false
+   The useshell option tells cfengine that it should not use a shell to
+start the program. The idea here is to protect against IFS attacks.
+Unfortunately some programs require a shell in order to be started, but
+most do not. This is an extra precaution.  When the cron daemon
+crashes, restarting it can be a problem since it does not close its
+filed descriptors properly when forking.  The dumb-option helps here:
+
+       "cron" matches=>1 restart "/etc/init.d/cron start"  useshell=dumb
+   To kill processes which should not be running, we write:
+
+
+      processes:
+     
+        solaris::
+     
+        #
+        # Don't want CDE stuff or SNMP peepholes...
+        #
+     
+         "ttdbserverd" signal=kill
+         "snmpd"       signal=kill
+         "mibiisa"     signal=kill
+
+   A couple of years ago, a broken cracked account was revealed at Oslo
+College by the following test in the cfengine configuration:
+
+     processes:
+     
+        # Ping attack ?
+     
+        "ping"  signal=kill inform=true
+   There are few legimate reasons to run the ping command more than a
+few times. The chances of cfengine detecting single pings is quite
+small.  But coordinated ping attacks are another story. When it was
+revealed that a user had twenty ping processes attempting to send large
+ping packets to hosts in the United States it was obvious the the
+account had been compromised. Fortunately for the recipient, the ping
+command was incorrectly phrased and would probably not have been
+noticed.
+
+     processes:
+     
+          "sshd"
+                       restart "/local/sbin/sshd"
+                       useshell=false
+     
+          "snmp"       signal=kill
+          "mibiisa"    signal=kill
+     
+          "named"      matches=>1
+                       restart "/local/bind/bin/named"
+                       useshell=false
+     
+          # Do the network community a service and run this
+     
+          "identd"   restart "/local/sbin/identd" inform=true
+   Process management also includes the garbage collection which we
+shall return to briefly.
+
+
+File: cfengine-Tutorial.info,  Node: Monitoring files,  Next: The setuid log,  Prev: Process monitoring,  Up: Security and cfengine
+
+Monitoring files
+================
+
+   Almost all security programs available are for the monitoring of
+file integrity. Cfengine also incorporates tools for monitoring files.
+Here are some of the elements in the faily complex files command:
+
+      files:
+     
+          classes::
+     
+             /file-object
+                               mode=mode
+                               owner=uid-list
+                               group=gid-list
+                               action=fixall/warnall..
+                               ignore=pattern
+                               include=pattern
+                               exclude=pattern
+                               checksum=md5
+                               syslog=true/on/false/off
+
+   In additions to these, there are extra flags for BSD filesystems and
+ways of managing file ACLs for systems like NT.  Here are some examples
+of basic checks on file permissions:
+
+
+      classes:
+     
+       # Define a class of hosts based on a test...
+     
+       have_shadow = ( `/bin/test -f /etc/shadow` )
+     
+       NFSservers = ( server1 server2 )
+     
+      files:
+     
+        any::
+     
+           /etc/passwd mode=0644 o=root  g=other  action=fixplain
+     
+        have_shadow::
+     
+           /etc/shadow mode=0400 o=root  g=other  action=fixplain
+     
+        # Takes a while so do this at midnight and only on servers
+     
+        NFSservers.Hr00::
+     
+           /usr/local
+                 mode=-0002   Check no files are writable!
+                 recurse=inf
+                 owner=root,bin
+                 group=0,1,2,3,4,5,6,7,staff
+                 action=fixall
+   In the last example we parse through a whole file system
+(recurse=inf) and as a result we get a number of checks for free. Any
+previously unknown setuid programs are reported as well as any
+suspicious filenames (see below).
+
+
+File: cfengine-Tutorial.info,  Node: The setuid log,  Next: Suspicious filenames,  Prev: Monitoring files,  Up: Security and cfengine
+
+The setuid log
+==============
+
+   Cfengine is always on the lookout for files which are setuid or
+setgid root.  It doesn't go actively looking for them uninvited, but
+whenever you get cfagent to check a file or directory with the files
+feature, it will make a note of setuid programs it finds there. These
+are recorded in the file cfengine.host.log which is stored under
+/var/cfengine or /var/log/cfengine.  When new setuid programs are
+discovered, a warning is printed, but only if you are root. If you ever
+want a complete list, delete the log file and cfengine will think that
+all of the setuid programs it finds are new. The log file is not
+readable by normal users.
+
+
+File: cfengine-Tutorial.info,  Node: Suspicious filenames,  Next: Checksums and Tripwire functionality,  Prev: The setuid log,  Up: Security and cfengine
+
+Suspicious filenames
+====================
+
+   Whenever cfagent opens a directory and scans through files and
+directories (recursively) (files, tidy, copy), it is also on the
+lookout for for suspicious filenames, i.e. files like "..  ."
+containing only space and/or dots. Such files are seldom created by
+sensible sources, but are often used by crackers to try to hide
+dangerous programs. Cfagent warns about such files. Although not
+necessarily a security issue, cfagent will also warn about filenames
+which contain non-printable characters if desired, and directories
+which are made to look like plain files by giving them filename
+extensions.
+
+     control:
+     
+        #
+        # Security checks
+        #
+     
+        NonAlphaNumFiles = ( on )
+        FileExtensions = ( o a c gif jpg html ) # etc
+        SuspiciousNames = ( .mo lrk3 lkr3 )
+   The file extension list may be used to detect concealed directories
+during these searches, if users create directories which look like
+common files this will be warned about. Additional suspicious filenames
+can be checked for automatically as a matter if course. This is
+commented further below.
+
+   The mail spool directory is a common place for users to try to hide
+dowloaded files. These options inform about files which do not have the
+name of a user or are not owned by a valid user:
+
+      control:
+     
+        WarnNonOwnerMail = ( true )
+        WarnNonUserMail = ( true )  # Warn about mail which is not owned by a user
+   Corresponding commands exist to delete these files without further
+ado.  This can be a useful way of cleaning up after users whose accounts
+have been removed.
+
+
+File: cfengine-Tutorial.info,  Node: Checksums and Tripwire functionality,  Next: FileExtensions,  Prev: Suspicious filenames,  Up: Security and cfengine
+
+Checksums and Tripwire functionality
+====================================
+
+   Cfagent can be used to check for changes in files which only
+something as exacting as an MD5 checksum/digest can detect. If you
+specify a checksum database and activate checksum verification,
+
+     control:
+     
+       ChecksumDatabase = ( /var/cfengine/cache.db )
+     
+       ChecksumUpdates = ( false )
+     
+     files:
+     
+         /filename checksum=md5 ....
+         /dirname  checksum=md5 recurse=inf....
+     
+         # If the database isn't secure, nothing is secure...
+     
+         /var/cfengine/cache.db  mode=600 owner=root action=fixall
+   then cfagent will build a database of file checksums and warn you
+when files' checksums change. This makes cfagent act like Tripwire
+(currently only with MD5 checksums). It can be used to show up Trojan
+horse versions of programs. It should be used sparingly though since
+database management and MD5 checksum computation are resource intensive
+operations and this could add significant time to a cfagent run. The
+ChecksumUpdates variable (normally false) can be set to true to update
+the checksum database when programs change for valid reasons.
+
+   Warnings are all every fine and well, but the spirit of cfengine is
+not to bother us with warnings, it is to fix things automatically.
+Warning is a useful supplement, but in security breaches it is better
+to fix the problem, rather than leaving the host in a dangerous state.
+If you are worried about the integrity of the system then don't just
+warn about checksum mismatches here, make an md5 copy comparison
+against a read-only medium which has correct, trusted version of the
+file on it. That way if a binary is compromised you will not only warn
+about it but also repair the damage immediately!
+
+   The control variable ChecksumUpdates may be switched to on in order
+to force cfagent to update its checksum database after warning of a
+change.
+
+
+File: cfengine-Tutorial.info,  Node: FileExtensions,  Next: NonAlphaNumFiles,  Prev: Checksums and Tripwire functionality,  Up: Security and cfengine
+
+FileExtensions
+==============
+
+   This list may be used to define a number of extensions which are
+regarded as being plain files by the system.  As part of the general
+security checking cfagent will warn about any directories which have
+names using these extensions. They may be used to conceal directories.
+
+       FileExtensions = ( c o gif jpg html )
+
+
+File: cfengine-Tutorial.info,  Node: NonAlphaNumFiles,  Next: Defensive garbage collection,  Prev: FileExtensions,  Up: Security and cfengine
+
+NonAlphaNumFiles
+================
+
+   If enabled, this option causes cfagent to detect and disable files
+which have purely non-alphanumeric filenames, i.e. files which might be
+accidental or deliberately concealed. The files are then marked with a
+suffix .cf-nonalpha and are rendered visible.
+
+       NonAlphaNumFiles = ( on )
+   These files can then be tidied (deleted) or disabled by searching for
+the suffix pattern. Note that alphanumeric means ascii codes less than
+32 and greater than 126.
+
+
+File: cfengine-Tutorial.info,  Node: Defensive garbage collection,  Next: Anonymous FTP example,  Prev: NonAlphaNumFiles,  Up: Security and cfengine
+
+Defensive garbage collection
+============================
+
+   We tend to be worried about the fact that crackers will destroy our
+systems and make them unusable, but many operating systems are
+programmed to do this to themselves!  There are few systems which can
+survive a full system disk and yet many logging agents go on filling up
+disks without ever checking to see how full they are getting. In short
+they choke themselves in a self-styled denial of service attack.
+Cfagent can help here by rotating logs frequently and by tidying
+temporary file directories:
+
+     disable:
+     
+       Tuesday.Hr00::
+     
+        #
+        # Disabling these log files weekly prevents them from
+        # growing so enormous that they fill the disk!
+        #
+     
+        /local/iu/httpd/logs/access_log   rotate=2
+        /local/iu/httpd/logs/agent_log    rotate=2
+        /local/iu/httpd/logs/error_log    rotate=2
+        /local/iu/httpd/logs/referer_log  rotate=2
+     
+       FTPserver.Sunday::
+     
+        /local/iu/logs/xferlog rotate=3
+     
+     tidy:
+     
+         /tmp pattern=* age=1
+
+   Process garbage collection is just as important.  There are lot's of
+reasons why process tables fill up with unterminated processes. One
+example is faulty X terminal software which does not kill its children
+at logout. Another is that programs like netscape and pine tend to go
+into loops from which they never return, gradually loading the system
+with an ever increasing glacial burden. Just killing old processes can
+cause your system to spring back from its ice age blues (hopefully
+without littering the system with too many dead mammoths or bronze age
+axe-bearers). If the host concerned has important duties then this lack
+of responsiveness can compromise key services. It also gives local
+users a way of carrying out denial of service attacks on the system.
+
+   If users always log out at the end of the day and log in again the
+day after then this is easy to address with cfengine. Here is some code
+to kill commonly hanging processes. Note that on BSD like systems
+process options "aux" are required to see the relevant processes:
+     processes:
+     
+       linux|freebsd|sun4::
+     
+           SetOptionString "aux"
+     
+       any::
+     
+       "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec"
+     
+           signal=kill
+     
+           include=ftpd
+           include=tcsh
+           include=xterm
+           include=netscape
+           include=ftp
+           include=pine
+           include=perl
+           include=irc
+           include=java
+           include=/bin/ls
+           include=emacs
+           include=passwd
+   This pattern works like this: as processes become more than a day old
+they name of the month appears in the date of the process start time.
+These are matched by the regular expression. The include lines then
+filter the list of the processes further picking out lines which
+include the specified strings.  On some BSD-like systems the default ps
+option string is "-ax" and you might need to reset it to something
+which adds the start date in order to make this work.
+
+   Another job for process management is to clean up processes which
+have hung, gone amok or which are left over from old logins. Here is a
+regular expression which detects non-root processes which have clocked
+up more than 100 hours of CPU time. This is a depressingly common
+phenomenon when a program goes into an infinite loop. It can starve
+other processes of resources in a very efficient denial of service
+attack.
+      any::
+     
+       #
+       # Kill processes which have run on for too long e.g. 999:99 cpu time
+       # Careful a pattern to match 99:99 will kill everything!
+       #
+     
+       "[0-9][0-9][0-9][0-9]:[0-9][0-9]" signal=term exclude=root
+            "[0-9][0-9][0-9]:[0-9][0-9]" signal=term exclude=root
+   Under NT this is not so simple, since the process table for the
+cygwin library applies only to processes which have been started by
+programs working under the Unix process emulation.  Hopefully this
+short-coming can be worked around at some point in the future.
+
+
+File: cfengine-Tutorial.info,  Node: Anonymous FTP example,  Next: WWW security,  Prev: Defensive garbage collection,  Up: Security and cfengine
+
+Anonymous FTP example
+=====================
+
+   Configuring a service like anonymous FTP requires a certain amount of
+vigilance. It is a good idea to automate it and let cfengine make sure
+that things don't go astray.  Note that we constantly ensure that the
+ls program used by the anonymous ftp server is a trusted program by
+checking it with an md5 signture of a trusted version of the program.
+If for some reason it should be replaced with a Trojan horse, cfagent
+would notice the incorrect checksum (md5) and move the bad program to
+ls.cf-saved and immediately replace it with the correct version without
+waiting for the adminstrator to act. The inform and syslog options ask
+for an explicit warning to be made about this copy.  Here is a complete
+anonymous ftp setup and maintenance program for solaris hosts.
+
+     control:
+     
+        actionsequence = ( directories copy editfiles files )
+     
+        # Define variables
+     
+        ftp = ( /usr/local/ftp )
+        uid = ( 99 )  # ftp user
+        gid = ( 99 )  # ftp group
+     
+     directories:
+     
+      solaris::
+     
+        $(ftp)/pub      mode=644 owner=root group=other
+        $(ftp)/etc      mode=111 owner=root group=other
+        $(ftp)/dev      mode=555 owner=root group=other
+        $(ftp)/usr      mode=555 owner=root group=other
+        $(ftp)/usr/lib  mode=555 owner=root group=other
+     
+     files:
+     
+       solaris::
+     
+        $(ftp)/etc/passwd mode=644 o=root    action=fixplain
+        $(ftp)/etc/shadow mode=400 o=root    action=fixplain
+        $(ftp)/pub        mode=644 owner=ftp action=fixall  recurse=inf
+     
+     copy:
+     
+       solaris::
+     
+           # Make sure ls is a trusted program by copying
+           # a secure location...
+     
+        /bin/ls dest=$(ftp)/usr/bin/ls
+                mode=111
+                owner=root
+                type=checksum
+                inform=true
+                syslog=true
+     
+        /etc/netconfig dest=$(ftp)/etc/netconfig mode=444 o=root
+     
+        /devices/pseudo/mm@0:zero      dest=$(ftp)/dev/zero      mode=666 o=root
+        /devices/pseudo/clone@0:tcp    dest=$(ftp)/dev/tcp       mode=444 o=root
+        /devices/pseudo/clone@0:udp    dest=$(ftp)/dev/udp       mode=666 o=root
+        /devices/pseudo/tl@0:ticotsord dest=$(ftp)/dev/ticotsord mode=666 o=root
+     
+        /usr/lib        dest=$(ftp)/usr/lib recurse=2
+                        mode=444
+                        owner=root
+                        backup=false
+                        include=ld.so*
+                        include=libc.so*
+                        include=libdl.so*
+                        include=libmp.so*
+                        include=libnsl.so*
+                        include=libsocket.so*
+                        include=nss_compat.so*
+                        include=nss_dns.so*
+                        include=nss_files.so*
+                        include=nss_nis.so*
+                        include=nss_nisplus.so*
+                        include=nss_xfn.so*
+                        include=straddr.so*
+     
+        /usr/share/lib/zoneinfo dest=$(ftp)/usr/share/lib/zoneinfo
+                         mode=444 recurse=2 o=root type=binary
+     
+     editfiles:
+     
+        solaris::
+     
+         #
+         # Make sure that umask is right for ftpd
+         # or files can be left 666 after upload!
+         #
+     
+       { /etc/rc2.d/S72inetsvc
+     
+       PrependIfNoSuchLine "umask 022"
+       }
+     
+       { $(ftp)/etc/passwd
+     
+       AutoCreate
+       EmptyEntireFilePlease
+       AppendIfNoSuchLine "ftp:x:$(uid):$(gid):Anonymous FTP:$(ftp):/bin/sync"
+       }
+     
+       { $(ftp)/etc/group
+     
+       AutoCreate
+       EmptyEntireFilePlease
+       AppendIfNoSuchLine "ftp::$(gid):"
+       }
+     
+       {  $(ftp)/etc/shadow
+     
+       AutoCreate
+       EmptyEntireFilePlease
+       AppendIfNoSuchLine "ftp:NP:6445::::::"
+       }
+     
+       # Finally...useful for chown
+     
+       { /etc/passwd
+     
+       AppendIfNoSuchLine "ftp:x:$(uid):$(gid):Anonymous FTP:$(ftp):/bin/sync"
+       }
+     
+       { /etc/group
+     
+       AppendIfNoSuchLine "ftp::$(gid):"
+       }
+
+
+File: cfengine-Tutorial.info,  Node: WWW security,  Next: Miscellaneous security of cfengine itself,  Prev: Anonymous FTP example,  Up: Security and cfengine
+
+WWW security
+============
+
+   The security of the web is a slightly paradoxical business.  On the
+one hand, we make a system for distributing files to anyone without the
+need for passwords, and on the other hand we are interested in limited
+who gets what information and who can change what. If you want web
+privacy you have to exclude the possibility of running untrusted CGI
+scripts, i.e. CGI programs which you did not write yourself since CGI
+programs can circumvent any server security.  This is because of a
+fundamental weakness in the way that a WWW server works.  It makes
+user-CGI scripts incompatible with the idea of private WWW areas.
+
+   The problem with CGI is this: in order for the httpd daemon to be
+able to read information to publish it, that information must be
+readable by the UID with which httpd runs (e.g. the www special user
+(you should not run with uid nobody since that can be mixed up with NFS
+mappings)).  But CGI programs automatically run with this www UID also.
+Since it is not possible to restrict the actions of CGI programs which
+you did not write yourself, any CGI program has automatically normal
+file permission access to any file which the server can see. A CGI
+program could choose to open a restricted file circumventing the
+security of the daemon. In short, privacy requires a separate UID (a
+separate daemon and port number) or a separate server host altogether.
+
+   Provided you acknowledge this weakness, you can still use cfengine
+to administrate the permissions and access files on say two WWW servers
+from your central location. Let us imagine having a public WWW server
+and a private WWW server and assume that they have a common user/UID
+database. We begin by defining a user-ID and group-ID for the public
+and private services. These need to have different ID's in order to
+prevent the CGI trick mentioned above.
+
+     editfiles:
+     
+      wwwpublic::
+     
+       { $(publicdocroot)/.htaccess
+     
+       AutoCreate
+       EmptyEntireFilePlease
+       AppendLine "order deny,allow"
+       AppendLine "deny from all"
+       AppendLine "allow from all"
+       }
+     
+      wwwprivate::
+     
+       { $(privatedocroot)/.htaccess
+     
+       AutoCreate
+       EmptyEntireFilePlease
+       AppendLine "order deny,allow"
+       AppendLine "deny from all"
+       AppendLine "allow .example.org"
+       }
+   Your documnts should be owned by a user and group which is *not* the
+same as the UID/GID the daemon runs with, otherwise CGI programs and
+server-side emebellishments could write and destroy those files. You
+will also want to ensure that the files are readable by the www daemon,
+so a files command can be used to this end.  You might want a group of
+people to have access to the files to modifiy their contents.
+
+      files:
+     
+      wwwprivate::
+     
+        $(privatedocroot) mode=664 owner=priv-data group=priv-data act=fixall
+     
+      wwwpublic::
+     
+        $(publicdocroot) mode=664 owner=public-data group=public-data act=fixall
+
+
+File: cfengine-Tutorial.info,  Node: Miscellaneous security of cfengine itself,  Next: Privacy (encryption),  Prev: WWW security,  Up: Security and cfengine
+
+Miscellaneous security of cfengine itself
+=========================================
+
+
+      control:
+     
+        SecureInput  = ( on )
+   If this is set cfengine will not read any files which are not owned
+by the uid running the program, or which are writable by groups or
+others.
+
+
+File: cfengine-Tutorial.info,  Node: Privacy (encryption),  Next: Trust and key races,  Prev: Miscellaneous security of cfengine itself,  Up: Security and cfengine
+
+Privacy (encryption)
+====================
+
+   Encryption (privacy) is not often a big deal in system
+administration. With the exception of the distribution of passwords and
+secret keys themselves, there is little or no reason to maintain any
+level of privacy when transferring system files (binaries for
+instance).  If you find yourself using a tool like cfengine to transmit
+company secrets from one place to another you should probably book
+yourself into the nearest asylum for a checkup. Cfengine is not about
+super-secure communication, but it can be used to perform the simple
+job of file distribution through an encrypted link (e.g. as a NIS
+replacement or other password distributor). Cfengine uses the triple
+DES implemenation in the OpenSSL distribution (or equivalent) to provide
+`good enough' privacy during remote copying.
+
+   The most important issue in system security is authentication.
+Without the ability to guarantee the identity of a user or of trusted
+information it is impossible to speak of security at all.  Although
+services like pidentd can go some way to confirming the identity of a
+user, the only non-spoofable way of confirming identity is to use a
+shared secret -- i.e. a password. A password works by demanding that
+two parties who want to trust one another must both know a piece of
+information which untrusted parties do not.
+
+   Following the second world war, the now famous pair, Julius and
+Ethel Rosenberg were convicted and executed for spying on the U.S. bomb
+project for the Soviet Union in 1953. At one point they improvised a
+clever password system: a cardboard Jell-O box was torn in two and one
+half given to a contact whom they later would need to identify.  The
+complex edge shape and colour matching made a complex key quite
+impossible to forge. Our bodies use a similar method of receptor
+identification of molecules for immune responses as well as for smell
+(with some subtleties).  Without matching secrets it is impossible to
+prove someone's identity.
+
+   To copy a file over an encrypted link, you write:
+
+      copy:
+     
+         source dest=destination encrypt=true server=myserver
+                                  trustkey=true
+   Bear in mind that the server must be a trusted host. Privacy won't
+help you if the data you are collecting are faulty.  In order to use the
+encryption there must be a public/private key pair on each host. The
+public key must be known by both hosts. You can use the program cfkey to
+generate a new key file. This public key file must then be distributed.
+Cfagent/cfrun and cfservd can exchange keys securely over the network.
+This is fine, provided you trust the sources of the keys (how do you
+know the key is from the host/user who claims to have sent it?).
+
+   Under encrypted communications cfengine conceals the names and
+contents of files. Provided the private key files are private, this has
+the added side effect of authenticating both hosts for one another.
+
+   On the server side, you can choose whether root on a client host
+should have server-root's privileges to read protected files on the
+server. In the `cfservd.conf' file you make a list:
+     control:
+     
+       TrustKeysFrom = ( IP-ADDRESS/SERIES )
+     
+     admit:
+     
+       /filetree *.domain.country root=myhost,yourhost
+     
+       /etc/shadow *.domain.country encrypt=true
+   In the second example, you can also restrict access to certain files
+to encrypted lines, i.e. demand that clients use a private connection
+to collect the file, in order to prevent wiretapping.
+
+
+File: cfengine-Tutorial.info,  Node: Trust and key races,  Next: Adaptive locks,  Prev: Privacy (encryption),  Up: Security and cfengine
+
+Trust and key races
+===================
+
+   Trust is the central issue in the security of any system. Public and
+private keys help you to trust other hosts, only after the genuine,
+legitimate public keys have been securely distributed to all relevant
+parties. Until that has happened, it is necessary to trust the identity
+of remote hosts. Cfengine provides trust policy options which decide
+whether keys should be exchanged on trust or not, when remote parties
+connect for the first time. If you do not want to blindly trust keys,
+you could arrange to exchange key files manually, e.g.
+
+     scp /var/cfengine/ppkeys/localhost.pub remote:/var/cfengine/ppkeys/root-IP-NUMBER.pub
+
+or you could arrange to connect at a specific time, so minimize the
+chances of spoofer racing you to the finishing line in transferring a
+key for a given user at a given host.
+
+   Note that, even program like ssh which use "privileged ports" are no
+longer immune to spoofing. Privileged ports are ports which only the
+root user can bind to. The idea used to be, a connection on a privileged
+port must have come from a trusted user, because only someone with the
+root/Administrator password would be able to bind to a privileged port.
+Today, that idea is naive at best. Anyone can set up their own host,
+pull the plug on another and spoof an address or user identity - there
+are so many ways to attack a system that it is impossible to know with
+certainty to whom one is talking over the net. The only security one
+has is in being able to keep a secret key. However, if someone gets
+there before you, with a fake key, and claims to be you, the receiver
+cannot know better. This applies to any and all cryptographic software.
+
+   Cfengine secure copy is not based on SSL/TLS (although it shares
+some of the lower level libraries). SSL is not appropriate for a system
+administration tool, because it uses a trust model based on a third
+party, such as Verisign.  Most adminisrators are not prepared to pay a
+fee to register every host on their network, with a trusted third party.
+Cfengine does not use the Secure Shell protocol either. The ssh
+protocol is not directly appropriate for a system management tool,
+because it provides only unilateral authentication of user to server.
+Cfengine authenticates these parties mutually, i.e.  user to server,
+and server to user. Moreover, ssh requires a user to manually accept a
+key on trust, when the public keys are unknown to the parties, whereas
+cfengine works non-interactively. SSh uses the notion of binding to a
+trusted port, to confirm privileged user identity. Cfengine does not
+make this assumption.
+
+
+File: cfengine-Tutorial.info,  Node: Adaptive locks,  Next: Spoofing,  Prev: Trust and key races,  Up: Security and cfengine
+
+Adaptive locks
+==============
+
+   Cfengine treats all of its operations as transactions which are
+locked. Locking prevents contention from competing processes and it
+also places reasonable limits on the execution of the program.  The
+fact that operations are locked means that several cfengine programs
+can coexist without problems. Two locking parameters control the way in
+which operations can procure locks.  The IfElapsed parameter tells
+operations that they can only be performed if a certain period of time
+has elapsed since the last time the action was performed. This is
+anti-spamming protection.  The ExpireAfter parameter tells cfengine
+that no action should last more than a given length of time. This is
+protection against hanging sub-processes.
+
+
+File: cfengine-Tutorial.info,  Node: Spoofing,  Next: Race conditions in file copying,  Prev: Adaptive locks,  Up: Security and cfengine
+
+Spoofing
+========
+
+   Spoofing refers to attempts to masquerade as another host when
+sending network transmissions. The cfd program which can be used to
+transfer files or activate cfengine remotely attempts to unmask such
+attempts by performing double reverse lookups in the name service. This
+verifies by a trusted server that the socket address and the host name
+are really who they claim to be. If you have the TCP wrappers package
+on your system (libwrap) then cfd will use this as additional
+protection.  Also if you have
+
+       CheckIdent = ( on )
+   cfd will demand verification of connections by attempting to connect
+to a pidentd server on the calling host. Secret keys also provide
+protection against spoofing by providing a conformation of
+trustworthiness based on a shared secret.
+
+
+File: cfengine-Tutorial.info,  Node: Race conditions in file copying,  Next: size= in copy,  Prev: Spoofing,  Up: Security and cfengine
+
+Race conditions in file copying
+===============================
+
+   When copying files from a source, it is possible that something
+might go wrong during the operation and leave a corrupt file in place.
+For example, the disk might become full while copying a file. This
+could lead to problems. Cfengine deals with this by always copying to a
+new file on the destination filesystem (prefix .cfnew) and then
+renaming it into place, only if the transfer was successful. This
+ensures that there is space on the filesystem and that nothing went
+wrong with the network connection or the disk during copying.
+
+
+File: cfengine-Tutorial.info,  Node: size= in copy,  Next: useshell= and owner= in shellcommands,  Prev: Race conditions in file copying,  Up: Security and cfengine
+
+size= in copy
+=============
+
+   As a further check on copying, cfengine allows you to define
+acceptable limits on the size of files. After all, sometimes errors
+might occur quite independently of anything you are doing with
+cfengine. Perhaps the master password file got emptied somehow, or got
+replaced by a binary, through some silly mistake. By checking making an
+estimate of the expected size of the file and adding it to the copy
+command, you can avoid installing a corrupt file and making a localized
+problem into a global one.
+
+
+File: cfengine-Tutorial.info,  Node: useshell= and owner= in shellcommands,  Next: Firewalls,  Prev: size= in copy,  Up: Security and cfengine
+
+useshell= and owner= in shellcommands
+=====================================
+
+   There are dangers in starting scripts from programs which run with
+root privileges. Normally, shell commands are started by executing them
+with the help of a /bin/sh -c command. The trouble with this is that it
+leaves one open to a variety of attacks. One example is fooling the
+shell into starting foreign programs by manipulating the IFS variable
+to treat '/' as a separator. You can ask cfengine to start programs
+directly, without involving an intermediary shell, by setting the
+useshell variable to false. The disadvantage is that you will not be
+able to use shell directives such as | and > in your commands. The
+owner=uid directive executes shell commands as a special user, allowing
+you to safely run scripts without root privilege.
+

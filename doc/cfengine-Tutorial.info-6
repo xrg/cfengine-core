@@ -1,0 +1,365 @@
+This is cfengine-Tutorial.info, produced by makeinfo version 4.0 from
+cfengine-Tutorial.texinfo.
+
+INFO-DIR-SECTION System Utilities
+START-INFO-DIR-ENTRY
+* cfengine Tutorial: (cfengine-Tutorial.info).
+                        Cfengine is a language based tool specifically
+                        designed for configuring and maintaining BSD
+                        and System-5-like operating systems attached
+                        to a TCP/IP network.
+END-INFO-DIR-ENTRY
+
+
+File: cfengine-Tutorial.info,  Node: Firewalls,  Prev: useshell= and owner= in shellcommands,  Up: Security and cfengine
+
+Firewalls
+=========
+
+   Cfengine is a useful tool for implementing, monitoring and
+maintaining firewalls. You can control what programs are supposed to be
+on the firewall and what programs are not supposed to be there. You can
+control file permissions, processes and a dozen other things which make
+up the configuration of a bastion host.  By referencing important
+programs against a read only medium you can not only monitor host
+integrity but always be certain that you are never more than a cfengine
+execution away from correctness.
+
+
+File: cfengine-Tutorial.info,  Node: Summary,  Next: Variable Index,  Prev: Security and cfengine,  Up: Top
+
+Summary
+*******
+
+   Cfengine is not a tool, it is an environment for managing host
+configuration and integrity. In this article it has only been possible
+to scratch the surface of what cfengine can do.  To fully understand
+the syntax of the examples here you should read the documentation for
+cfengine.
+
+   The big advantage of cfengine over many other configuration schemes
+is that you can have *everything* in one file (or set of files). The
+global file is common to every host and yet it can be as general or as
+specific as you want it to be.  You can use it as a front end for cron,
+and you can use its advanced features to make your hosts *converge* to
+a desired, correct state.
+
+
+File: cfengine-Tutorial.info,  Node: Variable Index,  Next: Concept Index,  Prev: Summary,  Up: Top
+
+Variable Index
+**************
+
+* Menu:
+
+* !:                                     Classes basics.
+* ":                                     Quoted strings.
+* $(arch):                               Variable substitution.
+* $(binserver):                          Variable substitution.
+* $(class):                              Variable substitution.
+* $(cr):                                 Variable substitution.
+* $(date):                               Variable substitution.
+* $(dblquote):                           Variable substitution.
+* $(dollar):                             Variable substitution.
+* $(domain):                             Variable substitution.
+* $(faculty):                            Variable substitution.
+* $(fqhost):                             Variable substitution.
+* $(host):                               Variable substitution.
+* $(ipaddress):                          Variable substitution.
+* $(lf):                                 Variable substitution.
+* $(n):                                  Variable substitution.
+* $(quote):                              Variable substitution.
+* $(site):                               Variable substitution.
+* $(spc):                                Variable substitution.
+* $(sysadm):                             Variable substitution.
+* $(tab):                                Variable substitution.
+* $(timezone):                           Variable substitution.
+* $(year):                               Variable substitution.
+* ':                                     Quoted strings.
+* -a option:                             Variable substitution.
+* -D option:                             Classes basics.
+* -f option <1>:                         CFINPUTS environment variable.
+* -f option:                             Invoking cfagent.
+* -h option:                             Invoking cfagent.
+* -N option <1>:                         Debugging tips.
+* -N option:                             Classes basics.
+* -n option:                             Invoking cfagent.
+* -v option:                             Invoking cfagent.
+* /etc/exports:                          Using netgroups.
+* /var/cfengine/cfengine.log:            Log files.
+* /var/cfengine/output:                  Running cfengine permanently.
+* `:                                     Quoted strings.
+* acl:                                   ACLs.
+* any:                                   The generic class any.
+* binserver <1>:                         Special variables.
+* binserver:                             Variable substitution.
+* CFALLCLASSES:                          Variable substitution.
+* domain:                                Variable substitution.
+* exclude=:                              File sweeps.
+* exec:                                  Variable substitution.
+* faculty:                               Variable substitution.
+* filter=:                               File sweeps.
+* host:                                  Variable substitution.
+* include=:                              File sweeps.
+* MaxCfengines:                          Variable substitution.
+* moduledirectory:                       Writing plugin modules.
+* OutputPrefix:                          Variable substitution.
+* repchar:                               Variable substitution.
+* site:                                  Variable substitution.
+* smtpserver:                            Running cfengine permanently.
+* split <1>:                             Iterating over lists.
+* split:                                 Variable substitution.
+* sysadm <1>:                            Variable substitution.
+* sysadm:                                Running cfengine permanently.
+* timezone:                              Variable substitution.
+* underscoreclasses:                     Variable substitution.
+
+
+File: cfengine-Tutorial.info,  Node: Concept Index,  Next: FAQ Index,  Prev: Variable Index,  Up: Top
+
+Concept Index
+*************
+
+* Menu:
+
+* !:                                     Classes basics.
+* -h option:                             Invoking cfagent.
+* -N option:                             Debugging tips.
+* .cfdisabled files:                     Disabling and the file repository.
+* .cfengine.rm:                          Log files.
+* .cfnew files:                          Emulating rdist.
+* .cfsaved files:                        Disabling and the file repository.
+* /etc/hosts.equiv:                      Disabling and the file repository.
+* /etc/inetd.conf file and cfengine:     Emulating rdist.
+* /home:                                 Using the automounter.
+* /users:                                Using the automounter.
+* /var/adm/wtmpx:                        Disabling and the file repository.
+* /var/cfengine/cfengine.log:            Log files.
+* /var/cfengine/output:                  Running cfengine permanently.
+* /var/log/cfengine/cfengine.log:        Log files.
+* /var/lp/logs/lpsched:                  Disabling and the file repository.
+* Access control:                        Access control.
+* Access control by directory:           Configuration file cfservd.conf.
+* Access control in cfservd:             Configuration file cfservd.conf.
+* Access control lists:                  ACLs.
+* ACL aliases:                           ACLs.
+* ACLs:                                  ACLs.
+* ACLs, DFS:                             ACLs.
+* ACLs, solaris:                         ACLs.
+* Actions, order of:                     Program structure.
+* AFS:                                   Using the automounter.
+* Annulling entries when debugging:      Debugging tips.
+* Atomic operations in cfagent:          Spamming and security.
+* Atoms in cfagent:                      Spamming and security.
+* auto_direct:                           Using the automounter.
+* auto_master:                           Using the automounter.
+* automount:                             Using the automounter.
+* Backup policy:                         Files and links.
+* Binary server:                         NFS filesystem resources.
+* Binary server, matching:               Special variables.
+* Binary servers, declaring:             How does it work?.
+* binserver variable and actionsequence: Special variables.
+* cfagent, starting:                     Invoking cfagent.
+* cfagent.conf <1>:                      CFINPUTS environment variable.
+* cfagent.conf:                          Invoking cfagent.
+* cfagent.conf file:                     What services?.
+* CFALLCLASSES:                          Variable substitution.
+* cfengine model:                        NFS resources.
+* cfengine model, how it works:          How does it work?.
+* cfexecd <1>:                           Running cfengine permanently.
+* cfexecd:                               Functionality.
+* CFINPUTS variable <1>:                 Configuration file cfservd.conf.
+* CFINPUTS variable:                     CFINPUTS environment variable.
+* cfrun:                                 Access control.
+* cfrun program <1>:                     Remote execution of cfagent.
+* cfrun program <2>:                     Emulating rdist.
+* cfrun program:                         What services?.
+* cfservd and access keyword:            Access control.
+* cfservd daemon:                        What services?.
+* cfservd dameon:                        Remote execution of cfagent.
+* cfservd.conf file <1>:                 Configuration file cfservd.conf.
+* cfservd.conf file:                     What services?.
+* cfwatcher program:                     What services?.
+* Class data and scripts:                Variable substitution.
+* Class, generic any:                    The generic class any.
+* Classes:                               Classes basics.
+* Classes based on shell commands:       shellcommand classes.
+* Classes, compound:                     Classes basics.
+* Classes, defining and undefining:      Classes basics.
+* Clock synchronization during copying:  Emulating rdist.
+* Comments:                              Program structure.
+* Compound classes:                      Classes basics.
+* Config file, default name:             Invoking cfagent.
+* Configuration files and registries:    Control files.
+* Contention during copying under load:  Splaying host times.
+* copy, file sweeps:                     File sweeps.
+* core files, caution!:                  Files and links.
+* Cron jobs, controlling with cfengine:  Using cfengine as a front-end for cron.
+* Day of the week:                       Building flexible time classes.
+* Deadlock protection:                   Deadlocks and runaway loops.
+* Debugging, annulling entries:          Debugging tips.
+* Default file:                          Invoking cfagent.
+* Defining variables using other variables: Variable substitution.
+* Device boundaries and remote copy access: Configuration file cfservd.conf.
+* DFS:                                   Using the automounter.
+* DHCP:                                  Network interface.
+* Directory Names, use of wildcards:     Wildcards in directory names.
+* Distributed configuration:             Building a distributed configuration.
+* DNS:                                   Name servers (DNS).
+* Dots in hostnames:                     Classes basics.
+* editfiles, file sweeps:                File sweeps.
+* Environment variable, CFINPUTS:        CFINPUTS environment variable.
+* Environment variables:                 Variable substitution.
+* Exceptions:                            Defining classes.
+* exclude=:                              File sweeps.
+* exclude=, problems:                    File sweeps.
+* Excluding actions in a controlled way: Defining classes.
+* ExpireAfter, caution setting to zero!: Deadlocks and runaway loops.
+* Exporting filesystems <1>:             Special variables.
+* Exporting filesystems:                 Using netgroups.
+* File search paths:                     CFINPUTS environment variable.
+* Files, checking permissions:           Monitoring important files.
+* Files, configuration:                  Control files.
+* Files, control:                        Control files.
+* files, file sweeps:                    File sweeps.
+* filter=:                               File sweeps.
+* Format:                                Program structure.
+* Free format:                           Program structure.
+* Fully qualified names:                 Classes basics.
+* Functions, in-built:                   Variable substitution.
+* Grouping time values:                  Building flexible time classes.
+* groups and time intervals:             Building flexible time classes.
+* Hard class name collision:             Variable substitution.
+* Hard links:                            Making links.
+* Help:                                  Invoking cfagent.
+* Home directories and automount:        Using the automounter.
+* Home server:                           NFS filesystem resources.
+* Home servers, declaring:               How does it work?.
+* Host name gets truncated:              Classes basics.
+* Hostname collision:                    Variable substitution.
+* HUP and cfservd, don't need to:        Installation of cfservd.
+* ifconfig:                              Network interface.
+* IfElapsed, caution setting to zero!:   Deadlocks and runaway loops.
+* ignore=:                               File sweeps.
+* Ignoring, private lists in files, copy and links: File sweeps.
+* Immune identity:                       Privacy (encryption).
+* In-built functions:                    Variable substitution.
+* include=:                              File sweeps.
+* Infinite loops:                        Deadlocks and runaway loops.
+* Invoking cfagent:                      Invoking cfagent.
+* Iteration over lists:                  Iterating over lists.
+* Linking to binservers:                 Special variables.
+* Links:                                 Making links.
+* Load balancing:                        Splaying host times.
+* localhost and remote copying:          Deadlocks and runaway loops.
+* Lock files for ordinary users:         Spamming and security.
+* Log files:                             Log files.
+* Log files, rotating:                   Disabling and the file repository.
+* Logical NOT:                           Classes basics.
+* Macros:                                Variable substitution.
+* Mailing output:                        Running cfengine permanently.
+* moduledirectory:                       Writing plugin modules.
+* Modules, user defined plug-ins:        Defining classes.
+* Monitoring important files:            Monitoring important files.
+* Months:                                Building flexible time classes.
+* Mount points:                          Unique filesystem mountpoints.
+* Multiple package configuration:        Iterating over lists.
+* Musts in cfengine:                     What you must have.
+* Name collision:                        Variable substitution.
+* Name server:                           Name servers (DNS).
+* Naming convention:                     Unique filesystem mountpoints.
+* Nested macros:                         Variable substitution.
+* netgroups:                             Using netgroups.
+* network configuration:                 Network interface.
+* network interface:                     Network interface.
+* NFS:                                   Network File System (NFS).
+* NFS mounted filesystems:               NFS resources.
+* NFS resources:                         NFS filesystem resources.
+* NIS:                                   Using netgroups.
+* NOT operator:                          Classes basics.
+* Operator ordering:                     Classes basics.
+* Optional features in cfagent:          Options.
+* Order of actions:                      Program structure.
+* Ordinary users, lock files:            Spamming and security.
+* Output logs:                           Running cfengine permanently.
+* Package configuration, multiple:       Iterating over lists.
+* Path to input files:                   CFINPUTS environment variable.
+* Patterns:                              Wildcards in directory names.
+* Permissions, extended:                 ACLs.
+* Piping input into cfengine:            CFINPUTS environment variable.
+* Plug-in modules:                       Defining classes.
+* Policy for running the system:         General considerations.
+* Privileged ports:                      Trust and key races.
+* Program format:                        Program structure.
+* Program structure:                     Program structure.
+* Quoting strings:                       Quoted strings.
+* Race condition with public keys:       Trust and key races.
+* Random numbers:                        Variable substitution.
+* rdist program:                         What services?.
+* Remote distribution of files:          What services?.
+* Remote execution of cfagent <1>:       Remote execution of cfagent.
+* Remote execution of cfagent:           What services?.
+* Rereading cfservd.conf:                Installation of cfservd.
+* Restarting cfservd:                    Installation of cfservd.
+* Restricting access:                    Access control.
+* Rotating files:                        Disabling and the file repository.
+* Running cfagent remotely:              Remote execution of cfagent.
+* Scripts, passing classes to:           Variable substitution.
+* Sections, order of:                    Program structure.
+* server=:                               Emulating rdist.
+* server= when copying to localhost:     Deadlocks and runaway loops.
+* setgid root log:                       Log files.
+* setuid root log:                       Log files.
+* Setuid scripts:                        Access control.
+* Shell commands which define classes:   shellcommand classes.
+* Special variables:                     Special variables.
+* Splaying host times:                   Splaying host times.
+* split:                                 Iterating over lists.
+* Starting cfagent:                      Invoking cfagent.
+* STDIN, reading from:                   CFINPUTS environment variable.
+* Strings:                               Quoted strings.
+* Structure of a program:                Program structure.
+* System administrator, name:            Variable substitution.
+* System policy:                         General considerations.
+* tidy, file sweeps:                     File sweeps.
+* Tidying files:                         Files and links.
+* Time classes:                          Building flexible time classes.
+* Trusted Third Party:                   Trust and key races.
+* underscoreclasses:                     Variable substitution.
+* User programs which define classes:    shellcommand classes.
+* Variable substitution:                 Variable substitution.
+* Variables and Macros:                  Variable substitution.
+* Variables, cfengine:                   Variable substitution.
+* Variables, cfengine model:             Special variables.
+* Variables, environment:                Variable substitution.
+* Variables, setting to result of a shell command: Variable substitution.
+* Variables, using:                      Variable substitution.
+* Verifying with -n option:              Invoking cfagent.
+* Wildcard, any class:                   The generic class any.
+* Wildcards:                             Wildcards in directory names.
+* Wildcards, in directory names:         Wildcards in directory names.
+* Years:                                 Building flexible time classes.
+
+
+File: cfengine-Tutorial.info,  Node: FAQ Index,  Prev: Concept Index,  Up: Top
+
+FAQ Index
+*********
+
+* Menu:
+
+* Brackets (parentheses) in classes.:    Classes basics.
+* Configure multiple packages:           Iterating over lists.
+* Define classes based on result of user program: shellcommand classes.
+* How can I make complex time intervals using time classes?: Building flexible time classes.
+* How can I use cfengine to make a global cron file?: Using cfengine as a front-end for cron.
+* How do I quote quotes?:                Quoted strings.
+* How to keep all users in /home:        Using the automounter.
+* Iterating over lists:                  Iterating over lists.
+* Parentheses in classes.:               Classes basics.
+* split, using a space:                  Iterating over lists.
+* Time classes, picking out complex time intervals: Building flexible time classes.
+* Why do I get network access denied to files I have granted access to?: Configuration file cfservd.conf.
+* Why does cfservd give access to files on a different filesystem?: Configuration file cfservd.conf.
+
+

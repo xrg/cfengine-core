@@ -1,0 +1,1346 @@
+This is cfengine-Tutorial.info, produced by makeinfo version 4.0 from
+cfengine-Tutorial.texinfo.
+
+INFO-DIR-SECTION System Utilities
+START-INFO-DIR-ENTRY
+* cfengine Tutorial: (cfengine-Tutorial.info).
+                        Cfengine is a language based tool specifically
+                        designed for configuring and maintaining BSD
+                        and System-5-like operating systems attached
+                        to a TCP/IP network.
+END-INFO-DIR-ENTRY
+
+
+File: cfengine-Tutorial.info,  Node: Classes basics,  Next: Variable substitution,  Prev: More advanced concepts,  Up: More advanced concepts
+
+Classes
+=======
+
+   The idea of classes is central to the operation of cfengine.  Saying
+that cfengine is `class orientated' means that it doesn't make decisions
+using `if'...`then'...`else' constructions the way other languages do,
+but only carries out an action if the host running the program is in
+the same class as the action itself.  To understand what this means,
+imagine sorting through a list of all the hosts at your site.  Imagine
+also that you are looking for the _class_ of hosts which belong to the
+computing department, which run GNU/Linux operating system and which
+have yellow spots! To figure out whether a particular host satisfies
+all of these criteria you first delete all of the hosts which are not
+GNU/Linux, then you delete all of the remaining ones which don't belong
+to the computing department, then you delete all the remaining ones
+which don't have yellow spots.  If you are on the remaining list, then
+you are in the class of all computer-science-Linux-yellow-spotted hosts
+and you can carry out the action.
+
+   Cfengine works in this way, narrowing things down by asking if a
+host is in several classes at the same time.  Although some information
+(like the kind of operating system you are running) can be obtained
+directly, clearly, to make this work we need to have lists of which
+hosts belong to the computer department and which ones have yellow
+spots.
+
+   So how does this work in a cfengine program?  A program or
+configuration script consists of a set of declarations for what we
+refer to as _actions_ which are to be carried out only for certain
+classes of host.  Any host can execute a particular program, but only
+certain action are extracted -- namely those which refer to that
+particular host.  This happens automatically because cfengine builds up
+a list of the classes to which it belongs as it goes along, so it
+avoids having to make many decisions over and over again.
+
+   By defining classes which classify the hosts on your network in some
+easy to understand way, you can make a single action apply to many hosts
+in one go - i.e.  just the hosts you need.  You can make generic rules
+for specific type of operating system, you can group together clusters
+of workstations according to who will be using them and you can paint
+yellow spots on them - what ever works for you.
+
+   A _cfengine action_ looks like this:
+
+
+     ACTION-TYPE:
+     
+        COMPOUND-CLASS::
+     
+            DECLARATION
+
+A single class can be one of several things:
+
+   * The name of an operating system architecture e.g.  `ultrix',
+     `sun4' etc.  This is referred to henceforth as a _hard class_.
+
+   * The (unqualified) name of a particular host. If your system
+     returns a fully qualified domain name for your host, cfagent
+     truncates it so as to unqualify the name.
+
+   * The name of a user-defined group of hosts.
+
+   * A day of the week (in the form `Monday Tuesday Wednesday..').
+
+   * An hour of the day (in the form `Hr00, Hr01 ... Hr23').
+
+   * Minutes in the hour (in the form `Min00, Min17 ... Min45').
+
+   * A five minute interval in the hour (in the form `Min00_05,
+     Min05_10 ... Min55_00')
+
+   * A day of the month (in the form `Day1 ... Day31').
+
+   * A month (in the form `January, February, ... December').
+
+   * A year (in the form `Yr1997, Yr2001').
+
+   * An arbitrary user-defined string.  (see the reference manual).
+
+   * The ip-address octets of any active interface, in the form
+     (`ipv4_192_0_0_1', `ipv4_192_0_0',`ipv4_192_0',`ipv4_192').
+
+
+   A compound class is a sequence of simple classes connected by dots or
+`pipe' symbols (vertical bars).  For example:
+
+
+     myclass.sun4.Monday::
+     
+     sun4|ultrix|osf::
+
+A compound class evaluates to `true' if all of the individual classes
+are separately true, thus in the above example the actions which follow
+`compound_class::' are only carried out if the host concerned is in
+`myclass', is of type `sun4' and the day is Monday!  In the second
+example, the host parsing the file must be either of type `sun4' _or_
+`ultrix' _or_ `osf'.  In other words, compound classes support two
+operators: AND and OR, written `.' and `|' respectively. Cfengine
+doesn't care how many of these operators you use (since it skips over
+blank class names), so you could write either
+
+
+     solaris|irix::
+
+or
+
+
+     solaris||irix::
+
+depending on your taste. On the other hand, the order in which cfengine
+evaluates AND and OR operations _does_ matter, and the rule is that AND
+takes priority over OR, so that `.' binds classes together tightly and
+all AND operations are evaluated before ORing the final results
+together. This is the usual behaviour in programming languages. You can
+use round parentheses in cfengine classes to override these preferences.
+
+   Cfengine allows you to define switch on and off dummy classes so that
+you can use them to select certain subsets of action.  In particular,
+note that by defining your own classes, using them to make compound
+rules of this type, and then switching them on and off, you can also
+switch on and off the corresponding actions in a controlled way.  The
+command line options `-D' and `-N' can be used for this purpose.  See
+also `addclasses' in the Reference manual.
+
+   A logical NOT operator has been added to allow you to exclude
+certain specific hosts in a more flexible way. The logical NOT operator
+is (as in C and C++) `!'. For instance, the following example would
+allow all hosts except for `myhost':
+
+        ACTION:
+     
+         !myhost::
+     
+             COMMAND
+
+and similarly, so allow all hosts in a user-defined group `mygroup',
+_except_ for `myhost', you would write
+
+        ACTION:
+     
+         mygroup.!myhost::
+     
+             COMMAND
+
+which reads `mygroup AND NOT myhost'. The NOT operator can also be
+combined with OR. For instance
+
+
+        CLASS1|!CLASS2
+
+would select hosts which were either in class 1, or those which were
+not in class 2.
+
+   Finally, there is a number of reserved classes.  The following are
+hard classes for various operating system architectures.  They do not
+need to be defined because each host knows what operating system it is
+running.  Thus the appropriate one of these will always be defined on
+each host.  Similarly the day of the week is clearly not open to
+definition, unless you are running cfengine from outer space.  The
+reserved classes are:
+
+     ultrix, sun4, sun3, hpux, hpux10, aix, solaris, osf, irix4, irix, irix64
+        sco, freebsd, netbsd, openbsd, bsd4_3, newsos, solarisx86, aos,
+               nextstep, bsdos, linux, debian, cray, unix_sv, GnU, NT
+
+If these classes are not sufficient to distinguish the hosts on your
+network, cfengine provides more specific classes which contain the name
+and release of the operating system. To find out what these look like
+for your systems you can run cfengine in `parse-only-verbose' mode:
+
+
+       cfagent -p -v
+
+and these will be displayed. For example, solaris 2.4 systems generate
+the additional classes `sunos_5_4' and `sunos_sun4m', `sunos_sun4m_5_4'.
+
+   Cfengine uses both the unqualified and fully host names as classes.
+Some sites and operating systems use fully qualified names for their
+hosts. i.e. `uname -n' returns to full domain qualified hostname. This
+spoils the class matching algorithms for cfengine, so cfengine
+automatically truncates names which contain a dot `.'  at the first `.'
+it encounters. If your hostnames contain dots (which do not refer to a
+domain name, then cfengine will be confused. The moral is: don't have
+dots in your host names! _NOTE: in order to ensure that the fully
+qualified name of the host becomes a class you must define the domain
+variable._ The dots in this string will be replaced by underscores.
+
+   In summary, the operator ordering in cfengine classes is as follows:
+
+`()'
+     Parentheses override everything.
+
+`!'
+     The NOT operator binds tightest.
+
+`.'
+     The AND operator binds more tightly than OR.
+
+`|'
+     OR is the weakest operator.
+
+
+File: cfengine-Tutorial.info,  Node: Variable substitution,  Next: Undefined variables,  Prev: Classes basics,  Up: More advanced concepts
+
+Variable substitution
+=====================
+
+   When you are building up a configuration file it is very useful to be
+able to use variables.  If you can define your configuration in terms of
+some key variables, it can be changed more easily later, it is more
+transparent to the reader of the program and you can also choose to
+define the variables differently on different types of system.  Another
+way of saying this is that cfengine variables also belong to classes.
+Cfengine makes use of variables in three ways.
+
+   * Environment variables from the shell
+
+   * Special variables used in cfengine features
+
+   * General macro-string substitution.
+
+Environment variables are fetched directly from the shell on whatever
+system is running the program.  An example of a special variable is the
+`domain' variable from the previous section.  Straightforward macro
+substitution allows you to define a symbol name to be replaced by an
+arbitrary text string.  All these definitions (apart from shell
+environment variables, of course) are made in the control part of the
+cfengine program:
+
+
+     control:
+     
+       myvar = ( /usr/local/mydir/lib/very/long/path )   # define macro
+     
+     ...
+     
+     links:
+     
+       $(myvar) -> /another/directory
+
+Here we define a macro called `myvar', which is later used to define
+the creation of a link.  As promised we can also define class-dependent
+variables:
+
+
+     control:
+     
+       sun4:: myvar = ( sun )
+       hpux:: myvar = ( HP )
+
+   Cfagent gives you access to the shell environment variables and
+allows you to define variables of your own.  It also keeps a few special
+variables which affect the way in which cfengine works.  When cfengine
+expands a variable it looks first at the name in its list of special
+variables, then in the list of user-defined macros and finally in the
+shell environment for a match.  If none of these are found it expands to
+the empty string. If you nest macros,
+
+     control:
+     
+       myvar = ( "$(othervar)" )
+   then you must quote the right hand side and ensure that the value is
+already defined.
+
+   You can also import values from the execution of a shell command by
+prefixing a command with the word `exec'. This method is deprecated in
+version 2 an replaced by a function.
+
+
+       control:
+     
+        # old method
+     
+        listing = ( "exec /bin/ls -l" )
+     
+        # new method
+     
+        listing = ( ExecResult(/bin/ls -l) )
+
+This sets the variable `listing' to the output of the command in the
+quotes.
+
+   Some other internal functions are
+
+`RandomInt(A,B)'
+     Generate a random integer between a and b.
+
+`ExecResult(COMMAND)'
+     Executes the named shell command and inserts the output into the
+     variable.
+
+For example:
+
+
+     control:
+     
+      variable2 = ( RandomInt(0,23) )
+     
+      variable3 = ( ExecResult(/bin/ls -a /opt) )
+
+   Variables are referred to in either of two different ways, depending
+on your taste.  You can use the forms `$(variable)' or `${variable}'.
+The variable in braces or parentheses can be the name of any user
+defined macro, environment variable or one of the following special
+internal variables.
+
+`AllClasses'
+     A long string in the form `CFALLCLASSES=class1:class2...'.  This
+     variable is a summary of all the defined classes at any given
+     time. It is always kept up to date so that scripts can make use of
+     cfengine's class data.
+
+`arch'
+     The current detailed architecture string--an amalgamation of the
+     information from _uname_. Non-definable.
+
+`binserver'
+     The default server for binary data.  *Note NFS resources::.  Non
+     definable.
+
+`class'
+     The currently defined system hard-class (e.g. `sun4', `hpux').
+     Non-definable.
+
+`date'
+     The current date string. Note that if you use this in a shell
+     command it might be interpreted as a list variable, since it
+     contains the default separator `:'.
+
+`domain'
+     The currently defined domain.
+
+`faculty'
+     The faculty or site as defined in control (see site).
+
+`fqhost'
+     The fully qualified (DNS/BIND) hostname of the system, which
+     includes the domain name as well.
+
+`host'
+     The hostname of the machine running the program.
+
+`ipaddress'
+     The numerical form of the internet address of the host currently
+     running cfengine.
+
+`MaxCfengines'
+     The maximum number of cfengines which should be allowed to
+     co-exist concurrently on the system. This can prevent excessive
+     load due to unintentional spamming in situations where several
+     cfagents are started independently. The default value is unlimited.
+
+`ostype'
+     A short for of `$(arch)'.
+
+`OutputPrefix'
+     This quoted string can be used to change the default `cfengine:'
+     prefix on output lines to something else. You might wish to shorten
+     the string, or have a different prefix for different hosts. The
+     value in this variable is appended with the name of the host. The
+     default is equivalent to,
+            OutputPrefix = ( "cfengine:$(host):")
+
+`RepChar'
+     The character value of the string used by the file repository in
+     constructing unique filenames from path names. This is the
+     character which replaces `/' (see the reference manual).
+
+`site'
+     This variable is identical to `$(faculty)' and may be used
+     interchangeably.
+
+`split'
+     The character on which list variables are split (see the reference
+     manual).
+
+`sysadm'
+     The name or mail address of the system administrator.
+
+`timezone'
+     The current timezone as defined in `control'.
+
+`UnderscoreClasses'
+     If this is set to `on' cfengine uses hard-classes which begin with
+     an underscore, so as to avoid name collisions. See also Runtime
+     Options in the Reference manual.
+
+`year'
+     The current year.
+
+These variables are kept special because they play a special role in
+setting up a system configuration.  *Note Global configurations::.  You
+are encouraged to use them to define fully generalized rules in your
+programs.  Variables can be used to advantage in defining filenames,
+directory names and in passing arguments to shell commands.  The
+judicious use of variables can reduce many definitions to a single one
+if you plan carefully.
+
+   _NOTE: the above control variables are not case sensitive, unlike
+user macros, so you should not define your own macros with these names._
+
+
+   The following variables are also reserved and may be used to produce
+troublesome special characters in strings.
+`cr'
+     Expands to the carriage-return character.
+
+`dblquote'
+     Expands to a double quote `"'
+
+`dollar'
+     Expands to `$'.
+
+`lf'
+     Expands to a line-feed character (Unix end of line).
+
+`n'
+     Expands to a newline character.
+
+`quote'
+     Expands to a single quote `''.
+
+`spc'
+     Expands simply to a single space. This can be used to place spaces
+     in filenames etc.
+
+`tab'
+     Expands to a single tab character.
+
+You can use variables in the following places:
+
+   * In any directory name.  The `$(binserver)' variable is not always
+     appropriate in this context.  For instance
+
+
+     links:
+     
+       osf::
+           /$(site)/${host}/directory -> somefile
+
+   * In any quoted string. (See `shellcommands' in the Reference
+     manual).
+
+     shellcommands:
+     
+       any::
+     
+        "/bin/echo $(timezone) | /bin/mail $(sysadm)"
+        '/bin/echo "double quotes!"'
+
+The latter possibility enables cfengine's variables to be passed on to
+user-defined scripts.
+
+   * To define the values of options passed to various actions, in the
+     form `OPTION=$(variable)'.
+
+   Variables can be defined differently under different classes by
+preceding the definition with a class name.  For example:
+
+     control:
+     
+        sun4::  my_macro = ( User_string_1 )
+        irix::  my_macro = ( User_string_2 )
+
+Here the value assigned to `$(my_macro)' depends on which of the
+classes evaluates to true.  This feature can be used to good effect to
+define the mail address of a suitable system administrator for different
+groups of host.
+     control:
+     
+      physics::   sysadm = ( mark,fred )
+      chemistry:: sysadm = ( localsys@domain )
+
+Note, incidentally, that the `-a' option can be used to print out the
+mail address of the system administrator for any wrapper scripts.
+
+
+File: cfengine-Tutorial.info,  Node: Undefined variables,  Next: Defining classes,  Prev: Variable substitution,  Up: More advanced concepts
+
+Undefined variables
+===================
+
+   Note that macro-variables which are undefined are not expanded as of
+version 1.6 of cfengine. In earlier versions, undefined variables would
+be replaced by an empty string, as in Perl. In versions 1.6.x and
+later, the variable string remains un-substituted, if the varaiable
+does not exist. For instance,
+
+     control:
+     
+       actionsequence = ( shellcommands )
+     
+       myvar = ( "test string " )
+     
+     shellcommands:
+     
+      "/bin/echo $(myvar) $(myvar2)"
+   results in:
+
+     cfengine:host: Executing script /bin/echo test string  $(myvar2)
+     cfengine:host:/bin/echo test : sh: syntax error at line 1: `(' unexpected
+     cfengine:host: Finished script /bin/echo test string  $(myvar2)
+
+   This allows variables to be defined on-the-fly by modules.
+
+
+File: cfengine-Tutorial.info,  Node: Defining classes,  Next: The generic class any,  Prev: Undefined variables,  Up: More advanced concepts
+
+Defining classes and making exceptions
+======================================
+
+   Cfengine communicates with itself by passing messages in the form of
+classes. When a class becomes switched on or off, cfengine's program
+effectively becomes modified. There are several ways in which you can
+switch on and off classes. Learning these fully will take some time,
+and only then will you harness the full power of cfengine.
+
+   * Classes may be defined manually from the command line.
+
+   * Classes may be defined locally in the actionsequence in order to
+     execute only some of the actions within a special category.
+
+   * Classes may become defined if cfengine actually needs to carry out
+     an action to repair the system's configuration.
+
+   * Classes may be defined by user-defined plug-in modules.
+
+
+   Because cfagent works at a very high level, doing very many things
+for very few lines of code it might seem that some flexibility is lost.
+When we restrict certain actions to special classes it is occasionally
+useful to be able to switch off classes temporarily so as to cancel the
+special actions.
+
+* Menu:
+
+* Command line classes::
+* actionsequence classes::
+* shellcommand classes::
+* Feedback classes::
+* Writing plugin modules::
+
+
+File: cfengine-Tutorial.info,  Node: Command line classes,  Next: actionsequence classes,  Prev: Defining classes,  Up: Defining classes
+
+Command line classes
+--------------------
+
+   You can define classes of your own which can be switched on and off,
+either on the command line or from the action sequence.  For example,
+suppose we define a class _include_.  We use `addclasses' to do this.
+
+     addclasses = ( include othersymbols )
+
+The purpose of this would be to allow certain `excludable actions' to
+be defined.  Actions defined by
+
+
+     any.include::
+                    ACTIONS
+
+will normally be carried out, because we have defined `include' to be
+true using `addclasses'.  But if cfagent is run in a restricted mode,
+in which `include' is set to false, we can exclude these actions.
+
+   So, by defining the symbol `include' to be false, you can exclude
+all of the actions which have `include' as a member.  There are two
+ways in which this can be done, one is to negate a class globally using
+
+
+     cfagent -N include
+
+This undefines the class `include' for the entire duration of the
+program.
+
+
+File: cfengine-Tutorial.info,  Node: actionsequence classes,  Next: shellcommand classes,  Prev: Command line classes,  Up: Defining classes
+
+actionsequence classes
+----------------------
+
+   Another way to specify actions is to use a class to select only a
+subset of all the actions defined in the actionsequence.  You do this
+by adding a class name to one on the actions in action sequence by
+using a dot `.' to separate the words.  In this case the symbol only
+evaluates to `true' for the duration of the action to which it
+attached.  Here is an example:
+
+       links.onlysome
+       shellcommands.othersymbols.onlysome
+
+In the first case _`onlysome' is defined to be true_ while this
+instance of `links' is executed.  That means that only actions labelled
+with the class `onlysome' will be executed as a result of that
+statement.  In the latter case, both `onlysome' and `othersymbols' are
+defined to be true for the duration of `shellcommands'.
+
+   This syntax would normally be used to omit certain time-consuming
+actions, such as tidying all home directories.  Or perhaps to
+synchronize certain actions which have to happen in a certain order.
+
+
+File: cfengine-Tutorial.info,  Node: shellcommand classes,  Next: Feedback classes,  Prev: actionsequence classes,  Up: Defining classes
+
+shellcommand classes
+--------------------
+
+   For more advanced uses of cfengine you might want to be able to
+define a class on the basis of the success or failure of a user-program,
+a shell command or user script. Consider the following example
+
+
+     groups:
+     
+        have_cc = ( "/bin/test -f /usr/ucb/cc"
+                    "/bin/test -f /local/gnu/cc"  )
+
+Note that as of version 1.4.0 of cfengine, you may use the word
+`classes' as an alias for `groups'.  Whenever cfagent meets an object
+in a class list or variable, which is surrounded by either single,
+double quotes or reversed quotes, it attempts to execute the string as
+a command passed to the Bourne shell. If the resulting command has
+return code zero (proper exit) then the class on the left hand side of
+the assignment (in this case `have_cc') will be true. If the command
+returns any other value (an error number) the result is false. Since
+groups are the logical OR of their members (it is sufficient that one
+of the members matches the current system), the class `have_cc' will be
+defined above if either `/usr/ucb/cc' or `/local/gnu/cc' exist, or both.
+
+
+File: cfengine-Tutorial.info,  Node: Feedback classes,  Next: Writing plugin modules,  Prev: shellcommand classes,  Up: Defining classes
+
+Feedback classes
+----------------
+
+   Classes may be defined as the result of actions being carried out by
+cfagent.  For example, if a file gets copied, needs to be edited or if
+diskspace falls under a certain threshhold, cfagent can be made to
+respond by activating classes at runtime. This allows you to create
+dynamically responsive programs which react to the changing environment.
+These classes are defined as part of other statements with clauses of
+the form
+
+
+       define=CLASSLIST
+
+   Classes like these should generally be declared at the start of a
+program unless the `define' statements always precede the actions which
+use the defined classes, with `addinstallable'.
+
+
+File: cfengine-Tutorial.info,  Node: Writing plugin modules,  Prev: Feedback classes,  Up: Defining classes
+
+Writing plugin modules
+----------------------
+
+   If the regular mechanisms for setting classes do not produce the
+results you require for your configuration, you can write your own
+routines to concoct the classes of your dreams. Plugin modules are
+added to cfagent programs from within the actionsequence, (see
+Reference manual). They allow you to write special code for answering
+questions which are too complex to answer using the other mechanisms
+above.  This allows you to control classes which will be switched on
+and the moment at which your module attempts to evaluate the condition
+of the system.
+
+   Modules must lie in a special directory defined by the variable
+`moduledirectory'.  They must have a name of the form `module:MYMODULE'
+and they must follow a simple protocol. Cfagent will only execute a
+module which is owned either by root or the user who is running
+cfagent, if it lies in the special directory and has the special name.
+A plug-in module may be written in any language, it can return any
+output you like, but lines which begin with a `+' sign are treated as
+classes to be defined (like `-D'), while lines which begin with a `-'
+sign are treated as classes to be undefined (like `-N').  Lines starting
+with `=' are variables/macros to be defined.  Any other lines of output
+are cited by cfagent, so you should normally make your module
+completely silent.  Here is an example module written in perl. First we
+define the module in the cfagent program:
+
+
+      control:
+     
+        moduledirectory = ( /local/cfagent/modules )
+     
+        actionsequence = (
+                         files
+                         module:myplugin.specialclass
+                         "module:argplugin.specialclass arg1 arg2"
+                         copy
+                         )
+      ...
+
+Note that the class definitions for the module can also be defined in as
+`AddInstallables', if this is more convenient. NOTE: you _must_ declare
+the classes before using them in the cfagent configuration, or else
+those actions will be ignored.  Next we write the plugin itself.
+     #!/usr/bin/perl
+     #
+     # module:myplugin
+     #
+     
+       # lots of computation....
+     
+     if (SPECIAL-CONDITION)
+        {
+        print "+specialclass";
+        }
+
+   Modules inherit the environment variables from cfagent and accept
+arguments, just as a regular shellcommand does.
+     #!/bin/sh
+     #
+     # module:myplugin
+     #
+     
+     /bin/echo $*
+   Cfagent defines the classes as an environment variable so that
+programs have access to these. E.g. try the following module:
+
+     #!/usr/bin/perl
+     
+     print "Decoding $ENV{CFALLCLASSES}\n";
+     
+     @allclasses = split (":","$ENV{CFALLCLASSES}");
+     
+     while ($c=shift(@allclasses))
+       {
+       $classes{$c} = 1;
+       print "$c is set\n";
+       }
+
+   Modules can define macros in cfagent by outputting strings of the
+form
+
+     =VARIABLENAME=VALUE
+
+
+File: cfengine-Tutorial.info,  Node: The generic class any,  Next: Debugging tips,  Prev: Defining classes,  Up: More advanced concepts
+
+The generic class `any'
+=======================
+
+   The generic wildcard `any' may be used to stand for any class.  Thus
+instead of assigning actions for the class `sun4' only you might define
+actions for any architecture by specifying:
+
+       any::
+             ACTIONS
+
+   If you don't specify any class at all then cfengine assumes a default
+value of `any' for the class.
+
+
+File: cfengine-Tutorial.info,  Node: Debugging tips,  Next: Access control,  Prev: The generic class any,  Up: More advanced concepts
+
+Debugging tips
+==============
+
+   A useful trick when debugging is to eliminate unwanted actions by
+changing their class name.  Since cfengine assumes that any class it
+does not understand is the name of some host, it will simply ignore
+entries it does not recognize.  For example:
+
+        myclass::
+
+can be changed to
+
+        Xmyclass::
+
+Since `Xmyclass' no longer matches any defined classes, and is not the
+name of any host it will simply be ignored.  The `-N' option can also
+be used to the same effect.  (see Reference manual).
+
+
+File: cfengine-Tutorial.info,  Node: Access control,  Next: Wildcards in directory names,  Prev: Debugging tips,  Up: More advanced concepts
+
+Access control
+==============
+
+   It is sometimes convenient to be able to restrict the access of a
+program to a handful of users.  This can be done by adding an access
+list to the `control:' section of your program.  For example,
+
+     control:
+         ...
+         access = ( mark root )
+
+would cause cfengine to refuse to run the program for any other users
+except mark and root.  Such a restriction would be useful, for instance,
+if you intended to make set-user-id scripts but only wished certain
+users to be able to run them.  If the access list is absent, all users
+can execute the program.
+
+   Note: if you are running cfagent via the `cfrun' program then
+cfagent is always started with the same user identity as the cfservd
+process on the remote host.  Normally this is the root user identity.
+This means that the access keyword will have no effect on the use of
+the command `cfrun'.
+
+
+File: cfengine-Tutorial.info,  Node: Wildcards in directory names,  Next: File sweeps,  Prev: Access control,  Up: More advanced concepts
+
+Wildcards in directory names
+============================
+
+   In the two actions `files' and `tidy' you define directory names at
+which file checking or tidying searches should start.  One economical
+feature is that you can define a whole group of directories at which
+identical searches should start in one fell swoop by making use of
+_wildcards_.  For example, the directory names
+
+          /usr/*/*
+          /bla/*/ab?/bla
+
+represent all of the _directories_ (and only directories) which match
+the above wildcard strings.  Cfagent opens each matching directory and
+iterates the action over all directories which match.
+
+   The symbol `?' matches any single character, whereas `*' matches any
+number of characters, in accordance with shell file-substitution
+wildcards.
+
+   When this notation is used in directory names, it always defines the
+starting point for a search.  It does not tell the command how to
+search, only where to begin.  The `pattern' directive in `tidy' can be
+used to specify patterns when tidying files and under `files' all files
+are considered, (see Reference manual),
+
+
+File: cfengine-Tutorial.info,  Node: File sweeps,  Next: Log files,  Prev: Wildcards in directory names,  Up: More advanced concepts
+
+Recursive file sweeps/directory traversals
+==========================================
+
+   File sweeps are searches through a directory tree in which many files
+are examined and considered for processing in some way.  There are many
+instances where one uses cfagent to perform a file sweep.
+
+   * As part of a `files' action, for checking access rights and
+     ownership of files.
+
+   * As part of a `tidy' action, for checking files for deletion.
+
+   * As part of a `copy' action, while recursively checking whether to
+     copy a file tree.
+
+   * As part of an `editfiles' action, while recursively checking
+     whether to edit the files in a tree of files.
+
+
+The problem with file sweeps is that they can be too sweeping! Often you
+are not interested in examining every single file in a file tree. You
+might wish to perform a search
+
+   * excluding certain named directories and their subdirectories with
+     `ignore'.
+
+   * excluding certain files and directories matching a specific
+     pattern.
+
+   * including only a subset of files matching specific patterns.
+
+   * filter out very specific file types.
+
+The tidy action is slightly different in this respect, since it already
+always expects to match a specific pattern. One is generally not
+interested in a search which deletes everything except for a named
+pattern: this would be too dangerous. For this reason, the syntax of
+`tidy' does not allow ignore,include and exclude.  It is documented in
+the section on tidying, (see Reference manual).
+
+   Items declared under the global `ignore' section affect files, copy,
+links and tidy.  For file sweeps within files, copy and links, you may
+provide private ignore lists using `ignore='. The difference between
+exclude and ignore is that ignore can deal with absolute directories.
+It prunes directories, while exclude only looks at the files within
+directories.
+
+   For file sweeps within  `files' and  `copy' you can specify specific
+search parameters using the keywords `include=' and `exclude=' and as
+of version 1.6.x `filter='.  For example,
+     files:
+     
+        /usr/local/bin m=0755 exclude=*.ps action=fixall
+
+In this example cfagent searches the entire file tree (omitting any
+directories listed in the ignore-list and omitting any files ending in
+the extension `.ps'), (see Reference manual).
+
+   Specifying the  `include=' keyword is slightly different since it
+automatically restricts the search to only named patterns (using `*'
+and `?' wildcards), whenever you have one or more instances of it. If
+you include patterns in this way, cfagent ignores any files which do
+not match the given patterns.  It also ignores any patterns which you
+have specified in the global ignore-list as well as patterns excluded
+with   `exclude=PATTERN'.  In other words, exclusions always override
+inclusions.
+
+   If you exclude a pattern or a directory and wish to treat it in some
+special way, you need to code an explicit check for that pattern as a
+separate entity. For example, to handle the exluded  `.ps' files above,
+you would need to code something like this:
+     files:
+     
+        /usr/local/bin m=0644 include=*.ps action=fixall
+
+   Note: don't be tempted to enclose your wildcards in quotes. The
+quotes will be treated literally and the pattern might not match the
+way you would expect.
+
+   For `editfiles' the syntax is somewhat different. Here one needs to
+add lines to the edit stanza:
+
+
+     editfiles:
+     
+      { /tmp/testdir
+     
+      Include .*
+      Exclude bla.*
+      Ignore "."
+      Ignore ".."
+      Recurse 6
+     
+      ReplaceAll "search" With "replace"
+      }
+
+
+File: cfengine-Tutorial.info,  Node: Log files,  Next: Quoted strings,  Prev: File sweeps,  Up: More advanced concepts
+
+Log files written by cfagent
+============================
+
+   Cfagent keeps two kinds of log-file privately and it allows you to
+log its activity to syslog.  Syslog logging may be switched on with the
+`Syslog' variable, (see Reference manual).
+
+   The first log cfagent keeps is for every user (every subdirectory of
+a home directory filesystem).  A file `~/.cfengine.rm' keeps a list of
+all the files which were deleted during the last pass of the `tidy'
+function.  This is useful for users who want to know files have been
+removed without their blessing.  This helps to identify what is
+happening on the system in case of accidents.
+
+   Another file is built when cfagent searches through file trees in the
+`files' action.  This is a list of all programs which are setuid root,
+or setgid root.  Since such files are a potential security risk,
+cfagent always prints a warning when it encounters a new one (one which
+is not already in its list).  This allows the system administrator to
+keep a watchful eye over new programs which appear and give users root
+access.  The cfengine log is called `/var/cfengine/cfengine.log'.  The
+file is not readable for general users.
+
+
+File: cfengine-Tutorial.info,  Node: Quoted strings,  Next: Regular expressions,  Prev: Log files,  Up: More advanced concepts
+
+Quoted strings
+==============
+
+   In several cfengine commands, you use quoted strings to define a
+quantity of text which may contain spaces. For example
+
+
+     control:
+     
+       macro = ( "mycommand" )
+     
+     editfiles:
+     
+       { $(HOME)/myfile
+     
+        AppendIfNoSuchLine 'This text contains space'
+       }
+
+In each case you may use any one of the three types of quote marks in
+order to delimit strings,
+
+
+       ' OR " OR `
+
+   If you choose, say `"', then you may not use this symbol within the
+string itself. The same goes for the other types of string delimiters.
+Unlike the shell, cfengine treats these three delimiters in precisely
+the same way. There is no difference between them.  If you need to
+quote a quoted string, then you should choose a delimiter which does
+not conflict with the substring.
+
+   Note that you can use special variables for certain symbols in a
+string *Note Variable substitution::.
+
+
+File: cfengine-Tutorial.info,  Node: Regular expressions,  Next: Iterating over lists,  Prev: Quoted strings,  Up: More advanced concepts
+
+Regular expressions
+===================
+
+   Regular expressions can be used in cfagent in connection with
+`editfiles' and `processes' to search for lines matching certain
+expressions.  A regular expression is a generalized wildcard. In
+cfagent wildcards, you can use the characters '*' and '?' to match any
+character or number of characters.  Regular expressions are more
+complicated than wildcards, but have far more flexibility.
+
+   _NOTE: the special characters `*' and `?' used in wildcards do not
+have the same meanings as regular expressions!_.
+
+   Some regular expressions match only a single string. For example,
+every string which contains no special characters is a regular
+expression which matches only a string identical to itself. Thus the
+regular expression `cfengine' would match only the string "cfengine",
+not "Cfengine" or "cfengin" etc.  Other regular expressions could match
+more general strings. For instance, the regular expression `c*' matches
+any number of c's (including none). Thus this expression would match the
+empty string, "c", "cccc", "ccccccccc", but not "cccx".
+
+   Here is a list of regular expression special characters and
+operators.
+
+`\'
+     The backslash character normally has a special purpose: either to
+     introduce a special command, or to tell the expression interpreter
+     that the next character is not to be treated as a special
+     character.  The backslash character stands for itself only when
+     protected by square brackets `[\]' or quoted with a backslash
+     itself `\\'.
+
+`\b'
+     Matches word boundary operator.
+
+`\B'
+     Match within a word (operator).
+
+`\<'
+     Match beginning of word.
+
+`\>'
+     Match end of word.
+
+`\w'
+     Match a character which can be part of a word.
+
+`\W'
+     Match a character which cannot be part of a word.
+
+`ANY CHARACTER'
+     Matches itself.
+
+`.'
+     Matches any character
+
+`*'
+     Match zero or more instances of the previous object. e.g. `c*'.
+     If no object precedes it, it represents a literal asterisk.
+
+`+'
+     Match one or more instances of the preceding object.
+
+`?'
+     Match zero or one instance of the preceding object.
+
+`{ }'
+     Number of matches operator. `{5}' would  match exactly 5 instances
+     of the previous object. `{6,}' would match at least 6 instances of
+     the previous object. `{7,12}' would match at least 7 instances of,
+     but no more than 12 instances of the preceding object.  Clearly
+     the first number must be less than the second to make a valid
+     search expression.
+
+`|'
+     The logical OR operator, OR's any two regular expressions.
+
+`[LIST]'
+     Defines a list of characters which are to be considered as a single
+     object (ORed). e.g. `[a-z]' matches any character in the range a to
+     z, `abcd' matches either a, b, c or d.  Most characters are
+     ordinary inside a list, but there are some exceptions: `]' ends the
+     list unless it is the first item, `\' quotes the next character,
+     `[:' and `:]' define a character class operator (see below), and
+     `-' represents a range of characters unless it is the first or
+     last character in the list.
+
+`[^LIST]'
+     Defines a list of characters which are NOT to be matched. i.e.
+     match any character except those in the list.
+
+``[:CLASS:]''
+     Defines a class of characters, using the ctype-library.
+    `alnum'
+          Alpha numeric character
+
+    `alpha'
+          An alphabetic character
+
+    `blank'
+          A space or a TAB
+
+    `cntrl'
+          A control character.
+
+    `digit'
+          0-9
+
+    `graph'
+          same as print, without space
+
+    `lower'
+          a lower case letter
+
+    `print'
+          printable characters (non control characters)
+
+    `punct'
+          neither control nor alphanumeric symbols
+
+    `space'
+          space, carriage return, line-feed, vertical tab and form-feed.
+
+    `upper'
+          upper case letter
+
+    `xdigit'
+          a hexadecimal digit 0-9, a-f
+
+``( )''
+     Groups together any number of operators.
+
+`\DIGIT'
+     Back-reference operator (refer to the GNU regex documentation).
+
+`^'
+     Match start of a line.
+
+`$'
+     Match the end of a line.
+
+Here is a few examples. Remember that some commands look for a regular
+expression match of part of a string, while others require a match of
+the entire string (see Reference manual).
+
+
+     ^#        match string beginning with the # symbol
+     ^[^#]      match string not beginning with the # symbol
+     ^[A-Z].+  match a string beginning with an uppercase letter
+               followed by at least one other character
+
+
+File: cfengine-Tutorial.info,  Node: Iterating over lists,  Prev: Regular expressions,  Up: More advanced concepts
+
+Iterating over lists
+====================
+
+   Shell list variables are normally defined by joining together a list
+of directories using a concatenation character such as `:'. A typical
+example of this is the PATH variable:
+
+
+     PATH=/usr/bin:/usr/local/bin:/usr/sbin
+
+   It is convenient to be able to use such variables to force cfagent to
+iterative over a list. This gives us a compact way of writing repeated
+operations and it allows a simple method of communication with the shell
+environment. For security reasons, iteration is supported only in the
+following contexts:
+
+   * in the `to' field of a multiple link action,
+
+   * in the `from' field of a copy action,
+
+   * in the directory field of a tidy action,
+
+   * in the directory field of the files action,
+
+   * in the ignore action,
+
+   * in a shell command.
+
+
+   This typically allows communication with PATH-like environment
+variables in the shell.
+
+   In these contexts, any variable which has the form of a list joined
+together by colons will be iterated over at compilation time. Note that
+you can change the value of the list separator using the `split'
+variable in the control section of the program (see Reference manual).
+
+   For example, to link all of the binary files in the PATH environment
+variable to a single directory, tidying dead links in the process, you
+would write
+
+
+     control:
+     
+       actionsequence = ( links tidy )
+     
+     links:
+     
+       /allbin +> $(PATH)
+     
+     tidy:
+     
+       # Hopefully no-match matches nothing
+     
+       /allbin pattern=no-match age=0 links=tidy
+
+NO-MATCH is not a reserved word in cfengine, this is just a string you
+do not expect to match any file.
+
+   Alternatively, you might want to define an internal list using a
+space as a separator:
+
+
+     control:
+     
+        split = ( " " )
+     
+        mylist = ( "mark ricky bad-dude" )
+     
+     tidy:
+     
+        /mnt/home1/$(mylist) pattern=*.cfsaved age=1
+
+This example iterates the tidy action over the directories
+`/mnt/home1/mark', `/mnt/home1/ricky' and `/mnt/home1/bad-dude'.
+
+   The number of list variables in any path or filename should normally
+be restricted to one or two, since the haphazard combination of two
+lists will seldom lead to any meaningful pattern.  The only obvious
+exception is perhaps to iterate over a common set of child-directories
+like `bin', `lib' etc in several different package directories.
+
+
+File: cfengine-Tutorial.info,  Node: Global configurations,  Next: Using cfengine as a front-end for cron,  Prev: More advanced concepts,  Up: Top
+
+Designing a global system configuration
+***************************************
+
+   This chapter is about building strategies for putting together a
+site configuration for your entire network.
+
+* Menu:
+
+* General considerations::
+* Using netgroups::             a common database for classes
+* Files and links::
+* Copying files::
+* Managing processes::
+* NFS resources::               the cfengine model
+* Using the automounter::
+* Editing files::
+* Disabling and the file repository::
+* Running user scripts::
+* Compressing logs::
+* ACLs::
+
+
+File: cfengine-Tutorial.info,  Node: General considerations,  Next: Using netgroups,  Prev: Global configurations,  Up: Global configurations
+
+General considerations
+======================
+
+   In order to use any system administration tool successfully, you have
+to make peace with your system by deciding exactly what you expect and
+what you are willing to do to achieve the results. You need to decide
+what you will consider to be acceptable and what is to be considered
+completely untenable. You need to make these decisions because otherwise
+you will only be confused later when things don't go the way you
+expected.
+
+   Experience shows that the most successful policies for automation
+involve keeping everything as simple as possible. The more uniform or
+alike your machines are, the easier they are to run and the happier
+users are.  Sometimes people claim that they need such great
+flexibility that all their machines should be different. This belief
+tends to be inversely proportional to the number of machines they run
+and generally only applies to very special development environments!
+Usually you will only need one or to machines to be special and most
+can be made very similar.
+
+   Site configuration is about sharing and controlling resources.  The
+resources include disks (filespace), files, data, programs, passwords
+and physical machines. Before planning your sitewide configuration you
+should spend some time deciding how you would like things to work.
+
+   In the remaining parts of this chapter, you will find some hints and
+tips about how to proceed, but remember that when push comes to shove,
+you must make your own choices.
+
+
+File: cfengine-Tutorial.info,  Node: Using netgroups,  Next: Files and links,  Prev: General considerations,  Up: Global configurations
+
+Using netgroups
+===============
+
+   If you use the network information service (NIS) on your local
+network then you may already have defined _netgroups_ consisting of
+lists of hosts which belong to specific owners at your site.  If you
+have, then you can use these groups within cfengine.  This means that
+you can use the same groups in the `/etc/exports' file as you use to
+define the mount groups and classes.
+
+   A netgroup is a list of hostnames or user names which are registered
+in the network information service (NIS) database under a specific name.
+In our case we shall only be interested in lists of hostnames.
+
+   To make a netgroup you need to define a list in the file
+`/etc/netgroup' on your NIS server.  If you are not the NIS
+administrator, you will have to ask to have a netgroup installed.  The
+form of a netgroup list of hosts is:
+
+
+     mylist-name      (host1,,) (host2,,) (host3,,) (host4,,)
+     
+     norway-sun4-host (saga,,) (tor,,) (odin,,)
+     foes-linux-hosts (borg,,)
+
+Each list item has three entries, but only the first is relevant for a
+host list.  See the manual pages on netgroups for a full explanation of
+the meaning of these fields.
+
+   The usefulness of netgroups is that they can be used to stand for a
+list of hostnames in system files like `/etc/exports'.  This compresses
+the amount of text in this file from a long list to a single name.  It
+also means that if you use the same list of hosts from a netgroup inside
+cfengine when defining groups and classes, you can be sure that you are
+always using the same list.  In particular it means that you don't have
+to update multiple copies of a list of hosts.
+
+   The netgroups can now be used in cfengine programs by using the `+'
+or `@+' symbols in the `groups' section.  (see Reference manual).
+

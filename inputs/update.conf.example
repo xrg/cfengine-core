@@ -1,0 +1,69 @@
+#######
+#
+# BEGIN update.conf
+#
+# This script only distributes the configuration, a simple file so that,
+# if there are syntax errors in the main config, we can still
+# distribute a correct configuration to the machines afterwards, even
+# though the main config won't parse. It is read and run just before the
+# main configuration is parsed.
+#
+#######
+
+control:
+
+ actionsequence  = ( copy tidy )  # Keep this simple and constant
+
+ domain          = ( iu.hio.no )
+ workdir         = ( /var/cfengine )
+ policyhost      = ( nexus.iu.hio.no )
+
+ master_cfinput  = ( /iu/nexus/local/iu/cfengine/inputs ) 
+ cf_install_dir  = ( /usr/local/sbin )
+
+############################################################################
+
+ #
+ # Make sure there is a local copy of the configuration and
+ # the most important binaries in case we have no connectivity
+ # e.g. for mobile stations or during DOS attacks
+ #
+
+copy:
+
+     $(master_cfinput)            dest=$(workdir)/inputs
+                                  r=inf
+                                  mode=700
+                                  type=binary
+                                  exclude=*.lst
+                                  exclude=*~
+                                  exclude=#*
+                                  server=$(policyhost)
+
+     $(cf_install_dir)/cfagent    dest=$(workdir)/bin/cfagent 
+                                  mode=755  
+                                  type=checksum
+
+     $(cf_install_dir)/cfservd    dest=$(workdir)/bin/cfservd
+                                  mode=755  
+                                  type=checksum
+
+     $(cf_install_dir)/cfexecd    dest=$(workdir)/bin/cfexecd
+                                  mode=755  
+                                  type=checksum
+
+#####################################################################
+
+tidy:
+
+     #
+     # Make sure we don't choke on our own words!
+     #
+
+     $(workdir)/outputs pattern=* age=7
+
+#######
+#
+# END update.conf
+#
+#######

@@ -1,0 +1,538 @@
+# Makefile.in generated automatically by automake 1.4-p5 from Makefile.am
+
+# Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+
+SHELL = @SHELL@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+
+DESTDIR =
+
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+
+top_builddir = ..
+
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@ $(AM_INSTALL_PROGRAM_FLAGS)
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+transform = @program_transform_name@
+
+NORMAL_INSTALL = :
+PRE_INSTALL = :
+POST_INSTALL = :
+NORMAL_UNINSTALL = :
+PRE_UNINSTALL = :
+POST_UNINSTALL = :
+BERKELEY_DB_CFLAGS = @BERKELEY_DB_CFLAGS@
+BERKELEY_DB_LDFLAGS = @BERKELEY_DB_LDFLAGS@
+BERKELEY_DB_LIB = @BERKELEY_DB_LIB@
+CC = @CC@
+DVIPS = @DVIPS@
+EIGHTBIT = @EIGHTBIT@
+GCC_CFLAG = @GCC_CFLAG@
+HOSTNAME = @HOSTNAME@
+LATEX = @LATEX@
+LEX = @LEX@
+MAKEINFO = @MAKEINFO@
+NOWRAP = @NOWRAP@
+OPENSSL_LIB_CPPFLAGS = @OPENSSL_LIB_CPPFLAGS@
+OPENSSL_LIB_LDFLAGS = @OPENSSL_LIB_LDFLAGS@
+OPENSSL_LIB_LIB = @OPENSSL_LIB_LIB@
+PACKAGE = @PACKAGE@
+RANLIB = @RANLIB@
+TEXI2DVI = @TEXI2DVI@
+VERSION = @VERSION@
+YACC = @YACC@
+
+CFLAGS = @CFLAGS@  @GCC_CFLAG@
+YFLAGS = -d
+LEXLIB = @LEXLIB@
+LDADD = -L../pub -lpub @BERKELEY_DB_LDFLAGS@ @BERKELEY_DB_LIB@ @OPENSSL_LIB_LDFLAGS@ @OPENSSL_LIB_LIB@
+INCLUDES = @BERKELEY_DB_CFLAGS@ @OPENSSL_LIB_CPPFLAGS@
+LDFLAGS = @BERKELEY_DB_LDFLAGS@ @OPENSSL_LIB_LDFLAGS@ @LDFLAGS@
+
+sbin_PROGRAMS = cfagent cfservd cfrun cfkey cfenvd cfenvgraph cfexecd
+
+cfagent_SOURCES =  	cfagent.c								init.c								        do.c                                                                    wrapper.c                                                               report.c                                                        	client.c								ip.c									process.c								ifconf.c								image.c									item.c									item-ext.c								item-file.c								2Dlist.c								globals.c								classes.c								misc.c									parse.c									functions.c								edittools.c								patches.c								install.c								link.c									tidy.c									filedir.c								eval.c									modes.c									chflags.c								locks.c									mount.c									macro.c									filenames.c								varstring.c								wildcard.c								cfparse.y								comparray.c								read.c									checksums.c								proto.c								        filters.c                                                       	copy.c									repository.c								rotate.c								errors.c								cflex.l									net.c									df.c									log.c									crypto.c								popen.c									popen_def.c								sensible.c								acl.c									dce_acl.c								nameinfo.c								strategies.c
+
+
+cfagent_LDADD = $(LEXLIB) @BERKELEY_DB_LIB@ @OPENSSL_LIB_LIB@
+
+cfservd_SOURCES =  	cfservd.c								parse.c									functions.c								install.c								ip.c									cfparse.c								chflags.c								cflex.l									item.c									item-ext.c								varstring.c								popen.c									popen_def.c								globals.c								filenames.c								macro.c									eval.c									read.c									classes.c								misc.c									2Dlist.c								modes.c									locks.c									init.c									wildcard.c								copy.c									rotate.c								net.c									acl.c									dce_acl.c								log.c									errors.c								crypto.c							        filters.c                                                       	patches.c								checksums.c								nameinfo.c								strategies.c
+
+
+cfservd_LDADD = $(LEXLIB)  @BERKELEY_DB_LIB@ @OPENSSL_LIB_LIB@
+
+cfexecd_SOURCES =  	cfexecd.c								popen.c									globals.c								read.c									classes.c								nameinfo.c								wildcard.c								errors.c							        patches.c                                                       	log.c									locks.c									filenames.c								granules.c								item.c
+
+
+cfexecd_LDADD = $(LEXLIB)  @BERKELEY_DB_LIB@ @OPENSSL_LIB_LIB@
+
+cfrun_SOURCES =  	cfrun.c									item.c									item-ext.c								filenames.c								nameinfo.c								eval.c									wildcard.c								proto.c									popen.c									net.c									ip.c									checksums.c								classes.c								read.c									log.c									crypto.c								patches.c								init.c									granules.c								globals.c
+
+
+cfkey_SOURCES =  	cfkey.c									init.c									filenames.c								crypto.c								popen.c									globals.c								read.c									classes.c								errors.c							        patches.c                                                       	log.c
+
+
+cfenvd_SOURCES =  	cfenvd.c								globals.c								filenames.c								nameinfo.c								classes.c								item.c									item-ext.c								eval.c									wildcard.c								df.c									read.c									granules.c								log.c									popen.c									patches.c								locks.c		
+
+
+cfenvgraph_SOURCES =  	cfenvgraph.c								granules.c
+
+
+#
+# Pickup header files here so Automake knows about them
+#
+noinst_HEADERS =  	cfservd.h									cfparse.h								cf.defs.h								cf.extern.h                                                     	prototypes.h
+
+
+#
+# Some basic clean ups
+#
+MOSTLYCLEANFILES = *~ *.orig
+
+#
+# Get everything removed down to where rebuilding requires:
+# "make; make install"
+# 
+CLEANFILES = cflex.c cfparse.c cfparse.h
+
+#
+# Get everything removed down to where rebuilding requires:
+# "configure; make; make install"
+#
+DISTCLEANFILES = cflex.c cfparse.c cfparse.h
+
+#
+# Get everything removed down to where rebuilding requires:
+# "aclocal; autoconf; autoheader; automake --add-missing"
+# "configure; make; make install"
+#
+MAINTAINERCLEANFILES = Makefile.in conf.h.in stamp-h.in
+mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+CONFIG_HEADER = conf.h
+CONFIG_CLEAN_FILES =  cflex.l
+PROGRAMS =  $(sbin_PROGRAMS)
+
+
+DEFS = @DEFS@ -I. -I$(srcdir) -I.
+CPPFLAGS = @CPPFLAGS@
+LIBS = @LIBS@
+cfagent_OBJECTS =  cfagent.o init.o do.o wrapper.o report.o client.o \
+ip.o process.o ifconf.o image.o item.o item-ext.o item-file.o 2Dlist.o \
+globals.o classes.o misc.o parse.o functions.o edittools.o patches.o \
+install.o link.o tidy.o filedir.o eval.o modes.o chflags.o locks.o \
+mount.o macro.o filenames.o varstring.o wildcard.o cfparse.o \
+comparray.o read.o checksums.o proto.o filters.o copy.o repository.o \
+rotate.o errors.o cflex.o net.o df.o log.o crypto.o popen.o popen_def.o \
+sensible.o acl.o dce_acl.o nameinfo.o strategies.o
+cfagent_DEPENDENCIES = 
+cfagent_LDFLAGS = 
+cfservd_OBJECTS =  cfservd.o parse.o functions.o install.o ip.o \
+cfparse.o chflags.o cflex.o item.o item-ext.o varstring.o popen.o \
+popen_def.o globals.o filenames.o macro.o eval.o read.o classes.o \
+misc.o 2Dlist.o modes.o locks.o init.o wildcard.o copy.o rotate.o net.o \
+acl.o dce_acl.o log.o errors.o crypto.o filters.o patches.o checksums.o \
+nameinfo.o strategies.o
+cfservd_DEPENDENCIES = 
+cfservd_LDFLAGS = 
+cfrun_OBJECTS =  cfrun.o item.o item-ext.o filenames.o nameinfo.o eval.o \
+wildcard.o proto.o popen.o net.o ip.o checksums.o classes.o read.o \
+log.o crypto.o patches.o init.o granules.o globals.o
+cfrun_LDADD = $(LDADD)
+cfrun_DEPENDENCIES = 
+cfrun_LDFLAGS = 
+cfkey_OBJECTS =  cfkey.o init.o filenames.o crypto.o popen.o globals.o \
+read.o classes.o errors.o patches.o log.o
+cfkey_LDADD = $(LDADD)
+cfkey_DEPENDENCIES = 
+cfkey_LDFLAGS = 
+cfenvd_OBJECTS =  cfenvd.o globals.o filenames.o nameinfo.o classes.o \
+item.o item-ext.o eval.o wildcard.o df.o read.o granules.o log.o \
+popen.o patches.o locks.o
+cfenvd_LDADD = $(LDADD)
+cfenvd_DEPENDENCIES = 
+cfenvd_LDFLAGS = 
+cfenvgraph_OBJECTS =  cfenvgraph.o granules.o
+cfenvgraph_LDADD = $(LDADD)
+cfenvgraph_DEPENDENCIES = 
+cfenvgraph_LDFLAGS = 
+cfexecd_OBJECTS =  cfexecd.o popen.o globals.o read.o classes.o \
+nameinfo.o wildcard.o errors.o patches.o log.o locks.o filenames.o \
+granules.o item.o
+cfexecd_DEPENDENCIES = 
+cfexecd_LDFLAGS = 
+LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
+HEADERS =  $(noinst_HEADERS)
+
+DIST_COMMON =  ./stamp-h.in Makefile.am Makefile.in cflex.c cflex.l.in \
+cfparse.c conf.h.in
+
+
+DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
+
+TAR = tar
+GZIP_ENV = --best
+SOURCES = $(cfagent_SOURCES) $(cfservd_SOURCES) $(cfrun_SOURCES) $(cfkey_SOURCES) $(cfenvd_SOURCES) $(cfenvgraph_SOURCES) $(cfexecd_SOURCES)
+OBJECTS = $(cfagent_OBJECTS) $(cfservd_OBJECTS) $(cfrun_OBJECTS) $(cfkey_OBJECTS) $(cfenvd_OBJECTS) $(cfenvgraph_OBJECTS) $(cfexecd_OBJECTS)
+
+all: all-redirect
+.SUFFIXES:
+.SUFFIXES: .S .c .l .o .s .y
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.ac $(ACLOCAL_M4) 
+	cd $(top_srcdir) && $(AUTOMAKE) --gnu --include-deps src/Makefile
+
+Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+
+conf.h: stamp-h
+	@if test ! -f $@; then \
+		rm -f stamp-h; \
+		$(MAKE) stamp-h; \
+	else :; fi
+stamp-h: $(srcdir)/conf.h.in $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES= CONFIG_HEADERS=src/conf.h \
+	     $(SHELL) ./config.status
+	@echo timestamp > stamp-h 2> /dev/null
+$(srcdir)/conf.h.in: $(srcdir)/stamp-h.in
+	@if test ! -f $@; then \
+		rm -f $(srcdir)/stamp-h.in; \
+		$(MAKE) $(srcdir)/stamp-h.in; \
+	else :; fi
+$(srcdir)/stamp-h.in: $(top_srcdir)/configure.ac $(ACLOCAL_M4) 
+	cd $(top_srcdir) && $(AUTOHEADER)
+	@echo timestamp > $(srcdir)/stamp-h.in 2> /dev/null
+
+mostlyclean-hdr:
+
+clean-hdr:
+
+distclean-hdr:
+	-rm -f conf.h
+
+maintainer-clean-hdr:
+cflex.l: $(top_builddir)/config.status cflex.l.in
+	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+mostlyclean-sbinPROGRAMS:
+
+clean-sbinPROGRAMS:
+	-test -z "$(sbin_PROGRAMS)" || rm -f $(sbin_PROGRAMS)
+
+distclean-sbinPROGRAMS:
+
+maintainer-clean-sbinPROGRAMS:
+
+install-sbinPROGRAMS: $(sbin_PROGRAMS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(sbindir)
+	@list='$(sbin_PROGRAMS)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo "  $(INSTALL_PROGRAM) $$p $(DESTDIR)$(sbindir)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`"; \
+	     $(INSTALL_PROGRAM) $$p $(DESTDIR)$(sbindir)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`; \
+	  else :; fi; \
+	done
+
+uninstall-sbinPROGRAMS:
+	@$(NORMAL_UNINSTALL)
+	list='$(sbin_PROGRAMS)'; for p in $$list; do \
+	  rm -f $(DESTDIR)$(sbindir)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`; \
+	done
+
+.c.o:
+	$(COMPILE) -c $<
+
+.s.o:
+	$(COMPILE) -c $<
+
+.S.o:
+	$(COMPILE) -c $<
+
+mostlyclean-compile:
+	-rm -f *.o core *.core
+
+clean-compile:
+
+distclean-compile:
+	-rm -f *.tab.c
+
+maintainer-clean-compile:
+
+cfagent: $(cfagent_OBJECTS) $(cfagent_DEPENDENCIES)
+	@rm -f cfagent
+	$(LINK) $(cfagent_LDFLAGS) $(cfagent_OBJECTS) $(cfagent_LDADD) $(LIBS)
+
+cfservd: $(cfservd_OBJECTS) $(cfservd_DEPENDENCIES)
+	@rm -f cfservd
+	$(LINK) $(cfservd_LDFLAGS) $(cfservd_OBJECTS) $(cfservd_LDADD) $(LIBS)
+
+cfrun: $(cfrun_OBJECTS) $(cfrun_DEPENDENCIES)
+	@rm -f cfrun
+	$(LINK) $(cfrun_LDFLAGS) $(cfrun_OBJECTS) $(cfrun_LDADD) $(LIBS)
+
+cfkey: $(cfkey_OBJECTS) $(cfkey_DEPENDENCIES)
+	@rm -f cfkey
+	$(LINK) $(cfkey_LDFLAGS) $(cfkey_OBJECTS) $(cfkey_LDADD) $(LIBS)
+
+cfenvd: $(cfenvd_OBJECTS) $(cfenvd_DEPENDENCIES)
+	@rm -f cfenvd
+	$(LINK) $(cfenvd_LDFLAGS) $(cfenvd_OBJECTS) $(cfenvd_LDADD) $(LIBS)
+
+cfenvgraph: $(cfenvgraph_OBJECTS) $(cfenvgraph_DEPENDENCIES)
+	@rm -f cfenvgraph
+	$(LINK) $(cfenvgraph_LDFLAGS) $(cfenvgraph_OBJECTS) $(cfenvgraph_LDADD) $(LIBS)
+
+cfexecd: $(cfexecd_OBJECTS) $(cfexecd_DEPENDENCIES)
+	@rm -f cfexecd
+	$(LINK) $(cfexecd_LDFLAGS) $(cfexecd_OBJECTS) $(cfexecd_LDADD) $(LIBS)
+.l.c:
+	$(LEX) $(AM_LFLAGS) $(LFLAGS) $< && mv $(LEX_OUTPUT_ROOT).c $@
+.y.c:
+	$(YACC) $(AM_YFLAGS) $(YFLAGS) $< && mv y.tab.c $*.c
+	if test -f y.tab.h; then \
+	if cmp -s y.tab.h $*.h; then rm -f y.tab.h; else mv y.tab.h $*.h; fi; \
+	else :; fi
+cfparse.h: cfparse.c
+
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES) $(LISP)
+	list='$(SOURCES) $(HEADERS)'; \
+	unique=`for i in $$list; do echo $$i; done | \
+	  awk '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	here=`pwd` && cd $(srcdir) \
+	  && mkid -f$$here/ID $$unique $(LISP)
+
+TAGS:  $(HEADERS) $(SOURCES) conf.h.in $(TAGS_DEPENDENCIES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS)'; \
+	unique=`for i in $$list; do echo $$i; done | \
+	  awk '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(ETAGS_ARGS)conf.h.in$$unique$(LISP)$$tags" \
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags conf.h.in $$unique $(LISP) -o $$here/TAGS)
+
+mostlyclean-tags:
+
+clean-tags:
+
+distclean-tags:
+	-rm -f TAGS ID
+
+maintainer-clean-tags:
+
+distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
+
+subdir = src
+
+distdir: $(DISTFILES)
+	@for file in $(DISTFILES); do \
+	  d=$(srcdir); \
+	  if test -d $$d/$$file; then \
+	    cp -pr $$d/$$file $(distdir)/$$file; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
+	    || cp -p $$d/$$file $(distdir)/$$file || :; \
+	  fi; \
+	done
+2Dlist.o: 2Dlist.c cf.defs.h conf.h prototypes.h cf.extern.h
+acl.o: acl.c cf.defs.h conf.h prototypes.h cf.extern.h
+cfagent.o: cfagent.c ../pub/getopt.h cf.defs.h conf.h prototypes.h \
+	cf.extern.h
+cfenvd.o: cfenvd.c ../pub/getopt.h cf.defs.h conf.h prototypes.h \
+	cf.extern.h
+cfenvgraph.o: cfenvgraph.c ../pub/getopt.h cf.defs.h conf.h prototypes.h \
+	cf.extern.h
+cfexecd.o: cfexecd.c ../pub/getopt.h cf.defs.h conf.h prototypes.h \
+	cf.extern.h
+cfkey.o: cfkey.c cf.defs.h conf.h prototypes.h cf.extern.h
+cflex.o: cflex.c cfparse.h cf.defs.h conf.h prototypes.h cf.extern.h
+cfparse.o: cfparse.c cf.defs.h conf.h prototypes.h cf.extern.h
+cfrun.o: cfrun.c cf.defs.h conf.h prototypes.h cf.extern.h
+cfservd.o: cfservd.c ../pub/getopt.h cf.defs.h conf.h prototypes.h \
+	cf.extern.h cfservd.h
+checksums.o: checksums.c cf.defs.h conf.h prototypes.h cf.extern.h
+chflags.o: chflags.c cf.defs.h conf.h prototypes.h cf.extern.h
+classes.o: classes.c cf.defs.h conf.h prototypes.h
+client.o: client.c cf.defs.h conf.h prototypes.h cf.extern.h
+comparray.o: comparray.c cf.defs.h conf.h prototypes.h cf.extern.h
+copy.o: copy.c cf.defs.h conf.h prototypes.h cf.extern.h
+crypto.o: crypto.c cf.defs.h conf.h prototypes.h cf.extern.h \
+	../pub/global.h
+dce_acl.o: dce_acl.c cf.defs.h conf.h prototypes.h cf.extern.h
+df.o: df.c ../pub/getopt.h cf.defs.h conf.h prototypes.h cf.extern.h
+do.o: do.c cf.defs.h conf.h prototypes.h cf.extern.h
+edittools.o: edittools.c cf.defs.h conf.h prototypes.h cf.extern.h
+errors.o: errors.c cf.defs.h conf.h prototypes.h cf.extern.h
+eval.o: eval.c cf.defs.h conf.h prototypes.h cf.extern.h
+filedir.o: filedir.c cf.defs.h conf.h prototypes.h cf.extern.h
+filenames.o: filenames.c cf.defs.h conf.h prototypes.h cf.extern.h
+filters.o: filters.c cf.defs.h conf.h prototypes.h cf.extern.h
+functions.o: functions.c cf.defs.h conf.h prototypes.h cf.extern.h
+globals.o: globals.c ../pub/getopt.h cf.defs.h conf.h prototypes.h
+granules.o: granules.c ../pub/getopt.h cf.defs.h conf.h prototypes.h \
+	cf.extern.h
+ifconf.o: ifconf.c cf.defs.h conf.h prototypes.h cf.extern.h
+image.o: image.c cf.defs.h conf.h prototypes.h cf.extern.h
+init.o: init.c cf.defs.h conf.h prototypes.h cf.extern.h ../pub/global.h
+install.o: install.c cf.defs.h conf.h prototypes.h cf.extern.h
+ip.o: ip.c cf.defs.h conf.h prototypes.h cf.extern.h
+item-ext.o: item-ext.c cf.defs.h conf.h prototypes.h cf.extern.h
+item-file.o: item-file.c cf.defs.h conf.h prototypes.h cf.extern.h
+item.o: item.c cf.defs.h conf.h prototypes.h cf.extern.h
+link.o: link.c cf.defs.h conf.h prototypes.h cf.extern.h
+locks.o: locks.c cf.defs.h conf.h prototypes.h cf.extern.h
+log.o: log.c cf.defs.h conf.h prototypes.h cf.extern.h
+macro.o: macro.c cf.defs.h conf.h prototypes.h cf.extern.h
+misc.o: misc.c cf.defs.h conf.h prototypes.h cf.extern.h ../pub/global.h
+modes.o: modes.c cf.defs.h conf.h prototypes.h cf.extern.h
+mount.o: mount.c cf.defs.h conf.h prototypes.h cf.extern.h
+nameinfo.o: nameinfo.c cf.defs.h conf.h prototypes.h cf.extern.h \
+	../pub/global.h
+net.o: net.c cf.defs.h conf.h prototypes.h cf.extern.h
+parse.o: parse.c cf.defs.h conf.h prototypes.h cf.extern.h
+patches.o: patches.c cf.defs.h conf.h prototypes.h cf.extern.h
+popen.o: popen.c cf.defs.h conf.h prototypes.h cf.extern.h
+popen_def.o: popen_def.c cf.defs.h conf.h prototypes.h cf.extern.h
+process.o: process.c cf.defs.h conf.h prototypes.h cf.extern.h
+proto.o: proto.c cf.defs.h conf.h prototypes.h cf.extern.h
+read.o: read.c cf.defs.h conf.h prototypes.h cf.extern.h
+report.o: report.c cf.defs.h conf.h prototypes.h cf.extern.h
+repository.o: repository.c cf.defs.h conf.h prototypes.h cf.extern.h \
+	../pub/global.h
+rotate.o: rotate.c cf.defs.h conf.h prototypes.h cf.extern.h \
+	../pub/global.h
+sensible.o: sensible.c cf.defs.h conf.h prototypes.h cf.extern.h
+strategies.o: strategies.c cf.defs.h conf.h prototypes.h cf.extern.h
+tidy.o: tidy.c cf.defs.h conf.h prototypes.h cf.extern.h
+varstring.o: varstring.c cf.defs.h conf.h prototypes.h cf.extern.h
+wildcard.o: wildcard.c cf.defs.h conf.h prototypes.h cf.extern.h
+wrapper.o: wrapper.c cf.defs.h conf.h prototypes.h cf.extern.h
+
+info-am:
+info: info-am
+dvi-am:
+dvi: dvi-am
+check-am: all-am
+check: check-am
+installcheck-am:
+installcheck: installcheck-am
+all-recursive-am: conf.h
+	$(MAKE) $(AM_MAKEFLAGS) all-recursive
+
+install-exec-am: install-sbinPROGRAMS
+install-exec: install-exec-am
+
+install-data-am:
+install-data: install-data-am
+
+install-am: all-am
+	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
+install: install-am
+uninstall-am: uninstall-sbinPROGRAMS
+uninstall: uninstall-am
+all-am: Makefile $(PROGRAMS) $(HEADERS) conf.h
+all-redirect: all-am
+install-strip:
+	$(MAKE) $(AM_MAKEFLAGS) AM_INSTALL_PROGRAM_FLAGS=-s install
+installdirs:
+	$(mkinstalldirs)  $(DESTDIR)$(sbindir)
+
+
+mostlyclean-generic:
+	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
+
+clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
+
+distclean-generic:
+	-rm -f Makefile $(CONFIG_CLEAN_FILES)
+	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
+
+maintainer-clean-generic:
+	-test -z "cflexlcfparsehcfparsec$(MAINTAINERCLEANFILES)" || rm -f cflexl cfparseh cfparsec $(MAINTAINERCLEANFILES)
+mostlyclean-am:  mostlyclean-hdr mostlyclean-sbinPROGRAMS \
+		mostlyclean-compile mostlyclean-tags \
+		mostlyclean-generic
+
+mostlyclean: mostlyclean-am
+
+clean-am:  clean-hdr clean-sbinPROGRAMS clean-compile clean-tags \
+		clean-generic mostlyclean-am
+
+clean: clean-am
+
+distclean-am:  distclean-hdr distclean-sbinPROGRAMS distclean-compile \
+		distclean-tags distclean-generic clean-am
+
+distclean: distclean-am
+
+maintainer-clean-am:  maintainer-clean-hdr maintainer-clean-sbinPROGRAMS \
+		maintainer-clean-compile maintainer-clean-tags \
+		maintainer-clean-generic distclean-am
+	@echo "This command is intended for maintainers to use;"
+	@echo "it deletes files that may require special tools to rebuild."
+
+maintainer-clean: maintainer-clean-am
+
+.PHONY: mostlyclean-hdr distclean-hdr clean-hdr maintainer-clean-hdr \
+mostlyclean-sbinPROGRAMS distclean-sbinPROGRAMS clean-sbinPROGRAMS \
+maintainer-clean-sbinPROGRAMS uninstall-sbinPROGRAMS \
+install-sbinPROGRAMS mostlyclean-compile distclean-compile \
+clean-compile maintainer-clean-compile tags mostlyclean-tags \
+distclean-tags clean-tags maintainer-clean-tags distdir info-am info \
+dvi-am dvi check check-am installcheck-am installcheck all-recursive-am \
+install-exec-am install-exec install-data-am install-data install-am \
+install uninstall-am uninstall all-redirect all-am all installdirs \
+mostlyclean-generic distclean-generic clean-generic \
+maintainer-clean-generic clean mostlyclean distclean maintainer-clean
+
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:

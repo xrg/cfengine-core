@@ -1,0 +1,1241 @@
+This is cfengine-Tutorial.info, produced by makeinfo version 4.0 from
+cfengine-Tutorial.texinfo.
+
+INFO-DIR-SECTION System Utilities
+START-INFO-DIR-ENTRY
+* cfengine Tutorial: (cfengine-Tutorial.info).
+                        Cfengine is a language based tool specifically
+                        designed for configuring and maintaining BSD
+                        and System-5-like operating systems attached
+                        to a TCP/IP network.
+END-INFO-DIR-ENTRY
+
+
+File: cfengine-Tutorial.info,  Node: ACLs,  Prev: Compressing logs,  Up: Global configurations
+
+Managing ACLs
+=============
+
+   Access control lists are extended file permissions. They allow you to
+open or close a file to a named list of users (without having to create
+a special group for those users).  They also allow you to open or close
+a file for a named list of groups.  Several Unix-like operating systems
+have had access control lists for some time; but they do not seem to
+have caught on.
+
+   There is a number of reasons for this dawdling in the past.  The
+tools for setting ACLs are generally interactive and awkward to use.
+Because a named list of users would lead to excessive verbosity in an
+`ls -l' listing, one does not normally see them. There is therefore the
+danger that the hidden information would lead to undetected blunders in
+opening files to the wrong users.  ACLs are also different on every
+vendor's filesystems and they don't work over intersystem NFS.  In
+spite of these reservations, ACLs are a great idea. Here at Oslo
+College, it seems that users are continually asking how they can open a
+file just for the one or two persons they wish to collaborate with.
+They have grown used to Novell/PC networks which embraced the
+technology from Apollo/NCS much earlier. Previously the Unix answer to
+users has always been: go ask the system administrator to make a
+special group for you.  Then do the `chmod' thing. And then they would
+say: so what's so great about this Unix then?
+
+   Addressing this lack of standardization has been the job of a POSIX
+draft committee. Some vendors have made their implementations in the
+image of this draft. Solaris 2.6 has a good implementation.  In spite
+of this, even these systems have only awkard tools for manipulating
+ACLs. Not the kind of thing you want to be around much, if you have
+better things to do.  But the incompatibility argument applies only to
+multiple vendor headbutting. Some institutions who share data on a
+global basis opt for advanced solutions to network filesystems, such as
+AFS and DFS.  Filesystems such as DCE's DFS make extensive use of file
+ACLs, and they are not operating system specific.  Even so, DFS
+provides only interactive tools for examining and setting file
+permissions, and this is of little use to system administrators who
+would rather relegate that sort of thing to a script.
+
+   The need for this kind of thing is clear. Systems which make use of
+ACLs for security can be brought to their knees by changing a few ACLs.
+Take the Apollo/Domain OS as an example. All one needs to do to kill the
+system is to change a few ACLs and forget what they were supposed to
+be. Suddenly the system is crippled, nothing works. The only solution,
+if you don't have a backup, is to remove all of the security. Unix has a
+simpler security philosophy when it comes to the operating system files,
+but ACLs would be a valuable addition to the security of our data.
+
+   A cfagent bare-bones file-checking program looks like this:
+
+     #
+     # Free format cfagent program
+     #
+     
+      control:
+     
+        ActionSequence - ( files )
+     
+      files:
+     
+        classes::
+     
+          /directory/file  mode=644
+                           owner=mark,ds
+                           group=users,adm
+                           acl=zap
+                           action=fixplain
+     
+       # ... more below
+
+This program simply checks the permissions and ownership of the named
+file. The regular file mode, owner and group are specified
+straightforwardly.  The new feature here is the `acl' directive. It is
+a deceptively simply looking animal, but it hides a wealth of
+complexity.  The `zap' is, of course, not an access control list.
+Rather, cfagent uses a system of aliases to refer to ACLs, so that the
+clutter of the complex ACL definitions does not impair the clarity of a
+file command.  An ACL alias is defined in a separate part of the
+program which looks like this:
+
+      # ...contd
+     
+     
+      acl:
+     
+        { zap
+     
+        method:append
+        fstype:solaris
+        user:rmz:rwx
+        user:len:r
+        }
+
+As you can see, an ACL is a compound object--a bundle of information
+which specifies which users have which permissions.  Because ACLs are
+_lists_ the alias objects must also know whether the items are to be
+appended to an existing list or whether they are to replace an existing
+list. Also, since the permission bits, general options and programming
+interfaces are all different for each type of filesystem, we have to
+tell cfagent what the filesystem type is.
+
+   It is possible to associate several ACL aliases with a file.  When
+cfagent checks a files with ACLs, it reads the existing ACL and
+compares it to the new one. Files are only modified if they do not
+conform to the specification  in the cfengine program. Let's look at a
+complete example:
+
+      files:
+     
+        $(HOME)/myfile acl=acl_alias1 action=fixall
+     
+      acl:
+     
+        { acl_alias1
+     
+        method:append
+        fstype:solaris
+        user:len:rwx
+        }
+
+ACLs are viewed in Solaris with the command `getfacl'.  Suppose that,
+before running this program, our test-file had permissions
+
+        user:*:rwx
+        user:mark:rwx           #effective:r-x
+        group:*:r-x              #effective:r-x
+        mask:r-x
+        other:r-x
+        default_user:rw-
+        default_group:r--
+        default_mask:-w-
+        default_other:rwx
+
+After the cfagent run, the ACL would become:
+
+        user:*:rwx
+        user:mark:rwx           #effective:r-x
+        user:len:rwx            #effective:r-x
+        group:*:r-x              #effective:r-x
+        mask:r-x
+        other:r-x
+        default_user:rw-
+        default_group:r--
+        default_mask:-w-
+        default_other:rwx
+
+Suppose we wanted to to remove 'w' bit for user `jacobs', or make sure
+that it was never there.
+
+     	{ acl_alias1
+     
+     	method:append
+     	fstype:solaris
+     	user:jacobs:-w
+     	}
+
+Note that the method used here is append. That means that, whatever
+other access permissions we might have granted on this file, the user
+`jacobs' (a known cracker) will have no write permissions on the file.
+Had we used the method `overwrite' above, we would have eliminated all
+other access permissions for every user and added the above.  If we
+really wanted to burn `jacobs', we could remove all rights to the file
+like this
+
+
+       user:jacobs:noaccess
+
+The keyword `noaccess' removes all bits. Note that this is not
+necessarily the same as doing a `-rwx', since some filesystems, like
+DFS, have more bits than this. Then, if we want to forgive and forget,
+the ACLs may be removed for `jacobs' with the syntax
+
+       user:jacobs:default
+
+   In Solaris, files inherit default ACLs from the directory they lie
+in; these are modified by the umask setting to generate their own
+default mask.
+
+   DFS ACLs look a little different. They are examined with the
+`acl_edit' command or with
+
+     dcecp -c acl show <filename>
+
+In order to effect changes to the DFS, you have to perform a DCE login
+to obtain authentication cookies. The user `cell_admin' is a special
+user account for administrating a local DFS cell.  Suppose we have a
+file with the following DCE ACL:
+
+       mask_obj:r-x---
+       user_obj:rwxcid
+       user:cell_admin:r--c-- #effective:r-----
+       group_obj:r-x--d       #effective:r-x---
+       other_obj:r-x---
+
+Now we want to add `wx' permissions for user `cell_admin', and add new
+entries with `rx' permissons for group `acct-admin' and user `root'.
+This is done with the following ACL alias:
+
+
+        { acl_alias2
+     
+        method:append
+        fstype:dfs
+        user:/.../iu.hioslo.no/cell_admin:wx
+        group:/.../iu.hioslo.no/acct-admin:rx
+        user:/.../iu.hioslo.no/root:rx
+        user:*:-x
+        }
+
+The local cell name `/.../iu.hioslo.no' is required here. Cfagent can
+not presently change ACLs in other cells remotely, but if your cfengine
+program covers all of the cell servers, then this is no limitation,
+since you can still centralize all your ACLs in one place. It is just
+that the execution and checking takes place at distributed locations.
+This is the beauty of cfengine.  After running cfagent, with the above
+program snippet, the ACL then becomes:
+
+       mask_obj:r-x---
+       user_obj:rwcid
+       user:cell_admin:rwxc-- #effective:r-x---
+       user:root:r-x---       #effective:r-x---
+       group_obj:r-x--d       #effective:r-x---
+       group:acct-admin:r-x---
+       other_bj:r-x---
+
+For the sake of simplicity we have only used standard Unix bits `rwx'
+here, but more complicated examples may be found in DFS. For example,
+
+
+      user:mark:+rwx,-cid
+
+which sets the read, write, execute flags, but removes the control,
+insert and delete flags. In the DFS, files inherit the inital object
+ACL of their parent directory, while new directories inherit the
+initial container object.
+
+   The objects referred to in DFS as `user_obj', `group_obj' and so
+forth refer to the owner of a file. i.e. they are equivalent to the
+same commands acting on the user who owns the file concerned.  To make
+the cfengine user-interface less cryptic and more in tune with the
+POSIX form, we have dropped the `_obj' suffices. A user field of `*' is
+a simple abbreviation for the owner of the file.
+
+   A problem with any system of lists is that one can generate a
+sequence which does one thing, and then undoes it and redoes something
+else, all in the same contradictory list. To avoid this kind of
+accidental interaction, cfengine insists that each user has only one ACE
+(access control entry), i.e. that all the permissions for a given user
+be in one entry.
+
+
+File: cfengine-Tutorial.info,  Node: Using cfengine as a front-end for cron,  Next: Cfengine network services,  Prev: Global configurations,  Up: Top
+
+Using cfengine as a front end for `cron'
+****************************************
+
+   One of cfengine's strengths is its use of classes to identify systems
+from a single file or set of files. Many administrators think that it
+would be nice if the cron daemon also worked in this way. One possible
+way of setting up cron from a global configuration would be to use the
+cfengine `editfiles' facility to edit each cron file separately. A much
+better way is to use cfengine's time classes to work like a user
+interface for cron.  This allows you to have a single, central cfengine
+file which contains all the cron jobs on your system without losing any
+of the fine control which cron affords you. All of the usual advantages
+apply:
+   * It is easier to keep track of what cron jobs are running on the
+     system when you have everything in one place.
+
+   * You can use all of your carefully crafted groups and user-defined
+     classes to identify which host should run which programs.
+
+   The central idea behind this scheme is to set up a regular cron job
+on every system which executes cfagent at frequent intervals.  Each
+time cfagent is started, it evaluates time classes and executes the
+shell commands defined in its configuration file.  In this way we use
+cfagent as a wrapper for the cron scripts, so that we can use
+cfengine's classes to control jobs for mulitple hosts. Cfengine's time
+classes are at least as powerful as `cron''s time specification
+possibilities, so this does not restrict you in any way, *Note Building
+flexible time classes::. The only price is the overhead of parsing the
+cfengine configuration file.
+
+   To be more concrete, imagine installing the following `crontab' file
+onto every host on your network:
+
+     #
+     # Global Cron file
+     #
+     0,15,30,45 * * * * /usr/local/sbin/cfexecd -F
+
+* Menu:
+
+* Structuring cfagent.conf::
+* Splaying host times::
+* Building flexible time classes::
+* Scheduling interval::
+
+
+File: cfengine-Tutorial.info,  Node: Structuring cfagent.conf,  Next: Splaying host times,  Prev: Using cfengine as a front-end for cron,  Up: Using cfengine as a front-end for cron
+
+Structuring `cfagent.conf'
+==========================
+
+   The structure of `cfagent.conf' needs to reflect your policy for
+running jobs on the system. You need to switch on relevant tasks and
+switch off unwanted tasks depending on the time of day. This can be
+done in three ways:
+
+   * By placing individual actions under classes which restrict the
+     times at which they are executed,
+
+
+            ACTION:
+          
+                  Hr00.Min10_15||Hr12.Min45_55::
+          
+                     COMMAND
+
+   * By choosing a different `actionsequence' depending on the time of
+     day.
+
+
+            control:
+          
+                  Hr00::   # Action-sequence for daily run at midnight
+          
+                     actionsequence = ( SEQUENCE )
+          
+                 !Hr00::   # Action-sequence otherwise
+          
+                      actionsequence = ( SEQUENCE )
+
+   * By importing modules based on time classes.
+
+
+            import:
+          
+                  Hr00:: cf.dailyjobs
+          
+                  any::  cf.hourlyjobs
+
+
+The last of these is the most efficient of the three, since cfengine
+does not even have to spend time parsing the files for actions which
+you know you will not want.
+
+
+File: cfengine-Tutorial.info,  Node: Splaying host times,  Next: Building flexible time classes,  Prev: Structuring cfagent.conf,  Up: Using cfengine as a front-end for cron
+
+Splaying host times
+===================
+
+   The trouble with starting every cfagent at the same time using a
+global cron file is that it might lead to contention or inefficiency.
+For instance, if a hundred cfagents all suddenly wanted to copy a file
+from a master source simultaneously this would lead to a big load on the
+server. We can prevent this from happening by introducing a time delay
+which is unique for each host and not longer than some given interval.
+Cfagent uses a hashing algorithm to generate a number between zero and
+a maximum value in minutes which you define, like this:
+
+
+      # Put this in update.conf, so that the updates are also splayed
+     
+      control:
+     
+         SplayTime = ( 10 ) # minutes
+
+If this number is non-zero, cfagent goes to sleep after parsing its
+configuration file and reading the clock. Every machine will go to sleep
+for a different length of time, which is no longer than the time you
+specify in minutes. A hashing algorithm, based on the fully qualified
+name of the host, is used to compute a unique time for hosts. The
+shorter the interval, the more clustered the hosts will be. The longer
+the interval, the lighter the load on your servers.  This `splaying' of
+the run times will lighten the load on servers, even if they come from
+domains not under your control but have a similar cron policy.
+
+   Splaying can be switched off temporarily with the `-q' or
+`--no-splay' options.
+
+
+File: cfengine-Tutorial.info,  Node: Building flexible time classes,  Next: Scheduling interval,  Prev: Splaying host times,  Up: Using cfengine as a front-end for cron
+
+Building flexible time classes
+==============================
+
+   Each time cfagent is run, it reads the system clock and defines the
+following classes based on the time and date:
+
+`YrXX::'
+     The current year, e.g. `Yr1997', `Yr2001'. This class is probably
+     not useful very often, but it might help you to turn on the
+     new-year lights, or shine up your systems for the new millenium!
+
+`MONTH::'
+     The current month can be used for defining very long term
+     variations in the system configuration, e.g. `January',
+     `February'. These classes could be used to determine when students
+     have their summer vacation, for instance, in order to perform
+     extra tidying, or to specially maintain some administrative policy
+     for the duration of a conference.
+
+`DAY::'
+     The day of the week may be used as a class, e.g. `Monday',
+     `Sunday'.
+
+`DayXX::'
+     A day in the month (date) may be used to single out by date, e.g.
+     the first day of each month defines `Day1', the 21st `Day21' etc.
+
+`HrXX::'
+     An hour of the day, in 24-hour clock notation: `Hr00'...`Hr23'.
+
+`MinXX::'
+     The precise minute at which cfagent was started: `Min0' ...
+     `Min59'.  This is probably not useful alone, but these values may
+     be combined to define arbitrary intervals of time.
+
+`MinXX_XX::'
+     The five-minute interval in the hour at which cfagent was
+     executed, in the form `Min0_5', `Min5_10' .. `Min55_0'.
+
+   Time classes based on the precise minute at which cfagent started are
+unlikely to be useful, since it is improbable that you will want to ask
+cron to run cfagent every single minute of every day: there would be no
+time for anything to complete before it was started again. Moreover,
+many things could conspire to delay the precise time at which cfagent
+were started. The real purpose in being able to detect the precise
+start time is to define composite classes which refer to arbitrary
+intervals of time. To do this, we use the `group' or `classes' action
+to create an alias for a group of time values.  Here are some creative
+examples:
+
+
+     classes:  # synonym groups:
+     
+       LunchAndTeaBreaks = ( Hr12 Hr10 Hr15 )
+     
+       NightShift        = ( Hr22 Hr23 Hr00 Hr01 Hr02 Hr03 Hr04 Hr05 Hr06 )
+     
+       ConferenceDays    = ( Day26 Day27 Day29 Day30 )
+     
+       QuarterHours      = ( Min00 Min15 Min30 Min45 )
+     
+       TimeSlices        = ( Min01 Min02 Min03 Min33 Min34 Min35)
+
+In these examples, the left hand sides of the assignments are
+effectively the ORed result of the right hand side. This if any classes
+in the parentheses are defined, the left hand side class will become
+defined. This provides a flexible and readable way of specifying
+intervals of time within a program, without having to use `|' and `.'
+operators everywhere.
+
+
+File: cfengine-Tutorial.info,  Node: Scheduling interval,  Prev: Building flexible time classes,  Up: Using cfengine as a front-end for cron
+
+Choosing a scheduling interval
+==============================
+
+   How often should you call your global cron script? There are several
+things to think about:
+
+   * How much fine control do you need? Running cron jobs once each
+     hour is usually enough for most tasks, but you might need to
+     exercise finer control for a few special tasks.
+
+   * Are you going to run the entire cfengine configuration file or a
+     special light-weight file?
+
+   * System latency. How long will it take to load, parse and run the
+     cfengine script?
+
+
+   Cfengine has an intelligent locking and timeout policy which should
+be sufficient to handle hanging shell commands from previous crons so
+that no overlap can take place, *Note Spamming and security::.
+
+
+File: cfengine-Tutorial.info,  Node: Cfengine network services,  Next: Security and cfengine,  Prev: Using cfengine as a front-end for cron,  Up: Top
+
+Cfengine and network services
+*****************************
+
+   This chapter describes how you can set up a cfengine network service
+to handle remote file distribution and remote execution of cfengine
+without having to open your hosts to possible attack using the `rsh'
+protocols.
+
+* Menu:
+
+* What services?::
+* How it works::
+* Configuring cfservd::
+
+
+File: cfengine-Tutorial.info,  Node: What services?,  Next: How it works,  Prev: Cfengine network services,  Up: Cfengine network services
+
+Cfengine network services
+=========================
+
+   By starting the daemon called `cfservd', you can set up a line of
+communication between hosts, allowing them to exchange files across the
+network or execute cfengine remotely on another system.  Cfengine
+network services are built around the following components:
+
+`cfagent'
+     The configuration engine, whose only contact with the network is
+     via remote copy requests. This component does the hard work of
+     configuring the system based on rules specified in the file
+     `cfagent.conf'. It does not and cannot grant any access to a
+     system from the network.
+
+`cfservd'
+     A daemon which acts as both a file server and a remote-cfagent
+     executor. This daemon authenticates requests from the network and
+     processes them according to rules specified in `cfservd.conf'.  It
+     works as a file server and as a mechanism for starting cfagent on
+     a local host and piping its output back to the network connection.
+
+`cfrun'
+     This is a simple initiation program which can be used to run
+     cfagent on a number of remote hosts. It cannot be used to tell
+     cfagent what to do, it can only ask cfagent on the remote host to
+     run the configuration file it already has. Anyone could be allowed
+     to run this program, it does not require any special user
+     privileges. A locking mechanism in cfengine prevents its abuse by
+     spamming.
+
+`cfwatch'
+     This program (which is not a part of the distribution: it is left
+     for others to implement) should provide a graphical user interface
+     for watching over the configuration of hosts running cfagent and
+     logging their output.
+
+With these components you can emulate programs like `rdist' whose job
+it is to check and maintain copies of files on client machines.  You
+may also decide who has permission to run cfagent and how often it may
+be run, without giving away any special user privileges.
+
+
+File: cfengine-Tutorial.info,  Node: How it works,  Next: Configuring cfservd,  Prev: What services?,  Up: Cfengine network services
+
+How it works
+============
+
+* Menu:
+
+* Emulating rdist::
+* Remote execution of cfagent::
+* Spamming and security::
+* cfservd protocol::
+* Deadlocks and runaway loops::
+
+
+File: cfengine-Tutorial.info,  Node: Emulating rdist,  Next: Remote execution of cfagent,  Prev: How it works,  Up: How it works
+
+Remote file distribution
+------------------------
+
+   This section describes how you can set up `cfservd' as a remote file
+server which can result in the distrubution of files to client hosts in
+a more democratic way than with programs like rdist.
+
+   An important difference between cfengine and other systems has to do
+with the way files are distributed.  Cfengine uses a `pull' rather than
+a `push' model for distributing network files.  The `rdist' command,
+for instance, works by forcing an image of the files on one server
+machine onto all clients.  Files get changed when the server wishes it
+and the clients have no choice but to live with the consequences.
+Cfengine cannot force its will onto other hosts in this way, it can only
+signal them and ask them to collect files if they want to. In other
+words, cfengine simulates a `push' model by polling each client and
+running the local cfengine configuration script giving the host the
+chance to `pull' any updated files from the remote server, but leaving
+it up to the client machine to decide whether or not it wants to update.
+
+   Also, in contrast to programs like `rdist' which distribute files
+over many hosts, cfengine does not require any general `root' access to
+a system using the `.rhosts' file or the `/etc/hosts.equiv' file. It is
+sufficient to run the daemon as root.  You can not run it by adding it
+to the `/etc/inetd.conf' file on your system however.  The restricted
+functionality of the daemon protects your system from attempts to
+execute general commands as the root user using `rsh'.
+
+   To remotely access files on a server, you add the keywork
+`server=HOST' to a copy command. Consider the following example which
+illustrates how you might distribute a password file from a masterhost
+to some clients.
+
+
+     copy:
+     
+       PasswdClients::
+     
+         /etc/passwd  dest=/etc/passwd owner=root group=0 server=SERVER-HOST
+
+Given that the `cfservd' daemon is running on SERVER-HOST, cfagent will
+make contact with the daemon and attempt to obtain information about
+the file. During this process, cfengine verifies that the system clocks
+of the two hosts are reasonably synchronized. If they are not, it will
+not permit remote copying.  If cfagent determines that a file needs to
+be updated from a remote server it begins copying the remote file to a
+new file on the same filesystem as the destination-file. This file has
+the suffix `.cfnew'.  Only when the file has been successfully
+collected will cfagent make a copy of the old file, (see `repository'
+in the Reference manual), and rename the new file into place. This
+behaviour is designed to avoid race-conditions which can occur during
+network connections and indeed any operations which take some time. If
+files were simply copied directly to their new destinations it is
+conceivable that a network error could interrupt the transfer leaving a
+corrupted file in place.
+
+   Cfagent places a timeout of a few seconds on network connections to
+avoid hanging processes.
+
+   Normally the daemon sleeps, waiting for connections from the network.
+Such a connection may be initiated by a request for remote files from a
+running cfengine program on another host, or it might be initiated by
+the program `cfrun' which simply asks the host running the daemon to
+run the cfengine program locally.
+
+
+File: cfengine-Tutorial.info,  Node: Remote execution of cfagent,  Next: Spamming and security,  Prev: Emulating rdist,  Up: How it works
+
+Remote execution of cfagent
+---------------------------
+
+   It is a good idea to execute cfagent by getting `cron' to run it
+regularly.  This ensures that cfagent will be run even if you are
+unable to log onto a host to run it yourself. Sometimes however you
+will want to run cfagent immediately in order to implement a change in
+configuration as quickly as possible. It would then be inconvenient to
+have to log onto every host in order to do this manually. A better way
+would be to issue a simple command which contacted a remote host and
+ran cfagent, printing the output on your own screen:
+
+
+     myhost% cfrun REMOTE-HOST -v
+     
+      OUTPUT....
+
+A simple user interface is provided to accomplish this. `cfrun' makes a
+connection to a remote cfservd-daemon and executes cfagent on that
+system with the privileges of the cfservd-daemon (usually `root'). This
+has a two advantages:
+
+   * You avoid having to log in on a remote host in order to reconfigure
+     it.
+
+   * Users other than root can run cfagent to fix any problems with the
+     system.
+
+
+   A potential disadvantage with such a system is that malicious users
+might be able to run cfagent on remote hosts. The fact that non-root
+users can execute cfagent is not a problem in itself, after all the
+most malicious thing they would be able to do would be to check the
+system configuration and repair any problems.  No one can tell cfagent
+what to do using the cfrun program, it is only  possible to run an
+existing configuration.  But a more serious concern is that malicious
+users might try to run cfagent repeatedly (so-called `spamming') so
+that a system became burdened with running cfagent constantly, *Note
+Spamming and security::.
+
+
+File: cfengine-Tutorial.info,  Node: Spamming and security,  Next: cfservd protocol,  Prev: Remote execution of cfagent,  Up: How it works
+
+Spamming and security
+---------------------
+
+   The term `spamming' refers to the senseless repetition of something
+in a malicious way intended to drive someone crazy(1). In the computer
+world some malicious users, a bit like `flashers' in the park(2) like
+to run around the net a reveal themselves ad nauseum by sending
+multiple mail messages or making network connections repeatedly to try
+to overload systems and people(3).
+
+   Whenever we open a system to the network, this problem becomes a
+concern.  Cfengine is a tool for making peace with networked systems,
+not a tool to be manipulated into acts of senseless aggression. The
+cfservd daemon does make it possible for anyone to connect and run a
+cfengine process however, so clearly some protection is required from
+such attacks.
+
+   Cfengine's solution to this problem is a locking mechanism. Rather
+than providing user-based control, cfengine uses a time based locking
+mechanism which prevents actions from being executed unless a certain
+minimum time has elapsed since the last time they were executed.  By
+using a lock which is not based on user identity, we protect several
+interests in one go:
+
+   * Restricting cfengine access to root would prevent regular users,
+     in trouble, from being able to fix problems when the system
+     administrator was unavailable. A time-based lock does not prevent
+     this kind of freedom.
+
+   * Accidents with cron or shell scripts could start cfagent more
+     often than desirable. We also need to protect against such
+     accidents.
+
+   * We can prevent malicious attacks regardless of whom they may come
+     from.
+
+
+   Cfengine is controlled by a series of locks which prevent it from
+being run too often, and which prevent it from spending too long trying
+to do its job. The locks work in such a way that you can start several
+cfengine processes simultaneously without them crashing into each
+other. Coexisting cfengine processes are also prevented from trying to
+do the same thing at the same time (we call this `spamming').  You can
+control two things about each kind of action in the action sequence:
+
+   * The minimum time which should have passed since the last time that
+     action was executed. It will not be executed again until this
+     amount of time has elapsed. (Default time is 0 minutes so that
+     users un-aware of this feature will not be confused by it.)
+
+   * The maximum amount of time cfagent should wait for an old
+     instantiation of cfagent to finish before killing it and starting
+     again. (Default time is 120 minutes.)
+
+
+You can set these values either globally (for all actions) or for each
+action separately. If you set global and local values, the local values
+override the global ones. All times are written in units of _minutes_.
+
+
+        actionsequence
+          (
+          action.IfElapsedTIME-IN-MINS
+          action.ExpireAfterTIME-IN-MINS
+          )
+
+or globally,
+
+
+       control:
+     
+          IfElapsed   = ( TIME-IN-MINS )
+     
+          ExpireAfter = ( TIME-IN-MINS )
+
+For example:
+
+
+      control:
+     
+        actionsequence =
+          (
+          files.IfElapsed240.ExpireAfter180
+          copy
+          tidy
+          )
+     
+        IfElapsed = ( 30 )
+
+   In this example, we treat the files action differently to the others.
+For all the other actions, cfagent will only execute the files part of
+the program if 30 minutes have elapsed since it was last run. Since no
+value is set, the expiry time for actions is 60 minutes, which means
+that any cfagent process which is still trying to finish up after 60
+minutes will be killed automatically by the next cfagent which gets
+started.
+
+   As for the files action: this will only be run if 240 minutes (4
+hours) have elapsed since the last run. Similarly, it will not be
+killed while processing `files' until after 180 minutes (3 hours) have
+passed.
+
+   These locks do not prevent the whole of cfagent from running, only
+so-called `atoms'. Several different atoms can be run concurrently by
+different cfagents.  Assuming that the time conditions set above allow
+you to start cfengine, the locks ensure that atoms will never be
+started by two cfagents at the same time, causing contention and
+wasting CPU cycles.  Atoms are defined to maximize the security of your
+system and to be efficient. If cfengine were to lock each file it
+looked at seperately, it would use a large amount of time processing
+the locks, so it doesn't do that. Instead, it groups things together
+like this:
+
+`copy, editfiles, shellcommands'
+     Each separate command has its own lock. This means that several
+     such actions can be processed concurrently by several cfagent
+     processes. Multiple or recursive copies and edits are treated as a
+     single object.
+
+`netconfig, resolve, umount, mailcheck, addmounts, disable, processes'
+     All commands of this action-type are locked simultaneously, since
+     they can lead to contention.
+
+`mountall, mountinfo, required, checktimezone'
+     These are not locked at all.
+
+   Cfagent creates a directory `~/.cfengine' for writing lock files for
+ordinary users.
+
+   The option `-K' or `--no-lock' can be used to switch off the locking
+checks, but note that when running cfagent remotely via `cfservd', this
+is not possible.
+
+   ---------- Footnotes ----------
+
+   (1) Recall the `spam' song from Monty Python's flying circus?
+
+   (2) Recall the `spam' song from Monty Python's flying circus?
+
+   (3) Recall the `spam' song ... get the idea?
+
+
+File: cfengine-Tutorial.info,  Node: cfservd protocol,  Next: Deadlocks and runaway loops,  Prev: Spamming and security,  Up: How it works
+
+Some points on the cfservd protocol
+-----------------------------------
+
+   Cfservd uses a form for host-based authorization. Each atomic
+operation, such as statting, getting files, reading directories etc,
+requires a new connection and each connection is verified by a double
+reverse lookup in the server's DNS records.  Single stat structures are
+cached during the processing of a file.
+
+   MD5 checksums are transferred from client to server to avoid loading
+the server.  Even if a user could corrupt the MD5 checksum, he or she
+would have to get past access control with TCP wrappers and the worst
+that could happen would be to get the right version of the file.  Again
+this is in keeping with the idea that users can only harm themselves
+and not others with cfengine.
+
+
+File: cfengine-Tutorial.info,  Node: Deadlocks and runaway loops,  Prev: cfservd protocol,  Up: How it works
+
+Deadlocks and runaway loops
+---------------------------
+
+   Whenever we allow concurrent processes to share a resource, we open
+ourselves up the possibilty of deadlock. This is a situation where two
+or more processes are locked in a vicious stalemate from which none can
+escape. Another problem is that it might be possible to start an
+infinite loop: cfagent starts itself.
+
+   Cfagent protects you from such loops to a large degree. It should
+not be possible to make such a loop by accident.  The reason for this
+is the locking mechanism which prevents tasks being repeated too often.
+If you start a cfagent process which contains a shell-command to start
+cfagent again, this shell command will be locked, so it will not be
+possible to run it a second time. So while you might be able to start a
+second cfagent process, further processes will not be started and you
+will simply have wasted a little CPU time. When the first cfagent
+returns, the tasks which the second cfagent completed will not be
+repeated unless you have set the `IfElapsed' time or the `ExpireAfter'
+time to zero.  In general, if you wish to avoid problems like this, you
+should not disable the locking mechanism by setting these two times to
+zero.
+
+   The possibility of deadlock arises in network connection. Cfengine
+will not attempt to use the network to copy a file which can be copied
+internally from some machine to itself. It will always replace the
+`server=' directive in a copy with `localhost' to avoid unnecessary
+network connections.  This prevents one kind of deadlock which could
+occur: namely cfrun executes cfagent on host A (cfservd on host A is
+then blocked until this completes), but the host A configuration file
+contains a remote copy from itself to itself.  This remote copy would
+then have to wait for cfservd to unblock, but this would be impossible
+since cfservd cannot unblock until it has the file. By avoiding remote
+copies to localhost, this possibility is avoided.
+
+
+File: cfengine-Tutorial.info,  Node: Configuring cfservd,  Prev: How it works,  Up: Cfengine network services
+
+Configuring `cfservd'
+=====================
+
+* Menu:
+
+* Installation of cfservd::
+* Configuration file cfservd.conf::
+
+
+File: cfengine-Tutorial.info,  Node: Installation of cfservd,  Next: Configuration file cfservd.conf,  Prev: Configuring cfservd,  Up: Configuring cfservd
+
+Installation of `cfservd'
+-------------------------
+
+   To install the cfservd daemon component, you will need to register a
+port for cfengine by adding the following line to the system file
+`/etc/services file'
+
+        cfengine        5308/tcp
+
+You could do this for all hosts by adding the following to your
+cfengine configuration
+
+     editfiles:
+     
+       { /etc/services
+     
+        AppendIfNoSuchLine "cfengine        5308/tcp"
+       }
+
+To start cfservd at boot time, you need to place a line of the
+following type in your system startup files:
+
+
+     # Start cfengine server
+     cfservd
+
+Note that `cfservd' will re-read its configuration file whenever it
+detects that it has been changed, so you should not have to restart the
+daemon, not send it the HUP signal as with other daemons.
+
+
+File: cfengine-Tutorial.info,  Node: Configuration file cfservd.conf,  Prev: Installation of cfservd,  Up: Configuring cfservd
+
+Configuration file `cfservd.conf'
+---------------------------------
+
+   The server daemon is controlled by a file called `cfservd.conf'.
+The syntax of this configuration file is deliberately modelled on
+cfengine's own configuration file, but despite the similarities, you
+cannot mix the contents of the two files.
+
+   Though they are not compatible, `cfagent.conf' and `cfservd.conf'
+are similar in several ways:
+
+   * Both files use classes to label entries, so that you may use the
+     same configuration file to control all hosts on your network. This
+     is a convenience which saves you the trouble of maintaining many
+     different files.
+
+   * Both files are searched for using the contents of the variable
+     `CFINPUTS'.
+
+   * You can use `groups' and `import' in both files to break up files
+     into convenient modules and to import common resources, such as
+     lists of groups.
+
+
+   Note that the classes in the `cfservd.conf' file do not tell you the
+classes of host which have access to files and directories, but rather
+which classes of host pay attention to the access and deny commands when
+the file is parsed.
+
+   Host name authentication is not by class or group but by hostname,
+like the `/etc/exports' file on most Unix systems. The syntax for the
+file is as follows:
+
+
+      control:
+     
+        CLASSES::
+     
+            domain = ( DNS-DOMAIN-NAME )
+     
+            cfrunCommand = ( "SCRIPT/FILENAME" )  # Quoted
+     
+            MaxConnections = ( MAXIMUM NUMBER OF FORKED DAEMONS )
+     
+            ChecksumDatabase = ( FILENAME )
+     
+            IfElapsed = ( TIME-IN-MINUTES )
+     
+            DenyBadClocks = ( FALSE )
+     
+            AllowConnectionsFrom = ( IP NUMBERS )
+     
+            DenyConnectionsFrom = ( IP NUMBERS )
+     
+            AllMultipleConnectionsFrom = ( IP NUMBERS )
+     
+            LogAllConnections = ( FALSE/TRUE )
+     
+            SkipVerify = ( IP NUMBERS )
+     
+      groups:
+     
+        GROUP DEFINITIONS
+     
+      import:
+     
+        FILES TO IMPORT
+     
+      admit: | grant:
+     
+        CLASSES::
+     
+           /FILE-OR-DIRECTORY
+     
+             WILDCARDS/HOSTNAMES
+     
+      deny:
+     
+        CLASSES::
+     
+           /FILE-OR-DIRECTORY
+     
+             WILDCARDS/HOSTNAMES root=HOSTLIST encrypt=TRUE/ON
+
+
+See the reference manual for descriptions of these elements.  The file
+consists of a control section and access information.  You may use the
+control section to define any variables which you want to use, for
+convenience, in the remainder of your file.
+
+   Following the control section, comes a list of files or directories
+and hosts which may access these. If permissions are granted to a
+directory then all subdirectories are automatically granted also. Note
+that plain-file symbolic links are not checked for, so you may need to
+specifically deny access to links if they are plain files, but cfservd
+does not follow directory symbolic links and give access to files in
+directories pointed to by these.
+
+   Fully qualified hostnames should be used in this file. If host names
+are unqualified, the current domain is appended to them (do not forget
+to define the domain name). Authentication calls the Unix function
+`gethostbyname()' and so on to identify and verify connecting hosts, so
+the names in the file must reflect the type on names returned by this
+function. You may use wildcards in names to match, for instance, all
+hosts from a particular domain.
+
+   Here is an example file
+     #####################################################
+     #
+     # This is a cfservd config file
+     #
+     #####################################################
+     
+     groups:
+     
+       PasswdHost = ( nexus )
+     
+     #####################################################
+     
+     control:
+     
+       #
+       # Assuming CFINPUTS is defined
+       #
+     
+       cfrunCommand = ( "/var/cfengine/bin/cfagent" )
+     
+       variable = ( /usr/local/publicfiles )
+     
+     #####################################################
+     
+     admit:   # Can also call this grant:
+     
+        PasswdHost::
+     
+          /etc/passwd
+     
+             *.iu.hioslo.no
+     
+         FtpHost::
+     
+         # An alternative to ftp, grant anyone
+     
+            /local/ftp/pub
+     
+              *
+     
+         any::
+     
+            $CFINPUTS/cfrun.sh
+     
+              *.iu.hioslo.no
+     
+     #####################################################
+     
+     deny:
+     
+        /etc/services
+     
+            borg.iu.hioslo.no
+     
+       /local/ftp
+     
+            *.pain-in-the-ass.com
+
+   _NOTE I: cfservd is not `rpc.mountd', access control is by filename,
+not by device name. Do not assume that files lying in subdirectories are
+not open for access simply because they lie on a different device. You
+should give the real path name to file and avoid symbolic links._
+
+   NOTE II: access control is per host and per user. User names are
+assumed to be common to both hosts. There is an implicit trust
+relationship here.  There is no way to verify whether the user on the
+remote host is the same user as the user with the same name on the local
+host.
+
+   If you still have problems with lack of access, it could be that you
+have forgotten to define the domain name for your network, or that you
+do not understand the TCP wrappers files `/etc/hosts.access' and
+`/etc/hosts.deny'.
+
+
+File: cfengine-Tutorial.info,  Node: Security and cfengine,  Next: Summary,  Prev: Cfengine network services,  Up: Top
+
+Security and cfengine
+*********************
+
+* Menu:
+
+* What is security?::
+* A word of warning::
+* Automation::
+* Trust::
+* Why trust cfengine?::
+* Configuration::
+* Disabling and replacing software::
+* Process monitoring::
+* Monitoring files::
+* The setuid log::
+* Suspicious filenames::
+* Checksums and Tripwire functionality::
+* FileExtensions::
+* NonAlphaNumFiles::
+* Defensive garbage collection::
+* Anonymous FTP example::
+* WWW security::
+* Miscellaneous security of cfengine itself::
+* Privacy (encryption)::
+* Trust and key races::
+* Adaptive locks::
+* Spoofing::
+* Race conditions in file copying::
+* size= in copy::
+* useshell= and owner= in shellcommands::
+* Firewalls::
+
+   Computer security is about protecting the data and availability of an
+association of hosts. Briefly, the key words are authentication,
+privacy, integrity and trust.  To understand computer security we have
+to understand the interrelationships between all of the hosts and
+services on our networks as well as the ways in which those hosts can
+be accessed.  Tools which allow this kind of management are complex and
+usually expensive.
+
+
+File: cfengine-Tutorial.info,  Node: What is security?,  Next: A word of warning,  Prev: Security and cfengine,  Up: Security and cfengine
+
+What is security?
+=================
+
+   For a computer to be secure it must be *physically secure* -- if we
+can get our hands on a host then we are never more than a screwdriver
+away from all of its assets--but assuming that hosts are physically
+secure, we then wish to deal with the issues of software security which
+is a much more difficult topic.  Software security is about access
+control and software reliability.  No single tool can make computer
+systems secure.  Major blunders have been made out of the belief that a
+single product (e.g. a `firewall') would solve the security problem.
+For instance, a few years ago a cracker deleted all the user
+directories from a dialup login server belonging to a major Norwegian
+telecommunications company, from the comfort of his web browser. This
+was possible, even through a firewall, because the web server on the
+host concerned was incorrectly configured. The bottom line is that
+there is no such thing as a secure operating system, firewall  or none.
+What is required is a persistent mixture of vigilence and adaptability.
+
+   For many, security is perceived as being synonymous with network
+privacy or network intrusion.  Privacy is one aspect of security, but
+it is not the network which is our special enemy. Many breaches of
+security happen from within. There is little difference between the
+dangers of remote access from the network or direct access from a
+console: privacy is about access control, no matter where the potential
+intruder might be.  If we focus exclusively on network connectivity we
+ignore a possible threat from internal employees (e.g. the janitor who
+is a computer expert and has an axe to grind, or the mischievous son of
+the director who was left waiting to play mom's office, or perhaps the
+unthinkable: a disgruntled employee who feels as though his/her talents
+go unappreciated).  Software security is a vast subject, because modern
+computer systems are complex. It is only exacerbated by the
+connectivity of the internet which allows millions of people to have a
+go at breaking into networked systems. What this points to is the fact
+that a secure environment requires a tight control of access control on
+every host individually, not merely at specific points such as
+firewalls.
+
+   This article is not a comprehensive guide to security. Rather it is
+an attempt to illustrate how cfengine can be used to help you automate a
+level of host integrity on all the hosts of your network.  Cfengine is a
+network configuration tool with two facets.  It is a language used to
+build an `expert system'. An expert system describes the way you would
+like your hosts and network to look and behave. CFengine is also a
+software robot which compares the model you have described with what the
+world really looks like and then sets to work correcting any deviations
+from that picture.  In many ways it is like an immune system,
+neutralizing and repairing damaged parts. Unlike many shell-script
+packages for sysadmin, cfengine is a C program which means light on
+system resources. Also it works on a principle of `convergence'.
+Convergence means that each time you run cfengine the system should get
+closer to the model which you have described until eventually when the
+system is the model, cfengine becomes quiescent, just like an immune
+system. In the words of one user your hosts `never get worse'. This
+assumes of course that the model you have is what you really want.
+Using cfengine, model building becomes synonymous with formulating and
+formalizing a system policy.
+
+   What makes cfengine a security tool is that security policy is a
+part of system policy: you cannot have one without the other.  You will
+never have security unless you are in control of your network.
+Cfengine monitors and indeed repairs hosts with simple easily
+controllable actions.  From an automation perspective, security is no
+different from the general day to day business of system maintenance,
+you just need to pay more attention to the details. We cannot speak of
+`have security' and `have not security'. There is always security, it
+is simply a matter of degree: weak or strong; effective or ineffective.
+
+
+File: cfengine-Tutorial.info,  Node: A word of warning,  Next: Automation,  Prev: What is security?,  Up: Security and cfengine
+
+A word of warning
+=================
+
+   Before starting it is only proper to state the obvious. You should
+never trust anyone's advice about configuration or security without
+running it past your own grey matter first. The examples provided here
+are just that: examples. They might apply to you as written and they
+might need to be modified. You should never accept and use an example
+without thinking carefully and critically first!  Also, in any book of
+recipies or guide to successful living you know that there are
+simplified answers to complex questions and you should treat them as
+such. There is no substitute for real understanding.
+

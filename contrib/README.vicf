@@ -1,0 +1,158 @@
+From Demosthenes.Skipitaris@saga.com  Wed Feb 17 13:50:32 1999
+Return-Path: <Demosthenes.Skipitaris@saga.com>
+Received: from kjo02msg.saga.no (karon.saga.no [193.212.109.18])
+	by nexus.iu.hioslo.no (8.9.3/8.9.3) with ESMTP id NAA24275
+	for <mark@iu.hioslo.no>; Wed, 17 Feb 1999 13:50:31 +0100 (MET)
+Received: by kjo02msg.saga.no with Internet Mail Service (5.5.2232.9)
+	id <FDJS5FLQ>; Wed, 17 Feb 1999 13:49:57 +0100
+Message-ID: <D7BF7F90A60DD2118F360060974838F80149BB09@kjo02msg.saga.no>
+From: "Skipitaris, Demosthenes" <Demosthenes.Skipitaris@saga.com>
+To: "'mark@iu.hioslo.no'" <mark@iu.hioslo.no>
+Subject: vicf
+Date: Wed, 17 Feb 1999 13:49:57 +0100
+MIME-Version: 1.0
+X-Mailer: Internet Mail Service (5.5.2232.9)
+Content-Type: text/plain;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: 8bit
+X-MIME-Autoconverted: from quoted-printable to 8bit by nexus.iu.hioslo.no id NAA24275
+Status: RO
+X-Status: D
+X-Keywords:
+
+Hei,
+
+her er første versjon av 'vicf', et script som kan brukes til å editere
+cfengine config-filer.
+
+Hensikten med scriptet er:
+
+1)  hindre at flere editerer samme fil samtidig.
+2) sjekke at editerte filer ikke inneholder feil, slik at ikke filer med
+feil blir distribuert ut.
+
+Scriptet kan bare brukes til å editere filer som ligger i $CFINPUTS.  Det
+kan startes fra hvor som helst, og uten
+argumenter lister det opp hvilke filer som ligger i $CFINPUTS.  Opsjonen -f
+overskriver lock på filene.
+Hos oss har vi satt opp slik at config-filer distribueres fra maskinen
+sentral.saga.no, og scriptet sjekker
+derfor om det kjøres på riktig maskin.
+
+Det er skrevet i shell fordi det ikke er sikkert at perl finnes/virker
+overalt.  (Jeg har også skrevet om cfmail og cfwrap
+til å bruke bourne-shell, fordi perl distribusjonen vi har her er "litt
+ustandard".)
+
+-ds
+
+-------
+
+#!/bin/sh
+
+EDITOR="${EDITOR-vi}"
+CFINPUTS="${CFINPUTS-/n/etc/cfg}"
+export EDITOR CFINPUTS
+NOPARSE="cf.preconf|cfd.conf"
+
+if [ "`hostname`" != "sentral" ]
+then
+	echo $0 can only be run on host sentral.
+	exit 1
+fi
+
+EdFile () {
+    if [ ! -f ${CFINPUTS}/${file} ]
+    then
+	echo "File not found: ${file}"
+	echo "Only these files are eligible for editing:"
+	/bin/ls $CFINPUTS
+	/usr/ucb/echo -n "Create new file? (Y/n) "
+	read answer
+	if [ "$answer" = "n" ]
+	then
+		echo Okay, exiting...
+		exit 0
+	fi
+    fi
+
+    if [ -f ${CFINPUTS}/.${file}.lock -a "$force" = "n" ]
+    then
+	i=30
+	/usr/ucb/echo -n "File ${file} is busy -- waiting up to $i
+seconds..."
+	while [ -f ${CFINPUTS}/.${file}.lock ]
+	do
+		/usr/ucb/echo -n .
+		i=`expr $i - 1`
+		if [ $i = 0 ]
+		then
+			echo "\nSorry, file is busy -- try again later."
+			exit 0
+		fi
+		sleep 1
+	done
+    fi
+
+    if [ -f ${CFINPUTS}/${file} ]
+    then
+	cp -p ${CFINPUTS}/${file} ${CFINPUTS}/.${file}.lock 
+    fi
+
+    editfile=n
+
+    while [ "$editfile" = "n" ]
+    do
+	${EDITOR} ${CFINPUTS}/.${file}.lock
+	cp /dev/null /tmp/cfparse.$$
+	/n/sbin/cfengine --no-warn --parse-only --file
+${CFINPUTS}/.${file}.lock > /tmp/cfparse.$$ 2>&1
+	if [ -s /tmp/cfparse.$$ ]
+	then
+		echo PARSE ERROR IN NEW INPUT-FILE:
+		cat /tmp/cfparse.$$
+		/usr/ucb/echo -n "Re-edit file? (Y/n) "
+		read answer
+		if [ "$answer" = "n" ]
+		then
+			echo Okay, exiting...
+			editfile="y"
+		fi
+	else
+		mv ${CFINPUTS}/.${file}.lock  ${CFINPUTS}/${file}
+		editfile="y"
+	fi
+    done
+
+    rm -f /tmp/cfparse.$$ ${CFINPUTS}/.${file}.lock
+}
+
+force=n
+
+if [ $# -eq 0 ]
+then
+	echo Usage: $0 [ -f ] filename
+	echo "These files are eligible for editing:"
+	/bin/ls $CFINPUTS
+	exit 0
+fi
+
+if [ "$1" = "-f" ]
+then
+	force=y
+	echo $*	
+	shift
+	echo $*	
+fi
+
+cd $CFINPUTS
+
+while [ $# -ne 0 ]
+do
+	file=`basename $1`
+	EdFile
+	shift
+done
+
+exit 0
+

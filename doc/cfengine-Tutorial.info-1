@@ -1,0 +1,1172 @@
+This is cfengine-Tutorial.info, produced by makeinfo version 4.0 from
+cfengine-Tutorial.texinfo.
+
+INFO-DIR-SECTION System Utilities
+START-INFO-DIR-ENTRY
+* cfengine Tutorial: (cfengine-Tutorial.info).
+                        Cfengine is a language based tool specifically
+                        designed for configuring and maintaining BSD
+                        and System-5-like operating systems attached
+                        to a TCP/IP network.
+END-INFO-DIR-ENTRY
+
+
+File: cfengine-Tutorial.info,  Node: Top,  Next: Overview,  Prev: (dir),  Up: (dir)
+
+Cfengine-Tutorial
+*****************
+
+   Copyright (C) 1995/96/97/98/99/2000 Mark Burgess
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the section entitled "GNU General Public License" is included
+exactly as in the original, and provided that the entire resulting
+derived work is distributed under the terms of a permission notice
+identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "GNU General Public License"
+may be included in a translation approved by the author instead of in
+the original English.
+
+   This manual corresponds to CFENGINE Edition 2.0.0 for version 2.0.0
+as last updated 6 March 2002.
+
+* Menu:
+
+* Overview::
+* Getting started::
+* More advanced concepts::
+* Global configurations::
+* Using cfengine as a front-end for cron::
+* Cfengine network services::
+* Security and cfengine::
+* Summary::
+* Variable Index::
+* Concept Index::
+* FAQ Index::
+
+
+File: cfengine-Tutorial.info,  Node: Overview,  Next: Getting started,  Prev: Top,  Up: Top
+
+Overview
+********
+
+   _In this manual the word "host" is used to refer to a single computer
+system - i.e.  a single machine which has a name termed its "hostname"._
+
+* Menu:
+
+* What is cfengine?::
+* Site configuration::          the problem
+* Key concepts::                the solution
+* Functionality::               an advertisement
+
+
+File: cfengine-Tutorial.info,  Node: What is cfengine?,  Next: Site configuration,  Prev: Overview,  Up: Overview
+
+What is cfengine and who can use it?
+====================================
+
+   Cfengine is a tool for setting up and maintaining computer systems.
+It consists of several components:
+
+      cfagent     - An autonomous configuration agent (required)
+      cfservd     - A file server and remote activation service (optional)
+      cfexecd     - A scheduling and report service (recommended)
+      cfenvd      - An anomaly detection service (strongly recommended)
+      cfenvgraph  - Ancillary tool for cfenvd (helper)
+      cfkey       - Key generation tool (run once on every host)
+   The agent `cfagent' can be used without the other components, but
+not all of the functionality of cfengine will be available unless the
+components are deployed appropriately.
+
+   Cfengine incorporates a declarative language--much higher level than
+Perl or shell: a single statement can result in many hundreds of
+operations being performed on multiple hosts. Cfengine is good at
+performing a lot of common system administration tasks, and allows you
+to build on its strengths with your own scripts. You can also use it as
+a netwide front-end for `cron'.  Once you have set up cfengine, you'll
+be free to use your time being like a human being, instead of playing
+R2-D2 with the system.
+
+   The main purpose of cfengine is to allow you to create a single,
+central system configuration which will define how every host on your
+network should be configured in an intuitive way.  An interpreter runs
+on every host on your network and parses the master file (or file-set);
+the configuration of each host is checked against this file and then,
+if you request it, any deviations from the defined configuration are
+fixed automatically.  You do not have to mention every host
+specifically by name in order to configure them: instead you can refer
+to the properties which distinguish hosts from one another.  Cfengine
+uses a flexible system of "classes" which helps you to single out a
+specific group of hosts with a single statement.
+
+   Cfengine grew out of the need to control the accumulation of complex
+shell scripts used in the automation of key system maintenance at Oslo.
+There were very many scripts, written in shell and in perl, performing
+tasks such as file tidying, find-database updates, process checking and
+several other tasks.  In a heterogeneous environment, shell-scripts
+work very poorly: shell commands have differing syntax across different
+operating systems, the locations and names of key files differ. In
+fact, the non-uniformity of Unix was a major headache. Scripts were
+filled with tests to determine what kind of operating system they were
+being run on, to the point where they became so complicated an
+unreadable that no-one was quite sure what they did anymore. Other
+scripts were placed only on the systems where they were relevant, out
+of sight and out of mind.  It quickly became clear that our dream
+solution would be to replace this proliferation of scripts by a single
+file containing everything to be checked on every host on the network.
+By defining a new language, this file could hide all of the tests by
+using classes (a generalized `switch/case' syntax) to label operations
+and improve the readability greatly. The gradual refinement of this
+idea resulted in the present day cfengine.
+
+   As an inexperienced cfengine user, you will probably find yourself
+trying to do things as you would have tried to do them i Shell or Perl.
+This is probably not the right way to think, when using cfengine. You
+will need to think in a more `cfengine way'. When reading the manual,
+keep in mind that cfengine's way of working is to think about what the
+final result should be like, rather than on how to get there (with
+Shell and Perl you specify what to do, rather than what you would like).
+
+   The remainder of this manual assumes that you know a little about
+BSD/System-5 systems and have everyday experience in using either the
+C-shell or the Bourne shell, or their derivatives.  If you are
+experienced in system administration, you might like to skip the earlier
+chapters and turn straight to the example in the section _Example
+configuration file_ of the Reference manual.  This is the probably
+quickest way to learn cfengine for the initiated.  If you are not so
+familiar with system administration and would like a more gentle
+introduction, then we begin here...
+
+
+File: cfengine-Tutorial.info,  Node: Site configuration,  Next: Key concepts,  Prev: What is cfengine?,  Up: Overview
+
+Site configuration
+==================
+
+   To the system administrator of a small network, with just a few
+workstations or perhaps even a single mainframe system, it might seem
+superfluous to create a big fuss about the administration of the system.
+After all, it's easy to `fix' things manually should any problems
+arise, making a link here, writing a script there and so on -- and its
+probably not even worth writing down what you did because you know that
+it will always be easy to fix next time around too...  But networks have
+a tendency to expand and--before you know it--you have five different
+types of operating system and each type of system has to be configured
+in a special way, you have to make patches to each system and you can't
+remember whether you fixed that host on the other side of the
+building...  Also, you discover fairly quickly that what you thought of
+as BSD or System 5 is not as standard as you thought and that none of
+your simple scripts that worked on one system work on the others without
+a considerable amount of hacking and testing.  You try writing a script
+to help you automate the task, but end up with an enormous number of
+`if..then..else..' tests which make it hard to see what is really going
+on.
+
+   To manage a network with many different flavours of operating
+system, in a systematic way, what is needed is a more disciplined way
+of making changes which is robust against re-installation.  After all,
+it would be tragic to spend many hours setting up a system by hand only
+to lose everything in an unfortunate disk-crash a week or even a year
+later when you have forgotten what you had to do.  Upgrades of the
+operating system software might delete your carefully worked out
+configuration.  What is needed is a separate record of all of the
+patches required on all of the systems on the network; a record which
+can be compared to the state of each host at any time and which a
+suitable engine can use to fix any deviations from that reference
+standard.
+
+   The idea behind cfengine is to focus upon a few key areas of basic
+system administration and provide a language in which the transparency
+of a configuration program is optimal.  It eliminates the need for lots
+of tests by allowing you to organize your network according to
+"classes".  From a single configuration file (or set of files) you can
+specify how your network should be configured -- and cfengine will then
+parse your file and carry out the instructions, warning or fixing
+errors as it goes.
+
+
+File: cfengine-Tutorial.info,  Node: Key concepts,  Next: Functionality,  Prev: Site configuration,  Up: Overview
+
+Key Concepts
+============
+
+   _Some of the important issues in system administration which
+cfengine can help with._
+
+* Menu:
+
+* Control files::               textfiles which configure
+* Network interface::           ethernet parameters
+* Network File System (NFS)::   sharing resources
+* Name servers (DNS)::          setting up a name service
+* Monitoring important files::  permission and ownership
+* Making links::                aliases
+
+
+File: cfengine-Tutorial.info,  Node: Control files,  Next: Network interface,  Prev: Key concepts,  Up: Key concepts
+
+Configuration files and registries
+----------------------------------
+
+   One of the endearing characteristics of BSD and system 5 systems is
+that they are configured through human-readable text files.  To add a
+new user to the system you edit `/etc/passwd', to add a new disk you
+must edit `/etc/fstab' etc.  Many applications are also configured with
+the help of text files.  When installing a new system for the first
+time, or when changing updating the setup of an old system you are
+faced with having to edit lots of files.  In some cases you will have
+to add precisely the same line to the same file on every system in your
+network as a change is made, so it is handy to have a way of automating
+this procedure so that you don't have to load every file into an editor
+by hand and make the changes yourself.  This is one of the tasks which
+cfagent will automate for you.
+
+   On Windows systems, configuration data are stored in a system
+registery.  This can also be edited by cfengine, with the right tools,
+but this requires more care.
+
+
+File: cfengine-Tutorial.info,  Node: Network interface,  Next: Network File System (NFS),  Prev: Control files,  Up: Key concepts
+
+Network interface
+-----------------
+
+   Each host which you connect to an ethernet-based network running
+TCP/IP protocols must have a so-called `net interface'.  This network
+interface must be configured before it will work.  Normally one does
+this with the help of the `ifconfig' command.  This can also be checked
+and configured automatically by cfagent.
+
+   Network configuration involves telling the interface hardware what
+the internet (IP) address of your system is, so that it knows which
+incoming `packets' of data to pay attention to.  It involves telling the
+interface how to interpret the addresses it receives by setting the
+`netmask' for your network (see below).  Finally you must tell it which
+dummy address is to be used for messages which are broadcast to all
+hosts on your network simultaneously (see the reference manual).
+
+   Cfagent's features are mainly meant for hosts which use static IP
+addresses, if you are using DHCP clients then you will not need the net
+configuration features.
+
+
+File: cfengine-Tutorial.info,  Node: Network File System (NFS),  Next: Name servers (DNS),  Prev: Network interface,  Up: Key concepts
+
+Network File System (NFS) or file distribution?
+-----------------------------------------------
+
+   Probably the first thing you are interested in doing with a network
+(after you've had your fill of the world wide web) is to make your files
+available to some or all hosts on the network, no matter where in your
+corporate empire (or university dungeon) you might be sitting.  In other
+words, if you have a disk which is physically connected to host A, you
+would like to make the contents of that disk available to hosts B, C,
+D...  etc.  NFS (the network filesystem) does this for you.  The process
+works by `filesystems'.
+
+   A filesystem is one partition of a disk drive - or one unit of disk
+space which can be accessed by a single `logical device'
+`/dev/something'.  To make a filesystem available to other hosts you
+have to do three things.
+
+   * On the host the disk is physically connected to you must _export_
+     the filesystem by adding something to the file `/etc/exports'.
+     This tells NFS who is allowed to access the disk and who isn't.
+
+   * On the host which is to access the filesystem you must create a
+     mount point.  This is a name in the directory tree at which you
+     want to add the files to your local filesystem.
+
+   * On the host which is to access the files you must mount the
+     filesystem onto the mount point.  The mount operation is the
+     jargon for telling the system to access the device on which the
+     data are stored.  Mounting is analogous to opening a file: files
+     are opened, filesystems are mounted.
+
+Only after all three of these have been done will a filesystem become
+available across the network.  Cfagent will help you with the last two
+in a very transparent way.  You could also use the text-editing facility
+in cfagent to edit the exports file, but there are other ways update
+the exports file using _netgroups_ which we shall not go into here.  If
+you are in doubt, look up the manual page on exports.
+
+   Some sites prefer to minimize the use of NFS filesystems, to avoid
+one machine being dependent on another. They prefer to make a local
+copy of the files on a remote machine instead.  Traditionally programs
+like `rdist' have been used for this purpose. You may also use cfagent
+to copy files in this way, *Note Emulating rdist::.
+
+
+File: cfengine-Tutorial.info,  Node: Name servers (DNS),  Next: Monitoring important files,  Prev: Network File System (NFS),  Up: Key concepts
+
+Name servers (DNS)
+------------------
+
+   There are two ways to specify addresses on the internet (called IP
+addresses).  One is to use the textual address like `ftp.uu.net' and
+the other is to use the numerical form `192.48.96.9'.  Alas, there is
+no one-to-one correspondence between the numerical addresses and the
+textual ones, thus a service is required to map one to the other.
+
+   The service is performed by one or more special hosts on the network
+called _nameservers_.  Each host must know how to contact a nameserver
+or it will probably hang the first time you give it an IP address.  You
+tell it how to contact a nameserver by editing the text-file
+`/etc/resolv.conf'.  This file must contain the domain name for your
+domain and a list of possible nameservers which can be contacted, in
+order of priority.  Because this is a special file which every host
+must have, you don't have to use the editing facilities in cfagent
+explicitly.  You can just define the nameservers for each host in the
+cfagent file and cfagent will do the editing automatically.  If you
+want to change the priority of nameservers later, or even change the
+list then a simple change of one or two lines in the configuration file
+will enable you to reconfigure every host on your network automatically
+without having to do any editing yourself!
+
+
+File: cfengine-Tutorial.info,  Node: Monitoring important files,  Next: Making links,  Prev: Name servers (DNS),  Up: Key concepts
+
+Monitoring important files
+--------------------------
+
+   Security is an important issue on any system.  In the busy life of a
+system administrator it is not always easy to remember to set the
+correct access rights on every file and this can result in either a
+security breach or problems in accessing files.
+
+   A common scenario is that you, as administrator, fetch a new package
+using ftp, compile it and install it without thinking too carefully.
+Since the owner and permissions of the files in an ftp archive remains
+those of the program author, it often happens that the software is left
+lying around with the owner and permissions as set by the author of the
+program rather than any user-name on _your_ system.  The user-id of the
+author might be anybody on your system -- or perhaps nobody at all!
+The files should clearly be owned by root and made readable and
+unwritable to normal users.
+
+   Simple accidents and careless actions under stress could result in,
+say, the password file being writable to ordinary users.  If this were
+the case, the security of the entire system would be compromised.
+Cfagent therefore allows you to monitor the permissions, ownership and
+general existence of files and directories and, if you wish, correct
+them or warn about them automatically.
+
+
+File: cfengine-Tutorial.info,  Node: Making links,  Prev: Monitoring important files,  Up: Key concepts
+
+Making links
+------------
+
+   One of the difficulties with having so many different variations on
+the theme of BSD and system 5 based operating systems is that similar
+files are not always where you expect to find them.  They have
+different names or lie in different directories.  The usual solution to
+the problem is to make an alias for these files, or a pointer from one
+filename to another.  The name for such an alias is a _symbolic link_.
+
+   It is often very convenient to make symbolic links.  For example, you
+might want the sendmail configuration file `/etc/sendmail.cf' to be a
+link to a global configuration file, say,
+     `/usr/local/mail/etc/sendmail.cf'
+
+on every single host on your network so that there is only one file to
+edit.  If you had to make all of these links yourself, it would take a
+lifetime.  Cfagent will make such a link automatically and check it
+each time it is run.  You can also ask it to tidy up old links which
+have been left around and no longer point to existing files.  If you
+reinstall your operating system later it doesn't matter because all your
+links are defined in your cfagent configuration file, recorded for all
+time.  Cfengine won't forget it, and you won't forget it because the
+setup is defined in one central place.
+
+   Cfagent will also allow you to make hard links to regular files, but
+not other kinds of file. A hard link to a symbolic link, is the same as
+a hard link to the file the symbolic link points to.
+
+
+File: cfengine-Tutorial.info,  Node: Functionality,  Prev: Key concepts,  Up: Overview
+
+Functionality
+=============
+
+   The notes above give you a rough idea of what cfengine can be used
+for.  Here is a summary of cfagent's capabilities.
+
+   * Check and configure the network interface.
+
+   * Edit textfiles for the system and for all users.
+
+   * Make and maintain symbolic links, including multiple links from a
+     single command.
+
+   * Check and set the permissions and ownership of files.
+
+   * Tidy (delete) junk files which clutter the system.
+
+   * Systematic, automated mounting of NFS filesystems.
+
+   * Checking for the presence of important files and filesystems.
+
+   * Controlled execution of user scripts and shell commands.
+
+   * Cfengine follows a class-based decision structure.
+
+   * Process management.
+
+
+   How do you run cfagent? You can run it as a cron job, or you can run
+it manually. You may run cfagent scripts/programs as often as you like.
+Each time you run a script, the engine determines whether anything
+needs to be done -- if nothing needs to be done, nothing is done!  If
+you use it to monitor and configure your entire network from a central
+file-base, then the natural thing is to run cfengine repeatedly with
+the help of `cron' and/or `cfexecd'.
+
+
+File: cfengine-Tutorial.info,  Node: Getting started,  Next: More advanced concepts,  Prev: Overview,  Up: Top
+
+Getting started
+***************
+
+* Menu:
+
+* What you must have::          a skeleton cfagent program
+* Program structure::           an overview
+* Building a distributed configuration ::
+* Options::                     spices and conveniences
+* Invoking cfagent::            from the command line
+* Running cfengine permanently::
+* CFINPUTS environment variable::  the cfengine search path
+* What to aim for::
+
+
+File: cfengine-Tutorial.info,  Node: What you must have,  Next: Program structure,  Prev: Getting started,  Up: Getting started
+
+What you must have in a cfagent program
+=======================================
+
+   A cfagent configuration file for a large network can become long and
+complex so, before we get down to details, let's try to strip away the
+complexity and look only to the essentials.
+
+   Each cfagent program or configuration file is a list of declarations
+of items to be checked and perhaps fixed.  You begin by creating a file
+called `cfagent.conf'.  The simplest meaningful file you can create is
+something like this:
+
+
+     # Comment...
+     
+     control:
+     
+       actionsequence = ( links )
+     
+     links:
+     
+       /bin -> /usr/bin
+
+The example above checks and makes (if necessary) a link from `/bin' to
+`/usr/bin'.  Let's examine this example more closely.  In a cfengine
+program:
+
+   * Use of space is unrestricted.  You can start new lines wherever
+     you like.  You should generally have a space before and after
+     parentheses to avoid confusing the parser.
+
+   * A comment is some text which is ignored by cfengine.  The `#'
+     symbol designates a comment and means: ignore the remaining text
+     on this line.  A comment symbol must have a space in front of it,
+     or start a new line so that cfengine knows you don't mean the
+     symbol as part of another word.
+
+   * Words which end in a single colon define _sections_ in a program.
+     Under a given section you group together all declarations of a
+     given type.  Section names must all be taken from a list defined
+     by the language.  You cannot define your own sections.
+
+   * Words which end in two colons are so-called _class_ names.  They
+     are used for making decisions in cfengine.
+
+   * Statements which are of the form `NAME=( LIST )' are used to
+     assign the value on the right hand side to the name on the left
+     hand side of the equals sign.
+
+
+In simple example above has three of the four types of object described
+above.  The `control:' section of any program tells cfengine how to
+behave.  In this example it adds the action LINKS to the
+actionsequence.  For LINKS you could replace some other action.  The
+essential point is that, if you don't have an action sequence, your
+cfengine program will do absolutely nothing! The action sequence is a
+list which tells cfagent what do to and in which order.
+
+   The `links:' section of the file tells cfagent that what follows is
+a number of links to be made.  If you write this part of the file, but
+forget to add links to the actionsequence, then nothing will be done!
+You can add any number of links in this part of the file and they will
+all be dealt with in order when--and only when--you write LINKS in the
+action sequence.
+
+   To summarize, you _must_ have:
+
+   * Some declarations which specify things to be done.
+
+   * An action sequence which tells cfagent which sections to process,
+     how many times and in which order they should be processed.
+
+
+   Now let's think a bit about how useful this short example program is.
+On a SunOS system, where the directory `/bin' is in fact supposed to be
+a link, such a check could be useful, but on some other system where
+`/bin' is a not a link but a separate directory, this would result in
+an error message from cfagent, telling you that `/bin' exists and is
+not a link.  The lesson is that, if we want to use cfagent to make _one
+single_ program which can be run on any host of any type, then we need
+some way of restricting the above link so that it only gets checked on
+SunOS systems.  We can write the following:
+
+
+     # Comment...
+     
+     control:
+     
+       actionsequence = ( links  )
+     
+     links:
+     
+       sun4::
+     
+            /bin -> /usr/bin
+            # other links
+     
+        osf::
+     
+            # other links
+
+The names which have double colons after them are called _classes_ and
+they are used to restrict a particular action so that it only gets
+performed if the host running the program is a member of that class.  If
+you are familiar with C++, this syntax should make you think of classes
+definitions in C++.  Classes works like this: the names above `sun4',
+`sun3', `osf' etc.  are all internally defined by cfagent.  If a host
+running, say, the OSF operating system executes the file it
+automatically becomes a member of the class `osf'.  Since it cannot be
+a member more than one of the above, this distinguishes between
+different types of operating system and creates a hidden
+`if'..`then'...`else' test.
+
+   This is the way in which cfagent makes decisions.  The key idea is
+that actions are only carried out if they are in the same class as the
+host running the program.  Classes are dealt with in detail in the next
+chapter.
+
+   Now let's see how to add another kind of action to the action
+sequence.
+
+
+     # Comment...
+     
+     control:
+     
+       actionsequence = ( tidy links )
+     
+     links:
+     
+       /bin -> /usr/bin
+     
+     tidy:
+     
+        /tmp  pattern=* age=7 recurse=inf
+
+We have now added a new kind of declaration called `tidy:' which
+deletes files.  In the example above, we are looking at files in the
+directory `/tmp' which match the pattern `*' and have not been accessed
+for more than seven days.  The search for these files descends
+recursively down any number of subdirectories.
+
+   To make any of this happen we must add the word TIDY to the action
+sequence.  If we don't, the declaration will be ignored.  Notice also
+that, regardless of the fact that `links:' comes before `tidy:', the
+order in the action sequence tells us that all `tidy' actions will be
+performed before `links:'.
+
+   The above structure can be repeated to build up a configuration file
+or script.
+
+
+File: cfengine-Tutorial.info,  Node: Program structure,  Next: Building a distributed configuration,  Prev: What you must have,  Up: Getting started
+
+Program structure
+=================
+
+   To summarize the previous section, here is a sketch of a typical
+cfagent configuration program showing a sensible structure.  The
+various sections are listed in a sensible order which you would probably
+use in the action sequence.
+
+   An individual section-declaration in the program looks something
+like this:
+
+
+     ACTION-TYPE:
+     
+        CLASS1::
+     
+            LIST OF THINGS TO DO...
+     
+        CLASS2::
+     
+            LIST OF THINGS TO DO...
+
+`action-type' is one of the following reserved words:
+
+
+        groups, control, homeservers, binservers, mailserver, mountables,
+        import, broadcast, resolve, defaultroute, directories, miscmounts,
+        files, ignore, tidy, required, links, disable, shellcommands,
+        editfiles, processes
+
+The order in which declarations occur is not important to cfengine from
+a syntactical point of view, but some of the above actions define
+information which you will want to refer to later.  All variables,
+classes, groups etc.  must be defined before they are used.  That means
+that it is smart to follow the order above for the sections in the first
+line of the above list.
+
+   The order in which items are declared is not to be confused with the
+order in which they are executed.  This is determined by the
+`actionsequence', (see the reference manual).  Probably you will want to
+coordinate the two so that they match as far as possible.
+
+   For completeness, here is a complete summary of the structure of a
+very general cfagent configuration program.  The format is free and use
+of space is unrestricted, though it is always a good idea to put a
+space in front before and after parentheses when defining variables.
+
+
+     ######################################################################
+     #
+     # Example of structure
+     #
+     ######################################################################
+     
+     groups:
+     
+        GROUP1 = ( HOST HOST ...  )
+        GROUP2 = ( HOST HOST ...  )
+        ...
+     
+     ######################################################################
+     
+     control:
+     
+        CLASS::
+     
+        site      =  ( MYSITE )
+        domain    =  ( MYDOMAIN )
+        ...
+     
+         actionsequence =
+           (
+           ACTION NAME
+           ....
+           )
+     
+        mountpattern = ( MOUNTPOINT )
+        homepattern = ( WILDCARDS MATCHING HOME DIRECTORIES )
+     
+        addinstallable = ( FOO BAR )
+        addclasses     = ( FOO BAR )
+     
+     ######################################################################
+     
+     homeservers:
+     
+        CLASS::
+                HOME SERVERS
+     
+     binservers:
+     
+        CLASS::
+                BINARY SERVERS
+     
+     mailserver:
+     
+        CLASS::
+                MAIL SERVER
+     
+     mountables:
+     
+        CLASS::
+     
+                LIST OF RESOURCES
+     
+     
+     ######################################################################
+     
+     import:
+     
+        CLASS::    INCLUDE FILE
+     
+        CLASS::    INCLUDE FILE
+     
+     
+     ######################################################################
+     
+     broadcast:
+     
+       CLASS::  ONES   # or zeros / zeroes
+     
+     defaultroute:
+     
+        CLASS::  MY-GW
+     
+     
+     ######################################################################
+     
+     resolve:
+     
+        any::
+     
+            LIST OF NAMESERVERS
+     
+     
+        ...
+
+
+File: cfengine-Tutorial.info,  Node: Building a distributed configuration,  Next: Options,  Prev: Program structure,  Up: Getting started
+
+Building a distributed configuration
+====================================
+
+If a configuration is to be specified at one central location, how does
+it get distributed to many hosts? The simple answer is to get cfengine
+to distribute the configuration to the hosts. To do that, a separate
+configuration file is used. Why?
+
+   Imagine what would happen if you made a mistake in the configuration,
+i.e. a syntax error which got distributed to every host. Now all the
+hosts wuld be unable to run cfengine, and thereafter unable to download
+a corrected configuration file. The whole setup would be broken. To
+prevent this kind of accident, a separate configuration file is used to
+copy the files and binaries to each host. This configuration should be
+simple, and should almost never be edited: they key word here is
+_reliability_.
+
+* Menu:
+
+* Startup update.conf::
+* Startup cfservd.conf::
+
+
+File: cfengine-Tutorial.info,  Node: Startup update.conf,  Next: Startup cfservd.conf,  Prev: Building a distributed configuration,  Up: Building a distributed configuration
+
+Startup update.conf
+-------------------
+
+   The file `update.conf' can have more or less the same form for all
+sites, looking something like this.
+     #######
+     #
+     # BEGIN update.conf
+     #
+     # This script distributes the configuration, a simple file so that,
+     # if there are syntax errors in the main config, we can still
+     # distribute a correct configuration to the machines afterwards, even
+     # though the main config won't parse. It is read and run just before the
+     # main configuration is parsed.
+     #
+     #######
+     
+     control:
+     
+      actionsequence  = ( copy tidy )  # Keep this simple and constant
+     
+      domain          = ( iu.hio.no )  # Needed for remote copy
+     
+      #
+      # Which host/dir is the master for configuration roll-outs?
+      #
+     
+      policyhost      = ( nexus.iu.hio.no )
+      master_cfinput  = ( /masterfiles/inputs )
+     
+      #
+      # Some convenient variables
+      #
+     
+      workdir         = ( /var/cfengine )
+      cf_install_dir  = ( /usr/local/sbin )
+     
+      # Avoid server contention
+     
+      SplayTime = ( 5 )
+     
+     ############################################################################
+     
+      #
+      # Make sure there is a local copy of the configuration and
+      # the most important binaries in case we have no connectivity
+      # e.g. for mobile stations or during DOS attacks
+      #
+     
+     copy:
+     
+          $(master_cfinput)            dest=$(workdir)/inputs
+                                       r=inf
+                                       mode=700
+                                       type=binary
+                                       exclude=*.lst
+                                       exclude=*~
+                                       exclude=#*
+                                       server=$(policyhost)
+     
+          $(cf_install_dir)/cfagent    dest=$(workdir)/bin/cfagent
+                                       mode=755
+                                       backup=false
+                                       type=checksum
+     
+          $(cf_install_dir)/cfservd    dest=$(workdir)/bin/cfservd
+                                       mode=755
+                                       backup=false
+                                       type=checksum
+     
+          $(cf_install_dir)/cfexecd    dest=$(workdir)/bin/cfexecd
+                                       mode=755
+                                       backup=false
+                                       type=checksum
+     
+     #####################################################################
+     
+     tidy:
+     
+          #
+          # Cfexecd stores output in this directory.
+          # Make sure we don't build up files and choke on our own words!
+          #
+     
+          $(workdir)/outputs pattern=* age=7
+     
+     #######
+     #
+     # END cf.update
+     #
+     #######
+
+
+File: cfengine-Tutorial.info,  Node: Startup cfservd.conf,  Prev: Startup update.conf,  Up: Building a distributed configuration
+
+Startup cfservd.conf
+--------------------
+
+   In order to set up remote distribution from a central server, you
+will need to start the cfservd service on the host from which the
+configuration is to be copied, and grant access to the hosts which need
+to download it. Here is a simple get-started file which does this:
+
+     #########################################################
+     #
+     # This is a cfservd config file - it is used for the server
+     # part of cfengine, for remote file transfers and control
+     # over cfengine using the cfrun program.
+     #
+     #########################################################
+     
+     control:
+     
+       domain = ( iu.hio.no )
+     
+          cfrunCommand = ( "/var/cfengine/bin/cfagent" )
+     
+      any::
+     
+       IfElapsed = ( 1 )
+       ExpireAfter = ( 15 )
+       MaxConnections = ( 50 )
+       MultipleConnections = ( true )
+     
+     #########################################################
+     
+     grant:
+     
+        # Grant access to all hosts at example.org.
+        # Files should be world readable
+     
+        /masterfiles/inputs   *.example.org
+     
+     ########
+     #
+     # END cfd.conf
+     #
+     ########
+
+
+File: cfengine-Tutorial.info,  Node: Options,  Next: Invoking cfagent,  Prev: Building a distributed configuration,  Up: Getting started
+
+Optional features in cfagent
+============================
+
+   Cfagent doesn't do anything unless you ask it to.  When you run a
+cfagent program it generates no output unless it finds something it
+believes to be wrong.  It does not carry out any actions unless they are
+declared in the action sequence.
+
+   If you like, though, you can make cfagent positively chatty.
+Cfagent can be run with a number of command line options (see the
+reference manual).  If you run the program with the `-v' or `--verbose'
+options, it will supply you cheerily with a resume of what it is doing.
+Certain warning messages also get printed in verbose mode, so it is a
+useful debugging tool.
+
+   You can ask cfagent to check lots of things - the timezone for
+instance, or the domain name.  In order for it to check these things, it
+needs some information from you.  All of the switches and options which
+change the way in which cfagent behaves get specified either on the
+command line or in the `control:' section of the control file.  Some
+special control variables are used for this purpose.  Here is a short
+example:
+
+
+     control:
+     
+       domain   = ( example.org )
+       netmask  = ( 255.255.255.0 )
+       timezone = ( MET CET )
+     
+       mountpattern = ( /mydomain/mountpoint )
+     
+       actionsequence =
+          (
+          checktimezone     # check time zone
+          netconfig         # includes check netmask
+          resolve           # includes domain
+          mountinfo         # look for mounted disks under mountpattern
+          )
+
+To get verbose output you must run cfagent with the appropriate command
+line option `--verbose' or `-v'.
+
+   Notice that setting values has a special kind of syntax: a variable
+name, an equals sign and a value in parentheses.  This tells you that
+the quantity of the left hand side assumes the value on the right hand
+side.  There are lots of questions you might ask at this point.  The
+answers to these will be covered as we go along and in the next chapter.
+
+   Before leaving this brief advertisement for control parameters, it is
+worth noting the definition of `mountpattern' above.  This declares a
+directory in which cfagent expects to find mounted disks.  It will be
+explained in detail later, for now notice that this definition looks
+rather stupid and inflexible.  It would be much better if we could use
+some kind of variables to define where to look for mounted filesystems.
+And of course you can...
+
+   Having briefly scraped the surface of what cfagent can do, turn to
+the example and take a look at what a complete program can look like,
+(see the reference manual).  If you understand it, you might like to
+skip through the rest of the manual until you find what you are looking
+for.  If it looks mysterious, then the next chapter should answer some
+questions in more depth.
+
+
+File: cfengine-Tutorial.info,  Node: Invoking cfagent,  Next: Running cfengine permanently,  Prev: Options,  Up: Getting started
+
+Invoking cfagent
+================
+
+   Cfagent may be invoked in a number of ways.  Here are some examples:
+
+     host% cfagent
+     
+     host% cfagent --file myfile
+     
+     host% cfagent -f myfile -v -n
+     
+     host% cfagent --help
+
+   The first of these (the default command, with no arguments) causes
+cfagent to look for a file called `cfagent.conf' in the current
+directory and execute it silently.  The second command reads the file
+`myfile' and works silently.  The third works in verbose mode and the
+`-n' option means that no actions should actually be carried out, only
+warnings should be printed.  The final example causes cfagent to print
+out a list of its command line options.
+
+   The complete list of options is listed in the summary at the
+beginning of this manual, or you can see it by giving the `-h' option,
+(see the reference manual).
+
+   In addition to running cfagent with a filename, you can also treat
+cfagent files as scripts by starting your cfagent program with the
+standard shell line:
+     #!/usr/local/sbin/cfagent -f
+     #
+     # My config script
+     #
+
+Here we assume that you have installed cfengine under the directory
+`/usr/local/sbin'.  By adding a header like this to the first line of
+your program and making the file executable with the `chmod' shell
+command, you can execute the program just by typing its name--i.e.
+without mentioning cfengine explicitly at all.
+
+   As a novice to cfengine, it is advisable to check all programs with
+the `-n' option before trusting them to your system, at least until you
+are familiar with the behaviour of cfengine.  This `safe' option allows
+you to see what cfengine wants to do, without actually committing
+yourself to doing it.
+
+
+File: cfengine-Tutorial.info,  Node: Running cfengine permanently,  Next: CFINPUTS environment variable,  Prev: Invoking cfagent,  Up: Getting started
+
+Running cfengine permanently
+============================
+
+   Once you are happy using cfengine, you will want it to run least once
+per hour on your systems. This is easily achieved by adding the
+following line to the root crontab file of each system:
+     0,30 * * * * /usr/local/sbin/cfexecd -F
+   This is enough to ensure that cfengine will get run. Any output
+generated by this job, will be stored in `/var/cfengine/outputs'.  In
+addition, if you add the following to the file `cfagent.conf', the
+system administrator will be emailed a summary of any output:
+
+     control:
+     
+     smtpserver = ( mailhub.example.org ) # site MTA which can talk smtp
+     sysadm     = ( mark@example.org )   # mail address of sysadm
+
+Fill in suitable values for these variables.  An alternative, or
+additional way to run cfengine, is to run the `cfexecd' program is
+daemon mode (without the `-F') option. In this mode, the daemon lives
+in the background and sleeps, activating only in accordance with a
+scheduling policy. The default policy is to run once every hour
+(equivalent to `Min00_05'). Here is how you would modify `cfagent.conf'
+in order to make the daemon execute cfagent every half-hour:
+      control:
+     
+        # When should cfexecd in daemon mode wake up the agent?
+     
+        schedule   = ( Min00_05 Min30_35 )
+   Note that the time specifications are the basic cfengine _time
+classes_, *Note Building flexible time classes::.  Although one of
+these methods should suffice, no harm will arise from running both cron
+and the cfexecd side-by-side.  Cfagents locking mechanisms ensure that
+no contention will occur.
+
+   The other components of cfengine can be started by cfagent itself:
+     processes:
+     
+      "cfenvd"  restart "/usr/local/sbin/cfenvd"
+      "cfservd" restart "/usr/local/sbin/cfservd"
+
+
+File: cfengine-Tutorial.info,  Node: CFINPUTS environment variable,  Next: What to aim for,  Prev: Running cfengine permanently,  Up: Getting started
+
+CFINPUTS environment variable
+=============================
+
+   Whenever cfengine looks for a file it asks a question: is the
+filename an absolute name (that is a name which begins from `/' like
+`/usr/file'), is it a file in the directory in which you invoke
+cfengine or is it a file which should be searched for in a special
+place?
+
+   If you use an absolute filename either on the command line using
+`-f' or in the `import' section of your program (a name which begins
+with a slash '/'), then cfengine trusts the name of the file you have
+given and treats it literally. If you specify the name of the file as
+simple `.' or `-' then cfengine reads its input from the standard input.
+
+   If you run cfengine without arguments (so that the default filename
+is `cfagent.conf') or you specify a file without a leading slash in the
+`import' section, then the value of the environment variable `CFINPUTS'
+is prepended to the start of the file name.  This allows you to keep
+your configuration in a standard place, pointed to by `CFINPUTS'.  For
+example:
+
+
+     host# setenv CFINPUTS /usr/local/masterfiles/cfengine/inputs
+     
+     host# cfagent -f myfile
+
+In this example, cfengine tries to open
+`/usr/local/masterfiles/cfengine/inputs/myfile'.  If no value is set
+for `CFINPUTS', then the default location is the trusted cfengine
+directory `/var/cfengine/inputs'.
+
+
+File: cfengine-Tutorial.info,  Node: What to aim for,  Prev: CFINPUTS environment variable,  Up: Getting started
+
+What to aim for
+===============
+
+   If you are a beginner to cfengine, you might not be certain exactly
+how you want to use it. Here are some hints from Dr. Daystrom about how
+to get things working quickly.
+
+   * Run cfengine from cron every hour on all your systems. Be sure to
+     label long tasks, or tasks which do not need to be performed often
+     by a _time class_ which prevents it from being executed all the
+     time, *Note Using cfengine as a front-end for cron::.
+
+     _Running cfengine from cron means that it will be run in parallel
+     on your systems. Cfengine on one host does not have to wait for
+     cfengine on another host to complete._
+
+   * Set up `cfservd' on all your systems so that cfengine can be
+     executed remotely, so that you can immediately "push" changes to
+     all your hosts with `cfrun'. Think carefully about whom you wish
+     to give permission to run cfengine from the net, *Note Configuring
+     cfservd::. Set up you `cfservd.conf' file accordingly. You can
+     also use this daemon to grant access rights for remote file
+     copying.
+
+     _Cfrun polls all your hosts serially and gives you a concatenated
+     indexed list of problems on all hosts. The disadvantage with cfrun
+     is that each host has to wait its turn._
+
+   * Don't forget to add `cfservd' to the system startup scripts, or to
+     `inittab' so that it starts when you boot your system.
+
+   * Add _all_ your hosts to the `cfrun.hosts' file. It does not matter
+     that some may be master servers and others clients. The locking
+     mechanisms will protect you from silliness, *Note Deadlocks and
+     runaway loops::. Cfengine will work it out. Cfrun allows you to
+     remotely execute cfengine on groups of hosts which satisfy a list
+     of cfengine classes.
+
+
+When you have set up these components, you can sit back and edit the
+configuration files and watch things being done.
+
+
+File: cfengine-Tutorial.info,  Node: More advanced concepts,  Next: Global configurations,  Prev: Getting started,  Up: Top
+
+More advanced concepts
+**********************
+
+* Menu:
+
+* Classes basics::
+* Variable substitution::
+* Undefined variables::
+* Defining classes::            making decisions
+* The generic class any::       a wildcard
+* Debugging tips::              nullifying classes
+* Access control::              specifying user access to programs
+* Wildcards in directory names::  multiple searches
+* File sweeps::
+* Log files::
+* Quoted strings::
+* Regular expressions::
+* Iterating over lists::
+

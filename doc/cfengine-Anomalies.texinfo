@@ -1,0 +1,511 @@
+\input texinfo @c -*-texinfo-*-
+@c *********************************************************************
+@c
+@c  This is a TEXINFO file. It generates both TEX documentation and
+@c  the "on line" documentation "info" files.
+@c
+@c  The file is structured like a programming language. Each chapter
+@c  starts with a chapter comment.
+@c
+@c  Menus list the subsections so that an online info-reader can parse
+@c  the file hierarchically.
+@c
+@c ***********************************************************************
+@c %** start of header
+@setfilename cfengine-Anomalies.info
+@settitle Anomaly detection with cfenvd and cfenvgraph
+@setchapternewpage odd
+@c %** end of header
+@defindex mb
+
+@include version3.texi
+
+@titlepage
+@title  Anomaly detection with cfenvd and cfenvgraph
+@subtitle Edition @value{EDITION} for version @value{VERSION}
+@author Mark Burgess
+@author Faculty of Engineering, Oslo University College, Norway
+
+@c @smallbook
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 2001 Mark Burgess
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the section entitled "GNU General Public License" is included
+exactly as in the original, and provided that the entire resulting
+derived work is distributed under the terms of a permission notice
+identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "GNU General Public License"
+may be included in a translation approved by the author instead of in
+the original English.
+
+This manual corresponds to CFENGINE
+Edition @value{EDITION} for version @value{VERSION}
+as last updated @value{UPDATED}.
+
+@end titlepage
+
+
+@c *************************** File begins here ************************
+
+
+@ifinfo
+@dircategory System Utilities
+@direntry
+* cfengine Tutorial: (cfengine-Tutorial.info).
+                        Cfengine is a language based tool specifically
+                        designed for configuring and maintaining BSD
+                        and System-5-like operating systems attached
+                        to a TCP/IP network.
+@end direntry
+@end ifinfo
+
+@ifnottex
+@node Top, Overview, (dir), (dir)
+@top Cfengine-Anomalies
+@end ifnottex
+
+@ifinfo
+Copyright @copyright{} 2001 Mark Burgess
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the section entitled "GNU General Public License" is included
+exactly as in the original, and provided that the entire resulting
+derived work is distributed under the terms of a permission notice
+identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "GNU General Public License"
+may be included in a translation approved by the author instead of in
+the original English.
+
+Edition @value{EDITION} for version @value{VERSION}
+as last updated @value{UPDATED}.
+
+@end ifinfo
+
+
+@c **********************************************************************
+@c CHAPTER
+@c **********************************************************************
+
+
+@menu
+* Overview::                    
+* Variable Index::              
+* Concept Index::               
+* FAQ Index::                   
+@end menu
+
+@node Overview, Variable Index, Top, Top
+@chapter Overview
+
+
+One of the aims of cfengine version 2, in combination with our research
+efforts at Oslo University College, is to develop a real computer immune
+system, based on the detection of `sicknesses' or anomalies in the behaviour
+of the system, not merely based on a policy template. Such a system would
+be far more dynamical and be able to change in response to changing external
+conditions. This work is in its early stages, but you can take advantage
+of it straight away, with a minimum of effort. This additional manual
+aims at getting you started, so that you can monitor systems, and learn
+about their behaviour, without having to watch control panels, or time-series
+traces.
+
+@c -------------------------------------------------------------------------------
+@c SECTION
+@c -------------------------------------------------------------------------------
+
+@menu
+* cfenvd::                      
+* Anomaly research::            
+* cfenvgraph::                  
+* Starting with anomaly detection::  
+@end menu
+
+@node cfenvd, Anomaly research, Overview, Overview
+@section An environment detector: cfenvd
+
+The @file{cfenvd} program serves two purposes: as an anomaly detection engine
+and as a source of entropy for generating random numbers, such as for
+encryption keys. Although it is not a compulsory part of cfengine, it is
+highly recommended to run this daemon. It requires few resources and poses
+no vulnerability to the system. It will play an increasingly important
+role in future developments.
+@cindex Entropy source
+@cindex Encryption keys
+@cindex Random numbers
+
+In cfengine 2.x, additional classes are automatically evaluated based on
+the state of the host, in relation to earlier times.  This is
+accomplished by the additional @file{cfenvd} daemon, which continually
+updates a database of system averages and variances, which characterize
+``normal'' behaviour. The state of the system is examined and compared
+to the database, and the state is classified in terms of the current
+level of activity, as compared to an average of equivalent earlier
+times. e.g.
+
+@smallexample
+RootProcs_low_dev2
+netbiosssn_in_low_dev2
+smtp_out_high_anomalous
+www_in_high_dev3
+@end smallexample
+
+The first of these tells us that the number of root processes is
+two standard deviations below the average of past behaviour, which might
+be fortuitous, or might signify a problem, such as a crashed server.
+The WWW item tells us that the number of incoming connections is three
+standard deviations above average. The smtp item tells us that outgoing
+smtp connections are more than three standard deviations above average,
+perhaps signifying a mail flood.
+The setting of these classes is transparent to the user, but the
+additional information is only visible to the privileged owner of
+the cfengine work-directory, where the data are cached.
+
+Active incoming ports are also registered as ``pin-portnumber'', but this
+is mainly an experimental feature for future research. The resulting class list,
+obtained from exploring the environment of the system, and after parsing
+a configuration, looks something like this:
+
+@smallexample
+host% cfagent -p -v
+
+[snip]
+
+Defined Classes = ( any Thursday Hr14 Min24 Min20_25
+Day19 July Yr2001 solaris examplehost 32_bit sunos_5_7
+sunos_sun4u sunos_sun4u_5_7 sparc solaris2_7 129_0_0 
+129_0_0_10 loghost OnTheHour peaktime DayTime 
+examplehost_example_org longjob Setup_SSH_OK y MailHub 
+percent_60 RootProcs_normal_dev2 nfsd_out_low_dev2 
+pin-1554 pin-80 pin-21 pin-6011 pin-5308 pin-139 
+pin-983 pin-10 )
+
+[snip]
+@end smallexample
+It is not yet known how the extra environment classes will be used in
+practice.  One obvious possibility is to limit certain heavy-weight
+operations (such as file tree scans) when the host is very busy, and
+to increase the probability of their occurrence when the host is
+lightly loaded. See the example in section 11.
+It remains to be seen how users will respond to these possibilities.
+
+
+@c -------------------------------------------------------------------------------
+@c SECTION
+@c -------------------------------------------------------------------------------
+
+@menu
+* Anomaly research::            
+* cfenvgraph::                  
+* Starting with anomaly detection::  
+@end menu
+
+@node Anomaly research, cfenvgraph, cfenvd, Overview
+@section Anomaly research
+
+There is no system available in the world today which can claim
+to detect and classify the functioning state of a computer system.
+Cfengine does not attempt to provide a ``product'' solution to this
+problem; rather it incorporates a framework, based on the
+current state of knowledge, for continuing research into this issue.
+In version 2.x of cfengine, an extra daemon @file{cfenvd} is used to
+collect statistical data about the recent history of each host
+(approximately the past two months), and classify it in a way that can
+be utilized by the cfengine agent. 
+
+
+The daemon may simply be started, with no arguments:
+@smallexample
+cfenvd
+@end smallexample
+and it proceeds to collect data and work autonomously, without further
+supervision. The cf-environment daemon is meant be
+trivial to use. The current long-term data recorded by the daemon are:
+number of users, number of root processes, number of non-root
+processes, percentage disk full for root disk, number of incoming and
+outgoing sockets for netbiosns, netbiosdgm, netbiosssn, irc, cfengine,
+nfsd, smtp, www, ftp, ssh and telnet. These data have been studied
+previously, and their behaviour is relatively well understood. In
+future versions, it is expected to extend this repertoire, as more
+research is done.
+
+The use of the daemon will not be reliable until about six to eight
+weeks after installing and running it, since a suitable training
+period is required to build up enough data for stable
+characterization. The daemon automatically adapts to the changing
+conditions, but has a built-in inertia which prevents anomalous
+signals from being given too much credence.  Persistent changes will
+gradually change the `normal state' of the host over an interval of a
+few weeks. Unlike some systems, cfengine's training period never ends.
+It regards normal behaviour as a relative concept, which has more to
+do with local stability than global constancy.
+
+The final size of the database is approximately 2MB. Measurements are
+taken every five minutes (approximately). This interval is based on
+auto-correlation times measured for networked hosts in practice.
+
+Cfenvd sets a number of classes in cfengine which describe the current
+state of the host in relation to its recent history. The classes
+describe whether a parameter is above or below its average value, and
+how far from the average the current value is, in units of the
+standard-deviation (see above). This information could be utilized to
+arrange for particularly resource-intensive maintenance to be delayed
+until the expected activity was low.
+
+
+@c -------------------------------------------------------------------------------
+@c SECTION
+@c -------------------------------------------------------------------------------
+
+@node cfenvgraph, Starting with anomaly detection, Anomaly research, Overview
+@section cfenvgraph
+
+The @samp{cfenvgraph} command can use used to dump a graph of averages for
+visual inspection of the normal state database. The format of the file
+is
+@smallexample
+t,y_1,y_2,y_3...
+@end smallexample
+@noindent
+which can be viewed using @samp{gnuplot} or
+@samp{xgmr} or other graphical plotting program.  This would allow the
+policy-maker to see what is likely to be a good time for such work (say
+06:00 hours), and then use this time for the job, unless an anomalous
+load is detected.
+
+The cfenvgraph command is used to extract data from the database used by
+the cfenvd environment daemon.
+@smallexample
+cfenvgraph -f @var{filename.db [-r -T -t -s -e]}
+@end smallexample
+The command normally generates two files with format
+@smallexample
+t, y_1, y_2, y_3, y_4...
+@end smallexample
+in a sub-directory of the current directory @samp{cfenvgraphs-snapshot}
+(or @file{cfenvgraphs-}@var{TIMESTAMP} if @samp{-T} is used).
+
+
+The files are called
+@smallexample
+cfenv-average
+cfenv-stddev
+@end smallexample
+and contain, respectively, the weighted average values of all the
+recorded data and the square-root of the weighted variances with respect
+to the averages. Data are weighted in such a way that older values are
+gradually deprecated, becoming irrelevant after about two months.
+
+
+
+Normally the vertical scale of each graph is scaled so that each line
+has a maximum value of 1 and a minimum value of 0, this allows all the
+lines to be seen in maximum detail. However, this makes it difficult to
+see the absolute values of the lines. With the @samp{-n} option, no scaling
+is performed and true values are plotted.
+
+
+The complete data span a one-week
+period, and the daily rhythm of the system may normally be viewed as a number
+of peaks, one per day.
+
+The options are:
+@table @samp
+@item --help (-h)
+List command options
+@item --file (-f)
+Specifiy file to plot.
+@item --titles (-t)
+If the @samp{-t} option is given, comments are generated at the start of the
+file which describe the columns. These are in a format understood by 
+ @samp{vvgraph} as title/label data. 
+@item --timestamps (-T)
+If the @samp{-T} option is given,
+the output filenames are time-stamped with the current time, in order to
+give a unique name.
+@item --resolution (-r)  
+If the @samp{-r} option is given then high resolution data are generated
+(five minute resolution), otherwise data are averaged over periods of one hour
+to generate simpler and smoother graphs. 
+@item --separate (-s)
+If the @samp{-s} option is given, cfenvgraph generates separate files
+for each metric, in the format
+@smallexample
+t,y,dy
+@end smallexample
+where dy is the height of a vertical error-bar. This set of graphs
+combines the average with the standard-deviation. (Note that the
+error bars show the standard-deviation, and not the standard error of the
+mean i.e. stddev/sqrt(N)); the latter has no obvious meaning here.
+If @samp{-e} is specified, then error bars are omitted. 
+@item --no-error-bars (-e)
+No error bars are plotted.
+@item --no-scaling (-n)
+The graphs are not scaled, so that (min,max) is mapped onto the interval
+(0,1).
+@end table
+
+
+Note that the values printed for sockets always look higher than
+they should for highly active services. This is because even those sockets
+which are in CLOSE_WAIT are counted. This is the correct way to determine
+a normal state based on the recent past. It is a local averaging performed
+by the kernel. If one counts only those connections which are currently
+active, one gets a distorted view of activity with a 5-minute sample
+rate. To measure more often than this would place unacceptably high load
+on the system.
+
+Graphs may be viewed in @samp{vvgraph}, @samp{xmgr} (used in the pictures above) or
+@samp{gnuplot}, or other graphical viewer. These graphs are not meant for
+continuous viewing. The data are averages, not time-series.
+
+For example, with gnuplot
+
+@smallexample
+host$ cfenvgaph -s
+host$ gnuplot
+gnuplot> plot "www-in.cfenv" with errorbars
+gnuplot> plot "www-in.cfenv" with lines
+@end smallexample
+
+
+@c -------------------------------------------------------------------------------
+@c SECTION
+@c -------------------------------------------------------------------------------
+
+@node Starting with anomaly detection,  , cfenvgraph, Overview
+@section Starting with anomaly detection
+
+@c looks for eps or png/jpg
+@c image{imagename,10cm,10cm}
+
+Try importing the following file:
+
+@smallexample
+#
+# cf.environ
+#
+# Just a test for responses to measured anomalies
+#
+
+classes:
+
+ #
+ # those hosts we wat to monitor
+ #
+
+ anomaly_hosts = ( nexus cube dax ) 
+
+shellcommands:
+
+  nfsd_in_high_dev2::
+
+  "/bin/echo High NFS server access rate 2dev at $(host) value $(value_nfsd_in) \
+average $(average_nfsd_in) pm $(stddev_nfsd_in)"
+
+
+ # ROOT PROCS
+
+  anomaly_hosts.RootProcs_high_dev2::
+
+   "/bin/echo RootProc anomaly high 2 dev on $(host) value $(value_rootprocs) \
+average $(average_rootprocs) pm $(stddev_rootprocs)"
+
+ # USER PROCS
+
+ anomaly_hosts.UserProcs_high_dev2::
+ 
+   "/bin/echo UserProc anomaly high 2 dev on $(host) value $(value_userprocs) \
+average $(average_userprocs) pm $(stddev_userprocs)"
+     
+ anomaly_hosts.UserProcs_high_anomaly::
+ 
+   "/bin/echo UserProc anomaly high 3 dev!! on $(host)"
+    
+ # WWW IN
+ 
+ anomaly_hosts.www_in_high_dev2::
+ 
+   "/bin/echo Incoming www anomaly high 2 dev on $(host) - value $(value_www_in) \
+average $(average_www_in) pm $(stddev_www_in)" 
+
+ anomaly_hosts.www_in_high_anomaly::
+ 
+   "/bin/echo Incoming www anomaly high anomaly dev!! on $(host) - value \
+$(value_www_in) average $(average_www_in) pm $(stddev_www_in)" 
+  
+ # SMTP IN
+ 
+ anomaly_hosts.smtp_in_high_dev2::
+ 
+   "/bin/echo Incoming smtp anomaly high 2 dev on $(host)  value $(value_smtp_in)\
+ average  $(average_smtp_in) pm $(stddev_smtp_in)" 
+
+ anomaly_hosts.smtp_in_high_anomaly::
+ 
+   "/bin/echo Incoming smtp anomaly high anomaly !! on $(host)  value $(value_smtp_in)\
+ average  $(average_smtp_in) pm $(stddev_smtp_in)"
+ 
+ # SMTP OUT
+ 
+ anomaly_hosts.smtp_out_high_dev2::
+ 
+   "/bin/echo Outgoing smtp anomaly high 2 dev on $(host) value $(value_smtp_out) \
+average  $(average_smtp_out) pm $(stddev_smtp_out)"
+ 
+ anomaly_hosts.smtp_out_high_anomaly::
+ 
+   "/bin/echo Outgoing smtp anomaly high anomaly dev!! on $(host) value \
+$(value_smtp_out) average $(average_smtp_out) pm $(stddev_smtp_out)"
+ 
+ # SAMBA
+
+ anomaly_hosts.netbiosssn_in_high_dev2::
+
+   "/bin/echo SAMBA access high 2 on $(host) value $(value_netbiosssn_in)\
+ average $(average_netbiosssn_in) pm $(stddev_netbiosssn_in)"    
+
+@end smallexample
+
+
+@c **********************************************************************
+@c INDEX
+@c **********************************************************************
+
+@node Variable Index, Concept Index, Overview, Top
+@unnumbered Variable Index
+
+@printindex vr
+
+@node Concept Index, FAQ Index, Variable Index, Top
+@unnumbered Concept Index
+
+@printindex cp
+
+@node FAQ Index,  , Concept Index, Top
+@unnumbered FAQ Index
+
+@printindex mb
+
+@contents
+
+@bye
+

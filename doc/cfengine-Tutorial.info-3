@@ -1,0 +1,1012 @@
+This is cfengine-Tutorial.info, produced by makeinfo version 4.0 from
+cfengine-Tutorial.texinfo.
+
+INFO-DIR-SECTION System Utilities
+START-INFO-DIR-ENTRY
+* cfengine Tutorial: (cfengine-Tutorial.info).
+                        Cfengine is a language based tool specifically
+                        designed for configuring and maintaining BSD
+                        and System-5-like operating systems attached
+                        to a TCP/IP network.
+END-INFO-DIR-ENTRY
+
+
+File: cfengine-Tutorial.info,  Node: Files and links,  Next: Copying files,  Prev: Using netgroups,  Up: Global configurations
+
+Files and links
+===============
+
+   File and link management takes several forms.  Actions are divided
+into three categories called `files', `tidy' and `links'. The first of
+these is used to check the existence of, the ownership and permissions
+of files. The second concerns the systematic deletion of garbage files.
+The third is a link manager which tests, makes and destroys links. The
+monitoring of file access bits and ownership can be set up for
+individual files and for directory trees, with controlled recursion.
+Files which do not meet the specified criteria can be `fixed' --i.e.
+automatically set to the correct permissions, or can simply be brought
+to the attention of the system administrator by a warning.  The syntax
+of such a command is as follows:
+
+
+     files:
+     
+       CLASS::
+     
+         /PATH mode=MODE owner=OWNER group=GROUP
+     
+              recurse=NO-OF-LEVELS action=ACTION
+
+The directory or file name is the point at which cfagent begins looking
+for files. From this point the search for files proceeds recursively
+into subdirectories with a maximum limit set by the `recurse'
+directive, and various options for dealing with symbolic links and
+device boundaries. The mode-string defines the allowed file-mode (by
+analogy with `chmod') and the owner and group may specify lists of
+acceptable user-ids and group-ids. The action taken in response to a
+file which does not meet acceptable criteria is specified in the action
+directive. It includes warning about or directly fixing all files, or
+plain files or directories only. Safe defaults exist for these
+directives so that in practice they may be treated as options.
+
+   For example,
+     files:
+     
+       any::
+            /usr/*/bin mode=a+rx,o-w own=root r=inf act=fixall
+
+which (in abbreviated form) would check recursively all files and
+directories starting from directories matching the wildcard (e.g.
+`/usr/local/bin', `/usr/ucb/bin').  By default, `fixall' causes the
+permissions and ownership of the files to be fixed without further
+warning.
+
+   One problem with symbolic links is that the files they point to can
+get deleted leaving a `hanging pointer'. Since cfagent can make many
+hundreds of links without any effort, there is the danger that, in time,
+the system could become full of links which don't point anywhere. To
+combat this problem, you can set the option `links=tidy' in the files
+section. If this is set, cfagent will remove any symbolic links which
+do not point to existing files (see Reference manual).
+
+   The creation of symbolic links is illustrated in figure 1 and the
+checking algorithm was discussed in section 2. In addition to the
+creation of single links, one may also specify the creation of multiple
+links with a single command. The command
+
+     links:
+     
+        binaryhost::
+     
+           /local/elm/bin +> /local/bin
+
+links all of the files in `/local/elm/bin' to corresponding files in
+`/local/bin'. This provides, amongst other things, one simple way of
+installing software packages in regular `bin' directories without
+controlling users' PATH variable. A further facility makes use of
+cfagent's knowledge of available (mounted) binary resources to search
+for matches to specific links. Readers are referred to the full
+documentation concerning this feature.
+
+   The need to tidy junk files has become increasingly evident during
+the history of cfengine. Files build up quickly in areas like `/tmp',
+`/var/tmp'. Many users use these areas for receiving large ftp-files so
+that their disk usage will not be noticed!  To give another example,
+just in the last few months the arrival of netscape World Wide Web
+client, with its caching facilities, has flooded hard-disks at Oslo
+with hundreds of megabytes of WWW files. In addition the regular
+appearance of `core' files(1) and compilation by-products (`.o' files
+and `.log' files etc.) fills disks with large files which many users do
+not understand.  The problem is easily remedied by a few lines in the
+cfagent configuration. Files can be deleted if they have not been
+accessed for n-days. Recursive searches are both possible and highly
+practical here. In following example:
+
+     tidy:
+     
+        AllHomeServers::
+     
+           home                 pattern=core       r=inf age=0
+           home/.wastebasket    pattern=*          r=inf age=14
+           home/.netscape-cache pattern=cache????* r=inf age=2
+           home/.MCOM-cache     pattern=cache????* r=inf age=2
+           home/.netscape       pattern=cache????*  r=inf age=2
+
+all hosts in the group `AllHomeServers' are instructed to iterate over
+all users' home directories (using the wildcard `home') and look for
+files matching special patterns.  Cfagent tests the _access time_ of
+files and deletes only files older than the specified limits. Hence all
+core files, in this example, are deleted immediately, whereas files in
+the subdirectory `.wastebasket' are deleted only after they have lain
+there untouched for 14 days, and so on.
+
+   As a system administrator you should, of course, exercise great
+caution when making rules which can delete users' files.  A single slip
+of the hand can result in a rule which will irretrievably delete files.
+
+   When making a `tidy' strategy you should probably coordinate with
+your backup policy.  You should not delete files until after you have
+taken a backup, so that -- if the worst should happen -- you are covered
+against possible accidents.
+
+   Cfagent helps to some extent to keep track of what files it deletes.
+When tidying users' home directories it creates a log file of all files
+which were deleted on the last tidy operation.  This log is called
+`~/.cfengine.rm'.
+
+   You might consider tidying certain files only once a week, in which
+case a command such as
+
+
+     tidy:
+     
+        AllHomeServers.Sunday::
+     
+            FILES TO TIDY
+
+could be useful.  Nonsense files, such as `core' files could be tidied
+every night.
+
+   _NOTE! Be careful when telling cfagent to delete core files.  If you
+write a wildcard like `core*', then you could risk deleting important
+system files such as `core.h'._
+
+   ---------- Footnotes ----------
+
+   (1) On some systems, core dumps cannot be switched off!
+
+
+File: cfengine-Tutorial.info,  Node: Copying files,  Next: Managing processes,  Prev: Files and links,  Up: Global configurations
+
+Copying files
+=============
+
+   The administration of a system often requires the copying of files.
+The reason for this is usually that we would like to distribute a copy
+of a particular file, from some master location and ensure that all of
+the copies are up to date. Another use for this is to install software
+from one directory (perhaps on a CD ROM) to another.
+
+   Cfagent helps this process by allowing you to copy a single file or a
+file tree, from one directory to another, perhaps checking the
+permissions and owners of a file to adjust the copies in some special
+way. The files are checked by cfagent using one of two methods.
+
+   * A date-stamp comparison with a master file, using last-change
+     times, can be used to tell cfagent to recopy a file from the
+     master if the master file is newer than the copy.
+
+   * A checksum can be computed for each file and compared with one for
+     the master file. If the contents of the copy file differs in any
+     way from the master, the file will be re-copied.
+
+
+Cfengine allows you to do the following
+
+   * Copy a single file to another file in a different location,
+     perhaps with a new name, new permissions and a different owner.
+
+   * Copy a single file to all users on the system, changing the owner
+     of the file for each user automatically. (This could be used to
+     distribute and update standard setup files.)
+
+   * Recursively copy an entire file tree, omitting files which match a
+     list of wildcard-patterns, or linking certain files instead of
+     copying.
+
+
+You can find out more about copying in the reference section.
+
+
+File: cfengine-Tutorial.info,  Node: Managing processes,  Next: NFS resources,  Prev: Copying files,  Up: Global configurations
+
+Managing processes
+==================
+
+   Cfagent allows you to check for the existence of processes on your
+system, send those processes signals (such as kill) and perhaps restart
+those processes. Typical applications for this are sending `cron' and
+`inetd' the HUP signal, after editing their configuration files, or
+killing unwanted processes (such as user programs which hog the system
+at peak usage times).
+
+   You can read more about this in the reference section .
+
+
+File: cfengine-Tutorial.info,  Node: NFS resources,  Next: Using the automounter,  Prev: Managing processes,  Up: Global configurations
+
+Cfengine's model for NFS-mounted filesystems
+============================================
+
+   Most of the filesystems that you will want to make available across
+the network are going to fall into one of two categories.  In cfengine
+parlance these are called _home directories_ and _binary directories_.
+A home directory is a place where users' login directories are kept.
+This is traditionally a directory called `/home' or `/users' or some
+subdirectory of these.  A binary directory is a place where compiled
+software is kept.  Such files (which do not belong to the pure
+operating system release) are often placed in a directory called
+`/usr/local' or simply `/local'.
+
+   In this chapter we shall consider a scheme for using cfengine to
+make NFS filesystem management quite painless.
+
+* Menu:
+
+* NFS filesystem resources::    a conceptual introduction
+* Unique filesystem mountpoints::  avoiding collisions
+* How does it work?::
+* Special variables::           binserver etc.
+* Mount example::               example program
+
+
+File: cfengine-Tutorial.info,  Node: NFS filesystem resources,  Next: Unique filesystem mountpoints,  Prev: NFS resources,  Up: NFS resources
+
+NFS filesystem resources
+------------------------
+
+   Using the Network File System (NFS) in a large workstation
+environment requires a bit of planning.  The idea of NFS is to share
+files on one host with other hosts.  In most cases, filesystems to be
+shared across the network fall into two categories: _binary_
+filesystems (those which contain compiled software) and _user_ or _home_
+filesystems (which contain users' login areas).
+
+   The most simple minded way to share resources would be to mount every
+resource (each available NFS filesystem) onto every host.  To avoid
+collisions, each filesystem would have to have a unique name.  This is
+one possibility, but not a very intelligent one.  As experienced users
+will realize, cross-mounting too many NFS filesystems is a recipe for
+all kinds of trouble.
+
+   Cfengine offers a simple model which can help you pick out only the
+resources you need from the list of NFS filesystems.  It will then mount
+them automatically and edit the appropriate filesystem tables.  It does
+this by defining classes of hosts.  For instance -- you really don't
+need to mount a binary filesystem for an `ultrix' system onto an `HPUX'
+system.  There would be no point -- binary resources are _architecture_
+or _hard-class dependent_.  But home directories are architecture
+independent.
+
+   Cfengine lets you to define a list of allowed servers for various
+hosts so that only filesystems from the servers will be considered for
+mounting!
+
+
+File: cfengine-Tutorial.info,  Node: Unique filesystem mountpoints,  Next: How does it work?,  Prev: NFS filesystem resources,  Up: NFS resources
+
+Unique filesystem mountpoints
+-----------------------------
+
+   The first step towards treating NFS filesystems as network resources
+is to invent a naming scheme so that every filesystem has a unique name
+on which it can be mounted.  If we don't sort this out now, we could
+find two or more hosts with a filesystem called `/usr/local', both of
+which we might like to mount since they contain different software.
+
+   A simple but extremely useful naming scheme is the following.  (1)
+If you don't like this scheme you can invent your own, but the
+remainder of the text will encourage you to use this one.  If you
+follow this scheme, exactly as described here, you will never have any
+problems with mount points.  We shall describe the scheme in detail
+below. Here are some points to digest:
+
+   * When mounting a remote filesystem on your local system, the local
+     and remote directories should always have exactly the same name.
+
+   * The name of every filesystem mountpoint should be unique and tell
+     you something meaningful about where it is located and what its
+     function is.
+
+   * You can always make links from special unique names to more general
+     names like `/usr/local'. If you this involves compiled software and
+     you do this on one host, you should do it on others which are of
+     the same type.
+
+   * It doesn't matter whether software compiles in the path names of
+     special directories into software as long as you follow the points
+     above.
+
+
+Each filesystem is given a directory name composed of three parts:
+
+
+     /site/host/contents
+
+The first directory (which only exists to create a suitable mountpoint)
+is the name of your local site.  If you are a physics department at a
+university (with a separate setup) you could call this `physics'.  It
+could be your company name or whatever.  The second piece is the name of
+the host to which the disk space is physically attached.  The final
+piece is the name of the filesystem.  Here are some typical examples:
+
+     /physics/einstein/local    # /usr/local for einstein@physics
+     /physics/newton/u1         # user partition 1 for newton@physics
+
+On the machines which are home to the `local' partition, it is better to
+make a link to `/usr/local' than call the filesystem `/usr/local'
+directly.  This is because it makes the procedure of organizing the
+entire network much clearer.
+
+   It is worth noting that, when you ask cfagent to mount such a
+resource, it will automatically make the mount directory and can easily
+be asked to make a link to `/usr/local', so this small amount of extra
+work is really no work at all.
+
+   The whole naming convention is compactly summarized by defining a
+mount point variable, `mountpattern'.  With the present scheme, this can
+be defined as
+
+     mountpattern = ( /$(site)/$(host) )
+
+so that it evaluates to the name of the host executing the file
+regardless of who that may be.  This variable is used together with the
+`homepattern' pattern variable, which is used to distinguish between
+home directories and binary resources. (See `homepattern' in the
+reference section).  You can think of this as being part of the naming
+convention.  In this text, we use the convention `u1 u2 u3...' for home
+disks.  You could equally well use `home1 home2...' etc.  As long as
+the name is unique, it doesn't matter.
+
+   The full list of named resources should now be listed in the
+`mountables' list, which is simply a list of all the resources
+available for mounting on the network.
+
+   ---------- Footnotes ----------
+
+   (1) This unique naming scheme was suggested to me originally by Knut
+Borge at USIT of the University of Oslo.
+
+
+File: cfengine-Tutorial.info,  Node: How does it work?,  Next: Special variables,  Prev: Unique filesystem mountpoints,  Up: NFS resources
+
+How does it work?
+-----------------
+
+   Once you have defined your unique names, how does cfagent know what
+to mount? The idea is now to define a list of servers for each class of
+hosts.
+
+   Suppose we make a `binserver' declaration:
+
+
+     binservers:
+     
+       mygroup.sun4::
+     
+          einstein
+          newton
+
+This would tell cfagent that it should mount all binary resources from
+hosts `einstein' or `newton' onto any host of type `sun4' in the group
+`mygroup'.  Every filesystem which is listed in `mountables' and is not
+a home directory will be mounted.
+
+   Home directories and binary resources are kept separate
+automatically by cfagent, because a home directory is one whose
+contents-name matches the `homepattern' pattern variable.  *Note Unique
+filesystem mountpoints::.
+
+   A `homeserver' declaration:
+
+
+     homeservers:
+     
+       mygroup::
+     
+          einstein
+          newton
+          schwinger
+          feynman
+
+would correspondingly mean mount all the home directory resources on the
+hosts in the list on all hosts in the group `mygroup'.  Clearly it is
+unnecessary to distinguish between the architecture platform types of
+the actual servers for user directories.
+
+   In each case, cfagent will mount filesystems, make the appropriate
+directories for the mount point and edit the filesystem table.
+
+
+File: cfengine-Tutorial.info,  Node: Special variables,  Next: Mount example,  Prev: How does it work?,  Up: NFS resources
+
+Special variables
+-----------------
+
+   Once you have mounted a resource on a unique directory, you have
+access to all of the relevant filesystems on your network -- but you
+really wanted the `local' filesystem to be mounted on `/usr/local'.  All
+you need do now is to make a link:
+
+
+     links:
+     
+       any::
+     
+           /usr/local  -> /$(site)/$(binserver)/local
+
+The meaning of this is that, on any host, the directory `/usr/local'
+should be a link to the `nearest' binary server's `local' resource.
+The `$(binserver)' variable can in principle expand to any binary
+server in the list.  In practice, cfagent goes through the list in
+order and picks the first filesystem resource which matches.
+
+   Could this lead to a collision? Suppose we are on the host `einstein'
+and we execute the above command.  The host `einstein' has a filesystem
+`/physics/einstein/local' on its local disk -- it is in fact the binary
+server for the network, so it certainly doesn't need to mount any NFS
+filesystems.  But this is no problem because cfagent automatically
+treats `$(host)' as the highest priority binary server for any host.
+That means that if you have a local filesystem, it will always have
+priority.
+
+   In contrast, if the host `schwinger' ran the command above, it would
+find no local filesystem called `/physics/schwinger/local', so it would
+go along the list of defined binary servers, find `einstein' and try
+again.  It will succeed in finding `einstein' _provided all the binary
+servers were mounted before the link command is executed_.  This means
+that you should structure the `actionsequence' so that all filesystems
+are mounted before any links are made.
+
+   With a little practice, the cfengine model can lead to an enormous
+simplification of the issue of NFS-mountable resources.
+
+   NOTE: cfengine does not try to export filesystems, only mount already
+exported filesystems.  If you want to automate this procedure also, you
+can use the `editfiles' facility to add entries to `/etc/exports' (see
+`editfiles' in the Reference manual).  In practice this is very
+difficult to do and perhaps not desirable.
+
+
+File: cfengine-Tutorial.info,  Node: Mount example,  Prev: Special variables,  Up: NFS resources
+
+Example programs for mounting resources
+---------------------------------------
+
+   Let's write a very simple configuration for a network with only one
+server called hal, where all the hosts are of the same operating system
+type.  In such an example we can avoid using classes altogether.
+
+
+     control:
+     
+       site   = ( univ )
+       domain = ( univ.edu )
+     
+       actionsequence =
+          (
+          mountall
+          mountinfo
+          addmounts
+          mountall
+          links
+          )
+     
+     binservers:
+     
+        hal
+     
+     homeservers:
+     
+        hal
+     
+     mailserver:
+     
+        hal:/var/spool/mail
+     
+     mountables:
+     
+        hal:/univ/home1
+        hal:/univ/home2
+        hal:/univ/local
+     
+     links:
+     
+        /usr/local -> /univ/local
+
+   In this example, we have only one type of host so the configuration
+is the same for each of them: no class references are required.  If we
+look through the action sequence we see that the program first mounts
+all the filesystems which are already defined on each host.  It does
+this to be sure that everything which is already set up to be mounted
+is mounted.  Let's assume that there are no problems with this.
+
+   The next thing that happens is that `mountinfo' builds a list of the
+filesystems which each host has successfully mounted.  Then by calling
+`addmounts' we ask cfagent to check whether the host is missing any
+filesystems.  What happens is that cfagent first looks to see what
+servers are defined for each host.  In this case all hosts on the
+network have only one server: hal.  Hal is defined as a server for both
+binary data and `home' data -- i.e.  users' home directories.  The list
+`mountables' tells cfagent what filesystems are available over the
+network for the server hal.  There are three filesystems which can be
+mounted, called `/univ/home1', `/univ/home2' and `/univ/local'.
+Cfagent checks to see whether each of these filesystems is mounted and,
+if not, it builds the necessary directories, edits the necessary files
+and mounts the filesystems.
+
+   Finally we come to `links' in the action sequence.  This tells
+cfagent to look at the defined links.  There is one link defined: a
+link from `/usr/local' to the mounted filesystem `/univ/local'.
+Cfagent checks and tries to make the link if necessary.  If all goes
+well, each host on the network should now have at least three
+filesystems mounted and a link from `/usr/local' to `/univ/local'.
+
+   Here is another simple example program for checking and automatically
+mounting an NFS based `/usr/local' and all home directories onto all
+hosts on a small network.  Here we have several servers and must
+therefore use some classes.
+
+     #
+     #  Mounts
+     #
+     
+     
+     control:
+     
+        site      = ( mysite )
+        domain    = ( mysite.country )
+        sysadm    = ( mark )
+        netmask   = ( 255.255.255.0 )
+     
+        actionsequence =
+           (
+           mountall
+           mountinfo
+           addmounts
+           mountall
+           links
+           )
+     
+        mountpattern = ( /$(site)/$(host) )
+        homepattern   = ( u? )                # u1 u2 u3 etc..
+     
+     groups:
+     
+        MyGroup =
+           (
+           host1
+           host2
+           binserver1
+           binserver2
+           )
+     
+     ######################################################################
+     
+     homeservers:
+     
+        MyGroup:: host1
+     
+     
+     binservers:
+     
+        MyGroup.sun4::   server1
+        MyGroup.ultrix:: server2
+     
+     mailserver:
+     
+        host1:/usr/spool/mail
+     
+     mountables:
+     
+        host1:/mysite/host1/u1
+        host1:/mysite/host1/u2
+        server1:/mysite/server1/local
+        server2:/mysite/server2/local
+     
+     
+     ##########################################################################
+     
+     links:
+     
+           /usr/local  -> /${site}/${binserver}/local
+
+   Let's suppose we run this program on host2 which is an ultrix
+machine.  This host belongs to the class `mygroup' and the hard-class
+`ultrix'.  This tells us that its homeserver is host1, its binary
+server is server2 and its mailserver is host1.  Moreover, since the
+homepattern matches any filesystem ending in u-something, it recognizes
+the two home directories in the mountables list -- and therefore the
+two binary directories also.
+
+   The action sequence starts by mounting all of the filesystems
+currently in the filesystem table `/etc/fstab'.  It then scans the list
+of mounted filesystems to find out what is actually mounted.  Since the
+homeserver is host1, we know that our host has to mount all
+home-filesystems from this server, so it checks for
+`host1:/mysite/host1/u1' and `host1:/mysite/host1/u2'.  If they are not
+present they are added to `/etc/fstab'(1).  Next, we know that the
+binary server is server1, so we should check for
+`server1:/mysite/server1/local'.  The mail server is also checked for
+and added if necessary.  Cfagent then tries to mount all filesystems
+once again, so that the new filesystems should be added.
+
+   Note that, in the process of adding the filesystems to `/etc/fstab',
+cfagent creates the directories up to and including the point at which
+the filesystems should be mounted.  If something prevents this -- if we
+try to mount on top of a plain file for instance -- then this will
+result in an error.
+
+   Finally, we reach the link section and we try to expand the
+variables.  `$(site)' expands to `mysite'.  `$(binserver)' expands
+first to the hostname (host2), but `/mysite/host2/local' does not
+exist, so it then goes to the binserver list, which substitutes server1
+for the value of `$(binserver)'.  Since `/mysite/server1/local' does
+exist and is now mounted, cfagent makes a link to this directory from
+`/usr/local'.  The script is then completed.
+
+   If the script is run again, everything should now be in place so
+nothing happens.  If for some reason it failed the first time, it will
+fail again.  At any rate it will either do the job once and for all or
+signal an error which must be corrected by human intervention(2).
+
+   ---------- Footnotes ----------
+
+   (1) Note: if the filesystem was in the fstab but not actually
+mounted a warning is issued telling you that the filesystem was
+probably not exported correctly on host1.
+
+   (2) One possibility is that an NFS filesystem cannot be mounted
+because the host serving the filesystem is out of service.  If this is
+the case then a subsequent re-run when the server resumes normal
+service will succeed.
+
+
+File: cfengine-Tutorial.info,  Node: Using the automounter,  Next: Editing files,  Prev: NFS resources,  Up: Global configurations
+
+Using the automounter
+=====================
+
+   The automounter is a daemon based service which replaces static
+mounting of NFS filesystems with a dynamical model. When the
+automounter is running, filesystems are mounted only when a user tries
+to access a file which resides on one of those filesystem. After a
+given period (usually five minutes) any filesystem which has not been
+accessed is unmounted. The advantage of this scenario is that hanging
+servers do not affect the behaviour of hosts which mount their
+filesystems, unless a specific file is being accessed.  In both cases,
+filesystems must be exported in order to be mountable.
+
+   It is not the purpose of this section to explain the use of the
+automounter in detail, only to offer hints as to how cfengine can be
+used to simplify and rationalize automount configuration for the already
+initiated.  Let us begin by comparing the behaviour of the automounter
+with the cfengine model for mounted filesystems.
+
+   The automounter is designed to be used together with a global
+configuration file, distributed by NIS (the network information
+service). As such, all hosts read the same configuration file. This
+makes it appear as though all hosts end up mounting every filesystem in
+the automount configuration database, but this is not so in practice
+because filesystems are only mounted if required. Thus a system which
+does not require a filesystem will not attempt to mount it.  Moreover,
+the existence of a global configuration file does not affect which
+hosts have the right to mount certain filesystems (which is specified
+by exports or share on the relevant server), thus a request to mount a
+non-exported filesystem will result in an access denial. The automounter
+is configured locally on each host in files named `/etc/auto_master',
+`auto_direct' etc.
+
+   In the cfengine static mounting scheme, you define a list of binary
+and home servers. The filesystem table is modified on the basis of
+these decisions, and filesystems are only added if cfagent deems it
+appropriate to mount them on a given host. The idea here is to minimize
+the number of filesystems mounted to those which are known to be
+required.  Again the issue of access permissions must be arranged
+separately. These filesystems are placed directly in `/etc/fstab', or
+the equivalent for your system.
+
+   From cfengine, you can use the automounter instead of the static
+mount model by
+
+   * omitting `addmounts', `mountinfo', `mountall' from the
+     actionsequence, in the control part of your cfengine program,
+
+   * using `editfiles' to edit the relevant configuration files such as
+     `/etc/auto_master', or `auto_direct' etc,
+
+   * using the `AutomountDirectResources' command in editfiles to dump
+     the list of cfengine class-based list of mountables into a file of
+     your choice in the correct format for autmount's direct maps,
+
+   * using `processes' to restart the automounter (send the hangup
+     signal `hup'), or perhaps stop and restart the daemon by sending
+     the `term' signal (you should never send the `kill' signal).
+
+   * using the multiple link facilities to link in indirect mounted
+     filesystems as required, and `files' or `tidy' to clean up stale
+     links afterwards,
+
+   * perhaps using `copy' to distribute basic automount configuration
+     files to multiple systems.
+
+
+   The automounter was created to solve certain problems which cfengine
+now solves (in the author's opinion) better. For example, the use of the
+`hosts' map in the automounter mounts filesystems like `/usr/local' on
+different (uniquely named) mountpoints for each host in order to avoid
+name space collisions. Using cfengine and a unique naming scheme, you
+can achieve the same thing more cleanly, without all of the gratuitous
+linking and unlinking which the automounter performs by itself.
+Moreover, the idea of a unique name-space is better practice and more
+in keeping with new global filesystem ideas such as AFS and DFS.  The
+only advantage of the automounter is that one avoids the annoying error
+messages from hung servers about "NFS server not responding".  In that
+respect, it seems sensible to use only direct mounts and a unique name
+space.
+
+   Some systems advocate grouping all users' login (home) directories
+under a common directory called `/home' or `users'.  The automounter
+goes through all manner of contortions to achieve this task. If you use
+a unique naming scheme like the one advocated here, this is a trivial
+task. You simply arrange to mount or automount all user directories,
+such as
+
+        /SITE/HOST/home1
+        /SITE/HOST/home2
+        ...
+
+and then link them as follows:
+
+
+        /home +> /SITE/HOST/home1
+        /home +> /SITE/HOST/home2
+        ...
+
+   Finally, you should be aware that the automounter does not like to
+be mixed with static mount and unmount operations. Automounted
+filesystems take priority over statically mounted filesystems, but the
+automounter can be confused by manually mounting or unmounting
+filesystems while it is running.
+
+
+File: cfengine-Tutorial.info,  Node: Editing files,  Next: Disabling and the file repository,  Prev: Using the automounter,  Up: Global configurations
+
+Editing Files
+=============
+
+   A very convenient characteristic of BSD/System 5 systems is that they
+are configured primarily by human-readable textfiles. This makes it easy
+for humans to configure the system and it also simplifies the automation
+of the procedure.  Most configuration files are line-based text files, a
+fact which explains the popularity of, for example, the Perl programming
+language.  Cfengine does not attempt to compete with Perl or its peers.
+Its internal editing functions operate at a higher level which are
+designed for transparency rather than flexibility.  Fortunately most
+editing operations involve appending a few lines to a file, commenting
+out certain lines or deleting lines.
+
+   For example, some administrators consider the finger service to be a
+threat to security and want to disable it. This could be done as
+follows.
+
+
+     editfiles:
+     
+           { /etc/inetd.conf
+     
+           HashCommentLinesContaining "finger"
+           }
+
+   Commands containing the word `Comment' are used to `comment out'
+certain lines from a text-file--i.e. render a line impotent without
+actually deleting it. Three types of comment were supported originally:
+shell style (hash) `#', `%' as used in TeX and on AIX systems, and
+C++-style `//'.
+
+   A more flexible way of commenting is also possible, using directives
+which first define strings which signify the start of a comment and the
+end of a comment. A single command can then be used to render a comment.
+The default values of the comment-start string is `# ' and the default
+comment-end string is the empty string.  For instance, to define C
+style comments you could write:
+
+
+       { FILE
+     
+       SetCommentStart "/* "
+       SetCommentEnd   " */"
+     
+       # Comment out all lines containing printf!
+     
+       CommentLinesMatching ".*printf.*"
+       }
+
+   Other applications for these editing commands include monitoring and
+controlling root-access to hosts by editing files such as `.rhosts' and
+setting up standard environment variables in global shell resource
+files-- for example, to set the timezone. You can use the editing
+feature to update and distribute the message of the day file, or to
+configure sendmail, (see FAQS and Tips in the Reference manual).
+
+   An extremely powerful feature of cfagent is the ability to edit a
+similar file belonging to every user in the system. For example, as a
+system administrator, you sometimes need to ensure that users have a
+sensible login environment. Changes in the system might require all
+users to define a new environment variable, for instance. This is
+achieved with the `home' pseudo-wildcard. If one writes
+
+
+       { home/.cshrc
+     
+       AppendIfNoSuchLine "# Sys admin/cfengine: put next line here"
+       AppendIfNoSuchLine "setenv PRINTER newprinter"
+       }
+
+then the users' files are checked one-by-one for the given lines of
+text, and edited if necessary.
+
+   Files are loaded into cfagent and edited in memory. They are only
+saved again if modifications to the file are carried out, in which case
+the old file is preserved by adding a suffix to the filename. When
+files are edited, cfagent generates a warning for the administrator's
+inspection so that the reason for the change can be investigated.
+
+   The behaviour of cfagent should not be confused with that of _sed_
+or _perl_.  Some functionality is reproduced for convenience, but the
+specific functions have been chosen on the basis of (i) their
+readability and (ii) the fact that they are
+`frequently-required-functions'. A typical file editing session involves
+the following points:
+
+   * Load file into memory.
+
+   * Is the size of the file within sensible user-definable limits?  If
+     not, file could be binary, refuse to edit.
+
+   * Check each editing command and count the number of edits made.
+
+   * If number of edits is greater than zero, rename the old file and
+     save the edited version in its place. Inform about the edit.
+
+   * If no edits are made, do nothing, say nothing.
+
+   Equivalent one-line sed operations involve editing the same file
+perhaps many times to achieve the same results--without the safety
+checks in addition.
+
+
+File: cfengine-Tutorial.info,  Node: Disabling and the file repository,  Next: Running user scripts,  Prev: Editing files,  Up: Global configurations
+
+Disabling and the file repository
+=================================
+
+   The existence of certain files can compromise the integrity of your
+system and you may wish to ensure that they do not exist. For example,
+some manufacturers sell their workstations with a `+' symbol in the
+file `/etc/hosts.equiv'.  This means that anyone in your NIS domain has
+password free access to the system!! Since this is probably not a good
+idea, you will want to disable this file by renaming it, or simply
+deleting it.
+
+
+       disable:
+     
+          /etc/hosts.equiv
+
+Other files compromise the system because they grow so large that they
+fill an entire disk partition. This is typically true of log files such
+as the system 5 files `/var/adm/wtmpx' and `/var/lp/logs/lpsched'.
+Other files like /VAR/ADM/MESSAGES get "rotated" by the system so that
+they do not grow so large as to fill the disk. You can make cfagent
+rotate these files too, by writing
+
+
+     disable:
+     
+         Sunday::
+     
+         /var/lp/logs/lpsched  rotate=3
+
+Now, when cfagent is run, it renamed the file `lpsched' to a file
+called `lpsched.1'. It also renames `lpsched.1' as `lpsched.2' and so
+on, until a maximum of 3 files are kept. After passing 3, the files
+`fall off the end' and are deleted permanently. This procedure prevents
+any log files from growing too large. If you are not interested in
+keeping back-logs, then you may write `rotate=empty' and cfagent will
+simply empty the log file.
+
+   When ever cfagent disables a file (`disable' or `links' with the `!'
+operator), or saves a new file on top of an old one (`copy' or
+`editfiles'), it makes a backup of the original. Usually disabled files
+are renamed by appending the string `.cfdisabled' the filename; copied
+files are saved by appending the string `.cfsaved'.  It is possible to
+switch off backup file generation in the copy feature by setting the
+variable `backup=false', but a better way of managing disabled and
+backed-up files is to use a directory in which you collect all such
+files for the whole system. This directory is called the file
+repository and is set in the control part of the program, as follows:
+
+
+       control:
+     
+          repository = ( DIRECTORY-NAME )
+
+   If this variable is defined, cfagent collects all backup and
+disabled files (except for rotated files) in this directory, using a
+unique pathname.  You can then inspect these files in the repository
+and arrange to tidy the repository for old files which are no longer
+interesting.
+
+
+File: cfengine-Tutorial.info,  Node: Running user scripts,  Next: Compressing logs,  Prev: Disabling and the file repository,  Up: Global configurations
+
+Running user scripts
+====================
+
+   Above all, the aim of cfengine is to present a simple interface to
+system administrators. The actions which are built into the engine are
+aimed at solving the most pressing problems, not at solving every
+problem.  In many cases administrators will still need to write scripts
+to carry out more specific tasks. These scripts can still be profitably
+run from cfengine. Variables and macros defined in cfengine can be
+passed to scripts so that scripts can make maximal advantage of the
+class based decisions. Also note that, since the days of the week are
+also classes in cfengine, it is straightforward to run weekly scripts
+from the cfengine environment (assuming that the configuration program
+is executed daily). An obvious use for this is to update databases,
+like the fast-find database one day of the week, or to run quota checks
+on disks.
+
+     shellcommands:
+     
+        myhost.Sunday::
+     
+           "/usr/bin/find/updatedb"
+
+Cfengine scripts can be passed variables using normal variable
+substitution:
+
+     control:
+     
+        cfbin     = ( /var/cfengine/bin )
+        backupdir = ( /iu/dax/backup )
+     
+     shellcommands:
+     
+       "$(cfbin)/cfbackup -p -f $(backupdir) -s /iu/nexus/u1"
+
+   If you need to write a particularly complex script to expand
+cfagent's capabilities, it might be useful to have full access to the
+defined classes. You can do this in one of two ways:
+
+   * Pass the variable `$(allclasses)' to the script. This contains a
+     list of all classes in the form of a string
+
+
+                CFALLCLASSES=CLASS1:CLASS2:...
+
+     This variable always contains an up to date list of the defined
+     classes.
+
+   * Use the command line option `-u' or `--use-env'. When this is
+     defined, cfagent defines an internal environment variable called
+     `CFALLCLASSES' which contains the same list as above.
+     Unfortunately, system 5 boxes don't seem to like having to update
+     an environment variable continuously and tend to dump core, so
+     this is not the default behaviour!
+
+
+
+File: cfengine-Tutorial.info,  Node: Compressing logs,  Next: ACLs,  Prev: Running user scripts,  Up: Global configurations
+
+Compressing old log files
+=========================
+
+   In the previous two sections we have looked at how to rotate old log
+files and how to execute shell commands. If you keep a lot of old log
+files around on your system, you might want to compress them so that
+they don't take up so much space. You can do this with a shell command.
+The example below looks for files matching a shell wildcard. Names of
+the form `file.1', `file.2'...`file.10' will match this wildcard and
+the compression program sees that they get compressed. The output is
+dumped to avoid spurious messages.
+
+
+     shellcommands:
+     
+       "$(gnu)/gzip /var/log/*.[0-9] /var/log/*.[0-9][0-9]  > /dev/null 2>&1"
+
+   Cfagent will also recognize rotated files if they have been
+compressed, with suffixes `.Z', `.gz', `.rbz' or `.rbz'.
+
