@@ -300,8 +300,8 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
 
 if (ip->purge == 'y')
    {
-   PurgeFiles(namecache,to,ip->inclusions); /* inclusions not exclusions, since exclude
-            from purge means include */
+   /* inclusions not exclusions, since exclude from purge means include */
+   PurgeFiles(namecache,to,ip->inclusions); 
    DeleteItemList(namecache);
    }
  
