@@ -313,7 +313,7 @@ else
    /*
     * Append --once option to our arguments for spawned monitor process.
     */
-   nargv = malloc(sizeof(char *) * argc+2);
+     nargv = malloc(sizeof(char *) * (argc+2));
    
    for (i = 0; i < argc; i++)
       {
