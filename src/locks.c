@@ -212,9 +212,12 @@ if (now == 0)
 Debug("GetLock(%s,%s,time=%d), ExpireAfter=%d, IfElapsed=%d\n",operator,operand,now,expireafter,ifelapsed);
 
 memset(CFLOCK,0,CF_BUFSIZE);
-memset(CFLAST,0,CF_BUFSIZE); 
-strncpy(c_operator,CanonifyName(operator),CF_BUFSIZE-1);
-strncpy(c_operand,CanonifyName(operand),CF_BUFSIZE-1);
+memset(CFLAST,0,CF_BUFSIZE);
+
+/* Make local copy in case CanonifyName called - not re-entramt*/
+
+strncpy(c_operator,operator,CF_BUFSIZE-1);
+strncpy(c_operand,operand,CF_BUFSIZE-1);
 
 for (i = 0; operator[i] != '\0'; i++)
     {
@@ -227,8 +230,8 @@ for (i = 0; operand[i] != '\0'; i++)
     }
 
 snprintf(CFLOG,CF_BUFSIZE,"%s/cfengine.%.40s.runlog",VLOGDIR,host);
-snprintf(CFLOCK,CF_BUFSIZE,"lock.%.100s.%.40s.%s.%.100s_%d",VCANONICALFILE,host,c_operator,c_operand,sum);
-snprintf(CFLAST,CF_BUFSIZE,"last.%.100s.%.40s.%s.%.100s_%d",VCANONICALFILE,host,c_operator,c_operand,sum);
+snprintf(CFLOCK,CF_BUFSIZE,"lock.%.100s.%.40s.%s.%.100s_%d",VCANONICALFILE,host,CanonifyName(c_operator),c_operand,sum);
+snprintf(CFLAST,CF_BUFSIZE,"last.%.100s.%.40s.%s.%.100s_%d",VCANONICALFILE,host,CanonifyName(c_operator),c_operand,sum);
  
 if (strlen(CFLOCK) > MAX_FILENAME)
    {
