@@ -267,6 +267,7 @@ extern int errno;
 #define false 0
 #define CF_BUFSIZE 4096
 #define CF_EXPANDSIZE 2*CF_BUFSIZE
+#define CF_ALLCLASSSIZE 4*CF_BUFSIZE
 #define CF_BUFFERMARGIN 32
 #define CF_MAXVARSIZE 1024
 #define CF_NONCELEN CF_BUFSIZE/16

@@ -179,7 +179,7 @@ extern char *GROUPBUFF;
 extern char *ACTIONBUFF;
 extern char *CLASSBUFF;
 extern char ALLCLASSBUFFER[4*CF_BUFSIZE];
-extern char CHROOT[CF_BUFSIZE];
+extern char CHROOT[CF_ALLCLASSSIZE];
 extern char ELSECLASSBUFFER[CF_BUFSIZE];
 extern char FAILOVERBUFFER[CF_BUFSIZE];
 extern char *LINKFROM;

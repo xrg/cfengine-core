@@ -1901,7 +1901,6 @@ else
    }
 
 
-
 if ((fp = fopen(file,"w")) == NULL)
    {
    CfLog(cfinform,"Could not open allclasses cache file","");
@@ -1912,7 +1911,7 @@ for (ip = VHEAP; ip != NULL; ip=ip->next)
    {
    if (IsDefinedClass(ip->name))
       {
-      if ((size += strlen(ip->name)) > 4*CF_BUFSIZE - CF_BUFFERMARGIN)
+      if ((size += strlen(ip->name)) > CF_ALLCLASSSIZE - CF_BUFFERMARGIN)
          {
          Verbose("Class buffer overflowed, dumping class environment for modules\n");
          Verbose("This would probably crash the exec interface on most machines\n");
