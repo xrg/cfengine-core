@@ -1037,10 +1037,10 @@ char *s1, *s2;
 { struct Item *args;
   char *sp;
   long cmp = -1, start = -1, end = -1;
+  char host_basename[CF_MAXVARSIZE];
   Debug("SRDEBUG in FuzzyHostMatch(): %s vs %s\n",s2,s1);
   args = SplitStringAsItemList(s1,',');
   sp = s2;
-  char host_basename[CF_MAXVARSIZE];
   
   for (sp = s2+strlen(s2)-1; sp > s2; sp--)
      {
