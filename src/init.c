@@ -38,6 +38,7 @@
 void CheckWorkDirectories()
 
 { struct stat statbuf;
+  int result;
   char *sp;
 
 Debug("CheckWorkDirectories()\n");
@@ -86,14 +87,18 @@ if (stat(VBUFF,&statbuf) == -1)
    {
    snprintf(VBUFF,CF_BUFSIZE,"%s/state",VLOCKDIR);
    MakeDirectoriesFor(VBUFF,'n');
-   chown(VBUFF,getuid(),getgid());
+   if (chown(VBUFF,getuid(),getgid()) == -1)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Unable to set owner on %s to %d.%d",VBUFF,getuid(),getgid());
+      CfLog(cferror,OUTPUT,"chown");
+      }
    chmod(VBUFF,(mode_t)0755);
    }
 else 
    {
    if (statbuf.st_mode & 022)
       {
-      snprintf(OUTPUT,CF_BUFSIZE*2,"UNTRUSTED: State directory %s was not private!\n",VLOCKDIR,statbuf.st_mode & 0777);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"UNTRUSTED: State directory %s (mode %o) was not private!\n",VLOCKDIR,statbuf.st_mode & 0777);
       CfLog(cferror,OUTPUT,"");
       }
    }
@@ -106,14 +111,19 @@ if (stat(VBUFF,&statbuf) == -1)
    snprintf(VBUFF,CF_BUFSIZE,"%s/modules/test",VLOCKDIR);
    MakeDirectoriesFor(VBUFF,'n');
    snprintf(VBUFF,CF_BUFSIZE,"%s/modules",VLOCKDIR);
-   chown(VBUFF,getuid(),getgid());
+   if (chown(VBUFF,getuid(),getgid()) == -1)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Unable to set owner on %s to %d.%d",VBUFF,getuid(),getgid());
+      CfLog(cferror,OUTPUT,"chown");
+      }
+
    chmod(VBUFF,(mode_t)0700);
    }
 else 
    {
    if (statbuf.st_mode & 022)
       {
-      snprintf(OUTPUT,CF_BUFSIZE*2,"UNTRUSTED: Module directory %s was not private!\n",VLOCKDIR,statbuf.st_mode & 0777);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"UNTRUSTED: Module directory %s (mode %o) was not private!\n",VLOCKDIR,statbuf.st_mode & 0777);
       CfLog(cferror,OUTPUT,"");
       }
    }
@@ -127,7 +137,12 @@ if (stat(VBUFF,&statbuf) == -1)
    snprintf(VBUFF,CF_BUFSIZE,"%s/rpc_in/test",VLOCKDIR);
    MakeDirectoriesFor(VBUFF,'n');
    snprintf(VBUFF,CF_BUFSIZE,"%s/rpc_in",VLOCKDIR);
-   chown(VBUFF,getuid(),getgid());
+   if (chown(VBUFF,getuid(),getgid()) == -1)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Unable to set owner on %s to %d.%d",VBUFF,getuid(),getgid());
+      CfLog(cferror,OUTPUT,"chown");
+      }
+
    chmod(VBUFF,(mode_t)0700);
    }
 else 
@@ -147,7 +162,12 @@ if (stat(VBUFF,&statbuf) == -1)
    snprintf(VBUFF,CF_BUFSIZE,"%s/rpc_out/test",VLOCKDIR);
    MakeDirectoriesFor(VBUFF,'n');
    snprintf(VBUFF,CF_BUFSIZE,"%s/rpc_out",VLOCKDIR);
-   chown(VBUFF,getuid(),getgid());
+   if (chown(VBUFF,getuid(),getgid()) == -1)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Unable to set owner on %s to %d.%d",VBUFF,getuid(),getgid());
+      CfLog(cferror,OUTPUT,"chown");
+      }
+
    chmod(VBUFF,(mode_t)0700);   
    }
 else
@@ -173,13 +193,18 @@ else
    {
    if (statbuf.st_mode & 077)
       {
-      snprintf(OUTPUT,CF_BUFSIZE*2,"UNTRUSTED: Private key directory %s/ppkeys was not private!\n",VLOCKDIR,statbuf.st_mode & 0777);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"UNTRUSTED: Private key directory %s/ppkeys (mode %o) was not private!\n",VLOCKDIR,statbuf.st_mode & 0777);
       FatalError(OUTPUT);
       }
    }
 
 Verbose("Making sure that locks are private...\n"); 
-chown(VLOCKDIR,getuid(),getgid());
+if (chown(VLOCKDIR,getuid(),getgid()) == -1)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"Unable to set owner on %s to %d.%d",VLOCKDIR,getuid(),getgid());
+   CfLog(cferror,OUTPUT,"chown");
+   }
+
 chmod(VLOCKDIR,(mode_t)0755); /* Locks must be immutable to others */
 }
 
