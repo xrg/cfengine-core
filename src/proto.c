@@ -176,7 +176,7 @@ int KeyAuthentication(struct Image *ip)
  BIGNUM *nonce_challenge, *bn = NULL;
  unsigned long err;
  unsigned char digest[EVP_MAX_MD_SIZE];
- int encrypted_len,nonce_len = 0,len,blowfishsize;
+ int encrypted_len,nonce_len = 0,len;
  char cant_trust_server, keyname[CF_BUFSIZE];
  RSA *server_pubkey = NULL;
 
@@ -410,8 +410,11 @@ if (server_pubkey == NULL)
    RSA_free(newkey);
    }
  
-/* proposition C5 */ 
+/* proposition C5 */
+
 GenerateRandomSessionKey();
+
+DebugBinOut(CONN->session_key,CF_BLOWFISHSIZE);
 
 if (CONN->session_key == NULL)
    {
@@ -421,16 +424,12 @@ if (CONN->session_key == NULL)
 else
    {
    Debug("Generated session key\n");
+   DebugBinOut(CONN->session_key,CF_BLOWFISHSIZE);
    }
 
-/* Session key - should be rsa encrypted. It ought to be this simple:
+//blowfishmpisize = BN_bn2mpi((BIGNUM *)CONN->session_key,in);
 
-     SendTransaction(CONN->sd,CONN->session_key,16,CF_DONE);
-
-   but the RSA encryption makes it very complicated
-*/
-
-blowfishsize = BN_bn2mpi((BIGNUM *)CONN->session_key,in);
+DebugBinOut(CONN->session_key,CF_BLOWFISHSIZE);
 
 encrypted_len = RSA_size(server_pubkey);
 
@@ -441,7 +440,7 @@ if ((out = malloc(encrypted_len)) == NULL)
    FatalError("memory failure");
    }
 
-if (RSA_public_encrypt(blowfishsize,in,out,server_pubkey,RSA_PKCS1_PADDING) <= 0)
+if (RSA_public_encrypt(CF_BLOWFISHSIZE,CONN->session_key,out,server_pubkey,RSA_PKCS1_PADDING) <= 0)
    {
    err = ERR_get_error();
    snprintf(OUTPUT,CF_BUFSIZE,"Public encryption failed = %s\n",ERR_reason_error_string(err));
@@ -453,6 +452,7 @@ if (RSA_public_encrypt(blowfishsize,in,out,server_pubkey,RSA_PKCS1_PADDING) <= 0
 Debug("Encryption succeeded\n");
 
 SendTransaction(CONN->sd,out,encrypted_len,CF_DONE);
+DebugBinOut(out,encrypted_len);
 
 if (server_pubkey != NULL)
    {
@@ -460,7 +460,6 @@ if (server_pubkey != NULL)
    }
 
 free(out);
-
 return true; 
 }
 

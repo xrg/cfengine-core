@@ -532,22 +532,6 @@ Verbose("---------------------------------------------------------------------\n
 
 /*********************************************************************/
 
-void DebugBinOut(char *buffer,int len)
-
-{ char *sp;
-
-Debug("BinaryBuffer[");
- 
-for (sp = buffer; (*sp != '\0') && (sp < buffer+len); sp++)
-   {
-   Debug("%x",*sp);
-   }
- 
-Debug("]\n"); 
-}
-
-/*********************************************************************/
-
 char *ChecksumPrint(char type,unsigned char digest[EVP_MAX_MD_SIZE+1])
 
 { unsigned int i;

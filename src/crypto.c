@@ -326,7 +326,7 @@ void GenerateRandomSessionKey()
 /* Hardcode blowfish for now - it's fast */ 
 
 bp = BN_new(); 
-BN_rand(bp,16,0,0);
+BN_rand(bp,CF_BLOWFISHSIZE,0,0);
 CONN->session_key = (unsigned char *)bp;
 }
 
@@ -383,4 +383,20 @@ EVP_CIPHER_CTX_cleanup(&ctx);
 return plainlen; 
 }
 
+/*********************************************************************/
 
+void DebugBinOut(char *buffer,int len)
+
+{ char *sp;
+  int check = 0;
+
+ Debug("BinaryBuffer(%d)[",len);
+ 
+for (sp = buffer; (sp < buffer+len); sp++)
+   {
+   check++;
+   Debug("%x",*sp);
+   }
+ 
+Debug("] = %d\n",check); 
+}

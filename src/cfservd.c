@@ -1380,31 +1380,31 @@ switch (GetCommand(recvbuffer))
        
        memset(buffer,0,CF_BUFSIZE);
        sscanf(recvbuffer,"SSYNCH %d",&len);
-       
+
        if (received != len+CF_PROTO_OFFSET)
           {
           Debug("Protocol error: %d\n",len);
           RefuseAccess(conn,sendbuffer,0,recvbuffer);
           return false;
           }
-       
+
        if (conn->session_key == NULL)
           {
           RefuseAccess(conn,sendbuffer,0,recvbuffer);
           return false;
           }
-       
+
        memcpy(out,recvbuffer+CF_PROTO_OFFSET,len);
        
        plainlen = DecryptString(out,recvbuffer,conn->session_key,len);
-       
+
        if (strncmp(recvbuffer,"SYNCH",5) !=0)
           {
           RefuseAccess(conn,sendbuffer,0,recvbuffer);
           return true;
           }
        /* roll through, no break */
-       
+
    case cfd_synch:
        if (! conn->id_verified)
           {
@@ -2421,6 +2421,7 @@ else
 /* Receive random session key, blowfish style ... */ 
 
 /* proposition C5 */
+
 memset(in,0,CF_BUFSIZE);
 
 if ((keylen = ReceiveTransaction(conn->sd_reply,in,NULL)) == -1)
@@ -2437,6 +2438,7 @@ if (keylen > CF_BUFSIZE/2)
 else
    {
    Debug("Got Blowfish size %d\n",keylen);
+   DebugBinOut(in,keylen);
    }
 
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
@@ -2460,9 +2462,7 @@ if (conn->session_key == NULL)
    return false;
    }
 
-/* Decrypt session key */
-
-if (RSA_private_decrypt(keylen,in,conn->session_key,PRIVKEY,RSA_PKCS1_PADDING) <= 0)
+if (RSA_private_decrypt(keylen,in,out,PRIVKEY,RSA_PKCS1_PADDING) <= 0)
    {
    err = ERR_get_error();
    
@@ -2474,12 +2474,15 @@ if (RSA_private_decrypt(keylen,in,conn->session_key,PRIVKEY,RSA_PKCS1_PADDING) <
    }
 
 memcpy(conn->session_key,out,CF_BLOWFISHSIZE);
+
 Debug("Got a session key...\n"); 
- 
+DebugBinOut(conn->session_key,16);
+
 BN_free(counter_challenge);
 free(out);
 RSA_free(newkey); 
 conn->rsa_auth = true;
+
 return true; 
 }
 
