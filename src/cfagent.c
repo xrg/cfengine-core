@@ -108,6 +108,7 @@ ReadRCFile(); /* Should come before parsing so that it can be overridden */
        if (!PARSEONLY && (QUERYVARS == NULL))
           {
           DoTree(1,"Update");
+          DoAlerts();
           EmptyActionSequence();
           DeleteClassesFromContext("update");
           DeleteCaches();
