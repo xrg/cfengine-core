@@ -23,9 +23,6 @@
 
 */
 @TOP@
-/* Do we have a variable sized struct sockaddr ? */
-#undef SOCKADDR_HAS_SA_LEN
-
 /* The old route entry structure in newer BSDs */
 #undef HAVE_ORTENTRY
 

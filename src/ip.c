@@ -310,9 +310,32 @@ for (ap = response; ap != NULL; ap = ap->ai_next)
 
  snprintf(hostbuffer,127,"(Non registered IP)"); 
 #else
- snprintf(hostbuffer,127,"(Not for old BIND)"); 
+struct hostent *hp;
+struct sockaddr_in myaddr;
+struct in_addr iaddr;
+  
+memset(hostbuffer,0,128);
+
+if ((iaddr.s_addr = inet_addr(ipaddress)) != -1)
+   {
+   hp = gethostbyaddr((void *)&iaddr,sizeof(struct sockaddr_in),AF_INET);
+  
+   if ((hp == NULL) || (hp->h_name == NULL))
+      {
+      strcpy(hostbuffer,"(Non registered IP)");
+      return hostbuffer;
+      }
+
+   strncpy(hostbuffer,hp->h_name,CF_MAXVARSIZE);
+   }
+else
+   {
+   strcpy(hostbuffer,"(non registered IP)");
+   }
+
 #endif
- return hostbuffer;
+
+return hostbuffer;
 }
 
 
@@ -437,7 +460,6 @@ void CheckFriendConnections(int hours)
   DBC *dbcp;
   DB_ENV *dbenv = NULL;
   int ret, secs = 3600*hours, criterion;
-  struct stat statbuf;
   time_t now = time(NULL),splaytime = 0,lsea = -1;
   char name[CF_BUFSIZE],hostname[CF_BUFSIZE];
   static struct LastSeen entry;

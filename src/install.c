@@ -4783,7 +4783,6 @@ void InstallImageItem(char *cf_findertype,char *path,mode_t plus,mode_t minus,ch
   char *spl; 
   char buf1[CF_EXPANDSIZE], buf2[CF_EXPANDSIZE], buf3[CF_EXPANDSIZE], buf4[CF_EXPANDSIZE];
   struct TwoDimList *tp = NULL;
-  struct hostent *hp;
   struct Item *expserver = NULL, *ep;
   
 if (!IsInstallable(CLASSBUFF))

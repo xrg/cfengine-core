@@ -824,7 +824,7 @@ void AddACE(char *acl,char *string,char *classes)
 
 { struct CFACL *ptr;
  struct CFACE *new, *top;
- char varbuff[CF_BUFSIZE], *cp, ebuff[CF_EXPANDSIZE];
+ char varbuff[CF_EXPANDSIZE], *cp, ebuff[CF_EXPANDSIZE];
  char comm[CF_MAXVARSIZE],data1[CF_MAXVARSIZE],data2[CF_MAXVARSIZE];
 /****** Code added for NT by Jørgen Kjensli & Bjørn Gustafson, May 1999 *****/
  

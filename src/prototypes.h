@@ -298,6 +298,8 @@ void ResetLine ARGLIST((char *s));
 
 /* eval.c */
 
+int CountParentheses(char *str);
+int NestedParentheses(char *str);
 int Day2Number ARGLIST((char *s));
 int Month2Number ARGLIST((char *s));
 void AddInstallable ARGLIST((char *classlist));

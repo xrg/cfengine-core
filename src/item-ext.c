@@ -1429,7 +1429,7 @@ char *search, *replace;
   struct Item *ip;
   struct Item *oldCurrentLinePtr;
   regex_t rx,rxcache;
-  regmatch_t match,matchcheck;
+  regmatch_t match;
 
   EditVerbose("SRDEBUG Checking for SingleReplace s/%s/%s/\n",search,replace);
 

@@ -254,7 +254,7 @@ return (true);
 
 void InsertFileAfter (struct Item **filestart,struct Item *ptr,char *string)
 
-{ struct Item *ip, *old;
+{ struct Item *ip;
   char *sp;
   FILE *fp;
   char linebuf[CF_BUFSIZE];

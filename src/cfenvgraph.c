@@ -1047,8 +1047,6 @@ for (i = 0; i < 7; i++)
        /* Smooth daily and weekly histograms */
        for (k = 1; k < CF_GRAINS-1; k++)
           {
-          int a;
-          
           for (j = 0; j < ATTR*2+CF_NETATTR*2+5+PH_LIMIT; j++)
              {
              for (i = 0; i < 7; i++)  
@@ -1062,8 +1060,6 @@ for (i = 0; i < 7; i++)
        {
        for (k = 1; k < CF_GRAINS-1; k++)
           {
-          int a;
-          
           for (j = 0; j < ATTR*2+CF_NETATTR*2+5+PH_LIMIT; j++)
              {
              for (i = 0; i < 7; i++)  

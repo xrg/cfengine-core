@@ -48,7 +48,8 @@
 int GetDiskUsage (char *file,enum cfsizes type)
 
 {
-#if defined SOLARIS || defined OSF || defined UNIXWARE 
+#if defined SOLARIS || defined OSF || defined UNIXWARE  || (defined(__NetBSD__) && __NetBSD_Version__ >= 200040000)
+
     struct statvfs buf;
 #elif defined ULTRIX
     struct fs_data buf;
@@ -70,14 +71,14 @@ int GetDiskUsage (char *file,enum cfsizes type)
        CfLog(cferror,OUTPUT,"");
        return CF_INFINITY;
        }
-#elif defined SOLARIS || defined OSF || defined UNIXWARE 
+#elif defined SOLARIS || defined OSF || defined UNIXWARE || (defined(__NetBSD__) && __NetBSD_Version__ >= 200040000)
     if (statvfs (file, &buf) != 0)
        {
        snprintf(OUTPUT,CF_BUFSIZE,"Couldn't get filesystem info for %s\n",file);
        CfLog(cferror,OUTPUT,"");
        return CF_INFINITY;
        }
-#elif defined IRIX || defined SCO || defined CFCRAY || defined UNIXWARE
+#elif defined IRIX || defined SCO || defined CFCRAY || (defined(__NetBSD__) && __NetBSD_Version__ >= 200040000)
     if (statfs (file, &buf, sizeof (struct statfs), 0) != 0)
        {
        snprintf(OUTPUT,CF_BUFSIZE,"Couldn't get filesystem info for %s\n",file);

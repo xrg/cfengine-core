@@ -200,6 +200,8 @@ void SavePublicKey(char *name,RSA *key)
   FILE *fp;
   int err;
 
+Debug("SavePublicKey %s\n",name); 
+
 if (!IsPrivileged())
    {
    Verbose("\n(Non privileged user...)\n\n");
@@ -209,7 +211,7 @@ if (!IsPrivileged())
       FatalError("You do not have a HOME variable pointing to your home directory");
       }
    
-   snprintf(filename,CF_BUFSIZE,"%s/.cfengine/ppkeys/%s.pub",sp,name);
+   snprintf(filename,CF_BUFSIZE,"%s/.cfagent/ppkeys/%s.pub",sp,name);
    }
 else
    {
@@ -247,7 +249,6 @@ void DeletePublicKey(name)
 char *name;
 
 { char filename[CF_BUFSIZE],*sp;
-  int err;
 
 if (!IsPrivileged())
    {
@@ -257,7 +258,7 @@ if (!IsPrivileged())
       {
       FatalError("You do not have a HOME variable pointing to your home directory");
       }  
-   snprintf(filename,CF_BUFSIZE,"%s/.cfengine/ppkeys/%s.pub",sp,name);
+   snprintf(filename,CF_BUFSIZE,"%s/.cfagent/ppkeys/%s.pub",sp,name);
    }
 else
    {

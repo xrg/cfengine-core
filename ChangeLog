@@ -1,3 +1,28 @@
+
+2.1.10
+
+	Persistent class protection added to returned remote vrpc calls to prevent
+	meaningless multiple replies.
+	
+	Change added to IPRange to avoid possible bootstrap problem with unconfigured resolver.
+	IP address setting was contingent on having DNS. Misplaced } fixed in nameinfo
+		
+	EmptyResolvConf removed only nameserver entries. Now removes everything.
+	
+	Due to an error in constructing 2.1.9 some of the advertised
+	changes below were not included. They are included in this version.
+	
+	Workaround error message for parser bug with nested variables.
+
+2.1.9
+
+	WORKDIR/state/allclasses file caches all class date during cfagent execution, just
+	like the $(allclasses) variable, but the file can grow much larger without
+	overflow.
+	
+	.cfengine -> .cfagent in non-root public keys (some missing conversions)
+	Expand buffer incorrectly zeroed out public name key causing empty keyname in RSA dialogue
+	Old style bind reverse lookup added to Hostname2IPAddress
 2.1.8 
 
 	Additional checks added to bolster server transaction security.

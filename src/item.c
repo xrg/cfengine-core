@@ -264,9 +264,8 @@ NUMBEROFEDITS++;
 
 void AppendItems (struct Item **liststart,char *itemstring,char *classes)
 
-{ struct Item *ip, *lp;
- char *sp,*spe = NULL;
- char currentitem[CF_MAXVARSIZE],local[CF_MAXVARSIZE];
+{ char *sp;
+  char currentitem[CF_MAXVARSIZE],local[CF_MAXVARSIZE];
  
 if ((itemstring == NULL) || strlen(itemstring) == 0)
    {
@@ -485,12 +484,12 @@ if (item != NULL)
 
    if (item->name != NULL)
       {
-      free (item->name);
+      free(item->name);
       }
 
    if (item->classes != NULL)
       {
-      free (item->classes);
+      free(item->classes);
       }
 
    sp = item->next;
@@ -666,8 +665,8 @@ if (isv4 && isCIDR)
 
 if (isv4 && isrange)
    {
-   long i, from = -1, to = -1, cmp = -1;
-   char *sp1,buffer1[8],buffer2[8];
+   long i, from = -1, to = -1;
+   char *sp1,buffer1[8];
    
    sp1 = s;
    
@@ -743,10 +742,9 @@ int FuzzySetMatch(char *s1,char *s2)
    s1 is the test string, and s2 is the reference e.g.
    FuzzySetMatch("128.39.74.10/23","128.39.75.56") == 0 */
 
-{ char *sp;
-  short isCIDR = false, isrange = false, isv6 = false, isv4 = false;
+{ short isCIDR = false, isrange = false, isv6 = false, isv4 = false;
   char address[128];
-  int mask,significant;
+  int mask;
   unsigned long a1,a2;
 
 if (strstr(s1,"/") != 0)

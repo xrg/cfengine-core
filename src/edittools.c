@@ -344,9 +344,8 @@ void DoEditFile(struct Edit *ptr,char *filename)
   char *sp, currentitem[CF_MAXVARSIZE];
   struct stat tmpstat;
   char spliton = ':';
-  mode_t maskval;
   int todo = 0, potentially_outstanding = false;
-  FILE *loop_fp = NULL,*read_fp = NULL;
+  FILE *loop_fp = NULL;
   int DeleteItemNotContaining(),DeleteItemNotStarting(),DeleteItemNotMatching();
   int global_replace = -1;
 
@@ -1688,7 +1687,6 @@ if (editsdone)
 int DeleteLinesWithFileItems(struct Item **filestart,char *infile,enum editnames code)
 
 { struct Item *ip,*ipc,*infilelist = NULL; 
-  char currentitem[CF_BUFSIZE];
   int slen, matches=0;
   int positive=false;
   

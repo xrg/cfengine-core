@@ -102,7 +102,7 @@ void Build2DListFromVarstring(struct TwoDimList **TwoDimlist, char *varstring, c
 
 { char format[6], *sp;
   char node[CF_BUFSIZE];
-  int i,j;
+  int i;
 
 Debug1("Build2DListFromVarstring(%s,sep=%c)\n",varstring,sep);
 

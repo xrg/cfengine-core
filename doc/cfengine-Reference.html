@@ -243,6 +243,7 @@ between start and stop
      <dd>True if the named module exists and can be executed. The module is assumed to
 follow the standard programming interface for modules (see Writing plugin modules in tutorial). 
 Unlike actionsequence modules, these modules are evaluated immediately on parsing. 
+Note that the module should be specified relative to the authorized module directory. 
 <br><dt><code>Regcmp(</code><var>regexp</var><code>,</code><var>string or list separated string</var><code>)</code>
      <dd>True if the string matched the regular expression. 
 <br><dt><code>ReturnsZero(</code><var>command</var><code>)</code>
@@ -2912,7 +2913,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
      </pre>
 
    <p>Normally cfengine does not tidy up old entries in the <code>/etc/resolv.conf</code>
-file. This option causes cfengine to remove old nameserver entries.
+file. This option causes cfengine to remove all existing content from the
+file.
 
 <div class="node">
 <p><hr>
@@ -11622,7 +11624,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Methods: <a href="#methods">methods</a>
 <li>Methods, remote caution: <a href="#methods">methods</a>
 <li>Miscellaneous mount operations: <a href="#miscmounts">miscmounts</a>
-<li>Module directory: <a href="#moduledirectory">moduledirectory</a>
+<li>Module directory: <a href="#moduledirectory">moduledirectory</a>, <a href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>
+<li>Modules executed immediately: <a href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>
 <li>Modules, user defined: <a href="#actionsequence">actionsequence</a>
 <li>Monitoring other hosts: <a href="#alerts">alerts</a>
 <li>Mount paths: <a href="#mountpattern">mountpattern</a>
@@ -11669,6 +11672,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Percentage disk space: <a href="#required">required</a>
 <li>Permissions, directories: <a href="#Directory%20permissions">Directory permissions</a>
 <li>Port, connecting to different: <a href="#Firewalls%20and%20NATs">Firewalls and NATs</a>
+<li>PrepModule: <a href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>
 <li>Preserving file times in copy: <a href="#copy">copy</a>
 <li>Previewing shellcommands: <a href="#shellcommands">shellcommands</a>
 <li>Private modules: <a href="#methods">methods</a>

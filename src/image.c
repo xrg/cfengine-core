@@ -109,7 +109,7 @@ void RecursiveImage(struct Image *ip,char *from,char *to,int maxrecurse)
   char newto[CF_BUFSIZE];
   int save_uid, save_gid, succeed;
   struct Item *namecache = NULL;
-  struct Item *ptr, *ptr1;
+  struct Item *ptr;
   struct cfdirent *dirp;
   CFDIR *dirh;
 
@@ -703,7 +703,7 @@ closedir(dirh);
 
 void ImageCopy(char *sourcefile,char *destfile,struct stat sourcestatbuf,struct Image *ip)
 
-{ char linkbuf[CF_BUFSIZE],server[CF_BUFSIZE],*lastnode;
+{ char linkbuf[CF_BUFSIZE],server[CF_EXPANDSIZE],*lastnode;
   struct stat deststatbuf;
   struct Link empty;
   struct Item *ptr, *ptr1;

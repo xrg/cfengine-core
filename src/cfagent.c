@@ -590,7 +590,6 @@ Verbose("Environment data loaded\n\n");
 void EchoValues()
 
 { struct Item *ip,*p2;
-  int n = 0;
   char ebuff[CF_EXPANDSIZE];
 
 Verbose("Accepted domain name: %s\n\n",VDOMAIN); 
@@ -1701,9 +1700,7 @@ while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o
 
 void CheckForMethod()
 
-{ struct Item *ip,*ip1,*ip2,*args = NULL;
-  char argbuffer[CF_BUFSIZE];
-  struct Method *mp;
+{ struct Item *ip;
   int i = 0;
 
 if (strcmp(METHODNAME,"cf-nomethod") == 0)
@@ -1819,10 +1816,36 @@ void BuildClassEnvironment()
 
 { struct Item *ip;
  int size = 0;
+ char file[CF_BUFSIZE], *sp;
+ FILE *fp;
  
 Debug("(BuildClassEnvironment)\n");
 
 snprintf(ALLCLASSBUFFER,CF_BUFSIZE,"%s=",CF_ALLCLASSESVAR);
+
+if (!IsPrivileged())
+   {
+   Verbose("\n(Non privileged user...)\n\n");
+   
+   if ((sp = getenv("HOME")) == NULL)
+      {
+      FatalError("You do not have a HOME variable pointing to your home directory");
+      }  
+
+   snprintf(file,CF_BUFSIZE,"%s/.cfagent/allclasses",sp);
+   }
+else
+   {
+   snprintf(file,CF_BUFSIZE,"%s/state/allclasses",WORKDIR);
+   }
+
+
+
+if ((fp = fopen(file,"w")) == NULL)
+   {
+   CfLog(cfinform,"Could not open allclasses cache file","");
+   return;
+   }
 
 for (ip = VHEAP; ip != NULL; ip=ip->next)
    {
@@ -1832,14 +1855,15 @@ for (ip = VHEAP; ip != NULL; ip=ip->next)
          {
          Verbose("Class buffer overflowed, dumping class environment for modules\n");
          Verbose("This would probably crash the exec interface on most machines\n");
-         return;
          }
       else
          {
          size++; /* Allow for : separator */
+         strcat(ALLCLASSBUFFER,ip->name);
+         strcat(ALLCLASSBUFFER,":");
          }
-      strcat(ALLCLASSBUFFER,ip->name);
-      strcat(ALLCLASSBUFFER,":");
+
+      fprintf(fp,"%s\n",ip->name);
       }
    }
  
@@ -1851,15 +1875,15 @@ for (ip = VHEAP; ip != NULL; ip=ip->next)
          {
          Verbose("Class buffer overflowed, dumping class environment for modules\n");
          Verbose("This would probably crash the exec interface on most machines\n");
-         return;
          }
       else
          {
          size++; /* Allow for : separator */
+         strcat(ALLCLASSBUFFER,ip->name);
+         strcat(ALLCLASSBUFFER,":");         
          }
       
-      strcat(ALLCLASSBUFFER,ip->name);
-      strcat(ALLCLASSBUFFER,":");
+      fprintf(fp,"%s\n",ip->name);
       }
     }
  
@@ -1872,6 +1896,8 @@ for (ip = VHEAP; ip != NULL; ip=ip->next)
        perror("putenv");
        }
     }
+
+ fclose(fp);
 }
 
 /*******************************************************************/

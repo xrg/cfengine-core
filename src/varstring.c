@@ -224,9 +224,7 @@ for (sp = str; *sp != '\0' ; sp++)       /* check for varitems */
 char *ExtractInnerVarString(char *str,char *substr)
 
 { char *sp;
-  char left = 'x', right = 'x';
-  int dollar = false;
-  int bracks = 1, vars = 0;
+  int bracks = 1;
 
 Debug1("ExtractInnerVarString(%s) - syntax verify\n",str);
 
@@ -278,9 +276,8 @@ return sp-1;
 char *ExtractOuterVarString(char *str,char *substr)
 
 { char *sp;
-  char left = 'x', right = 'x';
   int dollar = false;
-  int bracks = 0, vars = 0, onebrack = false;
+  int bracks = 0, onebrack = false;
 
 Debug("ExtractOuterVarString(%s) - syntax verify\n",str);
 
@@ -332,7 +329,7 @@ int ExpandVarstring(char *string,char buffer[CF_EXPANDSIZE],char *bserver)
 
 { char *sp,*env;
   char varstring = false;
-  char currentitem[CF_EXPANDSIZE],temp[CF_BUFSIZE],name[CF_MAXVARSIZE],scanstr[6];
+  char currentitem[CF_EXPANDSIZE],temp[CF_BUFSIZE],name[CF_MAXVARSIZE];
   int len;
   time_t tloc;
   
@@ -404,7 +401,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
       switch (ScanVariable(currentitem))
          {
          case cfversionvar:
-             if (BufferOverflow(buffer,VERSION))
+             if (ExpandOverflow(buffer,VERSION))
                 {
                 FatalError("Can't expand varstring");
                 }
@@ -878,7 +875,7 @@ struct Item *SplitVarstring(char *varstring,char sep)
   char node[CF_BUFSIZE];
   char buffer[CF_EXPANDSIZE],variable[CF_BUFSIZE];
   char before[CF_BUFSIZE],after[CF_BUFSIZE],result[CF_BUFSIZE];
-  int i,bracks = 1;
+  int i;
   
 Debug("SplitVarstring(%s,%c=%d)\n",varstring,sep,sep);
 

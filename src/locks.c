@@ -497,7 +497,7 @@ if (IGNORELOCK)
  
 if ((errno = DBP->del(DBP,NULL,&key,0)) != 0)
    {
-   Debug("Unable to delete lock [%s]: %s\n",name,db_strerror(errno));
+   Debug("Found no lock [%s]: %s\n",name,db_strerror(errno));
    }
 
 key.data = name;

@@ -239,6 +239,8 @@ enum builtin FunctionStringToCode(char *str)
   int i;
   enum builtin fn;
 
+Debug("FunctionStringToCode(%s)\n",str);
+  
 fn = nofn;
  
 for (sp = str; *sp != '\0'; sp++)
@@ -273,7 +275,7 @@ return (enum builtin) i;
 
 void GetRandom(char *args,char *value)
 
-{ int result,count=0,from=-1,to=-1;
+{ int result,from=-1,to=-1;
   char argv[CF_MAXFARGS][CF_MAXVARSIZE];
  
 if (ACTION != control)
@@ -362,7 +364,7 @@ strcpy(value,CF_NOCLASS);
 
 void HandleIPRange(char *args,char *value)
 
-{ struct stat statbuf;
+{ struct Item *ip;
  
 if (strchr(args,','))
    {
@@ -377,41 +379,61 @@ if (!FuzzyMatchParse(args))
    return;
    }
 
+
+for (ip = IPADDRESSES; ip != NULL; ip = ip->next)
+   {
+   Debug("Checking IP Range against iface %s\n",VIPADDRESS);
+   
+   if (FuzzySetMatch(args,ip->name) == 0)
+      {
+      Debug("IPRange Matched\n");
+      strcpy(value,CF_ANYCLASS);
+      return;
+      }
+   }
+
+
+Debug("Checking IP Range against RDNS %s\n",VIPADDRESS);
+
 if (FuzzySetMatch(args,VIPADDRESS) == 0)
    {
+   Debug("IPRange Matched\n");
    strcpy(value,CF_ANYCLASS);
+   return;
    }
+
+Debug("IPRange did not match\n");
+strcpy(value,CF_NOCLASS);
 }
 
 /*********************************************************************/
 
 void HandleHostRange(char *args,char *value)
 
-{ struct Item *list = NULL;
+{
+Debug("SRDEBUG in HandleHostRange()\n"); 
+Debug("SRDEBUG args=%s value=%s\n",args,value);
 
- Debug("SRDEBUG in HandleHostRange()\n"); 
- Debug("SRDEBUG args=%s value=%s\n",args,value);
+if (!FuzzyHostParse(args))
+   {
+   strcpy(value,CF_NOCLASS);
+   return;
+   }
+/* VDEFAULTBINSERVER.name is relative domain name */
+/* (see nameinfo.c ~line 145)                     */
 
- if (!FuzzyHostParse(args))
-    {
-    strcpy(value,CF_NOCLASS);
-    return;
-    }
- /* VDEFAULTBINSERVER.name is relative domain name */
-  /* (see nameinfo.c ~line 145)                     */
-
- if (FuzzyHostMatch(args,VDEFAULTBINSERVER.name) == 0)
-    {
-    Debug("SRDEBUG SUCCESS!\n");
-    strcpy(value,CF_ANYCLASS);
-    }
- else
-    {
-    Debug("SRDEBUG FAILURE\n");
-    strcpy(value,CF_NOCLASS);
-    }
+if (FuzzyHostMatch(args,VDEFAULTBINSERVER.name) == 0)
+   {
+   Debug("SRDEBUG SUCCESS!\n");
+   strcpy(value,CF_ANYCLASS);
+   }
+else
+   {
+   Debug("SRDEBUG FAILURE\n");
+   strcpy(value,CF_NOCLASS);
+   }
  
- return;
+return;
 }
 
 /*********************************************************************/
@@ -419,8 +441,7 @@ void HandleHostRange(char *args,char *value)
 void HandleCompareStat(enum builtin fn,char *args,char *value)
 
 { struct stat frombuf,tobuf;
-  char *sp,argv[CF_MAXFARGS][CF_MAXVARSIZE];
-  int count = 0;
+  char argv[CF_MAXFARGS][CF_MAXVARSIZE];
 
 FunctionArgs(args,argv,2); 
 strcpy(value,CF_NOCLASS);
@@ -604,8 +625,7 @@ if (!DONTDO)
 
 void HandleStrCmp(char *args,char *value)
 
-{ char *sp,argv[CF_MAXFARGS][CF_MAXVARSIZE];
-  int count = 0;
+{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
 
 FunctionArgs(args,argv,2); 
  
@@ -623,9 +643,8 @@ else
 
 void HandleRegCmp(char *args,char *value)
 
-{ char *sp,argv[CF_MAXFARGS][CF_MAXVARSIZE];
+{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
   struct Item *list = NULL, *ret; 
-  int count = 0;
 
 FunctionArgs(args,argv,2);
 
@@ -656,7 +675,7 @@ DeleteItemList(list);
 
 void HandleReadFile(char *args,char *value)
 
-{ char *sp,argv[CF_MAXFARGS][CF_MAXVARSIZE];
+{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
   int i,val = 0;
   FILE *fp;
 
@@ -903,7 +922,7 @@ void HandleReadList(char *args,char *value)
 { char argv[CF_MAXFARGS][CF_MAXVARSIZE];
   char *sp,*filename=argv[0],*maxbytes=argv[3],*formattype=argv[1];
   char *commentchar=argv[2],buffer[CF_BUFSIZE];
-  int i=0,val = 0,read = 0;
+  int val = 0;
   struct Item *list = NULL,*ip;
   FILE *fp;
 
@@ -1143,7 +1162,7 @@ void HandleSelectPGroup(char *args,char *value)
   char *filename=argv[0],*commentchar=argv[1];
   char *policy=argv[2],*size=argv[3];
   struct Item *list = NULL,*ip;
-  int i,psize = -1, count, leader,done = false;
+  int i,psize = -1, count,done = false;
   FILE *fp;
 
 FunctionArgs(args,argv,4);
@@ -1216,8 +1235,6 @@ while (!feof(fp))
 
    if ((count == psize) || ((count > 0) && feof(fp)))
       {
-      int len, this = 0;
-
       done = false;
       
       if (IsItemIn(list,VFQNAME)||IsItemIn(list,VIPADDRESS))
@@ -1315,7 +1332,7 @@ void HandleShowState(char *args,char *value)
   char buffer[CF_BUFSIZE],vbuff[CF_BUFSIZE];
   struct Item *addresses = NULL,*saddresses = NULL,*ip;
   FILE *fp;
-  int i = 0, tot=0, min_signal_diversity = 1,conns=1,classes=0;
+  int i = 0, tot=0, min_signal_diversity = 1,conns=1;
   int maxlen = 0,count;
   double *dist = NULL, S = 0.0;
   char *offset = NULL;
@@ -1349,7 +1366,7 @@ if (stat(buffer,&statbuf) == 0)
    printf("%s: In the last 40 minutes, the peak state was:\n",VPREFIX);
    while(!feof(fp))
       {
-      char *sp,local[CF_BUFSIZE],remote[CF_BUFSIZE];
+      char local[CF_BUFSIZE],remote[CF_BUFSIZE];
       buffer[0] = local[0] = remote[0] = '\0';
 
       memset(vbuff,0,CF_BUFSIZE);

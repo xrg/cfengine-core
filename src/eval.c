@@ -90,6 +90,47 @@ return -1;
 
 /*********************************************************************/
 
+int CountParentheses(char *str)
+
+{ char *sp;
+  int count = 0;
+
+for (sp = str; *sp != '\0'; sp++)
+   {
+   if (*sp == '(')
+      {
+      count++;
+      }
+
+   if (*sp == ')')
+      {
+      count--;
+      }
+   }
+
+return count;
+}
+
+/*********************************************************************/
+
+int NestedParentheses(char *str)
+
+{ char *sp;
+  int count = 0;
+
+for (sp = str; *sp != '\0'; sp++)
+   {
+   if (*sp == '(')
+      {
+      count++;
+      }
+   }
+
+return count;
+}
+
+/*********************************************************************/
+
 void AddInstallable(char *classlist)
 
 { char *sp, currentitem[CF_MAXVARSIZE];

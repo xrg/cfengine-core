@@ -37,7 +37,7 @@
 #include <sys/syssgi.h>
 #endif
 
-#ifdef SOCKADDR_HAS_SA_LEN
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
 # ifdef _SIZEOF_ADDR_IFREQ
 #  define SIZEOF_IFREQ(x) _SIZEOF_ADDR_IFREQ(x)
 # else
@@ -297,6 +297,9 @@ void GetInterfaceInfo(void)
   struct sockaddr_in *sin;
   struct hostent *hp;
   char *sp;
+  char ip[CF_MAXVARSIZE];
+  char name[CF_MAXVARSIZE];
+            
 
 Debug("GetInterfaceInfo()\n");
 
@@ -365,9 +368,6 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
             }
          else
             {
-            char ip[CF_MAXVARSIZE];
-            char name[CF_MAXVARSIZE];
-            
             if (hp->h_name != NULL)
                {
                Debug("Adding hostip %s..\n",inet_ntoa(sin->sin_addr));
@@ -380,35 +380,37 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
                   Debug("Adding alias %s..\n",hp->h_aliases[i]);
                   AddClassToHeap(CanonifyName(hp->h_aliases[i]));
                   }
-               
-               /* Old style compat */
-               strcpy(ip,inet_ntoa(sin->sin_addr));
-               AppendItem(&IPADDRESSES,ip,"");
-               
-               for (sp = ip+strlen(ip)-1; *sp != '.'; sp--)
-                  {
-                  }
+               }               
+
+            }
+         
+         /* Old style compat */
+         strcpy(ip,inet_ntoa(sin->sin_addr));
+         AppendItem(&IPADDRESSES,ip,"");
+         
+         for (sp = ip+strlen(ip)-1; *sp != '.'; sp--)
+            {
+            }
+         *sp = '\0';
+         AddClassToHeap(CanonifyName(ip));
+         
+            
+         /* New style */
+         strcpy(ip,"ipv4_");
+         strcat(ip,inet_ntoa(sin->sin_addr));
+         AddClassToHeap(CanonifyName(ip));
+         snprintf(name,CF_MAXVARSIZE-1,"ipv4[%s]",CanonifyName(ifp->ifr_name));
+         AddMacroValue(CONTEXTID,name,inet_ntoa(sin->sin_addr));
+         
+         for (sp = ip+strlen(ip)-1; (sp > ip); sp--)
+            {
+            if (*sp == '.')
+               {
                *sp = '\0';
                AddClassToHeap(CanonifyName(ip));
-               
-               
-               /* New style */
-               strcpy(ip,"ipv4_");
-               strcat(ip,inet_ntoa(sin->sin_addr));
-               AddClassToHeap(CanonifyName(ip));
-               snprintf(name,CF_MAXVARSIZE-1,"ipv4[%s]",CanonifyName(ifp->ifr_name));
-               AddMacroValue(CONTEXTID,name,inet_ntoa(sin->sin_addr));
-               
-               for (sp = ip+strlen(ip)-1; (sp > ip); sp--)
-                  {
-                  if (*sp == '.')
-                     {
-                     *sp = '\0';
-                     AddClassToHeap(CanonifyName(ip));
-                     }
-                  }
                }
             }
+         
          }
       }
    }

@@ -309,6 +309,10 @@ True if the named file object is a plain file.
 True if the named module exists and can be executed. The module is assumed to
 follow the standard programming interface for modules (see Writing plugin modules in tutorial).
 Unlike actionsequence modules, these modules are evaluated immediately on parsing.
+Note that the module should be specified relative to the authorized module directory.
+@cindex Module directory
+@cindex PrepModule
+@cindex Modules executed immediately
 @item Regcmp(@var{regexp},@var{string or list separated string})
 True if the string matched the regular expression.
 @item ReturnsZero(@var{command})
@@ -3187,7 +3191,8 @@ If the value is zero, cfengine will ignore it.
 @end example
 
 Normally cfengine does not tidy up old entries in the @file{/etc/resolv.conf}
-file. This option causes cfengine to remove old nameserver entries.
+file. This option causes cfengine to remove all existing content from the
+file.
 
 @c .....................................................
 @c SUBSECTION

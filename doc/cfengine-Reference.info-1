@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.1.8 for version 2.1.8
-as last updated 2 August 2004.
+   This manual corresponds to CFENGINE Edition 2.1.10 for version
+2.1.10 as last updated 16 August 2004.
 
 * Menu:
 
@@ -229,7 +229,9 @@ arguments in chronological order.
      True if the named module exists and can be executed. The module is
      assumed to follow the standard programming interface for modules
      (see Writing plugin modules in tutorial).  Unlike actionsequence
-     modules, these modules are evaluated immediately on parsing.
+     modules, these modules are evaluated immediately on parsing.  Note
+     that the module should be specified relative to the authorized
+     module directory.
 
 `Regcmp(REGEXP,STRING OR LIST SEPARATED STRING)'
      True if the string matched the regular expression.
@@ -2504,8 +2506,8 @@ EmptyResolvConf
         EmptyResolvConf  = ( true )
 
    Normally cfengine does not tidy up old entries in the
-`/etc/resolv.conf' file. This option causes cfengine to remove old
-nameserver entries.
+`/etc/resolv.conf' file. This option causes cfengine to remove all
+existing content from the file.
 
 
 File: cfengine-Reference.info,  Node: exclamation,  Next: excludecopy,  Prev: emptyresolvconf,  Up: control

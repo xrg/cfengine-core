@@ -1884,7 +1884,9 @@ Concept Index
 * Methods:                               methods.
 * Methods, remote caution:               methods.
 * Miscellaneous mount operations:        miscmounts.
-* Module directory:                      moduledirectory.
+* Module directory <1>:                  moduledirectory.
+* Module directory:                      Evaluated classes and special functions.
+* Modules executed immediately:          Evaluated classes and special functions.
 * Modules, user defined:                 actionsequence.
 * Monitoring other hosts:                alerts.
 * Mount paths:                           mountpattern.
@@ -1933,6 +1935,7 @@ Concept Index
 * Percentage disk space:                 required.
 * Permissions, directories:              Directory permissions.
 * Port, connecting to different:         Firewalls and NATs.
+* PrepModule:                            Evaluated classes and special functions.
 * Preserving file times in copy:         copy.
 * Previewing shellcommands:              shellcommands.
 * Private modules:                       methods.

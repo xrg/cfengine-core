@@ -1030,7 +1030,6 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
    for(ip = VBINSERVERS; ip != NULL && (!matched); ip = ip->next)
       {
       struct stat statbuf;
-      DBT key,value;
       DB *dbp = NULL;
       DB_ENV *dbenv = NULL;
       char database[CF_MAXVARSIZE],canon[CF_MAXVARSIZE];
@@ -1104,7 +1103,6 @@ void TidyFiles()
   struct TidyPattern *tlp;
   struct Tidy *tp;
   struct Item *ip1,*ip2;
-  struct stat statbuf;
   int homesearch = false, pathsearch = false;
 
 Banner("Tidying Spool Directories");
@@ -2352,9 +2350,8 @@ while(DeleteItemStarting(&filebase,"search"))
 
 if (OptionIs(CONTEXTID,"EmptyResolvConf", true))
    {
-   while (DeleteItemStarting(&filebase,"nameserver "))
-      {
-      }
+   DeleteItemList(filebase);
+   filebase = NULL;
    }
  
 EditItemsInResolvConf(VRESOLVE,&filebase); 
@@ -2682,9 +2679,7 @@ for (pp = VPROCLIST; pp != NULL; pp=pp->next)
 void CheckPackages()
 
 { struct Package *ptr;
-  enum cmpsense result;
   int match = 0;
-
 
 for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
    {

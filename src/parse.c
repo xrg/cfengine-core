@@ -556,25 +556,35 @@ switch (ACTION)
 void HandleGroupRValue(char *rval)        /* Assignment in groups/classes */
 
 { 
- Debug1("\nHandleGroupRvalue(%s)\n",rval);
+Debug1("\nHandleGroupRvalue(%s)\n",rval);
+
+if (CountParentheses(rval) > 0)
+   {
+   yyerror("Variables in function with $() rather than ${} - bug workaround");
+   }
+
+if (NestedParentheses(rval) > 1)
+   {
+   yyerror("Variables in function with $() rather than ${} - bug workaround");
+   }
+
+if (strcmp(rval,"+") == 0 || strcmp(rval,"-") == 0)
+   {
+   yyerror("+/- not bound to identifier");
+   }
  
- if (strcmp(rval,"+") == 0 || strcmp(rval,"-") == 0)
-    {
-    yyerror("+/- not bound to identifier");
-    }
- 
- if (rval[0] == '+')                               /* Lookup in NIS */
-    {
-    rval++;
-    
-    if (rval[0] == '@')                               /* Irrelevant */
-       {
-       rval++;
-       }
-    
-    Debug1("Netgroup rval, lookup NIS group (%s)\n",rval);
-    InstallGroupRValue(rval,netgroup);
-    }
+if (rval[0] == '+')                               /* Lookup in NIS */
+   {
+   rval++;
+   
+   if (rval[0] == '@')                               /* Irrelevant */
+      {
+      rval++;
+      }
+   
+   Debug1("Netgroup rval, lookup NIS group (%s)\n",rval);
+   InstallGroupRValue(rval,netgroup);
+   }
  else if ((rval[0] == '-') && (ACTION != processes))
     {
     rval++;

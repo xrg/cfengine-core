@@ -52,7 +52,7 @@ ExpandVarstring(ip->server,server,NULL);
  
 if (CONN->sd == CF_NOT_CONNECTED)
    {   
-   Debug("Opening server connnection to %s\n",ip->server);
+   Debug("Opening server connnection to %s\n",server);
 
    if (!RemoteConnect(server,ip->forceipv4))
       {
@@ -64,6 +64,8 @@ if (CONN->sd == CF_NOT_CONNECTED)
       AUTHENTICATED = false;
       return false;
       }
+
+   Debug("Remote IP set to %s\n",CONN->remoteip);
    
    if (!IdentifyForVerification(CONN->sd,CONN->localip,CONN->family))
       {

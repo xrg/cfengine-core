@@ -167,7 +167,7 @@ return true;
 
 int KeyAuthentication(struct Image *ip)
 
-{ char sendbuffer[CF_BUFSIZE],in[CF_BUFSIZE],*out,*decrypted_cchall;
+{ char sendbuffer[CF_EXPANDSIZE],in[CF_BUFSIZE],*out,*decrypted_cchall;
  BIGNUM *nonce_challenge, *bn = NULL;
  unsigned long err;
  unsigned char digest[EVP_MAX_MD_SIZE];
@@ -218,7 +218,7 @@ else
    cant_trust_server = 'n';                      /* have to trust server, since we can't verify id */
    encrypted_len = nonce_len;
    }
- 
+
 snprintf(sendbuffer,CF_BUFSIZE,"SAUTH %c %d %d",cant_trust_server,encrypted_len,nonce_len);
  
 if ((out = malloc(encrypted_len)) == NULL)
@@ -259,12 +259,12 @@ if (DEBUG||D2)
 /*Send the public key - we don't know if server has it */ 
 /* proposition C2 */
 
-memset(sendbuffer,0,CF_BUFSIZE); 
+memset(sendbuffer,0,CF_EXPANDSIZE); 
 len = BN_bn2mpi(PUBKEY->n,sendbuffer); 
 SendTransaction(CONN->sd,sendbuffer,len,CF_DONE); /* No need to encrypt the public key ... */
 
 /* proposition C3 */ 
-memset(sendbuffer,0,CF_BUFSIZE);   
+memset(sendbuffer,0,CF_EXPANDSIZE);   
 len = BN_bn2mpi(PUBKEY->e,sendbuffer); 
 SendTransaction(CONN->sd,sendbuffer,len,CF_DONE);
 
@@ -304,7 +304,7 @@ if (!ChecksumsMatch(digest,in,'m'))
    }
 else
    {
-   char server[CF_BUFSIZE];
+   char server[CF_EXPANDSIZE];
    ExpandVarstring(ip->server,server,NULL);
    
    if (cant_trust_server == 'y')  /* challenge reply was correct */ 
@@ -328,13 +328,18 @@ else
          }
       }
    }
- 
+
 /* Receive counter challenge from server */ 
+
 
 Debug("Receive counter challenge from server\n");  
 /* proposition S3 */   
 memset(in,0,CF_BUFSIZE);  
 encrypted_len = ReceiveTransaction(CONN->sd,in,NULL);
+
+
+
+
 
 if (encrypted_len < 0)
    {
@@ -362,7 +367,8 @@ SendTransaction(CONN->sd,digest,16,CF_DONE);
 free(decrypted_cchall); 
 
 /* If we don't have the server's public key, it will be sent */
- 
+
+
 if (server_pubkey == NULL)
    {
    RSA *newkey = RSA_new();

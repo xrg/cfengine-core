@@ -1123,7 +1123,7 @@ if (strstr(line,":")) /* day-Hr:Min:Sec */
 
 int FilterProcTTimeMatch(char *name1,char *name2,char *fromexpr,char *toexpr,char **names,char **line)
 
-{ int i,hr=0,min=-1,sec=-1;
+{ int i;
   time_t fromtime,totime,now = CFSTARTTIME,pstime = CFSTARTTIME;
   char timestr[256];
 

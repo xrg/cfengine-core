@@ -117,8 +117,7 @@ int FileChecksum ARGLIST((char *filename, unsigned char *digest, char type));
 
 int main (int argc,char **argv)
 
-{ time_t starttime = time(NULL);
- 
+{
 CheckOptsAndInit(argc,argv);
 
 StartServer(argc,argv);
@@ -282,7 +281,6 @@ if (ONCE)
 else
    { char **nargv;
      int i;
-     int pid;
 #ifdef HAVE_PTHREAD_H
      pthread_t tid;
 #endif
@@ -775,6 +773,7 @@ return(rtn);
 void MailResult(char *file,char *to)
 
 { int sd, sent, count = 0, anomaly = false;
+  char domain[256];
   struct hostent *hp;
   struct sockaddr_in raddr;
   struct servent *server;
@@ -925,9 +924,20 @@ Debug("%s",VBUFF);
      {
      goto mail_err;
      }
- 
-sprintf(VBUFF,"MAIL FROM: <cfengine@%s>\r\n",VFQNAME);
-Debug("%s",VBUFF);
+
+domain[0] = '\0';
+sscanf(to,"%*[^@]@%.64s",domain);
+
+if (strlen(domain) > 0)
+   {
+   sprintf(VBUFF,"MAIL FROM: <cfengine@%s>\r\n",domain);
+   Debug("%s",VBUFF);
+   }
+else
+   {
+   sprintf(VBUFF,"MAIL FROM: <%s>\r\n",to);
+   Debug("%s",VBUFF);   
+   }
 
 if (!Dialogue(sd,VBUFF))
    {
@@ -962,10 +972,12 @@ sent=send(sd,VBUFF,strlen(VBUFF),0);
 
  
 /* -- Added by Michael Rice <mrice@digitalmotorworks.com>*/
- 
-strftime(VBUFF,CF_BUFSIZE,"Date: %a, %d %b %Y %H:%M:%S %Z\r\n",localtime(&now));
+
+#if defined LINUX || defined NETBSD || defined FREEBSD || defined OPENBSD
+strftime(VBUFF,CF_BUFSIZE,"Date: %a, %d %b %Y %H:%M:%S %z\r\n",localtime(&now));
 sent=send(sd,VBUFF,strlen(VBUFF),0);
- 
+#endif
+
 sprintf(VBUFF,"From: cfengine@%s\r\n",VFQNAME);
 Debug("%s",VBUFF);
 sent=send(sd,VBUFF,strlen(VBUFF),0);

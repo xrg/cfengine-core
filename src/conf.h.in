@@ -23,9 +23,6 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
 */
-/* Do we have a variable sized struct sockaddr ? */
-#undef SOCKADDR_HAS_SA_LEN
-
 /* The old route entry structure in newer BSDs */
 #undef HAVE_ORTENTRY
 
@@ -297,6 +294,9 @@
 
 /* Define to 1 if `n_un.n_name' is member of `struct nlist'. */
 #undef HAVE_STRUCT_NLIST_N_UN_N_NAME
+
+/* Define to 1 if `sa_len' is member of `struct sockaddr'. */
+#undef HAVE_STRUCT_SOCKADDR_SA_LEN
 
 /* Define to 1 if you have the `sysconf' function. */
 #undef HAVE_SYSCONF

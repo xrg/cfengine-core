@@ -169,7 +169,6 @@ void CheckOptsAndInit(int argc,char **argv)
 { extern char *optarg;
   int optindex = 0;
   char ld_library_path[CF_BUFSIZE],vbuff[CF_BUFSIZE];
-  struct stat statbuf;
   int c;
 
 SetContext("server");
@@ -297,7 +296,7 @@ LoadSecretKeys();
 void CheckVariables()
 
 { struct stat statbuf;
-  int i, value = -1;
+  int i;
   char ebuff[CF_EXPANDSIZE];
 
 #ifdef HAVE_PTHREAD_H
@@ -646,7 +645,26 @@ while (true)
          }
       
       snprintf(intime,63,"%d",(int)now);
+
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+      if (pthread_mutex_lock(&MUTEX_COUNT) != 0)
+         {
+         CfLog(cferror,"pthread_mutex_lock failed","pthread_mutex_lock");
+         return;
+         }
+#endif
+
       PrependItem(&CONNECTIONLIST,MapAddress(ipaddr),intime);
+
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+   if (pthread_mutex_unlock(&MUTEX_COUNT) != 0)
+      {
+      CfLog(cferror,"pthread_mutex_unlock failed","pthread_mutex_unlock");
+      return;
+      }
+#endif
+
+      
       SpawnConnection(sd_reply,ipaddr);
       }
    }
@@ -763,7 +781,7 @@ for (ap = response ; ap != NULL; ap=ap->ai_next)
       {
       Debug("Bound to address %s on %s=%d\n",sockaddr_ntop(ap->ai_addr),CLASSTEXT[VSYSTEMHARDCLASS],VSYSTEMHARDCLASS);
 
-      if (VSYSTEMHARDCLASS == openbsd || VSYSTEMHARDCLASS == freebsd)
+      if (VSYSTEMHARDCLASS == openbsd || VSYSTEMHARDCLASS == freebsd || VSYSTEMHARDCLASS == netbsd)
          {
          continue;  /* *bsd doesn't map ipv6 addresses */
          }
@@ -881,7 +899,24 @@ for (ip = *list; ip != NULL; ip=ip->next)
 
    if (now > then + 7200)
       {
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+      if (pthread_mutex_lock(&MUTEX_COUNT) != 0)
+         {
+         CfLog(cferror,"pthread_mutex_lock failed","pthread_mutex_lock");
+         return;
+         }
+#endif
+
       DeleteItem(list,ip);
+
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+      if (pthread_mutex_unlock(&MUTEX_COUNT) != 0)
+         {
+         CfLog(cferror,"pthread_mutex_unlock failed","pthread_mutex_unlock");
+         return;
+         }
+#endif
+
       snprintf(OUTPUT,CF_BUFSIZE*2,"Purging IP address %s from connection list\n",ip->name);
       CfLog(cfverbose,OUTPUT,"");
       }
@@ -943,7 +978,6 @@ void CheckFileChanges(int argc,char **argv,int sd)
 
 { struct stat newstat;
   char filename[CF_BUFSIZE],*sp;
-  int i;
   
 memset(&newstat,0,sizeof(struct stat));
 memset(filename,0,CF_BUFSIZE);

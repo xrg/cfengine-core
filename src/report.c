@@ -414,7 +414,6 @@ void ListDefinedImages()
   struct UidList *up;
   struct GidList *gp;
   struct Item *iip, *svp;
-  struct sockaddr_in raddr;
   
 printf ("\nDEFINED FILE IMAGES\n\n");
 

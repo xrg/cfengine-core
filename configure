@@ -1693,7 +1693,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=cfengine
- VERSION=2.1.8
+ VERSION=2.1.10
 
 
 cat >>confdefs.h <<_ACEOF
@@ -8446,6 +8446,7 @@ echo "${ECHO_T}$BERKELEY_DB_DIR" >&6
         for v in . db44 db43 db42 db41 db40 db4 db33 db32 db3 db; do
             if test -f "$BERKELEY_DB_DIR/include/$v/db.h"; then
                 BERKELEY_DB_CFLAGS="-I$BERKELEY_DB_DIR/include/$v"
+		break
             fi
         done
 
@@ -8453,6 +8454,7 @@ echo "${ECHO_T}$BERKELEY_DB_DIR" >&6
         for v in db41 db40 db4 db33 db32 db3 db; do
             if test -f "$BERKELEY_DB_DIR/lib/lib$v.so"; then
                 BERKELEY_DB_LIB="-l$v"
+		break
             fi
         done
 
@@ -13173,9 +13175,12 @@ done
 
 
 
-echo "$as_me:$LINENO: checking for sa_len in struct sockaddr" >&5
-echo $ECHO_N "checking for sa_len in struct sockaddr... $ECHO_C" >&6
-cat >conftest.$ac_ext <<_ACEOF
+echo "$as_me:$LINENO: checking for struct sockaddr.sa_len" >&5
+echo $ECHO_N "checking for struct sockaddr.sa_len... $ECHO_C" >&6
+if test "${ac_cv_member_struct_sockaddr_sa_len+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -13188,10 +13193,9 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-
-struct sockaddr sa;
-int foo = sa.sa_len;
-
+static struct sockaddr ac_aggr;
+if (ac_aggr.sa_len)
+return 0;
   ;
   return 0;
 }
@@ -13218,22 +13222,75 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_struct_sockaddr_sa_len=yes
+  ac_cv_member_struct_sockaddr_sa_len=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-ac_cv_struct_sockaddr_sa_len=no
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+
+int
+main ()
+{
+static struct sockaddr ac_aggr;
+if (sizeof ac_aggr.sa_len)
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_member_struct_sockaddr_sa_len=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_member_struct_sockaddr_sa_len=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-if test "$ac_cv_struct_sockaddr_sa_len" = yes; then
-   cat >>confdefs.h <<\_ACEOF
-#define SOCKADDR_HAS_SA_LEN 1
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_member_struct_sockaddr_sa_len" >&5
+echo "${ECHO_T}$ac_cv_member_struct_sockaddr_sa_len" >&6
+if test $ac_cv_member_struct_sockaddr_sa_len = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_SOCKADDR_SA_LEN 1
 _ACEOF
 
+
 fi
-echo "$as_me:$LINENO: result: $ac_cv_struct_sockaddr_sa_len" >&5
-echo "${ECHO_T}$ac_cv_struct_sockaddr_sa_len" >&6
+
 
 
 rtry=none
@@ -15725,7 +15782,8 @@ LIBS="-L../pub -lpub $LIBS"
 echo "$as_me:$LINENO: checking Checking for GCC Specific compile flags" >&5
 echo $ECHO_N "checking Checking for GCC Specific compile flags... $ECHO_C" >&6
 if test x"$GCC" = "xyes"; then
-		GCC_CFLAG="-g -O2 -Wreturn-type -Wmissing-prototypes -Wuninitialized"
+
+	GCC_CFLAG="-g -O2 -Wreturn-type -Wmissing-prototypes -Wuninitialized"
 	echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 

@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.1.8)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.1.10)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -158,6 +158,7 @@ else
         for v in . db44 db43 db42 db41 db40 db4 db33 db32 db3 db; do
             if test -f "$BERKELEY_DB_DIR/include/$v/db.h"; then
                 BERKELEY_DB_CFLAGS="-I$BERKELEY_DB_DIR/include/$v"
+		break
             fi
         done
 
@@ -165,6 +166,7 @@ else
         for v in db41 db40 db4 db33 db32 db3 db; do
             if test -f "$BERKELEY_DB_DIR/lib/lib$v.so"; then
                 BERKELEY_DB_LIB="-l$v"
+		break
             fi
         done
 
@@ -382,20 +384,9 @@ dnl ######################################################################
 dnl Check for sa_len in struct sockaddr
 dnl ######################################################################
 
-AC_MSG_CHECKING(for sa_len in struct sockaddr)
-dnl AC_CACHE_VAL(ac_cv_struct_sockaddr_sa_len, [
-AC_TRY_COMPILE([
+AC_CHECK_MEMBERS([struct sockaddr.sa_len], , , [
 #include <sys/types.h>
-#include <sys/socket.h>
-],[
-struct sockaddr sa;
-int foo = sa.sa_len;
-], ac_cv_struct_sockaddr_sa_len=yes, ac_cv_struct_sockaddr_sa_len=no)
-dnl ], ac_cv_struct_sockaddr_sa_len=yes, ac_cv_struct_sockaddr_sa_len=no)])
-if test "$ac_cv_struct_sockaddr_sa_len" = yes; then
-   AC_DEFINE(SOCKADDR_HAS_SA_LEN)
-fi
-AC_MSG_RESULT([$ac_cv_struct_sockaddr_sa_len])
+#include <sys/socket.h>])
    
 dnl #######################################################################
 dnl Newer BSD systems don't have a compatible rtentry - use ortentry
@@ -646,7 +637,7 @@ dnl ####################################################################
 
 AC_MSG_CHECKING(Checking for GCC Specific compile flags)
 if test x"$GCC" = "xyes"; then
-	dnl This is a really bad default
+	
 	GCC_CFLAG="-g -O2 -Wreturn-type -Wmissing-prototypes -Wuninitialized"		
 	AC_MSG_RESULT(yes)
 	AC_SUBST(GCC_CFLAG)

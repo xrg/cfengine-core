@@ -862,7 +862,6 @@ rename(ENV_NEW,ENV);
 void AnalyzeArrival(char *arrival)
 
 { char src[CF_BUFSIZE],dest[CF_BUFSIZE], flag = '.';
-  int i;
   
 src[0] = dest[0] = '\0';
     
@@ -1114,7 +1113,7 @@ Verbose("100 x Load Average = %d\n",LOADAVG);
 
 void GatherSocketData()
 
-{ FILE *pp,*fpout;
+{ FILE *pp;
   char local[CF_BUFSIZE],remote[CF_BUFSIZE],comm[CF_BUFSIZE];
   struct Item *in[ATTR],*out[ATTR];
   char *sp;
@@ -1588,7 +1587,7 @@ dbp->close(dbp,0);
 
 void UpdateDistributions(char *timekey,struct Averages *av)
 
-{ int position,olddist[CF_GRAINS],newdist[CF_GRAINS]; 
+{ int position; 
   int day,i,time_to_update = true;
  
 /* Take an interval of 4 standard deviations from -2 to +2, divided into CF_GRAINS
@@ -1967,7 +1966,7 @@ void SetEntropyClasses(char *service,struct Item *list,char *inout)
 
 { struct Item *ip, *addresses = NULL;
   char local[CF_BUFSIZE],remote[CF_BUFSIZE],class[CF_BUFSIZE],vbuff[CF_BUFSIZE], *sp;
-  int i = 0, min_signal_diversity = 1,total=0,classes=0;
+  int i = 0, min_signal_diversity = 1,total=0;
   double *p = NULL, S = 0.0, percent = 0.0;
 
 
@@ -2082,7 +2081,6 @@ DeleteItemList(addresses);
 void SaveTCPEntropyData(struct Item *list,int i,char *inout)
 
 { struct Item *ip;
-  int j = 0,classes = 0;
   FILE *fp;
   char filename[CF_BUFSIZE];
 
