@@ -2450,30 +2450,45 @@ if (pthread_mutex_lock(&MUTEX_SYSCALL) != 0)
  
 conn->session_key = malloc(CF_BLOWFISHSIZE); 
 
-#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
-   {
-   CfLog(cferror,"pthread_mutex_unlock failed","lock");
-   }
-#endif
-
 if (conn->session_key == NULL)
    {
    return false;
    }
 
-if (RSA_private_decrypt(keylen,in,out,PRIVKEY,RSA_PKCS1_PADDING) <= 0)
+
+if (keylen == CF_BLOWFISHSIZE) /* Old, non-encrypted */
    {
-   err = ERR_get_error();
+   memcpy(conn->session_key,in,CF_BLOWFISHSIZE);
+   }
+else /* New encrypted */
+   {
+   if (RSA_private_decrypt(keylen,in,out,PRIVKEY,RSA_PKCS1_PADDING) <= 0)
+      {
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+      if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
+         {
+         CfLog(cferror,"pthread_mutex_unlock failed","lock");
+         }
+#endif
+      
+      err = ERR_get_error();
+      
+      snprintf(conn->output,CF_BUFSIZE,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
+      CfLog(cferror,conn->output,"");
+      free(conn->session_key);
+      conn->session_key = NULL;
+      return false;
+      }
    
-   snprintf(conn->output,CF_BUFSIZE,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
-   CfLog(cferror,conn->output,"");
-   free(conn->session_key);
-   conn->session_key = NULL;
-   return false;
+   memcpy(conn->session_key,out,CF_BLOWFISHSIZE);
    }
 
-memcpy(conn->session_key,out,CF_BLOWFISHSIZE);
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+   if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
+      {
+      CfLog(cferror,"pthread_mutex_unlock failed","lock");
+      }
+#endif
 
 Debug("Got a session key...\n"); 
 DebugBinOut(conn->session_key,16);
