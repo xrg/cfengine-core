@@ -75,6 +75,8 @@ FILE *cfpopen(char *command,char *type)
     {
     return NULL;
     }
+
+ signal(SIGCHLD,SIG_DFL);
  
  if (pid == 0)
     {

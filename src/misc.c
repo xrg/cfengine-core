@@ -956,9 +956,10 @@ int linux_redhat_version(void)
 #define MANDRAKE_10_1_ID "Mandrakelinux"
 #define FEDORA_ID "Fedora Core"
 #define WHITEBOX_ID "White Box Enterprise Linux"
-#define SCIENTIFIC_ID "Scientific Linux SL"
 #define CENTOS_ID "CentOS"
- 
+#define SCIENTIFIC_SL_ID "Scientific Linux SL"
+#define SCIENTIFIC_CERN_ID "Scientific Linux CERN"
+#define SCIENTIFIC_FERMI_ID "Scientific Linux FERMI" 
 #define RELEASE_FLAG "release "
 
 /* We are looking for one of the following strings...
@@ -1047,6 +1048,21 @@ Verbose("Looking for redhat linux info in \"%s\"\n",relstring);
     {
     vendor = "whitebox";
     }
+ else if(!strncmp(relstring, SCIENTIFIC_SL_ID, strlen(SCIENTIFIC_SL_ID)))
+    {
+    vendor = "scientific";
+    edition = "sl";
+    }
+ else if(!strncmp(relstring, SCIENTIFIC_CERN_ID, strlen(SCIENTIFIC_CERN_ID)))
+    {
+    vendor = "scientific";
+    edition = "cern";
+    }
+ else if(!strncmp(relstring, SCIENTIFIC_FERMI_ID, strlen(SCIENTIFIC_FERMI_ID)))
+    {
+    vendor = "scientific";
+    edition = "fermi";
+    }
  else if(!strncmp(relstring, CENTOS_ID, strlen(CENTOS_ID)))
     {
     vendor = "centos";
@@ -1078,10 +1094,6 @@ Verbose("Looking for redhat linux info in \"%s\"\n",relstring);
     Verbose("Could not find a numeric OS release in %s\n",
      RH_REL_FILENAME);
     return 2;
-    }
- else if(!strncmp(relstring, SCIENTIFIC_ID, strlen(SCIENTIFIC_ID)))
-    {
-    vendor = "scientific";
     }
  else
     {
