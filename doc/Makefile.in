@@ -214,7 +214,7 @@ ps_DATA = $(psfiles) $(pdffiles)
 MAKEINFOHTML = $(MAKEINFO) --html --no-split
 
 # Make sure these get distributed with everything else.
-EXTRA_DIST = cfagent.8 cfenvd.8 cfenvgraph.8 cfexecd.8 cfkey.8 cfrun.8 cfservd.8 cfengine.8 texinfo.tex $(htmlfiles) $(infofiles)  $(psfiles) $(dvifiles) $(pdffiles)
+EXTRA_DIST = cfagent.8 cfenvd.8 cfenvgraph.8 cfexecd.8 cfkey.8 cfrun.8 cfservd.8 cfengine.8 cfshow.8 texinfo.tex $(htmlfiles) $(infofiles)  $(psfiles) $(dvifiles) $(pdffiles)
 SUFFIXES = html latex pdf ps dvi
 
 #%.html : %.texinfo

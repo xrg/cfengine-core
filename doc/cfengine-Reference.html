@@ -76,6 +76,7 @@ implement configurations in practice.
 <li><a accesskey="3" href="#Hard-classes">Hard classes</a>
 <li><a accesskey="4" href="#Evaluated-classes-and-special-functions">Evaluated classes and special functions</a>
 <li><a accesskey="5" href="#Filenames-and-paths">Filenames and paths</a>
+<li><a accesskey="6" href="#Debugging-with-signals">Debugging with signals</a>
 </ul>
 
 <div class="node">
@@ -265,7 +266,8 @@ Note that the module should be specified relative to the authorized module direc
 
 <div class="node">
 <p><hr>
-<a name="Filenames-and-paths"></a>Previous:&nbsp;<a rel="previous" accesskey="p" href="#Evaluated-classes-and-special-functions">Evaluated classes and special functions</a>,
+<a name="Filenames-and-paths"></a>Next:&nbsp;<a rel="next" accesskey="n" href="#Debugging-with-signals">Debugging with signals</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#Evaluated-classes-and-special-functions">Evaluated classes and special functions</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#Reference-introduction">Reference introduction</a>
 <br>
 </div>
@@ -308,6 +310,28 @@ This is not a valid absolute filename:
 </pre>
    <p>Paths beginning with a backslash are assumed to be win32 paths.  They
 must begin with a drive letter or double-slash server name.
+
+<!--  -->
+<!-- SECTION -->
+<!--  -->
+<div class="node">
+<p><hr>
+<a name="Debugging-with-signals"></a>Previous:&nbsp;<a rel="previous" accesskey="p" href="#Filenames-and-paths">Filenames and paths</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Reference-introduction">Reference introduction</a>
+<br>
+</div>
+
+<h3 class="section">1.6 Debugging with signals</h3>
+
+<p>It is possible to turn debugging output on or off on a running cfagent.  This is
+useful for troubleshooting the cause of hangups, or for getting debugging output
+from a cfagent launched from cfexecd.
+
+   <p>A running cfagent process that receives a SIGUSR1 will immediately begin to behave
+as if it had been invoked with the '-d2' option.  A SIGUSR2 will cause a running
+cfagent to run as if the '-d2' option had not been invoked.
+
+   <p>Note that this output is often quite verbose.
 
 <!-- ********************************************************************** -->
 <!-- CHAPTER -->
@@ -8525,7 +8549,7 @@ entry is:
                             size=<var>number/empty</var>
                             type=<var>ctime/mtime/</var><b>atime</b>
                             dirlinks=<var>keep/tidy/delete</var>
-                            rmdirs=<var>true/</var><b>false</b><var>/all/sub</var>
+                            rmdirs=<var>[true/all]/[</var><b>false/none</b><var>]/sub</var>
                             links=<b>stop/keep</b><var>/traverse/tidy</var>
      
                             define=<var>classlist</var>
@@ -11945,6 +11969,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#Hard-classes">1.3 Cfengine hard classes</a>
 <li><a href="#Evaluated-classes-and-special-functions">1.4 Evaluated classes and special functions</a>
 <li><a href="#Filenames-and-paths">1.5 Filenames and paths</a>
+<li><a href="#Debugging-with-signals">1.6 Debugging with signals</a>
 </li></ul>
 <li><a name="toc_Cfkey" href="#Cfkey">2 Cfkey reference</a>
 <li><a name="toc_Cfshow" href="#Cfshow">3 Cfshow reference</a>

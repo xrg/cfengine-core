@@ -153,11 +153,13 @@ extern int errno;
 #include <sys/paths.h>
 #endif
 
-#ifdef HAVE_MALLOC_H
+#ifdef HAVE_SYS_MALLOC_H
 #ifdef DARWIN
 #include <sys/malloc.h>
 #include <sys/paths.h>
+#endif
 #else
+#ifdef HAVE_MALLOC_H
 #ifndef OPENBSD
 #ifdef __FreeBSD__
 #include <stdlib.h>

@@ -1,3 +1,18 @@
+2.1.13
+	Mistake in placement of update.conf runs fixed.
+
+	Alteration to lock hashing to avoid conflicts
+
+	Mandrake version type patch/repatch d 
+
+	Error message in disable now
+	underlines move to respository where defined.
+
+	Locking patch to tidy. Did not release lock when tidying
+	recursively with subdirectory deletions. (Eric Sorensen).
+
+	Host range patched (again) (Bas VdV)
+
 2.1.12
 	cf.preconf can now cause an abort if the script prints out a string
 	containing the substring "cfengine-preconf-abort".

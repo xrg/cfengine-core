@@ -178,8 +178,7 @@ DBP->close(DBP,0);
 int GetLock(char *operator,char *operand,int ifelapsed,int expireafter,char *host,time_t now)
 
 { unsigned int pid;
-  int err, sum=0;
-  char *sp;
+  int i, err, sum=0;
   time_t lastcompleted = 0, elapsedtime;
 
 if (IGNORELOCK)
@@ -201,15 +200,15 @@ Debug("GetLock(%s,%s,time=%d), ExpireAfter=%d, IfElapsed=%d\n",operator,operand,
 memset(CFLOCK,0,CF_BUFSIZE);
 memset(CFLAST,0,CF_BUFSIZE); 
 
-for (sp = operator; *sp != '\0'; sp++)
-   {
-   sum += (int)*sp;
-   }
+for (i = 0; operator[i] != '\0'; i++)
+    {
+    sum = (CF_MACROALPHABET * sum + operator[i]) % CF_HASHTABLESIZE;
+    }
 
-for (sp = operand; *sp != '\0'; sp++)
-   {
-   sum += (int)*sp;
-   }
+for (i = 0; operand[i] != '\0'; i++)
+    {
+    sum = (CF_MACROALPHABET * sum + operand[i]) % CF_HASHTABLESIZE;
+    }
 
 snprintf(CFLOG,CF_BUFSIZE,"%s/cfengine.%.40s.runlog",VLOGDIR,host);
 snprintf(CFLOCK,CF_BUFSIZE,"lock.%.100s.%.40s.%s.%.100s_%d",VCANONICALFILE,host,CanonifyName(operator),CanonifyName(operand),sum);

@@ -104,7 +104,7 @@ ReadRCFile(); /* Should come before parsing so that it can be overridden */
        {
        CheckSystemVariables();
 
-       if (!PARSEONLY && (QUERYVARS != NULL))
+       if (!PARSEONLY && (QUERYVARS == NULL))
           {
           DoTree(1,"Update");
           EmptyActionSequence();

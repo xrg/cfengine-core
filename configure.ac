@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.1.12)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.1.13)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -105,7 +105,7 @@ if test "x$BERKELEY_DB_DIR" = "xno" ; then
 else
     if test "x$BERKELEY_DB_DIR" = "xdefault" ; then
         for v in BerkeleyDB.3.2 BerkeleyDB.3.3 BerkeleyDB.4.0  BerkeleyDB.4.1  BerkeleyDB.4.2 BerkeleyDB.4.3 BerkeleyDB.4.4; do
-            for d in /opt /usr/local /usr; do
+            for d in $prefix /opt /usr/local /usr; do
                 test -d "$d/$v" && BERKELEY_DB_DIR="$d/$v"
             done
         done
@@ -113,7 +113,7 @@ else
 
     if test "x$BERKELEY_DB_DIR" = "xdefault" ; then
 
-        for d in /opt /usr/local /usr; do
+        for d in $prefix /opt /usr/local /usr; do
             for v in db-4 db4 db3 db db40; do
 
                 if test -f "$d/include/$v/db.h" ; then
@@ -125,9 +125,15 @@ else
 		    # and libdb-4.0.a.  Debian has /usr/lib/libdb-4.1.a, for
 		    # instance.  Look for the appropriate library.
                     if test $v = db4 -o $v = db40; then
+			save_CFLAGS="$CFLAGS"
+			save_LDFLAGS="$LDFLAGS"
+			CFLAGS="$CFLAGS $BERKELEY_DB_CFLAGS"
+			LDFLAGS="$LDFLAGS $BERKELEY_DB_LDFLAGS"
 			AC_SEARCH_LIBS(db_create, 
 				[db-4 db4 db-4.5 db-4.4 db-4.3 db-4.2 db-4.1 db-4.0], 
 				[BERKELEY_DB_LIB=$ac_cv_search_db_create])
+			CFLAGS="$save_CFLAGS"
+			LDFLAGS="$save_LDFLAGS"
 		    else
                     	BERKELEY_DB_LIB="-l$v"
                     fi
@@ -278,7 +284,7 @@ if test x"$OPENSSL_LIB_DIR" = xno ; then
     AC_MSG_ERROR(This release of cfengine requires OpenSSL 0.9.7 or later)
 else
     if test x"$OPENSSL_LIB_DIR" = xdefault ; then
-        for d in /opt/ssl /usr/local/ssl /usr/local /usr; do
+        for d in $prefix /opt/ssl /usr/local/ssl /usr/local /usr; do
             if test -f "$d/include/openssl/opensslv.h"; then
                 OPENSSL_LIB_LDFLAGS="-L$d/lib"
                 OPENSSL_LIB_CPPFLAGS="-I$d/include"
@@ -363,12 +369,27 @@ AC_ARG_WITH(pcre,
 
         if test "x$withval" != "xno" ; then
             if test "x$withval" != "xyes" ; then
+                if test "x$withval" = "xdefault" ; then
+                    for d in $prefix /usr/local /usr; do
+                        if test -f "$d/include/pcreposix.h" ; then
+                            CPPFLAGS="$CPPFLAGS -I$d/include"
+                            LDFLAGS="$LDFLAGS -L$d/lib"
+                            PCRE_LIB="-lpcreposix"
+                            AC_MSG_RESULT = "$d"
+                            break
+                        fi
+                    done
+                    if test x"$PCRE_LIB" = x ; then
+                        AC_MSG_ERROR(Cannot find PCRE)
+                    fi
+                else
                 if test -f "${withval}/include/pcreposix.h" ; then
                     CPPFLAGS="$CPPFLAGS -I${withval}/include"
                     LDFLAGS="$LDFLAGS -L${withval}/lib"
                     AC_MSG_RESULT = "${withval}"
                 else
                     AC_MSG_ERROR(Cannot find PCRE)
+                fi
                 fi
             else
                 AC_MSG_RESULT = "yes"
@@ -396,7 +417,7 @@ AC_CHECK_HEADERS(sys/mount.h)
 AC_CHECK_HEADERS(utime.h)
 AC_CHECK_HEADERS(time.h)
 AC_CHECK_HEADERS(sys/time.h)
-AC_CHECK_HEADERS(malloc.h)
+AC_CHECK_HEADERS(malloc.h sys/malloc.h)
 AC_CHECK_HEADERS(vfs.h)
 AC_CHECK_HEADERS(sys/vfs.h)
 AC_CHECK_HEADERS(sys/sockio.h)

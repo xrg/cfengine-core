@@ -63,6 +63,7 @@ if (stat(startpath,&sb) == -1)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Tidy directory %s cannot be accessed",startpath);
    CfLog(cfinform,OUTPUT,"stat");
+   ReleaseCurrentLock(); 
    return;
    }
 
@@ -100,6 +101,7 @@ if (stat(startpath,&sb) == -1)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Tidy directory %s cannot be accessed",startpath);
    CfLog(cfinform,OUTPUT,"stat");
+   ReleaseCurrentLock();
    return;
    }
 

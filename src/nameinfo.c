@@ -66,9 +66,7 @@ void GetNameInfo()
   char real_version[256]; /* see <sys/syssgi.h> */
 #endif
 #ifdef HAVE_SYSINFO
-#ifdef SI_ARCHITECTURE
   long sz;
-#endif
 #endif
 
 Debug("GetNameInfo()\n");
@@ -222,6 +220,18 @@ Verbose("Additional hard class defined as: %s\n",CanonifyName(VBUFF));
 #ifdef HAVE_SYSINFO
 #ifdef SI_ARCHITECTURE
 sz = sysinfo(SI_ARCHITECTURE,VBUFF,CF_BUFSIZE);
+if (sz == -1)
+  {
+  Verbose("cfengine internal: sysinfo returned -1\n");
+  }
+else
+  {
+  AddClassToHeap(CanonifyName(VBUFF));
+  Verbose("Additional hard class defined as: %s\n",VBUFF);
+  }
+#endif
+#ifdef SI_PLATFORM
+sz = sysinfo(SI_PLATFORM,VBUFF,CF_BUFSIZE);
 if (sz == -1)
   {
   Verbose("cfengine internal: sysinfo returned -1\n");
@@ -439,6 +449,19 @@ void GetV6InterfaceInfo(void)
     case cfnt:
         /* NT cannot do this */
         break;
+
+    case irix:
+    case irix4:
+    case irix64:
+        
+        if ((pp = cfpopen("/usr/etc/ifconfig -a","r")) == NULL)
+           {
+           Verbose("Could not find interface info\n");
+           return;
+           }
+        
+        break;
+        
     default:
         
         if ((pp = cfpopen("/sbin/ifconfig -a","r")) == NULL)

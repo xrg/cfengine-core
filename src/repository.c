@@ -136,6 +136,8 @@ CheckForHoles(&sstat,&dummy);
 
 if (CopyReg(file,buffer,sstat,dstat,&dummy))
    {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Moved %s to repository location %s\n",file,buffer);
+   CfLog(cfinform,OUTPUT,"");
    IMAGEBACKUP = imagecopy;
    return true;
    }

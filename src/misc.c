@@ -14,7 +14,7 @@
  
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   MERCHANTABILITY or FITNESS FOR A PARTICULARmandar PURPOSE.  See the
    GNU General Public License for more details.
  
   You should have received a copy of the GNU General Public License
@@ -969,6 +969,7 @@ int linux_redhat_version(void)
 #define REDHAT_ES_ID "Red Hat Enterprise Linux ES"
 #define REDHAT_WS_ID "Red Hat Enterprise Linux WS"
 #define MANDRAKE_ID "Linux Mandrake"
+#define MANDRAKE_10_1_ID "Mandrakelinux"
 #define FEDORA_ID "Fedora Core"
 #define WHITEBOX_ID "White Box Enterprise Linux"
  
@@ -1043,6 +1044,10 @@ Verbose("Looking for redhat linux info in \"%s\"\n",relstring);
     vendor = "redhat";
     }
  else if(!strncmp(relstring, MANDRAKE_ID, strlen(MANDRAKE_ID)))
+    {
+    vendor = "mandrake";
+    }
+ else if(!strncmp(relstring, MANDRAKE_10_1_ID, strlen(MANDRAKE_10_1_ID)))
     {
     vendor = "mandrake";
     }

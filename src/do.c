@@ -1779,8 +1779,8 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
             strcpy(path,workname);
             strcat(path,".cfdisabled");
             }
-         
-         snprintf(OUTPUT,CF_BUFSIZE*2,"Disabling/renaming file %s to %s\n",workname,path);
+
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Disabling/renaming file %s to %s (pending repository move)\n",workname,path);
          CfLog(cfinform,OUTPUT,"");
          
          if (! DONTDO)
@@ -3473,6 +3473,7 @@ if (stat(startpath,&sb) == -1)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Directory %s cannot be accessed in files",startpath);
    CfLog(cfinform,OUTPUT,"stat");
+   ReleaseCurrentLock(); 
    return;
    }
 

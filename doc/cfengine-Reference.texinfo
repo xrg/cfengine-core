@@ -148,6 +148,7 @@ implement configurations in practice.
 * Hard classes::                
 * Evaluated classes and special functions::  
 * Filenames and paths::         
+* Debugging with signals::      
 @end menu
 
 @node Installation, Work directory, Reference introduction, Reference introduction
@@ -354,7 +355,7 @@ classes:
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node Filenames and paths,  , Evaluated classes and special functions, Reference introduction
+@node Filenames and paths, Debugging with signals, Evaluated classes and special functions, Reference introduction
 @section Filenames and paths
 
 Filenames in Unix-like operating systems
@@ -401,6 +402,22 @@ This is not a valid absolute filename:
 Paths beginning with a backslash are assumed to be win32 paths.  They
 must begin with a drive letter or double-slash server name.
 
+@c -------------------------------------------------------------------------------
+@c SECTION
+@c -------------------------------------------------------------------------------
+
+@node Debugging with signals,  , Filenames and paths, Reference introduction
+@section Debugging with signals
+
+It is possible to turn debugging output on or off on a running cfagent.  This is
+useful for troubleshooting the cause of hangups, or for getting debugging output
+from a cfagent launched from cfexecd.
+
+A running cfagent process that receives a SIGUSR1 will immediately begin to behave
+as if it had been invoked with the '-d2' option.  A SIGUSR2 will cause a running
+cfagent to run as if the '-d2' option had not been invoked. 
+
+Note that this output is often quite verbose.
 
 @c **********************************************************************
 @c CHAPTER
@@ -9316,7 +9333,7 @@ tidy:
                        size=@var{number/empty}
                        type=@var{ctime/mtime/}@b{atime}
                        dirlinks=@var{keep/tidy/delete}
-                       rmdirs=@var{true/@b{false}/all/sub}
+                       rmdirs=@var{[true/all]/[@b{false/none}]/sub}
                        links=@b{stop/keep}@var{/traverse/tidy}
 
                        define=@var{classlist}
