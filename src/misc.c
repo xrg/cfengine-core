@@ -956,6 +956,7 @@ int linux_redhat_version(void)
 #define MANDRAKE_10_1_ID "Mandrakelinux"
 #define FEDORA_ID "Fedora Core"
 #define WHITEBOX_ID "White Box Enterprise Linux"
+#define SCIENTIFIC_ID "Scientific Linux SL"
 #define CENTOS_ID "CentOS"
  
 #define RELEASE_FLAG "release "
@@ -970,6 +971,7 @@ int linux_redhat_version(void)
  * Red Hat Enterprise Linux ES release 2.1 (Panama)
  * Fedora Core release 1 (Yarrow)
  * White Box Enterprise linux release 3.0 (Liberation)
+ * Scientific Linux SL Release 4.0 (Beryllium)
  * CentOS release 4.0 (Final)
  */
 
@@ -987,7 +989,7 @@ char *vendor="";
 char *edition="";
 /* Where the numerical release will be found */
 char *release=NULL;
-
+int i;
 int major = -1;
 char strmajor[CF_MAXVARSIZE];
 int minor = -1;
@@ -1060,6 +1062,15 @@ Verbose("Looking for redhat linux info in \"%s\"\n",relstring);
   * from the infomation above.  We assume that all the strings will
   * have the word 'release' before the numerical release.
   */
+
+  /* Convert relstring to lowercase so that vendors like
+     Scientific Linux don't fall through the cracks.
+   */
+
+ for (i = 0; i < strlen(relstring); i++)
+    {
+    relstring[i] = tolower(relstring[i]);
+    }
  
  release = strstr(relstring, RELEASE_FLAG);
  if(release == NULL)
@@ -1067,6 +1078,10 @@ Verbose("Looking for redhat linux info in \"%s\"\n",relstring);
     Verbose("Could not find a numeric OS release in %s\n",
      RH_REL_FILENAME);
     return 2;
+    }
+ else if(!strncmp(relstring, SCIENTIFIC_ID, strlen(SCIENTIFIC_ID)))
+    {
+    vendor = "scientific";
     }
  else
     {
