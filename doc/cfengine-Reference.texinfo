@@ -5330,6 +5330,25 @@ The creation of a path will fail if one of the links in the path is a
 plain file or device node.  A list of classes may optionally be defined
 here if a directory is created.
 
+If the @code{owner} value is set to the literal "LastNode", then the
+owner will be exchanged for the last node of the path. This allows the
+creation of home directories owned by users.
+
+@cindex Home directories, creating
+@cindex @code{LastNode} literal
+@smallexample
+
+control:
+
+  homedirs = ( mark:simen:luke:aeleen )
+
+directories:
+
+  /home/$(listcontent) owner=LastNode
+
+
+@end smallexample
+
 @page
 
 @c -------------------------------------------------------------------------------

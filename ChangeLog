@@ -6,6 +6,10 @@
 
        Fixup Makefile.am and doc/Makefile.am.  Docs are now installed
        in the CFEngine "share" directory where they belong.
+
+	Directory iteration fixed. New: owner=LastNode sets the owner of 
+	the directory to the name of the last node in the dir name. This allows
+	the creation of homedirs.
 	
 2.1.13
 	Mistake in placement of update.conf runs fixed.

@@ -3852,10 +3852,11 @@ InitializeAction();
 void InstallMakePath(char *path,mode_t plus,mode_t minus,char *uidnames,char *gidnames)
 
 { struct File *ptr;
-  char buffer[CF_EXPANDSIZE]; 
+ char buffer[CF_EXPANDSIZE],ebuff[CF_MAXVARSIZE]; 
   struct Item *list = NULL, *ip;
   struct TwoDimList *tp = NULL;
   char *sp;
+  int lastnode = false;
   
 Debug1("InstallMakePath (%s) (+%o)(-%o)(%s)(%s)\n",path,plus,minus,uidnames,gidnames);
 
@@ -3872,6 +3873,17 @@ Set2DList(tp);
 
 for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))    
    {
+   if (strcmp(uidnames,"LastNode") == 0)
+      {
+      strncpy(ebuff,ReadLastNode(sp),CF_MAXVARSIZE-1);
+      Verbose("File owner will be set to directory last node (%s)\n",ebuff);      
+      }
+   else
+      {
+      strncpy(ebuff,uidnames,CF_MAXVARSIZE-1);
+      }
+
+
    if ((ptr = (struct File *)malloc(sizeof(struct File))) == NULL)
       {
       FatalError("Memory Allocation failed for InstallMakepath() #1");
@@ -3935,7 +3947,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    ptr->minus = minus;
    ptr->recurse = 0;
    ptr->action = fixdirs;
-   ptr->uid = MakeUidList(uidnames);
+   ptr->uid = MakeUidList(ebuff);
    ptr->gid = MakeGidList(gidnames);
    ptr->inclusions = NULL;
    ptr->exclusions = NULL;
