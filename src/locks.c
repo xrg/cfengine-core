@@ -247,14 +247,14 @@ elapsedtime = (time_t)(now-lastcompleted) / 60;
 
 if (elapsedtime < 0)
    {
-   snprintf(OUTPUT,CF_BUFSIZE*2,"Another cfengine seems to have done %s.%s since I started (elapsed=%d)\n",operator, operand,elapsedtime);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Another cfengine seems to have done [%s.%s] since I started (elapsed=%d)\n",operator,operand,elapsedtime);
    CfLog(cfverbose,OUTPUT,"");
    return false;
    }
 
 if (elapsedtime < ifelapsed)
    {
-   snprintf(OUTPUT,CF_BUFSIZE*2,"Nothing scheduled for %s.%s (%u/%u minutes elapsed)\n",operator,operand,elapsedtime,ifelapsed);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Nothing scheduled for [%s.%s] (%u/%u minutes elapsed)\n",operator,operand,elapsedtime,ifelapsed);
    CfLog(cfverbose,OUTPUT,"");
    return false;
    }
@@ -268,7 +268,7 @@ if (lastcompleted != 0)
    {
    if (elapsedtime >= expireafter)
       {
-      snprintf(OUTPUT,CF_BUFSIZE*2,"Lock %s expired...(after %u/%u minutes)\n",CFLOCK,elapsedtime,expireafter);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Lock %s expired (after %u/%u minutes)\n",CFLOCK,elapsedtime,expireafter);
       CfLog(cfinform,OUTPUT,"");
       
       pid = GetLockPid(CFLOCK);
@@ -283,14 +283,6 @@ if (lastcompleted != 0)
          Verbose("Trying to kill expired process, pid %d\n",pid);
          
          err = 0;
-         
-/*  if (((err = kill(pid,SIGCONT)) == -1) && (errno != ESRCH))
-    {
-    sleep(3);
-    err=0;
-    
-    Does anyone remember who put this in or why it was here?
-*/
          
          if ((err = kill(pid,SIGINT)) == -1)
             {

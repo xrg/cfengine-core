@@ -2381,7 +2381,7 @@ void MakeImages()
   struct stat statbuf;
   struct servent *serverent;
   int savesilent;
-  char path[CF_EXPANDSIZE],destination[CF_EXPANDSIZE];
+  char path[CF_EXPANDSIZE],destination[CF_EXPANDSIZE],vbuff[CF_BUFSIZE];
   char server[CF_EXPANDSIZE],listserver[CF_EXPANDSIZE];
   
 for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
@@ -2455,9 +2455,9 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
          continue;
          }
       
-      snprintf(VBUFF,CF_BUFSIZE,"%.50s.%.50s_%.50s",path,destination,server); /* Unique ID for copy locking */
+      snprintf(vbuff,CF_BUFSIZE,"%.50s.%.50s_%.50s",path,destination,server); /* Unique ID for copy locking */
       
-      if (!GetLock(ASUniqueName("copy"),CanonifyName(VBUFF),ip->ifelapsed,ip->expireafter,VUQNAME,CFSTARTTIME))
+      if (!GetLock(ASUniqueName("copy"),CanonifyName(vbuff),ip->ifelapsed,ip->expireafter,VUQNAME,CFSTARTTIME))
          {
          SILENT = savesilent;
          ResetOutputRoute('d','d');
