@@ -2778,7 +2778,7 @@ environment variables in the shell.
    <p>In these contexts, any variable which has the form of
 a list joined together by colons will be iterated over
 at compilation time. Note that you can change the value
-of the list separator using the <code>split</code> variable
+of the list separator using the <code>Split</code> variable
 in the control section of the program (see Reference manual).
 
    <p>For example, to link all of the binary files in the PATH
@@ -2812,7 +2812,7 @@ a space as a separator:
 <pre class="smallexample">     
      control:
      
-        split = ( " " )
+        Split = ( " " )
      
         mylist = ( "mark ricky bad-dude" )
      
@@ -6994,7 +6994,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>repchar</code>: <a href="#Variable%20substitution">Variable substitution</a>
 <li><code>site</code>: <a href="#Variable%20substitution">Variable substitution</a>
 <li><code>smtpserver</code>: <a href="#Running%20cfengine%20permanently%20monitoring%20and%20restarting%20cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a>
-<li><code>split</code>: <a href="#Iterating%20over%20lists">Iterating over lists</a>, <a href="#Variable%20substitution">Variable substitution</a>
+<li><code>Split</code>: <a href="#Iterating%20over%20lists">Iterating over lists</a>
+<li><code>split</code>: <a href="#Variable%20substitution">Variable substitution</a>
 <li><code>sysadm</code>: <a href="#Variable%20substitution">Variable substitution</a>, <a href="#Running%20cfengine%20permanently%20monitoring%20and%20restarting%20cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a>
 <li><code>timezone</code>: <a href="#Variable%20substitution">Variable substitution</a>
 <li><code>underscoreclasses</code>: <a href="#Variable%20substitution">Variable substitution</a>
@@ -7202,7 +7203,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Shell commands which define classes: <a href="#shellcommand%20classes">shellcommand classes</a>
 <li>Special variables: <a href="#Special%20variables">Special variables</a>
 <li>Splaying host times: <a href="#Splaying%20host%20times">Splaying host times</a>
-<li>split: <a href="#Iterating%20over%20lists">Iterating over lists</a>
+<li>Split: <a href="#Iterating%20over%20lists">Iterating over lists</a>
 <li>Starting cfagent: <a href="#Invoking%20cfagent">Invoking cfagent</a>
 <li>STDIN, reading from: <a href="#CFINPUTS%20environment%20variable">CFINPUTS environment variable</a>
 <li>Strings: <a href="#Quoted%20strings">Quoted strings</a>
@@ -7250,7 +7251,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>How to keep all users in <code>/home</code>: <a href="#Using%20the%20automounter">Using the automounter</a>
 <li>Iterating over lists: <a href="#Iterating%20over%20lists">Iterating over lists</a>
 <li>Parentheses in classes.: <a href="#Classes%20basics">Classes basics</a>
-<li>split, using a space: <a href="#Iterating%20over%20lists">Iterating over lists</a>
+<li>Split, using a space: <a href="#Iterating%20over%20lists">Iterating over lists</a>
 <li>Time classes, picking out complex time intervals: <a href="#Building%20flexible%20time%20classes">Building flexible time classes</a>
 <li>Why do I get network access denied to files I have granted access to?: <a href="#Configuration%20file%20cfservd.conf">Configuration file cfservd.conf</a>
 <li>Why does cfservd give access to files on a different filesystem?: <a href="#Configuration%20file%20cfservd.conf">Configuration file cfservd.conf</a>

@@ -309,12 +309,9 @@ snprintf(value,CF_BUFSIZE,"%u",result);
 void HandleStatInfo(enum builtin fn,char *args,char *value)
 
 { struct stat statbuf;
+  char argv[CF_MAXFARGS][CF_MAXVARSIZE];
 
-if (strchr(args,','))
-   {
-   yyerror("Illegal argument to unary class-function");
-   return;
-   }
+FunctionArgs(args,argv,1);
 
 if (lstat(args,&statbuf) == -1)
    {
@@ -1302,7 +1299,7 @@ Verbose("This is a method with return value list: (%s)\n",args);
 
 for (ip = SplitStringAsItemList(args,','); ip != NULL; ip=ip->next)
    {
-   AppendItem(&METHODRETURNVARS,args,CLASSBUFF);
+   AppendItem(&METHODRETURNVARS,ip->name,CLASSBUFF);
    }
  
 strcpy(value,"noinstall");
@@ -1351,7 +1348,7 @@ if (PARSING)
    return;
    }
  
-snprintf(buffer,CF_BUFSIZE-1,"%s/state/cf_%s",WORKDIR,args);
+snprintf(buffer,CF_BUFSIZE-1,"%s/state/cf_%s",CFWORKDIR,args);
 
 if (stat(buffer,&statbuf) == 0)
    {
@@ -1623,13 +1620,14 @@ else
 
 void HandleUnsetState(char *args,char *value)
 
-{ char arg1[CF_MAXVARSIZE];
- 
+{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+  
 value[0] = '\0';
-OneArg(args,arg1);
+FunctionArgs(args,argv,1);
 
-Debug("HandleUnsetState(%s)\n",arg1); 
-DeletePersistentClass(arg1);
+
+Debug("HandleUnsetState(%s)\n",argv[0]); 
+DeletePersistentClass(argv[0]);
 }
 
 /*********************************************************************/
@@ -1637,7 +1635,7 @@ DeletePersistentClass(arg1);
 void HandlePrepModule(char *args,char *value)
 
 { char argv[CF_MAXFARGS][CF_MAXVARSIZE];
- char ebuff[CF_EXPANDSIZE];
+  char ebuff[CF_EXPANDSIZE];
 
 ExpandVarstring(args,ebuff,NULL);
  
@@ -1674,25 +1672,6 @@ snprintf(value,CF_BUFSIZE-1,"CF_ASSOCIATIVE_ARRAY%s",args);
 
 /*********************************************************************/
 /* Level 3                                                           */
-/*********************************************************************/
-
-void OneArg(args,arg1)
-
-char *args,*arg1;
-
-{ char one[CF_MAXVARSIZE];
-
-memset(one,0,CF_MAXVARSIZE);
- 
-if (strchr(args,','))
-   {
-   yyerror("Illegal argument to unary function");
-   return;
-   }
-
-strcpy(arg1,UnQuote(args));
-}
-
 /*********************************************************************/
 
 int FunctionArgs(char *args,char arg[CF_MAXFARGS][CF_MAXVARSIZE],int number)

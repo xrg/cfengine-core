@@ -89,13 +89,14 @@ if (forceipv4 == 'n')
             if (bind(CONN->sd, ap2->ai_addr, ap2->ai_addrlen) == 0)
                {
                freeaddrinfo(response2);
+               response2 = NULL;
                break;
                }
             }
          
          if (response2)
             {
-            free(response2);
+            freeaddrinfo(response2);
             }
          }
       
@@ -350,6 +351,13 @@ void LastSeen(char *hostname,enum roles role)
   time_t lastseen,now = time(NULL);
   static struct LastSeen entry;
   double average;
+
+if (strlen(hostname) == 0)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"LastSeen registry found empty hostname with role %d",role);
+   CfLog(cflogonly,OUTPUT,"");
+   return;
+   }
   
 snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
 
@@ -374,13 +382,6 @@ if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 
 memset(&value,0,sizeof(value)); 
 memset(&key,0,sizeof(key));       
-
-if (strlen(hostname) == 0)
-   {
-   snprintf(OUTPUT,CF_BUFSIZE,"LastSeen registry found empty hostname with role %d",role);
-   CfLog(cflogonly,OUTPUT,"");
-   return;
-   }
 
 switch (role)
    {
@@ -562,7 +563,7 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       criterion = false;
       }
    
-   snprintf(OUTPUT,CF_BUFSIZE,"Host %s last at %s\ti.e. not seen for %.2f hours\n\t(Expected <delta_t> = %.2f secs (= %.2f hours)) (Expires %d days)",hostname,ctime(&then),((double)(now-then))/3600.0,average,average/3600.0,lsea/3600/24);
+   snprintf(OUTPUT,CF_BUFSIZE,"Host %s last at %s\ti.e. not seen for %.2f hours\n\t(Expected <delta_t> = %.2f secs (= %.2f hours) (Expires %d days)",hostname,ctime(&then),((double)(now-then))/3600.0,average,average/3600.0,lsea/3600/24);
 
    if (now > lsea + then + splaytime + 2*3600)
       {

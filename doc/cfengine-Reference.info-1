@@ -35,13 +35,14 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.1.10 for version
-2.1.10 as last updated 16 August 2004.
+   This manual corresponds to CFENGINE Edition 2.1.11 for version
+2.1.11 as last updated 26 October 2004.
 
 * Menu:
 
 * Reference introduction::
 * Cfkey::
+* Cfshow::
 * Cfagent reference::
 * Cfservd.conf and cfrun reference::
 * Cfexecd reference::
@@ -208,12 +209,12 @@ arguments in chronological order.
 `IPRange(ADDRESS-RANGE)'
      True if the current host lies within the specified range
 
-`HostRange(BASENAME,START/STOP)'
+`HostRange(BASENAME,START-STOP)'
      True if the current relative domain name begins with basename and
      ends with an integer between start and stop
 
-`IsDefined(COMMAND)'
-     True of the named variable is defined. NB: `IsDefines(var)', not
+`IsDefined(VARIABLE-ID)'
+     True of the named variable is defined. NB: `IsDefined(var)', not
      `IsDefined(${var})'
 
 `IsDir(F)'
@@ -308,7 +309,7 @@ must begin with a drive letter or double-slash server name.
 * FAQ Index::
 
 
-File: cfengine-Reference.info,  Node: Cfkey,  Next: Cfagent reference,  Prev: Reference introduction,  Up: Top
+File: cfengine-Reference.info,  Node: Cfkey,  Next: Cfshow,  Prev: Reference introduction,  Up: Top
 
 Cfkey reference
 ***************
@@ -339,7 +340,57 @@ case, run `cfenvd' for a few days more and try again.
 * FAQ Index::
 
 
-File: cfengine-Reference.info,  Node: Cfagent reference,  Next: Cfservd.conf and cfrun reference,  Prev: Cfkey,  Up: Top
+File: cfengine-Reference.info,  Node: Cfshow,  Next: Cfagent reference,  Prev: Cfkey,  Up: Top
+
+Cfshow reference
+****************
+
+The `cfshow' command was introduced in cfengine 2.1.11 in order to
+provide a simple command line query of the various databases used to
+store operational state by cfagent.
+     everyhost# cfshow -a
+     everyhost# cfshow -l
+     everyhost# cfshow -c
+     everyhost# cfshow -s
+
+The command line options are
+
+`-a `--active''
+     This prints a list of any currently active locks, i.e. tasks that
+     cfengine believes it is currently enagaged in.
+
+`-l `--locks''
+     This prints a list of the locks and the last times an active lock
+     was secured for each cfengine acivity. This list is potentially
+     very long.
+
+`-s `--last-seen''
+     This lists the IP addresses of all known peers and the times they
+     were last engaged in communication with the current host. The
+     expected interval between communications is also printed. See
+     FriendStatus. The output format is in a form that can easily be
+     parsed by user scripts. e.g.
+          192.0.2.1 (answered us) at [Wed May 26 16:39:03 2004] i.e. not seen for !2860.08! hours; <delta_t> = {63325.64} hours
+          192.0.2.3 (answered us) at [Wed May 26 16:39:03 2004] i.e. not seen for !2860.08! hours; <delta_t> = {90465.20} hours
+
+`-c `--checksum''
+     This lists all of the files and their current checksum values in
+     the current checksum database.
+
+
+* Menu:
+
+* Cfagent reference::
+* Cfservd.conf and cfrun reference::
+* Cfexecd reference::
+* Problem solving::
+* Example configuration file::
+* Variable Index::
+* Concept Index::
+* FAQ Index::
+
+
+File: cfengine-Reference.info,  Node: Cfagent reference,  Next: Cfservd.conf and cfrun reference,  Prev: Cfshow,  Up: Top
 
 Cfagent reference
 *****************
@@ -558,6 +609,10 @@ Note that GNU long options are available with the syntax
 `-q'
      (`--no-splay') Switch off host splaying (sleeping).
 
+`-Q'
+     (`--quert') Query the values of the comma separated list of
+     variable names.
+
 `-s'
      (`--no-commands') Do not execute scripts or shell commands.
 
@@ -603,7 +658,8 @@ Note that GNU long options are available with the syntax
      (`--no-warn',`--quiet') Do not print warning messages.
 
 `-z'
-     (`--smtp') Print the SMTP server for the LAN (used by cfexecd).
+     (`--schedule') Print the exec schedule for the LAN (used by
+     cfexecd).
 
 
    In version 2.0.4, an abbreviation for actionsequence exclusions was
@@ -744,7 +800,7 @@ quotes.
 
 `ReadList(FILENAME,FILEFORMAT,COMMENT,MAX NUMBER OF BYTES)'
      Reads up to a maximum number of bytes from a properly formatted
-     file into a one-dimensional associated array. File formats are:
+     file into a listvariable. File formats are:
     `lines'
           If this format is specified, `ReadList' tries to interpret
           the file as a list of items on separate lines. The value
@@ -864,10 +920,18 @@ variables.
 `domain'
      The currently defined domain.
 
+`EmailFrom'
+     The E-mail address from whom E-mail from cfexecd should appear to
+     originate.
+
 `EmailMaxLines'
      Most lines of output to email from a single cfexecd-induced run of
      cfagent. If undefined, defaults to 100. Set to 0, no email is sent
      by cfexecd. Set to `inf', no maximum is enforced.
+
+`EmailTo'
+     The E-mail address to whom mail should be sent (overrides sysadm
+     variable).
 
 `faculty'
      The faculty or site as defined in control (see site).
@@ -1851,6 +1915,7 @@ cfengine.  Note that a limited number of in-built functions exists:
 * interfacename::
 * lastseenexpireafter::
 * fileextension::
+* lastseen::
 * linkcopies::
 * LogDirectory::
 * LogTidyHomeFiles::
@@ -2744,7 +2809,7 @@ function, *Note alerts::.
        LastSeenExpireAfter = ( 2 )
 
 
-File: cfengine-Reference.info,  Node: fileextension,  Next: linkcopies,  Prev: lastseenexpireafter,  Up: control
+File: cfengine-Reference.info,  Node: fileextension,  Next: lastseen,  Prev: lastseenexpireafter,  Up: control
 
 FileExtensions
 --------------
@@ -2758,7 +2823,22 @@ names using these extensions. They may be used to conceal directories.
        FileExtensions = ( c o gif jpg html )
 
 
-File: cfengine-Reference.info,  Node: linkcopies,  Next: LogDirectory,  Prev: fileextension,  Up: control
+File: cfengine-Reference.info,  Node: lastseen,  Next: linkcopies,  Prev: fileextension,  Up: control
+
+LastSeen
+--------
+
+This option is true by default. If set to off or false it prevents
+cfengine and/or cfservd from learning about last times hosts were
+observed connecting to one another. Some users with broken resolvers
+(particularly in view of the change over to IPv6 compatible libraries)
+might find this useful when processes appear to hang on connecting.
+
+
+       LastSeen = ( off )
+
+
+File: cfengine-Reference.info,  Node: linkcopies,  Next: LogDirectory,  Prev: lastseen,  Up: control
 
 LinkCopies
 ----------
@@ -3471,7 +3551,7 @@ copying. Cfengine attempts to prevent this during remote copies._
                              xdev=TRUE/ON/false/off
      
                              recurse=NUMBER/INF/0
-                             type=ctime/MTIME/CHECKSUM/SUM/BYTE/BINARY
+                             type=ctime/MTIME/CHECKSUM/SUM/BYTE/BINARY/ANY
                              linktype=absolute/symbolic/RELATIVE/HARD/NONE/COPY
                              typecheck=true/on/FALSE/OFF
                              define=CLASS-LIST(,:.)
@@ -4054,9 +4134,12 @@ be examined later.  The syntax is
 If a destination filename is specified, cfagent renames the source file
 to the destination, where possible (renaming across filesystems is not
 allowed).  If no destination is given, cfagent renames a given file by
-appending the name of the file with the suffix `.cfdisabled'.  A
-typical example of a file you would probably want to disable would be
-the `/etc/hosts.equiv' file which is often found with the `+' symbol
+appending the name of the file with the suffix `.cfdisabled'.  Note
+that directories are only renamed if they have a specific destination
+specified.
+
+   A typical example of a file you would probably want to disable would
+be the `/etc/hosts.equiv' file which is often found with the `+' symbol
 written in it, opening the system concerned to the entire NIS universe
 without password protection!  Here is an example:
 
@@ -4269,14 +4352,18 @@ comment of the type
 `SetCommentStart', `SetCommentEnd' and `CommentLinesMatching',
 `CommentLinesStarting' functions.
 
-   A special group of editing commands is based on the GNU Regular
-Expression package. These use GNU regular expressions to search line by
-line through text and perform various editing functions.  Some of these
-commands are based on the concept of a file pointer. The pointer starts
-at line one of the file and can be reset by 'locating' a certain line,
-or by using the reset-pointer commands. The current position of the
-pointer is used by commands such as `InsertLine' to allow a flexible
-way of editing the middle of files.
+   A special group of editing commands is based on the POSIX Regular
+Expression package. These use regular expressions to search line by
+line through text and perform various editing functions. Searches are
+of two different types: "LineMatching" and "LineContaining". In the
+first case the regular expression must match the entire line exactly;
+in the latter, a substring is searched for in the file.
+
+   Some of these commands are based on the concept of a file pointer.
+The pointer starts at line one of the file and can be reset by
+'locating' a certain line, or by using the reset-pointer commands. The
+current position of the pointer is used by commands such as
+`InsertLine' to allow a flexible way of editing the middle of files.
 
    A simple decision mechanism is incorporated to allow certain editing
 actions to be excluded. For instance, to insert a number of lines in a
@@ -4818,6 +4905,9 @@ expressions.
      risk. Setting this value to false causes execution to execute
      without an encapsulating shell.
 
+`WarnIfFileMissing QUOTED-STRING'
+     If the file to be edited does not exist, a visible alert is issued.
+
 `WarnIfLineContaining QUOTED-STRING'
      Issue a warning if the quoted string is found as a substring of
      one or more lines in the file.
@@ -5344,7 +5434,8 @@ evaluating the class attributes for each file.
      to be matched. The list should be separated by the OR symbol `|',
      since these types are mutually exclusive. The possible values are
      currently
-          reg|link|dir|socket|fifo|door|char|block
+          file|reg|link|dir|socket|fifo|door|char|block
+     Note that `file' and `reg' are synonymous.
 
 `ExecRegex:'
      matches the test string against the output of the specified
@@ -6204,6 +6295,8 @@ the decoupling between client request and service provision.
      
            action=`filename'
      
+           sendclasses=COMMA SEPARATED CLASS LIST
+     
            returnvars=COMMA SEPARATED VARIABLE LIST OR VOID
            returnclasses=COMMA SEPARATED CLASS LIST
      
@@ -6279,9 +6372,16 @@ transmitted with a dummy value, e.g. `Function(null)' or
          MethodParameters = ( null )
          actionsequence   = ( timezone )
      
+     
+       classes:
+     
+          dummy = ( any )
+     
      ####################################################
      
      alerts:
+     
+      dummy::
      
        "This simple method does nothing"
      
@@ -6497,7 +6597,7 @@ VOID)     ReturnClasses(COMMA SEPARATED LIST OF CLASSES)
 parameters `value1', `value2' and the the file excerpt is placed in the
 temporary file `/tmp/file1'.
 
-   The return clases are passed in their current state to the parent;
+   The return classes are passed in their current state to the parent;
 i.e. if class1 is defined then it is offered to the parent, but if it
 is not defined in the method, it is not passed on. The parent can then
 choose to accept or ignore the value.
@@ -6537,6 +6637,20 @@ perform?  For example, to make two hosts collaborate:
        returnclasses=null
        returnvars=retval
        ifelapsed=120
+
+   Note that an important aspect of remote method invocation is that
+there is only voluntary cooperation between the parties. A reply bundle
+from a finished method can collected from a server by the client many
+times, causing the classes and variables associated with it to be
+defined at regular intervals, controlled by the ifelapsed time. To
+avoid multiple actions, you should lock methods or their follow-up
+actions with long ifelapsed times. This is a fundamental `feature' of
+voluntary cooperation: each party must take responsibilty for the sense
+of what it receives from the other. This feature will not be to
+everyone's taste, and it is unconventional. However, voluntary
+cooperation provides a way of collaborating without trust in a
+framework that forces us to confront the security issues directly.  As
+such, it is a successful experiment.
 
 
 File: cfengine-Reference.info,  Node: miscmounts,  Next: mountables,  Prev: methods,  Up: Cfagent reference
@@ -6664,6 +6778,8 @@ process command is
                              action=signal/DO/WARN/BYMATCH
                              include=LITERAL
                              exclude=LITERAL
+                             filter=FILTER_NAME
+     
                              syslog=TRUE/ON/FALSE/OFF
                              inform=TRUE/ON/FALSE/OFF
                              ifelapsed=MINS
@@ -8142,136 +8258,4 @@ instead of the default (5308) one.  Here is an example (`cfrun.hosts'):
 
    This connects to: 1) node1 with standard port, 2) node2 with port
 22000 and extra options -DNis and, 3) node2 with port 22000.
-
-
-File: cfengine-Reference.info,  Node: Cfexecd reference,  Next: Problem solving,  Prev: Cfservd.conf and cfrun reference,  Up: Top
-
-Cfexecd reference
-*****************
-
-In wrapper mode (non-forking, non-daemon mode), cfagent is run by
-adding a line to the root crontab file of each system:
-     0,30 * * * * /usr/local/sbin/cfexecd -F
-   This is enough to ensure that cfengine will get run. Any output
-generated by this job, will be stored in `/var/cfengine/outputs'.  In
-addition, if you add the following to the file `cfagent.conf', the
-system administrator will be emailed a summary of any output:
-
-     control:
-     
-     smtpserver    = ( mailhub.example.org ) # site MTA which can talk smtp
-     sysadm        = ( mark@example.org )   # mail address of sysadm
-     EmailMaxLines = ( N )             # max lines of output to email
-     OutputPrefix  = ( "!" )                 # Line prefix
-
-Fill in suitable values for these variables. `EmailMaxLines' may be set
-to 0 to disable email output, a postive integer to set a limit, or
-`inf' to email the whole output regardless of its size. If undefined,
-`EmailMaxLines' defaults to 100.
-
-   An alternative, or additional way to run cfengine, is to run the
-`cfexecd' program is daemon mode (without the `-F') option. In this
-mode, the daemon lives in the background and sleeps, activating only in
-accordance with a scheduling policy. The default policy is to run once
-every hour (equivalent to `Min00_05'). Here is how you would modify
-`cfagent.conf' in order to make the daemon execute cfagent every
-half-hour:
-       control:
-     
-        # When should cfexecd in daemon mode wake up the agent?
-     
-        schedule   = ( Min00_05 Min30_35 )
-   Note that the time specifications are the basic cfengine _time
-classes_.  Although one of these methods should suffice, no harm will
-arise from running both cron and the cfexecd side-by-side.  Cfagents
-locking mechanisms ensure that no contention will occur.
-
-   Note, that if problems with library path for compiled in libraries
-occur, an explicit library path can be specified with the `-L' option.
-     0,30 * * * * /usr/local/sbin/cfexecd -F -L /local/iu/lib:/local/lib/mysql:/local/lib:/local/gnu/lib
-
-
-File: cfengine-Reference.info,  Node: Problem solving,  Next: Example configuration file,  Prev: Cfexecd reference,  Up: Top
-
-Problem solving
-***************
-
-* Menu:
-
-* cf.preconf bootstrap file::
-* cfrc resource file::
-
-
-File: cfengine-Reference.info,  Node: cf.preconf bootstrap file,  Next: cfrc resource file,  Prev: Problem solving,  Up: Problem solving
-
-`cf.preconf' bootstrap file
-===========================
-
-In some cases you will want to run cfengine on a system to configure it
-from scratch.  If the system is in a very bad way, it might not even be
-able to parse the cfengine configuration file, perhaps because the
-network was not properly configured or the DNS (Domain Name Service) was
-out of action.  To help prevent this situation, cfengine looks for a
-script called `cf.preconf' which gets executed prior to parsing and can
-be used to perform any emergency tests.  This file needs only contain
-enough to get the system to parse the configuration files.
-
-   `cf.preconf' may be any script in any language.  It need not exist
-at all! It is fed one argument by cfengine, namely the system hard-class
-for the current system (e.g.  `ultrix').  Here is an example:
-
-     #!/bin/sh
-     #
-     # cf.preconf is an emergency/bootstrap file to get things going
-     # in case cfengine is unable to parse its config file
-     #
-     
-     backupdir=/iu/nexus/local/iu/etc
-     
-      #
-      # If these files don't exist, you might not be able to parse cfagent.conf
-      #
-     
-     if [ ! -s /etc/resolv.conf ]; then
-     
-      echo Patching basics resolv.conf file
-      cat > /etc/resolv.conf << XX
-     domain iu.hioslo.no
-     nameserver 128.39.89.10
-     XX
-     
-     fi
-     
-     #
-     # SVR4
-     #
-     
-     if [ "$1" = "solaris" ]; then
-     
-       if [ ! -s "/etc/passwd" ]; then
-     
-       echo Patching missing passwd file
-         /bin/cp $backupdir/passwd /etc/passwd
-       fi
-     
-       if [ ! -s "/etc/shadow" ]; then
-     
-        echo Patching missing passwd file
-        /bin/cp $backupdir/shadow /etc/shadow
-       fi
-     fi
-     
-     #
-     # BSD 4.3
-     #
-     
-     if [ "$1" = "linux" ]; then
-     
-        if [ ! -s "/etc/passwd"  ]
-        then
-     
-         echo Patching missing passwd file
-         /bin/cp $backupdir/passwd.linux /etc/passwd
-        fi
-     fi
 

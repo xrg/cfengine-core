@@ -1871,6 +1871,11 @@ int CfRegcomp(regex_t *preg,const char *regex,int cflags)
 { int code;
   char buf[CF_BUFSIZE];
 
+if (regex == NULL || *regex == '\0')
+   {
+   return -1;
+   }
+
 code = regcomp(preg,regex,cflags);
  
 if (code != 0)

@@ -241,19 +241,33 @@ while ((c=getopt_long(argc,argv,"d:vhHFVT",CFDENVOPTIONS,&optindex)) != EOF)
    }
 
 LOGGING = true;                    /* Do output to syslog */
+
+/* XXX Initialize workdir for non privileged users */
+
+strcpy(CFWORKDIR,WORKDIR);
+
+if (getuid() > 0)
+   {
+   char *homedir;
+   if ((homedir = getenv("HOME")) != NULL)
+      {
+      strcpy(CFWORKDIR,homedir);
+      strcat(CFWORKDIR,"/.cfagent");
+      }
+   }
  
-sprintf(VBUFF,"%s/test",WORKDIR);
+sprintf(VBUFF,"%s/test",CFWORKDIR);
 MakeDirectoriesFor(VBUFF,'y');
-sprintf(VBUFF,"%s/state/test",WORKDIR);
+sprintf(VBUFF,"%s/state/test",CFWORKDIR);
 MakeDirectoriesFor(VBUFF,'y');
-strncpy(VLOCKDIR,WORKDIR,CF_BUFSIZE-1);
-strncpy(VLOGDIR,WORKDIR,CF_BUFSIZE-1);
+strncpy(VLOCKDIR,CFWORKDIR,CF_BUFSIZE-1);
+strncpy(VLOGDIR,CFWORKDIR,CF_BUFSIZE-1);
 
 for (i = 0; i < ATTR; i++)
    {
-   sprintf(VBUFF,"%s/state/cf_incoming.%s",WORKDIR,ECGSOCKS[i][1]);
+   sprintf(VBUFF,"%s/state/cf_incoming.%s",CFWORKDIR,ECGSOCKS[i][1]);
    CreateEmptyFile(VBUFF);
-   sprintf(VBUFF,"%s/state/cf_outgoing.%s",WORKDIR,ECGSOCKS[i][1]);
+   sprintf(VBUFF,"%s/state/cf_outgoing.%s",CFWORKDIR,ECGSOCKS[i][1]);
    CreateEmptyFile(VBUFF);
    }
 
@@ -263,13 +277,13 @@ for (i = 0; i < CF_NETATTR; i++)
    NETOUT_DIST[i] = NULL;
    }
  
-sprintf(VBUFF,"%s/state/cf_users",WORKDIR);
+sprintf(VBUFF,"%s/state/cf_users",CFWORKDIR);
 CreateEmptyFile(VBUFF);
  
-snprintf(AVDB,CF_BUFSIZE,"%s/state/%s",WORKDIR,CF_AVDB_FILE);
-snprintf(STATELOG,CF_BUFSIZE,"%s/state/%s",WORKDIR,CF_STATELOG_FILE);
-snprintf(ENV_NEW,CF_BUFSIZE,"%s/state/%s",WORKDIR,CF_ENVNEW_FILE);
-snprintf(ENV,CF_BUFSIZE,"%s/state/%s",WORKDIR,CF_ENV_FILE);
+snprintf(AVDB,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_AVDB_FILE);
+snprintf(STATELOG,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_STATELOG_FILE);
+snprintf(ENV_NEW,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_ENVNEW_FILE);
+snprintf(ENV,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_ENV_FILE);
 
 if (!BATCH_MODE)
    {
@@ -422,7 +436,7 @@ if (HISTO)
    {
    char filename[CF_BUFSIZE];
    
-   snprintf(filename,CF_BUFSIZE,"%s/state/histograms",WORKDIR);
+   snprintf(filename,CF_BUFSIZE,"%s/state/histograms",CFWORKDIR);
    
    if ((fp = fopen(filename,"r")) == NULL)
       {
@@ -1063,7 +1077,7 @@ while (!feof(pp))
 
 cfpclose(pp);
 
-snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_users",WORKDIR);
+snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_users",CFWORKDIR);
 SaveItemList(list,VBUFF,"none");
  
 Verbose("(Users,root,other) = (%d,%d,%d)\n",NUMBER_OF_USERS,ROOTPROCS,OTHERPROCS);
@@ -1246,7 +1260,7 @@ while (!feof(pp))
     time_t now = time(NULL);
     
     Debug("save incoming %s\n",ECGSOCKS[i][1]);
-    snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_incoming.%s",WORKDIR,ECGSOCKS[i][1]);
+    snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_incoming.%s",CFWORKDIR,ECGSOCKS[i][1]);
     if (stat(VBUFF,&statbuf) != -1)
        {
        if ((ByteSizeList(in[i]) < statbuf.st_size) && (now < statbuf.st_mtime+40*60))
@@ -1269,7 +1283,7 @@ while (!feof(pp))
     time_t now = time(NULL); 
 
     Debug("save outgoing %s\n",ECGSOCKS[i][1]);
-    snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_outgoing.%s",WORKDIR,ECGSOCKS[i][1]);
+    snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_outgoing.%s",CFWORKDIR,ECGSOCKS[i][1]);
 
     if (stat(VBUFF,&statbuf) != -1)
        {       
@@ -1294,7 +1308,7 @@ while (!feof(pp))
     time_t now = time(NULL); 
     
     Debug("save incoming %s\n",TCPNAMES[i]);
-    snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_incoming.%s",WORKDIR,TCPNAMES[i]);
+    snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_incoming.%s",CFWORKDIR,TCPNAMES[i]);
     
     if (stat(VBUFF,&statbuf) != -1)
        {       
@@ -1320,7 +1334,7 @@ while (!feof(pp))
     time_t now = time(NULL); 
  
     Debug("save outgoing %s\n",TCPNAMES[i]);
-    snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_outgoing.%s",WORKDIR,TCPNAMES[i]);
+    snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_outgoing.%s",CFWORKDIR,TCPNAMES[i]);
     
     if (stat(VBUFF,&statbuf) != -1)
        {       
@@ -1504,8 +1518,6 @@ if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
       return NULL;
       }
    }
- 
-dbp->close(dbp,0);
 
 AGE++;
 WAGE = AGE / CF_WEEK * CF_MEASURE_INTERVAL;
@@ -1514,11 +1526,13 @@ if (value.data != NULL)
    {
    memcpy(&entry,value.data,sizeof(entry));
    Debug("Previous values (%lf,..) for time index %s\n\n",entry.expect_number_of_users,timekey);
+   dbp->close(dbp,0);
    return &entry;
    }
 else
    {
    Debug("No previous value for time index %s\n",timekey);
+   dbp->close(dbp,0);
    return &entry;
    }
 }
@@ -1682,7 +1696,7 @@ if (HISTO)
       FILE *fp;
       char filename[CF_BUFSIZE];
       
-      snprintf(filename,CF_BUFSIZE,"%s/state/histograms",WORKDIR);
+      snprintf(filename,CF_BUFSIZE,"%s/state/histograms",CFWORKDIR);
       
       if ((fp = fopen(filename,"w")) == NULL)
          {
@@ -1896,7 +1910,8 @@ for (i = 0; i < CF_NETATTR; i++)
 double RejectAnomaly(double new,double average,double variance,double localav,double localvar)
 
 { double dev = sqrt(variance+localvar);          /* Geometrical average dev */
- double delta;
+  double delta;
+  int bigger;
 
 if (average == 0)
    {
@@ -1912,7 +1927,16 @@ if ((new - average)*(new-average) < cf_noise_threshold*cf_noise_threshold)
    {
    return new;
    }
- 
+
+if (new - average > 0)
+   {
+   bigger = true;
+   }
+else
+   {
+   bigger = false;
+   }
+
 /* This routine puts some inertia into the changes, so that the system
    doesn't respond to every little change ...   IR and UV cutoff */
  
@@ -1920,7 +1944,7 @@ delta = sqrt((new-average)*(new-average)+(new-localav)*(new-localav));
 
 if (delta > 4.0*dev)  /* IR */
    {
-   srand((unsigned int)time(NULL)); 
+   srand48((unsigned int)time(NULL)); 
    
    if (drand48() < 0.7) /* 70% chance of using full value - as in learning policy */
       {
@@ -1928,7 +1952,14 @@ if (delta > 4.0*dev)  /* IR */
       }
    else
       {
-      return average+2.0*dev;
+      if (bigger)
+         {
+         return average+2.0*dev;
+         }
+      else
+         {
+         return average-2.0*dev;
+         }
       }
    }
 else
@@ -2094,11 +2125,11 @@ if (list == NULL)
 
  if (strncmp(inout,"in",2) == 0)
     {
-    snprintf(filename,CF_BUFSIZE-1,"%s/state/cf_incoming.%s",WORKDIR,TCPNAMES[i]); 
+    snprintf(filename,CF_BUFSIZE-1,"%s/state/cf_incoming.%s",CFWORKDIR,TCPNAMES[i]); 
     }
  else
     {
-    snprintf(filename,CF_BUFSIZE-1,"%s/state/cf_outgoing.%s",WORKDIR,TCPNAMES[i]); 
+    snprintf(filename,CF_BUFSIZE-1,"%s/state/cf_outgoing.%s",CFWORKDIR,TCPNAMES[i]); 
     }
 
 Verbose("TCP Save %s\n",filename);

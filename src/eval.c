@@ -512,7 +512,7 @@ int IsDefinedClass(char *class)
   /* is currently true, given the defined heap and negations */
 
 {
- Debug4("IsDefinedClass(%s,VADDCLASSES)\n",class);
+Debug4("IsDefinedClass(%s,VADDCLASSES)\n",class);
 
 if (class == NULL)
    {

@@ -932,6 +932,7 @@ if (S_ISLNK(lstatptr->st_mode))
 if (S_ISREG(lstatptr->st_mode))
    {
    PrependItem(&attrib,"reg","");
+   PrependItem(&attrib,"file","");
    }
 
 if (S_ISDIR(lstatptr->st_mode))
@@ -1006,7 +1007,8 @@ for (i = 0; names[i] != NULL; i++)
             return true;
             }
          }
-      
+
+      Debug("No match of (%s) to (%s)\n",expr,line[i]);
       regfree(&rx);
       return false;      
       }

@@ -155,7 +155,12 @@ if (strncmp(dnsname,localip,strlen(localip)) == 0)
    strcpy(dnsname,localip);
    }
 
- snprintf(sendbuff,CF_BUFSIZE-1,"CAUTH %s %s %s %d",localip,dnsname,uname,CFSIGNATURE);
+if (strlen(dnsname) == 0)
+   {
+   strcpy(dnsname,localip);
+   }
+
+snprintf(sendbuff,CF_BUFSIZE-1,"CAUTH %s %s %s %d",localip,dnsname,uname,CFSIGNATURE);
 
 Debug("SENT:::%s\n",sendbuff);
  

@@ -84,6 +84,7 @@ struct option CFDOPTIONS[] =
    };
 
 char MAILTO[CF_BUFSIZE];
+char MAILFROM[CF_BUFSIZE];
 int MAXLINES = -1;
 const int INF_LINES = -2;
 
@@ -211,33 +212,51 @@ while ((c=getopt_long(argc,argv,"L:d:vhpFV1g",CFDOPTIONS,&optindex)) != EOF)
  
 LOGGING = true;                    /* Do output to syslog */
 
-snprintf(VBUFF,CF_BUFSIZE,"%s/inputs/update.conf",WORKDIR);
+ /* XXX Initialize workdir for non privileged users */
+
+strcpy(CFWORKDIR,WORKDIR);
+
+if (getuid() > 0)
+   {
+   char *homedir;
+   if ((homedir = getenv("HOME")) != NULL)
+      {
+      strcpy(CFWORKDIR,homedir);
+      strcat(CFWORKDIR,"/.cfagent");
+      }
+   }
+
+snprintf(VBUFF,CF_BUFSIZE,"%s/inputs/update.conf",CFWORKDIR);
 MakeDirectoriesFor(VBUFF,'y');
-snprintf(VBUFF,CF_BUFSIZE,"%s/bin/cfagent",WORKDIR);
+snprintf(VBUFF,CF_BUFSIZE,"%s/bin/cfagent -D from_cfexecd",CFWORKDIR);
 MakeDirectoriesFor(VBUFF,'y');
-snprintf(VBUFF,CF_BUFSIZE,"%s/outputs/spooled_reports",WORKDIR);
+snprintf(VBUFF,CF_BUFSIZE,"%s/outputs/spooled_reports",CFWORKDIR);
 MakeDirectoriesFor(VBUFF,'y');
 
-snprintf(VBUFF,CF_BUFSIZE,"%s/inputs",WORKDIR);
+snprintf(VBUFF,CF_BUFSIZE,"%s/inputs",CFWORKDIR);
 chmod(VBUFF,0700); 
-snprintf(VBUFF,CF_BUFSIZE,"%s/outputs",WORKDIR);
+snprintf(VBUFF,CF_BUFSIZE,"%s/outputs",CFWORKDIR);
 chmod(VBUFF,0700);
 
-strncpy(VLOCKDIR,WORKDIR,CF_BUFSIZE-1);
-strncpy(VLOGDIR,WORKDIR,CF_BUFSIZE-1);
+strncpy(VLOCKDIR,CFWORKDIR,CF_BUFSIZE-1);
+strncpy(VLOGDIR,CFWORKDIR,CF_BUFSIZE-1);
 
 VCANONICALFILE = strdup(CanonifyName(VINPUTFILE));
 GetNameInfo();
 
 strcpy(VUQNAME,VSYSNAME.nodename);
-}
 
+MAILTO[0] = '\0';
+MAILFROM[0] = '\0';
+VIPADDRESS[0] = '\0';
+VMAILSERVER[0] = '\0';
+}
 
 /*******************************************************************/
 
 void StartServer(int argc,char **argv)
 
-{ int time_to_run = false;
+{ int pid,time_to_run = false;
   time_t now = time(NULL); 
 
 Banner("Starting server");
@@ -386,8 +405,10 @@ void GetCfStuff()
   char cfcom[CF_BUFSIZE];
   static char line[CF_BUFSIZE];
 
-snprintf(cfcom,CF_BUFSIZE-1,"%s/bin/cfagent -z",WORKDIR);
- 
+/* Do not init variables here, in case we can use previous values. */
+  
+snprintf(cfcom,CF_BUFSIZE-1,"%s/bin/cfagent -Q smtpserver,sysadm,fqhost,ipaddress,EmailMaxLines,EmailFrom,EmailTo -D from_cfexecd",CFWORKDIR);
+
 if ((pp=cfpopen(cfcom,"r")) ==  NULL)
    {
    CfLog(cferror,"Couldn't start cfengine!","cfpopen");
@@ -395,75 +416,85 @@ if ((pp=cfpopen(cfcom,"r")) ==  NULL)
    return;
    }
 
-line[0] = '\0'; 
-fgets(line,CF_BUFSIZE,pp); 
-Chop(line); 
-
-while (strstr(line,":"))
+while (!feof(pp))
    {
+   char name[CF_BUFSIZE],content[CF_BUFSIZE];
    line[0] = '\0'; 
    fgets(line,CF_BUFSIZE,pp); 
-   Chop(line);    
+   Chop(line); 
+   sscanf(line,"%[^=]=%[^\n]",name,content);
+    
+   if (strcmp(name,"sysadm") == 0)
+      {
+      strncpy(MAILTO,content,CF_MAXVARSIZE-1);
+      Debug("%s\n",line);
+      continue;
+      }
+
+   if (strcmp(name,"smtpserver") == 0)
+      {
+      Debug("%s/%s\n",name,content);
+      strncpy(VMAILSERVER,content,CF_MAXVARSIZE-1);
+      continue;
+      }
+   
+   if (strcmp(name,"fqhost") == 0)
+      {
+      Debug("%s/%s\n",name,content);
+      strncpy(VFQNAME,content,CF_MAXVARSIZE-1);
+      continue;
+      }
+
+   if (strcmp(name,"ipaddress") == 0)
+      {
+      Debug("%s/%s\n",name,content);
+      strncpy(VIPADDRESS,content,CF_MAXVARSIZE-1);
+      continue;
+      }
+
+   if (strcmp(name,"EmailMaxLines") == 0)
+      {
+      Debug("%s/%s\n",name,content);
+      MAXLINES = 20;
+      sscanf(content,"%d",&MAXLINES);
+      continue;
+      }
+
+   if (strcmp(name,"EmailFrom") == 0)
+      {
+      Debug("%s/%s\n",name,content);
+      if (strstr(content,"$") == NULL && strlen(content) > 0)
+         {
+         strncpy(MAILFROM,content,CF_MAXVARSIZE-1);
+         continue;
+         }
+      }
+   
+   if (strcmp(name,"EmailTo") == 0)
+      {
+      Debug("%s/%s\n",name,content);
+      if (strstr(content,"$") == NULL && strlen(content) > 0)
+         {
+         strncpy(MAILTO,content,CF_MAXVARSIZE-1);
+         continue;
+         }
+      }
    }
 
-if (strstr(line,"No SMTP"))
-   {
-   CfLog(cferror,"cfengine defines no SMTP server -- or perhaps a syntax error in the config","");
-   CfLog(cferror,"Need: smtpserver = ( ?? ) in control ","");
-   }
+cfpclose(pp);
 
-strcpy(VMAILSERVER,line); 
+Debug("Got(to:%s,serv:%s,host:%s,ip:%s,max:%d,from:%s)\n",MAILTO,VMAILSERVER,VFQNAME,VIPADDRESS,MAXLINES,MAILFROM); 
  
-Debug("Got cfengine SMTP server as (%s)\n",VMAILSERVER); 
-
-line[0] = '\0'; 
-fgets(line,CF_BUFSIZE,pp); 
-Chop(line); 
-
-if (strlen(line) == 0)
+/* Now get schedule */
+  
+snprintf(cfcom,CF_BUFSIZE-1,"%s/bin/cfagent -z -D from_cfexecd",CFWORKDIR);
+ 
+if ((pp=cfpopen(cfcom,"r")) ==  NULL)
    {
-   CfLog(cferror,"cfengine defines no system administrator address","");
-   CfLog(cferror,"Need: sysadm = ( ??@?? ) in control ","");
-   }
-
-strcpy(MAILTO,line); 
-Debug("Got cfengine sysadm variable (%s)\n",MAILTO); 
-
-line[0] = '\0'; 
-fgets(line,CF_BUFSIZE,pp); 
-Chop(line); 
-strcpy(VFQNAME,line); 
-Debug("Got fully qualified name (%s)\n",VFQNAME); 
-
-line[0] = '\0'; 
-fgets(line,CF_BUFSIZE,pp); 
-Chop(line); 
-strcpy(VIPADDRESS,line); 
-Debug("Got IP (%s)\n",VIPADDRESS); 
-
-if ((ungetc(fgetc(pp), pp)) != '[')
-   {
+   CfLog(cferror,"Couldn't start cfengine!","cfpopen");
    line[0] = '\0';
-   fgets(line,CF_BUFSIZE,pp);
-   Chop(line);
-   if (sscanf(line, "%d", &MAXLINES) == 1)
-      {
-      Debug("Got max lines (%d)\n", MAXLINES); 
-      }
-   else if (strcmp(line, "inf") == 0)
-      {
-      Debug("Infinite lines\n");
-      MAXLINES = INF_LINES;
-      }
+   return;
    }
-
-if (MAXLINES == -1)
-   {
-   MAXLINES = 100;
-   Debug("Defaulting to max lines (%d)\n", MAXLINES);
-   }
-
-/* Now get scheduling constraints */
 
 DeleteItemList(SCHEDULE);
 SCHEDULE = NULL; 
@@ -545,6 +576,23 @@ exit(0);
 
 /**************************************************************/
 
+static char *timestamp(time_t stamp, char *buf, size_t len)
+{
+  struct tm *ltime;
+
+  ltime = localtime(&stamp);
+  snprintf(buf, len, "%04d-%02d-%02d--%02d-%02d-%02d",
+		      ltime->tm_year+1900,
+		      ltime->tm_mon+1,
+		      ltime->tm_mday,
+		      ltime->tm_hour,
+		      ltime->tm_min,
+		      ltime->tm_sec);
+  return buf;
+}
+
+/**************************************************************/
+
 void *LocalExec(void *dummy)
 
 { FILE *pp; 
@@ -569,17 +617,17 @@ Verbose("------------------------------------------------------------------\n");
 
 if (NOSPLAY)
    {
-   snprintf(cmd,CF_BUFSIZE-1,"%s/bin/cfagent -q",WORKDIR);
+   snprintf(cmd,CF_BUFSIZE-1,"%s/bin/cfagent -q",CFWORKDIR);
    }
 else
    {
-   snprintf(cmd,CF_BUFSIZE-1,"%s/bin/cfagent",WORKDIR);
+   snprintf(cmd,CF_BUFSIZE-1,"%s/bin/cfagent",CFWORKDIR);
    }
  
-snprintf(line,100,CanonifyName(ctime(&starttime)));
-snprintf(filename,CF_BUFSIZE-1,"%s/outputs/cf_%s_%s",WORKDIR,CanonifyName(VFQNAME),line);
+timestamp(starttime, line, CF_BUFSIZE);
 
-
+snprintf(filename,CF_BUFSIZE-1,"%s/outputs/cf_%s_%s",CFWORKDIR,CanonifyName(VFQNAME),line);
+ 
 /* What if no more processes? Could sacrifice and exec() - but we need a sentinel */
 
 if ((fp = fopen(filename,"w")) == NULL)
@@ -796,7 +844,7 @@ if (stat(file,&statbuf) == -1)
    }
 
 /* HvB: Bas van der Vlies */
-snprintf(prev_file,CF_BUFSIZE-1,"%s/outputs/previous",WORKDIR);
+snprintf(prev_file,CF_BUFSIZE-1,"%s/outputs/previous",CFWORKDIR);
  
 if (statbuf.st_size == 0)
    {
@@ -920,23 +968,31 @@ if (!Dialogue(sd,NULL))
 sprintf(VBUFF,"HELO %s\r\n",VFQNAME); 
 Debug("%s",VBUFF);
 
- if (!Dialogue(sd,VBUFF))
-     {
-     goto mail_err;
-     }
-
-domain[0] = '\0';
-sscanf(to,"%*[^@]@%.64s",domain);
-
-if (strlen(domain) > 0)
+if (!Dialogue(sd,VBUFF))
    {
-   sprintf(VBUFF,"MAIL FROM: <cfengine@%s>\r\n",domain);
-   Debug("%s",VBUFF);
+   goto mail_err;
+   }
+
+if (strlen(MAILFROM) > 0)
+   {
+   sprintf(VBUFF,"MAIL FROM: <%s>\r\n",MAILFROM);
+   Debug("%s",VBUFF);   
    }
 else
    {
-   sprintf(VBUFF,"MAIL FROM: <%s>\r\n",to);
-   Debug("%s",VBUFF);   
+   domain[0] = '\0';
+   sscanf(to,"%*[^@]@%.64s",domain);
+   
+   if (strlen(domain) > 0)
+      {
+      sprintf(VBUFF,"MAIL FROM: <cfengine@%s>\r\n",domain);
+      Debug("%s",VBUFF);
+      }
+   else
+      {
+      sprintf(VBUFF,"MAIL FROM: <%s>\r\n",to);
+      Debug("%s",VBUFF);   
+      }
    }
 
 if (!Dialogue(sd,VBUFF))
@@ -978,9 +1034,19 @@ strftime(VBUFF,CF_BUFSIZE,"Date: %a, %d %b %Y %H:%M:%S %z\r\n",localtime(&now));
 sent=send(sd,VBUFF,strlen(VBUFF),0);
 #endif
 
-sprintf(VBUFF,"From: cfengine@%s\r\n",VFQNAME);
-Debug("%s",VBUFF);
+ if (strlen(MAILFROM) == 0)
+    {
+    sprintf(VBUFF,"From: cfengine@%s\r\n",VFQNAME);
+    Debug("%s",VBUFF);
+    }
+ else
+    {
+    sprintf(VBUFF,"From: cfengine@%s\r\n",VFQNAME);
+    Debug("%s",VBUFF);    
+    }
+ 
 sent=send(sd,VBUFF,strlen(VBUFF),0);
+
 sprintf(VBUFF,"To: %s\r\n\r\n",to); 
 Debug("%s",VBUFF);
 sent=send(sd,VBUFF,strlen(VBUFF),0);

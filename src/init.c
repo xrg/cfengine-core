@@ -76,8 +76,8 @@ else
    MakeDirectoriesFor(VBUFF,'n');
    snprintf(VBUFF,CF_BUFSIZE,"%s/state/test",VLOGDIR);
    MakeDirectoriesFor(VBUFF,'n');
-   snprintf(CFPRIVKEYFILE,CF_BUFSIZE,"%s/ppkeys/localhost.priv",WORKDIR);
-   snprintf(CFPUBKEYFILE,CF_BUFSIZE,"%s/ppkeys/localhost.pub",WORKDIR);
+   snprintf(CFPRIVKEYFILE,CF_BUFSIZE,"%s/ppkeys/localhost.priv",CFWORKDIR);
+   snprintf(CFPUBKEYFILE,CF_BUFSIZE,"%s/ppkeys/localhost.pub",CFWORKDIR);
    }
 
 Verbose("Checking integrity of the state database\n");

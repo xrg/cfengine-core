@@ -256,12 +256,26 @@ else
 Debug("FQNAME = %s\n",VFQNAME);
  
 sprintf(VPREFIX,"cfrun:%s",VFQNAME);
- 
+
+ /* XXX Initialize workdir for non privileged users */
+
+ strcpy(CFWORKDIR,WORKDIR);
+
+ if (getuid() > 0)
+    {
+    char *homedir;
+    if ((homedir = getenv("HOME")) != NULL)
+       {
+       strcpy(CFWORKDIR,homedir);
+       strcat(CFWORKDIR,"/.cfagent");
+       }
+    }
+
 /* Read hosts file */
 
 umask(077);
-strcpy(VLOCKDIR,WORKDIR);
-strcpy(VLOGDIR,WORKDIR); 
+strcpy(VLOCKDIR,CFWORKDIR);
+strcpy(VLOGDIR,CFWORKDIR); 
 
 OpenSSL_add_all_algorithms();
 ERR_load_crypto_strings();
@@ -572,7 +586,7 @@ if (!strchr(VCFRUNHOSTS, '/'))
       }
    else
       {
-      snprintf(filename, CF_BUFSIZE, "%s/inputs/", WORKDIR);
+      snprintf(filename, CF_BUFSIZE, "%s/inputs/", CFWORKDIR);
       }
    }
  

@@ -147,8 +147,22 @@ void Initialize()
 
 {
 umask(077);
-strcpy(VLOCKDIR,WORKDIR);
-strcpy(VLOGDIR,WORKDIR); 
+ /* XXX Initialize workdir for non privileged users */
+
+ strcpy(CFWORKDIR,WORKDIR);
+
+ if (geteuid() > 0)
+    {
+    char *homedir;
+    if ((homedir = getenv("HOME")) != NULL)
+       {
+       strcpy(CFWORKDIR,homedir);
+       strcat(CFWORKDIR,"/.cfagent");
+       }
+    }
+ 
+strcpy(VLOCKDIR,CFWORKDIR);
+strcpy(VLOGDIR,CFWORKDIR); 
 
 OpenSSL_add_all_algorithms();
 ERR_load_crypto_strings();

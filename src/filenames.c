@@ -749,7 +749,11 @@ return buffer;
 
 void CreateEmptyFile(char *name)
 
-{ FILE *fp;
+{ int tempfd;
+
+/*
+
+FILE *fp;
 
 if ((fp = fopen(name,"w")) == NULL)
    {
@@ -759,6 +763,21 @@ if ((fp = fopen(name,"w")) == NULL)
    }
 
 fclose(fp);
+
+*/
+
+if (unlink(name) == -1)
+   {
+   Debug("Pre-existing object %s could not be removed or was not there\n",VLOGFILE);
+   }
+
+if ((tempfd = open(name, O_CREAT|O_EXCL|O_WRONLY,0600)) < 0)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"Couldn't open a file %s\n",VLOGFILE);  
+   CfLog(cfverbose,OUTPUT,"open");
+   }
+
+close(tempfd);
 }
 
 

@@ -49,7 +49,7 @@ snprintf(VBUFF,CF_BUFSIZE,"%s/randseed",VLOGDIR);
 
  if (stat(VBUFF,&statbuf) == -1)
     {
-    snprintf(AVDB,CF_BUFSIZE,"%s/%s",WORKDIR,CF_AVDB_FILE);
+    snprintf(AVDB,CF_BUFSIZE,"%s/%s",CFWORKDIR,CF_AVDB_FILE);
     }
  else
     {
@@ -153,7 +153,7 @@ if (!IsPrivileged())
    }
 else
    {
-   snprintf(filename,CF_BUFSIZE,"%s/ppkeys/%s.pub",WORKDIR,name);
+   snprintf(filename,CF_BUFSIZE,"%s/ppkeys/%s.pub",CFWORKDIR,name);
    }
  
 if (stat(filename,&statbuf) == -1)
@@ -215,7 +215,7 @@ if (!IsPrivileged())
    }
 else
    {
-   snprintf(filename,CF_BUFSIZE,"%s/ppkeys/%s.pub",WORKDIR,name);
+   snprintf(filename,CF_BUFSIZE,"%s/ppkeys/%s.pub",CFWORKDIR,name);
    }
 
 if (stat(filename,&statbuf) != -1)
@@ -262,7 +262,7 @@ if (!IsPrivileged())
    }
 else
    {
-   snprintf(filename,CF_BUFSIZE,"%s/ppkeys/%s.pub",WORKDIR,name);
+   snprintf(filename,CF_BUFSIZE,"%s/ppkeys/%s.pub",CFWORKDIR,name);
    }
 
 unlink(filename);

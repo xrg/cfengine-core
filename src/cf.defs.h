@@ -343,6 +343,7 @@ extern int errno;
 #define CF_NOUSER -99
 #define CF_RSA_PROTO_OFFSET 24
 #define CF_PROTO_OFFSET 16
+#define CF_INBAND_OFFSET 8
 #define CF_SMALL_OFFSET 2
 #define CF_MD5_LEN 16
 #define CF_SHA_LEN 20
@@ -422,6 +423,14 @@ struct LastSeen
    {
    double expect_lastseen;
    time_t lastseen;      
+   };
+
+
+
+struct LockData
+   {
+   pid_t pid;
+   time_t time;
    };
 
 /*******************************************************************/
@@ -1037,6 +1046,7 @@ enum editnames
    BeginGroupIfDefined,
    BeginGroupIfNotDefined,
    AutoCreate,
+   WarnIfFileMissing,
    ForEachLineIn,
    EndLoop,
    ReplaceLinesMatchingField,
@@ -1143,6 +1153,7 @@ enum pkgmgrs    /* Available package managers to query in packages: */
    {
    pkgmgr_rpm,
    pkgmgr_dpkg,
+   pkgmgr_sun,
    pkgmgr_none
    };
 
@@ -1669,6 +1680,7 @@ struct Link
 struct Edit
    {
    char done;     /* Have this here, too dangerous in Edlist */
+   char warn;
    char *scope;
    char *fname;
    char *defines;

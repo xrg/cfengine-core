@@ -1,4 +1,76 @@
 
+2.1.11
+
+	SUPPORT FOR POSIX ACLS IN LINUX IS NOT AS STRAIGHTFORWARD AS
+	ORIGINALLY THOUGHT.  THE API DOES NOT MATCH EXISTING
+	IMPLEMENTATIONS AND SEEMS SIGNIFICANTLY MORE COMPLEX. IN THE
+	INTERESTS OF STABILITY THIS WILL HAVE TO BE DEFERRED TO A LATER
+	RELEASE.
+
+	Comma in function argument bug in FileExists etc, fixed
+	
+	Option -z (--schedule) now prints only the run schedule.  Option
+	-Q (--query) added to print values of variables defined in
+	configuration
+	 
+	  cfagent -Q sysadm,domain,site,ipaddress
+
+	in format  varname=value
+
+	New variables can be used in cfagent.conf for cfexecd control:
+	
+	  EmailFrom = ( )
+	  EmailTo   = ( )  - overrides sysadm if set
+
+	
+	White Box linux class recognition added
+
+
+	When setting classes or variables by function call, the function
+	evaluation is no longer performed if it is not in an active class.
+	
+	Cfexecd now calls cfagent with -D from_cfexecd to define the class
+	"from_cfexecd::" when run from the executor
+	
+	WarnIfFileMissing added to editfiles and default is not to warn
+	of non-existent files, except in inform/verbose modes.
+	
+	Check added for DefineInGroup, signals error if not in group
+	Added copy type "any" for any matching criteria, date/sum etc.
+
+	Respository variable was not expanded like a normal variable
+	
+	cfshow tool added for consulting the databases
+
+	Better autodetection of Berkeley DB in some distros of Linux (SuSE) - has anyone heard of "standards"?
+	Date format changed in cfexecd output files
+	Errors if remote copy is not encrypted when server demands encryption. (patch)
+	
+	Renaming of directories is now allowed if dest= is set specifically.
+	
+	Check added for variables defined in terms of undefined variables.
+	
+	Patch for solaris package manager added (Louis Erickson - wwonko@rdwarf.com)
+
+	file added as synonym til reg in filter
+	
+	Patch to HostRange (item.c) (rader@ginseng.hep.wisc.edu)
+	Internal variable determining WORKDIR for non-privileged users.
+
+	Various minor changes and cosmetics.
+	
+	Lock string must include server name in copy - added
+	Method reply bundles fixed to work correctly with ipv6 addresses
+
+	SIGPIPE and SIGCHLD added to signal handler (SIGCHILD ignored against posix, but
+	how the hell do you sort this out?)
+	srand -> srand48 typo in cfenvd
+
+	Multiple method reply variables were incorrectly separated.
+	Added options to disable LastSeen data recording feature.
+
+	fclose used instead of pclose when calling ifconfig - resulted in zombies
+	
 2.1.10
 
 	Persistent class protection added to returned remote vrpc calls to prevent

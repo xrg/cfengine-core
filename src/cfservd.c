@@ -267,12 +267,26 @@ if ((CFSTARTTIME = time((time_t *)NULL)) == -1)
    {
    CfLog(cferror,"Couldn't read system clock\n","time");
    }
- 
-snprintf(vbuff,CF_BUFSIZE,"%s/test",WORKDIR);
+
+ /* XXX Initialize workdir for non privileged users */
+
+ strcpy(CFWORKDIR,WORKDIR);
+
+ if (getuid() > 0)
+    {
+    char *homedir;
+    if ((homedir = getenv("HOME")) != NULL)
+       {
+       strcpy(CFWORKDIR,homedir);
+       strcat(CFWORKDIR,"/.cfagent");
+       }
+    }
+
+snprintf(vbuff,CF_BUFSIZE,"%s/test",CFWORKDIR);
 
 MakeDirectoriesFor(vbuff,'y');
-strncpy(VLOGDIR,WORKDIR,CF_BUFSIZE-1);
-strncpy(VLOCKDIR,WORKDIR,CF_BUFSIZE-1);
+strncpy(VLOGDIR,CFWORKDIR,CF_BUFSIZE-1);
+strncpy(VLOCKDIR,CFWORKDIR,CF_BUFSIZE-1);
 
 VIFELAPSED = CF_EXEC_IFELAPSED;
 VEXPIREAFTER = CF_EXEC_EXPIREAFTER;
@@ -315,6 +329,11 @@ if ((CFDSTARTTIME = time((time_t *)NULL)) == -1)
 if (OptionIs(CONTEXTID,"CheckIdent", true))
    {
    CHECK_RFC931 = true;
+   }
+
+if (OptionIs(CONTEXTID,"LastSeen",false))
+   {
+   LASTSEEN = false;
    }
 
 if (OptionIs(CONTEXTID,"DenyBadClocks", false)) 
@@ -542,6 +561,7 @@ signal(SIGINT,(void*)ExitCleanly);
 signal(SIGTERM,(void*)ExitCleanly);
 signal(SIGHUP,SIG_IGN);
 signal(SIGPIPE,SIG_IGN);
+signal(SIGCHLD,SIG_IGN);
  
 if (listen(sd,queuesize) == -1)
    {
@@ -994,7 +1014,7 @@ else
    {
    if (!IsAbsoluteFileName(VINPUTFILE)) /* Don't prepend to absolute names */
       {
-      strncpy(filename,WORKDIR,CF_BUFSIZE-1);
+      strncpy(filename,CFWORKDIR,CF_BUFSIZE-1);
       AddSlash(filename);
       strncat(filename,"inputs/",CF_BUFSIZE-1-strlen(filename));
       }
@@ -1752,13 +1772,23 @@ if ((conn->trust == false) || IsFuzzyItemIn(SKIPVERIFY,MapAddress(conn->ipaddr))
       conn->uid = pw->pw_uid;
       }
 
-   LastSeen(dns_assert,cf_accept);
+   if (LASTSEEN)
+      {
+      LastSeen(dns_assert,cf_accept);
+      }
+   
    return true;
    }
  
 if (strcmp(ip_assert,MapAddress(conn->ipaddr)) != 0)
    {
    Verbose("IP address mismatch between client's assertion (%s) and socket (%s) - untrustworthy connection\n",ip_assert,conn->ipaddr);
+   return false;
+   }
+
+if (strlen(dns_assert) == 0)
+   {
+   Verbose("DNS asserted name was empty - untrustworthy connection\n");
    return false;
    }
 
@@ -3061,7 +3091,7 @@ int IsWildKnownHost(RSA *oldkey,RSA *newkey,char *mipaddr,char *username)
   char keydb[CF_MAXVARSIZE];
 
 snprintf(keyname,CF_MAXVARSIZE,"%s-%s",username,mipaddr);
-snprintf(keydb,CF_MAXVARSIZE,"%s/ppkeys/dynamic",WORKDIR); 
+snprintf(keydb,CF_MAXVARSIZE,"%s/ppkeys/dynamic",CFWORKDIR); 
 
 Debug("The key does not match the known, key but the host has dynamic IP...\n"); 
  
@@ -3159,7 +3189,7 @@ void AddToKeyDB(RSA *newkey,char *mipaddr)
   DB *dbp;
   char keydb[CF_MAXVARSIZE];
 
-snprintf(keydb,CF_MAXVARSIZE,"%s/ppkeys/dynamic",WORKDIR); 
+snprintf(keydb,CF_MAXVARSIZE,"%s/ppkeys/dynamic",CFWORKDIR); 
   
 if ((DHCPLIST != NULL) && IsFuzzyItemIn(DHCPLIST,mipaddr))
    {

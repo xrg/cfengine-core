@@ -58,18 +58,18 @@ else
    wlen = len;
    }
     
-if (wlen > CF_BUFSIZE-8)
+if (wlen > CF_BUFSIZE-CF_INBAND_OFFSET)
    {
    FatalError("SendTransaction software failure");
    }
  
-snprintf(work,8,"%c %d",status,wlen);
+snprintf(work,CF_INBAND_OFFSET,"%c %d",status,wlen);
 
-memcpy(work+8,buffer,wlen);
+memcpy(work+CF_INBAND_OFFSET,buffer,wlen);
 
 Debug("Transaction Send[%s][Packed text]\n",work); 
  
-if (SendSocketStream(sd,work,wlen+8,0) == -1)
+if (SendSocketStream(sd,work,wlen+CF_INBAND_OFFSET,0) == -1)
    {
    return -1;
    }
@@ -81,21 +81,21 @@ return 0;
 
 int ReceiveTransaction(int sd,char *buffer,int *more)
 
-{ char proto[9];
+{ char proto[CF_INBAND_OFFSET+1];
   char status = 'x';
   unsigned int len = 0;
  
-memset(proto,0,9);
+memset(proto,0,CF_INBAND_OFFSET+1);
 
-if (RecvSocketStream(sd,proto,8,0) == -1)   /* Get control channel */
+if (RecvSocketStream(sd,proto,CF_INBAND_OFFSET,0) == -1)   /* Get control channel */
    {
    return -1;
    }
 
 sscanf(proto,"%c %u",&status,&len);
-Debug("Transaction Receive [%s][%s]\n",proto,proto+8);
+Debug("Transaction Receive [%s][%s]\n",proto,proto+CF_INBAND_OFFSET);
 
-if (len > CF_BUFSIZE - 8)
+if (len > CF_BUFSIZE - CF_INBAND_OFFSET)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Bad transaction packet -- too long (%c %d) Proto = %s ",status,len,proto);
    CfLog(cferror,OUTPUT,"");

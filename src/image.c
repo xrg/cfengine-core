@@ -48,54 +48,55 @@ void GetRemoteMethods()
  
 Banner("Looking for remote method collaborations");
 
- for (ip = VRPCPEERLIST; ip != NULL; ip = ip->next)
-    {
-    strncpy(client,ip->name,64);
-    
-    if (strstr(ip->name,".")||strstr(ip->name,":"))
-       {
-       }
-    else
-       {
-       strcat(client,".");
-       strcat(client,VDOMAIN);
-       }
+NewParser();
 
-    Verbose(" Hailing remote peer %s\n",client);
-    
-    if (strcmp(client,VFQNAME) == 0)
-       {
-       /* Do not need to do this to ourselves ..  */
-       continue;
-       }
+for (ip = VRPCPEERLIST; ip != NULL; ip = ip->next)
+   {
+   strncpy(client,ip->name,64);
+   
+   if (strstr(ip->name,".")||strstr(ip->name,":"))
+      {
+      }
+   else
+      {
+      strcat(client,".");
+      strcat(client,VDOMAIN);
+      }
+   
+   Verbose(" Hailing remote peer %s\n",client);
+   
+   if (strcmp(client,VFQNAME) == 0)
+      {
+      /* Do not need to do this to ourselves ..  */
+      continue;
+      }
+   
+   Verbose(" Hailing remote peer %s for messages for us\n",client);
+   
+   InitializeAction();
+   snprintf(DESTINATION,CF_BUFSIZE,"%s/rpc_in",CFWORKDIR);
+   snprintf(CURRENTOBJECT,CF_BUFSIZE,"%s/rpc_out",CFWORKDIR);
+   snprintf(FINDERTYPE,1,"*");
+   PLUSMASK  = 0400;
+   MINUSMASK = 0377;
+   IMAGEBACKUP = 'n';
+   ENCRYPT = 'y';
+   strcpy(IMAGEACTION,"fix");
+   strcpy(CLASSBUFF,"any");
+   snprintf(VUIDNAME,CF_MAXVARSIZE,"%d",getuid());
+   snprintf(VGIDNAME,CF_MAXVARSIZE,"%d",getgid());
+   IMGCOMP = '>';
+   VRECURSE = 1;
+   PIFELAPSED = 0;
+   PEXPIREAFTER = 0;
+   COPYTYPE = DEFAULTCOPYTYPE;
+   
+   InstallImageItem(FINDERTYPE,CURRENTOBJECT,PLUSMASK,MINUSMASK,DESTINATION,
+                    IMAGEACTION,VUIDNAME,VGIDNAME,IMGSIZE,IMGCOMP,
+                    VRECURSE,COPYTYPE,LINKTYPE,client);
+   }
 
-    NewParser();
-    Verbose(" Hailing remote peer %s for messages for us\n",client);
-    snprintf(VBUFF,CF_BUFSIZE,"%s_*",Hostname2IPString(VFQNAME));
-
-    InitializeAction();
-    snprintf(DESTINATION,CF_BUFSIZE,"%s/rpc_in",WORKDIR);
-    snprintf(CURRENTOBJECT,CF_BUFSIZE,"%s/rpc_out",WORKDIR);
-    snprintf(FINDERTYPE,1,"*");
-    PLUSMASK  = 0400;
-    MINUSMASK = 0377;
-    IMAGEBACKUP = 'n';
-    ENCRYPT = 'y';
-    strcpy(IMAGEACTION,"fix");
-    strcpy(CLASSBUFF,"any");
-    snprintf(VUIDNAME,CF_MAXVARSIZE,"%d",getuid());
-    snprintf(VGIDNAME,CF_MAXVARSIZE,"%d",getgid());
-    IMGCOMP = '>';
-    VRECURSE = 1;
-    PIFELAPSED = 0;
-    PEXPIREAFTER = 0;
-    COPYTYPE = DEFAULTCOPYTYPE;
-    
-    InstallImageItem(FINDERTYPE,CURRENTOBJECT,PLUSMASK,MINUSMASK,DESTINATION,
-       IMAGEACTION,VUIDNAME,VGIDNAME,IMGSIZE,IMGCOMP,
-       VRECURSE,COPYTYPE,LINKTYPE,client);
-    DeleteParser();
-    }
+DeleteParser();
 
 Verbose("\nFinished with RPC\n\n");
 }
@@ -1112,15 +1113,27 @@ if (ip->linktype != 'n')
                  return;
                  }
               break;
+
+          case 'a':
+
+              ok_to_copy = (deststatbuf.st_ctime < sourcestatbuf.st_ctime)||(deststatbuf.st_mtime < sourcestatbuf.st_mtime)||CompareBinarySums(sourcefile,destfile,ip,&sourcestatbuf,&deststatbuf);;
+              
+              if (ok_to_copy && strcmp(ip->action,"warn") == 0)
+                 { 
+                 snprintf(OUTPUT,CF_BUFSIZE*2,"Image file %s is updated somehow (should be copy of %s)\n",destfile,sourcefile);
+                 CfLog(cferror,OUTPUT,"");
+                 return;
+                 }
+              break;
               
           default:
               ok_to_copy = (deststatbuf.st_ctime < sourcestatbuf.st_ctime)||(deststatbuf.st_mtime < sourcestatbuf.st_mtime);
               
               if (ok_to_copy && strcmp(ip->action,"warn") == 0)
                  { 
-                      snprintf(OUTPUT,CF_BUFSIZE*2,"Image file %s out of date (should be copy of %s)\n",destfile,sourcefile);
-                      CfLog(cferror,OUTPUT,"");
-                      return;
+                 snprintf(OUTPUT,CF_BUFSIZE*2,"Image file %s out of date (should be copy of %s)\n",destfile,sourcefile);
+                 CfLog(cferror,OUTPUT,"");
+                 return;
                  }
               break;
           }

@@ -424,6 +424,7 @@ switch (ACTION)
                  if (strcmp(id,"EndGroup") == 0 ||
                      strcmp(id,"GotoLastLine") == 0 ||
                      strcmp(id,"AutoCreate") == 0  ||
+                     strcmp(id,"WarnIfFileMissing") == 0  ||
                      strcmp(id,"EndLoop") == 0  ||
                      strcmp(id,"CatchAbort") == 0  ||
                      strcmp(id,"EmptyEntireFilePlease") == 0)
@@ -558,14 +559,17 @@ void HandleGroupRValue(char *rval)        /* Assignment in groups/classes */
 { 
 Debug1("\nHandleGroupRvalue(%s)\n",rval);
 
-if (CountParentheses(rval) > 0)
+if (ACTION == control)
    {
-   yyerror("Variables in function with $() rather than ${} - bug workaround");
-   }
-
-if (NestedParentheses(rval) > 1)
-   {
-   yyerror("Variables in function with $() rather than ${} - bug workaround");
+   if (CountParentheses(rval) > 0)
+      {
+      yyerror("Variables in function with $() rather than ${} - bug workaround");
+      }
+   
+   if (NestedParentheses(rval) > 1)
+      {
+      yyerror("Variables in function with $() rather than ${} - bug workaround");
+      }
    }
 
 if (strcmp(rval,"+") == 0 || strcmp(rval,"-") == 0)
@@ -629,7 +633,13 @@ if (ACTION == methods)
    ACTIONPENDING = true; 
    return;
    }
- 
+
+if (!IsDefinedClass(CLASSBUFF))
+   {
+   Debug("Function object class was beyond current environment (%s)\n",CLASSBUFF);
+   return;
+   }
+
 if (IsBuiltinFunction(fn))
    {
    local[0] = '\0';
@@ -1141,8 +1151,8 @@ if ((sp=getenv(CF_INPUTSVAR)) != NULL)
       
       if (! IsAbsoluteFileName(result))
          {
-         Verbose("CFINPUTS was not an absolute path, overriding with %s\n",WORKDIR);
-         snprintf(result,CF_BUFSIZE,"%s/inputs",WORKDIR);
+         Verbose("CFINPUTS was not an absolute path, overriding with %s\n",CFWORKDIR);
+         snprintf(result,CF_BUFSIZE,"%s/inputs",CFWORKDIR);
          }
       
       AddSlash(result);
@@ -1152,7 +1162,7 @@ if ((sp=getenv(CF_INPUTSVAR)) != NULL)
     {
     if (!IsAbsoluteFileName(filename))     /* Don't prepend to absolute names */
        { 
-       strcpy(result,WORKDIR);
+       strcpy(result,CFWORKDIR);
        AddSlash(result);
        strcat(result,"inputs/");
        }

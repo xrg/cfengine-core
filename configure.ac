@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.1.10)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.1.11)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -70,6 +70,7 @@ AC_PATH_PROG(TEXI2DVI, texi2dvi, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bi
 AC_PATH_PROG(DVIPS, dvips, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin:/sw/bin)
 AC_PATH_PROG(MAKEINFO, makeinfo, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin:/sw/bin)
 AC_PATH_PROG(PS2PDF, ps2pdf, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin:/sw/bin)
+AC_PATH_PROG(GETCONF, getconf, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin:/sw/bin)
 
 dnl ######################################################################
 dnl Checks for libraries.
@@ -94,30 +95,36 @@ dnl
 AC_ARG_WITH(berkeleydb,
     [  --with-berkeleydb[=PATH] directory where BerkeleyDB exists],
     BERKELEY_DB_DIR=$with_berkeleydb,
-    BERKELEY_DB_DIR=yes)
-AC_MSG_CHECKING(for BerkeleyDB location)
+    BERKELEY_DB_DIR=default)
+
+AC_MSG_CHECKING(for BerkeleyDB location in $BERKELEY_DB_DIR)
+
 if test "x$BERKELEY_DB_DIR" = "xno" ; then
     AC_MSG_RESULT( )
     AC_MSG_ERROR(This release of cfengine requires BerkeleyDB 3.2 or later)
 else
-    if test "x$BERKELEY_DB_DIR" = "xyes" ; then
+    if test "x$BERKELEY_DB_DIR" = "xdefault" ; then
         for v in BerkeleyDB.3.2 BerkeleyDB.3.3 BerkeleyDB.4.0  BerkeleyDB.4.1  BerkeleyDB.4.2 BerkeleyDB.4.3 BerkeleyDB.4.4; do
             for d in /opt /usr/local /usr; do
                 test -d "$d/$v" && BERKELEY_DB_DIR="$d/$v"
             done
         done
     fi
-    if test "x$BERKELEY_DB_DIR" = "xyes" ; then
+
+    if test "x$BERKELEY_DB_DIR" = "xdefault" ; then
+
         for d in /opt /usr/local /usr; do
-            for v in db-4 db4 db3 db; do
+            for v in db-4 db4 db3 db db40; do
+
                 if test -f "$d/include/$v/db.h" ; then
+                    echo "Found header in $d/include/$v "
                     test "x$d" != "x/usr" && BERKELEY_DB_LDFLAGS="-L$d/lib"
                     BERKELEY_DB_CFLAGS="-I$d/include/$v"
                     late_LIBS=$LIBS
 		    # In RedHat 8, for instance, we have /usr/include/db4
 		    # and libdb-4.0.a.  Debian has /usr/lib/libdb-4.1.a, for
 		    # instance.  Look for the appropriate library.
-                    if test $v = db4; then
+                    if test $v = db4 -o $v = db40; then
 			AC_SEARCH_LIBS(db_create, 
 				[db-4 db4 db-4.5 db-4.4 db-4.3 db-4.2 db-4.1 db-4.0], 
 				[BERKELEY_DB_LIB=$ac_cv_search_db_create])
@@ -129,6 +136,7 @@ else
                     break
                 fi
             done
+
 	    test "x$BERKELEY_DB_LIB" != "x" && break
             if test -f "$d/include/db.h"; then
                 if test "x$d" != "x/usr"; then
@@ -140,18 +148,29 @@ else
                 break
             fi
 	done
+
         if test "x$BERKELEY_DB_LIB" = "x" ; then
             AC_MSG_ERROR(Cannot find BerkeleyDB)
         fi
+
     elif test -f "$BERKELEY_DB_DIR/include/db.h";then
         case "$target_os" in
-        solaris*)  BERKELEY_DB_LDFLAGS="-L$BERKELEY_DB_DIR/lib -R$BERKELEY_DB_DIR/lib";;
+        solaris*)
+            #If we are staticlly linking the BDB files, we do not want a
+            #-R flag.  If .so's are present, assume we are dynamic linking
+            if test -n "`ls $BERKELEY_DB_DIR/lib/*.so 2>/dev/null`"
+            then
+                BERKELEY_DB_LDFLAGS="-L$BERKELEY_DB_DIR/lib -R$BERKELEY_DB_DIR/lib"
+            else
+                BERKELEY_DB_LDFLAGS="-L$BERKELEY_DB_DIR/lib"
+            fi;;
         *)         BERKELEY_DB_LDFLAGS="-L$BERKELEY_DB_DIR/lib";;
         esac
   
         BERKELEY_DB_CFLAGS="-I$BERKELEY_DB_DIR/include"
         BERKELEY_DB_LIB="-ldb"
         AC_MSG_RESULT($BERKELEY_DB_DIR)
+
     elif test -d "$BERKELEY_DB_DIR"; then
 
         BERKELEY_DB_CFLAGS="-I$BERKELEY_DB_DIR/include"
@@ -171,7 +190,15 @@ else
         done
 
         case "$target_os" in
-        solaris*)  BERKELEY_DB_LDFLAGS="-L$BERKELEY_DB_DIR/lib -R$BERKELEY_DB_DIR/lib";;
+        solaris*)
+            #If we are staticlly linking the BDB files, we do not want a
+            #-R flag.  If .so's are present, assume we are dynamic linking
+            if test -n "`ls $BERKELEY_DB_DIR/lib/*.so 2>/dev/null`"
+            then
+                BERKELEY_DB_LDFLAGS="-L$BERKELEY_DB_DIR/lib -R$BERKELEY_DB_DIR/lib"
+            else
+                BERKELEY_DB_LDFLAGS="-L$BERKELEY_DB_DIR/lib"
+            fi;;
         *)         BERKELEY_DB_LDFLAGS="-L$BERKELEY_DB_DIR/lib";;
         esac
   
@@ -244,13 +271,13 @@ AC_SUBST(BERKELEY_DB_LIB)
 AC_ARG_WITH(openssl,
     [  --with-openssl[=PATH] directory where OpenSSL exists],
     OPENSSL_LIB_DIR=$with_openssl,
-    OPENSSL_LIB_DIR=yes)
+    OPENSSL_LIB_DIR=default)
 AC_MSG_CHECKING(for OpenSSL location)
 if test x"$OPENSSL_LIB_DIR" = xno ; then
     AC_MSG_RESULT(no)
-    AC_MSG_ERROR(This release of cfengine requires OpenSSL 0.9.6b or later)
+    AC_MSG_ERROR(This release of cfengine requires OpenSSL 0.9.7 or later)
 else
-    if test x"$OPENSSL_LIB_DIR" = xyes ; then
+    if test x"$OPENSSL_LIB_DIR" = xdefault ; then
         for d in /opt/ssl /usr/local/ssl /usr/local /usr; do
             if test -f "$d/include/openssl/opensslv.h"; then
                 OPENSSL_LIB_LDFLAGS="-L$d/lib"
@@ -265,7 +292,15 @@ else
         fi
     elif test -f "$OPENSSL_LIB_DIR/include/openssl/ssl.h";then
         case "$target_os" in
-        solaris*)  OPENSSL_LIB_LDFLAGS="-L$OPENSSL_LIB_DIR/lib -R$OPENSSL_LIB_DIR/lib";;
+        solaris*)
+            #If we are staticlly linking the SSL files, we do not want a
+            #-R flag.  If .so's are present, assume we are dynamic linking
+            if test -n "`ls $OPENSSL_LIB_DIR/lib/*.so 2>/dev/null`"
+            then
+                OPENSSL_LIB_LDFLAGS="-L$OPENSSL_LIB_DIR/lib -R$OPENSSL_LIB_DIR/lib"
+            else
+                OPENSSL_LIB_LDFLAGS="-L$OPENSSL_LIB_DIR/lib"
+            fi;;
         *)         OPENSSL_LIB_LDFLAGS="-L$OPENSSL_LIB_DIR/lib";;
         esac
   
@@ -298,7 +333,7 @@ int main(void)
 }
        ],
        [AC_MSG_RESULT(OK)],
-       [AC_MSG_ERROR(This release of cfengine requires openssl 0.9.6b or later)]
+       [AC_MSG_ERROR(This release of cfengine requires openssl 0.9.7 or later)]
     )
 
     dnl ######################################################################
@@ -403,6 +438,23 @@ if test "$rtry" = ortentry; then
  AC_DEFINE(HAVE_ORTENTRY)
 fi
 AC_MSG_RESULT([$rtry])
+
+dnl #######################################################################
+dnl Large File Support
+dnl #######################################################################
+
+lfsresult=no
+AC_MSG_CHECKING(whether to compile with large file support)
+if test "$GETCONF" != "false"; then
+	lfscflags=`$GETCONF LFS_CFLAGS 2>/dev/null`
+	if test -n "$lfscflags"; then
+		CFLAGS="$CFLAGS $lfscflags"
+		lfsresult=yes
+	fi
+	lfsldflags=`$GETCONF LFS_LDFLAGS 2>/dev/null`
+	test -n "$lfsldflags" && LDFLAGS="$LDFLAGS $lfsldflags"
+fi
+AC_MSG_RESULT([$lfsresult])
 
 dnl #######################################################################
 dnl Handle DCE + threading stuff
@@ -678,7 +730,7 @@ AC_MSG_WARN( DFS users should use --enable-DCE)
 AC_MSG_WARN( )
 AC_MSG_WARN( This version requires Berkeley db version 3.2 or)
 AC_MSG_WARN(   later from www.sleepycat.com)
-AC_MSG_WARN( This version requires OpenSSL 0.9.6b or later)
+AC_MSG_WARN( This version requires OpenSSL 0.9.7 or later)
 AC_MSG_WARN(   from www.openssl.org)
 AC_MSG_WARN( )
 AC_MSG_WARN(=====================================================)

@@ -1234,13 +1234,13 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
       }
 
    ResetOutputRoute(ptr->log,ptr->inform);
+   ExpandVarstring(ptr->name,execstr,NULL);
    
-   if (!GetLock(ASUniqueName("shellcommand"),CanonifyName(ptr->name),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
+   if (!GetLock(ASUniqueName("shellcommand"),execstr,ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
       {
       continue;
       }
 
-   ExpandVarstring(ptr->name,execstr,NULL);
    
    snprintf(OUTPUT,CF_BUFSIZE*2,"Executing script %s...(timeout=%d,uid=%d,gid=%d)\n",execstr,ptr->timeout,ptr->uid,ptr->gid);
    CfLog(cfinform,OUTPUT,"");
@@ -1629,22 +1629,16 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
 
    if (S_ISDIR(statbuf.st_mode))
       {
-      if ((strcmp(dp->type,"file") != 0) && (strcmp(dp->type,"link") != 0))
-         {
-         snprintf(OUTPUT,CF_BUFSIZE*2,"Warning %s is a directory.\n",workname);
-         CfLog(cferror,OUTPUT,"");
-         CfLog(cferror,"I refuse to rename/delete a directory!\n\n","");
-         }
-      else
+      if ((strcmp(dp->type,"file") == 0) || (strcmp(dp->type,"link") == 0))
          {
          Verbose("Filetype %s, %s is not there - ok\n",dp->type,workname);
-         }
-      ResetOutputRoute('d','d');
-      ReleaseCurrentLock();
-      continue;
+         ResetOutputRoute('d','d');
+         ReleaseCurrentLock();
+         continue;
+         }      
       }
 
-   Verbose("Disable checking %s\n",workname);
+   Verbose("Disable/rename checking %s\n",workname);
 
    if (S_ISLNK(statbuf.st_mode))
       {
@@ -1693,9 +1687,9 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
       }
    else
       {
-      if (! S_ISREG(statbuf.st_mode))
+      if (!S_ISREG(statbuf.st_mode) && (strlen(dp->destination) == 0))
          {
-         Verbose("%s: %s is not a plain file - won't disable\n",VPREFIX,workname);
+         Verbose("%s: %s is not a plain file - won't rename/disable without specific destination\n",VPREFIX,workname);
          ResetOutputRoute('d','d');
          ReleaseCurrentLock();
          continue;
@@ -2466,13 +2460,12 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s in copy\n",path);
          CfLog(cfinform,OUTPUT,"");
-         ReleaseCurrentLock();
          SILENT = savesilent;
          ResetOutputRoute('d','d');
          continue;
          }
       
-      snprintf(VBUFF,CF_BUFSIZE,"%.50s.%.50s",path,destination); /* Unique ID for copy locking */
+      snprintf(VBUFF,CF_BUFSIZE,"%.50s.%.50s_%.50s",path,destination,server); /* Unique ID for copy locking */
       
       if (!GetLock(ASUniqueName("copy"),CanonifyName(VBUFF),ip->ifelapsed,ip->expireafter,VUQNAME,CFSTARTTIME))
          {
@@ -2709,6 +2702,9 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
        break;
      case pkgmgr_dpkg:
        match = DPKGPackageCheck(ptr->name, ptr->ver, ptr->cmp);
+       break;
+     case pkgmgr_sun:
+       match = SUNPackageCheck(ptr->name, ptr->ver, ptr->cmp);
        break;
      default:
        /* UGH!  This should *never* happen.  GetPkgMgr() and

@@ -970,7 +970,8 @@ int linux_redhat_version(void)
 #define REDHAT_WS_ID "Red Hat Enterprise Linux WS"
 #define MANDRAKE_ID "Linux Mandrake"
 #define FEDORA_ID "Fedora Core"
-
+#define WHITEBOX_ID "White Box Enterprise Linux"
+ 
 #define RELEASE_FLAG "release "
 
 /* We are looking for one of the following strings...
@@ -982,6 +983,7 @@ int linux_redhat_version(void)
  * Linux Mandrake release 7.1 (helium)
  * Red Hat Enterprise Linux ES release 2.1 (Panama)
  * Fedora Core release 1 (Yarrow)
+ * White Box Enterprise linux release 3.0 (Liberation)
  */
 
 #define RH_REL_FILENAME "/etc/redhat-release"
@@ -1048,6 +1050,10 @@ Verbose("Looking for redhat linux info in \"%s\"\n",relstring);
     {
     vendor = "fedora";
     }
+ else if(!strncmp(relstring, WHITEBOX_ID, strlen(WHITEBOX_ID)))
+    {
+    vendor = "whitebox";
+    }
  else
     {
     Verbose("Could not identify OS distro from %s\n", RH_REL_FILENAME);
@@ -1059,6 +1065,7 @@ Verbose("Looking for redhat linux info in \"%s\"\n",relstring);
   * from the infomation above.  We assume that all the strings will
   * have the word 'release' before the numerical release.
   */
+ 
  release = strstr(relstring, RELEASE_FLAG);
  if(release == NULL)
     {

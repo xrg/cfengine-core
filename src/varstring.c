@@ -726,6 +726,17 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              buffer[len] = REPOSCHAR;
              buffer[len+1] = '\0';
              break;
+
+         case cfrepos:
+             if (VREPOSITORY != NULL)
+                {
+                if (ExpandOverflow(buffer,VREPOSITORY))
+                   {
+                   FatalError("Can't expandvarstring");
+                   }
+                strcat(buffer,VREPOSITORY);
+                }
+             break;
              
          case cflistsep:
              if (ExpandOverflow(buffer,""))

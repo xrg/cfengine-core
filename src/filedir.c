@@ -183,7 +183,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    if (lstat(dirp->d_name,&statbuf) == -1)
       {
       snprintf(OUTPUT,CF_BUFSIZE*2,"RecursiveCheck was looking at %s when this happened:\n",pcwd);
-      CfLog(cferror,OUTPUT,"lstat");
+      CfLog(cfverbose,OUTPUT,"lstat");
       continue;
       }
    
@@ -192,7 +192,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       if (lstat(dirp->d_name,&statbuf) == -1)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",pcwd);
-         CfLog(cferror,OUTPUT,"stat");
+         CfLog(cfinform,OUTPUT,"stat");
          continue;
          }
       

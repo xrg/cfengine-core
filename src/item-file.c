@@ -64,7 +64,7 @@ if (! S_ISREG(statbuf.st_mode))
 if ((fp = fopen(file,"r")) == NULL)
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't read file %s for editing\n",file);
-   CfLog(cferror,OUTPUT,"fopen");
+   CfLog(cfinform,OUTPUT,"fopen");
    return false;
    }
 
@@ -154,7 +154,7 @@ if (IMAGEBACKUP != 'n')
       if (rename(file,backup) == -1)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Error while renaming backup %s\n",file);
-         CfLog(cferror,OUTPUT,"rename ");
+         CfLog(cfverbose,OUTPUT,"rename ");
          unlink(new);
          return false;
          }
@@ -168,7 +168,7 @@ if (IMAGEBACKUP != 'n')
 if (rename(new,file) == -1)
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Error while renaming %s\n",file);
-   CfLog(cferror,OUTPUT,"rename");
+   CfLog(cfverbose,OUTPUT,"rename");
    return false;
    }       
 

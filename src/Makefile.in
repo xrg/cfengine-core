@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 
-SOURCES = $(cfagent_SOURCES) $(cfenvd_SOURCES) $(cfenvgraph_SOURCES) $(cfexecd_SOURCES) $(cfkey_SOURCES) $(cfrun_SOURCES) $(cfservd_SOURCES)
+SOURCES = $(cfagent_SOURCES) $(cfenvd_SOURCES) $(cfenvgraph_SOURCES) $(cfexecd_SOURCES) $(cfkey_SOURCES) $(cfrun_SOURCES) $(cfservd_SOURCES) $(cfshow_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -40,7 +40,7 @@ POST_UNINSTALL = :
 host_triplet = @host@
 sbin_PROGRAMS = cfagent$(EXEEXT) cfservd$(EXEEXT) cfrun$(EXEEXT) \
 	cfkey$(EXEEXT) cfenvd$(EXEEXT) cfenvgraph$(EXEEXT) \
-	cfexecd$(EXEEXT)
+	cfexecd$(EXEEXT) cfshow$(EXEEXT)
 subdir = src
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/cflex.l.in $(srcdir)/conf.h.in \
@@ -92,7 +92,8 @@ cfenvd_OBJECTS = $(am_cfenvd_OBJECTS)
 cfenvd_LDADD = $(LDADD)
 cfenvd_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
-am_cfenvgraph_OBJECTS = cfenvgraph.$(OBJEXT) granules.$(OBJEXT)
+am_cfenvgraph_OBJECTS = cfenvgraph.$(OBJEXT) granules.$(OBJEXT) \
+	globals.$(OBJEXT)
 cfenvgraph_OBJECTS = $(am_cfenvgraph_OBJECTS)
 cfenvgraph_LDADD = $(LDADD)
 cfenvgraph_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -145,6 +146,12 @@ am_cfservd_OBJECTS = cfservd.$(OBJEXT) parse.$(OBJEXT) \
 cfservd_OBJECTS = $(am_cfservd_OBJECTS)
 cfservd_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
+am_cfshow_OBJECTS = cfshow.$(OBJEXT) globals.$(OBJEXT) popen.$(OBJEXT) \
+	log.$(OBJEXT) errors.$(OBJEXT) filenames.$(OBJEXT) \
+	patches.$(OBJEXT)
+cfshow_OBJECTS = $(am_cfshow_OBJECTS)
+cfshow_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -154,35 +161,36 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/cfexecd.Po ./$(DEPDIR)/cfkey.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/cflex.Po ./$(DEPDIR)/cfparse.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/cfrun.Po ./$(DEPDIR)/cfservd.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/checksums.Po ./$(DEPDIR)/chflags.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/classes.Po ./$(DEPDIR)/client.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/comparray.Po ./$(DEPDIR)/copy.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/crypto.Po ./$(DEPDIR)/dce_acl.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/df.Po ./$(DEPDIR)/do.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/dtypes.Po ./$(DEPDIR)/edittools.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/errors.Po ./$(DEPDIR)/eval.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/filedir.Po ./$(DEPDIR)/filenames.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/filters.Po ./$(DEPDIR)/functions.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/globals.Po ./$(DEPDIR)/granules.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ifconf.Po ./$(DEPDIR)/image.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/init.Po ./$(DEPDIR)/install.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ip.Po ./$(DEPDIR)/item-ext.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/item-file.Po ./$(DEPDIR)/item.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/link.Po ./$(DEPDIR)/locks.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/log.Po ./$(DEPDIR)/macro.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/methods.Po ./$(DEPDIR)/misc.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/modes.Po ./$(DEPDIR)/modules.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/mount.Po ./$(DEPDIR)/nameinfo.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/net.Po ./$(DEPDIR)/package.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/parse.Po ./$(DEPDIR)/patches.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/popen.Po ./$(DEPDIR)/popen_def.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/process.Po ./$(DEPDIR)/proto.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/read.Po ./$(DEPDIR)/report.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/repository.Po ./$(DEPDIR)/rotate.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/sensible.Po ./$(DEPDIR)/sockaddr.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/state.Po ./$(DEPDIR)/strategies.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/tidy.Po ./$(DEPDIR)/varstring.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/wildcard.Po ./$(DEPDIR)/wrapper.Po
+@AMDEP_TRUE@	./$(DEPDIR)/cfshow.Po ./$(DEPDIR)/checksums.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chflags.Po ./$(DEPDIR)/classes.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/client.Po ./$(DEPDIR)/comparray.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/copy.Po ./$(DEPDIR)/crypto.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/dce_acl.Po ./$(DEPDIR)/df.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/do.Po ./$(DEPDIR)/dtypes.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/edittools.Po ./$(DEPDIR)/errors.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/eval.Po ./$(DEPDIR)/filedir.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/filenames.Po ./$(DEPDIR)/filters.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/functions.Po ./$(DEPDIR)/globals.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/granules.Po ./$(DEPDIR)/ifconf.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/image.Po ./$(DEPDIR)/init.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/install.Po ./$(DEPDIR)/ip.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/item-ext.Po ./$(DEPDIR)/item-file.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/item.Po ./$(DEPDIR)/link.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/locks.Po ./$(DEPDIR)/log.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/macro.Po ./$(DEPDIR)/methods.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/misc.Po ./$(DEPDIR)/modes.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/modules.Po ./$(DEPDIR)/mount.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/nameinfo.Po ./$(DEPDIR)/net.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/package.Po ./$(DEPDIR)/parse.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/patches.Po ./$(DEPDIR)/popen.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/popen_def.Po ./$(DEPDIR)/process.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/proto.Po ./$(DEPDIR)/read.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/report.Po ./$(DEPDIR)/repository.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/rotate.Po ./$(DEPDIR)/sensible.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/sockaddr.Po ./$(DEPDIR)/state.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/strategies.Po ./$(DEPDIR)/tidy.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/varstring.Po ./$(DEPDIR)/wildcard.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/wrapper.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
@@ -192,10 +200,10 @@ YLWRAP = $(top_srcdir)/ylwrap
 YACCCOMPILE = $(YACC) $(YFLAGS) $(AM_YFLAGS)
 SOURCES = $(cfagent_SOURCES) $(cfenvd_SOURCES) $(cfenvgraph_SOURCES) \
 	$(cfexecd_SOURCES) $(cfkey_SOURCES) $(cfrun_SOURCES) \
-	$(cfservd_SOURCES)
+	$(cfservd_SOURCES) $(cfshow_SOURCES)
 DIST_SOURCES = $(cfagent_SOURCES) $(cfenvd_SOURCES) \
 	$(cfenvgraph_SOURCES) $(cfexecd_SOURCES) $(cfkey_SOURCES) \
-	$(cfrun_SOURCES) $(cfservd_SOURCES)
+	$(cfrun_SOURCES) $(cfservd_SOURCES) $(cfshow_SOURCES)
 HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
@@ -229,6 +237,7 @@ EGREP = @EGREP@
 EIGHTBIT = @EIGHTBIT@
 EXEEXT = @EXEEXT@
 GCC_CFLAG = @GCC_CFLAG@
+GETCONF = @GETCONF@
 GETLOADAVG_LIBS = @GETLOADAVG_LIBS@
 HOSTNAME = @HOSTNAME@
 INSTALL_DATA = @INSTALL_DATA@
@@ -315,6 +324,16 @@ AM_YFLAGS = -d
 LDADD = -L../pub -lpub $(BERKELEY_DB_LDFLAGSD) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LDFLAGS) $(OPENSSL_LIB_LIB)
 INCLUDES = $(BERKELEY_DB_CFLAGS) $(OPENSSL_LIB_CPPFLAGS)
 AM_LDFLAGS = $(BERKELEY_DB_LDFLAGS) $(OPENSSL_LIB_LDFLAGS) @LDFLAGS@
+cfshow_SOURCES = \
+	cfshow.c							\
+	globals.c							\
+	popen.c								\
+	log.c								\
+	errors.c							\
+	filenames.c							\
+	patches.c
+
+cfshow_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 cfagent_SOURCES = \
 	cfagent.c							\
 	init.c								\
@@ -512,7 +531,8 @@ cfenvd_SOURCES = \
 
 cfenvgraph_SOURCES = \
 	cfenvgraph.c							\
-	granules.c							
+	granules.c							\
+	globals.c
 
 
 #
@@ -651,6 +671,9 @@ cfrun$(EXEEXT): $(cfrun_OBJECTS) $(cfrun_DEPENDENCIES)
 cfservd$(EXEEXT): $(cfservd_OBJECTS) $(cfservd_DEPENDENCIES) 
 	@rm -f cfservd$(EXEEXT)
 	$(LINK) $(cfservd_LDFLAGS) $(cfservd_OBJECTS) $(cfservd_LDADD) $(LIBS)
+cfshow$(EXEEXT): $(cfshow_OBJECTS) $(cfshow_DEPENDENCIES) 
+	@rm -f cfshow$(EXEEXT)
+	$(LINK) $(cfshow_LDFLAGS) $(cfshow_OBJECTS) $(cfshow_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -670,6 +693,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfparse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfrun.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfservd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfshow.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/checksums.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chflags.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/classes.Po@am__quote@

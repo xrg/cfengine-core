@@ -5,7 +5,18 @@ LDADD = -L../pub -lpub $(BERKELEY_DB_LDFLAGSD) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_
 INCLUDES = $(BERKELEY_DB_CFLAGS) $(OPENSSL_LIB_CPPFLAGS)
 AM_LDFLAGS = $(BERKELEY_DB_LDFLAGS) $(OPENSSL_LIB_LDFLAGS) @LDFLAGS@
 
-sbin_PROGRAMS = cfagent cfservd cfrun cfkey cfenvd cfenvgraph cfexecd
+sbin_PROGRAMS = cfagent cfservd cfrun cfkey cfenvd cfenvgraph cfexecd cfshow
+
+cfshow_SOURCES =							\
+	cfshow.c							\
+	globals.c							\
+	popen.c								\
+	log.c								\
+	errors.c							\
+	filenames.c							\
+	patches.c
+
+cfshow_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 
 cfagent_SOURCES =							\
 	cfagent.c							\
@@ -208,7 +219,8 @@ cfenvd_SOURCES =							\
 
 cfenvgraph_SOURCES =							\
 	cfenvgraph.c							\
-	granules.c							
+	granules.c							\
+	globals.c
 
 #
 # Pickup header files here so Automake knows about them

@@ -493,7 +493,7 @@ else
 int CopyRegNet(char *source,char *new,struct Image *ip,off_t size)
 
 { int dd, buf_size,n_read = 0,toget,towrite,plainlen,more = true;
-  int last_write_made_hole = 0, done = false,tosend,cipherlen=0;
+ int last_write_made_hole = 0, done = false,tosend,cipherlen=0,value;
   char *buf,in[CF_BUFSIZE],out[CF_BUFSIZE],sendbuffer[CF_BUFSIZE],cfchangedstr[265];
   unsigned char iv[] = {1,2,3,4,5,6,7,8};
   long n_read_total = 0;  
@@ -636,6 +636,21 @@ while (!done)
       return false;      
       }
 
+   value = -1;
+
+   /* Check for mismatch between encryption here and on server - can lead to misunderstanding*/
+   
+   sscanf(buf,"t %d",&value);
+   
+   if ((value > 0) && strncmp(buf+CF_INBAND_OFFSET,"BAD: ",5) == 0)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Network access to cleartext %s:%s denied\n",ip->server,source);      
+      CfLog(cfinform,OUTPUT,"");
+      close(dd);
+      free(buf);
+      return false;
+      }
+   
    if (ip->encrypt == 'y')
       {
       if (!EVP_DecryptUpdate(&ctx,sendbuffer,&plainlen,buf,cipherlen))
@@ -663,7 +678,7 @@ while (!done)
             CfLog(cfinform,OUTPUT,"");
             close(dd);
             free(buf);
-     return false;      
+            return false;      
             }
          }
       }

@@ -57,7 +57,8 @@ struct Averages FindHurstFunction ARGLIST((int sameples_per_grain, int grains));
 
 /*****************************************************************************/
 
-char *COPYRIGHT = "Free Software Foundation 2001-\nDonated by Mark Burgess, Faculty of Engineering,\nOslo University College, 0254 Oslo, Norway";
+/* char *COPYRIGHT = "Free Software Foundation 2001-\nDonated by Mark Burgess, Faculty of Engineering,\nOslo University College, 0254 Oslo, Norway";
+ */
 
 struct option GRAPHOPTIONS[] =
    {
@@ -84,7 +85,7 @@ int SMOOTHHISTOGRAM[ATTR*2+CF_NETATTR*2+5+PH_LIMIT][7][CF_GRAINS];
 char VFQNAME[CF_BUFSIZE];
 
 /*****************************************************************************/
-
+/*
 char *ECGSOCKS[ATTR][2] =
    {
    {"137","netbiosns"},
@@ -110,7 +111,7 @@ char *TCPNAMES[CF_NETATTR] =
    "tcpfin",
    "misc",
    };
-
+*/
 char *PH_BINARIES[PH_LIMIT] =   /* Miss leading slash */
    {
    "usr/sbin/atd",
@@ -157,7 +158,7 @@ void GetFQHN()
   char cfcom[CF_BUFSIZE];
   static char line[CF_BUFSIZE];
 
-snprintf(cfcom,CF_BUFSIZE-1,"%s/bin/cfagent -z",WORKDIR);
+snprintf(cfcom,CF_BUFSIZE-1,"%s/bin/cfagent -z",CFWORKDIR);
  
 if ((pp=popen(cfcom,"r")) ==  NULL)
    {
@@ -1017,7 +1018,7 @@ for (i = 0; i < 7; i++)
     int position,day;
     int weekly[CF_NETATTR*2+ATTR*2+5+PH_LIMIT][CF_GRAINS];
     
-    snprintf(FLNAME,CF_BUFSIZE,"%s/state/histograms",WORKDIR);
+    snprintf(FLNAME,CF_BUFSIZE,"%s/state/histograms",CFWORKDIR);
     
     if ((fp = fopen(FLNAME,"r")) == NULL)
        {
@@ -1330,14 +1331,14 @@ if ((array = (double *)malloc((int)CF_WEEK)) == NULL)
    return;
    }
   
-if ((dirh = opendir(WORKDIR)) == NULL)
+if ((dirh = opendir(CFWORKDIR)) == NULL)
    {
-   printf("Can't open directory %s\n",WORKDIR);
+   printf("Can't open directory %s\n",CFWORKDIR);
    perror("opendir");
    return;
    }
 
-printf("\n\nLooking for filesystem arrival process data in %s\n",WORKDIR); 
+printf("\n\nLooking for filesystem arrival process data in %s\n",CFWORKDIR); 
 
 for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    {
@@ -1345,7 +1346,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       {
       printf("Found %s - generating X,Y plot\n",dirp->d_name);
 
-      snprintf(database,CF_BUFSIZE-1,"%s/%s",WORKDIR,dirp->d_name);
+      snprintf(database,CF_BUFSIZE-1,"%s/%s",CFWORKDIR,dirp->d_name);
       
       if ((errno = db_create(&dbp,dbenv,0)) != 0)
          {
@@ -1468,7 +1469,21 @@ void CheckOpts(int argc,char **argv)
   int optindex = 0;
   int c;
 
-snprintf(FILENAME,CF_BUFSIZE,"%s/state/%s",WORKDIR,CF_AVDB_FILE);
+ /* XXX Initialize workdir for non privileged users */
+
+ strcpy(CFWORKDIR,WORKDIR);
+
+ if (geteuid() > 0)
+    {
+    char *homedir;
+    if ((homedir = getenv("HOME")) != NULL)
+       {
+       strcpy(CFWORKDIR,homedir);
+       strcat(CFWORKDIR,"/.cfagent");
+       }
+    }
+ 
+snprintf(FILENAME,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_AVDB_FILE);
 
 while ((c=getopt_long(argc,argv,"Thtf:rsen",GRAPHOPTIONS,&optindex)) != EOF)
   {

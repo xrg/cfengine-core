@@ -69,12 +69,6 @@
 
 DB *DBP;
 
-struct LockData
-   {
-   pid_t pid;
-   time_t time;
-   };
-
 /********************************************************************/
 
 void PreLockState()
@@ -88,7 +82,7 @@ void PreLockState()
 void SaveExecLock()
 
 {
- strcpy(SAVELOCK,CFLOCK);
+strcpy(SAVELOCK,CFLOCK);
 }
 
 
@@ -97,7 +91,7 @@ void SaveExecLock()
 void RestoreExecLock()
 
 {
- strcpy(CFLOCK,SAVELOCK);
+strcpy(CFLOCK,SAVELOCK);
 }
 
 /********************************************************************/
@@ -105,23 +99,27 @@ void RestoreExecLock()
 void HandleSignal(int signum)
  
 {
-snprintf(OUTPUT,CF_BUFSIZE*2,"Received signal %d (%s) while doing [%s]",signum,SIGNALS[signum],CFLOCK);
-Chop(OUTPUT);
-CfLog(cferror,OUTPUT,"");
-snprintf(OUTPUT,CF_BUFSIZE*2,"Logical start time %s ",ctime(&CFSTARTTIME));
-Chop(OUTPUT);
-CfLog(cferror,OUTPUT,"");
-snprintf(OUTPUT,CF_BUFSIZE*2,"This sub-task started really at %s\n",ctime(&CFINITSTARTTIME));
-
-CfLog(cferror,OUTPUT,"");
-
-fflush(stdout);
-
-if (signum == SIGTERM || signum == SIGINT || signum == SIGHUP || signum == SIGSEGV || signum == SIGKILL)
+if (signum != SIGCHLD)
    {
-   ReleaseCurrentLock();
-   closelog();
-   exit(0);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Received signal %d (%s) while doing [%s]",signum,SIGNALS[signum],CFLOCK);
+   Chop(OUTPUT);
+   CfLog(cferror,OUTPUT,"");
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Logical start time %s ",ctime(&CFSTARTTIME));
+   Chop(OUTPUT);
+   CfLog(cferror,OUTPUT,"");
+   snprintf(OUTPUT,CF_BUFSIZE*2,"This sub-task started really at %s\n",ctime(&CFINITSTARTTIME));
+   CfLog(cferror,OUTPUT,"");
+   fflush(stdout);
+   
+   if (signum == SIGTERM || signum == SIGINT || signum == SIGHUP || signum == SIGSEGV || signum == SIGKILL|| signum == SIGPIPE)
+      {
+      ReleaseCurrentLock();
+      closelog();
+      exit(0);
+      }
+   }
+else /* zombie cleanup - how hard does it have to be? */
+   {
    }
 }
 
@@ -180,7 +178,8 @@ DBP->close(DBP,0);
 int GetLock(char *operator,char *operand,int ifelapsed,int expireafter,char *host,time_t now)
 
 { unsigned int pid;
-  int err; 
+  int err, sum=0;
+  char *sp;
   time_t lastcompleted = 0, elapsedtime;
 
 if (IGNORELOCK)
@@ -201,10 +200,20 @@ Debug("GetLock(%s,%s,time=%d), ExpireAfter=%d, IfElapsed=%d\n",operator,operand,
 
 memset(CFLOCK,0,CF_BUFSIZE);
 memset(CFLAST,0,CF_BUFSIZE); 
- 
+
+for (sp = operator; *sp != '\0'; sp++)
+   {
+   sum += (int)*sp;
+   }
+
+for (sp = operand; *sp != '\0'; sp++)
+   {
+   sum += (int)*sp;
+   }
+
 snprintf(CFLOG,CF_BUFSIZE,"%s/cfengine.%.40s.runlog",VLOGDIR,host);
-snprintf(CFLOCK,CF_BUFSIZE,"lock.%.100s.%.40s.%s.%.100s",VCANONICALFILE,host,operator,operand);
-snprintf(CFLAST,CF_BUFSIZE,"last.%.100s.%.40s.%s.%.100s",VCANONICALFILE,host,operator,operand);
+snprintf(CFLOCK,CF_BUFSIZE,"lock.%.100s.%.40s.%s.%.100s_%d",VCANONICALFILE,host,CanonifyName(operator),CanonifyName(operand),sum);
+snprintf(CFLAST,CF_BUFSIZE,"last.%.100s.%.40s.%s.%.100s_%d",VCANONICALFILE,host,CanonifyName(operator),CanonifyName(operand),sum);
  
 if (strlen(CFLOCK) > MAX_FILENAME)
    {
@@ -223,7 +232,7 @@ elapsedtime = (time_t)(now-lastcompleted) / 60;
 
 if (elapsedtime < 0)
    {
-   snprintf(OUTPUT,CF_BUFSIZE*2,"Another cfengine seems to have done %s.%s since I started\n",operator, operand);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Another cfengine seems to have done %s.%s since I started (elapsed=%d)\n",operator, operand,elapsedtime);
    CfLog(cfverbose,OUTPUT,"");
    return false;
    }

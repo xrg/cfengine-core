@@ -157,15 +157,17 @@ else
 
         
     case cfsysadm:  /* Can be redefined */
+
         if (!IsDefinedClass(CLASSBUFF))
            {
            break;
            }
         
         strcpy(VSYSADM,value);
-                  break;
+        break;
                   
     case cfnetmask:
+
         if (!IsDefinedClass(CLASSBUFF))
            {
            break;
@@ -1678,12 +1680,6 @@ switch (type)
                       break;
                       }
 
-                   if (IsItemIn(VHEAP,ebuff))  /* group reference */
-                      {
-                      AddClassToHeap(GROUPBUFF);
-                      break;
-                      }
-
                    if (IsDefinedClass(ebuff))
                       {
                       AddClassToHeap(GROUPBUFF);
@@ -2903,7 +2899,8 @@ else
  ptr->ignores = NULL;
  ptr->umask = UMASK;
  ptr->exclusions = NULL;
- ptr->inclusions = NULL; 
+ ptr->inclusions = NULL;
+ ptr->warn = 'n';
  VEDITLISTTOP = ptr;
  AddEditAction(file,edit,data);
 }
@@ -2990,7 +2987,9 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
              HandleUmask(data);
              ptr->umask = UMASK;
              UMASK = saved_umask;
-             
+
+         case WarnIfFileMissing: ptr->warn = 'y';
+             break;
          case EditIgnore:
              PrependItem(&(ptr->ignores),data,CF_ANYCLASS);
              break;
@@ -3854,7 +3853,8 @@ void InstallMakePath(char *path,mode_t plus,mode_t minus,char *uidnames,char *gi
 
 { struct File *ptr;
   char buffer[CF_EXPANDSIZE],ebuff[CF_EXPANDSIZE]; 
-
+  struct Item *list = NULL, *ip;
+  
 Debug1("InstallMakePath (%s) (+%o)(-%o)(%s)(%s)\n",path,plus,minus,uidnames,gidnames);
 
 if (!IsInstallable(CLASSBUFF))
@@ -3866,83 +3866,89 @@ if (!IsInstallable(CLASSBUFF))
 
 ExpandVarstring(path,ebuff,"");
 
-if ((ptr = (struct File *)malloc(sizeof(struct File))) == NULL)
+list = SplitStringAsItemList(ebuff,LISTSEPARATOR);
+
+for (ip = list; ip != NULL; ip=ip->next)
    {
-   FatalError("Memory Allocation failed for InstallMakepath() #1");
+   if ((ptr = (struct File *)malloc(sizeof(struct File))) == NULL)
+      {
+      FatalError("Memory Allocation failed for InstallMakepath() #1");
+      }
+   
+   if ((ptr->path = strdup(ip->name)) == NULL)
+      {
+      FatalError("Memory Allocation failed for InstallMakepath() #2");
+      }
+   
+   if ((ptr->classes = strdup(CLASSBUFF)) == NULL)
+      {
+      FatalError("Memory Allocation failed for InstallMakepath() #3");
+      }
+   
+   ExpandVarstring(ALLCLASSBUFFER,buffer,""); 
+   
+   if ((ptr->defines = strdup(buffer)) == NULL)
+      {
+      FatalError("Memory Allocation failed for InstallMakepath() #3a");
+      }
+   
+   ExpandVarstring(ELSECLASSBUFFER,buffer,""); 
+   
+   if ((ptr->elsedef = strdup(buffer)) == NULL)
+      {
+      FatalError("Memory Allocation failed for InstallMakepath() #3a");
+      }
+   
+   AddInstallable(ptr->defines);
+   AddInstallable(ptr->elsedef);  
+   
+   if (VMAKEPATHTOP == NULL)                 /* First element in the list */
+      {
+      VMAKEPATH = ptr;
+      }
+   else
+      {
+      VMAKEPATHTOP->next = ptr;
+      }
+   
+   if (PIFELAPSED != -1)
+      {
+      ptr->ifelapsed = PIFELAPSED;
+      }
+   else
+      {
+      ptr->ifelapsed = VIFELAPSED;
+      }
+   
+   if (PEXPIREAFTER != -1)
+      {
+      ptr->expireafter = PEXPIREAFTER;
+      }
+   else
+      {
+      ptr->expireafter = VEXPIREAFTER;
+      }
+   
+   ptr->plus = plus;
+   ptr->minus = minus;
+   ptr->recurse = 0;
+   ptr->action = fixdirs;
+   ptr->uid = MakeUidList(uidnames);
+   ptr->gid = MakeGidList(gidnames);
+   ptr->inclusions = NULL;
+   ptr->exclusions = NULL;
+   ptr->acl_aliases= VACLBUILD; 
+   ptr->log = LOGP;
+   ptr->filters = NULL;
+   ptr->inform = INFORMP;
+   ptr->plus_flags = PLUSFLAG;
+   ptr->minus_flags = MINUSFLAG;
+   ptr->done = 'n';
+   ptr->scope = strdup(CONTEXTID); 
+   ptr->next = NULL;
+   VMAKEPATHTOP = ptr;
    }
 
-if ((ptr->path = strdup(ebuff)) == NULL)
-   {
-   FatalError("Memory Allocation failed for InstallMakepath() #2");
-   }
-
-if ((ptr->classes = strdup(CLASSBUFF)) == NULL)
-   {
-   FatalError("Memory Allocation failed for InstallMakepath() #3");
-   }
-
-ExpandVarstring(ALLCLASSBUFFER,buffer,""); 
- 
-if ((ptr->defines = strdup(buffer)) == NULL)
-   {
-   FatalError("Memory Allocation failed for InstallMakepath() #3a");
-   }
-
-ExpandVarstring(ELSECLASSBUFFER,buffer,""); 
-
-if ((ptr->elsedef = strdup(buffer)) == NULL)
-   {
-   FatalError("Memory Allocation failed for InstallMakepath() #3a");
-   }
-
-AddInstallable(ptr->defines);
-AddInstallable(ptr->elsedef);  
- 
-if (VMAKEPATHTOP == NULL)                 /* First element in the list */
-   {
-   VMAKEPATH = ptr;
-   }
-else
-   {
-   VMAKEPATHTOP->next = ptr;
-   }
-
-if (PIFELAPSED != -1)
-   {
-   ptr->ifelapsed = PIFELAPSED;
-   }
-else
-   {
-   ptr->ifelapsed = VIFELAPSED;
-   }
-
-if (PEXPIREAFTER != -1)
-   {
-   ptr->expireafter = PEXPIREAFTER;
-   }
-else
-   {
-   ptr->expireafter = VEXPIREAFTER;
-   }
- 
-ptr->plus = plus;
-ptr->minus = minus;
-ptr->recurse = 0;
-ptr->action = fixdirs;
-ptr->uid = MakeUidList(uidnames);
-ptr->gid = MakeGidList(gidnames);
-ptr->inclusions = NULL;
-ptr->exclusions = NULL;
-ptr->acl_aliases= VACLBUILD; 
-ptr->log = LOGP;
-ptr->filters = NULL;
-ptr->inform = INFORMP;
-ptr->plus_flags = PLUSFLAG;
-ptr->minus_flags = MINUSFLAG;
-ptr->done = 'n';
-ptr->scope = strdup(CONTEXTID); 
-ptr->next = NULL;
-VMAKEPATHTOP = ptr;
 InitializeAction();
 }
 
@@ -4041,7 +4047,7 @@ Debug("HandleUmask(%s)",value);
  
 sscanf(value,"%o",&num);
 
-if (num <= 0)
+if (num < 0)
    {
    yyerror("umask value must be an octal number >= zero");
    }
@@ -4791,6 +4797,8 @@ if (!IsInstallable(CLASSBUFF))
    InitializeAction();
    return;
    }
+
+buf2[0] = '\0';
   
 Debug1("InstallImageItem (%s) (+%o)(-%o) (%s), server=%s\n",path,plus,minus,destination,server);
 
@@ -4842,16 +4850,7 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
          free(ep->name);
          ep->name = strdup("localhost");
          }
-      
-      if (IsDefinedClass(CLASSBUFF))
-         {
-         if ((strcmp(spl,buf2) == 0) && (strcmp(ep->name,"localhost") == 0))
-            {
-            yyerror("Image loop: file/dir copies to itself or missing destination file");
-            continue;
-            }
-         }
-      
+            
       if (strlen(ep->name) > 128)
          {
          snprintf(OUTPUT,CF_BUFSIZE,"Server name (%s) is too long",ep->name);
@@ -4907,7 +4906,16 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
          {
          ExpandVarstring(destination,buf2,"");
          }
-      
+
+      if (IsDefinedClass(CLASSBUFF))
+         {
+         if ((strcmp(spl,buf2) == 0) && (strcmp(ep->name,"localhost") == 0))
+            {
+            yyerror("Image loop: file/dir copies to itself or missing destination file");
+            continue;
+            }
+         }
+
       if (strlen(buf2) > 1)
          {
          DeleteSlash(buf2);
@@ -5026,7 +5034,7 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
          ptr->typecheck = TYPECHECK;
          }
 
-      if (ptr->purge == 'y' && strstr(ep->name,"localhost") == 0)
+      if (ptr->purge == 'y' && strstr(ep->name,"localhost") != 0)
          {
          Verbose("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
          Verbose("!! Purge detected in local (non-cfservd) file copy to file %s\n",ptr->destination);
@@ -5201,6 +5209,12 @@ else if (strcmp(value,"byte")==0 || strcmp(value,"binary") == 0)
    Debug1("Set copy by byte comaprison\n");
    COPYTYPE = 'b';
    return;
+   }
+else if (strcmp(value,"any")==0 || strcmp(value,"binary") == 0)
+   {
+   Debug1("Set copy by any comaprison\n");
+   COPYTYPE = 'a';
+   return;   
    }
 yyerror("Illegal copy type");
 }

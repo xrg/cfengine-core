@@ -3025,15 +3025,15 @@ in a shell command.
 
 This typically allows communication with PATH-like 
 environment variables in the shell.
-@cindex split
+@cindex Split
 @cindex Iteration over lists
 @mbindex Iterating over lists
-@vindex split
+@vindex Split
 
 In these contexts, any variable which has the form of
 a list joined together by colons will be iterated over
 at compilation time. Note that you can change the value
-of the list separator using the @code{split} variable
+of the list separator using the @code{Split} variable
 in the control section of the program (see Reference manual).
 
 For example, to link all of the binary files in the PATH
@@ -3065,13 +3065,13 @@ just a string you do not expect to match any file.
 
 Alternatively, you might want to define an internal list using
 a space as a separator:
-@mbindex split, using a space
+@mbindex Split, using a space
 
 @smallexample
 
 control:
 
-   split = ( " " )
+   Split = ( " " )
 
    mylist = ( "mark ricky bad-dude" )
 

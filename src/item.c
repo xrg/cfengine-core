@@ -1035,6 +1035,7 @@ char *s1, *s2;
 
 { struct Item *args;
   char *sp;
+  char s2_local[CF_MAXVARSIZE];
   long cmp = -1, start = -1, end = -1;
   Debug("SRDEBUG in FuzzyHostMatch(): %s vs %s\n",s2,s1);
   args = SplitStringAsItemList(s1,',');
@@ -1075,8 +1076,9 @@ char *s1, *s2;
      }
   
   Debug("SRDEBUG FuzzyHostMatch() %s is in (%ld..%ld)\n",s2,start,end);
-  
-  for (sp = s2; sp < s2+strlen(s2); sp++ )
+ 
+  strcpy(s2_local,s2); 
+  for (sp = s2_local; sp < s2_local+strlen(s2_local); sp++ )
      {
      if ( isdigit((int)*sp) )
         {
@@ -1084,10 +1086,10 @@ char *s1, *s2;
         break;
         }
      }
-  Debug("SRDEBUG extracted basename %s\n",s2);
-  Debug("SRDEBUG basename check: %s vs %s...\n",s2,args->name);
+  Debug("SRDEBUG extracted basename %s\n",s2_local);
+  Debug("SRDEBUG basename check: %s vs %s...\n",s2_local,args->name);
   
-  if ( strcmp(s2,args->name) != 0 )
+  if ( strcmp(s2_local,args->name) != 0 )
      {
      Debug("SRDEBUG FuzzyHostMatch() failed: basename %s does not match %s\n",s2,args->name);
      return 1;

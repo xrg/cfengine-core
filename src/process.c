@@ -64,7 +64,7 @@ while (!feof(pp))
 
 cfpclose(pp);
 
-snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_procs",WORKDIR);
+snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_procs",CFWORKDIR);
 
 imgbackup = IMAGEBACKUP;
 IMAGEBACKUP = 'n'; 
@@ -263,7 +263,7 @@ int FindMatches(struct Process *pp,struct Item *procdata,struct Item **killlist)
 
 { struct Item *ip, *ip2;
   char *sp,saveuid[16];
-  int pid=-1, ret, matches=0, got, i;
+  int pid=-1, ret, matches=0, got, i, one_space;
   regex_t rx,rxcache;
   regmatch_t pmatch;
   pid_t cfengine_pid = getpid();
@@ -329,6 +329,8 @@ for (ip = procdata; ip != NULL; ip=ip->next)
          }
       
       Debug("Matched proc[%s]\n",ip->name);
+
+      one_space = false;
       
       for (sp = ip->name; *sp != '\0'; sp++) /* if first field contains alpha, skip */
          {
@@ -336,7 +338,19 @@ for (ip = procdata; ip != NULL; ip=ip->next)
             {
             while (!isdigit((int)*sp) && (*sp != '\0'))
                {
+               if (*sp == ' ')
+                  {
+                  one_space = true;
+                  }
                sp++;
+               }
+
+            if (!one_space)
+               {
+               while(*sp != ' ' && *sp != '\t')
+                  {
+                  sp++;
+                  }
                }
             
             if ((sp > ip->name) && isalnum((int)*(sp-1))) /* Username contains number*/

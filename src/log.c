@@ -75,15 +75,15 @@ if (GetMacroValue(CONTEXTID,"SyslogFacility"))
       }
    if (strcmp(value,"LOG_LOCAL5") == 0)
       {
-      facility = LOG_LOCAL4;
+      facility = LOG_LOCAL5;
       }
    if (strcmp(value,"LOG_LOCAL6") == 0)
       {
-      facility = LOG_LOCAL4;
+      facility = LOG_LOCAL6;
       }   
    if (strcmp(value,"LOG_LOCAL7") == 0)
       {
-      facility = LOG_LOCAL4;
+      facility = LOG_LOCAL7;
       }
    
    if (lastsyslog != 1)

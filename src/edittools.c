@@ -392,7 +392,11 @@ CheckEditSwitches(filename,ptr);
 
 if (! LoadItemList(&filestart,filename))
    {
-   CfLog(cfverbose,"File was marked for editing\n","");
+   if (ptr->warn == 'y')
+      {
+      CfLog(cfverbose,"File was marked for editing\n","");
+      }
+   
    ReleaseCurrentLock();
    return;
    }
@@ -429,8 +433,10 @@ while (ep != NULL)
       case NoEdit:
       case EditInform:
       case EditBackup:
+      case EditLog:
       case EditUmask:
       case AutoCreate:
+      case WarnIfFileMissing:
       case EditInclude:
       case EditExclude:
       case EditFilter:
@@ -446,6 +452,12 @@ while (ep != NULL)
         break;
         
       case DefineInGroup:
+          if (EDITGROUPLEVEL == 0)
+             {
+             yyerror("DefineInGroup used outside edit-group");
+             break;
+             }
+          
           for (sp = expdata; *sp != '\0'; sp++)
              {
              currentitem[0] = '\0';
@@ -1194,6 +1206,8 @@ if (DONTDO || CompareToFile(filestart,filename))
  
 if ((! DONTDO) && (NUMBEROFEDITS > 0))
    {
+   snprintf(OUTPUT,CF_BUFSIZE,"Saving edit changes to file %s",filename);
+   CfLog(cfinform,OUTPUT,"");
    SaveItemList(filestart,filename,ptr->repository);
    AddEditfileClasses(ptr,true);
    }
@@ -1415,7 +1429,11 @@ cfpclose(pp);
 
 if (! LoadItemList(filestart,fname))
    {
-   EditVerbose("File was marked for editing\n");
+   if (ptr->warn == 'y')
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"File %s did not exist and was marked for editing");
+      CfLog(cferror,OUTPUT,"");
+      }
    return false;
    }
 

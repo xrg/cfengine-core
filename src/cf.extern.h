@@ -40,6 +40,7 @@ extern char *ECGSOCKS[ATTR][2];
 extern char *TCPNAMES[CF_NETATTR];
 extern char **METHODARGV;
 
+extern struct Item *QUERYVARS;
 extern struct Item *METHODRETURNVARS;;
 extern struct Item *METHODRETURNCLASSES;
 extern char METHODFILENAME[CF_BUFSIZE];
@@ -74,6 +75,7 @@ extern char CFDES3[8];
 
 extern char CFPUBKEYFILE[CF_BUFSIZE];
 extern char CFPRIVKEYFILE[CF_BUFSIZE];
+extern char CFWORKDIR[CF_BUFSIZE];
 extern char AVDB[1024];
 
 extern dev_t ROOTDEVICE;
@@ -355,8 +357,10 @@ extern short D3;
 extern short D4;
 
 extern short PARSING;
+extern short SHOWDB;
 extern short ISCFENGINE;
 
+extern short LASTSEEN;
 extern short VERBOSE;
 extern short EXCLAIM;
 extern short INFORM;
@@ -387,7 +391,7 @@ extern short NOFILECHECK;
 extern short NOTIDY;
 extern short NOSCRIPTS;
 extern short PRSYSADM;
-extern short PRMAILSERVER;
+extern short PRSCHEDULE;
 extern short MOUNTCHECK;
 extern short NOEDITS;
 extern short KILLOLDLINKS;

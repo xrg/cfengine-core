@@ -480,7 +480,7 @@ void GetV6InterfaceInfo(void)
               }
            }
         
-        fclose(pp);
+        cfpclose(pp);
         break;
     }
 }

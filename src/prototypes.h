@@ -149,9 +149,6 @@ void HandleSetState ARGLIST((char *args,char *value));
 void HandleUnsetState ARGLIST((char *args,char *value));
 void HandlePrepModule ARGLIST((char *args,char *value));
 void HandleAssociation ARGLIST((char *args,char *value));
-void OneArg ARGLIST((char *args,char *arg1));
-void TwoArgs ARGLIST((char *args,char *arg1,char *arg2));
-void ThreeArgs ARGLIST((char *args,char *arg1,char *arg2,char *arg3));
 int FunctionArgs ARGLIST((char *args,char argv[CF_MAXFARGS][CF_MAXVARSIZE],int number));
 void FiveArgs ARGLIST((char *args,char *arg1,char *arg2,char *arg3, char *arg4,char *arg5));
 int IsSocketType ARGLIST((char *s));
@@ -807,7 +804,7 @@ int StrnCmp ARGLIST((char *s1,char *s2,size_t n));
 
 #ifndef HAVE_GETNETGRENT
 
-void setnetgrent ARGLIST((const char *netgroup));
+int setnetgrent ARGLIST((const char *netgroup));
 int getnetgrent ARGLIST((char **host, char **user, char **domain));
 void endnetgrent ARGLIST((void));
 #endif
@@ -853,6 +850,7 @@ void DoAlerts ARGLIST((void));
 /* package.c */
 int RPMPackageCheck ARGLIST((char *package, char *version, enum cmpsense cmp));
 int DPKGPackageCheck ARGLIST((char *package, char *version, enum cmpsense cmp));
+int SUNPackageCheck ARGLIST((char *package, char *version, enum cmpsense cmp));
 
 /* popen.c */
 

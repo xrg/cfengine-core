@@ -62,6 +62,7 @@ void SetContext ARGLIST((char *id));
 void DeleteCaches ARGLIST((void));
 void CheckForMethod ARGLIST((void));
 void CheckMethodReply ARGLIST((void));
+void QueryCheck(void);
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -95,7 +96,7 @@ PreNetConfig();
 
 ReadRCFile(); /* Should come before parsing so that it can be overridden */
 
- if (IsPrivileged() && !MINUSF && !PRMAILSERVER)
+ if (IsPrivileged() && !MINUSF && !PRSCHEDULE)
     {
     SetContext("update");
     if (ParseInputFile("update.conf"))
@@ -110,6 +111,10 @@ ReadRCFile(); /* Should come before parsing so that it can be overridden */
           }
 
        VIMPORT = NULL;
+       }
+    else
+       {
+       Verbose("Skipping update.conf (-F=%d)\n",MINUSF);
        }
     
     if (ERRORCOUNT > 0)
@@ -141,31 +146,9 @@ ReadRCFile(); /* Should come before parsing so that it can be overridden */
     printf("%s\n",VSYSADM);
     exit (0);
     }
- 
- if (PRMAILSERVER)
+
+ if (PRSCHEDULE)
     {
-    if (GetMacroValue(CONTEXTID,"smtpserver"))
-       {
-       printf("%s\n",GetMacroValue(CONTEXTID,"smtpserver"));
-       }
-    else
-       {
-       printf("No SMTP server defined\n");
-       }
-    printf("%s\n",VSYSADM);
-    printf("%s\n",VFQNAME);
-    printf("%s\n",VIPADDRESS);
-    
-    if (GetMacroValue(CONTEXTID,"EmailMaxLines"))
-       {
-       printf("%s\n", GetMacroValue(CONTEXTID,"EmailMaxLines"));
-       }
-    else
-       {
-       /* User has not expressed a preference -- let cfexecd decide */
-       printf("%s", "-1\n");
-       }
-    
     for (ip = SCHEDULE; ip != NULL; ip=ip->next)
        {
        printf("[%s]\n",ip->name);
@@ -189,7 +172,9 @@ ReadRCFile(); /* Should come before parsing so that it can be overridden */
  CheckSystemVariables();
  
  SetReferenceTime(false); /* Reset */
- 
+
+ QueryCheck();
+     
  DoTree(2,"Main Tree"); 
  DoAlerts();
  
@@ -245,8 +230,8 @@ strcpy(VNFSTYPE,"nfs");
 IDClasses();
  
 /* Note we need to fix the options since the argv mechanism doesn't */
- /* work when the shell #!/bla/cfengine -v -f notation is used.      */
- /* Everything ends up inside a single argument! Here's the fix      */
+/* work when the shell #!/bla/cfengine -v -f notation is used.      */
+/* Everything ends up inside a single argument! Here's the fix      */
 
 cfargc = 1;
 cfargv[0]="cfagent";
@@ -280,15 +265,29 @@ for (i = 1; i < argc; i++)
  VEXPIREAFTER = VDEFAULTEXPIREAFTER;
  VIFELAPSED = VDEFAULTIFELAPSED;
  TRAVLINKS = false;
+
+ /* XXX Initialize workdir for non privileged users */
+
+ strcpy(CFWORKDIR,WORKDIR);
+
+ if (getuid() > 0)
+    {
+    char *homedir;
+    if ((homedir = getenv("HOME")) != NULL)
+       {
+       strcpy(CFWORKDIR,homedir);
+       strcat(CFWORKDIR,"/.cfagent");
+       }
+    }
  
- sprintf(ebuff,"%s/state/cf_procs",WORKDIR);
+ sprintf(ebuff,"%s/state/cf_procs",CFWORKDIR);
  
  if (stat(ebuff,&statbuf) == -1)
     {
     CreateEmptyFile(ebuff);
     }
  
- strcpy(VLOGDIR,WORKDIR); 
+ strcpy(VLOGDIR,CFWORKDIR); 
  strcpy(VLOCKDIR,VLOGDIR);  /* Same since 2.0.a8 */
  
  OpenSSL_add_all_algorithms();
@@ -335,7 +334,7 @@ if ((sp=getenv(CF_INPUTSVAR)) != NULL)
    }
 else
    {
-   snprintf(comm,CF_BUFSIZE,"%s/%s",WORKDIR,VPRECONFIG);
+   snprintf(comm,CF_BUFSIZE,"%s/%s",CFWORKDIR,VPRECONFIG);
    
    if (stat(comm,&buf) == -1)
       {
@@ -343,7 +342,7 @@ else
       return;
       }
    
-   snprintf(comm,CF_BUFSIZE,"%s/%s %s",WORKDIR,VPRECONFIG,CLASSTEXT[VSYSTEMHARDCLASS]);
+   snprintf(comm,CF_BUFSIZE,"%s/%s %s",CFWORKDIR,VPRECONFIG,CLASSTEXT[VSYSTEMHARDCLASS]);
    }
 
  if (S_ISDIR(buf.st_mode) || S_ISCHR(buf.st_mode) || S_ISBLK(buf.st_mode))
@@ -409,7 +408,7 @@ void ReadRCFile()
 filename[0] = buffer[0] = class[0] = variable[0] = value[0] = '\0';
 LINENUMBER = 0;
 
-snprintf(filename,CF_BUFSIZE,"%s/inputs/%s",WORKDIR,VRCFILE);
+snprintf(filename,CF_BUFSIZE,"%s/inputs/%s",CFWORKDIR,VRCFILE);
 if ((fp = fopen(filename,"r")) == NULL)      /* Open root file */
    {
    return;
@@ -521,7 +520,7 @@ void GetEnvironment()
   time_t now = time(NULL);
   
 Verbose("Looking for environment from cfenvd...\n");
-snprintf(env,CF_BUFSIZE,"%s/state/%s",WORKDIR,CF_ENV_FILE);
+snprintf(env,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_ENV_FILE);
 
 if (stat(env,&statbuf) == -1)
    {
@@ -592,6 +591,8 @@ void EchoValues()
 { struct Item *ip,*p2;
   char ebuff[CF_EXPANDSIZE];
 
+ebuff[0] = '\0';
+  
 Verbose("Accepted domain name: %s\n\n",VDOMAIN); 
 
 if (GetMacroValue(CONTEXTID,"OutputPrefix"))
@@ -817,7 +818,7 @@ if (GetMacroValue(CONTEXTID,"LockDirectory"))
 
 if (GetMacroValue(CONTEXTID,"LogDirectory"))
    {
-   Verbose("\n[LogDirectory is no longer runtime configurable: use configure --with-workdir=WORKDIR ]\n\n");
+   Verbose("\n[LogDirectory is no longer runtime configurable: use configure --with-workdir=CFWORKDIR ]\n\n");
    }
 
 Verbose("LogDirectory = %s\n",VLOGDIR);
@@ -868,6 +869,11 @@ if (OptionIs(CONTEXTID,"SkipIdentify",true))
 if (OptionIs(CONTEXTID,"Verbose",true))
    {
    VERBOSE = true;
+   }
+
+if (OptionIs(CONTEXTID,"LastSeen",false))
+   {
+   LASTSEEN = false;
    }
 
 if (OptionIs(CONTEXTID,"Inform",true))
@@ -982,8 +988,14 @@ if (GetMacroValue(CONTEXTID,"ChecksumDatabase"))
    }
 else
    {
-   snprintf(ebuff,CF_BUFSIZE,"%s/checksum.db",WORKDIR);
+   snprintf(ebuff,CF_BUFSIZE,"%s/checksum.db",CFWORKDIR);
    CHECKSUMDB = strdup(ebuff);
+   }
+
+if (SHOWDB)
+   {
+   printf("%s\n",CHECKSUMDB);
+   exit(0);
    }
  
 Verbose("Checksum database is %s\n",CHECKSUMDB); 
@@ -1085,6 +1097,28 @@ if (setclasses)
    }
 }
 
+
+/*******************************************************************/
+
+void QueryCheck()
+
+{ char src[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
+  struct Item *ip;
+ 
+if (QUERYVARS == NULL)
+   {
+   return;
+   }
+
+for (ip = QUERYVARS; ip != NULL; ip=ip->next)
+   {
+   snprintf(src,CF_MAXVARSIZE,"$(%s)",ip->name);
+   ExpandVarstring(src,ebuff,"");
+   printf("%s=%s\n",ip->name,ebuff);
+   }
+
+exit(0);
+}
 
 /*******************************************************************/
 
@@ -1519,7 +1553,7 @@ void CheckOpts(int argc,char **argv)
   int c;
 
   
-while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o:Z:",OPTIONS,&optindex)) != EOF)
+while ((c=getopt_long(argc,argv,"WbBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o:Z:Q:",OPTIONS,&optindex)) != EOF)
   {
   switch ((char) c)
       {
@@ -1628,7 +1662,8 @@ while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o
           PARSEONLY = true;
           break;
           
-      case 'z': PRMAILSERVER = true;
+      case 'z':
+          PRSCHEDULE = true;
           IGNORELOCK = true;
           PARSEONLY = true;
           break;
@@ -1677,6 +1712,9 @@ while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o
           
       case 'q': NOSPLAY = true;
           break;
+
+      case 'W': SHOWDB = true; 
+          break;
           
       case 'Y': CFPARANOID = true;
           break;
@@ -1687,6 +1725,17 @@ while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o
           
       case 'o': actionList = SplitStringAsItemList(optarg, ',');
           VAVOIDACTIONS = ConcatLists(actionList, VAVOIDACTIONS);
+          break;
+
+      case 'Q':
+          if (optarg == NULL || strlen(optarg) == 0)
+             {
+             exit(1);
+             }
+          
+          IGNORELOCK = true;
+          NOSPLAY = true;
+          QUERYVARS = SplitStringAsItemList(optarg,',');
           break;
           
       default:  Syntax();

@@ -115,6 +115,7 @@ as last updated @value{UPDATED}.
 @menu
 * Reference introduction::      
 * Cfkey::                       
+* Cfshow::                      
 * Cfagent reference::           
 * Cfservd.conf and cfrun reference::  
 * Cfexecd reference::           
@@ -294,11 +295,11 @@ True if file 1's attributes were changed in any way before file 2's (ctime).
 True if the named file object exists.
 @item IPRange(@var{address-range})
 True if the current host lies within the specified range
-@item HostRange(@var{basename,start/stop})
+@item HostRange(@var{basename,start-stop})
 True if the current relative domain name begins with basename and ends with an integer
 between start and stop
-@item IsDefined(@var{command})
-True of the named variable is defined. NB: @code{IsDefines(var)}, not @code{IsDefined($@{var@})}
+@item IsDefined(@var{variable-id})
+True of the named variable is defined. NB: @code{IsDefined(var)}, not @code{IsDefined($@{var@})}
 @item IsDir(@var{f})
 True if the named file object is a directory.
 @item IsLink(@var{f})
@@ -416,7 +417,7 @@ must begin with a drive letter or double-slash server name.
 * FAQ Index::                   
 @end menu
 
-@node Cfkey, Cfagent reference, Reference introduction, Top
+@node Cfkey, Cfshow, Reference introduction, Top
 @chapter Cfkey reference
 
 The very first thing you should do on every host is to establish a
@@ -438,6 +439,58 @@ data were found in order to make a random key. In that case, run @file{cfenvd}
 for a few days more and try again.
 @cindex PRNG not seeded
 
+@c **********************************************************************
+@c CHAPTER
+@c **********************************************************************
+
+@menu
+* Cfagent reference::           
+* Cfservd.conf and cfrun reference::  
+* Cfexecd reference::           
+* Problem solving::             
+* Example configuration file::  
+* Variable Index::              
+* Concept Index::               
+* FAQ Index::                   
+@end menu
+
+@node Cfshow, Cfagent reference, Cfkey, Top
+@chapter Cfshow reference
+
+The @code{cfshow} command was introduced in cfengine 2.1.11 in order to
+provide a simple command line query of the various databases used to store
+operational state by cfagent.
+@smallexample
+everyhost# cfshow -a
+everyhost# cfshow -l
+everyhost# cfshow -c
+everyhost# cfshow -s
+@end smallexample
+@noindent
+
+The command line options are
+
+@table @samp
+@item -a @code{--active}
+This prints a list of any currently active locks, i.e. tasks that cfengine believes
+it is currently enagaged in.
+@item -l @code{--locks}
+This prints a list of the locks and the last times an active lock was secured for each
+cfengine acivity. This list is potentially very long.
+@item -s @code{--last-seen}
+This lists the IP addresses of all known peers and the times they were last engaged in
+communication with the current host. The expected interval between communications is also
+printed. See FriendStatus. The output format is in a form that can easily be parsed by
+user scripts. e.g.
+@smallexample
+192.0.2.1 (answered us) at [Wed May 26 16:39:03 2004] i.e. not seen for !2860.08! hours; <delta_t> = @{63325.64@} hours
+192.0.2.3 (answered us) at [Wed May 26 16:39:03 2004] i.e. not seen for !2860.08! hours; <delta_t> = @{90465.20@} hours
+@end smallexample
+@item -c @code{--checksum}
+This lists all of the files and their current checksum values in the
+current checksum database.
+
+@end table
 
 @c **********************************************************************
 @c CHAPTER
@@ -454,7 +507,7 @@ for a few days more and try again.
 * FAQ Index::                   
 @end menu
 
-@node Cfagent reference, Cfservd.conf and cfrun reference, Cfkey, Top
+@node Cfagent reference, Cfservd.conf and cfrun reference, Cfshow, Top
 @chapter Cfagent reference
 
 
@@ -676,6 +729,9 @@ option.
 @item -q
 (@code{--no-splay}) Switch off host splaying (sleeping).
 
+@item -Q
+(@code{--quert}) Query the values of the comma separated list of variable names.
+
 @item -s 
 (@code{--no-commands}) Do not execute scripts or shell commands.
 
@@ -724,7 +780,7 @@ program.
 messages.
 
 @item -z
-(@code{--smtp}) Print the SMTP server for the LAN (used by cfexecd).
+(@code{--schedule}) Print the exec schedule for the LAN (used by cfexecd).
 
 @end table
 
@@ -910,7 +966,7 @@ of lines of the form:
 @end table
 
 @item ReadList(@var{filename},@var{fileformat},@var{comment},@var{Max number of bytes})
-Reads up to a maximum number of bytes from a properly formatted file into a one-dimensional associated array. File formats
+Reads up to a maximum number of bytes from a properly formatted file into a listvariable. File formats
 are:
 @table @code
 @item lines
@@ -1066,11 +1122,17 @@ be interpreted as a list variable, since it contains the default separator
 The currently defined domain.
 @vindex $(domain)
 
+@item EmailFrom
+The E-mail address from whom E-mail from cfexecd should appear to originate.
+
 @item EmailMaxLines
 Most lines of output to email from a single cfexecd-induced run of
 cfagent. If undefined, defaults to 100. Set to 0, no email is sent by
 cfexecd. Set to @code{inf}, no maximum is enforced.
 @vindex $@{EmailMaxLines@}
+
+@item EmailTo
+The E-mail address to whom mail should be sent (overrides sysadm variable).
 
 @item faculty
 The faculty or site as defined in control (see site).
@@ -2332,6 +2394,7 @@ The meaning of each of these lines is described below.
 * interfacename::               
 * lastseenexpireafter::         
 * fileextension::               
+* lastseen::                    
 * linkcopies::                  
 * LogDirectory::                
 * LogTidyHomeFiles::            
@@ -3521,7 +3584,7 @@ function, @xref{alerts}.
 @c SUBSECTION
 @c .....................................................
 
-@node fileextension, linkcopies, lastseenexpireafter, control
+@node fileextension, lastseen, lastseenexpireafter, control
 @subsection FileExtensions
 
 This list may be used to define a number of extensions
@@ -3543,7 +3606,31 @@ these extensions. They may be used to conceal directories.
 @c SUBSECTION
 @c .....................................................
 
-@node linkcopies, LogDirectory, fileextension, control
+@node lastseen, linkcopies, fileextension, control
+@subsection LastSeen
+
+This option is true by default. If set to off or false it prevents cfengine
+and/or cfservd from learning about last times hosts were observed
+connecting to one another. Some users with broken resolvers (particularly
+in view of the change over to IPv6 compatible libraries) might find this
+useful when processes appear to hang on connecting.
+@cindex Broken resolver
+@cindex LastSeen
+@cindex Hanging processes
+
+
+@smallexample
+
+  LastSeen = ( off )
+
+@end smallexample
+@vindex LastSeen
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node linkcopies, LogDirectory, lastseen, control
 @subsection LinkCopies
 
 This list is used to define a global list of names or patterns
@@ -4484,7 +4571,7 @@ copy:
                         xdev=@var{true/on}/@b{false/off}
 
                         recurse=@var{number/inf/}@var{0}
-                        type=@b{ctime}@var{/mtime/checksum/sum/byte/binary}
+                        type=@b{ctime}@var{/mtime/checksum/sum/byte/binary/any}
                         linktype=@b{absolute/symbolic}@var{/relative/hard/none/copy}
                         typecheck=@b{true/on}/@var{false/off}
                         define=@var{class-list}(,:.)
@@ -5171,14 +5258,17 @@ be examined later.  The syntax is
 @end cartouche
 
 @noindent
-If a destination filename is specified, cfagent renames the source file to
-the destination, where possible (renaming across filesystems is not allowed).
-If no destination is given,
-cfagent renames a given file by appending the name of the file with the
-suffix @file{.cfdisabled}.  A typical example of a file you would
-probably want to disable would be the @code{/etc/hosts.equiv} file which
-is often found with the @samp{+} symbol written in it, opening the
-system concerned to the entire NIS universe without password protection!
+If a destination filename is specified, cfagent renames the source file
+to the destination, where possible (renaming across filesystems is not
+allowed).  If no destination is given, cfagent renames a given file by
+appending the name of the file with the suffix @file{.cfdisabled}.  Note
+that directories are only renamed if they have a specific destination
+specified.
+
+A typical example of a file you would probably want to disable would be
+the @code{/etc/hosts.equiv} file which is often found with the @samp{+}
+symbol written in it, opening the system concerned to the entire NIS
+universe without password protection!
 @cindex @file{/etc/hosts.equiv}
 @cindex @code{.cfdisabled}
 Here is an example:
@@ -5338,10 +5428,10 @@ file in the same directory.
 @section editfiles
 
 Performs ascii (line-based) editing on text-files or limited binary
-editing of files.
-If editing a file which has hard links to it, be aware that
-editing the file will destroy the hard link references. This is also the
-case with shell commands. You should avoid hard links whenever possible.
+editing of files.  If editing a file which has hard links to it, be
+aware that editing the file will destroy the hard link references. This
+is also the case with shell commands. You should avoid hard links
+whenever possible.
 @cindex awk, editing
 @cindex sed, editing
 The form of an editing command is
@@ -5468,14 +5558,18 @@ More general comment types may be defined using the
 @code{CommentLinesMatching}, @code{CommentLinesStarting}
 functions.
 
-A special group of editing commands is based on the GNU Regular
-Expression package. These use GNU regular expressions to search line by
-line through text and perform various editing functions.  Some of these
-commands are based on the concept of a file pointer. The pointer starts
-at line one of the file and can be reset by 'locating' a certain line,
-or by using the reset-pointer commands. The current position of the
-pointer is used by commands such as @code{InsertLine} to allow a
-flexible way of editing the middle of files.
+A special group of editing commands is based on the POSIX Regular
+Expression package. These use regular expressions to search line by
+line through text and perform various editing functions. Searches are of two
+different types: "LineMatching" and "LineContaining". In the first case
+the regular expression must match the entire line exactly; in the latter,
+a substring is searched for in the file.
+
+Some of these commands are based on the concept of a file pointer. The
+pointer starts at line one of the file and can be reset by 'locating' a
+certain line, or by using the reset-pointer commands. The current
+position of the pointer is used by commands such as @code{InsertLine} to
+allow a flexible way of editing the middle of files.
 
 A simple decision mechanism is incorporated to allow certain editing
 actions to be excluded. For instance, to insert a number of lines
@@ -6078,6 +6172,10 @@ scripts during editing. This involves the inheritance of
 environment variables and path, which carries with it an
 inherent security risk. Setting this value to false
 causes execution to execute without an encapsulating shell.
+
+@item   WarnIfFileMissing @var{quoted-string}
+If the file to be edited does not exist, a visible alert
+is issued.
 
 @item   WarnIfLineContaining @var{quoted-string}
 Issue a warning if the quoted string is found as a
@@ -6746,8 +6844,9 @@ which are to be matched. The list should be separated by the OR symbol
 `|', since these types are mutually exclusive. The possible values are
 currently
 @smallexample
-reg|link|dir|socket|fifo|door|char|block
+file|reg|link|dir|socket|fifo|door|char|block
 @end smallexample
+Note that @code{file} and @code{reg} are synonymous.
 @item ExecRegex: 
 matches the test string against the output of the specified command.
 @item NameRegex: 
@@ -7829,6 +7928,8 @@ decoupling between client request and service provision.
 
       action=@file{filename}                
 
+      sendclasses=@var{comma separated class list}
+
       returnvars=@var{comma separated variable list or void}
       returnclasses=@var{comma separated class list}
 
@@ -7848,25 +7949,28 @@ noted below:
 
 @table @code
 @item action
-The name of the method file that should be defined in the modules directory of the server host.
+The name of the method file that should be defined in the modules
+directory of the server host.
 @item forcereplyto
-Sometimes nameservice problems (especially with remote devices) can lead to confusion about
-where a method should be sent. The caller can therefore declare to the server which address
-it wants the reply to be marked for.
+Sometimes nameservice problems (especially with remote devices) can lead
+to confusion about where a method should be sent. The caller can
+therefore declare to the server which address it wants the reply to be
+marked for.
 @item returnvars
-Returns the values of the variables to the parent process. This acts as an access control list for
-variable names transmitted by the child process. The names returned by the child must match this
-list.
+Returns the values of the variables to the parent process. This acts as
+an access control list for variable names transmitted by the child
+process. The names returned by the child must match this list.
 @item returnclasses
 Returns the classes to the parent process, if and only if they are
-defined at the end of the current method. This acts as an access control list for
-class names transmitted by the child process. The names returned by the child must match this
-list.
+defined at the end of the current method. This acts as an access control
+list for class names transmitted by the child process. The names
+returned by the child must match this list.
 
 @item sendclasses
-Transmits the current status of the named classes to the child process. In other words,
-if the listed classes are defined, they become defined in the child process, else they
-remain undefined. The class may still be defined in the child by independent local definitions.
+Transmits the current status of the named classes to the child
+process. In other words, if the listed classes are defined, they become
+defined in the child process, else they remain undefined. The class may
+still be defined in the child by independent local definitions.
 @end table
 
 The function arguments may not be empty, but a null value
@@ -7906,9 +8010,16 @@ With method file (located in the ModulesDirectory),
     MethodParameters = ( null )
     actionsequence   = ( timezone )
 
+
+  classes:
+
+     dummy = ( any )
+
 ####################################################
 
 alerts:
+
+ dummy::
 
   "This simple method does nothing"
 
@@ -8149,7 +8260,7 @@ The parameters transmitted by the parent are read into the formal
 parameters @code{value1}, @code{value2} and the the file excerpt is
 placed in the temporary file @file{/tmp/file1}.
 
-The return clases are passed in their current state to the parent;
+The return classes are passed in their current state to the parent;
 i.e. if class1 is defined then it is offered to the parent, but if it
 is not defined in the method, it is not passed on. The parent can then
 choose to accept or ignore the value.
@@ -8194,6 +8305,18 @@ methods:
   returnvars=retval
   ifelapsed=120
 @end smallexample
+
+Note that an important aspect of remote method invocation is that there is only
+voluntary cooperation between the parties. A reply bundle from a finished method
+can collected from a server by the client many times, causing the classes
+and variables associated with it to be defined at regular intervals, controlled
+by the ifelapsed time. To avoid multiple actions, you should lock methods or
+their follow-up actions with long ifelapsed times. This is a fundamental `feature'
+of voluntary cooperation: each party must take responsibilty for the sense of what
+it receives from the other. This feature will not be to everyone's taste, and it
+is unconventional. However, voluntary cooperation provides a way of collaborating
+without trust in a framework that forces us to confront the security issues directly.
+As such, it is a successful experiment.
 
 @c -------------------------------------------------------------------------------
 @c SECTION
@@ -8357,6 +8480,8 @@ processes:
                         action=@b{signal}@var{/do/warn/bymatch}
                         include=@var{literal}
                         exclude=@var{literal}
+                        filter=@var{filter_name}
+
                         syslog=@var{true/on}/@var{false/off}
                         inform=@var{true/on}/@var{false/off}
                         ifelapsed=@var{mins} 

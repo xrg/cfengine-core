@@ -85,11 +85,12 @@ return strncmp(buf1,buf2,n);
 
 /*********************************************************/
 
-void setnetgrent(netgroup)
+int setnetgrent(netgroup)
 
 const char *netgroup;
 
 {
+return 0;
 }
 
 /**********************************************************/

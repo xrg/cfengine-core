@@ -60,6 +60,7 @@ char CONTEXTID[32];
 char CFPUBKEYFILE[CF_BUFSIZE];
 char CFPRIVKEYFILE[CF_BUFSIZE];
 char AVDB[1024];
+char CFWORKDIR[CF_BUFSIZE];
 
 RSA *PRIVKEY = NULL, *PUBKEY = NULL;
 
@@ -119,6 +120,7 @@ pthread_mutex_t MUTEX_LOCK = PTHREAD_MUTEX_INITIALIZER;
   PUBLIC short D2 = false;
   PUBLIC short D3 = false;
   PUBLIC short D4 = false;
+  PUBLIC short LASTSEEN = true;
   PUBLIC short VERBOSE = false;
   PUBLIC short INFORM = false;
   PUBLIC short CHECK = false;
@@ -168,7 +170,9 @@ pthread_mutex_t MUTEX_LOCK = PTHREAD_MUTEX_INITIALIZER;
   PROTECTED int VDEFAULTEXPIREAFTER = 120; /* minutes */
 
   PUBLIC struct cfagent_connection *CONN = NULL;
+
   PUBLIC struct Item *VEXCLUDECACHE = NULL;
+  PUBLIC struct Item *QUERYVARS = NULL;
 
   PUBLIC struct cfObject *OBJECTLIST = NULL;
 
@@ -435,6 +439,8 @@ char *TCPNAMES[CF_NETATTR] =
       { "check-contradictions",no_argument,0,'g'},
       { "just",required_argument,0,'j'},
       { "avoid",required_argument,0,'o'},
+      { "query",required_argument,0,'Q'},
+      { "csdb",no_argument,0,'w'},
       { NULL,0,0,0 }
       };
 
@@ -636,6 +642,7 @@ char *TCPNAMES[CF_NETATTR] =
       {
       "rpm",
       "dpkg",   /* aptget ? */
+      "sun",    /* pkginfo/pkgadd/pkgrm */
       NULL
       };
 
@@ -647,6 +654,7 @@ char *TCPNAMES[CF_NETATTR] =
 
   PUBLIC short ISCFENGINE;  /* for re-using parser code in cfd */
 
+  PUBLIC  short SHOWDB = false;
   PUBLIC  short PARSING = false;
   PRIVATE short NOABSPATH = false;
   PRIVATE short TRAVLINKS = false;
@@ -662,7 +670,7 @@ char *TCPNAMES[CF_NETATTR] =
   PRIVATE short NOTIDY = false;
   PRIVATE short NOSCRIPTS = false;
   PRIVATE short PRSYSADM = false;
-  PRIVATE short PRMAILSERVER = false;
+  PRIVATE short PRSCHEDULE = false;
   PRIVATE short MOUNTCHECK = false;
   PRIVATE short NOPROCS = false;
   PRIVATE short NOMETHODS = false;
@@ -1043,6 +1051,7 @@ char *TCPNAMES[CF_NETATTR] =
      "BeginGroupIfDefined",
      "BeginGroupIfNotDefined",
      "AutoCreate",
+     "WarnIfFileMissing",
      "ForEachLineIn",
      "EndLoop",
      "ReplaceLinesMatchingField",
