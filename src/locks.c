@@ -193,7 +193,7 @@ int GetLock(char *operator,char *operand,int ifelapsed,int expireafter,char *hos
 { unsigned int pid;
   int i, err, sum=0;
   time_t lastcompleted = 0, elapsedtime;
-  char c_operator[CF_BUFSIZE],c_operand[CF_BUFSIZE];
+  char c_operator[CF_BUFSIZE],c_operand[CF_BUFSIZE],cc_operator[CF_BUFSIZE],cc_operand[CF_BUFSIZE];
   
 if (IGNORELOCK)
    {
@@ -214,10 +214,12 @@ Debug("GetLock(%s,%s,time=%d), ExpireAfter=%d, IfElapsed=%d\n",operator,operand,
 memset(CFLOCK,0,CF_BUFSIZE);
 memset(CFLAST,0,CF_BUFSIZE);
 
-/* Make local copy in case CanonifyName called - not re-entramt*/
+/* Make local copy in case CanonifyName called - not re-entrant - best fix for now */
 
 strncpy(c_operator,operator,CF_BUFSIZE-1);
 strncpy(c_operand,operand,CF_BUFSIZE-1);
+strncpy(cc_operator,CanonifyName(c_operator),CF_BUFSIZE-1);
+strncpy(cc_operand,CanonifyName(c_operand),CF_BUFSIZE-1);
 
 for (i = 0; operator[i] != '\0'; i++)
     {
@@ -230,8 +232,8 @@ for (i = 0; operand[i] != '\0'; i++)
     }
 
 snprintf(CFLOG,CF_BUFSIZE,"%s/cfengine.%.40s.runlog",VLOGDIR,host);
-snprintf(CFLOCK,CF_BUFSIZE,"lock.%.100s.%.40s.%s.%.100s_%d",VCANONICALFILE,host,CanonifyName(c_operator),c_operand,sum);
-snprintf(CFLAST,CF_BUFSIZE,"last.%.100s.%.40s.%s.%.100s_%d",VCANONICALFILE,host,CanonifyName(c_operator),c_operand,sum);
+snprintf(CFLOCK,CF_BUFSIZE,"lock.%.100s.%.40s.%s.%.100s_%d",VCANONICALFILE,host,cc_operator,cc_operand,sum);
+snprintf(CFLAST,CF_BUFSIZE,"last.%.100s.%.40s.%s.%.100s_%d",VCANONICALFILE,host,cc_operator,cc_operand,sum);
  
 if (strlen(CFLOCK) > MAX_FILENAME)
    {
