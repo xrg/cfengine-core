@@ -2335,10 +2335,7 @@ counter_challenge = BN_new();
 BN_rand(counter_challenge,256,0,0);
 nonce_len = BN_bn2mpi(counter_challenge,in);
 ChecksumString(in,nonce_len,digest,'m');
- 
-/* encrypted_len = BN_num_bytes(newkey->n);  encryption buffer is always the same size as n */
-
-encrypted_len = RSA_size(newkey); /* encryption buffer is always the same size as n */ 
+encrypted_len = RSA_size(newkey);         /* encryption buffer is always the same size as n */ 
 
  
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
@@ -2437,6 +2434,10 @@ if (keylen > CF_BUFSIZE/2)
    CfLog(cfinform,conn->output,"");
    return false;
    }
+else
+   {
+   Debug("Got Blowfish size %d\n",keylen);
+   }
 
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
 if (pthread_mutex_lock(&MUTEX_SYSCALL) != 0)
@@ -2445,7 +2446,7 @@ if (pthread_mutex_lock(&MUTEX_SYSCALL) != 0)
    }
 #endif
  
-conn->session_key = malloc(keylen);
+conn->session_key = malloc(CF_BLOWFISHSIZE); 
 
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
 if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
@@ -2459,7 +2460,20 @@ if (conn->session_key == NULL)
    return false;
    }
 
-memcpy(conn->session_key,in,keylen);
+/* Decrypt session key */
+
+if (RSA_private_decrypt(keylen,in,conn->session_key,PRIVKEY,RSA_PKCS1_PADDING) <= 0)
+   {
+   err = ERR_get_error();
+   
+   snprintf(conn->output,CF_BUFSIZE,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
+   CfLog(cferror,conn->output,"");
+   free(conn->session_key);
+   conn->session_key = NULL;
+   return false;
+   }
+
+memcpy(conn->session_key,out,CF_BLOWFISHSIZE);
 Debug("Got a session key...\n"); 
  
 BN_free(counter_challenge);

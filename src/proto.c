@@ -176,7 +176,7 @@ int KeyAuthentication(struct Image *ip)
  BIGNUM *nonce_challenge, *bn = NULL;
  unsigned long err;
  unsigned char digest[EVP_MAX_MD_SIZE];
- int encrypted_len,nonce_len = 0,len;
+ int encrypted_len,nonce_len = 0,len,blowfishsize;
  char cant_trust_server, keyname[CF_BUFSIZE];
  RSA *server_pubkey = NULL;
 
@@ -238,6 +238,7 @@ if (server_pubkey != NULL)
       err = ERR_get_error();
       snprintf(OUTPUT,CF_BUFSIZE,"Public encryption failed = %s\n",ERR_reason_error_string(err));
       CfLog(cferror,OUTPUT,"");
+      free(out);
       return false;
       }
    
@@ -336,15 +337,10 @@ else
 
 /* Receive counter challenge from server */ 
 
-
 Debug("Receive counter challenge from server\n");  
 /* proposition S3 */   
 memset(in,0,CF_BUFSIZE);  
 encrypted_len = ReceiveTransaction(CONN->sd,in,NULL);
-
-
-
-
 
 if (encrypted_len < 0)
    {
@@ -413,10 +409,6 @@ if (server_pubkey == NULL)
    SavePublicKey(keyname,newkey);
    RSA_free(newkey);
    }
-else
-   {
-   RSA_free(server_pubkey);
-   }
  
 /* proposition C5 */ 
 GenerateRandomSessionKey();
@@ -426,8 +418,49 @@ if (CONN->session_key == NULL)
    CfLog(cferror,"A random session key could not be established","");
    return false;
    }
- 
-SendTransaction(CONN->sd,CONN->session_key,16,CF_DONE); 
+else
+   {
+   Debug("Generated session key\n");
+   }
+
+/* Session key - should be rsa encrypted. It ought to be this simple:
+
+     SendTransaction(CONN->sd,CONN->session_key,16,CF_DONE);
+
+   but the RSA encryption makes it very complicated
+*/
+
+blowfishsize = BN_bn2mpi((BIGNUM *)CONN->session_key,in);
+
+encrypted_len = RSA_size(server_pubkey);
+
+Debug("Encrypt %d to %d\n",CF_BLOWFISHSIZE,encrypted_len);
+
+if ((out = malloc(encrypted_len)) == NULL)
+   {
+   FatalError("memory failure");
+   }
+
+if (RSA_public_encrypt(blowfishsize,in,out,server_pubkey,RSA_PKCS1_PADDING) <= 0)
+   {
+   err = ERR_get_error();
+   snprintf(OUTPUT,CF_BUFSIZE,"Public encryption failed = %s\n",ERR_reason_error_string(err));
+   CfLog(cferror,OUTPUT,"");
+   free(out);
+   return false;
+   }
+
+Debug("Encryption succeeded\n");
+
+SendTransaction(CONN->sd,out,encrypted_len,CF_DONE);
+
+if (server_pubkey != NULL)
+   {
+   RSA_free(server_pubkey);
+   }
+
+free(out);
+
 return true; 
 }
 

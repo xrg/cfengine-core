@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.1.15a1 for version
-2.1.15a1 as last updated 23 February 2005.
+   This manual corresponds to CFENGINE Edition 2.1.14 for version
+2.1.14 as last updated 28 February 2005.
 
 * Menu:
 
@@ -1954,6 +1954,7 @@ cfengine.  Note that a limited number of built-in functions exists:
 * deletenonownermail::
 * domain::
 * dryrun::
+* dpkginstallcommand::
 * editbinaryfilesize::
 * editfilesize::
 * emptyresolvconf::
@@ -1980,6 +1981,7 @@ cfengine.  Note that a limited number of built-in functions exists:
 * repchar::
 * repository::
 * RPMcommand::
+* rpminstallcommand::
 * schedule::
 * secureinput::
 * sensiblecount::
@@ -1992,6 +1994,7 @@ cfengine.  Note that a limited number of built-in functions exists:
 * SplayTime::
 * split::
 * spooldirectories::
+* suninstallcommand::
 * suspiciousnames::
 * sysadm::
 * Syslog::
@@ -2164,8 +2167,9 @@ Here is a more complete description of the meaning of these keywords.
 `packages'
      executes commands defined under the `packages' section of the
      program.  This will query the system's package database for the
-     specified packages, at the specified versions, and set classes
-     based on whether or not those packages exist.
+     specified packages, at the specified versions, set classes based
+     on whether or not those packages exist, and optionally install
+     those packages using a pre-defined package manager command.
 
 `shellcommands'
      executes all the commands defined under the `shellcommands'
@@ -2547,7 +2551,7 @@ mailservers whose names do not correspond to a known user name, but
 might be owned by a known user.
 
 
-File: cfengine-Reference.info,  Node: domain,  Next: dryrun,  Prev: deletenonownermail,  Up: control
+File: cfengine-Reference.info,  Node: domain,  Next: dpkginstallcommand,  Prev: deletenonownermail,  Up: control
 
 4.9.20 domain
 -------------
@@ -2567,9 +2571,25 @@ can fail to be defined if cfengine is not able to figure out the domain
 name.
 
 
-File: cfengine-Reference.info,  Node: dryrun,  Next: editbinaryfilesize,  Prev: domain,  Up: control
+File: cfengine-Reference.info,  Node: dpkginstallcommand,  Next: dryrun,  Prev: domain,  Up: control
 
-4.9.21 DryRun
+4.9.21 DPKGInstallCommand
+-------------------------
+
+Sets the command used to install packages that need to be installed
+under the DPKG package manager.
+
+     DPKGInstallCommand = ( "/usr/bin/pkgmgr %s" )
+
+   By default, this variable is not set, meaning that any packages with
+action=install will NOT be installed if installation is required.  Note
+the "'s around the string, and the %s is replaced with the list of
+packages to be installed, each separated by a ' ' (space).
+
+
+File: cfengine-Reference.info,  Node: dryrun,  Next: editbinaryfilesize,  Prev: dpkginstallcommand,  Up: control
+
+4.9.22 DryRun
 -------------
 
 
@@ -2587,7 +2607,7 @@ without actually doing it.
 
 File: cfengine-Reference.info,  Node: editbinaryfilesize,  Next: editfilesize,  Prev: dryrun,  Up: control
 
-4.9.22 editbinaryfilesize
+4.9.23 editbinaryfilesize
 -------------------------
 
         EditBinaryFileSize  = ( SIZE )
@@ -2601,7 +2621,7 @@ large number or to zero.  If the value is zero, cfengine will ignore it.
 
 File: cfengine-Reference.info,  Node: editfilesize,  Next: emptyresolvconf,  Prev: editbinaryfilesize,  Up: control
 
-4.9.23 editfilesize
+4.9.24 editfilesize
 -------------------
 
         EditfileSize  = ( SIZE )
@@ -2622,7 +2642,7 @@ the value is zero, cfengine will ignore it.
 
 File: cfengine-Reference.info,  Node: emptyresolvconf,  Next: exclamation,  Prev: editfilesize,  Up: control
 
-4.9.24 EmptyResolvConf
+4.9.25 EmptyResolvConf
 ----------------------
 
         EmptyResolvConf  = ( true )
@@ -2634,7 +2654,7 @@ existing content from the file.
 
 File: cfengine-Reference.info,  Node: exclamation,  Next: excludecopy,  Prev: emptyresolvconf,  Up: control
 
-4.9.25 Exclamation
+4.9.26 Exclamation
 ------------------
 
 This variable defaults to "on". If set to "off", no exclamation marks
@@ -2646,7 +2666,7 @@ checksum violations.
 
 File: cfengine-Reference.info,  Node: excludecopy,  Next: excludelinks,  Prev: exclamation,  Up: control
 
-4.9.26 ExcludeCopy
+4.9.27 ExcludeCopy
 ------------------
 
 This list is used to define a global list of names or patterns which
@@ -2667,7 +2687,7 @@ as long as that class is defined. For instance
 
 File: cfengine-Reference.info,  Node: excludelinks,  Next: ExpireAfter,  Prev: excludecopy,  Up: control
 
-4.9.27 ExcludeLink
+4.9.28 ExcludeLink
 ------------------
 
 This list is used to define a global list of names or patterns which
@@ -2688,7 +2708,7 @@ as long as that class is defined. For instance
 
 File: cfengine-Reference.info,  Node: ExpireAfter,  Next: homepattern,  Prev: excludelinks,  Up: control
 
-4.9.28 ExpireAfter
+4.9.29 ExpireAfter
 ------------------
 
 If you change the value of this parameter, it should be one of the
@@ -2718,7 +2738,7 @@ as options of the form `expireafter=10'.
 
 File: cfengine-Reference.info,  Node: homepattern,  Next: HostnameKeys,  Prev: ExpireAfter,  Up: control
 
-4.9.29 HomePattern
+4.9.30 HomePattern
 ------------------
 
         HomePattern  = ( LIST OF PATTERNS )
@@ -2759,7 +2779,7 @@ achieve the same this as follows:
 
 File: cfengine-Reference.info,  Node: HostnameKeys,  Next: IfElapsed,  Prev: homepattern,  Up: control
 
-4.9.30 HostnameKeys
+4.9.31 HostnameKeys
 -------------------
 
 If this variable is set to true/on, it causes cfagent to lookup and
@@ -2780,7 +2800,7 @@ attacker by potentially allowing DNS spoofing.
 
 File: cfengine-Reference.info,  Node: IfElapsed,  Next: Inform,  Prev: HostnameKeys,  Up: control
 
-4.9.31 IfElapsed
+4.9.32 IfElapsed
 ----------------
 
 If you change the value of this parameter, it should be one of the
@@ -2808,7 +2828,7 @@ as options of the form `ifelapsed=15'.
 
 File: cfengine-Reference.info,  Node: Inform,  Next: interfacename,  Prev: IfElapsed,  Up: control
 
-4.9.32 Inform
+4.9.33 Inform
 -------------
 
 
@@ -2828,7 +2848,7 @@ this output level one writes:
 
 File: cfengine-Reference.info,  Node: interfacename,  Next: lastseenexpireafter,  Prev: Inform,  Up: control
 
-4.9.33 InterfaceName
+4.9.34 InterfaceName
 --------------------
 
 If you have an operating system which is installed on some non-standard
@@ -2854,7 +2874,7 @@ file::.
 
 File: cfengine-Reference.info,  Node: lastseenexpireafter,  Next: fileextension,  Prev: interfacename,  Up: control
 
-4.9.34 LastSeenExpireAfter
+4.9.35 LastSeenExpireAfter
 --------------------------
 
 This value (in days) sets the time after which unseen friend hosts are
@@ -2867,7 +2887,7 @@ function, *Note alerts::.
 
 File: cfengine-Reference.info,  Node: fileextension,  Next: lastseen,  Prev: lastseenexpireafter,  Up: control
 
-4.9.35 FileExtensions
+4.9.36 FileExtensions
 ---------------------
 
 This list may be used to define a number of extensions which are
@@ -2881,7 +2901,7 @@ names using these extensions. They may be used to conceal directories.
 
 File: cfengine-Reference.info,  Node: lastseen,  Next: linkcopies,  Prev: fileextension,  Up: control
 
-4.9.36 LastSeen
+4.9.37 LastSeen
 ---------------
 
 This option is true by default. If set to off or false it prevents
@@ -2896,7 +2916,7 @@ might find this useful when processes appear to hang on connecting.
 
 File: cfengine-Reference.info,  Node: linkcopies,  Next: LogDirectory,  Prev: lastseen,  Up: control
 
-4.9.37 LinkCopies
+4.9.38 LinkCopies
 -----------------
 
 This list is used to define a global list of names or patterns which
@@ -2917,7 +2937,7 @@ as long as that class is defined. For instance
 
 File: cfengine-Reference.info,  Node: LogDirectory,  Next: LogTidyHomeFiles,  Prev: linkcopies,  Up: control
 
-4.9.38 LogDirectory
+4.9.39 LogDirectory
 -------------------
 
 This is now deprecated.
@@ -2931,7 +2951,7 @@ This defaults to `/var/run/cfengine' or `/var/cfengine'.
 
 File: cfengine-Reference.info,  Node: LogTidyHomeFiles,  Next: moduledirectory,  Prev: LogDirectory,  Up: control
 
-4.9.39 LogTidyHomeFiles
+4.9.40 LogTidyHomeFiles
 -----------------------
 
 
@@ -2943,7 +2963,7 @@ directories, of the files which are tidied by cfengine.
 
 File: cfengine-Reference.info,  Node: moduledirectory,  Next: mountpattern,  Prev: LogTidyHomeFiles,  Up: control
 
-4.9.40 moduledirectory
+4.9.41 moduledirectory
 ----------------------
 
         moduledirectory  = ( DIRECTORY FOR PLUGIN MODULES )
@@ -2958,7 +2978,7 @@ to `$HOME)/.cfengine/modules' for non-privileged users.
 
 File: cfengine-Reference.info,  Node: mountpattern,  Next: netmask,  Prev: moduledirectory,  Up: control
 
-4.9.41 mountpattern
+4.9.42 mountpattern
 -------------------
 
         mountpattern  = ( MOUNT-POINT )
@@ -2990,7 +3010,7 @@ a list like this:
 
 File: cfengine-Reference.info,  Node: netmask,  Next: nonalphanumfiles,  Prev: mountpattern,  Up: control
 
-4.9.42 netmask
+4.9.43 netmask
 --------------
 
         netmask = ( AAA.BBB.CCC.DDD )
@@ -3062,7 +3082,7 @@ using the value of the netmask.
 
 File: cfengine-Reference.info,  Node: nonalphanumfiles,  Next: nfstype,  Prev: netmask,  Up: control
 
-4.9.43 NonAlphaNumFiles
+4.9.44 NonAlphaNumFiles
 -----------------------
 
 If enabled, this option causes cfengine to detect and disable files
@@ -3079,7 +3099,7 @@ that alphanumeric means ascii codes less than 32 and greater than 126.
 
 File: cfengine-Reference.info,  Node: nfstype,  Next: repchar,  Prev: nonalphanumfiles,  Up: control
 
-4.9.44 nfstype
+4.9.45 nfstype
 --------------
 
         nfstype = ( NFS-TYPE )
@@ -3103,7 +3123,7 @@ DFS, you don't need to use cfengine's mounting commands at all.
 
 File: cfengine-Reference.info,  Node: repchar,  Next: repository,  Prev: nfstype,  Up: control
 
-4.9.45 RepChar
+4.9.46 RepChar
 --------------
 
         RepChar  = ( CHARACTER )
@@ -3119,7 +3139,7 @@ etc.
 
 File: cfengine-Reference.info,  Node: repository,  Next: RPMcommand,  Prev: repchar,  Up: control
 
-4.9.46 Repository
+4.9.47 Repository
 -----------------
 
         Repository  = ( DIRECTORY )
@@ -3131,9 +3151,9 @@ path from which they originate.  This affects files saved using
 repository: (cfengine-Tutorial)Disabling and the file repository.
 
 
-File: cfengine-Reference.info,  Node: RPMcommand,  Next: schedule,  Prev: repository,  Up: control
+File: cfengine-Reference.info,  Node: RPMcommand,  Next: rpminstallcommand,  Prev: repository,  Up: control
 
-4.9.47 RPMcommand
+4.9.48 RPMcommand
 -----------------
 
 The default value of the Red Hat Package manager command `/bin/rpm' can
@@ -3141,9 +3161,25 @@ be altered for non-standard systems with this variable.
      RPMcommand = ( /usr/bin/rpm )
 
 
-File: cfengine-Reference.info,  Node: schedule,  Next: secureinput,  Prev: RPMcommand,  Up: control
+File: cfengine-Reference.info,  Node: rpminstallcommand,  Next: schedule,  Prev: RPMcommand,  Up: control
 
-4.9.48 Schedule
+4.9.49 RPMInstallCommand
+------------------------
+
+Sets the command used to install packages that need to be installed
+under the RPM package manager.
+
+     RPMInstallCommand = ( "/usr/bin/pkgmgr %s" )
+
+   By default, this variable is not set, meaning that any packages with
+action=install will NOT be installed if installation is required.  Note
+the "'s around the string, and the %s is replaced with the list of
+packages to be installed, each separated by a ' ' (space).
+
+
+File: cfengine-Reference.info,  Node: schedule,  Next: secureinput,  Prev: rpminstallcommand,  Up: control
+
+4.9.50 Schedule
 ---------------
 
         schedule  = (  Min00_05 Min30_35 TIME CLASS )
@@ -3168,7 +3204,7 @@ is treated as a fundamental granularity.
 
 File: cfengine-Reference.info,  Node: secureinput,  Next: sensiblecount,  Prev: schedule,  Up: control
 
-4.9.49 SecureInput
+4.9.51 SecureInput
 ------------------
 
         SecureInput = ( on )
@@ -3180,7 +3216,7 @@ others.
 
 File: cfengine-Reference.info,  Node: sensiblecount,  Next: sensiblesize,  Prev: secureinput,  Up: control
 
-4.9.50 SensibleCount
+4.9.52 SensibleCount
 --------------------
 
         SensibleCount  = ( COUNT )
@@ -3195,7 +3231,7 @@ issued.  The default value for this variable is 2.
 
 File: cfengine-Reference.info,  Node: sensiblesize,  Next: showactions,  Prev: sensiblecount,  Up: control
 
-4.9.51 SensibleSize
+4.9.53 SensibleSize
 -------------------
 
         SensibleSize  = ( SIZE )
@@ -3211,7 +3247,7 @@ default value for this variable is 1000 bytes.
 
 File: cfengine-Reference.info,  Node: showactions,  Next: singlecopy,  Prev: sensiblesize,  Up: control
 
-4.9.52 ShowActions
+4.9.54 ShowActions
 ------------------
 
         ShowActions  = ( ON )
@@ -3224,7 +3260,7 @@ cfengine output. It will be of little interest to humans.
 
 File: cfengine-Reference.info,  Node: singlecopy,  Next: site,  Prev: showactions,  Up: control
 
-4.9.53 SingleCopy
+4.9.55 SingleCopy
 -----------------
 
 
@@ -3261,7 +3297,7 @@ Would result in:
 
 File: cfengine-Reference.info,  Node: site,  Next: SkipIdentify,  Prev: singlecopy,  Up: control
 
-4.9.54 site/faculty
+4.9.56 site/faculty
 -------------------
 
        site    = ( SITENAME )
@@ -3283,7 +3319,7 @@ interchangeably.
 
 File: cfengine-Reference.info,  Node: SkipIdentify,  Next: Smtpserver,  Prev: site,  Up: control
 
-4.9.55 SkipIdentify
+4.9.57 SkipIdentify
 -------------------
 
        SkipIdentify = ( true )
@@ -3297,7 +3333,7 @@ particularly if firewalls or Network Address Translation is in use.
 
 File: cfengine-Reference.info,  Node: Smtpserver,  Next: SplayTime,  Prev: SkipIdentify,  Up: control
 
-4.9.56 smtpserver
+4.9.58 smtpserver
 -----------------
 
        smtpserver = ( MAILHOST )
@@ -3307,7 +3343,7 @@ File: cfengine-Reference.info,  Node: Smtpserver,  Next: SplayTime,  Prev: SkipI
 
 File: cfengine-Reference.info,  Node: SplayTime,  Next: split,  Prev: Smtpserver,  Up: control
 
-4.9.57 SplayTime
+4.9.59 SplayTime
 ----------------
 
        SplayTime = ( TIME-IN-MINUTES )
@@ -3319,7 +3355,7 @@ will share its load on a server, *Note Splaying host times:
 
 File: cfengine-Reference.info,  Node: split,  Next: spooldirectories,  Prev: SplayTime,  Up: control
 
-4.9.58 Split
+4.9.60 Split
 ------------
 
         Split  = ( CHARACTER )
@@ -3334,9 +3370,9 @@ containing this character as lists to be broken up and iterated over,
 variables in the shell.  
 
 
-File: cfengine-Reference.info,  Node: spooldirectories,  Next: suspiciousnames,  Prev: split,  Up: control
+File: cfengine-Reference.info,  Node: spooldirectories,  Next: suninstallcommand,  Prev: split,  Up: control
 
-4.9.59 SpoolDirectories
+4.9.61 SpoolDirectories
 -----------------------
 
 A list of additional spool directories for cfengine to police. In these
@@ -3348,9 +3384,25 @@ also: `DeleteNonOwnerFiles', `DeleteNonUserFiles'.
        SpoolDirectories = ( /var/spool/cron/crontabs /var/spool/cron/atjobs )
 
 
-File: cfengine-Reference.info,  Node: suspiciousnames,  Next: sysadm,  Prev: spooldirectories,  Up: control
+File: cfengine-Reference.info,  Node: suninstallcommand,  Next: suspiciousnames,  Prev: spooldirectories,  Up: control
 
-4.9.60 suspiciousnames
+4.9.62 SUNInstallCommand
+------------------------
+
+Sets the command used to install packages that need to be installed
+under the SUN package manager.
+
+     SUNInstallCommand = ( "/usr/bin/pkgmgr %s" )
+
+   By default, this variable is not set, meaning that any packages with
+action=install will NOT be installed if installation is required.  Note
+the "'s around the string, and the %s is replaced with the list of
+packages to be installed, each separated by a ' ' (space).
+
+
+File: cfengine-Reference.info,  Node: suspiciousnames,  Next: sysadm,  Prev: suninstallcommand,  Up: control
+
+4.9.63 suspiciousnames
 ----------------------
 
        SuspiciousNames = ( .mo lrk3 )
@@ -3364,7 +3416,7 @@ files, tidy or copy.
 
 File: cfengine-Reference.info,  Node: sysadm,  Next: Syslog,  Prev: suspiciousnames,  Up: control
 
-4.9.61 sysadm
+4.9.64 sysadm
 -------------
 
         sysadm = ( MAIL ADDRESS )
@@ -3381,7 +3433,7 @@ should make this an address which users can mail if they have troubles.
 
 File: cfengine-Reference.info,  Node: Syslog,  Next: SyslogFacility,  Prev: sysadm,  Up: control
 
-4.9.62 Syslog
+4.9.65 Syslog
 -------------
 
 
@@ -3400,7 +3452,7 @@ File: cfengine-Reference.info,  Node: Syslog,  Next: SyslogFacility,  Prev: sysa
 
 File: cfengine-Reference.info,  Node: SyslogFacility,  Next: timezone,  Prev: Syslog,  Up: control
 
-4.9.63 SyslogFacility
+4.9.66 SyslogFacility
 ---------------------
 
 
@@ -3424,7 +3476,7 @@ File: cfengine-Reference.info,  Node: SyslogFacility,  Next: timezone,  Prev: Sy
 
 File: cfengine-Reference.info,  Node: timezone,  Next: TimeOut,  Prev: SyslogFacility,  Up: control
 
-4.9.64 timezone
+4.9.67 timezone
 ---------------
 
         timezone = ( 3-CHARACTER TIMEZONE )
@@ -3451,7 +3503,7 @@ in the usual way. It expands to the first item in your list.
 
 File: cfengine-Reference.info,  Node: TimeOut,  Next: Verbose,  Prev: timezone,  Up: control
 
-4.9.65 TimeOut
+4.9.68 TimeOut
 --------------
 
 
@@ -3464,7 +3516,7 @@ variable smaller than 3 seconds or larger than 60 seconds.
 
 File: cfengine-Reference.info,  Node: Verbose,  Next: Warnings,  Prev: TimeOut,  Up: control
 
-4.9.66 Verbose
+4.9.69 Verbose
 --------------
 
 
@@ -3488,7 +3540,7 @@ this output level on selected hosts one writes:
 
 File: cfengine-Reference.info,  Node: Warnings,  Next: warnnonuserfiles,  Prev: Verbose,  Up: control
 
-4.9.67 Warnings
+4.9.70 Warnings
 ---------------
 
 
@@ -3507,7 +3559,7 @@ hosts one writes:
 
 File: cfengine-Reference.info,  Node: warnnonuserfiles,  Next: warnnonownerfiles,  Prev: Warnings,  Up: control
 
-4.9.68 WarnNonUserFiles
+4.9.71 WarnNonUserFiles
 -----------------------
 
 If this parameter is set to true, cfengine will warn about files in
@@ -3518,7 +3570,7 @@ spool directories which do not have a name belonging to a known user id.
 
 File: cfengine-Reference.info,  Node: warnnonownerfiles,  Next: warnnonusermail,  Prev: warnnonuserfiles,  Up: control
 
-4.9.69 WarnNonOwnerFiles
+4.9.72 WarnNonOwnerFiles
 ------------------------
 
 If this parameter is set to true, cfengine will warn about files on
@@ -3536,7 +3588,7 @@ might be owned by a known user.
 
 File: cfengine-Reference.info,  Node: warnnonusermail,  Next: warnnonownermail,  Prev: warnnonownerfiles,  Up: control
 
-4.9.70 WarnNonUserMail
+4.9.73 WarnNonUserMail
 ----------------------
 
 If this parameter is set to true, cfengine will warn about mail files on
@@ -3546,7 +3598,7 @@ does not include lock files.
 
 File: cfengine-Reference.info,  Node: warnnonownermail,  Prev: warnnonusermail,  Up: control
 
-4.9.71 WarnNonOwnerMail
+4.9.74 WarnNonOwnerMail
 -----------------------
 
 If this parameter is set to true, cfengine will warn about files on
@@ -7101,10 +7153,13 @@ File: cfengine-Reference.info,  Node: packages,  Next: rename,  Prev: processes,
 =============
 
 The packages action allows you to check for the existance of packages
-on the system, as determined by the package database you select.  This
-operation is set up such that it tries not to make assumptions about
-the package manager in use.  For example, it should be possible to use
-RPM on a Solaris box.
+on the system, as determined by the package database you select.
+Optionally, if a package install command was specified, the package can
+be installed if it is not there.
+
+   This operation is set up such that it tries not to make assumptions
+about the package manager in use.  For example, it should be possible
+to use RPM on a Solaris box.
 
    The syntax summary is:
 
@@ -7114,16 +7169,16 @@ RPM on a Solaris box.
         CLASS::
 
            PACKAGE-NAME
-                             pkgmgr=none/RPM
+                             pkgmgr=none/RPM/DPKG/SUN
                              cmp=eq/LT/GT/GE/LE/NE
                              version=VERSION-STRING
                              define=CLASS-LIST(,:.)
                              elsedefine=CLASS-LIST(,:.)
+                             action=none/INSTALL/REMOVE
 
                              ifelapsed=MINS
                              expireafter=MINS
 
-Associated variables in control are `DefaultPkgMgr' and `RPMcommand'.
 `cmp'
      Determines how the version of the installed package will be
      compared to that specified by the `version' attribute.  Possible
@@ -7199,6 +7254,12 @@ Associated variables in control are `DefaultPkgMgr' and `RPMcommand'.
           want, and specify it.  It may take a few extra extra seconds
           to check, but it will save you lots of headaches later.
 
+    `dpkg'
+          Please document me!
+
+    `sun'
+          Please document me!
+
 
 `define'
      Specifies the list of classes to define if the specified package is
@@ -7208,14 +7269,51 @@ Associated variables in control are `DefaultPkgMgr' and `RPMcommand'.
      Specifies the list of classes to define if the specified package
      is not installed.
 
+`action'
+     Specifies whether the packages should actually do anything about
+     the situation it finds.  The default for this is to do nothing.
+     Of course, the classes in `define' and `elsedefine' will alwass be
+     defined, as applicable, regardless of the action specified.
 
-   Example:
+    `install'
+          Installs the package using the command associated with the
+          selected package manager, if it is not currently on the
+          system at the requested version, as follows:
+
+             * RPM - RPMInstallCommand
+
+             * DPKG - DPKGInstallCommand
+
+             * SUN - SUNInstallCommand
+
+          Each variable is of the format:
+
+               FOOInstallCommand = ( "/usr/bin/foo --args %s --more-args" )
+
+          The --args are of course optional.  The %s is replaced with a
+          space-separated list of the package names that were checked,
+          and found to not be installed.
+
+    `remove'
+          CURRENTLY PARSED BUT NOT IMPLEMENTED
+
+NOTE: classes are defined according to the result of the check, not any
+action performed as a result of that check.  In otherwords, if for
+example you have a situation where a package is not installed, and the
+action= is set to install, the classes in `elsedefine' will be defined
+regardless of whether or not the install was successful.  Assuming the
+package installed, the next run of cfagent will pick up that fact.
+This has to be done since the package installs are batched, so there is
+no reliable way to know if a given package was installed.
+
+Examples:
 
      packages:
 
          redhat_8_0::
              m4  version=0:1.4.1-11 cmp=eq pkgmgr=rpm elsedefine=needsm4
-   In this first example, we are looking for the m4 package at exactly
+
+In this first example, we are looking for the m4 package at exactly
 version 0:1.4.1-11.  The installed m4 package on a redhat_8_0 box has
 no epoch which is the same as zero.  Specifying it will keep you out of
 trouble.  This check will cause `needsm4' to be defined if the exact
@@ -7228,11 +7326,35 @@ version of m4 specified is not installed.
      packages:
          redhat_8_0::
              make version=0:4.5-2 cmp=ge define=hasmake elsedefine=needsmake
-   In the second example, we use the DefaultPkgMgr variable to set the
+
+In the second example, we use the DefaultPkgMgr variable to set the
 default for the `pkgmgr' attribute to `rpm'.  The actual version of make
 installed on recent redhat_8_0 machine is 1:3.79.1-14.  Since the check
 is for greater than or equal to this version, the hasmake class will be
 defined.
+
+     control:
+         redhat:;
+             DefaultPkgMgr = ( rpm )
+             RPMInstallCommand = ( "/usr/sbin/up2date %s" )
+
+     packages:
+         redhat_8_0::
+             make define=hasmake elsedefine=needsmake action=install
+
+This example is much like the second example, except that if the
+package is not installed, cfengine will attempt to install it using the
+command in RPMInstallCommand, replacing the %s with the package name,
+`make'.  If there were multiple packages specified in this way, the
+package installation would occur at the end of the package checks, and
+one command would be run, with %s replaced with a list of all package
+names.  In this example we chose not to use a version spec, but it is
+allowed, and as always, is optional.
+
+NOTE here that if make was not installed when the check is made,
+`needsmake' is defined, regardless of whether or not the install
+succeeds.  If the install is successful, the next cfagent run will
+define `hasmake'.
 
 
 File: cfengine-Reference.info,  Node: rename,  Next: required,  Prev: packages,  Up: Cfagent reference
@@ -8217,140 +8339,4 @@ identity for specific IP addresses or patterns using this command. E.g.
 implicitly trusts the connecting hosts! You should be very careful in
 using Network Address Translators in a secure environment. It is not
 recommended for sites which require a high level of security.  
-
-
-File: cfengine-Reference.info,  Node: cfrun,  Next: Firewalls and NATs,  Prev: admit grant and deny,  Up: Cfservd.conf and cfrun reference
-
-5.3 `cfrun'
-===========
-
-The general syntactic form of the `cfrun' command is
-
-
-       cfrun -OPTION --LONGOPTION CLASS1 CLASS2 ...
-
-Since `cfrun' addresses remote hosts, there is an ambiguity in whether
-options are intended for the `cfrun' command itself, on the local host,
-or whether they are to be passed on to the agent on the remote hosts.
-To clarify this distinction, the arguments are organized as follows:
-
-
-       cfrun -LOCAL OPTIONS -- REMOTE OPTIONS -- REMOTE CLASSES
-
-Local options are processed by `cfrun' on the local host; remote options
-are passed on as options to the remote `cfagent' (actually to the
-command defined in `cfrunCommand' in the file `cfservd.conf'; remote
-classes are processed by the remote `cfservd' service, and specifiy
-classes which must be satisfied by the remote host in order to invoke
-the remote command.
-
-   The `-q' and `-I' options are always assumed when executing cfengine
-remotely, so that `SplayTime' is effectively zero when polling hosts
-serially, and the output always shows what is happening on the remote
-hosts.  
-
-   Each host evaluates the classes sent by `cfrun' and decides whether
-cfengine should be invoked.  Only hosts which belong to the classes
-defined on the `cfrun' command line are executed. This allows you to
-single out groups of hosts which should execute cfengine, based on the
-very classes which you have defined for your configuration.  If no
-classes are sent on the command line, then all hosts are run.
-
-   `cfrun' uses a configuration file which is located under the
-`CFINPUTS' directory in order to determine which hosts and in which
-order it should try to connect. Because cfengine always uses a reliable
-TCP protocol for connections, it verifies each connection rather than
-simply broadcasting openly. Using this file you can even simulate
-broadcasting to hosts outside your subnet.  
-
-   This file should contain every host name you ever want to configure
-remotely, because you can still select subsets of the file by
-specifying classes which the remote host will understand.  If the
-remote host is not in one of the classes you specify when you run
-`cfrun', then it will simply ignore the request. Conversely, if you do
-not place a host in this file, it will never be contacted when you use
-the `cfrun' command. The format of the file is as follows
-
-
-      #
-      # Comment ..
-      #
-      domain=MY.DOMAIN
-      access=USER1,USER2
-      outputdir=DIRECTORY
-      maxchild=NUMBER LIMIT
-      hostnamekeys=TRUE/FALSE
-
-      HOSTNAME1            OPTIONS
-      HOSTNAME2:PORT OPTIONS
-      ...
-
-If the option `outputdir' is present, cfrun forks a separate process
-for each host and passes the output to files in a named directory.  The
-`maxchild' line limits the number of forked processes.
-
-   It is important to add the domain-name to this file.  The options
-you specifiy in this file, per host, are added to those you might
-specify on the command line when invoking cfengine remotely.  For
-instance, you might know of a bug on one host and decide not to perform
-interface configuration on that one machine. You would write a line
-like this:
-
-
-       funny.domain -- -i  # problem host
-
-   You could use `cfrun' inside one of your cfengine configuration
-files in order to remotely execute cfengine on all of the other network
-machines, by setting up a host list. The disadvantage however is that
-cfengine has to poll the systems on the network, which means that
-cfengine cannot be working in parallel on all hosts.
-
-   Some other examples:
-
-
-     e.g.  cfrun -- -- linux          Run on all linux machines
-           cfrun -- -p                Ping and parse on all hosts
-           cfrun -v -- -p             Ping all, local verbose
-           cfrun -v -- -k -- solaris  Local verbose, all solaris, but no copy
-
-   Amongst the local options, one may specify a subset of the hosts
-which are to be contacted by cfrun, i.e. to avoid processing the entire
-list of hosts. For example, to contact only host1 and host2, given that
-they are already in the list of hosts.
-
-
-     cfrun -v host1 host2
-     cfrun -v host1 host2 -- -p
-   
-
-File: cfengine-Reference.info,  Node: Firewalls and NATs,  Prev: cfrun,  Up: Cfservd.conf and cfrun reference
-
-5.4 Firewalls and NATs
-======================
-
-Firewalls and Network Address Translators (NAT) can be a problem for
-addressing.  Suppose you have a firewall and with a private IP-range
-behind the firewall.  You want to update the nodes from a central host.
-You can do a two stage configuration: first update the firewall and
-then update from the firewall to the nodes.
-
-   But suppose you already use SNAT (Source Network Address
-Translation) and DNAT (Destination ...) for the nodes. With DNAT you
-can say that socket 22000 on the firewall is routed to HOST-NAME:5308.
-DNAT gives us the possibilty to update the nodes from a central server
-in one step instead of two.
-
-   If the port command is given cfrun uses this to connect to the client
-instead of the default (5308) one.  Here is an example (`cfrun.hosts'):
-
-     domain=example.org
-     access=mark,sigmund
-     hostnamekeys=true
-
-     node1.example.org
-     node2.example.org:22000 -DNis
-     node2.example.org:22001
-   
-   This connects to: 1) node1 with standard port, 2) node2 with port
-22000 and extra options -DNis and, 3) node2 with port 22000.
 

@@ -11,6 +11,142 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: cfrun,  Next: Firewalls and NATs,  Prev: admit grant and deny,  Up: Cfservd.conf and cfrun reference
+
+5.3 `cfrun'
+===========
+
+The general syntactic form of the `cfrun' command is
+
+
+       cfrun -OPTION --LONGOPTION CLASS1 CLASS2 ...
+
+Since `cfrun' addresses remote hosts, there is an ambiguity in whether
+options are intended for the `cfrun' command itself, on the local host,
+or whether they are to be passed on to the agent on the remote hosts.
+To clarify this distinction, the arguments are organized as follows:
+
+
+       cfrun -LOCAL OPTIONS -- REMOTE OPTIONS -- REMOTE CLASSES
+
+Local options are processed by `cfrun' on the local host; remote options
+are passed on as options to the remote `cfagent' (actually to the
+command defined in `cfrunCommand' in the file `cfservd.conf'; remote
+classes are processed by the remote `cfservd' service, and specifiy
+classes which must be satisfied by the remote host in order to invoke
+the remote command.
+
+   The `-q' and `-I' options are always assumed when executing cfengine
+remotely, so that `SplayTime' is effectively zero when polling hosts
+serially, and the output always shows what is happening on the remote
+hosts.  
+
+   Each host evaluates the classes sent by `cfrun' and decides whether
+cfengine should be invoked.  Only hosts which belong to the classes
+defined on the `cfrun' command line are executed. This allows you to
+single out groups of hosts which should execute cfengine, based on the
+very classes which you have defined for your configuration.  If no
+classes are sent on the command line, then all hosts are run.
+
+   `cfrun' uses a configuration file which is located under the
+`CFINPUTS' directory in order to determine which hosts and in which
+order it should try to connect. Because cfengine always uses a reliable
+TCP protocol for connections, it verifies each connection rather than
+simply broadcasting openly. Using this file you can even simulate
+broadcasting to hosts outside your subnet.  
+
+   This file should contain every host name you ever want to configure
+remotely, because you can still select subsets of the file by
+specifying classes which the remote host will understand.  If the
+remote host is not in one of the classes you specify when you run
+`cfrun', then it will simply ignore the request. Conversely, if you do
+not place a host in this file, it will never be contacted when you use
+the `cfrun' command. The format of the file is as follows
+
+
+      #
+      # Comment ..
+      #
+      domain=MY.DOMAIN
+      access=USER1,USER2
+      outputdir=DIRECTORY
+      maxchild=NUMBER LIMIT
+      hostnamekeys=TRUE/FALSE
+
+      HOSTNAME1            OPTIONS
+      HOSTNAME2:PORT OPTIONS
+      ...
+
+If the option `outputdir' is present, cfrun forks a separate process
+for each host and passes the output to files in a named directory.  The
+`maxchild' line limits the number of forked processes.
+
+   It is important to add the domain-name to this file.  The options
+you specifiy in this file, per host, are added to those you might
+specify on the command line when invoking cfengine remotely.  For
+instance, you might know of a bug on one host and decide not to perform
+interface configuration on that one machine. You would write a line
+like this:
+
+
+       funny.domain -- -i  # problem host
+
+   You could use `cfrun' inside one of your cfengine configuration
+files in order to remotely execute cfengine on all of the other network
+machines, by setting up a host list. The disadvantage however is that
+cfengine has to poll the systems on the network, which means that
+cfengine cannot be working in parallel on all hosts.
+
+   Some other examples:
+
+
+     e.g.  cfrun -- -- linux          Run on all linux machines
+           cfrun -- -p                Ping and parse on all hosts
+           cfrun -v -- -p             Ping all, local verbose
+           cfrun -v -- -k -- solaris  Local verbose, all solaris, but no copy
+
+   Amongst the local options, one may specify a subset of the hosts
+which are to be contacted by cfrun, i.e. to avoid processing the entire
+list of hosts. For example, to contact only host1 and host2, given that
+they are already in the list of hosts.
+
+
+     cfrun -v host1 host2
+     cfrun -v host1 host2 -- -p
+   
+
+File: cfengine-Reference.info,  Node: Firewalls and NATs,  Prev: cfrun,  Up: Cfservd.conf and cfrun reference
+
+5.4 Firewalls and NATs
+======================
+
+Firewalls and Network Address Translators (NAT) can be a problem for
+addressing.  Suppose you have a firewall and with a private IP-range
+behind the firewall.  You want to update the nodes from a central host.
+You can do a two stage configuration: first update the firewall and
+then update from the firewall to the nodes.
+
+   But suppose you already use SNAT (Source Network Address
+Translation) and DNAT (Destination ...) for the nodes. With DNAT you
+can say that socket 22000 on the firewall is routed to HOST-NAME:5308.
+DNAT gives us the possibilty to update the nodes from a central server
+in one step instead of two.
+
+   If the port command is given cfrun uses this to connect to the client
+instead of the default (5308) one.  Here is an example (`cfrun.hosts'):
+
+     domain=example.org
+     access=mark,sigmund
+     hostnamekeys=true
+
+     node1.example.org
+     node2.example.org:22000 -DNis
+     node2.example.org:22001
+   
+   This connects to: 1) node1 with standard port, 2) node2 with port
+22000 and extra options -DNis and, 3) node2 with port 22000.
+
+
 File: cfengine-Reference.info,  Node: Cfexecd reference,  Next: Problem solving,  Prev: Cfservd.conf and cfrun reference,  Up: Top
 
 6 Cfexecd reference
@@ -1663,7 +1799,7 @@ Variable Index
 * ChecksumUpdates:                       ChecksumUpdates.     (line   8)
 * checktimezone:                         actionsequence.      (line  35)
 * childlinks:                            actionsequence.      (line  35)
-* cmp=:                                  packages.            (line  31)
+* cmp=:                                  packages.            (line  34)
 * control:                               control.             (line   6)
 * create:                                create.              (line   6)
 * directories:                           actionsequence.      (line  35)
@@ -1747,7 +1883,7 @@ Variable Index
 * p=:                                    tidy.                (line  39)
 * packages:                              actionsequence.      (line  35)
 * pattern:                               tidy.                (line  39)
-* pkgmgr=:                               packages.            (line  59)
+* pkgmgr=:                               packages.            (line  62)
 * processes:                             actionsequence.      (line  35)
 * purge=:                                copy.                (line 335)
 * r= <1>:                                tidy.                (line  39)
@@ -1797,7 +1933,7 @@ Variable Index
 * underscoreclasses:                     Special variables.   (line 123)
 * unmount <1>:                           unmount.             (line   6)
 * unmount:                               actionsequence.      (line  35)
-* version=:                              packages.            (line  52)
+* version=:                              packages.            (line  55)
 * Wildcards:                             tidy.                (line  56)
 * zeroes:                                broadcast.           (line  22)
 * zeros:                                 broadcast.           (line  22)
@@ -1936,6 +2072,7 @@ Concept Index
 * Deadlock:                              cf.preconf bootstrap file.
                                                               (line   6)
 * Deadlock zombie bug in restart:        processes.           (line 118)
+* Debian Package Database Queries:       packages.            (line 109)
 * Declaring classes:                     addinstallable.      (line   6)
 * Decrementing line pointer in editfiles: editfiles.          (line 444)
 * Defining a binary server:              binservers.          (line   6)
@@ -2115,7 +2252,7 @@ Concept Index
 * Multiple links:                        Multiple Links.      (line   6)
 * Name collision:                        Special variables.   (line 123)
 * NAT:                                   Firewalls and NATs.  (line  32)
-* Negating classes:                      actionsequence.      (line 181)
+* Negating classes:                      actionsequence.      (line 182)
 * Negating entries from netgroups:       groups.              (line  60)
 * Netgroups:                             groups.              (line  40)
 * Netgroups, negating entries:           groups.              (line  60)
@@ -2198,7 +2335,7 @@ Concept Index
 * Reverse lookup and SkipVerify:         root=.               (line  18)
 * rmdirs:                                tidy.                (line 147)
 * Rotating log files:                    disable.             (line  86)
-* RPM Database Queries:                  packages.            (line  74)
+* RPM Database Queries:                  packages.            (line  77)
 * Running cfengine from a single master host: cfrun.          (line  81)
 * Running cfrun:                         cfrun.               (line  32)
 * scanarrivals=:                         disks.               (line  64)
@@ -2241,6 +2378,7 @@ Concept Index
 * SpoolDirectories:                      spooldirectories.    (line   6)
 * Strategy, random:                      strategies.          (line   6)
 * Subnet mask:                           netmask.             (line  14)
+* Sun Package Database Queries:          packages.            (line 112)
 * Support for new systems:               cfrc resource file.  (line  39)
 * suspiciousnames:                       suspiciousnames.     (line   6)
 * Switching off backup in copy:          copy.                (line 135)
