@@ -177,7 +177,6 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
          }
       }
 
-   
    if (S_ISDIR(statbuf.st_mode))
       {
       if (IsMountedFileSystem(&statbuf,pcwd,1))
@@ -407,6 +406,8 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       return true;
       }
 
+   level = tp->maxrecurse - maxrecurse;
+
    strcat(pcwd,dirp->d_name);
 
    if (lstat(dirp->d_name,&statbuf) == -1)          /* Check for links first */
@@ -419,6 +420,10 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       if (S_ISLNK(statbuf.st_mode) && (statbuf.st_uid != getuid()))   
          {
          snprintf(OUTPUT,CF_BUFSIZE,"File %s is an untrusted link. cfagent will not follow it with a destructive operation (tidy)",pcwd);
+         if (getuid() == 0)
+            {
+            TidyParticularFile(pcwd,dirp->d_name,tp,&statbuf,false,level,false);
+            }
          continue;
          }
       }
@@ -444,8 +449,6 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       is_dir = false;
       }
    
-   level = tp->maxrecurse - maxrecurse;
-
    if (S_ISDIR(statbuf.st_mode))              /* note lstat above! */
       {
       if (IsMountedFileSystem(&statbuf,pcwd,1))
