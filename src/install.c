@@ -3852,8 +3852,10 @@ InitializeAction();
 void InstallMakePath(char *path,mode_t plus,mode_t minus,char *uidnames,char *gidnames)
 
 { struct File *ptr;
-  char buffer[CF_EXPANDSIZE],ebuff[CF_EXPANDSIZE]; 
+  char buffer[CF_EXPANDSIZE]; 
   struct Item *list = NULL, *ip;
+  struct TwoDimList *tp = NULL;
+  char *sp;
   
 Debug1("InstallMakePath (%s) (+%o)(-%o)(%s)(%s)\n",path,plus,minus,uidnames,gidnames);
 
@@ -3864,18 +3866,18 @@ if (!IsInstallable(CLASSBUFF))
    return;
    }
 
-ExpandVarstring(path,ebuff,"");
+Build2DListFromVarstring(&tp,path,'/');
 
-list = SplitStringAsItemList(ebuff,LISTSEPARATOR);
+Set2DList(tp);
 
-for (ip = list; ip != NULL; ip=ip->next)
+for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))    
    {
    if ((ptr = (struct File *)malloc(sizeof(struct File))) == NULL)
       {
       FatalError("Memory Allocation failed for InstallMakepath() #1");
       }
    
-   if ((ptr->path = strdup(ip->name)) == NULL)
+   if ((ptr->path = strdup(sp)) == NULL)
       {
       FatalError("Memory Allocation failed for InstallMakepath() #2");
       }
