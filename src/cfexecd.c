@@ -344,7 +344,7 @@ else
          pid = spawnvp((int)_P_NOWAIT, nargv[0], nargv);
          if (pid < 1)
             {
-            CfLog(cferror,"Can't spawn run","spawnvp");
+            CfLog(cfinform,"Can't spawn run","spawnvp");
             }
 #endif
 #ifndef NT
@@ -359,7 +359,7 @@ else
          
          if (pthread_create(&tid,&PTHREADDEFAULTS,LocalExec,NULL) != 0)
             {
-            CfLog(cferror,"Can't create thread!","pthread_create");
+            CfLog(cfinform,"Can't create thread!","pthread_create");
             LocalExec(NULL);
             }
          
@@ -411,7 +411,7 @@ snprintf(cfcom,CF_BUFSIZE-1,"%s/bin/cfagent -Q smtpserver,sysadm,fqhost,ipaddres
 
 if ((pp=cfpopen(cfcom,"r")) ==  NULL)
    {
-   CfLog(cferror,"Couldn't start cfengine!","cfpopen");
+   CfLog(cfinform,"Couldn't start cfengine!","cfpopen");
    line[0] = '\0';
    return;
    }
@@ -491,7 +491,7 @@ snprintf(cfcom,CF_BUFSIZE-1,"%s/bin/cfagent -z -D from_cfexecd",CFWORKDIR);
  
 if ((pp=cfpopen(cfcom,"r")) ==  NULL)
    {
-   CfLog(cferror,"Couldn't start cfengine!","cfpopen");
+   CfLog(cfinform,"Couldn't start cfengine!","cfpopen");
    line[0] = '\0';
    return;
    }
@@ -617,11 +617,11 @@ Verbose("------------------------------------------------------------------\n");
 
 if (NOSPLAY)
    {
-   snprintf(cmd,CF_BUFSIZE-1,"%s/bin/cfagent -q",CFWORKDIR);
+   snprintf(cmd,CF_BUFSIZE-1,"%s/bin/cfagent -q -Dfrom_cfexecd",CFWORKDIR);
    }
 else
    {
-   snprintf(cmd,CF_BUFSIZE-1,"%s/bin/cfagent",CFWORKDIR);
+   snprintf(cmd,CF_BUFSIZE-1,"%s/bin/cfagent -Dfrom_cfexecd",CFWORKDIR);
    }
  
 timestamp(starttime, line, CF_BUFSIZE);
@@ -633,14 +633,14 @@ snprintf(filename,CF_BUFSIZE-1,"%s/outputs/cf_%s_%s",CFWORKDIR,CanonifyName(VFQN
 if ((fp = fopen(filename,"w")) == NULL)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Couldn't open %s\n",filename);
-   CfLog(cferror,OUTPUT,"fopen");
+   CfLog(cfinform,OUTPUT,"fopen");
    return NULL;
    }
  
 if ((pp = cfpopen(cmd,"r")) == NULL)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Couldn't open pipe to command %s\n",cmd);
-   CfLog(cferror,OUTPUT,"cfpopen");
+   CfLog(cfinform,OUTPUT,"cfpopen");
    fclose(fp);
    return NULL;
    }
@@ -891,7 +891,7 @@ if (strlen(to) == 0)
 if ((fp=fopen(file,"r")) == NULL)
    {
    snprintf(VBUFF,CF_BUFSIZE-1,"Couldn't open file %s",file);
-   CfLog(cferror,VBUFF,"fopen");
+   CfLog(cfinform,VBUFF,"fopen");
    return;
    }
 
@@ -911,7 +911,7 @@ fclose(fp);
 if ((fp=fopen(file,"r")) == NULL)
    {
    snprintf(VBUFF,CF_BUFSIZE-1,"Couldn't open file %s",file);
-   CfLog(cferror,VBUFF,"fopen");
+   CfLog(cfinform,VBUFF,"fopen");
    return;
    }
  
@@ -929,7 +929,7 @@ if ((hp = gethostbyname(VMAILSERVER)) == NULL)
 
 if ((server = getservbyname("smtp","tcp")) == NULL)
    {
-   CfLog(cferror,"Unable to lookup smtp service","getservbyname");
+   CfLog(cfinform,"Unable to lookup smtp service","getservbyname");
    fclose(fp);
    return;
    }
@@ -944,7 +944,7 @@ Debug("Connecting...\n");
 
 if ((sd = socket(AF_INET,SOCK_STREAM,0)) == -1)
    {
-   CfLog(cferror,"Couldn't open a socket","socket");
+   CfLog(cfinform,"Couldn't open a socket","socket");
    fclose(fp);
    return;
    }
@@ -1090,7 +1090,7 @@ mail_err:
 fclose(fp);
 close(sd); 
 sprintf(VBUFF, "Cannot mail to %s.", to);
-CfLog(cferror,VBUFF,"");
+CfLog(cflogonly,VBUFF,"");
 }
 
 /******************************************************************/

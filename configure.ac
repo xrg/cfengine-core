@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.1.11)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.1.12)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -352,6 +352,32 @@ AC_SUBST(OPENSSL_LIB_LDFLAGS)
 AC_SUBST(OPENSSL_LIB_CPPFLAGS)
 AC_SUBST(OPENSSL_LIB_LIB)
 
+dnl ######################################################################
+dnl Checks for perl compatible regular expressions
+dnl ######################################################################
+
+AC_ARG_WITH(pcre,
+    [  --with-pcre[[=PATH]] directory where Perl compatible regex exists (optionally in PATH)],
+    [
+        AC_MSG_CHECKING(pcre)
+
+        if test "x$withval" != "xno" ; then
+            if test "x$withval" != "xyes" ; then
+                if test -f "${withval}/include/pcreposix.h" ; then
+                    CPPFLAGS="$CPPFLAGS -I${withval}/include"
+                    LDFLAGS="$LDFLAGS -L${withval}/lib"
+                    AC_MSG_RESULT = "${withval}"
+                else
+                    AC_MSG_ERROR(Cannot find PCRE)
+                fi
+            else
+                AC_MSG_RESULT = "yes"
+            fi
+            LIBS="$LIBS -lpcreposix"
+            AC_DEFINE(USE_PCRE, 1, [Define if PCRE is available.])
+        fi
+    ]
+)
 
 
 dnl ######################################################################

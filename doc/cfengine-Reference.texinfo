@@ -334,7 +334,7 @@ classes:
  isplain       = ( IsPlain(/tmp/import) )
  inrange       = ( IPRange(128.39.89.10-15) )
  CIDR          = ( IPRange(128.39.89.10/24) )
- compute_nodes = ( HostRage(cpu-,01-32)
+ compute_nodes = ( HostRange(cpu-,01-32)
  gotinit       = ( PrepModule(startup2,"arg1 arg2") )
 
 @end smallexample
@@ -10503,15 +10503,20 @@ if [ "$1" = "linux" ]; then
    fi
 fi
 
-
-
-
 @end smallexample 
 
 @cindex /etc/host.conf
 @vindex /etc/host.conf
 @cindex -x option
 @vindex -x option
+
+Note - in some circumstances, it might be appropriate to exit cfengine
+altogether after this script. If the script outputs a string containing
+the text "cfengine-preconf-abort", then cfagent will abort execution
+immediately after this.
+
+@cindex Emergency abort
+@cindex Abort cfengine after cf.preconf
 
 @c -------------------------------------------------------------------------------
 @c SECTION

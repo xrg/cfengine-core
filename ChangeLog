@@ -1,4 +1,30 @@
+2.1.12
+	cf.preconf can now cause an abort if the script prints out a string
+	containing the substring "cfengine-preconf-abort".
+	An exit code of 2 signals this failure
 
+	Cfrun bug in placement of workdir initialization. Would try to open
+	/inputs/cfrun.hosts instead of /var/cfengine/inputs/cfrun.hosts
+
+	Moved mutex locks in address purging, to see if it prevents some
+	segmentation faults.
+
+	In image.c:	
+	/*      if (TRAVLINKS || ip->linktype == 'n') */
+	Took out linktype reference. This appears to be erroneous.
+
+	Patch to tidy: "Guolin Cheng" <guolin@alexa.com>
+
+	Patch to -Q to prevent update.conf from being executed.
+
+	Patch to rationalize choice of port number for new getaddrinfo
+	interfaces. (ip.c)
+
+	small patch to allow the use of PCRE if it is compiled with
+	--with-pcre.  This is using the POSIX compatible API that PCRE provides,
+	so the change necessary is to use pcreposix.h instead of regex.h and to
+	link in pcreposix.so. cindy.marasco@pnl.gov)
+	
 2.1.11
 
 	SUPPORT FOR POSIX ACLS IN LINUX IS NOT AS STRAIGHTFORWARD AS

@@ -57,6 +57,9 @@ extern struct cfagent_connection *CONN;
 extern int AUTHENTICATED;
 extern struct Item *IPADDRESSES;
 
+extern char  STR_CFENGINEPORT[16];
+extern unsigned short SHORT_CFENGINEPORT;
+
 extern char CFLOCK[CF_BUFSIZE];
 extern char SAVELOCK[CF_BUFSIZE];
 extern char CFLOG[CF_BUFSIZE];

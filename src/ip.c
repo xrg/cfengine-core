@@ -52,10 +52,10 @@ if (forceipv4 == 'n')
 
    query.ai_family = AF_UNSPEC;
    query.ai_socktype = SOCK_STREAM;
-   
-   if ((err = getaddrinfo(host,"5308",&query,&response)) != 0)
+
+   if ((err = getaddrinfo(host,STR_CFENGINEPORT,&query,&response)) != 0)
       {
-      snprintf(OUTPUT,CF_BUFSIZE,"Unable to lookup hostname or cfengine service: %s",gai_strerror(err));
+      snprintf(OUTPUT,CF_BUFSIZE,"Unable to find hostname or cfengine service: (%s/%s) %s",host,STR_CFENGINEPORT,gai_strerror(err));
       CfLog(cfinform,OUTPUT,"");
       return false;
       }
@@ -154,11 +154,11 @@ if (forceipv4 == 'n')
       return false;
       }
    
-   cin.sin_port = CfenginePort();
+   cin.sin_port = SHORT_CFENGINEPORT;
    cin.sin_addr.s_addr = ((struct in_addr *)(hp->h_addr))->s_addr;
    cin.sin_family = AF_INET; 
    
-   Verbose("Connect to %s = %s, port h=%d\n",host,inet_ntoa(cin.sin_addr),htons(PORTNUMBER));
+   Verbose("Connect to %s = %s, port =%u\n",host,inet_ntoa(cin.sin_addr),SHORT_CFENGINEPORT);
     
    if ((CONN->sd = socket(AF_INET,SOCK_STREAM,0)) == -1)
       {
@@ -197,20 +197,41 @@ return true;
 
 /*******************************************************************/
 
-short CfenginePort()
+void CfenginePort()
 
-{
-struct servent *server;
+{ struct servent *server;
+ 
+if ((server = getservbyname(CFENGINE_SERVICE,"tcp")) == NULL)
+   {
+   CfLog(cflogonly,"Couldn't get cfengine service, using default","getservbyname");
+   SHORT_CFENGINEPORT = htons((unsigned short)5308);
+   }
+else
+   {
+   SHORT_CFENGINEPORT = htons(server->s_port);
+   }
+
+Verbose("Setting cfengine new port to %u\n",SHORT_CFENGINEPORT);
+}
+
+/*****************************************************************************/
+
+void StrCfenginePort()
+
+{ struct servent *server;
 
 if ((server = getservbyname(CFENGINE_SERVICE,"tcp")) == NULL)
    {
    CfLog(cflogonly,"Couldn't get cfengine service, using default","getservbyname");
-   return htons(5308);
+   snprintf(STR_CFENGINEPORT,15,"5308");
+   }
+else
+   {
+   snprintf(STR_CFENGINEPORT,15,"%d",htons(server->s_port));
    }
 
-return server->s_port;
+Verbose("Setting cfengine old port to %s\n",STR_CFENGINEPORT);
 }
-
 
 /*****************************************************************************/
 

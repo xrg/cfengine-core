@@ -3079,14 +3079,14 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
              
          case EndLoop:
              FOREACHLEVEL--;
-             if (FOREACHLEVEL < 0)
+             if (FOREACHLEVEL <= 0)
                 {
                 yyerror("EndLoop without ForEachLineIn");
                 }
              break;
              
          case DefineInGroup:
-             if (EDITGROUPLEVEL < 0)
+             if (EDITGROUPLEVEL <= 0)
                 {
                 yyerror("DefineInGroup outside a group");
                 }

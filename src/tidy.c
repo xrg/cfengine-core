@@ -323,9 +323,9 @@ int RecursiveTidySpecialArea(char *name,struct Tidy *tp,int maxrecurse,struct st
 { struct stat statbuf,topstatbuf;
   DIR *dirh;
   struct dirent *dirp;
-  char pcwd[CF_BUFSIZE];
+  char pcwd[CF_BUFSIZE], *parentdir;
   int is_dir,level,goback;
-  
+       
 Debug("RecursiveTidySpecialArea(%s)\n",name);
 memset(&statbuf,0,sizeof(statbuf));
 
@@ -492,11 +492,28 @@ if (maxrecurse == tp->maxrecurse)
          }
       }
    
-   chdir("/");
-
    if (ok)
       {
-      TidyParticularFile(name,ReadLastNode(name),tp,&topstatbuf,true,tp->maxrecurse,true);
+      char* basename=ReadLastNode(name); /* the last node of a pathname string  */
+      
+      if (strlen(name) == strlen(basename))  /* if name is something like "tmp" */
+         {
+         chdir("/");
+         }
+      else /* if the names are like "/tmp", or "/var/tmp" */
+         {
+         if ((parentdir = strdup(name)) == NULL)
+            {
+            FatalError("memory failure");
+            }
+         
+         *(parentdir+strlen(name)-strlen(basename)) = '\0'; 
+         
+         chdir(parentdir); /* now it can chdir to "/var". */
+         free(parentdir);
+         }
+      
+      TidyParticularFile(name,basename,tp,&topstatbuf,true,tp->maxrecurse,true);
       }
    }
 
@@ -696,7 +713,7 @@ if (age_match && size_match)
             if (rmdir(path) == -1)
                {
                Debug("Special case remove top level %s\n",path);
-               snprintf(OUTPUT,CF_BUFSIZE*2,"Delete top directory %s failed\n",path);
+               snprintf(OUTPUT,CF_BUFSIZE,"Delete top directory %s failed\n",path);
                CfLog(cfinform,OUTPUT,"unlink");
                }
             else
@@ -708,7 +725,7 @@ if (age_match && size_match)
             {
             if (rmdir(name) == -1)
                {
-               snprintf(OUTPUT,CF_BUFSIZE*2,"Delete directory %s failed\n",path);
+               snprintf(OUTPUT,CF_BUFSIZE,"Delete directory %s failed\n",path);
                CfLog(cfinform,OUTPUT,"unlink");
                }            
             else
@@ -731,9 +748,9 @@ if (age_match && size_match)
             CfLog(cfverbose,OUTPUT,"unlink");
             }
          
-         snprintf(OUTPUT,CF_BUFSIZE*2,"Deleting file %s\n",path);
+         snprintf(OUTPUT,CF_BUFSIZE,"Deleting file %s\n",path);
          CfLog(cfinform,OUTPUT,"");
-         snprintf(OUTPUT,CF_BUFSIZE*2,"Size=%d bytes, %c-age=%d days\n",
+         snprintf(OUTPUT,CF_BUFSIZE,"Size=%d bytes, %c-age=%d days\n",
                   statbuf->st_size,tlp->searchtype,(nowticks-fileticks)/CF_TICKS_PER_DAY);
          CfLog(cfverbose,OUTPUT,"");
          

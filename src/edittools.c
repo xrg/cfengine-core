@@ -452,7 +452,7 @@ while (ep != NULL)
         break;
         
       case DefineInGroup:
-          if (EDITGROUPLEVEL == 0)
+          if (EDITGROUPLEVEL < 1)
              {
              yyerror("DefineInGroup used outside edit-group");
              break;
@@ -942,6 +942,7 @@ while (ep != NULL)
           break;
           
       case BeginGroupIfNoMatch:
+          
           if (CURRENTLINEPTR == NULL || CURRENTLINEPTR->name == NULL )
              {
              EditVerbose("(Begin Group - no match for %s - file empty)\n",expdata);
@@ -956,6 +957,7 @@ while (ep != NULL)
           else
              {
              EditVerbose("(Begin Group - no match for %s)\n",expdata);
+             EDITGROUPLEVEL++;
              }
           break;
           
@@ -968,6 +970,7 @@ while (ep != NULL)
           else
              {
              EditVerbose("(Begin Group - no line matching %s)\n",expdata);
+             EDITGROUPLEVEL++;
              }
           break;
           
@@ -980,6 +983,7 @@ while (ep != NULL)
           else
              {
              EditVerbose("(Begin Group - no line containing %s)\n",expdata);
+             EDITGROUPLEVEL++;
              }
           break;
           
@@ -992,6 +996,7 @@ while (ep != NULL)
           else
              {
              EditVerbose("(Begin Group - no line %s)\n",expdata);
+             EDITGROUPLEVEL++;
              }
           break;
           
@@ -1008,6 +1013,7 @@ while (ep != NULL)
           else
              {
              EditVerbose("(Begin Group - new file %s)\n",expdata);
+             EDITGROUPLEVEL++;
              }
           break;
           
@@ -1016,6 +1022,7 @@ while (ep != NULL)
           if (!IsExcluded(expdata))
              {
              EditVerbose("(Begin Group - class %s defined)\n", expdata);
+             EDITGROUPLEVEL++;
              }
           else
              {
@@ -1027,6 +1034,7 @@ while (ep != NULL)
       case BeginGroupIfNotDefined:
           if (IsExcluded(expdata))
              {
+             EDITGROUPLEVEL++;
              EditVerbose("(Begin Group - class %s not defined)\n", expdata);
              }
           else
@@ -1045,10 +1053,13 @@ while (ep != NULL)
           else
              {
              EditVerbose("(Begin Group - found file %s)\n",expdata);
+             EDITGROUPLEVEL++;
              }
           break;
+          
       case EndGroup:
           EditVerbose("(End Group)\n");
+          EDITGROUPLEVEL--;
           break;
           
       case ReplaceAll:
@@ -1862,7 +1873,7 @@ while(ep != NULL)
       case BeginGroupIfNoLineContaining:
       case BeginGroupIfDefined:
       case BeginGroupIfNotDefined:
-   level ++;
+          level ++;
       }
 
    Debug("   skip: %s (%d)\n",VEDITNAMES[ep->code],level);

@@ -1,4 +1,4 @@
 @set UPDATED 20 September 2004
 @set UPDATED-MONTH September 2004
-@set EDITION 2.1.11
-@set VERSION 2.1.11
+@set EDITION 2.1.12
+@set VERSION 2.1.12

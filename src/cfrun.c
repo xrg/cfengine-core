@@ -231,33 +231,7 @@ for (i = 1; i < argc; i++)
     Debug("Class item: %s\n",ip->name);
     }
 
- ReadCfrunConf(); 
- 
- GetNameInfo();
- 
-/* 
-if (uname(&VSYSNAME) == -1)
-   {
-   perror("uname ");
-   printf("cfrun: uname couldn't get kernel name info!!\n");
-   exit(1);
-   }
-
-if ((strlen(VDOMAIN) > 0) && !strchr(VSYSNAME.nodename,'.'))
-   {
-   sprintf(VFQNAME,"%s.%s",VSYSNAME.nodename,VDOMAIN);
-   }
-else
-   {
-   sprintf(VFQNAME,"%s",VSYSNAME.nodename);
-   }   
-*/
- 
-Debug("FQNAME = %s\n",VFQNAME);
- 
-sprintf(VPREFIX,"cfrun:%s",VFQNAME);
-
- /* XXX Initialize workdir for non privileged users */
+  /* XXX Initialize workdir for non privileged users */
 
  strcpy(CFWORKDIR,WORKDIR);
 
@@ -266,22 +240,34 @@ sprintf(VPREFIX,"cfrun:%s",VFQNAME);
     char *homedir;
     if ((homedir = getenv("HOME")) != NULL)
        {
-       strcpy(CFWORKDIR,homedir);
+       strncpy(CFWORKDIR,homedir,CF_BUFSIZE-16);
        strcat(CFWORKDIR,"/.cfagent");
        }
     }
 
+ ReadCfrunConf(); 
+ 
+ GetNameInfo();
+
+ CfenginePort();
+ StrCfenginePort();
+ 
+ Debug("FQNAME = %s, WORKDIR = %s\n",VFQNAME,WORKDIR);
+ 
+ sprintf(VPREFIX,"cfrun:%s",VFQNAME);
+ 
+ 
 /* Read hosts file */
-
-umask(077);
-strcpy(VLOCKDIR,CFWORKDIR);
-strcpy(VLOGDIR,CFWORKDIR); 
-
-OpenSSL_add_all_algorithms();
-ERR_load_crypto_strings();
-CheckWorkDirectories();
-LoadSecretKeys();
-RandomSeed();
+ 
+ umask(077);
+ strcpy(VLOCKDIR,CFWORKDIR);
+ strcpy(VLOGDIR,CFWORKDIR); 
+ 
+ OpenSSL_add_all_algorithms();
+ ERR_load_crypto_strings();
+ CheckWorkDirectories();
+ LoadSecretKeys();
+ RandomSeed();
 }
 
 
@@ -302,6 +288,7 @@ int PollServer(char *host,char *options,int storeinfile)
   struct Image addresses;
 #ifdef HAVE_GETADDRINFO
   struct addrinfo query, *response=NULL, *ap;
+  char strport[16];
 #endif
   
 CONN = NewAgentConn();
@@ -327,12 +314,21 @@ FileVerbose(fp, "Connecting to server %s to port %d with options %s %s\n",parsed
 
  Debug("Using v6 compatible lookup...\n"); 
 
+if (port)
+   {
+   snprintf(strport,15,"%u",port);
+   }
+else
+   {
+   snprintf(strport,15,"%s",STR_CFENGINEPORT);
+   }
+ 
 memset(&query,0,sizeof(struct addrinfo));
 query.ai_family = AF_UNSPEC;
 query.ai_socktype = SOCK_STREAM;
 query.ai_flags = AI_PASSIVE;
  
-if ((err=getaddrinfo(parsed_host,NULL,&query,&response)) != 0)
+if ((err = getaddrinfo(parsed_host,strport,&query,&response)) != 0)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Unable to lookup %s (%s)",parsed_host,gai_strerror(err));
    CfLog(cferror,OUTPUT,"");
@@ -369,16 +365,8 @@ if (port)
    }
 else
    {
-   if ((server = getservbyname(CFENGINE_SERVICE,"tcp")) == NULL)
-      {
-      CfLog(cferror,"Unable to find cfengine port","getservbyname");
-      FileOutput(fp, fopl_error, "Unable to find cfengine port\n");
-      exit (1);
-      }
-   else
-      {                                                       
-      raddr.sin_port = (unsigned int) server->s_port;
-      } 
+   CfenginePort();
+   raddr.sin_port = SHORT_CFENGINEPORT;
    }
  
 raddr.sin_addr.s_addr = ((struct in_addr *)(hp->h_addr))->s_addr;

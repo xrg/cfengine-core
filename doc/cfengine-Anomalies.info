@@ -1,4 +1,4 @@
-This is cfengine-Anomalies.info, produced by makeinfo version 4.6 from
+This is cfengine-Anomalies.info, produced by makeinfo version 4.7 from
 cfengine-Anomalies.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -35,7 +35,7 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   Edition 2.1.11 for version 2.1.11 as last updated 20 September 2004.
+   Edition 2.1.12 for version 2.1.12 as last updated 20 September 2004.
 
 * Menu:
 
@@ -48,8 +48,8 @@ the original English.
 
 File: cfengine-Anomalies.info,  Node: Overview,  Next: Anomaly response,  Prev: Top,  Up: Top
 
-Overview
-********
+1 Overview
+**********
 
 One of the aims of cfengine version 2, in combination with our research
 efforts at Oslo University College, is to develop a real computer immune
@@ -75,8 +75,8 @@ control panels, or time-series traces.
 
 File: cfengine-Anomalies.info,  Node: Intrusion detection,  Next: Cryptographic checksums,  Prev: Overview,  Up: Overview
 
-Intrusion detection
-===================
+1.1 Intrusion detection
+=======================
 
 What is an intrusion or an attempted intrusion? This can be difficult to
 define. If someone tries to login at root once? If someone tries to
@@ -118,8 +118,8 @@ about that one for years!
 
 File: cfengine-Anomalies.info,  Node: Cryptographic checksums,  Next: cfenvd,  Prev: Intrusion detection,  Up: Overview
 
-Cryptographic checksums
-=======================
+1.2 Cryptographic checksums
+===========================
 
 Change detection is about monitoring whether files and other aspects of
 a system change. The idea was originally advanced in the program
@@ -144,13 +144,13 @@ file changes. Note that it excludes files such as log files that are
 supposed to change:
 
      control:
-     
+
      actionsequence = ( files )
-     
+
      #####################################################################
-     
+
      files:
-     
+
        /usr/local o=root,bin,man action=warnall mode=o-w r=inf checksum=md5
                           ignore=logs exclude=*.log
 
@@ -165,15 +165,15 @@ supposed to change:
 
 File: cfengine-Anomalies.info,  Node: cfenvd,  Next: Anomaly research,  Prev: Cryptographic checksums,  Up: Overview
 
-An environment detector: cfenvd
-===============================
+1.3 An environment detector: cfenvd
+===================================
 
 The `cfenvd' program serves two purposes: as an anomaly detection engine
 and as a source of entropy for generating random numbers, such as for
 encryption keys. Although it is not a compulsory part of cfengine, it is
 highly recommended to run this daemon. It requires few resources and
 poses no vulnerability to the system. It will play an increasingly
-important role in future developments.
+important role in future developments.  
 
    In cfengine 2.x, additional classes are automatically evaluated
 based on the state of the host, in relation to earlier times.  This is
@@ -203,7 +203,7 @@ are cached.
    The term `microanomaly' is used to describe two standard deviations
 above normal, when the delta of the change is less than the arbitray
 value of 5. This is a small number, and anomalies of these kinds are
-generally noise.
+generally noise.  
 
    Simply specifying statistical number anomalies is not sufficient to
 provide well honed anomaly characteristics. Cfengine tries to organize
@@ -238,9 +238,9 @@ resulting class list, obtained from exploring the environment of the
 system, and after parsing a configuration, looks something like this:
 
      host% cfagent -p -v
-     
+
      [snip]
-     
+
      Defined Classes = ( any Thursday Hr14 Min24 Min20_25
      Day19 July Yr2001 solaris examplehost 32_bit sunos_5_7
      sunos_sun4u sunos_sun4u_5_7 sparc solaris2_7 129_0_0
@@ -249,7 +249,7 @@ system, and after parsing a configuration, looks something like this:
      percent_60 RootProcs_normal_dev2 nfsd_out_low_dev2
      pin-1554 pin-80 pin-21 pin-6011 pin-5308 pin-139
      pin-983 pin-10 )
-     
+
      [snip]
    It is not yet known how the extra environment classes will be used in
 practice.  One obvious possibility is to limit certain heavy-weight
@@ -267,8 +267,8 @@ will respond to these possibilities.
 
 File: cfengine-Anomalies.info,  Node: Anomaly research,  Next: cfenvgraph,  Prev: cfenvd,  Up: Overview
 
-Anomaly research
-================
+1.4 Anomaly research
+====================
 
 There is no system available in the world today which can claim to
 detect and classify the functioning state of a computer system.
@@ -319,15 +319,14 @@ until the expected activity was low.
 
 File: cfengine-Anomalies.info,  Node: cfenvgraph,  Next: Fluctuation profiles,  Prev: Anomaly research,  Up: Overview
 
-cfenvgraph
-==========
+1.5 cfenvgraph
+==============
 
 The `cfenvgraph' command can use used to dump a graph of averages for
 visual inspection of the normal state database. The format of the file
 is
      t,y_1,y_2,y_3...
-
-which can be viewed using `gnuplot' or `xgmr' or other graphical
+   which can be viewed using `gnuplot' or `xgmr' or other graphical
 plotting program.  This would allow the policy-maker to see what is
 likely to be a good time for such work (say 06:00 hours), and then use
 this time for the job, unless an anomalous load is detected.
@@ -418,8 +417,8 @@ meant for continuous viewing. The data are averages, not time-series.
 
 File: cfengine-Anomalies.info,  Node: Fluctuation profiles,  Next: Starting with anomaly detection,  Prev: cfenvgraph,  Up: Overview
 
-Fluctuation profiles
-====================
+1.6 Fluctuation profiles
+========================
 
 Any model of fluctuating values is based on the idea that the changing
 signal has a basic separation of signal and noise. The variability of
@@ -433,8 +432,8 @@ the following sense....
 
 File: cfengine-Anomalies.info,  Node: Starting with anomaly detection,  Prev: Fluctuation profiles,  Up: Overview
 
-Starting with anomaly detection
-===============================
+1.7 Starting with anomaly detection
+===================================
 
 Try importing the following file:
 
@@ -444,141 +443,141 @@ Try importing the following file:
      # BEGIN cf.environ
      #
      ###
-     
+
      #
      # Just a test for responses to measured anomalies
      #
-     
+
      classes:
-     
+
       anomaly_hosts = ( myhost1 myhost2 )
-     
-     
+
+
      #################################################
-     
+
      alerts:
-     
+
        nfsd_in_high_dev2::
-     
+
        "High NFS server access rate 2dev at $(host)/$(env_time)
      current value $(value_nfsd_in) av $(average_nfsd_in) pm
      $(stddev_nfsd_in)"
-     
+
        ShowState(incoming.nfs)
-     
-     
+
+
       # ROOT PROCS
-     
+
        anomaly_hosts.RootProcs_high_dev2::
-     
+
         "RootProc anomaly high 2 dev on $(host)/$(env_time) current value
      $(value_rootprocs) av $(average_rootprocs) pm $(stddev_rootprocs)"
        ShowState(procs)
-     
-     
-     
+
+
+
       # USER PROCS
-     
+
       anomaly_hosts.UserProcs_high_dev2::
-     
+
         "UserProc anomaly high 2 dev on $(host)/$(env_time) current
      value $(value_userprocs) av $(average_userprocs) pm $(stddev_userprocs)"
         ShowState(procs)
-     
-     
+
+
       anomaly_hosts.UserProcs_high_anomaly::
-     
+
         "UserProc anomaly high 3 dev!! on $(host)/$(env_time)"
         ShowState(procs)
-     
-     
+
+
       # WWW IN
-     
+
       # This happens too often
       # anomaly_hosts.www_in_high_dev2::
       #
-     
+
       entropy_www_in_high.anomaly_hosts.www_in_high_anomaly::
-     
+
         "HIGH ENTROPY Incoming www anomaly high anomaly dev!!
      on $(host)/$(env_time) - current value $(value_www_in)
      av $(average_www_in) pm $(stddev_www_in)"
-     
+
         ShowState(incoming.www)
-     
+
       entropy_www_in_low.anomaly_hosts.www_in_high_anomaly::
-     
+
         "LOW ENTROPY Incoming www anomaly high anomaly dev!! on
      $(host)/$(env_time) - current value $(value_www_in) av
      $(average_www_in) pm $(stddev_www_in)"
-     
+
         ShowState(incoming.www)
-     
-     
-     
+
+
+
       # SMTP IN
-     
+
       entropy_smtp_in_high.anomaly_hosts.smtp_in_high_dev2::
-     
+
         "HIGH ENTROPY Incoming smtp anomaly high 2 dev on $(host)/$(env_time)"
-     
+
       entropy_smtp_in_high.anomaly_hosts.smtp_in_high_anomaly::
-     
+
         "HIGH ENTROPY Incoming smtp anomaly high anomaly !! on $(host)/$(env_time)"
-     
-     
+
+
       entropy_smtp_in_low.anomaly_hosts.smtp_in_high_dev1::
-     
+
         "LOW ENTROPY Incoming smtp anomaly high 1 dev on $(host)/$(env_time)
       current value $(value_smtp_in) av  $(average_smtp_in) pm $(stddev_smtp_in)"
-     
+
         ShowState(incoming.smtp)
-     
-     
+
+
       entropy_smtp_in_low.anomaly_hosts.smtp_in_high_dev2::
-     
+
         "LOW ENTROPY Incoming smtp anomaly high 2 dev on $(host)/$(env_time)
      current value $(value_smtp_in) av  $(average_smtp_in) pm $(stddev_smtp_in)"
-     
+
         ShowState(incoming.smtp)
-     
-     
+
+
       entropy_smtp_in_low.anomaly_hosts.smtp_in_high_anomaly::
-     
+
         "LOW ENTROPY Incoming smtp anomaly high anomaly !! on $(host)/$(env_time)
      current value $(value_smtp_in) av  $(average_smtp_in) pm $(stddev_smtp_in)"
-     
+
         ShowState(incoming.smtp)
-     
-     
+
+
       # SMTP OUT
-     
+
       anomaly_hosts.smtp_out_high_dev2::
-     
+
         "Outgoing smtp anomaly high 2 dev on $(host)/$(env_time) current value
      $(value_smtp_out) av  $(average_smtp_out) pm $(stddev_smtp_out)"
-     
+
         ShowState(outgoing.smtp)
-     
+
       anomaly_hosts.smtp_out_high_anomaly::
-     
+
         "Outgoing smtp anomaly high anomaly dev!! on $(host)/$(env_time)
      current value $(value_smtp_out) av $(average_smtp_out) pm $(stddev_smtp_out)"
-     
+
         ShowState(outgoing.smtp)
-     
-     
+
+
       # SAMBA
-     
+
       anomaly_hosts.netbiosssn_in_high_dev2::
-     
+
         "SAMBA access high 2 on $(host)/$(env_time) current value
      $(value_netbiosssn_in) av $(average_netbiosssn_in) pm $(stddev_netbiosssn_in)"
-     
+
         ShowState(incoming.netbiosssn)
-     
+
      ###########################################################################
-     
+
      ###
      #
      # END cf.environ
@@ -668,8 +667,8 @@ quantity and a summary of the highest values during the last 40 minutes:
 
 File: cfengine-Anomalies.info,  Node: Anomaly response,  Next: Variable Index,  Prev: Overview,  Up: Top
 
-Anomaly response
-****************
+2 Anomaly response
+******************
 
 * Menu:
 
@@ -679,8 +678,8 @@ Anomaly response
 
 File: cfengine-Anomalies.info,  Node: Log utilities,  Next: Persistent alerts,  Prev: Anomaly response,  Up: Anomaly response
 
-Log utilities
-=============
+2.1 Log utilities
+=================
 
 How shall we respond to an anomalous event?  Alerts can be channelled
 directly to syslog:
@@ -692,8 +691,8 @@ syslog interface.
 
 File: cfengine-Anomalies.info,  Node: Persistent alerts,  Prev: Log utilities,  Up: Anomaly response
 
-Persistent alerts
-=================
+2.2 Persistent alerts
+=====================
 
 DEFCON 1
 
@@ -726,6 +725,7 @@ File: cfengine-Anomalies.info,  Node: Variable Index,  Next: Concept Index,  Pre
 Variable Index
 **************
 
+ [index ]
 * Menu:
 
 File: cfengine-Anomalies.info,  Node: Concept Index,  Next: FAQ Index,  Prev: Variable Index,  Up: Top
@@ -733,14 +733,15 @@ File: cfengine-Anomalies.info,  Node: Concept Index,  Next: FAQ Index,  Prev: Va
 Concept Index
 *************
 
+ [index ]
 * Menu:
 
-* Encryption keys:                       cfenvd.
-* Entropy:                               cfenvd.
-* Entropy source:                        cfenvd.
-* Micro-anomaly:                         cfenvd.
-* Microanomaly:                          cfenvd.
-* Random numbers:                        cfenvd.
+* Encryption keys:                       cfenvd.               (line 11)
+* Entropy:                               cfenvd.               (line 57)
+* Entropy source:                        cfenvd.               (line 11)
+* Micro-anomaly:                         cfenvd.               (line 41)
+* Microanomaly:                          cfenvd.               (line 41)
+* Random numbers:                        cfenvd.               (line 11)
 
 
 File: cfengine-Anomalies.info,  Node: FAQ Index,  Prev: Concept Index,  Up: Top
@@ -748,24 +749,25 @@ File: cfengine-Anomalies.info,  Node: FAQ Index,  Prev: Concept Index,  Up: Top
 FAQ Index
 *********
 
+ [index ]
 * Menu:
 
 
 Tag Table:
 Node: Top478
 Node: Overview1642
-Node: Intrusion detection2603
-Node: Cryptographic checksums4741
+Node: Intrusion detection2607
+Node: Cryptographic checksums4753
 Node: cfenvd6623
-Node: Anomaly research11417
-Node: cfenvgraph14109
-Node: Fluctuation profiles18097
-Node: Starting with anomaly detection18722
-Node: Anomaly response29423
-Node: Log utilities29616
-Node: Persistent alerts29997
-Node: Variable Index31176
-Node: Concept Index31328
-Node: FAQ Index31767
+Node: Anomaly research11414
+Node: cfenvgraph14114
+Node: Fluctuation profiles18112
+Node: Starting with anomaly detection18745
+Node: Anomaly response29134
+Node: Log utilities29331
+Node: Persistent alerts29720
+Node: Variable Index30907
+Node: Concept Index31071
+Node: FAQ Index31666
 
 End Tag Table

@@ -541,7 +541,8 @@ void HandleIntSwitch ARGLIST((char *name,char *value,int *flag,int min, int max)
 
 char *sockaddr_ntop ARGLIST((struct sockaddr *sa));
 void *sockaddr_pton ARGLIST((int af,void *src));
-short CfenginePort ARGLIST((void));
+void CfenginePort ARGLIST((void));
+void StrCfenginePort ARGLIST((void));
 int IsIPV4Address ARGLIST((char *name));
 int IsIPV6Address ARGLIST((char *name));
 char *Hostname2IPString ARGLIST((char *name));

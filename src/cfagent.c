@@ -99,10 +99,12 @@ ReadRCFile(); /* Should come before parsing so that it can be overridden */
  if (IsPrivileged() && !MINUSF && !PRSCHEDULE)
     {
     SetContext("update");
+
     if (ParseInputFile("update.conf"))
        {
        CheckSystemVariables();
-       if (!PARSEONLY)
+
+       if (!PARSEONLY && (QUERYVARS != NULL))
           {
           DoTree(1,"Update");
           EmptyActionSequence();
@@ -205,7 +207,7 @@ void Initialize(int argc,char *argv[])
 strcpy(VDOMAIN,CF_START_DOMAIN);
 
 PreLockState();
- 
+
 ISCFENGINE = true;
 VFACULTY[0] = '\0';
 VSYSADM[0] = '\0';
@@ -300,6 +302,9 @@ for (i = 1; i < argc; i++)
  seed = ElfHash(s);
  srand48((long)seed);  
  CheckOpts(cfargc,cfargv);
+
+ CfenginePort();
+ StrCfenginePort();
 }
 
 /*******************************************************************/
@@ -376,6 +381,11 @@ while (!feof(pp))
       break;
       }
    
+   if (strstr(ebuff,"cfengine-preconf-abort"))
+      {
+      exit(2);
+      }
+
    if (ferror(pp))  /* abortable */
       {
       CfLog(cferror,"Error running preconfig\n","ferror");
@@ -1342,7 +1352,7 @@ int NothingLeftToDo()
 
 for (vproclist = VPROCLIST; vproclist != NULL; vproclist=vproclist->next)
    {
-   if (vproclist->done == 'n')
+   if (vproclist->done == 'n' && IsDefinedClass(vproclist->classes))
       {
       return false;
       }
@@ -1350,7 +1360,7 @@ for (vproclist = VPROCLIST; vproclist != NULL; vproclist=vproclist->next)
  
  for (vscript = VSCRIPT; vscript != NULL; vscript=vscript->next)
     {
-    if (vscript->done == 'n')
+    if (vscript->done == 'n'  && IsDefinedClass(vscript->classes))
        {
        return false;
        }
@@ -1358,7 +1368,7 @@ for (vproclist = VPROCLIST; vproclist != NULL; vproclist=vproclist->next)
  
 for (vfile = VFILE; vfile != NULL; vfile=vfile->next)
    {
-   if (vfile->done == 'n')
+   if (vfile->done == 'n' && IsDefinedClass(vfile->classes))
       {
       return false;
       }
@@ -1382,7 +1392,7 @@ for (veditlist = VEDITLIST; veditlist != NULL; veditlist=veditlist->next)
 
 for (vdisablelist = VDISABLELIST; vdisablelist != NULL; vdisablelist=vdisablelist->next)
    {
-   if (vdisablelist->done == 'n')
+   if (vdisablelist->done == 'n' && IsDefinedClass(vdisablelist->classes))
       {
       return false;
       }
@@ -1390,7 +1400,7 @@ for (vdisablelist = VDISABLELIST; vdisablelist != NULL; vdisablelist=vdisablelis
 
 for (vmakepath = VMAKEPATH; vmakepath != NULL; vmakepath=vmakepath->next)
    {
-   if (vmakepath->done == 'n')
+   if (vmakepath->done == 'n' && IsDefinedClass(vmakepath->classes))
       {
       return false;
       }
@@ -1398,7 +1408,7 @@ for (vmakepath = VMAKEPATH; vmakepath != NULL; vmakepath=vmakepath->next)
 
 for (vlink = VLINK; vlink != NULL; vlink=vlink->next)
    {
-   if (vlink->done == 'n')
+   if (vlink->done == 'n' && IsDefinedClass(vlink->classes))
       {
       return false;
       }
@@ -1406,7 +1416,7 @@ for (vlink = VLINK; vlink != NULL; vlink=vlink->next)
 
 for (vchlink = VCHLINK; vchlink != NULL; vchlink=vchlink->next)
    {
-   if (vchlink->done == 'n')
+   if (vchlink->done == 'n' && IsDefinedClass(vchlink->classes))
       {
       return false;
       }
@@ -1415,7 +1425,7 @@ for (vchlink = VCHLINK; vchlink != NULL; vchlink=vchlink->next)
 
 for (vunmount = VUNMOUNT; vunmount != NULL; vunmount=vunmount->next)
    {
-   if (vunmount->done == 'n')
+   if (vunmount->done == 'n' && IsDefinedClass(vunmount->classes))
       {
       return false;
       }
@@ -1423,7 +1433,7 @@ for (vunmount = VUNMOUNT; vunmount != NULL; vunmount=vunmount->next)
 
 for (vpkg = VPKG; vpkg != NULL; vpkg=vpkg->next)
    {
-   if (vpkg->done == 'n')
+   if (vpkg->done == 'n' && IsDefinedClass(vpkg->classes))
       {
       return false;
       }

@@ -253,7 +253,7 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
 
    if (S_ISDIR(statbuf.st_mode))
       {
-      if (TRAVLINKS || ip->linktype == 'n')
+      if (TRAVLINKS)
          {
          CfLog(cfverbose,"Traversing directory links during copy is too dangerous, pruned","");
          continue;

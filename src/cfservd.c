@@ -184,6 +184,9 @@ OUTPUT[0] = '\0';
 
 BINDINTERFACE[0] = '\0';
 
+CfenginePort();
+StrCfenginePort();
+
 SetSignals();
  
 ISCFENGINE = false;   /* Switch for the parser */
@@ -738,7 +741,7 @@ return (addr.s_addr);
 
 int OpenReceiverChannel()
 
-{ int sd,port;
+{ int sd;
   int yes=1;
   char *ptr = NULL;
 
@@ -751,8 +754,6 @@ int OpenReceiverChannel()
     
 cflinger.l_onoff = 1;
 cflinger.l_linger = 60;
-
-port = CfenginePort();
 
 #if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
   
@@ -770,7 +771,7 @@ if (BINDINTERFACE[0] != '\0' )
   ptr = BINDINTERFACE;
   }
 
-if (getaddrinfo(ptr,"5308",&query,&response) != 0)
+if (getaddrinfo(ptr,STR_CFENGINEPORT,&query,&response) != 0)
    {
    CfLog(cferror,"DNS/service lookup failure","getaddrinfo");
    return -1;   
@@ -842,7 +843,7 @@ if (BINDINTERFACE[0] != '\0' )
    sin.sin_addr.s_addr = INADDR_ANY;
    }
 
-sin.sin_port = (unsigned short)(port); /*  Service returns network byte order */
+sin.sin_port = (unsigned short)SHORT_CFENGINEPORT;
 sin.sin_family = AF_INET; 
 
 if ((sd = socket(AF_INET,SOCK_STREAM,0)) == -1)
@@ -913,34 +914,34 @@ if (list == NULL)
 
 Debug("Purging Old Connections...\n");
 
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+if (pthread_mutex_lock(&MUTEX_COUNT) != 0)
+   {
+   CfLog(cferror,"pthread_mutex_lock failed","pthread_mutex_lock");
+   return;
+   }
+#endif
+
 for (ip = *list; ip != NULL; ip=ip->next)
    {
    sscanf(ip->classes,"%d",&then);
 
    if (now > then + 7200)
       {
-#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-      if (pthread_mutex_lock(&MUTEX_COUNT) != 0)
-         {
-         CfLog(cferror,"pthread_mutex_lock failed","pthread_mutex_lock");
-         return;
-         }
-#endif
-
       DeleteItem(list,ip);
-
-#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-      if (pthread_mutex_unlock(&MUTEX_COUNT) != 0)
-         {
-         CfLog(cferror,"pthread_mutex_unlock failed","pthread_mutex_unlock");
-         return;
-         }
-#endif
 
       snprintf(OUTPUT,CF_BUFSIZE*2,"Purging IP address %s from connection list\n",ip->name);
       CfLog(cfverbose,OUTPUT,"");
       }
    }
+
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+if (pthread_mutex_unlock(&MUTEX_COUNT) != 0)
+   {
+   CfLog(cferror,"pthread_mutex_unlock failed","pthread_mutex_unlock");
+   return;
+   }
+#endif
 
 Debug("Done purging\n");
 }

@@ -146,6 +146,9 @@ pthread_mutex_t MUTEX_LOCK = PTHREAD_MUTEX_INITIALIZER;
 
   PUBLIC dev_t ROOTDEVICE = 0;
 
+  PUBLIC char  STR_CFENGINEPORT[16];
+  PUBLIC unsigned short SHORT_CFENGINEPORT;
+
   PUBLIC enum classes VSYSTEMHARDCLASS;
 
   PUBLIC struct Item VDEFAULTBINSERVER =      /* see GetNameInfo(), main.c */

@@ -330,6 +330,7 @@ if (!IsAbsoluteFileName(file))
 
 strncpy(pathbuf,file,CF_BUFSIZE-1);                                      /* local copy */
 
+
 #ifdef DARWIN
 /* Dealing w. a rsrc fork? */
 if (strstr(pathbuf, _PATH_RSRCFORKSPEC) != NULL)
@@ -364,6 +365,11 @@ if (strstr(pathbuf, _PATH_RSRCFORKSPEC) != NULL)
              struct Tidy tp;
              struct TidyPattern tpat;
              struct stat sbuf;
+
+             if (DONTDO)
+                {
+                return true;
+                }
              
              strcpy(currentpath,pathbuf);
              DeleteSlash(currentpath);

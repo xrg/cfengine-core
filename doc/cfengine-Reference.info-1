@@ -1,4 +1,4 @@
-This is cfengine-Reference.info, produced by makeinfo version 4.6 from
+This is cfengine-Reference.info, produced by makeinfo version 4.7 from
 cfengine-Reference.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.1.11 for version
-2.1.11 as last updated 26 October 2004.
+   This manual corresponds to CFENGINE Edition 2.1.12 for version
+2.1.12 as last updated 22 November 2004.
 
 * Menu:
 
@@ -55,8 +55,8 @@ the original English.
 
 File: cfengine-Reference.info,  Node: Reference introduction,  Next: Cfkey,  Prev: Top,  Up: Top
 
-Introduction to reference manual
-********************************
+1 Introduction to reference manual
+**********************************
 
 The purpose of the cfengine reference manual is to collect together and
 document the raw facts about the different components of cfengine. Once
@@ -77,8 +77,8 @@ implement configurations in practice.
 
 File: cfengine-Reference.info,  Node: Installation,  Next: Work directory,  Prev: Reference introduction,  Up: Reference introduction
 
-Installation
-============
+1.1 Installation
+================
 
 In order to install cfengine, you should first ensure that the following
 packages are installed.
@@ -101,8 +101,8 @@ the cfengine trusted work directory.
 
 File: cfengine-Reference.info,  Node: Work directory,  Next: Hard classes,  Prev: Installation,  Up: Reference introduction
 
-Work directory
-==============
+1.2 Work directory
+==================
 
 In order to achieve the desired simplifications, it was decided to
 reserve a private work area for the cfengine tool-set. In cfengine 1.x,
@@ -141,8 +141,8 @@ another central location and viewed in an alternative browser..
 
 File: cfengine-Reference.info,  Node: Hard classes,  Next: Evaluated classes and special functions,  Prev: Work directory,  Up: Reference introduction
 
-Cfengine hard classes
-=====================
+1.3 Cfengine hard classes
+=========================
 
 A single class can be one of several things:
 
@@ -185,8 +185,8 @@ with privilege, and the `/var/cfengine/env_data' file is secure.
 
 File: cfengine-Reference.info,  Node: Evaluated classes and special functions,  Next: Filenames and paths,  Prev: Hard classes,  Up: Reference introduction
 
-Evaluated classes and special functions
-=======================================
+1.4 Evaluated classes and special functions
+===========================================
 
 Cfengine provides a number of in-built functions for evaluating classes,
 based on file tests. Using these internal functions is quicker than
@@ -232,7 +232,7 @@ arguments in chronological order.
      (see Writing plugin modules in tutorial).  Unlike actionsequence
      modules, these modules are evaluated immediately on parsing.  Note
      that the module should be specified relative to the authorized
-     module directory.
+     module directory.  
 
 `Regcmp(REGEXP,STRING OR LIST SEPARATED STRING)'
      True if the string matched the regular expression.
@@ -246,20 +246,20 @@ arguments in chronological order.
 For example:
 
      classes:
-     
+
       access_to_dir = ( ReturnsZero(/bin/cd /mydir) )
       compare       = ( ChangedBefore(/etc/passwd_master,/etc/passwd) )
       isplain       = ( IsPlain(/tmp/import) )
       inrange       = ( IPRange(128.39.89.10-15) )
       CIDR          = ( IPRange(128.39.89.10/24) )
-      compute_nodes = ( HostRage(cpu-,01-32)
+      compute_nodes = ( HostRange(cpu-,01-32)
       gotinit       = ( PrepModule(startup2,"arg1 arg2") )
-
+   
 
 File: cfengine-Reference.info,  Node: Filenames and paths,  Prev: Evaluated classes and special functions,  Up: Reference introduction
 
-Filenames and paths
-===================
+1.5 Filenames and paths
+=======================
 
 Filenames in Unix-like operating systems
 
@@ -270,12 +270,11 @@ are in. For example:
 
      /etc/passwd
      /usr/local/masterfiles/distfile
-
-The only place where it makes sense to refer to a file without a
+   The only place where it makes sense to refer to a file without a
 complete directory specification is when searching through directories
 for different kinds of file, e.g.
      tidy:
-     
+
        /home/user pattern=core age=0 recurse=inf
 
 Here, one can write `core' without a path, because one is looking for
@@ -311,22 +310,21 @@ must begin with a drive letter or double-slash server name.
 
 File: cfengine-Reference.info,  Node: Cfkey,  Next: Cfshow,  Prev: Reference introduction,  Up: Top
 
-Cfkey reference
-***************
+2 Cfkey reference
+*****************
 
 The very first thing you should do on every host is to establish a
 public-private key pair. To do this, you need to run the program
      everyhost# cfkey
-
-on every host. This program needs to produce random numbers, and needs a
-source of randomness. A good strategy is to install and run the
+   on every host. This program needs to produce random numbers, and
+needs a source of randomness. A good strategy is to install and run the
 `cfenvd' program for a week or two in advance of deploying cfengine 2,
 since `cfenvd' collects random events, which are an excellent source of
-entropy for random number generation.
+entropy for random number generation.  
 
    If you get the error message "PRNG not seeded", it means that
 insufficient data were found in order to make a random key. In that
-case, run `cfenvd' for a few days more and try again.
+case, run `cfenvd' for a few days more and try again.  
 
 * Menu:
 
@@ -342,8 +340,8 @@ case, run `cfenvd' for a few days more and try again.
 
 File: cfengine-Reference.info,  Node: Cfshow,  Next: Cfagent reference,  Prev: Cfkey,  Up: Top
 
-Cfshow reference
-****************
+3 Cfshow reference
+******************
 
 The `cfshow' command was introduced in cfengine 2.1.11 in order to
 provide a simple command line query of the various databases used to
@@ -352,8 +350,7 @@ store operational state by cfagent.
      everyhost# cfshow -l
      everyhost# cfshow -c
      everyhost# cfshow -s
-
-The command line options are
+   The command line options are
 
 `-a `--active''
      This prints a list of any currently active locks, i.e. tasks that
@@ -392,8 +389,8 @@ The command line options are
 
 File: cfengine-Reference.info,  Node: Cfagent reference,  Next: Cfservd.conf and cfrun reference,  Prev: Cfshow,  Up: Top
 
-Cfagent reference
-*****************
+4 Cfagent reference
+*******************
 
 * Menu:
 
@@ -437,8 +434,8 @@ Cfagent reference
 
 File: cfengine-Reference.info,  Node: Cfagent intro,  Next: Variable expansion and contexts,  Prev: Cfagent reference,  Up: Cfagent reference
 
-Cfagent intro
-=============
+4.1 Cfagent intro
+=================
 
 Cfagent is the workhorse of cfengine. It interprets and computes the
 necessary strategies for implementing convergent maintenance. In order
@@ -466,32 +463,32 @@ performed to avoid unnecessary multiplicity.
 
 File: cfengine-Reference.info,  Node: The file cfagent.conf,  Next: Cfagent Runtime Options,  Prev: Cfagent intro,  Up: Cfagent intro
 
-The file cfagent.conf
----------------------
+4.1.1 The file cfagent.conf
+---------------------------
 
 
       control:
-     
+
         CLASSES::
-     
+
             domain = ( DNS-DOMAIN-NAME )
-     
+
       classes:
-     
+
         CLASS/GROUP DEFINITIONS
-     
+
       import:
-     
+
         FILES TO IMPORT
-     
+
       # other items
 
 
 
 File: cfengine-Reference.info,  Node: Cfagent Runtime Options,  Prev: The file cfagent.conf,  Up: Cfagent intro
 
-Cfagent runtime options
------------------------
+4.1.2 Cfagent runtime options
+-----------------------------
 
 Note that GNU long options are available with the syntax
 `--longoption'.  The long names are given in brackets.
@@ -559,7 +556,7 @@ Note that GNU long options are available with the syntax
 `-H'
      (`--no-hard-classes'). Prevents cfengine from generating any
      internal class name information. Can be used for emulation
-     purposes.
+     purposes.  
 
 `-i'
      (`--no-ifconfig') Do not attempt to configure the local area
@@ -629,7 +626,7 @@ Note that GNU long options are available with the syntax
      at any given time. This option causes some system 5 systems to
      generate a Bus Error or segmentation fault. The same information
      is available from the cfengine internal variable `$(allclasses)'
-     and can be passed as a parameter to scripts.
+     and can be passed as a parameter to scripts.  
 
 `-U'
      (`--underscore-classes'). When this option is set, cfengine adds
@@ -671,8 +668,8 @@ added:
 
 File: cfengine-Reference.info,  Node: Variable expansion and contexts,  Next: Cfengine classes,  Prev: Cfagent intro,  Up: Cfagent reference
 
-Variable expansion and contexts
-===============================
+4.2 Variable expansion and contexts
+===================================
 
 Variables in cfengine 2 are defined in contexts. Variables in a given
 context refer to the different phases of execution of cfengine: global,
@@ -689,9 +686,9 @@ Perl).  Such arrays are referred to by square brackets:
 
 
      $(array[key])  $(array[$(key)])
-
-and so on. Note carefully that cfengine requires parentheses or braces
-around variable names. Unlike in the shell, they cannot be omitted.
+   and so on. Note carefully that cfengine requires parentheses or
+braces around variable names. Unlike in the shell, they cannot be
+omitted.
 
 * Menu:
 
@@ -702,8 +699,8 @@ around variable names. Unlike in the shell, they cannot be omitted.
 
 File: cfengine-Reference.info,  Node: Setting variables with functions,  Next: Special variables,  Prev: Variable expansion and contexts,  Up: Variable expansion and contexts
 
-Setting variables with functions
---------------------------------
+4.2.1 Setting variables with functions
+--------------------------------------
 
 A number of special functions can be used to set variables in cfengine.
 You can import values from the execution of a shell command by
@@ -712,17 +709,17 @@ version 2 an replaced by a function.
 
 
        control:
-     
+
         # old method
-     
+
         listing = ( "exec /bin/ls -l" )
-     
+
         # new method
-     
+
         listing = ( ExecResult(/bin/ls -l) )
 
 This sets the variable `listing' to the output of the command in the
-quotes.
+quotes.  
 
    Some other internal functions are
 
@@ -730,9 +727,8 @@ quotes.
      Makes an associative array entry, associating X and Y. For
      instance:
           control:
-          
-           assoc_array = ( A(B,"is for bird") A(C,"is for cat") )
 
+           assoc_array = ( A(B,"is for bird") A(C,"is for cat") )
      results in:
 
           OBJECT: main
@@ -740,14 +736,14 @@ quotes.
              4630 : assoc_array[C]=is for cat
      Another example:
           control:
-          
+
            binhost = ( A(linux,machine1) A(solaris,machine2) )
-          
+
           copy:
-          
+
            # Contact machine 1 for linux
            # Contact machine 2 for solaris
-          
+
            /etc/source dest=/etc/receve server=$(binhost[$(class)])
 
 `ExecResult(COMMAND)'
@@ -769,7 +765,7 @@ quotes.
           ignored.  Items are keyed numerically starting from 1 to the
           maximum number in the file.  If the separation character is
           not a newline `$(n)', then the newline is assumed to be a
-          separator also.
+          separator also.  
 
     `textkey'
           If this format is specified, `ReadArray' tries to interpret
@@ -778,7 +774,7 @@ quotes.
 
 
 `ReadFile(FILENAME,MAX NUMBER OF BYTES)'
-     Read a maximum number of bytes from a file.
+     Read a maximum number of bytes from a file.  
 
 `ReadTable(FILENAME,FILEFORMAT,SEPARATOR,COMMENT,MAX NUMBER OF BYTES)'
      Reads up to a maximum number of bytes from a properly formatted
@@ -790,7 +786,7 @@ quotes.
           ignored.  Items are keyed numerically starting from 1 to the
           maximum number in the file.  Any lines that do not contain
           the correct number of separators cause the function to fail
-          without making any assignment.
+          without making any assignment.  
 
     `textkey'
           If this format is specified, `ReadArray' tries to interpret
@@ -804,7 +800,7 @@ quotes.
     `lines'
           If this format is specified, `ReadList' tries to interpret
           the file as a list of items on separate lines. The value
-          returned is a list formatted by the `Split' character.
+          returned is a list formatted by the `Split' character.  
 
 
           hosts = ( ReadList(/var/cfengine/inputs/datafile,lines,#,1000) )
@@ -813,14 +809,14 @@ quotes.
      This function is for use in peer to peer monitoring applications.
      It allows individual hosts to identify themselves as part of a
      clique and find their peers. The function returns a list variable,
-     delimited by the list separation character, for use with Split.
+     delimited by the list separation character, for use with Split.  
 
            control:
-          
+
              allpeers = ( SelectPartitionGroup(/var/cfengine/inputs/cfrun.hosts,#,random,4) )
-          
+
            copy:
-          
+
              /data/file dest=/p2prepository/file server=$(allpeers)
 
 `SelectPartitionLeader(FILENAME,COMMENT,POLICY,GROUP SIZE)'
@@ -830,31 +826,29 @@ quotes.
      hostnames or IP addresses, one host per line, with blank lines and
      comments and partitions it into groups of a fixed size. It then
      returns picks a leader for the the group and returns its name as
-     the value of the function.
+     the value of the function.  
 
            control:
-          
+
              leader = ( SelectPartitionLeader(/var/cfengine/inputs/cfrun.hosts,#,random,4) )
-          
+
            copy:
-          
+
              /data/file dest=/p2prepository/file server=$(leader)
 
    Note that functions should have no spaces between the function name
 and the leading parenthesis, but should themselves be surrounded by
-white space.
-
-For example:
+white space.  For example:
 
 
      control:
-     
+
       variable2 = ( RandomInt(0,23) )
-     
+
       variable3 = ( ExecResult(/bin/ls -a /opt) )
-     
+
       myexcerpt  = ( ReadFile("/etc/services",220) )
-     
+
       listvar = ( ReadArray(/tmp/array,textkey,",","#",100) )
 
    In the latter case, the file could look like this:
@@ -862,13 +856,12 @@ For example:
      one,String to tbe read
      two,Nothing string
      three,Everything comes in threes
-
-and results in the definition of (verify with `cfagent -p -d3'):
+   and results in the definition of (verify with `cfagent -p -d3'):
      OBJECT: main
         960 : listvar[one]=String to tbe read
         259 : listvar[two]=Nothing string
         224 : listvar[three]=Everything comes in threes
-
+   
 * Menu:
 
 * Special variables::
@@ -877,8 +870,8 @@ and results in the definition of (verify with `cfagent -p -d3'):
 
 File: cfengine-Reference.info,  Node: Special variables,  Next: Iteration over lists,  Prev: Setting variables with functions,  Up: Variable expansion and contexts
 
-Special variables
------------------
+4.2.2 Special variables
+-----------------------
 
 Variables are referred to in either of two different ways, depending on
 your taste.  You can use the forms `$(variable)' or `${variable}'.  The
@@ -890,14 +883,14 @@ variables.
      A long string in the form `CFALLCLASSES=class1:class2...'.  This
      variable is a summary of all the defined classes at any given
      time. It is always kept up to date so that scripts can make use of
-     cfengine's class data.
+     cfengine's class data.  
 
 `arch'
      The current detailed architecture string--an amalgamation of the
-     information from _uname_. Non-definable.
+     information from _uname_. Non-definable.  
 
 `binserver'
-     The default server for binary data.  Non definable.
+     The default server for binary data.  Non definable.  
 
 `ChecksumDatabase'
      If set to the name of a file, cfagent will use this to store
@@ -910,15 +903,15 @@ variables.
 
 `class'
      The currently defined system hard-class (e.g. `sun4', `hpux').
-     Non-definable.
+     Non-definable.  
 
 `date'
      The current date string. Note that if you use this in a shell
      command it might be interpreted as a list variable, since it
-     contains the default separator `:'.
+     contains the default separator `:'.  
 
 `domain'
-     The currently defined domain.
+     The currently defined domain.  
 
 `EmailFrom'
      The E-mail address from whom E-mail from cfexecd should appear to
@@ -927,25 +920,25 @@ variables.
 `EmailMaxLines'
      Most lines of output to email from a single cfexecd-induced run of
      cfagent. If undefined, defaults to 100. Set to 0, no email is sent
-     by cfexecd. Set to `inf', no maximum is enforced.
+     by cfexecd. Set to `inf', no maximum is enforced.  
 
 `EmailTo'
      The E-mail address to whom mail should be sent (overrides sysadm
      variable).
 
 `faculty'
-     The faculty or site as defined in control (see site).
+     The faculty or site as defined in control (see site).  
 
 `fqhost'
      The fully qualified (DNS/BIND) hostname of the system, which
-     includes the domain name as well.
+     includes the domain name as well.  
 
 `host'
-     The hostname of the machine running the program.
+     The hostname of the machine running the program.  
 
 `ipaddress'
      The numerical form of the internet address of the host currently
-     running cfengine, found by lookup in DNS.
+     running cfengine, found by lookup in DNS.  
 
 `ipv4[INTERFACE]'
      The IPv4 address of the named interface, determined from a probe
@@ -960,7 +953,7 @@ variables.
      co-exist concurrently on the system. This can prevent excessive
      load due to unintentional spamming in situations where several
      cfengines are started independently. The default value is
-     unlimited.
+     unlimited.  
 
 `ostype'
      A short for of `$(arch)'.
@@ -972,39 +965,39 @@ variables.
      value in this variable is appended with the name of the host. The
      default is equivalent to,
             OutputPrefix = ( "cfengine:$(host):")
-
+     
 `RepChar'
      The character value of the string used by the file repository in
      constructing unique filenames from path names. This is the
-     character which replaces `/' (see the reference manual).
+     character which replaces `/' (see the reference manual).  
 
 `site'
      This variable is identical to `$(faculty)' and may be used
-     interchangeably.
+     interchangeably.  
 
 `smtpserver'
      The name of the host to which mail output should be sent.
 
 `split'
      The character on which list variables are split (see the reference
-     manual).
+     manual).  
 
 `sysadm'
-     The name or mail address of the system administrator.
+     The name or mail address of the system administrator.  
 
 `timezone'
-     The current timezone as defined in `control'.
+     The current timezone as defined in `control'.  
 
 `UnderscoreClasses'
      If this is set to `on' cfengine uses hard-classes which begin with
      an underscore, so as to avoid name collisions. See also Runtime
-     Options in the Reference manual.
+     Options in the Reference manual.  
 
 `version'
-     The current version string as defined in the code.
+     The current version string as defined in the code.  
 
 `year'
-     The current year.
+     The current year.  
 
 These variables are kept special because they play a special role in
 setting up a system configuration.  You are encouraged to use them to
@@ -1020,36 +1013,36 @@ user macros, so you should not define your own macros with these names._
    The following variables are also reserved and may be used to produce
 troublesome special characters in strings.
 `cr'
-     Expands to the carriage-return character.
+     Expands to the carriage-return character.  
 
 `dblquote'
-     Expands to a double quote `"'
+     Expands to a double quote `"' 
 
 `dollar'
-     Expands to `$'.
+     Expands to `$'.  
 
 `lf'
-     Expands to a line-feed character (Unix end of line).
+     Expands to a line-feed character (Unix end of line).  
 
 `n'
-     Expands to a newline character.
+     Expands to a newline character.  
 
 `quote'
-     Expands to a single quote `''.
+     Expands to a single quote `''.  
 
 `spc'
      Expands simply to a single space. This can be used to place spaces
-     in filenames etc.
+     in filenames etc.  
 
 `tab'
-     Expands to a single tab character.
+     Expands to a single tab character.  
 
 
 
 File: cfengine-Reference.info,  Node: Iteration over lists,  Prev: Special variables,  Up: Variable expansion and contexts
 
-Iteration over lists
---------------------
+4.2.3 Iteration over lists
+--------------------------
 
 Variables can be used as iterators in some situations. Iteration over
 lists is currently rather limited in cfengine and is something to be
@@ -1058,16 +1051,16 @@ iterator, a character is chosen to represent a list separator, as in
 the shell `IFS' variable.  The default separator is the colon `:'
 character:
      control:
-     
+
       listvar = ( one:two:three:four )
    The action that contains a variable to be interpreted as a list
 appears as separate actions, one for each case:
      shellcommand:
-     
+
        "/bin/echo $(listvar)"
    is equivalent to
      shellcommand:
-     
+
        "/bin/echo one"
        "/bin/echo two"
        "/bin/echo three"
@@ -1093,9 +1086,9 @@ appears as separate actions, one for each case:
 scalars:
 
      alerts:
-     
+
       amnexus::
-     
+
        "do $(list1) $(list2)"
    e.g.
 
@@ -1122,20 +1115,20 @@ scalars:
 
    * Names in the ignore action.
 
-
+   
 
 File: cfengine-Reference.info,  Node: Cfengine classes,  Next: acl,  Prev: Variable expansion and contexts,  Up: Cfagent reference
 
-Cfengine classes
-================
+4.3 Cfengine classes
+====================
 
 A _cfengine action_ looks like this:
 
 
      ACTION-TYPE:
-     
+
         COMPOUND-CLASS::
-     
+
             DECLARATION
 
 A single class can be one of several things:
@@ -1180,10 +1173,9 @@ A single class can be one of several things:
 
 
      myclass.sun4.Monday::
-     
-     sun4|ultrix|osf::
 
-A compound class evaluates to `true' if all of the individual classes
+     sun4|ultrix|osf::
+   A compound class evaluates to `true' if all of the individual classes
 are separately true, thus in the above example the actions which follow
 `compound_class::' are only carried out if the host concerned is in
 `myclass', is of type `sun4' and the day is Monday!  In the second
@@ -1216,7 +1208,7 @@ note that by defining your own classes, using them to make compound
 rules of this type, and then switching them on and off, you can also
 switch on and off the corresponding actions in a controlled way.  The
 command line options `-D' and `-N' can be used for this purpose.  See
-also `addclasses' in the Reference manual.
+also `addclasses' in the Reference manual.  
 
    A logical NOT operator has been added to allow you to exclude
 certain specific hosts in a more flexible way. The logical NOT operator
@@ -1224,18 +1216,18 @@ is (as in C and C++) `!'. For instance, the following example would
 allow all hosts except for `myhost':
 
         ACTION:
-     
+
          !myhost::
-     
+
              COMMAND
 
 and similarly, so allow all hosts in a user-defined group `mygroup',
 _except_ for `myhost', you would write
 
         ACTION:
-     
+
          mygroup.!myhost::
-     
+
              COMMAND
 
 which reads `mygroup AND NOT myhost'. The NOT operator can also be
@@ -1266,9 +1258,9 @@ for your systems you can run cfengine in `parse-only-verbose' mode:
 
 
        cfagent -p -v
-
-and these will be displayed. For example, solaris 2.4 systems generate
-the additional classes `sunos_5_4' and `sunos_sun4m', `sunos_sun4m_5_4'.
+   and these will be displayed. For example, solaris 2.4 systems
+generate the additional classes `sunos_5_4' and `sunos_sun4m',
+`sunos_sun4m_5_4'.
 
    Cfengine uses both the unqualified and fully host names as classes.
 Some sites and operating systems use fully qualified names for their
@@ -1279,9 +1271,9 @@ it encounters. If your hostnames contain dots (which do not refer to a
 domain name, then cfengine will be confused. The moral is: don't have
 dots in your host names! _NOTE: in order to ensure that the fully
 qualified name of the host becomes a class you must define the domain
-variable._ The dots in this string will be replaced by underscores.
+variable._ The dots in this string will be replaced by underscores.  
 
-   In summary, the operator ordering in cfengine classes is as follows:
+   In summary, the operator ordering in cfengine classes is as follows: 
 
 `()'
      Parentheses override everything.
@@ -1299,16 +1291,16 @@ variable._ The dots in this string will be replaced by underscores.
 
 File: cfengine-Reference.info,  Node: acl,  Next: alerts,  Prev: Cfengine classes,  Up: Cfagent reference
 
-acl
-===
+4.4 acl
+=======
 
 
         acl:
-     
+
            CLASS::
-     
+
               { ACL-ALIAS
-     
+
               ACTION
               }
 
@@ -1335,10 +1327,10 @@ of information concerning a file's permissions.
 
 
       { ACL-ALIAS
-     
+
        method:overwrite/APPEND
        fstype:POSIX/SOLARIS/DFS/AFS/HPUX/NT
-     
+
        ACL_TYPE:USER/GROUP:PERMISSIONS
        ACL_TYPE:USER/GROUP:PERMISSIONS
        ...
@@ -1367,15 +1359,15 @@ override the ACLs.
 
 File: cfengine-Reference.info,  Node: ACEs,  Next: Solaris ACLs,  Prev: acl,  Up: acl
 
-Access control entries
-----------------------
+4.4.1 Access control entries
+----------------------------
 
 An access control list is build of any number of individual access
 control entries (ACEs). The ACEs has the following general syntax:
 
          ACL_TYPE:USER/GROUP:PERMISSIONS
 
-The user or group is sometimes referred to as a _key_.
+The user or group is sometimes referred to as a _key_.  
 
    For an explanation of ACL types and their use, refer to your local
 manual page.  However, note that for each type of filesystem, there are
@@ -1403,8 +1395,7 @@ entries.
      permissions. If there is no ACL entry for the given type and
      user/group, a new entry will be appended.
 
-
-If the new ACL exactly matches the existing ACL, the ACL is not
+   If the new ACL exactly matches the existing ACL, the ACL is not
 replaced.
 
    The individual bits in an ACE may be either added subtracted or set
@@ -1412,12 +1403,12 @@ equal to a specified mask. The `+' symbol means add, the `-' symbol
 subtract and `=' means set equal to.  Here are some examples:
 
        ACLTYPE:ID/*:MASK
-     
+
        user:mark:+rx,-w
        user:ds:=r
        user:jacobs:noaccess
        user:forgiven:default
-     
+
        user:*:rw
        group:*:r
        other:*:r
@@ -1433,8 +1424,8 @@ for `other').
 
 File: cfengine-Reference.info,  Node: Solaris ACLs,  Next: DFS ACLs,  Prev: ACEs,  Up: acl
 
-Solaris ACLs
-------------
+4.4.2 Solaris ACLs
+------------------
 
 Under Solaris, the ACL type can be one of the following:
 
@@ -1446,12 +1437,11 @@ Under Solaris, the ACL type can be one of the following:
              default_group
              default_mask
              default_other
-
-A user or group can be specified to the user, group, default_user and
+   A user or group can be specified to the user, group, default_user and
 default_group types.  Solaris ACL permissions are the normal UNIX
 permissions bits `rwx', where:
 
-         
+
              R - GRANTS READ PRIVILEGES.
              W - GRANTS WRITE PRIVILEGES.
              X - GRANTS EXECUTE PRIVILEGES.
@@ -1459,8 +1449,8 @@ permissions bits `rwx', where:
 
 File: cfengine-Reference.info,  Node: DFS ACLs,  Next: NT ACLs,  Prev: Solaris ACLs,  Up: acl
 
-DFS ACLs
---------
+4.4.3 DFS ACLs
+--------------
 
 In DCE, the ACL type can be one of the following:
 
@@ -1473,14 +1463,13 @@ In DCE, the ACL type can be one of the following:
              foreign_other
              foreign_user
              foreign_group
-
-The `user', `group', `foreign_user' and `foreign_group'  types require
-that you specify a user or group. The DCE documentation refers to types
-`user_obj', `group_obj' and so on. In the cfengine implementation, the
-ugly `_obj' suffix has been dropped to make these more in keeping with
-the POSIX names. `user_obj::', is equivalent to `user:*:' is cfengine.
-The star/asterisk implies that the ACL applies to the owner of the file
-object.
+   The `user', `group', `foreign_user' and `foreign_group'  types
+require that you specify a user or group. The DCE documentation refers
+to types `user_obj', `group_obj' and so on. In the cfengine
+implementation, the ugly `_obj' suffix has been dropped to make these
+more in keeping with the POSIX names. `user_obj::', is equivalent to
+`user:*:' is cfengine. The star/asterisk implies that the ACL applies
+to the owner of the file object.
 
    DFS permissions are comprised of the bits `crwxid', where:
              c - Grants control privileges, to modify an acl.
@@ -1489,8 +1478,7 @@ object.
              x - Grants execute privileges.
              i - Grants insert privileges.
              d - Grants delete privileges.
-
-See the DCE/DFS documentation for more information about this.
+   See the DCE/DFS documentation for more information about this.
 
    It is not possible to set ACLs in foreign cells currently using
 cfengine, but you can still have all of your ACL definitions in the same
@@ -1503,8 +1491,8 @@ must have a valid security ticket.
 
 File: cfengine-Reference.info,  Node: NT ACLs,  Next: ACL Example,  Prev: DFS ACLs,  Up: acl
 
-NT ACLs
--------
+4.4.4 NT ACLs
+-------------
 
 NT ACEs are written as follows:
             acl_type:user/group:permissions:accesstype
@@ -1552,30 +1540,30 @@ cfengine's behaviour as on UNIX systems without any changes to the
 configuration file. If the permissions `noaccess' or `default' is used,
 the access type will be irrelevant.
 
-ACL Example
-===========
+4.5 ACL Example
+===============
 
 Here is an example of a configuration file for an NT ACL:
 
      control:
              actionsequence = ( files )
              domain = ( iu.hioslo.no )
-     
+
      files:
              $(HOME)/tt    acl=acl_alias1    action=fixall
-     
+
      acl:
              { acl_alias1
-     
+
              method:overwrite
              fstype:nt
-     
+
              user:gustafb:rwx:allowed
              user:mark:all:allowed
              user:toreo:read:allowed
              user:torej:default:allowed
              user:ds2:+rwx:allowed
-     
+
              group:dummy:all:denied
              group:iu:read:allowed
              group:root:all:allowed
@@ -1585,8 +1573,8 @@ Here is an example of a configuration file for an NT ACL:
 
 File: cfengine-Reference.info,  Node: ACL Example,  Prev: NT ACLs,  Up: acl
 
-ACL Example
------------
+4.5.1 ACL Example
+-----------------
 
 Here is an example of a configuration file for one Solaris ACL and one
 DCE/DFS ACL:
@@ -1594,17 +1582,17 @@ DCE/DFS ACL:
      control:
              actionsequence = ( files )
              domain = ( iu.hioslo.no )
-     
+
      files:
              $(HOME)/tt    acl=acl_alias1    action=fixall
              /:/bigfile    acl=acl_alias2    action=fixall
-     
+
      acl:
              { acl_alias1
-     
+
              method:overwrite
              fstype:posix
-     
+
              user:*:rwx
              user:mark:=rwx
              user:sowille:=rx
@@ -1616,7 +1604,7 @@ DCE/DFS ACL:
              group:root:x
              mask:*:rx
              other:*:rx
-     
+
              default_user:*:=rw
              default_user:mark:+rwx
              default_user:ds:=rwx
@@ -1625,12 +1613,12 @@ DCE/DFS ACL:
              default_mask::w
              default_other::rwx
              }
-     
+
              { acl_alias2
-     
+
              method:overwrite
              fstype:dfs
-     
+
              user:*:rwxcid
              group:*:rxd
              other:*:wxir
@@ -1643,8 +1631,8 @@ DCE/DFS ACL:
 
 File: cfengine-Reference.info,  Node: alerts,  Next: binservers,  Prev: acl,  Up: Cfagent reference
 
-alerts
-======
+4.6 alerts
+==========
 
 Alerts are normally just messages that are printed when classes become
 activated in order to alert the system administrator to some condition
@@ -1657,31 +1645,31 @@ amounts of Email. This behaviour can be forced, however, by creating an
 alias for the class `any' that is defined on the affected hosts.
 
      alerts:
-     
+
         class::
-     
+
            QUOTED MESSAGE ifelapsed=TIME
            ShowState(PARAMETER)
            SysLog(PRIORITY,MESSAGE)
            SetState(NAME,TTL,POLICY)
            UnSetState(NAME)
            FriendStatus(HOURS)
-   For example:
+   For example: 
 
 
      alerts:
-     
+
        "Reminder: say hello every hour" ifelapsed=60
-     
+
        nfsd_in_high_dev2::
-     
+
        "High NFS server access rate 2dev at $(host) value $(value_nfsd_in) av $(average_nfsd_in) pm $(stddev_nfsd_in)"
        ShowState(incoming.nfs)
-     
+
       # ROOT PROCS
-     
+
        anomaly_hosts.RootProcs_high_dev2::
-     
+
         "RootProc anomaly high 2 dev on $(host) value $(value_rootprocs) av $(average_rootprocs) pm $(stddev_rootprocs)"
        ShowState(procs)
 
@@ -1696,11 +1684,11 @@ daemon.
 
    To limit the frequency of alerts, you can set locking times:
       # ROOT PROCS
-     
+
        anomaly_hosts.RootProcs_high_dev2::
-     
+
         "RootProc anomaly high 2 dev on $(host) value $(value_rootprocs) av $(average_rootprocs) pm $(stddev_rootprocs)"
-     
+
         ShowState(procs)  ifelapsed=10 expireafter=20
    Alerts can also be channeled directly to syslog, to avoid extraneous
 console messages or email.
@@ -1741,8 +1729,8 @@ lastseenexpireafter::.
 
 File: cfengine-Reference.info,  Node: binservers,  Next: broadcast,  Prev: alerts,  Up: Cfagent reference
 
-binservers
-==========
+4.7 binservers
+==============
 
 The `binservers' declaration need only be used if you are using
 cfengine's model for mounting NFS filesystems.  This declaration informs
@@ -1758,7 +1746,7 @@ type, for instance a SunOS server, an ULTRIX server and so on.
 
 
      binservers:
-     
+
         physics.sun4::   sunserver sunserver2
         physics.linux::  linuxserver
 
@@ -1777,13 +1765,13 @@ given by `homepattern'.  *Note homepattern::.  *Note homeservers::.
 binary server (and that with highest priority) is always the current
 host.  This ensures that local filesystems are always used in preference
 to NFS mounted filesystems.  This is only relevant in connection with
-the variable `$(binserver)'.
+the variable `$(binserver)'.  
 
 
 File: cfengine-Reference.info,  Node: broadcast,  Next: control,  Prev: binservers,  Up: Cfagent reference
 
-broadcast
-=========
+4.8 broadcast
+=============
 
 This information is used to configure the network interface for each
 host.
@@ -1797,11 +1785,11 @@ convention is used at your establishment and tell cfengine using a
 declaration of the form:
 
      broadcast:
-     
-       any::
-     
-          ones     # or zeros, or zeroes
 
+       any::
+
+          ones     # or zeros, or zeroes
+   
 In most cases you can use the generic class `any', since all of the
 hosts on the same subnet have to use the same convention.  If your
 configuration file encompasses several different subnets with different
@@ -1813,8 +1801,8 @@ value specified above and the netmask *Note netmask::.
 
 File: cfengine-Reference.info,  Node: control,  Next: classes,  Prev: broadcast,  Up: Cfagent reference
 
-control
-=======
+4.9 control
+===========
 
 The fundamental piece of any cfengine script or configuration file is
 the control section.  If you omit this part of a cfengine script, it
@@ -1826,9 +1814,9 @@ in the file does not necessarily reflect the order in which they are
 executed. The syntax of declarations here is:
 
        control:
-     
+
           CLASSES::
-     
+
              VARIABLE = ( LIST OR VALUE FUNCTION(ARGS) )
 
    The control section is a sequence of declarations which looks
@@ -1836,20 +1824,20 @@ something like the following example:
 
 
      control:
-     
+
        site     = ( univ )
        domain   = ( univ.edu )
        sysadm   = ( admin@computing.univ.edu )
        netmask  = ( 255.255.252.0 )
        timezone = ( EDT )
        nfstype  = ( nfs )
-     
+
        childlibpath = ( /usr/local:/mylibs )
-     
+
        sensiblesize  = ( 1000 )
        sensiblecount = ( 2 )
        editfilesize  = ( 4000 )
-     
+
        actionsequence =
           (
           links.some
@@ -1857,14 +1845,14 @@ something like the following example:
           links.others
           files
           )
-     
+
        myvariable = ( something )
        mymacro    = ( somethingelse )
        myrandom   = ( RandomInt(3,6) )
        myexcerpt  = ( ReadFile("/etc/services",220))
 
 Parentheses are required when making a declaring information in
-cfengine.  Note that a limited number of in-built functions exists:
+cfengine.  Note that a limited number of in-built functions exists: 
    * `ExecResult'(COMMAND) Executes the named shell command and inserts
      the output into the variable.  Note that, when this is used in
      cfengine internal list variables, any spaces are interpreted as
@@ -1955,8 +1943,8 @@ cfengine.  Note that a limited number of in-built functions exists:
 
 File: cfengine-Reference.info,  Node: access,  Next: actionsequence,  Prev: control,  Up: control
 
-access
-------
+4.9.1 access
+------------
 
 The `access' list is a list of users who are to be allowed to execute a
 cfengine program.  If the list does not exist then all users are
@@ -1974,8 +1962,8 @@ would restrict a script to users mark, aurora and user id 22 and 456.
 
 File: cfengine-Reference.info,  Node: actionsequence,  Next: addclasses,  Prev: access,  Up: control
 
-actionsequence
---------------
+4.9.2 actionsequence
+--------------------
 
 The action sequence determines the order in which collective actions are
 carried out.  Here is an example containing the full list of
@@ -2058,7 +2046,7 @@ Here is a more complete description of the meaning of these keywords.
      allows you to include a module of your own making in order to
      define or undefine a number of classes.  The syntax
             module:mytests
-          
+
             "module:mytests arg1 arg2 .."
      declares a user defined module which can potentially set the
      classes CLASS1 etc. Classes returned by the module must be
@@ -2097,7 +2085,7 @@ Here is a more complete description of the meaning of these keywords.
      address are set if there is an error. The defaultroute is matched
      against the static routing table and added if no default route
      exists. This does not apply to DHCP clients, which set a default
-     route automatically.
+     route automatically.  
 
 `required'
      executes all the commands defined under the `required' section of
@@ -2151,7 +2139,7 @@ of defining and undefining classes. *Note Defining classes:
 means that cfengine first executes `links' with the classes `firstpass'
 and `include' _defined_.  Later it executes `links' with `secondpass'
 defined.  You can use this method of adding classes to distinguish more
-finely the flow of control in programs.
+finely the flow of control in programs.  
 
    A note about style: if you define and undefine lots of classes to do
 what you want to do, you might stop and ask yourself if your `groups'
@@ -2163,8 +2151,8 @@ right way.
 
 File: cfengine-Reference.info,  Node: addclasses,  Next: addinstallable,  Prev: actionsequence,  Up: control
 
-AddClasses
-----------
+4.9.3 AddClasses
+----------------
 
         AddClasses  = ( LIST OF IDENTIFIERS )
 
@@ -2190,14 +2178,14 @@ qualify actions.  For example
    Under normal circumstances `exclude' is always true -- because you
 have defined it to be so, but you can _undefine_ it in two ways so as
 to prevent the action from being carried out.  One way is to undefine a
-class on the command line when you invoke cfengine:
+class on the command line when you invoke cfengine: 
 
      host#  cfengine -N exclude
 
 or
 
      host#  cfengine -N exclude.shortversion
-     
+
      host#  cfengine -N a.b.c.d
 
 These commands run cfengine with the named classes _undefined_.  That
@@ -2210,8 +2198,8 @@ undefined in the actionsequence.  See next section.
 
 File: cfengine-Reference.info,  Node: addinstallable,  Next: AllowRedefinitionOf,  Prev: addclasses,  Up: control
 
-AddInstallable
---------------
+4.9.4 AddInstallable
+--------------------
 
         AddInstallable  = ( LIST OF IDENTIFIERS )
 
@@ -2229,17 +2217,17 @@ class because of the ordering of the actions.
 
 
      control:
-     
+
          AddInstallable  = ( myclass )
-     
+
      files:
-     
+
         myclass::
-     
+
           /tmp/test mode=644 action=fixall
-     
+
      copy:
-     
+
           /tmp/foo dest=/tmp/test define=myclass
 
 If we remove the declaration, then when cfengine meets the files
@@ -2252,33 +2240,33 @@ main program.
 
 File: cfengine-Reference.info,  Node: AllowRedefinitionOf,  Next: AutoDefine,  Prev: addinstallable,  Up: control
 
-AllowRedefinitionOf
--------------------
+4.9.5 AllowRedefinitionOf
+-------------------------
 
 Normally cfagent warns about redefinitions of variables during parsing.
 This is presumed to be a mistake. To avoid this behaviour, add the name
 of the variable to this list, and the warning disappears.
      control:
-     
-     actionsequence = ( copy )
-     
-     AllowRedefinitionOf = ( cfrep )
-     
-     cfrep = ( bla )
-     
-     cfrep = ( blo )
 
+     actionsequence = ( copy )
+
+     AllowRedefinitionOf = ( cfrep )
+
+     cfrep = ( bla )
+
+     cfrep = ( blo )
+   
 
 File: cfengine-Reference.info,  Node: AutoDefine,  Next: BinaryPaddingChar,  Prev: AllowRedefinitionOf,  Up: control
 
-AutoDefine
-----------
+4.9.6 AutoDefine
+----------------
 
 
      control:
-     
+
         hup_syslogd::
-     
+
           autodefine = ( /etc/syslog.conf )
 
    Referring to the class that prefixes it, `autodefine' will define
@@ -2289,8 +2277,8 @@ define=class configured.
 
 File: cfengine-Reference.info,  Node: BinaryPaddingChar,  Next: ChecksumDatabase,  Prev: AutoDefine,  Up: control
 
-BinaryPaddingChar
------------------
+4.9.7 BinaryPaddingChar
+-----------------------
 
      BinaryPaddingChar = ( \0 )
 This specifies the type of character used to pad strings of unequal
@@ -2301,8 +2289,8 @@ messages within program code.
 
 File: cfengine-Reference.info,  Node: ChecksumDatabase,  Next: BindToInterface(cfagent),  Prev: BinaryPaddingChar,  Up: control
 
-ChecksumDatabase
-----------------
+4.9.8 ChecksumDatabase
+----------------------
 
      ChecksumDatabase = ( /var/cfengine/cfdb )
 
@@ -2313,21 +2301,21 @@ digests (i.e. cryptographic checksums) of files for security purposes,
 
 File: cfengine-Reference.info,  Node: BindToInterface(cfagent),  Next: ChecksumPurge,  Prev: ChecksumDatabase,  Up: control
 
-BindToInterface
----------------
+4.9.9 BindToInterface
+---------------------
 
 If this is set to a specific IP address of an IP configured interface,
 cfagent will use that address for outgoing connections.  On Multi-homed
 hosts this allows one to restrict the traffic to a known interface. An
 interface must be configured with an IP address in order to be bound.
 
-   This feature is not available for old operating systems.
+   This feature is not available for old operating systems.  
 
 
 File: cfengine-Reference.info,  Node: ChecksumPurge,  Next: ChecksumUpdates,  Prev: BindToInterface(cfagent),  Up: control
 
-ChecksumPurge
--------------
+4.9.10 ChecksumPurge
+--------------------
 
      ChecksumPurge = ( on )
 
@@ -2340,24 +2328,24 @@ database and a warning is issued.
 something like this:
 
      strategies:
-     
+
       { purging
-     
+
       NowAndThen: 1
       ElseWhen:   49
       }
-     
+
      control:
-     
+
       NowAndThen::
-     
+
         ChecksumPurge = ( on )
 
 
 File: cfengine-Reference.info,  Node: ChecksumUpdates,  Next: childlibpath,  Prev: ChecksumPurge,  Up: control
 
-ChecksumUpdates
----------------
+4.9.11 ChecksumUpdates
+----------------------
 
      ChecksumUpdates = ( on )
 
@@ -2374,8 +2362,8 @@ sufficient, it can be left as `on' so that only one message is given.
 
 File: cfengine-Reference.info,  Node: childlibpath,  Next: copylinks,  Prev: ChecksumUpdates,  Up: control
 
-ChildLibPath
-------------
+4.9.12 ChildLibPath
+-------------------
 
 Sets a value for LD_LIBRARY_PATH in child processes:
 
@@ -2390,8 +2378,8 @@ path here is a useful way of correcting this problem.
 
 File: cfengine-Reference.info,  Node: copylinks,  Next: defaultcopytype,  Prev: childlibpath,  Up: control
 
-CopyLinks
----------
+4.9.13 CopyLinks
+----------------
 
 This list is used to define a global list of names or patterns which
 are to be copied rather than linked symbolically. For example
@@ -2404,16 +2392,15 @@ using a file age comparison.
    Note that all entries defined under a specified class are valid only
 as long as that class is defined. For instance
        CLASS::
-     
-           CopyLinks = ( PATTERN )
 
-would define a pattern which was only valid when CLASS is defined.
+           CopyLinks = ( PATTERN )
+   would define a pattern which was only valid when CLASS is defined.
 
 
 File: cfengine-Reference.info,  Node: defaultcopytype,  Next: defaultpkgmgr,  Prev: copylinks,  Up: control
 
-DefaultCopyType
----------------
+4.9.14 DefaultCopyType
+----------------------
 
 This parameter determines the default form of copying for all copy
 operations parsed after this variable. The legal values are `ctime'
@@ -2425,8 +2412,8 @@ operations parsed after this variable. The legal values are `ctime'
 
 File: cfengine-Reference.info,  Node: defaultpkgmgr,  Next: deletenonuserfiles,  Prev: defaultcopytype,  Up: control
 
-DefaultPkgMgr
--------------
+4.9.15 DefaultPkgMgr
+--------------------
 
 Sets the default value of the `pkgmgr' attribute for `packages' items.
 
@@ -2440,14 +2427,14 @@ information on the values of this variable, *Note packages::.
 
 File: cfengine-Reference.info,  Node: deletenonuserfiles,  Next: deletenonownerfiles,  Prev: defaultpkgmgr,  Up: control
 
-DeleteNonUserFiles
-------------------
+4.9.16 DeleteNonUserFiles
+-------------------------
 
 If this parameter is set to true, cfengine will delete files which do
 not have a name belonging to a known user id.
 
      DeleteNonUserFiles = ( true )
-     
+
      SpoolDirectories = ( /var/spool/cron/crontabs )
 
    This is an generalization of DeleteNonUserMail and makes it
@@ -2456,15 +2443,15 @@ redundant.  it is formally executed as a part of the "tidy" action.
 
 File: cfengine-Reference.info,  Node: deletenonownerfiles,  Next: deletenonusermail,  Prev: deletenonuserfiles,  Up: control
 
-DeleteNonOwnerFiles
--------------------
+4.9.17 DeleteNonOwnerFiles
+--------------------------
 
 If this parameter is set to true, cfengine will delete files on
 mailservers whose names do not correspond to a known user name, but
 might be owned by a known user.
 
      DeleteNonOwnerFiles = ( true )
-     
+
      SpoolDirectories = ( /var/spool/cron/crontabs )
 
    This is an generalization of DeleteNonOwnerMail and makes it
@@ -2473,8 +2460,8 @@ redundant.
 
 File: cfengine-Reference.info,  Node: deletenonusermail,  Next: deletenonownermail,  Prev: deletenonownerfiles,  Up: control
 
-DeleteNonUserMail
------------------
+4.9.18 DeleteNonUserMail
+------------------------
 
 If this parameter is set to true, cfengine will delete mail files on
 mailservers which do not have a name belonging to a known user id. This
@@ -2483,8 +2470,8 @@ does not include lock files.
 
 File: cfengine-Reference.info,  Node: deletenonownermail,  Next: domain,  Prev: deletenonusermail,  Up: control
 
-DeleteNonOwnerMail
-------------------
+4.9.19 DeleteNonOwnerMail
+-------------------------
 
 If this parameter is set to true, cfengine will delete files on
 mailservers whose names do not correspond to a known user name, but
@@ -2493,8 +2480,8 @@ might be owned by a known user.
 
 File: cfengine-Reference.info,  Node: domain,  Next: dryrun,  Prev: deletenonownermail,  Up: control
 
-domain
-------
+4.9.20 domain
+-------------
 
        domain = ( DOMAIN NAME )
 
@@ -2513,8 +2500,8 @@ name.
 
 File: cfengine-Reference.info,  Node: dryrun,  Next: editbinaryfilesize,  Prev: domain,  Up: control
 
-DryRun
-------
+4.9.21 DryRun
+-------------
 
 
        DryRun = ( ON/off )
@@ -2524,14 +2511,14 @@ DryRun
 without actually doing it.
 
       CLASSES::
-     
+
         DryRun = ( on )
 
 
 File: cfengine-Reference.info,  Node: editbinaryfilesize,  Next: editfilesize,  Prev: dryrun,  Up: control
 
-editbinaryfilesize
-------------------
+4.9.22 editbinaryfilesize
+-------------------------
 
         EditBinaryFileSize  = ( SIZE )
 
@@ -2544,8 +2531,8 @@ large number or to zero.  If the value is zero, cfengine will ignore it.
 
 File: cfengine-Reference.info,  Node: editfilesize,  Next: emptyresolvconf,  Prev: editbinaryfilesize,  Up: control
 
-editfilesize
-------------
+4.9.23 editfilesize
+-------------------
 
         EditfileSize  = ( SIZE )
 
@@ -2565,8 +2552,8 @@ the value is zero, cfengine will ignore it.
 
 File: cfengine-Reference.info,  Node: emptyresolvconf,  Next: exclamation,  Prev: editfilesize,  Up: control
 
-EmptyResolvConf
----------------
+4.9.24 EmptyResolvConf
+----------------------
 
         EmptyResolvConf  = ( true )
 
@@ -2577,8 +2564,8 @@ existing content from the file.
 
 File: cfengine-Reference.info,  Node: exclamation,  Next: excludecopy,  Prev: emptyresolvconf,  Up: control
 
-Exclamation
------------
+4.9.25 Exclamation
+------------------
 
 This variable defaults to "on". If set to "off", no exclamation marks
 (Br. pling, Am: shriek) are printed during security alerts, e.g. for
@@ -2589,8 +2576,8 @@ checksum violations.
 
 File: cfengine-Reference.info,  Node: excludecopy,  Next: excludelinks,  Prev: exclamation,  Up: control
 
-ExcludeCopy
------------
+4.9.26 ExcludeCopy
+------------------
 
 This list is used to define a global list of names or patterns which
 are to be excluded from copy operations. For example
@@ -2602,16 +2589,15 @@ operation using the `exclude' option *Note copy::.
    Note that all entries defined under a specified class are valid only
 as long as that class is defined. For instance
        CLASS::
-     
-           ExcludeCopy = ( PATTERN )
 
-would define a pattern which was only valid when CLASS is defined.
+           ExcludeCopy = ( PATTERN )
+   would define a pattern which was only valid when CLASS is defined.
 
 
 File: cfengine-Reference.info,  Node: excludelinks,  Next: ExpireAfter,  Prev: excludecopy,  Up: control
 
-ExcludeLink
------------
+4.9.27 ExcludeLink
+------------------
 
 This list is used to define a global list of names or patterns which
 are to be excluded from linking operations. For example
@@ -2623,16 +2609,15 @@ operation using the `exclude' option *Note links::.
    Note that all entries defined under a specified class are valid only
 as long as that class is defined. For instance
        CLASS::
-     
-           ExcludeLink = ( PATTERN )
 
-would define a pattern which was only valid when CLASS is defined.
+           ExcludeLink = ( PATTERN )
+   would define a pattern which was only valid when CLASS is defined.
 
 
 File: cfengine-Reference.info,  Node: ExpireAfter,  Next: homepattern,  Prev: excludelinks,  Up: control
 
-ExpireAfter
------------
+4.9.28 ExpireAfter
+------------------
 
 If you change the value of this parameter, it should be one of the
 first things you do in your configuration script.
@@ -2661,8 +2646,8 @@ as options of the form `expireafter=10'.
 
 File: cfengine-Reference.info,  Node: homepattern,  Next: HostnameKeys,  Prev: ExpireAfter,  Up: control
 
-HomePattern
------------
+4.9.29 HomePattern
+------------------
 
         HomePattern  = ( LIST OF PATTERNS )
 
@@ -2702,8 +2687,8 @@ achieve the same this as follows:
 
 File: cfengine-Reference.info,  Node: HostnameKeys,  Next: IfElapsed,  Prev: homepattern,  Up: control
 
-HostnameKeys
-------------
+4.9.30 HostnameKeys
+-------------------
 
 If this variable is set to true/on, it causes cfagent to lookup and
 store trusted public keys according to their DNS fully qualified host
@@ -2723,8 +2708,8 @@ attacker by potentially allowing DNS spoofing.
 
 File: cfengine-Reference.info,  Node: IfElapsed,  Next: Inform,  Prev: HostnameKeys,  Up: control
 
-IfElapsed
----------
+4.9.31 IfElapsed
+----------------
 
 If you change the value of this parameter, it should be one of the
 first things you do in your configuration script.
@@ -2751,8 +2736,8 @@ as options of the form `ifelapsed=15'.
 
 File: cfengine-Reference.info,  Node: Inform,  Next: interfacename,  Prev: IfElapsed,  Up: control
 
-Inform
-------
+4.9.32 Inform
+-------------
 
 
        Inform = ( ON/off )
@@ -2765,14 +2750,14 @@ this output level one writes:
 
 
       CLASSES::
-     
+
         Inform = ( on )
 
 
 File: cfengine-Reference.info,  Node: interfacename,  Next: lastseenexpireafter,  Prev: Inform,  Up: control
 
-InterfaceName
--------------
+4.9.33 InterfaceName
+--------------------
 
 If you have an operating system which is installed on some non-standard
 hardware, you might have to specifically set the name of the network
@@ -2780,17 +2765,16 @@ interface. For example:
 
 
        control:
-     
-         nextstep.some::
-     
-            InterfaceName = ( en0 )
-     
-         nextstep.others::
-     
-            InterfaceName = ( ec0 )
 
-It is only necessary to set the interface name in this fashion if you
-have an operating system which is running on special hardware. Most
+         nextstep.some::
+
+            InterfaceName = ( en0 )
+
+         nextstep.others::
+
+            InterfaceName = ( ec0 )
+   It is only necessary to set the interface name in this fashion if
+you have an operating system which is running on special hardware. Most
 users will not need this.  The choice set here overrides the system
 defaults and the choices made in the `cfrc' file, *Note cfrc resource
 file::.
@@ -2798,8 +2782,8 @@ file::.
 
 File: cfengine-Reference.info,  Node: lastseenexpireafter,  Next: fileextension,  Prev: interfacename,  Up: control
 
-LastSeenExpireAfter
--------------------
+4.9.34 LastSeenExpireAfter
+--------------------------
 
 This value (in days) sets the time after which unseen friend hosts are
 purged from the `last seen' database, as viewed by the `FriendStatus'
@@ -2807,12 +2791,12 @@ function, *Note alerts::.
 
 
        LastSeenExpireAfter = ( 2 )
-
+   
 
 File: cfengine-Reference.info,  Node: fileextension,  Next: lastseen,  Prev: lastseenexpireafter,  Up: control
 
-FileExtensions
---------------
+4.9.35 FileExtensions
+---------------------
 
 This list may be used to define a number of extensions which are
 regarded as being plain files by the system.  As part of the general
@@ -2821,27 +2805,27 @@ names using these extensions. They may be used to conceal directories.
 
 
        FileExtensions = ( c o gif jpg html )
-
+   
 
 File: cfengine-Reference.info,  Node: lastseen,  Next: linkcopies,  Prev: fileextension,  Up: control
 
-LastSeen
---------
+4.9.36 LastSeen
+---------------
 
 This option is true by default. If set to off or false it prevents
 cfengine and/or cfservd from learning about last times hosts were
 observed connecting to one another. Some users with broken resolvers
 (particularly in view of the change over to IPv6 compatible libraries)
-might find this useful when processes appear to hang on connecting.
+might find this useful when processes appear to hang on connecting.  
 
 
        LastSeen = ( off )
-
+   
 
 File: cfengine-Reference.info,  Node: linkcopies,  Next: LogDirectory,  Prev: lastseen,  Up: control
 
-LinkCopies
-----------
+4.9.37 LinkCopies
+-----------------
 
 This list is used to define a global list of names or patterns which
 are to be linked symbolically rather than copied. For example
@@ -2853,16 +2837,15 @@ operation using the `symlink' option *Note copy::.
    Note that all entries defined under a specified class are valid only
 as long as that class is defined. For instance
        CLASS::
-     
-           LinkCopies = ( PATTERN )
 
-would define a pattern which was only valid when CLASS is defined.
+           LinkCopies = ( PATTERN )
+   would define a pattern which was only valid when CLASS is defined.
 
 
 File: cfengine-Reference.info,  Node: LogDirectory,  Next: LogTidyHomeFiles,  Prev: linkcopies,  Up: control
 
-LogDirectory
-------------
+4.9.38 LogDirectory
+-------------------
 
 This is now deprecated.
 
@@ -2875,8 +2858,8 @@ This defaults to `/var/run/cfengine' or `/var/cfengine'.
 
 File: cfengine-Reference.info,  Node: LogTidyHomeFiles,  Next: moduledirectory,  Prev: LogDirectory,  Up: control
 
-LogTidyHomeFiles
-----------------
+4.9.39 LogTidyHomeFiles
+-----------------------
 
 
        LogTidyHomeFiles = ( off )
@@ -2887,8 +2870,8 @@ directories, of the files which are tidied by cfengine.
 
 File: cfengine-Reference.info,  Node: moduledirectory,  Next: mountpattern,  Prev: LogTidyHomeFiles,  Up: control
 
-moduledirectory
----------------
+4.9.40 moduledirectory
+----------------------
 
         moduledirectory  = ( DIRECTORY FOR PLUGIN MODULES )
 
@@ -2902,8 +2885,8 @@ to `$HOME)/.cfengine/modules' for non-privileged users.
 
 File: cfengine-Reference.info,  Node: mountpattern,  Next: netmask,  Prev: moduledirectory,  Up: control
 
-mountpattern
-------------
+4.9.41 mountpattern
+-------------------
 
         mountpattern  = ( MOUNT-POINT )
 
@@ -2934,8 +2917,8 @@ a list like this:
 
 File: cfengine-Reference.info,  Node: netmask,  Next: nonalphanumfiles,  Prev: mountpattern,  Up: control
 
-netmask
--------
+4.9.42 netmask
+--------------
 
         netmask = ( AAA.BBB.CCC.DDD )
 
@@ -3006,8 +2989,8 @@ using the value of the netmask.
 
 File: cfengine-Reference.info,  Node: nonalphanumfiles,  Next: nfstype,  Prev: netmask,  Up: control
 
-NonAlphaNumFiles
-----------------
+4.9.43 NonAlphaNumFiles
+-----------------------
 
 If enabled, this option causes cfengine to detect and disable files
 which have purely non-alphanumeric filenames, i.e. files which might be
@@ -3023,8 +3006,8 @@ that alphanumeric means ascii codes less than 32 and greater than 126.
 
 File: cfengine-Reference.info,  Node: nfstype,  Next: repchar,  Prev: nonalphanumfiles,  Up: control
 
-nfstype
--------
+4.9.44 nfstype
+--------------
 
         nfstype = ( NFS-TYPE )
 
@@ -3042,13 +3025,13 @@ in which case the `mount type' would not be "nfs" but something else.
 AFS (the Andrew filesystem) and DFS (from the distributed computing
 environment).  The use of these filesystems really excludes the need to
 use the mount protocol at all.  In other words if you are using AFS or
-DFS, you don't need to use cfengine's mounting commands at all.
+DFS, you don't need to use cfengine's mounting commands at all.  
 
 
 File: cfengine-Reference.info,  Node: repchar,  Next: repository,  Prev: nfstype,  Up: control
 
-RepChar
--------
+4.9.45 RepChar
+--------------
 
         RepChar  = ( CHARACTER )
 
@@ -3058,13 +3041,13 @@ Normally, its value is set to `_' and each `/' in the path name of the
 file is changed to `_' and stored in the repository. If you prefer a
 different character, define it here. Note that the character can be
 quoted with either single or double quotes in order to encompass spaces
-etc.
+etc.  
 
 
 File: cfengine-Reference.info,  Node: repository,  Next: RPMcommand,  Prev: repchar,  Up: control
 
-Repository
-----------
+4.9.46 Repository
+-----------------
 
         Repository  = ( DIRECTORY )
 
@@ -3077,8 +3060,8 @@ repository: (cfengine-Tutorial)Disabling and the file repository.
 
 File: cfengine-Reference.info,  Node: RPMcommand,  Next: schedule,  Prev: repository,  Up: control
 
-RPMcommand
-----------
+4.9.47 RPMcommand
+-----------------
 
 The default value of the Red Hat Package manager command `/bin/rpm' can
 be altered for non-standard systems with this variable.
@@ -3087,8 +3070,8 @@ be altered for non-standard systems with this variable.
 
 File: cfengine-Reference.info,  Node: schedule,  Next: secureinput,  Prev: RPMcommand,  Up: control
 
-Schedule
---------
+4.9.48 Schedule
+---------------
 
         schedule  = (  Min00_05 Min30_35 TIME CLASS )
 
@@ -3112,8 +3095,8 @@ is treated as a fundamental granularity.
 
 File: cfengine-Reference.info,  Node: secureinput,  Next: sensiblecount,  Prev: schedule,  Up: control
 
-SecureInput
------------
+4.9.49 SecureInput
+------------------
 
         SecureInput = ( on )
 
@@ -3124,8 +3107,8 @@ others.
 
 File: cfengine-Reference.info,  Node: sensiblecount,  Next: sensiblesize,  Prev: secureinput,  Up: control
 
-SensibleCount
--------------
+4.9.50 SensibleCount
+--------------------
 
         SensibleCount  = ( COUNT )
 
@@ -3139,8 +3122,8 @@ issued.  The default value for this variable is 2.
 
 File: cfengine-Reference.info,  Node: sensiblesize,  Next: showactions,  Prev: sensiblecount,  Up: control
 
-SensibleSize
-------------
+4.9.51 SensibleSize
+-------------------
 
         SensibleSize  = ( SIZE )
 
@@ -3155,8 +3138,8 @@ default value for this variable is 1000 bytes.
 
 File: cfengine-Reference.info,  Node: showactions,  Next: singlecopy,  Prev: sensiblesize,  Up: control
 
-ShowActions
------------
+4.9.52 ShowActions
+------------------
 
         ShowActions  = ( ON )
 
@@ -3168,8 +3151,8 @@ cfengine output. It will be of little interest to humans.
 
 File: cfengine-Reference.info,  Node: singlecopy,  Next: site,  Prev: showactions,  Up: control
 
-SingleCopy
-----------
+4.9.53 SingleCopy
+-----------------
 
 
      	singlecopy = ( on )
@@ -3187,9 +3170,9 @@ cfservd:
 
      control:
      	singlecopy = ( on )
-     
+
      copy:
-     
+
       /dist/${fqhost}       dest=/ inform=true syslog=true r=inf server=disthost
       /dist/${ostype}       dest=/ inform=true syslog=true r=inf server=disthost
       /dist/all             dest=/ inform=true syslog=true r=inf server=disthost
@@ -3205,8 +3188,8 @@ Would result in:
 
 File: cfengine-Reference.info,  Node: site,  Next: SkipIdentify,  Prev: singlecopy,  Up: control
 
-site/faculty
-------------
+4.9.54 site/faculty
+-------------------
 
        site    = ( SITENAME )
        faculty = ( FACULTYNAME )
@@ -3227,8 +3210,8 @@ interchangeably.
 
 File: cfengine-Reference.info,  Node: SkipIdentify,  Next: Smtpserver,  Prev: site,  Up: control
 
-SkipIdentify
-------------
+4.9.55 SkipIdentify
+-------------------
 
        SkipIdentify = ( true )
 
@@ -3241,18 +3224,18 @@ particularly if firewalls or Network Address Translation is in use.
 
 File: cfengine-Reference.info,  Node: Smtpserver,  Next: SplayTime,  Prev: SkipIdentify,  Up: control
 
-smtpserver
-----------
+4.9.56 smtpserver
+-----------------
 
        smtpserver = ( MAILHOST )
 
-   This variable specified the destination for Email sent by cfexecd.
+   This variable specified the destination for Email sent by cfexecd.  
 
 
 File: cfengine-Reference.info,  Node: SplayTime,  Next: split,  Prev: Smtpserver,  Up: control
 
-SplayTime
----------
+4.9.57 SplayTime
+----------------
 
        SplayTime = ( TIME-IN-MINUTES )
 
@@ -3263,8 +3246,8 @@ will share its load on a server, *Note Splaying host times:
 
 File: cfengine-Reference.info,  Node: split,  Next: spooldirectories,  Prev: SplayTime,  Up: control
 
-Split
------
+4.9.58 Split
+------------
 
         Split  = ( CHARACTER )
 
@@ -3275,13 +3258,13 @@ containing this character as lists to be broken up and iterated over,
 *Note Iteration over lists::.
 
    This typically allows communication with PATH-like environment
-variables in the shell.
+variables in the shell.  
 
 
 File: cfengine-Reference.info,  Node: spooldirectories,  Next: suspiciousnames,  Prev: split,  Up: control
 
-SpoolDirectories
-----------------
+4.9.59 SpoolDirectories
+-----------------------
 
 A list of additional spool directories for cfengine to police. In these
 directories, filenames should correspond to existing users of the
@@ -3294,8 +3277,8 @@ also: `DeleteNonOwnerFiles', `DeleteNonUserFiles'.
 
 File: cfengine-Reference.info,  Node: suspiciousnames,  Next: sysadm,  Prev: spooldirectories,  Up: control
 
-suspiciousnames
----------------
+4.9.60 suspiciousnames
+----------------------
 
        SuspiciousNames = ( .mo lrk3 )
 
@@ -3308,8 +3291,8 @@ files, tidy or copy.
 
 File: cfengine-Reference.info,  Node: sysadm,  Next: Syslog,  Prev: suspiciousnames,  Up: control
 
-sysadm
-------
+4.9.61 sysadm
+-------------
 
         sysadm = ( MAIL ADDRESS )
 
@@ -3325,8 +3308,8 @@ should make this an address which users can mail if they have troubles.
 
 File: cfengine-Reference.info,  Node: Syslog,  Next: SyslogFacility,  Prev: sysadm,  Up: control
 
-Syslog
-------
+4.9.62 Syslog
+-------------
 
 
        Syslog = ( ON/off )
@@ -3338,14 +3321,14 @@ Syslog
 
 
       CLASSES::
-     
+
         Syslog = ( on )
 
 
 File: cfengine-Reference.info,  Node: SyslogFacility,  Next: timezone,  Prev: Syslog,  Up: control
 
-SyslogFacility
---------------
+4.9.63 SyslogFacility
+---------------------
 
 
        SyslogFacility = ( FACILITY )
@@ -3367,8 +3350,8 @@ SyslogFacility
 
 File: cfengine-Reference.info,  Node: timezone,  Next: TimeOut,  Prev: SyslogFacility,  Up: control
 
-timezone
---------
+4.9.64 timezone
+---------------
 
         timezone = ( 3-CHARACTER TIMEZONE )
 
@@ -3388,14 +3371,14 @@ you can automate with cfengine *Note editfiles::.
 in the usual way. It expands to the first item in your list.
 
      shellcommands:
-     
+
             "echo ${timezone} | mail ${sysadm}"
 
 
 File: cfengine-Reference.info,  Node: TimeOut,  Next: Verbose,  Prev: timezone,  Up: control
 
-TimeOut
--------
+4.9.65 TimeOut
+--------------
 
 
        TimeOut = ( 10 )
@@ -3407,8 +3390,8 @@ variable smaller than 3 seconds or larger than 60 seconds.
 
 File: cfengine-Reference.info,  Node: Verbose,  Next: Warnings,  Prev: TimeOut,  Up: control
 
-Verbose
--------
+4.9.66 Verbose
+--------------
 
 
        Verbose = ( ON/off )
@@ -3423,7 +3406,7 @@ this output level on selected hosts one writes:
 
 
       CLASSES::
-     
+
         Verbose = ( on )
 
    For related more limited output, *Note Inform::.
@@ -3431,8 +3414,8 @@ this output level on selected hosts one writes:
 
 File: cfengine-Reference.info,  Node: Warnings,  Next: warnnonuserfiles,  Prev: Verbose,  Up: control
 
-Warnings
---------
+4.9.67 Warnings
+---------------
 
 
        Warnings = ( ON/off )
@@ -3444,14 +3427,14 @@ hosts one writes:
 
 
       CLASSES::
-     
+
         Warnings = ( on )
 
 
 File: cfengine-Reference.info,  Node: warnnonuserfiles,  Next: warnnonownerfiles,  Prev: Warnings,  Up: control
 
-WarnNonUserFiles
-----------------
+4.9.68 WarnNonUserFiles
+-----------------------
 
 If this parameter is set to true, cfengine will warn about files in
 spool directories which do not have a name belonging to a known user id.
@@ -3461,8 +3444,8 @@ spool directories which do not have a name belonging to a known user id.
 
 File: cfengine-Reference.info,  Node: warnnonownerfiles,  Next: warnnonusermail,  Prev: warnnonuserfiles,  Up: control
 
-WarnNonOwnerFiles
------------------
+4.9.69 WarnNonOwnerFiles
+------------------------
 
 If this parameter is set to true, cfengine will warn about files on
 mailservers whose names do not correspond to a known user name, but
@@ -3470,7 +3453,7 @@ might be owned by a known user.
 
 
      SpoolDirectories = ( /var/spool/cron/crontabs )
-     
+
      WarnNonOwnerFiles = ( true )
 
    See also `DeleteNonOwnerFiles'. This generalizes and succeeds
@@ -3479,8 +3462,8 @@ might be owned by a known user.
 
 File: cfengine-Reference.info,  Node: warnnonusermail,  Next: warnnonownermail,  Prev: warnnonownerfiles,  Up: control
 
-WarnNonUserMail
----------------
+4.9.70 WarnNonUserMail
+----------------------
 
 If this parameter is set to true, cfengine will warn about mail files on
 mailservers which do not have a name belonging to a known user id. This
@@ -3489,8 +3472,8 @@ does not include lock files.
 
 File: cfengine-Reference.info,  Node: warnnonownermail,  Prev: warnnonusermail,  Up: control
 
-WarnNonOwnerMail
-----------------
+4.9.71 WarnNonOwnerMail
+-----------------------
 
 If this parameter is set to true, cfengine will warn about files on
 mailservers whose names do not correspond to a known user name, but
@@ -3499,8 +3482,8 @@ might be owned by a known user.
 
 File: cfengine-Reference.info,  Node: classes,  Next: copy,  Prev: control,  Up: Cfagent reference
 
-classes
-=======
+4.10 classes
+============
 
 The `classes' keyword is an alias for `groups' as of version 1.4.0 of
 cfengine.
@@ -3508,8 +3491,8 @@ cfengine.
 
 File: cfengine-Reference.info,  Node: copy,  Next: defaultroute,  Prev: classes,  Up: Cfagent reference
 
-copy
-====
+4.11 copy
+=========
 
 Cfengine copies files between locally mounted filesystems and via the
 network from registered servers.  The copy algorithm avoids
@@ -3519,7 +3502,7 @@ and then renaming this quickly into place.  The aim of this roundabout
 procedure is to avoid situations where the direct rewriting of a file
 is interrupted midway, leaving a partially written file to be read by
 other processes.  Cfengine attempts to preserve hard links to
-non-directory file-objects, but see the caution below.
+non-directory file-objects, but see the caution below.  
 
    _Caution should be exercised in copying files which change rapidly
 in size.  This can lead to file corruption, if the size changes during
@@ -3529,9 +3512,9 @@ copying. Cfengine attempts to prevent this during remote copies._
 
 
      copy:
-     
+
         CLASS::
-     
+
            MASTER-FILE
                              dest=DESTINATION-FILE
                              mode=MODE
@@ -3543,39 +3526,40 @@ copying. Cfengine attempts to prevent this during remote copies._
                              stealth=TRUE/ON/FALSE/OFF
                              timestamps=preserve/keep
                              symlink=PATTERN
-     
+
                              include=PATTERN
                              exclude=PATTERN
                              ignore=PATTERN
                              filter=FILTERALIAS
                              xdev=TRUE/ON/false/off
-     
+
                              recurse=NUMBER/INF/0
                              type=ctime/MTIME/CHECKSUM/SUM/BYTE/BINARY/ANY
                              linktype=absolute/symbolic/RELATIVE/HARD/NONE/COPY
                              typecheck=true/on/FALSE/OFF
                              define=CLASS-LIST(,:.)
                              elsedefine=CLASS-LIST(,:.)
-     
+
                              force=TRUE/ON/false/off
                              forcedirs=TRUE/ON/false/off
                              forceipv4=TRUE/ON/false/off
                              size=SIZE LIMITS
                              server=SERVER-HOST
                              failover=CLASSES
-     
+
                              trustkey=TRUE/false
                              secure=[deprecated]
                              encrypt=TRUE/false
                              verify=TRUE/false
                              oldserver=TRUE/false
-     
+
                              purge=TRUE/false
-     
+
                              syslog=TRUE/ON/FALSE/OFF
                              inform=TRUE/ON/FALSE/OFF
-     
+
                              findertype=MACOSX FINDER TYPE
+
 
 `dest'
      The destination file is the only obligatory item. This must be the
@@ -3638,7 +3622,7 @@ copying. Cfengine attempts to prevent this during remote copies._
      If the `backup' option is set to "false", cfengine will not make a
      backup copy of the file before copying. The default value is
      "true".  If the option "timestamp" is chosen, a unique timestamp
-     will be appended to the saved filename.
+     will be appended to the saved filename.  
 
 `repository'
      This allows a local override of the `Repository' variable, on an
@@ -3658,19 +3642,19 @@ copying. Cfengine attempts to prevent this during remote copies._
      mtime implies changing ctime which will force continual copying.
      This is a weakness in the Unix file system. Ctime cannot be
      preserved. Before version 1.5.0, there was a typo which made this
-     option active on many file copies.
+     option active on many file copies.  
 
 `timestamps'
      If this is set to `preserve' or `keep', the times of the source
      files are kept by the destination files during copying. This is
-     like the `p' option of the `tar' command.
+     like the `p' option of the `tar' command.  
 
 `recurse'
      Specifies the depth of recursion when copying whole file-trees
      recursively. The value may be a number or the keyword `inf'.
      Cfengine crosses device boundaries or mounted filesystems when
      descending recursively through file trees. To prevent this it is
-     simplest to specify a maximum level of recursion.
+     simplest to specify a maximum level of recursion.  
 
 `symlink'
      This option may be repeated a number of times to specify the names
@@ -3695,7 +3679,7 @@ copying. Cfengine attempts to prevent this during remote copies._
 
      If the `purge' option is used in copying, then the include option
      has the effect of the excluding files from the purge, i.e. include
-     means `keep' the named files.
+     means `keep' the named files.  
 
 `exclude'
      This option may be repeated a number of times to specify the names
@@ -3706,7 +3690,7 @@ copying. Cfengine attempts to prevent this during remote copies._
 
 `xdev'
      Prevents cfengine from descending into file systems that are not
-     on the same device as the root of the rescurion path.
+     on the same device as the root of the rescurion path.  
 
 `type'
      Normally cfengine uses the ctime date-stamps on files to determine
@@ -3745,12 +3729,12 @@ copying. Cfengine attempts to prevent this during remote copies._
      `cfagent.conf' file. If you don't define a domain you will
      probably receive an error of the form `cfengine: Hey! cannot stat
      file'. If the server name is `localhost', cfengine will perform a
-     local copy, without using a connection to cfservd.
+     local copy, without using a connection to cfservd.  
 
 `failover'
      If a file copy fails due to an error, the classes in this
      assignment will become active, allowing failover rules to become
-     active.
+     active.  
 
 `oldserver'
      If this is true, cfengine uses the old protocol specification for
@@ -3762,7 +3746,7 @@ copying. Cfengine attempts to prevent this during remote copies._
      presently unknown to the agent, on trust. This option should be
      used to bootstrap public key transfer between hosts. Once a public
      key has been accepted, it will not be replaced automatically.
-     Dated public keys must be removed by hand.
+     Dated public keys must be removed by hand.  
 
 `encrypt'
      Has an effect only when used in conjuction with copy from a remote
@@ -3792,7 +3776,6 @@ copying. Cfengine attempts to prevent this during remote copies._
           NUMBERbytes
           NUMBERkbytes
           NUMBERmbytes
-
      Only the first characters of these strings are significant, so
      they may be written however is convenient: e.g. `14kB', `14k',
      `14kilobytes' etc.   Examples are:
@@ -3854,12 +3837,12 @@ copying. Cfengine attempts to prevent this during remote copies._
 
 
      copy:
-     
+
            /local/etc/aliases dest=/etc/aliases m=644 o=root g=other
            /local/backup-etc  dest=/etc
-     
+
         solaris::
-     
+
            /local/etc/nsswitch.conf dest=/etc/nsswitch.conf
 
 In the first example, a global aliases file is copied from the master
@@ -3878,12 +3861,12 @@ distributing setup files and keeping them updated:
 
 
      copy:
-     
+
         /local/masterfiles/.cshrc  dest=home/.cshrc mode=0600
 
 You can force the copying of files, regardless of the date stamps by
 setting the option `force=true' or `force=on'. The default is
-`force=false' or `force=off'.
+`force=false' or `force=off'.  
 
 * Menu:
 
@@ -3893,8 +3876,8 @@ setting the option `force=true' or `force=on'. The default is
 
 File: cfengine-Reference.info,  Node: hard links in copy,  Next: Too many open files,  Prev: copy,  Up: copy
 
-Hard links in copying
----------------------
+4.11.1 Hard links in copying
+----------------------------
 
 Hard links are not like symbolic links, they are not merely pointers to
 other files, but alternative names for the same file. The name of every
@@ -3930,8 +3913,8 @@ difficult to keep track of.
 
 File: cfengine-Reference.info,  Node: Too many open files,  Prev: hard links in copy,  Up: copy
 
-Too many open files
--------------------
+4.11.2 Too many open files
+--------------------------
 
 In long recursive copies, where you descend into many levels of
 diretories, you can quickly run out of file descriptors. The number of
@@ -3949,8 +3932,8 @@ not sufficient for large recursive tree searches.
 
 File: cfengine-Reference.info,  Node: defaultroute,  Next: disks,  Prev: copy,  Up: Cfagent reference
 
-defaultroute
-============
+4.12 defaultroute
+=================
 
 Dynamical routing is not configurable in cfengine, but for machines with
 static routing tables it is useful to check that a default route is
@@ -3959,23 +3942,23 @@ this statement is simply:
 
 
      defaultroute:
-     
+
         CLASS::
-     
+
            my_gateway
 
 For example:
 
 
      defaultroute:
-     
+
        most::
-     
+
           129.240.22.1
-     
-     
+
+
        rest::
-     
+
           small_gw
 
 Gateways and routers usually have internet address `aaa.bbb.ccc.1' --
@@ -3985,8 +3968,8 @@ or a hostname for the gateway.
 
 File: cfengine-Reference.info,  Node: disks,  Next: directories,  Prev: defaultroute,  Up: Cfagent reference
 
-disks
-=====
+4.13 disks
+==========
 
 This is a synonyn for `required', *Note required::.  This action tests
 for the existence of a file or filesystem.  It should be called after
@@ -3995,15 +3978,15 @@ variable `$(binserver)' here.
 
 
        disks:
-     
+
          /FILESYSTEM freespace=SIZE-LIMIT define=CLASS-LIST(,:.)
-     
+
           inform=TRUE
           log=TRUE
-     
+
           scanarrivals=TRUE
           force=TRUE
-     
+
           ifelapsed=MINS
           expireafter=MINS
 
@@ -4030,21 +4013,21 @@ is issued.
 
 
      disks:
-     
+
         any::
-     
+
            /$(site)/$(binserver)/local
 
    If you set the `freespace' variable to a value and set `inform=true',
 cfagent issues warnings when free disk space falls below this threshold.
 Any define-classes also become defined in this instance.  (the default
-units are kilobytes, but you may specify bytes or megabytes), e.g.
+units are kilobytes, but you may specify bytes or megabytes), e.g.  
 
    If the option `force=true' is used, cfengine will parse filesystems
 even on NFS mounted filesystems. Normally it does not make sense to
 check filesystems that are not native to the local host, but
 occasionally ne would like to force such a check in order to set a
-class, based on the result, for instance.
+class, based on the result, for instance.  
 
    If the `scanarrivals' option is set, the agent will recursively
 descend through the file system building a database of file
@@ -4055,8 +4038,8 @@ backup of filesystem.
 
 File: cfengine-Reference.info,  Node: directories,  Next: disable,  Prev: disks,  Up: Cfagent reference
 
-directories
-===========
+4.14 directories
+================
 
 Directories declarations consist of a number of directories to be
 created.  Directories and files may also be checked and created using
@@ -4066,9 +4049,9 @@ the `touch' option in the `files' actions.  *Note files::.
 
 
        directories:
-     
+
           CLASSES::
-     
+
               /DIRECTORY
                               mode=MODE
                               owner=UID
@@ -4076,7 +4059,7 @@ the `touch' option in the `files' actions.  *Note files::.
                               define=CLASSLIST
                               syslog=TRUE/ON/FALSE/OFF
                               inform=TRUE/ON/FALSE/OFF
-     
+
                               ifelapsed=MINS
                               expireafter=MINS
 
@@ -4084,9 +4067,9 @@ For example
 
 
      directories:
-     
+
        CLASS::
-     
+
           /usr/local/bin  mode=755 owner=root group=wheel
 
 The form of the command is similar to that of `files' but this command
@@ -4103,8 +4086,8 @@ here if a directory is created.
 
 File: cfengine-Reference.info,  Node: disable,  Next: editfiles,  Prev: directories,  Up: Cfagent reference
 
-disable
-=======
+4.15 disable
+============
 
 Disabling a file means renaming it so that it becomes harmless.  This
 feature is useful if you want to prevent certain dangerous files from
@@ -4113,12 +4096,12 @@ be examined later.  The syntax is
 
 
       disable:
-     
+
         CLASS::
-     
+
            /FILENAME
                            dest=FILENAME
-     
+
                            type=PLAIN/FILE/LINK/LINKS
                            rotate=EMPTY/TRUNCATE/NUMERICAL-VALUE
                            size=NUMERICAL-VALUE
@@ -4127,7 +4110,7 @@ be examined later.  The syntax is
                            inform=TRUE/ON/false/off
                            repository=DESTINATION DIRECTORY
                            action=disable/WARN
-     
+
                            ifelapsed=MINS
                            expireafter=MINS
 
@@ -4145,13 +4128,13 @@ without password protection!  Here is an example:
 
 
      disable:
-     
+
            /etc/hosts.equiv
            /etc/nologin
            /usr/lib/sendmail.fc
-     
+
         sun4::
-     
+
            /var/spool/cron/at.allow
 
 Hint: The last example disables a file which restricts access to the
@@ -4159,9 +4142,9 @@ Hint: The last example disables a file which restricts access to the
 files::,
 
      files:
-     
+
         some::
-     
+
            /var/spool/cron/at.allow =0644 N [root] [wheel] touch
 
 which would create an empty security file `at.allow'.  See also your
@@ -4173,20 +4156,20 @@ optional syntax
 
 
      disable:
-     
+
          /directory/name type=file
 
 to specify that a file object should only be disabled if it is a plain
 file. The optional element `type=' can take the values `plain', `file',
 `link' or `links'. If one of these is specified, cfengine checks the
 type and only disables the object if there is a match. This allows you
-to disable a file and replace it by a link to another file for instance.
+to disable a file and replace it by a link to another file for instance.  
 
    NOTE that if you regularly disable a file which then gets recreated
 by some process, the disabled file `FILENAME.cfdisabled' will be
 overwritten each time cfengine disables the file and therefore the
 contents of the original are lost each time. The `rotate' facility was
-created for just this contingency.
+created for just this contingency.  
 
    The disable feature can be used to control the size of system log
 files, such as `/var/adm/messages' using a further option `rotate'.  If
@@ -4194,7 +4177,7 @@ the value rotate is set to 4, say,
 
 
       disable:
-     
+
          FILENAME  rotate=4
 
 then cfengine renames the file concerned by appending `.1' to it and a
@@ -4210,12 +4193,12 @@ retaining a copy then you can use `rotate=empty' or `rotate=truncate'.
 For instance, to keep control of your World Wide Web server logs:
 
      disable:
-     
+
         Sunday|Wednesday::
-     
+
             /usr/local/httpd/logs/access_log  rotate=empty
 
-This keeps a running log which is emptied each Sunday and Wednesday.
+This keeps a running log which is emptied each Sunday and Wednesday.  
 
    The `size=' option in disable allows you to carry out a disable
 operation only if the size of the file is less than, equal to or greater
@@ -4225,18 +4208,16 @@ be quoted in kilobytes or megabytes using the notation:
      NUMBERbytes
      NUMBERkbytes
      NUMBERmbytes
-
-Only the first characters of these strings are significant, so they may
-be written however is convenient: e.g. `14kB', `14k', `14kilobytes' etc.
-Examples are:
+   Only the first characters of these strings are significant, so they
+may be written however is convenient: e.g. `14kB', `14k', `14kilobytes'
+etc.   Examples are:
 
 
         size=<400  # disable if file size is < 400 bytes
         size=400   # disable if file size is equal to 400 bytes
         size=>400  # disable if file size > 400 bytes
-
-This options works with `rotate' or normal disabling; it is just an
-extra condition which must be satisfied.
+   This options works with `rotate' or normal disabling; it is just an
+extra condition which must be satisfied.  
 
    If a disable command results in action being taken by cfengine, an
 optional list of classes becomes can be switched on with the aid of a
@@ -4250,8 +4231,8 @@ disabled file in the same directory.
 
 File: cfengine-Reference.info,  Node: editfiles,  Next: files,  Prev: disable,  Up: Cfagent reference
 
-editfiles
-=========
+4.16 editfiles
+==============
 
 Performs ascii (line-based) editing on text-files or limited binary
 editing of files.  If editing a file which has hard links to it, be
@@ -4264,16 +4245,16 @@ Recursive File Sweeps in the tutorial).
 
 
      editfiles:
-     
+
         CLASS::
-     
+
            { FILE-TO-BE-EDITED
-     
+
            ACTION "QUOTED-STRING..."
            }
-     
+
            { DIRECTORY-TO-BE-EDITED
-     
+
            Recurse "inf"          # iterated over all files
            Filter  "filteralias"
            Include ".cshrc"
@@ -4285,18 +4266,18 @@ Recursive File Sweeps in the tutorial).
 Here are some examples:
 
      editfiles:
-     
+
         sun4::
-     
+
            { /etc/netmasks
-     
+
            DeleteLinesContaining "255.255.254.0"
            AppendIfNoSuchLine "128.39  255.255.255.0"
            }
-     
+
         PrintServers::
            { /etc/hosts.lpd
-     
+
            AppendIfNoSuchLine "tor"
            AppendIfNoSuchLine "odin"
            AppendIfNoSuchLine "borg"
@@ -4325,7 +4306,7 @@ would write
 
 
        { home/.cshrc
-     
+
         AppendIfNoSuchLine "setenv PRINTER default-printer"
         AppendIfNoSuchLine "set path = ( $path /new/directory )"
        }
@@ -4371,10 +4352,10 @@ file once only, you could write:
 
 
         { FILE
-     
+
          LocateLineMatching "INSERT POINT..."
          IncrementPointer   "1"
-     
+
          BeginGroupIfNoMatch "# cfengine - 2/Jan/95"
            IncrementPointer "-1"
            InsertLine "# cfengine - 2/Jan/95"
@@ -4426,14 +4407,14 @@ expressions.
 
 
           editfiles:
-          
+
            { /tmp/bla
-          
+
            ForEachLineIn "/tmp/in"
               AppendIfNoLineMatching "ThisLine"
            EndLoop
            }
-
+     
 `AppendIfNoSuchLine QUOTED-STRING'
      Add a line containing the quoted string to the end of the file if
      the file doesn't contain the exact line already.
@@ -4442,7 +4423,7 @@ expressions.
      For each line in the named file, call AppendIfNoSuchLine.  This
      adds lines containing the strings listed in the named file to the
      end of the current file if the file doesn't contain the exact line
-     already.
+     already.  
 
 `AppendToLineIfNotContains QUOTED-STRING'
      This commands looks for an exact match of the quoted string in the
@@ -4457,7 +4438,7 @@ expressions.
      output. New files are created with mode 644 (see also Umask), read
      access for everyone and write access for the cfengine user
      (normally root). Note that if you set this,
-     BeginGroupIfFileIsNewer will always be true.
+     BeginGroupIfFileIsNewer will always be true.  
 
 `AutomountDirectResources QUOTED-STRING'
      This command is designed to assist with automounter configuration
@@ -4480,25 +4461,25 @@ expressions.
      the last version of the file is kept, overwriting any previously
      saved versions.
              Backup "single"
-
+     
 `BeginGroupIfDefined QUOTED-STRING'
      The lines following, up to the first `EndGroup' are executed if
-     the quoted class is defined. Edit groups may be nested.
+     the quoted class is defined. Edit groups may be nested.  
 
 `BeginGroupIfNotDefined QUOTED-STRING'
      The lines following, up to the first `EndGroup' are executed if
-     the quoted class is not defined. Edit groups may be nested.
+     the quoted class is not defined. Edit groups may be nested.  
 
 `BeginGroupIfFileExists QUOTED-STRING'
      The lines following, up to the first `EndGroup' are executed if
      the quoted filename exists (can be statted).  Files which are not
      readable by the running process are for all intents and purposes
-     non-existent. Edit groups may be nested.
+     non-existent. Edit groups may be nested.  
 
 `BeginGroupIfFileIsNewer QUOTED-STRING'
      The lines following, up to the first `EndGroup' are executed if
      the quoted filename is newer than the file being edited. Edit
-     groups may be nested.
+     groups may be nested.  
 
 `BeginGroupIfNoLineContaining QUOTED-STRING'
      The lines following, up to the first `EndGroup' are executed if
@@ -4578,13 +4559,12 @@ expressions.
                   Append "$(myservice1)"
           	DefineInGroup "myservice1_added"
                 EndGroup
-          
+
                 BeginGroupIfNoSuchLine "$(myservice2)"
                   Append "$(myservice2)"
           	DefineInGroup "myservice2_added"
                 EndGroup
               }
-
      This will define service_added and service_added_another_way if
      either line is added, but additionally myservice1_added if
      myservice1 was added and likewise for myservice2_added.
@@ -4690,7 +4670,7 @@ expressions.
      `"4"'.  Negative values are equivalent to decrementing the
      pointer. If a request is made to increment/decrement outside of
      the file boundaries the pointer `bumps' into the boundary and
-     remains there, i.e. either at start of file or end of file.
+     remains there, i.e. either at start of file or end of file.  
 
 `Inform QUOTED-STRING'
      Set to true or false, on or off to set inform level for this file.
@@ -4860,14 +4840,14 @@ expressions.
      This defines a single character which is to be interpreted as a
      field separator for editing files with columns. The default value
      for this is `:', as is used in the password and group files.  It
-     is used in conjunction with `ReplaceLinesMatchingField'.
+     is used in conjunction with `ReplaceLinesMatchingField'.  
 
 `Syslog QUOTED-STRING'
      Set to true or false, on or off to set inform level for this file.
      Default is off.
 
 `Umask QUOTE MODE'
-     Set local umask for file creation and script execution.
+     Set local umask for file creation and script execution.  
 
 `UnCommentLinesContaining  QUOTED-STRING'
      Uncomment all lines in file containing the quoted string as a
@@ -4889,7 +4869,6 @@ expressions.
            /* 1 */
            /* 2 */
            /* 3 */
-
      and also
            /* 1
               2
@@ -4972,8 +4951,8 @@ committing them to your global site configuration.
 
 File: cfengine-Reference.info,  Node: files,  Next: filters,  Prev: editfiles,  Up: Cfagent reference
 
-files
-=====
+4.17 files
+==========
 
 The `files' facility allows you to touch (create), check for the
 existence, owner and permissions of files, change the permissions and
@@ -4993,51 +4972,51 @@ test for setuid root programs.
 
 File: cfengine-Reference.info,  Node: Syntax,  Next: Recursion,  Prev: files,  Up: files
 
-Syntax
-------
+4.17.1 Syntax
+-------------
 
 A files-statement can have several options.  We can begin by examining
 the form of the statement in pseudo-code:
 
        files:
-     
+
           CLASSES::
-     
+
              /FILE-OBJECT
                                mode=MODE
                                owner=UID-LIST
                                group=GID-LIST
                                action=FIXALL/OTHER-OPTIONS/warnall
                                links=false/stop/TRAVERSE/FOLLOW/TIDY
-     
+
                                ignore=PATTERN
                                include=PATTERN
                                exclude=PATTERN
                                filter=FILTER ALIAS
                                xdev=TRUE/ON/false/off
-     
+
                                define=CLASSLIST
                                elsedefine=CLASSLIST
-     
+
                                checksum=MD5
                                syslog=TRUE/ON/false/off
                                inform=TRUE/ON/false/off
                                ifelapsed=MINS
                                expireafter=MINS
-     
+
           SPECIAL OS FLAGS:
                                flags=BSD FLAGS
 
 An example would be the following:
 
         any::
-     
+
            /var/spool/printQ  mode=0775  r=0 o=daemon g=daemon  act=fixdirs
 
 The meaning of these item is sketched out below and becomes clearer on
 looking at a number of examples.  Note that, each of the options below
 can be written in either upper or lower case and abbreviated by any
-unique abbreviation.
+unique abbreviation.  
 
 `/FILE-OBJECT'
      This is the only obligatory part of a file action. This may be a
@@ -5050,7 +5029,7 @@ unique abbreviation.
 
      A file object is interpreted as a directory if you write it in the
      following form: `/directory-path/.'. i.e. a trailing dot signifies
-     a directory. This then becomes the same as the `directory' command.
+     a directory. This then becomes the same as the `directory' command.  
 
 `mode=MODESTRING'
      Specifies what the allowed permissions for files are.  If cfengine
@@ -5120,12 +5099,12 @@ unique abbreviation.
      patterns which are to be included in the search. Once you specify
      one pattern you exclude all files not matching at least one of the
      patterns. The case be useful for restricting a search, or for
-     modifying the permissions of only certain files.
+     modifying the permissions of only certain files.  
 
 `exclude=WILDCARD/PATTERN'
      You can include this option several times to specify specific
      patterns which are to be excluded from the search. This overrides
-     any patterns given in the `include=' list.
+     any patterns given in the `include=' list.  
 
 `ignore'
      This works like the global ignore directive but here you may
@@ -5148,7 +5127,7 @@ unique abbreviation.
      The value `links=tidy' has the same effect as the `-L' command
      line option except that here it may be specified per item rather
      than globally.  Setting this value causes links which point to
-     non-existent files to be deleted.
+     non-existent files to be deleted.  
 
      If the warn directive is used (for directories, plain files or
      both) then only a warning message is issued if the file being
@@ -5179,11 +5158,11 @@ unique abbreviation.
      Security warning messages are issued only once and the value in
      the database is then changed to the new value of the file
      automatically i.e. the behaviour is similar to that of setuid root
-     program detection, *Note ChecksumDatabase::.
+     program detection, *Note ChecksumDatabase::.  
 
 `xdev'
      Prevents cfengine from descending into file systems that are not
-     on the same device as the root of the rescurion path.
+     on the same device as the root of the rescurion path.  
 
 
    The default values are `mode=+000', `recurse=0', `action=warnall'
@@ -5193,8 +5172,8 @@ not traverse links unless the `-l' option is set on the command line.
 
 File: cfengine-Reference.info,  Node: Recursion,  Next: Directory permissions,  Prev: Syntax,  Up: files
 
-Recursion
----------
+4.17.2 Recursion
+----------------
 
 The recursion specifier tells cfengine what to do, starting from
 `/directory name'.  A value of `r=0' means `no recursion' and any
@@ -5205,13 +5184,13 @@ subdirectories checking or setting the permissions of files until it
 recursively into subdirectories, but no more than four levels.  This is
 a useful safety net in preventing unforeseen accidents.  A recursive
 search also bottoms out on device boundaries and symbolic links
-(provided the `-l' option is not used).
+(provided the `-l' option is not used).  
 
 
 File: cfengine-Reference.info,  Node: Directory permissions,  Next: home directive,  Prev: Recursion,  Up: files
 
-Directory permissions
----------------------
+4.17.3 Directory permissions
+----------------------------
 
 When you specify the permissions for a whole file tree, using the
 recursion specifier it is awkward to have to remember that directories
@@ -5221,9 +5200,9 @@ ensure that the corresponding execute flag is also set for directories
 which live in the tree.  So the command
 
      files:
-     
+
        myclass::
-     
+
            /dir  mode=a+rw r=inf fixall
 
 would set all plain files to mode 644 and all directories to 755, that
@@ -5233,8 +5212,8 @@ everyone on directories.
 
 File: cfengine-Reference.info,  Node: home directive,  Next: Owner and group wildcards,  Prev: Directory permissions,  Up: files
 
-`home' directive
-----------------
+4.17.4 `home' directive
+-----------------------
 
 If you want to check the files of all the users who have their login
 areas on the current host, you can use a wildcard directive `home'
@@ -5249,9 +5228,9 @@ program.  For example the following line is a very useful service to
 ignorant users.
 
      files:
-     
+
        any::
-     
+
          home mode=o-w r=inf act=fixall
 
 It ensures automatically that no user has files which can be written to
@@ -5260,7 +5239,7 @@ by other arbitrary users.
    As a corollary to this, you may write something like
 
        any::
-     
+
           home/www mode=a+r fixall
 
 to specify a special subdirectory of every users' home directory.  This
@@ -5270,8 +5249,8 @@ directories were readable for everyone.
 
 File: cfengine-Reference.info,  Node: Owner and group wildcards,  Next: Files linkchildren,  Prev: home directive,  Up: files
 
-Owner and group wildcards
--------------------------
+4.17.5 Owner and group wildcards
+--------------------------------
 
 If you do not want to explicitly state the owner or group of a file you
 may simply omit the group or owner options.
@@ -5284,8 +5263,8 @@ directory do not have permission read/write for all users.
 
 File: cfengine-Reference.info,  Node: Files linkchildren,  Next: touch,  Prev: Owner and group wildcards,  Up: files
 
-Files linkchildren
-------------------
+4.17.6 Files linkchildren
+-------------------------
 
 The `linkchildren' facility is almost identical to that already
 described under `links'.  *Note Link Children::.  The only difference
@@ -5293,28 +5272,28 @@ here is that the ownership and permissions on the links are set all in
 one operation.  For example:
 
      MYCLASS::
-     
+
         /local/lib/emacs m=0770 o=me g=mygroup act=linkchildren
 
 
 File: cfengine-Reference.info,  Node: touch,  Next: create,  Prev: Files linkchildren,  Up: files
 
-touch
------
+4.17.7 touch
+------------
 
 The `touch' facility creates a new file with the specified permissions
 and ownership, or corrects the permissions and ownership of an existing
 file, in addition to updating the time stamps.
 
      MYCLASS::
-     
+
         /NEWFILE mode=0644 action=touch
 
 
 File: cfengine-Reference.info,  Node: create,  Prev: touch,  Up: files
 
-create
-------
+4.17.8 create
+-------------
 
 This is like `touch' except that an existing file's time stamps,
 permissions and ownership will not be modified if the file already
@@ -5324,8 +5303,8 @@ values specified, or to the default values of `0644'.
 
 File: cfengine-Reference.info,  Node: filters,  Next: groups,  Prev: files,  Up: Cfagent reference
 
-filters
-=======
+4.18 filters
+============
 
 A filter is a way of selecting or pruning during a search over files or
 processes. Since filter rules could apply to several objects, cfengine
@@ -5346,55 +5325,55 @@ syntax is
 
 
      files:
-     
+
       /tmp filter=testfilteralias action=alert r=inf
 
    Filters are defined in a separate section. Filters for files and
 processes are defined together. They differ only in the criteria they
 contain. Here is are examples of file filters:
      Filters:
-     
+
        { filteralias1
-     
+
        Owner:     "mark|cell|motd"
        Group:     "ecg|mark"
        Mode:      "700"
-     
+
        FromCtime: "date(2000,1,1,0,0,0)"    # absolute date
        ToCtime:   "now"
-     
+
        FromMtime: "tminus(1,0,0,2,30,0)"    # relative "ago" from now
        ToMtime:   "inf"                     # end of time
-     
+
        FromAtime: "date(1997,2,22,0,0,0)"
        ToAtime:   "inf"
-     
+
        FromSize:  "10000"                   # File size interval
        ToSize:    "10mb"
-     
+
        ExecRegex: "/usr/bin/file(.*ascii.*)"# Result from "files" command
-     
+
        Type:      "dir|link"                # reg|link|dir|socket|fifo|door|char|block
-     
+
        NameRegex: ".*.asc"                  # regex matching file name
-     
+
        IsSymLinkTo: "/dev/null"             # True if file is a link to object name regex
-     
+
        Result:    "Type"                    # Result which shouldbe returned
-     
+
        }
-     
+
       #########################################
-     
+
        { testfilteralias2
-     
+
        ExecProgram: "/bin/ls $(this)"       # True if the program returns true. $(this) is the current object
        }
-     
+
       #########################################
-     
+
        { testfilteralias3
-     
+
        Owner: "mark"
        }
 
@@ -5425,7 +5404,7 @@ evaluating the class attributes for each file.
 
             FromCtime: "date(2000,1,1,0,0,0)"   # absolute date
             ToCtime:   "now"
-          
+
             FromMtime: "tminus(1,0,0,2,30,0)"     # relative "ago" from now
             ToMtime:   "inf"                     # end of time
 
@@ -5504,14 +5483,14 @@ evaluating the class attributes for each file.
      logical combination of above returned by filter (quoted regex)
    Examples: processes started between 18th Nov 2000 and now.
        { filteralias
-     
+
        FromSTime: "date(2000,11,18,0,0,0)"
        ToSTime:   "now"
        }
    All processes which have accumulated between 1 and 20 hours of CPU
 time.
        { filteralias
-     
+
        FromTTime:  "accumulated(0,0,0,1,0,0)"
        ToTTime:    "accumulated(0,0,0,20,0,0)"
        }
@@ -5523,119 +5502,119 @@ time.
 
 File: cfengine-Reference.info,  Node: Complete filter examples,  Prev: filters,  Up: filters
 
-Complete filter examples
-------------------------
+4.18.1 Complete filter examples
+-------------------------------
 
 Here is an example filter to search for all files which are either
 directories or links, or any kind of file owned by mark, in group
 cfengine.
 
      control:
-     
+
       actionsequence = ( files )
-     
+
      files:
-     
+
       /tmp       filter=testfilteralias action=alert r=inf
       /cfengine  filter=testfilteralias action=fixall r=inf mode=644
-     
+
      filters:
-     
+
        { testfilteralias
-     
+
        Owner:     "mark"
        Group:     "cfengine"
        Type:      "dir|link"
-     
+
        Result:    "Type|(Owner.Group)"  # Both owner AND group required correct
        }
    Find all ELF executables using data from the Unix `file' command.
 Caution, this takes a long time if used indescriminately.
 
      control:
-     
+
       actionsequence = ( files )
-     
+
      files:
-     
+
       /tmp       filter=testfilteralias action=alert r=inf
       /cfengine  filter=testfilteralias action=fixall r=inf mode=644
-     
+
      filters:
-     
+
        { testfilteralias
-     
+
        ExecRegex: "/bin/file (.*ELF.*)"
-     
+
        Result: "ExecRegex"
        }
    Here is an example which warns of any process coupled to a terminal
 started in November:
 
      control:
-     
+
       actionsequence = ( processes )
-     
+
      filters:
-     
+
        { filteralias
        FromSTime: "date(2000,11,0,0,0,0)"
        ToSTime:   "date(2000,11,30,0,0,0)"
        TTY: ".*pt.*"
        Result: "TTY.STime"
        }
-     
+
      processes:
-     
+
       "." filter=filteralias action=warn
 
 
 File: cfengine-Reference.info,  Node: groups,  Next: homeservers,  Prev: filters,  Up: Cfagent reference
 
-groups/classes
-==============
+4.19 groups/classes
+===================
 
 The `groups' action (equivalently referred to as `classes' as of
 version 1.4.0) is used to define classes which stand for groups of
 hosts.  If you use the NIS (network information service) facility for
 defining _netgroups_ then this idea will already be familiar to you and
-you can probably use your already-defined netgroups in cfengine.
+you can probably use your already-defined netgroups in cfengine.  
 
    To define a group, you simply make a list and assign it a name.
 Here is an example of the syntax:
 
 
      groups:
-     
+
        ANDed_class::
-     
+
          science = ( saga tor odin )
-     
+
          packages = ( saga )
-     
+
          AllHomeServers   = ( saga )
          AllBinaryServers = ( saga )
-     
+
          OIH_servers = ( saga )
          OIH_clients = ( tor odin )
-     
+
          notthis = ( !this )
-     
+
          ip_in_range = ( IPRange(129.0.0.1-15) )  # host is in ip address range
          ip_in_range = ( IPRange(129.0.0.1/24) )  # host is in ip address range (CIDR notation)
-     
-         compute_nodes = ( HostRange(cpu-,1-32) ) # host name in the cpu-01 through cpu-32 range
 
+         compute_nodes = ( HostRange(cpu-,1-32) ) # host name in the cpu-01 through cpu-32 range
+   
 To include a list of hosts from a NIS netgroup, you use the `+' symbol,
 or the `+@' construction.  For example:
 
 
      groups:
-     
+
         science = ( +science-allhosts )
-     
+
         physics = ( +physics-allhosts )
-     
+
         physics_theory = ( +@physics-theory-sun4 dirac feynman schwinger )
 
 Using an enormous netgroup does not use up any space.  A group
@@ -5669,7 +5648,7 @@ instance:
 
        AllSun4Hosts   = ( sonny sunny solar stella )
        AllUltrixHosts = ( ully olly wally golly )
-     
+
        AllBSD = ( AllSun4Hosts AllUltrixHosts )
 
 The classes on the right hand side are effectively ORed together into
@@ -5687,7 +5666,7 @@ is effectively the AND of the classes:
 
 
       Hr00::
-     
+
        SpecialTime = ( Monday Tuesday )
    defines `SpecialTime' at Hr00 on Monday or Tuesday.
 
@@ -5710,8 +5689,8 @@ effect is to make the class the logical OR of the scripts' results.
 
 File: cfengine-Reference.info,  Node: homeservers,  Next: ignore,  Prev: groups,  Up: Cfagent reference
 
-homeservers
-===========
+4.20 homeservers
+================
 
 The `homeservers' declaration need only be used if you are using
 cfengine's model for mounting NFS filesystems.  This declaration informs
@@ -5722,7 +5701,7 @@ home directories (login areas) which client hosts should mount.
 
 
      homeservers:
-     
+
         Physics::  einstein
         Math::     riemann euler
 
@@ -5737,12 +5716,12 @@ in the list of `mountables'.  *Note mountables::.
 wildcard value `home?' and the mountables list is given by
 
      mountables:
-     
+
         einstein:/mysite/einstein/home1
         einstein:/mysite/einstein/home2  mountoptions=soft,bg,intr,rsize=8192,wsize=8192
         riemann:/mysite/riemann/local    readonly=true
         euler:/mysite/euler/home1
-
+   
    Any host in the group `Physics' would now want to mount all home
 directories from the host `einstein'.  There are two of these.  Both
 the filesystems listed for `einstein' match the `homepattern' variable
@@ -5764,8 +5743,8 @@ highly recommended._
 
 File: cfengine-Reference.info,  Node: ignore,  Next: import,  Prev: homeservers,  Up: Cfagent reference
 
-ignore
-======
+4.21 ignore
+===========
 
 When you specify a recursive search as part of a `files', `tidy' or
 `copy' action, you would sometimes like to exclude certain directories
@@ -5776,27 +5755,27 @@ accomplished by adding the directory to the ignore-list.  The syntax is
 
 
        ignore:
-     
+
           WILDCARDS/DIRECTORIES/FILENAMES
 
-   For example:
+   For example: 
 
 
      ignore:
-     
+
         any::
-     
+
            #
            # Prevent tidying .X11 directories in /tmp where
            # window managers write semaphores
            #
-     
+
            .X11
-     
+
            #
            # Don't tidy emacs locks
            #
-     
+
            !*
            /local/lib/gnu/emacs/lock/
            /local/tmp
@@ -5808,7 +5787,7 @@ accomplished by adding the directory to the ignore-list.  The syntax is
 
 None of the above directories will be checked or entered during
 recursive descents unless a specific command is initiated to search
-those directories with their names as the top of the search tree.
+those directories with their names as the top of the search tree.  
 
    A handy tip if you are tidying `/tmp' recursively is to include the
 directory `.X11' here.  This directory is used by the X-windows system
@@ -5821,8 +5800,8 @@ links.
 
 File: cfengine-Reference.info,  Node: import,  Next: interfaces,  Prev: ignore,  Up: Cfagent reference
 
-import
-======
+4.22 import
+===========
 
 To break up a large configuration file into smaller files you can use
 the include directive.  This conditionally reads in files if the class
@@ -5833,14 +5812,14 @@ is:
 
 
      import:
-     
+
         any::
-     
+
            cf.global_classes
-     
-     
+
+
         linux::
-     
+
            cf.linux_classes
 
    Note that, if you define variables in an imported file they will not
@@ -5854,14 +5833,14 @@ includes, but not _vice-versa_.
 
 File: cfengine-Reference.info,  Node: interfaces,  Next: links,  Prev: import,  Up: Cfagent reference
 
-interfaces
-==========
+4.23 interfaces
+===============
 
 
       interfaces:
-     
+
         CLASSES::
-     
+
           INTERFACENAME netmask=NETMASK broadcast=BROADCAST
 
 If you have more than one network interface, or you do not wish to use
@@ -5873,15 +5852,15 @@ configuration.  Example:
 
 
        interfaces:
-     
+
          "le1" netmask=255.255.255.0 broadcast=ones
          "le2" netmask=255.255.255.0 broadcast=ones
 
 
 File: cfengine-Reference.info,  Node: links,  Next: mailserver,  Prev: interfaces,  Up: Cfagent reference
 
-links
-=====
+4.24 links
+==========
 
 The symbolic links function is one of the greatest plusses in cfengine
 as a system administration tool.  It allows you to do two things: check
@@ -5895,7 +5874,7 @@ children.  The `linkchildren' feature is also available from the
        FROM-LINK ->[!] TO-OBJECT
       OR
        FROM-LINK +>[!] TO-OBJECT
-     
+
                  type=symbolic/absolute/abs/HARD/RELATIVE/REL
                  copy=PATTERN
                  recurse=NUMBER/INF/0
@@ -5925,16 +5904,16 @@ _The special variable `$(binserver)' can be used in `links'._
 
 File: cfengine-Reference.info,  Node: Single links,  Next: Multiple Links,  Prev: links,  Up: links
 
-Single links
-------------
+4.24.1 Single links
+-------------------
 
 To define a single link, you create an entry of the following form:
 
 
      links:
-     
+
        CLASS::
-     
+
           LINKNAME -> OBJECT_TO_LINK_TO
           LINKNAME -> ./RELATIVE_LINK
           LINKNAME -> ../RELATIVE_LINK
@@ -5944,19 +5923,19 @@ is taken.  If a link exists but points incorrectly then a warning is
 issued, unless the pling operator `!' is given, in which case the
 correct value is forced.  If the link exists and points to a file which
 does not exist a warning is issued unless the command line option `-L'
-is used, in which case the link is deleted.
+is used, in which case the link is deleted.  
 
    Here is an example of some valid link statements.
 
 
      links:
-     
+
        Physics.sun4::
-     
+
         /usr/local       -> /$(site)/$(host)/local
         /home            -> /$(site)/$(host)/u1
         /etc/sendmail.cf -> /usr/local/mail/etc/global-sendmail.cf
-     
+
         /usr/lib/sendmail ->! /local/lib/sendmail
 
 cfengine makes any directories which are required leading up to the link
@@ -6003,7 +5982,7 @@ your system!)
      create them. By setting the FORCE option you can force cfengine to
      make symbolic links to files which do not exist.  This is useful
      for setting up links to filesystems which are not permanently
-     mounted.
+     mounted.  
 
 `exclude=PATTERN'
      This option can be repeated any number of times to build up a list
@@ -6039,9 +6018,9 @@ this feature is to illustrate a couple of examples.  Consider the
 following:
 
      links:
-     
+
         any::
-     
+
            /local -> /${site}/${binserver}/local
 
 The result of this command is quite different depending on which host is
@@ -6063,8 +6042,8 @@ made to a local filesystem if the rules of the model are upheld.
 
 File: cfengine-Reference.info,  Node: Multiple Links,  Next: Link Children,  Prev: Single links,  Up: links
 
-Multiple Links
---------------
+4.24.2 Multiple Links
+---------------------
 
 With the link symbol `+>', you opt to link all of the files in a
 directory to corresponding files in another directory.  This procedure
@@ -6072,9 +6051,9 @@ is sometimes useful for installing software.  In the example
 
 
      links:
-     
+
        myclass::
-     
+
           /usr/local/bin +>  /usr/local/lib/perl/bin
           /opt           +>! /local
 
@@ -6082,7 +6061,7 @@ every file in the directory `/usr/local/lib/perl/bin' is linked
 symbolically to a corresponding file in `/usr/local/bin'. The `pling'
 character forces cfengine to replace old links or plain files already
 existing. Old links are removed, whereas old files are saved by
-appending `.cfsaved' to the filename *Note repository::.
+appending `.cfsaved' to the filename *Note repository::.  
 
    Each time cfengine runs it goes through all of the files in the
 directory concerned and checks the appropriate link accordingly.  If new
@@ -6093,8 +6072,8 @@ line option is used, in which case the link is deleted.
 
 File: cfengine-Reference.info,  Node: Link Children,  Next: Relative and absolute links,  Prev: Multiple Links,  Up: links
 
-Link Children
--------------
+4.24.3 Link Children
+--------------------
 
 The linkchildren directive is a closely related to the cfengine model
 for NFS filesystems.  It is a way of making links which embodies a
@@ -6103,9 +6082,9 @@ rudimentary kind of `intelligence'.
    Consider the following:
 
      links:
-     
+
         any::
-     
+
            /usr/local/lib/emacs +> linkchildren
 
 The word `linkchildren' automatically tells cfengine that it should
@@ -6131,13 +6110,13 @@ server, but you also want to use the disk you have locally.  The
 following lines
 
      links:
-     
+
         electron::
-     
+
            /$(site)/electron/local +> linkchildren
-     
+
         any::
-     
+
            /usr/local              -> /$(site)/$(binserver)/local
 
 have the effect of creating a directory `/$(site)/electron/local' and
@@ -6164,8 +6143,8 @@ cfengine model.
 
 File: cfengine-Reference.info,  Node: Relative and absolute links,  Next: Hard links,  Prev: Link Children,  Up: links
 
-Relative and absolute links
----------------------------
+4.24.4 Relative and absolute links
+----------------------------------
 
 When specifying symbolic linking, you can ask cfengine to change the
 link type to be either relative to the source or to be an absolute
@@ -6193,8 +6172,8 @@ path to the file. For example, if `/local' is really a link to
 
 File: cfengine-Reference.info,  Node: Hard links,  Prev: Relative and absolute links,  Up: links
 
-Hard Links
-----------
+4.24.5 Hard Links
+-----------------
 
 Cfengine will also allow you to create hard links to regular files.  A
 hard link is in every way identical to the original file, it merely has
@@ -6203,7 +6182,7 @@ hard link you use the link-option `type=hard'. For example:
 
 
      links:
-     
+
         /DIRECTORY/NEWNAME -> /DIRECTORY/OTHERNAME type=hard
 
 Cfengine will not create hard links to directories or other special
@@ -6222,8 +6201,8 @@ the device and inode numbers of the file pointed to.
 
 File: cfengine-Reference.info,  Node: mailserver,  Next: methods,  Prev: links,  Up: Cfagent reference
 
-mailserver
-==========
+4.25 mailserver
+===============
 
 The `mailserver' declaration need only be used if you are using
 cfengine's model for mounting NFS filesystems.  This declaration informs
@@ -6233,13 +6212,13 @@ across the network.  The declaration looks like this:
 
 
      mailserver:
-     
+
         CLASS::      mailhost:/var/spool/mail
 
 The result of the `mailcheck' command in the action-sequence is now to
 mount the filesystem `/var/spool/mail' on the host `mailhost'.  This
 action is carried out on any machine which does not already have that
-filesystem mounted.
+filesystem mounted.  
 
    The mail spool directory is mounted, by default, onto the official
 mail spool directory for the system which is parsing the program.  In
@@ -6251,8 +6230,8 @@ resource file.  *Note cfrc resource file::.
 
 File: cfengine-Reference.info,  Node: methods,  Next: miscmounts,  Prev: mailserver,  Up: Cfagent reference
 
-methods
-=======
+4.26 methods
+============
 
 From version 2.1.0, cfagent provides for the execution of closed
 functions or "methods".  Methods are similar to the old idea of modules,
@@ -6287,23 +6266,23 @@ the decoupling between client request and service provision.
 
 
        methods:
-     
+
           CLASS::
-     
-     
+
+
             FUNCTION_NAME(PARAMETERS OR NONE)
-     
+
            action=`filename'
-     
+
            sendclasses=COMMA SEPARATED CLASS LIST
-     
+
            returnvars=COMMA SEPARATED VARIABLE LIST OR VOID
            returnclasses=COMMA SEPARATED CLASS LIST
-     
+
            server=IP-HOST/*
-     
+
            forcereplyto=IP ADDRESS
-     
+
            owner=SETUID
            group=SETGID
            chdir=CD FOR CHILD
@@ -6345,19 +6324,19 @@ transmitted with a dummy value, e.g. `Function(null)' or
 `function(void)'.  Here is an example method call.
 
       # cfagent.conf
-     
+
      control:
-     
+
         actionsequence = ( methods )
-     
+
      #################################################
-     
+
      methods:
-     
+
       any::
-     
+
         SimpleMethod(null)
-     
+
            action=cf.simple
            returnvars=null
            returnclasses=null
@@ -6365,26 +6344,26 @@ transmitted with a dummy value, e.g. `Function(null)' or
    With method file (located in the ModulesDirectory),
 
       # cf.simple
-     
+
        control:
-     
+
          MethodName       = ( SimpleMethod )
          MethodParameters = ( null )
          actionsequence   = ( timezone )
-     
-     
+
+
        classes:
-     
+
           dummy = ( any )
-     
+
      ####################################################
-     
+
      alerts:
-     
+
       dummy::
-     
+
        "This simple method does nothing"
-     
+
        ReturnVariables(void)
        ReturnClasses(void)
    On executing this example, the output is:
@@ -6402,8 +6381,8 @@ multicast or broadcast.
 
 File: cfengine-Reference.info,  Node: localhost examples,  Next: remotehost examples,  Prev: methods,  Up: methods
 
-Localhost examples
-------------------
+4.26.1 Localhost examples
+-------------------------
 
 The following example collects the tar file, unpacks it, configures and
 compiles it, then tidies its files.
@@ -6413,17 +6392,17 @@ compiles it, then tidies its files.
      # It should be in the usual place for cfinputs
      #
      ####################################################
-     
+
      control:
-     
+
         actionsequence = ( methods )
-     
+
      #####################################################
-     
+
      methods:
-     
+
         InstallTar(cfengine-2.1.0b7,/local/gnu)
-     
+
            action=cf.install
            returnvars=null
            returnclasses=null
@@ -6440,103 +6419,103 @@ compiles it, then tidies its files.
      # e.g. InstallFromTar(cfengine-2.1.0,/usr/local/gnu)
      #
      ####################################################
-     
+
      control:
-     
-     
+
+
       MethodName       = ( InstallTar )
       MethodParameters = ( filename gnuprefix )
-     
+
       path = ( /usr/local/gnu/bin )
-     
-     
+
+
       TrustedWorkDir = ( /tmp )
-     
+
       TrustedSources = ( /iu/nexus/ud/mark/tmp )
       TrustedSourceServer = ( localhost )
-     
+
       actionsequence = ( copy editfiles shellcommands tidy )
-     
+
      ####################################################
-     
+
      classes:
-     
+
        Force = ( any )
-     
+
      ####################################################
-     
+
      copy:
-     
+
       $(TrustedSources)/$(filename).tar.gz
-     
+
          dest=$(TrustedWorkDir)/$(filename).tar.gz
          server=$(TrustedSourceServer)
-     
+
      ####################################################
-     
+
      shellcommands:
-     
+
       "$(path)/tar zxf $(filename).tar.gz"
-     
+
           chdir=$(TrustedWorkDir)
-     
+
       "$(TrustedWorkDir)/$(filename)/configure --prefix=$(gnuprefix)"
-     
+
          chdir=$(TrustedWorkDir)/$(filename)
          define=okay
-     
+
       okay::
-     
+
       "$(path)/make"
-     
+
           chdir=$(TrustedWorkDir)/$(filename)
-     
+
      ####################################################
-     
+
      tidy:
-     
+
        $(TrustedWorkDir) pattern=$(filename) r=inf rmdirs=true age=0
-     
-     
+
+
      ####################################################
-     
+
      #editfiles:
      #
      #{ $(TrustedWorkDir)/$(filename)/configure-opts
      #
      #AppendIfNoSuchLine "Something ???"
      #}
-     
+
      ####################################################
-     
+
      alerts:
-     
+
       Force::
-     
+
        ReturnVariables(none)
        ReturnClasses(success)
 
    A more complex example is given below:
        GetAnalysis("${parent1}",param2,ReadFile("/etc/passwd",300))
-     
+
          # The name of the method that is in modulesdir
-     
+
          action=cf.methodtest
-     
+
          # The variables that we get back should be called these names
          # with method name prefix
-     
+
          returnvars=a,b,c,d
-     
+
          # This is an access list for returned classes. Classes will
          # only be handed back if they are included here
-     
+
          returnclasses=define1,define2,class1
-     
+
          # The host(s) that should execute the method
-     
+
          server=localhost
-     
+
          # Only localhost can decide these - not a remote caller
          #    owner=25
          #    group=root
@@ -6580,16 +6559,16 @@ VOID)     ReturnClasses(COMMA SEPARATED LIST OF CLASSES)
 
    e.g.
      control:
-     
+
       MethodName       = ( GetAnalysis )
       MethodParameters = ( value1 value2 /tmp/file1 )
-     
+
       # ....
-     
+
      alerts:
-     
+
        # Return variables are alerts to parent
-     
+
        ReturnVariables("${var1}","${var2}","var3",literal_value)
        ReturnClasses(class1,class2)
 
@@ -6605,8 +6584,8 @@ choose to accept or ignore the value.
 
 File: cfengine-Reference.info,  Node: remotehost examples,  Prev: localhost examples,  Up: methods
 
-Remote host examples
---------------------
+4.26.2 Remote host examples
+---------------------------
 
 Methods can also be scheduled for execution on remote hosts.
    * Both hosts must have an identical copy of the method stanza
@@ -6620,18 +6599,18 @@ for some additional requirements. A list of collaborating peers must be
 added to the control section of `update.conf'.
 
      control:
-     
+
       MethodPeers = ( HOSTNAME LIST )
    This list tells the agent which remote hosts to collaborate with,
 i.e.  whom should we contact to look for work that we have promised to
 perform?  For example, to make two hosts collaborate:
 
      methods:
-     
+
       host1|host2::
-     
+
        MethodTest("my test!")
-     
+
        action=cf.methodtest
        server=host2.iu.hio.no
        returnclasses=null
@@ -6655,8 +6634,8 @@ such, it is a successful experiment.
 
 File: cfengine-Reference.info,  Node: miscmounts,  Next: mountables,  Prev: methods,  Up: Cfagent reference
 
-miscmounts
-==========
+4.27 miscmounts
+===============
 
 If you do not use the cfengine model for statically mounting NFS
 filesystems (or if there are filesystems which do not naturally fall
@@ -6665,29 +6644,29 @@ miscellaneous filesystems using a statement of the form:
 
 
      miscmounts:
-     
+
         CLASS::
-     
+
            INFOHOST:SOURCE-DIRECTORY DESTINATION MODE
-     
+
            INFOHOST:SOURCE-DIRECTORY DESTINATION mode=MODE
-     
+
           ifelapsed=MINS expireafter=MINS
 
 For example
 
         physics::
-     
+
          # old syntax
-     
+
            libraryserver:/$(site)/libraryserver/data1
                                /$(site)/libraryserver/data1 ro
-     
+
          # consistent syntax
-     
+
            libraryserver:/$(site)/libraryserver/data2
                                /$(site)/libraryserver/data2 mode=ro
-     
+
            host:/foo /foo mode=rw,bg,hard,intr
 
 This statement would mount the directory `/$(site)/libraryserver/data'
@@ -6699,8 +6678,8 @@ read-write is assumed.
 
 File: cfengine-Reference.info,  Node: mountables,  Next: processes,  Prev: miscmounts,  Up: Cfagent reference
 
-mountables
-==========
+4.28 mountables
+===============
 
 The `mountables' declaration need only be used if you are using
 cfengine's model for mounting NFS filesystems.  This declaration informs
@@ -6712,7 +6691,7 @@ cfengine model.
    The syntax of the list is:
 
      mountables:
-     
+
         CLASS::
             "filesystem to mount"
      	   readonly=false/off/TRUE/ON
@@ -6720,9 +6699,9 @@ cfengine model.
    e.g.
 
      mountables:
-     
+
         CLASS::
-     
+
         server:/site/server/u1
         server:/site/server/local
         linuxhost:/site/linuxhost/local
@@ -6730,7 +6709,7 @@ cfengine model.
 
 Notice that binary and home-directory filesystems are mixed freely here.
 Cfengine determines which of the entries are homedirectories using the
-`homepattern' variable.
+`homepattern' variable.  
 
    Every time you add a disk or a mountable partition to your network,
 you should add the partition to the list of mountables.
@@ -6747,8 +6726,8 @@ configuration of the automounter, using the command
 
 File: cfengine-Reference.info,  Node: processes,  Next: packages,  Prev: mountables,  Up: Cfagent reference
 
-processes
-=========
+4.29 processes
+==============
 
 Using the processes facility, you can test for the existence of
 processes, signal (kill) processes and optionally restart them again.
@@ -6759,9 +6738,9 @@ an exact match, only a substring of the process line.  The form of a
 process command is
 
      processes:
-     
+
          "QUOTED REGULAR EXPRESSION"
-     
+
                              restart "SHELL COMMAND"
                              useshell=true/FALSE/DUMB
                              owner=RESTART-UID
@@ -6769,22 +6748,22 @@ process command is
                              chroot=DIRECTORY
                              chdir=DIRECTORY
                              umask=MASK
-     
+
                              signal=SIGNAL NAME
                              matches=NUMBER
                              define=CLASSLIST
                              elsedefine=CLASSLIST
-     
+
                              action=signal/DO/WARN/BYMATCH
                              include=LITERAL
                              exclude=LITERAL
                              filter=FILTER_NAME
-     
+
                              syslog=TRUE/ON/FALSE/OFF
                              inform=TRUE/ON/FALSE/OFF
                              ifelapsed=MINS
                              expireafter=MINS
-     
+
          SetOptionString "QUOTED OPTION STRING"
 
    By default, the options sent to ps are "-aux" for BSD systems and
@@ -6835,12 +6814,11 @@ it in memory. The process table is only re-consulted if
              lost     29   resource lost (eg, record-lock lost)
              usr1     30   user defined signal 1
              usr2     31   user defined signal 2
-
      Note that cfengine will not attempt to signal or restart processes
      0 to 3 on any system since such an attempt could bring down the
      system. The only exception is that the hangup (hup) signal may be
      sent to process 1 (init) which normally forces init to reread its
-     terminal configuration files.
+     terminal configuration files.  
 
 `restart "SHELL COMMAND"'
      Note the syntax: there is no equals sign here.  If the keyword
@@ -6865,7 +6843,7 @@ it in memory. The process table is only re-consulted if
      "cfengine-die" to STDOUT after restarting the process. This causes
      cfengine to close the pipe forcibly and continue.  Cfengine places
      a timeout on the restart process and attempts to clean up zombies,
-     but you should be aware of this possibility.
+     but you should be aware of this possibility.  
 
 `owner=,group='
      Sets the process uid and gid (setuid,gid) for processes which are
@@ -6904,7 +6882,7 @@ it in memory. The process table is only re-consulted if
             matches=<6  # warn number of matches is greater than or equal to 6
             matches=1   # warn if not exactly 1 matching process
             matches=>2  # warn if there are less than or equal to 2 matching processes
-
+     
 `include=LITERAL'
      Items listed as includes provide an extra level of selection after
      the regular expression matches have been expanded. If you include
@@ -6932,7 +6910,7 @@ it in memory. The process table is only re-consulted if
      no signal, but prints a message detailing the processes which
      match the regular expression.  If the option is set to `bymatch',
      then signals are only sent to the processes if the matches
-     criteria fail.
+     criteria fail.  
 
 
    Here is an example script which sends the hang-up signal to cron,
@@ -6940,7 +6918,7 @@ forcing it to reread its crontab files:
 
 
      processes:
-     
+
         "cron" signal=hup
 
 Here is a second example which may be used to restart the nameservice
@@ -6948,9 +6926,9 @@ on a solaris system:
 
 
      processes:
-     
+
         solaris::
-     
+
             "named" signal=kill restart "/usr/sbin/in.named"
 
 A more complex match could be used to look for processes belonging to a
@@ -6960,29 +6938,29 @@ FTP-ing files:
 
 
      control:
-     
+
          actionsequence = ( processes )
-     
+
        #
        # Set a kill signal here for convenience
        #
-     
+
          sig = ( kill )
-     
+
        #
        # Better not find that dumpster here!
        #
-     
+
          matches = ( 1 )
-     
+
      processes:
-     
+
         #
         #  Look for Johnny Mnemonic trying to dump his head, user = jmnemon
         #
-     
+
         ".*jmnemon.*ftp.*" signal=$(sig) matches=<$(matches) action=$(do)
-     
+
         # No mercy!
 
 The regular expression `.*' matches any number of characters, so this
@@ -6996,7 +6974,7 @@ greater than 20, one would write:
 
 
      processes:
-     
+
      "XXX" matches=<20  action=bymatch signal=kill
 
    See also filters *Note filters::, for more complex searches.
@@ -7004,8 +6982,8 @@ greater than 20, one would write:
 
 File: cfengine-Reference.info,  Node: packages,  Next: rename,  Prev: processes,  Up: Cfagent reference
 
-packages
-========
+4.30 packages
+=============
 
 The packages action allows you to check for the existance of packages
 on the system, as determined by the package database you select.  This
@@ -7017,16 +6995,16 @@ RPM on a Solaris box.
 
 
      packages:
-     
+
         CLASS::
-     
+
            PACKAGE-NAME
                              pkgmgr=none/RPM
                              cmp=eq/LT/GT/GE/LE/NE
                              version=VERSION-STRING
                              define=CLASS-LIST(,:.)
                              elsedefine=CLASS-LIST(,:.)
-     
+
                              ifelapsed=MINS
                              expireafter=MINS
 
@@ -7119,11 +7097,10 @@ Associated variables in control are `DefaultPkgMgr' and `RPMcommand'.
    Example:
 
      packages:
-     
+
          redhat_8_0::
              m4  version=0:1.4.1-11 cmp=eq pkgmgr=rpm elsedefine=needsm4
-
-In this first example, we are looking for the m4 package at exactly
+   In this first example, we are looking for the m4 package at exactly
 version 0:1.4.1-11.  The installed m4 package on a redhat_8_0 box has
 no epoch which is the same as zero.  Specifying it will keep you out of
 trouble.  This check will cause `needsm4' to be defined if the exact
@@ -7132,12 +7109,11 @@ version of m4 specified is not installed.
      control:
          redhat:;
              DefaultPkgMgr = ( rpm )
-     
+
      packages:
          redhat_8_0::
              make version=0:4.5-2 cmp=ge define=hasmake elsedefine=needsmake
-
-In the second example, we use the DefaultPkgMgr variable to set the
+   In the second example, we use the DefaultPkgMgr variable to set the
 default for the `pkgmgr' attribute to `rpm'.  The actual version of make
 installed on recent redhat_8_0 machine is 1:3.79.1-14.  Since the check
 is for greater than or equal to this version, the hasmake class will be
@@ -7146,16 +7122,16 @@ defined.
 
 File: cfengine-Reference.info,  Node: rename,  Next: required,  Prev: packages,  Up: Cfagent reference
 
-rename
-======
+4.31 rename
+===========
 
 As of version 2.1.0 rename is a synonym for disable, *Note disable::.
 
 
 File: cfengine-Reference.info,  Node: required,  Next: resolve,  Prev: rename,  Up: Cfagent reference
 
-required
-========
+4.32 required
+=============
 
 This is a synonym for disks, *Note disks::.  This action tests for the
 existence of a file or filesystem.  It should be called after all NFS
@@ -7164,9 +7140,9 @@ filesystems have been mounted.  You may use the special variable
 
 
        required:
-     
+
          /FILESYSTEM freespace=SIZE-LIMIT define=CLASS-LIST(,:.)
-     
+
           ifelapsed=MINS expireafter=MINS
 
    Files or filesystems which you consider to be essential to the
@@ -7192,20 +7168,20 @@ is issued.
 
 
      required:
-     
+
         any::
-     
+
            /$(site)/$(binserver)/local
 
    If you set the `freespace' variable to a value (the default units
-are kilobytes, but you may specify bytes or megabytes), e.g.
+are kilobytes, but you may specify bytes or megabytes), e.g.  
 
 
      required:
-     
+
        /site/host/home1 freespace=50mb define=dotidy
        /site/host/home2 freespace=10% define=dotidy
-
+   
 then cfengine will warn when the filesystem concerned has less than this
 amount of free space. By adding a `define' tag, you can switch on any
 number of classes if this happens. This allows you to activate special
@@ -7215,8 +7191,8 @@ full.
 
 File: cfengine-Reference.info,  Node: resolve,  Next: shellcommands,  Prev: required,  Up: Cfagent reference
 
-resolve
-=======
+4.33 resolve
+============
 
 The file `/etc/resolv.conf' specifies the default nameserver for each
 host, as well as the local domain name.  This file can also contain
@@ -7230,9 +7206,9 @@ statement:
 
 
      resolve:
-     
+
        mygroup::
-     
+
           129.240.22.35
           129.240.22.222
           129.240.2.3
@@ -7258,22 +7234,21 @@ non-nameserver lines to this file. For example:
 
 
      resolve:
-     
+
        mygroup::
-     
+
           129.240.22.35
           129.240.22.222
           "# Comment line"
           "order bind, files"
-
-If the line begins with a non-numeric character, the word `nameserver'
-is not added to the line.
+   If the line begins with a non-numeric character, the word
+`nameserver' is not added to the line.
 
 
 File: cfengine-Reference.info,  Node: shellcommands,  Next: strategies,  Prev: resolve,  Up: Cfagent reference
 
-shellcommands
-=============
+4.34 shellcommands
+==================
 
 Cfengine focuses on fairly simple minded tasks in order to be as general
 as possible.  In many cases you will therefore want to write a script to
@@ -7284,26 +7259,26 @@ commands from this section.
    The syntax is simply to quote the command you wish to be executed.
 
      shellcommands:
-     
+
        "COMMAND-STRING"
-     
+
                timeout=SECONDS
                useshell=true/FALSE
                umask=OCTAL NUMBER
                owner=UID
                group=GID
-     
+
                background=false/TRUE
                chdir=DIRECTORY
                chroot=DIRECTORY
                preview=TRUE/false
                inform=false/TRUE
-     
+
                noabspath=false/TRUE
-     
+
                ifelapsed=MINS
                expireafter=MINS
-     
+
                define=CLASS-LIST
                elsedefine=CLASS-LIST
 
@@ -7312,28 +7287,28 @@ permissions of the shellcommand to another user only if cfengine is
 executed by root. If you set the optional timeout string, then cfengine
 will abort the shellcommand if it exceeds the specified time-limit in
 seconds. This can be useful for avoiding situations caused by hung
-network connections etc.
+network connections etc.  
 
    Normally, cfagent requires the command string to begin with a `/'
 since it is dangerous to rely on an implicit path. However, sometimes it
-it is appropriate to override this.
+it is appropriate to override this.  
 
    Variable substitution works within the strings.  Here are some
 examples.
 
 
      shellcommands:
-     
+
         sun4::
-     
+
             "/usr/lib/find/updatedb"
-     
+
         AllHomeServers.Sunday::
-     
+
             "/dir/noseyparker /$(site)/$(host)/u1 $(sysadm) nomail"
-     
+
         AllBinaryServers.sun4.Saturday::
-     
+
            "/usr/etc/catman -w -M /usr/local/man"
            "/usr/etc/catman -w -M /usr/local/X11R5/man"
            "/usr/etc/catman -w -M /usr/man"
@@ -7351,30 +7326,29 @@ which are defined.  The command line option `-u' or `--use-env' can be
 used to define an environment variable which will be inherited by all
 scripts and contains the same information.  This is not the standard
 approach, since some systems cannot cope with this rapid change of
-environment and generate a Bus Error.
+environment and generate a Bus Error.  
 
    Commands can be iterated over variable lists, provided there is at
 least one space between each variable. For example:
 
 
      control:
-     
+
            actionsequence =
               (
               shellcommands
               )
-     
+
       var1 = ( a:b:c )
       var2 = ( x:y:z )
-     
-     shellcommands:
-     
-        "/bin/echo $(var1) $(var2)"
 
-This iterates over all values of the list variables. *Note Iterating
+     shellcommands:
+
+        "/bin/echo $(var1) $(var2)"
+   This iterates over all values of the list variables. *Note Iterating
 over lists: (cfengine-Tutorial)Iterating over lists.  If you are
 iterating over a list, the timeout applies to each separate iteration,
-not to the sum of all the iterations.
+not to the sum of all the iterations.  
 
    The `chroot' option changes the process root directory of the
 command, creating a `sandbox' which the process cannot escape from. Best
@@ -7392,8 +7366,8 @@ protocol of not executing unnecessary commands when the classes
 
 File: cfengine-Reference.info,  Node: strategies,  Next: tidy,  Prev: shellcommands,  Up: Cfagent reference
 
-strategies
-==========
+4.35 strategies
+===============
 
 Strategies are introduced as of cfengine version 2.0.x. A strategy is a
 probability distribution of classes. In game theoretical language, a
@@ -7401,24 +7375,24 @@ strategy is a mixed strategy. Each class label is a pure strategy, or a
 possible course of action. A strategy group is defined as follows:
 
      strategies:
-     
+
        { my_strategy_alias
-     
+
        class1: "2"
        class2: "3"
        class3: "$(value)"
        class4: "6"
        class5: "1"
        }
-     
+
      tidy:
-     
+
       class1.Hr00::
-     
+
         /home pat=*.mp3 age=0
-     
+
       class2.Hr02::
-     
+
         /home pat=*.wav age=0
    The idea here is to randomly pick from different alternatives
 
@@ -7438,20 +7412,20 @@ think of this simply as a way of defining classes at random, from a set.
 
 File: cfengine-Reference.info,  Node: tidy,  Next: unmount,  Prev: strategies,  Up: Cfagent reference
 
-tidy
-====
+4.36 tidy
+=========
 
 The tidy function is used to delete (remove permanently) unwanted files
 from a system.  It is useful for tidying up in `/tmp' or cleaning out
 `core' files from users' home directories.  The form of an entry is:
 
      tidy:
-     
+
        CLASS::
-     
+
            /DIRECTORY
                             pattern/include=WILDCARD
-     
+
                             recurse=NUMBER/INF
                             age=DAYS
                             size=NUMBER/EMPTY
@@ -7459,22 +7433,22 @@ from a system.  It is useful for tidying up in `/tmp' or cleaning out
                             dirlinks=KEEP/TIDY/DELETE
                             rmdirs=TRUE/FALSE/ALL/SUB
                             links=stop/keep/TRAVERSE/TIDY
-     
+
                             define=CLASSLIST
                             elsedefine=CLASSLIST
-     
+
                             syslog=TRUE/ON/FALSE/OFF
                             inform=TRUE/ON/FALSE/OFF
                             ifelapsed=MINS
                             expireafter=MINS
-     
+
                             filter=FILTER ALIAS
                             ignore=PATTERN
                             exclude=PATTERN
                             xdev=TRUE/ON/false/off
 
 Note that, each of the options below can be written in either upper or
-lower case and abbreviated by any unique abbreviation.
+lower case and abbreviated by any unique abbreviation.  
 
 `/DIRECTORY'
      This is the directory name to directories which mark the start of a
@@ -7491,7 +7465,7 @@ lower case and abbreviated by any unique abbreviation.
      2.0.x.  Note that, this pattern is processed as a filter before
      any other filter and, for safety reasons, it defaults to nothing.
      Thus, if you want to use a filter to select the files, you should
-     set `pattern=*', else the filter will not see any files at all.
+     set `pattern=*', else the filter will not see any files at all.  
 
 `exclude=WILDCARD'
      This does not work for the home directive; use the global ignore
@@ -7532,7 +7506,7 @@ lower case and abbreviated by any unique abbreviation.
      non-existent files to be deleted. This feature will not work on
      commands with the `home' wildcard feature.  If you want to clean
      up old links you should either user a `files' command or the
-     command line option which sets the tidy feature globally.
+     command line option which sets the tidy feature globally.  
 
 `size=>NUMBER/EMPTY'
      Old syntax `size=NUMBER/EMPTY'.  The value of this parameter
@@ -7547,7 +7521,7 @@ lower case and abbreviated by any unique abbreviation.
      megabytes may also be specified by appending b,k,m to the numbers.
      Only the first character after the number is significant so you
      may write the numbers however it might be convenient, e.g. `14k',
-     `14kB', `14kilobytes', the same as for `disable'.
+     `14kB', `14kilobytes', the same as for `disable'.  
 
 `type=CTIME/MTIME/ATIME'
      This value is used to set the type of time comparison made using
@@ -7570,7 +7544,7 @@ lower case and abbreviated by any unique abbreviation.
      will not follow symbolic links that are not owned by the agent
      user ID; this is to prevent link race attacks, in which users with
      write access could divert the agent to another part of the
-     filesystem,
+     filesystem, 
 
 `rmdirs=TRUE/FALSE/ALL/SUB'
      Normally cfengine will not delete directories. If this option is
@@ -7588,21 +7562,21 @@ lower case and abbreviated by any unique abbreviation.
 
 `xdev'
      Prevents cfengine from descending into file systems that are not
-     on the same device as the root of the rescurion path.
+     on the same device as the root of the rescurion path.  
 
    Take a look at the following example:
 
      tidy:
-     
+
         AllHomeServers::
-     
+
             home     pattern=core   R=inf age=0
             home     pattern=*~     R=inf age=7
             home     pattern=#*     R=inf age=30
-     
-     
+
+
         any::
-     
+
             /tmp/    pat=*            R=inf   age=1
             /        pat=core         R=2     age=0
             /etc     pat=hosts.equiv  r=0     age=0
@@ -7626,19 +7600,19 @@ readable to the user concerned.
 
 File: cfengine-Reference.info,  Node: unmount,  Prev: tidy,  Up: Cfagent reference
 
-unmount
-=======
+4.37 unmount
+============
 
 The unmount function unmounts non-required filesystems and removes the
 appropriate entry from the filesystem table (`/etc/fstab' or
 equivalent).  The syntax is simply
 
      unmount:
-     
+
         CLASS::
-     
+
            MOUNTHOST:FILESYSTEM
-     
+
              deletedir=TRUE/FALSE
              deletefstab=TRUE/FALSE
              force=TRUE/FALSE
@@ -7651,9 +7625,9 @@ not currently implemented and will likely have to be system dependent.
 For example:
 
      unmount:
-     
+
         physics::
-     
+
            libraryserver:/$(site)/libraryserver/data
 
 If the device is busy then the actual unmount will not take place until
@@ -7670,8 +7644,8 @@ unmount command.
 
 File: cfengine-Reference.info,  Node: Cfservd.conf and cfrun reference,  Next: Cfexecd reference,  Prev: Cfagent reference,  Up: Top
 
-Cfservd and cfrun reference
-***************************
+5 Cfservd and cfrun reference
+*****************************
 
 * Menu:
 
@@ -7680,8 +7654,8 @@ Cfservd and cfrun reference
 * cfrun::
 * Firewalls and NATs::
 
-   The server daemon is controlled by a file called `cfservd.conf'.
-The syntax of this configuration file is deliberately modelled on
+   The server daemon is controlled by a file called `cfservd.conf'.  The
+syntax of this configuration file is deliberately modelled on
 cfengine's own configuration file, but despite the similarities, they
 are separate.
 
@@ -7700,79 +7674,78 @@ follows:
 
 
       control:
-     
+
         CLASSES::
-     
+
             domain = ( DNS-DOMAIN-NAME )
-     
+
             cfrunCommand = ( "SCRIPT/FILENAME" )  # Quoted
-     
+
             MaxConnections = ( MAXIMUM NUMBER OF FORKED DAEMONS )
-     
+
             ChecksumDatabase = ( FILENAME )
-     
+
             IfElapsed = ( TIME-IN-MINUTES )
-     
+
             DenyBadClocks = ( FALSE )
-     
+
             AllowConnectionsFrom = ( IP NUMBERS )
-     
+
             DenyConnectionsFrom = ( IP NUMBERS )
-     
+
             AllMultipleConnectionsFrom = ( IP NUMBERS )
-     
+
             TrustKeysFrom  = ( IP NUMBERS )
-     
+
             AllowUsers = ( mark systemuser )
-     
+
             LogAllConnections = ( FALSE/TRUE )
-     
+
             SkipVerify = ( IP NUMBERS )
-     
+
             DynamicAddresses = ( IP NUMBERS )
-     
+
             BindToInterface = ( IP NUMBER/HOSTNAME )
-     
+
             HostnameKeys = ( TRUE/FALSE )
-     
+
       groups:
-     
+
         GROUP DEFINITIONS
-     
+
       import:
-     
+
         FILES TO IMPORT
-     
+
       admit: | grant:
-     
+
         CLASSES::
-     
+
            /FILE-OR-DIRECTORY
-     
+
              WILDCARDS/HOSTNAMES
-     
+
       deny:
-     
+
         CLASSES::
-     
+
            /FILE-OR-DIRECTORY
-     
+
              WILDCARDS/HOSTNAMES root=HOSTLIST encrypt=TRUE/ON
 
 
    Iteration of variables is allowed, hence:
-
      	control:
      	  Split = ( " " )
      	  hostlist = ( "10.10.10.1 10.10.10.2 10.10.10.3" )
      	  dirs =  ( "bin etc lib" )
      	  base = ( /usr )
-     
+
      	#########################################################
-     
+
      	admit:
      	   $(base)/$(dirs)   $(hostlist)
-results in:
+   results in:
      	Path: /usr/bin (encrypt=0)
      	   Admit: 10.10.10.1 10.10.10.2 10.10.10.3 root=
      	Path: /usr/etc (encrypt=0)
@@ -7785,8 +7758,8 @@ results in:
 
 File: cfengine-Reference.info,  Node: cfservd control,  Next: admit grant and deny,  Prev: Cfservd.conf and cfrun reference,  Up: Cfservd.conf and cfrun reference
 
-control
-=======
+5.1 control
+===========
 
 * Menu:
 
@@ -7811,8 +7784,8 @@ control
 
 File: cfengine-Reference.info,  Node: IP address ranges,  Next: AllowConnectionsFrom,  Prev: cfservd control,  Up: cfservd control
 
-IP address ranges
------------------
+5.1.1 IP address ranges
+-----------------------
 
 In the access control lists below, host ranges can be specified in a
 number of ways i) as substrings, ii) as address ranges denoted by the
@@ -7836,8 +7809,8 @@ equivalent:
 
 File: cfengine-Reference.info,  Node: AllowConnectionsFrom,  Next: AllowMultipleConnectionsFrom,  Prev: IP address ranges,  Up: cfservd control
 
-AllowConnectionsFrom
---------------------
+5.1.2 AllowConnectionsFrom
+--------------------------
 
 This variable allows a list of numerical IP masks to be specified,
 which cfservd will allow connections from.  If the list is not empty
@@ -7846,14 +7819,14 @@ daemon, its connection will be closed immediately.    This can be used
 to prevent hanging connection attacks from malicous hosts and other
 denial of service attacks which would bind thread resources.
           control:
-     
-           AllowConnectionsFrom = ( 128.39.89  192.2.0.10 )
 
+           AllowConnectionsFrom = ( 128.39.89  192.2.0.10 )
+   
 
 File: cfengine-Reference.info,  Node: AllowMultipleConnectionsFrom,  Next: AllowUsers,  Prev: AllowConnectionsFrom,  Up: cfservd control
 
-AllowMultipleConnectionsFrom
-----------------------------
+5.1.3 AllowMultipleConnectionsFrom
+----------------------------------
 
 This variable should contain a list of IP wildcards to hosts which are
 allowed simultaneous sessions on the server. Hosts which are not in this
@@ -7868,15 +7841,15 @@ connections denied/spam shield".
 
 File: cfengine-Reference.info,  Node: AllowUsers,  Next: AutoExecCommand,  Prev: AllowMultipleConnectionsFrom,  Up: cfservd control
 
-AllowUsers
-----------
+5.1.4 AllowUsers
+----------------
 
 This list determines which users are to be allowed to connect to the
 daemon.  Note that there is no way of identifying users except by their
 public keys.  If a malicious asserts their identity, when no public key
 for the named user is known to the server, then they could spoof the
 identity of that user.  All users who should be allowed to connect need
-to be here.  This applies to use of cfrun.
+to be here.  This applies to use of cfrun.  
 
 
      AllowUsers = ( mark root )
@@ -7893,36 +7866,36 @@ public keys are installed in advance, and to switch off trust.
 
 File: cfengine-Reference.info,  Node: AutoExecCommand,  Next: AutoExecInterval,  Prev: AllowUsers,  Up: cfservd control
 
-AutoExecCommand
----------------
+5.1.5 AutoExecCommand
+---------------------
 
 This variable no longer exists in cfengine version 2.
 
 
 File: cfengine-Reference.info,  Node: AutoExecInterval,  Next: BindToInterface,  Prev: AutoExecCommand,  Up: cfservd control
 
-AutoExecInterval
-----------------
+5.1.6 AutoExecInterval
+----------------------
 
-This variable no longer exists in version 2 of cfengine.
+This variable no longer exists in version 2 of cfengine.  
 
 
 File: cfengine-Reference.info,  Node: BindToInterface,  Next: ChecksumDatabase in cfservd,  Prev: AutoExecInterval,  Up: cfservd control
 
-BindToInterface
----------------
+5.1.7 BindToInterface
+---------------------
 
 If this is set to a specific IP address of an IP configured interface,
 cfservd will listen for connections only on that interface. On
 Multi-homed hosts this allows one to restrict the traffic to one
 interface. Note, Unix only allows one or all interfaces to be selected.
-An interface must be configured with an IP address in order to be bound.
+An interface must be configured with an IP address in order to be bound.  
 
 
 File: cfengine-Reference.info,  Node: ChecksumDatabase in cfservd,  Next: cfrunCommand,  Prev: BindToInterface,  Up: cfservd control
 
-ChecksumDatabase
-----------------
+5.1.8 ChecksumDatabase
+----------------------
 
 This is the path and filename to a database which will cache MD5
 checksum values server-side. This optimization is only available if you
@@ -7930,45 +7903,45 @@ have the Berkeley database library `libdb' on your system. If this
 variable is not defined, no database caching will be used and checksum
 values will be computed directly on request. The utility of this
 solution is a trade-off between the time it takes to compute the
-checksum versus the time for a disk-based lookup.
+checksum versus the time for a disk-based lookup.  
 
 
 File: cfengine-Reference.info,  Node: cfrunCommand,  Next: DenyBadClocks,  Prev: ChecksumDatabase in cfservd,  Up: cfservd control
 
-cfrunCommand
-------------
+5.1.9 cfrunCommand
+------------------
 
 This string is the command which you would like to be executed remotely
-by the `cfrun' command.
+by the `cfrun' command.  
 
 
 File: cfengine-Reference.info,  Node: DenyBadClocks,  Next: DenyConnectionsFrom,  Prev: cfrunCommand,  Up: cfservd control
 
-DenyBadClocks
--------------
+5.1.10 DenyBadClocks
+--------------------
 
 If this is set to `off', cfservd will not deny access to clients whose
 clocks are off by more than one hour. The default is to deny access to
 systems whose clocks differ by more than one hour. This can prevent
-messages of the form `Can't stat' file when remote copying.
+messages of the form `Can't stat' file when remote copying.  
 
 
 File: cfengine-Reference.info,  Node: DenyConnectionsFrom,  Next: cfservd HostnameKeys,  Prev: DenyBadClocks,  Up: cfservd control
 
-DenyConnectionsFrom
--------------------
+5.1.11 DenyConnectionsFrom
+--------------------------
 
 Hosts which are included by the allow-list above can be explicitly
 denied access using this list.
           control:
-     
-           DenyConnectionsFrom = ( 128.39.89.76 )  # rogue host
 
+           DenyConnectionsFrom = ( 128.39.89.76 )  # rogue host
+   
 
 File: cfengine-Reference.info,  Node: cfservd HostnameKeys,  Next: cfservd IfElapsed,  Prev: DenyConnectionsFrom,  Up: cfservd control
 
-HostnameKeys
-------------
+5.1.12 HostnameKeys
+-------------------
 
 If this variable is set to true/on, it causes cfservd to lookup and
 store trusted public keys according to their DNS fully qualified host
@@ -7985,8 +7958,8 @@ attacker by potentially allowing DNS spoofing.
 
 File: cfengine-Reference.info,  Node: cfservd IfElapsed,  Next: LogAllConnections,  Prev: cfservd HostnameKeys,  Up: cfservd control
 
-IfElapsed
----------
+5.1.13 IfElapsed
+----------------
 
 The `IfElapsed' anti-spamming filter is also built into `cfservd' so
 that a remote user cannot even get as far as causing cfengine to parse
@@ -7996,8 +7969,8 @@ is in minutes, the default is one hour.
 
 File: cfengine-Reference.info,  Node: LogAllConnections,  Next: MaxConnections,  Prev: cfservd IfElapsed,  Up: cfservd control
 
-LogAllConnections
------------------
+5.1.14 LogAllConnections
+------------------------
 
 If set to true, every successful connection will be logged to syslog.
 This could be useful for identifying abuses of the service, if the
@@ -8007,18 +7980,18 @@ IP address can then be excluded from the allowed connections list.
 
 File: cfengine-Reference.info,  Node: MaxConnections,  Next: TrustKeysFrom,  Prev: LogAllConnections,  Up: cfservd control
 
-MaxConnections
---------------
+5.1.15 MaxConnections
+---------------------
 
 This integer value sets a limit on the maximum number of child daemon
 threads which cfservd will `fork' in order to handle remote requests.
-The default value is ten.
+The default value is ten.  
 
 
 File: cfengine-Reference.info,  Node: TrustKeysFrom,  Next: DynamicAddresses,  Prev: MaxConnections,  Up: cfservd control
 
-TrustKeysFrom
--------------
+5.1.16 TrustKeysFrom
+--------------------
 
 Hosts which are included in this list are automatically trusted, if
 cfservd does not know their public key. This allows public keys to be
@@ -8029,31 +8002,31 @@ address, it will never be updated, unless the existing key is deleted
 by hand.
 
           control:
-     
+
            TrustKeysFrom = ( 128.39.89.76 )     # trusted host
            TrustKeysFrom = ( 128.39.89.76/24 )  # trusted subnet
-
+   
 
 File: cfengine-Reference.info,  Node: DynamicAddresses,  Prev: TrustKeysFrom,  Up: cfservd control
 
-DynamicAddresses
-----------------
+5.1.17 DynamicAddresses
+-----------------------
 
 Hosts which are included in this list are assumed to have IP addresses
 which can change with time, e.g. hosts which are given IP addresses by
 DHCP or a BOOTP like protocol.
 
           control:
-     
-           DynamicAddresses = ( 128.39.74.100-200 )  # DHCP range
 
+           DynamicAddresses = ( 128.39.74.100-200 )  # DHCP range
+   
    If cfservd receives a connection from an IP address that is in this
 list, and trustkey is _true_, the existing key for that IP address can
 be replaced with a new key, and the old key is recorded in a "used keys"
 list, access is granted. If trust is switched off, the server looks in
 the "used key list" to see if the key has been seen before. If not
 access is refused. If it has been seen before - it uses this earlier
-trust to accept the connection and replace the IP-key binding.
+trust to accept the connection and replace the IP-key binding.  
 
    Note that used keys are kept in a database for easy lookup, whereas
 fixed keys are kept in files for easy administration. If host keys
@@ -8063,8 +8036,8 @@ database should probably be deleted to purge keys that become illegal.
 
 File: cfengine-Reference.info,  Node: admit grant and deny,  Next: cfrun,  Prev: cfservd control,  Up: Cfservd.conf and cfrun reference
 
-admit, grant and deny
-=====================
+5.2 admit, grant and deny
+=========================
 
 * Menu:
 
@@ -8075,8 +8048,8 @@ admit, grant and deny
 
 File: cfengine-Reference.info,  Node: root=,  Next: encrypt=,  Prev: admit grant and deny,  Up: admit grant and deny
 
-`root='
--------
+5.2.1 `root='
+-------------
 
 This list specifies the names of hosts which are to have read access to
 files, regardless of the owner of the file. This effectively gives root
@@ -8090,13 +8063,13 @@ poisoning attacks are a possible way of bypassing access controls.
 identified with a functioning public/private key authentication, the IP
 address is added to the SkipVerify list, so that time is not wasted in
 verifying reverse lookups, when the identify can be verified more
-efficiently and securely by a key mechanism.
+efficiently and securely by a key mechanism.  
 
 
 File: cfengine-Reference.info,  Node: encrypt=,  Next: SkipVerify,  Prev: root=,  Up: admit grant and deny
 
-`encrypt=true'
---------------
+5.2.2 `encrypt=true'
+--------------------
 
 If this option is set, cfservd will only serve the named files if the
 copy access type is `secure', i.e. on an encrypted link. This
@@ -8106,8 +8079,8 @@ library.
 
 File: cfengine-Reference.info,  Node: SkipVerify,  Prev: encrypt=,  Up: admit grant and deny
 
-SkipVerify
-----------
+5.2.3 SkipVerify
+----------------
 
 If connecting hosts use a Network Address Translator in order to share
 an IP address, reverse lookup will fail to give a correct verification
@@ -8122,13 +8095,13 @@ identity for specific IP addresses or patterns using this command. E.g.
    NOTE!! This is a security risk because it means that cfservd
 implicitly trusts the connecting hosts! You should be very careful in
 using Network Address Translators in a secure environment. It is not
-recommended for sites which require a high level of security.
+recommended for sites which require a high level of security.  
 
 
 File: cfengine-Reference.info,  Node: cfrun,  Next: Firewalls and NATs,  Prev: admit grant and deny,  Up: Cfservd.conf and cfrun reference
 
-`cfrun'
-=======
+5.3 `cfrun'
+===========
 
 The general syntactic form of the `cfrun' command is
 
@@ -8153,7 +8126,7 @@ the remote command.
    The `-q' and `-I' options are always assumed when executing cfengine
 remotely, so that `SplayTime' is effectively zero when polling hosts
 serially, and the output always shows what is happening on the remote
-hosts.
+hosts.  
 
    Each host evaluates the classes sent by `cfrun' and decides whether
 cfengine should be invoked.  Only hosts which belong to the classes
@@ -8167,7 +8140,7 @@ classes are sent on the command line, then all hosts are run.
 order it should try to connect. Because cfengine always uses a reliable
 TCP protocol for connections, it verifies each connection rather than
 simply broadcasting openly. Using this file you can even simulate
-broadcasting to hosts outside your subnet.
+broadcasting to hosts outside your subnet.  
 
    This file should contain every host name you ever want to configure
 remotely, because you can still select subsets of the file by
@@ -8186,7 +8159,7 @@ the `cfrun' command. The format of the file is as follows
       outputdir=DIRECTORY
       maxchild=NUMBER LIMIT
       hostnamekeys=TRUE/FALSE
-     
+
       HOSTNAME1            OPTIONS
       HOSTNAME2:PORT OPTIONS
       ...
@@ -8227,12 +8200,12 @@ they are already in the list of hosts.
 
      cfrun -v host1 host2
      cfrun -v host1 host2 -- -p
-
+   
 
 File: cfengine-Reference.info,  Node: Firewalls and NATs,  Prev: cfrun,  Up: Cfservd.conf and cfrun reference
 
-Firewalls and NATs
-==================
+5.4 Firewalls and NATs
+======================
 
 Firewalls and Network Address Translators (NAT) can be a problem for
 addressing.  Suppose you have a firewall and with a private IP-range
@@ -8251,11 +8224,58 @@ instead of the default (5308) one.  Here is an example (`cfrun.hosts'):
      domain=example.org
      access=mark,sigmund
      hostnamekeys=true
-     
+
      node1.example.org
      node2.example.org:22000 -DNis
      node2.example.org:22001
-
+   
    This connects to: 1) node1 with standard port, 2) node2 with port
 22000 and extra options -DNis and, 3) node2 with port 22000.
+
+
+File: cfengine-Reference.info,  Node: Cfexecd reference,  Next: Problem solving,  Prev: Cfservd.conf and cfrun reference,  Up: Top
+
+6 Cfexecd reference
+*******************
+
+In wrapper mode (non-forking, non-daemon mode), cfagent is run by
+adding a line to the root crontab file of each system:
+     0,30 * * * * /usr/local/sbin/cfexecd -F
+   This is enough to ensure that cfengine will get run. Any output
+generated by this job, will be stored in `/var/cfengine/outputs'.  In
+addition, if you add the following to the file `cfagent.conf', the
+system administrator will be emailed a summary of any output:
+
+     control:
+
+     smtpserver    = ( mailhub.example.org ) # site MTA which can talk smtp
+     sysadm        = ( mark@example.org )   # mail address of sysadm
+     EmailMaxLines = ( N )             # max lines of output to email
+     OutputPrefix  = ( "!" )                 # Line prefix
+
+Fill in suitable values for these variables. `EmailMaxLines' may be set
+to 0 to disable email output, a postive integer to set a limit, or
+`inf' to email the whole output regardless of its size. If undefined,
+`EmailMaxLines' defaults to 100.
+
+   An alternative, or additional way to run cfengine, is to run the
+`cfexecd' program is daemon mode (without the `-F') option. In this
+mode, the daemon lives in the background and sleeps, activating only in
+accordance with a scheduling policy. The default policy is to run once
+every hour (equivalent to `Min00_05'). Here is how you would modify
+`cfagent.conf' in order to make the daemon execute cfagent every
+half-hour:
+       control:
+
+        # When should cfexecd in daemon mode wake up the agent?
+
+        schedule   = ( Min00_05 Min30_35 )
+   Note that the time specifications are the basic cfengine _time
+classes_.  Although one of these methods should suffice, no harm will
+arise from running both cron and the cfexecd side-by-side.  Cfagents
+locking mechanisms ensure that no contention will occur.  
+
+   Note, that if problems with library path for compiled in libraries
+occur, an explicit library path can be specified with the `-L' option.
+     0,30 * * * * /usr/local/sbin/cfexecd -F -L /local/iu/lib:/local/lib/mysql:/local/lib:/local/gnu/lib
 

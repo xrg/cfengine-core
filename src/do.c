@@ -2383,17 +2383,7 @@ void MakeImages()
   int savesilent;
   char path[CF_EXPANDSIZE],destination[CF_EXPANDSIZE];
   char server[CF_EXPANDSIZE],listserver[CF_EXPANDSIZE];
- 
-if ((serverent = getservbyname(CFENGINE_SERVICE,"tcp")) == NULL)
-   {
-   CfLog(cfverbose,"Remember to register cfengine in /etc/services: cfengine 5308/tcp\n","getservbyname");
-   PORTNUMBER = htons((unsigned short)5308);
-   }
-else
-   {
-   PORTNUMBER = (unsigned short)(serverent->s_port); /* already in network order */
-   }
- 
+  
 for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
    {
    CONN = NewAgentConn();  /* Global input/output channel */

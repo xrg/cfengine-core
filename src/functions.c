@@ -1745,7 +1745,7 @@ for (sp = args; *sp != '\0'; sp++)
  
  for (i = 0; i < number; i++)
     {
-    strncpy(arg[i],UnQuote(argv[i]),100);
+    strncpy(arg[i],UnQuote(argv[i]),CF_MAXVARSIZE-1);
     }
  
 return true;
