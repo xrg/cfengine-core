@@ -375,7 +375,7 @@ void SetDefaultRoute()
   FILE *pp;
 
 Verbose("Looking for a default route...\n");
-  
+
 if (!IsPrivileged())                            
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Only root can set a default route.");
@@ -412,32 +412,38 @@ while (!feof(pp))
          }
       else
          {
-         Verbose("cfengine: default route is already set to %s\n",VDEFAULTROUTE->name);
-         CfLog(cferror,"The default packet-route is incorrectly set\n","");
-         CfLog(cferror,"Please correct this manually using route(1).\n","");
+         Verbose("cfengine: default route is already set, but not to %s.\n",VDEFAULTROUTE->name);
+         defaultokay = 2;
          break;
          }
       }
    else
       {
-      Verbose("No default route is currently set\n");
-      AddMultipleClasses("no_default_route");
+      Debug("No default route is yet registered\n");
       defaultokay = 0;
       }
    }
 
 cfpclose(pp);
 
-if (defaultokay)
+if (defaultokay == 1)
    {
+   Verbose("Default route is set and agrees with conditional policy\n");
    return;
+   }
+
+if (defaultokay == 0)
+   {
+   AddMultipleClasses("no_default_route");
    }
 
 if (IsExcluded(VDEFAULTROUTE->classes))
    {
-   Debug("cfengine: No default route is applicable. Ignoring the routing tables.\n");
+   Verbose("cfengine: No default route is applicable. Ignoring the routing tables.\n");
    return;   
    }
+
+CfLog(cferror,"The default packet-route is incorrectly set, trying to correct\n","");
 
 # if defined HAVE_RTENTRY || defined HAVE_ORTENTRY
  
