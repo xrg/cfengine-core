@@ -1,15 +1,32 @@
+0-  Hr00_Q1::  Q1,Q2,Q3...etc time classes
 
-1. Improve documentation
+1. Out of processes strategy. Get cfexecd to remember processes
+   which might be killed, as well as highest process number
+   Put policy into cfagent.conf and save after each run a list
+   of potential candidates. or processes which should not be harmed. 
 
-2. Rewrite ifconfig stuff
+   If any process has more than XX instances, killl that?
+
+2. Work out a way of increasing frequency of runs to every 15 mins
+
+3. cfenvd remember last state and record persistence time of
+   anomalies
+
+4. cfenvd save netstat record when there is an anomaly?, or save
+   last process table and netstat
+
+5. What about remembering the stable core of processes, regardless
+   of who owns them? i.e. like pH og cfenvd on the ps table?? Then
+   kill the least permanent ones.
+
+6. UDP packets in cfenvd
+
+7. log files in cfenvd
+
+9. Rewrite ifconfig stuff
     - routing sockets
     - find out the configured IP address for DHCP clients
     - what happens on multi-homed hosts
-
-3. ipv6 - in next release
-
---
-splint checking
 
 
 

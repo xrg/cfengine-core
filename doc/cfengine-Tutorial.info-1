@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.0.0 for version 2.0.0
-as last updated 6 March 2002.
+   This manual corresponds to CFENGINE Edition 2.0.1 for version 2.0.1
+as last updated 2 April 2002.
 
 * Menu:
 
@@ -905,7 +905,7 @@ to download it. Here is a simple get-started file which does this:
      
      ########
      #
-     # END cfd.conf
+     # END cfservd.conf
      #
      ########
 

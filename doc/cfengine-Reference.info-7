@@ -956,9 +956,6 @@ cfservd.conf
      #
      # This is a cfservd config file
      #
-     # The access control here follows after any tcpd
-     # control in /etc/hosts.allow and /etc/hosts.deny
-     #
      #########################################################
      
       #
@@ -1006,6 +1003,7 @@ Variable Index
 
 * Menu:
 
+* !:                                     Cfengine classes.
 * $(arch):                               Special variables.
 * $(binserver):                          Special variables.
 * $(class):                              Special variables.
@@ -1028,11 +1026,13 @@ Variable Index
 * $(timezone):                           Special variables.
 * $(year):                               Special variables.
 * +:                                     groups.
-* -D option:                             addclasses.
+* -D option <1>:                         addclasses.
+* -D option:                             Cfengine classes.
 * -l:                                    tidy.
 * -L:                                    Single links.
 * -l:                                    Syntax.
-* -N option:                             addclasses.
+* -N option <1>:                         addclasses.
+* -N option:                             Cfengine classes.
 * -x option:                             cf.preconf bootstrap file.
 * .cfengine.rm:                          tidy.
 * /etc/host.conf:                        cf.preconf bootstrap file.

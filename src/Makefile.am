@@ -124,6 +124,8 @@ cfexecd_SOURCES =							\
 	locks.c								\
 	filenames.c							\
 	granules.c							\
+	eval.c								\
+	item-ext.c							\
 	item.c
 
 cfexecd_LDADD = $(LEXLIB)  @BERKELEY_DB_LIB@ @OPENSSL_LIB_LIB@

@@ -85,7 +85,7 @@ if (! MakeDirectoriesFor(newto,ip->forcedirs))
 if ((dirh = cfopendir(from,ip)) == NULL)
    {
    snprintf(OUTPUT,bufsize*2,"copy can't open directory [%s]\n",from);
-   CfLog(cferror,OUTPUT,"");
+   CfLog(cfinform,OUTPUT,"");
    return;
    }
 
@@ -249,7 +249,7 @@ for (itp = VMOUNTLIST; itp != NULL; itp=itp->next)
    if ((dirh = opendir(itp->name)) == NULL)
       {
       snprintf(OUTPUT,bufsize*2,"Can't open directory %s\n",itp->name);
-      CfLog(cferror,OUTPUT,"opendir");
+      CfLog(cfverbose,OUTPUT,"opendir");
       return;
       }
 
@@ -272,7 +272,7 @@ for (itp = VMOUNTLIST; itp != NULL; itp=itp->next)
       if ((dirh2 = opendir(homedir)) == NULL)
          {
 	 snprintf(OUTPUT,bufsize*2,"Can't open directory %s\n",homedir);
-	 CfLog(cferror,OUTPUT,"opendir");
+	 CfLog(cfinform,OUTPUT,"opendir");
          return;
          }
 
@@ -412,8 +412,8 @@ if (S_ISDIR(sourcestatbuf.st_mode))
 
    if ((dirh = cfopendir(sourcedir,ip)) == NULL)
       {
-      snprintf(OUTPUT,bufsize*2,"%s: Can't open directory %s\n",VPREFIX,sourcedir);
-      CfLog(cferror,OUTPUT,"opendir");
+      snprintf(OUTPUT,bufsize*2,"Can't open directory %s\n",sourcedir);
+      CfLog(cfverbose,OUTPUT,"opendir");
       FlushClientCache(ip);
       (ip->uid)->uid = save_uid;
       (ip->gid)->gid = save_gid;
@@ -508,7 +508,7 @@ Debug("PurgeFiles(%s)\n",directory);
  if ((dirh = opendir(directory)) == NULL)
     {
     snprintf(OUTPUT,bufsize*2,"Can't open directory %s\n",directory);
-    CfLog(cferror,OUTPUT,"cfopendir");
+    CfLog(cfverbose,OUTPUT,"cfopendir");
     return;
     }
 
@@ -551,6 +551,8 @@ Debug("PurgeFiles(%s)\n",directory);
 	     tp.tidylist = &tpat;
 	     tp.next = NULL;
 	     tp.path = filename;
+	     tp.exclusions = NULL;
+             tp.ignores = NULL;
 	     
 	     tpat.recurse = INFINITERECURSE;
 	     tpat.age = 0;

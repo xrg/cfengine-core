@@ -131,16 +131,19 @@ void AddMultipleClasses(classlist)
 
 char *classlist;
 
-{ char *sp, currentitem[maxvarsize];
-
+{ char *sp, currentitem[maxvarsize],local[maxvarsize];
+ 
 if ((classlist == NULL) || strlen(classlist) == 0)
    {
    return;
    }
 
-Debug("AddMultipleClasses(%s)\n",classlist);
- 
-for (sp = classlist; *sp != '\0'; sp++)
+bzero(local,maxvarsize);
+strcpy(local,classlist);
+
+Debug("AddMultipleClasses(%s)\n",local);
+
+for (sp = local; *sp != '\0'; sp++)
    {
    bzero(currentitem,maxvarsize);
 
@@ -150,7 +153,6 @@ for (sp = classlist; *sp != '\0'; sp++)
 
    AddClassToHeap(CanonifyName(currentitem));
    }
- 
 }
 
 /*********************************************************************/
@@ -219,6 +221,28 @@ switch ((i / 5))
             break;
    }
 
+/* Add quarters */ 
+
+switch ((i / 15))
+   {
+   case 0: AddClassToHeap("Q1");
+           sprintf(out,"Hr%s_Q1",VHR);
+	   AddClassToHeap(out);
+           break;
+   case 1: AddClassToHeap("Q2");
+           sprintf(out,"Hr%s_Q2",VHR);
+	   AddClassToHeap(out);
+           break;
+   case 2: AddClassToHeap("Q3");
+           sprintf(out,"Hr%s_Q3",VHR);
+	   AddClassToHeap(out);
+           break;
+   case 3: AddClassToHeap("Q4");
+           sprintf(out,"Hr%s_Q4",VHR);
+	   AddClassToHeap(out);
+           break;
+   }
+ 
 
 /* Day */
 

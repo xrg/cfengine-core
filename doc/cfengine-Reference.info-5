@@ -869,7 +869,7 @@ it in memory. The process table is only re-consulted if
      When restarting processes, cfengine normally uses a shell to
      interpret and execute the restart command. This has inherent
      security problems associated with it. If you set this option to
-     true, cfengine executes restart commands without using a shell.
+     false, cfengine executes restart commands without using a shell.
      This is recommended, but it does mean that you cannot use any
      shell operators or features in the restart command-line.
 

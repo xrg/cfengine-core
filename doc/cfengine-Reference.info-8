@@ -18,6 +18,7 @@ Concept Index
 
 * Menu:
 
+* !:                                     Cfengine classes.
 * --dry-run option:                      shellcommands.
 * -D option:                             addclasses.
 * -l option:                             tidy.
@@ -89,10 +90,14 @@ Concept Index
 * Class dependencies:                    groups.
 * Class information, passing to scripts: shellcommands.
 * classes <1>:                           groups.
-* classes:                               classes.
+* classes <2>:                           classes.
+* classes:                               Cfengine classes.
 * Classes, adding and defining:          addclasses.
+* Classes, compound:                     Cfengine classes.
+* Classes, defining and undefining:      Cfengine classes.
 * Classes, inbuilt functions:            Evaluated classes.
 * Comparing file objects:                Evaluated classes.
+* Compound classes:                      Cfengine classes.
 * Contacting specific hosts with cfrun:  cfrun.
 * control section:                       control.
 * Controlling the size of log files:     disable.
@@ -139,6 +144,7 @@ Concept Index
 * DNS:                                   resolve.
 * domain:                                domain.
 * Domain name:                           netmask.
+* Dots in hostnames:                     Cfengine classes.
 * Double quotes:                         editfiles.
 * DryRun:                                dryrun.
 * Dual homed hosts:                      interfaces.
@@ -168,6 +174,7 @@ Concept Index
 * freespace=:                            disks.
 * Full disk warnings <1>:                required.
 * Full disk warnings:                    disks.
+* Fully qualified names:                 Cfengine classes.
 * Group dependencies:                    groups.
 * Group field, editing:                  editfiles.
 * groups <1>:                            groups.
@@ -182,6 +189,7 @@ Concept Index
 * Home servers, defining:                homeservers.
 * home wildcard:                         Syntax.
 * Homepattern variable.:                 mountables.
+* Host name gets truncated:              Cfengine classes.
 * Hostname collision:                    Special variables.
 * Hung machine:                          cf.preconf bootstrap file.
 * ignore command:                        ignore.
@@ -215,6 +223,7 @@ Concept Index
 * Links, traversing in searches:         Syntax.
 * Local disk space, make use of:         Link Children.
 * Log files, controlling the size of:    disable.
+* Logical NOT:                           Cfengine classes.
 * Mail server, defining:                 mailserver.
 * Mailing output:                        Cfexecd reference.
 * Making directories:                    directories.
@@ -251,8 +260,10 @@ Concept Index
 * NFS mount model and automounter:       editfiles.
 * nfstype:                               nfstype.
 * NIS, netgroup support:                 groups.
+* NOT operator:                          Cfengine classes.
 * NT, ACL:                               NT ACLs.
 * ones:                                  broadcast.
+* Operator ordering:                     Cfengine classes.
 * Output logs:                           Cfexecd reference.
 * Ownership of files:                    Owner and group wildcards.
 * Password file, editing:                editfiles.
@@ -356,6 +367,7 @@ FAQ Index
 
 * Menu:
 
+* Brackets (parentheses) in classes.:    Cfengine classes.
 * Can't stat error when remote copying:  DenyBadClocks.
 * Changing repository name conventions:  repchar.
 * Checksums take too long to compute.:   ChecksumDatabase in cfservd.
@@ -370,6 +382,7 @@ FAQ Index
 * How to create files while editing:     editfiles.
 * Iterating over lists:                  split.
 * MD5 checksums take a long time to compute.: ChecksumDatabase in cfservd.
+* Parentheses in classes.:               Cfengine classes.
 * Remote copy problems, can't stat:      copy.
 * Too many open files error:             Too many open files.
 

@@ -84,6 +84,11 @@ A single class can be one of several things:
    * A five minute interval in the hour (in the form `Min00_05,
      Min05_10 ... Min55_00')
 
+   * A quart hour (in the form `Q1, Q2, Q3, Q4')
+
+   * An abbreviated time with quarter hour specified (in the form
+     `Hr00_Q1, Hr23_Q4' etc.)
+
    * A day of the month (in the form `Day1 ... Day31').
 
    * A month (in the form `January, February, ... December').

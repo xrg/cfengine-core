@@ -628,6 +628,16 @@ while (!done)
       return false;      
       }
 
+   if (strncmp(buf,CFCHANGEDSTR,strlen(CFCHANGEDSTR)) == 0)
+      {
+      snprintf(OUTPUT,bufsize*2,"File %s:%s changed while copying\n",ip->server,source);
+      RecvSocketStream(CONN->sd,buf,buf_size-n_read,0); /* flush rest of transaction */
+      CfLog(cfinform,OUTPUT,"");
+      close(dd);
+      free(buf);
+      return false;      
+      }
+
    if (ip->encrypt == 'y')
       {
       if (!EVP_DecryptUpdate(&ctx,sendbuffer,&plainlen,buf,cipherlen))

@@ -45,7 +45,7 @@
 
 #define CFGRACEPERIOD 4.0   /* training period in units of counters (weeks,iterations)*/
 
-int HISTOGRAM[ATTR*2+4][7][16];
+int HISTOGRAM[ATTR*2+4][7][GRAINS];
 
 int HISTO = false;
 int NUMBER_OF_USERS;
@@ -289,7 +289,7 @@ for (i = 0; i < 7; i++)
    {
    for (j = 0; j < ATTR*2+4; j++)
       {
-      for (k = 0; k < 16; k++)
+      for (k = 0; k < GRAINS; k++)
 	  {
 	  HISTOGRAM[i][j][k] = 0;
 	  }
@@ -395,7 +395,7 @@ if (HISTO)
       return;
       }
 
-   for (position = 0; position < 16; position++)
+   for (position = 0; position < GRAINS; position++)
       {
       fscanf(fp,"%d ",&position);
       
@@ -988,7 +988,7 @@ while (!feof(pp))
       continue;
       }
    
-   for (sp = local+strlen(local); *sp != '.'; sp--)
+   for (sp = local+strlen(local); (*sp != '.') && (sp > local); sp--)
       {
       }
 
@@ -1158,7 +1158,7 @@ void UpdateDistributions(timekey,av)
 char *timekey;
 struct Averages *av;
 
-{ int position,olddist[16],newdist[16]; 
+{ int position,olddist[GRAINS],newdist[GRAINS]; 
   int day,i,time_to_update = true;
  
 /* Now update the histogram in units of half stddev either side of local mean
@@ -1170,40 +1170,40 @@ if (HISTO)
    
    day = Day2Number(timekey);
    
-   position = 8 + (int)(NUMBER_OF_USERS - av->expect_number_of_users)/(2*sqrt((av->var_number_of_users)));
-   if (0 <= position && position < 16)
+   position = GRAINS/2 + (int)(NUMBER_OF_USERS - av->expect_number_of_users)/(GRAINS/4*sqrt((av->var_number_of_users)));
+   if (0 <= position && position < GRAINS)
       {
       HISTOGRAM[0][day][position]++;
       }
    
-   position = 8 + (int)(ROOTPROCS - av->expect_rootprocs)/(2*sqrt((av->var_rootprocs)));
-   if (0 <= position && position < 16)
+   position = GRAINS/2 + (int)(ROOTPROCS - av->expect_rootprocs)/(GRAINS/4*sqrt((av->var_rootprocs)));
+   if (0 <= position && position < GRAINS)
       {
       HISTOGRAM[1][day][position]++;
       }
    
-   position = 8 + (int)(OTHERPROCS - av->expect_otherprocs)/(2*sqrt((av->var_otherprocs)));
-   if (0 <= position && position < 16)
+   position = GRAINS/2 + (int)(OTHERPROCS - av->expect_otherprocs)/(GRAINS/4*sqrt((av->var_otherprocs)));
+   if (0 <= position && position < GRAINS)
       {
       HISTOGRAM[2][day][position]++;
       }
    
-   position = 8 + (int)(DISKFREE - av->expect_diskfree)/(2*sqrt((av->var_diskfree)));
-   if (0 <= position && position < 16)
+   position = GRAINS/2 + (int)(DISKFREE - av->expect_diskfree)/(GRAINS/4*sqrt((av->var_diskfree)));
+   if (0 <= position && position < GRAINS)
       {
       HISTOGRAM[3][day][position]++;
       }
    
    for (i = 0; i < ATTR; i++)
       {
-      position = 8 + (int)(INCOMING[i] - av->expect_incoming[i])/(2*sqrt((av->var_incoming[i])));
-      if (0 <= position && position < 16)
+      position = GRAINS/2 + (int)(INCOMING[i] - av->expect_incoming[i])/(GRAINS/4*sqrt((av->var_incoming[i])));
+      if (0 <= position && position < GRAINS)
 	 {
 	 HISTOGRAM[4+i][day][position]++;
 	 }
       
-      position = 8 + (int)(OUTGOING[i] - av->expect_outgoing[i])/(2*sqrt((av->var_outgoing[i])));
-      if (0 <= position && position < 16)
+      position = GRAINS/2 + (int)(OUTGOING[i] - av->expect_outgoing[i])/(GRAINS/4*sqrt((av->var_outgoing[i])));
+      if (0 <= position && position < GRAINS)
 	 {
 	 HISTOGRAM[4+ATTR+i][day][position]++;
 	 }
@@ -1222,7 +1222,7 @@ if (HISTO)
 	 return;
 	 }
       
-      for (position = 0; position < 16; position++)
+      for (position = 0; position < GRAINS; position++)
 	 {
 	 fprintf(fp,"%d ",position);
 	 

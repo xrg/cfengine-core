@@ -326,6 +326,7 @@ Up:<a rel=up href="#Top">Top</a>
 <ul>
 <li><a href="#Cfagent%20intro">Cfagent intro</a>: 
 <li><a href="#Special%20variables">Special variables</a>: 
+<li><a href="#Cfengine%20classes">Cfengine classes</a>: 
 <li><a href="#acl">acl</a>: 
 <li><a href="#binservers">binservers</a>: 
 <li><a href="#broadcast">broadcast</a>: 
@@ -573,7 +574,7 @@ messages.
 
 <p><hr>
 Node:<a name="Special%20variables">Special variables</a>,
-Next:<a rel=next href="#acl">acl</a>,
+Next:<a rel=next href="#Cfengine%20classes">Cfengine classes</a>,
 Previous:<a rel=previous href="#Cfagent%20intro">Cfagent intro</a>,
 Up:<a rel=up href="#Cfagent%20reference">Cfagent reference</a>
 <br>
@@ -723,9 +724,203 @@ filenames etc.
 </dl>
 
 <p><hr>
+Node:<a name="Cfengine%20classes">Cfengine classes</a>,
+Next:<a rel=next href="#acl">acl</a>,
+Previous:<a rel=previous href="#Special%20variables">Special variables</a>,
+Up:<a rel=up href="#Cfagent%20reference">Cfagent reference</a>
+<br>
+
+<h2>Cfengine classes</h2>
+
+<p>A <em>cfengine action</em> looks like this:
+
+<pre>
+<var>action-type</var>:
+
+   <var>compound-class</var>::
+
+       <var>declaration</var>
+</pre>
+
+<p>A single class can be one of several things:
+
+<ul>
+
+<li>The name of an operating system architecture e.g.  <code>ultrix</code>, <code>sun4</code> etc. 
+This is referred to henceforth as a <em>hard class</em>.
+
+<li>The (unqualified) name of a particular host. If your system returns a fully
+qualified domain name for your host, cfagent truncates it so as to unqualify
+the name.
+
+<li>The name of a user-defined group of hosts.
+
+<li>A day of the week (in the form <code>Monday Tuesday Wednesday..</code>).
+
+<li>An hour of the day (in the form <code>Hr00, Hr01 ... Hr23</code>).
+
+<li>Minutes in the hour (in the form <code>Min00, Min17 ... Min45</code>).
+
+<li>A five minute interval in the hour (in the form <code>Min00_05, Min05_10 ... Min55_00</code>)
+
+<li>A quart hour (in the form <code>Q1, Q2, Q3, Q4</code>)
+
+<li>An abbreviated time with quarter hour specified (in the form <code>Hr00_Q1, Hr23_Q4</code> etc.)
+
+<li>A day of the month (in the form <code>Day1 ... Day31</code>).
+
+<li>A month (in the form <code>January, February, ... December</code>).
+
+<li>A year (in the form <code>Yr1997, Yr2001</code>).
+
+<li>An arbitrary user-defined string.  (see the reference manual).
+
+<li>The ip-address octets of any active interface, in the form (<code>ipv4_192_0_0_1</code>,
+<code>ipv4_192_0_0</code>,<code>ipv4_192_0</code>,<code>ipv4_192</code>).
+
+</ul>
+
+<p>A compound class is a sequence of simple classes connected by dots or
+`pipe' symbols (vertical bars).  For example:
+
+<pre>
+myclass.sun4.Monday::
+
+sun4|ultrix|osf::
+
+</pre>
+
+<p>A compound class evaluates to `true' if all of the individual classes
+are separately true, thus in the above example the actions which follow
+<code>compound_class::</code> are only carried out if the host concerned is in
+<code>myclass</code>, is of type <code>sun4</code> and the day is Monday! 
+In the second example, the host parsing the file must be either of
+type <code>sun4</code> <em>or</em> <code>ultrix</code> <em>or</em> <code>osf</code>. 
+In other words, compound classes support two operators: AND and OR,
+written <code>.</code> and <code>|</code> respectively. Cfengine doesn't
+care how many of these operators you use (since it skips over blank
+class names), so you could write either
+
+<pre>
+solaris|irix::
+
+</pre>
+
+<p>or
+
+<pre>
+solaris||irix::
+
+</pre>
+
+<p>depending on your taste. On the other hand, the order in which cfengine
+evaluates AND and OR operations <em>does</em> matter, and the rule
+is that AND takes priority over OR, so that <code>.</code> binds classes
+together tightly and all AND operations are evaluated before ORing
+the final results together. This is the usual behaviour in programming
+languages. You can use round parentheses in cfengine classes to
+override these preferences.
+
+<p>Cfengine allows you to define switch on and off dummy classes so that
+you can use them to select certain subsets of action.  In particular,
+note that by defining your own classes, using them to make compound
+rules of this type, and then switching them on and off, you can also
+switch on and off the corresponding actions in a controlled way.  The
+command line options <code>-D</code> and <code>-N</code> can be used for this
+purpose.  See also <code>addclasses</code> in the Reference manual.
+
+<p>A logical NOT operator has been added to allow you to exclude
+certain specific hosts in a more flexible way. The logical NOT
+operator is (as in C and C++) <code>!</code>. For instance, the
+following example would allow all hosts except for <code>myhost</code>:
+
+<pre>   <var>action</var>:
+
+    !myhost::
+
+        <var>command</var>
+</pre>
+
+<p>and similarly, so allow all hosts in a user-defined group <code>mygroup</code>,
+<em>except</em> for <code>myhost</code>, you would write
+
+<pre>   <var>action</var>:
+
+    mygroup.!myhost::
+
+        <var>command</var>
+</pre>
+
+<p>which reads `mygroup AND NOT myhost'. The NOT operator can also be
+combined with OR. For instance
+
+<pre>
+   <var>class1</var>|!<var>class2</var>
+</pre>
+
+<p>would select hosts which were either in class 1, or those
+which were not in class 2.
+
+<p>Finally, there is a number of reserved classes.  The following are hard
+classes for various operating system architectures.  They do not need to
+be defined because each host knows what operating system it is running. 
+Thus the appropriate one of these will always be defined on each host. 
+Similarly the day of the week is clearly not open to definition, unless
+you are running cfengine from outer space.  The reserved classes are:
+
+<pre>ultrix, sun4, sun3, hpux, hpux10, aix, solaris, osf, irix4, irix, irix64
+   sco, freebsd, netbsd, openbsd, bsd4_3, newsos, solarisx86, aos,
+          nextstep, bsdos, linux, debian, cray, unix_sv, GnU, NT
+</pre>
+
+<p>If these classes are not sufficient to distinguish the hosts on
+your network, cfengine provides more specific classes which
+contain the name and release of the operating system. To find out
+what these look like for your systems you can run cfengine in
+`parse-only-verbose' mode:
+
+<pre>
+  cfagent -p -v
+
+</pre>
+
+<p>and these will be displayed. For example, solaris 2.4 systems
+generate the additional classes <code>sunos_5_4</code> and <code>sunos_sun4m</code>,
+<code>sunos_sun4m_5_4</code>.
+
+<p>Cfengine uses both the unqualified and fully host names as classes. Some
+sites and operating systems use fully qualified names for their
+hosts. i.e. <code>uname -n</code> returns to full domain qualified
+hostname. This spoils the class matching algorithms for cfengine, so
+cfengine automatically truncates names which contain a dot `.'  at the
+first `.' it encounters. If your hostnames contain dots (which do not
+refer to a domain name, then cfengine will be confused. The moral is:
+don't have dots in your host names! <em>NOTE: in order to ensure that
+the fully qualified name of the host becomes a class you must define the
+domain variable.</em> The dots in this string will be replaced by underscores.
+
+<p>In summary, the operator ordering in cfengine classes is as follows:
+
+<dl>
+
+<br><dt><code>()</code>
+<dd>Parentheses override everything.
+
+<br><dt><code>!</code>
+<dd>The NOT operator binds tightest.
+
+<br><dt><code>.</code>
+<dd>The AND operator binds more tightly than OR.
+
+<br><dt><code>|</code>
+<dd>OR is the weakest operator.
+
+</dl>
+
+<p><hr>
 Node:<a name="acl">acl</a>,
 Next:<a rel=next href="#binservers">binservers</a>,
-Previous:<a rel=previous href="#Special%20variables">Special variables</a>,
+Previous:<a rel=previous href="#Cfengine%20classes">Cfengine classes</a>,
 Up:<a rel=up href="#Cfagent%20reference">Cfagent reference</a>
 <br>
 
@@ -1658,9 +1853,6 @@ Up:<a rel=up href="#control">control</a>
 
 <h3>ChecksumDatabase</h3>
 
-<p>If this parameter is set to true, cfengine will delete files
-which do not have a name belonging to a known user id.
-
 <pre>ChecksumDatabase = ( /var/cfengine/cfdb )
 
 </pre>
@@ -1677,9 +1869,6 @@ Up:<a rel=up href="#control">control</a>
 <br>
 
 <h3>ChecksumUpdates</h3>
-
-<p>If this parameter is set to true, cfengine will delete files
-which do not have a name belonging to a known user id.
 
 <pre>ChecksumUpdates = ( on )
 
@@ -2489,7 +2678,7 @@ Up:<a rel=up href="#control">control</a>
 
 <h3>Schedule</h3>
 
-<pre>   schedule  = (  Min00_05 Min30_35  )
+<pre>   schedule  = (  Min00_05 Min30_35 <var>time class</var> )
 </pre>
 
 <p>When <code>cfexecd</code> is used in daemon mode, it defaults to running
@@ -2505,6 +2694,10 @@ precision timing is not required and the start time of cfengine, when
 scheduled in daemon mode, is not better than a few minutes.  The daemon
 does not require precision, but offers many other strategic
 features for load balancing and security.
+
+<p>Other time classes can be used in the schedule list, but note
+that cfexecd will not run the agent more than once every five minutes. 
+This is treated as a fundamental granularity.
 
 <p><hr>
 Node:<a name="secureinput">secureinput</a>,
@@ -5931,7 +6124,7 @@ in principle.
 <dd>When restarting processes, cfengine normally uses a shell to
 interpret and execute the restart command. This has inherent
 security problems associated with it. If you set this option to
-true, cfengine executes restart commands without using a shell. 
+false, cfengine executes restart commands without using a shell. 
 This is recommended, but it does mean that you cannot use any
 shell operators or features in the restart command-line.
 
@@ -8670,9 +8863,6 @@ Up:<a rel=up href="#Example%20configuration%20file">Example configuration file</
 #
 # This is a cfservd config file
 #
-# The access control here follows after any tcpd
-# control in /etc/hosts.allow and /etc/hosts.deny
-#
 #########################################################
 
  #
@@ -8725,6 +8915,7 @@ Up:<a rel=up href="#Top">Top</a>
 <h1>Variable Index</h1>
 
 <ul compact>
+<li><code>!</code>: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li><code>$(arch)</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>$(binserver)</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>$(class)</code>: <a href="#Special%20variables">Special variables</a>
@@ -8747,11 +8938,11 @@ Up:<a rel=up href="#Top">Top</a>
 <li><code>$(timezone)</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>$(year)</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>+</code>: <a href="#groups">groups</a>
-<li><code>-D option</code>: <a href="#addclasses">addclasses</a>
+<li><code>-D option</code>: <a href="#addclasses">addclasses</a>, <a href="#Cfengine%20classes">Cfengine classes</a>
 <li><code>-l</code>: <a href="#tidy">tidy</a>
 <li><code>-L</code>: <a href="#Single%20links">Single links</a>
 <li><code>-l</code>: <a href="#Syntax">Syntax</a>
-<li><code>-N option</code>: <a href="#addclasses">addclasses</a>
+<li><code>-N option</code>: <a href="#addclasses">addclasses</a>, <a href="#Cfengine%20classes">Cfengine classes</a>
 <li><code>-x option</code>: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>.cfengine.rm</code>: <a href="#tidy">tidy</a>
 <li><code>/etc/host.conf</code>: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
@@ -8883,6 +9074,7 @@ Up:<a rel=up href="#Top">Top</a>
 <h1>Concept Index</h1>
 
 <ul compact>
+<li>!: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li><code>--dry-run</code> option: <a href="#shellcommands">shellcommands</a>
 <li>-D option: <a href="#addclasses">addclasses</a>
 <li>-l option: <a href="#tidy">tidy</a>
@@ -8950,9 +9142,13 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Class dependencies: <a href="#groups">groups</a>
 <li>Class information, passing to scripts: <a href="#shellcommands">shellcommands</a>
 <li><code>classes</code>: <a href="#groups">groups</a>, <a href="#classes">classes</a>
+<li>classes: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Classes, adding and defining: <a href="#addclasses">addclasses</a>
+<li>Classes, compound: <a href="#Cfengine%20classes">Cfengine classes</a>
+<li>Classes, defining and undefining: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Classes, inbuilt functions: <a href="#Evaluated%20classes">Evaluated classes</a>
 <li>Comparing file objects: <a href="#Evaluated%20classes">Evaluated classes</a>
+<li>Compound classes: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Contacting specific hosts with cfrun: <a href="#cfrun">cfrun</a>
 <li>control section: <a href="#control">control</a>
 <li>Controlling the size of log files: <a href="#disable">disable</a>
@@ -8997,6 +9193,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>DNS: <a href="#resolve">resolve</a>
 <li>domain: <a href="#domain">domain</a>
 <li>Domain name: <a href="#netmask">netmask</a>
+<li>Dots in hostnames: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Double quotes: <a href="#editfiles">editfiles</a>
 <li>DryRun: <a href="#dryrun">dryrun</a>
 <li>Dual homed hosts: <a href="#interfaces">interfaces</a>
@@ -9024,6 +9221,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Force copying: <a href="#copy">copy</a>
 <li>freespace=: <a href="#required">required</a>, <a href="#disks">disks</a>
 <li>Full disk warnings: <a href="#required">required</a>, <a href="#disks">disks</a>
+<li>Fully qualified names: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Group dependencies: <a href="#groups">groups</a>
 <li>Group field, editing: <a href="#editfiles">editfiles</a>
 <li><code>groups</code>: <a href="#groups">groups</a>
@@ -9037,6 +9235,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Home servers, defining: <a href="#homeservers">homeservers</a>
 <li>home wildcard: <a href="#Syntax">Syntax</a>
 <li>Homepattern variable.: <a href="#mountables">mountables</a>
+<li>Host name gets truncated: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Hostname collision: <a href="#Special%20variables">Special variables</a>
 <li>Hung machine: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li>ignore command: <a href="#ignore">ignore</a>
@@ -9066,6 +9265,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Links, traversing in searches: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li>Local disk space, make use of: <a href="#Link%20Children">Link Children</a>
 <li>Log files, controlling the size of: <a href="#disable">disable</a>
+<li>Logical NOT: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Mail server, defining: <a href="#mailserver">mailserver</a>
 <li>Mailing output: <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li>Making directories: <a href="#directories">directories</a>
@@ -9100,8 +9300,10 @@ Up:<a rel=up href="#Top">Top</a>
 <li>NFS mount model and automounter: <a href="#editfiles">editfiles</a>
 <li>nfstype: <a href="#nfstype">nfstype</a>
 <li>NIS, netgroup support: <a href="#groups">groups</a>
+<li>NOT operator: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>NT, ACL: <a href="#NT%20ACLs">NT ACLs</a>
 <li>ones: <a href="#broadcast">broadcast</a>
+<li>Operator ordering: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Output logs: <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li>Ownership of files: <a href="#Owner%20and%20group%20wildcards">Owner and group wildcards</a>
 <li>Password file, editing: <a href="#editfiles">editfiles</a>
@@ -9202,6 +9404,7 @@ Up:<a rel=up href="#Top">Top</a>
 <h1>FAQ Index</h1>
 
 <ul compact>
+<li>Brackets (parentheses) in classes.: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Can't stat error when remote copying: <a href="#DenyBadClocks">DenyBadClocks</a>
 <li>Changing repository name conventions: <a href="#repchar">repchar</a>
 <li>Checksums take too long to compute.: <a href="#ChecksumDatabase%20in%20cfservd">ChecksumDatabase in cfservd</a>
@@ -9216,6 +9419,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>How to create files while editing: <a href="#editfiles">editfiles</a>
 <li>Iterating over lists: <a href="#split">split</a>
 <li>MD5 checksums take a long time to compute.: <a href="#ChecksumDatabase%20in%20cfservd">ChecksumDatabase in cfservd</a>
+<li>Parentheses in classes.: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Remote copy problems, can't stat: <a href="#copy">copy</a>
 <li>Too many open files error: <a href="#Too%20many%20open%20files">Too many open files</a>
 </ul>
@@ -9240,6 +9444,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li><a href="#Cfagent%20Runtime%20Options">Cfagent runtime options</a>
 </ul>
 <li><a href="#Special%20variables">Special variables</a>
+<li><a href="#Cfengine%20classes">Cfengine classes</a>
 <li><a href="#acl">acl</a>
 <ul>
 <li><a href="#ACEs">Access control entries</a>

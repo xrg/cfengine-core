@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.0.0 for version 2.0.0
-as last updated 8 March 2002.
+   This manual corresponds to CFENGINE Edition 2.0.1 for version 2.0.1
+as last updated 2 April 2002.
 
 * Menu:
 
@@ -318,6 +318,7 @@ Cfagent reference
 
 * Cfagent intro::
 * Special variables::
+* Cfengine classes::
 * acl::
 * binservers::
 * broadcast::
@@ -552,7 +553,7 @@ Note that GNU long options are available with the syntax
      (`--smtp') Print the SMTP server for the LAN (used by cfexecd).
 
 
-File: cfengine-Reference.info,  Node: Special variables,  Next: acl,  Prev: Cfagent intro,  Up: Cfagent reference
+File: cfengine-Reference.info,  Node: Special variables,  Next: Cfengine classes,  Prev: Cfagent intro,  Up: Cfagent reference
 
 Special variables
 =================
@@ -695,7 +696,177 @@ troublesome special characters in strings.
      Expands to a single tab character.
 
 
-File: cfengine-Reference.info,  Node: acl,  Next: binservers,  Prev: Special variables,  Up: Cfagent reference
+File: cfengine-Reference.info,  Node: Cfengine classes,  Next: acl,  Prev: Special variables,  Up: Cfagent reference
+
+Cfengine classes
+================
+
+   A _cfengine action_ looks like this:
+
+
+     ACTION-TYPE:
+     
+        COMPOUND-CLASS::
+     
+            DECLARATION
+
+A single class can be one of several things:
+
+   * The name of an operating system architecture e.g.  `ultrix',
+     `sun4' etc.  This is referred to henceforth as a _hard class_.
+
+   * The (unqualified) name of a particular host. If your system
+     returns a fully qualified domain name for your host, cfagent
+     truncates it so as to unqualify the name.
+
+   * The name of a user-defined group of hosts.
+
+   * A day of the week (in the form `Monday Tuesday Wednesday..').
+
+   * An hour of the day (in the form `Hr00, Hr01 ... Hr23').
+
+   * Minutes in the hour (in the form `Min00, Min17 ... Min45').
+
+   * A five minute interval in the hour (in the form `Min00_05,
+     Min05_10 ... Min55_00')
+
+   * A quart hour (in the form `Q1, Q2, Q3, Q4')
+
+   * An abbreviated time with quarter hour specified (in the form
+     `Hr00_Q1, Hr23_Q4' etc.)
+
+   * A day of the month (in the form `Day1 ... Day31').
+
+   * A month (in the form `January, February, ... December').
+
+   * A year (in the form `Yr1997, Yr2001').
+
+   * An arbitrary user-defined string.  (see the reference manual).
+
+   * The ip-address octets of any active interface, in the form
+     (`ipv4_192_0_0_1', `ipv4_192_0_0',`ipv4_192_0',`ipv4_192').
+
+
+   A compound class is a sequence of simple classes connected by dots or
+`pipe' symbols (vertical bars).  For example:
+
+
+     myclass.sun4.Monday::
+     
+     sun4|ultrix|osf::
+
+A compound class evaluates to `true' if all of the individual classes
+are separately true, thus in the above example the actions which follow
+`compound_class::' are only carried out if the host concerned is in
+`myclass', is of type `sun4' and the day is Monday!  In the second
+example, the host parsing the file must be either of type `sun4' _or_
+`ultrix' _or_ `osf'.  In other words, compound classes support two
+operators: AND and OR, written `.' and `|' respectively. Cfengine
+doesn't care how many of these operators you use (since it skips over
+blank class names), so you could write either
+
+
+     solaris|irix::
+
+or
+
+
+     solaris||irix::
+
+depending on your taste. On the other hand, the order in which cfengine
+evaluates AND and OR operations _does_ matter, and the rule is that AND
+takes priority over OR, so that `.' binds classes together tightly and
+all AND operations are evaluated before ORing the final results
+together. This is the usual behaviour in programming languages. You can
+use round parentheses in cfengine classes to override these preferences.
+
+   Cfengine allows you to define switch on and off dummy classes so that
+you can use them to select certain subsets of action.  In particular,
+note that by defining your own classes, using them to make compound
+rules of this type, and then switching them on and off, you can also
+switch on and off the corresponding actions in a controlled way.  The
+command line options `-D' and `-N' can be used for this purpose.  See
+also `addclasses' in the Reference manual.
+
+   A logical NOT operator has been added to allow you to exclude
+certain specific hosts in a more flexible way. The logical NOT operator
+is (as in C and C++) `!'. For instance, the following example would
+allow all hosts except for `myhost':
+
+        ACTION:
+     
+         !myhost::
+     
+             COMMAND
+
+and similarly, so allow all hosts in a user-defined group `mygroup',
+_except_ for `myhost', you would write
+
+        ACTION:
+     
+         mygroup.!myhost::
+     
+             COMMAND
+
+which reads `mygroup AND NOT myhost'. The NOT operator can also be
+combined with OR. For instance
+
+
+        CLASS1|!CLASS2
+
+would select hosts which were either in class 1, or those which were
+not in class 2.
+
+   Finally, there is a number of reserved classes.  The following are
+hard classes for various operating system architectures.  They do not
+need to be defined because each host knows what operating system it is
+running.  Thus the appropriate one of these will always be defined on
+each host.  Similarly the day of the week is clearly not open to
+definition, unless you are running cfengine from outer space.  The
+reserved classes are:
+
+     ultrix, sun4, sun3, hpux, hpux10, aix, solaris, osf, irix4, irix, irix64
+        sco, freebsd, netbsd, openbsd, bsd4_3, newsos, solarisx86, aos,
+               nextstep, bsdos, linux, debian, cray, unix_sv, GnU, NT
+
+If these classes are not sufficient to distinguish the hosts on your
+network, cfengine provides more specific classes which contain the name
+and release of the operating system. To find out what these look like
+for your systems you can run cfengine in `parse-only-verbose' mode:
+
+
+       cfagent -p -v
+
+and these will be displayed. For example, solaris 2.4 systems generate
+the additional classes `sunos_5_4' and `sunos_sun4m', `sunos_sun4m_5_4'.
+
+   Cfengine uses both the unqualified and fully host names as classes.
+Some sites and operating systems use fully qualified names for their
+hosts. i.e. `uname -n' returns to full domain qualified hostname. This
+spoils the class matching algorithms for cfengine, so cfengine
+automatically truncates names which contain a dot `.'  at the first `.'
+it encounters. If your hostnames contain dots (which do not refer to a
+domain name, then cfengine will be confused. The moral is: don't have
+dots in your host names! _NOTE: in order to ensure that the fully
+qualified name of the host becomes a class you must define the domain
+variable._ The dots in this string will be replaced by underscores.
+
+   In summary, the operator ordering in cfengine classes is as follows:
+
+`()'
+     Parentheses override everything.
+
+`!'
+     The NOT operator binds tightest.
+
+`.'
+     The AND operator binds more tightly than OR.
+
+`|'
+     OR is the weakest operator.
+
+
+File: cfengine-Reference.info,  Node: acl,  Next: binservers,  Prev: Cfengine classes,  Up: Cfagent reference
 
 acl
 ===
@@ -1244,233 +1415,4 @@ usernames from the password database.  For example:
         access = ( mark aurora 22 456 )
 
 would restrict a script to users mark, aurora and user id 22 and 456.
-
-
-File: cfengine-Reference.info,  Node: actionsequence,  Next: addclasses,  Prev: access,  Up: control
-
-actionsequence
---------------
-
-   The action sequence determines the order in which collective actions
-are carried out.  Here is an example containing the full list of
-possibilities:
-
-        actionsequence =
-           (
-           mountall               # mount filesystems in fstab
-           mountinfo              # scan mounted filesystems
-           checktimezone          # check timezone
-           netconfig              # check net interface config
-           resolve                # check resolver setup
-           unmount                # unmount any filesystems
-           shellcommands          # execute shell commands
-           editfiles              # edit files
-           addmounts              # add new filesystems to system
-           directories            # make any directories
-           links                  # check and maintain links (single and child)
-           mailcheck              # check mailserver
-           mountall               # (again)
-           required               # check required filesystems
-           tidy                   # tidy files
-           disable                # disable files
-           files                  # check file permissions
-           copy                   # make a copy/image of a master file
-           processes              # signal / check processes
-           module:name            # execute a user-defined module
-           )
-
-Here is a more complete description of the meaning of these keywords.
-
-`addmounts'
-     causes cfengine to compute which NFS filesystems are missing from
-     the current host and add them. This includes editing the
-     filesystem table, creating the mount-directory, if required.  This
-     command relies on information provided by `mountinfo', so it
-     should normally only be called after `mountinfo'. If the
-     filesystem already appears to be in the filesystem table, a
-     warning is issued.
-
-`checktimezone'
-     runs a check on the timezone defined for the shell running
-     cfengine.
-
-`directories'
-     executes all the commands defined under the `directories' section
-     of the program. It builds new directories.
-
-`disable'
-     executes all the commands defined under the `disable' section of
-     the program.
-
-`editfiles'
-     executes all the commands defined under the `editfiles' section of
-     the program.
-
-`files'
-     executes all the commands defined under the `files' section of the
-     program.
-
-`links'
-     executes all the commands defined under the `links' section of the
-     program.
-
-`mailcheck'
-     tests for the presence of the NFS-mounted mail spooling directory
-     on the current host. The name of the mail spool directory is
-     defined in the `mailserver' section of the cfengine program. If
-     the current host is the same as the mailserver (the host which has
-     the physical spool directory disk) nothing is done. Otherwise the
-     filesystem table is edited so as to include the mail directory.
-
-`module'
-     Normally cfengine's ability to detect the systems condition is
-     limited to what it is able to determine while excuting predefined
-     actions. Classes may be switched on as a result of actions cfengine
-     takes to correct a problem. To increase the flexibility of
-     cfengine, a mechanism has been introduced in version 1.5 which
-     allows you to include a module of your own making in order to
-     define or undefine a number of classes.  The syntax
-            module:mytests.CLASS1.CLASS2.CLASS3
-          
-            "module:mytests.CLASS1.CLASS2.CLASS3 arg1 arg2 .."
-     declares a user defined module which can potentially set the
-     classes CLASS1 etc. Classes returned by the module must be
-     declared so that cfengine knows to pay attention to rules which
-     use these classes when parsing. Note might actually be preferable
-     to define classes returned by modules under `AddInstallables'
-     which is equivalent. If arguments are passed to the module, the
-     whole string must be quoted like a shellcommand.  *Note Writing
-     plugin modules: (cfengine-Tutorial)Writing plugin modules.
-     Whether or not these classes become set or not depends on the
-     behaviour of your module. The classes continue to apply for all
-     actions which occur after the module's execution. The module must
-     be owned by the user executing cfengine or root (for security
-     reasons), it must be named `module:MODULE-NAME' and must lie in a
-     special directory, *Note moduledirectory::.
-
-`mountall'
-     mounts all filesystems defined in the hosts filesystem table.  This
-     causes new NFS filesystems added by `addmounts' and `mailcheck' to
-     be actually mounted. This should probably be called both before
-     `mountinfo' and after `addmounts' etc.  A short timeout is placed
-     on this operation to avoid hanging RPC connections when parsing
-     NFS mounted file systems.
-
-`mountinfo'
-     builds internal information about which filesystems are presently
-     mounted on the current host.  Cfengine assumes that
-     required-filesystems which are not found need to be mounted. A
-     short timeout is placed on this operation to avoid hanging RPC
-     connections when parsing NFS mounted file systems. If this times
-     out, no further mount operations are considered reliable and are
-     summarily cancelled.
-
-`netconfig'
-     checks the netmask, hostname, IP address and broadcast address for
-     the current host. The correct values for the netmask and broadcast
-     address are set if there is an error. The defaultroute is matched
-     against the static routing table and added if no default route
-     exists. This does not apply to DHCP clients, which set a default
-     route automatically.
-
-`required'
-     executes all the commands defined under the `required' section of
-     the program. It checks for the absence of important NFS resources.
-
-`resolve'
-     checks and corrects the DNS domain name and the order of
-     nameservers in the file `/etc/resolv.conf'.
-
-`shellcommands'
-     executes all the commands defined under the `shellcommands'
-     section of the program.
-
-`tidy'
-     executes all the commands defined under the `tidy' section of the
-     program.
-
-`unmount'
-     executes all the commands defined under the `unmount' section of
-     the program. The filesystem table is edited so as to remove the
-     unwanted filesystems and the unmount operation is executed.
-
-`processes'
-     executes commands defined under the `processes' section of the
-     program.
-
-   Under normal circumstances this coarse ordering is enough to suit
-most purposes.  In some cases you might want to, say, only perform half
-the link operations before mounting filesystems and then, say, perform
-the remainder.  You can do this (and similar things) by using the idea
-of defining and undefining classes. *Note Defining classes:
-(cfengine-Tutorial)Defining classes.
-
-   The syntax
-
-
-     actionsequence =
-        (
-        links.firstpass.include
-        ...
-        links.secondpass
-        )
-
-means that cfengine first executes `links' with the classes `firstpass'
-and `include' _defined_.  Later it executes `links' with `secondpass'
-defined.  You can use this method of adding classes to distinguish more
-finely the flow of control in programs.
-
-   A note about style: if you define and undefine lots of classes to do
-what you want to do, you might stop and ask yourself if your `groups'
-are defined as well as they should be.  *Note groups::.  Programming in
-cfengine is about doing a lot for only a little writing.  If you find
-yourself writing a lot, you are probably not going about things in the
-right way.
-
-
-File: cfengine-Reference.info,  Node: addclasses,  Next: addinstallable,  Prev: actionsequence,  Up: control
-
-AddClasses
-----------
-
-        AddClasses  = ( LIST OF IDENTIFIERS )
-
-   The `AddClasses' directive is used to define a list of class
-attributes for the current host.  Normally only the hard classes defined
-by the system are `true' for a given host.  It is convenient though to
-be able to define classes of your own to label certain actions, mainly
-so that they can later be excluded so as to cut short or filter out
-certain actions.  This can be done in two ways.  *Note actionsequence::.
-
-   To define a list of classes for the current session, you write:
-
-     AddClasses = ( exclude shortversion )
-
-This is equivalent to (though more permanent than) defining classes on
-the command line with the `-D' option.  You can now use these to
-qualify actions.  For example
-
-
-       any.exclude::
-           ...
-
-   Under normal circumstances `exclude' is always true -- because you
-have defined it to be so, but you can _undefine_ it in two ways so as
-to prevent the action from being carried out.  One way is to undefine a
-class on the command line when you invoke cfengine:
-
-     host#  cfengine -N exclude
-
-or
-
-     host#  cfengine -N exclude.shortversion
-     
-     host#  cfengine -N a.b.c.d
-
-These commands run cfengine with the named classes _undefined_.  That
-means that actions labelled with these classes are excluded during that
-run.
-
-   Another way to restrict classes is to add a list of classes to be
-undefined in the actionsequence.  See next section.
 

@@ -137,9 +137,8 @@ int argc;
 char **argv;
 
 {
-GetNameInfo();
 CheckOptsAndInit(argc,argv);
-GetInterfaceInfo(); 
+GetInterfaceInfo();
 ParseInputFiles();
 CheckVariables();
 SummarizeParsing();
@@ -172,7 +171,6 @@ char **argv;
 openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_DAEMON);
 strcpy(VINPUTFILE,CFD_INPUT);
 OUTPUT[0] = '\0';
-VFQNAME[0] = '\0';
 
 ISCFENGINE = false;   /* Switch for the parser */
 PARSEONLY  = false;
@@ -240,6 +238,7 @@ LOGGING = true;                    /* Do output to syslog */
  
 
 
+GetNameInfo();
 
 snprintf(VBUFF,bufsize,"%s/test",WORKDIR);
 
@@ -275,8 +274,8 @@ void CheckVariables()
  CfLog(cfinform,"cfservd Single threaded version","");
 #endif
 
-strncpy(VFQNAME,VSYSNAME.nodename,bufsize-1);
- 
+strncpy(VFQNAME,VSYSNAME.nodename,maxvarsize-1);
+
 if ((CFDSTARTTIME = time((time_t *)NULL)) == -1)
    {
    printf("Couldn't read system clock\n");
@@ -379,6 +378,7 @@ else
    snprintf(VFQNAME,bufsize,"%s.%s",VSYSNAME.nodename,ToLowerStr(VDOMAIN));
    strncpy(VUQNAME,VSYSNAME.nodename,maxvarsize-1);
    }
+
 }
 
 /*******************************************************************/
@@ -650,8 +650,16 @@ for (ap = response ; ap != NULL; ap=ap->ai_next)
    
    if (bind(sd,ap->ai_addr,ap->ai_addrlen) == 0)
       {
-      Debug("Bound to address %s\n",sockaddr_ntop(ap->ai_addr));
-      break; 
+      Debug("Bound to address %s on %s=%d\n",sockaddr_ntop(ap->ai_addr),CLASSTEXT[VSYSTEMHARDCLASS],VSYSTEMHARDCLASS);
+
+      if (VSYSTEMHARDCLASS == openbsd)
+	 {
+	 continue;  /* openbsd doesn't map ipv6 addresses */
+	 }
+      else
+	 {
+	 break;
+	 }
       }
    
    CfLog(cferror,"Could not bind server address","bind");
@@ -1776,7 +1784,7 @@ bzero(realname,bufsize);
 if (lstat(filename,&statbuf) == -1)
    {
    snprintf(conn->output,bufsize*2,"Couldn't stat filename %s from host %s\n",filename,conn->hostname);
-   CfLog(cfverbose,conn->output,"lstat");   
+   CfLog(cflogonly,conn->output,"lstat");   
    return false;
    }
 
@@ -1790,7 +1798,7 @@ if (S_ISLNK(statbuf.st_mode))
     if (realpath(filename,realname) == NULL)
        {
        snprintf(conn->output,bufsize*2,"Couldn't resolve filename %s from host %s\n",filename,conn->hostname);
-       CfLog(cferror,conn->output,"lstat");   
+       CfLog(cflogonly,conn->output,"lstat");   
        return false;
        }
 #else
@@ -2374,7 +2382,7 @@ else
 	 
 	 if (statbuf.st_size != savedlen)
 	    {
-	    snprintf(sendbuffer,bufsize,"BAD:File %s changed while copying",filename);
+	    snprintf(sendbuffer,bufsize,"%s: %s",CFCHANGEDSTR,filename);
 	    if (SendSocketStream(sd,sendbuffer,args->buf_size,0) == -1)
 	       {
 	       CfLog(cfverbose,"Send failed in GetFile","send");
@@ -2736,7 +2744,7 @@ struct cfd_connection *conn;
 {
 Debug("***Closing socket %d from %s\n",conn->sd_reply,conn->ipaddr);
  
-DeleteItemStarting(&CONNECTIONLIST,MapAddress(conn->ipaddr)); 
+DeleteItemMatching(&CONNECTIONLIST,MapAddress(conn->ipaddr)); 
 
 close(conn->sd_reply);
 free ((char *)conn);

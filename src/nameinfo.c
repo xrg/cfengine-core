@@ -58,6 +58,8 @@ void GetNameInfo()
   long sz;
 #endif
 #endif
+
+Debug("GetNameInfo()\n");
   
 VFQNAME[0] = VUQNAME[0] = '\0';
   
@@ -82,10 +84,9 @@ for (sp = VSYSNAME.machine; *sp != '\0'; sp++)
    *sp = ToLower(*sp);
    }
 
-
 for (i = 0; CLASSATTRIBUTES[i][0] != '\0'; i++)
    {
-   if (WildMatch(CLASSATTRIBUTES[i][0],VSYSNAME.sysname))
+   if (WildMatch(CLASSATTRIBUTES[i][0],ToLowerStr(VSYSNAME.sysname)))
       {
       if (WildMatch(CLASSATTRIBUTES[i][1],VSYSNAME.machine))
          {
@@ -101,6 +102,7 @@ for (i = 0; CLASSATTRIBUTES[i][0] != '\0'; i++)
                AddClassToHeap(CLASSTEXT[i]);
 	       }
             found = true;
+	    VSYSTEMHARDCLASS = (enum classes) i;
             break;
             }
          }
@@ -137,14 +139,12 @@ VDEFAULTBINSERVER.name = sp;
 
 AddClassToHeap(CanonifyName(sp));
 
-VSYSTEMHARDCLASS = (enum classes) i;
- 
 if ((tloc = time((time_t *)NULL)) == -1)
    {
    printf("Couldn't read system clock\n");
    }
 
-if (VERBOSE)
+if (VERBOSE || DEBUG || D2 || D3)
    {
    if (UNDERSCORE_CLASSES)
       {
@@ -169,11 +169,12 @@ if (VERBOSE)
    printf ("Operating System Type is %s\n",VSYSNAME.sysname);
    printf ("Operating System Release is %s\n",VSYSNAME.release);
    printf ("Architecture = %s\n\n\n",VSYSNAME.machine);
-   printf ("Using internal soft-class %s for host %s\n\n",VBUFF,VSYSNAME.nodename);
+   printf ("Using internal soft-class %s for host %s\n\n",VBUFF,CLASSTEXT[VSYSTEMHARDCLASS]);
    printf ("The time is now %s\n\n",ctime(&tloc));
    printf ("------------------------------------------------------------------------\n\n");
 
    }
+
 
 sprintf(VBUFF,"%d_bit",sizeof(long)*8);
 AddClassToHeap(VBUFF);

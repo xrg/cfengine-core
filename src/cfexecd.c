@@ -118,7 +118,7 @@ if (!ONCE)
    if (!GetLock("cfexecd","execd",0,0,VUQNAME,starttime))
       {
       snprintf(OUTPUT,bufsize*2,"cfexecd: Couldn't get a lock -- exists or too soon: IfElapsed %d, ExpireAfter %d\n",0,0);
-      CfLog(cferror,OUTPUT,"");
+      CfLog(cfverbose,OUTPUT,"");
       return 1;
       }
    }
@@ -286,7 +286,7 @@ else
       nargv[i] = argv[i];
       }
    
-   nargv[i++] = "--once";
+   nargv[i++] = strdup("--once");
    nargv[i++] = NULL;
    
    GetCfStuff();
@@ -325,15 +325,15 @@ else
 	 pthread_attr_setdetachstate(&PTHREADDEFAULTS,PTHREAD_CREATE_DETACHED);
 
 #ifdef HAVE_PTHREAD_ATTR_SETSTACKSIZE
-	 pthread_attr_setstacksize(&PTHREADDEFAULTS,(size_t)(PTHREAD_STACK_MIN+100*1024));
+	 pthread_attr_setstacksize(&PTHREADDEFAULTS,(size_t)1024*1024);
 #endif
-	 
+
 	 if (pthread_create(&tid,&PTHREADDEFAULTS,LocalExec,NULL) != 0)
 	    {
 	    CfLog(cferror,"Can't create thread!","pthread_create");
 	    LocalExec(NULL);
 	    }
-	 
+
 	 pthread_attr_destroy(&PTHREADDEFAULTS);
 #else
          LocalExec(NULL);	 
@@ -467,27 +467,33 @@ if (SCHEDULE == NULL)
 int ScheduleRun()
 
 { time_t now;
-  char timekey[64],*sp;
-  
+  char timekey[64];
+  struct Item *ip;
+
+Verbose("Sleeping...\n");
 sleep(60);          /* 1 Minute resolution is enough */ 
- 
+
 now = time(NULL);
 
-strcpy(timekey,GenTimeKey(now));
+snprintf(timekey,63,"%s",ctime(&now)); 
+AddTimeClass(timekey); 
 
-for (sp = timekey+strlen(timekey)-3; *sp != 'M'; sp--)
+for (ip = SCHEDULE; ip != NULL; ip = ip->next)
    {
-   } 
+   Verbose("Checking schedule %s...\n",ip->name);
+   if (IsDefinedClass(ip->name))
+      {
+      Verbose("Waking up the agent at %s ~ %s \n",timekey,ip->name);
+      DeleteItemList(VHEAP);
+      VHEAP = NULL;
+      GetNameInfo();
+      return true;
+      }
+   }
 
-if (IsItemIn(SCHEDULE,sp))
-   {
-   Verbose("Waking up the agent at %s ~ %s \n",sp,ctime(&now));
-   return true;
-   }
-else
-   {
-   return false;
-   }
+DeleteItemList(VHEAP);
+GetNameInfo();
+return false;
 }
 
 /*********************************************************************/
@@ -756,19 +762,6 @@ int number;
  /* dummy */
 }
 
-void AddClassToHeap(c)
-
-char *c;
-
-{
-}
-
-void DeleteClassFromHeap(c)
-
-char *c;
-
-{
-}
 
 void RecursiveTidySpecialArea(name,tp,maxrecurse)
 
@@ -779,6 +772,14 @@ int maxrecurse;
 {
 }
 
+
+void yyerror(s)
+
+char *s;
+
+{
+ printf("%s\n",s);
+}
 
 /* EOF */
 

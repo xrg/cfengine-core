@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.0.0)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.0.1)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -104,7 +104,7 @@ else
     fi
     if test x"$BERKELEY_DB_DIR" = xyes ; then
         for v in db4 db3 db2 db; do
-            if test -d "/usr/local/include/$v" ; then
+            if test -d "$BERKELEY_DB_DIR/include/$v" ; then
                 BERKELEY_DB_LDFLAGS="-L/usr/local/lib"
                 BERKELEY_DB_CFLAGS="-I/usr/local/include/$v"
                 BERKELEY_DB_LIB="-l$v"
@@ -114,7 +114,7 @@ else
         done
         if test x"$BERKELEY_DB_LIB" = x ; then
             for v in db4 db3 db2 db; do
-                if test -d "/usr/include/$v" ; then
+                if test -d "$BERKELEY_DB_DIR/$v" ; then
                     if test -f "/usr/include/$v/$v" ; then
                        BERKELEY_DB_CFLAGS="-I/usr/include/$v"
                        BERKELEY_DB_LIB="-l$v"
@@ -242,7 +242,6 @@ AC_CHECK_HEADERS(sys/param.h)
 AC_CHECK_HEADERS(fcntl.h)
 AC_CHECK_HEADERS(sys/filesys.h)
 AC_CHECK_HEADERS(dustat.h)
-AC_CHECK_HEADERS(tcpd.h)
 AC_CHECK_HEADERS(db.h regex.h rxposix.h)
 AC_CHECK_HEADERS(sys/systeminfo.h)
 AC_CHECK_HEADERS(sys/acl.h)

@@ -1,10 +1,24 @@
 
+2.0.1
+        Some error messages demoted to verbose only
+        Some documentation corrections
+        cfenvd given a -H option for histogram measurement. (research)
+        More problems with configure finding libraries fixed
+        Extra time classes Q1,Q2,Q3,Q4 are set in each quarter of the hour.
+	Also abbreviations of HrXX.Q1 ca write Hr12_Q1, for instance.
+        VSYSTEMHARDCLASS was not defined in cfservd
+	tidy .cfengine files could have permission 777. Missing permission added.
+	openbsd bind() fix in cfservd - openbsd does not map ipv4 addresses in ipv6!!!
+        error in assigning hardclass for openbsd (typo) and this affected several other operating systems. Fixed
+	
 2.0.0
 	Hpux config changes
 	Red Hat compilation issues with Berekely DB
 	cfservd.conf did not re-read input file properly if -f was used.
 	mode checks patch (Martin Jost)
 	GNU autoconf classes renamed to compiled_on_solaris2.7
+
+Cfengine 2.0 ----------------------------------------------------------------
 
 b4
         configure changes to compile on systems without pthread.

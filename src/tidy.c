@@ -85,7 +85,7 @@ if (level == 2)
 	 Debug("Pre-existing object %s could not be removed\n",VLOGFILE);
 	 }
 
-      if ((tempfd = open(VLOGFILE, O_CREAT|O_EXCL|O_WRONLY)) < 0)
+      if ((tempfd = open(VLOGFILE, O_CREAT|O_EXCL|O_WRONLY,0600)) < 0)
  	 {
  	 snprintf(OUTPUT,bufsize,"Couldn't open a file %s\n",VLOGFILE);	 
 	 CfLog(cferror,OUTPUT,"open");

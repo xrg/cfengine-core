@@ -76,6 +76,7 @@ int SEPARATE = false;
 int ERRORBARS = true;
 int NOSCALING = true;
 char FILENAME[bufsize];
+int HISTOGRAM[ATTR*2+4][7][GRAINS];
 
 /*****************************************************************************/
 
@@ -101,7 +102,7 @@ int main (argc,argv)
 int argc;
 char **argv;
 
-{ int errno,i,j,count=0, its;
+{ int errno,i,j,k,count=0, its;
   time_t now; 
   DBT key,value;
   DB *dbp;
@@ -109,7 +110,7 @@ char **argv;
   char timekey[64],filename[256],*sp;
   double age;
   FILE *fpav=NULL,*fpvar=NULL,*fproot=NULL,*fpuser=NULL,*fpother=NULL;
-  FILE *fpdisk=NULL,*fpin[ATTR],*fpout[ATTR];
+  FILE *fpdisk=NULL,*fpin[ATTR],*fpout[ATTR],*fp;
 
 CheckOpts(argc,argv);
 
@@ -563,6 +564,128 @@ if (SEPARATE)
       }
    }
 
+/* Finally, look at the histograms */
+
+for (i = 0; i < 7; i++)
+   {
+   for (j = 0; j < ATTR*2+4; j++)
+      {
+      for (k = 0; k < GRAINS; k++)
+	  {
+	  HISTOGRAM[j][i][k] = 0;
+	  }
+      }
+   }
+
+if (SEPARATE)
+   {
+   int position,day;
+   int weekly[ATTR*2+4][GRAINS];
+   
+   snprintf(filename,bufsize,"%s/histograms",WORKDIR);
+   
+   if ((fp = fopen(filename,"r")) == NULL)
+      {
+      printf("Unable to load histogram data\n");
+      exit(1);
+      }
+   
+   for (position = 0; position < GRAINS; position++)
+      {
+      fscanf(fp,"%d ",&position);
+      
+      for (i = 0; i < 4 + 2*ATTR; i++)
+	 {
+	 for (day = 0; day < 7; day++)
+	    {
+	    fscanf(fp,"%d ",&(HISTOGRAM[i][day][position]));
+	    }
+
+	 weekly[i][position] = 0;
+	 }
+      }
+   
+   fclose(fp);
+
+   sprintf(filename,"users.distr"); 
+   if ((fpuser = fopen(filename,"w")) == NULL)
+      {
+      perror("fopen");
+      exit(1);
+      }
+   sprintf(filename,"rootprocs.distr"); 
+   if ((fproot = fopen(filename,"w")) == NULL)
+      {
+      perror("fopen");
+      exit(1);
+      }
+   sprintf(filename,"otherprocs.distr"); 
+   if ((fpother = fopen(filename,"w")) == NULL)
+      {
+      perror("fopen");
+      exit(1);
+      }
+   sprintf(filename,"freedisk.distr"); 
+   if ((fpdisk = fopen(filename,"w")) == NULL)
+      {
+      perror("fopen");
+      exit(1);
+      }
+
+   for (i = 0; i < ATTR; i++)
+      {
+      sprintf(filename,"%s-in.distr",ECGSOCKS[i][1]); 
+      if ((fpin[i] = fopen(filename,"w")) == NULL)
+         {
+         perror("fopen");
+         exit(1);
+         }
+
+      sprintf(filename,"%s-out.distr",ECGSOCKS[i][1]); 
+      if ((fpout[i] = fopen(filename,"w")) == NULL)
+         {
+         perror("fopen");
+         exit(1);
+         }
+      }
+
+   /* Plot daily and weekly histograms */
+   for (k = 0; k < GRAINS; k++)
+      {
+      int a;
+      
+      for (j = 0; j < ATTR*2+4; j++)
+	 {
+	 for (i = 0; i < 7; i++)	 
+	    {
+	    weekly[j][k] += HISTOGRAM[j][i][k];
+	    }
+	 }
+
+      fprintf(fpuser,"%d %d\n",k,weekly[0][k]);
+      fprintf(fproot,"%d %d\n",k,weekly[1][k]);
+      fprintf(fpother,"%d %d\n",k,weekly[2][k]);
+      fprintf(fpdisk,"%d %d\n",k,weekly[3][k]);
+
+      for (a = 0; a < ATTR; a++)
+	 {
+	 fprintf(fpin[a],"%d %d\n",k,weekly[4+a][k]);
+	 fprintf(fpout[a],"%d %d\n",k,weekly[4+ATTR+a][k]);
+	 }
+      }
+   
+   fclose(fproot);
+   fclose(fpother);
+   fclose(fpuser);
+   fclose(fpdisk);
+
+   for (i = 0; i < ATTR; i++)
+      {
+      fclose(fpin[i]);
+      fclose(fpout[i]);
+      }
+   }
+ 
 return (0); 
 }
 

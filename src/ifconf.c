@@ -365,8 +365,10 @@ void SetDefaultRoute()
 
 # ifdef HAVE_ORTENTRY
    struct ortentry route;
-# else if HAVE_RTENTRY
+# else
+#  if HAVE_RTENTRY
    struct rtentry route;
+#  endif
 # endif
 
   FILE *pp;
@@ -460,7 +462,7 @@ if (! DONTDO)
    CfLog(cferror,OUTPUT,"");
    }
 
-# else if
+# else
 
 /* Socket routing - don't really know how to do this yet */ 
 

@@ -911,13 +911,13 @@ else
                         if (uid != (uid_t) -1)
                            {
                            snprintf(OUTPUT,bufsize*2,"  (Change owner to uid %d if possible)\n",uid);
-                           CfLog(cfinform,OUTPUT,"");
+                           CfLog(cfverbose,OUTPUT,"");
                            }
 
                         if (gid != (gid_t) -1)
                            {
                            snprintf(OUTPUT,bufsize*2,"  (Change group to gid %d if possible)\n",gid);
-                           CfLog(cfinform,OUTPUT,"");
+                           CfLog(cfverbose,OUTPUT,"");
                            }
                         }
                      }

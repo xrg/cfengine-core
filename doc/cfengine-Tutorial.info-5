@@ -325,7 +325,6 @@ pair of master files on a trusted host. Files of the form
      
       in.fingerd:  .example.org LOCAL
       in.cfingerd: .example.org LOCAL
-      cfd:         .example.org LOCAL
       sshdfwd-X11: .example.org LOCAL
      
       # Portmapper has to use IP series
@@ -1143,19 +1142,11 @@ Spoofing
 ========
 
    Spoofing refers to attempts to masquerade as another host when
-sending network transmissions. The cfd program which can be used to
+sending network transmissions. The cfservd program which can be used to
 transfer files or activate cfengine remotely attempts to unmask such
 attempts by performing double reverse lookups in the name service. This
 verifies by a trusted server that the socket address and the host name
-are really who they claim to be. If you have the TCP wrappers package
-on your system (libwrap) then cfd will use this as additional
-protection.  Also if you have
-
-       CheckIdent = ( on )
-   cfd will demand verification of connections by attempting to connect
-to a pidentd server on the calling host. Secret keys also provide
-protection against spoofing by providing a conformation of
-trustworthiness based on a shared secret.
+are really who they claim to be.
 
 
 File: cfengine-Tutorial.info,  Node: Race conditions in file copying,  Next: size= in copy,  Prev: Spoofing,  Up: Security and cfengine
@@ -1204,4 +1195,19 @@ useshell variable to false. The disadvantage is that you will not be
 able to use shell directives such as | and > in your commands. The
 owner=uid directive executes shell commands as a special user, allowing
 you to safely run scripts without root privilege.
+
+
+File: cfengine-Tutorial.info,  Node: Firewalls,  Prev: useshell= and owner= in shellcommands,  Up: Security and cfengine
+
+Firewalls
+=========
+
+   Cfengine is a useful tool for implementing, monitoring and
+maintaining firewalls. You can control what programs are supposed to be
+on the firewall and what programs are not supposed to be there. You can
+control file permissions, processes and a dozen other things which make
+up the configuration of a bastion host.  By referencing important
+programs against a read only medium you can not only monitor host
+integrity but always be certain that you are never more than a cfengine
+execution away from correctness.
 

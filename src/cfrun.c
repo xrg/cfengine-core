@@ -42,6 +42,7 @@
 int  MAXCHILD = 1;
 int  FileFlag = 0;
 int  TRUSTALL = false;
+int  VerboseFileLog = false;
 char OUTPUTDIR[bufsize];
 
 struct Item *VCFRUNCLASSES = NULL;
@@ -184,6 +185,10 @@ for (i = 1; i < argc; i++)
 	 {
 	 SILENT = true;
 	 }
+      else if (strncmp(argv[i],"-V",2) == 0)
+	 {
+	 VerboseFileLog = true;
+	 }
       else if (strncmp(argv[i],"--",2) == 0) 
 	 {
 	 optgroup++;
@@ -296,6 +301,7 @@ if (StoreInFile)
 else
    {
    fp = stdout;
+   VerboseFileLog = false; /* We don't write to a file! */
    }
  
 port = ParseHostname(host,parsed_host);
@@ -308,6 +314,7 @@ if ((hp = gethostbyname(parsed_host)) == NULL)
    printf("Make sure that fully qualified names can be looked up at your site!\n");
    printf("i.e. www.gnu.org, not just www. If you use NIS or /etc/hosts\n");
    printf("make sure that the full form is registered too as an alias!\n");
+   if (VerboseFileLog) { fprintf(fp,"FAILED: Unknown host\n"); }
    exit(1);
    }
 
@@ -323,6 +330,7 @@ else
    if ((server = getservbyname(CFENGINE_SERVICE,"tcp")) == NULL)
       {
       CfLog(cferror,"Unable to find cfengine port","getservbyname");
+      if (VerboseFileLog) { fprintf(fp,"FAILED: Unable to find cfengine port\n"); }
       exit (1);
       }
    else
@@ -347,6 +355,7 @@ if (HavePublicKey(sendbuffer) == NULL)
    if (TRUSTALL)
       {
       printf("Accepting public key from %s\n",parsed_host);
+      if (VerboseFileLog) { fprintf(fp,"NOTE: Accepting public key from host\n"); }
       }
    else
       {
@@ -378,6 +387,7 @@ if (HavePublicKey(sendbuffer) == NULL)
 if (!RemoteConnect(parsed_host,forceipv4))
    {
    CfLog(cferror,"Couldn't open a socket","socket");
+   if (VerboseFileLog) { fprintf(fp,"FAILED: Couldn't open a socket\n"); }
    if (CONN->sd != cf_not_connected)
       {
       close(CONN->sd);
@@ -390,6 +400,7 @@ if (!RemoteConnect(parsed_host,forceipv4))
 if (!IdentifyForVerification(CONN->sd,CONN->localip,CONN->family))
    {
    printf("Unable to open a channel\n");
+   if (VerboseFileLog) { fprintf(fp,"FAILED: Unable to open a channel\n"); }
    close(CONN->sd);
    errno = EPERM;
    free(addresses.server);
@@ -400,6 +411,7 @@ if (!KeyAuthentication(&addresses))
    {
    snprintf(OUTPUT,bufsize,"Key-authentication for %s failed\n",VFQNAME);
    CfLog(cferror,OUTPUT,"");
+   if (VerboseFileLog) { fprintf(fp,"FAILED: Key-authentication failed\n"); }
    errno = EPERM;
    close(CONN->sd);
    free(addresses.server);
@@ -411,6 +423,7 @@ snprintf(sendbuffer,bufsize,"EXEC %s %s",options,CFRUNOPTIONS);
 if (SendTransaction(CONN->sd,sendbuffer,0,CF_DONE) == -1)
    {
    printf("Transmission rejected");
+   if (VerboseFileLog) { fprintf(fp,"FAILED: Transmission rejected\n"); }
    close(CONN->sd);
    free(addresses.server);
    return false;
@@ -484,6 +497,7 @@ while (true)
    first = false;
 
    fprintf(fp,"%s",recvbuffer);
+   fflush(fp);
    }
 
 if (!first)
@@ -763,6 +777,7 @@ void cfrunSyntax()
  printf("-S\t\tSilent mode.\n");
  printf("-T\t\tTrust all incoming public keys.\n");
  printf("-v\t\tVerbose mode.\n");
+  printf("-V\t\tFile verbose logging mode.\n");
  printf("-- OPTIONS\tArguments to be passed to host application.\n");
  printf("-- CLASSES\tClasses to be defined for the hosts.\n\n");
  printf("e.g.  cfrun -- -- linux          Run on all linux machines\n");

@@ -11,21 +11,6 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
-File: cfengine-Tutorial.info,  Node: Firewalls,  Prev: useshell= and owner= in shellcommands,  Up: Security and cfengine
-
-Firewalls
-=========
-
-   Cfengine is a useful tool for implementing, monitoring and
-maintaining firewalls. You can control what programs are supposed to be
-on the firewall and what programs are not supposed to be there. You can
-control file permissions, processes and a dozen other things which make
-up the configuration of a bastion host.  By referencing important
-programs against a read only medium you can not only monitor host
-integrity but always be certain that you are never more than a cfengine
-execution away from correctness.
-
-
 File: cfengine-Tutorial.info,  Node: Summary,  Next: Variable Index,  Prev: Security and cfengine,  Up: Top
 
 Summary

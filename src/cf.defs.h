@@ -149,7 +149,9 @@ extern int errno;
 #endif
 
 #ifdef HAVE_MALLOC_H
+#ifndef OPENBSD
 #include <malloc.h>
+#endif
 #endif
 
 #include <fcntl.h>
@@ -252,7 +254,7 @@ extern int errno;
 #define recursion_limit 100
 #define cf_monday_morning 342000
 
-#define exec_ifelapsed 0
+#define exec_ifelapsed 5
 #define exec_expireafter 10
 
 
@@ -310,6 +312,7 @@ extern int errno;
 #define CF_MORE 'm'
 
 #define CFFAILEDSTR "BAD: Host authentication failed. Did you forget the domain name?"
+#define CFCHANGEDSTR "BAD: File changed while copying"
 
 #define CF_START_DOMAIN "undefined.domain"
 
@@ -332,7 +335,7 @@ extern int errno;
 
 #define BYTEWIDTH 8
 
-
+#define GRAINS 32
 #define ATTR   11
 #define CFWEEK (7.0*24.0*3600.0)
 #define MEASURE_INTERVAL (5.0*60.0)
@@ -563,7 +566,6 @@ enum classes
    bsd4_3,
    newsos,
    netbsd,
-   openbsd,
    aos,
    bsd_i,
    nextstep,
@@ -571,6 +573,7 @@ enum classes
    GnU,
    cfnt,
    unix_sv,
+   openbsd,
    cfsco,
    darwin,
    ux4800,

@@ -838,10 +838,10 @@ cached during the processing of a file.
 
    MD5 checksums are transferred from client to server to avoid loading
 the server.  Even if a user could corrupt the MD5 checksum, he or she
-would have to get past access control with TCP wrappers and the worst
-that could happen would be to get the right version of the file.  Again
-this is in keeping with the idea that users can only harm themselves
-and not others with cfengine.
+would have to get past IP address access control and the worst that
+could happen would be to get the right version of the file.  Again this
+is in keeping with the idea that users can only harm themselves and not
+others with cfengine.
 
 
 File: cfengine-Tutorial.info,  Node: Deadlocks and runaway loops,  Prev: cfservd protocol,  Up: How it works
@@ -1103,11 +1103,6 @@ assumed to be common to both hosts. There is an implicit trust
 relationship here.  There is no way to verify whether the user on the
 remote host is the same user as the user with the same name on the local
 host.
-
-   If you still have problems with lack of access, it could be that you
-have forgotten to define the domain name for your network, or that you
-do not understand the TCP wrappers files `/etc/hosts.access' and
-`/etc/hosts.deny'.
 
 
 File: cfengine-Tutorial.info,  Node: Security and cfengine,  Next: Summary,  Prev: Cfengine network services,  Up: Top

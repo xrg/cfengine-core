@@ -11,6 +11,235 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: actionsequence,  Next: addclasses,  Prev: access,  Up: control
+
+actionsequence
+--------------
+
+   The action sequence determines the order in which collective actions
+are carried out.  Here is an example containing the full list of
+possibilities:
+
+        actionsequence =
+           (
+           mountall               # mount filesystems in fstab
+           mountinfo              # scan mounted filesystems
+           checktimezone          # check timezone
+           netconfig              # check net interface config
+           resolve                # check resolver setup
+           unmount                # unmount any filesystems
+           shellcommands          # execute shell commands
+           editfiles              # edit files
+           addmounts              # add new filesystems to system
+           directories            # make any directories
+           links                  # check and maintain links (single and child)
+           mailcheck              # check mailserver
+           mountall               # (again)
+           required               # check required filesystems
+           tidy                   # tidy files
+           disable                # disable files
+           files                  # check file permissions
+           copy                   # make a copy/image of a master file
+           processes              # signal / check processes
+           module:name            # execute a user-defined module
+           )
+
+Here is a more complete description of the meaning of these keywords.
+
+`addmounts'
+     causes cfengine to compute which NFS filesystems are missing from
+     the current host and add them. This includes editing the
+     filesystem table, creating the mount-directory, if required.  This
+     command relies on information provided by `mountinfo', so it
+     should normally only be called after `mountinfo'. If the
+     filesystem already appears to be in the filesystem table, a
+     warning is issued.
+
+`checktimezone'
+     runs a check on the timezone defined for the shell running
+     cfengine.
+
+`directories'
+     executes all the commands defined under the `directories' section
+     of the program. It builds new directories.
+
+`disable'
+     executes all the commands defined under the `disable' section of
+     the program.
+
+`editfiles'
+     executes all the commands defined under the `editfiles' section of
+     the program.
+
+`files'
+     executes all the commands defined under the `files' section of the
+     program.
+
+`links'
+     executes all the commands defined under the `links' section of the
+     program.
+
+`mailcheck'
+     tests for the presence of the NFS-mounted mail spooling directory
+     on the current host. The name of the mail spool directory is
+     defined in the `mailserver' section of the cfengine program. If
+     the current host is the same as the mailserver (the host which has
+     the physical spool directory disk) nothing is done. Otherwise the
+     filesystem table is edited so as to include the mail directory.
+
+`module'
+     Normally cfengine's ability to detect the systems condition is
+     limited to what it is able to determine while excuting predefined
+     actions. Classes may be switched on as a result of actions cfengine
+     takes to correct a problem. To increase the flexibility of
+     cfengine, a mechanism has been introduced in version 1.5 which
+     allows you to include a module of your own making in order to
+     define or undefine a number of classes.  The syntax
+            module:mytests.CLASS1.CLASS2.CLASS3
+          
+            "module:mytests.CLASS1.CLASS2.CLASS3 arg1 arg2 .."
+     declares a user defined module which can potentially set the
+     classes CLASS1 etc. Classes returned by the module must be
+     declared so that cfengine knows to pay attention to rules which
+     use these classes when parsing. Note might actually be preferable
+     to define classes returned by modules under `AddInstallables'
+     which is equivalent. If arguments are passed to the module, the
+     whole string must be quoted like a shellcommand.  *Note Writing
+     plugin modules: (cfengine-Tutorial)Writing plugin modules.
+     Whether or not these classes become set or not depends on the
+     behaviour of your module. The classes continue to apply for all
+     actions which occur after the module's execution. The module must
+     be owned by the user executing cfengine or root (for security
+     reasons), it must be named `module:MODULE-NAME' and must lie in a
+     special directory, *Note moduledirectory::.
+
+`mountall'
+     mounts all filesystems defined in the hosts filesystem table.  This
+     causes new NFS filesystems added by `addmounts' and `mailcheck' to
+     be actually mounted. This should probably be called both before
+     `mountinfo' and after `addmounts' etc.  A short timeout is placed
+     on this operation to avoid hanging RPC connections when parsing
+     NFS mounted file systems.
+
+`mountinfo'
+     builds internal information about which filesystems are presently
+     mounted on the current host.  Cfengine assumes that
+     required-filesystems which are not found need to be mounted. A
+     short timeout is placed on this operation to avoid hanging RPC
+     connections when parsing NFS mounted file systems. If this times
+     out, no further mount operations are considered reliable and are
+     summarily cancelled.
+
+`netconfig'
+     checks the netmask, hostname, IP address and broadcast address for
+     the current host. The correct values for the netmask and broadcast
+     address are set if there is an error. The defaultroute is matched
+     against the static routing table and added if no default route
+     exists. This does not apply to DHCP clients, which set a default
+     route automatically.
+
+`required'
+     executes all the commands defined under the `required' section of
+     the program. It checks for the absence of important NFS resources.
+
+`resolve'
+     checks and corrects the DNS domain name and the order of
+     nameservers in the file `/etc/resolv.conf'.
+
+`shellcommands'
+     executes all the commands defined under the `shellcommands'
+     section of the program.
+
+`tidy'
+     executes all the commands defined under the `tidy' section of the
+     program.
+
+`unmount'
+     executes all the commands defined under the `unmount' section of
+     the program. The filesystem table is edited so as to remove the
+     unwanted filesystems and the unmount operation is executed.
+
+`processes'
+     executes commands defined under the `processes' section of the
+     program.
+
+   Under normal circumstances this coarse ordering is enough to suit
+most purposes.  In some cases you might want to, say, only perform half
+the link operations before mounting filesystems and then, say, perform
+the remainder.  You can do this (and similar things) by using the idea
+of defining and undefining classes. *Note Defining classes:
+(cfengine-Tutorial)Defining classes.
+
+   The syntax
+
+
+     actionsequence =
+        (
+        links.firstpass.include
+        ...
+        links.secondpass
+        )
+
+means that cfengine first executes `links' with the classes `firstpass'
+and `include' _defined_.  Later it executes `links' with `secondpass'
+defined.  You can use this method of adding classes to distinguish more
+finely the flow of control in programs.
+
+   A note about style: if you define and undefine lots of classes to do
+what you want to do, you might stop and ask yourself if your `groups'
+are defined as well as they should be.  *Note groups::.  Programming in
+cfengine is about doing a lot for only a little writing.  If you find
+yourself writing a lot, you are probably not going about things in the
+right way.
+
+
+File: cfengine-Reference.info,  Node: addclasses,  Next: addinstallable,  Prev: actionsequence,  Up: control
+
+AddClasses
+----------
+
+        AddClasses  = ( LIST OF IDENTIFIERS )
+
+   The `AddClasses' directive is used to define a list of class
+attributes for the current host.  Normally only the hard classes defined
+by the system are `true' for a given host.  It is convenient though to
+be able to define classes of your own to label certain actions, mainly
+so that they can later be excluded so as to cut short or filter out
+certain actions.  This can be done in two ways.  *Note actionsequence::.
+
+   To define a list of classes for the current session, you write:
+
+     AddClasses = ( exclude shortversion )
+
+This is equivalent to (though more permanent than) defining classes on
+the command line with the `-D' option.  You can now use these to
+qualify actions.  For example
+
+
+       any.exclude::
+           ...
+
+   Under normal circumstances `exclude' is always true -- because you
+have defined it to be so, but you can _undefine_ it in two ways so as
+to prevent the action from being carried out.  One way is to undefine a
+class on the command line when you invoke cfengine:
+
+     host#  cfengine -N exclude
+
+or
+
+     host#  cfengine -N exclude.shortversion
+     
+     host#  cfengine -N a.b.c.d
+
+These commands run cfengine with the named classes _undefined_.  That
+means that actions labelled with these classes are excluded during that
+run.
+
+   Another way to restrict classes is to add a list of classes to be
+undefined in the actionsequence.  See next section.
+
+
 File: cfengine-Reference.info,  Node: addinstallable,  Next: BinaryPaddingChar,  Prev: addclasses,  Up: control
 
 AddInstallable
@@ -70,9 +299,6 @@ File: cfengine-Reference.info,  Node: ChecksumDatabase,  Next: ChecksumUpdates, 
 ChecksumDatabase
 ----------------
 
-   If this parameter is set to true, cfengine will delete files which
-do not have a name belonging to a known user id.
-
      ChecksumDatabase = ( /var/cfengine/cfdb )
 
    If this filename is defined, cfengine will use it to store message
@@ -84,9 +310,6 @@ File: cfengine-Reference.info,  Node: ChecksumUpdates,  Next: childlibpath,  Pre
 
 ChecksumUpdates
 ---------------
-
-   If this parameter is set to true, cfengine will delete files which
-do not have a name belonging to a known user id.
 
      ChecksumUpdates = ( on )
 
@@ -728,7 +951,7 @@ File: cfengine-Reference.info,  Node: schedule,  Next: secureinput,  Prev: repos
 Schedule
 --------
 
-        schedule  = (  Min00_05 Min30_35  )
+        schedule  = (  Min00_05 Min30_35 TIME CLASS )
 
    When `cfexecd' is used in daemon mode, it defaults to running once
 an hour, on the hour, i.e..
@@ -742,6 +965,10 @@ precision timing is not required and the start time of cfengine, when
 scheduled in daemon mode, is not better than a few minutes.  The daemon
 does not require precision, but offers many other strategic features
 for load balancing and security.
+
+   Other time classes can be used in the schedule list, but note that
+cfexecd will not run the agent more than once every five minutes.  This
+is treated as a fundamental granularity.
 
 
 File: cfengine-Reference.info,  Node: secureinput,  Next: sensiblecount,  Prev: schedule,  Up: control

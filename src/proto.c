@@ -266,7 +266,7 @@ SendTransaction(CONN->sd,sendbuffer,len,CF_DONE);
 bzero(in,bufsize);  
 ReceiveTransaction(CONN->sd,in,NULL);
 
- if (BadProtoReply(in))
+if (BadProtoReply(in))
    {
    CfLog(cfinform,in,"");
    return false;
