@@ -28,6 +28,10 @@
 /*                                                                 */
 /*******************************************************************/
 
+#ifndef _GETOPT_H
+#include "../pub/getopt.h"
+#endif
+
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
 extern pthread_mutex_t MUTEX_SYSCALL;
 extern pthread_mutex_t MUTEX_LOCK;
