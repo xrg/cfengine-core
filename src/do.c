@@ -3331,7 +3331,7 @@ void EditItemsInResolvConf(struct Item *from,struct Item **list)
     
     if (isdigit((int)*(work)))
        {
-       snprintf(buf,CF_BUFSIZE,"nameserver %s",work);
+       snprintf(buf,CF_MAXVARSIZE,"nameserver %s",work);
        }
     else
        {
