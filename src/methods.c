@@ -274,6 +274,11 @@ if (INFORM)
    strcat(options,"-I ");
    }
 
+if (IGNORELOCK)
+   {
+   strcat(options,"-K ");
+   }
+
 if (VERBOSE)
    {
    strcat(options,"-v ");
