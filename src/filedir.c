@@ -234,7 +234,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
             {
             CheckExistingFile("*",pcwd,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
             goback = RecursiveCheck(pcwd,plus,minus,action,uidlist,gidlist,recurse-1,rlevel+1,ptr,&statbuf);
-     DirPop(goback,name,sb);
+            DirPop(goback,name,sb);
             }
          else
             {
@@ -265,6 +265,8 @@ void CheckExistingFile(char *cf_findertype,char *file,mode_t plus,mode_t minus,e
   u_long newflags;
 #endif
 
+Debug("CheckExistingFile(%s)\n",file);
+  
 maskvalue = umask(0);                 /* This makes the DEFAULT modes absolute */
  
 if (action == compress)
