@@ -198,23 +198,25 @@ ParseEVR(version, &eB, &vB, &rB);
      {
      result = cmpsense_lt;
      }
+
    /* If that did not decide it, try version.  We must *always* have
     * a version string.  That's just the way it is.*/
-
-   switch (rpmvercmp(vA, vB))
+   if (result == cmpsense_eq)
      {
-     case 1:    result = cmpsense_gt;
-                break;
-     case -1:   result = cmpsense_lt;
-                break;
+     switch (rpmvercmp(vA, vB))
+       {
+       case 1:    result = cmpsense_gt;
+                  break;
+       case -1:   result = cmpsense_lt;
+                  break;
+       }
      }
 
    /* if we wind up here, everything rides on the release if both have it.
     * RPM always stores a release internally in the database, so the A side
     * will have it.  It's just a matter of whether or not the user cares
     * about it at this point. */
-
-   if (rB && *rB)
+   if ((result == cmpsense_eq) && (rB && *rB))
       {
       switch (rpmvercmp(rA, rB))
          {
