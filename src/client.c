@@ -581,7 +581,10 @@ while (!done)
       {
       if (more)
          {
-         cipherlen = ReceiveTransaction(CONN->sd,buf,&more);
+         if ((cipherlen = ReceiveTransaction(CONN->sd,buf,&more)) == -1)
+            {
+            return false;
+            }
          }
       else
          {

@@ -1693,7 +1693,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=cfengine
- VERSION=2.1.7p1
+ VERSION=2.1.8
 
 
 cat >>confdefs.h <<_ACEOF
@@ -13656,6 +13656,8 @@ done
 
 fi
 
+
+
 echo "$as_me:$LINENO: checking for lchown" >&5
 echo $ECHO_N "checking for lchown... $ECHO_C" >&6
 if test "${ac_cv_func_lchown+set}" = set; then
@@ -15390,6 +15392,13 @@ _ACEOF
    cray*)
 	cat >>confdefs.h <<\_ACEOF
 #define CFCRAY 1
+_ACEOF
+
+        ;;
+
+   qnx*)
+        cat >>confdefs.h <<\_ACEOF
+#define CFQNX 1
 _ACEOF
 
         ;;

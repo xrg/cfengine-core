@@ -1114,6 +1114,8 @@ int linux_suse_version(void)
 {
 #define SUSE_REL_FILENAME "/etc/SuSE-release"
 #define SUSE_ID "SuSE Linux"
+#define SUSE_SLES8_ID "SuSE SLES-8"
+#define SUSE_SLES9_ID "SUSE LINUX Enterprise Server 9"
 #define SUSE_RELEASE_FLAG "Linux "
 
 /* The full string read in from SuSE-release */
@@ -1137,6 +1139,28 @@ FILE *fp;
     }
  fgets(relstring, sizeof(relstring), fp);
  fclose(fp);
+
+  
+   /* Check if it's a SuSE Enterprise version
+   */
+ Verbose("Looking for SuSE enterprise info in \"%s\"\n",relstring);
+ 
+ if(!strncmp(relstring, SUSE_SLES8_ID, strlen(SUSE_SLES8_ID)))
+    {
+    classbuf[0] = '\0';
+    strcat(classbuf, "SLES8");
+    AddClassToHeap(classbuf);
+     }
+ else if(!strncmp(relstring, SUSE_SLES9_ID, strlen(SUSE_SLES9_ID)))
+    {
+    classbuf[0] = '\0';
+    strcat(classbuf, "SLES9");
+    AddClassToHeap(classbuf);
+    }
+ 
+   /* Determine release version. We assume that the version follows
+    * the string "SuSE Linux".
+    */
  
  /* Determine release version. We assume that the version follows
   * the string "SuSE Linux".
@@ -1144,8 +1168,7 @@ FILE *fp;
  release = strstr(relstring, SUSE_RELEASE_FLAG);
  if(release == NULL)
     {
-    Verbose("Could not find a numeric OS release in %s\n",
-            SUSE_REL_FILENAME);
+    Verbose("Could not find a numeric OS release in %s\n",SUSE_REL_FILENAME);
     return 2;
     }
  else

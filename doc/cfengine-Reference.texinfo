@@ -3382,6 +3382,9 @@ This method of storing keys is not recommended for sites with
 fixed IP addresses, since it removes one security barrier
 from a potential attacker by potentially allowing DNS spoofing.
 
+Note that there is a corresponding variable to be set in @file{cfrun.hosts}
+for consistency.
+
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
@@ -7846,9 +7849,19 @@ Sometimes nameservice problems (especially with remote devices) can lead to conf
 where a method should be sent. The caller can therefore declare to the server which address
 it wants the reply to be marked for.
 @item returnvars
-Returns the values of the variables to the parent process.
+Returns the values of the variables to the parent process. This acts as an access control list for
+variable names transmitted by the child process. The names returned by the child must match this
+list.
 @item returnclasses
-Returns the classes to the parent process, if and only if they are defined at the end of the current method.
+Returns the classes to the parent process, if and only if they are
+defined at the end of the current method. This acts as an access control list for
+class names transmitted by the child process. The names returned by the child must match this
+list.
+
+@item sendclasses
+Transmits the current status of the named classes to the child process. In other words,
+if the listed classes are defined, they become defined in the child process, else they
+remain undefined. The class may still be defined in the child by independent local definitions.
 @end table
 
 The function arguments may not be empty, but a null value
@@ -8492,11 +8505,11 @@ expression matching and after includes.
 
 
 @item define=@var{classlist}
-The colon, command or dot separated list of classes becomes activated if the
+The colon, comma or dot separated list of classes becomes activated if the
 number of regular expression matches is non-zero.
 
 @item elsedefine=@var{classlist}
-The colon, command or dot separated list of classes becomes activated if the
+The colon, comma or dot separated list of classes becomes activated if the
 number of regular expression matches is zero.
 
 
@@ -10096,6 +10109,7 @@ is as follows
  access=@var{user1},@var{user2}
  outputdir=@var{directory}
  maxchild=@var{number limit}
+ hostnamekeys=@var{true/false}
 
  @var{hostname1}            @var{options}
  @var{hostname2}:@var{port} @var{options}
@@ -10103,6 +10117,7 @@ is as follows
 
 @end smallexample
 @end cartouche
+@cindex hostnamekeys
 
 @noindent
 If the option @code{outputdir} is present, cfrun forks a separate
@@ -10173,12 +10188,16 @@ If the port command is given cfrun uses this to connect to the client
 instead of the default (5308) one.
 Here is an example (@file{cfrun.hosts}): 
 @smallexample 
+domain=example.org
+access=mark,sigmund
+hostnamekeys=true
 
 node1.example.org
 node2.example.org:22000 -DNis
 node2.example.org:22001
  
 @end smallexample
+@cindex HostnameKeys
 
 This connects to: 1) node1 with standard port, 2) node2 with port 22000 and extra options -DNis
 and, 3) node2 with port 22000.

@@ -49,10 +49,16 @@
 # include <sched.h>
 #endif
 
-#ifdef HAVE_PTHREAD_H
+#ifdef PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
+pthread_attr_t PTHREADDEFAULTS;
+pthread_mutex_t MUTEX_COUNT = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP;
+pthread_mutex_t MUTEX_HOSTNAME = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP;
+#else
+# if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
 pthread_attr_t PTHREADDEFAULTS;
 pthread_mutex_t MUTEX_COUNT = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUTEX_HOSTNAME = PTHREAD_MUTEX_INITIALIZER;
+# endif
 #endif
 
 /*******************************************************************/
@@ -862,7 +868,8 @@ if ((fp=fopen(file,"r")) == NULL)
    return;
    }
  
- 
+Debug("Looking up hostname %s\n\n",VMAILSERVER);
+
 if ((hp = gethostbyname(VMAILSERVER)) == NULL)
    {
    printf("Unknown host: %s\n", VMAILSERVER);
@@ -885,6 +892,8 @@ memset(&raddr,0,sizeof(raddr));
 raddr.sin_port = (unsigned int) server->s_port;
 raddr.sin_addr.s_addr = ((struct in_addr *)(hp->h_addr))->s_addr;
 raddr.sin_family = AF_INET;  
+
+Debug("Connecting...\n");
 
 if ((sd = socket(AF_INET,SOCK_STREAM,0)) == -1)
    {
@@ -910,6 +919,7 @@ if (!Dialogue(sd,NULL))
    }
  
 sprintf(VBUFF,"HELO %s\r\n",VFQNAME); 
+Debug("%s",VBUFF);
 
  if (!Dialogue(sd,VBUFF))
      {
@@ -917,6 +927,7 @@ sprintf(VBUFF,"HELO %s\r\n",VFQNAME);
      }
  
 sprintf(VBUFF,"MAIL FROM: <cfengine@%s>\r\n",VFQNAME);
+Debug("%s",VBUFF);
 
 if (!Dialogue(sd,VBUFF))
    {
@@ -924,7 +935,8 @@ if (!Dialogue(sd,VBUFF))
    }
  
 sprintf(VBUFF,"RCPT TO: <%s>\r\n",to);
- 
+Debug("%s",VBUFF);
+
 if (!Dialogue(sd,VBUFF))
     {
     goto mail_err;
@@ -938,10 +950,12 @@ if (!Dialogue(sd,"DATA\r\n"))
 if (anomaly)
    {
    sprintf(VBUFF,"Subject: **!! (%s/%s)\r\n",VFQNAME,VIPADDRESS);
+   Debug("%s",VBUFF);
    }
 else
    {
    sprintf(VBUFF,"Subject: (%s/%s)\r\n",VFQNAME,VIPADDRESS);
+   Debug("%s",VBUFF);
    }
  
 sent=send(sd,VBUFF,strlen(VBUFF),0);
@@ -949,18 +963,22 @@ sent=send(sd,VBUFF,strlen(VBUFF),0);
  
 /* -- Added by Michael Rice <mrice@digitalmotorworks.com>*/
  
-strftime(VBUFF,CF_BUFSIZE,"Date: %a, %d %b %Y %H:%M:%S %z\r\n",localtime(&now));
+strftime(VBUFF,CF_BUFSIZE,"Date: %a, %d %b %Y %H:%M:%S %Z\r\n",localtime(&now));
 sent=send(sd,VBUFF,strlen(VBUFF),0);
  
-sprintf(VBUFF,"From: cfengine@%s\r\n",VFQNAME); 
+sprintf(VBUFF,"From: cfengine@%s\r\n",VFQNAME);
+Debug("%s",VBUFF);
 sent=send(sd,VBUFF,strlen(VBUFF),0);
 sprintf(VBUFF,"To: %s\r\n\r\n",to); 
+Debug("%s",VBUFF);
 sent=send(sd,VBUFF,strlen(VBUFF),0);
 
 while(!feof(fp))
    {
    VBUFF[0] = '\0';
    fgets(VBUFF,CF_BUFSIZE,fp);
+   Debug("%s",VBUFF);
+   
    if (strlen(VBUFF) > 0)
       {
       VBUFF[strlen(VBUFF)-1] = '\r';
@@ -968,6 +986,7 @@ while(!feof(fp))
       count++;
       sent=send(sd,VBUFF,strlen(VBUFF),0);
       }
+   
    if ((MAXLINES != INF_LINES) && (count > MAXLINES))
       {
       sprintf(VBUFF,"\r\n[Mail truncated by cfengine. File is at %s on %s]\r\n",file,VFQNAME);
@@ -978,6 +997,7 @@ while(!feof(fp))
 
 if (!Dialogue(sd,".\r\n"))
    {
+   Debug("mail_err\n");
    goto mail_err;
    }
  

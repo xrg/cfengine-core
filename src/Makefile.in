@@ -116,12 +116,13 @@ cfkey_LDADD = $(LDADD)
 cfkey_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am_cfrun_OBJECTS = cfrun.$(OBJEXT) item.$(OBJEXT) item-ext.$(OBJEXT) \
-	filenames.$(OBJEXT) sockaddr.$(OBJEXT) nameinfo.$(OBJEXT) \
-	eval.$(OBJEXT) wildcard.$(OBJEXT) proto.$(OBJEXT) \
-	popen.$(OBJEXT) net.$(OBJEXT) ip.$(OBJEXT) checksums.$(OBJEXT) \
-	classes.$(OBJEXT) read.$(OBJEXT) log.$(OBJEXT) \
-	crypto.$(OBJEXT) patches.$(OBJEXT) init.$(OBJEXT) \
-	granules.$(OBJEXT) globals.$(OBJEXT)
+	varstring.$(OBJEXT) filenames.$(OBJEXT) sockaddr.$(OBJEXT) \
+	nameinfo.$(OBJEXT) eval.$(OBJEXT) wildcard.$(OBJEXT) \
+	proto.$(OBJEXT) popen.$(OBJEXT) net.$(OBJEXT) ip.$(OBJEXT) \
+	checksums.$(OBJEXT) classes.$(OBJEXT) read.$(OBJEXT) \
+	log.$(OBJEXT) crypto.$(OBJEXT) patches.$(OBJEXT) \
+	init.$(OBJEXT) granules.$(OBJEXT) macro.$(OBJEXT) \
+	globals.$(OBJEXT)
 cfrun_OBJECTS = $(am_cfrun_OBJECTS)
 cfrun_LDADD = $(LDADD)
 cfrun_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -452,6 +453,7 @@ cfrun_SOURCES = \
 	cfrun.c								\
 	item.c								\
 	item-ext.c							\
+	varstring.c							\
 	filenames.c							\
 	sockaddr.c							\
 	nameinfo.c							\
@@ -469,6 +471,7 @@ cfrun_SOURCES = \
 	patches.c							\
 	init.c								\
 	granules.c							\
+	macro.c								\
 	globals.c
 
 cfkey_SOURCES = \

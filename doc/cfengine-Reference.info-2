@@ -1829,6 +1829,8 @@ Concept Index
 * Homepattern variable.:                 mountables.
 * Host name gets truncated:              Cfengine classes.
 * Hostname collision:                    Special variables.
+* HostnameKeys:                          Firewalls and NATs.
+* hostnamekeys:                          cfrun.
 * Hung machine:                          cf.preconf bootstrap file.
 * ignore command:                        ignore.
 * Import files, variables in:            import.

@@ -234,8 +234,6 @@ VREPOSITORY = strdup("\0");
 strcpy(METHODNAME,"cf-nomethod"); 
 METHODREPLYTO[0] = '\0';
 METHODFOR[0] = '\0';
-METHODRETURNVARS[0] = '\0';
-METHODRETURNCLASSES[0] = '\0';
  
 #ifndef HAVE_REGCOMP
 re_syntax_options |= RE_INTERVALS;
@@ -1765,20 +1763,19 @@ if (!ChildLoadMethodPackage(METHODNAME,METHODMD5))
 Debug("Method package looks ok -- proceeding\n"); 
 }
 
-
 /*******************************************************************/
 
 void CheckMethodReply()
 
 {
 if (ScopeIsMethod())
-    {
-    if (strlen(METHODREPLYTO) > 0)
-       {
-       Banner("Method reply message");
-       DispatchMethodReply();
-       }
-    }
+   {
+   if (strlen(METHODREPLYTO) > 0)
+      {
+      Banner("Method reply message");
+      DispatchMethodReply();
+      }
+   }
 }
 
 /*******************************************************************/

@@ -227,6 +227,7 @@ do
       case newsos:
       case aos:
       case osf:
+      case qnx:
       case crayos:
                     if (buf1[0] == '/')
                        {
@@ -982,6 +983,7 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
       }
 
    ReleaseCurrentLock();
+   ResetOutputRoute('d','d');
    }
 
 if (missing)
@@ -1000,8 +1002,6 @@ if (missing)
    CfLog(cferror,"This may be caused by a failure to mount a network filesystem (check exports)\n","");
    snprintf(OUTPUT,CF_BUFSIZE*2,"or because no valid server was specified in the program %s\n\n",VINPUTFILE);
    CfLog(cferror,OUTPUT,"");
-
-   ResetOutputRoute('d','d');
    }
 
 /* Look for any statistical gathering to be scheduled ... */ 
@@ -1079,8 +1079,7 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
          CfLog(cferror,OUTPUT,"db_open");
          dbp->close(dbp,0);
          continue;
-         }
-      
+         }      
 
       chmod(database,0644); 
       RegisterRecursionRootDevice(statbuf.st_dev);
@@ -1089,6 +1088,8 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
       dbp->close(dbp,0);
       ReleaseCurrentLock();      
       }
+   
+   ResetOutputRoute('d','d');
    }
 }
 
@@ -2752,6 +2753,11 @@ Banner("Dispatching new methods");
 
 for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
    {
+   if (IsExcluded(ptr->classes))
+      {
+      continue;
+      }
+
    if (ptr->done == 'y' || strcmp(ptr->scope,CONTEXTID) != 0)
       {
       continue;
@@ -3035,6 +3041,7 @@ switch (VSYSTEMHARDCLASS)
    case aos:
    case nextstep:
    case newsos:
+   case qnx:
    case sun4:    snprintf(fstab,CF_BUFSIZE,"%s:%s \t %s %s\t%s,%s 0 0",host,rmountpt,mountpt,VNFSTYPE,mode,opts);
                  break;
 

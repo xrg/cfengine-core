@@ -148,6 +148,7 @@ cfrun_SOURCES =								\
 	cfrun.c								\
 	item.c								\
 	item-ext.c							\
+	varstring.c							\
 	filenames.c							\
 	sockaddr.c							\
 	nameinfo.c							\
@@ -165,6 +166,7 @@ cfrun_SOURCES =								\
 	patches.c							\
 	init.c								\
 	granules.c							\
+	macro.c								\
 	globals.c
 
 cfkey_SOURCES =								\

@@ -204,7 +204,7 @@ memset(CFLAST,0,CF_BUFSIZE);
  
 snprintf(CFLOG,CF_BUFSIZE,"%s/cfengine.%.40s.runlog",VLOGDIR,host);
 snprintf(CFLOCK,CF_BUFSIZE,"lock.%.100s.%.40s.%s.%.100s",VCANONICALFILE,host,operator,operand);
-snprintf(CFLAST,CF_BUFSIZE,"last.%s.100.%.40s.%s.%.100s",VCANONICALFILE,host,operator,operand);
+snprintf(CFLAST,CF_BUFSIZE,"last.%.100s.%.40s.%s.%.100s",VCANONICALFILE,host,operator,operand);
  
 if (strlen(CFLOCK) > MAX_FILENAME)
    {

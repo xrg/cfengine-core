@@ -242,10 +242,12 @@ extern int errno;
 
 
 #ifdef HAVE_PTHREAD_H
+# define __USE_GNU 1
+
 # include <pthread.h>
-#ifndef _SC_THREAD_STACK_MIN
-#define _SC_THREAD_STACK_MIN PTHREAD_STACK_MIN
-#endif
+# ifndef _SC_THREAD_STACK_MIN
+# define _SC_THREAD_STACK_MIN PTHREAD_STACK_MIN
+# endif
 #endif
 
 #ifdef HAVE_SCHED_H
@@ -263,6 +265,7 @@ extern int errno;
 #define CF_EXPANDSIZE 2*CF_BUFSIZE
 #define CF_BUFFERMARGIN 32
 #define CF_MAXVARSIZE 1024
+#define CF_NONCELEN CF_BUFSIZE/16
 #define CF_MAXLINKSIZE 256
 #define CF_MAXLINKLEVEL 4
 #define CF_MAXARGS 31
@@ -305,9 +308,9 @@ extern int errno;
 /* This is the only place you ever need to edit anything           */
 /*******************************************************************/
 
-#define CF_CLASSATTR 35         /* increase this for each new class added */
-                            /* It defines the array size for class data */
-#define CF_ATTRDIM 3           /* Only used in CLASSATTRUBUTES[][] defn */
+#define CF_CLASSATTR 36         /* increase this for each new class added */
+                                /* It defines the array size for class data */
+#define CF_ATTRDIM 3            /* Only used in CLASSATTRUBUTES[][] defn */
 
    /* end class array limits */
 
@@ -691,6 +694,7 @@ enum classes
    cfsco,
    darwin,
    ux4800,
+   qnx,
    unused1,
    unused2,
    unused3

@@ -186,12 +186,10 @@ if (PUBKEY == NULL || PRIVKEY == NULL)
    return false;
    }
  
-Debug("KeyAuthentication()\n");
- 
 /* Generate a random challenge to authenticate the server */
  
 nonce_challenge = BN_new();
-BN_rand(nonce_challenge,256,0,0);
+BN_rand(nonce_challenge,CF_NONCELEN,0,0);
 
 nonce_len = BN_bn2mpi(nonce_challenge,in);
 ChecksumString(in,nonce_len,digest,'m');
@@ -201,10 +199,12 @@ ChecksumString(in,nonce_len,digest,'m');
 if (OptionIs(CONTEXTID,"HostnameKeys",true))
    {
    snprintf(keyname,CF_BUFSIZE,"root-%s",ip->server); 
+   Debug("KeyAuthentication(with hostname key %s)\n",keyname);
    }
 else
    {
    snprintf(keyname,CF_BUFSIZE,"root-%s",CONN->remoteip); 
+   Debug("KeyAuthentication(with IP keyname %s)\n",keyname);
    }
 
 if (server_pubkey = HavePublicKey(keyname))
@@ -272,7 +272,12 @@ SendTransaction(CONN->sd,sendbuffer,len,CF_DONE);
 
 /* proposition S1 */  
 memset(in,0,CF_BUFSIZE);  
-ReceiveTransaction(CONN->sd,in,NULL);
+
+if (ReceiveTransaction(CONN->sd,in,NULL) == -1)
+   {
+   CfLog(cferror,"Protocol transaction broken off",NULL);
+   return false;
+   }
 
 if (BadProtoReply(in))
    {
@@ -284,7 +289,12 @@ if (BadProtoReply(in))
 
 /* proposition S2 */   
 memset(in,0,CF_BUFSIZE);  
-ReceiveTransaction(CONN->sd,in,NULL);
+
+if (ReceiveTransaction(CONN->sd,in,NULL) == -1)
+   {
+   CfLog(cferror,"Protocol transaction broken off",NULL);
+   return false;   
+   }
 
 if (!ChecksumsMatch(digest,in,'m')) 
    {
@@ -294,22 +304,25 @@ if (!ChecksumsMatch(digest,in,'m'))
    }
 else
    {
+   char server[CF_BUFSIZE];
+   ExpandVarstring(ip->server,server,NULL);
+   
    if (cant_trust_server == 'y')  /* challenge reply was correct */ 
       {
       Verbose("\n...............................................................\n");
-      snprintf(OUTPUT,CF_BUFSIZE,"Strong authentication of server=%s connection confirmed\n",ip->server);
+      snprintf(OUTPUT,CF_BUFSIZE,"Strong authentication of server=%s connection confirmed\n",server);
       CfLog(cfverbose,OUTPUT,"");
       }
    else
       {
       if (ip->trustkey == 'y')
          {
-         snprintf(OUTPUT,CF_BUFSIZE,"Trusting server identity and willing to accept key from %s=%s",ip->server,CONN->remoteip);
+         snprintf(OUTPUT,CF_BUFSIZE,"Trusting server identity and willing to accept key from %s=%s",server,CONN->remoteip);
          CfLog(cferror,OUTPUT,"");
          }
       else
          {
-         snprintf(OUTPUT,CF_BUFSIZE,"Not authorized to trust the server=%s's public key (trustkey=false)\n",ip->server);
+         snprintf(OUTPUT,CF_BUFSIZE,"Not authorized to trust the server=%s's public key (trustkey=false)\n",server);
          CfLog(cferror,OUTPUT,"");
          return false;
          }
@@ -323,6 +336,11 @@ Debug("Receive counter challenge from server\n");
 memset(in,0,CF_BUFSIZE);  
 encrypted_len = ReceiveTransaction(CONN->sd,in,NULL);
 
+if (encrypted_len < 0)
+   {
+   CfLog(cferror,"Protocol transaction sent illegal cipher length",NULL);
+   return false;      
+   }
 
 if ((decrypted_cchall = malloc(encrypted_len)) == NULL)
    {
@@ -352,7 +370,7 @@ if (server_pubkey == NULL)
    Debug("Collecting public key from server!\n"); 
 
    /* proposition S4 - conditional */  
-   if ((len = ReceiveTransaction(CONN->sd,in,NULL)) == 0)
+   if ((len = ReceiveTransaction(CONN->sd,in,NULL)) <= 0)
       {
       CfLog(cferror,"Protocol error in RSA authentation from IP %s\n",ip->server);
       return false;

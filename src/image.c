@@ -288,7 +288,7 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
       (ip->uid)->uid = save_uid;
       (ip->gid)->gid = save_gid;
       
-      Verbose("Opening %s/%s\n",newfrom,newto);
+      Verbose("Opening %s->%s\n",newfrom,newto);
       RecursiveImage(ip,newfrom,newto,maxrecurse-1);
       }
    else
@@ -703,7 +703,7 @@ closedir(dirh);
 
 void ImageCopy(char *sourcefile,char *destfile,struct stat sourcestatbuf,struct Image *ip)
 
-{ char linkbuf[CF_BUFSIZE], *lastnode;
+{ char linkbuf[CF_BUFSIZE],server[CF_BUFSIZE],*lastnode;
   struct stat deststatbuf;
   struct Link empty;
   struct Item *ptr, *ptr1;
@@ -712,6 +712,8 @@ void ImageCopy(char *sourcefile,char *destfile,struct stat sourcestatbuf,struct 
   int ok_to_copy = false, found;
 
 Debug2("ImageCopy(%s,%s,+%o,-%o)\n",sourcefile,destfile,ip->plus,ip->minus);
+
+ExpandVarstring(ip->server,server,NULL);
 
 if ((strcmp(sourcefile,destfile) == 0) && (strcmp(ip->server,"localhost") == 0))
    {
@@ -884,7 +886,7 @@ if (ip->linktype != 'n')
           }
        
        CfLog(cfverbose,OUTPUT,"");
-       snprintf(OUTPUT,CF_BUFSIZE*2,"Copying from %s:%s\n",ip->server,sourcefile);
+       snprintf(OUTPUT,CF_BUFSIZE*2,"Copying from %s:%s\n",server,sourcefile);
        CfLog(cfinform,OUTPUT,"");
        
        if (CopyReg(sourcefile,destfile,sourcestatbuf,deststatbuf,ip))
@@ -1146,7 +1148,7 @@ if (ip->linktype != 'n')
        {
        if (S_ISREG(srcmode))
           {
-          snprintf(OUTPUT,CF_BUFSIZE*2,"Update of image %s from master %s on %s",destfile,sourcefile,ip->server);
+          snprintf(OUTPUT,CF_BUFSIZE*2,"Update of image %s from master %s on %s",destfile,sourcefile,server);
           
           if (DONTDO)
              {

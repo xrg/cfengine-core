@@ -381,6 +381,7 @@ for (ip = list; (ip != NULL); ip=ip->next, line++)
       continue;
       }
 
+   memcpy(&rx,&rxcache,sizeof(rx)); /* To fix a bug on some implementations where rx gets emptied */      
    if (EDABORTMODE && ItemMatchesRegEx(ip->name,VEDITABORT))
       {
       Verbose("Aborting search, regex %s matches line\n",VEDITABORT);
@@ -388,7 +389,6 @@ for (ip = list; (ip != NULL); ip=ip->next, line++)
       return NULL;
       }
    
-   memcpy(&rx,&rxcache,sizeof(rx)); /* To fix a bug on some implementations where rx gets emptied */      
    if (regexec(&rx,ip->name,1,&pmatch,0) == 0)
       {
       if ((pmatch.rm_so == 0) && (pmatch.rm_eo == strlen(ip->name)))

@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.1.7p1)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.1.8)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -424,6 +424,8 @@ if test "$ac_cv_lib_pthread_main" = "yes"; then
 	AC_CHECK_HEADERS(sched.h)
 fi
 
+
+
 AC_CHECK_FUNC(lchown, AC_DEFINE(HAVE_LCHOWN))
 
 AC_CHECK_FUNC(pthread_attr_setstacksize, AC_DEFINE(HAVE_PTHREAD_ATTR_SETSTACKSIZE), AC_CHECK_LIB(pthread, pthread_create))
@@ -555,6 +557,10 @@ case "$target_os" in
 
    cray*)
 	AC_DEFINE(CFCRAY)
+        ;;
+
+   qnx*)
+        AC_DEFINE(CFQNX)
         ;;
 
    openbsd*|obsd*)

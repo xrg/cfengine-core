@@ -45,6 +45,51 @@ strncpy(CONTEXTID,id,31);
 
 /*******************************************************************/
 
+void InstallObject(char *name)
+
+{ struct cfObject *ptr;
+  
+Debug1("Adding object %s", name);
+
+/*
+  if ( ! IsInstallable(CLASSBUFF))
+   {
+   return;
+   }
+*/
+
+for (ptr = VOBJ; ptr != NULL; ptr=ptr->next)
+   {
+   if (strcmp(ptr->scope,name) == 0)
+      {
+      Debug("Object %s already exists\n",name);
+      return;
+      }
+   }
+
+if ((ptr = (struct cfObject *)malloc(sizeof(struct cfObject))) == NULL)
+   {
+   FatalError("Memory Allocation failed for cfObject");
+   }
+ 
+if (VOBJTOP == NULL)
+   {
+   VOBJ = ptr;
+   }
+else
+   {
+   VOBJTOP->next = ptr;
+   }
+
+InitHashTable(ptr->hashtable);
+ 
+ptr->next = NULL;
+ptr->scope = strdup(name);
+VOBJTOP = ptr; 
+}
+
+/*******************************************************************/
+
 int ScopeIsMethod()
 
 {
@@ -219,9 +264,11 @@ int OptionIs(char *scope,char *name,short on)
 
 { char *result;
 
-result = GetMacroValue(scope, name);
+Debug("OptionIs(%s,%s,%d)\n",scope,name,on);
+ 
+result = GetMacroValue(scope,name);
 
-if ( result == NULL)
+if (result == NULL)
    {
    return(false);
    }
@@ -258,7 +305,6 @@ char *GetMacroValue(char *scope,char *name)
     and replace
 
      HASH[slot] by objectptr->hash[slot]
-
 */
 
 Debug("GetMacroValue(%s,%s)\n",scope,name);

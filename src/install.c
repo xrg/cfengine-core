@@ -1376,13 +1376,27 @@ if (value[0] == '\0')
         strncpy(METHODFILENAME,value,CF_BUFSIZE-1);
         break;
     case cfretclasses:
-        strncpy(METHODRETURNCLASSES,value,CF_BUFSIZE-1);
+        if (strlen(PARSEMETHODRETURNCLASSES) > 0)
+           {
+           yyerror("Redefinition of method return_classes");
+           }
+        else
+           {
+           strncpy(PARSEMETHODRETURNCLASSES,value,CF_BUFSIZE-1);
+           }
         break;
     case cfforcereplyto:
         strncpy(METHODFORCE,value,CF_BUFSIZE-1);
         break;
     case cfsendclasses:
-        strncpy(METHODREPLYTO,value,CF_MAXVARSIZE-1);
+        if (strlen(METHODREPLYTO) > 0)
+           {
+           yyerror("Redefinition of method send_classes");
+           }
+        else
+           {
+           strncpy(METHODREPLYTO,value,CF_MAXVARSIZE-1);
+           }
         break;
     case cfifelap:
         HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
@@ -1812,52 +1826,6 @@ AppendItem(&VIMPORT,ebuff,CLASSBUFF);
 
 /*******************************************************************/
 
-void InstallObject(char *name)
-
-{ struct cfObject *ptr;
-  
-Debug1("Adding object %s", name);
-
-/*
-  if ( ! IsInstallable(CLASSBUFF))
-   {
-   return;
-   }
-*/
-
-for (ptr = VOBJ; ptr != NULL; ptr=ptr->next)
-   {
-   if (strcmp(ptr->scope,name) == 0)
-      {
-      Debug("Object %s already exists\n",name);
-      return;
-      }
-   }
-
-if ((ptr = (struct cfObject *)malloc(sizeof(struct cfObject))) == NULL)
-   {
-   FatalError("Memory Allocation failed for cfObject");
-   }
- 
-if (VOBJTOP == NULL)
-   {
-   VOBJ = ptr;
-   }
-else
-   {
-   VOBJTOP->next = ptr;
-   }
-
-InitHashTable(ptr->hashtable);
- 
-ptr->next = NULL;
-ptr->scope = strdup(name);
-VOBJTOP = ptr; 
-}
-
-
-/*******************************************************************/
-
 void InstallHomeserverItem(char *item)
 
 { char ebuff[CF_EXPANDSIZE];
@@ -2025,7 +1993,7 @@ ptr->copy = VCPLNPARSE;
 ptr->exclusions = VEXCLUDEPARSE;
 ptr->inclusions = VINCLUDEPARSE;
 ptr->ignores = VIGNOREPARSE;
-ptr->filters=VFILTERBUILD;
+ptr->filters = VFILTERBUILD;
 ptr->recurse = VRECURSE;
 ptr->nofile = DEADLINKS;
 ptr->log = LOGP;
@@ -2140,6 +2108,8 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    ptr->exclusions = VEXCLUDEPARSE;
    ptr->inclusions = VINCLUDEPARSE;
    ptr->ignores = VIGNOREPARSE;
+   ptr->copytype = COPYTYPE;
+   ptr->filters = VFILTERBUILD;
    ptr->recurse = VRECURSE;
    ptr->log = LOGP;
    ptr->inform = INFORMP;
@@ -3597,13 +3567,16 @@ if (strlen(file) == 0)
    }
  
 memset(name,0,CF_BUFSIZE);
- 
+
+/* Methods need to be known to the engine even when not scheduled
 if (!IsInstallable(CLASSBUFF))
    {
    InitializeAction();
    Debug1("Not installing %s, no match\n",function);
    return;
    }
+*/
+
 
 Debug1("Installing item (%s=%s) in the methods list iff %s\n",function,file,CLASSBUFF);
 
@@ -3738,7 +3711,7 @@ ptr->file = strdup(file);
 ptr->servers = SplitStringAsItemList(CFSERVER,',');
 ptr->bundle = NULL;
 ptr->return_vars = SplitStringAsItemList(METHODFILENAME,',');
-ptr->return_classes = SplitStringAsItemList(METHODRETURNCLASSES,','); 
+ptr->return_classes = SplitStringAsItemList(PARSEMETHODRETURNCLASSES,','); 
 ptr->scope = strdup(CONTEXTID);
 ptr->useshell = USESHELL;
 ptr->log = LOGP;
@@ -4871,14 +4844,6 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
          ep->name = strdup("localhost");
          }
       
-      if (ptr->purge == 'y' && strstr(ep->name,"localhost") == 0)
-         {
-         Verbose("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-         Verbose("!! Purge detected in local (non-cfd) file copy to file %s\n",ptr->destination);
-         Verbose("!! Do not risk purge if source %s is NFS mounted (see manual)\n",ptr->path);
-         Verbose("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-         }
-
       if (IsDefinedClass(CLASSBUFF))
          {
          if ((strcmp(spl,buf2) == 0) && (strcmp(ep->name,"localhost") == 0))
@@ -5061,7 +5026,15 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
          ptr->forcedirs = FORCEDIRS;
          ptr->typecheck = TYPECHECK;
          }
-      
+
+      if (ptr->purge == 'y' && strstr(ep->name,"localhost") == 0)
+         {
+         Verbose("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+         Verbose("!! Purge detected in local (non-cfservd) file copy to file %s\n",ptr->destination);
+         Verbose("!! Do not risk purge if source %s is NFS mounted (see manual)\n",ptr->path);
+         Verbose("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+         }
+
       ptr->log = LOGP;
       ptr->inform = INFORMP;
       ptr->plus_flags = PLUSFLAG;

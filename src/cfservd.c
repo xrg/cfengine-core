@@ -39,10 +39,16 @@
 /* Pthreads                                                        */
 /*******************************************************************/
 
-#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+#ifdef PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
+pthread_attr_t PTHREADDEFAULTS;
+pthread_mutex_t MUTEX_COUNT = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP;
+pthread_mutex_t MUTEX_HOSTNAME = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP;
+#else
+# if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
 pthread_attr_t PTHREADDEFAULTS;
 pthread_mutex_t MUTEX_COUNT = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUTEX_HOSTNAME = PTHREAD_MUTEX_INITIALIZER;
+# endif
 #endif
 
 /*******************************************************************/
@@ -115,7 +121,7 @@ void DeleteConn ARGLIST((struct cfd_connection *conn));
 time_t SecondsTillAuto ARGLIST((void));
 void SetAuto ARGLIST((int seconds));
 int cfscanf ARGLIST((char *in, int len1, int len2, char *out1, char *out2, char *out3));
-int AuthenticationDialogue ARGLIST((struct cfd_connection *conn,char *buffer));
+int AuthenticationDialogue ARGLIST((struct cfd_connection *conn,char *buffer, int buffersize));
 char *MapAddress ARGLIST((char *addr));
 int IsWildKnownHost ARGLIST((RSA *oldkey,RSA *newkey,char *addr,char *user));
 void AddToKeyDB ARGLIST((RSA *key,char *addr));
@@ -137,6 +143,9 @@ int main (int argc,char **argv)
 {
 CheckOptsAndInit(argc,argv);
 ParseInputFile(VINPUTFILE);
+/* We call CfOpenLog again so, if we configure SyslogFacility, 
+   we open syslog again */
+CfOpenLog();
 CheckVariables();
 SummarizeParsing();
 
@@ -1110,7 +1119,7 @@ int BusyWithConnection(struct cfd_connection *conn)
   int len=0, drift, plainlen, received;
   struct cfd_get_arg get_args;
 
-memset(recvbuffer,0,CF_BUFSIZE);
+memset(recvbuffer,0,CF_BUFSIZE+128);
 memset(&get_args,0,sizeof(get_args));
 
 if ((received = ReceiveTransaction(conn->sd_reply,recvbuffer,NULL)) == -1)
@@ -1134,8 +1143,8 @@ switch (GetCommand(recvbuffer))
        
        if (!conn->id_verified)
           {
-                        RefuseAccess(conn,sendbuffer,0,recvbuffer);
-                        return false;
+          RefuseAccess(conn,sendbuffer,0,recvbuffer);
+          return false;
           }
        
        if (!AllowedUser(conn->username))
@@ -1167,12 +1176,14 @@ switch (GetCommand(recvbuffer))
        return false;
        
    case cfd_cauth:
+
        conn->id_verified = VerifyConnection(conn,(char *)(recvbuffer+strlen("CAUTH ")));
        
        if (! conn->id_verified)
           {
           RefuseAccess(conn,sendbuffer,0,recvbuffer);
           }
+       
        return conn->id_verified; /* are we finished yet ? */
        
        
@@ -1184,7 +1195,7 @@ switch (GetCommand(recvbuffer))
           return false;
           }
        
-       if (!AuthenticationDialogue(conn,recvbuffer))
+       if (!AuthenticationDialogue(conn,recvbuffer,received))
           {
           RefuseAccess(conn,sendbuffer,0,recvbuffer);
           return false;
@@ -1193,6 +1204,7 @@ switch (GetCommand(recvbuffer))
        return true;
        
    case cfd_get:
+
        memset(filename,0,CF_BUFSIZE);
        sscanf(recvbuffer,"GET %d %[^\n]",&(get_args.buf_size),filename);
        
@@ -2043,12 +2055,12 @@ for (ap = VADMIT; ap != NULL; ap=ap->next)
 
 /**************************************************************/
 
-int AuthenticationDialogue(struct cfd_connection *conn,char *recvbuffer)
+int AuthenticationDialogue(struct cfd_connection *conn,char *recvbuffer, int recvlen)
 
 { char in[CF_BUFSIZE],*out, *decrypted_nonce;
   BIGNUM *counter_challenge = NULL;
   unsigned char digest[EVP_MAX_MD_SIZE+1];
-  unsigned int crypt_len, nonce_len = 0,len = 0, encrypted_len, keylen;
+  unsigned int crypt_len, nonce_len = 0,len = 0, encrypted_len = 0, keylen;
   char sauth[10], iscrypt ='n';
   unsigned long err;
   RSA *newkey;
@@ -2061,9 +2073,37 @@ if (PRIVKEY == NULL || PUBKEY == NULL)
  
 /* proposition C1 */
 /* Opening string is a challenge from the client (some agent) */
- 
+
+sauth[0] = '\0';
+
 sscanf(recvbuffer,"%s %c %d %d",sauth,&iscrypt,&crypt_len,&nonce_len);
- 
+
+if (crypt_len == 0 || nonce_len == 0 || strlen(sauth) == 0)
+   {
+   CfLog(cfinform,"Protocol format error in authentation from IP %s\n",conn->hostname);
+   return false;
+   }
+
+if (nonce_len > CF_NONCELEN*2)
+   {
+   CfLog(cfinform,"Protocol deviant authentication nonce from %s\n",conn->hostname);
+   return false;   
+   }
+
+if (crypt_len > 2*CF_NONCELEN)
+   {
+   CfLog(cfinform,"Protocol abuse in unlikely cipher from %s\n",conn->hostname);
+   return false;      
+   }
+
+/* Check there is no attempt to read past the end of the received input */
+
+if (recvbuffer+CF_RSA_PROTO_OFFSET+nonce_len > recvbuffer+recvlen)
+   {
+   CfLog(cfinform,"Protocol consistency error in authentation from IP %s\n",conn->hostname);
+   return false;   
+   }
+
 if ((strcmp(sauth,"SAUTH") != 0) || (nonce_len == 0) || (crypt_len == 0))
    {
    CfLog(cfinform,"Protocol error in RSA authentation from IP %s\n",conn->hostname);
@@ -2089,9 +2129,6 @@ if (iscrypt == 'y')
    if (RSA_private_decrypt(crypt_len,recvbuffer+CF_RSA_PROTO_OFFSET,decrypted_nonce,PRIVKEY,RSA_PKCS1_PADDING) <= 0)
       {
       err = ERR_get_error();
-      snprintf(conn->output,CF_BUFSIZE,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
-      CfLog(cferror,conn->output,"");
-      free(decrypted_nonce);
 
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
       if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
@@ -2099,11 +2136,29 @@ if (iscrypt == 'y')
          CfLog(cferror,"pthread_mutex_unlock failed","lock");
          }
 #endif 
+
+      snprintf(conn->output,CF_BUFSIZE,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
+      CfLog(cferror,conn->output,"");
+      free(decrypted_nonce);
       return false;
       }
    }
  else
     {
+    if (nonce_len > crypt_len)
+       {
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+       if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
+          {
+          CfLog(cferror,"pthread_mutex_unlock failed","lock");
+          }
+#endif 
+       snprintf(conn->output,CF_BUFSIZE,"Illegal challenge\n");
+       CfLog(cferror,conn->output,"");
+       free(decrypted_nonce);
+       return false;       
+       }
+    
     memcpy(decrypted_nonce,recvbuffer+CF_RSA_PROTO_OFFSET,nonce_len);  
     }
  
@@ -2136,8 +2191,7 @@ if (iscrypt == 'y')
     {
     CfLog(cferror,"pthread_mutex_lock failed","lock");
     }
-#endif
- 
+#endif 
  
  
 /* proposition C2 */ 
@@ -2272,7 +2326,11 @@ if (iscrypt != 'y')
 
 /* proposition C4 */ 
 memset(in,0,CF_BUFSIZE);
-ReceiveTransaction(conn->sd_reply,in,NULL);
+
+if (ReceiveTransaction(conn->sd_reply,in,NULL) == -1)
+   {
+   return false;
+   }
  
 if (!ChecksumsMatch(digest,in,'m'))  /* replay / piggy in the middle attack ? */
    {
@@ -2300,9 +2358,19 @@ else
 
 /* proposition C5 */
 memset(in,0,CF_BUFSIZE);
-keylen = ReceiveTransaction(conn->sd_reply,in,NULL); 
 
- 
+if ((keylen = ReceiveTransaction(conn->sd_reply,in,NULL)) == -1)
+   {
+   return false;
+   }
+
+if (keylen > CF_BUFSIZE/2)
+   {
+   snprintf(conn->output,CF_BUFSIZE,"Session key length received from %s is too long",conn->ipaddr);
+   CfLog(cfinform,conn->output,"");
+   return false;
+   }
+
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
 if (pthread_mutex_lock(&MUTEX_SYSCALL) != 0)
    {
@@ -2319,7 +2387,11 @@ if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
    }
 #endif
 
- 
+if (conn->session_key == NULL)
+   {
+   return false;
+   }
+
 memcpy(conn->session_key,in,keylen);
 Debug("Got a session key...\n"); 
  

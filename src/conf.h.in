@@ -71,6 +71,7 @@
 #undef SCO
 #undef NEXTSTEP
 #undef CFCRAY
+#undef CFQNX
 #undef CFGNU
 #undef UNIXWARE
 #undef OPENBSD

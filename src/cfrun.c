@@ -85,6 +85,8 @@ int main (int argc,char **argv)
   int  status;
   int  pid;
 
+SetContext("cfrun");
+
 CheckOptsAndInit(argc,argv);
 
 ip = VCFRUNHOSTLIST;
@@ -120,6 +122,7 @@ while (ip != NULL)
       Debug("wait result pid = %d number %d\n", pid, i);
       i--;
       }
+
    if ( i < MAXCHILD )
       {
       ip = ip->next;
@@ -227,7 +230,7 @@ for (i = 1; i < argc; i++)
     {
     Debug("Class item: %s\n",ip->name);
     }
- 
+
  ReadCfrunConf(); 
  
  GetNameInfo();
@@ -250,7 +253,7 @@ else
    }   
 */
  
- Debug("FQNAME = %s\n",VFQNAME);
+Debug("FQNAME = %s\n",VFQNAME);
  
 sprintf(VPREFIX,"cfrun:%s",VFQNAME);
  
@@ -265,7 +268,6 @@ ERR_load_crypto_strings();
 CheckWorkDirectories();
 LoadSecretKeys();
 RandomSeed();
-
 }
 
 
@@ -375,7 +377,7 @@ snprintf(CONN->remoteip,CF_MAX_IP_LEN,"%s",inet_ntoa(raddr.sin_addr));
 addresses.trustkey = 'n'; 
 addresses.encrypt = 'n';
 addresses.server = strdup(parsed_host);
- 
+
 snprintf(sendbuffer,CF_BUFSIZE,"root-%s",parsed_host);
 gotkey = HavePublicKey(sendbuffer);
  
@@ -594,6 +596,20 @@ while (!feof(fp))
       {
       sscanf(line,"domain = %295[^# \n]",VDOMAIN);
       Verbose("Domain name = %s\n",VDOMAIN);
+      continue;
+      }
+
+   if (strncmp(line,"hostnamekeys",6) == 0)
+      {
+      char buf[16];
+      buf[0] = '\0';
+      sscanf(line,"hostnamekeys = %295[^# \n]",buf);
+      Verbose("Hostname keys\n");
+
+      if (strcmp(buf,"yes") == 0||strcmp(buf,"true") == 0)
+         {
+         AddMacroValue(CONTEXTID,"HostnameKeys","true");
+         }
       continue;
       }
 
@@ -940,20 +956,12 @@ void yyerror(char *s)
 {
 }
 
-char *GetMacroValue(char *s,char *sp)
+void Warning(char *s)
 
 {
- return NULL;
+if (WARNINGS)
+   {
+   fprintf (stderr,"%s:%s:%d: Warning: %s\n",VPREFIX,VCURRENTFILE,LINENUMBER,s);
+   }
 }
 
-
-int OptionIs ARGLIST((char *scope, char *name, short on))
-{
- return false;
-}
-
-
-void AddMacroValue(char *scope,char *name,char *value)
-
-{
-}

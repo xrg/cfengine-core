@@ -40,8 +40,8 @@ extern char *ECGSOCKS[ATTR][2];
 extern char *TCPNAMES[CF_NETATTR];
 extern char **METHODARGV;
 
-extern char METHODRETURNVARS[CF_BUFSIZE];
-extern char METHODRETURNCLASSES[CF_BUFSIZE];
+extern struct Item *METHODRETURNVARS;;
+extern struct Item *METHODRETURNCLASSES;
 extern char METHODFILENAME[CF_BUFSIZE];
 extern char *VMETHODPROTO[];
 extern int METHODARGC;
@@ -259,6 +259,8 @@ extern struct Mountables *VMOUNTABLESTOP;
 extern struct cfObject *VOBJTOP;
 extern struct cfObject *VOBJ;
 
+
+extern char *PARSEMETHODRETURNCLASSES;
 
 extern struct Item *METHODARGS;
 extern flag  MOUNT_RO;                  /* mount directory readonly */

@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.1.7p1 for version
-2.1.7p1 as last updated 22 May 2004.
+   This manual corresponds to CFENGINE Edition 2.1.8 for version 2.1.8
+as last updated 22 May 2004.
 
 * Menu:
 
@@ -6343,119 +6343,119 @@ FAQ Index
 
 Tag Table:
 Node: Top474
-Node: Overview1847
-Node: What is cfengine?2275
-Node: Site configuration6765
-Node: Key concepts9386
-Node: Control files9942
-Node: Network interface11102
-Node: Network File System (NFS)12241
-Node: Name servers (DNS)14680
-Node: Monitoring important files16152
-Node: Making links17570
-Node: Functionality19144
-Node: Getting started20426
-Node: What you must have20985
-Node: Program structure26773
-Node: Building a distributed configuration30437
-Node: Startup update.conf31464
-Node: Startup cfservd.conf34548
-Node: Options36009
-Node: Invoking cfagent38981
-Node: Running cfengine permanently monitoring and restarting cfexecd40941
-Node: CFINPUTS environment variable43305
-Node: What to aim for44852
-Node: More advanced concepts46876
-Node: Classes basics47517
-Node: Variable substitution55886
-Node: Undefined variables64309
-Node: Defining classes65269
-Node: Command line classes66653
-Node: actionsequence classes67761
-Node: shellcommand classes68913
-Node: Feedback classes70181
-Node: Writing plugin modules71000
-Node: The generic class any74061
-Node: Debugging tips74574
-Node: Access control75244
-Node: Wildcards in directory names76280
-Node: File sweeps77514
-Node: Security in File sweeps81268
-Node: Log files82683
-Node: Quoted strings83984
-Node: Regular expressions85174
-Node: Iterating over lists89887
-Node: Global configurations92423
-Node: General considerations93112
-Node: Using netgroups94761
-Node: Files and links96686
-Ref: Files and links-Footnote-1102965
-Node: Copying files103025
-Node: Managing processes104766
-Node: NFS resources105367
-Node: NFS filesystem resources106532
-Node: Unique filesystem mountpoints108145
-Ref: Unique filesystem mountpoints-Footnote-1111833
-Node: How does it work?111947
-Node: Special variables113425
-Node: Mount example115675
-Ref: Mount example-Footnote-1122027
-Ref: Mount example-Footnote-2122199
-Node: Using the automounter122425
-Node: Editing files127593
-Node: Disabling and the file repository131916
-Node: Running user scripts134777
-Node: Compressing logs137006
-Node: ACLs137937
-Node: Using cfengine as a front-end for cron147651
-Node: Structuring cfagent.conf149750
-Node: Splaying host times151160
-Node: Building flexible time classes152772
-Node: Scheduling interval155751
-Node: Cfengine network services156641
-Node: What services?157143
-Node: How it works159233
-Node: Emulating rdist159537
-Node: Remote execution of cfagent162993
-Node: Spamming and security164836
-Ref: Spamming and security-Footnote-1170216
-Ref: Spamming and security-Footnote-2170282
-Ref: Spamming and security-Footnote-3170348
-Node: cfservd protocol170397
-Node: Deadlocks and runaway loops171303
-Node: Configuring cfservd173379
-Node: Installation of cfservd173611
-Node: Configuration file cfservd.conf174568
-Node: Security and cfengine180047
-Node: What is security?181291
-Node: A word of warning185594
-Node: Automation186364
-Node: Trust189003
-Node: Why trust cfengine?190943
-Node: Configuration193556
-Node: Disabling and replacing software195354
-Node: Process monitoring202290
-Node: Monitoring files205016
-Node: The setuid log207017
-Node: Suspicious filenames207823
-Node: Checksums and Tripwire functionality209623
-Node: FileExtensions211713
-Node: NonAlphaNumFiles212218
-Node: Defensive garbage collection212858
-Node: Anonymous FTP example217115
-Node: WWW security221425
-Node: Miscellaneous security of cfengine itself224589
-Node: Privacy (encryption)225030
-Node: Trust and key races228734
-Node: Adaptive locks231502
-Node: Spoofing232386
-Node: Race conditions in file copying232926
-Node: size= in copy233665
-Node: useshell= and owner= in shellcommands234365
-Node: Firewalls235330
-Node: Summary235988
-Node: Variable Index236781
-Node: Concept Index240822
-Node: FAQ Index255241
+Node: Overview1843
+Node: What is cfengine?2271
+Node: Site configuration6761
+Node: Key concepts9382
+Node: Control files9938
+Node: Network interface11098
+Node: Network File System (NFS)12237
+Node: Name servers (DNS)14676
+Node: Monitoring important files16148
+Node: Making links17566
+Node: Functionality19140
+Node: Getting started20422
+Node: What you must have20981
+Node: Program structure26769
+Node: Building a distributed configuration30433
+Node: Startup update.conf31460
+Node: Startup cfservd.conf34544
+Node: Options36005
+Node: Invoking cfagent38977
+Node: Running cfengine permanently monitoring and restarting cfexecd40937
+Node: CFINPUTS environment variable43301
+Node: What to aim for44848
+Node: More advanced concepts46872
+Node: Classes basics47513
+Node: Variable substitution55882
+Node: Undefined variables64305
+Node: Defining classes65265
+Node: Command line classes66649
+Node: actionsequence classes67757
+Node: shellcommand classes68909
+Node: Feedback classes70177
+Node: Writing plugin modules70996
+Node: The generic class any74057
+Node: Debugging tips74570
+Node: Access control75240
+Node: Wildcards in directory names76276
+Node: File sweeps77510
+Node: Security in File sweeps81264
+Node: Log files82679
+Node: Quoted strings83980
+Node: Regular expressions85170
+Node: Iterating over lists89883
+Node: Global configurations92419
+Node: General considerations93108
+Node: Using netgroups94757
+Node: Files and links96682
+Ref: Files and links-Footnote-1102961
+Node: Copying files103021
+Node: Managing processes104762
+Node: NFS resources105363
+Node: NFS filesystem resources106528
+Node: Unique filesystem mountpoints108141
+Ref: Unique filesystem mountpoints-Footnote-1111829
+Node: How does it work?111943
+Node: Special variables113421
+Node: Mount example115671
+Ref: Mount example-Footnote-1122023
+Ref: Mount example-Footnote-2122195
+Node: Using the automounter122421
+Node: Editing files127589
+Node: Disabling and the file repository131912
+Node: Running user scripts134773
+Node: Compressing logs137002
+Node: ACLs137933
+Node: Using cfengine as a front-end for cron147647
+Node: Structuring cfagent.conf149746
+Node: Splaying host times151156
+Node: Building flexible time classes152768
+Node: Scheduling interval155747
+Node: Cfengine network services156637
+Node: What services?157139
+Node: How it works159229
+Node: Emulating rdist159533
+Node: Remote execution of cfagent162989
+Node: Spamming and security164832
+Ref: Spamming and security-Footnote-1170212
+Ref: Spamming and security-Footnote-2170278
+Ref: Spamming and security-Footnote-3170344
+Node: cfservd protocol170393
+Node: Deadlocks and runaway loops171299
+Node: Configuring cfservd173375
+Node: Installation of cfservd173607
+Node: Configuration file cfservd.conf174564
+Node: Security and cfengine180043
+Node: What is security?181287
+Node: A word of warning185590
+Node: Automation186360
+Node: Trust188999
+Node: Why trust cfengine?190939
+Node: Configuration193552
+Node: Disabling and replacing software195350
+Node: Process monitoring202286
+Node: Monitoring files205012
+Node: The setuid log207013
+Node: Suspicious filenames207819
+Node: Checksums and Tripwire functionality209619
+Node: FileExtensions211709
+Node: NonAlphaNumFiles212214
+Node: Defensive garbage collection212854
+Node: Anonymous FTP example217111
+Node: WWW security221421
+Node: Miscellaneous security of cfengine itself224585
+Node: Privacy (encryption)225026
+Node: Trust and key races228730
+Node: Adaptive locks231498
+Node: Spoofing232382
+Node: Race conditions in file copying232922
+Node: size= in copy233661
+Node: useshell= and owner= in shellcommands234361
+Node: Firewalls235326
+Node: Summary235984
+Node: Variable Index236777
+Node: Concept Index240818
+Node: FAQ Index255237
 
 End Tag Table

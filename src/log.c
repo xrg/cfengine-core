@@ -39,6 +39,7 @@ void CfOpenLog()
 
 { char value[CF_BUFSIZE];
   int facility = LOG_USER; 
+  static lastsyslog=0;
  
 if (GetMacroValue(CONTEXTID,"SyslogFacility"))
    {
@@ -72,15 +73,51 @@ if (GetMacroValue(CONTEXTID,"SyslogFacility"))
       {
       facility = LOG_LOCAL4;
       }
+   if (strcmp(value,"LOG_LOCAL5") == 0)
+      {
+      facility = LOG_LOCAL4;
+      }
+   if (strcmp(value,"LOG_LOCAL6") == 0)
+      {
+      facility = LOG_LOCAL4;
+      }   
+   if (strcmp(value,"LOG_LOCAL7") == 0)
+      {
+      facility = LOG_LOCAL4;
+      }
    
+   if (lastsyslog != 1)
+      {
+      if (lastsyslog)
+         {
+         closelog();
+         }
+      }
+   lastsyslog=1;
    openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,facility);
    }
 else if (ISCFENGINE)
    {
+   if (lastsyslog != 2)
+      {
+      if( lastsyslog )
+         {
+         closelog();
+         }
+      }
+   lastsyslog=2;
    openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_USER);
    }
 else
    {
+   if (lastsyslog != 3)
+      {
+      if( lastsyslog )
+         {
+         closelog();
+         }
+      }
+   lastsyslog=3;
    openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_DAEMON);
    }
 }

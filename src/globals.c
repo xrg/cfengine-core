@@ -63,11 +63,14 @@ char AVDB[1024];
 
 RSA *PRIVKEY = NULL, *PUBKEY = NULL;
 
-
-
-#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+#ifdef PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
+pthread_mutex_t MUTEX_SYSCALL = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP;
+pthread_mutex_t MUTEX_LOCK = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP;
+#else
+# if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
 pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUTEX_LOCK = PTHREAD_MUTEX_INITIALIZER;
+# endif
 #endif
 
 /*******************************************************************/
@@ -225,8 +228,8 @@ char *TCPNAMES[CF_NETATTR] =
   PUBLIC char METHODREPLYTO[CF_BUFSIZE]; 
   PUBLIC char METHODFOR[CF_BUFSIZE];
   PUBLIC char METHODFORCE[CF_BUFSIZE];
-  PUBLIC char METHODRETURNVARS[CF_BUFSIZE];
-  PUBLIC char METHODRETURNCLASSES[CF_BUFSIZE];
+  PUBLIC struct Item *METHODRETURNVARS = NULL;
+  PUBLIC struct Item *METHODRETURNCLASSES = NULL;
   PUBLIC char METHODMD5[CF_BUFSIZE];
 
  /*******************************************************************/
@@ -640,7 +643,6 @@ char *TCPNAMES[CF_NETATTR] =
 /*                                                                 */
 /* parse object : variables belonging to the Parse object          */
 /*                                                                 */
-/*                                                                 */
 /*******************************************************************/
 
   PUBLIC short ISCFENGINE;  /* for re-using parser code in cfd */
@@ -724,7 +726,9 @@ char *TCPNAMES[CF_NETATTR] =
   PRIVATE char CHECKSUM = 'n'; /* n,m,s */
   PRIVATE char COMPRESS = 'n';
   
+
   PRIVATE char *FINDERTYPE;
+  PRIVATE char *PARSEMETHODRETURNCLASSES;
   PRIVATE char *VUIDNAME;
   PRIVATE char *VGIDNAME;
   PRIVATE char *FILTERNAME;

@@ -51,6 +51,8 @@ int ParseInputFile(char *file)
 { char filename[CF_BUFSIZE], *sp;
   struct Item *ptr;
   struct stat s;
+  struct Item *done = NULL;
+   
 
 NewParser();
 PARSING = true;
@@ -91,8 +93,15 @@ for (ptr = VIMPORT; ptr != NULL; ptr=ptr->next)
    Verbose("Looking for an input file %s\n",ptr->name);
 
    sp = FindInputFile(filename,ptr->name);
-   ParseFile(filename,sp);
+
+   if (!IsItemIn(done,filename))
+      {
+      ParseFile(filename,sp);
+      PrependItem(&done,filename,NULL);
+      }
    }
+
+DeleteItemList(done);
 
 PARSING = false;
 DeleteParser();
@@ -142,6 +151,7 @@ void NewParser()
  DESTINATION = (char *) malloc(CF_BUFSIZE);
 
  IMAGEACTION = (char *) malloc(CF_BUFSIZE);
+ PARSEMETHODRETURNCLASSES = (char *) malloc(CF_BUFSIZE);
 
  CHDIR = (char *) malloc(CF_BUFSIZE);
  RESTART = (char *) malloc(CF_BUFSIZE);
@@ -156,6 +166,7 @@ void DeleteParser()
 
 { Debug("Delete Parser Object::");
 
+free(PARSEMETHODRETURNCLASSES);
 free(FINDERTYPE);
 free(VUIDNAME);
 free(VGIDNAME);
@@ -1180,8 +1191,7 @@ void InitializeAction()                                   /* Set defaults */
  *STRATEGYDATA = '\0';
  *CHDIR ='\0';
  METHODFILENAME[0] = '\0';
- METHODRETURNCLASSES[0] = '\0';
- METHODREPLYTO[0] = '\0';
+ PARSEMETHODRETURNCLASSES[0] = '\0';
  METHODFORCE[0] = '\0';
  CHROOT[0] = '\0';
  strcpy(VIFNAME,"");

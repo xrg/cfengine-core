@@ -3105,6 +3105,9 @@ IP addresses, but do have fixed hostnames.
 fixed IP addresses, since it removes one security barrier
 from a potential attacker by potentially allowing DNS spoofing.
 
+   <p>Note that there is a corresponding variable to be set in <code>cfrun.hosts</code>
+for consistency.
+
 <div class="node">
 <p><hr>
 Node:&nbsp;<a name="IfElapsed">IfElapsed</a>,
@@ -7303,9 +7306,19 @@ noted below:
 where a method should be sent. The caller can therefore declare to the server which address
 it wants the reply to be marked for. 
 <br><dt><code>returnvars</code>
-     <dd>Returns the values of the variables to the parent process. 
+     <dd>Returns the values of the variables to the parent process. This acts as an access control list for
+variable names transmitted by the child process. The names returned by the child must match this
+list. 
 <br><dt><code>returnclasses</code>
-     <dd>Returns the classes to the parent process, if and only if they are defined at the end of the current method. 
+     <dd>Returns the classes to the parent process, if and only if they are
+defined at the end of the current method. This acts as an access control list for
+class names transmitted by the child process. The names returned by the child must match this
+list.
+
+     <br><dt><code>sendclasses</code>
+     <dd>Transmits the current status of the named classes to the child process. In other words,
+if the listed classes are defined, they become defined in the child process, else they
+remain undefined. The class may still be defined in the child by independent local definitions. 
 </dl>
 
    <p>The function arguments may not be empty, but a null value
@@ -7924,11 +7937,11 @@ statements are not matched. Excludes are processed after regular
 expression matching and after includes.
 
      <br><dt><code>define=</code><var>classlist</var><code></code>
-     <dd>The colon, command or dot separated list of classes becomes activated if the
+     <dd>The colon, comma or dot separated list of classes becomes activated if the
 number of regular expression matches is non-zero.
 
      <br><dt><code>elsedefine=</code><var>classlist</var><code></code>
-     <dd>The colon, command or dot separated list of classes becomes activated if the
+     <dd>The colon, comma or dot separated list of classes becomes activated if the
 number of regular expression matches is zero.
 
      <br><dt><code>action=</code><var>signal/do/warn</var><code></code>
@@ -9444,6 +9457,7 @@ is as follows
       access=<var>user1</var>,<var>user2</var>
       outputdir=<var>directory</var>
       maxchild=<var>number limit</var>
+      hostnamekeys=<var>true/false</var>
      
       <var>hostname1</var>            <var>options</var>
       <var>hostname2</var>:<var>port</var> <var>options</var>
@@ -9520,7 +9534,10 @@ of two.
    <p>If the port command is given cfrun uses this to connect to the client
 instead of the default (5308) one. 
 Here is an example (<code>cfrun.hosts</code>):
-<pre class="smallexample">     
+<pre class="smallexample">     domain=example.org
+     access=mark,sigmund
+     hostnamekeys=true
+     
      node1.example.org
      node2.example.org:22000 -DNis
      node2.example.org:22001
@@ -11557,6 +11574,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Homepattern variable.: <a href="#mountables">mountables</a>
 <li>Host name gets truncated: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Hostname collision: <a href="#Special%20variables">Special variables</a>
+<li>HostnameKeys: <a href="#Firewalls%20and%20NATs">Firewalls and NATs</a>
+<li>hostnamekeys: <a href="#cfrun">cfrun</a>
 <li>Hung machine: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li>ignore command: <a href="#ignore">ignore</a>
 <li>Import files, variables in: <a href="#import">import</a>

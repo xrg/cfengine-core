@@ -239,7 +239,11 @@ for (ap = response; ap != NULL; ap = ap->ai_next)
    {
    strncpy(ipbuffer,sockaddr_ntop(ap->ai_addr),64);
    Debug("Found address (%s) for host %s\n",ipbuffer,hostname);
-   
+
+   if (strlen(ipbuffer) == 0)
+      {
+      snprintf(ipbuffer,63,"Empty IP result for %s",hostname);
+      }
    freeaddrinfo(response);   
    return ipbuffer;
    }
@@ -347,6 +351,13 @@ if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 
 memset(&value,0,sizeof(value)); 
 memset(&key,0,sizeof(key));       
+
+if (strlen(hostname) == 0)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"LastSeen registry found empty hostname with role %d",role);
+   CfLog(cflogonly,OUTPUT,"");
+   return;
+   }
 
 switch (role)
    {
@@ -508,9 +519,9 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       criterion = (now > then + splaytime + secs);
       }
    
-   if (GetMacroValue(CONTEXTID,"lastseenexpireafter"))
+   if (GetMacroValue(CONTEXTID,"LastSeenExpireAfter"))
       {
-      lsea = atoi(GetMacroValue(CONTEXTID,"lastseenexpireafter"));
+      lsea = atoi(GetMacroValue(CONTEXTID,"LastSeenExpireAfter"));
       lsea *= 3600*24;
       }
 
@@ -529,22 +540,22 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       criterion = false;
       }
    
-   snprintf(OUTPUT,CF_BUFSIZE,"Host %s last at %s\ti.e. not seen for %.2f hours\n\t(Expected <delta_t> = %.2f secs (= %.2f hours))",hostname,ctime(&then),((double)(now-then))/3600.0,average,average/3600.0);
-   
+   snprintf(OUTPUT,CF_BUFSIZE,"Host %s last at %s\ti.e. not seen for %.2f hours\n\t(Expected <delta_t> = %.2f secs (= %.2f hours)) (Expires %d days)",hostname,ctime(&then),((double)(now-then))/3600.0,average,average/3600.0,lsea/3600/24);
+
+   if (now > lsea + then + splaytime + 2*3600)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE*2,"INFO: Giving up on %s, last seen more than %d days ago at %s.",hostname,lsea/3600/24,ctime(&then));
+      CfLog(cferror,OUTPUT,"");
+      
+      if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
+         {
+         CfLog(cferror,"","db_store");
+         }
+      }
+
    if (criterion)
       {
       CfLog(cferror,OUTPUT,"");
-      
-      if (now > lsea + then + splaytime + 2*3600)
-         {
-         snprintf(OUTPUT,CF_BUFSIZE*2,"INFO: Giving up on %s, last seen more than a week ago at %s.",hostname,ctime(&then));
-         CfLog(cferror,OUTPUT,"");
-         
-         if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
-            {
-            CfLog(cferror,"","db_store");
-            }
-         }
       }
    else
       {      

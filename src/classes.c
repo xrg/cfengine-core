@@ -71,6 +71,7 @@ char *CLASSTEXT[] =   /* If you change here change enum classes too! */
    "sco",
    "darwin",
    "ux4800",
+   "qnx",
    "unused1",
    "unused2",
    "unused3",
@@ -113,6 +114,7 @@ char *CLASSATTRIBUTES[CF_CLASSATTR][CF_ATTRDIM] =
    {"sco_sv","*","*"},           /* SCO */
    {"darwin","*","*"},           /* Darwin, aka MacOS X */
    {"ux4800","*","*"},           /* UX/4800 */
+   {"qnx","*","*"},              /* qnx  */
    {"unused1","blah","blah"},
    {"unused2","blah","blah"},
    {"unused3","blah","blah"},
@@ -153,6 +155,7 @@ char *VPSCOMM[CF_CLASSATTR] =
    "/bin/ps",       /* sco */
    "/bin/ps",       /* darwin */
    "/bin/ps",       /* ux4800 */
+   "/bin/ps",       /* qnx  */
    "/bin/ps",
    "/bin/ps",
    "/bin/ps",
@@ -193,6 +196,7 @@ char *VPSOPTS[CF_CLASSATTR] =
    "-ef",    /* sco */
    "auxw",   /* darwin */
    "-ef",    /* ux4800 */
+   "-ef",    /* qnx */
    "-",
    "-",
    "-",
@@ -233,6 +237,7 @@ char *VMOUNTCOMM[CF_CLASSATTR] =
    "/etc/mountall",         /* sco */
    "/sbin/mount -va",     /* darwin */
    "/sbin/mount -v",     /* ux4800 */
+   "/bin/mount -v",      /* qnx */
    "unused-blah",
    "unused-blah",
    "unused-blah",
@@ -273,6 +278,7 @@ char *VUNMOUNTCOMM[CF_CLASSATTR] =
    "/etc/umount",     /* sco */
    "/sbin/umount",     /* darwin */
    "/sbin/umount",     /* ux4800 */
+   "/bin/umount",      /* qnx */
    "unused-blah",
    "unused-blah",
    "unused-blah",
@@ -315,6 +321,7 @@ char *VMOUNTOPTS[CF_CLASSATTR] =
    "bg,hard,intr",    /* sco */
    "-i,-b",           /* darwin */
    "bg,hard,intr",    /* ux4800 */
+   "bg,hard,intr",    /* qnx */
    "unused-blah",
    "unused-blah",
    "unused-blah",
@@ -355,6 +362,7 @@ char *VIFDEV[CF_CLASSATTR] =
    "net0",   /* sco */
    "en0",    /* darwin */
    "ec0",    /* ux4800 */
+   "en0",    /* qnx */
    "unused-blah",
    "unused-blah",
    "unused-blah",
@@ -396,6 +404,7 @@ char *VRESOLVCONF[CF_CLASSATTR] =
    "/etc/resolv.conf",     /* sco */
    "/etc/resolv.conf",     /* darwin */
    "/etc/resolv.conf",     /* ux4800 */
+   "/etc/resolv.conf",     /* qnx */
    "unused-blah",
    "unused-blah",
    "unused-blah",
@@ -438,6 +447,7 @@ char *VFSTAB[CF_CLASSATTR] =
    "/etc/default/filesys", /* sco */
    "/etc/fstab",       /* darwin */
    "/etc/vfstab",      /* ux4800 */
+   "/etc/fstab",       /* qnx */
    "unused-blah",
    "unused-blah",
    "unused-blah",
@@ -478,6 +488,7 @@ char *VMAILDIR[CF_CLASSATTR] =
    "/var/spool/mail",    /* sco */
    "/var/mail",          /* darwin */
    "/var/mail",          /* ux4800 */
+   "/var/spool/mail",    /* qnx */
    "unused-blah",
    "unused-blah",
    "unused-blah",
@@ -518,6 +529,7 @@ char *VNETSTAT[CF_CLASSATTR] =
    "/usr/bin/netstat -rn",   /* sco */
    "/usr/sbin/netstat -rn",  /* darwin */
    "/usr/bin/netstat -rn",   /* ux4800 */
+   "/usr/bin/netstat -rn",   /* qnx */
    "unused-blah",
    "unused-blah",
    "unused-blah",
@@ -559,6 +571,7 @@ char *VFILECOMM[CF_CLASSATTR] =
    "/usr/bin/file",   /* sco */
    "/usr/bin/file",   /* darwin */
    "/usr/bin/file",   /* ux4800 */
+   "/usr/bin/file",   /* qnx */
    "unused-blah",
    "unused-blah",
    "unused-blah",

@@ -953,6 +953,11 @@ fclose(fp);
 
 for (ip = list; ip != NULL; ip=ip->next)
    {
+   if (ip->name == NULL)
+      {
+      continue;
+      }
+   
    if (strlen(value) + strlen(ip->name) > CF_BUFSIZE)
       {
       snprintf(OUTPUT,CF_BUFSIZE,"Variable size exceeded in ReadList(%s)", args);
@@ -1274,18 +1279,15 @@ fclose(fp);
 
 void HandleReturnValues(char *args,char *value)
 
-{
+{ struct Item *ip;
+ 
 Verbose("This is a method with return value list: (%s)\n",args);
 
- if (strlen(METHODRETURNVARS) == 0)
-    {
-    strncpy(METHODRETURNVARS,args,CF_BUFSIZE-1);
-    }
- else
-    {
-    yyerror("Redefinition of method return values");
-    }
-
+for (ip = SplitStringAsItemList(args,','); ip != NULL; ip=ip->next)
+   {
+   AppendItem(&METHODRETURNVARS,args,CLASSBUFF);
+   }
+ 
 strcpy(value,"noinstall");
 }
 
@@ -1293,19 +1295,16 @@ strcpy(value,"noinstall");
 
 void HandleReturnClasses(char *args,char *value)
 
-{
+{ struct Item *ip;
+ 
 Verbose("This is a method with return class list: %s\n",args);
 
- if (strlen(METHODRETURNCLASSES) == 0)
-    {
-    strncpy(METHODRETURNCLASSES,args,CF_BUFSIZE-1);
-    }
- else
-    {
-    yyerror("Redefinition of method return classes");
-    }
+for (ip = SplitStringAsItemList(args,','); ip != NULL; ip=ip->next)
+   {
+   AppendItem(&METHODRETURNCLASSES,args,CLASSBUFF);
+   }
 
- strcpy(value,"noinstall");
+strcpy(value,"noinstall");
 }
 
 /*********************************************************************/
@@ -1621,9 +1620,12 @@ DeletePersistentClass(arg1);
 void HandlePrepModule(char *args,char *value)
 
 { char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+ char ebuff[CF_EXPANDSIZE];
+
+ExpandVarstring(args,ebuff,NULL);
  
 value[0] = '\0';
-FunctionArgs(args,argv,2);
+FunctionArgs(ebuff,argv,2);
 
 Debug("PrepModule(%s,%s)\n",argv[0],argv[1]);
  

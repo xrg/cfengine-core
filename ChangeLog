@@ -1,3 +1,29 @@
+2.1.8 
+
+	Additional checks added to bolster server transaction security.
+	
+	Fix of bug in copy server variable list expansion (unexpanded variables) introduced in 2.1.7
+	Typo in locks fixed
+	Mutex deadlock fix in cfservd for systems with up to date POSIX implementations.
+	QNX class data added
+	Syslog facility patches to cfservd. (Leonardo Helman)
+	Fix to avoid recursive imports
+	Variables were not expanded in PrepModule
+	Symbolic links were not tidied
+	Missing initializations in links could dump core
+	Logging route switching  bug in disk/required fixed
+
+
+	Bugs in implementation of remote method protocol. Classes were not
+	transferred properly.
+
+	Bug in HostnameKeys for cfrun fixed.
+	
+2.1.7p1
+
+	Bug in resolv node introduced in 2.1.7. Ordering of
+	nameservers was reverse.
+	
 2.1.7
 
         Mandrake Linux detect patch
@@ -53,7 +79,7 @@
 	
 	--with-docs option added and default is to not build the docs
 
-	Chgange to df.c to avoid rounding errors in small blocks for linux
+	Change to df.c to avoid rounding errors in small blocks for linux
 
 	wait status patch for returnszero()
 	

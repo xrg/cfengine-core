@@ -550,7 +550,6 @@ for (tlp = tp->tidylist; tlp != NULL; tlp=tlp->next)
          {
          KillOldLink(path,NULL);
          }
-      continue;
       }
    
    KILLOLDLINKS = savekilloldlinks;

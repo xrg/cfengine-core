@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.1.7p1 for version
-2.1.7p1 as last updated 25 June 2004.
+   This manual corresponds to CFENGINE Edition 2.1.8 for version 2.1.8
+as last updated 2 August 2004.
 
 * Menu:
 
@@ -2649,6 +2649,9 @@ fixed hostnames.
    This method of storing keys is not recommended for sites with fixed
 IP addresses, since it removes one security barrier from a potential
 attacker by potentially allowing DNS spoofing.
+
+   Note that there is a corresponding variable to be set in
+`cfrun.hosts' for consistency.
 
 
 File: cfengine-Reference.info,  Node: IfElapsed,  Next: Inform,  Prev: HostnameKeys,  Up: control
@@ -6224,11 +6227,23 @@ commands. Some special ones are noted below:
      the reply to be marked for.
 
 `returnvars'
-     Returns the values of the variables to the parent process.
+     Returns the values of the variables to the parent process. This
+     acts as an access control list for variable names transmitted by
+     the child process. The names returned by the child must match this
+     list.
 
 `returnclasses'
      Returns the classes to the parent process, if and only if they are
-     defined at the end of the current method.
+     defined at the end of the current method. This acts as an access
+     control list for class names transmitted by the child process. The
+     names returned by the child must match this list.
+
+`sendclasses'
+     Transmits the current status of the named classes to the child
+     process. In other words, if the listed classes are defined, they
+     become defined in the child process, else they remain undefined.
+     The class may still be defined in the child by independent local
+     definitions.
 
    The function arguments may not be empty, but a null value can be
 transmitted with a dummy value, e.g. `Function(null)' or
@@ -6784,11 +6799,11 @@ it in memory. The process table is only re-consulted if
      expression matching and after includes.
 
 `define=CLASSLIST'
-     The colon, command or dot separated list of classes becomes
+     The colon, comma or dot separated list of classes becomes
      activated if the number of regular expression matches is non-zero.
 
 `elsedefine=CLASSLIST'
-     The colon, command or dot separated list of classes becomes
+     The colon, comma or dot separated list of classes becomes
      activated if the number of regular expression matches is zero.
 
 `action=SIGNAL/DO/WARN'
@@ -8052,6 +8067,7 @@ the `cfrun' command. The format of the file is as follows
       access=USER1,USER2
       outputdir=DIRECTORY
       maxchild=NUMBER LIMIT
+      hostnamekeys=TRUE/FALSE
      
       HOSTNAME1            OPTIONS
       HOSTNAME2:PORT OPTIONS
@@ -8114,7 +8130,10 @@ in one step instead of two.
 
    If the port command is given cfrun uses this to connect to the client
 instead of the default (5308) one.  Here is an example (`cfrun.hosts'):
-
+     domain=example.org
+     access=mark,sigmund
+     hostnamekeys=true
+     
      node1.example.org
      node2.example.org:22000 -DNis
      node2.example.org:22001
