@@ -13,7 +13,9 @@
 
 	CentOS support added.
 
-	Extra encryption stage added in protocol.
+	Extra encryption stage added in C5 protocol. NOTE: This makes 2.1.14
+	cfagent clients unable to talk to older servers. (Upgrade servers
+	first, or at the same time.)
 
 	Class "no_default_route" is now defined if a default route is not previously
 	set, and a default route is defined for the current host.
