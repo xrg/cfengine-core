@@ -972,6 +972,7 @@ int linux_redhat_version(void)
 #define MANDRAKE_10_1_ID "Mandrakelinux"
 #define FEDORA_ID "Fedora Core"
 #define WHITEBOX_ID "White Box Enterprise Linux"
+#define CENTOS_ID "CentOS"
  
 #define RELEASE_FLAG "release "
 
@@ -985,6 +986,7 @@ int linux_redhat_version(void)
  * Red Hat Enterprise Linux ES release 2.1 (Panama)
  * Fedora Core release 1 (Yarrow)
  * White Box Enterprise linux release 3.0 (Liberation)
+ * CentOS release 4.0 (Final)
  */
 
 #define RH_REL_FILENAME "/etc/redhat-release"
@@ -1058,6 +1060,10 @@ Verbose("Looking for redhat linux info in \"%s\"\n",relstring);
  else if(!strncmp(relstring, WHITEBOX_ID, strlen(WHITEBOX_ID)))
     {
     vendor = "whitebox";
+    }
+ else if(!strncmp(relstring, CENTOS_ID, strlen(CENTOS_ID)))
+    {
+    vendor = "centos";
     }
  else
     {
