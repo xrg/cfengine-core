@@ -35,11 +35,7 @@
 
 /*******************************************************************/
 
-int FixCompressedArrayValue(i,value,start)
-
-int i;
-char *value;
-struct CompressedArray **start;
+int FixCompressedArrayValue(int i,char *value,struct CompressedArray **start)
 
 { struct CompressedArray *ap;
   char *sp;
@@ -78,9 +74,7 @@ return true;
 
 /*******************************************************************/
 
-void DeleteCompressedArray(start)
-
-struct CompressedArray *start;
+void DeleteCompressedArray(struct CompressedArray *start)
 
 {
 if (start != NULL)
@@ -99,10 +93,7 @@ if (start != NULL)
 
 /*******************************************************************/
 
-int CompressedArrayElementExists(start,key)
-
-struct CompressedArray *start;
-int key;
+int CompressedArrayElementExists(struct CompressedArray *start,int key)
 
 { struct CompressedArray *ap;
 
@@ -121,10 +112,7 @@ return false;
 
 /*******************************************************************/
 
-char *CompressedArrayValue(start,key)
-
-struct CompressedArray *start;
-int key;
+char *CompressedArrayValue(struct CompressedArray *start,int key)
 
 { struct CompressedArray *ap;
 

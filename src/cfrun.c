@@ -66,7 +66,7 @@ char CFLOCK[bufsize] = "dummy";
 /*******************************************************************/
 
 void CheckOptsAndInit  ARGLIST((int argc,char **argv));
-int PollServer ARGLIST((char *host, char *options, int StoreInFile));
+int PollServer ARGLIST((char *host, char *options, int storeinfile));
 void SendClassData ARGLIST((int sd, char *sendbuffer));
 void CheckAccess ARGLIST((char *users));
 void cfrunSyntax ARGLIST((void));
@@ -78,15 +78,12 @@ void FileOutput ARGLIST((FILE *fp, enum fileoutputlevels level, char *message));
 /* Level 0 : Main                                                  */
 /*******************************************************************/
 
-int main (argc,argv)
-
-int argc;
-char **argv;
+int main (int argc,char **argv)
 
 { struct Item *ip;
-  int 	 i=0;
-  int	 status;
-  int	 pid;
+  int   i=0;
+  int  status;
+  int  pid;
 
 CheckOptsAndInit(argc,argv);
 
@@ -97,25 +94,25 @@ while (ip != NULL)
    if (i < MAXCHILD)
       {
       if (fork() == 0) /* child */
-	 {
-	 printf("cfrun(%d):         .......... [ Hailing %s ] ..........\n",i,ip->name);
-	 Debug("pid = %d i = %d\n", getpid(), i);
-	 
-	 if (PollServer(ip->name,ip->classes, FileFlag))
-	    {
-	    Verbose("Connection with %s completed\n\n",ip->name);
-	    }
-	 else
-	    {
-	    Verbose("Connection refused...\n\n");
-	    }
-	 exit(0);
-	 }
+         {
+         printf("cfrun(%d):         .......... [ Hailing %s ] ..........\n",i,ip->name);
+         Debug("pid = %d i = %d\n", getpid(), i);
+         
+         if (PollServer(ip->name,ip->classes, FileFlag))
+            {
+            Verbose("Connection with %s completed\n\n",ip->name);
+            }
+         else
+            {
+            Verbose("Connection refused...\n\n");
+            }
+         exit(0);
+         }
       else
-	 {
-	 /* parent */
-	 i++;
-	 }
+         {
+         /* parent */
+         i++;
+         }
       }
    else 
       {
@@ -144,82 +141,79 @@ while (ip != NULL)
 /* Level 1                                                          */
 /********************************************************************/
 
-void CheckOptsAndInit(argc,argv)
-
-int argc;
-char **argv;
+void CheckOptsAndInit(int argc,char **argv)
 
 { int optgroup = 0, i;
   struct Item *ip;
 
 /* Separate command args into options and classes */
-bzero(CFRUNOPTIONS,bufsize);
+memset(CFRUNOPTIONS,0,bufsize);
 
 for (i = 1; i < argc; i++) 
    {
    if (optgroup == 0)
-      {	 
-      if (strncmp(argv[i],"-h",2) == 0)		 
-	 {
-	 cfrunSyntax();
-	 }
+      {  
+      if (strncmp(argv[i],"-h",2) == 0)   
+         {
+         cfrunSyntax();
+         }
       else if (strncmp(argv[i],"-f",2) == 0)
-	 {
-	 i++;
-	 
-	 if ((i >= argc) || (strncmp(argv[i],"-",1) == 0))
-	    {
-	    printf("Error: No filename listed after -f option.\n");
-	    cfrunSyntax();
-	    exit(0);
-	    }
-	 bzero(VCFRUNHOSTS,bufsize);
-	 strcat(VCFRUNHOSTS,argv[i]);
-	 Debug("cfrun: cfrun file = %s\n",VCFRUNHOSTS);
-	 }
+         {
+         i++;
+         
+         if ((i >= argc) || (strncmp(argv[i],"-",1) == 0))
+            {
+            printf("Error: No filename listed after -f option.\n");
+            cfrunSyntax();
+            exit(0);
+            }
+         memset(VCFRUNHOSTS,0,bufsize);
+         strncat(VCFRUNHOSTS,argv[i],bufsize-1-strlen(VCFRUNHOSTS));
+         Debug("cfrun: cfrun file = %s\n",VCFRUNHOSTS);
+         }
       else if (strncmp(argv[i],"-d",2) == 0)
-	 {
-	 DEBUG = true;
-	 VERBOSE = true;
-	 }
+         {
+         DEBUG = true;
+         VERBOSE = true;
+         }
       else if (strncmp(argv[i],"-v",2) == 0)
-	 {
-	 VERBOSE=true;
-	 }
+         {
+         VERBOSE=true;
+         }
       else if (strncmp(argv[i],"-T",2) == 0)
-	 {
-	 TRUSTALL = true;
-	 }
+         {
+         TRUSTALL = true;
+         }
       else if (strncmp(argv[i],"-S",2) == 0)
-	 {
-	 SILENT = true;
-	 }
+         {
+         SILENT = true;
+         }
       else if (strncmp(argv[i],"--",2) == 0) 
-	 {
-	 optgroup++;
-	 }
+         {
+         optgroup++;
+         }
       else if (argv[i][0] == '-')
-	 {
-	 printf("Error: Unknown option.\n");
-	 cfrunSyntax();
-	 exit(0);
-	 }
+         {
+         printf("Error: Unknown option.\n");
+         cfrunSyntax();
+         exit(0);
+         }
       else
-	 {
-	 AppendItem(&VCFRUNOPTIONHOSTS,argv[i],NULL); /* Restrict run hosts */
-	 }
+         {
+         AppendItem(&VCFRUNOPTIONHOSTS,argv[i],NULL); /* Restrict run hosts */
+         }
       }
    else if (optgroup == 1) 
       {
       if (strncmp(argv[i],"--",2) == 0)
-	 {
-	 optgroup++;
-	 }
+         {
+         optgroup++;
+         }
       else
-	 {
-	 strcat(CFRUNOPTIONS,argv[i]);
-	 strcat(CFRUNOPTIONS," ");
-	 }
+         {
+         strncat(CFRUNOPTIONS,argv[i],bufsize-1-strlen(CFRUNOPTIONS));
+         strncat(CFRUNOPTIONS," ",bufsize-1-strlen(CFRUNOPTIONS));
+         }
       }
    else
       {
@@ -227,17 +221,17 @@ for (i = 1; i < argc; i++)
       }
    }
  
-Debug("CFRUNOPTIONS string: %s\n",CFRUNOPTIONS);
-   
-for (ip = VCFRUNCLASSES; ip != NULL; ip=ip->next)
-   {
-   Debug("Class item: %s\n",ip->name);
-   }
-
-ReadCfrunConf(); 
-
-GetNameInfo();
-
+ Debug("CFRUNOPTIONS string: %s\n",CFRUNOPTIONS);
+ 
+ for (ip = VCFRUNCLASSES; ip != NULL; ip=ip->next)
+    {
+    Debug("Class item: %s\n",ip->name);
+    }
+ 
+ ReadCfrunConf(); 
+ 
+ GetNameInfo();
+ 
 /* 
 if (uname(&VSYSNAME) == -1)
    {
@@ -277,10 +271,7 @@ RandomSeed();
 
 /********************************************************************/
 
-int PollServer(host,options,StoreInFile)
-
-char *host, *options;
-int  StoreInFile;
+int PollServer(char *host,char *options,int storeinfile)
 
 { struct hostent *hp;
   struct sockaddr_in raddr;
@@ -299,7 +290,7 @@ int  StoreInFile;
   
 CONN = NewAgentConn();
 
-if (StoreInFile)
+if (storeinfile)
    {
    sprintf(filebuffer, "%s/%s", OUTPUTDIR, host);
    if ((fp = fopen(filebuffer, "w")) == NULL)
@@ -320,7 +311,7 @@ FileVerbose(fp, "Connecting to server %s to port %d with options %s %s\n",parsed
 
  Debug("Using v6 compatible lookup...\n"); 
 
-bzero(&query,sizeof(struct addrinfo));
+memset(&query,0,sizeof(struct addrinfo));
 query.ai_family = AF_UNSPEC;
 query.ai_socktype = SOCK_STREAM;
 query.ai_flags = AI_PASSIVE;
@@ -354,7 +345,7 @@ if ((hp = gethostbyname(parsed_host)) == NULL)
    exit(1);
    }
  
-bzero(&raddr,sizeof(raddr));
+memset(&raddr,0,sizeof(raddr));
  
 if (port)
    {
@@ -408,24 +399,24 @@ if (!gotkey)
       printf("          Do you want to accept one on trust? (yes/no)\n\n--> ");
       
       while (true)
-	 {
-	 fgets(reply,8,stdin);
-	 Chop(reply);
-	 
-	 if (strcmp(reply,"yes")==0)
-	    {
-	    addresses.trustkey = 'y';
-	    break;
-	    }
-	 else if (strcmp(reply,"no")==0)
-	    {
-	    break;
-	    }
-	 else
-	    {
-	    printf("Please reply yes or no...(%s)\n",reply);
-	    }
-	 }
+         {
+         fgets(reply,8,stdin);
+         Chop(reply);
+         
+         if (strcmp(reply,"yes")==0)
+            {
+            addresses.trustkey = 'y';
+            break;
+            }
+         else if (strcmp(reply,"no")==0)
+            {
+            break;
+            }
+         else
+            {
+            printf("Please reply yes or no...(%s)\n",reply);
+            }
+         }
       }
    }
  
@@ -482,7 +473,7 @@ first = true;
  
 while (true)
    {
-   bzero(recvbuffer,bufsize);
+   memset(recvbuffer,0,bufsize);
 
    if ((n_read = ReceiveTransaction(CONN->sd,recvbuffer,NULL)) == -1)
       {
@@ -512,12 +503,12 @@ while (true)
    if (n_read == 0)
       {
       if (!first)
-	 {
-	 fprintf(fp,"\n");
-	 }
+         {
+         fprintf(fp,"\n");
+         }
       break;
       }
-
+   
    if (strlen(recvbuffer) == 0)
       {
       continue;
@@ -558,7 +549,6 @@ return true;
 /* Level 2                                                          */
 /********************************************************************/
 
-
 void ReadCfrunConf()
 
 { char filename[bufsize], *sp;
@@ -566,7 +556,7 @@ void ReadCfrunConf()
   FILE *fp;
   struct Item *ip; 
 
-bzero(filename,bufsize);
+memset(filename,0,bufsize);
 
 if (!strchr(VCFRUNHOSTS, '/'))
    {
@@ -594,9 +584,9 @@ if ((fp = fopen(filename,"r")) == NULL)      /* Open root file */
 
 while (!feof(fp))
    {
-   bzero(buffer,maxvarsize);
-   bzero(options,bufsize);
-   bzero(line,bufsize);
+   memset(buffer,0,maxvarsize);
+   memset(options,0,bufsize);
+   memset(line,0,bufsize);
 
    ReadLine(line,bufsize,fp);
 
@@ -610,26 +600,26 @@ while (!feof(fp))
    if (strncmp(line,"maxchild", strlen("maxchild")) == 0)
       {
       sscanf(line,"maxchild = %295[^# \n]", buffer);
-
+      
       if ( (MAXCHILD = atoi(buffer)) == 0 )
-	 {
-	 MAXCHILD = 1;
-	 }
-
+         {
+         MAXCHILD = 1;
+         }
+      
       Verbose("cfrun: maxchild = %d\n", MAXCHILD);
       continue;
       }
-
+   
    if (strncmp(line,"outputdir", strlen("outputdir")) == 0)
       {
       sscanf(line,"outputdir = %295[^# \n]", OUTPUTDIR);
       Verbose("cfrun: outputdir = %s\n", OUTPUTDIR);
       if ( opendir(OUTPUTDIR) == NULL)
-	 {
+         {
          printf("Directory %s does not exists\n", OUTPUTDIR);
-	 exit(1);
+         exit(1);
          }
-
+      
       FileFlag=1;
       continue;
       }
@@ -637,47 +627,47 @@ while (!feof(fp))
    if (strncmp(line,"outputlevel", strlen("outputlevel")) == 0)
       {
       sscanf(line,"outputlevel = %295[^# \n]", buffer);
-
+      
       if (strncmp(buffer,"inform", strlen("inform")) == 0)
-	 {
-	 OUTPUTLEVEL = fopl_inform;
-	 Verbose("cfrun: outputlevel = inform");
-	 }
+         {
+         OUTPUTLEVEL = fopl_inform;
+         Verbose("cfrun: outputlevel = inform");
+         }
       else if (strncmp(buffer,"error", strlen("error")) == 0)
-	 {
-	 OUTPUTLEVEL = fopl_error;
-	 Verbose("cfrun: outputlevel = error");
-	 }
+         {
+         OUTPUTLEVEL = fopl_error;
+         Verbose("cfrun: outputlevel = error");
+         }
       else if (strncmp(buffer,"normal", strlen("normal")) == 0)
-	 {
-	 OUTPUTLEVEL = fopl_normal;
-	 Verbose("cfrun: outputlevel = normal");
-	 }
+         {
+         OUTPUTLEVEL = fopl_normal;
+         Verbose("cfrun: outputlevel = normal");
+         }
       else
          {
          printf("Invalid outputlevel: %s\n", OUTPUTDIR);
-	 }
-
+         }
+      
       continue;
       }
-
+   
    if (strncmp(line,"access",6) == 0)
       {
       for (sp = line; (*sp != '=') && (*sp != '\0'); sp++)
-	 {
-	 }
-
+         {
+         }
+      
       if (*sp == '\0' || *(++sp) == '\0')
-	 {
-	 continue;
-	 }
-
+         {
+         continue;
+         }
+      
       CheckAccess(sp);
       continue;
       }
-
+   
    sscanf(line,"%295s %[^#\n]",buffer,options);
-
+   
    if (buffer[0] == '#')
       {
       continue;
@@ -719,10 +709,7 @@ fclose(fp);
 
 /********************************************************************/
  
-int ParseHostname(hostname,new_hostname)
-
-char *hostname;
-char *new_hostname;
+int ParseHostname(char *hostname,char *new_hostname)
 
 { int port=0;
 
@@ -734,10 +721,7 @@ return(port);
 
 /********************************************************************/
 
-void SendClassData(sd, sendbuffer)
-
-int sd;
-char *sendbuffer;
+void SendClassData(int sd,char *sendbuffer)
 
 { struct Item *ip;
   int used;
@@ -745,7 +729,7 @@ char *sendbuffer;
 
 sp = sendbuffer;
 used = 0;
-bzero(sendbuffer,bufsize);
+memset(sendbuffer,0,bufsize);
   
 for (ip = VCFRUNCLASSES; ip != NULL; ip = ip->next)
    {
@@ -759,7 +743,7 @@ for (ip = VCFRUNCLASSES; ip != NULL; ip = ip->next)
 
       used = 0;
       sp = sendbuffer;
-      bzero(sendbuffer,bufsize);
+      memset(sendbuffer,0,bufsize);
       }
    
    strcat(sendbuffer,ip->name);
@@ -779,10 +763,10 @@ if (used + strlen(CFD_TERMINATOR) +2 > bufsize)
 
    used = 0;
    sp = sendbuffer;
-   bzero(sendbuffer,bufsize);
+   memset(sendbuffer,0,bufsize);
    }
    
-sprintf(sp,CFD_TERMINATOR);
+sprintf(sp, "%s", CFD_TERMINATOR);
 
 if (SendTransaction(sd,sendbuffer,0,CF_DONE) == -1)
    {
@@ -793,9 +777,7 @@ if (SendTransaction(sd,sendbuffer,0,CF_DONE) == -1)
 
 /********************************************************************/
 
-void CheckAccess(users)
-
-char *users;
+void CheckAccess(char *users)
 
 { char id[maxvarsize], *sp;
   struct passwd *pw;
@@ -819,53 +801,49 @@ for (sp = users; *sp != '\0'; sp++)
    if (isalpha((int)id[0]))
       {
       if ((pw = getpwnam(id)) == NULL)
-	 {
-	 printf("cfrun: No such user (%s) in password database\n",id);
-	 continue;
-	 }
+         {
+         printf("cfrun: No such user (%s) in password database\n",id);
+         continue;
+         }
       
       if (pw->pw_uid == myuid)
-	 {
-	 return;
-	 }
+         {
+         return;
+         }
       }
    else
       {
       uid = atoi(id);
       if (uid == myuid)
-	 {
-	 return;
-	 }
+         {
+         return;
+         }
       }
    }
-
+ 
  printf("cfrun: you have not been granted permission to run cfrun\n");
  exit(0);
 }
 
 /********************************************************************/
 
-void FileOutput(fp, level, message)
-
-FILE *fp;
-enum fileoutputlevels level;
-char *message;
+void FileOutput(FILE *fp,enum fileoutputlevels level,char *message)
 
 {
  switch (level)
     {
     case fopl_inform:
-	if (OUTPUTLEVEL >= fopl_inform)
-	   {
-	   fprintf(fp, "cfrun: INFORM: %s", message);
-	   }
-	break;
+ if (OUTPUTLEVEL >= fopl_inform)
+    {
+    fprintf(fp, "cfrun: INFORM: %s", message);
+    }
+ break;
     case fopl_error:
-	if (OUTPUTLEVEL >= fopl_error)
-	   {
-	   fprintf(fp, "cfrun: ERROR: %s", message);
-	   }
-	break;
+ if (OUTPUTLEVEL >= fopl_error)
+    {
+    fprintf(fp, "cfrun: ERROR: %s", message);
+    }
+ break;
     /* Default is to do nothing. That's right for "normal"! */
     }
  return;
@@ -937,45 +915,33 @@ ap = NULL;
 /* Linking simplification                                      */
 /***************************************************************/
 
-void FatalError(s)
-
-char *s;
+void FatalError(char *s)
 
 {
 exit(1);
 }
 
 
-int RecursiveTidySpecialArea(name,tp,maxrecurse,sb)
+int RecursiveTidySpecialArea(char *name,struct Tidy *tp,int maxrecurse,struct stat *sb)
 
-char *name;
-struct Tidy *tp;
-int maxrecurse;
-struct stat *sb;
 {
  return true;
 }
 
-int CompareMD5Net(file1,file2,ip)
-
-char *file1, *file2;
-struct Image *ip;
+int CompareMD5Net(char *file1,char *file2,struct Image *ip)
 
 {
  return 0;
 }
 
 
-void yyerror(s)
-
-char *s;
+void yyerror(char *s)
 
 {
 }
 
-char *GetMacroValue(s,sp)
+char *GetMacroValue(char *s,char *sp)
 
-char *s,*sp;
 {
  return NULL;
 }
@@ -986,5 +952,8 @@ int OptionIs ARGLIST((char *scope, char *name, short on))
  return false;
 }
 
-/* EOF */
 
+void AddMacroValue(char *scope,char *name,char *value)
+
+{
+}

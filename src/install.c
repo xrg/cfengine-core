@@ -1,6 +1,6 @@
 /* cfengine for GNU
  
-        Copyright (C) 1995
+        Copyright (C) 1995-
         Free Software Foundation, Inc.
  
    This file is part of GNU cfengine - written and maintained 
@@ -37,9 +37,7 @@
 
 /*******************************************************************/
 
-void InstallControlRValue(lvalue,varvalue)
-
-char *lvalue,*varvalue;
+void InstallControlRValue(char *lvalue,char *varvalue)
 
 { int number = -1;
   char buffer[maxvarsize], command[maxvarsize], *sp;
@@ -79,7 +77,7 @@ if (strncmp(value,"exec ",5) == 0)
       }
    }
 
-/* end version 1 compat*/ 
+/* end version 1 compat */ 
  
 /* Actionsequence needs to be dynamical here, so make exception - should be IsInstallable?? */
  
@@ -93,379 +91,395 @@ else
    Debug1("Assign variable [%s=%s] when %s)\n",lvalue,value,CLASSBUFF);
    }
  
-switch (ScanVariable(lvalue))
-   {
-   case cfsite:
-   case cffaculty:  if (!IsDefinedClass(CLASSBUFF))
-                      {
-		      break;
-		      }
-
-                    if (VFACULTY[0] != '\0')
-                       {
-                       yyerror("Multiple declaration of variable faculty / site");
-                       FatalError("Redefinition of basic system variable");
-                       }
-
-                    strcpy(VFACULTY,value);
-                    break;
-
-   case cfdomain:  if (!IsDefinedClass(CLASSBUFF))
-                      {
-		      break;
-		      }
-
-                   strcpy(VDOMAIN,value);
-		  
-		   if (!strstr(VSYSNAME.nodename,ToLowerStr(VDOMAIN)))
-		      {
-		      snprintf(VFQNAME,bufsize,"%s.%s",VSYSNAME.nodename,ToLowerStr(VDOMAIN));
-		      strcpy(VUQNAME,VSYSNAME.nodename);
-		      }
-		   else
-		      {
-		      int n = 0;
-		      strcpy(VFQNAME,VSYSNAME.nodename);
-		      
-		      while(VSYSNAME.nodename[n++] != '.')
-			{
-			}
-
-                      strncpy(VUQNAME,VSYSNAME.nodename,n-1);		      
- 		      }
-		   
-		   if (! NOHARDCLASSES)
-		      {
-		      if (strlen(VFQNAME) > maxvarsize-1)
-			 {
-		 	 FatalError("The fully qualified name is longer than maxvarsize!!");
-			 }
-		     
-		      strcpy(buffer,VFQNAME);
-		     
-		      AddClassToHeap(CanonifyName(buffer));
-		      }
-                   break;
-
-   case cfsysadm:  /* Can be redefined */
-                   if (!IsDefinedClass(CLASSBUFF))
-                      {
-		      break;
-		      }
-
-                  strcpy(VSYSADM,value);
-                  break;
-
-   case cfnetmask:
-                   if (!IsDefinedClass(CLASSBUFF))
-                      {
-		      break;
-		      }
-
-                  if (VNETMASK[0] != '\0')
-                     {
-                     yyerror("Multiple declaration of variable netmask");
-                     FatalError("Redefinition of basic system variable");
-                     }
-                  strcpy(VNETMASK,value);
-		  AddNetworkClass(VNETMASK);
-                  break;
-
-
-   case cfmountpat: SetMountPath(value);
-                    break;
-
-   case cfrepos:
-                   SetRepository(value);
-		   break;
-
-   case cfhomepat:  
-                  Debug1("Installing %s as home pattern\n",value);
-                  AppendItem(&VHOMEPATLIST,value,CLASSBUFF);
-                  break;
-
-   case cfextension:
-                  AppendItem(&EXTENSIONLIST,value,CLASSBUFF);
-                  break;
-
-   case cfsuspicious:
-                  AppendItem(&SUSPICIOUSLIST,value,CLASSBUFF);
-		  break;
-
-   case cfschedule:
-                  AppendItem(&SCHEDULE,value,CLASSBUFF);
-		  break;
-
-   case cfspooldirs:
-                  AppendItem(&SPOOLDIRLIST,value,CLASSBUFF);
-		  break;
-		  
-   case cfnonattackers:
-                  AppendItem(&NONATTACKERLIST,value,CLASSBUFF);
-		  break;
-   case cfmulticonn:
-                  AppendItem(&MULTICONNLIST,value,CLASSBUFF);
-		  break;
-   case cftrustkeys:
-                  AppendItem(&TRUSTKEYLIST,value,CLASSBUFF);
-		  break;
-   case cfdynamic:
-                  AppendItem(&DHCPLIST,value,CLASSBUFF);
-		  break;
-   case cfallowusers:
-                  AppendItem(&ALLOWUSERLIST,value,CLASSBUFF);
-		  break;		  
-   case cfskipverify:
-                  AppendItem(&SKIPVERIFY,value,CLASSBUFF);
-		  break;
-   case cfredef:
-                  AppendItem(&VREDEFINES,value,CLASSBUFF);
-		  break;  
-   case cfattackers:
-                  AppendItem(&ATTACKERLIST,value,CLASSBUFF);
-		  break;
-		  
-   case cftimezone:
-                   if (!IsDefinedClass(CLASSBUFF))
-                      {
-		      break;
-		      }
-
-                    AppendItem(&VTIMEZONE,value,NULL);
-                    break;
-
-   case cfssize: 
-                  sscanf(value,"%d",&number);
-                  if (number >= 0)
-                     {
-                     SENSIBLEFSSIZE = number;
-                     }
-                  else
-                     {
-                     yyerror("Silly value for sensiblesize (must be positive integer)");
-                     }
-                  break;
-
-   case cfscount:
-                  sscanf(value,"%d",&number);
-                  if (number > 0)
-                     {
-                     SENSIBLEFILECOUNT = number;
-                     }
-                  else
-                     {
-                     yyerror("Silly value for sensiblecount (must be positive integer)");
-                     }
-
-                  break;
-
-   case cfeditsize:
-                  sscanf(value,"%d",&number);
-
-                  if (number >= 0)
-                     {
-                     EDITFILESIZE = number;
-                     }
-                  else
-                     {
-                     yyerror("Silly value for editfilesize (must be positive integer)");
-                     }
-
-                  break;
-
-   case cfbineditsize:
-                  sscanf(value,"%d",&number);
-
-                  if (number >= 0)
-                     {
-                     EDITBINFILESIZE = number;
-                     }
-                  else
-                     {
-                     yyerror("Silly value for editbinaryfilesize (must be positive integer)");
-                     }
-
-                  break;
-		  
-   case cfifelapsed:
-                  sscanf(value,"%d",&number);
-
-                  if (number >= 0)
-                     {
-                     VDEFAULTIFELAPSED = VIFELAPSED = number;
-                     }
-                  else
-                     {
-                     yyerror("Silly value for IfElapsed");
-                     }
-
-                  break;
-		  
-   case cfexpireafter:
-                  sscanf(value,"%d",&number);
-
-                  if (number > 0)
-                     {
-                     VDEFAULTEXPIREAFTER = VEXPIREAFTER = number;
-                     }
-                  else
-                     {
-                     yyerror("Silly value for ExpireAfter");
-                     }
-
-                  break;
-		  
-   case cfactseq:
-                  AppendToActionSequence(value);
-                  break;
-
-   case cfaccess:
-                  AppendToAccessList(value);
-                  break;
-
-   case cfnfstype:
-                  strcpy(VNFSTYPE,value); 
-                  break;
-
-   case cfmethodname:
-                  if (strcmp(METHODNAME,"cf-nomethod") != 0)
-		     {
-		     yyerror("Redefinition of method name");
-		     }
-                  strncpy(METHODNAME,value,bufsize-1);
-		  SetContext("private-method");
-                  break;
-
-   case cfarglist:
-                  AppendItem(&METHODARGS,value,CLASSBUFF);
-                  break;
-		  
-   case cfaddclass:
-                  AddMultipleClasses(value);
-                  break;
-
-   case cfinstallclass:
-                  AddInstallable(value);
-		  break;
-		  
-   case cfexcludecp:
-                  PrependItem(&VEXCLUDECOPY,value,CLASSBUFF);
-                  break;
-
-   case cfsinglecp:
-                  PrependItem(&VSINGLECOPY,value,CLASSBUFF);
-                  break;
-		  
-   case cfexcludeln:
-                  PrependItem(&VEXCLUDELINK,value,CLASSBUFF);
-                  break;
-		  
-   case cfcplinks:
-                  PrependItem(&VCOPYLINKS,value,CLASSBUFF);
-                  break;
-   case cflncopies:
-                  PrependItem(&VLINKCOPIES,value,CLASSBUFF);
-                  break;
-
-   case cfrepchar:
-		    if (strlen(value) > 1)
-			{
-			yyerror("reposchar can only be a single letter");
-			break;
-			}
-		     if (value[0] == '/')
-			{
-			yyerror("illegal value for reposchar");
-			break;
-			}
-		     REPOSCHAR = value[0];
-		     break;
-
-   case cflistsep:
-			if (strlen(value) > 1)
-			   {
-			   yyerror("listseparator can only be a single letter");
-			   break;
-			   }
-			if (value[0] == '/')
-			   {
-			   yyerror("illegal value for listseparator");
-			   break;
-			   }
-			LISTSEPARATOR = value[0];
-			break;
-			
-   case cfunderscore:
-                        if (strcmp(value,"on") == 0)
-			   { char rename[maxvarsize];
-			   UNDERSCORE_CLASSES=true;
-			   Verbose("Resetting classes using underscores...\n");
-			   while(DeleteItemContaining(&VHEAP,CLASSTEXT[VSYSTEMHARDCLASS]))
-			      {
-			      }
-
-			   sprintf(rename,"_%s",CLASSTEXT[VSYSTEMHARDCLASS]);
-			   
-                           AddClassToHeap(rename);
-			   break;
-			   }
-
-			if (strcmp(value,"off") == 0)
-			   {
-			   UNDERSCORE_CLASSES=false;
-			   break;
-			   }
-			
-                        yyerror("illegal value for underscoreclasses");
-			break;
-
-   case cfifname:    if (strlen(value)>15)
-                        {
-	     	        yyerror("Silly interface name, (should be something link eth0)");
-	                }
-
-                     strcpy(VIFNAMEOVERRIDE,value);
-		     VIFDEV[VSYSTEMHARDCLASS] = VIFNAMEOVERRIDE; /* override */
-		     Debug("Overriding interface with %s\n",VIFDEV[VSYSTEMHARDCLASS]);
-		     break;
-
-   case cfdefcopy: if (strcmp(value,"ctime") == 0)
-                      {
-		      DEFAULTCOPYTYPE = 't';
-		      return;
-		      }
-                   else if (strcmp(value,"mtime") == 0)
-		      {
-		      DEFAULTCOPYTYPE = 'm';
-		      return;
-		      }
-                   else if (strcmp(value,"checksum")==0 || strcmp(value,"sum") == 0)
-		      {
-		      DEFAULTCOPYTYPE = 'c';
-		      return;
-		      }
-                   else if (strcmp(value,"byte")==0 || strcmp(value,"binary") == 0)
-		      {
-		      DEFAULTCOPYTYPE = 'b';
-		      return;
-		      }
-                   yyerror("Illegal default copy type");
-		   break;
-
-   case cfdefpkgmgr: DEFAULTPKGMGR = GetPkgMgr(value);
+ switch (ScanVariable(lvalue))
+    {
+    case cfsite:
+    case cffaculty:
+        if (!IsDefinedClass(CLASSBUFF))
+           {
            break;
-
-   default:
-                  AddMacroValue(CONTEXTID,lvalue,value);
+           }
+        
+        if (VFACULTY[0] != '\0')
+           {
+           yyerror("Multiple declaration of variable faculty / site");
+           FatalError("Redefinition of basic system variable");
+           }
+        
+        strcpy(VFACULTY,value);
+        break;
+        
+    case cfdomain:
+        if (!IsDefinedClass(CLASSBUFF))
+           {
+           break;
+           }
+        
+        if (strlen(value) > 0)
+           {
+           strcpy(VDOMAIN,value);
+           }
+        else
+           {
+           yyerror("domain is empty");
+           }
+        
+        if (!StrStr(VSYSNAME.nodename,VDOMAIN))
+           {
+           snprintf(VFQNAME,bufsize,"%s.%s",VSYSNAME.nodename,ToLowerStr(VDOMAIN));
+           strcpy(VUQNAME,VSYSNAME.nodename);
+           }
+        else
+           {
+           int n = 0;
+           strcpy(VFQNAME,VSYSNAME.nodename);
+           
+           while(VSYSNAME.nodename[n++] != '.')
+              {
+              }
+           
+           strncpy(VUQNAME,VSYSNAME.nodename,n-1);        
+           }
+        
+        if (! NOHARDCLASSES)
+           {
+           if (strlen(VFQNAME) > maxvarsize-1)
+              {
+              FatalError("The fully qualified name is longer than maxvarsize!!");
+              }
+           
+           strcpy(buffer,VFQNAME);
+           
+           AddClassToHeap(CanonifyName(buffer));
+           }
+        
+        break;
+        
+    case cfsysadm:  /* Can be redefined */
+        if (!IsDefinedClass(CLASSBUFF))
+           {
+           break;
+           }
+        
+        strcpy(VSYSADM,value);
                   break;
-   }
+                  
+    case cfnetmask:
+        if (!IsDefinedClass(CLASSBUFF))
+           {
+           break;
+           }
+        
+        if (VNETMASK[0] != '\0')
+           {
+           yyerror("Multiple declaration of variable netmask");
+           FatalError("Redefinition of basic system variable");
+           }
+        strcpy(VNETMASK,value);
+        AddNetworkClass(VNETMASK);
+        break;
+        
+        
+    case cfmountpat:
+        SetMountPath(value);
+        break;
+        
+    case cfrepos:
+        SetRepository(value);
+        break;
+        
+    case cfhomepat:  
+        Debug1("Installing %s as home pattern\n",value);
+        AppendItem(&VHOMEPATLIST,value,CLASSBUFF);
+        break;
+        
+    case cfextension:
+        AppendItems(&EXTENSIONLIST,value,CLASSBUFF);
+        break;
+        
+    case cfsuspicious:
+        AppendItems(&SUSPICIOUSLIST,value,CLASSBUFF);
+        break;
+        
+    case cfschedule:
+        AppendItems(&SCHEDULE,value,CLASSBUFF);
+        break;
+        
+    case cfspooldirs:
+        AppendItem(&SPOOLDIRLIST,value,CLASSBUFF);
+        break;
+        
+    case cfmethodpeers:
+        AppendItems(&VRPCPEERLIST,value,CLASSBUFF);
+        break;
+        
+    case cfnonattackers:
+        AppendItems(&NONATTACKERLIST,value,CLASSBUFF);
+        break;
+    case cfmulticonn:
+        AppendItems(&MULTICONNLIST,value,CLASSBUFF);
+        break;
+    case cftrustkeys:
+        AppendItems(&TRUSTKEYLIST,value,CLASSBUFF);
+        break;
+    case cfdynamic:
+        AppendItems(&DHCPLIST,value,CLASSBUFF);
+        break;
+    case cfallowusers:
+        AppendItems(&ALLOWUSERLIST,value,CLASSBUFF);
+        break;    
+    case cfskipverify:
+        AppendItems(&SKIPVERIFY,value,CLASSBUFF);
+        break;
+    case cfredef:
+        AppendItems(&VREDEFINES,value,CLASSBUFF);
+        break;  
+    case cfattackers:
+        AppendItems(&ATTACKERLIST,value,CLASSBUFF);
+        break;
+        
+    case cftimezone:
+        if (!IsDefinedClass(CLASSBUFF))
+           {
+           break;
+           }
+        
+        AppendItem(&VTIMEZONE,value,NULL);
+        break;
+        
+    case cfssize: 
+        sscanf(value,"%d",&number);
+        if (number >= 0)
+           {
+           SENSIBLEFSSIZE = number;
+           }
+        else
+           {
+           yyerror("Silly value for sensiblesize (must be positive integer)");
+           }
+        break;
+        
+    case cfscount:
+        sscanf(value,"%d",&number);
+        if (number > 0)
+           {
+           SENSIBLEFILECOUNT = number;
+           }
+        else
+           {
+           yyerror("Silly value for sensiblecount (must be positive integer)");
+           }
+        
+        break;
+        
+    case cfeditsize:
+        sscanf(value,"%d",&number);
+        
+        if (number >= 0)
+           {
+           EDITFILESIZE = number;
+           }
+        else
+           {
+           yyerror("Silly value for editfilesize (must be positive integer)");
+           }
+        
+        break;
+        
+    case cfbineditsize:
+        sscanf(value,"%d",&number);
+        
+        if (number >= 0)
+           {
+           EDITBINFILESIZE = number;
+           }
+        else
+           {
+           yyerror("Silly value for editbinaryfilesize (must be positive integer)");
+           }
+        
+        break;
+        
+    case cfifelapsed:
+        sscanf(value,"%d",&number);
+        
+        if (number >= 0)
+           {
+           VDEFAULTIFELAPSED = VIFELAPSED = number;
+           }
+        else
+           {
+           yyerror("Silly value for IfElapsed");
+           }
+        
+        break;
+        
+    case cfexpireafter:
+        sscanf(value,"%d",&number);
+        
+        if (number > 0)
+           {
+           VDEFAULTEXPIREAFTER = VEXPIREAFTER = number;
+           }
+        else
+           {
+           yyerror("Silly value for ExpireAfter");
+           }
+        
+        break;
+        
+    case cfactseq:
+        AppendToActionSequence(value);
+        break;
+        
+    case cfaccess:
+        AppendToAccessList(value);
+        break;
+        
+    case cfnfstype:
+        strcpy(VNFSTYPE,value); 
+        break;
+        
+    case cfmethodname:
+        if (strcmp(METHODNAME,"cf-nomethod") != 0)
+           {
+           yyerror("Redefinition of method name");
+           }
+        strncpy(METHODNAME,value,bufsize-1);
+        SetContext("private-method");
+        break;
+        
+    case cfarglist:
+        AppendItem(&METHODARGS,value,CLASSBUFF);
+        break;
+        
+    case cfaddclass:
+        AddMultipleClasses(value);
+        break;
+        
+    case cfinstallclass:
+        AddInstallable(value);
+        break;
+        
+    case cfexcludecp:
+        PrependItem(&VEXCLUDECOPY,value,CLASSBUFF);
+        break;
+        
+    case cfsinglecp:
+        PrependItem(&VSINGLECOPY,value,CLASSBUFF);
+        break;
+        
+    case cfexcludeln:
+        PrependItem(&VEXCLUDELINK,value,CLASSBUFF);
+        break;
+        
+    case cfcplinks:
+        PrependItem(&VCOPYLINKS,value,CLASSBUFF);
+        break;
+    case cflncopies:
+        PrependItem(&VLINKCOPIES,value,CLASSBUFF);
+        break;
+        
+    case cfrepchar:
+        if (strlen(value) > 1)
+           {
+           yyerror("reposchar can only be a single letter");
+           break;
+           }
+        if (value[0] == '/')
+           {
+           yyerror("illegal value for reposchar");
+           break;
+           }
+        REPOSCHAR = value[0];
+        break;
+        
+    case cflistsep:
+        if (strlen(value) > 1)
+           {
+           yyerror("listseparator can only be a single letter");
+           break;
+           }
+        if (value[0] == '/')
+           {
+           yyerror("illegal value for listseparator");
+           break;
+           }
+        LISTSEPARATOR = value[0];
+        break;
+        
+    case cfunderscore:
+        if (strcmp(value,"on") == 0)
+           { char rename[maxvarsize];
+           UNDERSCORE_CLASSES=true;
+           Verbose("Resetting classes using underscores...\n");
+           while(DeleteItemContaining(&VHEAP,CLASSTEXT[VSYSTEMHARDCLASS]))
+              {
+              }
+           
+           sprintf(rename,"_%s",CLASSTEXT[VSYSTEMHARDCLASS]);
+           
+           AddClassToHeap(rename);
+           break;
+           }
+        
+        if (strcmp(value,"off") == 0)
+           {
+           UNDERSCORE_CLASSES=false;
+           break;
+           }
+        
+        yyerror("illegal value for underscoreclasses");
+        break;
+        
+    case cfifname:
+        if (strlen(value)>15)
+           {
+           yyerror("Silly interface name, (should be something link eth0)");
+           }
+        
+        strcpy(VIFNAMEOVERRIDE,value);
+        VIFDEV[VSYSTEMHARDCLASS] = VIFNAMEOVERRIDE; /* override */
+        Debug("Overriding interface with %s\n",VIFDEV[VSYSTEMHARDCLASS]);
+        break;
+        
+    case cfdefcopy:
+        if (strcmp(value,"ctime") == 0)
+           {
+           DEFAULTCOPYTYPE = 't';
+           return;
+           }
+        else if (strcmp(value,"mtime") == 0)
+           {
+           DEFAULTCOPYTYPE = 'm';
+           return;
+           }
+        else if (strcmp(value,"checksum")==0 || strcmp(value,"sum") == 0)
+           {
+           DEFAULTCOPYTYPE = 'c';
+           return;
+           }
+        else if (strcmp(value,"byte")==0 || strcmp(value,"binary") == 0)
+           {
+           DEFAULTCOPYTYPE = 'b';
+           return;
+           }
+        yyerror("Illegal default copy type");
+        break;
+        
+    case cfdefpkgmgr:
+        DEFAULTPKGMGR = GetPkgMgr(value);
+        break;
+        
+    default:
+        AddMacroValue(CONTEXTID,lvalue,value);
+        break;
+    }
 }
 
 /*******************************************************************/
 
-void HandleEdit(file,edit,string)      /* child routines in edittools.c */
-
-char *file, *edit, *string;
+void HandleEdit(char *file,char *edit,char *string)      /* child routines in edittools.c */
 
 {
 if (! IsInstallable(CLASSBUFF))
@@ -496,9 +510,7 @@ else
 
 /********************************************************************/
 
-void HandleOptionalFileAttribute(item)
-
-char *item;
+void HandleOptionalFileAttribute(char *item)
 
 { char value[maxvarsize];
 
@@ -522,25 +534,29 @@ switch(GetCommAttribute(item))
    case cfmode:    ParseModeString(value,&PLUSMASK,&MINUSMASK);
                    break;
    case cfflags:   ParseFlagString(value,&PLUSFLAG,&MINUSFLAG);
-                   break;		   
-   case cfowner:   if (strlen(value) < bufsize)
-                      {
-		      strcpy(VUIDNAME,value);
-		      }
-                   else
-		      {
-		      yyerror("Too many owners");
-		      }
-                   break;
-   case cfgroup:   if (strlen(value) < bufsize)
-                      {
-		      strcpy(VGIDNAME,value);
-		      }
-                   else
-		      {
-		      yyerror("Too many groups");
-		      }
-                   break;
+                   break;     
+   case cfowner:
+       if (strlen(value) < bufsize)
+          {
+          strcpy(VUIDNAME,value);
+          }
+       else
+          {
+          yyerror("Too many owners");
+          }
+       break;
+
+   case cfgroup:
+       if (strlen(value) < bufsize)
+          {
+          strcpy(VGIDNAME,value);
+          }
+       else
+          {
+          yyerror("Too many groups");
+          }
+       break;
+
    case cfaction:  FILEACTION = (enum fileactions) GetFileAction(value);
                    break;
    case cflinks:   HandleTravLinks(value);
@@ -556,7 +572,7 @@ switch(GetCommAttribute(item))
    case cfacl:     PrependItem(&VACLBUILD,value,CF_ANYCLASS);
                    break;
    case cffilter:  PrependItem(&VFILTERBUILD,value,CF_ANYCLASS);
-                   break;		   
+                   break;     
    case cfdefine:  HandleDefine(value);
                    break;
    case cfelsedef: HandleElseDefine(value);
@@ -580,9 +596,7 @@ switch(GetCommAttribute(item))
 
 /*******************************************************************/
 
-void HandleOptionalImageAttribute(item)
-
-char *item;
+void HandleOptionalImageAttribute(char *item)
 
 { char value[bufsize];
 
@@ -601,6 +615,18 @@ Debug1("HandleOptionalImageAttribute(%s)\n",value);
 
 switch(GetCommAttribute(item))
    {
+#ifdef DARWIN
+   case cffindertype:
+        if (strlen(value) == 4)
+           {
+           strncpy(FINDERTYPE,value,bufsize);
+           }
+        else
+           {
+           yyerror("Attribute findertype must be exactly 4 characters");
+           }
+        break;
+#endif
    case cfmode:    ParseModeString(value,&PLUSMASK,&MINUSMASK);
                    break;
    case cfflags:   ParseFlagString(value,&PLUSFLAG,&MINUSFLAG);
@@ -618,9 +644,9 @@ switch(GetCommAttribute(item))
    case cfforce:   HandleCharSwitch("force",value,&FORCE);
                    break;
    case cfforcedirs: HandleCharSwitch("forcedirs",value,&FORCEDIRS);
-                   break;		   
+                   break;     
    case cfforceipv4: HandleCharSwitch("forceipv4",value,&FORCEIPV4);
-                   break;		   
+                   break;     
    case cfbackup:  HandleCharSwitch("backup",value,&IMAGEBACKUP);
                    break;
    case cfrecurse: HandleRecurse(value);
@@ -648,7 +674,7 @@ switch(GetCommAttribute(item))
    case cfelsedef: HandleElseDefine(value);
                    break;
    case cffailover: HandleFailover(value);
-                   break;		   		   
+                   break;          
    case cfsize:    HandleCopySize(value);
                    break;
    case cfacl:     PrependItem(&VACLBUILD,value,CF_ANYCLASS);
@@ -686,9 +712,7 @@ switch(GetCommAttribute(item))
 
 /******************************************************************/
 
-void HandleOptionalRequired(item)
-
-char *item;
+void HandleOptionalRequired(char *item)
 
 { char value[maxvarsize];
 
@@ -709,10 +733,12 @@ switch(GetCommAttribute(item))
    {
    case cffree:    HandleRequiredSize(value);
                    break;
+   case cfscan:    HandleCharSwitch("scanarrivals",value,&SCAN);
+                   break;
    case cfdefine:  HandleDefine(value);
                    break;
    case cfelsedef: HandleElseDefine(value);
-                   break;	   
+                   break;    
    case cfsetlog:  HandleCharSwitch("log",value,&LOGP);
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
@@ -733,9 +759,7 @@ switch(GetCommAttribute(item))
 
 /******************************************************************/
 
-void HandleOptionalInterface(item)
-
-char *item;
+void HandleOptionalInterface(char *item)
 
 { char value[maxvarsize];
 
@@ -758,6 +782,8 @@ switch(GetCommAttribute(item))
                         break;
    case cfsetbroadcast: HandleBroadcast(value);
                         break;
+   case cfsetipaddress: HandleIPAddress(value);
+                        break;
 
    default:        yyerror("Illegal interfaces attribute");
    }
@@ -766,9 +792,7 @@ switch(GetCommAttribute(item))
 
 /***********************************************************************/
 
-void HandleOptionalMountablesAttribute(item) /* HvB: Bas van der Vlies */
-
-char *item;
+void HandleOptionalMountablesAttribute(char *item) /* HvB: Bas van der Vlies */
 
 { char value[maxvarsize];
 
@@ -790,12 +814,12 @@ switch(GetCommAttribute(item))
       break; 
 
    case cfreadonly: 
-      if ((strcmp(value,"on")==0) || (strcmp(value,"true")==0))
-	 {
-	 MOUNT_RO=true;
-	 }
-      break; 
-
+       if ((strcmp(value,"on")==0) || (strcmp(value,"true")==0))
+          {
+          MOUNT_RO=true;
+          }
+       break; 
+       
    default:         yyerror("Illegal mount option"
                             "(mountoptions/readonly)");
    }
@@ -804,9 +828,7 @@ switch(GetCommAttribute(item))
 
 /******************************************************************/
 
-void HandleOptionalUnMountAttribute(item)
-
-char *item;
+void HandleOptionalUnMountAttribute(char *item)
 
 { char value[maxvarsize];
 
@@ -825,58 +847,61 @@ Debug1("HandleOptionalUnMountsItem(%s)\n",value);
 
 switch(GetCommAttribute(item))
    {
-   case cfdeldir: if (strcmp(value,"true") == 0 || strcmp(value,"yes") == 0)
-                     {
-		     DELETEDIR = 'y';
-		     break;
-		     }
-   
-                  if (strcmp(value,"false") == 0 || strcmp(value,"no") == 0)
-                     {
-		     DELETEDIR = 'n';
-		     break;
-		     }
+   case cfdeldir:
+       if (strcmp(value,"true") == 0 || strcmp(value,"yes") == 0)
+          {
+          DELETEDIR = 'y';
+          break;
+          }
+       
+       if (strcmp(value,"false") == 0 || strcmp(value,"no") == 0)
+          {
+          DELETEDIR = 'n';
+          break;
+          }
+       
+   case cfdelfstab:
+       if (strcmp(value,"true") == 0 || strcmp(value,"yes") == 0)
+          {
+          DELETEFSTAB = 'y';
+          break;
+          }
+       
+       if (strcmp(value,"false") == 0 || strcmp(value,"no") == 0)
+          {
+          DELETEFSTAB = 'n';
+          break;
+          }   
+       
+   case cfforce:
+       if (strcmp(value,"true") == 0 || strcmp(value,"yes") == 0)
+          {
+          FORCE = 'y';
+          break;
+          }
+       
+       if (strcmp(value,"false") == 0 || strcmp(value,"no") == 0)
+          {
+          FORCE = 'n';
+          break;
+          }
+       
+   case cfifelap:
+       HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
+       break;
+   case cfexpaft:
+       HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
+       break;
 
-   case cfdelfstab: if (strcmp(value,"true") == 0 || strcmp(value,"yes") == 0)
-                       {
-		       DELETEFSTAB = 'y';
-		       break;
-		       }
-   
-                    if (strcmp(value,"false") == 0 || strcmp(value,"no") == 0)
-                       {
-		       DELETEFSTAB = 'n';
-		       break;
-		       }   
-		    
-   case cfforce:    if (strcmp(value,"true") == 0 || strcmp(value,"yes") == 0)
-                       {
-		       FORCE = 'y';
-		       break;
-		       }
-   
-                    if (strcmp(value,"false") == 0 || strcmp(value,"no") == 0)
-                       {
-		       FORCE = 'n';
-		       break;
-		       }
-
-   case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
-                   break;
-   case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
-                   break;
-
-   default:         yyerror("Illegal unmount option"
-                            " (deletedir/deletefstab/force)");
+   default:
+       yyerror("Illegal unmount option (deletedir/deletefstab/force)");
    }
-
+ 
 }
 
 /******************************************************************/
 
-void HandleOptionalMiscMountsAttribute(item)
-
-char *item;
+void HandleOptionalMiscMountsAttribute(char *item)
 
 { char value[maxvarsize];
 
@@ -895,52 +920,53 @@ Debug1("HandleOptionalMiscMOuntsItem(%s)\n",value);
 
 switch(GetCommAttribute(item))
    {
-   case cfmode:    { struct Item *op;
-   		     struct Item *next;
-
-		      if (MOUNTOPTLIST)                     /* just in case */
-			 DeleteItemList(MOUNTOPTLIST);
-		      MOUNTOPTLIST = SplitStringAsItemList(value,',');
-
-		      for (op = MOUNTOPTLIST; op != NULL; op = next)
-			 {
-			 next = op->next;  /* in case op is deleted */
-			 Debug1("miscmounts option: %s\n", op->name);
-
-			 if (strcmp(op->name,"rw") == 0)
-			    {
-			    MOUNTMODE='w';
-			    DeleteItem(&MOUNTOPTLIST,op);
-			    }
-			 else if (strcmp(op->name,"ro") == 0)
-			    {
-			    MOUNTMODE='o';
-			    DeleteItem(&MOUNTOPTLIST,op);
-			    }
-			 else if (strcmp(op->name,"bg") == 0)
-			    {
-			    /* backgrounded mounts can hang MountFileSystems */
-			    DeleteItem(&MOUNTOPTLIST,op);
-			    }
-			 /* validate other mount options here */
-			 }
-		   }
-		   break;
+   case cfmode:
+        { struct Item *op;
+        struct Item *next;
+        
+        if (MOUNTOPTLIST)
+           {/* just in case */
+           DeleteItemList(MOUNTOPTLIST);
+           }
+        MOUNTOPTLIST = SplitStringAsItemList(value,',');
+        
+        for (op = MOUNTOPTLIST; op != NULL; op = next)
+           {
+           next = op->next;  /* in case op is deleted */
+           Debug1("miscmounts option: %s\n", op->name);
+           
+           if (strcmp(op->name,"rw") == 0)
+              {
+              MOUNTMODE='w';
+              DeleteItem(&MOUNTOPTLIST,op);
+              }
+           else if (strcmp(op->name,"ro") == 0)
+              {
+              MOUNTMODE='o';
+              DeleteItem(&MOUNTOPTLIST,op);
+              }
+           else if (strcmp(op->name,"bg") == 0)
+              {
+              /* backgrounded mounts can hang MountFileSystems */
+              DeleteItem(&MOUNTOPTLIST,op);
+              }
+           /* validate other mount options here */
+           }
+        }
+        break;
    case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
-                   break;
+       break;
    case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
-                   break;
-  
+       break;
+       
    default:        yyerror("Illegal miscmounts attribute (rw/ro)");
    }
-
+ 
 }
 
 /******************************************************************/
 
-void HandleOptionalTidyAttribute(item)
-
-char *item;
+void HandleOptionalTidyAttribute(char *item)
 
 { char value[maxvarsize];
 
@@ -969,11 +995,13 @@ switch(GetCommAttribute(item))
                    break;
 
    case cfinclude: 
-   case cfpattern: strcpy(CURRENTITEM,value);
-                   if (*value == '/')
-		      {
-		      yyerror("search pattern begins with / must be a relative name");
-		      }
+   case cfpattern:
+
+       strcpy(CURRENTITEM,value);
+       if (*value == '/')
+          {
+          yyerror("search pattern begins with / must be a relative name");
+          }
                    break;
 
    case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
@@ -981,7 +1009,7 @@ switch(GetCommAttribute(item))
    case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
                    break;
 
-		   
+     
    case cfage:     HandleAge(value);
                    break;
 
@@ -996,7 +1024,7 @@ switch(GetCommAttribute(item))
 
    case cfdirlinks:
                    HandleTidyLinkDirs(value);
-		   break;
+     break;
 
    case cfrmdirs:  HandleTidyRmdirs(value);
                    break;
@@ -1004,7 +1032,7 @@ switch(GetCommAttribute(item))
    case cfdefine:  HandleDefine(value);
                    break;
    case cfelsedef: HandleElseDefine(value);
-                   break;		   
+                   break;     
    case cfsetlog:  HandleCharSwitch("log",value,&LOGP);
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
@@ -1022,9 +1050,7 @@ switch(GetCommAttribute(item))
 
 /******************************************************************/
 
-void HandleOptionalDirAttribute(item)
-
-char *item;
+void HandleOptionalDirAttribute(char *item)
 
 { char value[maxvarsize];
 
@@ -1054,7 +1080,7 @@ switch(GetCommAttribute(item))
    case cfdefine:  HandleDefine(value);
                    break;
    case cfelsedef: HandleElseDefine(value);
-                   break;		   
+                   break;     
    case cfsetlog:  HandleCharSwitch("log",value,&LOGP);
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
@@ -1071,9 +1097,7 @@ switch(GetCommAttribute(item))
 
 /*******************************************************************/
 
-void HandleOptionalDisableAttribute(item)
-
-char *item;
+void HandleOptionalDisableAttribute(char *item)
 
 { char value[maxvarsize];
 
@@ -1092,32 +1116,33 @@ Debug1("HandleOptionalDisableAttribute(%s)\n",value);
 
 switch(GetCommAttribute(item))
    {
-   case cfaction:  if (strcmp(value,"warn") == 0)
-                      {
-		      PROACTION = 'w';
-		      }
-                   else if (strcmp(value,"delete") == 0)
-		      {
-		      PROACTION = 'd';
-		      }
-                   else
-                      {
-                      yyerror("Unknown action for disable");
-                      }
-                   break;
-
+   case cfaction:
+       if (strcmp(value,"warn") == 0)
+          {
+          PROACTION = 'w';
+          }
+       else if (strcmp(value,"delete") == 0)
+          {
+          PROACTION = 'd';
+          }
+       else
+          {
+          yyerror("Unknown action for disable");
+          }
+       break;
+       
    case cftype:    HandleDisableFileType(value);
                    break;
 
    case cfrotate:  HandleDisableRotate(value);
                    break;
-		   
+     
    case cfsize:    HandleDisableSize(value);
                    break;
    case cfdefine:  HandleDefine(value);
                    break;
    case cfelsedef: HandleElseDefine(value);
-                   break;		   
+                   break;     
    case cfsetlog:  HandleCharSwitch("log",value,&LOGP);
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
@@ -1138,9 +1163,7 @@ switch(GetCommAttribute(item))
 
 /*******************************************************************/
 
-void HandleOptionalLinkAttribute(item)
-
-char *item;
+void HandleOptionalLinkAttribute(char *item)
 
 { char value[maxvarsize];
 
@@ -1168,7 +1191,7 @@ switch(GetCommAttribute(item))
    case cfinclude: PrependItem(&VINCLUDEPARSE,value,CF_ANYCLASS);
                    break;
    case cffilter:  PrependItem(&VFILTERBUILD,value,CF_ANYCLASS);
-                   break;		   
+                   break;     
    case cfignore:  PrependItem(&VIGNOREPARSE,value,CF_ANYCLASS);
                    break;
    case cfcopy:    PrependItem(&VCPLNPARSE,value,CF_ANYCLASS);
@@ -1182,7 +1205,7 @@ switch(GetCommAttribute(item))
    case cfdefine:  HandleDefine(value);
                    break;
    case cfelsedef: HandleElseDefine(value);
-                   break;		   
+                   break;     
    case cfsetlog:  HandleCharSwitch("log",value,&LOGP);
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
@@ -1198,9 +1221,7 @@ switch(GetCommAttribute(item))
 
 /*******************************************************************/
 
-void HandleOptionalProcessAttribute(item)
-
-char *item;
+void HandleOptionalProcessAttribute(char *item)
 
 { char value[maxvarsize];
 
@@ -1219,23 +1240,25 @@ Debug1("HandleOptionalProcessAttribute(%s)\n",value);
 
 switch(GetCommAttribute(item))
    {
-   case cfaction:  if (strcmp(value,"signal") == 0 || strcmp(value,"do") == 0)
-                      {
-		      PROACTION = 's';
-                      }
-                   else if (strcmp(value,"bymatch") == 0)
-		      {
-		      PROACTION = 'm';
-		      }
-                   else if (strcmp(value,"warn") == 0)
-		      {
-		      PROACTION = 'w';
-		      }
-                   else
-		      {
-		      yyerror("Unknown action for processes");
-		      }
-                   break;
+   case cfaction:
+       if (strcmp(value,"signal") == 0 || strcmp(value,"do") == 0)
+          {
+          PROACTION = 's';
+          }
+       else if (strcmp(value,"bymatch") == 0)
+          {
+          PROACTION = 'm';
+          }
+       else if (strcmp(value,"warn") == 0)
+          {
+          PROACTION = 'w';
+          }
+       else
+          {
+          yyerror("Unknown action for processes");
+          }
+       break;
+
    case cfmatches: HandleProcessMatches(value);
                    ACTIONPENDING = true;
                    break;
@@ -1259,7 +1282,7 @@ switch(GetCommAttribute(item))
    case cffilter:  PrependItem(&VFILTERBUILD,value,CF_ANYCLASS);
                    break;
    case cfowner:   strcpy(VUIDNAME,value);
-		   break;
+     break;
    case cfgroup:   strcpy(VGIDNAME,value);
                    break;
    case cfchdir:   HandleChDir(value);
@@ -1272,7 +1295,7 @@ switch(GetCommAttribute(item))
                    break;
    case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
                    break;
-		   
+     
    default:        yyerror("Illegal process attribute");
    }
 
@@ -1281,9 +1304,7 @@ switch(GetCommAttribute(item))
 
 /*******************************************************************/
 
-void HandleOptionalPackagesAttribute(item)
-
-char *item;
+void HandleOptionalPackagesAttribute(char *item)
 
 { char value[maxvarsize];
 
@@ -1311,7 +1332,7 @@ switch(GetCommAttribute(item))
    case cfdefine:  HandleDefine(value);
                    break;
    case cfelsedef: HandleElseDefine(value);
-                   break;		   
+                   break;     
    case cfsetlog:  HandleCharSwitch("log",value,&LOGP);
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
@@ -1327,9 +1348,7 @@ switch(GetCommAttribute(item))
 
 /*******************************************************************/
 
-void HandleOptionalMethodsAttribute(item)
-
-char *item;
+void HandleOptionalMethodsAttribute(char *item)
 
 { char value[bufsize];
 
@@ -1347,36 +1366,36 @@ if (value[0] == '\0')
  switch(GetCommAttribute(item))
     {
     case cfserver: HandleServer(value);
-	           break;
+            break;
 
     case cfaction: strncpy(ACTIONBUFF,value,bufsize-1);
-	           break;
+            break;
 
     case cfretvars:
-	           strncpy(METHODFILENAME,value,bufsize-1);
-	           break;
+            strncpy(METHODFILENAME,value,bufsize-1);
+            break;
     case cfretclasses:
- 	           strncpy(METHODRETURNCLASSES,value,bufsize-1);
-	           break;
+             strncpy(METHODRETURNCLASSES,value,bufsize-1);
+            break;
 
     case cfsendclasses:
- 	            strncpy(METHODREPLYTO,value,bufsize-1);
-	            break;
+              strncpy(METHODREPLYTO,value,maxvarsize-1);
+             break;
     case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
-	            break;
+             break;
     case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
-           	    break;
+                break;
 
    case cfowner:     strncpy(VUIDNAME,value,bufsize-1);
-		     break;
+       break;
    case cfgroup:     strncpy(VGIDNAME,value,bufsize-1);
                      break;
    case cfchdir:     HandleChDir(value);
                      break;
    case cfchroot:    HandleChRoot(value);
-                     break;		     
+                     break;       
 
-	
+ 
     default:       yyerror("Illegal methods attribute");
     }
  
@@ -1386,9 +1405,7 @@ ACTIONPENDING = true;
 
 /*******************************************************************/
 
-void HandleOptionalScriptAttribute(item)
-
-char *item;
+void HandleOptionalScriptAttribute(char *item)
 
 { char value[maxvarsize];
 
@@ -1416,7 +1433,7 @@ switch(GetCommAttribute(item))
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
                      break;
    case cfowner:     strcpy(VUIDNAME,value);
-		     break;
+       break;
    case cfgroup:     strcpy(VGIDNAME,value);
                      break;
    case cfdefine:    HandleDefine(value);
@@ -1430,9 +1447,9 @@ switch(GetCommAttribute(item))
    case cfchdir:     HandleChDir(value);
                      break;
    case cfchroot:    HandleChRoot(value);
-                     break;		     
+                     break;       
    case cfpreview:   HandleCharSwitch("preview",value,&PREVIEW);
-                     break;		     
+                     break;       
    case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
                    break;
    case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
@@ -1445,9 +1462,7 @@ switch(GetCommAttribute(item))
 
 /*******************************************************************/
 
-void HandleOptionalAlertsAttribute(item)
-
-char *item;
+void HandleOptionalAlertsAttribute(char *item)
 
 { char value[maxvarsize];
 
@@ -1477,9 +1492,7 @@ switch(GetCommAttribute(item))
 
 /*******************************************************************/
 
-void HandleChDir(value)
-
-char *value;
+void HandleChDir(char *value)
 
 {
 if (!IsAbsoluteFileName(value))
@@ -1492,9 +1505,7 @@ strcpy(CHDIR,value);
 
 /*******************************************************************/
 
-void HandleChRoot(value)
-
-char *value;
+void HandleChRoot(char *value)
 
 {
 if (!IsAbsoluteFileName(value))
@@ -1507,9 +1518,7 @@ strcpy(CHROOT,value);
 
 /*******************************************************************/
 
-void HandleFileItem(item)
-
-char *item;
+void HandleFileItem(char *item)
 
 {
 if (strcmp(item,"home") == 0)
@@ -1526,9 +1535,7 @@ yyerror(OUTPUT);
 
 /*******************************************************************/
 
-void InstallBroadcastItem(item)
-
-char *item;
+void InstallBroadcastItem(char *item)
 
 {
 Debug1("Install broadcast mode (%s)\n",item);
@@ -1569,9 +1576,7 @@ FatalError("Unknown broadcast mode");
 
 /*******************************************************************/
 
-void InstallDefaultRouteItem(item)
-
-char *item;
+void InstallDefaultRouteItem(char *item)
 
 { struct hostent *hp;
   struct in_addr inaddr;
@@ -1602,7 +1607,7 @@ ExpandVarstring(item,VBUFF,NULL);
       }
    else
       {
-      bcopy(hp->h_addr,&inaddr, hp->h_length);
+      memcpy(&inaddr,hp->h_addr, hp->h_length);
       strcpy(VDEFAULTROUTE,inet_ntoa(inaddr));
       }
    }
@@ -1614,10 +1619,7 @@ else
 
 /*******************************************************************/
 
-void InstallGroupRValue(item,type)
-
-char *item;
-enum itemtypes type;
+void InstallGroupRValue(char *item,enum itemtypes type)
 
 { char *machine, *user, *domain;
   char buff[bufsize];
@@ -1659,13 +1661,13 @@ switch (type)
                       break;
                       }
 
-		   if (IsDefinedClass(buff))
+                   if (IsDefinedClass(buff))
                       {
                       AddClassToHeap(GROUPBUFF);
                       break;
                       }
 
-		   Debug("[No match of class]\n\n");
+     Debug("[No match of class %s]\n\n",buff);
 
                    break;
 
@@ -1680,7 +1682,7 @@ switch (type)
                          break;
                          }
 
-		      if (strcmp(machine,VFQNAME) == 0)
+                      if (strcmp(machine,VFQNAME) == 0)
                          {
                          Debug1("Matched %s in netgroup %s\n",machine,buff);
                          AddClassToHeap(GROUPBUFF);
@@ -1704,14 +1706,14 @@ switch (type)
                          DeleteItemStarting(&VHEAP,GROUPBUFF);
                          break;
                          }
-		      
+        
                       if (strcmp(machine,VFQNAME) == 0)
                          {
                          Debug1("Matched delete item %s in netgroup %s\n",machine,buff);
                          DeleteItemStarting(&VHEAP,GROUPBUFF);
                          break;
                          }
-		      
+        
                       }
                    
                    endnetgrent();
@@ -1725,7 +1727,7 @@ switch (type)
                       break;
                       }
 
-		   SetClassesOnScript(buff,GROUPBUFF,NULL,false);
+                   SetClassesOnScript(buff,GROUPBUFF,NULL,false);
                    break;
 
    case deletion:  if (IsDefinedClass(buff))
@@ -1741,9 +1743,7 @@ switch (type)
 
 /*******************************************************************/
 
-void HandleHomePattern(pattern)
-
-char *pattern;
+void HandleHomePattern(char *pattern)
 
 {
 VBUFF[0]='\0';
@@ -1753,9 +1753,7 @@ AppendItem(&VHOMEPATLIST,VBUFF,CLASSBUFF);
 
 /*******************************************************************/
 
-void AppendNameServer(item)
-
-char *item;
+void AppendNameServer(char *item)
 
 { 
 Debug1("Installing item (%s) in the nameserver list\n",item);
@@ -1773,9 +1771,7 @@ AppendItem(&VRESOLVE,VBUFF,CLASSBUFF);
 
 /*******************************************************************/
 
-void AppendImport(item)
-
-char *item;
+void AppendImport(char *item)
 
 { 
 if ( ! IsInstallable(CLASSBUFF))
@@ -1799,9 +1795,7 @@ AppendItem(&VIMPORT,VBUFF,CLASSBUFF);
 
 /*******************************************************************/
 
-void InstallObject(name)
-
-char *name;
+void InstallObject(char *name)
 
 { struct cfObject *ptr;
   
@@ -1847,9 +1841,7 @@ VOBJTOP = ptr;
 
 /*******************************************************************/
 
-void InstallHomeserverItem(item)
-
-char *item;
+void InstallHomeserverItem(char *item)
 
 {
 if (! IsInstallable(CLASSBUFF))
@@ -1865,9 +1857,7 @@ AppendItem(&VHOMESERVERS,VBUFF,CLASSBUFF);
 
 /*******************************************************************/
 
-void InstallBinserverItem(item)           /* Install if matches classes */
-
-char *item;
+void InstallBinserverItem(char *item)
 
 {
 if (! IsInstallable(CLASSBUFF))
@@ -1883,9 +1873,7 @@ AppendItem(&VBINSERVERS,VBUFF,CLASSBUFF);
 
 /*******************************************************************/
 
-void InstallMailserverPath(path)
-
-char *path;
+void InstallMailserverPath(char *path)
 
 {
 if ( ! IsInstallable(CLASSBUFF))
@@ -1906,9 +1894,7 @@ Debug1("Installing mailserver (%s) for group (%s)",path,GROUPBUFF);
 
 /*******************************************************************/
 
-void InstallLinkItem (from,to)
-
-char *from, *to;
+void InstallLinkItem(char *from,char *to)
 
 { struct Link *ptr;
   char buffer[bufsize], buffer2[bufsize];
@@ -2039,9 +2025,7 @@ InitializeAction();
 
 /*******************************************************************/
 
-void InstallLinkChildrenItem (from,to)
-
-char *from, *to;
+void InstallLinkChildrenItem (char *from,char *to)
 
 { struct Link *ptr;
   char *sp, buffer[bufsize];
@@ -2158,15 +2142,11 @@ InitializeAction();
 
 /*******************************************************************/
 
-void InstallRequiredPath(path,freespace)
-
-char *path;
-int freespace;
+void InstallRequiredPath(char *path,int freespace)
 
 { struct Disk *ptr;
   char buffer[bufsize],*sp;
   struct TwoDimList *tp = NULL;
-
 
 Build2DListFromVarstring(&tp,path,'/');
     
@@ -2249,7 +2229,8 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    ptr->next = NULL;
    ptr->log = LOGP;
    ptr->inform = INFORMP;
-   ptr->done = 'n'; 
+   ptr->done = 'n';
+   ptr->scanarrivals = SCAN;
    ptr->scope = strdup(CONTEXTID);
  
 /* HvB : Bas van der Vlies */
@@ -2264,12 +2245,7 @@ InitializeAction();
 
 /*******************************************************************/
 
-void InstallMountableItem(path, mnt_opts, readonly)
-
-char *path;
-char *mnt_opts;
-flag readonly;
-
+void InstallMountableItem(char *path,char *mnt_opts,flag readonly)
 
 { struct Mountables *ptr;
 
@@ -2290,18 +2266,18 @@ if (!IsDefinedClass(CLASSBUFF))
     for (ptr = VMOUNTABLES; ptr != NULL; ptr = ptr->next)
        {
        if ( strcmp(ptr->filesystem, VBUFF) == 0 )
-	  {
-	  snprintf(OUTPUT,bufsize*2,"Only one definition per mount allowed: %s\n",ptr->filesystem);
-	  yyerror(OUTPUT); 
-	  return;
+          {
+          snprintf(OUTPUT,bufsize*2,"Only one definition per mount allowed: %s\n",ptr->filesystem);
+          yyerror(OUTPUT); 
+          return;
           }
        }
     }
  
-if ((ptr = (struct Mountables *)malloc(sizeof(struct Mountables))) == NULL)
-   {
-   FatalError("Memory Allocation failed for InstallMountableItem() #1");
-   }
+ if ((ptr = (struct Mountables *)malloc(sizeof(struct Mountables))) == NULL)
+    {
+    FatalError("Memory Allocation failed for InstallMountableItem() #1");
+    }
  
 if ((ptr->filesystem = strdup(VBUFF)) == NULL)
    {
@@ -2320,8 +2296,8 @@ else
    ptr->mountopts = NULL;
    }
 
-ptr->readonly = readonly;
-ptr->next = NULL;
+ ptr->readonly = readonly;
+ ptr->next = NULL;
  ptr->done = 'n';
  ptr->scope = strdup(CONTEXTID);
  
@@ -2339,10 +2315,7 @@ VMOUNTABLESTOP=ptr;
 
 /*******************************************************************/
 
-void AppendUmount(path,deldir,delfstab,force)
-
-char *path;
-char deldir,delfstab,force;
+void AppendUmount(char *path,char deldir,char delfstab,char force)
 
 { struct UnMount *ptr;
  
@@ -2410,9 +2383,7 @@ VUNMOUNTTOP = ptr;
 
 /*******************************************************************/
 
-void AppendMiscMount(from,onto,opts)
-
-char *from, *onto, *opts;
+void AppendMiscMount(char *from,char *onto,char *opts)
 
 { struct MiscMount *ptr;
 
@@ -2489,9 +2460,7 @@ VMISCMOUNTTOP = ptr;
 
 /*******************************************************************/
 
-void AppendIgnore(path)
-
-char *path;
+void AppendIgnore(char *path)
 
 { struct TwoDimList *tp = NULL;
   char *sp;
@@ -2518,9 +2487,7 @@ Delete2DList(tp);
 
 /*******************************************************************/
 
-void InstallPending(action)
-
-enum actions action;
+void InstallPending(enum actions action)
 
 {
 if (ACTIONPENDING)
@@ -2535,143 +2502,161 @@ else
 
 switch (action)
    {
-   case filters:  InstallFilterTest(FILTERNAME,CURRENTITEM,FILTERDATA);
-                  CURRENTITEM[0] = '\0';
-		  FILTERDATA[0] = '\0'; 
-                  break;
-
+   case filters:
+       InstallFilterTest(FILTERNAME,CURRENTITEM,FILTERDATA);
+       CURRENTITEM[0] = '\0';
+       FILTERDATA[0] = '\0'; 
+       break;
+       
    case strategies:
-                  AddClassToStrategy(STRATEGYNAME,CURRENTITEM,STRATEGYDATA);
-		  break;
+       AddClassToStrategy(STRATEGYNAME,CURRENTITEM,STRATEGYDATA);
+       break;
 
-   case resolve:  AppendNameServer(CURRENTOBJECT);
-                  break;
+   case resolve:
+       AppendNameServer(CURRENTOBJECT);
+       break;
+
    case files:
-                  InstallFileListItem(CURRENTOBJECT,PLUSMASK,MINUSMASK,FILEACTION,VUIDNAME,
-				      VGIDNAME,VRECURSE,(char)PTRAVLINKS,CHECKSUM);
-                  break;
+       InstallFileListItem(CURRENTOBJECT,PLUSMASK,MINUSMASK,FILEACTION,VUIDNAME,
+                           VGIDNAME,VRECURSE,(char)PTRAVLINKS,CHECKSUM);
+       break;
 
-   case processes: InstallProcessItem(EXPR,RESTART,PROMATCHES,PROCOMP,
-				      PROSIGNAL,PROACTION,CLASSBUFF,USESHELL,VUIDNAME,VGIDNAME);
-                   break;
+   case processes:
+
+       InstallProcessItem(EXPR,RESTART,PROMATCHES,PROCOMP,
+                          PROSIGNAL,PROACTION,CLASSBUFF,USESHELL,VUIDNAME,VGIDNAME);
+       break;
+       
    case image:
-                  InstallImageItem(CURRENTOBJECT,PLUSMASK,MINUSMASK,DESTINATION,
-				   IMAGEACTION,VUIDNAME,VGIDNAME,IMGSIZE,IMGCOMP,
-				   VRECURSE,COPYTYPE,LINKTYPE,CFSERVER);
-                  break;
+       InstallImageItem(FINDERTYPE,CURRENTOBJECT,PLUSMASK,MINUSMASK,DESTINATION,
+                        IMAGEACTION,VUIDNAME,VGIDNAME,IMGSIZE,IMGCOMP,
+                        VRECURSE,COPYTYPE,LINKTYPE,CFSERVER);
+       break;
+       
+   case ignore:
+       AppendIgnore(CURRENTOBJECT);
+       break;
 
-   case ignore:   AppendIgnore(CURRENTOBJECT);
-                  break;
+   case tidy:
+       if (VAGE >= 99999)
+          {
+          yyerror("Must specify an age for tidy actions");
+          return;
+          }
+       InstallTidyItem(CURRENTOBJECT,CURRENTITEM,VRECURSE,VAGE,(char)PTRAVLINKS,
+                       TIDYSIZE,AGETYPE,LINKDIRS,TIDYDIRS,CLASSBUFF);
+       break;
+       
+   case makepath:
+       InstallMakePath(CURRENTOBJECT,PLUSMASK,MINUSMASK,VUIDNAME,VGIDNAME);
+       break;
 
-   case tidy:     if (VAGE >= 99999)
-                     {
-                     yyerror("Must specify an age for tidy actions");
-                     return;
-                     }
-                  InstallTidyItem(CURRENTOBJECT,CURRENTITEM,VRECURSE,VAGE,(char)PTRAVLINKS,
-				  TIDYSIZE,AGETYPE,LINKDIRS,TIDYDIRS,CLASSBUFF);
-                  break;
-
-   case makepath: InstallMakePath(CURRENTOBJECT,PLUSMASK,MINUSMASK,VUIDNAME,VGIDNAME);
-                  break;
-
-   case methods:  InstallMethod(CURRENTOBJECT,ACTIONBUFF);
-                  break;
+   case methods:
+       InstallMethod(CURRENTOBJECT,ACTIONBUFF);
+       break;
 
    case rename_disable:
-   case disable:  AppendDisable(CURRENTOBJECT,CURRENTITEM,ROTATE,DISCOMP,DISABLESIZE);
-                  break;
+   case disable:
+       AppendDisable(CURRENTOBJECT,CURRENTITEM,ROTATE,DISCOMP,DISABLESIZE);
+       break;
 
    case shellcommands:
-                  AppendScript(CURRENTOBJECT,VTIMEOUT,USESHELL,VUIDNAME,VGIDNAME);
-		  InitializeAction();
-		  break;
 
-   case alerts:   if (strcmp(CLASSBUFF,"any") == 0)
-                     {
-		     yyerror("Alerts cannot be in class any - probably a mistake");
-		     }
-                  else
-		     {
-		     InstallItem(&VALERTS,CURRENTOBJECT,CLASSBUFF,0,0);
-		     }
-                  break;
+       AppendScript(CURRENTOBJECT,VTIMEOUT,USESHELL,VUIDNAME,VGIDNAME);
+       InitializeAction();
+       break;
+       
+   case alerts:
+
+       if (strcmp(CLASSBUFF,"any") == 0)
+          {
+          yyerror("Alerts cannot be in class any - probably a mistake");
+          }
+       else
+          {
+          Debug("Install %s if %s\n",CURRENTOBJECT,CLASSBUFF);
+          InstallItem(&VALERTS,CURRENTOBJECT,CLASSBUFF,0,0);
+          }
+       break;
+       
    case interfaces:
-                  AppendInterface(VIFNAME,DESTINATION,CURRENTOBJECT);
-		  break;
+       AppendInterface(VIFNAME,LINKTO,DESTINATION,CURRENTOBJECT);
+       break;
 
    case disks:
    case required:
-                  InstallRequiredPath(CURRENTOBJECT,IMGSIZE);
-                  break;
+
+       InstallRequiredPath(CURRENTOBJECT,IMGSIZE);
+       break;
 
    /* HvB: Bas van der Vlies */
    case mountables:
-		  InstallMountableItem(CURRENTOBJECT,MOUNTOPTS,MOUNT_RO);
-		  break;
+       InstallMountableItem(CURRENTOBJECT,MOUNTOPTS,MOUNT_RO);
+       break;
 
    case misc_mounts:
-                  if ((strlen(MOUNTFROM) != 0) && (strlen(MOUNTONTO) != 0))
-		     {
-		     switch (MOUNTMODE)
-			{
-			case 'o': strcpy(MOUNTOPTS,"ro");
-				  break;
-			case 'w': strcpy(MOUNTOPTS,"rw");
-				  break;
-			default:  printf("Install pending, miscmount, shouldn't happen\n");
-				  MOUNTOPTS[0] = '\0'; /* no mount mode set! */
-			}
-		  
-		     if (strlen(MOUNTOPTS) != 0)     /* valid mount mode set */
-			{ struct Item *op;
-			for (op = MOUNTOPTLIST; op != NULL; op = op->next)
-			   {
-			   if (BufferOverflow(MOUNTOPTS,op->name))
-			      {
-			      printf(" culprit: InstallPending, skipping miscmount %s %s\n",
-			             MOUNTFROM, MOUNTONTO);
-			      return;
-			      }
-			   strcat(MOUNTOPTS,",");
-			   strcat(MOUNTOPTS,op->name);
-			   }
-			AppendMiscMount(MOUNTFROM,MOUNTONTO,MOUNTOPTS);
-			}
-		     }
-		  
-		  InitializeAction();
-		  break;
-
+       if ((strlen(MOUNTFROM) != 0) && (strlen(MOUNTONTO) != 0))
+          {
+          switch (MOUNTMODE)
+             {
+             case 'o': strcpy(MOUNTOPTS,"ro");
+                 break;
+             case 'w': strcpy(MOUNTOPTS,"rw");
+                 break;
+             default:  printf("Install pending, miscmount, shouldn't happen\n");
+                 MOUNTOPTS[0] = '\0'; /* no mount mode set! */
+             }
+          
+          if (strlen(MOUNTOPTS) != 0)     /* valid mount mode set */
+             { struct Item *op;
+             for (op = MOUNTOPTLIST; op != NULL; op = op->next)
+                {
+                if (BufferOverflow(MOUNTOPTS,op->name))
+                   {
+                   printf(" culprit: InstallPending, skipping miscmount %s %s\n",
+                          MOUNTFROM, MOUNTONTO);
+                   return;
+                   }
+                strcat(MOUNTOPTS,",");
+                strcat(MOUNTOPTS,op->name);
+                }
+             AppendMiscMount(MOUNTFROM,MOUNTONTO,MOUNTOPTS);
+             }
+          }
+       
+       InitializeAction();
+       break;
+       
    case unmounta:
-                  AppendUmount(CURRENTOBJECT,DELETEDIR,DELETEFSTAB,FORCE);
-		  break;
-		   
+       AppendUmount(CURRENTOBJECT,DELETEDIR,DELETEFSTAB,FORCE);
+       break;
+       
    case links:
-                  if (LINKTO[0] == '\0')
-                     {
-                     return;
-                     }
-
-                  if (ACTION_IS_LINKCHILDREN)
-                     {
-                     InstallLinkChildrenItem(LINKFROM,LINKTO);
-                     ACTION_IS_LINKCHILDREN = false;
-                     }
-                  else if (ACTION_IS_LINK)
-                     {
-                     InstallLinkItem(LINKFROM,LINKTO);
-                     ACTION_IS_LINK = false;
-                     }
-                  else
-                     {
-                     return;                                   /* Don't have whole command */
-                     }
-
-                  break;
-
-   case packages: InstallPackagesItem(CURRENTOBJECT,PKGVER,CMPSENSE,PKGMGR);
-                  break;
+       if (LINKTO[0] == '\0')
+          {
+          return;
+          }
+       
+       if (ACTION_IS_LINKCHILDREN)
+          {
+          InstallLinkChildrenItem(LINKFROM,LINKTO);
+          ACTION_IS_LINKCHILDREN = false;
+          }
+       else if (ACTION_IS_LINK)
+          {
+          InstallLinkItem(LINKFROM,LINKTO);
+          ACTION_IS_LINK = false;
+          }
+       else
+          {
+          return;                                   /* Don't have whole command */
+          }
+       
+       break;
+       
+   case packages:
+       InstallPackagesItem(CURRENTOBJECT,PKGVER,CMPSENSE,PKGMGR);
+       break;
    }
 
  
@@ -2682,9 +2667,7 @@ Debug1("   END InstallPending]\n\n");
 /* Level 3                                                         */
 /*******************************************************************/
 
-void HandleCharSwitch(name,value,pflag)
-
-char *name, *value, *pflag;
+void HandleCharSwitch(char *name,char *value,char *pflag)
 
 {
 Debug1("HandleCharSwitch(%s=%s)\n",name,value);
@@ -2721,10 +2704,7 @@ if ((strcmp(value,"timestamp") == 0))
 
 /*******************************************************************/
 
-void HandleIntSwitch(name,value,pflag,min,max)
-
-char *name,*value;
-int min,max,*pflag;
+void HandleIntSwitch(char *name,char *value,int *pflag,int min,int max)
 
 { int numvalue = -17267592; /* silly number, never happens */
  
@@ -2753,9 +2733,7 @@ else
 
 /*******************************************************************/
 
-int EditFileExists(file)
-
-char *file;
+int EditFileExists(char *file)
 
 { struct Edit *ptr;
 
@@ -2774,11 +2752,9 @@ return false;
 
 /********************************************************************/
 
-void GetExecOutput(command,buffer)
+void GetExecOutput(char *command,char *buffer)
 
 /* Buffer initially contains whole exec string */
-
-char *command, *buffer;
 
 { int offset = 0;
   char line[bufsize], *sp; 
@@ -2798,7 +2774,7 @@ if ((pp = cfpopen(command,"r")) == NULL)
    return;
    }
 
-bzero(buffer,bufsize);
+memset(buffer,0,bufsize);
   
 while (!feof(pp))
    {
@@ -2814,16 +2790,16 @@ while (!feof(pp))
       {
       fflush(pp);
       break;
-      }	 
-
+      }  
+   
    for (sp = line; *sp != '\0'; sp++)
       {
       if (*sp == '\n')
-	 {
-	 *sp = ' ';
-	 }
+         {
+         *sp = ' ';
+         }
       }
-
+   
    if (strlen(line)+offset > bufsize-10)
       {
       snprintf(OUTPUT,bufsize*2,"Buffer exceeded %d bytes in exec %s\n",maxvarsize,command);
@@ -2847,9 +2823,7 @@ cfpclose(pp);
 
 /********************************************************************/
 
-void InstallEditFile(file,edit,data)
-
-char *file,*edit,*data;
+void InstallEditFile(char *file,char *edit,char *data)
 
 { struct Edit *ptr;
 
@@ -2941,9 +2915,7 @@ else
 
 /********************************************************************/
 
-void AddEditAction(file,edit,data)
-
-char *file,*edit,*data;
+void AddEditAction(char *file,char *edit,char *data)
 
 { struct Edit *ptr;
   struct Edlist *top,*new;
@@ -3009,138 +2981,138 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
          {
          FatalError("Memory Allocation failed for InstallEditFile() #3");
          }
-
+      
       if ((new->code = EditActionsToCode(edit)) == NoEdit)
          {
-	 snprintf(OUTPUT,bufsize,"Unknown edit action \"%s\"",edit);
+         snprintf(OUTPUT,bufsize,"Unknown edit action \"%s\"",edit);
          yyerror(OUTPUT);
          }
-
+      
       switch(new->code)
          {
-	 case EditUmask:
-	     HandleUmask(data);
-	     ptr->umask = UMASK;
-	 case EditIgnore:
-	     PrependItem(&(ptr->ignores),data,CF_ANYCLASS);
-	     break;
-	 case EditExclude:
-	     PrependItem(&(ptr->exclusions),data,CF_ANYCLASS);
-	     break;
-	 case EditInclude:
-	     PrependItem(&(ptr->inclusions),data,CF_ANYCLASS);
-	     break;
-	 case EditRecurse:
-	     if (strcmp(data,"inf") == 0)
-		{
-		ptr->recurse = INFINITERECURSE;
-		}
-	     else
-		{
-		ptr->recurse = atoi(data);
-		if (ptr->recurse < 0)
-		   {
-		   yyerror("Illegal recursion value");
-		   }
-		}
-	       break;
-
-	 case Append:
-	     if (EDITGROUPLEVEL == 0)
-		{
-		yyerror("Append used outside of Group - non-convergent");
-		}
-
-	 case EditMode:
-	     if (strcmp(data,"Binary") == 0)
-		{
-		ptr->binary = 'y';
-		}
-	     break;
-
+         case EditUmask:
+             HandleUmask(data);
+             ptr->umask = UMASK;
+         case EditIgnore:
+             PrependItem(&(ptr->ignores),data,CF_ANYCLASS);
+             break;
+         case EditExclude:
+             PrependItem(&(ptr->exclusions),data,CF_ANYCLASS);
+             break;
+         case EditInclude:
+             PrependItem(&(ptr->inclusions),data,CF_ANYCLASS);
+             break;
+         case EditRecurse:
+             if (strcmp(data,"inf") == 0)
+                {
+                ptr->recurse = INFINITERECURSE;
+                }
+             else
+                {
+                ptr->recurse = atoi(data);
+                if (ptr->recurse < 0)
+                   {
+                   yyerror("Illegal recursion value");
+                   }
+                }
+             break;
+             
+         case Append:
+             if (EDITGROUPLEVEL == 0)
+                {
+                yyerror("Append used outside of Group - non-convergent");
+                }
+             
+         case EditMode:
+             if (strcmp(data,"Binary") == 0)
+                {
+                ptr->binary = 'y';
+                }
+             break;
+             
          case BeginGroupIfNoMatch:
          case BeginGroupIfNoLineMatching:
          case BeginGroupIfNoLineContaining:
          case BeginGroupIfNoSuchLine:
-	 case BeginGroupIfDefined:
+         case BeginGroupIfDefined:
          case BeginGroupIfNotDefined: 
-	 case BeginGroupIfFileIsNewer:
-	 case BeginGroupIfFileExists:
-                EDITGROUPLEVEL++;
-                break;
+         case BeginGroupIfFileIsNewer:
+         case BeginGroupIfFileExists:
+             EDITGROUPLEVEL++;
+             break;
          case EndGroup:
-                EDITGROUPLEVEL--;
-		if (EDITGROUPLEVEL < 0)
-		   {
-		   yyerror("EndGroup without Begin");
-		   }
-                break;
+             EDITGROUPLEVEL--;
+             if (EDITGROUPLEVEL < 0)
+                {
+                yyerror("EndGroup without Begin");
+                }
+             break;
          case ReplaceAll:
-	        if (SEARCHREPLACELEVEL > 0)
-		   {
-		   yyerror("ReplaceAll without With before or at line");
-		   }
-		
-                SEARCHREPLACELEVEL++;
-                break;
+             if (SEARCHREPLACELEVEL > 0)
+                {
+                yyerror("ReplaceAll without With before or at line");
+                }
+             
+             SEARCHREPLACELEVEL++;
+             break;
          case With:
-                SEARCHREPLACELEVEL--;
-                break;
-	 case ForEachLineIn:
-	        if (FOREACHLEVEL > 0)
-		   {
-		   yyerror("Nested ForEach loops not allowed");
-		   }
-		
-	        FOREACHLEVEL++;
-		break;
-	 case EndLoop:
-	        FOREACHLEVEL--;
-		if (FOREACHLEVEL < 0)
-		   {
-		   yyerror("EndLoop without ForEachLineIn");
-		   }
-		break;
+             SEARCHREPLACELEVEL--;
+             break;
+         case ForEachLineIn:
+             if (FOREACHLEVEL > 0)
+                {
+                yyerror("Nested ForEach loops not allowed");
+                }
+             
+             FOREACHLEVEL++;
+             break;
+         case EndLoop:
+             FOREACHLEVEL--;
+             if (FOREACHLEVEL < 0)
+                {
+                yyerror("EndLoop without ForEachLineIn");
+                }
+             break;
          case DefineInGroup:
-                if (EDITGROUPLEVEL < 0)
-                   {
-                   yyerror("DefineInGroup outside a group");
-                   }
-		AddInstallable(new->data);
-                break;
-	 case SetLine:
-	        if (FOREACHLEVEL > 0)
-		   {
-		   yyerror("SetLine inside ForEachLineIn loop");
-		   }
-	        break;
-	 case FixEndOfLine:
-	        if (strlen(data) > extra_space - 1)
-		   {
-		   yyerror("End of line type is too long!");
-		   printf("          (max %d characters allowed)\n",extra_space);
-		   }
-		break;
-	 case ReplaceLinesMatchingField:
-	        if (atoi(data) == 0)
-		   {
-		   yyerror("Argument must be an integer, greater than zero");
-		   }
-		break;
-	 case ElseDefineClasses:
-	 case EditFilter:
-	 case DefineClasses:
-	     if (EDITGROUPLEVEL > 0 || FOREACHLEVEL > 0)
-		{
-		yyerror("Class definitions inside conditionals or loops are not allowed. Did you mean DefineInGroup?");
-		}
-	     AddInstallable(new->data);
-	     break;
-	 case EditRepos:
-	     ptr->repository = strdup(data);
-	     break;
+             if (EDITGROUPLEVEL < 0)
+                {
+                yyerror("DefineInGroup outside a group");
+                }
+             AddInstallable(new->data);
+             break;
+         case SetLine:
+             if (FOREACHLEVEL > 0)
+                {
+                yyerror("SetLine inside ForEachLineIn loop");
+                }
+             break;
+         case FixEndOfLine:
+             if (strlen(data) > extra_space - 1)
+                {
+                yyerror("End of line type is too long!");
+                printf("          (max %d characters allowed)\n",extra_space);
+                }
+             break;
+         case ReplaceLinesMatchingField:
+             if (atoi(data) == 0)
+                {
+                yyerror("Argument must be an integer, greater than zero");
+                }
+             break;
+         case ElseDefineClasses:
+         case EditFilter:
+         case DefineClasses:
+             if (EDITGROUPLEVEL > 0 || FOREACHLEVEL > 0)
+                {
+                yyerror("Class definitions inside conditionals or loops are not allowed. Did you mean DefineInGroup?");
+                }
+             AddInstallable(new->data);
+             break;
+         case EditRepos:
+             ptr->repository = strdup(data);
+             break;
          }
-
+      
       return;
       }
    }
@@ -3150,9 +3122,7 @@ printf("cfengine: software error - no file matched installing %s edit\n",file);
 
 /********************************************************************/
 
-enum editnames EditActionsToCode(edit)
-
-char *edit;
+enum editnames EditActionsToCode(char *edit)
 
 { int i;
 
@@ -3172,9 +3142,7 @@ return (NoEdit);
 
 /********************************************************************/
 
-void AppendInterface(ifname,netmask,broadcast)
-
-char *ifname,*netmask,*broadcast;
+void AppendInterface(char *ifname,char *address,char *netmask,char *broadcast)
 
 { struct Interface *ifp;
  
@@ -3226,6 +3194,11 @@ if ((ifp->broadcast = strdup(broadcast)) == NULL)
    FatalError("Memory Allocation failed for AppendInterface() #3");
    } 
 
+if ((ifp->ipaddress = strdup(address)) == NULL)
+   {
+   FatalError("Memory Allocation failed for AppendInterface() #3");
+   } 
+ 
 if (VIFLISTTOP == NULL)                 /* First element in the list */
    {
    VIFLIST = ifp;
@@ -3246,10 +3219,7 @@ InitializeAction();
 
 /*******************************************************************/
 
-void AppendScript(item,timeout,useshell,uidname,gidname)
-
-char *item, useshell,*uidname,*gidname;
-int timeout;
+void AppendScript(char *item,int timeout,char useshell,char *uidname,char *gidname)
 
 { struct TwoDimList *tp = NULL;
   struct ShellComm *ptr;
@@ -3284,7 +3254,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       FatalError("Memory Allocation failed for Appendscript() #2");
       }
 
-   if (*sp != '/')
+   if (*sp != '/' && !NOABSPATH)
       {
       yyerror("scripts or commands must have absolute path names");
       printf ("cfengine: concerns: %s\n",sp);
@@ -3329,14 +3299,14 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       {
       sscanf(uidname,"%d",&uid);
       if (uid == CF_NOUSER)
-	 {
-	 yyerror("Unknown or silly user id");
-	 return;
-	 }
+         {
+         yyerror("Unknown or silly user id");
+         return;
+         }
       else
-	 {
-	 ptr->uid = uid;
-	 }
+         {
+         ptr->uid = uid;
+         }
       }
    else if ((pw = getpwnam(uidname)) == NULL)
       {
@@ -3356,14 +3326,14 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       {
       sscanf(gidname,"%d",&gid);
       if (gid == CF_NOUSER)
-	 {
-	 yyerror("Unknown or silly group id");
-	 continue;
-	 }
+         {
+         yyerror("Unknown or silly group id");
+         continue;
+         }
       else
-	 {
-	 ptr->gid = gid;
-	 }
+         {
+         ptr->gid = gid;
+         }
       }
    else if ((gw = getgrnam(gidname)) == NULL)
       {
@@ -3428,11 +3398,7 @@ Delete2DList(tp);
 
 /********************************************************************/
 
-void AppendDisable(path,type,rotate,comp,size)
-
-char *path, *type, comp;
-short rotate;
-int size;
+void AppendDisable(char *path,char *type,short rotate,char comp,int size)
 
 { char *sp;
   struct Disable *ptr;
@@ -3568,12 +3534,11 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
 
 /*******************************************************************/
 
-void InstallMethod(function,file)
-
-char *function, *file;
+void InstallMethod(char *function,char *file)
 
 { char *sp, work[bufsize],name[bufsize];
   struct Method *ptr;
+  struct Item *bare_send_args = NULL;
   uid_t uid = CF_NOUSER;
   gid_t gid = CF_NOUSER;
   struct passwd *pw;
@@ -3581,8 +3546,15 @@ char *function, *file;
    
 Debug1("Installing item (%s=%s) in the methods list\n",function,file);
 
-bzero(name,bufsize-1);
-bzero(work,bufsize-1);
+if (strlen(file) == 0)
+   {
+   snprintf(OUTPUT,bufsize,"Missing action file from declaration of method %s",function);
+   yyerror(OUTPUT);
+   return;
+   }
+ 
+memset(name,0,bufsize);
+memset(work,0,bufsize);
  
 if (! IsInstallable(CLASSBUFF))
    {
@@ -3611,7 +3583,47 @@ if (!strstr(function,"("))
    InitializeAction();
    return;
    }
+
+/* First look at bare args to cache an arg fingerprint */ 
+strcpy(work,function);
+
+if (work[strlen(work)-1] != ')')
+   {
+   yyerror("Illegal use of space or nested parentheses");
+   }
  
+work [strlen(work)-1] = '\0';   /*chop last ) */
+ 
+sscanf(function,"%[^(]",name); 
+
+if (strlen(name) == 0)
+   {
+   yyerror("Empty method");
+   return;
+   }
+ 
+for (sp = work; sp != NULL; sp++) /* Pick out the args*/
+   {
+   if (*sp == '(')
+      {
+      break;
+      }
+   }
+ 
+sp++; 
+
+if (strlen(sp) == 0)
+   {
+   yyerror("Missing argument (void?) to method");
+   }
+ 
+bare_send_args = ListFromArgs(sp);
+ChecksumList(bare_send_args,ptr->digest,'m');
+DeleteItemList(bare_send_args);
+ 
+/* Now expand variables */
+ 
+memset(work,0,bufsize); 
 ExpandVarstring(function,work,"");
  
 if (work[strlen(work)-1] != ')')
@@ -3681,6 +3693,7 @@ if ((ptr->classes = strdup(CLASSBUFF)) == NULL)
  
 ptr->file = strdup(file); 
 ptr->servers = SplitStringAsItemList(CFSERVER,',');
+ptr->bundle = NULL;
 ptr->return_vars = SplitStringAsItemList(METHODFILENAME,',');
 ptr->return_classes = SplitStringAsItemList(METHODRETURNCLASSES,','); 
 ptr->scope = strdup(CONTEXTID);
@@ -3773,6 +3786,7 @@ if ((ptr->chdir = strdup(work)) == NULL)
    {
    FatalError("Memory Allocation failed for InstallProcItem() #4c");
    }
+
  
 ptr->next = NULL;
 VMETHODSTOP = ptr;
@@ -3781,12 +3795,7 @@ InitializeAction();
 
 /*******************************************************************/
 
-void InstallTidyItem(path,wild,rec,age,travlinks,tidysize,type,ldirs,tidydirs,classes)
-
-char *wild, *path;
-short age,tidydirs;
-int rec,tidysize;
-char type, ldirs, *classes, travlinks;
+void InstallTidyItem(char *path,char *wild,int rec,short age,char travlinks,int tidysize,char type,char ldirs,short tidydirs,char *classes)
 
 { struct TwoDimList *tp = NULL;
   char *sp;
@@ -3818,12 +3827,7 @@ InitializeAction();
 
 /*******************************************************************/
 
-void InstallMakePath(path,plus,minus,uidnames,gidnames)
-
-char *path;
-mode_t plus,minus;
-char *uidnames;
-char *gidnames;
+void InstallMakePath(char *path,mode_t plus,mode_t minus,char *uidnames,char *gidnames)
 
 { struct File *ptr;
   char buffer[bufsize]; 
@@ -3923,9 +3927,7 @@ InitializeAction();
 
 /*******************************************************************/
 
-void HandleTravLinks(value)
-
-char *value;
+void HandleTravLinks(char *value)
 
 {
 if (ACTION == tidy && strncmp(CURRENTOBJECT,"home",4) == 0)
@@ -3962,9 +3964,7 @@ yyerror("Illegal links= specifier");
 
 /*******************************************************************/
 
-void HandleTidySize(value)
-
-char *value;
+void HandleTidySize(char *value)
 
 { int num = -1;
   char *sp, units = 'k';
@@ -3985,25 +3985,25 @@ else
    if (num <= 0)
       {
       if (*value == '>')
-	 {
-	 sscanf(value+1,"%d%c",&num,&units);
-	 if (num <= 0)
-	    {
-	    yyerror("size value must be a decimal number with units m/b/k");
-	    }
-	 }
+         {
+         sscanf(value+1,"%d%c",&num,&units);
+         if (num <= 0)
+            {
+            yyerror("size value must be a decimal number with units m/b/k");
+            }
+         }
       else
-	 {
-	 yyerror("size value must be a decimal number with units m/b/k");
-	 }
+         {
+         yyerror("size value must be a decimal number with units m/b/k");
+         }
       }
-
+   
    switch (units)
       {
       case 'b': TIDYSIZE = num;
-	        break;
+          break;
       case 'm': TIDYSIZE = num * 1024 * 1024;
-	        break;
+          break;
       default:  TIDYSIZE = num * 1024;
       }
    }
@@ -4012,9 +4012,7 @@ else
 
 /*******************************************************************/
 
-void HandleUmask(value)
-
-char *value;
+void HandleUmask(char *value)
 
 { int num = -1;
 
@@ -4032,9 +4030,7 @@ UMASK = (mode_t) num;
 
 /*******************************************************************/
 
-void HandleDisableSize(value)
-
-char *value;
+void HandleDisableSize(char *value)
 
 { int i = -1;
   char *sp, units = 'b';
@@ -4074,9 +4070,7 @@ switch (units)
 
 /*******************************************************************/
 
-void HandleCopySize(value)
-
-char *value;
+void HandleCopySize(char *value)
 
 { int i = -1;
   char *sp, units = 'b';
@@ -4116,9 +4110,7 @@ switch (units)
 
 /*******************************************************************/
 
-void HandleRequiredSize(value)
-
-char *value;
+void HandleRequiredSize(char *value)
 
 { int i = -1;
   char *sp, units = 'b';
@@ -4160,9 +4152,7 @@ switch (units)
 
 /*******************************************************************/
 
-void HandleTidyType(value)
-
-char *value;
+void HandleTidyType(char *value)
 
 {
 if (strcmp(value,"a")== 0 || strcmp(value,"atime") == 0)
@@ -4188,9 +4178,7 @@ yyerror("Illegal age search type, must be atime/ctime/mtime");
 
 /*******************************************************************/
 
-void HandleTidyLinkDirs(value)
-
-char *value;
+void HandleTidyLinkDirs(char *value)
 
 {
 if (strcmp(value,"keep")== 0)
@@ -4210,9 +4198,7 @@ yyerror("Illegal linkdirs value, must be keep/delete/tidy");
 
 /*******************************************************************/
 
-void HandleTidyRmdirs(value)
-
-char *value;
+void HandleTidyRmdirs(char *value)
 
 {
 if ((strcmp(value,"true") == 0)||(strcmp(value,"all") == 0))
@@ -4238,9 +4224,7 @@ yyerror("Illegal rmdirs value, must be true/false/sub");
 
 /*******************************************************************/
 
-void HandleTimeOut(value)
-
-char *value;
+void HandleTimeOut(char *value)
 
 { int num = -1;
 
@@ -4257,9 +4241,7 @@ VTIMEOUT = num;
 
 /*******************************************************************/
 
-void HandleUseShell(value)
-
-char *value;
+void HandleUseShell(char *value)
 
 {
  if (strcmp(value,"true") == 0)
@@ -4285,9 +4267,7 @@ yyerror("Illegal attribute for useshell= ");
 
 /*******************************************************************/
 
-void HandleChecksum(value)
-
-char *value;
+void HandleChecksum(char *value)
 
 {
 if (strcmp(value,"md5") == 0)
@@ -4307,9 +4287,7 @@ yyerror("Illegal attribute for checksum= ");
 
 /*******************************************************************/
 
-void HandleTimeStamps(value)
-
-char *value;
+void HandleTimeStamps(char *value)
 
 {
 if (strcmp(value,"preserve") == 0 || strcmp(value,"keep") == 0)
@@ -4323,9 +4301,7 @@ PRESERVETIMES = 'n';
 
 /*******************************************************************/
 
-int GetFileAction(action)
-
-char *action;
+int GetFileAction(char *action)
 
 { int i;
 
@@ -4344,15 +4320,7 @@ return (int) warnall;
 
 /*******************************************************************/
 
-void InstallFileListItem(path,plus,minus,action,uidnames,gidnames,recurse,travlinks,chksum)
-
-char *path;
-mode_t plus,minus;
-enum fileactions action;
-char *uidnames;
-char *gidnames;
-int recurse;
-char travlinks,chksum;
+void InstallFileListItem(char *path,mode_t plus,mode_t minus,enum fileactions action,char *uidnames,char *gidnames,int recurse,char travlinks,char chksum)
 
 { struct File *ptr;
   char *spl;
@@ -4468,11 +4436,7 @@ InitializeAction();
 
 /*******************************************************************/
 
-void InstallProcessItem(expr,restart,matches,comp,signal,action,classes,useshell,uidname,gidname)
-
-char *expr, *restart, *classes, *uidname, *gidname;
-short matches, signal;
-char action, comp, useshell;
+void InstallProcessItem(char *expr,char *restart,short matches,char comp,short signal,char action,char *classes,char useshell,char *uidname,char *gidname)
 
 { struct Process *ptr;
   char buf[bufsize];
@@ -4656,11 +4620,7 @@ AddInstallable(ptr->elsedef);
 
 /*******************************************************************/
 
-void InstallPackagesItem(name,ver,sense,mgr)
-
-char *name, *ver;
-enum cmpsense sense;
-enum pkgmgrs mgr;
+void InstallPackagesItem(char *name,char *ver,enum cmpsense sense,enum pkgmgrs mgr)
 
 { struct Package *ptr;
   char buffer[bufsize];
@@ -4762,9 +4722,7 @@ InitializeAction();
 
 /*******************************************************************/
 
-int GetCmpSense(sense)
-
-char *sense;
+int GetCmpSense(char *sense)
 
 { int i;
 
@@ -4782,9 +4740,7 @@ return (int) cmpsense_eq;
 
 /*******************************************************************/
 
-int GetPkgMgr(pkgmgr)
-
-char *pkgmgr;
+int GetPkgMgr(char *pkgmgr)
 
 { int i;
 for (i = 0; PKGMGRTEXT[i] != '\0'; i++)
@@ -4801,15 +4757,7 @@ return (int) pkgmgr_none;
 
 /*******************************************************************/
 
-void InstallImageItem(path,plus,minus,destination,action,uidnames,gidnames,
-		 size,comp,rec,type,lntype,server)
-
-char *path, *destination, *action, *server;
-mode_t plus,minus;
-char *uidnames;
-char *gidnames;
-char type, lntype, comp;
-int rec, size;
+void InstallImageItem(char *cf_findertype,char *path,mode_t plus,mode_t minus,char *destination,char *action,char *uidnames,char *gidnames,int size,char comp,int rec,char type,char lntype,char *server)
 
 { struct Image *ptr;
   char *spl; 
@@ -4819,7 +4767,7 @@ int rec, size;
   
 if ( ! IsInstallable(CLASSBUFF))
    {
-   Debug1("Not installing copy item, no match (%s)\n",CLASSBUFF);
+   Debug1("Not installing copy item, no match (%s,%s)\n",path,CLASSBUFF);
    InitializeAction();
    return;
    }
@@ -4923,40 +4871,44 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
    if (!IsAbsoluteFileName(buf2))
       {
       if (strncmp(buf2,"home",4) == 0)
-	 {
-	 if (strlen(buf2) > 4 && buf2[4] != '/')
-	    {
-	    yyerror("illegal use of home or not absolute pathname");
-	    return;
-	    }
-	 }
+         {
+         if (strlen(buf2) > 4 && buf2[4] != '/')
+            {
+            yyerror("illegal use of home or not absolute pathname");
+            return;
+            }
+         }
+      else if (*buf2 == '$')
+         {
+         /* unexpanded variable */
+         }
       else
-	 {
-	 snprintf(OUTPUT,bufsize,"Image %s needs an absolute pathname",buf2);
-	 yyerror(OUTPUT);
-	 return;
-	 }
+         {
+         snprintf(OUTPUT,bufsize,"Image %s needs an absolute pathname",buf2);
+         yyerror(OUTPUT);
+         return;
+         }
       }
-
+   
    if ((ptr->destination = strdup(buf2)) == NULL)
       {
       FatalError("Memory Allocation failed for InstallImageItem() #4");
       }
-
+   
    if (IsDefinedClass(CLASSBUFF))
       {
       if ((strcmp(spl,buf2) == 0) && (strcmp(buf3,"localhost") == 0))
-	 {
-	 yyerror("image loop: file/dir copies to itself or missing destination file");
-	 return;
-	 }
+         {
+         yyerror("image loop: file/dir copies to itself or missing destination file");
+         return;
+         }
       }
-
+   
    if ((ptr->path = strdup(spl)) == NULL)
       {
       FatalError("Memory Allocation failed for InstallImageItem() #2");
       }
-      
+   
    if (VIMAGETOP == NULL)
       {
       VIMAGE = ptr;
@@ -4964,6 +4916,12 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
    else
       {
       VIMAGETOP->next = ptr;
+      }
+      
+
+   if ((ptr->cf_findertype = strdup(cf_findertype)) == NULL)
+      {
+      FatalError("Memory Allocation failed for cf_findertype ptr in InstallImageItem()");
       }
 
    ptr->plus = plus;
@@ -5055,30 +5013,7 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
       Verbose("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
       }
 
-   ptr->acl_aliases = VACLBUILD;
-   
-   if (strcmp(ptr->server,"localhost") != 0)
-      {
-      if ((hp = gethostbyname(buf3)) == NULL)
-	 {
-	 yyerror("DNS lookup failure. Unknown host");
-	 printf("Culprit: %s\n",server);
-	 printf("Make sure that fully qualified names can be looked up at your site!\n");
-	 printf("i.e. www.gnu.org, not just www. If you use NIS or /etc/hosts\n");
-	 printf("make sure that the full form is registered too as an alias!\n");
-	 perror("gethostbyname: ");
-	 exit(1);
-	 }
-
-      ptr->dns = (struct in_addr *) malloc(sizeof(struct in_addr));
-      
-      bcopy((hp->h_addr),(ptr->dns),sizeof(struct in_addr));
-      }
-   else
-      {
-      ptr->dns = NULL;
-      }
-   
+   ptr->acl_aliases = VACLBUILD;   
    ptr->inode_cache = NULL;
    
    VIMAGETOP = ptr;
@@ -5102,46 +5037,51 @@ InitializeAction();
 
 /*******************************************************************/
 
-void InstallAuthItem(path,attribute,list,listtop,classes)
+void InstallAuthItem(char *path,char *attribute,struct Auth **list,struct Auth **listtop,char *classes)
 
 /* This is the top level interface for installing access rules
    for the server. Picks out the structures by name. */
 
-char *path, *attribute, *classes;
-struct Auth **list, **listtop;
 
 { struct TwoDimList *tp = NULL;
- char attribexp[bufsize];
-  char *sp;
+  char attribexp[bufsize];
+  char *sp1;
+  struct Item *vlist = NULL,*ip;
 
-ExpandVarstring(attribute,attribexp,"");
+Debug1("InstallAuthItem(%s,%s)\n",path,attribute);
+  
+vlist = SplitStringAsItemList(attribute,LISTSEPARATOR);
  
 Build2DListFromVarstring(&tp,path,'/');
    
 Set2DList(tp);
 
-for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
+for (sp1 = Get2DListEnt(tp); sp1 != NULL; sp1 = Get2DListEnt(tp))
    {
-   Debug1("InstallAuthItem(%s=%s,%s)\n",path,sp,attribexp);
-
-   if (AuthPathExists(sp,*list))
+   for (ip = vlist; ip != NULL; ip = ip->next)
       {
-      AddAuthHostItem(sp,attribute,classes,list);
-      }
-   else
-      {
-      InstallAuthPath(sp,attribute,classes,list,listtop);
+      ExpandVarstring(ip->name,attribexp,"");
+      
+      Debug1("InstallAuthItem(%s=%s,%s)\n",path,sp1,attribexp);
+      
+      if (AuthPathExists(sp1,*list))
+         {
+         AddAuthHostItem(sp1,attribexp,classes,list);
+         }
+      else
+         {
+         InstallAuthPath(sp1,attribexp,classes,list,listtop);
+         }
       }
    }
-
-Delete2DList(tp);
+ 
+ Delete2DList(tp);
+ DeleteItemList(vlist); 
 }
 
 /*******************************************************************/
 
-int GetCommAttribute(s)
-
-char *s;
+int GetCommAttribute(char *s)
 
 { int i;
   char comm[maxvarsize];
@@ -5171,9 +5111,7 @@ return cfbad;
 
 /*******************************************************************/
 
-void HandleRecurse(value)
-
-char *value;
+void HandleRecurse(char *value)
 
 { int n = -1;
 
@@ -5207,9 +5145,7 @@ else
 
 /*******************************************************************/
 
-void HandleCopyType(value)
-
-char *value;
+void HandleCopyType(char *value)
 
 {
 if (strcmp(value,"ctime") == 0)
@@ -5241,9 +5177,7 @@ yyerror("Illegal copy type");
 
 /*******************************************************************/
 
-void HandleDisableFileType(value)
-
-char *value;
+void HandleDisableFileType(char *value)
 
 {
 if (strlen(CURRENTITEM) != 0)
@@ -5267,9 +5201,7 @@ else
 
 /*******************************************************************/
 
-void HandleDisableRotate(value)
-
-char *value;
+void HandleDisableRotate(char *value)
 
 { int num = 0;
 
@@ -5297,9 +5229,7 @@ else
 
 /*******************************************************************/
 
-void HandleAge(days)
-
-char *days;
+void HandleAge(char *days)
 
 { 
 sscanf(days,"%d",&VAGE);
@@ -5308,9 +5238,7 @@ Debug1("HandleAge(%d)\n",VAGE);
 
 /*******************************************************************/
 
-void HandleProcessMatches(value)
-
-char *value;
+void HandleProcessMatches(char *value)
 
 { int i = -1;
 
@@ -5338,9 +5266,7 @@ ACTIONPENDING = true;
 
 /*******************************************************************/
 
-void HandleProcessSignal(value)
-
-char *value;
+void HandleProcessSignal(char *value)
 
 { int i;
   char *sp;
@@ -5379,9 +5305,7 @@ PROSIGNAL = (short) i;
 
 /*******************************************************************/
 
-void HandleNetmask(value)
-
-char *value;
+void HandleNetmask(char *value)
 
 {
  if (strlen(DESTINATION) == 0)
@@ -5396,16 +5320,29 @@ char *value;
 
 /*******************************************************************/
 
-void HandleBroadcast(value)
+void HandleIPAddress(char *value)
 
-char *value;
+{
+ if (strlen(LINKTO) == 0)
+    {
+    strcpy(LINKTO,value);
+    }
+ else
+    {
+    yyerror("redefinition of ip address");
+    }
+}
+
+/*******************************************************************/
+
+void HandleBroadcast(char *value)
 
 {
 if (strlen(CURRENTOBJECT) != 0)
-   {	
+   { 
    yyerror("redefinition of broadcast address");
    printf("Previous val = %s\n",CURRENTOBJECT);
-   }	
+   } 
  
 if (strcmp("ones",value) == 0)
    {
@@ -5430,9 +5367,7 @@ yyerror("Illegal broadcast specifier (ones/zeros)");
 
 /*******************************************************************/
 
-void AppendToActionSequence (action)
-
-char *action;
+void AppendToActionSequence (char *action)
 
 { int j = 0;
   char *sp,cbuff[bufsize],actiontxt[bufsize];
@@ -5489,9 +5424,7 @@ while (*sp != '\0')
 
 /*******************************************************************/
 
-void AppendToAccessList (user)
-
-char *user;
+void AppendToAccessList (char *user)
 
 { char id[maxvarsize];
   struct passwd *pw;
@@ -5517,9 +5450,7 @@ else
 
 /*******************************************************************/
 
-void HandleLinkAction(value)
-
-char *value;
+void HandleLinkAction(char *value)
 
 {
 if (strcmp(value,"silent") == 0)
@@ -5533,9 +5464,7 @@ yyerror("Invalid link action");
 
 /*******************************************************************/
 
-void HandleDeadLinks(value)
-
-char *value;
+void HandleDeadLinks(char *value)
 
 {
 if (strcmp(value,"kill") == 0)
@@ -5555,9 +5484,7 @@ yyerror("Invalid deadlink option");
 
 /*******************************************************************/
 
-void HandleLinkType(value)
-
-char *value;
+void HandleLinkType(char *value)
 
 {
 if (strcmp(value,"hard") == 0)
@@ -5606,9 +5533,7 @@ yyerror(OUTPUT);
 
 /*******************************************************************/
 
-void HandleServer(value)
-
-char *value;
+void HandleServer(char *value)
 
 {
 Debug("Server in copy set to : %s\n",value);
@@ -5617,9 +5542,7 @@ strcpy(CFSERVER,value);
 
 /*******************************************************************/
 
-void HandleDefine(value)
-
-char *value;
+void HandleDefine(char *value)
 
 { char *sp;
  
@@ -5655,9 +5578,7 @@ for (sp = value; *sp != '\0'; sp++)
 
 /*******************************************************************/
 
-void HandleElseDefine(value)
-
-char *value;
+void HandleElseDefine(char *value)
 
 { char *sp;
  
@@ -5687,9 +5608,7 @@ for (sp = value; *sp != '\0'; sp++)
 
 /*******************************************************************/
 
-void HandleFailover(value)
-
-char *value;
+void HandleFailover(char *value)
 
 { char *sp;
  
@@ -5721,9 +5640,7 @@ for (sp = value; *sp != '\0'; sp++)
 /* Level 4                                                         */
 /*******************************************************************/
 
-struct UidList *MakeUidList(uidnames)
-
-char *uidnames;
+struct UidList *MakeUidList(char *uidnames)
 
 { struct UidList *uidlist;
   struct Item *ip, *tmplist;
@@ -5774,13 +5691,13 @@ for (sp = buffer; *sp != '\0'; sp+=strlen(uidbuff))
             {
             if ((pw = getpwnam(ip->name)) == NULL)
                {
-	       if (!PARSING)
-		  {
-		  snprintf(OUTPUT,bufsize*2,"Unknown user [%s]\n",ip->name);
-		  CfLog(cferror,OUTPUT,"");
-		  }
-	       uid = unknown_owner;	/* signal user not found */
-	       usercopy = ip->name;
+               if (!PARSING)
+                  {
+                  snprintf(OUTPUT,bufsize*2,"Unknown user [%s]\n",ip->name);
+                  CfLog(cferror,OUTPUT,"");
+                  }
+               uid = unknown_owner; /* signal user not found */
+               usercopy = ip->name;
                }
             else
                {
@@ -5788,11 +5705,11 @@ for (sp = buffer; *sp != '\0'; sp+=strlen(uidbuff))
                }
             AddSimpleUidItem(&uidlist,uid,usercopy); 
             }
-
+         
          DeleteItemList(tmplist);
          continue;
          }
-
+      
       if (isdigit((int)uidbuff[0]))
          {
          sscanf(uidbuff,"%d",&tmp);
@@ -5806,13 +5723,13 @@ for (sp = buffer; *sp != '\0'; sp+=strlen(uidbuff))
             }
          else if ((pw = getpwnam(uidbuff)) == NULL)
             {
-	    if (!PARSING)
-	       {
-	       snprintf(OUTPUT,bufsize,"Unknown user %s\n",uidbuff);
-	       CfLog(cferror,OUTPUT,"");
-	       }
-	    uid = unknown_owner;		/* signal user not found */
-	    usercopy = uidbuff;
+            if (!PARSING)
+               {
+               snprintf(OUTPUT,bufsize,"Unknown user %s\n",uidbuff);
+               CfLog(cferror,OUTPUT,"");
+               }
+            uid = unknown_owner;  /* signal user not found */
+            usercopy = uidbuff;
             }
          else
             {
@@ -5822,8 +5739,8 @@ for (sp = buffer; *sp != '\0'; sp+=strlen(uidbuff))
       AddSimpleUidItem(&uidlist,uid,usercopy);
       }
    }
-
-if (uidlist == NULL)
+ 
+ if (uidlist == NULL)
    {
    AddSimpleUidItem(&uidlist,sameowner,(char *) NULL);
    }
@@ -5833,9 +5750,7 @@ return (uidlist);
 
 /*********************************************************************/
 
-struct GidList *MakeGidList(gidnames)
-
-char *gidnames;
+struct GidList *MakeGidList(char *gidnames)
 
 { struct GidList *gidlist;
   char gidbuff[bufsize],buffer[bufsize];
@@ -5871,14 +5786,14 @@ for (sp = buffer; *sp != '\0'; sp+=strlen(gidbuff))
             }
          else if ((gr = getgrnam(gidbuff)) == NULL)
             {
-	    if (!PARSING)
-	       {
-	       snprintf(OUTPUT,bufsize,"Unknown group %s\n",gidbuff);
-	       CfLog(cferror,OUTPUT,"");
-	       }
-	    
-	    gid = unknown_group;
-	    groupcopy = gidbuff;
+     if (!PARSING)
+        {
+        snprintf(OUTPUT,bufsize,"Unknown group %s\n",gidbuff);
+        CfLog(cferror,OUTPUT,"");
+        }
+     
+     gid = unknown_group;
+     groupcopy = gidbuff;
             }
          else
             {
@@ -5901,12 +5816,7 @@ return(gidlist);
 
 /*******************************************************************/
 
-void InstallTidyPath(path,wild,rec,age,travlinks,tidysize,type,ldirs,tidydirs,classes)
-
-char *wild, *path;
-short age,tidydirs;
-int rec, tidysize;
-char type, ldirs, *classes, travlinks;
+void InstallTidyPath(char *path,char *wild,int rec,short age,char travlinks,int tidysize,char type,char ldirs,short tidydirs,char *classes)
 
 { struct Tidy *ptr;
   char *sp;
@@ -5993,12 +5903,7 @@ AddTidyItem(path,wild,rec+no_of_links,age,travlinks,tidysize,type,ldirs,tidydirs
 
 /*********************************************************************/
 
-void AddTidyItem(path,wild,rec,age,travlinks,tidysize,type,ldirs,tidydirs,classes)
-
-char *wild, *path;
-short age,tidydirs;
-int rec,tidysize;
-char type, ldirs,*classes, travlinks;
+void AddTidyItem(char *path,char *wild,int rec,short age,char travlinks,int tidysize,char type,char ldirs,short tidydirs,char *classes)
 
 { char varbuff[bufsize];
   struct Tidy *ptr;
@@ -6021,25 +5926,25 @@ for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
    if (strcmp(ptr->path,varbuff) == 0)
       {
       PrependTidy(&(ptr->tidylist),wild,rec,age,travlinks,tidysize,type,ldirs,tidydirs,classes);
-
+      
       for (ip = VEXCLUDEPARSE; ip != NULL; ip=ip->next)
-	 {
-	 AppendItem(&(ptr->exclusions),ip->name,ip->classes);
-	 }
+         {
+         AppendItem(&(ptr->exclusions),ip->name,ip->classes);
+         }
       
       for (ip = VIGNOREPARSE; ip != NULL; ip=ip->next)
-	 {
-	 AppendItem(&(ptr->ignores),ip->name,ip->classes);
-	 }
-
+         {
+         AppendItem(&(ptr->ignores),ip->name,ip->classes);
+         }
+      
       DeleteItemList(VEXCLUDEPARSE);
       DeleteItemList(VIGNOREPARSE);
       /* Must have the maximum recursion level here */
-
+      
       if (rec == INFINITERECURSE || ((ptr->maxrecurse < rec) && (ptr->maxrecurse != INFINITERECURSE)))
-	 {
+         {
          ptr->maxrecurse = rec;
-	 }
+         }
       return;
       }
    }
@@ -6047,9 +5952,7 @@ for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
 
 /*********************************************************************/
 
-int TidyPathExists(path)
-
-char *path;
+int TidyPathExists(char *path)
 
 { struct Tidy *tp;
 
@@ -6073,11 +5976,7 @@ return false;
 /* Level 5                                                         */
 /*******************************************************************/
 
-void AddSimpleUidItem(uidlist,uid,uidname)
-
-struct UidList **uidlist;
-int uid;
-char *uidname;
+void AddSimpleUidItem(struct UidList **uidlist,int uid,char *uidname)
 
 { struct UidList *ulp, *u;
   char *copyuser;
@@ -6089,7 +5988,7 @@ if ((ulp = (struct UidList *)malloc(sizeof(struct UidList))) == NULL)
 
 ulp->uid = uid;
  
- if (uid == unknown_owner)			/* unknown user */
+ if (uid == unknown_owner)   /* unknown user */
     {
     if ((copyuser = strdup(uidname)) == NULL)
        {
@@ -6120,11 +6019,7 @@ else
 
 /*******************************************************************/
 
-void AddSimpleGidItem(gidlist,gid,gidname)
-
-struct GidList **gidlist;
-int gid;
-char *gidname;
+void AddSimpleGidItem(struct GidList **gidlist,int gid,char *gidname)
 
 { struct GidList *glp,*g;
   char *copygroup;
@@ -6136,7 +6031,7 @@ if ((glp = (struct GidList *)malloc(sizeof(struct GidList))) == NULL)
  
 glp->gid = gid;
  
-if (gid == unknown_group)			/* unknown group */
+if (gid == unknown_group)   /* unknown group */
    {
    if ((copygroup = strdup(gidname)) == NULL)
       {
@@ -6168,10 +6063,7 @@ else
 
 /***********************************************************************/
 
-void InstallAuthPath(path,hostname,classes,list,listtop)
-
-char *path, *hostname, *classes;
-struct Auth **list, **listtop;
+void InstallAuthPath(char *path,char *hostname,char *classes,struct Auth **list,struct Auth **listtop)
 
 { struct Auth *ptr;
 
@@ -6222,13 +6114,11 @@ AddAuthHostItem(ptr->path,hostname,classes,list);
 
 /***********************************************************************/
 
-void AddAuthHostItem(path,attribute,classes,list)
-
-char *path, *attribute, *classes;
-struct Auth **list;
+void AddAuthHostItem(char *path,char *attribute,char *classes,struct Auth **list)
 
 { char varbuff[bufsize];
   struct Auth *ptr;
+  struct Item *ip, *split = NULL;
 
 Debug1("AddAuthHostItem(%s,%s)\n",path,attribute);
 
@@ -6243,13 +6133,19 @@ for (ptr = *list; ptr != NULL; ptr=ptr->next)
    varbuff[0] = '\0';
    ExpandVarstring(path,varbuff,"");
 
+   split = SplitStringAsItemList(attribute,LISTSEPARATOR);
+
    if (strcmp(ptr->path,varbuff) == 0)
       {
-      if (!HandleAdmitAttribute(ptr,attribute))
-	 {
-	 PrependItem(&(ptr->accesslist),attribute,classes);
-	 }
-      return;
+      for (ip = split; ip != NULL; ip=ip->next)
+         {
+         
+         if (!HandleAdmitAttribute(ptr,ip->name))
+            {
+            PrependItem(&(ptr->accesslist),ip->name,classes);
+            }
+         }
+      return;      
       }
    }
 }
@@ -6257,10 +6153,7 @@ for (ptr = *list; ptr != NULL; ptr=ptr->next)
 
 /*********************************************************************/
 
-int AuthPathExists(path,list)
-
-char *path;
-struct Auth *list;
+int AuthPathExists(char *path,struct Auth *list)
 
 { struct Auth *ap;
 
@@ -6288,10 +6181,7 @@ return false;
 
 /*********************************************************************/
 
-int HandleAdmitAttribute(ptr,attribute)
-
-struct Auth *ptr;
-char *attribute;
+int HandleAdmitAttribute(struct Auth *ptr,char *attribute)
 
 { char value[maxvarsize],buffer[bufsize],host[maxvarsize],*sp;
 
@@ -6310,73 +6200,71 @@ Debug1("HandleAdmitFileAttribute(%s)\n",value);
 
 switch(GetCommAttribute(attribute))
    {
-   case cfencryp:  Debug("\nENCRYPTION tag %s\n",value);
-                   if ((strcmp(value,"on")==0) || (strcmp(value,"true")==0))
-                      {
-		      ptr->encrypt = true;
-		      return true;
-		      }
-                   break;
+   case cfencryp:
 
-   case cfroot:   Debug("\nROOTMAP tag %s\n",value);
-                  ExpandVarstring(value,buffer,"");
- 
-		  for (sp = buffer; *sp != '\0'; sp+=strlen(host))
-		     {
-		     if (*sp == ',')
-			{
-			sp++;
-			}
+       Debug("\nENCRYPTION tag %s\n",value);
+       if ((strcmp(value,"on")==0) || (strcmp(value,"true")==0))
+          {
+          ptr->encrypt = true;
+          return true;
+          }
+       break;
+       
+   case cfroot:
 
-		     host[0] = '\0';
-
-		     if (sscanf(sp,"%[^,\n]",host))
-			{
-			char copyhost[bufsize];
-
-			strncpy(copyhost,host,bufsize-1);
-			
-			if (!strstr(copyhost,"."))
-			   {
-			   if (strlen(copyhost)+strlen(VDOMAIN) < maxvarsize-2)
-			      {
-			      strcat(copyhost,".");
-			      strcat(copyhost,VDOMAIN);
-			      }
-			   else
-			      {
-			      yyerror("Server name too long");
-			      }
-			   }
-
-			if (!IsItemIn(ptr->maproot,copyhost))
-			   {
-			   PrependItem(&(ptr->maproot),copyhost,NULL);
-			   }
-			else
-			   {
-			   Debug("Not installing %s in rootmap\n",host);
-			   }
-			}
-		     }
-		  return true;
-		  break;
+       Debug("\nROOTMAP tag %s\n",value);
+       ExpandVarstring(value,buffer,"");
+       
+       for (sp = buffer; *sp != '\0'; sp+=strlen(host))
+          {
+          if (*sp == ',')
+             {
+             sp++;
+             }
+          
+          host[0] = '\0';
+          
+          if (sscanf(sp,"%[^,\n]",host))
+             {
+             char copyhost[bufsize];
+             
+             strncpy(copyhost,host,bufsize-1);
+             
+             if (!strstr(copyhost,"."))
+                {
+                if (strlen(copyhost)+strlen(VDOMAIN) < maxvarsize-2)
+                   {
+                   strcat(copyhost,".");
+                   strcat(copyhost,VDOMAIN);
+                   }
+                else
+                   {
+                   yyerror("Server name too long");
+                   }
+                }
+             
+             if (!IsItemIn(ptr->maproot,copyhost))
+                {
+                PrependItem(&(ptr->maproot),copyhost,NULL);
+                }
+             else
+                {
+                Debug("Not installing %s in rootmap\n",host);
+                }
+             }
+          }
+       return true;
+       break;
    }
-
-yyerror("Illegal admit/deny attribute"); 
-return false;
+ 
+ yyerror("Illegal admit/deny attribute"); 
+ return false;
 }
 
 
 /*********************************************************************/
 
-void PrependTidy(list,wild,rec,age,travlinks,tidysize,type,ldirs,tidydirs,classes)
-
-struct TidyPattern **list;
-char *wild;
-short age,tidydirs;
-int rec,tidysize;
-char type, ldirs, *classes, travlinks;
+void PrependTidy(struct TidyPattern **list,char *wild,int rec,short age,char travlinks,int tidysize,char type,char ldirs,short tidydirs,char *classes)
 
 { struct TidyPattern *tp;
   char *spe = NULL,*sp, buffer[bufsize];

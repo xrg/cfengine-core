@@ -45,10 +45,7 @@
 
 /************************************************************************/
 
-int GetDiskUsage (file,type)
-
-char *file;
-enum cfsizes type;
+int GetDiskUsage (char *file,enum cfsizes type)
 
 {
 #if defined SOLARIS || defined OSF || defined UNIXWARE 
@@ -61,7 +58,7 @@ enum cfsizes type;
     u_long blocksize = 1024, total = 0, used = 0, avail = 0;
     int capacity = 0;
 
-    bzero (&buf, sizeof (buf));
+    memset(&buf,0,sizeof(buf));
 
     Verbose("Checking free space on %s\n",file);
 

@@ -73,9 +73,7 @@ char *MONTHTEXT[] =
 /* Level 1                                                           */
 /*********************************************************************/
 
-int Day2Number(datestring)
-
-char *datestring;
+int Day2Number(char *datestring)
 
 { int i = 0;
 
@@ -92,9 +90,7 @@ return -1;
 
 /*********************************************************************/
 
-void AddInstallable(classlist)
-
-char *classlist;
+void AddInstallable(char *classlist)
 
 { char *sp, currentitem[maxvarsize];
 
@@ -127,9 +123,7 @@ Debug("AddInstallable(%s)\n",classlist);
 
 /*********************************************************************/
 
-void AddPrefixedMultipleClasses(name,classlist)
-
-char *name,*classlist;
+void AddPrefixedMultipleClasses(char *name,char *classlist)
 
 { char *sp, currentitem[maxvarsize],local[maxvarsize],pref[bufsize];
  
@@ -138,14 +132,14 @@ if ((classlist == NULL) || strlen(classlist) == 0)
    return;
    }
 
-bzero(local,maxvarsize);
+memset(local,0,maxvarsize);
 strncpy(local,classlist,maxvarsize-1);
 
 Debug("AddPrefixedMultipleClasses(%s,%s)\n",name,local);
 
 for (sp = local; *sp != '\0'; sp++)
    {
-   bzero(currentitem,maxvarsize);
+   memset(currentitem,0,maxvarsize);
 
    sscanf(sp,"%250[^.:,]",currentitem);
 
@@ -166,9 +160,7 @@ for (sp = local; *sp != '\0'; sp++)
 
 /*********************************************************************/
 
-void AddMultipleClasses(classlist)
-
-char *classlist;
+void AddMultipleClasses(char *classlist)
 
 { char *sp, currentitem[maxvarsize],local[maxvarsize];
  
@@ -177,14 +169,14 @@ if ((classlist == NULL) || strlen(classlist) == 0)
    return;
    }
 
-bzero(local,maxvarsize);
+memset(local,0,maxvarsize);
 strncpy(local,classlist,maxvarsize-1);
 
 Debug("AddMultipleClasses(%s)\n",local);
 
 for (sp = local; *sp != '\0'; sp++)
    {
-   bzero(currentitem,maxvarsize);
+   memset(currentitem,0,maxvarsize);
 
    sscanf(sp,"%250[^.:,]",currentitem);
 
@@ -201,9 +193,7 @@ for (sp = local; *sp != '\0'; sp++)
 
 /*********************************************************************/
 
-void AddTimeClass(str)
-
-char *str;
+void AddTimeClass(char *str)
 
 { int i;
   char buf2[10], buf3[10], buf4[10], buf5[10], buf[10], out[10];
@@ -224,7 +214,7 @@ sscanf(str,"%*s %s %s %s %s",buf2,buf3,buf4,buf5);
 sscanf(buf4,"%[^:]",buf);
 sprintf(out,"Hr%s",buf);
 AddClassToHeap(out);
-bzero(VHR,3);
+memset(VHR,0,3);
 strncpy(VHR,buf,2); 
 
 /* Minutes */
@@ -232,7 +222,7 @@ strncpy(VHR,buf,2);
 sscanf(buf4,"%*[^:]:%[^:]",buf);
 sprintf(out,"Min%s",buf);
 AddClassToHeap(out);
-bzero(VMINUTE,3);
+memset(VMINUTE,0,3);
 strncpy(VMINUTE,buf,2); 
  
 sscanf(buf,"%d",&i);
@@ -271,19 +261,19 @@ switch ((i / 15))
    {
    case 0: AddClassToHeap("Q1");
            sprintf(out,"Hr%s_Q1",VHR);
-	   AddClassToHeap(out);
+    AddClassToHeap(out);
            break;
    case 1: AddClassToHeap("Q2");
            sprintf(out,"Hr%s_Q2",VHR);
-	   AddClassToHeap(out);
+    AddClassToHeap(out);
            break;
    case 2: AddClassToHeap("Q3");
            sprintf(out,"Hr%s_Q3",VHR);
-	   AddClassToHeap(out);
+    AddClassToHeap(out);
            break;
    case 3: AddClassToHeap("Q4");
            sprintf(out,"Hr%s_Q4",VHR);
-	   AddClassToHeap(out);
+    AddClassToHeap(out);
            break;
    }
  
@@ -292,7 +282,7 @@ switch ((i / 15))
 
 sprintf(out,"Day%s",buf3);
 AddClassToHeap(out);
-bzero(VDAY,3);
+memset(VDAY,0,3);
 strncpy(VDAY,buf3,2);
  
 /* Month */
@@ -302,7 +292,7 @@ for (i = 0; i < 12; i++)
    if (strncmp(MONTHTEXT[i],buf2,3)==0)
       {
       AddClassToHeap(MONTHTEXT[i]);
-      bzero(VMONTH,4);
+      memset(VMONTH,0,4);
       strncpy(VMONTH,MONTHTEXT[i],3);
       break;
       }
@@ -318,9 +308,7 @@ AddClassToHeap(out);
 
 /*******************************************************************/
 
-int Month2Number(string)
-
-char *string;
+int Month2Number(char *string)
 
 { int i;
 
@@ -343,9 +331,7 @@ return -1;
 
 /*******************************************************************/
 
-void AddClassToHeap(class)
-
-char *class;
+void AddClassToHeap(char *class)
 
 {
 Debug("AddClassToHeap(%s)\n",class);
@@ -355,6 +341,8 @@ Debug("AddClassToHeap(%s)\n",class);
    snprintf(OUTPUT,bufsize,"Defining class %s -- but it isn't declared installable",class);
    yyerror(OUTPUT);
    }*/
+
+Chop(class);
  
 if (IsItemIn(VHEAP,class))
    {
@@ -366,9 +354,7 @@ AppendItem(&VHEAP,class,CONTEXTID);
 
 /*********************************************************************/
 
-void DeleteClassFromHeap(class)
-
-char *class;
+void DeleteClassFromHeap(char *class)
 
 {
 DeleteItemLiteral(&VHEAP,class);
@@ -376,9 +362,7 @@ DeleteItemLiteral(&VHEAP,class);
 
 /*********************************************************************/
 
-void DeleteClassesFromContext(context)
-
-char *context;
+void DeleteClassesFromContext(char *context)
 
 { struct Item *ip;
 
@@ -396,9 +380,7 @@ for (ip = VHEAP; ip != NULL; ip=ip->next)
 
 /*********************************************************************/
 
-int IsHardClass(sp)  /* true if string matches a hardwired class e.g. hpux */
-
-char *sp;
+int IsHardClass(char *sp)  /* true if string matches a hardwired class e.g. hpux */
 
 { int i;
 
@@ -423,9 +405,7 @@ return(false);
 
 /*******************************************************************/
 
-int IsSpecialClass(class)
-
-char *class;
+int IsSpecialClass(char *class)
 
 { int value = -1;
 
@@ -471,9 +451,7 @@ return false;
 
 /*********************************************************************/
 
-int IsExcluded(exception)
-
-char *exception;
+int IsExcluded(char *exception)
 
 {
 if (! IsDefinedClass(exception))
@@ -487,12 +465,10 @@ return false;
 
 /*********************************************************************/
 
-int IsDefinedClass(class) 
+int IsDefinedClass(char *class) 
 
   /* Evaluates a.b.c|d.e.f etc and returns true if the class */
   /* is currently true, given the defined heap and negations */
-
-char *class;
 
 {
 if (class == NULL)
@@ -506,9 +482,7 @@ return EvaluateORString(class,VADDCLASSES);
 
 /*********************************************************************/
 
-int IsInstallable(class)
-
-char *class;
+int IsInstallable(char *class)
 
   /* Evaluates to true if the class string COULD become true in */
   /* the course of the execution - but might not be true now    */
@@ -535,10 +509,7 @@ return (EvaluateORString(buffer,VALLADDCLASSES)||EvaluateORString(class,VALLADDC
 
 /*********************************************************************/
 
-void NegateCompoundClass(class,heap)
-
-char *class;
-struct Item **heap;
+void NegateCompoundClass(char *class,struct Item **heap)
 
 { char *sp = class;
   char cbuff[maxvarsize];
@@ -549,12 +520,12 @@ while(*sp != '\0')
    {
    sscanf(sp,"%[^.]",cbuff);
 
-   while ((*sp != '\0') && (*sp !='.'))
+   while ((*sp != '\0') && ((*sp !='.')||(*sp == '&')))
       {
       sp++;
       }
 
-   if (*sp == '.')
+   if (*sp == '.' || *sp == '&')
       {
       sp++;
       }
@@ -574,10 +545,7 @@ while(*sp != '\0')
 /* Level 2                                                           */
 /*********************************************************************/
 
-int EvaluateORString(class,list)
-
-char *class;
-struct Item *list;
+int EvaluateORString(char *class,struct Item *list)
 
 { char *sp, cbuff[bufsize];
   int result = false;
@@ -596,7 +564,7 @@ for (sp = class; *sp != '\0'; sp++)
       sp++;
       }
 
-   bzero(cbuff,bufsize);
+   memset(cbuff,0,bufsize);
 
    sp += GetORAtom(sp,cbuff);
 
@@ -631,10 +599,7 @@ return result;
 /* Level 3                                                           */
 /*********************************************************************/
 
-int EvaluateANDString(class,list)
-
-char *class;
-struct Item *list;
+int EvaluateANDString(char *class,struct Item *list)
 
 { char *sp, *atom;
   char cbuff[bufsize];
@@ -656,7 +621,7 @@ while(*sp != '\0')
       sp++;
       }
 
-   bzero(cbuff,bufsize);
+   memset(cbuff,0,bufsize);
 
    sp += GetANDAtom(sp,cbuff) + 1;
 
@@ -667,32 +632,32 @@ while(*sp != '\0')
    if (IsBracketed(cbuff))
       {
       atom = cbuff+1;
-
+      
       cbuff[strlen(cbuff)-1] = '\0';
-
+      
       if (EvaluateORString(atom,list))
-	 {
-	 if (negation)
-	    {
-	    return false;
-	    }
-	 else
-	    {
-	    count--;
-	    }
-	 }
+         {
+         if (negation)
+            {
+            return false;
+            }
+         else
+            {
+            count--;
+            }
+         }
       else
-	 {
-	 if (negation)
-	    {
-	    count--;
-	    }
-	 else
-	    {
-	    return false;
-	    }
-	 }
-
+         {
+         if (negation)
+            {
+            count--;
+            }
+         else
+            {
+            return false;
+            }
+         }
+      
       continue;
       }
    else
@@ -702,7 +667,7 @@ while(*sp != '\0')
    
    /* End of parenthesis check */
    
-   if (*sp == '.')
+   if (*sp == '.' || *sp == '&')
       {
       sp++;
       }
@@ -711,18 +676,18 @@ while(*sp != '\0')
       {
       if (negation)
          {
-	 count--;
-	 }
+         count--;
+         }
       else
-	 {
-	 return false;
-	 }
+         {
+         return false;
+         }
       } 
    else if (IsItemIn(VHEAP,atom))
       {
       if (negation)
          {
-	 return false;
+         return false;
          }
       else
          {
@@ -765,9 +730,7 @@ else
 
 /*********************************************************************/
 
-int GetORAtom(start,buffer)
-
-char *start, *buffer;
+int GetORAtom(char *start,char *buffer)
 
 { char *sp = start;
   char *spc = buffer;
@@ -802,15 +765,13 @@ return len;
 /* Level 4                                                           */
 /*********************************************************************/
 
-int GetANDAtom(start,buffer)
-
-char *start, *buffer;
+int GetANDAtom(char *start,char *buffer)
 
 { char *sp = start;
   char *spc = buffer;
   int bracklevel = 0, len = 0;
 
-while ((*sp != '\0') && !((*sp == '.') && (bracklevel == 0)))
+while ((*sp != '\0') && !(((*sp == '.')||(*sp == '&')) && (bracklevel == 0)))
    {
    if (*sp == '(')
       {
@@ -837,9 +798,7 @@ return len;
 
 /*********************************************************************/
 
-int CountEvalAtoms(class)
-
-char *class;
+int CountEvalAtoms(char *class)
 
 { char *sp;
   int count = 0, bracklevel = 0;
@@ -860,7 +819,7 @@ for (sp = class; *sp != '\0'; sp++)
       continue;
       }
    
-   if ((bracklevel == 0) && (*sp == '.'))
+   if ((bracklevel == 0) && ((*sp == '.')||(*sp == '&')))
       {
       count++;
       }
@@ -880,9 +839,7 @@ return count+1;
 /* TOOLKIT : actions                                                 */
 /*********************************************************************/
 
-enum actions ActionStringToCode (str)
-
-char *str;
+enum actions ActionStringToCode (char *str)
 
 { char *sp;
   int i;
@@ -919,12 +876,10 @@ return (enum actions) i;
 
 /*********************************************************************/
 
-int IsBracketed(s)
+int IsBracketed(char *s)
 
  /* return true if the entire string is bracketed, not just if
     if contains brackets */
-
-char *s;
 
 { int i, level= 0;
 

@@ -30,7 +30,7 @@
 
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 2001 Mark Burgess
+Copyright @copyright{} 2004 Mark Burgess
 
    Permission is granted to make and distribute verbatim copies of this
 manual provided the copyright notice and this permission notice are
@@ -145,7 +145,7 @@ implement configurations in practice.
 * Installation::                
 * Work directory::              
 * Hard classes::                
-* Evaluated classes::           
+* Evaluated classes and special functions::  
 * Filenames and paths::         
 @end menu
 
@@ -224,7 +224,7 @@ to another central location and viewed in an alternative browser..
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node Hard classes, Evaluated classes, Work directory, Reference introduction
+@node Hard classes, Evaluated classes and special functions, Work directory, Reference introduction
 @section Cfengine hard classes
 
 
@@ -253,7 +253,7 @@ the name.
 
 @item A month (in the form @code{January, February, ... December}).
 
-@item A year (in the form @code{Yr1997, Yr2001}).
+@item A year (in the form @code{Yr1997, Yr2004}).
 
 @item An arbitrary user-defined string.  (see the reference manual).
 
@@ -275,8 +275,8 @@ file is secure.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node Evaluated classes, Filenames and paths, Hard classes, Reference introduction
-@section Evaluated classes
+@node Evaluated classes and special functions, Filenames and paths, Hard classes, Reference introduction
+@section Evaluated classes and special functions
 
 Cfengine provides a number of in-built functions for evaluating classes,
 based on file tests. Using these internal functions is quicker than
@@ -294,6 +294,9 @@ True if file 1's attributes were changed in any way before file 2's (ctime).
 True if the named file object exists.
 @item IPRange(@var{address-range})
 True if the current host lies within the specified range
+@item HostRange(@var{basename,start-stop})
+True if the current relative domain name begins with basename and ends with an integer
+between start and stop
 @item IsDefined(@var{command})
 True of the named variable is defined. NB: @code{IsDefines(var)}, not @code{IsDefined($@{var@})}
 @item IsDir(@var{f})
@@ -302,6 +305,13 @@ True if the named file object is a directory.
 True if the named file object is a symbolic link.
 @item IsPlain(@var{f})
 True if the named file object is a plain file.
+@item PrepModule(@var{module},@var{arg1 arg2...})
+True if the named module exists and can be executed. The module is assumed to
+follow the standard programming interface for modules, @xref{Writing plugin modules,Writing plugin
+modules,Writing plugin modules,cfengine-Tutorial}.
+Unlike actionsequence modules, these modules are evaluated immediately on parsing.
+@item Regcmp(@var{regexp},@var{string or list separated string})
+True if the string matched the regular expression.
 @item ReturnsZero(@var{command})
 True if the named shell command returns with exit code zero (okay).
 @item Strcmp(@var{s1},@var{s2})
@@ -320,6 +330,8 @@ classes:
  isplain       = ( IsPlain(/tmp/import) )
  inrange       = ( IPRange(128.39.89.10-15) )
  CIDR          = ( IPRange(128.39.89.10/24) )
+ compute_nodes = ( HostRage(cpu-,01-32)
+ gotinit       = ( PrepModule(startup2,"arg1 arg2") )
 
 @end smallexample
 @cindex Classes, inbuilt functions
@@ -338,10 +350,10 @@ classes:
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node Filenames and paths,  , Evaluated classes, Reference introduction
+@node Filenames and paths,  , Evaluated classes and special functions, Reference introduction
 @section Filenames and paths
 
-Filenames in Unix-lik operating systems
+Filenames in Unix-like operating systems
 
 The directory separator is the forward slash '/' character. All references
 to file locations must be absolute names in cfengine, i.e. they must begin
@@ -445,7 +457,7 @@ for a few days more and try again.
 
 @menu
 * Cfagent intro::               
-* Special variables::           
+* Variable expansion and contexts::  
 * Cfengine classes::            
 * acl::                         
 * alerts::                      
@@ -485,7 +497,7 @@ for a few days more and try again.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node Cfagent intro, Special variables, Cfagent reference, Cfagent reference
+@node Cfagent intro, Variable expansion and contexts, Cfagent reference, Cfagent reference
 @section Cfagent intro
 
 
@@ -709,8 +721,189 @@ $ cfagent --just tidy --just shellcommands
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node Special variables, Cfengine classes, Cfagent intro, Cfagent reference
-@section Special variables
+@node Variable expansion and contexts, Cfengine classes, Cfagent intro, Cfagent reference
+@section Variable expansion and contexts
+
+Variables in cfengine 2 are defined in contexts. Variables in a given context
+refer to the different phases of execution of cfengine: global, update and main.
+In the "current" context, variables have the form
+@smallexample
+$(variable) $@{variable@}
+@end smallexample
+and are expanded either on parsing or at execution. Variables that cannot be
+expanded remain as dollar strings. Variables belonging to a context that is not
+the current one may be referred to as
+@smallexample
+$(@var{context}.variable) $@{@var{context}.variable@}
+@end smallexample
+e.g.
+@smallexample
+$(global.env_time)
+@end smallexample
+Some variables in cfengine are associative arrays (as made famous by Perl).
+Such arrays are referred to by square brackets:
+
+@smallexample
+
+$(array[key])  $(array[$(key)])
+
+@end smallexample
+@noindent
+and so on. Note carefully that cfengine requires parentheses or braces around variable
+names. Unlike in the shell, they cannot be omitted.
+
+
+
+@c -------------------------------------------------------------------------------
+@c SUBSECTION
+@c -------------------------------------------------------------------------------
+
+
+@menu
+* Setting variables with functions::  
+* Special variables::           
+* Iteration over lists::        
+@end menu
+
+@node Setting variables with functions, Special variables, Variable expansion and contexts, Variable expansion and contexts
+@subsection Setting variables with functions
+
+A number of special functions can be used to set variables in cfengine.
+You can import values from the execution of a shell command
+by prefixing a command with the word @code{exec}. This method is deprecated
+in version 2 an replaced by a function.
+
+@cindex Variables, setting to result of a shell command
+@vindex @code{exec}
+@smallexample
+
+  control:
+
+   # old method
+
+   listing = ( "exec /bin/ls -l" )
+
+   # new method
+
+   listing = ( ExecResult(/bin/ls -l) )
+
+@end smallexample
+
+@noindent
+This sets the variable `listing' to the output of the command in the
+quotes.
+@cindex In-built functions
+@cindex Functions, in-built
+@cindex Random numbers
+
+Some other internal functions are
+
+@table @code
+@item RandomInt(@var{a},@var{b})
+Generate a random integer between a and b.
+
+
+@item ReadArray(@var{filename},@var{fileformat},@var{separator},@var{comment},@var{Max number of bytes})
+Reads up to a maximum number of bytes from a properly formatted file into a one-dimensional associated array. File formats
+are:
+@table @code
+@item autokey
+If this format is specified, @code{ReadArray} tries to interpret the file as a table of
+items separated with the separator character. Blank lines and comments (to end of line) are ignored.
+Items are keyed numerically starting from 1 to the maximum number in the file.
+If the separation character is not a newline @code{$(n)}, then the newline is assumed
+to be a separator also.
+
+@item textkey
+If this format is specified, @code{ReadArray} tries to interpret the file as a list
+of lines of the form:
+@smallexample
+  key,value
+@end smallexample
+
+@end table
+
+
+@item ReadFile(@var{filename},@var{Max number of bytes})
+Read a maximum number of bytes from a file.
+@cindex ReadFile
+@item ReadTable(@var{filename},@var{fileformat},@var{separator},@var{comment},@var{Max number of bytes})
+Reads up to a maximum number of bytes from a properly formatted file into a two-dimensional associated array.
+@table @code
+@item autokey
+If this format is specified, @code{ReadArray} tries to interpret the
+file as a table of items separated with the separator character. Blank
+lines and comments (to end of line) are ignored.  Items are keyed
+numerically starting from 1 to the maximum number in the file.  Any
+lines that do not contain the correct number of separators cause the
+function to fail without making any assignment.
+@cindex ReadTable
+@cindex Read array from table
+
+@item textkey
+If this format is specified, @code{ReadArray} tries to interpret the file as a list
+of lines of the form:
+@smallexample
+  key1,key2,,value
+@end smallexample
+
+@end table
+
+@item ExecResult(@var{command})
+Executes the named shell command and inserts the output into the variable. Note that, when this is used in
+cfengine internal list variables, any spaces are interpreted as list
+separators. In other lists, normal rules for iteration apply.
+@end table
+Note that functions should have no spaces between the function name and the
+leading parenthesis, but should themselves be surrounded by white space.
+@noindent
+For example:
+
+@smallexample
+
+control:
+
+ variable2 = ( RandomInt(0,23) )
+
+ variable3 = ( ExecResult(/bin/ls -a /opt) )
+
+ myexcerpt  = ( ReadFile("/etc/services",220) )
+
+ listvar = ( ReadArray(/tmp/array,textkey,",","#",100) )
+
+@end smallexample
+
+In the latter case, the file could look like this:
+@smallexample
+host$ more /tmp/array
+one,String to tbe read
+two,Nothing string
+three,Everything comes in threes
+@end smallexample
+@noindent
+and results in the definition of (verify with @code{cfagent -p -d3}):
+@smallexample
+OBJECT: main
+   960 : listvar[one]=String to tbe read
+   259 : listvar[two]=Nothing string
+   224 : listvar[three]=Everything comes in threes
+@end smallexample
+@cindex Array example
+@cindex Read array from file
+@cindex Array from file
+@cindex ReadArray
+
+@c -------------------------------------------------------------------------------
+@c SUBSECTION
+@c -------------------------------------------------------------------------------
+
+@menu
+* Special variables::           
+* Iteration over lists::        
+@end menu
+
+@node Special variables, Iteration over lists, Setting variables with functions, Variable expansion and contexts
+@subsection Special variables
 
 
 Variables are referred to in either of two different ways, depending on
@@ -784,8 +977,19 @@ The hostname of the machine running the program.
 
 @item ipaddress
 The numerical form of the internet address of the host currently running
-cfengine.
+cfengine, found by lookup in DNS.
 @vindex $(ipaddress)
+
+@item ipv4[@var{interface}]
+The IPv4 address of the named interface, determined from a probe of the
+interfaces. This variable belongs in the global context and refers to
+as in the following examples:
+@smallexample
+
+$@{global.ipv4[hme0]@}
+$@{global.ipv4[eth0]@}
+
+@end smallexample
 
 @item MaxCfengines
 The maximum number of cfengines which should be allowed to
@@ -907,12 +1111,116 @@ Expands to a single tab character.
 
 @end table
 
+@c -------------------------------------------------------------------------------
+@c SUBSECTION
+@c -------------------------------------------------------------------------------
+
+@node Iteration over lists,  , Special variables, Variable expansion and contexts
+@subsection Iteration over lists
+
+Variables can be used as iterators in some situations. Iteration over lists
+is currently rather limited in cfengine and is something to be improved on
+in a future version. When a variable is used as an iterator, a character
+is chosen to represent a list separator, as in the shell @samp{IFS} variable.
+The default separator is the colon @samp{:} character:
+@smallexample
+control:
+
+ listvar = ( one:two:three:four )
+
+@end smallexample
+The action that contains a variable to be interpreted as a list appears
+as separate actions, one for each case:
+@smallexample
+shellcommand:
+
+  "/bin/echo $(listvar)"
+@end smallexample
+is equivalent to
+@smallexample
+shellcommand:
+
+  "/bin/echo one"
+  "/bin/echo two"
+  "/bin/echo three"
+  "/bin/echo four"
+@end smallexample
+If multiple iterators are used, these are handled as nested loops:
+@smallexample
+cfengine::/bin/echo one 1:     one 1
+cfengine::/bin/echo one 2:     one 2
+cfengine::/bin/echo one 3:     one 3
+cfengine::/bin/echo one 4:     one 4
+cfengine::/bin/echo two 1:     two 1
+cfengine::/bin/echo two 2:     two 2
+cfengine::/bin/echo two 3:     two 3
+cfengine::/bin/echo two 4:     two 4
+cfengine::/bin/echo three:     three 1
+cfengine::/bin/echo three:     three 2
+cfengine::/bin/echo three:     three 3
+cfengine::/bin/echo three:     three 4
+cfengine::/bin/echo four :     four 1
+cfengine::/bin/echo four :     four 2
+cfengine::/bin/echo four :     four 3
+cfengine::/bin/echo four :     four 4
+@end smallexample
+Where iterators are not allowed, the implied lists are treated as scalars:
+@smallexample
+
+alerts:
+
+ amnexus::
+
+  "do $(list1) $(list2)"
+@end smallexample
+e.g.
+@smallexample
+
+cfengine:: do one:two:three:four 1:2:3:4
+@end smallexample
+
+Iterative expansion is currently restricted to:
+@itemize @bullet
+
+@item
+In the `to' field of a multiple link action,
+
+@item
+In the `from' field of a copy action,
+
+@item
+In the directory field of a tidy action,
+
+@item
+In the directory field of the files action,
+
+@item
+In the directory field of the required/disk action,
+
+@item
+In the directory field of the disable action,
+
+@item
+In the directory field of the copy action,
+
+@item
+In the directory field of the admit/deny server access rules,
+
+@item
+Names in the ignore action.
+
+@end itemize
+@cindex split
+@cindex Iteration over lists
+@mbindex Iterating over lists
+@vindex split
+
 
 @c -------------------------------------------------------------------------------
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node Cfengine classes, acl, Special variables, Cfagent reference
+@node Cfengine classes, acl, Variable expansion and contexts, Cfagent reference
 @section Cfengine classes
 @cindex classes
 
@@ -958,7 +1266,7 @@ the name.
 
 @item A month (in the form @code{January, February, ... December}).
 
-@item A year (in the form @code{Yr1997, Yr2001}).
+@item A year (in the form @code{Yr1997, Yr2004}).
 
 @item An arbitrary user-defined string.  (see the reference manual).
 
@@ -987,7 +1295,10 @@ are separately true, thus in the above example the actions which follow
 In the second example, the host parsing the file must be either of
 type @code{sun4} @emph{or} @code{ultrix} @emph{or} @code{osf}.
 In other words, compound classes support two operators: AND and OR,
-written @samp{.} and @samp{|} respectively. Cfengine doesn't
+written @samp{.} and @samp{|} respectively. 
+ From cfengine version 2.1.1,
+I bit the bullet and added @samp{&} as a synonym for the AND operator.
+Cfengine doesn't
 care how many of these operators you use (since it skips over blank
 class names), so you could write either
 
@@ -1125,7 +1436,7 @@ Parentheses override everything.
 @item !
 The NOT operator binds tightest.
 
-@item .
+@item . &
 The AND operator binds more tightly than OR.
 
 @item |
@@ -1568,6 +1879,7 @@ alerts:
       SysLog(@var{priority},@var{message})
       SetState(@var{name},@var{ttl},@var{policy})
       UnSetState(@var{name})
+      FriendStatus(@var{minutes})
 
 @end smallexample
 For example:
@@ -1599,7 +1911,7 @@ alerts:
 The @code{ShowState()} function reports on state gathered by the cfenvd
 daemon.
 @smallexample
-ShowState(incoming.smtp)
+ShowState(incoming.tcpsyn)
 ShowState(outgoing.smtp)
 ShowState(incoming.www)
 ShowState(outgoing.www)
@@ -1654,6 +1966,17 @@ Existing persistent classes can be deleted with:
           UnsetState(myclass)
 
 @end smallexample
+The @code{FriendStatus} function is available from version 2.1.4 and displays
+a message if hosts that normally have a cfengine protocol connection with the current
+host have not connected for more than than specified number of minutes. If the number
+of minutes is set to zero, cfengine uses a machine-learned expectation value for the
+time and uses this. The friend status of a host is thus the expectation that there
+is a problem with a remote peer.
+
+@cindex FriendStatus
+@cindex Peer watching (FriendStatus)
+@cindex Monitoring other hosts
+
 
 @c -------------------------------------------------------------------------------
 @c SECTION
@@ -1811,7 +2134,7 @@ control:
 
   myvariable = ( something )
   mymacro    = ( somethingelse )
-  myrandom   = ( RandInt(3,6) )
+  myrandom   = ( RandomInt(3,6) )
   myexcerpt  = ( ReadFile("/etc/services",220))
 
 @end smallexample 
@@ -1823,12 +2146,18 @@ Note that a limited number of in-built functions exists:
 @cindex ReadFile() function
 @itemize @bullet
 @item 
+@code{ExecResult}(@var{command}) Executes the named shell command and
+inserts the output into the variable.  Note that, when this is used in
+cfengine internal list variables, any spaces are interpreted as list
+separators. In other lists, normal rules for iteration apply.
+@item 
 @code{RandomInt(a,b)}
 Is substituted for a random number between (a,b).
 @item 
 @code{ReadFile}(@var{filename},@var{Max number of bytes})
 A maximum number of bytes is read from the named file and placed in a variable.
 @end itemize
+For more functions, @xref{Setting variables with functions}.
 
 @vindex site
 @vindex domain
@@ -1853,6 +2182,7 @@ The meaning of each of these lines is described below.
 * AutoDefine::                  
 * BinaryPaddingChar::           
 * ChecksumDatabase::            
+* BindToInterface(cfagent)::    
 * ChecksumPurge::               
 * ChecksumUpdates::             
 * childlibpath::                
@@ -2064,15 +2394,14 @@ mechanism has been introduced in version 1.5 which allows you to include
 a module of your own making in order to define or undefine a number of classes.
 The syntax
 @smallexample
-  module:mytests.@var{class1}.@var{class2}.@var{class3}
+  module:mytests
 
-  "module:mytests.@var{class1}.@var{class2}.@var{class3} arg1 arg2 .."
+  "module:mytests arg1 arg2 .."
 @end smallexample
 declares a user defined module which can potentially set the classes
 @var{class1} etc. Classes returned by the module must be declared so
 that cfengine knows to pay attention to rules which use these classes
-when parsing. Note might actually be preferable to define classes
-returned by modules under @code{AddInstallables} which is equivalent. If
+when parsing; this is done using @code{AddInstallables}. If
 arguments are passed to the module, the whole string must be quoted like
 a shellcommand.  @xref{Writing plugin modules,Writing plugin
 modules,Writing plugin modules,cfengine-Tutorial}.  Whether or not these
@@ -2371,7 +2700,7 @@ or text messages within program code.
 @c SUBSECTION
 @c .....................................................
 
-@node ChecksumDatabase, ChecksumPurge, BinaryPaddingChar, control
+@node ChecksumDatabase, BindToInterface(cfagent), BinaryPaddingChar, control
 @subsection ChecksumDatabase
 
 @smallexample
@@ -2388,11 +2717,29 @@ If this filename is defined, cfengine will use it to store
 message digests (i.e. cryptographic checksums) of files
 for security purposes, @xref{files}, @code{checksum=}.
 
+
+
+@c ...........................................
+@c SUBSECTION
+@c ...........................................
+
+@node BindToInterface(cfagent), ChecksumPurge, ChecksumDatabase, control
+@subsection BindToInterface
+If this is set to a specific IP address of an IP configured interface,
+cfagent will use that address for outgoing connections.  On Multi-homed
+hosts this allows one to restrict the traffic to a known interface. An interface must
+be configured with an IP address in order to be bound.
+
+This feature is not available for old operating systems.
+@cindex Multihomed hosts
+@vindex BindToInterface
+@cindex Binding to one interface only
+
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 
-@node ChecksumPurge, ChecksumUpdates, ChecksumDatabase, control
+@node ChecksumPurge, ChecksumUpdates, BindToInterface(cfagent), control
 @subsection ChecksumPurge
 
 
@@ -3078,6 +3425,8 @@ would define a pattern which was only valid when
 @node LogDirectory, LogTidyHomeFiles, linkcopies, control
 @subsection LogDirectory
 
+This is now deprecated.
+
 Specify an alternative directory for keeping cfengine's
 log data. This defaults to @file{/var/run/cfengine} or
 @file{/var/cfengine}.
@@ -3602,27 +3951,8 @@ which cfengine will share its load on a server,
 The value of this variable is used to define the list separator in
 variables which are expected to be treated as lists. The default value
 of this variable is the colon @samp{:}.  Cfengine treats variables
-containing this character as lists to be broken up and iterated over in
-the following cases:
-
-@itemize @bullet
-
-@item
-in the `to' field of a multiple link action,
-
-@item
-in the `from' field of a copy action,
-
-@item
-in the directory field of a tidy action,
-
-@item
-in the directory field of the files action,
-
-@item
-in the ignore action.
-
-@end itemize
+containing this character as lists to be broken up and iterated over,
+@xref{Iteration over lists}.
 
 This typically allows communication with PATH-like 
 environment variables in the shell.
@@ -4009,6 +4339,8 @@ copy:
                         syslog=@var{true/on}/@var{false/off}
                         inform=@var{true/on}/@var{false/off}
 
+                        findertype=@var{MacOSX finder type}
+
 @end smallexample
 @end cartouche
 
@@ -4024,6 +4356,28 @@ of a plain file. An implicit `copy file to directory' syntax is not
 allowed.  Symbolic links are copied as symbolic links, plain files are
 copied as plain files and special files are copied as special files.
 The @code{recurse} option is required to copy the contents of subdirectories.
+
+If the destination file name is of the form
+@file{filename/..namedfork/rsrc}, then it is assumed that you are
+copying the resource fork of a file to an HFS+ file system on OS X
+Jaguar. In the absence of the destination file being in this form (just
+dest=filename), cfengine will assume that you are working with the data
+fork of the file.
+
+For a resource fork copy to properly work, the data fork must
+have already been copied. Ie the OS will not allow you to copy the
+resource fork for a file that does not exist. And, copying a data fork
+after the resource fork will overwrite the resource fork. So, order is
+important.  Copy the data fork, first. Then, copy the resource fork.
+
+To split the data and resource forks of a file into two parts,
+open up a terminal.  The following commands will copy MyFile 's data and
+resource forks into two separate files which can then be recombined by
+cfengine:
+@smallexample
+	cp MyFile MyFile-datafork
+	cp MyFile/..namedfork/rsrc MyFile-rsrcfork
+@end smallexample
 
 @item mode, owner, group
 The file mode, owner
@@ -4147,6 +4501,25 @@ determine whether the source and destination files are identical. If
 initiated.  An @samp{mtime} comparison does not take into account
 changes of file permissions, only modifications to the contents of the
 files.
+
+
+@item findertype
+	Sets the four letter file type code in an HFS+ file system on Mac OS X
+	Jaguar. For example, the four letter code APPL indicates the file is an
+	Application (and will be executed when double-clicked). The four letter
+	code TEXT indicates the file is a text file and will be opened by the
+	default text editor.
+
+	If the file also has an extension (for example .txt), then if setting
+	the finder type code, you should make sure your finder type code does
+	not conflict with the file extension.
+
+	Files both without extensions and finder type codes are mostly useless
+	to OS X, so be sure to do one or the other!
+
+	Also note that finder type codes should not be applied to the resource
+	forks of files.
+
 
 @item server
 If you want to copy a file remotely from a server, you specify the
@@ -4450,7 +4823,12 @@ special variable @code{$(binserver)} here.
 
     /@var{filesystem} freespace=@var{size-limit} define=@var{class-list}(,:.) 
 
-     inform=@var{true} log=@var{true} force=@var{true}
+     inform=@var{true} 
+     log=@var{true} 
+
+     scanarrivals=@var{true} 
+     force=@var{true}
+     
      ifelapsed=@var{mins} 
      expireafter=@var{mins}
 
@@ -4508,6 +4886,13 @@ result, for instance.
 @cindex NFS filesystems and disk checking
 @cindex Setting classes based on non-local disks
 
+@vindex scanarrivals=
+@cindex scanarrivals=
+
+If the @code{scanarrivals} option is set, the agent will recursively descend
+through the file system building a database of file modification times. This
+data is used for research purposes and will eventually be used to trigger
+classes that determine optimal times for backup of filesystem.
 
 @c -------------------------------------------------------------------------------
 @c SECTION
@@ -5180,17 +5565,21 @@ you actually want this.
 @item DeleteLinesAfterThisMatching @var{quoted-regex}
 Delete lines after the current position which match the quoted expression.
 
-@item   DeleteLinesContaining @var{quoted-string}
-Delete all lines containing the exact string quoted.
+@item   DeleteLinesContaining @var{quoted-string}/DeleteLinesNotContaining @var{quoted-string}
+Delete all lines (not) containing the exact string quoted.
 
-@item   DeleteLinesMatching @var{quoted-regex}
-Delete all lines fully matching the tied quoted regular expression.
+@item   DeleteLinesMatching @var{quoted-regex}/DeleteLinesNotMatching @var{quoted-regex}
+Delete all lines (not) fully matching the tied quoted regular expression.
 
-@item   DeleteLinesNotMatching @var{quoted-regex}
-Delete all lines not fully matching the tied quoted regular expression.
+@item   DeleteLinesStarting @var{quoted-string}/DeleteLinesNotStarting @var{quoted-string}
+Delete all lines (not) beginning with the exact string quoted.
 
-@item   DeleteLinesStarting @var{quoted-string}
-Delete all lines beginning with the exact string quoted.
+@item DeleteLinesNotContainingFileItems @var{filename}
+Delete lines in the file that do not contain the any of the substrings in the file.
+@item DeleteLinesNotMatchingFileItems @var{filename}
+Delete lines in the file that do not match the any of the regular expressions in the file.
+@item DeleteLinesNotStartingFileItems @var{filename}
+Delete lines in the file that do not start with any of the substrings in the file.
 
 @item DeleteNLines @var{quoted-string}
 Deletes up to @math{N} lines from the current file, starting from the
@@ -5639,11 +6028,15 @@ the form of the statement in pseudo-code:
                           elsedefine=@var{classlist}
 
                           checksum=@var{md5}
-                          flags=@var{BSD flags}
                           syslog=@var{true/on}/@b{false/off}
                           inform=@var{true/on}/@b{false/off}
                           ifelapsed=@var{mins} 
                           expireafter=@var{mins}
+
+     @var{Special OS flags:}
+                          flags=@var{BSD flags}
+
+
 @end smallexample 
 @end cartouche
 
@@ -5705,7 +6098,7 @@ read/execute flags for others and group bits.  An example of the
 numerical form might be @code{-002} which would mean that the
 read-for-others flag should either not be set or should be unset,
 depending on the action you choose.  @code{+2000} would mean that the
-setuid flag should be present or set, depending on the action.
+setgid flag should be present or set, depending on the action.
 @code{+2000,-002} would be a combination of these.  The @samp{=} sign
 sets to an absolute value, so @code{=755} would set the file mode to
 mode 755.
@@ -5719,6 +6112,7 @@ example,
    /tmp/flags.01  mode=0600 owner=0 group=0
                   flags=uappnd,uchg,uunlnk,nodump,opaque,sappnd,schg,sunlnk
                   action=touch      
+
 
 @end smallexample
 
@@ -6354,6 +6748,8 @@ groups:
 
     ip_in_range = ( IPRange(129.0.0.1-15) )  # host is in ip address range
     ip_in_range = ( IPRange(129.0.0.1/24) )  # host is in ip address range (CIDR notation)
+
+    compute_nodes = ( HostRange(cpu-,1-32) ) # host name in the cpu-01 through cpu-32 range
 
 @end smallexample 
 @cindex CIDR
@@ -7214,13 +7610,12 @@ builds in anti-spamming protection. The principle used is that hosts
 should be immune to Denial of Service attacks; they should
 only be able to disadvanatge themselves with the attempt.}
 
-(Remote method execution is not implemented in version 2.1.0, but will follow
-in a later release, when additional research has been carried out.)
+(Remote method execution was not implemented until version 2.1.3)
 
 Methods allow you to call an independent cfengine program, pass it arguments and classes,
 and collect the results for use in your main program. It thus introduces
 parent-child semantics into cfengine "imports". A method is more than an import.
-(Import is like a C #include, while a method is like a C function.)
+(Import is analagous to a C #include, while a method is like a C function.)
 Communication is peer to peer, by mutual consent. There is no "method server"
 that executes methods on remote hosts. Hosts exchange information by invitation
 only. This is an unreliable service (in the sense of UDP).
@@ -7243,7 +7638,7 @@ decoupling between client request and service provision.
       returnvars=@var{comma separated variable list or void}
       returnclasses=@var{comma separated class list}
 
-      server=@var{ip-host}
+      server=@var{ip-host/*}
 
       owner=@var{setuid}
       group=@var{setgid}
@@ -7305,6 +7700,21 @@ nexus$ ./cfagent -f ./cftest
 cfengine:myhost:SimpleMethod: cfengine:nexus: This simple method does nothing
 
 @end example
+
+If the server name is a wildcard, e.g. @code{*} then this acts as a multicast or broadcast.
+
+@c ...........................................
+@c SUBSECTION
+@c ...........................................
+
+@menu
+* localhost examples::          
+* remotehost examples::         
+@end menu
+
+@node localhost examples, remotehost examples, methods, methods
+@subsection Localhost examples
+
 
 The following example
 collects the tar file, unpacks it,
@@ -7521,6 +7931,47 @@ The return clases are passed in their current state to the parent;
 i.e. if class1 is defined then it is offered to the parent, but if it
 is not defined in the method, it is not passed on. The parent can then
 choose to accept or ignore the value.
+
+@c ...........................................
+@c SUBSECTION
+@c ...........................................
+
+@node remotehost examples,  , localhost examples, methods
+@subsection Remote host examples
+
+Methods can also be scheduled for execution on remote hosts.
+@itemize
+@item Both hosts must have an identical copy of the method stanza
+@item Public keys must be exchanged between the cooperating hosts
+@item Access must be granted to @file{/var/cfengine/rpc_out} in cfservd.
+@end itemize
+
+Remote method execution is the same as local method execution except for
+some additional requirements. A list of collaborating peers must be added
+to the control section of @file{update.conf}.
+
+@smallexample
+control:
+
+ MethodPeers = ( @var{hostname list} )
+@end smallexample
+This list tells the agent which remote hosts to collaborate with, i.e.
+whom should we contact to look for work that we have promised to perform?
+For example, to make two hosts collaborate:
+
+@smallexample
+methods:
+
+ host1|host2::
+
+  MethodTest("my test!")
+
+  action=cf.methodtest
+  server=host2.iu.hio.no
+  returnclasses=null
+  returnvars=retval
+  ifelapsed=120
+@end smallexample
 
 @c -------------------------------------------------------------------------------
 @c SECTION
@@ -8256,8 +8707,9 @@ nameserver 129.240.2.3
 
 @noindent
 Note that the @code{resolve} action does not delete anything from the
-file @code{/etc/resolv.conf}.  It adds nameservers which do not
-previously exist and reorders the lines of servers which do exist.
+file @code{/etc/resolv.conf} unless the @code{EmptyResolveConf} variable is set
+to 'true' .  It adds nameservers which do not previously exist and
+reorders the lines of servers which do exist.
 
 As of version 1.3.11, you may use a quoted string to add non-nameserver
 lines to this file. For example:
@@ -8313,6 +8765,8 @@ shellcommands:
           preview=@var{true}/@b{false}
           inform=@b{false}@var{/true}
 
+          noabspath=@b{false}@var{/true}
+
           ifelapsed=@var{mins} 
           expireafter=@var{mins}
 
@@ -8331,6 +8785,14 @@ network connections etc.
 @mbindex How can I set a timeout for a shell command?
 @mbindex How can I avoid hanging shellcommands?
 @mbindex Hanging commands, timeouts
+
+Normally, cfagent requires the command string to begin with a @samp{/}
+since it is dangerous to rely on an implicit path. However, sometimes it
+it is appropriate to override this.
+@cindex noabspath
+@vindex noabspath 
+@mbindex Shellcommands must start with absolute path
+@mbindex Absolute path and shellcommands
 
 Variable substitution works within the strings.  Here are some examples.
 
@@ -8828,10 +9290,31 @@ file is as follows:
 
 @end cartouche
 
-
+@cindex Iteration in server rules
+@cindex cfservd.conf iteration
+Iteration of variables is allowed, hence:
 @noindent
+@smallexample
+	control:
+	  Split = ( " " )
+	  hostlist = ( "10.10.10.1 10.10.10.2 10.10.10.3" )  
+	  dirs =  ( "bin etc lib" )
+	  base = ( /usr )
 
+	#########################################################
 
+	admit:
+	   $(base)/$(dirs)   $(hostlist)
+@end smallexample
+results in:
+@smallexample
+	Path: /usr/bin (encrypt=0)
+	   Admit: 10.10.10.1 10.10.10.2 10.10.10.3 root=
+	Path: /usr/etc (encrypt=0)
+	   Admit: 10.10.10.1 10.10.10.2 10.10.10.3 root=
+	Path: /usr/lib (encrypt=0)
+	   Admit: 10.10.10.1 10.10.10.2 10.10.10.3 root=
+@end smallexample
 
 The file consists of a control section and access information.
 

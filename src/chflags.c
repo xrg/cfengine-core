@@ -36,23 +36,20 @@
 /* adapted from FreeBSD /usr/src/bin/ls/stat_flags.c */
 
 
-#define	TEST(a, b, f) {							\
-	if (!memcmp(a, b, sizeof(b))) {					\
-		if (clear) {						\
-			if (minusmask)					\
-				*minusmask |= (f);			\
-		} else if (plusmask)					\
-			*plusmask |= (f);				\
-		break;							\
-	}								\
+#define TEST(a, b, f) {       \
+ if (!memcmp(a, b, sizeof(b))) {     \
+  if (clear) {      \
+   if (minusmask)     \
+    *minusmask |= (f);   \
+  } else if (plusmask)     \
+   *plusmask |= (f);    \
+  break;       \
+ }        \
 }
 
 /***************************************************************/
 
-void ParseFlagString( flagstring,plusmask,minusmask)
-
-char *flagstring;
-u_long *plusmask,*minusmask;
+void ParseFlagString(char *flagstring,u_long *plusmask,u_long *minusmask)
 
 { char *sp, *next;
   int clear;
@@ -85,35 +82,35 @@ value = 0;
     switch ( *sp )
        {
        case 'a':
-	   TEST(sp, "arch", SF_ARCHIVED);
-	   TEST(sp, "archived", SF_ARCHIVED);
-	   goto Error;
+    TEST(sp, "arch", SF_ARCHIVED);
+    TEST(sp, "archived", SF_ARCHIVED);
+    goto Error;
        case 'd':
-	   clear = !clear;
-	   TEST(sp, "dump", UF_NODUMP);
-	   goto Error;
+    clear = !clear;
+    TEST(sp, "dump", UF_NODUMP);
+    goto Error;
        case 'o':
-	   TEST(sp, "opaque", UF_OPAQUE);
-	   goto Error;
+    TEST(sp, "opaque", UF_OPAQUE);
+    goto Error;
        case 's':
-	   TEST(sp, "sappnd", SF_APPEND);
-	   TEST(sp, "sappend", SF_APPEND);
-	   TEST(sp, "schg", SF_IMMUTABLE);
-	   TEST(sp, "schange", SF_IMMUTABLE);
-	   TEST(sp, "simmutable", SF_IMMUTABLE);
-	   TEST(sp, "sunlnk", SF_NOUNLINK);
-	   TEST(sp, "sunlink", SF_NOUNLINK);
-	   goto Error;
+    TEST(sp, "sappnd", SF_APPEND);
+    TEST(sp, "sappend", SF_APPEND);
+    TEST(sp, "schg", SF_IMMUTABLE);
+    TEST(sp, "schange", SF_IMMUTABLE);
+    TEST(sp, "simmutable", SF_IMMUTABLE);
+    TEST(sp, "sunlnk", SF_NOUNLINK);
+    TEST(sp, "sunlink", SF_NOUNLINK);
+    goto Error;
        case 'u':
-	   TEST(sp, "uappnd", UF_APPEND);
-	   TEST(sp, "uappend", UF_APPEND);
-	   TEST(sp, "uchg", UF_IMMUTABLE);
-	   TEST(sp, "uchange", UF_IMMUTABLE);
-	   TEST(sp, "uimmutable", UF_IMMUTABLE);
-	   TEST(sp, "uunlnk", UF_NOUNLINK);
-	   TEST(sp, "uunlink", UF_NOUNLINK);
-	   goto Error;
-	   
+    TEST(sp, "uappnd", UF_APPEND);
+    TEST(sp, "uappend", UF_APPEND);
+    TEST(sp, "uchg", UF_IMMUTABLE);
+    TEST(sp, "uchange", UF_IMMUTABLE);
+    TEST(sp, "uimmutable", UF_IMMUTABLE);
+    TEST(sp, "uunlnk", UF_NOUNLINK);
+    TEST(sp, "uunlink", UF_NOUNLINK);
+    goto Error;
+    
        case '0':
        case '1':
        case '2':
@@ -122,19 +119,19 @@ value = 0;
        case '5':
        case '6':
        case '7':
-	   sscanf(sp,"%o",&value);
-	   *plusmask = value;
-	   *minusmask = ~value & CHFLAGS_MASK;
-	   break;
-	   
+    sscanf(sp,"%o",&value);
+    *plusmask = value;
+    *minusmask = ~value & CHFLAGS_MASK;
+    break;
+    
        case '\0':
-	   break;
-	   
-	 Error:
+    break;
+    
+  Error:
        default:
-	   printf( "Invalid flag string '%s'\n", sp );
-	   yyerror ("Invalid flag string");
-	   return;
+    printf( "Invalid flag string '%s'\n", sp );
+    yyerror ("Invalid flag string");
+    return;
        }
     }
  Debug1("ParseFlagString:[PLUS=%o][MINUS=%o]\n",*plusmask,*minusmask);

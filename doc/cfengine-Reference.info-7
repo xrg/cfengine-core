@@ -11,6 +11,290 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: SkipVerify,  Prev: encrypt=,  Up: admit grant and deny
+
+SkipVerify
+----------
+
+   If connecting hosts use a Network Address Translator in order to
+share an IP address, reverse lookup will fail to give a correct
+verification of host identity.  You can switch off cfservd's
+verification of IP host identity for specific IP addresses or patterns
+using this command. E.g.
+
+
+     SkipVerify = ( 192.0.0.10  192.0.2.  )
+
+   This does not affect key verification.
+
+   NOTE!! This is a security risk because it means that cfservd
+implicitly trusts the connecting hosts! You should be very careful in
+using Network Address Translators in a secure environment. It is not
+recommended for sites which require a high level of security.
+
+
+File: cfengine-Reference.info,  Node: cfrun,  Next: Firewalls and NATs,  Prev: admit grant and deny,  Up: Cfservd.conf and cfrun reference
+
+`cfrun'
+=======
+
+   The general syntactic form of the `cfrun' command is
+
+
+       cfrun -OPTION --LONGOPTION CLASS1 CLASS2 ...
+
+Since `cfrun' addresses remote hosts, there is an ambiguity in whether
+options are intended for the `cfrun' command itself, on the local host,
+or whether they are to be passed on to the agent on the remote hosts.
+To clarify this distinction, the arguments are organized as follows:
+
+
+       cfrun -LOCAL OPTIONS -- REMOTE OPTIONS -- REMOTE CLASSES
+
+Local options are processed by `cfrun' on the local host; remote options
+are passed on as options to the remote `cfagent' (actually to the
+command defined in `cfrunCommand' in the file `cfservd.conf'; remote
+classes are processed by the remote `cfservd' service, and specifiy
+classes which must be satisfied by the remote host in order to invoke
+the remote command.
+
+   The `-q' and `-I' options are always assumed when executing cfengine
+remotely, so that `SplayTime' is effectively zero when polling hosts
+serially, and the output always shows what is happening on the remote
+hosts.
+
+   Each host evaluates the classes sent by `cfrun' and decides whether
+cfengine should be invoked.  Only hosts which belong to the classes
+defined on the `cfrun' command line are executed. This allows you to
+single out groups of hosts which should execute cfengine, based on the
+very classes which you have defined for your configuration.  If no
+classes are sent on the command line, then all hosts are run.
+
+   `cfrun' uses a configuration file which is located under the
+`CFINPUTS' directory in order to determine which hosts and in which
+order it should try to connect. Because cfengine always uses a reliable
+TCP protocol for connections, it verifies each connection rather than
+simply broadcasting openly. Using this file you can even simulate
+broadcasting to hosts outside your subnet.
+
+   This file should contain every host name you ever want to configure
+remotely, because you can still select subsets of the file by
+specifying classes which the remote host will understand.  If the
+remote host is not in one of the classes you specify when you run
+`cfrun', then it will simply ignore the request. Conversely, if you do
+not place a host in this file, it will never be contacted when you use
+the `cfrun' command. The format of the file is as follows
+
+
+      #
+      # Comment ..
+      #
+      domain=MY.DOMAIN
+      access=USER1,USER2
+      outputdir=DIRECTORY
+      maxchild=NUMBER LIMIT
+     
+      HOSTNAME1            OPTIONS
+      HOSTNAME2:PORT OPTIONS
+      ...
+
+If the option `outputdir' is present, cfrun forks a separate process
+for each host and passes the output to files in a named directory.  The
+`maxchild' line limits the number of forked processes.
+
+   It is important to add the domain-name to this file.  The options
+you specifiy in this file, per host, are added to those you might
+specify on the command line when invoking cfengine remotely.  For
+instance, you might know of a bug on one host and decide not to perform
+interface configuration on that one machine. You would write a line
+like this:
+
+
+       funny.domain -- -i  # problem host
+
+   You could use `cfrun' inside one of your cfengine configuration
+files in order to remotely execute cfengine on all of the other network
+machines, by setting up a host list. The disadvantage however is that
+cfengine has to poll the systems on the network, which means that
+cfengine cannot be working in parallel on all hosts.
+
+   Some other examples:
+
+
+     e.g.  cfrun -- -- linux          Run on all linux machines
+           cfrun -- -p                Ping and parse on all hosts
+           cfrun -v -- -p             Ping all, local verbose
+           cfrun -v -- -k -- solaris  Local verbose, all solaris, but no copy
+
+   Amongst the local options, one may specify a subset of the hosts
+which are to be contacted by cfrun, i.e. to avoid processing the entire
+list of hosts. For example, to contact only host1 and host2, given that
+they are already in the list of hosts.
+
+
+     cfrun -v host1 host2
+     cfrun -v host1 host2 -- -p
+
+
+File: cfengine-Reference.info,  Node: Firewalls and NATs,  Prev: cfrun,  Up: Cfservd.conf and cfrun reference
+
+Firewalls and NATs
+==================
+
+   Firewalls and Network Address Translators (NAT) can be a problem for
+addressing.  Suppose you have a firewall and with a private IP-range
+behind the firewall.  You want to update the nodes from a central host.
+You can do a two stage configuration: first update the firewall and
+then update from the firewall to the nodes.
+
+   But suppose you already use SNAT (Source Network Address
+Translation) and DNAT (Destination ...) for the nodes. With DNAT you
+can say that socket 22000 on the firewall is routed to HOST-NAME:5308.
+DNAT gives us the possibilty to update the nodes from a central server
+in one step instead of two.
+
+   If the port command is given cfrun uses this to connect to the client
+instead of the default (5308) one.  Here is an example (`cfrun.hosts'):
+
+     node1.example.org
+     node2.example.org:22000 -DNis
+     node2.example.org:22001
+
+   This connects to: 1) node1 with standard port, 2) node2 with port
+22000 and extra options -DNis and, 3) node2 with port 22000.
+
+
+File: cfengine-Reference.info,  Node: Cfexecd reference,  Next: Problem solving,  Prev: Cfservd.conf and cfrun reference,  Up: Top
+
+Cfexecd reference
+*****************
+
+   In wrapper mode (non-forking, non-daemon mode), cfagent is run by
+adding a line to the root crontab file of each system:
+     0,30 * * * * /usr/local/sbin/cfexecd -F
+   This is enough to ensure that cfengine will get run. Any output
+generated by this job, will be stored in `/var/cfengine/outputs'.  In
+addition, if you add the following to the file `cfagent.conf', the
+system administrator will be emailed a summary of any output:
+
+     control:
+     
+     smtpserver    = ( mailhub.example.org ) # site MTA which can talk smtp
+     sysadm        = ( mark@example.org )    # mail address of sysadm
+     EmailMaxLines = ( N )                 # max lines of output to email
+
+Fill in suitable values for these variables. `EmailMaxLines' may be set
+to 0 to disable email output, a postive integer to set a limit, or
+`inf' to email the whole output regardless of its size. If undefined,
+`EmailMaxLines' defaults to 100.
+
+   An alternative, or additional way to run cfengine, is to run the
+`cfexecd' program is daemon mode (without the `-F') option. In this
+mode, the daemon lives in the background and sleeps, activating only in
+accordance with a scheduling policy. The default policy is to run once
+every hour (equivalent to `Min00_05'). Here is how you would modify
+`cfagent.conf' in order to make the daemon execute cfagent every
+half-hour:
+       control:
+     
+        # When should cfexecd in daemon mode wake up the agent?
+     
+        schedule   = ( Min00_05 Min30_35 )
+   Note that the time specifications are the basic cfengine _time
+classes_.  Although one of these methods should suffice, no harm will
+arise from running both cron and the cfexecd side-by-side.  Cfagents
+locking mechanisms ensure that no contention will occur.
+
+   Note, that if problems with library path for compiled in libraries
+occur, an explicit library path can be specified with the `-L' option.
+     0,30 * * * * /usr/local/sbin/cfexecd -F -L /local/iu/lib:/local/lib/mysql:/local/lib:/local/gnu/lib
+
+
+File: cfengine-Reference.info,  Node: Problem solving,  Next: Example configuration file,  Prev: Cfexecd reference,  Up: Top
+
+Problem solving
+***************
+
+* Menu:
+
+* cf.preconf bootstrap file::
+* cfrc resource file::
+
+
+File: cfengine-Reference.info,  Node: cf.preconf bootstrap file,  Next: cfrc resource file,  Prev: Problem solving,  Up: Problem solving
+
+`cf.preconf' bootstrap file
+===========================
+
+   In some cases you will want to run cfengine on a system to configure
+it from scratch.  If the system is in a very bad way, it might not even
+be able to parse the cfengine configuration file, perhaps because the
+network was not properly configured or the DNS (Domain Name Service) was
+out of action.  To help prevent this situation, cfengine looks for a
+script called `cf.preconf' which gets executed prior to parsing and can
+be used to perform any emergency tests.  This file needs only contain
+enough to get the system to parse the configuration files.
+
+   `cf.preconf' may be any script in any language.  It need not exist
+at all! It is fed one argument by cfengine, namely the system hard-class
+for the current system (e.g.  `ultrix').  Here is an example:
+
+     #!/bin/sh
+     #
+     # cf.preconf is an emergency/bootstrap file to get things going
+     # in case cfengine is unable to parse its config file
+     #
+     
+     backupdir=/iu/nexus/local/iu/etc
+     
+      #
+      # If these files don't exist, you might not be able to parse cfagent.conf
+      #
+     
+     if [ ! -s /etc/resolv.conf ]; then
+     
+      echo Patching basics resolv.conf file
+      cat > /etc/resolv.conf << XX
+     domain iu.hioslo.no
+     nameserver 128.39.89.10
+     XX
+     
+     fi
+     
+     #
+     # SVR4
+     #
+     
+     if [ "$1" = "solaris" ]; then
+     
+       if [ ! -s "/etc/passwd" ]; then
+     
+       echo Patching missing passwd file
+         /bin/cp $backupdir/passwd /etc/passwd
+       fi
+     
+       if [ ! -s "/etc/shadow" ]; then
+     
+        echo Patching missing passwd file
+        /bin/cp $backupdir/shadow /etc/shadow
+       fi
+     fi
+     
+     #
+     # BSD 4.3
+     #
+     
+     if [ "$1" = "linux" ]; then
+     
+        if [ ! -s "/etc/passwd"  ]
+        then
+     
+         echo Patching missing passwd file
+         /bin/cp $backupdir/passwd.linux /etc/passwd
+        fi
+     fi
+
+
 File: cfengine-Reference.info,  Node: cfrc resource file,  Prev: cf.preconf bootstrap file,  Up: Problem solving
 
 `cfrc' resource file
@@ -1423,200 +1707,4 @@ cfservd.conf
      deny:
      
           $(public)/special *.moneyworld.com
-
-
-File: cfengine-Reference.info,  Node: Variable Index,  Next: Concept Index,  Prev: Example configuration file,  Up: Top
-
-Variable Index
-**************
-
-* Menu:
-
-* !:                                     Cfengine classes.
-* $(arch):                               Special variables.
-* $(binserver):                          Special variables.
-* $(class):                              Special variables.
-* $(cr):                                 Special variables.
-* $(date):                               Special variables.
-* $(dblquote):                           Special variables.
-* $(dollar):                             Special variables.
-* $(domain):                             Special variables.
-* $(faculty):                            Special variables.
-* $(fqhost):                             Special variables.
-* $(host):                               Special variables.
-* $(ipaddress):                          Special variables.
-* $(lf):                                 Special variables.
-* $(n):                                  Special variables.
-* $(quote):                              Special variables.
-* $(site):                               Special variables.
-* $(spc):                                Special variables.
-* $(sysadm):                             Special variables.
-* $(tab):                                Special variables.
-* $(timezone):                           Special variables.
-* $(year):                               Special variables.
-* ${EmailMaxLines}:                      Special variables.
-* +:                                     groups.
-* -D option <1>:                         Cfengine classes.
-* -D option:                             addclasses.
-* -l <1>:                                Syntax.
-* -l:                                    tidy.
-* -L:                                    Single links.
-* -N option <1>:                         Cfengine classes.
-* -N option:                             addclasses.
-* -x option:                             cf.preconf bootstrap file.
-* .cfengine.rm:                          tidy.
-* /etc/host.conf:                        cf.preconf bootstrap file.
-* /var/cfengine/output:                  Cfexecd reference.
-* a= <1>:                                tidy.
-* a=:                                    Syntax.
-* AccessedBefore():                      Evaluated classes.
-* action:                                Syntax.
-* actionsequence <1>:                    control.
-* actionsequence:                        actionsequence.
-* AddClasses:                            addclasses.
-* AddInstallable:                        addinstallable.
-* addmounts:                             actionsequence.
-* age:                                   tidy.
-* alerts:                                alerts.
-* AllowUsers:                            AllowUsers.
-* backup=:                               copy.
-* BindToInterface:                       BindToInterface.
-* binserver <1>:                         Link Children.
-* binserver:                             Single links.
-* binservers:                            binservers.
-* broadcast:                             broadcast.
-* cf.preconf:                            cf.preconf bootstrap file.
-* CFALLCLASSES <1>:                      Cfagent Runtime Options.
-* CFALLCLASSES:                          Special variables.
-* cfrc:                                  cfrc resource file.
-* ChangedBefore():                       Evaluated classes.
-* ChecksumDatabase:                      ChecksumDatabase.
-* ChecksumPurge:                         ChecksumPurge.
-* ChecksumUpdates:                       ChecksumUpdates.
-* checktimezone:                         actionsequence.
-* childlinks:                            actionsequence.
-* cmp=:                                  packages.
-* control:                               control.
-* create:                                create.
-* directories:                           actionsequence.
-* disable <1>:                           disable.
-* disable:                               actionsequence.
-* domain <1>:                            control.
-* domain:                                domain.
-* DryRun:                                dryrun.
-* editbinaryfilesize:                    editbinaryfilesize.
-* editfiles:                             actionsequence.
-* editfilesize <1>:                      editfilesize.
-* editfilesize:                          control.
-* EmailMaxLines:                         Cfexecd reference.
-* empty:                                 disable.
-* EmptyResolvConf:                       emptyresolvconf.
-* Exclamation:                           exclamation.
-* exclude=:                              Syntax.
-* FileExtensions:                        fileextension.
-* files <1>:                             actionsequence.
-* files:                                 files.
-* filter:                                filters.
-* force= <1>:                            copy.
-* force=:                                disks.
-* freespace= <1>:                        disks.
-* freespace=:                            required.
-* g=:                                    Syntax.
-* group:                                 Syntax.
-* groups:                                groups.
-* home:                                  Syntax.
-* HomePattern:                           homepattern.
-* homepattern:                           mountables.
-* homeservers:                           homeservers.
-* import:                                import.
-* include=:                              Syntax.
-* interface configuration:               interfaces.
-* InterfaceName:                         interfacename.
-* IsDir():                               Evaluated classes.
-* IsLink():                              Evaluated classes.
-* IsNewerThan():                         Evaluated classes.
-* IsPlain():                             Evaluated classes.
-* l=:                                    Syntax.
-* LD_LIBRARY_PATH:                       control.
-* link:                                  Syntax.
-* linkchildren <1>:                      Files linkchildren.
-* linkchildren:                          Link Children.
-* links <1>:                             links.
-* links:                                 actionsequence.
-* m=:                                    Syntax.
-* mailcheck <1>:                         actionsequence.
-* mailcheck:                             mailserver.
-* mailserver:                            mailserver.
-* MaxCfengines:                          Special variables.
-* methods:                               methods.
-* miscmounts:                            miscmounts.
-* mode:                                  Syntax.
-* module:                                actionsequence.
-* moduledirectory:                       moduledirectory.
-* mountables <1>:                        homeservers.
-* mountables:                            mountables.
-* mountall:                              actionsequence.
-* mountinfo:                             actionsequence.
-* mountpattern:                          mountpattern.
-* netconfig:                             actionsequence.
-* netmask <1>:                           netmask.
-* netmask:                               control.
-* nfstype <1>:                           control.
-* nfstype:                               nfstype.
-* o=:                                    Syntax.
-* ones:                                  broadcast.
-* OutputPrefix:                          Special variables.
-* owner:                                 Syntax.
-* p=:                                    tidy.
-* packages:                              actionsequence.
-* pattern:                               tidy.
-* pkgmgr=:                               packages.
-* processes:                             actionsequence.
-* purge=:                                copy.
-* r= <1>:                                tidy.
-* r=:                                    Syntax.
-* recurse <1>:                           Syntax.
-* recurse:                               tidy.
-* RepChar:                               repchar.
-* repchar:                               Special variables.
-* required:                              actionsequence.
-* resolve <1>:                           resolve.
-* resolve:                               actionsequence.
-* Restricting access:                    access.
-* ReturnsZero():                         Evaluated classes.
-* rotate=:                               disable.
-* scheduling:                            schedule.
-* SecureInput:                           secureinput.
-* SensibleCount:                         sensiblecount.
-* sensiblecount:                         control.
-* SensibleSize:                          sensiblesize.
-* sensiblesize:                          control.
-* shellcommands:                         actionsequence.
-* ShowActions:                           showactions.
-* singlelinks:                           actionsequence.
-* site <1>:                              control.
-* site:                                  site.
-* SkipVerify:                            root=.
-* smtpserver:                            Cfexecd reference.
-* split <1>:                             Special variables.
-* split:                                 split.
-* SpoolDirectories:                      spooldirectories.
-* SuspiciousNames:                       suspiciousnames.
-* sysadm <1>:                            Cfexecd reference.
-* sysadm <2>:                            sysadm.
-* sysadm:                                control.
-* tidy <1>:                              tidy.
-* tidy:                                  actionsequence.
-* timezone:                              control.
-* touch:                                 touch.
-* truncate:                              disable.
-* type= <1>:                             disable.
-* type=:                                 Hard links.
-* underscoreclasses:                     Special variables.
-* unmount <1>:                           actionsequence.
-* unmount:                               unmount.
-* version=:                              packages.
-* Wildcards:                             tidy.
-* zeroes:                                broadcast.
-* zeros:                                 broadcast.
 

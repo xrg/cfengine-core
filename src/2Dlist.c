@@ -43,9 +43,7 @@
 /* TOOLKIT : 2D list                                                 */
 /*********************************************************************/
 
-void Set2DList(list)
-
-struct TwoDimList *list;
+void Set2DList(struct TwoDimList *list)
 
 { struct TwoDimList *tp;
 
@@ -59,11 +57,9 @@ for (tp = list; tp != NULL; tp=tp->next)
 
 /*********************************************************************/
 
-char *Get2DListEnt(list)
+char *Get2DListEnt(struct TwoDimList *list)
 
    /* return a path string in static data, like getent in NIS */
-
-struct TwoDimList *list;
 
 { static char entry[bufsize];
   struct TwoDimList *tp;
@@ -76,7 +72,7 @@ if (EndOfTwoDimList(list))
    return NULL;
    }
 
-bzero(entry,bufsize);
+memset(entry,0,bufsize);
 
 for (tp = list; tp != NULL; tp=tp->next)
    {
@@ -98,19 +94,15 @@ return entry;
 
 /*********************************************************************/
 
-void Build2DListFromVarstring(TwoDimlist,varstring,sep)
+void Build2DListFromVarstring(struct TwoDimList **TwoDimlist, char *varstring, char sep)
 
  /* Build a database list with all expansions of a 2D list a */
  /* sep is a separator which is used to split a many-variable */
  /* string into many strings with only one variable           */
 
-struct TwoDimList **TwoDimlist;
-char *varstring, sep;
-/* GLOBAL LISTSEPARATOR */
-
 { char format[6], *sp;
   char node[bufsize];
-  int i;
+  int i,j;
 
 Debug1("Build2DListFromVarstring(%s,sep=%c)\n",varstring,sep);
 
@@ -124,25 +116,35 @@ snprintf(format,6,"%%[^%c]",sep);   /* set format string to search */
 
 for (sp = varstring; *sp != '\0'; sp++)
    {
-   bzero(node,maxlinksize);
-
-   *node = *sp;;
-      
+   memset(node,0,maxlinksize);
+   
+   *node = *sp;
+   
    for (i = 1; (*(sp+i) != '$') && (*(sp+i) != '\0'); i++)
       {
       *(node+i) = *(sp+i);
+      
+      if (*(node+i) == '[')  /* Make sure there are no arrays ... */
+         {
+         while((*(node+i) != ']') && (*(sp+i) != '\0'))
+            {
+            i++;
+            *(node+i) = *(sp+i);
+            }
+         }
       }
-
-      *(node+i) = '\0';
-      sp += i-1;
+   
+   *(node+i) = '\0';
+   
+   sp += i-1;
    
    if (strlen(node) == 0)
       {
       continue;
       }
-
+   
    AppendTwoDimItem(TwoDimlist,SplitVarstring(node,LISTSEPARATOR),sep);
-
+   
    if (*sp == '\0')
       {
       break;
@@ -152,9 +154,7 @@ for (sp = varstring; *sp != '\0'; sp++)
 
 /*********************************************************************/
 
-int IncrementTwoDimList (from,list)
-
-struct TwoDimList *from, *list;
+int IncrementTwoDimList (struct TwoDimList *from,struct TwoDimList *list)
 
 { struct TwoDimList *tp;
 
@@ -194,9 +194,7 @@ return TD_nowrap; /* Shouldn't get here */
 
 /*********************************************************************/
 
-int EndOfTwoDimList(list)       /* bool */
-
-struct TwoDimList *list;
+int EndOfTwoDimList(struct TwoDimList *list)       /* bool */
 
    /* returns true if the leftmost list variable has cycled */
    /* i.e. rounds is > 0 for the first is-2d list item      */
@@ -206,9 +204,9 @@ struct TwoDimList *list;
 for (tp = list; tp != NULL; tp=tp->next)
    {
    if (tp->is2d)
-       {
-       break;
-       }
+      {
+      break;
+      }
    }
 
 if (list == NULL)
@@ -241,11 +239,7 @@ else
 
 /*********************************************************************/
 
-void AppendTwoDimItem(liststart,itemlist,sep)
-
-struct TwoDimList **liststart;
-struct Item *itemlist;
-char sep;
+void AppendTwoDimItem(struct TwoDimList **liststart,struct Item *itemlist,char sep)
 
 { struct TwoDimList *ip, *lp;
 
@@ -272,7 +266,7 @@ else
    for (lp = *liststart; lp->next != NULL; lp=lp->next)
       {
       }
-
+   
    lp->next = ip;
    }
 
@@ -294,9 +288,7 @@ else
 
 /*********************************************************************/
 
-void Delete2DList(item)
-
-struct TwoDimList *item;
+void Delete2DList(struct TwoDimList *item)
 
 {
 if (item != NULL)

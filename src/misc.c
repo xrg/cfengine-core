@@ -39,10 +39,7 @@
 /* TOOLKIT : files/directories                                       */
 /*********************************************************************/
 
-int DirPush(name,sb)          /* Enter dir and check for race exploits */
-
-char *name;
-struct stat *sb;
+int DirPush(char *name,struct stat *sb)          /* Enter dir and check for race exploits */
 
 {
 if (chdir(name) == -1)
@@ -62,11 +59,7 @@ return true;
 
 /**********************************************************************/
 
-void DirPop(goback,name,sb)      /* Exit dir and check for race exploits */
-
-char *name;
-int goback;
-struct stat *sb;
+void DirPop(int goback,char * name,struct stat *sb)      /* Exit dir and check for race exploits */
 
 {
 if (goback && TRAVLINKS)
@@ -93,10 +86,7 @@ else if (goback)
 
 /**********************************************************************/
 
-void CheckLinkSecurity(sb,name)
-
-struct stat *sb;
-char *name;
+void CheckLinkSecurity(struct stat *sb,char *name)
 
 { struct stat security;
 
@@ -120,9 +110,7 @@ if ((sb->st_dev != security.st_dev) || (sb->st_ino != security.st_ino))
 
 /**********************************************************************/
 
-void TruncateFile(name)
-
-char *name;
+void TruncateFile(char *name)
 
 { struct stat statbuf;
   int fd;
@@ -148,9 +136,7 @@ else
 
 /*************************************************************************/
 
-int FileSecure (name)
-
-char *name;
+int FileSecure (char *name)
 
 { struct stat statbuf;
 
@@ -184,15 +170,11 @@ return true;
 
 /***************************************************************/
 
-int ChecksumChanged(filename,digest,warnlevel,refresh,type)
+int ChecksumChanged(char *filename,unsigned char digest[EVP_MAX_MD_SIZE+1],int warnlevel,int refresh,char type)
 
     /* Returns false if filename never seen before, and adds a checksum
        to the database. Returns true if checksums do not match and also
        updates database to the new value */
-    
-char *filename, type;
-unsigned char digest[EVP_MAX_MD_SIZE+1];
-int warnlevel,refresh;
 
 { struct stat stat1, stat2;
   int i,needupdate = false, size = 21;
@@ -224,197 +206,197 @@ if (CHECKSUMDB == NULL)
       ChecksumFile(filename,dbdigest,type);
       
       for (i = 0; i < size; i++)
-	 {
-	 if (digest[i] != dbdigest[i])
-	    {
-	    return true;
-	    }
-	 }
+         {
+         if (digest[i] != dbdigest[i])
+            {
+            return true;
+            }
+         }
       return false;
       }
-   }
-
-if (refresh)
-   {
-   /* Check whether database is current wrt local file */
-
-   if (stat(filename,&stat1) == -1)
-      {
-      snprintf(OUTPUT,bufsize*2,"Couldn't stat %s\n",filename);
-      CfLog(cferror,OUTPUT,"stat");
-      return false;
-      }
-   
-   if (stat(CHECKSUMDB,&stat2) != -1)
-      {
-      if (stat1.st_mtime > stat2.st_mtime)
-	 {
-	 Debug("Checksum database is older than %s...refresh needed\n",filename);
-	 needupdate = true;
-	 }
-      else
-	 {
-	 Debug("Checksum up to date..\n");
-	 }
-      }
-   else
-      {
-      needupdate = true;
-      }      
    }
  
-if ((errno = db_create(&dbp,dbenv,0)) != 0)
-   {
-   snprintf(OUTPUT,bufsize*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
-   CfLog(cferror,OUTPUT,"db_open");
-   return false;
-   }
-
+ if (refresh)
+    {
+    /* Check whether database is current wrt local file */
+    
+    if (stat(filename,&stat1) == -1)
+       {
+       snprintf(OUTPUT,bufsize*2,"Couldn't stat %s\n",filename);
+       CfLog(cferror,OUTPUT,"stat");
+       return false;
+       }
+    
+    if (stat(CHECKSUMDB,&stat2) != -1)
+       {
+       if (stat1.st_mtime > stat2.st_mtime)
+          {
+          Debug("Checksum database is older than %s...refresh needed\n",filename);
+          needupdate = true;
+          }
+       else
+          {
+          Debug("Checksum up to date..\n");
+          }
+       }
+    else
+       {
+       needupdate = true;
+       }      
+    }
+ 
+ if ((errno = db_create(&dbp,dbenv,0)) != 0)
+    {
+    snprintf(OUTPUT,bufsize*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
+    CfLog(cferror,OUTPUT,"db_open");
+    return false;
+    }
+ 
 #ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+ if ((errno = dbp->open(dbp,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((errno = dbp->open(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+     if ((errno = dbp->open(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
-   {
-   snprintf(OUTPUT,bufsize*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
-   CfLog(cferror,OUTPUT,"db_open");
-   dbp->close(dbp,0);
-   return false;
-   }
-
-bzero(&value,sizeof(value)); 
-bzero(&key,sizeof(key));       
-      
-key.data = filename;
-key.size = strlen(filename)+1;
-value.data = dbvalue;
-value.size = size; 
-
-if (needupdate)
-   {
-   bzero(dbdigest,EVP_MAX_MD_SIZE+1);
-   ChecksumFile(filename,dbdigest,type);
-   
-   key.data = filename;
-   key.size = strlen(filename)+1;
-   value.data = (void *) dbdigest;
-   value.size = size;
-   
-   Debug("Updating checksum for %s to %s\n",filename,ChecksumPrint(type,value.data));
-   
-   if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
-      {
-      CfLog(cferror,"","db_store");
-      }
-  
-   key.data = filename;
-   key.size = strlen(filename)+1;
-   
-   if ((errno = dbp->put(dbp,NULL,&key,&value,0)) != 0)
-      {
-      CfLog(cferror,"put failed","db->put");
-      }      
-   }
-
-if ((errno = dbp->get(dbp,NULL,&key,&value,0)) == 0)
-   {
-   /* The filename key was found in the db */
-   Debug("Comparing %s (sent)\n",ChecksumPrint(type,digest));
-   Debug("     with %s (db)\n",ChecksumPrint(type,value.data));
-
-   bzero(dbdigest,EVP_MAX_MD_SIZE+1);
-   bcopy(value.data,dbdigest,size);
-   
-   for (i = 0; i < size; i++)
-      {
-      if (digest[i] != dbdigest[i])
-	 {
-	 Debug("Found checksum for %s in database but it didn't match\n",filename);
-
-	 if (EXCLAIM)
-	    {
-	    CfLog(warnlevel,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!","");
-	    }
-
-	 snprintf(OUTPUT,bufsize*2,"SECURITY ALERT: Checksum for %s changed!",filename);
-	 CfLog(warnlevel,OUTPUT,"");
-
-	 if (EXCLAIM)
-	    {
-	    CfLog(warnlevel,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!","");
-	    }
-
-	 if (CHECKSUMUPDATES)
-	    {
-	    bzero(dbdigest,EVP_MAX_MD_SIZE+1);
-	    ChecksumFile(filename,dbdigest,type);
-	    
-	    key.data = filename;
-	    key.size = strlen(filename)+1;
-	    value.data = (void *) dbdigest;
-	    value.size = size;
-	    
-	    Verbose("Updating checksum for %s to %s\n",filename,ChecksumPrint(type,value.data));
-	    
-	    if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
-	       {
-	       CfLog(cferror,"","db->del");
-	       }
-	    
-	    key.data = filename;
-	    key.size = strlen(filename)+1;
-	    
-	    if ((errno = dbp->put(dbp,NULL,&key,&value,0)) != 0)
-	       {
-	       CfLog(cferror,"put failed","db->put");
-	       }
-	    }
-
-	 dbp->close(dbp,0);
-	 return true;                        /* Checksum updated but was changed */
-	 }
-      }
-   
-   Debug("Found checksum for %s in database and it matched\n",filename);
-   dbp->close(dbp,0);
-   return false;
-   }
-else
-   {
-   /* Key was not found, so install it */
-
-   if (ISCFENGINE)
-      {
-      snprintf(OUTPUT,bufsize,"File %s was not in md5 database - new file found",filename);
-      CfLog(cfsilent,OUTPUT,"");
-      }
-   
-   bzero(dbdigest,EVP_MAX_MD_SIZE+1);
-   ChecksumFile(filename,dbdigest,type);
-
-   key.data = filename;
-   key.size = strlen(filename)+1;
-   value.data = (void *) dbdigest;
-   value.size = size;
-
-   Debug("Storing checksum for %s in database %s\n",filename,ChecksumPrint(type,dbdigest));
-
-   if ((errno = dbp->put(dbp,NULL,&key,&value,0)) != 0)
-      {
-      CfLog(cferror,"put failed","db->put");
-      }
-   
-   dbp->close(dbp,0);
-
-   if (ISCFENGINE)
-      {
-      return false;      /* No need to warn when first installed */
-      }
-   else
-      {
-      return true;
-      }
-   }
+        {
+        snprintf(OUTPUT,bufsize*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
+        CfLog(cferror,OUTPUT,"db_open");
+        dbp->close(dbp,0);
+        return false;
+        }
+ 
+ memset(&value,0,sizeof(value)); 
+ memset(&key,0,sizeof(key));       
+ 
+ key.data = filename;
+ key.size = strlen(filename)+1;
+ value.data = dbvalue;
+ value.size = size; 
+ 
+ if (needupdate)
+    {
+    memset(dbdigest,0,EVP_MAX_MD_SIZE+1);
+    ChecksumFile(filename,dbdigest,type);
+    
+    key.data = filename;
+    key.size = strlen(filename)+1;
+    value.data = (void *) dbdigest;
+    value.size = size;
+    
+    Debug("Updating checksum for %s to %s\n",filename,ChecksumPrint(type,value.data));
+    
+    if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
+       {
+       CfLog(cferror,"","db_store");
+       }
+    
+    key.data = filename;
+    key.size = strlen(filename)+1;
+    
+    if ((errno = dbp->put(dbp,NULL,&key,&value,0)) != 0)
+       {
+       CfLog(cferror,"put failed","db->put");
+       }      
+    }
+ 
+ if ((errno = dbp->get(dbp,NULL,&key,&value,0)) == 0)
+    {
+    /* The filename key was found in the db */
+    Debug("Comparing %s (sent)\n",ChecksumPrint(type,digest));
+    Debug("     with %s (db)\n",ChecksumPrint(type,value.data));
+    
+    memset(dbdigest,0,EVP_MAX_MD_SIZE+1);
+    memcpy(dbdigest,value.data,size);
+    
+    for (i = 0; i < size; i++)
+       {
+       if (digest[i] != dbdigest[i])
+          {
+          Debug("Found checksum for %s in database but it didn't match\n",filename);
+          
+          if (EXCLAIM)
+             {
+             CfLog(warnlevel,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!","");
+             }
+          
+          snprintf(OUTPUT,bufsize*2,"SECURITY ALERT: Checksum for %s changed!",filename);
+          CfLog(warnlevel,OUTPUT,"");
+          
+          if (EXCLAIM)
+             {
+             CfLog(warnlevel,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!","");
+             }
+          
+          if (CHECKSUMUPDATES)
+             {
+             memset(dbdigest,0,EVP_MAX_MD_SIZE+1);
+             ChecksumFile(filename,dbdigest,type);
+             
+             key.data = filename;
+             key.size = strlen(filename)+1;
+             value.data = (void *) dbdigest;
+             value.size = size;
+             
+             Verbose("Updating checksum for %s to %s\n",filename,ChecksumPrint(type,value.data));
+             
+             if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
+                {
+                CfLog(cferror,"","db->del");
+                }
+             
+             key.data = filename;
+             key.size = strlen(filename)+1;
+             
+             if ((errno = dbp->put(dbp,NULL,&key,&value,0)) != 0)
+                {
+                CfLog(cferror,"put failed","db->put");
+                }
+             }
+          
+          dbp->close(dbp,0);
+          return true;                        /* Checksum updated but was changed */
+          }
+       }
+    
+    Debug("Found checksum for %s in database and it matched\n",filename);
+    dbp->close(dbp,0);
+    return false;
+    }
+ else
+    {
+    /* Key was not found, so install it */
+    
+    if (ISCFENGINE)
+       {
+       snprintf(OUTPUT,bufsize,"File %s was not in md5 database - new file found",filename);
+       CfLog(cfsilent,OUTPUT,"");
+       }
+    
+    memset(dbdigest,0,EVP_MAX_MD_SIZE+1);
+    ChecksumFile(filename,dbdigest,type);
+    
+    key.data = filename;
+    key.size = strlen(filename)+1;
+    value.data = (void *) dbdigest;
+    value.size = size;
+    
+    Debug("Storing checksum for %s in database %s\n",filename,ChecksumPrint(type,dbdigest));
+    
+    if ((errno = dbp->put(dbp,NULL,&key,&value,0)) != 0)
+       {
+       CfLog(cferror,"put failed","db->put");
+       }
+    
+    dbp->close(dbp,0);
+    
+    if (ISCFENGINE)
+       {
+       return false;      /* No need to warn when first installed */
+       }
+    else
+       {
+       return true;
+       }
+    }
 }
 
 
@@ -461,8 +443,8 @@ if ((errno = dbp->open(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 
  /* Initialize the key/data return pair. */
 
- memset(&key, 0, sizeof(key));
- memset(&value, 0, sizeof(value));
+ memset(&key,0,sizeof(key));
+ memset(&value,0,sizeof(value));
  
  /* Walk through the database and print out the key/data pairs. */
 
@@ -475,9 +457,9 @@ if ((errno = dbp->open(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
        CfLog(cferror,OUTPUT,"");
 
        if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
-	  {
-	  CfLog(cferror,"","db_store");
-	  }
+          {
+          CfLog(cferror,"","db_store");
+          }
        }
     }
  
@@ -487,11 +469,7 @@ dbp->close(dbp,0);
 
 /*************************************************************************/
 
-int IgnoredOrExcluded(action,file,inclusions,exclusions)
-
-enum actions action;
-char *file;
-struct Item *inclusions, *exclusions;
+int IgnoredOrExcluded(enum actions action,char *file,struct Item *inclusions,struct Item *exclusions)
 
 { char *lastnode;
 
@@ -510,7 +488,7 @@ else
    lastnode = file;
    }
 
-if (inclusions != NULL && !IsWildItemIn(inclusions,lastnode))
+if ((inclusions != NULL) && !IsWildItemIn(inclusions,lastnode))
    {
    Debug("cfengine: skipping non-included pattern %s\n",file);
    return true;
@@ -544,9 +522,7 @@ return false;
 
 /*********************************************************************/
 
-void Banner(string)
-
-char *string;
+void Banner(char *string)
 
 {
 Verbose("---------------------------------------------------------------------\n");
@@ -556,10 +532,7 @@ Verbose("---------------------------------------------------------------------\n
 
 /*********************************************************************/
 
-void DebugBinOut(buffer,len)
-
-char *buffer;
-int len;
+void DebugBinOut(char *buffer,int len)
 
 { char *sp;
 
@@ -575,10 +548,7 @@ Debug("]\n");
 
 /*********************************************************************/
 
-char *ChecksumPrint(type,digest)
-
-char type;
-unsigned char digest[EVP_MAX_MD_SIZE+1];
+char *ChecksumPrint(char type,unsigned char digest[EVP_MAX_MD_SIZE+1])
 
 { unsigned int i;
   static char buffer[EVP_MAX_MD_SIZE*4];
@@ -604,9 +574,7 @@ return buffer;
 
 /*******************************************************************/
 
-int ShellCommandReturnsZero(comm)
-
-char *comm;
+int ShellCommandReturnsZero(char *comm)
 
 { int status, i, argc;
   pid_t pid;
@@ -617,7 +585,7 @@ char *comm;
 
 for (i = 0; i < maxshellargs; i++)
    {
-   bzero (arg[i],bufsize);
+   memset (arg[i],0,bufsize);
    }
 
 argc = SplitCommand(comm,arg);
@@ -679,12 +647,12 @@ else                                    /* parent */
 
       if (WEXITSTATUS(status) == 0)
          {
-	 Debug("Shell command returned 0\n");
+  Debug("Shell command returned 0\n");
          return true;
          }
       else
          {
-	 Debug("Shell command was non-zero\n");
+  Debug("Shell command was non-zero\n");
          return false;
          }
       }
@@ -728,10 +696,7 @@ void SetSignals()
 
 /*********************************************************************/
 
-void SetClassesOnScript(execstr,classes,elseclasses,useshell)
-
-char *execstr, *classes, *elseclasses;
-int useshell;
+void SetClassesOnScript(char *execstr,char *classes,char *elseclasses,int useshell)
 
 { FILE *pp;
   int print;
@@ -742,7 +707,7 @@ switch (useshell)
    case 'y':  pp = cfpopen_sh(execstr,"r");
               break;
    default:   pp = cfpopen(execstr,"r");
-              break;	     
+              break;      
    }
  
 if (pp == NULL)
@@ -784,10 +749,10 @@ while (!feof(pp))
    for (sp = line; *sp != '\0'; sp++)
       {
       if (! isspace((int)*sp))
-	 {
-	 print = true;
-	 break;
-	 }
+         {
+         print = true;
+         break;
+         }
       }
    
    if (print)
@@ -795,15 +760,13 @@ while (!feof(pp))
       Verbose("%s:%s: %s\n",VPREFIX,execstr,line);
       }
    }
-
+ 
 cfpclose_def(pp,classes,elseclasses);
 }
 
 /*********************************************************************/
 
-char *UnQuote(s)
-
-char *s;
+char *UnQuote(char *s)
 
 {
  if (s[strlen(s)-1] == '\"')
@@ -821,14 +784,158 @@ char *s;
     }
 }
 
+
+/*******************************************************************/
+
+void IDClasses()
+
+{ struct stat statbuf;
+  char *sp;
+  int i = 0;
+ 
+AddClassToHeap("any");      /* This is a reserved word / wildcard */
+ 
+snprintf(VBUFF,bufsize,"cfengine_%s",CanonifyName(VERSION));
+AddClassToHeap(VBUFF);
+ 
+for (sp = VBUFF+strlen(VBUFF); i < 2; sp--)
+   {
+   if (*sp == '_')
+      {
+      i++;
+      *sp = '\0';
+      AddClassToHeap(VBUFF);
+      }
+   }
+ 
+if (stat("/etc/redhat-release",&statbuf) != -1)
+   {
+   Verbose("This appears to be a redhat system.\n");
+   AddClassToHeap("redhat");
+   linux_redhat_version();
+   }
+
+if (stat("/etc/SuSE-release",&statbuf) != -1)
+   {
+   Verbose("\nThis appears to be a SuSE system.\n");
+   AddClassToHeap("SuSE");
+   linux_suse_version();
+   }
+
+if (stat("/etc/slackware-release",&statbuf) != -1)
+   {
+   Verbose("\nThis appears to be a slackware system.\n");
+   AddClassToHeap("slackware");
+   }
+ 
+if (stat("/etc/debian_version",&statbuf) != -1)
+   {
+   Verbose("\nThis appears to be a debian system.\n");
+   AddClassToHeap("debian");
+   debian_version();
+   }
+
+if (stat("/etc/UnitedLinux-release",&statbuf) != -1)
+   {
+   Verbose("\nThis appears to be a UnitedLinux system.\n");
+   AddClassToHeap("UnitedLinux");
+   }
+ 
+}
+
+/*********************************************************************************/
+
+int linux_fedora_version(void)
+{
+#define FEDORA_ID "Fedora Core"
+
+#define RELEASE_FLAG "release "
+
+/* We are looking for one of the following strings...
+ *
+ * Fedora Core release 1 (Yarrow)
+ */
+
+#define FEDORA_REL_FILENAME "/etc/fedora-release"
+
+FILE *fp;
+
+/* The full string read in from fedora-release */
+char relstring[maxvarsize];
+char classbuf[maxvarsize];
+
+/* Fedora */
+char *vendor="";
+/* Where the numerical release will be found */
+char *release=NULL;
+
+int major = -1;
+char strmajor[maxvarsize];
+
+/* Grab the first line from the file and then close it. */
+ if ((fp = fopen(FEDORA_REL_FILENAME,"r")) == NULL)
+    {
+    return 1;
+    }
+ fgets(relstring, sizeof(relstring), fp);
+ fclose(fp);
+ 
+ Verbose("Looking for fedora core linux info...\n");
+ 
+ /* First, try to grok the vendor */
+ if(!strncmp(relstring, FEDORA_ID, strlen(FEDORA_ID)))
+    {
+    vendor = "fedora";
+    }
+ else
+    {
+    Verbose("Could not identify OS distro from %s\n", FEDORA_REL_FILENAME);
+    return 2;
+    }
+ 
+ /* Now, grok the release.  We assume that all the strings will
+  * have the word 'release' before the numerical release.
+  */
+ release = strstr(relstring, RELEASE_FLAG);
+ if(release == NULL)
+    {
+    Verbose("Could not find a numeric OS release in %s\n",
+     FEDORA_REL_FILENAME);
+    return 2;
+    }
+ else
+    {
+    release += strlen(RELEASE_FLAG);
+    if (sscanf(release, "%d", &major) == 1)
+       {
+       sprintf(strmajor, "%d", major);
+       }
+    }
+ 
+ if (major != -1 && vendor != "")
+    {
+    classbuf[0] = '\0';
+    strcat(classbuf, vendor);
+    AddClassToHeap(classbuf);
+    strcat(classbuf, "_");
+    strcat(classbuf, strmajor);
+    AddClassToHeap(classbuf);
+    }
+ 
+ return 0;
+}
+
 /*********************************************************************************/
 
 int linux_redhat_version(void)
 {
 #define REDHAT_ID "Red Hat Linux"
-#define REDHAT_AS_ID "Red Hat Linux Advanced Server"
+#define REDHAT_AS_ID "Red Hat Enterprise Linux AS"
+#define REDHAT_AS21_ID "Red Hat Linux Advanced Server"
 #define REDHAT_ES_ID "Red Hat Enterprise Linux ES"
+#define REDHAT_WS_ID "Red Hat Enterprise Linux WS"
 #define MANDRAKE_ID "Linux Mandrake"
+#define FEDORA_ID "Fedora Core"
 
 #define RELEASE_FLAG "release "
 
@@ -836,8 +943,11 @@ int linux_redhat_version(void)
  *
  * Red Hat Linux release 6.2 (Zoot)
  * Red Hat Linux Advanced Server release 2.1AS (Pensacola)
+ * Red Hat Enterprise Linux AS release 3 (Taroon)
+ * Red Hat Enterprise Linux WS release 3 (Taroon)
  * Linux Mandrake release 7.1 (helium)
  * Red Hat Enterprise Linux ES release 2.1 (Panama)
+ * Fedora Core release 1 (Yarrow)
  */
 
 #define RH_REL_FILENAME "/etc/redhat-release"
@@ -876,7 +986,18 @@ char strminor[maxvarsize];
     vendor = "redhat";
     edition = "es";
     }
- else if(!strncmp(relstring, REDHAT_AS_ID, strlen(REDHAT_AS_ID)))
+ else if(!strncmp(relstring, REDHAT_WS_ID, strlen(REDHAT_WS_ID)))
+    {
+    vendor = "redhat";
+    edition = "ws";
+    }
+ else if(!strncmp(relstring, REDHAT_WS_ID, strlen(REDHAT_WS_ID)))
+    {
+    vendor = "redhat";
+    edition = "ws";
+    }
+ else if(!strncmp(relstring, REDHAT_AS_ID, strlen(REDHAT_AS_ID)) ||
+  !strncmp(relstring, REDHAT_AS21_ID, strlen(REDHAT_AS21_ID)))
     {
     vendor = "redhat";
     edition = "as";
@@ -888,6 +1009,10 @@ char strminor[maxvarsize];
  else if(!strncmp(relstring, MANDRAKE_ID, strlen(MANDRAKE_ID)))
     {
     vendor = "mandrake";
+    }
+ else if(!strncmp(relstring, FEDORA_ID, strlen(FEDORA_ID)))
+    {
+    vendor = "fedora";
     }
  else
     {
@@ -904,7 +1029,7 @@ char strminor[maxvarsize];
  if(release == NULL)
     {
     Verbose("Could not find a numeric OS release in %s\n",
-	    RH_REL_FILENAME);
+     RH_REL_FILENAME);
     return 2;
     }
  else
@@ -915,7 +1040,9 @@ char strminor[maxvarsize];
        sprintf(strmajor, "%d", major);
        sprintf(strminor, "%d", minor);
        }
-    /* red hat 9 is *not* red hat 9.0. */
+    /* red hat 9 is *not* red hat 9.0. 
+     * and same thing with RHEL AS 3
+     */
     else if (sscanf(release, "%d", &major) == 1)
        {
        sprintf(strmajor, "%d", major);
@@ -923,7 +1050,7 @@ char strminor[maxvarsize];
        };
     }
  
- if(major != -1 && minor != -1 && vendor != "")
+ if (major != -1 && minor != -1 && vendor != "")
     {
     classbuf[0] = '\0';
     strcat(classbuf, vendor);
@@ -1046,3 +1173,4 @@ switch (fscanf(fp, "%d.%d", &major, &release))
 fclose(fp);
 return 0;
 }
+

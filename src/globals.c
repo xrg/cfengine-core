@@ -67,6 +67,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
 
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
 pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t MUTEX_LOCK = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 /*******************************************************************/
@@ -104,7 +105,7 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
   PUBLIC char VINPUTFILE[bufsize];
   PUBLIC char VCURRENTFILE[bufsize];
   PUBLIC char VLOGFILE[bufsize];
-  PUBLIC char ALLCLASSBUFFER[bufsize];
+  PUBLIC char ALLCLASSBUFFER[4*bufsize];
   PUBLIC char ELSECLASSBUFFER[bufsize];
   PUBLIC char FAILOVERBUFFER[bufsize];
   PUBLIC char CHROOT[bufsize];
@@ -148,6 +149,7 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
       NULL,
       0,
       0,
+      0,
       NULL
       };
 
@@ -165,6 +167,38 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
   PUBLIC struct Item *VEXCLUDECACHE = NULL;
 
   PUBLIC struct cfObject *OBJECTLIST = NULL;
+
+  PUBLIC struct Item *IPADDRESSES = NULL;
+
+ /*******************************************************************/
+ /* Anomaly                                                         */
+ /*******************************************************************/
+
+char *ECGSOCKS[ATTR][2] =
+   {
+   {"137","netbiosns"},
+   {"138","netbiosdgm"},
+   {"139","netbiosssn"},
+   {"194","irc"},
+   {"5308","cfengine"},
+   {"2049","nfsd"},
+   {"25","smtp"},
+   {"80","www"},
+   {"21","ftp"},
+   {"22","ssh"},
+   {"443","wwws"}
+   };
+
+char *TCPNAMES[NETATTR] =
+   {
+   "icmp",
+   "udp",
+   "dns",
+   "tcpsyn",
+   "tcpack",
+   "tcpfin",
+   "misc"
+   };
 
  /*******************************************************************/
  /* Methods                                                         */
@@ -187,13 +221,13 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
 
   PUBLIC char METHODNAME[bufsize];
   PUBLIC char METHODFILENAME[bufsize];
-  PUBLIC char METHODREPLYTO[maxvarsize];
+  PUBLIC char METHODREPLYTO[bufsize];
   PUBLIC char METHODRETURNVARS[bufsize];
-  PUBLIC char METHODRETURNCLASSES[maxvarsize];
+  PUBLIC char METHODRETURNCLASSES[bufsize];
   PUBLIC char METHODMD5[bufsize];
 
  /*******************************************************************/
- /* Data structures - root pointers                                 */
+ /* Data/list structures - root pointers                            */
  /*******************************************************************/
 
   PROTECTED  struct Item *VTIMEZONE = NULL;
@@ -209,6 +243,7 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
   PROTECTED  struct Item *VINCLUDEPARSE = NULL;
   PROTECTED  struct Item *VIGNOREPARSE = NULL;
   PROTECTED  struct Item *VSERVERLIST = NULL;
+  PROTECTED  struct Item *VRPCPEERLIST = NULL;
   PROTECTED  struct Item *VREDEFINES = NULL;
 
   PROTECTED  struct Item *VHEAP = NULL;      /* Points to the base of the attribute heap */
@@ -498,15 +533,22 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
       "execresult",
       "returnszero",
       "iprange",
+      "hostrange",
       "isdefined",
       "strcmp",
+      "regcmp",
       "showstate",
+      "friendstatus",
       "readfile",
       "returnvariables",
       "returnclasses",
       "syslog",
       "setstate",
       "unsetstate",
+      "prepmodule",
+      "a",
+      "readarray",
+      "readtable",
       NULL
       };
 
@@ -597,6 +639,7 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
   PUBLIC short ISCFENGINE;  /* for re-using parser code in cfd */
 
   PUBLIC  short PARSING = false;
+PRIVATE short NOABSPATH = false;
   PRIVATE short TIDYDIRS = false;
   PRIVATE short TRAVLINKS = false;
   PRIVATE short PTRAVLINKS = false;
@@ -649,6 +692,7 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
   PRIVATE char TRUSTKEY = 'n';
   PRIVATE char PRESERVETIMES = 'n';
   PRIVATE char TYPECHECK = 'y';
+  PRIVATE char SCAN = 'n';
   PRIVATE char LINKTYPE = 's';
   PRIVATE char AGETYPE = 'a';
   PRIVATE char COPYTYPE = 't';
@@ -672,7 +716,8 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
   PRIVATE char STEALTH = 'n';
   PRIVATE char CHECKSUM = 'n'; /* n,m,s */
   PRIVATE char COMPRESS = 'n';
-
+  
+  PRIVATE char *FINDERTYPE;
   PRIVATE char *VUIDNAME;
   PRIVATE char *VGIDNAME;
   PRIVATE char *FILTERNAME;
@@ -754,6 +799,7 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
 
   PRIVATE char *COMMATTRIBUTES[] =
      {
+     "findertype",
      "recurse",
      "mode",
      "owner",
@@ -792,6 +838,7 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
      "useshell",
      "syslog",
      "inform",
+     "ipv4",
      "netmask",
      "broadcast",
      "ignore",
@@ -826,6 +873,8 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
      "sendclasses",
      "ifelapsed",
      "expireafter",
+     "scanarrivals",
+     "noabspath",
      NULL
      };
 
@@ -904,9 +953,15 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
      "DeleteLinesStarting",
      "DeleteLinesNotStarting",
      "DeleteLinesContaining",
-     "DeleteLinesNotStarting",
+     "DeleteLinesNotContaining",
      "DeleteLinesMatching",
      "DeleteLinesNotMatching",
+     "DeleteLinesStartingFileItems",
+     "DeleteLinesContainingFileItems",
+     "DeleteLinesMatchingFileItems",
+     "DeleteLinesNotStartingFileItems",
+     "DeleteLinesNotContainingFileItems",
+     "DeleteLinesNotMatchingFileItems",
      "AppendIfNoSuchLine",
      "PrependIfNoSuchLine",
      "WarnIfNoSuchLine",
@@ -929,6 +984,7 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
      "SetSearchRegExp",
      "LocateLineMatching",
      "InsertLine",
+     "AppendIfNoSuchLinesFromFile",
      "IncrementPointer",
      "ReplaceLineWith",
      "DeleteToLineMatching",
@@ -1021,7 +1077,7 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
 /*******************************************************************/
 
   PRIVATE char CFSERVER[maxvarsize];
-
+  PRIVATE char BINDINTERFACE[bufsize];
   PRIVATE unsigned short PORTNUMBER = 0;
   PRIVATE char VIPADDRESS[18];
   PRIVATE int  CF_TIMEOUT = 10;

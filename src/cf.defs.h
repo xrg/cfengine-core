@@ -39,7 +39,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <limits.h>
-
 #ifdef HAVE_UNAME
 #include <sys/utsname.h>
 #else
@@ -148,12 +147,23 @@ extern int errno;
 #include <unistd.h>
 #endif
 
+
+#ifdef DARWIN
+#include <sys/malloc.h>
+#include <sys/paths.h>
+#endif
+
 #ifdef HAVE_MALLOC_H
+#ifdef DARWIN
+#include <sys/malloc.h>
+#include <sys/paths.h>
+#else
 #ifndef OPENBSD
 #ifdef __FreeBSD__
 #include <stdlib.h>
 #else
 #include <malloc.h>
+#endif
 #endif
 #endif
 #endif
@@ -257,7 +267,7 @@ extern int errno;
 #define maxargs 31
 #define cfmaxiplen 64       /* numerical ip length */
 #define noproccols 16
-#define hashtablesize 1021  /* prime number */
+#define hashtablesize 4969 /* prime number */
 #define macroalphabet 61    /* a-z, A-Z plus a bit */
 #define maxshellargs 30
 #define samemode 0
@@ -301,11 +311,14 @@ extern int errno;
 
 /*******************************************************************/
 
-#define AVDB_FILE     "cf_averages.db"
+#define AVDB_FILE     "cf_learning.db"
 #define STATEDB_FILE  "cf_state.db"
+#define LASTDB_FILE   "cf_lastseen.db"
 #define STATELOG_FILE "state_log"
 #define ENV_NEW_FILE  "env_data.new"
 #define ENV_FILE      "env_data"
+#define tcpdumpcommand "/usr/sbin/tcpdump -t -n -v"
+
 
 #define CFINPUTSVAR "CFINPUTS"          /* default name for file path var */
 #define CFALLCLASSESVAR "CFALLCLASSES"  /* default name for CFALLCLASSES env */
@@ -362,6 +375,7 @@ extern int errno;
 
 #define GRAINS   64
 #define ATTR     11
+#define NETATTR   7 /* icmp udp dns tcpsyn tcpfin tcpack */
 #define PH_LIMIT 10
 #define CFWEEK   (7.0*24.0*3600.0)
 #define MEASURE_INTERVAL (5.0*60.0)
@@ -384,7 +398,21 @@ struct Averages
    double var_loadavg;
    double var_incoming[ATTR];
    double var_outgoing[ATTR];
-   double var_pH[PH_LIMIT];      
+   double var_pH[PH_LIMIT];
+
+      /* tcpdump data - tag them on here ... */
+      
+   double expect_netin[NETATTR];
+   double expect_netout[NETATTR];
+   double var_netin[NETATTR];
+   double var_netout[NETATTR];
+   };
+
+
+struct LastSeen
+   {
+   double expect_lastseen;
+   time_t lastseen;      
    };
 
 /*******************************************************************/
@@ -475,6 +503,14 @@ enum cf_filetype
 
 /*******************************************************************/
 
+enum roles
+   {
+   cf_connect,
+   cf_accept
+   };
+
+/*******************************************************************/
+
 struct cfstat
    {
    char             *cf_filename;   /* What file are we statting? */
@@ -550,15 +586,22 @@ enum builtin
    fn_execresult,
    fn_returnszero,
    fn_iprange,
+   fn_hostrange,
    fn_isdefined,
    fn_strcmp,
+   fn_regcmp,
    fn_showstate,
+   fn_friendstat,
    fn_readfile,
    fn_returnvars,
    fn_returnclasses,
    fn_syslog,
    fn_setstate,
-   fn_unsetstate
+   fn_unsetstate,
+   fn_module,
+   fn_adj,
+   fn_readarray,
+   fn_readtable,
    };
 
 /*******************************************************************/
@@ -663,6 +706,7 @@ enum fileactions
 
 enum commattr  /* See COMMATTRIBUTES[] in globals.c  for matching entry */
    {
+   cffindertype,
    cfrecurse,
    cfmode,
    cfowner,
@@ -701,6 +745,7 @@ enum commattr  /* See COMMATTRIBUTES[] in globals.c  for matching entry */
    cfuseshell,
    cfsetlog,
    cfsetinform,
+   cfsetipaddress,
    cfsetnetmask,
    cfsetbroadcast,
    cfignore,
@@ -735,6 +780,8 @@ enum commattr  /* See COMMATTRIBUTES[] in globals.c  for matching entry */
    cfsendclasses,
    cfifelap,
    cfexpaft,
+   cfscan,
+   cfnoabspath,
    cfbad                        /* HvB must be as last */		
    };
 
@@ -815,6 +862,7 @@ enum vnames
    cfmulticonn,
    cfarglist,
    cfmethodname,
+   cfmethodpeers,
    cftrustkeys,
    cfdynamic,
    cfallowusers,
@@ -896,6 +944,12 @@ enum editnames
    DeleteLinesNotContaining,
    DeleteLinesMatching,
    DeleteLinesNotMatching,
+   DeleteLinesStartingFileItems,
+   DeleteLinesContainingFileItems,
+   DeleteLinesMatchingFileItems,  
+   DeleteLinesNotStartingFileItems,
+   DeleteLinesNotContainingFileItems,
+   DeleteLinesNotMatchingFileItems,  
    AppendIfNoSuchLine,
    PrependIfNoSuchLine,
    WarnIfNoSuchLine,
@@ -918,6 +972,7 @@ enum editnames
    SetSearchRegExp,
    LocateLineMatching,
    InsertLine,
+   AppendIfNoSuchLinesFromFile,
    IncrementPointer,
    ReplaceLineWith,
    DeleteToLineMatching,
@@ -1076,6 +1131,32 @@ enum pkgmgrs    /* Available package managers to query in packages: */
 
 typedef char flag;
 
+enum socks
+   {
+   netbiosns,
+   netbiosdgm,
+   netbiosssn,
+   irc,
+   cfengine,
+   nfsd,
+   smtp,
+   www,
+   ftp,
+   ssh,
+   wwws
+   };
+
+enum iptypes
+   {
+   icmp,
+   udp,
+   dns,
+   tcpsyn,
+   tcpack,
+   tcpfin,
+   tcpmisc
+   };
+
 /*******************************************************************/
 
 struct cfagent_connection
@@ -1096,6 +1177,7 @@ struct cfObject
    {
    char *scope;                       /* Name of object (scope) */
    char *hashtable[hashtablesize];    /* Variable heap  */
+   char *type[hashtablesize];         /* scalar or itlist? */
    char *classlist;                   /* Private classes -- ? */
    struct Item *actionsequence;
    struct cfObject *next;
@@ -1126,6 +1208,7 @@ struct Interface
    char done;
    char *scope;
    char *ifdev;
+   char *ipaddress;
    char *netmask;
    char *broadcast;
    char *classes;
@@ -1150,7 +1233,9 @@ struct Method
    struct Item   *return_classes;
    char          *file;
    char          *name;
+   unsigned char  digest[EVP_MAX_MD_SIZE+1];
    char          *classes;
+   char          *bundle;
    char           invitation;
    int            ifelapsed;
    int            expireafter;
@@ -1166,6 +1251,7 @@ struct Item
    char done;
    char *name;
    char *classes;
+   int counter;
    int ifelapsed;
    int expireafter;
    struct Item *next;
@@ -1362,10 +1448,11 @@ struct Disk
    char   force;	/* HvB: Bas van der Vlies */
    int    freespace;
    struct Disk *next;
-   int ifelapsed;
-   int expireafter;
+   int    ifelapsed;
+   int    expireafter;
    char   log;
    char   inform;
+   char   scanarrivals;
    };
 
 /*******************************************************************/
@@ -1397,6 +1484,7 @@ struct Disable
 
 struct Image
    {
+   char   *cf_findertype; /* Type info for finder */
    char   done;
    char   *scope;
    char   *path;
@@ -1439,7 +1527,6 @@ struct Image
    struct cfstat *cache;                              /* stat cache */
    struct CompressedArray *inode_cache;              /* inode cache */
  
-   struct in_addr *dns;                      /* Cache gethostbyname */
    int    addrfamily;
    
    struct Image *next;
@@ -1852,4 +1939,6 @@ struct Package      /* For packages: */
 /* All prototypes                                                   */
 /********************************************************************/
 
+#include <math.h>
+#include <db.h>
 #include "prototypes.h"

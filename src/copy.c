@@ -35,13 +35,10 @@
 
 /*********************************************************************/
 
-void CheckForHoles(sstat,ip)
+void CheckForHoles(struct stat *sstat,struct Image *ip)
 
 /* Need a transparent way of getting this into CopyReg() */
 /* Use a public member in struct Image                   */
-
-struct stat *sstat;
-struct Image *ip;
 
 {
 #ifndef IRIX
@@ -62,10 +59,7 @@ ip->makeholes = 0;
 
 /*********************************************************************/
 
-int CopyRegDisk(source,new,ip)
-
-char *source, *new;
-struct Image *ip;
+int CopyRegDisk(char *source,char *new,struct Image *ip)
 
 { int sd, dd, buf_size;
   char *buf, *cp;
@@ -121,7 +115,7 @@ while (true)
 
    if (ip->makeholes)
       {
-      buf[n_read] = 1;	                   /* Sentinel to stop loop.  */
+      buf[n_read] = 1;                    /* Sentinel to stop loop.  */
 
       /* Find first non-zero *word*, or the word with the sentinel.  */
 
@@ -147,12 +141,12 @@ while (true)
          /* Make a hole.  */
          if (lseek (dd, (off_t) n_read, SEEK_CUR) < 0L)
             {
-	    snprintf(OUTPUT,bufsize,"Copy failed (no space?) while doing %s to %s\n",source,new);
+            snprintf(OUTPUT,bufsize,"Copy failed (no space?) while doing %s to %s\n",source,new);
             CfLog(cferror,OUTPUT,"lseek");
             free(buf);
-	    unlink(new);
-	    close(dd);
-	    close(sd);
+            unlink(new);
+            close(dd);
+            close(sd);
             return false;
             }
          last_write_made_hole = 1;
@@ -163,23 +157,23 @@ while (true)
          intp = 0;
          }
       }
-
+   
    if (intp == 0)
       {
       if (cf_full_write (dd, buf, n_read) < 0)
          {
-	 snprintf(OUTPUT,bufsize*2,"Copy failed (no space?) while doing %s to %s\n",source,new);
+         snprintf(OUTPUT,bufsize*2,"Copy failed (no space?) while doing %s to %s\n",source,new);
          CfLog(cferror,OUTPUT,"");
          close(sd);
          close(dd);
          free(buf);
-	 unlink(new);
+         unlink(new);
          return false;
          }
       last_write_made_hole = 0;
       }
    }
-
+ 
   /* If the file ends with a `hole', something needs to be written at
      the end.  Otherwise the kernel would truncate the file at the end
      of the last write operation.  */
@@ -187,7 +181,7 @@ while (true)
   if (last_write_made_hole)
     {
     /* Write a null character and truncate it again.  */
-
+    
     if (cf_full_write (dd, "", 1) < 0 || ftruncate (dd, n_read_total) < 0)
        {
        CfLog(cferror,"cfengine: full_write or ftruncate error in CopyReg\n","write");
@@ -208,11 +202,7 @@ return true;
 
 /*********************************************************************/
 
-int EmbeddedWrite(new,dd,buf,ip,towrite,last_write_made_hole,n_read)
-
-int dd, towrite,*last_write_made_hole,n_read;
-char *new,*buf;
-struct Image *ip;
+int EmbeddedWrite(char *new,int dd,char *buf,struct Image *ip,int towrite,int *last_write_made_hole,int n_read)
 
 { int *intp;
  char *cp;
@@ -221,7 +211,7 @@ struct Image *ip;
  
  if (ip->makeholes)
     {
-    buf[n_read] = 1;	                   /* Sentinel to stop loop.  */
+    buf[n_read] = 1;                    /* Sentinel to stop loop.  */
     
     /* Find first non-zero *word*, or the word with the sentinel.  */
     intp = (int *) buf;
@@ -245,11 +235,11 @@ struct Image *ip;
        {
        /* Make a hole.  */
        if (lseek (dd,(off_t)n_read,SEEK_CUR) < 0L)
-	  {
-	  snprintf(OUTPUT,bufsize,"lseek in EmbeddedWrite, dest=%s\n", new);
-	  CfLog(cferror,OUTPUT,"lseek");
-	  return false;
-	  }
+          {
+          snprintf(OUTPUT,bufsize,"lseek in EmbeddedWrite, dest=%s\n", new);
+          CfLog(cferror,OUTPUT,"lseek");
+          return false;
+          }
        *last_write_made_hole = 1;
        }
     else

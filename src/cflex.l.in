@@ -55,7 +55,7 @@ space     [ \t]+
 comment   #.*
 
 linedir   #line[ \t]+[0-9]+.*
-function  [a-zA-Z0-9_]+\([^)]*\)
+function  [!a-zA-Z0-9_]+\([^)]*\)
 
 qstring  \"((\\\")|[^"])*\"|\'((\\\')|[^'])*\'|`[^`]*`
 
@@ -66,7 +66,7 @@ id        [a-zA-Z0-9_@EIGHTBIT@]+
 
 lvalue    [a-zA-Z0-9_@EIGHTBIT@]+
 
-classt    [.|!,;a-zA-Z0-9_()@EIGHTBIT@]+::
+classt    [.|&!,;a-zA-Z0-9_()@EIGHTBIT@]+::
 
 option    [a-z0-9]+=[^ \t\n]+
 

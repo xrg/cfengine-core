@@ -45,10 +45,7 @@ return true;
 
 /*********************************************************************/
 
-
-int MatchAFileSystem(server, lastlink)
-
-char *server, *lastlink;
+int MatchAFileSystem(char *server,char *lastlink)
 
 { struct Item *mp;
   char *sp;
@@ -89,13 +86,9 @@ return(false);
 
 /*********************************************************************/
 
-int IsMountedFileSystem (childstat,dir,rlevel)
+int IsMountedFileSystem (struct stat *childstat,char *dir,int rlevel)
 
  /* Is FS NFS mounted ? */
-
-char *dir;
-struct stat *childstat;
-int rlevel;
 
 { struct stat parentstat;
   struct Mountables *mp;
@@ -110,14 +103,14 @@ for (mp = VMOUNTABLES; mp !=NULL; mp=mp->next)
       Debug("Looking at filesystem %s on %s\n",mp->filesystem,host);
 
       if (strncmp(host,VFQNAME,strlen(host)) == 0)
-	 {
-	 Verbose("Filesystem %s belongs to this host\n",dir);
-	 return false;
-	 }
+         {
+         Verbose("Filesystem %s belongs to this host\n",dir);
+         return false;
+         }
       }
    }
-  
-strcpy(VBUFF,dir);
+ 
+ strcpy(VBUFF,dir);
 
 if (VBUFF[strlen(VBUFF)-1] == '/')
    {

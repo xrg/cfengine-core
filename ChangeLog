@@ -1,3 +1,174 @@
+2.1.5
+	KNOWN BUG in persistent state memory for tcpdump data - long ipv6
+	addresses can make a byte count > old for fewer incoming so it remembers
+	wrong snapshot
+
+	Double DeleteParser() fixed.
+
+	Code cosmetics:
+
+		Annoying tabs removed from sources
+		bzero -> memset explicitly
+		bcopy -> memcpy
+
+        Segmentation fault in list handling fixed (seldom occurrence)
+	
+2.1.4
+
+        "Bug" found in method recognition - only constant parameters allowed.
+        Time of day or relative hostames as parameters will not work
+
+	Mutexes around locking now.
+
+	
+	Variable expansion of server deferred in copy to allow dynamic server choice
+
+        Removed old dns lookup caching for ipv4 - means no prior check for existing hostnames,
+        but allows running with dynamical variables
+	
+	-q option added to cfexecd. If set it invokes cfagent with -q flag (--no-splay)
+	Rewritten function analysis for multiple arguments in assignments
+	ReadTable() and ReadArray() functions to read associative arrays from files
+	hpux class changed from 9000* to * in class matching. Assume old versions now dead
+
+
+	tcpdump interface for cfenvd
+	Attempt to detect ipv6 address from ifconfig on unix and add classes. Cannot yet bind to interface.
+	Make internal list representation of IP addresses.
+
+	Error in -f evaluation introduced in recent version fixed.
+
+	Bind to outgoing interface implemented for new getaddrinfo libs functions.
+ 	Same of fior cfservd 
+
+	   BindToInterface = ( )
+
+	editfiles additions:
+	
+        DeleteLinesContainingFileItems @var{filename}
+        DeleteLinesMatchingFileItems @var{filename}
+        DeleteLinesStartingFileItems @var{filename}
+        DeleteLinesNotContainingFileItems @var{filename}
+        DeleteLinesNotMatchingFileItems @var{filename}
+        DeleteLinesNotStartingFileItems @var{filename}
+	AppendIfNoSuchLinesFromFile @var{filename}
+
+	Special function added to alerts:
+
+   	   FriendStatus(hours)
+
+	shows hosts that have not reported in for hours.
+	
+2.1.3
+
+
+	Voluntary RPC remote methods implemented.
+	
+	Bug in ignore when doing file recursion fixed.
+	Wildcard match did not include plain files when expanding wildcards
+
+	Internal array representation added to expression evaluation
+	
+          $(array[key])  $(array[$(key)])
+
+        Arrays may be defined using the association function:
+
+	assoc_array = ( A(B,"is for bird") A(C,"is for cat") )
+	
+2.1.2
+
+	Various minor patches
+
+	singlecopy locking patch (Eric Sorenson)
+	Patches Iain Morgen (NASA)
+
+	cfexecd add From line to mail
+
+	RegCmp(regex,$listvar) function added to match classes
+
+	Documentation of iteration added to reference manual - was missing.
+	
+	Domain variable was overwritten in 2.1.0 when methods were initialized. Corrected.
+	Cfexecd #ifdefs not compatible with cygwin - rewritten workaround
+	Entropy measure anomaly classes
+
+	Comparator uninitialized in process matches, creating bogus outout with -d3
+	Chop function removes all trailing spaces.
+	interfaces now records ip addreses
+
+	Variables can override context using a dot notation:
+
+	  ${context.variable}  ${global.env_time}
+
+	Interface addresses on multiple interfaces:
+
+   	  ${global.ipv4[hme0]} 
+  	  ${global.ipv4[eth1]}
+
+	cfservd list handling bugs after user patch, plus enchanced iteration:
+        e.g. now make multiple rules in a sinlgle stanza
+	
+		control:
+
+		  Split = ( " " )
+		  hostlist = ( "10.10.10.1 10.10.10.2 10.10.10.3" )  
+		  dirs =  ( "bin etc lib" )
+		  base = ( /usr )
+
+		#########################################################
+
+		admit:
+
+		   $(base)/$(dirs)   $(hostlist)
+
+	results in:
+	
+		Path: /usr/bin (encrypt=0)
+		   Admit: 10.10.10.1 10.10.10.2 10.10.10.3 root=
+		Path: /usr/etc (encrypt=0)
+		   Admit: 10.10.10.1 10.10.10.2 10.10.10.3 root=
+		Path: /usr/lib (encrypt=0)
+		   Admit: 10.10.10.1 10.10.10.2 10.10.10.3 root=
+
+	
+	Allow modules during parsing to initialize classes etc.
+	
+	control:
+	
+            gotinit = ( PrepModule(startup1,"arg1 arg2...") )
+	
+       classes:	
+	
+             gotinit = ( PrepModule(startup2,"arg1 arg2"}) )
+
+	
+2.1.1
+	Permissions on explicitly mentioned links to files could result in file permission
+	being changed instead.
+
+	Error in permission evaluation for copied files fixed.
+	
+	Mac OSX finder patches added
+
+	ID classes rationalized into nameinfo.c
+
+	scanarrivals option to disks/required - for research.
+
+	Improved anomaly analysis.
+	
+	setting repository in cfservd.conf caused crash - fixed.
+
+	& is now a synonym for "." - the AND operator in class evaluation
+
+	! negation of functions in class assignments is now handled
+
+	New option noabspath=true for copy allows one to override the need for
+	a full path in certain situations, e.g. "export A=x; /dothis""
+
+	Redhat 9 class names patch JY.
+
+	Case insensitive domain matching
+	
 2.1.0
 
 	************************************************************************************

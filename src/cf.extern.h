@@ -30,13 +30,14 @@
 
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
 extern pthread_mutex_t MUTEX_SYSCALL;
+extern pthread_mutex_t MUTEX_LOCK;
 #endif
 
 extern int PASS;
 extern RSA *PRIVKEY, *PUBKEY;
-
-/* cfengine */
-
+extern char BINDINTERFACE[bufsize];
+extern char *ECGSOCKS[ATTR][2];
+extern char *TCPNAMES[NETATTR];
 extern char **METHODARGV;
 extern char METHODRETURNVARS[bufsize];
 extern char METHODRETURNCLASSES[maxvarsize];
@@ -50,6 +51,7 @@ extern char METHODMD5[bufsize];
 extern char PADCHAR;
 extern struct cfagent_connection *CONN;
 extern int AUTHENTICATED;
+extern struct Item *IPADDRESSES;
 
 extern char CFLOCK[bufsize];
 extern char SAVELOCK[bufsize];
@@ -127,6 +129,7 @@ extern int LINENUMBER;
 extern mode_t DEFAULTMODE;
 extern mode_t DEFAULTSYSTEMMODE;
 extern int HAVEUID;
+extern char *FINDERTYPE;
 extern char *VUIDNAME;
 extern char *VGIDNAME;
 extern char CFSERVER[];
@@ -219,6 +222,8 @@ extern enum classes VSYSTEMHARDCLASS;
 extern char VFQNAME[];
 extern char VUQNAME[];
 extern char LOGFILE[];
+
+extern short NOABSPATH;
 
 extern struct Item *VEXCLUDECACHE;
 extern struct Item *VSINGLECOPY;
@@ -318,6 +323,7 @@ extern struct Method *VMETHODSTOP;
 extern struct Process *VPROCLIST;
 extern struct Process *VPROCTOP;
 extern struct Item *VSERVERLIST;
+extern struct Item *VRPCPEERLIST;
 extern struct Item *VREDEFINES;
 
 extern struct Item *VREPOSLIST;
@@ -403,6 +409,7 @@ extern short NOSPLAY;
 extern short DONESPLAY;
 extern char XDEV;
 extern char TYPECHECK;
+extern char SCAN;
 
 extern enum actions ACTION;
 extern enum vnames CONTROLVAR;

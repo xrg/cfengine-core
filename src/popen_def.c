@@ -46,10 +46,7 @@ extern int    MAXFD; /* Max number of simultaneous pipes */
 
 /******************************************************************************/
 
-int cfpclose_def(pp,defines,elsedef)
-
-FILE *pp;
-char *defines,*elsedef;
+int cfpclose_def(FILE *pp,char *defines,char *elsedef)
 
 { int fd, status;
   pid_t pid;

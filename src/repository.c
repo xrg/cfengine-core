@@ -36,9 +36,7 @@
 
 /*********************************************************************/
 
-int Repository(file,repository)
-
-char *file, *repository;
+int Repository(char *file,char *repository)
 
  /* Returns true if the file was backup up and false if not */
 

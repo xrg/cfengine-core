@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.1.0p1 for version
-2.1.0p1 as last updated 22 October 2003.
+   This manual corresponds to CFENGINE Edition 2.1.5 for version 2.1.5
+as last updated 1 April 2004.
 
 * Menu:
 
@@ -70,7 +70,7 @@ implement configurations in practice.
 * Installation::
 * Work directory::
 * Hard classes::
-* Evaluated classes::
+* Evaluated classes and special functions::
 * Filenames and paths::
 
 
@@ -138,7 +138,7 @@ are mailed to the administrator, as previously, or can be copied to
 another central location and viewed in an alternative browser..
 
 
-File: cfengine-Reference.info,  Node: Hard classes,  Next: Evaluated classes,  Prev: Work directory,  Up: Reference introduction
+File: cfengine-Reference.info,  Node: Hard classes,  Next: Evaluated classes and special functions,  Prev: Work directory,  Up: Reference introduction
 
 Cfengine hard classes
 =====================
@@ -167,7 +167,7 @@ Cfengine hard classes
 
    * A month (in the form `January, February, ... December').
 
-   * A year (in the form `Yr1997, Yr2001').
+   * A year (in the form `Yr1997, Yr2004').
 
    * An arbitrary user-defined string.  (see the reference manual).
 
@@ -182,10 +182,10 @@ a trusted link can be established with cfenvd, i.e. if both are running
 with privilege, and the `/var/cfengine/env_data' file is secure.
 
 
-File: cfengine-Reference.info,  Node: Evaluated classes,  Next: Filenames and paths,  Prev: Hard classes,  Up: Reference introduction
+File: cfengine-Reference.info,  Node: Evaluated classes and special functions,  Next: Filenames and paths,  Prev: Hard classes,  Up: Reference introduction
 
-Evaluated classes
-=================
+Evaluated classes and special functions
+=======================================
 
    Cfengine provides a number of in-built functions for evaluating
 classes, based on file tests. Using these internal functions is quicker
@@ -208,6 +208,10 @@ arguments in chronological order.
 `IPRange(ADDRESS-RANGE)'
      True if the current host lies within the specified range
 
+`HostRange(BASENAME,START-STOP)'
+     True if the current relative domain name begins with basename and
+     ends with an integer between start and stop
+
 `IsDefined(COMMAND)'
      True of the named variable is defined. NB: `IsDefines(var)', not
      `IsDefined(${var})'
@@ -220,6 +224,16 @@ arguments in chronological order.
 
 `IsPlain(F)'
      True if the named file object is a plain file.
+
+`PrepModule(MODULE,ARG1 ARG2...)'
+     True if the named module exists and can be executed. The module is
+     assumed to follow the standard programming interface for modules,
+     *Note Writing plugin modules: (cfengine-Tutorial)Writing plugin
+     modules.  Unlike actionsequence modules, these modules are
+     evaluated immediately on parsing.
+
+`Regcmp(REGEXP,STRING OR LIST SEPARATED STRING)'
+     True if the string matched the regular expression.
 
 `ReturnsZero(COMMAND)'
      True if the named shell command returns with exit code zero (okay).
@@ -236,14 +250,16 @@ For example:
       isplain       = ( IsPlain(/tmp/import) )
       inrange       = ( IPRange(128.39.89.10-15) )
       CIDR          = ( IPRange(128.39.89.10/24) )
+      compute_nodes = ( HostRage(cpu-,01-32)
+      gotinit       = ( PrepModule(startup2,"arg1 arg2") )
 
 
-File: cfengine-Reference.info,  Node: Filenames and paths,  Prev: Evaluated classes,  Up: Reference introduction
+File: cfengine-Reference.info,  Node: Filenames and paths,  Prev: Evaluated classes and special functions,  Up: Reference introduction
 
 Filenames and paths
 ===================
 
-   Filenames in Unix-lik operating systems
+   Filenames in Unix-like operating systems
 
    The directory separator is the forward slash '/' character. All
 references to file locations must be absolute names in cfengine, i.e.
@@ -330,7 +346,7 @@ Cfagent reference
 * Menu:
 
 * Cfagent intro::
-* Special variables::
+* Variable expansion and contexts::
 * Cfengine classes::
 * acl::
 * alerts::
@@ -366,7 +382,7 @@ Cfagent reference
 * unmount::
 
 
-File: cfengine-Reference.info,  Node: Cfagent intro,  Next: Special variables,  Prev: Cfagent reference,  Up: Cfagent reference
+File: cfengine-Reference.info,  Node: Cfagent intro,  Next: Variable expansion and contexts,  Prev: Cfagent reference,  Up: Cfagent reference
 
 Cfagent intro
 =============
@@ -576,10 +592,147 @@ added:
      $ cfagent --just tidy --just shellcommands
 
 
-File: cfengine-Reference.info,  Node: Special variables,  Next: Cfengine classes,  Prev: Cfagent intro,  Up: Cfagent reference
+File: cfengine-Reference.info,  Node: Variable expansion and contexts,  Next: Cfengine classes,  Prev: Cfagent intro,  Up: Cfagent reference
+
+Variable expansion and contexts
+===============================
+
+   Variables in cfengine 2 are defined in contexts. Variables in a
+given context refer to the different phases of execution of cfengine:
+global, update and main.  In the "current" context, variables have the
+form
+     $(variable) ${variable}
+   and are expanded either on parsing or at execution. Variables that
+cannot be expanded remain as dollar strings. Variables belonging to a
+context that is not the current one may be referred to as
+     $(CONTEXT.variable) ${CONTEXT.variable}
+   e.g.
+     $(global.env_time)
+   Some variables in cfengine are associative arrays (as made famous by
+Perl).  Such arrays are referred to by square brackets:
+
+
+     $(array[key])  $(array[$(key)])
+
+and so on. Note carefully that cfengine requires parentheses or braces
+around variable names. Unlike in the shell, they cannot be omitted.
+
+* Menu:
+
+* Setting variables with functions::
+* Special variables::
+* Iteration over lists::
+
+
+File: cfengine-Reference.info,  Node: Setting variables with functions,  Next: Special variables,  Prev: Variable expansion and contexts,  Up: Variable expansion and contexts
+
+Setting variables with functions
+--------------------------------
+
+   A number of special functions can be used to set variables in
+cfengine.  You can import values from the execution of a shell command
+by prefixing a command with the word `exec'. This method is deprecated
+in version 2 an replaced by a function.
+
+
+       control:
+     
+        # old method
+     
+        listing = ( "exec /bin/ls -l" )
+     
+        # new method
+     
+        listing = ( ExecResult(/bin/ls -l) )
+
+This sets the variable `listing' to the output of the command in the
+quotes.
+
+   Some other internal functions are
+
+`RandomInt(A,B)'
+     Generate a random integer between a and b.
+
+`ReadArray(FILENAME,FILEFORMAT,SEPARATOR,COMMENT,MAX NUMBER OF BYTES)'
+     Reads up to a maximum number of bytes from a properly formatted
+     file into a one-dimensional associated array. File formats are:
+    `autokey'
+          If this format is specified, `ReadArray' tries to interpret
+          the file as a table of items separated with the separator
+          character. Blank lines and comments (to end of line) are
+          ignored.  Items are keyed numerically starting from 1 to the
+          maximum number in the file.  If the separation character is
+          not a newline `$(n)', then the newline is assumed to be a
+          separator also.
+
+    `textkey'
+          If this format is specified, `ReadArray' tries to interpret
+          the file as a list of lines of the form:
+                 key,value
+
+`ReadFile(FILENAME,MAX NUMBER OF BYTES)'
+     Read a maximum number of bytes from a file.
+
+`ReadTable(FILENAME,FILEFORMAT,SEPARATOR,COMMENT,MAX NUMBER OF BYTES)'
+     Reads up to a maximum number of bytes from a properly formatted
+     file into a two-dimensional associated array.
+    `autokey'
+          If this format is specified, `ReadArray' tries to interpret
+          the file as a table of items separated with the separator
+          character. Blank lines and comments (to end of line) are
+          ignored.  Items are keyed numerically starting from 1 to the
+          maximum number in the file.  Any lines that do not contain
+          the correct number of separators cause the function to fail
+          without making any assignment.
+
+    `textkey'
+          If this format is specified, `ReadArray' tries to interpret
+          the file as a list of lines of the form:
+                 key1,key2,,value
+
+`ExecResult(COMMAND)'
+     Executes the named shell command and inserts the output into the
+     variable. Note that, when this is used in cfengine internal list
+     variables, any spaces are interpreted as list separators. In other
+     lists, normal rules for iteration apply.  Note that functions
+should have no spaces between the function name and the leading
+parenthesis, but should themselves be surrounded by white space.
+
+For example:
+
+
+     control:
+     
+      variable2 = ( RandomInt(0,23) )
+     
+      variable3 = ( ExecResult(/bin/ls -a /opt) )
+     
+      myexcerpt  = ( ReadFile("/etc/services",220) )
+     
+      listvar = ( ReadArray(/tmp/array,textkey,",","#",100) )
+
+   In the latter case, the file could look like this:
+     host$ more /tmp/array
+     one,String to tbe read
+     two,Nothing string
+     three,Everything comes in threes
+
+and results in the definition of (verify with `cfagent -p -d3'):
+     OBJECT: main
+        960 : listvar[one]=String to tbe read
+        259 : listvar[two]=Nothing string
+        224 : listvar[three]=Everything comes in threes
+
+* Menu:
+
+* Special variables::
+* Iteration over lists::
+
+
+File: cfengine-Reference.info,  Node: Special variables,  Next: Iteration over lists,  Prev: Setting variables with functions,  Up: Variable expansion and contexts
 
 Special variables
-=================
+-----------------
 
    Variables are referred to in either of two different ways, depending
 on your taste.  You can use the forms `$(variable)' or `${variable}'.
@@ -638,7 +791,15 @@ internal variables.
 
 `ipaddress'
      The numerical form of the internet address of the host currently
-     running cfengine.
+     running cfengine, found by lookup in DNS.
+
+`ipv4[INTERFACE]'
+     The IPv4 address of the named interface, determined from a probe
+     of the interfaces. This variable belongs in the global context and
+     refers to as in the following examples:
+
+          ${global.ipv4[hme0]}
+          ${global.ipv4[eth0]}
 
 `MaxCfengines'
      The maximum number of cfengines which should be allowed to
@@ -727,7 +888,83 @@ troublesome special characters in strings.
      Expands to a single tab character.
 
 
-File: cfengine-Reference.info,  Node: Cfengine classes,  Next: acl,  Prev: Special variables,  Up: Cfagent reference
+File: cfengine-Reference.info,  Node: Iteration over lists,  Prev: Special variables,  Up: Variable expansion and contexts
+
+Iteration over lists
+--------------------
+
+   Variables can be used as iterators in some situations. Iteration
+over lists is currently rather limited in cfengine and is something to
+be improved on in a future version. When a variable is used as an
+iterator, a character is chosen to represent a list separator, as in
+the shell `IFS' variable.  The default separator is the colon `:'
+character:
+     control:
+     
+      listvar = ( one:two:three:four )
+   The action that contains a variable to be interpreted as a list
+appears as separate actions, one for each case:
+     shellcommand:
+     
+       "/bin/echo $(listvar)"
+   is equivalent to
+     shellcommand:
+     
+       "/bin/echo one"
+       "/bin/echo two"
+       "/bin/echo three"
+       "/bin/echo four"
+   If multiple iterators are used, these are handled as nested loops:
+     cfengine::/bin/echo one 1:     one 1
+     cfengine::/bin/echo one 2:     one 2
+     cfengine::/bin/echo one 3:     one 3
+     cfengine::/bin/echo one 4:     one 4
+     cfengine::/bin/echo two 1:     two 1
+     cfengine::/bin/echo two 2:     two 2
+     cfengine::/bin/echo two 3:     two 3
+     cfengine::/bin/echo two 4:     two 4
+     cfengine::/bin/echo three:     three 1
+     cfengine::/bin/echo three:     three 2
+     cfengine::/bin/echo three:     three 3
+     cfengine::/bin/echo three:     three 4
+     cfengine::/bin/echo four :     four 1
+     cfengine::/bin/echo four :     four 2
+     cfengine::/bin/echo four :     four 3
+     cfengine::/bin/echo four :     four 4
+   Where iterators are not allowed, the implied lists are treated as
+scalars:
+
+     alerts:
+     
+      amnexus::
+     
+       "do $(list1) $(list2)"
+   e.g.
+
+     cfengine:: do one:two:three:four 1:2:3:4
+
+   Iterative expansion is currently restricted to:
+   * In the `to' field of a multiple link action,
+
+   * In the `from' field of a copy action,
+
+   * In the directory field of a tidy action,
+
+   * In the directory field of the files action,
+
+   * In the directory field of the required/disk action,
+
+   * In the directory field of the disable action,
+
+   * In the directory field of the copy action,
+
+   * In the directory field of the admit/deny server access rules,
+
+   * Names in the ignore action.
+
+
+
+File: cfengine-Reference.info,  Node: Cfengine classes,  Next: acl,  Prev: Variable expansion and contexts,  Up: Cfagent reference
 
 Cfengine classes
 ================
@@ -770,7 +1007,7 @@ A single class can be one of several things:
 
    * A month (in the form `January, February, ... December').
 
-   * A year (in the form `Yr1997, Yr2001').
+   * A year (in the form `Yr1997, Yr2004').
 
    * An arbitrary user-defined string.  (see the reference manual).
 
@@ -792,9 +1029,11 @@ are separately true, thus in the above example the actions which follow
 `myclass', is of type `sun4' and the day is Monday!  In the second
 example, the host parsing the file must be either of type `sun4' _or_
 `ultrix' _or_ `osf'.  In other words, compound classes support two
-operators: AND and OR, written `.' and `|' respectively. Cfengine
-doesn't care how many of these operators you use (since it skips over
-blank class names), so you could write either
+operators: AND and OR, written `.' and `|' respectively.   From
+cfengine version 2.1.1, I bit the bullet and added `&' as a synonym for
+the AND operator.  Cfengine doesn't care how many of these operators
+you use (since it skips over blank class names), so you could write
+either
 
 
      solaris|irix::
@@ -890,7 +1129,7 @@ variable._ The dots in this string will be replaced by underscores.
 `!'
      The NOT operator binds tightest.
 
-`.'
+`. &'
      The AND operator binds more tightly than OR.
 
 `|'
@@ -1238,315 +1477,4 @@ one DCE/DFS ACL:
              group:/.../iu.hioslo.no/acct-admin:rwxcid
              user:/.../iu.hioslo.no/root:rx
              }
-
-
-File: cfengine-Reference.info,  Node: alerts,  Next: binservers,  Prev: acl,  Up: Cfagent reference
-
-alerts
-======
-
-   Alerts are normally just messages that are printed when classes
-become activated in order to alert the system administrator to some
-condition that has arisen.  Alerts can also be special functions, like
-`ShowState()' that generate system output.
-
-   Alerts cannot belong to the class `any', that would generate a
-message from every host. In a huge network this could result in vast
-amounts of Email. This behaviour can be forced, however, by creating an
-alias for the class `any' that is defined on the affected hosts.
-
-     alerts:
-     
-        class::
-     
-           QUOTED MESSAGE ifelapsed=TIME
-           ShowState(PARAMETER)
-           SysLog(PRIORITY,MESSAGE)
-           SetState(NAME,TTL,POLICY)
-           UnSetState(NAME)
-   For example:
-
-
-     alerts:
-     
-       "Reminder: say hello every hour" ifelapsed=60
-     
-       nfsd_in_high_dev2::
-     
-       "High NFS server access rate 2dev at $(host) value $(value_nfsd_in) av $(average_nfsd_in) pm $(stddev_nfsd_in)"
-       ShowState(incoming.nfs)
-     
-      # ROOT PROCS
-     
-       anomaly_hosts.RootProcs_high_dev2::
-     
-        "RootProc anomaly high 2 dev on $(host) value $(value_rootprocs) av $(average_rootprocs) pm $(stddev_rootprocs)"
-       ShowState(procs)
-
-   The `ShowState()' function reports on state gathered by the cfenvd
-daemon.
-     ShowState(incoming.smtp)
-     ShowState(outgoing.smtp)
-     ShowState(incoming.www)
-     ShowState(outgoing.www)
-     ShowState(procs)
-     ShowState(users)
-
-   To limit the frequency of alerts, you can set locking times:
-      # ROOT PROCS
-     
-       anomaly_hosts.RootProcs_high_dev2::
-     
-        "RootProc anomaly high 2 dev on $(host) value $(value_rootprocs) av $(average_rootprocs) pm $(stddev_rootprocs)"
-     
-        ShowState(procs)  ifelapsed=10 expireafter=20
-   Alerts can also be channeled directly to syslog, to avoid extraneous
-console messages or email.
-
-       SysLog(LOG_ERR,"Test syslog message")
-   One application for alerts is to pass signals from one cfengine to
-another by persistent, shared memory.  For example, suppose a
-short-lived anomaly event triggers a class that relates to a security
-alert. The event class might be too short-lived to be followed up by
-cfagent in full. One could thus set a long term class that would
-trigger up several follow-up checks.  A persistent class could also be
-used to exclude an operation for an interval of time.
-
-   Persistent class memory can be added through a system alert
-functions to give timer behaviour.  For example, consider setting a
-class that acts like a non-resettable timer. It is defined for exactly
-10 minutes before expiring.
-
-       SetState("preserved_class",10,Preserve)
-   Or to set a class that acts as a resettable timer. It is defined for
-60 minutes unless the SetState call is called again to extend its
-lifetime.
-
-       SetState(non_preserved_class,60,Reset)
-   Existing persistent classes can be deleted with:
-
-               UnsetState(myclass)
-
-
-File: cfengine-Reference.info,  Node: binservers,  Next: broadcast,  Prev: alerts,  Up: Cfagent reference
-
-binservers
-==========
-
-   The `binservers' declaration need only be used if you are using
-cfengine's model for mounting NFS filesystems.  This declaration informs
-hosts of which other hosts on the network possess filesystems containing
-software (binary files) which client hosts should mount.  This includes
-resources like programs in `/usr/local' and so on.  A host may have
-several binary servers, since there may be several machines to which
-disks are physically attached.  In most cases, on a well organized
-network, there will be only one _architecture server_ per UNIX platform
-type, for instance a SunOS server, an ULTRIX server and so on.
-
-   Binary servers are defined as follows:
-
-
-     binservers:
-     
-        physics.sun4::   sunserver sunserver2
-        physics.linux::  linuxserver
-
-The meaning of this declaration is the following.  All hosts of type
-`sun4' which are members of the group `physics' should mount any
-binaries declared in the `mountables' resource list which belong to
-hosts `sunserver' or `sunserver2'.  Similarly all `linux' machines
-should mount binary filesystems in the mountables list from
-`linuxserver'.
-
-   Cfengine knows the difference between binaries and home directories
-in the `mountables' list, because home directories match the pattern
-given by `homepattern'.  *Note homepattern::.  *Note homeservers::.
-
-   Note that every host is a binary server for itself, so that the first
-binary server (and that with highest priority) is always the current
-host.  This ensures that local filesystems are always used in preference
-to NFS mounted filesystems.  This is only relevant in connection with
-the variable `$(binserver)'.
-
-
-File: cfengine-Reference.info,  Node: broadcast,  Next: control,  Prev: binservers,  Up: Cfagent reference
-
-broadcast
-=========
-
-   This information is used to configure the network interface for each
-host.
-
-   Every local area network has a convention for determining which
-internet address is used for broadcast requests.  Normally this is an
-address of the form `aaa.bbb.ccc.255' or `aaa.bbb.ccc.0'.  The
-difference between these two forms is whether all of the bits in the
-last number are ones or zeroes respectively.  You must find out which
-convention is used at your establishment and tell cfengine using a
-declaration of the form:
-
-     broadcast:
-     
-       any::
-     
-          ones     # or zeros, or zeroes
-
-In most cases you can use the generic class `any', since all of the
-hosts on the same subnet have to use the same convention.  If your
-configuration file encompasses several different subnets with different
-conventions then you will need to use a more specific.
-
-   Cfengine computes the actual value of the broadcast address using the
-value specified above and the netmask *Note netmask::.
-
-
-File: cfengine-Reference.info,  Node: control,  Next: classes,  Prev: broadcast,  Up: Cfagent reference
-
-control
-=======
-
-   The fundamental piece of any cfengine script or configuration file is
-the control section.  If you omit this part of a cfengine script, it
-will not do anything! The control section is used to define certain
-variables, set default values and define the order in which the various
-actions you have defined will be carried out.  Because cfengine is a
-declarative or descriptive language, the order in which actions appear
-in the file does not necessarily reflect the order in which they are
-executed. The syntax of declarations here is:
-
-       control:
-     
-          CLASSES::
-     
-             VARIABLE = ( LIST OR VALUE FUNCTION(ARGS) )
-
-   The control section is a sequence of declarations which looks
-something like the following example:
-
-
-     control:
-     
-       site     = ( univ )
-       domain   = ( univ.edu )
-       sysadm   = ( admin@computing.univ.edu )
-       netmask  = ( 255.255.252.0 )
-       timezone = ( EDT )
-       nfstype  = ( nfs )
-     
-       childlibpath = ( /usr/local:/mylibs )
-     
-       sensiblesize  = ( 1000 )
-       sensiblecount = ( 2 )
-       editfilesize  = ( 4000 )
-     
-       actionsequence =
-          (
-          links.some
-          mountall
-          links.others
-          files
-          )
-     
-       myvariable = ( something )
-       mymacro    = ( somethingelse )
-       myrandom   = ( RandInt(3,6) )
-       myexcerpt  = ( ReadFile("/etc/services",220))
-
-Parentheses are required when making a declaring information in
-cfengine.  Note that a limited number of in-built functions exists:
-   * `RandomInt(a,b)' Is substituted for a random number between (a,b).
-
-   * `ReadFile'(FILENAME,MAX NUMBER OF BYTES) A maximum number of bytes
-     is read from the named file and placed in a variable.
-
-   The meaning of each of these lines is described below.
-
-* Menu:
-
-* access::
-* actionsequence::
-* addclasses::
-* addinstallable::
-* AllowRedefinitionOf::
-* AutoDefine::
-* BinaryPaddingChar::
-* ChecksumDatabase::
-* ChecksumPurge::
-* ChecksumUpdates::
-* childlibpath::
-* copylinks::
-* defaultcopytype::
-* defaultpkgmgr::
-* deletenonuserfiles::
-* deletenonownerfiles::
-* deletenonusermail::
-* deletenonownermail::
-* domain::
-* dryrun::
-* editbinaryfilesize::
-* editfilesize::
-* emptyresolvconf::
-* exclamation::
-* excludecopy::
-* excludelinks::
-* ExpireAfter::
-* homepattern::
-* HostnameKeys::
-* IfElapsed::
-* Inform::
-* interfacename::
-* fileextension::
-* linkcopies::
-* LogDirectory::
-* LogTidyHomeFiles::
-* moduledirectory::
-* mountpattern::
-* netmask::
-* nonalphanumfiles::
-* nfstype::
-* repchar::
-* repository::
-* RPMcommand::
-* schedule::
-* secureinput::
-* sensiblecount::
-* sensiblesize::
-* showactions::
-* singlecopy::
-* site::
-* Smtpserver::
-* SplayTime::
-* split::
-* spooldirectories::
-* suspiciousnames::
-* sysadm::
-* Syslog::
-* SyslogFacility::
-* timezone::
-* TimeOut::
-* Verbose::
-* Warnings::
-* warnnonuserfiles::
-* warnnonownerfiles::
-* warnnonusermail::
-* warnnonownermail::
-
-
-File: cfengine-Reference.info,  Node: access,  Next: actionsequence,  Prev: control,  Up: control
-
-access
-------
-
-   The `access' list is a list of users who are to be allowed to
-execute a cfengine program.  If the list does not exist then all users
-are allowed to run a program.
-
-        access = ( USER1 USER2 ...  )
-
-The list may consist of either numerical user identifiers or valid
-usernames from the password database.  For example:
-
-        access = ( mark aurora 22 456 )
-
-would restrict a script to users mark, aurora and user id 22 and 456.
 

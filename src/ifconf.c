@@ -89,13 +89,10 @@ char VNUMBROADCAST[256];
 
 /*******************************************************************/
 
-void IfConf (vifdev,vnetmask,vbroadcast)
-
-char *vifdev,*vnetmask, *vbroadcast;
+void IfConf (char *vifdev,char *vaddress,char *vnetmask,char *vbroadcast)
 
 { int sk, flags, metric, isnotsane = false;
 
- 
 Verbose("Assumed interface name: %s %s %s\n",vifdev,vnetmask,vbroadcast);
 
 if (!IsPrivileged())                            
@@ -115,7 +112,6 @@ if (vbroadcast[0] == '\0')
    CfLog(cferror,"Program does not define a broadcast mode for this host","");
    return;
    }
-
 
 strcpy(IFR.ifr_name,vifdev);
 IFR.ifr_addr.sa_family = AF_INET;
@@ -143,12 +139,12 @@ if (ioctl(sk,SIOCGIFMETRIC, (caddr_t) &IFR) == -1)   /* Get the routing priority
 
 metric = IFR.ifr_metric;
 
-isnotsane = GetIfStatus(sk,vifdev,vnetmask,vbroadcast);
+isnotsane = GetIfStatus(sk,vifdev,vaddress,vnetmask,vbroadcast);
 
 if (! DONTDO && isnotsane)
    {
-   SetIfStatus(sk,vifdev,vnetmask,vbroadcast);
-   GetIfStatus(sk,vifdev,vnetmask,vbroadcast);
+   SetIfStatus(sk,vifdev,vaddress,vnetmask,vbroadcast);
+   GetIfStatus(sk,vifdev,vaddress,vnetmask,vbroadcast);
    }
 
 close(sk);
@@ -157,10 +153,7 @@ close(sk);
 
 /*******************************************************************/
 
-int GetIfStatus(sk,vifdev,vnetmask,vbroadcast)
-
-int sk;
-char *vifdev,*vnetmask,*vbroadcast;
+int GetIfStatus(int sk,char *vifdev,char *vaddress,char *vnetmask,char *vbroadcast)
 
 { struct sockaddr_in *sin;
   struct sockaddr_in netmask;
@@ -177,7 +170,7 @@ if ((hp = gethostbyname(VSYSNAME.nodename)) == NULL)
    }
 else
    {
-   bcopy(hp->h_addr,&inaddr, hp->h_length);
+   memcpy(&inaddr,hp->h_addr,hp->h_length);
    Verbose("Address given by nameserver: %s\n",inet_ntoa(inaddr));
    }
 
@@ -190,7 +183,17 @@ if (ioctl(sk,SIOCGIFADDR, (caddr_t) &IFR) == -1)   /* Get the device status flag
 
 sin = (struct sockaddr_in *) &IFR.ifr_addr;
 
-
+if (strlen(vaddress) > 0)
+   {
+   if (strcmp(vaddress,(char *)inet_ntoa(sin->sin_addr)) != 0)
+      {
+      CfLog(cferror,"This machine is configured with an address which differs from\n","");
+      CfLog(cferror,"the cfagent configuration\n","");
+      CfLog(cferror,"Don't know what to do yet...\n","");
+      insane = true;
+      }
+   }
+ 
 if (strcmp((char *)inet_ntoa(*(struct in_addr *)(hp->h_addr)),(char *)inet_ntoa(sin->sin_addr)) != 0)
    {
    CfLog(cferror,"This machine is configured with an address which differs from\n","");
@@ -240,10 +243,7 @@ return(insane);
 
 /*******************************************************************/
 
-void SetIfStatus(sk,vifdev,vnetmask,vbroadcast)
-
-int sk;
-char *vifdev,*vnetmask, *vbroadcast;
+void SetIfStatus(int sk,char *vifdev,char *vaddress,char *vnetmask,char *vbroadcast)
 
 { struct sockaddr_in *sin;
   struct sockaddr_in netmask, broadcast;
@@ -257,6 +257,9 @@ char *vifdev,*vnetmask, *vbroadcast;
       perror ("Can't set IP address");
       return;
       } 
+
+
+ REWRITE THIS TO USE ifconfig / ipconfig
 
    **********************************/
 
@@ -310,9 +313,7 @@ else
 
 /*****************************************************/
 
-void GetBroadcastAddr(ipaddr,vifdev,vnetmask,vbroadcast)
-
-char *ipaddr,*vifdev,*vnetmask,*vbroadcast;
+void GetBroadcastAddr(char *ipaddr,char *vifdev,char *vnetmask,char *vbroadcast)
 
 { unsigned int na,nb,nc,nd;
   unsigned int ia,ib,ic,id;
@@ -403,7 +404,7 @@ while (!feof(pp))
       {
       if (strstr(VBUFF,VDEFAULTROUTE))
          {
-	 Verbose("cfengine: default route is already set to %s\n",VDEFAULTROUTE);
+  Verbose("cfengine: default route is already set to %s\n",VDEFAULTROUTE);
          defaultokay = 1;
          break;
          }
@@ -471,11 +472,11 @@ Verbose("Sorry don't know how to do routing on this platform\n");
 # endif
 }
 
-#else /* NT */
+#else /* NT or IRIX */
 
-void IfConf (vifdev,vnetmask,vbroadcast)
+void IfConf (vifdev,vaddress,vnetmask,vbroadcast)
 
-char *vifdev,*vnetmask, *vbroadcast;
+char *vifdev,*vaddress,*vnetmask, *vbroadcast;
 
 {
 Verbose("Network configuration is not implemented on this OS\n");

@@ -150,7 +150,7 @@ void ListDefinedInterfaces()
  
 for (ifp = VIFLIST; ifp !=NULL; ifp=ifp->next)
    {
-   printf("Interface %s, netmask=%s, broadcast=%s\n",ifp->ifdev,ifp->netmask,ifp->broadcast);
+   printf("Interface %s, ipv4=%s, netmask=%s, broadcast=%s\n",ifp->ifdev,ifp->ipaddress,ifp->netmask,ifp->broadcast);
    }
 }
 
@@ -253,7 +253,7 @@ printf ("\nDEFINED CHILD LINKS\n\n");
 for (ptr = VCHLINK; ptr != NULL; ptr=ptr->next)
    {
    printf("\nCLINK %s->%s force=%c attr=%d, rec=%d\n",ptr->from,ptr->to,
-	  ptr->force,ptr->silent,ptr->recurse);
+   ptr->force,ptr->silent,ptr->recurse);
 
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    
@@ -342,6 +342,8 @@ for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
       printf("   Send arg %d: %s\n",i++,ip->name);
       }
 
+   printf("   %s\n",ChecksumPrint('m',ptr->digest));
+
    i = 1;
    
    for (ip = ptr->send_classes; ip != NULL; ip=ip->next)
@@ -416,147 +418,141 @@ void ListDefinedImages()
   
 printf ("\nDEFINED FILE IMAGES\n\n");
 
-for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
-   {
-   for (ptr = VIMAGE; ptr != NULL; ptr=ptr->next)
-      {
-      if (strcmp(svp->name,ptr->server) != 0)  /* group together similar hosts so */
-	 {                                     /* can can do multiple transactions */
-	 continue;                             /* on one connection */
-	 } 
-      
-      printf("\nCOPY %s\n Mode +%o\n     -%o\n TO dest: %s\n action: %s\n",ptr->path,ptr->plus,ptr->minus,
-	     ptr->destination,ptr->action);
-
-      printf(" Size %c %d\n",ptr->comp,ptr->size);
-      printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
-      
-      if (ptr->recurse == INFINITERECURSE)
-	 {
-	 printf(" recurse=inf\n");
-	 }
-      else
-	 {
-	 printf(" recurse=%d\n",ptr->recurse);
-	 }
-
-      printf(" xdev = %c\n",ptr->xdev);
-      
-      printf(" uids = ( ");
-      
-      for (up = ptr->uid; up != NULL; up=up->next)
-	 {
-	 printf("%d ",up->uid);
-	 }
-      
-      printf(")\n gids = ( ");
-      
-      for (gp = ptr->gid; gp != NULL; gp=gp->next)
-	 {
-	 printf("%d ",gp->gid);
-	 }
-      
-      printf(")\n filters:");
-      
-      for (iip = ptr->filters; iip != NULL; iip=iip->next)
-	 {
-	 printf(" %s",iip->name);
-	 }
-      
-      printf("\n exclude:");
-      
-      for (iip = ptr->acl_aliases; iip != NULL; iip=iip->next)
-	 {
-	 printf(" ACL object %s\n",iip->name);
-	 }
-      
-      printf("\n ignore:");
-      
-      for (iip = ptr->ignores; iip != NULL; iip = iip->next)
-	 {
-	 printf(" %s",iip->name);
-	 }
-      
-      printf("\n");
-      printf(" symlink:");
-      
-      for (iip = ptr->symlink; iip != NULL; iip = iip->next)
-	 {
-	 printf(" %s",iip->name);
-	 }
-      
-      printf("\n include:");
-      
-      for (iip = ptr->inclusions; iip != NULL; iip = iip->next)
-	 {
-	 printf(" %s",iip->name);
-	 }
-      printf("\n");
-      
-      printf(" classes = %s\n",ptr->classes);
-      
-      printf(" method = %c (time/checksum)\n",ptr->type);
-      
-      printf(" server = %s (encrypt=%c,verified=%c)\n",ptr->server,ptr->encrypt,ptr->verify);
-      printf(" accept the server's public key on trust? %c\n",ptr->trustkey);
-      
-      printf(" purging = %c\n",ptr->purge);
-      
-      if (ptr->dns != NULL)
-	 {
-	 raddr.sin_addr.s_addr = (ptr->dns)->s_addr;
-	 printf(" host entry cache = %d = %s\n",ptr->dns,inet_ntoa(raddr.sin_addr));
-	 }
-      
-      if (ptr->defines)
-	 {
-	 printf(" Define %s\n",ptr->defines);
-	 }
-      
-      if (ptr->elsedef)
-	 {
-	 printf(" ElseDefine %s\n",ptr->elsedef);
-	 }
-
-      if (ptr->failover)
-	 {
-	 printf(" FailoverClasses %s\n",ptr->failover);
-	 }
-
-      switch (ptr->backup)
-	 {
-	 case 'n': printf(" NOT BACKED UP\n");
-	     break;
-	 case 'y': printf(" Single backup archive\n");
-	     break;
-	 case 's': printf(" Timestamped backups (full history)\n");
-	     break;
-	 default: printf (" UNKNOWN BACKUP POLICY!!\n");
-	 }
-
-
-      if (ptr->repository)
-	 {
-	 printf(" Local repository = %s\n",ptr->repository);
-	 }
-      
-      if (ptr->stealth == 'y')
-	 {
-	 printf(" Stealth copy\n");
-	 }
-
-      if (ptr->preservetimes == 'y')
-	 {
-	 printf(" File times preserved\n");
-	 }
-
-      if (ptr->forcedirs == 'y')
-	 {
-	 printf(" Forcible movement of obstructing files in recursion\n");
-	 }
-
-      }
-   }
+ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
+    {
+    for (ptr = VIMAGE; ptr != NULL; ptr=ptr->next)
+       {
+       if (strcmp(svp->name,ptr->server) != 0)  /* group together similar hosts so */
+          {                                     /* can can do multiple transactions */
+          continue;                             /* on one connection */
+          } 
+       
+       printf("\nCOPY %s\n Mode +%o\n     -%o\n TO dest: %s\n action: %s\n",ptr->path,ptr->plus,ptr->minus,
+              ptr->destination,ptr->action);
+       
+       printf(" Size %c %d\n",ptr->comp,ptr->size);
+       printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+       
+       if (ptr->recurse == INFINITERECURSE)
+          {
+          printf(" recurse=inf\n");
+          }
+       else
+          {
+          printf(" recurse=%d\n",ptr->recurse);
+          }
+       
+       printf(" xdev = %c\n",ptr->xdev);
+       
+       printf(" uids = ( ");
+       
+       for (up = ptr->uid; up != NULL; up=up->next)
+          {
+          printf("%d ",up->uid);
+          }
+       
+       printf(")\n gids = ( ");
+       
+       for (gp = ptr->gid; gp != NULL; gp=gp->next)
+          {
+          printf("%d ",gp->gid);
+          }
+       
+       printf(")\n filters:");
+       
+       for (iip = ptr->filters; iip != NULL; iip=iip->next)
+          {
+          printf(" %s",iip->name);
+          }
+       
+       printf("\n exclude:");
+       
+       for (iip = ptr->acl_aliases; iip != NULL; iip=iip->next)
+          {
+          printf(" ACL object %s\n",iip->name);
+          }
+       
+       printf("\n ignore:");
+       
+       for (iip = ptr->ignores; iip != NULL; iip = iip->next)
+          {
+          printf(" %s",iip->name);
+          }
+       
+       printf("\n");
+       printf(" symlink:");
+       
+       for (iip = ptr->symlink; iip != NULL; iip = iip->next)
+          {
+          printf(" %s",iip->name);
+          }
+       
+       printf("\n include:");
+       
+       for (iip = ptr->inclusions; iip != NULL; iip = iip->next)
+          {
+          printf(" %s",iip->name);
+          }
+       printf("\n");
+       
+       printf(" classes = %s\n",ptr->classes);
+       
+       printf(" method = %c (time/checksum)\n",ptr->type);
+       
+       printf(" server = %s (encrypt=%c,verified=%c)\n",ptr->server,ptr->encrypt,ptr->verify);
+       printf(" accept the server's public key on trust? %c\n",ptr->trustkey);
+       
+       printf(" purging = %c\n",ptr->purge);
+       
+       if (ptr->defines)
+          {
+          printf(" Define %s\n",ptr->defines);
+          }
+       
+       if (ptr->elsedef)
+          {
+          printf(" ElseDefine %s\n",ptr->elsedef);
+          }
+       
+       if (ptr->failover)
+          {
+          printf(" FailoverClasses %s\n",ptr->failover);
+          }
+       
+       switch (ptr->backup)
+          {
+          case 'n': printf(" NOT BACKED UP\n");
+              break;
+          case 'y': printf(" Single backup archive\n");
+              break;
+          case 's': printf(" Timestamped backups (full history)\n");
+              break;
+          default: printf (" UNKNOWN BACKUP POLICY!!\n");
+          }
+       
+       
+       if (ptr->repository)
+          {
+          printf(" Local repository = %s\n",ptr->repository);
+          }
+       
+       if (ptr->stealth == 'y')
+          {
+          printf(" Stealth copy\n");
+          }
+       
+       if (ptr->preservetimes == 'y')
+          {
+          printf(" File times preserved\n");
+          }
+       
+       if (ptr->forcedirs == 'y')
+          {
+          printf(" Forcible movement of obstructing files in recursion\n");
+          }
+       
+       }
+    }
 }
 
 /*********************************************************************/
@@ -597,31 +593,31 @@ for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
       {
       printf("\n    FOR CLASSES (%s)\n",tp->classes);
       printf("    pat=%s, %c-age=%d, size=%d, linkdirs=%c, rmdirs=%c, travlinks=%c compress=%c\n",
-	     tp->pattern,tp->searchtype,tp->age,tp->size,tp->dirlinks,tp->rmdirs,tp->travlinks,tp->compress);
+             tp->pattern,tp->searchtype,tp->age,tp->size,tp->dirlinks,tp->rmdirs,tp->travlinks,tp->compress);
       
       if (tp->defines)
-	 {
-	 printf("       Define %s\n",tp->defines);
-	 }
+         {
+         printf("       Define %s\n",tp->defines);
+         }
       
       if (tp->elsedef)
-	 {
-	 printf("       ElseDefine %s\n",tp->elsedef);
-	 }
+         {
+         printf("       ElseDefine %s\n",tp->elsedef);
+         }
       
       for (ip = tp->filters; ip != NULL; ip=ip->next)
-	 {
-	 printf(" Filter %s\n",ip->name);
-	 }   
+         {
+         printf(" Filter %s\n",ip->name);
+         }   
       
       if (tp->recurse == INFINITERECURSE)
-	 {
-	 printf("       recurse=inf\n");
-	 }
+         {
+         printf("       recurse=inf\n");
+         }
       else
-	 {
-	 printf("       recurse=%d\n",tp->recurse);
-	 }
+         {
+         printf("       recurse=%d\n",tp->recurse);
+         }
       }
    }
 }
@@ -640,12 +636,18 @@ for (ptr = VMOUNTABLES; ptr != NULL; ptr=ptr->next)
    printf("%s ",ptr->filesystem);
 
    if ( ptr->readonly )
+      {
       printf(" ro\n");
+      }
    else
+      {
       printf(" rw\n");
+      }
 
    if ( ptr->mountopts != NULL )
+      {
       printf("\t %s\n", ptr->mountopts );
+      }
    }
 }
 
@@ -675,9 +677,9 @@ printf ("\nDEFINED REQUIRE\n\n");
 for (ptr = VREQUIRED; ptr != NULL; ptr=ptr->next)
    {
    /* HvB : Bas van der Vlies */
-   printf("%s, freespace=%d, force=%c, define=%s\n",
-	  ptr->name,ptr->freespace, ptr->force,ptr->define);
+   printf("%s, freespace=%d, force=%c, define=%s\n",ptr->name,ptr->freespace, ptr->force,ptr->define);
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+   printf(" scanarrivals=%c\n",ptr->scanarrivals);
    }
 }
 
@@ -720,7 +722,7 @@ for (ptr = VDISABLELIST; ptr != NULL; ptr=ptr->next)
    else
       {
       printf("\nDISABLE %s:\n rotate=%d, type=%s, size%c%d action=%c\n",
-	  ptr->name,ptr->rotate,ptr->type,ptr->comp,ptr->size,ptr->action);
+             ptr->name,ptr->rotate,ptr->type,ptr->comp,ptr->size,ptr->action);
       }
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    if (ptr->repository)
@@ -732,7 +734,7 @@ for (ptr = VDISABLELIST; ptr != NULL; ptr=ptr->next)
       {
       printf(" Define %s\n",ptr->defines);
       }
-
+   
    if (ptr->elsedef)
       {
       printf(" ElseDefine %s\n",ptr->elsedef);
@@ -839,8 +841,8 @@ printf ("\nDEFINED FILES\n\n");
 for (ptr = VFILE; ptr != NULL; ptr=ptr->next)
    {
    printf("\nFILE OBJECT %s\n +%o\n -%o\n +%o\n -%o\n %s\n travelinks=%c\n",
-	  ptr->path,ptr->plus,ptr->minus,ptr->plus_flags,ptr->minus_flags,
-	  FILEACTIONTEXT[ptr->action],ptr->travlinks);
+   ptr->path,ptr->plus,ptr->minus,ptr->plus_flags,ptr->minus_flags,
+   FILEACTIONTEXT[ptr->action],ptr->travlinks);
 
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    if (ptr->recurse == INFINITERECURSE)
@@ -879,7 +881,7 @@ for (ptr = VFILE; ptr != NULL; ptr=ptr->next)
       {
       printf(" Filter %s\n",ip->name);
       }   
-	  
+   
    for (ip = ptr->exclusions; ip != NULL; ip = ip->next)
       {
       printf(" Exclude %s\n",ip->name);
@@ -960,8 +962,8 @@ for (ptr = VPROCLIST; ptr != NULL; ptr=ptr->next)
       sp = ptr->restart;
       }
    
-   printf("\nPROCESS %s\n Restart = %s (useshell=%c)\n matches: %c%d\n signal=%s\n action=%c\n",
-	  ptr->expr,sp,ptr->useshell,ptr->comp,ptr->matches,SIGNALS[ptr->signal],ptr->action);
+   printf("\nPROCESS %s\n Restart = %s (useshell=%c)\n matches: (%c)%d\n signal=%s\n action=%c\n",
+   ptr->expr,sp,ptr->useshell,ptr->comp,ptr->matches,SIGNALS[ptr->signal],ptr->action);
 
    printf (" ChDir=%s, ChRoot=%s\n",ptr->chdir,ptr->chroot);
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
@@ -1030,19 +1032,18 @@ void ListDefinedStrategies()
  
 printf("\nDEFINED STRATEGIES\n\n");
 
-for (ptr = VSTRATEGYLIST; ptr != NULL; ptr=ptr->next)
-   {
-   printf("%s (type=%c)\n",ptr->name,ptr->type);
-   if (ptr->strategies)
-      {
-      for (ip = ptr->strategies; ip !=NULL; ip=ip->next)
-	 {
-	 printf("  %s - weight %s\n",ip->name,ip->classes);
-	 }
-      }
-   printf("\n");
-   }
-
+ for (ptr = VSTRATEGYLIST; ptr != NULL; ptr=ptr->next)
+    {
+    printf("%s (type=%c)\n",ptr->name,ptr->type);
+    if (ptr->strategies)
+       {
+       for (ip = ptr->strategies; ip !=NULL; ip=ip->next)
+          {
+          printf("  %s - weight %s\n",ip->name,ip->classes);
+          }
+       }
+    printf("\n");
+    } 
 }
 
 /*******************************************************************/
@@ -1102,13 +1103,13 @@ for (ptr=VFILTERLIST; ptr != NULL; ptr=ptr->next)
       {
       printf(" ElseDefines: %s\n",ptr->elsedef);
       }
-
+   
    for (i = 0; i < NoFilter; i++)
       {
       if (ptr->criteria[i] != NULL)
-	 {
-	 printf(" (%s) [%s]\n",VFILTERNAMES[i],ptr->criteria[i]);
-	 }
+         {
+         printf(" (%s) [%s]\n",VFILTERNAMES[i],ptr->criteria[i]);
+         }
       }
    }
 }
@@ -1155,11 +1156,11 @@ void ListDefinedPackages()
        {
        printf(" Define %s\n",ptr->defines);
        }
- 
+    
     if (ptr->elsedef)
        {
        printf(" ElseDefine %s\n",ptr->elsedef);
        }
     }
-    printf("\n");
+ printf("\n");
 }

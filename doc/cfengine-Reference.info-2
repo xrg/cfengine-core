@@ -11,6 +11,332 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: alerts,  Next: binservers,  Prev: acl,  Up: Cfagent reference
+
+alerts
+======
+
+   Alerts are normally just messages that are printed when classes
+become activated in order to alert the system administrator to some
+condition that has arisen.  Alerts can also be special functions, like
+`ShowState()' that generate system output.
+
+   Alerts cannot belong to the class `any', that would generate a
+message from every host. In a huge network this could result in vast
+amounts of Email. This behaviour can be forced, however, by creating an
+alias for the class `any' that is defined on the affected hosts.
+
+     alerts:
+     
+        class::
+     
+           QUOTED MESSAGE ifelapsed=TIME
+           ShowState(PARAMETER)
+           SysLog(PRIORITY,MESSAGE)
+           SetState(NAME,TTL,POLICY)
+           UnSetState(NAME)
+           FriendStatus(MINUTES)
+   For example:
+
+
+     alerts:
+     
+       "Reminder: say hello every hour" ifelapsed=60
+     
+       nfsd_in_high_dev2::
+     
+       "High NFS server access rate 2dev at $(host) value $(value_nfsd_in) av $(average_nfsd_in) pm $(stddev_nfsd_in)"
+       ShowState(incoming.nfs)
+     
+      # ROOT PROCS
+     
+       anomaly_hosts.RootProcs_high_dev2::
+     
+        "RootProc anomaly high 2 dev on $(host) value $(value_rootprocs) av $(average_rootprocs) pm $(stddev_rootprocs)"
+       ShowState(procs)
+
+   The `ShowState()' function reports on state gathered by the cfenvd
+daemon.
+     ShowState(incoming.tcpsyn)
+     ShowState(outgoing.smtp)
+     ShowState(incoming.www)
+     ShowState(outgoing.www)
+     ShowState(procs)
+     ShowState(users)
+
+   To limit the frequency of alerts, you can set locking times:
+      # ROOT PROCS
+     
+       anomaly_hosts.RootProcs_high_dev2::
+     
+        "RootProc anomaly high 2 dev on $(host) value $(value_rootprocs) av $(average_rootprocs) pm $(stddev_rootprocs)"
+     
+        ShowState(procs)  ifelapsed=10 expireafter=20
+   Alerts can also be channeled directly to syslog, to avoid extraneous
+console messages or email.
+
+       SysLog(LOG_ERR,"Test syslog message")
+   One application for alerts is to pass signals from one cfengine to
+another by persistent, shared memory.  For example, suppose a
+short-lived anomaly event triggers a class that relates to a security
+alert. The event class might be too short-lived to be followed up by
+cfagent in full. One could thus set a long term class that would
+trigger up several follow-up checks.  A persistent class could also be
+used to exclude an operation for an interval of time.
+
+   Persistent class memory can be added through a system alert
+functions to give timer behaviour.  For example, consider setting a
+class that acts like a non-resettable timer. It is defined for exactly
+10 minutes before expiring.
+
+       SetState("preserved_class",10,Preserve)
+   Or to set a class that acts as a resettable timer. It is defined for
+60 minutes unless the SetState call is called again to extend its
+lifetime.
+
+       SetState(non_preserved_class,60,Reset)
+   Existing persistent classes can be deleted with:
+
+               UnsetState(myclass)
+   The `FriendStatus' function is available from version 2.1.4 and
+displays a message if hosts that normally have a cfengine protocol
+connection with the current host have not connected for more than than
+specified number of minutes. If the number of minutes is set to zero,
+cfengine uses a machine-learned expectation value for the time and uses
+this. The friend status of a host is thus the expectation that there is
+a problem with a remote peer.
+
+
+File: cfengine-Reference.info,  Node: binservers,  Next: broadcast,  Prev: alerts,  Up: Cfagent reference
+
+binservers
+==========
+
+   The `binservers' declaration need only be used if you are using
+cfengine's model for mounting NFS filesystems.  This declaration informs
+hosts of which other hosts on the network possess filesystems containing
+software (binary files) which client hosts should mount.  This includes
+resources like programs in `/usr/local' and so on.  A host may have
+several binary servers, since there may be several machines to which
+disks are physically attached.  In most cases, on a well organized
+network, there will be only one _architecture server_ per UNIX platform
+type, for instance a SunOS server, an ULTRIX server and so on.
+
+   Binary servers are defined as follows:
+
+
+     binservers:
+     
+        physics.sun4::   sunserver sunserver2
+        physics.linux::  linuxserver
+
+The meaning of this declaration is the following.  All hosts of type
+`sun4' which are members of the group `physics' should mount any
+binaries declared in the `mountables' resource list which belong to
+hosts `sunserver' or `sunserver2'.  Similarly all `linux' machines
+should mount binary filesystems in the mountables list from
+`linuxserver'.
+
+   Cfengine knows the difference between binaries and home directories
+in the `mountables' list, because home directories match the pattern
+given by `homepattern'.  *Note homepattern::.  *Note homeservers::.
+
+   Note that every host is a binary server for itself, so that the first
+binary server (and that with highest priority) is always the current
+host.  This ensures that local filesystems are always used in preference
+to NFS mounted filesystems.  This is only relevant in connection with
+the variable `$(binserver)'.
+
+
+File: cfengine-Reference.info,  Node: broadcast,  Next: control,  Prev: binservers,  Up: Cfagent reference
+
+broadcast
+=========
+
+   This information is used to configure the network interface for each
+host.
+
+   Every local area network has a convention for determining which
+internet address is used for broadcast requests.  Normally this is an
+address of the form `aaa.bbb.ccc.255' or `aaa.bbb.ccc.0'.  The
+difference between these two forms is whether all of the bits in the
+last number are ones or zeroes respectively.  You must find out which
+convention is used at your establishment and tell cfengine using a
+declaration of the form:
+
+     broadcast:
+     
+       any::
+     
+          ones     # or zeros, or zeroes
+
+In most cases you can use the generic class `any', since all of the
+hosts on the same subnet have to use the same convention.  If your
+configuration file encompasses several different subnets with different
+conventions then you will need to use a more specific.
+
+   Cfengine computes the actual value of the broadcast address using the
+value specified above and the netmask *Note netmask::.
+
+
+File: cfengine-Reference.info,  Node: control,  Next: classes,  Prev: broadcast,  Up: Cfagent reference
+
+control
+=======
+
+   The fundamental piece of any cfengine script or configuration file is
+the control section.  If you omit this part of a cfengine script, it
+will not do anything! The control section is used to define certain
+variables, set default values and define the order in which the various
+actions you have defined will be carried out.  Because cfengine is a
+declarative or descriptive language, the order in which actions appear
+in the file does not necessarily reflect the order in which they are
+executed. The syntax of declarations here is:
+
+       control:
+     
+          CLASSES::
+     
+             VARIABLE = ( LIST OR VALUE FUNCTION(ARGS) )
+
+   The control section is a sequence of declarations which looks
+something like the following example:
+
+
+     control:
+     
+       site     = ( univ )
+       domain   = ( univ.edu )
+       sysadm   = ( admin@computing.univ.edu )
+       netmask  = ( 255.255.252.0 )
+       timezone = ( EDT )
+       nfstype  = ( nfs )
+     
+       childlibpath = ( /usr/local:/mylibs )
+     
+       sensiblesize  = ( 1000 )
+       sensiblecount = ( 2 )
+       editfilesize  = ( 4000 )
+     
+       actionsequence =
+          (
+          links.some
+          mountall
+          links.others
+          files
+          )
+     
+       myvariable = ( something )
+       mymacro    = ( somethingelse )
+       myrandom   = ( RandomInt(3,6) )
+       myexcerpt  = ( ReadFile("/etc/services",220))
+
+Parentheses are required when making a declaring information in
+cfengine.  Note that a limited number of in-built functions exists:
+   * `ExecResult'(COMMAND) Executes the named shell command and inserts
+     the output into the variable.  Note that, when this is used in
+     cfengine internal list variables, any spaces are interpreted as
+     list separators. In other lists, normal rules for iteration apply.
+
+   * `RandomInt(a,b)' Is substituted for a random number between (a,b).
+
+   * `ReadFile'(FILENAME,MAX NUMBER OF BYTES) A maximum number of bytes
+     is read from the named file and placed in a variable.
+   For more functions, *Note Setting variables with functions::.
+
+   The meaning of each of these lines is described below.
+
+* Menu:
+
+* access::
+* actionsequence::
+* addclasses::
+* addinstallable::
+* AllowRedefinitionOf::
+* AutoDefine::
+* BinaryPaddingChar::
+* ChecksumDatabase::
+* BindToInterface(cfagent)::
+* ChecksumPurge::
+* ChecksumUpdates::
+* childlibpath::
+* copylinks::
+* defaultcopytype::
+* defaultpkgmgr::
+* deletenonuserfiles::
+* deletenonownerfiles::
+* deletenonusermail::
+* deletenonownermail::
+* domain::
+* dryrun::
+* editbinaryfilesize::
+* editfilesize::
+* emptyresolvconf::
+* exclamation::
+* excludecopy::
+* excludelinks::
+* ExpireAfter::
+* homepattern::
+* HostnameKeys::
+* IfElapsed::
+* Inform::
+* interfacename::
+* fileextension::
+* linkcopies::
+* LogDirectory::
+* LogTidyHomeFiles::
+* moduledirectory::
+* mountpattern::
+* netmask::
+* nonalphanumfiles::
+* nfstype::
+* repchar::
+* repository::
+* RPMcommand::
+* schedule::
+* secureinput::
+* sensiblecount::
+* sensiblesize::
+* showactions::
+* singlecopy::
+* site::
+* Smtpserver::
+* SplayTime::
+* split::
+* spooldirectories::
+* suspiciousnames::
+* sysadm::
+* Syslog::
+* SyslogFacility::
+* timezone::
+* TimeOut::
+* Verbose::
+* Warnings::
+* warnnonuserfiles::
+* warnnonownerfiles::
+* warnnonusermail::
+* warnnonownermail::
+
+
+File: cfengine-Reference.info,  Node: access,  Next: actionsequence,  Prev: control,  Up: control
+
+access
+------
+
+   The `access' list is a list of users who are to be allowed to
+execute a cfengine program.  If the list does not exist then all users
+are allowed to run a program.
+
+        access = ( USER1 USER2 ...  )
+
+The list may consist of either numerical user identifiers or valid
+usernames from the password database.  For example:
+
+        access = ( mark aurora 22 456 )
+
+would restrict a script to users mark, aurora and user id 22 and 456.
+
+
 File: cfengine-Reference.info,  Node: actionsequence,  Next: addclasses,  Prev: access,  Up: control
 
 actionsequence
@@ -96,15 +422,14 @@ Here is a more complete description of the meaning of these keywords.
      cfengine, a mechanism has been introduced in version 1.5 which
      allows you to include a module of your own making in order to
      define or undefine a number of classes.  The syntax
-            module:mytests.CLASS1.CLASS2.CLASS3
+            module:mytests
           
-            "module:mytests.CLASS1.CLASS2.CLASS3 arg1 arg2 .."
+            "module:mytests arg1 arg2 .."
      declares a user defined module which can potentially set the
      classes CLASS1 etc. Classes returned by the module must be
      declared so that cfengine knows to pay attention to rules which
-     use these classes when parsing. Note might actually be preferable
-     to define classes returned by modules under `AddInstallables'
-     which is equivalent. If arguments are passed to the module, the
+     use these classes when parsing; this is done using
+     `AddInstallables'. If arguments are passed to the module, the
      whole string must be quoted like a shellcommand.  *Note Writing
      plugin modules: (cfengine-Tutorial)Writing plugin modules.
      Whether or not these classes become set or not depends on the
@@ -338,7 +663,7 @@ space character, since this is normally used to edit filenames or text
 messages within program code.
 
 
-File: cfengine-Reference.info,  Node: ChecksumDatabase,  Next: ChecksumPurge,  Prev: BinaryPaddingChar,  Up: control
+File: cfengine-Reference.info,  Node: ChecksumDatabase,  Next: BindToInterface(cfagent),  Prev: BinaryPaddingChar,  Up: control
 
 ChecksumDatabase
 ----------------
@@ -350,7 +675,21 @@ digests (i.e. cryptographic checksums) of files for security purposes,
 *Note files::, `checksum='.
 
 
-File: cfengine-Reference.info,  Node: ChecksumPurge,  Next: ChecksumUpdates,  Prev: ChecksumDatabase,  Up: control
+File: cfengine-Reference.info,  Node: BindToInterface(cfagent),  Next: ChecksumPurge,  Prev: ChecksumDatabase,  Up: control
+
+BindToInterface
+---------------
+
+   If this is set to a specific IP address of an IP configured
+interface, cfagent will use that address for outgoing connections.  On
+Multi-homed hosts this allows one to restrict the traffic to a known
+interface. An interface must be configured with an IP address in order
+to be bound.
+
+   This feature is not available for old operating systems.
+
+
+File: cfengine-Reference.info,  Node: ChecksumPurge,  Next: ChecksumUpdates,  Prev: BindToInterface(cfagent),  Up: control
 
 ChecksumPurge
 -------------
@@ -860,6 +1199,8 @@ File: cfengine-Reference.info,  Node: LogDirectory,  Next: LogTidyHomeFiles,  Pr
 LogDirectory
 ------------
 
+   This is now deprecated.
+
    Specify an alternative directory for keeping cfengine's log data.
 This defaults to `/var/run/cfengine' or `/var/cfengine'.
 
@@ -1077,345 +1418,4 @@ RPMcommand
    The default value of the Red Hat Package manager command `/bin/rpm'
 can be altered for non-standard systems with this variable.
      RPMcommand = ( /usr/bin/rpm )
-
-
-File: cfengine-Reference.info,  Node: schedule,  Next: secureinput,  Prev: RPMcommand,  Up: control
-
-Schedule
---------
-
-        schedule  = (  Min00_05 Min30_35 TIME CLASS )
-
-   When `cfexecd' is used in daemon mode, it defaults to running once
-an hour, on the hour, i.e..
-        schedule  = (  Min00_05 )
-   This can be extended to make the agent run more often. The time
-specifiers are cfengine classes, and are written as intervals of time
-rather the precise times.  Cfengine's time resolution is purposely
-limited to five minutes because the auto-correlation time of user
-resources is generally greater than this. Thus, it is assumed that
-precision timing is not required and the start time of cfengine, when
-scheduled in daemon mode, is not better than a few minutes.  The daemon
-does not require precision, but offers many other strategic features
-for load balancing and security.
-
-   Other time classes can be used in the schedule list, but note that
-cfexecd will not run the agent more than once every five minutes.  This
-is treated as a fundamental granularity.
-
-
-File: cfengine-Reference.info,  Node: secureinput,  Next: sensiblecount,  Prev: schedule,  Up: control
-
-SecureInput
------------
-
-        SecureInput = ( on )
-
-   If this is set cfengine will not import files which are not owned by
-the uid running the program, or    which are writable by groups or
-others.
-
-
-File: cfengine-Reference.info,  Node: sensiblecount,  Next: sensiblesize,  Prev: secureinput,  Up: control
-
-SensibleCount
--------------
-
-        SensibleCount  = ( COUNT )
-
-   This variable is used by the action `required'.  It defines for
-cfengine what you consider to be the minimum number of files in a
-`required' directory.  If you declare a directory as being required,
-cfengine will check to see if it exists.  Then, if the directory
-contains fewer than the value of `sensiblecount' files, a warning is
-issued.  The default value for this variable is 2.
-
-
-File: cfengine-Reference.info,  Node: sensiblesize,  Next: showactions,  Prev: sensiblecount,  Up: control
-
-SensibleSize
-------------
-
-        SensibleSize  = ( SIZE )
-
-   This variable is used by the action `required'.  It defines for
-cfengine what you consider to be the minimum size for a `required' file.
-If you declare a file as being required, cfengine will check to see if
-the file exists.  Of course, the file may exist but be empty, so the
-size of the file is also checked against this constant.  If the file is
-smaller than the value of `sensiblesize' a warning is issued.  The
-default value for this variable is 1000 bytes.
-
-
-File: cfengine-Reference.info,  Node: showactions,  Next: singlecopy,  Prev: sensiblesize,  Up: control
-
-ShowActions
------------
-
-        ShowActions  = ( ON )
-
-   This causes cfengine to produce detailed output of what action is
-being carried out as part of the prefix information during output.
-This is intended only for third party tools which collect and parse the
-cfengine output. It will be of little interest to humans.
-
-
-File: cfengine-Reference.info,  Node: singlecopy,  Next: site,  Prev: showactions,  Up: control
-
-SingleCopy
-----------
-
-
-     	singlecopy = ( on )
-
-   If `singlecopy' is defined the behavior of copy: is modified so that
-a file will only be copied once, helping to achieve hierarchical or
-"most specific" file copy overrides, provided that the most specific
-file occurs first.  With the following file structure on a host running
-cfservd:
-
-   	/dist/hosts/loghost1.example.com/etc/syslog.conf
-/dist/solaris/etc/syslog.conf 	/dist/all/etc/syslog.conf
-
-   The configuration:
-
-     control:
-     	singlecopy = ( on )
-     
-     copy:
-     
-      /dist/${fqhost}       dest=/ inform=true syslog=true r=inf server=disthost
-      /dist/${ostype}       dest=/ inform=true syslog=true r=inf server=disthost
-      /dist/all             dest=/ inform=true syslog=true r=inf server=disthost
-
-Would result in:
-
-     /dist/hosts/loghost1.example.com/etc/syslog.conf being copied to loghost1.example.com
-     /dist/solaris/etc/syslog.conf being copied to Solaris systems
-     /dist/all/etc/syslog.conf being copied to all other systems
-
-   CAUTION: this feature is necessarily memory intensive.
-
-
-File: cfengine-Reference.info,  Node: site,  Next: Smtpserver,  Prev: singlecopy,  Up: control
-
-site/faculty
-------------
-
-       site    = ( SITENAME )
-       faculty = ( FACULTYNAME )
-
-   This variable defines a convenient name for your site configuration.
-It is useful for making generic rules later on, because it means for
-instance that you can define the name of a directory to be
-
-     /$(site)/$(host)/local
-
-without having to redefine the rule for a specific site.  This is a
-handy trick for making generic rules in your files which can be imported
-into a configuration for any site.
-
-   `faculty' is a synonym for `site'.  The two names may be used
-interchangeably.
-
-
-File: cfengine-Reference.info,  Node: Smtpserver,  Next: SplayTime,  Prev: site,  Up: control
-
-smtpserver
-----------
-
-       smtpserver = ( MAILHOST )
-
-   This variable specified the destination for Email sent by cfexecd.
-
-
-File: cfengine-Reference.info,  Node: SplayTime,  Next: split,  Prev: Smtpserver,  Up: control
-
-SplayTime
----------
-
-       SplayTime = ( TIME-IN-MINUTES )
-
-   This variable is used to set the maximum time over which cfengine
-will share its load on a server, *Note Splaying host times:
-(cfengine-Tutorial)Splaying host times.
-
-
-File: cfengine-Reference.info,  Node: split,  Next: spooldirectories,  Prev: SplayTime,  Up: control
-
-Split
------
-
-        Split  = ( CHARACTER )
-
-   The value of this variable is used to define the list separator in
-variables which are expected to be treated as lists. The default value
-of this variable is the colon `:'.  Cfengine treats variables
-containing this character as lists to be broken up and iterated over in
-the following cases:
-
-   * in the `to' field of a multiple link action,
-
-   * in the `from' field of a copy action,
-
-   * in the directory field of a tidy action,
-
-   * in the directory field of the files action,
-
-   * in the ignore action.
-
-
-   This typically allows communication with PATH-like environment
-variables in the shell.
-
-
-File: cfengine-Reference.info,  Node: spooldirectories,  Next: suspiciousnames,  Prev: split,  Up: control
-
-SpoolDirectories
-----------------
-
-   A list of additional spool directories for cfengine to police. In
-these directories, filenames should correspond to existing users of the
-system.  When users lost their accounts, this list plus the mail spool
-directory will be checked for files owned by deprecated users.  See
-also: `DeleteNonOwnerFiles', `DeleteNonUserFiles'.
-
-       SpoolDirectories = ( /var/spool/cron/crontabs /var/spool/cron/atjobs )
-
-
-File: cfengine-Reference.info,  Node: suspiciousnames,  Next: sysadm,  Prev: spooldirectories,  Up: control
-
-suspiciousnames
----------------
-
-       SuspiciousNames = ( .mo lrk3 )
-
-   Filenames in this list are treated as suspicious and generate a
-warning as cfengine scans directories. This might be used to detect
-hacked systems or concealed programs. Checks are only made in
-directories which cfengine scans in connection with a command such as
-files, tidy or copy.
-
-
-File: cfengine-Reference.info,  Node: sysadm,  Next: Syslog,  Prev: suspiciousnames,  Up: control
-
-sysadm
-------
-
-        sysadm = ( MAIL ADDRESS )
-
-   The mail address of your system administrator should be placed here.
-This is used in two instances.  If cfengine is invoked with the option
-`-a', then it simply prints out this value.  This is a handy feature
-for making scripts.
-
-   The administrators mail address is also written into the personal log
-files which cfengine creates for each user after tidying files, so you
-should make this an address which users can mail if they have troubles.
-
-
-File: cfengine-Reference.info,  Node: Syslog,  Next: SyslogFacility,  Prev: sysadm,  Up: control
-
-Syslog
-------
-
-
-       Syslog = ( ON/off )
-
-   This variable activates syslog logging of cfengine output at the
-`inform' level.
-
-   To set this output level one writes:
-
-
-      CLASSES::
-     
-        Syslog = ( on )
-
-
-File: cfengine-Reference.info,  Node: SyslogFacility,  Next: timezone,  Prev: Syslog,  Up: control
-
-SyslogFacility
---------------
-
-
-       SyslogFacility = ( FACILITY )
-
-   This variable alters the syslog facility level.  e.g.
-
-
-        SyslogFacility = ( LOG_LOCAL1 )
-
-   Valid arguments are
-     LOG_USER
-     LOG_DAEMON
-     LOG_LOCAL0
-     LOG_LOCAL1
-     LOG_LOCAL2
-     LOG_LOCAL3
-     LOG_LOCAL4
-
-
-File: cfengine-Reference.info,  Node: timezone,  Next: TimeOut,  Prev: SyslogFacility,  Up: control
-
-timezone
---------
-
-        timezone = ( 3-CHARACTER TIMEZONE )
-
-   The timezone variable is a list of character strings which define
-your local timezone.  Normally you will only need a single timezone,
-but sometimes there are several aliases for a given timezone e.g. MET
-and CET are synonymous.  Currently only the first three characters of
-this string are checked against the timezone which cfengine manages to
-glean from the system.  If a mismatch is detected a warning message is
-printed.  cfengine does not attempt to configure the timezone.  This
-feature works only as a reminder, since the timezone should really be
-set once and for all at the time the system is installed.  On some
-systems you can set the timezone by editing a file, a procedure which
-you can automate with cfengine *Note editfiles::.
-
-   The value of the `timezone' can be accessed by variable substitution
-in the usual way. It expands to the first item in your list.
-
-     shellcommands:
-     
-            "echo ${timezone} | mail ${sysadm}"
-
-
-File: cfengine-Reference.info,  Node: TimeOut,  Next: Verbose,  Prev: timezone,  Up: control
-
-TimeOut
--------
-
-
-       TimeOut = ( 10 )
-
-   The default timeout for network connections is 10 seconds. This is
-too short on some routed networks. It is not permitted to set this
-variable smaller than 3 seconds or larger than 60 seconds.
-
-
-File: cfengine-Reference.info,  Node: Verbose,  Next: Warnings,  Prev: TimeOut,  Up: control
-
-Verbose
--------
-
-
-       Verbose = ( ON/off )
-
-   This variable switches on the output level whereby cfengine reports
-everything it does during a run in great detail. Normally only urgent
-messages or clear errors are printed, *Note Inform::.  This option is
-almost equivalent to using the `--verbose' of `-v' command-line
-options. The only difference is that system environment reporting
-information, which is printed prior to parsing, is not shown.  To set
-this output level on selected hosts one writes:
-
-
-      CLASSES::
-     
-        Verbose = ( on )
-
-   For related more limited output, *Note Inform::.
 

@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.1.0p1)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.1.5)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -65,10 +65,11 @@ AC_CONFIG_LIBOBJ_DIR(pub)
 AC_FUNC_GETLOADAVG 
 
 
-AC_PATH_PROG(LATEX, latex, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin)
-AC_PATH_PROG(TEXI2DVI, texi2dvi, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin)
-AC_PATH_PROG(DVIPS, dvips, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin)
-AC_PATH_PROG(MAKEINFO, makeinfo, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin)
+AC_PATH_PROG(LATEX, latex, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin:/sw/bin)
+AC_PATH_PROG(TEXI2DVI, texi2dvi, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin:/sw/bin)
+AC_PATH_PROG(DVIPS, dvips, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin:/sw/bin)
+AC_PATH_PROG(MAKEINFO, makeinfo, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin:/sw/bin)
+AC_PATH_PROG(PS2PDF, ps2pdf, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin:/sw/bin)
 
 dnl ######################################################################
 dnl Checks for libraries.
@@ -100,7 +101,7 @@ if test "x$BERKELEY_DB_DIR" = "xno" ; then
     AC_MSG_ERROR(This release of cfengine requires BerkeleyDB 3.2 or later)
 else
     if test "x$BERKELEY_DB_DIR" = "xyes" ; then
-        for v in BerkeleyDB.3.2 BerkeleyDB.3.3 BerkeleyDB.4.0  BerkeleyDB.4.1  BerkeleyDB.4.2; do
+        for v in BerkeleyDB.3.2 BerkeleyDB.3.3 BerkeleyDB.4.0  BerkeleyDB.4.1  BerkeleyDB.4.2 BerkeleyDB.4.3 BerkeleyDB.4.4; do
             for d in /opt /usr/local /usr; do
                 test -d "$d/$v" && BERKELEY_DB_DIR="$d/$v"
             done
@@ -112,7 +113,18 @@ else
                 if test -f "$d/include/$v/db.h" ; then
                     test "x$d" != "x/usr" && BERKELEY_DB_LDFLAGS="-L$d/lib"
                     BERKELEY_DB_CFLAGS="-I$d/include/$v"
-                    BERKELEY_DB_LIB="-l$v"
+                    late_LIBS=$LIBS
+		    # In RedHat 8, for instance, we have /usr/include/db4
+		    # and libdb-4.0.a.  Debian has /usr/lib/libdb-4.1.a, for
+		    # instance.  Look for the appropriate library.
+                    if test $v = db4; then
+			AC_SEARCH_LIBS(db_create, 
+				[db-4 db4 db-4.5 db-4.4 db-4.3 db-4.2 db-4.1 db-4.0], 
+				[BERKELEY_DB_LIB=$ac_cv_search_db_create])
+		    else
+                    	BERKELEY_DB_LIB="-l$v"
+                    fi
+		    LIBS=$late_LIBS
                     AC_MSG_RESULT($d)
                     break
                 fi
@@ -143,7 +155,7 @@ else
     elif test -d "$BERKELEY_DB_DIR"; then
 
         BERKELEY_DB_CFLAGS="-I$BERKELEY_DB_DIR/include"
-        for v in . db41 db40 db4 db33 db32 db3 db; do
+        for v in . db44 db43 db42 db41 db40 db4 db33 db32 db3 db; do
             if test -f "$BERKELEY_DB_DIR/include/$v/db.h"; then
                 BERKELEY_DB_CFLAGS="-I$BERKELEY_DB_DIR/include/$v"
             fi

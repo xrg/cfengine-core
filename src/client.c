@@ -37,11 +37,10 @@
 /* Level 1                                                           */
 /*********************************************************************/
 
-int OpenServerConnection(ip)
+int OpenServerConnection(struct Image *ip)
 
-struct Image *ip;
-
-{
+{ char server[bufsize];
+ 
 if (strcmp(ip->server,"localhost") == 0)
    {
    AUTHENTICATED = true;
@@ -49,18 +48,19 @@ if (strcmp(ip->server,"localhost") == 0)
    }
 
 AUTHENTICATED = false; 
+ExpandVarstring(ip->server,server,NULL);
  
 if (CONN->sd == cf_not_connected)
-   {
+   {   
    Debug("Opening server connnection to %s\n",ip->server);
 
-   if (!RemoteConnect(ip->server,ip->forceipv4))
+   if (!RemoteConnect(server,ip->forceipv4))
       {
       CfLog(cfinform,"Couldn't open a socket","socket");
       if (CONN->sd != cf_not_connected)
-	 {
-	 CloseServerConnection();
-	 }
+         {
+         CloseServerConnection();
+         }
       AUTHENTICATED = false;
       return false;
       }
@@ -83,7 +83,7 @@ if (CONN->sd == cf_not_connected)
    
    else if (!KeyAuthentication(ip))
       {
-      snprintf(OUTPUT,bufsize,"Authentication dialogue with %s failed\n",ip->server);
+      snprintf(OUTPUT,bufsize,"Authentication dialogue with %s failed\n",server);
       CfLog(cferror,OUTPUT,"");
       errno = EPERM;
       CloseServerConnection();
@@ -96,7 +96,7 @@ if (CONN->sd == cf_not_connected)
    }
 else
    {
-   Debug("Server connection to %s already open on %d\n",ip->server,CONN->sd);
+   Debug("Server connection to %s already open on %d\n",server,CONN->sd);
    }
 
 AUTHENTICATED = true; 
@@ -123,15 +123,10 @@ if (CONN->session_key != NULL)
 
 /*********************************************************************/
 
-int cf_rstat(file,buf,ip,stattype)
+int cf_rstat(char *file,struct stat *buf,struct Image *ip,char *stattype)
 
 /* If a link, this reads readlink and sends it back in the same
    package. It then caches the value for each copy command */
-
-char *file;
-struct stat *buf;
-struct Image *ip;
-char *stattype;
 
 { char sendbuffer[bufsize];
   char recvbuffer[bufsize];
@@ -141,7 +136,7 @@ char *stattype;
   time_t tloc;
 
 Debug("cf_rstat(%s)\n",file);
-bzero(recvbuffer,bufsize); 
+memset(recvbuffer,0,bufsize); 
 
 if (strlen(file) > bufsize-30)
    {
@@ -174,7 +169,7 @@ if (ip->encrypt == 'y')
    snprintf(in,bufsize-1,"SYNCH %d STAT %s",tloc,file);
    cipherlen = EncryptString(in,out,CONN->session_key,strlen(in)+1);
    snprintf(sendbuffer,bufsize-1,"SSYNCH %d",cipherlen);
-   bcopy(out,sendbuffer+CF_PROTO_OFFSET,cipherlen);
+   memcpy(sendbuffer+CF_PROTO_OFFSET,out,cipherlen);
    tosend = cipherlen+CF_PROTO_OFFSET;
    }
 else
@@ -215,7 +210,7 @@ if (OKProtoReply(recvbuffer))
    long d1,d2,d3,d4,d5,d6,d7,d8,d9,d10,d11,d12=0,d13=0;
    
    sscanf(recvbuffer,"OK: %1ld %5ld %14ld %14ld %14ld %14ld %14ld %14ld %14ld %14ld %14ld %14ld %14ld",
-	  &d1,&d2,&d3,&d4,&d5,&d6,&d7,&d8,&d9,&d10,&d11,&d12,&d13);
+   &d1,&d2,&d3,&d4,&d5,&d6,&d7,&d8,&d9,&d10,&d11,&d12,&d13);
 
    cfst.cf_type = (enum cf_filetype) d1;
    cfst.cf_mode = (mode_t) d2;
@@ -237,10 +232,10 @@ if (OKProtoReply(recvbuffer))
    Debug("Mode = %d,%d\n",d2,d3);
    
    Debug("OK: type=%d\n mode=%o\n lmode=%o\n uid=%d\n gid=%d\n size=%ld\n atime=%d\n mtime=%d ino=%d nlnk=%d, dev=%d\n",
-	cfst.cf_type,cfst.cf_mode,cfst.cf_lmode,cfst.cf_uid,cfst.cf_gid,(long)cfst.cf_size,
-	cfst.cf_atime,cfst.cf_mtime,cfst.cf_ino,cfst.cf_nlink,cfst.cf_dev);
+ cfst.cf_type,cfst.cf_mode,cfst.cf_lmode,cfst.cf_uid,cfst.cf_gid,(long)cfst.cf_size,
+ cfst.cf_atime,cfst.cf_mtime,cfst.cf_ino,cfst.cf_nlink,cfst.cf_dev);
 
-   bzero(recvbuffer,bufsize);
+   memset(recvbuffer,0,bufsize);
    
    if (ReceiveTransaction(CONN->sd,recvbuffer,NULL) == -1)
       {
@@ -261,19 +256,19 @@ if (OKProtoReply(recvbuffer))
    switch (cfst.cf_type)
       {
       case cf_reg:   cfst.cf_mode |= (mode_t) S_IFREG;
-	             break;
+              break;
       case cf_dir:   cfst.cf_mode |= (mode_t) S_IFDIR;
-   	             break;
+                 break;
       case cf_char:  cfst.cf_mode |= (mode_t) S_IFCHR;
-	             break;
+              break;
       case cf_fifo:  cfst.cf_mode |= (mode_t) S_IFIFO;
-	             break;
+              break;
       case cf_sock:  cfst.cf_mode |= (mode_t) S_IFSOCK;
-	             break;
+              break;
       case cf_block: cfst.cf_mode |= (mode_t) S_IFBLK;
-	             break;
+              break;
       case cf_link:  cfst.cf_mode |= (mode_t) S_IFLNK;
-	             break;
+              break;
       }
 
 
@@ -326,10 +321,7 @@ return -1;
 
 /*********************************************************************/
 
-CFDIR *cf_ropendir(dirname,ip)
-
-char *dirname;
-struct Image *ip;
+CFDIR *cf_ropendir(char *dirname,struct Image *ip)
 
 { char sendbuffer[bufsize];
   char recvbuffer[bufsize];
@@ -395,29 +387,27 @@ while (!done)
    for (sp = recvbuffer; *sp != '\0'; sp++)
       {
       if (strncmp(sp,CFD_TERMINATOR,strlen(CFD_TERMINATOR)) == 0)        /* End transmission */
-	 {
-	 cfdirh->cf_listpos = cfdirh->cf_list;
-	 return cfdirh;
-	 }
-
+         {
+         cfdirh->cf_listpos = cfdirh->cf_list;
+         return cfdirh;
+         }
+      
       AppendItem(&(cfdirh->cf_list),sp,NULL);
       
       while(*sp != '\0')
-	 {
-	 sp++;
-	 }
+         {
+         sp++;
+         }
       }
    }
-
-cfdirh->cf_listpos = cfdirh->cf_list;
-return cfdirh;
+ 
+ cfdirh->cf_listpos = cfdirh->cf_list;
+ return cfdirh;
 }
 
 /*********************************************************************/
 
-void FlushClientCache(ip)
-
-struct Image *ip;
+void FlushClientCache(struct Image *ip)
 
 {
 if (ip->cache)
@@ -429,10 +419,7 @@ if (ip->cache)
 
 /*********************************************************************/
 
-int CompareMD5Net(file1,file2,ip)
-
-char *file1, *file2;
-struct Image *ip;
+int CompareMD5Net(char *file1,char *file2,struct Image *ip)
 
 { static unsigned char d[CF_MD5_LEN];
   char *sp,sendbuffer[bufsize],recvbuffer[bufsize],in[bufsize],out[bufsize];
@@ -442,7 +429,7 @@ struct Image *ip;
 ChecksumFile(file2,d,'m');   /* send md5 to the server for comparison */
 Debug("Send digest of %s to server, %s\n",file2,ChecksumPrint('m',d));
 
-bzero(recvbuffer,bufsize);
+memset(recvbuffer,0,bufsize);
 
 if (ip->encrypt == 'y')
    {
@@ -457,7 +444,7 @@ if (ip->encrypt == 'y')
    
    cipherlen = EncryptString(in,out,CONN->session_key,strlen(in)+CF_SMALL_OFFSET+CF_MD5_LEN);
    snprintf(sendbuffer,bufsize,"SMD5 %d",cipherlen);
-   bcopy(out,sendbuffer+CF_PROTO_OFFSET,cipherlen);
+   memcpy(sendbuffer+CF_PROTO_OFFSET,out,cipherlen);
    tosend = cipherlen + CF_PROTO_OFFSET;
    }
 else
@@ -501,11 +488,7 @@ else
 
 /*********************************************************************/
 
-int CopyRegNet(source,new,ip,size)
-
-char *source, *new;
-struct Image *ip;
-off_t size;
+int CopyRegNet(char *source,char *new,struct Image *ip,off_t size)
 
 { int dd, buf_size,n_read = 0,toget,towrite,plainlen,more = true;
   int last_write_made_hole = 0, done = false,tosend,cipherlen=0;
@@ -548,7 +531,7 @@ if (ip->encrypt == 'y')
    snprintf(in,bufsize-CF_PROTO_OFFSET,"GET dummykey %s",source);
    cipherlen = EncryptString(in,out,CONN->session_key,strlen(in)+1);
    snprintf(sendbuffer,bufsize,"SGET %4d %4d",cipherlen,buf_size);
-   bcopy(out,sendbuffer+CF_PROTO_OFFSET,cipherlen);
+   memcpy(sendbuffer+CF_PROTO_OFFSET,out,cipherlen);
    tosend=cipherlen+CF_PROTO_OFFSET;   
    EVP_DecryptInit(&ctx,EVP_bf_cbc(),CONN->session_key,iv);
    }
@@ -581,63 +564,63 @@ while (!done)
       towrite = (size - n_read_total);
       
       if (ip->compat == 'y')
-	 {
-	 toget = buf_size;
-	 }
+         {
+         toget = buf_size;
+         }
       else
-	 {
-	 toget = towrite;
-	 }
+         {
+         toget = towrite;
+         }
       }
    else
       {
       toget = towrite = 0;
       }
-
+   
    if (ip->encrypt == 'y')
       {
       if (more)
-	 {
-	 cipherlen = ReceiveTransaction(CONN->sd,buf,&more);
-	 }
+         {
+         cipherlen = ReceiveTransaction(CONN->sd,buf,&more);
+         }
       else
-	 {
-	 break;	 /* Already written last encrypted buffer */
-	 }
+         {
+         break;  /* Already written last encrypted buffer */
+         }
       }
    else
       {
       if ((n_read = RecvSocketStream(CONN->sd,buf,toget,0)) == -1)
-	 {
-	 if (errno == EINTR) 
-	    {
-	    continue;
-	    }
-	 
-	 CfLog(cferror,"Error in socket stream","recv");
-	 close(dd);
-	 free(buf);
-	 return false;
-	 }
+         {
+         if (errno == EINTR) 
+            {
+            continue;
+            }
+         
+         CfLog(cferror,"Error in socket stream","recv");
+         close(dd);
+         free(buf);
+         return false;
+         }
       }
-
-
+   
+   
    /* If the first thing we get is an error message, break. */
-
+   
    if (n_read_total == 0 && strncmp(buf,CFFAILEDSTR,strlen(CFFAILEDSTR)) == 0)
       {
       snprintf(OUTPUT,bufsize*2,"Network access to %s:%s denied\n",ip->server,source);
       if (ip->encrypt != 'y')
-	 {
-	 RecvSocketStream(CONN->sd,buf,buf_size-n_read,0); /* flush rest of transaction */
-	 }
+         {
+         RecvSocketStream(CONN->sd,buf,buf_size-n_read,0); /* flush rest of transaction */
+         }
       
       CfLog(cfinform,OUTPUT,"");
       close(dd);
       free(buf);
       return false;      
       }
-
+   
    if (strncmp(buf,cfchangedstr,strlen(cfchangedstr)) == 0)
       {
       snprintf(OUTPUT,bufsize*2,"File %s:%s changed while copying\n",ip->server,source);
@@ -651,54 +634,54 @@ while (!done)
    if (ip->encrypt == 'y')
       {
       if (!EVP_DecryptUpdate(&ctx,sendbuffer,&plainlen,buf,cipherlen))
-	 {
-	 Debug("Decryption failed\n");
-	 return false;
-	 }
+         {
+         Debug("Decryption failed\n");
+         return false;
+         }
       
-      bcopy(sendbuffer,buf,plainlen);
+      memcpy(buf,sendbuffer,plainlen);
       n_read = towrite = plainlen;
       }
 
    if (ip->encrypt != 'y')
       {
       if (n_read == 0)
-	 {
-	 break;
-	 }
+         {
+         break;
+         }
       
       if (n_read == size)
-	 {
-	 if (n_read_total == 0 && strncmp(buf,CFFAILEDSTR,size) == 0)
-	    {
-	    snprintf(OUTPUT,bufsize*2,"Network access to %s:%s denied\n",ip->server,source);
-	    CfLog(cfinform,OUTPUT,"");
-	    close(dd);
-	    free(buf);
-	    return false;      
-	    }
-	 }
+         {
+         if (n_read_total == 0 && strncmp(buf,CFFAILEDSTR,size) == 0)
+            {
+            snprintf(OUTPUT,bufsize*2,"Network access to %s:%s denied\n",ip->server,source);
+            CfLog(cfinform,OUTPUT,"");
+            close(dd);
+            free(buf);
+     return false;      
+            }
+         }
       }
    
 /*   if (n_read < toget)
-      {
-      snprintf(OUTPUT,bufsize*2,"Network error getting %s:%s\n",ip->server,source);
-      CfLog(cfinform,OUTPUT,"");
-      close(dd);
-      free(buf);
-      return false;  
-      }
+     {
+     snprintf(OUTPUT,bufsize*2,"Network error getting %s:%s\n",ip->server,source);
+     CfLog(cfinform,OUTPUT,"");
+     close(dd);
+     free(buf);
+     return false;  
+     }
 */   
    n_read_total += towrite; /* n_read; */
    
    if (ip->encrypt == 'n')
       {
       if (n_read_total >= (long)size)  /* Handle EOF without closing socket */
-	 {
-	 done = true;
-	 }
+         {
+         done = true;
+         }
       }
-
+   
    if (!EmbeddedWrite(new,dd,buf,ip,towrite,&last_write_made_hole,n_read))
       {
       snprintf(OUTPUT,bufsize,"Local disk write failed copying %s:%s to %s\n",ip->server,source,new);
@@ -763,12 +746,7 @@ return true;
 /* Level 2                                                           */
 /*********************************************************************/
 
-int GetCachedStatData(file,statbuf,ip,stattype)
-
-char *file;
-struct stat *statbuf;
-struct Image *ip;
-char *stattype;
+int GetCachedStatData(char *file,struct stat *statbuf,struct Image *ip,char *stattype)
 
 { struct cfstat *sp;
 
@@ -779,21 +757,21 @@ for (sp = ip->cache; sp != NULL; sp=sp->next)
    if ((strcmp(ip->server,sp->cf_server) == 0) && (strcmp(file,sp->cf_filename) == 0))
       {
       if (sp->cf_failed)  /* cached failure from cfopendir */
-	 {
-	 errno = EPERM;
-	 Debug("Cached failure to stat\n");
-	 return -1;
-	 }
-
+         {
+         errno = EPERM;
+         Debug("Cached failure to stat\n");
+         return -1;
+         }
+      
       if ((strcmp(stattype,"link") == 0) && (sp->cf_lmode != 0))
-	 {
-	 statbuf->st_mode  = sp->cf_lmode;
-	 }
+         {
+         statbuf->st_mode  = sp->cf_lmode;
+         }
       else
-	 {
+         {
          statbuf->st_mode  = sp->cf_mode;
-	 }
-
+         }
+      
       statbuf->st_uid   = sp->cf_uid;
       statbuf->st_gid   = sp->cf_gid;
       statbuf->st_size  = sp->cf_size;
@@ -802,22 +780,19 @@ for (sp = ip->cache; sp != NULL; sp=sp->next)
       statbuf->st_ctime = sp->cf_ctime;
       statbuf->st_ino   = sp->cf_ino;
       statbuf->st_nlink = sp->cf_nlink;      
-
+      
       Debug("Found in cache\n");
       return true;
       }
    }
-
-Debug("Did not find in cache\n"); 
-return false;
+ 
+ Debug("Did not find in cache\n"); 
+ return false;
 }
 
 /*********************************************************************/
 
-void CacheData(data,ip)
-
-struct cfstat *data;
-struct Image *ip;
+void CacheData(struct cfstat *data,struct Image *ip)
 
 { struct cfstat *sp;
 
@@ -827,7 +802,7 @@ if ((sp = (struct cfstat *) malloc(sizeof(struct cfstat))) == NULL)
    return;
    }
 
-bcopy(data,sp,sizeof(struct cfstat));
+memcpy(sp,data,sizeof(struct cfstat));
 
 sp->next = ip->cache;
 ip->cache = sp;
@@ -835,9 +810,7 @@ ip->cache = sp;
 
 /*********************************************************************/
 
-void FlushToEnd(sd,toget)
-
-int sd,toget;
+void FlushToEnd(int sd,int toget)
 
 { int i;
   char buffer[2]; 
@@ -875,9 +848,7 @@ return ap;
 
 /*********************************************************************/
 
-void DeleteAgentConn(ap)
-
-struct cfagent_connection *ap;
+void DeleteAgentConn(struct cfagent_connection *ap)
 
 {
 if (ap->session_key != NULL)

@@ -161,9 +161,7 @@ RandomSeed();
 /* linker tricks                                                   */
 /*******************************************************************/
 
-void AddMultipleClasses(classlist)
-
-char *classlist;
+void AddMultipleClasses(char *classlist)
 
 {
 }
@@ -173,20 +171,12 @@ void ReleaseCurrentLock()
 }
 
 
-int RecursiveTidySpecialArea(name,tp,maxrecurse,sb)
-
-char *name;
-struct Tidy *tp;
-int maxrecurse;
-struct stat *sb;
-
+int RecursiveTidySpecialArea(char *name,struct Tidy *tp,int maxrecurse,struct stat *sb)
 {
  return true;
 }
 
-char *GetMacroValue(s,sp)
-
-char *s,*sp;
+char *GetMacroValue(char *s,char *sp)
 {
  return NULL;
 }

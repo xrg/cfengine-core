@@ -37,9 +37,7 @@
 /* Parser                                                          */
 /*******************************************************************/
 
-void InstallFilter(filter)
-
-char *filter;
+void InstallFilter(char *filter)
 
 { struct Filter *ptr;
   int i;
@@ -96,9 +94,7 @@ VFILTERLISTTOP = ptr;
 
 /********************************************************************/
 
-void InstallFilterTest(alias,type,data)
-
-char *alias,*type,*data;
+void InstallFilterTest(char *alias,char *type,char *data)
 
 { int crit, i = -1;
   struct Filter *fp;
@@ -132,93 +128,93 @@ else
    for (fp = VFILTERLIST; fp != NULL; fp = fp->next)
       {
       if (strcmp(alias,fp->alias) == 0)
-	 {
+         {
          switch (crit)
-	    {
-	    case filterdefclasses:
-		fp->defines = strdup(buffer);
-		break;
-	    case filterelsedef:
-		fp->elsedef = strdup(buffer);
-		break;
-	    case filterresult:
-		IsInstallable(buffer); /* syntax check */
-		break;
-
-	    case filterfromctime:
-		now = Date2Number(buffer,now);
-		break;
-	    case filtertoctime:
-		now = Date2Number(buffer,now);
-		break;
-	    case filterfrommtime:
-		now = Date2Number(buffer,now);
-		break;
-	    case filtertomtime:
-		now = Date2Number(buffer,now);
-		break;
-	    case filterfromatime:
-		now = Date2Number(buffer,now);
-		break;
-	    case filtertoatime:
-		now = Date2Number(buffer,now);
-		break;
-	    case filterfromsize:
-	    case filtertosize:
-		sscanf(buffer,"%d%c",&i,&units);
-
-		if (i < 0)
-		   {
-		   yyerror("filter size attribute with silly value (must be a non-negative number)");
-		   }
-		
-		switch (units)
-		   {
-		   case 'k':
-		   case 'K': i *= 1024;
-		       break;
-		   case 'm':
-		   case 'M': i = i * 1024 * 1024;
-		       break;
-		   }
-
-		sprintf(buffer,"%d",i);
-		break;
-	    case filterexecregex:
-		for (sp = buffer+strlen(buffer)-1; (*sp != '(') && (sp > buffer); sp--)
-		   {
-		   }
-		
-		sscanf(sp+1,"%256[^)]",VBUFF);
-		if (!RegexOK(VBUFF))
-		   {
-		   yyerror("Regular expression error");
-		   }
-		break;
-		
-	    case filternameregex:
-		if (!RegexOK(buffer))
-		   {
-		   yyerror("Regular expression error");
-		   }
-		break;
-	    case filterexec:
-		/* test here */
-		break;
-	    case filtersymlinkto:
-		break;
-	    }
-	 
-	 if ((fp->criteria[crit] = strdup(buffer)) == NULL)
-	    {
-	    CfLog(cferror,"Couldn't allocate filter memory","strdup");
-	    FatalError("Dying..");
-	    }
-	 else
-	    {
-	    return;
-	    }
-	 }
+            {
+            case filterdefclasses:
+                fp->defines = strdup(buffer);
+                break;
+            case filterelsedef:
+                fp->elsedef = strdup(buffer);
+                break;
+            case filterresult:
+                IsInstallable(buffer); /* syntax check */
+                break;
+                
+            case filterfromctime:
+                now = Date2Number(buffer,now);
+                break;
+            case filtertoctime:
+                now = Date2Number(buffer,now);
+                break;
+            case filterfrommtime:
+                now = Date2Number(buffer,now);
+                break;
+            case filtertomtime:
+                now = Date2Number(buffer,now);
+                break;
+            case filterfromatime:
+                now = Date2Number(buffer,now);
+                break;
+            case filtertoatime:
+                now = Date2Number(buffer,now);
+                break;
+            case filterfromsize:
+            case filtertosize:
+                sscanf(buffer,"%d%c",&i,&units);
+                
+                if (i < 0)
+                   {
+                   yyerror("filter size attribute with silly value (must be a non-negative number)");
+                   }
+                
+                switch (units)
+                   {
+                   case 'k':
+                   case 'K': i *= 1024;
+                       break;
+                   case 'm':
+                   case 'M': i = i * 1024 * 1024;
+                       break;
+                   }
+                
+                sprintf(buffer,"%d",i);
+                break;
+            case filterexecregex:
+                for (sp = buffer+strlen(buffer)-1; (*sp != '(') && (sp > buffer); sp--)
+                   {
+                   }
+                
+                sscanf(sp+1,"%256[^)]",VBUFF);
+                if (!RegexOK(VBUFF))
+                   {
+                   yyerror("Regular expression error");
+                   }
+                break;
+                
+            case filternameregex:
+                if (!RegexOK(buffer))
+                   {
+                   yyerror("Regular expression error");
+                   }
+                break;
+            case filterexec:
+                /* test here */
+                break;
+            case filtersymlinkto:
+                break;
+            }
+         
+         if ((fp->criteria[crit] = strdup(buffer)) == NULL)
+            {
+            CfLog(cferror,"Couldn't allocate filter memory","strdup");
+            FatalError("Dying..");
+            }
+         else
+            {
+            return;
+            }
+         }
       }
    }
 }
@@ -292,83 +288,81 @@ for (fp = VFILTERLIST; fp != NULL; fp = fp->next)
       CfLog(cferror,OUTPUT,"");
       FatalError("Consistency errors");
       }
-
+   
    if (fp->criteria[filterfromatime] != NULL)
       {
       if (Date2Number(fp->criteria[filterfromatime],t) > Date2Number(fp->criteria[filtertoatime],t))
-	 {
-	 snprintf(OUTPUT,bufsize*2,"To/From atimes silly in filter %s (from > to)",fp->alias);
-	 CfLog(cferror,OUTPUT,"");
-	 FatalError("Consistency errors");
-	 }
+         {
+         snprintf(OUTPUT,bufsize*2,"To/From atimes silly in filter %s (from > to)",fp->alias);
+         CfLog(cferror,OUTPUT,"");
+         FatalError("Consistency errors");
+         }
       }
-
+   
    if (fp->criteria[filterfromctime] != NULL)
       {
       if (Date2Number(fp->criteria[filterfromctime],t) > Date2Number(fp->criteria[filtertoctime],t))
-	 {
-	 snprintf(OUTPUT,bufsize*2,"To/From ctimes silly in filter %s (from > to)",fp->alias);
-	 CfLog(cferror,OUTPUT,"");
-	 FatalError("Consistency errors");
-	 }
+         {
+         snprintf(OUTPUT,bufsize*2,"To/From ctimes silly in filter %s (from > to)",fp->alias);
+         CfLog(cferror,OUTPUT,"");
+         FatalError("Consistency errors");
+         }
       }
-
+   
    if (fp->criteria[filterfrommtime] != NULL)
       {
       if (Date2Number(fp->criteria[filterfrommtime],t) > Date2Number(fp->criteria[filtertomtime],t))
-	 {
-	 snprintf(OUTPUT,bufsize*2,"To/From mtimes silly in filter %s (from > to)",fp->alias);
-	 CfLog(cferror,OUTPUT,"");
-	 FatalError("Consistency errors");
-	 }
+         {
+         snprintf(OUTPUT,bufsize*2,"To/From mtimes silly in filter %s (from > to)",fp->alias);
+         CfLog(cferror,OUTPUT,"");
+         FatalError("Consistency errors");
+         }
       }
    
    if (fp->criteria[filterfromstime] != NULL)
       {
       if (Date2Number(fp->criteria[filterfromstime],t) > Date2Number(fp->criteria[filtertostime],t))
-	 {
-	 snprintf(OUTPUT,bufsize*2,"To/From stimes silly in filter %s (from > to)",fp->alias);
-	 CfLog(cferror,OUTPUT,"");
-	 FatalError("Consistency errors");
-	 }
+         {
+         snprintf(OUTPUT,bufsize*2,"To/From stimes silly in filter %s (from > to)",fp->alias);
+         CfLog(cferror,OUTPUT,"");
+         FatalError("Consistency errors");
+         }
       }
-
+   
    if (fp->criteria[filterfromttime] != NULL)
       {
       if (Date2Number(fp->criteria[filterfromttime],t) > Date2Number(fp->criteria[filtertottime],t))
-	 {
-	 snprintf(OUTPUT,bufsize*2,"To/From ttimes silly in filter %s (from > to)",fp->alias);
-	 CfLog(cferror,OUTPUT,"");
-	 FatalError("Consistency errors");
-	 }
+         {
+         snprintf(OUTPUT,bufsize*2,"To/From ttimes silly in filter %s (from > to)",fp->alias);
+         CfLog(cferror,OUTPUT,"");
+         FatalError("Consistency errors");
+         }
       if (strncmp(fp->criteria[filterfromttime],"accumulated",strlen("accumulated")) != 0)
-	 {
-	 yyerror("Must use accumulated time in FromTtime");
-	 }
+         {
+         yyerror("Must use accumulated time in FromTtime");
+         }
       if (strncmp(fp->criteria[filtertottime],"accumulated",strlen("accumulated")) != 0)
-	 {
-	 yyerror("Must use accumulated time in ToTtime");
-	 }
+         {
+         yyerror("Must use accumulated time in ToTtime");
+         }
       }
-
+   
    if (fp->criteria[filterfromsize] != NULL)
       {
       if (strcmp(fp->criteria[filterfromsize],fp->criteria[filtertosize]) > 0)
-	 {
-	 snprintf(OUTPUT,bufsize*2,"To/From size is silly in filter %s (from > to)",fp->alias);
-	 CfLog(cferror,OUTPUT,"");
-	 FatalError("Consistency errors");
-	 }
+         {
+         snprintf(OUTPUT,bufsize*2,"To/From size is silly in filter %s (from > to)",fp->alias);
+         CfLog(cferror,OUTPUT,"");
+         FatalError("Consistency errors");
+         }
       }
-
+   
    }
 }
-   
+
 /********************************************************************/
 
-enum filternames FilterActionsToCode(filtertype)
-
-char *filtertype;
+enum filternames FilterActionsToCode(char *filtertype)
 
 { int i;
 
@@ -396,9 +390,7 @@ return (NoFilter);
 
 /*******************************************************************/
 
-int FilterExists(name)
-
-char *name;
+int FilterExists(char *name)
 
 { struct Filter *ptr;
 
@@ -414,10 +406,7 @@ return false;
 
 /*********************************************************************/
 
-time_t Date2Number(string,now)
-
-char *string;
-time_t now;
+time_t Date2Number(char *string,time_t now)
 
  /*
 
@@ -569,11 +558,7 @@ return now;
 /* Several filters are ANDed together....                          */
 /*******************************************************************/
 
-int ProcessFilter(proc,filterlist,names,start,end)
-
-char *proc, **names;
-int *start,*end;
-struct Item *filterlist;
+int ProcessFilter(char *proc,struct Item *filterlist,char **names,int *start,int *end)
 
 { struct Item *tests = NULL;
   struct Filter *fp;
@@ -601,45 +586,40 @@ for (fp = VFILTERLIST; fp != NULL; fp=fp->next)
       Debug ("Applying filter %s\n",fp->alias);
 
       if (fp->criteria[filterresult] == NULL)
-	 {
-	 fp->criteria[filterresult] = strdup("Owner.PID.PPID.PGID.RSize.VSize.Status.Command.TTime.STime.TTY.Priority.Threads");
-	 }
+         {
+         fp->criteria[filterresult] = strdup("Owner.PID.PPID.PGID.RSize.VSize.Status.Command.TTime.STime.TTY.Priority.Threads");
+         }
       
       DoProc(&tests,fp->criteria,names,line);
-
+      
       if (tmpres = EvaluateORString(fp->criteria[filterresult],tests))
-	 {
-	 AddMultipleClasses(fp->defines);
-	 }
+         {
+         AddMultipleClasses(fp->defines);
+         }
       else
-	 {
-	 AddMultipleClasses(fp->elsedef);
-	 }
-
+         {
+         AddMultipleClasses(fp->elsedef);
+         }
+      
       result &= tmpres;
       }   
    }
-
-for (i = 0; i < noproccols; i++)
-   {
-   if (line[i] != NULL)
-      {
-      free(line[i]);
-      }
-   }
-
-DeleteItemList(tests);
-return result; 
+ 
+ for (i = 0; i < noproccols; i++)
+    {
+    if (line[i] != NULL)
+       {
+       free(line[i]);
+       }
+    }
+ 
+ DeleteItemList(tests);
+ return result; 
 }
 
 /*******************************************************************/
 
-int FileObjectFilter(file,lstatptr,filterlist,context)
-
-char *file;
-struct stat *lstatptr;
-struct Item *filterlist;
-enum actions context;
+int FileObjectFilter(char *file,struct stat *lstatptr,struct Item *filterlist,enum actions context)
 
 { struct Item *tests = NULL;
   struct Filter *fp;  int result = true, tmpres;
@@ -658,21 +638,21 @@ for (fp = VFILTERLIST; fp != NULL; fp=fp->next)
       Debug ("Applying filter %s\n",fp->alias);
       
       if (fp->criteria[filterresult] == NULL)
-	 {
-	 fp->criteria[filterresult] = strdup("Type.Owner.Group.Mode.Ctime.Mtime.Atime.Size.ExecRegex.NameRegex.IsSymLinkTo.ExecProgram");
-	 }
+         {
+         fp->criteria[filterresult] = strdup("Type.Owner.Group.Mode.Ctime.Mtime.Atime.Size.ExecRegex.NameRegex.IsSymLinkTo.ExecProgram");
+         }
       
       DoFilter(&tests,fp->criteria,lstatptr,file);
-
+      
       if (tmpres = EvaluateORString(fp->criteria[filterresult],tests))
-	 {
-	 AddMultipleClasses(fp->defines);
-	 }
+         {
+         AddMultipleClasses(fp->defines);
+         }
       else
-	 {
-	 AddMultipleClasses(fp->elsedef);
-	 }
-
+         {
+         AddMultipleClasses(fp->elsedef);
+         }
+      
       result &= tmpres;
       }
    }
@@ -684,11 +664,8 @@ return result;
 
 /*******************************************************************/
 
-void DoFilter(attr,crit,lstatptr,filename)
+void DoFilter(struct Item **attr,char **crit,struct stat *lstatptr,char *filename)
 
-struct Item **attr;
-char **crit,*filename;
-struct stat *lstatptr;
 
 {
 if (crit[filtertype] != NULL)
@@ -782,10 +759,7 @@ if (crit[filterexec] != NULL)
 
 /*******************************************************************/
 
-void DoProc(attr,crit,names,line)
-
-struct Item **attr;
-char **crit,**names,**line;
+void DoProc(struct Item **attr,char **crit,char **names,char **line)
 
 {
 if (crit[filterowner] != NULL)
@@ -947,10 +921,7 @@ else
 
 /*******************************************************************/
 
-int FilterTypeMatch(lstatptr,crit)
-
-struct stat *lstatptr;
-char *crit;
+int FilterTypeMatch(struct stat *lstatptr,char *crit)
 
 { struct Item *attrib = NULL;
 
@@ -1010,10 +981,7 @@ else
 
 /*******************************************************************/
 
-int FilterProcMatch(name1,name2,expr,names,line)
-
-char *name1,*name2,*expr;
-char **names,**line;
+int FilterProcMatch(char *name1,char *name2,char *expr,char **names,char **line)
 
 { int i;
   regex_t rx;
@@ -1032,43 +1000,40 @@ for (i = 0; names[i] != NULL; i++)
       {
       Debug("Match (%s) to (%s)\n",expr,line[i]);
       if (regexec(&rx,line[i],1,&pmatch,0) == 0)
-	 {
-	 if ((pmatch.rm_so == 0) && (pmatch.rm_eo == strlen(line[i])))
-	    {
-	    regfree(&rx);
-	    return true;
-	    }
-	 }
+         {
+         if ((pmatch.rm_so == 0) && (pmatch.rm_eo == strlen(line[i])))
+            {
+            regfree(&rx);
+            return true;
+            }
+         }
       
       regfree(&rx);
       return false;      
       }
    }
-
-regfree(&rx);
-return false; 
+ 
+ regfree(&rx);
+ return false; 
 }
 
 /*******************************************************************/
 
-int FilterProcSTimeMatch(name1,name2,fromexpr,toexpr,names,line)
-
-char *name1,*name2,*fromexpr,*toexpr;
-char **names,**line;
+int FilterProcSTimeMatch(char *name1,char *name2,char *fromexpr,char *toexpr,char **names,char **line)
 
 { int i;
   time_t fromtime,totime, now = CFSTARTTIME,pstime;
   char year[5],month[4],hr[3],min[3],day[3],timestr[256];
   
-bzero(year,5);
+memset(year,0,5);
 strcpy(year,VYEAR);
-bzero(month,4); 
+memset(month,0,4); 
 strcpy(month,VMONTH);
-bzero(day,3); 
+memset(day,0,3); 
 strcpy(day,VDAY);
-bzero(hr,3); 
+memset(hr,0,3); 
 strcpy(hr,VHR);
-bzero(min,3); 
+memset(min,0,3); 
 strcpy(min,VMINUTE); 
 
 fromtime = Date2Number(fromexpr,now);
@@ -1079,29 +1044,29 @@ for (i = 0; names[i] != NULL; i++)
    if ((strcmp(names[i],name1) == 0) || (strcmp(names[i],name2) == 0))
       {
       if (strstr(line[i],":")) /* Hr:Min:Sec */
-	 {
+         {
          sscanf(line[i],"%2[^:]:%2[^:]:",hr,min);
-	 snprintf(timestr,256,"date(%s,%d,%s,%s,%s,0)",year,Month2Number(month),day,hr,min);
-	 }
+         snprintf(timestr,256,"date(%s,%d,%s,%s,%s,0)",year,Month2Number(month),day,hr,min);
+         }
       else                     /* date Month */
-	 {
+         {
          sscanf(line[i],"%3[a-zA-Z] %2[0-9]",month,day);
-	 snprintf(timestr,256,"date(%s,%d,%s,%s,%s,0)",year,Month2Number(month),day,hr,min);
-	 }
+         snprintf(timestr,256,"date(%s,%d,%s,%s,%s,0)",year,Month2Number(month),day,hr,min);
+         }
       
       if (Month2Number(month) < 0)
-	 {
-	 continue;
-	 }
+         {
+         continue;
+         }
       
       pstime = Date2Number(timestr,now);
-
+      
       Debug("Stime %s converted to %s\n",timestr,ctime(&pstime));
-
+      
       return ((fromtime < pstime) && (pstime < totime));
       }
    } 
-return false;
+ return false;
 }
 
 /*******************************************************************/
@@ -1111,10 +1076,7 @@ return false;
  *  Parse different TTime values
 */
 
-void ParseTTime(line, time_str)
-
-char *line;
-char *time_str;
+void ParseTTime(char *line, char *time_str)
 
 {
 int  day=0, hr=0, min=0, sec=0;
@@ -1141,8 +1103,8 @@ if (strstr(line,":")) /* day-Hr:Min:Sec */
       if (min > 59)
          {
          day = min / (24 * 60);
-	 hr  = (min - (day * 24 * 60)) / (60);
-	 min = min % 60;
+         hr  = (min - (day * 24 * 60)) / (60);
+         min = min % 60;
          }
       snprintf(time_str,256,"accumulated(0,0,%d,%d,%d,%d)",day,hr,min,sec);
       }
@@ -1152,10 +1114,7 @@ if (strstr(line,":")) /* day-Hr:Min:Sec */
 
 /*******************************************************************/
 
-int FilterProcTTimeMatch(name1,name2,fromexpr,toexpr,names,line)
-
-char *name1,*name2,*fromexpr,*toexpr;
-char **names,**line;
+int FilterProcTTimeMatch(char *name1,char *name2,char *fromexpr,char *toexpr,char **names,char **line)
 
 { int i,hr=0,min=-1,sec=-1;
   time_t fromtime,totime,now = CFSTARTTIME,pstime = CFSTARTTIME;
@@ -1168,7 +1127,7 @@ for (i = 0; names[i] != NULL; i++)
    {
    if ((strcmp(names[i],name1) == 0) || (strcmp(names[i],name2) == 0))
       {
-      bzero(timestr, sizeof(timestr));
+      memset(timestr,0,sizeof(timestr));
       ParseTTime(line[i], timestr);
       Debug("ParseTTime = %s\n",timestr); 
       pstime = Date2Number(timestr,now);
@@ -1181,10 +1140,7 @@ return false;
 
 /*******************************************************************/
 
-int FilterOwnerMatch(lstatptr,crit)
-
-char *crit;
-struct stat *lstatptr;
+int FilterOwnerMatch(struct stat *lstatptr,char *crit)
 
 { struct Item *attrib = NULL;
   char buffer[64];
@@ -1216,10 +1172,7 @@ else
 
 /*******************************************************************/
 
-int FilterGroupMatch(lstatptr,crit)
-
-char *crit;
-struct stat *lstatptr;
+int FilterGroupMatch(struct stat *lstatptr,char *crit)
 
 { struct Item *attrib = NULL;
   char buffer[64];
@@ -1251,10 +1204,7 @@ else
 
 /*******************************************************************/
 
-int FilterModeMatch(lstatptr,crit)
-
-char *crit;
-struct stat *lstatptr;
+int FilterModeMatch(struct stat *lstatptr,char *crit)
 
 { mode_t plusmask,minusmask,newperm;
 
@@ -1272,10 +1222,7 @@ return ((newperm & 07777) == (lstatptr->st_mode & 07777));
 
 /*******************************************************************/
 
-int FilterTimeMatch(stattime,from,to)
-
-char *from,*to;
-time_t stattime;
+int FilterTimeMatch(time_t stattime,char *from,char *to)
 
 { time_t fromtime,totime, now = CFSTARTTIME;
 
@@ -1287,9 +1234,7 @@ return ((fromtime < stattime) && (stattime < totime));
 
 /*******************************************************************/
 
-int FilterNameRegexMatch(filename,crit)
-
-char *filename,*crit;
+int FilterNameRegexMatch(char *filename,char *crit)
 
 { regex_t rx;
   regmatch_t pmatch;
@@ -1314,9 +1259,7 @@ return false;
 
 /*******************************************************************/
 
-int FilterExecRegexMatch(filename,crit)
-
-char *filename,*crit;
+int FilterExecRegexMatch(char *filename,char *crit)
 
 { regex_t rx;
   regmatch_t pmatch;
@@ -1328,9 +1271,9 @@ VBUFF[0] = '\0';
 ExpandVarstring(crit,VBUFF,NULL);
 DeleteMacro(CONTEXTID,"this");
   
-bzero(buffer,bufsize);
-bzero(line,bufsize); 
-bzero(expr,bufsize);
+memset(buffer,0,bufsize);
+memset(line,0,bufsize); 
+memset(expr,0,bufsize);
 
 for (sp = VBUFF+strlen(VBUFF)-1; (*sp != '(') && (sp > VBUFF); sp--)
    {
@@ -1370,9 +1313,7 @@ return false;
 
 /*******************************************************************/
 
-int FilterIsSymLinkTo(filename,crit)
-
-char *filename,*crit;
+int FilterIsSymLinkTo(char *filename,char *crit)
 
 { regex_t rx;
   regmatch_t pmatch;
@@ -1383,7 +1324,7 @@ if (CfRegcomp(&rx,crit,REG_EXTENDED) != 0)
    return false;
    }
 
-bzero(buffer,bufsize);
+memset(buffer,0,bufsize);
  
 if (readlink(filename,buffer,bufsize-1) == -1)
    {
@@ -1408,9 +1349,7 @@ return false;
 
 /*******************************************************************/
 
-int FilterExecMatch(filename,crit)
-
-char *filename, *crit;
+int FilterExecMatch(char *filename,char *crit)
 
   /* command can include $(this) for the name of the file */
 
@@ -1434,10 +1373,7 @@ else
 
 /*******************************************************************/
 
-void GetProcessColumns(proc,names,start,end)
-
-char *proc, **names;
-int *start,*end;
+void GetProcessColumns(char *proc,char **names,int *start,int *end)
 
 { char *sp,title[16];
   int col,offset = 0;
@@ -1457,18 +1393,18 @@ for (sp = proc; *sp != '\0'; sp++)
    if (isspace((int)*sp))
       {
       if (start[col] != -1)
-	 {
-	 Debug("End of %s is %d\n",title,offset-1);
-	 end[col++] = offset - 1;
-	 if (col > noproccols - 1)
-	    {
-	    CfLog(cferror,"Column overflow in process table","");
-	    break;
-	    }
-	 }
+         {
+         Debug("End of %s is %d\n",title,offset-1);
+         end[col++] = offset - 1;
+         if (col > noproccols - 1)
+            {
+            CfLog(cferror,"Column overflow in process table","");
+            break;
+            }
+         }
       continue;
       }
-
+   
    else if (start[col] == -1)
       {
       start[col] = offset;
@@ -1488,10 +1424,7 @@ if (end[col] == -1)
 
 /*******************************************************************/
 
-void SplitLine(proc,names,start,end,line)
-
-char *proc, **names, **line;
-int *start,*end;
+void SplitLine(char *proc,char **names,int *start,int *end,char **line)
 
 { int i,s,e;
 
@@ -1525,22 +1458,22 @@ for (i = 0; names[i] != NULL; i++)
    else
       {
       for (e = end[i]; (e <= end[i]+10) && !isspace((int)*(proc+e)); e++)
-	 {
-	 }
+         {
+         }
       
       while (isspace((int)proc[e]))
-	 {
-	 if (e > 0)
-	    {
-	    e--;
-	    }
-	 }
+         {
+         if (e > 0)
+            {
+            e--;
+            }
+         }
       }
-
+   
    if (s <= e)
       {
       line[i] = (char *)malloc(e-s+2);
-      bzero(line[i],(e-s+2));
+      memset(line[i],0,(e-s+2));
       strncpy(line[i],(char *)(proc+s),(e-s+1));
       }
    else

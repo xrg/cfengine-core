@@ -263,18 +263,53 @@ RootProcs_low_dev2
 netbiosssn_in_low_dev2
 smtp_out_high_anomalous
 www_in_high_dev3
+ftp_in_high_microanomaly
 @end smallexample
 
-The first of these tells us that the number of root processes is
-two standard deviations below the average of past behaviour, which might
-be fortuitous, or might signify a problem, such as a crashed server.
-The WWW item tells us that the number of incoming connections is three
+The first of these tells us that the number of root processes is two
+standard deviations below the average of past behaviour, which might be
+fortuitous, or might signify a problem, such as a crashed server.  The
+WWW item tells us that the number of incoming connections is three
 standard deviations above average. The smtp item tells us that outgoing
 smtp connections are more than three standard deviations above average,
-perhaps signifying a mail flood.
-The setting of these classes is transparent to the user, but the
-additional information is only visible to the privileged owner of
-the cfengine work-directory, where the data are cached.
+perhaps signifying a mail flood.  The setting of these classes is
+transparent to the user, but the additional information is only visible
+to the privileged owner of the cfengine work-directory, where the data
+are cached.
+
+The term `microanomaly' is used to describe two standard deviations
+above normal, when the delta of the change is less than the arbitray
+value of 5. This is a small number, and anomalies of these kinds are
+generally noise.
+@cindex Micro-anomaly
+@cindex Microanomaly
+
+Simply specifying statistical number anomalies is not sufficient to
+provide well honed anomaly characteristics. Cfengine tries to organize
+the information surrounding an anomaly first in terms of statistical
+significance and then only later in terms of event characteristics.
+There are too many events in which the numerical values exceed thresholds
+determined by an arbitrary policy. Other criteria are needed to pin down
+which anomalies are interesting and which are not. As a second level of
+policy filtering, cfengine provides a measure of the entropy of the source
+IP addresses of the  measured data. A low entropy value means that most of the
+events came from only a few (or one) IP addresses. A high entropy value implies
+that the events were spread over many IP sources. These conditions are described by
+classes of the form:
+
+@cindex Entropy
+@smallexample
+ entropy_www_in_high
+ entropy_smtp_in_low
+@end smallexample
+
+Thus, for example, in the first case the class will be set if incoming traffic
+at the peak event of the last data sample was spread evenly over all the incoming
+addresses. Such an event indicates that the resource usage is not due to a
+single source (e.g. an attacker from a single location) but is evenly spread --- perhaps
+just a coincidental anomaly. In the second case, the low entropy smtp traffic must
+come from one or two addresses and is more likely to be spam or an attack of some kind.
+These classes can be combined with the specific anomaly thresholds (see example below).
 
 Active incoming ports are also registered as ``pin-portnumber'', but this
 is mainly an experimental feature for future research. The resulting class list,
@@ -536,8 +571,8 @@ alerts:
   nfsd_in_high_dev2::
 
   "High NFS server access rate 2dev at $(host)/$(env_time) 
-current value $(value_nfsd_in) av $(average_nfsd_in) 
-pm $(stddev_nfsd_in)"
+current value $(value_nfsd_in) av $(average_nfsd_in) pm 
+$(stddev_nfsd_in)"
 
   ShowState(incoming.nfs)
 
@@ -546,9 +581,8 @@ pm $(stddev_nfsd_in)"
 
   anomaly_hosts.RootProcs_high_dev2::
 
-   "RootProc anomaly high 2 dev on $(host)/$(env_time) 
-current value $(value_rootprocs) av $(average_rootprocs) 
-pm $(stddev_rootprocs)"
+   "RootProc anomaly high 2 dev on $(host)/$(env_time) current value 
+$(value_rootprocs) av $(average_rootprocs) pm $(stddev_rootprocs)"
   ShowState(procs)
 
 
@@ -557,9 +591,8 @@ pm $(stddev_rootprocs)"
 
  anomaly_hosts.UserProcs_high_dev2::
  
-   "UserProc anomaly high 2 dev on $(host)/$(env_time) 
-current value $(value_userprocs) av $(average_userprocs) 
-pm $(stddev_userprocs)"
+   "UserProc anomaly high 2 dev on $(host)/$(env_time) current 
+value $(value_userprocs) av $(average_userprocs) pm $(stddev_userprocs)"
    ShowState(procs)
 
      
@@ -569,48 +602,62 @@ pm $(stddev_userprocs)"
    ShowState(procs)    
 
 
-
  # WWW IN
  
- anomaly_hosts.www_in_high_dev2::
+ # This happens too often
+ # anomaly_hosts.www_in_high_dev2:: 
+ #
+
+ entropy_www_in_high.anomaly_hosts.www_in_high_anomaly::
  
-   "Incoming www anomaly high 2 dev on $(host)/$(env_time) - 
-current value $(value_www_in) av $(average_www_in) 
-pm $(stddev_www_in)" 
+   "HIGH ENTROPY Incoming www anomaly high anomaly dev!! 
+on $(host)/$(env_time) - current value $(value_www_in) 
+av $(average_www_in) pm $(stddev_www_in)" 
+
    ShowState(incoming.www)
 
-
- anomaly_hosts.www_in_high_anomaly::
+ entropy_www_in_low.anomaly_hosts.www_in_high_anomaly::
  
-   "Incoming www anomaly high anomaly dev!! on $(host)/$(env_time) 
-- current value $(value_www_in) av $(average_www_in) 
-pm $(stddev_www_in)" 
+   "LOW ENTROPY Incoming www anomaly high anomaly dev!! on 
+$(host)/$(env_time) - current value $(value_www_in) av 
+$(average_www_in) pm $(stddev_www_in)" 
+
    ShowState(incoming.www)
 
 
 
  # SMTP IN
  
- anomaly_hosts.smtp_in_high_dev1::
+ entropy_smtp_in_high.anomaly_hosts.smtp_in_high_dev2::
  
-   "Incoming smtp anomaly high 1 dev on $(host)/$(env_time)  
-current value $(value_smtp_in) av  $(average_smtp_in) 
-pm $(stddev_smtp_in)"
+   "HIGH ENTROPY Incoming smtp anomaly high 2 dev on $(host)/$(env_time)"
+
+ entropy_smtp_in_high.anomaly_hosts.smtp_in_high_anomaly::
+ 
+   "HIGH ENTROPY Incoming smtp anomaly high anomaly !! on $(host)/$(env_time)"
+
+
+ entropy_smtp_in_low.anomaly_hosts.smtp_in_high_dev1::
+ 
+   "LOW ENTROPY Incoming smtp anomaly high 1 dev on $(host)/$(env_time) 
+ current value $(value_smtp_in) av  $(average_smtp_in) pm $(stddev_smtp_in)"
+
    ShowState(incoming.smtp)
 
- anomaly_hosts.smtp_in_high_dev2::
+
+ entropy_smtp_in_low.anomaly_hosts.smtp_in_high_dev2::
  
-   "Incoming smtp anomaly high 2 dev on $(host)/$(env_time)  
-current value $(value_smtp_in) av  $(average_smtp_in) 
-pm $(stddev_smtp_in)"
+   "LOW ENTROPY Incoming smtp anomaly high 2 dev on $(host)/$(env_time)
+current value $(value_smtp_in) av  $(average_smtp_in) pm $(stddev_smtp_in)"
+
    ShowState(incoming.smtp)
 
 
- anomaly_hosts.smtp_in_high_anomaly::
+ entropy_smtp_in_low.anomaly_hosts.smtp_in_high_anomaly::
  
-   "Incoming smtp anomaly high anomaly !! on $(host)/$(env_time)  
-current value $(value_smtp_in) av  $(average_smtp_in)
- pm $(stddev_smtp_in)"
+   "LOW ENTROPY Incoming smtp anomaly high anomaly !! on $(host)/$(env_time)
+current value $(value_smtp_in) av  $(average_smtp_in) pm $(stddev_smtp_in)"
+
    ShowState(incoming.smtp)
 
 
@@ -618,17 +665,16 @@ current value $(value_smtp_in) av  $(average_smtp_in)
  
  anomaly_hosts.smtp_out_high_dev2::
  
-   "Outgoing smtp anomaly high 2 dev on $(host)/$(env_time) 
-current value $(value_smtp_out) av  $(average_smtp_out) 
-pm $(stddev_smtp_out)"
-   ShowState(outgoing.smtp) 
+   "Outgoing smtp anomaly high 2 dev on $(host)/$(env_time) current value 
+$(value_smtp_out) av  $(average_smtp_out) pm $(stddev_smtp_out)"
 
+   ShowState(outgoing.smtp) 
 
  anomaly_hosts.smtp_out_high_anomaly::
  
    "Outgoing smtp anomaly high anomaly dev!! on $(host)/$(env_time) 
-current value $(value_smtp_out) av $(average_smtp_out) 
-pm $(stddev_smtp_out)"
+current value $(value_smtp_out) av $(average_smtp_out) pm $(stddev_smtp_out)"
+
    ShowState(outgoing.smtp)  
 
 
@@ -636,10 +682,12 @@ pm $(stddev_smtp_out)"
 
  anomaly_hosts.netbiosssn_in_high_dev2::
 
-   "SAMBA access high 2 on $(host)/$(env_time) 
-current value $(value_netbiosssn_in) av $(average_netbiosssn_in) 
-pm $(stddev_netbiosssn_in)"    
-   ShowState(incoming.smtp) 
+   "SAMBA access high 2 on $(host)/$(env_time) current value 
+$(value_netbiosssn_in) av $(average_netbiosssn_in) pm $(stddev_netbiosssn_in)"    
+
+   ShowState(incoming.netbiosssn) 
+
+###########################################################################
 
 ###
 #
@@ -655,33 +703,82 @@ and a summary of the highest values during the last 40 minutes:
 
 @smallexample
 
-cf:cube: Incoming www anomaly high 2 dev on cube/Wed Oct 22 10:27:08 2003 - current value 12 av 6.8 pm 5.0
+cf:cube: LOW ENTROPY Incoming www anomaly high anomaly dev!! on cube/Fri Feb 20 19:57:23 2004 - current value 53 av 9.9 pm 16.1
 cf:cube: -----------------------------------------------------------------------------------
 cf:cube: In the last 40 minutes, the peak state was:
-cf:cube: ( 1) tcp        0      0 128.39.74.16:80         216.39.50.74:39973      TIME_WAIT   
-cf:cube: ( 2) tcp        0      0 128.39.74.16:80         64.68.80.44:15197       TIME_WAIT   
-cf:cube: ( 3) tcp        0      0 128.39.74.16:80         64.68.80.44:15393       TIME_WAIT   
-cf:cube: ( 4) tcp        0      0 128.39.74.16:80         128.39.75.115:1786      ESTABLISHED 
-cf:cube: ( 5) tcp        0      0 128.39.74.16:80         128.39.75.115:1785      FIN_WAIT2   
-cf:cube: ( 6) tcp        0      0 128.39.74.16:80         158.39.114.20:3784      ESTABLISHED 
-cf:cube: ( 7) tcp        0      0 128.39.74.16:80         158.39.114.20:3785      ESTABLISHED 
-cf:cube: ( 8) tcp        0      0 128.39.74.16:80         158.39.114.20:3780      TIME_WAIT   
-cf:cube: ( 9) tcp        0      0 128.39.74.16:80         158.39.114.20:3781      TIME_WAIT   
-cf:cube: (10) tcp        0      0 128.39.74.16:80         158.39.114.20:3783      TIME_WAIT   
-cf:cube: (11) tcp        0      0 128.39.74.16:80         195.75.201.8:30050      ESTABLISHED 
-cf:cube: (12) tcp        0      0 128.39.74.16:80         195.75.201.8:30049      ESTABLISHED 
-cf:cube: (13) tcp        0      0 128.39.74.16:80         128.39.74.131:1268      ESTABLISHED 
-cf:cube: (14) tcp        0      0 128.39.74.16:80         128.39.74.131:1269      ESTABLISHED 
-cf:cube: (15) tcp        0      0 128.39.74.16:80         195.75.201.8:30062      ESTABLISHED 
-cf:cube: (16) tcp        0      0 128.39.74.16:80         195.75.201.8:30061      ESTABLISHED 
- DNS key: 216.39.50.74 = 216.39.50.74
- DNS key: 64.68.80.44 = crawl23.googlebot.com
- DNS key: 128.39.75.115 = pc115-75.iu.hio.no
- DNS key: 158.39.114.20 = heracleum.stud.hitos.no
- DNS key: 195.75.201.8 = 195.75.201.8
- DNS key: 128.39.74.131 = pc131-74.iu.hio.no
+cf:cube: ( 1) tcp        0      0 128.39.74.16:80         157.158.24.40:4049      TIME_WAIT   
+cf:cube: ( 2) tcp        0      0 128.39.74.16:80         157.158.24.40:3796      TIME_WAIT   
+cf:cube: ( 3) tcp        0      0 128.39.74.16:80         157.158.24.40:3544      TIME_WAIT   
+cf:cube: ( 4) tcp        0      0 128.39.74.16:80         157.158.24.40:4063      TIME_WAIT   
+cf:cube: ( 5) tcp        0      0 128.39.74.16:80         157.158.24.40:4035      TIME_WAIT   
+cf:cube: ( 6) tcp        0      0 128.39.74.16:80         157.158.24.40:3782      TIME_WAIT   
+cf:cube: ( 7) tcp        0      0 128.39.74.16:80         157.158.24.40:3530      TIME_WAIT   
+cf:cube: ( 8) tcp        0      0 128.39.74.16:80         157.158.24.40:3824      TIME_WAIT   
+cf:cube: ( 9) tcp        0      0 128.39.74.16:80         157.158.24.40:3572      TIME_WAIT   
+cf:cube: (10) tcp        0      0 128.39.74.16:80         157.158.24.40:4091      TIME_WAIT   
+cf:cube: (11) tcp        0      0 128.39.74.16:80         157.158.24.40:3839      TIME_WAIT   
+cf:cube: (12) tcp        0      0 128.39.74.16:80         157.158.24.40:3810      TIME_WAIT   
+cf:cube: (13) tcp        0      0 128.39.74.16:80         157.158.24.40:4077      TIME_WAIT   
+cf:cube: (14) tcp        0      0 128.39.74.16:80         157.158.24.40:3993      TIME_WAIT   
+cf:cube: (15) tcp        0      0 128.39.74.16:80         157.158.24.40:3740      TIME_WAIT   
+cf:cube: (16) tcp        0      0 128.39.74.16:80         157.158.24.40:3712      TIME_WAIT   
+cf:cube: (17) tcp        0      0 128.39.74.16:80         157.158.24.40:3979      TIME_WAIT   
+cf:cube: (18) tcp        0      0 128.39.74.16:80         157.158.24.40:3726      TIME_WAIT   
+cf:cube: (19) tcp        0      0 128.39.74.16:80         157.158.24.40:4021      TIME_WAIT   
+cf:cube: (20) tcp        0      0 128.39.74.16:80         157.158.24.40:3768      TIME_WAIT   
+cf:cube: (21) tcp        0      0 128.39.74.16:80         157.158.24.40:3516      TIME_WAIT   
+cf:cube: (22) tcp        0      0 128.39.74.16:80         80.203.17.11:11487      ESTABLISHED 
+cf:cube: (23) tcp        0      0 128.39.74.16:80         157.158.24.40:4007      TIME_WAIT   
+cf:cube: (24) tcp        0      0 128.39.74.16:80         157.158.24.40:3754      TIME_WAIT   
+cf:cube: (25) tcp        0      0 128.39.74.16:80         66.196.72.28:6545       TIME_WAIT   
+cf:cube: (26) tcp        0      0 128.39.74.16:80         157.158.24.40:3923      TIME_WAIT   
+cf:cube: (27) tcp        0      0 128.39.74.16:80         157.158.24.40:3670      TIME_WAIT   
+cf:cube: (28) tcp        0      0 128.39.74.16:80         80.202.77.107:1567      TIME_WAIT   
+cf:cube: (29) tcp        0      0 128.39.74.16:80         157.158.24.40:4189      TIME_WAIT   
+cf:cube: (30) tcp        0      0 128.39.74.16:80         157.158.24.40:3909      TIME_WAIT   
+cf:cube: (31) tcp        0      0 128.39.74.16:80         157.158.24.40:3656      TIME_WAIT   
+cf:cube: (32) tcp        0      0 128.39.74.16:80         157.158.24.40:3698      TIME_WAIT   
+cf:cube: (33) tcp        0      0 128.39.74.16:80         157.158.24.40:3965      TIME_WAIT   
+cf:cube: (34) tcp        0      0 128.39.74.16:80         80.202.77.107:1568      TIME_WAIT   
+cf:cube: (35) tcp        0      0 128.39.74.16:80         157.158.24.40:3937      TIME_WAIT   
+cf:cube: (36) tcp        0      0 128.39.74.16:80         157.158.24.40:3684      TIME_WAIT   
+cf:cube: (37) tcp        0      0 128.39.74.16:80         157.158.24.40:4203      TIME_WAIT   
+cf:cube: (38) tcp        0      0 128.39.74.16:80         157.158.24.40:3951      TIME_WAIT   
+cf:cube: (39) tcp        0      0 128.39.74.16:80         157.158.24.40:3600      TIME_WAIT   
+cf:cube: (40) tcp        0      0 128.39.74.16:80         157.158.24.40:4119      TIME_WAIT   
+cf:cube: (41) tcp        0      0 128.39.74.16:80         157.158.24.40:3867      TIME_WAIT   
+cf:cube: (42) tcp        0      0 128.39.74.16:80         157.158.24.40:3614      TIME_WAIT   
+cf:cube: (43) tcp        0      0 128.39.74.16:80         157.158.24.40:3586      TIME_WAIT   
+cf:cube: (44) tcp        0      0 128.39.74.16:80         157.158.24.40:4105      TIME_WAIT   
+cf:cube: (45) tcp        0      0 128.39.74.16:80         157.158.24.40:3853      TIME_WAIT   
+cf:cube: (46) tcp        0      0 128.39.74.16:80         157.158.24.40:4147      TIME_WAIT   
+cf:cube: (47) tcp        0      0 128.39.74.16:80         157.158.24.40:3895      TIME_WAIT   
+cf:cube: (48) tcp        0      0 128.39.74.16:80         157.158.24.40:3642      TIME_WAIT   
+cf:cube: (49) tcp        0      0 128.39.74.16:80         80.213.238.106:4318     FIN_WAIT2   
+cf:cube: (50) tcp        0      0 128.39.74.16:80         80.213.238.106:4319     TIME_WAIT   
+cf:cube: (51) tcp        0      0 128.39.74.16:80         157.158.24.40:4133      TIME_WAIT   
+cf:cube: (52) tcp        0      0 128.39.74.16:80         157.158.24.40:3881      TIME_WAIT   
+cf:cube: (53) tcp        0      0 128.39.74.16:80         157.158.24.40:3628      TIME_WAIT   
+ @{
+ DNS key: 157.158.24.40 = arm.iele.polsl.gliwice.pl (47/53)
+ DNS key: 80.203.17.11 = 11.80-203-17.nextgentel.com (1/53)
+ DNS key: 66.196.72.28 = j3118.inktomisearch.com (1/53)
+ DNS key: 80.202.77.107 = 107.80-202-77.nextgentel.com (2/53)
+ DNS key: 80.213.238.106 = ti100710a080-3690.bb.online.no (2/53)
+ -
+ Frequency: 157.158.24.40    |*********************************************** 	(47/53)
+ Frequency: 80.203.17.11     |* 	(1/53)
+ Frequency: 66.196.72.28     |* 	(1/53)
+ Frequency: 80.202.77.107    |** 	(2/53)
+ Frequency: 80.213.238.106   |** 	(2/53)
+ @}
+ -
+ Scaled entropy of addresses = 12.7 %
+ (Entropy = 0 for single source, 100 for flatly distributed source)
+ -
 cf:cube: -----------------------------------------------------------------------------------
-cf:cube: State of incoming.www peaked at Wed Oct 22 10:22:07 2003
+cf:cube: State of incoming.www peaked at Fri Feb 20 19:57:23 2004
+
 
 @end smallexample
 

@@ -37,12 +37,7 @@
 /* EDIT Data structure routines                                     */
 /********************************************************************/
 
-int DoRecursiveEditFiles(name,level,ptr,sb)
-
-char *name;
-int level;
-struct Edit *ptr;
-struct stat *sb;
+int DoRecursiveEditFiles(char *name,int level,struct Edit *ptr,struct stat *sb)
 
 { DIR *dirh;
   struct dirent *dirp;
@@ -100,20 +95,20 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       if (lstat(dirp->d_name,&statbuf) == -1)
          {
          snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",pcwd);
-	 CfLog(cferror,OUTPUT,"stat");
+         CfLog(cferror,OUTPUT,"stat");
          continue;
          }
-
-      if (S_ISLNK(statbuf.st_mode) && (statbuf.st_mode != getuid()))	  
-	 {
-	 snprintf(OUTPUT,bufsize,"File %s is an untrusted link. cfagent will not follow it with a destructive operation (tidy)",pcwd);
-	 continue;
-	 }
+      
+      if (S_ISLNK(statbuf.st_mode) && (statbuf.st_mode != getuid()))   
+         {
+         snprintf(OUTPUT,bufsize,"File %s is an untrusted link. cfagent will not follow it with a destructive operation (tidy)",pcwd);
+         continue;
+         }
       
       if (stat(dirp->d_name,&statbuf) == -1)
          {
          snprintf(OUTPUT,bufsize*2,"RecursiveCheck was working on %s when this happened:\n",pcwd);
-	 CfLog(cferror,OUTPUT,"stat");
+         CfLog(cferror,OUTPUT,"stat");
          continue;
          }
       }
@@ -126,7 +121,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
          continue;
          }
       }
-
+   
    if (S_ISDIR(statbuf.st_mode))
       {
       if (IsMountedFileSystem(&statbuf,pcwd,level))
@@ -138,7 +133,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
          if ((ptr->recurse > 1) || (ptr->recurse == INFINITERECURSE))
             {
             goback = DoRecursiveEditFiles(pcwd,level-1,ptr,&statbuf);
-	    DirPop(goback,name,sb);
+            DirPop(goback,name,sb);
             }
          else
             {
@@ -158,9 +153,7 @@ return true;
 
 /********************************************************************/
 
-void DoEditHomeFiles(ptr)
-
-struct Edit *ptr;
+void DoEditHomeFiles(struct Edit *ptr)
 
 { DIR *dirh, *dirh2;
   struct dirent *dirp, *dirp2;
@@ -216,17 +209,17 @@ for (ip = VMOUNTLIST; ip != NULL; ip=ip->next)
       for (dirp2 = readdir(dirh2); dirp2 != NULL; dirp2 = readdir(dirh2))
          {
          if (!SensibleFile(dirp2->d_name,homedir,NULL))
-	    {
-	    continue;
-	    }
-
+            {
+            continue;
+            }
+         
          strcpy(dest,homedir);
          AddSlash(dest);
          strcat(dest,dirp2->d_name);
          AddSlash(dest);
          sp = ptr->fname + strlen("home/");
          strcat(dest,sp);
-
+         
          if (stat(dest,&statbuf))
             {
             EditVerbose("File %s doesn't exist for editing, skipping\n",dest);
@@ -257,10 +250,7 @@ for (ip = VMOUNTLIST; ip != NULL; ip=ip->next)
 
 /********************************************************************/
 
-void WrapDoEditFile(ptr,filename)
-
-struct Edit *ptr;
-char *filename;
+void WrapDoEditFile(struct Edit *ptr,char *filename)
 
 { struct stat statbuf,statbuf2;
   char linkname[bufsize];
@@ -274,80 +264,76 @@ if (lstat(filename,&statbuf) != -1)
       {
       EditVerbose("File %s is a link, editing real file instead\n",filename);
       
-      bzero(linkname,bufsize);
-      bzero(realname,bufsize);
+      memset(linkname,0,bufsize);
+      memset(realname,0,bufsize);
       
       if (readlink(filename,linkname,bufsize-1) == -1)
-	 {
-	 snprintf(OUTPUT,bufsize*2,"Cannot read link %s\n",filename);
-	 CfLog(cferror,OUTPUT,"readlink");
-	 return;
-	 }
+         {
+         snprintf(OUTPUT,bufsize*2,"Cannot read link %s\n",filename);
+         CfLog(cferror,OUTPUT,"readlink");
+         return;
+         }
       
       if (linkname[0] != '/')
-	 {
-	 strcpy(realname,filename);
-	 ChopLastNode(realname);
-	 AddSlash(realname);
-	 }
+         {
+         strcpy(realname,filename);
+         ChopLastNode(realname);
+         AddSlash(realname);
+         }
       
       if (BufferOverflow(realname,linkname))
-	 {
-	 snprintf(OUTPUT,bufsize*2,"(culprit %s in editfiles)\n",filename);
-	 CfLog(cferror,OUTPUT,"");
-	 return;
-	 }
+         {
+         snprintf(OUTPUT,bufsize*2,"(culprit %s in editfiles)\n",filename);
+         CfLog(cferror,OUTPUT,"");
+         return;
+         }
       
       if (stat(filename,&statbuf2) != -1)
-	 {
-	 if (statbuf2.st_uid != statbuf.st_uid)
-	    {
-	    /* Link to /etc/passwd? ouch! */
-	    snprintf(OUTPUT,bufsize*2,"Forbidden to edit a link to another user's file with privilege (%s)",filename);
-	    CfLog(cfinform,OUTPUT,"");
-	    return;
-	    }
-	 }
+         {
+         if (statbuf2.st_uid != statbuf.st_uid)
+            {
+            /* Link to /etc/passwd? ouch! */
+            snprintf(OUTPUT,bufsize*2,"Forbidden to edit a link to another user's file with privilege (%s)",filename);
+            CfLog(cfinform,OUTPUT,"");
+            return;
+            }
+         }
       
       strcat(realname,linkname);
-
+      
       if (!FileObjectFilter(realname,&statbuf2,ptr->filters,editfiles))
-	 {
-	 Debug("Skipping filtered editfile %s\n",filename);
-	 return;
-	 }
+         {
+         Debug("Skipping filtered editfile %s\n",filename);
+         return;
+         }
       DoEditFile(ptr,realname);
       return;
       }
    else
       {
       if (!FileObjectFilter(filename,&statbuf,ptr->filters,editfiles))
-	 {
-	 Debug("Skipping filtered editfile %s\n",filename);
-	 return;
-	 }
+         {
+         Debug("Skipping filtered editfile %s\n",filename);
+         return;
+         }
       DoEditFile(ptr,filename);
       return;
       }
    }
-else
-   {
-   if (!FileObjectFilter(filename,&statbuf,ptr->filters,editfiles))
-      {
-      Debug("Skipping filtered editfile %s\n",filename);
-      return;
-      }
-   DoEditFile(ptr,filename);
-   }
+ else
+    {
+    if (!FileObjectFilter(filename,&statbuf,ptr->filters,editfiles))
+       {
+       Debug("Skipping filtered editfile %s\n",filename);
+       return;
+       }
+    DoEditFile(ptr,filename);
+    }
 }
 
 /********************************************************************/
 
-void DoEditFile(ptr,filename)
-
-struct Edit *ptr;
-char *filename;
-
+void DoEditFile(struct Edit *ptr,char *filename)
 
    /* Many of the functions called here are defined in the */
    /* item.c toolkit since they operate on linked lists    */
@@ -360,13 +346,14 @@ char *filename;
   char spliton = ':';
   mode_t maskval;
   int todo = 0, potentially_outstanding = false;
-  FILE *loop_fp = NULL;
+  FILE *loop_fp = NULL,*read_fp = NULL;
+  int DeleteItemNotContaining(),DeleteItemNotStarting(),DeleteItemNotMatching();
 
 Debug("DoEditFile(%s)\n",filename);
 filestart = NULL;
 currenteditscript[0] = '\0';
 searchstr[0] = '\0';
-bzero(EDITBUFF,bufsize);
+memset(EDITBUFF,0,bufsize);
 AUTOCREATED = false;
 IMAGEBACKUP = 's';
 
@@ -449,710 +436,730 @@ while (ep != NULL)
       case EditFilter:
       case DefineClasses:
       case ElseDefineClasses:
-	       break;
+        break;
 
       case EditUseShell:
-	       if (strcmp(expdata,"false") == 0)
-		  {
-		  ptr->useshell = 'n';
-		  }
-	       break;
-
+        if (strcmp(expdata,"false") == 0)
+           {
+           ptr->useshell = 'n';
+           }
+        break;
+        
       case DefineInGroup:
-                  for (sp = expdata; *sp != '\0'; sp++)
-                      {
-                      currentitem[0] = '\0';
-                      sscanf(sp,"%[^,:.]",currentitem);
-                      sp += strlen(currentitem);
-                      AddClassToHeap(currentitem);
-                      }
-                  break;
-
+          for (sp = expdata; *sp != '\0'; sp++)
+             {
+             currentitem[0] = '\0';
+             sscanf(sp,"%[^,:.]",currentitem);
+             sp += strlen(currentitem);
+             AddClassToHeap(currentitem);
+             }
+          break;
+          
       case CatchAbort:
-	          EditVerbose("Caught Exception\n");
-	          break;
-
+           EditVerbose("Caught Exception\n");
+           break;
+           
       case SplitOn:
-	          spliton = *(expdata);
-		  EditVerbose("Split lines by %c\n",spliton);
-		  break;
-
+          spliton = *(expdata);
+          EditVerbose("Split lines by %c\n",spliton);
+          break;
+          
       case DeleteLinesStarting:
-               while (DeleteItemStarting(&filestart,expdata))
-                  {
-                  }
-               break;
-
+          while (DeleteItemStarting(&filestart,expdata))
+             {
+             }
+          break;
+          
       case DeleteLinesContaining:
-               while (DeleteItemContaining(&filestart,expdata))
-                  {
-                  }
-               break;
-
+          while (DeleteItemContaining(&filestart,expdata))
+             {
+             }
+          break;
+          
       case DeleteLinesNotStarting:
-               while (DeleteItemNotStarting(&filestart,expdata))
-                  {
-                  }
-               break;
-
+          while (DeleteItemNotStarting(&filestart,expdata))
+             {
+             }
+          break;
+          
       case DeleteLinesNotContaining:
-               while (DeleteItemNotContaining(&filestart,expdata))
-                  {
-                  }
-               break;
-
+          while (DeleteItemNotContaining(&filestart,expdata))
+             {
+             }
+          break;
+          
+      case DeleteLinesStartingFileItems:
+      case DeleteLinesContainingFileItems:
+      case DeleteLinesMatchingFileItems:
+      case DeleteLinesNotStartingFileItems:
+      case DeleteLinesNotContainingFileItems:
+      case DeleteLinesNotMatchingFileItems:
+          
+          if (!DeleteLinesWithFileItems(&filestart,expdata,ep->code))
+             {
+             goto abort;
+             }
+          break;
+          
       case DeleteLinesAfterThisMatching:
-
-               if ((filestart == NULL) || (CURRENTLINEPTR == NULL))
-		  {
-		  break;
-		  }
-	       else if (CURRENTLINEPTR->next != NULL)
-		  {
-                  while (DeleteItemMatching(&(CURRENTLINEPTR->next),expdata))
-                    {
-	   	    }
-		  }
-               break;	       
-
+          
+          if ((filestart == NULL) || (CURRENTLINEPTR == NULL))
+             {
+             break;
+             }
+          else if (CURRENTLINEPTR->next != NULL)
+             {
+             while (DeleteItemMatching(&(CURRENTLINEPTR->next),expdata))
+                {
+                }
+             }
+          break;        
+          
       case DeleteLinesMatching:
-               while (DeleteItemMatching(&filestart,expdata))
-                 {
-		 }
-               break;
-
+          while (DeleteItemMatching(&filestart,expdata))
+             {
+             }
+          break;
+          
       case DeleteLinesNotMatching:
-               while (DeleteItemNotMatching(&filestart,expdata))
-                 {
-		 }
-               break;
-
+          while (DeleteItemNotMatching(&filestart,expdata))
+             {
+             }
+          break;
+          
       case Append:
-              AppendItem(&filestart,expdata,NULL);
-              break;
-
+          AppendItem(&filestart,expdata,NULL);
+          break;
+          
       case AppendIfNoSuchLine:
-               if (! IsItemIn(filestart,expdata))
-                  {
-                  AppendItem(&filestart,expdata,NULL);
-                  }
-               break;
-
+          if (! IsItemIn(filestart,expdata))
+             {
+             AppendItem(&filestart,expdata,NULL);
+             }
+          break;
+          
+      case AppendIfNoSuchLinesFromFile:
+          if (!AppendLinesFromFile(&filestart,expdata))
+             {
+             goto abort;
+             }
+          break;
+          
       case SetLine:
-               strcpy(EDITBUFF,expdata);
-               EditVerbose("Set current line to %s\n",EDITBUFF);
-               break;
-
+          strcpy(EDITBUFF,expdata);
+          EditVerbose("Set current line to %s\n",EDITBUFF);
+          break;
+          
       case AppendIfNoLineMatching:
-
-    	       Debug("AppendIfNoLineMatching : %s\n",EDITBUFF);
-
-               if (strcmp(EDITBUFF,"") == 0)
-                  {
-                  snprintf(OUTPUT,bufsize*2,"SetLine not set when calling AppendIfNoLineMatching %s\n",expdata);
-		  CfLog(cferror,OUTPUT,"");
-                  break;
-                  }
-
-	       if (strcmp(expdata,"ThisLine") == 0)
-		  {
-		  if (LocateNextItemMatching(filestart,EDITBUFF) == NULL)
-		     {
-		     AppendItem(&filestart,EDITBUFF,NULL);
-		     }		 
-
-		  break;
-		  }
-	       
-               if (LocateNextItemMatching(filestart,expdata) == NULL)
-	          {
-                  AppendItem(&filestart,EDITBUFF,NULL);
-                  }
-               break;
-
+          
+          Debug("AppendIfNoLineMatching : %s\n",EDITBUFF);
+          
+          if (strcmp(EDITBUFF,"") == 0)
+             {
+             snprintf(OUTPUT,bufsize*2,"SetLine not set when calling AppendIfNoLineMatching %s\n",expdata);
+             CfLog(cferror,OUTPUT,"");
+             break;
+             }
+          
+          if (strcmp(expdata,"ThisLine") == 0)
+             {
+             if (LocateNextItemMatching(filestart,EDITBUFF) == NULL)
+                {
+                AppendItem(&filestart,EDITBUFF,NULL);
+                }   
+             
+             break;
+             }
+          
+          if (LocateNextItemMatching(filestart,expdata) == NULL)
+             {
+             AppendItem(&filestart,EDITBUFF,NULL);
+             }
+          break;
+          
       case Prepend:
-               PrependItem(&filestart,expdata,NULL);
-               break;
-
+          PrependItem(&filestart,expdata,NULL);
+          break;
+          
       case PrependIfNoSuchLine:
-               if (! IsItemIn(filestart,expdata))
-                  {
-                  PrependItem(&filestart,expdata,NULL);
-                  }
-               break;
-
+          if (! IsItemIn(filestart,expdata))
+             {
+             PrependItem(&filestart,expdata,NULL);
+             }
+          break;
+          
       case PrependIfNoLineMatching:
-
-               if (strcmp(EDITBUFF,"") == 0)
-                  {
-                  snprintf(OUTPUT,bufsize,"SetLine not set when calling PrependIfNoLineMatching %s\n",expdata);
-		  CfLog(cferror,OUTPUT,"");
-                  break;
-                  }
-
-               if (LocateNextItemMatching(filestart,expdata) == NULL)
-                  {
-                  PrependItem(&filestart,EDITBUFF,NULL);
-                  }
-               break;
-
+          
+          if (strcmp(EDITBUFF,"") == 0)
+             {
+             snprintf(OUTPUT,bufsize,"SetLine not set when calling PrependIfNoLineMatching %s\n",expdata);
+             CfLog(cferror,OUTPUT,"");
+             break;
+             }
+          
+          if (LocateNextItemMatching(filestart,expdata) == NULL)
+             {
+             PrependItem(&filestart,EDITBUFF,NULL);
+             }
+          break;
+          
       case WarnIfNoSuchLine:
-   	       if ((PASS == 1) && (LocateNextItemMatching(filestart,expdata) == NULL))
-                  {
-		  printf("Warning, file %s has no line matching %s\n",filename,expdata);
-		  }	       
-               break;
-
+          if ((PASS == 1) && (LocateNextItemMatching(filestart,expdata) == NULL))
+             {
+             printf("Warning, file %s has no line matching %s\n",filename,expdata);
+             }        
+          break;
+          
       case WarnIfLineMatching:
-               if ((PASS == 1) && (LocateNextItemMatching(filestart,expdata) != NULL))
-                  {
-                  printf("Warning, file %s has a line matching %s\n",filename,expdata);
-                  }
-               break;
-
+          if ((PASS == 1) && (LocateNextItemMatching(filestart,expdata) != NULL))
+             {
+             printf("Warning, file %s has a line matching %s\n",filename,expdata);
+             }
+          break;
+          
       case WarnIfNoLineMatching:
-	       if ((PASS == 1) && (LocateNextItemMatching(filestart,expdata) == NULL))
-                  {
-                  printf("Warning, file %s has a no line matching %s\n",filename,expdata);
-                  }
-               break;
-
+          if ((PASS == 1) && (LocateNextItemMatching(filestart,expdata) == NULL))
+             {
+             printf("Warning, file %s has a no line matching %s\n",filename,expdata);
+             }
+          break;
+          
       case WarnIfLineStarting:
-   	       if ((PASS == 1) && (LocateNextItemStarting(filestart,expdata) != NULL))
-                  {
-                  printf("Warning, file %s has a line starting %s\n",filename,expdata);
-                  }
-               break;
-
+          if ((PASS == 1) && (LocateNextItemStarting(filestart,expdata) != NULL))
+             {
+             printf("Warning, file %s has a line starting %s\n",filename,expdata);
+             }
+          break;
+          
       case WarnIfNoLineStarting:
-	       if ((PASS == 1) && (LocateNextItemStarting(filestart,expdata) == NULL))
-                  {
-                  printf("Warning, file %s has no line starting %s\n",filename,expdata);
-                  }
-               break;
-
+          if ((PASS == 1) && (LocateNextItemStarting(filestart,expdata) == NULL))
+             {
+             printf("Warning, file %s has no line starting %s\n",filename,expdata);
+             }
+          break;
+          
       case WarnIfLineContaining:
-	       if ((PASS == 1) && (LocateNextItemContaining(filestart,expdata) != NULL))
-                  {
-                  printf("Warning, file %s has a line containing %s\n",filename,expdata);
-                  }
-               break;
-
+          if ((PASS == 1) && (LocateNextItemContaining(filestart,expdata) != NULL))
+             {
+             printf("Warning, file %s has a line containing %s\n",filename,expdata);
+             }
+          break;
+          
       case WarnIfNoLineContaining:
-	       if ((PASS == 1) && (LocateNextItemContaining(filestart,expdata) == NULL))
-                  {
-                  printf("Warning, file %s has no line containing %s\n",filename,expdata);
-                  }
-               break;
-
+          if ((PASS == 1) && (LocateNextItemContaining(filestart,expdata) == NULL))
+             {
+             printf("Warning, file %s has no line containing %s\n",filename,expdata);
+             }
+          break;
+          
       case SetCommentStart:
-               strncpy(COMMENTSTART,expdata,maxvarsize);
-               COMMENTSTART[maxvarsize-1] = '\0';
-               break;
-
+          strncpy(COMMENTSTART,expdata,maxvarsize);
+          COMMENTSTART[maxvarsize-1] = '\0';
+          break;
+          
       case SetCommentEnd:
-               strncpy(COMMENTEND,expdata,maxvarsize);
-               COMMENTEND[maxvarsize-1] = '\0';
-               break;
-
+          strncpy(COMMENTEND,expdata,maxvarsize);
+          COMMENTEND[maxvarsize-1] = '\0';
+          break;
+          
       case CommentLinesMatching:
-               while (CommentItemMatching(&filestart,expdata,COMMENTSTART,COMMENTEND))
-                  {
-                  }
-               break;
-
+          while (CommentItemMatching(&filestart,expdata,COMMENTSTART,COMMENTEND))
+             {
+             }
+          break;
+          
       case CommentLinesStarting:
-               while (CommentItemStarting(&filestart,expdata,COMMENTSTART,COMMENTEND))
-                  {
-                  }
-               break;
-
+          while (CommentItemStarting(&filestart,expdata,COMMENTSTART,COMMENTEND))
+             {
+             }
+          break;
+          
       case CommentLinesContaining:
-               while (CommentItemContaining(&filestart,expdata,COMMENTSTART,COMMENTEND))
-                  {
-                  }
-               break;
-
+          while (CommentItemContaining(&filestart,expdata,COMMENTSTART,COMMENTEND))
+             {
+             }
+          break;
+          
       case HashCommentLinesContaining:
-               while (CommentItemContaining(&filestart,expdata,"# ",""))
-                  {
-                  }
-               break;
-
+          while (CommentItemContaining(&filestart,expdata,"# ",""))
+             {
+             }
+          break;
+          
       case HashCommentLinesStarting:
-               while (CommentItemStarting(&filestart,expdata,"# ",""))
-                  {
-                  }
-               break;
-
+          while (CommentItemStarting(&filestart,expdata,"# ",""))
+             {
+             }
+          break;
+          
       case HashCommentLinesMatching:
-               while (CommentItemMatching(&filestart,expdata,"# ",""))
-                  {
-                  }
-               break;
-
+          while (CommentItemMatching(&filestart,expdata,"# ",""))
+             {
+             }
+          break;
+          
       case SlashCommentLinesContaining:
-               while (CommentItemContaining(&filestart,expdata,"//",""))
-                  {
-                  }
-               break;
-
+          while (CommentItemContaining(&filestart,expdata,"//",""))
+             {
+             }
+          break;
+          
       case SlashCommentLinesStarting:
-               while (CommentItemStarting(&filestart,expdata,"//",""))
-                  {
-                  }
-               break;
-
+          while (CommentItemStarting(&filestart,expdata,"//",""))
+             {
+             }
+          break;
+          
       case SlashCommentLinesMatching:
-               while (CommentItemMatching(&filestart,expdata,"//",""))
-                  {
-                  }
-               break;
-
+          while (CommentItemMatching(&filestart,expdata,"//",""))
+             {
+             }
+          break;
+          
       case PercentCommentLinesContaining:
-               while (CommentItemContaining(&filestart,expdata,"%",""))
-                  {
-                  }
-               break;
-
+          while (CommentItemContaining(&filestart,expdata,"%",""))
+             {
+             }
+          break;
+          
       case PercentCommentLinesStarting:
                while (CommentItemStarting(&filestart,expdata,"%",""))
                   {
                   }
                break;
-
+               
       case PercentCommentLinesMatching:
-               while (CommentItemMatching(&filestart,expdata,"%",""))
-                  {
-                  }
-               break;
-
+          while (CommentItemMatching(&filestart,expdata,"%",""))
+             {
+             }
+          break;
+          
       case ResetSearch:
-               if (!ResetEditSearch(expdata,filestart))
-                  {
-                  printf("ResetSearch Failed in %s, aborting editing\n",filename);
-                  goto abort;
-                  }
-               break;
-
+          if (!ResetEditSearch(expdata,filestart))
+             {
+             printf("ResetSearch Failed in %s, aborting editing\n",filename);
+             goto abort;
+             }
+          break;
+          
       case LocateLineMatching:
-
-               if (CURRENTLINEPTR == NULL)
-                  {
-                  newlineptr == NULL;
-                  }
-               else
-                  {
-                  newlineptr = LocateItemMatchingRegExp(CURRENTLINEPTR,expdata);
-                  }
-	       
-               if (newlineptr == NULL)
-                  {
-                  EditVerbose("LocateLineMatchingRegexp failed in %s, aborting editing\n",filename);
-                  ep = ThrowAbort(ep);
-                  }
-               break;
-
+          
+          if (CURRENTLINEPTR == NULL)
+             {
+             newlineptr == NULL;
+             }
+          else
+             {
+             newlineptr = LocateItemMatchingRegExp(CURRENTLINEPTR,expdata);
+             }
+          
+          if (newlineptr == NULL)
+             {
+             EditVerbose("LocateLineMatchingRegexp failed in %s, aborting editing\n",filename);
+             ep = ThrowAbort(ep);
+             }
+          break;
+          
       case InsertLine:
-	          if (filestart == NULL)
-		     {
-		     AppendItem(&filestart,expdata,NULL);
-		     }
-		  else
-		     {
-		     InsertItemAfter(&filestart,CURRENTLINEPTR,expdata);
-		     }
-                  break;
-
+          if (filestart == NULL)
+             {
+             AppendItem(&filestart,expdata,NULL);
+             }
+          else
+             {
+             InsertItemAfter(&filestart,CURRENTLINEPTR,expdata);
+             }
+          break;
+          
       case InsertFile:
-	          InsertFileAfter(&filestart,CURRENTLINEPTR,expdata);
-		  break;
-
+          InsertFileAfter(&filestart,CURRENTLINEPTR,expdata);
+          break;
+          
       case IncrementPointer:
-               if (! IncrementEditPointer(expdata,filestart))     /* edittools */
-                  {
-                  printf ("IncrementPointer failed in %s, aborting editing\n",filename);
-  	          ep = ThrowAbort(ep);
-                  }
-
-               break;
-	       
-     case ReplaceLineWith:
-               if (!ReplaceEditLineWith(expdata))
-                  {
-                  printf("Aborting edit of file %s\n",filename);
-                  continue;
-                  }
-               break;
-
+          if (! IncrementEditPointer(expdata,filestart))     /* edittools */
+             {
+             printf ("IncrementPointer failed in %s, aborting editing\n",filename);
+             ep = ThrowAbort(ep);
+             }
+          
+          break;
+          
+      case ReplaceLineWith:
+          if (!ReplaceEditLineWith(expdata))
+             {
+             printf("Aborting edit of file %s\n",filename);
+             continue;
+             }
+          break;
+          
       case DeleteToLineMatching:
-               if (! DeleteToRegExp(&filestart,expdata))
-                  {
-                  EditVerbose("Nothing matched DeleteToLineMatching regular expression\n");
-                  EditVerbose("Aborting file editing of %s.\n" ,filename);
-                  ep = ThrowAbort(ep);
-                  }
-               break;
-
+          if (! DeleteToRegExp(&filestart,expdata))
+             {
+             EditVerbose("Nothing matched DeleteToLineMatching regular expression\n");
+             EditVerbose("Aborting file editing of %s.\n" ,filename);
+             ep = ThrowAbort(ep);
+             }
+          break;
+          
       case DeleteNLines:
-               if (! DeleteSeveralLines(&filestart,expdata))
-                  {
-                  EditVerbose("Could not delete %s lines from file\n",expdata);
-                  EditVerbose("Aborting file editing of %s.\n",filename);
-                  ep = ThrowAbort(ep);
-                  }
-               break;
-
+          if (! DeleteSeveralLines(&filestart,expdata))
+             {
+             EditVerbose("Could not delete %s lines from file\n",expdata);
+             EditVerbose("Aborting file editing of %s.\n",filename);
+             ep = ThrowAbort(ep);
+             }
+          break;
+          
       case HashCommentToLineMatching:
-               if (! CommentToRegExp(&filestart,expdata,"#",""))
-                  {
-                  EditVerbose("Nothing matched HashCommentToLineMatching regular expression\n");
-                  EditVerbose("Aborting file editing of %s.\n",filename);
-                  ep = ThrowAbort(ep);
-                  }
-               break;
-
+          if (! CommentToRegExp(&filestart,expdata,"#",""))
+             {
+             EditVerbose("Nothing matched HashCommentToLineMatching regular expression\n");
+             EditVerbose("Aborting file editing of %s.\n",filename);
+             ep = ThrowAbort(ep);
+             }
+          break;
+          
       case PercentCommentToLineMatching:
-               if (! CommentToRegExp(&filestart,expdata,"%",""))
-                  {
-                  EditVerbose("Nothing matched PercentCommentToLineMatching regular expression\n");
-                  EditVerbose("Aborting file editing of %s.\n",filename);
-                  ep = ThrowAbort(ep);
-                  }
-               break;
-
+          if (! CommentToRegExp(&filestart,expdata,"%",""))
+             {
+             EditVerbose("Nothing matched PercentCommentToLineMatching regular expression\n");
+             EditVerbose("Aborting file editing of %s.\n",filename);
+             ep = ThrowAbort(ep);
+             }
+          break;
+          
       case CommentToLineMatching:
-               if (! CommentToRegExp(&filestart,expdata,COMMENTSTART,COMMENTEND))
-                  {
-                  EditVerbose("Nothing matched CommentToLineMatching regular expression\n");
-                  EditVerbose("Aborting file editing of %s.\n",filename);
-                  ep = ThrowAbort(ep);
-                  }
-               break;
-
+          if (! CommentToRegExp(&filestart,expdata,COMMENTSTART,COMMENTEND))
+             {
+             EditVerbose("Nothing matched CommentToLineMatching regular expression\n");
+             EditVerbose("Aborting file editing of %s.\n",filename);
+             ep = ThrowAbort(ep);
+             }
+          break;
+          
       case CommentNLines:
-               if (! CommentSeveralLines(&filestart,expdata,COMMENTSTART,COMMENTEND))
-                  {
-                  EditVerbose("Could not comment %s lines from file\n",expdata);
-                  EditVerbose("Aborting file editing of %s.\n",filename);
-                  ep = ThrowAbort(ep);
-                  }
-               break;
-	       
+          if (! CommentSeveralLines(&filestart,expdata,COMMENTSTART,COMMENTEND))
+             {
+             EditVerbose("Could not comment %s lines from file\n",expdata);
+             EditVerbose("Aborting file editing of %s.\n",filename);
+             ep = ThrowAbort(ep);
+             }
+          break;
+          
       case UnCommentNLines:
-               if (! UnCommentSeveralLines(&filestart,expdata,COMMENTSTART,COMMENTEND))
-                  {
-                  EditVerbose("Could not comment %s lines from file\n",expdata);
-                  EditVerbose("Aborting file editing of %s.\n",filename);
-                  ep = ThrowAbort(ep);
-                  }
-               break;
-
+          if (! UnCommentSeveralLines(&filestart,expdata,COMMENTSTART,COMMENTEND))
+             {
+             EditVerbose("Could not comment %s lines from file\n",expdata);
+             EditVerbose("Aborting file editing of %s.\n",filename);
+             ep = ThrowAbort(ep);
+             }
+          break;
+          
       case UnCommentLinesContaining:
-               while (UnCommentItemContaining(&filestart,expdata,COMMENTSTART,COMMENTEND))
-                  {
-                  }
-               break;
-
+          while (UnCommentItemContaining(&filestart,expdata,COMMENTSTART,COMMENTEND))
+             {
+             }
+          break;
+          
       case UnCommentLinesMatching:
-               while (UnCommentItemMatching(&filestart,expdata,COMMENTSTART,COMMENTEND))
-                  {
-                  }
-               break;
-	       
+          while (UnCommentItemMatching(&filestart,expdata,COMMENTSTART,COMMENTEND))
+             {
+             }
+          break;
+          
       case SetScript:
-                strncpy(currenteditscript, expdata, bufsize);
-                currenteditscript[bufsize-1] = '\0';
-                break;
+          strncpy(currenteditscript, expdata, bufsize);
+          currenteditscript[bufsize-1] = '\0';
+          break;
 
       case RunScript:
-               if (! RunEditScript(expdata,filename,&filestart,ptr))
-                  {
-                  printf("Aborting further edits to %s\n",filename);
-                  ep = ThrowAbort(ep);
-                  }
-               break;
-
+          if (! RunEditScript(expdata,filename,&filestart,ptr))
+             {
+             printf("Aborting further edits to %s\n",filename);
+             ep = ThrowAbort(ep);
+             }
+          break;
+          
       case RunScriptIfNoLineMatching:
-               if (! LocateNextItemMatching(filestart,expdata))
-                  {
-                  if (! RunEditScript(currenteditscript,filename,&filestart,ptr))
-                     {
-                     printf("Aborting further edits to %s\n",filename);
-                     ep = ThrowAbort(ep);
-                     }
-                  }
-               break;
-
+          if (! LocateNextItemMatching(filestart,expdata))
+             {
+             if (! RunEditScript(currenteditscript,filename,&filestart,ptr))
+                {
+                printf("Aborting further edits to %s\n",filename);
+                ep = ThrowAbort(ep);
+                }
+             }
+          break;
+          
       case RunScriptIfLineMatching:
-               if (LocateNextItemMatching(filestart,expdata))
-                  {
-                  if (! RunEditScript(currenteditscript,filename,&filestart,ptr))
-                     {
-                     printf("Aborting further edits to %s\n",filename);
-                     ep = ThrowAbort(ep);
-                     }
-                  }
-               break;
-
+          if (LocateNextItemMatching(filestart,expdata))
+             {
+             if (! RunEditScript(currenteditscript,filename,&filestart,ptr))
+                {
+                printf("Aborting further edits to %s\n",filename);
+                ep = ThrowAbort(ep);
+                }
+             }
+          break;
+          
       case EmptyEntireFilePlease:
-               EditVerbose("Emptying entire file\n");
-               DeleteItemList(filestart);
-	       filestart = NULL;
-	       CURRENTLINEPTR = NULL;
-	       CURRENTLINENUMBER=0;
-               NUMBEROFEDITS++;
-               break;
-
+          EditVerbose("Emptying entire file\n");
+          DeleteItemList(filestart);
+          filestart = NULL;
+          CURRENTLINEPTR = NULL;
+          CURRENTLINENUMBER=0;
+          NUMBEROFEDITS++;
+          break;
+          
       case GotoLastLine:
-               GotoLastItem(filestart);
-               break;
-
+          GotoLastItem(filestart);
+          break;
+          
       case BreakIfLineMatches:
-	       if (CURRENTLINEPTR == NULL || CURRENTLINEPTR->name == NULL )
-		  {
-		  EditVerbose("(BreakIfLIneMatches - no match for %s - file empty)\n",expdata);
-		  break;
-		  }
-	  
-               if (LineMatches(CURRENTLINEPTR->name,expdata))
-                  {
-                  EditVerbose("Break! %s\n",expdata);
-                  goto abort;
-                  }
-               break;
-
+          if (CURRENTLINEPTR == NULL || CURRENTLINEPTR->name == NULL )
+             {
+             EditVerbose("(BreakIfLIneMatches - no match for %s - file empty)\n",expdata);
+             break;
+             }
+          
+          if (LineMatches(CURRENTLINEPTR->name,expdata))
+             {
+             EditVerbose("Break! %s\n",expdata);
+             goto abort;
+             }
+          break;
+          
       case BeginGroupIfNoMatch:
-	       if (CURRENTLINEPTR == NULL || CURRENTLINEPTR->name == NULL )
-		  {
-		  EditVerbose("(Begin Group - no match for %s - file empty)\n",expdata);
-		  break;
-		  }
-	       
-               if (LineMatches(CURRENTLINEPTR->name,expdata))
-                  {
-                  EditVerbose("(Begin Group - skipping %s)\n",expdata);
-		  ep = SkipToEndGroup(ep,filename);
-                  }
-               else
-                  {
-                  EditVerbose("(Begin Group - no match for %s)\n",expdata);
-                  }
-               break;
-
-     case BeginGroupIfNoLineMatching:
-               if (LocateItemMatchingRegExp(filestart,expdata) != 0)
-                  {
-                  EditVerbose("(Begin Group - skipping %s)\n",expdata);
-		  ep = SkipToEndGroup(ep,filename);
-                  }
-               else
-                  {
-                  EditVerbose("(Begin Group - no line matching %s)\n",expdata);
-                  }
-               break;
-
+          if (CURRENTLINEPTR == NULL || CURRENTLINEPTR->name == NULL )
+             {
+             EditVerbose("(Begin Group - no match for %s - file empty)\n",expdata);
+             break;
+             }
+          
+          if (LineMatches(CURRENTLINEPTR->name,expdata))
+             {
+             EditVerbose("(Begin Group - skipping %s)\n",expdata);
+             ep = SkipToEndGroup(ep,filename);
+             }
+          else
+             {
+             EditVerbose("(Begin Group - no match for %s)\n",expdata);
+             }
+          break;
+          
+      case BeginGroupIfNoLineMatching:
+          if (LocateItemMatchingRegExp(filestart,expdata) != 0)
+             {
+             EditVerbose("(Begin Group - skipping %s)\n",expdata);
+             ep = SkipToEndGroup(ep,filename);
+             }
+          else
+             {
+             EditVerbose("(Begin Group - no line matching %s)\n",expdata);
+             }
+          break;
+          
       case BeginGroupIfNoLineContaining:
-               if (LocateNextItemContaining(filestart,expdata) != 0)
-                  {
-                  EditVerbose("(Begin Group - skipping, string matched)\n");
-                  ep = SkipToEndGroup(ep,filename);
-                  }
-               else
-                  {
-                  EditVerbose("(Begin Group - no line containing %s)\n",expdata);
-                  }
-               break;
-
+          if (LocateNextItemContaining(filestart,expdata) != 0)
+             {
+             EditVerbose("(Begin Group - skipping, string matched)\n");
+             ep = SkipToEndGroup(ep,filename);
+             }
+          else
+             {
+             EditVerbose("(Begin Group - no line containing %s)\n",expdata);
+             }
+          break;
+          
       case BeginGroupIfNoSuchLine:
-               if (IsItemIn(filestart,expdata))
-                  {
-                  EditVerbose("(Begin Group - skipping, line exists)\n");
-		  ep = SkipToEndGroup(ep,filename);
-                  }
-               else
-                  {
-                  EditVerbose("(Begin Group - no line %s)\n",expdata);
-                  }
-               break;
-
-
-     case BeginGroupIfFileIsNewer:
-               if ((!AUTOCREATED) && (!FileIsNewer(filename,expdata)))
-                  {
-                  EditVerbose("(Begin Group - skipping, file is older)\n");
-                  while(ep->code != EndGroup)
-                     {
-                     ep=ep->next;
-                     }
-                  }
-               else
-                  {
-                  EditVerbose("(Begin Group - new file %s)\n",expdata);
-                  }
-               break;
-
-
+          if (IsItemIn(filestart,expdata))
+             {
+             EditVerbose("(Begin Group - skipping, line exists)\n");
+             ep = SkipToEndGroup(ep,filename);
+             }
+          else
+             {
+             EditVerbose("(Begin Group - no line %s)\n",expdata);
+             }
+          break;
+          
+          
+      case BeginGroupIfFileIsNewer:
+          if ((!AUTOCREATED) && (!FileIsNewer(filename,expdata)))
+             {
+             EditVerbose("(Begin Group - skipping, file is older)\n");
+             while(ep->code != EndGroup)
+                {
+                ep=ep->next;
+                }
+             }
+          else
+             {
+             EditVerbose("(Begin Group - new file %s)\n",expdata);
+             }
+          break;
+          
+          
       case BeginGroupIfDefined:
-               if (!IsExcluded(expdata))
-                 {
-                 EditVerbose("(Begin Group - class %s defined)\n", expdata);
-                 }
-               else
-                 {
-                 EditVerbose("(Begin Group - class %s not defined - skipping)\n", expdata);
-                 ep = SkipToEndGroup(ep,filename);
-                 }
-               break;
-
+          if (!IsExcluded(expdata))
+             {
+             EditVerbose("(Begin Group - class %s defined)\n", expdata);
+             }
+          else
+             {
+             EditVerbose("(Begin Group - class %s not defined - skipping)\n", expdata);
+             ep = SkipToEndGroup(ep,filename);
+             }
+          break;
+          
       case BeginGroupIfNotDefined:
-               if (IsExcluded(expdata))
-                 {
-                 EditVerbose("(Begin Group - class %s not defined)\n", expdata);
-                 }
-               else
-                 {
-                 EditVerbose("(Begin Group - class %s defined - skipping)\n", expdata);
-                 ep = SkipToEndGroup(ep,filename);
-                 }
-               break;
-	       
-     case BeginGroupIfFileExists:
-               if (stat(expdata,&tmpstat) == -1)
-                  {
-                  EditVerbose("(Begin Group - file unreadable/no such file - skipping)\n");
-		  ep = SkipToEndGroup(ep,filename);
-                  }
-               else
-                  {
-                  EditVerbose("(Begin Group - found file %s)\n",expdata);
-                  }
-               break;
+          if (IsExcluded(expdata))
+             {
+             EditVerbose("(Begin Group - class %s not defined)\n", expdata);
+             }
+          else
+             {
+             EditVerbose("(Begin Group - class %s defined - skipping)\n", expdata);
+             ep = SkipToEndGroup(ep,filename);
+             }
+          break;
+          
+      case BeginGroupIfFileExists:
+          if (stat(expdata,&tmpstat) == -1)
+             {
+             EditVerbose("(Begin Group - file unreadable/no such file - skipping)\n");
+             ep = SkipToEndGroup(ep,filename);
+             }
+          else
+             {
+             EditVerbose("(Begin Group - found file %s)\n",expdata);
+             }
+          break;
       case EndGroup:
-               EditVerbose("(End Group)\n");
-               break;
-
+          EditVerbose("(End Group)\n");
+          break;
+          
       case ReplaceAll:
-               strncpy(searchstr,expdata,bufsize);
-               break;
-
+          strncpy(searchstr,expdata,bufsize);
+          break;
+          
       case With:
-               if (!GlobalReplace(&filestart,searchstr,expdata))
-		  {
-		  snprintf(OUTPUT,bufsize*2,"Error editing file %s",filename);
-		  CfLog(cferror,OUTPUT,"");
-		  }
-               break;
-
+          if (!GlobalReplace(&filestart,searchstr,expdata))
+             {
+             snprintf(OUTPUT,bufsize*2,"Error editing file %s",filename);
+             CfLog(cferror,OUTPUT,"");
+             }
+          break;
+          
       case FixEndOfLine:
-               DoFixEndOfLine(filestart,expdata);
-	       break;
-
+          DoFixEndOfLine(filestart,expdata);
+          break;
+          
       case AbortAtLineMatching:
-               EDABORTMODE = true;
-	       strcpy(VEDITABORT,expdata);
-	       break;
-
+          EDABORTMODE = true;
+          strcpy(VEDITABORT,expdata);
+          break;
+          
       case UnsetAbort:
-               EDABORTMODE = false;
-	       break;
-
+          EDABORTMODE = false;
+          break;
+          
       case AutoMountDirectResources:
-	       HandleAutomountResources(&filestart,expdata);
-	       break;
-
+          HandleAutomountResources(&filestart,expdata);
+          break;
+          
       case ForEachLineIn:
-	       if (loopstart == NULL)
-		  {
-	          loopstart = ep;
-
-		  if ((loop_fp = fopen(expdata,"r")) == NULL)
-		     {
-		     EditVerbose("Couldn't open %s\n",expdata);
-		     while(ep->code != EndLoop) /* skip over loop */
-		        {
-		        ep = ep->next;
-		        }
-		     break;
-		     }
-		  
-		  EditVerbose("Starting ForEach loop with %s\n",expdata);
-		  continue;
-		  }
-	       else
-		  {
-	          if (!feof(loop_fp))
-		     {
-		     bzero(EDITBUFF,bufsize);
-
-		     while (ReadLine(EDITBUFF,bufsize,loop_fp)) /* Like SetLine */
-			{
-			if (strlen(EDITBUFF) == 0)
-			   {
-			   EditVerbose("ForEachLineIn skipping blank line");
-			   continue;
-			   }
-			break;
-			}
-		     if (strlen(EDITBUFF) == 0)
-			{
-			EditVerbose("EndForEachLineIn\n");
-			fclose(loop_fp);
-			loopstart = NULL;
-			while(ep->code != EndLoop)
-			   {
-			   ep = ep->next;
-			   }
-			EditVerbose("EndForEachLineIn, set current line to: %s\n",EDITBUFF);
-			}
-
-		     Debug("ForeachLine: %s\n",EDITBUFF);
-		     }
-		  else
-		     {
-		     EditVerbose("EndForEachLineIn");
-		     
-		     fclose(loop_fp);
-		     loopstart = NULL;
-		     
-		     while(ep->code != EndLoop)
-		        {
-		        ep = ep->next;
-		        }
-		     }
-		  }
-	       
-	       break;
-
+          if (loopstart == NULL)
+             {
+             loopstart = ep;
+             
+             if ((loop_fp = fopen(expdata,"r")) == NULL)
+                {
+                EditVerbose("Couldn't open %s\n",expdata);
+                while(ep->code != EndLoop) /* skip over loop */
+                   {
+                   ep = ep->next;
+                   }
+                break;
+                }
+             
+             EditVerbose("Starting ForEach loop with %s\n",expdata);
+             continue;
+             }
+          else
+             {
+             if (!feof(loop_fp))
+                {
+                memset(EDITBUFF,0,bufsize);
+                
+                while (ReadLine(EDITBUFF,bufsize,loop_fp)) /* Like SetLine */
+                   {
+                   if (strlen(EDITBUFF) == 0)
+                      {
+                      EditVerbose("ForEachLineIn skipping blank line");
+                      continue;
+                      }
+                   break;
+                   }
+                if (strlen(EDITBUFF) == 0)
+                   {
+                   EditVerbose("EndForEachLineIn\n");
+                   fclose(loop_fp);
+                   loopstart = NULL;
+                   while(ep->code != EndLoop)
+                      {
+                      ep = ep->next;
+                      }
+                   EditVerbose("EndForEachLineIn, set current line to: %s\n",EDITBUFF);
+                   }
+                
+                Debug("ForeachLine: %s\n",EDITBUFF);
+                }
+             else
+                {
+                EditVerbose("EndForEachLineIn");
+                
+                fclose(loop_fp);
+                loopstart = NULL;
+                
+                while(ep->code != EndLoop)
+                   {
+                   ep = ep->next;
+                   }
+                }
+             }
+          
+          break;
+          
       case EndLoop:
-	       loopend = ep;
-   	       ep = loopstart;
-	       continue;
-
+          loopend = ep;
+          ep = loopstart;
+          continue;
+          
       case ReplaceLinesMatchingField:
-	       ReplaceWithFieldMatch(&filestart,expdata,EDITBUFF,spliton,filename);
-	       break;
-
+          ReplaceWithFieldMatch(&filestart,expdata,EDITBUFF,spliton,filename);
+          break;
+          
       case AppendToLineIfNotContains:
-	       AppendToLine(CURRENTLINEPTR,expdata,filename);
-	       break;
-
+          AppendToLine(CURRENTLINEPTR,expdata,filename);
+          break;
+          
       default: snprintf(OUTPUT,bufsize*2,"Unknown action in editing of file %s\n",filename);
-	       CfLog(cferror,OUTPUT,"");
-               break;
+          CfLog(cferror,OUTPUT,"");
+          break;
       }
-
+   
    ep = ep->next;
    }
-
+ 
 abort :  
-
+     
 EditVerbose("End editing %s\n",filename);
 EditVerbose(".....................................................................\n");
-
+ 
 EDITVERBOSE = false;
 EDABORTMODE = false;
-
+ 
 if (DONTDO || CompareToFile(filestart,filename))
    {
    EditVerbose("Unchanged file: %s\n",filename);
@@ -1182,10 +1189,7 @@ if (!potentially_outstanding)
 
 /********************************************************************/
 
-int IncrementEditPointer(str,liststart)
-
-char *str;
-struct Item *liststart;
+int IncrementEditPointer(char *str,struct Item *liststart)
 
 { int i,n = 0;
   struct Item *ip;
@@ -1234,7 +1238,7 @@ if (n < 0)
          {
          CURRENTLINENUMBER += n;
          CURRENTLINEPTR = ip;
-	 Debug2("Current line (%d) starts: %20.20s ...\n",CURRENTLINENUMBER,CURRENTLINEPTR->name);
+  Debug2("Current line (%d) starts: %20.20s ...\n",CURRENTLINENUMBER,CURRENTLINEPTR->name);
 
          return true;
          }
@@ -1263,10 +1267,7 @@ return true;
 
 /********************************************************************/
 
-int ResetEditSearch (str,list)
-
-char *str;
-struct Item *list;
+int ResetEditSearch (char *str,struct Item *list)
 
 { int i = 1 ,n = -1;
   struct Item *ip;
@@ -1299,9 +1300,7 @@ return true;
 
 /********************************************************************/
 
-int ReplaceEditLineWith (string)
-
-char *string;
+int ReplaceEditLineWith (char *string)
 
 { char *sp;
 
@@ -1327,11 +1326,7 @@ return true;
 
 /********************************************************************/
 
-int RunEditScript (script,fname,filestart,ptr)
-
-char *script, *fname;
-struct Item **filestart;
-struct Edit *ptr;
+int RunEditScript (char *script,char *fname,struct Item **filestart,struct Edit *ptr)
 
 { FILE *pp;
   char buffer[bufsize];
@@ -1369,7 +1364,7 @@ switch (ptr->useshell)
    case 'y':  pp = cfpopen_sh(buffer,"r");
               break;
    default:   pp = cfpopen(buffer,"r");
-              break;	     
+              break;      
    }
   
 if (pp == NULL)
@@ -1406,13 +1401,10 @@ return true;
 
 /************************************************************/
 
-void DoFixEndOfLine(list,type)  /* fix end of line char format */
+void DoFixEndOfLine(struct Item *list,char *type)
 
   /* Assumes that extra_space macro allows enough space */
   /* in the allocated strings to add a few characters */
-
-struct Item *list;
-char *type;
 
 { struct Item *ip;
   char *sp;
@@ -1425,13 +1417,13 @@ if (strcmp("unix",type) == 0 || strcmp("UNIX",type) == 0)
    for (ip = list; ip != NULL; ip=ip->next)
       {
       for (sp = ip->name; *sp != '\0'; sp++)
-	 {
-	 if (*sp == (char)13)
-	    {
-	    *sp = '\0';
-	    NUMBEROFEDITS++;
-	    }
-	 }
+  {
+  if (*sp == (char)13)
+     {
+     *sp = '\0';
+     NUMBEROFEDITS++;
+     }
+  }
       }
    return;
    }
@@ -1443,32 +1435,29 @@ if (strcmp("dos",type) == 0 || strcmp("DOS",type) == 0)
       gotCR = false;
       
       for (sp = ip->name; *sp !='\0'; sp++)
-	 {
-	 if (*sp == (char)13)
-	    {
-	    gotCR = true;
-	    }
-	 }
-
+         {
+         if (*sp == (char)13)
+            {
+            gotCR = true;
+            }
+         }
+      
       if (!gotCR)
-	 {
-	 *sp = (char)13;
-	 *(sp+1) = '\0';
-	 NUMBEROFEDITS++;
-	 }
+         {
+         *sp = (char)13;
+         *(sp+1) = '\0';
+         NUMBEROFEDITS++;
+         }
       }
    return;
    }
-
+ 
 printf("Unknown file format: %s\n",type);
 }
 
 /**************************************************************/
 
-void HandleAutomountResources(filestart,opts)
-
-struct Item **filestart;
-char *opts;
+void HandleAutomountResources(struct Item **filestart,char *opts)
 
 { struct Mountables *mp;
   char buffer[bufsize];
@@ -1497,10 +1486,7 @@ for (mp = VMOUNTABLES; mp != NULL; mp=mp->next)
 
 /**************************************************************/
 
-void CheckEditSwitches(filename,ptr)
-
-char *filename;
-struct Edit *ptr;
+void CheckEditSwitches(char *filename,struct Edit *ptr)
 
 { struct stat statbuf;
   struct Edlist *ep;
@@ -1519,78 +1505,80 @@ for (ep = actions; ep != NULL; ep=ep->next)
       }
 
    ExpandVarstring(ep->data,expdata,NULL);
-
+   
    switch(ep->code)
       {
-      case AutoCreate: if (!DONTDO)
-	                  { mode_t mask;
-
-			  if (stat(filename,&statbuf) == -1)
-			     {
-			     Debug("Setting umask to %o\n",ptr->umask);
-			     mask=umask(ptr->umask);
-			     
-			     if ((fd = creat(filename,0644)) == -1)
-				{
-				snprintf(OUTPUT,bufsize*2,"Unable to create file %s\n",filename);
-				CfLog(cfinform,OUTPUT,"creat");
-				}
-			     else
-				{
-				AUTOCREATED = true;
-				close(fd);
-				}
-			     snprintf(OUTPUT,bufsize*2,"Creating file %s, mode %o\n",filename,(0644 & ~ptr->umask));
-			     CfLog(cfinform,OUTPUT,"");
-			     umask(mask);
-			     return;
-			     }			 
-			  }
-                       
-                       break;
-      
-      case EditBackup: if (strcmp("false",ToLowerStr(expdata)) == 0 || strcmp("off",ToLowerStr(expdata)) == 0)
-	                  {
-			  IMAGEBACKUP = 'n';
-	                  }
-
-  	               if (strcmp("single",ToLowerStr(expdata)) == 0 || strcmp("one",ToLowerStr(expdata)) == 0)
-	                  {
-			  IMAGEBACKUP = 'n';
-	                  }
-
-		       if (strcmp("timestamp",ToLowerStr(expdata)) == 0 || strcmp("stamp",ToLowerStr(expdata)) == 0)
-	                  {
-			  IMAGEBACKUP = 's';
-	                  }
-
-                       break;
-		       
-      case EditLog:    if (strcmp(ToLowerStr(expdata),"true") == 0 || strcmp(ToLowerStr(expdata),"on") == 0)
-	                  {
-			  log = 'y';
-			  break;
-			  }
-
-                       if (strcmp(ToLowerStr(expdata),"false") == 0 || strcmp(ToLowerStr(expdata),"off") == 0)
-                          {
-			  log = 'n';
-			  break;
-			  }
-
-      case EditInform: if (strcmp(ToLowerStr(expdata),"true") == 0 || strcmp(ToLowerStr(expdata),"on") == 0)
-	                  {
-			  inform = 'y';
-			  break;
-			  }
-
-                       if (strcmp(ToLowerStr(expdata),"false") == 0 || strcmp(ToLowerStr(expdata),"off") == 0)
-                          {
-			  inform = 'n';
-			  break;
-			  }
-
-	  
+      case AutoCreate:
+          if (!DONTDO)
+             { mode_t mask;
+             
+             if (stat(filename,&statbuf) == -1)
+                {
+                Debug("Setting umask to %o\n",ptr->umask);
+                mask=umask(ptr->umask);
+                
+                if ((fd = creat(filename,0644)) == -1)
+                   {
+                   snprintf(OUTPUT,bufsize*2,"Unable to create file %s\n",filename);
+                   CfLog(cfinform,OUTPUT,"creat");
+                   }
+                else
+                   {
+                   AUTOCREATED = true;
+                   close(fd);
+                   }
+                snprintf(OUTPUT,bufsize*2,"Creating file %s, mode %o\n",filename,(0644 & ~ptr->umask));
+                CfLog(cfinform,OUTPUT,"");
+                umask(mask);
+                return;
+                }    
+             }
+          
+          break;
+          
+      case EditBackup:
+          if (strcmp("false",ToLowerStr(expdata)) == 0 || strcmp("off",ToLowerStr(expdata)) == 0)
+             {
+             IMAGEBACKUP = 'n';
+             }
+          
+          if (strcmp("single",ToLowerStr(expdata)) == 0 || strcmp("one",ToLowerStr(expdata)) == 0)
+             {
+             IMAGEBACKUP = 'n';
+             }
+          
+          if (strcmp("timestamp",ToLowerStr(expdata)) == 0 || strcmp("stamp",ToLowerStr(expdata)) == 0)
+             {
+             IMAGEBACKUP = 's';
+             }
+          
+          break;
+          
+      case EditLog:
+          if (strcmp(ToLowerStr(expdata),"true") == 0 || strcmp(ToLowerStr(expdata),"on") == 0)
+             {
+             log = 'y';
+             break;
+             }
+          
+          if (strcmp(ToLowerStr(expdata),"false") == 0 || strcmp(ToLowerStr(expdata),"off") == 0)
+             {
+             log = 'n';
+             break;
+             }
+          
+      case EditInform:
+          if (strcmp(ToLowerStr(expdata),"true") == 0 || strcmp(ToLowerStr(expdata),"on") == 0)
+             {
+             inform = 'y';
+             break;
+             }
+          
+          if (strcmp(ToLowerStr(expdata),"false") == 0 || strcmp(ToLowerStr(expdata),"off") == 0)
+             {
+             inform = 'n';
+             break;
+             }                   
       }
    }
 
@@ -1603,10 +1591,7 @@ ResetOutputRoute(log,inform);
 /* Level 3                                                    */
 /**************************************************************/
 
-void AddEditfileClasses (list,editsdone)
-
-struct Edit *list;
-int editsdone;
+void AddEditfileClasses (struct Edit *list,int editsdone)
 
 { char *sp, currentitem[maxvarsize];
   struct Edlist *ep;
@@ -1616,66 +1601,190 @@ if (editsdone)
    for (ep = list->actions; ep != NULL; ep=ep->next)
       {
       if (IsExcluded(ep->classes))
-	 {
-	 continue;
-	 }
-
-      if (ep->code == DefineClasses)
-	 {
-	 Debug("AddEditfileClasses(%s)\n",ep->data);
-	 
-	 for (sp = ep->data; *sp != '\0'; sp++)
-	    {
-	    currentitem[0] = '\0';
-	    
-	    sscanf(sp,"%[^,:.]",currentitem);
-	    
-	    sp += strlen(currentitem);
-	    
-	    AddClassToHeap(currentitem);
-	    }
-	 }
-      }
-   }
-else
-   {
-   for (ep = list->actions; ep != NULL; ep=ep->next)
-      {
-      if (IsExcluded(ep->classes))
-	 {
-	 continue;
-	 }
+         {
+         continue;
+         }
       
-      if (ep->code == ElseDefineClasses)
-	 {
-	 Debug("Entering AddEditfileClasses(%s)\n",ep->data);
-	 
-	 for (sp = ep->data; *sp != '\0'; sp++)
-	    {
-	    currentitem[0] = '\0';
-	    
-	    sscanf(sp,"%[^,:.]",currentitem);
-	    
-	    sp += strlen(currentitem);
-	    
-	    AddClassToHeap(currentitem);
-	    }
-	 }
+      if (ep->code == DefineClasses)
+         {
+         Debug("AddEditfileClasses(%s)\n",ep->data);
+         
+         for (sp = ep->data; *sp != '\0'; sp++)
+            {
+            currentitem[0] = '\0';
+            
+            sscanf(sp,"%[^,:.]",currentitem);
+            
+            sp += strlen(currentitem);
+            
+            AddClassToHeap(currentitem);
+            }
+         }
       }
    }
-
-if (ep == NULL)
-   {
-   return;
-   }
-
+ else
+    {
+    for (ep = list->actions; ep != NULL; ep=ep->next)
+       {
+       if (IsExcluded(ep->classes))
+          {
+          continue;
+          }
+       
+       if (ep->code == ElseDefineClasses)
+          {
+          Debug("Entering AddEditfileClasses(%s)\n",ep->data);
+          
+          for (sp = ep->data; *sp != '\0'; sp++)
+             {
+             currentitem[0] = '\0';
+             
+             sscanf(sp,"%[^,:.]",currentitem);
+             
+             sp += strlen(currentitem);
+             
+             AddClassToHeap(currentitem);
+             }
+          }
+       }
+    }
+ 
+ if (ep == NULL)
+    {
+    return;
+    }
+ 
 }
 
 /**************************************************************/
 
-struct Edlist *ThrowAbort(from)
+int DeleteLinesWithFileItems(struct Item **filestart,char *infile,enum editnames code)
 
-struct Edlist *from;
+{ struct Item *ip,*ipc,*infilelist = NULL; 
+  char currentitem[bufsize];
+  int slen, matches=0;
+  int positive=false;
+  
+if (!LoadItemList(&infilelist,infile))
+   {
+   snprintf(OUTPUT,bufsize,"Cannot open file iterator %s in editfiles - aborting editing",infile);
+   CfLog(cferror,OUTPUT,"");
+   return false;
+   }
+ 
+ for (ip = *filestart; ip != NULL; ip = ip->next)
+   {
+   Verbose("Looking at line with %s\n",ip->name);
+   positive = false;
+   
+   switch (code)
+      {
+      case DeleteLinesStartingFileItems:
+          positive = true;
+      case DeleteLinesNotStartingFileItems:
+          matches = 0;
+          
+          for (ipc = infilelist; ipc != NULL; ipc=ipc->next)
+             {
+             Chop(ipc->name);
+             slen = IntMin(strlen(ipc->name),strlen(ip->name));  
+             if (strncmp(ipc->name,ip->name,slen) == 0)
+                {
+                Debug("Matched with %s\n",ipc->name);
+                matches++;
+                }
+             }
+          
+          if (positive && (matches > 0))
+             {
+             Debug("%s POS matched %s\n",VEDITNAMES[code],ip->name);
+             DeleteItem(filestart,ip);      
+             }
+          else if (!positive && matches == 0)
+             {
+             Debug("%s NEG matched %s\n",VEDITNAMES[code],ip->name);
+             DeleteItem(filestart,ip);
+             }
+          
+          break;
+          
+      case DeleteLinesContainingFileItems:
+          positive = true;
+      case DeleteLinesNotContainingFileItems:
+          matches = 0;
+          
+          for (ipc = infilelist; ipc != NULL; ipc=ipc->next)
+             {
+             Chop(ipc->name);
+             
+             if (strstr(ipc->name,ip->name) == 0)
+                {
+                matches++;
+                }
+             else if(strstr(ip->name,ipc->name) == 0)
+                {
+                matches++;
+                }
+             }
+          
+          if (positive && (matches > 0))
+             {
+             Debug("%s matched %s\n",VEDITNAMES[code],ip->name);
+             DeleteItem(filestart,ip);      
+             }
+          else if (!positive &&matches == 0)
+             {
+             Debug("%s matched %s\n",VEDITNAMES[code],ip->name);
+             DeleteItem(filestart,ip);
+             }
+          
+          break;
+          
+      case DeleteLinesMatchingFileItems:
+          positive = true;
+      case DeleteLinesNotMatchingFileItems:
+          Verbose("%s not implemented (yet)\n",VEDITNAMES[code]);
+          break;
+          
+      }
+   }
+ 
+ DeleteItemList(infilelist); 
+ return true;
+}
+
+/**************************************************************/
+
+int AppendLinesFromFile(struct Item **filestart,char *filename)
+
+{ FILE *fp;
+  char buffer[bufsize]; 
+
+ if ((fp=fopen(filename,"r")) == NULL)
+    {
+    snprintf(OUTPUT,bufsize,"Editfiles could not read file %s\n",filename);
+    CfLog(cferror,OUTPUT,"fopen");
+    return false;
+    }
+
+ while (!feof(fp))
+    {
+    buffer[0] = '\0';
+    fgets(buffer,bufsize-1,fp);
+    Chop(buffer);
+    if (!IsItemIn(*filestart,buffer))
+       {
+       AppendItem(filestart,buffer,NULL);
+       }
+    }
+
+ fclose(fp);
+ return true;
+}
+
+/**************************************************************/
+
+struct Edlist *ThrowAbort(struct Edlist *from)
 
 { struct Edlist *ep, *last = NULL;
  
@@ -1694,10 +1803,7 @@ return last;
 
 /**************************************************************/
 
-struct Edlist *SkipToEndGroup(ep,filename)
-
-struct Edlist *ep;
-char *filename;
+struct Edlist *SkipToEndGroup(struct Edlist *ep,char *filename)
 
 { int level = -1;
  
@@ -1713,7 +1819,7 @@ while(ep != NULL)
       case BeginGroupIfNoLineContaining:
       case BeginGroupIfDefined:
       case BeginGroupIfNotDefined:
-	  level ++;
+   level ++;
       }
 
    Debug("   skip: %s (%d)\n",VEDITNAMES[ep->code],level);
@@ -1721,9 +1827,9 @@ while(ep != NULL)
    if (ep->code == EndGroup)
        {
        if (level == 0)
-	  {
-	  return ep;
-	  }
+          {
+          return ep;
+          }
        level--;
        }
    
@@ -1733,19 +1839,16 @@ while(ep != NULL)
       CfLog(cferror,OUTPUT,"");
       break;
       }
-
+   
    ep=ep->next;
    }
-
-return ep;
+ 
+ return ep;
 }
 
 /**************************************************************/
 
-int BinaryEditFile(ptr,filename)
-
-struct Edit *ptr;
-char *filename;
+int BinaryEditFile(struct Edit *ptr,char *filename)
 
 { char expdata[bufsize],search[bufsize];
   struct Edlist *ep;
@@ -1804,67 +1907,64 @@ while (ep != NULL)
    switch(ep->code)
       {
       case WarnIfContainsString:
-	  WarnIfContainsRegex(memseg,statbuf.st_size,expdata,filename);
-	  break;
-	  
+          WarnIfContainsRegex(memseg,statbuf.st_size,expdata,filename);
+          break;
+          
       case WarnIfContainsFile:
-	  WarnIfContainsFilePattern(memseg,statbuf.st_size,expdata,filename);
-	  break;
-
+          WarnIfContainsFilePattern(memseg,statbuf.st_size,expdata,filename);
+          break;
+          
       case EditMode:
-	  break;
-
+          break;
+          
       case ReplaceAll:
-	  Debug("Replace %s\n",expdata);
-	  strcpy(search,expdata);
-	  break;
-	  
+          Debug("Replace %s\n",expdata);
+          strcpy(search,expdata);
+          break;
+          
       case With:
-	  if (strcmp(expdata,search) == 0)
-	     {
-	     Verbose("Search and replace patterns are identical in binary edit %s\n",filename);
-	     continue;
-	     }
-	  
-	  if (BinaryReplaceRegex(memseg,statbuf.st_size,search,expdata,filename))
-	     {
-	     NUMBEROFEDITS++;
-	     }
-	  break;
-
+          if (strcmp(expdata,search) == 0)
+             {
+             Verbose("Search and replace patterns are identical in binary edit %s\n",filename);
+             continue;
+             }
+          
+          if (BinaryReplaceRegex(memseg,statbuf.st_size,search,expdata,filename))
+             {
+             NUMBEROFEDITS++;
+             }
+          break;
+          
       default:
-	  snprintf(OUTPUT,bufsize*2,"Cannot use %s in a binary edit (%s)",VEDITNAMES[ep->code],filename);
-	  CfLog(cferror,OUTPUT,"");
+          snprintf(OUTPUT,bufsize*2,"Cannot use %s in a binary edit (%s)",VEDITNAMES[ep->code],filename);
+          CfLog(cferror,OUTPUT,"");
       }
-
+   
    ep=ep->next;
    }
-
-if ((! DONTDO) && (NUMBEROFEDITS > 0))
-   {
-   SaveBinaryFile(filename,statbuf.st_size,memseg,ptr->repository);
-   AddEditfileClasses(ptr,true);
-   }
-else
-   {
-   AddEditfileClasses(ptr,false);
-   }
-
-free(memseg);
-EditVerbose("End editing %s\n",filename);
-EditVerbose(".....................................................................\n"); 
-return true;
+ 
+ if ((! DONTDO) && (NUMBEROFEDITS > 0))
+    {
+    SaveBinaryFile(filename,statbuf.st_size,memseg,ptr->repository);
+    AddEditfileClasses(ptr,true);
+    }
+ else
+    {
+    AddEditfileClasses(ptr,false);
+    }
+ 
+ free(memseg);
+ EditVerbose("End editing %s\n",filename);
+ EditVerbose(".....................................................................\n"); 
+ return true;
 }
+
 
 /**************************************************************/
 /* Level 4                                                    */
 /**************************************************************/
 
-int LoadBinaryFile(source,size,memseg)
-
-char *source;
-off_t size;
-void *memseg;
+int LoadBinaryFile(char *source,off_t size,void *memseg)
 
 { int sd,n_read;
   char buf[bufsize];
@@ -1895,7 +1995,7 @@ while (true)
       return false;
       }
 
-   bcopy(buf,ptr,n_read);
+   memcpy(ptr,buf,n_read);
    ptr += n_read;
 
    if (n_read < bufsize)
@@ -1912,11 +2012,7 @@ return true;
 
 /**************************************************************/
 
-int SaveBinaryFile(file,size,memseg,repository)
-
-char *file, *repository;
-off_t size;
-void *memseg;
+int SaveBinaryFile(char *file,off_t size,void *memseg,char *repository)
 
  /* If we do this, we screw up checksums anyway, so no need to
     preserve unix holes here ...*/
@@ -1957,16 +2053,16 @@ if (! IsItemIn(VREPOSLIST,new))
    else if(Repository(backup,repository))
       {
       if (rename(new,file) == -1)
-	 {
-	 snprintf(OUTPUT,bufsize*2,"Error while renaming %s\n",file);
-	 CfLog(cferror,OUTPUT,"rename");
-	 return false;
-	 }       
+         {
+         snprintf(OUTPUT,bufsize*2,"Error while renaming %s\n",file);
+         CfLog(cferror,OUTPUT,"rename");
+         return false;
+         }       
       unlink(backup);
       return true;
       }
    }
-
+ 
 if (rename(new,file) == -1)
    {
    snprintf(OUTPUT,bufsize*2,"Error while renaming %s\n",file);
@@ -1979,11 +2075,7 @@ return true;
 
 /**************************************************************/
 
-void WarnIfContainsRegex(memseg,size,data,filename)
-
-void *memseg;
-off_t size;
-char *data,*filename;
+void WarnIfContainsRegex(void *memseg,off_t size,char *data,char *filename)
 
 { off_t sp;
   regex_t rx,rxcache;
@@ -1993,7 +2085,7 @@ Debug("WarnIfContainsRegex(%s)\n",data);
 
 for (sp = 0; sp < (off_t)(size-strlen(data)); sp++)
    {
-   if (bcmp((char *) memseg+sp,data,strlen(data)) == 0)
+   if (memcmp((char *) memseg+sp,data,strlen(data)) == 0)
       {
       snprintf(OUTPUT,bufsize*2,"WARNING! File %s contains literal string %.255s",filename,data);
       CfLog(cferror,OUTPUT,"");
@@ -2008,7 +2100,7 @@ if (CfRegcomp(&rxcache,data,REG_EXTENDED) != 0)
 
 for (sp = 0; sp < (off_t)(size-strlen(data)); sp++)
    {
-   bcopy(&rxcache,&rx,sizeof(rx)); /* To fix a bug on some implementations where rx gets emptied */
+   memcpy(&rx,&rxcache,sizeof(rx)); /* To fix a bug on some implementations where rx gets emptied */
 
    if (regexec(&rx,(char *)memseg+sp,1,&pmatch,0) == 0)
       {
@@ -2022,11 +2114,7 @@ for (sp = 0; sp < (off_t)(size-strlen(data)); sp++)
 
 /**************************************************************/
 
-void WarnIfContainsFilePattern(memseg,size,data,filename)
-
-void *memseg;
-off_t size;
-char *data,*filename;
+void WarnIfContainsFilePattern(void *memseg,off_t size,char *data,char *filename)
 
 { off_t sp;
   struct stat statbuf; 
@@ -2071,7 +2159,7 @@ if (!LoadBinaryFile(data,statbuf.st_size,pattern))
  
 for (sp = 0; sp < (off_t)(size-statbuf.st_size); sp++)
    {
-   if (bcmp((char *) memseg+sp,pattern,statbuf.st_size-1) == 0)
+   if (memcmp((char *) memseg+sp,pattern,statbuf.st_size-1) == 0)
       {
       snprintf(OUTPUT,bufsize*2,"WARNING! File %s contains the contents of reference file %s",filename,data);
       CfLog(cferror,OUTPUT,"");
@@ -2086,11 +2174,7 @@ free(pattern);
 
 /**************************************************************/
 
-int BinaryReplaceRegex(memseg,size,search,replace,filename)
-
-void *memseg;
-off_t size;
-char *search,*filename,*replace;
+int BinaryReplaceRegex(void *memseg,off_t size,char *search,char *replace,char *filename)
 
 { off_t sp,spr;
   regex_t rx,rxcache;
@@ -2106,31 +2190,31 @@ if (CfRegcomp(&rxcache,search,REG_EXTENDED) != 0)
 
 for (sp = 0; sp < (off_t)(size-strlen(replace)); sp++)
    {
-   bcopy(&rxcache,&rx,sizeof(rx)); /* To fix a bug on some implementations where rx gets emptied */
+   memcpy(&rx,&rxcache,sizeof(rx)); /* To fix a bug on some implementations where rx gets emptied */
 
    if (regexec(&rx,(char *)(sp+(char *)memseg),1,&pmatch,0) == 0)
       {
       if (pmatch.rm_eo-pmatch.rm_so < strlen(replace))
-	 {
-	 snprintf(OUTPUT,bufsize*2,"Cannot perform binary replacement: string doesn't fit in %s",filename);
-	 CfLog(cfverbose,OUTPUT,"");
-	 }
+         {
+         snprintf(OUTPUT,bufsize*2,"Cannot perform binary replacement: string doesn't fit in %s",filename);
+         CfLog(cfverbose,OUTPUT,"");
+         }
       else
-	 {
-	 Verbose("Replacing [%s] with [%s] at %d\n",search,replace,sp);
-	 match = true;
-	 
-	 strncpy((char *)memseg+sp+(off_t)pmatch.rm_so,replace,strlen(replace));
-
-	 Verbose("Padding character is %c\n",PADCHAR);
-	 
-	 for (spr = (pmatch.rm_so+strlen(replace)); spr < pmatch.rm_eo; spr++)
-	    {
-	    *((char *)memseg+spr+sp) = PADCHAR; /* default space */
-	    }
-
-	 sp += pmatch.rm_eo - pmatch.rm_so - 1;
-	 }
+         {
+         Verbose("Replacing [%s] with [%s] at %d\n",search,replace,sp);
+         match = true;
+         
+         strncpy((char *)memseg+sp+(off_t)pmatch.rm_so,replace,strlen(replace));
+         
+         Verbose("Padding character is %c\n",PADCHAR);
+         
+         for (spr = (pmatch.rm_so+strlen(replace)); spr < pmatch.rm_eo; spr++)
+            {
+            *((char *)memseg+spr+sp) = PADCHAR; /* default space */
+            }
+         
+         sp += pmatch.rm_eo - pmatch.rm_so - 1;
+         }
       }
    else
       {

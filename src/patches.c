@@ -37,11 +37,51 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
+/*********************************************************/
+
+int IntMin (int a,int b)
+
+{
+if (a > b)
+   {
+   return b;
+   }
+else     
+   {
+   return a;
+   }
+}
+
+/*********************************************************/
+
+char *StrStr(char *a,char *b) /* Case insensitive match */
+
+{ char buf1[bufsize],buf2[bufsize];
+
+strncpy(buf1,ToLowerStr(a),bufsize-1);
+strncpy(buf2,ToLowerStr(b),bufsize-1);
+return strstr(buf1,buf2); 
+}
+
+/*********************************************************/
+
+int StrnCmp(char *a,char *b,size_t n) /* Case insensitive match */
+
+{ char buf1[bufsize],buf2[bufsize];
+
+strncpy(buf1,ToLowerStr(a),bufsize-1);
+strncpy(buf2,ToLowerStr(b),bufsize-1);
+return strncmp(buf1,buf2,n); 
+}
+
+/*********************************************************/
+
 #ifndef HAVE_GETNETGRENT
 
 #ifndef const
 # define const
 #endif
+
 
 /*********************************************************/
 
@@ -84,9 +124,7 @@ void endnetgrent()
 /* UNAME is missing on some weird OSes                     */
 /***********************************************************/
 
-int uname (sys)
-
-struct utsname *sys;
+int uname (struct utsname *sys)
 
 { char buffer[bufsize], *sp;
 
@@ -133,15 +171,11 @@ return (0);
 /***********************************************************/
 
 #ifndef HAVE_STRSTR
-
-
 #ifndef const
 # define const
 #endif
 
-char *strstr(s1,s2)
-
-char *s1, *s2;
+char *strstr(char *s1,char *s2)
 
 { char *sp;
 
@@ -169,9 +203,7 @@ return NULL;
 
 #ifndef HAVE_STRDUP
 
-char *strdup(str)
-
-char *str;
+char *strdup(char *str)
 
 { char *sp;
  
@@ -200,10 +232,7 @@ return sp;
 
 #ifndef HAVE_STRRCHR
 
-char *strrchr(str,ch)
-
-char *str;
-char ch;
+char *strrchr(char *str,char ch)
 
 { char *sp;
  
@@ -237,9 +266,7 @@ return NULL;
 
 #ifndef HAVE_STRERROR
 
-char *strerror(err)
-
-int err;
+char *strerror(int err)
 
 { static char buffer[20];
 
@@ -260,9 +287,7 @@ return buffer;
 # define const
 #endif
 
-int putenv (s)
-
-char *s;
+int putenv(char *s)
 
 {
 Verbose("(This system does not have putenv: cannot update CFALLCLASSES\n");
@@ -284,9 +309,7 @@ return 0;
 # define const
 #endif
 
-int seteuid (uid)
-
-uid_t uid;
+int seteuid (uid_t uid)
 
 {
 #ifdef HAVE_SETREUID
@@ -307,9 +330,7 @@ return -1;
 # define const
 #endif
 
-int setegid (gid)
-
-gid_t gid;
+int setegid (gid_t gid)
 
 {
 #ifdef HAVE_SETREGID
@@ -336,9 +357,7 @@ return (double)random();
 
 #ifndef HAVE_DRAND48  
 
-void srand48(seed)
-
-long seed;
+void srand48(long seed)
 
 {
 srandom((unsigned int)seed);

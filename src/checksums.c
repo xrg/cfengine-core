@@ -36,11 +36,7 @@
 
 /*******************************************************************/
 
-int CompareCheckSums(file1,file2,ip,sstat,dstat)
-
-char *file1, *file2;
-struct Image *ip;
-struct stat *sstat, *dstat;
+int CompareCheckSums(char *file1,char *file2,struct Image *ip,struct stat *sstat,struct stat *dstat)
 
 { static unsigned char digest1[EVP_MAX_MD_SIZE+1], digest2[EVP_MAX_MD_SIZE+1];
   int i;
@@ -80,17 +76,13 @@ else
 
 /*******************************************************************/
 
-int CompareBinarySums(file1,file2,ip,sstat,dstat)
+int CompareBinarySums(char *file1,char *file2,struct Image *ip,struct stat *sstat,struct stat *dstat)
 
      /* See the md5 algorithms in pub-lib/md5.c */
      /* file 1 is source                        */
 
-char *file1, *file2;
-struct Image *ip;
-struct stat *sstat, *dstat;
-
  { int fd1, fd2,bytes1,bytes2;
-   char	buff1[BUFSIZ],buff2[BUFSIZ];
+   char buff1[BUFSIZ],buff2[BUFSIZ];
 
 Debug("CompareBinarySums(%s,%s)\n",file1,file2);
 
@@ -113,33 +105,30 @@ if (strcmp(ip->server,"localhost") == 0)
       bytes2 = read(fd2, buff2, BUFSIZ);
 
       if ((bytes1 != bytes2) || (memcmp(buff1, buff2, bytes1) != 0))
-	 {
-  	 Verbose("Binary Comparison mismatch...\n");
-  	 close(fd2);
-  	 close(fd1);
-  	 return true;
-  	 }
+         {
+         Verbose("Binary Comparison mismatch...\n");
+         close(fd2);
+         close(fd1);
+         return true;
+         }
       }
    while (bytes1 > 0);
-  
+   
    close(fd2);
    close(fd1);
-
+   
    return false;  /* only if files are identical */
    }
-else
-   {
-   Debug("Using network md5 checksum instead\n");
-   return CompareMD5Net(file1,file2,ip); /* client.c */
-   }
-}
+ else
+    {
+    Debug("Using network md5 checksum instead\n");
+    return CompareMD5Net(file1,file2,ip); /* client.c */
+    }
+ }
 
 /*******************************************************************/
 
-void ChecksumFile(filename,digest,type)
-
-char *filename,type;
-unsigned char digest[EVP_MAX_MD_SIZE+1];
+void ChecksumFile(char *filename,unsigned char digest[EVP_MAX_MD_SIZE+1],char type)
 
 { FILE *file;
   EVP_MD_CTX context;
@@ -158,9 +147,9 @@ else
    switch (type)
       {
       case 's': md = EVP_get_digestbyname("sha");
-  	        break;
+           break;
       case 'm': md = EVP_get_digestbyname("md5");
-	        break;
+         break;
       default: FatalError("Software failure in ChecksumFile");
       }
    
@@ -180,11 +169,7 @@ else
 
 /*******************************************************************/
 
-void ChecksumList(list,digest,type)
-
-struct Item *list;
-char type;
-unsigned char digest[EVP_MAX_MD_SIZE+1];
+void ChecksumList(struct Item *list,unsigned char digest[EVP_MAX_MD_SIZE+1],char type)
 
 { struct Item *ip;
   EVP_MD_CTX context;
@@ -196,9 +181,9 @@ Debug2("ChecksumList(%c)\n",type);
  switch (type)
     {
     case 's': md = EVP_get_digestbyname("sha");
-	break;
+ break;
     case 'm': md = EVP_get_digestbyname("md5");
-	break;
+ break;
     default: FatalError("Software failure in ChecksumList");
     }
  
@@ -206,20 +191,17 @@ Debug2("ChecksumList(%c)\n",type);
  
  for (ip = list; ip != NULL; ip=ip->next) 
     {
+    Debug(" digesting %s\n",ip->name);
     EVP_DigestUpdate(&context,ip->name,strlen(ip->name));
     }
  
  EVP_DigestFinal(&context,digest,&md_len);
- 
+
 }
 
 /*******************************************************************/
 
-void ChecksumString(buffer,len,digest,type)
-
-char *buffer,type;
-int len;
-unsigned char digest[EVP_MAX_MD_SIZE+1];
+void ChecksumString(char *buffer,int len,unsigned char digest[EVP_MAX_MD_SIZE+1],char type)
 
 { EVP_MD_CTX context;
   const EVP_MD *md = NULL;
@@ -243,10 +225,8 @@ EVP_DigestFinal(&context,digest,&md_len);
 
 /*******************************************************************/
 
-int ChecksumsMatch(digest1,digest2,type)
+int ChecksumsMatch(unsigned char digest1[EVP_MAX_MD_SIZE+1],unsigned char digest2[EVP_MAX_MD_SIZE+1],char type)
 
-unsigned char digest1[EVP_MAX_MD_SIZE+1],digest2[EVP_MAX_MD_SIZE+1];
-char type;
 
 { int i,size = EVP_MAX_MD_SIZE;
  

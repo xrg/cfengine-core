@@ -11,6 +11,336 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: schedule,  Next: secureinput,  Prev: RPMcommand,  Up: control
+
+Schedule
+--------
+
+        schedule  = (  Min00_05 Min30_35 TIME CLASS )
+
+   When `cfexecd' is used in daemon mode, it defaults to running once
+an hour, on the hour, i.e..
+        schedule  = (  Min00_05 )
+   This can be extended to make the agent run more often. The time
+specifiers are cfengine classes, and are written as intervals of time
+rather the precise times.  Cfengine's time resolution is purposely
+limited to five minutes because the auto-correlation time of user
+resources is generally greater than this. Thus, it is assumed that
+precision timing is not required and the start time of cfengine, when
+scheduled in daemon mode, is not better than a few minutes.  The daemon
+does not require precision, but offers many other strategic features
+for load balancing and security.
+
+   Other time classes can be used in the schedule list, but note that
+cfexecd will not run the agent more than once every five minutes.  This
+is treated as a fundamental granularity.
+
+
+File: cfengine-Reference.info,  Node: secureinput,  Next: sensiblecount,  Prev: schedule,  Up: control
+
+SecureInput
+-----------
+
+        SecureInput = ( on )
+
+   If this is set cfengine will not import files which are not owned by
+the uid running the program, or    which are writable by groups or
+others.
+
+
+File: cfengine-Reference.info,  Node: sensiblecount,  Next: sensiblesize,  Prev: secureinput,  Up: control
+
+SensibleCount
+-------------
+
+        SensibleCount  = ( COUNT )
+
+   This variable is used by the action `required'.  It defines for
+cfengine what you consider to be the minimum number of files in a
+`required' directory.  If you declare a directory as being required,
+cfengine will check to see if it exists.  Then, if the directory
+contains fewer than the value of `sensiblecount' files, a warning is
+issued.  The default value for this variable is 2.
+
+
+File: cfengine-Reference.info,  Node: sensiblesize,  Next: showactions,  Prev: sensiblecount,  Up: control
+
+SensibleSize
+------------
+
+        SensibleSize  = ( SIZE )
+
+   This variable is used by the action `required'.  It defines for
+cfengine what you consider to be the minimum size for a `required' file.
+If you declare a file as being required, cfengine will check to see if
+the file exists.  Of course, the file may exist but be empty, so the
+size of the file is also checked against this constant.  If the file is
+smaller than the value of `sensiblesize' a warning is issued.  The
+default value for this variable is 1000 bytes.
+
+
+File: cfengine-Reference.info,  Node: showactions,  Next: singlecopy,  Prev: sensiblesize,  Up: control
+
+ShowActions
+-----------
+
+        ShowActions  = ( ON )
+
+   This causes cfengine to produce detailed output of what action is
+being carried out as part of the prefix information during output.
+This is intended only for third party tools which collect and parse the
+cfengine output. It will be of little interest to humans.
+
+
+File: cfengine-Reference.info,  Node: singlecopy,  Next: site,  Prev: showactions,  Up: control
+
+SingleCopy
+----------
+
+
+     	singlecopy = ( on )
+
+   If `singlecopy' is defined the behavior of copy: is modified so that
+a file will only be copied once, helping to achieve hierarchical or
+"most specific" file copy overrides, provided that the most specific
+file occurs first.  With the following file structure on a host running
+cfservd:
+
+   	/dist/hosts/loghost1.example.com/etc/syslog.conf
+/dist/solaris/etc/syslog.conf 	/dist/all/etc/syslog.conf
+
+   The configuration:
+
+     control:
+     	singlecopy = ( on )
+     
+     copy:
+     
+      /dist/${fqhost}       dest=/ inform=true syslog=true r=inf server=disthost
+      /dist/${ostype}       dest=/ inform=true syslog=true r=inf server=disthost
+      /dist/all             dest=/ inform=true syslog=true r=inf server=disthost
+
+Would result in:
+
+     /dist/hosts/loghost1.example.com/etc/syslog.conf being copied to loghost1.example.com
+     /dist/solaris/etc/syslog.conf being copied to Solaris systems
+     /dist/all/etc/syslog.conf being copied to all other systems
+
+   CAUTION: this feature is necessarily memory intensive.
+
+
+File: cfengine-Reference.info,  Node: site,  Next: Smtpserver,  Prev: singlecopy,  Up: control
+
+site/faculty
+------------
+
+       site    = ( SITENAME )
+       faculty = ( FACULTYNAME )
+
+   This variable defines a convenient name for your site configuration.
+It is useful for making generic rules later on, because it means for
+instance that you can define the name of a directory to be
+
+     /$(site)/$(host)/local
+
+without having to redefine the rule for a specific site.  This is a
+handy trick for making generic rules in your files which can be imported
+into a configuration for any site.
+
+   `faculty' is a synonym for `site'.  The two names may be used
+interchangeably.
+
+
+File: cfengine-Reference.info,  Node: Smtpserver,  Next: SplayTime,  Prev: site,  Up: control
+
+smtpserver
+----------
+
+       smtpserver = ( MAILHOST )
+
+   This variable specified the destination for Email sent by cfexecd.
+
+
+File: cfengine-Reference.info,  Node: SplayTime,  Next: split,  Prev: Smtpserver,  Up: control
+
+SplayTime
+---------
+
+       SplayTime = ( TIME-IN-MINUTES )
+
+   This variable is used to set the maximum time over which cfengine
+will share its load on a server, *Note Splaying host times:
+(cfengine-Tutorial)Splaying host times.
+
+
+File: cfengine-Reference.info,  Node: split,  Next: spooldirectories,  Prev: SplayTime,  Up: control
+
+Split
+-----
+
+        Split  = ( CHARACTER )
+
+   The value of this variable is used to define the list separator in
+variables which are expected to be treated as lists. The default value
+of this variable is the colon `:'.  Cfengine treats variables
+containing this character as lists to be broken up and iterated over,
+*Note Iteration over lists::.
+
+   This typically allows communication with PATH-like environment
+variables in the shell.
+
+
+File: cfengine-Reference.info,  Node: spooldirectories,  Next: suspiciousnames,  Prev: split,  Up: control
+
+SpoolDirectories
+----------------
+
+   A list of additional spool directories for cfengine to police. In
+these directories, filenames should correspond to existing users of the
+system.  When users lost their accounts, this list plus the mail spool
+directory will be checked for files owned by deprecated users.  See
+also: `DeleteNonOwnerFiles', `DeleteNonUserFiles'.
+
+       SpoolDirectories = ( /var/spool/cron/crontabs /var/spool/cron/atjobs )
+
+
+File: cfengine-Reference.info,  Node: suspiciousnames,  Next: sysadm,  Prev: spooldirectories,  Up: control
+
+suspiciousnames
+---------------
+
+       SuspiciousNames = ( .mo lrk3 )
+
+   Filenames in this list are treated as suspicious and generate a
+warning as cfengine scans directories. This might be used to detect
+hacked systems or concealed programs. Checks are only made in
+directories which cfengine scans in connection with a command such as
+files, tidy or copy.
+
+
+File: cfengine-Reference.info,  Node: sysadm,  Next: Syslog,  Prev: suspiciousnames,  Up: control
+
+sysadm
+------
+
+        sysadm = ( MAIL ADDRESS )
+
+   The mail address of your system administrator should be placed here.
+This is used in two instances.  If cfengine is invoked with the option
+`-a', then it simply prints out this value.  This is a handy feature
+for making scripts.
+
+   The administrators mail address is also written into the personal log
+files which cfengine creates for each user after tidying files, so you
+should make this an address which users can mail if they have troubles.
+
+
+File: cfengine-Reference.info,  Node: Syslog,  Next: SyslogFacility,  Prev: sysadm,  Up: control
+
+Syslog
+------
+
+
+       Syslog = ( ON/off )
+
+   This variable activates syslog logging of cfengine output at the
+`inform' level.
+
+   To set this output level one writes:
+
+
+      CLASSES::
+     
+        Syslog = ( on )
+
+
+File: cfengine-Reference.info,  Node: SyslogFacility,  Next: timezone,  Prev: Syslog,  Up: control
+
+SyslogFacility
+--------------
+
+
+       SyslogFacility = ( FACILITY )
+
+   This variable alters the syslog facility level.  e.g.
+
+
+        SyslogFacility = ( LOG_LOCAL1 )
+
+   Valid arguments are
+     LOG_USER
+     LOG_DAEMON
+     LOG_LOCAL0
+     LOG_LOCAL1
+     LOG_LOCAL2
+     LOG_LOCAL3
+     LOG_LOCAL4
+
+
+File: cfengine-Reference.info,  Node: timezone,  Next: TimeOut,  Prev: SyslogFacility,  Up: control
+
+timezone
+--------
+
+        timezone = ( 3-CHARACTER TIMEZONE )
+
+   The timezone variable is a list of character strings which define
+your local timezone.  Normally you will only need a single timezone,
+but sometimes there are several aliases for a given timezone e.g. MET
+and CET are synonymous.  Currently only the first three characters of
+this string are checked against the timezone which cfengine manages to
+glean from the system.  If a mismatch is detected a warning message is
+printed.  cfengine does not attempt to configure the timezone.  This
+feature works only as a reminder, since the timezone should really be
+set once and for all at the time the system is installed.  On some
+systems you can set the timezone by editing a file, a procedure which
+you can automate with cfengine *Note editfiles::.
+
+   The value of the `timezone' can be accessed by variable substitution
+in the usual way. It expands to the first item in your list.
+
+     shellcommands:
+     
+            "echo ${timezone} | mail ${sysadm}"
+
+
+File: cfengine-Reference.info,  Node: TimeOut,  Next: Verbose,  Prev: timezone,  Up: control
+
+TimeOut
+-------
+
+
+       TimeOut = ( 10 )
+
+   The default timeout for network connections is 10 seconds. This is
+too short on some routed networks. It is not permitted to set this
+variable smaller than 3 seconds or larger than 60 seconds.
+
+
+File: cfengine-Reference.info,  Node: Verbose,  Next: Warnings,  Prev: TimeOut,  Up: control
+
+Verbose
+-------
+
+
+       Verbose = ( ON/off )
+
+   This variable switches on the output level whereby cfengine reports
+everything it does during a run in great detail. Normally only urgent
+messages or clear errors are printed, *Note Inform::.  This option is
+almost equivalent to using the `--verbose' of `-v' command-line
+options. The only difference is that system environment reporting
+information, which is printed prior to parsing, is not shown.  To set
+this output level on selected hosts one writes:
+
+
+      CLASSES::
+     
+        Verbose = ( on )
+
+   For related more limited output, *Note Inform::.
+
+
 File: cfengine-Reference.info,  Node: Warnings,  Next: warnnonuserfiles,  Prev: Verbose,  Up: control
 
 Warnings
@@ -156,6 +486,8 @@ copying. Cfengine attempts to prevent this during remote copies._
      
                              syslog=TRUE/ON/FALSE/OFF
                              inform=TRUE/ON/FALSE/OFF
+     
+                             findertype=MACOSX FINDER TYPE
 
 `dest'
      The destination file is the only obligatory item. This must be the
@@ -166,6 +498,27 @@ copying. Cfengine attempts to prevent this during remote copies._
      symbolic links, plain files are copied as plain files and special
      files are copied as special files.  The `recurse' option is
      required to copy the contents of subdirectories.
+
+     If the destination file name is of the form
+     `filename/..namedfork/rsrc', then it is assumed that you are
+     copying the resource fork of a file to an HFS+ file system on OS X
+     Jaguar. In the absence of the destination file being in this form
+     (just dest=filename), cfengine will assume that you are working
+     with the data fork of the file.
+
+     For a resource fork copy to properly work, the data fork must have
+     already been copied. Ie the OS will not allow you to copy the
+     resource fork for a file that does not exist. And, copying a data
+     fork after the resource fork will overwrite the resource fork. So,
+     order is important.  Copy the data fork, first. Then, copy the
+     resource fork.
+
+     To split the data and resource forks of a file into two parts,
+     open up a terminal.  The following commands will copy MyFile 's
+     data and resource forks into two separate files which can then be
+     recombined by cfengine:
+          	cp MyFile MyFile-datafork
+          	cp MyFile/..namedfork/rsrc MyFile-rsrcfork
 
 `mode, owner, group'
      The file mode, owner and group of the images are specified as in
@@ -277,6 +630,24 @@ copying. Cfengine attempts to prevent this during remote copies._
      comparison is initiated.  An `mtime' comparison does not take into
      account changes of file permissions, only modifications to the
      contents of the files.
+
+`findertype'
+     	Sets the four letter file type code in an HFS+ file system on Mac
+     OS X 	Jaguar. For example, the four letter code APPL
+     indicates the file is an 	Application (and will be executed
+     when double-clicked). The four letter 	code TEXT indicates
+     the file is a text file and will be opened by the 	default text
+     editor.
+
+     	If the file also has an extension (for example .txt), then if
+     setting 	the finder type code, you should make sure your
+     finder type code does 	not conflict with the file extension.
+
+     	Files both without extensions and finder type codes are mostly
+     useless 	to OS X, so be sure to do one or the other!
+
+     	Also note that finder type codes should not be applied to the
+     resource 	forks of files.
 
 `server'
      If you want to copy a file remotely from a server, you specify the
@@ -537,7 +908,12 @@ variable `$(binserver)' here.
      
          /FILESYSTEM freespace=SIZE-LIMIT define=CLASS-LIST(,:.)
      
-          inform=TRUE log=TRUE force=TRUE
+          inform=TRUE
+          log=TRUE
+     
+          scanarrivals=TRUE
+          force=TRUE
+     
           ifelapsed=MINS
           expireafter=MINS
 
@@ -579,6 +955,12 @@ even on NFS mounted filesystems. Normally it does not make sense to
 check filesystems that are not native to the local host, but
 occasionally ne would like to force such a check in order to set a
 class, based on the result, for instance.
+
+   If the `scanarrivals' option is set, the agent will recursively
+descend through the file system building a database of file
+modification times. This data is used for research purposes and will
+eventually be used to trigger classes that determine optimal times for
+backup of filesystem.
 
 
 File: cfengine-Reference.info,  Node: directories,  Next: disable,  Prev: disks,  Up: Cfagent reference

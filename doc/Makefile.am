@@ -11,27 +11,32 @@ html_DATA = $(htmlfiles)
 
 # Info used in building and installing Postscript files
 ps1 = 
-ps2 = cfengine-Tutorial.ps cfengine-Reference.ps
+ps2 = cfengine-Tutorial.ps cfengine-Reference.ps cfengine-Anomalies.ps
 
 # When the Texi2DVI problem with cfengine-Reference is corrected, 
 # then uncomment the reference to ps2
-psfiles = $(ps1)	# $(ps2)
+psfiles = $(ps2)
 
 psdir = $(pkgdatadir)/doc
 ps_DATA = $(psfiles)
 
+MAKEINFOHTML = $(MAKEINFO) --html --no-split
+
 # Make sure these get distributed with everything else.
-EXTRA_DIST = cfagent.8 cfenvd.8 cfenvgraph.8 cfexecd.8 cfkey.8 cfrun.8 cfservd.8 cfengine.8 texinfo.tex $(htmlfiles)
-SUFFIXES = html latex
+EXTRA_DIST = cfagent.8 cfenvd.8 cfenvgraph.8 cfexecd.8 cfkey.8 cfrun.8 cfservd.8 cfengine.8 texinfo.tex $(htmlfiles) $(infofiles)  $(psfiles) $(dvifiles)
+SUFFIXES = html latex pdf ps dvi
 
-%.html : %.texinfo
-	${MAKEINFO} -I $(srcdir) --html --no-split $<
+#%.html : %.texinfo
+#	${MAKEINFO} -I $(srcdir) --html --no-split $<
+#
+#%.dvi : %.latex
+#	${LATEX} $<
 
-%.dvi : %.latex
-	${LATEX} $<
+#%.dvi : %.texinfo
+#	${TEXI2DVI} $<
 
-%.dvi : %.texinfo
-	${TEXI2DVI} $<
+#%.pdf : %.ps
+#	${PS2PDF} $<
 
 #
 # Some basic clean ups

@@ -39,10 +39,7 @@ FILE *PIPE;
 
 /*******************************************************************/
 
-int LoadProcessTable(procdata,psopts)
-
-struct Item **procdata;
-char *psopts;
+int LoadProcessTable(struct Item **procdata,char *psopts)
 
 { FILE *pp;
   char pscomm[maxlinksize], imgbackup;
@@ -60,7 +57,7 @@ if ((pp = cfpopen(pscomm,"r")) == NULL)
 
 while (!feof(pp))
    {
-   bzero(VBUFF,bufsize);
+   memset(VBUFF,0,bufsize);
    ReadLine(VBUFF,bufsize,pp);
    AppendItem(procdata,VBUFF,"");
    }
@@ -78,10 +75,7 @@ return true;
 
 /*******************************************************************/
 
-void DoProcessCheck(pp,procdata)
-
-struct Process *pp;
-struct Item *procdata;
+void DoProcessCheck(struct Process *pp,struct Item *procdata)
 
 { char line[bufsize];
   int matches=0,dosignals=true;
@@ -112,46 +106,46 @@ if (pp->matches >= 0)
    switch (pp->comp)
       {
       case '=': if (matches != (int)pp->matches)
-                   {
-	    	   snprintf(OUTPUT,bufsize*2,"%d processes matched %s (should be %d)\n",matches,pp->expr,pp->matches);
-		   CfLog(cferror,OUTPUT,"");
-		   if (pp->action == 'm')
-		      {
-		      dosignals = true;
-		      }
-		   }
-                break;
-		
+         {
+         snprintf(OUTPUT,bufsize*2,"%d processes matched %s (should be %d)\n",matches,pp->expr,pp->matches);
+         CfLog(cferror,OUTPUT,"");
+         if (pp->action == 'm')
+            {
+            dosignals = true;
+            }
+         }
+          break;
+          
       case '>': if (matches < (int)pp->matches)
-	           {
-	    	   snprintf(OUTPUT,bufsize*2,"%d processes matched %s (should be >=%d)\n",matches,pp->expr,pp->matches);
-		   CfLog(cferror,OUTPUT,"");
-		   if (pp->action == 'm')
-		      {
-		      dosignals = true;
-		      }
-	           } 
-                break;
-		
+         {
+         snprintf(OUTPUT,bufsize*2,"%d processes matched %s (should be >=%d)\n",matches,pp->expr,pp->matches);
+         CfLog(cferror,OUTPUT,"");
+         if (pp->action == 'm')
+            {
+            dosignals = true;
+            }
+         } 
+          break;
+          
       case '<': if (matches > (int)pp->matches)
-	           {
-	    	   snprintf(OUTPUT,bufsize*2,"%d processes matched %s (should be <=%d)\n",matches,pp->expr,pp->matches);
-		   CfLog(cferror,OUTPUT,"");
-		   if (pp->action == 'm')
-		      {
-		      dosignals = true;
-		      }
-	           } 
+         {
+         snprintf(OUTPUT,bufsize*2,"%d processes matched %s (should be <=%d)\n",matches,pp->expr,pp->matches);
+         CfLog(cferror,OUTPUT,"");
+         if (pp->action == 'm')
+            {
+            dosignals = true;
+            }
+         } 
       }
    }
-
-if (dosignals)
-   {
-   DoSignals(pp,killlist);
-   }
  
-DeleteItemList(killlist);
-
+ if (dosignals)
+    {
+    DoSignals(pp,killlist);
+    }
+ 
+ DeleteItemList(killlist);
+ 
 if ((pp->action == 'm') && !dosignals && (matches != 0))
    {
    Verbose("%s: Matches found for %s - no restart sequence\n",VPREFIX,pp->expr);
@@ -199,55 +193,55 @@ if (strlen(pp->restart) != 0)
    if (pp->useshell == 'y')
       {
       if ((PIPE = cfpopen_shsetuid(pp->restart,"r",pp->uid,pp->gid,pp->chdir,pp->chroot)) == NULL)
-	 {
-	 snprintf(OUTPUT,bufsize*2,"Process restart execution failed on %s\n",pp->restart);
-	 CfLog(cferror,OUTPUT,"popen");
-	 return;
-	 }
+         {
+         snprintf(OUTPUT,bufsize*2,"Process restart execution failed on %s\n",pp->restart);
+         CfLog(cferror,OUTPUT,"popen");
+         return;
+         }
       }
    else
       {
       if ((PIPE = cfpopensetuid(pp->restart,"r",pp->uid,pp->gid,pp->chdir,pp->chroot)) == NULL)
-	 {
-	 snprintf(OUTPUT,bufsize*2,"Process restart execution failed on %s\n",pp->restart);
-	 CfLog(cferror,OUTPUT,"popen");
-	 return;
-	 }
+         {
+         snprintf(OUTPUT,bufsize*2,"Process restart execution failed on %s\n",pp->restart);
+         CfLog(cferror,OUTPUT,"popen");
+         return;
+         }
       }
-
+   
    DEADLOCK = false;   
    
    while (!feof(PIPE))
       {
       if (pp->useshell == 'd') /* dumb shell */
-	 {
-	 fgets(line,1,PIPE);
+         {
+         fgets(line,1,PIPE);
          break;
-	 }
+         }
       
       ReadLine(line,bufsize,PIPE);
-
+      
       if (feof(PIPE) || ferror(PIPE))
-	 {
-	 break;
-	 }
+         {
+         break;
+         }
       
       if (strstr(line,"cfengine-die"))
-	 {
-	 break;
-	 }
-
+         {
+         break;
+         }
+      
       /* patch for ERESTARTSYSTEM bug in popen */
-
+      
       if (strstr(line,"cfd: start") || DEADLOCK)
-	 {
-	 break;
-	 }
+         {
+         break;
+         }
       
       snprintf(OUTPUT,bufsize*2,"Restart: %s",line);
       CfLog(cfinform,OUTPUT,"");
       }
-
+   
    if (pp->useshell == 'y')
       {
       pclose(PIPE);
@@ -265,10 +259,7 @@ if (strlen(pp->restart) != 0)
 
 /**********************************************************************************/
 
-int FindMatches(pp,procdata,killlist)
-
-struct Process *pp;
-struct Item *procdata,**killlist;
+int FindMatches(struct Process *pp,struct Item *procdata,struct Item **killlist)
 
 { struct Item *ip, *ip2;
   char *sp,saveuid[16];
@@ -291,7 +282,7 @@ GetProcessColumns(procdata->name,(char **)names,start,end);
 
 for (ip = procdata; ip != NULL; ip=ip->next)
    {
-   bcopy(&rxcache,&rx,sizeof(rx)); /* To fix a bug on some implementations where rx gets emptied */
+   memcpy(&rx,&rxcache,sizeof(rx)); /* To fix a bug on some implementations where rx gets emptied */
 
    if (regexec(&rx,ip->name,1,&pmatch,0) == 0)
       {
@@ -300,142 +291,142 @@ for (ip = procdata; ip != NULL; ip=ip->next)
       Debug("Regex %s matched %s\n",ip->name,pp->expr);
       
       for (ip2 = pp->inclusions; ip2 != NULL; ip2 = ip2->next)
-	 {
-	 got = false;
-	 
-	 if (strstr(ip->name,ip2->name) || WildMatch(ip2->name,ip->name))
-	    {
-	    got = true;
-	    break;
-	    }
-	 }
+         {
+         got = false;
+         
+         if (strstr(ip->name,ip2->name) || WildMatch(ip2->name,ip->name))
+            {
+            got = true;
+            break;
+            }
+         }
       
       if (!got)
-	 {
-	 continue;
-	 }
+         {
+         continue;
+         }
       
       got = false;
       
       for (ip2 = pp->exclusions; ip2 != NULL; ip2 = ip2->next)
-	 {
-	 if (strstr(ip->name,ip2->name) || WildMatch(ip2->name,ip->name))
-	    {
-	    got = true;
-	    break;
-	    }
-	 }
-
+         {
+         if (strstr(ip->name,ip2->name) || WildMatch(ip2->name,ip->name))
+            {
+            got = true;
+            break;
+            }
+         }
+      
       if (!ProcessFilter(ip->name,pp->filters,names,start,end))
-	 {
-	 Debug("%s Filtered away\n",ip->name);
-	 continue;
-	 }
+         {
+         Debug("%s Filtered away\n",ip->name);
+         continue;
+         }
       
       if (got)
-	 {
-	 continue;
-	 }
-
+         {
+         continue;
+         }
+      
       Debug("Matched proc[%s]\n",ip->name);
       
       for (sp = ip->name; *sp != '\0'; sp++) /* if first field contains alpha, skip */
-	 {
-	 while (true)
-	    {
-	    while (!isdigit((int)*sp) && (*sp != '\0'))
-	       {
-	       sp++;
-	       }
-	    
-	    if ((sp > ip->name) && isalnum((int)*(sp-1))) /* Username contains number*/
-	       {
-	       sp++;
-	       }
-	    else
-	       {
-	       break;
-	       }
-	    }
-	 
-	 sscanf(sp,"%d",&pid);
-	 
-	 if (pid != -1)
-	    {
-	    break;
-	    }
-	 }  
+         {
+         while (true)
+            {
+            while (!isdigit((int)*sp) && (*sp != '\0'))
+               {
+               sp++;
+               }
+            
+            if ((sp > ip->name) && isalnum((int)*(sp-1))) /* Username contains number*/
+               {
+               sp++;
+               }
+            else
+               {
+               break;
+               }
+            }
+  
+         sscanf(sp,"%d",&pid);
+         
+         if (pid != -1)
+            {
+            break;
+            }
+         }  
       
       if (pid == -1)
-	 {
-	 snprintf(OUTPUT,bufsize*2,"Unable to extract pid while looking for %s\n",pp->expr);
-	 CfLog(cfverbose,OUTPUT,"");
-	 continue;
-	 }
+         {
+         snprintf(OUTPUT,bufsize*2,"Unable to extract pid while looking for %s\n",pp->expr);
+         CfLog(cfverbose,OUTPUT,"");
+         continue;
+         }
       
       Debug2("Found matching pid %d\n",pid);
       
       matches++;
       
       if (pid == 1 && pp->signal == cfhup)
-	 {
-	 Verbose("(Okay to send HUP to init)\n");
-	 }
+         {
+         Verbose("(Okay to send HUP to init)\n");
+         }
       else if (pid < 4)
-	 {
-	 Verbose("%s: will not signal or restart processes 0,1,2,3\n",VPREFIX);
-	 Verbose("%s: occurred while looking for %s\n",VPREFIX,pp->expr);
-	 continue;
-	 }
+         {
+         Verbose("%s: will not signal or restart processes 0,1,2,3\n",VPREFIX);
+         Verbose("%s: occurred while looking for %s\n",VPREFIX,pp->expr);
+         continue;
+         }
       
       if (pp->action == 'w')
-	 {
-	 snprintf(OUTPUT,bufsize*2,"Process alert: %s\n",procdata->name);
-	 CfLog(cferror,OUTPUT,"");	 
-	 snprintf(OUTPUT,bufsize*2,"Process alert: %s\n",ip->name);
-	 CfLog(cferror,OUTPUT,"");
-	 continue;
-	 }
+         {
+         snprintf(OUTPUT,bufsize*2,"Process alert: %s\n",procdata->name);
+         CfLog(cferror,OUTPUT,"");  
+         snprintf(OUTPUT,bufsize*2,"Process alert: %s\n",ip->name);
+         CfLog(cferror,OUTPUT,"");
+         continue;
+         }
       
       if (pp->signal != cfnosignal)
-	 {
-	 if (!DONTDO)
-	    {
-	    if (pid == cfengine_pid)
-	       {
-	       CfLog(cfverbose,"Cfengine will not kill itself!\n","");
-	       continue;
-	       }
-
-	    if (pp->action == 'm')
-	       {
-	       sprintf(saveuid,"%d",pid);
-	       PrependItem(killlist,saveuid,"");
-	       }
-	    else
-	       {
-	       if ((ret = kill((pid_t)pid,pp->signal)) < 0)
-		  {
-		  snprintf(OUTPUT,bufsize*2,"Couldn't send signal to pid %d\n",pid);
-		  CfLog(cfverbose,OUTPUT,"kill");
-		  
-		  continue;
-		  }
-	       
-	       snprintf(OUTPUT,bufsize*2,"Signalled process %d (%s) with %s\n",pid,pp->expr,SIGNALS[pp->signal]);
-	       CfLog(cfinform,OUTPUT,"");
-	 
-	       if ((pp->signal == cfkill || pp->signal == cfterm) && ret >= 0)
-		  {
-		  snprintf(OUTPUT,bufsize*2,"Killed: %s\n",ip->name);
-		  CfLog(cfinform,OUTPUT,"");
-		  }
-	       }
-	    }
-	 }
+         {
+         if (!DONTDO)
+            {
+            if (pid == cfengine_pid)
+               {
+               CfLog(cfverbose,"Cfengine will not kill itself!\n","");
+               continue;
+               }
+            
+            if (pp->action == 'm')
+               {
+               sprintf(saveuid,"%d",pid);
+               PrependItem(killlist,saveuid,"");
+               }
+            else
+               {
+               if ((ret = kill((pid_t)pid,pp->signal)) < 0)
+                  {
+                  snprintf(OUTPUT,bufsize*2,"Couldn't send signal to pid %d\n",pid);
+                  CfLog(cfverbose,OUTPUT,"kill");
+                  
+                  continue;
+                  }
+               
+               snprintf(OUTPUT,bufsize*2,"Signalled process %d (%s) with %s\n",pid,pp->expr,SIGNALS[pp->signal]);
+               CfLog(cfinform,OUTPUT,"");
+               
+               if ((pp->signal == cfkill || pp->signal == cfterm) && ret >= 0)
+                  {
+                  snprintf(OUTPUT,bufsize*2,"Killed: %s\n",ip->name);
+                  CfLog(cfinform,OUTPUT,"");
+                  }
+               }
+            }
+         }
       }
    }
-
+ 
  for (i = 0; i < noproccols; i++)
     {
     if (names[i] != NULL)
@@ -450,10 +441,7 @@ for (ip = procdata; ip != NULL; ip=ip->next)
 
 /**********************************************************************************/
 
-void DoSignals(pp,list)
-
-struct Process *pp;
-struct Item *list;
+void DoSignals(struct Process *pp,struct Item *list)
 
 { struct Item *ip;
   pid_t pid;
@@ -468,7 +456,8 @@ if (list == NULL)
 
 if (pp->signal == cfnosignal)
    {
-   Verbose ("No signal to send for %s\n",pp->expr);
+   snprintf(OUTPUT,bufsize,"No signal to send for %s\n",pp->expr);
+   CfLog(cfinform,OUTPUT,"");
    return;
    }
 
@@ -487,18 +476,18 @@ for (ip = list; ip != NULL; ip=ip->next)
    if (!DONTDO)
       {
       if ((ret = kill((pid_t)pid,pp->signal)) < 0)
-	 {
-	 snprintf(OUTPUT,bufsize*2,"Couldn't send signal to pid %d\n",pid);
-	 CfLog(cfverbose,OUTPUT,"kill");
-	 
-	 return;
-	 }
-   
+         {
+         snprintf(OUTPUT,bufsize*2,"Couldn't send signal to pid %d\n",pid);
+         CfLog(cfverbose,OUTPUT,"kill");
+         
+         return;
+         }
+      
       if ((pp->signal == cfkill || pp->signal == cfterm) && ret >= 0)
-	 {
-	 snprintf(OUTPUT,bufsize*2,"Killed: %s\n",ip->name);
-	 CfLog(cfinform,OUTPUT,"");
-	 }
+         {
+         snprintf(OUTPUT,bufsize*2,"Killed: %s\n",ip->name);
+         CfLog(cfinform,OUTPUT,"");
+         }
       }
    }
 }

@@ -27,25 +27,32 @@
 /*                                                                           */
 /* File: functions.c                                                         */
 /*                                                                           */
+/* There is a protocol to these function calls - must return a val/class     */
+/*                                                                           */
 /*****************************************************************************/
 
 #include "cf.defs.h"
 #include "cf.extern.h"
-
+#include <math.h>
 
 /*********************************************************************/
 
-int IsBuiltinFunction(item)
-
-char *item;
+int IsBuiltinFunction(char *item)
 
 { char name[maxvarsize],args[bufsize];
   char c1 = '?',c2 = '?' ;
 
+Debug("IsBuiltinFunction(%s)\n",item);
+  
 name[0] = '\0';
 args[0] = '\0';
     
-sscanf(item,"%255[a-zA-Z0-9_]%c%255[^)]%c",name,&c1,args,&c2);
+if (*item == '!')
+   {
+   item++;
+   }
+ 
+sscanf(item,"%255[!a-zA-Z0-9_]%c%255[^)]%c",name,&c1,args,&c2);
 
 if (c1 != '(' || c2 != ')')
    {
@@ -74,13 +81,18 @@ return true;
 
 /*********************************************************************/
 
-char *EvaluateFunction(f,value)
-
-char *f,*value;
+char *EvaluateFunction(char *f,char *value)
 
 { enum builtin fn;
   char name[maxvarsize],vargs[bufsize],args[bufsize];
+  int negated = false;
 
+if (*f == '!')
+   {
+   negated = true;
+   f++;
+   }
+ 
 sscanf(f,"%255[^(](%255[^)])",name,vargs);
 ExpandVarstring(vargs,args,NULL); 
 Debug("HandleFunction: %s(%s)\n",name,args);
@@ -110,22 +122,37 @@ switch (fn = FunctionStringToCode(name))
    case fn_iprange:
        HandleIPRange(args,value);
        break;
+   case fn_hostrange:
+       HandleHostRange(args,value);
+       break;
    case fn_isdefined:
        HandleIsDefined(args,value);
        break;
    case fn_strcmp:
        HandleStrCmp(args,value);
        break;
+   case fn_regcmp:
+       HandleRegCmp(args,value);
+       break;
    case fn_showstate:
        HandleShowState(args,value);
+       break;
+   case fn_friendstat:
+       HandleFriendStatus(args,value);
        break;
    case fn_readfile:
        HandleReadFile(args,value);
        break;
+      case fn_readarray:
+       HandleReadArray(args,value);
+       break;
+      case fn_readtable:
+       HandleReadTable(args,value);
+       break;
    case fn_syslog:
        HandleSyslogFn(args,value);
        break;
-
+       
    case fn_setstate:
        HandleSetState(args,value);
        break;
@@ -133,38 +160,61 @@ switch (fn = FunctionStringToCode(name))
    case fn_unsetstate:
        HandleUnsetState(args,value);
        break;
+
+   case fn_module:
+       HandlePrepModule(args,value);
+       break;
+
+   case fn_adj:
+       HandleAssociation(args,value);
+       break;
        
    case fn_returnvars:
-
+       
        if (ScopeIsMethod())
-	  {
-	  HandleReturnValues(args,value);
-	  ACTIONPENDING = false;
-	  }
+          {
+          HandleReturnValues(args,value);
+          ACTIONPENDING = false;
+          }
        else
-	  {
-	  snprintf(OUTPUT,bufsize,"Function %s can only be used within a private method context",f);
-	  yyerror(OUTPUT);
-	  }
+          {
+          snprintf(OUTPUT,bufsize,"Function %s can only be used within a private method context",f);
+          yyerror(OUTPUT);
+          }
        break;
        
    case fn_returnclasses:
        
        if (ScopeIsMethod())
-	  {
-	  HandleReturnClasses(args,value);
-	  ACTIONPENDING = false;
-	  }
+          {
+          HandleReturnClasses(args,value);
+          ACTIONPENDING = false;
+          }
        else
-	  {
-	  snprintf(OUTPUT,bufsize,"Function %s can only be used within a private method context",f);
-	  yyerror(OUTPUT);
-	  }
+          {
+          snprintf(OUTPUT,bufsize,"Function %s can only be used within a private method context",f);
+          yyerror(OUTPUT);
+          }
        break;
        
    default: snprintf(OUTPUT,bufsize,"No such builtin function %s\n",f);
        CfLog(cferror,OUTPUT,"");
    }
+ 
+ if (negated)
+    {
+    if (strcmp(value,CF_NOCLASS) == 0)
+       {
+       strcpy(value,CF_ANYCLASS);
+       return value;
+       }
+    
+    if (strcmp(value,CF_ANYCLASS) == 0)
+       {
+       strcpy(value,CF_NOCLASS);
+       return value;
+       }
+    }
  
 return value;
 }
@@ -173,9 +223,7 @@ return value;
 /* level 2                                                           */
 /*********************************************************************/
 
-enum builtin FunctionStringToCode(str)
-
-char *str;
+enum builtin FunctionStringToCode(char *str)
 
 { char *sp;
   int i;
@@ -213,22 +261,19 @@ return (enum builtin) i;
 
 /*********************************************************************/
 
-void GetRandom(args,value)
-
-char *args,*value;
+void GetRandom(char *args,char *value)
 
 { int result,count=0,from=-1,to=-1;
- char tbuff[bufsize],fbuff[bufsize];
-
+  char argv[2][bufsize];
+ 
 if (ACTION != control)
    {
    yyerror("Use of RandomInt(a,b) outside of variable assignment");
    }
   
-
-TwoArgs(args,fbuff,tbuff); 
-from = atoi(fbuff);
-to = atoi(tbuff);
+FunctionArgs(args,argv,2); 
+from = atoi(argv[0]);
+to = atoi(argv[1]);
  
 if ((from < 0) || (to < 0) || (from == to))
    {
@@ -249,10 +294,7 @@ snprintf(value,bufsize,"%u",result);
 
 /*********************************************************************/
 
-void HandleStatInfo(fn,args,value)
-
-enum builtin fn;
-char *args,*value;
+void HandleStatInfo(enum builtin fn,char *args,char *value)
 
 { struct stat statbuf;
 
@@ -277,40 +319,38 @@ if (lstat(args,&statbuf) == -1)
     }
  
 strcpy(value,CF_NOCLASS);
-
+ 
  switch(fn)
     {
     case fn_isdir:
-	if (S_ISDIR(statbuf.st_mode))
-	   {
-	   strcpy(value,CF_ANYCLASS);
-	   return;
-	   }
-	break;
+        if (S_ISDIR(statbuf.st_mode))
+           {
+           strcpy(value,CF_ANYCLASS);
+           return;
+           }
+        break;
     case fn_islink:
-	if (S_ISLNK(statbuf.st_mode))
-	   {
-	   strcpy(value,CF_ANYCLASS);
-	   return;
-	   }
-	break;
+        if (S_ISLNK(statbuf.st_mode))
+           {
+           strcpy(value,CF_ANYCLASS);
+           return;
+           }
+        break;
     case fn_isplain:
-	if (S_ISREG(statbuf.st_mode))
-	   {
-	   strcpy(value,CF_ANYCLASS);
-	   return;
-	   }
-	break;
+        if (S_ISREG(statbuf.st_mode))
+           {
+           strcpy(value,CF_ANYCLASS);
+           return;
+           }
+        break;
     }
  
-strcpy(value,CF_NOCLASS);
+ strcpy(value,CF_NOCLASS);
 }
 
 /*********************************************************************/
 
-void HandleIPRange(args,value)
-
-char *args,*value;
+void HandleIPRange(char *args,char *value)
 
 { struct stat statbuf;
  
@@ -335,24 +375,52 @@ if (FuzzySetMatch(args,VIPADDRESS) == 0)
 
 /*********************************************************************/
 
-void HandleCompareStat(fn,args,value)
+void HandleHostRange(char *args,char *value)
 
-enum builtin fn;
-char *args,*value;
+{ struct Item *list = NULL;
+
+ Debug("SRDEBUG in HandleHostRange()\n"); 
+ Debug("SRDEBUG args=%s value=%s\n",args,value);
+
+ if (!FuzzyHostParse(args))
+    {
+    strcpy(value,CF_NOCLASS);
+    return;
+    }
+ /* VDEFAULTBINSERVER.name is relative domain name */
+  /* (see nameinfo.c ~line 145)                     */
+
+ if (FuzzyHostMatch(args,VDEFAULTBINSERVER.name) == 0)
+    {
+    Debug("SRDEBUG SUCCESS!\n");
+    strcpy(value,CF_ANYCLASS);
+    }
+ else
+    {
+    Debug("SRDEBUG FAILURE\n");
+    strcpy(value,CF_NOCLASS);
+    }
+ 
+ return;
+}
+
+/*********************************************************************/
+
+void HandleCompareStat(enum builtin fn,char *args,char *value)
 
 { struct stat frombuf,tobuf;
-  char *sp,from[bufsize],to[bufsize];
+  char *sp,argv[2][bufsize];
   int count = 0;
 
-TwoArgs(args,from,to); 
+FunctionArgs(args,argv,2); 
 strcpy(value,CF_NOCLASS);
  
-if (stat(from,&frombuf) == -1)
+if (stat(argv[0],&frombuf) == -1)
    {
    return;
    }
 
-if (stat(to,&tobuf) == -1)
+if (stat(argv[1],&tobuf) == -1)
    {
    return;
    }
@@ -361,38 +429,36 @@ switch(fn)
    {
    case fn_newerthan:
        if (frombuf.st_mtime < tobuf.st_mtime)
-	  {
-	  strcpy(value,CF_ANYCLASS);
-	  return;
-	  }
+          {
+          strcpy(value,CF_ANYCLASS);
+          return;
+          }
        break;
-
+       
    case fn_accessedbefore:
        if (frombuf.st_atime < tobuf.st_atime)
-	  {
-	  strcpy(value,CF_ANYCLASS);
-	  return;
-	  }
+          {
+          strcpy(value,CF_ANYCLASS);
+          return;
+          }
        break;
-
+       
    case fn_changedbefore:
        if (frombuf.st_ctime < tobuf.st_ctime)
-	  {
-	  strcpy(value,CF_ANYCLASS);
-	  return;
-	  }       
+          {
+          strcpy(value,CF_ANYCLASS);
+          return;
+          }       
        break;
    }
-
+ 
 strcpy(value,CF_NOCLASS);
 }
 
 
 /*********************************************************************/
 
-void HandleFunctionExec(args,value)
-
-char *args,*value;
+void HandleFunctionExec(char *args,char *value)
 
 { char command[maxvarsize];
 
@@ -416,9 +482,7 @@ if (*args == '/')
 
 /*********************************************************************/
 
-void HandleReturnsZero(args,value)
-
-char *args,*value;
+void HandleReturnsZero(char *args,char *value)
 
 { char command[bufsize];
 
@@ -443,16 +507,14 @@ if (*args == '/')
     {
     yyerror("ExecResult(/command) must specify an absolute path");
     }
-
-strcpy(value,CF_NOCLASS); 
+ 
+ strcpy(value,CF_NOCLASS); 
 }
 
 
 /*********************************************************************/
 
-void HandleIsDefined(args,value)
-
-char *args,*value;
+void HandleIsDefined(char *args,char *value)
 
 {
 if (ACTION != groups)
@@ -473,69 +535,65 @@ strcpy(value,CF_NOCLASS);
 
 /*********************************************************************/
 
-void HandleSyslogFn(args,value)
+void HandleSyslogFn(char *args,char *value)
 
-char *args,*value;
-
-{ char from[bufsize],to[bufsize];
+{ char argv[2][bufsize];
   int priority = LOG_ERR;
 
-TwoArgs(args,from,to);
+FunctionArgs(args,argv,2);
 
 value[0] = '\0';
 
-if (strcmp(from,"LOG_EMERG") == 0)
+if (strcmp(argv[0],"LOG_EMERG") == 0)
    {
    priority = LOG_EMERG;
    }
-else if (strcmp(from,"LOG_ALERT") == 0)
+else if (strcmp(argv[0],"LOG_ALERT") == 0)
    {
    priority = LOG_ALERT;
    }
-else if (strcmp(from,"LOG_CRIT") == 0)
+else if (strcmp(argv[0],"LOG_CRIT") == 0)
    {
    priority = LOG_CRIT;
    }
-else if (strcmp(from,"LOG_NOTICE") == 0)
+else if (strcmp(argv[0],"LOG_NOTICE") == 0)
    {
    priority = LOG_NOTICE;
    } 
-else if (strcmp(from,"LOG_WARNING") == 0)
+else if (strcmp(argv[0],"LOG_WARNING") == 0)
    {
    priority = LOG_WARNING;
    }
-else if (strcmp(from,"LOG_ERR") == 0)
+else if (strcmp(argv[0],"LOG_ERR") == 0)
    {
    priority = LOG_ERR;
    }
 else
    {
-   snprintf(OUTPUT,bufsize,"Unknown syslog priority (%s) - changing to LOG_ERR",from);
+   snprintf(OUTPUT,bufsize,"Unknown syslog priority (%s) - changing to LOG_ERR",argv[0]);
    CfLog(cferror,OUTPUT,"");
    priority = LOG_ERR;
    }
 
-Debug("Alerting to syslog(%s,%s)\n",from,to);
+Debug("Alerting to syslog(%s,%s)\n",argv[0],argv[1]);
 
 if (!DONTDO)
    {
-   syslog(priority," %s",to);
+   syslog(priority," %s",argv[1]);
    } 
 }
 
 
 /*********************************************************************/
 
-void HandleStrCmp(args,value)
+void HandleStrCmp(char *args,char *value)
 
-char *args,*value;
-
-{ char *sp,from[bufsize],to[bufsize];
+{ char *sp,argv[2][bufsize];
   int count = 0;
 
-TwoArgs(args,from,to); 
+FunctionArgs(args,argv,2); 
  
-if (strcmp(from,to) == 0)
+if (strcmp(argv[0],argv[1]) == 0)
    {
    strcpy(value,CF_ANYCLASS); 
    }
@@ -545,24 +603,54 @@ else
    } 
 }
 
+/*********************************************************************/
+
+void HandleRegCmp(char *args,char *value)
+
+{ char *sp,argv[2][bufsize];
+  struct Item *list = NULL, *ret; 
+  int count = 0;
+
+FunctionArgs(args,argv,2);
+
+if (ACTION != groups)
+   {
+   yyerror("Function RegCmp() used outside of classes/groups");
+   return;
+   }
+
+list = SplitStringAsItemList(argv[1],LISTSEPARATOR);
+
+ret = LocateNextItemMatching(list,argv[0]);
+     
+if (ret != NULL)
+   {
+   strcpy(value,CF_ANYCLASS); 
+   }
+else
+   {
+   strcpy(value,CF_NOCLASS);
+   }
+ 
+DeleteItemList(list); 
+}
+
 
 /*********************************************************************/
 
-void HandleReadFile(args,value)
+void HandleReadFile(char *args,char *value)
 
-char *args,*value;
-
-{ char *sp,filename[bufsize],maxbytes[bufsize];
-  int val = 0;
+{ char *sp,argv[2][bufsize];
+  int i,val = 0;
   FILE *fp;
 
-TwoArgs(args,filename,maxbytes);
+FunctionArgs(args,argv,2);
  
-val = atoi(maxbytes);
+val = atoi(argv[1]);
 
-if ((fp = fopen(filename,"r")) == NULL)
+if ((fp = fopen(argv[0],"r")) == NULL)
    {
-   snprintf(OUTPUT,bufsize,"Could open ReadFile(%s)\n",filename);
+   snprintf(OUTPUT,bufsize,"Could not open ReadFile(%s)\n",argv[0]);
    CfLog(cferror,OUTPUT,"fopen");
    return;
    }
@@ -575,8 +663,17 @@ if (val > bufsize - buffer_margin)
    return;
    }
 
-bzero(value,bufsize); 
+memset(value,0,bufsize); 
 fread(value,val,1,fp);
+
+for (i = val+1; i >= 0; i--)
+   {   
+   if (value[i] == EOF)
+      {
+      value[i] = '\0';
+      break;
+      }
+    }
  
 fclose(fp); 
 }
@@ -584,9 +681,209 @@ fclose(fp);
 
 /*********************************************************************/
 
-void HandleReturnValues(args,value)
+void HandleReadArray(char *args,char *value)
 
-char *args,*value;
+{ char argv[5][bufsize];
+  char *sp,*filename=argv[0],*maxbytes=argv[4],*formattype=argv[1];
+  char *commentchar=argv[3],*sepchar=argv[2],buffer[bufsize];
+  int i=0,val = 0,read = 0;
+  struct Item *list = NULL,*ip;
+  FILE *fp;
+
+FunctionArgs(args,argv,5);
+ 
+val = atoi(maxbytes);
+
+if ((fp = fopen(filename,"r")) == NULL)
+   {
+   snprintf(OUTPUT,bufsize,"Could not open ReadFile(%s)\n",filename);
+   CfLog(cferror,OUTPUT,"fopen");
+   return;
+   }
+ 
+if (strlen(sepchar) > 1)
+   {
+   yyerror("List separator declared is not a single character in ReadArray");
+   }
+
+while (!feof(fp))
+   {
+   memset(buffer,0,bufsize);
+   fgets(buffer,bufsize,fp);
+
+   if ((read > val) && (val > 0))
+      {
+      Verbose("Breaking off file read after %d bytes\n",read);
+      break;
+      }
+   
+   read += strlen(buffer);
+
+   if (strlen(commentchar) > 0)
+      {
+      for (sp = buffer; sp < buffer+bufsize; sp++) /* Remove comments */
+         {
+         if (strncmp(sp,commentchar,strlen(commentchar)) == 0)
+            {
+            *sp = '\0';
+            break;
+            }
+         }
+      }
+   
+   Chop(buffer);
+   
+   if (strlen(buffer) == 0)
+      {
+      continue;
+      }
+   
+   if (strcmp(formattype,"autokey") == 0)
+      {
+      Debug("AUTOKEY: %s(%s)\n",CURRENTITEM,buffer);
+      list = SplitStringAsItemList(buffer,*sepchar);
+      
+      for (ip = list; ip != NULL; ip=ip->next)
+         {
+         char lvalue[bufsize];
+         i++;
+         Debug("Setting %s[%d] = %s\n",CURRENTITEM,i,ip->name);
+         
+         snprintf(lvalue,bufsize-1,"%s[%d]",CURRENTITEM,i);
+         InstallControlRValue(lvalue,ip->name);
+         snprintf(value,bufsize-1,"CF_ASSOCIATIVE_ARRAY%s",args);
+         }
+      }
+   else if (strcmp(formattype,"textkey") == 0)
+      {
+      char argv[2][bufsize],lvalue[bufsize];
+      if (!FunctionArgs(buffer,argv,2))
+         {
+         break;
+         }
+      
+      Debug("Setting %s[%s] = %s\n",CURRENTITEM,argv[0],argv[1]);
+      
+      snprintf(lvalue,bufsize-1,"%s[%s]",CURRENTITEM,argv[0]);
+      InstallControlRValue(lvalue,argv[1]);
+      snprintf(value,bufsize-1,"CF_ASSOCIATIVE_ARRAY%s",args);
+      }
+   else
+      {
+      yyerror("No such file format specifier");
+      }
+   }
+ 
+ fclose(fp); 
+ snprintf(value,bufsize-1,"CF_ASSOCIATIVE_ARRAY%s",args);
+}
+
+/*********************************************************************/
+
+void HandleReadTable(char *args,char *value)
+
+{  char argv[5][bufsize];
+  char *sp,*filename=argv[0],*maxbytes=argv[4],*formattype=argv[1];
+  char *commentchar=argv[3],*sepchar=argv[2],buffer[bufsize];
+  int i=0,j=0,val = 0,read = 0;
+  struct Item *list = NULL,*ip;
+  FILE *fp;
+
+FunctionArgs(args,argv,5);
+ 
+val = atoi(maxbytes);
+
+if ((fp = fopen(filename,"r")) == NULL)
+   {
+   snprintf(OUTPUT,bufsize,"Could not open ReadFile(%s)\n",filename);
+   CfLog(cferror,OUTPUT,"fopen");
+   return;
+   }
+ 
+if (strlen(sepchar) > 1)
+   {
+   yyerror("List separator declared is not a single character in ReadArray");
+   }
+
+while (!feof(fp))
+   {
+   memset(buffer,0,bufsize);
+   fgets(buffer,bufsize,fp);
+
+   i++;
+   j=0;
+   
+   if ((read > val) && (val > 0))
+      {
+      Verbose("Breaking off file read after %d bytes\n",read);
+      break;
+      }
+   
+   read += strlen(buffer);
+
+   if (strlen(commentchar) > 0)
+      {
+      for (sp = buffer; sp < buffer+bufsize; sp++) /* Remove comments */
+         {
+         if (strncmp(sp,commentchar,strlen(commentchar)) == 0)
+            {
+            *sp = '\0';
+            break;
+            }
+         }
+      }
+   
+   Chop(buffer);
+   
+   if (strlen(buffer) == 0)
+      {
+      continue;
+      }
+   
+   if (strcmp(formattype,"autokey") == 0)
+      {
+      Debug("AUTOKEY: %s(%s)\n",CURRENTITEM,buffer);
+      list = SplitStringAsItemList(buffer,*sepchar);
+      
+      for (ip = list; ip != NULL; ip=ip->next)
+         {
+         char lvalue[bufsize];
+         j++;
+         Debug("Setting %s[%d][%d] = %s\n",CURRENTITEM,i,j,ip->name);
+         
+         snprintf(lvalue,bufsize-1,"%s[%d][%d]",CURRENTITEM,i,j);
+         InstallControlRValue(lvalue,ip->name);
+         snprintf(value,bufsize-1,"CF_ASSOCIATIVE_ARRAY%s",args);
+         }
+      }
+   else if (strcmp(formattype,"textkey") == 0)
+      {
+      char argv[2][bufsize],lvalue[bufsize];
+      if (!FunctionArgs(buffer,argv,3))
+         {
+         break;
+         }
+      
+      Debug("Setting %s[%s] = %s\n",CURRENTITEM,argv[0],argv[1]);
+      
+      snprintf(lvalue,bufsize-1,"%s[%s][%s]",CURRENTITEM,argv[0],argv[1]);
+      InstallControlRValue(lvalue,argv[2]);
+      snprintf(value,bufsize-1,"CF_ASSOCIATIVE_ARRAY%s",args);
+      }
+   else
+      {
+      yyerror("No such file format specifier");
+      }
+   }
+ 
+fclose(fp); 
+snprintf(value,bufsize-1,"CF_ASSOCIATIVE_ARRAY%s",args);
+}
+
+
+/*********************************************************************/
+
+void HandleReturnValues(char *args,char *value)
 
 {
 Verbose("This is a method with return value list: (%s)\n",args);
@@ -605,9 +902,7 @@ strcpy(value,"noinstall");
 
 /*********************************************************************/
 
-void HandleReturnClasses(args,value)
-
-char *args,*value;
+void HandleReturnClasses(char *args,char *value)
 
 {
 Verbose("This is a method with return class list: %s\n",args);
@@ -626,20 +921,17 @@ Verbose("This is a method with return class list: %s\n",args);
 
 /*********************************************************************/
 
-void HandleShowState(args,value)
-
-char *args,*value;
+void HandleShowState(char *args,char *value)
 
 { struct stat statbuf;
   char buffer[bufsize];
   struct Item *addresses = NULL,*ip;
   FILE *fp;
-  int i = 0;
+  int i = 0, tot=0, min_signal_diversity = 1,conns=1,classes=0;
+  int maxlen = 0,count;
+  double *dist = NULL, S = 0.0;
+  char *offset = NULL;
   
-if (PARSING)
-   {
-   return;
-   }
   
 if ((ACTION != alerts) && PARSING)
    {
@@ -648,7 +940,13 @@ if ((ACTION != alerts) && PARSING)
 
 Debug("ShowState(%s)\n",args); 
 
-snprintf(buffer,bufsize,"%s/state/cf_%s",WORKDIR,args);
+if (PARSING)
+   {
+   strcpy(value,"doinstall");
+   return;
+   }
+ 
+snprintf(buffer,bufsize-1,"%s/state/cf_%s",WORKDIR,args);
 
 if (stat(buffer,&statbuf) == 0)
    {
@@ -665,58 +963,165 @@ if (stat(buffer,&statbuf) == 0)
       {
       char *sp,local[bufsize],remote[bufsize];
       buffer[0] = local[0] = remote[0] = '\0';
-      
+
+      memset(VBUFF,0,bufsize);
       fgets(buffer,bufsize,fp);
-      i++;
 
       if (strlen(buffer) > 0)
-	 {
-	 printf("%s: (%2d) %s",VPREFIX,i,buffer);
-
-	 if (strncmp(args,"incoming",8) == 0 || strncmp(args,"outgoing",8) == 0)
-	    {
-	    if (strncmp(buffer,"tcp",3) == 0)
-	       {
-	       sscanf(buffer,"%*s %*s %*s %s %s",local,remote); /* linux-like */
-	       }
-	    else
-	       {
-	       sscanf(buffer,"%s %s",local,remote);             /* solaris-like */
-	       }
-	    
-	    strncpy(VBUFF,remote,bufsize-1);
-	    
-	    for (sp = VBUFF+strlen(VBUFF)-1; isdigit((int)*sp); sp--)
-	       {	    
-	       }
-	    
-	    *sp = '\0';
-	    
-	    if (!IsItemIn(addresses,VBUFF))
-	       {
-	       AppendItem(&addresses,VBUFF,"");
-	       }
-	    }
-	 }
+         {
+         Verbose("%s: (%2d) %s",VPREFIX,conns,buffer);
+         
+         if (IsSocketType(args))
+            {
+            if (strncmp(args,"incoming",8) == 0 || strncmp(args,"outgoing",8) == 0)
+               {
+               if (strncmp(buffer,"tcp",3) == 0)
+                  {
+                  sscanf(buffer,"%*s %*s %*s %s %s",local,remote); /* linux-like */
+                  }
+               else
+                  {
+                  sscanf(buffer,"%s %s",local,remote);             /* solaris-like */
+                  }
+               
+               strncpy(VBUFF,remote,bufsize-1);
+               }
+            }
+         else if (IsTCPType(args))
+            {
+            count = 1;
+            sscanf(buffer,"%d %[^\n]",&count,remote);
+            AppendItem(&addresses,remote,"");
+            SetItemListCounter(addresses,remote,count);
+            conns += count;
+            continue;
+            }
+         else      
+            {
+            if (offset == NULL)
+               {
+               if (offset = strstr(buffer,"CMD"))
+                  {
+                  }
+               else if (offset = strstr(buffer,"COMMAND"))
+                  {
+                  }
+               
+               if (offset == NULL)
+                  {
+                  continue;
+                  }
+               }
+            
+            strncpy(VBUFF,offset,bufsize-1);
+            Chop(VBUFF);
+            }
+         
+         if (!IsItemIn(addresses,VBUFF))
+            {
+            conns++;
+            AppendItem(&addresses,VBUFF,"");
+            IncrementItemListCounter(addresses,VBUFF);
+            }
+         else
+            {
+            conns++;    
+            IncrementItemListCounter(addresses,VBUFF);
+            }
+         }
       }
    
    fclose(fp);
-
-   if (addresses != NULL)
+   conns--;
+   
+   if (IsSocketType(args)||IsTCPType(args))
       {
-      printf("\n");
+      if (addresses != NULL)
+         {
+         printf(" {\n");
+         }
+      
+      for (ip = addresses; ip != NULL; ip=ip->next)
+         {
+         tot+=ip->counter;
+         
+         buffer[0] = '\0';
+         sscanf(ip->name,"%s",buffer);
+         
+         if (!IsIPV4Address(buffer) && !IsIPV6Address(buffer))
+            {
+            Verbose("\nRejecting address %s\n",ip->name);
+            continue;
+            }
+         
+         printf(" DNS key: %s = %s (%d/%d)\n",buffer,IPString2Hostname(buffer),ip->counter,conns);
+         
+         if (strlen(ip->name) > maxlen)
+            {
+            maxlen = strlen(ip->name);
+            }
+         }
+      
+      if (addresses != NULL)
+         {
+         printf(" -\n");
+         }
       }
-
+   else
+      {
+      for (ip = addresses; ip != NULL; ip=ip->next)
+         {
+         tot+=ip->counter;
+         }
+      }
+   
    for (ip = addresses; ip != NULL; ip=ip->next)
       {
-      printf(" DNS key: %s = %s\n",ip->name,IPString2Hostname(ip->name));
+      int s;
+      
+      if (maxlen > 17) /* ipv6 */
+         {
+         printf(" Frequency: %-40s|",ip->name);
+         }
+      else
+         {
+         printf(" Frequency: %-17s|",ip->name);
+         }
+      
+      for (s = 0; (s < ip->counter) && (s < 50); s++)
+         {
+         if (s < 48)
+            {
+            putchar('*');
+            }
+         else
+            {
+            putchar('+');
+            }
+         }
+      printf(" \t(%d/%d)\n",ip->counter,conns);
       }
-
+   
    if (addresses != NULL)
       {
-      printf("\n");
+      printf(" }\n");
       }
-
+   
+   dist = (double *) malloc((tot+1)*sizeof(double));
+   
+   if (conns > min_signal_diversity)
+      {
+      for (i = 0,ip = addresses; ip != NULL; i++,ip=ip->next)
+         {
+         dist[i] = ((double)(ip->counter))/((double)tot);
+         
+         S -= dist[i]*log(dist[i]);
+         }
+      
+      printf(" -\n Scaled entropy of addresses = %.1f %%\n",S/log((double)tot)*100.0);
+      printf(" (Entropy = 0 for single source, 100 for flatly distributed source)\n -\n");
+      }
+   
    printf("%s: -----------------------------------------------------------------------------------\n",VPREFIX);
    snprintf(buffer,bufsize,"State of %s peaked at %s\n",args,ctime(&statbuf.st_mtime));
    strcpy(value,buffer);
@@ -726,20 +1131,54 @@ else
    snprintf(buffer,bufsize,"State parameter %s is not known or recorded\n",args);   
    strcpy(value,buffer);
    }
+
+if (dist)
+   {
+   free((char *)dist);
+   }
 }
 
 /*********************************************************************/
 
-void HandleSetState(args,value)
+void HandleFriendStatus(char *args,char *value)
 
-char *args,*value;
+{ char argv[1][bufsize];
+  int time = 0;
+  
+if ((ACTION != alerts) && PARSING)
+   {
+   yyerror("Use of FriendStatus(type) outside of alert declaration");
+   }
+ 
+FunctionArgs(args,argv,1);
 
-{ char name[bufsize],ttlbuf[bufsize],policy[bufsize];
- unsigned int ttl = 0;
+if (PARSING)
+   {
+   strcpy(value,"doinstall");
+   return;
+   }
+
+time = atoi(argv[0]);
+
+if (time > 0)
+   {
+   CheckFriendConnections(time);
+   }
+ 
+strcpy(value,""); /* No reply */
+}
+
+/*********************************************************************/
+
+void HandleSetState(char *args,char *value)
+
+{ char argv[3][bufsize];
+  char *name=argv[0],*ttlbuf=argv[1],*policy=argv[2];
+  unsigned int ttl = 0;
 
 value[0] = '\0';
  
-ThreeArgs(args,name,ttlbuf,policy);
+FunctionArgs(args,argv,3);
 ttl = atoi(ttlbuf);
 
 Debug("HandleSetState(%s,%d,%s)\n",name,ttl,policy);
@@ -772,9 +1211,7 @@ else
 
 /*********************************************************************/
 
-void HandleUnsetState(args,value)
-
-char *args,*value;
+void HandleUnsetState(char *args,char *value)
 
 { char arg1[bufsize];
  
@@ -783,6 +1220,43 @@ OneArg(args,arg1);
 
 Debug("HandleUnsetState(%s)\n",arg1); 
 DeletePersistentClass(arg1);
+}
+
+/*********************************************************************/
+
+void HandlePrepModule(char *args,char *value)
+
+{ char argv[2][bufsize];
+ 
+value[0] = '\0';
+FunctionArgs(args,argv,2);
+
+Debug("PrepModule(%s,%s)\n",argv[0],argv[1]);
+ 
+if (CheckForModule(argv[0],argv[1]))
+   {
+   strcpy(value,CF_ANYCLASS);
+   }
+else
+   {
+   strcpy(value,CF_NOCLASS);
+   }
+}
+
+/*********************************************************************/
+
+void HandleAssociation(char *args,char *value)
+
+{ char argv[2][bufsize],lvalue[bufsize];
+ 
+value[0] = '\0';
+FunctionArgs(args,argv,2);
+
+Debug("HandleAssociation(%s <-> %s)\n",argv[0],argv[1]);
+
+snprintf(lvalue,bufsize-1,"%s[%s]",CURRENTITEM,argv[0]);
+InstallControlRValue(lvalue,argv[1]);
+snprintf(value,bufsize-1,"CF_ASSOCIATIVE_ARRAY%s",args);
 }
 
 /*********************************************************************/
@@ -795,7 +1269,7 @@ char *args,*arg1;
 
 { char one[bufsize];
 
-bzero(one,bufsize);
+memset(one,0,bufsize);
  
 if (strchr(args,','))
    {
@@ -808,84 +1282,130 @@ strcpy(arg1,UnQuote(args));
 
 /*********************************************************************/
 
-void TwoArgs(args,arg1,arg2)
+int FunctionArgs(char *args,char arg[][bufsize],int number)
 
-char *args,*arg1,*arg2;
+{ char *argv[10];
+  char *sp,**start;
+  int count = 0, i;
 
-{ char one[bufsize],two[bufsize];
-  char *sp;
-  int count = 0;
+for (i = 0; i < number; i++)
+   {
+   arg[i][0] = '\0';
+   argv[i] = (char *)malloc(bufsize);
+   memset(argv[i],0,bufsize);
+   }
  
-bzero(one,bufsize);
-bzero(two,bufsize); 
- 
+start = malloc(sizeof(char *)*(number+1));
+
+start[0] = args; 
+
 for (sp = args; *sp != '\0'; sp++)
    {
+   if (*sp == '\"')
+      {
+      while (*++sp != '\"')
+         {
+         }
+      continue;
+      }
+   
+   if (*sp == '\'')
+      {
+      while (*++sp != '\'')
+         {
+         }
+      continue;
+      }
+   
    if (*sp == ',')
       {
-      count++;
+      if (++count > number-1)
+         {
+         break;
+         }
+      
+      start[count] = sp+1;
       }
    }
-
-if (count != 1)
-   {
-   yyerror("Two arguments to function required");
-   return;
-   }
  
-sscanf(args,"%[^,],%[^)]",one,two);
-Debug("TwoArgs [%s] [%s]\n",one,two);
+ if (count != number-1)
+    {
+    if (PARSING)
+       {
+       snprintf(OUTPUT,bufsize,"Function or format of input file requires %d argument items",number);
+       yyerror(OUTPUT);
+       }
+    else
+       {
+       snprintf(OUTPUT,bufsize,"Assignment (%s) with format error",args);
+       CfLog(cferror,OUTPUT,"");
+       }
+    return false;
+    }
  
-if (one[0]=='\0' || two[0] == '\0')
-   {
-   yyerror("Argument error in cfunction");
-   return;
-   }
-
-strcpy(arg1,UnQuote(one));
-strcpy(arg2,UnQuote(two));
+ for (i = 0; i < number-1; i++)
+    {
+    strncpy(argv[i],start[i],start[i+1]-start[i]-1);
+    }
+ 
+ sscanf(start[number-1],"%[^)]",argv[number-1]); 
+ 
+ for (i = 0; i < number; i++)
+    {
+    strncpy(arg[i],UnQuote(argv[i]),100);
+    free(argv[i]);
+    }
+ 
+free(start);
+return true;
 }
 
 
-/*********************************************************************/
+/*****************************************************************/
 
-void ThreeArgs(args,arg1,arg2,arg3)
+int IsSocketType(char *s)
 
-char *args,*arg1,*arg2,*arg3;
+{ int i;
 
-{ char one[bufsize],two[bufsize],three[bufsize];
-  char *sp;
-  int count = 0;
-  
-bzero(one,bufsize);
-bzero(two,bufsize);
-bzero(three,bufsize);
- 
-for (sp = args; *sp != '\0'; sp++)
+for (i = 0; i < ATTR; i++)
    {
-   if (*sp == ',')
+   if (strstr(s,ECGSOCKS[i][1]))
       {
-      count++;
+      Debug("IsSocketType(%s=%s)\n",s,ECGSOCKS[i][1]);
+      
+      return true;
       }
    }
+return false;
+}
 
-if (count != 2)
+/*****************************************************************/
+
+int IsTCPType(char *s)
+
+{ int i;
+
+for (i = 0; i < NETATTR; i++)
    {
-   yyerror("Three arguments to function required");
-   return;
+   if (strstr(s,TCPNAMES[i]))
+      {
+      Debug("IsTCPType(%s)\n",s); 
+      return true;
+      }
    }
+return false;
+}
 
- 
-sscanf(args,"%[^,],%[^,],%[^)]",one,two,three);
-Debug("ThreeArgs [%s] [%s] [%s]\n",one,two,three);
- 
-if (one[0]=='\0' || two[0] == '\0' || three[0] == '\0')
-   {
-   yyerror("Argument error in function");
-   return;
-   }
+/*****************************************************************/
 
-strcpy(arg1,UnQuote(one));
-strcpy(arg2,UnQuote(two));
-strcpy(arg3,UnQuote(three));
+int IsProcessType(char *s)
+
+{ int i;
+
+ if (strcmp(s,"procs") == 0)
+    {
+    return true;
+    }
+ 
+ return false;
 }

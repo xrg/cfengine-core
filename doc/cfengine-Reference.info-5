@@ -11,6 +11,75 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: Complete filter examples,  Prev: filters,  Up: filters
+
+Complete filter examples
+------------------------
+
+   Here is an example filter to search for all files which are either
+directories or links, or any kind of file owned by mark, in group
+cfengine.
+
+     control:
+     
+      actionsequence = ( files )
+     
+     files:
+     
+      /tmp       filter=testfilteralias action=alert r=inf
+      /cfengine  filter=testfilteralias action=fixall r=inf mode=644
+     
+     filters:
+     
+       { testfilteralias
+     
+       Owner:     "mark"
+       Group:     "cfengine"
+       Type:      "dir|link"
+     
+       Result:    "Type|(Owner.Group)"  # Both owner AND group required correct
+       }
+   Find all ELF executables using data from the Unix `file' command.
+Caution, this takes a long time if used indescriminately.
+
+     control:
+     
+      actionsequence = ( files )
+     
+     files:
+     
+      /tmp       filter=testfilteralias action=alert r=inf
+      /cfengine  filter=testfilteralias action=fixall r=inf mode=644
+     
+     filters:
+     
+       { testfilteralias
+     
+       ExecRegex: "/bin/file (.*ELF.*)"
+     
+       Result: "ExecRegex"
+       }
+   Here is an example which warns of any process coupled to a terminal
+started in November:
+
+     control:
+     
+      actionsequence = ( processes )
+     
+     filters:
+     
+       { filteralias
+       FromSTime: "date(2000,11,0,0,0,0)"
+       ToSTime:   "date(2000,11,30,0,0,0)"
+       TTY: ".*pt.*"
+       Result: "TTY.STime"
+       }
+     
+     processes:
+     
+      "." filter=filteralias action=warn
+
+
 File: cfengine-Reference.info,  Node: groups,  Next: homeservers,  Prev: filters,  Up: Cfagent reference
 
 groups/classes
@@ -44,6 +113,8 @@ Here is an example of the syntax:
      
          ip_in_range = ( IPRange(129.0.0.1-15) )  # host is in ip address range
          ip_in_range = ( IPRange(129.0.0.1/24) )  # host is in ip address range (CIDR notation)
+     
+         compute_nodes = ( HostRange(cpu-,1-32) ) # host name in the cpu-01 through cpu-32 range
 
 To include a list of hosts from a NIS netgroup, you use the `+' symbol,
 or the `+@' construction.  For example:
@@ -686,18 +757,16 @@ basis. This builds in anti-spamming protection. The principle used is
 that hosts should be immune to Denial of Service attacks; they should
 only be able to disadvanatge themselves with the attempt._
 
-   (Remote method execution is not implemented in version 2.1.0, but
-will follow in a later release, when additional research has been
-carried out.)
+   (Remote method execution was not implemented until version 2.1.3)
 
    Methods allow you to call an independent cfengine program, pass it
 arguments and classes, and collect the results for use in your main
 program. It thus introduces parent-child semantics into cfengine
-"imports". A method is more than an import.  (Import is like a C
-#include, while a method is like a C function.)  Communication is peer
-to peer, by mutual consent. There is no "method server" that executes
-methods on remote hosts. Hosts exchange information by invitation only.
-This is an unreliable service (in the sense of UDP).
+"imports". A method is more than an import.  (Import is analagous to a
+C #include, while a method is like a C function.)  Communication is
+peer to peer, by mutual consent. There is no "method server" that
+executes methods on remote hosts. Hosts exchange information by
+invitation only. This is an unreliable service (in the sense of UDP).
 
    The order of method exeuction is not guaranteed. This results from
 the decoupling between client request and service provision.
@@ -715,7 +784,7 @@ the decoupling between client request and service provision.
            returnvars=COMMA SEPARATED VARIABLE LIST OR VOID
            returnclasses=COMMA SEPARATED CLASS LIST
      
-           server=IP-HOST
+           server=IP-HOST/*
      
            owner=SETUID
            group=SETGID
@@ -764,6 +833,20 @@ transmitted with a dummy value, e.g. `Function(null)' or
    On executing this example, the output is:
      nexus$ ./cfagent -f ./cftest
      cfengine:myhost:SimpleMethod: cfengine:nexus: This simple method does nothing
+
+   If the server name is a wildcard, e.g. `*' then this acts as a
+multicast or broadcast.
+
+* Menu:
+
+* localhost examples::
+* remotehost examples::
+
+
+File: cfengine-Reference.info,  Node: localhost examples,  Next: remotehost examples,  Prev: methods,  Up: methods
+
+Localhost examples
+------------------
 
    The following example collects the tar file, unpacks it, configures
 and compiles it, then tidies its files.
@@ -963,6 +1046,42 @@ is not defined in the method, it is not passed on. The parent can then
 choose to accept or ignore the value.
 
 
+File: cfengine-Reference.info,  Node: remotehost examples,  Prev: localhost examples,  Up: methods
+
+Remote host examples
+--------------------
+
+   Methods can also be scheduled for execution on remote hosts.
+   * Both hosts must have an identical copy of the method stanza
+
+   * Public keys must be exchanged between the cooperating hosts
+
+   * Access must be granted to `/var/cfengine/rpc_out' in cfservd.
+
+   Remote method execution is the same as local method execution except
+for some additional requirements. A list of collaborating peers must be
+added to the control section of `update.conf'.
+
+     control:
+     
+      MethodPeers = ( HOSTNAME LIST )
+   This list tells the agent which remote hosts to collaborate with,
+i.e.  whom should we contact to look for work that we have promised to
+perform?  For example, to make two hosts collaborate:
+
+     methods:
+     
+      host1|host2::
+     
+       MethodTest("my test!")
+     
+       action=cf.methodtest
+       server=host2.iu.hio.no
+       returnclasses=null
+       returnvars=retval
+       ifelapsed=120
+
+
 File: cfengine-Reference.info,  Node: miscmounts,  Next: mountables,  Prev: methods,  Up: Cfagent reference
 
 miscmounts
@@ -1053,258 +1172,4 @@ matters._
    This list can be accessed in editfiles, to allow straightforward
 configuration of the automounter, using the command
 `AutomountDirectResources'.
-
-
-File: cfengine-Reference.info,  Node: processes,  Next: packages,  Prev: mountables,  Up: Cfagent reference
-
-processes
-=========
-
-   Using the processes facility, you can test for the existence of
-processes, signal (kill) processes and optionally restart them again.
-Cfengine opens a pipe from the system ps command and searches through
-the output from this command using regular expressions to match the
-lines of output from `ps'.  The regular expression does not have to be
-an exact match, only a substring of the process line.  The form of a
-process command is
-
-     processes:
-     
-         "QUOTED REGULAR EXPRESSION"
-     
-                             restart "SHELL COMMAND"
-                             useshell=true/FALSE/DUMB
-                             owner=RESTART-UID
-                             group=RESTART-GID
-                             chroot=DIRECTORY
-                             chdir=DIRECTORY
-                             umask=MASK
-     
-                             signal=SIGNAL NAME
-                             matches=NUMBER
-                             define=CLASSLIST
-                             elsedefine=CLASSLIST
-     
-                             action=signal/DO/WARN/BYMATCH
-                             include=LITERAL
-                             exclude=LITERAL
-                             syslog=TRUE/ON/FALSE/OFF
-                             inform=TRUE/ON/FALSE/OFF
-                             ifelapsed=MINS
-                             expireafter=MINS
-     
-         SetOptionString "QUOTED OPTION STRING"
-
-   By default, the options sent to ps are "-aux" for BSD systems and
-"-ef" for system 5.  You can use the `SetOptionString' command to
-redefine the option string. Cfengine assumes only that the first
-identifiable number on each line is the process identifier for the
-processes, so you must not choose options for ps which change this
-basic requirement (this is not a problem in practice). Cfengine reads
-the output of the ps-command normally only once, and searches through
-it in memory. The process table is only re-consulted if
-`SetOptionString' is called. The options have the following meanings:
-
-`signal=SIGNAL NAME'
-     This option defines the name of a signal which is to be sent to
-     all processes matching the quoted regular expression. If this
-     option is omitted, no signal is sent. The signal names have the
-     usual meanings. The full list, with largely standardized meanings,
-     is
-
-             hup       1   hang-up
-             int       2   interrupt
-             quit      3   quit
-             ill       4   illegal instruction
-             trap      5   trace trap
-             iot       6   iot instruction
-             emt       7   emt instruction
-             fpe       8   floating point exception
-             kill      9   kill signal
-             bus      10   bus error
-             segv     11   segmentation fault
-             sys      12   bad argument to system call
-             pipe     13   write to non existent pipe
-             alrm     14   alarm clock
-             term     15   software termination signal
-             urg      16   urgent condition on I/O channel
-             stop     17   stop signal (not from tty)
-             tstp     18   stop from tty
-             cont     19   continue
-             chld     20   to parent on child exit/stop
-             gttin    21   to readers pgrp upon background tty read
-             gttou    22   like TTIN for output if (tp->t_local&LTOSTOP)
-             io       23   input/output possible signal
-             xcpu     24   exceeded CPU time limit
-             xfsz     25   exceeded file size limit
-             vtalrm   26   virtual time alarm
-             prof     27   profiling time alarm
-             winch    28   window changed
-             lost     29   resource lost (eg, record-lock lost)
-             usr1     30   user defined signal 1
-             usr2     31   user defined signal 2
-
-     Note that cfengine will not attempt to signal or restart processes
-     0 to 3 on any system since such an attempt could bring down the
-     system. The only exception is that the hangup (hup) signal may be
-     sent to process 1 (init) which normally forces init to reread its
-     terminal configuration files.
-
-`restart "SHELL COMMAND"'
-     Note the syntax: there is no equals sign here.  If the keyword
-     `restart' appears, then the next quoted string is interpreted as a
-     shell command which is to be executed after any signals have been
-     sent.  This command is only issued if the number of processes
-     matching the specified regular expression is zero, or if the
-     signal sent was signal 9 (sigkill) or 15 (sigterm) , i.e.  the
-     normal termination signals.  This could be used to restart a
-     daemon for instance. Cfengine executes this command and _waits_
-     for its completion so you should normally only use this feature to
-     execute non-blocking commands, such as daemons which dissociate
-     themselves from the I/O stream and place themselves in the
-     background. Some unices leave a hanging pipe on restart (they never
-     manage to detect the end of file condition). This occurs on
-     POSIX.1 and SVR4 popen calls which use wait4. For some reason they
-     fail to find and end-of-file for an exiting child process and go
-     into a deadlock trying to read from an already dead process. This
-     leaves a zombie behind (the parent daemon process which forked and
-     was supposed to exit) though the child continues.  A way around
-     this is to use a wrapper script which prints the line
-     "cfengine-die" to STDOUT after restarting the process. This causes
-     cfengine to close the pipe forcibly and continue.  Cfengine places
-     a timeout on the restart process and attempts to clean up zombies,
-     but you should be aware of this possibility.
-
-`owner=,group='
-     Sets the process uid and gid (setuid,gid) for processes which are
-     restarted. This applies only to cfengine run by root.
-
-`chroot'
-     Changes the process root directory of the restarted process,
-     creating a `sandbox' which the process cannot escape from. Best
-     used together with a change of owner, since a root process can
-     break out of such a confinement in principle.
-
-`chdir'
-     Change the current working directory of the restarted process.
-
-`useshell=TRUE/FALSE/DUMB'
-     When restarting processes, cfengine normally uses a shell to
-     interpret and execute the restart command. This has inherent
-     security problems associated with it. If you set this option to
-     false, cfengine executes restart commands without using a shell.
-     This is recommended, but it does mean that you cannot use any
-     shell operators or features in the restart command-line.
-
-     Some programs (like cron) do not handle I/O properly when they fork
-     their daemon parts, this causes a zombie process and normally
-     hangs cfengine. By choosing the value `dumb' for this, cfengine
-     ignores all output from a program and does not use a startup shell.
-     This prevents programs like cron from hanging cfengine.
-
-`matches=NUMBER'
-     This option may be used to set a maximum, minimum or exact number
-     of matches. If cfengine doesn't find a number of matches to the
-     regular expression which is in accordance with this value it
-     signals a warning.  The `<', `>' symbols are used  to specify
-     upper and lower limits. For example,
-
-            matches=<6  # warn number of matches is greater than or equal to 6
-            matches=1   # warn if not exactly 1 matching process
-            matches=>2  # warn if there are less than or equal to 2 matching processes
-
-`include=LITERAL'
-     Items listed as includes provide an extra level of selection after
-     the regular expression matches have been expanded. If you include
-     one include option, then only lines containing one or more of the
-     literal strings or wildcards will be matched.
-
-`exclude=LITERAL'
-     Process lines containing literal strings or wildcards in exclude
-     statements are not matched. Excludes are processed after regular
-     expression matching and after includes.
-
-`define=CLASSLIST'
-     The colon, command or dot separated list of classes becomes
-     activated if the number of regular expression matches is non-zero.
-
-`elsedefine=CLASSLIST'
-     The colon, command or dot separated list of classes becomes
-     activated if the number of regular expression matches is zero.
-
-`action=SIGNAL/DO/WARN'
-     The default value of this option is to silently send a signal (if
-     one was defined using the `signal' option) to matching processes.
-     This is equivalent to setting the value of this parameter to
-     `signal' or `do'. If you set this option to `warn', cfengine sends
-     no signal, but prints a message detailing the processes which
-     match the regular expression.  If the option is set to `bymatch',
-     then signals are only sent to the processes if the matches
-     criteria fail.
-
-   Here is an example script which sends the hang-up signal to cron,
-forcing it to reread its crontab files:
-
-
-     processes:
-     
-        "cron" signal=hup
-
-Here is a second example which may be used to restart the nameservice
-on a solaris system:
-
-
-     processes:
-     
-        solaris::
-     
-            "named" signal=kill restart "/usr/sbin/in.named"
-
-A more complex match could be used to look for processes belonging to a
-particular user. Here is a script which kills ftp related processes
-belonging to a particular user who is known to spend the whole day
-FTP-ing files:
-
-
-     control:
-     
-         actionsequence = ( processes )
-     
-       #
-       # Set a kill signal here for convenience
-       #
-     
-         sig = ( kill )
-     
-       #
-       # Better not find that dumpster here!
-       #
-     
-         matches = ( 1 )
-     
-     processes:
-     
-        #
-        #  Look for Johnny Mnemonic trying to dump his head, user = jmnemon
-        #
-     
-        ".*jmnemon.*ftp.*" signal=$(sig) matches=<$(matches) action=$(do)
-     
-        # No mercy!
-
-The regular expression `.*' matches any number of characters, so this
-command searches for a line containing both the username and something
-to do with ftp and sends these processes the kill signal.
-
-   You can arrange for signals to be sent, only if the number of matches
-fails the test. The `action=bymatch' option is used for this.  For
-instance, to kill process `XXX' only if the number of matches is
-greater than 20, one would write:
-
-
-     processes:
-     
-     "XXX" matches=<20  action=bymatch signal=kill
-
-   See also filters *Note filters::, for more complex searches.
 

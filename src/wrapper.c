@@ -38,10 +38,7 @@
 
 /*******************************************************************/
 
-void TidyWrapper(startpath,vp)
-
-char *startpath;
-void *vp;
+void TidyWrapper(char *startpath,void *vp)
 
 { struct Tidy *tp;
   struct stat sb; 
@@ -77,10 +74,7 @@ ReleaseCurrentLock();
 
 /*******************************************************************/
 
-void RecHomeTidyWrapper(startpath,vp)
-
-char *startpath;
-void *vp;
+void RecHomeTidyWrapper(char *startpath,void *vp)
 
 { struct stat sb;
   struct Tidy *tp = (struct Tidy *) vp;
@@ -117,10 +111,7 @@ ReleaseCurrentLock();
 
 /*******************************************************************/
 
-void CheckFileWrapper(startpath,vp)
-
-char *startpath;
-void *vp;
+void CheckFileWrapper(char *startpath,void *vp)
 
 {  struct stat statbuf;
    mode_t filemode;
@@ -169,9 +160,9 @@ if (ptr->inclusions != NULL && !IsWildItemIn(ptr->inclusions,lastnode))
    if (stat(startpath,&statbuf) != -1)
       {
       if (!S_ISDIR(statbuf.st_mode))
-	 {
-	 return;  /* assure that we recurse into directories */
-	 }
+  {
+  return;  /* assure that we recurse into directories */
+  }
       }
    }
 
@@ -192,7 +183,7 @@ if (stat(startpath,&statbuf) == -1)
       MakeDirectoriesFor(startpath,'n');
       ptr->action = fixall;
       *(startpath+strlen(ptr->path)-2) = '\0';       /* trunc /. */
-      CheckExistingFile(startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
+      CheckExistingFile("*",startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
       ReleaseCurrentLock();
       return;
       }
@@ -204,28 +195,29 @@ if (stat(startpath,&statbuf) == -1)
    switch (ptr->action)
       {
       case create:
-      case touch:   if (! DONTDO)
-                       {
-                       MakeDirectoriesFor(startpath,'n');
-		       
-                       if ((fd = creat(ptr->path,filemode)) == -1)
-			  { 
-			  perror("creat");
-			  AddMultipleClasses(ptr->elsedef);
-			  return;
-			  }
-		       else
-			  {
-			  AddMultipleClasses(ptr->defines);
-			  close(fd);
-			  }
-
-		       CheckExistingFile(startpath,ptr->plus,ptr->minus,fixall,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
-                       }
-
-                    snprintf(OUTPUT,bufsize*2,"Creating file %s, mode = %o\n",ptr->path,filemode);
-		    CfLog(cfinform,OUTPUT,"");
-                    break;
+      case touch:
+          if (! DONTDO)
+             {
+             MakeDirectoriesFor(startpath,'n');
+             
+             if ((fd = creat(ptr->path,filemode)) == -1)
+                { 
+                perror("creat");
+                AddMultipleClasses(ptr->elsedef);
+                return;
+                }
+         else
+            {
+            AddMultipleClasses(ptr->defines);
+            close(fd);
+            }
+             
+             CheckExistingFile("*",startpath,ptr->plus,ptr->minus,fixall,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
+             }
+          
+          snprintf(OUTPUT,bufsize*2,"Creating file %s, mode = %o\n",ptr->path,filemode);
+          CfLog(cfinform,OUTPUT,"");
+          break;
       case alert:
       case linkchildren: 
       case warnall:
@@ -233,12 +225,13 @@ if (stat(startpath,&statbuf) == -1)
       case warndirs:
       case fixplain:
       case fixdirs:
-      case fixall:  snprintf(OUTPUT,bufsize*2,"File/Dir %s did not exist and was marked (%s)\n",ptr->path,FILEACTIONTEXT[ptr->action]);
-	            CfLog(cfinform,OUTPUT,"");
-                    break;
+      case fixall:
+          snprintf(OUTPUT,bufsize*2,"File/Dir %s did not exist and was marked (%s)\n",ptr->path,FILEACTIONTEXT[ptr->action]);
+          CfLog(cfinform,OUTPUT,"");
+          break;
       case compress:
-	            break;
-
+          break;
+          
       default:      FatalError("cfengine: Internal sofware error: Checkfiles(), bad action\n");
       }
    }
@@ -256,50 +249,52 @@ else
       ReleaseCurrentLock();
       return;
       }
-
-
+   
+   
    if (ptr->action == linkchildren)
       {
       LinkChildren(ptr->path,
-		   's',
-		   &statbuf,
-		   ptr->uid->uid,ptr->gid->gid,
-		   ptr->inclusions,
-		   ptr->exclusions,
-		   NULL,
-		   0,
-		   NULL);
+                   's',
+                   &statbuf,
+                   ptr->uid->uid,ptr->gid->gid,
+                   ptr->inclusions,
+                   ptr->exclusions,
+                   NULL,
+                   0,
+                   NULL);
       ReleaseCurrentLock();
       return;
       }
-
+   
    if (S_ISDIR(statbuf.st_mode) && (ptr->recurse != 0))
       {
-      if (!IgnoreFile(startpath,ReadLastNode(startpath),ptr->ignores))
-	 {
-	 Verbose("%s: Skipping ignored directory %s\n",VPREFIX,startpath);
-	 CheckExistingFile(startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
-	 }
-
+      if (IgnoreFile(startpath,ReadLastNode(startpath),ptr->ignores))
+         {
+         Verbose("%s: (Skipping ignored directory %s)\n",VPREFIX,startpath);
+         return;
+         }
+      
+      CheckExistingFile("*",startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
       RegisterRecursionRootDevice(statbuf.st_dev);
-
       RecursiveCheck(startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,ptr->recurse,0,ptr,&statbuf);
       }
    else
       {
-      CheckExistingFile(startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
+      if (lstat(startpath,&statbuf) == -1)
+         {
+         CfLog(cferror,"Unable to stat already statted object!","lstat");
+         return;
+         }
+      CheckExistingFile("*",startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
       }
    }
-
+ 
 ReleaseCurrentLock();
 }
 
 /*******************************************************************/
 
-void DirectoriesWrapper(dir,vp)
-
-char *dir;
-void *vp;
+void DirectoriesWrapper(char *dir,void *vp)
 
 { struct stat statbuf;
   char directory[bufsize];
@@ -307,7 +302,7 @@ void *vp;
 
 ptr=(struct File *)vp;
  
-bzero(directory,bufsize);
+memset(directory,0,bufsize);
 ExpandVarstring(dir,directory,"");
 
 AddSlash(directory);
@@ -317,7 +312,7 @@ MakeDirectoriesFor(directory,'n');
 
 if (stat(directory,&statbuf) == -1)
    {
-   bzero(directory,bufsize);
+   memset(directory,0,bufsize);
    ExpandVarstring(dir,directory,"");
    chmod(directory,0500); /* Shouldn't happen - mode 000 ??*/
  
@@ -334,7 +329,7 @@ if (!GetLock(ASUniqueName("directories"),CanonifyName(directory),ptr->ifelapsed,
    return;
    }
 
-CheckExistingFile(dir,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
+CheckExistingFile("*",dir,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
 ReleaseCurrentLock(); 
 }
 

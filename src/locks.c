@@ -102,9 +102,7 @@ void RestoreExecLock()
 
 /********************************************************************/
 
-void HandleSignal(signum)
- 
-int signum;
+void HandleSignal(int signum)
  
 {
 snprintf(OUTPUT,bufsize*2,"Received signal %d (%s) while doing [%s]",signum,SIGNALS[signum],CFLOCK);
@@ -177,11 +175,7 @@ DBP->close(DBP,0);
 
 /************************************************************************/
 
-int GetLock(operator,operand,ifelapsed,expireafter,host,now)
-
-char *operator, *operand, *host;
-int ifelapsed, expireafter;
-time_t now;
+int GetLock(char *operator,char *operand,int ifelapsed,int expireafter,char *host,time_t now)
 
 { unsigned int pid;
   int err; 
@@ -203,8 +197,8 @@ if (now == 0)
 
 Debug("GetLock(%s,%s,time=%d), ExpireAfter=%d, IfElapsed=%d\n",operator,operand,now,expireafter,ifelapsed);
 
-bzero(CFLOCK,bufsize);
-bzero(CFLAST,bufsize); 
+memset(CFLOCK,0,bufsize);
+memset(CFLAST,0,bufsize); 
  
 snprintf(CFLOG,bufsize,"%s/cfengine.%.40s.runlog",VLOGDIR,host);
 snprintf(CFLOCK,bufsize,"lock.%.100s.%.40s.%s.%.100s",VCANONICALFILE,host,operator,operand);
@@ -254,54 +248,54 @@ if (lastcompleted != 0)
       pid = GetLockPid(CFLOCK);
 
       if (pid == -1)
-	 {
-	 snprintf(OUTPUT,bufsize*2,"Illegal pid in corrupt lock %s - ignoring lock\n",CFLOCK);
-	 CfLog(cferror,OUTPUT,"");
-	 }
+         {
+         snprintf(OUTPUT,bufsize*2,"Illegal pid in corrupt lock %s - ignoring lock\n",CFLOCK);
+         CfLog(cferror,OUTPUT,"");
+         }
       else
-	 {
-	 Verbose("Trying to kill expired process, pid %d\n",pid);
-
-	 err = 0;
-	 
-/*	 if (((err = kill(pid,SIGCONT)) == -1) && (errno != ESRCH))
-	    {
-	    sleep(3);
-	    err=0;
-
-Does anyone remember who put this in or why it was here?
+         {
+         Verbose("Trying to kill expired process, pid %d\n",pid);
+         
+         err = 0;
+         
+/*  if (((err = kill(pid,SIGCONT)) == -1) && (errno != ESRCH))
+    {
+    sleep(3);
+    err=0;
+    
+    Does anyone remember who put this in or why it was here?
 */
-	 
-	 if ((err = kill(pid,SIGINT)) == -1)
-	    {
-	    sleep(1);
-	    err=0;
-	    
-	    if ((err = kill(pid,SIGTERM)) == -1)
-	       {		 
-	       sleep(5);
-	       err=0;
-	       
-	       if ((err = kill(pid,SIGKILL)) == -1)
-		  {
-		  sleep(1);
-		  }
-	       }
-	    }
-
-	 if (err == 0 || errno == ESRCH)
-	    {
-	    LockLog(pid,"Lock expired, process killed",operator,operand);
-	    unlink(CFLOCK);
-	    }
-	 else
-	    {
-	    snprintf(OUTPUT,bufsize*2,"Unable to kill expired cfagent process %d from lock %s, exiting this time..\n",pid,CFLOCK);
-	    CfLog(cferror,OUTPUT,"kill");
-	    
-	    FatalError("");
-	    }
-	 }
+         
+         if ((err = kill(pid,SIGINT)) == -1)
+            {
+            sleep(1);
+            err=0;
+            
+            if ((err = kill(pid,SIGTERM)) == -1)
+               {   
+               sleep(5);
+               err=0;
+               
+               if ((err = kill(pid,SIGKILL)) == -1)
+                  {
+                  sleep(1);
+                  }
+               }
+            }
+         
+         if (err == 0 || errno == ESRCH)
+            {
+            LockLog(pid,"Lock expired, process killed",operator,operand);
+            unlink(CFLOCK);
+            }
+         else
+            {
+            snprintf(OUTPUT,bufsize*2,"Unable to kill expired cfagent process %d from lock %s, exiting this time..\n",pid,CFLOCK);
+            CfLog(cferror,OUTPUT,"kill");
+            
+            FatalError("");
+            }
+         }
       }
    else
       {
@@ -309,9 +303,9 @@ Does anyone remember who put this in or why it was here?
       return false;
       }
    }
-
-SetLock();
-return true;
+ 
+ SetLock();
+ return true;
 }
  
 /************************************************************************/
@@ -330,7 +324,8 @@ if (strlen(CFLAST) == 0)
    {
    return;
    }
- 
+
+
 if (DeleteLock(CFLOCK) == -1)
    {
    Debug("Unable to remove lock %s\n",CFLOCK);
@@ -344,6 +339,7 @@ if (PutLock(CFLAST) == -1)
    return;
    }
 
+ 
 LockLog(getpid(),"Lock removed normally ",CFLOCK,"");
 strcpy(CFLOCK,"no_active_lock");
 }
@@ -368,8 +364,8 @@ if (IGNORELOCK)
    return 1;
    }
 
-bzero(&value,sizeof(value)); 
-bzero(&key,sizeof(key));    
+memset(&value,0,sizeof(value)); 
+memset(&key,0,sizeof(key));    
 
 InitializeLocks();
  
@@ -383,22 +379,22 @@ while ((errno = dbcp->c_get(dbcp, &key, &value, DB_NEXT)) == 0)
    {
    if (value.data != NULL)
       {
-      bcopy(value.data,&entry,sizeof(entry));
-
+      memcpy(&entry,value.data,sizeof(entry));
+      
       elapsedtime = (time_t)(CFSTARTTIME-entry.time) / 60;
       
       if (elapsedtime >= VEXPIREAFTER)      
-	 {
-	 Debug("LOCK-DB-EXPIRED: %s %s\n",ctime(&(entry.time)),key.data);
-	 continue;
-	 }
+         {
+         Debug("LOCK-DB-EXPIRED: %s %s\n",ctime(&(entry.time)),key.data);
+         continue;
+         }
       
       Debug("LOCK-DB-DUMP   : %s %s\n",ctime(&(entry.time)),key.data);
       
       if (strncmp(key.data,"lock",4) == 0)
-	 {
-	 count++;
-	 }
+         {
+         count++;
+         }
       }
    }
 
@@ -477,17 +473,15 @@ if (PutLock(CFLOCK) == -1)
 /* Level 3                                                              */
 /************************************************************************/
 
-int PutLock(name)
-
-char *name;
+int PutLock(char *name)
 
 { DBT key,value;
   struct LockData entry;
 
 Debug("PutLock(%s)\n",name);
   
-bzero(&value,sizeof(value)); 
-bzero(&key,sizeof(key));       
+memset(&value,0,sizeof(value)); 
+memset(&key,0,sizeof(key));       
       
 key.data = name;
 key.size = strlen(name)+1;
@@ -510,6 +504,15 @@ entry.pid = getpid();
 entry.time = time((time_t *)NULL); 
 value.data = &entry;
 value.size = sizeof(entry);
+
+#if defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD
+ 
+if (pthread_mutex_lock(&MUTEX_LOCK) != 0)
+   {
+   CfLog(cferror,"pthread_mutex_lock failed","pthread_mutex_lock");
+   }
+ 
+#endif
  
 if ((errno = DBP->put(DBP,NULL,&key,&value,0)) != 0)
    {
@@ -518,15 +521,22 @@ if ((errno = DBP->put(DBP,NULL,&key,&value,0)) != 0)
    return -1;
    }      
 
+#if defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD
+ 
+if (pthread_mutex_unlock(&MUTEX_LOCK) != 0)
+   {
+   CfLog(cferror,"pthread_mutex_unlock failed","unlock");
+   }
+ 
+#endif
+ 
 CloseLocks(); 
 return 0; 
 }
 
 /************************************************************************/
 
-int DeleteLock(name)
-
-char *name;
+int DeleteLock(char *name)
 
 { DBT key;
 
@@ -535,17 +545,34 @@ if (strcmp(name,"pre-lock-state") == 0)
    return 0;
    }
  
-bzero(&key,sizeof(key));       
+memset(&key,0,sizeof(key));       
       
 key.data = name;
 key.size = strlen(name)+1;
 
+#if defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD
+
+if (pthread_mutex_lock(&MUTEX_LOCK) != 0)
+   {
+   CfLog(cferror,"pthread_mutex_lock failed","pthread_mutex_lock");
+   }
+#endif 
+  
 InitializeLocks();
  
 if ((errno = DBP->del(DBP,NULL,&key,0)) != 0)
    {
    Debug("Unable to delete lock [%s]: %s\n",name,db_strerror(errno));
    }
+
+#if defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD
+
+if (pthread_mutex_unlock(&MUTEX_LOCK) != 0)
+   {
+   CfLog(cferror,"pthread_mutex_unlock failed","unlock");
+   }
+ 
+#endif
  
 CloseLocks();
 return 0; 
@@ -553,16 +580,14 @@ return 0;
 
 /************************************************************************/
 
-time_t GetLockTime(name)
-
-char *name;
+time_t GetLockTime(char *name)
 
 { DBT key,value;
   struct LockData entry;
 
-bzero(&key,sizeof(key));       
-bzero(&value,sizeof(value));
-bzero(&entry,sizeof(entry));
+memset(&key,0,sizeof(key));       
+memset(&value,0,sizeof(value));
+memset(&entry,0,sizeof(entry));
       
 key.data = name;
 key.size = strlen(name)+1;
@@ -577,7 +602,7 @@ if ((errno = DBP->get(DBP,NULL,&key,&value,0)) != 0)
 
 if (value.data != NULL)
    {
-   bcopy(value.data,&entry,sizeof(entry));
+   memcpy(&entry,value.data,sizeof(entry));
    CloseLocks();
    return entry.time;
    }
@@ -588,15 +613,13 @@ return -1;
 
 /************************************************************************/
 
-pid_t GetLockPid(name)
-
-char *name;
+pid_t GetLockPid(char *name)
 
 { DBT key,value;
   struct LockData entry;
 
-bzero(&value,sizeof(value));
-bzero(&key,sizeof(key));       
+memset(&value,0,sizeof(value));
+memset(&key,0,sizeof(key));       
       
 key.data = name;
 key.size = strlen(name)+1;
@@ -611,7 +634,7 @@ if ((errno = DBP->get(DBP,NULL,&key,&value,0)) != 0)
 
 if (value.data != NULL)
    {
-   bcopy(value.data,&entry,sizeof(entry));
+   memcpy(&entry,value.data,sizeof(entry));
    CloseLocks();
    return entry.pid;
    }
@@ -622,10 +645,7 @@ return -1;
 
 /************************************************************************/
 
-void LockLog(pid,str,operator,operand)
-
-int pid;
-char *str, *operator, *operand;
+void LockLog(int pid,char *str,char *operator,char *operand)
 
 { FILE *fp;
   char buffer[maxvarsize];

@@ -38,9 +38,7 @@
 /* TOOLKIT : Item list                                               */
 /*********************************************************************/
 
-int ListLen(list)
-
-struct Item *list;
+int ListLen(struct Item *list)
 
 { int count = 0;
   struct Item *ip;
@@ -55,9 +53,7 @@ return count;
 
 /*********************************************************************/
 
-int ByteSizeList(list)
-
-struct Item *list;
+int ByteSizeList(struct Item *list)
 
 { int count = 0;
   struct Item *ip;
@@ -72,10 +68,7 @@ return count;
 
 /*********************************************************************/
 
-int IsItemIn(list,item)
-
-struct Item *list;
-char *item;
+int IsItemIn(struct Item *list,char *item)
 
 { struct Item *ptr; 
 
@@ -95,10 +88,73 @@ for (ptr = list; ptr != NULL; ptr=ptr->next)
 return(false);
 }
 
+/*********************************************************************/
+
+int GetItemListCounter(struct Item *list,char *item)
+
+{ struct Item *ptr; 
+
+if ((item == NULL) || (strlen(item) == 0))
+   {
+   return -1;
+   }
+ 
+for (ptr = list; ptr != NULL; ptr=ptr->next)
+   {
+   if (strcmp(ptr->name,item) == 0)
+      {
+      return ptr->counter;
+      }
+   }
+ 
+ return -1;
+}
 
 /*********************************************************************/
 
-int IsFuzzyItemIn(list,item)
+void IncrementItemListCounter(struct Item *list,char *item)
+
+{ struct Item *ptr; 
+
+if ((item == NULL) || (strlen(item) == 0))
+   {
+   return;
+   }
+ 
+for (ptr = list; ptr != NULL; ptr=ptr->next)
+   {
+   if (strcmp(ptr->name,item) == 0)
+      {
+      ptr->counter++;
+      return;
+      }
+   }
+}
+
+/*********************************************************************/
+
+void SetItemListCounter(struct Item *list,char *item,int value)
+
+{ struct Item *ptr; 
+
+if ((item == NULL) || (strlen(item) == 0))
+   {
+   return;
+   }
+ 
+for (ptr = list; ptr != NULL; ptr=ptr->next)
+   {
+   if (strcmp(ptr->name,item) == 0)
+      {
+      ptr->counter = value;
+      return;
+      }
+   }
+}
+
+/*********************************************************************/
+
+int IsFuzzyItemIn(struct Item *list,char *item)
 
  /* This is for matching ranges of IP addresses, like CIDR e.g.
 
@@ -106,9 +162,6 @@ int IsFuzzyItemIn(list,item)
  Range2 = ( 128.39.89.100-101 )
  
  */
-
-struct Item *list;
-char *item;
 
 { struct Item *ptr; 
 
@@ -134,9 +187,7 @@ return(false);
 
 /*********************************************************************/
 
-struct Item *ConcatLists (list1, list2)
-
-struct Item *list1, *list2;
+struct Item *ConcatLists (struct Item *list1,struct Item *list2)
 
 /* Notes: * Refrain from freeing list2 after using ConcatLists
           * list1 must have at least one element in it */
@@ -157,16 +208,21 @@ return list1;
 
 /*********************************************************************/
 
-void PrependItem (liststart,itemstring,classes)
-
-struct Item **liststart;
-char *itemstring,*classes;
+void PrependItem (struct Item **liststart,char *itemstring,char *classes)
 
 { struct Item *ip;
   char *sp,*spe = NULL;
 
-EditVerbose("Prepending %s\n",itemstring);
-
+if (!PARSING && (ACTION == editfiles))
+   {
+   snprintf(OUTPUT,bufsize,"Prepending [%s]\n",itemstring);
+   CfLog(cfinform,OUTPUT,"");
+   }
+else
+   {
+   EditVerbose("Prepending [%s]\n",itemstring);
+   }
+ 
 if ((ip = (struct Item *)malloc(sizeof(struct Item))) == NULL)
    {
    CfLog(cferror,"","malloc");
@@ -188,6 +244,7 @@ if ((classes != NULL) && (spe = malloc(strlen(classes)+2)) == NULL)
 strcpy(sp,itemstring);
 ip->name = sp;
 ip->next = *liststart;
+ip->counter = 0;
 *liststart = ip;
 
 if (classes != NULL)
@@ -205,15 +262,57 @@ NUMBEROFEDITS++;
 
 /*********************************************************************/
 
-void AppendItem (liststart,itemstring,classes)
+void AppendItems (struct Item **liststart,char *itemstring,char *classes)
 
-struct Item **liststart;
-char *itemstring,*classes;
+{ struct Item *ip, *lp;
+ char *sp,*spe = NULL;
+ char currentitem[maxvarsize],local[maxvarsize];
+ 
+if ((itemstring == NULL) || strlen(itemstring) == 0)
+   {
+   return;
+   }
+ 
+memset(local,0,maxvarsize);
+strncpy(local,itemstring,maxvarsize-1);
+ 
+ /* split and iteratate across the list with space and comma sep */
+
+for (sp = local ; *sp != '\0'; sp++)
+   {
+   /* find our separating character */
+   memset(currentitem,0,maxvarsize);
+   sscanf(sp,"%250[^ ,\n\t]",currentitem);
+   
+   if (strlen(currentitem) == 0)
+      {
+      continue;
+      }
+   /* add it to whatever list we're operating on */
+   Debug("Appending %s\n",currentitem);
+   AppendItem(liststart,currentitem,classes);
+   
+   /* and move up to the next list */
+   sp += strlen(currentitem);
+   }
+}
+
+/*********************************************************************/
+
+void AppendItem (struct Item **liststart,char *itemstring,char *classes)
 
 { struct Item *ip, *lp;
   char *sp,*spe = NULL;
 
-EditVerbose("Appending [%s]\n",itemstring);
+if (!PARSING && (ACTION == editfiles))
+   {
+   snprintf(OUTPUT,bufsize,"Appending [%s]\n",itemstring);
+   CfLog(cfinform,OUTPUT,"");
+   }
+else
+   {
+   EditVerbose("Appending [%s]\n",itemstring);
+   }
 
 if ((ip = (struct Item *)malloc(sizeof(struct Item))) == NULL)
    {
@@ -249,7 +348,8 @@ if ((classes != NULL) && (spe = malloc(strlen(classes)+2)) == NULL)
 strcpy(sp,itemstring);
 ip->name = sp;
 ip->next = NULL;
-
+ip->counter = 0;
+ 
 if (classes != NULL)
    {
    strcpy(spe,classes);
@@ -266,15 +366,21 @@ NUMBEROFEDITS++;
 
 /*********************************************************************/
 
-void InstallItem (liststart,itemstring,classes,ifelapsed,expireafter)
-
-struct Item **liststart;
-char *itemstring,*classes;
+void InstallItem (struct Item **liststart,char *itemstring,char *classes,int ifelapsed,int expireafter)
 
 { struct Item *ip, *lp;
   char *sp,*spe = NULL;
 
-EditVerbose("Appending [%s]\n",itemstring);
+if (!PARSING && (ACTION == editfiles))
+   {
+   snprintf(OUTPUT,bufsize,"Appending [%s]\n",itemstring);
+   CfLog(cfinform,OUTPUT,"");
+   }
+else
+   {
+   EditVerbose("Appending [%s]\n",itemstring);
+   }
+
 
 if ((ip = (struct Item *)malloc(sizeof(struct Item))) == NULL)
    {
@@ -345,10 +451,8 @@ NUMBEROFEDITS++;
 
 /*********************************************************************/
 
-void DeleteItemList(item)                /* delete starting from item */
+void DeleteItemList(struct Item *item)                /* delete starting from item */
  
-struct Item *item;
-
 {
 if (item != NULL)
    {
@@ -371,10 +475,8 @@ if (item != NULL)
 
 /*********************************************************************/
 
-void DeleteItem(liststart,item)
+void DeleteItem(struct Item **liststart,struct Item *item)
  
-struct Item **liststart,*item;
-
 { struct Item *ip, *sp;
 
 if (item != NULL)
@@ -414,10 +516,7 @@ if (item != NULL)
 
 /*********************************************************************/
 
-
-void DebugListItemList(liststart)
-
-struct Item *liststart;
+void DebugListItemList(struct Item *liststart)
 
 { struct Item *ptr;
 
@@ -429,9 +528,7 @@ for (ptr = liststart; ptr != NULL; ptr=ptr->next)
 
 /*********************************************************************/
 
-int ItemListsEqual(list1,list2)
-
-struct Item *list1, *list2;
+int ItemListsEqual(struct Item *list1,struct Item *list2)
 
 { struct Item *ip1, *ip2;
 
@@ -464,9 +561,7 @@ while (true)
 /* Fuzzy Match                                                       */
 /*********************************************************************/
 
-int FuzzyMatchParse(s)
-
-char *s;
+int FuzzyMatchParse(char *s)
 
 { char *sp;
   short isCIDR = false, isrange = false, isv6 = false, isv4 = false, isADDR = false; 
@@ -493,17 +588,17 @@ for (sp = s; *sp != '\0'; sp++)  /* Is this an address or hostname */
       {
       count++;
       if (count > 3)
-	 {
-	 isADDR = false;
-	 break;
-	 }
+         {
+         isADDR = false;
+         break;
+         }
       }
    else
       {
       count = 0;
       }
    }
-
+ 
 if (! isADDR)
    {
    return true;
@@ -583,72 +678,70 @@ if (isv4 && isrange)
       sp1 += strlen(buffer1)+1;
       
       if (strstr(buffer1,"-"))
-	 {
-	 sscanf(buffer1,"%ld-%ld",&from,&to);
-
-	 if (from < 0 || to < 0)
-	    {
-	    yyerror("Error in IP range - looks like address, or bad hostname");
-	    return false;
-	    }
-	 
-	 if (to < from)
-	    {
-	    yyerror("Bad IP range");
-	    return false;
-	    }
-	 
-	 }
+         {
+         sscanf(buffer1,"%ld-%ld",&from,&to);
+         
+         if (from < 0 || to < 0)
+            {
+            yyerror("Error in IP range - looks like address, or bad hostname");
+            return false;
+            }
+         
+         if (to < from)
+            {
+            yyerror("Bad IP range");
+            return false;
+            }
+         
+         }
       }
    }
-
-if (isv6 && isCIDR)
-   {
-   char address[128];
-   int mask,blocks;
-
-   if (strlen(s) < 20)
-      {
-      yyerror("IPv6 address looks too short");
-      return false;
-      }
-
-   if (strlen(s) > 42)
-      {
-      yyerror("IPv6 address looks too long");
-      return false;
-      }
-
-   address[0] = '\0';
-   mask = 0;
-   sscanf(s,"%40[^/]/%d",address,&mask);
-   blocks = mask/8;
-   
-   if (mask % 8 != 0)
-      {
-      CfLog(cferror,"Cannot handle ipv6 masks which are not 8 bit multiples (fix me)","");
-      return false;
-      }
-   
-   if (mask > 15)
-      {
-      yyerror("IPv6 CIDR mask is too large");
-      return false;
-      }
-   }
+ 
+ if (isv6 && isCIDR)
+    {
+    char address[128];
+    int mask,blocks;
+    
+    if (strlen(s) < 20)
+       {
+       yyerror("IPv6 address looks too short");
+       return false;
+       }
+    
+    if (strlen(s) > 42)
+       {
+       yyerror("IPv6 address looks too long");
+       return false;
+       }
+    
+    address[0] = '\0';
+    mask = 0;
+    sscanf(s,"%40[^/]/%d",address,&mask);
+    blocks = mask/8;
+    
+    if (mask % 8 != 0)
+       {
+       CfLog(cferror,"Cannot handle ipv6 masks which are not 8 bit multiples (fix me)","");
+       return false;
+       }
+    
+    if (mask > 15)
+       {
+       yyerror("IPv6 CIDR mask is too large");
+       return false;
+       }
+    }
 
 return true; 
 }
 
 /*********************************************************************/
 
-int FuzzySetMatch(s1,s2)
+int FuzzySetMatch(char *s1,char *s2)
 
 /* Match two IP strings - with : or . in hex or decimal
    s1 is the test string, and s2 is the reference e.g.
    FuzzySetMatch("128.39.74.10/23","128.39.75.56") == 0 */
-
-char *s1,*s2;
 
 { char *sp;
   short isCIDR = false, isrange = false, isv6 = false, isv4 = false;
@@ -708,8 +801,8 @@ if (isv4)
    struct sockaddr_in addr1,addr2;
    int shift;
 
-   bzero(&addr1,sizeof(struct sockaddr_in));
-   bzero(&addr2,sizeof(struct sockaddr_in));
+   memset(&addr1,0,sizeof(struct sockaddr_in));
+   memset(&addr2,0,sizeof(struct sockaddr_in));
    
    if (isCIDR)
       {
@@ -718,74 +811,74 @@ if (isv4)
       sscanf(s1,"%16[^/]/%d",address,&mask);
       shift = 32 - mask;
       
-      bcopy((struct sockaddr_in *) sockaddr_pton(AF_INET,address),&addr1,sizeof(struct sockaddr_in));
-      bcopy((struct sockaddr_in *) sockaddr_pton(AF_INET,s2),&addr2,sizeof(struct sockaddr_in));
+      memcpy(&addr1,(struct sockaddr_in *) sockaddr_pton(AF_INET,address),sizeof(struct sockaddr_in));
+      memcpy(&addr2,(struct sockaddr_in *) sockaddr_pton(AF_INET,s2),sizeof(struct sockaddr_in));
 
       a1 = htonl(addr1.sin_addr.s_addr);
       a2 = htonl(addr2.sin_addr.s_addr);
-
+      
       a1 = a1 >> shift;
       a2 = a2 >> shift;
-
+      
       if (a1 == a2)
-	 {
-	 return 0;
-	 }
+         {
+         return 0;
+         }
       else
-	 {
-	 return -1;
-	 }
+         {
+         return -1;
+         }
       }
    else
       {
       long i, from = -1, to = -1, cmp = -1;
       char *sp1,*sp2,buffer1[8],buffer2[8];
-
+      
       sp1 = s1;
       sp2 = s2;
       
       for (i = 0; i < 4; i++)
-	 {
+         {
          if (sscanf(sp1,"%[^.]",buffer1) <= 0)
             {
             break;
             }
-	 sp1 += strlen(buffer1)+1;
-	 sscanf(sp2,"%[^.]",buffer2);
-	 sp2 += strlen(buffer2)+1;
-
-	 if (strstr(buffer1,"-"))
-	    {
-	    sscanf(buffer1,"%ld-%ld",&from,&to);
-	    sscanf(buffer2,"%ld",&cmp);
-
-	    if (from < 0 || to < 0)
-	       {
-	       Debug("Couldn't read range\n");
-	       return -1;
-	       }
-
-	    if ((from > cmp) || (cmp > to))
-	       {
-	       Debug("Out of range %d > %d > %d (range %s)\n",from,cmp,to,buffer2);
-	       return -1;
-	       }
-	    }
-	 else
-	    {
-	    sscanf(buffer1,"%ld",&from);
-	    sscanf(buffer2,"%ld",&cmp);
-
-	    if (from != cmp)
-	       {
-	       Debug("Unequal\n");
-	       return -1;
-	       }
-	    }
-
-	 Debug("Matched octet %s with %s\n",buffer1,buffer2);
-	 }
-
+         sp1 += strlen(buffer1)+1;
+         sscanf(sp2,"%[^.]",buffer2);
+         sp2 += strlen(buffer2)+1;
+         
+         if (strstr(buffer1,"-"))
+            {
+            sscanf(buffer1,"%ld-%ld",&from,&to);
+            sscanf(buffer2,"%ld",&cmp);
+            
+            if (from < 0 || to < 0)
+               {
+               Debug("Couldn't read range\n");
+               return -1;
+               }
+            
+            if ((from > cmp) || (cmp > to))
+               {
+               Debug("Out of range %d > %d > %d (range %s)\n",from,cmp,to,buffer2);
+               return -1;
+               }
+            }
+         else
+            {
+            sscanf(buffer1,"%ld",&from);
+            sscanf(buffer2,"%ld",&cmp);
+            
+            if (from != cmp)
+               {
+               Debug("Unequal\n");
+               return -1;
+               }
+            }
+         
+         Debug("Matched octet %s with %s\n",buffer1,buffer2);
+         }
+      
       Debug("Matched IP range\n");
       return 0;
       }
@@ -797,8 +890,8 @@ if (isv6)
    struct sockaddr_in6 addr1,addr2;
    int blocks, i;
 
-   bzero(&addr1,sizeof(struct sockaddr_in6));
-   bzero(&addr2,sizeof(struct sockaddr_in6));
+   memset(&addr1,0,sizeof(struct sockaddr_in6));
+   memset(&addr2,0,sizeof(struct sockaddr_in6));
    
    if (isCIDR)
       {
@@ -808,21 +901,21 @@ if (isv6)
       blocks = mask/8;
 
       if (mask % 8 != 0)
-	 {
-	 CfLog(cferror,"Cannot handle ipv6 masks which are not 8 bit multiples (fix me)","");
-	 return -1;
-	 }
-
-      bcopy((struct sockaddr_in6 *) sockaddr_pton(AF_INET6,address),&addr1,sizeof(struct sockaddr_in6));
-      bcopy((struct sockaddr_in6 *) sockaddr_pton(AF_INET6,s2),&addr2,sizeof(struct sockaddr_in6));
-
+         {
+         CfLog(cferror,"Cannot handle ipv6 masks which are not 8 bit multiples (fix me)","");
+         return -1;
+         }
+      
+      memcpy(&addr1,(struct sockaddr_in6 *) sockaddr_pton(AF_INET6,address),sizeof(struct sockaddr_in6));
+      memcpy(&addr2,(struct sockaddr_in6 *) sockaddr_pton(AF_INET6,s2),sizeof(struct sockaddr_in6));
+      
       for (i = 0; i < blocks; i++) /* blocks < 16 */
-	 {
-	 if (addr1.sin6_addr.s6_addr[i] != addr2.sin6_addr.s6_addr[i])
-	    {
-	    return -1;
-	    }
-	 }
+         {
+         if (addr1.sin6_addr.s6_addr[i] != addr2.sin6_addr.s6_addr[i])
+            {
+            return -1;
+            }
+         }
       return 0;
       }
    else
@@ -834,39 +927,39 @@ if (isv6)
       sp2 = s2;
       
       for (i = 0; i < 8; i++)
-	 {
-	 sscanf(sp1,"%[^:]",buffer1);
-	 sp1 += strlen(buffer1)+1;
-	 sscanf(sp2,"%[^:]",buffer2);
-	 sp2 += strlen(buffer2)+1;
-
-	 if (strstr(buffer1,"-"))
-	    {
-	    sscanf(buffer1,"%lx-%lx",&from,&to);
-	    sscanf(buffer2,"%lx",&cmp);
-
-	    if (from < 0 || to < 0)
-	       {
-	       return -1;
-	       }
-
-	    if ((from >= cmp) || (cmp > to))
-	       {
-	       printf("%x < %x < %x\n",from,cmp,to);
-	       return -1;
-	       }
-	    }
-	 else
-	    {
-	    sscanf(buffer1,"%ld",&from);
-	    sscanf(buffer2,"%ld",&cmp);
-
-	    if (from != cmp)
-	       {
-	       return -1;
-	       }
-	    }
-	 }
+         {
+         sscanf(sp1,"%[^:]",buffer1);
+         sp1 += strlen(buffer1)+1;
+         sscanf(sp2,"%[^:]",buffer2);
+         sp2 += strlen(buffer2)+1;
+         
+         if (strstr(buffer1,"-"))
+            {
+            sscanf(buffer1,"%lx-%lx",&from,&to);
+            sscanf(buffer2,"%lx",&cmp);
+            
+            if (from < 0 || to < 0)
+               {
+               return -1;
+               }
+            
+            if ((from >= cmp) || (cmp > to))
+               {
+               printf("%x < %x < %x\n",from,cmp,to);
+               return -1;
+               }
+            }
+         else
+            {
+            sscanf(buffer1,"%ld",&from);
+            sscanf(buffer2,"%ld",&cmp);
+            
+            if (from != cmp)
+               {
+               return -1;
+               }
+            }
+         }
       
       return 0;
       }
@@ -877,16 +970,145 @@ return -1;
 }
 
 /*********************************************************************/
+/* Host Match                                                        */
+/* written by steve rader <rader@hep.wisc.edu>                       */
+/*********************************************************************/
+
+int FuzzyHostParse(char *s)
+
+/*
+ * do something like...
+ *   if ( $s !~ /^.*?\,\d+\-\d+$/ ) { return false; }
+ *   return true;
+ */ 
+
+{ struct Item *args;
+  char *sp;
+  long start = -1, end = -1, where = -1;
+  int n;
+  Debug("SRDEBUG in FuzzyHostParse(): %s\n",s);
+  args = SplitStringAsItemList(s,',');
+  if ( args->next == NULL ) { 
+    yyerror("HostRange() syntax error: not enough args (expecting two)");
+    return false;
+  }
+  if ( args->next->next != NULL ) { 
+    yyerror("HostRange() syntax error: too many args (expecting two)");
+    return false;
+  }
+  sp = args->next->name;
+  n = sscanf(sp,"%ld-%ld%n",&start,&end,&where);
+  Debug("SRDEBUG start=%d end=%d num_matched=%d\n",start,end,n);
+  if ( n >= 2 && sp[where] != '\0' ) {
+    /* X-Ycrud syntax error */
+    yyerror("HostRange() syntax error: second arg should have X-Y format where X and Y are decimal numbers");
+    return false;
+  }
+  if ( n != 2 ) {
+    /* all other syntax errors */    
+    yyerror("HostRange() syntax error: second arg should have X-Y format where X and Y are decimal numbers");
+    return false;
+  } 
+  Debug("SRDEBUG syntax is okay\n");
+  return true; 
+}
+
+/*********************************************************************/
+
+int FuzzyHostMatch(s1,s2)
+
+/*
+ * do something like...
+ *   @args = split(/,/,$s1);
+ *   if ( $s2 !~ /(\d+)$/ ) { 
+ *     return 1; # failure: no num in hostname
+ *   }
+ *   if ( $1 < $args[1] || $1 > $args[2] ) { 
+ *     return 1; # failure: hostname num not in range
+ *   }
+ *   $s2 =~ s/^(.*?)\d.*$/$1/;
+ *   if ( $s2 ne $args[0] ) {
+ *     return 1; # failure: hostname doesn't match basename
+ *   }
+ *   return 0; # success
+ */
+
+char *s1, *s2;
+
+{ struct Item *args;
+  char *sp;
+  long cmp = -1, start = -1, end = -1;
+  Debug("SRDEBUG in FuzzyHostMatch(): %s vs %s\n",s2,s1);
+  args = SplitStringAsItemList(s1,',');
+  sp = s2;
+  
+  for (sp = s2+strlen(s2)-1; sp > s2; sp--)
+     {
+     if ( ! isdigit((int)*sp) )
+        {
+        sp++;
+        if ( sp != s2+strlen(s2) )
+           { 
+           Debug("SRDEBUG extracted string %s\n",sp);
+           }
+        break;
+        }
+     }
+  
+  if ( sp == s2+strlen(s2) )
+     { 
+     Debug("SRDEBUG FuzzyHostMatch() failed: did not extract int from the end of %s\n",s2);
+     return 1;
+     }
+  sscanf(sp,"%ld",&cmp);
+  Debug("SRDEBUG extracted int %d\n",cmp,sp);
+  
+  if ( cmp < 0 )
+     { 
+     Debug("SRDEBUG FuzzyHostMatch() failed: %s doesn't have an int in it's domain name\n",s2);
+     return 1;
+     }
+  sscanf(args->next->name,"%ld-%ld",&start,&end);
+  
+  if ( cmp < start || cmp > end )
+     { 
+     Debug("SRDEBUG FuzzyHostMatch() failed: %ld is not in (%ld..%ld)\n",cmp,start,end);
+     return 1;
+     }
+  
+  Debug("SRDEBUG FuzzyHostMatch() %s is in (%ld..%ld)\n",s2,start,end);
+  
+  for (sp = s2; sp < s2+strlen(s2); sp++ )
+     {
+     if ( isdigit((int)*sp) )
+        {
+        *sp = '\0';
+        break;
+        }
+     }
+  Debug("SRDEBUG extracted basename %s\n",s2);
+  Debug("SRDEBUG basename check: %s vs %s...\n",s2,args->name);
+  
+  if ( strcmp(s2,args->name) != 0 )
+     {
+     Debug("SRDEBUG FuzzyHostMatch() failed: basename %s does not match %s\n",s2,args->name);
+     return 1;
+     }
+
+  Debug("SRDEBUG basename matches\n");
+  Debug("SRDEBUG FuzzyHostMatch() succeeded\n");
+  return 0;
+}
+
+
+/*********************************************************************/
 /* String Handling                                                   */
 /*********************************************************************/
 
-struct Item *SplitStringAsItemList(string,sep)
+struct Item *SplitStringAsItemList(char *string,char sep)
 
  /* Splits a string containing a separator like : 
     into a linked list of separate items, */
-
-char *string;
-char sep;
 
 { struct Item *liststart = NULL;
   char format[9], *sp;
@@ -898,7 +1120,7 @@ sprintf(format,"%%255[^%c]",sep);   /* set format string to search */
 
 for (sp = string; *sp != '\0'; sp++)
    {
-   bzero(node,maxvarsize);
+   memset(node,0,maxvarsize);
    sscanf(sp,format,node);
 
    if (strlen(node) == 0)

@@ -57,7 +57,7 @@ implement configurations in practice.
 <li><a accesskey="1" href="#Installation">Installation</a>: 
 <li><a accesskey="2" href="#Work%20directory">Work directory</a>: 
 <li><a accesskey="3" href="#Hard%20classes">Hard classes</a>: 
-<li><a accesskey="4" href="#Evaluated%20classes">Evaluated classes</a>: 
+<li><a accesskey="4" href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>: 
 <li><a accesskey="5" href="#Filenames%20and%20paths">Filenames and paths</a>: 
 </ul>
 
@@ -143,7 +143,7 @@ to another central location and viewed in an alternative browser..
 <div class="node">
 <p><hr>
 Node:<a name="Hard%20classes">Hard classes</a>,
-Next:<a rel="next" accesskey="n" href="#Evaluated%20classes">Evaluated classes</a>,
+Next:<a rel="next" accesskey="n" href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>,
 Previous:<a rel="previous" accesskey="p" href="#Work%20directory">Work directory</a>,
 Up:<a rel="up" accesskey="u" href="#Reference%20introduction">Reference introduction</a>
 <br>
@@ -176,7 +176,7 @@ the name.
 
      <li>A month (in the form <code>January, February, ... December</code>).
 
-     <li>A year (in the form <code>Yr1997, Yr2001</code>).
+     <li>A year (in the form <code>Yr1997, Yr2004</code>).
 
      <li>An arbitrary user-defined string.  (see the reference manual).
 
@@ -195,14 +195,14 @@ file is secure.
 
 <div class="node">
 <p><hr>
-Node:<a name="Evaluated%20classes">Evaluated classes</a>,
+Node:<a name="Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>,
 Next:<a rel="next" accesskey="n" href="#Filenames%20and%20paths">Filenames and paths</a>,
 Previous:<a rel="previous" accesskey="p" href="#Hard%20classes">Hard classes</a>,
 Up:<a rel="up" accesskey="u" href="#Reference%20introduction">Reference introduction</a>
 <br>
 </div>
 
-<h3 class="section">Evaluated classes</h3>
+<h3 class="section">Evaluated classes and special functions</h3>
 
    <p>Cfengine provides a number of in-built functions for evaluating classes,
 based on file tests. Using these internal functions is quicker than
@@ -220,6 +220,9 @@ arguments in chronological order.
      <dd>True if the named file object exists. 
 <br><dt><code>IPRange(</code><var>address-range</var><code>)</code>
      <dd>True if the current host lies within the specified range
+<br><dt><code>HostRange(</code><var>basename,start-stop</var><code>)</code>
+     <dd>True if the current relative domain name begins with basename and ends with an integer
+between start and stop
 <br><dt><code>IsDefined(</code><var>command</var><code>)</code>
      <dd>True of the named variable is defined. NB: <code>IsDefines(var)</code>, not <code>IsDefined(${var})</code>
 <br><dt><code>IsDir(</code><var>f</var><code>)</code>
@@ -228,6 +231,12 @@ arguments in chronological order.
      <dd>True if the named file object is a symbolic link. 
 <br><dt><code>IsPlain(</code><var>f</var><code>)</code>
      <dd>True if the named file object is a plain file. 
+<br><dt><code>PrepModule(</code><var>module</var><code>,</code><var>arg1 arg2...</var><code>)</code>
+     <dd>True if the named module exists and can be executed. The module is assumed to
+follow the standard programming interface for modules, See <a href="cfengine-Tutorial.html#Writing%20plugin%20modules">Writing plugin modules</a>. 
+Unlike actionsequence modules, these modules are evaluated immediately on parsing. 
+<br><dt><code>Regcmp(</code><var>regexp</var><code>,</code><var>string or list separated string</var><code>)</code>
+     <dd>True if the string matched the regular expression. 
 <br><dt><code>ReturnsZero(</code><var>command</var><code>)</code>
      <dd>True if the named shell command returns with exit code zero (okay). 
 <br><dt><code>Strcmp(</code><var>s1</var><code>,</code><var>s2</var><code>)</code>
@@ -243,20 +252,22 @@ arguments in chronological order.
       isplain       = ( IsPlain(/tmp/import) )
       inrange       = ( IPRange(128.39.89.10-15) )
       CIDR          = ( IPRange(128.39.89.10/24) )
+      compute_nodes = ( HostRage(cpu-,01-32)
+      gotinit       = ( PrepModule(startup2,"arg1 arg2") )
      
      </pre>
 
 <div class="node">
 <p><hr>
 Node:<a name="Filenames%20and%20paths">Filenames and paths</a>,
-Previous:<a rel="previous" accesskey="p" href="#Evaluated%20classes">Evaluated classes</a>,
+Previous:<a rel="previous" accesskey="p" href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>,
 Up:<a rel="up" accesskey="u" href="#Reference%20introduction">Reference introduction</a>
 <br>
 </div>
 
 <h3 class="section">Filenames and paths</h3>
 
-   <p>Filenames in Unix-lik operating systems
+   <p>Filenames in Unix-like operating systems
 
    <p>The directory separator is the forward slash '/' character. All references
 to file locations must be absolute names in cfengine, i.e. they must begin
@@ -356,7 +367,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 
 <ul class="menu">
 <li><a accesskey="1" href="#Cfagent%20intro">Cfagent intro</a>: 
-<li><a accesskey="2" href="#Special%20variables">Special variables</a>: 
+<li><a accesskey="2" href="#Variable%20expansion%20and%20contexts">Variable expansion and contexts</a>: 
 <li><a accesskey="3" href="#Cfengine%20classes">Cfengine classes</a>: 
 <li><a accesskey="4" href="#acl">acl</a>: 
 <li><a accesskey="5" href="#alerts">alerts</a>: 
@@ -395,7 +406,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <div class="node">
 <p><hr>
 Node:<a name="Cfagent%20intro">Cfagent intro</a>,
-Next:<a rel="next" accesskey="n" href="#Special%20variables">Special variables</a>,
+Next:<a rel="next" accesskey="n" href="#Variable%20expansion%20and%20contexts">Variable expansion and contexts</a>,
 Previous:<a rel="previous" accesskey="p" href="#Cfagent%20reference">Cfagent reference</a>,
 Up:<a rel="up" accesskey="u" href="#Cfagent%20reference">Cfagent reference</a>
 <br>
@@ -622,14 +633,175 @@ added:
 
 <div class="node">
 <p><hr>
-Node:<a name="Special%20variables">Special variables</a>,
+Node:<a name="Variable%20expansion%20and%20contexts">Variable expansion and contexts</a>,
 Next:<a rel="next" accesskey="n" href="#Cfengine%20classes">Cfengine classes</a>,
 Previous:<a rel="previous" accesskey="p" href="#Cfagent%20intro">Cfagent intro</a>,
 Up:<a rel="up" accesskey="u" href="#Cfagent%20reference">Cfagent reference</a>
 <br>
 </div>
 
-<h3 class="section">Special variables</h3>
+<h3 class="section">Variable expansion and contexts</h3>
+
+   <p>Variables in cfengine 2 are defined in contexts. Variables in a given context
+refer to the different phases of execution of cfengine: global, update and main. 
+In the "current" context, variables have the form
+<pre class="smallexample">     $(variable) ${variable}
+     </pre>
+   and are expanded either on parsing or at execution. Variables that cannot be
+expanded remain as dollar strings. Variables belonging to a context that is not
+the current one may be referred to as
+<pre class="smallexample">     $(<var>context</var>.variable) ${<var>context</var>.variable}
+     </pre>
+   e.g.
+<pre class="smallexample">     $(global.env_time)
+     </pre>
+   Some variables in cfengine are associative arrays (as made famous by Perl). 
+Such arrays are referred to by square brackets:
+
+<pre class="smallexample">     
+     $(array[key])  $(array[$(key)])
+     
+     </pre>
+
+<p>and so on. Note carefully that cfengine requires parentheses or braces around variable
+names. Unlike in the shell, they cannot be omitted.
+
+<ul class="menu">
+<li><a accesskey="1" href="#Setting%20variables%20with%20functions">Setting variables with functions</a>: 
+<li><a accesskey="2" href="#Special%20variables">Special variables</a>: 
+<li><a accesskey="3" href="#Iteration%20over%20lists">Iteration over lists</a>: 
+</ul>
+
+<div class="node">
+<p><hr>
+Node:<a name="Setting%20variables%20with%20functions">Setting variables with functions</a>,
+Next:<a rel="next" accesskey="n" href="#Special%20variables">Special variables</a>,
+Previous:<a rel="previous" accesskey="p" href="#Variable%20expansion%20and%20contexts">Variable expansion and contexts</a>,
+Up:<a rel="up" accesskey="u" href="#Variable%20expansion%20and%20contexts">Variable expansion and contexts</a>
+<br>
+</div>
+
+<h4 class="subsection">Setting variables with functions</h4>
+
+   <p>A number of special functions can be used to set variables in cfengine. 
+You can import values from the execution of a shell command
+by prefixing a command with the word <code>exec</code>. This method is deprecated
+in version 2 an replaced by a function.
+
+<pre class="smallexample">     
+       control:
+     
+        # old method
+     
+        listing = ( "exec /bin/ls -l" )
+     
+        # new method
+     
+        listing = ( ExecResult(/bin/ls -l) )
+     
+     </pre>
+
+<p>This sets the variable `listing' to the output of the command in the
+quotes.
+
+   <p>Some other internal functions are
+
+     <dl>
+<dt><code>RandomInt(</code><var>a</var><code>,</code><var>b</var><code>)</code>
+     <dd>Generate a random integer between a and b.
+
+     <br><dt><code>ReadArray(</code><var>filename</var><code>,</code><var>fileformat</var><code>,</code><var>separator</var><code>,</code><var>comment</var><code>,</code><var>Max number of bytes</var><code>)</code>
+     <dd>Reads up to a maximum number of bytes from a properly formatted file into a one-dimensional associated array. File formats
+are:
+          <dl>
+<dt><code>autokey</code>
+          <dd>If this format is specified, <code>ReadArray</code> tries to interpret the file as a table of
+items separated with the separator character. Blank lines and comments (to end of line) are ignored. 
+Items are keyed numerically starting from 1 to the maximum number in the file. 
+If the separation character is not a newline <code>$(n)</code>, then the newline is assumed
+to be a separator also.
+
+          <br><dt><code>textkey</code>
+          <dd>If this format is specified, <code>ReadArray</code> tries to interpret the file as a list
+of lines of the form:
+          <pre class="smallexample">                 key,value
+               </pre>
+
+     </dl>
+
+     <br><dt><code>ReadFile(</code><var>filename</var><code>,</code><var>Max number of bytes</var><code>)</code>
+     <dd>Read a maximum number of bytes from a file. 
+<br><dt><code>ReadTable(</code><var>filename</var><code>,</code><var>fileformat</var><code>,</code><var>separator</var><code>,</code><var>comment</var><code>,</code><var>Max number of bytes</var><code>)</code>
+     <dd>Reads up to a maximum number of bytes from a properly formatted file into a two-dimensional associated array.
+          <dl>
+<dt><code>autokey</code>
+          <dd>If this format is specified, <code>ReadArray</code> tries to interpret the
+file as a table of items separated with the separator character. Blank
+lines and comments (to end of line) are ignored.  Items are keyed
+numerically starting from 1 to the maximum number in the file.  Any
+lines that do not contain the correct number of separators cause the
+function to fail without making any assignment.
+
+          <br><dt><code>textkey</code>
+          <dd>If this format is specified, <code>ReadArray</code> tries to interpret the file as a list
+of lines of the form:
+          <pre class="smallexample">                 key1,key2,,value
+               </pre>
+
+     </dl>
+
+     <br><dt><code>ExecResult(</code><var>command</var><code>)</code>
+     <dd>Executes the named shell command and inserts the output into the variable. Note that, when this is used in
+cfengine internal list variables, any spaces are interpreted as list
+separators. In other lists, normal rules for iteration apply. 
+</dl>
+Note that functions should have no spaces between the function name and the
+leading parenthesis, but should themselves be surrounded by white space.
+
+<p>For example:
+
+<pre class="smallexample">     
+     control:
+     
+      variable2 = ( RandomInt(0,23) )
+     
+      variable3 = ( ExecResult(/bin/ls -a /opt) )
+     
+      myexcerpt  = ( ReadFile("/etc/services",220) )
+     
+      listvar = ( ReadArray(/tmp/array,textkey,",","#",100) )
+     
+     </pre>
+
+   <p>In the latter case, the file could look like this:
+<pre class="smallexample">     host$ more /tmp/array
+     one,String to tbe read
+     two,Nothing string
+     three,Everything comes in threes
+     </pre>
+
+<p>and results in the definition of (verify with <code>cfagent -p -d3</code>):
+<pre class="smallexample">     OBJECT: main
+        960 : listvar[one]=String to tbe read
+        259 : listvar[two]=Nothing string
+        224 : listvar[three]=Everything comes in threes
+     </pre>
+
+<ul class="menu">
+<li><a accesskey="1" href="#Special%20variables">Special variables</a>: 
+<li><a accesskey="2" href="#Iteration%20over%20lists">Iteration over lists</a>: 
+</ul>
+
+<div class="node">
+<p><hr>
+Node:<a name="Special%20variables">Special variables</a>,
+Next:<a rel="next" accesskey="n" href="#Iteration%20over%20lists">Iteration over lists</a>,
+Previous:<a rel="previous" accesskey="p" href="#Setting%20variables%20with%20functions">Setting variables with functions</a>,
+Up:<a rel="up" accesskey="u" href="#Variable%20expansion%20and%20contexts">Variable expansion and contexts</a>
+<br>
+</div>
+
+<h4 class="subsection">Special variables</h4>
 
    <p>Variables are referred to in either of two different ways, depending on
 your taste.  You can use the forms <code>$(variable)</code> or
@@ -689,7 +861,17 @@ includes the domain name as well.
 
      <br><dt><code>ipaddress</code>
      <dd>The numerical form of the internet address of the host currently running
-cfengine.
+cfengine, found by lookup in DNS.
+
+     <br><dt><code>ipv4[</code><var>interface</var><code>]</code>
+     <dd>The IPv4 address of the named interface, determined from a probe of the
+interfaces. This variable belongs in the global context and refers to
+as in the following examples:
+     <pre class="smallexample">          
+          ${global.ipv4[hme0]}
+          ${global.ipv4[eth0]}
+          
+          </pre>
 
      <br><dt><code>MaxCfengines</code>
      <dd>The maximum number of cfengines which should be allowed to
@@ -783,9 +965,97 @@ filenames etc.
 
 <div class="node">
 <p><hr>
+Node:<a name="Iteration%20over%20lists">Iteration over lists</a>,
+Previous:<a rel="previous" accesskey="p" href="#Special%20variables">Special variables</a>,
+Up:<a rel="up" accesskey="u" href="#Variable%20expansion%20and%20contexts">Variable expansion and contexts</a>
+<br>
+</div>
+
+<h4 class="subsection">Iteration over lists</h4>
+
+   <p>Variables can be used as iterators in some situations. Iteration over lists
+is currently rather limited in cfengine and is something to be improved on
+in a future version. When a variable is used as an iterator, a character
+is chosen to represent a list separator, as in the shell <code>IFS</code> variable. 
+The default separator is the colon <code>:</code> character:
+<pre class="smallexample">     control:
+     
+      listvar = ( one:two:three:four )
+     
+     </pre>
+   The action that contains a variable to be interpreted as a list appears
+as separate actions, one for each case:
+<pre class="smallexample">     shellcommand:
+     
+       "/bin/echo $(listvar)"
+     </pre>
+   is equivalent to
+<pre class="smallexample">     shellcommand:
+     
+       "/bin/echo one"
+       "/bin/echo two"
+       "/bin/echo three"
+       "/bin/echo four"
+     </pre>
+   If multiple iterators are used, these are handled as nested loops:
+<pre class="smallexample">     cfengine::/bin/echo one 1:     one 1
+     cfengine::/bin/echo one 2:     one 2
+     cfengine::/bin/echo one 3:     one 3
+     cfengine::/bin/echo one 4:     one 4
+     cfengine::/bin/echo two 1:     two 1
+     cfengine::/bin/echo two 2:     two 2
+     cfengine::/bin/echo two 3:     two 3
+     cfengine::/bin/echo two 4:     two 4
+     cfengine::/bin/echo three:     three 1
+     cfengine::/bin/echo three:     three 2
+     cfengine::/bin/echo three:     three 3
+     cfengine::/bin/echo three:     three 4
+     cfengine::/bin/echo four :     four 1
+     cfengine::/bin/echo four :     four 2
+     cfengine::/bin/echo four :     four 3
+     cfengine::/bin/echo four :     four 4
+     </pre>
+   Where iterators are not allowed, the implied lists are treated as scalars:
+<pre class="smallexample">     
+     alerts:
+     
+      amnexus::
+     
+       "do $(list1) $(list2)"
+     </pre>
+   e.g.
+<pre class="smallexample">     
+     cfengine:: do one:two:three:four 1:2:3:4
+     </pre>
+
+   <p>Iterative expansion is currently restricted to:
+     <ul>
+
+     <li>In the `to' field of a multiple link action,
+
+     <li>In the `from' field of a copy action,
+
+     <li>In the directory field of a tidy action,
+
+     <li>In the directory field of the files action,
+
+     <li>In the directory field of the required/disk action,
+
+     <li>In the directory field of the disable action,
+
+     <li>In the directory field of the copy action,
+
+     <li>In the directory field of the admit/deny server access rules,
+
+     <li>Names in the ignore action.
+
+   </ul>
+
+<div class="node">
+<p><hr>
 Node:<a name="Cfengine%20classes">Cfengine classes</a>,
 Next:<a rel="next" accesskey="n" href="#acl">acl</a>,
-Previous:<a rel="previous" accesskey="p" href="#Special%20variables">Special variables</a>,
+Previous:<a rel="previous" accesskey="p" href="#Variable%20expansion%20and%20contexts">Variable expansion and contexts</a>,
 Up:<a rel="up" accesskey="u" href="#Cfagent%20reference">Cfagent reference</a>
 <br>
 </div>
@@ -831,7 +1101,7 @@ the name.
 
      <li>A month (in the form <code>January, February, ... December</code>).
 
-     <li>A year (in the form <code>Yr1997, Yr2001</code>).
+     <li>A year (in the form <code>Yr1997, Yr2004</code>).
 
      <li>An arbitrary user-defined string.  (see the reference manual).
 
@@ -857,7 +1127,10 @@ are separately true, thus in the above example the actions which follow
 In the second example, the host parsing the file must be either of
 type <code>sun4</code> <em>or</em> <code>ultrix</code> <em>or</em> <code>osf</code>. 
 In other words, compound classes support two operators: AND and OR,
-written <code>.</code> and <code>|</code> respectively. Cfengine doesn't
+written <code>.</code> and <code>|</code> respectively. 
+ From cfengine version 2.1.1,
+I bit the bullet and added <code>&amp;</code> as a synonym for the AND operator. 
+Cfengine doesn't
 care how many of these operators you use (since it skips over blank
 class names), so you could write either
 
@@ -969,7 +1242,7 @@ domain variable.</em> The dots in this string will be replaced by underscores.
      <br><dt><code>!</code>
      <dd>The NOT operator binds tightest.
 
-     <br><dt><code>.</code>
+     <br><dt><code>. &amp;</code>
      <dd>The AND operator binds more tightly than OR.
 
      <br><dt><code>|</code>
@@ -1405,6 +1678,7 @@ the affected hosts.
            SysLog(<var>priority</var>,<var>message</var>)
            SetState(<var>name</var>,<var>ttl</var>,<var>policy</var>)
            UnSetState(<var>name</var>)
+           FriendStatus(<var>minutes</var>)
      
      </pre>
    For example:
@@ -1430,7 +1704,7 @@ the affected hosts.
 
    <p>The <code>ShowState()</code> function reports on state gathered by the cfenvd
 daemon.
-<pre class="smallexample">     ShowState(incoming.smtp)
+<pre class="smallexample">     ShowState(incoming.tcpsyn)
      ShowState(outgoing.smtp)
      ShowState(incoming.www)
      ShowState(outgoing.www)
@@ -1480,6 +1754,12 @@ the SetState call is called again to extend its lifetime.
                UnsetState(myclass)
      
      </pre>
+   The <code>FriendStatus</code> function is available from version 2.1.4 and displays
+a message if hosts that normally have a cfengine protocol connection with the current
+host have not connected for more than than specified number of minutes. If the number
+of minutes is set to zero, cfengine uses a machine-learned expectation value for the
+time and uses this. The friend status of a host is thus the expectation that there
+is a problem with a remote peer.
 
 <div class="node">
 <p><hr>
@@ -1623,7 +1903,7 @@ like the following example:
      
        myvariable = ( something )
        mymacro    = ( somethingelse )
-       myrandom   = ( RandInt(3,6) )
+       myrandom   = ( RandomInt(3,6) )
        myexcerpt  = ( ReadFile("/etc/services",220))
      
      </pre>
@@ -1631,11 +1911,16 @@ like the following example:
 <p>Parentheses are required when making a declaring information in cfengine. 
 Note that a limited number of in-built functions exists:
      <ul>
+<li><code>ExecResult</code>(<var>command</var>) Executes the named shell command and
+inserts the output into the variable.  Note that, when this is used in
+cfengine internal list variables, any spaces are interpreted as list
+separators. In other lists, normal rules for iteration apply. 
 <li><code>RandomInt(a,b)</code>
 Is substituted for a random number between (a,b). 
 <li><code>ReadFile</code>(<var>filename</var>,<var>Max number of bytes</var>)
 A maximum number of bytes is read from the named file and placed in a variable. 
 </ul>
+   For more functions, See <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>.
 
    <p>The meaning of each of these lines is described below.
 
@@ -1648,7 +1933,8 @@ A maximum number of bytes is read from the named file and placed in a variable.
 <li><a accesskey="6" href="#AutoDefine">AutoDefine</a>: 
 <li><a accesskey="7" href="#BinaryPaddingChar">BinaryPaddingChar</a>: 
 <li><a accesskey="8" href="#ChecksumDatabase">ChecksumDatabase</a>: 
-<li><a accesskey="9" href="#ChecksumPurge">ChecksumPurge</a>: 
+<li><a accesskey="9" href="#BindToInterface(cfagent)">BindToInterface(cfagent)</a>: 
+<li><a href="#ChecksumPurge">ChecksumPurge</a>: 
 <li><a href="#ChecksumUpdates">ChecksumUpdates</a>: 
 <li><a href="#childlibpath">childlibpath</a>: 
 <li><a href="#copylinks">copylinks</a>: 
@@ -1831,15 +2117,14 @@ takes to correct a problem. To increase the flexibility of cfengine, a
 mechanism has been introduced in version 1.5 which allows you to include
 a module of your own making in order to define or undefine a number of classes. 
 The syntax
-     <pre class="smallexample">            module:mytests.<var>class1</var>.<var>class2</var>.<var>class3</var>
+     <pre class="smallexample">            module:mytests
           
-            "module:mytests.<var>class1</var>.<var>class2</var>.<var>class3</var> arg1 arg2 .."
+            "module:mytests arg1 arg2 .."
           </pre>
      declares a user defined module which can potentially set the classes
 <var>class1</var> etc. Classes returned by the module must be declared so
 that cfengine knows to pay attention to rules which use these classes
-when parsing. Note might actually be preferable to define classes
-returned by modules under <code>AddInstallables</code> which is equivalent. If
+when parsing; this is done using <code>AddInstallables</code>. If
 arguments are passed to the module, the whole string must be quoted like
 a shellcommand.  See <a href="cfengine-Tutorial.html#Writing%20plugin%20modules">Writing plugin modules</a>.  Whether or not these
 classes become set or not depends on the behaviour of your module. The
@@ -2117,7 +2402,7 @@ or text messages within program code.
 <div class="node">
 <p><hr>
 Node:<a name="ChecksumDatabase">ChecksumDatabase</a>,
-Next:<a rel="next" accesskey="n" href="#ChecksumPurge">ChecksumPurge</a>,
+Next:<a rel="next" accesskey="n" href="#BindToInterface(cfagent)">BindToInterface(cfagent)</a>,
 Previous:<a rel="previous" accesskey="p" href="#BinaryPaddingChar">BinaryPaddingChar</a>,
 Up:<a rel="up" accesskey="u" href="#control">control</a>
 <br>
@@ -2135,9 +2420,27 @@ for security purposes, See <a href="#files">files</a>, <code>checksum=</code>.
 
 <div class="node">
 <p><hr>
+Node:<a name="BindToInterface(cfagent)">BindToInterface(cfagent)</a>,
+Next:<a rel="next" accesskey="n" href="#ChecksumPurge">ChecksumPurge</a>,
+Previous:<a rel="previous" accesskey="p" href="#ChecksumDatabase">ChecksumDatabase</a>,
+Up:<a rel="up" accesskey="u" href="#control">control</a>
+<br>
+</div>
+
+<h4 class="subsection">BindToInterface</h4>
+
+   <p>If this is set to a specific IP address of an IP configured interface,
+cfagent will use that address for outgoing connections.  On Multi-homed
+hosts this allows one to restrict the traffic to a known interface. An interface must
+be configured with an IP address in order to be bound.
+
+   <p>This feature is not available for old operating systems.
+
+<div class="node">
+<p><hr>
 Node:<a name="ChecksumPurge">ChecksumPurge</a>,
 Next:<a rel="next" accesskey="n" href="#ChecksumUpdates">ChecksumUpdates</a>,
-Previous:<a rel="previous" accesskey="p" href="#ChecksumDatabase">ChecksumDatabase</a>,
+Previous:<a rel="previous" accesskey="p" href="#BindToInterface(cfagent)">BindToInterface(cfagent)</a>,
 Up:<a rel="up" accesskey="u" href="#control">control</a>
 <br>
 </div>
@@ -2839,6 +3142,8 @@ Up:<a rel="up" accesskey="u" href="#control">control</a>
 
 <h4 class="subsection">LogDirectory</h4>
 
+   <p>This is now deprecated.
+
    <p>Specify an alternative directory for keeping cfengine's
 log data. This defaults to <code>/var/run/cfengine</code> or
 <code>/var/cfengine</code>.
@@ -3361,22 +3666,8 @@ Up:<a rel="up" accesskey="u" href="#control">control</a>
    <p>The value of this variable is used to define the list separator in
 variables which are expected to be treated as lists. The default value
 of this variable is the colon <code>:</code>.  Cfengine treats variables
-containing this character as lists to be broken up and iterated over in
-the following cases:
-
-     <ul>
-
-     <li>in the `to' field of a multiple link action,
-
-     <li>in the `from' field of a copy action,
-
-     <li>in the directory field of a tidy action,
-
-     <li>in the directory field of the files action,
-
-     <li>in the ignore action.
-
-   </ul>
+containing this character as lists to be broken up and iterated over,
+See <a href="#Iteration%20over%20lists">Iteration over lists</a>.
 
    <p>This typically allows communication with PATH-like
 environment variables in the shell.
@@ -3779,6 +4070,8 @@ attempts to prevent this during remote copies.</em>
                              syslog=<var>true/on</var>/<var>false/off</var>
                              inform=<var>true/on</var>/<var>false/off</var>
      
+                             findertype=<var>MacOSX finder type</var>
+     
      </pre>
 
      <dl>
@@ -3791,6 +4084,27 @@ of a plain file. An implicit `copy file to directory' syntax is not
 allowed.  Symbolic links are copied as symbolic links, plain files are
 copied as plain files and special files are copied as special files. 
 The <code>recurse</code> option is required to copy the contents of subdirectories.
+
+     <p>If the destination file name is of the form
+<code>filename/..namedfork/rsrc</code>, then it is assumed that you are
+copying the resource fork of a file to an HFS+ file system on OS X
+Jaguar. In the absence of the destination file being in this form (just
+dest=filename), cfengine will assume that you are working with the data
+fork of the file.
+
+     <p>For a resource fork copy to properly work, the data fork must
+have already been copied. Ie the OS will not allow you to copy the
+resource fork for a file that does not exist. And, copying a data fork
+after the resource fork will overwrite the resource fork. So, order is
+important.  Copy the data fork, first. Then, copy the resource fork.
+
+     <p>To split the data and resource forks of a file into two parts,
+open up a terminal.  The following commands will copy MyFile 's data and
+resource forks into two separate files which can then be recombined by
+cfengine:
+     <pre class="smallexample">          	cp MyFile MyFile-datafork
+          	cp MyFile/..namedfork/rsrc MyFile-rsrcfork
+          </pre>
 
      <br><dt><code>mode, owner, group</code>
      <dd>The file mode, owner
@@ -3903,6 +4217,23 @@ determine whether the source and destination files are identical. If
 initiated.  An <code>mtime</code> comparison does not take into account
 changes of file permissions, only modifications to the contents of the
 files.
+
+     <br><dt><code>findertype</code>
+     <dd>	Sets the four letter file type code in an HFS+ file system on Mac OS X
+	Jaguar. For example, the four letter code APPL indicates the file is an
+	Application (and will be executed when double-clicked). The four letter
+	code TEXT indicates the file is a text file and will be opened by the
+	default text editor.
+
+     <p>	If the file also has an extension (for example .txt), then if setting
+	the finder type code, you should make sure your finder type code does
+	not conflict with the file extension.
+
+     <p>	Files both without extensions and finder type codes are mostly useless
+	to OS X, so be sure to do one or the other!
+
+     <p>	Also note that finder type codes should not be applied to the resource
+	forks of files.
 
      <br><dt><code>server</code>
      <dd>If you want to copy a file remotely from a server, you specify the
@@ -4195,7 +4526,12 @@ special variable <code>$(binserver)</code> here.
      
          /<var>filesystem</var> freespace=<var>size-limit</var> define=<var>class-list</var>(,:.)
      
-          inform=<var>true</var> log=<var>true</var> force=<var>true</var>
+          inform=<var>true</var>
+          log=<var>true</var>
+     
+          scanarrivals=<var>true</var>
+          force=<var>true</var>
+     
           ifelapsed=<var>mins</var>
           expireafter=<var>mins</var>
      
@@ -4243,6 +4579,11 @@ even on NFS mounted filesystems. Normally it does not make sense to
 check filesystems that are not native to the local host, but occasionally
 ne would like to force such a check in order to set a class, based on the
 result, for instance.
+
+   <p>If the <code>scanarrivals</code> option is set, the agent will recursively descend
+through the file system building a database of file modification times. This
+data is used for research purposes and will eventually be used to trigger
+classes that determine optimal times for backup of filesystem.
 
 <div class="node">
 <p><hr>
@@ -4837,17 +5178,21 @@ you actually want this.
      <br><dt><code>DeleteLinesAfterThisMatching </code><var>quoted-regex</var><code></code>
      <dd>Delete lines after the current position which match the quoted expression.
 
-     <br><dt><code>DeleteLinesContaining </code><var>quoted-string</var><code></code>
-     <dd>Delete all lines containing the exact string quoted.
+     <br><dt><code>DeleteLinesContaining </code><var>quoted-string</var><code>/DeleteLinesNotContaining </code><var>quoted-string</var><code></code>
+     <dd>Delete all lines (not) containing the exact string quoted.
 
-     <br><dt><code>DeleteLinesMatching </code><var>quoted-regex</var><code></code>
-     <dd>Delete all lines fully matching the tied quoted regular expression.
+     <br><dt><code>DeleteLinesMatching </code><var>quoted-regex</var><code>/DeleteLinesNotMatching </code><var>quoted-regex</var><code></code>
+     <dd>Delete all lines (not) fully matching the tied quoted regular expression.
 
-     <br><dt><code>DeleteLinesNotMatching </code><var>quoted-regex</var><code></code>
-     <dd>Delete all lines not fully matching the tied quoted regular expression.
+     <br><dt><code>DeleteLinesStarting </code><var>quoted-string</var><code>/DeleteLinesNotStarting </code><var>quoted-string</var><code></code>
+     <dd>Delete all lines (not) beginning with the exact string quoted.
 
-     <br><dt><code>DeleteLinesStarting </code><var>quoted-string</var><code></code>
-     <dd>Delete all lines beginning with the exact string quoted.
+     <br><dt><code>DeleteLinesNotContainingFileItems </code><var>filename</var><code></code>
+     <dd>Delete lines in the file that do not contain the any of the substrings in the file. 
+<br><dt><code>DeleteLinesNotMatchingFileItems </code><var>filename</var><code></code>
+     <dd>Delete lines in the file that do not match the any of the regular expressions in the file. 
+<br><dt><code>DeleteLinesNotStartingFileItems </code><var>filename</var><code></code>
+     <dd>Delete lines in the file that do not start with any of the substrings in the file.
 
      <br><dt><code>DeleteNLines </code><var>quoted-string</var><code></code>
      <dd>Deletes up to N lines from the current file, starting from the
@@ -5269,11 +5614,15 @@ the form of the statement in pseudo-code:
                                elsedefine=<var>classlist</var>
      
                                checksum=<var>md5</var>
-                               flags=<var>BSD flags</var>
                                syslog=<var>true/on</var>/<b>false/off</b>
                                inform=<var>true/on</var>/<b>false/off</b>
                                ifelapsed=<var>mins</var>
                                expireafter=<var>mins</var>
+     
+          <var>Special OS flags:</var>
+                               flags=<var>BSD flags</var>
+     
+     
      </pre>
 
 <p>An example would be the following:
@@ -5315,7 +5664,7 @@ read/execute flags for others and group bits.  An example of the
 numerical form might be <code>-002</code> which would mean that the
 read-for-others flag should either not be set or should be unset,
 depending on the action you choose.  <code>+2000</code> would mean that the
-setuid flag should be present or set, depending on the action. 
+setgid flag should be present or set, depending on the action. 
 <code>+2000,-002</code> would be a combination of these.  The <code>=</code> sign
 sets to an absolute value, so <code>=755</code> would set the file mode to
 mode 755.
@@ -5328,6 +5677,7 @@ example,
              /tmp/flags.01  mode=0600 owner=0 group=0
                             flags=uappnd,uchg,uunlnk,nodump,opaque,sappnd,schg,sunlnk
                             action=touch
+          
           
           </pre>
 
@@ -5937,6 +6287,8 @@ an example of the syntax:
      
          ip_in_range = ( IPRange(129.0.0.1-15) )  # host is in ip address range
          ip_in_range = ( IPRange(129.0.0.1/24) )  # host is in ip address range (CIDR notation)
+     
+         compute_nodes = ( HostRange(cpu-,1-32) ) # host name in the cpu-01 through cpu-32 range
      
      </pre>
 
@@ -6695,13 +7047,12 @@ builds in anti-spamming protection. The principle used is that hosts
 should be immune to Denial of Service attacks; they should
 only be able to disadvanatge themselves with the attempt.</em>
 
-   <p>(Remote method execution is not implemented in version 2.1.0, but will follow
-in a later release, when additional research has been carried out.)
+   <p>(Remote method execution was not implemented until version 2.1.3)
 
    <p>Methods allow you to call an independent cfengine program, pass it arguments and classes,
 and collect the results for use in your main program. It thus introduces
 parent-child semantics into cfengine "imports". A method is more than an import. 
-(Import is like a C #include, while a method is like a C function.) 
+(Import is analagous to a C #include, while a method is like a C function.) 
 Communication is peer to peer, by mutual consent. There is no "method server"
 that executes methods on remote hosts. Hosts exchange information by invitation
 only. This is an unreliable service (in the sense of UDP).
@@ -6722,7 +7073,7 @@ decoupling between client request and service provision.
            returnvars=<var>comma separated variable list or void</var>
            returnclasses=<var>comma separated class list</var>
      
-           server=<var>ip-host</var>
+           server=<var>ip-host/*</var>
      
            owner=<var>setuid</var>
            group=<var>setgid</var>
@@ -6780,6 +7131,24 @@ Here is an example method call.
      cfengine:myhost:SimpleMethod: cfengine:nexus: This simple method does nothing
      
      </pre>
+
+   <p>If the server name is a wildcard, e.g. <code>*</code> then this acts as a multicast or broadcast.
+
+<ul class="menu">
+<li><a accesskey="1" href="#localhost%20examples">localhost examples</a>: 
+<li><a accesskey="2" href="#remotehost%20examples">remotehost examples</a>: 
+</ul>
+
+<div class="node">
+<p><hr>
+Node:<a name="localhost%20examples">localhost examples</a>,
+Next:<a rel="next" accesskey="n" href="#remotehost%20examples">remotehost examples</a>,
+Previous:<a rel="previous" accesskey="p" href="#methods">methods</a>,
+Up:<a rel="up" accesskey="u" href="#methods">methods</a>
+<br>
+</div>
+
+<h4 class="subsection">Localhost examples</h4>
 
    <p>The following example
 collects the tar file, unpacks it,
@@ -6987,6 +7356,48 @@ placed in the temporary file <code>/tmp/file1</code>.
 i.e. if class1 is defined then it is offered to the parent, but if it
 is not defined in the method, it is not passed on. The parent can then
 choose to accept or ignore the value.
+
+<div class="node">
+<p><hr>
+Node:<a name="remotehost%20examples">remotehost examples</a>,
+Previous:<a rel="previous" accesskey="p" href="#localhost%20examples">localhost examples</a>,
+Up:<a rel="up" accesskey="u" href="#methods">methods</a>
+<br>
+</div>
+
+<h4 class="subsection">Remote host examples</h4>
+
+   <p>Methods can also be scheduled for execution on remote hosts.
+     <ul>
+<li>Both hosts must have an identical copy of the method stanza
+<li>Public keys must be exchanged between the cooperating hosts
+<li>Access must be granted to <code>/var/cfengine/rpc_out</code> in cfservd. 
+</ul>
+
+   <p>Remote method execution is the same as local method execution except for
+some additional requirements. A list of collaborating peers must be added
+to the control section of <code>update.conf</code>.
+
+<pre class="smallexample">     control:
+     
+      MethodPeers = ( <var>hostname list</var> )
+     </pre>
+   This list tells the agent which remote hosts to collaborate with, i.e. 
+whom should we contact to look for work that we have promised to perform? 
+For example, to make two hosts collaborate:
+
+<pre class="smallexample">     methods:
+     
+      host1|host2::
+     
+       MethodTest("my test!")
+     
+       action=cf.methodtest
+       server=host2.iu.hio.no
+       returnclasses=null
+       returnvars=retval
+       ifelapsed=120
+     </pre>
 
 <div class="node">
 <p><hr>
@@ -7660,8 +8071,9 @@ variable (set here to <code>uio.no</code>) results in a
      </pre>
 
 <p>Note that the <code>resolve</code> action does not delete anything from the
-file <code>/etc/resolv.conf</code>.  It adds nameservers which do not
-previously exist and reorders the lines of servers which do exist.
+file <code>/etc/resolv.conf</code> unless the <code>EmptyResolveConf</code> variable is set
+to 'true' .  It adds nameservers which do not previously exist and
+reorders the lines of servers which do exist.
 
    <p>As of version 1.3.11, you may use a quoted string to add non-nameserver
 lines to this file. For example:
@@ -7716,6 +8128,8 @@ commands from this section.
                preview=<var>true</var>/<b>false</b>
                inform=<b>false</b><var>/true</var>
      
+               noabspath=<b>false</b><var>/true</var>
+     
                ifelapsed=<var>mins</var>
                expireafter=<var>mins</var>
      
@@ -7727,6 +8141,10 @@ executed by root. If you set the optional timeout string, then cfengine
 will abort the shellcommand if it exceeds the specified time-limit in
 seconds. This can be useful for avoiding situations caused by hung
 network connections etc.
+
+   <p>Normally, cfagent requires the command string to begin with a <code>/</code>
+since it is dangerous to rely on an implicit path. However, sometimes it
+it is appropriate to override this.
 
    <p>Variable substitution works within the strings.  Here are some examples.
 
@@ -8155,7 +8573,29 @@ file is as follows:
      </pre>
 
 
-<p>The file consists of a control section and access information.
+   <p>Iteration of variables is allowed, hence:
+
+<pre class="smallexample">     	control:
+     	  Split = ( " " )
+     	  hostlist = ( "10.10.10.1 10.10.10.2 10.10.10.3" )
+     	  dirs =  ( "bin etc lib" )
+     	  base = ( /usr )
+     
+     	#########################################################
+     
+     	admit:
+     	   $(base)/$(dirs)   $(hostlist)
+     </pre>
+results in:
+<pre class="smallexample">     	Path: /usr/bin (encrypt=0)
+     	   Admit: 10.10.10.1 10.10.10.2 10.10.10.3 root=
+     	Path: /usr/etc (encrypt=0)
+     	   Admit: 10.10.10.1 10.10.10.2 10.10.10.3 root=
+     	Path: /usr/lib (encrypt=0)
+     	   Admit: 10.10.10.1 10.10.10.2 10.10.10.3 root=
+     </pre>
+
+   <p>The file consists of a control section and access information.
 
 <div class="node">
 <p><hr>
@@ -10475,15 +10915,15 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>${EmailMaxLines}</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>+</code>: <a href="#groups">groups</a>
 <li><code>-D option</code>: <a href="#Cfengine%20classes">Cfengine classes</a>, <a href="#addclasses">addclasses</a>
-<li><code>-l</code>: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li><code>-L</code>: <a href="#Single%20links">Single links</a>
+<li><code>-l</code>: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li><code>-N option</code>: <a href="#Cfengine%20classes">Cfengine classes</a>, <a href="#addclasses">addclasses</a>
 <li><code>-x option</code>: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>.cfengine.rm</code>: <a href="#tidy">tidy</a>
 <li><code>/etc/host.conf</code>: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>/var/cfengine/output</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li><code>a=</code>: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
-<li><code>AccessedBefore()</code>: <a href="#Evaluated%20classes">Evaluated classes</a>
+<li><code>AccessedBefore()</code>: <a href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>
 <li><code>action</code>: <a href="#Syntax">Syntax</a>
 <li><code>actionsequence</code>: <a href="#control">control</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>AddClasses</code>: <a href="#addclasses">addclasses</a>
@@ -10493,14 +10933,14 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>alerts</code>: <a href="#alerts">alerts</a>
 <li><code>AllowUsers</code>: <a href="#AllowUsers">AllowUsers</a>
 <li><code>backup=</code>: <a href="#copy">copy</a>
-<li><code>BindToInterface</code>: <a href="#BindToInterface">BindToInterface</a>
-<li><code>binserver</code>: <a href="#Link%20Children">Link Children</a>, <a href="#Single%20links">Single links</a>
+<li><code>BindToInterface</code>: <a href="#BindToInterface(cfagent)">BindToInterface(cfagent)</a>, <a href="#BindToInterface">BindToInterface</a>
+<li><code>binserver</code>: <a href="#Single%20links">Single links</a>, <a href="#Link%20Children">Link Children</a>
 <li><code>binservers</code>: <a href="#binservers">binservers</a>
 <li><code>broadcast</code>: <a href="#broadcast">broadcast</a>
 <li><code>cf.preconf</code>: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
-<li><code>CFALLCLASSES</code>: <a href="#Cfagent%20Runtime%20Options">Cfagent Runtime Options</a>, <a href="#Special%20variables">Special variables</a>
+<li><code>CFALLCLASSES</code>: <a href="#Special%20variables">Special variables</a>, <a href="#Cfagent%20Runtime%20Options">Cfagent Runtime Options</a>
 <li><code>cfrc</code>: <a href="#cfrc%20resource%20file">cfrc resource file</a>
-<li><code>ChangedBefore()</code>: <a href="#Evaluated%20classes">Evaluated classes</a>
+<li><code>ChangedBefore()</code>: <a href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>
 <li><code>ChecksumDatabase</code>: <a href="#ChecksumDatabase">ChecksumDatabase</a>
 <li><code>ChecksumPurge</code>: <a href="#ChecksumPurge">ChecksumPurge</a>
 <li><code>ChecksumUpdates</code>: <a href="#ChecksumUpdates">ChecksumUpdates</a>
@@ -10515,12 +10955,13 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>DryRun</code>: <a href="#dryrun">dryrun</a>
 <li><code>editbinaryfilesize</code>: <a href="#editbinaryfilesize">editbinaryfilesize</a>
 <li><code>editfiles</code>: <a href="#actionsequence">actionsequence</a>
-<li><code>editfilesize</code>: <a href="#editfilesize">editfilesize</a>, <a href="#control">control</a>
+<li><code>editfilesize</code>: <a href="#control">control</a>, <a href="#editfilesize">editfilesize</a>
 <li><code>EmailMaxLines</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li><code>empty</code>: <a href="#disable">disable</a>
 <li><code>EmptyResolvConf</code>: <a href="#emptyresolvconf">emptyresolvconf</a>
 <li><code>Exclamation</code>: <a href="#exclamation">exclamation</a>
 <li><code>exclude=</code>: <a href="#Syntax">Syntax</a>
+<li><code>exec</code>: <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
 <li><code>FileExtensions</code>: <a href="#fileextension">fileextension</a>
 <li><code>files</code>: <a href="#actionsequence">actionsequence</a>, <a href="#files">files</a>
 <li><code>filter</code>: <a href="#filters">filters</a>
@@ -10537,17 +10978,17 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>include=</code>: <a href="#Syntax">Syntax</a>
 <li><code>interface configuration</code>: <a href="#interfaces">interfaces</a>
 <li><code>InterfaceName</code>: <a href="#interfacename">interfacename</a>
-<li><code>IsDir()</code>: <a href="#Evaluated%20classes">Evaluated classes</a>
-<li><code>IsLink()</code>: <a href="#Evaluated%20classes">Evaluated classes</a>
-<li><code>IsNewerThan()</code>: <a href="#Evaluated%20classes">Evaluated classes</a>
-<li><code>IsPlain()</code>: <a href="#Evaluated%20classes">Evaluated classes</a>
+<li><code>IsDir()</code>: <a href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>
+<li><code>IsLink()</code>: <a href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>
+<li><code>IsNewerThan()</code>: <a href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>
+<li><code>IsPlain()</code>: <a href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>
 <li><code>l=</code>: <a href="#Syntax">Syntax</a>
 <li><code>LD_LIBRARY_PATH</code>: <a href="#control">control</a>
 <li><code>link</code>: <a href="#Syntax">Syntax</a>
 <li><code>linkchildren</code>: <a href="#Files%20linkchildren">Files linkchildren</a>, <a href="#Link%20Children">Link Children</a>
 <li><code>links</code>: <a href="#links">links</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>m=</code>: <a href="#Syntax">Syntax</a>
-<li><code>mailcheck</code>: <a href="#actionsequence">actionsequence</a>, <a href="#mailserver">mailserver</a>
+<li><code>mailcheck</code>: <a href="#mailserver">mailserver</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>mailserver</code>: <a href="#mailserver">mailserver</a>
 <li><code>MaxCfengines</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>methods</code>: <a href="#methods">methods</a>
@@ -10560,8 +11001,9 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>mountinfo</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>mountpattern</code>: <a href="#mountpattern">mountpattern</a>
 <li><code>netconfig</code>: <a href="#actionsequence">actionsequence</a>
-<li><code>netmask</code>: <a href="#netmask">netmask</a>, <a href="#control">control</a>
-<li><code>nfstype</code>: <a href="#control">control</a>, <a href="#nfstype">nfstype</a>
+<li><code>netmask</code>: <a href="#control">control</a>, <a href="#netmask">netmask</a>
+<li><code>nfstype</code>: <a href="#nfstype">nfstype</a>, <a href="#control">control</a>
+<li><code>noabspath</code>: <a href="#shellcommands">shellcommands</a>
 <li><code>o=</code>: <a href="#Syntax">Syntax</a>
 <li><code>ones</code>: <a href="#broadcast">broadcast</a>
 <li><code>OutputPrefix</code>: <a href="#Special%20variables">Special variables</a>
@@ -10579,8 +11021,9 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>required</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>resolve</code>: <a href="#resolve">resolve</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>Restricting access</code>: <a href="#access">access</a>
-<li><code>ReturnsZero()</code>: <a href="#Evaluated%20classes">Evaluated classes</a>
+<li><code>ReturnsZero()</code>: <a href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>
 <li><code>rotate=</code>: <a href="#disable">disable</a>
+<li><code>scanarrivals=</code>: <a href="#disks">disks</a>
 <li><code>scheduling</code>: <a href="#schedule">schedule</a>
 <li><code>SecureInput</code>: <a href="#secureinput">secureinput</a>
 <li><code>SensibleCount</code>: <a href="#sensiblecount">sensiblecount</a>
@@ -10590,20 +11033,20 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>shellcommands</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>ShowActions</code>: <a href="#showactions">showactions</a>
 <li><code>singlelinks</code>: <a href="#actionsequence">actionsequence</a>
-<li><code>site</code>: <a href="#control">control</a>, <a href="#site">site</a>
+<li><code>site</code>: <a href="#site">site</a>, <a href="#control">control</a>
 <li><code>SkipVerify</code>: <a href="#root%3d">root=</a>
 <li><code>smtpserver</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>
-<li><code>split</code>: <a href="#Special%20variables">Special variables</a>, <a href="#split">split</a>
+<li><code>split</code>: <a href="#Special%20variables">Special variables</a>, <a href="#Iteration%20over%20lists">Iteration over lists</a>, <a href="#split">split</a>
 <li><code>SpoolDirectories</code>: <a href="#spooldirectories">spooldirectories</a>
 <li><code>SuspiciousNames</code>: <a href="#suspiciousnames">suspiciousnames</a>
-<li><code>sysadm</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>, <a href="#sysadm">sysadm</a>, <a href="#control">control</a>
+<li><code>sysadm</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>, <a href="#sysadm">sysadm</a>, <a href="#control">control</a>, <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li><code>tidy</code>: <a href="#tidy">tidy</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>timezone</code>: <a href="#control">control</a>
 <li><code>touch</code>: <a href="#touch">touch</a>
 <li><code>truncate</code>: <a href="#disable">disable</a>
-<li><code>type=</code>: <a href="#disable">disable</a>, <a href="#Hard%20links">Hard links</a>
+<li><code>type=</code>: <a href="#Hard%20links">Hard links</a>, <a href="#disable">disable</a>
 <li><code>underscoreclasses</code>: <a href="#Special%20variables">Special variables</a>
-<li><code>unmount</code>: <a href="#actionsequence">actionsequence</a>, <a href="#unmount">unmount</a>
+<li><code>unmount</code>: <a href="#unmount">unmount</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>version=</code>: <a href="#packages">packages</a>
 <li><code>Wildcards</code>: <a href="#tidy">tidy</a>
 <li><code>zeroes</code>: <a href="#broadcast">broadcast</a>
@@ -10624,8 +11067,8 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>!: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li><code>--dry-run</code> option: <a href="#shellcommands">shellcommands</a>
 <li>-D option: <a href="#addclasses">addclasses</a>
-<li><code>-L</code> option: <a href="#Single%20links">Single links</a>
 <li>-l option: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
+<li><code>-L</code> option: <a href="#Single%20links">Single links</a>
 <li>-x option: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>.cfdisabled</code>: <a href="#disable">disable</a>
 <li>.cfengine.rm: <a href="#tidy">tidy</a>
@@ -10649,6 +11092,8 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>AllowConnectionsFrom</code> variable: <a href="#AllowConnectionsFrom">AllowConnectionsFrom</a>
 <li>AllowUsers in cfservd: <a href="#AllowUsers">AllowUsers</a>
 <li>Andrew filesystem: <a href="#nfstype">nfstype</a>
+<li>Array example: <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
+<li>Array from file: <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
 <li>atime tidies: <a href="#tidy">tidy</a>
 <li><code>AutoCreate</code>: <a href="#editfiles">editfiles</a>
 <li><code>AutoExecInterval</code> variable: <a href="#AutoExecInterval">AutoExecInterval</a>
@@ -10660,10 +11105,10 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>BeginGroupIfFileExists</code>: <a href="#editfiles">editfiles</a>
 <li><code>BeginGroupIfFileIsNewer</code>: <a href="#editfiles">editfiles</a>
 <li><code>BeginGroupIfNotDefined</code>: <a href="#editfiles">editfiles</a>
-<li>Binary servers and links: <a href="#Single%20links">Single links</a>, <a href="#Link%20Children">Link Children</a>
+<li>Binary servers and links: <a href="#Link%20Children">Link Children</a>, <a href="#Single%20links">Single links</a>
 <li>Binary servers, defining: <a href="#binservers">binservers</a>
 <li>Binary servers, priority: <a href="#Single%20links">Single links</a>, <a href="#binservers">binservers</a>
-<li>Binding to one interface only: <a href="#BindToInterface">BindToInterface</a>
+<li>Binding to one interface only: <a href="#BindToInterface(cfagent)">BindToInterface(cfagent)</a>, <a href="#BindToInterface">BindToInterface</a>
 <li>Bootstrap file: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li>Broadcast address: <a href="#broadcast">broadcast</a>
 <li>Broadcasts to the cfengine service.: <a href="#cfrun">cfrun</a>
@@ -10675,13 +11120,14 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>cf.preconf bootstrap file: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>cf.site</code>: <a href="#cfservd.conf">cfservd.conf</a>, <a href="#cf.site">cf.site</a>
 <li><code>cfagent.conf</code>: <a href="#cfagent.conf">cfagent.conf</a>
-<li>CFALLCLASSES: <a href="#Special%20variables">Special variables</a>, <a href="#shellcommands">shellcommands</a>
+<li>CFALLCLASSES: <a href="#shellcommands">shellcommands</a>, <a href="#Special%20variables">Special variables</a>
 <li>cfenvd and key entropy: <a href="#Cfkey">Cfkey</a>
 <li>cfexecd: <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li>cfrc resource file: <a href="#cfrc%20resource%20file">cfrc resource file</a>
 <li>cfrun, limiting users on server: <a href="#AllowUsers">AllowUsers</a>
 <li><code>cfrunCommand</code> variable: <a href="#cfrunCommand">cfrunCommand</a>
 <li><code>cfservd.conf</code> file: <a href="#Cfservd.conf%20and%20cfrun%20reference">Cfservd.conf and cfrun reference</a>
+<li>cfservd.conf iteration: <a href="#Cfservd.conf%20and%20cfrun%20reference">Cfservd.conf and cfrun reference</a>
 <li>Changing cfengine port: <a href="#Firewalls%20and%20NATs">Firewalls and NATs</a>
 <li>Checking for installed packages: <a href="#packages">packages</a>
 <li>Checksum warning, turning off exclamation: <a href="#exclamation">exclamation</a>
@@ -10699,9 +11145,9 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Classes, adding and defining: <a href="#addclasses">addclasses</a>
 <li>Classes, compound: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Classes, defining and undefining: <a href="#Cfengine%20classes">Cfengine classes</a>
-<li>Classes, inbuilt functions: <a href="#Evaluated%20classes">Evaluated classes</a>
+<li>Classes, inbuilt functions: <a href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>
 <li>Classless IP addresses: <a href="#groups">groups</a>
-<li>Comparing file objects: <a href="#Evaluated%20classes">Evaluated classes</a>
+<li>Comparing file objects: <a href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>
 <li>Compound classes: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Contacting specific hosts with cfrun: <a href="#cfrun">cfrun</a>
 <li>control section: <a href="#control">control</a>
@@ -10766,7 +11212,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>File management: <a href="#files">files</a>
 <li>File sizes, specifying: <a href="#tidy">tidy</a>
 <li>File tree images: <a href="#copy">copy</a>
-<li>File types: <a href="#Evaluated%20classes">Evaluated classes</a>
+<li>File types: <a href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>
 <li>Files, breaking up into several: <a href="#import">import</a>
 <li>Files, checking permissions: <a href="#files">files</a>
 <li>Files, home wildcard: <a href="#home%20directive">home directive</a>
@@ -10776,9 +11222,11 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Files, setting owner: <a href="#files">files</a>
 <li>Files, syntax: <a href="#Syntax">Syntax</a>
 <li>Force copying: <a href="#copy">copy</a>
-<li>freespace=: <a href="#disks">disks</a>, <a href="#required">required</a>
-<li>Full disk warnings: <a href="#required">required</a>, <a href="#disks">disks</a>
+<li>freespace=: <a href="#required">required</a>, <a href="#disks">disks</a>
+<li>FriendStatus: <a href="#alerts">alerts</a>
+<li>Full disk warnings: <a href="#disks">disks</a>, <a href="#required">required</a>
 <li>Fully qualified names: <a href="#Cfengine%20classes">Cfengine classes</a>
+<li>Functions, in-built: <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
 <li>Group dependencies: <a href="#groups">groups</a>
 <li>Group field, editing: <a href="#editfiles">editfiles</a>
 <li><code>groups</code>: <a href="#groups">groups</a>
@@ -10786,7 +11234,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Groups, defining: <a href="#groups">groups</a>
 <li>Hard class name collision: <a href="#Special%20variables">Special variables</a>
 <li>Hardlinks: <a href="#Hard%20links">Hard links</a>
-<li>Hashes of files: <a href="#Syntax">Syntax</a>, <a href="#ChecksumDatabase">ChecksumDatabase</a>
+<li>Hashes of files: <a href="#ChecksumDatabase">ChecksumDatabase</a>, <a href="#Syntax">Syntax</a>
 <li>home directive: <a href="#home%20directive">home directive</a>
 <li>Home path: <a href="#homepattern">homepattern</a>
 <li>Home servers, defining: <a href="#homeservers">homeservers</a>
@@ -10798,6 +11246,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>ignore command: <a href="#ignore">ignore</a>
 <li>Import files, variables in: <a href="#import">import</a>
 <li>Importing files: <a href="#import">import</a>
+<li>In-built functions: <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
 <li>Incrementing line pointer in editfiles: <a href="#editfiles">editfiles</a>
 <li>Interface name, redefining by class: <a href="#interfacename">interfacename</a>
 <li>InterfaceName: <a href="#interfacename">interfacename</a>
@@ -10805,21 +11254,22 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Internet address: <a href="#netmask">netmask</a>
 <li>IP address: <a href="#netmask">netmask</a>
 <li>Iterating over lists in shellcommands: <a href="#shellcommands">shellcommands</a>
-<li>Iteration over lists: <a href="#split">split</a>
+<li>Iteration in server rules: <a href="#Cfservd.conf%20and%20cfrun%20reference">Cfservd.conf and cfrun reference</a>
+<li>Iteration over lists: <a href="#Iteration%20over%20lists">Iteration over lists</a>, <a href="#split">split</a>
 <li>Key entropy and cfenvd: <a href="#Cfkey">Cfkey</a>
 <li>Key security of users: <a href="#AllowUsers">AllowUsers</a>
 <li>Key, ACL: <a href="#DFS%20ACLs">DFS ACLs</a>
 <li>Kilobyte, filesize unit: <a href="#tidy">tidy</a>
-<li>Linkchildren: <a href="#Files%20linkchildren">Files linkchildren</a>, <a href="#Link%20Children">Link Children</a>
+<li>Linkchildren: <a href="#Link%20Children">Link Children</a>, <a href="#Files%20linkchildren">Files linkchildren</a>
 <li>Links and binary servers: <a href="#Link%20Children">Link Children</a>, <a href="#Single%20links">Single links</a>
 <li>Links, absolute: <a href="#Single%20links">Single links</a>
-<li>Links, deleting stale: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
+<li>Links, deleting stale: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li>Links, forcing for non-existent files: <a href="#Single%20links">Single links</a>
 <li>Links, making: <a href="#links">links</a>
 <li>Links, multiple: <a href="#Multiple%20Links">Multiple Links</a>
 <li>Links, removing dead: <a href="#Single%20links">Single links</a>
 <li>Links, single: <a href="#Single%20links">Single links</a>
-<li>Links, traversing in searches: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
+<li>Links, traversing in searches: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li>Local disk space, make use of: <a href="#Link%20Children">Link Children</a>
 <li>Log files, controlling the size of: <a href="#disable">disable</a>
 <li>Logical NOT: <a href="#Cfengine%20classes">Cfengine classes</a>
@@ -10838,12 +11288,13 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Miscellaneous mount operations: <a href="#miscmounts">miscmounts</a>
 <li>Module directory: <a href="#moduledirectory">moduledirectory</a>
 <li>Modules, user defined: <a href="#actionsequence">actionsequence</a>
+<li>Monitoring other hosts: <a href="#alerts">alerts</a>
 <li>Mount paths: <a href="#mountpattern">mountpattern</a>
-<li>Mountable resources, defining: <a href="#mountables">mountables</a>, <a href="#homeservers">homeservers</a>
+<li>Mountable resources, defining: <a href="#homeservers">homeservers</a>, <a href="#mountables">mountables</a>
 <li>Mounted filesystems: <a href="#copy">copy</a>
 <li>Mounting filesystems.: <a href="#miscmounts">miscmounts</a>
 <li>mtime tidies: <a href="#tidy">tidy</a>
-<li>Multihomed hosts: <a href="#BindToInterface">BindToInterface</a>
+<li>Multihomed hosts: <a href="#BindToInterface(cfagent)">BindToInterface(cfagent)</a>, <a href="#BindToInterface">BindToInterface</a>
 <li>Multiple links: <a href="#Multiple%20Links">Multiple Links</a>
 <li>Name collision: <a href="#Special%20variables">Special variables</a>
 <li>NAT: <a href="#Firewalls%20and%20NATs">Firewalls and NATs</a>
@@ -10851,8 +11302,8 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Negating entries from netgroups: <a href="#groups">groups</a>
 <li>Netgroups: <a href="#groups">groups</a>
 <li>Netgroups, negating entries: <a href="#groups">groups</a>
-<li>netmask: <a href="#netmask">netmask</a>
 <li>Netmask: <a href="#netmask">netmask</a>
+<li>netmask: <a href="#netmask">netmask</a>
 <li>Network address translator: <a href="#Firewalls%20and%20NATs">Firewalls and NATs</a>
 <li>Network Address Translators: <a href="#SkipVerify">SkipVerify</a>
 <li>Network interfaces, several: <a href="#interfaces">interfaces</a>
@@ -10862,6 +11313,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>NFS mount model and automounter: <a href="#editfiles">editfiles</a>
 <li>nfstype: <a href="#nfstype">nfstype</a>
 <li>NIS, netgroup support: <a href="#groups">groups</a>
+<li>noabspath: <a href="#shellcommands">shellcommands</a>
 <li>NOT operator: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>NT, ACL: <a href="#NT%20ACLs">NT ACLs</a>
 <li>ones: <a href="#broadcast">broadcast</a>
@@ -10875,6 +11327,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Paths, making: <a href="#directories">directories</a>
 <li>Pattern matching in file sweeps: <a href="#Syntax">Syntax</a>
 <li>pattern= and filtering: <a href="#tidy">tidy</a>
+<li>Peer watching (FriendStatus): <a href="#alerts">alerts</a>
 <li>Percentage disk space: <a href="#required">required</a>
 <li>Permissions, directories: <a href="#Directory%20permissions">Directory permissions</a>
 <li>Port, connecting to different: <a href="#Firewalls%20and%20NATs">Firewalls and NATs</a>
@@ -10889,8 +11342,14 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Public keys: <a href="#copy">copy</a>
 <li>Purge, excluding files: <a href="#copy">copy</a>
 <li>Quoted strings: <a href="#editfiles">editfiles</a>
+<li>Random numbers: <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
 <li>RandomInt() function: <a href="#control">control</a>
+<li>Read array from file: <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
+<li>Read array from table: <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
+<li>ReadArray: <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
+<li>ReadFile: <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
 <li>ReadFile() function: <a href="#control">control</a>
+<li>ReadTable: <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
 <li>Recursion in files: <a href="#Recursion">Recursion</a>
 <li>Redefinition of macros: <a href="#AllowRedefinitionOf">AllowRedefinitionOf</a>
 <li>Relative links: <a href="#Single%20links">Single links</a>
@@ -10911,6 +11370,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>RPM Database Queries: <a href="#packages">packages</a>
 <li>Running cfengine from a single master host: <a href="#cfrun">cfrun</a>
 <li>Running <code>cfrun</code>: <a href="#cfrun">cfrun</a>
+<li>scanarrivals=: <a href="#disks">disks</a>
 <li>scheduling: <a href="#schedule">schedule</a>
 <li>Scripts and class information: <a href="#shellcommands">shellcommands</a>
 <li>Scripts, passing classes to: <a href="#Special%20variables">Special variables</a>
@@ -10938,7 +11398,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>smtpserver: <a href="#Smtpserver">Smtpserver</a>
 <li>Specifying file sizes: <a href="#tidy">tidy</a>
 <li>SplayTime in cfrun: <a href="#cfrun">cfrun</a>
-<li>split: <a href="#split">split</a>
+<li>split: <a href="#Iteration%20over%20lists">Iteration over lists</a>, <a href="#split">split</a>
 <li>SplitOn: <a href="#editfiles">editfiles</a>
 <li>SpoolDirectories: <a href="#spooldirectories">spooldirectories</a>
 <li>Subnet mask: <a href="#netmask">netmask</a>
@@ -10950,7 +11410,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Symbolic links, relative: <a href="#Single%20links">Single links</a>
 <li>sysadm: <a href="#sysadm">sysadm</a>
 <li>SysLog(): <a href="#alerts">alerts</a>
-<li>Testing files: <a href="#Evaluated%20classes">Evaluated classes</a>
+<li>Testing files: <a href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>
 <li>Tidy by ctime, mtime, atime: <a href="#tidy">tidy</a>
 <li>Tidy log files for users: <a href="#LogTidyHomeFiles">LogTidyHomeFiles</a>
 <li>Tidying empty files: <a href="#tidy">tidy</a>
@@ -10965,17 +11425,18 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Truncating log files: <a href="#disable">disable</a>
 <li>Trusted hosts: <a href="#copy">copy</a>
 <li><code>TrustKeysFrom</code> variable: <a href="#TrustKeysFrom">TrustKeysFrom</a>
-<li>umask: <a href="#processes">processes</a>, <a href="#editfiles">editfiles</a>, <a href="#shellcommands">shellcommands</a>
+<li>umask: <a href="#editfiles">editfiles</a>, <a href="#processes">processes</a>, <a href="#shellcommands">shellcommands</a>
 <li>underscoreclasses: <a href="#Special%20variables">Special variables</a>
 <li>Unmounting filesystems: <a href="#unmount">unmount</a>
 <li>UnsetState(): <a href="#alerts">alerts</a>
 <li><code>update.conf</code>: <a href="#Work%20directory">Work directory</a>
 <li>Variables in import files: <a href="#import">import</a>
+<li>Variables, setting to result of a shell command: <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
 <li>Warning about full disks: <a href="#disks">disks</a>, <a href="#required">required</a>
 <li>Wildcard home: <a href="#Syntax">Syntax</a>
 <li>Wildcards in homepattern: <a href="#homepattern">homepattern</a>
 <li>WWW server logs: <a href="#disable">disable</a>
-<li>xdev: <a href="#copy">copy</a>, <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
+<li>xdev: <a href="#Syntax">Syntax</a>, <a href="#copy">copy</a>, <a href="#tidy">tidy</a>
 <li>xdev (File system boundaries): <a href="#Recursion">Recursion</a>
 <li>zeros: <a href="#broadcast">broadcast</a>
    </ul>
@@ -10990,6 +11451,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <h2 class="unnumbered">FAQ Index</h2>
 
 <ul class="index-mb" compact>
+<li>Absolute path and shellcommands: <a href="#shellcommands">shellcommands</a>
 <li>Brackets (parentheses) in classes.: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Can't stat error when remote copying: <a href="#DenyBadClocks">DenyBadClocks</a>
 <li>Changing repository name conventions: <a href="#repchar">repchar</a>
@@ -11003,10 +11465,11 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>How can I avoid hanging shellcommands?: <a href="#shellcommands">shellcommands</a>
 <li>How can I set a timeout for a shell command?: <a href="#shellcommands">shellcommands</a>
 <li>How to create files while editing: <a href="#editfiles">editfiles</a>
-<li>Iterating over lists: <a href="#split">split</a>
+<li>Iterating over lists: <a href="#split">split</a>, <a href="#Iteration%20over%20lists">Iteration over lists</a>
 <li>MD5 checksums take a long time to compute.: <a href="#ChecksumDatabase%20in%20cfservd">ChecksumDatabase in cfservd</a>
 <li>Parentheses in classes.: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Remote copy problems, can't stat: <a href="#copy">copy</a>
+<li>Shellcommands must start with absolute path: <a href="#shellcommands">shellcommands</a>
 <li>Too many open files error: <a href="#Too%20many%20open%20files">Too many open files</a>
    </ul>
 <a name="Contents">
@@ -11021,7 +11484,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#Installation">Installation</a>
 <li><a href="#Work%20directory">Work directory</a>
 <li><a href="#Hard%20classes">Cfengine hard classes</a>
-<li><a href="#Evaluated%20classes">Evaluated classes</a>
+<li><a href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>
 <li><a href="#Filenames%20and%20paths">Filenames and paths</a>
 </li></ul>
 <li><a name="toc_Cfkey" href="#Cfkey">Cfkey reference</a>
@@ -11032,7 +11495,12 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#The%20file%20cfagent.conf">The file cfagent.conf</a>
 <li><a href="#Cfagent%20Runtime%20Options">Cfagent runtime options</a>
 </li></ul>
+<li><a href="#Variable%20expansion%20and%20contexts">Variable expansion and contexts</a>
+<ul>
+<li><a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
 <li><a href="#Special%20variables">Special variables</a>
+<li><a href="#Iteration%20over%20lists">Iteration over lists</a>
+</li></ul>
 <li><a href="#Cfengine%20classes">Cfengine classes</a>
 <li><a href="#acl">acl</a>
 <ul>
@@ -11058,6 +11526,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#AutoDefine">AutoDefine</a>
 <li><a href="#BinaryPaddingChar">BinaryPaddingChar</a>
 <li><a href="#ChecksumDatabase">ChecksumDatabase</a>
+<li><a href="#BindToInterface(cfagent)">BindToInterface</a>
 <li><a href="#ChecksumPurge">ChecksumPurge</a>
 <li><a href="#ChecksumUpdates">ChecksumUpdates</a>
 <li><a href="#childlibpath">ChildLibPath</a>
@@ -11159,6 +11628,10 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 </li></ul>
 <li><a href="#mailserver">mailserver</a>
 <li><a href="#methods">methods</a>
+<ul>
+<li><a href="#localhost%20examples">Localhost examples</a>
+<li><a href="#remotehost%20examples">Remote host examples</a>
+</li></ul>
 <li><a href="#miscmounts">miscmounts</a>
 <li><a href="#mountables">mountables</a>
 <li><a href="#processes">processes</a>

@@ -32,10 +32,7 @@
 /* Modestring toolkit                                          */
 /***************************************************************/
 
-void ParseModeString(modestring,plusmask,minusmask)
-
-char *modestring;
-mode_t *plusmask, *minusmask;
+void ParseModeString(char *modestring,mode_t *plusmask,mode_t *minusmask)
 
 { char *sp;
  int affected = 0, value = 0, gotaction;
@@ -61,22 +58,22 @@ for (sp = modestring; true ; *sp++)
       {
       case 'a': CheckModeState(who,state,symbolic,sort,*sp);
                 affected |= 07777;
-		sort = symbolic;
+                sort = symbolic;
                 break;
 
       case 'u': CheckModeState(who,state,symbolic,sort,*sp);
                 affected |= 04700;
-		sort = symbolic;
+                sort = symbolic;
                 break;
 
       case 'g': CheckModeState(who,state,symbolic,sort,*sp);
                 affected |= 02070;
-		sort = symbolic;
+                sort = symbolic;
                 break;
 
       case 'o': CheckModeState(who,state,symbolic,sort,*sp);
                 affected |= 00007;
-		sort = symbolic;
+                sort = symbolic;
                 break;
 
       case '+':
@@ -86,36 +83,36 @@ for (sp = modestring; true ; *sp++)
                    yyerror("Too many +-= in mode string");
                    }
 
-      		CheckModeState(who,state,symbolic,sort,*sp);
+        CheckModeState(who,state,symbolic,sort,*sp);
                 action = *sp;
                 state = which;
                 gotaction = true;
-		sort = unknown;
+                sort = unknown;
                 break;
 
       case 'r': CheckModeState(which,state,symbolic,sort,*sp);
                 value |= 0444 & affected;
-		sort = symbolic;
+                sort = symbolic;
                 break;
 
       case 'w': CheckModeState(which,state,symbolic,sort,*sp);
                 value |= 0222 & affected;
-		sort = symbolic;
+                sort = symbolic;
                 break;
 
       case 'x': CheckModeState(which,state,symbolic,sort,*sp);
                 value |= 0111 & affected;
-		sort = symbolic;
+                sort = symbolic;
                 break;
 
       case 's': CheckModeState(which,state,symbolic,sort,*sp);
                 value |= 06000 & affected;
-		sort = symbolic;
+                sort = symbolic;
                 break;
 
       case 't': CheckModeState(which,state,symbolic,sort,*sp);
                 value |= 01000;
-		sort = symbolic;
+                sort = symbolic;
                 break;
 
       case '0':
@@ -126,72 +123,68 @@ for (sp = modestring; true ; *sp++)
       case '5':
       case '6':
       case '7': CheckModeState(which,state,numeric,sort,*sp);
-		sort = numeric;
-		gotaction = true;
-		state = which;
-	        affected = 07777; /* TODO: Hard-coded; see below */
+                sort = numeric;
+                gotaction = true;
+                state = which;
+                affected = 07777; /* TODO: Hard-coded; see below */
                 sscanf(sp,"%o",&value);
-		if (value > 07777) /* TODO: Hardcoded !
-				      Is this correct for all sorts of Unix ?
-				      What about NT ?
-				      Any (POSIX)-constants ??
-				   */
+                if (value > 07777) /* TODO: Hardcoded !
+                                      Is this correct for all sorts of Unix ?
+                                      What about NT ?
+                                      Any (POSIX)-constants ??
+                                   */
                    {
-		   yyerror("Mode-Value too big !\n");
+                   yyerror("Mode-Value too big !\n");
                    }
                 while (isdigit((int)*sp) && (*sp != '\0'))
-		   {
+                   {
                    sp++;
                    }
                 sp--;
                 break;
-
+                
       case ',':
-                SetMask(action,value,affected,plusmask,minusmask);
-		if (found_sort != unknown && found_sort != sort)
-		   {
-		   Warning("Symbolic and numeric form for modes mixed");
-		   }
-		found_sort = sort;
-		sort = unknown;
-                action = '=';
-                affected = 0;
-                value = 0;
-                gotaction = false;
-                state = who;
-                break;
-
+          SetMask(action,value,affected,plusmask,minusmask);
+          if (found_sort != unknown && found_sort != sort)
+             {
+             Warning("Symbolic and numeric form for modes mixed");
+             }
+          found_sort = sort;
+          sort = unknown;
+          action = '=';
+          affected = 0;
+          value = 0;
+          gotaction = false;
+          state = who;
+          break;
+          
       case '\0':
-	        if (state == who || value == 0)
-		   {
-		   if (strcmp(modestring,"0000") != 0 && strcmp(modestring,"000") != 0)
-		      {
-		      Warning("mode string is incomplete");
-		      }
-                   }
-		
-                SetMask(action,value,affected,plusmask,minusmask);
-		if (found_sort != unknown && found_sort != sort)
-		   {
-		   Warning("Symbolic and numeric form for modes mixed");
-		   }
-                Debug1("[PLUS=%o][MINUS=%o]\n",*plusmask,*minusmask);
-                return;
-
+          if (state == who || value == 0)
+             {
+             if (strcmp(modestring,"0000") != 0 && strcmp(modestring,"000") != 0)
+                {
+                Warning("mode string is incomplete");
+                }
+             }
+          
+          SetMask(action,value,affected,plusmask,minusmask);
+          if (found_sort != unknown && found_sort != sort)
+             {
+             Warning("Symbolic and numeric form for modes mixed");
+             }
+          Debug1("[PLUS=%o][MINUS=%o]\n",*plusmask,*minusmask);
+          return;
+          
       default: snprintf(OUTPUT,bufsize,"Invalid mode string (%s)",modestring);  
- 	       yyerror (OUTPUT);
-               break;
+          yyerror (OUTPUT);
+          break;
       }
    }
 }
 
 /*********************************************************/
 
-void CheckModeState(stateA,stateB,sortA,sortB,ch)
-
-enum modestate stateA, stateB;
-enum modesort sortA, sortB;
-char ch;
+void CheckModeState(enum modestate stateA,enum modestate stateB,enum modesort sortA,enum modesort sortB,char ch)
 
 {
 if ((stateA != wild) && (stateB != wild) && (stateA != stateB))
@@ -208,11 +201,7 @@ if ((sortA != unknown) && (sortB != unknown) && (sortA != sortB))
 
 /*********************************************************/
 
-void SetMask(action,value,affected,p,m)
-
-char action;
-int value, affected;
-mode_t *p,*m;
+void SetMask(char action,int value,int affected,mode_t *p,mode_t *m)
 
 {
 Debug1("SetMask(%c%o,%o)\n",action,value,affected);

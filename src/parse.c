@@ -46,33 +46,39 @@ extern FILE *yyin;
 
 /*******************************************************************/
 
-int ParseInputFile(file)
-
-char *file;
+int ParseInputFile(char *file)
 
 { char filename[bufsize], *sp;
   struct Item *ptr;
   struct stat s;
 
 NewParser();
-PARSING = true; 
-sp = FindInputFile(filename,file);
+PARSING = true;
 
-Debug("(BEGIN PARSING %s)\n",file); 
-Verbose("Looking for an input file %s\n",filename);
-
- 
-if (stat(filename,&s) == -1)
+if (strcmp(file,"-") == 0)
    {
-   Verbose("(No file %s)\n",file);
-   DeleteParser();
-   Debug("(END OF PARSING %s)\n",file);
-   Verbose("Finished with %s\n",file);
-   PARSING = false;
-   return false;
+   Debug("(BEGIN PARSING STDIN)\n");
+   ParseStdin();
    }
- 
-ParseFile(filename,sp);
+else
+   {
+   sp = FindInputFile(filename,file);
+   
+   Debug("(BEGIN PARSING %s)\n",filename); 
+   Verbose("Looking for an input file %s\n",filename);
+   
+   if (stat(filename,&s) == -1)
+      {
+      Verbose("(No file %s)\n",filename);
+      Debug("(END OF PARSING %s)\n",filename);
+      Verbose("Finished with %s\n",filename);
+      PARSING = false;
+      DeleteParser();
+      return false;
+      }
+   
+   ParseFile(filename,sp);
+   }
 
 for (ptr = VIMPORT; ptr != NULL; ptr=ptr->next)
    {
@@ -89,11 +95,16 @@ for (ptr = VIMPORT; ptr != NULL; ptr=ptr->next)
    }
 
  
+if (strcmp(file,"update.conf") == 0)
+   {
+   GetRemoteMethods();
+   }
+  
 PARSING = false;
 DeleteParser();
 
 Debug("(END OF PARSING %s)\n",file);
-Verbose("Finished with %s\n",file); 
+Verbose("Finished with %s\n\n",file); 
 return true; 
 }
 
@@ -103,6 +114,8 @@ void NewParser()
 
 {
  Debug("New Parser Object::");
+ FINDERTYPE = (char *) malloc(bufsize);
+ strncpy(FINDERTYPE, "*", bufsize); /* "*" = no findertype set */
  VUIDNAME = (char *) malloc(bufsize);
  VGIDNAME = (char *) malloc(bufsize);
  FILTERNAME = (char *) malloc(bufsize);
@@ -143,6 +156,7 @@ void DeleteParser()
 
 { Debug("Delete Parser Object::");
 
+free(FINDERTYPE);
 free(VUIDNAME);
 free(VGIDNAME);
 free(FILTERNAME);
@@ -171,14 +185,11 @@ free(STRATEGYDATA);
 
 /*******************************************************************/
 
-int RemoveEscapeSequences(from,to)
-
-char *from,*to;
+int RemoveEscapeSequences(char *from,char *to)
 
 { char *sp,*cp;
   char start = *from;
   int len = strlen(from);
-
 
 if (len == 0)
    {
@@ -203,20 +214,20 @@ if (len == 0)
     if (*sp == '\\')
        {
        switch (*(sp+1))
-	  {
-	  case '\n':
-                 LINENUMBER++;
-                 sp+=2;
-	      break;
-	  case '\\':
-	  case '\"':
-	  case '\'': sp++;
-	      break;
-	  }
+          {
+          case '\n':
+              LINENUMBER++;
+              sp+=2;
+              break;
+          case '\\':
+          case '\"':
+          case '\'': sp++;
+              break;
+          }
        }
     *cp = *sp;    
     }
-
+ 
  yyerror("Runaway string");
  *(cp) = '\0';
  return 0;
@@ -224,10 +235,7 @@ if (len == 0)
 
 /*******************************************************************/
 
-
-void SetAction (action)            /* Change state to major action */
-
-enum actions action;
+void SetAction (enum actions action) 
 
 {
 InstallPending(ACTION);   /* Flush any existing actions */
@@ -248,7 +256,7 @@ switch (ACTION)
    case disable:
    case rename_disable:
    case filters:
-   case strategies:		   
+   case strategies:     
    case image:
    case links:
    case required:
@@ -268,74 +276,70 @@ strcpy(CLASSBUFF,CF_ANYCLASS);    /* default class */
 
 /*******************************************************************/
 
-void HandleLValue(id)     /* Record name of a variable assignment */
-
-char *id;
+void HandleLValue(char *id)     /* Record name of a variable assignment */
 
 {
 Debug1("HandleLVALUE(%s) in action %s\n",id,ACTIONTEXT[ACTION]);
 
-switch(ACTION)   /* Check for IP names in cfd */
-   {
-   case control:
-
-       if ((CONTROLVAR = ScanVariable(id)) != nonexistentvar)
-	  {
-	  strcpy(CURRENTITEM,id);
-	  return;
-	  }
-       else
-	  {
-	  if (IsDefinedClass(CLASSBUFF))
-	     {
-	     RecordMacroId(id);
-	     }
-	  return;
-	  }
-       break;
-
-   case groups:
-          { int count = 1;
-	  char *cid = id;
-	  
-	  while (*cid != '\0')
-	     {
-	     if (*cid++ == '.')
-		{
-		count++;
-		}
-	     }
-	  
-	  if (strcmp(id,CF_ANYCLASS) == 0)
-	     {
-	     yyerror("Reserved class <any>");
-	     }
-	  
-	  if (count > 1)                              /* compound class */
-	     {
-	     yyerror("Group with compound identifier");
-	     FatalError("Dots [.] not allowed in group identifiers");
-	     }
-	  
-	  if (IsHardClass(id))
-	     {
-	     yyerror("Reserved class name (choose a different name)");
-	     }
-	  
-	  strcpy(GROUPBUFF,id);
-	  }
-
-	  break;
-	  
-   }
+ switch(ACTION)   /* Check for IP names in cfd */
+    {
+    case control:
+        
+        if ((CONTROLVAR = ScanVariable(id)) != nonexistentvar)
+           {
+           strcpy(CURRENTITEM,id);
+           return;
+           }
+        else
+           {
+           if (IsDefinedClass(CLASSBUFF))
+              {
+              RecordMacroId(id);
+              }
+           return;
+           }
+        break;
+        
+    case groups:
+        { int count = 1;
+        char *cid = id;
+        
+        while (*cid != '\0')
+           {
+           if (*cid++ == '.')
+              {
+              count++;
+              }
+           }
+        
+        if (strcmp(id,CF_ANYCLASS) == 0)
+           {
+           yyerror("Reserved class <any>");
+           }
+        
+        if (count > 1)                              /* compound class */
+           {
+           yyerror("Group with compound identifier");
+           FatalError("Dots [.] not allowed in group identifiers");
+           }
+        
+        if (IsHardClass(id))
+           {
+           yyerror("Reserved class name (choose a different name)");
+           }
+        
+        strcpy(GROUPBUFF,id);
+        }
+        
+    break;
+    
+    }
 }
 
 
 /*******************************************************************/
 
-void HandleBraceObjectID(id)   /* Record identifier for braced object */
-
-char *id;
+void HandleBraceObjectID(char *id)   /* Record identifier for braced object */
 
 {
 Debug1("HandleBraceObjectID(%s) in action %s\n",id,ACTIONTEXT[ACTION]);
@@ -343,55 +347,53 @@ Debug1("HandleBraceObjectID(%s) in action %s\n",id,ACTIONTEXT[ACTION]);
 switch (ACTION)
    {
    case acls:
-		 strcpy(CURRENTOBJECT,id);
-                 InstallACL(id,CLASSBUFF);
-		 break;
-
+       strcpy(CURRENTOBJECT,id);
+       InstallACL(id,CLASSBUFF);
+       break;
+       
    case strategies:
-                 if (strlen(STRATEGYNAME) == 0)
-		    {
-		    strcpy(STRATEGYNAME,id);
-		    InstallStrategy(id,CLASSBUFF);
-		    }
-		 else
-		    {
-		    yyerror("Multiple identifiers or forgotten quotes in strategy");
-		    }
-		 break;
-
+       if (strlen(STRATEGYNAME) == 0)
+          {
+          strcpy(STRATEGYNAME,id);
+          InstallStrategy(id,CLASSBUFF);
+          }
+       else
+          {
+          yyerror("Multiple identifiers or forgotten quotes in strategy");
+          }
+       break;
+       
    case editfiles:
-		 if (strlen(CURRENTOBJECT) == 0)
-		    {
-		    strcpy(CURRENTOBJECT,id);
-		    EDITGROUPLEVEL = 0;
-		    FOREACHLEVEL = 0;
-		    SEARCHREPLACELEVEL = 0;
-		    }
-		 else
-		    {
-                    yyerror("Multiple filenames in editfiles");
-		    }
-                 break; 
-
+       if (strlen(CURRENTOBJECT) == 0)
+          {
+          strcpy(CURRENTOBJECT,id);
+          EDITGROUPLEVEL = 0;
+          FOREACHLEVEL = 0;
+          SEARCHREPLACELEVEL = 0;
+          }
+       else
+          {
+          yyerror("Multiple filenames in editfiles");
+          }
+       break; 
+       
    case filters:
-                 if (strlen(FILTERNAME)==0)
-		    {
-		    strcpy(FILTERNAME,id);
-		    InstallFilter(id);
-		    }
-		 else
-		    {
-		    yyerror("Multiple identifiers in filter");
-		    }
-		 break;
+       if (strlen(FILTERNAME)==0)
+          {
+          strcpy(FILTERNAME,id);
+          InstallFilter(id);
+          }
+       else
+          {
+          yyerror("Multiple identifiers in filter");
+          }
+       break;
    }
 }
 
 /*******************************************************************/
 
-void HandleBraceObjectClassifier(id)      /* Record LHS item in braced object */
-
-char *id;
+void HandleBraceObjectClassifier(char *id)      /* Record LHS item in braced object */
 
 {
 Debug1("HandleClassifier(%s) in action %s\n",id,ACTIONTEXT[ACTION]);
@@ -405,7 +407,7 @@ switch (ACTION)
    case filters:
    case strategies:
                  strcpy(CURRENTITEM,id);
-		 break;
+   break;
 
    case editfiles:
                  if (strcmp(id,"EndGroup") == 0 ||
@@ -418,16 +420,14 @@ switch (ACTION)
                         HandleEdit(CURRENTOBJECT,id,NULL);
                         }
 
-		 strcpy(CURRENTITEM,id);
+   strcpy(CURRENTITEM,id);
        break;
    }
 }
 
 /*******************************************************************/
 
-void HandleClass (id)
-
-char *id;
+void HandleClass (char *id)
 
 { int members;
  char *sp;
@@ -440,9 +440,8 @@ char *id;
       {
       case '-':
       case '*':
-      case '&':
-	  snprintf(OUTPUT,bufsize,"Illegal character (%c) in class %s",*sp,id);
-	  yyerror(OUTPUT);
+   snprintf(OUTPUT,bufsize,"Illegal character (%c) in class %s",*sp,id);
+   yyerror(OUTPUT);
       }
    }
  
@@ -462,148 +461,142 @@ strcpy(CLASSBUFF,id);
 
 /*******************************************************************/
 
-void HandleQuotedString(qstring)
-
-char *qstring;
+void HandleQuotedString(char *qstring)
 
 {
 Debug1("HandleQuotedString %s\n",qstring);
  
 switch (ACTION)
     {
-    case editfiles:	
+    case editfiles: 
         HandleEdit(CURRENTOBJECT,CURRENTITEM,qstring);
-	break;
-	
+        break;
+        
     case filters:
         strcpy(FILTERDATA,qstring);
         ACTIONPENDING = true;
-	InstallPending(ACTION); 
+        InstallPending(ACTION); 
         break;
-
+        
     case strategies:
         strcpy(STRATEGYDATA,qstring);
         ACTIONPENDING = true;
-	InstallPending(ACTION); 
+        InstallPending(ACTION); 
         break;
-
+        
     case processes: /* Handle anomalous syntax of restart/setoptonstring */
-
-	
-	if (strcmp(CURRENTOBJECT,"SetOptionString") == 0)
-	   {	   
-	   if (HAVE_RESTART)
-	      {
-	      yyerror("Processes syntax error");
-	      }
-	   strcpy(RESTART,qstring);
-	   ACTIONPENDING = true;
-	   InstallPending(ACTION);
-
-	   return;
-	   }
-		
+        
+        
+        if (strcmp(CURRENTOBJECT,"SetOptionString") == 0)
+           {    
+           if (HAVE_RESTART)
+              {
+              yyerror("Processes syntax error");
+              }
+           strcpy(RESTART,qstring);
+           ACTIONPENDING = true;
+           InstallPending(ACTION);
+           
+           return;
+           }
+        
         if (strlen(RESTART) > 0 || (!HAVE_RESTART && strlen(EXPR) > 0)) /* Any string must be new rule */
-	   {
+           {
            if (!ACTIONPENDING)
-	      {
-	      yyerror("Insufficient or incomplete processes statement");
-	      }
-	   InstallPending(ACTION);
-	   InitializeAction();
-	   }
-
-	if (EXPR[0] == '\0')
-	   {
-	   if (HAVE_RESTART)
-	      {
-	      yyerror("Missing process search expression");
-	      }
-	   Debug1("Installing expression %s\n",qstring);
-	   strcpy(EXPR,qstring);
-	   HAVE_RESTART = false;
-	   }
-	else if (HAVE_RESTART)
-	   {
-	   Debug1("Installing restart expression\n");
-	   strncpy(RESTART,qstring,bufsize-1);
-	   ACTIONPENDING = true;
-	   }	
-	break;
-
+              {
+              yyerror("Insufficient or incomplete processes statement");
+              }
+           InstallPending(ACTION);
+           InitializeAction();
+           }
+        
+        if (EXPR[0] == '\0')
+           {
+           if (HAVE_RESTART)
+              {
+              yyerror("Missing process search expression");
+              }
+           Debug1("Installing expression %s\n",qstring);
+           strcpy(EXPR,qstring);
+           HAVE_RESTART = false;
+           }
+        else if (HAVE_RESTART)
+           {
+           Debug1("Installing restart expression\n");
+           strncpy(RESTART,qstring,bufsize-1);
+           ACTIONPENDING = true;
+           } 
+        break;
+        
     case interfaces:
-	strncpy(VIFNAME,qstring,15);
-	break;
-	
+        strncpy(VIFNAME,qstring,15);
+        break;
+        
     default:
-	InstallPending(ACTION); 
-	strncpy(CURRENTOBJECT,qstring,bufsize-1);
-	ACTIONPENDING = true;
-	return;
+        InstallPending(ACTION); 
+        strncpy(CURRENTOBJECT,qstring,bufsize-1);
+        ACTIONPENDING = true;
+        return;
     } 
 }
 
 /*******************************************************************/
 
-void HandleGroupRValue(rval)        /* Assignment in groups/classes */
-
-char *rval;
+void HandleGroupRValue(char *rval)        /* Assignment in groups/classes */
 
 { 
-Debug1("\nHandleGroupRvalue(%s)\n",rval);
-
-if (strcmp(rval,"+") == 0 || strcmp(rval,"-") == 0)
-   {
-   yyerror("+/- not bound to identifier");
-   }
-
-if (rval[0] == '+')                               /* Lookup in NIS */
-   {
-   rval++;
-
-   if (rval[0] == '@')                               /* Irrelevant */
-      {
-      rval++;
-      }
-
-   Debug1("Netgroup rval, lookup NIS group (%s)\n",rval);
-   InstallGroupRValue(rval,netgroup);
-   }
-else if ((rval[0] == '-') && (ACTION != processes))
-   {
-   rval++;
-
-   if (rval[0] == '@')                               /* Irrelevant */
-      {
-      rval++;
-      InstallGroupRValue(rval,groupdeletion);
-      }
-   else
-      {
-      InstallGroupRValue(rval,deletion);
-      }
-   }
-else if (rval[0] == '\"' || rval[0] == '\'' || rval[0] == '`') 
-   {
-   *(rval+strlen(rval)-1) = '\0';
-   
-   InstallGroupRValue(rval,classscript);
-   }	
-else if (rval[0] == '/')
-   {	
-   InstallGroupRValue(rval,classscript);
-   }			
-else
-   {
-   InstallGroupRValue(rval,simple);
-   }
-}
+ Debug1("\nHandleGroupRvalue(%s)\n",rval);
  
+ if (strcmp(rval,"+") == 0 || strcmp(rval,"-") == 0)
+    {
+    yyerror("+/- not bound to identifier");
+    }
+ 
+ if (rval[0] == '+')                               /* Lookup in NIS */
+    {
+    rval++;
+    
+    if (rval[0] == '@')                               /* Irrelevant */
+       {
+       rval++;
+       }
+    
+    Debug1("Netgroup rval, lookup NIS group (%s)\n",rval);
+    InstallGroupRValue(rval,netgroup);
+    }
+ else if ((rval[0] == '-') && (ACTION != processes))
+    {
+    rval++;
+    
+    if (rval[0] == '@')                               /* Irrelevant */
+       {
+       rval++;
+       InstallGroupRValue(rval,groupdeletion);
+       }
+    else
+       {
+       InstallGroupRValue(rval,deletion);
+       }
+    }
+ else if (rval[0] == '\"' || rval[0] == '\'' || rval[0] == '`') 
+    {
+    *(rval+strlen(rval)-1) = '\0';
+    
+    InstallGroupRValue(rval,classscript);
+    } 
+ else if (rval[0] == '/')
+    { 
+    InstallGroupRValue(rval,classscript);
+    }   
+ else
+    {
+    InstallGroupRValue(rval,simple);
+    }
+}
+
 /***************************************************************************/
 
-void HandleFunctionObject(fn) /* Function in main body */
-
-char *fn;
+void HandleFunctionObject(char *fn) /* Function in main body */
 
 { char local[bufsize];
 
@@ -624,31 +617,40 @@ if (IsBuiltinFunction(fn))
    switch (ACTION)
       {
       case groups:
-	  InstallGroupRValue(local,simple);
-	  break;
+          InstallGroupRValue(local,simple);
+          break;
       case control:
-	  InstallControlRValue(CURRENTITEM,local);
-	  break;
+          
+          if (strncmp("CF_ASSOCIATIVE_ARRAY",local,strlen("CF_ASSOCIATIVE_ARRAY")) == 0)
+             {
+             break;
+             }
+          
+          InstallControlRValue(CURRENTITEM,local);
+          break;
       case alerts:
-
-	  if (strcmp(local,"noinstall") != 0)
-	     {
-	     strncpy(CURRENTOBJECT,fn,bufsize-1);
-	     ACTIONPENDING = true;
-	     }
-	  break;
-
-    default: snprintf(OUTPUT,bufsize,"Function call %s out of place",fn);
-	yyerror(OUTPUT);
+          
+          if (strcmp(local,"noinstall") != 0)
+             {
+             Debug("Recognized function %s\n",fn);
+             strncpy(CURRENTOBJECT,fn,bufsize-1);
+             ACTIONPENDING = true;
+             }
+          else
+             {
+             Debug("Not recognized %s\n",fn);
+             }
+          break;
+          
+      default: snprintf(OUTPUT,bufsize,"Function call %s out of place",fn);
+          yyerror(OUTPUT);
       }
    }
 }
 
 /***************************************************************************/
 
-void HandleVarObject(object)
-
-char *object;
+void HandleVarObject(char *object)
 
 {
 Debug1("Handling Object = (%s)\n",object);
@@ -668,91 +670,91 @@ switch (ACTION)
    case control:
 
        switch (CONTROLVAR)
-	  {
+          {
           case cfmountpat:
-  	     SetMountPath(object);
-	     break;
-       
+              SetMountPath(object);
+              break;
+              
           case cfrepos:
-	     SetRepository(object);
-	     break;
-       
+              SetRepository(object);
+              break;
+              
           case cfrepchar:
- 	     if (strlen(object) > 1)
-	        {
-	        yyerror("reposchar can only be a single letter");
-	        }
-	     if (object[0] == '/')
-	        {
-	        yyerror("illegal value for reposchar");
-	        }
-	     REPOSCHAR = object[0];
-             break;
-       
-	  case cflistsep:
-	     if (strlen(object) > 1)
-	        {
-	        yyerror("listseparator can only be a single letter");
-	        }
-	     if (object[0] == '/')
-	        {
-	        yyerror("illegal value for listseparator");
-	        }
-	     LISTSEPARATOR = object[0];
-	     break;
-       
+              if (strlen(object) > 1)
+                 {
+                 yyerror("reposchar can only be a single letter");
+                 }
+              if (object[0] == '/')
+                 {
+                 yyerror("illegal value for reposchar");
+                 }
+              REPOSCHAR = object[0];
+              break;
+              
+          case cflistsep:
+              if (strlen(object) > 1)
+                 {
+                 yyerror("listseparator can only be a single letter");
+                 }
+              if (object[0] == '/')
+                 {
+                 yyerror("illegal value for listseparator");
+                 }
+              LISTSEPARATOR = object[0];
+              break;
+              
           case cfhomepat:
-	     yyerror("Path relative to mountpath required");
-	     FatalError("Absolute path was specified\n");
-             break;
-       
+              yyerror("Path relative to mountpath required");
+              FatalError("Absolute path was specified\n");
+              break;
+              
           case nonexistentvar:
-
-	     if (IsDefinedClass(CLASSBUFF))
-	        {
-	        AddMacroValue(CONTEXTID,CURRENTITEM,object);
-	        }
-	     break;
+              
+              if (IsDefinedClass(CLASSBUFF))
+                 {
+                 AddMacroValue(CONTEXTID,CURRENTITEM,object);
+                 }
+              break;
           }
        break;
-
+       
    case import:
-          AppendImport(object); /* Recursion */
-          break;
-
+       AppendImport(object); /* Recursion */
+       break;
+       
    case links:      /* from link (see cf.l) */
-          break;
-
+       break;
+       
    case filters:
        if (strlen(FILTERNAME) == 0)
-	  {
-	  yyerror("empty or broken filter");
-	  }
+          {
+          yyerror("empty or broken filter");
+          }
        else
-	  {
-	  strncpy(CURRENTITEM,object,bufsize-1);
-	  ACTIONPENDING = true;
-	  }
+          {
+          strncpy(CURRENTITEM,object,bufsize-1);
+          ACTIONPENDING = true;
+          }
        break;
-
+       
    case disks:
-
+       
    case required:   strncpy(CURRENTOBJECT,object,bufsize-1);
        break;
-
+       
    case shellcommands:
        break;
        
        /* HvB : Bas van der Vlies */
    case mountables: 
        break;
-
+       
    case defaultroute:InstallDefaultRouteItem(object);
        break;
-
+       
    case resolve:     AppendNameServer(object);
        break;
-
+       
    case broadcast:   InstallBroadcastItem(object);
        break;
 
@@ -765,29 +767,29 @@ switch (ACTION)
    case disable:    strncpy(CURRENTOBJECT,object,bufsize-1);
                     ACTIONPENDING = true;
                     break;
-		    
+      
    case makepath:   strncpy(CURRENTOBJECT,object,bufsize-1);
                     break;
-		    
+      
    case ignore:     strncpy(CURRENTOBJECT,object,bufsize-1);
                     break;
        
    case misc_mounts:
        if (! MOUNT_FROM)
-	  {
-	  MOUNT_FROM = true;
-	  strncpy(MOUNTFROM,CURRENTOBJECT,bufsize-1);
-	  }
+          {
+          MOUNT_FROM = true;
+          strncpy(MOUNTFROM,CURRENTOBJECT,bufsize-1);
+          }
        else
-      {
-      if (MOUNT_ONTO)
-	 {
-	 yyerror ("Path not expected");
-	 FatalError("miscmounts: syntax error");
-	 }
-      MOUNT_ONTO = true;
-      strncpy(MOUNTONTO,CURRENTOBJECT,bufsize-1);
-      }
+          {
+          if (MOUNT_ONTO)
+             {
+             yyerror ("Path not expected");
+             FatalError("miscmounts: syntax error");
+             }
+          MOUNT_ONTO = true;
+          strncpy(MOUNTONTO,CURRENTOBJECT,bufsize-1);
+          }
        break;
        
    case unmounta:
@@ -804,32 +806,32 @@ switch (ACTION)
        
    case processes:
        if (strcmp(ToLowerStr(object),"restart") == 0)
-	  {
-	  if (HAVE_RESTART)
-	     {
-	     yyerror("Repeated Restart option in processes");
-	     }
-	  HAVE_RESTART = true;
-	  Debug1("Found restart directive\n");
-	  }
+          {
+          if (HAVE_RESTART)
+             {
+             yyerror("Repeated Restart option in processes");
+             }
+          HAVE_RESTART = true;
+          Debug1("Found restart directive\n");
+          }
        else if (strcmp(ToLowerStr(object),"setoptionstring") == 0)
-	  {
-	  InstallPending(ACTION);
-	  InitializeAction();
-	  Debug1("\nFound SetOptionString\n");
-	  strcpy(CURRENTOBJECT,"SetOptionString");
-	  strcpy(EXPR,"SetOptionString");
-	  }
+          {
+          InstallPending(ACTION);
+          InitializeAction();
+          Debug1("\nFound SetOptionString\n");
+          strcpy(CURRENTOBJECT,"SetOptionString");
+          strcpy(EXPR,"SetOptionString");
+          }
        else if (HAVE_RESTART)
-	   {
-	   Debug1("Installing restart expression\n");
-	   strncpy(RESTART,object,bufsize-1);
-	   ACTIONPENDING = true;
-	   }
+          {
+          Debug1("Installing restart expression\n");
+          strncpy(RESTART,object,bufsize-1);
+          ACTIONPENDING = true;
+          }
        else
-	  {
-	  Debug1("Dropped %s :(\n",object);
-	  }
+          {
+          Debug1("Dropped %s :(\n",object);
+          }
        break;
        
    case binservers: InstallBinserverItem(object);
@@ -843,7 +845,7 @@ switch (ACTION)
 
    case methods:    if (strlen(object) > bufsize-1)
                        {
-		       yyerror("Method argument string is too long");
+         yyerror("Method argument string is too long");
                        }
                     break;
        
@@ -853,60 +855,56 @@ switch (ACTION)
 
 /*******************************************************************/
 
-void HandleServerRule(object)
-
-char *object;
+void HandleServerRule(char *object)
 
 { char buffer[bufsize];
 
 ExpandVarstring(object,buffer,"");
 Debug("HandleServerRule(%s=%s)\n",object,buffer);
 
- if (*object == '/')
+ if (*buffer == '/')
     {
     Debug("\n\nNew admit/deny object=%s\n",buffer);
-    strcpy(CURRENTAUTHPATH,buffer);
+    strcpy(CURRENTAUTHPATH,object);
     }
  else
     {
     switch(ACTION)   /* Check for IP names in cfservd */
        {
        case admit:
-	   FuzzyMatchParse(buffer);       
-	   InstallAuthItem(CURRENTAUTHPATH,buffer,&VADMIT,&VADMITTOP,CLASSBUFF);
-	   break;
+           FuzzyMatchParse(buffer);       
+           InstallAuthItem(CURRENTAUTHPATH,object,&VADMIT,&VADMITTOP,CLASSBUFF);
+           break;
        case deny:
-	   FuzzyMatchParse(buffer);       
-	   InstallAuthItem(CURRENTAUTHPATH,buffer,&VDENY,&VDENYTOP,CLASSBUFF);
-	   break;
+           FuzzyMatchParse(buffer);       
+           InstallAuthItem(CURRENTAUTHPATH,object,&VDENY,&VDENYTOP,CLASSBUFF);
+           break;
        }
     }
 }
 
 /*******************************************************************/
 
-void HandleOption(option)
-
-char *option;
+void HandleOption(char *option)
 
 {
 Debug("HandleOption(%s)\n",option);
  
 switch (ACTION)
-   {		 
+   {   
    case files:
                  HandleOptionalFileAttribute(option);
-		 break;
+   break;
    case image:
                  HandleOptionalImageAttribute(option);
-		 break;
+   break;
    case tidy:
                  HandleOptionalTidyAttribute(option);
                  break;
-		 
+   
    case makepath:
                  HandleOptionalDirAttribute(option);
-		 break;
+   break;
 
    case disable:
    case rename_disable:
@@ -921,20 +919,20 @@ switch (ACTION)
 
    case misc_mounts:
 
-   	         HandleOptionalMiscMountsAttribute(option);
-		 break;
+             HandleOptionalMiscMountsAttribute(option);
+   break;
 
    case mountables:
                  HandleOptionalMountablesAttribute(option);
-		 break;
+   break;
 
    case unmounta:
                  HandleOptionalUnMountAttribute(option);
-		 break;
-		 
+   break;
+   
    case shellcommands:
                  HandleOptionalScriptAttribute(option);
-		 break;
+   break;
 
    case alerts:  HandleOptionalAlertsAttribute(option);
                  break;
@@ -942,29 +940,29 @@ switch (ACTION)
    case disks:
    case required:
                  HandleOptionalRequired(option);
-		 break;
+   break;
 
    case interfaces:
                  HandleOptionalInterface(option);
-		 if (strlen(VIFNAME) && strlen(CURRENTOBJECT) && strlen(DESTINATION))
-		    {
-		    ACTIONPENDING = true;
-		    }
-		 break;
-
+                 if (strlen(VIFNAME) && strlen(CURRENTOBJECT) && strlen(DESTINATION))
+                    {
+                    ACTIONPENDING = true;
+                    }
+                 break;
+                 
    case admit:
                  InstallAuthItem(CURRENTAUTHPATH,option,&VADMIT,&VADMITTOP,CLASSBUFF);
-		 break;
+   break;
    case deny:
                  InstallAuthItem(CURRENTAUTHPATH,option,&VDENY,&VDENYTOP,CLASSBUFF);
-		 break;
+   break;
 
    case import:  /* Need option for private modules... */
                  break;
 
    case packages:
                  HandleOptionalPackagesAttribute(option);
-		 break;
+   break;
 
    case methods: HandleOptionalMethodsAttribute(option);
                  break;
@@ -979,9 +977,7 @@ switch (ACTION)
 /* Level 2                                                         */
 /*******************************************************************/
 
-void ParseFile(filename,env)
-
-char *filename,*env;
+void ParseFile(char *filename,char *env)
 
 { FILE *save_yyin = yyin;
  
@@ -1039,9 +1035,35 @@ InstallPending(ACTION);
 
 /*******************************************************************/
 
-int CompoundId(id)                   /* check for dots in the name */
+void ParseStdin()
 
-char *id;
+{
+yyin = stdin;
+ 
+Debug("\n##########################################################################\n"); 
+Debug("# BEGIN PARSING stdin\n");
+Debug("##########################################################################\n\n"); 
+ 
+LINENUMBER=1;
+ 
+while (!feof(yyin))
+   { 
+   yyparse();
+   
+   if (ferror(yyin))  /* abortable */
+      {
+      printf("%s: Error reading %s\n",VPREFIX,VCURRENTFILE);
+      perror("cfengine");
+      exit(1);
+      }
+   }
+ 
+InstallPending(ACTION);
+}
+
+/*******************************************************************/
+
+int CompoundId(char *id)                   /* check for dots in the name */
 
 { int count = 1;
   char *cid = id;
@@ -1060,9 +1082,7 @@ return(count);
 
 /*******************************************************************/
 
-void RecordMacroId(name)
-
-char *name;
+void RecordMacroId(char *name)
 
 {
 Debug("RecordMacroId(%s)\n",name);
@@ -1078,39 +1098,45 @@ if (strcmp(name,"this") == 0)
 /* Level 2                                                         */
 /*******************************************************************/
 
-char *FindInputFile(result,filename)
-
-char *filename, *result;
+char *FindInputFile(char *result,char *filename)
 
 { char *sp;
  
 result[0] = '\0';
+
+ 
+if (MINUSF && (*filename == '.' || *filename == '/'))
+   {
+   Verbose("Manually overidden relative path (%s)\n",filename);
+   strncpy(result,filename,bufsize-1);
+   return result;
+   }
  
 if ((sp=getenv(CFINPUTSVAR)) != NULL)
    {
-   if (! LastFileSeparator(filename))     /* Don't prepend to absolute names */
+   if (!IsAbsoluteFileName(filename))     /* Don't prepend to absolute names */
       { 
       strcpy(result,sp);
       
       if (! IsAbsoluteFileName(result))
-	 {
-	 Verbose("CFINPUTS was not an absolute path, overriding with %s\n",WORKDIR);
-	 snprintf(result,bufsize,"%s/inputs",WORKDIR);
-	 }
+         {
+         Verbose("CFINPUTS was not an absolute path, overriding with %s\n",WORKDIR);
+         snprintf(result,bufsize,"%s/inputs",WORKDIR);
+         }
       
       AddSlash(result);
       }
    }
-else
-   {
-   if (! LastFileSeparator(filename))     /* Don't prepend to absolute names */
-      { 
-      strcpy(result,WORKDIR);
-      AddSlash(result);
-      strcat(result,"inputs/");
-      }
-   }
-
+ else
+    {
+    if (!IsAbsoluteFileName(filename))     /* Don't prepend to absolute names */
+       { 
+       strcpy(result,WORKDIR);
+       AddSlash(result);
+       strcat(result,"inputs/");
+       }
+    }
+ 
 strcat(result,filename);
 return result;
 }
@@ -1134,6 +1160,7 @@ void InitializeAction()                                   /* Set defaults */
  VRECURSE = 0;
  HAVE_RESTART = false;
  VAGE = 99999;
+ strncpy(FINDERTYPE,"*",bufsize);
  strcpy(VUIDNAME,"*");
  strcpy(VGIDNAME,"*");
  HAVE_RESTART = 0;
@@ -1164,6 +1191,7 @@ void InitializeAction()                                   /* Set defaults */
  ROTATE=0;
  TIDYSIZE=0;
  PROMATCHES=-1;
+ PROCOMP = '!';
  PROACTION = 'd';
  PROSIGNAL=0;
  COMPRESS='n';
@@ -1175,6 +1203,8 @@ void InitializeAction()                                   /* Set defaults */
  INFORMP = 'd';
  PURGE = 'n';
  TRUSTKEY = 'n';
+ NOABSPATH = false;
+ SCAN = 'n';
  CHECKSUM = 'n';
  TIDYDIRS = false;
  VEXCLUDEPARSE = NULL;
@@ -1192,8 +1222,8 @@ void InitializeAction()                                   /* Set defaults */
 
  STRATEGYNAME[0] = '\0';
  FILTERNAME[0] = '\0';
- bzero(ALLCLASSBUFFER,bufsize);
- bzero(ELSECLASSBUFFER,bufsize);
+ memset(ALLCLASSBUFFER,0,bufsize);
+ memset(ELSECLASSBUFFER,0,bufsize);
  
  strcpy(CFSERVER,"localhost");
  
@@ -1232,8 +1262,8 @@ void InitializeAction()                                   /* Set defaults */
 
  if ( ! ACTION_IS_LINK && ! ACTION_IS_LINKCHILDREN)
     {
-    bzero(LINKFROM,bufsize);
-    bzero(LINKTO,bufsize);  /* ALSO RESTART */
+    memset(LINKFROM,0,bufsize);
+    memset(LINKTO,0,bufsize);  /* ALSO RESTART */
     LINKSILENT = false;
     LINKTYPE = 's';
     FORCELINK = 'n';
@@ -1243,38 +1273,34 @@ void InitializeAction()                                   /* Set defaults */
 
 /*********************************************************************/
 
-void SetMountPath (value)
+void SetMountPath (char *value)
 
-char *value;
+{ char buff[bufsize];
 
- { char buff[bufsize];
-
- ExpandVarstring(value,buff,"");
+ExpandVarstring(value,buff,"");
  
- Debug("Appending [%s] to mountlist\n",buff);
+Debug("Appending [%s] to mountlist\n",buff);
  
- AppendItem(&VMOUNTLIST,buff,CLASSBUFF);
- }
+AppendItem(&VMOUNTLIST,buff,CLASSBUFF);
+}
 
 /*********************************************************************/
 
-void SetRepository (value)
+void SetRepository (char *value)
 
-char *value;
+{
+if (*value != '/')
+   {
+   yyerror("File repository must be an absolute directory name");
+   }
+ 
+if (strlen(VREPOSITORY) != 0)
+   {
+   yyerror("Redefinition of system variable repository");
+   }
 
- {
-  if (*value != '/')
-     {
-     yyerror("File repository must be an absolute directory name");
-     }
-  
-  if (strlen(VREPOSITORY) != 0)
-     {
-     yyerror("Redefinition of system variable repository");
-     }
-
- ExpandVarstring(value,VBUFF,"");
- VREPOSITORY = strdup(VBUFF);
- }
+ExpandVarstring(value,VBUFF,"");
+VREPOSITORY = strdup(VBUFF);
+}
 
 /* EOF */

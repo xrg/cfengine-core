@@ -40,11 +40,7 @@
 
 /*********************************************************************/
 
-int ReadLine(buff,size,fp)
-
-char *buff;
-int size;
-FILE *fp;
+int ReadLine(char *buff,int size,FILE *fp)
 
 {
 buff[0] = '\0';

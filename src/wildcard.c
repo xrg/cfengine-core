@@ -46,9 +46,7 @@
 
 /*************************************************************************/
 
-int IsWildCard (str)
-
-char *str;
+int IsWildCard (char *str)
 
 {
 return (strchr(str,'?') || strchr(str,'*'));
@@ -57,92 +55,90 @@ return (strchr(str,'?') || strchr(str,'*'));
 /*************************************************************************/
 
 
-   int WildMatch (wildptr,cmpptr)
+int WildMatch (char *wildptr,char *cmpptr)
 
-   char *wildptr, *cmpptr;
+{ char buffer[bufsize];
+  int i, status = startofstrings;
+  char lastwild = '\0';
 
-   { char buffer[bufsize];
-     int i, status = startofstrings;
-     char lastwild = '\0';
-
-   Debug1("WildMatch(%s,%s)\n",wildptr,cmpptr);
+Debug1("WildMatch(%s,%s)\n",wildptr,cmpptr);
      
-   if (strstr(wildptr,"*") == NULL && strstr(wildptr,"?") == NULL)
-      {
-      return (! strcmp(wildptr,cmpptr));
-      }
+if (strstr(wildptr,"*") == NULL && strstr(wildptr,"?") == NULL)
+   {
+   return (! strcmp(wildptr,cmpptr));
+   }
 
-  while (true)
+while (true)
+   {
+   while (*wildptr == '?')                                /* 1 */
       {
-      while (*wildptr == '?')                                /* 1 */
-         {
-         wildptr++;
-         cmpptr++;
-         if ((*cmpptr == '\0') && (*wildptr != '\0'))        /* 2 */
-            {
-            return(nomatch);
-            }
-         lastwild = '?';
-         status = middleofstrings;
-         }
-
-      if (*wildptr == '\0' && *cmpptr == '\0')                /* 3 */
-         {
-         return(match);
-         }
-      else if (*wildptr == '\0')                              /* 4 */
+      wildptr++;
+      cmpptr++;
+      if ((*cmpptr == '\0') && (*wildptr != '\0'))        /* 2 */
          {
          return(nomatch);
          }
-
-      if (*wildptr == '*')                                    /* 5 */
-         {
-         while (*wildptr == '*')                              /* 6 */
-            {
-            wildptr++;
-            }
-         if (*wildptr == '\0')                                /* 7 */
-            {
-            if (*cmpptr == '\0')                              /* 8 */
-               {
-               return(nomatch);
-               }
-            else
-               {
-               return(match);
-               }
-            }
-
-         cmpptr++;                                            /* 9 */
-         status = middleofstrings;
-         lastwild = '*';
-         }
-
-      for (i = 0; !(Wild(*wildptr) || *wildptr == '\0'); i++) /* 10 */
-         {
-         buffer[i] = *wildptr++;
-         if (*wildptr == '\0')                                /* 11 */
-            {
-            status = endofstrings;
-            }
-         }
-
-      buffer[i] = '\0';
-
-      if ((cmpptr = AfterSubString(cmpptr,buffer,status,lastwild)) == NULL)
-         {
-         return(nomatch);                                      /* 12 */
-         }
-
+      lastwild = '?';
       status = middleofstrings;
       }
+   
+   if (*wildptr == '\0' && *cmpptr == '\0')                /* 3 */
+      {
+      return(match);
+         }
+   else if (*wildptr == '\0')                              /* 4 */
+      {
+      return(nomatch);
+      }
+   
+   if (*wildptr == '*')                                    /* 5 */
+      {
+      while (*wildptr == '*')                              /* 6 */
+         {
+         wildptr++;
+         }
+      if (*wildptr == '\0')                                /* 7 */
+         {
+         if (*cmpptr == '\0')                              /* 8 */
+            {
+            return(nomatch);
+            }
+         else
+            {
+            return(match);
+            }
+         }
+      
+      cmpptr++;                                            /* 9 */
+      status = middleofstrings;
+      lastwild = '*';
+      }
+   
+   for (i = 0; !(Wild(*wildptr) || *wildptr == '\0'); i++) /* 10 */
+      {
+      buffer[i] = *wildptr++;
+      if (*wildptr == '\0')                                /* 11 */
+         {
+         status = endofstrings;
+         }
+      }
+   
+   buffer[i] = '\0';
+   
+   if ((cmpptr = AfterSubString(cmpptr,buffer,status,lastwild)) == NULL)
+      {
+      return(nomatch);                                      /* 12 */
+      }
+   
+   status = middleofstrings;
    }
+}
 
 /******************************************************************/
 /* Wildcard Toolkit : Level 1                                     */
 /******************************************************************/
 
-  char *AfterSubString(big,small,status,lastwild)
+char *AfterSubString(char *big,char *small,int status,char lastwild)
 
    /* If the last wildcard was a ? then this just tries to      */
    /* match the substrings from the present position, otherwise */
@@ -153,49 +149,45 @@ return (strchr(str,'?') || strchr(str,'*'));
    /* is tied to the end of big. This makes sure that there is  */
    /* correct alignment with end of string marker.              */
 
-   char *big,*small;
-   int status;
-   char lastwild;
+{ char *bigptr;
 
-   { char *bigptr;
+if (strlen(small) > strlen(big))                       /* 13 */
+   {
+   return(NULL);
+   }
 
-   if (strlen(small) > strlen(big))                       /* 13 */
+if (lastwild == '?')                                   /* 14 */
+   {
+   if (strncmp(big,small,strlen(small)) == 0)
+      {
+      return(big+strlen(small));
+      }
+   else
       {
       return(NULL);
       }
-
-   if (lastwild == '?')                                   /* 14 */
-      {
-      if (strncmp(big,small,strlen(small)) == 0)
-         {
-         return(big+strlen(small));
-         }
-      else
-         {
-         return(NULL);
-         }
-      }
-
-   if (status == endofstrings)                             /* 15 */
-      {
-      big = big + strlen(big) - strlen(small);
-      }
-
-   for (bigptr = big; *bigptr != '\0'; ++bigptr)           /* 16 */
-      {
-      if (strncmp(bigptr,small,strlen(small)) == 0)
-         {
-         return(bigptr+strlen(small));
-         }
-
-      if (status == startofstrings)                        /* 17 */
-         {
-         return(NULL);
-         }
-      }
-
-   return(NULL);                                           /* 18 */
    }
+ 
+if (status == endofstrings)                             /* 15 */
+   {
+   big = big + strlen(big) - strlen(small);
+   }
+
+for (bigptr = big; *bigptr != '\0'; ++bigptr)           /* 16 */
+   {
+   if (strncmp(bigptr,small,strlen(small)) == 0)
+      {
+      return(bigptr+strlen(small));
+      }
+   
+   if (status == startofstrings)                        /* 17 */
+      {
+      return(NULL);
+      }
+   }
+ 
+return(NULL);                                           /* 18 */
+}
 
 /******************************************************************
 

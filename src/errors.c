@@ -47,9 +47,7 @@ exit(1);
 
 /*********************************************************************/
 
-void Warning(s)
-
-char *s;
+void Warning(char *s)
 
 {
 if (WARNINGS)
@@ -60,9 +58,7 @@ if (WARNINGS)
 
 /*********************************************************************/
 
-void ResetLine(s)
-
-char *s;
+void ResetLine(char *s)
 
 { int c;
   int v;

@@ -35,10 +35,7 @@
 
 /*********************************************************************/
 
-int LoadItemList(liststart,file)
-
-struct Item **liststart;
-char *file;
+int LoadItemList(struct Item **liststart,char *file)
 
 { FILE *fp;
   struct stat statbuf;
@@ -72,7 +69,7 @@ if ((fp = fopen(file,"r")) == NULL)
    }
 
 
-bzero(VBUFF,bufsize); 
+memset(VBUFF,0,bufsize); 
 
 while(!feof(fp))
    {
@@ -91,10 +88,7 @@ return (true);
 
 /*********************************************************************/
 
-int SaveItemList(liststart,file,repository)
-
-struct Item *liststart;
-char *file, *repository;
+int SaveItemList(struct Item *liststart,char *file,char *repository)
 
 { struct Item *ip;
   struct stat statbuf;
@@ -158,16 +152,16 @@ if (IMAGEBACKUP != 'n')
    if (! IsItemIn(VREPOSLIST,new))
       {
       if (rename(file,backup) == -1)
-	 {
-	 snprintf(OUTPUT,bufsize*2,"Error while renaming backup %s\n",file);
-	 CfLog(cferror,OUTPUT,"rename ");
-	 unlink(new);
-	 return false;
-	 }
+         {
+         snprintf(OUTPUT,bufsize*2,"Error while renaming backup %s\n",file);
+         CfLog(cferror,OUTPUT,"rename ");
+         unlink(new);
+         return false;
+         }
       else if (Repository(backup,repository))
-	 {
-	 unlink(backup);
-	 }
+         {
+         unlink(backup);
+         }
       }
    }
 
@@ -187,12 +181,9 @@ return true;
 
 /*********************************************************************/
 
-int CompareToFile(liststart,file)
+int CompareToFile(struct Item *liststart,char *file)
 
 /* returns true if file on disk is identical to file in memory */
-
-struct Item *liststart;
-char *file;
 
 { FILE *fp;
   struct stat statbuf;
@@ -217,7 +208,7 @@ if ((fp = fopen(file,"r")) == NULL)
    return false;
    }
 
-bzero(VBUFF,bufsize);
+memset(VBUFF,0,bufsize);
 
 for (ip = liststart; ip != NULL; ip=ip->next)
    {
@@ -261,10 +252,7 @@ return (true);
 
 /*********************************************************************/
 
-void InsertFileAfter (filestart,ptr,string)
-
-struct Item *ptr, **filestart;
-char *string;
+void InsertFileAfter (struct Item **filestart,struct Item *ptr,char *string)
 
 { struct Item *ip, *old;
   char *sp;
@@ -296,16 +284,16 @@ while(!feof(fp) && ReadLine(linebuf,bufsize,fp))
    if (CURRENTLINEPTR == NULL)
       {
       if (*filestart == NULL)
-	 {
-	 *filestart = ip;
-	 ip->next = NULL;
-	 }
+         {
+         *filestart = ip;
+         ip->next = NULL;
+         }
       else
-	 {
-	 ip->next = (*filestart)->next;
-	 (*filestart)->next = ip;	    
-	 }
-
+         {
+         ip->next = (*filestart)->next;
+         (*filestart)->next = ip;     
+         }
+      
       strcpy(sp,linebuf);
       ip->name = sp;
       ip->classes = NULL;

@@ -11,6 +11,208 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: Variable Index,  Next: Concept Index,  Prev: Example configuration file,  Up: Top
+
+Variable Index
+**************
+
+* Menu:
+
+* !:                                     Cfengine classes.
+* $(arch):                               Special variables.
+* $(binserver):                          Special variables.
+* $(class):                              Special variables.
+* $(cr):                                 Special variables.
+* $(date):                               Special variables.
+* $(dblquote):                           Special variables.
+* $(dollar):                             Special variables.
+* $(domain):                             Special variables.
+* $(faculty):                            Special variables.
+* $(fqhost):                             Special variables.
+* $(host):                               Special variables.
+* $(ipaddress):                          Special variables.
+* $(lf):                                 Special variables.
+* $(n):                                  Special variables.
+* $(quote):                              Special variables.
+* $(site):                               Special variables.
+* $(spc):                                Special variables.
+* $(sysadm):                             Special variables.
+* $(tab):                                Special variables.
+* $(timezone):                           Special variables.
+* $(year):                               Special variables.
+* ${EmailMaxLines}:                      Special variables.
+* +:                                     groups.
+* -D option <1>:                         Cfengine classes.
+* -D option:                             addclasses.
+* -L:                                    Single links.
+* -l <1>:                                Syntax.
+* -l:                                    tidy.
+* -N option <1>:                         Cfengine classes.
+* -N option:                             addclasses.
+* -x option:                             cf.preconf bootstrap file.
+* .cfengine.rm:                          tidy.
+* /etc/host.conf:                        cf.preconf bootstrap file.
+* /var/cfengine/output:                  Cfexecd reference.
+* a= <1>:                                tidy.
+* a=:                                    Syntax.
+* AccessedBefore():                      Evaluated classes and special functions.
+* action:                                Syntax.
+* actionsequence <1>:                    control.
+* actionsequence:                        actionsequence.
+* AddClasses:                            addclasses.
+* AddInstallable:                        addinstallable.
+* addmounts:                             actionsequence.
+* age:                                   tidy.
+* alerts:                                alerts.
+* AllowUsers:                            AllowUsers.
+* backup=:                               copy.
+* BindToInterface <1>:                   BindToInterface(cfagent).
+* BindToInterface:                       BindToInterface.
+* binserver <1>:                         Single links.
+* binserver:                             Link Children.
+* binservers:                            binservers.
+* broadcast:                             broadcast.
+* cf.preconf:                            cf.preconf bootstrap file.
+* CFALLCLASSES <1>:                      Special variables.
+* CFALLCLASSES:                          Cfagent Runtime Options.
+* cfrc:                                  cfrc resource file.
+* ChangedBefore():                       Evaluated classes and special functions.
+* ChecksumDatabase:                      ChecksumDatabase.
+* ChecksumPurge:                         ChecksumPurge.
+* ChecksumUpdates:                       ChecksumUpdates.
+* checktimezone:                         actionsequence.
+* childlinks:                            actionsequence.
+* cmp=:                                  packages.
+* control:                               control.
+* create:                                create.
+* directories:                           actionsequence.
+* disable <1>:                           disable.
+* disable:                               actionsequence.
+* domain <1>:                            control.
+* domain:                                domain.
+* DryRun:                                dryrun.
+* editbinaryfilesize:                    editbinaryfilesize.
+* editfiles:                             actionsequence.
+* editfilesize <1>:                      control.
+* editfilesize:                          editfilesize.
+* EmailMaxLines:                         Cfexecd reference.
+* empty:                                 disable.
+* EmptyResolvConf:                       emptyresolvconf.
+* Exclamation:                           exclamation.
+* exclude=:                              Syntax.
+* exec:                                  Setting variables with functions.
+* FileExtensions:                        fileextension.
+* files <1>:                             actionsequence.
+* files:                                 files.
+* filter:                                filters.
+* force= <1>:                            copy.
+* force=:                                disks.
+* freespace= <1>:                        disks.
+* freespace=:                            required.
+* g=:                                    Syntax.
+* group:                                 Syntax.
+* groups:                                groups.
+* home:                                  Syntax.
+* HomePattern:                           homepattern.
+* homepattern:                           mountables.
+* homeservers:                           homeservers.
+* import:                                import.
+* include=:                              Syntax.
+* interface configuration:               interfaces.
+* InterfaceName:                         interfacename.
+* IsDir():                               Evaluated classes and special functions.
+* IsLink():                              Evaluated classes and special functions.
+* IsNewerThan():                         Evaluated classes and special functions.
+* IsPlain():                             Evaluated classes and special functions.
+* l=:                                    Syntax.
+* LD_LIBRARY_PATH:                       control.
+* link:                                  Syntax.
+* linkchildren <1>:                      Files linkchildren.
+* linkchildren:                          Link Children.
+* links <1>:                             links.
+* links:                                 actionsequence.
+* m=:                                    Syntax.
+* mailcheck <1>:                         mailserver.
+* mailcheck:                             actionsequence.
+* mailserver:                            mailserver.
+* MaxCfengines:                          Special variables.
+* methods:                               methods.
+* miscmounts:                            miscmounts.
+* mode:                                  Syntax.
+* module:                                actionsequence.
+* moduledirectory:                       moduledirectory.
+* mountables <1>:                        homeservers.
+* mountables:                            mountables.
+* mountall:                              actionsequence.
+* mountinfo:                             actionsequence.
+* mountpattern:                          mountpattern.
+* netconfig:                             actionsequence.
+* netmask <1>:                           control.
+* netmask:                               netmask.
+* nfstype <1>:                           nfstype.
+* nfstype:                               control.
+* noabspath:                             shellcommands.
+* o=:                                    Syntax.
+* ones:                                  broadcast.
+* OutputPrefix:                          Special variables.
+* owner:                                 Syntax.
+* p=:                                    tidy.
+* packages:                              actionsequence.
+* pattern:                               tidy.
+* pkgmgr=:                               packages.
+* processes:                             actionsequence.
+* purge=:                                copy.
+* r= <1>:                                tidy.
+* r=:                                    Syntax.
+* recurse <1>:                           Syntax.
+* recurse:                               tidy.
+* RepChar:                               repchar.
+* repchar:                               Special variables.
+* required:                              actionsequence.
+* resolve <1>:                           resolve.
+* resolve:                               actionsequence.
+* Restricting access:                    access.
+* ReturnsZero():                         Evaluated classes and special functions.
+* rotate=:                               disable.
+* scanarrivals=:                         disks.
+* scheduling:                            schedule.
+* SecureInput:                           secureinput.
+* SensibleCount:                         sensiblecount.
+* sensiblecount:                         control.
+* SensibleSize:                          sensiblesize.
+* sensiblesize:                          control.
+* shellcommands:                         actionsequence.
+* ShowActions:                           showactions.
+* singlelinks:                           actionsequence.
+* site <1>:                              site.
+* site:                                  control.
+* SkipVerify:                            root=.
+* smtpserver:                            Cfexecd reference.
+* split <1>:                             Special variables.
+* split <2>:                             Iteration over lists.
+* split:                                 split.
+* SpoolDirectories:                      spooldirectories.
+* SuspiciousNames:                       suspiciousnames.
+* sysadm <1>:                            Cfexecd reference.
+* sysadm <2>:                            sysadm.
+* sysadm <3>:                            control.
+* sysadm:                                Cfexecd reference.
+* tidy <1>:                              tidy.
+* tidy:                                  actionsequence.
+* timezone:                              control.
+* touch:                                 touch.
+* truncate:                              disable.
+* type= <1>:                             Hard links.
+* type=:                                 disable.
+* underscoreclasses:                     Special variables.
+* unmount <1>:                           unmount.
+* unmount:                               actionsequence.
+* version=:                              packages.
+* Wildcards:                             tidy.
+* zeroes:                                broadcast.
+* zeros:                                 broadcast.
+
+
 File: cfengine-Reference.info,  Node: Concept Index,  Next: FAQ Index,  Prev: Variable Index,  Up: Top
 
 Concept Index
@@ -21,9 +223,9 @@ Concept Index
 * !:                                     Cfengine classes.
 * --dry-run option:                      shellcommands.
 * -D option:                             addclasses.
-* -L option:                             Single links.
 * -l option <1>:                         tidy.
 * -l option:                             Syntax.
+* -L option:                             Single links.
 * -x option:                             cf.preconf bootstrap file.
 * .cfdisabled:                           disable.
 * .cfengine.rm:                          tidy.
@@ -47,6 +249,8 @@ Concept Index
 * AllowConnectionsFrom variable:         AllowConnectionsFrom.
 * AllowUsers in cfservd:                 AllowUsers.
 * Andrew filesystem:                     nfstype.
+* Array example:                         Setting variables with functions.
+* Array from file:                       Setting variables with functions.
 * atime tidies:                          tidy.
 * AutoCreate:                            editfiles.
 * AutoExecInterval variable:             AutoExecInterval.
@@ -58,11 +262,12 @@ Concept Index
 * BeginGroupIfFileExists:                editfiles.
 * BeginGroupIfFileIsNewer:               editfiles.
 * BeginGroupIfNotDefined:                editfiles.
-* Binary servers and links <1>:          Single links.
-* Binary servers and links:              Link Children.
+* Binary servers and links <1>:          Link Children.
+* Binary servers and links:              Single links.
 * Binary servers, defining:              binservers.
 * Binary servers, priority <1>:          Single links.
 * Binary servers, priority:              binservers.
+* Binding to one interface only <1>:     BindToInterface(cfagent).
 * Binding to one interface only:         BindToInterface.
 * Bootstrap file:                        cf.preconf bootstrap file.
 * Broadcast address:                     broadcast.
@@ -76,14 +281,15 @@ Concept Index
 * cf.site <1>:                           cfservd.conf.
 * cf.site:                               cf.site.
 * cfagent.conf:                          cfagent.conf.
-* CFALLCLASSES <1>:                      Special variables.
-* CFALLCLASSES:                          shellcommands.
+* CFALLCLASSES <1>:                      shellcommands.
+* CFALLCLASSES:                          Special variables.
 * cfenvd and key entropy:                Cfkey.
 * cfexecd:                               Cfexecd reference.
 * cfrc resource file:                    cfrc resource file.
 * cfrun, limiting users on server:       AllowUsers.
 * cfrunCommand variable:                 cfrunCommand.
 * cfservd.conf file:                     Cfservd.conf and cfrun reference.
+* cfservd.conf iteration:                Cfservd.conf and cfrun reference.
 * Changing cfengine port:                Firewalls and NATs.
 * Checking for installed packages:       packages.
 * Checksum warning, turning off exclamation: exclamation.
@@ -102,9 +308,9 @@ Concept Index
 * Classes, adding and defining:          addclasses.
 * Classes, compound:                     Cfengine classes.
 * Classes, defining and undefining:      Cfengine classes.
-* Classes, inbuilt functions:            Evaluated classes.
+* Classes, inbuilt functions:            Evaluated classes and special functions.
 * Classless IP addresses:                groups.
-* Comparing file objects:                Evaluated classes.
+* Comparing file objects:                Evaluated classes and special functions.
 * Compound classes:                      Cfengine classes.
 * Contacting specific hosts with cfrun:  cfrun.
 * control section:                       control.
@@ -172,7 +378,7 @@ Concept Index
 * File management:                       files.
 * File sizes, specifying:                tidy.
 * File tree images:                      copy.
-* File types:                            Evaluated classes.
+* File types:                            Evaluated classes and special functions.
 * Files, breaking up into several:       import.
 * Files, checking permissions:           files.
 * Files, home wildcard:                  home directive.
@@ -182,11 +388,13 @@ Concept Index
 * Files, setting owner:                  files.
 * Files, syntax:                         Syntax.
 * Force copying:                         copy.
-* freespace= <1>:                        disks.
-* freespace=:                            required.
-* Full disk warnings <1>:                required.
-* Full disk warnings:                    disks.
+* freespace= <1>:                        required.
+* freespace=:                            disks.
+* FriendStatus:                          alerts.
+* Full disk warnings <1>:                disks.
+* Full disk warnings:                    required.
 * Fully qualified names:                 Cfengine classes.
+* Functions, in-built:                   Setting variables with functions.
 * Group dependencies:                    groups.
 * Group field, editing:                  editfiles.
 * groups <1>:                            groups.
@@ -194,8 +402,8 @@ Concept Index
 * Groups, defining:                      groups.
 * Hard class name collision:             Special variables.
 * Hardlinks:                             Hard links.
-* Hashes of files <1>:                   Syntax.
-* Hashes of files:                       ChecksumDatabase.
+* Hashes of files <1>:                   ChecksumDatabase.
+* Hashes of files:                       Syntax.
 * home directive:                        home directive.
 * Home path:                             homepattern.
 * Home servers, defining:                homeservers.
@@ -207,6 +415,7 @@ Concept Index
 * ignore command:                        ignore.
 * Import files, variables in:            import.
 * Importing files:                       import.
+* In-built functions:                    Setting variables with functions.
 * Incrementing line pointer in editfiles: editfiles.
 * Interface name, redefining by class:   interfacename.
 * InterfaceName:                         interfacename.
@@ -214,25 +423,27 @@ Concept Index
 * Internet address:                      netmask.
 * IP address:                            netmask.
 * Iterating over lists in shellcommands: shellcommands.
+* Iteration in server rules:             Cfservd.conf and cfrun reference.
+* Iteration over lists <1>:              Iteration over lists.
 * Iteration over lists:                  split.
 * Key entropy and cfenvd:                Cfkey.
 * Key security of users:                 AllowUsers.
 * Key, ACL:                              DFS ACLs.
 * Kilobyte, filesize unit:               tidy.
-* Linkchildren <1>:                      Files linkchildren.
-* Linkchildren:                          Link Children.
+* Linkchildren <1>:                      Link Children.
+* Linkchildren:                          Files linkchildren.
 * Links and binary servers <1>:          Link Children.
 * Links and binary servers:              Single links.
 * Links, absolute:                       Single links.
-* Links, deleting stale <1>:             Syntax.
-* Links, deleting stale:                 tidy.
+* Links, deleting stale <1>:             tidy.
+* Links, deleting stale:                 Syntax.
 * Links, forcing for non-existent files: Single links.
 * Links, making:                         links.
 * Links, multiple:                       Multiple Links.
 * Links, removing dead:                  Single links.
 * Links, single:                         Single links.
-* Links, traversing in searches <1>:     tidy.
-* Links, traversing in searches:         Syntax.
+* Links, traversing in searches <1>:     Syntax.
+* Links, traversing in searches:         tidy.
 * Local disk space, make use of:         Link Children.
 * Log files, controlling the size of:    disable.
 * Logical NOT:                           Cfengine classes.
@@ -252,12 +463,14 @@ Concept Index
 * Miscellaneous mount operations:        miscmounts.
 * Module directory:                      moduledirectory.
 * Modules, user defined:                 actionsequence.
+* Monitoring other hosts:                alerts.
 * Mount paths:                           mountpattern.
-* Mountable resources, defining <1>:     mountables.
-* Mountable resources, defining:         homeservers.
+* Mountable resources, defining <1>:     homeservers.
+* Mountable resources, defining:         mountables.
 * Mounted filesystems:                   copy.
 * Mounting filesystems.:                 miscmounts.
 * mtime tidies:                          tidy.
+* Multihomed hosts <1>:                  BindToInterface(cfagent).
 * Multihomed hosts:                      BindToInterface.
 * Multiple links:                        Multiple Links.
 * Name collision:                        Special variables.
@@ -266,8 +479,8 @@ Concept Index
 * Negating entries from netgroups:       groups.
 * Netgroups:                             groups.
 * Netgroups, negating entries:           groups.
-* netmask:                               netmask.
 * Netmask:                               netmask.
+* netmask:                               netmask.
 * Network address translator:            Firewalls and NATs.
 * Network Address Translators:           SkipVerify.
 * Network interfaces, several:           interfaces.
@@ -277,6 +490,7 @@ Concept Index
 * NFS mount model and automounter:       editfiles.
 * nfstype:                               nfstype.
 * NIS, netgroup support:                 groups.
+* noabspath:                             shellcommands.
 * NOT operator:                          Cfengine classes.
 * NT, ACL:                               NT ACLs.
 * ones:                                  broadcast.
@@ -290,6 +504,7 @@ Concept Index
 * Paths, making:                         directories.
 * Pattern matching in file sweeps:       Syntax.
 * pattern= and filtering:                tidy.
+* Peer watching (FriendStatus):          alerts.
 * Percentage disk space:                 required.
 * Permissions, directories:              Directory permissions.
 * Port, connecting to different:         Firewalls and NATs.
@@ -304,8 +519,14 @@ Concept Index
 * Public keys:                           copy.
 * Purge, excluding files:                copy.
 * Quoted strings:                        editfiles.
+* Random numbers:                        Setting variables with functions.
 * RandomInt() function:                  control.
+* Read array from file:                  Setting variables with functions.
+* Read array from table:                 Setting variables with functions.
+* ReadArray:                             Setting variables with functions.
+* ReadFile:                              Setting variables with functions.
 * ReadFile() function:                   control.
+* ReadTable:                             Setting variables with functions.
 * Recursion in files:                    Recursion.
 * Redefinition of macros:                AllowRedefinitionOf.
 * Relative links:                        Single links.
@@ -326,6 +547,7 @@ Concept Index
 * RPM Database Queries:                  packages.
 * Running cfengine from a single master host: cfrun.
 * Running cfrun:                         cfrun.
+* scanarrivals=:                         disks.
 * scheduling:                            schedule.
 * Scripts and class information:         shellcommands.
 * Scripts, passing classes to:           Special variables.
@@ -353,6 +575,7 @@ Concept Index
 * smtpserver:                            Smtpserver.
 * Specifying file sizes:                 tidy.
 * SplayTime in cfrun:                    cfrun.
+* split <1>:                             Iteration over lists.
 * split:                                 split.
 * SplitOn:                               editfiles.
 * SpoolDirectories:                      spooldirectories.
@@ -365,7 +588,7 @@ Concept Index
 * Symbolic links, relative:              Single links.
 * sysadm:                                sysadm.
 * SysLog():                              alerts.
-* Testing files:                         Evaluated classes.
+* Testing files:                         Evaluated classes and special functions.
 * Tidy by ctime, mtime, atime:           tidy.
 * Tidy log files for users:              LogTidyHomeFiles.
 * Tidying empty files:                   tidy.
@@ -381,22 +604,23 @@ Concept Index
 * Truncating log files:                  disable.
 * Trusted hosts:                         copy.
 * TrustKeysFrom variable:                TrustKeysFrom.
-* umask <1>:                             processes.
-* umask <2>:                             editfiles.
+* umask <1>:                             editfiles.
+* umask <2>:                             processes.
 * umask:                                 shellcommands.
 * underscoreclasses:                     Special variables.
 * Unmounting filesystems:                unmount.
 * UnsetState():                          alerts.
 * update.conf:                           Work directory.
 * Variables in import files:             import.
+* Variables, setting to result of a shell command: Setting variables with functions.
 * Warning about full disks <1>:          disks.
 * Warning about full disks:              required.
 * Wildcard home:                         Syntax.
 * Wildcards in homepattern:              homepattern.
 * WWW server logs:                       disable.
-* xdev <1>:                              copy.
-* xdev <2>:                              tidy.
-* xdev:                                  Syntax.
+* xdev <1>:                              Syntax.
+* xdev <2>:                              copy.
+* xdev:                                  tidy.
 * xdev (File system boundaries):         Recursion.
 * zeros:                                 broadcast.
 
@@ -408,6 +632,7 @@ FAQ Index
 
 * Menu:
 
+* Absolute path and shellcommands:       shellcommands.
 * Brackets (parentheses) in classes.:    Cfengine classes.
 * Can't stat error when remote copying:  DenyBadClocks.
 * Changing repository name conventions:  repchar.
@@ -421,10 +646,12 @@ FAQ Index
 * How can I avoid hanging shellcommands?: shellcommands.
 * How can I set a timeout for a shell command?: shellcommands.
 * How to create files while editing:     editfiles.
-* Iterating over lists:                  split.
+* Iterating over lists <1>:              split.
+* Iterating over lists:                  Iteration over lists.
 * MD5 checksums take a long time to compute.: ChecksumDatabase in cfservd.
 * Parentheses in classes.:               Cfengine classes.
 * Remote copy problems, can't stat:      copy.
+* Shellcommands must start with absolute path: shellcommands.
 * Too many open files error:             Too many open files.
 
 

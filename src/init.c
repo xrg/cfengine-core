@@ -134,7 +134,7 @@ else
    {
    if (statbuf.st_mode & 077)
       {
-      snprintf(OUTPUT,bufsize*2,"UNTRUSTED: RPC input directory %s was not private!\n",VLOCKDIR,statbuf.st_mode & 0777);
+      snprintf(OUTPUT,bufsize*2,"UNTRUSTED: RPC input directory %s was not private! (%o)\n",VBUFF,statbuf.st_mode & 0777);
       FatalError(OUTPUT);
       }
    }
@@ -154,7 +154,7 @@ else
    {
    if (statbuf.st_mode & 077)
       {
-      snprintf(OUTPUT,bufsize*2,"UNTRUSTED: RPC output directory %s was not private!\n",VLOCKDIR,statbuf.st_mode & 0777);
+      snprintf(OUTPUT,bufsize*2,"UNTRUSTED: RPC output directory %s was not private! (%o)\n",VBUFF,statbuf.st_mode & 0777);
       FatalError(OUTPUT);
       }
    }
@@ -173,7 +173,7 @@ else
    {
    if (statbuf.st_mode & 077)
       {
-      snprintf(OUTPUT,bufsize*2,"UNTRUSTED: Private key directory %s was not private!\n",VLOCKDIR,statbuf.st_mode & 0777);
+      snprintf(OUTPUT,bufsize*2,"UNTRUSTED: Private key directory %s/ppkeys was not private!\n",VLOCKDIR,statbuf.st_mode & 0777);
       FatalError(OUTPUT);
       }
    }
@@ -187,11 +187,12 @@ chmod(VLOCKDIR,(mode_t)0755); /* Locks must be immutable to others */
 /**********************************************************************/
 
 void ActAsDaemon(int preserve)
-{
-   int fd, maxfd;
+
+{ int fd, maxfd;
 #ifdef HAVE_SETSID
    setsid();
-#endif 
+#endif
+   
    closelog();
    fflush(NULL);
    fd = open("/dev/null", O_RDWR, 0);
@@ -217,4 +218,119 @@ for (fd=STDERR_FILENO+1; fd<maxfd; ++fd)
    {
    if (fd != preserve) close(fd);
    }
+}
+
+
+
+/*******************************************************************/
+
+int IsIPV6Address(char *name)
+
+{ char *sp;
+ int count,max = 0; 
+
+Debug("IsIPV6Address(%s)\n",name);
+ 
+if (name == NULL)
+   {
+   return false;   
+   }
+
+count = 0;
+ 
+for (sp = name; *sp != '\0'; sp++)
+   {
+   if (isalnum((int)*sp))
+      {
+      count++;
+      }
+   else if ((*sp != ':') && (*sp != '.'))
+      {
+      return false;
+      }
+
+   if (count > max)
+      {
+      max = count;
+      }
+   else
+      {
+      count = 0;
+      }
+   }
+
+if (max <= 2)
+   {
+   Debug("Looks more like a MAC address");
+   return false;
+   }
+ 
+if (strstr(name,":") == NULL)
+   {
+   return false;
+   }
+
+if (StrStr(name,"scope"))
+   {
+   return false;    
+   }
+ 
+return true;
+}
+
+
+/*******************************************************************/
+
+int IsIPV4Address(char *name)
+
+{ char *sp;
+  int count = 0; 
+
+Debug("IsIPV4Address(%s)\n",name);
+ 
+if (name == NULL)
+   {
+   return false;   
+   }
+ 
+for (sp = name; *sp != '\0'; sp++)
+   {
+   if (!isdigit((int)*sp) && (*sp != '.'))
+      {
+      return false;
+      }
+
+   if (*sp == '.')
+      {
+      count++;
+      }
+   }
+ 
+if (count != 3)
+   {
+   return false;
+   }
+
+return true;
+}
+
+/*******************************************************************/
+
+int IsInterfaceAddress(char *adr)
+
+ /* Does this address belong to a local interface */
+
+{ struct Item *ip;
+
+for (ip = IPADDRESSES; ip != NULL; ip=ip->next)
+   {
+   if (StrnCmp(adr,ip->name,strlen(adr)) == 0)
+      {
+      Debug("Identifying (%s) as one of my interfaces\n",adr);
+      return true;
+      }
+   }
+
+Debug("(%s) is not one of my interfaces\n",adr); 
+return false; 
 }

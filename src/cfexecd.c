@@ -68,6 +68,7 @@ struct option CFDOPTIONS[] =
    { "debug",optional_argument,0,'d' }, 
    { "verbose",no_argument,0,'v' },
    { "file",required_argument,0,'f' },
+   { "no-splay",required_argument,0,'q' },
    { "no-fork",no_argument,0,'F' },
    { "once",no_argument,0,'1'},
    { "foreground",no_argument,0,'g'},
@@ -108,10 +109,7 @@ int FileChecksum ARGLIST((char *filename, unsigned char *digest, char type));
 /* Level 0 : Main                                                  */
 /*******************************************************************/
 
-int main (argc,argv)
-
-int argc;
-char **argv;
+int main (int argc,char **argv)
 
 { time_t starttime = time(NULL);
  
@@ -132,10 +130,7 @@ if (!ONCE)
 /* Level 1                                                          */
 /********************************************************************/
 
-void CheckOptsAndInit(argc,argv)
-
-int argc;
-char **argv;
+void CheckOptsAndInit(int argc,char **argv)
 
 { extern char *optarg;
   int optindex = 0;
@@ -144,7 +139,9 @@ char **argv;
 
 ld_library_path[0] = '\0';
 
-Banner("Check options"); 
+Banner("Check options");
+
+NOSPLAY = false; 
 
 sprintf(VPREFIX, "cfexecd"); 
 openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_DAEMON);
@@ -164,46 +161,49 @@ while ((c=getopt_long(argc,argv,"L:d:vhpFV1g",CFDOPTIONS,&optindex)) != EOF)
                    default:  DEBUG = true;
                              break;
                    }
-		
-		NO_FORK = true;
-		VERBOSE = true;
-		printf("cfexecd Debug mode: running in foreground\n");
+                
+                NO_FORK = true;
+                VERBOSE = true;
+                printf("cfexecd Debug mode: running in foreground\n");
                 break;
 
       case 'v': VERBOSE = true;
-	        break;
+         break;
 
       case 'V': printf("GNU %s-%s daemon\n%s\n",PACKAGE,VERSION,COPYRIGHT);
-	        printf("This program is covered by the GNU Public License and may be\n");
-		printf("copied free of charge. No warrenty is implied.\n\n");
-                exit(0);
-	        break;
-
+          printf("This program is covered by the GNU Public License and may be\n");
+          printf("copied free of charge. No warrenty is implied.\n\n");
+          exit(0);
+          break;
+          
+      case 'q': NOSPLAY = true;
+          break;
+          
       case 'p': PARSEONLY = true;
-	        break;
-
+          break;
+          
       case 'g': NO_FORK = true;
-	        break;
-
+         break;
+         
       case 'L': 
-	        snprintf(ld_library_path,bufsize-1,"LD_LIBRARY_PATH=%s",optarg);
-		if (putenv(strdup(ld_library_path)) != 0)
-		   {
-		   }
-		
-		break;
-
+          snprintf(ld_library_path,bufsize-1,"LD_LIBRARY_PATH=%s",optarg);
+          if (putenv(strdup(ld_library_path)) != 0)
+             {
+             }
+          
+          break;
+          
       case 'F':
       case '1': ONCE = true;
-		NO_FORK = true;
-	        break;
-
+          NO_FORK = true;
+          break;
+          
       default:  Syntax();
-                exit(1);
-
+          exit(1);
+          
       }
-   }
-
+  }
+ 
 LOGGING = true;                    /* Do output to syslog */
 
 snprintf(VBUFF,bufsize,"%s/inputs/update.conf",WORKDIR);
@@ -230,10 +230,7 @@ strcpy(VUQNAME,VSYSNAME.nodename);
 
 /*******************************************************************/
 
-void StartServer(argc,argv)
-
-int argc;
-char **argv;
+void StartServer(int argc,char **argv)
 
 { int time_to_run = false;
   time_t now = time(NULL); 
@@ -304,51 +301,53 @@ else
       time_to_run = ScheduleRun();
       
       if (time_to_run)
-	 {
-	 if (!GetLock("cfd","exec",exec_ifelapsed,exec_expireafter,VUQNAME,time(NULL)))
-	    {
-	    snprintf(OUTPUT,bufsize*2,"cfexecd: Couldn't get exec lock -- exists or too soon: IfElapsed %d, ExpireAfter %d\n",exec_ifelapsed,exec_expireafter);
-	    CfLog(cfverbose,OUTPUT,"");
-	    continue;
-	    }
-	 
-	 GetCfStuff();
-	 
+         {
+         if (!GetLock("cfd","exec",exec_ifelapsed,exec_expireafter,VUQNAME,time(NULL)))
+            {
+            snprintf(OUTPUT,bufsize*2,"cfexecd: Couldn't get exec lock -- exists or too soon: IfElapsed %d, ExpireAfter %d\n",exec_ifelapsed,exec_expireafter);
+            CfLog(cfverbose,OUTPUT,"");
+            continue;
+            }
+         
+         GetCfStuff();
+         
 #ifdef NT 
-	 /*
-	  * Spawn a separate process - spawn will work if the cfexecd binary
-	  * has changed (where cygwin's fork() would fail).
-	  */
-	 
-	 Debug("Spawning %s\n", nargv[0]);
-	 pid = spawnvp((int)_P_NOWAIT, nargv[0], nargv);
-	 if (pid < 1)
-	    {
-	    CfLog(cferror,"Can't spawn run","spawnvp");
-	    }
-	 
-#elsif (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-	 
-	 pthread_attr_init(&PTHREADDEFAULTS);
-	 pthread_attr_setdetachstate(&PTHREADDEFAULTS,PTHREAD_CREATE_DETACHED);
-
+         /*
+          * Spawn a separate process - spawn will work if the cfexecd binary
+          * has changed (where cygwin's fork() would fail).
+          */
+         
+         Debug("Spawning %s\n", nargv[0]);
+         pid = spawnvp((int)_P_NOWAIT, nargv[0], nargv);
+         if (pid < 1)
+            {
+            CfLog(cferror,"Can't spawn run","spawnvp");
+            }
+#endif
+#ifndef NT
+#if (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+         
+         pthread_attr_init(&PTHREADDEFAULTS);
+         pthread_attr_setdetachstate(&PTHREADDEFAULTS,PTHREAD_CREATE_DETACHED);
+         
 #ifdef HAVE_PTHREAD_ATTR_SETSTACKSIZE
-	 pthread_attr_setstacksize(&PTHREADDEFAULTS,(size_t)2048*1024);
+         pthread_attr_setstacksize(&PTHREADDEFAULTS,(size_t)2048*1024);
 #endif
-
-	 if (pthread_create(&tid,&PTHREADDEFAULTS,LocalExec,NULL) != 0)
-	    {
-	    CfLog(cferror,"Can't create thread!","pthread_create");
-	    LocalExec(NULL);
-	    }
-
-	 pthread_attr_destroy(&PTHREADDEFAULTS);
+         
+         if (pthread_create(&tid,&PTHREADDEFAULTS,LocalExec,NULL) != 0)
+            {
+            CfLog(cferror,"Can't create thread!","pthread_create");
+            LocalExec(NULL);
+            }
+         
+         pthread_attr_destroy(&PTHREADDEFAULTS);
 #else
-         LocalExec(NULL);	 
+         LocalExec(NULL);  
 #endif
-	 
-	 ReleaseCurrentLock();
-	 }
+#endif
+         
+         ReleaseCurrentLock();
+         }
       }
    }
 }
@@ -542,9 +541,7 @@ exit(0);
 
 /**************************************************************/
 
-void *LocalExec(dummy)
-
-void *dummy;
+void *LocalExec(void *dummy)
 
 { FILE *pp; 
   char line[bufsize],filename[bufsize],*sp;
@@ -565,8 +562,16 @@ Verbose("  LocalExec at %s\n",ctime(&starttime));
 Verbose("------------------------------------------------------------------\n"); 
 
 /* Need to make sure we have LD_LIBRARY_PATH here or children will die  */
+
+if (NOSPLAY)
+   {
+   snprintf(cmd,bufsize-1,"%s/bin/cfagent -q",WORKDIR);
+   }
+else
+   {
+   snprintf(cmd,bufsize-1,"%s/bin/cfagent",WORKDIR);
+   }
  
-snprintf(cmd,bufsize-1,"%s/bin/cfagent",WORKDIR);
 snprintf(line,100,CanonifyName(ctime(&starttime)));
 snprintf(filename,bufsize-1,"%s/outputs/cf_%s_%s",WORKDIR,CanonifyName(VFQNAME),line);
 
@@ -584,6 +589,7 @@ if ((pp = cfpopen(cmd,"r")) == NULL)
    {
    snprintf(OUTPUT,bufsize,"Couldn't open pipe to command %s\n",cmd);
    CfLog(cferror,OUTPUT,"cfpopen");
+   fclose(fp);
    return NULL;
    }
  
@@ -593,17 +599,17 @@ while (!feof(pp) && ReadLine(line,bufsize,pp))
       {
       fflush(pp);
       break;
-      }	 
+      }  
    
    print = false;
       
    for (sp = line; *sp != '\0'; sp++)
       {
       if (! isspace((int)*sp))
-	 {
-	 print = true;
-	 break;
-	 }
+         {
+         print = true;
+         break;
+         }
       }
    
    if (print)
@@ -613,10 +619,14 @@ while (!feof(pp) && ReadLine(line,bufsize,pp))
       /* If we can't send mail, log to syslog */
       
       if (strlen(MAILTO) == 0)
-	 {
-	 strcat(line,"\n");
-	 CfLog(cfinform,line,"");
-	 }
+         {
+         strncat(line,"\n",bufsize-1-strlen(line));
+         if ((strchr(line,'\n')) == NULL)
+            {
+            line[bufsize-2] = '\n';
+            }
+         CfLog(cfinform,line,"");
+         }
       
       line[0] = '\0';
       }
@@ -640,10 +650,9 @@ return NULL;
  * This function is "stolen" from the checksum.c. Else we have to link so
  * many more files with cfexecd. There also some small changes.
 */
-int FileChecksum(filename,digest,type)
 
-char *filename,type;
-unsigned char digest[EVP_MAX_MD_SIZE+1];
+int FileChecksum(char *filename,unsigned char digest[EVP_MAX_MD_SIZE+1],char type)
+
 
 { FILE *file;
   EVP_MD_CTX context;
@@ -663,9 +672,9 @@ else
    switch (type)
       {
       case 's': md = EVP_get_digestbyname("sha");
-  	        break;
+           break;
       case 'm': md = EVP_get_digestbyname("md5");
-	        break;
+         break;
       default: FatalError("Software failure in ChecksumFile");
       }
 
@@ -692,6 +701,8 @@ else
 return 0; 
 }
 
+/*******************************************************************/
+
 /*
  * HvB: Bas van der Vlies
  *  This function compare the current result with the previous run
@@ -701,9 +712,7 @@ return 0;
  *
  *  Changes made by: Jeff Wasilko always update the symlink
 */
-int CompareResult(filename, prev_file)
-
-char *filename, *prev_file; 
+int CompareResult(char *filename,char *prev_file)
 
 { int i;
   char digest1[EVP_MAX_MD_SIZE+1];
@@ -730,9 +739,9 @@ if ((fp=fopen(prev_file,"r")) != NULL)
       for (i = 0; i < md_len1; i++)
           if (digest1[i] != digest2[i])
              {
-	     rtn = 1;
-	     break;
-	     }
+      rtn = 1;
+      break;
+      }
       }
    }
 else
@@ -757,15 +766,14 @@ return(rtn);
 
 /***********************************************************************/
 
-void MailResult(file,to)
+void MailResult(char *file,char *to)
 
-char *file,*to;
-
-{ int sd, sent, count = 0;
+{ int sd, sent, count = 0, anomaly = false;
   struct hostent *hp;
   struct sockaddr_in raddr;
   struct servent *server;
   struct stat statbuf;
+  time_t now = time(NULL);
   FILE *fp;
 
   /* HvB: Bas van der Vlies */
@@ -825,6 +833,28 @@ if (strlen(to) == 0)
    return;
    }
 
+/* Check first for anomalies - for subject header */
+ 
+if ((fp=fopen(file,"r")) == NULL)
+   {
+   snprintf(VBUFF,bufsize-1,"Couldn't open file %s",file);
+   CfLog(cferror,VBUFF,"fopen");
+   return;
+   }
+
+ while (!feof(fp))
+    {
+    VBUFF[0] = '\0';
+    fgets(VBUFF,bufsize,fp);
+    if (strstr(VBUFF,"entropy"))
+       {
+       anomaly = true;
+       break;
+       }
+    }
+ 
+fclose(fp);
+ 
 if ((fp=fopen(file,"r")) == NULL)
    {
    snprintf(VBUFF,bufsize-1,"Couldn't open file %s",file);
@@ -850,7 +880,7 @@ if ((server = getservbyname("smtp","tcp")) == NULL)
    return;
    }
 
-bzero(&raddr,sizeof(raddr));
+memset(&raddr,0,sizeof(raddr));
 
 raddr.sin_port = (unsigned int) server->s_port;
 raddr.sin_addr.s_addr = ((struct in_addr *)(hp->h_addr))->s_addr;
@@ -905,7 +935,18 @@ if (!Dialogue(sd,"DATA\r\n"))
     goto mail_err;
     }
 
-sprintf(VBUFF,"Subject: (%s/%s)\r\n",VFQNAME,VIPADDRESS); 
+if (anomaly)
+   {
+   sprintf(VBUFF,"Subject: **!! (%s/%s)\r\n",VFQNAME,VIPADDRESS);
+   }
+else
+   {
+   sprintf(VBUFF,"Subject: (%s/%s)\r\n",VFQNAME,VIPADDRESS);
+   }
+ 
+sent=send(sd,VBUFF,strlen(VBUFF),0);
+
+sprintf(VBUFF,"From: cfengine@%s\r\n",VFQNAME); 
 sent=send(sd,VBUFF,strlen(VBUFF),0);
 sprintf(VBUFF,"To: %s\r\n\r\n",to); 
 sent=send(sd,VBUFF,strlen(VBUFF),0);
@@ -952,13 +993,11 @@ CfLog(cferror,VBUFF,"");
 /* Level 5                                                        */
 /******************************************************************/
 
-int Dialogue(sd,s)
-
-int sd;
-char *s;
+int Dialogue(int sd,char *s)
 
 { int sent;
   char ch,f = '\0';
+  int charpos,rfclinetype = ' ';
 
 if ((s != NULL) && (*s != '\0'))
    {
@@ -970,18 +1009,32 @@ else
    Debug("Nothing to send .. waiting for opening\n");
    }
 
+charpos = 0;
+ 
 while (recv(sd,&ch,1,0))
    {
+   charpos++;
+   
    if (f == '\0')
       {
       f = ch;
       }
 
+   if (charpos == 4)  /* Multiline RFC in form 222-Message with hyphen at pos 4 */
+      {
+      rfclinetype = ch;
+      }
+   
    Debug("%c",ch);
    
    if (ch == '\n' || ch == '\0')
       {
-      break;
+      charpos = 0;
+      
+      if (rfclinetype == ' ')
+         {
+         break;
+         }
       }
    }
 
@@ -992,9 +1045,7 @@ return ((f == '2') || (f == '3')); /* return code 200 or 300 from smtp*/
 /*  Dummies                                                       */
 /******************************************************************/
 
-void Banner(string)
-
-char *string;
+void Banner(char *string)
 
 {
 Verbose("---------------------------------------------------------------------\n");
@@ -1004,44 +1055,40 @@ Verbose("---------------------------------------------------------------------\n
 
 /*********************************************************************/
 
-
-void RotateFiles(name,number)
-
-char *name;
-int number;
+void RotateFiles(char *name,int number)
 
 {
  /* dummy */
 }
 
 
-int RecursiveTidySpecialArea(name,tp,maxrecurse,sb)
-
-char *name;
-struct Tidy *tp;
-int maxrecurse;
-struct stat *sb;
+int RecursiveTidySpecialArea(char *name,struct Tidy *tp,int maxrecurse,struct stat *sb)
 
 {
  return true;
 }
 
 
-void yyerror(s)
-
-char *s;
+void yyerror(char *s)
 
 {
  printf("%s\n",s);
 }
 
 
-char *GetMacroValue(s,sp)
+char *GetMacroValue(char *s,char *sp)
 
-char *s,*sp;
 {
  return NULL;
 }
+
+
+void AddMacroValue(char *scope,char *name,char *value)
+
+{
+}
+
+
 /* EOF */
 
 

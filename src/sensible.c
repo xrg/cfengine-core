@@ -46,10 +46,7 @@ char *VSKIPFILES[] =
 
 /*********************************************************************/
 
-int SensibleFile(nodename,path,ip)
-
-char *nodename, *path;
-struct Image *ip;
+int SensibleFile(char *nodename,char *path,struct Image *ip)
 
 { int i, suspicious = true;
   struct stat statbuf; 
@@ -68,14 +65,14 @@ if (IsItemIn(SUSPICIOUSLIST,nodename))
    if (stat(nodename,&statbuf) != -1)
       {
       if (S_ISREG(statbuf.st_mode))
-	 {
-	 snprintf(OUTPUT,bufsize,"Suspicious file %s found in %s\n",nodename,path);
-	 CfLog(cferror,OUTPUT,"");
-	 return false;
-	 }
+         {
+         snprintf(OUTPUT,bufsize,"Suspicious file %s found in %s\n",nodename,path);
+         CfLog(cferror,OUTPUT,"");
+         return false;
+         }
       }
    }
-
+ 
 if ((strcmp(nodename,"...") == 0) && (strcmp(path,"/") == 0))
    {
    Verbose("DFS cell node detected in /...\n");
@@ -123,9 +120,9 @@ if (suspicious && NONALPHAFILES)
    for (sp = newname+strlen(path); *sp != '\0'; sp++)
       {
       if ((*sp > 126) || (*sp < 33))
-	 {
-	 *sp = 50 + (*sp / 50);  /* Create a visible ASCII interpretation */
-	 }
+  {
+  *sp = 50 + (*sp / 50);  /* Create a visible ASCII interpretation */
+  }
       }
 
    strcat(newname,".cf-nonalpha");
@@ -156,26 +153,26 @@ if (strstr(nodename,".") && (EXTENSIONLIST != NULL))
    if (S_ISDIR(statbuf.st_mode))
       {
       if (strcmp(nodename,"...") == 0)
-	 {
-	 Verbose("Hidden directory ... found in %s\n",path);
-	 return true;
-	 }
-
+         {
+         Verbose("Hidden directory ... found in %s\n",path);
+         return true;
+         }
+      
       for (sp = nodename+strlen(nodename)-1; *sp != '.'; sp--)
-	 {
-	 }
-
+         {
+         }
+      
       if ((char *)sp != nodename) /* Don't get .dir */
-	 {
-	 sp++; /* Find file extension, look for known plain files  */
-
-	 if ((strlen(sp) > 0) && IsItemIn(EXTENSIONLIST,sp))
-	    {
-	    snprintf(OUTPUT,bufsize,"Suspicious directory %s in %s looks like plain file with extension .%s",nodename,path,sp);
-	    CfLog(cfsilent,OUTPUT,"");
-	    return false;
-	    }
-	 }
+         {
+         sp++; /* Find file extension, look for known plain files  */
+         
+         if ((strlen(sp) > 0) && IsItemIn(EXTENSIONLIST,sp))
+            {
+            snprintf(OUTPUT,bufsize,"Suspicious directory %s in %s looks like plain file with extension .%s",nodename,path,sp);
+            CfLog(cfsilent,OUTPUT,"");
+            return false;
+            }
+         }
       }
    }
 
@@ -227,21 +224,17 @@ return true;
 
 /********************************************************************/
 
-void RegisterRecursionRootDevice(device)
-
-dev_t device;
+void RegisterRecursionRootDevice(dev_t device)
 
 {
- Verbose("Registering root device as %d\n",device);
- ROOTDEVICE = device;
+Debug("Registering root device as %d\n",device);
+ROOTDEVICE = device;
 }
 
 
 /********************************************************************/
 
-int DeviceChanged(thisdevice)
-
-dev_t thisdevice;
+int DeviceChanged(dev_t thisdevice)
 
 {
 if (thisdevice == ROOTDEVICE)

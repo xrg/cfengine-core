@@ -87,7 +87,7 @@ char *CLASSATTRIBUTES[CLSSATTR][ATTRDIM] =
    {"-","-","-"},                 /* fields are sysname and machine */
    {"sunos","*","4*"},           /* sun 4  */
    {"ultrix","risc","4*"},       /* ultrix */
-   {"hp-ux","9000*","*"},        /* hpux */
+   {"hp-ux","*","*"},        /* hpux */
    {"aix","*","*"},              /* aix */
    {"linux","*","*"},            /* linux */
    {"sunos","sun4*","5*"},       /* solaris */

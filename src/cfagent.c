@@ -53,13 +53,11 @@ enum aseq EvaluateAction ARGLIST((char *action, struct Item **classlist, int pas
 void CheckOpts ARGLIST((int argc, char **argv));
 int GetResource ARGLIST((char *var));
 void BuildClassEnvironment ARGLIST((void));
-void CheckForModule ARGLIST((char *actiontxt, char *args));
 void Syntax ARGLIST((void));
 void EmptyActionSequence ARGLIST((void));
 void GetEnvironment ARGLIST((void));
 int NothingLeftToDo ARGLIST((void));
 void SummarizeObjects ARGLIST((void));
-void CheckClass ARGLIST((char *class, char *source));
 void SetContext ARGLIST((char *id));
 void DeleteCaches ARGLIST((void));
 void CheckForMethod ARGLIST((void));
@@ -69,10 +67,7 @@ void CheckMethodReply ARGLIST((void));
 /* Level 0 : Main                                                  */
 /*******************************************************************/
 
-int main(argc,argv)
-
-char *argv[];
-int argc;
+int main(int argc,char *argv[])
 
 { struct Item *ip;
  
@@ -99,114 +94,119 @@ PreNetConfig();
 
 ReadRCFile(); /* Should come before parsing so that it can be overridden */
 
-if (IsPrivileged() && !MINUSF && !PRMAILSERVER)
-   {
-   SetContext("update");
-   if (ParseInputFile("update.conf"))
-      {
-      CheckSystemVariables();
-      if (!PARSEONLY)
-	 {
-	 DoTree(1,"Update");
-	 EmptyActionSequence();
-	 DeleteClassesFromContext("update");
-	 DeleteCaches();
-	 }
-      }
-   }
-
-DeleteMacros(CONTEXTID);
+ if (IsPrivileged() && !MINUSF && !PRMAILSERVER)
+    {
+    SetContext("update");
+    if (ParseInputFile("update.conf"))
+       {
+       CheckSystemVariables();
+       if (!PARSEONLY)
+          {
+          DoTree(1,"Update");
+          EmptyActionSequence();
+          DeleteClassesFromContext("update");
+          DeleteCaches();
+          }
+       }
+    
+    if (ERRORCOUNT > 0)
+       {
+       exit(1);
+       }
+    }
  
-if (UPDATEONLY)
-   {
-   return 0;
-   }
-
-SetContext("main");
-
-if (!PARSEONLY)
-   {
-   PersistentClassesToHeap();
-   GetEnvironment();
-   }
+ if (UPDATEONLY)
+    {
+    return 0;
+    }
  
-ParseInputFile(VINPUTFILE);
-CheckFilters();
-EchoValues();
-CheckForMethod();
+ SetContext("main");
  
-if (PRSYSADM)                                           /* -a option */
-   {
-   printf("%s\n",VSYSADM);
-   exit (0);
-   }
-
-if (PRMAILSERVER)
-   {
-   if (GetMacroValue(CONTEXTID,"smtpserver"))
-      {
-      printf("%s\n",GetMacroValue(CONTEXTID,"smtpserver"));
-      }
-   else
-      {
-      printf("No SMTP server defined\n");
-      }
-   printf("%s\n",VSYSADM);
-   printf("%s\n",VFQNAME);
-   printf("%s\n",VIPADDRESS);
-
-   if (GetMacroValue(CONTEXTID,"EmailMaxLines"))
-      {
-      printf("%s\n", GetMacroValue(CONTEXTID,"EmailMaxLines"));
-      }
-   else
-      {
-      /* User has not expressed a preference -- let cfexecd decide */
-      printf("%s", "-1\n");
-      }
-
-   for (ip = SCHEDULE; ip != NULL; ip=ip->next)
-      {
-      printf("[%s]\n",ip->name);
-      }
-
-   printf("\n");
-   exit(0);
-   }
-
-if (PARSEONLY)                            /* Establish lock for root */
-   {
-   exit(0);
-   } 
+ if (!PARSEONLY)
+    {
+    PersistentClassesToHeap();
+    GetEnvironment();
+    }
  
-CfOpenLog();
-CheckSystemVariables();
-
-SetReferenceTime(false); /* Reset */
-
-DoTree(2,"Main Tree"); 
-DoAlerts();
-
-CheckMethodReply();
+ ParseInputFile(VINPUTFILE);
+ CheckFilters();
+ EchoValues();
+ CheckForMethod();
  
-if (OptionIs(CONTEXTID,"ChecksumPurge", true)) 
-   {
-   ChecksumPurge();
-   }
+ if (PRSYSADM)                                           /* -a option */
+    {
+    printf("%s\n",VSYSADM);
+    exit (0);
+    }
  
-SummarizeObjects();
-closelog();
-return 0;
+ if (PRMAILSERVER)
+    {
+    if (GetMacroValue(CONTEXTID,"smtpserver"))
+       {
+       printf("%s\n",GetMacroValue(CONTEXTID,"smtpserver"));
+       }
+    else
+       {
+       printf("No SMTP server defined\n");
+       }
+    printf("%s\n",VSYSADM);
+    printf("%s\n",VFQNAME);
+    printf("%s\n",VIPADDRESS);
+    
+    if (GetMacroValue(CONTEXTID,"EmailMaxLines"))
+       {
+       printf("%s\n", GetMacroValue(CONTEXTID,"EmailMaxLines"));
+       }
+    else
+       {
+       /* User has not expressed a preference -- let cfexecd decide */
+       printf("%s", "-1\n");
+       }
+    
+    for (ip = SCHEDULE; ip != NULL; ip=ip->next)
+       {
+       printf("[%s]\n",ip->name);
+       }
+    
+    printf("\n");
+    exit(0);
+    }
+ 
+ if (ERRORCOUNT > 0)
+    {
+    exit(1);
+    }
+ 
+ if (PARSEONLY)                            /* Establish lock for root */
+    {
+    exit(0);
+    } 
+ 
+ CfOpenLog();
+ CheckSystemVariables();
+ 
+ SetReferenceTime(false); /* Reset */
+ 
+ DoTree(2,"Main Tree"); 
+ DoAlerts();
+ 
+ CheckMethodReply();
+ 
+ if (OptionIs(CONTEXTID,"ChecksumPurge", true)) 
+    {
+    ChecksumPurge();
+    }
+ 
+ SummarizeObjects();
+ closelog();
+ return 0;
 }
 
 /*******************************************************************/
 /* Level 1                                                         */
 /*******************************************************************/
  
-void Initialize(argc,argv)
-
-char *argv[];
-int argc;
+void Initialize(int argc,char *argv[])
 
 { char *sp, *cfargv[maxargs];
   int i, cfargc, seed;
@@ -240,101 +240,65 @@ re_syntax_options |= RE_INTERVALS;
 strcpy(VINPUTFILE,"cfagent.conf");
 strcpy(VNFSTYPE,"nfs");
 
-AddClassToHeap("any");      /* This is a reserved word / wildcard */
-
-snprintf(VBUFF,bufsize,"cfengine_%s",CanonifyName(VERSION));
-AddClassToHeap(VBUFF);
-
-if (stat("/etc/redhat-release",&statbuf) != -1)
-   {
-   Verbose("This appears to be a redhat system.\n");
-   AddClassToHeap("redhat");
-   linux_redhat_version();
-   }
-
-if (stat("/etc/SuSE-release",&statbuf) != -1)
-   {
-   Verbose("\nThis appears to be a SuSE system.\n");
-   AddClassToHeap("SuSE");
-   linux_suse_version();
-   }
-
-if (stat("/etc/slackware-release",&statbuf) != -1)
-   {
-   Verbose("\nThis appears to be a slackware system.\n");
-   AddClassToHeap("slackware");
-   }
- 
-if (stat("/etc/debian_version",&statbuf) != -1)
-   {
-   Verbose("\nThis appears to be a debian system.\n");
-   AddClassToHeap("debian");
-   debian_version();
-   }
-
-if (stat("/etc/UnitedLinux-release",&statbuf) != -1)
-   {
-   Verbose("\nThis appears to be a UnitedLinux system.\n");
-   AddClassToHeap("UnitedLinux");
-   }
+IDClasses();
  
 /* Note we need to fix the options since the argv mechanism doesn't */
  /* work when the shell #!/bla/cfengine -v -f notation is used.      */
  /* Everything ends up inside a single argument! Here's the fix      */
 
 cfargc = 1;
-cfargv[0]="cfengine";
+cfargv[0]="cfagent";
 
 for (i = 1; i < argc; i++)
    {
    sp = argv[i];
-
+   
    while (*sp != '\0')
       {
       while (*sp == ' ' && *sp != '\0') /* Skip to arg */
          {
-	 if (*sp == ' ')
-	    {
-	    *sp = '\0'; /* Break argv string */
-	    }
-	 sp++;
+         if (*sp == ' ')
+            {
+            *sp = '\0'; /* Break argv string */
+            }
+         sp++;
          }
-
+      
       cfargv[cfargc++] = sp;
       
       while (*sp != ' ' && *sp != '\0') /* Skip to white space */
          {
-	 sp++;
+         sp++;
          }
       }
    }
-
-VDEFAULTBINSERVER.name = "";
-
-VEXPIREAFTER = VDEFAULTEXPIREAFTER;
-VIFELAPSED = VDEFAULTIFELAPSED;
-TRAVLINKS = false;
  
-sprintf(VBUFF,"%s/state/cf_procs",WORKDIR);
+ VDEFAULTBINSERVER.name = "";
+ 
+ VEXPIREAFTER = VDEFAULTEXPIREAFTER;
+ VIFELAPSED = VDEFAULTIFELAPSED;
+ TRAVLINKS = false;
+ 
+ sprintf(VBUFF,"%s/state/cf_procs",WORKDIR);
  
  if (stat(VBUFF,&statbuf) == -1)
     {
     CreateEmptyFile(VBUFF);
     }
  
-strcpy(VLOGDIR,WORKDIR); 
-strcpy(VLOCKDIR,VLOGDIR);  /* Same since 2.0.a8 */
-
-OpenSSL_add_all_algorithms();
-ERR_load_crypto_strings();
-CheckWorkDirectories();
-RandomSeed();
+ strcpy(VLOGDIR,WORKDIR); 
+ strcpy(VLOCKDIR,VLOGDIR);  /* Same since 2.0.a8 */
  
-RAND_bytes(s,16);
-s[15] = '\0';
-seed = ElfHash(s);
-srand48((long)seed);  
-CheckOpts(cfargc,cfargv);
+ OpenSSL_add_all_algorithms();
+ ERR_load_crypto_strings();
+ CheckWorkDirectories();
+ RandomSeed();
+ 
+ RAND_bytes(s,16);
+ s[15] = '\0';
+ seed = ElfHash(s);
+ srand48((long)seed);  
+ CheckOpts(cfargc,cfargv);
 }
 
 /*******************************************************************/
@@ -370,23 +334,23 @@ if ((sp=getenv(CFINPUTSVAR)) != NULL)
 else
    {
    snprintf(comm,bufsize,"%s/%s",WORKDIR,VPRECONFIG);
-
+   
    if (stat(comm,&buf) == -1)
-       {
-       CfLog(cfverbose,"No preconfiguration file\n","");
-       return;
-       }
-      
+      {
+      CfLog(cfverbose,"No preconfiguration file\n","");
+      return;
+      }
+   
    snprintf(comm,bufsize,"%s/%s %s",WORKDIR,VPRECONFIG,CLASSTEXT[VSYSTEMHARDCLASS]);
    }
 
-if (S_ISDIR(buf.st_mode) || S_ISCHR(buf.st_mode) || S_ISBLK(buf.st_mode))
-   {
-   snprintf(OUTPUT,bufsize*2,"Error: %s was not a regular file\n",VPRECONFIG);
-   CfLog(cferror,OUTPUT,"");
-   FatalError("Aborting.");
-   }
-
+ if (S_ISDIR(buf.st_mode) || S_ISCHR(buf.st_mode) || S_ISBLK(buf.st_mode))
+    {
+    snprintf(OUTPUT,bufsize*2,"Error: %s was not a regular file\n",VPRECONFIG);
+    CfLog(cferror,OUTPUT,"");
+    FatalError("Aborting.");
+    }
+ 
 Verbose("\n\nExecuting Net Preconfiguration script...%s\n\n",VPRECONFIG);
  
 if ((pp = cfpopen(comm,"r")) == NULL)
@@ -521,11 +485,11 @@ while (!feof(fp))
                         VNETSTAT[c] = mp;
                         break;
       case rpscomm:
-	                VPSCOMM[c] = mp;
-	                break;
+                 VPSCOMM[c] = mp;
+                 break;
       case rpsopts:
-	                VPSOPTS[c] = mp;
-	                break;
+                 VPSOPTS[c] = mp;
+                 break;
       default:
                         snprintf(VBUFF,bufsize,"Bad resource %s in %s\n",variable,VRCFILE);
                         FatalError(VBUFF);
@@ -552,8 +516,9 @@ void GetEnvironment()
 { char env[bufsize],class[bufsize],name[maxvarsize],value[maxvarsize];
   FILE *fp;
   struct stat statbuf;
-
-Debug1("GetEnvironment()\n");
+  time_t now = time(NULL);
+  
+Verbose("Looking for environment from cfenvd...\n");
 snprintf(env,bufsize,"%s/state/%s",WORKDIR,ENV_FILE);
 
 if (stat(env,&statbuf) == -1)
@@ -562,6 +527,13 @@ if (stat(env,&statbuf) == -1)
    return;
    }
 
+ if (statbuf.st_mtime < (now - 60*60))
+    {
+    Verbose("Environment data are too old - discarding\n");
+    unlink(env);
+    return;
+    }
+ 
  if (!GetMacroValue(CONTEXTID,"env_time"))
     {
     snprintf(value,maxvarsize-1,"%s",ctime(&statbuf.st_mtime));
@@ -572,6 +544,8 @@ if (stat(env,&statbuf) == -1)
     {
     CfLog(cferror,"Reserved variable $(env_time) in use","");
     }
+
+Verbose("Loading environment...\n");
  
 if ((fp = fopen(env,"r")) == NULL)
    {
@@ -595,9 +569,9 @@ while (!feof(fp))
       {
       sscanf(class,"%255[^=]=%255s",name,value);
       if (!GetMacroValue(CONTEXTID,name))
-	 {
-	 AddMacroValue(CONTEXTID,name,value);
-	 }
+         {
+         AddMacroValue(CONTEXTID,name,value);
+         }
       }
    else
       {
@@ -605,7 +579,8 @@ while (!feof(fp))
       }
    }
  
-fclose(fp); 
+fclose(fp);
+Verbose("Environment data loaded\n\n"); 
 }
 
 /*******************************************************************/
@@ -615,24 +590,9 @@ void EchoValues()
 { struct Item *ip;
   int n = 0;
   
-if (strstr(VSYSNAME.nodename,ToLowerStr(VDOMAIN)))
-   {
-   strcpy(VFQNAME,VSYSNAME.nodename);
-   
-   while(VSYSNAME.nodename[n++] != '.')
-      {
-      }
-   
-   strncpy(VUQNAME,VSYSNAME.nodename,n-1);
-   }
-else
-   {
-   snprintf(VFQNAME,bufsize,"%s.%s",VSYSNAME.nodename,ToLowerStr(VDOMAIN));
-   strcpy(VUQNAME,VSYSNAME.nodename);
-   }
- 
+
 Verbose("Accepted domain name: %s\n\n",VDOMAIN); 
-bzero(VBUFF,bufsize);
+memset(VBUFF,0,bufsize);
 
 if (GetMacroValue(CONTEXTID,"OutputPrefix"))
    {
@@ -665,14 +625,13 @@ if (VERBOSE || DEBUG || D2 || D3)
       printf("%s ",ip->name);
       }
    printf(")\n");
-
+   
    printf("Suspicious filenames to be warned about = ( ");
    for (ip = SUSPICIOUSLIST; ip != NULL; ip=ip->next)
       {
       printf("%s ",ip->name);
       }
-   printf(")\n");
-   
+   printf(")\n");   
    }
 
 if (DEBUG || D2 || D3)
@@ -875,6 +834,14 @@ if (GetMacroValue(CONTEXTID,"childlibpath"))
       }
    }
 
+if (GetMacroValue(CONTEXTID,"BindToInterface"))
+   {
+   memset(VBUFF,0,bufsize);
+   ExpandVarstring("$(BindToInterface)",VBUFF,NULL);
+   strncpy(BINDINTERFACE, VBUFF, bufsize-1);
+   Debug("$(BindToInterface) Expanded to %s\n",BINDINTERFACE);
+   } 
+
 if (GetMacroValue(CONTEXTID,"MaxCfengines"))
    {
    activecfs = atoi(GetMacroValue(CONTEXTID,"MaxCfengines"));
@@ -927,22 +894,22 @@ if (GetMacroValue(CONTEXTID,"BinaryPaddingChar"))
    if (VBUFF[0] == '\\')
       {
       switch (VBUFF[1])
-	 {
-	 case '0': PADCHAR = '\0';
-	     break;
-	 case '\n': PADCHAR = '\n';
-
-	     break;
-	 case '\\': PADCHAR = '\\';
-	 }
+         {
+         case '0': PADCHAR = '\0';
+             break;
+         case '\n': PADCHAR = '\n';
+             
+             break;
+         case '\\': PADCHAR = '\\';
+         }
       }
    else
       {
       PADCHAR = VBUFF[0];
       }
    }
-
-
+ 
+ 
 if (OptionIs(CONTEXTID,"Warnings",true))
    {
    WARNINGS = true;
@@ -1010,7 +977,7 @@ else
    snprintf(VBUFF,bufsize,"%s/checksum.db",WORKDIR);
    CHECKSUMDB = strdup(VBUFF);
    }
-
+ 
 Verbose("Checksum database is %s\n",CHECKSUMDB); 
  
 if (GetMacroValue(CONTEXTID,"CompressCommand"))
@@ -1059,40 +1026,36 @@ if (!NOSPLAY)
       time = atoi(GetMacroValue(CONTEXTID,"SplayTime"));
       
       if (time < 0)
-	 {
-	 CfLog(cfinform,"SplayTime with negative value, ignoring.\n","");
-	 return;
-	 }
+         {
+         CfLog(cfinform,"SplayTime with negative value, ignoring.\n","");
+         return;
+         }
       
       if (!DONESPLAY)
-	 {
-	 if (!PARSEONLY)
-	    {
-	    DONESPLAY = true;
-	    Verbose("Sleeping for SplayTime %d seconds\n\n",(int)(time*60*hash/hashtablesize));
-	    sleep((int)(time*60*hash/hashtablesize));
-	    }
-	 }
+         {
+         if (!PARSEONLY)
+            {
+            DONESPLAY = true;
+            Verbose("Sleeping for SplayTime %d seconds\n\n",(int)(time*60*hash/hashtablesize));
+            sleep((int)(time*60*hash/hashtablesize));
+            }
+         }
       else
-	 {
-	 Verbose("Time splayed once already - not repeating\n");
-	 }
+         {
+         Verbose("Time splayed once already - not repeating\n");
+         }
       }
    } 
-
-if (OptionIs(CONTEXTID,"LogTidyHomeFiles",false))
-   {
-   LOGTIDYHOMEFILES = false;
-   }
-
-
+ 
+ if (OptionIs(CONTEXTID,"LogTidyHomeFiles",false))
+    {
+    LOGTIDYHOMEFILES = false;
+    } 
 }
 
 /*******************************************************************/
 
-void SetReferenceTime(setclasses)
-
-int setclasses;
+void SetReferenceTime(int setclasses)
 
 { time_t tloc;
  
@@ -1116,10 +1079,7 @@ if (setclasses)
 
 /*******************************************************************/
 
-void DoTree(passes,info)
-
-int passes;
-char *info;
+void DoTree(int passes,char *info)
 
 { struct Item *action;
  
@@ -1140,176 +1100,177 @@ for (PASS = 1; PASS <= passes; PASS++)
          }
       
       if (IsExcluded(action->classes))
-	 {
-	 continue;
-	 }
-
+         {
+         continue;
+         }
+      
       if ((PASS > 1) && NothingLeftToDo())
-	 {
-	 continue;
-	 }
-
+         {
+         continue;
+         }
+      
       Verbose("\n*********************************************************************\n");
       Verbose(" %s Sched: %s pass %d @ %s",info,action->name,PASS,ctime(&CFINITSTARTTIME));
       Verbose("*********************************************************************\n\n");
       
-      switch(EvaluateAction(action->name,&VADDCLASSES,PASS))
-	 {
-	 case mountinfo:
-	     if (PASS == 1)
-		{
-		GetHomeInfo();
-		GetMountInfo();
-		}
-	     break;
-	     
-	 case mkpaths:
-	     if (!NOFILECHECK)
-		{
-		GetSetuidLog();
-		MakePaths();
-		SaveSetuidLog();
-		}
-	     break;
-	     
-	 case lnks:	     
-	     MakeChildLinks();
-	     MakeLinks();	     
-	     break;
-	     
-	 case chkmail:
-	     MailCheck();	     
-	     break;
-	     
-	 case mountall:
-	     if (!NOMOUNTS && PASS == 1)
-		{	      
-		MountFileSystems();
-		}
-	     break;
-	     
-	 case requir:
-	 case diskreq:
-
-	     CheckRequired();
-	     break;
-	     
-	 case tidyf:
-	     if (!NOTIDY) 
-		{
-		TidyFiles();
-		}
-	     break;
-	     
-	 case shellcom:
-	     if (!NOSCRIPTS)
-		{
-		Scripts();
-		}
-	     break;
-	     
-	 case chkfiles:
-	     if (!NOFILECHECK)
-		{
-		GetSetuidLog();
-		CheckFiles();
-		SaveSetuidLog();
-		}
-	     break;
-	     
-	 case disabl:
-	 case renam:
-	     DisableFiles();
-	     break;
-	     
-	 case mountresc:
-	     if (!NOMOUNTS)
-		{
-		if (!GetLock("Mountres",CanonifyName(VFSTAB[VSYSTEMHARDCLASS]),0,VEXPIREAFTER,VUQNAME,0))
-		   {
-		   exit(0);    /* Note IFELAPSED must be zero to avoid conflict with mountresc */
-		   }
-		
-		MountHomeBinServers();
-		MountMisc();
-		ReleaseCurrentLock();
-		}
-	     break;
-	     
-	 case umnt:
-	     Unmount();
-	     break;
-	     
-	 case edfil:
-	     if (!NOEDITS)
-		{
-		EditFiles();
-		}
-	     break;
-	     
-	     
-	 case resolv:
-
-	     if (PASS > 1)
-		{
-		continue;
-		}
-	     
-	     if (!GetLock(ASUniqueName("resolve"),"",VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
-		{
-		continue;
-		}
-	     
-	     CheckResolv();
-	     ReleaseCurrentLock();
-	     break;
-	     
-	 case imag:
-	     if (!NOCOPY)
-		{
-		GetSetuidLog();
-		MakeImages();
-		SaveSetuidLog();
-		}
-	     break;
-	     
-	 case netconfig:
-	     
-	     if (IFCONF)
-		{
-		ConfigureInterfaces();
-		}
-	     break;
-	     
-	 case tzone:
-	     CheckTimeZone();
-	     break;
-	     
-	 case procs:
-	     if (!NOPROCS)
-		{
-		CheckProcesses();
-		}
-	     break;
-
-	 case meths:
-	     if (!NOMETHODS)
-		{
-		DoMethods();
-		}
-	     break;
-	     
-	 case pkgs:
-		 CheckPackages();
-	     break;
-	     
-	 case plugin:      break;
-	     
-	 default:  
-	     snprintf(OUTPUT,bufsize*2,"Undefined action %s in sequence\n",action->name);
-	     FatalError(OUTPUT);
-	     break;
-	 }
+      switch(ACTION = EvaluateAction(action->name,&VADDCLASSES,PASS))
+         {
+         case mountinfo:
+             if (PASS == 1)
+                {
+                GetHomeInfo();
+                GetMountInfo();
+                }
+             break;
+             
+         case mkpaths:
+             if (!NOFILECHECK)
+                {
+                GetSetuidLog();
+                MakePaths();
+                SaveSetuidLog();
+                }
+             break;
+             
+         case lnks:      
+             MakeChildLinks();
+             MakeLinks();      
+             break;
+             
+         case chkmail:
+             MailCheck();      
+             break;
+             
+         case mountall:
+             if (!NOMOUNTS && PASS == 1)
+                {       
+                MountFileSystems();
+                }
+             break;
+             
+         case requir:
+         case diskreq:
+             
+             CheckRequired();
+             break;
+             
+         case tidyf:
+             if (!NOTIDY) 
+                {
+                TidyFiles();
+                }
+             break;
+             
+         case shellcom:
+             if (!NOSCRIPTS)
+                {
+                Scripts();
+                }
+             break;
+             
+         case chkfiles:
+             if (!NOFILECHECK)
+                {
+                GetSetuidLog();
+                CheckFiles();
+                SaveSetuidLog();
+                }
+             break;
+             
+         case disabl:
+         case renam:
+             DisableFiles();
+             break;
+             
+         case mountresc:
+             if (!NOMOUNTS)
+                {
+                if (!GetLock("Mountres",CanonifyName(VFSTAB[VSYSTEMHARDCLASS]),0,VEXPIREAFTER,VUQNAME,0))
+                   {
+                   exit(0);    /* Note IFELAPSED must be zero to avoid conflict with mountresc */
+                   }
+                
+                MountHomeBinServers();
+                MountMisc();
+                ReleaseCurrentLock();
+                }
+             break;
+             
+         case umnt:
+             Unmount();
+             break;
+             
+         case edfil:
+             if (!NOEDITS)
+                {
+                EditFiles();
+                }
+             break;
+             
+             
+         case resolv:
+             
+             if (PASS > 1)
+                {
+                continue;
+                }
+             
+             if (!GetLock(ASUniqueName("resolve"),"",VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+                {
+                continue;
+                }
+             
+             CheckResolv();
+             ReleaseCurrentLock();
+             break;
+             
+         case imag:
+             if (!NOCOPY)
+                {
+                GetSetuidLog();
+                MakeImages();
+                SaveSetuidLog();
+                }
+             break;
+             
+         case netconfig:
+             
+             if (IFCONF)
+                {
+                ConfigureInterfaces();
+                }
+             break;
+             
+         case tzone:
+             CheckTimeZone();
+             break;
+             
+         case procs:
+             if (!NOPROCS)
+                {
+                CheckProcesses();
+                }
+             break;
+             
+         case meths:
+             if (!NOMETHODS)
+                {
+                DoMethods();
+                }
+             break;
+             
+         case pkgs:
+             CheckPackages();
+             break;
+             
+         case plugin:
+             break;
+             
+         default:  
+             snprintf(OUTPUT,bufsize*2,"Undefined action %s in sequence\n",action->name);
+             FatalError(OUTPUT);
+             break;
+         }
       
       DeleteItemList(VADDCLASSES);
       VADDCLASSES = NULL;
@@ -1343,15 +1304,15 @@ for (vproclist = VPROCLIST; vproclist != NULL; vproclist=vproclist->next)
       return false;
       }
    }
-
-for (vscript = VSCRIPT; vscript != NULL; vscript=vscript->next)
-   {
-   if (vscript->done == 'n')
-      {
-      return false;
-      }
-   }
-
+ 
+ for (vscript = VSCRIPT; vscript != NULL; vscript=vscript->next)
+    {
+    if (vscript->done == 'n')
+       {
+       return false;
+       }
+    }
+ 
 for (vfile = VFILE; vfile != NULL; vfile=vfile->next)
    {
    if (vfile->done == 'n')
@@ -1430,11 +1391,7 @@ return true;
 
 /*******************************************************************/
 
-enum aseq EvaluateAction(action,classlist,pass)
-
-char *action;
-struct Item **classlist;
-int pass;
+enum aseq EvaluateAction(char *action,struct Item **classlist,int pass)
 
 { int i,j = 0;
   char *sp,cbuff[bufsize],actiontxt[bufsize],mod[bufsize],args[bufsize];
@@ -1478,13 +1435,13 @@ while (*sp != '\0')
    else
       {
       if ((strncmp(actiontxt,"module:",7) != 0) && ! IsSpecialClass(cbuff))
-	 {
+         {
          AppendItem(classlist,cbuff,NULL);
-	 }
+         }
       }
    }
-
-BuildClassEnvironment();
+ 
+ BuildClassEnvironment();
 
 if ((VERBOSE || DEBUG || D2) && *classlist != NULL)
    {
@@ -1545,16 +1502,14 @@ for (op = VOBJ; op != NULL; op=op->next)
 /* Level 2                                                         */
 /*******************************************************************/
 
-void CheckOpts(argc,argv)
-
-char **argv;
-int argc;
+void CheckOpts(int argc,char **argv)
 
 { extern char *optarg;
   struct Item *actionList;
   int optindex = 0;
   int c;
 
+  
 while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o:Z:",OPTIONS,&optindex)) != EOF)
   {
   switch ((char) c)
@@ -1564,170 +1519,172 @@ while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o
                 if (getchar() != 'y')
                    {
                    printf("cfagent: aborting\n");
-		   closelog();
+                   closelog();
                    exit(1);
                    }
-
+                
                 ENFORCELINKS = true;
                 break;
-
+                
       case 'B': UPDATEONLY = true;
-  	        break;
+           break;
 
-      case 'f': strcpy(VINPUTFILE,optarg);
-                MINUSF = true;
-                break;
-
+      case 'f':
+          strncpy(VINPUTFILE,optarg, bufsize-1);
+          VINPUTFILE[bufsize-1] = '\0';
+          MINUSF = true;
+          break;
+          
       case 'g': CHECK  = true;
-	        break;
-
+          break;
+          
       case 'd': 
-	        AddClassToHeap("opt_debug");
-                switch ((optarg==NULL) ? '3' : *optarg)
-                   {
-                   case '1': D1 = true;
-                             break;
-                   case '2': D2 = true;
-                             break;
-		   case '3': D3 = true;
-		             VERBOSE = true;
-		             break;
-		   case '4': D4 = true;
-		             break;
-                   default:  DEBUG = true;
-                             break;
-                   }
-                break;
-
+          AddClassToHeap("opt_debug");
+          switch ((optarg==NULL) ? '3' : *optarg)
+             {
+             case '1': D1 = true;
+                 break;
+             case '2': D2 = true;
+                 break;
+             case '3': D3 = true;
+                 VERBOSE = true;
+                 break;
+             case '4': D4 = true;
+                 break;
+             default:  DEBUG = true;
+                 break;
+             }
+          break;
+          
       case 'M':
-		NOMODULES = true;
-		break;
-		
+          NOMODULES = true;
+          break;
+          
       case 'K': IGNORELOCK = true;
-	        break;
-
+          break;
+          
       case 'A': IGNORELOCK = true;
-	        break;
-		
+          break;
+          
       case 'D': AddMultipleClasses(optarg);
-                break;
-
+          break;
+          
       case 'N': NegateCompoundClass(optarg,&VNEGHEAP);
-                break;
-
+          break;
+          
       case 'b': FORCENETCOPY = true;
-	        break;
-
+          break;
+          
       case 'e': NOEDITS = true;
-                break;
-
+          break;
+          
       case 'i': IFCONF = false;
-                break;
-
+          break;
+          
       case 'I': INFORM = true;
-	        break;
-
+          break;
+          
       case 'v': VERBOSE = true;
-                break;
-
+          break;
+          
       case 'l': FatalError("Option -l is deprecated -- too dangerous");
-                break;
-
+          break;
+          
       case 'n': DONTDO = true;
-	        IGNORELOCK = true;
-	        AddClassToHeap("opt_dry_run");
-                break;
-
+          IGNORELOCK = true;
+          AddClassToHeap("opt_dry_run");
+          break;
+          
       case 'p': PARSEONLY = true;
-                IGNORELOCK = true;
-                break;
-
+          IGNORELOCK = true;
+          break;
+          
       case 'm': NOMOUNTS = true;
-                break;
-
+          break;
+          
       case 'c': NOFILECHECK = true;
-                break;
-
+          break;
+          
       case 'C': MOUNTCHECK = true;
-                break;
-
+          break;
+          
       case 't': NOTIDY = true;
-                break;
-
+          break;
+          
       case 's': NOSCRIPTS = true;
-                break;
-
+          break;
+          
       case 'a': PRSYSADM = true;
-                IGNORELOCK = true;
-		PARSEONLY = true;
-                break;
-
+          IGNORELOCK = true;
+          PARSEONLY = true;
+          break;
+          
       case 'z': PRMAILSERVER = true;
-	        IGNORELOCK = true;
-		PARSEONLY = true;
-		break;
-
+          IGNORELOCK = true;
+          PARSEONLY = true;
+          break;
+          
       case 'Z': strncpy(METHODMD5,optarg,bufsize-1);
-  	        Debug("Got method call reference %s\n",METHODMD5);
-   	        break;
-		
+          Debug("Got method call reference %s\n",METHODMD5);
+          break;
+          
       case 'L': KILLOLDLINKS = true;
-                break;
-
+          break;
+          
       case 'V': printf("GNU cfengine %s\n%s\n",VERSION,COPYRIGHT);
-	        printf("This program is covered by the GNU Public License and may be\n");
-		printf("copied free of charge.  No warranty is implied.\n\n");
-                exit(0);
-
+          printf("This program is covered by the GNU Public License and may be\n");
+          printf("copied free of charge.  No warranty is implied.\n\n");
+          exit(0);
+          
       case 'h': Syntax();
-                exit(0);
-
+          exit(0);
+          
       case 'x': NOPRECONFIG = true;
-                break;
-
+          break;
+          
       case 'w': WARNINGS = false;
-                break;
-
+          break;
+          
       case 'X': NOLINKS = true;
-                break;
-
+          break;
+          
       case 'k': NOCOPY = true;
-                break;
-
+          break;
+          
       case 'S': SILENT = true;
-                break;
-
+          break;
+          
       case 'u': USEENVIRON = true;
-                break;
-
+          break;
+          
       case 'U': UNDERSCORE_CLASSES = true;
-	        break;
-
+          break;
+          
       case 'H': NOHARDCLASSES = true;
-	        break;
-
+          break;
+          
       case 'P': NOPROCS = true;
-	        break;
-
+          break;
+          
       case 'q': NOSPLAY = true;
-	        break;
-
+          break;
+          
       case 'Y': CFPARANOID = true;
-	        break;
-
+          break;
+          
       case 'j': actionList = SplitStringAsItemList(optarg, ',');
-                VJUSTACTIONS = ConcatLists(actionList, VJUSTACTIONS);
-                break;
-
+          VJUSTACTIONS = ConcatLists(actionList, VJUSTACTIONS);
+          break;
+          
       case 'o': actionList = SplitStringAsItemList(optarg, ',');
-                VAVOIDACTIONS = ConcatLists(actionList, VAVOIDACTIONS);
-                break;
-
+          VAVOIDACTIONS = ConcatLists(actionList, VAVOIDACTIONS);
+          break;
+          
       default:  Syntax();
-                exit(1);
-
+          exit(1);
+          
       }
-   }
+  }
 }
 
 /*******************************************************************/
@@ -1813,9 +1770,7 @@ if (ScopeIsMethod())
 
 /*******************************************************************/
 
-int GetResource(var)
-
-char *var;
+int GetResource(char *var)
 
 { int i;
 
@@ -1835,9 +1790,7 @@ return 0;
 
 /*******************************************************************/
 
-void SetStartTime(setclasses)
-
-int setclasses;
+void SetStartTime(int setclasses)
 
 { time_t tloc;
  
@@ -1848,7 +1801,7 @@ if ((tloc = time((time_t *)NULL)) == -1)
 
 CFINITSTARTTIME = tloc;
 
-Verbose("Job start time set to %s\n",ctime(&tloc));
+Debug("Job start time set to %s\n",ctime(&tloc));
 }
 
 /*******************************************************************/
@@ -1867,182 +1820,49 @@ for (ip = VHEAP; ip != NULL; ip=ip->next)
    if (IsDefinedClass(ip->name))
       {
       if ((size += strlen(ip->name)) > bufsize - buffer_margin)
-	 {
-	 Verbose("Class buffer overflowed, dumping class environment for modules\n");
-	 Verbose("This would probably crash the exec interface on most machines\n");
-	 return;
-	 }
+         {
+         Verbose("Class buffer overflowed, dumping class environment for modules\n");
+         Verbose("This would probably crash the exec interface on most machines\n");
+         return;
+         }
       else
-	 {
-	 size++; /* Allow for : separator */
-	 }
+         {
+         size++; /* Allow for : separator */
+         }
       strcat(ALLCLASSBUFFER,ip->name);
       strcat(ALLCLASSBUFFER,":");
       }
    }
-
-for (ip = VALLADDCLASSES; ip != NULL; ip=ip->next)
-   {
-   if (IsDefinedClass(ip->name))
+ 
+ for (ip = VALLADDCLASSES; ip != NULL; ip=ip->next)
+    {
+    if (IsDefinedClass(ip->name))
       {
       if ((size += strlen(ip->name)) > bufsize - buffer_margin)
-	 {
-	 Verbose("Class buffer overflowed, dumping class environment for modules\n");
-	 Verbose("This would probably crash the exec interface on most machines\n");
-	 return;
-	 }
+         {
+         Verbose("Class buffer overflowed, dumping class environment for modules\n");
+         Verbose("This would probably crash the exec interface on most machines\n");
+         return;
+         }
       else
-	 {
-	 size++; /* Allow for : separator */
-	 }
+         {
+         size++; /* Allow for : separator */
+         }
       
       strcat(ALLCLASSBUFFER,ip->name);
       strcat(ALLCLASSBUFFER,":");
       }
-   }
-
-Debug2("---\nENVIRONMENT: %s\n---\n",ALLCLASSBUFFER);
-
-if (USEENVIRON)
-   {
-   if (putenv(ALLCLASSBUFFER) == -1)
-      {
-      perror("putenv");
-      }
-   }
-}
-
-/*******************************************************************/
-
-void CheckForModule(actiontxt,args)
-
-char *actiontxt,*args;
-
-{ struct stat statbuf;
-  char line[bufsize],command[bufsize],name[maxvarsize],content[bufsize],*sp;
-  FILE *pp;
-  int print;
-
-if (NOMODULES)
-   {
-   return;
-   }
-  
-bzero(VBUFF,bufsize);
-
-if (GetMacroValue(CONTEXTID,"moduledirectory"))
-   {
-   ExpandVarstring("$(moduledirectory)",VBUFF,NULL);
-   }
-else
-   {
-   snprintf(VBUFF,bufsize,"%s/modules",WORKDIR);
-   }
-
-AddSlash(VBUFF);
-strcat(VBUFF,actiontxt);
+    }
  
-if (stat(VBUFF,&statbuf) == -1)
-   {
-   snprintf(OUTPUT,bufsize*2,"(Plug-in %s not found)",VBUFF);
-   Banner(OUTPUT);
-   return;
-   }
-
-if ((statbuf.st_uid != 0) && (statbuf.st_uid != getuid()))
-   {
-   snprintf(OUTPUT,bufsize*2,"Module %s was not owned by uid=%d executing cfagent\n",VBUFF,getuid());
-   CfLog(cferror,OUTPUT,"");
-   return;
-   }
-  
-snprintf(OUTPUT,bufsize*2,"Plug-in `%s\'",actiontxt);
-Banner(OUTPUT);
-
-strcat(VBUFF," ");
-
-if (BufferOverflow(VBUFF,args))
-   {
-   snprintf(OUTPUT,bufsize*2,"Culprit: class list for module (shouldn't happen)\n" );
-   CfLog(cferror,OUTPUT,"");
-   return;
-   }
-
-strcat(VBUFF,args); 
-ExpandVarstring(VBUFF,command,NULL); 
+ Debug2("---\nENVIRONMENT: %s\n---\n",ALLCLASSBUFFER);
  
-Verbose("Exec module [%s]\n",command); 
-   
-if ((pp = cfpopen(command,"r")) == NULL)
-   {
-   snprintf(OUTPUT,bufsize*2,"Couldn't open pipe from %s\n",actiontxt);
-   CfLog(cferror,OUTPUT,"cfpopen");
-   return;
-   }
-
-while (!feof(pp))
-   {
-   if (ferror(pp))  /* abortable */
-      {
-      snprintf(OUTPUT,bufsize*2,"Shell command pipe %s\n",actiontxt);
-      CfLog(cferror,OUTPUT,"ferror");
-      break;
-      }
-   
-   ReadLine(line,bufsize,pp);
-
-   if (strlen(line) > bufsize - 80)
-      {
-      snprintf(OUTPUT,bufsize*2,"Line from module %s is too long to be sensible\n",actiontxt);
-      CfLog(cferror,OUTPUT,"");
-      break;
-      }
-   
-   if (ferror(pp))  /* abortable */
-      {
-      snprintf(OUTPUT,bufsize*2,"Shell command pipe %s\n",actiontxt);
-      CfLog(cferror,OUTPUT,"ferror");
-      break;
-      }	 
-   
-   print = false;
-   
-   for (sp = line; *sp != '\0'; sp++)
-      {
-      if (! isspace((int)*sp))
-	 {
-	 print = true;
-	 break;
-	 }
-      }
-   
-   switch (*line)
-      {
-      case '+':
-	  Verbose("Activated classes: %s\n",line+1);
-	  CheckClass(line+1,command);
-	  AddMultipleClasses(line+1);
-	  break;
-      case '-':
-	  Verbose("Deactivated classes: %s\n",line+1);
-	  CheckClass(line+1,command);
-	  NegateCompoundClass(line+1,&VNEGHEAP);
-	  break;
-      case '=':
-          sscanf(line+1,"%[^=]=%[^\n]",name,content);
-	  AddMacroValue(CONTEXTID,name,content);
-	  break;
-
-      default:
-	  if (print)
-	     {
-	     snprintf(OUTPUT,bufsize,"%s: %s\n",actiontxt,line);
-	     CfLog(cferror,OUTPUT,"");
-	     }
-      }
-   }
-
-cfpclose(pp);
+ if (USEENVIRON)
+    {
+    if (putenv(ALLCLASSBUFFER) == -1)
+       {
+       perror("putenv");
+       }
+    }
 }
 
 /*******************************************************************/
@@ -2066,29 +1886,4 @@ printf("\nBug reports to bug-cfengine@gnu.org (News: gnu.cfengine.bug)\n");
 printf("General help to help-cfengine@gnu.org (News: gnu.cfengine.help)\n");
 printf("Info & fixes at http://www.iu.hio.no/cfengine\n");
 }
-
-
-/******************************************************************/
-/* Level 3                                                        */
-/******************************************************************/
-
-void CheckClass(name,source)
-
-char *name,*source;
-
-{ char *sp;
-
- for (sp = name; *sp != '\0'; sp++)
-    {
-    if (!isalnum((int)*sp) && (*sp != '_'))
-       {
-       snprintf(OUTPUT,bufsize,"Module class contained an illegal character (%c). Only alphanumeric or underscores in classes.",*sp);
-       CfLog(cferror,OUTPUT,"");
-       }
-    }
- 
-}
-
-
-
 /* EOF */

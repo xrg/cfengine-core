@@ -36,9 +36,7 @@
 
 /*********************************************************************/
 
-int BadProtoReply(buf)
-
-char *buf;
+int BadProtoReply(char *buf)
 
 {
 return (strncmp(buf,"BAD:",4) == 0);
@@ -46,9 +44,7 @@ return (strncmp(buf,"BAD:",4) == 0);
 
 /*********************************************************************/
 
-int OKProtoReply(buf)
-
-char *buf;
+int OKProtoReply(char *buf)
 
 {
 return(strncmp(buf,"OK:",3) == 0);
@@ -56,9 +52,7 @@ return(strncmp(buf,"OK:",3) == 0);
 
 /*********************************************************************/
 
-int FailedProtoReply(buf)
-
-char *buf;
+int FailedProtoReply(char *buf)
 
 {
 return(strncmp(buf,CFFAILEDSTR,strlen(CFFAILEDSTR)) == 0);
@@ -66,10 +60,7 @@ return(strncmp(buf,CFFAILEDSTR,strlen(CFFAILEDSTR)) == 0);
 
 /*********************************************************************/
 
-int IdentifyForVerification(sd,localip,family)
-
-int sd,family;
-char *localip;
+int IdentifyForVerification(int sd,char *localip,int family)
 
 { char sendbuff[bufsize],dnsname[bufsize];
   struct sockaddr_in myaddr;
@@ -79,8 +70,8 @@ char *localip;
   struct passwd *user_ptr;
   char *uname;
   
-bzero(sendbuff,bufsize);
-bzero(dnsname,bufsize);
+memset(sendbuff,0,bufsize);
+memset(dnsname,0,bufsize);
  
 if (strcmp(VDOMAIN,CF_START_DOMAIN) == 0)
    {
@@ -97,52 +88,52 @@ if (strcmp(VDOMAIN,CF_START_DOMAIN) == 0)
  switch (family)
     {
     case AF_INET: len = sizeof(struct sockaddr_in);
-	break;
+        break;
 #if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
     case AF_INET6: len = sizeof(struct sockaddr_in6);
-	break;
+        break;
 #endif
     default:
-	CfLog(cferror,"Software error in IdentifyForVerification","");
+        CfLog(cferror,"Software error in IdentifyForVerification","");
     }
-
-if (getsockname(sd,(struct sockaddr *)&myaddr,&len) == -1)
-   {
-   CfLog(cferror,"Couldn't get socket address\n","getsockname");
-   return false;
-   }
  
-snprintf(localip,cfmaxiplen-1,"%s",sockaddr_ntop((struct sockaddr *)&myaddr)); 
-
-Debug("Identifying this agent as %s i.e. %s, with signature %d\n",localip,VFQNAME,CFSIGNATURE);
-
+ if (getsockname(sd,(struct sockaddr *)&myaddr,&len) == -1)
+    {
+    CfLog(cferror,"Couldn't get socket address\n","getsockname");
+    return false;
+    }
+ 
+ snprintf(localip,cfmaxiplen-1,"%s",sockaddr_ntop((struct sockaddr *)&myaddr)); 
+ 
+ Debug("Identifying this agent as %s i.e. %s, with signature %d\n",localip,VFQNAME,CFSIGNATURE);
+ 
 #if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
-
-if ((err=getnameinfo((struct sockaddr *)&myaddr,len,dnsname,maxvarsize,NULL,0,0)) != 0)
-   {
-   snprintf(OUTPUT,bufsize,"Couldn't look up address v6 for %s: %s\n",dnsname,gai_strerror(err));
-   CfLog(cferror,OUTPUT,"");
-   return false;
-   }
+ 
+ if ((err=getnameinfo((struct sockaddr *)&myaddr,len,dnsname,maxvarsize,NULL,0,0)) != 0)
+    {
+    snprintf(OUTPUT,bufsize,"Couldn't look up address v6 for %s: %s\n",dnsname,gai_strerror(err));
+    CfLog(cferror,OUTPUT,"");
+    return false;
+    }
  
 #else 
-
-iaddr = &(myaddr.sin_addr); 
-hp = gethostbyaddr((void *)iaddr,sizeof(myaddr.sin_addr),family);
-
-if ((hp == NULL) || (hp->h_name == NULL))
-   {
-   CfLog(cferror,"Couldn't lookup IP address\n","gethostbyaddr");
-   return false;
-   }
-
-strncpy(dnsname,hp->h_name,maxvarsize);
  
-if ((strstr(hp->h_name,".") == 0) && (strlen(VDOMAIN) > 0))
-   {
-   strcat(dnsname,".");
-   strcat(dnsname,VDOMAIN);
-   } 
+ iaddr = &(myaddr.sin_addr); 
+ hp = gethostbyaddr((void *)iaddr,sizeof(myaddr.sin_addr),family);
+ 
+ if ((hp == NULL) || (hp->h_name == NULL))
+    {
+    CfLog(cferror,"Couldn't lookup IP address\n","gethostbyaddr");
+    return false;
+    }
+ 
+ strncpy(dnsname,hp->h_name,maxvarsize);
+ 
+ if ((strstr(hp->h_name,".") == 0) && (strlen(VDOMAIN) > 0))
+    {
+    strcat(dnsname,".");
+    strcat(dnsname,VDOMAIN);
+    } 
 #endif 
  
 user_ptr = getpwuid(getuid());
@@ -173,9 +164,7 @@ return true;
 
 /*********************************************************************/
 
-int KeyAuthentication(ip)
-
-struct Image *ip;
+int KeyAuthentication(struct Image *ip)
 
 { char sendbuffer[bufsize],in[bufsize],*out,*decrypted_cchall;
  BIGNUM *nonce_challenge, *bn = NULL;
@@ -246,11 +235,11 @@ if (server_pubkey != NULL)
       return false;
       }
    
-   bcopy(out,sendbuffer+CF_RSA_PROTO_OFFSET,encrypted_len); 
+   memcpy(sendbuffer+CF_RSA_PROTO_OFFSET,out,encrypted_len); 
    }
 else
    {
-   bcopy(in,sendbuffer+CF_RSA_PROTO_OFFSET,nonce_len); 
+   memcpy(sendbuffer+CF_RSA_PROTO_OFFSET,in,nonce_len); 
    }
 
 /* proposition C1 - Send challenge / nonce */
@@ -269,19 +258,19 @@ if (DEBUG||D2)
 /*Send the public key - we don't know if server has it */ 
 /* proposition C2 */
 
-bzero(sendbuffer,bufsize); 
+memset(sendbuffer,0,bufsize); 
 len = BN_bn2mpi(PUBKEY->n,sendbuffer); 
 SendTransaction(CONN->sd,sendbuffer,len,CF_DONE); /* No need to encrypt the public key ... */
 
 /* proposition C3 */ 
-bzero(sendbuffer,bufsize);   
+memset(sendbuffer,0,bufsize);   
 len = BN_bn2mpi(PUBKEY->e,sendbuffer); 
 SendTransaction(CONN->sd,sendbuffer,len,CF_DONE);
 
 /* check reply about public key - server can break connection here */
 
 /* proposition S1 */  
-bzero(in,bufsize);  
+memset(in,0,bufsize);  
 ReceiveTransaction(CONN->sd,in,NULL);
 
 if (BadProtoReply(in))
@@ -293,7 +282,7 @@ if (BadProtoReply(in))
 /* Get challenge response - should be md5 of challenge */
 
 /* proposition S2 */   
-bzero(in,bufsize);  
+memset(in,0,bufsize);  
 ReceiveTransaction(CONN->sd,in,NULL);
 
 if (!ChecksumsMatch(digest,in,'m')) 
@@ -306,30 +295,31 @@ else
    {
    if (cant_trust_server == 'y')  /* challenge reply was correct */ 
       {
+      Verbose("\n >\n");
       snprintf(OUTPUT,bufsize,"Strong authentication of server=%s connection confirmed\n",ip->server);
       CfLog(cfverbose,OUTPUT,"");
       }
    else
       {
       if (ip->trustkey == 'y')
-	 {
-	 snprintf(OUTPUT,bufsize,"Trusting server identity and willing to accept key from %s=%s",ip->server,CONN->remoteip);
-	 CfLog(cferror,OUTPUT,"");
-	 }
+         {
+         snprintf(OUTPUT,bufsize,"Trusting server identity and willing to accept key from %s=%s",ip->server,CONN->remoteip);
+         CfLog(cferror,OUTPUT,"");
+         }
       else
-	 {
-	 snprintf(OUTPUT,bufsize,"Not authorized to trust the server=%s's public key (trustkey=false)\n",ip->server);
-	 CfLog(cferror,OUTPUT,"");
-	 return false;
-	 }
+         {
+         snprintf(OUTPUT,bufsize,"Not authorized to trust the server=%s's public key (trustkey=false)\n",ip->server);
+         CfLog(cferror,OUTPUT,"");
+         return false;
+         }
       }
    }
-
+ 
 /* Receive counter challenge from server */ 
 
 Debug("Receive counter challenge from server\n");  
 /* proposition S3 */   
-bzero(in,bufsize);  
+memset(in,0,bufsize);  
 encrypted_len = ReceiveTransaction(CONN->sd,in,NULL);
 
 

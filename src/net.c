@@ -44,10 +44,7 @@ Verbose("%s: Time out\n",VPREFIX);
 
 /*************************************************************************/
 
-int SendTransaction(sd,buffer,len,status)
-
-char *buffer,status;
-int sd,len;
+int SendTransaction(int sd,char *buffer,int len,char status)
 
 { char work[bufsize];
   int wlen;
@@ -68,7 +65,7 @@ if (wlen > bufsize-8)
  
 snprintf(work,8,"%c %d",status,wlen);
 
-bcopy(buffer,work+8,wlen);
+memcpy(work+8,buffer,wlen);
 
 Debug("Transaction Send[%s][Packed text]\n",work); 
  
@@ -82,16 +79,13 @@ return 0;
 
 /*************************************************************************/
 
-int ReceiveTransaction(sd,buffer,more)
-
-char *buffer;
-int sd,*more;
+int ReceiveTransaction(int sd,char *buffer,int *more)
 
 { char proto[9];
   char status = 'x';
   unsigned int len = 0;
  
-bzero(proto,9);
+memset(proto,0,9);
 
 if (RecvSocketStream(sd,proto,8,0) == -1)   /* Get control channel */
    {
@@ -114,25 +108,22 @@ if (strncmp(proto,"CAUTH",5) == 0)
    return -1;
    }
  
-if (more != NULL)
-   {
-   switch(status)
-      {
-      case 'm': *more = true;
-	  break;
-      default: *more = false;
-      }
-   }
+ if (more != NULL)
+    {
+    switch(status)
+       {
+       case 'm': *more = true;
+           break;
+       default: *more = false;
+       }
+    }
  
 return RecvSocketStream(sd,buffer,len,0);
 }
 
 /*************************************************************************/
  
-int RecvSocketStream(sd,buffer,toget,nothing)
- 
-int sd,toget,nothing;
-char buffer[bufsize];
+int RecvSocketStream(int sd,char buffer[bufsize],int toget,int nothing)
  
 { int already, got;
   static int fraction;
@@ -183,9 +174,7 @@ return toget;
  * Wed Feb 28 11:30:55 GMT 2001, Morten Hermanrud, mhe@say.no
  */
 
-int SendSocketStream(sd,buffer,tosend,flags)
-int sd,tosend,flags;
-char buffer[bufsize];
+int SendSocketStream(int sd,char buffer[bufsize],int tosend,int flags)
 
 { int sent,already=0;
 
@@ -198,18 +187,17 @@ do
    switch(sent)
       {
       case -1:
-	  CfLog(cfverbose,"Couldn't send","send");
-	  return -1;
+          CfLog(cfverbose,"Couldn't send","send");
+          return -1;
       default:
-	  Debug("SendSocketStream, sent %d\n",sent);
-	  already += sent;
-	  break;
+          Debug("SendSocketStream, sent %d\n",sent);
+          already += sent;
+          break;
       }
    }
+ while (already < tosend); 
 
-while(already < tosend);
-
-return already;
+ return already;
 }
 
 /*************************************************************************/

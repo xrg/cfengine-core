@@ -27,14 +27,15 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
+#ifdef DARWIN
+#include <sys/attr.h>
+#endif
 
 /*********************************************************************/
 
-int IsHomeDir(name)
+int IsHomeDir(char *name)
 
       /* This assumes that the dir lies under mountpattern */
-
-char *name;
 
 { char *sp;
   struct Item *ip;
@@ -57,19 +58,19 @@ for (ip = VHOMEPATLIST; ip != NULL; ip=ip->next)
    for (sp = ip->name; *sp != '\0'; sp++)
       {
       if (*sp == '/')
-	 {
-	 slashes++;
-	 }
+         {
+         slashes++;
+         }
       }
    
    for (sp = name+strlen(name); (*(sp-1) != '/') && (sp >= name) && (slashes >= 0); sp--)
       {
       if (*sp == '/')
-	 {
-	 slashes--;
-	 }
+         {
+         slashes--;
+         }
       }
-
+   
    /* Full comparison */
    
    if (WildMatch(ip->name,sp))
@@ -86,9 +87,7 @@ return(false);
 
 /*********************************************************************/
 
-int EmptyDir(path)
-
-char *path;
+int EmptyDir(char *path)
 
 { DIR *dirh;
   struct dirent *dirp;
@@ -120,17 +119,7 @@ return (!count);
 
 /*********************************************************************/
 
-int RecursiveCheck(name,plus,minus,action,uidlist,gidlist,recurse,rlevel,ptr,sb)
-
-char *name;
-mode_t plus,minus;
-struct UidList *uidlist;
-struct GidList *gidlist;
-enum fileactions action;
-int recurse;
-int rlevel;
-struct File *ptr;
-struct stat *sb;
+int RecursiveCheck(char *name,mode_t plus,mode_t minus,enum fileactions action,struct UidList *uidlist,struct GidList *gidlist,int recurse,int rlevel,struct File *ptr,struct stat *sb)
 
 { DIR *dirh;
   int goback; 
@@ -150,7 +139,7 @@ if (rlevel > recursion_limit)
    return false;
    }
  
-bzero(pcwd,bufsize); 
+memset(pcwd,0,bufsize); 
 
 Debug("RecursiveCheck(%s,+%o,-%o)\n",name,plus,minus);
 
@@ -163,7 +152,7 @@ if ((dirh = opendir(".")) == NULL)
    {
    if (lstat(name,&statbuf) != -1)
       {
-      CheckExistingFile(name,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
+      CheckExistingFile("*",name,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
       }
    return true;
    }
@@ -203,38 +192,36 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       if (lstat(dirp->d_name,&statbuf) == -1)
          {
          snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",pcwd);
-	 CfLog(cferror,OUTPUT,"stat");
+         CfLog(cferror,OUTPUT,"stat");
          continue;
          }
-
-      if (S_ISLNK(statbuf.st_mode) && (statbuf.st_mode != getuid()))	  
-	 {
-	 snprintf(OUTPUT,bufsize,"File %s is an untrusted link. cfagent will not follow it with a destructive operation (tidy)",pcwd);
-	 continue;
-	 }
-
+      
+      if (S_ISLNK(statbuf.st_mode) && (statbuf.st_mode != getuid()))   
+         {
+         snprintf(OUTPUT,bufsize,"File %s is an untrusted link. cfagent will not follow it with a destructive operation (tidy)",pcwd);
+         continue;
+         }
+      
       if (stat(dirp->d_name,&statbuf) == -1)
          {
          snprintf(OUTPUT,bufsize*2,"RecursiveCheck was working on %s when this happened:\n",pcwd);
-	 CfLog(cferror,OUTPUT,"stat");
+         CfLog(cferror,OUTPUT,"stat");
          continue;
          }
       }
-
-
+   
    if (ptr->xdev =='y' && DeviceChanged(statbuf.st_dev))
       {
       Verbose("Skipping %s on different device\n",pcwd);
       continue;
       }
-
    
    if (S_ISLNK(statbuf.st_mode))            /* should we ignore links? */
       {
-      CheckExistingFile(pcwd,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
+      CheckExistingFile("*",pcwd,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
       continue;
       }
-
+   
    if (S_ISDIR(statbuf.st_mode))
       {
       if (IsMountedFileSystem(&statbuf,pcwd,rlevel))
@@ -245,19 +232,19 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
          {
          if ((ptr->recurse > 1) || (ptr->recurse == INFINITERECURSE))
             {
-            CheckExistingFile(pcwd,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
+            CheckExistingFile("*",pcwd,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
             goback = RecursiveCheck(pcwd,plus,minus,action,uidlist,gidlist,recurse-1,rlevel+1,ptr,&statbuf);
-	    DirPop(goback,name,sb);
+     DirPop(goback,name,sb);
             }
          else
             {
-            CheckExistingFile(pcwd,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
+            CheckExistingFile("*",pcwd,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
             }
          }
       }
    else
       {
-      CheckExistingFile(pcwd,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
+      CheckExistingFile("*",pcwd,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
       }
    }
 
@@ -268,17 +255,8 @@ return true;
 
 /*********************************************************************/
 
-void CheckExistingFile(file,plus,minus,action,uidlist,gidlist,dstat,ptr,acl_aliases)
+void CheckExistingFile(char *cf_findertype,char *file,mode_t plus,mode_t minus,enum fileactions action,struct UidList *uidlist,struct GidList *gidlist,struct stat *dstat,struct File *ptr,struct Item *acl_aliases)
 
-char *file;
-mode_t plus,minus;
-struct UidList *uidlist;
-struct GidList *gidlist;
-enum fileactions action;
-struct stat *dstat;
-struct File *ptr;
-struct Item *acl_aliases;
- 
 { mode_t newperm = dstat->st_mode, maskvalue;
   int amroot = true, fixmode = true, docompress=false;
   unsigned char digest[EVP_MAX_MD_SIZE+1];
@@ -390,10 +368,10 @@ if (dstat->st_uid == 0 && (dstat->st_mode & S_ISUID))
       if (! IsItemIn(VSETUIDLIST,file))
          {
          if (amroot)
-	    {
-	    snprintf(OUTPUT,bufsize*2,"NEW SETUID root PROGRAM %s\n",file);
-	    CfLog(cfinform,OUTPUT,"");
-	    }
+            {
+            snprintf(OUTPUT,bufsize*2,"NEW SETUID root PROGRAM %s\n",file);
+            CfLog(cfinform,OUTPUT,"");
+            }
          PrependItem(&VSETUIDLIST,file,NULL);
          }
       }
@@ -403,27 +381,28 @@ if (dstat->st_uid == 0 && (dstat->st_mode & S_ISUID))
          {
          case fixall:
          case fixdirs:
-         case fixplain:  snprintf(OUTPUT,bufsize*2,"Removing setuid (root) flag from %s...\n\n",file);
-	                 CfLog(cfinform,OUTPUT,"");
-			 
-	                 if (ptr != NULL)
-                            {
-                            AddMultipleClasses(ptr->defines);
-                            }
-                         break;
+         case fixplain:
+             snprintf(OUTPUT,bufsize*2,"Removing setuid (root) flag from %s...\n\n",file);
+             CfLog(cfinform,OUTPUT,"");
+             
+             if (ptr != NULL)
+                {
+                AddMultipleClasses(ptr->defines);
+                }
+             break;
          case warnall:
          case warndirs:
-         case warnplain: if (amroot)
-	                    {
-      	                    snprintf(OUTPUT,bufsize*2,"WARNING setuid (root) flag on %s...\n\n",file);
-			    CfLog(cferror,OUTPUT,"");
-	                    }
-                         break;
-
+         case warnplain:
+             if (amroot)
+                {
+                snprintf(OUTPUT,bufsize*2,"WARNING setuid (root) flag on %s...\n\n",file);
+                CfLog(cferror,OUTPUT,"");
+                }
+             break;             
          }
       }
    }
-
+ 
 if (dstat->st_uid == 0 && (dstat->st_mode & S_ISGID))
    {
    if (newperm & S_ISGID)
@@ -437,10 +416,10 @@ if (dstat->st_uid == 0 && (dstat->st_mode & S_ISGID))
          else
             {
             if (amroot)
-	       {
-	       snprintf(OUTPUT,bufsize*2,"NEW SETGID root PROGRAM %s\n",file);
-	       CfLog(cferror,OUTPUT,"");
-	       }
+               {
+               snprintf(OUTPUT,bufsize*2,"NEW SETGID root PROGRAM %s\n",file);
+               CfLog(cferror,OUTPUT,"");
+               }
             PrependItem(&VSETUIDLIST,file,NULL);
             }
          }
@@ -451,23 +430,36 @@ if (dstat->st_uid == 0 && (dstat->st_mode & S_ISGID))
          {
          case fixall:
          case fixdirs:
-         case fixplain: snprintf(OUTPUT,bufsize*2,"Removing setgid (root) flag from %s...\n\n",file);
-	                CfLog(cfinform,OUTPUT,"");
-	                if (ptr != NULL)
-			   {
-                           AddMultipleClasses(ptr->defines);
-			   }
-	                break;
+         case fixplain:
+             snprintf(OUTPUT,bufsize*2,"Removing setgid (root) flag from %s...\n\n",file);
+             CfLog(cfinform,OUTPUT,"");
+             if (ptr != NULL)
+                {
+                AddMultipleClasses(ptr->defines);
+                }
+             break;
          case warnall:
          case warndirs:
-         case warnplain: snprintf(OUTPUT,bufsize*2,"WARNING setgid (root) flag on %s...\n\n",file);
-	                 CfLog(cferror,OUTPUT,"");
-                         break;
-
-         default:        break;
+         case warnplain:
+             snprintf(OUTPUT,bufsize*2,"WARNING setgid (root) flag on %s...\n\n",file);
+             CfLog(cferror,OUTPUT,"");
+             break;
+             
+         default:
+             break;
          }
       }
    }
+
+#ifdef DARWIN
+if (CheckFinderType(file, action, cf_findertype, dstat))
+   {
+   if (ptr != NULL)
+      {
+      AddMultipleClasses(ptr->defines);
+      }
+   }
+#endif
 
 if (CheckOwner(file,action,uidlist,gidlist,dstat))
    {
@@ -481,14 +473,14 @@ if ((ptr != NULL) && S_ISREG(dstat->st_mode) && (ptr->checksum != 'n'))
     {
     Debug("Checking checksum integrity of %s\n",file);
 
-    bzero(digest,EVP_MAX_MD_SIZE+1);
+    memset(digest,0,EVP_MAX_MD_SIZE+1);
     ChecksumFile(file,digest,ptr->checksum);
 
     if (!DONTDO)
        {
        if (ChecksumChanged(file,digest,cferror,false,ptr->checksum))
-	  {
-	  }
+   {
+   }
        }
     }
 
@@ -540,7 +532,7 @@ if (((newperm & 07777) == (dstat->st_mode & 07777)) && (action != touch))    /* 
    return;
    }
 #else
-if ((newperm & 07777) == (dstat->st_mode & 07777))    /* file okay */
+if (((newperm & 07777) == (dstat->st_mode & 07777)) && (action != touch))    /* file okay */
    {
    Debug("File okay, newperm = %o, stat = %o\n",(newperm & 07777),(dstat->st_mode & 07777));
    fixmode = false;
@@ -554,122 +546,122 @@ if (fixmode)
    switch (action)
       {
       case linkchildren:
-	  
+
       case warnplain:
-	  if (S_ISREG(dstat->st_mode))
-	     {
-	     snprintf(OUTPUT,bufsize*2,"%s has permission %o\n",file,dstat->st_mode & 07777);
-	     CfLog(cferror,OUTPUT,"");
-	     snprintf(OUTPUT,bufsize*2,"[should be %o]\n",newperm & 07777);
-	     CfLog(cferror,OUTPUT,"");
-	     }
-	  break;
+          if (S_ISREG(dstat->st_mode))
+             {
+             snprintf(OUTPUT,bufsize*2,"%s has permission %o\n",file,dstat->st_mode & 07777);
+             CfLog(cferror,OUTPUT,"");
+             snprintf(OUTPUT,bufsize*2,"[should be %o]\n",newperm & 07777);
+             CfLog(cferror,OUTPUT,"");
+             }
+          break;
       case warndirs:
-	  if (S_ISDIR(dstat->st_mode))
-	     {
-	     snprintf(OUTPUT,bufsize*2,"%s has permission %o\n",file,dstat->st_mode & 07777);
-	     CfLog(cferror,OUTPUT,"");
-	     snprintf(OUTPUT,bufsize*2,"[should be %o]\n",newperm & 07777);
-	     CfLog(cferror,OUTPUT,"");
-	     }
-	  break;
+          if (S_ISDIR(dstat->st_mode))
+             {
+             snprintf(OUTPUT,bufsize*2,"%s has permission %o\n",file,dstat->st_mode & 07777);
+             CfLog(cferror,OUTPUT,"");
+             snprintf(OUTPUT,bufsize*2,"[should be %o]\n",newperm & 07777);
+             CfLog(cferror,OUTPUT,"");
+             }
+          break;
       case warnall:   
-	  snprintf(OUTPUT,bufsize*2,"%s has permission %o\n",file,dstat->st_mode & 07777);
-	  CfLog(cferror,OUTPUT,"");
-	  snprintf(OUTPUT,bufsize*2,"[should be %o]\n",newperm & 07777);
-	  CfLog(cferror,OUTPUT,"");
-	  break;
-	  
+          snprintf(OUTPUT,bufsize*2,"%s has permission %o\n",file,dstat->st_mode & 07777);
+          CfLog(cferror,OUTPUT,"");
+          snprintf(OUTPUT,bufsize*2,"[should be %o]\n",newperm & 07777);
+          CfLog(cferror,OUTPUT,"");
+          break;
+          
       case fixplain:
-	  if (S_ISREG(dstat->st_mode))
-	     {
-	     if (! DONTDO)
-		{
-		if (chmod (file,newperm & 07777) == -1)
-		   {
-		   snprintf(OUTPUT,bufsize*2,"chmod failed on %s\n",file);
-		   CfLog(cferror,OUTPUT,"chmod");
-		   break;
-		   }
-		}
-	     
-	     snprintf(OUTPUT,bufsize*2,"%s had permission %o, changed it to %o\n",
-		     file,dstat->st_mode & 07777,newperm & 07777);
-	     CfLog(cfinform,OUTPUT,"");
-	     
-	     if (ptr != NULL)
-		{
-		AddMultipleClasses(ptr->defines);
-		}
-	     }
-	  break;
-	  
+          if (S_ISREG(dstat->st_mode))
+             {
+             if (! DONTDO)
+                {
+                if (chmod (file,newperm & 07777) == -1)
+                   {
+                   snprintf(OUTPUT,bufsize*2,"chmod failed on %s\n",file);
+                   CfLog(cferror,OUTPUT,"chmod");
+                   break;
+                   }
+                }
+             
+             snprintf(OUTPUT,bufsize*2,"Plain file %s had permission %o, changed it to %o\n",
+                      file,dstat->st_mode & 07777,newperm & 07777);
+             CfLog(cfinform,OUTPUT,"");
+             
+             if (ptr != NULL)
+                {
+                AddMultipleClasses(ptr->defines);
+                }
+             }
+          break;
+          
       case fixdirs:
-	  if (S_ISDIR(dstat->st_mode))
-	     {
-	     if (! DONTDO)
-		{
-		if (chmod (file,newperm & 07777) == -1)
-		   {
-		   snprintf(OUTPUT,bufsize*2,"chmod failed on %s\n",file);
-		   CfLog(cferror,OUTPUT,"chmod");
-		   break;
-		   }
-		}
-	     
-	     snprintf(OUTPUT,bufsize*2,"%s had permission %o, changed it to %o\n",
-		     file,dstat->st_mode & 07777,newperm & 07777);
-	     CfLog(cfinform,OUTPUT,"");
-	     
-	     if (ptr != NULL)
-		{
-		AddMultipleClasses(ptr->defines);
-		}
-	     }
-	  break;
-	  
+          if (S_ISDIR(dstat->st_mode))
+             {
+             if (! DONTDO)
+                {
+                if (chmod (file,newperm & 07777) == -1)
+                   {
+                   snprintf(OUTPUT,bufsize*2,"chmod failed on %s\n",file);
+                   CfLog(cferror,OUTPUT,"chmod");
+                   break;
+                   }
+                }
+             
+             snprintf(OUTPUT,bufsize*2,"Directory %s had permission %o, changed it to %o\n",
+                      file,dstat->st_mode & 07777,newperm & 07777);
+             CfLog(cfinform,OUTPUT,"");
+             
+             if (ptr != NULL)
+                {
+                AddMultipleClasses(ptr->defines);
+                }
+             }
+          break;
+          
       case fixall:
-	  if (! DONTDO)
-	     {
-	     if (chmod (file,newperm & 07777) == -1)
-		{
-		snprintf(OUTPUT,bufsize*2,"chmod failed on %s\n",file);
-		CfLog(cferror,OUTPUT,"chmod");
-		break;
-		}
-	     }
-	  
-	  snprintf(OUTPUT,bufsize*2,"%s had permission %o, changed it to %o\n",
-		  file,dstat->st_mode & 07777,newperm & 07777);
-	  CfLog(cfinform,OUTPUT,"");
-	  
-	  if (ptr != NULL)
-	     {
-	     AddMultipleClasses(ptr->defines);
-	     }
-	  break;
-	  
+          if (! DONTDO)
+             {
+             if (chmod (file,newperm & 07777) == -1)
+                {
+                snprintf(OUTPUT,bufsize*2,"chmod failed on %s\n",file);
+                CfLog(cferror,OUTPUT,"chmod");
+                break;
+                }
+             }
+          
+          snprintf(OUTPUT,bufsize*2,"Object %s had permission %o, changed it to %o\n",
+                   file,dstat->st_mode & 07777,newperm & 07777);
+          CfLog(cfinform,OUTPUT,"");
+          
+          if (ptr != NULL)
+             {
+             AddMultipleClasses(ptr->defines);
+             }
+          break;
+          
       case touch:
-	  if (! DONTDO)
-	     {
-	     if (chmod (file,newperm & 07777) == -1)
-		{
-		snprintf(OUTPUT,bufsize*2,"chmod failed on %s\n",file);
-		CfLog(cferror,OUTPUT,"chmod");
-		break;
-		}
-	     utime (file,NULL);
-	     }
-	  if (ptr != NULL)
-	     {
-	     AddMultipleClasses(ptr->defines);
-	     }
-	  break;
-	  
+          if (! DONTDO)
+             {
+             if (chmod (file,newperm & 07777) == -1)
+                {
+                snprintf(OUTPUT,bufsize*2,"chmod failed on %s\n",file);
+                CfLog(cferror,OUTPUT,"chmod");
+                break;
+                }
+             utime (file,NULL);
+             }
+          if (ptr != NULL)
+             {
+             AddMultipleClasses(ptr->defines);
+             }
+          break;
+          
       default:     FatalError("cfengine: internal error CheckExistingFile(): illegal file action\n");
       }
    }
-
+ 
  
 #if defined HAVE_CHFLAGS  /* BSD special flags */
 
@@ -688,182 +680,287 @@ if (ptr != NULL)
       Debug("Fixing %s, newflags = %o, flags = %o\n",file,(newflags & CHFLAGS_MASK),(dstat->st_flags & CHFLAGS_MASK));
       
       switch (action)
-	 {
-	 case linkchildren:
-	     
-	 case warnplain:
-	     if (S_ISREG(dstat->st_mode))
-		{
-		snprintf(OUTPUT,bufsize*2,"%s has flags %o\n",file,dstat->st_flags & CHFLAGS_MASK);
-		CfLog(cferror,OUTPUT,"");
-		snprintf(OUTPUT,bufsize*2,"[should be %o]\n",newflags & CHFLAGS_MASK);
-		CfLog(cferror,OUTPUT,"");
-		}
-	     break;
-	 case warndirs:
-	     if (S_ISDIR(dstat->st_mode))
-		{
-		snprintf(OUTPUT,bufsize*2,"%s has flags %o\n",file,dstat->st_mode & CHFLAGS_MASK);
-		CfLog(cferror,OUTPUT,"");
-		snprintf(OUTPUT,bufsize*2,"[should be %o]\n",newflags & CHFLAGS_MASK);
-		CfLog(cferror,OUTPUT,"");
-		}
-	     break;
-	 case warnall:
-	     snprintf(OUTPUT,bufsize*2,"%s has flags %o\n",file,dstat->st_mode & CHFLAGS_MASK);
-	     CfLog(cferror,OUTPUT,"");
-	     snprintf(OUTPUT,bufsize*2,"[should be %o]\n",newflags & CHFLAGS_MASK);
-	     CfLog(cferror,OUTPUT,"");
-	     break;
-	     
-	 case fixplain:
-	     
-	     if (S_ISREG(dstat->st_mode))
-		{
-		if (! DONTDO)
-		   {
-		   if (chflags (file,newflags & CHFLAGS_MASK) == -1)
-		      {
-		      snprintf(OUTPUT,bufsize*2,"chflags failed on %s\n",file);
-		      CfLog(cferror,OUTPUT,"chflags");
-		      break;
-		      }
-		   }
-		
-		snprintf(OUTPUT,bufsize*2,"%s had flags %o, changed it to %o\n",
-			file,dstat->st_flags & CHFLAGS_MASK,newflags & CHFLAGS_MASK);
-		CfLog(cfinform,OUTPUT,"");
-		
-		if (ptr != NULL)
-		   {
-		   AddMultipleClasses(ptr->defines);
-		   }
-		}
-	     break;
-	     
-	 case fixdirs:
-	     if (S_ISDIR(dstat->st_mode))
-		{
-		if (! DONTDO)
-		   {
-		   if (chflags (file,newflags & CHFLAGS_MASK) == -1)
-		      {
-		      snprintf(OUTPUT,bufsize*2,"chflags failed on %s\n",file);
-		      CfLog(cferror,OUTPUT,"chflags");
-		      break;
-		      }
-		   }
-		
-		snprintf(OUTPUT,bufsize*2,"%s had flags %o, changed it to %o\n",
-			file,dstat->st_flags & CHFLAGS_MASK,newflags & CHFLAGS_MASK);
-		CfLog(cfinform,OUTPUT,"");
-		
-		if (ptr != NULL)
-		   {
-		   AddMultipleClasses(ptr->defines);
-		   }
-		}
-	     break;
-	     
-      case fixall:
-	  if (! DONTDO)
-	     {
-	     if (chflags (file,newflags & CHFLAGS_MASK) == -1)
-		{
-		snprintf(OUTPUT,bufsize*2,"chflags failed on %s\n",file);
-		CfLog(cferror,OUTPUT,"chflags");
-		break;
-		}
-	     }
-	  
-	  snprintf(OUTPUT,bufsize*2,"%s had flags %o, changed it to %o\n",
-		  file,dstat->st_flags & CHFLAGS_MASK,newflags & CHFLAGS_MASK);
-	  CfLog(cfinform,OUTPUT,"");
-	  
-	  if (ptr != NULL)
-	     {
-	     AddMultipleClasses(ptr->defines);
-	     }
-	  break;
-	  
-      case touch:
-	  if (! DONTDO)
-	     {
-	     if (chflags (file,newflags & CHFLAGS_MASK) == -1)
-		{
-		snprintf(OUTPUT,bufsize*2,"chflags failed on %s\n",file);
-		CfLog(cferror,OUTPUT,"chflags");
-		break;
-		}
-	     utime (file,NULL);
-	     }
-	  if (ptr != NULL)
-	     {
-	     AddMultipleClasses(ptr->defines);
-	     }
-	  break;
-	  
-	 default:     FatalError("cfengine: internal error CheckExistingFile(): illegal file action\n");
-	 }
+         {
+         case linkchildren:
+             
+         case warnplain:
+             if (S_ISREG(dstat->st_mode))
+                {
+                snprintf(OUTPUT,bufsize*2,"%s has flags %o\n",file,dstat->st_flags & CHFLAGS_MASK);
+                CfLog(cferror,OUTPUT,"");
+                snprintf(OUTPUT,bufsize*2,"[should be %o]\n",newflags & CHFLAGS_MASK);
+                CfLog(cferror,OUTPUT,"");
+                }
+             break;
+         case warndirs:
+             if (S_ISDIR(dstat->st_mode))
+                {
+                snprintf(OUTPUT,bufsize*2,"%s has flags %o\n",file,dstat->st_mode & CHFLAGS_MASK);
+                CfLog(cferror,OUTPUT,"");
+                snprintf(OUTPUT,bufsize*2,"[should be %o]\n",newflags & CHFLAGS_MASK);
+                CfLog(cferror,OUTPUT,"");
+                }
+             break;
+         case warnall:
+             snprintf(OUTPUT,bufsize*2,"%s has flags %o\n",file,dstat->st_mode & CHFLAGS_MASK);
+             CfLog(cferror,OUTPUT,"");
+             snprintf(OUTPUT,bufsize*2,"[should be %o]\n",newflags & CHFLAGS_MASK);
+             CfLog(cferror,OUTPUT,"");
+             break;
+             
+         case fixplain:
+             
+             if (S_ISREG(dstat->st_mode))
+                {
+                if (! DONTDO)
+                   {
+                   if (chflags (file,newflags & CHFLAGS_MASK) == -1)
+                      {
+                      snprintf(OUTPUT,bufsize*2,"chflags failed on %s\n",file);
+                      CfLog(cferror,OUTPUT,"chflags");
+                      break;
+                      }
+                   }
+                
+                snprintf(OUTPUT,bufsize*2,"%s had flags %o, changed it to %o\n",
+                         file,dstat->st_flags & CHFLAGS_MASK,newflags & CHFLAGS_MASK);
+                CfLog(cfinform,OUTPUT,"");
+                
+                if (ptr != NULL)
+                   {
+                   AddMultipleClasses(ptr->defines);
+                   }
+                }
+             break;
+             
+         case fixdirs:
+             if (S_ISDIR(dstat->st_mode))
+                {
+                if (! DONTDO)
+                   {
+                   if (chflags (file,newflags & CHFLAGS_MASK) == -1)
+                      {
+                      snprintf(OUTPUT,bufsize*2,"chflags failed on %s\n",file);
+                      CfLog(cferror,OUTPUT,"chflags");
+                      break;
+                      }
+                   }
+                
+                snprintf(OUTPUT,bufsize*2,"%s had flags %o, changed it to %o\n",
+                         file,dstat->st_flags & CHFLAGS_MASK,newflags & CHFLAGS_MASK);
+                CfLog(cfinform,OUTPUT,"");
+                
+                if (ptr != NULL)
+                   {
+                   AddMultipleClasses(ptr->defines);
+                   }
+                }
+             break;
+             
+         case fixall:
+             if (! DONTDO)
+                {
+                if (chflags (file,newflags & CHFLAGS_MASK) == -1)
+                   {
+                   snprintf(OUTPUT,bufsize*2,"chflags failed on %s\n",file);
+                   CfLog(cferror,OUTPUT,"chflags");
+                   break;
+                   }
+                }
+             
+             snprintf(OUTPUT,bufsize*2,"%s had flags %o, changed it to %o\n",
+                      file,dstat->st_flags & CHFLAGS_MASK,newflags & CHFLAGS_MASK);
+             CfLog(cfinform,OUTPUT,"");
+             
+             if (ptr != NULL)
+                {
+                AddMultipleClasses(ptr->defines);
+                }
+             break;
+             
+         case touch:
+             if (! DONTDO)
+                {
+                if (chflags (file,newflags & CHFLAGS_MASK) == -1)
+                   {
+                   snprintf(OUTPUT,bufsize*2,"chflags failed on %s\n",file);
+                   CfLog(cferror,OUTPUT,"chflags");
+                   break;
+                   }
+                utime (file,NULL);
+                }
+             if (ptr != NULL)
+                {
+                AddMultipleClasses(ptr->defines);
+                }
+             break;
+             
+         default:     FatalError("cfengine: internal error CheckExistingFile(): illegal file action\n");
+         }
       }
    }
 #endif
-
-if (docompress)
-   {
-   CompressFile(file);
-   if (ptr != NULL)
-      {
-      AddMultipleClasses(ptr->defines);
-      }
-   }
-
-umask(maskvalue);  
-Debug("CheckExistingFile(Done)\n"); 
+ 
+ if (docompress)
+    {
+    CompressFile(file);
+    if (ptr != NULL)
+       {
+       AddMultipleClasses(ptr->defines);
+       }
+    }
+ 
+ umask(maskvalue);  
+ Debug("CheckExistingFile(Done)\n"); 
 }
 
 /*********************************************************************/
 
-void CheckCopiedFile(file,plus,minus,action,uidlist,gidlist,dstat,sstat,ptr,acl_aliases)
-
-char *file;
-mode_t plus,minus;
-struct UidList *uidlist;
-struct GidList *gidlist;
-enum fileactions action;
-struct stat *dstat;
-struct stat *sstat;
-struct File *ptr;
-struct Item *acl_aliases;
+void CheckCopiedFile(char *cf_findertype,char *file,mode_t plus,mode_t minus,enum fileactions action,struct UidList *uidlist,struct GidList *gidlist,struct stat *dstat,struct stat *sstat,struct File *ptr,struct Item *acl_aliases)
 
 { mode_t newplus,newminus;
 
  /* plus/minus must be relative to source file, not to
     perms of newly created file! */
 
-Debug("CheckCopiedFile(%s)\n",file); 
+Debug("CheckCopiedFile(%s,+%o,-%o)\n",file,plus,minus); 
 
-if ((plus == 0) && (minus == 0))
-    {
-    newplus = sstat->st_mode & 07777 | plus;
-    newminus = ~(sstat->st_mode & 07777 & ~minus) & 07777;
-    CheckExistingFile(file,newplus,newminus,fixall,uidlist,gidlist,dstat,NULL,acl_aliases);
+newplus = (sstat->st_mode & 07777) | plus;
+newminus = ~(newplus & ~minus) & 07777;
+   
+CheckExistingFile(cf_findertype,file,newplus,newminus,fixall,uidlist,gidlist,dstat,NULL,acl_aliases);
+}
+
+#ifdef DARWIN
+/*********************************************************************/
+
+int CheckFinderType(char *file,enum fileactions action,char *cf_findertype, struct stat *statbuf)     
+{
+     
+     /* Code modeled after hfstar's extract.c */
+ typedef struct t_fndrinfo
+ {
+    long fdType;
+    long fdCreator;
+    short fdFlags;
+    short fdLocationV;
+    short fdLocationH;
+    short fdFldr;
+    short fdIconID;
+    short fdUnused[3];
+    char fdScript;
+    char fdXFlags;
+    short fdComment;
+    long fdPutAway;
+ } FInfo;
+ 
+ struct attrlist attrs;
+ struct
+ {
+    long ssize;
+    struct timespec created;
+    struct timespec modified;
+    struct timespec changed;
+    struct timespec backup;
+    FInfo fi;
+ } fndrInfo;
+ 
+ int retval;
+ 
+ Debug("CheckFinderType of %s for %s\n", file, cf_findertype);
+ 
+ if (strncmp(cf_findertype, "*", bufsize) == 0 || strncmp(cf_findertype, "", bufsize) == 0)
+    { /* No checking - no action */
+    Debug("CheckFinderType not needed\n");
+    return 0;
     }
+ 
+ attrs.bitmapcount = ATTR_BIT_MAP_COUNT;
+ attrs.reserved = 0;
+ attrs.commonattr = ATTR_CMN_CRTIME | ATTR_CMN_MODTIME | ATTR_CMN_CHGTIME | ATTR_CMN_BKUPTIME | ATTR_CMN_FNDRINFO;
+ attrs.volattr = 0;
+ attrs.dirattr = 0;
+ attrs.fileattr = 0;
+ attrs.forkattr = 0;
+ 
+ memset(&fndrInfo, 0, sizeof(fndrInfo));
+ 
+ getattrlist(file, &attrs, &fndrInfo, sizeof(fndrInfo),0);
+ 
+ if (fndrInfo.fi.fdType != *(long *)cf_findertype)
+    { /* Need to update Finder Type field */
+    fndrInfo.fi.fdType = *(long *)cf_findertype;
+    
+    /* Determine action to take */
+    
+    if (S_ISLNK(statbuf->st_mode) || S_ISDIR(statbuf->st_mode))
+       {
+       printf("CheckFinderType: Wrong file type for %s -- skipping\n", file);
+       return 0;
+       }
+    
+    if (S_ISREG(statbuf->st_mode) && action == fixdirs)
+       {
+       printf("CheckFinderType: Wrong file type for %s -- skipping\n", file);
+       return 0;
+       }
+    
+    switch (action)
+       {       
+       /* Fix it */
+       case fixplain:
+       case fixdirs:
+       case fixall: 
+       case touch:
+           
+           
+           if (DONTDO)
+              { /* well, unless we shouldn't fix it */
+              printf("CheckFinderType: Dry run. No action taken.\n");
+              return 0;
+              }
+           
+           /* setattrlist does not take back in the long ssize */        
+           retval = setattrlist(file, &attrs, &fndrInfo.created, 4*sizeof(struct timespec) + sizeof(FInfo), 0);
+           
+           Debug("CheckFinderType setattrlist returned %d\n", retval);
+           
+           if (retval >= 0)
+              {
+              printf("Setting Finder Type code of %s to %s\n", file, cf_findertype);
+              }
+           else
+              {
+              printf("Setting Finder Type code of %s to %s failed!!\n", file, cf_findertype);
+              }
+           
+           return retval;
+           
+            /* Just warn */
+       case linkchildren:
+       case warnall: 
+       case warndirs:
+       case warnplain:
+           printf("Warning: FinderType does not match -- not fixing.\n");
+           return 0;
+           
+       default:
+           printf("Should never get here. Aroo?\n");
+           return 0;
+       }
+    }
+ 
  else
     {
-    CheckExistingFile(file,plus,minus,fixall,uidlist,gidlist,dstat,NULL,acl_aliases);
+    Debug("CheckFinderType matched\n");
+    return 0;
     }
 }
 
+#endif
 /*********************************************************************/
 
-int CheckOwner(file,action,uidlist,gidlist,statbuf)
-
-char *file;
-enum fileactions action;
-struct UidList *uidlist;
-struct GidList *gidlist;
-struct stat *statbuf;
+int CheckOwner(char *file,enum fileactions action,struct UidList *uidlist,struct GidList *gidlist,struct stat *statbuf)
 
 { struct passwd *pw;
   struct group *gp;
@@ -881,13 +978,13 @@ for (ulp = uidlist; ulp != NULL; ulp=ulp->next)
    
    if (ulp->uid == unknown_owner) /* means not found while parsing */
       {
-      unknownulp = MakeUidList (ulp->uidname);	/* Will only match one */
+      unknownulp = MakeUidList (ulp->uidname); /* Will only match one */
       if (unknownulp != NULL && statbuf->st_uid == unknownulp->uid)
-	 {
-	 uid = unknownulp->uid;
-	 uidmatch = true;
-	 break;
-	 }
+         {
+         uid = unknownulp->uid;
+         uidmatch = true;
+         break;
+         }
       }
    
    if (ulp->uid == sameowner || statbuf->st_uid == ulp->uid)   /* "same" matches anything */
@@ -897,174 +994,173 @@ for (ulp = uidlist; ulp != NULL; ulp=ulp->next)
       break;
       }
    }
-
-for (glp = gidlist; glp != NULL; glp=glp->next)
-   {
-   if (glp->gid == unknown_group) /* means not found while parsing */
-      {
-      unknownglp = MakeGidList (glp->gidname);	/* Will only match one */
-      if (unknownglp != NULL && statbuf->st_gid == unknownglp->gid)
-	 {
-	 gid = unknownglp->gid;
-	 gidmatch = true;
-	 break;
-	 }
-      }
-   if (glp->gid == samegroup || statbuf->st_gid == glp->gid)  /* "same" matches anything */
-      {
-      gid = glp->gid;
-      gidmatch = true;
-      break;
-      }
-   }
-
-
-if (uidmatch && gidmatch)
-   {
-   return false;
-   }
-else
-   {
-   if (! uidmatch)
-      {
-      for (ulp = uidlist; ulp != NULL; ulp=ulp->next)
-	 {
-	 if (uidlist->uid != unknown_owner)
-	    {
-	    uid = uidlist->uid;    /* default is first (not unknown) item in list */
-	    break;
-	    }
-	 }
-      }
-   
-   if (! gidmatch)
-      {
-      for (glp = gidlist; glp != NULL; glp=glp->next)
-	 {
-	 if (gidlist->gid != unknown_group)
-	    {
-	    gid = gidlist->gid;    /* default is first (not unknown) item in list */
-	    break;
-	    }
-	 }
-      }
-
-   if (S_ISLNK(statbuf->st_mode) && (action == fixdirs || action == fixplain))
-      {
-      Debug2("File %s incorrect type (link), skipping...\n",file);
-      return false;
-      }
-
-   if ((S_ISREG(statbuf->st_mode) && action == fixdirs) || (S_ISDIR(statbuf->st_mode) && action == fixplain))
-      {
-      Debug2("File %s incorrect type, skipping...\n",file);
-      return false;
-      }
-
-   switch (action)
-      {
-      case fixplain:
-      case fixdirs:
-      case fixall: 
-      case touch:
-          	  if (VERBOSE || DEBUG || D2)
-		     {
-		     if (uid == sameowner && gid == samegroup)
-			{
-			printf("%s:   touching %s\n",VPREFIX,file);
-			}
-		     else
-                        {
-                        if (uid != sameowner)
-                           {
-                           Debug("(Change owner to uid %d if possible)\n",uid);
-                           }
-
-                        if (gid != samegroup)
-                           {
-                           Debug("Change group to gid %d if possible)\n",gid);
-                           }
-                        }
-                     }
-
-                  if (! DONTDO && S_ISLNK(statbuf->st_mode))
-                     {
+ 
+ for (glp = gidlist; glp != NULL; glp=glp->next)
+    {
+    if (glp->gid == unknown_group) /* means not found while parsing */
+       {
+       unknownglp = MakeGidList (glp->gidname); /* Will only match one */
+       if (unknownglp != NULL && statbuf->st_gid == unknownglp->gid)
+          {
+          gid = unknownglp->gid;
+          gidmatch = true;
+          break;
+          }
+       }
+    if (glp->gid == samegroup || statbuf->st_gid == glp->gid)  /* "same" matches anything */
+       {
+       gid = glp->gid;
+       gidmatch = true;
+       break;
+       }
+    }
+ 
+ 
+ if (uidmatch && gidmatch)
+    {
+    return false;
+    }
+ else
+    {
+    if (! uidmatch)
+       {
+       for (ulp = uidlist; ulp != NULL; ulp=ulp->next)
+          {
+          if (uidlist->uid != unknown_owner)
+             {
+             uid = uidlist->uid;    /* default is first (not unknown) item in list */
+             break;
+             }
+          }
+       }
+    
+    if (! gidmatch)
+       {
+       for (glp = gidlist; glp != NULL; glp=glp->next)
+          {
+          if (gidlist->gid != unknown_group)
+             {
+             gid = gidlist->gid;    /* default is first (not unknown) item in list */
+             break;
+             }
+          }
+       }
+    
+    if (S_ISLNK(statbuf->st_mode) && (action == fixdirs || action == fixplain))
+       {
+       Debug2("File %s incorrect type (link), skipping...\n",file);
+       return false;
+       }
+    
+    if ((S_ISREG(statbuf->st_mode) && action == fixdirs) || (S_ISDIR(statbuf->st_mode) && action == fixplain))
+       {
+       Debug2("File %s incorrect type, skipping...\n",file);
+       return false;
+       }
+    
+    switch (action)
+       {
+       case fixplain:
+       case fixdirs:
+       case fixall: 
+       case touch:
+           if (VERBOSE || DEBUG || D2)
+              {
+              if (uid == sameowner && gid == samegroup)
+                 {
+                 printf("%s:   touching %s\n",VPREFIX,file);
+                 }
+              else
+                 {
+                 if (uid != sameowner)
+                    {
+                    Debug("(Change owner to uid %d if possible)\n",uid);
+                    }
+                 
+                 if (gid != samegroup)
+                    {
+                    Debug("Change group to gid %d if possible)\n",gid);
+                    }
+                 }
+              }
+           
+           if (! DONTDO && S_ISLNK(statbuf->st_mode))
+              {
 #ifdef HAVE_LCHOWN
-		     Debug("Using LCHOWN function\n");
-                     if (lchown(file,uid,gid) == -1)
-                        {
-                        snprintf(OUTPUT,bufsize*2,"Cannot set ownership on link %s!\n",file);
-                        CfLog(cflogonly,OUTPUT,"lchown");
-                        }
-		     else
-			{
-			return true;
-			}
+              Debug("Using LCHOWN function\n");
+              if (lchown(file,uid,gid) == -1)
+                 {
+                 snprintf(OUTPUT,bufsize*2,"Cannot set ownership on link %s!\n",file);
+                 CfLog(cflogonly,OUTPUT,"lchown");
+                 }
+              else
+                 {
+                 return true;
+                 }
 #endif
-                     }
-                  else if (! DONTDO)
-                     {
-		     if (!uidmatch)
-			{
-			snprintf(OUTPUT,bufsize,"Owner of %s was %d, setting to %d",file,statbuf->st_uid,uid);
-			CfLog(cfinform,OUTPUT,"");
-			}
-
-		     if (!gidmatch)
-			{
-			snprintf(OUTPUT,bufsize,"Group of %s was %d, setting to %d",file,statbuf->st_gid,gid);
-			CfLog(cfinform,OUTPUT,"");
-			}
-		     
-		     
-                     if (chown(file,uid,gid) == -1)
-                        {
-                        snprintf(OUTPUT,bufsize*2,"Cannot set ownership on file %s!\n",file);
-                        CfLog(cflogonly,OUTPUT,"chown");
-                        }
-		     else
-			{
-			return true;
-			}
-                     }
-                  break;
-
-      case linkchildren:
-      case warnall: 
-      case warndirs:
-      case warnplain:
-                  if ((pw = getpwuid(statbuf->st_uid)) == NULL)
-                     {
-                     snprintf(OUTPUT,bufsize*2,"File %s is not owned by anybody in the passwd database\n",file);
-		     CfLog(cferror,OUTPUT,"");
-                     snprintf(OUTPUT,bufsize*2,"(uid = %d,gid = %d)\n",statbuf->st_uid,statbuf->st_gid);
-		     CfLog(cferror,OUTPUT,"");
-                     break;
-                     }
-
-                  if ((gp = getgrgid(statbuf->st_gid)) == NULL)
-                     {
-                     snprintf(OUTPUT,bufsize*2,"File %s is not owned by any group in group database\n",file);
-		     CfLog(cferror,OUTPUT,"");
-                     break;
-                     }
-
-                  snprintf(OUTPUT,bufsize*2,"File %s is owned by [%s], group [%s]\n",file,pw->pw_name,gp->gr_name);
-		  CfLog(cferror,OUTPUT,"");
-                  break;
-      }
-   }
-
-return false; 
+              }
+           else if (! DONTDO)
+              {
+              if (!uidmatch)
+                 {
+                 snprintf(OUTPUT,bufsize,"Owner of %s was %d, setting to %d",file,statbuf->st_uid,uid);
+                 CfLog(cfinform,OUTPUT,"");
+                 }
+              
+              if (!gidmatch)
+                 {
+                 snprintf(OUTPUT,bufsize,"Group of %s was %d, setting to %d",file,statbuf->st_gid,gid);
+                 CfLog(cfinform,OUTPUT,"");
+                 }
+              
+              if (!S_ISLNK(statbuf->st_mode))
+                 {
+                 if (chown(file,uid,gid) == -1)
+                    {
+                    snprintf(OUTPUT,bufsize*2,"Cannot set ownership on file %s!\n",file);
+                    CfLog(cflogonly,OUTPUT,"chown");
+                    }
+                 else
+                    {
+                    return true;
+                    }
+                 }
+              }
+           break;
+           
+       case linkchildren:
+       case warnall: 
+       case warndirs:
+       case warnplain:
+           if ((pw = getpwuid(statbuf->st_uid)) == NULL)
+              {
+              snprintf(OUTPUT,bufsize*2,"File %s is not owned by anybody in the passwd database\n",file);
+              CfLog(cferror,OUTPUT,"");
+              snprintf(OUTPUT,bufsize*2,"(uid = %d,gid = %d)\n",statbuf->st_uid,statbuf->st_gid);
+              CfLog(cferror,OUTPUT,"");
+              break;
+              }
+           
+           if ((gp = getgrgid(statbuf->st_gid)) == NULL)
+              {
+              snprintf(OUTPUT,bufsize*2,"File %s is not owned by any group in group database\n",file);
+              CfLog(cferror,OUTPUT,"");
+              break;
+              }
+           
+           snprintf(OUTPUT,bufsize*2,"File %s is owned by [%s], group [%s]\n",file,pw->pw_name,gp->gr_name);
+           CfLog(cferror,OUTPUT,"");
+           break;
+       }
+    }
+ 
+ return false; 
 }
 
 
 /*********************************************************************/
 
-int CheckHomeSubDir(testpath,tidypath,recurse)
-
-char *testpath, *tidypath;
-int recurse;
+int CheckHomeSubDir(char *testpath,char *tidypath,int recurse)
 
 { char *subdirstart, *sp1, *sp2;
   char buffer[bufsize];
@@ -1117,11 +1213,9 @@ return true;
 
 /**************************************************************/
 
-int FileIsNewer(file1,file2)
+int FileIsNewer(char *file1,char *file2)
 
 /* True if file2 is newer than file 1 */
-
-char *file1, *file2;
 
 { struct stat statbuf1, statbuf2;
 
@@ -1152,21 +1246,18 @@ else
 /* Used by files and tidy modules                                    */
 /*********************************************************************/
 
-int IgnoreFile (pathto,name,ignores)
-
-char *pathto, *name;
-struct Item *ignores;
+int IgnoreFile (char *pathto,char *name,struct Item *ignores)
 
 { struct Item *ip;
 
-Debug("IgnoreFile(%s)\n",name);
+Debug("IgnoreFile(%s,%s)\n",pathto,name);
  
 if (name == NULL || strlen(name) == 0)
    {
    return false;
    }
  
-strcpy(VBUFF,pathto);
+strncpy(VBUFF,pathto,bufsize-1);
 AddSlash(VBUFF);
 strcat(VBUFF,name);
 
@@ -1215,9 +1306,7 @@ return false;
 
 /*********************************************************************/
 
-void CompressFile(file)
-
-char *file;
+void CompressFile(char *file)
 
 { char comm[bufsize];
   FILE *pp;

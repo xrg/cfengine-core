@@ -37,9 +37,7 @@
 /* Level 1                                                           */
 /*********************************************************************/
 
-int IsAbsoluteFileName(f)
-
-char *f;
+int IsAbsoluteFileName(char *f)
 
 {
 #ifdef NT
@@ -63,11 +61,9 @@ return false;
 
 /*******************************************************************/
 
-int RootDirLength(f)
+int RootDirLength(char *f)
 
   /* Return length of Initial directory in path - */
-
-char *f;
 
 {
 #ifdef NT
@@ -81,43 +77,41 @@ if (IsFileSep(f[0]) && IsFileSep(f[1]))
    for (len=2; !IsFileSep(f[len]); len++)
       {
       if (f[len] == '\0')
-	 {
-	 return len;
-	 }
+         {
+         return len;
+         }
       }
-
+   
    /* Skip over share name */
    for (len++; !IsFileSep(f[len]); len++)
       {
       if (f[len] == '\0')
-	 {
-	 return len;
-	 }
+         {
+         return len;
+         }
       }
-
+   
    /* Skip over file separator */
    len++;
-
+   
    return len;
    }
-if ( isalpha(f[0]) && f[1] == ':' && IsFileSep(f[2]) )
-   {
-   return 3;
-   }
+ if ( isalpha(f[0]) && f[1] == ':' && IsFileSep(f[2]) )
+    {
+    return 3;
+    }
 #endif
-if (*f == '/')
-   {
-   return 1;
-   }
-
-return 0;
+ if (*f == '/')
+    {
+    return 1;
+    }
+ 
+ return 0;
 }
 
 /*******************************************************************/
 
-void AddSlash(str)
-
-char *str;
+void AddSlash(char *str)
 
 {
 if ((strlen(str)== 0) || (str == NULL))
@@ -133,9 +127,7 @@ if (!IsFileSep(str[strlen(str)-1]))
 
 /*********************************************************************/
 
-void DeleteSlash(str)
-
-char *str;
+void DeleteSlash(char *str)
 
 {
 if ((strlen(str)== 0) || (str == NULL))
@@ -156,9 +148,7 @@ if (IsFileSep(str[strlen(str)-1]))
 
 /*********************************************************************/
 
-void DeleteNewline(str)
-
-char *str;
+void DeleteNewline(char *str)
 
 {
 if ((strlen(str)== 0) || (str == NULL))
@@ -175,12 +165,10 @@ if ((strlen(str)== 0) || (str == NULL))
 
 /*********************************************************************/
 
-char *LastFileSeparator(str)
+char *LastFileSeparator(char *str)
 
   /* Return pointer to last file separator in string, or NULL if 
      string does not contains any file separtors */
-
-char *str;
 
 { char *sp;
 
@@ -202,15 +190,12 @@ return NULL;
 
 /*********************************************************************/
 
-int ChopLastNode(str)
+int ChopLastNode(char *str)
 
   /* Chop off trailing node name (possible blank) starting from
      last character and removing up to the first / encountered 
      e.g. /a/b/c -> /a/b
           /a/b/ -> /a/b                                        */
-
-char *str;
-
 { char *sp;
 
 if ((sp = LastFileSeparator(str)) == NULL)
@@ -226,14 +211,12 @@ else
 
 /*********************************************************************/
 
-char *CanonifyName(str)
-
-char *str;
+char *CanonifyName(char *str)
 
 { static char buffer[bufsize];
   char *sp;
 
-bzero(buffer,bufsize);
+memset(buffer,0,bufsize);
 strcpy(buffer,str);
 
 for (sp = buffer; *sp != '\0'; sp++)
@@ -249,14 +232,12 @@ return buffer;
 
 /*********************************************************************/
 
-char *Space2Score(str)
-
-char *str;
+char *Space2Score(char *str)
 
 { static char buffer[bufsize];
   char *sp;
 
-bzero(buffer,bufsize);
+memset(buffer,0,bufsize);
 strcpy(buffer,str);
 
 for (sp = buffer; *sp != '\0'; sp++)
@@ -272,14 +253,12 @@ return buffer;
 
 /*********************************************************************/
 
-char *ASUniqueName(str) /* generates a unique action sequence name */
-
-char *str;
+char *ASUniqueName(char *str) /* generates a unique action sequence name */
 
 { static char buffer[bufsize];
   struct Item *ip;
 
-bzero(buffer,bufsize);
+memset(buffer,0,bufsize);
 strcpy(buffer,str);
 
 for (ip = VADDCLASSES; ip != NULL; ip=ip->next)
@@ -298,11 +277,9 @@ return buffer;
 
 /*********************************************************************/
 
-char *ReadLastNode(str)
+char *ReadLastNode(char *str)
 
 /* Return the last node of a pathname string  */
-
-char *str;
 
 { char *sp;
   
@@ -318,9 +295,7 @@ else
 
 /*********************************************************************/
 
-int MakeDirectoriesFor(file,force)  /* Make all directories which underpin file */
-
-char *file, force;
+int MakeDirectoriesFor(char *file,char force)  /* Make all directories which underpin file */
 
 { char *sp,*spc;
   char currentpath[bufsize];
@@ -329,6 +304,14 @@ char *file, force;
   mode_t mask;
   int rootlen;
   char Path_File_Separator;
+    
+#ifdef DARWIN
+/* Keeps track of if dealing w. resource fork */
+int rsrcfork;
+rsrcfork = 0;
+
+char * tmpstr;
+#endif    
     
 if (!IsAbsoluteFileName(file))
    {
@@ -339,172 +322,199 @@ if (!IsAbsoluteFileName(file))
 
 strncpy(pathbuf,file,bufsize-1);                                      /* local copy */
 
+#ifdef DARWIN
+/* Dealing w. a rsrc fork? */
+if (strstr(pathbuf, _PATH_RSRCFORKSPEC) != NULL)
+   {
+   rsrcfork = 1;
+   }
+#endif
+
 /* skip link name */
-sp = LastFileSeparator(pathbuf);
-if (sp == NULL)
-   {
-   sp = pathbuf;
-   }
-*sp = '\0';
-
-DeleteSlash(pathbuf); 
+ sp = LastFileSeparator(pathbuf);
+ if (sp == NULL)
+    {
+    sp = pathbuf;
+    }
+ *sp = '\0';
  
-if (lstat(pathbuf,&statbuf) != -1)
-   {
-   if (S_ISLNK(statbuf.st_mode))
-      {
-      Verbose("%s: INFO: %s is a symbolic link, not a true directory!\n",VPREFIX,pathbuf);
-      }
-
-   if (force == 'y')   /* force in-the-way directories aside */
-      {
-      if (!S_ISDIR(statbuf.st_mode))  /* if the dir exists - no problem */
-	 {
-	 if (ISCFENGINE)
-	    {
-	    struct Tidy tp;
-	    struct TidyPattern tpat;
-	    struct stat sbuf;
-	    
-	    strcpy(currentpath,pathbuf);
-	    DeleteSlash(currentpath);
-	    strcat(currentpath,".cf-moved");
-	    snprintf(OUTPUT,bufsize,"Moving obstructing file/link %s to %s to make directory",pathbuf,currentpath);
-	    CfLog(cferror,OUTPUT,"");
-	    
-	    /* If cfagent, remove an obstructing backup object */
-	    
-	    if (lstat(currentpath,&sbuf) != -1)
-	       {
-	       if (S_ISDIR(sbuf.st_mode))
-		  {
-		  tp.maxrecurse = 2;
-		  tp.tidylist = &tpat;
-		  tp.next = NULL;
-		  tp.path = currentpath;
-		  
-		  tpat.recurse = INFINITERECURSE;
-		  tpat.age = 0;
-		  tpat.size = 0;
-		  tpat.pattern = strdup("*");
-		  tpat.classes = strdup("any");
-		  tpat.defines = NULL;
-		  tpat.elsedef = NULL;
-		  tpat.dirlinks = 'y';
-		  tpat.travlinks = 'n';
-		  tpat.rmdirs = 'y';
-		  tpat.searchtype = 'a';
-		  tpat.log = 'd';
-		  tpat.inform = 'd';
-		  tpat.next = NULL;
-		  RecursiveTidySpecialArea(currentpath,&tp,INFINITERECURSE,&sbuf);
-		  free(tpat.pattern);
-		  free(tpat.classes);
-		  
-		  if (rmdir(currentpath) == -1)
-		     {
-		     snprintf(OUTPUT,bufsize*2,"Couldn't remove directory %s while trying to remove a backup\n",currentpath);
-		     CfLog(cfinform,OUTPUT,"rmdir");
-		     }
-		  }
-	       else
-		  {
-		  if (unlink(currentpath) == -1)
-		     {
-		     snprintf(OUTPUT,bufsize*2,"Couldn't remove file/link %s while trying to remove a backup\n",currentpath);
-		     CfLog(cfinform,OUTPUT,"rmdir");
-		     }
-		  }
-	       }
-	      
-	    /* And then move the current object out of the way...*/
-	    
-	    if (rename(pathbuf,currentpath) == -1)
-	       {
-	       snprintf(OUTPUT,bufsize*2,"Warning. The object %s is not a directory.\n",pathbuf);
-	       CfLog(cfinform,OUTPUT,"");
-	       CfLog(cfinform,"Could not make a new directory or move the block","rename");
-	       return(false);
-	       }
-	    }
-	 }
-      else
-	 {
-	 if (! S_ISLNK(statbuf.st_mode) && ! S_ISDIR(statbuf.st_mode))
-	    {
-	    snprintf(OUTPUT,bufsize*2,"Warning. The object %s is not a directory.\n",pathbuf);
-	    CfLog(cfinform,OUTPUT,"");
-	    CfLog(cfinform,"Cannot make a new directory without deleting it!\n\n","");
-	    return(false);
-	    }
-	 }
-      }
-   }
-
+ DeleteSlash(pathbuf); 
+ 
+ if (lstat(pathbuf,&statbuf) != -1)
+    {
+    if (S_ISLNK(statbuf.st_mode))
+       {
+       Verbose("%s: INFO: %s is a symbolic link, not a true directory!\n",VPREFIX,pathbuf);
+       }
+    
+    if (force == 'y')   /* force in-the-way directories aside */
+       {
+       if (!S_ISDIR(statbuf.st_mode))  /* if the dir exists - no problem */
+          {
+          if (ISCFENGINE)
+             {
+             struct Tidy tp;
+             struct TidyPattern tpat;
+             struct stat sbuf;
+             
+             strcpy(currentpath,pathbuf);
+             DeleteSlash(currentpath);
+             strcat(currentpath,".cf-moved");
+             snprintf(OUTPUT,bufsize,"Moving obstructing file/link %s to %s to make directory",pathbuf,currentpath);
+             CfLog(cferror,OUTPUT,"");
+             
+             /* If cfagent, remove an obstructing backup object */
+             
+             if (lstat(currentpath,&sbuf) != -1)
+                {
+                if (S_ISDIR(sbuf.st_mode))
+                   {
+                   tp.maxrecurse = 2;
+                   tp.tidylist = &tpat;
+                   tp.next = NULL;
+                   tp.path = currentpath;
+                   
+                   tpat.recurse = INFINITERECURSE;
+                   tpat.age = 0;
+                   tpat.size = 0;
+                   tpat.pattern = strdup("*");
+                   tpat.classes = strdup("any");
+                   tpat.defines = NULL;
+                   tpat.elsedef = NULL;
+                   tpat.dirlinks = 'y';
+                   tpat.travlinks = 'n';
+                   tpat.rmdirs = 'y';
+                   tpat.searchtype = 'a';
+                   tpat.log = 'd';
+                   tpat.inform = 'd';
+                   tpat.next = NULL;
+                   RecursiveTidySpecialArea(currentpath,&tp,INFINITERECURSE,&sbuf);
+                   free(tpat.pattern);
+                   free(tpat.classes);
+                   
+                   if (rmdir(currentpath) == -1)
+                      {
+                      snprintf(OUTPUT,bufsize*2,"Couldn't remove directory %s while trying to remove a backup\n",currentpath);
+                      CfLog(cfinform,OUTPUT,"rmdir");
+                      }
+                   }
+                else
+                   {
+                   if (unlink(currentpath) == -1)
+                      {
+                      snprintf(OUTPUT,bufsize*2,"Couldn't remove file/link %s while trying to remove a backup\n",currentpath);
+                      CfLog(cfinform,OUTPUT,"rmdir");
+                      }
+                   }
+                }
+             
+             /* And then move the current object out of the way...*/
+             
+             if (rename(pathbuf,currentpath) == -1)
+                {
+                snprintf(OUTPUT,bufsize*2,"Warning. The object %s is not a directory.\n",pathbuf);
+                CfLog(cfinform,OUTPUT,"");
+                CfLog(cfinform,"Could not make a new directory or move the block","rename");
+                return(false);
+                }
+             }
+          }
+       else
+          {
+          if (! S_ISLNK(statbuf.st_mode) && ! S_ISDIR(statbuf.st_mode))
+             {
+             snprintf(OUTPUT,bufsize*2,"Warning. The object %s is not a directory.\n",pathbuf);
+             CfLog(cfinform,OUTPUT,"");
+             CfLog(cfinform,"Cannot make a new directory without deleting it!\n\n","");
+             return(false);
+             }
+          }
+       }
+    }
+ 
 /* Now we can make a new directory .. */ 
-
-currentpath[0] = '\0';
  
-rootlen = RootDirLength(sp);
-strncpy(currentpath, file, rootlen);
-for (sp = file+rootlen, spc = currentpath+rootlen; *sp != '\0'; sp++)
-   {
-   if (!IsFileSep(*sp) && *sp != '\0')
-      {
-      *spc = *sp;
-      spc++;
-      }
-   else
-      {
-      Path_File_Separator = *sp;
-      *spc = '\0';
+ currentpath[0] = '\0';
+ 
+ rootlen = RootDirLength(sp);
+ strncpy(currentpath, file, rootlen);
 
-      if (strlen(currentpath) == 0)
-         {
-         }
-      else if (stat(currentpath,&statbuf) == -1)
-         {
-         Debug2("cfengine: Making directory %s, mode %o\n",currentpath,DEFAULTMODE);
-
-         if (! DONTDO)
-            {
-	    mask = umask(0);
-
-            if (mkdir(currentpath,DEFAULTMODE) == -1)
-               {
-               snprintf(OUTPUT,bufsize*2,"Unable to make directories to %s\n",file);
-               CfLog(cferror,OUTPUT,"mkdir");
-	       umask(mask);
-               return(false);
-               }
-	    umask(mask);
-            }
-         }
-      else
-         {
-         if (! S_ISDIR(statbuf.st_mode))
-            {
-            snprintf(OUTPUT,bufsize*2,"Cannot make %s - %s is not a directory! (use forcedirs=true)\n",pathbuf,currentpath);
-	    CfLog(cferror,OUTPUT,"");
-            return(false);
-            }
-         }
-
-      /* *spc = FILE_SEPARATOR; */
-      *spc = Path_File_Separator;
-      spc++;
-      }
-   }
-
-Debug("Directory for %s exists. Okay\n",file);
-return(true);
+ for (sp = file+rootlen, spc = currentpath+rootlen; *sp != '\0'; sp++)
+    {
+    if (!IsFileSep(*sp) && *sp != '\0')
+       {
+       *spc = *sp;
+       spc++;
+       }
+    else
+       {
+       Path_File_Separator = *sp;
+       *spc = '\0';
+       
+       if (strlen(currentpath) == 0)
+          {
+          }
+       else if (stat(currentpath,&statbuf) == -1)
+          {
+          Debug2("cfengine: Making directory %s, mode %o\n",currentpath,DEFAULTMODE);
+          
+          if (! DONTDO)
+             {
+             mask = umask(0);
+             
+             if (mkdir(currentpath,DEFAULTMODE) == -1)
+                {
+                snprintf(OUTPUT,bufsize*2,"Unable to make directories to %s\n",file);
+                CfLog(cferror,OUTPUT,"mkdir");
+                umask(mask);
+                return(false);
+                }
+             umask(mask);
+             }
+          }
+       else
+          {
+          if (! S_ISDIR(statbuf.st_mode))
+             {
+#ifdef DARWIN
+             /* Ck if rsrc fork */
+             if (rsrcfork)
+                {
+                tmpstr = malloc(bufsize);
+                strncpy(tmpstr, currentpath, bufsize);
+                strncat(tmpstr, _PATH_FORKSPECIFIER, bufsize);
+                
+                /* Cfengine removed terminating slashes */
+                DeleteSlash(tmpstr);
+                
+                if (strncmp(tmpstr, pathbuf, bufsize) == 0)
+                   {
+                   free(tmpstr);
+                   return(true);
+                   }
+                free(tmpstr);
+                }
+#endif
+             
+             snprintf(OUTPUT,bufsize*2,"Cannot make %s - %s is not a directory! (use forcedirs=true)\n",pathbuf,currentpath);
+             CfLog(cferror,OUTPUT,"");
+             return(false);
+             }
+          }
+       
+       /* *spc = FILE_SEPARATOR; */
+       *spc = Path_File_Separator;
+       spc++;
+       }
+    }
+ 
+ Debug("Directory for %s exists. Okay\n",file);
+ return(true);
 }
 
 /*********************************************************************/
 
-int BufferOverflow(str1,str2)                   /* Should be an inline ! */
-
-char *str1, *str2;
+int BufferOverflow(char *str1,char *str2)   /* Should be an inline ! */
 
 { int len = strlen(str2);
 
@@ -521,29 +531,24 @@ return false;
 
 /*********************************************************************/
 
-void Chop(str)
+void Chop(char *str) /* remove trailing spaces */
 
-char *str;
-
-{
+{ int i;
+ 
 if ((str == NULL) || (strlen(str)==0))
    {
    return;
    }
 
-if (isspace((int)str[strlen(str)-1]))
-   {
-   str[strlen(str)-1] = '\0';
-   }
+ for (i = strlen(str)-1; isspace((int)str[i]); i--)
+    {
+    str[i] = '\0';
+    }
 }
-
-
 
 /*********************************************************************/
 
-int CompressPath(dest,src)
-
-char *dest, *src;
+int CompressPath(char *dest,char *src)
 
 { char *sp;
   char node[bufsize];
@@ -552,7 +557,7 @@ char *dest, *src;
 
 Debug2("CompressPath(%s,%s)\n",dest,src);
 
-bzero(dest,bufsize);
+memset(dest,0,bufsize);
 
 rootlen = RootDirLength(src);
 strncpy(dest, src, rootlen);
@@ -566,28 +571,28 @@ for (sp = src+rootlen; *sp != '\0'; sp++)
    for (nodelen = 0; sp[nodelen] != '\0' && !IsFileSep(sp[nodelen]); nodelen++)
       {
       if (nodelen > maxlinksize)
-	 {
-	 CfLog(cferror,"Link in path suspiciously large","");
-	 return false;
-	 }
+         {
+         CfLog(cferror,"Link in path suspiciously large","");
+         return false;
+         }
       }
    strncpy(node, sp, nodelen);
    node[nodelen] = '\0';
-
+   
    sp += nodelen - 1;
-
+   
    if (strcmp(node,".") == 0)
       {
       continue;
       }
-
+   
    if (strcmp(node,"..") == 0)
       {
       if (! ChopLastNode(dest))
-	 {
-	 Debug("cfengine: used .. beyond top of filesystem!\n");
-	 return false;
-	 }
+         {
+         Debug("cfengine: used .. beyond top of filesystem!\n");
+         return false;
+         }
       continue;
       }
    else
@@ -609,9 +614,7 @@ return true;
 /* TOOLKIT : String                                                  */
 /*********************************************************************/
 
-char ToLower (ch)
-
-char ch;
+char ToLower (char ch)
 
 {
 if (isdigit((int)ch) || ispunct((int)ch))
@@ -632,9 +635,7 @@ else
 
 /*********************************************************************/
 
-char ToUpper (ch)
-
-char ch;
+char ToUpper (char ch)
 
 {
 if (isdigit((int)ch) || ispunct((int)ch))
@@ -654,14 +655,12 @@ else
 
 /*********************************************************************/
 
-char *ToUpperStr (str)
-
-char *str;
+char *ToUpperStr (char *str)
 
 { static char buffer[bufsize];
   int i;
 
-bzero(buffer,bufsize);
+memset(buffer,0,bufsize);
   
 if (strlen(str) >= bufsize)
    {
@@ -684,14 +683,12 @@ return buffer;
 
 /*********************************************************************/
 
-char *ToLowerStr (str)
-
-char *str;
+char *ToLowerStr (char *str)
 
 { static char buffer[bufsize];
   int i;
 
-bzero(buffer,bufsize);
+memset(buffer,0,bufsize);
 
 if (strlen(str) >= bufsize-1)
    {
@@ -714,9 +711,7 @@ return buffer;
 
 /*********************************************************************/
 
-void CreateEmptyFile(name)
-
-char *name;
+void CreateEmptyFile(char *name)
 
 { FILE *fp;
 

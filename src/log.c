@@ -72,6 +72,8 @@ if (GetMacroValue(CONTEXTID,"SyslogFacility"))
       {
       facility = LOG_LOCAL4;
       }
+   
+   openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,facility);
    }
 else if (ISCFENGINE)
    {
@@ -85,10 +87,7 @@ else
 
 /*****************************************************************************/
 
-void CfLog(level,string,errstr)
-
-enum cfoutputlevel level;
-char *string, *errstr;
+void CfLog(enum cfoutputlevel level,char *string,char *errstr)
 
 { int endl = false;
   char *sp, buffer[1024];
@@ -107,7 +106,7 @@ buffer[1023] = '\0';
  
 for (sp = buffer; *sp != '\0'; sp++)
    {
-   if (*sp == '%')
+   if ((*sp == '%') && (*(sp+1) >= 'a'))
       {
       *sp = '?';
       }
@@ -125,125 +124,124 @@ if (!SILENT && (pthread_mutex_lock(&MUTEX_SYSCALL) != 0))
  
 switch(level)
    {
-   case cfsilent:    if (! SILENT || VERBOSE || DEBUG || D2)
-                        {
-			ShowAction();
-			printf("%s: %s",VPREFIX,buffer);
-			endl = true;
-                        }
-                     break;
-
-   case cfinform:    if (SILENT)
-                        {
-			return;
-                        }
+   case cfsilent:
+       if (! SILENT || VERBOSE || DEBUG || D2)
+          {
+          ShowAction();
+          printf("%s: %s",VPREFIX,buffer);
+          endl = true;
+          }
+       break;
+       
+   case cfinform:
+       if (SILENT)
+          {
+          return;
+          }
+       
+       if (INFORM || VERBOSE || DEBUG || D2)
+          {
+          ShowAction();
+          printf("%s: %s",VPREFIX,buffer);
+          endl = true;
+          }
+       
+       if (LOGGING && IsPrivileged() && !DONTDO)
+          {
+          syslog(LOG_NOTICE, "%s", buffer); 
+          
+          if ((errstr != NULL) && (strlen(errstr) != 0))
+             {
+             syslog(LOG_ERR,"%s: %s",errstr,strerror(errno));  
+             }
+          }
+       break;
    
-                     if (INFORM || VERBOSE || DEBUG || D2)
-                        {
-			ShowAction();
-			printf("%s: %s",VPREFIX,buffer);
-			endl = true;
-                        }
-		     
-		     if (LOGGING && IsPrivileged() && !DONTDO)
-			{
-			syslog(LOG_NOTICE, "%s", buffer); 
+   case cfverbose:
+       if (VERBOSE || DEBUG || D2)
+          {
+          if ((errstr == NULL) || (strlen(errstr) > 0))
+             {
+             ShowAction();
+             printf("%s: %s\n",VPREFIX,buffer);
+             printf("%s: %s",VPREFIX,errstr);
+             endl = true;
+             }
+          else
+             {
+             ShowAction();
+             printf("%s: %s",VPREFIX,buffer);
+             endl = true;
+             }
+          }
+       break;
 
-			if (strlen(errstr) != 0)
-			   {
-			   syslog(LOG_ERR,"%s: %s",errstr,strerror(errno));  
-			   }
-			}
-                     break;
-			
-   case cfverbose:   if (VERBOSE || DEBUG || D2)
-                        {
-			if ((errstr == NULL) || (strlen(errstr) > 0))
-			   {
-			   ShowAction();
-			   printf("%s: %s\n",VPREFIX,buffer);
-			   printf("%s: %s",VPREFIX,errstr);
-			   endl = true;
-			   }
-			else
-			   {
-			   ShowAction();
-			   printf("%s: %s",VPREFIX,buffer);
-			   endl = true;
-			   }
-                        }
-                     break;
-
-   case cfeditverbose: if (EDITVERBOSE || DEBUG)
-                          {
-			  ShowAction();
-		   	  printf("%s: %s",VPREFIX,buffer);
-			  endl = true;
-                          }
-                     break;
-
+   case cfeditverbose:
+       if (EDITVERBOSE || DEBUG)
+          {
+          ShowAction();
+          printf("%s: %s",VPREFIX,buffer);
+          endl = true;
+          }
+       break;
+       
    case cflogonly: 
-                     if (LOGGING && IsPrivileged() && !DONTDO)
-			{
-			syslog(LOG_ERR," %s",buffer);    
-			
-			if ((errstr != NULL) && (strlen(errstr) > 0))
-			   {
-			   syslog(LOG_ERR," %s",errstr);  
-			   }
-			}
-		     
-                     break;
+
+       if (LOGGING && IsPrivileged() && !DONTDO)
+          {
+          syslog(LOG_ERR," %s",buffer);    
+          
+          if ((errstr != NULL) && (strlen(errstr) > 0))
+             {
+             syslog(LOG_ERR," %s",errstr);  
+             }
+          }
+       
+       break;
 
    case cferror:
-                     printf("%s: %s",VPREFIX,buffer);
-
-		     if (LOGGING && IsPrivileged() && !DONTDO)
-			{			
-			syslog(LOG_ERR," %s",buffer);    
-			}
- 
-		     if (buffer[strlen(buffer)-1] != '\n')
-			{
-			printf("\n");
-			}
-		     
-		     if ((errstr != NULL) && (strlen(errstr) > 0))
-                        {
-			ShowAction();
-		        printf("%s: %s: %s\n",VPREFIX,errstr,strerror(errno));
-			endl = true;
-			
-			if (LOGGING && IsPrivileged() && !DONTDO)
-			   {
-			   syslog(LOG_ERR, " %s: %s",errstr,strerror(errno));   
-			   }
-                        }
+       printf("%s: %s",VPREFIX,buffer);
+       
+       if (LOGGING && IsPrivileged() && !DONTDO)
+          {   
+          syslog(LOG_ERR," %s",buffer);    
+          }
+       
+       if (buffer[strlen(buffer)-1] != '\n')
+          {
+          printf("\n");
+          }
+       
+       if ((errstr != NULL) && (strlen(errstr) > 0))
+          {
+          ShowAction();
+          printf("%s: %s: %s\n",VPREFIX,errstr,strerror(errno));
+          endl = true;
+          
+          if (LOGGING && IsPrivileged() && !DONTDO)
+             {
+             syslog(LOG_ERR, " %s: %s",errstr,strerror(errno));   
+             }
+          }
    }
-
-
 
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-      if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
-	 {
-	 /* CfLog(cferror,"pthread_mutex_unlock failed","lock");*/
-	 }
+ if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
+    {
+    /* CfLog(cferror,"pthread_mutex_unlock failed","lock");*/
+    }
 #endif 
-
  
-if (endl && (buffer[strlen(buffer)-1] != '\n'))
-   {
-   printf("\n");
-   }
+ 
+ if (endl && (buffer[strlen(buffer)-1] != '\n'))
+    {
+    printf("\n");
+    }
 }
 
 /*****************************************************************************/
 
-void ResetOutputRoute (log,inform)
-
-char log, inform;
-
-  /* t = true, f = false, d = default */
+void ResetOutputRoute (char log,char inform)
 
 {
 if ((log == 'y') || (log == 'n') || (inform == 'y') || (inform == 'n'))
@@ -254,17 +252,17 @@ if ((log == 'y') || (log == 'n') || (inform == 'y') || (inform == 'n'))
    switch (log)
       {
       case 'y': LOGGING = true;
-	        break;
+         break;
       case 'n': LOGGING = false;
-	        break;
+         break;
       }
 
    switch (inform)
       {
       case 'y': INFORM = true;
-	        break;
+         break;
       case 'n': INFORM = false;
-	        break;
+         break;
       }
    }
 else

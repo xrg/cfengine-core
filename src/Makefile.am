@@ -11,6 +11,7 @@ cfagent_SOURCES =							\
 	cfagent.c							\
 	init.c								\
         do.c                                                            \
+	modules.c							\
 	alerts.c							\
         wrapper.c                                                       \
         report.c                                                        \
@@ -36,6 +37,7 @@ cfagent_SOURCES =							\
 	filedir.c							\
 	eval.c								\
 	modes.c								\
+	sockaddr.c							\
 	chflags.c							\
 	locks.c								\
 	mount.c								\
@@ -65,6 +67,7 @@ cfagent_SOURCES =							\
 	dce_acl.c							\
 	nameinfo.c							\
 	strategies.c                         				\
+	granules.c							\
 	methods.c							\
 	state.c								\
 	package.c
@@ -76,6 +79,7 @@ cfservd_SOURCES =							\
 	parse.c								\
 	functions.c							\
 	install.c							\
+	sockaddr.c							\
 	ip.c								\
 	report.c							\
 	cfparse.y							\
@@ -92,6 +96,7 @@ cfservd_SOURCES =							\
 	eval.c								\
 	read.c								\
 	classes.c							\
+	modules.c							\
 	misc.c								\
 	2Dlist.c							\
 	modes.c								\
@@ -119,6 +124,7 @@ cfexecd_SOURCES =							\
 	cfexecd.c							\
 	popen.c								\
 	globals.c							\
+	sockaddr.c							\
 	read.c								\
 	classes.c							\
 	nameinfo.c							\
@@ -141,6 +147,7 @@ cfrun_SOURCES =								\
 	item.c								\
 	item-ext.c							\
 	filenames.c							\
+	sockaddr.c							\
 	nameinfo.c							\
 	eval.c								\
 	wildcard.c							\
@@ -177,6 +184,7 @@ cfenvd_SOURCES =							\
 	globals.c							\
 	filenames.c							\
 	nameinfo.c							\
+	sockaddr.c							\
 	classes.c							\
 	item.c								\
 	item-ext.c							\

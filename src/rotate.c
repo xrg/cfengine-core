@@ -36,15 +36,11 @@
 
 /*********************************************************************/
 
-void RotateFiles(name,number)
+void RotateFiles(char *name,int number)
 
  /* Rotates file extensions like in free bsd, messages, syslog */
  /* etc. Note that this doesn't check for failure, since the   */
  /* aim is to disable the files anyway                         */
-
-
-char *name;
-int number;
 
 { int i, fd;
   struct Image dummy;

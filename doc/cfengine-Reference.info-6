@@ -11,6 +11,260 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: processes,  Next: packages,  Prev: mountables,  Up: Cfagent reference
+
+processes
+=========
+
+   Using the processes facility, you can test for the existence of
+processes, signal (kill) processes and optionally restart them again.
+Cfengine opens a pipe from the system ps command and searches through
+the output from this command using regular expressions to match the
+lines of output from `ps'.  The regular expression does not have to be
+an exact match, only a substring of the process line.  The form of a
+process command is
+
+     processes:
+     
+         "QUOTED REGULAR EXPRESSION"
+     
+                             restart "SHELL COMMAND"
+                             useshell=true/FALSE/DUMB
+                             owner=RESTART-UID
+                             group=RESTART-GID
+                             chroot=DIRECTORY
+                             chdir=DIRECTORY
+                             umask=MASK
+     
+                             signal=SIGNAL NAME
+                             matches=NUMBER
+                             define=CLASSLIST
+                             elsedefine=CLASSLIST
+     
+                             action=signal/DO/WARN/BYMATCH
+                             include=LITERAL
+                             exclude=LITERAL
+                             syslog=TRUE/ON/FALSE/OFF
+                             inform=TRUE/ON/FALSE/OFF
+                             ifelapsed=MINS
+                             expireafter=MINS
+     
+         SetOptionString "QUOTED OPTION STRING"
+
+   By default, the options sent to ps are "-aux" for BSD systems and
+"-ef" for system 5.  You can use the `SetOptionString' command to
+redefine the option string. Cfengine assumes only that the first
+identifiable number on each line is the process identifier for the
+processes, so you must not choose options for ps which change this
+basic requirement (this is not a problem in practice). Cfengine reads
+the output of the ps-command normally only once, and searches through
+it in memory. The process table is only re-consulted if
+`SetOptionString' is called. The options have the following meanings:
+
+`signal=SIGNAL NAME'
+     This option defines the name of a signal which is to be sent to
+     all processes matching the quoted regular expression. If this
+     option is omitted, no signal is sent. The signal names have the
+     usual meanings. The full list, with largely standardized meanings,
+     is
+
+             hup       1   hang-up
+             int       2   interrupt
+             quit      3   quit
+             ill       4   illegal instruction
+             trap      5   trace trap
+             iot       6   iot instruction
+             emt       7   emt instruction
+             fpe       8   floating point exception
+             kill      9   kill signal
+             bus      10   bus error
+             segv     11   segmentation fault
+             sys      12   bad argument to system call
+             pipe     13   write to non existent pipe
+             alrm     14   alarm clock
+             term     15   software termination signal
+             urg      16   urgent condition on I/O channel
+             stop     17   stop signal (not from tty)
+             tstp     18   stop from tty
+             cont     19   continue
+             chld     20   to parent on child exit/stop
+             gttin    21   to readers pgrp upon background tty read
+             gttou    22   like TTIN for output if (tp->t_local&LTOSTOP)
+             io       23   input/output possible signal
+             xcpu     24   exceeded CPU time limit
+             xfsz     25   exceeded file size limit
+             vtalrm   26   virtual time alarm
+             prof     27   profiling time alarm
+             winch    28   window changed
+             lost     29   resource lost (eg, record-lock lost)
+             usr1     30   user defined signal 1
+             usr2     31   user defined signal 2
+
+     Note that cfengine will not attempt to signal or restart processes
+     0 to 3 on any system since such an attempt could bring down the
+     system. The only exception is that the hangup (hup) signal may be
+     sent to process 1 (init) which normally forces init to reread its
+     terminal configuration files.
+
+`restart "SHELL COMMAND"'
+     Note the syntax: there is no equals sign here.  If the keyword
+     `restart' appears, then the next quoted string is interpreted as a
+     shell command which is to be executed after any signals have been
+     sent.  This command is only issued if the number of processes
+     matching the specified regular expression is zero, or if the
+     signal sent was signal 9 (sigkill) or 15 (sigterm) , i.e.  the
+     normal termination signals.  This could be used to restart a
+     daemon for instance. Cfengine executes this command and _waits_
+     for its completion so you should normally only use this feature to
+     execute non-blocking commands, such as daemons which dissociate
+     themselves from the I/O stream and place themselves in the
+     background. Some unices leave a hanging pipe on restart (they never
+     manage to detect the end of file condition). This occurs on
+     POSIX.1 and SVR4 popen calls which use wait4. For some reason they
+     fail to find and end-of-file for an exiting child process and go
+     into a deadlock trying to read from an already dead process. This
+     leaves a zombie behind (the parent daemon process which forked and
+     was supposed to exit) though the child continues.  A way around
+     this is to use a wrapper script which prints the line
+     "cfengine-die" to STDOUT after restarting the process. This causes
+     cfengine to close the pipe forcibly and continue.  Cfengine places
+     a timeout on the restart process and attempts to clean up zombies,
+     but you should be aware of this possibility.
+
+`owner=,group='
+     Sets the process uid and gid (setuid,gid) for processes which are
+     restarted. This applies only to cfengine run by root.
+
+`chroot'
+     Changes the process root directory of the restarted process,
+     creating a `sandbox' which the process cannot escape from. Best
+     used together with a change of owner, since a root process can
+     break out of such a confinement in principle.
+
+`chdir'
+     Change the current working directory of the restarted process.
+
+`useshell=TRUE/FALSE/DUMB'
+     When restarting processes, cfengine normally uses a shell to
+     interpret and execute the restart command. This has inherent
+     security problems associated with it. If you set this option to
+     false, cfengine executes restart commands without using a shell.
+     This is recommended, but it does mean that you cannot use any
+     shell operators or features in the restart command-line.
+
+     Some programs (like cron) do not handle I/O properly when they fork
+     their daemon parts, this causes a zombie process and normally
+     hangs cfengine. By choosing the value `dumb' for this, cfengine
+     ignores all output from a program and does not use a startup shell.
+     This prevents programs like cron from hanging cfengine.
+
+`matches=NUMBER'
+     This option may be used to set a maximum, minimum or exact number
+     of matches. If cfengine doesn't find a number of matches to the
+     regular expression which is in accordance with this value it
+     signals a warning.  The `<', `>' symbols are used  to specify
+     upper and lower limits. For example,
+
+            matches=<6  # warn number of matches is greater than or equal to 6
+            matches=1   # warn if not exactly 1 matching process
+            matches=>2  # warn if there are less than or equal to 2 matching processes
+
+`include=LITERAL'
+     Items listed as includes provide an extra level of selection after
+     the regular expression matches have been expanded. If you include
+     one include option, then only lines containing one or more of the
+     literal strings or wildcards will be matched.
+
+`exclude=LITERAL'
+     Process lines containing literal strings or wildcards in exclude
+     statements are not matched. Excludes are processed after regular
+     expression matching and after includes.
+
+`define=CLASSLIST'
+     The colon, command or dot separated list of classes becomes
+     activated if the number of regular expression matches is non-zero.
+
+`elsedefine=CLASSLIST'
+     The colon, command or dot separated list of classes becomes
+     activated if the number of regular expression matches is zero.
+
+`action=SIGNAL/DO/WARN'
+     The default value of this option is to silently send a signal (if
+     one was defined using the `signal' option) to matching processes.
+     This is equivalent to setting the value of this parameter to
+     `signal' or `do'. If you set this option to `warn', cfengine sends
+     no signal, but prints a message detailing the processes which
+     match the regular expression.  If the option is set to `bymatch',
+     then signals are only sent to the processes if the matches
+     criteria fail.
+
+   Here is an example script which sends the hang-up signal to cron,
+forcing it to reread its crontab files:
+
+
+     processes:
+     
+        "cron" signal=hup
+
+Here is a second example which may be used to restart the nameservice
+on a solaris system:
+
+
+     processes:
+     
+        solaris::
+     
+            "named" signal=kill restart "/usr/sbin/in.named"
+
+A more complex match could be used to look for processes belonging to a
+particular user. Here is a script which kills ftp related processes
+belonging to a particular user who is known to spend the whole day
+FTP-ing files:
+
+
+     control:
+     
+         actionsequence = ( processes )
+     
+       #
+       # Set a kill signal here for convenience
+       #
+     
+         sig = ( kill )
+     
+       #
+       # Better not find that dumpster here!
+       #
+     
+         matches = ( 1 )
+     
+     processes:
+     
+        #
+        #  Look for Johnny Mnemonic trying to dump his head, user = jmnemon
+        #
+     
+        ".*jmnemon.*ftp.*" signal=$(sig) matches=<$(matches) action=$(do)
+     
+        # No mercy!
+
+The regular expression `.*' matches any number of characters, so this
+command searches for a line containing both the username and something
+to do with ftp and sends these processes the kill signal.
+
+   You can arrange for signals to be sent, only if the number of matches
+fails the test. The `action=bymatch' option is used for this.  For
+instance, to kill process `XXX' only if the number of matches is
+greater than 20, one would write:
+
+
+     processes:
+     
+     "XXX" matches=<20  action=bymatch signal=kill
+
+   See also filters *Note filters::, for more complex searches.
+
+
 File: cfengine-Reference.info,  Node: packages,  Next: rename,  Prev: processes,  Up: Cfagent reference
 
 packages
@@ -256,8 +510,9 @@ this declaration together with the `domain' variable (set here to
      nameserver 129.240.2.3
 
 Note that the `resolve' action does not delete anything from the file
-`/etc/resolv.conf'.  It adds nameservers which do not previously exist
-and reorders the lines of servers which do exist.
+`/etc/resolv.conf' unless the `EmptyResolveConf' variable is set to
+'true' .  It adds nameservers which do not previously exist and
+reorders the lines of servers which do exist.
 
    As of version 1.3.11, you may use a quoted string to add
 non-nameserver lines to this file. For example:
@@ -305,6 +560,8 @@ shell commands from this section.
                preview=TRUE/false
                inform=false/TRUE
      
+               noabspath=false/TRUE
+     
                ifelapsed=MINS
                expireafter=MINS
 
@@ -314,6 +571,10 @@ executed by root. If you set the optional timeout string, then cfengine
 will abort the shellcommand if it exceeds the specified time-limit in
 seconds. This can be useful for avoiding situations caused by hung
 network connections etc.
+
+   Normally, cfagent requires the command string to begin with a `/'
+since it is dangerous to rely on an implicit path. However, sometimes it
+it is appropriate to override this.
 
    Variable substitution works within the strings.  Here are some
 examples.
@@ -711,7 +972,27 @@ follows:
              WILDCARDS/HOSTNAMES root=HOSTLIST encrypt=TRUE/ON
 
 
-The file consists of a control section and access information.
+   Iteration of variables is allowed, hence:
+
+     	control:
+     	  Split = ( " " )
+     	  hostlist = ( "10.10.10.1 10.10.10.2 10.10.10.3" )
+     	  dirs =  ( "bin etc lib" )
+     	  base = ( /usr )
+     
+     	#########################################################
+     
+     	admit:
+     	   $(base)/$(dirs)   $(hostlist)
+results in:
+     	Path: /usr/bin (encrypt=0)
+     	   Admit: 10.10.10.1 10.10.10.2 10.10.10.3 root=
+     	Path: /usr/etc (encrypt=0)
+     	   Admit: 10.10.10.1 10.10.10.2 10.10.10.3 root=
+     	Path: /usr/lib (encrypt=0)
+     	   Admit: 10.10.10.1 10.10.10.2 10.10.10.3 root=
+
+   The file consists of a control section and access information.
 
 
 File: cfengine-Reference.info,  Node: cfservd control,  Next: admit grant and deny,  Prev: Cfservd.conf and cfrun reference,  Up: Cfservd.conf and cfrun reference
@@ -1033,288 +1314,4 @@ File: cfengine-Reference.info,  Node: encrypt=,  Next: SkipVerify,  Prev: root=,
 the copy access type is `secure', i.e. on an encrypted link. This
 presupposes that cfengine has been compiled with a working OpenSSL
 library.
-
-
-File: cfengine-Reference.info,  Node: SkipVerify,  Prev: encrypt=,  Up: admit grant and deny
-
-SkipVerify
-----------
-
-   If connecting hosts use a Network Address Translator in order to
-share an IP address, reverse lookup will fail to give a correct
-verification of host identity.  You can switch off cfservd's
-verification of IP host identity for specific IP addresses or patterns
-using this command. E.g.
-
-
-     SkipVerify = ( 192.0.0.10  192.0.2.  )
-
-   This does not affect key verification.
-
-   NOTE!! This is a security risk because it means that cfservd
-implicitly trusts the connecting hosts! You should be very careful in
-using Network Address Translators in a secure environment. It is not
-recommended for sites which require a high level of security.
-
-
-File: cfengine-Reference.info,  Node: cfrun,  Next: Firewalls and NATs,  Prev: admit grant and deny,  Up: Cfservd.conf and cfrun reference
-
-`cfrun'
-=======
-
-   The general syntactic form of the `cfrun' command is
-
-
-       cfrun -OPTION --LONGOPTION CLASS1 CLASS2 ...
-
-Since `cfrun' addresses remote hosts, there is an ambiguity in whether
-options are intended for the `cfrun' command itself, on the local host,
-or whether they are to be passed on to the agent on the remote hosts.
-To clarify this distinction, the arguments are organized as follows:
-
-
-       cfrun -LOCAL OPTIONS -- REMOTE OPTIONS -- REMOTE CLASSES
-
-Local options are processed by `cfrun' on the local host; remote options
-are passed on as options to the remote `cfagent' (actually to the
-command defined in `cfrunCommand' in the file `cfservd.conf'; remote
-classes are processed by the remote `cfservd' service, and specifiy
-classes which must be satisfied by the remote host in order to invoke
-the remote command.
-
-   The `-q' and `-I' options are always assumed when executing cfengine
-remotely, so that `SplayTime' is effectively zero when polling hosts
-serially, and the output always shows what is happening on the remote
-hosts.
-
-   Each host evaluates the classes sent by `cfrun' and decides whether
-cfengine should be invoked.  Only hosts which belong to the classes
-defined on the `cfrun' command line are executed. This allows you to
-single out groups of hosts which should execute cfengine, based on the
-very classes which you have defined for your configuration.  If no
-classes are sent on the command line, then all hosts are run.
-
-   `cfrun' uses a configuration file which is located under the
-`CFINPUTS' directory in order to determine which hosts and in which
-order it should try to connect. Because cfengine always uses a reliable
-TCP protocol for connections, it verifies each connection rather than
-simply broadcasting openly. Using this file you can even simulate
-broadcasting to hosts outside your subnet.
-
-   This file should contain every host name you ever want to configure
-remotely, because you can still select subsets of the file by
-specifying classes which the remote host will understand.  If the
-remote host is not in one of the classes you specify when you run
-`cfrun', then it will simply ignore the request. Conversely, if you do
-not place a host in this file, it will never be contacted when you use
-the `cfrun' command. The format of the file is as follows
-
-
-      #
-      # Comment ..
-      #
-      domain=MY.DOMAIN
-      access=USER1,USER2
-      outputdir=DIRECTORY
-      maxchild=NUMBER LIMIT
-     
-      HOSTNAME1            OPTIONS
-      HOSTNAME2:PORT OPTIONS
-      ...
-
-If the option `outputdir' is present, cfrun forks a separate process
-for each host and passes the output to files in a named directory.  The
-`maxchild' line limits the number of forked processes.
-
-   It is important to add the domain-name to this file.  The options
-you specifiy in this file, per host, are added to those you might
-specify on the command line when invoking cfengine remotely.  For
-instance, you might know of a bug on one host and decide not to perform
-interface configuration on that one machine. You would write a line
-like this:
-
-
-       funny.domain -- -i  # problem host
-
-   You could use `cfrun' inside one of your cfengine configuration
-files in order to remotely execute cfengine on all of the other network
-machines, by setting up a host list. The disadvantage however is that
-cfengine has to poll the systems on the network, which means that
-cfengine cannot be working in parallel on all hosts.
-
-   Some other examples:
-
-
-     e.g.  cfrun -- -- linux          Run on all linux machines
-           cfrun -- -p                Ping and parse on all hosts
-           cfrun -v -- -p             Ping all, local verbose
-           cfrun -v -- -k -- solaris  Local verbose, all solaris, but no copy
-
-   Amongst the local options, one may specify a subset of the hosts
-which are to be contacted by cfrun, i.e. to avoid processing the entire
-list of hosts. For example, to contact only host1 and host2, given that
-they are already in the list of hosts.
-
-
-     cfrun -v host1 host2
-     cfrun -v host1 host2 -- -p
-
-
-File: cfengine-Reference.info,  Node: Firewalls and NATs,  Prev: cfrun,  Up: Cfservd.conf and cfrun reference
-
-Firewalls and NATs
-==================
-
-   Firewalls and Network Address Translators (NAT) can be a problem for
-addressing.  Suppose you have a firewall and with a private IP-range
-behind the firewall.  You want to update the nodes from a central host.
-You can do a two stage configuration: first update the firewall and
-then update from the firewall to the nodes.
-
-   But suppose you already use SNAT (Source Network Address
-Translation) and DNAT (Destination ...) for the nodes. With DNAT you
-can say that socket 22000 on the firewall is routed to HOST-NAME:5308.
-DNAT gives us the possibilty to update the nodes from a central server
-in one step instead of two.
-
-   If the port command is given cfrun uses this to connect to the client
-instead of the default (5308) one.  Here is an example (`cfrun.hosts'):
-
-     node1.example.org
-     node2.example.org:22000 -DNis
-     node2.example.org:22001
-
-   This connects to: 1) node1 with standard port, 2) node2 with port
-22000 and extra options -DNis and, 3) node2 with port 22000.
-
-
-File: cfengine-Reference.info,  Node: Cfexecd reference,  Next: Problem solving,  Prev: Cfservd.conf and cfrun reference,  Up: Top
-
-Cfexecd reference
-*****************
-
-   In wrapper mode (non-forking, non-daemon mode), cfagent is run by
-adding a line to the root crontab file of each system:
-     0,30 * * * * /usr/local/sbin/cfexecd -F
-   This is enough to ensure that cfengine will get run. Any output
-generated by this job, will be stored in `/var/cfengine/outputs'.  In
-addition, if you add the following to the file `cfagent.conf', the
-system administrator will be emailed a summary of any output:
-
-     control:
-     
-     smtpserver    = ( mailhub.example.org ) # site MTA which can talk smtp
-     sysadm        = ( mark@example.org )    # mail address of sysadm
-     EmailMaxLines = ( N )                 # max lines of output to email
-
-Fill in suitable values for these variables. `EmailMaxLines' may be set
-to 0 to disable email output, a postive integer to set a limit, or
-`inf' to email the whole output regardless of its size. If undefined,
-`EmailMaxLines' defaults to 100.
-
-   An alternative, or additional way to run cfengine, is to run the
-`cfexecd' program is daemon mode (without the `-F') option. In this
-mode, the daemon lives in the background and sleeps, activating only in
-accordance with a scheduling policy. The default policy is to run once
-every hour (equivalent to `Min00_05'). Here is how you would modify
-`cfagent.conf' in order to make the daemon execute cfagent every
-half-hour:
-       control:
-     
-        # When should cfexecd in daemon mode wake up the agent?
-     
-        schedule   = ( Min00_05 Min30_35 )
-   Note that the time specifications are the basic cfengine _time
-classes_.  Although one of these methods should suffice, no harm will
-arise from running both cron and the cfexecd side-by-side.  Cfagents
-locking mechanisms ensure that no contention will occur.
-
-   Note, that if problems with library path for compiled in libraries
-occur, an explicit library path can be specified with the `-L' option.
-     0,30 * * * * /usr/local/sbin/cfexecd -F -L /local/iu/lib:/local/lib/mysql:/local/lib:/local/gnu/lib
-
-
-File: cfengine-Reference.info,  Node: Problem solving,  Next: Example configuration file,  Prev: Cfexecd reference,  Up: Top
-
-Problem solving
-***************
-
-* Menu:
-
-* cf.preconf bootstrap file::
-* cfrc resource file::
-
-
-File: cfengine-Reference.info,  Node: cf.preconf bootstrap file,  Next: cfrc resource file,  Prev: Problem solving,  Up: Problem solving
-
-`cf.preconf' bootstrap file
-===========================
-
-   In some cases you will want to run cfengine on a system to configure
-it from scratch.  If the system is in a very bad way, it might not even
-be able to parse the cfengine configuration file, perhaps because the
-network was not properly configured or the DNS (Domain Name Service) was
-out of action.  To help prevent this situation, cfengine looks for a
-script called `cf.preconf' which gets executed prior to parsing and can
-be used to perform any emergency tests.  This file needs only contain
-enough to get the system to parse the configuration files.
-
-   `cf.preconf' may be any script in any language.  It need not exist
-at all! It is fed one argument by cfengine, namely the system hard-class
-for the current system (e.g.  `ultrix').  Here is an example:
-
-     #!/bin/sh
-     #
-     # cf.preconf is an emergency/bootstrap file to get things going
-     # in case cfengine is unable to parse its config file
-     #
-     
-     backupdir=/iu/nexus/local/iu/etc
-     
-      #
-      # If these files don't exist, you might not be able to parse cfagent.conf
-      #
-     
-     if [ ! -s /etc/resolv.conf ]; then
-     
-      echo Patching basics resolv.conf file
-      cat > /etc/resolv.conf << XX
-     domain iu.hioslo.no
-     nameserver 128.39.89.10
-     XX
-     
-     fi
-     
-     #
-     # SVR4
-     #
-     
-     if [ "$1" = "solaris" ]; then
-     
-       if [ ! -s "/etc/passwd" ]; then
-     
-       echo Patching missing passwd file
-         /bin/cp $backupdir/passwd /etc/passwd
-       fi
-     
-       if [ ! -s "/etc/shadow" ]; then
-     
-        echo Patching missing passwd file
-        /bin/cp $backupdir/shadow /etc/shadow
-       fi
-     fi
-     
-     #
-     # BSD 4.3
-     #
-     
-     if [ "$1" = "linux" ]; then
-     
-        if [ ! -s "/etc/passwd"  ]
-        then
-     
-         echo Patching missing passwd file
-         /bin/cp $backupdir/passwd.linux /etc/passwd
-        fi
-     fi
 

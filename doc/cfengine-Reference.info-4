@@ -353,18 +353,27 @@ expressions.
      Delete lines after the current position which match the quoted
      expression.
 
-`DeleteLinesContaining QUOTED-STRING'
-     Delete all lines containing the exact string quoted.
+`DeleteLinesContaining QUOTED-STRING/DeleteLinesNotContaining QUOTED-STRING'
+     Delete all lines (not) containing the exact string quoted.
 
-`DeleteLinesMatching QUOTED-REGEX'
-     Delete all lines fully matching the tied quoted regular expression.
-
-`DeleteLinesNotMatching QUOTED-REGEX'
-     Delete all lines not fully matching the tied quoted regular
+`DeleteLinesMatching QUOTED-REGEX/DeleteLinesNotMatching QUOTED-REGEX'
+     Delete all lines (not) fully matching the tied quoted regular
      expression.
 
-`DeleteLinesStarting QUOTED-STRING'
-     Delete all lines beginning with the exact string quoted.
+`DeleteLinesStarting QUOTED-STRING/DeleteLinesNotStarting QUOTED-STRING'
+     Delete all lines (not) beginning with the exact string quoted.
+
+`DeleteLinesNotContainingFileItems FILENAME'
+     Delete lines in the file that do not contain the any of the
+     substrings in the file.
+
+`DeleteLinesNotMatchingFileItems FILENAME'
+     Delete lines in the file that do not match the any of the regular
+     expressions in the file.
+
+`DeleteLinesNotStartingFileItems FILENAME'
+     Delete lines in the file that do not start with any of the
+     substrings in the file.
 
 `DeleteNLines QUOTED-STRING'
      Deletes up to N lines from the current file, starting from the
@@ -750,11 +759,13 @@ examining the form of the statement in pseudo-code:
                                elsedefine=CLASSLIST
      
                                checksum=MD5
-                               flags=BSD FLAGS
                                syslog=TRUE/ON/false/off
                                inform=TRUE/ON/false/off
                                ifelapsed=MINS
                                expireafter=MINS
+     
+          SPECIAL OS FLAGS:
+                               flags=BSD FLAGS
 
 An example would be the following:
 
@@ -792,7 +803,7 @@ unique abbreviation.
      numerical form might be `-002' which would mean that the
      read-for-others flag should either not be set or should be unset,
      depending on the action you choose.  `+2000' would mean that the
-     setuid flag should be present or set, depending on the action.
+     setgid flag should be present or set, depending on the action.
      `+2000,-002' would be a combination of these.  The `=' sign sets
      to an absolute value, so `=755' would set the file mode to mode
      755.
@@ -1245,73 +1256,4 @@ time.
 * Menu:
 
 * Complete filter examples::
-
-
-File: cfengine-Reference.info,  Node: Complete filter examples,  Prev: filters,  Up: filters
-
-Complete filter examples
-------------------------
-
-   Here is an example filter to search for all files which are either
-directories or links, or any kind of file owned by mark, in group
-cfengine.
-
-     control:
-     
-      actionsequence = ( files )
-     
-     files:
-     
-      /tmp       filter=testfilteralias action=alert r=inf
-      /cfengine  filter=testfilteralias action=fixall r=inf mode=644
-     
-     filters:
-     
-       { testfilteralias
-     
-       Owner:     "mark"
-       Group:     "cfengine"
-       Type:      "dir|link"
-     
-       Result:    "Type|(Owner.Group)"  # Both owner AND group required correct
-       }
-   Find all ELF executables using data from the Unix `file' command.
-Caution, this takes a long time if used indescriminately.
-
-     control:
-     
-      actionsequence = ( files )
-     
-     files:
-     
-      /tmp       filter=testfilteralias action=alert r=inf
-      /cfengine  filter=testfilteralias action=fixall r=inf mode=644
-     
-     filters:
-     
-       { testfilteralias
-     
-       ExecRegex: "/bin/file (.*ELF.*)"
-     
-       Result: "ExecRegex"
-       }
-   Here is an example which warns of any process coupled to a terminal
-started in November:
-
-     control:
-     
-      actionsequence = ( processes )
-     
-     filters:
-     
-       { filteralias
-       FromSTime: "date(2000,11,0,0,0,0)"
-       ToSTime:   "date(2000,11,30,0,0,0)"
-       TTY: ".*pt.*"
-       Result: "TTY.STime"
-       }
-     
-     processes:
-     
-      "." filter=filteralias action=warn
 

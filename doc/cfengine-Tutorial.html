@@ -1433,7 +1433,9 @@ are separately true, thus in the above example the actions which follow
 In the second example, the host parsing the file must be either of
 type <code>sun4</code> <em>or</em> <code>ultrix</code> <em>or</em> <code>osf</code>. 
 In other words, compound classes support two operators: AND and OR,
-written <code>.</code> and <code>|</code> respectively. Cfengine doesn't
+written <code>.</code> and <code>|</code> respectively. From cfengine version 2.1.1,
+I bit the bullet and added <code>&amp;</code> as a synonym for the AND operator. 
+Cfengine doesn't
 care how many of these operators you use (since it skips over blank
 class names), so you could write either
 
@@ -1545,7 +1547,7 @@ domain variable.</em> The dots in this string will be replaced by underscores.
      <br><dt><code>!</code>
      <dd>The NOT operator binds tightest.
 
-     <br><dt><code>.</code>
+     <br><dt><code>. &amp;</code>
      <dd>The AND operator binds more tightly than OR.
 
      <br><dt><code>|</code>
@@ -2129,15 +2131,16 @@ define the module in the cfagent program:
      
         actionsequence = (
                          files
-                         module:myplugin.specialclass
-                         "module:argplugin.specialclass arg1 arg2"
+                         module:myplugin
+                         "module:argplugin arg1 arg2"
                          copy
                          )
       ...
+        AddInstallables = ( specialclass )
      
      </pre>
 
-<p>Note that the class definitions for the module can also be defined in as
+<p>Note that the class definitions for the module should also be defined in as
 <code>AddInstallables</code>, if this is more convenient. NOTE: you <em>must</em>
 declare the classes before using them in the cfagent configuration, or else
 those actions will be ignored. 

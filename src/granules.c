@@ -37,9 +37,7 @@
 
 /*****************************************************************************/
 
-char *ConvTimeKey(str)
-
-char *str;
+char *ConvTimeKey(char *str)
 
 { int i;
   char buf1[10],buf2[10],buf3[10],buf4[10],buf5[10],buf[10],out[10];
@@ -100,9 +98,7 @@ return timekey;
 
 /*****************************************************************************/
 
-char *GenTimeKey(now)
-
-time_t now;
+char *GenTimeKey(time_t now)
  
 { char str[64];
     

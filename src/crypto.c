@@ -129,9 +129,7 @@ if (BN_num_bits(PUBKEY->e) < 2 || !BN_is_odd(PUBKEY->e))
 
 /*********************************************************************/
 
-RSA *HavePublicKey(name)
-
-char *name;
+RSA *HavePublicKey(char *name)
 
 { char filename[bufsize],*sp;
   struct stat statbuf; 
@@ -194,10 +192,7 @@ else
 
 /*********************************************************************/
 
-void SavePublicKey(name,key)
-
-char *name;
-RSA *key;
+void SavePublicKey(char *name,RSA *key)
 
 { char filename[bufsize],*sp;
   struct stat statbuf;
@@ -272,9 +267,7 @@ unlink(filename);
 
 /*********************************************************************/
 
-void MD5Random(digest)
-
-unsigned char digest[EVP_MAX_MD_SIZE+1];
+void MD5Random(unsigned char digest[EVP_MAX_MD_SIZE+1])
 
    /* Make a decent random number by crunching some system states & garbage through
       MD5. We can use this as a seed for pseudo random generator */
@@ -336,11 +329,7 @@ CONN->session_key = (unsigned char *)bp;
 
 /*********************************************************************/
 
-int EncryptString(in,out,key,plainlen)
-
-char *in,*out;
-unsigned char *key;
-int plainlen;
+int EncryptString(char *in,char *out,unsigned char *key,int plainlen)
 
 { int cipherlen, tmplen;
  unsigned char iv[8] = {1,2,3,4,5,6,7,8};
@@ -366,11 +355,7 @@ return cipherlen;
 
 /*********************************************************************/
 
-int DecryptString(in,out,key,cipherlen)
-
-char *in,*out;
-unsigned char *key;
-int cipherlen;
+int DecryptString(char *in,char *out,unsigned char *key,int cipherlen)
 
 { int plainlen, tmplen;
   unsigned char iv[8] = {1,2,3,4,5,6,7,8};

@@ -42,10 +42,8 @@ int    MAXFD = 20; /* Max number of simultaneous pipes */
 
 /*****************************************************************************/
 
-FILE *cfpopen(command,type)
+FILE *cfpopen(char *command,char *type)
     
-char *command, *type;
-
  { static char arg[maxshellargs][bufsize];
    int i, argc, pd[2];
    char **argv;
@@ -83,37 +81,37 @@ char *command, *type;
     switch (*type)
        {
        case 'r':
-
-	   close(pd[0]);        /* Don't need output from parent */
-
-	   if (pd[1] != 1)
-	      {
-	      dup2(pd[1],1);    /* Attach pp=pd[1] to our stdout */
-	      dup2(pd[1],2);    /* Merge stdout/stderr */
-	      close(pd[1]);
-	      }
-
-	   break;
-
+           
+           close(pd[0]);        /* Don't need output from parent */
+           
+           if (pd[1] != 1)
+              {
+              dup2(pd[1],1);    /* Attach pp=pd[1] to our stdout */
+              dup2(pd[1],2);    /* Merge stdout/stderr */
+              close(pd[1]);
+              }
+           
+           break;
+           
        case 'w':
-
-	   close(pd[1]);
-
-	   if (pd[0] != 0)
-	      {
-	      dup2(pd[0],0);
-	      close(pd[0]);
-	      }
+           
+           close(pd[1]);
+           
+           if (pd[0] != 0)
+              {
+              dup2(pd[0],0);
+              close(pd[0]);
+              }
        }
-
+    
     for (i = 0; i < MAXFD; i++)
        {
        if (CHILD[i] > 0)
-	  {
-	  close(i);
-	  }
+          {
+          close(i);
+          }
        }
-
+    
     argc = SplitCommand(command,arg);
     argv = (char **) malloc((argc+1)*sizeof(char *));
     
@@ -134,7 +132,7 @@ char *command, *type;
        snprintf(OUTPUT,bufsize,"Couldn't run %s",arg[0]);
        CfLog(cferror,OUTPUT,"execv");
        }
-
+    
     free((char *)argv);
     _exit(1);
     }
@@ -143,40 +141,36 @@ char *command, *type;
     switch (*type)
        {
        case 'r':
-
-	   close(pd[1]);
-	   
-	   if ((pp = fdopen(pd[0],type)) == NULL)
-	      {
-	      return NULL;
-	      }
-	   break;
-	   
+           
+           close(pd[1]);
+           
+           if ((pp = fdopen(pd[0],type)) == NULL)
+              {
+              return NULL;
+              }
+           break;
+           
        case 'w':
-
-	   close(pd[0]);
-	   
-	   if ((pp = fdopen(pd[1],type)) == NULL)
-	      {
-	      return NULL;
-	      }
+           
+           close(pd[0]);
+           
+           if ((pp = fdopen(pd[1],type)) == NULL)
+              {
+              return NULL;
+              }
        }
-
+    
     CHILD[fileno(pp)] = pid;
     return pp;
     }
-
+ 
  return NULL; /* Cannot reach here */
  }
 
 /*****************************************************************************/
 
-FILE *cfpopensetuid(command,type,uid,gid,chdirv,chrootv)
+FILE *cfpopensetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,char *chrootv)
     
-char *command, *type, *chdirv, *chrootv;
-uid_t uid;
-gid_t gid;
-
  { static char arg[maxshellargs][bufsize];
    int i, argc, pd[2];
    char **argv;
@@ -214,37 +208,37 @@ gid_t gid;
     switch (*type)
        {
        case 'r':
-
-	   close(pd[0]);        /* Don't need output from parent */
-
-	   if (pd[1] != 1)
-	      {
-	      dup2(pd[1],1);    /* Attach pp=pd[1] to our stdout */
-	      dup2(pd[1],2);    /* Merge stdout/stderr */
-	      close(pd[1]);
-	      }
-
-	   break;
-
+           
+           close(pd[0]);        /* Don't need output from parent */
+           
+           if (pd[1] != 1)
+              {
+              dup2(pd[1],1);    /* Attach pp=pd[1] to our stdout */
+              dup2(pd[1],2);    /* Merge stdout/stderr */
+              close(pd[1]);
+              }
+           
+           break;
+           
        case 'w':
-
-	   close(pd[1]);
-
-	   if (pd[0] != 0)
-	      {
-	      dup2(pd[0],0);
-	      close(pd[0]);
-	      }
+           
+           close(pd[1]);
+           
+           if (pd[0] != 0)
+              {
+              dup2(pd[0],0);
+              close(pd[0]);
+              }
        }
-
+    
     for (i = 0; i < MAXFD; i++)
        {
        if (CHILD[i] > 0)
-	  {
-	  close(i);
-	  }
+          {
+          close(i);
+          }
        }
-
+    
     argc = SplitCommand(command,arg);
     argv = (char **) malloc((argc+1)*sizeof(char *));
     
@@ -263,21 +257,21 @@ gid_t gid;
     if (strlen(chrootv) != 0)
        {
        if (chroot(chrootv) == -1)
-	  {
-	  snprintf(OUTPUT,bufsize,"Couldn't chroot to %s\n",chrootv);
-	  CfLog(cferror,OUTPUT,"chroot");
-	  return NULL;
-	  }
+          {
+          snprintf(OUTPUT,bufsize,"Couldn't chroot to %s\n",chrootv);
+          CfLog(cferror,OUTPUT,"chroot");
+          return NULL;
+          }
        }
     
     if (strlen(chdirv) != 0)
        {
        if (chdir(chdirv) == -1)
-	  {
-	  snprintf(OUTPUT,bufsize,"Couldn't chdir to %s\n",chdirv);
-	  CfLog(cferror,OUTPUT,"chdir");
-	  return NULL;
-	  }
+          {
+          snprintf(OUTPUT,bufsize,"Couldn't chdir to %s\n",chdirv);
+          CfLog(cferror,OUTPUT,"chdir");
+          return NULL;
+          }
        }
     
     if (gid != (gid_t) -1)
@@ -285,11 +279,11 @@ gid_t gid;
        Verbose("Changing gid to %d\n",gid);      
        
        if (setgid(gid) == -1)
-	  {
-	  snprintf(OUTPUT,bufsize,"Couldn't set gid to %d\n",gid);
-	  CfLog(cferror,OUTPUT,"setgid");
-	  return NULL;
-	  }
+          {
+          snprintf(OUTPUT,bufsize,"Couldn't set gid to %d\n",gid);
+          CfLog(cferror,OUTPUT,"setgid");
+          return NULL;
+          }
        }
     
     if (uid != (uid_t) -1)
@@ -297,11 +291,11 @@ gid_t gid;
        Verbose("Changing uid to %d\n",uid);
        
        if (setuid(uid) == -1)
-	  {
-	  snprintf(OUTPUT,bufsize,"Couldn't effective uid to %d\n",uid);
-	  CfLog(cferror,OUTPUT,"setuid");
-	  return NULL;
-	  }
+          {
+          snprintf(OUTPUT,bufsize,"Couldn't effective uid to %d\n",uid);
+          CfLog(cferror,OUTPUT,"setuid");
+          return NULL;
+          }
        }
     
     if (execv(arg[0],argv) == -1)
@@ -309,7 +303,7 @@ gid_t gid;
        snprintf(OUTPUT,bufsize,"Couldn't run %s",arg[0]);
        CfLog(cferror,OUTPUT,"execv");
        }
-
+    
     free((char *)argv);
     _exit(1);
     }
@@ -318,25 +312,25 @@ gid_t gid;
     switch (*type)
        {
        case 'r':
-
-	   close(pd[1]);
-	   
-	   if ((pp = fdopen(pd[0],type)) == NULL)
-	      {
-	      return NULL;
-	      }
-	   break;
-	   
+           
+           close(pd[1]);
+           
+           if ((pp = fdopen(pd[0],type)) == NULL)
+              {
+              return NULL;
+              }
+           break;
+           
        case 'w':
-
-	   close(pd[0]);
-	   
-	   if ((pp = fdopen(pd[1],type)) == NULL)
-	      {
-	      return NULL;
-	      }
+           
+           close(pd[0]);
+           
+           if ((pp = fdopen(pd[1],type)) == NULL)
+              {
+              return NULL;
+              }
        }
-
+    
     CHILD[fileno(pp)] = pid;
     return pp;
     }
@@ -348,10 +342,8 @@ gid_t gid;
 /* Shell versions of commands - not recommended for security reasons         */
 /*****************************************************************************/
 
-FILE *cfpopen_sh(command,type)
+FILE *cfpopen_sh(char *command,char *type)
     
-char *command, *type;
-
  { int i,pd[2];
    pid_t pid;
    FILE *pp = NULL;
@@ -388,36 +380,36 @@ char *command, *type;
        {
        case 'r':
 
-	   close(pd[0]);        /* Don't need output from parent */
+    close(pd[0]);        /* Don't need output from parent */
 
-	   if (pd[1] != 1)
-	      {
-	      dup2(pd[1],1);    /* Attach pp=pd[1] to our stdout */
-	      dup2(pd[1],2);    /* Merge stdout/stderr */
-	      close(pd[1]);
-	      }
+    if (pd[1] != 1)
+       {
+       dup2(pd[1],1);    /* Attach pp=pd[1] to our stdout */
+       dup2(pd[1],2);    /* Merge stdout/stderr */
+       close(pd[1]);
+       }
 
-	   break;
+    break;
 
        case 'w':
 
-	   close(pd[1]);
+    close(pd[1]);
 
-	   if (pd[0] != 0)
-	      {
-	      dup2(pd[0],0);
-	      close(pd[0]);
-	      }
+    if (pd[0] != 0)
+       {
+       dup2(pd[0],0);
+       close(pd[0]);
        }
-
+       }
+    
     for (i = 0; i < MAXFD; i++)
        {
        if (CHILD[i] > 0)
-	  {
-	  close(i);
-	  }
+          {
+          close(i);
+          }
        }
-
+    
     execl("/bin/sh","sh","-c",command,NULL);
     _exit(1);
     }
@@ -426,41 +418,36 @@ char *command, *type;
     switch (*type)
        {
        case 'r':
-	   
-	   close(pd[1]);
-	   
-	   if ((pp = fdopen(pd[0],type)) == NULL)
-	      {
-	      return NULL;
-	      }
-	   break;
-	   
+           
+           close(pd[1]);
+           
+           if ((pp = fdopen(pd[0],type)) == NULL)
+              {
+              return NULL;
+              }
+           break;
+           
        case 'w':
-	   
-	   close(pd[0]);
-	   
-	   if ((pp = fdopen(pd[1],type)) == NULL)
-	      {
-	      return NULL;
-	      }
+           
+           close(pd[0]);
+           
+           if ((pp = fdopen(pd[1],type)) == NULL)
+              {
+              return NULL;
+              }
        }
-
+    
     CHILD[fileno(pp)] = pid;
     return pp;
     }
-
-return NULL;
+ 
+ return NULL;
 }
 
 /******************************************************************************/
 
-FILE *cfpopen_shsetuid(command,type,uid,gid,chdirv,chrootv)
+FILE *cfpopen_shsetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,char *chrootv)
     
-char *command, *type, *chdirv, *chrootv;
-uid_t uid;
-gid_t gid;
-
-
  { int i,pd[2];
    pid_t pid;
    FILE *pp = NULL;
@@ -497,55 +484,55 @@ gid_t gid;
     switch (*type)
        {
        case 'r':
-
-	   close(pd[0]);        /* Don't need output from parent */
-
-	   if (pd[1] != 1)
-	      {
-	      dup2(pd[1],1);    /* Attach pp=pd[1] to our stdout */
-	      dup2(pd[1],2);    /* Merge stdout/stderr */
-	      close(pd[1]);
-	      }
-
-	   break;
-
+           
+           close(pd[0]);        /* Don't need output from parent */
+           
+           if (pd[1] != 1)
+              {
+              dup2(pd[1],1);    /* Attach pp=pd[1] to our stdout */
+              dup2(pd[1],2);    /* Merge stdout/stderr */
+              close(pd[1]);
+              }
+           
+           break;
+           
        case 'w':
-
-	   close(pd[1]);
-
-	   if (pd[0] != 0)
-	      {
-	      dup2(pd[0],0);
-	      close(pd[0]);
-	      }
+           
+           close(pd[1]);
+           
+           if (pd[0] != 0)
+              {
+              dup2(pd[0],0);
+              close(pd[0]);
+              }
        }
-
+    
     for (i = 0; i < MAXFD; i++)
        {
        if (CHILD[i] > 0)
-	  {
-	  close(i);
-	  }
+          {
+          close(i);
+          }
        }
-
+    
     if (strlen(chrootv) != 0)
        {
        if (chroot(chrootv) == -1)
-	  {
-	  snprintf(OUTPUT,bufsize,"Couldn't chroot to %s\n",chrootv);
-	  CfLog(cferror,OUTPUT,"chroot");
-	  return NULL;
-	  }
+          {
+          snprintf(OUTPUT,bufsize,"Couldn't chroot to %s\n",chrootv);
+          CfLog(cferror,OUTPUT,"chroot");
+          return NULL;
+          }
        }
-
+    
     if (strlen(chdirv) != 0)
        {
        if (chdir(chdirv) == -1)
-	  {
-	  snprintf(OUTPUT,bufsize,"Couldn't chdir to %s\n",chdirv);
-	  CfLog(cferror,OUTPUT,"chroot");
-	  return NULL;
-	  }
+          {
+          snprintf(OUTPUT,bufsize,"Couldn't chdir to %s\n",chdirv);
+          CfLog(cferror,OUTPUT,"chroot");
+          return NULL;
+          }
        }
     
     if (gid != (gid_t) -1)
@@ -553,11 +540,11 @@ gid_t gid;
        Verbose("Changing gid to %d\n",gid);      
        
        if (setgid(gid) == -1)
-	  {
-	  snprintf(OUTPUT,bufsize,"Couldn't set gid to %d\n",gid);
-	  CfLog(cferror,OUTPUT,"setgid");
-	  return NULL;
-	  }
+          {
+          snprintf(OUTPUT,bufsize,"Couldn't set gid to %d\n",gid);
+          CfLog(cferror,OUTPUT,"setgid");
+          return NULL;
+          }
        }
     
     if (uid != (uid_t) -1)
@@ -565,11 +552,11 @@ gid_t gid;
        Verbose("Changing uid to %d\n",uid);
        
        if (setuid(uid) == -1)
-	  {
-	  snprintf(OUTPUT,bufsize,"Couldn't set uid to %d\n",uid);
-	  CfLog(cferror,OUTPUT,"setuid");
-	  return NULL;
-	  }
+          {
+          snprintf(OUTPUT,bufsize,"Couldn't set uid to %d\n",uid);
+          CfLog(cferror,OUTPUT,"setuid");
+          return NULL;
+          }
        }
     
     execl("/bin/sh","sh","-c",command,NULL);
@@ -580,30 +567,30 @@ gid_t gid;
     switch (*type)
        {
        case 'r':
-	   
-	   close(pd[1]);
-	   
-	   if ((pp = fdopen(pd[0],type)) == NULL)
-	      {
-	      return NULL;
-	      }
-	   break;
-	   
+           
+           close(pd[1]);
+           
+           if ((pp = fdopen(pd[0],type)) == NULL)
+              {
+              return NULL;
+              }
+           break;
+           
        case 'w':
-	   
-	   close(pd[0]);
-	   
-	   if ((pp = fdopen(pd[1],type)) == NULL)
-	      {
-	      return NULL;
-	      }
+           
+           close(pd[0]);
+           
+           if ((pp = fdopen(pd[1],type)) == NULL)
+              {
+              return NULL;
+              }
        }
-
+    
     CHILD[fileno(pp)] = pid;
     return pp;
     }
-
-return NULL;
+ 
+ return NULL;
 }
 
 
@@ -611,9 +598,7 @@ return NULL;
 /* Close commands                                                             */
 /******************************************************************************/
 
-int cfpclose(pp)
-
-FILE *pp;
+int cfpclose(FILE *pp)
 
 { int fd, status;
   pid_t pid;
@@ -681,9 +666,7 @@ while(waitpid(pid,&status,0) < 0)
 /* Command exec aids                                               */
 /*******************************************************************/
 
-int SplitCommand(comm,arg)
-
-char *comm, arg[maxshellargs][bufsize];
+int SplitCommand(char *comm,char arg[maxshellargs][bufsize])
 
 { char *sp;
   int i = 0;
@@ -704,15 +687,15 @@ for (sp = comm; sp < comm+strlen(comm); sp++)
    switch (*sp)
       {
       case '\0': return(i-1);
-	  
+   
       case '\"': sscanf (++sp,"%[^\"]",arg[i]);
-	  break;
+   break;
       case '\'': sscanf (++sp,"%[^\']",arg[i]);
-	  break;
+   break;
       case '`':  sscanf (++sp,"%[^`]",arg[i]);
-	  break;
+   break;
       default:   sscanf (sp,"%s",arg[i]);
-	  break;
+   break;
       }
    
    sp += strlen(arg[i]);

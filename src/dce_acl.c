@@ -90,60 +90,60 @@ struct aclData {
 
 static void
 setupACL(int,
-	 struct aclData *,
-	 error_status_t *);
+  struct aclData *,
+  error_status_t *);
 
 static void
 resetACL(struct aclData *);
 
 static void
 logError(const char *,
-	 enum cfoutputlevel,
-	 error_status_t);
+  enum cfoutputlevel,
+  error_status_t);
 
 static void
 getRgyData(const char *,
-	   const char *,
-	   struct rgyData *,
-	   error_status_t *);
+    const char *,
+    struct rgyData *,
+    error_status_t *);
 
 static boolean32
 isMatchingACLEntry(sec_acl_entry_t * aclEntry,
-		   struct rgyData  * rgyData,
-		   error_status_t  * status);
+     struct rgyData  * rgyData,
+     error_status_t  * status);
 
 static void
 nameToUUID(sec_rgy_name_t,
-	   sec_acl_entry_type_t,
-	   uuid_p_t,
-	   error_status_t *);
+    sec_acl_entry_type_t,
+    uuid_p_t,
+    error_status_t *);
 
 static sec_acl_permset_t
 permPrintableToBitmask(char);
 
 static sec_acl_permset_t
 permSetPrintableToBinary(const char *,
-			 sec_acl_permset_t,
-			 error_status_t *);
+    sec_acl_permset_t,
+    error_status_t *);
 
 static sec_acl_entry_type_t
 aclTypePrintableToBinary(const char *,
-			 boolean32,
-			 error_status_t *);
+    boolean32,
+    error_status_t *);
 
 static boolean32
 equalACLEntry(sec_acl_entry_t * lhs,
-	      sec_acl_entry_t * rhs,
-	      error_status_t  * status);
+       sec_acl_entry_t * rhs,
+       error_status_t  * status);
 
 static boolean32
 equalACLEntries(sec_acl_t      * lhs,
-		sec_acl_t      * rhs,
-		error_status_t * status);
+  sec_acl_t      * rhs,
+  error_status_t * status);
 
 static void
 copyACLEntries(sec_acl_t const * source,
-	       sec_acl_t       * target);
+        sec_acl_t       * target);
 
 /*****************************************************************************/
 /* Exposed Routines                                                          */
@@ -158,9 +158,9 @@ copyACLEntries(sec_acl_t const * source,
 
 int
 CheckDFSACE(struct CFACE     * aces,
-	    char               method,
-	    char             * filename,
-	    enum fileactions   action)
+     char               method,
+     char             * filename,
+     enum fileactions   action)
 {
   struct CFACE   * ep;
   struct aclData   aclData;
@@ -173,213 +173,213 @@ CheckDFSACE(struct CFACE     * aces,
   /* Setup aclData structure by copying requested filename to name member */
 
   strncpy((char *)&(aclData.name[0]),
-	  (const char *)filename,
-	  sizeof(aclData.name));
+   (const char *)filename,
+   sizeof(aclData.name));
 
   sec_acl_bind(aclData.name,
-	       FALSE,
-	       &aclData.handle,
-	       &aclStatus);
+        FALSE,
+        &aclData.handle,
+        &aclStatus);
 
   if (aclStatus == error_status_ok) {
 
     sec_acl_get_manager_types(aclData.handle,
-			      sec_acl_type_object,
-			      ArraySize(aclData.mgrTypes),
-			      &aclData.mgrTypesSizeUsed,
-			      &aclData.mgrTypesNum,
-			      aclData.mgrTypes,
-			      &aclStatus);
+         sec_acl_type_object,
+         ArraySize(aclData.mgrTypes),
+         &aclData.mgrTypesSizeUsed,
+         &aclData.mgrTypesNum,
+         aclData.mgrTypes,
+         &aclStatus);
 
     if (aclStatus == error_status_ok) {
 
       if (aclData.mgrTypesSizeUsed < aclData.mgrTypesNum) {
-	CfLog(cfsilent, "Warning: some manager types missed\n", "");
+ CfLog(cfsilent, "Warning: some manager types missed\n", "");
       }
 
       sec_acl_lookup(aclData.handle,
-		     aclData.mgrTypes,
-		     sec_acl_type_object,
-		     &aclData.list,
-		     &aclStatus);
+       aclData.mgrTypes,
+       sec_acl_type_object,
+       &aclData.list,
+       &aclStatus);
 
       if (aclStatus == error_status_ok) {
 
-	setupACL(MAXDFSACL, &aclData, &aclStatus);
+ setupACL(MAXDFSACL, &aclData, &aclStatus);
 
-	if (aclStatus == error_status_ok) {
+ if (aclStatus == error_status_ok) {
 
-	  /* If this is an append, copy all existing acls to the new
-	  ** ACL list allocated by setupACL()
-	  */
+   /* If this is an append, copy all existing acls to the new
+   ** ACL list allocated by setupACL()
+   */
 
-	  if (method == 'a') copyACLEntries(aclData.old,
-					    aclData.new);
+   if (method == 'a') copyACLEntries(aclData.old,
+         aclData.new);
 
-	  /* Walk CFACE list until end-of-list or fatal error */
+   /* Walk CFACE list until end-of-list or fatal error */
 
-	  for (ep = aces;
-	       ep && (aclStatus == error_status_ok);
-	       ep = ep->next) {
+   for (ep = aces;
+        ep && (aclStatus == error_status_ok);
+        ep = ep->next) {
 
-	    if ((ep->name == NULL) || (IsExcluded(ep->classes))) continue;
+     if ((ep->name == NULL) || (IsExcluded(ep->classes))) continue;
     
-	    Verbose("%s: Mode =%s, name=%s, type=%s\n",
-		    VPREFIX,
-		    ep->mode,
-		    ep->name,
-		    ep->acltype);
+     Verbose("%s: Mode =%s, name=%s, type=%s\n",
+      VPREFIX,
+      ep->mode,
+      ep->name,
+      ep->acltype);
 
-	    /* Translate external ACL representation to internal */
+     /* Translate external ACL representation to internal */
 
-	    getRgyData(ep->name, ep->acltype, &rgyData, &aclStatus);
+     getRgyData(ep->name, ep->acltype, &rgyData, &aclStatus);
 
-	    if (aclStatus == error_status_ok) {
+     if (aclStatus == error_status_ok) {
 
-	      /* Zip through the ACL, looking for a match */
+       /* Zip through the ACL, looking for a match */
 
-	      entryMatch = FALSE;
-	      for (aclIndex = 0;
-		   aclIndex < aclData.new->num_entries;
-		   aclIndex++) {
+       entryMatch = FALSE;
+       for (aclIndex = 0;
+     aclIndex < aclData.new->num_entries;
+     aclIndex++) {
 
-		entryMatch = isMatchingACLEntry(&(aclData.new->
-						  sec_acl_entries[aclIndex]),
-						&rgyData,
-						&aclStatus);
+  entryMatch = isMatchingACLEntry(&(aclData.new->
+        sec_acl_entries[aclIndex]),
+      &rgyData,
+      &aclStatus);
 
-		if (aclStatus == error_status_ok) {
+  if (aclStatus == error_status_ok) {
 
-		  if (entryMatch) {
-	       
-		    /*
-		    ** "default" means remove the named user from the ACL,
-		    ** so that default permissions apply.  If this is a
-		    ** "default", then decrease number of entries in the ACL;
-		    ** if this wasn't the topmost entry, then move the topmost
-		    ** to this slot.
-		    **
-		    ** Otherwise, set the permissions set on this entry
-		    ** using the mode provided.
-		    */
-		
-		    if (strcmp(ep->mode, "default") == 0) {
-		      aclData.new->num_entries--;
-		      if (aclData.new->num_entries != aclIndex) {
-			aclData.new->sec_acl_entries[aclIndex] =
-			  aclData.new->sec_acl_entries[aclData.new->
-						      num_entries];
-		      }
-		    } else {
-		      aclData.new->sec_acl_entries[aclIndex].perms =
-			permSetPrintableToBinary(ep->mode,
-						 aclData.new->
-						 sec_acl_entries[aclIndex].
-						 perms,
-						 &aclStatus);
-		    }
+    if (entryMatch) {
+        
+      /*
+      ** "default" means remove the named user from the ACL,
+      ** so that default permissions apply.  If this is a
+      ** "default", then decrease number of entries in the ACL;
+      ** if this wasn't the topmost entry, then move the topmost
+      ** to this slot.
+      **
+      ** Otherwise, set the permissions set on this entry
+      ** using the mode provided.
+      */
+  
+      if (strcmp(ep->mode, "default") == 0) {
+        aclData.new->num_entries--;
+        if (aclData.new->num_entries != aclIndex) {
+   aclData.new->sec_acl_entries[aclIndex] =
+     aclData.new->sec_acl_entries[aclData.new->
+            num_entries];
+        }
+      } else {
+        aclData.new->sec_acl_entries[aclIndex].perms =
+   permSetPrintableToBinary(ep->mode,
+       aclData.new->
+       sec_acl_entries[aclIndex].
+       perms,
+       &aclStatus);
+      }
 
-		    /* ACL entry has been matched; stop looking. */
+      /* ACL entry has been matched; stop looking. */
 
-		    break;
-		  }
-		}
-	      }
+      break;
+    }
+  }
+       }
 
-	      /* At this point, we've either experienced a fatal error or
-	      ** have searched the ACL list for the entry, successfully or
-	      ** unsuccessfully.  If we are still alive and yet haven't
-	      ** found a matching entry, then either this is a default entry,
-	      ** in which case we do nothing (since there's nothing to remove),
-	      ** or a new entry, in which case we set it up.
-	      */
+       /* At this point, we've either experienced a fatal error or
+       ** have searched the ACL list for the entry, successfully or
+       ** unsuccessfully.  If we are still alive and yet haven't
+       ** found a matching entry, then either this is a default entry,
+       ** in which case we do nothing (since there's nothing to remove),
+       ** or a new entry, in which case we set it up.
+       */
 
-	      if (aclStatus == error_status_ok) {
+       if (aclStatus == error_status_ok) {
 
-		if ((entryMatch == FALSE) &&
-		    (strcmp(ep->mode, "default") != 0)) {
+  if ((entryMatch == FALSE) &&
+      (strcmp(ep->mode, "default") != 0)) {
 
-		  aclIndex = aclData.new->num_entries;
-		  aclData.new->num_entries = aclIndex + 1;
-		  if (rgyData.isId) {
-		    aclData.new->sec_acl_entries[aclIndex].
-		      entry_info.tagged_union.id.uuid = rgyData.uuid;
-		  }
-		  aclData.new->sec_acl_entries[aclIndex].
-		    entry_info.entry_type = rgyData.type;
-		  aclData.new->sec_acl_entries[aclIndex].
-		    perms = permSetPrintableToBinary(ep->mode, 0, &aclStatus);
-		}
-	      }
-	    }
-	  }
+    aclIndex = aclData.new->num_entries;
+    aclData.new->num_entries = aclIndex + 1;
+    if (rgyData.isId) {
+      aclData.new->sec_acl_entries[aclIndex].
+        entry_info.tagged_union.id.uuid = rgyData.uuid;
+    }
+    aclData.new->sec_acl_entries[aclIndex].
+      entry_info.entry_type = rgyData.type;
+    aclData.new->sec_acl_entries[aclIndex].
+      perms = permSetPrintableToBinary(ep->mode, 0, &aclStatus);
+  }
+       }
+     }
+   }
 
-	  /* We've now either successfully run the list of CFACE elements
-	  ** and have a new ACL, or we've been killed by a fatal error.
-	  ** If we are alive, and the new ACL is different from the
-	  ** preexisting one, then we will attempt to update; otherwise,
-	  ** we are a no-op.
-	  */
+   /* We've now either successfully run the list of CFACE elements
+   ** and have a new ACL, or we've been killed by a fatal error.
+   ** If we are alive, and the new ACL is different from the
+   ** preexisting one, then we will attempt to update; otherwise,
+   ** we are a no-op.
+   */
 
-	  if (aclStatus == error_status_ok) {
+   if (aclStatus == error_status_ok) {
 
-	    entryMatch = equalACLEntries(aclData.old,
-					 aclData.new,
-					 &aclStatus);
+     entryMatch = equalACLEntries(aclData.old,
+      aclData.new,
+      &aclStatus);
 
-	    if (aclStatus == error_status_ok) {
-	      
-	      if (entryMatch) {
-		Verbose("%s: No update necessary\n", VPREFIX);
-		aclStatus = sec_acl_duplicate_entry;
-	      } else {
-		if ((action == warnall)   ||
-		    (action == warnplain) ||
-		    (action == warndirs)) {
-		  snprintf(OUTPUT,bufsize,"File %s needs ACL update\n", filename);
-		  CfLog(cfinform, OUTPUT, "");
-		  aclStatus = sec_acl_not_authorized;
-		} else {
-		  sec_acl_replace(aclData.handle,
-				  aclData.mgrTypes,
-				  sec_acl_type_object,
-				  &(aclData.list),
-				  &aclStatus);
+     if (aclStatus == error_status_ok) {
+       
+       if (entryMatch) {
+  Verbose("%s: No update necessary\n", VPREFIX);
+  aclStatus = sec_acl_duplicate_entry;
+       } else {
+  if ((action == warnall)   ||
+      (action == warnplain) ||
+      (action == warndirs)) {
+    snprintf(OUTPUT,bufsize,"File %s needs ACL update\n", filename);
+    CfLog(cfinform, OUTPUT, "");
+    aclStatus = sec_acl_not_authorized;
+  } else {
+    sec_acl_replace(aclData.handle,
+      aclData.mgrTypes,
+      sec_acl_type_object,
+      &(aclData.list),
+      &aclStatus);
 
-		  if (aclStatus == error_status_ok) {
-		    snprintf(OUTPUT,bufsize,"ACL for file %s updated\n", filename);
-		    CfLog(cfinform, OUTPUT, "");
-		  } else {
-		    logError("sec_acl_replace", cferror, aclStatus);
-		  }
-		}
-	      }
-	    }
-	  }
+    if (aclStatus == error_status_ok) {
+      snprintf(OUTPUT,bufsize,"ACL for file %s updated\n", filename);
+      CfLog(cfinform, OUTPUT, "");
+    } else {
+      logError("sec_acl_replace", cferror, aclStatus);
+    }
+  }
+       }
+     }
+   }
 
-	  /* Reset aclData structure to initial state */
+   /* Reset aclData structure to initial state */
 
-	  resetACL(&aclData);
-	}
+   resetACL(&aclData);
+ }
 
-	/*
-	** Free ACL storage that the system provided via sec_acl_lookup().
-	*/
+ /*
+ ** Free ACL storage that the system provided via sec_acl_lookup().
+ */
 
-	for (aclIndex = 0;
-	     aclIndex < aclData.list.num_acls;
-	     aclIndex++) {
-	  sec_acl_release(aclData.handle,
-			  aclData.list.sec_acls[aclIndex],
-			  &fooStatus);
-	  if (fooStatus != error_status_ok) {
-	    logError("sec_acl_release", cferror, fooStatus);
-	  }
-	}
+ for (aclIndex = 0;
+      aclIndex < aclData.list.num_acls;
+      aclIndex++) {
+   sec_acl_release(aclData.handle,
+     aclData.list.sec_acls[aclIndex],
+     &fooStatus);
+   if (fooStatus != error_status_ok) {
+     logError("sec_acl_release", cferror, fooStatus);
+   }
+ }
 
       } else {
 
-	logError("sec_acl_lookup", cferror, aclStatus);
+ logError("sec_acl_lookup", cferror, aclStatus);
       }
 
     } else {
@@ -414,9 +414,9 @@ CheckDFSACE(struct CFACE     * aces,
 
 static void
 getRgyData(const char     * aclName,
-	   const char     * aclType,
-	   struct rgyData * rgyData,
-	   error_status_t * status)
+    const char     * aclType,
+    struct rgyData * rgyData,
+    error_status_t * status)
 {
   /*
   ** asterisk in "name" field means that the user or group id
@@ -436,9 +436,9 @@ getRgyData(const char     * aclName,
   if (*status == error_status_ok) {
 
     if (rgyData->isId) nameToUUID(rgyData->name,
-				  rgyData->type,
-				  &(rgyData->uuid),
-				  status);
+      rgyData->type,
+      &(rgyData->uuid),
+      status);
   }
 }
 
@@ -452,16 +452,16 @@ getRgyData(const char     * aclName,
 
 static boolean32
 isMatchingACLEntry(sec_acl_entry_t * aclEntry,
-		   struct rgyData  * rgyData,
-		   error_status_t  * status)
+     struct rgyData  * rgyData,
+     error_status_t  * status)
 {
   boolean32 isMatching;
 
   if (aclEntry->entry_info.entry_type == rgyData->type) {
     if (rgyData->isId) {
       isMatching = uuid_equal(&(aclEntry->entry_info.tagged_union.id.uuid),
-			      &(rgyData->uuid),
-			      status);
+         &(rgyData->uuid),
+         status);
     } else {
       isMatching = TRUE;
     }
@@ -485,8 +485,8 @@ isMatchingACLEntry(sec_acl_entry_t * aclEntry,
 
 static sec_acl_entry_type_t
 aclTypePrintableToBinary(const char     * tString,
-			 boolean32        nUsed,
-			 error_status_t * status)
+    boolean32        nUsed,
+    error_status_t * status)
 {
   static const struct Type {
     const char           * tString;
@@ -539,8 +539,8 @@ aclTypePrintableToBinary(const char     * tString,
 
 static sec_acl_permset_t
 permSetPrintableToBinary(const char        * perms,
-			 sec_acl_permset_t   oldPermSet,
-			 error_status_t    * status)
+    sec_acl_permset_t   oldPermSet,
+    error_status_t    * status)
 {
   error_status_t      localStatus = error_status_ok;
   int                 isAdd;
@@ -557,27 +557,27 @@ permSetPrintableToBinary(const char        * perms,
     permsPtr   = perms;
     while (curPerm = *permsPtr++) {
       if ((curPerm == '+') || (curPerm == ',')) {
-	isAdd = true;
+ isAdd = true;
       }
       else if (curPerm == '-') {
-	isAdd = false;
+ isAdd = false;
       }
       else if (curPerm == '=') {
-	isAdd      = true;
-	newPermSet = 0;
+ isAdd      = true;
+ newPermSet = 0;
       } else {
-	if (bitmask = permPrintableToBitmask(curPerm)) {
-	  if (isAdd) SetBit(newPermSet, bitmask);
-	  else     UnSetBit(newPermSet, bitmask);
-	} else {
-	  snprintf(OUTPUT,bufsize,
-		  "Invalid mode '%c' in DCE/DFS acl: %s\n",
-		  curPerm,
-		  perms);
-	  CfLog(cferror, OUTPUT, "");
-	  localStatus = sec_acl_invalid_dfs_acl;
-	  break;
-	}
+ if (bitmask = permPrintableToBitmask(curPerm)) {
+   if (isAdd) SetBit(newPermSet, bitmask);
+   else     UnSetBit(newPermSet, bitmask);
+ } else {
+   snprintf(OUTPUT,bufsize,
+    "Invalid mode '%c' in DCE/DFS acl: %s\n",
+    curPerm,
+    perms);
+   CfLog(cferror, OUTPUT, "");
+   localStatus = sec_acl_invalid_dfs_acl;
+   break;
+ }
       }
     }
   }
@@ -638,8 +638,8 @@ permPrintableToBitmask(char printable)
 
 static void
 logError(const char         * routine,
-	 enum cfoutputlevel   level,
-	 error_status_t       status)
+  enum cfoutputlevel   level,
+  error_status_t       status)
 {
   error_status_t    msgStatus;
   unsigned_char_p_t msgText;
@@ -649,10 +649,10 @@ logError(const char         * routine,
     free(msgText);
   } else {
     snprintf(OUTPUT,bufsize,
-	    "<unable to retrieve message for status code %ld; "
-	    "retrieval code %ld>\n",
-	    status,
-	    msgStatus);
+     "<unable to retrieve message for status code %ld; "
+     "retrieval code %ld>\n",
+     status,
+     msgStatus);
     CfLog(level, OUTPUT, routine);
   }
 }
@@ -666,79 +666,79 @@ logError(const char         * routine,
 
 static void
 nameToUUID(sec_rgy_name_t         name,
-	   sec_acl_entry_type_t   type,
-	   uuid_p_t               uuid,
-	   error_status_t       * status)
+    sec_acl_entry_type_t   type,
+    uuid_p_t               uuid,
+    error_status_t       * status)
 {
   sec_rgy_handle_t rgySite;
   error_status_t   rgyStatus;
   error_status_t   fooStatus;
   
   sec_rgy_site_open((unsigned_char_p_t)"/.:",
-		    &rgySite,
-		    &rgyStatus);
+      &rgySite,
+      &rgyStatus);
 
   if (rgyStatus == error_status_ok) {
 
     switch (type) {
     case sec_acl_e_type_user:
       {
-	sec_id_parse_name(rgySite,
-			  name,
-			  NULL,
-			  NULL,
-			  NULL,
-			  uuid,
-			  &rgyStatus);
-	if (rgyStatus != error_status_ok) {
-	  logError("sec_rgy_parse_name", cferror, rgyStatus);
-	}
+ sec_id_parse_name(rgySite,
+     name,
+     NULL,
+     NULL,
+     NULL,
+     uuid,
+     &rgyStatus);
+ if (rgyStatus != error_status_ok) {
+   logError("sec_rgy_parse_name", cferror, rgyStatus);
+ }
       }
       break;
     case sec_acl_e_type_group:
       {
-	sec_id_parse_group(rgySite,
-			   name,
-			   NULL,
-			   NULL,
-			   NULL,
-			   uuid,
-			   &rgyStatus);
-	if (rgyStatus != error_status_ok) {
-	  logError("sec_rgy_parse_group", cferror, rgyStatus);
-	}
+ sec_id_parse_group(rgySite,
+      name,
+      NULL,
+      NULL,
+      NULL,
+      uuid,
+      &rgyStatus);
+ if (rgyStatus != error_status_ok) {
+   logError("sec_rgy_parse_group", cferror, rgyStatus);
+ }
       }
       break;
     case sec_acl_e_type_foreign_user:
       {
-	CfLog(cferror,
-	      "acl type sec_acl_e_type_foreign_user not supported yet.\n",
-	      "");
-	rgyStatus = sec_acl_not_implemented;
+ CfLog(cferror,
+       "acl type sec_acl_e_type_foreign_user not supported yet.\n",
+       "");
+ rgyStatus = sec_acl_not_implemented;
       }
       break;
     case sec_acl_e_type_foreign_group:
       {
-	CfLog(cferror,
-	      "acl type sec_acl_e_type_foreign_group not supported yet\n",
-	      "");
-	rgyStatus = sec_acl_not_implemented;
+ CfLog(cferror,
+       "acl type sec_acl_e_type_foreign_group not supported yet\n",
+       "");
+ rgyStatus = sec_acl_not_implemented;
       }
       break;
     case sec_acl_e_type_foreign_other:
       {
-	CfLog(cferror,
-	      "acl type sec_acl_e_type_foreign_other not supported yet.\n",
-	      "");
-	rgyStatus = sec_acl_not_implemented;
+ CfLog(cferror,
+       "acl type sec_acl_e_type_foreign_other not supported yet.\n",
+       "");
+ rgyStatus = sec_acl_not_implemented;
       }
       break;
     default:
       {
-	CfLog(cferror,
-	      "Unknown acl type in nameToUUID!\n",
-	      "");
-	rgyStatus = sec_acl_invalid_acl_type;
+ CfLog(cferror,
+       "Unknown acl type in nameToUUID!\n",
+       "");
+ rgyStatus = sec_acl_invalid_acl_type;
       }
       break;
     }
@@ -770,14 +770,14 @@ nameToUUID(sec_rgy_name_t         name,
 
 static void
 setupACL(int              aclNumEntries,
-	 struct aclData * aclData,
-	 error_status_t * status)
+  struct aclData * aclData,
+  error_status_t * status)
 {
   if (
       (aclData->new = (sec_acl_t *)calloc(1, sizeof(sec_acl_t))) &&
       (aclData->new->sec_acl_entries
        = (sec_acl_entry_t *)calloc(aclNumEntries,
-				   sizeof(sec_acl_entry_t)))
+       sizeof(sec_acl_entry_t)))
       ) {
 
     aclData->old = aclData->list.sec_acls[0];
@@ -825,14 +825,14 @@ resetACL(struct aclData * aclData)
 
 static boolean32
 equalACLEntry(sec_acl_entry_t * lhs,
-	      sec_acl_entry_t * rhs,
-	      error_status_t  * status)
+       sec_acl_entry_t * rhs,
+       error_status_t  * status)
 {
   return ((lhs->perms == rhs->perms) &&
-	  (lhs->entry_info.entry_type == rhs->entry_info.entry_type) &&
-	  (uuid_equal(&(lhs->entry_info.tagged_union.id.uuid),
-		      &(rhs->entry_info.tagged_union.id.uuid),
-		      status)));
+   (lhs->entry_info.entry_type == rhs->entry_info.entry_type) &&
+   (uuid_equal(&(lhs->entry_info.tagged_union.id.uuid),
+        &(rhs->entry_info.tagged_union.id.uuid),
+        status)));
 }
 
 /*
@@ -848,8 +848,8 @@ equalACLEntry(sec_acl_entry_t * lhs,
 
 static boolean32
 equalACLEntries(sec_acl_t      * lhs,
-		sec_acl_t      * rhs,
-		error_status_t * status)
+  sec_acl_t      * rhs,
+  error_status_t * status)
 {
   boolean32  equalEntry;
   unsigned32 lhsIdx;
@@ -872,10 +872,10 @@ equalACLEntries(sec_acl_t      * lhs,
     equalEntry = FALSE;
     for (rhsIdx = 0; rhsIdx < rhs->num_entries; rhsIdx++) {
       if (equalACLEntry(&(lhs->sec_acl_entries[lhsIdx]),
-			&(rhs->sec_acl_entries[rhsIdx]),
-			status)) {
-	equalEntry = TRUE;
-	break;
+   &(rhs->sec_acl_entries[rhsIdx]),
+   status)) {
+ equalEntry = TRUE;
+ break;
       }
     }
     if (equalEntry == FALSE) return(FALSE);
@@ -899,7 +899,7 @@ equalACLEntries(sec_acl_t      * lhs,
 
 static void
 copyACLEntries(sec_acl_t const * source,
-	       sec_acl_t       * target)
+        sec_acl_t       * target)
 {
   int numEntries = source->num_entries;
   int curEntry; 

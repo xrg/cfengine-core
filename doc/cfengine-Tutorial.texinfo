@@ -1545,7 +1545,9 @@ are separately true, thus in the above example the actions which follow
 In the second example, the host parsing the file must be either of
 type @code{sun4} @emph{or} @code{ultrix} @emph{or} @code{osf}.
 In other words, compound classes support two operators: AND and OR,
-written @samp{.} and @samp{|} respectively. Cfengine doesn't
+written @samp{.} and @samp{|} respectively. From cfengine version 2.1.1,
+I bit the bullet and added @samp{&} as a synonym for the AND operator.
+Cfengine doesn't
 care how many of these operators you use (since it skips over blank
 class names), so you could write either
 
@@ -1683,7 +1685,7 @@ Parentheses override everything.
 @item !
 The NOT operator binds tightest.
 
-@item .
+@item . &
 The AND operator binds more tightly than OR.
 
 @item |
@@ -2350,15 +2352,16 @@ define the module in the cfagent program:
  
    actionsequence = ( 
                     files 
-                    module:myplugin.specialclass 
-                    "module:argplugin.specialclass arg1 arg2"
+                    module:myplugin
+                    "module:argplugin arg1 arg2"
                     copy 
                     )
  ...
+   AddInstallables = ( specialclass )
 
 @end smallexample
 @noindent
-Note that the class definitions for the module can also be defined in as
+Note that the class definitions for the module should also be defined in as
 @code{AddInstallables}, if this is more convenient. NOTE: you @emph{must}
 declare the classes before using them in the cfagent configuration, or else
 those actions will be ignored.

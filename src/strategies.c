@@ -34,9 +34,7 @@
 
 /*****************************************************************************/
 
-void InstallStrategy(alias,classes)
-
-char *alias, *classes;
+void InstallStrategy(char *alias,char *classes)
 
 { struct Strategy *ptr;
  
@@ -86,9 +84,7 @@ char *alias, *classes;
 
 /*****************************************************************************/
 
-void AddClassToStrategy(alias,class,value)
-
-char *alias,*class,*value;
+void AddClassToStrategy(char *alias,char *class,char *value)
 
 { struct Strategy *sp;
   char buf[maxvarsize];
@@ -100,7 +96,7 @@ if (class[strlen(class)-1] != ':')
    return;
    }
   
-bzero(buf,maxvarsize);
+memset(buf,0,maxvarsize);
 sscanf(class,"%[^:]",&buf);
  
 ExpandVarstring(value,VBUFF,"");
@@ -150,45 +146,45 @@ for (ptr = VSTRATEGYLIST; ptr != NULL; ptr=ptr->next)
       {
       total = count = 0;
       for (ip = ptr->strategies; ip !=NULL; ip=ip->next)
-	 {
-	 count++;
-	 total += atoi(ip->classes);
-	 }
-
+         {
+         count++;
+         total += atoi(ip->classes);
+         }
+      
       count++;
       array = (double *)malloc(count*sizeof(double));
       cumulative = (double *)malloc(count*sizeof(double));
       count = 1;
       cum = 0.0;
       cumulative[0] = 0;
-            
+      
       for (ip = ptr->strategies; ip !=NULL; ip=ip->next)
-	 {
-	 array[count] = ((double)atoi(ip->classes))/((double)total);
-	 cum += array[count];
-	 cumulative[count] = cum;
-	 Debug("%s : %f cum %f\n",ip->name,array[count],cumulative[count]);
-	 count++;
-	 }
-
+         {
+         array[count] = ((double)atoi(ip->classes))/((double)total);
+         cum += array[count];
+         cumulative[count] = cum;
+         Debug("%s : %f cum %f\n",ip->name,array[count],cumulative[count]);
+         count++;
+         }
+      
       /* Get random number 0-1 */
-
+      
       fluct = drand48();
-
+      
       count = 1;
       cum = 0.0;
-
+      
       for (ip = ptr->strategies; ip !=NULL; ip=ip->next)
-	 {
-	 Verbose("    Class %d: %f-%f\n",count,cumulative[count-1],cumulative[count]);
-	 if ((cumulative[count-1] < fluct) && (fluct < cumulative[count]))
-	    {
-	    Verbose("   - Choosing %s (%f)\n",ip->name,fluct);
-	    AddClassToHeap(ip->name);
-	    break;
-	    }
-	 count++;
-	 }
+         {
+         Verbose("    Class %d: %f-%f\n",count,cumulative[count-1],cumulative[count]);
+         if ((cumulative[count-1] < fluct) && (fluct < cumulative[count]))
+            {
+            Verbose("   - Choosing %s (%f)\n",ip->name,fluct);
+            AddClassToHeap(ip->name);
+            break;
+            }
+         count++;
+         }
       free(cumulative);
       free(array);
       }
