@@ -1191,7 +1191,7 @@ for (i = 0; i < 7; i++)
              {
              continue;
              }
-          fprintf(FPIN[a],"%d %d\n",k,weekly[5+ATTR+a][k]);
+          fprintf(FPIN[a],"%d %d\n",k,weekly[5+2*ATTR+2*CF_NETATTR+a][k]);
           }
        
        }

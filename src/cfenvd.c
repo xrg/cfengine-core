@@ -529,6 +529,13 @@ if (TCPDUMP)
             {
             break;
             }
+
+         if (strstr(tcpbuffer,":")) /* Error message protect sleeptime */
+            {
+            signal(SIGALRM,SIG_DFL);
+            TCPDUMP = false;
+            break;
+            }
          
          AnalyzeArrival(tcpbuffer);
          }
@@ -1654,7 +1661,7 @@ if (HISTO)
          }
       }
 
-   // PUT TCP STUFF HERE...
+   /* PUT TCP STUFF HERE... */
    
    for (i = 0; i < PH_LIMIT; i++)
       {
@@ -1666,7 +1673,7 @@ if (HISTO)
       position = CF_GRAINS/2 + (int)(0.5+(PH_DELTA[i] - av->expect_pH[i])*CF_GRAINS/(4*sqrt((av->var_pH[i]))));
       if (0 <= position && position < CF_GRAINS)
          {
-         HISTOGRAM[5+2*CF_NETATTR+2*ATTR+i][day][position]++;
+         HISTOGRAM[5+2*CF_NETATTR+2*2*ATTR+i][day][position]++;
          }
       }
    

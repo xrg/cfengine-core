@@ -148,7 +148,7 @@ if (!IsPrivileged())
       {
       FatalError("You do not have a HOME variable pointing to your home directory");
       }  
-   snprintf(filename,CF_BUFSIZE,"%s/.cfengine/ppkeys/%s.pub",sp,name);
+   snprintf(filename,CF_BUFSIZE,"%s/.cfagent/ppkeys/%s.pub",sp,name);
    }
 else
    {

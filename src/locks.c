@@ -114,7 +114,9 @@ CfLog(cferror,OUTPUT,"");
 snprintf(OUTPUT,CF_BUFSIZE*2,"This sub-task started really at %s\n",ctime(&CFINITSTARTTIME));
 
 CfLog(cferror,OUTPUT,"");
- 
+
+fflush(stdout);
+
 if (signum == SIGTERM || signum == SIGINT || signum == SIGHUP || signum == SIGSEGV || signum == SIGKILL)
    {
    ReleaseCurrentLock();

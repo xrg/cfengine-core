@@ -348,6 +348,7 @@ void DoEditFile(struct Edit *ptr,char *filename)
   int todo = 0, potentially_outstanding = false;
   FILE *loop_fp = NULL,*read_fp = NULL;
   int DeleteItemNotContaining(),DeleteItemNotStarting(),DeleteItemNotMatching();
+  int global_replace = -1;
 
 Debug("DoEditFile(%s)\n",filename);
 filestart = NULL;
@@ -1041,14 +1042,40 @@ while (ep != NULL)
           
       case ReplaceAll:
           strncpy(searchstr,expdata,CF_BUFSIZE);
+          global_replace = true;
           break;
           
+
+      case ReplaceFirst:
+          strncpy(searchstr,expdata,CF_BUFSIZE);
+          global_replace = false;
+          break;
+  
       case With:
-          if (!GlobalReplace(&filestart,searchstr,expdata))
+          switch(global_replace)
              {
-             snprintf(OUTPUT,CF_BUFSIZE*2,"Error editing file %s",filename);
-             CfLog(cferror,OUTPUT,"");
+             case true: 
+                 if (!GlobalReplace(&filestart,searchstr,expdata))
+                    {
+                    snprintf(OUTPUT,CF_BUFSIZE*2,"Error editing file %s",filename);
+                    CfLog(cferror,OUTPUT,"");
+                    }
+                 break;
+                 
+             case false: 
+                 if (!SingleReplace(&filestart,searchstr,expdata))
+                    {
+                    snprintf(OUTPUT,CF_BUFSIZE*2,"Error editing file %s",filename);
+                    CfLog(cferror,OUTPUT,"");
+                    }
+                 break;
+                 
+             default:
+                 snprintf(OUTPUT,CF_BUFSIZE*2,"Internal error editing file %s: found With without finding ReplaceAll or ReplaceFirst first!!?",filename);
+                 CfLog(cferror,OUTPUT,"");
              }
+
+          global_replace = -1;
           break;
           
       case FixEndOfLine:
@@ -2207,6 +2234,11 @@ for (sp = 0; sp < (off_t)(size-strlen(replace)); sp++)
          strncpy((char *)memseg+sp+(off_t)pmatch.rm_so,replace,strlen(replace));
          
          Verbose("Padding character is %c\n",PADCHAR);
+
+ 	 if ( pmatch.rm_so + strlen(replace) - pmatch.rm_eo >= pmatch.rm_eo )
+            {
+            Verbose("ReplaceAll: replacement is smaller than match: padding replacement with %d chars!! (pad char is \"%c\")\n",pmatch.rm_eo - ( pmatch.rm_so + strlen(replace)), PADCHAR);
+            }
          
          for (spr = (pmatch.rm_so+strlen(replace)); spr < pmatch.rm_eo; spr++)
             {
@@ -2225,3 +2257,4 @@ for (sp = 0; sp < (off_t)(size-strlen(replace)); sp++)
 regfree(&rx);
 return match; 
 }
+

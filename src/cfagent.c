@@ -72,6 +72,7 @@ int main(int argc,char *argv[])
 { struct Item *ip;
  
 SetContext("global");
+SetSignals(); 
  
 signal (SIGTERM,HandleSignal);                   /* Signal Handler */
 signal (SIGHUP,HandleSignal);
@@ -107,6 +108,8 @@ ReadRCFile(); /* Should come before parsing so that it can be overridden */
           DeleteClassesFromContext("update");
           DeleteCaches();
           }
+
+       VIMPORT = NULL;
        }
     
     if (ERRORCOUNT > 0)
@@ -217,7 +220,6 @@ void Initialize(int argc,char *argv[])
 strcpy(VDOMAIN,CF_START_DOMAIN);
 
 PreLockState();
-SetSignals(); 
  
 ISCFENGINE = true;
 VFACULTY[0] = '\0';
@@ -231,6 +233,7 @@ VREPOSITORY = strdup("\0");
 
 strcpy(METHODNAME,"cf-nomethod"); 
 METHODREPLYTO[0] = '\0';
+METHODFOR[0] = '\0';
 METHODRETURNVARS[0] = '\0';
 METHODRETURNCLASSES[0] = '\0';
  
@@ -588,7 +591,7 @@ Verbose("Environment data loaded\n\n");
 
 void EchoValues()
 
-{ struct Item *ip;
+{ struct Item *ip,*p2;
   int n = 0;
   char ebuff[CF_EXPANDSIZE];
 
@@ -608,6 +611,9 @@ else
    strcpy(VPREFIX,"cfengine:");
    strcat(VPREFIX,VUQNAME);
    }
+
+p2 = SortItemListNames(VHEAP);
+VHEAP = p2;
 
 
 if (VERBOSE || DEBUG || D2 || D3)
@@ -854,6 +860,12 @@ if (GetMacroValue(CONTEXTID,"MaxCfengines"))
       closelog();
       exit(1);
       }
+   }
+
+
+if (OptionIs(CONTEXTID,"SkipIdentify",true))
+   {
+   SKIPIDENTIFY = true;
    }
 
 if (OptionIs(CONTEXTID,"Verbose",true))
@@ -1696,7 +1708,6 @@ void CheckForMethod()
   struct Method *mp;
   int i = 0;
 
-  
 if (strcmp(METHODNAME,"cf-nomethod") == 0)
    {
    return;
@@ -1750,6 +1761,8 @@ if (!ChildLoadMethodPackage(METHODNAME,METHODMD5))
    CfLog(cfinform,OUTPUT,"");
    exit(0);
    }
+
+Debug("Method package looks ok -- proceeding\n"); 
 }
 
 

@@ -88,6 +88,7 @@ larrow    \+>
 
 admit:                 {
                        DaemonOnly;
+                       Debug1("NEW ACTION %s\n",yytext);
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
 
@@ -99,6 +100,7 @@ admit:                 {
 
 grant:                 {
                        DaemonOnly;
+                       Debug1("NEW ACTION %s\n",yytext);
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
 
@@ -118,6 +120,7 @@ deny:                  {
                        }
 
 control:               {
+                       Debug1("NEW ACTION %s\n",yytext);
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
 
@@ -128,6 +131,7 @@ control:               {
 
 
 strategies:            {
+                       Debug1("NEW ACTION %s\n",yytext);
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
 
@@ -137,6 +141,7 @@ strategies:            {
                        }
 
 groups:                {
+                       Debug1("NEW ACTION %s\n",yytext);
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
 
@@ -146,6 +151,7 @@ groups:                {
                        }
 
 classes:               {                                           /* Synonym for groups */
+                       Debug1("NEW ACTION %s\n",yytext);
                        InstallPending(ACTION);             /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
 
@@ -156,6 +162,7 @@ classes:               {                                           /* Synonym fo
 
 acl:                   {
                        CfengineOnly;
+                       Debug1("NEW ACTION %s\n",yytext);
 
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
@@ -167,6 +174,7 @@ acl:                   {
 
 filters:               {
                        CfengineOnly;
+                       Debug1("NEW ACTION %s\n",yytext);
 
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
@@ -178,6 +186,7 @@ filters:               {
 
 {actiont}              {
                        CfengineOnly;
+                       Debug1("NEW ACTION %s\n",yytext);
 
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
@@ -188,6 +197,7 @@ filters:               {
                        }
 
 import:                {
+                       Debug1("NEW ACTION %s\n",yytext);
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
 
@@ -198,6 +208,7 @@ import:                {
 
 editfiles:             {
                        CfengineOnly;
+                       Debug1("NEW ACTION %s\n",yytext);
 
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
@@ -407,10 +418,10 @@ editfiles:             {
 
 
 {function}             {
+                       Debug1("FUNCTION %s\n",yytext);
+
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
-
-                       Debug1("FUNCTION %s\n",yytext);
 
                        if (ACTION == alerts)
                           {
@@ -428,6 +439,8 @@ editfiles:             {
                        }
 
 <INITIAL>{varobj}      {
+                       Debug1("VAROBJ %s\n",yytext);
+
                        if ((ACTION_IS_LINK || ACTION_IS_LINKCHILDREN) && (strlen(LINKTO)==0))
                           {
                           Debug("Pending link destination...\n");
@@ -446,8 +459,6 @@ editfiles:             {
                              InitializeAction();                 /* Clear data for files/dirs  */
                              }
                           }
-
-                       Debug1("VAROBJ %s\n",yytext);
 
                        IsVarString(yytext);        /* Syntax check */
                        HandleVarObject(yytext);

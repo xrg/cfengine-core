@@ -126,7 +126,7 @@ as last updated @value{UPDATED}.
 @end menu
 
 @node Reference introduction, Cfkey, Top, Top
-@chapter Inroduction to reference manual
+@chapter Introduction to reference manual
 
 The purpose of the cfengine reference manual is to collect together and
 document the raw facts about the different components of cfengine. Once
@@ -488,6 +488,7 @@ for a few days more and try again.
 * required::                    
 * resolve::                     
 * shellcommands::               
+* strategies::                  
 * tidy::                        
 * unmount::                     
 @end menu
@@ -763,8 +764,8 @@ $(array[key])  $(array[$(key)])
 
 @end smallexample
 @noindent
-and so on. Note carefully that cfengine requires parentheses or braces around variable
-names. Unlike in the shell, they cannot be omitted.
+and so on. Note carefully that cfengine requires parentheses or braces
+around variable names. Unlike in the shell, they cannot be omitted.
 
 
 
@@ -813,6 +814,46 @@ quotes.
 Some other internal functions are
 
 @table @code
+@item A(@var{X},@var{Y})
+Makes an associative array entry, associating @var{X} and @var{Y}. For instance:
+@smallexample
+control:
+
+ assoc_array = ( A(B,"is for bird") A(C,"is for cat") )
+
+@end smallexample
+@noindent
+results in:
+@smallexample
+
+OBJECT: main
+   4569 : assoc_array[B]=is for bird
+   4630 : assoc_array[C]=is for cat
+
+@end smallexample
+@cindex Associative arrays.
+Another example:
+@smallexample
+control:
+
+ binhost = ( A(linux,machine1) A(solaris,machine2) )
+
+copy:
+
+ # Contact machine 1 for linux
+ # Contact machine 2 for solaris
+
+ /etc/source dest=/etc/receve server=$(binhost[$(class)])
+
+@end smallexample
+
+@item ExecResult(@var{command})
+Executes the named shell command and inserts the output into the
+variable. Note that, when this is used in cfengine internal list
+variables, any spaces are interpreted as list separators. In other
+lists, normal rules for iteration apply.
+
+
 @item RandomInt(@var{a},@var{b})
 Generate a random integer between a and b.
 
@@ -827,6 +868,7 @@ items separated with the separator character. Blank lines and comments (to end o
 Items are keyed numerically starting from 1 to the maximum number in the file.
 If the separation character is not a newline @code{$(n)}, then the newline is assumed
 to be a separator also.
+@cindex Associative arrays.
 
 @item textkey
 If this format is specified, @code{ReadArray} tries to interpret the file as a list
@@ -863,10 +905,60 @@ of lines of the form:
 
 @end table
 
-@item ExecResult(@var{command})
-Executes the named shell command and inserts the output into the variable. Note that, when this is used in
-cfengine internal list variables, any spaces are interpreted as list
-separators. In other lists, normal rules for iteration apply.
+@item ReadList(@var{filename},@var{fileformat},@var{comment},@var{Max number of bytes})
+Reads up to a maximum number of bytes from a properly formatted file into a one-dimensional associated array. File formats
+are:
+@table @code
+@item lines
+If this format is specified, @code{ReadList} tries to interpret the file as a list of
+items on separate lines. The value returned is a list formatted by the @code{Split} character.
+@cindex Associative arrays.
+@end table
+@smallexample
+ 
+hosts = ( ReadList(/var/cfengine/inputs/datafile,lines,#,1000) )
+
+@end smallexample
+
+@item SelectPartitionGroup(@var{filename},@var{comment},@var{Policy},@var{group size})
+
+This function is for use in peer to peer monitoring applications. It allows individual
+hosts to identify themselves as part of a clique and find their peers. The function
+returns a list variable, delimited by the list separation character, for use with Split.
+@cindex SelectPartitionGroup
+@cindex Peer to peer methods
+@smallexample
+
+ control:
+
+   allpeers = ( SelectPartitionGroup(/var/cfengine/inputs/cfrun.hosts,#,random,4) )
+
+ copy:
+
+   /data/file dest=/p2prepository/file server=$(allpeers)
+
+@end smallexample
+@item SelectPartitionLeader(@var{filename},@var{comment},@var{Policy},@var{group size})
+
+This function is for use in peer to peer monitoring applications. It allows individual
+hosts to identify themselves as part of a clique and select a leader.
+This function reads a text file of hostnames or IP addresses, one host per line, with blank
+lines and comments and partitions it into groups of a fixed size. It then returns picks
+a leader for the the group and returns its name as the value of the function.
+@cindex SelectPartitionLeader
+@cindex Peer to peer methods
+@smallexample
+
+ control:
+
+   leader = ( SelectPartitionLeader(/var/cfengine/inputs/cfrun.hosts,#,random,4) )
+
+ copy:
+
+   /data/file dest=/p2prepository/file server=$(leader)
+
+@end smallexample
+
 @end table
 Note that functions should have no spaces between the function name and the
 leading parenthesis, but should themselves be surrounded by white space.
@@ -1202,28 +1294,33 @@ Iterative expansion is currently restricted to:
 @itemize @bullet
 
 @item
-In the `to' field of a multiple link action,
+In the directory field of the admit/deny server access rules,
 
 @item
 In the `from' field of a copy action,
-
 @item
-In the directory field of a tidy action,
-
-@item
-In the directory field of the files action,
-
-@item
-In the directory field of the required/disk action,
+In the server field of the copy action,
 
 @item
 In the directory field of the disable action,
 
 @item
-In the directory field of the copy action,
+In the directory field of the files action,
 
 @item
-In the directory field of the admit/deny server access rules,
+In the `to' field of a multiple link action,
+
+
+@item
+In the directory field of the required/disk action,
+
+@item
+In a resolve item.
+
+@item
+In the directory field of a tidy action,
+
+
 
 @item
 Names in the ignore action.
@@ -1991,10 +2088,11 @@ connection with the current host have not connected for more than than
 specified number of hours. If the number of hours is set to zero,
 cfengine uses a machine-learned expectation value for the time and uses
 this to report. The friend status of a host is thus the expectation that
-there is a problem with a remote peer. Expected contact rates of less than
-once are week are ignored as spurious.
+there is a problem with a remote peer. Expected contact rates of more than
+the variable @code{LastSeenExpireAfter} are ignored as spurious, @xref{lastseenexpireafter}.
 
 @cindex FriendStatus
+@cindex Last Seen database
 @cindex Peer watching (FriendStatus)
 @cindex Monitoring other hosts
 
@@ -2228,6 +2326,7 @@ The meaning of each of these lines is described below.
 * IfElapsed::                   
 * Inform::                      
 * interfacename::               
+* lastseenexpireafter::         
 * fileextension::               
 * linkcopies::                  
 * LogDirectory::                
@@ -2247,6 +2346,7 @@ The meaning of each of these lines is described below.
 * showactions::                 
 * singlecopy::                  
 * site::                        
+* SkipIdentify::                
 * Smtpserver::                  
 * SplayTime::                   
 * split::                       
@@ -3357,7 +3457,7 @@ To set this output level one writes:
 @c SUBSECTION
 @c .....................................................
 
-@node interfacename, fileextension, Inform, control
+@node interfacename, lastseenexpireafter, Inform, control
 @subsection InterfaceName
 @cindex InterfaceName
 @vindex InterfaceName
@@ -3393,7 +3493,27 @@ choices made in the @file{cfrc} file, @xref{cfrc resource file}.
 @c SUBSECTION
 @c .....................................................
 
-@node fileextension, linkcopies, interfacename, control
+@node lastseenexpireafter, fileextension, interfacename, control
+@subsection LastSeenExpireAfter
+
+This value (in days) sets the time after which unseen friend hosts
+are purged from the `last seen' database, as viewed by the @code{FriendStatus}
+function, @xref{alerts}.
+
+@smallexample
+
+  LastSeenExpireAfter = ( 2 )
+
+@end smallexample
+@vindex LastSeenExpireAfter
+@cindex Last Seen database
+
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node fileextension, linkcopies, lastseenexpireafter, control
 @subsection FileExtensions
 
 This list may be used to define a number of extensions
@@ -3901,7 +4021,7 @@ CAUTION: this feature is necessarily memory intensive.
 @c SUBSECTION
 @c .....................................................
 
-@node site, Smtpserver, singlecopy, control
+@node site, SkipIdentify, singlecopy, control
 @subsection site/faculty
 @cindex site
 @vindex site
@@ -3931,7 +4051,27 @@ may be used interchangeably.
 @c SUBSECTION
 @c .....................................................
 
-@node Smtpserver, SplayTime, site, control
+@node SkipIdentify, Smtpserver, site, control
+@subsection SkipIdentify
+
+@example
+  SkipIdentify = ( true )
+@end example
+
+This is the client side directive corresponding to the server
+directive @code{SkipVerify}. It tells cfengine not to assume that
+the client is registered in the Domain Name Service (DNS). Sometimes
+the assumption of DNS registration can break connectivity between hosts,
+particularly if firewalls or Network Address Translation is in use.
+
+@cindex SkipIdentify
+@cindex Network Address Translation
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node Smtpserver, SplayTime, SkipIdentify, control
 @subsection smtpserver
 
 @example
@@ -4531,9 +4671,9 @@ files.
 	code TEXT indicates the file is a text file and will be opened by the
 	default text editor.
 
-	If the file also has an extension (for example .txt), then if setting
-	the finder type code, you should make sure your finder type code does
-	not conflict with the file extension.
+	If the file also has an extension (for example @code{.txt}),
+then if setting the finder type code, you should make sure your finder
+type code does not conflict with the file extension.
 
 	Files both without extensions and finder type codes are mostly useless
 	to OS X, so be sure to do one or the other!
@@ -4549,9 +4689,11 @@ running the @code{cfservd} daemon, and you must make sure that you
 have defined the variable @code{domain} in the control section
 of the @file{cfagent.conf} file. If you don't define a domain
 you will probably receive an error of the form `cfengine: Hey! cannot
-stat file'.
+stat file'. If the server name is `localhost', cfengine will perform a local
+copy, without using a connection to cfservd.
 @mbindex Hey! Cannot stat file error
 @mbindex Remote copy problems, can't stat
+@mbindex locahost in copy
 
 @item failover
 If a file copy fails due to an error, the classes in this assignment
@@ -5769,6 +5911,15 @@ will be replaced with @samp{hello CFENGINE} even though two possible
 strings match the regular expression. On the other hand if the
 expression is not ambiguous, say replacing @samp{cfengine} with
 @samp{CFENGINE}, then the result would be @samp{hello CFENGINE CFENGINE}.
+
+@item ReplaceFirst @var{quoted-regex} With @var{quoted-string} 
+For each line of the current file, replace the first string matching the
+regular expression in the first quotes (@var{quoted-regex}) with the
+string given in the second set of quotes (@var{quoted-string}).
+Matching is done left to right.  For example, if you replace
+@samp{"YY = [[:digit:]][[:digit:]]"} with @samp{"YY = 04"} and
+cfengine encounters @samp{"YY = 03 but old YY = 70"} then it will
+be replaced with @samp{"YY = 04 but old YY = 70"}
 
 @item ReplaceLinesMatchingField @var{quoted-number}
 This command replaces any lines in the current file with the current line
@@ -8789,7 +8940,7 @@ is not added to the line.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node shellcommands, tidy, resolve, Cfagent reference
+@node shellcommands, strategies, resolve, Cfagent reference
 @section shellcommands
 
 Cfengine focuses on fairly simple minded tasks in order to be as general
@@ -8944,7 +9095,60 @@ when the classes @code{opt_dry_run} is defined.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node tidy, unmount, shellcommands, Cfagent reference
+@node strategies, tidy, shellcommands, Cfagent reference
+@section strategies
+@cindex Gaming stratgies
+@cindex Strategy, random
+@vindex Randomizing strategy
+
+Strategies are introduced as of cfengine version 2.0.x. A strategy is a
+probability distribution of classes. In game theoretical language, a
+strategy is a mixed strategy. Each class label is a pure strategy, or a
+possible course of action. A strategy group is defined as follows:
+
+@smallexample
+strategies:
+
+  @{ my_strategy_alias
+
+  class1: "2"
+  class2: "3"
+  class3: "$(value)"
+  class4: "6"
+  class5: "1"
+  @}
+
+tidy:
+
+ class1.Hr00::  
+
+   /home pat=*.mp3 age=0
+
+ class2.Hr02::  
+
+   /home pat=*.wav age=0
+@end smallexample
+The idea here is to randomly pick from different alternatives
+
+ Formally, each strategy is a class which is defined with a certain
+probability. An integer weight is provided in quotes to represent the
+probability of the classes. When cfengine is run, it picks on of the
+classes from each strategy by `throwing dice' to select a strategy at
+random. Think of Star Trek, when the Captain says "rotate shield
+modulations". Using strategies, you can choose different ways of
+configuring or protecting a system, at random, thus confounding
+environmental attempts to break (into) the system.
+
+Note that each strategy has a formal name, but this name is not used to
+attach a strategy to an action, as in filters, or acls. Rather, think of
+this simply as a way of defining classes at random, from a set.
+
+
+@c -------------------------------------------------------------------------------
+@c SECTION
+@c -------------------------------------------------------------------------------
+
+@node tidy, unmount, strategies, Cfagent reference
 @section tidy
 @cindex Tidying files
 @cindex Deleting files

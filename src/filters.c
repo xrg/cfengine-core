@@ -1097,14 +1097,22 @@ if (strstr(line,":")) /* day-Hr:Min:Sec */
       {
       snprintf(time_str,256,"accumulated(0,0,0,%d,%d,%d)",hr,min,sec);
       }
-   else if ((r = sscanf(line,"%d:%d",&min,&sec)) == 2 )
+   else if ((r = sscanf(line,"%d:%d",&min,&sec)) == 2)
       {
+/* Removed test - apparent bug
+   
       if (min > 59)
          {
          day = min / (24 * 60);
          hr  = (min - (day * 24 * 60)) / (60);
          min = min % 60;
          }
+*/
+
+      day = min / (24 * 60);
+      hr  = (min - (day * 24 * 60)) / (60);
+      min = min % 60;
+
       snprintf(time_str,256,"accumulated(0,0,%d,%d,%d,%d)",day,hr,min,sec);
       }
    }

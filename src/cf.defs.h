@@ -266,6 +266,7 @@ extern int errno;
 #define CF_MAXLINKSIZE 256
 #define CF_MAXLINKLEVEL 4
 #define CF_MAXARGS 31
+#define CF_MAXFARGS 8
 #define CF_MAX_IP_LEN 64       /* numerical ip length */
 #define CF_PROCCOLS 16
 #define CF_HASHTABLESIZE 4969 /* prime number */
@@ -345,6 +346,10 @@ extern int errno;
 
 #define CF_DONE 't'
 #define CF_MORE 'm'
+
+#ifndef ERESTARTSYS
+# define ERESTARTSYS EINTR
+#endif
 
 #define CF_FAILEDSTR "BAD: Host authentication failed. Did you forget the domain name or IP/DNS address registration (for ipv4 or ipv6)?"
 #define CF_CHANGEDSTR1 "BAD: File changed "   /* Split this so it cannot be recognized */
@@ -434,6 +439,8 @@ struct LastSeen
    ST_BLKSIZE: Optimal I/O blocksize for the file, in bytes.
    ST_NBLOCKS: Number of 512-byte blocks in the file
    (including indirect blocks). */
+
+
 
 #ifndef HAVE_ST_BLOCKS
 # define ST_BLKSIZE(statbuf) DEV_BSIZE
@@ -603,6 +610,10 @@ enum builtin
    fn_adj,
    fn_readarray,
    fn_readtable,
+   fn_readlist,
+   fn_selectpl,
+   fn_selectpn,
+   fn_selectpna,
    };
 
 /*******************************************************************/
@@ -1005,6 +1016,7 @@ enum editnames
    CommentNLines,
    UnCommentNLines,
    ReplaceAll,
+   ReplaceFirst,
    With,
    SetLine,
    FixEndOfLine,
@@ -1353,7 +1365,7 @@ struct Tidy
          char               compress;
          char               travlinks;
          char               dirlinks;          /* k=keep, t=tidy */
-         char               rmdirs;            /* t=true, f=false */
+         char               rmdirs;            /* t=true, f=false, s=sub-only */
          char               searchtype;        /* a, m, c time */
 	 char               log;
 	 char               inform;

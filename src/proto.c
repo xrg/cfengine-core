@@ -72,8 +72,9 @@ int IdentifyForVerification(int sd,char *localip,int family)
   
 memset(sendbuff,0,CF_BUFSIZE);
 memset(dnsname,0,CF_BUFSIZE);
- 
-if (strcmp(VDOMAIN,CF_START_DOMAIN) == 0)
+
+
+if (!SKIPIDENTIFY && (strcmp(VDOMAIN,CF_START_DOMAIN) == 0))
    {
    CfLog(cferror,"Undefined domain name","");
    return false;
@@ -295,7 +296,7 @@ else
    {
    if (cant_trust_server == 'y')  /* challenge reply was correct */ 
       {
-      Verbose("\n >\n");
+      Verbose("\n...............................................................\n");
       snprintf(OUTPUT,CF_BUFSIZE,"Strong authentication of server=%s connection confirmed\n",ip->server);
       CfLog(cfverbose,OUTPUT,"");
       }

@@ -128,6 +128,7 @@ pthread_mutex_t MUTEX_LOCK = PTHREAD_MUTEX_INITIALIZER;
   PUBLIC short SHOWACTIONS = false;
   PUBLIC short LOGTIDYHOMEFILES = true;
   PUBLIC short UPDATEONLY = false;
+  PUBLIC short SKIPIDENTIFY = false;
 
   PUBLIC char FORK = 'n';
 
@@ -221,7 +222,8 @@ char *TCPNAMES[CF_NETATTR] =
 
   PUBLIC char METHODNAME[CF_BUFSIZE];
   PUBLIC char METHODFILENAME[CF_BUFSIZE];
-  PUBLIC char METHODREPLYTO[CF_BUFSIZE];
+  PUBLIC char METHODREPLYTO[CF_BUFSIZE]; 
+  PUBLIC char METHODFOR[CF_BUFSIZE];
   PUBLIC char METHODFORCE[CF_BUFSIZE];
   PUBLIC char METHODRETURNVARS[CF_BUFSIZE];
   PUBLIC char METHODRETURNCLASSES[CF_BUFSIZE];
@@ -550,6 +552,10 @@ char *TCPNAMES[CF_NETATTR] =
       "a",
       "readarray",
       "readtable",
+      "readlist",
+      "selectpartitionleader",
+      "selectpartitionneighbours",
+      "selectpartitionneighbors",
       NULL
       };
 
@@ -1016,6 +1022,7 @@ char *TCPNAMES[CF_NETATTR] =
      "CommentNLines",
      "UnCommentNLines",
      "ReplaceAll",
+     "ReplaceFirst",
      "With",
      "SetLine",
      "FixEndOfLine",

@@ -1,3 +1,49 @@
+2.1.7
+
+        Mandrake Linux detect patch
+
+	Unbelievably no documentation about strategies ever found its way
+	into the manual!! Fixed.
+	Sorting of anomaly histogram data
+	Date patch for SMTP in cfexecd
+
+	Bugfix for TTime filters in ParseTTime() - submitted Bob B. Crosbie.
+	Trinity Centre for High Performance Computing,
+	
+        ReplaceFirst function to replace first occurrence of a string in line.
+
+	Umask saving patch in editfiles (Sergio Gelato)
+	
+	Patch for variable socket length structs (BSD)
+	
+        Apparent bug in local methods from recent change. Name localhost
+	would be converted into an address which would then fail to match hail.
+
+	Iteration over server= variable in copy added
+	Iteration over resolver variables added
+
+
+	Bug in class evaluation was introduced in 2.1.6 by a sorting
+	algorithm. Some classes would evaluate to false even though true.
+
+        Default route setting has been broken in linux for a long time.
+        A workaround has been added using the shellcommand /sbin/route
+
+	Bug in rmdirs in tidy - old type mismatch corrected. Might cause
+	cfengine to delete an empty root-search directory undesirably.
+
+	Some bizarre coding in the resolver section replaced. Could lead
+	to incomplete class data.
+
+	Added option SkipIdentify = ( true ) for avoiding DNS lookup in
+	client side authentication.
+
+	Bug in method evaluation if peers have inconsistent resolvers and
+	cannot agree on whether to use IPv6/v4.
+
+	ReadList() function added to control for reading an iterator
+	from a file
+	
 2.1.6
 
 	Patch for incorrect symbolic link resolution with ".." internals.

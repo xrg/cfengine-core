@@ -474,10 +474,30 @@ closedir(dirh);
 
 if (maxrecurse == tp->maxrecurse)
    {
+   struct TidyPattern *tlp;
+   int ok = true;
+   
    Debug("Checking tidy topmost directory %s\n",name);
+
+   for (tlp = tp->tidylist; tlp != NULL; tlp=tlp->next)
+      {
+      if (IsExcluded(tlp->classes))
+         {
+         continue;
+         }
+
+      if (tlp->rmdirs == 's')
+         {
+         ok = false;
+         }
+      }
+   
    chdir("/");
 
-   TidyParticularFile(name,ReadLastNode(name),tp,&topstatbuf,true,tp->maxrecurse,true);
+   if (ok)
+      {
+      TidyParticularFile(name,ReadLastNode(name),tp,&topstatbuf,true,tp->maxrecurse,true);
+      }
    }
 
 return true; 
@@ -667,7 +687,6 @@ if (age_match && size_match)
    
    if (! DONTDO)
       {
-      
       if (S_ISDIR(statbuf->st_mode))
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Deleting directory %s\n",path);
@@ -679,7 +698,7 @@ if (age_match && size_match)
                {
                Debug("Special case remove top level %s\n",path);
                snprintf(OUTPUT,CF_BUFSIZE*2,"Delete top directory %s failed\n",path);
-               CfLog(cferror,OUTPUT,"unlink");
+               CfLog(cfinform,OUTPUT,"unlink");
                }
             else
                {
@@ -691,7 +710,7 @@ if (age_match && size_match)
             if (rmdir(name) == -1)
                {
                snprintf(OUTPUT,CF_BUFSIZE*2,"Delete directory %s failed\n",path);
-               CfLog(cferror,OUTPUT,"unlink");
+               CfLog(cfinform,OUTPUT,"unlink");
                }            
             else
                {

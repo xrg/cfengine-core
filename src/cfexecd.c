@@ -946,6 +946,12 @@ else
  
 sent=send(sd,VBUFF,strlen(VBUFF),0);
 
+ 
+/* -- Added by Michael Rice <mrice@digitalmotorworks.com>*/
+ 
+strftime(VBUFF,CF_BUFSIZE,"Date: %a, %d %b %Y %H:%M:%S %z\r\n",localtime(&now));
+sent=send(sd,VBUFF,strlen(VBUFF),0);
+ 
 sprintf(VBUFF,"From: cfengine@%s\r\n",VFQNAME); 
 sent=send(sd,VBUFF,strlen(VBUFF),0);
 sprintf(VBUFF,"To: %s\r\n\r\n",to); 

@@ -752,7 +752,7 @@ switch (ACTION)
    case defaultroute:InstallDefaultRouteItem(object);
        break;
        
-   case resolve:     AppendNameServer(object);
+   case resolve: 
        break;
        
    case broadcast:   InstallBroadcastItem(object);
@@ -1207,7 +1207,7 @@ void InitializeAction()                                   /* Set defaults */
  NOABSPATH = false;
  SCAN = 'n';
  CHECKSUM = 'n';
- TIDYDIRS = false;
+ TIDYDIRS = 'n';
  VEXCLUDEPARSE = NULL;
  VINCLUDEPARSE = NULL;
  VIGNOREPARSE = NULL;

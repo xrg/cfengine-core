@@ -149,8 +149,17 @@ switch (fn = FunctionStringToCode(name))
    case fn_readtable:
        HandleReadTable(args,value);
        break;
-       
-   case fn_syslog:
+   case fn_readlist:
+       HandleReadList(args,value);
+       break;
+   case fn_selectpl:
+       HandleSelectPLeader(args,value);
+       break;
+   case fn_selectpn:
+   case fn_selectpna:
+       HandleSelectPGroup(args,value);
+       break;
+case fn_syslog:
        HandleSyslogFn(args,value);
        break;
        
@@ -265,7 +274,7 @@ return (enum builtin) i;
 void GetRandom(char *args,char *value)
 
 { int result,count=0,from=-1,to=-1;
-  char argv[2][CF_BUFSIZE];
+  char argv[CF_MAXFARGS][CF_MAXVARSIZE];
  
 if (ACTION != control)
    {
@@ -410,7 +419,7 @@ void HandleHostRange(char *args,char *value)
 void HandleCompareStat(enum builtin fn,char *args,char *value)
 
 { struct stat frombuf,tobuf;
-  char *sp,argv[2][CF_BUFSIZE];
+  char *sp,argv[CF_MAXFARGS][CF_MAXVARSIZE];
   int count = 0;
 
 FunctionArgs(args,argv,2); 
@@ -538,7 +547,7 @@ strcpy(value,CF_NOCLASS);
 
 void HandleSyslogFn(char *args,char *value)
 
-{ char argv[2][CF_BUFSIZE];
+{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
   int priority = LOG_ERR;
 
 FunctionArgs(args,argv,2);
@@ -595,7 +604,7 @@ if (!DONTDO)
 
 void HandleStrCmp(char *args,char *value)
 
-{ char *sp,argv[2][CF_BUFSIZE];
+{ char *sp,argv[CF_MAXFARGS][CF_MAXVARSIZE];
   int count = 0;
 
 FunctionArgs(args,argv,2); 
@@ -614,7 +623,7 @@ else
 
 void HandleRegCmp(char *args,char *value)
 
-{ char *sp,argv[2][CF_BUFSIZE];
+{ char *sp,argv[CF_MAXFARGS][CF_MAXVARSIZE];
   struct Item *list = NULL, *ret; 
   int count = 0;
 
@@ -647,7 +656,7 @@ DeleteItemList(list);
 
 void HandleReadFile(char *args,char *value)
 
-{ char *sp,argv[2][CF_BUFSIZE];
+{ char *sp,argv[CF_MAXFARGS][CF_MAXVARSIZE];
   int i,val = 0;
   FILE *fp;
 
@@ -690,7 +699,7 @@ fclose(fp);
 
 void HandleReadArray(char *args,char *value)
 
-{ char argv[5][CF_BUFSIZE];
+{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
   char *sp,*filename=argv[0],*maxbytes=argv[4],*formattype=argv[1];
   char *commentchar=argv[3],*sepchar=argv[2],buffer[CF_BUFSIZE];
   int i=0,val = 0,read = 0;
@@ -728,7 +737,7 @@ while (!feof(fp))
 
    if (strlen(commentchar) > 0)
       {
-      for (sp = buffer; sp < buffer+CF_BUFSIZE; sp++) /* Remove comments */
+      for (sp = buffer; sp < buffer+strlen(buffer); sp++) /* Remove comments */
          {
          if (strncmp(sp,commentchar,strlen(commentchar)) == 0)
             {
@@ -763,7 +772,7 @@ while (!feof(fp))
       }
    else if (strcmp(formattype,"textkey") == 0)
       {
-      char argv[2][CF_BUFSIZE],lvalue[CF_BUFSIZE];
+      char argv[CF_MAXFARGS][CF_MAXVARSIZE],lvalue[CF_BUFSIZE];
       if (!FunctionArgs(buffer,argv,2))
          {
          break;
@@ -789,7 +798,7 @@ while (!feof(fp))
 
 void HandleReadTable(char *args,char *value)
 
-{  char argv[5][CF_BUFSIZE];
+{  char argv[CF_MAXFARGS][CF_MAXVARSIZE];
   char *sp,*filename=argv[0],*maxbytes=argv[4],*formattype=argv[1];
   char *commentchar=argv[3],*sepchar=argv[2],buffer[CF_BUFSIZE];
   int i=0,j=0,val = 0,read = 0;
@@ -830,7 +839,7 @@ while (!feof(fp))
 
    if (strlen(commentchar) > 0)
       {
-      for (sp = buffer; sp < buffer+CF_BUFSIZE; sp++) /* Remove comments */
+      for (sp = buffer; sp < buffer+strlen(buffer); sp++) /* Remove comments */
          {
          if (strncmp(sp,commentchar,strlen(commentchar)) == 0)
             {
@@ -865,7 +874,7 @@ while (!feof(fp))
       }
    else if (strcmp(formattype,"textkey") == 0)
       {
-      char argv[2][CF_BUFSIZE],lvalue[CF_BUFSIZE];
+      char argv[CF_MAXFARGS][CF_MAXVARSIZE],lvalue[CF_BUFSIZE];
       if (!FunctionArgs(buffer,argv,3))
          {
          break;
@@ -887,6 +896,379 @@ fclose(fp);
 snprintf(value,CF_BUFSIZE-1,"CF_ASSOCIATIVE_ARRAY%s",args);
 }
 
+/*********************************************************************/
+
+void HandleReadList(char *args,char *value)
+
+{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+  char *sp,*filename=argv[0],*maxbytes=argv[3],*formattype=argv[1];
+  char *commentchar=argv[2],buffer[CF_BUFSIZE];
+  int i=0,val = 0,read = 0;
+  struct Item *list = NULL,*ip;
+  FILE *fp;
+
+FunctionArgs(args,argv,4);
+ 
+val = atoi(maxbytes);
+   
+if (strcmp(formattype,"lines") != 0)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"Unknown format type in ReadList(%s)",args);
+   CfLog(cferror,OUTPUT,"");;
+   }
+    
+if ((fp = fopen(filename,"r")) == NULL)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"Could not open ReadFile(%s)\n",filename);
+   CfLog(cferror,OUTPUT,"fopen");
+   return;
+   }
+
+while (!feof(fp))
+   {
+   memset(buffer,0,CF_BUFSIZE);
+   fgets(buffer,CF_BUFSIZE,fp);
+   
+   if (strlen(commentchar) > 0)
+      {
+      for (sp = buffer; sp < buffer+strlen(buffer); sp++) /* Remove comments */
+         {
+         if (strncmp(sp,commentchar,strlen(commentchar)) == 0)
+            {
+            *sp = '\0';
+            break;
+            }
+         }
+      }
+   
+   Chop(buffer);
+
+   if (strlen(buffer) > 0)
+      {
+      PrependItem(&list,buffer,NULL);
+      }
+   }
+
+fclose(fp); 
+
+for (ip = list; ip != NULL; ip=ip->next)
+   {
+   if (strlen(value) + strlen(ip->name) > CF_BUFSIZE)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Variable size exceeded in ReadList(%s)", args);
+      CfLog(cferror,OUTPUT,"");
+      return;
+      }
+   snprintf(value+strlen(value),CF_BUFSIZE,"%s%c",ip->name,LISTSEPARATOR);
+   Verbose(" %s (added peer) = %s\n",ip->name,value);            
+   }
+
+value[strlen(value)-1] = '\0';
+}
+
+/*********************************************************************/
+
+void HandleSelectPLeader(char *args,char *value)
+
+{ FILE *fp;
+  char machine[128],first[128];
+  char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+  char *filename=argv[0],*commentchar=argv[1];
+  char *policy=argv[2],*size=argv[3];
+  struct Item *list = NULL,*ip;
+  int i,psize = -1, count, leader,done = false;
+
+FunctionArgs(args,argv,4);
+psize = atoi(size);
+
+first[0] = '\0';
+ 
+if (psize < 2)
+   {
+   strcpy(value,"silly");
+   CfLog(cferror,"Partitioning of size < 2 is silly","");
+   return;
+   }
+ 
+Verbose("Searching for my peer group in %s with partition size %d\n",filename,psize);
+
+if (!((strcmp("random",policy) == 0) || (strcmp("first",policy) == 0)))
+   {
+   strcpy(value,"silly");
+   CfLog(cferror,"Partition leader policy is first/random only","");
+   return;
+   }
+    
+if ((fp = fopen(filename,"r")) == NULL)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"Could not open ReadFile(%s)\n",filename);
+   CfLog(cferror,OUTPUT,"fopen");
+   return;
+   }
+
+count = 0;
+ 
+while (!feof(fp))
+   {
+   char buffer[CF_BUFSIZE];
+   
+   memset(buffer,0,CF_BUFSIZE);
+   fgets(buffer,CF_BUFSIZE-1,fp);
+   
+   if (strlen(commentchar) > 0)
+      {
+      for (i = 0; i < strlen(buffer); i++) /* Remove comments */
+         {
+         if (strncmp((char *)(buffer+i),commentchar,strlen(commentchar)) == 0)
+            {
+            buffer[i] = '\0';
+            break;
+            }
+         }
+      }
+   
+   memset(machine,0,127);
+   
+   sscanf(buffer,"%127s",machine);
+
+   if (strlen(machine) == 0)
+      {
+      continue;
+      }
+
+   if (strstr(machine,"="))
+      {
+      Debug("Skipping what looks like an embedded assignment (%s)\n",machine);
+      continue;
+      }
+
+   if (strlen(first) == 0)
+      {
+      strncpy(first,machine,127);
+      }
+   
+   if ((count == psize) || ((count > 0) && feof(fp)))
+      {
+      int len, this = 0;
+
+      done = false;
+      
+      if (IsItemIn(list,VFQNAME)||IsItemIn(list,VIPADDRESS))
+         {
+         /* This is my peer group */
+         Verbose("Found my peer group:\n");
+         
+         len = ListLen(list);
+
+         if (strcmp(policy,"random") == 0)
+            {
+            leader = (int)(drand48()*(double)(len));
+            }
+         else
+            {
+            leader = 0;
+            }
+         
+         for (ip = list; ip != NULL; ip=ip->next)
+            {
+            if (leader == this)
+               {
+               Verbose(" %s (leader)\n",ip->name);
+               if (strlen(ip->name) > 0)
+                  {
+                  strncpy(value,ip->name,127);
+                  }
+               else
+                  {
+                  strncpy(value,first,127);
+                  }
+               done = true;
+               }
+            else
+               {
+               Verbose(" %s (peer)\n",ip->name);
+               }
+            this++;
+            }
+         }
+      else
+         {
+         Debug("Not my peer group:");
+         for (ip = list; ip != NULL; ip=ip->next)
+            {
+            Debug(" %s",ip->name);
+            }
+         
+         Verbose("\n");
+         }
+      
+      count = 0;
+      DeleteItemList(list);
+      list = NULL;            
+
+      if (done)
+         {
+         break;
+         }
+      }
+   
+   count++;
+   PrependItem(&list,machine,NULL);
+   }
+
+if (!done)
+   {
+   strncpy(value,first,127); /* Fill up blanks in peer groups */
+   }
+
+if (list != NULL)
+   {
+   DeleteItemList(list);
+   }
+ 
+fclose(fp); 
+}
+
+
+/*********************************************************************/
+
+void HandleSelectPGroup(char *args,char *value)
+
+{ char argv[CF_MAXFARGS][CF_MAXVARSIZE],machine[128],first[128];
+  char *filename=argv[0],*commentchar=argv[1];
+  char *policy=argv[2],*size=argv[3];
+  struct Item *list = NULL,*ip;
+  int i,psize = -1, count, leader,done = false;
+  FILE *fp;
+
+FunctionArgs(args,argv,4);
+psize = atoi(size);
+
+first[0] = '\0';
+value[0] = '\0'; 
+ 
+if (psize < 2)
+   {
+   strcpy(value,"silly");
+   CfLog(cferror,"Partitioning of size < 2 is silly","");
+   return;
+   }
+ 
+Verbose("Searching for my peer group neighbours in %s with partition size %d\n",filename,psize);
+
+if (!(strcmp("random",policy) == 0 || strcmp("first",policy) == 0))
+   {
+   strcpy(value,"silly");
+   CfLog(cferror,"Partition leader policy is first/random only","");
+   return;
+   }
+    
+if ((fp = fopen(filename,"r")) == NULL)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"Could not open ReadFile(%s)\n",filename);
+   CfLog(cferror,OUTPUT,"fopen");
+   return;
+   }
+
+count = 0;
+ 
+while (!feof(fp))
+   {
+   char buffer[CF_BUFSIZE];
+   memset(buffer,0,CF_BUFSIZE);
+   fgets(buffer,CF_BUFSIZE,fp);
+   
+   if (strlen(commentchar) > 0)
+      {
+      for (i = 0; i < strlen(buffer); i++) /* Remove comments */
+         {
+         if (strncmp((char *)(buffer+i),commentchar,strlen(commentchar)) == 0)
+            {
+            buffer[i] = '\0';
+            break;
+            }
+         }
+      }
+   
+   machine[0] = '\0';
+   sscanf(buffer,"%127s",machine);
+
+   if (strlen(machine) == 0)
+      {
+      continue;
+      }
+
+   if (strstr(machine,"="))
+      {
+      Debug("Skipping what looks like an embedded assignment (%s)\n",machine);
+      continue;
+      }
+
+   if (strlen(first) == 0)
+      {
+      strncpy(first,machine,127);
+      }
+
+   if ((count == psize) || ((count > 0) && feof(fp)))
+      {
+      int len, this = 0;
+
+      done = false;
+      
+      if (IsItemIn(list,VFQNAME)||IsItemIn(list,VIPADDRESS))
+         {
+         /* This is my peer group */
+         Verbose("Found my peer group:\n");
+         
+         for (ip = list; ip != NULL; ip=ip->next)
+            {
+            if ((strcmp(ip->name,VFQNAME) != 0) && (strcmp(ip->name,VIPADDRESS) != 0))
+               {
+               if (strlen(value) + strlen(ip->name) + 1 > CF_BUFSIZE)
+                  {
+                  snprintf(OUTPUT,CF_BUFSIZE,"Variable size exceeded in SelectPartitionNeighbours(%s)", args);
+                  CfLog(cferror,OUTPUT,"");
+                  return;
+                  }
+               
+               snprintf(value+strlen(value),CF_BUFSIZE,"%s%c",ip->name,LISTSEPARATOR);
+               Verbose(" %s (added peer) = %s\n",ip->name,value);            
+               }
+            done = true;
+            }
+         value[strlen(value)-1] = '\0';
+         }
+      else
+         {
+         Debug("Not my peer group:");
+         for (ip = list; ip != NULL; ip=ip->next)
+            {
+            Debug(" %s",ip->name);
+            }
+         
+         Verbose("\n");
+         }
+      
+      count = 0;
+      DeleteItemList(list);
+      list = NULL;            
+      if (done)
+         {
+         break;
+         }
+      }
+   
+   count++;
+   PrependItem(&list,machine,NULL);
+   }
+
+if (!done)
+   {
+   strncat(value,first,127); /* Fill up blanks in peer groups */
+   }
+ 
+fclose(fp); 
+}
 
 /*********************************************************************/
 
@@ -932,7 +1314,7 @@ void HandleShowState(char *args,char *value)
 
 { struct stat statbuf;
   char buffer[CF_BUFSIZE],vbuff[CF_BUFSIZE];
-  struct Item *addresses = NULL,*ip;
+  struct Item *addresses = NULL,*saddresses = NULL,*ip;
   FILE *fp;
   int i = 0, tot=0, min_signal_diversity = 1,conns=1,classes=0;
   int maxlen = 0,count;
@@ -1082,8 +1464,10 @@ if (stat(buffer,&statbuf) == 0)
          tot+=ip->counter;
          }
       }
-   
-   for (ip = addresses; ip != NULL; ip=ip->next)
+
+   saddresses = SortItemListCounters(addresses);
+
+   for (ip = saddresses; ip != NULL; ip=ip->next)
       {
       int s;
       
@@ -1140,6 +1524,8 @@ else
    strcpy(value,buffer);
    }
 
+DeleteItemList(addresses); 
+
 if (dist)
    {
    free((char *)dist);
@@ -1150,7 +1536,7 @@ if (dist)
 
 void HandleFriendStatus(char *args,char *value)
 
-{ char argv[1][CF_BUFSIZE];
+{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
   int time = -1;
   
 if ((ACTION != alerts) && PARSING)
@@ -1180,7 +1566,7 @@ strcpy(value,""); /* No reply */
 
 void HandleSetState(char *args,char *value)
 
-{ char argv[3][CF_BUFSIZE];
+{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
   char *name=argv[0],*ttlbuf=argv[1],*policy=argv[2];
   unsigned int ttl = 0;
 
@@ -1221,7 +1607,7 @@ else
 
 void HandleUnsetState(char *args,char *value)
 
-{ char arg1[CF_BUFSIZE];
+{ char arg1[CF_MAXVARSIZE];
  
 value[0] = '\0';
 OneArg(args,arg1);
@@ -1234,7 +1620,7 @@ DeletePersistentClass(arg1);
 
 void HandlePrepModule(char *args,char *value)
 
-{ char argv[2][CF_BUFSIZE];
+{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
  
 value[0] = '\0';
 FunctionArgs(args,argv,2);
@@ -1255,7 +1641,7 @@ else
 
 void HandleAssociation(char *args,char *value)
 
-{ char argv[2][CF_BUFSIZE],lvalue[CF_BUFSIZE];
+{ char argv[CF_MAXFARGS][CF_MAXVARSIZE],lvalue[CF_BUFSIZE];
  
 value[0] = '\0';
 FunctionArgs(args,argv,2);
@@ -1275,9 +1661,9 @@ void OneArg(args,arg1)
 
 char *args,*arg1;
 
-{ char one[CF_BUFSIZE];
+{ char one[CF_MAXVARSIZE];
 
-memset(one,0,CF_BUFSIZE);
+memset(one,0,CF_MAXVARSIZE);
  
 if (strchr(args,','))
    {
@@ -1290,20 +1676,21 @@ strcpy(arg1,UnQuote(args));
 
 /*********************************************************************/
 
-int FunctionArgs(char *args,char arg[][CF_BUFSIZE],int number)
+int FunctionArgs(char *args,char arg[CF_MAXFARGS][CF_MAXVARSIZE],int number)
 
-{ char *argv[10];
-  char *sp,**start;
+{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+  char *sp,*start[CF_MAXFARGS];
   int count = 0, i;
 
+if (number > CF_MAXFARGS)
+   {
+   FatalError("Software error: too many function arguments");
+   }
+  
 for (i = 0; i < number; i++)
    {
-   arg[i][0] = '\0';
-   argv[i] = (char *)malloc(CF_BUFSIZE);
-   memset(argv[i],0,CF_BUFSIZE);
+   memset(argv[i],0,CF_MAXVARSIZE);
    }
- 
-start = malloc(sizeof(char *)*(number+1));
 
 start[0] = args; 
 
@@ -1361,10 +1748,8 @@ for (sp = args; *sp != '\0'; sp++)
  for (i = 0; i < number; i++)
     {
     strncpy(arg[i],UnQuote(argv[i]),100);
-    free(argv[i]);
     }
  
-free(start);
 return true;
 }
 

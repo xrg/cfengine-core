@@ -261,6 +261,8 @@ char *GetMacroValue(char *scope,char *name)
 
 */
 
+Debug("GetMacroValue(%s,%s)\n",scope,name);
+
 if (strstr(name,"."))
    {
    objscope[0] = '\0';

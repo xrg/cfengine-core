@@ -21,7 +21,7 @@
 @include version2.texi
 
 @titlepage
-@title cfengine tutorial
+@title cfengine concepts
 @subtitle Edition @value{EDITION} for version @value{VERSION}
 @author Mark Burgess
 @author Faculty of Engineering, Oslo University College, Norway
@@ -771,9 +771,9 @@ An individual section-declaration in the program looks something like this:
 
 @smallexample
 
-   groups, control, homeservers, binservers, mailserver, mountables,
+   groups, control, copy, homeservers, binservers, mailserver, mountables,
    import, broadcast, resolve, defaultroute, directories, miscmounts,
-   files, ignore, tidy, required, links, disable, shellcommands, 
+   files, ignore, tidy, required, links, disable, shellcommands, strategies
    editfiles, processes
 
 @end smallexample
@@ -803,7 +803,6 @@ front before and after parentheses when defining variables.
 @cindex Format
 
 @smallexample
-
 ######################################################################
 # 
 # Example of structure

@@ -154,6 +154,7 @@ else
            }
         
         break;
+
         
     case cfsysadm:  /* Can be redefined */
         if (!IsDefinedClass(CLASSBUFF))
@@ -491,11 +492,11 @@ if (! IsInstallable(CLASSBUFF))
 
 if (string == NULL)
    {
-   Debug1("Handling Edit of %s, action [%s] with no data\n",file,edit);
+   Debug1("Handling Edit of %s, action [%s] with no data if (%s)\n",file,edit,CLASSBUFF);
    }
 else
    {
-   Debug1("Handling Edit of %s, action [%s] with data <%s>\n",file,edit,string);
+   Debug1("Handling Edit of %s, action [%s] with data <%s> if (%s)\n",file,edit,string,CLASSBUFF);
    }
 
 if (EditFileExists(file))
@@ -1367,24 +1368,19 @@ if (value[0] == '\0')
     {
     case cfserver:
         HandleServer(value);
-        break;
-        
+        break;        
     case cfaction:
         strncpy(ACTIONBUFF,value,CF_BUFSIZE-1);
-        break;
-        
+        break;        
     case cfretvars:
         strncpy(METHODFILENAME,value,CF_BUFSIZE-1);
         break;
-        
     case cfretclasses:
         strncpy(METHODRETURNCLASSES,value,CF_BUFSIZE-1);
         break;
-        
     case cfforcereplyto:
         strncpy(METHODFORCE,value,CF_BUFSIZE-1);
         break;
-
     case cfsendclasses:
         strncpy(METHODREPLYTO,value,CF_MAXVARSIZE-1);
         break;
@@ -1393,8 +1389,7 @@ if (value[0] == '\0')
         break;
     case cfexpaft:
         HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
-        break;
-        
+        break;        
     case cfowner:
         strncpy(VUIDNAME,value,CF_BUFSIZE-1);
         break;
@@ -1622,12 +1617,12 @@ ExpandVarstring(item,ebuff,NULL);
    else
       {
       memcpy(&inaddr,hp->h_addr, hp->h_length);
-      strcpy(VDEFAULTROUTE,inet_ntoa(inaddr));
+      strncpy(VDEFAULTROUTE,inet_ntoa(inaddr),CF_MAXVARSIZE);
       }
    }
 else
    {
-   strcpy(VDEFAULTROUTE,ebuff);
+   strncpy(VDEFAULTROUTE,ebuff,CF_MAXVARSIZE);
    }
 }
 
@@ -1770,6 +1765,7 @@ AppendItem(&VHOMEPATLIST,ebuff,CLASSBUFF);
 void AppendNameServer(char *item)
 
 { char ebuff[CF_EXPANDSIZE];
+ struct Item *list = NULL, *ip;
  
 Debug1("Installing item (%s) in the nameserver list\n",item);
 
@@ -1780,8 +1776,13 @@ if (!IsInstallable(CLASSBUFF))
    }
 
 ExpandVarstring(item,ebuff,"");
- 
-AppendItem(&VRESOLVE,ebuff,CLASSBUFF);
+
+list = SplitStringAsItemList(ebuff,LISTSEPARATOR);
+
+for (ip = list; ip != NULL; ip=ip->next)
+   {
+   PrependItem(&VRESOLVE,ip->name,CLASSBUFF);
+   }
 }
 
 /*******************************************************************/
@@ -2857,7 +2858,7 @@ if (data == NULL)
    }
 else
    {
-   Debug1("InstallEditFile(%s,%s,%s) with classes\n",file,edit,data,CLASSBUFF);
+   Debug1("InstallEditFile(%s,%s,%s) with classes %s\n",file,edit,data,CLASSBUFF);
    }
 
 if (!IsInstallable(CLASSBUFF))
@@ -2944,6 +2945,7 @@ void AddEditAction(char *file,char *edit,char *data)
 { struct Edit *ptr;
   struct Edlist *top,*new;
   char varbuff[CF_EXPANDSIZE];
+  mode_t saved_umask;
 
 if (data == NULL)
    {
@@ -3014,8 +3016,11 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
       switch(new->code)
          {
          case EditUmask:
+             saved_umask = UMASK;
              HandleUmask(data);
              ptr->umask = UMASK;
+             UMASK = saved_umask;
+             
          case EditIgnore:
              PrependItem(&(ptr->ignores),data,CF_ANYCLASS);
              break;
@@ -3063,6 +3068,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
          case BeginGroupIfFileExists:
              EDITGROUPLEVEL++;
              break;
+             
          case EndGroup:
              EDITGROUPLEVEL--;
              if (EDITGROUPLEVEL < 0)
@@ -3070,6 +3076,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
                 yyerror("EndGroup without Begin");
                 }
              break;
+             
          case ReplaceAll:
              if (SEARCHREPLACELEVEL > 0)
                 {
@@ -3078,9 +3085,20 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
              
              SEARCHREPLACELEVEL++;
              break;
+
+         case ReplaceFirst:
+             if (SEARCHREPLACELEVEL > 0)
+                {
+                yyerror("ReplaceFirst without With before or at line");
+                }
+             
+             SEARCHREPLACELEVEL++;
+             break;
+             
          case With:
              SEARCHREPLACELEVEL--;
              break;
+             
          case ForEachLineIn:
              if (FOREACHLEVEL > 0)
                 {
@@ -3089,6 +3107,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
              
              FOREACHLEVEL++;
              break;
+             
          case EndLoop:
              FOREACHLEVEL--;
              if (FOREACHLEVEL < 0)
@@ -3096,6 +3115,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
                 yyerror("EndLoop without ForEachLineIn");
                 }
              break;
+             
          case DefineInGroup:
              if (EDITGROUPLEVEL < 0)
                 {
@@ -3103,6 +3123,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
                 }
              AddInstallable(new->data);
              break;
+             
          case SetLine:
              if (FOREACHLEVEL > 0)
                 {
@@ -3566,7 +3587,7 @@ void InstallMethod(char *function,char *file)
   struct passwd *pw;
   struct group *gw;
    
-Debug1("Installing item (%s=%s) in the methods list\n",function,file);
+Debug1("Install item (%s=%s) in the methods list iff %s?\n",function,file,CLASSBUFF);
 
 if (strlen(file) == 0)
    {
@@ -3583,7 +3604,9 @@ if (!IsInstallable(CLASSBUFF))
    Debug1("Not installing %s, no match\n",function);
    return;
    }
- 
+
+Debug1("Installing item (%s=%s) in the methods list iff %s\n",function,file,CLASSBUFF);
+
 if ((ptr = (struct Method *)malloc(sizeof(struct Method))) == NULL)
    {
    FatalError("Memory Allocation failed for InstallMethod() #1");
@@ -4788,8 +4811,9 @@ void InstallImageItem(char *cf_findertype,char *path,mode_t plus,mode_t minus,ch
   char buf1[CF_EXPANDSIZE], buf2[CF_EXPANDSIZE], buf3[CF_EXPANDSIZE], buf4[CF_EXPANDSIZE];
   struct TwoDimList *tp = NULL;
   struct hostent *hp;
+  struct Item *expserver = NULL, *ep;
   
-if ( ! IsInstallable(CLASSBUFF))
+if (!IsInstallable(CLASSBUFF))
    {
    Debug1("Not installing copy item, no match (%s,%s)\n",path,CLASSBUFF);
    InitializeAction();
@@ -4818,12 +4842,8 @@ if (strlen(buf1) > 1)
    DeleteSlash(buf1);
    }
 
-if (!FORCENETCOPY && ((strcmp(buf3,VFQNAME) == 0) || (strcmp(buf3,VUQNAME) == 0) || (strcmp(buf3,VSYSNAME.nodename) == 0)))
-   {
-   Debug("Swapping %s for localhost\n",server);
-   strcpy(buf3,"localhost");
-   }
-
+expserver = SplitStringAsItemList(buf3,LISTSEPARATOR);
+   
 Build2DListFromVarstring(&tp,path,'/');  /* Must split on space in comm string */
     
 Set2DList(tp);
@@ -4831,229 +4851,243 @@ Set2DList(tp);
  
 for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
    {
-   if ((ptr = (struct Image *)malloc(sizeof(struct Image))) == NULL)
+   for (ep = expserver; ep != NULL; ep=ep->next)
       {
-      FatalError("Memory Allocation failed for InstallImageItem() #1");
-      }
-   
-   if ((ptr->classes = strdup(CLASSBUFF)) == NULL)
-      {
-      FatalError("Memory Allocation failed for InstallImageItem() #3");
-      }
-   
-   if (strlen(buf3) > 128)
-      {
-      yyerror("Server name is too long");
-      return;
-      }
-   
-   if ((ptr->server = strdup(buf3)) == NULL)
-      {
-      FatalError("Memory Allocation failed for InstallImageItem() #5");
-      }
-   
-   if ((ptr->action = strdup(action)) == NULL)
-      {
-      FatalError("Memory Allocation failed for InstallImageItem() #6");
-      }
-   
-   ExpandVarstring(ALLCLASSBUFFER,buf4,"");
-   
-   if ((ptr->defines = strdup(buf4)) == NULL)
-      {
-      FatalError("Memory Allocation failed for InstallImageItem() #7");
-      }
-   
-   ExpandVarstring(ELSECLASSBUFFER,buf4,"");
-   
-   if ((ptr->elsedef = strdup(buf4)) == NULL)
-      {
-      FatalError("Memory Allocation failed for InstallImageItem() #7");
-      }
-
-   ExpandVarstring(FAILOVERBUFFER,buf4,"");
-   
-   if ((ptr->failover = strdup(buf4)) == NULL)
-      {
-      FatalError("Memory Allocation failed for InstallImageItem() #8");
-      }
-
-   if (strlen(destination) == 0)
-      {
-      strcpy(buf2,spl);
-      }
-   else
-      {
-      ExpandVarstring(destination,buf2,"");
-      }
-
-   if (strlen(buf2) > 1)
-      {
-      DeleteSlash(buf2);
-      }
-   
-   if (!IsAbsoluteFileName(buf2))
-      {
-      if (strncmp(buf2,"home",4) == 0)
+      Debug("\nBegin pass with server = %s\n",ep->name);
+      if ((ptr = (struct Image *)malloc(sizeof(struct Image))) == NULL)
          {
-         if (strlen(buf2) > 4 && buf2[4] != '/')
+         FatalError("Memory Allocation failed for InstallImageItem() #1");
+         }
+      
+      if ((ptr->classes = strdup(CLASSBUFF)) == NULL)
+         {
+         FatalError("Memory Allocation failed for InstallImageItem() #3");
+         }
+            
+      if (!FORCENETCOPY && ((strcmp(ep->name,VFQNAME) == 0) || (strcmp(ep->name,VUQNAME) == 0) || (strcmp(ep->name,VSYSNAME.nodename) == 0)))
+         {
+         Debug("Swapping %s for localhost\n",server);
+         free(ep->name);
+         ep->name = strdup("localhost");
+         }
+      
+      if (ptr->purge == 'y' && strstr(ep->name,"localhost") == 0)
+         {
+         Verbose("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+         Verbose("!! Purge detected in local (non-cfd) file copy to file %s\n",ptr->destination);
+         Verbose("!! Do not risk purge if source %s is NFS mounted (see manual)\n",ptr->path);
+         Verbose("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+         }
+
+      if (IsDefinedClass(CLASSBUFF))
+         {
+         if ((strcmp(spl,buf2) == 0) && (strcmp(ep->name,"localhost") == 0))
             {
-            yyerror("illegal use of home or not absolute pathname");
-            return;
+            yyerror("Image loop: file/dir copies to itself or missing destination file");
+            continue;
             }
          }
-      else if (*buf2 == '$')
+      
+      if (strlen(ep->name) > 128)
          {
-         /* unexpanded variable */
+         snprintf(OUTPUT,CF_BUFSIZE,"Server name (%s) is too long",ep->name);
+         yyerror(OUTPUT);
+         DeleteItemList(expserver);   
+         return;
+         }
+      
+      if (!IsItemIn(VSERVERLIST,ep->name))   /* cache list of servers */
+         {
+         AppendItem(&VSERVERLIST,ep->name,NULL);
+         }
+     
+   
+      Debug("Transformed server %s into %s\n",server,ep->name);
+      
+      if ((ptr->server = strdup(ep->name)) == NULL)
+         {
+         FatalError("Memory Allocation failed for InstallImageItem() #5");
+         }
+      
+      if ((ptr->action = strdup(action)) == NULL)
+         {
+         FatalError("Memory Allocation failed for InstallImageItem() #6");
+         }
+      
+      ExpandVarstring(ALLCLASSBUFFER,buf4,"");
+      
+      if ((ptr->defines = strdup(buf4)) == NULL)
+         {
+         FatalError("Memory Allocation failed for InstallImageItem() #7");
+         }
+      
+      ExpandVarstring(ELSECLASSBUFFER,buf4,"");
+      
+      if ((ptr->elsedef = strdup(buf4)) == NULL)
+         {
+         FatalError("Memory Allocation failed for InstallImageItem() #7");
+         }
+      
+      ExpandVarstring(FAILOVERBUFFER,buf4,"");
+      
+      if ((ptr->failover = strdup(buf4)) == NULL)
+         {
+         FatalError("Memory Allocation failed for InstallImageItem() #8");
+         }
+      
+      if (strlen(destination) == 0)
+         {
+         strcpy(buf2,spl);
          }
       else
          {
-         snprintf(OUTPUT,CF_BUFSIZE,"Image %s needs an absolute pathname",buf2);
-         yyerror(OUTPUT);
-         return;
+         ExpandVarstring(destination,buf2,"");
          }
-      }
-   
-   if ((ptr->destination = strdup(buf2)) == NULL)
-      {
-      FatalError("Memory Allocation failed for InstallImageItem() #4");
-      }
-   
-   if (IsDefinedClass(CLASSBUFF))
-      {
-      if ((strcmp(spl,buf2) == 0) && (strcmp(buf3,"localhost") == 0))
-         {
-         yyerror("image loop: file/dir copies to itself or missing destination file");
-         return;
-         }
-      }
-   
-   if ((ptr->path = strdup(spl)) == NULL)
-      {
-      FatalError("Memory Allocation failed for InstallImageItem() #2");
-      }
-   
-   if (VIMAGETOP == NULL)
-      {
-      VIMAGE = ptr;
-      }
-   else
-      {
-      VIMAGETOP->next = ptr;
-      }
       
-
-   if ((ptr->cf_findertype = strdup(cf_findertype)) == NULL)
-      {
-      FatalError("Memory Allocation failed for cf_findertype ptr in InstallImageItem()");
-      }
-
-   ptr->plus = plus;
-   ptr->minus = minus;
-   ptr->uid = MakeUidList(uidnames);
-   ptr->gid = MakeGidList(gidnames);
-   ptr->force = FORCE;
-   ptr->next = NULL;
-   ptr->backup = IMAGEBACKUP;
-   ptr->done = 'n';
-   ptr->scope = strdup(CONTEXTID);
-   
-   if (strlen(LOCALREPOS) > 0)
-      {
-      ExpandVarstring(LOCALREPOS,buf2,"");
-      ptr->repository = strdup(buf2);
-      }
-   else
-      {
-      ptr->repository = NULL;
-      }
-
-   if (PIFELAPSED != -1)
-      {
-      ptr->ifelapsed = PIFELAPSED;
-      }
-   else
-      {
-      ptr->ifelapsed = VIFELAPSED;
-      }
-   
-   if (PEXPIREAFTER != -1)
-      {
-      ptr->expireafter = PEXPIREAFTER;
-      }
-   else
-      {
-      ptr->expireafter = VEXPIREAFTER;
-      }
-
-   ptr->recurse = rec;
-   ptr->type = type;
-   ptr->stealth = STEALTH;
-   ptr->preservetimes = PRESERVETIMES;
-   ptr->encrypt = ENCRYPT;
-   ptr->verify = VERIFY;
-   ptr->size = size;
-   ptr->comp = comp;
-   ptr->linktype = lntype;
-   ptr->symlink = VCPLNPARSE;
-   ptr->exclusions = VEXCLUDEPARSE;
-   ptr->inclusions = VINCLUDEPARSE;
-   ptr->filters = VFILTERBUILD;
-   ptr->ignores = VIGNOREPARSE;
-   ptr->cache = NULL;
-   ptr->purge = PURGE;
-
-   if (PURGE == 'y')
-      {
-      ptr->forcedirs = 'y';
-      ptr->typecheck = 'n';
-      }
-   else
-      {
-      ptr->forcedirs = FORCEDIRS;
-      ptr->typecheck = TYPECHECK;
-      }
-   
-   ptr->log = LOGP;
-   ptr->inform = INFORMP;
-   ptr->plus_flags = PLUSFLAG;
-   ptr->minus_flags = MINUSFLAG;
-   ptr->trustkey = TRUSTKEY;
-   ptr->compat = COMPATIBILITY;
-   ptr->forceipv4 = FORCEIPV4;
-   ptr->xdev = XDEV;
-
-   if (ptr->compat == 'y' && ptr->encrypt == 'y')
-      {
-      yyerror("You cannot mix version1 compatibility with encrypted transfers");
-      return;
-      }
-   
-   if (ptr->purge == 'y' && strcmp(buf3,"localhost") == 0)
-      {
-      Verbose("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-      Verbose("!! Purge detected in local (non-cfd) file copy to file %s\n",ptr->destination);
-      Verbose("!! Do not risk purge if source %s is NFS mounted (see manual)\n",ptr->path);
-      Verbose("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-      }
-
-   ptr->acl_aliases = VACLBUILD;   
-   ptr->inode_cache = NULL;
-   
-   VIMAGETOP = ptr;
-
-   AddInstallable(ptr->defines);
-   AddInstallable(ptr->elsedef);
-
-   if (!IsItemIn(VSERVERLIST,ptr->server))   /* cache list of servers */
-      {
-      AppendItem(&VSERVERLIST,ptr->server,NULL);
+      if (strlen(buf2) > 1)
+         {
+         DeleteSlash(buf2);
+         }
+      
+      if (!IsAbsoluteFileName(buf2))
+         {
+         if (strncmp(buf2,"home",4) == 0)
+            {
+            if (strlen(buf2) > 4 && buf2[4] != '/')
+               {
+               yyerror("illegal use of home or not absolute pathname");
+               return;
+               }
+            }
+         else if (*buf2 == '$')
+            {
+            /* unexpanded variable */
+            }
+         else
+            {
+            snprintf(OUTPUT,CF_BUFSIZE,"Image %s needs an absolute pathname",buf2);
+            yyerror(OUTPUT);
+            return;
+            }
+         }
+      
+      if ((ptr->destination = strdup(buf2)) == NULL)
+         {
+         FatalError("Memory Allocation failed for InstallImageItem() #4");
+         }
+      
+      if ((ptr->path = strdup(spl)) == NULL)
+         {
+         FatalError("Memory Allocation failed for InstallImageItem() #2");
+         }
+      
+      if (VIMAGETOP == NULL)
+         {
+         VIMAGE = ptr;
+         }
+      else
+         {
+         VIMAGETOP->next = ptr;
+         }
+      
+      
+      if ((ptr->cf_findertype = strdup(cf_findertype)) == NULL)
+         {
+         FatalError("Memory Allocation failed for cf_findertype ptr in InstallImageItem()");
+         }
+      
+      ptr->plus = plus;
+      ptr->minus = minus;
+      ptr->uid = MakeUidList(uidnames);
+      ptr->gid = MakeGidList(gidnames);
+      ptr->force = FORCE;
+      ptr->next = NULL;
+      ptr->backup = IMAGEBACKUP;
+      ptr->done = 'n';
+      ptr->scope = strdup(CONTEXTID);
+      
+      if (strlen(LOCALREPOS) > 0)
+         {
+         ExpandVarstring(LOCALREPOS,buf2,"");
+         ptr->repository = strdup(buf2);
+         }
+      else
+         {
+         ptr->repository = NULL;
+         }
+      
+      if (PIFELAPSED != -1)
+         {
+         ptr->ifelapsed = PIFELAPSED;
+         }
+      else
+         {
+         ptr->ifelapsed = VIFELAPSED;
+         }
+      
+      if (PEXPIREAFTER != -1)
+         {
+         ptr->expireafter = PEXPIREAFTER;
+         }
+      else
+         {
+         ptr->expireafter = VEXPIREAFTER;
+         }
+      
+      ptr->recurse = rec;
+      ptr->type = type;
+      ptr->stealth = STEALTH;
+      ptr->preservetimes = PRESERVETIMES;
+      ptr->encrypt = ENCRYPT;
+      ptr->verify = VERIFY;
+      ptr->size = size;
+      ptr->comp = comp;
+      ptr->linktype = lntype;
+      ptr->symlink = VCPLNPARSE;
+      ptr->exclusions = VEXCLUDEPARSE;
+      ptr->inclusions = VINCLUDEPARSE;
+      ptr->filters = VFILTERBUILD;
+      ptr->ignores = VIGNOREPARSE;
+      ptr->cache = NULL;
+      ptr->purge = PURGE;
+      
+      if (PURGE == 'y')
+         {
+         ptr->forcedirs = 'y';
+         ptr->typecheck = 'n';
+         }
+      else
+         {
+         ptr->forcedirs = FORCEDIRS;
+         ptr->typecheck = TYPECHECK;
+         }
+      
+      ptr->log = LOGP;
+      ptr->inform = INFORMP;
+      ptr->plus_flags = PLUSFLAG;
+      ptr->minus_flags = MINUSFLAG;
+      ptr->trustkey = TRUSTKEY;
+      ptr->compat = COMPATIBILITY;
+      ptr->forceipv4 = FORCEIPV4;
+      ptr->xdev = XDEV;
+      
+      if (ptr->compat == 'y' && ptr->encrypt == 'y')
+         {
+         yyerror("You cannot mix version1 compatibility with encrypted transfers");
+         return;
+         }
+      
+      ptr->acl_aliases = VACLBUILD;   
+      ptr->inode_cache = NULL;
+      
+      VIMAGETOP = ptr;
+      
+      AddInstallable(ptr->defines);
+      AddInstallable(ptr->elsedef);
       }
    }
 
-/* Add to possible classes so actions will be installed */
-
-   
+DeleteItemList(expserver);   
 Delete2DList(tp);
 
 InitializeAction();

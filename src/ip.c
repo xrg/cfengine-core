@@ -56,7 +56,7 @@ if (forceipv4 == 'n')
    if ((err = getaddrinfo(host,"5308",&query,&response)) != 0)
       {
       snprintf(OUTPUT,CF_BUFSIZE,"Unable to lookup hostname or cfengine service: %s",gai_strerror(err));
-      CfLog(cferror,OUTPUT,"");
+      CfLog(cfinform,OUTPUT,"");
       return false;
       }
    
@@ -351,22 +351,20 @@ memset(&key,0,sizeof(key));
 switch (role)
    {
    case cf_accept:
-       snprintf(databuf,CF_BUFSIZE-1,"%s (hailed us)",hostname);
+       snprintf(databuf,CF_BUFSIZE-1,"%s (hailed us)",Hostname2IPString(hostname));
        break;
    case cf_connect:
-       snprintf(databuf,CF_BUFSIZE-1,"%s (answered us)",hostname);
+       snprintf(databuf,CF_BUFSIZE-1,"%s (answered us)",Hostname2IPString(hostname));
        break;
    }
  
 key.data = databuf;
 key.size = strlen(databuf)+1;
 
-value.data = (void *)&entry;
-value.size = sizeof(entry); 
-
 if ((errno = dbp->get(dbp,NULL,&key,&value,0)) == 0)
    {
-   average = entry.expect_lastseen;
+   memcpy(&entry,value.data,sizeof(entry));   
+   average = (double)entry.expect_lastseen;
    lastseen = entry.lastseen;
 
    /* Update the geometrical memory of the expectation value for this arrival-process */
@@ -429,8 +427,8 @@ void CheckFriendConnections(int hours)
   DB_ENV *dbenv = NULL;
   int ret, secs = 3600*hours, criterion;
   struct stat statbuf;
-  time_t now = time(NULL),splaytime = 0;
-  char name[CF_BUFSIZE];
+  time_t now = time(NULL),splaytime = 0,lsea = -1;
+  char name[CF_BUFSIZE],hostname[CF_BUFSIZE];
   static struct LastSeen entry;
   double average = 0;
 
@@ -488,12 +486,13 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
    time_t then;
 
    memcpy(&then,value.data,sizeof(then));
+   strcpy(hostname,(char *)key.data);
 
    if (value.data != NULL)
       {
       memcpy(&entry,value.data,sizeof(entry));
-      then = entry.lastseen;
-      average = entry.expect_lastseen;
+      then = (time_t)entry.lastseen;
+      average = (double)entry.expect_lastseen;
       }
    else
       {
@@ -508,21 +507,37 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       {
       criterion = (now > then + splaytime + secs);
       }
+   
+   if (GetMacroValue(CONTEXTID,"lastseenexpireafter"))
+      {
+      lsea = atoi(GetMacroValue(CONTEXTID,"lastseenexpireafter"));
+      lsea *= 3600*24;
+      }
 
-   if ((int)average > CF_WEEK)   /* Don't care about outliers */
+   if (lsea < 0)
+      {
+      lsea = CF_WEEK;
+      }
+
+   if ((int)average > lsea)   /* Don't care about outliers */
       {
       criterion = false;
       }
 
-   snprintf(OUTPUT,CF_BUFSIZE,"Host %s last at %s\ti.e. not seen for %.2f hours\n\t(Expected <delta_t> = %.2f secs (= %.2f hours))",(char *)key.data,ctime(&then),(now-then)/3600.0,average,average/3600.0);
+   if (average < 1800)  /* anomalous couplings do not count*/
+      {
+      criterion = false;
+      }
+   
+   snprintf(OUTPUT,CF_BUFSIZE,"Host %s last at %s\ti.e. not seen for %.2f hours\n\t(Expected <delta_t> = %.2f secs (= %.2f hours))",hostname,ctime(&then),((double)(now-then))/3600.0,average,average/3600.0);
    
    if (criterion)
       {
       CfLog(cferror,OUTPUT,"");
       
-      if (now > CF_WEEK + then + splaytime + 2*3600)
+      if (now > lsea + then + splaytime + 2*3600)
          {
-         snprintf(OUTPUT,CF_BUFSIZE*2,"INFO: Giving up on %s, last seen more than a week ago at %s.",key.data,ctime(&then));
+         snprintf(OUTPUT,CF_BUFSIZE*2,"INFO: Giving up on %s, last seen more than a week ago at %s.",hostname,ctime(&then));
          CfLog(cferror,OUTPUT,"");
          
          if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)

@@ -787,6 +787,28 @@ char *UnQuote(char *s)
     }
 }
 
+/*********************************************************************/
+
+void AddListSeparator(char *s)
+
+{
+if (s[strlen(s)-1] != LISTSEPARATOR)
+   {
+   s[strlen(s)+1] = '\0';
+   s[strlen(s)] = LISTSEPARATOR;
+   }
+}
+
+/*********************************************************************/
+
+void ChopListSeparator(char *s)
+
+{
+if (s[strlen(s)-1] == LISTSEPARATOR)
+   {
+   s[strlen(s)-1] = '\0';
+   } 
+}
 
 /*******************************************************************/
 
@@ -810,8 +832,17 @@ for (sp = VBUFF+strlen(VBUFF); i < 2; sp--)
       AddClassToHeap(VBUFF);
       }
    }
- 
-if (stat("/etc/redhat-release",&statbuf) != -1)
+
+if (stat("/etc/mandrake-release",&statbuf) != -1)
+   {
+   Verbose("This appears to be a mandrake system.\n");
+   AddClassToHeap("Mandrake");
+   linux_mandrake_version();
+   }
+/* Mandrake has a symlink at /etc/redhat-release pointing to
+ * /etc/mandrake-release, so we else-if around that
+ */
+else if (stat("/etc/redhat-release",&statbuf) != -1)
    {
    Verbose("This appears to be a redhat system.\n");
    AddClassToHeap("redhat");
@@ -981,7 +1012,7 @@ char strminor[CF_MAXVARSIZE];
  fgets(relstring, sizeof(relstring), fp);
  fclose(fp);
  
- Verbose("Looking for redhat linux info...\n");
+Verbose("Looking for redhat linux info in \"%s\"\n",relstring);
  
  /* First, try to grok the vendor and the edition (if any) */
  if(!strncmp(relstring, REDHAT_ES_ID, strlen(REDHAT_ES_ID)))
@@ -1177,3 +1208,101 @@ fclose(fp);
 return 0;
 }
 
+/******************************************************************/
+
+int linux_mandrake_version(void)
+{
+
+/* We are looking for one of the following strings... */
+#define MANDRAKE_ID "Linux Mandrake"
+#define MANDRAKE_REV_ID "Mandrake Linux"
+
+#define RELEASE_FLAG "release "
+#define MANDRAKE_REL_FILENAME "/etc/mandrake-release"
+
+FILE *fp;
+
+/* The full string read in from mandrake-release */
+char relstring[CF_MAXVARSIZE];
+char classbuf[CF_MAXVARSIZE];
+
+/* I've never seen Mandrake-Move or the other 'editions', so
+   I'm not going to try and support them here.  Contributions welcome. */
+
+/* Where the numerical release will be found */
+char *release=NULL;
+char *vendor=NULL;
+int major = -1;
+char strmajor[CF_MAXVARSIZE];
+int minor = -1;
+char strminor[CF_MAXVARSIZE];
+
+/* Grab the first line from the file and then close it. */
+ if ((fp = fopen(MANDRAKE_REL_FILENAME,"r")) == NULL)
+    {
+    return 1;
+    }
+ fgets(relstring, sizeof(relstring), fp);
+ fclose(fp);
+
+ Verbose("Looking for Mandrake linux info in \"%s\"\n",relstring);
+
+  /* Older Mandrakes had the 'Mandrake Linux' string in reverse order */
+ if(!strncmp(relstring, MANDRAKE_ID, strlen(MANDRAKE_ID)))
+    {
+    vendor = "mandrake";
+    }
+ else if(!strncmp(relstring, MANDRAKE_REV_ID, strlen(MANDRAKE_REV_ID)))
+    {
+    vendor = "mandrake";
+    }
+ else
+    {
+    Verbose("Could not identify OS distro from %s\n", MANDRAKE_REL_FILENAME);
+    return 2;
+    }
+
+ /* Now, grok the release. We assume that all the strings will
+  * have the word 'release' before the numerical release.
+  */
+ release = strstr(relstring, RELEASE_FLAG);
+ if(release == NULL)
+    {
+    Verbose("Could not find a numeric OS release in %s\n",
+     MANDRAKE_REL_FILENAME);
+    return 2;
+    }
+ else
+    {
+    release += strlen(RELEASE_FLAG);
+    if (sscanf(release, "%d.%d", &major, &minor) == 2)
+       {
+       sprintf(strmajor, "%d", major);
+       sprintf(strminor, "%d", minor);
+       }
+    else
+       {
+       Verbose("Could not break down release version numbers in %s\n",
+       MANDRAKE_REL_FILENAME);
+       };
+    }
+
+ if (major != -1 && minor != -1 && vendor != "")
+    {
+    classbuf[0] = '\0';
+    strcat(classbuf, vendor);
+    AddClassToHeap(classbuf);
+    strcat(classbuf, "_");
+    strcat(classbuf, strmajor);
+    AddClassToHeap(classbuf);
+    if (minor != -2)
+       {
+       strcat(classbuf, "_");
+       strcat(classbuf, strminor);
+       AddClassToHeap(classbuf);
+       }
+    }
+ return 0;
+}
+
+/******************************************************************/

@@ -37,11 +37,17 @@
 #include <sys/syssgi.h>
 #endif
 
-/* FreeBSD has size macro defined as ifreq is variable size */
-#ifdef _SIZEOF_ADDR_IFREQ
-#define SIZEOF_IFREQ(x) _SIZEOF_ADDR_IFREQ(x)
+#ifdef SOCKADDR_HAS_SA_LEN
+# ifdef _SIZEOF_ADDR_IFREQ
+#  define SIZEOF_IFREQ(x) _SIZEOF_ADDR_IFREQ(x)
+# else
+#  define SIZEOF_IFREQ(x) \
+          ((x).ifr_addr.sa_len > sizeof(struct sockaddr) ? \
+           (sizeof(struct ifreq) - sizeof(struct sockaddr) + \
+            (x).ifr_addr.sa_len) : sizeof(struct ifreq))
+# endif
 #else
-#define SIZEOF_IFREQ(x) sizeof(struct ifreq)
+# define SIZEOF_IFREQ(x) sizeof(struct ifreq)
 #endif
 
 /*******************************************************************/
@@ -313,7 +319,7 @@ if (ioctl(fd, OSIOCGIFCONF, &list) == -1 || (list.ifc_len < (sizeof(struct ifreq
    exit(1);
    }
 
-for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*ifp),j++,ifp=&ifbuf[j])
+for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*ifp),j++,ifp=(struct ifreq *)((char *)ifp+SIZEOF_IFREQ(*ifp)))
    {
    if (ifp->ifr_addr.sa_family == 0)
        {
@@ -340,7 +346,7 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
       if (ioctl(fd,SIOCGIFFLAGS,&ifr) == -1)
          {
          CfLog(cferror,"No such network device","ioctl");
-  close(fd);
+         close(fd);
          return;
          }
 
@@ -405,8 +411,6 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
             }
          }
       }
-   
-   ifp=(struct ifreq *)((char *)ifp+SIZEOF_IFREQ(*ifp));
    }
  
 close(fd);
@@ -443,7 +447,7 @@ void GetV6InterfaceInfo(void)
         
         while (!feof(pp))
            {    
-           fgets(buffer,CF_BUFSIZE,pp);
+           fgets(buffer,CF_BUFSIZE-1,pp);
            
            if (StrStr(buffer,"inet6"))
               {
@@ -472,7 +476,8 @@ void GetV6InterfaceInfo(void)
               
               DeleteItemList(list);
               }
-           }        
+           }
+        
         fclose(pp);
         break;
     }

@@ -1335,7 +1335,7 @@ int GlobalReplace(struct Item **liststart,char *search,char *replace)
   regex_t rx,rxcache;
   regmatch_t match,matchcheck;
 
-EditVerbose("Checking for replace/%s/%s\n",search,replace);
+EditVerbose("Checking for global replace/%s/%s\n",search,replace);
 
 if (CfRegcomp(&rxcache,search,REG_EXTENDED) != 0)
    {
@@ -1414,6 +1414,59 @@ regfree(&rxcache);
 return true;
 }
 
+/********************************************************************/
+/* part of ReplaceFirst regexp With string                          */
+/* written by steve rader <rader@hep.wisc.edu>                      */
+/********************************************************************/
+
+int SingleReplace(liststart,search,replace)
+
+struct Item **liststart;
+char *search, *replace;
+
+{ int i;
+  char *sp, *start = NULL;
+  struct Item *ip;
+  struct Item *oldCurrentLinePtr;
+  regex_t rx,rxcache;
+  regmatch_t match,matchcheck;
+
+  EditVerbose("SRDEBUG Checking for SingleReplace s/%s/%s/\n",search,replace);
+
+  if (CfRegcomp(&rxcache,search,REG_EXTENDED) != 0) {
+    EditVerbose("SRDEBUG SingleReplace ab-ended: could not compile regex! (this should not happen?)\n");
+    return false;
+  }
+
+  i = 0;
+  for (ip = *liststart; ip != NULL; ip=ip->next) {
+    i++;
+    if (ip->name == NULL) {
+      continue;
+    }
+    bcopy(&rxcache,&rx,sizeof(rx)); /* workaround for regexec()s that empty rx */
+    if (regexec(&rx,ip->name,1,&match,0) == 0) {
+      start = ip->name + match.rm_so;
+      EditVerbose("Doing SingleReplace of \"%s\" with \"%s\" on line %d\n",start,replace,i);
+      bzero(VBUFF,CF_BUFSIZE);
+      strcpy(VBUFF,ip->name);
+      VBUFF[match.rm_so] = '\0';  /* ...head of string */
+      strcat(VBUFF,replace);      /* ...replacement string */
+      sp = ip->name;
+      sp += match.rm_eo;
+      strcat(VBUFF,sp);           /* ...tail of string */
+      Debug("SRDEBUG old line num %d is: \"%s\"\n",i,ip->name);
+      Debug("SRDEBUG new line num %d is: \"%s\"\n",i,VBUFF);
+      CURRENTLINEPTR = ip;
+      InsertItemAfter(liststart,ip,VBUFF);
+      oldCurrentLinePtr = CURRENTLINEPTR; 
+      DeleteItem(liststart,ip);
+      ip = oldCurrentLinePtr;
+    } 
+  }
+  regfree(&rxcache);
+  return true;
+}
 
 /********************************************************************/
 

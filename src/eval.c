@@ -471,6 +471,8 @@ int IsDefinedClass(char *class)
   /* is currently true, given the defined heap and negations */
 
 {
+ Debug4("IsDefinedClass(%s,VADDCLASSES)\n",class);
+
 if (class == NULL)
    {
    return true;
@@ -488,8 +490,10 @@ int IsInstallable(char *class)
   /* the course of the execution - but might not be true now    */
 
 { char buffer[CF_BUFSIZE], *sp;
-  int i = 0;
+ int i = 0, val;
 
+Debug1("IsInstallable(%s) -",class);
+  
 for (sp = class; *sp != '\0'; sp++)
    {
    if (*sp == '!')
@@ -503,7 +507,18 @@ buffer[i] = '\0';
  
 /* return (EvaluateORString(buffer,VALLADDCLASSES)||EvaluateORString(class,VADDCLASSES));*/
 
-return (EvaluateORString(buffer,VALLADDCLASSES)||EvaluateORString(class,VALLADDCLASSES)||EvaluateORString(class,VADDCLASSES));
+val = (EvaluateORString(buffer,VALLADDCLASSES)||EvaluateORString(class,VALLADDCLASSES)||EvaluateORString(class,VADDCLASSES));
+
+if (val)
+   {
+   Debug1(" true\n");
+   }
+else
+   {
+   Debug1(" false\n");
+   }
+
+return val;
 }
 
 
@@ -525,7 +540,7 @@ while(*sp != '\0')
       sp++;
       }
 
-   if (*sp == '.' || *sp == '&')
+   if ((*sp == '.') || (*sp == '&'))
       {
       sp++;
       }
@@ -555,7 +570,7 @@ if (class == NULL)
    return false;
    }
 
-Debug4("EvaluateORString(%s)\n",class);
+Debug4("\n--------\nEvaluateORString(%s)\n",class);
  
 for (sp = class; *sp != '\0'; sp++)
    {
@@ -579,10 +594,12 @@ for (sp = class; *sp != '\0'; sp++)
       cbuff[strlen(cbuff)-1] = '\0';
 
       result |= EvaluateORString(cbuff+1,list);
+      Debug4("EvalORString-temp-result-y=%d (%s)\n",result,cbuff+1);
       }
    else
       {
       result |= EvaluateANDString(cbuff,list);
+      Debug4("EvalORString-temp-result-n=%d (%s)\n",result,cbuff);
       }
 
    if (*sp == '\0')
@@ -632,6 +649,8 @@ while(*sp != '\0')
    if (IsBracketed(cbuff))
       {
       atom = cbuff+1;
+
+      Debug4("Checking AND Atom %s?\n");
       
       cbuff[strlen(cbuff)-1] = '\0';
       
@@ -639,10 +658,12 @@ while(*sp != '\0')
          {
          if (negation)
             {
+            Debug4("EvalANDString-temp-result-neg1=false\n");
             return false;
             }
          else
             {
+            Debug4("EvalORString-temp-result count=%d\n",count);
             count--;
             }
          }
@@ -650,6 +671,7 @@ while(*sp != '\0')
          {
          if (negation)
             {
+            Debug4("EvalORString-temp-result2 count=%d\n",count);
             count--;
             }
          else
@@ -672,10 +694,13 @@ while(*sp != '\0')
       sp++;
       }
 
+   Debug4("Checking OR atom (%s)?\n",atom);
+
    if (IsItemIn(VNEGHEAP,atom))
       {
       if (negation)
          {
+         Debug4("EvalORString-temp-result3 count=%d\n",count);
          count--;
          }
       else
@@ -687,10 +712,12 @@ while(*sp != '\0')
       {
       if (negation)
          {
+         Debug4("EvaluateANDString(%s) returns false by negation\n",class);
          return false;
          }
       else
          {
+         Debug4("EvalORString-temp-result3.5 count=%d\n",count);
          count--;
          }
       } 
@@ -698,19 +725,23 @@ while(*sp != '\0')
       {
       if (negation)
          {
+         Debug4("EvaluateANDString(%s) returns false by negation 2\n",class);
          return false;
          }
       else
          {
+         Debug4("EvalORString-temp-result3.6 count=%d\n",count);
          count--;
          }
       } 
    else if (negation)    /* ! (an undefined class) == true */
       {
+      Debug4("EvalORString-temp-result4 count=%d\n",count);
       count--;
       }
    else       
       {
+      Debug4("EvaluateANDString(%s) returns false ny negation 3\n",class);
       return false;
       }
    }
@@ -757,7 +788,7 @@ while ((*sp != '\0') && !((*sp == '|') && (bracklevel == 0)))
 
 *spc = '\0';
 
-Debug4("GetORATom(%s)->%s\n",start,buffer); 
+Debug4("\nGetORATom(%s)->%s\n",start,buffer); 
 return len;
 }
 
@@ -791,7 +822,7 @@ while ((*sp != '\0') && !(((*sp == '.')||(*sp == '&')) && (bracklevel == 0)))
    }
 
 *spc = '\0';
-Debug4("GetANDATom(%s)->%s\n",start,buffer);  
+Debug4("\nGetANDATom(%s)->%s\n",start,buffer);  
 
 return len;
 }

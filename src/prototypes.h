@@ -138,10 +138,13 @@ void HandleRegCmp ARGLIST((char* args,char *value));
 void HandleShowState ARGLIST((char* args,char *value));
 void HandleReadFile ARGLIST((char *args,char *value));
 void HandleReadArray ARGLIST((char *args,char *value));
+void HandleReadList ARGLIST((char *args,char *value));
 void HandleReadTable ARGLIST((char *args,char *value));
 void HandleReturnValues ARGLIST((char *args,char *value));
 void HandleReturnClasses ARGLIST((char *args,char *value));
 void HandleSyslogFn ARGLIST((char *args,char *value));
+void HandleSelectPLeader ARGLIST((char *args,char *value));
+void HandleSelectPGroup ARGLIST((char *args,char *value));
 void HandleSetState ARGLIST((char *args,char *value));
 void HandleUnsetState ARGLIST((char *args,char *value));
 void HandlePrepModule ARGLIST((char *args,char *value));
@@ -149,7 +152,7 @@ void HandleAssociation ARGLIST((char *args,char *value));
 void OneArg ARGLIST((char *args,char *arg1));
 void TwoArgs ARGLIST((char *args,char *arg1,char *arg2));
 void ThreeArgs ARGLIST((char *args,char *arg1,char *arg2,char *arg3));
-int FunctionArgs ARGLIST((char *args,char argv[][CF_BUFSIZE],int number));
+int FunctionArgs ARGLIST((char *args,char argv[CF_MAXFARGS][CF_MAXVARSIZE],int number));
 void FiveArgs ARGLIST((char *args,char *arg1,char *arg2,char *arg3, char *arg4,char *arg5));
 int IsSocketType ARGLIST((char *s));
 int IsTCPType ARGLIST((char *s));
@@ -581,6 +584,7 @@ int DeleteSeveralLines  ARGLIST((struct Item **filestart, char *string));
 struct Item *GotoLastItem ARGLIST((struct Item *list));
 int LineMatches  ARGLIST((char *line, char *regexp));
 int GlobalReplace ARGLIST((struct Item **liststart, char *search, char *replace));
+int SingleReplace ARGLIST((struct Item **liststart, char *search, char *replace));
 int CommentSeveralLines  ARGLIST((struct Item **filestart, char *string, char *comm, char *end));
 int UnCommentSeveralLines  ARGLIST((struct Item **filestart, char *string, char *comm, char *end));
 int ItemMatchesRegEx ARGLIST((char *item, char *regex));
@@ -619,6 +623,8 @@ struct Item *SplitStringAsItemList ARGLIST((char *string, char sep));
 struct Item *ListFromArgs ARGLIST((char *string));
 void IncrementItemListCounter ARGLIST((struct Item *ptr, char *string));
 void SetItemListCounter ARGLIST((struct Item *ptr, char *string,int value));
+struct Item *SortItemListNames(struct Item *list);
+struct Item *SortItemListCounters(struct Item *list);
 
 /* link.c */
 
@@ -706,6 +712,7 @@ int CheckForMethodPackage ARGLIST((char *name));
 
 int linux_fedora_version ARGLIST((void));
 int linux_redhat_version ARGLIST((void));
+int linux_mandrake_version ARGLIST((void));
 int linux_suse_version ARGLIST((void));
 int debian_version ARGLIST((void));
 char * UnQuote ARGLIST((char *name));
@@ -732,6 +739,8 @@ void DebugBinOut ARGLIST((char *string, int len));
 int ShellCommandReturnsZero ARGLIST((char *comm));
 void SetClassesOnScript ARGLIST((char *comm, char *classes, char *elseclasses, int useshell));
 void IDClasses ARGLIST((void));
+void AddListSeparator(char *s);
+void ChopListSeparator(char *s);
 
 /* modes.c */
 

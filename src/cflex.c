@@ -2184,6 +2184,7 @@ YY_RULE_SETUP
 #line 89 "cflex.l"
 {
                        DaemonOnly;
+                       Debug1("NEW ACTION %s\n",yytext);
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
 
@@ -2194,9 +2195,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 100 "cflex.l"
+#line 101 "cflex.l"
 {
                        DaemonOnly;
+                       Debug1("NEW ACTION %s\n",yytext);
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
 
@@ -2207,7 +2209,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 110 "cflex.l"
+#line 112 "cflex.l"
 {
                        DaemonOnly;
                        InstallPending(ACTION);           /* Flush any existing actions */
@@ -2220,8 +2222,9 @@ YY_RULE_SETUP
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 120 "cflex.l"
+#line 122 "cflex.l"
 {
+                       Debug1("NEW ACTION %s\n",yytext);
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
 
@@ -2232,8 +2235,9 @@ YY_RULE_SETUP
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 130 "cflex.l"
+#line 133 "cflex.l"
 {
+                       Debug1("NEW ACTION %s\n",yytext);
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
 
@@ -2244,8 +2248,9 @@ YY_RULE_SETUP
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 139 "cflex.l"
+#line 143 "cflex.l"
 {
+                       Debug1("NEW ACTION %s\n",yytext);
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
 
@@ -2256,8 +2261,9 @@ YY_RULE_SETUP
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 148 "cflex.l"
+#line 153 "cflex.l"
 {                                           /* Synonym for groups */
+                       Debug1("NEW ACTION %s\n",yytext);
                        InstallPending(ACTION);             /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
 
@@ -2268,9 +2274,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 157 "cflex.l"
+#line 163 "cflex.l"
 {
                        CfengineOnly;
+                       Debug1("NEW ACTION %s\n",yytext);
 
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
@@ -2282,9 +2289,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 168 "cflex.l"
+#line 175 "cflex.l"
 {
                        CfengineOnly;
+                       Debug1("NEW ACTION %s\n",yytext);
 
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
@@ -2296,9 +2304,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 179 "cflex.l"
+#line 187 "cflex.l"
 {
                        CfengineOnly;
+                       Debug1("NEW ACTION %s\n",yytext);
 
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
@@ -2310,8 +2319,9 @@ YY_RULE_SETUP
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 190 "cflex.l"
+#line 199 "cflex.l"
 {
+                       Debug1("NEW ACTION %s\n",yytext);
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
 
@@ -2322,9 +2332,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 199 "cflex.l"
+#line 209 "cflex.l"
 {
                        CfengineOnly;
+                       Debug1("NEW ACTION %s\n",yytext);
 
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
@@ -2336,33 +2347,33 @@ YY_RULE_SETUP
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 210 "cflex.l"
+#line 221 "cflex.l"
 {
                        LINENUMBER++;
                        }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 214 "cflex.l"
+#line 225 "cflex.l"
 {
                        }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 217 "cflex.l"
+#line 228 "cflex.l"
 {
                        ResetLine((char *)yytext+6);
                        } 
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 221 "cflex.l"
+#line 232 "cflex.l"
 {
                        }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 225 "cflex.l"
+#line 236 "cflex.l"
 {
                        Debug1("LFARROW %s\n",yytext);
                        strcpy(LINKFROM,CURRENTOBJECT);
@@ -2373,7 +2384,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 234 "cflex.l"
+#line 245 "cflex.l"
 {
                        Debug1("FARROW %s\n",yytext);
                        strcpy(LINKFROM,CURRENTOBJECT);
@@ -2384,7 +2395,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 242 "cflex.l"
+#line 253 "cflex.l"
 {
                        Debug1("ARROW %s\n",yytext);
                        strcpy(LINKFROM,CURRENTOBJECT);
@@ -2395,7 +2406,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 251 "cflex.l"
+#line 262 "cflex.l"
 {
                        Debug1("LARROW %s\n",yytext);
                        strcpy(LINKFROM,CURRENTOBJECT);
@@ -2406,7 +2417,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 260 "cflex.l"
+#line 271 "cflex.l"
 {
                        Debug1("EQUALS %s\n",yytext);
                        return EQUALS;
@@ -2414,7 +2425,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 266 "cflex.l"
+#line 277 "cflex.l"
 {
                        Debug1("\nNEW CLASS PREDICATE:: %s\n",yytext);
 
@@ -2428,7 +2439,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 277 "cflex.l"
+#line 288 "cflex.l"
 {
                        Debug1("LVALUE %s\n",yytext);
                        HandleLValue(yytext);
@@ -2437,7 +2448,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 283 "cflex.l"
+#line 294 "cflex.l"
 {
                        Debug1("BRACELIST-CLASSIFIER %s\n",yytext);
                        HandleBraceObjectClassifier(yytext);
@@ -2446,7 +2457,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 289 "cflex.l"
+#line 300 "cflex.l"
 {
                        Debug1("BRACELIST-ID %s\n",yytext);
 
@@ -2463,7 +2474,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 304 "cflex.l"
+#line 315 "cflex.l"
 {
                        Debug1("LEFTBRACK\n");
                        BEGIN INASSIGN;
@@ -2472,7 +2483,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 310 "cflex.l"
+#line 321 "cflex.l"
 {
                        bzero(FILTERNAME,CF_BUFSIZE); /* Reset */
                        bzero(STRATEGYNAME,CF_BUFSIZE); /* Reset */
@@ -2483,7 +2494,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 318 "cflex.l"
+#line 329 "cflex.l"
 {
                        Debug1("RIGHTBRACK\n\n");
                        BEGIN INCONTROL;
@@ -2492,7 +2503,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 324 "cflex.l"
+#line 335 "cflex.l"
 {
                        Debug1("RBRACE\n");
 
@@ -2519,7 +2530,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 350 "cflex.l"
+#line 361 "cflex.l"
 {
                        char *sp = NULL;
                        int less = 0;
@@ -2551,7 +2562,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 380 "cflex.l"
+#line 391 "cflex.l"
 {
                        char *sp = NULL;
                        int less = 0;
@@ -2575,7 +2586,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 401 "cflex.l"
+#line 412 "cflex.l"
 {
                        Debug1("RVAL-FUNCTION %s\n",yytext);
 
@@ -2585,12 +2596,12 @@ YY_RULE_SETUP
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 409 "cflex.l"
+#line 420 "cflex.l"
 {
+                       Debug1("FUNCTION %s\n",yytext);
+
                        InstallPending(ACTION);           /* Flush any existing actions */
                        InitializeAction();                 /* Clear data for files/dirs  */
-
-                       Debug1("FUNCTION %s\n",yytext);
 
                        if (ACTION == alerts)
                           {
@@ -2603,7 +2614,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 424 "cflex.l"
+#line 435 "cflex.l"
 {
                        Debug1("\nOPTION %s\n",yytext);
                        HandleOption(yytext);
@@ -2612,8 +2623,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 430 "cflex.l"
+#line 441 "cflex.l"
 {
+                       Debug1("VAROBJ %s\n",yytext);
+
                        if ((ACTION_IS_LINK || ACTION_IS_LINKCHILDREN) && (strlen(LINKTO)==0))
                           {
                           Debug("Pending link destination...\n");
@@ -2633,8 +2646,6 @@ YY_RULE_SETUP
                              }
                           }
 
-                       Debug1("VAROBJ %s\n",yytext);
-
                        IsVarString(yytext);        /* Syntax check */
                        HandleVarObject(yytext);
                        return VAROBJ;
@@ -2642,7 +2653,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 457 "cflex.l"
+#line 468 "cflex.l"
 {
                        Debug1("RVAL-VAROBJ %s\n",yytext);
 
@@ -2661,7 +2672,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 473 "cflex.l"
+#line 484 "cflex.l"
 {
                        Debug1("BRACELIST-VAROBJ %s\n",yytext);
 
@@ -2678,7 +2689,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 487 "cflex.l"
+#line 498 "cflex.l"
 {
                        Debug1("\nCFSERVD-VAROBJ %s\n",yytext);
 
@@ -2688,7 +2699,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 494 "cflex.l"
+#line 505 "cflex.l"
 {
 	               printf("Stray character (%s)",yytext);
                        return yytext[0];
@@ -2696,10 +2707,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 499 "cflex.l"
+#line 510 "cflex.l"
 ECHO;
 	YY_BREAK
-#line 2703 "lex.yy.c"
+#line 2714 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(INCONTROL):
 case YY_STATE_EOF(BRACELIST):
@@ -3589,7 +3600,7 @@ int main()
 	return 0;
 	}
 #endif
-#line 499 "cflex.l"
+#line 510 "cflex.l"
 
 
 /* EOF */

@@ -2344,6 +2344,7 @@ for (ip = filebase; ip != NULL; ip=ip->next)
    }
 
 DeleteItemStarting(&filebase,"domain");
+
 while(DeleteItemStarting(&filebase,"search"))
    {
    }
@@ -2414,14 +2415,14 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
 
    for (ip = VIMAGE; ip != NULL; ip=ip->next)
       {
-      ExpandVarstring(ip->server,server,NULL);
+      ExpandVarstring(ip->server,server,NULL);            
       ExpandVarstring(ip->path,path,NULL);
       ExpandVarstring(ip->destination,destination,NULL);
-      
+
       if (strcmp(listserver,server) != 0)  /* group together similar hosts so */
          {                                /* can can do multiple transactions */
          continue;                        /* on one connection */
-         }
+         }      
       
       if (IsExcluded(ip->classes))
          {
@@ -2441,7 +2442,7 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
       
       if (!OpenServerConnection(ip))
          {
-         snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to establish connection with %s\n",listserver);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to establish connection with %s (failover)\n",listserver);
          CfLog(cfinform,OUTPUT,"");
          AddMultipleClasses(ip->failover);
          continue;
@@ -3280,33 +3281,29 @@ for (ip1 = VHOMEPATLIST; ip1 != NULL; ip1=ip1->next)
 void EditItemsInResolvConf(struct Item *from,struct Item **list)
 
 { char buf[CF_MAXVARSIZE],work[CF_EXPANDSIZE];
+ struct Item *ip;
 
-if ((from != NULL) && !IsDefinedClass(from->classes))
-   {
-   return;
-   }
-  
-if (from == NULL)
-   {
-   return;
-   }
-else
-   {
-   ExpandVarstring(from->name,work,"");
-   EditItemsInResolvConf(from->next,list);
-   if (isdigit((int)*(work)))
-      {
-      snprintf(buf,CF_BUFSIZE,"nameserver %s",work);
-      }
-   else
-      {
-      strcpy(buf,work);
-      }
-   
-   DeleteItemMatching(list,buf); /* del+prep = move to head of list */
-   PrependItem(list,buf,NULL);
-   return;
-   }
+ for (ip = from; ip != NULL; ip=ip->next)
+    {
+    if (IsExcluded(ip->classes))
+       {
+       continue;
+       }
+    
+    ExpandVarstring(ip->name,work,"");
+    
+    if (isdigit((int)*(work)))
+       {
+       snprintf(buf,CF_BUFSIZE,"nameserver %s",work);
+       }
+    else
+       {
+       strncpy(buf,work,CF_MAXVARSIZE-1);
+       }
+    
+    DeleteItemMatching(list,buf); /* del+prep = move to head of list */
+    PrependItem(list,buf,NULL);
+    }
 }
 
 
@@ -3490,7 +3487,8 @@ if (stat(startpath,&sb) == -1)
    CfLog(cfinform,OUTPUT,"stat");
    return;
    }
- 
+
+CheckExistingFile("*",startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&sb,ptr,ptr->acl_aliases);
 RecursiveCheck(startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,ptr->recurse,0,ptr,&sb);
  
 ReleaseCurrentLock(); 

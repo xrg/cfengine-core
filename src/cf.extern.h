@@ -39,13 +39,15 @@ extern char BINDINTERFACE[CF_BUFSIZE];
 extern char *ECGSOCKS[ATTR][2];
 extern char *TCPNAMES[CF_NETATTR];
 extern char **METHODARGV;
+
 extern char METHODRETURNVARS[CF_BUFSIZE];
-extern char METHODRETURNCLASSES[CF_MAXVARSIZE];
+extern char METHODRETURNCLASSES[CF_BUFSIZE];
 extern char METHODFILENAME[CF_BUFSIZE];
 extern char *VMETHODPROTO[];
 extern int METHODARGC;
-extern char METHODREPLYTO[CF_MAXVARSIZE];
-extern char METHODFORCE[CF_MAXVARSIZE];
+extern char METHODREPLYTO[CF_BUFSIZE];
+extern char METHODFOR[CF_BUFSIZE];
+extern char METHODFORCE[CF_BUFSIZE];
 extern char CONTEXTID[32];
 extern char METHODNAME[CF_BUFSIZE];
 extern char METHODMD5[CF_BUFSIZE];
@@ -152,6 +154,7 @@ extern char PRESERVETIMES;
 extern char TRUSTKEY;
 extern char FORK;
 
+extern short SKIPIDENTIFY;
 extern short COMPATIBILITY_MODE;
 extern short LINKSILENT;
 extern short UPDATEONLY;

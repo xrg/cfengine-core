@@ -1,4 +1,4 @@
-This is cfengine-Anomalies.info, produced by makeinfo version 4.5 from
+This is cfengine-Anomalies.info, produced by makeinfo version 4.6 from
 cfengine-Anomalies.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -35,7 +35,7 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   Edition 2.1.6 for version 2.1.6 as last updated 17 April 2004.
+   Edition 2.1.7p1 for version 2.1.7p1 as last updated 17 April 2004.
 
 * Menu:
 
@@ -51,16 +51,16 @@ File: cfengine-Anomalies.info,  Node: Overview,  Next: Anomaly response,  Prev: 
 Overview
 ********
 
-   One of the aims of cfengine version 2, in combination with our
-research efforts at Oslo University College, is to develop a real
-computer immune system, based on the detection of `sicknesses' or
-anomalies in the behaviour of the system, not merely based on a policy
-template. Such a system would be far more dynamical and be able to
-change in response to changing external conditions. This work is in its
-early stages, but you can take advantage of it straight away, with a
-minimum of effort. This additional manual aims at getting you started,
-so that you can monitor systems, and learn about their behaviour,
-without having to watch control panels, or time-series traces.
+One of the aims of cfengine version 2, in combination with our research
+efforts at Oslo University College, is to develop a real computer immune
+system, based on the detection of `sicknesses' or anomalies in the
+behaviour of the system, not merely based on a policy template. Such a
+system would be far more dynamical and be able to change in response to
+changing external conditions. This work is in its early stages, but you
+can take advantage of it straight away, with a minimum of effort. This
+additional manual aims at getting you started, so that you can monitor
+systems, and learn about their behaviour, without having to watch
+control panels, or time-series traces.
 
 * Menu:
 
@@ -78,10 +78,10 @@ File: cfengine-Anomalies.info,  Node: Intrusion detection,  Next: Cryptographic 
 Intrusion detection
 ===================
 
-   What is an intrusion or an attempted intrusion? This can be
-difficult to define. If someone tries to login at root once? If someone
-tries to login at root fifty times? Port scanning, SATAN or ISS scan?
-Someone trying a known security hole?
+What is an intrusion or an attempted intrusion? This can be difficult to
+define. If someone tries to login at root once? If someone tries to
+login at root fifty times? Port scanning, SATAN or ISS scan? Someone
+trying a known security hole?
 
    The aim of an intrusion detection system is to detect break-ins in
 progress so that something can be done about them. Obviously the first
@@ -121,8 +121,8 @@ File: cfengine-Anomalies.info,  Node: Cryptographic checksums,  Next: cfenvd,  P
 Cryptographic checksums
 =======================
 
-   Change detection is about monitoring whether files and other aspects
-of a system change. The idea was originally advanced in the program
+Change detection is about monitoring whether files and other aspects of
+a system change. The idea was originally advanced in the program
 Tripwire, which collected a "snaphot" of the system in the form of a
 database of file checksums (hashes) and permissions and rechecked the
 system against this database at regular intervals. Tripwire examines
@@ -168,12 +168,12 @@ File: cfengine-Anomalies.info,  Node: cfenvd,  Next: Anomaly research,  Prev: Cr
 An environment detector: cfenvd
 ===============================
 
-   The `cfenvd' program serves two purposes: as an anomaly detection
-engine and as a source of entropy for generating random numbers, such
-as for encryption keys. Although it is not a compulsory part of
-cfengine, it is highly recommended to run this daemon. It requires few
-resources and poses no vulnerability to the system. It will play an
-increasingly important role in future developments.
+The `cfenvd' program serves two purposes: as an anomaly detection engine
+and as a source of entropy for generating random numbers, such as for
+encryption keys. Although it is not a compulsory part of cfengine, it is
+highly recommended to run this daemon. It requires few resources and
+poses no vulnerability to the system. It will play an increasingly
+important role in future developments.
 
    In cfengine 2.x, additional classes are automatically evaluated
 based on the state of the host, in relation to earlier times.  This is
@@ -270,7 +270,7 @@ File: cfengine-Anomalies.info,  Node: Anomaly research,  Next: cfenvgraph,  Prev
 Anomaly research
 ================
 
-   There is no system available in the world today which can claim to
+There is no system available in the world today which can claim to
 detect and classify the functioning state of a computer system.
 Cfengine does not attempt to provide a "product" solution to this
 problem; rather it incorporates a framework, based on the current state
@@ -322,7 +322,7 @@ File: cfengine-Anomalies.info,  Node: cfenvgraph,  Next: Fluctuation profiles,  
 cfenvgraph
 ==========
 
-   The `cfenvgraph' command can use used to dump a graph of averages for
+The `cfenvgraph' command can use used to dump a graph of averages for
 visual inspection of the normal state database. The format of the file
 is
      t,y_1,y_2,y_3...
@@ -421,12 +421,11 @@ File: cfengine-Anomalies.info,  Node: Fluctuation profiles,  Next: Starting with
 Fluctuation profiles
 ====================
 
-   Any model of fluctuating values is based on the idea that the
-changing signal has a basic separation of signal and noise. The
-variability of the signal is generally characterized by a probability
-distribution. Some tools and many papers assume that the distribution
-of fluctuations is Gaussian. This is almost never the case in real
-computer systems.
+Any model of fluctuating values is based on the idea that the changing
+signal has a basic separation of signal and noise. The variability of
+the signal is generally characterized by a probability distribution.
+Some tools and many papers assume that the distribution of fluctuations
+is Gaussian. This is almost never the case in real computer systems.
 
    Hurst exponent measures the degree of stability in the signal, in
 the following sense....
@@ -437,7 +436,7 @@ File: cfengine-Anomalies.info,  Node: Starting with anomaly detection,  Prev: Fl
 Starting with anomaly detection
 ===============================
 
-   Try importing the following file:
+Try importing the following file:
 
 
      ###
@@ -683,8 +682,8 @@ File: cfengine-Anomalies.info,  Node: Log utilities,  Next: Persistent alerts,  
 Log utilities
 =============
 
-   How shall we respond to an anomalous event?  Alerts can be
-channelled directly to syslog:
+How shall we respond to an anomalous event?  Alerts can be channelled
+directly to syslog:
 
        SysLog(LOG_ERR,"Test syslog message")
    Software that processes logs can thus be interfaced with via the
@@ -696,7 +695,7 @@ File: cfengine-Anomalies.info,  Node: Persistent alerts,  Prev: Log utilities,  
 Persistent alerts
 =================
 
-   DEFCON 1
+DEFCON 1
 
    Another application for alerts is to pass signals from one cfengine
 to another by persistent, shared memory.  For example, suppose a
@@ -754,19 +753,19 @@ FAQ Index
 
 Tag Table:
 Node: Top478
-Node: Overview1636
-Node: Intrusion detection2600
-Node: Cryptographic checksums4741
-Node: cfenvd6626
-Node: Anomaly research11423
-Node: cfenvgraph14118
-Node: Fluctuation profiles18109
-Node: Starting with anomaly detection18737
-Node: Anomaly response29441
-Node: Log utilities29634
-Node: Persistent alerts30018
-Node: Variable Index31200
-Node: Concept Index31352
-Node: FAQ Index31791
+Node: Overview1640
+Node: Intrusion detection2601
+Node: Cryptographic checksums4739
+Node: cfenvd6621
+Node: Anomaly research11415
+Node: cfenvgraph14107
+Node: Fluctuation profiles18095
+Node: Starting with anomaly detection18720
+Node: Anomaly response29421
+Node: Log utilities29614
+Node: Persistent alerts29995
+Node: Variable Index31174
+Node: Concept Index31326
+Node: FAQ Index31765
 
 End Tag Table

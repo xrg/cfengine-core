@@ -257,7 +257,8 @@ for (sp = str; *sp != '\0' ; sp++)       /* check for varitems */
    
    if (bracks == 0)
       {
-      strncpy(substr,str,sp-str);      
+      strncpy(substr,str,sp-str);
+      Debug("Returning substring value %s\n",substr);
       return substr;
       }
    }
@@ -335,13 +336,14 @@ int ExpandVarstring(char *string,char buffer[CF_EXPANDSIZE],char *bserver)
   int len;
   time_t tloc;
   
-Debug("ExpandVarstring(%s)\n",string);
 memset(buffer,0,CF_EXPANDSIZE);
  
 if (string == 0 || strlen(string) == 0)
    {
    return false;
    }
+
+Debug("ExpandVarstring(%s)\n",string);
 
 for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
    {
@@ -390,11 +392,14 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
          Debug("Nested variables");
          ExpandVarstring(temp,currentitem,"");
          CheckVarID(currentitem);
+         sp += 3; /* $() */
          }
       else
          {
          strncpy(currentitem,temp,CF_BUFSIZE-1);
          }
+
+      Debug("Scanning variable %s\n",currentitem);
       
       switch (ScanVariable(currentitem))
          {
@@ -726,15 +731,15 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cflistsep:
-          if (ExpandOverflow(buffer,""))
-             {
-             FatalError("Can't expandvarstring");
-             }
-          len = strlen(buffer);
-          buffer[len] = LISTSEPARATOR;
-          buffer[len+1] = '\0';
-          break;
-          
+             if (ExpandOverflow(buffer,""))
+                {
+                FatalError("Can't expandvarstring");
+                }
+             len = strlen(buffer);
+             buffer[len] = LISTSEPARATOR;
+             buffer[len+1] = '\0';
+             break;
+             
          default:
              
              if ((env = GetMacroValue(CONTEXTID,currentitem)) != NULL)
@@ -744,9 +749,11 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
                    FatalError("Can't expandvarstring");
                    }
                 strcat(buffer,env);
+                Debug("Expansion gave (%s)\n",buffer);             
+
                 break;
                 }
-             
+
              Debug("Currently non existent variable $(%s)\n",currentitem);
              
              if (varstring == '}')

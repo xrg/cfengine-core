@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.1.6)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.1.7p1)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -378,6 +378,25 @@ AC_CHECK_FUNCS(strstr putenv drand48 srand48 getaddrinfo)
 AC_CHECK_FUNCS(bcopy mkfifo statfs statvfs door)
 AC_CHECK_FUNCS(sysinfo setsid strdup strrchr strerror snprintf sysconf)
 
+dnl ######################################################################
+dnl Check for sa_len in struct sockaddr
+dnl ######################################################################
+
+AC_MSG_CHECKING(for sa_len in struct sockaddr)
+dnl AC_CACHE_VAL(ac_cv_struct_sockaddr_sa_len, [
+AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <sys/socket.h>
+],[
+struct sockaddr sa;
+int foo = sa.sa_len;
+], ac_cv_struct_sockaddr_sa_len=yes, ac_cv_struct_sockaddr_sa_len=no)
+dnl ], ac_cv_struct_sockaddr_sa_len=yes, ac_cv_struct_sockaddr_sa_len=no)])
+if test "$ac_cv_struct_sockaddr_sa_len" = yes; then
+   AC_DEFINE(SOCKADDR_HAS_SA_LEN)
+fi
+AC_MSG_RESULT([$ac_cv_struct_sockaddr_sa_len])
+   
 dnl #######################################################################
 dnl Newer BSD systems don't have a compatible rtentry - use ortentry
 dnl #######################################################################

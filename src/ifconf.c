@@ -400,11 +400,13 @@ while (!feof(pp))
    {
    ReadLine(VBUFF,CF_BUFSIZE,pp);
 
-   if (strncmp(VBUFF,"default",7) == 0)
+   Debug("LINE: %s = %s?\n",VBUFF,VDEFAULTROUTE);
+   
+   if ((strncmp(VBUFF,"default",7) == 0)||(strncmp(VBUFF,"0.0.0.0",7) == 0))
       {
       if (strstr(VBUFF,VDEFAULTROUTE))
          {
-  Verbose("cfengine: default route is already set to %s\n",VDEFAULTROUTE);
+         Verbose("cfengine: default route is already set to %s\n",VDEFAULTROUTE);
          defaultokay = 1;
          break;
          }
@@ -429,12 +431,26 @@ if (defaultokay)
  
 if ((sk = socket(AF_INET,SOCK_RAW,0)) == -1)
    {
-   if ( VSYSTEMHARDCLASS == linuxx )
+   if (VSYSTEMHARDCLASS == linuxx)
       {
-      Debug ("No raw socket protocol for linux\n");
+      Debug ("No raw socket protocol for linux -- faking with shell commands\n");
+
+      ShellCommandReturnsZero("/sbin/route del default");
+
+      snprintf(VBUFF,CF_MAXVARSIZE,"/sbin/route add default gw %s",VDEFAULTROUTE);
+      
+      if (ShellCommandReturnsZero(VBUFF))
+         {
+         CfLog(cfinform,"Setting default route","");
+         CfLog(cfinform,VBUFF,"");
+         }
+      else
+         {
+         CfLog(cferror,"Error setting route","");
+         }
       return;
       }
-   
+
    printf("System class %s\n",CLASSTEXT[VSYSTEMHARDCLASS]);
    perror("cfengine: socket");
    FatalError("Error in SetDefaultRoute()");

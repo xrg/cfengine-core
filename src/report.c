@@ -1070,11 +1070,11 @@ for (ptr=VEDITLIST; ptr != NULL; ptr=ptr->next)
       {
       if (ep->data == NULL)
          {
-         printf(" %s [nodata]\n",VEDITNAMES[ep->code]);
+         printf(" %s [nodata] if (%s)\n",VEDITNAMES[ep->code],ep->classes);
          }
       else
          {
-         printf(" %s [%s]\n",VEDITNAMES[ep->code],ep->data);
+         printf(" %s [%s] if (%s)\n",VEDITNAMES[ep->code],ep->data,ep->classes);
          }
       }
    printf("\n");
