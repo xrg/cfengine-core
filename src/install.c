@@ -3081,7 +3081,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
              
          case EndLoop:
              FOREACHLEVEL--;
-             if (FOREACHLEVEL <= 0)
+             if (FOREACHLEVEL < 0)
                 {
                 yyerror("EndLoop without ForEachLineIn");
                 }
@@ -3101,6 +3101,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
                 yyerror("SetLine inside ForEachLineIn loop");
                 }
              break;
+             
          case FixEndOfLine:
              if (strlen(data) > CF_EXTRASPC - 1)
                 {
