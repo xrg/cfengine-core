@@ -229,6 +229,86 @@ else
 NUMBEROFEDITS++;
 }
 
+
+/*********************************************************************/
+
+void InstallItem (liststart,itemstring,classes,ifelapsed,expireafter)
+
+struct Item **liststart;
+char *itemstring,*classes;
+
+{ struct Item *ip, *lp;
+  char *sp,*spe = NULL;
+
+EditVerbose("Appending [%s]\n",itemstring);
+
+if ((ip = (struct Item *)malloc(sizeof(struct Item))) == NULL)
+   {
+   CfLog(cferror,"","malloc");
+   FatalError("");
+   }
+
+if ((sp = malloc(strlen(itemstring)+extra_space)) == NULL)
+   {
+   CfLog(cferror,"","malloc");
+   FatalError("");
+   }
+
+if (*liststart == NULL)
+   {
+   *liststart = ip;
+   }
+else
+   {
+   for (lp = *liststart; lp->next != NULL; lp=lp->next)
+      {
+      }
+
+   lp->next = ip;
+   }
+
+if ((classes!= NULL) && (spe = malloc(strlen(classes)+2)) == NULL)
+   {
+   CfLog(cferror,"","malloc");
+   FatalError("");
+   }
+
+strcpy(sp,itemstring);
+
+if (PIFELAPSED != -1)
+   {
+   ip->ifelapsed = PIFELAPSED;
+   }
+else
+   {
+   ip->ifelapsed = ifelapsed;
+   }
+
+if (PEXPIREAFTER != -1)
+   {
+   ip->expireafter = PEXPIREAFTER;
+   }
+else
+   {
+   ip->expireafter = expireafter;
+   }
+ 
+ip->name = sp;
+ip->next = NULL;
+
+if (classes != NULL)
+   {
+   strcpy(spe,classes);
+   ip->classes = spe;
+   }
+else
+   {
+   ip->classes = NULL;
+   }
+
+NUMBEROFEDITS++;
+}
+
 /*********************************************************************/
 
 void DeleteItemList(item)                /* delete starting from item */
@@ -818,4 +898,76 @@ for (sp = string; *sp != '\0'; sp++)
 return liststart;
 }
 
+/*********************************************************************************/
+
+struct Item *ListFromArgs(string)
+
+/* Splits a string with quoted components etc */
+
+char *string;
+
+{ struct Item *ip = NULL;
+  int dquote_level = 0,i = 0;
+  int paren_level = 0;
+  char *sp,lastch = '\0';
+  char item[bufsize];
+
+bzero(item,bufsize);
+     
+for (sp = string; *sp != '\0'; sp++)
+   {
+   switch (*sp)
+      {
+      case '\"':
+
+	  if (lastch == '\\')  /* Escaped quote */
+	     {
+	     sp--;
+	     *sp = ')';
+	     continue;
+	     }
+	  else
+	     {
+	     if (dquote_level == 0)
+		{
+		dquote_level = 1;
+		continue;
+		}
+	     else
+		{
+		dquote_level = 0;
+		continue;
+		}
+	     }
+	  break;
+
+      case '(':
+
+	  paren_level++;
+	  break;
+
+      case ')':
+
+	  paren_level--;
+	  break;
+
+      case ',':
+
+	  if (dquote_level == 0 && paren_level == 0)
+	     {
+	     item[i] = '\0';
+	     i = 0;
+	     AppendItem(&ip,item,"");
+	     bzero(item,bufsize);
+	     continue;
+	     }
+      }
+
+   item[i++] = *sp;
+   lastch = *sp;
+   }
+
+AppendItem(&ip,item,""); 
+return ip;
+}
 

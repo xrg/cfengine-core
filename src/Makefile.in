@@ -207,7 +207,9 @@ cfagent_SOURCES = \
 	acl.c								\
 	dce_acl.c							\
 	nameinfo.c							\
-	strategies.c
+	strategies.c                         				\
+	methods.c							\
+	package.c
 
 
 cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
@@ -402,7 +404,8 @@ am_cfagent_OBJECTS = cfagent.$(OBJEXT) init.$(OBJEXT) do.$(OBJEXT) \
 	rotate.$(OBJEXT) errors.$(OBJEXT) cflex.$(OBJEXT) net.$(OBJEXT) \
 	df.$(OBJEXT) log.$(OBJEXT) crypto.$(OBJEXT) popen.$(OBJEXT) \
 	popen_def.$(OBJEXT) sensible.$(OBJEXT) acl.$(OBJEXT) \
-	dce_acl.$(OBJEXT) nameinfo.$(OBJEXT) strategies.$(OBJEXT)
+	dce_acl.$(OBJEXT) nameinfo.$(OBJEXT) strategies.$(OBJEXT) \
+	methods.$(OBJEXT) package.$(OBJEXT)
 cfagent_OBJECTS = $(am_cfagent_OBJECTS)
 cfagent_DEPENDENCIES =
 cfagent_LDFLAGS =
@@ -490,9 +493,10 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/item-ext.Po ./$(DEPDIR)/item-file.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/item.Po ./$(DEPDIR)/link.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/locks.Po ./$(DEPDIR)/log.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/macro.Po ./$(DEPDIR)/misc.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/modes.Po ./$(DEPDIR)/mount.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/nameinfo.Po ./$(DEPDIR)/net.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/macro.Po ./$(DEPDIR)/methods.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/misc.Po ./$(DEPDIR)/modes.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/mount.Po ./$(DEPDIR)/nameinfo.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/net.Po ./$(DEPDIR)/package.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/parse.Po ./$(DEPDIR)/patches.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/popen.Po ./$(DEPDIR)/popen_def.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/process.Po ./$(DEPDIR)/proto.Po \
@@ -651,11 +655,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locks.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/macro.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/methods.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/misc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/modes.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mount.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nameinfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/net.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/package.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/patches.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/popen.Po@am__quote@

@@ -1,8 +1,65 @@
 2.1.0
-	Procedure calls
 
-2.0.8
-        Parser bugfix for group defintions from script (compat obsolete syntax)
+	Error in init.c erroneously referred to old directory .cfengine instead of .cfagent for
+	non-root users.
+	
+	Builtin function ReadFile(filename,maxbytes) allows us to read
+	a maximum number of bytes from a file into a variable e.g. 
+
+	control:
+	  mylist = ( ReadFile("/etc/passwd",20) )
+
+	  Split = ( "_" )  # NOTE careful with split character
+	
+	  myvar  = ( ReadFile(/etc/passwd,220) )
+
+	
+	2.0.8 - released this far as a 2.0.x patch
+	
+	Check for illegal characters in classes.
+	Able to bind to a specific IP addressed interface in cfservd.
+        	BindToInterface = ( 10.10.43.6 )
+
+	Security fix to transaction lengths in remote copying.	
+	Suspicious names now applies only to regular files 	
+
+	2.1.a8
+
+	recursive parse imports immediately, not after cfagent.conf
+	
+	Imports allows in update.conf
+	Extra locking applied to methods
+	Parser error in cfservd fixed. Would ignore single character objects (ordering
+	error in lexer).
+
+	2.10a7
+
+       	Methods parsing added
+
+	Granular locking added to all parts of cfengine
+	ifelapsed
+	expireafter added to each action as options e.g. ifelapsed=20
+
+	2.1.0a6
+	
+	Admit /deny did not do variable expansion on pathnames - fixed
+	
+	Reduced stating level during file transfer in cfservd - helps to prevent
+	thrashing when transferring files with server fragmentation.
+	
+	class "windows" is added as a synonym for "nt"
+	xdev=true option to image, tidy, files
+        Timeout added to receive in file copying
+	mounts are only performed in pass 1
+	edit warnings are only carried out during pass 1
+
+	Bug fix for Mode class in file filters - was not matching modes properly
+	Can't copy files less than 17 bytes now supposedly fixed
+
+	Add mutex around syslog() to see if it helps weird file errors.
+	
+2.0.7p3
+        Parser bugfix for group defintions from script (in old compat obsolete syntax)
 
 2.0.7
 

@@ -63,6 +63,16 @@ for (sp = buffer; *sp != '\0'; sp++)
       }
    }
 
+
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+if (!SILENT && (pthread_mutex_lock(&MUTEX_SYSCALL) != 0))
+   {
+   /* If we can't lock this could be dangerous to proceed with threaded file descriptors */
+   return;
+   /* CfLog(cferror,"pthread_mutex_lock failed","lock"); would lead to sick recursion */
+   }
+#endif
+ 
 switch(level)
    {
    case cfsilent:    if (! SILENT || VERBOSE || DEBUG || D2)
@@ -159,8 +169,16 @@ switch(level)
 			   syslog(LOG_ERR, " %s: %s",errstr,strerror(errno));   
 			   }
                         }
-		     return;
    }
+
+
+
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+      if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
+	 {
+	 /* CfLog(cferror,"pthread_mutex_unlock failed","lock");*/
+	 }
+#endif 
 
  
 if (endl && (buffer[strlen(buffer)-1] != '\n'))

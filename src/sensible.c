@@ -64,9 +64,16 @@ if (strlen(nodename) < 1)
 
 if (IsItemIn(SUSPICIOUSLIST,nodename))
    {
-   snprintf(OUTPUT,bufsize,"Suspicious file %s found in %s\n",nodename,path);
-   CfLog(cferror,OUTPUT,"");
-   return false;
+   struct stat statbuf;
+   if (stat(nodename,&statbuf) != -1)
+      {
+      if (S_ISREG(statbuf.st_mode))
+	 {
+	 snprintf(OUTPUT,bufsize,"Suspicious file %s found in %s\n",nodename,path);
+	 CfLog(cferror,OUTPUT,"");
+	 return false;
+	 }
+      }
    }
 
 if ((strcmp(nodename,"...") == 0) && (strcmp(path,"/") == 0))
@@ -181,9 +188,6 @@ for (sp = nodename; *sp != '\0'; sp++) /* Check for files like ".. ." */
       }
    }
 
-snprintf(OUTPUT,bufsize,"Suspicous looking file object \"%s\" masquerading as hidden file in %s\n",nodename,path);
-CfLog(cfsilent,OUTPUT,"");
-Debug("Filename looks suspicious\n"); 
 
 /* removed if (EXTENSIONLIST==NULL) mb */ 
 
@@ -194,6 +198,15 @@ if (cflstat(vbuff,&statbuf,ip) == -1)
    return true;
    }
 
+if (statbuf.st_size == 0 && ! (VERBOSE||INFORM)) /* No sense in warning about empty files */
+   {
+   return false;
+   }
+ 
+snprintf(OUTPUT,bufsize,"Suspicous looking file object \"%s\" masquerading as hidden file in %s\n",nodename,path);
+CfLog(cfsilent,OUTPUT,"");
+Debug("Filename looks suspicious\n"); 
+ 
 if (S_ISLNK(statbuf.st_mode))
    {
    snprintf(OUTPUT,bufsize,"   %s is a symbolic link\n",nodename);
@@ -209,4 +222,35 @@ snprintf(OUTPUT,bufsize,"[%s] has size %ld and full mode %o\n",nodename,(unsigne
 CfLog(cfsilent,OUTPUT,"");
  
 return true;
+}
+
+
+/********************************************************************/
+
+void RegisterRecursionRootDevice(device)
+
+dev_t device;
+
+{
+ Verbose("Registering root device as %d\n",device);
+ ROOTDEVICE = device;
+}
+
+
+/********************************************************************/
+
+int DeviceChanged(thisdevice)
+
+dev_t thisdevice;
+
+{
+if (thisdevice == ROOTDEVICE)
+   {
+   return false;
+   }
+else
+   {
+   Verbose("Device change from %d to %d\n",ROOTDEVICE,thisdevice);
+   return true;
+   }
 }

@@ -60,40 +60,125 @@ if (!IsPrivileged())
       FatalError("You do not have a HOME variable pointing to your home directory");
       }
 
-   snprintf(VLOGDIR,bufsize,"%s/.cfengine",sp);
-   snprintf(VLOCKDIR,bufsize,"%s/.cfengine",sp);
+   snprintf(VLOGDIR,bufsize,"%s/.cfagent",sp);
+   snprintf(VLOCKDIR,bufsize,"%s/.cfagent",sp);
    snprintf(VBUFF,bufsize,"%s/.cfagent/test",sp);
    MakeDirectoriesFor(VBUFF,'y');
-   snprintf(CFPRIVKEYFILE,bufsize,"%s/.cfengine/ppkeys/localhost.priv",sp);
-   snprintf(CFPUBKEYFILE,bufsize,"%s/.cfengine/ppkeys/localhost.pub",sp);
+   snprintf(VBUFF,bufsize,"%s/.cfagent/state/test",sp);
+   MakeDirectoriesFor(VBUFF,'n');
+   snprintf(CFPRIVKEYFILE,bufsize,"%s/.cfagent/ppkeys/localhost.priv",sp);
+   snprintf(CFPUBKEYFILE,bufsize,"%s/.cfagent/ppkeys/localhost.pub",sp);
    }
 else
    {
    snprintf(VBUFF,bufsize,"%s/test",VLOCKDIR);
    snprintf(VBUFF,bufsize,"%s/test",VLOGDIR);
    MakeDirectoriesFor(VBUFF,'n');
+   snprintf(VBUFF,bufsize,"%s/state/test",VLOGDIR);
+   MakeDirectoriesFor(VBUFF,'n');
    snprintf(CFPRIVKEYFILE,bufsize,"%s/ppkeys/localhost.priv",WORKDIR);
    snprintf(CFPUBKEYFILE,bufsize,"%s/ppkeys/localhost.pub",WORKDIR);
    }
 
- 
-snprintf(VBUFF,bufsize,"%s/modules/test",VLOCKDIR);
-MakeDirectoriesFor(VBUFF,'n');
- 
-snprintf(VBUFF,bufsize,"%s/ppkeys/test",VLOCKDIR);
-MakeDirectoriesFor(VBUFF,'n');
-snprintf(VBUFF,bufsize,"%s/ppkeys",VLOCKDIR); 
-chmod(VBUFF,(mode_t)0700); /* Locks must be immutable to others */ 
-
+Verbose("Checking integrity of the state database\n");
+snprintf(VBUFF,bufsize,"%s/state",VLOCKDIR);
 if (stat(VBUFF,&statbuf) == -1)
    {
-   if (statbuf.st_mode & 077)
+   snprintf(VBUFF,bufsize,"%s/state",VLOCKDIR);
+   MakeDirectoriesFor(VBUFF,'n');
+   chown(VBUFF,getuid(),getgid());
+   chmod(VBUFF,(mode_t)0755);
+   }
+else 
+   {
+   if (statbuf.st_mode & 022)
       {
-      snprintf(OUTPUT,bufsize*2,"Lock/Log directory %s was not private! Mode %o - setting to 700\n",VLOCKDIR,statbuf.st_mode & 0777);
+      snprintf(OUTPUT,bufsize*2,"UNTRUSTED: State directory %s was not private!\n",VLOCKDIR,statbuf.st_mode & 0777);
       CfLog(cferror,OUTPUT,"");
       }
    }
 
+Verbose("Checking integrity of the module directory\n"); 
+
+snprintf(VBUFF,bufsize,"%s/modules",VLOCKDIR);
+if (stat(VBUFF,&statbuf) == -1)
+   {
+   snprintf(VBUFF,bufsize,"%s/modules/test",VLOCKDIR);
+   MakeDirectoriesFor(VBUFF,'n');
+   snprintf(VBUFF,bufsize,"%s/modules",VLOCKDIR);
+   chown(VBUFF,getuid(),getgid());
+   chmod(VBUFF,(mode_t)0700);
+   }
+else 
+   {
+   if (statbuf.st_mode & 022)
+      {
+      snprintf(OUTPUT,bufsize*2,"UNTRUSTED: Module directory %s was not private!\n",VLOCKDIR,statbuf.st_mode & 0777);
+      CfLog(cferror,OUTPUT,"");
+      }
+   }
+
+Verbose("Checking integrity of the input data for RPC\n"); 
+
+snprintf(VBUFF,bufsize,"%s/rpc_in",VLOCKDIR);
+
+if (stat(VBUFF,&statbuf) == -1)
+   {
+   snprintf(VBUFF,bufsize,"%s/rpc_in/test",VLOCKDIR);
+   MakeDirectoriesFor(VBUFF,'n');
+   snprintf(VBUFF,bufsize,"%s/rpc_in",VLOCKDIR);
+   chown(VBUFF,getuid(),getgid());
+   chmod(VBUFF,(mode_t)0700);
+   }
+else 
+   {
+   if (statbuf.st_mode & 077)
+      {
+      snprintf(OUTPUT,bufsize*2,"UNTRUSTED: RPC input directory %s was not private!\n",VLOCKDIR,statbuf.st_mode & 0777);
+      FatalError(OUTPUT);
+      }
+   }
+
+Verbose("Checking integrity of the output data for RPC\n"); 
+
+snprintf(VBUFF,bufsize,"%s/rpc_out",VLOCKDIR);
+if (stat(VBUFF,&statbuf) == -1)
+   {
+   snprintf(VBUFF,bufsize,"%s/rpc_out/test",VLOCKDIR);
+   MakeDirectoriesFor(VBUFF,'n');
+   snprintf(VBUFF,bufsize,"%s/rpc_out",VLOCKDIR);
+   chown(VBUFF,getuid(),getgid());
+   chmod(VBUFF,(mode_t)0700);   
+   }
+else
+   {
+   if (statbuf.st_mode & 077)
+      {
+      snprintf(OUTPUT,bufsize*2,"UNTRUSTED: RPC output directory %s was not private!\n",VLOCKDIR,statbuf.st_mode & 0777);
+      FatalError(OUTPUT);
+      }
+   }
+ 
+Verbose("Checking integrity of the PKI directory\n");
+snprintf(VBUFF,bufsize,"%s/ppkeys",VLOCKDIR);
+    
+if (stat(VBUFF,&statbuf) == -1)
+   {
+   snprintf(VBUFF,bufsize,"%s/ppkeys/test",VLOCKDIR);
+   MakeDirectoriesFor(VBUFF,'n');
+   snprintf(VBUFF,bufsize,"%s/ppkeys",VLOCKDIR); 
+   chmod(VBUFF,(mode_t)0700); /* Locks must be immutable to others */    
+   }
+else
+   {
+   if (statbuf.st_mode & 077)
+      {
+      snprintf(OUTPUT,bufsize*2,"UNTRUSTED: Private key directory %s was not private!\n",VLOCKDIR,statbuf.st_mode & 0777);
+      FatalError(OUTPUT);
+      }
+   }
+
+Verbose("Making sure that locks are private...\n"); 
 chown(VLOCKDIR,getuid(),getgid());
 chmod(VLOCKDIR,(mode_t)0755); /* Locks must be immutable to others */
 }

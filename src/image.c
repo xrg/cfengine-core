@@ -150,6 +150,12 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
          }
       }
 
+   if ((ip->xdev =='y') && DeviceChanged(statbuf.st_dev))
+      {
+      Verbose("Skipping %s on different device\n",newfrom);
+      continue;
+      }
+   
    if (!FileObjectFilter(newfrom,&statbuf,ip->filters,image))
       {
       continue;
@@ -214,7 +220,8 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
 
       (ip->uid)->uid = save_uid;
       (ip->gid)->gid = save_gid;
-      
+
+      Verbose("Opening %s/%s\n",newfrom,newto);
       RecursiveImage(ip,newfrom,newto,maxrecurse-1);
       }
    else
@@ -1572,12 +1579,12 @@ if (rename(new,dest) == -1)
    return false;
    }
 
-if ((IMAGEBACKUP == 'y') && backupisdir)
+if ((IMAGEBACKUP != 'n') && backupisdir)
    {
    snprintf(OUTPUT,bufsize,"Cannot move a directory to repository, leaving at %s",backup);
    CfLog(cfinform,OUTPUT,"");
    }
-else if ((IMAGEBACKUP == 'y') && Repository(backup,ip->repository))
+else if ((IMAGEBACKUP != 'n') && Repository(backup,ip->repository))
    {
    unlink(backup);
    }

@@ -327,6 +327,14 @@ switch (ScanVariable(lvalue))
                   strcpy(VNFSTYPE,value); 
                   break;
 
+   case cfmethodname:
+                  strncpy(METHODNAME,value,bufsize-1);
+                  break;
+
+   case cfarglist:
+                  AppendItem(&METHODARGS,value,CLASSBUFF);
+                  break;
+		  
    case cfaddclass:
                   AddCompoundClass(value);
                   break;
@@ -439,6 +447,9 @@ switch (ScanVariable(lvalue))
                    yyerror("Illegal default copy type");
 		   break;
 
+   case cfdefpkgmgr: DEFAULTPKGMGR = GetPkgMgr(value);
+           break;
+
    default:
                   AddMacroValue(CONTEXTID,lvalue,value);
                   break;
@@ -452,7 +463,7 @@ void HandleEdit(file,edit,string)      /* child routines in edittools.c */
 char *file, *edit, *string;
 
 {
-if ( ! IsInstallable(CLASSBUFF))
+if (! IsInstallable(CLASSBUFF))
    {
    InitializeAction();
    Debug1("Not installing Edit no match\n");
@@ -550,6 +561,12 @@ switch(GetCommAttribute(item))
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
                    break;
    case cfchksum:  HandleChecksum(value);
+                   break;
+   case cfxdev:    HandleCharSwitch("xdev",value,&XDEV);
+                   break;
+   case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
+                   break;
+   case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
                    break;
    default:        yyerror("Illegal file attribute");
    }
@@ -651,6 +668,12 @@ switch(GetCommAttribute(item))
    case cftimestamps:
                    HandleTimeStamps(value);
                    break;
+   case cfxdev:    HandleCharSwitch("xdev",value,&XDEV);
+                   break;
+   case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
+                   break;
+   case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
+                   break;
 
    default:        yyerror("Illegal copy attribute");
    }
@@ -688,6 +711,10 @@ switch(GetCommAttribute(item))
    case cfsetlog:  HandleCharSwitch("log",value,&LOGP);
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
+                   break;
+   case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
+                   break;
+   case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
                    break;
 
    /* HvB: Bas van der Vlies */
@@ -829,6 +856,11 @@ switch(GetCommAttribute(item))
 		       break;
 		       }
 
+   case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
+                   break;
+   case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
+                   break;
+
    default:         yyerror("Illegal unmount option"
                             " (deletedir/deletefstab/force)");
    }
@@ -889,6 +921,10 @@ switch(GetCommAttribute(item))
 			 }
 		   }
 		   break;
+   case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
+                   break;
+   case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
+                   break;
   
    default:        yyerror("Illegal miscmounts attribute (rw/ro)");
    }
@@ -935,6 +971,12 @@ switch(GetCommAttribute(item))
 		      }
                    break;
 
+   case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
+                   break;
+   case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
+                   break;
+
+		   
    case cfage:     HandleAge(value);
                    break;
 
@@ -965,6 +1007,8 @@ switch(GetCommAttribute(item))
    case cfcompress: HandleCharSwitch("compress",value,&COMPRESS);
                    break;
    case cffilter:  PrependItem(&VFILTERBUILD,value,CF_ANYCLASS);
+                   break;
+   case cfxdev:    HandleCharSwitch("xdev",value,&XDEV);
                    break;
 
    default:        yyerror("Illegal tidy attribute");
@@ -1009,6 +1053,10 @@ switch(GetCommAttribute(item))
    case cfsetlog:  HandleCharSwitch("log",value,&LOGP);
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
+                   break;
+   case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
+                   break;
+   case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
                    break;
 
    default:        yyerror("Illegal directory attribute");
@@ -1071,6 +1119,10 @@ switch(GetCommAttribute(item))
                    break;
    case cfrepository: strncpy(LOCALREPOS,value,bufsize-buffer_margin);
                    break;
+   case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
+                   break;
+   case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
+                   break;
 
    default:        yyerror("Illegal disable attribute");
    }
@@ -1127,6 +1179,10 @@ switch(GetCommAttribute(item))
    case cfsetlog:  HandleCharSwitch("log",value,&LOGP);
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
+                   break;
+   case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
+                   break;
+   case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
                    break;
 
    default:        yyerror("Illegal link attribute");
@@ -1205,12 +1261,111 @@ switch(GetCommAttribute(item))
                    break;
    case cfumask:   HandleUmask(value);
                    break;
+   case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
+                   break;
+   case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
+                   break;
 		   
    default:        yyerror("Illegal process attribute");
    }
 
  
 }
+
+/*******************************************************************/
+
+void HandleOptionalPackagesAttribute(item)
+
+char *item;
+
+{ char value[maxvarsize];
+
+VBUFF[0] = value[0] = '\0';
+
+ExpandVarstring(item,VBUFF,NULL);
+
+sscanf(VBUFF,"%*[^=]=%s",value);
+
+if (value[0] == '\0')
+   {
+   yyerror("Packages attribute with no value");
+   }
+
+Debug1("HandleOptionalPackagesAttribute(%s)\n",value);
+
+switch(GetCommAttribute(item))
+   {
+   case cfversion: strcpy(PKGVER,value);
+                   break;
+   case cfcmp:     CMPSENSE = (enum cmpsense) GetCmpSense(value);
+                   break;
+   case cfpkgmgr:  PKGMGR = (enum pkgmgrs) GetPkgMgr(value);
+                   break;
+   case cfdefine:  HandleDefine(value);
+                   break;
+   case cfelsedef: HandleElseDefine(value);
+                   break;		   
+   case cfsetlog:  HandleCharSwitch("log",value,&LOGP);
+                   break;
+   case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
+                   break;
+   case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
+                   break;
+   case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
+                   break;
+
+   default:        yyerror("Illegal packages attribute");
+   }
+}
+
+/*******************************************************************/
+
+void HandleOptionalMethodsAttribute(item)
+
+char *item;
+
+{ char value[maxvarsize];
+
+VBUFF[0] = value[0] = '\0';
+
+ExpandVarstring(item,VBUFF,NULL);
+
+sscanf(VBUFF,"%*[^=]=%s",value);
+
+if (value[0] == '\0')
+   {
+   yyerror("Packages attribute with no value");
+   }
+
+ switch(GetCommAttribute(item))
+    {
+    case cfserver: HandleServer(value);
+	           break;
+
+    case cfaction: strncpy(ACTIONBUFF,value,bufsize-1);
+	           break;
+
+    case cfretvars:
+	           strncpy(VUIDNAME,value,bufsize-1);
+	           break;
+    case cfretclasses:
+ 	           strncpy(VGIDNAME,value,bufsize-1);
+	           break;
+
+    case cfsendclasses:
+ 	            strncpy(LINKFROM,value,bufsize-1);
+	            break;
+    case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
+	            break;
+    case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
+	break;
+	
+    default:       yyerror("Illegal methods attribute");
+    }
+ 
+ACTIONPENDING = true; 
+}
+
 
 /*******************************************************************/
 
@@ -1261,8 +1416,45 @@ switch(GetCommAttribute(item))
                      break;		     
    case cfpreview:   HandleCharSwitch("preview",value,&PREVIEW);
                      break;		     
+   case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
+                   break;
+   case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
+                   break;
 
    default:         yyerror("Illegal shellcommand attribute");
+   }
+
+}
+
+/*******************************************************************/
+
+void HandleOptionalAlertsAttribute(item)
+
+char *item;
+
+{ char value[maxvarsize];
+
+VBUFF[0] = value[0] = '\0';
+
+ExpandVarstring(item,VBUFF,NULL);
+
+sscanf(VBUFF,"%*[^=]=%s",value);
+
+if (value[0] == '\0')
+   {
+   yyerror("Alerts attribute with no value");
+   }
+
+Debug1("HandleOptionalAlertsAttribute(%s)\n",value);
+
+switch(GetCommAttribute(item))
+   {
+   case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
+                   break;
+   case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
+                   break;
+
+   default:         yyerror("Illegal alerts attribute");
    }
 
 }
@@ -1778,6 +1970,24 @@ if (strlen(ptr->to) > 1)
    DeleteSlash(ptr->to);
    }
 
+if (PIFELAPSED != -1)
+   {
+   ptr->ifelapsed = PIFELAPSED;
+   }
+else
+   {
+   ptr->ifelapsed = VIFELAPSED;
+   }
+
+if (PEXPIREAFTER != -1)
+   {
+   ptr->expireafter = PEXPIREAFTER;
+   }
+else
+   {
+   ptr->expireafter = VEXPIREAFTER;
+   }
+ 
 ptr->force = FORCELINK;
 ptr->silent = LINKSILENT;
 ptr->type = LINKTYPE;
@@ -1875,6 +2085,24 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    else
       {
       VCHLINKTOP->next = ptr;
+      }
+
+   if (PIFELAPSED != -1)
+      {
+      ptr->ifelapsed = PIFELAPSED;
+      }
+   else
+      {
+      ptr->ifelapsed = VIFELAPSED;
+      }
+   
+   if (PEXPIREAFTER != -1)
+      {
+      ptr->expireafter = PEXPIREAFTER;
+      }
+   else
+      {
+      ptr->expireafter = VEXPIREAFTER;
       }
 
    ptr->force = FORCELINK;
@@ -1976,7 +2204,25 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    
    AddInstallable(ptr->define);
    AddInstallable(ptr->elsedef);
+
+   if (PIFELAPSED != -1)
+      {
+      ptr->ifelapsed = PIFELAPSED;
+      }
+   else
+      {
+      ptr->ifelapsed = VIFELAPSED;
+      }
    
+   if (PEXPIREAFTER != -1)
+      {
+      ptr->expireafter = PEXPIREAFTER;
+      }
+   else
+      {
+      ptr->expireafter = VEXPIREAFTER;
+      }
+
    ptr->freespace = freespace;
    ptr->next = NULL;
    ptr->log = LOGP;
@@ -2112,6 +2358,24 @@ else
    VUNMOUNTTOP->next = ptr;
    }
 
+if (PIFELAPSED != -1)
+   {
+   ptr->ifelapsed = PIFELAPSED;
+   }
+else
+   {
+   ptr->ifelapsed = VIFELAPSED;
+   }
+
+if (PEXPIREAFTER != -1)
+   {
+   ptr->expireafter = PEXPIREAFTER;
+   }
+else
+   {
+   ptr->expireafter = VEXPIREAFTER;
+   }
+ 
 ptr->next = NULL;
 ptr->deletedir = deldir;  /* t/f - true false */
 ptr->deletefstab = delfstab;
@@ -2176,6 +2440,24 @@ else
    VMISCMOUNTTOP->next = ptr;
    }
 
+if (PIFELAPSED != -1)
+   {
+   ptr->ifelapsed = PIFELAPSED;
+   }
+else
+   {
+   ptr->ifelapsed = VIFELAPSED;
+   }
+
+if (PEXPIREAFTER != -1)
+   {
+   ptr->expireafter = PEXPIREAFTER;
+   }
+else
+   {
+   ptr->expireafter = VEXPIREAFTER;
+   }
+ 
 ptr->next = NULL;
 ptr->done = 'n';
 ptr->scope = strdup(CONTEXTID); 
@@ -2266,6 +2548,9 @@ switch (action)
    case makepath: InstallMakePath(CURRENTOBJECT,PLUSMASK,MINUSMASK,VUIDNAME,VGIDNAME);
                   break;
 
+   case methods:  InstallMethod(CURRENTOBJECT,ACTIONBUFF);
+                  break;
+		  
    case disable:  AppendDisable(CURRENTOBJECT,CURRENTITEM,ROTATE,DISCOMP,DISABLESIZE);
                   break;
 
@@ -2275,10 +2560,7 @@ switch (action)
 		  break;
 
    case alerts:
-                  if (strlen(CURRENTITEM) > 0)
-	             {
-                     AppendItem(&VALERTS,CURRENTITEM,CLASSBUFF);
-	             }
+                  InstallItem(&VALERTS,CURRENTOBJECT,CLASSBUFF,0,0);
                   break;
    case interfaces:
                   AppendInterface(VIFNAME,DESTINATION,CURRENTOBJECT);
@@ -2353,6 +2635,9 @@ switch (action)
                      }
 
                   break;
+
+   case packages: InstallPackagesItem(CURRENTOBJECT,PKGVER,CMPSENSE,PKGMGR);
+                  break;
    }
 
 LINKFROM[0] = '\0';
@@ -2404,6 +2689,38 @@ if ((strcmp(value,"timestamp") == 0))
     printf("Switch %s=(true/false)|(on/off)",name); 
     yyerror("Illegal switch value");
     }
+}
+
+/*******************************************************************/
+
+void HandleIntSwitch(name,value,pflag,min,max)
+
+char *name,*value;
+int min,max,*pflag;
+
+{ int numvalue = -17267592; /* silly number, never happens */
+ 
+Debug1("HandleIntSwitch(%s=%s,%d,%d)\n",name,value,min,max);
+
+sscanf(value,"%d",&numvalue);
+
+if (numvalue == -17267592)
+   {
+   snprintf(OUTPUT,bufsize,"Integer expected as argument to %s",name);
+   yyerror(OUTPUT);
+   return;
+   }
+ 
+if ((numvalue <= max) && (numvalue >= min))
+   {
+   *pflag = numvalue;
+   return;
+   }
+else
+   {
+   snprintf(OUTPUT,bufsize,"Integer %s out of range (%d <= %s <= %d)",name,min,name,max);
+   yyerror(OUTPUT);
+   }
 }
 
 /*******************************************************************/
@@ -2560,6 +2877,24 @@ if ( ! IsInstallable(CLASSBUFF))
     ptr->repository = NULL;
     }
 
+if (PIFELAPSED != -1)
+   {
+   ptr->ifelapsed = PIFELAPSED;
+   }
+else
+   {
+   ptr->ifelapsed = VIFELAPSED;
+   }
+
+if (PEXPIREAFTER != -1)
+   {
+   ptr->expireafter = PEXPIREAFTER;
+   }
+else
+   {
+   ptr->expireafter = VEXPIREAFTER;
+   }
+ 
  ptr->done = 'n';
  ptr->scope = strdup(CONTEXTID);
  ptr->recurse = 0;
@@ -3011,7 +3346,25 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       {
       ptr->gid = gw->gr_gid;
       }
- 
+
+   if (PIFELAPSED != -1)
+      {
+      ptr->ifelapsed = PIFELAPSED;
+      }
+   else
+      {
+      ptr->ifelapsed = VIFELAPSED;
+      }
+   
+   if (PEXPIREAFTER != -1)
+      {
+      ptr->expireafter = PEXPIREAFTER;
+      }
+   else
+      {
+      ptr->expireafter = VEXPIREAFTER;
+      }
+
    ptr->log = LOGP;
    ptr->inform = INFORMP;
    ptr->timeout = timeout;
@@ -3139,6 +3492,24 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       {
       ptr->repository = NULL;
       }
+
+   if (PIFELAPSED != -1)
+      {
+      ptr->ifelapsed = PIFELAPSED;
+      }
+   else
+      {
+      ptr->ifelapsed = VIFELAPSED;
+      }
+   
+   if (PEXPIREAFTER != -1)
+      {
+      ptr->expireafter = PEXPIREAFTER;
+      }
+   else
+      {
+      ptr->expireafter = VEXPIREAFTER;
+      }
    
    ptr->rotate = rotate;
    ptr->comp = comp;
@@ -3157,6 +3528,139 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    }
  
  Delete2DList(tp);  
+}
+
+/*******************************************************************/
+
+void InstallMethod(function,file)
+
+char *function, *file;
+
+{ char *sp, work[bufsize],name[bufsize];
+  struct Method *ptr;
+ 
+Debug1("Installing item (%s=%s) in the methods list\n",function,file);
+
+bzero(name,bufsize-1);
+bzero(work,bufsize-1);
+ 
+if (! IsInstallable(CLASSBUFF))
+   {
+   InitializeAction();
+   Debug1("Not installing %s, no match\n",function);
+   return;
+   }
+ 
+if ((ptr = (struct Method *)malloc(sizeof(struct Method))) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallMethod() #1");
+   }
+
+ if (VMETHODSTOP == NULL)
+    {
+    VMETHODS = ptr;
+    }
+ else
+    {
+    VMETHODSTOP->next = ptr;
+    }
+
+if (!strstr(function,"("))
+   {
+   yyerror("Missing parenthesis or extra space");
+   InitializeAction();
+   return;
+   }
+ 
+ExpandVarstring(function,work,"");
+ 
+if (work[strlen(work)-1] != ')')
+   {
+   yyerror("Illegal use of space or nested parentheses");
+   }
+ 
+work [strlen(work)-1] = '\0';   /*chop last ) */
+ 
+sscanf(function,"%[^(]",name); 
+
+if (strlen(name) == 0)
+   {
+   yyerror("Empty method");
+   return;
+   }
+ 
+for (sp = work; sp != NULL; sp++) /* Pick out the args*/
+   {
+   if (*sp == '(')
+      {
+      break;
+      }
+   }
+ 
+sp++; 
+
+ptr->send_args = ListFromArgs(sp);
+ptr->send_classes = SplitStringAsItemList(LINKFROM,','); 
+ 
+if ((ptr->name = strdup(name)) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallMethod() #2");
+   }
+ 
+if ((ptr->classes = strdup(CLASSBUFF)) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallMethod() #3");
+   }
+
+ if (strlen(file) == 0)
+    {
+    yyerror("Missing filename in method");
+    return;
+    }
+
+ if (strcmp(file,"dispatch") == 0)
+    {
+    ptr->invitation = 'y';
+    }
+ else
+    {
+    ptr->invitation = 'n';
+    }
+ 
+ if (file[0] == '/' || file[0] == '.')
+    {
+    snprintf(OUTPUT,bufsize,"Method name (%s) was absolute. Must be in trusted Modules directory (no path prefix)",file);
+    yyerror(OUTPUT);
+    return;
+    }
+ 
+ptr->file = strdup(file); 
+ptr->servers = SplitStringAsItemList(CFSERVER,',');
+ptr->return_vars = SplitStringAsItemList(VUIDNAME,',');
+ptr->return_classes = SplitStringAsItemList(VGIDNAME,','); 
+ptr->scope = strdup(CONTEXTID);
+ 
+if (PIFELAPSED != -1)
+   {
+   ptr->ifelapsed = PIFELAPSED;
+   }
+else
+   {
+   ptr->ifelapsed = VIFELAPSED;
+   }
+
+if (PEXPIREAFTER != -1)
+   {
+   ptr->expireafter = PEXPIREAFTER;
+   }
+else
+   {
+   ptr->expireafter = VEXPIREAFTER;
+   }
+ 
+ptr->next = NULL;
+VMETHODSTOP = ptr;
+InitializeAction();
 }
 
 /*******************************************************************/
@@ -3261,6 +3765,24 @@ else
    VMAKEPATHTOP->next = ptr;
    }
 
+if (PIFELAPSED != -1)
+   {
+   ptr->ifelapsed = PIFELAPSED;
+   }
+else
+   {
+   ptr->ifelapsed = VIFELAPSED;
+   }
+
+if (PEXPIREAFTER != -1)
+   {
+   ptr->expireafter = PEXPIREAFTER;
+   }
+else
+   {
+   ptr->expireafter = VEXPIREAFTER;
+   }
+ 
 ptr->plus = plus;
 ptr->minus = minus;
 ptr->recurse = 0;
@@ -3722,7 +4244,7 @@ char travlinks,chksum;
 
 Debug1("InstallFileaction (%s) (+%o)(-%o) (%s) (%d) (%c)\n",path,plus,minus,FILEACTIONTEXT[action],action,travlinks);
 
-if ( ! IsInstallable(CLASSBUFF))
+if (!IsInstallable(CLASSBUFF))
    {
    InitializeAction();
    Debug1("Not installing file item, no match\n");
@@ -3777,6 +4299,24 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
       VFILETOP->next = ptr;
       }
 
+   if (PIFELAPSED != -1)
+      {
+      ptr->ifelapsed = PIFELAPSED;
+      }
+   else
+      {
+      ptr->ifelapsed = VIFELAPSED;
+      }
+   
+   if (PEXPIREAFTER != -1)
+      {
+      ptr->expireafter = PEXPIREAFTER;
+      }
+   else
+      {
+      ptr->expireafter = VEXPIREAFTER;
+      }
+   
    ptr->action = action;
    ptr->plus = plus;
    ptr->minus = minus;
@@ -3792,6 +4332,7 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
    ptr->filters = VFILTERBUILD;
    ptr->next = NULL;
    ptr->log = LOGP;
+   ptr->xdev = XDEV;
    ptr->inform = INFORMP;
    ptr->checksum = chksum;
    ptr->plus_flags = PLUSFLAG;
@@ -3904,6 +4445,24 @@ else
    VPROCTOP->next = ptr;
    }
 
+if (PIFELAPSED != -1)
+   {
+   ptr->ifelapsed = PIFELAPSED;
+   }
+else
+   {
+   ptr->ifelapsed = VIFELAPSED;
+   }
+
+if (PEXPIREAFTER != -1)
+   {
+   ptr->expireafter = PEXPIREAFTER;
+   }
+else
+   {
+   ptr->expireafter = VEXPIREAFTER;
+   }
+ 
 ptr->matches = matches;
 ptr->comp = comp;
 ptr->signal = signal;
@@ -3977,6 +4536,151 @@ VPROCTOP = ptr;
 InitializeAction();
 AddInstallable(ptr->defines);
 AddInstallable(ptr->elsedef);  
+}
+
+/*******************************************************************/
+
+void InstallPackagesItem(name,ver,sense,mgr)
+
+char *name, *ver;
+enum cmpsense sense;
+enum pkgmgrs mgr;
+
+{ struct Package *ptr;
+  char buffer[bufsize];
+
+if ( ! IsInstallable(CLASSBUFF))
+   {
+   InitializeAction();
+   Debug1("Not installing packages item, no match\n");
+   return;
+   }
+
+/* If the package manager is set to pkgmgr_none, then an invalid
+ * manager was specified, so we don't need to do anything */
+if ( PKGMGR == pkgmgr_none )
+   {
+   InitializeAction();
+   Debug1("Package manager set to none.  Not installing package item\n");
+   return;
+   }
+
+Debug1("InstallPackagesItem(%s,%s,%s,%s)\n",
+        name,ver,CMPSENSETEXT[sense],PKGMGRTEXT[mgr]);
+
+if ((ptr = (struct Package *)malloc(sizeof(struct Package))) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallPackageItem() #1");
+   }
+
+if ((ptr->name = strdup(name)) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallPackageItem() #2");
+   }
+
+if ((ptr->ver = strdup(ver)) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallPackageItem() #3");
+   }
+
+if ((ptr->classes = strdup(CLASSBUFF)) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallPackageItem() #4");
+   }
+
+ExpandVarstring(ALLCLASSBUFFER,buffer,"");
+
+if ((ptr->defines = strdup(buffer)) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallPackageItem() #4a");
+   }
+
+ExpandVarstring(ELSECLASSBUFFER,buffer,"");
+
+if ((ptr->elsedef = strdup(buffer)) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallPackageItem() #4b");
+   }
+
+AddInstallable(ptr->defines);
+AddInstallable(ptr->elsedef);
+
+if (VPKGTOP == NULL)                 /* First element in the list */
+   {
+   VPKG = ptr;
+   }
+else
+   {
+   VPKGTOP->next = ptr;
+   }
+
+if (PIFELAPSED != -1)
+   {
+   ptr->ifelapsed = PIFELAPSED;
+   }
+else
+   {
+   ptr->ifelapsed = VIFELAPSED;
+   }
+
+if (PEXPIREAFTER != -1)
+   {
+   ptr->expireafter = PEXPIREAFTER;
+   }
+else
+   {
+   ptr->expireafter = VEXPIREAFTER;
+   }
+ 
+ptr->log = LOGP;
+ptr->inform = INFORMP;
+ptr->cmp = sense;
+ptr->pkgmgr = mgr;
+ptr->done = 'n';
+ptr->scope = strdup(CONTEXTID);
+
+ptr->next = NULL;
+VPKGTOP = ptr;
+InitializeAction();
+}
+
+/*******************************************************************/
+
+int GetCmpSense(sense)
+
+char *sense;
+
+{ int i;
+
+for (i = 0; CMPSENSETEXT[i] != '\0'; i++)
+   {
+   if (strcmp(sense,CMPSENSETEXT[i]) == 0)
+      {
+      return i;
+      }
+   }
+
+yyerror("Unknown comparison sense");
+return (int) cmpsense_eq;
+}
+
+/*******************************************************************/
+
+int GetPkgMgr(pkgmgr)
+
+char *pkgmgr;
+
+{ int i;
+for (i = 0; PKGMGRTEXT[i] != '\0'; i++)
+   {
+   if (strcmp(pkgmgr,PKGMGRTEXT[i]) == 0)
+      {
+      return i;
+      }
+   }
+
+yyerror("Unknown package manager");
+return (int) pkgmgr_none;
 }
 
 /*******************************************************************/
@@ -4165,7 +4869,25 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
       {
       ptr->repository = NULL;
       }
+
+   if (PIFELAPSED != -1)
+      {
+      ptr->ifelapsed = PIFELAPSED;
+      }
+   else
+      {
+      ptr->ifelapsed = VIFELAPSED;
+      }
    
+   if (PEXPIREAFTER != -1)
+      {
+      ptr->expireafter = PEXPIREAFTER;
+      }
+   else
+      {
+      ptr->expireafter = VEXPIREAFTER;
+      }
+
    ptr->recurse = rec;
    ptr->type = type;
    ptr->stealth = STEALTH;
@@ -4201,6 +4923,7 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
    ptr->trustkey = TRUSTKEY;
    ptr->compat = COMPATIBILITY;
    ptr->forceipv4 = FORCEIPV4;
+   ptr->xdev = XDEV;
 
    if (ptr->compat == 'y' && ptr->encrypt == 'y')
       {
@@ -4272,16 +4995,19 @@ char *path, *attribute, *classes;
 struct Auth **list, **listtop;
 
 { struct TwoDimList *tp = NULL;
+ char attribexp[bufsize];
   char *sp;
 
-Debug1("InstallAuthItem(%s,%s)\n",path,attribute);
-
+ExpandVarstring(attribute,attribexp,"");
+ 
 Build2DListFromVarstring(&tp,path,'/');
    
 Set2DList(tp);
 
 for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    {
+   Debug1("InstallAuthItem(%s=%s,%s)\n",path,sp,attribexp);
+
    if (AuthPathExists(sp,*list))
       {
       AddAuthHostItem(sp,attribute,classes,list);
@@ -5115,11 +5841,30 @@ if (rec != INFINITERECURSE && strncmp("home/",ptr->path,5) == 0) /* Is this a su
       }
    }
 
+if (PIFELAPSED != -1)
+   {
+   ptr->ifelapsed = PIFELAPSED;
+   }
+else
+   {
+   ptr->ifelapsed = VIFELAPSED;
+   }
+
+if (PEXPIREAFTER != -1)
+   {
+   ptr->expireafter = PEXPIREAFTER;
+   }
+else
+   {
+   ptr->expireafter = VEXPIREAFTER;
+   }
+ 
 ptr->done = 'n';
 ptr->scope = strdup(CONTEXTID); 
 ptr->tidylist = NULL;
 ptr->maxrecurse = rec + no_of_links;
 ptr->next = NULL;
+ptr->xdev = XDEV; 
 ptr->exclusions = VEXCLUDEPARSE;
 ptr->ignores = VIGNOREPARSE;      
 

@@ -122,7 +122,8 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       continue;
       }
 
-   if (IgnoreFile(name,dirp->d_name,NULL))
+   
+   if (IgnoreFile(name,dirp->d_name,NULL))  /* No ref to tp->ignores here...fix?*/
       {
       continue;
       }
@@ -359,7 +360,7 @@ if (IgnoredOrExcluded(tidy,name,NULL,tp->exclusions))
   return true;
   }
 
-if (IgnoreFile(name,"",NULL))
+if (IgnoreFile(name,"",tp->ignores))
    {
    Debug2("cfengine: Ignoring directory %s\n",name);
    return true;
@@ -407,7 +408,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       continue;
       }
 
-   if (IgnoreFile(name,dirp->d_name,NULL))
+   if (IgnoreFile(name,dirp->d_name,tp->ignores))
       {
       continue;
       }
@@ -439,6 +440,12 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    if (TRAVLINKS && (stat(dirp->d_name,&statbuf) == -1))
       {
       Verbose("Can't stat %s (%s)\n",dirp->d_name,pcwd);
+      continue;
+      }
+   
+   if (tp->xdev =='y' && DeviceChanged(statbuf.st_dev))
+      {
+      Verbose("Skipping %s on different device\n",pcwd);
       continue;
       }
    

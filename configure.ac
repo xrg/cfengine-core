@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.0.7p3)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.0.8p1)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -447,6 +447,11 @@ case "$target_os" in
         ;;
    osf*)
 	AC_DEFINE(OSF)
+	if test "$GCC" = yes; then
+	   AC_MSG_WARN([pthreads may not work with GCC under Tru64])
+	   AC_MSG_WARN([If you get build errors mentioning PTHREADDEFAULTS etc.,])
+	   AC_MSG_WARN([re-configure with CC=cc.])
+	fi
         ;;
    irix6*)
 	# rtentry is detected OK on a 6.5.19 system.

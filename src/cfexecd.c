@@ -682,13 +682,14 @@ else
 return 0; 
 }
 
-
 /*
  * HvB: Bas van der Vlies
  *  This function compare the current result with the previous run
  *  and returns:
  *    0 : if the files are the same
  *    1 : if the files differ
+ *
+ *  Changes made by: Jeff Wasilko always update the symlink
 */
 int CompareResult(filename, prev_file)
 
@@ -699,6 +700,7 @@ char *filename, *prev_file;
   char digest2[EVP_MAX_MD_SIZE+1];
   int  md_len1, md_len2;
   FILE *fp;
+  int rtn = 0;
 
 Verbose("Comparing files  %s with %s\n", prev_file, filename);
 
@@ -711,38 +713,37 @@ if ((fp=fopen(prev_file,"r")) != NULL)
 
    if (md_len1 != md_len2)
       {
-      return(1);
+      rtn = 1;
       }
-
-   for (i = 0; i < md_len1; i++)
+   else
       {
-      if (digest1[i] != digest2[i])
-	 {
-	 /* Current file will now be the previous result */
-	 unlink(prev_file);
-	 if (symlink(filename, prev_file) == -1) 
-	    {
-  	    snprintf(OUTPUT,bufsize,"Could not link %s and %s",filename,prev_file);
-	    CfLog(cfinform,OUTPUT,"symlink");
-            }
-
-         return(1);
-	 }
+      for (i = 0; i < md_len1; i++)
+          if (digest1[i] != digest2[i])
+             {
+	     rtn = 1;
+	     break;
+	     }
       }
-
-   return(0);
    }
 else
    {
    /* no previous file */
-   if ( symlink(filename, prev_file) == -1 ) 
-      {
-      snprintf(OUTPUT,bufsize,"Could not link %s and %s",filename,prev_file);
-      CfLog(cfinform,OUTPUT,"symlink");
-      }
-   return(1);
+   rtn = 1;
    }
+
+/* always update the symlink. */   
+unlink(prev_file);
+if (symlink(filename, prev_file) == -1 )
+   {
+   snprintf(OUTPUT,bufsize,"Could not link %s and %s",filename,prev_file);
+   CfLog(cfinform,OUTPUT,"symlink");
+   rtn = 1;
+   }
+
+return(rtn);
 }
+
+
 
 /***********************************************************************/
 

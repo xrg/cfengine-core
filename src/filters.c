@@ -1095,6 +1095,49 @@ for (i = 0; names[i] != NULL; i++)
 return false;
 }
 
+/*
+ * HvB: Bas van der Vlies
+ *  Parse different TTime values
+*/
+void ParseTTime(line, time_str)
+
+char *line;
+char *time_str;
+
+{
+int  day=0, hr=0, min=0, sec=0;
+int r;
+
+if (strstr(line,":")) /* day-Hr:Min:Sec */
+   {
+   /* 
+    * first check the long fromat 
+    *   day-hr:min:sec (posix)
+    *       hr:min:sec (posix)
+    *          min:sec (old)
+   */ 
+   if ((r = sscanf(line,"%d-%d:%d:%d",&day,&hr,&min,&sec)) == 4)
+      {
+      snprintf(time_str,256,"accumulated(0,0,%d,%d,%d,%d)",day,hr,min,sec);
+      }
+   else if ((r = sscanf(line,"%d:%d:%d",&hr,&min,&sec)) == 3 )
+      {
+      snprintf(time_str,256,"accumulated(0,0,0,%d,%d,%d)",hr,min,sec);
+      }
+   else if ((r = sscanf(line,"%d:%d",&min,&sec)) == 2 )
+      {
+      if (min > 59)
+         {
+         day = min / (24 * 60);
+	 hr  = (min - (day * 24 * 60)) / (60);
+	 min = min % 60;
+         }
+      snprintf(time_str,256,"accumulated(0,0,%d,%d,%d,%d)",day,hr,min,sec);
+      }
+   }
+}
+
+
 /*******************************************************************/
 
 int FilterProcTTimeMatch(name1,name2,fromexpr,toexpr,names,line)
@@ -1113,19 +1156,10 @@ for (i = 0; names[i] != NULL; i++)
    {
    if ((strcmp(names[i],name1) == 0) || (strcmp(names[i],name2) == 0))
       {
-      if (strstr(line[i],":")) /* Hr:Min:Sec */
-	 {
-         sscanf(line[i],"%d:%d",&min,&sec);
-
-	 if (sec < 0 || min < 0)
-	    {
-	    CfLog(cferror,"Parse error checking process time","");
-	    return false;
-	    }
-	 
-	 snprintf(timestr,256,"accumulated(0,0,0,%d,%d,%d)",hr,min,sec);
-	 pstime = Date2Number(timestr,now);
-	 }
+      bzero(timestr, sizeof(timestr));
+      ParseTTime(line[i], timestr);
+      Debug("ParseTTime = %s\n",timestr); 
+      pstime = Date2Number(timestr,now);
 
       return ((fromtime < pstime) && (pstime < totime));
       }
@@ -1210,11 +1244,18 @@ int FilterModeMatch(lstatptr,crit)
 char *crit;
 struct stat *lstatptr;
 
-{ mode_t plusmask,minusmask;
+{ mode_t plusmask,minusmask,newperm;
+
 
 ParseModeString(crit,&plusmask,&minusmask);
 
-return ((lstatptr->st_mode & plusmask) && !(lstatptr->st_mode & minusmask));
+newperm = (lstatptr->st_mode & 07777);
+newperm |= plusmask;
+newperm &= ~minusmask;
+ 
+Debug("FilterModeMatch %s -> (+%o,-%o/%o) = %d \n",crit,plusmask,minusmask,lstatptr->st_mode &07777,((newperm & 07777) == (lstatptr->st_mode & 07777)));
+
+return ((newperm & 07777) == (lstatptr->st_mode & 07777));
 } 
 
 /*******************************************************************/

@@ -62,6 +62,7 @@ void SummarizeObjects ARGLIST((void));
 void CheckClass ARGLIST((char *class, char *source));
 void SetContext ARGLIST((char *id));
 void DeleteCaches ARGLIST((void));
+void CheckForMethod ARGLIST((void));
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -101,7 +102,7 @@ ReadRCFile(); /* Should come before parsing so that it can be overridden */
 if (IsPrivileged() && !MINUSF && !PRMAILSERVER)
    {
    SetContext("update");
-   if (ParseBootFiles())
+   if (ParseInputFile("update.conf"))
       {
       CheckSystemVariables();
       if (!PARSEONLY)
@@ -129,10 +130,11 @@ if (!PARSEONLY)
    GetEnvironment();
    }
  
-ParseInputFiles();
+ParseInputFile(VINPUTFILE);
 CheckFilters();
 SetStrategies(); 
 EchoValues();
+CheckForMethod();
  
 if (PRSYSADM)                                           /* -a option */
    {
@@ -187,7 +189,7 @@ SetReferenceTime(false); /* Reset */
 DoTree(2,"Main Tree"); 
 DoAlerts();
 
-if (GetMacroValue(CONTEXTID,"ChecksumPurge") && (strcmp(GetMacroValue(CONTEXTID,"ChecksumPurge"),"on") == 0))
+if (OptionIs(CONTEXTID,"ChecksumPurge", true)) 
    {
    ChecksumPurge();
    }
@@ -226,7 +228,8 @@ VDEFAULTROUTE[0] = '\0';
 ALLCLASSBUFFER[0] = '\0';
 VREPOSITORY = strdup("\0");
 
- 
+strcpy(METHODNAME,"cf-nomethod"); 
+
 #ifndef HAVE_REGCOMP
 re_syntax_options |= RE_INTERVALS;
 #endif
@@ -761,6 +764,10 @@ if (DEBUG || D2 || D3)
    printf("------------------------------------------------------------\n");
    ListDefinedScripts();
    printf("------------------------------------------------------------\n");
+   ListDefinedPackages();
+   printf("------------------------------------------------------------\n");
+   ListDefinedMethods();
+   printf("------------------------------------------------------------\n");
 
    
    if (IGNORELOCK)
@@ -836,6 +843,11 @@ if ( MOUNTCHECK && (VERBOSE || DEBUG || D2))
    }
 
 
+ if (IsDefinedClass("nt"))
+    {
+    AddClassToHeap("windows");
+    }
+ 
 if (ERRORCOUNT > 0)
    {
    FatalError("Execution terminated after parsing due to errors in program");
@@ -878,31 +890,31 @@ if (GetMacroValue(CONTEXTID,"MaxCfengines"))
       }
    }
 
-if (GetMacroValue(CONTEXTID,"Verbose") && (strcmp(GetMacroValue(CONTEXTID,"Verbose"),"on") == 0))
+if (OptionIs(CONTEXTID,"Verbose",true))
    {
    VERBOSE = true;
    }
 
-if (GetMacroValue(CONTEXTID,"Inform") && (strcmp(GetMacroValue(CONTEXTID,"Inform"),"on") == 0))
+if (OptionIs(CONTEXTID,"Inform",true))
    {
    INFORM = true;
    } 
 
- if (GetMacroValue(CONTEXTID,"Exclamation") && (strcmp(GetMacroValue(CONTEXTID,"Exclamation"),"off") == 0))
+if (OptionIs(CONTEXTID,"Exclamation",false))
    {
    EXCLAIM = false;
    } 
 
 INFORM_save = INFORM;
- 
-if (GetMacroValue(CONTEXTID,"Syslog") && (strcmp(GetMacroValue(CONTEXTID,"Syslog"),"on") == 0))
+
+if (OptionIs(CONTEXTID,"Syslog",true))
    {
    LOGGING = true;
    }
 
 LOGGING_save = LOGGING;
 
-if (GetMacroValue(CONTEXTID,"DryRun") && (strcmp(GetMacroValue(CONTEXTID,"DryRun"),"on") == 0))
+if (OptionIs(CONTEXTID,"DryRun",true))
    {
    DONTDO = true;
    AddClassToHeap("opt_dry_run");
@@ -930,23 +942,23 @@ if (GetMacroValue(CONTEXTID,"BinaryPaddingChar"))
       }
    }
 
- 
-if (GetMacroValue(CONTEXTID,"Warnings") && (strcmp(GetMacroValue(CONTEXTID,"Warnings"),"on") == 0))
+
+if (OptionIs(CONTEXTID,"Warnings",true))
    {
    WARNINGS = true;
    }
 
-if (GetMacroValue(CONTEXTID,"NonAlphaNumFiles") && (strcmp(GetMacroValue(CONTEXTID,"NonAlphaNumFiles"),"on") == 0))
+if (OptionIs(CONTEXTID,"NonAlphaNumFiles",true))
    {
    NONALPHAFILES = true;
    }
 
-if (GetMacroValue(CONTEXTID,"SecureInput") && (strcmp(GetMacroValue(CONTEXTID,"SecureInput"),"on") == 0))
+if (OptionIs(CONTEXTID,"SecureInput",true))
    {
    CFPARANOID = true;
    }
 
-if (GetMacroValue(CONTEXTID,"ShowActions") && (strcmp(GetMacroValue(CONTEXTID,"ShowActions"),"on") == 0))
+if (OptionIs(CONTEXTID,"ShowActions",true))
    {
    SHOWACTIONS = true;
    }
@@ -1013,8 +1025,7 @@ if (GetMacroValue(CONTEXTID,"CompressCommand"))
       }
    }
 
- 
-if (GetMacroValue(CONTEXTID,"ChecksumUpdates") && (strcmp(GetMacroValue(CONTEXTID,"ChecksumUpdates"),"on") == 0))
+if (OptionIs(CONTEXTID,"ChecksumUpdates",true))
    {
    CHECKSUMUPDATES = true;
    } 
@@ -1069,7 +1080,7 @@ if (!NOSPLAY)
       }
    } 
 
-if (GetMacroValue(CONTEXTID,"LogTidyHomeFiles") && (strcmp(GetMacroValue(CONTEXTID,"LogTidyHomeFiles"),"off") == 0))
+if (OptionIs(CONTEXTID,"LogTidyHomeFiles",false))
    {
    LOGTIDYHOMEFILES = false;
    }
@@ -1110,10 +1121,9 @@ void DoTree(passes,info)
 int passes;
 char *info;
 
-{ int pass;
-  struct Item *action;
+{ struct Item *action;
  
-for (pass = 1; pass <= passes; pass++)
+for (PASS = 1; PASS <= passes; PASS++)
    {
    for (action = VACTIONSEQ; action !=NULL; action=action->next)
       {
@@ -1134,19 +1144,19 @@ for (pass = 1; pass <= passes; pass++)
 	 continue;
 	 }
 
-      if ((pass > 1) && NothingLeftToDo())
+      if ((PASS > 1) && NothingLeftToDo())
 	 {
 	 continue;
 	 }
 
       Verbose("\n*********************************************************************\n");
-      Verbose(" %s Sched: %s pass %d @ %s",info,action->name,pass,ctime(&CFINITSTARTTIME));
+      Verbose(" %s Sched: %s pass %d @ %s",info,action->name,PASS,ctime(&CFINITSTARTTIME));
       Verbose("*********************************************************************\n\n");
       
-      switch(EvaluateAction(action->name,&VADDCLASSES,pass))
+      switch(EvaluateAction(action->name,&VADDCLASSES,PASS))
 	 {
 	 case mountinfo:
-	     if (pass == 1)
+	     if (PASS == 1)
 		{
 		GetHomeInfo();
 		GetMountInfo();
@@ -1172,8 +1182,8 @@ for (pass = 1; pass <= passes; pass++)
 	     break;
 	     
 	 case mountall:
-	     if (!NOMOUNTS )
-		{
+	     if (!NOMOUNTS && PASS == 1)
+		{	      
 		MountFileSystems();
 		}
 	     break;
@@ -1239,7 +1249,7 @@ for (pass = 1; pass <= passes; pass++)
 	     
 	 case resolv:
 
-	     if (pass > 1)
+	     if (PASS > 1)
 		{
 		continue;
 		}
@@ -1280,6 +1290,17 @@ for (pass = 1; pass <= passes; pass++)
 		CheckProcesses();
 		}
 	     break;
+
+	 case meths:
+	     if (!NOMETHODS)
+		{
+		DoMethods();
+		}
+	     break;
+	     
+	 case pkgs:
+		 CheckPackages();
+	     break;
 	     
 	 case plugin:      break;
 	     
@@ -1312,6 +1333,7 @@ int NothingLeftToDo()
   struct Edit *veditlist;
   struct Process *vproclist;
   struct Tidy *vtidy;
+  struct Package *vpkg;
 
 for (vproclist = VPROCLIST; vproclist != NULL; vproclist=vproclist->next)
    {
@@ -1389,6 +1411,14 @@ for (vchlink = VCHLINK; vchlink != NULL; vchlink=vchlink->next)
 for (vunmount = VUNMOUNT; vunmount != NULL; vunmount=vunmount->next)
    {
    if (vunmount->done == 'n')
+      {
+      return false;
+      }
+   }
+
+for (vpkg = VPKG; vpkg != NULL; vpkg=vpkg->next)
+   {
+   if (vpkg->done == 'n')
       {
       return false;
       }
@@ -1684,13 +1714,64 @@ while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o
 
       case 'o': actionList = SplitStringAsItemList(optarg, ',');
                 VAVOIDACTIONS = ConcatLists(actionList, VAVOIDACTIONS);
-                break;		
+                break;
 
       default:  Syntax();
                 exit(1);
 
       }
    }
+}
+
+/*******************************************************************/
+
+void CheckForMethod()
+
+{ struct Item *ip,*ip1,*ip2,*args = NULL;
+  char argbuffer[bufsize];
+ 
+if (strcmp(METHODNAME,"cf-nomethod") == 0)
+   {
+   return;
+   }
+
+Verbose("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n+\n");
+Verbose("+ This is a private method: %s\n",METHODNAME);
+
+if (METHODARGS == NULL)
+   {
+   FatalError("This module was declared a method but no MethodParameters declaration was given");
+   }
+else
+   {
+   Verbose("+\n+ Method argument prototype = (");
+   for (ip = METHODARGS; ip != NULL; ip=ip->next)
+      {
+      if (IsDefinedClass(ip->classes))
+	 {
+	 Verbose(" %s",ip->name);
+	 }
+      }
+   Verbose(" )\n+\n");
+   }
+ 
+Verbose("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n");
+
+Verbose("Looking for a data package for this method...");
+ 
+
+printf("REPLY-PROTOTYPE: ");
+
+// Print protolist
+
+LoadMethodPackage(METHODNAME);     
+ 
+Verbose("Collecting arg list");
+ 
+fgets(argbuffer,bufsize-1,stdin);  /* Read authorization prototype */
+
+args = ListFromArgs(argbuffer);
+
 }
 
 /*******************************************************************/
@@ -1738,7 +1819,8 @@ Verbose("Job start time set to %s\n",ctime(&tloc));
 void BuildClassEnvironment()
 
 { struct Item *ip;
-
+ int size = 0;
+ 
 Debug("(BuildClassEnvironment)\n");
 
 snprintf(ALLCLASSBUFFER,bufsize,"%s=",CFALLCLASSESVAR);
@@ -1747,12 +1829,16 @@ for (ip = VHEAP; ip != NULL; ip=ip->next)
    {
    if (IsDefinedClass(ip->name))
       {
-      if (BufferOverflow(ALLCLASSBUFFER,ip->name))
+      if ((size += strlen(ip->name)) > bufsize - buffer_margin)
 	 {
-	 printf("%s: culprit BuildClassEnvironment()\n",VPREFIX);
+	 Verbose("Class buffer overflowed, dumping class environment for modules\n");
+	 Verbose("This would probably crash the exec interface on most machines\n");
 	 return;
 	 }
-
+      else
+	 {
+	 size++; /* Allow for : separator */
+	 }
       strcat(ALLCLASSBUFFER,ip->name);
       strcat(ALLCLASSBUFFER,":");
       }
@@ -1762,10 +1848,15 @@ for (ip = VALLADDCLASSES; ip != NULL; ip=ip->next)
    {
    if (IsDefinedClass(ip->name))
       {
-      if (BufferOverflow(ALLCLASSBUFFER,ip->name))
+      if ((size += strlen(ip->name)) > bufsize - buffer_margin)
 	 {
-	 printf("%s: culprit BuildClassEnvironment()\n",VPREFIX);
+	 Verbose("Class buffer overflowed, dumping class environment for modules\n");
+	 Verbose("This would probably crash the exec interface on most machines\n");
 	 return;
+	 }
+      else
+	 {
+	 size++; /* Allow for : separator */
 	 }
       
       strcat(ALLCLASSBUFFER,ip->name);

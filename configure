@@ -1633,7 +1633,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=cfengine
- VERSION=2.0.7p3
+ VERSION=2.0.8p1
 
 
 cat >>confdefs.h <<_ACEOF
@@ -13615,6 +13615,14 @@ fi
 #define OSF 1
 _ACEOF
 
+	if test "$GCC" = yes; then
+	   { echo "$as_me:$LINENO: WARNING: pthreads may not work with GCC under Tru64" >&5
+echo "$as_me: WARNING: pthreads may not work with GCC under Tru64" >&2;}
+	   { echo "$as_me:$LINENO: WARNING: If you get build errors mentioning PTHREADDEFAULTS etc.," >&5
+echo "$as_me: WARNING: If you get build errors mentioning PTHREADDEFAULTS etc.," >&2;}
+	   { echo "$as_me:$LINENO: WARNING: re-configure with CC=cc." >&5
+echo "$as_me: WARNING: re-configure with CC=cc." >&2;}
+	fi
         ;;
    irix6*)
 	# rtentry is detected OK on a 6.5.19 system.

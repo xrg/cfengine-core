@@ -38,22 +38,10 @@
 /* Pthreads                                                        */
 /*******************************************************************/
 
-#ifdef HAVE_PTHREAD_H
-# include <pthread.h>
-#ifndef _SC_THREAD_STACK_MIN
-#define _SC_THREAD_STACK_MIN PTHREAD_STACK_MIN
-#endif
-#endif
-
-#ifdef HAVE_SCHED_H
-# include <sched.h>
-#endif
-
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
 pthread_attr_t PTHREADDEFAULTS;
 pthread_mutex_t MUTEX_COUNT = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUTEX_HOSTNAME = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 /*******************************************************************/
@@ -72,6 +60,11 @@ int MULTIPLECONNS = false;
 int TRIES = 0;
 int MAXTRIES = 5;
 int LOGCONNS = false;
+
+/*
+ * HvB
+*/
+char BINDINTERFACE[bufsize];
 
 struct option CFDOPTIONS[] =
    {
@@ -133,6 +126,11 @@ void AddToKeyDB ARGLIST((RSA *key,char *addr));
 int SafeOpen ARGLIST((char *filename));
 void SafeClose ARGLIST((int fd));
 
+/*
+ * HvB
+*/
+unsigned find_inet_addr ARGLIST((char *host));
+
 /*******************************************************************/
 /* Level 0 : Main                                                  */
 /*******************************************************************/
@@ -145,7 +143,7 @@ char **argv;
 {
 CheckOptsAndInit(argc,argv);
 GetInterfaceInfo();
-ParseInputFiles();
+ParseInputFile("cfservd.conf");
 CheckVariables();
 SummarizeParsing();
 
@@ -180,6 +178,11 @@ openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_DAEMON);
 strcpy(VINPUTFILE,CFD_INPUT);
 strcpy(CFLOCK,"cfservd");
 OUTPUT[0] = '\0';
+
+/*
+ * HvB: Bas van der Vlies
+*/
+BINDINTERFACE[0] = '\0';
 
 SetSignals();
  
@@ -337,17 +340,17 @@ if ((CFDSTARTTIME = time((time_t *)NULL)) == -1)
    printf("Couldn't read system clock\n");
    }
 
-if (GetMacroValue(CONTEXTID,"CheckIdent") && (strcmp(GetMacroValue(CONTEXTID,"CheckIdent"),"on") == 0))
+if (OptionIs(CONTEXTID,"CheckIdent", true))
    {
    CHECK_RFC931 = true;
    }
 
-if (GetMacroValue(CONTEXTID,"DenyBadClocks") && (strcmp(GetMacroValue(CONTEXTID,"DenyBadClocks"),"off") == 0))
+if (OptionIs(CONTEXTID,"DenyBadClocks", false)) 
    {
    DENYBADCLOCKS = false;
    }
- 
-if (GetMacroValue(CONTEXTID,"LogAllConnections") && (strcmp(GetMacroValue(CONTEXTID,"LogAllConnections"),"on") == 0))
+
+if (OptionIs(CONTEXTID,"LogAllConnections", true)) 
    {
    LOGCONNS = true;
    }
@@ -412,8 +415,8 @@ CFD_INTERVAL = 0;
 Debug("MaxConnections = %d\n",CFD_MAXPROCESSES);
 
 CHECKSUMUPDATES = true;
- 
-if (GetMacroValue(CONTEXTID,"ChecksumUpdates") && (strcmp(GetMacroValue(CONTEXTID,"ChecksumUpdates"),"off") == 0))
+
+if (OptionIs(CONTEXTID,"ChecksumUpdates", false))
   {
   CHECKSUMUPDATES = false;
   } 
@@ -435,6 +438,19 @@ else
    snprintf(VFQNAME,bufsize,"%s.%s",VSYSNAME.nodename,ToLowerStr(VDOMAIN));
    strncpy(VUQNAME,VSYSNAME.nodename,maxvarsize-1);
    }
+
+/*
+ * HvB: Bas van der Vlies
+ * bind to only one interface
+*/
+if (GetMacroValue(CONTEXTID,"BindToInterface"))
+   {
+   bzero(VBUFF,bufsize);
+   ExpandVarstring("$(BindToInterface)",VBUFF,NULL);
+   strncpy(BINDINTERFACE, VBUFF, bufsize-1);
+   Debug("$(BindToInterface) Expanded to %s\n",BINDINTERFACE);
+   }
+
 
 }
 
@@ -664,6 +680,50 @@ while (true)
    }
 }
 
+
+/*******************************************************************************/
+
+/*
+ * HvB: Bas van der Vlies
+ * find_inet_addr - translate numerical or symbolic host name, from the
+ *                  postfix sources and adjusted to cfengine style/syntax
+*/
+unsigned find_inet_addr(host)
+
+char *host;
+{
+
+struct in_addr addr;
+struct hostent *hp;
+
+bzero(VBUFF,bufsize);
+
+addr.s_addr = inet_addr(host);
+if ((addr.s_addr == INADDR_NONE) || (addr.s_addr == 0)) 
+   {
+   if ((hp = gethostbyname(host)) == 0)
+      {
+      snprintf(VBUFF,bufsize,"\nhost not found: %s\n",host);
+      FatalError(VBUFF);
+      }
+   if (hp->h_addrtype != AF_INET)
+      {
+      snprintf(VBUFF,bufsize,"unexpected address family: %d\n",hp->h_addrtype);
+      FatalError(VBUFF);
+      }
+   if (hp->h_length != sizeof(addr))
+      {
+      snprintf(VBUFF,bufsize,"unexpected address length %d\n",hp->h_length);
+      FatalError(VBUFF);
+      }
+
+   memcpy((char *) &addr, hp->h_addr, hp->h_length);
+   }
+
+return (addr.s_addr);
+}
+
+
 /*********************************************************************/
 /* Level 2                                                           */
 /*********************************************************************/
@@ -672,6 +732,9 @@ int OpenReceiverChannel()
 
 { int sd,port;
   int yes=1;
+
+  char *ptr = NULL;
+
   struct linger cflinger;
 #ifdef HAVE_GETADDRINFO
     struct addrinfo query,*response,*ap;
@@ -692,7 +755,15 @@ query.ai_flags = AI_PASSIVE;
 query.ai_family = AF_UNSPEC;
 query.ai_socktype = SOCK_STREAM;
 
-if (getaddrinfo(NULL,"5308",&query,&response) != 0)
+/*
+ * HvB : Bas van der Vlies
+*/
+if (BINDINTERFACE[0] != '\0' )
+  {
+  ptr = BINDINTERFACE;
+  }
+
+if (getaddrinfo(ptr,"5308",&query,&response) != 0)
    {
    CfLog(cferror,"DNS/service lookup failure","getaddrinfo");
    return -1;   
@@ -718,7 +789,7 @@ for (ap = response ; ap != NULL; ap=ap->ai_next)
       CfLog(cferror,"Socket options were not accepted","setsockopt");
       exit(1);
       }
-   
+
    if (bind(sd,ap->ai_addr,ap->ai_addrlen) == 0)
       {
       Debug("Bound to address %s on %s=%d\n",sockaddr_ntop(ap->ai_addr),CLASSTEXT[VSYSTEMHARDCLASS],VSYSTEMHARDCLASS);
@@ -752,8 +823,17 @@ if (response != NULL)
  
 bzero(&sin,sizeof(sin));
 
+/*
+ * HvB : Bas van der Vlies
+*/
+if (BINDINTERFACE[0] != '\0' )
+   {
+   sin.sin_addr.s_addr = find_inet_addr(BINDINTERFACE);
+   }
+else
+  sin.sin_addr.s_addr = INADDR_ANY;
+
 sin.sin_port = (unsigned short)(port); /*  Service returns network byte order */
-sin.sin_addr.s_addr = INADDR_ANY;
 sin.sin_family = AF_INET; 
 
 if ((sd = socket(AF_INET,SOCK_STREAM,0)) == -1)
@@ -958,7 +1038,7 @@ if (CFDSTARTTIME < newstat.st_mtime)
 
    AddClassToHeap("any");
    GetNameInfo();
-   ParseInputFiles();
+   ParseInputFile("cfservd.conf");
    CheckVariables();
    SummarizeParsing();
    }
@@ -1941,7 +2021,8 @@ for (ap = VADMIT; ap != NULL; ap=ap->next)
       Debug("Found a matching rule in access list (%s,%s)\n",realname,ap->path);
       if (stat(ap->path,&statbuf) == -1)
 	 {
-	 Verbose("Warning cannot stat file object %s in admit/grant, or access list refers to dangling link\n",ap->path);
+	 snprintf(OUTPUT,bufsize,"Warning cannot stat file object %s in admit/grant, or access list refers to dangling link\n",ap->path);
+	 CfLog(cflogonly,OUTPUT,"");
 	 continue;
 	 }
       
@@ -1988,7 +2069,8 @@ for (ap = VDENY; ap != NULL; ap=ap->next)
 	  IsFuzzyItemIn(ap->accesslist,MapAddress(conn->ipaddr)))
          {
          access = false;
-	 Debug("Denied access privileges\n");
+	 snprintf(conn->output,bufsize*2,"Host %s explicitly denied access to %s\n",conn->hostname,realname);
+	 CfLog(cfverbose,conn->output,"");   
          break;
          }
       }
@@ -2397,6 +2479,7 @@ cfst.cf_atime    = statbuf.st_atime;
 cfst.cf_mtime    = statbuf.st_mtime;
 cfst.cf_ctime    = statbuf.st_ctime;
 cfst.cf_ino      = statbuf.st_ino;
+cfst.cf_dev      = statbuf.st_dev;
 cfst.cf_readlink = linkbuf;
 
 if (cfst.cf_nlink == cfnosize)
@@ -2431,9 +2514,10 @@ Debug("OK: type=%d\n mode=%o\n lmode=%o\n uid=%d\n gid=%d\n size=%ld\n atime=%d\
 	cfst.cf_atime,cfst.cf_mtime);
 
 
-snprintf(sendbuffer,bufsize,"OK: %d %d %d %d %d %ld %d %d %d %d %d %d",
+snprintf(sendbuffer,bufsize,"OK: %d %d %d %d %d %ld %d %d %d %d %d %d %d",
 	cfst.cf_type,cfst.cf_mode,cfst.cf_lmode,cfst.cf_uid,cfst.cf_gid,(long)cfst.cf_size,
-	cfst.cf_atime,cfst.cf_mtime,cfst.cf_ctime,cfst.cf_makeholes,cfst.cf_ino,cfst.cf_nlink);
+	cfst.cf_atime,cfst.cf_mtime,cfst.cf_ctime,cfst.cf_makeholes,cfst.cf_ino,
+	 cfst.cf_nlink,cfst.cf_dev);
 
 SendTransaction(conn->sd_reply,sendbuffer,0,CF_DONE);
 bzero(sendbuffer,bufsize);
@@ -2458,7 +2542,7 @@ void CfGetFile(args)
 
 struct cfd_get_arg *args;
 
-{ int sd,fd,n_read,total=0,cipherlen,sendlen=0;
+{ int sd,fd,n_read,total=0,cipherlen,sendlen=0,count = 0;
   char sendbuffer[bufsize+1],out[bufsize],*filename;
   struct stat statbuf;
   uid_t uid;
@@ -2508,12 +2592,6 @@ if (args->encrypt)
    EVP_CIPHER_CTX_init(&ctx);
    EVP_EncryptInit(&ctx,EVP_bf_cbc(),key,iv);
 
-   if (statbuf.st_size < 17)
-      {
-      snprintf(OUTPUT,bufsize,"Cannot encrypt files smaller than 17 bytes with OpenSSL/Blowfish (%s)",filename);
-      CfLog(cferror,OUTPUT,"");
-      return;
-      }
    }
  
 if ((fd = SafeOpen(filename)) == -1)
@@ -2529,11 +2607,15 @@ else
       {
       bzero(sendbuffer,bufsize);
 
+      Debug("Now reading from disk...\n");
+      
       if ((n_read = read(fd,sendbuffer,args->buf_size)) == -1)
 	 {
 	 CfLog(cferror,"read failed in GetFile","read");
 	 break;
 	 }
+
+      Debug("Read completed..\n");
 
       if (strncmp(sendbuffer,CFFAILEDSTR,strlen(CFFAILEDSTR)) == 0)
 	 {
@@ -2548,8 +2630,12 @@ else
 	 { int savedlen = statbuf.st_size;
 
 	 /* This can happen with log files /databases etc */
-	 
-	 stat(filename,&statbuf);
+
+	 if (count++ % 3 == 0) /* Don't do this too often */
+	    {
+	    Debug("Restatting %s\n",filename);
+	    stat(filename,&statbuf);
+	    }
 	 
 	 if (statbuf.st_size != savedlen)
 	    {
@@ -2582,20 +2668,27 @@ else
 	    close(fd);
 	    return;
 	    }
-	 
-	 if (SendTransaction(sd,out,cipherlen,CF_MORE) == -1)
-            {
-            CfLog(cfverbose,"Send failed in GetFile","send");
-            break;
-            }
+
+	 if (cipherlen)
+	    {
+	    if (SendTransaction(sd,out,cipherlen,CF_MORE) == -1)
+	       {
+	       CfLog(cfverbose,"Send failed in GetFile","send");
+	       break;
+	       }
+	    }
 	 }
       else
 	 {
+	 Debug("Sending data on socket (%d)\n",sendlen);
+	 
 	 if (SendSocketStream(sd,sendbuffer,sendlen,0) == -1)
 	    {
 	    CfLog(cfverbose,"Send failed in GetFile","send");
 	    break;
 	    }
+
+	 Debug("Sending complete...\n");
 	 }     
       }
 
@@ -2692,7 +2785,7 @@ offset = 0;
 
 for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    {
-   if (strlen(dirp->d_name)+1+offset >= bufsize - buffer_margin)
+   if (strlen(dirp->d_name)+1+offset >= bufsize - maxlinksize)
       {
       SendTransaction(conn->sd_reply,sendbuffer,offset+1,CF_MORE);
       offset = 0;

@@ -64,7 +64,9 @@ cfagent_SOURCES =							\
 	acl.c								\
 	dce_acl.c							\
 	nameinfo.c							\
-	strategies.c
+	strategies.c                         				\
+	methods.c							\
+	package.c
 
 cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 

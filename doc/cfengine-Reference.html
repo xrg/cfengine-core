@@ -382,6 +382,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#miscmounts">miscmounts</a>: 
 <li><a href="#mountables">mountables</a>: 
 <li><a href="#processes">processes</a>: 
+<li><a href="#packages">packages</a>: 
 <li><a href="#required">required</a>: 
 <li><a href="#resolve">resolve</a>: 
 <li><a href="#shellcommands">shellcommands</a>: 
@@ -1391,7 +1392,7 @@ Alerts cannot belong to the class <code>any</code>.
      
         class::
      
-           <var>quoted message</var>
+           <var>quoted message</var> ifelapsed=<var>time</var>
            ShowState(<var>parameter</var>)
      
      </pre>
@@ -1400,12 +1401,12 @@ Alerts cannot belong to the class <code>any</code>.
 <pre class="smallexample">     
      alerts:
      
+       "Reminder: say hello every hour" ifelapsed=60
+     
        nfsd_in_high_dev2::
      
        "High NFS server access rate 2dev at $(host) value $(value_nfsd_in) av $(average_nfsd_in) pm $(stddev_nfsd_in)"
        ShowState(incoming.nfs)
-     
-     
      
       # ROOT PROCS
      
@@ -1569,6 +1570,7 @@ like the following example:
        myvariable = ( something )
        mymacro    = ( somethingelse )
        myrandom   = ( RandInt(3,6) )
+       myexcerpt  = ( ReadFile("/etc/services",220))
      
      </pre>
 
@@ -1577,6 +1579,8 @@ Note that a limited number of in-built functions exists:
      <ul>
 <li><code>RandomInt(a,b)</code>
 Is substituted for a random number between (a,b). 
+<li><code>ReadFile</code>(<var>filename</var>,<var>Max number of bytes</var>)
+A maximum number of bytes is read from the named file and placed in a variable. 
 </ul>
 
    <p>The meaning of each of these lines is described below.
@@ -1595,6 +1599,7 @@ Is substituted for a random number between (a,b).
 <li><a href="#childlibpath">childlibpath</a>: 
 <li><a href="#copylinks">copylinks</a>: 
 <li><a href="#defaultcopytype">defaultcopytype</a>: 
+<li><a href="#defaultpkgmgr">defaultpkgmgr</a>: 
 <li><a href="#deletenonuserfiles">deletenonuserfiles</a>: 
 <li><a href="#deletenonownerfiles">deletenonownerfiles</a>: 
 <li><a href="#deletenonusermail">deletenonusermail</a>: 
@@ -1697,6 +1702,7 @@ possibilities:
            netconfig              # check net interface config
            resolve                # check resolver setup
            unmount                # unmount any filesystems
+           packages               # check for required packages
            shellcommands          # execute shell commands
            editfiles              # edit files
            addmounts              # add new filesystems to system
@@ -1818,6 +1824,12 @@ important NFS resources.
      <br><dt><code>resolve</code>
      <dd>checks and corrects the DNS domain name and the order
 of nameservers in the file <code>/etc/resolv.conf</code>.
+
+     <br><dt><code>packages</code>
+     <dd>executes commands defined under the <code>packages</code> section
+of the program.  This will query the system's package database
+for the specified packages, at the specified versions, and set
+classes based on whether or not those packages exist.
 
      <br><dt><code>shellcommands</code>
      <dd>executes all the commands defined under the <code>shellcommands</code>
@@ -2187,7 +2199,7 @@ are valid only as long as that class is defined. For instance
 <div class="node">
 <p><hr>
 Node:<a name="defaultcopytype">defaultcopytype</a>,
-Next:<a rel="next" accesskey="n" href="#deletenonuserfiles">deletenonuserfiles</a>,
+Next:<a rel="next" accesskey="n" href="#defaultpkgmgr">defaultpkgmgr</a>,
 Previous:<a rel="previous" accesskey="p" href="#copylinks">copylinks</a>,
 Up:<a rel="up" accesskey="u" href="#control">control</a>
 <br>
@@ -2207,9 +2219,31 @@ e.g.
 
 <div class="node">
 <p><hr>
+Node:<a name="defaultpkgmgr">defaultpkgmgr</a>,
+Next:<a rel="next" accesskey="n" href="#deletenonuserfiles">deletenonuserfiles</a>,
+Previous:<a rel="previous" accesskey="p" href="#defaultcopytype">defaultcopytype</a>,
+Up:<a rel="up" accesskey="u" href="#control">control</a>
+<br>
+</div>
+
+<h4 class="subsection">DefaultPkgMgr</h4>
+
+   <p>Sets the default value of the <code>pkgmgr</code> attribute for
+<code>packages</code> items.
+
+<pre class="smallexample">     DefaultPkgMgr = ( rpm )
+     </pre>
+
+   <p>By default, this variable is not set, meaning there will be no
+package manager selected, and each item in the <code>packages</code>
+section must specify its own package manager, or it will not be
+checked.  For information on the values of this variable, See <a href="#packages">packages</a>.
+
+<div class="node">
+<p><hr>
 Node:<a name="deletenonuserfiles">deletenonuserfiles</a>,
 Next:<a rel="next" accesskey="n" href="#deletenonownerfiles">deletenonownerfiles</a>,
-Previous:<a rel="previous" accesskey="p" href="#defaultcopytype">defaultcopytype</a>,
+Previous:<a rel="previous" accesskey="p" href="#defaultpkgmgr">defaultpkgmgr</a>,
 Up:<a rel="up" accesskey="u" href="#control">control</a>
 <br>
 </div>
@@ -2482,6 +2516,9 @@ Up:<a rel="up" accesskey="u" href="#control">control</a>
 
 <h4 class="subsection">ExpireAfter</h4>
 
+   <p>If you change the value of this parameter, it should be one of the
+first things you do in your configuration script.
+
    <p>This parameter controls the global value of the ExpireAfter parameter. 
 See <a href="cfengine-Tutorial.html#Spamming%20and%20security">Spamming and security</a>. This parameter controls the maximum time in
 minutes which a cfengine action is allowed to live. After this time
@@ -2502,7 +2539,10 @@ For instance,
      
      </pre>
 
-<p>sets the expiry time parameter to 15 minutes for this copy command.
+<p>sets the expiry time parameter to 15 minutes for this copy command. 
+This method should be considered old and deprecated however. 
+As of version 2.1.0, you can define the expiry time on a per-command basis,
+as options of the form <code>expireafter=10</code>.
 
 <div class="node">
 <p><hr>
@@ -2564,11 +2604,13 @@ Up:<a rel="up" accesskey="u" href="#control">control</a>
 
 <h4 class="subsection">IfElapsed</h4>
 
-   <p>This parameter controls the global value of the IfElapsed
-parameter, See <a href="cfengine-Tutorial.html#Spamming%20and%20security">Spamming and security</a>. This parameter
-controls the minimum time which must have elapsed for
-an action in the action sequence before which it will be
-executed again.
+   <p>If you change the value of this parameter, it should be one of the
+first things you do in your configuration script.
+
+   <p>This parameter controls the global value of the IfElapsed parameter,
+See <a href="cfengine-Tutorial.html#Spamming%20and%20security">Spamming and security</a>. This parameter controls the minimum time
+which must have elapsed for an action in the action sequence before
+which it will be executed again.
 
 <pre class="smallexample">     
       IfElapsed = ( <var>time-in-minutes</var> )
@@ -2584,7 +2626,10 @@ For instance,
      
      </pre>
 
-<p>sets the elapsed time parameter to 15 minutes for this copy command.
+<p>sets the elapsed time parameter to 15 minutes for this copy command. 
+This method should be considered old and deprecated however. 
+As of version 2.1.0, you can define the expiry time on a per-command basis,
+as options of the form <code>ifelapsed=15</code>.
 
 <div class="node">
 <p><hr>
@@ -3570,10 +3615,13 @@ attempts to prevent this during remote copies.</em>
                              stealth=<var>true/on/</var><b>false/off</b><var></var>
                              timestamps=<b>preserve/keep</b>
                              symlink=<var>pattern</var>
+     
                              include=<var>pattern</var>
                              exclude=<var>pattern</var>
                              ignore=<var>pattern</var>
                              filter=<var>filteralias</var>
+                             xdev=<var>true/on</var>/<b>false/off</b>
+     
                              recurse=<var>number/inf/</var><var>0</var>
                              type=<b>ctime</b><var>/mtime/checksum/sum/byte/binary</var>
                              linktype=<b>absolute/symbolic</b><var>/relative/hard/none/copy</var>
@@ -3708,6 +3756,10 @@ be excluded from a copy operation. A global list of
 patterns can also be defined in the control section of the program
 `excludes' override `includes'. 
 See <a href="#excludelinks">excludelinks</a>.
+
+     <br><dt><code>xdev</code>
+     <dd>Prevents cfengine from descending into file systems that are not on the
+same device as the root of the rescurion path.
 
      <br><dt><code>type</code>
      <dd>Normally cfengine uses the ctime date-stamps on files to determine
@@ -4012,6 +4064,8 @@ special variable <code>$(binserver)</code> here.
          /<var>filesystem</var> freespace=<var>size-limit</var> define=<var>class-list</var>(,:.)
      
           inform=<var>true</var> log=<var>true</var> force=<var>true</var>
+          ifelapsed=<var>mins</var>
+          expireafter=<var>mins</var>
      
      </pre>
 
@@ -4088,6 +4142,8 @@ the <code>touch</code> option in the <code>files</code> actions.  See <a href="#
                               syslog=<var>true/on</var>/<var>false/off</var>
                               inform=<var>true/on</var>/<var>false/off</var>
      
+                              ifelapsed=<var>mins</var>
+                              expireafter=<var>mins</var>
      </pre>
 
 <p>For example
@@ -4142,6 +4198,9 @@ be examined later.  The syntax is
                            inform=<var>true/on</var>/<b>false/off</b>
                            repository=<var>destination directory</var>
                            action=<b>disable</b>/<var>warn</var>
+     
+                           ifelapsed=<var>mins</var>
+                           expireafter=<var>mins</var>
      
      </pre>
 
@@ -4306,7 +4365,7 @@ and edit all files matching a pattern, using <code>Include</code>, <code>Exclude
      
            { <var>directory-to-be-edited</var>
      
-           Recurse "inf"
+           Recurse "inf"          # iterated over all files
            Filter  "filteralias"
            Include ".cshrc"
            Ignore  "bin"
@@ -4682,7 +4741,9 @@ See discussion below.
      <br><dt><code>EndLoop</code>
      <dd>Terminates a loop. See <code>ForEachLineIn</code>
 
-     <br><dt><code>Filter </code><var>filteralias</var><code></code>
+     <br><dt><code>ExpireAfter </code><var>mins</var><code></code>
+     <dd>
+<br><dt><code>Filter </code><var>filteralias</var><code></code>
      <dd>Name a fiter for pruning file searches.
 
      <br><dt><code>FixEndOfLine</code>
@@ -4709,6 +4770,9 @@ the current file.
 
      <br><dt><code>HashCommentLinesStarting </code><var>quoted-string</var><code></code>
      <dd>Add a <code>#</code> to the start of any line starting with the quoted string.
+
+     <br><dt><code>IfElapsed </code><var>mins</var><code></code>
+     <dd>As usual.
 
      <br><dt><code>IncrementPointer </code><var>quoted-number</var><code></code>
      <dd>Increments the value (in lines) of the file pointer
@@ -5059,15 +5123,17 @@ the form of the statement in pseudo-code:
                                include=<var>pattern</var>
                                exclude=<var>pattern</var>
                                filter=<var>filter alias</var>
+                               xdev=<var>true/on</var>/<b>false/off</b>
      
                                define=<var>classlist</var>
                                elsedefine=<var>classlist</var>
      
                                checksum=<var>md5</var>
                                flags=<var>BSD flags</var>
-                               syslog=<var>true/on</var>/<var>false/off</var>
-                               inform=<var>true/on</var>/<var>false/off</var>
-     
+                               syslog=<var>true/on</var>/<b>false/off</b>
+                               inform=<var>true/on</var>/<b>false/off</b>
+                               ifelapsed=<var>mins</var>
+                               expireafter=<var>mins</var>
      </pre>
 
 <p>An example would be the following:
@@ -5225,6 +5291,10 @@ warnings.  Security warning messages are issued only once and the value
 in the database is then changed to the new value of the file
 automatically i.e. the behaviour is similar to that of setuid root
 program detection, See <a href="#ChecksumDatabase">ChecksumDatabase</a>.
+
+     <br><dt><code>xdev</code>
+     <dd>Prevents cfengine from descending into file systems that are not on the
+same device as the root of the rescurion path.
 
    </dl>
 
@@ -6056,7 +6126,8 @@ children.  The <code>linkchildren</code> feature is also available from the
                  nofile=<b>kill</b>/<var>force</var>
                  syslog=<var>true/on</var>/<var>false/off</var>
                  inform=<var>true/on</var>/<var>false/off</var>
-     
+                 ifelapsed=<var>mins</var>
+                 expireafter=<var>mins</var>
      </pre>
 
 <p><em>The special variable </em><code>$(binserver)</code><em> can be used in </em><code>links</code><em>.</em>
@@ -6474,6 +6545,8 @@ miscellaneous filesystems using a statement of the form:
      
            <var>infohost</var>:<var>source-directory</var> <var>destination</var> mode=<var>mode</var>
      
+          ifelapsed=<var>mins</var> expireafter=<var>mins</var>
+     
      </pre>
 
 <p>For example
@@ -6561,7 +6634,7 @@ configuration of the automounter, using the command <code>AutomountDirectResourc
 <div class="node">
 <p><hr>
 Node:<a name="processes">processes</a>,
-Next:<a rel="next" accesskey="n" href="#required">required</a>,
+Next:<a rel="next" accesskey="n" href="#packages">packages</a>,
 Previous:<a rel="previous" accesskey="p" href="#mountables">mountables</a>,
 Up:<a rel="up" accesskey="u" href="#Cfagent%20reference">Cfagent reference</a>
 <br>
@@ -6599,6 +6672,8 @@ form of a process command is
                              exclude=<var>literal</var>
                              syslog=<var>true/on</var>/<var>false/off</var>
                              inform=<var>true/on</var>/<var>false/off</var>
+                             ifelapsed=<var>mins</var>
+                             expireafter=<var>mins</var>
      
          SetOptionString <var>"quoted option string"</var>
      
@@ -6832,9 +6907,162 @@ of matches is greater than 20, one would write:
 
 <div class="node">
 <p><hr>
+Node:<a name="packages">packages</a>,
+Next:<a rel="next" accesskey="n" href="#required">required</a>,
+Previous:<a rel="previous" accesskey="p" href="#processes">processes</a>,
+Up:<a rel="up" accesskey="u" href="#Cfagent%20reference">Cfagent reference</a>
+<br>
+</div>
+
+<h3 class="section">packages</h3>
+
+   <p>The packages action allows you to check for the existance of packages
+on the system, as determined by the package database you select. 
+This operation is set up such that it tries not to make assumptions about
+the package manager in use.  For example, it should be possible to use
+RPM on a Solaris box.
+
+   <p>The syntax summary is:
+
+<pre class="smallexample">     
+     packages:
+     
+        <var>class</var>::
+     
+           <var>package-name</var>
+                             pkgmgr=<b>none</b>/<var>rpm</var>
+                             cmp=<b>eq</b>/<var>lt/gt/ge/le/ne</var>
+                             version=<var>version-string</var>
+                             define=<var>class-list</var>(,:.)
+                             elsedefine=<var>class-list</var>(,:.)
+     
+                             ifelapsed=<var>mins</var>
+                             expireafter=<var>mins</var>
+     
+     </pre>
+
+     <dl>
+
+     <br><dt><code>cmp</code>
+     <dd>Determines how the version of the installed package will be compared to
+that specified by the <code>version</code> attribute.  Possible values include:
+
+          <ul>
+<li><code>eq</code>
+The version installed must be equal to <code>version</code>
+<li><code>lt</code>
+The version installed must be less than <code>version</code>
+<li><code>gt</code>
+The version installed must be greater than <code>version</code>
+<li><code>le</code>
+The version installed must be less than or equal to <code>version</code>
+<li><code>ge</code>
+The version installed must be creater than or equal to <code>version</code>
+<li><code>ne</code>
+The version installed must not be equal to <code>version</code>
+</ul>
+
+     <p>The default value for this attribute is <code>eq</code>.
+
+     <br><dt><code>version</code>
+     <dd>Specifies the package manager specific version string to match.  If
+this is not specified, then any version matches, and the value of
+the <code>cmp</code> attribute is ignored.  See the allowed values of
+<code>pkgmgr</code> below for an explation of how each package manager
+will interpret this.
+
+     <br><dt><code>pkgmgr</code>
+     <dd>Selects the package manager database to query.  This defaults to either
+the value of the <code>DefaultPkgMgr</code> variable, or if that is not set,
+there is no default.  In that case, no checking will be done unless
+<code>pkgmgr</code> is set explicitly for each package.  Note that the default
+value '<code>none</code>' listed is merely a pseudo-value, and cannot actually
+be used, since it would make no sense anyway.
+
+     <p>Each package manager will interpret the <code>version</code> and <code>cmp</code>
+attributes in its own way.  So, for example, when you use
+<code>pkgmgr=rpm</code>, the comparison will be done with the same rules that
+RPM use if it were not being run through cfengine.
+
+     <p>Currently, the following values are accepted:
+
+          <dl>
+<dt><code>rpm</code>
+          <dd>This uses the rpm command, which cfengine expects to find as <code>/bin/rpm</code>
+to query the machine's RPM database.  The <code>rpm</code> check assumes that you
+are using a version of RPM that understands the concept of an epoch,
+which means that you will want to use RPM version 3.0.3 or greater. 
+Versions as early as 2.5.6 may work, but it is doubtful.  If multiple
+packages of the same name are installed (i.e. kernel), then the check
+considers the package to be installed at the specified version if
+<b>at least one</b> of them satisifies the criteria specified by <code>cmp</code> and
+<code>version</code>.
+
+          <p>The format of a RPM version string is: [epoch:]version[-release].  The
+version[-release] can be seen by simply running: <code>rpm -q &lt;pkg&gt;</code>. 
+In order to see the epoch, you must use a query format, like this:
+<code>rpm -q --queryformat "%{EPOCH}:%{VERSION}-%{RELEASE}\n" &lt;pkg&gt;</code>. 
+Most packages do not have an epoch, and will print <code>(none)</code> in the
+epoch space.  In recent incarnations of RPM, the absense of an epoch
+is interpreted as 0.  This is also how cfengine will interpret it. 
+<em>Be careful with this.  If the installed version
+of a package has an epoch greater than 0, and you do not specify the epoch,
+unexpected results may happen.</em>  For example, if you have a package installed,
+<code>foo-1:2.0-1</code>, and you specify a <code>version=3.0-1</code> and a
+<code>cmp=gt</code>, the check will be true, because the installed version has
+an epoch of 1, and you did not specify an epoch, which implies you wanted
+an epoch of 0.  The rule here is basically to always check the epoch of
+the package you really want, and specify it.  It may take a few extra
+extra seconds to check, but it will save you lots of headaches later.
+
+     </dl>
+
+     <br><dt><code>define</code>
+     <dd>Specifies the list of classes to define if the specified package is
+installed.
+
+     <br><dt><code>elsedefine</code>
+     <dd>Specifies the list of classes to define if the specified package is not
+installed.
+
+</dl>
+
+   <p>Example:
+
+<pre class="smallexample">     packages:
+     
+         redhat_8_0::
+             m4  version=0:1.4.1-11 cmp=eq pkgmgr=rpm elsedefine=needsm4
+     
+     </pre>
+
+<p>In this first example, we are looking for the m4 package at exactly version
+0:1.4.1-11.  The installed m4 package on a redhat_8_0 box has no epoch
+which is the same as zero.  Specifying it will keep you out of trouble.  This
+check will cause <code>needsm4</code> to be defined if the exact version of
+m4 specified is not installed.
+
+<pre class="smallexample">     control:
+         redhat:;
+             DefaultPkgMgr = ( rpm )
+     
+     packages:
+         redhat_8_0::
+             make version=0:4.5-2 cmp=ge define=hasmake elsedefine=needsmake
+     
+     </pre>
+
+<p>In the second example, we use the DefaultPkgMgr variable to set the default
+for the <code>pkgmgr</code> attribute to <code>rpm</code>.  The actual version of make
+installed on recent redhat_8_0 machine is 1:3.79.1-14.  Since the check is
+for greater than or equal to this version, the hasmake class will be
+defined.
+
+<div class="node">
+<p><hr>
 Node:<a name="required">required</a>,
 Next:<a rel="next" accesskey="n" href="#resolve">resolve</a>,
-Previous:<a rel="previous" accesskey="p" href="#processes">processes</a>,
+Previous:<a rel="previous" accesskey="p" href="#packages">packages</a>,
 Up:<a rel="up" accesskey="u" href="#Cfagent%20reference">Cfagent reference</a>
 <br>
 </div>
@@ -6850,6 +7078,8 @@ special variable <code>$(binserver)</code> here.
        required:
      
          /<var>filesystem</var> freespace=<var>size-limit</var> define=<var>class-list</var>(,:.)
+     
+          ifelapsed=<var>mins</var> expireafter=<var>mins</var>
      
      </pre>
 
@@ -7004,6 +7234,9 @@ commands from this section.
                preview=<var>true</var>/<b>false</b>
                inform=<b>false</b><var>/true</var>
      
+               ifelapsed=<var>mins</var>
+               expireafter=<var>mins</var>
+     
      </pre>
 
 <p>The user and group ID's of the process can be set to restrict the
@@ -7124,10 +7357,13 @@ entry is:
      
                             syslog=<var>true/on</var>/<var>false/off</var>
                             inform=<var>true/on</var>/<var>false/off</var>
+                            ifelapsed=<var>mins</var>
+                            expireafter=<var>mins</var>
      
                             filter=<var>filter alias</var>
                             ignore=<var>pattern</var>
                             exclude=<var>pattern</var>
+                            xdev=<var>true/on</var>/<b>false/off</b>
      
      </pre>
 
@@ -7245,6 +7481,10 @@ be removed, only sub-directories.
      <dd>The colon, comma or dot separated list of classes becomes defined
 if any file matching the specified pattern is deleted.
 
+     <br><dt><code>xdev</code>
+     <dd>Prevents cfengine from descending into file systems that are not on the
+same device as the root of the rescurion path.
+
    </dl>
 Take a look at the following example:
 
@@ -7304,6 +7544,8 @@ equivalent).  The syntax is simply
              deletedir=<var></var><b>true</b><var>/false</var>
              deletefstab=<var></var><b>true</b><var>/false</var>
              force=<var>true/</var><b>false</b><var></var>
+             ifelapsed=<var>mins</var>
+             expireafter=<var>mins</var>
      
      </pre>
 
@@ -7400,6 +7642,8 @@ file is as follows:
      
             DynamicAddresses = ( <var>IP numbers</var> )
      
+            BindToInterface = ( <var>IP number</var>/<var>hostname</var> )
+     
       groups:
      
         <var>Group definitions</var>
@@ -7447,9 +7691,10 @@ Up:<a rel="up" accesskey="u" href="#Cfservd.conf%20and%20cfrun%20reference">Cfse
 <li><a accesskey="4" href="#AllowUsers">AllowUsers</a>: 
 <li><a accesskey="5" href="#AutoExecCommand">AutoExecCommand</a>: 
 <li><a accesskey="6" href="#AutoExecInterval">AutoExecInterval</a>: 
-<li><a accesskey="7" href="#ChecksumDatabase%20in%20cfservd">ChecksumDatabase in cfservd</a>: 
-<li><a accesskey="8" href="#cfrunCommand">cfrunCommand</a>: 
-<li><a accesskey="9" href="#DenyBadClocks">DenyBadClocks</a>: 
+<li><a accesskey="7" href="#BindToInterface">BindToInterface</a>: 
+<li><a accesskey="8" href="#ChecksumDatabase%20in%20cfservd">ChecksumDatabase in cfservd</a>: 
+<li><a accesskey="9" href="#cfrunCommand">cfrunCommand</a>: 
+<li><a href="#DenyBadClocks">DenyBadClocks</a>: 
 <li><a href="#DenyConnectionsFrom">DenyConnectionsFrom</a>: 
 <li><a href="#cfservd%20IfElapsed">cfservd IfElapsed</a>: 
 <li><a href="#LogAllConnections">LogAllConnections</a>: 
@@ -7584,7 +7829,7 @@ Up:<a rel="up" accesskey="u" href="#cfservd%20control">cfservd control</a>
 <div class="node">
 <p><hr>
 Node:<a name="AutoExecInterval">AutoExecInterval</a>,
-Next:<a rel="next" accesskey="n" href="#ChecksumDatabase%20in%20cfservd">ChecksumDatabase in cfservd</a>,
+Next:<a rel="next" accesskey="n" href="#BindToInterface">BindToInterface</a>,
 Previous:<a rel="previous" accesskey="p" href="#AutoExecCommand">AutoExecCommand</a>,
 Up:<a rel="up" accesskey="u" href="#cfservd%20control">cfservd control</a>
 <br>
@@ -7596,9 +7841,26 @@ Up:<a rel="up" accesskey="u" href="#cfservd%20control">cfservd control</a>
 
 <div class="node">
 <p><hr>
+Node:<a name="BindToInterface">BindToInterface</a>,
+Next:<a rel="next" accesskey="n" href="#ChecksumDatabase%20in%20cfservd">ChecksumDatabase in cfservd</a>,
+Previous:<a rel="previous" accesskey="p" href="#AutoExecInterval">AutoExecInterval</a>,
+Up:<a rel="up" accesskey="u" href="#cfservd%20control">cfservd control</a>
+<br>
+</div>
+
+<h4 class="subsection">BindToInterface</h4>
+
+   <p>If this is set to a specific IP address of an IP configured interface,
+cfservd will listen for connections only on that interface. On Multi-homed
+hosts this allows one to restrict the traffic to one interface. Note, Unix
+only allows one or all interfaces to be selected. An interface must be
+configured with an IP address in order to be bound.
+
+<div class="node">
+<p><hr>
 Node:<a name="ChecksumDatabase%20in%20cfservd">ChecksumDatabase in cfservd</a>,
 Next:<a rel="next" accesskey="n" href="#cfrunCommand">cfrunCommand</a>,
-Previous:<a rel="previous" accesskey="p" href="#AutoExecInterval">AutoExecInterval</a>,
+Previous:<a rel="previous" accesskey="p" href="#BindToInterface">BindToInterface</a>,
 Up:<a rel="up" accesskey="u" href="#cfservd%20control">cfservd control</a>
 <br>
 </div>
@@ -9703,17 +9965,17 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>${EmailMaxLines}</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>+</code>: <a href="#groups">groups</a>
 <li><code>-D option</code>: <a href="#addclasses">addclasses</a>, <a href="#Cfengine%20classes">Cfengine classes</a>
-<li><code>-l</code>: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
+<li><code>-l</code>: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li><code>-L</code>: <a href="#Single%20links">Single links</a>
-<li><code>-N option</code>: <a href="#addclasses">addclasses</a>, <a href="#Cfengine%20classes">Cfengine classes</a>
+<li><code>-N option</code>: <a href="#Cfengine%20classes">Cfengine classes</a>, <a href="#addclasses">addclasses</a>
 <li><code>-x option</code>: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>.cfengine.rm</code>: <a href="#tidy">tidy</a>
 <li><code>/etc/host.conf</code>: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>/var/cfengine/output</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>
-<li><code>a=</code>: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
+<li><code>a=</code>: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li><code>AccessedBefore()</code>: <a href="#Evaluated%20classes">Evaluated classes</a>
 <li><code>action</code>: <a href="#Syntax">Syntax</a>
-<li><code>actionsequence</code>: <a href="#actionsequence">actionsequence</a>, <a href="#control">control</a>
+<li><code>actionsequence</code>: <a href="#control">control</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>AddClasses</code>: <a href="#addclasses">addclasses</a>
 <li><code>AddInstallable</code>: <a href="#addinstallable">addinstallable</a>
 <li><code>addmounts</code>: <a href="#actionsequence">actionsequence</a>
@@ -9721,7 +9983,8 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>alerts</code>: <a href="#alerts">alerts</a>
 <li><code>AllowUsers</code>: <a href="#AllowUsers">AllowUsers</a>
 <li><code>backup=</code>: <a href="#copy">copy</a>
-<li><code>binserver</code>: <a href="#Single%20links">Single links</a>, <a href="#Link%20Children">Link Children</a>
+<li><code>BindToInterface</code>: <a href="#BindToInterface">BindToInterface</a>
+<li><code>binserver</code>: <a href="#Link%20Children">Link Children</a>, <a href="#Single%20links">Single links</a>
 <li><code>binservers</code>: <a href="#binservers">binservers</a>
 <li><code>broadcast</code>: <a href="#broadcast">broadcast</a>
 <li><code>cf.preconf</code>: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
@@ -9733,11 +9996,12 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>ChecksumUpdates</code>: <a href="#ChecksumUpdates">ChecksumUpdates</a>
 <li><code>checktimezone</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>childlinks</code>: <a href="#actionsequence">actionsequence</a>
+<li><code>cmp=</code>: <a href="#packages">packages</a>
 <li><code>control</code>: <a href="#control">control</a>
 <li><code>create</code>: <a href="#create">create</a>
 <li><code>directories</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>disable</code>: <a href="#actionsequence">actionsequence</a>, <a href="#disable">disable</a>
-<li><code>domain</code>: <a href="#control">control</a>, <a href="#domain">domain</a>
+<li><code>domain</code>: <a href="#domain">domain</a>, <a href="#control">control</a>
 <li><code>DryRun</code>: <a href="#dryrun">dryrun</a>
 <li><code>editbinaryfilesize</code>: <a href="#editbinaryfilesize">editbinaryfilesize</a>
 <li><code>editfiles</code>: <a href="#actionsequence">actionsequence</a>
@@ -9750,14 +10014,14 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>FileExtensions</code>: <a href="#fileextension">fileextension</a>
 <li><code>files</code>: <a href="#actionsequence">actionsequence</a>, <a href="#files">files</a>
 <li><code>filter</code>: <a href="#filters">filters</a>
-<li><code>force=</code>: <a href="#disks">disks</a>, <a href="#copy">copy</a>
+<li><code>force=</code>: <a href="#copy">copy</a>, <a href="#disks">disks</a>
 <li><code>freespace=</code>: <a href="#required">required</a>, <a href="#disks">disks</a>
 <li><code>g=</code>: <a href="#Syntax">Syntax</a>
 <li><code>group</code>: <a href="#Syntax">Syntax</a>
 <li><code>groups</code>: <a href="#groups">groups</a>
 <li><code>home</code>: <a href="#Syntax">Syntax</a>
-<li><code>HomePattern</code>: <a href="#homepattern">homepattern</a>
 <li><code>homepattern</code>: <a href="#mountables">mountables</a>
+<li><code>HomePattern</code>: <a href="#homepattern">homepattern</a>
 <li><code>homeservers</code>: <a href="#homeservers">homeservers</a>
 <li><code>import</code>: <a href="#import">import</a>
 <li><code>include=</code>: <a href="#Syntax">Syntax</a>
@@ -9771,7 +10035,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>LD_LIBRARY_PATH</code>: <a href="#control">control</a>
 <li><code>link</code>: <a href="#Syntax">Syntax</a>
 <li><code>linkchildren</code>: <a href="#Files%20linkchildren">Files linkchildren</a>, <a href="#Link%20Children">Link Children</a>
-<li><code>links</code>: <a href="#actionsequence">actionsequence</a>, <a href="#links">links</a>
+<li><code>links</code>: <a href="#links">links</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>m=</code>: <a href="#Syntax">Syntax</a>
 <li><code>mailcheck</code>: <a href="#actionsequence">actionsequence</a>, <a href="#mailserver">mailserver</a>
 <li><code>mailserver</code>: <a href="#mailserver">mailserver</a>
@@ -9780,53 +10044,56 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>mode</code>: <a href="#Syntax">Syntax</a>
 <li><code>module</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>moduledirectory</code>: <a href="#moduledirectory">moduledirectory</a>
-<li><code>mountables</code>: <a href="#mountables">mountables</a>, <a href="#homeservers">homeservers</a>
+<li><code>mountables</code>: <a href="#homeservers">homeservers</a>, <a href="#mountables">mountables</a>
 <li><code>mountall</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>mountinfo</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>mountpattern</code>: <a href="#mountpattern">mountpattern</a>
 <li><code>netconfig</code>: <a href="#actionsequence">actionsequence</a>
-<li><code>netmask</code>: <a href="#netmask">netmask</a>, <a href="#control">control</a>
+<li><code>netmask</code>: <a href="#control">control</a>, <a href="#netmask">netmask</a>
 <li><code>nfstype</code>: <a href="#nfstype">nfstype</a>, <a href="#control">control</a>
 <li><code>o=</code>: <a href="#Syntax">Syntax</a>
 <li><code>ones</code>: <a href="#broadcast">broadcast</a>
 <li><code>OutputPrefix</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>owner</code>: <a href="#Syntax">Syntax</a>
 <li><code>p=</code>: <a href="#tidy">tidy</a>
+<li><code>packages</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>pattern</code>: <a href="#tidy">tidy</a>
+<li><code>pkgmgr=</code>: <a href="#packages">packages</a>
 <li><code>processes</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>purge=</code>: <a href="#copy">copy</a>
 <li><code>r=</code>: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
-<li><code>recurse</code>: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
+<li><code>recurse</code>: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li><code>repchar</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>RepChar</code>: <a href="#repchar">repchar</a>
 <li><code>required</code>: <a href="#actionsequence">actionsequence</a>
-<li><code>resolve</code>: <a href="#actionsequence">actionsequence</a>, <a href="#resolve">resolve</a>
+<li><code>resolve</code>: <a href="#resolve">resolve</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>Restricting access</code>: <a href="#access">access</a>
 <li><code>ReturnsZero()</code>: <a href="#Evaluated%20classes">Evaluated classes</a>
 <li><code>rotate=</code>: <a href="#disable">disable</a>
 <li><code>scheduling</code>: <a href="#schedule">schedule</a>
 <li><code>SecureInput</code>: <a href="#secureinput">secureinput</a>
-<li><code>SensibleCount</code>: <a href="#sensiblecount">sensiblecount</a>
 <li><code>sensiblecount</code>: <a href="#control">control</a>
-<li><code>sensiblesize</code>: <a href="#control">control</a>
+<li><code>SensibleCount</code>: <a href="#sensiblecount">sensiblecount</a>
 <li><code>SensibleSize</code>: <a href="#sensiblesize">sensiblesize</a>
+<li><code>sensiblesize</code>: <a href="#control">control</a>
 <li><code>shellcommands</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>ShowActions</code>: <a href="#showactions">showactions</a>
 <li><code>singlelinks</code>: <a href="#actionsequence">actionsequence</a>
-<li><code>site</code>: <a href="#site">site</a>, <a href="#control">control</a>
+<li><code>site</code>: <a href="#control">control</a>, <a href="#site">site</a>
 <li><code>SkipVerify</code>: <a href="#root%3d">root=</a>
 <li><code>smtpserver</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li><code>split</code>: <a href="#Special%20variables">Special variables</a>, <a href="#split">split</a>
 <li><code>SpoolDirectories</code>: <a href="#spooldirectories">spooldirectories</a>
 <li><code>SuspiciousNames</code>: <a href="#suspiciousnames">suspiciousnames</a>
-<li><code>sysadm</code>: <a href="#control">control</a>, <a href="#Cfexecd%20reference">Cfexecd reference</a>, <a href="#sysadm">sysadm</a>
+<li><code>sysadm</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>, <a href="#control">control</a>, <a href="#sysadm">sysadm</a>, <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li><code>tidy</code>: <a href="#tidy">tidy</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>timezone</code>: <a href="#control">control</a>
 <li><code>touch</code>: <a href="#touch">touch</a>
 <li><code>truncate</code>: <a href="#disable">disable</a>
 <li><code>type=</code>: <a href="#disable">disable</a>, <a href="#Hard%20links">Hard links</a>
 <li><code>underscoreclasses</code>: <a href="#Special%20variables">Special variables</a>
-<li><code>unmount</code>: <a href="#unmount">unmount</a>, <a href="#actionsequence">actionsequence</a>
+<li><code>unmount</code>: <a href="#actionsequence">actionsequence</a>, <a href="#unmount">unmount</a>
+<li><code>version=</code>: <a href="#packages">packages</a>
 <li><code>Wildcards</code>: <a href="#tidy">tidy</a>
 <li><code>zeroes</code>: <a href="#broadcast">broadcast</a>
 <li><code>zeros</code>: <a href="#broadcast">broadcast</a>
@@ -9846,9 +10113,8 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>!: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li><code>--dry-run</code> option: <a href="#shellcommands">shellcommands</a>
 <li>-D option: <a href="#addclasses">addclasses</a>
-<li>-l option: <a href="#tidy">tidy</a>
+<li>-l option: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li><code>-L</code> option: <a href="#Single%20links">Single links</a>
-<li>-l option: <a href="#Syntax">Syntax</a>
 <li>-x option: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>.cfdisabled</code>: <a href="#disable">disable</a>
 <li>.cfengine.rm: <a href="#tidy">tidy</a>
@@ -9883,9 +10149,10 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>BeginGroupIfFileExists</code>: <a href="#editfiles">editfiles</a>
 <li><code>BeginGroupIfFileIsNewer</code>: <a href="#editfiles">editfiles</a>
 <li><code>BeginGroupIfNotDefined</code>: <a href="#editfiles">editfiles</a>
-<li>Binary servers and links: <a href="#Link%20Children">Link Children</a>, <a href="#Single%20links">Single links</a>
+<li>Binary servers and links: <a href="#Single%20links">Single links</a>, <a href="#Link%20Children">Link Children</a>
 <li>Binary servers, defining: <a href="#binservers">binservers</a>
-<li>Binary servers, priority: <a href="#binservers">binservers</a>, <a href="#Single%20links">Single links</a>
+<li>Binary servers, priority: <a href="#Single%20links">Single links</a>, <a href="#binservers">binservers</a>
+<li>Binding to one interface only: <a href="#BindToInterface">BindToInterface</a>
 <li>Bootstrap file: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li>Broadcast address: <a href="#broadcast">broadcast</a>
 <li>Broadcasts to the cfengine service.: <a href="#cfrun">cfrun</a>
@@ -9905,6 +10172,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>cfrunCommand</code> variable: <a href="#cfrunCommand">cfrunCommand</a>
 <li><code>cfservd.conf</code> file: <a href="#Cfservd.conf%20and%20cfrun%20reference">Cfservd.conf and cfrun reference</a>
 <li>Changing cfengine port: <a href="#Firewalls%20and%20NATs">Firewalls and NATs</a>
+<li>Checking for installed packages: <a href="#packages">packages</a>
 <li>Checksum warning, turning off exclamation: <a href="#exclamation">exclamation</a>
 <li>ChecksumDatabase: <a href="#ChecksumDatabase">ChecksumDatabase</a>
 <li><code>ChecksumDatabase</code> variable: <a href="#ChecksumDatabase%20in%20cfservd">ChecksumDatabase in cfservd</a>
@@ -9915,8 +10183,8 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Class decided by shell command: <a href="#groups">groups</a>
 <li>Class dependencies: <a href="#groups">groups</a>
 <li>Class information, passing to scripts: <a href="#shellcommands">shellcommands</a>
-<li>classes: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li><code>classes</code>: <a href="#groups">groups</a>, <a href="#classes">classes</a>, <a href="#groups">groups</a>
+<li>classes: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Classes, adding and defining: <a href="#addclasses">addclasses</a>
 <li>Classes, compound: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Classes, defining and undefining: <a href="#Cfengine%20classes">Cfengine classes</a>
@@ -9942,14 +10210,14 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Defining a mail server: <a href="#mailserver">mailserver</a>
 <li>Defining a mountable: <a href="#mountables">mountables</a>
 <li>Defining before use: <a href="#addinstallable">addinstallable</a>
-<li>Defining classes: <a href="#addclasses">addclasses</a>, <a href="#classes">classes</a>, <a href="#addclasses">addclasses</a>
+<li>Defining classes: <a href="#addclasses">addclasses</a>, <a href="#classes">classes</a>
 <li>Defining groups: <a href="#groups">groups</a>
 <li>DeleteNonOwnerMail: <a href="#deletenonownerfiles">deletenonownerfiles</a>
 <li>DeleteNonUserFiles: <a href="#deletenonownerfiles">deletenonownerfiles</a>
 <li>DeleteNonUserMail DeleteNonUserFiles: <a href="#deletenonuserfiles">deletenonuserfiles</a>
 <li>Deleting directories: <a href="#tidy">tidy</a>
 <li>Deleting files: <a href="#tidy">tidy</a>
-<li>Deleting stale links: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
+<li>Deleting stale links: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li><code>DenyBadClocks</code> variable: <a href="#DenyBadClocks">DenyBadClocks</a>
 <li><code>DenyConnectionsFrom</code> variable: <a href="#DenyConnectionsFrom">DenyConnectionsFrom</a>
 <li>Dependencies: <a href="#groups">groups</a>
@@ -9997,8 +10265,8 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Files, setting owner: <a href="#files">files</a>
 <li>Files, syntax: <a href="#Syntax">Syntax</a>
 <li>Force copying: <a href="#copy">copy</a>
-<li>freespace=: <a href="#disks">disks</a>, <a href="#required">required</a>
-<li>Full disk warnings: <a href="#disks">disks</a>, <a href="#required">required</a>
+<li>freespace=: <a href="#required">required</a>, <a href="#disks">disks</a>
+<li>Full disk warnings: <a href="#required">required</a>, <a href="#disks">disks</a>
 <li>Fully qualified names: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Group dependencies: <a href="#groups">groups</a>
 <li>Group field, editing: <a href="#editfiles">editfiles</a>
@@ -10031,7 +10299,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Key security of users: <a href="#AllowUsers">AllowUsers</a>
 <li>Key, ACL: <a href="#DFS%20ACLs">DFS ACLs</a>
 <li>Kilobyte, filesize unit: <a href="#tidy">tidy</a>
-<li>Linkchildren: <a href="#Link%20Children">Link Children</a>, <a href="#Files%20linkchildren">Files linkchildren</a>
+<li>Linkchildren: <a href="#Files%20linkchildren">Files linkchildren</a>, <a href="#Link%20Children">Link Children</a>
 <li>Links and binary servers: <a href="#Single%20links">Single links</a>, <a href="#Link%20Children">Link Children</a>
 <li>Links, absolute: <a href="#Single%20links">Single links</a>
 <li>Links, deleting stale: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
@@ -10040,7 +10308,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Links, multiple: <a href="#Multiple%20Links">Multiple Links</a>
 <li>Links, removing dead: <a href="#Single%20links">Single links</a>
 <li>Links, single: <a href="#Single%20links">Single links</a>
-<li>Links, traversing in searches: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
+<li>Links, traversing in searches: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li>Local disk space, make use of: <a href="#Link%20Children">Link Children</a>
 <li>Log files, controlling the size of: <a href="#disable">disable</a>
 <li>Logical NOT: <a href="#Cfengine%20classes">Cfengine classes</a>
@@ -10059,10 +10327,11 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Module directory: <a href="#moduledirectory">moduledirectory</a>
 <li>Modules, user defined: <a href="#actionsequence">actionsequence</a>
 <li>Mount paths: <a href="#mountpattern">mountpattern</a>
-<li>Mountable resources, defining: <a href="#mountables">mountables</a>, <a href="#homeservers">homeservers</a>
+<li>Mountable resources, defining: <a href="#homeservers">homeservers</a>, <a href="#mountables">mountables</a>
 <li>Mounted filesystems: <a href="#copy">copy</a>
 <li>Mounting filesystems.: <a href="#miscmounts">miscmounts</a>
 <li>mtime tidies: <a href="#tidy">tidy</a>
+<li>Multihomed hosts: <a href="#BindToInterface">BindToInterface</a>
 <li>Multiple links: <a href="#Multiple%20Links">Multiple Links</a>
 <li>Name collision: <a href="#Special%20variables">Special variables</a>
 <li>NAT: <a href="#Firewalls%20and%20NATs">Firewalls and NATs</a>
@@ -10070,8 +10339,8 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Negating entries from netgroups: <a href="#groups">groups</a>
 <li>Netgroups: <a href="#groups">groups</a>
 <li>Netgroups, negating entries: <a href="#groups">groups</a>
-<li>netmask: <a href="#netmask">netmask</a>
 <li>Netmask: <a href="#netmask">netmask</a>
+<li>netmask: <a href="#netmask">netmask</a>
 <li>Network address translator: <a href="#Firewalls%20and%20NATs">Firewalls and NATs</a>
 <li>Network Address Translators: <a href="#SkipVerify">SkipVerify</a>
 <li>Network interfaces, several: <a href="#interfaces">interfaces</a>
@@ -10087,6 +10356,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Operator ordering: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Output logs: <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li>Ownership of files: <a href="#Owner%20and%20group%20wildcards">Owner and group wildcards</a>
+<li>packages: <a href="#packages">packages</a>
 <li>Password file, editing: <a href="#editfiles">editfiles</a>
 <li>Path to home directories: <a href="#homepattern">homepattern</a>
 <li>Path to mounted filesystems: <a href="#mountpattern">mountpattern</a>
@@ -10107,6 +10377,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Purge, excluding files: <a href="#copy">copy</a>
 <li>Quoted strings: <a href="#editfiles">editfiles</a>
 <li>RandomInt() function: <a href="#control">control</a>
+<li>ReadFile() function: <a href="#control">control</a>
 <li>Recursion in files: <a href="#Recursion">Recursion</a>
 <li>Redefinition of macros: <a href="#AllowRedefinitionOf">AllowRedefinitionOf</a>
 <li>Relative links: <a href="#Single%20links">Single links</a>
@@ -10124,6 +10395,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Reverse lookup and SkipVerify: <a href="#root%3d">root=</a>
 <li>rmdirs: <a href="#tidy">tidy</a>
 <li>Rotating log files: <a href="#disable">disable</a>
+<li>RPM Database Queries: <a href="#packages">packages</a>
 <li>Running cfengine from a single master host: <a href="#cfrun">cfrun</a>
 <li>Running <code>cfrun</code>: <a href="#cfrun">cfrun</a>
 <li>scheduling: <a href="#schedule">schedule</a>
@@ -10174,11 +10446,11 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Touching files: <a href="#touch">touch</a>
 <li>travlinks: <a href="#tidy">tidy</a>
 <li>Tree copying, exact: <a href="#copy">copy</a>
-<li>Tripwire functionality: <a href="#Syntax">Syntax</a>, <a href="#ChecksumDatabase">ChecksumDatabase</a>
+<li>Tripwire functionality: <a href="#ChecksumDatabase">ChecksumDatabase</a>, <a href="#Syntax">Syntax</a>
 <li>Truncating log files: <a href="#disable">disable</a>
 <li>Trusted hosts: <a href="#copy">copy</a>
 <li><code>TrustKeysFrom</code> variable: <a href="#TrustKeysFrom">TrustKeysFrom</a>
-<li>umask: <a href="#shellcommands">shellcommands</a>, <a href="#editfiles">editfiles</a>, <a href="#processes">processes</a>
+<li>umask: <a href="#processes">processes</a>, <a href="#editfiles">editfiles</a>, <a href="#shellcommands">shellcommands</a>
 <li>underscoreclasses: <a href="#Special%20variables">Special variables</a>
 <li>Unmounting filesystems: <a href="#unmount">unmount</a>
 <li><code>update.conf</code>: <a href="#Work%20directory">Work directory</a>
@@ -10187,6 +10459,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Wildcard home: <a href="#Syntax">Syntax</a>
 <li>Wildcards in homepattern: <a href="#homepattern">homepattern</a>
 <li>WWW server logs: <a href="#disable">disable</a>
+<li>xdev: <a href="#copy">copy</a>, <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li>xdev (File system boundaries): <a href="#Recursion">Recursion</a>
 <li>zeros: <a href="#broadcast">broadcast</a>
    </ul>
@@ -10274,6 +10547,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#childlibpath">ChildLibPath</a>
 <li><a href="#copylinks">CopyLinks</a>
 <li><a href="#defaultcopytype">DefaultCopyType</a>
+<li><a href="#defaultpkgmgr">DefaultPkgMgr</a>
 <li><a href="#deletenonuserfiles">DeleteNonUserFiles</a>
 <li><a href="#deletenonownerfiles">DeleteNonOwnerFiles</a>
 <li><a href="#deletenonusermail">DeleteNonUserMail</a>
@@ -10368,6 +10642,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#miscmounts">miscmounts</a>
 <li><a href="#mountables">mountables</a>
 <li><a href="#processes">processes</a>
+<li><a href="#packages">packages</a>
 <li><a href="#required">required</a>
 <li><a href="#resolve">resolve</a>
 <li><a href="#shellcommands">shellcommands</a>
@@ -10384,6 +10659,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#AllowUsers">AllowUsers</a>
 <li><a href="#AutoExecCommand">AutoExecCommand</a>
 <li><a href="#AutoExecInterval">AutoExecInterval</a>
+<li><a href="#BindToInterface">BindToInterface</a>
 <li><a href="#ChecksumDatabase%20in%20cfservd">ChecksumDatabase</a>
 <li><a href="#cfrunCommand">cfrunCommand</a>
 <li><a href="#DenyBadClocks">DenyBadClocks</a>

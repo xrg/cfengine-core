@@ -89,7 +89,7 @@ int sd,*more;
 
 { char proto[9];
   char status;
-  unsigned int len;
+  unsigned int len = 0;
  
 bzero(proto,9);
 
@@ -100,6 +100,13 @@ if (RecvSocketStream(sd,proto,8,0) == -1)   /* Get control channel */
 
 sscanf(proto,"%c %u",&status,&len);
 Debug("Transaction Receive [%s][%s]\n",proto,proto+8);
+
+if (len > bufsize - 8)
+   {
+   snprintf(OUTPUT,bufsize,"Bad transaction packet -- too long (%c %d) Proto = %s ",status,len,proto);
+   CfLog(cferror,OUTPUT,"");
+   return -1;
+   }
 
 if (strncmp(proto,"CAUTH",5) == 0)
    {
@@ -132,6 +139,12 @@ char buffer[bufsize];
 
 Debug("RecvSocketStream(%d)\n",toget);
 
+if (toget > bufsize)
+   {
+   CfLog(cferror,"Bad software request for overfull buffer","");
+   return -1;
+   }
+ 
 for (already = 0; already != toget; already += got)
    {
    got = recv(sd,buffer+already,toget-already,0);
@@ -144,7 +157,7 @@ for (already = 0; already != toget; already += got)
  
    if (got == 0)   /* doesn't happen unless sock is closed */
       {
-      Debug("Transmission empty...\n");
+      Debug("Transmission empty or timed out...\n");
       fraction = 0;
       return already;
       }
@@ -178,6 +191,8 @@ char buffer[bufsize];
 
 do
    {
+   Debug("Attempting to send %d bytes\n",tosend-already);
+
    sent=send(sd,buffer+already,tosend-already,flags);
    
    switch(sent)
@@ -191,6 +206,7 @@ do
 	  break;
       }
    }
+
 while(already < tosend);
 
 return already;

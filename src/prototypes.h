@@ -123,6 +123,20 @@ char *EvaluateFunction ARGLIST((char *function, char *value));
 enum builtin FunctionStringToCode ARGLIST((char *str));
 int IsBuiltinFunction  ARGLIST((char *function));
 
+void HandleStatInfo ARGLIST((enum builtin fn,char *args,char *value));
+void HandleCompareStat ARGLIST((enum builtin fn,char *args,char *value));
+void GetRandom ARGLIST((char* args,char *value));
+void HandleFunctionExec ARGLIST((char* args,char *value));
+void HandleStatInfo ARGLIST((enum builtin fn,char* args,char *value));
+void HandleCompareStat ARGLIST((enum builtin fn,char* args,char *value));
+void HandleReturnsZero ARGLIST((char* args,char *value));
+void HandleIPRange ARGLIST((char* args,char *value));
+void HandleIsDefined ARGLIST((char* args,char *value));
+void HandleStrCmp ARGLIST((char* args,char *value));
+void HandleShowState ARGLIST((char* args,char *value));
+void HandleReadFile ARGLIST((char *args,char *value));
+
+
 /* granules.c  */
 
 char *ConvTimeKey ARGLIST((char *str));
@@ -173,6 +187,7 @@ int GetDiskUsage  ARGLIST((char *file, enum cfsizes type));
 
 /* do.c */
 
+void DoMethods ARGLIST((void));
 void GetHomeInfo ARGLIST((void));
 void GetMountInfo ARGLIST((void));
 void MakePaths ARGLIST((void));
@@ -199,6 +214,7 @@ void MakeImages ARGLIST((void));
 void ConfigureInterfaces ARGLIST((void));
 void CheckTimeZone ARGLIST((void));
 void CheckProcesses ARGLIST((void));
+void CheckPackages ARGLIST((void));
 int RequiredFileSystemOkay ARGLIST((char *name));
 void InstallMountedItem ARGLIST((char *host, char *mountdir));
 void InstallMountableItem ARGLIST((char *path, char *mnt_opts, flag readonly));
@@ -341,6 +357,11 @@ int FilterProcMatch ARGLIST((char *name1,char *name2,char *expr,char **names,cha
 int FilterProcSTimeMatch  ARGLIST((char *name1,char *name2,char *expr1,char *expr2,char **names,char **line));
 int FilterProcTTimeMatch  ARGLIST((char *name1,char *name2,char *expr1,char *expr2,char **names,char **line));
 void DoProc ARGLIST((struct Item **attr,char **crit,char **names,char **line));
+/*
+ * HvB: Bas van der Vlies
+*/
+void ParseTTime ARGLIST((char *line,char *time_str));
+
 
 
 /* ifconf.c */
@@ -390,6 +411,9 @@ void HandleOptionalDisableAttribute ARGLIST((char *item));
 void HandleOptionalLinkAttribute ARGLIST((char *item));
 void HandleOptionalProcessAttribute ARGLIST((char *item));
 void HandleOptionalScriptAttribute ARGLIST((char *item));
+void HandleOptionalAlertsAttribute ARGLIST((char *item));
+void HandleOptionalPackagesAttribute ARGLIST((char *item));
+void HandleOptionalMethodsAttribute ARGLIST((char *item));
 void HandleChDir ARGLIST((char *value));
 void HandleChRoot ARGLIST((char *value));
 void HandleFileItem ARGLIST((char *item));
@@ -440,7 +464,11 @@ int GetFileAction ARGLIST((char *action));
 void InstallFileListItem ARGLIST((char *path, mode_t plus, mode_t minus, enum fileactions action, char *uidnames, char *gidnames, int recurse, char travlinks, char chksum));
 void InstallProcessItem ARGLIST((char *expr, char *restart, short int matches, char comp, short int signal, char action, char *classes, char useshell, char *uidname, char *gidname));
 void InstallImageItem ARGLIST((char *path, mode_t plus, mode_t minus, char *destination, char *action, char *uidnames, char *gidnames, int size, char comp, int rec, char type, char lntype, char *server));
+void InstallMethod ARGLIST((char *function, char *file));
 void InstallAuthItem ARGLIST((char *path, char *attribute, struct Auth **list, struct Auth **listtop, char *classes));
+void InstallPackagesItem ARGLIST((char *name, char *ver, enum cmpsense sense, enum pkgmgrs mgr));
+int GetCmpSense ARGLIST((char *sense));
+int GetPkgMgr ARGLIST((char *mgr));
 int GetCommAttribute ARGLIST((char *s));
 void HandleRecurse ARGLIST((char *value));
 void HandleCopyType ARGLIST((char *value));
@@ -474,6 +502,7 @@ int HandleAdmitAttribute ARGLIST((struct Auth *ptr, char *attribute));
 void PrependTidy ARGLIST((struct TidyPattern **list, char *wild, int rec, short int age, char travlinks, int tidysize, char type, char ldirs, short int tidydirs, char *classes));
 void HandleShortSwitch ARGLIST((char *name,char *value,short *flag));
 void HandleCharSwitch ARGLIST((char *name,char *value,char *flag));
+void HandleIntSwitch ARGLIST((char *name,char *value,int *flag,int min, int max));
 
 /* ip.c */
 
@@ -533,11 +562,13 @@ int FuzzySetMatch ARGLIST((char *s1, char *s2));
 int FuzzyMatchParse ARGLIST((char *item));
 void PrependItem  ARGLIST((struct Item **liststart, char *itemstring, char *classes));
 void AppendItem  ARGLIST((struct Item **liststart, char *itemstring, char *classes));
+void InstallItem  ARGLIST((struct Item **liststart, char *itemstring, char *classes, int ifelapsed, int expireafter));
 void DeleteItemList ARGLIST((struct Item *item));
 void DeleteItem ARGLIST((struct Item **liststart, struct Item *item));
 void DebugListItemList ARGLIST((struct Item *liststart));
 int ItemListsEqual ARGLIST((struct Item *list1, struct Item *list2));
 struct Item *SplitStringAsItemList ARGLIST((char *string, char sep));
+struct Item *ListFromArgs ARGLIST((char *string));
 
 /* link.c */
 
@@ -595,6 +626,18 @@ void DeleteMacros ARGLIST((char *scope));
 void DeleteMacro  ARGLIST((char *scope,char *name));
 struct cfObject *ObjectContext ARGLIST((char *scope));
 
+/* HvB */
+int OptionIs ARGLIST((char *scope, char *name, short on));
+
+/* methods.c */
+
+void DispatchNewMethod ARGLIST((struct Method *ptr));
+struct Method *GetPendingMethods ARGLIST((void));
+void LoadMethodPackage ARGLIST((char *));
+void EvaluatePendingMethod ARGLIST((struct Method *ptr));
+void DeleteMethodList ARGLIST((struct Method *ptr));
+void EncapsulateMethod ARGLIST((struct Method *ptr,char *name));
+
 /* misc.c */
 
 int linux_redhat_version ARGLIST((void));
@@ -622,6 +665,7 @@ void GetV6InterfaceInfo ARGLIST((void));
 void DebugBinOut ARGLIST((char *string, int len));
 int ShellCommandReturnsZero ARGLIST((char *comm));
 void SetClassesOnScript ARGLIST((char *comm, char *classes, char *elseclasses, int useshell));
+
 /* modes.c */
 
 void ParseModeString ARGLIST((char *modestring, mode_t *plusmask, mode_t *minusmask));
@@ -652,11 +696,10 @@ void GetNonMarkov ARGLIST((void));
 
 /* parse.c */
 
-void ParseInputFiles ARGLIST((void));
-int ParseBootFiles ARGLIST((void));
+int ParseInputFile ARGLIST((char *file));
 void ParseFile ARGLIST((char *f,char *env));
 void NewParser ARGLIST((void));
-void RemoveEscapeSequences ARGLIST((char *from,char *to));
+int RemoveEscapeSequences ARGLIST((char *from,char *to));
 void DeleteParser ARGLIST((void));
 void SetAction ARGLIST((enum actions action));
 void HandleLValue ARGLIST((char *id));
@@ -674,6 +717,7 @@ int CompoundId ARGLIST((char *id));
 void InitializeAction ARGLIST((void));
 void SetMountPath  ARGLIST((char *value));
 void SetRepository  ARGLIST((char *value));
+char *FindInputFile  ARGLIST((char *result, char *filename));
 
 
 /* patches.c */
@@ -723,6 +767,10 @@ int IsPrivileged ARGLIST((void));
 
 void DoAlerts ARGLIST((void));
 
+/* package.c */
+int RPMPackageCheck ARGLIST((char *package, char *version, enum cmpsense cmp));
+int DPKGPackageCheck ARGLIST((char *package, char *version, enum cmpsense cmp));
+
 /* popen.c */
 
 FILE *cfpopensetuid ARGLIST((char *command, char *type, uid_t uid, gid_t gid, char *chdirv, char *chrootv));
@@ -752,7 +800,9 @@ int ReadLine ARGLIST((char *buff, int size, FILE *fp));
 
 /* report.c */
 
+void ListDefinedVariables ARGLIST((void));
 void ListDefinedClasses ARGLIST((void));
+void ListDefinedMethods ARGLIST((void));
 void ListDefinedAlerts ARGLIST((void));
 void ListDefinedStrategies ARGLIST((void));
 void ListDefinedInterfaces ARGLIST((void));
@@ -772,6 +822,7 @@ void ListDefinedDisable ARGLIST((void));
 void ListDefinedMakePaths ARGLIST((void));
 void ListDefinedImports ARGLIST((void));
 void ListDefinedIgnore ARGLIST((void));
+void ListDefinedPackages ARGLIST((void));
 void ListFiles ARGLIST((void));
 void ListActionSequence ARGLIST((void));
 void ListUnmounts ARGLIST((void));
@@ -791,6 +842,8 @@ void RotateFiles ARGLIST((char *name, int number));
 /* sensible.c */
 
 int SensibleFile ARGLIST((char *nodename, char *path, struct Image *ip));
+void RegisterRecursionRootDevice ARGLIST((dev_t device));
+int DeviceChanged ARGLIST((dev_t thisdevice));
 
 /* tidy.c */
 

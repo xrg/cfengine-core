@@ -83,3 +83,7 @@ time_t CFDSTARTTIME;
 #if defined(SUN4)
 extern char *realpath(/* char *path; char resolved_path[MAXPATHLEN] */);
 #endif
+
+#ifndef INADDR_NONE
+#define INADDR_NONE ((unsigned long int) 0xffffffff)
+#endif

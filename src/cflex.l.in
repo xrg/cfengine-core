@@ -45,17 +45,17 @@
 %s INCONTROL BRACELIST INASSIGN CFSERVD
 %o 30000
 %a 16000
-%p 9000
-%n 800
+%p 12000
+%n 2000
 
-actiont   copy:|resolve:|files:|tidy:|homeservers:|binservers:|mailserver:|disks:|mountables:|links:|shellcommands:|disable:|directories:|ignore:|interfaces:|defaultroute:|miscmounts:|unmount:|processes:|required:|broadcast:|alerts:
+actiont   copy:|resolve:|files:|tidy:|homeservers:|binservers:|mailserver:|disks:|mountables:|links:|shellcommands:|disable:|directories:|ignore:|interfaces:|defaultroute:|miscmounts:|unmount:|processes:|required:|broadcast:|alerts:|packages:|methods:
 
 space     [ \t]+
 
 comment   #.*
 
 linedir   #line[ \t]+[0-9]+.*
-function  [a-zA-Z_]+\([^)]*\)
+function  [a-zA-Z0-9_]+\([^)]*\)
 
 qstring  \"((\\\")|[^"])*\"|\'((\\\')|[^'])*\'|`[^`]*`
 
@@ -348,15 +348,19 @@ editfiles:             {
 
 <INASSIGN>{qstring}    {
                        char *sp = NULL;
+                       int less = 0;
                        Debug1("RVAL-QSTRING %s\n",yytext);
-                       *(yytext+strlen((char *)yytext)-1) = '\0';
 
-                       if ((sp = strdup(yytext+1)) == NULL)
+                       if ((sp = malloc(strlen(yytext)+1)) == NULL)
                           {
                           FatalError("Malloc failure in parsing");
                           }
 
-                       RemoveEscapeSequences(yytext+1,sp);
+                       if((less = RemoveEscapeSequences(yytext,sp)) > 0)
+                       {
+                       Debug1("QSTRING-LESS %d\n",less);
+                       yyless(less);
+                       }
 
                        switch (ACTION)
                           {
@@ -366,6 +370,7 @@ editfiles:             {
                              return RVALUE;
                           case groups:
                              HandleGroupRValue(sp);
+                             free(sp);
                              return RVALUE;
                           }
                        }
@@ -373,16 +378,22 @@ editfiles:             {
 
 {qstring}              {
                        char *sp = NULL;
+                       int less = 0;
                        Debug1("QSTRING %s\n",yytext);
-                       *(yytext+strlen((char *)yytext)-1) = '\0';
-                       if ((sp = strdup(yytext+1)) == NULL)
+
+                       if ((sp = malloc(strlen(yytext)+1)) == NULL)
                           {
                           FatalError("Malloc failure in parsing");
                           }
 
-                       RemoveEscapeSequences(yytext+1,sp);
+                       if((less = RemoveEscapeSequences(yytext,sp)) > 0)
+                       {
+                       Debug1("QSTRING-LESS %d\n",less);
+                       yyless(less);
+                       }
 
                        HandleQuotedString(sp);
+                       free(sp);
                        return QSTRING;
                        }
 
@@ -472,15 +483,16 @@ editfiles:             {
                        return VAROBJ;
                        }
 
-.                      {
-                       return yytext[0];
-                       }
-
 <CFSERVD>{varobj}      {
                        Debug1("\nCFSERVD-VAROBJ %s\n",yytext);
 
                        HandleServerRule(yytext);
                        return ACCESSOBJ;
+                       }
+
+.                      {
+	               printf("Stray character (%s)",yytext);
+                       return yytext[0];
                        }
 
 %%

@@ -268,7 +268,7 @@ else
 void GetInterfaceInfo(void)
 
 { int fd,len,i,j;
-  struct ifreq ifbuf[64],ifr, *ifp;
+  struct ifreq ifbuf[512],ifr, *ifp;
   struct ifconf list;
   struct sockaddr_in *sin;
   struct hostent *hp;
@@ -295,7 +295,7 @@ if (ioctl(fd, OSIOCGIFCONF, &list) == -1 || (list.ifc_len < (sizeof(struct ifreq
    exit(1);
    }
 
-for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*ifp),j++)
+for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*ifp),j++,ifp=&ifbuf[j])
    {
    if (ifp->ifr_addr.sa_family == 0)
        {

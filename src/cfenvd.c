@@ -1738,7 +1738,7 @@ if (average == 0)
  
 delta = sqrt((new-average)*(new-average)+(new-localav)*(new-localav));
 
-if (delta > 5.0*dev)  /* IR */
+if (delta > 4.0*dev)  /* IR */
    {
    return average + delta/2.0;    /* Damping */
    }

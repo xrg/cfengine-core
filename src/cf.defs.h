@@ -31,7 +31,7 @@
 #include "conf.h"
 #include <stdio.h>
 
-/*#if defined(STDC_HEADERS) || defined(SUN4)*/
+
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -231,6 +231,18 @@ extern int errno;
 #endif
 
 
+#ifdef HAVE_PTHREAD_H
+# include <pthread.h>
+#ifndef _SC_THREAD_STACK_MIN
+#define _SC_THREAD_STACK_MIN PTHREAD_STACK_MIN
+#endif
+#endif
+
+#ifdef HAVE_SCHED_H
+# include <sched.h>
+#endif
+
+
 /*******************************************************************/
 /* Various defines                                                 */
 /*******************************************************************/
@@ -261,7 +273,7 @@ extern int errno;
 #define recursion_limit 100
 #define cf_monday_morning 342000
 
-#define exec_ifelapsed 2
+#define exec_ifelapsed 5
 #define exec_expireafter 10
 
 
@@ -478,6 +490,7 @@ struct cfstat
    int               cf_failed;     /* stat returned -1 */
    int               cf_nlink;      /* Number of hard links */
    int               cf_ino;        /* inode number on server */
+   dev_t             cf_dev;        /* device number */
    struct cfstat    *next;
    };
 
@@ -528,7 +541,8 @@ enum builtin
    fn_iprange,
    fn_isdefined,
    fn_strcmp,
-   fn_showstate
+   fn_showstate,
+   fn_readfile
    };
 
 /*******************************************************************/
@@ -566,7 +580,9 @@ enum actions
    acls,
    interfaces,
    filters,
-   strategies
+   strategies,
+   packages,
+   methods
    };
 
 /*******************************************************************/
@@ -628,7 +644,7 @@ enum fileactions
 
 /*******************************************************************/
 
-enum fileattr  /* See COMMATTRIBUTES[] in globals.c  for matching entry */
+enum commattr  /* See COMMATTRIBUTES[] in globals.c  for matching entry */
    {
    cfrecurse,
    cfmode,
@@ -693,6 +709,15 @@ enum fileattr  /* See COMMATTRIBUTES[] in globals.c  for matching entry */
    cfcompat,
    cfmountoptions,
    cfreadonly,
+   cfversion,
+   cfcmp,
+   cfpkgmgr,
+   cfxdev,
+   cfretvars,
+   cfretclasses,
+   cfsendclasses,
+   cfifelap,
+   cfexpaft,
    cfbad                        /* HvB must be as last */		
    };
 
@@ -771,12 +796,15 @@ enum vnames
    cfnonattackers,
    cfattackers,
    cfmulticonn,
+   cfarglist,
+   cfmethodname,
    cftrustkeys,
    cfdynamic,
    cfallowusers,
    cfskipverify,
    cfdefcopy,
    cfredef,
+   cfdefpkgmgr,
    nonexistentvar
    };
 
@@ -819,6 +847,8 @@ enum aseq
    tzone,
    mountinfo,
    procs,
+   pkgs,
+   meths,
    non,
    plugin
    };
@@ -921,7 +951,9 @@ enum editnames
    EditUmask,
    EditUseShell,
    EditFilter,
-   DefineInGroup
+   DefineInGroup,
+   EditIfElapsed,
+   EditExpireAfter
    };
 
 enum RegExpTypes
@@ -986,6 +1018,27 @@ enum modesort
 
 /*******************************************************************/
 
+enum cmpsense   /* For package version comparison */
+   {
+   cmpsense_eq,
+   cmpsense_gt,
+   cmpsense_lt,
+   cmpsense_ge,
+   cmpsense_le,
+   cmpsense_ne
+   };
+
+/*******************************************************************/
+
+enum pkgmgrs    /* Available package managers to query in packages: */
+   {
+   pkgmgr_rpm,
+   pkgmgr_dpkg,
+   pkgmgr_none
+   };
+
+/*******************************************************************/
+
 typedef char flag;
 
 /*******************************************************************/
@@ -1000,6 +1053,7 @@ struct cfagent_connection
    unsigned char *session_key;
    short error;
    };
+
 
 /*******************************************************************/
 
@@ -1045,11 +1099,33 @@ struct Interface
 
 /*******************************************************************/
 
+struct Method
+   {
+   char done;
+   char *scope;
+   struct Item *send_args;
+   struct Item *send_classes;
+   struct Item *servers;
+   struct Item *return_vars;
+   struct Item *return_classes;
+   char *file;
+   char *name;
+   char *classes;
+   char invitation;
+   int ifelapsed;
+   int expireafter;
+   struct Method *next;
+   };
+
+/*******************************************************************/
+
 struct Item
    {
    char done;
    char *name;
    char *classes;
+   int ifelapsed;
+   int expireafter;
    struct Item *next;
    char *scope;
    };
@@ -1092,6 +1168,8 @@ struct Process
    struct Item    *exclusions;
    struct Item    *inclusions;
    struct Item    *filters;
+   int ifelapsed;
+   int expireafter;
    struct Process *next;
    };
 
@@ -1118,6 +1196,10 @@ struct Tidy
    char         done;       /* Too intensive in Tidy Pattern */
    char         *scope;
    char        *path;
+   char         xdev;
+   int ifelapsed;
+   int expireafter;
+
    struct Item *exclusions;
    struct Item *ignores;      
    struct TidyPattern *tidylist;
@@ -1168,6 +1250,9 @@ struct MiscMount
    char *onto;
    char *options;
    char *classes;
+   int ifelapsed;
+   int expireafter;
+
    struct MiscMount *next;
    };
 
@@ -1182,6 +1267,9 @@ struct UnMount
    char deletedir;  /* y/n - true false */
    char deletefstab;
    char force;
+   int ifelapsed;
+   int expireafter;
+
    struct UnMount *next;
    };
 
@@ -1211,6 +1299,9 @@ struct File
    char   log;
    char   compress;
    char   inform;
+   char   xdev;
+   int ifelapsed;
+   int expireafter;
    char   checksum;   /* m=md5 n=none */
    u_long plus_flags;    /* for *BSD chflags */
    u_long minus_flags;    /* for *BSD chflags */
@@ -1229,6 +1320,8 @@ struct Disk
    char   force;	/* HvB: Bas van der Vlies */
    int    freespace;
    struct Disk *next;
+   int ifelapsed;
+   int expireafter;
    char   log;
    char   inform;
    };
@@ -1253,6 +1346,8 @@ struct Disable
    struct Disable *next;
    char   log;
    char   inform;
+   int ifelapsed;
+   int expireafter;
    };
 
 /*******************************************************************/
@@ -1282,11 +1377,16 @@ struct Image
    char   stealth;               /* preserve times on source files */
    char   preservetimes;                 /* preserve times in copy */
    char   backup;
+   char   xdev;
    int    recurse;
    int    makeholes;
    off_t  size;
    char   comp;
    char   purge;
+
+   int ifelapsed;
+   int expireafter;
+
    struct Item *exclusions;
    struct Item *inclusions;
    struct Item *filters;      
@@ -1398,6 +1498,8 @@ struct Link
    char   type;
    char   copytype;
    int    recurse;
+   int ifelapsed;
+   int expireafter;
    struct Item *exclusions;
    struct Item *inclusions;
    struct Item *ignores;            
@@ -1422,6 +1524,8 @@ struct Edit
    char *repository;
    int   recurse;
    char  binary;   /* y/n */
+   int ifelapsed;
+   int expireafter;
    struct Item *ignores;
    struct Item *exclusions;
    struct Item *inclusions;      
@@ -1516,6 +1620,8 @@ struct ShellComm
    char              *defines;
    char              *elsedef;
    char              preview;
+   int ifelapsed;
+   int expireafter;
    };
 
 /*******************************************************************/
@@ -1538,6 +1644,26 @@ struct Strategy
    char   type;                 /* default r=random */
    struct Item *strategies;
    struct Strategy *next;
+   };
+
+/*******************************************************************/
+
+struct Package      /* For packages: */
+   {
+   char              done;
+   char              *scope;
+   char              *name;
+   char              *classes;
+   char              log;
+   char              inform;
+   char              *defines;
+   char              *elsedef;
+   char              *ver;
+   enum cmpsense     cmp;
+   enum pkgmgrs      pkgmgr;
+   struct Package    *next;
+   int ifelapsed;
+   int expireafter;
    };
 
 /*******************************************************************/

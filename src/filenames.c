@@ -143,7 +143,12 @@ if ((strlen(str)== 0) || (str == NULL))
    return;
    }
 
- if (IsFileSep(str[strlen(str)-1]))
+if (strcmp(str,"/") == 0)
+   {
+   return;
+   }
+ 
+if (IsFileSep(str[strlen(str)-1]))
    {
    str[strlen(str)-1] = '\0';
    }
@@ -327,7 +332,7 @@ char *file, force;
     
 if (!IsAbsoluteFileName(file))
    {
-   snprintf(OUTPUT,bufsize*2,"Will not create directories for a relative filename %s\nHas no invariant meaning\n",file);
+   snprintf(OUTPUT,bufsize*2,"Will not create directories for a relative filename (%s). Has no invariant meaning\n",file);
    CfLog(cferror,OUTPUT,"");
    return false;
    }

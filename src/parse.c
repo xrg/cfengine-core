@@ -46,126 +46,35 @@ extern FILE *yyin;
 
 /*******************************************************************/
 
-int ParseBootFiles()
+int ParseInputFile(file)
+
+char *file;
 
 { char filename[bufsize], *sp;
-  static char *bootf = "update.conf"; 
+  struct Item *ptr;
   struct stat s;
 
-if (MINUSF)
-   {
-   Verbose("Reading special file - ignoring %s",bootf);
-   return true;
-   }
-  
-filename[0] = '\0';
-PARSING = true;
-
 NewParser();
+PARSING = true;
+ 
+sp = FindInputFile(filename,file);
 
-if ((sp=getenv(CFINPUTSVAR)) != NULL)
-   {
-   if (! LastFileSeparator(bootf))     /* Don't prepend to absolute names */
-      { 
-      strcpy(filename,sp);
-      if (! IsAbsoluteFileName(filename))
-	 {
-	 Verbose("CFINPUTS was not an absolute path, overriding with %s\n",WORKDIR);
-	 snprintf(filename,bufsize,"%s/inputs",WORKDIR);
-	 }
-      
-      AddSlash(filename);
-      }
-   }
-else
-   {
-   if (! LastFileSeparator(bootf))     /* Don't prepend to absolute names */
-      { 
-      strcpy(filename,WORKDIR);
-      AddSlash(filename);
-      strcat(filename,"inputs/");
-      }
-   }
+Debug("(BEGIN PARSING %s)\n",file); 
+Verbose("Looking for an input file %s\n",filename);
 
-strcat(filename,bootf);
-
-Verbose("Looking for a bootstrap file %s\n",filename);
-
+ 
 if (stat(filename,&s) == -1)
    {
-   Verbose("(No bootstrap file)\n");
+   Verbose("(No file %s)\n",file);
    DeleteParser();
+   Debug("(END OF PARSING %s)\n",file);
+   Verbose("Finished with %s\n",file);
+   PARSING = false;
    return false;
    }
  
 ParseFile(filename,sp);
-   
-PARSING = false;
 
-DeleteParser();
- 
-Debug("(END OF PARSING)\n");
-Verbose("Finished with %s\n",bootf); 
-
-return true; 
-}
-
-/*******************************************************************/
-
-void ParseInputFiles()
-
-{ struct Item *ptr;
-  char filename[bufsize], *sp;
-  void TimeOut();
-
-PARSING = true;
-
-NewParser(); 
-  
-if ((strcmp(VINPUTFILE,".") == 0)||(strcmp(VINPUTFILE,"-") == 0)) /* read from standard input */
-   {
-   yyin = stdin;
-
-   if (!feof(yyin))
-      {
-      yyparse();
-      }
-
-   InstallPending(ACTION);
-   }
-else
-   {
-   filename[0] = '\0';
-
-   if ((sp=getenv(CFINPUTSVAR)) != NULL)
-      {
-      if (! LastFileSeparator(VINPUTFILE))     /* Don't prepend to absolute names */
-	 { 
-	 strcpy(filename,sp);
-
-	 if (! IsAbsoluteFileName(filename))
-	    {
-	    Verbose("CFINPUTS was not an absolute path, overriding with %s\n",WORKDIR);
-	    snprintf(filename,bufsize,"%s/inputs",WORKDIR);
-	    }
-	 AddSlash(filename);
-	 }
-      }
-   else
-      {
-      if (! LastFileSeparator(VINPUTFILE))     /* Don't prepend to absolute names */
-	 { 
-	 strcpy(filename,WORKDIR);              /* Used to set default configdir at configure */
-	 AddSlash(filename);
-	 strcat(filename,"inputs/");
-	 }
-      }
-
-   strcat(filename,VINPUTFILE);
-
-   ParseFile(filename,sp);
-   }
-   
 for (ptr = VIMPORT; ptr != NULL; ptr=ptr->next)
    {
    if (IsExcluded(ptr->classes))
@@ -173,45 +82,20 @@ for (ptr = VIMPORT; ptr != NULL; ptr=ptr->next)
       continue;
       }
 
-   Verbose("Import file %s\n",ptr->name);
-   
-   filename[0] = '\0';
+   Debug("(BEGIN PARSING %s)\n",ptr->name); 
+   Verbose("Looking for an input file %s\n",ptr->name);
 
-   if ((sp=getenv(CFINPUTSVAR)) != NULL)
-      {
-      if (! LastFileSeparator(ptr->name))   
-         { 
-         strcpy(filename,sp);	
-	 AddSlash(filename);
-         }
-      }
-   else
-      {
-      if (! LastFileSeparator(VINPUTFILE))     /* Don't prepend to absolute names */
-	 { 
-	 strcpy(filename,WORKDIR);              /* Used to set default configdir at configure */
-	 AddSlash(filename);
-	 strcat(filename,"inputs/");
-	 }
-      }
-
-   if (LastFileSeparator(ptr->name)) 
-      { 
-      strcpy(filename,ptr->name);
-      } 
-   else 
-      {  
-      strcat(filename,ptr->name);
-      }
+   sp = FindInputFile(filename,ptr->name);
    ParseFile(filename,sp);
    }
 
-VCURRENTFILE[0]='\0';       /* Zero filename for subsequent errors */
+ 
 PARSING = false;
-
 DeleteParser();
  
-Debug("(END OF PARSING)\n");
+Debug("(END OF PARSING %s)\n",file);
+Verbose("Finished with %s\n",file); 
+return true; 
 }
 
 /*******************************************************************/
@@ -239,6 +123,9 @@ void NewParser()
  *MOUNTFROM = '\0';
  *MOUNTONTO = '\0';
  MOUNTOPTS = (char *) malloc(bufsize);
+
+ PKGVER = (char *) malloc(bufsize);
+ PKGVER[0] = '\0';
 
  DESTINATION = (char *) malloc(bufsize);
 
@@ -285,24 +172,44 @@ free(STRATEGYDATA);
 
 /*******************************************************************/
 
-void RemoveEscapeSequences(from,to)
+int RemoveEscapeSequences(from,to)
 
 char *from,*to;
 
-{ char *sp = from,*cp = to;
+{ char *sp,*cp;
+  char start = *from;
+  int len = strlen(from);
 
-if (strlen(from) == 0)
+
+if (len == 0)
    {
-   return;
+   return 0;
    }
- 
- 
- for (sp = from; *(sp+1) != '\0'; sp++,cp++)
+
+ for (sp=from+1,cp=to; (sp-from) < len; sp++,cp++)
     {
+    if ((*sp == start))
+       {
+       *(cp) = '\0';
+       if (*(sp+1) != '\0')
+          {
+          return (2+(sp - from));
+          }
+       return 0;
+       }
+    if (*sp == '\n')
+       {
+       LINENUMBER++;
+       }
     if (*sp == '\\')
        {
        switch (*(sp+1))
 	  {
+	  case '\n':
+                 LINENUMBER++;
+                 sp+=2;
+	      break;
+	  case '\\':
 	  case '\"':
 	  case '\'': sp++;
 	      break;
@@ -310,9 +217,10 @@ if (strlen(from) == 0)
        }
     *cp = *sp;    
     }
- 
- *cp = *sp;    
- *(cp+1) = '\0';    
+
+ yyerror("Runaway string");
+ *(cp) = '\0';
+ return 0;
 }
 
 /*******************************************************************/
@@ -348,6 +256,7 @@ switch (ACTION)
    case unmounta:
    case admit:
    case deny:
+   case methods:
    case processes:  InitializeAction();
    }
 
@@ -521,7 +430,22 @@ void HandleClass (id)
 char *id;
 
 { int members;
+ char *sp;
 
+ Debug("HandleClass(%s)\n",id);
+
+ for (sp = id; *sp != '\0'; sp++)
+   {
+   switch (*sp)
+      {
+      case '-':
+      case '*':
+      case '&':
+	  snprintf(OUTPUT,bufsize,"Illegal character (%c) in class %s",*sp,id);
+	  yyerror(OUTPUT);
+      }
+   }
+ 
 InstallPending(ACTION);
 
 if ((members = CompoundId(id)) > 1)             /* Parse compound id */
@@ -562,12 +486,6 @@ switch (ACTION)
         ACTIONPENDING = true;
 	InstallPending(ACTION); 
         break;
-
-    case alerts:
-	strcpy(CURRENTITEM,qstring);
-	ACTIONPENDING = true;
-	InstallPending(ACTION); 
-	break;
 
     case processes: /* Handle anomalous syntax of restart/setoptonstring */
 
@@ -688,6 +606,13 @@ void HandleFunctionObject(fn) /* Function in main body */
 char *fn;
 
 { char local[bufsize];
+
+if (ACTION == methods)
+   {
+   strncpy(CURRENTOBJECT,fn,bufsize-1);
+   ACTIONPENDING = true; 
+   return;
+   }
  
 if (IsBuiltinFunction(fn))
    {
@@ -702,8 +627,8 @@ if (IsBuiltinFunction(fn))
 	  InstallControlRValue(CURRENTITEM,local);
 	  break;
       case alerts:
-	  InstallPending(ACTION);
-	  AppendItem(&VALERTS,fn,CLASSBUFF);
+          strncpy(CURRENTOBJECT,fn,bufsize-1);
+          ACTIONPENDING = true; 
 	  break;
 
     default: snprintf(OUTPUT,bufsize,"Function call %s out of place",fn);
@@ -721,13 +646,13 @@ char *object;
 {
 Debug1("Handling Object = (%s)\n",object);
 
-strcpy(CURRENTOBJECT,object);                   /* Yes this must be here */
+strncpy(CURRENTOBJECT,object,bufsize-1);        /* Yes this must be here */
 
 ACTIONPENDING = true;                         /* we're parsing an action */
 
 if (ACTION_IS_LINK || ACTION_IS_LINKCHILDREN)      /* to-link (after ->) */
    {
-   strcpy(LINKTO,CURRENTOBJECT);
+   strncpy(LINKTO,CURRENTOBJECT,bufsize-1);
    return;
    }
 
@@ -785,7 +710,7 @@ switch (ACTION)
        break;
 
    case import:
-          AppendImport(object);
+          AppendImport(object); /* Recursion */
           break;
 
    case links:      /* from link (see cf.l) */
@@ -798,14 +723,14 @@ switch (ACTION)
 	  }
        else
 	  {
-	  strcpy(CURRENTITEM,object);
+	  strncpy(CURRENTITEM,object,bufsize-1);
 	  ACTIONPENDING = true;
 	  }
        break;
 
    case disks:
 
-   case required:   strcpy(CURRENTOBJECT,object);
+   case required:   strncpy(CURRENTOBJECT,object,bufsize-1);
        break;
 
    case shellcommands:
@@ -826,24 +751,24 @@ switch (ACTION)
 
    case mailserver: InstallMailserverPath(object);
        break;
-   case tidy:       strcpy(CURRENTITEM,object);
+   case tidy:       strncpy(CURRENTITEM,object,bufsize-1);
        break;
 
-   case disable:    strcpy(CURRENTOBJECT,object);
+   case disable:    strncpy(CURRENTOBJECT,object,bufsize-1);
                     ACTIONPENDING = true;
                     break;
 		    
-   case makepath:   strcpy(CURRENTOBJECT,object);
+   case makepath:   strncpy(CURRENTOBJECT,object,bufsize-1);
                     break;
 		    
-   case ignore:     strcpy(CURRENTOBJECT,object);
+   case ignore:     strncpy(CURRENTOBJECT,object,bufsize-1);
                     break;
        
    case misc_mounts:
        if (! MOUNT_FROM)
 	  {
 	  MOUNT_FROM = true;
-	  strcpy(MOUNTFROM,CURRENTOBJECT);
+	  strncpy(MOUNTFROM,CURRENTOBJECT,bufsize-1);
 	  }
        else
       {
@@ -853,12 +778,12 @@ switch (ACTION)
 	 FatalError("miscmounts: syntax error");
 	 }
       MOUNT_ONTO = true;
-      strcpy(MOUNTONTO,CURRENTOBJECT);
+      strncpy(MOUNTONTO,CURRENTOBJECT,bufsize-1);
       }
        break;
        
    case unmounta:
-       strcpy(CURRENTOBJECT,object);
+       strncpy(CURRENTOBJECT,object,bufsize-1);
        break;
        
    case image:
@@ -866,7 +791,7 @@ switch (ACTION)
        break;
        
    case editfiles:  /* file recorded in CURRENTOBJECT */
-       strcpy(CURRENTOBJECT,object);
+       strncpy(CURRENTOBJECT,object,bufsize-1);
        break;
        
    case processes:
@@ -894,7 +819,15 @@ switch (ACTION)
        
    case homeservers: InstallHomeserverItem(object);
        break;
-       
+
+   case packages:
+       break;
+
+   case methods:    if (strlen(object) > bufsize-1)
+                       {
+		       yyerror("Method argument string is too long");
+                       }
+                    break;
        
    default:         yyerror("Unknown command or name out of context");
    }
@@ -906,25 +839,27 @@ void HandleServerRule(object)
 
 char *object;
 
-{
- Debug1("HandleServerRule(%s)\n",object);
+{ char buffer[bufsize];
+
+ExpandVarstring(object,buffer,"");
+Debug("HandleServerRule(%s=%s)\n",object,buffer);
 
  if (*object == '/')
     {
-    Debug("\n\nNew admit/deny object=%s\n",object);
-    strcpy(CURRENTAUTHPATH,object);
+    Debug("\n\nNew admit/deny object=%s\n",buffer);
+    strcpy(CURRENTAUTHPATH,buffer);
     }
  else
     {
     switch(ACTION)   /* Check for IP names in cfservd */
        {
        case admit:
-	   FuzzyMatchParse(object);       
-	   InstallAuthItem(CURRENTAUTHPATH,object,&VADMIT,&VADMITTOP,CLASSBUFF);
+	   FuzzyMatchParse(buffer);       
+	   InstallAuthItem(CURRENTAUTHPATH,buffer,&VADMIT,&VADMITTOP,CLASSBUFF);
 	   break;
        case deny:
-	   FuzzyMatchParse(object);       
-	   InstallAuthItem(CURRENTAUTHPATH,object,&VDENY,&VDENYTOP,CLASSBUFF);
+	   FuzzyMatchParse(buffer);       
+	   InstallAuthItem(CURRENTAUTHPATH,buffer,&VDENY,&VDENYTOP,CLASSBUFF);
 	   break;
        }
     }
@@ -982,7 +917,7 @@ switch (ACTION)
                  HandleOptionalScriptAttribute(option);
 		 break;
 
-   case alerts:  yyerror("No attributes to alerts");
+   case alerts:  HandleOptionalAlertsAttribute(option);
                  break;
 
    case disks:
@@ -1008,6 +943,13 @@ switch (ACTION)
    case import:  /* Need option for private modules... */
                  break;
 
+   case packages:
+                 HandleOptionalPackagesAttribute(option);
+		 break;
+
+   case methods: HandleOptionalMethodsAttribute(option);
+                 break;
+
    default:
                  yyerror("Options cannot be used in this context:");
    } 
@@ -1022,7 +964,8 @@ void ParseFile(filename,env)
 
 char *filename,*env;
 
-{  
+{ FILE *save_yyin = yyin;
+ 
 signal(SIGALRM,(void *)TimeOut);
 alarm(RPCTIMEOUT);
  
@@ -1068,6 +1011,7 @@ while (!feof(yyin))
    }
  
 fclose (yyin);
+yyin = save_yyin;
  
 alarm(0);
 signal(SIGALRM,SIG_DFL);
@@ -1112,6 +1056,48 @@ if (strcmp(name,"this") == 0)
 }
 
 /*******************************************************************/
+/* Level 2                                                         */
+/*******************************************************************/
+
+char *FindInputFile(result,filename)
+
+char *filename, *result;
+
+{ char *sp;
+ 
+result[0] = '\0';
+ 
+if ((sp=getenv(CFINPUTSVAR)) != NULL)
+   {
+   if (! LastFileSeparator(filename))     /* Don't prepend to absolute names */
+      { 
+      strcpy(result,sp);
+      
+      if (! IsAbsoluteFileName(result))
+	 {
+	 Verbose("CFINPUTS was not an absolute path, overriding with %s\n",WORKDIR);
+	 snprintf(result,bufsize,"%s/inputs",WORKDIR);
+	 }
+      
+      AddSlash(result);
+      }
+   }
+else
+   {
+   if (! LastFileSeparator(filename))     /* Don't prepend to absolute names */
+      { 
+      strcpy(result,WORKDIR);
+      AddSlash(result);
+      strcat(result,"inputs/");
+      }
+   }
+
+strcat(result,filename);
+return result;
+}
+
+
+/*******************************************************************/
 /* Toolkits Misc                                                   */
 /*******************************************************************/
 
@@ -1133,6 +1119,8 @@ void InitializeAction()                                   /* Set defaults */
  strcpy(VGIDNAME,"*");
  HAVE_RESTART = 0;
  FILEACTION=warnall;
+ PIFELAPSED=-1;
+ PEXPIREAFTER=-1;
 
  *CURRENTAUTHPATH = '\0';
  *CURRENTOBJECT = '\0';
@@ -1176,6 +1164,9 @@ void InitializeAction()                                   /* Set defaults */
  VCPLNPARSE = NULL;
  VTIMEOUT=0;
 
+ PKGMGR = DEFAULTPKGMGR; /* pkgmgr_none */
+ CMPSENSE = cmpsense_eq;
+ PKGVER[0] = '\0';
 
  STRATEGYNAME[0] = '\0';
  FILTERNAME[0] = '\0';
@@ -1191,6 +1182,7 @@ void InitializeAction()                                   /* Set defaults */
  FORCE = 'n';
  FORCEDIRS = 'n';
  STEALTH = 'n';
+ XDEV = 'n';
  PRESERVETIMES = 'n';
  TYPECHECK = 'y';
  UMASK = 077;     /* Default umask for scripts/files */

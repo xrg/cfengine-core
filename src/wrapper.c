@@ -57,7 +57,7 @@ if (tp->done == 'y')
 
 tp->done = 'y'; 
 
-if (!GetLock(ASUniqueName("tidy"),CanonifyName(startpath),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+if (!GetLock(ASUniqueName("tidy"),CanonifyName(startpath),tp->ifelapsed,tp->expireafter,VUQNAME,CFSTARTTIME))
    {
    return;
    }
@@ -68,7 +68,8 @@ if (stat(startpath,&sb) == -1)
    CfLog(cfinform,OUTPUT,"stat");
    return;
    }
- 
+
+RegisterRecursionRootDevice(sb.st_dev);
 RecursiveTidySpecialArea(startpath,tp,tp->maxrecurse,&sb);
 
 ReleaseCurrentLock(); 
@@ -82,10 +83,11 @@ char *startpath;
 void *vp;
 
 { struct stat sb;
+  struct Tidy *tp = (struct Tidy *) vp;
  
 Verbose("Tidying Home partition %s...\n",startpath);
 
-if (!GetLock(ASUniqueName("tidy"),CanonifyName(startpath),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+if (!GetLock(ASUniqueName("tidy"),CanonifyName(startpath),tp->ifelapsed,tp->expireafter,VUQNAME,CFSTARTTIME))
    {
    return;
    }
@@ -97,6 +99,7 @@ if (stat(startpath,&sb) == -1)
    return;
    }
 
+RegisterRecursionRootDevice(sb.st_dev); 
 RecursiveHomeTidy(startpath,1,&sb);
  
 ReleaseCurrentLock();
@@ -127,7 +130,7 @@ else
    }
  
  
-if (!GetLock(ASUniqueName("files"),CanonifyName(lock),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+if (!GetLock(ASUniqueName("files"),CanonifyName(lock),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
    {
    return;
    }
@@ -148,7 +151,7 @@ for (lastnode = startpath+strlen(startpath)-1; *lastnode != '/'; lastnode--)
    }
 
 lastnode++;
-
+ 
 if (ptr->inclusions != NULL && !IsWildItemIn(ptr->inclusions,lastnode))
    {
    Debug2("cfengine: skipping non-included pattern %s\n",lastnode);
@@ -244,6 +247,7 @@ else
       return;
       }
 
+
    if (ptr->action == linkchildren)
       {
       LinkChildren(ptr->path,
@@ -266,7 +270,9 @@ else
 	 Verbose("%s: Skipping ignored directory %s\n",VPREFIX,startpath);
 	 CheckExistingFile(startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
 	 }
-          
+
+      RegisterRecursionRootDevice(statbuf.st_dev);
+
       RecursiveCheck(startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,ptr->recurse,0,ptr,&statbuf);
       }
    else
@@ -313,7 +319,7 @@ if (stat(directory,&statbuf) == -1)
       }
    } 
 
-if (!GetLock(ASUniqueName("directories"),CanonifyName(directory),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+if (!GetLock(ASUniqueName("directories"),CanonifyName(directory),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
    {
    return;
    }

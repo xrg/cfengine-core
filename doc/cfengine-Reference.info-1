@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.0.7p3 for version
-2.0.7p3 as last updated 16 May 2003.
+   This manual corresponds to CFENGINE Edition 2.0.8p1 for version
+2.0.8p1 as last updated 1 September 2003.
 
 * Menu:
 
@@ -356,6 +356,7 @@ Cfagent reference
 * miscmounts::
 * mountables::
 * processes::
+* packages::
 * required::
 * resolve::
 * shellcommands::
@@ -1250,19 +1251,19 @@ belong to the class `any'.
      
         class::
      
-           QUOTED MESSAGE
+           QUOTED MESSAGE ifelapsed=TIME
            ShowState(PARAMETER)
    For example:
 
 
      alerts:
      
+       "Reminder: say hello every hour" ifelapsed=60
+     
        nfsd_in_high_dev2::
      
        "High NFS server access rate 2dev at $(host) value $(value_nfsd_in) av $(average_nfsd_in) pm $(stddev_nfsd_in)"
        ShowState(incoming.nfs)
-     
-     
      
       # ROOT PROCS
      
@@ -1403,10 +1404,14 @@ something like the following example:
        myvariable = ( something )
        mymacro    = ( somethingelse )
        myrandom   = ( RandInt(3,6) )
+       myexcerpt  = ( ReadFile("/etc/services",220))
 
 Parentheses are required when making a declaring information in
 cfengine.  Note that a limited number of in-built functions exists:
    * `RandomInt(a,b)' Is substituted for a random number between (a,b).
+
+   * `ReadFile'(FILENAME,MAX NUMBER OF BYTES) A maximum number of bytes
+     is read from the named file and placed in a variable.
 
    The meaning of each of these lines is described below.
 
@@ -1425,6 +1430,7 @@ cfengine.  Note that a limited number of in-built functions exists:
 * childlibpath::
 * copylinks::
 * defaultcopytype::
+* defaultpkgmgr::
 * deletenonuserfiles::
 * deletenonownerfiles::
 * deletenonusermail::

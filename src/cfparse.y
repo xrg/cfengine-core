@@ -108,6 +108,7 @@ accessentries:         accessentry
                      | accessentries accessentry;
 
 entry:                 FUNCTION
+                     | FUNCTION options
                      | VAROBJ options
                      | VAROBJ ARROW VAROBJ options
                      | VAROBJ LARROW VAROBJ options

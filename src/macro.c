@@ -201,6 +201,47 @@ ptr->hashtable[slot] = sp;
 Debug("Added Macro at hash address %d to object %s with value %s\n",slot,scope,sp);
 }
 
+/*
+ * HvB: Bas van der Vlies
+ *  This function checks if the given name has
+ *  the requested value:
+ *    1 --> check for values on or true
+ *    0 --> check for values off or false
+ *  return true if the name has the requested value
+*/
+int OptionIs(scope, name, on)
+
+char *scope, *name;
+short on;
+
+
+{ char *result;
+
+result = GetMacroValue(scope, name);
+if ( result == NULL)
+   {
+   return(false);
+   }
+
+if (on)
+   {
+   if ( (strcmp(result, "on") == 0) || ( strcmp(result, "true") == 0) )
+      {
+      return(true);
+      }
+   }
+else
+   {
+   if ( (strcmp(result, "off") == 0) || (strcmp(result, "false") == 0) )
+      {
+      return(true);
+      }
+   }
+
+return(false);
+}
+
+
 /*******************************************************************/
 
 char *GetMacroValue(scope,name)

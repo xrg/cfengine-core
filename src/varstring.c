@@ -92,12 +92,15 @@ char *VVNAMES[] =
    "allowconnectionsfrom", /* nonattackers */
    "denyconnectionsfrom",
    "allowmultipleconnectionsfrom",
+   "methodparameters",
+   "methodname",
    "trustkeysfrom",
    "dynamicaddresses",
    "allowusers",
    "skipverify",
    "defaultcopytype",
    "allowredefinitionof",
+   "defaultpkgmgr",     /* For packages */
    NULL
    };
 

@@ -11,6 +11,117 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: shellcommands,  Next: tidy,  Prev: resolve,  Up: Cfagent reference
+
+shellcommands
+=============
+
+   Cfengine focuses on fairly simple minded tasks in order to be as
+general as possible.  In many cases you will therefore want to write a
+script to do something special on your system.  You can still take
+advantage of the classes you have defined by executing these scripts or
+shell commands from this section.
+
+   The syntax is simply to quote the command you wish to be executed.
+
+     shellcommands:
+     
+       "COMMAND-STRING"
+     
+               timeout=SECONDS
+               useshell=true/FALSE
+               umask=OCTAL NUMBER
+               owner=UID
+               group=GID
+               define=CLASS-LIST
+               background=false/TRUE
+               chdir=DIRECTORY
+               chroot=DIRECTORY
+               preview=TRUE/false
+               inform=false/TRUE
+     
+               ifelapsed=MINS
+               expireafter=MINS
+
+The user and group ID's of the process can be set to restrict the
+permissions of the shellcommand to another user only if cfengine is
+executed by root. If you set the optional timeout string, then cfengine
+will abort the shellcommand if it exceeds the specified time-limit in
+seconds. This can be useful for avoiding situations caused by hung
+network connections etc.
+
+   Variable substitution works within the strings.  Here are some
+examples.
+
+
+     shellcommands:
+     
+        sun4::
+     
+            "/usr/lib/find/updatedb"
+     
+        AllHomeServers.Sunday::
+     
+            "/dir/noseyparker /$(site)/$(host)/u1 $(sysadm) nomail"
+     
+        AllBinaryServers.sun4.Saturday::
+     
+           "/usr/etc/catman -w -M /usr/local/man"
+           "/usr/etc/catman -w -M /usr/local/X11R5/man"
+           "/usr/etc/catman -w -M /usr/man"
+           "/usr/etc/catman -w -M /usr/local/gnu/man"
+
+If you need to write more advanced scripts, which make detailed use of
+the classes defined by cfengine, use the `$(allclasses)' variable to
+send a complete list of classes to your script in the format
+
+
+     CFALLCLASSES=class1:class2:class3...
+
+This variable is kept up-to-date at any given time with only the classes
+which are defined.  The command line option `-u' or `--use-env' can be
+used to define an environment variable which will be inherited by all
+scripts and contains the same information.  This is not the standard
+approach, since some systems cannot cope with this rapid change of
+environment and generate a Bus Error.
+
+   Commands can be iterated over variable lists, provided there is at
+least one space between each variable. For example:
+
+
+     control:
+     
+           actionsequence =
+              (
+              shellcommands
+              )
+     
+      var1 = ( a:b:c )
+      var2 = ( x:y:z )
+     
+     shellcommands:
+     
+        "/bin/echo $(var1) $(var2)"
+
+This iterates over all values of the list variables. *Note Iterating
+over lists: (cfengine-Tutorial)Iterating over lists.  If you are
+iterating over a list, the timeout applies to each separate iteration,
+not to the sum of all the iterations.
+
+   The `chroot' option changes the process root directory of the
+command, creating a `sandbox' which the process cannot escape from. Best
+used together with a change of owner, since a root process can break out
+of such a confinement in principle. The `chdir' option changes the
+current working directory of the restarted process.
+
+   The `preview' option means that the shellcommand will also be
+executed during the `--dry-run' (`-n') options. This allows cfengine to
+be more aware of the results of scripts which define classes. This
+option should be used with care.  Scripts should conform to the
+protocol of not executing unnecessary commands when the classes
+`opt_dry_run' is defined.
+
+
 File: cfengine-Reference.info,  Node: tidy,  Next: unmount,  Prev: shellcommands,  Up: Cfagent reference
 
 tidy
@@ -40,10 +151,13 @@ out `core' files from users' home directories.  The form of an entry is:
      
                             syslog=TRUE/ON/FALSE/OFF
                             inform=TRUE/ON/FALSE/OFF
+                            ifelapsed=MINS
+                            expireafter=MINS
      
                             filter=FILTER ALIAS
                             ignore=PATTERN
                             exclude=PATTERN
+                            xdev=TRUE/ON/false/off
 
 Note that, each of the options below can be written in either upper or
 lower case and abbreviated by any unique abbreviation.
@@ -158,6 +272,10 @@ lower case and abbreviated by any unique abbreviation.
      The colon, comma or dot separated list of classes becomes defined
      if any file matching the specified pattern is deleted.
 
+`xdev'
+     Prevents cfengine from descending into file systems that are not
+     on the same device as the root of the rescurion path.
+
    Take a look at the following example:
 
      tidy:
@@ -210,6 +328,8 @@ equivalent).  The syntax is simply
              deletedir=TRUE/FALSE
              deletefstab=TRUE/FALSE
              force=TRUE/FALSE
+             ifelapsed=MINS
+             expireafter=MINS
 
 The options allow you to temporarily unmount a directory without
 actually removing it from the filesystem table. The option `force' is
@@ -297,6 +417,8 @@ follows:
      
             DynamicAddresses = ( IP NUMBERS )
      
+            BindToInterface = ( IP NUMBER/HOSTNAME )
+     
       groups:
      
         GROUP DEFINITIONS
@@ -338,6 +460,7 @@ control
 * AllowUsers::
 * AutoExecCommand::
 * AutoExecInterval::
+* BindToInterface::
 * ChecksumDatabase in cfservd::
 * cfrunCommand::
 * DenyBadClocks::
@@ -439,7 +562,7 @@ AutoExecCommand
    This variable no longer exists in cfengine version 2.
 
 
-File: cfengine-Reference.info,  Node: AutoExecInterval,  Next: ChecksumDatabase in cfservd,  Prev: AutoExecCommand,  Up: cfservd control
+File: cfengine-Reference.info,  Node: AutoExecInterval,  Next: BindToInterface,  Prev: AutoExecCommand,  Up: cfservd control
 
 AutoExecInterval
 ----------------
@@ -447,7 +570,19 @@ AutoExecInterval
    This variable no longer exists in version 2 of cfengine.
 
 
-File: cfengine-Reference.info,  Node: ChecksumDatabase in cfservd,  Next: cfrunCommand,  Prev: AutoExecInterval,  Up: cfservd control
+File: cfengine-Reference.info,  Node: BindToInterface,  Next: ChecksumDatabase in cfservd,  Prev: AutoExecInterval,  Up: cfservd control
+
+BindToInterface
+---------------
+
+   If this is set to a specific IP address of an IP configured
+interface, cfservd will listen for connections only on that interface.
+On Multi-homed hosts this allows one to restrict the traffic to one
+interface. Note, Unix only allows one or all interfaces to be selected.
+An interface must be configured with an IP address in order to be bound.
+
+
+File: cfengine-Reference.info,  Node: ChecksumDatabase in cfservd,  Next: cfrunCommand,  Prev: BindToInterface,  Up: cfservd control
 
 ChecksumDatabase
 ----------------

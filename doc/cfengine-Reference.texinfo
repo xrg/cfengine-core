@@ -308,6 +308,7 @@ True if the named shell command returns with exit code zero (okay).
 True if the strings match exactly.
 @end table
 
+
 @noindent
 For example:
 @smallexample
@@ -470,6 +471,7 @@ for a few days more and try again.
 * miscmounts::                  
 * mountables::                  
 * processes::                   
+* packages::                    
 * required::                    
 * resolve::                     
 * shellcommands::               
@@ -1553,7 +1555,7 @@ alerts:
 
    class::
 
-      @var{quoted message}
+      @var{quoted message} ifelapsed=@var{time}
       ShowState(@var{parameter})
 
 @end smallexample
@@ -1564,12 +1566,12 @@ For example:
 
 alerts:
 
+  "Reminder: say hello every hour" ifelapsed=60
+
   nfsd_in_high_dev2::
 
   "High NFS server access rate 2dev at $(host) value $(value_nfsd_in) av $(average_nfsd_in) pm $(stddev_nfsd_in)"
   ShowState(incoming.nfs)
-
-
 
  # ROOT PROCS
 
@@ -1748,6 +1750,7 @@ control:
   myvariable = ( something )
   mymacro    = ( somethingelse )
   myrandom   = ( RandInt(3,6) )
+  myexcerpt  = ( ReadFile("/etc/services",220))
 
 @end smallexample 
 
@@ -1755,10 +1758,14 @@ control:
 Parentheses are required when making a declaring information in cfengine.
 Note that a limited number of in-built functions exists:
 @cindex RandomInt() function
+@cindex ReadFile() function
 @itemize @bullet
 @item 
 @code{RandomInt(a,b)}
 Is substituted for a random number between (a,b).
+@item 
+@code{ReadFile}(@var{filename},@var{Max number of bytes})
+A maximum number of bytes is read from the named file and placed in a variable.
 @end itemize
 
 @vindex site
@@ -1789,6 +1796,7 @@ The meaning of each of these lines is described below.
 * childlibpath::                
 * copylinks::                   
 * defaultcopytype::             
+* defaultpkgmgr::               
 * deletenonuserfiles::          
 * deletenonownerfiles::         
 * deletenonusermail::           
@@ -1894,6 +1902,7 @@ possibilities:
       netconfig              # check net interface config
       resolve                # check resolver setup
       unmount                # unmount any filesystems
+      packages               # check for required packages
       shellcommands          # execute shell commands
       editfiles              # edit files
       addmounts              # add new filesystems to system
@@ -1931,6 +1940,7 @@ possibilities:
 @vindex disable
 @vindex files 
 @vindex processes
+@vindex packages
 @vindex module
 
 @noindent
@@ -2041,6 +2051,12 @@ important NFS resources.
 @item resolve
 checks and corrects the DNS domain name and the order
 of nameservers in the file @file{/etc/resolv.conf}.
+
+@item packages
+executes commands defined under the @code{packages} section
+of the program.  This will query the system's package database
+for the specified packages, at the specified versions, and set
+classes based on whether or not those packages exist.
 
 @item shellcommands
 executes all the commands defined under the @code{shellcommands}
@@ -2428,7 +2444,7 @@ would define a pattern which was only valid when
 @c SUBSECTION
 @c .....................................................
 
-@node defaultcopytype, deletenonuserfiles, copylinks, control
+@node defaultcopytype, defaultpkgmgr, copylinks, control
 @subsection DefaultCopyType
 
 This parameter determines the default form of copying for all copy operations
@@ -2442,12 +2458,30 @@ e.g.
 
 @end smallexample
 
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node defaultpkgmgr, deletenonuserfiles, defaultcopytype, control
+@subsection DefaultPkgMgr
+
+Sets the default value of the @code{pkgmgr} attribute for
+@code{packages} items.
+
+@smallexample
+DefaultPkgMgr = ( rpm )
+@end smallexample
+
+By default, this variable is not set, meaning there will be no
+package manager selected, and each item in the @code{packages}
+section must specify its own package manager, or it will not be
+checked.  For information on the values of this variable, @xref{packages}.
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 
-@node deletenonuserfiles, deletenonownerfiles, defaultcopytype, control
+@node deletenonuserfiles, deletenonownerfiles, defaultpkgmgr, control
 @subsection DeleteNonUserFiles
 
 If this parameter is set to true, cfengine will delete files 
@@ -2699,6 +2733,9 @@ would define a pattern which was only valid when
 @node ExpireAfter, homepattern, excludelinks, control
 @subsection ExpireAfter
 
+If you change the value of this parameter, it should be one of the
+first things you do in your configuration script.
+
 This parameter controls the global value of the ExpireAfter parameter.
 @xref{Spamming and security,Spamming and security,Spamming and
 security,cfengine-Tutorial}. This parameter controls the maximum time in
@@ -2727,7 +2764,9 @@ For instance,
 
 @noindent
 sets the expiry time parameter to 15 minutes for this copy command.
-
+This method should be considered old and deprecated however.
+As of version 2.1.0, you can define the expiry time on a per-command basis,
+as options of the form @code{expireafter=10}.
 
 @c .....................................................
 @c SUBSECTION
@@ -2794,11 +2833,14 @@ to achieve the same this as follows:
 @node IfElapsed, Inform, homepattern, control
 @subsection IfElapsed
 
-This parameter controls the global value of the IfElapsed
-parameter, @xref{Spamming and security,Spamming and security,Spamming and security,cfengine-Tutorial}. This parameter
-controls the minimum time which must have elapsed for
-an action in the action sequence before which it will be
-executed again.
+If you change the value of this parameter, it should be one of the
+first things you do in your configuration script.
+
+This parameter controls the global value of the IfElapsed parameter,
+@xref{Spamming and security,Spamming and security,Spamming and
+security,cfengine-Tutorial}. This parameter controls the minimum time
+which must have elapsed for an action in the action sequence before
+which it will be executed again.
 
 @cartouche
 @smallexample
@@ -2821,6 +2863,11 @@ For instance,
 
 @noindent
 sets the elapsed time parameter to 15 minutes for this copy command.
+This method should be considered old and deprecated however.
+As of version 2.1.0, you can define the expiry time on a per-command basis,
+as options of the form @code{ifelapsed=15}.
+
+
 
 @c .....................................................
 @c SUBSECTION
@@ -3798,10 +3845,13 @@ copy:
                         stealth=@var{true/on/@b{false/off}}
                         timestamps=@b{preserve/keep}
                         symlink=@var{pattern}
+
                         include=@var{pattern}
                         exclude=@var{pattern} 
                         ignore=@var{pattern}
                         filter=@var{filteralias}
+                        xdev=@var{true/on}/@b{false/off}
+
                         recurse=@var{number/inf/}@var{0}
                         type=@b{ctime}@var{/mtime/checksum/sum/byte/binary}
                         linktype=@b{absolute/symbolic}@var{/relative/hard/none/copy}
@@ -3948,6 +3998,12 @@ be excluded from a copy operation. A global list of
 patterns can also be defined in the control section of the program
 `excludes' override `includes'.
 @xref{excludelinks}.
+
+@item xdev
+Prevents cfengine from descending into file systems that are not on the
+same device as the root of the rescurion path.
+@cindex xdev
+
 
 @item type
 Normally cfengine uses the ctime date-stamps on files to determine
@@ -4263,6 +4319,8 @@ special variable @code{$(binserver)} here.
     /@var{filesystem} freespace=@var{size-limit} define=@var{class-list}(,:.) 
 
      inform=@var{true} log=@var{true} force=@var{true}
+     ifelapsed=@var{mins} 
+     expireafter=@var{mins}
 
 @end smallexample
 @end cartouche
@@ -4352,6 +4410,8 @@ The form of a declaration is:
                          syslog=@var{true/on}/@var{false/off}
                          inform=@var{true/on}/@var{false/off}
 
+                         ifelapsed=@var{mins} 
+                         expireafter=@var{mins}
 @end smallexample
 @end cartouche
 
@@ -4413,6 +4473,9 @@ be examined later.  The syntax is
                       inform=@var{true/on}/@b{false/off}
                       repository=@var{destination directory}
                       action=@b{disable}/@var{warn}
+
+                      ifelapsed=@var{mins} 
+                      expireafter=@var{mins}
 
 @end smallexample
 @end cartouche
@@ -4607,7 +4670,7 @@ editfiles:
 
       @{ @var{directory-to-be-edited}
 
-      Recurse "inf"
+      Recurse "inf"          # iterated over all files
       Filter  "filteralias"
       Include ".cshrc"
       Ignore  "bin"
@@ -5023,6 +5086,8 @@ Terminates a begin-end conditional structure.
 @item EndLoop
 Terminates a loop. See @code{ForEachLineIn}
 
+@item ExpireAfter @var{mins}
+
 @item Filter @var{filteralias}
 Name a fiter for pruning file searches.
 
@@ -5050,6 +5115,9 @@ Add a @samp{#} to the start of any line exactly matching the quoted regular expr
 
 @item   HashCommentLinesStarting @var{quoted-string}
 Add a @samp{#} to the start of any line starting with the quoted string.
+
+@item IfElapsed @var{mins}
+As usual.
 
 @item IncrementPointer @var{quoted-number}
 Increments the value (in lines) of the file pointer
@@ -5425,15 +5493,17 @@ the form of the statement in pseudo-code:
                           include=@var{pattern}
                           exclude=@var{pattern}
                           filter=@var{filter alias}
+                          xdev=@var{true/on}/@b{false/off}
 
                           define=@var{classlist}
                           elsedefine=@var{classlist}
 
                           checksum=@var{md5}
                           flags=@var{BSD flags}
-                          syslog=@var{true/on}/@var{false/off}
-                          inform=@var{true/on}/@var{false/off}
-
+                          syslog=@var{true/on}/@b{false/off}
+                          inform=@var{true/on}/@b{false/off}
+                          ifelapsed=@var{mins} 
+                          expireafter=@var{mins}
 @end smallexample 
 @end cartouche
 
@@ -5629,6 +5699,12 @@ program detection, @xref{ChecksumDatabase}.
 @cindex Message digests
 @cindex Hashes of files
 @cindex Tripwire functionality
+
+@item xdev
+Prevents cfengine from descending into file systems that are not on the
+same device as the root of the rescurion path.
+@cindex xdev
+
 
 @end table
 
@@ -6529,8 +6605,9 @@ children.  The @code{linkchildren} feature is also available from the
             define=@var{classlist}
             nofile=@b{kill}/@var{force}
             syslog=@var{true/on}/@var{false/off}
-            inform=@var{true/on}/@var{false/off}
-
+            inform=@var{true/on}/@var{false/off} 
+            ifelapsed=@var{mins} 
+            expireafter=@var{mins}
 @end smallexample
 @end cartouche
 
@@ -6987,6 +7064,8 @@ miscmounts:
 
       @var{infohost}:@var{source-directory} @var{destination} mode=@var{mode}
 
+     ifelapsed=@var{mins} expireafter=@var{mins}
+
 @end smallexample 
 @end cartouche
 
@@ -7088,8 +7167,9 @@ configuration of the automounter, using the command @code{AutomountDirectResourc
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node processes, required, mountables, Cfagent reference
+@node processes, packages, mountables, Cfagent reference
 @section processes
+
 Using the processes facility, you can test for the existence of
 processes, signal (kill) processes and optionally restart them
 again. Cfengine opens a pipe from the system ps command and searches
@@ -7122,6 +7202,8 @@ processes:
                         exclude=@var{literal}
                         syslog=@var{true/on}/@var{false/off}
                         inform=@var{true/on}/@var{false/off}
+                        ifelapsed=@var{mins} 
+                        expireafter=@var{mins}
 
     SetOptionString @var{"quoted option string"}
 
@@ -7379,7 +7461,177 @@ See also filters @xref{filters}, for more complex searches.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node required, resolve, processes, Cfagent reference
+@node packages, required, processes, Cfagent reference
+@section packages
+@cindex packages
+@cindex Checking for installed packages
+
+The packages action allows you to check for the existance of packages
+on the system, as determined by the package database you select.
+This operation is set up such that it tries not to make assumptions about
+the package manager in use.  For example, it should be possible to use
+RPM on a Solaris box.
+
+The syntax summary is:
+
+@cartouche
+@smallexample
+
+packages:
+
+   @var{class}::
+
+      @var{package-name}
+                        pkgmgr=@b{none}/@var{rpm}
+                        cmp=@b{eq}/@var{lt/gt/ge/le/ne}
+                        version=@var{version-string}
+                        define=@var{class-list}(,:.)
+                        elsedefine=@var{class-list}(,:.)
+
+                        ifelapsed=@var{mins} 
+                        expireafter=@var{mins}
+
+@end smallexample
+@end cartouche
+
+@noindent
+
+@table @code
+
+@item cmp
+@vindex cmp=
+Determines how the version of the installed package will be compared to
+that specified by the @code{version} attribute.  Possible values include:
+
+@itemize @bullet
+@item
+@code{eq}
+The version installed must be equal to @code{version}
+@item
+@code{lt}
+The version installed must be less than @code{version}
+@item
+@code{gt}
+The version installed must be greater than @code{version}
+@item
+@code{le}
+The version installed must be less than or equal to @code{version}
+@item
+@code{ge}
+The version installed must be creater than or equal to @code{version}
+@item
+@code{ne}
+The version installed must not be equal to @code{version}
+@end itemize
+
+The default value for this attribute is @code{eq}.
+
+@item version
+@vindex version=
+Specifies the package manager specific version string to match.  If
+this is not specified, then any version matches, and the value of
+the @code{cmp} attribute is ignored.  See the allowed values of
+@code{pkgmgr} below for an explation of how each package manager
+will interpret this.
+
+@item pkgmgr
+@vindex pkgmgr=
+Selects the package manager database to query.  This defaults to either
+the value of the @code{DefaultPkgMgr} variable, or if that is not set,
+there is no default.  In that case, no checking will be done unless
+@code{pkgmgr} is set explicitly for each package.  Note that the default
+value '@samp{none}' listed is merely a pseudo-value, and cannot actually
+be used, since it would make no sense anyway.
+
+Each package manager will interpret the @code{version} and @code{cmp}
+attributes in its own way.  So, for example, when you use
+@code{pkgmgr=rpm}, the comparison will be done with the same rules that
+RPM use if it were not being run through cfengine.
+
+Currently, the following values are accepted:
+
+@table @code
+@item rpm
+@cindex RPM Database Queries
+This uses the rpm command, which cfengine expects to find as @file{/bin/rpm}
+to query the machine's RPM database.  The @code{rpm} check assumes that you
+are using a version of RPM that understands the concept of an epoch,
+which means that you will want to use RPM version 3.0.3 or greater.
+Versions as early as 2.5.6 may work, but it is doubtful.  If multiple
+packages of the same name are installed (i.e. kernel), then the check
+considers the package to be installed at the specified version if
+@b{at least one} of them satisifies the criteria specified by @code{cmp} and
+@code{version}.
+
+The format of a RPM version string is: [epoch:]version[-release].  The
+version[-release] can be seen by simply running: @command{rpm -q <pkg>}.
+In order to see the epoch, you must use a query format, like this:
+@command{rpm -q --queryformat "%@{EPOCH@}:%@{VERSION@}-%@{RELEASE@}\n" <pkg>}.
+Most packages do not have an epoch, and will print @samp{(none)} in the
+epoch space.  In recent incarnations of RPM, the absense of an epoch
+is interpreted as 0.  This is also how cfengine will interpret it.
+@emph{Be careful with this.  If the installed version
+of a package has an epoch greater than 0, and you do not specify the epoch,
+unexpected results may happen.}  For example, if you have a package installed,
+@samp{foo-1:2.0-1}, and you specify a @code{version=3.0-1} and a
+@code{cmp=gt}, the check will be true, because the installed version has
+an epoch of 1, and you did not specify an epoch, which implies you wanted
+an epoch of 0.  The rule here is basically to always check the epoch of
+the package you really want, and specify it.  It may take a few extra
+extra seconds to check, but it will save you lots of headaches later.
+
+@end table
+
+@item define
+Specifies the list of classes to define if the specified package is
+installed.
+
+@item elsedefine
+Specifies the list of classes to define if the specified package is not
+installed.
+
+@end table
+
+Example:
+
+@smallexample
+packages:
+
+    redhat_8_0::
+        m4  version=0:1.4.1-11 cmp=eq pkgmgr=rpm elsedefine=needsm4
+
+@end smallexample
+@noindent
+In this first example, we are looking for the m4 package at exactly version
+0:1.4.1-11.  The installed m4 package on a redhat_8_0 box has no epoch
+which is the same as zero.  Specifying it will keep you out of trouble.  This
+check will cause @code{needsm4} to be defined if the exact version of
+m4 specified is not installed.
+
+@smallexample
+control:
+    redhat:;
+        DefaultPkgMgr = ( rpm )
+
+packages:
+    redhat_8_0::
+        make version=0:4.5-2 cmp=ge define=hasmake elsedefine=needsmake
+
+@end smallexample
+@noindent
+In the second example, we use the DefaultPkgMgr variable to set the default
+for the @code{pkgmgr} attribute to @code{rpm}.  The actual version of make
+installed on recent redhat_8_0 machine is 1:3.79.1-14.  Since the check is
+for greater than or equal to this version, the hasmake class will be
+defined.
+
+@page
+
+@c -------------------------------------------------------------------------------
+@c SECTION
+@c -------------------------------------------------------------------------------
+
+@node required, resolve, packages, Cfagent reference
 @section required
 
 This is a synonym for disks, @xref{disks}.
@@ -7393,6 +7645,8 @@ special variable @code{$(binserver)} here.
   required:
 
     /@var{filesystem} freespace=@var{size-limit} define=@var{class-list}(,:.) 
+
+     ifelapsed=@var{mins} expireafter=@var{mins}
 
 @end smallexample
 @end cartouche
@@ -7564,6 +7818,9 @@ shellcommands:
           preview=@var{true}/@b{false}
           inform=@b{false}@var{/true}
 
+          ifelapsed=@var{mins} 
+          expireafter=@var{mins}
+
 @end smallexample
 @end cartouche
 @cindex umask
@@ -7707,10 +7964,13 @@ tidy:
 
                        syslog=@var{true/on}/@var{false/off}
                        inform=@var{true/on}/@var{false/off}
+                       ifelapsed=@var{mins} 
+                       expireafter=@var{mins}
 
                        filter=@var{filter alias}
                        ignore=@var{pattern}
                        exclude=@var{pattern}
+                       xdev=@var{true/on}/@b{false/off}
 
 @end smallexample 
 @end cartouche
@@ -7861,6 +8121,12 @@ be removed, only sub-directories.
 The colon, comma or dot separated list of classes becomes defined
 if any file matching the specified pattern is deleted.
 
+@item xdev
+Prevents cfengine from descending into file systems that are not on the
+same device as the root of the rescurion path.
+@cindex xdev
+
+
 @end table
 Take a look at the following example:
 
@@ -7928,6 +8194,8 @@ unmount:
         deletedir=@var{@b{true}/false}
         deletefstab=@var{@b{true}/false}
         force=@var{true/@b{false}}
+        ifelapsed=@var{mins} 
+        expireafter=@var{mins}
 
 @end smallexample 
 @end cartouche
@@ -8033,6 +8301,8 @@ file is as follows:
 
        DynamicAddresses = ( @var{IP numbers} )
 
+       BindToInterface = ( @var{IP number}/@var{hostname} )
+
  groups:
 
    @var{Group definitions}
@@ -8087,6 +8357,7 @@ The file consists of a control section and access information.
 * AllowUsers::                  
 * AutoExecCommand::             
 * AutoExecInterval::            
+* BindToInterface::             
 * ChecksumDatabase in cfservd::  
 * cfrunCommand::                
 * DenyBadClocks::               
@@ -8220,17 +8491,33 @@ This variable no longer exists in cfengine version 2.
 @c SUBSECTION
 @c ...........................................
 
-@node AutoExecInterval, ChecksumDatabase in cfservd, AutoExecCommand, cfservd control
+@node AutoExecInterval, BindToInterface, AutoExecCommand, cfservd control
 @subsection AutoExecInterval
 This variable no longer exists in version 2 of cfengine.
 @cindex @code{AutoExecInterval} variable
+
 
 
 @c ...........................................
 @c SUBSECTION
 @c ...........................................
 
-@node ChecksumDatabase in cfservd, cfrunCommand, AutoExecInterval, cfservd control
+@node BindToInterface, ChecksumDatabase in cfservd, AutoExecInterval, cfservd control
+@subsection BindToInterface
+If this is set to a specific IP address of an IP configured interface,
+cfservd will listen for connections only on that interface. On Multi-homed
+hosts this allows one to restrict the traffic to one interface. Note, Unix
+only allows one or all interfaces to be selected. An interface must be
+configured with an IP address in order to be bound.
+@cindex Multihomed hosts
+@vindex BindToInterface
+@cindex Binding to one interface only
+
+@c ...........................................
+@c SUBSECTION
+@c ...........................................
+
+@node ChecksumDatabase in cfservd, cfrunCommand, BindToInterface, cfservd control
 @subsection ChecksumDatabase
 
 This is the path and filename to a database which will cache
@@ -8460,6 +8747,9 @@ Network Address Translators in a secure environment. It is not recommended
 for sites which require a high level of security.
 @cindex Network Address Translators
 @cindex Security risk
+
+
+
 
 @c -------------------------------------------------------------------------------
 @c SECTION

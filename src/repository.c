@@ -44,7 +44,7 @@ char *file, *repository;
 
 { char buffer[bufsize];
   char localrepository[bufsize]; 
-  char node[maxlinksize];
+  char node[bufsize];
   struct stat sstat, dstat;
   char *sp;
   struct Image dummy;
@@ -52,7 +52,7 @@ char *file, *repository;
 
 if (repository == NULL)
    {
-   strcpy(localrepository,VREPOSITORY);
+   strncpy(localrepository,VREPOSITORY,bufsize);
    }
 else
    {
@@ -60,7 +60,8 @@ else
       {
       return false;
       }
-   strcpy(localrepository,repository);
+   
+   strncpy(localrepository,repository,bufsize);
    }
 
 if (IMAGEBACKUP == 'n')
@@ -98,7 +99,7 @@ for (sp = node; *sp != '\0'; sp++)
       }
    }
 
-strcpy(buffer,localrepository);
+strncpy(buffer,localrepository,bufsize-2);
 AddSlash(buffer);
 
 if (BufferOverflow(buffer,node))
@@ -109,7 +110,10 @@ if (BufferOverflow(buffer,node))
 
 strcat(buffer,node);
 
-MakeDirectoriesFor(buffer,'y');
+if (!MakeDirectoriesFor(buffer,'y'))
+   {
+   snprintf(OUTPUT,bufsize,"Repository (%s),testfile (%s)",localrepository,buffer);
+   }
 
 if (stat(file,&sstat) == -1)
    {
@@ -128,6 +132,7 @@ dummy.cache = NULL;
 dummy.stealth = 'n';
 dummy.encrypt = 'n'; 
 dummy.preservetimes = 'n';
+dummy.repository = NULL; 
  
 CheckForHoles(&sstat,&dummy);
 

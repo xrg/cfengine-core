@@ -402,7 +402,7 @@ for (lp = VCHLINK; lp != NULL; lp = lp->next)
 
    snprintf(VBUFF,bufsize,"%.50s.%.50s",lp->from,lp->to); /* Unique ID for copy locking */
 
-   if (!GetLock(ASUniqueName("link"),CanonifyName(VBUFF),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+   if (!GetLock(ASUniqueName("link"),CanonifyName(VBUFF),lp->ifelapsed,lp->expireafter,VUQNAME,CFSTARTTIME))
       {
       continue;
       }
@@ -513,7 +513,7 @@ for (lp = VLINK; lp != NULL; lp = lp->next)
 
    snprintf(VBUFF,bufsize,"%.50s.%.50s",lp->from,lp->to); /* Unique ID for copy locking */
    
-   if (!GetLock(ASUniqueName("link"),CanonifyName(VBUFF),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+   if (!GetLock(ASUniqueName("link"),CanonifyName(VBUFF),lp->ifelapsed,lp->expireafter,VUQNAME,CFSTARTTIME))
       {
       continue;
       }
@@ -805,6 +805,12 @@ if (!IsPrivileged())
    return;
    }
 
+
+if (!GetLock(ASUniqueName("domount"),"",VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+   {
+   return;
+   } 
+
 if (VSYSTEMHARDCLASS == cfnt)
    {
    /* This is a shell script. Make sure it hasn't been compromised. */
@@ -834,6 +840,7 @@ if ((pp = cfpopen(VMOUNTCOMM[VSYSTEMHARDCLASS],"r")) == NULL)
    {
    snprintf(OUTPUT,bufsize*2,"Failed to open pipe from %s\n",VMOUNTCOMM[VSYSTEMHARDCLASS]);
    CfLog(cferror,OUTPUT,"popen");
+   ReleaseCurrentLock();
    return;
    }
 
@@ -883,6 +890,7 @@ while (!feof(pp))
 alarm(0);
 signal(SIGALRM,SIG_DFL);
 cfpclose(pp);
+ReleaseCurrentLock();
 }
 
 /*******************************************************************/
@@ -912,7 +920,7 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
       rp->done = 'y';
       }
    
-   if (!GetLock(ASUniqueName("disks"),rp->name,VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+   if (!GetLock(ASUniqueName("disks"),rp->name,rp->ifelapsed,rp->expireafter,VUQNAME,CFSTARTTIME))
       {
       continue;
       }
@@ -1142,7 +1150,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
 
    ResetOutputRoute(ptr->log,ptr->inform);
    
-   if (!GetLock(ASUniqueName("shellcommand"),CanonifyName(ptr->name),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+   if (!GetLock(ASUniqueName("shellcommand"),CanonifyName(ptr->name),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
       {
       continue;
       }
@@ -1514,7 +1522,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
       dp->done = 'y';
       }
 
-   if (!GetLock(ASUniqueName("disable"),CanonifyName(dp->name),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+   if (!GetLock(ASUniqueName("disable"),CanonifyName(dp->name),dp->ifelapsed,dp->expireafter,VUQNAME,CFSTARTTIME))
       {
       continue;
       }
@@ -1955,7 +1963,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
       ptr->done = 'y';
       }
 
-   if (!GetLock(ASUniqueName("unmount"),CanonifyName(ptr->name),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+   if (!GetLock(ASUniqueName("unmount"),CanonifyName(ptr->name),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
       {
       continue;
       }
@@ -2218,14 +2226,12 @@ for (ip = filebase; ip != NULL; ip=ip->next)
       }
    }
 
-
-
 DeleteItemStarting(&filebase,"domain");
 while(DeleteItemStarting(&filebase,"search"))
    {
    }
- 
-if (GetMacroValue(CONTEXTID,"EmptyResolvConf") && (strcmp(GetMacroValue(CONTEXTID,"EmptyResolvConf"),"true") == 0))
+
+if (OptionIs(CONTEXTID,"EmptyResolvConf", true))
    {
    while (DeleteItemStarting(&filebase,"nameserver "))
       {
@@ -2341,7 +2347,7 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
       
       snprintf(VBUFF,bufsize,"%.50s.%.50s",path,destination); /* Unique ID for copy locking */
 
-      if (!GetLock(ASUniqueName("copy"),CanonifyName(VBUFF),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+      if (!GetLock(ASUniqueName("copy"),CanonifyName(VBUFF),ip->ifelapsed,ip->expireafter,VUQNAME,CFSTARTTIME))
 	 {
 	 SILENT = savesilent;
 	 ResetOutputRoute('d','d');
@@ -2374,6 +2380,7 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
 	       {
 	       Verbose("%s: (Destination purging enabled)\n",VPREFIX);
 	       }
+	    RegisterRecursionRootDevice(statbuf.st_dev);
 	    RecursiveImage(ip,path,destination,ip->recurse);
 	    }
 	 else
@@ -2495,12 +2502,8 @@ void CheckProcesses()
 { struct Process *pp;
   struct Item *procdata = NULL;
   char *psopts = VPSOPTS[VSYSTEMHARDCLASS];
+  
 
-if (!GetLock(ASUniqueName("processes"),"allprocs",VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
-   {
-   return;
-   }
- 
 if (!LoadProcessTable(&procdata,psopts))
    {
    CfLog(cferror,"Unable to read the process table\n","");
@@ -2523,6 +2526,13 @@ for (pp = VPROCLIST; pp != NULL; pp=pp->next)
       pp->done = 'y';
       }
 
+   snprintf(VBUFF,bufsize-1,"proc-%s-%s",pp->expr,pp->restart);
+   
+   if (!GetLock(ASUniqueName("processes"),CanonifyName(VBUFF),pp->ifelapsed,pp->expireafter,VUQNAME,CFSTARTTIME))
+      {
+      continue;
+      }
+
    ResetOutputRoute(pp->log,pp->inform);
    
    if (strcmp(pp->expr,"SetOptionString") == 0)
@@ -2541,11 +2551,116 @@ for (pp = VPROCLIST; pp != NULL; pp=pp->next)
       }
    
    ResetOutputRoute('d','d');
+   ReleaseCurrentLock(); 
    }
-
-ReleaseCurrentLock(); 
 }
 
+/*******************************************************************/
+
+void CheckPackages()
+
+{ struct Package *ptr;
+  enum cmpsense result;
+  int match = 0;
+
+
+for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
+   {
+   if (ptr->done == 'y' || strcmp(ptr->scope,CONTEXTID) != 0)
+      {
+      continue;
+      }
+   else
+      {
+      ptr->done = 'y';
+      }
+
+   if (IsExcluded(ptr->classes))
+      {
+      continue;
+      }
+
+   if (!GetLock(ASUniqueName("packages"),CanonifyName(ptr->name),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
+      {
+      continue;
+      }
+   
+   switch(ptr->pkgmgr)
+     {
+     case pkgmgr_rpm:
+       match = RPMPackageCheck(ptr->name, ptr->ver, ptr->cmp);
+       break;
+     case pkgmgr_dpkg:
+       match = DPKGPackageCheck(ptr->name, ptr->ver, ptr->cmp);
+       break;
+     default:
+       /* UGH!  This should *never* happen.  GetPkgMgr() and
+        * InstallPackagesItem() should have caught this before it
+        * was ever installed!!!
+        * */
+       snprintf(OUTPUT,bufsize,"Internal error!  Tried to check package %s in an unknown database: %d.  This should never happen!\n", ptr->name, ptr->pkgmgr);
+       CfLog(cferror,OUTPUT,"");
+       break;
+     }
+   
+   if (match)
+     {
+     AddMultipleClasses(ptr->defines);
+     }
+   else
+     {
+     AddMultipleClasses(ptr->elsedef);
+     }
+   
+   ptr->done = 'y';
+   ReleaseCurrentLock();
+   }
+
+}
+
+/*******************************************************************/
+
+void DoMethods()
+
+{ struct Method *ptr, *pending = NULL;
+
+pending = GetPendingMethods();
+ 
+Banner("Dispatching new methods");
+
+for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
+   {
+   if (ptr->done == 'y' || strcmp(ptr->scope,CONTEXTID) != 0)
+      {
+      continue;
+      }
+   else
+      {
+      ptr->done = 'y';
+      }
+   
+   if (!GetLock(ASUniqueName("methods"),CanonifyName(ptr->name),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
+      {
+      continue;
+      }
+   
+   DispatchNewMethod(ptr);
+
+   ptr->done = 'y';
+   ReleaseCurrentLock();
+   }
+
+Banner("Evaluating new methods");
+
+for (ptr = GetPendingMethods(); ptr != NULL; ptr=ptr->next)
+   {
+   // Get ready to dispatch methods
+   EvaluatePendingMethod(ptr);
+   }
+}
+
+/*******************************************************************/
+/* Level 2                                                         */
 /*******************************************************************/
 
 int RequiredFileSystemOkay (name)
@@ -2558,7 +2673,7 @@ char *name;
   long sizeinbytes = 0, filecount = 0;
   char buff[bufsize];
 
-Debug2("Checking required filesystem %s\n",name);
+Debug("Checking required filesystem %s\n",name);
 
 if (stat(name,&statbuf) == -1)
    {
@@ -3167,7 +3282,7 @@ ptr = (struct File *)vp;
 
 Verbose("%s: Checking files in %s...\n",VPREFIX,startpath);
 
-if (!GetLock(ASUniqueName("files"),startpath,VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+if (!GetLock(ASUniqueName("files"),startpath,ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
    {
    return;
    }

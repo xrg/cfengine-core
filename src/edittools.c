@@ -580,49 +580,49 @@ while (ep != NULL)
                break;
 
       case WarnIfNoSuchLine:
-               if (LocateNextItemMatching(filestart,expdata) == NULL)
+   	       if ((PASS == 1) && (LocateNextItemMatching(filestart,expdata) == NULL))
                   {
-                  printf("Warning, file %s has no line matching %s\n",filename,expdata);
-                  }
+		  printf("Warning, file %s has no line matching %s\n",filename,expdata);
+		  }	       
                break;
 
       case WarnIfLineMatching:
-               if (LocateNextItemMatching(filestart,expdata) != NULL)
+               if ((PASS == 1) && (LocateNextItemMatching(filestart,expdata) != NULL))
                   {
                   printf("Warning, file %s has a line matching %s\n",filename,expdata);
                   }
                break;
 
       case WarnIfNoLineMatching:
-               if (LocateNextItemMatching(filestart,expdata) == NULL)
+	       if ((PASS == 1) && (LocateNextItemMatching(filestart,expdata) == NULL))
                   {
                   printf("Warning, file %s has a no line matching %s\n",filename,expdata);
                   }
                break;
 
       case WarnIfLineStarting:
-               if (LocateNextItemStarting(filestart,expdata) != NULL)
+   	       if ((PASS == 1) && (LocateNextItemStarting(filestart,expdata) != NULL))
                   {
                   printf("Warning, file %s has a line starting %s\n",filename,expdata);
                   }
                break;
 
       case WarnIfNoLineStarting:
-               if (LocateNextItemStarting(filestart,expdata) == NULL)
+	       if ((PASS == 1) && (LocateNextItemStarting(filestart,expdata) == NULL))
                   {
                   printf("Warning, file %s has no line starting %s\n",filename,expdata);
                   }
                break;
 
       case WarnIfLineContaining:
-               if (LocateNextItemContaining(filestart,expdata) != NULL)
+	       if ((PASS == 1) && (LocateNextItemContaining(filestart,expdata) != NULL))
                   {
                   printf("Warning, file %s has a line containing %s\n",filename,expdata);
                   }
                break;
 
       case WarnIfNoLineContaining:
-               if (LocateNextItemContaining(filestart,expdata) == NULL)
+	       if ((PASS == 1) && (LocateNextItemContaining(filestart,expdata) == NULL))
                   {
                   printf("Warning, file %s has no line containing %s\n",filename,expdata);
                   }

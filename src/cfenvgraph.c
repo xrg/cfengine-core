@@ -1050,20 +1050,35 @@ for (i = 0; i < 5; i++)
    samples_per_grain[i] = delta_t[i]/MEASURE_INTERVAL;
    H[i] = FindHurstFunction(samples_per_grain[i],grains[i]);
    }
+
+printf("\n============================================================================\n");
+ printf("Fluctuation measures - Hurst exponent estimates\n");
+ printf("============================================================================\n");
  
 for (i = 1; i < 5; i++)
    {
    dilatation = (double)delta_t[i]/(double)delta_t[0];
    M[i].expect_number_of_users = log(H[i].expect_number_of_users/H[0].expect_number_of_users)/log(dilatation);
+   printf(" M[%d].users = %f\n",i,M[i].expect_number_of_users);
+   
    M[i].expect_rootprocs = log(H[i].expect_rootprocs/H[0].expect_rootprocs)/log(dilatation);
+   printf(" M[%d].rootprocs = %f\n",i,M[i].expect_rootprocs);
+   
    M[i].expect_otherprocs = log(H[i].expect_otherprocs/H[0].expect_otherprocs)/log(dilatation);
+   printf(" M[%d].userprocs = %f\n",i,M[i].expect_otherprocs);
+   
    M[i].expect_diskfree = log(H[i].expect_diskfree/H[0].expect_diskfree)/log(dilatation);
+   printf(" M[%d].diskfree = %f\n",i,M[i].expect_diskfree);
+   
    M[i].expect_loadavg = log(H[i].expect_loadavg/H[0].expect_loadavg)/log(dilatation);
+   printf(" M[%d].loadavg = %f\n",i,M[i].expect_loadavg);
    
    for (j = 0; j < ATTR; j++)
       {
       M[i].expect_incoming[j] = log(H[i].expect_incoming[j]/H[0].expect_incoming[j])/log(dilatation);
+      printf(" M[%d].incoming.%s = %f\n",i,ECGSOCKS[j][1],M[i].expect_incoming[i]);
       M[i].expect_outgoing[j] = log(H[i].expect_outgoing[j]/H[0].expect_outgoing[j])/log(dilatation);
+      printf(" M[%d].outgoing.%s = %f\n",i,ECGSOCKS[j][1],M[i].expect_outgoing[i]);
       }
    
    h2.expect_number_of_users += M[i].expect_number_of_users * M[i].expect_number_of_users/4.0;
@@ -1081,6 +1096,7 @@ for (i = 1; i < 5; i++)
    uncertainty = 1.0/fabs(1.0/H[i].expect_number_of_users - 1.0/H[0].expect_number_of_users)*sqrt(MAX.var_number_of_users/log(dilatation))/(MAX.expect_number_of_users*2.0);
    }
 
+ printf("\n\nESTIMATED RMS HURST EXPONENTS...\n\n"); 
  printf("Hurst exponent for no. of users        = %.1f u %.2f - order of mag\n",sqrt(h2.expect_number_of_users),uncertainty);
  printf("Hurst exponent for rootprocs           = %.1f\n",sqrt(h2.expect_rootprocs));
  printf("Hurst exponent for otherprocs          = %.1f\n",sqrt(h2.expect_otherprocs));

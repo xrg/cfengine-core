@@ -37,7 +37,7 @@ Recursive File Sweeps in the tutorial).
      
            { DIRECTORY-TO-BE-EDITED
      
-           Recurse "inf"
+           Recurse "inf"          # iterated over all files
            Filter  "filteralias"
            Include ".cshrc"
            Ignore  "bin"
@@ -391,6 +391,8 @@ expressions.
 `EndLoop'
      Terminates a loop. See `ForEachLineIn'
 
+`ExpireAfter MINS'
+
 `Filter FILTERALIAS'
      Name a fiter for pruning file searches.
 
@@ -418,6 +420,9 @@ expressions.
 
 `HashCommentLinesStarting QUOTED-STRING'
      Add a `#' to the start of any line starting with the quoted string.
+
+`IfElapsed MINS'
+     As usual.
 
 `IncrementPointer QUOTED-NUMBER'
      Increments the value (in lines) of the file pointer by the number
@@ -735,14 +740,17 @@ examining the form of the statement in pseudo-code:
                                include=PATTERN
                                exclude=PATTERN
                                filter=FILTER ALIAS
+                               xdev=TRUE/ON/false/off
      
                                define=CLASSLIST
                                elsedefine=CLASSLIST
      
                                checksum=MD5
                                flags=BSD FLAGS
-                               syslog=TRUE/ON/FALSE/OFF
-                               inform=TRUE/ON/FALSE/OFF
+                               syslog=TRUE/ON/false/off
+                               inform=TRUE/ON/false/off
+                               ifelapsed=MINS
+                               expireafter=MINS
 
 An example would be the following:
 
@@ -896,6 +904,10 @@ unique abbreviation.
      the database is then changed to the new value of the file
      automatically i.e. the behaviour is similar to that of setuid root
      program detection, *Note ChecksumDatabase::.
+
+`xdev'
+     Prevents cfengine from descending into file systems that are not
+     on the same device as the root of the rescurion path.
 
    The default values are `mode=+000', `recurse=0', `action=warnall'
 and any owner or group is acceptable.  The default for `links' is to

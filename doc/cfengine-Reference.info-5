@@ -319,6 +319,8 @@ the `files' action  *Note files::. The syntax of a link item is:
                  nofile=kill/FORCE
                  syslog=TRUE/ON/FALSE/OFF
                  inform=TRUE/ON/FALSE/OFF
+                 ifelapsed=MINS
+                 expireafter=MINS
 
 _The special variable `$(binserver)' can be used in `links'._
 
@@ -674,6 +676,8 @@ miscellaneous filesystems using a statement of the form:
            INFOHOST:SOURCE-DIRECTORY DESTINATION MODE
      
            INFOHOST:SOURCE-DIRECTORY DESTINATION mode=MODE
+     
+          ifelapsed=MINS expireafter=MINS
 
 For example
 
@@ -746,7 +750,7 @@ configuration of the automounter, using the command
 `AutomountDirectResources'.
 
 
-File: cfengine-Reference.info,  Node: processes,  Next: required,  Prev: mountables,  Up: Cfagent reference
+File: cfengine-Reference.info,  Node: processes,  Next: packages,  Prev: mountables,  Up: Cfagent reference
 
 processes
 =========
@@ -781,6 +785,8 @@ process command is
                              exclude=LITERAL
                              syslog=TRUE/ON/FALSE/OFF
                              inform=TRUE/ON/FALSE/OFF
+                             ifelapsed=MINS
+                             expireafter=MINS
      
          SetOptionString "QUOTED OPTION STRING"
 
@@ -998,7 +1004,146 @@ greater than 20, one would write:
    See also filters *Note filters::, for more complex searches.
 
 
-File: cfengine-Reference.info,  Node: required,  Next: resolve,  Prev: processes,  Up: Cfagent reference
+File: cfengine-Reference.info,  Node: packages,  Next: required,  Prev: processes,  Up: Cfagent reference
+
+packages
+========
+
+   The packages action allows you to check for the existance of packages
+on the system, as determined by the package database you select.  This
+operation is set up such that it tries not to make assumptions about
+the package manager in use.  For example, it should be possible to use
+RPM on a Solaris box.
+
+   The syntax summary is:
+
+
+     packages:
+     
+        CLASS::
+     
+           PACKAGE-NAME
+                             pkgmgr=none/RPM
+                             cmp=eq/LT/GT/GE/LE/NE
+                             version=VERSION-STRING
+                             define=CLASS-LIST(,:.)
+                             elsedefine=CLASS-LIST(,:.)
+     
+                             ifelapsed=MINS
+                             expireafter=MINS
+
+`cmp'
+     Determines how the version of the installed package will be
+     compared to that specified by the `version' attribute.  Possible
+     values include:
+
+        * `eq' The version installed must be equal to `version'
+
+        * `lt' The version installed must be less than `version'
+
+        * `gt' The version installed must be greater than `version'
+
+        * `le' The version installed must be less than or equal to
+          `version'
+
+        * `ge' The version installed must be creater than or equal to
+          `version'
+
+        * `ne' The version installed must not be equal to `version'
+
+     The default value for this attribute is `eq'.
+
+`version'
+     Specifies the package manager specific version string to match.  If
+     this is not specified, then any version matches, and the value of
+     the `cmp' attribute is ignored.  See the allowed values of
+     `pkgmgr' below for an explation of how each package manager will
+     interpret this.
+
+`pkgmgr'
+     Selects the package manager database to query.  This defaults to
+     either the value of the `DefaultPkgMgr' variable, or if that is
+     not set, there is no default.  In that case, no checking will be
+     done unless `pkgmgr' is set explicitly for each package.  Note
+     that the default value '`none'' listed is merely a pseudo-value,
+     and cannot actually be used, since it would make no sense anyway.
+
+     Each package manager will interpret the `version' and `cmp'
+     attributes in its own way.  So, for example, when you use
+     `pkgmgr=rpm', the comparison will be done with the same rules that
+     RPM use if it were not being run through cfengine.
+
+     Currently, the following values are accepted:
+
+    `rpm'
+          This uses the rpm command, which cfengine expects to find as
+          `/bin/rpm' to query the machine's RPM database.  The `rpm'
+          check assumes that you are using a version of RPM that
+          understands the concept of an epoch, which means that you
+          will want to use RPM version 3.0.3 or greater.  Versions as
+          early as 2.5.6 may work, but it is doubtful.  If multiple
+          packages of the same name are installed (i.e. kernel), then
+          the check considers the package to be installed at the
+          specified version if at least one of them satisifies the
+          criteria specified by `cmp' and `version'.
+
+          The format of a RPM version string is:
+          [epoch:]version[-release].  The version[-release] can be seen
+          by simply running: `rpm -q <pkg>'.  In order to see the
+          epoch, you must use a query format, like this: `rpm -q
+          --queryformat "%{EPOCH}:%{VERSION}-%{RELEASE}\n" <pkg>'.
+          Most packages do not have an epoch, and will print `(none)'
+          in the epoch space.  In recent incarnations of RPM, the
+          absense of an epoch is interpreted as 0.  This is also how
+          cfengine will interpret it.  _Be careful with this.  If the
+          installed version of a package has an epoch greater than 0,
+          and you do not specify the epoch, unexpected results may
+          happen._  For example, if you have a package installed,
+          `foo-1:2.0-1', and you specify a `version=3.0-1' and a
+          `cmp=gt', the check will be true, because the installed
+          version has an epoch of 1, and you did not specify an epoch,
+          which implies you wanted an epoch of 0.  The rule here is
+          basically to always check the epoch of the package you really
+          want, and specify it.  It may take a few extra extra seconds
+          to check, but it will save you lots of headaches later.
+
+`define'
+     Specifies the list of classes to define if the specified package is
+     installed.
+
+`elsedefine'
+     Specifies the list of classes to define if the specified package
+     is not installed.
+
+Example:
+
+     packages:
+     
+         redhat_8_0::
+             m4  version=0:1.4.1-11 cmp=eq pkgmgr=rpm elsedefine=needsm4
+
+In this first example, we are looking for the m4 package at exactly
+version 0:1.4.1-11.  The installed m4 package on a redhat_8_0 box has
+no epoch which is the same as zero.  Specifying it will keep you out of
+trouble.  This check will cause `needsm4' to be defined if the exact
+version of m4 specified is not installed.
+
+     control:
+         redhat:;
+             DefaultPkgMgr = ( rpm )
+     
+     packages:
+         redhat_8_0::
+             make version=0:4.5-2 cmp=ge define=hasmake elsedefine=needsmake
+
+In the second example, we use the DefaultPkgMgr variable to set the
+default for the `pkgmgr' attribute to `rpm'.  The actual version of make
+installed on recent redhat_8_0 machine is 1:3.79.1-14.  Since the check
+is for greater than or equal to this version, the hasmake class will be
+defined.
+
+
+File: cfengine-Reference.info,  Node: required,  Next: resolve,  Prev: packages,  Up: Cfagent reference
 
 required
 ========
@@ -1012,6 +1157,8 @@ NFS filesystems have been mounted.  You may use the special variable
        required:
      
          /FILESYSTEM freespace=SIZE-LIMIT define=CLASS-LIST(,:.)
+     
+          ifelapsed=MINS expireafter=MINS
 
    Files or filesystems which you consider to be essential to the
 operation of the system can be declared as `required'.  Cfengine will
@@ -1111,112 +1258,4 @@ non-nameserver lines to this file. For example:
 
 If the line begins with a non-numeric character, the word `nameserver'
 is not added to the line.
-
-
-File: cfengine-Reference.info,  Node: shellcommands,  Next: tidy,  Prev: resolve,  Up: Cfagent reference
-
-shellcommands
-=============
-
-   Cfengine focuses on fairly simple minded tasks in order to be as
-general as possible.  In many cases you will therefore want to write a
-script to do something special on your system.  You can still take
-advantage of the classes you have defined by executing these scripts or
-shell commands from this section.
-
-   The syntax is simply to quote the command you wish to be executed.
-
-     shellcommands:
-     
-       "COMMAND-STRING"
-     
-               timeout=SECONDS
-               useshell=true/FALSE
-               umask=OCTAL NUMBER
-               owner=UID
-               group=GID
-               define=CLASS-LIST
-               background=false/TRUE
-               chdir=DIRECTORY
-               chroot=DIRECTORY
-               preview=TRUE/false
-               inform=false/TRUE
-
-The user and group ID's of the process can be set to restrict the
-permissions of the shellcommand to another user only if cfengine is
-executed by root. If you set the optional timeout string, then cfengine
-will abort the shellcommand if it exceeds the specified time-limit in
-seconds. This can be useful for avoiding situations caused by hung
-network connections etc.
-
-   Variable substitution works within the strings.  Here are some
-examples.
-
-
-     shellcommands:
-     
-        sun4::
-     
-            "/usr/lib/find/updatedb"
-     
-        AllHomeServers.Sunday::
-     
-            "/dir/noseyparker /$(site)/$(host)/u1 $(sysadm) nomail"
-     
-        AllBinaryServers.sun4.Saturday::
-     
-           "/usr/etc/catman -w -M /usr/local/man"
-           "/usr/etc/catman -w -M /usr/local/X11R5/man"
-           "/usr/etc/catman -w -M /usr/man"
-           "/usr/etc/catman -w -M /usr/local/gnu/man"
-
-If you need to write more advanced scripts, which make detailed use of
-the classes defined by cfengine, use the `$(allclasses)' variable to
-send a complete list of classes to your script in the format
-
-
-     CFALLCLASSES=class1:class2:class3...
-
-This variable is kept up-to-date at any given time with only the classes
-which are defined.  The command line option `-u' or `--use-env' can be
-used to define an environment variable which will be inherited by all
-scripts and contains the same information.  This is not the standard
-approach, since some systems cannot cope with this rapid change of
-environment and generate a Bus Error.
-
-   Commands can be iterated over variable lists, provided there is at
-least one space between each variable. For example:
-
-
-     control:
-     
-           actionsequence =
-              (
-              shellcommands
-              )
-     
-      var1 = ( a:b:c )
-      var2 = ( x:y:z )
-     
-     shellcommands:
-     
-        "/bin/echo $(var1) $(var2)"
-
-This iterates over all values of the list variables. *Note Iterating
-over lists: (cfengine-Tutorial)Iterating over lists.  If you are
-iterating over a list, the timeout applies to each separate iteration,
-not to the sum of all the iterations.
-
-   The `chroot' option changes the process root directory of the
-command, creating a `sandbox' which the process cannot escape from. Best
-used together with a change of owner, since a root process can break out
-of such a confinement in principle. The `chdir' option changes the
-current working directory of the restarted process.
-
-   The `preview' option means that the shellcommand will also be
-executed during the `--dry-run' (`-n') options. This allows cfengine to
-be more aware of the results of scripts which define classes. This
-option should be used with care.  Scripts should conform to the
-protocol of not executing unnecessary commands when the classes
-`opt_dry_run' is defined.
 

@@ -222,6 +222,13 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       }
 
 
+   if (ptr->xdev =='y' && DeviceChanged(statbuf.st_dev))
+      {
+      Verbose("Skipping %s on different device\n",pcwd);
+      continue;
+      }
+
+   
    if (S_ISLNK(statbuf.st_mode))            /* should we ignore links? */
       {
       CheckExistingFile(pcwd,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
@@ -997,6 +1004,19 @@ else
                      }
                   else if (! DONTDO)
                      {
+		     if (!uidmatch)
+			{
+			snprintf(OUTPUT,bufsize,"Owner of %s was %d, setting to %d",file,statbuf->st_uid,uid);
+			CfLog(cfinform,OUTPUT,"");
+			}
+
+		     if (!gidmatch)
+			{
+			snprintf(OUTPUT,bufsize,"Group of %s was %d, setting to %d",file,statbuf->st_gid,gid);
+			CfLog(cfinform,OUTPUT,"");
+			}
+		     
+		     
                      if (chown(file,uid,gid) == -1)
                         {
                         snprintf(OUTPUT,bufsize*2,"Cannot set ownership on file %s!\n",file);

@@ -32,15 +32,6 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
-void GetRandom ARGLIST((char* args,char *value));
-void HandleFunctionExec ARGLIST((char* args,char *value));
-void HandleStatInfo ARGLIST((enum builtin fn,char* args,char *value));
-void HandleCompareStat ARGLIST((enum builtin fn,char* args,char *value));
-void HandleReturnsZero ARGLIST((char* args,char *value));
-void HandleIPRange ARGLIST((char* args,char *value));
-void HandleIsDefined ARGLIST((char* args,char *value));
-void HandleStrCmp ARGLIST((char* args,char *value));
-void HandleShowState ARGLIST((char* args,char *value));
 
 /*********************************************************************/
 
@@ -57,7 +48,7 @@ if (c1 != '(' || c2 != ')')
    {
    return false;
    }
- 
+
 Debug("IsBuiltinFunction: %s(%s)\n",name,args);
 return true; 
 }
@@ -109,6 +100,11 @@ switch (fn = FunctionStringToCode(name))
    case fn_showstate:
        HandleShowState(args,value);
        break;
+   case fn_readfile:
+       HandleReadFile(args,value);
+       break;
+   default: snprintf(OUTPUT,bufsize,"No such builtin function %s\n",f);
+       CfLog(cferror,OUTPUT,"");
    }
  
 return value;
@@ -341,7 +337,7 @@ if (stat(to,&tobuf) == -1)
 switch(fn)
    {
    case fn_newerthan:
-       if (frombuf.st_mtime > tobuf.st_mtime)
+       if (frombuf.st_mtime < tobuf.st_mtime)
 	  {
 	  strcpy(value,CF_ANYCLASS);
 	  return;
@@ -495,10 +491,74 @@ if (strcmp(nfrom,nto) == 0)
    {
    strcpy(value,CF_ANYCLASS); 
    }
- else
-    {
-    strcpy(value,CF_NOCLASS);
-    } 
+else
+   {
+   strcpy(value,CF_NOCLASS);
+   } 
+}
+
+/*********************************************************************/
+
+void HandleReadFile(args,value)
+
+char *args,*value;
+
+{ char *sp,filename[bufsize],maxbytes[bufsize],*nf,*nm;
+  int count = 0,val = 0;
+  FILE *fp;
+
+filename[0] = '\0';
+maxbytes[0] = '\0';
+
+bzero(value,bufsize);
+ 
+for (sp = args; *sp != '\0'; sp++)
+   {
+   if (*sp == ',')
+      {
+      count++;
+      }
+   }
+
+if (count != 1)
+   {
+   yyerror("ReadFile(filename,maxbytes): argument error");
+   return;
+   }
+ 
+sscanf(args,"%[^,],%[^)]",filename,maxbytes);
+Debug("ReadFile [%s] < [%s]\n",filename,maxbytes);
+ 
+if (filename[0]=='\0' || maxbytes[0] == '\0')
+   {
+   yyerror("Argument error in class-function");
+   return;
+   }
+
+nf = UnQuote(filename);
+nm = UnQuote(maxbytes);
+
+val = atoi(nm);
+
+if ((fp = fopen(filename,"r")) == NULL)
+   {
+   snprintf(OUTPUT,bufsize,"Could open ReadFile(%s)\n",filename);
+   CfLog(cferror,OUTPUT,"fopen");
+   return;
+   }
+
+if (val > bufsize - buffer_margin)
+   {
+   snprintf(OUTPUT,bufsize,"ReadFile() will not read more than %d bytes",bufsize - buffer_margin);
+   CfLog(cferror,OUTPUT,"");
+   fclose(fp);
+   return;
+   }
+
+bzero(value,bufsize); 
+fread(value,val,1,fp);
+ 
+fclose(fp); 
 }
 
 
@@ -519,7 +579,7 @@ if (PARSING)
    return;
    }
   
-if (ACTION != alerts)
+if ((ACTION != alerts) && PARSING)
    {
    yyerror("Use of ShowState(type) outside of alert declaration");
    }
@@ -532,7 +592,8 @@ if (stat(buffer,&statbuf) == 0)
    {
    if ((fp = fopen(buffer,"r")) == NULL)
       {
-      Verbose("Could not open state %s\n",buffer);
+      snprintf(OUTPUT,bufsize,"Could not open state memory %s\n",buffer);
+      CfLog(cfinform, OUTPUT,"fopen");
       return;
       }
 

@@ -28,6 +28,7 @@ possibilities:
            netconfig              # check net interface config
            resolve                # check resolver setup
            unmount                # unmount any filesystems
+           packages               # check for required packages
            shellcommands          # execute shell commands
            editfiles              # edit files
            addmounts              # add new filesystems to system
@@ -145,6 +146,12 @@ Here is a more complete description of the meaning of these keywords.
 `resolve'
      checks and corrects the DNS domain name and the order of
      nameservers in the file `/etc/resolv.conf'.
+
+`packages'
+     executes commands defined under the `packages' section of the
+     program.  This will query the system's package database for the
+     specified packages, at the specified versions, and set classes
+     based on whether or not those packages exist.
 
 `shellcommands'
      executes all the commands defined under the `shellcommands'
@@ -429,7 +436,7 @@ as long as that class is defined. For instance
 would define a pattern which was only valid when CLASS is defined.
 
 
-File: cfengine-Reference.info,  Node: defaultcopytype,  Next: deletenonuserfiles,  Prev: copylinks,  Up: control
+File: cfengine-Reference.info,  Node: defaultcopytype,  Next: defaultpkgmgr,  Prev: copylinks,  Up: control
 
 DefaultCopyType
 ---------------
@@ -442,7 +449,23 @@ operations parsed after this variable. The legal values are `ctime'
       DefaultCopyType = ( mtime )
 
 
-File: cfengine-Reference.info,  Node: deletenonuserfiles,  Next: deletenonownerfiles,  Prev: defaultcopytype,  Up: control
+File: cfengine-Reference.info,  Node: defaultpkgmgr,  Next: deletenonuserfiles,  Prev: defaultcopytype,  Up: control
+
+DefaultPkgMgr
+-------------
+
+   Sets the default value of the `pkgmgr' attribute for `packages'
+items.
+
+     DefaultPkgMgr = ( rpm )
+
+   By default, this variable is not set, meaning there will be no
+package manager selected, and each item in the `packages' section must
+specify its own package manager, or it will not be checked.  For
+information on the values of this variable, *Note packages::.
+
+
+File: cfengine-Reference.info,  Node: deletenonuserfiles,  Next: deletenonownerfiles,  Prev: defaultpkgmgr,  Up: control
 
 DeleteNonUserFiles
 ------------------
@@ -638,6 +661,9 @@ File: cfengine-Reference.info,  Node: ExpireAfter,  Next: homepattern,  Prev: ex
 ExpireAfter
 -----------
 
+   If you change the value of this parameter, it should be one of the
+first things you do in your configuration script.
+
    This parameter controls the global value of the ExpireAfter
 parameter.  *Note Spamming and security: (cfengine-Tutorial)Spamming
 and security. This parameter controls the maximum time in minutes which
@@ -655,6 +681,9 @@ appending a pseudo-class called `ExpireAfterTIME'.  For instance,
       actionsequence = ( copy.ExpireAfter15 )
 
 sets the expiry time parameter to 15 minutes for this copy command.
+This method should be considered old and deprecated however.  As of
+version 2.1.0, you can define the expiry time on a per-command basis,
+as options of the form `expireafter=10'.
 
 
 File: cfengine-Reference.info,  Node: homepattern,  Next: IfElapsed,  Prev: ExpireAfter,  Up: control
@@ -703,6 +732,9 @@ File: cfengine-Reference.info,  Node: IfElapsed,  Next: Inform,  Prev: homepatte
 IfElapsed
 ---------
 
+   If you change the value of this parameter, it should be one of the
+first things you do in your configuration script.
+
    This parameter controls the global value of the IfElapsed parameter,
 *Note Spamming and security: (cfengine-Tutorial)Spamming and security.
 This parameter controls the minimum time which must have elapsed for an
@@ -718,6 +750,9 @@ appending a pseudo-class called `IfElapsedTIME'.  For instance,
       ActionSequence = ( copy.IfElapsed15 )
 
 sets the elapsed time parameter to 15 minutes for this copy command.
+This method should be considered old and deprecated however.  As of
+version 2.1.0, you can define the expiry time on a per-command basis,
+as options of the form `ifelapsed=15'.
 
 
 File: cfengine-Reference.info,  Node: Inform,  Next: interfacename,  Prev: IfElapsed,  Up: control
@@ -1390,23 +1425,4 @@ WarnNonUserMail
    If this parameter is set to true, cfengine will warn about mail
 files on mailservers which do not have a name belonging to a known user
 id. This does not include lock files.
-
-
-File: cfengine-Reference.info,  Node: warnnonownermail,  Prev: warnnonusermail,  Up: control
-
-WarnNonOwnerMail
-----------------
-
-   If this parameter is set to true, cfengine will warn about files on
-mailservers whose names do not correspond to a known user name, but
-might be owned by a known user.
-
-
-File: cfengine-Reference.info,  Node: classes,  Next: copy,  Prev: control,  Up: Cfagent reference
-
-classes
-=======
-
-   The `classes' keyword is an alias for `groups' as of version 1.4.0
-of cfengine.
 

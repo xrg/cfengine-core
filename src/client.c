@@ -4,8 +4,7 @@
         Free Software Foundation, Inc.
 
    This file is part of GNU cfengine - written and maintained 
-   by Mark Burgess, Dept of Computing and Engineering, Oslo College,
-   Dept. of Theoretical physics, University of Oslo
+   by Mark Burgess, Dept of Computing and Engineering, Oslo University College,
  
    This program is free software; you can redistribute it and/or modify it
    under the terms of the GNU General Public License as published by the
@@ -213,10 +212,10 @@ if (BadProtoReply(recvbuffer))
 
 if (OKProtoReply(recvbuffer))
    {
-   long d1,d2,d3,d4,d5,d6,d7,d8,d9,d10,d11,d12=0;
+   long d1,d2,d3,d4,d5,d6,d7,d8,d9,d10,d11,d12=0,d13=0;
    
-   sscanf(recvbuffer,"OK: %1ld %5ld %14ld %14ld %14ld %14ld %14ld %14ld %14ld %14ld %14ld %14ld",
-	  &d1,&d2,&d3,&d4,&d5,&d6,&d7,&d8,&d9,&d10,&d11,&d12);
+   sscanf(recvbuffer,"OK: %1ld %5ld %14ld %14ld %14ld %14ld %14ld %14ld %14ld %14ld %14ld %14ld %14ld",
+	  &d1,&d2,&d3,&d4,&d5,&d6,&d7,&d8,&d9,&d10,&d11,&d12,&d13);
 
    cfst.cf_type = (enum cf_filetype) d1;
    cfst.cf_mode = (mode_t) d2;
@@ -231,14 +230,15 @@ if (OKProtoReply(recvbuffer))
    ip->makeholes = (char) d10;
    cfst.cf_ino = d11;
    cfst.cf_nlink = d12;
+   cfst.cf_dev = d13;
 
    /* Use %?d here to avoid memory overflow attacks */
 
    Debug("Mode = %d,%d\n",d2,d3);
    
-   Debug("OK: type=%d\n mode=%o\n lmode=%o\n uid=%d\n gid=%d\n size=%ld\n atime=%d\n mtime=%d ino=%d nlnk=%d\n",
+   Debug("OK: type=%d\n mode=%o\n lmode=%o\n uid=%d\n gid=%d\n size=%ld\n atime=%d\n mtime=%d ino=%d nlnk=%d, dev=%d\n",
 	cfst.cf_type,cfst.cf_mode,cfst.cf_lmode,cfst.cf_uid,cfst.cf_gid,(long)cfst.cf_size,
-	cfst.cf_atime,cfst.cf_mtime,cfst.cf_ino,cfst.cf_nlink);
+	cfst.cf_atime,cfst.cf_mtime,cfst.cf_ino,cfst.cf_nlink,cfst.cf_dev);
 
    bzero(recvbuffer,bufsize);
    
@@ -310,6 +310,7 @@ if (OKProtoReply(recvbuffer))
    buf->st_ctime = cfst.cf_ctime;
    buf->st_atime = cfst.cf_atime;
    buf->st_ino   = cfst.cf_ino;
+   buf->st_dev   = cfst.cf_dev;
    buf->st_nlink = cfst.cf_nlink;
    
    return 0;
@@ -543,14 +544,7 @@ if (buf_size < 2048)
    } 
  
 if (ip->encrypt == 'y')
-   {
-   if (size < 17)
-      {
-      snprintf(OUTPUT,bufsize,"Cannot encrypt files smaller than 17 bytes with OpenSSL/Blowfish (%s)",source);
-      CfLog(cferror,OUTPUT,"");
-      return false;
-      }
-   
+   {   
    snprintf(in,bufsize-CF_PROTO_OFFSET,"GET dummykey %s",source);
    cipherlen = EncryptString(in,out,CONN->session_key,strlen(in)+1);
    snprintf(sendbuffer,bufsize,"SGET %4d %4d",cipherlen,buf_size);
@@ -666,23 +660,26 @@ while (!done)
       n_read = towrite = plainlen;
       }
 
-   if (n_read == 0)
+   if (ip->encrypt != 'y')
       {
-      break;
-      }
-
-   if (n_read == size)
-      {
-      if (n_read_total == 0 && strncmp(buf,CFFAILEDSTR,size) == 0)
+      if (n_read == 0)
 	 {
-	 snprintf(OUTPUT,bufsize*2,"Network access to %s:%s denied\n",ip->server,source);
-	 CfLog(cfinform,OUTPUT,"");
-	 close(dd);
-	 free(buf);
-	 return false;      
+	 break;
+	 }
+      
+      if (n_read == size)
+	 {
+	 if (n_read_total == 0 && strncmp(buf,CFFAILEDSTR,size) == 0)
+	    {
+	    snprintf(OUTPUT,bufsize*2,"Network access to %s:%s denied\n",ip->server,source);
+	    CfLog(cfinform,OUTPUT,"");
+	    close(dd);
+	    free(buf);
+	    return false;      
+	    }
 	 }
       }
-
+   
 /*   if (n_read < toget)
       {
       snprintf(OUTPUT,bufsize*2,"Network error getting %s:%s\n",ip->server,source);
@@ -693,7 +690,7 @@ while (!done)
       }
 */   
    n_read_total += towrite; /* n_read; */
-
+   
    if (ip->encrypt == 'n')
       {
       if (n_read_total >= (long)size)  /* Handle EOF without closing socket */

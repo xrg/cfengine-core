@@ -131,6 +131,8 @@ void SetStrategies()
   struct Item *ip; 
   int total,count;
   double *array,*cumulative,cum,fluct;
+
+Banner("Strategy evaluation");
  
 for (ptr = VSTRATEGYLIST; ptr != NULL; ptr=ptr->next)
    {
@@ -169,10 +171,12 @@ for (ptr = VSTRATEGYLIST; ptr != NULL; ptr=ptr->next)
 
       for (ip = ptr->strategies; ip !=NULL; ip=ip->next)
 	 {
+	 Verbose("Class %d: %f-%f\n",count,cumulative[count-1],cumulative[count]);
 	 if ((cumulative[count-1] < fluct) && (fluct < cumulative[count]))
 	    {
-	    Verbose(" - Choosing %s (%f)\n",ip->name,fluct);
+	    Verbose(" - Choosing %s (%f)\n\n",ip->name,fluct);
 	    AddClassToHeap(ip->name);
+	    break;
 	    }
 	 count++;
 	 }
@@ -180,6 +184,8 @@ for (ptr = VSTRATEGYLIST; ptr != NULL; ptr=ptr->next)
       free(array);
       }
    }
+
+Banner("End strategy evaluation"); 
 }
 
 /*****************************************************************************/

@@ -28,11 +28,17 @@
 /*                                                                 */
 /*******************************************************************/
 
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+extern pthread_mutex_t MUTEX_SYSCALL;
+#endif
+
+extern int PASS;
 extern RSA *PRIVKEY, *PUBKEY;
 
 /* cfengine */
 
 extern char CONTEXTID[32];
+extern char METHODNAME[bufsize];
 extern char PADCHAR;
 extern struct cfagent_connection *CONN;
 extern int AUTHENTICATED;
@@ -56,7 +62,7 @@ extern char CFPUBKEYFILE[bufsize];
 extern char CFPRIVKEYFILE[bufsize];
 extern char AVDB[1024];
 
-
+extern dev_t ROOTDEVICE;
 extern char *VPRECONFIG;
 extern char *VRCFILE;
 
@@ -169,6 +175,7 @@ extern char *CURRENTAUTHPATH;
 extern char *RESTART;
 extern char *FILTERDATA;
 extern char *STRATEGYDATA;
+extern char *PKGVER;
 
 extern short PROSIGNAL;
 extern char  PROACTION;
@@ -223,6 +230,10 @@ extern struct Item *VMOUNTLIST;
 extern struct Item *VHEAP;      /* Points to the base of the attribute heap */
 extern struct Item *VNEGHEAP;
 
+/* For packages: */
+extern struct Package *VPKG;
+extern struct Package *VPKGTOP;
+
 /* HvB : Bas van der Vlies */
 extern struct Mountables *VMOUNTABLES;  /* Points to the list of mountables */
 extern struct Mountables *VMOUNTABLESTOP;
@@ -230,6 +241,8 @@ extern struct Mountables *VMOUNTABLESTOP;
 extern struct cfObject *VOBJTOP;
 extern struct cfObject *VOBJ;
 
+
+extern struct Item *METHODARGS;
 extern flag  MOUNT_RO;                  /* mount directory readonly */
 
 extern struct Item *VALERTS;
@@ -291,6 +304,8 @@ extern struct UnMount *VUNMOUNTTOP;
 extern struct Item *VCLASSDEFINE;
 extern struct Image *VIMAGE;
 extern struct Image *VIMAGETOP;
+extern struct Method *VMETHODS;
+extern struct Method *VMETHODSTOP;
 extern struct Process *VPROCLIST;
 extern struct Process *VPROCTOP;
 extern struct Item *VSERVERLIST;
@@ -325,6 +340,8 @@ extern short EXCLAIM;
 extern short INFORM;
 extern short CHECK;
 
+extern int PIFELAPSED;
+extern int PEXPIREAFTER;
 extern short LOGGING;
 extern short INFORM_save;
 extern short LOGGING_save;
@@ -343,6 +360,7 @@ extern short GOTMOUNTINFO;
 extern short NOMOUNTS;
 extern short NOMODULES;
 extern short NOPROCS;
+extern short NOMETHODS;
 extern short NOFILECHECK;
 extern short NOTIDY;
 extern short NOSCRIPTS;
@@ -373,6 +391,7 @@ extern short UNDERSCORE_CLASSES;
 extern short NOHARDCLASSES;
 extern short NOSPLAY;
 extern short DONESPLAY;
+extern char XDEV;
 extern char TYPECHECK;
 
 extern enum actions ACTION;
@@ -412,6 +431,8 @@ extern char *VEDITNAMES[];
 extern char *VFILTERNAMES[];
 extern char *VUNMOUNTCOMM[];
 extern char *VRESOURCES[];
+extern char *CMPSENSETEXT[];
+extern char *PKGMGRTEXT[];
 
 extern int VTIMEOUT;
 extern mode_t UMASK;
@@ -431,6 +452,10 @@ extern int VDEFAULTEXPIREAFTER;
 extern int AUTOCREATED;
 
 extern enum fileactions FILEACTION;
+
+extern enum cmpsense CMPSENSE;
+extern enum pkgmgrs PKGMGR;
+extern enum pkgmgrs DEFAULTPKGMGR;
 
 extern unsigned short PORTNUMBER;
 

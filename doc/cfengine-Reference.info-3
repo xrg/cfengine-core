@@ -11,6 +11,25 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: warnnonownermail,  Prev: warnnonusermail,  Up: control
+
+WarnNonOwnerMail
+----------------
+
+   If this parameter is set to true, cfengine will warn about files on
+mailservers whose names do not correspond to a known user name, but
+might be owned by a known user.
+
+
+File: cfengine-Reference.info,  Node: classes,  Next: copy,  Prev: control,  Up: Cfagent reference
+
+classes
+=======
+
+   The `classes' keyword is an alias for `groups' as of version 1.4.0
+of cfengine.
+
+
 File: cfengine-Reference.info,  Node: copy,  Next: defaultroute,  Prev: classes,  Up: Cfagent reference
 
 copy
@@ -48,10 +67,13 @@ copying. Cfengine attempts to prevent this during remote copies._
                              stealth=TRUE/ON/FALSE/OFF
                              timestamps=preserve/keep
                              symlink=PATTERN
+     
                              include=PATTERN
                              exclude=PATTERN
                              ignore=PATTERN
                              filter=FILTERALIAS
+                             xdev=TRUE/ON/false/off
+     
                              recurse=NUMBER/INF/0
                              type=ctime/MTIME/CHECKSUM/SUM/BYTE/BINARY
                              linktype=absolute/symbolic/RELATIVE/HARD/NONE/COPY
@@ -182,6 +204,10 @@ copying. Cfengine attempts to prevent this during remote copies._
      from a copy operation. A global list of patterns can also be
      defined in the control section of the program `excludes' override
      `includes'.  *Note excludelinks::.
+
+`xdev'
+     Prevents cfengine from descending into file systems that are not
+     on the same device as the root of the rescurion path.
 
 `type'
      Normally cfengine uses the ctime date-stamps on files to determine
@@ -454,6 +480,8 @@ variable `$(binserver)' here.
          /FILESYSTEM freespace=SIZE-LIMIT define=CLASS-LIST(,:.)
      
           inform=TRUE log=TRUE force=TRUE
+          ifelapsed=MINS
+          expireafter=MINS
 
    Files or filesystems which you consider to be essential to the
 operation of the system can be declared as `required'.  Cfengine will
@@ -518,6 +546,9 @@ the `touch' option in the `files' actions.  *Note files::.
                               define=CLASSLIST
                               syslog=TRUE/ON/FALSE/OFF
                               inform=TRUE/ON/FALSE/OFF
+     
+                              ifelapsed=MINS
+                              expireafter=MINS
 
 For example
 
@@ -564,6 +595,9 @@ be examined later.  The syntax is
                            inform=TRUE/ON/false/off
                            repository=DESTINATION DIRECTORY
                            action=disable/WARN
+     
+                           ifelapsed=MINS
+                           expireafter=MINS
 
 Cfengine renames a given file by appending the name of the file with the
 suffix `.cfdisabled'.  A typical example of a file you would probably

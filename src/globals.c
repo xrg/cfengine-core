@@ -45,7 +45,6 @@
 /*                                                                 */
 /* Global : Truly global variables here                            */
 /*                                                                 */
-/*                                                                 */
 /*******************************************************************/
 
 char VBUFF[bufsize]; /* General workspace, contents not guaranteed */
@@ -53,15 +52,23 @@ char OUTPUT[bufsize*2];
 int AUTHENTICATED = false;
 int CHECKSUMUPDATES = false;
 
+int PASS;
+
 char *CHECKSUMDB;
 char PADCHAR = ' ';
 char CONTEXTID[32];
-
+char METHODNAME[bufsize];
 char CFPUBKEYFILE[bufsize];
 char CFPRIVKEYFILE[bufsize];
 char AVDB[1024];
 
 RSA *PRIVKEY = NULL, *PUBKEY = NULL;
+
+
+
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 /*******************************************************************/
 /*                                                                 */
@@ -131,6 +138,8 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PUBLIC time_t CFSTARTTIME;
   PUBLIC time_t CFINITSTARTTIME;
 
+  PUBLIC dev_t ROOTDEVICE = 0;
+
   PUBLIC enum classes VSYSTEMHARDCLASS;
 
   PUBLIC struct Item VDEFAULTBINSERVER =      /* see GetNameInfo(), main.c */
@@ -138,6 +147,8 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
       'n',
       NULL,
       NULL,
+      0,
+      0,
       NULL
       };
 
@@ -155,6 +166,8 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PUBLIC struct Item *VEXCLUDECACHE = NULL;
 
   PUBLIC struct cfObject *OBJECTLIST = NULL;
+
+  PUBLIC struct Item *METHODARGS = NULL;
 
 /*******************************************************************/
  /* Data structures - root pointers                                 */
@@ -206,6 +219,8 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PROTECTED  struct File *VFILETOP = NULL;
   PROTECTED  struct Image *VIMAGE = NULL;
   PROTECTED  struct Image *VIMAGETOP=NULL;
+  PROTECTED  struct Method *VMETHODS = NULL;
+  PROTECTED  struct Method *VMETHODSTOP=NULL;
   PROTECTED  struct Item *VHOMESERVERS = NULL;
   PROTECTED  struct Item *VSETUIDLIST = NULL;
   PROTECTED  struct Disable *VDISABLELIST = NULL;
@@ -251,6 +266,9 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PROTECTED  struct Process *VPROCLIST=NULL;
   PROTECTED  struct Process *VPROCTOP=NULL;
   PROTECTED  struct Item *VREPOSLIST=NULL;
+
+  PROTECTED  struct Package *VPKG=NULL;    /* Head of the packages item list */
+  PROTECTED  struct Package *VPKGTOP=NULL; /* The last packages item we added */
 
 
  /*********************************************************************/
@@ -395,6 +413,8 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
       "Additional network interfaces:",
       "Search filter objects:",
       "Strategies:",
+      "Package Checks:",
+      "Method Function Calls",
       NULL
       };
 
@@ -433,6 +453,8 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
       "interfaces",
       "filters",
       "strategies",
+      "packages",
+      "methods",
       NULL
       };
 
@@ -453,6 +475,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
       "isdefined",
       "strcmp",
       "showstate",
+      "readfile",
       NULL
       };
 
@@ -499,10 +522,38 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
       "checktimezone",
       "mountinfo",
       "processes",
+      "packages",
+      "methods",
       "none",
       NULL
       };
 
+  /*********************************************************************/
+  /* Package check actions                                             */
+  /*********************************************************************/
+
+  /* The sense of the comparison (greater than, less than...) */
+
+  PRIVATE char *CMPSENSETEXT[] =
+      {
+      "eq",
+      "gt",
+      "lt",
+      "ge",
+      "le",
+      "ne",
+      NULL
+      };
+
+  /*********************************************************************/
+  /* The names of the available package managers */
+
+  PRIVATE char *PKGMGRTEXT[] =
+      {
+      "rpm",
+      "dpkg",   /* aptget ? */
+      NULL
+      };
 
 /*******************************************************************/
 /*                                                                 */
@@ -531,6 +582,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PRIVATE short PRMAILSERVER = false;
   PRIVATE short MOUNTCHECK = false;
   PRIVATE short NOPROCS = false;
+  PRIVATE short NOMETHODS = false;
   PRIVATE short NOEDITS = false;
   PRIVATE short KILLOLDLINKS = false;
   PRIVATE short IGNORELOCK = false;
@@ -555,10 +607,12 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PRIVATE short NOSPLAY = false;
   PRIVATE short DONESPLAY = false;
 
+
   PROTECTED  struct Item *VACLBUILD = NULL;
   PROTECTED  struct Item *VFILTERBUILD = NULL;
   PROTECTED  struct Item *VSTRATEGYBUILD = NULL;
 
+  PRIVATE char XDEV = false;
   PRIVATE char IMAGEBACKUP='y';
   PRIVATE char TRUSTKEY = 'n';
   PRIVATE char PRESERVETIMES = 'n';
@@ -613,6 +667,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PRIVATE char *RESTART;
   PRIVATE char *FILTERDATA;
   PRIVATE char *STRATEGYDATA;
+  PRIVATE char *PKGVER;     /* value of ver option in packages: */
 
   PRIVATE short PROSIGNAL;
   PRIVATE char  PROACTION;
@@ -630,6 +685,8 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PRIVATE int VRECURSE;
   PRIVATE int VAGE;
   PRIVATE int VTIMEOUT=0;
+  PRIVATE int PIFELAPSED=0;
+  PRIVATE int PEXPIREAFTER=0;
 
   PRIVATE mode_t UMASK=0;
   PRIVATE mode_t PLUSMASK;
@@ -643,6 +700,9 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PUBLIC enum actions ACTION = none;
   PRIVATE enum vnames CONTROLVAR = nonexistentvar;
   PRIVATE enum fileactions FILEACTION = warnall;
+  PRIVATE enum cmpsense CMPSENSE = cmpsense_eq; /* Comparison for packages: */
+  PRIVATE enum pkgmgrs PKGMGR = pkgmgr_none;  /* Which package mgr to query */
+  PRIVATE enum pkgmgrs DEFAULTPKGMGR = pkgmgr_none;
 
   PRIVATE flag ACTION_IS_LINK = false;
   PRIVATE flag ACTION_IS_LINKCHILDREN = false;
@@ -725,6 +785,15 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
      "oldserver",
      "mountoptions",      /* HvB : Bas van der Vlies */
      "readonly",          /* HvB : Bas van der Vlies */
+     "version",
+     "cmp",
+     "pkgmgr",
+     "xdev",
+     "returnvars",
+     "returnclasses",
+     "sendclasses",
+     "ifelapsed",
+     "expireafter",
      NULL
      };
 
@@ -894,6 +963,8 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
      "UseShell",
      "Filter",
      "DefineInGroup",
+     "IfElapsed",
+     "ExpireAfter",
      NULL
      };
 

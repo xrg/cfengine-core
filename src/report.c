@@ -254,6 +254,8 @@ for (ptr = VCHLINK; ptr != NULL; ptr=ptr->next)
    {
    printf("\nCLINK %s->%s force=%c attr=%d, rec=%d\n",ptr->from,ptr->to,
 	  ptr->force,ptr->silent,ptr->recurse);
+
+   printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    
    for (ip = ptr->copy; ip != NULL; ip = ip->next)
       {
@@ -311,7 +313,61 @@ printf ("\nDEFINED ALERTS\n\n");
 
 for (ptr = VALERTS; ptr != NULL; ptr=ptr->next)
    {
-   printf("%s: [%s]\n",ptr->classes,ptr->name);
+   printf("%s: [%s] ifelapsed %d, expireafter %d\n",ptr->classes,ptr->name,ptr->ifelapsed,ptr->expireafter);
+   }
+}
+
+/*********************************************************************/
+
+void ListDefinedMethods()
+
+{ struct Method *ptr;
+  struct Item *ip;
+  int i;
+
+printf ("\nDEFINED METHODS\n\n");
+
+for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
+   {
+   printf("\n METHOD: [%s] if class (%s)\n",ptr->name,ptr->classes);
+   printf("   IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+   printf("   In file: %s\n",ptr->file);
+
+   i = 1;
+   
+   for (ip = ptr->send_args; ip != NULL; ip=ip->next)
+      {
+      printf("   Send arg %d: %s\n",i++,ip->name);
+      }
+
+   i = 1;
+   
+   for (ip = ptr->send_classes; ip != NULL; ip=ip->next)
+      {
+      printf("   Send class %d: %s\n",i++,ip->name);
+      }
+
+   i = 1;
+   
+   for (ip = ptr->servers; ip != NULL; ip=ip->next)
+      {
+      printf("   Encrypt for server %d: %s\n",i++,ip->name);
+      }
+
+   i = 1;
+   
+   for (ip = ptr->return_vars; ip != NULL; ip=ip->next)
+      {
+      printf("   Return value %d: $(%s.%s)\n",i++,ptr->name,ip->name);
+      }
+
+   i = 1;
+   
+   for (ip = ptr->return_classes; ip != NULL; ip=ip->next)
+      {
+      printf("   Return class %d: %s\n",i++,ip->name);
+      }
+
    }
 }
 
@@ -328,6 +384,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
    printf("\nSHELLCOMMAND %s\n timeout=%d\n uid=%d,gid=%d\n",ptr->name,ptr->timeout,ptr->uid,ptr->gid);
    printf(" umask = %o, background = %c\n",ptr->umask,ptr->fork);
    printf (" ChDir=%s, ChRoot=%s\n",ptr->chdir,ptr->chroot);
+   printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    
    if (ptr->defines)
       {
@@ -371,6 +428,7 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
 	     ptr->destination,ptr->action);
 
       printf(" Size %c %d\n",ptr->comp,ptr->size);
+      printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
       
       if (ptr->recurse == INFINITERECURSE)
 	 {
@@ -380,6 +438,8 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
 	 {
 	 printf(" recurse=%d\n",ptr->recurse);
 	 }
+
+      printf(" xdev = %c\n",ptr->xdev);
       
       printf(" uids = ( ");
       
@@ -462,10 +522,17 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
 	 printf(" FailoverClasses %s\n",ptr->failover);
 	 }
 
-      if (ptr->backup == 'n')
+      switch (ptr->backup)
 	 {
-	 printf(" NOT BACKED UP\n");
+	 case 'n': printf(" NOT BACKED UP\n");
+	     break;
+	 case 'y': printf(" Single backup archive\n");
+	     break;
+	 case 's': printf(" Timestamped backups (full history)\n");
+	     break;
+	 default: printf (" UNKNOWN BACKUP POLICY!!\n");
 	 }
+
 
       if (ptr->repository)
 	 {
@@ -511,6 +578,9 @@ for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
       {
       printf("\nTIDY %s (maxrecurse = %d)\n",ptr->path,ptr->maxrecurse);
       }
+
+   printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+   printf(" xdev = %c\n",ptr->xdev);
    
    for (ip = ptr->exclusions; ip != NULL; ip = ip->next)
       {
@@ -589,6 +659,7 @@ printf ("\nDEFINED MISC MOUNTABLES\n\n");
 for (ptr = VMISCMOUNT; ptr != NULL; ptr=ptr->next)
    {
    printf("%s on %s (%s)\n",ptr->from,ptr->onto,ptr->options);
+   printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    }
 }
 
@@ -604,7 +675,8 @@ for (ptr = VREQUIRED; ptr != NULL; ptr=ptr->next)
    {
    /* HvB : Bas van der Vlies */
    printf("%s, freespace=%d, force=%c, define=%s\n",
-	ptr->name,ptr->freespace, ptr->force,ptr->define);
+	  ptr->name,ptr->freespace, ptr->force,ptr->define);
+   printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    }
 }
 
@@ -643,6 +715,7 @@ for (ptr = VDISABLELIST; ptr != NULL; ptr=ptr->next)
    printf("\nDISABLE %s:\n rotate=%d, type=%s, size%c%d action=%c\n",
 	  ptr->name,ptr->rotate,ptr->type,ptr->comp,ptr->size,ptr->action);
 
+   printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    if (ptr->repository)
       {
       printf(" Local repository = %s\n",ptr->repository);
@@ -673,8 +746,9 @@ printf ("\nDEFINED DIRECTORIES\n\n");
 
 for (ptr = VMAKEPATH; ptr != NULL; ptr=ptr->next)
    {
-   printf("DIRECTORY %s\n +%o\n -%o\n %s\n",ptr->path,ptr->plus,ptr->minus,FILEACTIONTEXT[ptr->action]);
-
+   printf("\nDIRECTORY %s\n +%o\n -%o\n %s\n",ptr->path,ptr->plus,ptr->minus,FILEACTIONTEXT[ptr->action]);
+   printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+   
    if (ptr->recurse == INFINITERECURSE)
       {
       printf(" recurse=inf\n");
@@ -760,7 +834,8 @@ for (ptr = VFILE; ptr != NULL; ptr=ptr->next)
    printf("\nFILE OBJECT %s\n +%o\n -%o\n +%o\n -%o\n %s\n travelinks=%c\n",
 	  ptr->path,ptr->plus,ptr->minus,ptr->plus_flags,ptr->minus_flags,
 	  FILEACTIONTEXT[ptr->action],ptr->travlinks);
-   
+
+   printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    if (ptr->recurse == INFINITERECURSE)
       {
       printf(" recurse=inf\n");
@@ -769,6 +844,8 @@ for (ptr = VFILE; ptr != NULL; ptr=ptr->next)
       {
       printf(" recurse=%d\n",ptr->recurse);
       }
+
+   printf(" xdev = %c\n",ptr->xdev);
    
    printf(" uids = ( ");
 
@@ -850,6 +927,7 @@ printf("\nDEFINED UNMOUNTS\n\n");
 for (ptr=VUNMOUNT; ptr!=NULL; ptr=ptr->next)
    {
    printf("%s (classes=%s) deletedir=%c deletefstab=%c force=%c\n",ptr->name,ptr->classes,ptr->deletedir,ptr->deletefstab,ptr->force);
+   printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    printf(" Context scope: %s\n",ptr->scope);
    }
 }
@@ -879,6 +957,7 @@ for (ptr = VPROCLIST; ptr != NULL; ptr=ptr->next)
 	  ptr->expr,sp,ptr->useshell,ptr->comp,ptr->matches,SIGNALS[ptr->signal],ptr->action);
 
    printf (" ChDir=%s, ChRoot=%s\n",ptr->chdir,ptr->chroot);
+   printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    
    if (ptr->defines)
       {
@@ -972,6 +1051,7 @@ for (ptr=VEDITLIST; ptr != NULL; ptr=ptr->next)
    {
    printf("EDITFILE  %s (%c)(r=%d)\n",ptr->fname,ptr->done,ptr->recurse);
    printf(" Context scope: %s\n",ptr->scope);
+   printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    
    if (ptr->repository)
       {
@@ -1039,4 +1119,40 @@ void ListDefinedVariables()
     printf("\nOBJECT: %s\n",cp->scope);
     PrintHashTable(cp->hashtable);
     }
+}
+
+/*******************************************************************/
+
+void ListDefinedPackages()
+
+{ struct Package *ptr = NULL;
+
+ printf("\nDEFINED PACKAGE CHECKS\n\n");
+
+ for (ptr = VPKG; ptr != NULL; ptr = ptr->next)
+    {
+    printf("PACKAGE NAME: %s\n", ptr->name);
+    printf(" Package database: %s\n", PKGMGRTEXT[ptr->pkgmgr]);
+    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+    
+    if (ptr->ver && *(ptr->ver) != '\0')
+       {
+       printf(" Version is %s %s\n",
+                CMPSENSETEXT[ptr->cmp], ptr->ver);
+       }
+    else
+       {
+       printf(" Matches any package version.\n");
+       }
+    if (ptr->defines)
+       {
+       printf(" Define %s\n",ptr->defines);
+       }
+ 
+    if (ptr->elsedef)
+       {
+       printf(" ElseDefine %s\n",ptr->elsedef);
+       }
+    }
+    printf("\n");
 }
