@@ -27,7 +27,7 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
-/*****************************************************************************************/
+/****************************************************************************/
 
 /* Local prototypes that nobody else should care about... */
 
@@ -40,7 +40,7 @@ int xisalpha(int c);
 int xisalnum(int c);
 int xisdigit(int c);
 
-/*****************************************************************************************/
+/****************************************************************************/
 
 /* Make sure we are insensitive to the locale so everyone gets the
  * same experience from these. */
@@ -194,6 +194,7 @@ ParseEVR(version, &eB, &vB, &rB);
      {
      result = cmpsense_gt;
      }
+
    if (epochA < epochB)
      {
      result = cmpsense_lt;
@@ -201,6 +202,7 @@ ParseEVR(version, &eB, &vB, &rB);
 
    /* If that did not decide it, try version.  We must *always* have
     * a version string.  That's just the way it is.*/
+
    if (result == cmpsense_eq)
      {
      switch (rpmvercmp(vA, vB))
@@ -216,6 +218,7 @@ ParseEVR(version, &eB, &vB, &rB);
     * RPM always stores a release internally in the database, so the A side
     * will have it.  It's just a matter of whether or not the user cares
     * about it at this point. */
+
    if ((result == cmpsense_eq) && (rB && *rB))
       {
       switch (rpmvercmp(rA, rB))
@@ -848,7 +851,16 @@ int rpmvercmp(const char * a, const char * b)
        {
        free(s1);
        free(s2);
-       return rc;
+
+       if (rc > 0)
+          {
+          return 1;
+          }
+       
+       if (rc < 0)
+          {
+          return -1;
+          }
        }
     
     /* restore character that was replaced by null above */
