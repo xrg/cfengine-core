@@ -569,6 +569,8 @@ char *TCPNAMES[CF_NETATTR] =
       "selectpartitionleader",
       "selectpartitionneighbours",
       "selectpartitionneighbors",
+      "isgreaterthan",
+      "islessthan",
       NULL
       };
 

@@ -36,7 +36,7 @@ may be included in a translation approved by the author instead of in
 the original English.
 
    This manual corresponds to CFENGINE Edition 2.1.14 for version
-2.1.14 as last updated 28 February 2005.
+2.1.14 as last updated 16 March 2005.
 
 * Menu:
 
@@ -251,7 +251,34 @@ arguments in chronological order.
      (success).
 
 `Strcmp(S1,S2)'
-     True if the string s1 exactly matches s2
+     True if the string s1 exactly matches s2 
+
+`IsGreaterThan(S1,S2)'
+     Returns true if the value of s1 is greater than the value of s2.
+     Note that, if the strings have numerical values, a numerical
+     comparison is performed, otherwise a string comparison is used.
+
+`IsLessThan(S1,S2)'
+     Returns true if the value of s1 is less than the value of s2. Note
+     that, if the strings have numerical values, a numerical comparison
+     is performed, otherwise a string comparison is used.
+
+          	control:
+
+            	 actionsequence = ( files )
+
+          	 a = ( 2.12 )
+           	 b = ( 2.11 )
+
+          	classes:
+
+          	lt = ( LessThan(${a},${b}) )
+             	gt = ( GreaterThan(${a},${b}) )
+
+          	alerts:
+
+          	  lt:: "$(a) LESS THAN $(b)"
+          	  gt:: "$(a) GREATER THAN $(b)"
 
 For example:
 
@@ -4084,14 +4111,21 @@ For example:
 
           129.240.22.1
 
-
        rest::
 
           small_gw
 
+       no_default_route::
+
+          192.168.1.1
+
 Gateways and routers usually have internet address `aaa.bbb.ccc.1' --
 i.e.  the first address on the subnet.  You may use the numerical form
 or a hostname for the gateway.
+
+   The class `no_default_route' is defined if the current host does not
+have a currently defined default route, but specifies one in its
+configuration.  
 
 
 File: cfengine-Reference.info,  Node: disks,  Next: directories,  Prev: defaultroute,  Up: Cfagent reference

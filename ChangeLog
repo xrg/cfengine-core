@@ -19,6 +19,27 @@
 
 	Class "no_default_route" is now defined if a default route is not previously
 	set, and a default route is defined for the current host.
+
+	Added class functions IsGreaterThan, IsLessThan for numerical or string comparisons
+
+	control:
+	
+  	 actionsequence = ( files )
+	
+	 a = ( 2.12 )
+ 	 b = ( 2.11 )	
+	
+	classes:
+
+	lt = ( LessThan(${a},${b}) )
+   	gt = ( GreaterThan(${a},${b}) )
+
+	alerts:
+
+	  lt:: "$(a) LESS THAN $(b)"
+	  gt:: "$(a) GREATER THAN $(b)"
+
+
 	
 2.1.13
 	Mistake in placement of update.conf runs fixed.

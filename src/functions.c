@@ -131,6 +131,12 @@ switch (fn = FunctionStringToCode(name))
    case fn_strcmp:
        HandleStrCmp(args,value);
        break;
+   case fn_greaterthan:
+       HandleGreaterThan(args,value,'+');
+       break;
+   case fn_lessthan:
+       HandleGreaterThan(args,value,'-');
+       break;       
    case fn_regcmp:
        HandleRegCmp(args,value);
        break;
@@ -159,7 +165,7 @@ switch (fn = FunctionStringToCode(name))
    case fn_selectpna:
        HandleSelectPGroup(args,value);
        break;
-case fn_syslog:
+   case fn_syslog:
        HandleSyslogFn(args,value);
        break;
        
@@ -633,6 +639,74 @@ if (strcmp(argv[0],argv[1]) == 0)
 else
    {
    strcpy(value,CF_NOCLASS);
+   } 
+}
+
+/*********************************************************************/
+
+void HandleGreaterThan(char *args,char *value,char ch)
+
+{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+  double a = CF_NOVAL,b = CF_NOVAL;
+ 
+FunctionArgs(args,argv,2); 
+
+sscanf(argv[0],"%lf",&a);
+sscanf(argv[1],"%lf",&b);
+
+if ((a != CF_NOVAL) && (b != CF_NOVAL)) 
+   {
+   Debug("%s and %s are numerical\n",argv[0],argv[1]);
+   
+   if (ch == '+')
+      {
+      if (a > b)
+         {
+         strcpy(value,CF_ANYCLASS);
+         }
+      else
+         {
+         strcpy(value,CF_NOCLASS);
+         }
+      return;
+      }
+   else
+      {
+      if (a < b)  
+         {
+         strcpy(value,CF_ANYCLASS);
+         }
+      else
+         {
+         strcpy(value,CF_NOCLASS);
+         }
+      return;
+      }
+   }
+
+Debug("%s and %s are NOT numerical\n",argv[0],argv[1]);
+
+if (strcmp(argv[0],argv[1]) > 0)
+   {
+   if (ch == '+')
+      {
+      strcpy(value,CF_ANYCLASS);
+      }
+   else
+      {
+      strcpy(value,CF_NOCLASS);
+      }
+   }
+else
+   {
+   if (ch == '+')
+      {
+      strcpy(value,CF_NOCLASS);
+      }
+   else
+      {
+      strcpy(value,CF_ANYCLASS);
+      }
    } 
 }
 

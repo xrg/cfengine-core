@@ -327,6 +327,37 @@ True if the string matched the regular expression regexp.
 True if the named shell command returns with exit code zero (success).
 @item Strcmp(@var{s1},@var{s2})
 True if the string s1 exactly matches s2
+@cindex IsGreatThan
+@cindex IsLessThan
+@cindex >
+@cindex <
+@item IsGreaterThan(@var{s1},@var{s2})
+Returns true if the value of s1 is greater than the value of s2. Note
+that, if the strings have numerical values, a numerical comparison is
+performed, otherwise a string comparison is used.
+@item IsLessThan(@var{s1},@var{s2})
+Returns true if the value of s1 is less than the value of s2. Note
+that, if the strings have numerical values, a numerical comparison is
+performed, otherwise a string comparison is used.
+@smallexample
+
+	control:
+	
+  	 actionsequence = ( files )
+	
+	 a = ( 2.12 )
+ 	 b = ( 2.11 )	
+	
+	classes:
+
+	lt = ( LessThan($@{a@},$@{b@}) )
+   	gt = ( GreaterThan($@{a@},$@{b@}) )
+
+	alerts:
+
+	  lt:: "$(a) LESS THAN $(b)"
+	  gt:: "$(a) GREATER THAN $(b)"
+@end smallexample
 @end table
 
 
@@ -5235,7 +5266,7 @@ form or a hostname for the gateway.
 
 The class @code{no_default_route} is defined if the current host does not have a currently
 defined default route, but specifies one in its configuration.
-@cindex{no_default_route class}
+@cindex no_default_route class
 
 @page
 

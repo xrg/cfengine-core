@@ -41,6 +41,15 @@ remotely, so that `SplayTime' is effectively zero when polling hosts
 serially, and the output always shows what is happening on the remote
 hosts.  
 
+   On connecting to a remote host, cfengine attempts to obtain
+credentials by exchanging keys. Unknown keys, in a key exchange, need
+to be explicitly accepted on trust. Normally, the interactive `cfrun'
+program prompts the user explicitly, (like in the secure shell, `ssh',
+connections).  This can be annoying if there are many hosts to connect
+to.  The `-T' option tells cfengine to trust all new keys. This option
+should be used with caution, and only at times when one is sure that the
+hosts one is connecting to are trustworthy.
+
    Each host evaluates the classes sent by `cfrun' and decides whether
 cfengine should be invoked.  Only hosts which belong to the classes
 defined on the `cfrun' command line are executed. This allows you to
@@ -1768,7 +1777,7 @@ Variable Index
 * a= <1>:                                tidy.                (line  39)
 * a=:                                    Syntax.              (line  47)
 * AccessedBefore():                      Evaluated classes and special functions.
-                                                              (line  75)
+                                                              (line 102)
 * action:                                Syntax.              (line  47)
 * actionsequence <1>:                    actionsequence.      (line   6)
 * actionsequence:                        control.             (line  66)
@@ -1793,7 +1802,7 @@ Variable Index
                                                               (line 142)
 * cfrc:                                  cfrc resource file.  (line   6)
 * ChangedBefore():                       Evaluated classes and special functions.
-                                                              (line  75)
+                                                              (line 102)
 * ChecksumDatabase:                      ChecksumDatabase.    (line   8)
 * ChecksumPurge:                         ChecksumPurge.       (line   8)
 * ChecksumUpdates:                       ChecksumUpdates.     (line   8)
@@ -1839,13 +1848,13 @@ Variable Index
 * interface configuration:               interfaces.          (line   6)
 * InterfaceName:                         interfacename.       (line   6)
 * IsDir():                               Evaluated classes and special functions.
-                                                              (line  75)
+                                                              (line 102)
 * IsLink():                              Evaluated classes and special functions.
-                                                              (line  75)
+                                                              (line 102)
 * IsNewerThan():                         Evaluated classes and special functions.
-                                                              (line  75)
+                                                              (line 102)
 * IsPlain():                             Evaluated classes and special functions.
-                                                              (line  75)
+                                                              (line 102)
 * l=:                                    Syntax.              (line  47)
 * LastSeen:                              lastseen.            (line  14)
 * LastSeenExpireAfter:                   lastseenexpireafter. (line  12)
@@ -1898,7 +1907,7 @@ Variable Index
 * resolve:                               actionsequence.      (line  35)
 * Restricting access:                    access.              (line   6)
 * ReturnsZero():                         Evaluated classes and special functions.
-                                                              (line  75)
+                                                              (line 102)
 * rotate=:                               disable.             (line  89)
 * scanarrivals=:                         disks.               (line  64)
 * scheduling:                            schedule.            (line   6)
@@ -1953,6 +1962,7 @@ Concept Index
 * -l option:                             tidy.                (line  84)
 * -L option:                             Single links.        (line  22)
 * -l option:                             Syntax.              (line 150)
+* -T in cfrun.:                          cfrun.               (line  31)
 * -x option:                             cf.preconf bootstrap file.
                                                               (line  74)
 * .cfdisabled:                           disable.             (line  41)
@@ -1964,6 +1974,10 @@ Concept Index
                                                               (line  74)
 * /etc/hosts.equiv:                      disable.             (line  41)
 * /var/cfengine/output:                  Cfexecd reference.   (line  28)
+* <:                                     Evaluated classes and special functions.
+                                                              (line  61)
+* >:                                     Evaluated classes and special functions.
+                                                              (line  61)
 * Abort cfengine after cf.preconf:       cf.preconf bootstrap file.
                                                               (line  79)
 * Absolute links:                        Single links.        (line  64)
@@ -2010,7 +2024,7 @@ Concept Index
 * Bootstrap file:                        cf.preconf bootstrap file.
                                                               (line   6)
 * Broadcast address:                     broadcast.           (line   6)
-* Broadcasts to the cfengine service.:   cfrun.               (line  43)
+* Broadcasts to the cfengine service.:   cfrun.               (line  52)
 * Broken resolver:                       lastseen.            (line  10)
 * Built-in functions:                    Setting variables with functions.
                                                               (line  23)
@@ -2053,14 +2067,14 @@ Concept Index
 * classes:                               Cfengine classes.    (line   6)
 * Classes, adding and defining:          addclasses.          (line   6)
 * Classes, built-in functions:           Evaluated classes and special functions.
-                                                              (line  75)
+                                                              (line 102)
 * Classes, compound:                     Cfengine classes.    (line  55)
 * Classes, defining and undefining:      Cfengine classes.    (line  92)
 * Classless IP addresses:                groups.              (line  36)
 * Comparing file objects:                Evaluated classes and special functions.
-                                                              (line  75)
+                                                              (line 102)
 * Compound classes:                      Cfengine classes.    (line  55)
-* Contacting specific hosts with cfrun:  cfrun.               (line 103)
+* Contacting specific hosts with cfrun:  cfrun.               (line 112)
 * control section:                       control.             (line   6)
 * Controlling the size of log files:     disable.             (line  86)
 * copy:                                  copy.                (line   6)
@@ -2135,7 +2149,7 @@ Concept Index
 * File sizes, specifying:                tidy.                (line 112)
 * File tree images:                      copy.                (line 335)
 * File types:                            Evaluated classes and special functions.
-                                                              (line  75)
+                                                              (line 102)
 * Files, breaking up into several:       import.              (line   6)
 * Files, checking permissions:           files.               (line   6)
 * Files, home wildcard:                  home directive.      (line   6)
@@ -2174,7 +2188,7 @@ Concept Index
 * Host name gets truncated:              Cfengine classes.    (line 155)
 * Hostname collision:                    Special variables.   (line 123)
 * HostnameKeys:                          Firewalls and NATs.  (line  28)
-* hostnamekeys:                          cfrun.               (line  66)
+* hostnamekeys:                          cfrun.               (line  75)
 * Hung machine:                          cf.preconf bootstrap file.
                                                               (line   6)
 * ignore command:                        ignore.              (line  18)
@@ -2187,6 +2201,10 @@ Concept Index
                                                               (line  72)
 * Internet address:                      netmask.             (line  14)
 * IP address:                            netmask.             (line  14)
+* IsGreatThan:                           Evaluated classes and special functions.
+                                                              (line  61)
+* IsLessThan:                            Evaluated classes and special functions.
+                                                              (line  61)
 * Iterating over lists in shellcommands: shellcommands.       (line 102)
 * Iteration in server rules:             Cfservd.conf and cfrun reference.
                                                               (line  93)
@@ -2268,6 +2286,7 @@ Concept Index
 * NFS mount model and automounter:       editfiles.           (line 215)
 * nfstype:                               nfstype.             (line   6)
 * NIS, netgroup support:                 groups.              (line  40)
+* no_default_route class:                defaultroute.        (line  41)
 * noabspath:                             shellcommands.       (line  47)
 * NOT operator:                          Cfengine classes.    (line  94)
 * NT, ACL:                               NT ACLs.             (line   6)
@@ -2336,8 +2355,8 @@ Concept Index
 * rmdirs:                                tidy.                (line 147)
 * Rotating log files:                    disable.             (line  86)
 * RPM Database Queries:                  packages.            (line  77)
-* Running cfengine from a single master host: cfrun.          (line  81)
-* Running cfrun:                         cfrun.               (line  32)
+* Running cfengine from a single master host: cfrun.          (line  90)
+* Running cfrun:                         cfrun.               (line  41)
 * scanarrivals=:                         disks.               (line  64)
 * scheduling:                            schedule.            (line   6)
 * Scripts and class information:         shellcommands.       (line  82)
@@ -2389,7 +2408,7 @@ Concept Index
 * sysadm:                                sysadm.              (line   6)
 * SysLog():                              alerts.              (line  27)
 * Testing files:                         Evaluated classes and special functions.
-                                                              (line  75)
+                                                              (line 102)
 * Tidy by ctime, mtime, atime:           tidy.                (line 137)
 * Tidy log files for users:              LogTidyHomeFiles.    (line  12)
 * Tidying empty files:                   tidy.                (line 112)
@@ -2403,6 +2422,7 @@ Concept Index
 * Tripwire functionality <1>:            Syntax.              (line 191)
 * Tripwire functionality:                ChecksumDatabase.    (line   8)
 * Truncating log files:                  disable.             (line  86)
+* Trust, key exchange with cfrun:        cfrun.               (line  31)
 * Trusted hosts:                         copy.                (line 259)
 * TrustKeysFrom variable:                TrustKeysFrom.       (line  18)
 * umask <1>:                             shellcommands.       (line  37)

@@ -293,6 +293,7 @@ extern int errno;
 #define CF_NOT_CONNECTED -1
 #define CF_RECURSION_LIMIT 100
 #define CF_MONDAY_MORNING 342000
+#define CF_NOVAL -0.7259285297502359
 
 #define CF_METHODEXEC 0
 #define CF_METHODREPLY  1
@@ -632,6 +633,8 @@ enum builtin
    fn_selectpl,
    fn_selectpn,
    fn_selectpna,
+   fn_greaterthan,
+   fn_lessthan,
    };
 
 /*******************************************************************/

@@ -134,6 +134,7 @@ void HandleIPRange ARGLIST((char* args,char *value));
 void HandleHostRange ARGLIST((char* args,char *value));
 void HandleIsDefined ARGLIST((char* args,char *value));
 void HandleStrCmp ARGLIST((char* args,char *value));
+void HandleGreaterThan ARGLIST((char* args,char *value,char plusminus));
 void HandleRegCmp ARGLIST((char* args,char *value));
 void HandleShowState ARGLIST((char* args,char *value));
 void HandleReadFile ARGLIST((char *args,char *value));
