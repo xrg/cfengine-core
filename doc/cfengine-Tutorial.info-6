@@ -1,4 +1,4 @@
-This is cfengine-Tutorial.info, produced by makeinfo version 4.3 from
+This is cfengine-Tutorial.info, produced by makeinfo version 4.5 from
 cfengine-Tutorial.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -145,8 +145,8 @@ Concept Index
 * Binary servers, declaring:             How does it work?.
 * binserver variable and actionsequence: Special variables.
 * cfagent, starting:                     Invoking cfagent.
-* cfagent.conf <1>:                      Invoking cfagent.
-* cfagent.conf:                          CFINPUTS environment variable.
+* cfagent.conf <1>:                      CFINPUTS environment variable.
+* cfagent.conf:                          Invoking cfagent.
 * cfagent.conf file:                     What services?.
 * CFALLCLASSES:                          Variable substitution.
 * cfengine model:                        NFS resources.
@@ -154,12 +154,12 @@ Concept Index
 * cfexecd <1>:                           Running cfengine permanently monitoring and restarting cfexecd.
 * cfexecd:                               Functionality.
 * cfexecd restarting by processes:       Running cfengine permanently monitoring and restarting cfexecd.
-* CFINPUTS variable <1>:                 CFINPUTS environment variable.
-* CFINPUTS variable:                     Configuration file cfservd.conf.
+* CFINPUTS variable <1>:                 Configuration file cfservd.conf.
+* CFINPUTS variable:                     CFINPUTS environment variable.
 * cfrun:                                 Access control.
-* cfrun program <1>:                     What services?.
-* cfrun program <2>:                     Remote execution of cfagent.
-* cfrun program:                         Emulating rdist.
+* cfrun program <1>:                     Remote execution of cfagent.
+* cfrun program <2>:                     Emulating rdist.
+* cfrun program:                         What services?.
 * cfservd and access keyword:            Access control.
 * cfservd daemon:                        What services?.
 * cfservd dameon:                        Remote execution of cfagent.
@@ -285,8 +285,8 @@ Concept Index
 * Random numbers:                        Variable substitution.
 * rdist program:                         What services?.
 * Remote distribution of files:          What services?.
-* Remote execution of cfagent <1>:       What services?.
-* Remote execution of cfagent:           Remote execution of cfagent.
+* Remote execution of cfagent <1>:       Remote execution of cfagent.
+* Remote execution of cfagent:           What services?.
 * Rereading cfservd.conf:                Installation of cfservd.
 * Restarting cfexecd:                    Running cfengine permanently monitoring and restarting cfexecd.
 * Restarting cfservd:                    Installation of cfservd.

@@ -36,7 +36,7 @@ int LinkChildFiles(char *from,char *to,char type,struct Item *inclusions,struct 
 
 { DIR *dirh;
   struct dirent *dirp;
-  char pcwdto[bufsize],pcwdfrom[bufsize];
+  char pcwdto[CF_BUFSIZE],pcwdfrom[CF_BUFSIZE];
   struct stat statbuf;
   int (*linkfiles) ARGLIST((char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr));
 
@@ -49,7 +49,7 @@ if (stat(to,&statbuf) == -1)
 
 if ((dirh = opendir(to)) == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"Can't open directory %s\n",to);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open directory %s\n",to);
    CfLog(cferror,OUTPUT,"opendir");
    return false;
    }
@@ -124,8 +124,8 @@ void LinkChildren(char *path,char type,struct stat *rootstat,uid_t uid,gid_t gid
    --------------------------------------------------------------------- */
 
 { char *sp;
-  char lastlink[bufsize],server[bufsize],from[bufsize],to[bufsize],relpath[bufsize];
-  char odir[bufsize];
+  char lastlink[CF_BUFSIZE],server[CF_BUFSIZE],from[CF_BUFSIZE],to[CF_BUFSIZE],relpath[CF_BUFSIZE];
+  char odir[CF_BUFSIZE];
   DIR *dirh;
   struct dirent *dirp;
   struct stat statbuf;
@@ -136,7 +136,7 @@ Debug("LinkChildren(%s)\n",path);
   
 if (! S_ISDIR(rootstat->st_mode))
    {
-   snprintf(OUTPUT,bufsize*2,"File %s is not a directory: it has no children to link!\n",path);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"File %s is not a directory: it has no children to link!\n",path);
    CfLog(cferror,OUTPUT,"");
    return;
    }
@@ -162,7 +162,7 @@ for (sp = path+strlen(path); sp != path-1; sp--)
          
          if ((dirh = opendir(odir)) == NULL)
             {
-            snprintf(OUTPUT,bufsize*2,"Can't open directory %s\n",path);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open directory %s\n",path);
             CfLog(cferror,OUTPUT,"opendir");
             return;
             }
@@ -217,7 +217,7 @@ for (sp = path+strlen(path); sp != path-1; sp--)
                       linkfiles = HardLinkFiles;
                       break;
                   default:
-                      snprintf(OUTPUT,bufsize*2,"Internal error, link type was [%c]\n",type);
+                      snprintf(OUTPUT,CF_BUFSIZE*2,"Internal error, link type was [%c]\n",type);
                       CfLog(cferror,OUTPUT,"");
                       continue;
                   }
@@ -236,9 +236,9 @@ for (sp = path+strlen(path); sp != path-1; sp--)
       }
    }
  
- snprintf(OUTPUT,bufsize*2,"Couldn't link the children of %s to anything because no\n",path);
+ snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't link the children of %s to anything because no\n",path);
  CfLog(cferror,OUTPUT,""); 
- snprintf(OUTPUT,bufsize*2,"file system was found to mirror it in the defined binservers list.\n");
+ snprintf(OUTPUT,CF_BUFSIZE*2,"file system was found to mirror it in the defined binservers list.\n");
  CfLog(cferror,OUTPUT,""); 
 }
 
@@ -249,8 +249,8 @@ int RecursiveLink(struct Link *lp,char *from,char *to,int maxrecurse)
 { struct stat statbuf;
   DIR *dirh;
   struct dirent *dirp;
-  char newfrom[bufsize];
-  char newto[bufsize];
+  char newfrom[CF_BUFSIZE];
+  char newto[CF_BUFSIZE];
   void *bug_check;
   int (*linkfiles) ARGLIST((char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr));
  
@@ -275,7 +275,7 @@ bug_check = lp->next;
 
 if ((dirh = opendir(to)) == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"Can't open directory [%s]\n",to);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open directory [%s]\n",to);
    CfLog(cferror,OUTPUT,"opendir");
    return false;
    }
@@ -324,7 +324,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       {
       if (stat(newto,&statbuf) == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",newto);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",newto);
          CfLog(cfverbose,OUTPUT,"");
          continue;
          }
@@ -333,11 +333,11 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       {
       if (lstat(newto,&statbuf) == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",newto);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",newto);
          CfLog(cfverbose,OUTPUT,"");
          
-         memset(VBUFF,0,bufsize);
-         if (readlink(newto,VBUFF,bufsize-1) != -1)
+         memset(VBUFF,0,CF_BUFSIZE);
+         if (readlink(newto,VBUFF,CF_BUFSIZE-1) != -1)
             {
             Verbose("File is link to -> %s\n",VBUFF);
             }
@@ -391,14 +391,14 @@ int LinkFiles(char *from,char *to_tmp,struct Item *inclusions,struct Item *exclu
 /* should return true if 'to' found */
 
 { struct stat buf,savebuf;
-  char to[bufsize],linkbuf[bufsize],saved[bufsize],absto[bufsize],*lastnode;
+  char to[CF_BUFSIZE],linkbuf[CF_BUFSIZE],saved[CF_BUFSIZE],absto[CF_BUFSIZE],*lastnode;
   struct UidList fakeuid;
   struct Image ip;
-  char stamp[bufsize];
+  char stamp[CF_BUFSIZE];
   time_t STAMPNOW;
   STAMPNOW = time((time_t *)NULL);
 
-memset(to,0,bufsize);
+memset(to,0,CF_BUFSIZE);
 memset(&ip,0,sizeof(ip));
   
 if ((*to_tmp != '/') && (*to_tmp != '.'))  /* links without a directory reference */
@@ -406,9 +406,9 @@ if ((*to_tmp != '/') && (*to_tmp != '.'))  /* links without a directory referenc
    strcpy(to,"./");
    }
 
-if (strlen(to_tmp)+3 > bufsize)
+if (strlen(to_tmp)+3 > CF_BUFSIZE)
    {
-   printf("%s: bufsize boundaries exceeded in LinkFiles(%s->%s)\n",VPREFIX,from,to_tmp);
+   printf("%s: CF_BUFSIZE boundaries exceeded in LinkFiles(%s->%s)\n",VPREFIX,from,to_tmp);
    return false;
    }
 
@@ -430,10 +430,10 @@ if (IgnoredOrExcluded(links,lastnode,inclusions,exclusions))
 
 if (IsWildItemIn(VCOPYLINKS,lastnode) || IsWildItemIn(copy,lastnode))
    {
-   fakeuid.uid = sameowner;
+   fakeuid.uid = CF_SAME_OWNER;
    fakeuid.next = NULL;
-   ip.plus = samemode;
-   ip.minus = samemode;
+   ip.plus = CF_SAMEMODE;
+   ip.minus = CF_SAMEMODE;
    ip.uid = &fakeuid;
    ip.gid = (struct GidList *) &fakeuid;
    ip.action = "do";
@@ -447,7 +447,7 @@ if (IsWildItemIn(VCOPYLINKS,lastnode) || IsWildItemIn(copy,lastnode))
    ip.symlink = NULL;
    ip.classes = NULL;
    ip.plus_flags = 0;
-   ip.size = cfnosize;
+   ip.size = CF_NOSIZE;
    ip.linktype = 's';
    ip.minus_flags = 0;
    ip.server = strdup("localhost");
@@ -483,16 +483,16 @@ if (lstat(from,&buf) == 0)
    {
    if (! S_ISLNK(buf.st_mode) && ! ENFORCELINKS)
       {
-      snprintf(OUTPUT,bufsize*2,"Error linking %s -> %s\n",from,to);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Error linking %s -> %s\n",from,to);
       CfLog(cfsilent,OUTPUT,"");
-      snprintf(OUTPUT,bufsize*2,"Cannot make link: %s exists and is not a link! (uid %d)\n",from,buf.st_uid);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot make link: %s exists and is not a link! (uid %d)\n",from,buf.st_uid);
       CfLog(cfsilent,OUTPUT,"");
       return(true);
       }
 
    if (S_ISREG(buf.st_mode) && ENFORCELINKS)
       {
-      snprintf(OUTPUT,bufsize*2,"Moving %s to %s%s\n",from,from,CF_SAVED);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Moving %s to %s%s\n",from,from,CF_SAVED);
       CfLog(cfsilent,OUTPUT,"");
 
       if (DONTDO)
@@ -510,7 +510,7 @@ if (lstat(from,&buf) == 0)
 
       if (rename(from,saved) == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"Can't rename %s to %s\n",from,saved);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Can't rename %s to %s\n",from,saved);
   CfLog(cferror,OUTPUT,"rename");
          return(true);
          }
@@ -523,7 +523,7 @@ if (lstat(from,&buf) == 0)
    
    if (S_ISDIR(buf.st_mode) && ENFORCELINKS)
       {
-      snprintf(OUTPUT,bufsize*2,"Moving directory %s to %s%s.dir\n",from,from,CF_SAVED);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Moving directory %s to %s%s.dir\n",from,from,CF_SAVED);
       CfLog(cfsilent,OUTPUT,"");
       
       if (DONTDO)
@@ -542,31 +542,31 @@ if (lstat(from,&buf) == 0)
       
       if (stat(saved,&savebuf) != -1)
          {
-         snprintf(OUTPUT,bufsize*2,"Couldn't save directory %s, since %s exists already\n",from,saved);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't save directory %s, since %s exists already\n",from,saved);
          CfLog(cferror,OUTPUT,"");
-         snprintf(OUTPUT,bufsize*2,"Unable to force link to existing directory %s\n",from);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to force link to existing directory %s\n",from);
          CfLog(cferror,OUTPUT,"");
          return true;
          }
       
       if (rename(from,saved) == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"Can't rename %s to %s\n",from,saved);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Can't rename %s to %s\n",from,saved);
          CfLog(cferror,OUTPUT,"rename");
          return(true);
          }
       }
    }
 
-memset(linkbuf,0,bufsize);
+memset(linkbuf,0,CF_BUFSIZE);
 
-if (readlink(from,linkbuf,bufsize-1) == -1)
+if (readlink(from,linkbuf,CF_BUFSIZE-1) == -1)
    {
    if (! MakeDirectoriesFor(from,'n'))                  /* link doesn't exist */
       {
-      snprintf(OUTPUT,bufsize*2,"Couldn't build directory tree up to %s!\n",from);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't build directory tree up to %s!\n",from);
       CfLog(cfsilent,OUTPUT,"");
-      snprintf(OUTPUT,bufsize*2,"One element was a plain file, not a directory!\n");
+      snprintf(OUTPUT,CF_BUFSIZE*2,"One element was a plain file, not a directory!\n");
       CfLog(cfsilent,OUTPUT,"");      
       return(true);
       }
@@ -590,7 +590,7 @@ if (readlink(from,linkbuf,bufsize-1) == -1)
       {
       if (ENFORCELINKS)
          {
-         snprintf(OUTPUT,bufsize*2,"Removing link %s\n",from);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Removing link %s\n",from);
          CfLog(cfinform,OUTPUT,"");
          
          if (!DONTDO)
@@ -606,16 +606,16 @@ if (readlink(from,linkbuf,bufsize-1) == -1)
          }
       else
          {
-         snprintf(OUTPUT,bufsize*2,"Old link %s points somewhere else. Doing nothing!\n",from);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Old link %s points somewhere else. Doing nothing!\n",from);
          CfLog(cfsilent,OUTPUT,"");
-         snprintf(OUTPUT,bufsize*2,"(Link points to %s not %s)\n\n",linkbuf,to);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"(Link points to %s not %s)\n\n",linkbuf,to);
          CfLog(cfsilent,OUTPUT,"");  
          return(true);
          }
       }
    else
       {
-      snprintf(OUTPUT,bufsize*2,"Link (%s->%s) exists.\n",from,to_tmp);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Link (%s->%s) exists.\n",from,to_tmp);
       CfLog(cfverbose,OUTPUT,"");
       
       if (!nofile)
@@ -637,7 +637,7 @@ if (readlink(from,linkbuf,bufsize-1) == -1)
 int RelativeLink(char *from,char *to,struct Item *inclusions,struct Item *exclusions,struct Item *copy,short nofile,struct Link *ptr)
 
 { char *sp, *commonto, *commonfrom;
-  char buff[bufsize],linkto[bufsize];
+  char buff[CF_BUFSIZE],linkto[CF_BUFSIZE];
   int levels=0;
   
 Debug2("RelativeLink(%s,%s)\n",from,to);
@@ -649,7 +649,7 @@ if (*to == '.')
 
 if (!CompressPath(linkto,to))
    {
-   snprintf(OUTPUT,bufsize*2,"Failed to link %s to %s\n",from,to);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Failed to link %s to %s\n",from,to);
    CfLog(cferror,OUTPUT,"");
    return false;
    }
@@ -660,7 +660,7 @@ commonfrom = from;
 if (strcmp(commonto,commonfrom) == 0)
    {
    CfLog(cferror,"Can't link file to itself!\n","");
-   snprintf(OUTPUT,bufsize*2,"(%s -> %s)\n",from,to);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"(%s -> %s)\n",from,to);
    CfLog(cferror,OUTPUT,"");
    return false;
    }
@@ -691,7 +691,7 @@ for (sp = commonfrom; *sp != '\0'; sp++)
 
 Debug("LEVELS = %d\n",levels);
  
-memset(buff,0,bufsize);
+memset(buff,0,CF_BUFSIZE);
 
 strcat(buff,"./");
 
@@ -721,8 +721,8 @@ int AbsoluteLink(char *from,char *to,struct Item *inclusions,struct Item *exclus
 
 /* global LINKTO */
 
-{ char absto[bufsize];
-  char expand[bufsize];
+{ char absto[CF_BUFSIZE];
+  char expand[CF_BUFSIZE];
   
 Debug2("AbsoluteLink(%s,%s)\n",from,to);
 
@@ -747,7 +747,7 @@ if (!nofile)
    if (!ExpandLinks(expand,absto,0))  /* begin at level 1 and beam out at 15 */
       {
       CfLog(cferror,"Failed to make absolute link in\n","");
-      snprintf(OUTPUT,bufsize*2,"%s -> %s\n",from,to);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"%s -> %s\n",from,to);
       CfLog(cferror,OUTPUT,"");
       return false;
       }
@@ -777,12 +777,12 @@ if (DONTDO)
    }
 else
    {
-   snprintf(OUTPUT,bufsize*2,"Linking files %s -> %s\n",from,to);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Linking files %s -> %s\n",from,to);
    CfLog(cfinform,OUTPUT,"");
 
    if (symlink(to,from) == -1)
       {
-      snprintf(OUTPUT,bufsize*2,"Couldn't link %s to %s\n",to,from);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't link %s to %s\n",to,from);
       CfLog(cferror,OUTPUT,"symlink");
       return false;
       }
@@ -799,17 +799,17 @@ else
 
 void KillOldLink(char *name,char *defs)
 
-{ char linkbuf[bufsize];
-  char linkpath[bufsize],*sp;
+{ char linkbuf[CF_BUFSIZE];
+  char linkpath[CF_BUFSIZE],*sp;
   struct stat statbuf;
 
 Debug("KillOldLink(%s)\n",name);
-memset(linkbuf,0,bufsize);
-memset(linkpath,0,bufsize); 
+memset(linkbuf,0,CF_BUFSIZE);
+memset(linkpath,0,CF_BUFSIZE); 
 
-if (readlink(name,linkbuf,bufsize-1) == -1)
+if (readlink(name,linkbuf,CF_BUFSIZE-1) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"(Can't read link %s while checking for deadlinks)\n",name);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"(Can't read link %s while checking for deadlinks)\n",name);
    CfLog(cfverbose,OUTPUT,"");
    return;
    }
@@ -831,13 +831,13 @@ if (stat(VBUFF,&statbuf) == -1)               /* link points nowhere */
    {
    if (KILLOLDLINKS || DEBUG || D2)
       {
-      snprintf(OUTPUT,bufsize*2,"%s is a link which points to %s, but that file doesn't seem to exist\n",name,VBUFF);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"%s is a link which points to %s, but that file doesn't seem to exist\n",name,VBUFF);
       CfLog(cfverbose,OUTPUT,"");
       }
 
    if (KILLOLDLINKS)
       {
-      snprintf(OUTPUT,bufsize*2,"Removing dead link %s\n",name);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Removing dead link %s\n",name);
       CfLog(cfinform,OUTPUT,"");
 
       if (! DONTDO)
@@ -856,10 +856,10 @@ int HardLinkFiles(char *from,char *to,struct Item *inclusions,struct Item *exclu
 /* should return true if 'to' found */
 
 { struct stat frombuf,tobuf;
-  char saved[bufsize], *lastnode;
+  char saved[CF_BUFSIZE], *lastnode;
   struct UidList fakeuid;
   struct Image ip;
-  char stamp[bufsize];
+  char stamp[CF_BUFSIZE];
   time_t STAMPNOW;
   STAMPNOW = time((time_t *)NULL);
   
@@ -883,10 +883,10 @@ if (IsWildItemIn(VEXCLUDELINK,lastnode) || IsWildItemIn(exclusions,lastnode))
 
 if (IsWildItemIn(VCOPYLINKS,lastnode) || IsWildItemIn(copy,lastnode))
    {
-   fakeuid.uid = sameowner;
+   fakeuid.uid = CF_SAME_OWNER;
    fakeuid.next = NULL;
-   ip.plus = samemode;
-   ip.minus = samemode;
+   ip.plus = CF_SAMEMODE;
+   ip.minus = CF_SAMEMODE;
    ip.uid = &fakeuid;
    ip.gid = (struct GidList *) &fakeuid;
    ip.action = "do";
@@ -909,7 +909,7 @@ if (stat(to,&tobuf) == -1)
 
 if (! S_ISREG(tobuf.st_mode))
    {
-   snprintf(OUTPUT,bufsize*2,"%s: will only hard link regular files and %s is not regular\n",VPREFIX,to);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"%s: will only hard link regular files and %s is not regular\n",VPREFIX,to);
    CfLog(cfsilent,OUTPUT,"");
    return true;
    }
@@ -933,7 +933,7 @@ if (frombuf.st_ino != tobuf.st_ino && frombuf.st_dev != frombuf.st_dev)
 
    if (frombuf.st_mode == tobuf.st_mode && frombuf.st_size == tobuf.st_size)
       {
-      snprintf(OUTPUT,bufsize*2,"Hard link (%s->%s) on different device APPEARS okay\n",from,to);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Hard link (%s->%s) on different device APPEARS okay\n",from,to);
       CfLog(cfverbose,OUTPUT,"");
       AddMultipleClasses(ptr->elsedef);
       return true;
@@ -942,18 +942,18 @@ if (frombuf.st_ino != tobuf.st_ino && frombuf.st_dev != frombuf.st_dev)
 
 if (frombuf.st_ino == tobuf.st_ino && frombuf.st_dev == frombuf.st_dev)
    {
-   snprintf(OUTPUT,bufsize*2,"Hard link (%s->%s) exists and is okay.\n",from,to);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Hard link (%s->%s) exists and is okay.\n",from,to);
    CfLog(cfverbose,OUTPUT,"");
    AddMultipleClasses(ptr->elsedef);
    return true;
    }
 
-snprintf(OUTPUT,bufsize*2,"%s does not appear to be a hard link to %s\n",from,to);
+snprintf(OUTPUT,CF_BUFSIZE*2,"%s does not appear to be a hard link to %s\n",from,to);
 CfLog(cfinform,OUTPUT,""); 
 
 if (ENFORCELINKS)
    {
-   snprintf(OUTPUT,bufsize*2,"Moving %s to %s.%s\n",from,from,CF_SAVED);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Moving %s to %s.%s\n",from,from,CF_SAVED);
    CfLog(cfinform,OUTPUT,"");
 
    if (DONTDO)
@@ -992,7 +992,7 @@ if (DONTDO)
    }
 else
    {
-   snprintf(OUTPUT,bufsize*2,"Hardlinking files %s -> %s\n",from,to);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Hardlinking files %s -> %s\n",from,to);
    CfLog(cfinform,OUTPUT,"");
 
    if (link(to,from) == -1)
@@ -1013,16 +1013,16 @@ int ExpandLinks(char *dest,char *from,int level)                            /* r
   /* Expand a path contaning symbolic links, up to 4 levels  */
   /* of symbolic links and then beam out in a hurry !        */
 
-{ char *sp, buff[bufsize];
-  char node[maxlinksize];
+{ char *sp, buff[CF_BUFSIZE];
+  char node[CF_MAXLINKSIZE];
   struct stat statbuf;
   int lastnode = false;
 
-memset(dest,0,bufsize);
+memset(dest,0,CF_BUFSIZE);
 
 Debug2("ExpandLinks(%s,%d)\n",from,level);
 
-if (level >= maxlinklevel)
+if (level >= CF_MAXLINKLEVEL)
    {
    CfLog(cferror,"Too many levels of symbolic links to evaluate absolute path\n","");
    return false;
@@ -1066,18 +1066,18 @@ for (sp = from; *sp != '\0'; sp++)
 
    if (lstat(dest,&statbuf) == -1)  /* File doesn't exist so we can stop here */
       {
-      snprintf(OUTPUT,bufsize*2,"Can't stat %s in ExpandLinks\n",dest);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s in ExpandLinks\n",dest);
       CfLog(cferror,OUTPUT,"stat");
       return false;
       }
 
    if (S_ISLNK(statbuf.st_mode))
       {
-      memset(buff,0,bufsize);
+      memset(buff,0,CF_BUFSIZE);
       
-      if (readlink(dest,buff,bufsize-1) == -1)
+      if (readlink(dest,buff,CF_BUFSIZE-1) == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"Expand links can't stat %s\n",dest);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Expand links can't stat %s\n",dest);
          CfLog(cferror,OUTPUT,"readlink");
          return false;
          }
@@ -1122,7 +1122,7 @@ for (sp = from; *sp != '\0'; sp++)
                return true;
                }
             
-            memset(buff,0,bufsize);
+            memset(buff,0,CF_BUFSIZE);
             
             if (!lastnode && !ExpandLinks(buff,dest,level+1))
                {
@@ -1145,7 +1145,7 @@ char *AbsLinkPath (char *from,char *relto)
 
 { char *sp;
   int pop = 1;
-  static char destination[bufsize];
+  static char destination[CF_BUFSIZE];
   
 if (*relto == '/')
    {

@@ -4,26 +4,26 @@ info_TEXINFOS = cfengine-Reference.texinfo cfengine-Tutorial.texinfo cfengine-An
 
 docdir = $(prefix)/doc/$(PACKAGE)-$(VERSION)
 doc_DATA =
+
 # Info used in building and installing HTML files
 htmldir = $(pkgdatadir)/html
 htmlfiles = cfengine-Reference.html cfengine-Tutorial.html cfengine-Anomalies.html
 html_DATA = $(htmlfiles)
 
 # Info used in building and installing Postscript files
-ps1 = 
-ps2 = cfengine-Tutorial.ps cfengine-Reference.ps cfengine-Anomalies.ps
 
-# When the Texi2DVI problem with cfengine-Reference is corrected, 
-# then uncomment the reference to ps2
-psfiles = $(ps2)
+psfiles = cfengine-Tutorial.ps cfengine-Reference.ps cfengine-Anomalies.ps
+pdffiles = cfengine-Tutorial.pdf cfengine-Reference.pdf cfengine-Anomalies.pdf
 
 psdir = $(pkgdatadir)/doc
-ps_DATA = $(psfiles)
+ps_DATA = $(psfiles) $(pdffiles)
 
 MAKEINFOHTML = $(MAKEINFO) --html --no-split
 
 # Make sure these get distributed with everything else.
-EXTRA_DIST = cfagent.8 cfenvd.8 cfenvgraph.8 cfexecd.8 cfkey.8 cfrun.8 cfservd.8 cfengine.8 texinfo.tex $(htmlfiles) $(infofiles)  $(psfiles) $(dvifiles)
+
+EXTRA_DIST = cfagent.8 cfenvd.8 cfenvgraph.8 cfexecd.8 cfkey.8 cfrun.8 cfservd.8 cfengine.8 texinfo.tex $(htmlfiles) $(infofiles)  $(psfiles) $(dvifiles) $(pdffiles)
+
 SUFFIXES = html latex pdf ps dvi
 
 #%.html : %.texinfo

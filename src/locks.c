@@ -105,13 +105,13 @@ void RestoreExecLock()
 void HandleSignal(int signum)
  
 {
-snprintf(OUTPUT,bufsize*2,"Received signal %d (%s) while doing [%s]",signum,SIGNALS[signum],CFLOCK);
+snprintf(OUTPUT,CF_BUFSIZE*2,"Received signal %d (%s) while doing [%s]",signum,SIGNALS[signum],CFLOCK);
 Chop(OUTPUT);
 CfLog(cferror,OUTPUT,"");
-snprintf(OUTPUT,bufsize*2,"Logical start time %s ",ctime(&CFSTARTTIME));
+snprintf(OUTPUT,CF_BUFSIZE*2,"Logical start time %s ",ctime(&CFSTARTTIME));
 Chop(OUTPUT);
 CfLog(cferror,OUTPUT,"");
-snprintf(OUTPUT,bufsize*2,"This sub-task started really at %s\n",ctime(&CFINITSTARTTIME));
+snprintf(OUTPUT,CF_BUFSIZE*2,"This sub-task started really at %s\n",ctime(&CFINITSTARTTIME));
 
 CfLog(cferror,OUTPUT,"");
  
@@ -134,11 +134,11 @@ if (IGNORELOCK)
    return;
    }
 
-snprintf(LOCKDB,bufsize,"%s/cfengine_lock_db",VLOCKDIR);
+snprintf(LOCKDB,CF_BUFSIZE,"%s/cfengine_lock_db",VLOCKDIR);
 
 if ((errno = db_create(&DBP,NULL,0)) != 0)
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't open lock database %s\n",LOCKDB);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open lock database %s\n",LOCKDB);
    CfLog(cferror,OUTPUT,"db_open");
    IGNORELOCK = true;
    return;
@@ -152,7 +152,7 @@ if ((errno = DBP->open(DBP,LOCKDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 if ((errno = DBP->open(DBP,NULL,LOCKDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
 #endif
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't open lock database %s\n",LOCKDB);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open lock database %s\n",LOCKDB);
    CfLog(cferror,OUTPUT,"db_open");
    IGNORELOCK = true;
    return;
@@ -197,12 +197,12 @@ if (now == 0)
 
 Debug("GetLock(%s,%s,time=%d), ExpireAfter=%d, IfElapsed=%d\n",operator,operand,now,expireafter,ifelapsed);
 
-memset(CFLOCK,0,bufsize);
-memset(CFLAST,0,bufsize); 
+memset(CFLOCK,0,CF_BUFSIZE);
+memset(CFLAST,0,CF_BUFSIZE); 
  
-snprintf(CFLOG,bufsize,"%s/cfengine.%.40s.runlog",VLOGDIR,host);
-snprintf(CFLOCK,bufsize,"lock.%.100s.%.40s.%s.%.100s",VCANONICALFILE,host,operator,operand);
-snprintf(CFLAST,bufsize,"last.%s.100.%.40s.%s.%.100s",VCANONICALFILE,host,operator,operand);
+snprintf(CFLOG,CF_BUFSIZE,"%s/cfengine.%.40s.runlog",VLOGDIR,host);
+snprintf(CFLOCK,CF_BUFSIZE,"lock.%.100s.%.40s.%s.%.100s",VCANONICALFILE,host,operator,operand);
+snprintf(CFLAST,CF_BUFSIZE,"last.%s.100.%.40s.%s.%.100s",VCANONICALFILE,host,operator,operand);
  
 if (strlen(CFLOCK) > MAX_FILENAME)
    {
@@ -221,14 +221,14 @@ elapsedtime = (time_t)(now-lastcompleted) / 60;
 
 if (elapsedtime < 0)
    {
-   snprintf(OUTPUT,bufsize*2,"Another cfengine seems to have done %s.%s since I started\n",operator, operand);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Another cfengine seems to have done %s.%s since I started\n",operator, operand);
    CfLog(cfverbose,OUTPUT,"");
    return false;
    }
 
 if (elapsedtime < ifelapsed)
    {
-   snprintf(OUTPUT,bufsize*2,"Nothing scheduled for %s.%s (%u/%u minutes elapsed)\n",operator,operand,elapsedtime,ifelapsed);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Nothing scheduled for %s.%s (%u/%u minutes elapsed)\n",operator,operand,elapsedtime,ifelapsed);
    CfLog(cfverbose,OUTPUT,"");
    return false;
    }
@@ -242,14 +242,14 @@ if (lastcompleted != 0)
    {
    if (elapsedtime >= expireafter)
       {
-      snprintf(OUTPUT,bufsize*2,"Lock %s expired...(after %u/%u minutes)\n",CFLOCK,elapsedtime,expireafter);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Lock %s expired...(after %u/%u minutes)\n",CFLOCK,elapsedtime,expireafter);
       CfLog(cfinform,OUTPUT,"");
       
       pid = GetLockPid(CFLOCK);
 
       if (pid == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"Illegal pid in corrupt lock %s - ignoring lock\n",CFLOCK);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Illegal pid in corrupt lock %s - ignoring lock\n",CFLOCK);
          CfLog(cferror,OUTPUT,"");
          }
       else
@@ -290,7 +290,7 @@ if (lastcompleted != 0)
             }
          else
             {
-            snprintf(OUTPUT,bufsize*2,"Unable to kill expired cfagent process %d from lock %s, exiting this time..\n",pid,CFLOCK);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to kill expired cfagent process %d from lock %s, exiting this time..\n",pid,CFLOCK);
             CfLog(cferror,OUTPUT,"kill");
             
             FatalError("");
@@ -334,7 +334,7 @@ if (DeleteLock(CFLOCK) == -1)
 
 if (PutLock(CFLAST) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"Unable to create %s\n",CFLAST);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to create %s\n",CFLAST);
    CfLog(cferror,OUTPUT,"creat");
    return;
    }
@@ -420,7 +420,7 @@ if ((mtime = GetLockTime(CFLAST)) == -1)
    
    if (PutLock(CFLAST) == -1)
       {
-      snprintf(OUTPUT,bufsize*2,"Unable to lock %s\n",CFLAST);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to lock %s\n",CFLAST);
       CfLog(cferror,OUTPUT,"");
       return 0;
       }
@@ -462,7 +462,7 @@ Debug("SetLock(%s)\n",CFLOCK);
 
 if (PutLock(CFLOCK) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"GetLock: can't open new lock file %s\n",CFLOCK);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"GetLock: can't open new lock file %s\n",CFLOCK);
    CfLog(cferror,OUTPUT,"fopen");
    FatalError("");;
    }
@@ -648,7 +648,7 @@ return -1;
 void LockLog(int pid,char *str,char *operator,char *operand)
 
 { FILE *fp;
-  char buffer[maxvarsize];
+  char buffer[CF_MAXVARSIZE];
   struct stat statbuf;
   time_t tim;
 
@@ -656,7 +656,7 @@ Debug("LockLog(%s)\n",str);
 
 if ((fp = fopen(CFLOG,"a")) == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"Can't open lock-log file %s\n",CFLOG);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open lock-log file %s\n",CFLOG);
    CfLog(cferror,OUTPUT,"fopen");
    FatalError("");
    }

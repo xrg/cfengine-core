@@ -75,8 +75,8 @@ am_cfagent_OBJECTS = cfagent.$(OBJEXT) init.$(OBJEXT) do.$(OBJEXT) \
 	log.$(OBJEXT) crypto.$(OBJEXT) popen.$(OBJEXT) \
 	popen_def.$(OBJEXT) sensible.$(OBJEXT) acl.$(OBJEXT) \
 	dce_acl.$(OBJEXT) nameinfo.$(OBJEXT) strategies.$(OBJEXT) \
-	granules.$(OBJEXT) methods.$(OBJEXT) state.$(OBJEXT) \
-	package.$(OBJEXT)
+	granules.$(OBJEXT) methods.$(OBJEXT) dtypes.$(OBJEXT) \
+	state.$(OBJEXT) package.$(OBJEXT)
 cfagent_OBJECTS = $(am_cfagent_OBJECTS)
 am__DEPENDENCIES_1 =
 cfagent_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -87,7 +87,7 @@ am_cfenvd_OBJECTS = cfenvd.$(OBJEXT) globals.$(OBJEXT) \
 	item-file.$(OBJEXT) eval.$(OBJEXT) wildcard.$(OBJEXT) \
 	df.$(OBJEXT) read.$(OBJEXT) granules.$(OBJEXT) log.$(OBJEXT) \
 	popen.$(OBJEXT) patches.$(OBJEXT) locks.$(OBJEXT) \
-	state.$(OBJEXT) init.$(OBJEXT)
+	dtypes.$(OBJEXT) state.$(OBJEXT) init.$(OBJEXT)
 cfenvd_OBJECTS = $(am_cfenvd_OBJECTS)
 cfenvd_LDADD = $(LDADD)
 cfenvd_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -127,19 +127,20 @@ cfrun_LDADD = $(LDADD)
 cfrun_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am_cfservd_OBJECTS = cfservd.$(OBJEXT) parse.$(OBJEXT) \
-	functions.$(OBJEXT) install.$(OBJEXT) sockaddr.$(OBJEXT) \
-	ip.$(OBJEXT) report.$(OBJEXT) cfparse.$(OBJEXT) \
-	chflags.$(OBJEXT) cflex.$(OBJEXT) item.$(OBJEXT) \
-	item-ext.$(OBJEXT) varstring.$(OBJEXT) popen.$(OBJEXT) \
-	popen_def.$(OBJEXT) globals.$(OBJEXT) filenames.$(OBJEXT) \
-	macro.$(OBJEXT) eval.$(OBJEXT) read.$(OBJEXT) \
-	classes.$(OBJEXT) modules.$(OBJEXT) misc.$(OBJEXT) \
-	2Dlist.$(OBJEXT) modes.$(OBJEXT) locks.$(OBJEXT) \
-	init.$(OBJEXT) wildcard.$(OBJEXT) copy.$(OBJEXT) \
-	rotate.$(OBJEXT) net.$(OBJEXT) acl.$(OBJEXT) dce_acl.$(OBJEXT) \
-	log.$(OBJEXT) errors.$(OBJEXT) crypto.$(OBJEXT) \
-	filters.$(OBJEXT) patches.$(OBJEXT) checksums.$(OBJEXT) \
-	state.$(OBJEXT) nameinfo.$(OBJEXT) strategies.$(OBJEXT)
+	dtypes.$(OBJEXT) functions.$(OBJEXT) install.$(OBJEXT) \
+	sockaddr.$(OBJEXT) ip.$(OBJEXT) report.$(OBJEXT) \
+	cfparse.$(OBJEXT) chflags.$(OBJEXT) cflex.$(OBJEXT) \
+	item.$(OBJEXT) item-ext.$(OBJEXT) varstring.$(OBJEXT) \
+	popen.$(OBJEXT) popen_def.$(OBJEXT) globals.$(OBJEXT) \
+	filenames.$(OBJEXT) macro.$(OBJEXT) eval.$(OBJEXT) \
+	read.$(OBJEXT) classes.$(OBJEXT) modules.$(OBJEXT) \
+	misc.$(OBJEXT) 2Dlist.$(OBJEXT) modes.$(OBJEXT) \
+	locks.$(OBJEXT) init.$(OBJEXT) wildcard.$(OBJEXT) \
+	copy.$(OBJEXT) rotate.$(OBJEXT) net.$(OBJEXT) acl.$(OBJEXT) \
+	dce_acl.$(OBJEXT) log.$(OBJEXT) errors.$(OBJEXT) \
+	crypto.$(OBJEXT) filters.$(OBJEXT) patches.$(OBJEXT) \
+	checksums.$(OBJEXT) state.$(OBJEXT) nameinfo.$(OBJEXT) \
+	strategies.$(OBJEXT)
 cfservd_OBJECTS = $(am_cfservd_OBJECTS)
 cfservd_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
@@ -157,30 +158,30 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/comparray.Po ./$(DEPDIR)/copy.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/crypto.Po ./$(DEPDIR)/dce_acl.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/df.Po ./$(DEPDIR)/do.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/edittools.Po ./$(DEPDIR)/errors.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/eval.Po ./$(DEPDIR)/filedir.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/filenames.Po ./$(DEPDIR)/filters.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/functions.Po ./$(DEPDIR)/globals.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/granules.Po ./$(DEPDIR)/ifconf.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/image.Po ./$(DEPDIR)/init.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/install.Po ./$(DEPDIR)/ip.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/item-ext.Po ./$(DEPDIR)/item-file.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/item.Po ./$(DEPDIR)/link.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/locks.Po ./$(DEPDIR)/log.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/macro.Po ./$(DEPDIR)/methods.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/misc.Po ./$(DEPDIR)/modes.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/modules.Po ./$(DEPDIR)/mount.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/nameinfo.Po ./$(DEPDIR)/net.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/package.Po ./$(DEPDIR)/parse.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/patches.Po ./$(DEPDIR)/popen.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/popen_def.Po ./$(DEPDIR)/process.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/proto.Po ./$(DEPDIR)/read.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/report.Po ./$(DEPDIR)/repository.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/rotate.Po ./$(DEPDIR)/sensible.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/sockaddr.Po ./$(DEPDIR)/state.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/strategies.Po ./$(DEPDIR)/tidy.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/varstring.Po ./$(DEPDIR)/wildcard.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/wrapper.Po
+@AMDEP_TRUE@	./$(DEPDIR)/dtypes.Po ./$(DEPDIR)/edittools.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/errors.Po ./$(DEPDIR)/eval.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/filedir.Po ./$(DEPDIR)/filenames.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/filters.Po ./$(DEPDIR)/functions.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/globals.Po ./$(DEPDIR)/granules.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ifconf.Po ./$(DEPDIR)/image.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/init.Po ./$(DEPDIR)/install.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ip.Po ./$(DEPDIR)/item-ext.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/item-file.Po ./$(DEPDIR)/item.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/link.Po ./$(DEPDIR)/locks.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/log.Po ./$(DEPDIR)/macro.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/methods.Po ./$(DEPDIR)/misc.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/modes.Po ./$(DEPDIR)/modules.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/mount.Po ./$(DEPDIR)/nameinfo.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/net.Po ./$(DEPDIR)/package.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/parse.Po ./$(DEPDIR)/patches.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/popen.Po ./$(DEPDIR)/popen_def.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/process.Po ./$(DEPDIR)/proto.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/read.Po ./$(DEPDIR)/report.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/repository.Po ./$(DEPDIR)/rotate.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/sensible.Po ./$(DEPDIR)/sockaddr.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/state.Po ./$(DEPDIR)/strategies.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tidy.Po ./$(DEPDIR)/varstring.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/wildcard.Po ./$(DEPDIR)/wrapper.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
@@ -209,6 +210,8 @@ AWK = @AWK@
 BERKELEY_DB_CFLAGS = @BERKELEY_DB_CFLAGS@
 BERKELEY_DB_LDFLAGS = @BERKELEY_DB_LDFLAGS@
 BERKELEY_DB_LIB = @BERKELEY_DB_LIB@
+BUILD_DOC_FALSE = @BUILD_DOC_FALSE@
+BUILD_DOC_TRUE = @BUILD_DOC_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -373,6 +376,7 @@ cfagent_SOURCES = \
 	strategies.c                         				\
 	granules.c							\
 	methods.c							\
+	dtypes.c							\
 	state.c								\
 	package.c
 
@@ -380,6 +384,7 @@ cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 cfservd_SOURCES = \
 	cfservd.c							\
 	parse.c								\
+	dtypes.c							\
 	functions.c							\
 	install.c							\
 	sockaddr.c							\
@@ -498,6 +503,7 @@ cfenvd_SOURCES = \
 	popen.c								\
 	patches.c							\
 	locks.c								\
+	dtypes.c							\
 	state.c								\
 	init.c
 
@@ -671,6 +677,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dce_acl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/df.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/do.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dtypes.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/edittools.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/errors.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eval.Po@am__quote@
@@ -849,8 +856,8 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-rm -f cfparse.h
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+	-rm -f cfparse.h
 	-rm -f cflex.c
 	-rm -f cfparse.c
 clean: clean-am

@@ -46,7 +46,7 @@ Verbose("%s: Time out\n",VPREFIX);
 
 int SendTransaction(int sd,char *buffer,int len,char status)
 
-{ char work[bufsize];
+{ char work[CF_BUFSIZE];
   int wlen;
  
 if (len == 0) 
@@ -58,7 +58,7 @@ else
    wlen = len;
    }
     
-if (wlen > bufsize-8)
+if (wlen > CF_BUFSIZE-8)
    {
    FatalError("SendTransaction software failure");
    }
@@ -95,9 +95,9 @@ if (RecvSocketStream(sd,proto,8,0) == -1)   /* Get control channel */
 sscanf(proto,"%c %u",&status,&len);
 Debug("Transaction Receive [%s][%s]\n",proto,proto+8);
 
-if (len > bufsize - 8)
+if (len > CF_BUFSIZE - 8)
    {
-   snprintf(OUTPUT,bufsize,"Bad transaction packet -- too long (%c %d) Proto = %s ",status,len,proto);
+   snprintf(OUTPUT,CF_BUFSIZE,"Bad transaction packet -- too long (%c %d) Proto = %s ",status,len,proto);
    CfLog(cferror,OUTPUT,"");
    return -1;
    }
@@ -123,14 +123,14 @@ return RecvSocketStream(sd,buffer,len,0);
 
 /*************************************************************************/
  
-int RecvSocketStream(int sd,char buffer[bufsize],int toget,int nothing)
+int RecvSocketStream(int sd,char buffer[CF_BUFSIZE],int toget,int nothing)
  
 { int already, got;
   static int fraction;
 
 Debug("RecvSocketStream(%d)\n",toget);
 
-if (toget > bufsize)
+if (toget > CF_BUFSIZE)
    {
    CfLog(cferror,"Bad software request for overfull buffer","");
    return -1;
@@ -155,7 +155,7 @@ for (already = 0; already != toget; already += got)
 
    Debug("    (Concatenated %d from stream)\n",got);
 
-   if (strncmp(buffer,"AUTH",4) == 0 && (already == bufsize))
+   if (strncmp(buffer,"AUTH",4) == 0 && (already == CF_BUFSIZE))
       {
       fraction = 0;
       return already;
@@ -174,7 +174,7 @@ return toget;
  * Wed Feb 28 11:30:55 GMT 2001, Morten Hermanrud, mhe@say.no
  */
 
-int SendSocketStream(int sd,char buffer[bufsize],int tosend,int flags)
+int SendSocketStream(int sd,char buffer[CF_BUFSIZE],int tosend,int flags)
 
 { int sent,already=0;
 

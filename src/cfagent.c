@@ -208,10 +208,11 @@ ReadRCFile(); /* Should come before parsing so that it can be overridden */
  
 void Initialize(int argc,char *argv[])
 
-{ char *sp, *cfargv[maxargs];
+{ char *sp, *cfargv[CF_MAXARGS];
   int i, cfargc, seed;
   struct stat statbuf;
   unsigned char s[16];
+  char ebuff[CF_EXPANDSIZE];
   
 strcpy(VDOMAIN,CF_START_DOMAIN);
 
@@ -279,11 +280,11 @@ for (i = 1; i < argc; i++)
  VIFELAPSED = VDEFAULTIFELAPSED;
  TRAVLINKS = false;
  
- sprintf(VBUFF,"%s/state/cf_procs",WORKDIR);
+ sprintf(ebuff,"%s/state/cf_procs",WORKDIR);
  
- if (stat(VBUFF,&statbuf) == -1)
+ if (stat(ebuff,&statbuf) == -1)
     {
-    CreateEmptyFile(VBUFF);
+    CreateEmptyFile(ebuff);
     }
  
  strcpy(VLOGDIR,WORKDIR); 
@@ -306,7 +307,7 @@ for (i = 1; i < argc; i++)
 void PreNetConfig()                           /* Execute a shell script */
 
 { struct stat buf;
-  char comm[bufsize];
+  char comm[CF_BUFSIZE],ebuff[CF_EXPANDSIZE];
   char *sp;
   FILE *pp;
 
@@ -319,9 +320,9 @@ if (NOPRECONFIG)
 strcpy(VPREFIX,"cfengine:");
 strcat(VPREFIX,VUQNAME);
  
-if ((sp=getenv(CFINPUTSVAR)) != NULL)
+if ((sp=getenv(CF_INPUTSVAR)) != NULL)
    {
-   snprintf(comm,bufsize,"%s/%s",sp,VPRECONFIG);
+   snprintf(comm,CF_BUFSIZE,"%s/%s",sp,VPRECONFIG);
 
    if (stat(comm,&buf) == -1)
        {
@@ -329,11 +330,11 @@ if ((sp=getenv(CFINPUTSVAR)) != NULL)
        return;
        }
    
-   snprintf(comm,bufsize,"%s/%s %s 2>&1",sp,VPRECONFIG,CLASSTEXT[VSYSTEMHARDCLASS]);
+   snprintf(comm,CF_BUFSIZE,"%s/%s %s 2>&1",sp,VPRECONFIG,CLASSTEXT[VSYSTEMHARDCLASS]);
    }
 else
    {
-   snprintf(comm,bufsize,"%s/%s",WORKDIR,VPRECONFIG);
+   snprintf(comm,CF_BUFSIZE,"%s/%s",WORKDIR,VPRECONFIG);
    
    if (stat(comm,&buf) == -1)
       {
@@ -341,12 +342,12 @@ else
       return;
       }
    
-   snprintf(comm,bufsize,"%s/%s %s",WORKDIR,VPRECONFIG,CLASSTEXT[VSYSTEMHARDCLASS]);
+   snprintf(comm,CF_BUFSIZE,"%s/%s %s",WORKDIR,VPRECONFIG,CLASSTEXT[VSYSTEMHARDCLASS]);
    }
 
  if (S_ISDIR(buf.st_mode) || S_ISCHR(buf.st_mode) || S_ISBLK(buf.st_mode))
     {
-    snprintf(OUTPUT,bufsize*2,"Error: %s was not a regular file\n",VPRECONFIG);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"Error: %s was not a regular file\n",VPRECONFIG);
     CfLog(cferror,OUTPUT,"");
     FatalError("Aborting.");
     }
@@ -355,7 +356,7 @@ Verbose("\n\nExecuting Net Preconfiguration script...%s\n\n",VPRECONFIG);
  
 if ((pp = cfpopen(comm,"r")) == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"Failed to open pipe to %s\n",comm);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Failed to open pipe to %s\n",comm);
    CfLog(cferror,OUTPUT,"");
    return;
    }
@@ -368,7 +369,7 @@ while (!feof(pp))
       break;
       }
 
-   ReadLine(VBUFF,bufsize,pp);
+   ReadLine(ebuff,CF_BUFSIZE,pp);
 
    if (feof(pp))
       {
@@ -381,7 +382,7 @@ while (!feof(pp))
       break;
       }
 
-   CfLog(cfinform,VBUFF,"");
+   CfLog(cfinform,ebuff,"");
    }
 
 cfpclose(pp);
@@ -399,15 +400,15 @@ void DeleteCaches()
 
 void ReadRCFile()
 
-{ char filename[bufsize], buffer[bufsize], *mp;
-  char class[maxvarsize], variable[maxvarsize], value[maxvarsize];
+{ char filename[CF_BUFSIZE], buffer[CF_BUFSIZE], *mp;
+  char class[CF_MAXVARSIZE], variable[CF_MAXVARSIZE], value[CF_MAXVARSIZE];
   int c;
   FILE *fp;
 
 filename[0] = buffer[0] = class[0] = variable[0] = value[0] = '\0';
 LINENUMBER = 0;
 
-snprintf(filename,bufsize,"%s/inputs/%s",WORKDIR,VRCFILE);
+snprintf(filename,CF_BUFSIZE,"%s/inputs/%s",WORKDIR,VRCFILE);
 if ((fp = fopen(filename,"r")) == NULL)      /* Open root file */
    {
    return;
@@ -415,7 +416,7 @@ if ((fp = fopen(filename,"r")) == NULL)      /* Open root file */
 
 while (!feof(fp))
    {
-   ReadLine(buffer,bufsize,fp);
+   ReadLine(buffer,CF_BUFSIZE,fp);
    LINENUMBER++;
    class[0]='\0';
    variable[0]='\0';
@@ -428,7 +429,7 @@ while (!feof(fp))
 
    if (strstr(buffer,":") == 0)
       {
-      snprintf(OUTPUT,bufsize*2,"Malformed line (missing :) in resource file %s - skipping\n",VRCFILE);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Malformed line (missing :) in resource file %s - skipping\n",VRCFILE);
       CfLog(cferror,OUTPUT,"");
       continue;
       }
@@ -437,9 +438,9 @@ while (!feof(fp))
 
    if (class[0] == '\0' || variable[0] == '\0' || value[0] == '\0')
       {
-      snprintf(OUTPUT,bufsize*2,"%s:%s - Bad resource\n",VRCFILE,buffer);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"%s:%s - Bad resource\n",VRCFILE,buffer);
       CfLog(cferror,OUTPUT,"");
-      snprintf(OUTPUT,bufsize*2,"class=%s,variable=%s,value=%s\n",class,variable,value);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"class=%s,variable=%s,value=%s\n",class,variable,value);
       CfLog(cferror,OUTPUT,"");
       FatalError("Bad resource");
       }
@@ -455,7 +456,7 @@ while (!feof(fp))
       FatalError("malloc in ReadRCFile");
       }
 
-   snprintf(OUTPUT,bufsize*2,"Redefining resource %s as %s (%s)\n",variable,value,class);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Redefining resource %s as %s (%s)\n",variable,value,class);
    CfLog(cfverbose,OUTPUT,"");
 
    c = VSYSTEMHARDCLASS;
@@ -491,8 +492,8 @@ while (!feof(fp))
                  VPSOPTS[c] = mp;
                  break;
       default:
-                        snprintf(VBUFF,bufsize,"Bad resource %s in %s\n",variable,VRCFILE);
-                        FatalError(VBUFF);
+                        snprintf(OUTPUT,CF_BUFSIZE,"Bad resource %s in %s\n",variable,VRCFILE);
+                        FatalError(OUTPUT);
                         break;
       }
    }
@@ -513,13 +514,13 @@ VACTIONSEQ = NULL;
 
 void GetEnvironment()
 
-{ char env[bufsize],class[bufsize],name[maxvarsize],value[maxvarsize];
+{ char env[CF_BUFSIZE],class[CF_BUFSIZE],name[CF_MAXVARSIZE],value[CF_MAXVARSIZE];
   FILE *fp;
   struct stat statbuf;
   time_t now = time(NULL);
   
 Verbose("Looking for environment from cfenvd...\n");
-snprintf(env,bufsize,"%s/state/%s",WORKDIR,ENV_FILE);
+snprintf(env,CF_BUFSIZE,"%s/state/%s",WORKDIR,CF_ENV_FILE);
 
 if (stat(env,&statbuf) == -1)
    {
@@ -536,7 +537,7 @@ if (stat(env,&statbuf) == -1)
  
  if (!GetMacroValue(CONTEXTID,"env_time"))
     {
-    snprintf(value,maxvarsize-1,"%s",ctime(&statbuf.st_mtime));
+    snprintf(value,CF_MAXVARSIZE-1,"%s",ctime(&statbuf.st_mtime));
     Chop(value);
     AddMacroValue(CONTEXTID,"env_time",value);
     }
@@ -589,19 +590,18 @@ void EchoValues()
 
 { struct Item *ip;
   int n = 0;
-  
+  char ebuff[CF_EXPANDSIZE];
 
 Verbose("Accepted domain name: %s\n\n",VDOMAIN); 
-memset(VBUFF,0,bufsize);
 
 if (GetMacroValue(CONTEXTID,"OutputPrefix"))
    {
-   ExpandVarstring("$(OutputPrefix)",VBUFF,NULL);
+   ExpandVarstring("$(OutputPrefix)",ebuff,NULL);
    }
 
-if (strlen(VBUFF) != 0)
+if (strlen(ebuff) != 0)
    {
-   strncpy(VPREFIX,VBUFF,40);  /* No more than 40 char prefix (!) */
+   strncpy(VPREFIX,ebuff,40);  /* No more than 40 char prefix (!) */
    }
 else
    {
@@ -733,7 +733,7 @@ if (DEBUG || D2 || D3)
 
 void CheckSystemVariables()
 
-{ char id[maxvarsize];
+{ char id[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
   int time, hash, activecfs, locks;
 
 Debug2("\n\n");
@@ -823,10 +823,10 @@ LoadSecretKeys();
  
 if (GetMacroValue(CONTEXTID,"childlibpath"))
    {
-   snprintf(VBUFF,bufsize,"LD_LIBRARY_PATH=%s",GetMacroValue(CONTEXTID,"childlibpath"));
-   if (putenv(strdup(VBUFF)) == 0)
+   snprintf(OUTPUT,CF_BUFSIZE,"LD_LIBRARY_PATH=%s",GetMacroValue(CONTEXTID,"childlibpath"));
+   if (putenv(strdup(OUTPUT)) == 0)
       {
-      Verbose("Setting %s\n",VBUFF);
+      Verbose("Setting %s\n",OUTPUT);
       }
    else
       {
@@ -836,9 +836,8 @@ if (GetMacroValue(CONTEXTID,"childlibpath"))
 
 if (GetMacroValue(CONTEXTID,"BindToInterface"))
    {
-   memset(VBUFF,0,bufsize);
-   ExpandVarstring("$(BindToInterface)",VBUFF,NULL);
-   strncpy(BINDINTERFACE, VBUFF, bufsize-1);
+   ExpandVarstring("$(BindToInterface)",ebuff,NULL);
+   strncpy(BINDINTERFACE,ebuff,CF_BUFSIZE-1);
    Debug("$(BindToInterface) Expanded to %s\n",BINDINTERFACE);
    } 
 
@@ -850,7 +849,7 @@ if (GetMacroValue(CONTEXTID,"MaxCfengines"))
  
    if (locks >= activecfs)
       {
-      snprintf(OUTPUT,bufsize*2,"Too many cfagents running (%d/%d)\n",locks,activecfs);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Too many cfagents running (%d/%d)\n",locks,activecfs);
       CfLog(cferror,OUTPUT,"");
       closelog();
       exit(1);
@@ -889,11 +888,11 @@ if (OptionIs(CONTEXTID,"DryRun",true))
 
 if (GetMacroValue(CONTEXTID,"BinaryPaddingChar"))
    {
-   strcpy(VBUFF,GetMacroValue(CONTEXTID,"BinaryPaddingChar"));
+   strcpy(ebuff,GetMacroValue(CONTEXTID,"BinaryPaddingChar"));
    
-   if (VBUFF[0] == '\\')
+   if (ebuff[0] == '\\')
       {
-      switch (VBUFF[1])
+      switch (ebuff[1])
          {
          case '0': PADCHAR = '\0';
              break;
@@ -905,7 +904,7 @@ if (GetMacroValue(CONTEXTID,"BinaryPaddingChar"))
       }
    else
       {
-      PADCHAR = VBUFF[0];
+      PADCHAR = ebuff[0];
       }
    }
  
@@ -936,7 +935,7 @@ if (OptionIs(CONTEXTID,"ShowActions",true))
    val = (mode_t)atoi(GetMacroValue(CONTEXTID,"Umask"));
    if (umask(val) == (mode_t)-1)
       {
-      snprintf(OUTPUT,bufsize*2,"Can't set umask to %o\n",val);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Can't set umask to %o\n",val);
       CfLog(cferror,OUTPUT,"umask");
       }
    }
@@ -963,9 +962,9 @@ if (GetMacroValue(CONTEXTID,"DefaultCopyType"))
  
 if (GetMacroValue(CONTEXTID,"ChecksumDatabase"))
    {
-   ExpandVarstring("$(ChecksumDatabase)",VBUFF,NULL);
+   ExpandVarstring("$(ChecksumDatabase)",ebuff,NULL);
 
-   CHECKSUMDB = strdup(VBUFF);
+   CHECKSUMDB = strdup(ebuff);
 
    if (*CHECKSUMDB != '/')
       {
@@ -974,17 +973,17 @@ if (GetMacroValue(CONTEXTID,"ChecksumDatabase"))
    }
 else
    {
-   snprintf(VBUFF,bufsize,"%s/checksum.db",WORKDIR);
-   CHECKSUMDB = strdup(VBUFF);
+   snprintf(ebuff,CF_BUFSIZE,"%s/checksum.db",WORKDIR);
+   CHECKSUMDB = strdup(ebuff);
    }
  
 Verbose("Checksum database is %s\n",CHECKSUMDB); 
  
 if (GetMacroValue(CONTEXTID,"CompressCommand"))
    {
-   ExpandVarstring("$(CompressCommand)",VBUFF,NULL);
+   ExpandVarstring("$(CompressCommand)",ebuff,NULL);
 
-   COMPRESSCOMMAND = strdup(VBUFF);
+   COMPRESSCOMMAND = strdup(ebuff);
    
    if (*COMPRESSCOMMAND != '/')
       {
@@ -1036,8 +1035,8 @@ if (!NOSPLAY)
          if (!PARSEONLY)
             {
             DONESPLAY = true;
-            Verbose("Sleeping for SplayTime %d seconds\n\n",(int)(time*60*hash/hashtablesize));
-            sleep((int)(time*60*hash/hashtablesize));
+            Verbose("Sleeping for SplayTime %d seconds\n\n",(int)(time*60*hash/CF_HASHTABLESIZE));
+            sleep((int)(time*60*hash/CF_HASHTABLESIZE));
             }
          }
       else
@@ -1058,6 +1057,7 @@ if (!NOSPLAY)
 void SetReferenceTime(int setclasses)
 
 { time_t tloc;
+ char vbuff[CF_MAXVARSIZE];
  
 if ((tloc = time((time_t *)NULL)) == -1)
    {
@@ -1066,13 +1066,13 @@ if ((tloc = time((time_t *)NULL)) == -1)
 
 CFSTARTTIME = tloc;
 
-snprintf(VBUFF,bufsize,"%s",ctime(&tloc));
+snprintf(vbuff,CF_BUFSIZE,"%s",ctime(&tloc));
 
 Verbose("Reference time set to %s\n",ctime(&tloc));
 
 if (setclasses)
    {
-   AddTimeClass(VBUFF);
+   AddTimeClass(vbuff);
    }
 }
 
@@ -1267,7 +1267,7 @@ for (PASS = 1; PASS <= passes; PASS++)
              break;
              
          default:  
-             snprintf(OUTPUT,bufsize*2,"Undefined action %s in sequence\n",action->name);
+             snprintf(OUTPUT,CF_BUFSIZE*2,"Undefined action %s in sequence\n",action->name);
              FatalError(OUTPUT);
              break;
          }
@@ -1394,7 +1394,7 @@ return true;
 enum aseq EvaluateAction(char *action,struct Item **classlist,int pass)
 
 { int i,j = 0;
-  char *sp,cbuff[bufsize],actiontxt[bufsize],mod[bufsize],args[bufsize];
+  char *sp,cbuff[CF_BUFSIZE],actiontxt[CF_BUFSIZE],mod[CF_BUFSIZE],args[CF_BUFSIZE];
   struct Item *ip;
 
 cbuff[0]='\0';
@@ -1420,7 +1420,7 @@ while (*sp != '\0')
  
    if (IsHardClass(cbuff))
       {
-      snprintf(OUTPUT,bufsize*2,"Error in action sequence: %s\n",action);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Error in action sequence: %s\n",action);
       CfLog(cferror,OUTPUT,"");
       FatalError("You cannot add a reserved class!");
       }
@@ -1530,8 +1530,8 @@ while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o
            break;
 
       case 'f':
-          strncpy(VINPUTFILE,optarg, bufsize-1);
-          VINPUTFILE[bufsize-1] = '\0';
+          strncpy(VINPUTFILE,optarg, CF_BUFSIZE-1);
+          VINPUTFILE[CF_BUFSIZE-1] = '\0';
           MINUSF = true;
           break;
           
@@ -1624,7 +1624,7 @@ while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o
           PARSEONLY = true;
           break;
           
-      case 'Z': strncpy(METHODMD5,optarg,bufsize-1);
+      case 'Z': strncpy(METHODMD5,optarg,CF_BUFSIZE-1);
           Debug("Got method call reference %s\n",METHODMD5);
           break;
           
@@ -1692,7 +1692,7 @@ while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o
 void CheckForMethod()
 
 { struct Item *ip,*ip1,*ip2,*args = NULL;
-  char argbuffer[bufsize];
+  char argbuffer[CF_BUFSIZE];
   struct Method *mp;
   int i = 0;
 
@@ -1746,7 +1746,7 @@ Verbose("Looking for a data package for this method (%s)\n",METHODMD5);
 
 if (!ChildLoadMethodPackage(METHODNAME,METHODMD5))
    {
-   snprintf(OUTPUT,bufsize,"No valid incoming request to execute method (%s)\n",METHODNAME);
+   snprintf(OUTPUT,CF_BUFSIZE,"No valid incoming request to execute method (%s)\n",METHODNAME);
    CfLog(cfinform,OUTPUT,"");
    exit(0);
    }
@@ -1782,9 +1782,8 @@ for (i = 0; VRESOURCES[i] != '\0'; i++)
       }
    }
 
-snprintf (VBUFF,bufsize,"Unknown resource %s in %s",var,VRCFILE);
-
-FatalError(VBUFF);
+snprintf (OUTPUT,CF_BUFSIZE,"Unknown resource %s in %s",var,VRCFILE);
+FatalError(OUTPUT);
 return 0;
 }
 
@@ -1813,13 +1812,13 @@ void BuildClassEnvironment()
  
 Debug("(BuildClassEnvironment)\n");
 
-snprintf(ALLCLASSBUFFER,bufsize,"%s=",CFALLCLASSESVAR);
+snprintf(ALLCLASSBUFFER,CF_BUFSIZE,"%s=",CF_ALLCLASSESVAR);
 
 for (ip = VHEAP; ip != NULL; ip=ip->next)
    {
    if (IsDefinedClass(ip->name))
       {
-      if ((size += strlen(ip->name)) > bufsize - buffer_margin)
+      if ((size += strlen(ip->name)) > CF_BUFSIZE - CF_BUFFERMARGIN)
          {
          Verbose("Class buffer overflowed, dumping class environment for modules\n");
          Verbose("This would probably crash the exec interface on most machines\n");
@@ -1838,7 +1837,7 @@ for (ip = VHEAP; ip != NULL; ip=ip->next)
     {
     if (IsDefinedClass(ip->name))
       {
-      if ((size += strlen(ip->name)) > bufsize - buffer_margin)
+      if ((size += strlen(ip->name)) > 4*CF_BUFSIZE - CF_BUFFERMARGIN)
          {
          Verbose("Class buffer overflowed, dumping class environment for modules\n");
          Verbose("This would probably crash the exec interface on most machines\n");

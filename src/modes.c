@@ -175,7 +175,7 @@ for (sp = modestring; true ; *sp++)
           Debug1("[PLUS=%o][MINUS=%o]\n",*plusmask,*minusmask);
           return;
           
-      default: snprintf(OUTPUT,bufsize,"Invalid mode string (%s)",modestring);  
+      default: snprintf(OUTPUT,CF_BUFSIZE,"Invalid mode string (%s)",modestring);  
           yyerror (OUTPUT);
           break;
       }

@@ -308,8 +308,8 @@ editfiles:             {
                        }
 
 {lbrace}               {
-                       bzero(FILTERNAME,bufsize); /* Reset */
-                       bzero(STRATEGYNAME,bufsize); /* Reset */
+                       bzero(FILTERNAME,CF_BUFSIZE); /* Reset */
+                       bzero(STRATEGYNAME,CF_BUFSIZE); /* Reset */
 
                        Debug1("LBRACE\n");
                        return LBRACE;

@@ -44,7 +44,7 @@ int    MAXFD = 20; /* Max number of simultaneous pipes */
 
 FILE *cfpopen(char *command,char *type)
     
- { static char arg[maxshellargs][bufsize];
+ { static char arg[CF_MAXSHELLARGS][CF_BUFSIZE];
    int i, argc, pd[2];
    char **argv;
    pid_t pid;
@@ -129,7 +129,7 @@ FILE *cfpopen(char *command,char *type)
     
     if (execv(arg[0],argv) == -1)
        {
-       snprintf(OUTPUT,bufsize,"Couldn't run %s",arg[0]);
+       snprintf(OUTPUT,CF_BUFSIZE,"Couldn't run %s",arg[0]);
        CfLog(cferror,OUTPUT,"execv");
        }
     
@@ -171,7 +171,7 @@ FILE *cfpopen(char *command,char *type)
 
 FILE *cfpopensetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,char *chrootv)
     
- { static char arg[maxshellargs][bufsize];
+ { static char arg[CF_MAXSHELLARGS][CF_BUFSIZE];
    int i, argc, pd[2];
    char **argv;
    pid_t pid;
@@ -258,7 +258,7 @@ FILE *cfpopensetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,ch
        {
        if (chroot(chrootv) == -1)
           {
-          snprintf(OUTPUT,bufsize,"Couldn't chroot to %s\n",chrootv);
+          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't chroot to %s\n",chrootv);
           CfLog(cferror,OUTPUT,"chroot");
           return NULL;
           }
@@ -268,7 +268,7 @@ FILE *cfpopensetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,ch
        {
        if (chdir(chdirv) == -1)
           {
-          snprintf(OUTPUT,bufsize,"Couldn't chdir to %s\n",chdirv);
+          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't chdir to %s\n",chdirv);
           CfLog(cferror,OUTPUT,"chdir");
           return NULL;
           }
@@ -280,7 +280,7 @@ FILE *cfpopensetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,ch
        
        if (setgid(gid) == -1)
           {
-          snprintf(OUTPUT,bufsize,"Couldn't set gid to %d\n",gid);
+          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't set gid to %d\n",gid);
           CfLog(cferror,OUTPUT,"setgid");
           return NULL;
           }
@@ -292,7 +292,7 @@ FILE *cfpopensetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,ch
        
        if (setuid(uid) == -1)
           {
-          snprintf(OUTPUT,bufsize,"Couldn't effective uid to %d\n",uid);
+          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't effective uid to %d\n",uid);
           CfLog(cferror,OUTPUT,"setuid");
           return NULL;
           }
@@ -300,7 +300,7 @@ FILE *cfpopensetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,ch
     
     if (execv(arg[0],argv) == -1)
        {
-       snprintf(OUTPUT,bufsize,"Couldn't run %s",arg[0]);
+       snprintf(OUTPUT,CF_BUFSIZE,"Couldn't run %s",arg[0]);
        CfLog(cferror,OUTPUT,"execv");
        }
     
@@ -519,7 +519,7 @@ FILE *cfpopen_shsetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv
        {
        if (chroot(chrootv) == -1)
           {
-          snprintf(OUTPUT,bufsize,"Couldn't chroot to %s\n",chrootv);
+          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't chroot to %s\n",chrootv);
           CfLog(cferror,OUTPUT,"chroot");
           return NULL;
           }
@@ -529,7 +529,7 @@ FILE *cfpopen_shsetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv
        {
        if (chdir(chdirv) == -1)
           {
-          snprintf(OUTPUT,bufsize,"Couldn't chdir to %s\n",chdirv);
+          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't chdir to %s\n",chdirv);
           CfLog(cferror,OUTPUT,"chroot");
           return NULL;
           }
@@ -541,7 +541,7 @@ FILE *cfpopen_shsetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv
        
        if (setgid(gid) == -1)
           {
-          snprintf(OUTPUT,bufsize,"Couldn't set gid to %d\n",gid);
+          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't set gid to %d\n",gid);
           CfLog(cferror,OUTPUT,"setgid");
           return NULL;
           }
@@ -553,7 +553,7 @@ FILE *cfpopen_shsetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv
        
        if (setuid(uid) == -1)
           {
-          snprintf(OUTPUT,bufsize,"Couldn't set uid to %d\n",uid);
+          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't set uid to %d\n",uid);
           CfLog(cferror,OUTPUT,"setuid");
           return NULL;
           }
@@ -600,7 +600,7 @@ FILE *cfpopen_shsetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv
 
 int cfpclose(FILE *pp)
 
-{ int fd, status;
+{ int fd, status, wait_result;
   pid_t pid;
 
 Debug("cfpclose(pp)\n");
@@ -639,25 +639,28 @@ while(waitpid(pid,&status,0) < 0)
  return status; 
  
 #else
-      
- if (wait(&status) != pid)
+
+ while ((wait_result = wait(&status)) != pid)
+    {
+    if (wait_result <= 0)
+       {
+       snprintf(OUTPUT,CF_BUFSIZE,"Wait for child failed\n");
+       CfLog(cfinform,OUTPUT,"wait");
+       return -1;
+       }
+    }
+ 
+ if (WIFSIGNALED(status))
     {
     return -1;
     }
- else
+ 
+ if (! WIFEXITED(status))
     {
-    if (WIFSIGNALED(status))
-       {
-       return -1;
-       }
-    
-    if (! WIFEXITED(status))
-       {
-       return -1;
-       }
-
-    return (WEXITSTATUS(status));
+    return -1;
     }
+ 
+ return (WEXITSTATUS(status));
 #endif
 }
 
@@ -666,14 +669,14 @@ while(waitpid(pid,&status,0) < 0)
 /* Command exec aids                                               */
 /*******************************************************************/
 
-int SplitCommand(char *comm,char arg[maxshellargs][bufsize])
+int SplitCommand(char *comm,char arg[CF_MAXSHELLARGS][CF_BUFSIZE])
 
 { char *sp;
   int i = 0;
 
 for (sp = comm; sp < comm+strlen(comm); sp++)
    {
-   if (i >= maxshellargs-1)
+   if (i >= CF_MAXSHELLARGS-1)
       {
       CfLog(cferror,"Too many arguments in embedded script","");
       FatalError("Use a wrapper");
@@ -689,13 +692,13 @@ for (sp = comm; sp < comm+strlen(comm); sp++)
       case '\0': return(i-1);
    
       case '\"': sscanf (++sp,"%[^\"]",arg[i]);
-   break;
+          break;
       case '\'': sscanf (++sp,"%[^\']",arg[i]);
-   break;
+          break;
       case '`':  sscanf (++sp,"%[^`]",arg[i]);
-   break;
+          break;
       default:   sscanf (sp,"%s",arg[i]);
-   break;
+          break;
       }
    
    sp += strlen(arg[i]);

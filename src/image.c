@@ -44,7 +44,7 @@ void GetRemoteMethods()
    parsing since it uses covert variables that belong to the parser */
 
 { struct Item*ip;
-  char client[bufsize]; 
+  char client[CF_BUFSIZE]; 
  
 Banner("Looking for remote method collaborations");
 
@@ -71,11 +71,11 @@ Banner("Looking for remote method collaborations");
 
     NewParser();
     Verbose(" Hailing remote peer %s for messages for us\n",client);
-    snprintf(VBUFF,bufsize,"%s_*",Hostname2IPString(VFQNAME));
+    snprintf(VBUFF,CF_BUFSIZE,"%s_*",Hostname2IPString(VFQNAME));
 
     InitializeAction();
-    snprintf(DESTINATION,bufsize,"%s/rpc_in",WORKDIR);
-    snprintf(CURRENTOBJECT,bufsize,"%s/rpc_out",WORKDIR);
+    snprintf(DESTINATION,CF_BUFSIZE,"%s/rpc_in",WORKDIR);
+    snprintf(CURRENTOBJECT,CF_BUFSIZE,"%s/rpc_out",WORKDIR);
     snprintf(FINDERTYPE,1,"*");
     PLUSMASK  = 0400;
     MINUSMASK = 0377;
@@ -83,8 +83,8 @@ Banner("Looking for remote method collaborations");
     ENCRYPT = 'y';
     strcpy(IMAGEACTION,"fix");
     strcpy(CLASSBUFF,"any");
-    snprintf(VUIDNAME,maxvarsize,"%d",getuid());
-    snprintf(VGIDNAME,maxvarsize,"%d",getgid());
+    snprintf(VUIDNAME,CF_MAXVARSIZE,"%d",getuid());
+    snprintf(VGIDNAME,CF_MAXVARSIZE,"%d",getgid());
     IMGCOMP = '>';
     VRECURSE = 1;
     PIFELAPSED = 0;
@@ -105,8 +105,8 @@ Verbose("\nFinished with RPC\n\n");
 void RecursiveImage(struct Image *ip,char *from,char *to,int maxrecurse)
 
 { struct stat statbuf, deststatbuf;
-  char newfrom[bufsize];
-  char newto[bufsize];
+  char newfrom[CF_BUFSIZE];
+  char newto[CF_BUFSIZE];
   int save_uid, save_gid, succeed;
   struct Item *namecache = NULL;
   struct Item *ptr, *ptr1;
@@ -134,19 +134,19 @@ if (strlen(from) == 0)     /* Check for root dir */
 
   /* Check that dest dir exists before starting */
 
-strncpy(newto,to,bufsize-2);
+strncpy(newto,to,CF_BUFSIZE-2);
 AddSlash(newto);
 
 if (! MakeDirectoriesFor(newto,ip->forcedirs))
    {
-   snprintf(OUTPUT,bufsize*2,"Unable to make directory for %s in copy: %s to %s\n",newto,ip->path,ip->destination);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to make directory for %s in copy: %s to %s\n",newto,ip->path,ip->destination);
    CfLog(cferror,OUTPUT,"");
    return;
    }
 
 if ((dirh = cfopendir(from,ip)) == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"copy can't open directory [%s]\n",from);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"copy can't open directory [%s]\n",from);
    CfLog(cfverbose,OUTPUT,"");
    return;
    }
@@ -168,9 +168,9 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
       continue;
       }
 
-   strncpy(newfrom,from,bufsize-2);                             /* Assemble pathname */
+   strncpy(newfrom,from,CF_BUFSIZE-2);                             /* Assemble pathname */
    AddSlash(newfrom);
-   strncpy(newto,to,bufsize-2);
+   strncpy(newto,to,CF_BUFSIZE-2);
    AddSlash(newto);
 
    if (BufferOverflow(newfrom,dirp->d_name))
@@ -180,7 +180,7 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
       return;
       }
 
-   strncat(newfrom,dirp->d_name,bufsize-2);
+   strncat(newfrom,dirp->d_name,CF_BUFSIZE-2);
 
    if (BufferOverflow(newto,dirp->d_name))
       {
@@ -240,7 +240,7 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
 
       if (succeed)
          {
-         snprintf(OUTPUT,bufsize*2,"Skipping excluded file %s class %s\n",newto,ip->classes);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Skipping excluded file %s class %s\n",newto,ip->classes);
          CfLog(cfverbose,OUTPUT,"");
          continue;
          }
@@ -277,7 +277,7 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
          mkdir(newto,statbuf.st_mode);
          if (stat(newto,&deststatbuf) == -1)
             {
-            snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",newto);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",newto);
             CfLog(cferror,OUTPUT,"stat");
             continue;
             }
@@ -317,8 +317,8 @@ void CheckHomeImages(struct Image *ip)
 
 { DIR *dirh, *dirh2;
   struct dirent *dirp, *dirp2;
-  char username[maxvarsize];
-  char homedir[bufsize],dest[bufsize];
+  char username[CF_MAXVARSIZE];
+  char homedir[CF_BUFSIZE],dest[CF_BUFSIZE];
   struct passwd *pw;
   struct group *gr;
   struct stat statbuf;
@@ -334,7 +334,7 @@ if (!MountPathDefined())
 
 if (cfstat(ip->path,&statbuf,ip) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"Master file %s doesn't exist for copying\n",ip->path);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Master file %s doesn't exist for copying\n",ip->path);
    CfLog(cferror,OUTPUT,"");
    return;
    }
@@ -348,7 +348,7 @@ for (itp = VMOUNTLIST; itp != NULL; itp=itp->next)
    
    if ((dirh = opendir(itp->name)) == NULL)
       {
-      snprintf(OUTPUT,bufsize*2,"Can't open directory %s\n",itp->name);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open directory %s\n",itp->name);
       CfLog(cfverbose,OUTPUT,"opendir");
       return;
       }
@@ -371,7 +371,7 @@ for (itp = VMOUNTLIST; itp != NULL; itp=itp->next)
 
       if ((dirh2 = opendir(homedir)) == NULL)
          {
-         snprintf(OUTPUT,bufsize*2,"Can't open directory %s\n",homedir);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open directory %s\n",homedir);
          CfLog(cfverbose,OUTPUT,"opendir");
          return;
          }
@@ -393,7 +393,7 @@ for (itp = VMOUNTLIST; itp != NULL; itp=itp->next)
             AddSlash(dest);
             if (strlen(ip->destination) < 6)
                {
-               snprintf(OUTPUT,bufsize*2,"Error in home/copy to %s",ip->destination);
+               snprintf(OUTPUT,CF_BUFSIZE*2,"Error in home/copy to %s",ip->destination);
                CfLog(cferror,OUTPUT,"");
                return;
                }
@@ -454,10 +454,10 @@ for (itp = VMOUNTLIST; itp != NULL; itp=itp->next)
 void CheckImage(char *source,char *destination,struct Image *ip)
 
 { CFDIR *dirh;
-  char sourcefile[bufsize];
-  char sourcedir[bufsize];
-  char destdir[bufsize];
-  char destfile[bufsize];
+  char sourcefile[CF_BUFSIZE];
+  char sourcedir[CF_BUFSIZE];
+  char destdir[CF_BUFSIZE];
+  char destfile[CF_BUFSIZE];
   struct stat sourcestatbuf, deststatbuf;
   struct cfdirent *dirp;
   int save_uid, save_gid, found;
@@ -475,7 +475,7 @@ else
  
 if (found == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",source);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",source);
    CfLog(cferror,OUTPUT,"");
    FlushClientCache(ip);
    return;
@@ -508,7 +508,7 @@ if (S_ISDIR(sourcestatbuf.st_mode))
 
    if ((dirh = cfopendir(sourcedir,ip)) == NULL)
       {
-      snprintf(OUTPUT,bufsize*2,"Can't open directory %s\n",sourcedir);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open directory %s\n",sourcedir);
       CfLog(cfverbose,OUTPUT,"opendir");
       FlushClientCache(ip);
       (ip->uid)->uid = save_uid;
@@ -520,7 +520,7 @@ if (S_ISDIR(sourcestatbuf.st_mode))
   
     if (stat(destdir,&deststatbuf) == -1)
        {
-       snprintf(OUTPUT,bufsize*2,"Can't stat directory %s\n",destdir);
+       snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat directory %s\n",destdir);
        CfLog(cferror,OUTPUT,"stat");
        }
     else
@@ -587,7 +587,7 @@ void PurgeFiles(struct Item *filelist,char *directory,struct Item *inclusions)
 { DIR *dirh;
   struct stat statbuf; 
   struct dirent *dirp;
-  char filename[bufsize];
+  char filename[CF_BUFSIZE];
 
 Debug("PurgeFiles(%s)\n",directory);
 
@@ -595,7 +595,7 @@ Debug("PurgeFiles(%s)\n",directory);
 
  if (strlen(directory) < 2)
     {
-    snprintf(OUTPUT,bufsize,"Purge of %s denied -- too dangerous!",directory);
+    snprintf(OUTPUT,CF_BUFSIZE,"Purge of %s denied -- too dangerous!",directory);
     CfLog(cferror,OUTPUT,"");
     return;
     }
@@ -608,7 +608,7 @@ Debug("PurgeFiles(%s)\n",directory);
 
  if ((dirh = opendir(directory)) == NULL)
     {
-    snprintf(OUTPUT,bufsize*2,"Can't open directory %s\n",directory);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open directory %s\n",directory);
     CfLog(cfverbose,OUTPUT,"cfopendir");
     return;
     }
@@ -622,9 +622,9 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    
    if (! IsItemIn(filelist,dirp->d_name))
       {
-      strncpy(filename,directory,bufsize-2);
+      strncpy(filename,directory,CF_BUFSIZE-2);
       AddSlash(filename);
-      strncat(filename,dirp->d_name,bufsize-2);
+      strncat(filename,dirp->d_name,CF_BUFSIZE-2);
       
       Debug("Checking purge %s..\n",filename);
       
@@ -634,12 +634,12 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
          }
       else
          {
-         snprintf(OUTPUT,bufsize*2,"Purging %s in copy dest directory\n",filename);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Purging %s in copy dest directory\n",filename);
          CfLog(cfinform,OUTPUT,"");
          
          if (lstat(filename,&statbuf) == -1)
             {
-            snprintf(OUTPUT,bufsize*2,"Couldn't stat %s while purging\n",filename);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't stat %s while purging\n",filename);
             CfLog(cfverbose,OUTPUT,"stat");
             }
          else if (S_ISDIR(statbuf.st_mode))
@@ -656,7 +656,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
             tp.ignores = NULL;
             
             tpat.filters = NULL;     
-            tpat.recurse = INFINITERECURSE;
+            tpat.recurse = CF_INF_RECURSE;
             tpat.age = 0;
             tpat.size = 0;
             tpat.pattern = strdup("*");
@@ -670,7 +670,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
             tpat.log = 'd';
             tpat.inform = 'd';
             tpat.next = NULL;
-            RecursiveTidySpecialArea(filename,&tp,INFINITERECURSE,&statbuf);
+            RecursiveTidySpecialArea(filename,&tp,CF_INF_RECURSE,&statbuf);
             free(tpat.pattern);
             free(tpat.classes);
             
@@ -678,7 +678,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
             
             if (rmdir(filename) == -1)
                {
-               snprintf(OUTPUT,bufsize*2,"Couldn't remove directory %s while purging\n",filename);
+               snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't remove directory %s while purging\n",filename);
                CfLog(cfverbose,OUTPUT,"rmdir");
                }
             
@@ -686,7 +686,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
             }
          else if (unlink(filename) == -1)
             {
-            snprintf(OUTPUT,bufsize*2,"Couldn't unlink %s while purging\n",filename);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't unlink %s while purging\n",filename);
             CfLog(cfverbose,OUTPUT,"");
             }
          }
@@ -703,7 +703,7 @@ closedir(dirh);
 
 void ImageCopy(char *sourcefile,char *destfile,struct stat sourcestatbuf,struct Image *ip)
 
-{ char linkbuf[bufsize], *lastnode;
+{ char linkbuf[CF_BUFSIZE], *lastnode;
   struct stat deststatbuf;
   struct Link empty;
   struct Item *ptr, *ptr1;
@@ -715,7 +715,7 @@ Debug2("ImageCopy(%s,%s,+%o,-%o)\n",sourcefile,destfile,ip->plus,ip->minus);
 
 if ((strcmp(sourcefile,destfile) == 0) && (strcmp(ip->server,"localhost") == 0))
    {
-   snprintf(OUTPUT,bufsize*2,"Image loop: file/dir %s copies to itself",sourcefile);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Image loop: file/dir %s copies to itself",sourcefile);
    CfLog(cfinform,OUTPUT,"");
    return;
    }
@@ -740,7 +740,7 @@ if ((strcmp(sourcefile,destfile) == 0) && (strcmp(ip->server,"localhost") == 0))
  
 if (succeed)
    {
-   snprintf(OUTPUT,bufsize*2,"Skipping excluded file %s class %s\n",destfile,ip->classes);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Skipping excluded file %s class %s\n",destfile,ip->classes);
    CfLog(cfverbose,OUTPUT,"");
    return;
    }
@@ -781,7 +781,7 @@ if (ip->linktype != 'n')
          
          if (lstat(destfile,&deststatbuf) == -1)
             {
-            snprintf(OUTPUT,bufsize*2,"Can't lstat %s\n",destfile);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Can't lstat %s\n",destfile);
             CfLog(cferror,OUTPUT,"lstat");
             }
          else
@@ -798,7 +798,7 @@ if (ip->linktype != 'n')
     silent = true;
     }
  
- memset(linkbuf,0,bufsize);
+ memset(linkbuf,0,CF_BUFSIZE);
  
  found = lstat(destfile,&deststatbuf);
  
@@ -820,7 +820,7 @@ if (ip->linktype != 'n')
           {
           if (unlink(destfile) == -1)
              {
-             snprintf(OUTPUT,bufsize*2,"Couldn't remove link %s",destfile);
+             snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't remove link %s",destfile);
              CfLog(cferror,OUTPUT,"unlink");
              return;
              }
@@ -830,13 +830,13 @@ if (ip->linktype != 'n')
        } 
     }
  
- if (ip->size != cfnosize)
+ if (ip->size != CF_NOSIZE)
     {
     switch (ip->comp)
        {
        case '<':  if (sourcestatbuf.st_size > ip->size)
           {
-          snprintf(OUTPUT,bufsize*2,"Source file %s is > %d bytes in copy (omitting)\n",sourcefile,ip->size);
+          snprintf(OUTPUT,CF_BUFSIZE*2,"Source file %s is > %d bytes in copy (omitting)\n",sourcefile,ip->size);
           CfLog(cfinform,OUTPUT,"");
           return;
           }
@@ -845,7 +845,7 @@ if (ip->linktype != 'n')
        case '=':
            if (sourcestatbuf.st_size != ip->size)
               {
-              snprintf(OUTPUT,bufsize*2,"Source file %s is not %d bytes in copy (omitting)\n",sourcefile,ip->size);
+              snprintf(OUTPUT,CF_BUFSIZE*2,"Source file %s is not %d bytes in copy (omitting)\n",sourcefile,ip->size);
               CfLog(cfinform,OUTPUT,"");
               return;
               }
@@ -854,7 +854,7 @@ if (ip->linktype != 'n')
        default:
            if (sourcestatbuf.st_size < ip->size)
               {
-              snprintf(OUTPUT,bufsize*2,"Source file %s is < %d bytes in copy (omitting)\n",sourcefile,ip->size);
+              snprintf(OUTPUT,CF_BUFSIZE*2,"Source file %s is < %d bytes in copy (omitting)\n",sourcefile,ip->size);
               CfLog(cfinform,OUTPUT,"");
               return;
               }
@@ -867,16 +867,16 @@ if (ip->linktype != 'n')
     {
     if (strcmp(ip->action,"warn") == 0)
        {
-       snprintf(OUTPUT,bufsize*2,"Image file %s is non-existent\n",destfile);
+       snprintf(OUTPUT,CF_BUFSIZE*2,"Image file %s is non-existent\n",destfile);
        CfLog(cfinform,OUTPUT,"");
-       snprintf(OUTPUT,bufsize*2,"(should be copy of %s)\n",sourcefile);
+       snprintf(OUTPUT,CF_BUFSIZE*2,"(should be copy of %s)\n",sourcefile);
        CfLog(cfinform,OUTPUT,"");
        return;
        }
     
     if (S_ISREG(srcmode))
        {
-       snprintf(OUTPUT,bufsize*2,"%s wasn't at destination (copying)",destfile);
+       snprintf(OUTPUT,CF_BUFSIZE*2,"%s wasn't at destination (copying)",destfile);
        if (DONTDO)
           {
           printf("Need this: %s\n",OUTPUT);
@@ -884,14 +884,14 @@ if (ip->linktype != 'n')
           }
        
        CfLog(cfverbose,OUTPUT,"");
-       snprintf(OUTPUT,bufsize*2,"Copying from %s:%s\n",ip->server,sourcefile);
+       snprintf(OUTPUT,CF_BUFSIZE*2,"Copying from %s:%s\n",ip->server,sourcefile);
        CfLog(cfinform,OUTPUT,"");
        
        if (CopyReg(sourcefile,destfile,sourcestatbuf,deststatbuf,ip))
           {
           if (stat(destfile,&deststatbuf) == -1)
              {
-             snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",destfile);
+             snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",destfile);
              CfLog(cferror,OUTPUT,"stat");
              }
           else
@@ -905,7 +905,7 @@ if (ip->linktype != 'n')
              {
              if (strncmp(ptr->name,destfile,strlen(destfile)+1) == 0) 
                 {
-                snprintf(OUTPUT,bufsize*2,"cfengine: image %s was set to autodefine %s\n",ptr->name,ptr->classes);
+                snprintf(OUTPUT,CF_BUFSIZE*2,"cfengine: image %s was set to autodefine %s\n",ptr->name,ptr->classes);
                 CfLog(cfinform,OUTPUT,"");
                 AddMultipleClasses(ptr->classes);
                 }
@@ -963,7 +963,7 @@ if (ip->linktype != 'n')
           }
        else if (mkfifo (destfile,srcmode))
           {
-          snprintf(OUTPUT,bufsize*2,"Cannot create fifo `%s'", destfile);
+          snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot create fifo `%s'", destfile);
           CfLog(cferror,OUTPUT,"mkfifo");
           return;
           }
@@ -981,7 +981,7 @@ if (ip->linktype != 'n')
              }
           else if (mknod (destfile, srcmode, sourcestatbuf.st_rdev))
              {
-             snprintf(OUTPUT,bufsize*2,"Cannot create special file `%s'",destfile);
+             snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot create special file `%s'",destfile);
              CfLog(cferror,OUTPUT,"mknod");
              return;
              }
@@ -992,15 +992,15 @@ if (ip->linktype != 'n')
 
    if (S_ISLNK(srcmode))
       {
-      if (cfreadlink(sourcefile,linkbuf,bufsize,ip) == -1)
+      if (cfreadlink(sourcefile,linkbuf,CF_BUFSIZE,ip) == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"Can't readlink %s\n",sourcefile);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Can't readlink %s\n",sourcefile);
          CfLog(cferror,OUTPUT,"");
          Debug2("Leaving ImageCopy\n");
          return;
          }
       
-      snprintf(OUTPUT,bufsize*2,"Checking link from %s to %s\n",destfile,linkbuf);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Checking link from %s to %s\n",destfile,linkbuf);
       CfLog(cfverbose,OUTPUT,"");
       
       if (ip->linktype == 'a' && linkbuf[0] != '/')      /* Not absolute path - must fix */
@@ -1008,8 +1008,8 @@ if (ip->linktype != 'n')
          strcpy(VBUFF,sourcefile);
          ChopLastNode(VBUFF);
          AddSlash(VBUFF);
-         strncat(VBUFF,linkbuf,bufsize-1);
-         strncpy(linkbuf,VBUFF,bufsize-1);
+         strncat(VBUFF,linkbuf,CF_BUFSIZE-1);
+         strncpy(linkbuf,VBUFF,CF_BUFSIZE-1);
          }
       
       switch (ip->linktype)
@@ -1039,7 +1039,7 @@ if (ip->linktype != 'n')
          {
          if (lstat(destfile,&deststatbuf) == -1)
             {
-            snprintf(OUTPUT,bufsize*2,"Can't lstat %s\n",destfile);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Can't lstat %s\n",destfile);
             CfLog(cferror,OUTPUT,"lstat");
             }
          else
@@ -1065,16 +1065,16 @@ if (ip->linktype != 'n')
                  }      
               else
                  {
-                 CfLog(cfverbose,"Checksum comparison replaced by ctime: files not regular\n","");
-                 snprintf(OUTPUT,bufsize*2,"%s -> %s\n",sourcefile,destfile);
+                 CfLog(cfinform,"Checksum comparison replaced by ctime: files not regular\n","");
+                 snprintf(OUTPUT,CF_BUFSIZE*2,"%s -> %s\n",sourcefile,destfile);
                  CfLog(cfinform,OUTPUT,"");
                  ok_to_copy = (deststatbuf.st_ctime < sourcestatbuf.st_ctime)||(deststatbuf.st_mtime < sourcestatbuf.st_mtime);
                  }
               
               if (ok_to_copy && strcmp(ip->action,"warn") == 0)
                  { 
-                 snprintf(OUTPUT,bufsize*2,"Image file %s has a wrong MD5 checksum (should be copy of %s)\n",destfile,sourcefile);
-                 CfLog(cferror,OUTPUT,"");
+                 snprintf(OUTPUT,CF_BUFSIZE*2,"Image file %s has a wrong MD5 checksum (should be copy of %s)\n",destfile,sourcefile);
+                 CfLog(cfinform,OUTPUT,"");
                  return;
                  }
               break;
@@ -1087,14 +1087,14 @@ if (ip->linktype != 'n')
               else
                  {
                  CfLog(cfinform,"Byte comparison replaced by ctime: files not regular\n","");
-                 snprintf(OUTPUT,bufsize*2,"%s -> %s\n",sourcefile,destfile);
-                 CfLog(cfverbose,OUTPUT,"");
+                 snprintf(OUTPUT,CF_BUFSIZE*2,"%s -> %s\n",sourcefile,destfile);
+                 CfLog(cfinform,OUTPUT,"");
                  ok_to_copy = (deststatbuf.st_ctime < sourcestatbuf.st_ctime)||(deststatbuf.st_mtime < sourcestatbuf.st_mtime);
                  }
               
               if (ok_to_copy && strcmp(ip->action,"warn") == 0)
                  { 
-                 snprintf(OUTPUT,bufsize*2,"Image file %s has a wrong binary checksum (should be copy of %s)\n",destfile,sourcefile);
+                 snprintf(OUTPUT,CF_BUFSIZE*2,"Image file %s has a wrong binary checksum (should be copy of %s)\n",destfile,sourcefile);
                  CfLog(cferror,OUTPUT,"");
                  return;
                  }
@@ -1105,7 +1105,7 @@ if (ip->linktype != 'n')
               
               if (ok_to_copy && strcmp(ip->action,"warn") == 0)
                  { 
-                 snprintf(OUTPUT,bufsize*2,"Image file %s out of date (should be copy of %s)\n",destfile,sourcefile);
+                 snprintf(OUTPUT,CF_BUFSIZE*2,"Image file %s out of date (should be copy of %s)\n",destfile,sourcefile);
                  CfLog(cferror,OUTPUT,"");
                  return;
                  }
@@ -1116,7 +1116,7 @@ if (ip->linktype != 'n')
               
               if (ok_to_copy && strcmp(ip->action,"warn") == 0)
                  { 
-                      snprintf(OUTPUT,bufsize*2,"Image file %s out of date (should be copy of %s)\n",destfile,sourcefile);
+                      snprintf(OUTPUT,CF_BUFSIZE*2,"Image file %s out of date (should be copy of %s)\n",destfile,sourcefile);
                       CfLog(cferror,OUTPUT,"");
                       return;
                  }
@@ -1146,7 +1146,7 @@ if (ip->linktype != 'n')
        {
        if (S_ISREG(srcmode))
           {
-          snprintf(OUTPUT,bufsize*2,"Update of image %s from master %s on %s",destfile,sourcefile,ip->server);
+          snprintf(OUTPUT,CF_BUFSIZE*2,"Update of image %s from master %s on %s",destfile,sourcefile,ip->server);
           
           if (DONTDO)
              {
@@ -1162,7 +1162,7 @@ if (ip->linktype != 'n')
              {
              if (strncmp(ptr->name,destfile,strlen(destfile)+1) == 0)
                 {
-                snprintf(OUTPUT,bufsize*2,"cfengine: image %s was set to autodefine %s\n",ptr->name,ptr->classes);
+                snprintf(OUTPUT,CF_BUFSIZE*2,"cfengine: image %s was set to autodefine %s\n",ptr->name,ptr->classes);
                 CfLog(cfinform,OUTPUT,"");
                 AddMultipleClasses(ptr->classes);
                 }
@@ -1172,7 +1172,7 @@ if (ip->linktype != 'n')
              {
              if (stat(destfile,&deststatbuf) == -1)
                 {
-                snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",destfile);
+                snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",destfile);
                 CfLog(cferror,OUTPUT,"stat");
                 }
              else
@@ -1218,14 +1218,14 @@ if (ip->linktype != 'n')
        
        if (S_ISLNK(sourcestatbuf.st_mode))
           {
-          if (cfreadlink(sourcefile,linkbuf,bufsize,ip) == -1)
+          if (cfreadlink(sourcefile,linkbuf,CF_BUFSIZE,ip) == -1)
              {
-             snprintf(OUTPUT,bufsize*2,"Can't readlink %s\n",sourcefile);
+             snprintf(OUTPUT,CF_BUFSIZE*2,"Can't readlink %s\n",sourcefile);
              CfLog(cferror,OUTPUT,"");
              return;
              }
           
-          snprintf(OUTPUT,bufsize*2,"Checking link from %s to %s\n",destfile,linkbuf);
+          snprintf(OUTPUT,CF_BUFSIZE*2,"Checking link from %s to %s\n",destfile,linkbuf);
           CfLog(cfverbose,OUTPUT,"");
           
           enforcelinks = ENFORCELINKS;
@@ -1434,7 +1434,7 @@ struct cfdirent *cfreaddir(CFDIR *cfdirh,struct Image *ip)
 { static struct cfdirent dir;
   struct dirent *dirp;
 
-memset(dir.d_name,0,bufsize);
+memset(dir.d_name,0,CF_BUFSIZE);
 
 if (strcmp(ip->server,"localhost") == 0)
    {
@@ -1445,14 +1445,14 @@ if (strcmp(ip->server,"localhost") == 0)
       return NULL;
       }
 
-   strncpy(dir.d_name,dirp->d_name,bufsize-1);
+   strncpy(dir.d_name,dirp->d_name,CF_BUFSIZE-1);
    return &dir;
    }
 else
    {
    if (cfdirh->cf_listpos != NULL)
       {
-      strncpy(dir.d_name,(cfdirh->cf_listpos)->name,bufsize);
+      strncpy(dir.d_name,(cfdirh->cf_listpos)->name,CF_BUFSIZE);
       cfdirh->cf_listpos = cfdirh->cf_listpos->next;
       return &dir;
       }
@@ -1484,8 +1484,8 @@ free((char *)dirh);
 
 int CopyReg(char *source,char *dest,struct stat sstat,struct stat dstat,struct Image *ip)
 
-{ char backup[bufsize];
-  char new[bufsize], *linkable;
+{ char backup[CF_BUFSIZE];
+  char new[CF_BUFSIZE], *linkable;
   int remote = false, silent, backupisdir=false, backupok=false;
   struct stat s;
 #ifdef HAVE_UTIME_H
@@ -1549,14 +1549,14 @@ if (strstr(dest, _PATH_RSRCFORKSPEC))
    { /* Need to munge the "new" name */
    rsrcfork = 1;
    
-   tmpstr = malloc(bufsize);
+   tmpstr = malloc(CF_BUFSIZE);
    
    /* Drop _PATH_RSRCFORKSPEC */
-   strncpy(tmpstr, dest, bufsize);
+   strncpy(tmpstr, dest, CF_BUFSIZE);
    forkpointer = strstr(tmpstr, _PATH_RSRCFORKSPEC);
    *forkpointer = '\0';
    
-   strncpy(new, tmpstr, bufsize);
+   strncpy(new, tmpstr, CF_BUFSIZE);
    
    free(tmpstr);
    }
@@ -1610,7 +1610,7 @@ Debug("CopyReg succeeded in copying to %s to %s\n",source,new);
 
 if (IMAGEBACKUP != 'n')
    {
-   char stamp[bufsize];
+   char stamp[CF_BUFSIZE];
    time_t STAMPNOW;
    STAMPNOW = time((time_t *)NULL);
    
@@ -1628,7 +1628,7 @@ if (IMAGEBACKUP != 'n')
       strcat(backup,stamp);
       }
 
-   /* rely on prior BufferOverflow() and on strlen(CF_SAVED) < buffer_margin */
+   /* rely on prior BufferOverflow() and on strlen(CF_SAVED) < CF_BUFFERMARGIN */
    strcat(backup,CF_SAVED);
 
    if (IsItemIn(VREPOSLIST,backup))
@@ -1672,14 +1672,14 @@ if (IMAGEBACKUP != 'n')
  
  if (stat(new,&dstat) == -1)
     {
-    snprintf(OUTPUT,bufsize*2,"Can't stat new file %s\n",new);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat new file %s\n",new);
     CfLog(cferror,OUTPUT,"stat");
     return false;
     }
  
  if (dstat.st_size != sstat.st_size)
     {
-    snprintf(OUTPUT,bufsize*2,"WARNING: new file %s seems to have been corrupted in transit (sizes %d and %d), aborting!\n",new, (int) dstat.st_size, (int) sstat.st_size);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"WARNING: new file %s seems to have been corrupted in transit (sizes %d and %d), aborting!\n",new, (int) dstat.st_size, (int) sstat.st_size);
     CfLog(cfverbose,OUTPUT,"");
     if (backupok)
        {
@@ -1693,7 +1693,7 @@ if (ip->verify == 'y')
    Verbose("Final verification of transmission.\n");
    if (CompareCheckSums(source,new,ip,&sstat,&dstat))
       {
-      snprintf(OUTPUT,bufsize*2,"WARNING: new file %s seems to have been corrupted in transit, aborting!\n",new);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"WARNING: new file %s seems to have been corrupted in transit, aborting!\n",new);
       CfLog(cfverbose,OUTPUT,"");
       if (backupok)
          {
@@ -1711,20 +1711,20 @@ if (rsrcfork)
    
    if (rsrcrd == -1 || rsrcwd == -1)
       {
-      snprintf(OUTPUT, bufsize, "Open of rsrcrd/rsrcwd failed\n");
+      snprintf(OUTPUT, CF_BUFSIZE, "Open of rsrcrd/rsrcwd failed\n");
       CfLog(cfinform,OUTPUT,"open");
       close(rsrcrd);
       close(rsrcwd);
       return(false);
       }
    
-   rsrcbuf = malloc(bufsize);
+   rsrcbuf = malloc(CF_BUFSIZE);
    
    rsrcbytesr = 0;
    
    while(1)
       {
-      rsrcbytesr = read(rsrcrd, rsrcbuf, bufsize);
+      rsrcbytesr = read(rsrcrd, rsrcbuf, CF_BUFSIZE);
       
       if (rsrcbytesr == -1)
          { /* Ck error */
@@ -1734,7 +1734,7 @@ if (rsrcfork)
             }
          else
             {
-            snprintf(OUTPUT, bufsize, "Read of rsrcrd failed\n");
+            snprintf(OUTPUT, CF_BUFSIZE, "Read of rsrcrd failed\n");
             CfLog(cfinform,OUTPUT,"read");
             close(rsrcrd);
             close(rsrcwd);
@@ -1770,7 +1770,7 @@ if (rsrcfork)
                 }
             else
                {
-               snprintf(OUTPUT, bufsize, "Write of rsrcwd failed\n");
+               snprintf(OUTPUT, CF_BUFSIZE, "Write of rsrcwd failed\n");
                CfLog(cfinform,OUTPUT,"write");
                
                close(rsrcrd);
@@ -1792,7 +1792,7 @@ if (rsrcfork)
     
     if (rename(new,dest) == -1)
        {
-       snprintf(OUTPUT,bufsize*2,"Problem: could not install copy file as %s, directory in the way?\n",dest);
+       snprintf(OUTPUT,CF_BUFSIZE*2,"Problem: could not install copy file as %s, directory in the way?\n",dest);
        CfLog(cferror,OUTPUT,"rename");
        if (backupok)
           {
@@ -1807,7 +1807,7 @@ if (rsrcfork)
  
  if ((IMAGEBACKUP != 'n') && backupisdir)
     {
-    snprintf(OUTPUT,bufsize,"Cannot move a directory to repository, leaving at %s",backup);
+    snprintf(OUTPUT,CF_BUFSIZE,"Cannot move a directory to repository, leaving at %s",backup);
     CfLog(cfinform,OUTPUT,"");
     }
  else if ((IMAGEBACKUP != 'n') && Repository(backup,ip->repository))

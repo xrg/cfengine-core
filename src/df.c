@@ -66,30 +66,30 @@ int GetDiskUsage (char *file,enum cfsizes type)
 #if defined ULTRIX
     if (getmnt (NULL, &buf, sizeof (struct fs_data), STAT_ONE, file) == -1)
        {
-       snprintf(OUTPUT,bufsize,"Couldn't get filesystem info for %s\n",file);
+       snprintf(OUTPUT,CF_BUFSIZE,"Couldn't get filesystem info for %s\n",file);
        CfLog(cferror,OUTPUT,"");
-       return cfinfinity;
+       return CF_INFINITY;
        }
 #elif defined SOLARIS || defined OSF || defined UNIXWARE 
     if (statvfs (file, &buf) != 0)
        {
-       snprintf(OUTPUT,bufsize,"Couldn't get filesystem info for %s\n",file);
+       snprintf(OUTPUT,CF_BUFSIZE,"Couldn't get filesystem info for %s\n",file);
        CfLog(cferror,OUTPUT,"");
-       return cfinfinity;
+       return CF_INFINITY;
        }
 #elif defined IRIX || defined SCO || defined CFCRAY || defined UNIXWARE
     if (statfs (file, &buf, sizeof (struct statfs), 0) != 0)
        {
-       snprintf(OUTPUT,bufsize,"Couldn't get filesystem info for %s\n",file);
+       snprintf(OUTPUT,CF_BUFSIZE,"Couldn't get filesystem info for %s\n",file);
        CfLog(cferror,OUTPUT,"");
-       return cfinfinity;
+       return CF_INFINITY;
        }
 #else
     if (statfs (file, &buf) != 0)
        {
-       snprintf(OUTPUT,bufsize,"Couldn't get filesystem info for %s\n",file);
+       snprintf(OUTPUT,CF_BUFSIZE,"Couldn't get filesystem info for %s\n",file);
        CfLog(cferror,OUTPUT,"");
-       return cfinfinity;
+       return CF_INFINITY;
        }
 #endif
 
@@ -118,9 +118,9 @@ int GetDiskUsage (char *file,enum cfsizes type)
 #endif
 
 #if defined AIX || defined SCO || defined CFCRAY || defined LINUX
-    total = buf.f_blocks * (buf.f_bsize / blocksize);
-    used = (buf.f_blocks - buf.f_bfree) * (buf.f_bsize / blocksize);
-    avail = buf.f_bfree * (buf.f_bsize / blocksize);
+    total = buf.f_blocks * ((float)buf.f_bsize / blocksize);
+    used = (buf.f_blocks - buf.f_bfree) * ((float)buf.f_bsize / blocksize);
+    avail = buf.f_bfree * ((float)buf.f_bsize / blocksize);
 #endif
 
 #if defined IRIX

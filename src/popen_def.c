@@ -48,7 +48,7 @@ extern int    MAXFD; /* Max number of simultaneous pipes */
 
 int cfpclose_def(FILE *pp,char *defines,char *elsedef)
 
-{ int fd, status;
+{ int fd, status, wait_result;
   pid_t pid;
 
 Debug("cfpclose_def(pp)\n");
@@ -97,34 +97,38 @@ else
 return status; 
  
 #else
-      
- if (wait(&status) != pid)
+
+ while ((wait_result = wait(&status)) != pid)
+    {
+    if (wait_result <= 0)
+       {
+       snprintf(OUTPUT,CF_BUFSIZE,"Wait for child failed\n");
+       CfLog(cfinform,OUTPUT,"wait");
+       return -1;
+       }
+    }
+ 
+ if (WIFSIGNALED(status))
     {
     return -1;
     }
+ 
+ if (! WIFEXITED(status))
+    {
+    return -1;
+    }
+ 
+ if (WEXITSTATUS(status) == 0)
+    {
+    AddMultipleClasses(defines);
+    }
  else
     {
-    if (WIFSIGNALED(status))
-       {
-       return -1;
-       }
-    
-    if (! WIFEXITED(status))
-       {
-       return -1;
-       }
-
-    if (WEXITSTATUS(status) == 0)
-       {
-       AddMultipleClasses(defines);
-       }
-    else
-       {
-       AddMultipleClasses(elsedef);
-       }
-
-    return (WEXITSTATUS(status));
+    AddMultipleClasses(elsedef);
     }
+ 
+ return (WEXITSTATUS(status));
+
 #endif
 }
 

@@ -40,9 +40,9 @@ int Repository(char *file,char *repository)
 
  /* Returns true if the file was backup up and false if not */
 
-{ char buffer[bufsize];
-  char localrepository[bufsize]; 
-  char node[bufsize];
+{ char buffer[CF_BUFSIZE];
+  char localrepository[CF_BUFSIZE]; 
+  char node[CF_BUFSIZE];
   struct stat sstat, dstat;
   char *sp;
   struct Image dummy;
@@ -50,7 +50,7 @@ int Repository(char *file,char *repository)
 
 if (repository == NULL)
    {
-   strncpy(localrepository,VREPOSITORY,bufsize);
+   strncpy(localrepository,VREPOSITORY,CF_BUFSIZE);
    }
 else
    {
@@ -59,7 +59,7 @@ else
       return false;
       }
    
-   strncpy(localrepository,repository,bufsize);
+   strncpy(localrepository,repository,CF_BUFSIZE);
    }
 
 if (IMAGEBACKUP == 'n')
@@ -69,9 +69,9 @@ if (IMAGEBACKUP == 'n')
 
 if (IsItemIn(VREPOSLIST,file))
    {
-   snprintf(OUTPUT,bufsize,"The file %s has already been moved to the repository once.",file);
+   snprintf(OUTPUT,CF_BUFSIZE,"The file %s has already been moved to the repository once.",file);
    CfLog(cfinform,OUTPUT,"");
-   snprintf(OUTPUT,bufsize,"Multiple update will cause loss of backup. Use backup=false in copy to override.");
+   snprintf(OUTPUT,CF_BUFSIZE,"Multiple update will cause loss of backup. Use backup=false in copy to override.");
    CfLog(cfinform,OUTPUT,"");
    return true;
    }
@@ -97,7 +97,7 @@ for (sp = node; *sp != '\0'; sp++)
       }
    }
 
-strncpy(buffer,localrepository,bufsize-2);
+strncpy(buffer,localrepository,CF_BUFSIZE-2);
 AddSlash(buffer);
 
 if (BufferOverflow(buffer,node))
@@ -110,7 +110,7 @@ strcat(buffer,node);
 
 if (!MakeDirectoriesFor(buffer,'y'))
    {
-   snprintf(OUTPUT,bufsize,"Repository (%s),testfile (%s)",localrepository,buffer);
+   snprintf(OUTPUT,CF_BUFSIZE,"Repository (%s),testfile (%s)",localrepository,buffer);
    }
 
 if (stat(file,&sstat) == -1)

@@ -69,6 +69,7 @@ cfagent_SOURCES =							\
 	strategies.c                         				\
 	granules.c							\
 	methods.c							\
+	dtypes.c							\
 	state.c								\
 	package.c
 
@@ -77,6 +78,7 @@ cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 cfservd_SOURCES =							\
 	cfservd.c							\
 	parse.c								\
+	dtypes.c							\
 	functions.c							\
 	install.c							\
 	sockaddr.c							\
@@ -198,6 +200,7 @@ cfenvd_SOURCES =							\
 	popen.c								\
 	patches.c							\
 	locks.c								\
+	dtypes.c							\
 	state.c								\
 	init.c
 

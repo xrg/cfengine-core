@@ -45,7 +45,7 @@ void RotateFiles(char *name,int number)
 { int i, fd;
   struct Image dummy;
   struct stat statbuf;
-  char filename[bufsize];
+  char filename[CF_BUFSIZE];
   
 if (stat(name,&statbuf) == -1)
    {
@@ -61,40 +61,40 @@ for (i = number-1; i > 0; i--)
       return;
       }
    
-   snprintf(filename,bufsize,"%s.%d",name,i);
-   snprintf(VBUFF,bufsize,"%s.%d",name, i+1);
+   snprintf(filename,CF_BUFSIZE,"%s.%d",name,i);
+   snprintf(VBUFF,CF_BUFSIZE,"%s.%d",name, i+1);
    
    if (rename(filename,VBUFF) == -1)
       {
       Debug("Rename failed in RotateFiles %s -> %s\n",name,filename);
       }
 
-   snprintf(filename,bufsize,"%s.%d.gz",name,i);
-   snprintf(VBUFF,bufsize,"%s.%d.gz",name, i+1);
+   snprintf(filename,CF_BUFSIZE,"%s.%d.gz",name,i);
+   snprintf(VBUFF,CF_BUFSIZE,"%s.%d.gz",name, i+1);
    
    if (rename(filename,VBUFF) == -1)
       {
       Debug("Rename failed in RotateFiles %s -> %s\n",name,filename);
       }
 
-   snprintf(filename,bufsize,"%s.%d.Z",name,i);
-   snprintf(VBUFF,bufsize,"%s.%d.Z",name, i+1);
+   snprintf(filename,CF_BUFSIZE,"%s.%d.Z",name,i);
+   snprintf(VBUFF,CF_BUFSIZE,"%s.%d.Z",name, i+1);
    
    if (rename(filename,VBUFF) == -1)
       {
       Debug("Rename failed in RotateFiles %s -> %s\n",name,filename);
       }   
 
-   snprintf(filename,bufsize,"%s.%d.bz",name,i);
-   snprintf(VBUFF,bufsize,"%s.%d.bz",name, i+1);
+   snprintf(filename,CF_BUFSIZE,"%s.%d.bz",name,i);
+   snprintf(VBUFF,CF_BUFSIZE,"%s.%d.bz",name, i+1);
    
    if (rename(filename,VBUFF) == -1)
       {
       Debug("Rename failed in RotateFiles %s -> %s\n",name,filename);
       }   
 
-   snprintf(filename,bufsize,"%s.%d.bz2",name,i);
-   snprintf(VBUFF,bufsize,"%s.%d.bz2",name, i+1);
+   snprintf(filename,CF_BUFSIZE,"%s.%d.bz2",name,i);
+   snprintf(VBUFF,CF_BUFSIZE,"%s.%d.bz2",name, i+1);
    
    if (rename(filename,VBUFF) == -1)
       {
@@ -103,7 +103,7 @@ for (i = number-1; i > 0; i--)
 
    }
 
-snprintf(VBUFF,bufsize,"%s.1",name);
+snprintf(VBUFF,CF_BUFSIZE,"%s.1",name);
 
 dummy.server = "localhost";
 dummy.inode_cache = NULL;
@@ -123,7 +123,7 @@ chmod(name,0600);                 /* File must be writable to empty ..*/
  
 if ((fd = creat(name,statbuf.st_mode)) == -1)
    {
-   snprintf(OUTPUT,bufsize,"Failed to create new %s in disable(rotate)\n",name);
+   snprintf(OUTPUT,CF_BUFSIZE,"Failed to create new %s in disable(rotate)\n",name);
    CfLog(cferror,OUTPUT,"creat");
    }
 else

@@ -149,7 +149,7 @@ void HandleAssociation ARGLIST((char *args,char *value));
 void OneArg ARGLIST((char *args,char *arg1));
 void TwoArgs ARGLIST((char *args,char *arg1,char *arg2));
 void ThreeArgs ARGLIST((char *args,char *arg1,char *arg2,char *arg3));
-int FunctionArgs ARGLIST((char *args,char argv[][bufsize],int number));
+int FunctionArgs ARGLIST((char *args,char argv[][CF_BUFSIZE],int number));
 void FiveArgs ARGLIST((char *args,char *arg1,char *arg2,char *arg3, char *arg4,char *arg5));
 int IsSocketType ARGLIST((char *s));
 int IsTCPType ARGLIST((char *s));
@@ -350,6 +350,7 @@ char *ASUniqueName ARGLIST((char *str));
 char *ReadLastNode ARGLIST((char *str));
 int MakeDirectoriesFor ARGLIST((char *file, char force));
 int BufferOverflow ARGLIST((char *str1, char *str2));
+int ExpandOverflow ARGLIST((char *str1, char *str2));
 void Chop ARGLIST((char *str));
 int CompressPath ARGLIST((char *dest, char *src));
 char ToLower  ARGLIST((char ch));
@@ -472,7 +473,7 @@ enum editnames EditActionsToCode ARGLIST((char *edit));
 void AppendInterface ARGLIST((char *ifname, char *ip, char *netmask, char *broadcast));
 void AppendScript ARGLIST((char *item, int timeout, char useshell, char *uidname, char *gidname));
 void AppendDisable ARGLIST((char *path, char *type, short int rotate, char comp, int size));
-void InstallTidyItem  ARGLIST((char *path, char *wild, int rec, short int age, char travlinks, int tidysize, char type, char ldirs, short int tidydirs, char *classes));
+void InstallTidyItem  ARGLIST((char *path, char *wild, int rec, short int age, char travlinks, int tidysize, char type, char ldirs, char tidydirs, char *classes));
 void InstallMakePath ARGLIST((char *path, mode_t plus, mode_t minus, char *uidnames, char *gidnames));
 void HandleTravLinks ARGLIST((char *value));
 void HandleTidySize ARGLIST((char *value));
@@ -520,7 +521,7 @@ void HandleElseDefine ARGLIST((char *value));
 void HandleFailover ARGLIST((char *value));
 struct UidList *MakeUidList ARGLIST((char *uidnames));
 struct GidList *MakeGidList ARGLIST((char *gidnames));
-void InstallTidyPath ARGLIST((char *path, char *wild, int rec, short int age, char travlinks, int tidysize, char type, char ldirs, short int tidydirs, char *classes));
+void InstallTidyPath ARGLIST((char *path, char *wild, int rec, short int age, char travlinks, int tidysize, char type, char ldirs,char tidydirs, char *classes));
 void AddTidyItem ARGLIST((char *path, char *wild, int rec, short int age, char travlinks, int tidysize, char type, char ldirs, short int tidydirs, char *classes));
 int TidyPathExists ARGLIST((char *path));
 void AddSimpleUidItem ARGLIST((struct UidList **uidlist, int uid, char *uidname));
@@ -529,7 +530,7 @@ void InstallAuthPath ARGLIST((char *path, char *hostname, char *classes, struct 
 void AddAuthHostItem ARGLIST((char *path, char *attribute, char *classes, struct Auth **list));
 int AuthPathExists ARGLIST((char *path, struct Auth *list));
 int HandleAdmitAttribute ARGLIST((struct Auth *ptr, char *attribute));
-void PrependTidy ARGLIST((struct TidyPattern **list, char *wild, int rec, short int age, char travlinks, int tidysize, char type, char ldirs, short int tidydirs, char *classes));
+void PrependTidy ARGLIST((struct TidyPattern **list, char *wild, int rec, short int age, char travlinks, int tidysize, char type, char ldirs,char tidydirs, char *classes));
 void HandleShortSwitch ARGLIST((char *name,char *value,short *flag));
 void HandleCharSwitch ARGLIST((char *name,char *value,char *flag));
 void HandleIntSwitch ARGLIST((char *name,char *value,int *flag,int min, int max));
@@ -850,7 +851,7 @@ FILE *cfpopen_sh ARGLIST((char *command, char *type));
 FILE *cfpopen_shsetuid ARGLIST((char *command, char *type, uid_t uid, gid_t gid, char *chdirv, char *chrootv));
 int cfpclose ARGLIST((FILE *pp));
 int cfpclose_def ARGLIST((FILE *pp, char *defines, char *elsedef));
-int SplitCommand ARGLIST((char *comm, char (*arg)[bufsize]));
+int SplitCommand ARGLIST((char *comm, char (*arg)[CF_BUFSIZE]));
 
 /* process.c */
 
@@ -929,8 +930,8 @@ void DePort ARGLIST((char *tcpbuffer));
 int RecursiveHomeTidy ARGLIST((char *name, int level,struct stat *sb));
 int TidyHomeFile ARGLIST((char *path, char *name,struct stat *statbuf, int level));
 int RecursiveTidySpecialArea ARGLIST((char *name, struct Tidy *tp, int maxrecurse, struct stat *sb));
-void TidyParticularFile ARGLIST((char *path, char *name, struct Tidy *tp, struct stat *statbuf, int is_dir, int level));
-void DoTidyFile ARGLIST((char *path, char *name, struct TidyPattern *tlp, struct stat *statbuf, short int logging_this, int isdir));
+void TidyParticularFile ARGLIST((char *path, char *name, struct Tidy *tp, struct stat *statbuf, int is_dir, int level,int usepath));
+void DoTidyFile ARGLIST((char *path, char *name, struct TidyPattern *tlp, struct stat *statbuf, short int logging_this, int isdir,int usepath));
 void DeleteTidyList ARGLIST((struct TidyPattern *list));
 
 /* varstring.c */
@@ -938,10 +939,10 @@ void DeleteTidyList ARGLIST((struct TidyPattern *list));
 int TrueVar ARGLIST((char *var));
 int CheckVarID ARGLIST((char *var));
 int IsVarString ARGLIST((char *str));
-char ExpandVarstring ARGLIST((char *string, char *buffer, char *bserver));
+int ExpandVarstring ARGLIST((char *string,char buffer[CF_EXPANDSIZE], char *bserver));
 char *ExtractInnerVarString ARGLIST((char *string, char *substr));
 char *ExtractOuterVarString ARGLIST((char *string, char *substr));
-char ExpandVarbinserv ARGLIST((char *string, char *buffer, char *bserver));
+int ExpandVarbinserv ARGLIST((char *string, char *buffer, char *bserver));
 enum vnames ScanVariable ARGLIST((char *name));
 struct Item *SplitVarstring ARGLIST((char *varstring, char sep));
 

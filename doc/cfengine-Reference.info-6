@@ -1,4 +1,4 @@
-This is cfengine-Reference.info, produced by makeinfo version 4.3 from
+This is cfengine-Reference.info, produced by makeinfo version 4.5 from
 cfengine-Reference.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -198,6 +198,7 @@ it in memory. The process table is only re-consulted if
      then signals are only sent to the processes if the matches
      criteria fail.
 
+
    Here is an example script which sends the hang-up signal to cron,
 forcing it to reread its crontab files:
 
@@ -369,6 +370,7 @@ Associated variables in control are `DefaultPkgMgr' and `RPMcommand'.
           want, and specify it.  It may take a few extra extra seconds
           to check, but it will save you lots of headaches later.
 
+
 `define'
      Specifies the list of classes to define if the specified package is
      installed.
@@ -376,6 +378,7 @@ Associated variables in control are `DefaultPkgMgr' and `RPMcommand'.
 `elsedefine'
      Specifies the list of classes to define if the specified package
      is not installed.
+
 
    Example:
 
@@ -553,7 +556,7 @@ shell commands from this section.
                umask=OCTAL NUMBER
                owner=UID
                group=GID
-               define=CLASS-LIST
+     
                background=false/TRUE
                chdir=DIRECTORY
                chroot=DIRECTORY
@@ -564,6 +567,9 @@ shell commands from this section.
      
                ifelapsed=MINS
                expireafter=MINS
+     
+               define=CLASS-LIST
+               elsedefine=CLASS-LIST
 
 The user and group ID's of the process can be set to restrict the
 permissions of the shellcommand to another user only if cfengine is

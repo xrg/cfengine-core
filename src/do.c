@@ -39,7 +39,7 @@ void GetHomeInfo()
 { DIR *dirh;
   struct dirent *dirp;
   struct Item *ip;
-  char path[bufsize],mountitem[bufsize];
+  char path[CF_BUFSIZE],mountitem[CF_BUFSIZE];
 
 if (!IsPrivileged())                            
    {
@@ -62,9 +62,9 @@ for (ip = VMOUNTLIST; ip != NULL; ip=ip->next)
    
    if ((dirh = opendir(ip->name)) == NULL)
       {
-      snprintf(OUTPUT,bufsize*2,"INFO: Host %s seems to have no (additional) local disks except the OS\n",VDEFAULTBINSERVER.name);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"INFO: Host %s seems to have no (additional) local disks except the OS\n",VDEFAULTBINSERVER.name);
       CfLog(cfverbose,OUTPUT,"");
-      snprintf(OUTPUT,bufsize*2,"      mounted under %s\n\n",ip->name);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"      mounted under %s\n\n",ip->name);
       CfLog(cfverbose,OUTPUT,"");
       return;
       }
@@ -82,23 +82,23 @@ for (ip = VMOUNTLIST; ip != NULL; ip=ip->next)
 
       if (IsHomeDir(VBUFF))
          {
-         snprintf(OUTPUT,bufsize*2,"Host defines a home directory %s\n",VBUFF);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Host defines a home directory %s\n",VBUFF);
   CfLog(cfverbose,OUTPUT,"");
          }
       else
          {
-         snprintf(OUTPUT,bufsize*2,"Host defines a potential mount point %s\n",VBUFF);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Host defines a potential mount point %s\n",VBUFF);
   CfLog(cfverbose,OUTPUT,"");
          }
 
-      snprintf(path,bufsize,"%s%s",ip->name,dirp->d_name);
-      snprintf(mountitem,bufsize,"%s:%s",VDEFAULTBINSERVER.name,path);
+      snprintf(path,CF_BUFSIZE,"%s%s",ip->name,dirp->d_name);
+      snprintf(mountitem,CF_BUFSIZE,"%s:%s",VDEFAULTBINSERVER.name,path);
 
       if (! IsItemIn(VMOUNTED,mountitem))
          {
          if ( MOUNTCHECK && ! RequiredFileSystemOkay(path) && VERBOSE)
             {
-            snprintf(OUTPUT,bufsize*2,"Found a mountpoint %s but there was\n",path);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Found a mountpoint %s but there was\n",path);
      CfLog(cfinform,OUTPUT,"");
             CfLog(cfinform,"nothing mounted on it.\n\n","");
             }
@@ -113,8 +113,8 @@ for (ip = VMOUNTLIST; ip != NULL; ip=ip->next)
 void GetMountInfo ()  /* This is, in fact, the most portable way to read the mount info! */
                       /* Depressing, isn't it? */
 { FILE *pp;
-  char buf1[bufsize],buf2[bufsize],buf3[bufsize];
-  char host[maxvarsize], mounton[bufsize];
+  char buf1[CF_BUFSIZE],buf2[CF_BUFSIZE],buf3[CF_BUFSIZE];
+  char host[CF_MAXVARSIZE], mounton[CF_BUFSIZE];
   int i;
 
 if (!GetLock(ASUniqueName("mountinfo"),"",1,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
@@ -137,7 +137,7 @@ alarm(RPCTIMEOUT);
 
 if ((pp = cfpopen(buf1,"r")) == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"%s: Can't open %s\n",VPREFIX,buf1);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"%s: Can't open %s\n",VPREFIX,buf1);
    CfLog(cferror,OUTPUT,"popen");
    return;
    }
@@ -153,7 +153,7 @@ do
       break;
       }
    
-   ReadLine(VBUFF,bufsize,pp);
+   ReadLine(VBUFF,CF_BUFSIZE,pp);
 
    if (ferror(pp))  /* abortable */
       {
@@ -196,7 +196,7 @@ do
          {
          CfLog(cfinform,"There was an RPC timeout. Aborting mount operations.\n","");
          CfLog(cfinform,"Session failed while trying to talk to remote host\n","");
-         snprintf(OUTPUT,bufsize*2,"%s\n",VBUFF);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"%s\n",VBUFF);
   CfLog(cfinform,OUTPUT,"");
          }
 
@@ -303,7 +303,7 @@ void MakePaths()
 
 { struct File *ptr;
   struct Item *ip1,*ip2;
-  char pathbuff[bufsize],basename[bufsize];
+  char pathbuff[CF_BUFSIZE],basename[CF_EXPANDSIZE];
   
 for (ptr = VMAKEPATH; ptr != NULL; ptr=ptr->next)
    {
@@ -327,7 +327,7 @@ for (ptr = VMAKEPATH; ptr != NULL; ptr=ptr->next)
       {
       if (*(ptr->path+4) != '/')
          {
-         snprintf(OUTPUT,bufsize*2,"Illegal use of home in directories: %s\n",ptr->path);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Illegal use of home in directories: %s\n",ptr->path);
          CfLog(cferror,OUTPUT,"");
          continue;
          }
@@ -374,7 +374,7 @@ void MakeChildLinks()     /* <binserver> should expand to a best fit filesys */
 { struct Link *lp;
   struct Item *ip;
   int matched,varstring;
-  char to[bufsize],from[bufsize],path[bufsize];
+  char to[CF_EXPANDSIZE],from[CF_EXPANDSIZE],path[CF_EXPANDSIZE];
   struct stat statbuf;
   short saveenforce;
   short savesilent;
@@ -402,7 +402,7 @@ for (lp = VCHLINK; lp != NULL; lp = lp->next)
       lp->done = 'y';
       }
 
-   snprintf(VBUFF,bufsize,"%.50s.%.50s",lp->from,lp->to); /* Unique ID for copy locking */
+   snprintf(VBUFF,CF_BUFSIZE,"%.50s.%.50s",lp->from,lp->to); /* Unique ID for copy locking */
 
    if (!GetLock(ASUniqueName("link"),CanonifyName(VBUFF),lp->ifelapsed,lp->expireafter,VUQNAME,CFSTARTTIME))
       {
@@ -430,7 +430,7 @@ for (lp = VCHLINK; lp != NULL; lp = lp->next)
          {
          if (stat(from,&statbuf) == -1)
             {
-            snprintf(OUTPUT,bufsize*2,"Makechildlinks() can't stat %s\n",from);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Makechildlinks() can't stat %s\n",from);
      CfLog(cferror,OUTPUT,"stat");
      ResetOutputRoute('d','d');
             continue;
@@ -451,9 +451,9 @@ for (lp = VCHLINK; lp != NULL; lp = lp->next)
          }
       else if (! varstring)
          {
-         snprintf(OUTPUT,bufsize*2,"Error while trying to childlink %s -> %s\n",from,path);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Error while trying to childlink %s -> %s\n",from,path);
   CfLog(cferror,OUTPUT,"");
-         snprintf(OUTPUT,bufsize*2,"The directory %s does not exist. Can't link.\n",path);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"The directory %s does not exist. Can't link.\n",path);
   CfLog(cferror,OUTPUT,"");  
          }
 
@@ -470,7 +470,7 @@ for (lp = VCHLINK; lp != NULL; lp = lp->next)
 
    if (matched == false && ip == NULL)
       {
-      snprintf(OUTPUT,bufsize*2,"ChildLink didn't find any server to match %s -> %s\n",from,to);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"ChildLink didn't find any server to match %s -> %s\n",from,to);
       CfLog(cferror,OUTPUT,"");
       }
 
@@ -483,7 +483,7 @@ for (lp = VCHLINK; lp != NULL; lp = lp->next)
 void MakeLinks()     /* <binserver> should expand to a best fit filesys */
 
 { struct Link *lp;
-  char from[bufsize],to[bufsize],path[bufsize];
+  char from[CF_EXPANDSIZE],to[CF_EXPANDSIZE],path[CF_EXPANDSIZE];
   struct Item *ip;
   int matched,varstring;
   short saveenforce;
@@ -513,7 +513,7 @@ for (lp = VLINK; lp != NULL; lp = lp->next)
       lp->done = 'y';
       }
 
-   snprintf(VBUFF,bufsize,"%.50s.%.50s",lp->from,lp->to); /* Unique ID for copy locking */
+   snprintf(VBUFF,CF_BUFSIZE,"%.50s.%.50s",lp->from,lp->to); /* Unique ID for copy locking */
    
    if (!GetLock(ASUniqueName("link"),CanonifyName(VBUFF),lp->ifelapsed,lp->expireafter,VUQNAME,CFSTARTTIME))
       {
@@ -565,7 +565,7 @@ for (lp = VLINK; lp != NULL; lp = lp->next)
          }
       else if (! varstring)
          {
-         snprintf(OUTPUT,bufsize*2,"Error while trying to link %s -> %s\n",from,path);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Error while trying to link %s -> %s\n",from,path);
   CfLog(cfinform,OUTPUT,"");
          }
 
@@ -582,7 +582,7 @@ for (lp = VLINK; lp != NULL; lp = lp->next)
    
    if (matched == false && ip == NULL)
       {
-      snprintf(OUTPUT,bufsize*2,"Links didn't find any file to match %s -> %s\n",from,to);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Links didn't find any file to match %s -> %s\n",from,to);
       CfLog(cferror,OUTPUT,"");
       }
    
@@ -594,10 +594,10 @@ for (lp = VLINK; lp != NULL; lp = lp->next)
 
 void MailCheck()
 
-{ char mailserver[bufsize];
-  char mailhost[maxvarsize];
-  char rmailpath[maxvarsize];
-  char lmailpath[maxvarsize];
+{ char mailserver[CF_BUFSIZE];
+  char mailhost[CF_MAXVARSIZE];
+  char rmailpath[CF_MAXVARSIZE];
+  char lmailpath[CF_MAXVARSIZE];
 
 
 if (!GetLock("Mailcheck",CanonifyName(VFSTAB[VSYSTEMHARDCLASS]),0,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
@@ -633,7 +633,7 @@ if (strcmp(VDEFAULTBINSERVER.name,mailhost) == 0) /* Is this the mailserver ?*/
    return;
    }
 
-snprintf(lmailpath,bufsize,"%s:%s",mailhost,VMAILDIR[VSYSTEMHARDCLASS]);
+snprintf(lmailpath,CF_BUFSIZE,"%s:%s",mailhost,VMAILDIR[VSYSTEMHARDCLASS]);
 
 
 if (IsItemIn(VMOUNTED,lmailpath))                             /* Remote file system mounted on */
@@ -701,7 +701,7 @@ if (always || (strncmp(VMAILSERVER,VFQNAME,strlen(VMAILSERVER)) != 0))
 
    if ((dirh = opendir(spooldir)) == NULL)
       {
-      snprintf(OUTPUT,bufsize*2,"Can't open spool directory %s",spooldir);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open spool directory %s",spooldir);
       CfLog(cfverbose,OUTPUT,"opendir");
       return;
       }
@@ -723,7 +723,7 @@ if (always || (strncmp(VMAILSERVER,VFQNAME,strlen(VMAILSERVER)) != 0))
             {
             if (TrueVar("WarnNonOwnerMail")||TrueVar("WarnNonOwnerFiles"))
                {
-               snprintf(OUTPUT,bufsize*2,"File %s in spool dir %s is not owned by any user",dirp->d_name,spooldir);
+               snprintf(OUTPUT,CF_BUFSIZE*2,"File %s in spool dir %s is not owned by any user",dirp->d_name,spooldir);
                CfLog(cferror,OUTPUT,"");
                }
             
@@ -735,7 +735,7 @@ if (always || (strncmp(VMAILSERVER,VFQNAME,strlen(VMAILSERVER)) != 0))
                   }
                else
                   {
-                  snprintf(OUTPUT,bufsize*2,"Deleting file %s in spool dir %s not owned by any user",dirp->d_name,spooldir);
+                  snprintf(OUTPUT,CF_BUFSIZE*2,"Deleting file %s in spool dir %s not owned by any user",dirp->d_name,spooldir);
                   CfLog(cferror,OUTPUT,"");
                   
                   if (unlink(VBUFF) == -1)
@@ -757,7 +757,7 @@ if (always || (strncmp(VMAILSERVER,VFQNAME,strlen(VMAILSERVER)) != 0))
          {
          if (TrueVar("WarnNonUserMail")||TrueVar("WarnNonUserFiles"))
             {
-            snprintf(OUTPUT,bufsize*2,"File %s in spool dir %s is not the name of a user",dirp->d_name,spooldir);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"File %s in spool dir %s is not the name of a user",dirp->d_name,spooldir);
             CfLog(cferror,OUTPUT,"");
             }
          
@@ -769,7 +769,7 @@ if (always || (strncmp(VMAILSERVER,VFQNAME,strlen(VMAILSERVER)) != 0))
                }
             else
                {
-               snprintf(OUTPUT,bufsize*2,"Deleting file %s in spool dir %s (not a username)",dirp->d_name,spooldir);
+               snprintf(OUTPUT,CF_BUFSIZE*2,"Deleting file %s in spool dir %s (not a username)",dirp->d_name,spooldir);
                CfLog(cferror,OUTPUT,"");
                
                if (unlink(VBUFF) == -1)
@@ -837,7 +837,7 @@ if (VSYSTEMHARDCLASS == cfnt)
  
  if ((pp = cfpopen(VMOUNTCOMM[VSYSTEMHARDCLASS],"r")) == NULL)
     {
-    snprintf(OUTPUT,bufsize*2,"Failed to open pipe from %s\n",VMOUNTCOMM[VSYSTEMHARDCLASS]);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"Failed to open pipe from %s\n",VMOUNTCOMM[VSYSTEMHARDCLASS]);
     CfLog(cferror,OUTPUT,"popen");
     ReleaseCurrentLock();
     return;
@@ -851,7 +851,7 @@ while (!feof(pp))
       break;
       }
    
-   ReadLine(VBUFF,bufsize,pp);
+   ReadLine(VBUFF,CF_BUFSIZE,pp);
 
    if (ferror(pp))  /* abortable */
       {
@@ -872,7 +872,7 @@ while (!feof(pp))
    if (strstr(VBUFF,"denied") || strstr(VBUFF,"RPC"))
       {
       CfLog(cfinform,"There was a mount error, trying to mount one of the filesystems on this host.\n","");
-      snprintf(OUTPUT,bufsize*2,"%s\n",VBUFF);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"%s\n",VBUFF);
       CfLog(cfinform,OUTPUT,"");
       GOTMOUNTINFO = false;
       break;
@@ -899,7 +899,7 @@ void CheckRequired()
 { struct Disk *rp;
   struct Item *ip;
   int matched=0,varstring=0,missing = 0;
-  char path[bufsize],expand[bufsize];
+  char path[CF_EXPANDSIZE],expand[CF_EXPANDSIZE];
 
 ACTION=required;
 
@@ -929,8 +929,6 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
 
    for(ip = VBINSERVERS; ip != NULL && (!matched); ip = ip->next)
       {
-      path[0] = expand[0] = '\0';
-
       ExpandVarstring(rp->name,expand,NULL);
       varstring = ExpandVarbinserv(expand,path,ip->name);
 
@@ -946,7 +944,7 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
          }
       else if (! varstring)
          {
-         snprintf(OUTPUT,bufsize*2,"The file %s does not exist or is suspicious.\n\n",path);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"The file %s does not exist or is suspicious.\n\n",path);
          CfLog(cferror,OUTPUT,"");
          
          /* Define the class if there was no freespace option. */
@@ -994,13 +992,13 @@ if (missing)
       {
       printf("Couldn't read system clock\n");
       }
-   snprintf(OUTPUT,bufsize*2,"MESSAGE at %s\n\n",ctime(&tloc));
+   snprintf(OUTPUT,CF_BUFSIZE*2,"MESSAGE at %s\n\n",ctime(&tloc));
    CfLog(cferror,OUTPUT,"");
-   snprintf(OUTPUT,bufsize*2,"There are %d required file(system)s missing on host <%s>\n",missing,VDEFAULTBINSERVER.name);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"There are %d required file(system)s missing on host <%s>\n",missing,VDEFAULTBINSERVER.name);
    CfLog(cferror,OUTPUT,"");   
    CfLog(cferror,"even after all mounts have been attempted.\n","");
    CfLog(cferror,"This may be caused by a failure to mount a network filesystem (check exports)\n","");
-   snprintf(OUTPUT,bufsize*2,"or because no valid server was specified in the program %s\n\n",VINPUTFILE);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"or because no valid server was specified in the program %s\n\n",VINPUTFILE);
    CfLog(cferror,OUTPUT,"");
 
    ResetOutputRoute('d','d');
@@ -1035,16 +1033,14 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
       DBT key,value;
       DB *dbp = NULL;
       DB_ENV *dbenv = NULL;
-      char database[maxvarsize],canon[maxvarsize];
+      char database[CF_MAXVARSIZE],canon[CF_MAXVARSIZE];
       int ifelapsed = rp->ifelapsed;
 
-      if (ifelapsed < CFWEEK)
+      if (ifelapsed < CF_WEEK)
          {
          Verbose("IfElapsed time is too short for these data - changes only slowly\n");
-         ifelapsed = CFWEEK;
+         ifelapsed = CF_WEEK;
          }
-      
-      path[0] = expand[0] = '\0';
       
       ExpandVarstring(rp->name,expand,NULL);
       varstring = ExpandVarbinserv(expand,path,ip->name);
@@ -1059,8 +1055,8 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
          continue;
          }
       
-      snprintf(canon,maxvarsize-1,"%s",CanonifyName(path));      
-      snprintf(database,maxvarsize-1,"%s/scan:%s.db",VLOCKDIR,canon);
+      snprintf(canon,CF_MAXVARSIZE-1,"%s",CanonifyName(path));      
+      snprintf(database,CF_MAXVARSIZE-1,"%s/scan:%s.db",VLOCKDIR,canon);
       
       Verbose("Scanning filesystem %s for arrival processes...to %s\n",path,database);
       
@@ -1068,7 +1064,7 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
       
       if ((errno = db_create(&dbp,dbenv,0)) != 0)
          {
-         snprintf(OUTPUT,bufsize*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
          CfLog(cferror,OUTPUT,"db_open");
          return;
          }
@@ -1079,7 +1075,7 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
       if ((errno = dbp->open(dbp,NULL,database,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
          {
-         snprintf(OUTPUT,bufsize*2,"Couldn't open database %s\n",database);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open database %s\n",database);
          CfLog(cferror,OUTPUT,"db_open");
          dbp->close(dbp,0);
          continue;
@@ -1103,7 +1099,7 @@ void TidyFiles()
    /* Here we start by scanning for any absolute path wildcards */
    /* After that's finished, we go snooping around the homedirs */
 
-{ char basename[bufsize],pathbuff[bufsize];
+{ char basename[CF_EXPANDSIZE],pathbuff[CF_BUFSIZE];
   struct TidyPattern *tlp;
   struct Tidy *tp;
   struct Item *ip1,*ip2;
@@ -1210,11 +1206,11 @@ Verbose("Done with home directories\n");
 void Scripts()
 
 { struct ShellComm *ptr;
-  char line[bufsize];
+  char line[CF_BUFSIZE];
   char comm[20], *sp;
-  char execstr[bufsize];
-  char chdir_buf[bufsize];
-  char chroot_buf[bufsize];
+  char execstr[CF_EXPANDSIZE];
+  char chdir_buf[CF_EXPANDSIZE];
+  char chroot_buf[CF_EXPANDSIZE];
   int print;
   mode_t maskval = 0;
   FILE *pp;
@@ -1245,10 +1241,9 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
       continue;
       }
 
-   memset(execstr,0,bufsize);
    ExpandVarstring(ptr->name,execstr,NULL);
    
-   snprintf(OUTPUT,bufsize*2,"Executing script %s...(timeout=%d,uid=%d,gid=%d)\n",execstr,ptr->timeout,ptr->uid,ptr->gid);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Executing script %s...(timeout=%d,uid=%d,gid=%d)\n",execstr,ptr->timeout,ptr->uid,ptr->gid);
    CfLog(cfinform,OUTPUT,"");
    
    if (DONTDO && preview != 'y')
@@ -1284,7 +1279,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
       
       if (ptr->umask == 0)
          {
-         snprintf(OUTPUT,bufsize*2,"Programming %s running with umask 0! Use umask= to set\n",execstr);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Programming %s running with umask 0! Use umask= to set\n",execstr);
          CfLog(cfsilent,OUTPUT,"");
          }
       
@@ -1301,7 +1296,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
       
       if (pp == NULL)
          {
-         snprintf(OUTPUT,bufsize*2,"Couldn't open pipe to command %s\n",execstr);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open pipe to command %s\n",execstr);
          CfLog(cferror,OUTPUT,"popen");
          ResetOutputRoute('d','d');
          ReleaseCurrentLock();
@@ -1312,12 +1307,12 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
          {
          if (ferror(pp))  /* abortable */
             {
-            snprintf(OUTPUT,bufsize*2,"Shell command pipe %s\n",execstr);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
             CfLog(cferror,OUTPUT,"ferror");
             break;
             }
          
-         ReadLine(line,bufsize-1,pp);
+         ReadLine(line,CF_BUFSIZE-1,pp);
          
          if (strstr(line,"cfengine-die"))
             {
@@ -1326,7 +1321,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
          
          if (ferror(pp))  /* abortable */
             {
-            snprintf(OUTPUT,bufsize*2,"Shell command pipe %s\n",execstr);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
             CfLog(cferror,OUTPUT,"ferror");
             break;
             }
@@ -1380,7 +1375,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
                   }
                }
             
-            snprintf(OUTPUT,bufsize,"%s (preview of %s)\n",message,comm);
+            snprintf(OUTPUT,CF_BUFSIZE,"%s (preview of %s)\n",message,comm);
             CfLog(level,OUTPUT,"");
             }
          else 
@@ -1418,7 +1413,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
    
    umask(maskval);
    
-   snprintf(OUTPUT,bufsize*2,"Finished script %s\n",execstr);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Finished script %s\n",execstr);
    CfLog(cfinform,OUTPUT,"");
    
    ResetOutputRoute('d','d');
@@ -1447,7 +1442,7 @@ else
    {
    while (!feof(fp))
       {
-      ReadLine(VBUFF,bufsize,fp);
+      ReadLine(VBUFF,CF_BUFSIZE,fp);
 
       if (strlen(VBUFF) == 0)
          {
@@ -1493,7 +1488,7 @@ else
 void CheckFiles()                         /* Check through file systems */
 
 { struct File *ptr;
-  char buffer[bufsize];
+  char ebuff[CF_EXPANDSIZE];
   short savetravlinks = TRAVLINKS;
   short savekilloldlinks = KILLOLDLINKS;
 
@@ -1543,9 +1538,9 @@ for (ptr = VFILE; ptr != NULL; ptr=ptr->next)
 
    Verbose("Checking file(s) in %s\n",ptr->path);
 
-   buffer[0] = '\0';
+   ebuff[0] = '\0';
 
-   ExpandWildCardsAndDo(ptr->path,buffer,CheckFileWrapper,ptr);
+   ExpandWildCardsAndDo(ptr->path,ebuff,CheckFileWrapper,ptr);
 
    ResetOutputRoute('d','d');
    TRAVLINKS = savetravlinks;
@@ -1570,7 +1565,7 @@ if (! DONTDO)
    {
    if ((fp = fopen(VSETUIDLOG,"w")) == NULL)
       {
-      snprintf(OUTPUT,bufsize*2,"Can't open %s for writing\n",VSETUIDLOG);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open %s for writing\n",VSETUIDLOG);
       CfLog(cferror,OUTPUT,"fopen");
       return;
       }
@@ -1597,7 +1592,7 @@ void DisableFiles()
 
 { struct Disable *dp;
   struct stat statbuf;
-  char workname[bufsize],path[bufsize];
+  char workname[CF_EXPANDSIZE],path[CF_BUFSIZE];
   
 for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
    {
@@ -1637,7 +1632,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
       {
       if ((strcmp(dp->type,"file") != 0) && (strcmp(dp->type,"link") != 0))
          {
-         snprintf(OUTPUT,bufsize*2,"Warning %s is a directory.\n",workname);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Warning %s is a directory.\n",workname);
          CfLog(cferror,OUTPUT,"");
          CfLog(cferror,"I refuse to rename/delete a directory!\n\n","");
          }
@@ -1662,11 +1657,11 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
          continue;
          }
       
-      memset(VBUFF,0,bufsize);
+      memset(VBUFF,0,CF_BUFSIZE);
       
-      if (readlink(workname,VBUFF,bufsize-1) == -1)
+      if (readlink(workname,VBUFF,CF_BUFSIZE-1) == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"DisableFiles() can't read link %s\n",workname);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"DisableFiles() can't read link %s\n",workname);
          CfLog(cferror,OUTPUT,"readlink");
          ResetOutputRoute('d','d');
          ReleaseCurrentLock();
@@ -1681,7 +1676,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
             {
             if (unlink(workname) == -1)
                {
-               snprintf(OUTPUT,bufsize*2,"Error while unlinking %s\n",workname);
+               snprintf(OUTPUT,CF_BUFSIZE*2,"Error while unlinking %s\n",workname);
                CfLog(cferror,OUTPUT,"unlink");
                ResetOutputRoute('d','d');
                ReleaseCurrentLock();
@@ -1693,7 +1688,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
          }
       else
          {
-         snprintf(OUTPUT,bufsize,"Warning - file %s exists\n",workname);
+         snprintf(OUTPUT,CF_BUFSIZE,"Warning - file %s exists\n",workname);
          CfLog(cferror,OUTPUT,"");
          }
       }
@@ -1723,7 +1718,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
          return;
          }
       
-      if (dp->size != cfnosize)
+      if (dp->size != CF_NOSIZE)
          {
          switch (dp->comp)
             {
@@ -1768,7 +1763,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
             {
             if (IsFileSep(dp->destination[0]))
                {
-               strncpy(path,dp->destination,bufsize-1);
+               strncpy(path,dp->destination,CF_BUFSIZE-1);
                }
             else
                {
@@ -1777,7 +1772,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
                AddSlash(path);
                if (BufferOverflow(path,dp->destination))
                   {
-                  snprintf(OUTPUT,bufsize*2,"Buffer overflow occurred while renaming %s\n",workname);
+                  snprintf(OUTPUT,CF_BUFSIZE*2,"Buffer overflow occurred while renaming %s\n",workname);
                   CfLog(cferror,OUTPUT,"");
                   ResetOutputRoute('d','d');
                   ReleaseCurrentLock();
@@ -1792,7 +1787,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
             strcat(path,".cfdisabled");
             }
          
-         snprintf(OUTPUT,bufsize*2,"Disabling/renaming file %s to %s\n",workname,path);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Disabling/renaming file %s to %s\n",workname,path);
          CfLog(cfinform,OUTPUT,"");
          
          if (! DONTDO)
@@ -1805,7 +1800,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
                   {
                   if (rename(workname,path) == -1)
                      {
-                     snprintf(OUTPUT,bufsize*2,"Error occurred while renaming %s\n",workname);
+                     snprintf(OUTPUT,CF_BUFSIZE*2,"Error occurred while renaming %s\n",workname);
                      CfLog(cferror,OUTPUT,"rename");
                      ResetOutputRoute('d','d');
                      ReleaseCurrentLock();
@@ -1821,7 +1816,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
                   }
                else
                   {
-                  snprintf(OUTPUT,bufsize,"Warning - file %s exists (need to disable)",workname);
+                  snprintf(OUTPUT,CF_BUFSIZE,"Warning - file %s exists (need to disable)",workname);
                   CfLog(cferror,OUTPUT,"");
                   }        
                }
@@ -1829,7 +1824,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
          }
       else if (dp->rotate == CF_TRUNCATE)
          {
-         snprintf(OUTPUT,bufsize*2,"Truncating (emptying) %s\n",workname);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Truncating (emptying) %s\n",workname);
          CfLog(cfinform,OUTPUT,"");
          
          if (dp->action == 'd')
@@ -1842,13 +1837,13 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
             }
          else
             {
-            snprintf(OUTPUT,bufsize,"File %s needs emptying",workname);
+            snprintf(OUTPUT,CF_BUFSIZE,"File %s needs emptying",workname);
             CfLog(cferror,OUTPUT,"");
             }
          }
       else
          {
-         snprintf(OUTPUT,bufsize*2,"Rotating files %s by %d\n",workname,dp->rotate);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Rotating files %s by %d\n",workname,dp->rotate);
          CfLog(cfinform,OUTPUT,"");
          
          if (dp->action == 'd')
@@ -1860,7 +1855,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
                }
             else        
                {
-               snprintf(OUTPUT,bufsize,"File %s needs rotating/emptying",workname);
+               snprintf(OUTPUT,CF_BUFSIZE,"File %s needs rotating/emptying",workname);
                CfLog(cferror,OUTPUT,"");
                }
             }
@@ -1877,19 +1872,19 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
 void MountHomeBinServers()
 
 { struct Mountables *mp;
-  char host[maxvarsize];
-  char mountdir[bufsize];
-  char maketo[bufsize];
+  char host[CF_MAXVARSIZE];
+  char mountdir[CF_BUFSIZE];
+  char maketo[CF_BUFSIZE];
 
   /*
    * HvB: Bas van der Vlies
   */
-  char mountmode[bufsize];
+  char mountmode[CF_BUFSIZE];
 
 if (! GOTMOUNTINFO)
    {
    CfLog(cfinform,"Incomplete mount info due to RPC failure.\n","");
-   snprintf(OUTPUT,bufsize*2,"%s will not be modified on this pass!\n\n",VFSTAB[VSYSTEMHARDCLASS]);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"%s will not be modified on this pass!\n\n",VFSTAB[VSYSTEMHARDCLASS]);
    CfLog(cfinform,OUTPUT,"");
    return;
    }
@@ -1977,15 +1972,15 @@ for (mp = VMOUNTABLES; mp != NULL; mp=mp->next)
 void MountMisc()
 
 { struct MiscMount *mp;
-  char host[maxvarsize];
-  char mountdir[bufsize];
-  char maketo[bufsize];
-  char mtpt[bufsize];
+  char host[CF_MAXVARSIZE];
+  char mountdir[CF_BUFSIZE];
+  char maketo[CF_BUFSIZE];
+  char mtpt[CF_BUFSIZE];
 
 if (! GOTMOUNTINFO)
    {
    CfLog(cfinform,"Incomplete mount info due to RPC failure.\n","");
-   snprintf(OUTPUT,bufsize*2,"%s will not be modified on this pass!\n\n",VFSTAB[VSYSTEMHARDCLASS]);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"%s will not be modified on this pass!\n\n",VFSTAB[VSYSTEMHARDCLASS]);
    CfLog(cfinform,OUTPUT,"");
    return;
    }
@@ -2027,7 +2022,7 @@ for (mp = VMISCMOUNT; mp != NULL; mp=mp->next)
       continue;
       }
 
-   snprintf(mtpt,bufsize,"%s:%s",host,mp->onto);
+   snprintf(mtpt,CF_BUFSIZE,"%s:%s",host,mp->onto);
    
    if (!IsItemIn(VMOUNTED,mtpt))
       {
@@ -2046,8 +2041,8 @@ for (mp = VMISCMOUNT; mp != NULL; mp=mp->next)
 void Unmount()
 
 { struct UnMount *ptr;
-  char comm[bufsize];
-  char fs[bufsize];
+  char comm[CF_BUFSIZE];
+  char fs[CF_BUFSIZE];
   struct Item *filelist, *item;
   struct stat statbuf;
   FILE *pp;
@@ -2062,7 +2057,7 @@ filelist = NULL;
 
 if (! LoadItemList(&filelist,VFSTAB[VSYSTEMHARDCLASS]))
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't open %s!\n",VFSTAB[VSYSTEMHARDCLASS]);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open %s!\n",VFSTAB[VSYSTEMHARDCLASS]);
    CfLog(cferror,OUTPUT,"");
    return;
    }
@@ -2100,7 +2095,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
       continue;
       }
    
-   snprintf(OUTPUT,bufsize*2,"Unmount filesystem %s on %s\n",fs,ptr->name);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Unmount filesystem %s on %s\n",fs,ptr->name);
    CfLog(cfverbose,OUTPUT,"");
 
    if (strcmp(fs,"/") == 0 || strcmp(fs,"/usr") == 0)
@@ -2112,21 +2107,21 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
 
    if (IsItemIn(VMOUNTED,ptr->name) && (! DONTDO))
       {
-      snprintf(comm,bufsize,"%s %s",VUNMOUNTCOMM[VSYSTEMHARDCLASS],fs);
+      snprintf(comm,CF_BUFSIZE,"%s %s",VUNMOUNTCOMM[VSYSTEMHARDCLASS],fs);
 
       if ((pp = cfpopen(comm,"r")) == NULL)
          {
-         snprintf(OUTPUT,bufsize*2,"Failed to open pipe from %s\n",VUNMOUNTCOMM[VSYSTEMHARDCLASS]);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Failed to open pipe from %s\n",VUNMOUNTCOMM[VSYSTEMHARDCLASS]);
          CfLog(cferror,OUTPUT,"");
          ReleaseCurrentLock();     
          return;
          }
       
-      ReadLine(VBUFF,bufsize,pp);
+      ReadLine(VBUFF,CF_BUFSIZE,pp);
       
       if (strstr(VBUFF,"busy") || strstr(VBUFF,"Busy"))
          {
-         snprintf(OUTPUT,bufsize*2,"umount warned that the device under %s\n",ptr->name);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"umount warned that the device under %s\n",ptr->name);
          CfLog(cfinform,OUTPUT,"");
          CfLog(cfinform,"was busy. Cannot unmount that device.\n","");
          /* don't delete the mount dir when unmount's failed */
@@ -2134,7 +2129,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
          }
       else
          {
-         snprintf(OUTPUT,bufsize*2,"Unmounting %s\n",ptr->name);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Unmounting %s\n",ptr->name);
          CfLog(cfinform,OUTPUT,"");
          DeleteItemStarting(&VMOUNTED,ptr->name);  /* update mount record */
          }
@@ -2148,7 +2143,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
          {
          if ( ! S_ISDIR(statbuf.st_mode))
             {
-            snprintf(OUTPUT,bufsize*2,"Warning! %s was not a directory.\n",fs);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Warning! %s was not a directory.\n",fs);
             CfLog(cfinform,OUTPUT,"");
             CfLog(cfinform,"(Unmount) will not delete this!\n","");
             KillOldLink(fs,NULL);
@@ -2157,12 +2152,12 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
             {
             if (rmdir(fs) == -1)
                {
-               snprintf(OUTPUT,bufsize*2,"Unable to remove the directory %s\n",fs);
+               snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to remove the directory %s\n",fs);
                CfLog(cferror,OUTPUT,"rmdir");
                } 
             else
                {
-               snprintf(OUTPUT,bufsize*2,"Removing directory %s\n",ptr->name);
+               snprintf(OUTPUT,CF_BUFSIZE*2,"Removing directory %s\n",ptr->name);
                CfLog(cfinform,OUTPUT,"");
                }
             }
@@ -2180,7 +2175,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
          
          if (item == NULL || item->next == NULL)
             {
-            snprintf(OUTPUT,bufsize*2,"Bad format in %s\n",VFSTAB[aix]);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Bad format in %s\n",VFSTAB[aix]);
             CfLog(cferror,OUTPUT,"");
             continue;
             }
@@ -2210,11 +2205,11 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
                case solarisx86:
                case solaris:
                    /* find fs in proper context ("<host>:<remotepath> <-> <fs> ") */
-                   snprintf(VBUFF,bufsize,"[^:]+:[^ \t]+[ \t]+[^ \t]+[ \t]+%s[ \t]",fs);
+                   snprintf(VBUFF,CF_BUFSIZE,"[^:]+:[^ \t]+[ \t]+[^ \t]+[ \t]+%s[ \t]",fs);
                    break;
                default:
                    /* find fs in proper context ("<host>:<remotepath> <fs> ") */
-                   snprintf(VBUFF,bufsize,"[^:]+:[^ \t]+[ \t]+%s[ \t]",fs);
+                   snprintf(VBUFF,CF_BUFSIZE,"[^:]+:[^ \t]+[ \t]+%s[ \t]",fs);
                    break;
                }
             item = LocateItemContainingRegExp(filelist,VBUFF);
@@ -2302,13 +2297,13 @@ if (!IsPrivileged())
 
 if (! LoadItemList(&referencefile,VRESOLVCONF[VSYSTEMHARDCLASS]))
    {
-   snprintf(OUTPUT,bufsize*2,"Trying to create %s\n",VRESOLVCONF[VSYSTEMHARDCLASS]);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Trying to create %s\n",VRESOLVCONF[VSYSTEMHARDCLASS]);
    CfLog(cfinform,OUTPUT,"");
    existed = false;
    
    if ((fd = creat(VRESOLVCONF[VSYSTEMHARDCLASS],0644)) == -1)
       {
-      snprintf(OUTPUT,bufsize*2,"Unable to create file %s\n",VRESOLVCONF[VSYSTEMHARDCLASS]);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to create file %s\n",VRESOLVCONF[VSYSTEMHARDCLASS]);
       CfLog(cferror,OUTPUT,"creat");
       return;
       }
@@ -2334,14 +2329,14 @@ for (ip = filebase; ip != NULL; ip=ip->next)
 
    if (isspace((int)ch))
       {
-      snprintf(OUTPUT,bufsize*2,"Deleted line %s ended with a space in %s.\n",ip->name,VRESOLVCONF[VSYSTEMHARDCLASS]);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Deleted line %s ended with a space in %s.\n",ip->name,VRESOLVCONF[VSYSTEMHARDCLASS]);
       CfLog(cfinform,OUTPUT,"");
       CfLog(cfinform,"The resolver doesn't understand this.\n","");
       DeleteItem(&filebase,ip);
       }
    else if (isspace((int)*(ip->name)))
       {
-      snprintf(OUTPUT,bufsize*2,"Deleted line %s started with a space in %s.\n",ip->name,VRESOLVCONF[VSYSTEMHARDCLASS]);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Deleted line %s started with a space in %s.\n",ip->name,VRESOLVCONF[VSYSTEMHARDCLASS]);
       CfLog(cfinform,OUTPUT,"");
       CfLog(cfinform,"The resolver doesn't understand this.\n","");
       DeleteItem(&filebase,ip);
@@ -2362,7 +2357,7 @@ if (OptionIs(CONTEXTID,"EmptyResolvConf", true))
  
 EditItemsInResolvConf(VRESOLVE,&filebase); 
 
-snprintf(VBUFF,bufsize,"domain %s",ToLowerStr(VDOMAIN));
+snprintf(VBUFF,CF_BUFSIZE,"domain %s",ToLowerStr(VDOMAIN));
 PrependItem(&filebase,VBUFF,NULL);
  
 if (DONTDO)
@@ -2393,9 +2388,8 @@ void MakeImages()
   struct stat statbuf;
   struct servent *serverent;
   int savesilent;
-  char path[bufsize];
-  char destination[bufsize];
-  char server[bufsize],listserver[bufsize];
+  char path[CF_EXPANDSIZE],destination[CF_EXPANDSIZE];
+  char server[CF_EXPANDSIZE],listserver[CF_EXPANDSIZE];
  
 if ((serverent = getservbyname(CFENGINE_SERVICE,"tcp")) == NULL)
    {
@@ -2447,7 +2441,7 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
       
       if (!OpenServerConnection(ip))
          {
-         snprintf(OUTPUT,bufsize*2,"Unable to establish connection with %s\n",listserver);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to establish connection with %s\n",listserver);
          CfLog(cfinform,OUTPUT,"");
          AddMultipleClasses(ip->failover);
          continue;
@@ -2471,7 +2465,7 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
       
       if (cfstat(path,&statbuf,ip) == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"Can't stat %s in copy\n",path);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s in copy\n",path);
          CfLog(cfinform,OUTPUT,"");
          ReleaseCurrentLock();
          SILENT = savesilent;
@@ -2479,7 +2473,7 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
          continue;
          }
       
-      snprintf(VBUFF,bufsize,"%.50s.%.50s",path,destination); /* Unique ID for copy locking */
+      snprintf(VBUFF,CF_BUFSIZE,"%.50s.%.50s",path,destination); /* Unique ID for copy locking */
       
       if (!GetLock(ASUniqueName("copy"),CanonifyName(VBUFF),ip->ifelapsed,ip->expireafter,VUQNAME,CFSTARTTIME))
          {
@@ -2577,7 +2571,7 @@ for (ifp = VIFLIST; ifp != NULL; ifp=ifp->next)
 void CheckTimeZone()
 
 { struct Item *ip;
-  char tz[maxvarsize];
+  char tz[CF_MAXVARSIZE];
   
 if (VTIMEZONE == NULL)
    {
@@ -2617,7 +2611,7 @@ for (ip = VTIMEZONE; ip != NULL; ip=ip->next)
       }
    }
 
-snprintf(OUTPUT,bufsize*2,"Time zone was %s which is not in the list of acceptable values",tz);
+snprintf(OUTPUT,CF_BUFSIZE*2,"Time zone was %s which is not in the list of acceptable values",tz);
 CfLog(cferror,OUTPUT,""); 
 }
 
@@ -2652,7 +2646,7 @@ for (pp = VPROCLIST; pp != NULL; pp=pp->next)
       pp->done = 'y';
       }
 
-   snprintf(VBUFF,bufsize-1,"proc-%s-%s",pp->expr,pp->restart);
+   snprintf(VBUFF,CF_BUFSIZE-1,"proc-%s-%s",pp->expr,pp->restart);
    
    if (!GetLock(ASUniqueName("processes"),CanonifyName(VBUFF),pp->ifelapsed,pp->expireafter,VUQNAME,CFSTARTTIME))
       {
@@ -2724,7 +2718,7 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
         * InstallPackagesItem() should have caught this before it
         * was ever installed!!!
         * */
-         snprintf(OUTPUT,bufsize,"Internal error!  Tried to check package %s in an unknown database: %d.  This should never happen!\n", ptr->name, ptr->pkgmgr);
+         snprintf(OUTPUT,CF_BUFSIZE,"Internal error!  Tried to check package %s in an unknown database: %d.  This should never happen!\n", ptr->name, ptr->pkgmgr);
          CfLog(cferror,OUTPUT,"");
          break;
      }
@@ -2750,7 +2744,7 @@ void DoMethods()
 
 { struct Method *ptr;
   struct Item *ip;
-  char label[bufsize];
+  char label[CF_BUFSIZE];
   unsigned char digest[EVP_MAX_MD_SIZE+1];
     
 Banner("Dispatching new methods");
@@ -2767,7 +2761,7 @@ for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
       }
 
    ChecksumList(ptr->send_args,digest,'m');
-   snprintf(label,bufsize-1,"%s/rpc_in/localhost_localhost_%s_%s",VLOCKDIR,ptr->name,ChecksumPrint('m',digest));
+   snprintf(label,CF_BUFSIZE-1,"%s/rpc_in/localhost_localhost_%s_%s",VLOCKDIR,ptr->name,ChecksumPrint('m',digest));
 
    if (!GetLock(ASUniqueName("methods-dispatch"),CanonifyName(label),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
       {
@@ -2782,7 +2776,7 @@ for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
 
 Banner("Evaluating incoming methods that policy accepts...");
 
-for (ip = GetPendingMethods(cfmethodexec); ip != NULL; ip=ip->next)
+for (ip = GetPendingMethods(CF_METHODEXEC); ip != NULL; ip=ip->next)
    {
    /* Call child process to execute method*/
    EvaluatePendingMethod(ip->name);
@@ -2792,7 +2786,7 @@ DeleteItemList(ip);
  
 Banner("Fetching replies to finished methods");
  
-for (ip = GetPendingMethods(cfmethodreply); ip != NULL; ip=ip->next)
+for (ip = GetPendingMethods(CF_METHODREPLY); ip != NULL; ip=ip->next)
    { 
    if (ParentLoadReplyPackage(ip->name))
       {
@@ -2812,7 +2806,7 @@ int RequiredFileSystemOkay (char *name)
   DIR *dirh;
   struct dirent *dirp;
   long sizeinbytes = 0, filecount = 0;
-  char buff[bufsize];
+  char buff[CF_BUFSIZE];
 
 Debug("Checking required filesystem %s\n",name);
 
@@ -2831,7 +2825,7 @@ if (S_ISDIR(statbuf.st_mode))
    {
    if ((dirh = opendir(name)) == NULL)
       {
-      snprintf(OUTPUT,bufsize*2,"Can't open directory %s which checking required/disk\n",name);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open directory %s which checking required/disk\n",name);
       CfLog(cferror,OUTPUT,"opendir");
       return false;
       }
@@ -2862,7 +2856,7 @@ if (S_ISDIR(statbuf.st_mode))
             continue;
             }
 
-         snprintf(OUTPUT,bufsize*2,"Can't stat %s in required/disk\n",buff);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s in required/disk\n",buff);
   CfLog(cferror,OUTPUT,"lstat");
          continue;
          }
@@ -2880,14 +2874,14 @@ if (S_ISDIR(statbuf.st_mode))
 
    if (sizeinbytes < SENSIBLEFSSIZE)
       {
-      snprintf(OUTPUT,bufsize*2,"File system %s is suspiciously small! (%d bytes)\n",name,sizeinbytes);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"File system %s is suspiciously small! (%d bytes)\n",name,sizeinbytes);
       CfLog(cferror,OUTPUT,"");
       return(false);
       }
 
    if (filecount < SENSIBLEFILECOUNT)
       {
-      snprintf(OUTPUT,bufsize*2,"Filesystem %s has only %d files/directories.\n",name,filecount);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Filesystem %s has only %d files/directories.\n",name,filecount);
       CfLog(cferror,OUTPUT,"");
       return(false);
       }
@@ -2904,17 +2898,17 @@ int ScanFileSystemArrivals(char *name,int rlevel,struct stat *sb,DB *dbp)
 { DIR *dirh;
   int goback; 
   struct dirent *dirp;
-  char pcwd[bufsize];
+  char pcwd[CF_BUFSIZE];
   struct stat statbuf;
   
-if (rlevel > recursion_limit)
+if (rlevel > CF_RECURSION_LIMIT)
    {
-   snprintf(OUTPUT,bufsize*2,"WARNING: Very deep nesting of directories (>%d deep): %s (Aborting files)",rlevel,name);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"WARNING: Very deep nesting of directories (>%d deep): %s (Aborting files)",rlevel,name);
    CfLog(cferror,OUTPUT,"");
    return false;
    }
  
-memset(pcwd,0,bufsize); 
+memset(pcwd,0,CF_BUFSIZE); 
 
 Debug("ScanFileSystemArrivals(%s)\n",name);
 
@@ -2948,7 +2942,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
 
    if (lstat(dirp->d_name,&statbuf) == -1)
       {
-      snprintf(OUTPUT,bufsize*2,"RecursiveCheck was looking at %s when this happened:\n",pcwd);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"RecursiveCheck was looking at %s when this happened:\n",pcwd);
       CfLog(cferror,OUTPUT,"lstat");
       continue;
       }
@@ -2986,7 +2980,7 @@ return true;
 
 void InstallMountedItem(char *host,char *mountdir)
 
-{ char buf[bufsize];
+{ char buf[CF_BUFSIZE];
  
 strcpy (buf,host);
 strcat (buf,":");
@@ -2998,7 +2992,7 @@ if (IsItemIn(VMOUNTED,buf))
       {
       if (!strstr(buf,"swap"))
          {
-         snprintf(OUTPUT,bufsize*2,"WARNING mount item %s\n",buf);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"WARNING mount item %s\n",buf);
          CfLog(cferror,OUTPUT,"");
          CfLog(cferror,"is mounted multiple times!\n","");
          }
@@ -3013,7 +3007,7 @@ if (IsItemIn(VMOUNTED,buf))
 
 void AddToFstab(char *host,char *rmountpt,char *mountpt,char *mode,char *options,int ismounted)
 
-{ char fstab[bufsize];
+{ char fstab[CF_BUFSIZE];
   char *opts;
   FILE *fp;
 
@@ -3040,34 +3034,34 @@ switch (VSYSTEMHARDCLASS)
    case aos:
    case nextstep:
    case newsos:
-   case sun4:    snprintf(fstab,bufsize,"%s:%s \t %s %s\t%s,%s 0 0",host,rmountpt,mountpt,VNFSTYPE,mode,opts);
+   case sun4:    snprintf(fstab,CF_BUFSIZE,"%s:%s \t %s %s\t%s,%s 0 0",host,rmountpt,mountpt,VNFSTYPE,mode,opts);
                  break;
 
    case crayos:
-                 snprintf(fstab,bufsize,"%s:%s \t %s %s\t%s,%s",host,rmountpt,mountpt,ToUpperStr(VNFSTYPE),mode,opts);
+                 snprintf(fstab,CF_BUFSIZE,"%s:%s \t %s %s\t%s,%s",host,rmountpt,mountpt,ToUpperStr(VNFSTYPE),mode,opts);
                  break;
-   case ultrx:   snprintf(fstab,bufsize,"%s@%s:%s:%s:0:0:%s:%s",rmountpt,host,mountpt,mode,VNFSTYPE,opts);
+   case ultrx:   snprintf(fstab,CF_BUFSIZE,"%s@%s:%s:%s:0:0:%s:%s",rmountpt,host,mountpt,mode,VNFSTYPE,opts);
                  break;
-   case hp:      snprintf(fstab,bufsize,"%s:%s %s \t %s \t %s,%s 0 0",host,rmountpt,mountpt,VNFSTYPE,mode,opts);
+   case hp:      snprintf(fstab,CF_BUFSIZE,"%s:%s %s \t %s \t %s,%s 0 0",host,rmountpt,mountpt,VNFSTYPE,mode,opts);
                  break;
-   case aix:     snprintf(fstab,bufsize,"%s:\n\tdev\t= %s\n\ttype\t= %s\n\tvfs\t= %s\n\tnodename\t= %s\n\tmount\t= true\n\toptions\t= %s,%s\n\taccount\t= false\n\n",mountpt,rmountpt,VNFSTYPE,VNFSTYPE,host,mode,opts);
+   case aix:     snprintf(fstab,CF_BUFSIZE,"%s:\n\tdev\t= %s\n\ttype\t= %s\n\tvfs\t= %s\n\tnodename\t= %s\n\tmount\t= true\n\toptions\t= %s,%s\n\taccount\t= false\n\n",mountpt,rmountpt,VNFSTYPE,VNFSTYPE,host,mode,opts);
                  break;
    case GnU:
-   case linuxx:  snprintf(fstab,bufsize,"%s:%s \t %s \t %s \t %s,%s",host,rmountpt,mountpt,VNFSTYPE,mode,opts);
+   case linuxx:  snprintf(fstab,CF_BUFSIZE,"%s:%s \t %s \t %s \t %s,%s",host,rmountpt,mountpt,VNFSTYPE,mode,opts);
                  break;
 
    case netbsd:
    case openbsd:
    case bsd_i:
-   case freebsd: snprintf(fstab,bufsize,"%s:%s \t %s \t %s \t %s,%s 0 0",host,rmountpt,mountpt,VNFSTYPE,mode,opts);
+   case freebsd: snprintf(fstab,CF_BUFSIZE,"%s:%s \t %s \t %s \t %s,%s 0 0",host,rmountpt,mountpt,VNFSTYPE,mode,opts);
                  break;
 
    case unix_sv:
    case solarisx86:
-   case solaris: snprintf(fstab,bufsize,"%s:%s - %s %s - yes %s,%s",host,rmountpt,mountpt,VNFSTYPE,mode,opts);
+   case solaris: snprintf(fstab,CF_BUFSIZE,"%s:%s - %s %s - yes %s,%s",host,rmountpt,mountpt,VNFSTYPE,mode,opts);
                  break;
 
-   case cfnt:    snprintf(fstab,bufsize,"/bin/mount %s:%s %s",host,rmountpt,mountpt);
+   case cfnt:    snprintf(fstab,CF_BUFSIZE,"/bin/mount %s:%s %s",host,rmountpt,mountpt);
                  break;
    case cfsco:   CfLog(cferror,"Don't understand filesystem format on SCO, no data","");
                  break;
@@ -3087,12 +3081,12 @@ if (MatchStringInFstab(mountpt))
         struct Item *mntentry = NULL;
         struct UnMount cleaner;
       
-      snprintf(OUTPUT,bufsize*2,"Removing \"%s\" entry from %s to allow update:\n",mountpt,VFSTAB[VSYSTEMHARDCLASS]);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Removing \"%s\" entry from %s to allow update:\n",mountpt,VFSTAB[VSYSTEMHARDCLASS]);
       CfLog(cfinform,OUTPUT,"");
       CfLog(cfinform,"---------------------------------------------------","");
       
       /* delete current fstab entry and unmount if necessary */
-      snprintf(mountspec,bufsize,".+:%s",mountpt);
+      snprintf(mountspec,CF_BUFSIZE,".+:%s",mountpt);
       mntentry = LocateItemContainingRegExp(VMOUNTED,mountspec);
       if (mntentry)
          {
@@ -3101,7 +3095,7 @@ if (MatchStringInFstab(mountpt))
          strcat(mountspec,mountpt);
          }
       else  /* mountpt isn't mounted, so Unmount can use dummy host name */
-          snprintf(mountspec,bufsize,"host:%s",mountpt);
+          snprintf(mountspec,CF_BUFSIZE,"host:%s",mountpt);
       
       /* delete current fstab entry and unmount if necessary (don't rmdir) */
       cleaner.name        = mountspec;
@@ -3123,11 +3117,11 @@ if (MatchStringInFstab(mountpt))
       /* warn if entry's already in the fstab but hasn't been mounted */
       if (!ismounted && !SILENT && !strstr(mountpt,"cdrom"))
          {
-         snprintf(OUTPUT,bufsize*2,"Warning the file system %s seems to be in %s\n",mountpt,VFSTAB[VSYSTEMHARDCLASS]);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Warning the file system %s seems to be in %s\n",mountpt,VFSTAB[VSYSTEMHARDCLASS]);
          CfLog(cfinform,OUTPUT,"");
-         snprintf(OUTPUT,bufsize*2,"already, but I was not able to mount it.\n");
+         snprintf(OUTPUT,CF_BUFSIZE*2,"already, but I was not able to mount it.\n");
          CfLog(cfinform,OUTPUT,"");
-         snprintf(OUTPUT,bufsize*2,"Check the exports file on host %s? Check for file with same name as dir?\n",host);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Check the exports file on host %s? Check for file with same name as dir?\n",host);
          CfLog(cfinform,OUTPUT,"");
          }
       
@@ -3144,15 +3138,15 @@ if (MatchStringInFstab(mountpt))
     {
     if ((fp = fopen(VFSTAB[VSYSTEMHARDCLASS],"a")) == NULL)
        {
-       snprintf(OUTPUT,bufsize*2,"Can't open %s for appending\n",VFSTAB[VSYSTEMHARDCLASS]);
+       snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open %s for appending\n",VFSTAB[VSYSTEMHARDCLASS]);
        CfLog(cferror,OUTPUT,"fopen");
        ReleaseCurrentLock();
        return;
        }
     
-    snprintf(OUTPUT,bufsize*2,"Adding filesystem to %s\n",VFSTAB[VSYSTEMHARDCLASS]);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"Adding filesystem to %s\n",VFSTAB[VSYSTEMHARDCLASS]);
     CfLog(cfinform,OUTPUT,"");
-    snprintf(OUTPUT,bufsize*2,"%s\n",fstab);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"%s\n",fstab);
     CfLog(cfinform,OUTPUT,"");
     fprintf(fp,"%s\n",fstab);
     fclose(fp);
@@ -3172,7 +3166,7 @@ int CheckFreeSpace (char *file,struct Disk *disk_ptr)
 
 if (stat(file,&statbuf) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't stat %s checking diskspace\n",file);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't stat %s checking diskspace\n",file);
    CfLog(cferror,OUTPUT,"");
    return true;
    }
@@ -3196,9 +3190,9 @@ if (kilobytes < 0)  /* percentage */
    kilobytes = -1 * kilobytes;
    if (free < kilobytes)
       {
-      snprintf(OUTPUT,bufsize*2,"Free disk space is under %d%% for partition\n",kilobytes);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Free disk space is under %d%% for partition\n",kilobytes);
       CfLog(cfinform,OUTPUT,"");
-      snprintf(OUTPUT,bufsize*2,"containing %s (%d%% free)\n",file,free);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"containing %s (%d%% free)\n",file,free);
       CfLog(cfinform,OUTPUT,"");
       return false;
       }
@@ -3209,9 +3203,9 @@ else
 
    if (free < kilobytes)
       {
-      snprintf(OUTPUT,bufsize*2,"Disk space under %d kB for partition\n",kilobytes);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Disk space under %d kB for partition\n",kilobytes);
       CfLog(cfinform,OUTPUT,"");
-      snprintf(OUTPUT,bufsize*2,"containing %s (%d kB free)\n",file,free);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"containing %s (%d kB free)\n",file,free);
       CfLog(cfinform,OUTPUT,"");
       return false;
       }
@@ -3225,7 +3219,7 @@ return true;
 void CheckHome(struct File *ptr)                      /* iterate check over homedirs */
 
 { struct Item *ip1, *ip2;
-  char basename[bufsize],pathbuff[bufsize];
+  char basename[CF_EXPANDSIZE],pathbuff[CF_BUFSIZE];
 
 Debug("CheckHome(%s)\n",ptr->path);
 
@@ -3262,7 +3256,7 @@ for (ip1 = VHOMEPATLIST; ip1 != NULL; ip1=ip1->next)
          
          if (*(ptr->path+4) != '/')
             {
-            snprintf(OUTPUT,bufsize*2,"Illegal use of home in files: %s\n",ptr->path);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Illegal use of home in files: %s\n",ptr->path);
             CfLog(cferror,OUTPUT,"");
             return;
             }
@@ -3285,7 +3279,7 @@ for (ip1 = VHOMEPATLIST; ip1 != NULL; ip1=ip1->next)
 
 void EditItemsInResolvConf(struct Item *from,struct Item **list)
 
-{ char buf[maxvarsize],work[bufsize];
+{ char buf[CF_MAXVARSIZE],work[CF_EXPANDSIZE];
 
 if ((from != NULL) && !IsDefinedClass(from->classes))
    {
@@ -3302,7 +3296,7 @@ else
    EditItemsInResolvConf(from->next,list);
    if (isdigit((int)*(work)))
       {
-      snprintf(buf,bufsize,"nameserver %s",work);
+      snprintf(buf,CF_BUFSIZE,"nameserver %s",work);
       }
    else
       {
@@ -3340,7 +3334,7 @@ void ExpandWildCardsAndDo(char *wildpath,char *buffer,void (*function)(char *pat
  /* matching file or directory                                    */
 
  
-{ char *rest, extract[bufsize], construct[bufsize],varstring[bufsize],cleaned[bufsize], *work;
+{ char *rest, extract[CF_BUFSIZE], construct[CF_BUFSIZE],varstring[CF_EXPANDSIZE],cleaned[CF_BUFSIZE], *work;
   struct stat statbuf;
   DIR *dirh;
   struct dirent *dp;
@@ -3348,7 +3342,7 @@ void ExpandWildCardsAndDo(char *wildpath,char *buffer,void (*function)(char *pat
 
 varstring[0] = '\0';
 
-memset(cleaned,0,bufsize); 
+memset(cleaned,0,CF_BUFSIZE); 
  
 for (i = j = 0; wildpath[i] != '\0'; i++,j++)
    {
@@ -3390,7 +3384,7 @@ if (! IsWildCard(extract))
    strcat(buffer,"/");
    if (BufferOverflow(buffer,extract))
        {
-       snprintf(OUTPUT,bufsize*2,"Culprit %s\n",extract);
+       snprintf(OUTPUT,CF_BUFSIZE*2,"Culprit %s\n",extract);
        CfLog(cferror,OUTPUT,"");
        exit(0);
        }
@@ -3404,7 +3398,7 @@ else
    
    if ((dirh=opendir(buffer)) == NULL)
       {
-      snprintf(OUTPUT,bufsize*2,"Can't open dir: %s\n",buffer);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open dir: %s\n",buffer);
       CfLog(cferror,OUTPUT,"opendir");
       return;
       }
@@ -3425,7 +3419,7 @@ else
 
       if (stat(buffer,&statbuf) == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"Can't stat %s\n\n",buffer);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n\n",buffer);
          CfLog(cferror,OUTPUT,"stat");
          continue;
          }
@@ -3438,7 +3432,7 @@ else
  
    if (count == 0)
       {
-      snprintf(OUTPUT,bufsize*2,"No directories matching %s in %s\n",extract,buffer);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"No directories matching %s in %s\n",extract,buffer);
       CfLog(cfinform,OUTPUT,"");
       return;
       }
@@ -3492,7 +3486,7 @@ if (!GetLock(ASUniqueName("files"),startpath,ptr->ifelapsed,ptr->expireafter,VUQ
  
 if (stat(startpath,&sb) == -1)
    {
-   snprintf(OUTPUT,bufsize,"Directory %s cannot be accessed in files",startpath);
+   snprintf(OUTPUT,CF_BUFSIZE,"Directory %s cannot be accessed in files",startpath);
    CfLog(cfinform,OUTPUT,"stat");
    return;
    }
@@ -3565,14 +3559,14 @@ int MatchStringInFstab(char *str)
 
 if ((fp = fopen(VFSTAB[VSYSTEMHARDCLASS],"r")) == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"Can't open %s for reading\n",VFSTAB[VSYSTEMHARDCLASS]);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open %s for reading\n",VFSTAB[VSYSTEMHARDCLASS]);
    CfLog(cferror,OUTPUT,"fopen");
    return true; /* write nothing */
    }
 
 while (!feof(fp))
    {
-   ReadLine(VBUFF,bufsize,fp);
+   ReadLine(VBUFF,CF_BUFSIZE,fp);
 
    if (VBUFF[0] == '#')
       {

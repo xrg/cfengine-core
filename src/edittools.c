@@ -41,7 +41,7 @@ int DoRecursiveEditFiles(char *name,int level,struct Edit *ptr,struct stat *sb)
 
 { DIR *dirh;
   struct dirent *dirp;
-  char pcwd[bufsize];
+  char pcwd[CF_BUFSIZE];
   struct stat statbuf;
   int goback;
 
@@ -94,20 +94,20 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       {
       if (lstat(dirp->d_name,&statbuf) == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",pcwd);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",pcwd);
          CfLog(cferror,OUTPUT,"stat");
          continue;
          }
       
       if (S_ISLNK(statbuf.st_mode) && (statbuf.st_mode != getuid()))   
          {
-         snprintf(OUTPUT,bufsize,"File %s is an untrusted link. cfagent will not follow it with a destructive operation (tidy)",pcwd);
+         snprintf(OUTPUT,CF_BUFSIZE,"File %s is an untrusted link. cfagent will not follow it with a destructive operation (tidy)",pcwd);
          continue;
          }
       
       if (stat(dirp->d_name,&statbuf) == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"RecursiveCheck was working on %s when this happened:\n",pcwd);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"RecursiveCheck was working on %s when this happened:\n",pcwd);
          CfLog(cferror,OUTPUT,"stat");
          continue;
          }
@@ -116,7 +116,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       {
       if (lstat(dirp->d_name,&statbuf) == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"RecursiveCheck was working in %s when this happened:\n",pcwd);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"RecursiveCheck was working in %s when this happened:\n",pcwd);
          CfLog(cferror,OUTPUT,"lstat");
          continue;
          }
@@ -130,7 +130,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
          }
       else
          {
-         if ((ptr->recurse > 1) || (ptr->recurse == INFINITERECURSE))
+         if ((ptr->recurse > 1) || (ptr->recurse == CF_INF_RECURSE))
             {
             goback = DoRecursiveEditFiles(pcwd,level-1,ptr,&statbuf);
             DirPop(goback,name,sb);
@@ -157,7 +157,7 @@ void DoEditHomeFiles(struct Edit *ptr)
 
 { DIR *dirh, *dirh2;
   struct dirent *dirp, *dirp2;
-  char *sp,homedir[bufsize],dest[bufsize];
+  char *sp,homedir[CF_BUFSIZE],dest[CF_BUFSIZE];
   struct passwd *pw;
   struct stat statbuf;
   struct Item *ip;
@@ -178,7 +178,7 @@ for (ip = VMOUNTLIST; ip != NULL; ip=ip->next)
    
    if ((dirh = opendir(ip->name)) == NULL)
       {
-      snprintf(OUTPUT,bufsize*2,"Can't open directory %s\n",ip->name);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open directory %s\n",ip->name);
       CfLog(cferror,OUTPUT,"opendir");
       return;
       }
@@ -201,7 +201,7 @@ for (ip = VMOUNTLIST; ip != NULL; ip=ip->next)
 
       if ((dirh2 = opendir(homedir)) == NULL)
          {
-         snprintf(OUTPUT,bufsize*2,"Can't open directory%s\n",homedir);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open directory%s\n",homedir);
          CfLog(cferror,OUTPUT,"opendir");
          return;
          }
@@ -240,7 +240,7 @@ for (ip = VMOUNTLIST; ip != NULL; ip=ip->next)
 
          WrapDoEditFile(ptr,dest);
       
-         chown(dest,uid,sameowner);
+         chown(dest,uid,CF_SAME_OWNER);
          }
       closedir(dirh2);
       }
@@ -253,8 +253,8 @@ for (ip = VMOUNTLIST; ip != NULL; ip=ip->next)
 void WrapDoEditFile(struct Edit *ptr,char *filename)
 
 { struct stat statbuf,statbuf2;
-  char linkname[bufsize];
-  char realname[bufsize];
+  char linkname[CF_BUFSIZE];
+  char realname[CF_BUFSIZE];
 
 Debug("WrapDoEditFile(%s,%s)\n",ptr->fname,filename);
   
@@ -264,12 +264,12 @@ if (lstat(filename,&statbuf) != -1)
       {
       EditVerbose("File %s is a link, editing real file instead\n",filename);
       
-      memset(linkname,0,bufsize);
-      memset(realname,0,bufsize);
+      memset(linkname,0,CF_BUFSIZE);
+      memset(realname,0,CF_BUFSIZE);
       
-      if (readlink(filename,linkname,bufsize-1) == -1)
+      if (readlink(filename,linkname,CF_BUFSIZE-1) == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"Cannot read link %s\n",filename);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot read link %s\n",filename);
          CfLog(cferror,OUTPUT,"readlink");
          return;
          }
@@ -283,7 +283,7 @@ if (lstat(filename,&statbuf) != -1)
       
       if (BufferOverflow(realname,linkname))
          {
-         snprintf(OUTPUT,bufsize*2,"(culprit %s in editfiles)\n",filename);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"(culprit %s in editfiles)\n",filename);
          CfLog(cferror,OUTPUT,"");
          return;
          }
@@ -293,7 +293,7 @@ if (lstat(filename,&statbuf) != -1)
          if (statbuf2.st_uid != statbuf.st_uid)
             {
             /* Link to /etc/passwd? ouch! */
-            snprintf(OUTPUT,bufsize*2,"Forbidden to edit a link to another user's file with privilege (%s)",filename);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Forbidden to edit a link to another user's file with privilege (%s)",filename);
             CfLog(cfinform,OUTPUT,"");
             return;
             }
@@ -340,8 +340,8 @@ void DoEditFile(struct Edit *ptr,char *filename)
 
 { struct Edlist *ep, *loopstart, *loopend, *ThrowAbort();
   struct Item *filestart = NULL, *newlineptr = NULL;
-  char currenteditscript[bufsize], searchstr[bufsize], expdata[bufsize];
-  char *sp, currentitem[maxvarsize];
+  char currenteditscript[CF_BUFSIZE], searchstr[CF_BUFSIZE], expdata[CF_EXPANDSIZE];
+  char *sp, currentitem[CF_MAXVARSIZE];
   struct stat tmpstat;
   char spliton = ':';
   mode_t maskval;
@@ -353,7 +353,7 @@ Debug("DoEditFile(%s)\n",filename);
 filestart = NULL;
 currenteditscript[0] = '\0';
 searchstr[0] = '\0';
-memset(EDITBUFF,0,bufsize);
+memset(EDITBUFF,0,CF_BUFSIZE);
 AUTOCREATED = false;
 IMAGEBACKUP = 's';
 
@@ -546,7 +546,7 @@ while (ep != NULL)
           break;
           
       case SetLine:
-          strcpy(EDITBUFF,expdata);
+          strncpy(EDITBUFF,expdata,CF_BUFSIZE);
           EditVerbose("Set current line to %s\n",EDITBUFF);
           break;
           
@@ -556,7 +556,7 @@ while (ep != NULL)
           
           if (strcmp(EDITBUFF,"") == 0)
              {
-             snprintf(OUTPUT,bufsize*2,"SetLine not set when calling AppendIfNoLineMatching %s\n",expdata);
+             snprintf(OUTPUT,CF_BUFSIZE*2,"SetLine not set when calling AppendIfNoLineMatching %s\n",expdata);
              CfLog(cferror,OUTPUT,"");
              break;
              }
@@ -592,7 +592,7 @@ while (ep != NULL)
           
           if (strcmp(EDITBUFF,"") == 0)
              {
-             snprintf(OUTPUT,bufsize,"SetLine not set when calling PrependIfNoLineMatching %s\n",expdata);
+             snprintf(OUTPUT,CF_BUFSIZE,"SetLine not set when calling PrependIfNoLineMatching %s\n",expdata);
              CfLog(cferror,OUTPUT,"");
              break;
              }
@@ -653,13 +653,13 @@ while (ep != NULL)
           break;
           
       case SetCommentStart:
-          strncpy(COMMENTSTART,expdata,maxvarsize);
-          COMMENTSTART[maxvarsize-1] = '\0';
+          strncpy(COMMENTSTART,expdata,CF_MAXVARSIZE);
+          COMMENTSTART[CF_MAXVARSIZE-1] = '\0';
           break;
           
       case SetCommentEnd:
-          strncpy(COMMENTEND,expdata,maxvarsize);
-          COMMENTEND[maxvarsize-1] = '\0';
+          strncpy(COMMENTEND,expdata,CF_MAXVARSIZE);
+          COMMENTEND[CF_MAXVARSIZE-1] = '\0';
           break;
           
       case CommentLinesMatching:
@@ -868,8 +868,8 @@ while (ep != NULL)
           break;
           
       case SetScript:
-          strncpy(currenteditscript, expdata, bufsize);
-          currenteditscript[bufsize-1] = '\0';
+          strncpy(currenteditscript, expdata, CF_BUFSIZE);
+          currenteditscript[CF_BUFSIZE-1] = '\0';
           break;
 
       case RunScript:
@@ -1040,13 +1040,13 @@ while (ep != NULL)
           break;
           
       case ReplaceAll:
-          strncpy(searchstr,expdata,bufsize);
+          strncpy(searchstr,expdata,CF_BUFSIZE);
           break;
           
       case With:
           if (!GlobalReplace(&filestart,searchstr,expdata))
              {
-             snprintf(OUTPUT,bufsize*2,"Error editing file %s",filename);
+             snprintf(OUTPUT,CF_BUFSIZE*2,"Error editing file %s",filename);
              CfLog(cferror,OUTPUT,"");
              }
           break;
@@ -1057,7 +1057,7 @@ while (ep != NULL)
           
       case AbortAtLineMatching:
           EDABORTMODE = true;
-          strcpy(VEDITABORT,expdata);
+          strncpy(VEDITABORT,expdata,CF_BUFSIZE);
           break;
           
       case UnsetAbort:
@@ -1090,9 +1090,9 @@ while (ep != NULL)
              {
              if (!feof(loop_fp))
                 {
-                memset(EDITBUFF,0,bufsize);
+                memset(EDITBUFF,0,CF_BUFSIZE);
                 
-                while (ReadLine(EDITBUFF,bufsize,loop_fp)) /* Like SetLine */
+                while (ReadLine(EDITBUFF,CF_BUFSIZE,loop_fp)) /* Like SetLine */
                    {
                    if (strlen(EDITBUFF) == 0)
                       {
@@ -1144,7 +1144,7 @@ while (ep != NULL)
           AppendToLine(CURRENTLINEPTR,expdata,filename);
           break;
           
-      default: snprintf(OUTPUT,bufsize*2,"Unknown action in editing of file %s\n",filename);
+      default: snprintf(OUTPUT,CF_BUFSIZE*2,"Unknown action in editing of file %s\n",filename);
           CfLog(cferror,OUTPUT,"");
           break;
       }
@@ -1329,7 +1329,7 @@ return true;
 int RunEditScript (char *script,char *fname,struct Item **filestart,struct Edit *ptr)
 
 { FILE *pp;
-  char buffer[bufsize];
+  char buffer[CF_BUFSIZE];
 
 if (script == NULL)
    {
@@ -1354,7 +1354,7 @@ else
 
 DeleteItemList(*filestart);
 
-snprintf(buffer,bufsize,"%s %s %s  2>&1",script,fname,CLASSTEXT[VSYSTEMHARDCLASS]);
+snprintf(buffer,CF_BUFSIZE,"%s %s %s  2>&1",script,fname,CLASSTEXT[VSYSTEMHARDCLASS]);
 
 EditVerbose("Running command: %s\n",buffer);
 
@@ -1375,7 +1375,7 @@ if (pp == NULL)
 
 while (!feof(pp))   
    {
-   ReadLine(CURRENTITEM,bufsize,pp);
+   ReadLine(CURRENTITEM,CF_BUFSIZE,pp);
 
    if (!feof(pp))
       {
@@ -1403,7 +1403,7 @@ return true;
 
 void DoFixEndOfLine(struct Item *list,char *type)
 
-  /* Assumes that extra_space macro allows enough space */
+  /* Assumes that CF_EXTRASPC macro allows enough space */
   /* in the allocated strings to add a few characters */
 
 { struct Item *ip;
@@ -1460,7 +1460,7 @@ printf("Unknown file format: %s\n",type);
 void HandleAutomountResources(struct Item **filestart,char *opts)
 
 { struct Mountables *mp;
-  char buffer[bufsize];
+  char buffer[CF_BUFSIZE];
   char *sp;
 
 for (mp = VMOUNTABLES; mp != NULL; mp=mp->next)
@@ -1470,7 +1470,7 @@ for (mp = VMOUNTABLES; mp != NULL; mp=mp->next)
       }
 
    sp++;
-   snprintf(buffer,bufsize,"%s\t%s\t%s",sp,opts,mp->filesystem);
+   snprintf(buffer,CF_BUFSIZE,"%s\t%s\t%s",sp,opts,mp->filesystem);
 
    if (LocateNextItemContaining(*filestart,sp) == NULL)
       {
@@ -1491,7 +1491,7 @@ void CheckEditSwitches(char *filename,struct Edit *ptr)
 { struct stat statbuf;
   struct Edlist *ep;
   char inform = 'd', log = 'd';
-  char expdata[bufsize];
+  char expdata[CF_EXPANDSIZE];
   int fd;
 struct Edlist *actions = ptr->actions;
   
@@ -1519,7 +1519,7 @@ for (ep = actions; ep != NULL; ep=ep->next)
                 
                 if ((fd = creat(filename,0644)) == -1)
                    {
-                   snprintf(OUTPUT,bufsize*2,"Unable to create file %s\n",filename);
+                   snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to create file %s\n",filename);
                    CfLog(cfinform,OUTPUT,"creat");
                    }
                 else
@@ -1527,7 +1527,7 @@ for (ep = actions; ep != NULL; ep=ep->next)
                    AUTOCREATED = true;
                    close(fd);
                    }
-                snprintf(OUTPUT,bufsize*2,"Creating file %s, mode %o\n",filename,(0644 & ~ptr->umask));
+                snprintf(OUTPUT,CF_BUFSIZE*2,"Creating file %s, mode %o\n",filename,(0644 & ~ptr->umask));
                 CfLog(cfinform,OUTPUT,"");
                 umask(mask);
                 return;
@@ -1593,7 +1593,7 @@ ResetOutputRoute(log,inform);
 
 void AddEditfileClasses (struct Edit *list,int editsdone)
 
-{ char *sp, currentitem[maxvarsize];
+{ char *sp, currentitem[CF_MAXVARSIZE];
   struct Edlist *ep;
 
 if (editsdone)
@@ -1661,13 +1661,13 @@ if (editsdone)
 int DeleteLinesWithFileItems(struct Item **filestart,char *infile,enum editnames code)
 
 { struct Item *ip,*ipc,*infilelist = NULL; 
-  char currentitem[bufsize];
+  char currentitem[CF_BUFSIZE];
   int slen, matches=0;
   int positive=false;
   
 if (!LoadItemList(&infilelist,infile))
    {
-   snprintf(OUTPUT,bufsize,"Cannot open file iterator %s in editfiles - aborting editing",infile);
+   snprintf(OUTPUT,CF_BUFSIZE,"Cannot open file iterator %s in editfiles - aborting editing",infile);
    CfLog(cferror,OUTPUT,"");
    return false;
    }
@@ -1758,11 +1758,11 @@ if (!LoadItemList(&infilelist,infile))
 int AppendLinesFromFile(struct Item **filestart,char *filename)
 
 { FILE *fp;
-  char buffer[bufsize]; 
+  char buffer[CF_BUFSIZE]; 
 
  if ((fp=fopen(filename,"r")) == NULL)
     {
-    snprintf(OUTPUT,bufsize,"Editfiles could not read file %s\n",filename);
+    snprintf(OUTPUT,CF_BUFSIZE,"Editfiles could not read file %s\n",filename);
     CfLog(cferror,OUTPUT,"fopen");
     return false;
     }
@@ -1770,7 +1770,7 @@ int AppendLinesFromFile(struct Item **filestart,char *filename)
  while (!feof(fp))
     {
     buffer[0] = '\0';
-    fgets(buffer,bufsize-1,fp);
+    fgets(buffer,CF_BUFSIZE-1,fp);
     Chop(buffer);
     if (!IsItemIn(*filestart,buffer))
        {
@@ -1835,7 +1835,7 @@ while(ep != NULL)
    
    if (ep->next == NULL)
       {
-      snprintf(OUTPUT,bufsize*2,"Missing EndGroup in %s",filename);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Missing EndGroup in %s",filename);
       CfLog(cferror,OUTPUT,"");
       break;
       }
@@ -1850,7 +1850,7 @@ while(ep != NULL)
 
 int BinaryEditFile(struct Edit *ptr,char *filename)
 
-{ char expdata[bufsize],search[bufsize];
+{ char expdata[CF_EXPANDSIZE],search[CF_BUFSIZE];
   struct Edlist *ep;
   struct stat statbuf;
   void *memseg;
@@ -1862,28 +1862,28 @@ search[0] = '\0';
  
 if (stat(filename,&statbuf) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't stat %s\n",filename);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't stat %s\n",filename);
    CfLog(cfverbose,OUTPUT,"stat");
    return false;
    }
 
 if ((EDITBINFILESIZE != 0) &&(statbuf.st_size > EDITBINFILESIZE))
    {
-   snprintf(OUTPUT,bufsize*2,"File %s is bigger than the limit <editbinaryfilesize>\n",filename);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"File %s is bigger than the limit <editbinaryfilesize>\n",filename);
    CfLog(cfinform,OUTPUT,"");
    return(false);
    }
 
 if (! S_ISREG(statbuf.st_mode))
    {
-   snprintf(OUTPUT,bufsize*2,"%s is not a plain file\n",filename);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"%s is not a plain file\n",filename);
    CfLog(cfinform,OUTPUT,"");
    return false;
    }
 
-if ((memseg = malloc(statbuf.st_size+buffer_margin)) == NULL)
+if ((memseg = malloc(statbuf.st_size+CF_BUFFERMARGIN)) == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"Unable to load file %s into memory",filename);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to load file %s into memory",filename);
    CfLog(cferror,OUTPUT,"malloc");
    return false;
    }
@@ -1919,7 +1919,7 @@ while (ep != NULL)
           
       case ReplaceAll:
           Debug("Replace %s\n",expdata);
-          strcpy(search,expdata);
+          strncpy(search,expdata,CF_BUFSIZE);
           break;
           
       case With:
@@ -1936,7 +1936,7 @@ while (ep != NULL)
           break;
           
       default:
-          snprintf(OUTPUT,bufsize*2,"Cannot use %s in a binary edit (%s)",VEDITNAMES[ep->code],filename);
+          snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot use %s in a binary edit (%s)",VEDITNAMES[ep->code],filename);
           CfLog(cferror,OUTPUT,"");
       }
    
@@ -1967,7 +1967,7 @@ while (ep != NULL)
 int LoadBinaryFile(char *source,off_t size,void *memseg)
 
 { int sd,n_read;
-  char buf[bufsize];
+  char buf[CF_BUFSIZE];
   off_t n_read_total = 0;
   char *ptr;
 
@@ -1975,7 +1975,7 @@ Debug("LoadBinaryFile(%s,%d)\n",source,size);
   
 if ((sd = open(source,O_RDONLY)) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"Can't copy %s!\n",source);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Can't copy %s!\n",source);
    CfLog(cfinform,OUTPUT,"open");
    return false;
    }
@@ -1984,7 +1984,7 @@ ptr = memseg;
  
 while (true)
    {
-   if ((n_read = read (sd,buf,bufsize)) == -1)
+   if ((n_read = read (sd,buf,CF_BUFSIZE)) == -1)
       {
       if (errno == EINTR) 
          {
@@ -1998,7 +1998,7 @@ while (true)
    memcpy(ptr,buf,n_read);
    ptr += n_read;
 
-   if (n_read < bufsize)
+   if (n_read < CF_BUFSIZE)
       {
       break;
       }
@@ -2018,7 +2018,7 @@ int SaveBinaryFile(char *file,off_t size,void *memseg,char *repository)
     preserve unix holes here ...*/
 
 { int dd;
-  char new[bufsize],backup[bufsize];
+  char new[CF_BUFSIZE],backup[CF_BUFSIZE];
 
 Debug("SaveBinaryFile(%s,%d)\n",file,size);
 Verbose("Saving %s\n",file);
@@ -2032,7 +2032,7 @@ unlink(new);  /* To avoid link attacks */
  
 if ((dd = open(new,O_WRONLY|O_CREAT|O_TRUNC|O_EXCL, 0600)) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"Copy %s security - failed attempt to exploit a race? (Not copied)\n",file);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Copy %s security - failed attempt to exploit a race? (Not copied)\n",file);
    CfLog(cfinform,OUTPUT,"open");
    return false;
    }
@@ -2045,7 +2045,7 @@ if (! IsItemIn(VREPOSLIST,new))
    {
    if (rename(file,backup) == -1)
       {
-      snprintf(OUTPUT,bufsize*2,"Error while renaming backup %s\n",file);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Error while renaming backup %s\n",file);
       CfLog(cferror,OUTPUT,"rename ");
       unlink(new);
       return false;
@@ -2054,7 +2054,7 @@ if (! IsItemIn(VREPOSLIST,new))
       {
       if (rename(new,file) == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"Error while renaming %s\n",file);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Error while renaming %s\n",file);
          CfLog(cferror,OUTPUT,"rename");
          return false;
          }       
@@ -2065,7 +2065,7 @@ if (! IsItemIn(VREPOSLIST,new))
  
 if (rename(new,file) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"Error while renaming %s\n",file);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Error while renaming %s\n",file);
    CfLog(cferror,OUTPUT,"rename");
    return false;
    }       
@@ -2087,7 +2087,7 @@ for (sp = 0; sp < (off_t)(size-strlen(data)); sp++)
    {
    if (memcmp((char *) memseg+sp,data,strlen(data)) == 0)
       {
-      snprintf(OUTPUT,bufsize*2,"WARNING! File %s contains literal string %.255s",filename,data);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"WARNING! File %s contains literal string %.255s",filename,data);
       CfLog(cferror,OUTPUT,"");
       return;
       }
@@ -2104,7 +2104,7 @@ for (sp = 0; sp < (off_t)(size-strlen(data)); sp++)
 
    if (regexec(&rx,(char *)memseg+sp,1,&pmatch,0) == 0)
       {
-      snprintf(OUTPUT,bufsize*2,"WARNING! File %s contains regular expression %.255s",filename,data);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"WARNING! File %s contains regular expression %.255s",filename,data);
       CfLog(cferror,OUTPUT,"");
       regfree(&rx);
       return;
@@ -2124,35 +2124,35 @@ Debug("WarnIfContainsFile(%s)\n",data);
 
 if (stat(data,&statbuf) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"File %s cannot be opened",data);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"File %s cannot be opened",data);
    CfLog(cferror,OUTPUT,"stat");
    return;
    }
 
 if (! S_ISREG(statbuf.st_mode))
    {
-   snprintf(OUTPUT,bufsize*2,"File %s cannot be used as a binary pattern",data);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"File %s cannot be used as a binary pattern",data);
    CfLog(cferror,OUTPUT,"");
    return;
    }
 
 if (statbuf.st_size > size)
    {
-   snprintf(OUTPUT,bufsize*2,"File %s is larger than the search file, ignoring",data);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"File %s is larger than the search file, ignoring",data);
    CfLog(cfinform,OUTPUT,"");
    return;
    }
 
-if ((pattern = malloc(statbuf.st_size+buffer_margin)) == NULL)
+if ((pattern = malloc(statbuf.st_size+CF_BUFFERMARGIN)) == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"File %s cannot be loaded",data);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"File %s cannot be loaded",data);
    CfLog(cferror,OUTPUT,"");
    return;
    }
 
 if (!LoadBinaryFile(data,statbuf.st_size,pattern))
    {
-   snprintf(OUTPUT,bufsize*2,"File %s cannot be opened",data);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"File %s cannot be opened",data);
    CfLog(cferror,OUTPUT,"stat");
    return;
    }
@@ -2161,7 +2161,7 @@ for (sp = 0; sp < (off_t)(size-statbuf.st_size); sp++)
    {
    if (memcmp((char *) memseg+sp,pattern,statbuf.st_size-1) == 0)
       {
-      snprintf(OUTPUT,bufsize*2,"WARNING! File %s contains the contents of reference file %s",filename,data);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"WARNING! File %s contains the contents of reference file %s",filename,data);
       CfLog(cferror,OUTPUT,"");
       free(pattern);
       return;
@@ -2196,7 +2196,7 @@ for (sp = 0; sp < (off_t)(size-strlen(replace)); sp++)
       {
       if (pmatch.rm_eo-pmatch.rm_so < strlen(replace))
          {
-         snprintf(OUTPUT,bufsize*2,"Cannot perform binary replacement: string doesn't fit in %s",filename);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot perform binary replacement: string doesn't fit in %s",filename);
          CfLog(cfverbose,OUTPUT,"");
          }
       else

@@ -39,7 +39,7 @@
 
 int IsBuiltinFunction(char *item)
 
-{ char name[maxvarsize],args[bufsize];
+{ char name[CF_MAXVARSIZE],args[CF_BUFSIZE];
   char c1 = '?',c2 = '?' ;
 
 Debug("IsBuiltinFunction(%s)\n",item);
@@ -84,7 +84,7 @@ return true;
 char *EvaluateFunction(char *f,char *value)
 
 { enum builtin fn;
-  char name[maxvarsize],vargs[bufsize],args[bufsize];
+  char name[CF_MAXVARSIZE],vargs[CF_BUFSIZE],args[CF_EXPANDSIZE];
   int negated = false;
 
 if (*f == '!')
@@ -143,12 +143,13 @@ switch (fn = FunctionStringToCode(name))
    case fn_readfile:
        HandleReadFile(args,value);
        break;
-      case fn_readarray:
+   case fn_readarray:
        HandleReadArray(args,value);
        break;
-      case fn_readtable:
+   case fn_readtable:
        HandleReadTable(args,value);
        break;
+       
    case fn_syslog:
        HandleSyslogFn(args,value);
        break;
@@ -178,7 +179,7 @@ switch (fn = FunctionStringToCode(name))
           }
        else
           {
-          snprintf(OUTPUT,bufsize,"Function %s can only be used within a private method context",f);
+          snprintf(OUTPUT,CF_BUFSIZE,"Function %s can only be used within a private method context",f);
           yyerror(OUTPUT);
           }
        break;
@@ -192,12 +193,12 @@ switch (fn = FunctionStringToCode(name))
           }
        else
           {
-          snprintf(OUTPUT,bufsize,"Function %s can only be used within a private method context",f);
+          snprintf(OUTPUT,CF_BUFSIZE,"Function %s can only be used within a private method context",f);
           yyerror(OUTPUT);
           }
        break;
        
-   default: snprintf(OUTPUT,bufsize,"No such builtin function %s\n",f);
+   default: snprintf(OUTPUT,CF_BUFSIZE,"No such builtin function %s\n",f);
        CfLog(cferror,OUTPUT,"");
    }
  
@@ -251,7 +252,7 @@ for (i = 1; BUILTINS[i] != NULL; i++)
 
 if (fn == nofn)
   {
-  snprintf(OUTPUT,bufsize,"Internal function (%s) not recognized",str);
+  snprintf(OUTPUT,CF_BUFSIZE,"Internal function (%s) not recognized",str);
   yyerror(OUTPUT);
   FatalError("Could not parse function");
   }
@@ -264,7 +265,7 @@ return (enum builtin) i;
 void GetRandom(char *args,char *value)
 
 { int result,count=0,from=-1,to=-1;
-  char argv[2][bufsize];
+  char argv[2][CF_BUFSIZE];
  
 if (ACTION != control)
    {
@@ -289,7 +290,7 @@ if (from > to)
 
 result = from + (int)(drand48()*(double)(to-from));
 Debug("RandomInt(%u)\n",result);
-snprintf(value,bufsize,"%u",result); 
+snprintf(value,CF_BUFSIZE,"%u",result); 
 }
 
 /*********************************************************************/
@@ -409,7 +410,7 @@ void HandleHostRange(char *args,char *value)
 void HandleCompareStat(enum builtin fn,char *args,char *value)
 
 { struct stat frombuf,tobuf;
-  char *sp,argv[2][bufsize];
+  char *sp,argv[2][CF_BUFSIZE];
   int count = 0;
 
 FunctionArgs(args,argv,2); 
@@ -460,7 +461,7 @@ strcpy(value,CF_NOCLASS);
 
 void HandleFunctionExec(char *args,char *value)
 
-{ char command[maxvarsize];
+{ char command[CF_MAXVARSIZE];
 
  if (ACTION != control)
    {
@@ -469,10 +470,10 @@ void HandleFunctionExec(char *args,char *value)
  
 if (*args == '/')
    {
-   strncpy(command,args,maxvarsize);
+   strncpy(command,args,CF_MAXVARSIZE);
    GetExecOutput(command,value);
    Chop(value);
-   value[maxvarsize-1] = '\0';  /* Truncate to maxvarsize */
+   value[CF_MAXVARSIZE-1] = '\0';  /* Truncate to CF_MAXVARSIZE */
    }
  else
     {
@@ -484,7 +485,7 @@ if (*args == '/')
 
 void HandleReturnsZero(char *args,char *value)
 
-{ char command[bufsize];
+{ char command[CF_BUFSIZE];
 
 if (ACTION != groups)
    {
@@ -495,7 +496,7 @@ Debug("HandleReturnsZero(%s)\n",args);
  
 if (*args == '/')
    {
-   strncpy(command,args,bufsize);
+   strncpy(command,args,CF_BUFSIZE);
    
    if (ShellCommandReturnsZero(command))
       {
@@ -537,13 +538,19 @@ strcpy(value,CF_NOCLASS);
 
 void HandleSyslogFn(char *args,char *value)
 
-{ char argv[2][bufsize];
+{ char argv[2][CF_BUFSIZE];
   int priority = LOG_ERR;
 
 FunctionArgs(args,argv,2);
 
 value[0] = '\0';
 
+if (PARSING)
+   {
+   strcpy(value,"doinstall");
+   return;
+   }
+ 
 if (strcmp(argv[0],"LOG_EMERG") == 0)
    {
    priority = LOG_EMERG;
@@ -570,7 +577,7 @@ else if (strcmp(argv[0],"LOG_ERR") == 0)
    }
 else
    {
-   snprintf(OUTPUT,bufsize,"Unknown syslog priority (%s) - changing to LOG_ERR",argv[0]);
+   snprintf(OUTPUT,CF_BUFSIZE,"Unknown syslog priority (%s) - changing to LOG_ERR",argv[0]);
    CfLog(cferror,OUTPUT,"");
    priority = LOG_ERR;
    }
@@ -588,7 +595,7 @@ if (!DONTDO)
 
 void HandleStrCmp(char *args,char *value)
 
-{ char *sp,argv[2][bufsize];
+{ char *sp,argv[2][CF_BUFSIZE];
   int count = 0;
 
 FunctionArgs(args,argv,2); 
@@ -607,7 +614,7 @@ else
 
 void HandleRegCmp(char *args,char *value)
 
-{ char *sp,argv[2][bufsize];
+{ char *sp,argv[2][CF_BUFSIZE];
   struct Item *list = NULL, *ret; 
   int count = 0;
 
@@ -640,7 +647,7 @@ DeleteItemList(list);
 
 void HandleReadFile(char *args,char *value)
 
-{ char *sp,argv[2][bufsize];
+{ char *sp,argv[2][CF_BUFSIZE];
   int i,val = 0;
   FILE *fp;
 
@@ -650,20 +657,20 @@ val = atoi(argv[1]);
 
 if ((fp = fopen(argv[0],"r")) == NULL)
    {
-   snprintf(OUTPUT,bufsize,"Could not open ReadFile(%s)\n",argv[0]);
+   snprintf(OUTPUT,CF_BUFSIZE,"Could not open ReadFile(%s)\n",argv[0]);
    CfLog(cferror,OUTPUT,"fopen");
    return;
    }
 
-if (val > bufsize - buffer_margin)
+if (val > CF_BUFSIZE - CF_BUFFERMARGIN)
    {
-   snprintf(OUTPUT,bufsize,"ReadFile() will not read more than %d bytes",bufsize - buffer_margin);
+   snprintf(OUTPUT,CF_BUFSIZE,"ReadFile() will not read more than %d bytes",CF_BUFSIZE - CF_BUFFERMARGIN);
    CfLog(cferror,OUTPUT,"");
    fclose(fp);
    return;
    }
 
-memset(value,0,bufsize); 
+memset(value,0,CF_BUFSIZE); 
 fread(value,val,1,fp);
 
 for (i = val+1; i >= 0; i--)
@@ -683,9 +690,9 @@ fclose(fp);
 
 void HandleReadArray(char *args,char *value)
 
-{ char argv[5][bufsize];
+{ char argv[5][CF_BUFSIZE];
   char *sp,*filename=argv[0],*maxbytes=argv[4],*formattype=argv[1];
-  char *commentchar=argv[3],*sepchar=argv[2],buffer[bufsize];
+  char *commentchar=argv[3],*sepchar=argv[2],buffer[CF_BUFSIZE];
   int i=0,val = 0,read = 0;
   struct Item *list = NULL,*ip;
   FILE *fp;
@@ -696,7 +703,7 @@ val = atoi(maxbytes);
 
 if ((fp = fopen(filename,"r")) == NULL)
    {
-   snprintf(OUTPUT,bufsize,"Could not open ReadFile(%s)\n",filename);
+   snprintf(OUTPUT,CF_BUFSIZE,"Could not open ReadFile(%s)\n",filename);
    CfLog(cferror,OUTPUT,"fopen");
    return;
    }
@@ -708,8 +715,8 @@ if (strlen(sepchar) > 1)
 
 while (!feof(fp))
    {
-   memset(buffer,0,bufsize);
-   fgets(buffer,bufsize,fp);
+   memset(buffer,0,CF_BUFSIZE);
+   fgets(buffer,CF_BUFSIZE,fp);
 
    if ((read > val) && (val > 0))
       {
@@ -721,7 +728,7 @@ while (!feof(fp))
 
    if (strlen(commentchar) > 0)
       {
-      for (sp = buffer; sp < buffer+bufsize; sp++) /* Remove comments */
+      for (sp = buffer; sp < buffer+CF_BUFSIZE; sp++) /* Remove comments */
          {
          if (strncmp(sp,commentchar,strlen(commentchar)) == 0)
             {
@@ -745,18 +752,18 @@ while (!feof(fp))
       
       for (ip = list; ip != NULL; ip=ip->next)
          {
-         char lvalue[bufsize];
+         char lvalue[CF_BUFSIZE];
          i++;
          Debug("Setting %s[%d] = %s\n",CURRENTITEM,i,ip->name);
          
-         snprintf(lvalue,bufsize-1,"%s[%d]",CURRENTITEM,i);
+         snprintf(lvalue,CF_BUFSIZE-1,"%s[%d]",CURRENTITEM,i);
          InstallControlRValue(lvalue,ip->name);
-         snprintf(value,bufsize-1,"CF_ASSOCIATIVE_ARRAY%s",args);
+         snprintf(value,CF_BUFSIZE-1,"CF_ASSOCIATIVE_ARRAY%s",args);
          }
       }
    else if (strcmp(formattype,"textkey") == 0)
       {
-      char argv[2][bufsize],lvalue[bufsize];
+      char argv[2][CF_BUFSIZE],lvalue[CF_BUFSIZE];
       if (!FunctionArgs(buffer,argv,2))
          {
          break;
@@ -764,9 +771,9 @@ while (!feof(fp))
       
       Debug("Setting %s[%s] = %s\n",CURRENTITEM,argv[0],argv[1]);
       
-      snprintf(lvalue,bufsize-1,"%s[%s]",CURRENTITEM,argv[0]);
+      snprintf(lvalue,CF_BUFSIZE-1,"%s[%s]",CURRENTITEM,argv[0]);
       InstallControlRValue(lvalue,argv[1]);
-      snprintf(value,bufsize-1,"CF_ASSOCIATIVE_ARRAY%s",args);
+      snprintf(value,CF_BUFSIZE-1,"CF_ASSOCIATIVE_ARRAY%s",args);
       }
    else
       {
@@ -775,16 +782,16 @@ while (!feof(fp))
    }
  
  fclose(fp); 
- snprintf(value,bufsize-1,"CF_ASSOCIATIVE_ARRAY%s",args);
+ snprintf(value,CF_BUFSIZE-1,"CF_ASSOCIATIVE_ARRAY%s",args);
 }
 
 /*********************************************************************/
 
 void HandleReadTable(char *args,char *value)
 
-{  char argv[5][bufsize];
+{  char argv[5][CF_BUFSIZE];
   char *sp,*filename=argv[0],*maxbytes=argv[4],*formattype=argv[1];
-  char *commentchar=argv[3],*sepchar=argv[2],buffer[bufsize];
+  char *commentchar=argv[3],*sepchar=argv[2],buffer[CF_BUFSIZE];
   int i=0,j=0,val = 0,read = 0;
   struct Item *list = NULL,*ip;
   FILE *fp;
@@ -795,7 +802,7 @@ val = atoi(maxbytes);
 
 if ((fp = fopen(filename,"r")) == NULL)
    {
-   snprintf(OUTPUT,bufsize,"Could not open ReadFile(%s)\n",filename);
+   snprintf(OUTPUT,CF_BUFSIZE,"Could not open ReadFile(%s)\n",filename);
    CfLog(cferror,OUTPUT,"fopen");
    return;
    }
@@ -807,8 +814,8 @@ if (strlen(sepchar) > 1)
 
 while (!feof(fp))
    {
-   memset(buffer,0,bufsize);
-   fgets(buffer,bufsize,fp);
+   memset(buffer,0,CF_BUFSIZE);
+   fgets(buffer,CF_BUFSIZE,fp);
 
    i++;
    j=0;
@@ -823,7 +830,7 @@ while (!feof(fp))
 
    if (strlen(commentchar) > 0)
       {
-      for (sp = buffer; sp < buffer+bufsize; sp++) /* Remove comments */
+      for (sp = buffer; sp < buffer+CF_BUFSIZE; sp++) /* Remove comments */
          {
          if (strncmp(sp,commentchar,strlen(commentchar)) == 0)
             {
@@ -847,18 +854,18 @@ while (!feof(fp))
       
       for (ip = list; ip != NULL; ip=ip->next)
          {
-         char lvalue[bufsize];
+         char lvalue[CF_BUFSIZE];
          j++;
          Debug("Setting %s[%d][%d] = %s\n",CURRENTITEM,i,j,ip->name);
          
-         snprintf(lvalue,bufsize-1,"%s[%d][%d]",CURRENTITEM,i,j);
+         snprintf(lvalue,CF_BUFSIZE-1,"%s[%d][%d]",CURRENTITEM,i,j);
          InstallControlRValue(lvalue,ip->name);
-         snprintf(value,bufsize-1,"CF_ASSOCIATIVE_ARRAY%s",args);
+         snprintf(value,CF_BUFSIZE-1,"CF_ASSOCIATIVE_ARRAY%s",args);
          }
       }
    else if (strcmp(formattype,"textkey") == 0)
       {
-      char argv[2][bufsize],lvalue[bufsize];
+      char argv[2][CF_BUFSIZE],lvalue[CF_BUFSIZE];
       if (!FunctionArgs(buffer,argv,3))
          {
          break;
@@ -866,9 +873,9 @@ while (!feof(fp))
       
       Debug("Setting %s[%s] = %s\n",CURRENTITEM,argv[0],argv[1]);
       
-      snprintf(lvalue,bufsize-1,"%s[%s][%s]",CURRENTITEM,argv[0],argv[1]);
+      snprintf(lvalue,CF_BUFSIZE-1,"%s[%s][%s]",CURRENTITEM,argv[0],argv[1]);
       InstallControlRValue(lvalue,argv[2]);
-      snprintf(value,bufsize-1,"CF_ASSOCIATIVE_ARRAY%s",args);
+      snprintf(value,CF_BUFSIZE-1,"CF_ASSOCIATIVE_ARRAY%s",args);
       }
    else
       {
@@ -877,7 +884,7 @@ while (!feof(fp))
    }
  
 fclose(fp); 
-snprintf(value,bufsize-1,"CF_ASSOCIATIVE_ARRAY%s",args);
+snprintf(value,CF_BUFSIZE-1,"CF_ASSOCIATIVE_ARRAY%s",args);
 }
 
 
@@ -890,7 +897,7 @@ Verbose("This is a method with return value list: (%s)\n",args);
 
  if (strlen(METHODRETURNVARS) == 0)
     {
-    strncpy(METHODRETURNVARS,args,bufsize-1);
+    strncpy(METHODRETURNVARS,args,CF_BUFSIZE-1);
     }
  else
     {
@@ -909,7 +916,7 @@ Verbose("This is a method with return class list: %s\n",args);
 
  if (strlen(METHODRETURNCLASSES) == 0)
     {
-    strncpy(METHODRETURNCLASSES,args,bufsize-1);
+    strncpy(METHODRETURNCLASSES,args,CF_BUFSIZE-1);
     }
  else
     {
@@ -924,7 +931,7 @@ Verbose("This is a method with return class list: %s\n",args);
 void HandleShowState(char *args,char *value)
 
 { struct stat statbuf;
-  char buffer[bufsize];
+  char buffer[CF_BUFSIZE],vbuff[CF_BUFSIZE];
   struct Item *addresses = NULL,*ip;
   FILE *fp;
   int i = 0, tot=0, min_signal_diversity = 1,conns=1,classes=0;
@@ -946,13 +953,13 @@ if (PARSING)
    return;
    }
  
-snprintf(buffer,bufsize-1,"%s/state/cf_%s",WORKDIR,args);
+snprintf(buffer,CF_BUFSIZE-1,"%s/state/cf_%s",WORKDIR,args);
 
 if (stat(buffer,&statbuf) == 0)
    {
    if ((fp = fopen(buffer,"r")) == NULL)
       {
-      snprintf(OUTPUT,bufsize,"Could not open state memory %s\n",buffer);
+      snprintf(OUTPUT,CF_BUFSIZE,"Could not open state memory %s\n",buffer);
       CfLog(cfinform, OUTPUT,"fopen");
       return;
       }
@@ -961,11 +968,11 @@ if (stat(buffer,&statbuf) == 0)
    printf("%s: In the last 40 minutes, the peak state was:\n",VPREFIX);
    while(!feof(fp))
       {
-      char *sp,local[bufsize],remote[bufsize];
+      char *sp,local[CF_BUFSIZE],remote[CF_BUFSIZE];
       buffer[0] = local[0] = remote[0] = '\0';
 
-      memset(VBUFF,0,bufsize);
-      fgets(buffer,bufsize,fp);
+      memset(vbuff,0,CF_BUFSIZE);
+      fgets(buffer,CF_BUFSIZE,fp);
 
       if (strlen(buffer) > 0)
          {
@@ -984,7 +991,8 @@ if (stat(buffer,&statbuf) == 0)
                   sscanf(buffer,"%s %s",local,remote);             /* solaris-like */
                   }
                
-               strncpy(VBUFF,remote,bufsize-1);
+               strncpy(vbuff,remote,CF_BUFSIZE-1);
+               DePort(vbuff);
                }
             }
          else if (IsTCPType(args))
@@ -1013,20 +1021,20 @@ if (stat(buffer,&statbuf) == 0)
                   }
                }
             
-            strncpy(VBUFF,offset,bufsize-1);
-            Chop(VBUFF);
+            strncpy(vbuff,offset,CF_BUFSIZE-1);
+            Chop(vbuff);
             }
          
-         if (!IsItemIn(addresses,VBUFF))
+         if (!IsItemIn(addresses,vbuff))
             {
             conns++;
-            AppendItem(&addresses,VBUFF,"");
-            IncrementItemListCounter(addresses,VBUFF);
+            AppendItem(&addresses,vbuff,"");
+            IncrementItemListCounter(addresses,vbuff);
             }
          else
             {
             conns++;    
-            IncrementItemListCounter(addresses,VBUFF);
+            IncrementItemListCounter(addresses,vbuff);
             }
          }
       }
@@ -1053,7 +1061,7 @@ if (stat(buffer,&statbuf) == 0)
             Verbose("\nRejecting address %s\n",ip->name);
             continue;
             }
-         
+
          printf(" DNS key: %s = %s (%d/%d)\n",buffer,IPString2Hostname(buffer),ip->counter,conns);
          
          if (strlen(ip->name) > maxlen)
@@ -1123,12 +1131,12 @@ if (stat(buffer,&statbuf) == 0)
       }
    
    printf("%s: -----------------------------------------------------------------------------------\n",VPREFIX);
-   snprintf(buffer,bufsize,"State of %s peaked at %s\n",args,ctime(&statbuf.st_mtime));
+   snprintf(buffer,CF_BUFSIZE,"State of %s peaked at %s\n",args,ctime(&statbuf.st_mtime));
    strcpy(value,buffer);
    }
 else 
    {
-   snprintf(buffer,bufsize,"State parameter %s is not known or recorded\n",args);   
+   snprintf(buffer,CF_BUFSIZE,"State parameter %s is not known or recorded\n",args);   
    strcpy(value,buffer);
    }
 
@@ -1142,8 +1150,8 @@ if (dist)
 
 void HandleFriendStatus(char *args,char *value)
 
-{ char argv[1][bufsize];
-  int time = 0;
+{ char argv[1][CF_BUFSIZE];
+  int time = -1;
   
 if ((ACTION != alerts) && PARSING)
    {
@@ -1160,7 +1168,7 @@ if (PARSING)
 
 time = atoi(argv[0]);
 
-if (time > 0)
+if (time >= 0)
    {
    CheckFriendConnections(time);
    }
@@ -1172,7 +1180,7 @@ strcpy(value,""); /* No reply */
 
 void HandleSetState(char *args,char *value)
 
-{ char argv[3][bufsize];
+{ char argv[3][CF_BUFSIZE];
   char *name=argv[0],*ttlbuf=argv[1],*policy=argv[2];
   unsigned int ttl = 0;
 
@@ -1213,7 +1221,7 @@ else
 
 void HandleUnsetState(char *args,char *value)
 
-{ char arg1[bufsize];
+{ char arg1[CF_BUFSIZE];
  
 value[0] = '\0';
 OneArg(args,arg1);
@@ -1226,7 +1234,7 @@ DeletePersistentClass(arg1);
 
 void HandlePrepModule(char *args,char *value)
 
-{ char argv[2][bufsize];
+{ char argv[2][CF_BUFSIZE];
  
 value[0] = '\0';
 FunctionArgs(args,argv,2);
@@ -1247,16 +1255,16 @@ else
 
 void HandleAssociation(char *args,char *value)
 
-{ char argv[2][bufsize],lvalue[bufsize];
+{ char argv[2][CF_BUFSIZE],lvalue[CF_BUFSIZE];
  
 value[0] = '\0';
 FunctionArgs(args,argv,2);
 
 Debug("HandleAssociation(%s <-> %s)\n",argv[0],argv[1]);
 
-snprintf(lvalue,bufsize-1,"%s[%s]",CURRENTITEM,argv[0]);
+snprintf(lvalue,CF_BUFSIZE-1,"%s[%s]",CURRENTITEM,argv[0]);
 InstallControlRValue(lvalue,argv[1]);
-snprintf(value,bufsize-1,"CF_ASSOCIATIVE_ARRAY%s",args);
+snprintf(value,CF_BUFSIZE-1,"CF_ASSOCIATIVE_ARRAY%s",args);
 }
 
 /*********************************************************************/
@@ -1267,9 +1275,9 @@ void OneArg(args,arg1)
 
 char *args,*arg1;
 
-{ char one[bufsize];
+{ char one[CF_BUFSIZE];
 
-memset(one,0,bufsize);
+memset(one,0,CF_BUFSIZE);
  
 if (strchr(args,','))
    {
@@ -1282,7 +1290,7 @@ strcpy(arg1,UnQuote(args));
 
 /*********************************************************************/
 
-int FunctionArgs(char *args,char arg[][bufsize],int number)
+int FunctionArgs(char *args,char arg[][CF_BUFSIZE],int number)
 
 { char *argv[10];
   char *sp,**start;
@@ -1291,8 +1299,8 @@ int FunctionArgs(char *args,char arg[][bufsize],int number)
 for (i = 0; i < number; i++)
    {
    arg[i][0] = '\0';
-   argv[i] = (char *)malloc(bufsize);
-   memset(argv[i],0,bufsize);
+   argv[i] = (char *)malloc(CF_BUFSIZE);
+   memset(argv[i],0,CF_BUFSIZE);
    }
  
 start = malloc(sizeof(char *)*(number+1));
@@ -1332,12 +1340,12 @@ for (sp = args; *sp != '\0'; sp++)
     {
     if (PARSING)
        {
-       snprintf(OUTPUT,bufsize,"Function or format of input file requires %d argument items",number);
+       snprintf(OUTPUT,CF_BUFSIZE,"Function or format of input file requires %d argument items",number);
        yyerror(OUTPUT);
        }
     else
        {
-       snprintf(OUTPUT,bufsize,"Assignment (%s) with format error",args);
+       snprintf(OUTPUT,CF_BUFSIZE,"Assignment (%s) with format error",args);
        CfLog(cferror,OUTPUT,"");
        }
     return false;
@@ -1360,52 +1368,3 @@ free(start);
 return true;
 }
 
-
-/*****************************************************************/
-
-int IsSocketType(char *s)
-
-{ int i;
-
-for (i = 0; i < ATTR; i++)
-   {
-   if (strstr(s,ECGSOCKS[i][1]))
-      {
-      Debug("IsSocketType(%s=%s)\n",s,ECGSOCKS[i][1]);
-      
-      return true;
-      }
-   }
-return false;
-}
-
-/*****************************************************************/
-
-int IsTCPType(char *s)
-
-{ int i;
-
-for (i = 0; i < NETATTR; i++)
-   {
-   if (strstr(s,TCPNAMES[i]))
-      {
-      Debug("IsTCPType(%s)\n",s); 
-      return true;
-      }
-   }
-return false;
-}
-
-/*****************************************************************/
-
-int IsProcessType(char *s)
-
-{ int i;
-
- if (strcmp(s,"procs") == 0)
-    {
-    return true;
-    }
- 
- return false;
-}

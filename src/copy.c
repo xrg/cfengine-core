@@ -69,7 +69,7 @@ int CopyRegDisk(char *source,char *new,struct Image *ip)
   
 if ((sd = open(source,O_RDONLY|O_BINARY)) == -1)
    {
-   snprintf(OUTPUT,bufsize,"Can't copy %s!\n",source);
+   snprintf(OUTPUT,CF_BUFSIZE,"Can't copy %s!\n",source);
    CfLog(cfinform,OUTPUT,"open");
    unlink(new);
    return false;
@@ -79,7 +79,7 @@ unlink(new);  /* To avoid link attacks */
  
 if ((dd = open(new,O_WRONLY|O_CREAT|O_TRUNC|O_EXCL|O_BINARY, 0600)) == -1)
    {
-   snprintf(OUTPUT,bufsize,"Copy %s:%s security - failed attempt to exploit a race? (Not copied)\n",ip->server,new);
+   snprintf(OUTPUT,CF_BUFSIZE,"Copy %s:%s security - failed attempt to exploit a race? (Not copied)\n",ip->server,new);
    CfLog(cfinform,OUTPUT,"open");
    close(sd);
    unlink(new);
@@ -141,7 +141,7 @@ while (true)
          /* Make a hole.  */
          if (lseek (dd, (off_t) n_read, SEEK_CUR) < 0L)
             {
-            snprintf(OUTPUT,bufsize,"Copy failed (no space?) while doing %s to %s\n",source,new);
+            snprintf(OUTPUT,CF_BUFSIZE,"Copy failed (no space?) while doing %s to %s\n",source,new);
             CfLog(cferror,OUTPUT,"lseek");
             free(buf);
             unlink(new);
@@ -162,7 +162,7 @@ while (true)
       {
       if (cf_full_write (dd, buf, n_read) < 0)
          {
-         snprintf(OUTPUT,bufsize*2,"Copy failed (no space?) while doing %s to %s\n",source,new);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Copy failed (no space?) while doing %s to %s\n",source,new);
          CfLog(cferror,OUTPUT,"");
          close(sd);
          close(dd);
@@ -236,7 +236,7 @@ int EmbeddedWrite(char *new,int dd,char *buf,struct Image *ip,int towrite,int *l
        /* Make a hole.  */
        if (lseek (dd,(off_t)n_read,SEEK_CUR) < 0L)
           {
-          snprintf(OUTPUT,bufsize,"lseek in EmbeddedWrite, dest=%s\n", new);
+          snprintf(OUTPUT,CF_BUFSIZE,"lseek in EmbeddedWrite, dest=%s\n", new);
           CfLog(cferror,OUTPUT,"lseek");
           return false;
           }
@@ -253,7 +253,7 @@ int EmbeddedWrite(char *new,int dd,char *buf,struct Image *ip,int towrite,int *l
     {
     if (cf_full_write (dd,buf,towrite) < 0)
        {
-       snprintf(OUTPUT,bufsize*2,"Local disk write(%.256s) failed\n",new);
+       snprintf(OUTPUT,CF_BUFSIZE*2,"Local disk write(%.256s) failed\n",new);
        CfLog(cferror,OUTPUT,"write");
        CONN->error = true;
        return false;

@@ -47,8 +47,8 @@
 /*                                                                 */
 /*******************************************************************/
 
-char VBUFF[bufsize]; /* General workspace, contents not guaranteed */
-char OUTPUT[bufsize*2];
+char VBUFF[CF_BUFSIZE]; /* General workspace, contents not guaranteed */
+char OUTPUT[CF_BUFSIZE*2];
 int AUTHENTICATED = false;
 int CHECKSUMUPDATES = false;
 
@@ -57,8 +57,8 @@ int PASS;
 char *CHECKSUMDB;
 char PADCHAR = ' ';
 char CONTEXTID[32];
-char CFPUBKEYFILE[bufsize];
-char CFPRIVKEYFILE[bufsize];
+char CFPUBKEYFILE[CF_BUFSIZE];
+char CFPRIVKEYFILE[CF_BUFSIZE];
 char AVDB[1024];
 
 RSA *PRIVKEY = NULL, *PUBKEY = NULL;
@@ -100,16 +100,16 @@ pthread_mutex_t MUTEX_LOCK = PTHREAD_MUTEX_INITIALIZER;
   PUBLIC char *VREPOSITORY = NULL;
   PUBLIC char *COMPRESSCOMMAND = NULL;
 
-  PUBLIC char VPREFIX[maxvarsize];
+  PUBLIC char VPREFIX[CF_MAXVARSIZE];
 
-  PUBLIC char VINPUTFILE[bufsize];
-  PUBLIC char VCURRENTFILE[bufsize];
-  PUBLIC char VLOGFILE[bufsize];
-  PUBLIC char ALLCLASSBUFFER[4*bufsize];
-  PUBLIC char ELSECLASSBUFFER[bufsize];
-  PUBLIC char FAILOVERBUFFER[bufsize];
-  PUBLIC char CHROOT[bufsize];
-  PUBLIC char EDITBUFF[bufsize];
+  PUBLIC char VINPUTFILE[CF_BUFSIZE];
+  PUBLIC char VCURRENTFILE[CF_BUFSIZE];
+  PUBLIC char VLOGFILE[CF_BUFSIZE];
+  PUBLIC char ALLCLASSBUFFER[4*CF_BUFSIZE];
+  PUBLIC char ELSECLASSBUFFER[CF_BUFSIZE];
+  PUBLIC char FAILOVERBUFFER[CF_BUFSIZE];
+  PUBLIC char CHROOT[CF_BUFSIZE];
+  PUBLIC char EDITBUFF[CF_BUFSIZE];
 
   PUBLIC short DEBUG = false;
   PUBLIC short D1 = false;
@@ -189,7 +189,7 @@ char *ECGSOCKS[ATTR][2] =
    {"443","wwws"}
    };
 
-char *TCPNAMES[NETATTR] =
+char *TCPNAMES[CF_NETATTR] =
    {
    "icmp",
    "udp",
@@ -219,12 +219,13 @@ char *TCPNAMES[NETATTR] =
      NULL
      };
 
-  PUBLIC char METHODNAME[bufsize];
-  PUBLIC char METHODFILENAME[bufsize];
-  PUBLIC char METHODREPLYTO[bufsize];
-  PUBLIC char METHODRETURNVARS[bufsize];
-  PUBLIC char METHODRETURNCLASSES[bufsize];
-  PUBLIC char METHODMD5[bufsize];
+  PUBLIC char METHODNAME[CF_BUFSIZE];
+  PUBLIC char METHODFILENAME[CF_BUFSIZE];
+  PUBLIC char METHODREPLYTO[CF_BUFSIZE];
+  PUBLIC char METHODFORCE[CF_BUFSIZE];
+  PUBLIC char METHODRETURNVARS[CF_BUFSIZE];
+  PUBLIC char METHODRETURNCLASSES[CF_BUFSIZE];
+  PUBLIC char METHODMD5[CF_BUFSIZE];
 
  /*******************************************************************/
  /* Data/list structures - root pointers                            */
@@ -353,18 +354,18 @@ char *TCPNAMES[NETATTR] =
  /* Reserved variables                                              */
  /*******************************************************************/
 
- PROTECTED char   VMAILSERVER[bufsize];
+ PROTECTED char   VMAILSERVER[CF_BUFSIZE];
 
- PROTECTED char      VFACULTY[maxvarsize];
- PROTECTED char       VDOMAIN[maxvarsize];
- PROTECTED char       VSYSADM[maxvarsize];
- PROTECTED char      VNETMASK[maxvarsize];
- PROTECTED char    VBROADCAST[maxvarsize];
- PROTECTED char VDEFAULTROUTE[maxvarsize];
- PROTECTED char      VNFSTYPE[maxvarsize];
- PROTECTED char       VFQNAME[maxvarsize];
- PROTECTED char       VUQNAME[maxvarsize];
- PROTECTED char       LOGFILE[maxvarsize];
+ PROTECTED char      VFACULTY[CF_MAXVARSIZE];
+ PROTECTED char       VDOMAIN[CF_MAXVARSIZE];
+ PROTECTED char       VSYSADM[CF_MAXVARSIZE];
+ PROTECTED char      VNETMASK[CF_MAXVARSIZE];
+ PROTECTED char    VBROADCAST[CF_MAXVARSIZE];
+ PROTECTED char VDEFAULTROUTE[CF_MAXVARSIZE];
+ PROTECTED char      VNFSTYPE[CF_MAXVARSIZE];
+ PROTECTED char       VFQNAME[CF_MAXVARSIZE];
+ PROTECTED char       VUQNAME[CF_MAXVARSIZE];
+ PROTECTED char       LOGFILE[CF_MAXVARSIZE];
 
  PROTECTED char         VYEAR[5];
  PROTECTED char         VDAY[3];
@@ -639,8 +640,7 @@ char *TCPNAMES[NETATTR] =
   PUBLIC short ISCFENGINE;  /* for re-using parser code in cfd */
 
   PUBLIC  short PARSING = false;
-PRIVATE short NOABSPATH = false;
-  PRIVATE short TIDYDIRS = false;
+  PRIVATE short NOABSPATH = false;
   PRIVATE short TRAVLINKS = false;
   PRIVATE short PTRAVLINKS = false;
   PRIVATE short DEADLINKS = true;
@@ -687,6 +687,7 @@ PRIVATE short NOABSPATH = false;
   PROTECTED  struct Item *VFILTERBUILD = NULL;
   PROTECTED  struct Item *VSTRATEGYBUILD = NULL;
 
+  PRIVATE char TIDYDIRS = 'n';
   PRIVATE char XDEV = false;
   PRIVATE char IMAGEBACKUP='y';
   PRIVATE char TRUSTKEY = 'n';
@@ -813,6 +814,7 @@ PRIVATE short NOABSPATH = false;
      "force",
      "forcedirs",
      "forceipv4",
+     "forcereplyto",
      "backup",
      "rotate",
      "size",
@@ -926,7 +928,7 @@ PRIVATE short NOABSPATH = false;
 /*                                                                 */
 /*******************************************************************/
 
-  PRIVATE char VEDITABORT[maxlinksize];
+  PRIVATE char VEDITABORT[CF_BUFSIZE];
 
   PUBLIC int EDITFILESIZE = 10000;
   PUBLIC int EDITBINFILESIZE = 10000000;
@@ -944,8 +946,8 @@ PRIVATE short NOABSPATH = false;
 
   PRIVATE int AUTOCREATED = 0;
 
-  PRIVATE char COMMENTSTART[maxvarsize];
-  PRIVATE char COMMENTEND[maxvarsize];
+  PRIVATE char COMMENTSTART[CF_MAXVARSIZE];
+  PRIVATE char COMMENTEND[CF_MAXVARSIZE];
 
   PUBLIC char *VEDITNAMES[] =
      {
@@ -1076,8 +1078,8 @@ PRIVATE short NOABSPATH = false;
 /*                                                                 */
 /*******************************************************************/
 
-  PRIVATE char CFSERVER[maxvarsize];
-  PRIVATE char BINDINTERFACE[bufsize];
+  PRIVATE char CFSERVER[CF_MAXVARSIZE];
+  PRIVATE char BINDINTERFACE[CF_BUFSIZE];
   PRIVATE unsigned short PORTNUMBER = 0;
   PRIVATE char VIPADDRESS[18];
   PRIVATE int  CF_TIMEOUT = 10;
@@ -1111,18 +1113,18 @@ PRIVATE short NOABSPATH = false;
 /*                                                                 */
 /*******************************************************************/
 
-  PUBLIC char VLOCKDIR[bufsize];
-  PUBLIC char VLOGDIR[bufsize];
+  PUBLIC char VLOCKDIR[CF_BUFSIZE];
+  PUBLIC char VLOGDIR[CF_BUFSIZE];
 
   PUBLIC char *VCANONICALFILE = NULL;
 
   PUBLIC FILE *VLOGFP = NULL;
 
-  PUBLIC char CFLOCK[bufsize];
-  PUBLIC char SAVELOCK[bufsize]; 
-  PUBLIC char CFLOG[bufsize];
-  PUBLIC char CFLAST[bufsize]; 
-  PUBLIC char LOCKDB[bufsize];
+  PUBLIC char CFLOCK[CF_BUFSIZE];
+  PUBLIC char SAVELOCK[CF_BUFSIZE]; 
+  PUBLIC char CFLOG[CF_BUFSIZE];
+  PUBLIC char CFLAST[CF_BUFSIZE]; 
+  PUBLIC char LOCKDB[CF_BUFSIZE];
 
 /* EOF */
 

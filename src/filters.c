@@ -98,7 +98,7 @@ void InstallFilterTest(char *alias,char *type,char *data)
 
 { int crit, i = -1;
   struct Filter *fp;
-  char buffer[bufsize],units='x',*sp;
+  char ebuff[CF_EXPANDSIZE],vbuff[CF_BUFSIZE],units='x',*sp;
   time_t now;
 
 if (strlen(type) == 0)
@@ -115,12 +115,11 @@ if (time(&now) == -1)
 
 crit = (int) FilterActionsToCode(type); 
  
-buffer[0] = '\0'; 
-ExpandVarstring(data,buffer,NULL);
+ExpandVarstring(data,ebuff,NULL);
  
 if (crit == NoFilter)
    {
-   snprintf(OUTPUT,bufsize,"Unknown filter criterion (%s)\n",type);
+   snprintf(OUTPUT,CF_BUFSIZE,"Unknown filter criterion (%s)\n",type);
    yyerror(OUTPUT);
    }
 else
@@ -132,36 +131,36 @@ else
          switch (crit)
             {
             case filterdefclasses:
-                fp->defines = strdup(buffer);
+                fp->defines = strdup(ebuff);
                 break;
             case filterelsedef:
-                fp->elsedef = strdup(buffer);
+                fp->elsedef = strdup(ebuff);
                 break;
             case filterresult:
-                IsInstallable(buffer); /* syntax check */
+                IsInstallable(ebuff); /* syntax check */
                 break;
                 
             case filterfromctime:
-                now = Date2Number(buffer,now);
+                now = Date2Number(ebuff,now);
                 break;
             case filtertoctime:
-                now = Date2Number(buffer,now);
+                now = Date2Number(ebuff,now);
                 break;
             case filterfrommtime:
-                now = Date2Number(buffer,now);
+                now = Date2Number(ebuff,now);
                 break;
             case filtertomtime:
-                now = Date2Number(buffer,now);
+                now = Date2Number(ebuff,now);
                 break;
             case filterfromatime:
-                now = Date2Number(buffer,now);
+                now = Date2Number(ebuff,now);
                 break;
             case filtertoatime:
-                now = Date2Number(buffer,now);
+                now = Date2Number(ebuff,now);
                 break;
             case filterfromsize:
             case filtertosize:
-                sscanf(buffer,"%d%c",&i,&units);
+                sscanf(ebuff,"%d%c",&i,&units);
                 
                 if (i < 0)
                    {
@@ -178,22 +177,22 @@ else
                        break;
                    }
                 
-                sprintf(buffer,"%d",i);
+                sprintf(ebuff,"%d",i);
                 break;
             case filterexecregex:
-                for (sp = buffer+strlen(buffer)-1; (*sp != '(') && (sp > buffer); sp--)
+                for (sp = ebuff+strlen(ebuff)-1; (*sp != '(') && (sp > ebuff); sp--)
                    {
                    }
                 
-                sscanf(sp+1,"%256[^)]",VBUFF);
-                if (!RegexOK(VBUFF))
+                sscanf(sp+1,"%256[^)]",vbuff);
+                if (!RegexOK(vbuff))
                    {
                    yyerror("Regular expression error");
                    }
                 break;
                 
             case filternameregex:
-                if (!RegexOK(buffer))
+                if (!RegexOK(ebuff))
                    {
                    yyerror("Regular expression error");
                    }
@@ -205,7 +204,7 @@ else
                 break;
             }
          
-         if ((fp->criteria[crit] = strdup(buffer)) == NULL)
+         if ((fp->criteria[crit] = strdup(ebuff)) == NULL)
             {
             CfLog(cferror,"Couldn't allocate filter memory","strdup");
             FatalError("Dying..");
@@ -235,7 +234,7 @@ for (fp = VFILTERLIST; fp != NULL; fp = fp->next)
    {
    if (fp->criteria[filterresult] == NULL)
        {
-       snprintf(OUTPUT,bufsize*2,"No result specified for filter %s",fp->alias);
+       snprintf(OUTPUT,CF_BUFSIZE*2,"No result specified for filter %s",fp->alias);
        CfLog(cferror,OUTPUT,"");
        FatalError("Consistency error");
        }
@@ -243,7 +242,7 @@ for (fp = VFILTERLIST; fp != NULL; fp = fp->next)
    if ((fp->criteria[filterfromctime]!=NULL && fp->criteria[filtertoctime]==NULL) ||
        (fp->criteria[filterfromctime]==NULL && fp->criteria[filtertoctime]!=NULL))
       {
-      snprintf(OUTPUT,bufsize*2,"Incomplete ctime limit specification of filter %s",fp->alias);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Incomplete ctime limit specification of filter %s",fp->alias);
       CfLog(cferror,OUTPUT,"");
       FatalError("Consistency errors");
       }
@@ -251,7 +250,7 @@ for (fp = VFILTERLIST; fp != NULL; fp = fp->next)
    if ((fp->criteria[filterfromatime]!=NULL && fp->criteria[filtertoatime]==NULL) ||
        (fp->criteria[filterfromatime]==NULL && fp->criteria[filtertoatime]!=NULL))
       {
-      snprintf(OUTPUT,bufsize*2,"Incomplete atime limit specification of filter %s",fp->alias);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Incomplete atime limit specification of filter %s",fp->alias);
       CfLog(cferror,OUTPUT,"");
       FatalError("Consistency errors");
       }
@@ -259,7 +258,7 @@ for (fp = VFILTERLIST; fp != NULL; fp = fp->next)
    if ((fp->criteria[filterfrommtime]!=NULL && fp->criteria[filtertomtime]==NULL) ||
        (fp->criteria[filterfrommtime]==NULL && fp->criteria[filtertomtime]!=NULL))
       {
-      snprintf(OUTPUT,bufsize*2,"Incomplete mtime limit specification of filter %s",fp->alias);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Incomplete mtime limit specification of filter %s",fp->alias);
       CfLog(cferror,OUTPUT,"");
       FatalError("Consistency errors");
       }
@@ -267,7 +266,7 @@ for (fp = VFILTERLIST; fp != NULL; fp = fp->next)
    if ((fp->criteria[filterfromstime]!=NULL && fp->criteria[filtertostime]==NULL) ||
        (fp->criteria[filterfromstime]==NULL && fp->criteria[filtertostime]!=NULL))
       {
-      snprintf(OUTPUT,bufsize*2,"Incomplete stime limit specification of filter %s",fp->alias);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Incomplete stime limit specification of filter %s",fp->alias);
       CfLog(cferror,OUTPUT,"");
       FatalError("Consistency errors");
       }
@@ -275,7 +274,7 @@ for (fp = VFILTERLIST; fp != NULL; fp = fp->next)
    if ((fp->criteria[filterfromttime]!=NULL && fp->criteria[filtertottime]==NULL) ||
        (fp->criteria[filterfromttime]==NULL && fp->criteria[filtertottime]!=NULL))
       {
-      snprintf(OUTPUT,bufsize*2,"Incomplete ttime limit specification of filter %s",fp->alias);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Incomplete ttime limit specification of filter %s",fp->alias);
       CfLog(cferror,OUTPUT,"");
       FatalError("Consistency errors");
       }
@@ -284,7 +283,7 @@ for (fp = VFILTERLIST; fp != NULL; fp = fp->next)
    if ((fp->criteria[filterfromsize]!=NULL && fp->criteria[filtertosize]==NULL) ||
        (fp->criteria[filterfromsize]==NULL && fp->criteria[filtertosize]!=NULL))
       {
-      snprintf(OUTPUT,bufsize*2,"Incomplete size limit specification of filter %s",fp->alias);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Incomplete size limit specification of filter %s",fp->alias);
       CfLog(cferror,OUTPUT,"");
       FatalError("Consistency errors");
       }
@@ -293,7 +292,7 @@ for (fp = VFILTERLIST; fp != NULL; fp = fp->next)
       {
       if (Date2Number(fp->criteria[filterfromatime],t) > Date2Number(fp->criteria[filtertoatime],t))
          {
-         snprintf(OUTPUT,bufsize*2,"To/From atimes silly in filter %s (from > to)",fp->alias);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"To/From atimes silly in filter %s (from > to)",fp->alias);
          CfLog(cferror,OUTPUT,"");
          FatalError("Consistency errors");
          }
@@ -303,7 +302,7 @@ for (fp = VFILTERLIST; fp != NULL; fp = fp->next)
       {
       if (Date2Number(fp->criteria[filterfromctime],t) > Date2Number(fp->criteria[filtertoctime],t))
          {
-         snprintf(OUTPUT,bufsize*2,"To/From ctimes silly in filter %s (from > to)",fp->alias);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"To/From ctimes silly in filter %s (from > to)",fp->alias);
          CfLog(cferror,OUTPUT,"");
          FatalError("Consistency errors");
          }
@@ -313,7 +312,7 @@ for (fp = VFILTERLIST; fp != NULL; fp = fp->next)
       {
       if (Date2Number(fp->criteria[filterfrommtime],t) > Date2Number(fp->criteria[filtertomtime],t))
          {
-         snprintf(OUTPUT,bufsize*2,"To/From mtimes silly in filter %s (from > to)",fp->alias);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"To/From mtimes silly in filter %s (from > to)",fp->alias);
          CfLog(cferror,OUTPUT,"");
          FatalError("Consistency errors");
          }
@@ -323,7 +322,7 @@ for (fp = VFILTERLIST; fp != NULL; fp = fp->next)
       {
       if (Date2Number(fp->criteria[filterfromstime],t) > Date2Number(fp->criteria[filtertostime],t))
          {
-         snprintf(OUTPUT,bufsize*2,"To/From stimes silly in filter %s (from > to)",fp->alias);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"To/From stimes silly in filter %s (from > to)",fp->alias);
          CfLog(cferror,OUTPUT,"");
          FatalError("Consistency errors");
          }
@@ -333,7 +332,7 @@ for (fp = VFILTERLIST; fp != NULL; fp = fp->next)
       {
       if (Date2Number(fp->criteria[filterfromttime],t) > Date2Number(fp->criteria[filtertottime],t))
          {
-         snprintf(OUTPUT,bufsize*2,"To/From ttimes silly in filter %s (from > to)",fp->alias);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"To/From ttimes silly in filter %s (from > to)",fp->alias);
          CfLog(cferror,OUTPUT,"");
          FatalError("Consistency errors");
          }
@@ -351,7 +350,7 @@ for (fp = VFILTERLIST; fp != NULL; fp = fp->next)
       {
       if (strcmp(fp->criteria[filterfromsize],fp->criteria[filtertosize]) > 0)
          {
-         snprintf(OUTPUT,bufsize*2,"To/From size is silly in filter %s (from > to)",fp->alias);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"To/From size is silly in filter %s (from > to)",fp->alias);
          CfLog(cferror,OUTPUT,"");
          FatalError("Consistency errors");
          }
@@ -563,7 +562,7 @@ int ProcessFilter(char *proc,struct Item *filterlist,char **names,int *start,int
 { struct Item *tests = NULL;
   struct Filter *fp;
   int result = true, tmpres, i;
-  char *line[noproccols];
+  char *line[CF_PROCCOLS];
   
 Debug("ProcessFilter(%.6s...)\n",proc);
 
@@ -605,7 +604,7 @@ for (fp = VFILTERLIST; fp != NULL; fp=fp->next)
       }   
    }
  
- for (i = 0; i < noproccols; i++)
+ for (i = 0; i < CF_PROCCOLS; i++)
     {
     if (line[i] != NULL)
        {
@@ -1263,24 +1262,23 @@ int FilterExecRegexMatch(char *filename,char *crit)
 
 { regex_t rx;
   regmatch_t pmatch;
-  char buffer[bufsize],expr[bufsize],line[bufsize],*sp;
+  char buffer[CF_BUFSIZE],expr[CF_BUFSIZE],line[CF_BUFSIZE],ebuff[CF_EXPANDSIZE],*sp;
   FILE *pp;
 
 AddMacroValue(CONTEXTID,"this",filename);
-VBUFF[0] = '\0'; 
-ExpandVarstring(crit,VBUFF,NULL);
+ExpandVarstring(crit,ebuff,NULL);
 DeleteMacro(CONTEXTID,"this");
   
-memset(buffer,0,bufsize);
-memset(line,0,bufsize); 
-memset(expr,0,bufsize);
+memset(buffer,0,CF_BUFSIZE);
+memset(line,0,CF_BUFSIZE); 
+memset(expr,0,CF_BUFSIZE);
 
-for (sp = VBUFF+strlen(VBUFF)-1; (*sp != '(') && (sp > VBUFF); sp--)
+for (sp = ebuff+strlen(ebuff)-1; (*sp != '(') && (sp > ebuff); sp--)
    {
    }
  
 sscanf(sp+1,"%256[^)]",expr);
-strncpy(buffer,VBUFF,(int)(sp-VBUFF));
+strncpy(buffer,ebuff,(int)(sp-ebuff));
  
 if (CfRegcomp(&rx,expr,REG_EXTENDED) != 0)
    {
@@ -1289,12 +1287,12 @@ if (CfRegcomp(&rx,expr,REG_EXTENDED) != 0)
 
 if ((pp = cfpopen(buffer,"r")) == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't open pipe to command %s\n",buffer);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open pipe to command %s\n",buffer);
    CfLog(cferror,OUTPUT,"cfpopen");
    return false;
    }
  
-ReadLine(line,bufsize,pp);  /* One buffer only */
+ReadLine(line,CF_BUFSIZE,pp);  /* One buffer only */
 
 cfpclose(pp); 
  
@@ -1317,18 +1315,18 @@ int FilterIsSymLinkTo(char *filename,char *crit)
 
 { regex_t rx;
   regmatch_t pmatch;
-  char buffer[bufsize];
+  char buffer[CF_BUFSIZE];
 
 if (CfRegcomp(&rx,crit,REG_EXTENDED) != 0)
    {
    return false;
    }
 
-memset(buffer,0,bufsize);
+memset(buffer,0,CF_BUFSIZE);
  
-if (readlink(filename,buffer,bufsize-1) == -1)
+if (readlink(filename,buffer,CF_BUFSIZE-1) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"Unable to read link %s in filter",filename);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to read link %s in filter",filename);
    CfLog(cferror,OUTPUT,"readlink");
    regfree(&rx);
    return false;      
@@ -1353,15 +1351,15 @@ int FilterExecMatch(char *filename,char *crit)
 
   /* command can include $(this) for the name of the file */
 
-{
+{ char ebuff[CF_EXPANDSIZE];
+ 
 AddMacroValue(CONTEXTID,"this",filename);
-VBUFF[0] = '\0'; 
-ExpandVarstring(crit,VBUFF,NULL);
+ExpandVarstring(crit,ebuff,NULL);
 DeleteMacro(CONTEXTID,"this");
 
-Debug("Executing filter command [%s]\n",VBUFF);
+Debug("Executing filter command [%s]\n",ebuff);
 
-if (ShellCommandReturnsZero(VBUFF))
+if (ShellCommandReturnsZero(ebuff))
    {
    return true;
    }
@@ -1378,7 +1376,7 @@ void GetProcessColumns(char *proc,char **names,int *start,int *end)
 { char *sp,title[16];
   int col,offset = 0;
   
-for (col = 0; col < noproccols; col++)
+for (col = 0; col < CF_PROCCOLS; col++)
    {
    start[col] = end[col] = -1;
    names[col] = NULL;
@@ -1396,7 +1394,7 @@ for (sp = proc; *sp != '\0'; sp++)
          {
          Debug("End of %s is %d\n",title,offset-1);
          end[col++] = offset - 1;
-         if (col > noproccols - 1)
+         if (col > CF_PROCCOLS - 1)
             {
             CfLog(cferror,"Column overflow in process table","");
             break;
@@ -1430,7 +1428,7 @@ void SplitLine(char *proc,char **names,int *start,int *end,char **line)
 
 Debug("SplitLine(%s)\n",proc); 
  
-for (i = 0; i < noproccols; i++)
+for (i = 0; i < CF_PROCCOLS; i++)
    {
    line[i] = NULL;
    }

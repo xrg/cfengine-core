@@ -97,7 +97,7 @@ aclsortperror(int error)
         CfLog(cferror,"acl: The system can't allocate any memory.\n", "");
         break;
     default:
-        snprintf(OUTPUT,bufsize*2,"acl: Unknown ACL error code: %d !\n", error);
+        snprintf(OUTPUT,CF_BUFSIZE*2,"acl: Unknown ACL error code: %d !\n", error);
         CfLog(cferror,OUTPUT,"");
         break;
     }
@@ -262,7 +262,7 @@ BuildDceAclEntry_Perms(char *mode, sec_acl_permset_t oldmode)
                  }
               break;
           default:  
-              snprintf(OUTPUT,2*bufsize,"Invalid mode string in DCE/DFS acl: %s\n", mode);
+              snprintf(OUTPUT,2*CF_BUFSIZE,"Invalid mode string in DCE/DFS acl: %s\n", mode);
               CfLog(cferror,OUTPUT,"");
           }
        }
@@ -285,7 +285,7 @@ BuildDceAclEntry_Id(sec_rgy_handle_t rgy_site, sec_rgy_name_t name, sec_acl_entr
         sec_id_parse_group(rgy_site, name, NULL, NULL, NULL, &id, &status);
         if (status != error_status_ok)
            {
-           snprintf(OUTPUT,bufsize*2,"sec_rgy_parse_group: %ld\n", status);
+           snprintf(OUTPUT,CF_BUFSIZE*2,"sec_rgy_parse_group: %ld\n", status);
            CfLog(cferror,OUTPUT,"");
            }
         break;
@@ -293,7 +293,7 @@ BuildDceAclEntry_Id(sec_rgy_handle_t rgy_site, sec_rgy_name_t name, sec_acl_entr
         sec_id_parse_name(rgy_site, name, NULL, NULL, NULL, &id, &status);
         if (status != error_status_ok)
            {
-           snprintf(OUTPUT,bufsize*2,"sec_rgy_parse_name: %ld\n", status);
+           snprintf(OUTPUT,CF_BUFSIZE*2,"sec_rgy_parse_name: %ld\n", status);
            CfLog(cferror,OUTPUT,"");
            }
         break;
@@ -384,7 +384,7 @@ ParseSolarisMode(char* mode, mode_t oldmode)
                  }
               break;
           default:  
-              snprintf(OUTPUT,bufsize*2,"Invalid mode string in solaris acl: %s\n", mode);
+              snprintf(OUTPUT,CF_BUFSIZE*2,"Invalid mode string in solaris acl: %s\n", mode);
               CfLog(cferror,OUTPUT,"");
           }
        }
@@ -417,7 +417,7 @@ BuildAclEntry(struct stat *sb, char *acltype, char *name, struct acl *newaclbufp
           }
        else
           {
-          snprintf(OUTPUT,bufsize*2,"acl: no such user: %s\n",name);
+          snprintf(OUTPUT,CF_BUFSIZE*2,"acl: no such user: %s\n",name);
           CfLog(cferror,OUTPUT,"");
           return -1;
           }
@@ -439,7 +439,7 @@ BuildAclEntry(struct stat *sb, char *acltype, char *name, struct acl *newaclbufp
           }
        else
           {
-          snprintf(OUTPUT,bufsize*2,"acl: no such group: %s\n",name);
+          snprintf(OUTPUT,CF_BUFSIZE*2,"acl: no such group: %s\n",name);
           CfLog(cferror,OUTPUT,"");
           return -1;
           }
@@ -471,7 +471,7 @@ BuildAclEntry(struct stat *sb, char *acltype, char *name, struct acl *newaclbufp
           }
        else
           {
-          snprintf(OUTPUT,bufsize*2,"%s: acl: no such user: %s\n", VPREFIX, name);
+          snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: no such user: %s\n", VPREFIX, name);
           CfLog(cferror,OUTPUT,"");
           return -1;
           }
@@ -493,7 +493,7 @@ BuildAclEntry(struct stat *sb, char *acltype, char *name, struct acl *newaclbufp
           }
        else
           {
-          snprintf(OUTPUT,bufsize*2,"acl: no such group: %s\n",name);
+          snprintf(OUTPUT,CF_BUFSIZE*2,"acl: no such group: %s\n",name);
           CfLog(cferror,OUTPUT,"");
           return -1;
           }
@@ -521,6 +521,7 @@ BuildAclEntry(struct stat *sb, char *acltype, char *name, struct acl *newaclbufp
 void InstallACL(char *alias,char *classes)
 
 { struct CFACL *ptr;
+  char ebuff[CF_EXPANDSIZE];
  
  Debug1("InstallACL(%s,%s)\n",alias,classes);
  
@@ -530,15 +531,14 @@ void InstallACL(char *alias,char *classes)
     return;
     }
  
- VBUFF[0]='\0';                         /* Expand any variables */
- ExpandVarstring(alias,VBUFF,"");
+ ExpandVarstring(alias,ebuff,"");
  
  if ((ptr = (struct CFACL *)malloc(sizeof(struct CFACL))) == NULL)
     {
     FatalError("Memory Allocation failed for InstallACL() #1");
     }
  
- if ((ptr->acl_alias = strdup(VBUFF)) == NULL)
+ if ((ptr->acl_alias = strdup(ebuff)) == NULL)
     {
     FatalError("Memory Allocation failed for InstallEditFile() #2");
     }
@@ -798,7 +798,7 @@ DWORD old_mode;  /* The old access mask */
               break;
           default:
               /* The character was not a valid permission */
-              snprintf(OUTPUT,bufsize*2,"Invalid mode string in NT acl: %s. No changes made.\n", new_mode);
+              snprintf(OUTPUT,CF_BUFSIZE*2,"Invalid mode string in NT acl: %s. No changes made.\n", new_mode);
               CfLog(cferror,OUTPUT,"");
               return old_mode;
           }
@@ -824,11 +824,11 @@ void AddACE(char *acl,char *string,char *classes)
 
 { struct CFACL *ptr;
  struct CFACE *new, *top;
- char varbuff[bufsize], *cp;
- char comm[maxvarsize],data1[maxvarsize],data2[maxvarsize];
+ char varbuff[CF_BUFSIZE], *cp, ebuff[CF_EXPANDSIZE];
+ char comm[CF_MAXVARSIZE],data1[CF_MAXVARSIZE],data2[CF_MAXVARSIZE];
 /****** Code added for NT by Jørgen Kjensli & Bjørn Gustafson, May 1999 *****/
  
- char data3[maxvarsize];     /* To hold the extra variable accesstype */
+ char data3[CF_MAXVARSIZE];     /* To hold the extra variable accesstype */
  
 /*************************** END NT Addition *******************************/
  int i;
@@ -881,11 +881,11 @@ void AddACE(char *acl,char *string,char *classes)
           }
        else
           {
-          memset(VBUFF,0,sizeof(VBUFF));
-          VBUFF[0]='\0';                         /* Expand any variables */
-          ExpandVarstring(string,VBUFF,"");
+          memset(ebuff,0,sizeof(ebuff));
+          ebuff[0]='\0';                         /* Expand any variables */
+          ExpandVarstring(string,ebuff,"");
           
-          cp = VBUFF;
+          cp = ebuff;
           i = 0;
           while (*cp != ':' && *cp != '\0')
              {
@@ -1036,7 +1036,7 @@ int CheckACLs(char *filename,enum fileactions action,struct Item *acl_aliases)
 /*************************** END NT Addition *******************************/
           default:
               /* XXX alb - fix, was missing OUTPUT initial parameter */
-              snprintf(OUTPUT,bufsize*2, "Unknown filesystem type in ACL %s\n",ip->name);
+              snprintf(OUTPUT,CF_BUFSIZE*2, "Unknown filesystem type in ACL %s\n",ip->name);
               CfLog(cferror,OUTPUT,"");
           }
        }
@@ -1171,7 +1171,7 @@ ACL_SIZE_INFORMATION *oldACLSize; /*Pointer to a struct with info about ACL*/
 
  if (sizeRqd == 0)
     {
-    snprintf(OUTPUT,bufsize*2,"%s: acl: Unable to get size of old SD\n", VPREFIX);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to get size of old SD\n", VPREFIX);
     CfLog(cferror,OUTPUT,"");
     return;
     }
@@ -1179,7 +1179,7 @@ ACL_SIZE_INFORMATION *oldACLSize; /*Pointer to a struct with info about ACL*/
  /* Allocate memory for the old security descriptor */
  if ((old_sd = (SECURITY_DESCRIPTOR *) malloc(sizeRqd)) == NULL)
     {
-    snprintf(OUTPUT,bufsize*2,"%s: acl: Unable to allocate memory for the old SD\n", VPREFIX);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to allocate memory for the old SD\n", VPREFIX);
     CfLog(cferror,OUTPUT,"");
     return;
     }
@@ -1188,7 +1188,7 @@ ACL_SIZE_INFORMATION *oldACLSize; /*Pointer to a struct with info about ACL*/
  old_sdSize = sizeRqd;
  if (!GetFileSecurity(filename, DACL_SECURITY_INFORMATION, old_sd, old_sdSize, &sizeRqd))
     {
-    snprintf(OUTPUT,bufsize*2,"%s: acl: Unable to get the old SD\n", VPREFIX);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to get the old SD\n", VPREFIX);
     CfLog(cferror,OUTPUT,"");
     return;
     }
@@ -1196,7 +1196,7 @@ ACL_SIZE_INFORMATION *oldACLSize; /*Pointer to a struct with info about ACL*/
  /* Retrieve information about the old security descriptor */
  if (!GetSecurityDescriptorDacl(old_sd, haveACL, old_pacl, &byDef))
     {
-    snprintf(OUTPUT,bufsize*2,"%s: acl: Unable to get information about the old SD\n", VPREFIX);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to get information about the old SD\n", VPREFIX);
     CfLog(cferror,OUTPUT,"");
     return;
     }
@@ -1207,14 +1207,14 @@ ACL_SIZE_INFORMATION *oldACLSize; /*Pointer to a struct with info about ACL*/
     /* Retrieve size information about the old ACL and add it to the size of the new */
     if (!GetAclInformation(*old_pacl, oldACLSize, sizeof(ACL_SIZE_INFORMATION), AclSizeInformation))
        {
-       snprintf(OUTPUT,bufsize*2,"%s: acl: Unable to get information about the old ACL\n", VPREFIX);
+       snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to get information about the old ACL\n", VPREFIX);
        CfLog(cferror,OUTPUT,"");
        return;
        }
     }
  else
     {
-    snprintf(OUTPUT,bufsize*2,"%s: acl: The old security descriptor does not contain an ACL\n", VPREFIX);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: The old security descriptor does not contain an ACL\n", VPREFIX);
     CfLog(cferror,OUTPUT,"");
     return;
     }
@@ -1328,7 +1328,7 @@ PACL old_pacl;             Pointer to an ACL
        uLength = dLength = 256;
        if (!LookupAccountSid(NULL, (PSID)(&aceType->SidStart), user, &uLength, domain, &dLength, &sidType))
           {
-    snprintf(OUTPUT,bufsize*2,"%s: acl: Unable to get allowed ACE's username\n", VPREFIX);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to get allowed ACE's username\n", VPREFIX);
     CfLog(cferror,OUTPUT,"");
     continue;
           }
@@ -1375,7 +1375,7 @@ PACL old_pacl;             Pointer to an ACL
           }
        else
           {
-          snprintf(OUTPUT,bufsize*2,"%s: acl: Existing ACE lost due to it's unfamiliar ACE type(#%x) (allowed=0, denied=1)\n", VPREFIX,(aceType->Header.AceType));
+          snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Existing ACE lost due to it's unfamiliar ACE type(#%x) (allowed=0, denied=1)\n", VPREFIX,(aceType->Header.AceType));
           CfLog(cferror,OUTPUT,"");
           }
        }
@@ -1434,7 +1434,7 @@ PACL *new_pacl;    Pointer to the ACL that shoul be altered
     /* If SID doesn't exist, continue loop */
   if (!sidSize)
      {
-     snprintf(OUTPUT,bufsize*2,"%s: acl: User %s doesn't exist. ACE not created.\n", VPREFIX, ep->name);
+     snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: User %s doesn't exist. ACE not created.\n", VPREFIX, ep->name);
      CfLog(cferror,OUTPUT,"");
      continue;
      }
@@ -1449,7 +1449,7 @@ PACL *new_pacl;    Pointer to the ACL that shoul be altered
   domainSize = 256;
   if (!LookupAccountName(NULL, ep->name, psid, &sidSize, domain, &domainSize, &snu))
      {
-     snprintf(OUTPUT,bufsize*2,"%s: acl: User doesn't exist. Will not create ACE for: %s\n", VPREFIX, ep->name);
+     snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: User doesn't exist. Will not create ACE for: %s\n", VPREFIX, ep->name);
      CfLog(cferror,OUTPUT,"");
      free(psid);
      continue;
@@ -1460,7 +1460,7 @@ PACL *new_pacl;    Pointer to the ACL that shoul be altered
      {
      if (!AddAccessDeniedAce(*new_pacl, ACL_REVISION, ep->NTMode, psid))
         {
-        snprintf(OUTPUT,bufsize*2,"%s: acl: Unable to add new denied ACE for user %s\n", VPREFIX, ep->name);
+        snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to add new denied ACE for user %s\n", VPREFIX, ep->name);
         CfLog(cferror,OUTPUT,"");
         free(psid);
         return;
@@ -1477,7 +1477,7 @@ PACL *new_pacl;    Pointer to the ACL that shoul be altered
      {
      if (!AddAccessAllowedAce(*new_pacl, ACL_REVISION, ep->NTMode, psid))
         {
-        snprintf(OUTPUT,bufsize*2,"%s: acl: Unable to add new allowed ACE for user %s\n", VPREFIX, ep->name);
+        snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to add new allowed ACE for user %s\n", VPREFIX, ep->name);
         CfLog(cferror,OUTPUT,"");
         free(psid);
         return;
@@ -1611,7 +1611,7 @@ enum fileactions action;/* The action to be performed */
  /* Get the size of all ACE's that will be inserted in the new ACL */
  if ((newACLSize = getNTACEs_Size(new_aces)) == 0)
     {
-    snprintf(OUTPUT,bufsize*2,"%s: acl: Size of ACEs is zero.\n", VPREFIX);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Size of ACEs is zero.\n", VPREFIX);
     CfLog(cferror,OUTPUT,"");
     goto done;
     }
@@ -1622,7 +1622,7 @@ enum fileactions action;/* The action to be performed */
  /* Initialize a Security Descriptor for the new ACL*/
  if (!InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION))
     {
-    snprintf(OUTPUT,bufsize*2,"%s: acl: Unable to init new SD\n", VPREFIX);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to init new SD\n", VPREFIX);
     CfLog(cferror,OUTPUT,"");
     goto done;
     }
@@ -1630,7 +1630,7 @@ enum fileactions action;/* The action to be performed */
  /* Allocate memory for the new ACL */
  if ((new_pacl = (PACL)calloc(1,newACLSize)) == NULL)
     {
-    snprintf(OUTPUT,bufsize*2,"%s: acl: Unable to allocate memory for new ACL\n", VPREFIX);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to allocate memory for new ACL\n", VPREFIX);
     CfLog(cferror,OUTPUT,"");
     goto done;
     }
@@ -1638,7 +1638,7 @@ enum fileactions action;/* The action to be performed */
  /* Initialize the new ACL */
  if (!InitializeAcl(new_pacl, newACLSize, ACL_REVISION))
     {
-    snprintf(OUTPUT,bufsize*2,"%s: acl: Unable to initialize the new ACL\n", VPREFIX);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to initialize the new ACL\n", VPREFIX);
     CfLog(cferror,OUTPUT,"");
     goto done;
     }
@@ -1650,7 +1650,7 @@ enum fileactions action;/* The action to be performed */
  /* Set the new ACL into the Security Descriptor */
  if (!SetSecurityDescriptorDacl(&sd, TRUE, new_pacl, FALSE))
     {
-    snprintf(OUTPUT,bufsize*2,"%s: acl: Unable to install new ACL\n", VPREFIX);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to install new ACL\n", VPREFIX);
     CfLog(cferror,OUTPUT,"");
     goto done;
     }
@@ -1658,7 +1658,7 @@ enum fileactions action;/* The action to be performed */
  /* Check the new Security Descriptor */
  if (!IsValidSecurityDescriptor(&sd))
     {
-    snprintf(OUTPUT,bufsize*2,"%s: acl: New Security Descriptor is invalid\n", VPREFIX);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: New Security Descriptor is invalid\n", VPREFIX);
     CfLog(cferror,OUTPUT,"");
     goto done;
     }
@@ -1666,7 +1666,7 @@ enum fileactions action;/* The action to be performed */
  /* Install new ACL and new Security Descriptor */
  if (!SetFileSecurity(win_path, DACL_SECURITY_INFORMATION, &sd))
     {
-    snprintf(OUTPUT,bufsize*2,"%s: acl: Unable to set file security on file: %s\n", VPREFIX, filename);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to set file security on file: %s\n", VPREFIX, filename);
     CfLog(cferror,OUTPUT,"");
     LogWinError();
     goto done;
@@ -1790,7 +1790,7 @@ enum fileactions action;
              status = 1;
              if (strcmp(ep->mode, "default") == 0)
                 {
-                snprintf(OUTPUT,bufsize*2,"Deleting ACL entry %d: type = %x,\tid = %d,\tperm = %o\n",
+                snprintf(OUTPUT,CF_BUFSIZE*2,"Deleting ACL entry %d: type = %x,\tid = %d,\tperm = %o\n",
                          i, newaclbufp[i].a_type, newaclbufp[i].a_id, newaclbufp[i].a_perm);
                 CfLog(cfverbose,OUTPUT,"");
                 newacls--;
@@ -1807,7 +1807,7 @@ enum fileactions action;
                    newaclbufp[i].a_type = tmpacl.a_type;
                    newaclbufp[i].a_perm = tmpacl.a_perm;
                    
-                   snprintf(OUTPUT,bufsize*2,"Replaced ACL entry %d: type = %x,\tid = %d,\tperm = %o\n",
+                   snprintf(OUTPUT,CF_BUFSIZE*2,"Replaced ACL entry %d: type = %x,\tid = %d,\tperm = %o\n",
                             i, newaclbufp[i].a_type, newaclbufp[i].a_id, newaclbufp[i].a_perm);
                    CfLog(cfverbose,OUTPUT,"");
                    }
@@ -1822,7 +1822,7 @@ enum fileactions action;
        newaclbufp[newacls].a_perm = ParseSolarisMode(ep->mode, 0);
        newacls++;
        
-       snprintf(OUTPUT,bufsize*2,"Added ACL entry %d: type = %x,\tid = %d,\tperm = %o\n",
+       snprintf(OUTPUT,CF_BUFSIZE*2,"Added ACL entry %d: type = %x,\tid = %d,\tperm = %o\n",
                 i, newaclbufp[i].a_type, newaclbufp[i].a_id, newaclbufp[i].a_perm);
        CfLog(cfverbose,OUTPUT,"");
        }
@@ -1857,7 +1857,7 @@ enum fileactions action;
  
  if (action == warnall || action == warnplain || action == warndirs)
     {
-    snprintf(OUTPUT,bufsize*2,"File %s needs ACL update\n",filename);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"File %s needs ACL update\n",filename);
     CfLog(cfinform,OUTPUT,"");
     return false;
     }
@@ -1892,7 +1892,7 @@ enum fileactions action;
        Verbose("Changing effective uid to %ld\n", (long)sb.st_uid);
        if (seteuid(sb.st_uid) == -1)
           {
-   snprintf(OUTPUT,bufsize*2,"Couldn't set effective uid from %ld to %ld\n",(long)myuid,(long)sb.st_uid);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't set effective uid from %ld to %ld\n",(long)myuid,(long)sb.st_uid);
    CfLog(cferror,OUTPUT,"seteuid");
    return false;
           }
@@ -1900,7 +1900,7 @@ enum fileactions action;
        }
     else
        {
-       snprintf(OUTPUT,bufsize*2,"Can't set effective uid from %ld to %ld, not super-user!\n",
+       snprintf(OUTPUT,CF_BUFSIZE*2,"Can't set effective uid from %ld to %ld, not super-user!\n",
         (long)myuid, (long)sb.st_uid);
        CfLog(cferror,OUTPUT,"seteuid");
        return false;
@@ -1920,7 +1920,7 @@ enum fileactions action;
     
     if (seteuid(myuid) == -1)
        {
-       snprintf(OUTPUT,bufsize*2,"Unable to regain privileges of user %ld\n",
+       snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to regain privileges of user %ld\n",
         (long)myuid);
        CfLog(cferror,OUTPUT,"seteuid");
        FatalError("Aborting cfengine");
@@ -1936,7 +1936,7 @@ enum fileactions action;
     Debug1("setting acl of %s resulted in %d acl-entries\n", filename, newacls);
     }
  
- snprintf(OUTPUT,bufsize*2,"ACL for file %s updated\n",filename);
+ snprintf(OUTPUT,CF_BUFSIZE*2,"ACL for file %s updated\n",filename);
  CfLog(cfinform,OUTPUT,"");
  
  return true;

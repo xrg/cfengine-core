@@ -259,34 +259,35 @@ extern int errno;
 
 #define true  1
 #define false 0
-#define bufsize 4096
-#define buffer_margin 32
-#define maxvarsize 1024
-#define maxlinksize 256
-#define maxlinklevel 4
-#define maxargs 31
-#define cfmaxiplen 64       /* numerical ip length */
-#define noproccols 16
-#define hashtablesize 4969 /* prime number */
-#define macroalphabet 61    /* a-z, A-Z plus a bit */
-#define maxshellargs 30
-#define samemode 0
-#define sameowner (uid_t)-1
-#define unknown_owner (uid_t)-2
-#define samegroup (gid_t)-1
-#define unknown_group (gid_t)-2
-#define cfnosize    -1
-#define extra_space 8      /* pads items during AppendItem for eol handling in editfiles */
-#define cfinfinity (int)999999999
-#define ticksperday 86400 /* 60 * 60 *24 */
-#define cf_not_connected -1
-#define recursion_limit 100
-#define cf_monday_morning 342000
+#define CF_BUFSIZE 4096
+#define CF_EXPANDSIZE 2*CF_BUFSIZE
+#define CF_BUFFERMARGIN 32
+#define CF_MAXVARSIZE 1024
+#define CF_MAXLINKSIZE 256
+#define CF_MAXLINKLEVEL 4
+#define CF_MAXARGS 31
+#define CF_MAX_IP_LEN 64       /* numerical ip length */
+#define CF_PROCCOLS 16
+#define CF_HASHTABLESIZE 4969 /* prime number */
+#define CF_MACROALPHABET 61    /* a-z, A-Z plus a bit */
+#define CF_MAXSHELLARGS 30
+#define CF_SAMEMODE 0
+#define CF_SAME_OWNER (uid_t)-1
+#define CF_UNKNOWN_OWNER (uid_t)-2
+#define CF_SAME_GROUP (gid_t)-1
+#define CF_UNKNOWN_GROUP (gid_t)-2
+#define CF_NOSIZE    -1
+#define CF_EXTRASPC 8      /* pads items during AppendItem for eol handling in editfiles */
+#define CF_INFINITY (int)999999999
+#define CF_TICKS_PER_DAY 86400 /* 60 * 60 *24 */
+#define CF_NOT_CONNECTED -1
+#define CF_RECURSION_LIMIT 100
+#define CF_MONDAY_MORNING 342000
 
-#define cfmethodexec 0
-#define cfmethodreply  1
-#define exec_ifelapsed 5
-#define exec_expireafter 10
+#define CF_METHODEXEC 0
+#define CF_METHODREPLY  1
+#define CF_EXEC_IFELAPSED 5
+#define CF_EXEC_EXPIREAFTER 10
 
 
 /* Need this to to avoid conflict with solaris 2.6 and db.h */
@@ -303,26 +304,26 @@ extern int errno;
 /* This is the only place you ever need to edit anything           */
 /*******************************************************************/
 
-#define CLSSATTR 35         /* increase this for each new class added */
+#define CF_CLASSATTR 35         /* increase this for each new class added */
                             /* It defines the array size for class data */
-#define ATTRDIM 3           /* Only used in CLASSATTRUBUTES[][] defn */
+#define CF_ATTRDIM 3           /* Only used in CLASSATTRUBUTES[][] defn */
 
    /* end class array limits */
 
 /*******************************************************************/
 
-#define AVDB_FILE     "cf_learning.db"
-#define STATEDB_FILE  "cf_state.db"
-#define LASTDB_FILE   "cf_lastseen.db"
-#define STATELOG_FILE "state_log"
-#define ENV_NEW_FILE  "env_data.new"
-#define ENV_FILE      "env_data"
-#define tcpdumpcommand "/usr/sbin/tcpdump -t -n -v"
+#define CF_AVDB_FILE     "cf_learning.db"
+#define CF_STATEDB_FILE  "cf_state.db"
+#define CF_LASTDB_FILE   "cf_lastseen.db"
+#define CF_STATELOG_FILE "state_log"
+#define CF_ENVNEW_FILE  "env_data.new"
+#define CF_ENV_FILE      "env_data"
+#define CF_TCPDUMP_COMM "/usr/sbin/tcpdump -t -n -v"
 
 
-#define CFINPUTSVAR "CFINPUTS"          /* default name for file path var */
-#define CFALLCLASSESVAR "CFALLCLASSES"  /* default name for CFALLCLASSES env */
-#define INFINITERECURSE -99             /* code used to signify inf in recursion */
+#define CF_INPUTSVAR "CFINPUTS"          /* default name for file path var */
+#define CF_ALLCLASSESVAR "CFALLCLASSES"  /* default name for CFALLCLASSES env */
+#define CF_INF_RECURSE -99             /* code used to signify inf in recursion */
 #define CF_TRUNCATE -1
 #define CF_EMPTYFILE -2
 #define CF_USELOGFILE true              /* synonyms for tidy.c */
@@ -345,9 +346,9 @@ extern int errno;
 #define CF_DONE 't'
 #define CF_MORE 'm'
 
-#define CFFAILEDSTR "BAD: Host authentication failed. Did you forget the domain name or IP/DNS address registration (for ipv4 or ipv6)?"
-#define CFCHANGEDSTR1 "BAD: File changed "   /* Split this so it cannot be recognized */
-#define CFCHANGEDSTR2 "while copying"
+#define CF_FAILEDSTR "BAD: Host authentication failed. Did you forget the domain name or IP/DNS address registration (for ipv4 or ipv6)?"
+#define CF_CHANGEDSTR1 "BAD: File changed "   /* Split this so it cannot be recognized */
+#define CF_CHANGEDSTR2 "while copying"
 
 #define CF_START_DOMAIN "undefined.domain"
 
@@ -373,12 +374,12 @@ extern int errno;
 
 /*****************************************************************************/
 
-#define GRAINS   64
+#define CF_GRAINS   64
 #define ATTR     11
-#define NETATTR   7 /* icmp udp dns tcpsyn tcpfin tcpack */
+#define CF_NETATTR   7 /* icmp udp dns tcpsyn tcpfin tcpack */
 #define PH_LIMIT 10
-#define CFWEEK   (7.0*24.0*3600.0)
-#define MEASURE_INTERVAL (5.0*60.0)
+#define CF_WEEK   (7.0*24.0*3600.0)
+#define CF_MEASURE_INTERVAL (5.0*60.0)
 
 struct Averages
    {
@@ -402,10 +403,10 @@ struct Averages
 
       /* tcpdump data - tag them on here ... */
       
-   double expect_netin[NETATTR];
-   double expect_netout[NETATTR];
-   double var_netin[NETATTR];
-   double var_netout[NETATTR];
+   double expect_netin[CF_NETATTR];
+   double expect_netout[CF_NETATTR];
+   double var_netin[CF_NETATTR];
+   double var_netout[CF_NETATTR];
    };
 
 
@@ -549,7 +550,7 @@ typedef struct cfdir CFDIR;
 struct cfdirent
    {
    struct dirent *cf_dirp;
-   char   d_name[bufsize];   /* This is bigger than POSIX */
+   char   d_name[CF_BUFSIZE];   /* This is bigger than POSIX */
    };
 
 
@@ -720,6 +721,7 @@ enum commattr  /* See COMMATTRIBUTES[] in globals.c  for matching entry */
    cfforce,
    cfforcedirs,
    cfforceipv4,
+   cfforcereplyto,
    cfbackup,
    cfrotate,
    cfsize,
@@ -801,6 +803,7 @@ enum itemtypes
 
 enum vnames 
    {
+   cfversionvar,
    cffaculty,
    cfsite,
    cfhost,
@@ -1164,8 +1167,8 @@ struct cfagent_connection
    int sd;
    int trust;
    int family;     /* AF_INET or AF_INET6 */
-   char localip[cfmaxiplen];
-   char remoteip[cfmaxiplen];
+   char localip[CF_MAX_IP_LEN];
+   char remoteip[CF_MAX_IP_LEN];
    unsigned char *session_key;
    short error;
    };
@@ -1176,8 +1179,8 @@ struct cfagent_connection
 struct cfObject
    {
    char *scope;                       /* Name of object (scope) */
-   char *hashtable[hashtablesize];    /* Variable heap  */
-   char *type[hashtablesize];         /* scalar or itlist? */
+   char *hashtable[CF_HASHTABLESIZE];    /* Variable heap  */
+   char *type[CF_HASHTABLESIZE];         /* scalar or itlist? */
    char *classlist;                   /* Private classes -- ? */
    struct Item *actionsequence;
    struct cfObject *next;
@@ -1236,6 +1239,7 @@ struct Method
    unsigned char  digest[EVP_MAX_MD_SIZE+1];
    char          *classes;
    char          *bundle;
+   char          *forcereplyto;
    char           invitation;
    int            ifelapsed;
    int            expireafter;
@@ -1406,7 +1410,7 @@ struct UnMount
 struct File
    {
    char   done;
-   char *scope;
+   char   *scope;
    char   *path;
    char   *defines;
    char   *elsedef;
@@ -1418,7 +1422,7 @@ struct File
    struct Item *exclusions;
    struct Item *inclusions;
    struct Item *filters;
-   struct Item    *ignores;      
+   struct Item *ignores;      
    char   *classes;
    struct UidList *uid;
    struct GidList *gid;
@@ -1428,8 +1432,8 @@ struct File
    char   compress;
    char   inform;
    char   xdev;
-   int ifelapsed;
-   int expireafter;
+   int    ifelapsed;
+   int    expireafter;
    char   checksum;   /* m=md5 n=none */
    u_long plus_flags;    /* for *BSD chflags */
    u_long minus_flags;    /* for *BSD chflags */

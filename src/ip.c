@@ -40,7 +40,7 @@ int RemoteConnect(char *host,char forceipv4)          /* Handle ipv4 or ipv6 con
 
 { int err;
 
-#ifdef HAVE_GETADDRINFO /* --------------we have ipv6 ------------------- */
+#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
  
 if (forceipv4 == 'n')
    {
@@ -55,7 +55,7 @@ if (forceipv4 == 'n')
    
    if ((err = getaddrinfo(host,"5308",&query,&response)) != 0)
       {
-      snprintf(OUTPUT,bufsize,"Unable to lookup hostname or cfengine service: %s",gai_strerror(err));
+      snprintf(OUTPUT,CF_BUFSIZE,"Unable to lookup hostname or cfengine service: %s",gai_strerror(err));
       CfLog(cferror,OUTPUT,"");
       return false;
       }
@@ -79,7 +79,7 @@ if (forceipv4 == 'n')
          
          if ((err = getaddrinfo(BINDINTERFACE,NULL,&query2,&response2)) != 0)
             {
-            snprintf(OUTPUT,bufsize,"Unable to lookup hostname or cfengine service: %s",gai_strerror(err));
+            snprintf(OUTPUT,CF_BUFSIZE,"Unable to lookup hostname or cfengine service: %s",gai_strerror(err));
             CfLog(cferror,OUTPUT,"");
             return false;
             }
@@ -117,13 +117,13 @@ if (forceipv4 == 'n')
    if (connected)
       {
       CONN->family = ap->ai_family;
-      snprintf(CONN->remoteip,cfmaxiplen-1,"%s",sockaddr_ntop(ap->ai_addr));
+      snprintf(CONN->remoteip,CF_MAX_IP_LEN-1,"%s",sockaddr_ntop(ap->ai_addr));
       }
    else
       {
       close(CONN->sd);
-      snprintf(OUTPUT,bufsize*2,"Couldn't connect to host %s\n",host);
-      CONN->sd = cf_not_connected;
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't connect to host %s\n",host);
+      CONN->sd = CF_NOT_CONNECTED;
       }
    
    if (response != NULL)
@@ -148,7 +148,7 @@ if (forceipv4 == 'n')
    
    if ((hp = gethostbyname(host)) == NULL)
       {
-      snprintf(OUTPUT,bufsize,"Unable to look up IP address of %s",host);
+      snprintf(OUTPUT,CF_BUFSIZE,"Unable to look up IP address of %s",host);
       CfLog(cferror,OUTPUT,"gethostbyname");
       return false;
       }
@@ -172,14 +172,14 @@ if (forceipv4 == 'n')
       }
    
    CONN->family = AF_INET;
-   snprintf(CONN->remoteip,cfmaxiplen-1,"%s",inet_ntoa(cin.sin_addr));
+   snprintf(CONN->remoteip,CF_MAX_IP_LEN-1,"%s",inet_ntoa(cin.sin_addr));
     
    signal(SIGALRM,(void *)TimeOut);
    alarm(CF_TIMEOUT);
     
    if (err=connect(CONN->sd,(void *)&cin,sizeof(cin)) == -1)
       {
-      snprintf(OUTPUT,bufsize*2,"Couldn't connect to host %s\n",host);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't connect to host %s\n",host);
       CfLog(cfinform,OUTPUT,"connect");
       return false;
       }
@@ -218,7 +218,7 @@ char *Hostname2IPString(char *hostname)
 { static char ipbuffer[65];
   int err;
  
-#ifdef HAVE_GETADDRINFO /* --------------we have ipv6 ------------------- */
+#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
 
  struct addrinfo query, *response, *ap;
 
@@ -230,7 +230,7 @@ char *Hostname2IPString(char *hostname)
  
 if ((err = getaddrinfo(hostname,NULL,&query,&response)) != 0)
    {
-   snprintf(OUTPUT,bufsize,"Unable to lookup hostname (%s) or cfengine service: %s",hostname,gai_strerror(err));
+   snprintf(OUTPUT,CF_BUFSIZE,"Unable to lookup hostname (%s) or cfengine service: %s",hostname,gai_strerror(err));
    CfLog(cferror,OUTPUT,"");
    return hostname;
    }
@@ -271,7 +271,7 @@ char *IPString2Hostname(char *ipaddress)
 { static char hostbuffer[128];
   int err;
 
-#ifdef HAVE_GETADDRINFO
+#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
 
  struct addrinfo query, *response, *ap;
 
@@ -284,7 +284,7 @@ memset(hostbuffer,0,128);
 
 if ((err = getaddrinfo(ipaddress,NULL,&query,&response)) != 0)
    {
-   snprintf(OUTPUT,bufsize,"Unable to lookup IP address (%s): %s",ipaddress,gai_strerror(err));
+   snprintf(OUTPUT,CF_BUFSIZE,"Unable to lookup IP address (%s): %s",ipaddress,gai_strerror(err));
    CfLog(cferror,OUTPUT,"");
    snprintf(hostbuffer,127,"(Non registered IP)"); 
    return hostbuffer;
@@ -319,16 +319,16 @@ void LastSeen(char *hostname,enum roles role)
 { DBT key,value;
   DB *dbp;
   DB_ENV *dbenv = NULL;
-  char name[bufsize],databuf[bufsize];
+  char name[CF_BUFSIZE],databuf[CF_BUFSIZE];
   time_t lastseen,now = time(NULL);
   static struct LastSeen entry;
   double average;
   
-snprintf(name,bufsize-1,"%s/%s",VLOCKDIR,LASTDB_FILE);
+snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
 
 if ((errno = db_create(&dbp,dbenv,0)) != 0)
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't open last-seen database %s\n",name);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
    CfLog(cferror,OUTPUT,"db_open");
    return;
    }
@@ -339,7 +339,7 @@ if ((errno = dbp->open(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't open last-seen database %s\n",name);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
    CfLog(cferror,OUTPUT,"db_open");
    dbp->close(dbp,0);
    return;
@@ -351,10 +351,10 @@ memset(&key,0,sizeof(key));
 switch (role)
    {
    case cf_accept:
-       snprintf(databuf,bufsize-1,"%s (hailed us)",hostname);
+       snprintf(databuf,CF_BUFSIZE-1,"%s (hailed us)",hostname);
        break;
    case cf_connect:
-       snprintf(databuf,bufsize-1,"%s (answered us)",hostname);
+       snprintf(databuf,CF_BUFSIZE-1,"%s (answered us)",hostname);
        break;
    }
  
@@ -430,7 +430,7 @@ void CheckFriendConnections(int hours)
   int ret, secs = 3600*hours, criterion;
   struct stat statbuf;
   time_t now = time(NULL),splaytime = 0;
-  char name[bufsize];
+  char name[CF_BUFSIZE];
   static struct LastSeen entry;
   double average = 0;
 
@@ -444,11 +444,11 @@ if (GetMacroValue(CONTEXTID,"SplayTime"))
    }
 
 Verbose("CheckFriendConnections(%d)\n",hours);
-snprintf(name,bufsize-1,"%s/%s",VLOCKDIR,LASTDB_FILE);
+snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
 
 if ((errno = db_create(&dbp,dbenv,0)) != 0)
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't open last-seen database %s\n",name);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
    CfLog(cferror,OUTPUT,"db_open");
    return;
    }
@@ -459,7 +459,7 @@ if ((errno = dbp->open(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't open last-seen database %s\n",name);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
    CfLog(cferror,OUTPUT,"db_open");
    dbp->close(dbp,0);
    return;
@@ -502,21 +502,27 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
 
    if (secs == 0)
       {
-      criterion = now > then + splaytime + average;
+      criterion = (now > then + splaytime + (int)(average+0.5));
       }
    else
       {
-      criterion = now > then + splaytime + secs;
+      criterion = (now > then + splaytime + secs);
       }
+
+   if ((int)average > CF_WEEK)   /* Don't care about outliers */
+      {
+      criterion = false;
+      }
+
+   snprintf(OUTPUT,CF_BUFSIZE,"Host %s last at %s\ti.e. not seen for %.2f hours\n\t(Expected <delta_t> = %.2f secs (= %.2f hours))",(char *)key.data,ctime(&then),(now-then)/3600.0,average,average/3600.0);
    
    if (criterion)
       {
-      snprintf(OUTPUT,bufsize,"Host %s last at %s\t(Expected <delta_t> = %.2f secs (= %.2f mins))",(char *)key.data,ctime(&then),average,average/60.0);
       CfLog(cferror,OUTPUT,"");
       
-      if (now > CFWEEK + then + splaytime + 2*3600)
+      if (now > CF_WEEK + then + splaytime + 2*3600)
          {
-         snprintf(OUTPUT,bufsize*2,"INFO: Giving up on %s, last seen more than a week ago at %s.",key.data,ctime(&then));
+         snprintf(OUTPUT,CF_BUFSIZE*2,"INFO: Giving up on %s, last seen more than a week ago at %s.",key.data,ctime(&then));
          CfLog(cferror,OUTPUT,"");
          
          if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
@@ -527,7 +533,6 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       }
    else
       {      
-      snprintf(OUTPUT,bufsize,"Host %s last at %s",(char *)key.data,ctime(&then));
       CfLog(cfinform,OUTPUT,"");
       }
    }

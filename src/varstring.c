@@ -33,6 +33,7 @@
 
 char *VVNAMES[] =
    {
+   "version",
    "faculty",
    "site",
    "host",
@@ -111,13 +112,12 @@ char *VVNAMES[] =
 
 int TrueVar(char *var)
 
-{ char buff[bufsize];
-  char varbuf[maxvarsize]; 
+{ char buff[CF_EXPANDSIZE];
+  char varbuf[CF_MAXVARSIZE]; 
  
 if (GetMacroValue(CONTEXTID,var))
    {
-   memset(buff,0,bufsize);
-   snprintf(varbuf,maxvarsize,"$(%s)",var);
+   snprintf(varbuf,CF_MAXVARSIZE,"$(%s)",var);
    ExpandVarstring(varbuf,buff,NULL);
 
    if (strcmp(ToLowerStr(buff),"on") == 0)
@@ -150,7 +150,7 @@ for (sp = var; *sp != '\0'; sp++)
       }
    else
       {
-      snprintf(OUTPUT,bufsize,"Non identifier character (%c) in variable identifier (%s)",*sp,var);
+      snprintf(OUTPUT,CF_BUFSIZE,"Non identifier character (%c) in variable identifier (%s)",*sp,var);
       yyerror(OUTPUT);
       return false;
       }
@@ -230,7 +230,7 @@ char *ExtractInnerVarString(char *str,char *substr)
 
 Debug1("ExtractInnerVarString(%s) - syntax verify\n",str);
 
-memset(substr,0,bufsize);
+memset(substr,0,CF_BUFSIZE);
  
 for (sp = str; *sp != '\0' ; sp++)       /* check for varitems */
    {
@@ -283,7 +283,7 @@ char *ExtractOuterVarString(char *str,char *substr)
 
 Debug("ExtractOuterVarString(%s) - syntax verify\n",str);
 
-memset(substr,0,bufsize);
+memset(substr,0,CF_BUFSIZE);
  
 for (sp = str; *sp != '\0' ; sp++)       /* check for varitems */
    {
@@ -327,16 +327,16 @@ for (sp = str; *sp != '\0' ; sp++)       /* check for varitems */
 
 /*********************************************************************/
 
-char ExpandVarstring(char *string,char *buffer,char *bserver) 
+int ExpandVarstring(char *string,char buffer[CF_EXPANDSIZE],char *bserver) 
 
 { char *sp,*env;
   char varstring = false;
-  char currentitem[bufsize],temp[bufsize],name[maxvarsize],scanstr[6];
+  char currentitem[CF_EXPANDSIZE],temp[CF_BUFSIZE],name[CF_MAXVARSIZE],scanstr[6];
   int len;
   time_t tloc;
   
 Debug("ExpandVarstring(%s)\n",string);
-memset(buffer,0,bufsize);
+memset(buffer,0,CF_EXPANDSIZE);
  
 if (string == 0 || strlen(string) == 0)
    {
@@ -349,7 +349,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
 
    sscanf(sp,"%[^$]",currentitem);
 
-   if (BufferOverflow(buffer,currentitem))
+   if (ExpandOverflow(buffer,currentitem))
       {
       FatalError("Can't expand varstring");
       }
@@ -393,11 +393,19 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
          }
       else
          {
-         strncpy(currentitem,temp,bufsize-1);
+         strncpy(currentitem,temp,CF_BUFSIZE-1);
          }
       
       switch (ScanVariable(currentitem))
          {
+         case cfversionvar:
+             if (BufferOverflow(buffer,VERSION))
+                {
+                FatalError("Can't expand varstring");
+                }
+             strcat(buffer,VERSION);
+	     break;
+             
          case cffaculty:
          case cfsite:
              if (VFACULTY[0] == '\0')
@@ -405,7 +413,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
                 yyerror("faculty/site undefined variable");
                 }
              
-             if (BufferOverflow(buffer,VFACULTY))
+             if (ExpandOverflow(buffer,VFACULTY))
                 {
                 FatalError("Can't expand varstring");
                 }
@@ -416,7 +424,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
          case cfhost:
              if (strlen(VUQNAME) == 0)
                 {
-                if (BufferOverflow(buffer,VDEFAULTBINSERVER.name))
+                if (ExpandOverflow(buffer,VDEFAULTBINSERVER.name))
                    {
                    FatalError("Can't expand varstring");
                    }
@@ -424,7 +432,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
                 }
              else
                 {
-                if (BufferOverflow(buffer,VUQNAME))
+                if (ExpandOverflow(buffer,VUQNAME))
                    {
                    FatalError("Can't expand varstring");
                    }
@@ -433,7 +441,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cffqhost:
-             if (BufferOverflow(buffer,VFQNAME))
+             if (ExpandOverflow(buffer,VFQNAME))
                 {
                 FatalError("Can't expand varstring");
                 }
@@ -441,7 +449,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cfnetmask:
-             if (BufferOverflow(buffer,VNETMASK))
+             if (ExpandOverflow(buffer,VNETMASK))
                 {
                 FatalError("Can't expand varstring");
                 }
@@ -450,7 +458,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              
              
          case cfipaddr:
-             if (BufferOverflow(buffer,VIPADDRESS))
+             if (ExpandOverflow(buffer,VIPADDRESS))
                 {
                 FatalError("Can't expand varstring");
                 }
@@ -464,7 +472,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
                 FatalError("Bad variable");
                 }
              
-             if (BufferOverflow(buffer,"$(binserver)"))
+             if (ExpandOverflow(buffer,"$(binserver)"))
                 {
                 FatalError("Can't expand varstring");
                 }
@@ -477,7 +485,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
                 yyerror("sysadm undefined variable");
                 }
              
-             if (BufferOverflow(buffer,VSYSADM))
+             if (ExpandOverflow(buffer,VSYSADM))
                 {
                 FatalError("Can't expand varstring");
                 }
@@ -490,7 +498,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
                 yyerror("domain undefined variable");
                 }
              
-             if (BufferOverflow(buffer,VDOMAIN))
+             if (ExpandOverflow(buffer,VDOMAIN))
                 {
                 FatalError("Can't expandvarstring");
                 }
@@ -498,7 +506,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cfnfstype:
-             if (BufferOverflow(buffer,VNFSTYPE))
+             if (ExpandOverflow(buffer,VNFSTYPE))
                 {
                 FatalError("Can't expandvarstring");
                 }
@@ -511,7 +519,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
                 yyerror("timezone undefined variable");
                 }
              
-             if (BufferOverflow(buffer,VTIMEZONE->name))
+             if (ExpandOverflow(buffer,VTIMEZONE->name))
                 {
                 FatalError("Can't expandvarstring");
                 }
@@ -519,7 +527,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cfclass:
-             if (BufferOverflow(buffer,CLASSTEXT[VSYSTEMHARDCLASS]))
+             if (ExpandOverflow(buffer,CLASSTEXT[VSYSTEMHARDCLASS]))
                 {
                 FatalError("Can't expandvarstring");
                 }
@@ -527,7 +535,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cfarch:
-             if (BufferOverflow(buffer,VARCH))
+             if (ExpandOverflow(buffer,VARCH))
                 {
                 FatalError("Can't expandvarstring");
                 }
@@ -535,7 +543,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cfarch2:
-             if (BufferOverflow(buffer,VARCH2))
+             if (ExpandOverflow(buffer,VARCH2))
                 {
                 FatalError("Can't expandvarstring");
                 }
@@ -547,11 +555,11 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              
              if ((tloc = time((time_t *)NULL)) == -1)
                 {
-                snprintf(OUTPUT,bufsize*2,"Couldn't read system clock\n");
+                snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't read system clock\n");
                 CfLog(cferror,"Couldn't read clock","time");
                 }
              
-             if (BufferOverflow(buffer,ctime(&tloc)))
+             if (ExpandOverflow(buffer,ctime(&tloc)))
                 {
                 FatalError("Can't expandvarstring");
                 }
@@ -564,7 +572,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cfyear:
-             if (BufferOverflow(buffer,VYEAR))
+             if (ExpandOverflow(buffer,VYEAR))
                 {
                 FatalError("Can't expandvarstring");
                 }
@@ -575,7 +583,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cfmonth:
-             if (BufferOverflow(buffer,VMONTH))
+             if (ExpandOverflow(buffer,VMONTH))
                 {
                 FatalError("Can't expandvarstring");
                 }
@@ -586,7 +594,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cfday:
-             if (BufferOverflow(buffer,VDAY))
+             if (ExpandOverflow(buffer,VDAY))
                 {
                 FatalError("Can't expandvarstring");
                 }
@@ -596,7 +604,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
                 }
              break;
          case cfhr:
-             if (BufferOverflow(buffer,VHR))
+             if (ExpandOverflow(buffer,VHR))
                 {
                 FatalError("Can't expandvarstring");
                 }
@@ -607,7 +615,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cfmin:
-             if (BufferOverflow(buffer,VMINUTE))
+             if (ExpandOverflow(buffer,VMINUTE))
                 {
                 FatalError("Can't expandvarstring");
                 }
@@ -620,11 +628,11 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
          case cfallclass:
              if (strlen(ALLCLASSBUFFER) == 0)
                 {
-                snprintf(name,maxvarsize,"$(%s)",currentitem);
+                snprintf(name,CF_MAXVARSIZE,"$(%s)",currentitem);
                 strcat(buffer,name);
                 }
              
-             if (BufferOverflow(buffer,ALLCLASSBUFFER))
+             if (ExpandOverflow(buffer,ALLCLASSBUFFER))
                 {
                 FatalError("Can't expandvarstring");
                 }
@@ -632,7 +640,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cfspc:
-             if (BufferOverflow(buffer," "))
+             if (ExpandOverflow(buffer," "))
                 {
                 FatalError("Can't expandvarstring");
                 }
@@ -640,7 +648,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cftab:
-             if (BufferOverflow(buffer," "))
+             if (ExpandOverflow(buffer," "))
                 {
                 FatalError("Can't expandvarstring");
                 }
@@ -648,7 +656,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cflf:
-             if (BufferOverflow(buffer," "))
+             if (ExpandOverflow(buffer," "))
                 {
                 FatalError("Can't expandvarstring");
                 }
@@ -656,7 +664,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cfcr:
-             if (BufferOverflow(buffer," "))
+             if (ExpandOverflow(buffer," "))
                 { 
                 FatalError("Can't expandvarstring");
                 }
@@ -664,7 +672,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cfn:
-             if (BufferOverflow(buffer," "))
+             if (ExpandOverflow(buffer," "))
                 { 
                 FatalError("Can't expandvarstring");
                 }
@@ -672,14 +680,14 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cfdblquote:
-             if (BufferOverflow(buffer," "))
+             if (ExpandOverflow(buffer," "))
                 { 
                 FatalError("Can't expandvarstring");
                 }
              strcat(buffer,"\"");
              break;
          case cfquote:
-             if (BufferOverflow(buffer," "))
+             if (ExpandOverflow(buffer," "))
                 { 
                 FatalError("Can't expandvarstring");
                 }
@@ -690,7 +698,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              
              if (!PARSING)
                 {
-                if (BufferOverflow(buffer," "))
+                if (ExpandOverflow(buffer," "))
                    { 
                    FatalError("Can't expandvarstring");
                    }
@@ -698,7 +706,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
                 }
              else
                 {
-                if (BufferOverflow(buffer,"$(dollar)"))
+                if (ExpandOverflow(buffer,"$(dollar)"))
                    { 
                    FatalError("Can't expandvarstring");
                    }
@@ -708,7 +716,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              
              
          case cfrepchar:
-             if (BufferOverflow(buffer," "))
+             if (ExpandOverflow(buffer," "))
                 {
                 FatalError("Can't expandvarstring");
                 }
@@ -718,7 +726,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              break;
              
          case cflistsep:
-          if (BufferOverflow(buffer,""))
+          if (ExpandOverflow(buffer,""))
              {
              FatalError("Can't expandvarstring");
              }
@@ -731,7 +739,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              
              if ((env = GetMacroValue(CONTEXTID,currentitem)) != NULL)
                 {
-                if (BufferOverflow(buffer,env))
+                if (ExpandOverflow(buffer,env))
                    {
                    FatalError("Can't expandvarstring");
                    }
@@ -743,11 +751,11 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              
              if (varstring == '}')
                 {
-                snprintf(name,maxvarsize,"${%s}",currentitem);
+                snprintf(name,CF_MAXVARSIZE,"${%s}",currentitem);
                 }
              else
                 {
-                snprintf(name,maxvarsize,"$(%s)",currentitem);
+                snprintf(name,CF_MAXVARSIZE,"$(%s)",currentitem);
                 }
              strcat(buffer,name);
          }
@@ -762,11 +770,11 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
 
 /*********************************************************************/
 
-char ExpandVarbinserv(char *string,char *buffer,char *bserver) 
+int ExpandVarbinserv(char *string,char *buffer,char *bserver) 
 
 { char *sp;
   char varstring = false;
-  char currentitem[bufsize], scanstr[6];
+  char currentitem[CF_EXPANDSIZE], scanstr[6];
 
 Debug("ExpandVarbinserv %s, ",string);
 
@@ -817,7 +825,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
       switch (ScanVariable(currentitem))
          {
          case cfbinserver:
-             if (BufferOverflow(buffer,bserver))
+             if (ExpandOverflow(buffer,bserver))
                 {
                 FatalError("Can't expand varstring");
                 }
@@ -860,15 +868,15 @@ struct Item *SplitVarstring(char *varstring,char sep)
 
 { struct Item *liststart = NULL;
   char format[6], *sp;
-  char node[bufsize];
-  char buffer[bufsize],variable[bufsize];
-  char before[bufsize],after[bufsize],result[bufsize];
+  char node[CF_BUFSIZE];
+  char buffer[CF_EXPANDSIZE],variable[CF_BUFSIZE];
+  char before[CF_BUFSIZE],after[CF_BUFSIZE],result[CF_BUFSIZE];
   int i,bracks = 1;
   
 Debug("SplitVarstring(%s,%c=%d)\n",varstring,sep,sep);
 
-memset(before,0,bufsize);
-memset(after,0,bufsize);
+memset(before,0,CF_BUFSIZE);
+memset(after,0,CF_BUFSIZE);
 
 if (strcmp(varstring,"") == 0)   /* Handle path = / as special case */
    {
@@ -914,7 +922,7 @@ while(*sp != '\0')
 
 for (sp = buffer; *sp != '\0'; sp++)
    {
-   memset(node,0,maxlinksize);
+   memset(node,0,CF_MAXLINKSIZE);
    sscanf(sp,format,node);
 
    if (strlen(node) == 0)
@@ -924,13 +932,13 @@ for (sp = buffer; *sp != '\0'; sp++)
    
    sp += strlen(node)-1;
 
-   if (strlen(before)+strlen(node)+strlen(after) >= bufsize)
+   if (strlen(before)+strlen(node)+strlen(after) >= CF_BUFSIZE)
       {
       FatalError("Buffer overflow expanding variable string");
       printf("Concerns: %s%s%s in %s",before,node,after,varstring);
       }
    
-   snprintf(result,bufsize,"%s%s%s",before,node,after);
+   snprintf(result,CF_BUFSIZE,"%s%s%s",before,node,after);
 
    AppendItem(&liststart,result,NULL);
 

@@ -1,4 +1,4 @@
-This is cfengine-Reference.info, produced by makeinfo version 4.3 from
+This is cfengine-Reference.info, produced by makeinfo version 4.5 from
 cfengine-Reference.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -175,10 +175,6 @@ expressions.
      This should be used in conjunction with the decision structures
      `BeginGroupIfNoLineMatching' and `BreakIfLineMatches'.
 
-`AppendIfNoSuchLine QUOTED-STRING'
-     Add a line containing the quoted string to the end of the file if
-     the file doesn't contain the exact line already.
-
 `AppendIfNoLineMatching  QUOTED-REGEX/ "ThisLine"'
      A new version of the older `AppendIfNoSuchLine' which uses a
      regular expression instead of a literal string. The line which
@@ -196,6 +192,16 @@ expressions.
               AppendIfNoLineMatching "ThisLine"
            EndLoop
            }
+
+`AppendIfNoSuchLine QUOTED-STRING'
+     Add a line containing the quoted string to the end of the file if
+     the file doesn't contain the exact line already.
+
+`AppendIfNoSuchLinesFromFile FILENAME'
+     For each line in the named file, call AppendIfNoSuchLine.  This
+     adds lines containing the strings listed in the named file to the
+     end of the current file if the file doesn't contain the exact line
+     already.
 
 `AppendToLineIfNotContains QUOTED-STRING'
      This commands looks for an exact match of the quoted string in the
@@ -677,6 +683,7 @@ expressions.
      Issue a warning if the quoted regular expression does not match
      one or more lines in the file.
 
+
 A limited number of operations can also be performed on purely binary
 files, e.g.  compiled programs, in order to search for strings or viral
 code, or to modify strings within a program. Binary mode is a mutually
@@ -701,6 +708,7 @@ binary files is set by `editbinaryfilesize' in `control'.
      part of the file which is being edited. This can be used to search
      for binary data which cannot be typed directly into the cfengine
      program, e.g. virus signatures.
+
 
 It is suggested that you use these editing functions with caution.
 Although all possible safeguards have been incorporated into them, it
@@ -923,6 +931,7 @@ unique abbreviation.
 `xdev'
      Prevents cfengine from descending into file systems that are not
      on the same device as the root of the rescurion path.
+
 
    The default values are `mode=+000', `recurse=0', `action=warnall'
 and any owner or group is acceptable.  The default for `links' is to
@@ -1239,7 +1248,7 @@ evaluating the class attributes for each file.
 
 `Result:'
      logical combination of above returned by filter (quoted regex)
-Examples: processes started between 18th Nov 2000 and now.
+   Examples: processes started between 18th Nov 2000 and now.
        { filteralias
      
        FromSTime: "date(2000,11,18,0,0,0)"

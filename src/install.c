@@ -40,8 +40,8 @@
 void InstallControlRValue(char *lvalue,char *varvalue)
 
 { int number = -1;
-  char buffer[maxvarsize], command[maxvarsize], *sp;
-  char value[bufsize];
+  char buffer[CF_MAXVARSIZE], command[CF_MAXVARSIZE], *sp;
+  char value[CF_EXPANDSIZE];
   
 if (!IsInstallable(CLASSBUFF))
    {
@@ -66,10 +66,10 @@ if (strncmp(value,"exec ",5) == 0)
 
    if (*sp == '/')
       {
-      strncpy(command,sp,maxvarsize);
+      strncpy(command,sp,CF_MAXVARSIZE);
       GetExecOutput(command,value);
       Chop(value);
-      value[maxvarsize-1] = '\0';  /* Truncate to maxvarsize */
+      value[CF_MAXVARSIZE-1] = '\0';  /* Truncate to CF_MAXVARSIZE */
       }
    else
       {
@@ -126,7 +126,7 @@ else
         
         if (!StrStr(VSYSNAME.nodename,VDOMAIN))
            {
-           snprintf(VFQNAME,bufsize,"%s.%s",VSYSNAME.nodename,ToLowerStr(VDOMAIN));
+           snprintf(VFQNAME,CF_BUFSIZE,"%s.%s",VSYSNAME.nodename,ToLowerStr(VDOMAIN));
            strcpy(VUQNAME,VSYSNAME.nodename);
            }
         else
@@ -143,9 +143,9 @@ else
         
         if (! NOHARDCLASSES)
            {
-           if (strlen(VFQNAME) > maxvarsize-1)
+           if (strlen(VFQNAME) > CF_MAXVARSIZE-1)
               {
-              FatalError("The fully qualified name is longer than maxvarsize!!");
+              FatalError("The fully qualified name is longer than CF_MAXVARSIZE!!");
               }
            
            strcpy(buffer,VFQNAME);
@@ -345,7 +345,7 @@ else
            {
            yyerror("Redefinition of method name");
            }
-        strncpy(METHODNAME,value,bufsize-1);
+        strncpy(METHODNAME,value,CF_BUFSIZE-1);
         SetContext("private-method");
         break;
         
@@ -410,7 +410,7 @@ else
         
     case cfunderscore:
         if (strcmp(value,"on") == 0)
-           { char rename[maxvarsize];
+           { char rename[CF_MAXVARSIZE];
            UNDERSCORE_CLASSES=true;
            Verbose("Resetting classes using underscores...\n");
            while(DeleteItemContaining(&VHEAP,CLASSTEXT[VSYSTEMHARDCLASS]))
@@ -512,13 +512,13 @@ else
 
 void HandleOptionalFileAttribute(char *item)
 
-{ char value[maxvarsize];
+{ char value[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
 
-VBUFF[0] = value[0] = '\0';
+value[0] = '\0';
 
-ExpandVarstring(item,VBUFF,NULL);
+ExpandVarstring(item,ebuff,NULL);
 
-sscanf(VBUFF,"%*[^=]=%s",value);
+sscanf(ebuff,"%*[^=]=%s",value);
 
 if (value[0] == '\0')
    {
@@ -536,7 +536,7 @@ switch(GetCommAttribute(item))
    case cfflags:   ParseFlagString(value,&PLUSFLAG,&MINUSFLAG);
                    break;     
    case cfowner:
-       if (strlen(value) < bufsize)
+       if (strlen(value) < CF_BUFSIZE)
           {
           strcpy(VUIDNAME,value);
           }
@@ -547,7 +547,7 @@ switch(GetCommAttribute(item))
        break;
 
    case cfgroup:
-       if (strlen(value) < bufsize)
+       if (strlen(value) < CF_BUFSIZE)
           {
           strcpy(VGIDNAME,value);
           }
@@ -598,13 +598,13 @@ switch(GetCommAttribute(item))
 
 void HandleOptionalImageAttribute(char *item)
 
-{ char value[bufsize];
+{ char value[CF_BUFSIZE],ebuff[CF_EXPANDSIZE];
 
-VBUFF[0] = value[0] = '\0';
+value[0] = '\0';
 
-ExpandVarstring(item,VBUFF,NULL);
+ExpandVarstring(item,ebuff,NULL);
 
-sscanf(VBUFF,"%*[^=]=%[^\n]",value);
+sscanf(ebuff,"%*[^=]=%[^\n]",value);
 
 if (value[0] == '\0')
    {
@@ -619,7 +619,7 @@ switch(GetCommAttribute(item))
    case cffindertype:
         if (strlen(value) == 4)
            {
-           strncpy(FINDERTYPE,value,bufsize);
+           strncpy(FINDERTYPE,value,CF_BUFSIZE);
            }
         else
            {
@@ -689,7 +689,7 @@ switch(GetCommAttribute(item))
                    break;
    case cftypecheck: HandleCharSwitch("typecheck",value,&TYPECHECK);
                    break;
-   case cfrepository: strncpy(LOCALREPOS,value,bufsize-buffer_margin);
+   case cfrepository: strncpy(LOCALREPOS,value,CF_BUFSIZE-CF_BUFFERMARGIN);
                    break;
    case cffilter:  PrependItem(&VFILTERBUILD,value,CF_ANYCLASS);
                    break;
@@ -714,13 +714,13 @@ switch(GetCommAttribute(item))
 
 void HandleOptionalRequired(char *item)
 
-{ char value[maxvarsize];
+{ char value[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
 
-VBUFF[0] = value[0] = '\0';
+value[0] = '\0';
 
-ExpandVarstring(item,VBUFF,NULL);
+ExpandVarstring(item,ebuff,NULL);
 
-sscanf(VBUFF,"%*[^=]=%s",value);
+sscanf(ebuff,"%*[^=]=%s",value);
 
 if (value[0] == '\0')
    {
@@ -761,13 +761,13 @@ switch(GetCommAttribute(item))
 
 void HandleOptionalInterface(char *item)
 
-{ char value[maxvarsize];
+{ char value[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
 
-VBUFF[0] = value[0] = '\0';
+value[0] = '\0';
 
-ExpandVarstring(item,VBUFF,NULL);
+ExpandVarstring(item,ebuff,NULL);
 
-sscanf(VBUFF,"%*[^=]=%s",value);
+sscanf(ebuff,"%*[^=]=%s",value);
 
 if (value[0] == '\0')
    {
@@ -794,11 +794,11 @@ switch(GetCommAttribute(item))
 
 void HandleOptionalMountablesAttribute(char *item) /* HvB: Bas van der Vlies */
 
-{ char value[maxvarsize];
+{ char value[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
 
-VBUFF[0] = value[0] = '\0';
-ExpandVarstring(item,VBUFF,NULL);
-sscanf(VBUFF,"%*[^=]=%s",value);
+value[0] = '\0';
+ExpandVarstring(item,ebuff,NULL);
+sscanf(ebuff,"%*[^=]=%s",value);
 
 if (value[0] == '\0')
    {
@@ -830,13 +830,13 @@ switch(GetCommAttribute(item))
 
 void HandleOptionalUnMountAttribute(char *item)
 
-{ char value[maxvarsize];
+{ char value[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
 
-VBUFF[0] = value[0] = '\0';
+value[0] = '\0';
 
-ExpandVarstring(item,VBUFF,NULL);
+ExpandVarstring(item,ebuff,NULL);
 
-sscanf(VBUFF,"%*[^=]=%s",value);
+sscanf(ebuff,"%*[^=]=%s",value);
 
 if (value[0] == '\0')
    {
@@ -903,13 +903,13 @@ switch(GetCommAttribute(item))
 
 void HandleOptionalMiscMountsAttribute(char *item)
 
-{ char value[maxvarsize];
+{ char value[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
 
-VBUFF[0] = value[0] = '\0';
+value[0] = '\0';
 
-ExpandVarstring(item,VBUFF,NULL);
+ExpandVarstring(item,ebuff,NULL);
 
-sscanf(VBUFF,"%*[^=]=%s",value);
+sscanf(ebuff,"%*[^=]=%s",value);
 
 if (value[0] == '\0')
    {
@@ -968,13 +968,13 @@ switch(GetCommAttribute(item))
 
 void HandleOptionalTidyAttribute(char *item)
 
-{ char value[maxvarsize];
+{ char value[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
 
-VBUFF[0] = value[0] = '\0';
+value[0] = '\0';
 
-ExpandVarstring(item,VBUFF,NULL);
+ExpandVarstring(item,ebuff,NULL);
 
-sscanf(VBUFF,"%*[^=]=%s",value);
+sscanf(ebuff,"%*[^=]=%s",value);
 
 if (value[0] == '\0')
    {
@@ -1052,11 +1052,11 @@ switch(GetCommAttribute(item))
 
 void HandleOptionalDirAttribute(char *item)
 
-{ char value[maxvarsize];
+{ char value[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
 
-VBUFF[0] = value[0] = '\0';
+value[0] = '\0';
 
-ExpandVarstring(item,VBUFF,NULL);
+ExpandVarstring(item,ebuff,NULL);
 
 sscanf(item,"%*[^=]=%s",value);
 
@@ -1099,13 +1099,13 @@ switch(GetCommAttribute(item))
 
 void HandleOptionalDisableAttribute(char *item)
 
-{ char value[maxvarsize];
+{ char value[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
 
-VBUFF[0] = value[0] = '\0';
+value[0] = '\0';
 
-ExpandVarstring(item,VBUFF,NULL);
+ExpandVarstring(item,ebuff,NULL);
 
-sscanf(VBUFF,"%*[^=]=%s",value);
+sscanf(ebuff,"%*[^=]=%s",value);
 
 if (value[0] == '\0')
    {
@@ -1147,13 +1147,13 @@ switch(GetCommAttribute(item))
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
                    break;
-   case cfrepository: strncpy(LOCALREPOS,value,bufsize-buffer_margin);
+   case cfrepository: strncpy(LOCALREPOS,value,CF_BUFSIZE-CF_BUFFERMARGIN);
                    break;
    case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
                    break;
    case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
                    break;
-   case cfdest:    strncpy(DESTINATION,value,bufsize-1);
+   case cfdest:    strncpy(DESTINATION,value,CF_BUFSIZE-1);
                    break;
 
    default:        yyerror("Illegal disable attribute");
@@ -1165,13 +1165,13 @@ switch(GetCommAttribute(item))
 
 void HandleOptionalLinkAttribute(char *item)
 
-{ char value[maxvarsize];
+{ char value[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
 
-VBUFF[0] = value[0] = '\0';
+value[0] = '\0';
 
-ExpandVarstring(item,VBUFF,NULL);
+ExpandVarstring(item,ebuff,NULL);
 
-sscanf(VBUFF,"%*[^=]=%s",value);
+sscanf(ebuff,"%*[^=]=%s",value);
 
 if (value[0] == '\0')
    {
@@ -1223,13 +1223,13 @@ switch(GetCommAttribute(item))
 
 void HandleOptionalProcessAttribute(char *item)
 
-{ char value[maxvarsize];
+{ char value[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
 
-VBUFF[0] = value[0] = '\0';
+value[0] = '\0';
 
-ExpandVarstring(item,VBUFF,NULL);
+ExpandVarstring(item,ebuff,NULL);
 
-sscanf(VBUFF,"%*[^=]=%s",value);
+sscanf(ebuff,"%*[^=]=%s",value);
 
 if (value[0] == '\0')
    {
@@ -1306,13 +1306,13 @@ switch(GetCommAttribute(item))
 
 void HandleOptionalPackagesAttribute(char *item)
 
-{ char value[maxvarsize];
+{ char value[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
 
-VBUFF[0] = value[0] = '\0';
+value[0] = '\0';
 
-ExpandVarstring(item,VBUFF,NULL);
+ExpandVarstring(item,ebuff,NULL);
 
-sscanf(VBUFF,"%*[^=]=%s",value);
+sscanf(ebuff,"%*[^=]=%s",value);
 
 if (value[0] == '\0')
    {
@@ -1350,13 +1350,13 @@ switch(GetCommAttribute(item))
 
 void HandleOptionalMethodsAttribute(char *item)
 
-{ char value[bufsize];
+{ char value[CF_BUFSIZE],ebuff[CF_EXPANDSIZE];
 
-VBUFF[0] = value[0] = '\0';
+value[0] = '\0';
 
-ExpandVarstring(item,VBUFF,NULL);
+ExpandVarstring(item,ebuff,NULL);
 
-sscanf(VBUFF,"%*[^=]=%s",value);
+sscanf(ebuff,"%*[^=]=%s",value);
 
 if (value[0] == '\0')
    {
@@ -1365,38 +1365,51 @@ if (value[0] == '\0')
 
  switch(GetCommAttribute(item))
     {
-    case cfserver: HandleServer(value);
-            break;
-
-    case cfaction: strncpy(ACTIONBUFF,value,bufsize-1);
-            break;
-
+    case cfserver:
+        HandleServer(value);
+        break;
+        
+    case cfaction:
+        strncpy(ACTIONBUFF,value,CF_BUFSIZE-1);
+        break;
+        
     case cfretvars:
-            strncpy(METHODFILENAME,value,bufsize-1);
-            break;
+        strncpy(METHODFILENAME,value,CF_BUFSIZE-1);
+        break;
+        
     case cfretclasses:
-             strncpy(METHODRETURNCLASSES,value,bufsize-1);
-            break;
+        strncpy(METHODRETURNCLASSES,value,CF_BUFSIZE-1);
+        break;
+        
+    case cfforcereplyto:
+        strncpy(METHODFORCE,value,CF_BUFSIZE-1);
+        break;
 
     case cfsendclasses:
-              strncpy(METHODREPLYTO,value,maxvarsize-1);
-             break;
-    case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
-             break;
-    case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
-                break;
-
-   case cfowner:     strncpy(VUIDNAME,value,bufsize-1);
-       break;
-   case cfgroup:     strncpy(VGIDNAME,value,bufsize-1);
-                     break;
-   case cfchdir:     HandleChDir(value);
-                     break;
-   case cfchroot:    HandleChRoot(value);
-                     break;       
-
- 
-    default:       yyerror("Illegal methods attribute");
+        strncpy(METHODREPLYTO,value,CF_MAXVARSIZE-1);
+        break;
+    case cfifelap:
+        HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
+        break;
+    case cfexpaft:
+        HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
+        break;
+        
+    case cfowner:
+        strncpy(VUIDNAME,value,CF_BUFSIZE-1);
+        break;
+    case cfgroup:
+        strncpy(VGIDNAME,value,CF_BUFSIZE-1);
+        break;
+    case cfchdir:
+        HandleChDir(value);
+        break;
+    case cfchroot:
+        HandleChRoot(value);
+        break;       
+               
+    default:
+        yyerror("Illegal methods attribute");
     }
  
 ACTIONPENDING = true; 
@@ -1407,13 +1420,13 @@ ACTIONPENDING = true;
 
 void HandleOptionalScriptAttribute(char *item)
 
-{ char value[maxvarsize];
+{ char value[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
 
-VBUFF[0] = value[0] = '\0';
+value[0] = '\0';
 
-ExpandVarstring(item,VBUFF,NULL);
+ExpandVarstring(item,ebuff,NULL);
 
-sscanf(VBUFF,"%*[^=]=%s",value);
+sscanf(ebuff,"%*[^=]=%s",value);
 
 if (value[0] == '\0')
    {
@@ -1464,13 +1477,13 @@ switch(GetCommAttribute(item))
 
 void HandleOptionalAlertsAttribute(char *item)
 
-{ char value[maxvarsize];
+{ char value[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
 
-VBUFF[0] = value[0] = '\0';
+value[0] = '\0';
 
-ExpandVarstring(item,VBUFF,NULL);
+ExpandVarstring(item,ebuff,NULL);
 
-sscanf(VBUFF,"%*[^=]=%s",value);
+sscanf(ebuff,"%*[^=]=%s",value);
 
 if (value[0] == '\0')
    {
@@ -1580,6 +1593,7 @@ void InstallDefaultRouteItem(char *item)
 
 { struct hostent *hp;
   struct in_addr inaddr;
+  char ebuff[CF_EXPANDSIZE];
 
 Debug1("Install defaultroute mode (%s)\n",item);
 
@@ -1595,13 +1609,13 @@ if (VDEFAULTROUTE[0] != '\0')
    FatalError("Redefinition of basic system variable");
    }
 
-ExpandVarstring(item,VBUFF,NULL);
+ExpandVarstring(item,ebuff,NULL);
 
- if (inet_addr(VBUFF) == -1)
+ if (inet_addr(ebuff) == -1)
    {
-   if ((hp = gethostbyname(VBUFF)) == NULL)
+   if ((hp = gethostbyname(ebuff)) == NULL)
       {
-      snprintf(OUTPUT,bufsize*2,"Bad address/host (%s) in default route\n",VBUFF);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Bad address/host (%s) in default route\n",ebuff);
       CfLog(cferror,OUTPUT,"gethostbyname");
       yyerror ("Bad specification of default packet route: hostname or decimal IP address");
       }
@@ -1613,7 +1627,7 @@ ExpandVarstring(item,VBUFF,NULL);
    }
 else
    {
-   strcpy(VDEFAULTROUTE,VBUFF);
+   strcpy(VDEFAULTROUTE,ebuff);
    }
 }
 
@@ -1622,7 +1636,7 @@ else
 void InstallGroupRValue(char *item,enum itemtypes type)
 
 { char *machine, *user, *domain;
-  char buff[bufsize];
+  char ebuff[CF_EXPANDSIZE];
 
 if (!IsDefinedClass(CLASSBUFF))
    {
@@ -1632,59 +1646,59 @@ if (!IsDefinedClass(CLASSBUFF))
 
 if (*item == '\'' || *item == '"' || *item == '`')
    {
-   ExpandVarstring(item+1,buff,NULL);
+   ExpandVarstring(item+1,ebuff,NULL);
    }
 else
    {
-   ExpandVarstring(item,buff,NULL);
+   ExpandVarstring(item,ebuff,NULL);
    }
 
-Debug1("HandleGroupRVal(%s) group (%s), type=%d\n",buff,GROUPBUFF,type);
+Debug1("HandleGroupRVal(%s) group (%s), type=%d\n",ebuff,GROUPBUFF,type);
 
 switch (type)
    {
-   case simple:    if (strcmp(buff,VDEFAULTBINSERVER.name) == 0)
+   case simple:    if (strcmp(ebuff,VDEFAULTBINSERVER.name) == 0)
                       {
                       AddClassToHeap(GROUPBUFF);
                       break;
                       }
 
-                   if (strcmp(buff,VFQNAME) == 0)
+                   if (strcmp(ebuff,VFQNAME) == 0)
                       {
                       AddClassToHeap(GROUPBUFF);
                       break;
                       }
 
-                   if (IsItemIn(VHEAP,buff))  /* group reference */
+                   if (IsItemIn(VHEAP,ebuff))  /* group reference */
                       {
                       AddClassToHeap(GROUPBUFF);
                       break;
                       }
 
-                   if (IsDefinedClass(buff))
+                   if (IsDefinedClass(ebuff))
                       {
                       AddClassToHeap(GROUPBUFF);
                       break;
                       }
 
-     Debug("[No match of class %s]\n\n",buff);
+     Debug("[No match of class %s]\n\n",ebuff);
 
                    break;
 
-   case netgroup:  setnetgrent(buff);
+   case netgroup:  setnetgrent(ebuff);
 
                    while (getnetgrent(&machine,&user,&domain))
                       {
                       if (strcmp(machine,VDEFAULTBINSERVER.name) == 0)
                          {
-                         Debug1("Matched %s in netgroup %s\n",machine,buff);
+                         Debug1("Matched %s in netgroup %s\n",machine,ebuff);
                          AddClassToHeap(GROUPBUFF);
                          break;
                          }
 
                       if (strcmp(machine,VFQNAME) == 0)
                          {
-                         Debug1("Matched %s in netgroup %s\n",machine,buff);
+                         Debug1("Matched %s in netgroup %s\n",machine,ebuff);
                          AddClassToHeap(GROUPBUFF);
                          break;
                          }
@@ -1696,20 +1710,20 @@ switch (type)
 
    case groupdeletion: 
 
-                   setnetgrent(buff);
+                   setnetgrent(ebuff);
 
                    while (getnetgrent(&machine,&user,&domain))
                       {
                       if (strcmp(machine,VDEFAULTBINSERVER.name) == 0)
                          {
-                         Debug1("Matched delete item %s in netgroup %s\n",machine,buff);
+                         Debug1("Matched delete item %s in netgroup %s\n",machine,ebuff);
                          DeleteItemStarting(&VHEAP,GROUPBUFF);
                          break;
                          }
         
                       if (strcmp(machine,VFQNAME) == 0)
                          {
-                         Debug1("Matched delete item %s in netgroup %s\n",machine,buff);
+                         Debug1("Matched delete item %s in netgroup %s\n",machine,ebuff);
                          DeleteItemStarting(&VHEAP,GROUPBUFF);
                          break;
                          }
@@ -1721,16 +1735,16 @@ switch (type)
 
    case classscript:
 
-                   if (buff[0] != '/')
+                   if (ebuff[0] != '/')
                       {
                       yyerror("Quoted scripts must begin with / for absolute path");
                       break;
                       }
 
-                   SetClassesOnScript(buff,GROUPBUFF,NULL,false);
+                   SetClassesOnScript(ebuff,GROUPBUFF,NULL,false);
                    break;
 
-   case deletion:  if (IsDefinedClass(buff))
+   case deletion:  if (IsDefinedClass(ebuff))
                       {
                       DeleteItemStarting(&VHEAP,GROUPBUFF);
                       }
@@ -1745,36 +1759,38 @@ switch (type)
 
 void HandleHomePattern(char *pattern)
 
-{
-VBUFF[0]='\0';
-ExpandVarstring(pattern,VBUFF,"");
-AppendItem(&VHOMEPATLIST,VBUFF,CLASSBUFF);
+{ char ebuff[CF_EXPANDSIZE];
+
+ExpandVarstring(pattern,ebuff,"");
+AppendItem(&VHOMEPATLIST,ebuff,CLASSBUFF);
 }
 
 /*******************************************************************/
 
 void AppendNameServer(char *item)
 
-{ 
+{ char ebuff[CF_EXPANDSIZE];
+ 
 Debug1("Installing item (%s) in the nameserver list\n",item);
 
-if ( ! IsInstallable(CLASSBUFF))
+if (!IsInstallable(CLASSBUFF))
    {
    Debug1("Not installing %s, no match\n",item);
    return;
    }
 
-ExpandVarstring(item,VBUFF,"");
+ExpandVarstring(item,ebuff,"");
  
-AppendItem(&VRESOLVE,VBUFF,CLASSBUFF);
+AppendItem(&VRESOLVE,ebuff,CLASSBUFF);
 }
 
 /*******************************************************************/
 
 void AppendImport(char *item)
 
-{ 
-if ( ! IsInstallable(CLASSBUFF))
+{ char ebuff[CF_EXPANDSIZE];
+ 
+if (!IsInstallable(CLASSBUFF))
    {
    Debug1("Not installing %s, no match\n",item);
    return;
@@ -1788,9 +1804,9 @@ if (strcmp(item,VCURRENTFILE) == 0)
 
 Debug1("\n\n [Installing item (%s) in the import list]\n\n",item);
 
-ExpandVarstring(item,VBUFF,"");
+ExpandVarstring(item,ebuff,"");
  
-AppendItem(&VIMPORT,VBUFF,CLASSBUFF);
+AppendItem(&VIMPORT,ebuff,CLASSBUFF);
 }
 
 /*******************************************************************/
@@ -1843,32 +1859,34 @@ VOBJTOP = ptr;
 
 void InstallHomeserverItem(char *item)
 
-{
-if (! IsInstallable(CLASSBUFF))
+{ char ebuff[CF_EXPANDSIZE];
+ 
+if (!IsInstallable(CLASSBUFF))
    {
    Debug1("Not installing %s, no match\n",item);
    return;
    }
 
-ExpandVarstring(item,VBUFF,"");  
+ExpandVarstring(item,ebuff,"");  
 
-AppendItem(&VHOMESERVERS,VBUFF,CLASSBUFF);
+AppendItem(&VHOMESERVERS,ebuff,CLASSBUFF);
 }
 
 /*******************************************************************/
 
 void InstallBinserverItem(char *item)
 
-{
-if (! IsInstallable(CLASSBUFF))
+{ char ebuff[CF_EXPANDSIZE];
+ 
+if (!IsInstallable(CLASSBUFF))
    {
    Debug1("Not installing %s, no match\n",item);
    return;
    }
 
-ExpandVarstring(item,VBUFF,""); 
+ExpandVarstring(item,ebuff,""); 
 
-AppendItem(&VBINSERVERS,VBUFF,CLASSBUFF);
+AppendItem(&VBINSERVERS,ebuff,CLASSBUFF);
 }
 
 /*******************************************************************/
@@ -1876,7 +1894,7 @@ AppendItem(&VBINSERVERS,VBUFF,CLASSBUFF);
 void InstallMailserverPath(char *path)
 
 {
-if ( ! IsInstallable(CLASSBUFF))
+if (!IsInstallable(CLASSBUFF))
    {
    Debug1("Not installing %s, no match\n",path);
    return;
@@ -1897,22 +1915,23 @@ Debug1("Installing mailserver (%s) for group (%s)",path,GROUPBUFF);
 void InstallLinkItem(char *from,char *to)
 
 { struct Link *ptr;
-  char buffer[bufsize], buffer2[bufsize];
+  char buffer[CF_EXPANDSIZE], buffer2[CF_EXPANDSIZE];
+  char ebuff[CF_EXPANDSIZE];
   
 Debug1("Storing Link: (From)%s->(To)%s\n",from,to);
 
-if ( ! IsInstallable(CLASSBUFF))
+if (!IsInstallable(CLASSBUFF))
    {
    InitializeAction();
    Debug1("Not installing link no match\n");
    return;
    }
 
-ExpandVarstring(from,VBUFF,"");
+ExpandVarstring(from,ebuff,"");
 
- if (strlen(VBUFF) > 1)
+ if (strlen(ebuff) > 1)
    {
-   DeleteSlash(VBUFF);
+   DeleteSlash(ebuff);
    }
 
 ExpandVarstring(to,buffer,"");
@@ -1929,7 +1948,7 @@ if ((ptr = (struct Link *)malloc(sizeof(struct Link))) == NULL)
    FatalError("Memory Allocation failed for InstallListItem() #1");
    }
  
-if ((ptr->from = strdup(VBUFF)) == NULL)
+if ((ptr->from = strdup(ebuff)) == NULL)
    {
    FatalError("Memory Allocation failed for InstallListItem() #2");
    }
@@ -2028,19 +2047,19 @@ InitializeAction();
 void InstallLinkChildrenItem (char *from,char *to)
 
 { struct Link *ptr;
-  char *sp, buffer[bufsize];
+  char *sp, buffer[CF_EXPANDSIZE],ebuff[CF_EXPANDSIZE];
   struct TwoDimList *tp = NULL;
 
 Debug1("Storing Linkchildren item: %s -> %s\n",from,to);
 
-if ( ! IsInstallable(CLASSBUFF))
+if (!IsInstallable(CLASSBUFF))
    {
    InitializeAction();
    Debug1("Not installing linkchildren no match\n");
    return;
    }
 
-ExpandVarstring(from,VBUFF,"");
+ExpandVarstring(from,ebuff,"");
 ExpandVarstring(ALLCLASSBUFFER,buffer,""); 
 
 Build2DListFromVarstring(&tp,to,'/');
@@ -2054,7 +2073,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       FatalError("Memory Allocation failed for InstallListChildrenItem() #1");
       }
 
-   if ((ptr->from = strdup(VBUFF)) == NULL)
+   if ((ptr->from = strdup(ebuff)) == NULL)
       {
       FatalError("Memory Allocation failed for InstallLinkchildrenItem() #2");
       }
@@ -2145,7 +2164,7 @@ InitializeAction();
 void InstallRequiredPath(char *path,int freespace)
 
 { struct Disk *ptr;
-  char buffer[bufsize],*sp;
+  char buffer[CF_EXPANDSIZE],ebuff[CF_EXPANDSIZE],*sp;
   struct TwoDimList *tp = NULL;
 
 Build2DListFromVarstring(&tp,path,'/');
@@ -2156,22 +2175,21 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    {
    Debug1("Installing item (%s) in the required list\n",sp);
    
-   if ( ! IsInstallable(CLASSBUFF))
+   if (!IsInstallable(CLASSBUFF))
       {
       InitializeAction();
       Debug1("Not installing %s, no match\n",sp);
       return;
       }
    
-   VBUFF[0] = '\0';
-   ExpandVarstring(sp,VBUFF,"");
+   ExpandVarstring(sp,ebuff,"");
    
    if ((ptr = (struct Disk *)malloc(sizeof(struct Disk))) == NULL)
       {
       FatalError("Memory Allocation failed for InstallRequired() #1");
       }
    
-   if ((ptr->name = strdup(VBUFF)) == NULL)
+   if ((ptr->name = strdup(ebuff)) == NULL)
       {
       FatalError("Memory Allocation failed for InstallRequired() #2");
       }
@@ -2248,6 +2266,7 @@ InitializeAction();
 void InstallMountableItem(char *path,char *mnt_opts,flag readonly)
 
 { struct Mountables *ptr;
+  char ebuff[CF_EXPANDSIZE]; 
 
 Debug1("Adding mountable %s to list\n",path);
 
@@ -2256,30 +2275,30 @@ if (!IsDefinedClass(CLASSBUFF))
    return;
    }
  
- ExpandVarstring(path,VBUFF,"");
+ExpandVarstring(path,ebuff,"");
  
 /* 
  * Check if mount entry already exists
  */
- if ( VMOUNTABLES != NULL )
-    {
-    for (ptr = VMOUNTABLES; ptr != NULL; ptr = ptr->next)
-       {
-       if ( strcmp(ptr->filesystem, VBUFF) == 0 )
-          {
-          snprintf(OUTPUT,bufsize*2,"Only one definition per mount allowed: %s\n",ptr->filesystem);
-          yyerror(OUTPUT); 
-          return;
-          }
-       }
-    }
+if (VMOUNTABLES != NULL)
+   {
+   for (ptr = VMOUNTABLES; ptr != NULL; ptr = ptr->next)
+      {
+      if ( strcmp(ptr->filesystem, VBUFF) == 0 )
+         {
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Only one definition per mount allowed: %s\n",ptr->filesystem);
+         yyerror(OUTPUT); 
+         return;
+         }
+      }
+   }
  
- if ((ptr = (struct Mountables *)malloc(sizeof(struct Mountables))) == NULL)
-    {
-    FatalError("Memory Allocation failed for InstallMountableItem() #1");
-    }
+if ((ptr = (struct Mountables *)malloc(sizeof(struct Mountables))) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallMountableItem() #1");
+   }
  
-if ((ptr->filesystem = strdup(VBUFF)) == NULL)
+if ((ptr->filesystem = strdup(ebuff)) == NULL)
    {
    FatalError("Memory Allocation failed for InstallMountableItem() #2");
    }
@@ -2310,7 +2329,7 @@ else
    VMOUNTABLESTOP->next = ptr;
    }
 
-VMOUNTABLESTOP=ptr;
+VMOUNTABLESTOP = ptr;
 }
 
 /*******************************************************************/
@@ -2318,23 +2337,23 @@ VMOUNTABLESTOP=ptr;
 void AppendUmount(char *path,char deldir,char delfstab,char force)
 
 { struct UnMount *ptr;
+  char ebuff[CF_EXPANDSIZE]; 
  
-if ( ! IsInstallable(CLASSBUFF))
+if (!IsInstallable(CLASSBUFF))
    {
    InitializeAction();
    Debug1("Not installing %s, no match\n",path);
    return;
    }
 
-VBUFF[0] = '\0';
-ExpandVarstring(path,VBUFF,"");
+ExpandVarstring(path,ebuff,"");
 
  if ((ptr = (struct UnMount *)malloc(sizeof(struct UnMount))) == NULL)
    {
    FatalError("Memory Allocation failed for AppendUmount() #1");
    }
 
-if ((ptr->name = strdup(VBUFF)) == NULL)
+if ((ptr->name = strdup(ebuff)) == NULL)
    {
    FatalError("Memory Allocation failed for AppendUmount() #2");
    }
@@ -2386,10 +2405,11 @@ VUNMOUNTTOP = ptr;
 void AppendMiscMount(char *from,char *onto,char *opts)
 
 { struct MiscMount *ptr;
+  char ebuff[CF_EXPANDSIZE]; 
 
 Debug1("Adding misc mountable %s %s (%s) to list\n",from,onto,opts);
 
-if ( ! IsInstallable(CLASSBUFF))
+if (!IsInstallable(CLASSBUFF))
    {
    Debug1("Not installing %s, no match\n",from);
    return;
@@ -2400,16 +2420,16 @@ if ((ptr = (struct MiscMount *)malloc(sizeof(struct MiscMount))) == NULL)
    FatalError("Memory Allocation failed for AppendMiscMount #1");
    }
 
-ExpandVarstring(from,VBUFF,"");
+ExpandVarstring(from,ebuff,"");
  
-if ((ptr->from = strdup(VBUFF)) == NULL)
+if ((ptr->from = strdup(ebuff)) == NULL)
    {
    FatalError("Memory Allocation failed for AppendMiscMount() #2");
    }
 
-ExpandVarstring(onto,VBUFF,"");
+ExpandVarstring(onto,ebuff,"");
 
-if ((ptr->onto = strdup(VBUFF)) == NULL)
+if ((ptr->onto = strdup(ebuff)) == NULL)
    {
    FatalError("Memory Allocation failed for AppendMiscMount() #3");
    }
@@ -2577,6 +2597,8 @@ switch (action)
           Debug("Install %s if %s\n",CURRENTOBJECT,CLASSBUFF);
           InstallItem(&VALERTS,CURRENTOBJECT,CLASSBUFF,0,0);
           }
+
+       InitializeAction();
        break;
        
    case interfaces:
@@ -2714,7 +2736,7 @@ sscanf(value,"%d",&numvalue);
 
 if (numvalue == -17267592)
    {
-   snprintf(OUTPUT,bufsize,"Integer expected as argument to %s",name);
+   snprintf(OUTPUT,CF_BUFSIZE,"Integer expected as argument to %s",name);
    yyerror(OUTPUT);
    return;
    }
@@ -2726,7 +2748,7 @@ if ((numvalue <= max) && (numvalue >= min))
    }
 else
    {
-   snprintf(OUTPUT,bufsize,"Integer %s out of range (%d <= %s <= %d)",name,min,name,max);
+   snprintf(OUTPUT,CF_BUFSIZE,"Integer %s out of range (%d <= %s <= %d)",name,min,name,max);
    yyerror(OUTPUT);
    }
 }
@@ -2736,17 +2758,18 @@ else
 int EditFileExists(char *file)
 
 { struct Edit *ptr;
+  char ebuff[CF_EXPANDSIZE]; 
 
-VBUFF[0]='\0';                         /* Expand any variables */
-ExpandVarstring(file,VBUFF,"");
+ExpandVarstring(file,ebuff,"");
 
-for (ptr=VEDITLIST; ptr != NULL; ptr=ptr->next)
+for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
    {
-   if (strcmp(ptr->fname,VBUFF) == 0)
+   if (strcmp(ptr->fname,ebuff) == 0)
       {
       return true;
       }
    }
+ 
 return false;
 }
 
@@ -2757,7 +2780,7 @@ void GetExecOutput(char *command,char *buffer)
 /* Buffer initially contains whole exec string */
 
 { int offset = 0;
-  char line[bufsize], *sp; 
+  char line[CF_BUFSIZE], *sp; 
   FILE *pp;
 
 Debug1("GetExecOutput(%s,%s)\n",command,buffer);
@@ -2769,12 +2792,12 @@ if (DONTDO)
 
 if ((pp = cfpopen(command,"r")) == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't open pipe to command %s\n",command);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open pipe to command %s\n",command);
    CfLog(cfinform,OUTPUT,"pipe");
    return;
    }
 
-memset(buffer,0,bufsize);
+memset(buffer,0,CF_BUFSIZE);
   
 while (!feof(pp))
    {
@@ -2784,7 +2807,7 @@ while (!feof(pp))
       break;
       }
 
-   ReadLine(line,bufsize,pp);
+   ReadLine(line,CF_BUFSIZE,pp);
 
    if (ferror(pp))  /* abortable */
       {
@@ -2800,14 +2823,14 @@ while (!feof(pp))
          }
       }
    
-   if (strlen(line)+offset > bufsize-10)
+   if (strlen(line)+offset > CF_BUFSIZE-10)
       {
-      snprintf(OUTPUT,bufsize*2,"Buffer exceeded %d bytes in exec %s\n",maxvarsize,command);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Buffer exceeded %d bytes in exec %s\n",CF_MAXVARSIZE,command);
       CfLog(cferror,OUTPUT,"");
       break;
       }
 
-   snprintf(buffer+offset,bufsize,"%s ",line);
+   snprintf(buffer+offset,CF_BUFSIZE,"%s ",line);
    offset += strlen(line)+1;
    }
 
@@ -2826,6 +2849,7 @@ cfpclose(pp);
 void InstallEditFile(char *file,char *edit,char *data)
 
 { struct Edit *ptr;
+  char ebuff[CF_EXPANDSIZE]; 
 
 if (data == NULL)
    {
@@ -2836,48 +2860,48 @@ else
    Debug1("InstallEditFile(%s,%s,%s) with classes\n",file,edit,data,CLASSBUFF);
    }
 
-if ( ! IsInstallable(CLASSBUFF))
+if (!IsInstallable(CLASSBUFF))
    {
    InitializeAction();
    Debug1("Not installing Edit no match\n");
    return;
    }
 
- ExpandVarstring(file,VBUFF,"");
+ExpandVarstring(file,ebuff,"");
  
- if ((ptr = (struct Edit *)malloc(sizeof(struct Edit))) == NULL)
-    {
-    FatalError("Memory Allocation failed for InstallEditFile() #1");
-    }
+if ((ptr = (struct Edit *)malloc(sizeof(struct Edit))) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallEditFile() #1");
+   }
  
- if ((ptr->fname = strdup(VBUFF)) == NULL)
-    {
-    FatalError("Memory Allocation failed for InstallEditFile() #2");
-    }
+if ((ptr->fname = strdup(ebuff)) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallEditFile() #2");
+   }
  
- if (VEDITLISTTOP == NULL)                 /* First element in the list */
-    {
-    VEDITLIST = ptr;
-    }
- else
-    {
-    VEDITLISTTOP->next = ptr;
-    }
+if (VEDITLISTTOP == NULL)                 /* First element in the list */
+   {
+   VEDITLIST = ptr;
+   }
+else
+   {
+   VEDITLISTTOP->next = ptr;
+   }
  
- if (strncmp(VBUFF,"home",4) == 0 && strlen(VBUFF) < 6)
-    {
-    yyerror("Can't edit home directories: missing a filename after home");
-    }
+if (strncmp(ebuff,"home",4) == 0 && strlen(ebuff) < 6)
+   {
+   yyerror("Can't edit home directories: missing a filename after home");
+   }
 
- if (strlen(LOCALREPOS) > 0)
-    {
-    ExpandVarstring(LOCALREPOS,VBUFF,"");
-    ptr->repository = strdup(VBUFF);
-    }
- else
-    {
-    ptr->repository = NULL;
-    }
+if (strlen(LOCALREPOS) > 0)
+   {
+   ExpandVarstring(LOCALREPOS,ebuff,"");
+   ptr->repository = strdup(ebuff);
+   }
+else
+   {
+   ptr->repository = NULL;
+   }
 
 if (PIFELAPSED != -1)
    {
@@ -2919,7 +2943,7 @@ void AddEditAction(char *file,char *edit,char *data)
 
 { struct Edit *ptr;
   struct Edlist *top,*new;
-  char varbuff[bufsize];
+  char varbuff[CF_EXPANDSIZE];
 
 if (data == NULL)
    {
@@ -2930,7 +2954,7 @@ else
    Debug2("AddEditAction(%s,%s,%s)\n",file,edit,data);
    }
 
-if ( ! IsInstallable(CLASSBUFF))
+if (!IsInstallable(CLASSBUFF))
    {
    Debug1("Not installing Edit no match\n");
    return;
@@ -2938,7 +2962,6 @@ if ( ! IsInstallable(CLASSBUFF))
 
 for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
    {
-   varbuff[0] = '\0';
    ExpandVarstring(file,varbuff,"");
 
    if (strcmp(ptr->fname,varbuff) == 0)
@@ -2966,10 +2989,10 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
          }
       else
          {
-         VBUFF[0]='\0';                         /* Expand any variables */
-         ExpandVarstring(data,VBUFF,"");
+         char ebuff[CF_EXPANDSIZE];
+         ExpandVarstring(data,ebuff,"");
 
-         if ((new->data = strdup(VBUFF)) == NULL)
+         if ((new->data = strdup(ebuff)) == NULL)
             {
             FatalError("Memory Allocation failed for AddEditAction() #1");
             }
@@ -2984,7 +3007,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
       
       if ((new->code = EditActionsToCode(edit)) == NoEdit)
          {
-         snprintf(OUTPUT,bufsize,"Unknown edit action \"%s\"",edit);
+         snprintf(OUTPUT,CF_BUFSIZE,"Unknown edit action \"%s\"",edit);
          yyerror(OUTPUT);
          }
       
@@ -3005,7 +3028,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
          case EditRecurse:
              if (strcmp(data,"inf") == 0)
                 {
-                ptr->recurse = INFINITERECURSE;
+                ptr->recurse = CF_INF_RECURSE;
                 }
              else
                 {
@@ -3087,10 +3110,10 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
                 }
              break;
          case FixEndOfLine:
-             if (strlen(data) > extra_space - 1)
+             if (strlen(data) > CF_EXTRASPC - 1)
                 {
                 yyerror("End of line type is too long!");
-                printf("          (max %d characters allowed)\n",extra_space);
+                printf("          (max %d characters allowed)\n",CF_EXTRASPC);
                 }
              break;
          case ReplaceLinesMatchingField:
@@ -3225,7 +3248,7 @@ void AppendScript(char *item,int timeout,char useshell,char *uidname,char *gidna
   struct ShellComm *ptr;
   struct passwd *pw;
   struct group *gw;
-  char *sp, buf[bufsize];
+  char *sp, ebuff[CF_EXPANDSIZE];
   int uid = CF_NOUSER; 
   int gid = CF_NOUSER;
   
@@ -3261,22 +3284,21 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       return;
       }
 
-
    if ((ptr->name = strdup(sp)) == NULL)
       {
       FatalError("Memory Allocation failed for Appendscript() #3");
       }
 
-   ExpandVarstring(CHROOT,buf,"");
+   ExpandVarstring(CHROOT,ebuff,"");
 
-   if ((ptr->chroot = strdup(buf)) == NULL)
+   if ((ptr->chroot = strdup(ebuff)) == NULL)
       {
       FatalError("Memory Allocation failed for Appendscipt() #4b");
       }
    
-   ExpandVarstring(CHDIR,buf,"");
+   ExpandVarstring(CHDIR,ebuff,"");
    
-   if ((ptr->chdir = strdup(buf)) == NULL)
+   if ((ptr->chdir = strdup(ebuff)) == NULL)
       {
       FatalError("Memory Allocation failed for Appendscript() #4c");
       }
@@ -3293,7 +3315,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
 
    if (*uidname == '*')
       {
-      ptr->uid = sameowner;      
+      ptr->uid = CF_SAME_OWNER;      
       }
    else if (isdigit((int)*uidname))
       {
@@ -3320,7 +3342,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
 
    if (*gidname == '*')
       {
-      ptr->gid = samegroup;
+      ptr->gid = CF_SAME_GROUP;
       }
    else if (isdigit((int)*gidname))
       {
@@ -3374,16 +3396,16 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    ptr->done = 'n';
    ptr->scope = strdup(CONTEXTID);
 
-   ExpandVarstring(ALLCLASSBUFFER,VBUFF,"");
+   ExpandVarstring(ALLCLASSBUFFER,ebuff,"");
    
-   if ((ptr->defines = strdup(VBUFF)) == NULL)
+   if ((ptr->defines = strdup(ebuff)) == NULL)
       {
       FatalError("Memory Allocation failed for AppendDisable() #3");
       }
 
-   ExpandVarstring(ELSECLASSBUFFER,VBUFF,"");
+   ExpandVarstring(ELSECLASSBUFFER,ebuff,"");
    
-   if ((ptr->elsedef = strdup(VBUFF)) == NULL)
+   if ((ptr->elsedef = strdup(ebuff)) == NULL)
       {
       FatalError("Memory Allocation failed for AppendDisable() #3");
       }
@@ -3403,10 +3425,11 @@ void AppendDisable(char *path,char *type,short rotate,char comp,int size)
 { char *sp;
   struct Disable *ptr;
   struct TwoDimList *tp = NULL;
+  char ebuff[CF_EXPANDSIZE];
  
 Debug1("Installing item (%s) in the disable list\n",path);
 
-if ( ! IsInstallable(CLASSBUFF))
+if (!IsInstallable(CLASSBUFF))
    {
    InitializeAction();
    Debug1("Not installing %s, no match\n",path);
@@ -3435,16 +3458,16 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       FatalError("Memory Allocation failed for AppendDisable() #2");
       }
    
-   ExpandVarstring(ALLCLASSBUFFER,VBUFF,"");
+   ExpandVarstring(ALLCLASSBUFFER,ebuff,"");
 
-   if ((ptr->defines = strdup(VBUFF)) == NULL)
+   if ((ptr->defines = strdup(ebuff)) == NULL)
       {
       FatalError("Memory Allocation failed for AppendDisable() #3");
       }
 
-   ExpandVarstring(ELSECLASSBUFFER,VBUFF,"");
+   ExpandVarstring(ELSECLASSBUFFER,ebuff,"");
 
-   if ((ptr->elsedef = strdup(VBUFF)) == NULL)
+   if ((ptr->elsedef = strdup(ebuff)) == NULL)
       {
       FatalError("Memory Allocation failed for AppendDisable() #3");
       } 
@@ -3456,22 +3479,21 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    
    if (strlen(type) == 0)
       {
-      sprintf(VBUFF,"all");
+      sprintf(ebuff,"all");
       }
    else
       {
-      sprintf(VBUFF,"%s",type);
+      sprintf(ebuff,"%s",type);
       }
    
-   if ((ptr->type = strdup(VBUFF)) == NULL)
+   if ((ptr->type = strdup(ebuff)) == NULL)
       {
       FatalError("Memory Allocation failed for AppendDisable() #4");
       }
 
+   ExpandVarstring(DESTINATION,ebuff,"");
 
-   ExpandVarstring(DESTINATION,VBUFF,"");
-
-   if ((ptr->destination = strdup(VBUFF)) == NULL)
+   if ((ptr->destination = strdup(ebuff)) == NULL)
       {
       FatalError("Memory Allocation failed for AppendDisable() #3");
       }
@@ -3487,8 +3509,8 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
 
    if (strlen(LOCALREPOS) > 0)
       {
-      ExpandVarstring(LOCALREPOS,VBUFF,"");
-      ptr->repository = strdup(VBUFF);
+      ExpandVarstring(LOCALREPOS,ebuff,"");
+      ptr->repository = strdup(ebuff);
       }
    else
       {
@@ -3536,7 +3558,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
 
 void InstallMethod(char *function,char *file)
 
-{ char *sp, work[bufsize],name[bufsize];
+{ char *sp, work[CF_EXPANDSIZE],name[CF_BUFSIZE];
   struct Method *ptr;
   struct Item *bare_send_args = NULL;
   uid_t uid = CF_NOUSER;
@@ -3548,15 +3570,14 @@ Debug1("Installing item (%s=%s) in the methods list\n",function,file);
 
 if (strlen(file) == 0)
    {
-   snprintf(OUTPUT,bufsize,"Missing action file from declaration of method %s",function);
+   snprintf(OUTPUT,CF_BUFSIZE,"Missing action file from declaration of method %s",function);
    yyerror(OUTPUT);
    return;
    }
  
-memset(name,0,bufsize);
-memset(work,0,bufsize);
+memset(name,0,CF_BUFSIZE);
  
-if (! IsInstallable(CLASSBUFF))
+if (!IsInstallable(CLASSBUFF))
    {
    InitializeAction();
    Debug1("Not installing %s, no match\n",function);
@@ -3568,14 +3589,14 @@ if ((ptr = (struct Method *)malloc(sizeof(struct Method))) == NULL)
    FatalError("Memory Allocation failed for InstallMethod() #1");
    }
 
- if (VMETHODSTOP == NULL)
-    {
-    VMETHODS = ptr;
-    }
- else
-    {
-    VMETHODSTOP->next = ptr;
-    }
+if (VMETHODSTOP == NULL)
+   {
+   VMETHODS = ptr;
+   }
+else
+   {
+   VMETHODSTOP->next = ptr;
+   }
 
 if (!strstr(function,"("))
    {
@@ -3623,7 +3644,6 @@ DeleteItemList(bare_send_args);
  
 /* Now expand variables */
  
-memset(work,0,bufsize); 
 ExpandVarstring(function,work,"");
  
 if (work[strlen(work)-1] != ')')
@@ -3686,7 +3706,7 @@ if ((ptr->classes = strdup(CLASSBUFF)) == NULL)
  
  if (file[0] == '/' || file[0] == '.')
     {
-    snprintf(OUTPUT,bufsize,"Method name (%s) was absolute. Must be in trusted Modules directory (no path prefix)",file);
+    snprintf(OUTPUT,CF_BUFSIZE,"Method name (%s) was absolute. Must be in trusted Modules directory (no path prefix)",file);
     yyerror(OUTPUT);
     return;
     }
@@ -3703,7 +3723,7 @@ ptr->inform = INFORMP;
  
 if (*VUIDNAME == '*')
    {
-   ptr->uid = sameowner;      
+   ptr->uid = CF_SAME_OWNER;      
    }
 else if (isdigit((int)*VUIDNAME))
    {
@@ -3730,7 +3750,7 @@ else
 
 if (*VGIDNAME == '*')
    {
-   ptr->gid = samegroup;
+   ptr->gid = CF_SAME_GROUP;
    }
 else if (isdigit((int)*VGIDNAME))
    {
@@ -3787,6 +3807,13 @@ if ((ptr->chdir = strdup(work)) == NULL)
    FatalError("Memory Allocation failed for InstallProcItem() #4c");
    }
 
+
+ExpandVarstring(METHODFORCE,work,"");
+ 
+if ((ptr->forcereplyto = strdup(work)) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallProcItem() #4c");
+   }
  
 ptr->next = NULL;
 VMETHODSTOP = ptr;
@@ -3795,7 +3822,7 @@ InitializeAction();
 
 /*******************************************************************/
 
-void InstallTidyItem(char *path,char *wild,int rec,short age,char travlinks,int tidysize,char type,char ldirs,short tidydirs,char *classes)
+void InstallTidyItem(char *path,char *wild,int rec,short age,char travlinks,int tidysize,char type,char ldirs,char tidydirs,char *classes)
 
 { struct TwoDimList *tp = NULL;
   char *sp;
@@ -3830,26 +3857,25 @@ InitializeAction();
 void InstallMakePath(char *path,mode_t plus,mode_t minus,char *uidnames,char *gidnames)
 
 { struct File *ptr;
-  char buffer[bufsize]; 
+  char buffer[CF_EXPANDSIZE],ebuff[CF_EXPANDSIZE]; 
 
 Debug1("InstallMakePath (%s) (+%o)(-%o)(%s)(%s)\n",path,plus,minus,uidnames,gidnames);
 
-if ( ! IsInstallable(CLASSBUFF))
+if (!IsInstallable(CLASSBUFF))
    {
    InitializeAction();
    Debug1("Not installing directory item, no match\n");
    return;
    }
 
-VBUFF[0]='\0';                                /* Expand any variables */
-ExpandVarstring(path,VBUFF,"");
+ExpandVarstring(path,ebuff,"");
 
 if ((ptr = (struct File *)malloc(sizeof(struct File))) == NULL)
    {
    FatalError("Memory Allocation failed for InstallMakepath() #1");
    }
 
-if ((ptr->path = strdup(VBUFF)) == NULL)
+if ((ptr->path = strdup(ebuff)) == NULL)
    {
    FatalError("Memory Allocation failed for InstallMakepath() #2");
    }
@@ -3919,7 +3945,6 @@ ptr->plus_flags = PLUSFLAG;
 ptr->minus_flags = MINUSFLAG;
 ptr->done = 'n';
 ptr->scope = strdup(CONTEXTID); 
- 
 ptr->next = NULL;
 VMAKEPATHTOP = ptr;
 InitializeAction();
@@ -4203,19 +4228,19 @@ void HandleTidyRmdirs(char *value)
 {
 if ((strcmp(value,"true") == 0)||(strcmp(value,"all") == 0))
    {
-   TIDYDIRS = 1;
+   TIDYDIRS = 'y';
    return;
    }
 
 if ((strcmp(value,"false") == 0)||(strcmp(value,"none") == 0))
    {
-   TIDYDIRS = 0;
+   TIDYDIRS = 'n';
    return;
    }
 
 if (strcmp(value,"sub") == 0)
    {
-   TIDYDIRS = 2;
+   TIDYDIRS = 's';
    return;
    }
 
@@ -4323,7 +4348,7 @@ return (int) warnall;
 void InstallFileListItem(char *path,mode_t plus,mode_t minus,enum fileactions action,char *uidnames,char *gidnames,int recurse,char travlinks,char chksum)
 
 { struct File *ptr;
-  char *spl;
+  char *spl,ebuff[CF_EXPANDSIZE];
   struct TwoDimList *tp = NULL;
 
 Debug1("InstallFileaction (%s) (+%o)(-%o) (%s) (%d) (%c)\n",path,plus,minus,FILEACTIONTEXT[action],action,travlinks);
@@ -4357,16 +4382,16 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
       FatalError("Memory Allocation failed for InstallFileListItem() #3");
       }
 
-   ExpandVarstring(ALLCLASSBUFFER,VBUFF,""); 
+   ExpandVarstring(ALLCLASSBUFFER,ebuff,""); 
 
-   if ((ptr->defines = strdup(VBUFF)) == NULL)
+   if ((ptr->defines = strdup(ebuff)) == NULL)
       {
       FatalError("Memory Allocation failed for InstallFileListItem() #3");
       }
 
-   ExpandVarstring(ELSECLASSBUFFER,VBUFF,""); 
+   ExpandVarstring(ELSECLASSBUFFER,ebuff,""); 
 
-   if ((ptr->elsedef = strdup(VBUFF)) == NULL)
+   if ((ptr->elsedef = strdup(ebuff)) == NULL)
       {
       FatalError("Memory Allocation failed for InstallFileListItem() #3");
       }
@@ -4429,7 +4454,6 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
    }
 
 Delete2DList(tp);
-
 InitializeAction();
 }
 
@@ -4439,7 +4463,7 @@ InitializeAction();
 void InstallProcessItem(char *expr,char *restart,short matches,char comp,short signal,char action,char *classes,char useshell,char *uidname,char *gidname)
 
 { struct Process *ptr;
-  char buf[bufsize];
+  char ebuff[CF_EXPANDSIZE];
   uid_t uid;
   gid_t gid;
   struct passwd *pw;
@@ -4460,53 +4484,53 @@ if ((ptr = (struct Process *)malloc(sizeof(struct Process))) == NULL)
    FatalError("Memory Allocation failed for InstallProcItem() #1");
    }
 
-ExpandVarstring(expr,buf,"");
+ExpandVarstring(expr,ebuff,"");
  
-if ((ptr->expr = strdup(buf)) == NULL)
+if ((ptr->expr = strdup(ebuff)) == NULL)
    {
    FatalError("Memory Allocation failed for InstallProcItem() #2");
    }
 
-ExpandVarstring(restart,buf,"");
+ExpandVarstring(restart,ebuff,"");
 
-if (strcmp(buf,"SetOptionString") == 0)
+if (strcmp(ebuff,"SetOptionString") == 0)
    {
-   if ((strlen(buf) > 0) && buf[0] != '/')
+   if ((strlen(ebuff) > 0) && ebuff[0] != '/')
       {
-      snprintf(OUTPUT,bufsize,"Restart command (%s) does not have an absolute pathname",buf);
+      snprintf(OUTPUT,CF_BUFSIZE,"Restart command (%s) does not have an absolute pathname",ebuff);
       yyerror(OUTPUT);
       }
    }
  
-if ((ptr->restart = strdup(buf)) == NULL)
+if ((ptr->restart = strdup(ebuff)) == NULL)
    {
    FatalError("Memory Allocation failed for InstallProcItem() #3");
    }
 
-ExpandVarstring(ALLCLASSBUFFER,buf,""); 
+ExpandVarstring(ALLCLASSBUFFER,ebuff,""); 
  
-if ((ptr->defines = strdup(buf)) == NULL)
+if ((ptr->defines = strdup(ebuff)) == NULL)
    {
    FatalError("Memory Allocation failed for InstallProcItem() #4");
    }
 
-ExpandVarstring(ELSECLASSBUFFER,buf,""); 
+ExpandVarstring(ELSECLASSBUFFER,ebuff,""); 
 
-if ((ptr->elsedef = strdup(buf)) == NULL)
+if ((ptr->elsedef = strdup(ebuff)) == NULL)
    {
    FatalError("Memory Allocation failed for InstallProcItem() #4a");
    }
 
-ExpandVarstring(CHROOT,buf,"");
+ExpandVarstring(CHROOT,ebuff,"");
  
-if ((ptr->chroot = strdup(buf)) == NULL)
+if ((ptr->chroot = strdup(ebuff)) == NULL)
    {
    FatalError("Memory Allocation failed for InstallProcItem() #4b");
    }
 
-ExpandVarstring(CHDIR,buf,"");
+ExpandVarstring(CHDIR,ebuff,"");
  
-if ((ptr->chdir = strdup(buf)) == NULL)
+if ((ptr->chdir = strdup(ebuff)) == NULL)
    {
    FatalError("Memory Allocation failed for InstallProcItem() #4c");
    }
@@ -4623,7 +4647,7 @@ AddInstallable(ptr->elsedef);
 void InstallPackagesItem(char *name,char *ver,enum cmpsense sense,enum pkgmgrs mgr)
 
 { struct Package *ptr;
-  char buffer[bufsize];
+  char buffer[CF_EXPANDSIZE];
 
 if ( ! IsInstallable(CLASSBUFF))
    {
@@ -4761,7 +4785,7 @@ void InstallImageItem(char *cf_findertype,char *path,mode_t plus,mode_t minus,ch
 
 { struct Image *ptr;
   char *spl; 
-  char buf1[bufsize], buf2[bufsize], buf3[bufsize], buf4[bufsize];
+  char buf1[CF_EXPANDSIZE], buf2[CF_EXPANDSIZE], buf3[CF_EXPANDSIZE], buf4[CF_EXPANDSIZE];
   struct TwoDimList *tp = NULL;
   struct hostent *hp;
   
@@ -4884,7 +4908,7 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
          }
       else
          {
-         snprintf(OUTPUT,bufsize,"Image %s needs an absolute pathname",buf2);
+         snprintf(OUTPUT,CF_BUFSIZE,"Image %s needs an absolute pathname",buf2);
          yyerror(OUTPUT);
          return;
          }
@@ -5044,7 +5068,7 @@ void InstallAuthItem(char *path,char *attribute,struct Auth **list,struct Auth *
 
 
 { struct TwoDimList *tp = NULL;
-  char attribexp[bufsize];
+  char attribexp[CF_EXPANDSIZE];
   char *sp1;
   struct Item *vlist = NULL,*ip;
 
@@ -5084,7 +5108,7 @@ for (sp1 = Get2DListEnt(tp); sp1 != NULL; sp1 = Get2DListEnt(tp))
 int GetCommAttribute(char *s)
 
 { int i;
-  char comm[maxvarsize];
+  char comm[CF_MAXVARSIZE];
 
 for (i = 0; s[i] != '\0'; i++)
    {
@@ -5117,7 +5141,7 @@ void HandleRecurse(char *value)
 
 if (strcmp(value,"inf") == 0)
    {
-   VRECURSE = INFINITERECURSE;
+   VRECURSE = CF_INF_RECURSE;
    }
 else
    {
@@ -5370,7 +5394,7 @@ yyerror("Illegal broadcast specifier (ones/zeros)");
 void AppendToActionSequence (char *action)
 
 { int j = 0;
-  char *sp,cbuff[bufsize],actiontxt[bufsize];
+  char *sp,cbuff[CF_BUFSIZE],actiontxt[CF_BUFSIZE];
 
 Debug1("Installing item (%s) in the action sequence list\n",action);
 
@@ -5426,7 +5450,7 @@ while (*sp != '\0')
 
 void AppendToAccessList (char *user)
 
-{ char id[maxvarsize];
+{ char id[CF_MAXVARSIZE];
   struct passwd *pw;
 
 Debug1("Adding to access list for %s\n",user);
@@ -5527,7 +5551,7 @@ if (strcmp(value,"none") == 0 || strcmp(value,"copy") == 0)
    return;
    }
 
- snprintf(OUTPUT,bufsize*2,"Invalid link type %s\n",value);
+ snprintf(OUTPUT,CF_BUFSIZE*2,"Invalid link type %s\n",value);
 yyerror(OUTPUT);
 }
 
@@ -5548,14 +5572,14 @@ void HandleDefine(char *value)
  
 Debug("Define response classes: %s\n",value);
 
-if (strlen(value) > bufsize)
+if (strlen(value) > CF_BUFSIZE)
    {
    yyerror("class list too long - can't handle it!");
    }
 
 /*if (!IsInstallable(value))
    {
-   snprintf(OUTPUT,bufsize*2,"Undeclared installable define=%s (see AddInstallable)",value);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Undeclared installable define=%s (see AddInstallable)",value);
    yyerror(OUTPUT);
    }
 */
@@ -5570,7 +5594,7 @@ for (sp = value; *sp != '\0'; sp++)
    
    if (! isalnum((int)*sp) && *sp != '_')
       {
-      snprintf(OUTPUT,bufsize*2,"Illegal class list in define=%s\n",value);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Illegal class list in define=%s\n",value);
       yyerror(OUTPUT);
       }
    }
@@ -5584,7 +5608,7 @@ void HandleElseDefine(char *value)
  
 Debug("Define elsedefault classes: %s\n",value);
 
-if (strlen(value) > bufsize)
+if (strlen(value) > CF_BUFSIZE)
    {
    yyerror("class list too long - can't handle it!");
    }
@@ -5600,7 +5624,7 @@ for (sp = value; *sp != '\0'; sp++)
    
    if (! isalnum((int)*sp) && *sp != '_')
       {
-      snprintf(OUTPUT,bufsize*2,"Illegal class list in elsedefine=%s\n",value);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Illegal class list in elsedefine=%s\n",value);
       yyerror(OUTPUT);
       }
    }
@@ -5614,7 +5638,7 @@ void HandleFailover(char *value)
  
 Debug("Define failover classes: %s\n",value);
 
-if (strlen(value) > bufsize)
+if (strlen(value) > CF_BUFSIZE)
    {
    yyerror("class list too long - can't handle it!");
    }
@@ -5630,7 +5654,7 @@ for (sp = value; *sp != '\0'; sp++)
    
    if (! isalnum((int)*sp) && *sp != '_')
       {
-      snprintf(OUTPUT,bufsize*2,"Illegal class list in failover=%s\n",value);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Illegal class list in failover=%s\n",value);
       yyerror(OUTPUT);
       }
    }
@@ -5644,17 +5668,17 @@ struct UidList *MakeUidList(char *uidnames)
 
 { struct UidList *uidlist;
   struct Item *ip, *tmplist;
-  char uidbuff[bufsize];
+  char uidbuff[CF_BUFSIZE];
   char *sp;
   int offset;
   struct passwd *pw;
-  char *machine, *user, *domain, buffer[bufsize], *usercopy=NULL;
+  char *machine, *user, *domain, buffer[CF_EXPANDSIZE], *usercopy=NULL;
   int uid;
   int tmp = -1;
 
 uidlist = NULL;
 buffer[0] = '\0';
- 
+
 ExpandVarstring(uidnames,buffer,"");
  
 for (sp = buffer; *sp != '\0'; sp+=strlen(uidbuff))
@@ -5693,10 +5717,10 @@ for (sp = buffer; *sp != '\0'; sp+=strlen(uidbuff))
                {
                if (!PARSING)
                   {
-                  snprintf(OUTPUT,bufsize*2,"Unknown user [%s]\n",ip->name);
+                  snprintf(OUTPUT,CF_BUFSIZE*2,"Unknown user [%s]\n",ip->name);
                   CfLog(cferror,OUTPUT,"");
                   }
-               uid = unknown_owner; /* signal user not found */
+               uid = CF_UNKNOWN_OWNER; /* signal user not found */
                usercopy = ip->name;
                }
             else
@@ -5719,16 +5743,16 @@ for (sp = buffer; *sp != '\0'; sp+=strlen(uidbuff))
          {
          if (strcmp(uidbuff,"*") == 0)
             {
-            uid = sameowner;                     /* signals wildcard */
+            uid = CF_SAME_OWNER;                     /* signals wildcard */
             }
          else if ((pw = getpwnam(uidbuff)) == NULL)
             {
             if (!PARSING)
                {
-               snprintf(OUTPUT,bufsize,"Unknown user %s\n",uidbuff);
+               snprintf(OUTPUT,CF_BUFSIZE,"Unknown user %s\n",uidbuff);
                CfLog(cferror,OUTPUT,"");
                }
-            uid = unknown_owner;  /* signal user not found */
+            uid = CF_UNKNOWN_OWNER;  /* signal user not found */
             usercopy = uidbuff;
             }
          else
@@ -5742,7 +5766,7 @@ for (sp = buffer; *sp != '\0'; sp+=strlen(uidbuff))
  
  if (uidlist == NULL)
    {
-   AddSimpleUidItem(&uidlist,sameowner,(char *) NULL);
+   AddSimpleUidItem(&uidlist,CF_SAME_OWNER,(char *) NULL);
    }
 
 return (uidlist);
@@ -5753,7 +5777,7 @@ return (uidlist);
 struct GidList *MakeGidList(char *gidnames)
 
 { struct GidList *gidlist;
-  char gidbuff[bufsize],buffer[bufsize];
+  char gidbuff[CF_BUFSIZE],buffer[CF_EXPANDSIZE];
   char *sp, *groupcopy=NULL;
   struct group *gr;
   int gid;
@@ -5782,17 +5806,17 @@ for (sp = buffer; *sp != '\0'; sp+=strlen(gidbuff))
          {
          if (strcmp(gidbuff,"*") == 0)
             {
-            gid = samegroup;                     /* signals wildcard */
+            gid = CF_SAME_GROUP;                     /* signals wildcard */
             }
          else if ((gr = getgrnam(gidbuff)) == NULL)
             {
      if (!PARSING)
         {
-        snprintf(OUTPUT,bufsize,"Unknown group %s\n",gidbuff);
+        snprintf(OUTPUT,CF_BUFSIZE,"Unknown group %s\n",gidbuff);
         CfLog(cferror,OUTPUT,"");
         }
      
-     gid = unknown_group;
+     gid = CF_UNKNOWN_GROUP;
      groupcopy = gidbuff;
             }
          else
@@ -5807,7 +5831,7 @@ for (sp = buffer; *sp != '\0'; sp+=strlen(gidbuff))
 
 if (gidlist == NULL)
    {
-   AddSimpleGidItem(&gidlist,samegroup,NULL);
+   AddSimpleGidItem(&gidlist,CF_SAME_GROUP,NULL);
    }
 
 return(gidlist);
@@ -5816,10 +5840,10 @@ return(gidlist);
 
 /*******************************************************************/
 
-void InstallTidyPath(char *path,char *wild,int rec,short age,char travlinks,int tidysize,char type,char ldirs,short tidydirs,char *classes)
+void InstallTidyPath(char *path,char *wild,int rec,short age,char travlinks,int tidysize,char type,char ldirs,char tidydirs,char *classes)
 
 { struct Tidy *ptr;
-  char *sp;
+  char *sp,ebuff[CF_EXPANDSIZE];
   int no_of_links = 0;
 
 if (!IsInstallable(classes))
@@ -5830,11 +5854,11 @@ if (!IsInstallable(classes))
    }
 
 VBUFF[0]='\0';                                /* Expand any variables */
-ExpandVarstring(path,VBUFF,"");
+ExpandVarstring(path,ebuff,"");
 
-if (strlen(VBUFF) != 1)
+if (strlen(ebuff) != 1)
    {
-   DeleteSlash(VBUFF);
+   DeleteSlash(ebuff);
    }
 
 if ((ptr = (struct Tidy *)malloc(sizeof(struct Tidy))) == NULL)
@@ -5842,7 +5866,7 @@ if ((ptr = (struct Tidy *)malloc(sizeof(struct Tidy))) == NULL)
    FatalError("Memory Allocation failed for InstallTidyItem() #1");
    }
 
-if ((ptr->path = strdup(VBUFF)) == NULL)
+if ((ptr->path = strdup(ebuff)) == NULL)
    {
    FatalError("Memory Allocation failed for InstallTidyItem() #3");
    }
@@ -5856,7 +5880,7 @@ else
    VTIDYTOP->next = ptr;
    }
 
-if (rec != INFINITERECURSE && strncmp("home/",ptr->path,5) == 0) /* Is this a subdir of home wildcard? */
+if (rec != CF_INF_RECURSE && strncmp("home/",ptr->path,5) == 0) /* Is this a subdir of home wildcard? */
    {
    for (sp = ptr->path; *sp != '\0'; sp++)                     /* Need to make recursion relative to start */
       {                                                        /* of the search, not relative to home */
@@ -5892,7 +5916,7 @@ ptr->maxrecurse = rec + no_of_links;
 ptr->next = NULL;
 ptr->xdev = XDEV; 
 ptr->exclusions = VEXCLUDEPARSE;
-ptr->ignores = VIGNOREPARSE;      
+ptr->ignores = VIGNOREPARSE;
 
 VEXCLUDEPARSE = NULL; 
 VIGNOREPARSE = NULL;      
@@ -5905,13 +5929,13 @@ AddTidyItem(path,wild,rec+no_of_links,age,travlinks,tidysize,type,ldirs,tidydirs
 
 void AddTidyItem(char *path,char *wild,int rec,short age,char travlinks,int tidysize,char type,char ldirs,short tidydirs,char *classes)
 
-{ char varbuff[bufsize];
+{ char varbuff[CF_EXPANDSIZE];
   struct Tidy *ptr;
   struct Item *ip;
 
 Debug1("AddTidyItem(%s,pat=%s,size=%d)\n",path,wild,tidysize);
 
-if ( ! IsInstallable(CLASSBUFF))
+if (!IsInstallable(CLASSBUFF))
    {
    InitializeAction();
    Debug1("Not installing TidyItem no match\n");
@@ -5920,7 +5944,6 @@ if ( ! IsInstallable(CLASSBUFF))
 
 for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
    {
-   varbuff[0] = '\0';
    ExpandVarstring(path,varbuff,"");
 
    if (strcmp(ptr->path,varbuff) == 0)
@@ -5941,7 +5964,7 @@ for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
       DeleteItemList(VIGNOREPARSE);
       /* Must have the maximum recursion level here */
       
-      if (rec == INFINITERECURSE || ((ptr->maxrecurse < rec) && (ptr->maxrecurse != INFINITERECURSE)))
+      if (rec == CF_INF_RECURSE || ((ptr->maxrecurse < rec) && (ptr->maxrecurse != CF_INF_RECURSE)))
          {
          ptr->maxrecurse = rec;
          }
@@ -5955,15 +5978,15 @@ for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
 int TidyPathExists(char *path)
 
 { struct Tidy *tp;
+  char ebuff[CF_EXPANDSIZE]; 
 
-VBUFF[0]='\0';                                /* Expand any variables */
-ExpandVarstring(path,VBUFF,"");
+ExpandVarstring(path,ebuff,"");
 
 for (tp = VTIDY; tp != NULL; tp=tp->next)
    {
-   if (strcmp(tp->path,path) == 0)
+   if (strcmp(tp->path,ebuff) == 0)
       {
-      Debug1("TidyPathExists(%s)\n",path);
+      Debug1("TidyPathExists(%s)\n",ebuff);
       return true;
       }
    }
@@ -5988,7 +6011,7 @@ if ((ulp = (struct UidList *)malloc(sizeof(struct UidList))) == NULL)
 
 ulp->uid = uid;
  
- if (uid == unknown_owner)   /* unknown user */
+ if (uid == CF_UNKNOWN_OWNER)   /* unknown user */
     {
     if ((copyuser = strdup(uidname)) == NULL)
        {
@@ -6031,7 +6054,7 @@ if ((glp = (struct GidList *)malloc(sizeof(struct GidList))) == NULL)
  
 glp->gid = gid;
  
-if (gid == unknown_group)   /* unknown group */
+if (gid == CF_UNKNOWN_GROUP)   /* unknown group */
    {
    if ((copygroup = strdup(gidname)) == NULL)
       {
@@ -6066,6 +6089,7 @@ else
 void InstallAuthPath(char *path,char *hostname,char *classes,struct Auth **list,struct Auth **listtop)
 
 { struct Auth *ptr;
+  char ebuff[CF_EXPANDSIZE]; 
 
 if (!IsDefinedClass(classes))
    {
@@ -6076,12 +6100,11 @@ if (!IsDefinedClass(classes))
 
 Debug1("InstallAuthPath(%s,%s) for %s\n",path,hostname,classes);
 
-VBUFF[0]='\0';                                /* Expand any variables */
-ExpandVarstring(path,VBUFF,"");
+ExpandVarstring(path,ebuff,"");
 
-if (strlen(VBUFF) != 1)
+if (strlen(ebuff) != 1)
    {
-   DeleteSlash(VBUFF);
+   DeleteSlash(ebuff);
    }
 
 if ((ptr = (struct Auth *)malloc(sizeof(struct Auth))) == NULL)
@@ -6089,7 +6112,7 @@ if ((ptr = (struct Auth *)malloc(sizeof(struct Auth))) == NULL)
    FatalError("Memory Allocation failed for InstallAuthPath() #1");
    }
 
-if ((ptr->path = strdup(VBUFF)) == NULL)
+if ((ptr->path = strdup(ebuff)) == NULL)
    {
    FatalError("Memory Allocation failed for InstallAuthPath() #3");
    }
@@ -6116,7 +6139,7 @@ AddAuthHostItem(ptr->path,hostname,classes,list);
 
 void AddAuthHostItem(char *path,char *attribute,char *classes,struct Auth **list)
 
-{ char varbuff[bufsize];
+{ char varbuff[CF_EXPANDSIZE];
   struct Auth *ptr;
   struct Item *ip, *split = NULL;
 
@@ -6130,7 +6153,6 @@ if (!IsDefinedClass(CLASSBUFF))
 
 for (ptr = *list; ptr != NULL; ptr=ptr->next)
    {
-   varbuff[0] = '\0';
    ExpandVarstring(path,varbuff,"");
 
    split = SplitStringAsItemList(attribute,LISTSEPARATOR);
@@ -6156,13 +6178,13 @@ for (ptr = *list; ptr != NULL; ptr=ptr->next)
 int AuthPathExists(char *path,struct Auth *list)
 
 { struct Auth *ap;
+  char ebuff[CF_EXPANDSIZE]; 
 
 Debug1("AuthPathExists(%s)\n",path);
 
-VBUFF[0]='\0';                                /* Expand any variables */
-ExpandVarstring(path,VBUFF,"");
+ExpandVarstring(path,ebuff,"");
 
-if (VBUFF[0] != '/')
+if (ebuff[0] != '/')
    {
    yyerror("Missing absolute path to a directory");
    FatalError("Cannot continue");
@@ -6170,7 +6192,7 @@ if (VBUFF[0] != '/')
 
 for (ap = list; ap != NULL; ap=ap->next)
    {
-   if (strcmp(ap->path,VBUFF) == 0)
+   if (strcmp(ap->path,ebuff) == 0)
       {
       return true;
       }
@@ -6183,13 +6205,13 @@ return false;
 
 int HandleAdmitAttribute(struct Auth *ptr,char *attribute)
 
-{ char value[maxvarsize],buffer[bufsize],host[maxvarsize],*sp;
+{ char value[CF_MAXVARSIZE],buffer[CF_EXPANDSIZE],host[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE],*sp;
 
-VBUFF[0] = value[0] = '\0';
+value[0] = '\0';
 
-ExpandVarstring(attribute,VBUFF,NULL);
+ExpandVarstring(attribute,ebuff,NULL);
 
-sscanf(VBUFF,"%*[^=]=%s",value);
+sscanf(ebuff,"%*[^=]=%s",value);
 
 if (value[0] == '\0')
    {
@@ -6226,13 +6248,13 @@ switch(GetCommAttribute(attribute))
           
           if (sscanf(sp,"%[^,\n]",host))
              {
-             char copyhost[bufsize];
+             char copyhost[CF_BUFSIZE];
              
-             strncpy(copyhost,host,bufsize-1);
+             strncpy(copyhost,host,CF_BUFSIZE-1);
              
              if (!strstr(copyhost,"."))
                 {
-                if (strlen(copyhost)+strlen(VDOMAIN) < maxvarsize-2)
+                if (strlen(copyhost)+strlen(VDOMAIN) < CF_MAXVARSIZE-2)
                    {
                    strcat(copyhost,".");
                    strcat(copyhost,VDOMAIN);
@@ -6264,10 +6286,10 @@ switch(GetCommAttribute(attribute))
 
 /*********************************************************************/
 
-void PrependTidy(struct TidyPattern **list,char *wild,int rec,short age,char travlinks,int tidysize,char type,char ldirs,short tidydirs,char *classes)
+void PrependTidy(struct TidyPattern **list,char *wild,int rec,short age,char travlinks,int tidysize,char type,char ldirs,char tidydirs,char *classes)
 
 { struct TidyPattern *tp;
-  char *spe = NULL,*sp, buffer[bufsize];
+  char *spe = NULL,*sp, buffer[CF_EXPANDSIZE];
 
 if ((tp = (struct TidyPattern *)malloc(sizeof(struct TidyPattern))) == NULL)
    {
@@ -6320,17 +6342,7 @@ tp->dirlinks = ldirs;
 tp->log = LOGP;
 tp->inform = INFORMP;
 tp->compress=COMPRESS;
- 
-switch (tidydirs)
-   {
-   case 0: tp->rmdirs = 'n';
-           break;
-   case 1: tp->rmdirs = 'y';
-           break;
-   case 2: tp->rmdirs = 's';
-           break;
-   default: FatalError("Software error in Prepend Tidy");
-   }
+tp->rmdirs =tidydirs;
 
 *list = tp;
 

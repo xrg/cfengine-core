@@ -57,7 +57,7 @@ return (strchr(str,'?') || strchr(str,'*'));
 
 int WildMatch (char *wildptr,char *cmpptr)
 
-{ char buffer[bufsize];
+{ char buffer[CF_BUFSIZE];
   int i, status = startofstrings;
   char lastwild = '\0';
 

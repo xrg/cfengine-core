@@ -61,7 +61,7 @@ if (!GetLock(ASUniqueName("tidy"),CanonifyName(startpath),tp->ifelapsed,tp->expi
 
 if (stat(startpath,&sb) == -1)
    {
-   snprintf(OUTPUT,bufsize,"Tidy directory %s cannot be accessed",startpath);
+   snprintf(OUTPUT,CF_BUFSIZE,"Tidy directory %s cannot be accessed",startpath);
    CfLog(cfinform,OUTPUT,"stat");
    return;
    }
@@ -98,7 +98,7 @@ Verbose("Tidying Home partition %s...\n",startpath);
 
 if (stat(startpath,&sb) == -1)
    {
-   snprintf(OUTPUT,bufsize,"Tidy directory %s cannot be accessed",startpath);
+   snprintf(OUTPUT,CF_BUFSIZE,"Tidy directory %s cannot be accessed",startpath);
    CfLog(cfinform,OUTPUT,"stat");
    return;
    }
@@ -115,7 +115,7 @@ void CheckFileWrapper(char *startpath,void *vp)
 
 {  struct stat statbuf;
    mode_t filemode;
-   char *lastnode, lock[maxvarsize];
+   char *lastnode, lock[CF_MAXVARSIZE];
    int fd;
    struct File *ptr;
 
@@ -123,11 +123,11 @@ ptr = (struct File *)vp;
 
 if (ptr->uid != NULL)
    {
-   snprintf(lock,maxvarsize-1,"%s_%o_%o_%d",startpath,ptr->plus,ptr->minus,ptr->uid->uid);
+   snprintf(lock,CF_MAXVARSIZE-1,"%s_%o_%o_%d",startpath,ptr->plus,ptr->minus,ptr->uid->uid);
    }
 else
    {
-   snprintf(lock,maxvarsize-1,"%s_%o_%o",startpath,ptr->plus,ptr->minus);
+   snprintf(lock,CF_MAXVARSIZE-1,"%s_%o_%o",startpath,ptr->plus,ptr->minus);
    }
  
  
@@ -175,7 +175,7 @@ if (IsWildItemIn(ptr->exclusions,lastnode))
     
 if (stat(startpath,&statbuf) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"Cannot access file/directory %s\n",ptr->path);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot access file/directory %s\n",ptr->path);
    CfLog(cfinform,OUTPUT,"stat");
 
    if (TouchDirectory(ptr))                /* files ending in /. */
@@ -215,7 +215,7 @@ if (stat(startpath,&statbuf) == -1)
              CheckExistingFile("*",startpath,ptr->plus,ptr->minus,fixall,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
              }
           
-          snprintf(OUTPUT,bufsize*2,"Creating file %s, mode = %o\n",ptr->path,filemode);
+          snprintf(OUTPUT,CF_BUFSIZE*2,"Creating file %s, mode = %o\n",ptr->path,filemode);
           CfLog(cfinform,OUTPUT,"");
           break;
       case alert:
@@ -226,7 +226,7 @@ if (stat(startpath,&statbuf) == -1)
       case fixplain:
       case fixdirs:
       case fixall:
-          snprintf(OUTPUT,bufsize*2,"File/Dir %s did not exist and was marked (%s)\n",ptr->path,FILEACTIONTEXT[ptr->action]);
+          snprintf(OUTPUT,CF_BUFSIZE*2,"File/Dir %s did not exist and was marked (%s)\n",ptr->path,FILEACTIONTEXT[ptr->action]);
           CfLog(cfinform,OUTPUT,"");
           break;
       case compress:
@@ -297,12 +297,11 @@ ReleaseCurrentLock();
 void DirectoriesWrapper(char *dir,void *vp)
 
 { struct stat statbuf;
-  char directory[bufsize];
+  char directory[CF_EXPANDSIZE];
   struct File *ptr;
 
 ptr=(struct File *)vp;
  
-memset(directory,0,bufsize);
 ExpandVarstring(dir,directory,"");
 
 AddSlash(directory);
@@ -312,13 +311,13 @@ MakeDirectoriesFor(directory,'n');
 
 if (stat(directory,&statbuf) == -1)
    {
-   memset(directory,0,bufsize);
+   memset(directory,0,CF_BUFSIZE);
    ExpandVarstring(dir,directory,"");
    chmod(directory,0500); /* Shouldn't happen - mode 000 ??*/
  
    if (stat(directory,&statbuf) == -1)
       {
-      snprintf(OUTPUT,bufsize*2,"Cannot stat %s after creating it",directory);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot stat %s after creating it",directory);
       CfLog(cfinform,OUTPUT,"stat");
       return;
       }

@@ -61,7 +61,7 @@ char *Get2DListEnt(struct TwoDimList *list)
 
    /* return a path string in static data, like getent in NIS */
 
-{ static char entry[bufsize];
+{ static char entry[CF_BUFSIZE];
   struct TwoDimList *tp;
   char seps[2];
 
@@ -72,7 +72,7 @@ if (EndOfTwoDimList(list))
    return NULL;
    }
 
-memset(entry,0,bufsize);
+memset(entry,0,CF_BUFSIZE);
 
 for (tp = list; tp != NULL; tp=tp->next)
    {
@@ -101,7 +101,7 @@ void Build2DListFromVarstring(struct TwoDimList **TwoDimlist, char *varstring, c
  /* string into many strings with only one variable           */
 
 { char format[6], *sp;
-  char node[bufsize];
+  char node[CF_BUFSIZE];
   int i,j;
 
 Debug1("Build2DListFromVarstring(%s,sep=%c)\n",varstring,sep);
@@ -116,7 +116,7 @@ snprintf(format,6,"%%[^%c]",sep);   /* set format string to search */
 
 for (sp = varstring; *sp != '\0'; sp++)
    {
-   memset(node,0,maxlinksize);
+   memset(node,0,CF_MAXLINKSIZE);
    
    *node = *sp;
    

@@ -64,7 +64,7 @@ void InitHashTable(char **table)
 
 { int i;
 
-for (i = 0; i < hashtablesize; i++)
+for (i = 0; i < CF_HASHTABLESIZE; i++)
    {
    table[i] = NULL;
    }
@@ -76,7 +76,7 @@ void PrintHashTable(char **table)
 
 { int i;
 
-for (i = 0; i < hashtablesize; i++)
+for (i = 0; i < CF_HASHTABLESIZE; i++)
    {
    if (table[i] != NULL)
       {
@@ -93,7 +93,7 @@ int Hash(char *name)
 
  for (i = 0; name[i] != '\0'; i++)
    {
-   slot = (macroalphabet * slot + name[i]) % hashtablesize;
+   slot = (CF_MACROALPHABET * slot + name[i]) % CF_HASHTABLESIZE;
    }
 
 return slot;
@@ -120,14 +120,14 @@ while (*key)
   h &= ~g;
   }
 
-return (h % hashtablesize);
+return (h % CF_HASHTABLESIZE);
 }
 
 /*******************************************************************/
 
 void AddMacroValue(char *scope,char *name,char *value)
 
-{ char *sp, buffer[bufsize],exp[bufsize];
+{ char *sp, buffer[CF_BUFSIZE],exp[CF_EXPANDSIZE];
   struct cfObject *ptr; 
   int slot;
 
@@ -139,7 +139,7 @@ if (name == NULL || value == NULL || scope == NULL)
    CfLog(cferror,"Empty macro","");
    }
 
-if (strlen(name) > maxvarsize)
+if (strlen(name) > CF_MAXVARSIZE)
    {
    yyerror("macro name too long");
    return;
@@ -149,7 +149,7 @@ ExpandVarstring(value,exp,NULL);
 
 ptr = ObjectContext(scope);
  
-snprintf(buffer,bufsize,"%s=%s",name,exp);
+snprintf(buffer,CF_BUFSIZE,"%s=%s",name,exp);
 
 if ((sp = malloc(strlen(buffer)+1)) == NULL)
    {
@@ -168,7 +168,7 @@ if (ptr->hashtable[slot] != 0)
       {
       if (PARSING && !IsItemIn(VREDEFINES,name))
          {
-         snprintf(VBUFF,bufsize,"Redefinition of macro %s=%s (or perhaps missing quote)",name,exp);
+         snprintf(VBUFF,CF_BUFSIZE,"Redefinition of macro %s=%s (or perhaps missing quote)",name,exp);
          Warning(VBUFF);
          }
       free(ptr->hashtable[slot]);
@@ -177,9 +177,9 @@ if (ptr->hashtable[slot] != 0)
       return;
       }
    
-   while ((ptr->hashtable[++slot % hashtablesize] != 0))
+   while ((ptr->hashtable[++slot % CF_HASHTABLESIZE] != 0))
       {
-      if (slot == hashtablesize-1)
+      if (slot == CF_HASHTABLESIZE-1)
          {
          slot = 0;
          }
@@ -190,7 +190,7 @@ if (ptr->hashtable[slot] != 0)
       
       if (CompareMacro(name,ptr->hashtable[slot]) == 0)
          {
-         snprintf(VBUFF,bufsize,"Redefinition of macro %s=%s",name,exp);
+         snprintf(VBUFF,CF_BUFSIZE,"Redefinition of macro %s=%s",name,exp);
          Warning(VBUFF);
          free(ptr->hashtable[slot]);
          ptr->hashtable[slot] = sp;
@@ -252,7 +252,7 @@ char *GetMacroValue(char *scope,char *name)
 { char *sp;
   int slot,i;
   struct cfObject *ptr = NULL;
-  char objscope[maxvarsize],vname[maxvarsize];
+  char objscope[CF_MAXVARSIZE],vname[CF_MAXVARSIZE];
   
 /* Check the class.id identity to see if this is private ..
     and replace
@@ -283,7 +283,7 @@ if (CompareMacro(vname,ptr->hashtable[slot]) != 0)
       {
       i++;
 
-      if (i >= hashtablesize-1)
+      if (i >= CF_HASHTABLESIZE-1)
          {
          i = 0;
          }
@@ -335,7 +335,7 @@ if (CompareMacro(id,ptr->hashtable[slot]) != 0)
          break;
          }
       
-      if (i >= hashtablesize-1)
+      if (i >= CF_HASHTABLESIZE-1)
          {
          i = 0;
          }
@@ -359,7 +359,7 @@ if (CompareMacro(id,ptr->hashtable[slot]) != 0)
 
 int CompareMacro(char *name,char *macro)
 
-{ char buffer[bufsize];
+{ char buffer[CF_BUFSIZE];
 
 if (macro == NULL || name == NULL)
    {
@@ -379,7 +379,7 @@ void DeleteMacros(char *scope)
   
 ptr = ObjectContext(scope);
  
-for (i = 0; i < hashtablesize; i++)
+for (i = 0; i < CF_HASHTABLESIZE; i++)
    {
    if (ptr->hashtable[i] != NULL)
       {

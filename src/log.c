@@ -31,13 +31,13 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
-extern char CFLOCK[bufsize];
+extern char CFLOCK[CF_BUFSIZE];
 
 /*****************************************************************************/
 
 void CfOpenLog()
 
-{ char value[bufsize];
+{ char value[CF_BUFSIZE];
   int facility = LOG_USER; 
  
 if (GetMacroValue(CONTEXTID,"SyslogFacility"))

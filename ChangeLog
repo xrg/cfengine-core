@@ -1,3 +1,28 @@
+2.1.6
+
+	Patch for incorrect symbolic link resolution with ".." internals.
+	Would chop off a leading slash.
+	
+	Patches for alerts appearing twice. InitAction added in install.c
+	
+	--with-docs option added and default is to not build the docs
+
+	Chgange to df.c to avoid rounding errors in small blocks for linux
+
+	wait status patch for returnszero()
+	
+	dpkg debian package management support (Morten Werner)
+
+	tidy rmdirs=all did not remove top directory since v2.0.0. Fixed.
+	Problem was new method to aviod races can never reach this location,
+	so have to use absolute path for top dir.
+
+	DARWIN patches to cfservd.c/ip.c to fix definitions
+
+	Separate ExpandVarstring buffer-size with new expandsize value
+        This removes some spurious use of VBUFF scratch space. One bug
+        in tidy path expansion found here. Variables were not expanded.
+	
 2.1.5
 	KNOWN BUG in persistent state memory for tcpdump data - long ipv6
 	addresses can make a byte count > old for fewer incoming so it remembers

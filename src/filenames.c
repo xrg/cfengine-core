@@ -114,7 +114,7 @@ if (IsFileSep(f[0]) && IsFileSep(f[1]))
 void AddSlash(char *str)
 
 {
-if ((strlen(str)== 0) || (str == NULL))
+if (str == NULL)
    {
    return;
    }
@@ -197,26 +197,34 @@ int ChopLastNode(char *str)
      e.g. /a/b/c -> /a/b
           /a/b/ -> /a/b                                        */
 { char *sp;
+ int ret; 
 
 if ((sp = LastFileSeparator(str)) == NULL)
    {
-   return false;
+   ret = false;
    }
 else
    {
    *sp = '\0';
-   return true;
+   ret = true;
    }
+
+if (strlen(str) == 0)
+   {
+   AddSlash(str);
+   }
+ 
+return ret; 
 }
 
 /*********************************************************************/
 
 char *CanonifyName(char *str)
 
-{ static char buffer[bufsize];
+{ static char buffer[CF_BUFSIZE];
   char *sp;
 
-memset(buffer,0,bufsize);
+memset(buffer,0,CF_BUFSIZE);
 strcpy(buffer,str);
 
 for (sp = buffer; *sp != '\0'; sp++)
@@ -234,10 +242,10 @@ return buffer;
 
 char *Space2Score(char *str)
 
-{ static char buffer[bufsize];
+{ static char buffer[CF_BUFSIZE];
   char *sp;
 
-memset(buffer,0,bufsize);
+memset(buffer,0,CF_BUFSIZE);
 strcpy(buffer,str);
 
 for (sp = buffer; *sp != '\0'; sp++)
@@ -255,15 +263,15 @@ return buffer;
 
 char *ASUniqueName(char *str) /* generates a unique action sequence name */
 
-{ static char buffer[bufsize];
+{ static char buffer[CF_BUFSIZE];
   struct Item *ip;
 
-memset(buffer,0,bufsize);
+memset(buffer,0,CF_BUFSIZE);
 strcpy(buffer,str);
 
 for (ip = VADDCLASSES; ip != NULL; ip=ip->next)
    {
-   if (strlen(buffer)+strlen(ip->name)+3 > maxlinksize)
+   if (strlen(buffer)+strlen(ip->name)+3 > CF_MAXLINKSIZE)
       {
       break;
       }
@@ -298,8 +306,8 @@ else
 int MakeDirectoriesFor(char *file,char force)  /* Make all directories which underpin file */
 
 { char *sp,*spc;
-  char currentpath[bufsize];
-  char pathbuf[bufsize];
+  char currentpath[CF_BUFSIZE];
+  char pathbuf[CF_BUFSIZE];
   struct stat statbuf;
   mode_t mask;
   int rootlen;
@@ -315,12 +323,12 @@ char * tmpstr;
     
 if (!IsAbsoluteFileName(file))
    {
-   snprintf(OUTPUT,bufsize*2,"Will not create directories for a relative filename (%s). Has no invariant meaning\n",file);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Will not create directories for a relative filename (%s). Has no invariant meaning\n",file);
    CfLog(cferror,OUTPUT,"");
    return false;
    }
 
-strncpy(pathbuf,file,bufsize-1);                                      /* local copy */
+strncpy(pathbuf,file,CF_BUFSIZE-1);                                      /* local copy */
 
 #ifdef DARWIN
 /* Dealing w. a rsrc fork? */
@@ -360,7 +368,7 @@ if (strstr(pathbuf, _PATH_RSRCFORKSPEC) != NULL)
              strcpy(currentpath,pathbuf);
              DeleteSlash(currentpath);
              strcat(currentpath,".cf-moved");
-             snprintf(OUTPUT,bufsize,"Moving obstructing file/link %s to %s to make directory",pathbuf,currentpath);
+             snprintf(OUTPUT,CF_BUFSIZE,"Moving obstructing file/link %s to %s to make directory",pathbuf,currentpath);
              CfLog(cferror,OUTPUT,"");
              
              /* If cfagent, remove an obstructing backup object */
@@ -374,7 +382,7 @@ if (strstr(pathbuf, _PATH_RSRCFORKSPEC) != NULL)
                    tp.next = NULL;
                    tp.path = currentpath;
                    
-                   tpat.recurse = INFINITERECURSE;
+                   tpat.recurse = CF_INF_RECURSE;
                    tpat.age = 0;
                    tpat.size = 0;
                    tpat.pattern = strdup("*");
@@ -388,13 +396,13 @@ if (strstr(pathbuf, _PATH_RSRCFORKSPEC) != NULL)
                    tpat.log = 'd';
                    tpat.inform = 'd';
                    tpat.next = NULL;
-                   RecursiveTidySpecialArea(currentpath,&tp,INFINITERECURSE,&sbuf);
+                   RecursiveTidySpecialArea(currentpath,&tp,CF_INF_RECURSE,&sbuf);
                    free(tpat.pattern);
                    free(tpat.classes);
                    
                    if (rmdir(currentpath) == -1)
                       {
-                      snprintf(OUTPUT,bufsize*2,"Couldn't remove directory %s while trying to remove a backup\n",currentpath);
+                      snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't remove directory %s while trying to remove a backup\n",currentpath);
                       CfLog(cfinform,OUTPUT,"rmdir");
                       }
                    }
@@ -402,7 +410,7 @@ if (strstr(pathbuf, _PATH_RSRCFORKSPEC) != NULL)
                    {
                    if (unlink(currentpath) == -1)
                       {
-                      snprintf(OUTPUT,bufsize*2,"Couldn't remove file/link %s while trying to remove a backup\n",currentpath);
+                      snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't remove file/link %s while trying to remove a backup\n",currentpath);
                       CfLog(cfinform,OUTPUT,"rmdir");
                       }
                    }
@@ -412,7 +420,7 @@ if (strstr(pathbuf, _PATH_RSRCFORKSPEC) != NULL)
              
              if (rename(pathbuf,currentpath) == -1)
                 {
-                snprintf(OUTPUT,bufsize*2,"Warning. The object %s is not a directory.\n",pathbuf);
+                snprintf(OUTPUT,CF_BUFSIZE*2,"Warning. The object %s is not a directory.\n",pathbuf);
                 CfLog(cfinform,OUTPUT,"");
                 CfLog(cfinform,"Could not make a new directory or move the block","rename");
                 return(false);
@@ -423,7 +431,7 @@ if (strstr(pathbuf, _PATH_RSRCFORKSPEC) != NULL)
           {
           if (! S_ISLNK(statbuf.st_mode) && ! S_ISDIR(statbuf.st_mode))
              {
-             snprintf(OUTPUT,bufsize*2,"Warning. The object %s is not a directory.\n",pathbuf);
+             snprintf(OUTPUT,CF_BUFSIZE*2,"Warning. The object %s is not a directory.\n",pathbuf);
              CfLog(cfinform,OUTPUT,"");
              CfLog(cfinform,"Cannot make a new directory without deleting it!\n\n","");
              return(false);
@@ -464,7 +472,7 @@ if (strstr(pathbuf, _PATH_RSRCFORKSPEC) != NULL)
              
              if (mkdir(currentpath,DEFAULTMODE) == -1)
                 {
-                snprintf(OUTPUT,bufsize*2,"Unable to make directories to %s\n",file);
+                snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to make directories to %s\n",file);
                 CfLog(cferror,OUTPUT,"mkdir");
                 umask(mask);
                 return(false);
@@ -480,14 +488,14 @@ if (strstr(pathbuf, _PATH_RSRCFORKSPEC) != NULL)
              /* Ck if rsrc fork */
              if (rsrcfork)
                 {
-                tmpstr = malloc(bufsize);
-                strncpy(tmpstr, currentpath, bufsize);
-                strncat(tmpstr, _PATH_FORKSPECIFIER, bufsize);
+                tmpstr = malloc(CF_BUFSIZE);
+                strncpy(tmpstr, currentpath, CF_BUFSIZE);
+                strncat(tmpstr, _PATH_FORKSPECIFIER, CF_BUFSIZE);
                 
                 /* Cfengine removed terminating slashes */
                 DeleteSlash(tmpstr);
                 
-                if (strncmp(tmpstr, pathbuf, bufsize) == 0)
+                if (strncmp(tmpstr, pathbuf, CF_BUFSIZE) == 0)
                    {
                    free(tmpstr);
                    return(true);
@@ -496,7 +504,7 @@ if (strstr(pathbuf, _PATH_RSRCFORKSPEC) != NULL)
                 }
 #endif
              
-             snprintf(OUTPUT,bufsize*2,"Cannot make %s - %s is not a directory! (use forcedirs=true)\n",pathbuf,currentpath);
+             snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot make %s - %s is not a directory! (use forcedirs=true)\n",pathbuf,currentpath);
              CfLog(cferror,OUTPUT,"");
              return(false);
              }
@@ -518,9 +526,26 @@ int BufferOverflow(char *str1,char *str2)   /* Should be an inline ! */
 
 { int len = strlen(str2);
 
-if ((strlen(str1)+len) > (bufsize - buffer_margin))
+if ((strlen(str1)+len) > (CF_BUFSIZE - CF_BUFFERMARGIN))
    {
-   snprintf(OUTPUT,bufsize*2,"Buffer overflow constructing string. Increase bufsize macro.\n");
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Buffer overflow constructing string. Increase CF_BUFSIZE macro.\n");
+   CfLog(cferror,OUTPUT,"");
+   printf("%s: Tried to add %s to %s\n",VPREFIX,str2,str1);
+   return true;
+   }
+
+return false;
+}
+
+/*********************************************************************/
+
+int ExpandOverflow(char *str1,char *str2)   /* Should be an inline ! */
+
+{ int len = strlen(str2);
+
+if ((strlen(str1)+len) > (CF_EXPANDSIZE - CF_BUFFERMARGIN))
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"Expansion overflow constructing string. Increase CF_EXPANDSIZE macro.\n");
    CfLog(cferror,OUTPUT,"");
    printf("%s: Tried to add %s to %s\n",VPREFIX,str2,str1);
    return true;
@@ -551,16 +576,17 @@ if ((str == NULL) || (strlen(str)==0))
 int CompressPath(char *dest,char *src)
 
 { char *sp;
-  char node[bufsize];
+  char node[CF_BUFSIZE];
   int nodelen;
   int rootlen;
 
 Debug2("CompressPath(%s,%s)\n",dest,src);
 
-memset(dest,0,bufsize);
+memset(dest,0,CF_BUFSIZE);
 
 rootlen = RootDirLength(src);
-strncpy(dest, src, rootlen);
+strncpy(dest,src,rootlen);
+ 
 for (sp = src+rootlen; *sp != '\0'; sp++)
    {
    if (IsFileSep(*sp))
@@ -570,12 +596,13 @@ for (sp = src+rootlen; *sp != '\0'; sp++)
 
    for (nodelen = 0; sp[nodelen] != '\0' && !IsFileSep(sp[nodelen]); nodelen++)
       {
-      if (nodelen > maxlinksize)
+      if (nodelen > CF_MAXLINKSIZE)
          {
          CfLog(cferror,"Link in path suspiciously large","");
          return false;
          }
       }
+
    strncpy(node, sp, nodelen);
    node[nodelen] = '\0';
    
@@ -588,18 +615,19 @@ for (sp = src+rootlen; *sp != '\0'; sp++)
    
    if (strcmp(node,"..") == 0)
       {
-      if (! ChopLastNode(dest))
+      if (!ChopLastNode(dest))
          {
          Debug("cfengine: used .. beyond top of filesystem!\n");
          return false;
          }
+   
       continue;
       }
    else
       {
       AddSlash(dest);
       }
-   
+
    if (BufferOverflow(dest,node))
       {
       return false;
@@ -607,6 +635,7 @@ for (sp = src+rootlen; *sp != '\0'; sp++)
    
    strcat(dest,node);
    }
+ 
 return true;
 }
 
@@ -657,12 +686,12 @@ else
 
 char *ToUpperStr (char *str)
 
-{ static char buffer[bufsize];
+{ static char buffer[CF_BUFSIZE];
   int i;
 
-memset(buffer,0,bufsize);
+memset(buffer,0,CF_BUFSIZE);
   
-if (strlen(str) >= bufsize)
+if (strlen(str) >= CF_BUFSIZE)
    {
    char *tmp;
    tmp = malloc(40+strlen(str));
@@ -670,7 +699,7 @@ if (strlen(str) >= bufsize)
    FatalError(tmp);
    }
 
-for (i = 0;  (str[i] != '\0') && (i < bufsize-1); i++)
+for (i = 0;  (str[i] != '\0') && (i < CF_BUFSIZE-1); i++)
    {
    buffer[i] = ToUpper(str[i]);
    }
@@ -685,20 +714,20 @@ return buffer;
 
 char *ToLowerStr (char *str)
 
-{ static char buffer[bufsize];
+{ static char buffer[CF_BUFSIZE];
   int i;
 
-memset(buffer,0,bufsize);
+memset(buffer,0,CF_BUFSIZE);
 
-if (strlen(str) >= bufsize-1)
+if (strlen(str) >= CF_BUFSIZE-1)
    {
    char *tmp;
    tmp = malloc(40+strlen(str));
-   snprintf(tmp,bufsize-1,"String too long in ToLowerStr: %s",str);
+   snprintf(tmp,CF_BUFSIZE-1,"String too long in ToLowerStr: %s",str);
    FatalError(tmp);
    }
 
-for (i = 0; (str[i] != '\0') && (i < bufsize-1); i++)
+for (i = 0; (str[i] != '\0') && (i < CF_BUFSIZE-1); i++)
    {
    buffer[i] = ToLower(str[i]);
    }
@@ -717,7 +746,7 @@ void CreateEmptyFile(char *name)
 
 if ((fp = fopen(name,"w")) == NULL)
    {
-   snprintf(OUTPUT,bufsize,"Cannot create file %s",name);
+   snprintf(OUTPUT,CF_BUFSIZE,"Cannot create file %s",name);
    CfLog(cfverbose,OUTPUT,"fopen");
    return;
    }

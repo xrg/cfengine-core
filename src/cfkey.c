@@ -32,7 +32,7 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
-char CFLOCK[bufsize];
+char CFLOCK[CF_BUFSIZE];
 
 void Initialize ARGLIST((void));
 int RecursiveTidySpecialArea ARGLIST((char *name, struct Tidy *tp, int maxrecurse, struct stat *sb));
@@ -133,7 +133,7 @@ if(!PEM_write_RSAPublicKey(fp,pair))
 fclose(fp);
 
  
-snprintf(VBUFF,bufsize,"%s/randseed",VLOGDIR);
+snprintf(VBUFF,CF_BUFSIZE,"%s/randseed",VLOGDIR);
 RAND_write_file(VBUFF);
 chmod(VBUFF,0644); 
 return 0;

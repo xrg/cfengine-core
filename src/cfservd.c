@@ -159,7 +159,7 @@ void CheckOptsAndInit(int argc,char **argv)
 
 { extern char *optarg;
   int optindex = 0;
-  char ld_library_path[bufsize];
+  char ld_library_path[CF_BUFSIZE],vbuff[CF_BUFSIZE];
   struct stat statbuf;
   int c;
 
@@ -191,7 +191,7 @@ while ((c=getopt_long(argc,argv,"L:d:f:vmhpFV",CFDOPTIONS,&optindex)) != EOF)
   {
   switch ((char) c)
       {
-      case 'f': strncpy(VINPUTFILE,optarg,bufsize-1);
+      case 'f': strncpy(VINPUTFILE,optarg,CF_BUFSIZE-1);
          MINUSF = true;
                 break;
 
@@ -227,7 +227,7 @@ while ((c=getopt_long(argc,argv,"L:d:f:vmhpFV",CFDOPTIONS,&optindex)) != EOF)
          break;
 
       case 'L': Verbose("Setting LD_LIBRARY_PATH=%s\n",optarg);
-         snprintf(ld_library_path,bufsize-1,"LD_LIBRARY_PATH=%s",optarg);
+         snprintf(ld_library_path,CF_BUFSIZE-1,"LD_LIBRARY_PATH=%s",optarg);
              putenv(ld_library_path);
   break;
    
@@ -260,14 +260,14 @@ if ((CFSTARTTIME = time((time_t *)NULL)) == -1)
    CfLog(cferror,"Couldn't read system clock\n","time");
    }
  
-snprintf(VBUFF,bufsize,"%s/test",WORKDIR);
+snprintf(vbuff,CF_BUFSIZE,"%s/test",WORKDIR);
 
-MakeDirectoriesFor(VBUFF,'y');
-strncpy(VLOGDIR,WORKDIR,bufsize-1);
-strncpy(VLOCKDIR,WORKDIR,bufsize-1);
+MakeDirectoriesFor(vbuff,'y');
+strncpy(VLOGDIR,WORKDIR,CF_BUFSIZE-1);
+strncpy(VLOCKDIR,WORKDIR,CF_BUFSIZE-1);
 
-VIFELAPSED = exec_ifelapsed;
-VEXPIREAFTER = exec_expireafter;
+VIFELAPSED = CF_EXEC_IFELAPSED;
+VEXPIREAFTER = CF_EXEC_EXPIREAFTER;
  
 strcpy(VDOMAIN,"undefined.domain");
 
@@ -289,6 +289,7 @@ void CheckVariables()
 
 { struct stat statbuf;
   int i, value = -1;
+  char ebuff[CF_EXPANDSIZE];
 
 #ifdef HAVE_PTHREAD_H
  CfLog(cfinform,"cfservd Multithreaded version","");
@@ -296,7 +297,7 @@ void CheckVariables()
  CfLog(cfinform,"cfservd Single threaded version","");
 #endif
 
-strncpy(VFQNAME,VSYSNAME.nodename,maxvarsize-1);
+strncpy(VFQNAME,VSYSNAME.nodename,CF_MAXVARSIZE-1);
 
 if ((CFDSTARTTIME = time((time_t *)NULL)) == -1)
    {
@@ -320,9 +321,9 @@ if (OptionIs(CONTEXTID,"LogAllConnections", true))
 
 if (GetMacroValue(CONTEXTID,"ChecksumDatabase"))
    {
-   ExpandVarstring("$(ChecksumDatabase)",VBUFF,NULL);
+   ExpandVarstring("$(ChecksumDatabase)",ebuff,NULL);
 
-   CHECKSUMDB = strdup(VBUFF);
+   CHECKSUMDB = strdup(ebuff);
 
    if (*CHECKSUMDB != '/')
       {
@@ -330,20 +331,18 @@ if (GetMacroValue(CONTEXTID,"ChecksumDatabase"))
       }
    }
 
- 
-memset(VBUFF,0,bufsize);
-memset(CFRUNCOMMAND,0,bufsize);
+ memset(CFRUNCOMMAND,0,CF_BUFSIZE);
  
 if (GetMacroValue(CONTEXTID,"cfrunCommand"))
    {
-   ExpandVarstring("$(cfrunCommand)",VBUFF,NULL);
+   ExpandVarstring("$(cfrunCommand)",ebuff,NULL);
 
-   if (*VBUFF != '/')
+   if (*ebuff != '/')
       {
       FatalError("$(cfrunCommand) does not expand to an absolute filename\n");
       }
 
-   sscanf(VBUFF,"%4095s",CFRUNCOMMAND);
+   sscanf(ebuff,"%4095s",CFRUNCOMMAND);
    Debug("cfrunCommand is %s\n",CFRUNCOMMAND);
 
    if (stat(CFRUNCOMMAND,&statbuf) == -1)
@@ -354,11 +353,10 @@ if (GetMacroValue(CONTEXTID,"cfrunCommand"))
 
 if (GetMacroValue(CONTEXTID,"MaxConnections"))
    {
-   memset(VBUFF,0,bufsize);
-   ExpandVarstring("$(MaxConnections)",VBUFF,NULL);
-   Debug("$(MaxConnections) Expanded to %s\n",VBUFF);
+   ExpandVarstring("$(MaxConnections)",ebuff,NULL);
+   Debug("$(MaxConnections) Expanded to %s\n",ebuff);
 
-   CFD_MAXPROCESSES = atoi(VBUFF);
+   CFD_MAXPROCESSES = atoi(ebuff);
    
    MAXTRIES = CFD_MAXPROCESSES / 3;  /* How many attempted connections over max
             before we commit suicide? */
@@ -388,7 +386,7 @@ i = 0;
 
 if (StrStr(VSYSNAME.nodename,ToLowerStr(VDOMAIN)))
    {
-   strncpy(VFQNAME,VSYSNAME.nodename,maxvarsize-1);
+   strncpy(VFQNAME,VSYSNAME.nodename,CF_MAXVARSIZE-1);
    
    while(VSYSNAME.nodename[i++] != '.')
       {
@@ -398,8 +396,8 @@ if (StrStr(VSYSNAME.nodename,ToLowerStr(VDOMAIN)))
    }
 else
    {
-   snprintf(VFQNAME,bufsize,"%s.%s",VSYSNAME.nodename,ToLowerStr(VDOMAIN));
-   strncpy(VUQNAME,VSYSNAME.nodename,maxvarsize-1);
+   snprintf(VFQNAME,CF_BUFSIZE,"%s.%s",VSYSNAME.nodename,ToLowerStr(VDOMAIN));
+   strncpy(VUQNAME,VSYSNAME.nodename,CF_MAXVARSIZE-1);
    }
 
 /*
@@ -408,13 +406,10 @@ else
 */
 if (GetMacroValue(CONTEXTID,"BindToInterface"))
    {
-   memset(VBUFF,0,bufsize);
-   ExpandVarstring("$(BindToInterface)",VBUFF,NULL);
-   strncpy(BINDINTERFACE, VBUFF, bufsize-1);
+   ExpandVarstring("$(BindToInterface)",ebuff,NULL);
+   strncpy(BINDINTERFACE,ebuff, CF_BUFSIZE-1);
    Debug("$(BindToInterface) Expanded to %s\n",BINDINTERFACE);
    }
-
-
 }
 
 /*******************************************************************/
@@ -516,12 +511,12 @@ if (ERRORCOUNT > 0)
 
 void StartServer(int argc,char **argv)
 
-{ char ipaddr[maxvarsize],intime[64];
+{ char ipaddr[CF_MAXVARSIZE],intime[64];
   int sd,sd_reply,ageing;
   fd_set rset;
   time_t now;
 
-#ifdef HAVE_GETADDRINFO
+#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
   int addrlen=sizeof(struct sockaddr_in6);
   struct sockaddr_in6 cin;
 #else
@@ -550,7 +545,7 @@ Verbose("Listening for connections ...\n");
 
 if ((!NO_FORK) && (fork() != 0))
    {
-   snprintf(OUTPUT,bufsize*2,"cfservd starting %.24s\n",ctime(&CFDSTARTTIME));
+   snprintf(OUTPUT,CF_BUFSIZE*2,"cfservd starting %.24s\n",ctime(&CFDSTARTTIME));
    CfLog(cfinform,OUTPUT,"");
    exit(0);
    }
@@ -596,14 +591,14 @@ while (true)
          ageing = 0;
          }
       
-      memset(ipaddr,0,maxvarsize);
-      snprintf(ipaddr,maxvarsize-1,"%s",sockaddr_ntop((struct sockaddr *)&cin));
+      memset(ipaddr,0,CF_MAXVARSIZE);
+      snprintf(ipaddr,CF_MAXVARSIZE-1,"%s",sockaddr_ntop((struct sockaddr *)&cin));
       
       Debug("Obtained IP address of %s on socket %d from accept\n",ipaddr,sd_reply);
       
       if ((NONATTACKERLIST != NULL) && !IsFuzzyItemIn(NONATTACKERLIST,MapAddress(ipaddr)))   /* Allowed Subnets */
          {
-         snprintf(OUTPUT,bufsize*2,"Denying connection from non-authorized IP %s\n",ipaddr);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Denying connection from non-authorized IP %s\n",ipaddr);
          CfLog(cferror,OUTPUT,"");
          close(sd_reply);
          continue;
@@ -611,7 +606,7 @@ while (true)
       
       if (IsFuzzyItemIn(ATTACKERLIST,MapAddress(ipaddr)))   /* Denied Subnets */
          {
-         snprintf(OUTPUT,bufsize*2,"Denying connection from non-authorized IP %s\n",ipaddr);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Denying connection from non-authorized IP %s\n",ipaddr);
          CfLog(cferror,OUTPUT,"");
          close(sd_reply);
          continue;
@@ -628,7 +623,7 @@ while (true)
          {
          if (IsItemIn(CONNECTIONLIST,MapAddress(ipaddr)))
             {
-            snprintf(OUTPUT,bufsize*2,"Denying repeated connection from %s\n",ipaddr);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Denying repeated connection from %s\n",ipaddr);
             CfLog(cferror,OUTPUT,"");
             close(sd_reply);
             continue;
@@ -637,7 +632,7 @@ while (true)
       
       if (LOGCONNS)
          {
-         snprintf(OUTPUT,bufsize*2,"Accepting connection from %s\n",ipaddr);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Accepting connection from %s\n",ipaddr);
          CfLog(cfinform,OUTPUT,"");
          }
       
@@ -664,25 +659,23 @@ unsigned find_inet_addr(char *host)
 { struct in_addr addr;
   struct hostent *hp;
 
-memset(VBUFF,0,bufsize);
-
 addr.s_addr = inet_addr(host);
 if ((addr.s_addr == INADDR_NONE) || (addr.s_addr == 0)) 
    {
    if ((hp = gethostbyname(host)) == 0)
       {
-      snprintf(VBUFF,bufsize,"\nhost not found: %s\n",host);
-      FatalError(VBUFF);
+      snprintf(OUTPUT,CF_BUFSIZE,"\nhost not found: %s\n",host);
+      FatalError(OUTPUT);
       }
    if (hp->h_addrtype != AF_INET)
       {
-      snprintf(VBUFF,bufsize,"unexpected address family: %d\n",hp->h_addrtype);
-      FatalError(VBUFF);
+      snprintf(OUTPUT,CF_BUFSIZE,"unexpected address family: %d\n",hp->h_addrtype);
+      FatalError(OUTPUT);
       }
    if (hp->h_length != sizeof(addr))
       {
-      snprintf(VBUFF,bufsize,"unexpected address length %d\n",hp->h_length);
-      FatalError(VBUFF);
+      snprintf(OUTPUT,CF_BUFSIZE,"unexpected address length %d\n",hp->h_length);
+      FatalError(OUTPUT);
       }
 
    memcpy((char *) &addr, hp->h_addr, hp->h_length);
@@ -703,7 +696,7 @@ int OpenReceiverChannel()
   char *ptr = NULL;
 
   struct linger cflinger;
-#ifdef HAVE_GETADDRINFO
+#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
     struct addrinfo query,*response,*ap;
 #else
     struct sockaddr_in sin;
@@ -714,7 +707,7 @@ cflinger.l_linger = 60;
 
 port = CfenginePort();
 
-#if HAVE_GETADDRINFO
+#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
   
 memset(&query,0,sizeof(struct addrinfo));
 
@@ -880,7 +873,7 @@ for (ip = *list; ip != NULL; ip=ip->next)
    if (now > then + 7200)
       {
       DeleteItem(list,ip);
-      snprintf(OUTPUT,bufsize*2,"Purging IP address %s from connection list\n",ip->name);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Purging IP address %s from connection list\n",ip->name);
       CfLog(cfverbose,OUTPUT,"");
       }
    }
@@ -901,7 +894,7 @@ void SpawnConnection(int sd_reply,char *ipaddr)
 
 conn = NewConn(sd_reply);
 
-strncpy(conn->ipaddr,ipaddr,cfmaxiplen-1);
+strncpy(conn->ipaddr,ipaddr,CF_MAX_IP_LEN-1);
 
 Debug("New connection...(from %s/%d)\n",conn->ipaddr,sd_reply);
  
@@ -940,17 +933,17 @@ HandleConnection(conn);
 void CheckFileChanges(int argc,char **argv,int sd)
 
 { struct stat newstat;
-  char filename[bufsize],*sp;
+  char filename[CF_BUFSIZE],*sp;
   int i;
   
 memset(&newstat,0,sizeof(struct stat));
-memset(filename,0,bufsize);
+memset(filename,0,CF_BUFSIZE);
 
-if ((sp=getenv(CFINPUTSVAR)) != NULL)
+if ((sp=getenv(CF_INPUTSVAR)) != NULL)
    {
    if (!IsAbsoluteFileName(VINPUTFILE)) /* Don't prepend to absolute names */
       { 
-      strncpy(filename,sp,bufsize-1);
+      strncpy(filename,sp,CF_BUFSIZE-1);
       AddSlash(filename);
       }
    }
@@ -958,17 +951,17 @@ else
    {
    if (!IsAbsoluteFileName(VINPUTFILE)) /* Don't prepend to absolute names */
       {
-      strncpy(filename,WORKDIR,bufsize-1);
+      strncpy(filename,WORKDIR,CF_BUFSIZE-1);
       AddSlash(filename);
-      strncat(filename,"inputs/",bufsize-1-strlen(filename));
+      strncat(filename,"inputs/",CF_BUFSIZE-1-strlen(filename));
       }
    }
 
-strncat(filename,VINPUTFILE,bufsize-1-strlen(filename));
+strncat(filename,VINPUTFILE,CF_BUFSIZE-1-strlen(filename));
 
 if (stat(filename,&newstat) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"Input file %s missing or busy..\n",filename);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Input file %s missing or busy..\n",filename);
    CfLog(cferror,OUTPUT,filename);
    sleep(5);
    return;
@@ -978,7 +971,7 @@ Debug("Checking file updates on %s (%x/%x)\n",filename, newstat.st_ctime, CFDSTA
 
 if (CFDSTARTTIME < newstat.st_mtime)
    {
-   snprintf(OUTPUT,bufsize*2,"Rereading config files %s..\n",filename);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Rereading config files %s..\n",filename);
    CfLog(cfinform,OUTPUT,"");
 
    /* Free & reload -- lock this to avoid access errors during reload */
@@ -1062,9 +1055,9 @@ if (ACTIVE_THREADS >= CFD_MAXPROCESSES)
       CfLog(cferror,"pthread_mutex_unlock failed","unlock");
       }
 
-   snprintf(OUTPUT,bufsize,"Too many threads (>=%d) -- increase MaxConnections?",CFD_MAXPROCESSES);
+   snprintf(OUTPUT,CF_BUFSIZE,"Too many threads (>=%d) -- increase MaxConnections?",CFD_MAXPROCESSES);
    CfLog(cferror,OUTPUT,"");
-   snprintf(OUTPUT,bufsize,"BAD: Server is currently too busy -- increase MaxConnections or Splaytime?");
+   snprintf(OUTPUT,CF_BUFSIZE,"BAD: Server is currently too busy -- increase MaxConnections or Splaytime?");
    SendTransaction(conn->sd_reply,OUTPUT,0,CF_DONE);
    DeleteConn(conn);
    return NULL;
@@ -1111,13 +1104,13 @@ int BusyWithConnection(struct cfd_connection *conn)
   /* and extract the information from the message */
 
 { time_t tloc, trem = 0;
-  char recvbuffer[bufsize+128], sendbuffer[bufsize],check[bufsize];  
-  char filename[bufsize],buffer[bufsize],args[bufsize],out[bufsize];
+  char recvbuffer[CF_BUFSIZE+128], sendbuffer[CF_BUFSIZE],check[CF_BUFSIZE];  
+  char filename[CF_BUFSIZE],buffer[CF_BUFSIZE],args[CF_BUFSIZE],out[CF_BUFSIZE];
   long time_no_see = 0;
   int len=0, drift, plainlen, received;
   struct cfd_get_arg get_args;
 
-memset(recvbuffer,0,bufsize);
+memset(recvbuffer,0,CF_BUFSIZE);
 memset(&get_args,0,sizeof(get_args));
 
 if ((received = ReceiveTransaction(conn->sd_reply,recvbuffer,NULL)) == -1)
@@ -1136,7 +1129,7 @@ Debug("Received: [%s] on socket %d\n",recvbuffer,conn->sd_reply);
 switch (GetCommand(recvbuffer))
    {
    case cfd_exec:
-       memset(args,0,bufsize);
+       memset(args,0,CF_BUFSIZE);
        sscanf(recvbuffer,"EXEC %[^\n]",args);
        
        if (!conn->id_verified)
@@ -1200,10 +1193,10 @@ switch (GetCommand(recvbuffer))
        return true;
        
    case cfd_get:
-       memset(filename,0,bufsize);
+       memset(filename,0,CF_BUFSIZE);
        sscanf(recvbuffer,"GET %d %[^\n]",&(get_args.buf_size),filename);
        
-       if (get_args.buf_size < 0 || get_args.buf_size > bufsize)
+       if (get_args.buf_size < 0 || get_args.buf_size > CF_BUFSIZE)
           {
           RefuseAccess(conn,sendbuffer,0,recvbuffer);
           return false;
@@ -1221,9 +1214,9 @@ switch (GetCommand(recvbuffer))
           return true;   
           }
        
-       memset(sendbuffer,0,bufsize);
+       memset(sendbuffer,0,CF_BUFSIZE);
        
-       if (get_args.buf_size >= bufsize)
+       if (get_args.buf_size >= CF_BUFSIZE)
           {
           get_args.buf_size = 2048;
           }
@@ -1238,7 +1231,7 @@ switch (GetCommand(recvbuffer))
        return true;
        
    case cfd_sget:
-       memset(buffer,0,bufsize);
+       memset(buffer,0,CF_BUFSIZE);
        sscanf(recvbuffer,"SGET %d %d",&len,&(get_args.buf_size));
        if (received != len+CF_PROTO_OFFSET)
           {
@@ -1263,7 +1256,7 @@ switch (GetCommand(recvbuffer))
           return false;
           }
        
-       if (get_args.buf_size >= bufsize)
+       if (get_args.buf_size >= CF_BUFSIZE)
           {
           get_args.buf_size = 2048;
           }
@@ -1283,7 +1276,7 @@ switch (GetCommand(recvbuffer))
           return false;   
           }
        
-       memset(sendbuffer,0,bufsize);
+       memset(sendbuffer,0,CF_BUFSIZE);
        
        get_args.connect = conn;
        get_args.encrypt = true;
@@ -1295,7 +1288,7 @@ switch (GetCommand(recvbuffer))
        
    case cfd_opendir:
 
-       memset(filename,0,bufsize);
+       memset(filename,0,CF_BUFSIZE);
        sscanf(recvbuffer,"OPENDIR %[^\n]",filename);
        
        if (! conn->id_verified)
@@ -1316,7 +1309,7 @@ switch (GetCommand(recvbuffer))
        
    case cfd_ssynch:
        
-       memset(buffer,0,bufsize);
+       memset(buffer,0,CF_BUFSIZE);
        sscanf(recvbuffer,"SSYNCH %d",&len);
        
        if (received != len+CF_PROTO_OFFSET)
@@ -1350,7 +1343,7 @@ switch (GetCommand(recvbuffer))
           return false;
           }
        
-       memset(filename,0,bufsize);
+       memset(filename,0,CF_BUFSIZE);
        sscanf(recvbuffer,"SYNCH %ld STAT %[^\n]",&time_no_see,filename);
        
        trem = (time_t) time_no_see;
@@ -1378,7 +1371,7 @@ switch (GetCommand(recvbuffer))
        
        if (DENYBADCLOCKS && (drift*drift > CLOCK_DRIFT*CLOCK_DRIFT))
           {
-          snprintf(conn->output,bufsize*2,"BAD: Clocks are too far unsynchronized %ld/%ld\n",(long)tloc,(long)trem);
+          snprintf(conn->output,CF_BUFSIZE*2,"BAD: Clocks are too far unsynchronized %ld/%ld\n",(long)tloc,(long)trem);
           CfLog(cfinform,conn->output,"");
           SendTransaction(conn->sd_reply,conn->output,0,CF_DONE);
           return true;
@@ -1392,7 +1385,7 @@ switch (GetCommand(recvbuffer))
        return true;
 
    case cfd_smd5:
-       memset(buffer,0,bufsize);
+       memset(buffer,0,CF_BUFSIZE);
        sscanf(recvbuffer,"SMD5 %d",&len);
        
        if (received != len+CF_PROTO_OFFSET)
@@ -1419,8 +1412,8 @@ switch (GetCommand(recvbuffer))
           return true;
           }
        
-       memset(filename,0,bufsize);
-       memset(args,0,bufsize);
+       memset(filename,0,CF_BUFSIZE);
+       memset(args,0,CF_BUFSIZE);
        
        CompareLocalChecksum(conn,sendbuffer,recvbuffer);
        return true;
@@ -1460,7 +1453,7 @@ return NULL;
 
 int MatchClasses(struct cfd_connection *conn)
 
-{ char recvbuffer[bufsize];
+{ char recvbuffer[CF_BUFSIZE];
   struct Item *classlist = NULL, *ip;
   int count = 0;
 
@@ -1523,11 +1516,9 @@ while (true && (count < 10))  /* arbitrary check to avoid infinite loop, DoS att
 
 void DoExec(struct cfd_connection *conn,char *sendbuffer,char *args)
 
-{ char buffer[bufsize], line[bufsize], *sp;
+{ char ebuff[CF_EXPANDSIZE], line[CF_BUFSIZE], *sp;
   int print = false,i;
   FILE *pp;
-
-memset(buffer,0,bufsize);
 
 if ((CFSTARTTIME = time((time_t *)NULL)) == -1)
    {
@@ -1564,21 +1555,12 @@ for (sp = args; *sp != '\0'; sp++) /* Blank out -K -f */
          }
       }
    }
+    
+ExpandVarstring("$(cfrunCommand) --no-splay --inform",ebuff,"");
  
-/* 
-if (!GetLock("cfservd","exec",VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+if (strlen(ebuff)+strlen(args)+6 > CF_BUFSIZE)
    {
-   snprintf(sendbuffer,bufsize,"cfservd Couldn't get a lock -- too soon: IfElapsed %d, ExpireAfter %d\n",VIFELAPSED,VEXPIREAFTER);
-   SendTransaction(conn->sd_reply,sendbuffer,0,CF_DONE);
-   return;
-   }
-*/
-   
-ExpandVarstring("$(cfrunCommand) --no-splay --inform",buffer,"");
- 
-if (strlen(buffer)+strlen(args)+6 > bufsize)
-   {
-   snprintf(sendbuffer,bufsize,"Command line too long with args: %s\n",buffer);
+   snprintf(sendbuffer,CF_BUFSIZE,"Command line too long with args: %s\n",ebuff);
    SendTransaction(conn->sd_reply,sendbuffer,0,CF_DONE);
    ReleaseCurrentLock();
    return;
@@ -1587,22 +1569,22 @@ else
    {
    if ((args != NULL) & (strlen(args) > 0))
       {
-      strcat(buffer," ");
-      strcat(buffer,args);
+      strcat(ebuff," ");
+      strcat(ebuff,args);
 
-      snprintf(sendbuffer,bufsize,"cfservd Executing %s\n",buffer);
+      snprintf(sendbuffer,CF_BUFSIZE,"cfservd Executing %s\n",ebuff);
       SendTransaction(conn->sd_reply,sendbuffer,0,CF_DONE);
       }
    }
 
-snprintf(conn->output,bufsize,"Executing command %s\n",buffer);
+snprintf(conn->output,CF_BUFSIZE,"Executing command %s\n",ebuff);
 CfLog(cfinform,conn->output,""); 
  
-if ((pp = cfpopen(buffer,"r")) == NULL)
+if ((pp = cfpopen(ebuff,"r")) == NULL)
    {
-   snprintf(conn->output,bufsize,"Couldn't open pipe to command %s\n",buffer);
+   snprintf(conn->output,CF_BUFSIZE,"Couldn't open pipe to command %s\n",ebuff);
    CfLog(cferror,conn->output,"pipe");
-   snprintf(sendbuffer,bufsize,"Unable to run %s\n",buffer);
+   snprintf(sendbuffer,CF_BUFSIZE,"Unable to run %s\n",ebuff);
    SendTransaction(conn->sd_reply,sendbuffer,0,CF_DONE);
    ReleaseCurrentLock();
    return;
@@ -1616,7 +1598,7 @@ while (!feof(pp))
       break;
       }
 
-   ReadLine(line,bufsize,pp);
+   ReadLine(line,CF_BUFSIZE,pp);
    
    if (ferror(pp))
       {
@@ -1637,7 +1619,7 @@ while (!feof(pp))
    
    if (print)
       {
-      snprintf(sendbuffer,bufsize,"%s\n",line);
+      snprintf(sendbuffer,CF_BUFSIZE,"%s\n",line);
       SendTransaction(conn->sd_reply,sendbuffer,0,CF_DONE);
       }
   }
@@ -1652,7 +1634,7 @@ cfpclose(pp);
 int GetCommand (char *str)
 
 { int i;
-  char op[bufsize];
+  char op[CF_BUFSIZE];
 
 sscanf(str,"%4095s",op);
 
@@ -1669,16 +1651,16 @@ return -1;
 
 /*********************************************************************/
 
-int VerifyConnection(struct cfd_connection *conn,char buf[bufsize])
+int VerifyConnection(struct cfd_connection *conn,char buf[CF_BUFSIZE])
 
  /* Try reverse DNS lookup
     and RFC931 username lookup to check the authenticity. */
 
-{ char ipstring[maxvarsize], fqname[maxvarsize], username[maxvarsize];
-  char dns_assert[maxvarsize],ip_assert[maxvarsize];
+{ char ipstring[CF_MAXVARSIZE], fqname[CF_MAXVARSIZE], username[CF_MAXVARSIZE];
+  char dns_assert[CF_MAXVARSIZE],ip_assert[CF_MAXVARSIZE];
   int matched = false;
   struct passwd *pw;
-#ifdef HAVE_GETADDRINFO
+#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
   struct addrinfo query, *response=NULL, *ap;
   int err;
 #else
@@ -1690,16 +1672,16 @@ int VerifyConnection(struct cfd_connection *conn,char buf[bufsize])
 
 Debug("Connecting host identifies itself as %s\n",buf);
 
-memset(ipstring,0,maxvarsize);
-memset(fqname,0,maxvarsize);
-memset(username,0,maxvarsize); 
+memset(ipstring,0,CF_MAXVARSIZE);
+memset(fqname,0,CF_MAXVARSIZE);
+memset(username,0,CF_MAXVARSIZE); 
 
 sscanf(buf,"%255s %255s %255s",ipstring,fqname,username);
 
 Debug("(ipstring=[%s],fqname=[%s],username=[%s],socket=[%s])\n",ipstring,fqname,username,conn->ipaddr); 
 
-strncpy(dns_assert,ToLowerStr(fqname),maxvarsize-1);
-strncpy(ip_assert,ipstring,maxvarsize-1);
+strncpy(dns_assert,ToLowerStr(fqname),CF_MAXVARSIZE-1);
+strncpy(ip_assert,ipstring,CF_MAXVARSIZE-1);
 
 /* It only makes sense to check DNS by reverse lookup if the key had to be accepted
    on trust. Once we have a positive key ID, the IP address is irrelevant fr authentication...
@@ -1707,12 +1689,12 @@ strncpy(ip_assert,ipstring,maxvarsize-1);
  
 if ((conn->trust == false) || IsFuzzyItemIn(SKIPVERIFY,MapAddress(conn->ipaddr)))
    {
-   snprintf(conn->output,bufsize*2,"Allowing %s to connect without (re)checking ID\n",ip_assert);
+   snprintf(conn->output,CF_BUFSIZE*2,"Allowing %s to connect without (re)checking ID\n",ip_assert);
    CfLog(cfverbose,conn->output,"");
    Verbose("Non-verified Host ID is %s (Using skipverify)\n",dns_assert);
-   strncpy(conn->hostname,dns_assert,maxvarsize); 
+   strncpy(conn->hostname,dns_assert,CF_MAXVARSIZE); 
    Verbose("Non-verified User ID seems to be %s (Using skipverify)\n",username); 
-   strncpy(conn->username,username,maxvarsize);
+   strncpy(conn->username,username,CF_MAXVARSIZE);
 
    if ((pw=getpwnam(username)) == NULL) /* Keep this inside mutex */
       {      
@@ -1736,14 +1718,14 @@ if (strcmp(ip_assert,MapAddress(conn->ipaddr)) != 0)
 
 Verbose("Socket caller address appears honest (%s matches %s)\n",ip_assert,MapAddress(conn->ipaddr));
  
-snprintf(conn->output,bufsize,"Socket originates from %s=%s\n",ip_assert,dns_assert);
+snprintf(conn->output,CF_BUFSIZE,"Socket originates from %s=%s\n",ip_assert,dns_assert);
 CfLog(cfverbose,conn->output,""); 
 
 Debug("Attempting to verify honesty by looking up hostname (%s)\n",dns_assert);
 
 /* Do a reverse DNS lookup, like tcp wrappers to see if hostname matches IP */
  
-#ifdef HAVE_GETADDRINFO
+#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
 
  Debug("Using v6 compatible lookup...\n"); 
 
@@ -1755,7 +1737,7 @@ query.ai_flags = AI_PASSIVE;
  
 if ((err=getaddrinfo(dns_assert,NULL,&query,&response)) != 0)
    {
-   snprintf(conn->output,bufsize,"Unable to lookup %s (%s)",dns_assert,gai_strerror(err));
+   snprintf(conn->output,CF_BUFSIZE,"Unable to lookup %s (%s)",dns_assert,gai_strerror(err));
    CfLog(cferror,conn->output,"");
    }
  
@@ -1794,7 +1776,7 @@ if ((hp = gethostbyname(dns_assert)) == NULL)
    Verbose("     i.e. www.gnu.org, not just www. If you use NIS or /etc/hosts\n");
    Verbose("     make sure that the full form is registered too as an alias!\n");
 
-   snprintf(OUTPUT,bufsize,"DNS lookup of %s failed",dns_assert);
+   snprintf(OUTPUT,CF_BUFSIZE,"DNS lookup of %s failed",dns_assert);
    CfLog(cflogonly,OUTPUT,"gethostbyname");
    matched = false;
    }
@@ -1837,7 +1819,7 @@ else
       
       if ((hp->h_addr_list[i] != NULL) && (hp->h_aliases[j] != NULL))
          {
-         snprintf(conn->output,bufsize,"Reverse hostname lookup failed, host claiming to be %s was %s\n",buf,sockaddr_ntop((struct sockaddr *)&raddr));
+         snprintf(conn->output,CF_BUFSIZE,"Reverse hostname lookup failed, host claiming to be %s was %s\n",buf,sockaddr_ntop((struct sockaddr *)&raddr));
          CfLog(cflogonly,conn->output,"");
          matched = false;
          }
@@ -1848,7 +1830,7 @@ else
       }
    else
       {
-      snprintf(conn->output,bufsize,"No name was registered in DNS for %s - reverse lookup failed\n",dns_assert);
+      snprintf(conn->output,CF_BUFSIZE,"No name was registered in DNS for %s - reverse lookup failed\n",dns_assert);
       CfLog(cflogonly,conn->output,"");
       matched = false;
       }   
@@ -1879,19 +1861,19 @@ else
 
 if (!matched)
    {
-   snprintf(conn->output,bufsize,"Failed on DNS reverse lookup of %s\n",dns_assert);
+   snprintf(conn->output,CF_BUFSIZE,"Failed on DNS reverse lookup of %s\n",dns_assert);
    CfLog(cflogonly,conn->output,"gethostbyname");
-   snprintf(conn->output,bufsize,"Client sent: %s",buf);
+   snprintf(conn->output,CF_BUFSIZE,"Client sent: %s",buf);
    CfLog(cflogonly,conn->output,"");
    return false;
    }
  
 Verbose("Host ID is %s\n",dns_assert);
-strncpy(conn->hostname,dns_assert,maxvarsize-1);
+strncpy(conn->hostname,dns_assert,CF_MAXVARSIZE-1);
 LastSeen(dns_assert,cf_accept); 
  
 Verbose("User ID seems to be %s\n",username); 
-strncpy(conn->username,username,maxvarsize-1);
+strncpy(conn->username,username,CF_MAXVARSIZE-1);
  
 return true;   
 }
@@ -1918,15 +1900,15 @@ int AccessControl(char *filename,struct cfd_connection *conn,int encrypt)
 
 { struct Auth *ap;
   int access = false;
-  char realname[bufsize];
+  char realname[CF_BUFSIZE];
   struct stat statbuf;
 
 Debug("AccessControl(%s)\n",filename);
-memset(realname,0,bufsize);
+memset(realname,0,CF_BUFSIZE);
 
 if (lstat(filename,&statbuf) == -1)
    {
-   snprintf(conn->output,bufsize*2,"Couldn't stat filename %s from host %s\n",filename,conn->hostname);
+   snprintf(conn->output,CF_BUFSIZE*2,"Couldn't stat filename %s from host %s\n",filename,conn->hostname);
    CfLog(cfverbose,conn->output,"lstat");
    CfLog(cflogonly,conn->output,"lstat");   
    return false;
@@ -1934,14 +1916,14 @@ if (lstat(filename,&statbuf) == -1)
 
 if (S_ISLNK(statbuf.st_mode)) 
    {
-   strncpy(realname,filename,bufsize);
+   strncpy(realname,filename,CF_BUFSIZE);
    }
  else
     {
 #ifdef HAVE_REALPATH
     if (realpath(filename,realname) == NULL)
        {
-       snprintf(conn->output,bufsize*2,"Couldn't resolve filename %s from host %s\n",filename,conn->hostname);
+       snprintf(conn->output,CF_BUFSIZE*2,"Couldn't resolve filename %s from host %s\n",filename,conn->hostname);
        CfLog(cfverbose,conn->output,"lstat");
        CfLog(cflogonly,conn->output,"lstat");   
        return false;
@@ -1981,14 +1963,14 @@ for (ap = VADMIT; ap != NULL; ap=ap->next)
       Debug("Found a matching rule in access list (%s,%s)\n",realname,ap->path);
       if (stat(ap->path,&statbuf) == -1)
          {
-         snprintf(OUTPUT,bufsize,"Warning cannot stat file object %s in admit/grant, or access list refers to dangling link\n",ap->path);
+         snprintf(OUTPUT,CF_BUFSIZE,"Warning cannot stat file object %s in admit/grant, or access list refers to dangling link\n",ap->path);
          CfLog(cflogonly,OUTPUT,"");
          continue;
          }
       
       if (!encrypt && (ap->encrypt == true))
          {
-         snprintf(conn->output,bufsize,"File %s requires encrypt connection...will not serve\n",ap->path);
+         snprintf(conn->output,CF_BUFSIZE,"File %s requires encrypt connection...will not serve\n",ap->path);
          CfLog(cferror,conn->output,"");
          access = false;
          }
@@ -2029,7 +2011,7 @@ for (ap = VADMIT; ap != NULL; ap=ap->next)
            IsFuzzyItemIn(ap->accesslist,MapAddress(conn->ipaddr)))
           {
           access = false;
-          snprintf(conn->output,bufsize*2,"Host %s explicitly denied access to %s\n",conn->hostname,realname);
+          snprintf(conn->output,CF_BUFSIZE*2,"Host %s explicitly denied access to %s\n",conn->hostname,realname);
           CfLog(cfverbose,conn->output,"");   
           break;
           }
@@ -2038,12 +2020,12 @@ for (ap = VADMIT; ap != NULL; ap=ap->next)
  
  if (access)
     {
-    snprintf(conn->output,bufsize*2,"Host %s granted access to %s\n",conn->hostname,realname);
+    snprintf(conn->output,CF_BUFSIZE*2,"Host %s granted access to %s\n",conn->hostname,realname);
     CfLog(cfverbose,conn->output,"");
     }
  else
     {
-    snprintf(conn->output,bufsize*2,"Host %s denied access to %s\n",conn->hostname,realname);
+    snprintf(conn->output,CF_BUFSIZE*2,"Host %s denied access to %s\n",conn->hostname,realname);
     CfLog(cfverbose,conn->output,"");
     CfLog(cflogonly,conn->output,"");
     }
@@ -2063,7 +2045,7 @@ for (ap = VADMIT; ap != NULL; ap=ap->next)
 
 int AuthenticationDialogue(struct cfd_connection *conn,char *recvbuffer)
 
-{ char in[bufsize],*out, *decrypted_nonce;
+{ char in[CF_BUFSIZE],*out, *decrypted_nonce;
   BIGNUM *counter_challenge = NULL;
   unsigned char digest[EVP_MAX_MD_SIZE+1];
   unsigned int crypt_len, nonce_len = 0,len = 0, encrypted_len, keylen;
@@ -2107,7 +2089,7 @@ if (iscrypt == 'y')
    if (RSA_private_decrypt(crypt_len,recvbuffer+CF_RSA_PROTO_OFFSET,decrypted_nonce,PRIVKEY,RSA_PKCS1_PADDING) <= 0)
       {
       err = ERR_get_error();
-      snprintf(conn->output,bufsize,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
+      snprintf(conn->output,CF_BUFSIZE,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
       CfLog(cferror,conn->output,"");
       free(decrypted_nonce);
 
@@ -2176,7 +2158,7 @@ if (iscrypt == 'y')
  if ((newkey->n = BN_mpi2bn(recvbuffer,len,NULL)) == NULL)
     {
     err = ERR_get_error();
-    snprintf(conn->output,bufsize,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
+    snprintf(conn->output,CF_BUFSIZE,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
     CfLog(cferror,conn->output,"");
     RSA_free(newkey);
     return false;
@@ -2201,7 +2183,7 @@ if (iscrypt == 'y')
  if ((newkey->e = BN_mpi2bn(recvbuffer,len,NULL)) == NULL)
     {
     err = ERR_get_error();
-    snprintf(conn->output,bufsize,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
+    snprintf(conn->output,CF_BUFSIZE,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
     CfLog(cferror,conn->output,"");
     RSA_free(newkey);
     return false;
@@ -2261,7 +2243,7 @@ if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
 if (RSA_public_encrypt(nonce_len,in,out,newkey,RSA_PKCS1_PADDING) <= 0)
    {
    err = ERR_get_error();
-   snprintf(conn->output,bufsize,"Public encryption failed = %s\n",ERR_reason_error_string(err));
+   snprintf(conn->output,CF_BUFSIZE,"Public encryption failed = %s\n",ERR_reason_error_string(err));
    CfLog(cferror,conn->output,"");
    RSA_free(newkey);
    free(out);
@@ -2276,12 +2258,12 @@ SendTransaction(conn->sd_reply,out,encrypted_len,CF_DONE);
 if (iscrypt != 'y')
    {
    /* proposition S4  - conditional */
-   memset(in,0,bufsize); 
+   memset(in,0,CF_BUFSIZE); 
    len = BN_bn2mpi(PUBKEY->n,in);
    SendTransaction(conn->sd_reply,in,len,CF_DONE);
 
    /* proposition S5  - conditional */
-   memset(in,0,bufsize);  
+   memset(in,0,CF_BUFSIZE);  
    len = BN_bn2mpi(PUBKEY->e,in); 
    SendTransaction(conn->sd_reply,in,len,CF_DONE); 
    }
@@ -2289,7 +2271,7 @@ if (iscrypt != 'y')
 /* Receive reply to counter_challenge */
 
 /* proposition C4 */ 
-memset(in,0,bufsize);
+memset(in,0,CF_BUFSIZE);
 ReceiveTransaction(conn->sd_reply,in,NULL);
  
 if (!ChecksumsMatch(digest,in,'m'))  /* replay / piggy in the middle attack ? */
@@ -2297,7 +2279,7 @@ if (!ChecksumsMatch(digest,in,'m'))  /* replay / piggy in the middle attack ? */
    BN_free(counter_challenge);
    free(out);
    RSA_free(newkey);
-   snprintf(conn->output,bufsize,"Challenge response from client %s was incorrect - ID false?",conn->ipaddr);
+   snprintf(conn->output,CF_BUFSIZE,"Challenge response from client %s was incorrect - ID false?",conn->ipaddr);
    CfLog(cfinform,conn->output,"");
    return false; 
    }
@@ -2305,11 +2287,11 @@ else
    {
    if (!conn->trust)
       {
-      snprintf(conn->output,bufsize,"Strong authentication of client %s/%s achieved",conn->hostname,conn->ipaddr);
+      snprintf(conn->output,CF_BUFSIZE,"Strong authentication of client %s/%s achieved",conn->hostname,conn->ipaddr);
       }
    else
       {
-      snprintf(conn->output,bufsize,"Weak authentication of trusted client %s/%s (key accepted on trust).\n",conn->hostname,conn->ipaddr);
+      snprintf(conn->output,CF_BUFSIZE,"Weak authentication of trusted client %s/%s (key accepted on trust).\n",conn->hostname,conn->ipaddr);
       }
    CfLog(cfverbose,conn->output,"");
    }
@@ -2317,7 +2299,7 @@ else
 /* Receive random session key, blowfish style ... */ 
 
 /* proposition C5 */
-memset(in,0,bufsize);
+memset(in,0,CF_BUFSIZE);
 keylen = ReceiveTransaction(conn->sd_reply,in,NULL); 
 
  
@@ -2359,15 +2341,15 @@ int StatFile(struct cfd_connection *conn,char *sendbuffer,char *filename)
 
 { struct cfstat cfst;
   struct stat statbuf;
-  char linkbuf[bufsize];
+  char linkbuf[CF_BUFSIZE];
 
   Debug("StatFile(%s)\n",filename);
 
 memset(&cfst,0,sizeof(struct cfstat));
   
-if (strlen(ReadLastNode(filename)) > maxlinksize)
+if (strlen(ReadLastNode(filename)) > CF_MAXLINKSIZE)
    {
-   snprintf(sendbuffer,bufsize*2,"BAD: Filename suspiciously long [%s]\n",filename);
+   snprintf(sendbuffer,CF_BUFSIZE*2,"BAD: Filename suspiciously long [%s]\n",filename);
    CfLog(cferror,sendbuffer,"");
    SendTransaction(conn->sd_reply,sendbuffer,0,CF_DONE);
    return -1;
@@ -2375,7 +2357,7 @@ if (strlen(ReadLastNode(filename)) > maxlinksize)
 
 if (lstat(filename,&statbuf) == -1)
    {
-   snprintf(sendbuffer,bufsize,"BAD: unable to stat file %s",filename);
+   snprintf(sendbuffer,CF_BUFSIZE,"BAD: unable to stat file %s",filename);
    CfLog(cfverbose,sendbuffer,"lstat");
    SendTransaction(conn->sd_reply,sendbuffer,0,CF_DONE);
    return -1;
@@ -2383,9 +2365,9 @@ if (lstat(filename,&statbuf) == -1)
 
 cfst.cf_readlink = NULL;
 cfst.cf_lmode = 0;
-cfst.cf_nlink = cfnosize;
+cfst.cf_nlink = CF_NOSIZE;
 
-memset(linkbuf,0,bufsize);
+memset(linkbuf,0,CF_BUFSIZE);
 
 if (S_ISLNK(statbuf.st_mode))
    {
@@ -2393,7 +2375,7 @@ if (S_ISLNK(statbuf.st_mode))
    cfst.cf_lmode = statbuf.st_mode & 07777;
    cfst.cf_nlink = statbuf.st_nlink;
        
-   if (readlink(filename,linkbuf,bufsize-1) == -1)
+   if (readlink(filename,linkbuf,CF_BUFSIZE-1) == -1)
       {
       sprintf(sendbuffer,"BAD: unable to read link\n");
       CfLog(cferror,sendbuffer,"readlink");
@@ -2408,7 +2390,7 @@ if (S_ISLNK(statbuf.st_mode))
 
 if (stat(filename,&statbuf) == -1)
    {
-   snprintf(sendbuffer,bufsize,"BAD: unable to stat file %s\n",filename);
+   snprintf(sendbuffer,CF_BUFSIZE,"BAD: unable to stat file %s\n",filename);
    CfLog(cfverbose,conn->output,"stat");
    SendTransaction(conn->sd_reply,sendbuffer,0,CF_DONE);
    return -1;
@@ -2455,7 +2437,7 @@ cfst.cf_ino      = statbuf.st_ino;
 cfst.cf_dev      = statbuf.st_dev;
 cfst.cf_readlink = linkbuf;
 
-if (cfst.cf_nlink == cfnosize)
+if (cfst.cf_nlink == CF_NOSIZE)
    {
    cfst.cf_nlink = statbuf.st_nlink;
    }
@@ -2478,7 +2460,7 @@ else
    }
 
 
-memset(sendbuffer,0,bufsize);
+memset(sendbuffer,0,CF_BUFSIZE);
 
  /* send as plain text */
 
@@ -2487,14 +2469,14 @@ Debug("OK: type=%d\n mode=%o\n lmode=%o\n uid=%d\n gid=%d\n size=%ld\n atime=%d\
  cfst.cf_atime,cfst.cf_mtime);
 
 
-snprintf(sendbuffer,bufsize,"OK: %d %d %d %d %d %ld %d %d %d %d %d %d %d",
+snprintf(sendbuffer,CF_BUFSIZE,"OK: %d %d %d %d %d %ld %d %d %d %d %d %d %d",
  cfst.cf_type,cfst.cf_mode,cfst.cf_lmode,cfst.cf_uid,cfst.cf_gid,(long)cfst.cf_size,
  cfst.cf_atime,cfst.cf_mtime,cfst.cf_ctime,cfst.cf_makeholes,cfst.cf_ino,
   cfst.cf_nlink,cfst.cf_dev);
 
 SendTransaction(conn->sd_reply,sendbuffer,0,CF_DONE);
 
- memset(sendbuffer,0,bufsize);
+ memset(sendbuffer,0,CF_BUFSIZE);
 
 if (cfst.cf_readlink != NULL)
    {
@@ -2515,7 +2497,7 @@ return 0;
 void CfGetFile(struct cfd_get_arg *args)
 
 { int sd,fd,n_read,total=0,cipherlen,sendlen=0,count = 0;
-  char sendbuffer[bufsize+1],out[bufsize],*filename;
+  char sendbuffer[CF_BUFSIZE+1],out[CF_BUFSIZE],*filename;
   struct stat statbuf;
   uid_t uid;
   unsigned char iv[] = {1,2,3,4,5,6,7,8}, *key;
@@ -2555,7 +2537,7 @@ if (uid != 0 && !args->connect->maproot) /* should remote root be local root */
  
  if (args->buf_size < 512)
     {
-    snprintf(args->connect->output,bufsize,"blocksize for %s was only %d\n",filename,args->buf_size);
+    snprintf(args->connect->output,CF_BUFSIZE,"blocksize for %s was only %d\n",filename,args->buf_size);
     CfLog(cferror,args->connect->output,"");
     }
  
@@ -2567,16 +2549,16 @@ if (uid != 0 && !args->connect->maproot) /* should remote root be local root */
  
  if ((fd = SafeOpen(filename)) == -1)
     {
-    snprintf(sendbuffer,bufsize,"Open error of file [%s]\n",filename);
+    snprintf(sendbuffer,CF_BUFSIZE,"Open error of file [%s]\n",filename);
     CfLog(cferror,sendbuffer,"open");
-    snprintf(sendbuffer,bufsize,"%s",CFFAILEDSTR);
+    snprintf(sendbuffer,CF_BUFSIZE,"%s",CF_FAILEDSTR);
     SendSocketStream(sd,sendbuffer,args->buf_size,0);
     }
  else
     {
     while(true)
        {
-       memset(sendbuffer,0,bufsize);
+       memset(sendbuffer,0,CF_BUFSIZE);
        
        Debug("Now reading from disk...\n");
        
@@ -2588,7 +2570,7 @@ if (uid != 0 && !args->connect->maproot) /* should remote root be local root */
        
        Debug("Read completed..\n");
        
-       if (strncmp(sendbuffer,CFFAILEDSTR,strlen(CFFAILEDSTR)) == 0)
+       if (strncmp(sendbuffer,CF_FAILEDSTR,strlen(CF_FAILEDSTR)) == 0)
           {
           Debug("SENT FAILSTRING BY MISTAKE!\n");
           }
@@ -2610,7 +2592,7 @@ if (uid != 0 && !args->connect->maproot) /* should remote root be local root */
           
           if (statbuf.st_size != savedlen)
              {
-             snprintf(sendbuffer,bufsize,"%s%s: %s",CFCHANGEDSTR1,CFCHANGEDSTR2,filename);
+             snprintf(sendbuffer,CF_BUFSIZE,"%s%s: %s",CF_CHANGEDSTR1,CF_CHANGEDSTR2,filename);
              if (SendSocketStream(sd,sendbuffer,args->buf_size,0) == -1)
                 {
                 CfLog(cfverbose,"Send failed in GetFile","send");
@@ -2687,7 +2669,7 @@ if (uid != 0 && !args->connect->maproot) /* should remote root be local root */
 void CompareLocalChecksum(struct cfd_connection *conn,char *sendbuffer,char *recvbuffer)
 
 { unsigned char digest[EVP_MAX_MD_SIZE+1];
-  char filename[bufsize];
+  char filename[CF_BUFSIZE];
   char *sp;
   int i;
 
@@ -2701,7 +2683,7 @@ for (i = 0; i < CF_MD5_LEN; i++)
    }
  
 Debug("CompareLocalChecksums(%s,%s)\n",filename,ChecksumPrint('m',digest));
-memset(sendbuffer,0,bufsize);
+memset(sendbuffer,0,CF_BUFSIZE);
 
 if (ChecksumChanged(filename,digest,cfverbose,true,'m'))
    {
@@ -2737,27 +2719,27 @@ if (*dirname != '/')
 if ((dirh = opendir(dirname)) == NULL)
    {
    Debug("cfengine, couldn't open dir %s\n",dirname);
-   snprintf(sendbuffer,bufsize,"BAD: cfengine, couldn't open dir %s\n",dirname);
+   snprintf(sendbuffer,CF_BUFSIZE,"BAD: cfengine, couldn't open dir %s\n",dirname);
    SendTransaction(conn->sd_reply,sendbuffer,0,CF_DONE);
    return -1;
    }
 
 /* Pack names for transmission */
 
-memset(sendbuffer,0,bufsize);
+memset(sendbuffer,0,CF_BUFSIZE);
 
 offset = 0;
 
 for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    {
-   if (strlen(dirp->d_name)+1+offset >= bufsize - maxlinksize)
+   if (strlen(dirp->d_name)+1+offset >= CF_BUFSIZE - CF_MAXLINKSIZE)
       {
       SendTransaction(conn->sd_reply,sendbuffer,offset+1,CF_MORE);
       offset = 0;
-      memset(sendbuffer,0,bufsize);
+      memset(sendbuffer,0,CF_BUFSIZE);
       }
 
-   strncpy(sendbuffer+offset,dirp->d_name,maxlinksize);
+   strncpy(sendbuffer+offset,dirp->d_name,CF_MAXLINKSIZE);
    offset += strlen(dirp->d_name) + 1;     /* + zero byte separator */
    }
  
@@ -2772,9 +2754,9 @@ return 0;
 
 void Terminate(int sd)
 
-{ char buffer[bufsize];
+{ char buffer[CF_BUFSIZE];
 
-memset(buffer,0,bufsize);
+memset(buffer,0,CF_BUFSIZE);
 
 strcpy(buffer,CFD_TERMINATOR);
 
@@ -2837,15 +2819,15 @@ else
    ipaddr = conn->ipaddr;
    }
  
-snprintf(sendbuffer,bufsize,"%s",CFFAILEDSTR);
+snprintf(sendbuffer,CF_BUFSIZE,"%s",CF_FAILEDSTR);
 CfLog(cfinform,"Host authorization/authentication failed or access denied\n","");
 SendTransaction(conn->sd_reply,sendbuffer,size,CF_DONE);
-snprintf(sendbuffer,bufsize,"From (host=%s,user=%s,ip=%s)",hostname,username,ipaddr);
+snprintf(sendbuffer,CF_BUFSIZE,"From (host=%s,user=%s,ip=%s)",hostname,username,ipaddr);
 CfLog(cfinform,sendbuffer,"");
 
 if (strlen(errmesg) > 0)
    {
-   snprintf(OUTPUT,bufsize,"ID from connecting host: (%s)",errmesg);
+   snprintf(OUTPUT,CF_BUFSIZE,"ID from connecting host: (%s)",errmesg);
    CfLog(cflogonly,OUTPUT,"");
    }
 }
@@ -2854,9 +2836,9 @@ if (strlen(errmesg) > 0)
 
 void ReplyNothing(struct cfd_connection *conn)
 
-{ char buffer[bufsize];
+{ char buffer[CF_BUFSIZE];
 
-snprintf(buffer,bufsize,"Hello %s (%s), nothing relevant to do here...\n\n",conn->hostname,conn->ipaddr);
+snprintf(buffer,CF_BUFSIZE,"Hello %s (%s), nothing relevant to do here...\n\n",conn->hostname,conn->ipaddr);
 
 if (SendTransaction(conn->sd_reply,buffer,0,CF_DONE) == -1)
    {
@@ -2885,15 +2867,15 @@ else
 int CheckStoreKey(struct cfd_connection *conn,RSA *key)
 
 { RSA *savedkey;
- char keyname[maxvarsize];
+ char keyname[CF_MAXVARSIZE];
 
 if (OptionIs(CONTEXTID,"HostnameKeys",true))
    {
-   snprintf(keyname,maxvarsize,"%s-%s",conn->username,conn->hostname);
+   snprintf(keyname,CF_MAXVARSIZE,"%s-%s",conn->username,conn->hostname);
    }
 else
    {
-   snprintf(keyname,maxvarsize,"%s-%s",conn->username,MapAddress(conn->ipaddr));
+   snprintf(keyname,CF_MAXVARSIZE,"%s-%s",conn->username,MapAddress(conn->ipaddr));
    }
  
 if (savedkey = HavePublicKey(keyname))
@@ -2969,11 +2951,11 @@ int IsWildKnownHost(RSA *oldkey,RSA *newkey,char *mipaddr,char *username)
 { DBT key,value;
   DB *dbp;
   int trust = false;
-  char keyname[maxvarsize];
-  char keydb[maxvarsize];
+  char keyname[CF_MAXVARSIZE];
+  char keydb[CF_MAXVARSIZE];
 
-snprintf(keyname,maxvarsize,"%s-%s",username,mipaddr);
-snprintf(keydb,maxvarsize,"%s/ppkeys/dynamic",WORKDIR); 
+snprintf(keyname,CF_MAXVARSIZE,"%s-%s",username,mipaddr);
+snprintf(keydb,CF_MAXVARSIZE,"%s/ppkeys/dynamic",WORKDIR); 
 
 Debug("The key does not match the known, key but the host has dynamic IP...\n"); 
  
@@ -3045,7 +3027,7 @@ if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
    }
 else
    {
-   snprintf(OUTPUT,bufsize,"Public key was previously owned by %s now by %s - updating\n",value.data,mipaddr);
+   snprintf(OUTPUT,CF_BUFSIZE,"Public key was previously owned by %s now by %s - updating\n",value.data,mipaddr);
    CfLog(cfverbose,OUTPUT,"");
    Debug("Now trusting this new key, because we have seen it before\n");
    DeletePublicKey(keyname);
@@ -3069,9 +3051,9 @@ void AddToKeyDB(RSA *newkey,char *mipaddr)
 
 { DBT key,value;
   DB *dbp;
-  char keydb[maxvarsize];
+  char keydb[CF_MAXVARSIZE];
 
-snprintf(keydb,maxvarsize,"%s/ppkeys/dynamic",WORKDIR); 
+snprintf(keydb,CF_MAXVARSIZE,"%s/ppkeys/dynamic",WORKDIR); 
   
 if ((DHCPLIST != NULL) && IsFuzzyItemIn(DHCPLIST,mipaddr))
    {

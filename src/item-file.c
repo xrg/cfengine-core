@@ -42,38 +42,38 @@ int LoadItemList(struct Item **liststart,char *file)
 
 if (stat(file,&statbuf) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't stat %s\n",file);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't stat %s\n",file);
    CfLog(cfverbose,OUTPUT,"stat");
    return false;
    }
 
 if ((EDITFILESIZE != 0) &&(statbuf.st_size > EDITFILESIZE))
    {
-   snprintf(OUTPUT,bufsize*2,"File %s is bigger than the limit <editfilesize>\n",file);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"File %s is bigger than the limit <editfilesize>\n",file);
    CfLog(cfinform,OUTPUT,"");
    return(false);
    }
 
 if (! S_ISREG(statbuf.st_mode))
    {
-   snprintf(OUTPUT,bufsize*2,"%s is not a plain file\n",file);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"%s is not a plain file\n",file);
    CfLog(cfinform,OUTPUT,"");
    return false;
    }
 
 if ((fp = fopen(file,"r")) == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't read file %s for editing\n",file);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't read file %s for editing\n",file);
    CfLog(cferror,OUTPUT,"fopen");
    return false;
    }
 
 
-memset(VBUFF,0,bufsize); 
+memset(VBUFF,0,CF_BUFSIZE); 
 
 while(!feof(fp))
    {
-   ReadLine(VBUFF,bufsize,fp);
+   ReadLine(VBUFF,CF_BUFSIZE,fp);
 
    if (!feof(fp) || (strlen(VBUFF) != 0))
       {
@@ -92,16 +92,16 @@ int SaveItemList(struct Item *liststart,char *file,char *repository)
 
 { struct Item *ip;
   struct stat statbuf;
-  char new[bufsize],backup[bufsize];
+  char new[CF_BUFSIZE],backup[CF_BUFSIZE];
   FILE *fp;
   mode_t mask;
-  char stamp[bufsize]; 
+  char stamp[CF_BUFSIZE]; 
   time_t STAMPNOW;
   STAMPNOW = time((time_t *)NULL);
 
 if (stat(file,&statbuf) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't stat %s, which needed editing!\n",file);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't stat %s, which needed editing!\n",file);
    CfLog(cferror,OUTPUT,"");
    CfLog(cferror,"Check definition in program - is file NFS mounted?\n\n","");
    return false;
@@ -125,7 +125,7 @@ unlink(new); /* Just in case of races */
  
 if ((fp = fopen(new,"w")) == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't write file %s after editing\n",new);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't write file %s after editing\n",new);
    CfLog(cferror,OUTPUT,"");
    return false;
    }
@@ -143,7 +143,7 @@ if (fclose(fp) == -1)
  
 if (ISCFENGINE && (ACTION == editfiles))
    {
-   snprintf(OUTPUT,bufsize*2,"Edited file %s \n",file);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Edited file %s \n",file);
    CfLog(cfinform,OUTPUT,""); 
    }
 
@@ -153,7 +153,7 @@ if (IMAGEBACKUP != 'n')
       {
       if (rename(file,backup) == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"Error while renaming backup %s\n",file);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Error while renaming backup %s\n",file);
          CfLog(cferror,OUTPUT,"rename ");
          unlink(new);
          return false;
@@ -167,7 +167,7 @@ if (IMAGEBACKUP != 'n')
 
 if (rename(new,file) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"Error while renaming %s\n",file);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Error while renaming %s\n",file);
    CfLog(cferror,OUTPUT,"rename");
    return false;
    }       
@@ -203,16 +203,16 @@ if (liststart == NULL)
  
 if ((fp = fopen(file,"r")) == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't read file %s for editing\n",file);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't read file %s for editing\n",file);
    CfLog(cferror,OUTPUT,"fopen");
    return false;
    }
 
-memset(VBUFF,0,bufsize);
+memset(VBUFF,0,CF_BUFSIZE);
 
 for (ip = liststart; ip != NULL; ip=ip->next)
    {
-   ReadLine(VBUFF,bufsize,fp);
+   ReadLine(VBUFF,CF_BUFSIZE,fp);
    
    if (feof(fp) && (ip->next != NULL))
       {
@@ -240,7 +240,7 @@ for (ip = liststart; ip != NULL; ip=ip->next)
    VBUFF[0] = '\0';
    }
 
-if (!feof(fp) && (ReadLine(VBUFF,bufsize,fp) != false))
+if (!feof(fp) && (ReadLine(VBUFF,CF_BUFSIZE,fp) != false))
    {
    fclose(fp);
    return false;
@@ -257,7 +257,7 @@ void InsertFileAfter (struct Item **filestart,struct Item *ptr,char *string)
 { struct Item *ip, *old;
   char *sp;
   FILE *fp;
-  char linebuf[bufsize];
+  char linebuf[CF_BUFSIZE];
 
 EditVerbose("Edit: Inserting file %s \n",string);
 
@@ -267,7 +267,7 @@ if ((fp=fopen(string,"r")) == NULL)
    return;
    }
 
-while(!feof(fp) && ReadLine(linebuf,bufsize,fp))
+while(!feof(fp) && ReadLine(linebuf,CF_BUFSIZE,fp))
    {
    if ((ip = (struct Item *)malloc(sizeof(struct Item))) == NULL)
       {

@@ -39,7 +39,7 @@ int RecursiveHomeTidy(char *name,int level,struct stat *sb)
 { struct stat statbuf;
   DIR *dirh;
   struct dirent *dirp;
-  char pcwd[bufsize];
+  char pcwd[CF_BUFSIZE];
   time_t ticks;
   int done = false,goback;
 
@@ -55,9 +55,9 @@ if (strlen(name) == 0)
    name = "/";
    }
 
-if (level > recursion_limit)
+if (level > CF_RECURSION_LIMIT)
    {
-   snprintf(OUTPUT,bufsize*2,"WARNING: Very deep nesting of directories (> %d deep): %s (Aborting tidy)",level,name);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"WARNING: Very deep nesting of directories (> %d deep): %s (Aborting tidy)",level,name);
    CfLog(cferror,OUTPUT,"");
    return true;
    }
@@ -66,7 +66,7 @@ Debug2("HomeTidy: Opening %s as .\n",name);
 
 if ((dirh = opendir(".")) == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"Can't open directory %s\n",name);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open directory %s\n",name);
    CfLog(cfverbose,OUTPUT,"opendir");
    return true;
    }
@@ -89,7 +89,7 @@ if (level == 2)
       
       if ((tempfd = open(VLOGFILE, O_CREAT|O_EXCL|O_WRONLY,0600)) < 0)
          {
-         snprintf(OUTPUT,bufsize,"Couldn't open a file %s\n",VLOGFILE);  
+         snprintf(OUTPUT,CF_BUFSIZE,"Couldn't open a file %s\n",VLOGFILE);  
          CfLog(cferror,OUTPUT,"open");
          VLOGFP = stderr;
          }
@@ -139,21 +139,21 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
 
       if (lstat(dirp->d_name,&statbuf) == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",pcwd);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",pcwd);
          CfLog(cferror,OUTPUT,"stat");
          continue;
          }
       
       if (S_ISLNK(statbuf.st_mode) && (statbuf.st_mode != getuid()))   
          {
-         snprintf(OUTPUT,bufsize,"File %s is an untrusted link. cfagent will not follow it with a destructive operation (tidy)",pcwd);
+         snprintf(OUTPUT,CF_BUFSIZE,"File %s is an untrusted link. cfagent will not follow it with a destructive operation (tidy)",pcwd);
          CfLog(cfinform,OUTPUT,"");
          continue;
          }
       
       if (stat(dirp->d_name,&statbuf) == -1)
          {
-         snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",pcwd);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",pcwd);
          CfLog(cferror,OUTPUT,"stat");
          continue;
          }
@@ -164,12 +164,12 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
          {
          if (DEBUG || D2 || VERBOSE)
             {
-            snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",pcwd);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",pcwd);
             CfLog(cferror,OUTPUT,"lstat");
-            memset(VBUFF,0,bufsize);
-            if (readlink(pcwd,VBUFF,bufsize-1) != -1)
+            memset(VBUFF,0,CF_BUFSIZE);
+            if (readlink(pcwd,VBUFF,CF_BUFSIZE-1) != -1)
                {
-               snprintf(OUTPUT,bufsize*2,"File is link to -> %s\n",VBUFF);
+               snprintf(OUTPUT,CF_BUFSIZE*2,"File is link to -> %s\n",VBUFF);
                CfLog(cferror,OUTPUT,"");
                }
             }
@@ -252,7 +252,7 @@ for (tp = VTIDY; tp != NULL; tp=tp->next)
 
    Debug("  Check rule %s ...\n",tp->path);
    
-   if ((tp->maxrecurse != INFINITERECURSE) && (level > tp->maxrecurse+1))
+   if ((tp->maxrecurse != CF_INF_RECURSE) && (level > tp->maxrecurse+1))
       {
       Debug("Recursion maxed out at level %d/%d\n",level,tp->maxrecurse+1);
       /*return false;*/
@@ -298,13 +298,13 @@ for (tp = VTIDY; tp != NULL; tp=tp->next)
       
       if (WildMatch(tlp->pattern,name) && CheckHomeSubDir(path,tp->path,tp->maxrecurse))
          {
-         if ((tlp->recurse != INFINITERECURSE) && (level > tlp->recurse+1))
+         if ((tlp->recurse != CF_INF_RECURSE) && (level > tlp->recurse+1))
             {
             Debug("Not tidying %s - level %d > limit %d\n",path,level,tlp->recurse+1);
             continue;
             }
          
-         DoTidyFile(path,name,tlp,statbuf,CF_USELOGFILE,false);
+         DoTidyFile(path,name,tlp,statbuf,CF_USELOGFILE,false,false);
          }
       
       ResetOutputRoute('d','d');
@@ -323,7 +323,7 @@ int RecursiveTidySpecialArea(char *name,struct Tidy *tp,int maxrecurse,struct st
 { struct stat statbuf,topstatbuf;
   DIR *dirh;
   struct dirent *dirp;
-  char pcwd[bufsize];
+  char pcwd[CF_BUFSIZE];
   int is_dir,level,goback;
   
 Debug("RecursiveTidySpecialArea(%s)\n",name);
@@ -365,12 +365,12 @@ if (maxrecurse == tp->maxrecurse)
       {
       if (DEBUG || D2 || VERBOSE)
          {
-         snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",name);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",name);
          CfLog(cferror,OUTPUT,"");
-         memset(VBUFF,0,bufsize);
-         if (readlink(name,VBUFF,bufsize-1) != -1)
+         memset(VBUFF,0,CF_BUFSIZE);
+         if (readlink(name,VBUFF,CF_BUFSIZE-1) != -1)
             {
-            snprintf(OUTPUT,bufsize*2,"File is link to -> %s\n",VBUFF);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"File is link to -> %s\n",VBUFF);
             CfLog(cferror,OUTPUT,"");
             }
          }
@@ -380,7 +380,7 @@ if (maxrecurse == tp->maxrecurse)
  
  if ((dirh = opendir(".")) == NULL)
     {
-    snprintf(OUTPUT,bufsize*2,"Can't open directory [%s]\n",name);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open directory [%s]\n",name);
     CfLog(cfverbose,OUTPUT,"opendir");
     return true;
     }
@@ -418,7 +418,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       {
       if (S_ISLNK(statbuf.st_mode) && (statbuf.st_uid != getuid()))   
          {
-         snprintf(OUTPUT,bufsize,"File %s is an untrusted link. cfagent will not follow it with a destructive operation (tidy)",pcwd);
+         snprintf(OUTPUT,CF_BUFSIZE,"File %s is an untrusted link. cfagent will not follow it with a destructive operation (tidy)",pcwd);
          continue;
          }
       }
@@ -462,11 +462,11 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
          DirPop(goback,name,sb);
          }  
       
-      TidyParticularFile(pcwd,dirp->d_name,tp,&statbuf,is_dir,level);
+      TidyParticularFile(pcwd,dirp->d_name,tp,&statbuf,is_dir,level,false);
       }
    else
       {
-      TidyParticularFile(pcwd,dirp->d_name,tp,&statbuf,is_dir,level);
+      TidyParticularFile(pcwd,dirp->d_name,tp,&statbuf,is_dir,level,false);
       }
    }
 
@@ -477,7 +477,7 @@ if (maxrecurse == tp->maxrecurse)
    Debug("Checking tidy topmost directory %s\n",name);
    chdir("/");
 
-   TidyParticularFile(name,ReadLastNode(name),tp,&topstatbuf,true,tp->maxrecurse);
+   TidyParticularFile(name,ReadLastNode(name),tp,&topstatbuf,true,tp->maxrecurse,true);
    }
 
 return true; 
@@ -485,7 +485,7 @@ return true;
 
 /*********************************************************************/
 
-void TidyParticularFile(char *path,char *name,struct Tidy *tp,struct stat *statbuf,int is_dir,int level)
+void TidyParticularFile(char *path,char *name,struct Tidy *tp,struct stat *statbuf,int is_dir,int level,int usepath)
 
 { struct TidyPattern *tlp;
   short savekilloldlinks = KILLOLDLINKS;
@@ -547,7 +547,7 @@ for (tlp = tp->tidylist; tlp != NULL; tlp=tlp->next)
       continue;
       }
    
-   if (level > tlp->recurse && tlp->recurse != INFINITERECURSE)
+   if (level > tlp->recurse && tlp->recurse != CF_INF_RECURSE)
       {
       Debug2("[PATTERN %s RECURSE ENDED at %d(%d) BEFORE MAXVAL %d]\n",tlp->pattern,
              level,tlp->recurse,tp->maxrecurse);
@@ -561,7 +561,7 @@ for (tlp = tp->tidylist; tlp != NULL; tlp=tlp->next)
       continue;
       }
 
-   if (! WildMatch(tlp->pattern,name))
+   if (!WildMatch(tlp->pattern,name))
       {
       Debug("Pattern did not match (first filter %s) %s\n",tlp->pattern,path);
       ResetOutputRoute('d','d');
@@ -592,7 +592,7 @@ for (tlp = tp->tidylist; tlp != NULL; tlp=tlp->next)
       }
    
    Debug2("Matched %s to %s in %s\n",name,tlp->pattern,path);
-   DoTidyFile(path,name,tlp,statbuf,CF_NOLOGFILE,is_dir);
+   DoTidyFile(path,name,tlp,statbuf,CF_NOLOGFILE,is_dir,usepath);
    ResetOutputRoute('d','d');
    }
 }
@@ -601,7 +601,7 @@ for (tlp = tp->tidylist; tlp != NULL; tlp=tlp->next)
 /* Level 2                                                           */
 /*********************************************************************/
 
-void DoTidyFile(char *path,char *name,struct TidyPattern *tlp,struct stat *statbuf,short logging_this,int isreallydir)
+void DoTidyFile(char *path,char *name,struct TidyPattern *tlp,struct stat *statbuf,short logging_this,int isreallydir,int usepath)
 
 { time_t nowticks, fileticks = 0;
   int size_match = false, age_match = false;
@@ -632,7 +632,7 @@ if (isreallydir)
  
 if (nowticks-fileticks < 0)
    {
-   snprintf(OUTPUT,bufsize*2,"ALERT: atime for %s is in the future. Check system clock!\n",path);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"ALERT: atime for %s is in the future. Check system clock!\n",path);
    CfLog(cfinform,OUTPUT,"");
    return;
    }
@@ -653,7 +653,7 @@ else
    size_match = (tlp->size <= statbuf->st_size);
    }
 
-age_match = tlp->age*ticksperday <= (nowticks-fileticks);
+age_match = tlp->age*CF_TICKS_PER_DAY <= (nowticks-fileticks);
 
 if (age_match && size_match)
    {
@@ -667,18 +667,36 @@ if (age_match && size_match)
    
    if (! DONTDO)
       {
+      
       if (S_ISDIR(statbuf->st_mode))
          {
-         snprintf(OUTPUT,bufsize*2,"Deleting directory %s\n",path);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Deleting directory %s\n",path);
          CfLog(cfinform,OUTPUT,"");
-         
-         if (rmdir(name) == -1)
+
+         if (usepath)
             {
-            CfLog(cferror,"","unlink");
+            if (rmdir(path) == -1)
+               {
+               Debug("Special case remove top level %s\n",path);
+               snprintf(OUTPUT,CF_BUFSIZE*2,"Delete top directory %s failed\n",path);
+               CfLog(cferror,OUTPUT,"unlink");
+               }
+            else
+               {
+               AddMultipleClasses(tlp->defines);
+               }
             }
          else
             {
-            AddMultipleClasses(tlp->defines);
+            if (rmdir(name) == -1)
+               {
+               snprintf(OUTPUT,CF_BUFSIZE*2,"Delete directory %s failed\n",path);
+               CfLog(cferror,OUTPUT,"unlink");
+               }            
+            else
+               {
+               AddMultipleClasses(tlp->defines);
+               }
             }
          }
       else
@@ -691,14 +709,14 @@ if (age_match && size_match)
             }
          else if ((ret = unlink(name)) == -1)
             {
-            snprintf(OUTPUT,bufsize*2,"Couldn't unlink %s tidying\n",path);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't unlink %s tidying\n",path);
             CfLog(cfverbose,OUTPUT,"unlink");
             }
          
-         snprintf(OUTPUT,bufsize*2,"Deleting file %s\n",path);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Deleting file %s\n",path);
          CfLog(cfinform,OUTPUT,"");
-         snprintf(OUTPUT,bufsize*2,"Size=%d bytes, %c-age=%d days\n",
-                  statbuf->st_size,tlp->searchtype,(nowticks-fileticks)/ticksperday);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Size=%d bytes, %c-age=%d days\n",
+                  statbuf->st_size,tlp->searchtype,(nowticks-fileticks)/CF_TICKS_PER_DAY);
          CfLog(cfverbose,OUTPUT,"");
          
          if (ret != -1)

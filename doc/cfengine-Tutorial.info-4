@@ -1,4 +1,4 @@
-This is cfengine-Tutorial.info, produced by makeinfo version 4.3 from
+This is cfengine-Tutorial.info, produced by makeinfo version 4.5 from
 cfengine-Tutorial.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -438,6 +438,7 @@ following classes based on the time and date:
      The five-minute interval in the hour at which cfagent was
      executed, in the form `Min0_5', `Min5_10' .. `Min55_0'.
 
+
    Time classes based on the precise minute at which cfagent started are
 unlikely to be useful, since it is improbable that you will want to ask
 cron to run cfagent every single minute of every day: there would be no
@@ -549,6 +550,7 @@ network services are built around the following components:
      for others to implement) should provide a graphical user interface
      for watching over the configuration of hosts running cfagent and
      logging their output.
+
 
 With these components you can emulate programs like `rdist' whose job
 it is to check and maintain copies of files on client machines.  You
@@ -807,6 +809,7 @@ like this:
 
 `mountall, mountinfo, required, checktimezone'
      These are not locked at all.
+
 
    Cfagent creates a directory `~/.cfengine' for writing lock files for
 ordinary users.

@@ -215,7 +215,7 @@ void PrependItem (struct Item **liststart,char *itemstring,char *classes)
 
 if (!PARSING && (ACTION == editfiles))
    {
-   snprintf(OUTPUT,bufsize,"Prepending [%s]\n",itemstring);
+   snprintf(OUTPUT,CF_BUFSIZE,"Prepending [%s]\n",itemstring);
    CfLog(cfinform,OUTPUT,"");
    }
 else
@@ -266,22 +266,22 @@ void AppendItems (struct Item **liststart,char *itemstring,char *classes)
 
 { struct Item *ip, *lp;
  char *sp,*spe = NULL;
- char currentitem[maxvarsize],local[maxvarsize];
+ char currentitem[CF_MAXVARSIZE],local[CF_MAXVARSIZE];
  
 if ((itemstring == NULL) || strlen(itemstring) == 0)
    {
    return;
    }
  
-memset(local,0,maxvarsize);
-strncpy(local,itemstring,maxvarsize-1);
+memset(local,0,CF_MAXVARSIZE);
+strncpy(local,itemstring,CF_MAXVARSIZE-1);
  
  /* split and iteratate across the list with space and comma sep */
 
 for (sp = local ; *sp != '\0'; sp++)
    {
    /* find our separating character */
-   memset(currentitem,0,maxvarsize);
+   memset(currentitem,0,CF_MAXVARSIZE);
    sscanf(sp,"%250[^ ,\n\t]",currentitem);
    
    if (strlen(currentitem) == 0)
@@ -306,7 +306,7 @@ void AppendItem (struct Item **liststart,char *itemstring,char *classes)
 
 if (!PARSING && (ACTION == editfiles))
    {
-   snprintf(OUTPUT,bufsize,"Appending [%s]\n",itemstring);
+   snprintf(OUTPUT,CF_BUFSIZE,"Appending [%s]\n",itemstring);
    CfLog(cfinform,OUTPUT,"");
    }
 else
@@ -320,7 +320,7 @@ if ((ip = (struct Item *)malloc(sizeof(struct Item))) == NULL)
    FatalError("");
    }
 
-if ((sp = malloc(strlen(itemstring)+extra_space)) == NULL)
+if ((sp = malloc(strlen(itemstring)+CF_EXTRASPC)) == NULL)
    {
    CfLog(cferror,"","malloc");
    FatalError("");
@@ -373,7 +373,7 @@ void InstallItem (struct Item **liststart,char *itemstring,char *classes,int ife
 
 if (!PARSING && (ACTION == editfiles))
    {
-   snprintf(OUTPUT,bufsize,"Appending [%s]\n",itemstring);
+   snprintf(OUTPUT,CF_BUFSIZE,"Appending [%s]\n",itemstring);
    CfLog(cfinform,OUTPUT,"");
    }
 else
@@ -388,7 +388,7 @@ if ((ip = (struct Item *)malloc(sizeof(struct Item))) == NULL)
    FatalError("");
    }
 
-if ((sp = malloc(strlen(itemstring)+extra_space)) == NULL)
+if ((sp = malloc(strlen(itemstring)+CF_EXTRASPC)) == NULL)
    {
    CfLog(cferror,"","malloc");
    FatalError("");
@@ -650,14 +650,14 @@ if (isv4 && isCIDR)
 
    if (mask < 8)
       {
-      snprintf(OUTPUT,bufsize,"Mask value %d in %s is less than 8",mask,s);
+      snprintf(OUTPUT,CF_BUFSIZE,"Mask value %d in %s is less than 8",mask,s);
       yyerror(OUTPUT);
       return false;
       }
 
    if (mask > 30)
       {
-      snprintf(OUTPUT,bufsize,"Mask value %d in %s is silly (> 30)",mask,s);
+      snprintf(OUTPUT,CF_BUFSIZE,"Mask value %d in %s is silly (> 30)",mask,s);
       yyerror(OUTPUT);
       return false;
       }
@@ -771,21 +771,21 @@ if (strstr(s1,":") != 0)
 
 if (isv4 && isv6)
    {
-   snprintf(OUTPUT,bufsize,"Mixture of IPv6 and IPv4 addresses: %s",s1);
+   snprintf(OUTPUT,CF_BUFSIZE,"Mixture of IPv6 and IPv4 addresses: %s",s1);
    CfLog(cferror,OUTPUT,"");
    return -1;
    }
 
 if (isCIDR && isrange)
    {
-   snprintf(OUTPUT,bufsize,"Cannot mix CIDR notation with xxx-yyy range notation: %s",s1);
+   snprintf(OUTPUT,CF_BUFSIZE,"Cannot mix CIDR notation with xxx-yyy range notation: %s",s1);
    CfLog(cferror,OUTPUT,"");
    return -1;
    }
 
 if (!(isv6 || isv4))
    {
-   snprintf(OUTPUT,bufsize,"Not a valid address range - or not a fully qualified name: %s",s1);
+   snprintf(OUTPUT,CF_BUFSIZE,"Not a valid address range - or not a fully qualified name: %s",s1);
    CfLog(cferror,OUTPUT,"");
    return -1;
    }
@@ -1112,7 +1112,7 @@ struct Item *SplitStringAsItemList(char *string,char sep)
 
 { struct Item *liststart = NULL;
   char format[9], *sp;
-  char node[maxvarsize];
+  char node[CF_MAXVARSIZE];
   
 Debug("SplitStringAsItemList(%s,%c)\n",string,sep);
 
@@ -1120,7 +1120,7 @@ sprintf(format,"%%255[^%c]",sep);   /* set format string to search */
 
 for (sp = string; *sp != '\0'; sp++)
    {
-   memset(node,0,maxvarsize);
+   memset(node,0,CF_MAXVARSIZE);
    sscanf(sp,format,node);
 
    if (strlen(node) == 0)

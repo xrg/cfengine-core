@@ -77,7 +77,7 @@ struct option CFDOPTIONS[] =
    { NULL,0,0,0 }
    };
 
-char MAILTO[bufsize];
+char MAILTO[CF_BUFSIZE];
 int MAXLINES = -1;
 const int INF_LINES = -2;
 
@@ -134,7 +134,7 @@ void CheckOptsAndInit(int argc,char **argv)
 
 { extern char *optarg;
   int optindex = 0;
-  char ld_library_path[bufsize];
+  char ld_library_path[CF_BUFSIZE];
   int c;
 
 ld_library_path[0] = '\0';
@@ -186,7 +186,7 @@ while ((c=getopt_long(argc,argv,"L:d:vhpFV1g",CFDOPTIONS,&optindex)) != EOF)
          break;
          
       case 'L': 
-          snprintf(ld_library_path,bufsize-1,"LD_LIBRARY_PATH=%s",optarg);
+          snprintf(ld_library_path,CF_BUFSIZE-1,"LD_LIBRARY_PATH=%s",optarg);
           if (putenv(strdup(ld_library_path)) != 0)
              {
              }
@@ -206,20 +206,20 @@ while ((c=getopt_long(argc,argv,"L:d:vhpFV1g",CFDOPTIONS,&optindex)) != EOF)
  
 LOGGING = true;                    /* Do output to syslog */
 
-snprintf(VBUFF,bufsize,"%s/inputs/update.conf",WORKDIR);
+snprintf(VBUFF,CF_BUFSIZE,"%s/inputs/update.conf",WORKDIR);
 MakeDirectoriesFor(VBUFF,'y');
-snprintf(VBUFF,bufsize,"%s/bin/cfagent",WORKDIR);
+snprintf(VBUFF,CF_BUFSIZE,"%s/bin/cfagent",WORKDIR);
 MakeDirectoriesFor(VBUFF,'y');
-snprintf(VBUFF,bufsize,"%s/outputs/spooled_reports",WORKDIR);
+snprintf(VBUFF,CF_BUFSIZE,"%s/outputs/spooled_reports",WORKDIR);
 MakeDirectoriesFor(VBUFF,'y');
 
-snprintf(VBUFF,bufsize,"%s/inputs",WORKDIR);
+snprintf(VBUFF,CF_BUFSIZE,"%s/inputs",WORKDIR);
 chmod(VBUFF,0700); 
-snprintf(VBUFF,bufsize,"%s/outputs",WORKDIR);
+snprintf(VBUFF,CF_BUFSIZE,"%s/outputs",WORKDIR);
 chmod(VBUFF,0700);
 
-strncpy(VLOCKDIR,WORKDIR,bufsize-1);
-strncpy(VLOGDIR,WORKDIR,bufsize-1);
+strncpy(VLOCKDIR,WORKDIR,CF_BUFSIZE-1);
+strncpy(VLOGDIR,WORKDIR,CF_BUFSIZE-1);
 
 VCANONICALFILE = strdup(CanonifyName(VINPUTFILE));
 GetNameInfo();
@@ -239,7 +239,7 @@ Banner("Starting server");
   
 if ((!NO_FORK) && (fork() != 0))
    {
-   snprintf(OUTPUT,bufsize*2,"cfexecd starting %.24s\n",ctime(&now));
+   snprintf(OUTPUT,CF_BUFSIZE*2,"cfexecd starting %.24s\n",ctime(&now));
    CfLog(cfinform,OUTPUT,"");
    exit(0);
    }
@@ -248,7 +248,7 @@ if (!ONCE)
    {
    if (!GetLock("cfexecd","execd",0,0,VUQNAME,now))
       {
-      snprintf(OUTPUT,bufsize*2,"cfexecd: Couldn't get a lock -- exists or too soon: IfElapsed %d, ExpireAfter %d\n",0,0);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"cfexecd: Couldn't get a lock -- exists or too soon: IfElapsed %d, ExpireAfter %d\n",0,0);
       CfLog(cfverbose,OUTPUT,"");
       return;
       }
@@ -302,9 +302,9 @@ else
       
       if (time_to_run)
          {
-         if (!GetLock("cfd","exec",exec_ifelapsed,exec_expireafter,VUQNAME,time(NULL)))
+         if (!GetLock("cfd","exec",CF_EXEC_IFELAPSED,CF_EXEC_EXPIREAFTER,VUQNAME,time(NULL)))
             {
-            snprintf(OUTPUT,bufsize*2,"cfexecd: Couldn't get exec lock -- exists or too soon: IfElapsed %d, ExpireAfter %d\n",exec_ifelapsed,exec_expireafter);
+            snprintf(OUTPUT,CF_BUFSIZE*2,"cfexecd: Couldn't get exec lock -- exists or too soon: IfElapsed %d, ExpireAfter %d\n",CF_EXEC_IFELAPSED,CF_EXEC_EXPIREAFTER);
             CfLog(cfverbose,OUTPUT,"");
             continue;
             }
@@ -379,10 +379,10 @@ printf("Info & fixes at http://www.iu.hio.no/cfengine\n");
 void GetCfStuff()
 
 { FILE *pp;
-  char cfcom[bufsize];
-  static char line[bufsize];
+  char cfcom[CF_BUFSIZE];
+  static char line[CF_BUFSIZE];
 
-snprintf(cfcom,bufsize-1,"%s/bin/cfagent -z",WORKDIR);
+snprintf(cfcom,CF_BUFSIZE-1,"%s/bin/cfagent -z",WORKDIR);
  
 if ((pp=cfpopen(cfcom,"r")) ==  NULL)
    {
@@ -392,19 +392,19 @@ if ((pp=cfpopen(cfcom,"r")) ==  NULL)
    }
 
 line[0] = '\0'; 
-fgets(line,bufsize,pp); 
+fgets(line,CF_BUFSIZE,pp); 
 Chop(line); 
 
 while (strstr(line,":"))
    {
    line[0] = '\0'; 
-   fgets(line,bufsize,pp); 
+   fgets(line,CF_BUFSIZE,pp); 
    Chop(line);    
    }
 
 if (strstr(line,"No SMTP"))
    {
-   CfLog(cferror,"cfengine defines no SMTP server (not even localhost)","");
+   CfLog(cferror,"cfengine defines no SMTP server -- or perhaps a syntax error in the config","");
    CfLog(cferror,"Need: smtpserver = ( ?? ) in control ","");
    }
 
@@ -413,7 +413,7 @@ strcpy(VMAILSERVER,line);
 Debug("Got cfengine SMTP server as (%s)\n",VMAILSERVER); 
 
 line[0] = '\0'; 
-fgets(line,bufsize,pp); 
+fgets(line,CF_BUFSIZE,pp); 
 Chop(line); 
 
 if (strlen(line) == 0)
@@ -426,13 +426,13 @@ strcpy(MAILTO,line);
 Debug("Got cfengine sysadm variable (%s)\n",MAILTO); 
 
 line[0] = '\0'; 
-fgets(line,bufsize,pp); 
+fgets(line,CF_BUFSIZE,pp); 
 Chop(line); 
 strcpy(VFQNAME,line); 
 Debug("Got fully qualified name (%s)\n",VFQNAME); 
 
 line[0] = '\0'; 
-fgets(line,bufsize,pp); 
+fgets(line,CF_BUFSIZE,pp); 
 Chop(line); 
 strcpy(VIPADDRESS,line); 
 Debug("Got IP (%s)\n",VIPADDRESS); 
@@ -440,7 +440,7 @@ Debug("Got IP (%s)\n",VIPADDRESS);
 if ((ungetc(fgetc(pp), pp)) != '[')
    {
    line[0] = '\0';
-   fgets(line,bufsize,pp);
+   fgets(line,CF_BUFSIZE,pp);
    Chop(line);
    if (sscanf(line, "%d", &MAXLINES) == 1)
       {
@@ -468,7 +468,7 @@ while (!feof(pp))
    {
    line[0] = '\0';
    VBUFF[0] = '\0';
-   fgets(line,bufsize,pp);
+   fgets(line,CF_BUFSIZE,pp);
    sscanf(line,"[%[^]]",VBUFF);
 
    if (strlen(VBUFF)==0)
@@ -544,8 +544,8 @@ exit(0);
 void *LocalExec(void *dummy)
 
 { FILE *pp; 
-  char line[bufsize],filename[bufsize],*sp;
-  char cmd[bufsize];
+  char line[CF_BUFSIZE],filename[CF_BUFSIZE],*sp;
+  char cmd[CF_BUFSIZE];
   int print;
   time_t starttime = time(NULL);
   FILE *fp;
@@ -565,35 +565,35 @@ Verbose("------------------------------------------------------------------\n");
 
 if (NOSPLAY)
    {
-   snprintf(cmd,bufsize-1,"%s/bin/cfagent -q",WORKDIR);
+   snprintf(cmd,CF_BUFSIZE-1,"%s/bin/cfagent -q",WORKDIR);
    }
 else
    {
-   snprintf(cmd,bufsize-1,"%s/bin/cfagent",WORKDIR);
+   snprintf(cmd,CF_BUFSIZE-1,"%s/bin/cfagent",WORKDIR);
    }
  
 snprintf(line,100,CanonifyName(ctime(&starttime)));
-snprintf(filename,bufsize-1,"%s/outputs/cf_%s_%s",WORKDIR,CanonifyName(VFQNAME),line);
+snprintf(filename,CF_BUFSIZE-1,"%s/outputs/cf_%s_%s",WORKDIR,CanonifyName(VFQNAME),line);
 
 
 /* What if no more processes? Could sacrifice and exec() - but we need a sentinel */
 
 if ((fp = fopen(filename,"w")) == NULL)
    {
-   snprintf(OUTPUT,bufsize,"Couldn't open %s\n",filename);
+   snprintf(OUTPUT,CF_BUFSIZE,"Couldn't open %s\n",filename);
    CfLog(cferror,OUTPUT,"fopen");
    return NULL;
    }
  
 if ((pp = cfpopen(cmd,"r")) == NULL)
    {
-   snprintf(OUTPUT,bufsize,"Couldn't open pipe to command %s\n",cmd);
+   snprintf(OUTPUT,CF_BUFSIZE,"Couldn't open pipe to command %s\n",cmd);
    CfLog(cferror,OUTPUT,"cfpopen");
    fclose(fp);
    return NULL;
    }
  
-while (!feof(pp) && ReadLine(line,bufsize,pp))
+while (!feof(pp) && ReadLine(line,CF_BUFSIZE,pp))
    {
    if (ferror(pp))
       {
@@ -620,10 +620,10 @@ while (!feof(pp) && ReadLine(line,bufsize,pp))
       
       if (strlen(MAILTO) == 0)
          {
-         strncat(line,"\n",bufsize-1-strlen(line));
+         strncat(line,"\n",CF_BUFSIZE-1-strlen(line));
          if ((strchr(line,'\n')) == NULL)
             {
-            line[bufsize-2] = '\n';
+            line[CF_BUFSIZE-2] = '\n';
             }
          CfLog(cfinform,line,"");
          }
@@ -754,7 +754,7 @@ else
 unlink(prev_file);
 if (symlink(filename, prev_file) == -1 )
    {
-   snprintf(OUTPUT,bufsize,"Could not link %s and %s",filename,prev_file);
+   snprintf(OUTPUT,CF_BUFSIZE,"Could not link %s and %s",filename,prev_file);
    CfLog(cfinform,OUTPUT,"symlink");
    rtn = 1;
    }
@@ -777,7 +777,7 @@ void MailResult(char *file,char *to)
   FILE *fp;
 
   /* HvB: Bas van der Vlies */
-  char prev_file[bufsize];
+  char prev_file[CF_BUFSIZE];
 
 if ((strlen(VMAILSERVER) == 0) || (strlen(to) == 0))
    {
@@ -791,7 +791,7 @@ if (stat(file,&statbuf) == -1)
    }
 
 /* HvB: Bas van der Vlies */
-snprintf(prev_file,bufsize-1,"%s/outputs/previous",WORKDIR);
+snprintf(prev_file,CF_BUFSIZE-1,"%s/outputs/previous",WORKDIR);
  
 if (statbuf.st_size == 0)
    {
@@ -837,7 +837,7 @@ if (strlen(to) == 0)
  
 if ((fp=fopen(file,"r")) == NULL)
    {
-   snprintf(VBUFF,bufsize-1,"Couldn't open file %s",file);
+   snprintf(VBUFF,CF_BUFSIZE-1,"Couldn't open file %s",file);
    CfLog(cferror,VBUFF,"fopen");
    return;
    }
@@ -845,7 +845,7 @@ if ((fp=fopen(file,"r")) == NULL)
  while (!feof(fp))
     {
     VBUFF[0] = '\0';
-    fgets(VBUFF,bufsize,fp);
+    fgets(VBUFF,CF_BUFSIZE,fp);
     if (strstr(VBUFF,"entropy"))
        {
        anomaly = true;
@@ -857,7 +857,7 @@ fclose(fp);
  
 if ((fp=fopen(file,"r")) == NULL)
    {
-   snprintf(VBUFF,bufsize-1,"Couldn't open file %s",file);
+   snprintf(VBUFF,CF_BUFSIZE-1,"Couldn't open file %s",file);
    CfLog(cferror,VBUFF,"fopen");
    return;
    }
@@ -895,7 +895,7 @@ if ((sd = socket(AF_INET,SOCK_STREAM,0)) == -1)
    
 if (connect(sd,(void *) &raddr,sizeof(raddr)) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't connect to host %s\n",VMAILSERVER);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't connect to host %s\n",VMAILSERVER);
    CfLog(cfinform,OUTPUT,"connect");
    fclose(fp);
    close(sd);
@@ -954,7 +954,7 @@ sent=send(sd,VBUFF,strlen(VBUFF),0);
 while(!feof(fp))
    {
    VBUFF[0] = '\0';
-   fgets(VBUFF,bufsize,fp);
+   fgets(VBUFF,CF_BUFSIZE,fp);
    if (strlen(VBUFF) > 0)
       {
       VBUFF[strlen(VBUFF)-1] = '\r';

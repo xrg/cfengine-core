@@ -1,4 +1,4 @@
-This is cfengine-Reference.info, produced by makeinfo version 4.3 from
+This is cfengine-Reference.info, produced by makeinfo version 4.5 from
 cfengine-Reference.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.1.5 for version 2.1.5
-as last updated 1 April 2004.
+   This manual corresponds to CFENGINE Edition 2.1.6 for version 2.1.6
+as last updated 2 May 2004.
 
 * Menu:
 
@@ -208,7 +208,7 @@ arguments in chronological order.
 `IPRange(ADDRESS-RANGE)'
      True if the current host lies within the specified range
 
-`HostRange(BASENAME,START-STOP)'
+`HostRange(BASENAME,START/STOP)'
      True if the current relative domain name begins with basename and
      ends with an integer between start and stop
 
@@ -227,10 +227,9 @@ arguments in chronological order.
 
 `PrepModule(MODULE,ARG1 ARG2...)'
      True if the named module exists and can be executed. The module is
-     assumed to follow the standard programming interface for modules,
-     *Note Writing plugin modules: (cfengine-Tutorial)Writing plugin
-     modules.  Unlike actionsequence modules, these modules are
-     evaluated immediately on parsing.
+     assumed to follow the standard programming interface for modules
+     (see Writing plugin modules in tutorial).  Unlike actionsequence
+     modules, these modules are evaluated immediately on parsing.
 
 `Regcmp(REGEXP,STRING OR LIST SEPARATED STRING)'
      True if the string matched the regular expression.
@@ -386,6 +385,24 @@ File: cfengine-Reference.info,  Node: Cfagent intro,  Next: Variable expansion a
 
 Cfagent intro
 =============
+
+   Cfagent is the workhorse of cfengine. It interprets and computes the
+necessary strategies for implementing convergent maintenance. In order
+to carry out work efficiently, the agent groups similar actions
+together. The order of these actions is goverened by a list called the
+actionsequence.
+
+   In many cases, cfagent will be able to complete all its work in a
+single pass of the actionsequence. However, in complex configurations,
+it is hard to resolve all of the ordering dependencies automatically in
+a single pass. Cfagent keeps track both of all actions that have been
+performed and of those that might still need to be performed (given that
+some actions depend on the later outcomes of others). If there is a
+possibility that an action ordering dilemma might occur, it runs a
+second pass of the actionsequence to more quickly resolve the dependency
+(avoiding the wait for next scheduled run).  No actions are performed
+twice however, since the agent checks off actions that have already been
+performed to avoid unnecessary multiplicity.
 
 * Menu:
 
@@ -585,6 +602,7 @@ Note that GNU long options are available with the syntax
 `-z'
      (`--smtp') Print the SMTP server for the LAN (used by cfexecd).
 
+
    In version 2.0.4, an abbreviation for actionsequence exclusions was
 added:
 
@@ -670,6 +688,7 @@ quotes.
           the file as a list of lines of the form:
                  key,value
 
+
 `ReadFile(FILENAME,MAX NUMBER OF BYTES)'
      Read a maximum number of bytes from a file.
 
@@ -690,13 +709,15 @@ quotes.
           the file as a list of lines of the form:
                  key1,key2,,value
 
+
 `ExecResult(COMMAND)'
      Executes the named shell command and inserts the output into the
      variable. Note that, when this is used in cfengine internal list
      variables, any spaces are interpreted as list separators. In other
-     lists, normal rules for iteration apply.  Note that functions
-should have no spaces between the function name and the leading
-parenthesis, but should themselves be surrounded by white space.
+     lists, normal rules for iteration apply.
+   Note that functions should have no spaces between the function name
+and the leading parenthesis, but should themselves be surrounded by
+white space.
 
 For example:
 
@@ -846,6 +867,9 @@ internal variables.
      an underscore, so as to avoid name collisions. See also Runtime
      Options in the Reference manual.
 
+`version'
+     The current version string as defined in the code.
+
 `year'
      The current year.
 
@@ -886,6 +910,7 @@ troublesome special characters in strings.
 
 `tab'
      Expands to a single tab character.
+
 
 
 File: cfengine-Reference.info,  Node: Iteration over lists,  Prev: Special variables,  Up: Variable expansion and contexts
@@ -1135,6 +1160,7 @@ variable._ The dots in this string will be replaced by underscores.
 `|'
      OR is the weakest operator.
 
+
 
 File: cfengine-Reference.info,  Node: acl,  Next: alerts,  Prev: Cfengine classes,  Up: Cfagent reference
 
@@ -1241,6 +1267,7 @@ entries.
      the specified permission bits will be added to the old
      permissions. If there is no ACL entry for the given type and
      user/group, a new entry will be appended.
+
 
 If the new ACL exactly matches the existing ACL, the ACL is not
 replaced.

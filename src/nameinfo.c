@@ -103,7 +103,7 @@ for (i = 0; CLASSATTRIBUTES[i][0] != '\0'; i++)
             {
             if (UNDERSCORE_CLASSES)
                {
-               snprintf(VBUFF,bufsize,"_%s",CLASSTEXT[i]);
+               snprintf(VBUFF,CF_BUFSIZE,"_%s",CLASSTEXT[i]);
                AddClassToHeap(VBUFF);
                }
             else
@@ -156,11 +156,11 @@ if (VERBOSE || DEBUG || D2 || D3)
    {
    if (UNDERSCORE_CLASSES)
       {
-      snprintf(VBUFF,bufsize,"_%s",CLASSTEXT[i]);
+      snprintf(VBUFF,CF_BUFSIZE,"_%s",CLASSTEXT[i]);
       }
    else
       {
-      snprintf(VBUFF,bufsize,"%s",CLASSTEXT[i]);
+      snprintf(VBUFF,CF_BUFSIZE,"%s",CLASSTEXT[i]);
       }
 
    if (ISCFENGINE)
@@ -188,14 +188,14 @@ sprintf(VBUFF,"%d_bit",sizeof(long)*8);
 AddClassToHeap(VBUFF);
 Verbose("Additional hard class defined as: %s\n",CanonifyName(VBUFF));
 
-snprintf(VBUFF,bufsize,"%s_%s",VSYSNAME.sysname,VSYSNAME.release);
+snprintf(VBUFF,CF_BUFSIZE,"%s_%s",VSYSNAME.sysname,VSYSNAME.release);
 AddClassToHeap(CanonifyName(VBUFF));
 
 #ifdef IRIX
 /* Get something like `irix64_6_5_19m' defined as well as
    `irix64_6_5'.  Just copying the latter into VSYSNAME.release
    wouldn't be backwards-compatible.  */
-snprintf(VBUFF,bufsize,"%s_%s",VSYSNAME.sysname,real_version);
+snprintf(VBUFF,CF_BUFSIZE,"%s_%s",VSYSNAME.sysname,real_version);
 AddClassToHeap(CanonifyName(VBUFF));
 #endif
 
@@ -203,19 +203,19 @@ AddClassToHeap(CanonifyName(VSYSNAME.machine));
  
 Verbose("Additional hard class defined as: %s\n",CanonifyName(VBUFF));
 
-snprintf(VBUFF,bufsize,"%s_%s",VSYSNAME.sysname,VSYSNAME.machine);
+snprintf(VBUFF,CF_BUFSIZE,"%s_%s",VSYSNAME.sysname,VSYSNAME.machine);
 AddClassToHeap(CanonifyName(VBUFF));
 
 Verbose("Additional hard class defined as: %s\n",CanonifyName(VBUFF));
 
-snprintf(VBUFF,bufsize,"%s_%s_%s",VSYSNAME.sysname,VSYSNAME.machine,VSYSNAME.release);
+snprintf(VBUFF,CF_BUFSIZE,"%s_%s_%s",VSYSNAME.sysname,VSYSNAME.machine,VSYSNAME.release);
 AddClassToHeap(CanonifyName(VBUFF));
 
 Verbose("Additional hard class defined as: %s\n",CanonifyName(VBUFF));
 
 #ifdef HAVE_SYSINFO
 #ifdef SI_ARCHITECTURE
-sz = sysinfo(SI_ARCHITECTURE,VBUFF,bufsize);
+sz = sysinfo(SI_ARCHITECTURE,VBUFF,CF_BUFSIZE);
 if (sz == -1)
   {
   Verbose("cfengine internal: sysinfo returned -1\n");
@@ -228,19 +228,19 @@ else
 #endif
 #endif
 
-snprintf(VBUFF,bufsize,"%s_%s_%s_%s",VSYSNAME.sysname,VSYSNAME.machine,VSYSNAME.release,VSYSNAME.version);
+snprintf(VBUFF,CF_BUFSIZE,"%s_%s_%s_%s",VSYSNAME.sysname,VSYSNAME.machine,VSYSNAME.release,VSYSNAME.version);
 
-if (strlen(VBUFF) < maxvarsize-2)
+if (strlen(VBUFF) < CF_MAXVARSIZE-2)
    {
    VARCH = strdup(CanonifyName(VBUFF));
    }
 else
    {
-   Verbose("cfengine internal: $(arch) overflows maxvarsize! Truncating\n");
+   Verbose("cfengine internal: $(arch) overflows CF_MAXVARSIZE! Truncating\n");
    VARCH = strdup(CanonifyName(VSYSNAME.sysname));
    }
 
-snprintf(VBUFF,bufsize,"%s_%s",VSYSNAME.sysname,VSYSNAME.machine);
+snprintf(VBUFF,CF_BUFSIZE,"%s_%s",VSYSNAME.sysname,VSYSNAME.machine);
 
 VARCH2 = strdup(CanonifyName(VBUFF));
  
@@ -324,11 +324,11 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
 
    if(UNDERSCORE_CLASSES)
       {
-      snprintf(VBUFF, bufsize, "_net_iface_%s", CanonifyName(ifp->ifr_name));
+      snprintf(VBUFF, CF_BUFSIZE, "_net_iface_%s", CanonifyName(ifp->ifr_name));
       }
    else
       {
-      snprintf(VBUFF, bufsize, "net_iface_%s", CanonifyName(ifp->ifr_name));
+      snprintf(VBUFF, CF_BUFSIZE, "net_iface_%s", CanonifyName(ifp->ifr_name));
       }
 
    AddClassToHeap(VBUFF);
@@ -359,8 +359,8 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
             }
          else
             {
-            char ip[maxvarsize];
-            char name[maxvarsize];
+            char ip[CF_MAXVARSIZE];
+            char name[CF_MAXVARSIZE];
             
             if (hp->h_name != NULL)
                {
@@ -390,7 +390,7 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
                strcpy(ip,"ipv4_");
                strcat(ip,inet_ntoa(sin->sin_addr));
                AddClassToHeap(CanonifyName(ip));
-               snprintf(name,maxvarsize-1,"ipv4[%s]",CanonifyName(ifp->ifr_name));
+               snprintf(name,CF_MAXVARSIZE-1,"ipv4[%s]",CanonifyName(ifp->ifr_name));
                AddMacroValue(CONTEXTID,name,inet_ntoa(sin->sin_addr));
                
                for (sp = ip+strlen(ip)-1; (sp > ip); sp--)
@@ -417,7 +417,7 @@ close(fd);
 void GetV6InterfaceInfo(void)
 
 { FILE *pp;
-  char buffer[bufsize]; 
+  char buffer[CF_BUFSIZE]; 
  
 /* Whatever the manuals might say, you cannot get IPV6
    interface configuration from the ioctls. This seems
@@ -443,7 +443,7 @@ void GetV6InterfaceInfo(void)
         
         while (!feof(pp))
            {    
-           fgets(buffer,bufsize,pp);
+           fgets(buffer,CF_BUFSIZE,pp);
            
            if (StrStr(buffer,"inet6"))
               {
@@ -472,9 +472,9 @@ void GetV6InterfaceInfo(void)
               
               DeleteItemList(list);
               }
-           }
-        
+           }        
         fclose(pp);
+        break;
     }
 }
 
@@ -483,7 +483,7 @@ void GetV6InterfaceInfo(void)
 void AddNetworkClass(char *netmask) /* Function contrib David Brownlee <abs@mono.org> */
 
 { struct in_addr ip,nm;
-  char *sp,nmbuf[maxvarsize],ipbuf[maxvarsize];
+  char *sp,nmbuf[CF_MAXVARSIZE],ipbuf[CF_MAXVARSIZE];
 
     /*
      * Has to differentiate between cases such as:
@@ -517,9 +517,9 @@ void AddNetworkClass(char *netmask) /* Function contrib David Brownlee <abs@mono
 
 void SetDomainName(char *sp)           /* Bas van der Vlies */
 
-{ char fqn[maxvarsize];
+{ char fqn[CF_MAXVARSIZE];
   char *ptr;
-  char buffer[bufsize];
+  char buffer[CF_BUFSIZE];
 
 if (gethostname(fqn, sizeof(fqn)) != -1)
    {

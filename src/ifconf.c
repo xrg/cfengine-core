@@ -233,7 +233,7 @@ GetBroadcastAddr(inet_ntoa(inaddr),vifdev,vnetmask,vbroadcast);
 
 if (strcmp(VBUFF,VNUMBROADCAST) != 0)
    {
-   snprintf(OUTPUT,bufsize*2,"Broadcast address was %s not %s (should be bit-type %s)\n",VBUFF,VNUMBROADCAST,vbroadcast);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Broadcast address was %s not %s (should be bit-type %s)\n",VBUFF,VNUMBROADCAST,vbroadcast);
    CfLog(cferror,OUTPUT,"");
    insane = true;
    }
@@ -281,7 +281,7 @@ if (ioctl(sk,SIOCSIFNETMASK, (caddr_t) &IFR) < 0)
    }
 else
    {
-   snprintf(OUTPUT,bufsize*2,"Set Netmask to: %s\n",inet_ntoa(netmask.sin_addr));
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Set Netmask to: %s\n",inet_ntoa(netmask.sin_addr));
    CfLog(cfinform,OUTPUT,"");
    }
 
@@ -306,7 +306,7 @@ if ((char *) sin->sin_addr.s_addr == NULL)
    }
 else
    {
-   snprintf(OUTPUT,bufsize*2,"Set Broadcast address to: %s\n",inet_ntoa(sin->sin_addr));
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Set Broadcast address to: %s\n",inet_ntoa(sin->sin_addr));
    CfLog(cfinform,OUTPUT,"");
    }
 }
@@ -378,7 +378,7 @@ Verbose("Looking at default route...\n");
   
 if (!IsPrivileged())                            
    {
-   snprintf(OUTPUT,bufsize*2,"Only root can set a default route.");
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Only root can set a default route.");
    CfLog(cfinform,OUTPUT,"");
    return;
    }
@@ -391,14 +391,14 @@ if (VDEFAULTROUTE[0] == '\0')
 
 if ((pp = cfpopen(VNETSTAT[VSYSTEMHARDCLASS],"r")) == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"Failed to open pipe from %s\n",VNETSTAT[VSYSTEMHARDCLASS]);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Failed to open pipe from %s\n",VNETSTAT[VSYSTEMHARDCLASS]);
    CfLog(cferror,OUTPUT,"popen");
    return;
    }
 
 while (!feof(pp))
    {
-   ReadLine(VBUFF,bufsize,pp);
+   ReadLine(VBUFF,CF_BUFSIZE,pp);
 
    if (strncmp(VBUFF,"default",7) == 0)
       {
@@ -459,7 +459,7 @@ if (! DONTDO)
       }
 
    CfLog(cferror,"The routing table did not contain a default route.\n","");
-   snprintf(OUTPUT,bufsize*2,"I'm setting it to %s\n",VDEFAULTROUTE);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"I'm setting it to %s\n",VDEFAULTROUTE);
    CfLog(cferror,OUTPUT,"");
    }
 

@@ -45,11 +45,11 @@ void RandomSeed()
 
 Debug("RandomSeed() work directory is %s\n",VLOGDIR);
 
-snprintf(VBUFF,bufsize,"%s/randseed",VLOGDIR); 
+snprintf(VBUFF,CF_BUFSIZE,"%s/randseed",VLOGDIR); 
 
  if (stat(VBUFF,&statbuf) == -1)
     {
-    snprintf(AVDB,bufsize,"%s/%s",WORKDIR,AVDB_FILE);
+    snprintf(AVDB,CF_BUFSIZE,"%s/%s",WORKDIR,CF_AVDB_FILE);
     }
  else
     {
@@ -60,7 +60,7 @@ Verbose("Looking for a source of entropy in %s\n",AVDB);
 
 if (!RAND_load_file(AVDB,-1))
    {
-   snprintf(OUTPUT,bufsize,"Could not read sufficient randomness from %s\n",AVDB);
+   snprintf(OUTPUT,CF_BUFSIZE,"Could not read sufficient randomness from %s\n",AVDB);
    CfLog(cfverbose,OUTPUT,"");
    }
 
@@ -81,7 +81,7 @@ void LoadSecretKeys()
   
 if ((fp = fopen(CFPRIVKEYFILE,"r")) == NULL)
    {
-   snprintf(OUTPUT,bufsize,"Couldn't find a private key (%s) - use cfkey to get one",CFPRIVKEYFILE);
+   snprintf(OUTPUT,CF_BUFSIZE,"Couldn't find a private key (%s) - use cfkey to get one",CFPRIVKEYFILE);
    CfLog(cferror,OUTPUT,"open");
    return;
    }
@@ -89,7 +89,7 @@ if ((fp = fopen(CFPRIVKEYFILE,"r")) == NULL)
 if ((PRIVKEY = PEM_read_RSAPrivateKey(fp,(RSA **)NULL,NULL,passphrase)) == NULL)
    {
    err = ERR_get_error();
-   snprintf(OUTPUT,bufsize,"Error reading Private Key = %s\n",ERR_reason_error_string(err));
+   snprintf(OUTPUT,CF_BUFSIZE,"Error reading Private Key = %s\n",ERR_reason_error_string(err));
    CfLog(cferror,OUTPUT,"");
    PRIVKEY = NULL;
    fclose(fp);
@@ -102,7 +102,7 @@ Verbose("Loaded %s\n",CFPRIVKEYFILE);
 
 if ((fp = fopen(CFPUBKEYFILE,"r")) == NULL)
    {
-   snprintf(OUTPUT,bufsize,"Couldn't find a public key (%s) - use cfkey to get one",CFPUBKEYFILE);
+   snprintf(OUTPUT,CF_BUFSIZE,"Couldn't find a public key (%s) - use cfkey to get one",CFPUBKEYFILE);
    CfLog(cferror,OUTPUT,"fopen");
    return;
    }
@@ -110,7 +110,7 @@ if ((fp = fopen(CFPUBKEYFILE,"r")) == NULL)
 if ((PUBKEY = PEM_read_RSAPublicKey(fp,NULL,NULL,passphrase)) == NULL)
    {
    err = ERR_get_error();
-   snprintf(OUTPUT,bufsize,"Error reading Private Key = %s\n",ERR_reason_error_string(err));
+   snprintf(OUTPUT,CF_BUFSIZE,"Error reading Private Key = %s\n",ERR_reason_error_string(err));
    CfLog(cferror,OUTPUT,"");
    PUBKEY = NULL;
    fclose(fp);
@@ -131,7 +131,7 @@ if (BN_num_bits(PUBKEY->e) < 2 || !BN_is_odd(PUBKEY->e))
 
 RSA *HavePublicKey(char *name)
 
-{ char filename[bufsize],*sp;
+{ char filename[CF_BUFSIZE],*sp;
   struct stat statbuf; 
   static char *passphrase = "public";
   unsigned long err;
@@ -148,11 +148,11 @@ if (!IsPrivileged())
       {
       FatalError("You do not have a HOME variable pointing to your home directory");
       }  
-   snprintf(filename,bufsize,"%s/.cfengine/ppkeys/%s.pub",sp,name);
+   snprintf(filename,CF_BUFSIZE,"%s/.cfengine/ppkeys/%s.pub",sp,name);
    }
 else
    {
-   snprintf(filename,bufsize,"%s/ppkeys/%s.pub",WORKDIR,name);
+   snprintf(filename,CF_BUFSIZE,"%s/ppkeys/%s.pub",WORKDIR,name);
    }
  
 if (stat(filename,&statbuf) == -1)
@@ -164,7 +164,7 @@ else
    {
    if ((fp = fopen(filename,"r")) == NULL)
       {
-      snprintf(OUTPUT,bufsize,"Couldn't find a public key (%s) - use cfkey to get one",filename);
+      snprintf(OUTPUT,CF_BUFSIZE,"Couldn't find a public key (%s) - use cfkey to get one",filename);
       CfLog(cferror,OUTPUT,"open");
       return NULL;
       }
@@ -172,7 +172,7 @@ else
    if ((newkey = PEM_read_RSAPublicKey(fp,NULL,NULL,passphrase)) == NULL)
       {
       err = ERR_get_error();
-      snprintf(OUTPUT,bufsize,"Error reading Private Key = %s\n",ERR_reason_error_string(err));
+      snprintf(OUTPUT,CF_BUFSIZE,"Error reading Private Key = %s\n",ERR_reason_error_string(err));
       CfLog(cferror,OUTPUT,"");
       fclose(fp);
       return NULL;
@@ -194,7 +194,7 @@ else
 
 void SavePublicKey(char *name,RSA *key)
 
-{ char filename[bufsize],*sp;
+{ char filename[CF_BUFSIZE],*sp;
   struct stat statbuf;
   FILE *fp;
   int err;
@@ -207,11 +207,11 @@ if (!IsPrivileged())
       {
       FatalError("You do not have a HOME variable pointing to your home directory");
       }  
-   snprintf(filename,bufsize,"%s/.cfengine/ppkeys/%s.pub",sp,name);
+   snprintf(filename,CF_BUFSIZE,"%s/.cfengine/ppkeys/%s.pub",sp,name);
    }
 else
    {
-   snprintf(filename,bufsize,"%s/ppkeys/%s.pub",WORKDIR,name);
+   snprintf(filename,CF_BUFSIZE,"%s/ppkeys/%s.pub",WORKDIR,name);
    }
 
 if (stat(filename,&statbuf) != -1)
@@ -223,7 +223,7 @@ Verbose("Saving public key %s\n",filename);
   
 if ((fp = fopen(filename, "w")) == NULL )
    {
-   snprintf(OUTPUT,bufsize,"Unable to write a public key %s",filename);
+   snprintf(OUTPUT,CF_BUFSIZE,"Unable to write a public key %s",filename);
    CfLog(cferror,OUTPUT,"fopen");
    return;
    }
@@ -231,7 +231,7 @@ if ((fp = fopen(filename, "w")) == NULL )
 if (!PEM_write_RSAPublicKey(fp,key))
    {
    err = ERR_get_error();
-   snprintf(OUTPUT,bufsize,"Error saving public key %s = %s\n",filename,ERR_reason_error_string(err));
+   snprintf(OUTPUT,CF_BUFSIZE,"Error saving public key %s = %s\n",filename,ERR_reason_error_string(err));
    CfLog(cferror,OUTPUT,"");
    }
  
@@ -244,7 +244,7 @@ void DeletePublicKey(name)
 
 char *name;
 
-{ char filename[bufsize],*sp;
+{ char filename[CF_BUFSIZE],*sp;
   int err;
 
 if (!IsPrivileged())
@@ -255,11 +255,11 @@ if (!IsPrivileged())
       {
       FatalError("You do not have a HOME variable pointing to your home directory");
       }  
-   snprintf(filename,bufsize,"%s/.cfengine/ppkeys/%s.pub",sp,name);
+   snprintf(filename,CF_BUFSIZE,"%s/.cfengine/ppkeys/%s.pub",sp,name);
    }
 else
    {
-   snprintf(filename,bufsize,"%s/ppkeys/%s.pub",WORKDIR,name);
+   snprintf(filename,CF_BUFSIZE,"%s/ppkeys/%s.pub",WORKDIR,name);
    }
 
 unlink(filename);
@@ -272,8 +272,8 @@ void MD5Random(unsigned char digest[EVP_MAX_MD_SIZE+1])
    /* Make a decent random number by crunching some system states & garbage through
       MD5. We can use this as a seed for pseudo random generator */
 
-{ unsigned char buffer[bufsize];
-  char pscomm[maxlinksize];
+{ unsigned char buffer[CF_BUFSIZE];
+  char pscomm[CF_MAXLINKSIZE];
   char uninitbuffer[100];
   int md_len;
   const EVP_MD *md;
@@ -287,27 +287,27 @@ EVP_DigestInit(&context,md);
 
 Verbose("...\n");
  
-snprintf(buffer,bufsize,"%d%d%25s",(int)CFSTARTTIME,(int)digest,VFQNAME);
+snprintf(buffer,CF_BUFSIZE,"%d%d%25s",(int)CFSTARTTIME,(int)digest,VFQNAME);
 
-EVP_DigestUpdate(&context,buffer,bufsize);
+EVP_DigestUpdate(&context,buffer,CF_BUFSIZE);
 
-snprintf(pscomm,bufsize,"%s %s",VPSCOMM[VSYSTEMHARDCLASS],VPSOPTS[VSYSTEMHARDCLASS]);
+snprintf(pscomm,CF_BUFSIZE,"%s %s",VPSCOMM[VSYSTEMHARDCLASS],VPSOPTS[VSYSTEMHARDCLASS]);
 
 if ((pp = cfpopen(pscomm,"r")) == NULL)
    {
-   snprintf(OUTPUT,bufsize,"Couldn't open the process list with command %s\n",pscomm);
+   snprintf(OUTPUT,CF_BUFSIZE,"Couldn't open the process list with command %s\n",pscomm);
    CfLog(cferror,OUTPUT,"popen");
    }
 
 while (!feof(pp))
    {
-   ReadLine(buffer,bufsize,pp);
-   EVP_DigestUpdate(&context,buffer,bufsize);
+   ReadLine(buffer,CF_BUFSIZE,pp);
+   EVP_DigestUpdate(&context,buffer,CF_BUFSIZE);
    }
 
 uninitbuffer[99] = '\0';
-snprintf(buffer,bufsize-1,"%ld %s",time(NULL),uninitbuffer);
-EVP_DigestUpdate(&context,buffer,bufsize);
+snprintf(buffer,CF_BUFSIZE-1,"%ld %s",time(NULL),uninitbuffer);
+EVP_DigestUpdate(&context,buffer,CF_BUFSIZE);
 
 cfpclose(pp);
 

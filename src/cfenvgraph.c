@@ -78,10 +78,10 @@ int HIRES = false;
 int SEPARATE = false;
 int ERRORBARS = true;
 int NOSCALING = true;
-char FILENAME[bufsize];
-unsigned int HISTOGRAM[ATTR*2+NETATTR*2+5+PH_LIMIT][7][GRAINS];
-int SMOOTHHISTOGRAM[ATTR*2+NETATTR*2+5+PH_LIMIT][7][GRAINS];
-char VFQNAME[bufsize];
+char FILENAME[CF_BUFSIZE];
+unsigned int HISTOGRAM[ATTR*2+CF_NETATTR*2+5+PH_LIMIT][7][CF_GRAINS];
+int SMOOTHHISTOGRAM[ATTR*2+CF_NETATTR*2+5+PH_LIMIT][7][CF_GRAINS];
+char VFQNAME[CF_BUFSIZE];
 
 /*****************************************************************************/
 
@@ -100,7 +100,7 @@ char *ECGSOCKS[ATTR][2] =
    {"443","wwws"},
    };
 
-char *TCPNAMES[NETATTR] =
+char *TCPNAMES[CF_NETATTR] =
    {
    "icmp",
    "udp",
@@ -129,7 +129,7 @@ char TIMEKEY[64],FLNAME[256],*sp;
 double AGE;
 FILE *FPAV=NULL,*FPVAR=NULL,*FPROOT=NULL,*FPUSER=NULL,*FPOTHER=NULL;
 FILE *FPDISK=NULL,*FPLOAD=NULL,*FPIN[ATTR],*FPOUT[ATTR],*FPPH[PH_LIMIT],*fp;
-FILE *FPNIN[NETATTR],*FPNOUT[NETATTR];
+FILE *FPNETIN[CF_NETATTR],*FPNETOUT[CF_NETATTR];
 
 /*****************************************************************************/
 
@@ -154,10 +154,10 @@ return 0;
 void GetFQHN()
 
 { FILE *pp;
-  char cfcom[bufsize];
-  static char line[bufsize];
+  char cfcom[CF_BUFSIZE];
+  static char line[CF_BUFSIZE];
 
-snprintf(cfcom,bufsize-1,"%s/bin/cfagent -z",WORKDIR);
+snprintf(cfcom,CF_BUFSIZE-1,"%s/bin/cfagent -z",WORKDIR);
  
 if ((pp=popen(cfcom,"r")) ==  NULL)
    {
@@ -167,10 +167,10 @@ if ((pp=popen(cfcom,"r")) ==  NULL)
    }
 
 line[0] = '\0'; 
-fgets(line,bufsize,pp); 
-fgets(line,bufsize,pp); 
+fgets(line,CF_BUFSIZE,pp); 
+fgets(line,CF_BUFSIZE,pp); 
 line[0] = '\0'; 
-fgets(line,bufsize,pp);  
+fgets(line,CF_BUFSIZE,pp);  
 strcpy(VFQNAME,line);
 
 if (strlen(VFQNAME) == 0)
@@ -260,7 +260,7 @@ for (i = 0; i < ATTR; i++)
    }
 
  
-for (i = 0; i < NETATTR; i++)
+for (i = 0; i < CF_NETATTR; i++)
    {
    MAX.var_netin[i] = 0.01;
    MAX.var_netout[i] = 0.01;
@@ -273,7 +273,7 @@ for (i = 0; i < NETATTR; i++)
    MIN.expect_netout[i] = 9999.0;
    }
  
-for (NOW = cf_monday_morning; NOW < cf_monday_morning+CFWEEK; NOW += MEASURE_INTERVAL)
+for (NOW = CF_MONDAY_MORNING; NOW < CF_MONDAY_MORNING+CF_WEEK; NOW += CF_MEASURE_INTERVAL)
    {
    memset(&key,0,sizeof(key));       
    memset(&value,0,sizeof(value));
@@ -373,7 +373,7 @@ for (NOW = cf_monday_morning; NOW < cf_monday_morning+CFWEEK; NOW += MEASURE_INT
             }
          }
       
-      for (i = 0; i < NETATTR; i++)
+      for (i = 0; i < CF_NETATTR; i++)
          {
          if (fabs(ENTRY.expect_netin[i]) < MIN.expect_netin[i])
             {
@@ -424,7 +424,7 @@ for (NOW = cf_monday_morning; NOW < cf_monday_morning+CFWEEK; NOW += MEASURE_INT
          }
       
       
-      for (i = 0; i < NETATTR; i++)
+      for (i = 0; i < CF_NETATTR; i++)
          {
          if (fabs(ENTRY.expect_netin[i]) > MAX.expect_netin[i])
             {
@@ -480,7 +480,7 @@ printf(" 5. MAX <loadavg>         = %10f - %10f u %10f\n",MIN.expect_loadavg,MAX
    printf("%2d. MAX <%-10s-out>  = %10f - %10f u %10f\n",7+i,ECGSOCKS[i/2][1],MIN.expect_outgoing[i/2],MAX.expect_outgoing[i/2],sqrt(MAX.var_outgoing[i/2]));
    }
  
- for (i = 0; i < NETATTR*2; i+=2)
+ for (i = 0; i < CF_NETATTR*2; i+=2)
    {
    printf("%2d. MAX <%-10s-in>   = %10f - %10f u %10f\n",6+ATTR+i,TCPNAMES[i/2],MIN.expect_netin[i/2],MAX.expect_netin[i/2],sqrt(MAX.var_netin[i/2]));
    printf("%2d. MAX <%-10s-out>  = %10f - %10f u %10f\n",7+ATTR+i,TCPNAMES[i/2],MIN.expect_netout[i/2],MAX.expect_netout[i/2],sqrt(MAX.var_netout[i/2]));
@@ -493,7 +493,7 @@ printf(" 5. MAX <loadavg>         = %10f - %10f u %10f\n",MIN.expect_loadavg,MAX
       {
       continue;
       }
-   printf("%2d. MAX <%-10s-in>   = %10f - %10f u %10f\n",i+5+NETATTR+ATTR,PH_BINARIES[i],MIN.expect_pH[i],MAX.expect_pH[i],sqrt(MAX.var_pH[i]));
+   printf("%2d. MAX <%-10s-in>   = %10f - %10f u %10f\n",i+5+CF_NETATTR+ATTR,PH_BINARIES[i],MIN.expect_pH[i],MAX.expect_pH[i],sqrt(MAX.var_pH[i]));
    }
 
  
@@ -531,7 +531,7 @@ if ((errno = DBP->get(DBP,NULL,&key,&value,0)) != 0)
 if (value.data != NULL)
    {
    AGE = *(double *)(value.data);
-   printf("\n\nDATABASE_AGE %.1f (weeks)\n\n",AGE/CFWEEK*MEASURE_INTERVAL);
+   printf("\n\nDATABASE_AGE %.1f (weeks)\n\n",AGE/CF_WEEK*CF_MEASURE_INTERVAL);
    }
 
 }
@@ -651,17 +651,17 @@ if (SEPARATE)
          }
       }
 
-   for (i = 0; i < NETATTR; i++)
+   for (i = 0; i < CF_NETATTR; i++)
       {
       sprintf(FLNAME,"%s-in.cfenv",TCPNAMES[i]); 
-      if ((FPNIN[i] = fopen(FLNAME,"w")) == NULL)
+      if ((FPNETIN[i] = fopen(FLNAME,"w")) == NULL)
          {
          perror("fopen");
          exit(1);
          }
 
       sprintf(FLNAME,"%s-out.cfenv",TCPNAMES[i]); 
-      if ((FPNOUT[i] = fopen(FLNAME,"w")) == NULL)
+      if ((FPNETOUT[i] = fopen(FLNAME,"w")) == NULL)
          {
          perror("fopen");
          exit(1);
@@ -699,7 +699,7 @@ if (TITLES)
       fprintf(FPAV,"# Column %d: Outgoing %s sockets\n",7+i,ECGSOCKS[i/2][1]);
       }
 
-   for (i = 0; i < NETATTR*2; i+=2)
+   for (i = 0; i < CF_NETATTR*2; i+=2)
       {
       fprintf(FPAV,"# Column %d: Incoming %s packets\n",6+ATTR+i,TCPNAMES[i/2]);
       fprintf(FPAV,"# Column %d: Outgoing %s packets\n",7+ATTR+i,TCPNAMES[i/2]);
@@ -728,7 +728,7 @@ if (TITLES)
       fprintf(FPVAR,"# Column %d: Outgoing %s sockets\n",7+i,ECGSOCKS[i/2][1]);
       }
 
-   for (i = 0; i < NETATTR*2; i+=2)
+   for (i = 0; i < CF_NETATTR*2; i+=2)
       {
       fprintf(FPVAR,"# Column %d: Incoming %s packets\n",6+ATTR+i,TCPNAMES[i/2]);
       fprintf(FPVAR,"# Column %d: Outgoing %s packets\n",7+ATTR+i,TCPNAMES[i/2]);
@@ -755,10 +755,10 @@ else
    its = 12;
    }
 
-NOW = cf_monday_morning;
+NOW = CF_MONDAY_MORNING;
 memset(&ENTRY,0,sizeof(ENTRY)); 
  
-while (NOW < cf_monday_morning+CFWEEK)
+while (NOW < CF_MONDAY_MORNING+CF_WEEK)
    {
    for (j = 0; j < its; j++)
       {
@@ -801,7 +801,7 @@ while (NOW < cf_monday_morning+CFWEEK)
             ENTRY.var_outgoing[i] += DET.var_outgoing[i]/(double)its;
             }
          
-         for (i = 0; i < NETATTR; i++)
+         for (i = 0; i < CF_NETATTR; i++)
             {
             ENTRY.expect_netin[i] += DET.expect_netin[i]/(double)its;
             ENTRY.expect_netout[i] += DET.expect_netout[i]/(double)its;
@@ -835,7 +835,7 @@ while (NOW < cf_monday_morning+CFWEEK)
                MAX.expect_outgoing[i] = 1;
                }
             
-            for (i = 1; i < NETATTR; i++)
+            for (i = 1; i < CF_NETATTR; i++)
                {
                MAX.expect_netin[i] = 1;
                MAX.expect_netout[i] = 1;
@@ -868,7 +868,7 @@ while (NOW < cf_monday_morning+CFWEEK)
                        ,ENTRY.expect_outgoing[i]/MAX.expect_outgoing[i]);
                }
             
-            for (i = 0; i < NETATTR; i++)
+            for (i = 0; i < CF_NETATTR; i++)
                {
                fprintf(FPAV,"%f %f "
                        ,ENTRY.expect_netin[i]/MAX.expect_netin[i]
@@ -901,7 +901,7 @@ while (NOW < cf_monday_morning+CFWEEK)
                        sqrt(ENTRY.var_outgoing[i])/MAX.expect_outgoing[i]);
                }
             
-            for (i = 0; i < NETATTR; i++)
+            for (i = 0; i < CF_NETATTR; i++)
                {
                fprintf(FPVAR,"%f %f ",
                        sqrt(ENTRY.var_netin[i])/MAX.expect_netin[i],
@@ -933,10 +933,10 @@ while (NOW < cf_monday_morning+CFWEEK)
                   fprintf(FPOUT[i],"%d %f %f\n",count,ENTRY.expect_outgoing[i]/MAX.expect_outgoing[i],sqrt(ENTRY.var_outgoing[i])/MAX.expect_outgoing[i]);
                   }
                
-               for (i = 0; i < NETATTR; i++)
+               for (i = 0; i < CF_NETATTR; i++)
                   {
-                  fprintf(FPNIN[i],"%d %f %f\n",count,ENTRY.expect_netin[i]/MAX.expect_netin[i],sqrt(ENTRY.var_netin[i])/MAX.expect_netin[i]);
-                  fprintf(FPNOUT[i],"%d %f %f\n",count,ENTRY.expect_netout[i]/MAX.expect_netout[i],sqrt(ENTRY.var_netout[i])/MAX.expect_netout[i]);
+                  fprintf(FPNETIN[i],"%d %f %f\n",count,ENTRY.expect_netin[i]/MAX.expect_netin[i],sqrt(ENTRY.var_netin[i])/MAX.expect_netin[i]);
+                  fprintf(FPNETOUT[i],"%d %f %f\n",count,ENTRY.expect_netout[i]/MAX.expect_netout[i],sqrt(ENTRY.var_netout[i])/MAX.expect_netout[i]);
                   }
                
                for (i = 0; i < PH_LIMIT; i++)
@@ -953,7 +953,7 @@ while (NOW < cf_monday_morning+CFWEEK)
             }
          }
       
-      NOW += MEASURE_INTERVAL;
+      NOW += CF_MEASURE_INTERVAL;
       }
    }
  
@@ -976,10 +976,10 @@ while (NOW < cf_monday_morning+CFWEEK)
        fclose(FPOUT[i]);
        }
     
-    for (i = 0; i < NETATTR; i++)
+    for (i = 0; i < CF_NETATTR; i++)
        {
-       fclose(FPNIN[i]);
-       fclose(FPNOUT[i]);
+       fclose(FPNETIN[i]);
+       fclose(FPNETOUT[i]);
        }
     
     for (i = 0; i < PH_LIMIT; i++)
@@ -1003,9 +1003,9 @@ void WriteHistograms()
 
 for (i = 0; i < 7; i++)
    {
-   for (j = 0; j < PH_LIMIT+ATTR*2+NETATTR*2+5; j++)
+   for (j = 0; j < PH_LIMIT+ATTR*2+CF_NETATTR*2+5; j++)
       {
-      for (k = 0; k < GRAINS; k++)
+      for (k = 0; k < CF_GRAINS; k++)
          {
          HISTOGRAM[j][i][k] = 0;
          }
@@ -1015,9 +1015,9 @@ for (i = 0; i < 7; i++)
  if (SEPARATE)
     {
     int position,day;
-    int weekly[NETATTR*2+ATTR*2+5+PH_LIMIT][GRAINS];
+    int weekly[CF_NETATTR*2+ATTR*2+5+PH_LIMIT][CF_GRAINS];
     
-    snprintf(FLNAME,bufsize,"%s/state/histograms",WORKDIR);
+    snprintf(FLNAME,CF_BUFSIZE,"%s/state/histograms",WORKDIR);
     
     if ((fp = fopen(FLNAME,"r")) == NULL)
        {
@@ -1025,11 +1025,11 @@ for (i = 0; i < 7; i++)
        exit(1);
        }
     
-    for (position = 0; position < GRAINS; position++)
+    for (position = 0; position < CF_GRAINS; position++)
        {
        fscanf(fp,"%d ",&position);
        
-       for (i = 0; i < 5 + 2*ATTR+PH_LIMIT; i++)
+       for (i = 0; i < 5 + 2*CF_NETATTR+2*ATTR+PH_LIMIT; i++)
           {
           for (day = 0; day < 7; day++)
              {
@@ -1045,11 +1045,11 @@ for (i = 0; i < 7; i++)
     if (!HIRES)
        {
        /* Smooth daily and weekly histograms */
-       for (k = 1; k < GRAINS-1; k++)
+       for (k = 1; k < CF_GRAINS-1; k++)
           {
           int a;
           
-          for (j = 0; j < ATTR*2+NETATTR*2+5+PH_LIMIT; j++)
+          for (j = 0; j < ATTR*2+CF_NETATTR*2+5+PH_LIMIT; j++)
              {
              for (i = 0; i < 7; i++)  
                 {
@@ -1060,11 +1060,11 @@ for (i = 0; i < 7; i++)
        }
     else
        {
-       for (k = 1; k < GRAINS-1; k++)
+       for (k = 1; k < CF_GRAINS-1; k++)
           {
           int a;
           
-          for (j = 0; j < ATTR*2+NETATTR*2+5+PH_LIMIT; j++)
+          for (j = 0; j < ATTR*2+CF_NETATTR*2+5+PH_LIMIT; j++)
              {
              for (i = 0; i < 7; i++)  
                 {
@@ -1113,7 +1113,7 @@ for (i = 0; i < 7; i++)
           perror("fopen");
           exit(1);
           }
-       
+
        sprintf(FLNAME,"%s-out.distr",ECGSOCKS[i][1]); 
        if ((FPOUT[i] = fopen(FLNAME,"w")) == NULL)
           {
@@ -1122,6 +1122,23 @@ for (i = 0; i < 7; i++)
           }
        }
     
+       for (i = 0; i < CF_NETATTR; i++)
+          {
+          sprintf(FLNAME,"%s-in.distr",TCPNAMES[i]); 
+          if ((FPNETIN[i] = fopen(FLNAME,"w")) == NULL)
+             {
+             perror("fopen");
+             exit(1);
+             }
+          sprintf(FLNAME,"%s-out.distr",TCPNAMES[i]); 
+
+          if ((FPNETOUT[i] = fopen(FLNAME,"w")) == NULL)
+             {
+             perror("fopen");
+             exit(1);
+             }
+          }
+       
     for (i = 0; i < PH_LIMIT; i++)
        {
        if (PH_BINARIES[i] == NULL)
@@ -1138,11 +1155,11 @@ for (i = 0; i < 7; i++)
        }
     
     /* Plot daily and weekly histograms */
-    for (k = 0; k < GRAINS; k++)
+    for (k = 0; k < CF_GRAINS; k++)
        {
        int a;
        
-       for (j = 0; j < ATTR*2+NETATTR*2+5+PH_LIMIT; j++)
+       for (j = 0; j < ATTR*2+CF_NETATTR*2+5+PH_LIMIT; j++)
           {
           for (i = 0; i < 7; i++)  
              {
@@ -1161,7 +1178,13 @@ for (i = 0; i < 7; i++)
           fprintf(FPIN[a],"%d %d\n",k,weekly[5+a][k]);
           fprintf(FPOUT[a],"%d %d\n",k,weekly[5+ATTR+a][k]);
           }
-       
+
+       for (a = 0; a < CF_NETATTR; a++)
+          {
+          fprintf(FPNETIN[a],"%d %d\n",k,weekly[5+2*ATTR+a][k]);
+          fprintf(FPNETOUT[a],"%d %d\n",k,weekly[5+2*ATTR+CF_NETATTR+a][k]);
+          }
+
        for (a = 0; a < PH_LIMIT; a++)
           {
           if (PH_BINARIES[a] == NULL)
@@ -1183,6 +1206,12 @@ for (i = 0; i < 7; i++)
        {
        fclose(FPIN[i]);
        fclose(FPOUT[i]);
+       }
+
+    for (i = 0; i < CF_NETATTR; i++)
+       {
+       fclose(FPNETIN[i]);
+       fclose(FPNETOUT[i]);
        }
     
     for (i = 0; i < PH_LIMIT; i++)
@@ -1207,18 +1236,18 @@ void FindHurstExponents()
  
 /* Dilatation intervals */
  
- delta_t[0] = MEASURE_INTERVAL*2;
+ delta_t[0] = CF_MEASURE_INTERVAL*2;
  delta_t[1] = 3600;
  delta_t[2] = 6 * 3600;
  delta_t[3] = 24 * 3600;
- delta_t[4] = CFWEEK; 
+ delta_t[4] = CF_WEEK; 
  
  memset(&h2,0,sizeof(struct Averages));
  
  for (i = 0; i < 5; i++)
     {
-    grains[i] = CFWEEK/delta_t[i];
-    samples_per_grain[i] = delta_t[i]/MEASURE_INTERVAL;
+    grains[i] = CF_WEEK/delta_t[i];
+    samples_per_grain[i] = delta_t[i]/CF_MEASURE_INTERVAL;
     H[i] = FindHurstFunction(samples_per_grain[i],grains[i]);
     }
  
@@ -1290,7 +1319,7 @@ void DiskArrivals()
   FILE *fp; 
   struct dirent *dirp;
   int count = 0, index = 0, i;
-  char filename[bufsize],database[bufsize];
+  char filename[CF_BUFSIZE],database[CF_BUFSIZE];
   double val, maxval = 1.0, *array, grain = 0.0;
   time_t now;
   DBT key,value;
@@ -1298,7 +1327,7 @@ void DiskArrivals()
   DB_ENV *dbenv = NULL;
 
 
-if ((array = (double *)malloc((int)CFWEEK)) == NULL)
+if ((array = (double *)malloc((int)CF_WEEK)) == NULL)
    {
    printf("Memory error");
    perror("malloc");
@@ -1320,7 +1349,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       {
       printf("Found %s - generating X,Y plot\n",dirp->d_name);
 
-      snprintf(database,bufsize-1,"%s/%s",WORKDIR,dirp->d_name);
+      snprintf(database,CF_BUFSIZE-1,"%s/%s",WORKDIR,dirp->d_name);
       
       if ((errno = db_create(&dbp,dbenv,0)) != 0)
          {
@@ -1344,7 +1373,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       count = 0.0;
       index = 0;
       
-      for (now = cf_monday_morning; now < cf_monday_morning+CFWEEK; now += MEASURE_INTERVAL)
+      for (now = CF_MONDAY_MORNING; now < CF_MONDAY_MORNING+CF_WEEK; now += CF_MEASURE_INTERVAL)
          {
          memset(&key,0,sizeof(key));       
          memset(&value,0,sizeof(value));
@@ -1401,7 +1430,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       
       dbp->close(dbp,0);
       
-      snprintf(filename,bufsize-1,"%s.cfenv",dirp->d_name);
+      snprintf(filename,CF_BUFSIZE-1,"%s.cfenv",dirp->d_name);
       
       if ((fp = fopen(filename,"w")) == NULL)
          {
@@ -1443,7 +1472,7 @@ void CheckOpts(int argc,char **argv)
   int optindex = 0;
   int c;
 
-snprintf(FILENAME,bufsize,"%s/state/%s",WORKDIR,AVDB_FILE);
+snprintf(FILENAME,CF_BUFSIZE,"%s/state/%s",WORKDIR,CF_AVDB_FILE);
 
 while ((c=getopt_long(argc,argv,"Thtf:rsen",GRAPHOPTIONS,&optindex)) != EOF)
   {
@@ -1502,10 +1531,10 @@ printf("Info & fixes at http://www.iu.hio.no/cfengine\n");
 
 char *CanonifyName(char *str)
 
-{ static char buffer[bufsize];
+{ static char buffer[CF_BUFSIZE];
   char *sp;
 
-memset(buffer,0,bufsize);
+memset(buffer,0,CF_BUFSIZE);
 strcpy(buffer,str);
 
 for (sp = buffer; *sp != '\0'; sp++)
@@ -1572,7 +1601,7 @@ for (i = 0; i < ATTR; i++)
 
 count = 0;
  
-for (NOW = cf_monday_morning; NOW < cf_monday_morning+CFWEEK; NOW += MEASURE_INTERVAL)
+for (NOW = CF_MONDAY_MORNING; NOW < CF_MONDAY_MORNING+CF_WEEK; NOW += CF_MEASURE_INTERVAL)
    {
    memset(&key,0,sizeof(key));       
    memset(&value,0,sizeof(value));

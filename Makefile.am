@@ -1,4 +1,10 @@
-SUBDIRS = pub src contrib inputs doc 
+if BUILD_DOC
+DOC_DIR = doc
+else
+DOC_DIR =
+endif
+
+SUBDIRS = pub src contrib inputs $(DOC_DIR)
 
 EXTRA_DIST = acconfig.h doc/cfengine.8 COPYING ChangeLog INSTALL NEWS README
 

@@ -55,14 +55,14 @@ return(strncmp(buf,"OK:",3) == 0);
 int FailedProtoReply(char *buf)
 
 {
-return(strncmp(buf,CFFAILEDSTR,strlen(CFFAILEDSTR)) == 0);
+return(strncmp(buf,CF_FAILEDSTR,strlen(CF_FAILEDSTR)) == 0);
 }
 
 /*********************************************************************/
 
 int IdentifyForVerification(int sd,char *localip,int family)
 
-{ char sendbuff[bufsize],dnsname[bufsize];
+{ char sendbuff[CF_BUFSIZE],dnsname[CF_BUFSIZE];
   struct sockaddr_in myaddr;
   struct in_addr *iaddr;
   struct hostent *hp;
@@ -70,8 +70,8 @@ int IdentifyForVerification(int sd,char *localip,int family)
   struct passwd *user_ptr;
   char *uname;
   
-memset(sendbuff,0,bufsize);
-memset(dnsname,0,bufsize);
+memset(sendbuff,0,CF_BUFSIZE);
+memset(dnsname,0,CF_BUFSIZE);
  
 if (strcmp(VDOMAIN,CF_START_DOMAIN) == 0)
    {
@@ -103,15 +103,15 @@ if (strcmp(VDOMAIN,CF_START_DOMAIN) == 0)
     return false;
     }
  
- snprintf(localip,cfmaxiplen-1,"%s",sockaddr_ntop((struct sockaddr *)&myaddr)); 
+ snprintf(localip,CF_MAX_IP_LEN-1,"%s",sockaddr_ntop((struct sockaddr *)&myaddr)); 
  
  Debug("Identifying this agent as %s i.e. %s, with signature %d\n",localip,VFQNAME,CFSIGNATURE);
  
 #if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
  
- if ((err=getnameinfo((struct sockaddr *)&myaddr,len,dnsname,maxvarsize,NULL,0,0)) != 0)
+ if ((err=getnameinfo((struct sockaddr *)&myaddr,len,dnsname,CF_MAXVARSIZE,NULL,0,0)) != 0)
     {
-    snprintf(OUTPUT,bufsize,"Couldn't look up address v6 for %s: %s\n",dnsname,gai_strerror(err));
+    snprintf(OUTPUT,CF_BUFSIZE,"Couldn't look up address v6 for %s: %s\n",dnsname,gai_strerror(err));
     CfLog(cferror,OUTPUT,"");
     return false;
     }
@@ -127,7 +127,7 @@ if (strcmp(VDOMAIN,CF_START_DOMAIN) == 0)
     return false;
     }
  
- strncpy(dnsname,hp->h_name,maxvarsize);
+ strncpy(dnsname,hp->h_name,CF_MAXVARSIZE);
  
  if ((strstr(hp->h_name,".") == 0) && (strlen(VDOMAIN) > 0))
     {
@@ -145,7 +145,7 @@ if ((strlen(VDOMAIN) > 0) && !IsIPV6Address(dnsname) && !strchr(dnsname,'.'))
    {
    Debug("Appending domain %s to %s\n",VDOMAIN,dnsname);
    strcat(dnsname,".");
-   strncat(dnsname,VDOMAIN,maxvarsize/2);
+   strncat(dnsname,VDOMAIN,CF_MAXVARSIZE/2);
    }  
 
 if (strncmp(dnsname,localip,strlen(localip)) == 0)
@@ -154,7 +154,7 @@ if (strncmp(dnsname,localip,strlen(localip)) == 0)
    strcpy(dnsname,localip);
    }
 
- snprintf(sendbuff,bufsize-1,"CAUTH %s %s %s %d",localip,dnsname,uname,CFSIGNATURE);
+ snprintf(sendbuff,CF_BUFSIZE-1,"CAUTH %s %s %s %d",localip,dnsname,uname,CFSIGNATURE);
 
 Debug("SENT:::%s\n",sendbuff);
  
@@ -166,12 +166,12 @@ return true;
 
 int KeyAuthentication(struct Image *ip)
 
-{ char sendbuffer[bufsize],in[bufsize],*out,*decrypted_cchall;
+{ char sendbuffer[CF_BUFSIZE],in[CF_BUFSIZE],*out,*decrypted_cchall;
  BIGNUM *nonce_challenge, *bn = NULL;
  unsigned long err;
  unsigned char digest[EVP_MAX_MD_SIZE];
  int encrypted_len,nonce_len = 0,len;
- char cant_trust_server, keyname[bufsize];
+ char cant_trust_server, keyname[CF_BUFSIZE];
  RSA *server_pubkey = NULL;
 
 if (COMPATIBILITY_MODE)
@@ -199,11 +199,11 @@ ChecksumString(in,nonce_len,digest,'m');
 
 if (OptionIs(CONTEXTID,"HostnameKeys",true))
    {
-   snprintf(keyname,bufsize,"root-%s",ip->server); 
+   snprintf(keyname,CF_BUFSIZE,"root-%s",ip->server); 
    }
 else
    {
-   snprintf(keyname,bufsize,"root-%s",CONN->remoteip); 
+   snprintf(keyname,CF_BUFSIZE,"root-%s",CONN->remoteip); 
    }
 
 if (server_pubkey = HavePublicKey(keyname))
@@ -218,7 +218,7 @@ else
    encrypted_len = nonce_len;
    }
  
-snprintf(sendbuffer,bufsize,"SAUTH %c %d %d",cant_trust_server,encrypted_len,nonce_len);
+snprintf(sendbuffer,CF_BUFSIZE,"SAUTH %c %d %d",cant_trust_server,encrypted_len,nonce_len);
  
 if ((out = malloc(encrypted_len)) == NULL)
    {
@@ -230,7 +230,7 @@ if (server_pubkey != NULL)
    if (RSA_public_encrypt(nonce_len,in,out,server_pubkey,RSA_PKCS1_PADDING) <= 0)
       {
       err = ERR_get_error();
-      snprintf(OUTPUT,bufsize,"Public encryption failed = %s\n",ERR_reason_error_string(err));
+      snprintf(OUTPUT,CF_BUFSIZE,"Public encryption failed = %s\n",ERR_reason_error_string(err));
       CfLog(cferror,OUTPUT,"");
       return false;
       }
@@ -258,19 +258,19 @@ if (DEBUG||D2)
 /*Send the public key - we don't know if server has it */ 
 /* proposition C2 */
 
-memset(sendbuffer,0,bufsize); 
+memset(sendbuffer,0,CF_BUFSIZE); 
 len = BN_bn2mpi(PUBKEY->n,sendbuffer); 
 SendTransaction(CONN->sd,sendbuffer,len,CF_DONE); /* No need to encrypt the public key ... */
 
 /* proposition C3 */ 
-memset(sendbuffer,0,bufsize);   
+memset(sendbuffer,0,CF_BUFSIZE);   
 len = BN_bn2mpi(PUBKEY->e,sendbuffer); 
 SendTransaction(CONN->sd,sendbuffer,len,CF_DONE);
 
 /* check reply about public key - server can break connection here */
 
 /* proposition S1 */  
-memset(in,0,bufsize);  
+memset(in,0,CF_BUFSIZE);  
 ReceiveTransaction(CONN->sd,in,NULL);
 
 if (BadProtoReply(in))
@@ -282,12 +282,12 @@ if (BadProtoReply(in))
 /* Get challenge response - should be md5 of challenge */
 
 /* proposition S2 */   
-memset(in,0,bufsize);  
+memset(in,0,CF_BUFSIZE);  
 ReceiveTransaction(CONN->sd,in,NULL);
 
 if (!ChecksumsMatch(digest,in,'m')) 
    {
-   snprintf(OUTPUT,bufsize,"Challenge response from server %s/%s was incorrect!",ip->server,CONN->remoteip);
+   snprintf(OUTPUT,CF_BUFSIZE,"Challenge response from server %s/%s was incorrect!",ip->server,CONN->remoteip);
    CfLog(cferror,OUTPUT,"");
    return false;
    }
@@ -296,19 +296,19 @@ else
    if (cant_trust_server == 'y')  /* challenge reply was correct */ 
       {
       Verbose("\n >\n");
-      snprintf(OUTPUT,bufsize,"Strong authentication of server=%s connection confirmed\n",ip->server);
+      snprintf(OUTPUT,CF_BUFSIZE,"Strong authentication of server=%s connection confirmed\n",ip->server);
       CfLog(cfverbose,OUTPUT,"");
       }
    else
       {
       if (ip->trustkey == 'y')
          {
-         snprintf(OUTPUT,bufsize,"Trusting server identity and willing to accept key from %s=%s",ip->server,CONN->remoteip);
+         snprintf(OUTPUT,CF_BUFSIZE,"Trusting server identity and willing to accept key from %s=%s",ip->server,CONN->remoteip);
          CfLog(cferror,OUTPUT,"");
          }
       else
          {
-         snprintf(OUTPUT,bufsize,"Not authorized to trust the server=%s's public key (trustkey=false)\n",ip->server);
+         snprintf(OUTPUT,CF_BUFSIZE,"Not authorized to trust the server=%s's public key (trustkey=false)\n",ip->server);
          CfLog(cferror,OUTPUT,"");
          return false;
          }
@@ -319,7 +319,7 @@ else
 
 Debug("Receive counter challenge from server\n");  
 /* proposition S3 */   
-memset(in,0,bufsize);  
+memset(in,0,CF_BUFSIZE);  
 encrypted_len = ReceiveTransaction(CONN->sd,in,NULL);
 
 
@@ -331,7 +331,7 @@ if ((decrypted_cchall = malloc(encrypted_len)) == NULL)
 if (RSA_private_decrypt(encrypted_len,in,decrypted_cchall,PRIVKEY,RSA_PKCS1_PADDING) <= 0)
    {
    err = ERR_get_error();
-   snprintf(OUTPUT,bufsize,"Private decrypt failed = %s, abandoning\n",ERR_reason_error_string(err));
+   snprintf(OUTPUT,CF_BUFSIZE,"Private decrypt failed = %s, abandoning\n",ERR_reason_error_string(err));
    CfLog(cferror,OUTPUT,"");
    return false;
    }
@@ -360,7 +360,7 @@ if (server_pubkey == NULL)
    if ((newkey->n = BN_mpi2bn(in,len,NULL)) == NULL)
       {
       err = ERR_get_error();
-      snprintf(OUTPUT,bufsize,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
+      snprintf(OUTPUT,CF_BUFSIZE,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
       CfLog(cferror,OUTPUT,"");
       return false;
       }
@@ -375,7 +375,7 @@ if (server_pubkey == NULL)
    if ((newkey->e = BN_mpi2bn(in,len,NULL)) == NULL)
       {
       err = ERR_get_error();
-      snprintf(OUTPUT,bufsize,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
+      snprintf(OUTPUT,CF_BUFSIZE,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
       CfLog(cferror,OUTPUT,"");
       return false;
       }

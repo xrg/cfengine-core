@@ -51,15 +51,15 @@ int  MAXCHILD = 1;
 int  FileFlag = 0;
 int  TRUSTALL = false;
 enum fileoutputlevels  OUTPUTLEVEL = fopl_normal;
-char OUTPUTDIR[bufsize];
+char OUTPUTDIR[CF_BUFSIZE];
 
 struct Item *VCFRUNCLASSES = NULL;
 struct Item *VCFRUNOPTIONHOSTS = NULL;
 struct Item *VCFRUNHOSTLIST = NULL;
 
-char VCFRUNHOSTS[bufsize] = "cfrun.hosts";
-char CFRUNOPTIONS[bufsize];
-char CFLOCK[bufsize] = "dummy";
+char VCFRUNHOSTS[CF_BUFSIZE] = "cfrun.hosts";
+char CFRUNOPTIONS[CF_BUFSIZE];
+char CFLOCK[CF_BUFSIZE] = "dummy";
 
 /*******************************************************************/
 /* Functions internal to cfrun.c                                   */
@@ -147,7 +147,7 @@ void CheckOptsAndInit(int argc,char **argv)
   struct Item *ip;
 
 /* Separate command args into options and classes */
-memset(CFRUNOPTIONS,0,bufsize);
+memset(CFRUNOPTIONS,0,CF_BUFSIZE);
 
 for (i = 1; i < argc; i++) 
    {
@@ -167,8 +167,8 @@ for (i = 1; i < argc; i++)
             cfrunSyntax();
             exit(0);
             }
-         memset(VCFRUNHOSTS,0,bufsize);
-         strncat(VCFRUNHOSTS,argv[i],bufsize-1-strlen(VCFRUNHOSTS));
+         memset(VCFRUNHOSTS,0,CF_BUFSIZE);
+         strncat(VCFRUNHOSTS,argv[i],CF_BUFSIZE-1-strlen(VCFRUNHOSTS));
          Debug("cfrun: cfrun file = %s\n",VCFRUNHOSTS);
          }
       else if (strncmp(argv[i],"-d",2) == 0)
@@ -211,8 +211,8 @@ for (i = 1; i < argc; i++)
          }
       else
          {
-         strncat(CFRUNOPTIONS,argv[i],bufsize-1-strlen(CFRUNOPTIONS));
-         strncat(CFRUNOPTIONS," ",bufsize-1-strlen(CFRUNOPTIONS));
+         strncat(CFRUNOPTIONS,argv[i],CF_BUFSIZE-1-strlen(CFRUNOPTIONS));
+         strncat(CFRUNOPTIONS," ",CF_BUFSIZE-1-strlen(CFRUNOPTIONS));
          }
       }
    else
@@ -275,8 +275,8 @@ int PollServer(char *host,char *options,int storeinfile)
 
 { struct hostent *hp;
   struct sockaddr_in raddr;
-  char sendbuffer[bufsize],recvbuffer[bufsize];
-  char filebuffer[bufsize],parsed_host[bufsize];
+  char sendbuffer[CF_BUFSIZE],recvbuffer[CF_BUFSIZE];
+  char filebuffer[CF_BUFSIZE],parsed_host[CF_BUFSIZE];
   char reply[8];
   struct servent *server;
   int err,n_read,first,port;
@@ -318,13 +318,13 @@ query.ai_flags = AI_PASSIVE;
  
 if ((err=getaddrinfo(parsed_host,NULL,&query,&response)) != 0)
    {
-   snprintf(OUTPUT,bufsize,"Unable to lookup %s (%s)",parsed_host,gai_strerror(err));
+   snprintf(OUTPUT,CF_BUFSIZE,"Unable to lookup %s (%s)",parsed_host,gai_strerror(err));
    CfLog(cferror,OUTPUT,"");
    }
  
 for (ap = response; ap != NULL; ap = ap->ai_next)
    {
-   snprintf(CONN->remoteip,cfmaxiplen,"%s",sockaddr_ntop(ap->ai_addr));
+   snprintf(CONN->remoteip,CF_MAX_IP_LEN,"%s",sockaddr_ntop(ap->ai_addr));
    break;
    }
 
@@ -368,7 +368,7 @@ else
 raddr.sin_addr.s_addr = ((struct in_addr *)(hp->h_addr))->s_addr;
 raddr.sin_family = AF_INET; 
 
-snprintf(CONN->remoteip,cfmaxiplen,"%s",inet_ntoa(raddr.sin_addr));
+snprintf(CONN->remoteip,CF_MAX_IP_LEN,"%s",inet_ntoa(raddr.sin_addr));
 
 #endif
  
@@ -376,12 +376,12 @@ addresses.trustkey = 'n';
 addresses.encrypt = 'n';
 addresses.server = strdup(parsed_host);
  
-snprintf(sendbuffer,bufsize,"root-%s",parsed_host);
+snprintf(sendbuffer,CF_BUFSIZE,"root-%s",parsed_host);
 gotkey = HavePublicKey(sendbuffer);
  
 if (!gotkey)
    {
-   snprintf(sendbuffer,bufsize,"root-%s",CONN->remoteip);
+   snprintf(sendbuffer,CF_BUFSIZE,"root-%s",CONN->remoteip);
    gotkey = HavePublicKey(sendbuffer);
    }
  
@@ -424,10 +424,10 @@ if (!RemoteConnect(parsed_host,forceipv4))
    {
    CfLog(cferror,"Couldn't open a socket","socket");
    FileOutput(fp, fopl_error, "Couldn't open a socket\n");
-   if (CONN->sd != cf_not_connected)
+   if (CONN->sd != CF_NOT_CONNECTED)
       {
       close(CONN->sd);
-      CONN->sd = cf_not_connected;
+      CONN->sd = CF_NOT_CONNECTED;
       }
    free(addresses.server);
    return false;
@@ -445,7 +445,7 @@ if (!IdentifyForVerification(CONN->sd,CONN->localip,CONN->family))
 
 if (!KeyAuthentication(&addresses))
    {
-   snprintf(OUTPUT,bufsize,"Key-authentication for %s failed\n",VFQNAME);
+   snprintf(OUTPUT,CF_BUFSIZE,"Key-authentication for %s failed\n",VFQNAME);
    CfLog(cferror,OUTPUT,"");
    FileOutput(fp, fopl_error, "Key-authentication failed\n");
    errno = EPERM;
@@ -454,7 +454,7 @@ if (!KeyAuthentication(&addresses))
    return false;
    }
  
-snprintf(sendbuffer,bufsize,"EXEC %s %s",options,CFRUNOPTIONS);
+snprintf(sendbuffer,CF_BUFSIZE,"EXEC %s %s",options,CFRUNOPTIONS);
 
 if (SendTransaction(CONN->sd,sendbuffer,0,CF_DONE) == -1)
    {
@@ -473,7 +473,7 @@ first = true;
  
 while (true)
    {
-   memset(recvbuffer,0,bufsize);
+   memset(recvbuffer,0,CF_BUFSIZE);
 
    if ((n_read = ReceiveTransaction(CONN->sd,recvbuffer,NULL)) == -1)
       {
@@ -551,16 +551,16 @@ return true;
 
 void ReadCfrunConf()
 
-{ char filename[bufsize], *sp;
-  char buffer[maxvarsize], options[bufsize], line[bufsize];
+{ char filename[CF_BUFSIZE], *sp;
+  char buffer[CF_MAXVARSIZE], options[CF_BUFSIZE], line[CF_BUFSIZE];
   FILE *fp;
   struct Item *ip; 
 
-memset(filename,0,bufsize);
+memset(filename,0,CF_BUFSIZE);
 
 if (!strchr(VCFRUNHOSTS, '/'))
    {
-   if ((sp=getenv(CFINPUTSVAR)) != NULL)
+   if ((sp=getenv(CF_INPUTSVAR)) != NULL)
       {
       strcpy(filename,sp);
       if (filename[strlen(filename)-1] != '/')
@@ -570,7 +570,7 @@ if (!strchr(VCFRUNHOSTS, '/'))
       }
    else
       {
-      snprintf(filename, bufsize, "%s/inputs/", WORKDIR);
+      snprintf(filename, CF_BUFSIZE, "%s/inputs/", WORKDIR);
       }
    }
  
@@ -584,11 +584,11 @@ if ((fp = fopen(filename,"r")) == NULL)      /* Open root file */
 
 while (!feof(fp))
    {
-   memset(buffer,0,maxvarsize);
-   memset(options,0,bufsize);
-   memset(line,0,bufsize);
+   memset(buffer,0,CF_MAXVARSIZE);
+   memset(options,0,CF_BUFSIZE);
+   memset(line,0,CF_BUFSIZE);
 
-   ReadLine(line,bufsize,fp);
+   ReadLine(line,CF_BUFSIZE,fp);
 
    if (strncmp(line,"domain",6) == 0)
       {
@@ -729,11 +729,11 @@ void SendClassData(int sd,char *sendbuffer)
 
 sp = sendbuffer;
 used = 0;
-memset(sendbuffer,0,bufsize);
+memset(sendbuffer,0,CF_BUFSIZE);
   
 for (ip = VCFRUNCLASSES; ip != NULL; ip = ip->next)
    {
-   if (used + strlen(ip->name) +2 > bufsize)
+   if (used + strlen(ip->name) +2 > CF_BUFSIZE)
       {
       if (SendTransaction(sd,sendbuffer,0,CF_DONE) == -1)
          {
@@ -743,7 +743,7 @@ for (ip = VCFRUNCLASSES; ip != NULL; ip = ip->next)
 
       used = 0;
       sp = sendbuffer;
-      memset(sendbuffer,0,bufsize);
+      memset(sendbuffer,0,CF_BUFSIZE);
       }
    
    strcat(sendbuffer,ip->name);
@@ -753,7 +753,7 @@ for (ip = VCFRUNCLASSES; ip != NULL; ip = ip->next)
    used += strlen(ip->name)+1;
    }
 
-if (used + strlen(CFD_TERMINATOR) +2 > bufsize)
+if (used + strlen(CFD_TERMINATOR) +2 > CF_BUFSIZE)
    {
    if (SendTransaction(sd,sendbuffer,0,CF_DONE) == -1)
       {
@@ -763,7 +763,7 @@ if (used + strlen(CFD_TERMINATOR) +2 > bufsize)
 
    used = 0;
    sp = sendbuffer;
-   memset(sendbuffer,0,bufsize);
+   memset(sendbuffer,0,CF_BUFSIZE);
    }
    
 sprintf(sp, "%s", CFD_TERMINATOR);
@@ -779,7 +779,7 @@ if (SendTransaction(sd,sendbuffer,0,CF_DONE) == -1)
 
 void CheckAccess(char *users)
 
-{ char id[maxvarsize], *sp;
+{ char id[CF_MAXVARSIZE], *sp;
   struct passwd *pw;
   int uid,myuid;
 
@@ -886,7 +886,7 @@ struct cfagent_connection *NewAgentConn()
 
 { struct cfagent_connection *ap = (struct cfagent_connection *)malloc(sizeof(struct cfagent_connection));
 
-ap->sd = cf_not_connected;
+ap->sd = CF_NOT_CONNECTED;
 ap->family = AF_INET; 
 ap->trust = false;
 ap->localip[0] = '\0';

@@ -56,10 +56,10 @@ else
 
 char *StrStr(char *a,char *b) /* Case insensitive match */
 
-{ char buf1[bufsize],buf2[bufsize];
+{ char buf1[CF_BUFSIZE],buf2[CF_BUFSIZE];
 
-strncpy(buf1,ToLowerStr(a),bufsize-1);
-strncpy(buf2,ToLowerStr(b),bufsize-1);
+strncpy(buf1,ToLowerStr(a),CF_BUFSIZE-1);
+strncpy(buf2,ToLowerStr(b),CF_BUFSIZE-1);
 return strstr(buf1,buf2); 
 }
 
@@ -67,10 +67,10 @@ return strstr(buf1,buf2);
 
 int StrnCmp(char *a,char *b,size_t n) /* Case insensitive match */
 
-{ char buf1[bufsize],buf2[bufsize];
+{ char buf1[CF_BUFSIZE],buf2[CF_BUFSIZE];
 
-strncpy(buf1,ToLowerStr(a),bufsize-1);
-strncpy(buf2,ToLowerStr(b),bufsize-1);
+strncpy(buf1,ToLowerStr(a),CF_BUFSIZE-1);
+strncpy(buf2,ToLowerStr(b),CF_BUFSIZE-1);
 return strncmp(buf1,buf2,n); 
 }
 
@@ -126,9 +126,9 @@ void endnetgrent()
 
 int uname (struct utsname *sys)
 
-{ char buffer[bufsize], *sp;
+{ char buffer[CF_BUFSIZE], *sp;
 
-if (gethostname(buffer,bufsize) == -1)
+if (gethostname(buffer,CF_BUFSIZE) == -1)
    {
    perror("gethostname");
    exit(1);

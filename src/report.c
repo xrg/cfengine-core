@@ -433,7 +433,7 @@ printf ("\nDEFINED FILE IMAGES\n\n");
        printf(" Size %c %d\n",ptr->comp,ptr->size);
        printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
        
-       if (ptr->recurse == INFINITERECURSE)
+       if (ptr->recurse == CF_INF_RECURSE)
           {
           printf(" recurse=inf\n");
           }
@@ -567,7 +567,7 @@ printf ("\nDEFINED TIDY MASKS\n\n");
 
 for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
    {
-   if (ptr->maxrecurse == INFINITERECURSE)
+   if (ptr->maxrecurse == CF_INF_RECURSE)
       {
       printf("\nTIDY %s (maxrecurse = inf)\n",ptr->path);
       }
@@ -610,7 +610,7 @@ for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
          printf(" Filter %s\n",ip->name);
          }   
       
-      if (tp->recurse == INFINITERECURSE)
+      if (tp->recurse == CF_INF_RECURSE)
          {
          printf("       recurse=inf\n");
          }
@@ -758,7 +758,7 @@ for (ptr = VMAKEPATH; ptr != NULL; ptr=ptr->next)
    printf("\nDIRECTORY %s\n +%o\n -%o\n %s\n",ptr->path,ptr->plus,ptr->minus,FILEACTIONTEXT[ptr->action]);
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    
-   if (ptr->recurse == INFINITERECURSE)
+   if (ptr->recurse == CF_INF_RECURSE)
       {
       printf(" recurse=inf\n");
       }
@@ -845,7 +845,7 @@ for (ptr = VFILE; ptr != NULL; ptr=ptr->next)
    FILEACTIONTEXT[ptr->action],ptr->travlinks);
 
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
-   if (ptr->recurse == INFINITERECURSE)
+   if (ptr->recurse == CF_INF_RECURSE)
       {
       printf(" recurse=inf\n");
       }
@@ -994,7 +994,7 @@ for (ptr = VPROCLIST; ptr != NULL; ptr=ptr->next)
       }
    }
 
-printf(")\n");
+printf("\n");
 }
 
 /*******************************************************************/

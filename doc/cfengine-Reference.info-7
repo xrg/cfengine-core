@@ -1,4 +1,4 @@
-This is cfengine-Reference.info, produced by makeinfo version 4.3 from
+This is cfengine-Reference.info, produced by makeinfo version 4.5 from
 cfengine-Reference.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -180,8 +180,9 @@ system administrator will be emailed a summary of any output:
      control:
      
      smtpserver    = ( mailhub.example.org ) # site MTA which can talk smtp
-     sysadm        = ( mark@example.org )    # mail address of sysadm
-     EmailMaxLines = ( N )                 # max lines of output to email
+     sysadm        = ( mark@example.org )   # mail address of sysadm
+     EmailMaxLines = ( N )             # max lines of output to email
+     OutputPrefix  = ( "!" )                 # Line prefix
 
 Fill in suitable values for these variables. `EmailMaxLines' may be set
 to 0 to disable email output, a postive integer to set a limit, or

@@ -2474,8 +2474,8 @@ case 27:
 YY_RULE_SETUP
 #line 310 "cflex.l"
 {
-                       bzero(FILTERNAME,bufsize); /* Reset */
-                       bzero(STRATEGYNAME,bufsize); /* Reset */
+                       bzero(FILTERNAME,CF_BUFSIZE); /* Reset */
+                       bzero(STRATEGYNAME,CF_BUFSIZE); /* Reset */
 
                        Debug1("LBRACE\n");
                        return LBRACE;

@@ -1,4 +1,4 @@
-This is cfengine-Tutorial.info, produced by makeinfo version 4.3 from
+This is cfengine-Tutorial.info, produced by makeinfo version 4.5 from
 cfengine-Tutorial.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -219,6 +219,7 @@ variable._ The dots in this string will be replaced by underscores.
 
 `|'
      OR is the weakest operator.
+
 
 
 File: cfengine-Tutorial.info,  Node: Variable substitution,  Next: Undefined variables,  Prev: Classes basics,  Up: More advanced concepts
@@ -447,6 +448,7 @@ troublesome special characters in strings.
 
 `tab'
      Expands to a single tab character.
+
 
 You can use variables in the following places:
 
@@ -1176,6 +1178,7 @@ operators.
     `xdigit'
           a hexadecimal digit 0-9, a-f
 
+
 ``( )''
      Groups together any number of operators.
 
@@ -1187,6 +1190,7 @@ operators.
 
 `$'
      Match the end of a line.
+
 
 Here is a few examples. Remember that some commands look for a regular
 expression match of part of a string, while others require a match of

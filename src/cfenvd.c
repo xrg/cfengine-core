@@ -51,7 +51,7 @@
 #define cf_noise_threshold 10 /* number that does not warrent large anomaly status */
 #define big_number 100000
 
-unsigned int HISTOGRAM[2*NETATTR+ATTR*2+5+PH_LIMIT][7][GRAINS];
+unsigned int HISTOGRAM[2*CF_NETATTR+ATTR*2+5+PH_LIMIT][7][CF_GRAINS];
 
 int HISTO = false;
 int NUMBER_OF_USERS;
@@ -61,8 +61,8 @@ int DISKFREE;
 int LOADAVG;
 int INCOMING[ATTR];
 int OUTGOING[ATTR];
-int NETIN[NETATTR];
-int NETOUT[NETATTR];
+int NETIN[CF_NETATTR];
+int NETOUT[CF_NETATTR];
 int PH_SAMP[PH_LIMIT];
 int PH_LAST[PH_LIMIT];
 int PH_DELTA[PH_LIMIT];
@@ -72,12 +72,12 @@ int BATCH_MODE = false;
 double ITER = 0.0;        /* Iteration since start */
 double AGE,WAGE;          /* Age and weekly age of database */
 
-char OUTPUT[bufsize*2];
+char OUTPUT[CF_BUFSIZE*2];
 
-char BATCHFILE[bufsize];
-char STATELOG[bufsize];
-char ENV_NEW[bufsize];
-char ENV[bufsize];
+char BATCHFILE[CF_BUFSIZE];
+char STATELOG[CF_BUFSIZE];
+char ENV_NEW[CF_BUFSIZE];
+char ENV[CF_BUFSIZE];
 
 short TCPDUMP = false;
 short TCPPAUSE = false;
@@ -86,8 +86,8 @@ FILE *TCPPIPE;
 struct Averages LOCALAV;
 struct Item *ALL_INCOMING = NULL;
 struct Item *ALL_OUTGOING = NULL;
-struct Item *NETIN_DIST[NETATTR];
-struct Item *NETOUT_DIST[NETATTR];
+struct Item *NETIN_DIST[CF_NETATTR];
+struct Item *NETOUT_DIST[CF_NETATTR];
 
 
 double ENTROPY = 0.0;
@@ -246,8 +246,8 @@ sprintf(VBUFF,"%s/test",WORKDIR);
 MakeDirectoriesFor(VBUFF,'y');
 sprintf(VBUFF,"%s/state/test",WORKDIR);
 MakeDirectoriesFor(VBUFF,'y');
-strncpy(VLOCKDIR,WORKDIR,bufsize-1);
-strncpy(VLOGDIR,WORKDIR,bufsize-1);
+strncpy(VLOCKDIR,WORKDIR,CF_BUFSIZE-1);
+strncpy(VLOGDIR,WORKDIR,CF_BUFSIZE-1);
 
 for (i = 0; i < ATTR; i++)
    {
@@ -257,7 +257,7 @@ for (i = 0; i < ATTR; i++)
    CreateEmptyFile(VBUFF);
    }
 
-for (i = 0; i < NETATTR; i++)
+for (i = 0; i < CF_NETATTR; i++)
    {
    NETIN_DIST[i] = NULL;
    NETOUT_DIST[i] = NULL;
@@ -266,10 +266,10 @@ for (i = 0; i < NETATTR; i++)
 sprintf(VBUFF,"%s/state/cf_users",WORKDIR);
 CreateEmptyFile(VBUFF);
  
-snprintf(AVDB,bufsize,"%s/state/%s",WORKDIR,AVDB_FILE);
-snprintf(STATELOG,bufsize,"%s/state/%s",WORKDIR,STATELOG_FILE);
-snprintf(ENV_NEW,bufsize,"%s/state/%s",WORKDIR,ENV_NEW_FILE);
-snprintf(ENV,bufsize,"%s/state/%s",WORKDIR,ENV_FILE);
+snprintf(AVDB,CF_BUFSIZE,"%s/state/%s",WORKDIR,CF_AVDB_FILE);
+snprintf(STATELOG,CF_BUFSIZE,"%s/state/%s",WORKDIR,CF_STATELOG_FILE);
+snprintf(ENV_NEW,CF_BUFSIZE,"%s/state/%s",WORKDIR,CF_ENVNEW_FILE);
+snprintf(ENV,CF_BUFSIZE,"%s/state/%s",WORKDIR,CF_ENV_FILE);
 
 if (!BATCH_MODE)
    {
@@ -293,7 +293,7 @@ if (!BATCH_MODE)
       LOCALAV.var_outgoing[i] = 0.0;
       }
 
-   for (i = 0; i < NETATTR; i++)
+   for (i = 0; i < CF_NETATTR; i++)
       {
       LOCALAV.expect_netin[i] = 0.0;
       LOCALAV.expect_netout[i] = 0.0;
@@ -311,9 +311,9 @@ if (!BATCH_MODE)
 
 for (i = 0; i < 7; i++)
    {
-   for (j = 0; j < ATTR*2+5+PH_LIMIT; j++)
+   for (j = 0; j < 2*CF_NETATTR+ATTR*2+5+PH_LIMIT; j++)
       {
-      for (k = 0; k < GRAINS; k++)
+      for (k = 0; k < CF_GRAINS; k++)
          {
          HISTOGRAM[i][j][k] = 0;
          }
@@ -361,7 +361,7 @@ void GetDatabaseAge()
 
 if ((errno = db_create(&dbp,NULL,0)) != 0)
    {
-   snprintf(OUTPUT,bufsize,"Couldn't open average database %s\n",AVDB);
+   snprintf(OUTPUT,CF_BUFSIZE,"Couldn't open average database %s\n",AVDB);
    CfLog(cferror,OUTPUT,"db_open");
    return;
    }
@@ -373,7 +373,7 @@ if ((errno = dbp->open(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
    {
    AGE = WAGE = 0;
-   snprintf(OUTPUT,bufsize,"Couldn't open average database %s\n",AVDB);
+   snprintf(OUTPUT,CF_BUFSIZE,"Couldn't open average database %s\n",AVDB);
    CfLog(cferror,OUTPUT,"db_open");
    return;
    }
@@ -401,7 +401,7 @@ dbp->close(dbp,0);
 if (value.data != NULL)
    {
    AGE = *(double *)(value.data);
-   WAGE = AGE / CFWEEK * MEASURE_INTERVAL;
+   WAGE = AGE / CF_WEEK * CF_MEASURE_INTERVAL;
    Debug("\n\nPrevious DATABASE_AGE %f\n\n",AGE);
    }
 else
@@ -420,9 +420,9 @@ void LoadHistogram()
 
 if (HISTO)
    {
-   char filename[bufsize];
+   char filename[CF_BUFSIZE];
    
-   snprintf(filename,bufsize,"%s/state/histograms",WORKDIR);
+   snprintf(filename,CF_BUFSIZE,"%s/state/histograms",WORKDIR);
    
    if ((fp = fopen(filename,"r")) == NULL)
       {
@@ -430,11 +430,11 @@ if (HISTO)
       return;
       }
 
-   for (position = 0; position < GRAINS; position++)
+   for (position = 0; position < CF_GRAINS; position++)
       {
       fscanf(fp,"%d ",&position);
       
-      for (i = 0; i < 5 + 2*NETATTR + 2*ATTR + PH_LIMIT; i++)
+      for (i = 0; i < 5 + 2*CF_NETATTR + 2*ATTR + PH_LIMIT; i++)
          {
          for (day = 0; day < 7; day++)
             {
@@ -454,7 +454,7 @@ void StartServer(int argc,char **argv)
 { char *timekey;
   struct Averages averages;
   void HandleSignal();
-  char tcpbuffer[bufsize];
+  char tcpbuffer[CF_BUFSIZE];
   int i;
 
 if ((!NO_FORK) && (fork() != 0))
@@ -485,12 +485,12 @@ if (!GetLock("cfenvd","daemon",0,1,"localhost",(time_t)time(NULL)))
 if (TCPDUMP)
    {
    struct stat statbuf;
-   char buffer[maxvarsize];
-   sscanf(tcpdumpcommand,"%s",buffer);
+   char buffer[CF_MAXVARSIZE];
+   sscanf(CF_TCPDUMP_COMM,"%s",buffer);
    
    if (stat(buffer,&statbuf) != -1)
       {
-      if ((TCPPIPE = cfpopen(tcpdumpcommand,"r")) == NULL)
+      if ((TCPPIPE = cfpopen(CF_TCPDUMP_COMM,"r")) == NULL)
          {
          TCPDUMP = false;
          }
@@ -510,7 +510,7 @@ if (TCPDUMP)
 
    if (TCPDUMP)
       {
-      memset(tcpbuffer,0,bufsize);      
+      memset(tcpbuffer,0,CF_BUFSIZE);      
       ZeroArrivals();
       signal(SIGALRM,(void *)TimeOut);
       alarm(SLEEPTIME);
@@ -523,7 +523,7 @@ if (TCPDUMP)
             break;
             }
          
-         fgets(tcpbuffer,bufsize-1,TCPPIPE);
+         fgets(tcpbuffer,CF_BUFSIZE-1,TCPPIPE);
          
          if (TCPPAUSE)
             {
@@ -537,7 +537,7 @@ if (TCPDUMP)
       TCPPAUSE = false;
       fflush(TCPPIPE);
       
-      for (i = 0; i < NETATTR; i++)
+      for (i = 0; i < CF_NETATTR; i++)
          {
          Verbose(" > TCPDUMP FOUND: %d/%d pckts in %s \n",NETIN[i],NETOUT[i],TCPNAMES[i]);
          }
@@ -631,7 +631,7 @@ struct Averages EvalAvQ(char *t)
 { struct Averages *currentvals,newvals;
   int i; 
   double Number_Of_Users,Rootprocs,Otherprocs,Diskfree,LoadAvg;
-  double Incoming[ATTR],Outgoing[ATTR],pH_delta[PH_LIMIT],NetIn[NETATTR],NetOut[NETATTR];
+  double Incoming[ATTR],Outgoing[ATTR],pH_delta[PH_LIMIT],NetIn[CF_NETATTR],NetOut[CF_NETATTR];
 
 if ((currentvals = GetCurrentAverages(t)) == NULL)
    {
@@ -659,7 +659,7 @@ for (i = 0; i < PH_LIMIT; i++)
    pH_delta[i] = RejectAnomaly(PH_DELTA[i],currentvals->expect_pH[i],currentvals->var_pH[i],LOCALAV.expect_pH[i],LOCALAV.var_pH[i]);
    }
 
-for (i = 0; i < NETATTR; i++)
+for (i = 0; i < CF_NETATTR; i++)
    {
    NetIn[i] = RejectAnomaly(NETIN[i],currentvals->expect_netin[i],currentvals->var_netin[i],LOCALAV.expect_netin[i],LOCALAV.var_netin[i]);
    NetOut[i] = RejectAnomaly(NETOUT[i],currentvals->expect_netout[i],currentvals->var_netout[i],LOCALAV.expect_netout[i],LOCALAV.var_netout[i]);
@@ -712,7 +712,7 @@ for (i = 0; i < ATTR; i++)
    }
 
  
-for (i = 0; i < NETATTR; i++)
+for (i = 0; i < CF_NETATTR; i++)
    {
    newvals.expect_netin[i] = WAverage(NetIn[i],currentvals->expect_netin[i],WAGE);
    newvals.expect_netout[i] = WAverage(NetOut[i],currentvals->expect_netout[i],WAGE);
@@ -808,7 +808,7 @@ for (i = 0; i < PH_LIMIT; i++)
    SetVariable(CanonifyName(PH_BINARIES[i]),PH_DELTA[i],av.expect_pH[i],sig,&classlist);
    }
 
-for (i = 0; i < NETATTR; i++)
+for (i = 0; i < CF_NETATTR; i++)
    {
    char name[256];
    strcpy(name,TCPNAMES[i]);
@@ -854,7 +854,7 @@ rename(ENV_NEW,ENV);
 
 void AnalyzeArrival(char *arrival)
 
-{ char src[bufsize],dest[bufsize], flag = '.';
+{ char src[CF_BUFSIZE],dest[CF_BUFSIZE], flag = '.';
   int i;
   
 src[0] = dest[0] = '\0';
@@ -997,11 +997,11 @@ if (strstr(arrival,"tcp") || strstr(arrival,"ack"))
 
     if (strstr(arrival,".138"))
        {
-       snprintf(dest,bufsize-1,"%s NETBIOS",src);
+       snprintf(dest,CF_BUFSIZE-1,"%s NETBIOS",src);
        }
     else if (strstr(arrival,".2049"))
        {
-       snprintf(dest,bufsize-1,"%s NFS",src);
+       snprintf(dest,CF_BUFSIZE-1,"%s NFS",src);
        }
     else
        {
@@ -1019,11 +1019,11 @@ if (strstr(arrival,"tcp") || strstr(arrival,"ack"))
 void GatherProcessData()
 
 { FILE *pp;
-  char pscomm[bufsize];
-  char user[maxvarsize];
+  char pscomm[CF_BUFSIZE];
+  char user[CF_MAXVARSIZE];
   struct Item *list = NULL;
   
-snprintf(pscomm,bufsize,"%s %s",VPSCOMM[VSYSTEMHARDCLASS],VPSOPTS[VSYSTEMHARDCLASS]);
+snprintf(pscomm,CF_BUFSIZE,"%s %s",VPSCOMM[VSYSTEMHARDCLASS],VPSOPTS[VSYSTEMHARDCLASS]);
 
 NUMBER_OF_USERS = ROOTPROCS = OTHERPROCS = 0; 
 
@@ -1032,11 +1032,11 @@ if ((pp = cfpopen(pscomm,"r")) == NULL)
    return;
    }
 
-ReadLine(VBUFF,bufsize,pp); 
+ReadLine(VBUFF,CF_BUFSIZE,pp); 
 
 while (!feof(pp))
    {
-   ReadLine(VBUFF,bufsize,pp);
+   ReadLine(VBUFF,CF_BUFSIZE,pp);
    sscanf(VBUFF,"%s",user);
    if (!IsItemIn(list,user))
       {
@@ -1057,7 +1057,7 @@ while (!feof(pp))
 
 cfpclose(pp);
 
-snprintf(VBUFF,maxvarsize,"%s/state/cf_users",WORKDIR);
+snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_users",WORKDIR);
 SaveItemList(list,VBUFF,"none");
  
 Verbose("(Users,root,other) = (%d,%d,%d)\n",NUMBER_OF_USERS,ROOTPROCS,OTHERPROCS);
@@ -1108,7 +1108,7 @@ Verbose("100 x Load Average = %d\n",LOADAVG);
 void GatherSocketData()
 
 { FILE *pp,*fpout;
-  char local[bufsize],remote[bufsize],comm[bufsize];
+  char local[CF_BUFSIZE],remote[CF_BUFSIZE],comm[CF_BUFSIZE];
   struct Item *in[ATTR],*out[ATTR];
   char *sp;
   int i;
@@ -1144,10 +1144,10 @@ if ((pp = cfpopen(comm,"r")) == NULL)
 
 while (!feof(pp))
    {
-   memset(local,0,bufsize);
-   memset(remote,0,bufsize);
+   memset(local,0,CF_BUFSIZE);
+   memset(remote,0,CF_BUFSIZE);
    
-   ReadLine(VBUFF,bufsize,pp);
+   ReadLine(VBUFF,CF_BUFSIZE,pp);
 
    if (strstr(VBUFF,"UNIX"))
       {
@@ -1240,7 +1240,7 @@ while (!feof(pp))
     time_t now = time(NULL);
     
     Debug("save incoming %s\n",ECGSOCKS[i][1]);
-    snprintf(VBUFF,maxvarsize,"%s/state/cf_incoming.%s",WORKDIR,ECGSOCKS[i][1]);
+    snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_incoming.%s",WORKDIR,ECGSOCKS[i][1]);
     if (stat(VBUFF,&statbuf) != -1)
        {
        if ((ByteSizeList(in[i]) < statbuf.st_size) && (now < statbuf.st_mtime+40*60))
@@ -1263,7 +1263,7 @@ while (!feof(pp))
     time_t now = time(NULL); 
 
     Debug("save outgoing %s\n",ECGSOCKS[i][1]);
-    snprintf(VBUFF,maxvarsize,"%s/state/cf_outgoing.%s",WORKDIR,ECGSOCKS[i][1]);
+    snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_outgoing.%s",WORKDIR,ECGSOCKS[i][1]);
 
     if (stat(VBUFF,&statbuf) != -1)
        {       
@@ -1282,13 +1282,13 @@ while (!feof(pp))
     }
  
  
- for (i = 0; i < NETATTR; i++)
+ for (i = 0; i < CF_NETATTR; i++)
     {
     struct stat statbuf;
     time_t now = time(NULL); 
     
     Debug("save incoming %s\n",TCPNAMES[i]);
-    snprintf(VBUFF,maxvarsize,"%s/state/cf_incoming.%s",WORKDIR,TCPNAMES[i]);
+    snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_incoming.%s",WORKDIR,TCPNAMES[i]);
     
     if (stat(VBUFF,&statbuf) != -1)
        {       
@@ -1302,18 +1302,19 @@ while (!feof(pp))
        }
     
     SaveTCPEntropyData(NETIN_DIST[i],i,"in");
+    SetEntropyClasses(TCPNAMES[i],NETIN_DIST[i],"in");
     DeleteItemList(NETIN_DIST[i]);
     NETIN_DIST[i] = NULL;
     }
 
 
- for (i = 0; i < NETATTR; i++)
+ for (i = 0; i < CF_NETATTR; i++)
     {
     struct stat statbuf;
     time_t now = time(NULL); 
  
     Debug("save outgoing %s\n",TCPNAMES[i]);
-    snprintf(VBUFF,maxvarsize,"%s/state/cf_outgoing.%s",WORKDIR,TCPNAMES[i]);
+    snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_outgoing.%s",WORKDIR,TCPNAMES[i]);
     
     if (stat(VBUFF,&statbuf) != -1)
        {       
@@ -1327,6 +1328,7 @@ while (!feof(pp))
        }
     
     SaveTCPEntropyData(NETOUT_DIST[i],i,"out");
+    SetEntropyClasses(TCPNAMES[i],NETOUT_DIST[i],"out");
     DeleteItemList(NETOUT_DIST[i]);
     NETOUT_DIST[i] = NULL;
     }
@@ -1361,7 +1363,7 @@ Debug("Looking for proc data\n");
 
 if ((dirh = opendir("/proc")) == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"Can't open directory /proc\n");
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open directory /proc\n");
    CfLog(cfverbose,OUTPUT,"opendir");
    return;
    }
@@ -1500,7 +1502,7 @@ if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
 dbp->close(dbp,0);
 
 AGE++;
-WAGE = AGE / CFWEEK * MEASURE_INTERVAL;
+WAGE = AGE / CF_WEEK * CF_MEASURE_INTERVAL;
 
 if (value.data != NULL)
    {
@@ -1579,11 +1581,11 @@ dbp->close(dbp,0);
 
 void UpdateDistributions(char *timekey,struct Averages *av)
 
-{ int position,olddist[GRAINS],newdist[GRAINS]; 
+{ int position,olddist[CF_GRAINS],newdist[CF_GRAINS]; 
   int day,i,time_to_update = true;
  
-/* Take an interval of 4 standard deviations from -2 to +2, divided into GRAINS
-   parts. Centre each measurement on GRAINS/2 and scale each measurement by the
+/* Take an interval of 4 standard deviations from -2 to +2, divided into CF_GRAINS
+   parts. Centre each measurement on CF_GRAINS/2 and scale each measurement by the
    std-deviation for the current time.
  */
 if (HISTO)
@@ -1592,51 +1594,66 @@ if (HISTO)
    
    day = Day2Number(timekey);
    
-   position = GRAINS/2 + (int)(0.5+(NUMBER_OF_USERS - av->expect_number_of_users)*GRAINS/(4*sqrt((av->var_number_of_users))));
-   if (0 <= position && position < GRAINS)
+   position = CF_GRAINS/2 + (int)(0.5+(NUMBER_OF_USERS - av->expect_number_of_users)*CF_GRAINS/(4*sqrt((av->var_number_of_users))));
+   if (0 <= position && position < CF_GRAINS)
       {
       HISTOGRAM[0][day][position]++;
       }
    
-   position = GRAINS/2 + (int)(0.5+(ROOTPROCS - av->expect_rootprocs)*GRAINS/(4*sqrt((av->var_rootprocs))));
-   if (0 <= position && position < GRAINS)
+   position = CF_GRAINS/2 + (int)(0.5+(ROOTPROCS - av->expect_rootprocs)*CF_GRAINS/(4*sqrt((av->var_rootprocs))));
+   if (0 <= position && position < CF_GRAINS)
       {
       HISTOGRAM[1][day][position]++;
       }
    
-   position = GRAINS/2 + (int)(0.5+(OTHERPROCS - av->expect_otherprocs)*GRAINS/(4*sqrt((av->var_otherprocs))));
-   if (0 <= position && position < GRAINS)
+   position = CF_GRAINS/2 + (int)(0.5+(OTHERPROCS - av->expect_otherprocs)*CF_GRAINS/(4*sqrt((av->var_otherprocs))));
+   if (0 <= position && position < CF_GRAINS)
       {
       HISTOGRAM[2][day][position]++;
       }
    
-   position = GRAINS/2 + (int)(0.5+(DISKFREE - av->expect_diskfree)*GRAINS/(4*sqrt((av->var_diskfree))));
-   if (0 <= position && position < GRAINS)
+   position = CF_GRAINS/2 + (int)(0.5+(DISKFREE - av->expect_diskfree)*CF_GRAINS/(4*sqrt((av->var_diskfree))));
+   if (0 <= position && position < CF_GRAINS)
       {
       HISTOGRAM[3][day][position]++;
       }
 
-   position = GRAINS/2 + (int)(0.5+(LOADAVG - av->expect_loadavg)*GRAINS/(4*sqrt((av->var_loadavg))));
-   if (0 <= position && position < GRAINS)
+   position = CF_GRAINS/2 + (int)(0.5+(LOADAVG - av->expect_loadavg)*CF_GRAINS/(4*sqrt((av->var_loadavg))));
+   if (0 <= position && position < CF_GRAINS)
       {
       HISTOGRAM[4][day][position]++;
       }
 
    for (i = 0; i < ATTR; i++)
       {
-      position = GRAINS/2 + (int)(0.5+(INCOMING[i] - av->expect_incoming[i])*GRAINS/(4*sqrt((av->var_incoming[i]))));
-      if (0 <= position && position < GRAINS)
+      position = CF_GRAINS/2 + (int)(0.5+(INCOMING[i] - av->expect_incoming[i])*CF_GRAINS/(4*sqrt((av->var_incoming[i]))));
+      if (0 <= position && position < CF_GRAINS)
          {
          HISTOGRAM[5+i][day][position]++;
          }
       
-      position = GRAINS/2 + (int)(0.5+(OUTGOING[i] - av->expect_outgoing[i])*GRAINS/(4*sqrt((av->var_outgoing[i]))));
-      if (0 <= position && position < GRAINS)
+      position = CF_GRAINS/2 + (int)(0.5+(OUTGOING[i] - av->expect_outgoing[i])*CF_GRAINS/(4*sqrt((av->var_outgoing[i]))));
+      if (0 <= position && position < CF_GRAINS)
          {
          HISTOGRAM[5+ATTR+i][day][position]++;
          }
       }
-   
+
+   for (i = 0; i < CF_NETATTR; i++)
+      {
+      position = CF_GRAINS/2 + (int)(0.5+(INCOMING[i] - av->expect_incoming[i])*CF_GRAINS/(4*sqrt((av->var_incoming[i]))));
+      if (0 <= position && position < CF_GRAINS)
+         {
+         HISTOGRAM[5+i+2*ATTR][day][position]++;
+         }
+      
+      position = CF_GRAINS/2 + (int)(0.5+(OUTGOING[i] - av->expect_outgoing[i])*CF_GRAINS/(4*sqrt((av->var_outgoing[i]))));
+      if (0 <= position && position < CF_GRAINS)
+         {
+         HISTOGRAM[5+2*ATTR+CF_NETATTR+i][day][position]++;
+         }
+      }
+
    // PUT TCP STUFF HERE...
    
    for (i = 0; i < PH_LIMIT; i++)
@@ -1646,10 +1663,10 @@ if (HISTO)
          continue;
          }
       
-      position = GRAINS/2 + (int)(0.5+(PH_DELTA[i] - av->expect_pH[i])*GRAINS/(4*sqrt((av->var_pH[i]))));
-      if (0 <= position && position < GRAINS)
+      position = CF_GRAINS/2 + (int)(0.5+(PH_DELTA[i] - av->expect_pH[i])*CF_GRAINS/(4*sqrt((av->var_pH[i]))));
+      if (0 <= position && position < CF_GRAINS)
          {
-         HISTOGRAM[5+2*NETATTR+2*ATTR+i][day][position]++;
+         HISTOGRAM[5+2*CF_NETATTR+2*ATTR+i][day][position]++;
          }
       }
    
@@ -1657,9 +1674,9 @@ if (HISTO)
    if (time_to_update)
       {
       FILE *fp;
-      char filename[bufsize];
+      char filename[CF_BUFSIZE];
       
-      snprintf(filename,bufsize,"%s/state/histograms",WORKDIR);
+      snprintf(filename,CF_BUFSIZE,"%s/state/histograms",WORKDIR);
       
       if ((fp = fopen(filename,"w")) == NULL)
          {
@@ -1667,11 +1684,11 @@ if (HISTO)
          return;
          }
       
-      for (position = 0; position < GRAINS; position++)
+      for (position = 0; position < CF_GRAINS; position++)
          {
          fprintf(fp,"%u ",position);
          
-         for (i = 0; i < 5 + 2*NETATTR+2*ATTR+PH_LIMIT; i++)
+         for (i = 0; i < 5 + 2*CF_NETATTR+2*ATTR+PH_LIMIT; i++)
             {
             for (day = 0; day < 7; day++)
                {
@@ -1722,7 +1739,7 @@ return av;
 
 double SetClasses(char * name,double variable,double av_expect,double av_var,double localav_expect,double localav_var,struct Item **classlist,char *timekey)
 
-{ char buffer[bufsize],buffer2[bufsize];
+{ char buffer[CF_BUFSIZE],buffer2[CF_BUFSIZE];
   double dev,delta,sigma,ldelta,lsigma,sig;
 
 Debug("\n SetClasses(%s,X=%f,avX=%f,varX=%f,lavX=%f,lvarX=%f,%s)\n",name,variable,av_expect,av_var,localav_expect,localav_var,timekey);
@@ -1836,7 +1853,7 @@ if (fabs(delta) < cf_noise_threshold) /* Arbitrary limits on sensitivity  */
 void SetVariable(char *name,double value,double average,double stddev,struct Item **classlist)
 
 
-{ char var[bufsize];
+{ char var[CF_BUFSIZE];
 
 sprintf(var,"value_%s=%d",name,(int)value);
 AppendItem(classlist,var,"");
@@ -1861,7 +1878,7 @@ void ZeroArrivals()
 
 { int i;
  
-for (i = 0; i < NETATTR; i++)
+for (i = 0; i < CF_NETATTR; i++)
    {
    NETIN[i] = 0;
    NETOUT[i] = 0;
@@ -1942,82 +1959,115 @@ return hash;
 void SetEntropyClasses(char *service,struct Item *list,char *inout)
 
 { struct Item *ip, *addresses = NULL;
-  char local[bufsize],remote[bufsize],class[bufsize],vbuff[bufsize], *sp;
-  int i = 0, min_signal_diversity = 1,conns=0,classes=0;
-  double *dist = NULL, S = 0.0, percent = 0.0;
+  char local[CF_BUFSIZE],remote[CF_BUFSIZE],class[CF_BUFSIZE],vbuff[CF_BUFSIZE], *sp;
+  int i = 0, min_signal_diversity = 1,total=0,classes=0;
+  double *p = NULL, S = 0.0, percent = 0.0;
+
+
+if (IsSocketType(service))
+   {
+   for (ip = list; ip != NULL; ip=ip->next)
+      {   
+      if (strlen(ip->name) > 0)
+         {
+         if (strncmp(ip->name,"tcp",3) == 0)
+            {
+            sscanf(ip->name,"%*s %*s %*s %s %s",local,remote); /* linux-like */
+            }
+         else
+            {
+            sscanf(ip->name,"%s %s",local,remote);             /* solaris-like */
+            }
+         
+         strncpy(vbuff,remote,CF_BUFSIZE-1);
+         
+         for (sp = vbuff+strlen(vbuff)-1; isdigit((int)*sp); sp--)
+            {     
+            }
+         
+         *sp = '\0';
+         
+         if (!IsItemIn(addresses,vbuff))
+            {
+            total++;
+            AppendItem(&addresses,vbuff,"");
+            IncrementItemListCounter(addresses,vbuff);
+            }
+         else
+            {
+            total++;    
+            IncrementItemListCounter(addresses,vbuff);
+            }      
+         }
+      }
    
-for (ip = list; ip != NULL; ip=ip->next)
-   {   
-   if (strlen(ip->name) > 0)
+   p = (double *) malloc((total+1)*sizeof(double));
+   
+   if (total > min_signal_diversity)
       {
-      if (strncmp(ip->name,"tcp",3) == 0)
+      for (i = 0,ip = addresses; ip != NULL; i++,ip=ip->next)
          {
-         sscanf(ip->name,"%*s %*s %*s %s %s",local,remote); /* linux-like */
-         }
-      else
-         {
-         sscanf(ip->name,"%s %s",local,remote);             /* solaris-like */
+         p[i] = ((double)(ip->counter))/((double)total);
+         
+         S -= p[i]*log(p[i]);
          }
       
-      strncpy(vbuff,remote,bufsize-1);
-      
-      for (sp = vbuff+strlen(vbuff)-1; isdigit((int)*sp); sp--)
-         {     
-         }
-      
-      *sp = '\0';
-      
-      if (!IsItemIn(addresses,vbuff))
-         {
-         conns++;
-         AppendItem(&addresses,vbuff,"");
-         IncrementItemListCounter(addresses,vbuff);
-         }
-      else
-         {
-         conns++;    
-         IncrementItemListCounter(addresses,vbuff);
-         }      
+      percent = S/log((double)total)*100.0;
+      free(p);       
       }
    }
- 
- 
- dist = (double *) malloc((conns+1)*sizeof(double));
- 
- if (conns > min_signal_diversity)
-    {
-    for (i = 0,ip = addresses; ip != NULL; i++,ip=ip->next)
-       {
-       dist[i] = ((double)(ip->counter))/((double)conns);
-       
-       S -= dist[i]*log(dist[i]);
-       }
-    
-    percent = S/log((double)conns)*100.0;
-    
-    if (percent > 90)
-       {
-       snprintf(class,maxvarsize,"entropy_%s_%s_high",service,inout);
-       AppendItem(&ENTROPIES,class,"");
-       }
-    else if (percent < 20)
-       {
-       snprintf(class,maxvarsize,"entropy_%s_%s_low",service,inout);
-       AppendItem(&ENTROPIES,class,"");
-       }
-    else
-       {
-       snprintf(class,maxvarsize,"entropy_%s_%s_medium",service,inout);
-       AppendItem(&ENTROPIES,class,"");
-       }
-    }
  else
     {
-    percent = 0;
+    int classes = 0;
+
+    total = 0;
+    
+    for (ip = list; ip != NULL; ip=ip->next)
+       {
+       total += (double)(ip->counter);
+       }
+ 
+    p = (double *)malloc(sizeof(double)*total); 
+
+    for (ip = list; ip != NULL; ip=ip->next)
+       {
+       p[classes++] = ip->counter/total;
+       }
+    
+    for (i = 0; i < classes; i++)
+       {
+       S -= p[i] * log(p[i]);
+       }
+    
+    if (classes > 1)
+       {
+       percent = S/log((double)classes)*100.0;
+       }
+    else
+       {    
+       percent = 0;
+       }
+
+    free(p);
     }
  
- DeleteItemList(addresses);
- free(dist); 
+if (percent > 90)
+   {
+   snprintf(class,CF_MAXVARSIZE,"entropy_%s_%s_high",service,inout);
+   AppendItem(&ENTROPIES,class,"");
+   }
+else if (percent < 20)
+   {
+   snprintf(class,CF_MAXVARSIZE,"entropy_%s_%s_low",service,inout);
+   AppendItem(&ENTROPIES,class,"");
+   }
+else
+   {
+   snprintf(class,CF_MAXVARSIZE,"entropy_%s_%s_medium",service,inout);
+   AppendItem(&ENTROPIES,class,"");
+   }
+ 
+DeleteItemList(addresses);
 }
 
 /***************************************************************/
@@ -2025,10 +2075,9 @@ for (ip = list; ip != NULL; ip=ip->next)
 void SaveTCPEntropyData(struct Item *list,int i,char *inout)
 
 { struct Item *ip;
-  double total = 0.0,*p,S = 0.0,percent;
   int j = 0,classes = 0;
   FILE *fp;
-  char filename[bufsize];
+  char filename[CF_BUFSIZE];
 
 Verbose("TCP Save %s\n",TCPNAMES[i]);
   
@@ -2037,21 +2086,14 @@ if (list == NULL)
    Verbose("No %s-%s events\n",TCPNAMES[i],inout);
    return;
    }
-  
-for (ip = list; ip != NULL; ip=ip->next)
-   {
-   total += (double)(ip->counter);
-   }
- 
-p = (double *)malloc(sizeof(double)*total); 
 
  if (strncmp(inout,"in",2) == 0)
     {
-    snprintf(filename,bufsize-1,"%s/state/cf_incoming.%s",WORKDIR,TCPNAMES[i]); 
+    snprintf(filename,CF_BUFSIZE-1,"%s/state/cf_incoming.%s",WORKDIR,TCPNAMES[i]); 
     }
  else
     {
-    snprintf(filename,bufsize-1,"%s/state/cf_outgoing.%s",WORKDIR,TCPNAMES[i]); 
+    snprintf(filename,CF_BUFSIZE-1,"%s/state/cf_outgoing.%s",WORKDIR,TCPNAMES[i]); 
     }
 
 Verbose("TCP Save %s\n",filename);
@@ -2065,46 +2107,9 @@ if ((fp = fopen(filename,"w")) == NULL)
 for (ip = list; ip != NULL; ip=ip->next)
    {
    fprintf(fp,"%d %s\n",ip->counter,ip->name);
-   p[classes++] = ip->counter/total;
    }
  
 fclose(fp);
-
-//Now set entropy classes
- 
-for (j = 0; j < classes; j++)
-   {
-   S -= p[j] * log(p[j]);
-   }
-
-if (classes > 1)
-   {
-   percent = S/log((double)classes)*100.0;
-   }
-else
-   {    
-   percent = 0;
-   }
- 
- Verbose("Entropy %s = %f percent\n",TCPNAMES[i],percent);
- 
- if (percent > 90)
-    {
-    snprintf(filename,maxvarsize,"entropy_%s_%s_high",TCPNAMES[i],inout);
-    AppendItem(&ENTROPIES,filename,"");
-    }
- else if (percent < 20)
-    {
-    snprintf(filename,maxvarsize,"entropy_%s_%s_low",TCPNAMES[i],inout);
-    AppendItem(&ENTROPIES,filename,"");
-    }
- else
-    {
-    snprintf(filename,maxvarsize,"entropy_%s_%s_medium",TCPNAMES[i],inout);
-    AppendItem(&ENTROPIES,filename,"");
-    }
- 
- free(p);
 }
 
 

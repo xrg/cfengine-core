@@ -44,7 +44,7 @@ int DirPush(char *name,struct stat *sb)          /* Enter dir and check for race
 {
 if (chdir(name) == -1)
    {
-   snprintf(OUTPUT,bufsize,"Could not change to directory %s, mode %o in tidy",name,sb->st_mode & 07777);
+   snprintf(OUTPUT,CF_BUFSIZE,"Could not change to directory %s, mode %o in tidy",name,sb->st_mode & 07777);
    CfLog(cfinform,OUTPUT,"chdir");
    return false;
    }
@@ -66,7 +66,7 @@ if (goback && TRAVLINKS)
    {
    if (chdir(name) == -1)
       {
-      snprintf(OUTPUT,bufsize,"Error in backing out of recursive descent securely to %s",name);
+      snprintf(OUTPUT,CF_BUFSIZE,"Error in backing out of recursive descent securely to %s",name);
       CfLog(cferror,OUTPUT,"chdir");
       HandleSignal(SIGTERM);
       }
@@ -77,7 +77,7 @@ else if (goback)
    {
    if (chdir("..") == -1)
       {
-      snprintf(OUTPUT,bufsize,"Error in backing out of recursive descent securely to %s",name);
+      snprintf(OUTPUT,CF_BUFSIZE,"Error in backing out of recursive descent securely to %s",name);
       CfLog(cferror,OUTPUT,"chdir");
       HandleSignal(SIGTERM);
       }
@@ -94,14 +94,14 @@ Debug("Checking the inode and device to make sure we are where we think we are..
 
 if (stat(".",&security) == -1)
    {
-   snprintf(OUTPUT,bufsize,"Could not stat directory %s after entering!",name);
+   snprintf(OUTPUT,CF_BUFSIZE,"Could not stat directory %s after entering!",name);
    CfLog(cferror,OUTPUT,"stat");
    return;
    }
 
 if ((sb->st_dev != security.st_dev) || (sb->st_ino != security.st_ino))
    {
-   snprintf(OUTPUT,bufsize,"SERIOUS SECURITY ALERT: path race exploited in recursion to/from %s. Not safe for agent to continue - aborting",name);
+   snprintf(OUTPUT,CF_BUFSIZE,"SERIOUS SECURITY ALERT: path race exploited in recursion to/from %s. Not safe for agent to continue - aborting",name);
    CfLog(cferror,OUTPUT,"");
    HandleSignal(SIGTERM);
    /* Exits */
@@ -124,7 +124,7 @@ else
    {
    if ((fd = creat(name,000)) == -1)      /* dummy mode ignored */
       {
-      snprintf(OUTPUT,bufsize*2,"creat(%s) failed\n",name);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"creat(%s) failed\n",name);
       CfLog(cferror,OUTPUT,"creat");
       }
    else
@@ -152,7 +152,7 @@ if (stat(name,&statbuf) == -1)
 
 if (statbuf.st_uid != getuid())
    {
-   snprintf(OUTPUT,bufsize*2,"File %s is not owned by uid %d (security exception)",name,getuid());
+   snprintf(OUTPUT,CF_BUFSIZE*2,"File %s is not owned by uid %d (security exception)",name,getuid());
    CfLog(cferror,OUTPUT,"");
    }
  
@@ -160,7 +160,7 @@ if (statbuf.st_uid != getuid())
  
 if (statbuf.st_mode & (S_IWGRP | S_IWOTH))
    {
-   snprintf(OUTPUT,bufsize*2,"File %s (owner %d) is writable by others (security exception)",name,getuid());
+   snprintf(OUTPUT,CF_BUFSIZE*2,"File %s (owner %d) is writable by others (security exception)",name,getuid());
    CfLog(cferror,OUTPUT,"");
    return false;
    }
@@ -222,7 +222,7 @@ if (CHECKSUMDB == NULL)
     
     if (stat(filename,&stat1) == -1)
        {
-       snprintf(OUTPUT,bufsize*2,"Couldn't stat %s\n",filename);
+       snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't stat %s\n",filename);
        CfLog(cferror,OUTPUT,"stat");
        return false;
        }
@@ -247,7 +247,7 @@ if (CHECKSUMDB == NULL)
  
  if ((errno = db_create(&dbp,dbenv,0)) != 0)
     {
-    snprintf(OUTPUT,bufsize*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
+    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
     CfLog(cferror,OUTPUT,"db_open");
     return false;
     }
@@ -258,7 +258,7 @@ if (CHECKSUMDB == NULL)
      if ((errno = dbp->open(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
         {
-        snprintf(OUTPUT,bufsize*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
+        snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
         CfLog(cferror,OUTPUT,"db_open");
         dbp->close(dbp,0);
         return false;
@@ -318,7 +318,7 @@ if (CHECKSUMDB == NULL)
              CfLog(warnlevel,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!","");
              }
           
-          snprintf(OUTPUT,bufsize*2,"SECURITY ALERT: Checksum for %s changed!",filename);
+          snprintf(OUTPUT,CF_BUFSIZE*2,"SECURITY ALERT: Checksum for %s changed!",filename);
           CfLog(warnlevel,OUTPUT,"");
           
           if (EXCLAIM)
@@ -367,7 +367,7 @@ if (CHECKSUMDB == NULL)
     
     if (ISCFENGINE)
        {
-       snprintf(OUTPUT,bufsize,"File %s was not in md5 database - new file found",filename);
+       snprintf(OUTPUT,CF_BUFSIZE,"File %s was not in md5 database - new file found",filename);
        CfLog(cfsilent,OUTPUT,"");
        }
     
@@ -415,7 +415,7 @@ void ChecksumPurge()
   
 if ((errno = db_create(&dbp,dbenv,0)) != 0)
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
    CfLog(cferror,OUTPUT,"db_open");
    return;
    }
@@ -426,7 +426,7 @@ if ((errno = dbp->open(dbp,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 if ((errno = dbp->open(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
    CfLog(cferror,OUTPUT,"db_open");
    dbp->close(dbp,0);
    return;
@@ -453,7 +453,7 @@ if ((errno = dbp->open(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
     if (stat(key.data,&statbuf) == -1)
        {
        Verbose("Purging file %s from checksum db - no longer exists\n",(char *)key.data);
-       snprintf(OUTPUT,bufsize*2,"SECURITY INFO: Checksum for %s purged - file no longer exists!",key.data);
+       snprintf(OUTPUT,CF_BUFSIZE*2,"SECURITY INFO: Checksum for %s purged - file no longer exists!",key.data);
        CfLog(cferror,OUTPUT,"");
 
        if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
@@ -578,21 +578,21 @@ int ShellCommandReturnsZero(char *comm)
 
 { int status, i, argc;
   pid_t pid;
-  char arg[maxshellargs][bufsize];
+  char arg[CF_MAXSHELLARGS][CF_BUFSIZE];
   char **argv;
 
 /* Build argument array */
 
-for (i = 0; i < maxshellargs; i++)
+for (i = 0; i < CF_MAXSHELLARGS; i++)
    {
-   memset (arg[i],0,bufsize);
+   memset (arg[i],0,CF_BUFSIZE);
    }
 
 argc = SplitCommand(comm,arg);
 
 if (argc == -1)
    {
-   snprintf(OUTPUT,bufsize,"Too many arguments in %s\n",comm);
+   snprintf(OUTPUT,CF_BUFSIZE,"Too many arguments in %s\n",comm);
    CfLog(cferror,OUTPUT,"");
    return false;
    }
@@ -626,35 +626,38 @@ else if (pid == 0)                     /* child */
    }
 else                                    /* parent */
    {
-   if (wait(&status) != pid)
+   pid_t wait_result;
+   
+   while ((wait_result = wait(&status)) != pid)
       {
-      snprintf(OUTPUT,bufsize,"Wait for child failed\n");
-      CfLog(cfinform,OUTPUT,"wait");
+      if (wait_result <= 0)
+         {
+         snprintf(OUTPUT,CF_BUFSIZE,"Wait for child failed\n");
+         CfLog(cfinform,OUTPUT,"wait");
+         return false;
+         }
+      }
+
+   if (WIFSIGNALED(status))
+      {
+      Debug("Script %s returned: %d\n",comm,WTERMSIG(status));
       return false;
+      }
+   
+   if (! WIFEXITED(status))
+      {
+      return false;
+      }
+   
+   if (WEXITSTATUS(status) == 0)
+      {
+      Debug("Shell command returned 0\n");
+      return true;
       }
    else
       {
-      if (WIFSIGNALED(status))
-         {
-         Debug("Script %s returned: %d\n",comm,WTERMSIG(status));
-         return false;
-         }
-
-      if (! WIFEXITED(status))
-         {
-         return false;
-         }
-
-      if (WEXITSTATUS(status) == 0)
-         {
-  Debug("Shell command returned 0\n");
-         return true;
-         }
-      else
-         {
-  Debug("Shell command was non-zero\n");
-         return false;
-         }
+      Debug("Shell command was non-zero\n");
+      return false;
       }
    }
 
@@ -700,7 +703,7 @@ void SetClassesOnScript(char *execstr,char *classes,char *elseclasses,int useshe
 
 { FILE *pp;
   int print;
-  char line[bufsize],*sp;
+  char line[CF_BUFSIZE],*sp;
  
 switch (useshell)
    {
@@ -712,7 +715,7 @@ switch (useshell)
  
 if (pp == NULL)
    {
-   snprintf(OUTPUT,bufsize*2,"Couldn't open pipe to command %s\n",execstr);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open pipe to command %s\n",execstr);
    CfLog(cferror,OUTPUT,"popen");
    return;
    } 
@@ -721,12 +724,12 @@ while (!feof(pp))
    {
    if (ferror(pp))  /* abortable */
       {
-      snprintf(OUTPUT,bufsize*2,"Shell command pipe %s\n",execstr);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
       CfLog(cferror,OUTPUT,"ferror");
       break;
       }
    
-   ReadLine(line,bufsize,pp);
+   ReadLine(line,CF_BUFSIZE,pp);
    
    if (strstr(line,"cfengine-die"))
       {
@@ -735,7 +738,7 @@ while (!feof(pp))
    
    if (ferror(pp))  /* abortable */
       {
-      snprintf(OUTPUT,bufsize*2,"Shell command pipe %s\n",execstr);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
       CfLog(cferror,OUTPUT,"ferror");
       break;
       }
@@ -795,7 +798,7 @@ void IDClasses()
  
 AddClassToHeap("any");      /* This is a reserved word / wildcard */
  
-snprintf(VBUFF,bufsize,"cfengine_%s",CanonifyName(VERSION));
+snprintf(VBUFF,CF_BUFSIZE,"cfengine_%s",CanonifyName(VERSION));
 AddClassToHeap(VBUFF);
  
 for (sp = VBUFF+strlen(VBUFF); i < 2; sp--)
@@ -861,8 +864,8 @@ int linux_fedora_version(void)
 FILE *fp;
 
 /* The full string read in from fedora-release */
-char relstring[maxvarsize];
-char classbuf[maxvarsize];
+char relstring[CF_MAXVARSIZE];
+char classbuf[CF_MAXVARSIZE];
 
 /* Fedora */
 char *vendor="";
@@ -870,7 +873,7 @@ char *vendor="";
 char *release=NULL;
 
 int major = -1;
-char strmajor[maxvarsize];
+char strmajor[CF_MAXVARSIZE];
 
 /* Grab the first line from the file and then close it. */
  if ((fp = fopen(FEDORA_REL_FILENAME,"r")) == NULL)
@@ -955,8 +958,8 @@ int linux_redhat_version(void)
 FILE *fp;
 
 /* The full string read in from redhat-release */
-char relstring[maxvarsize];
-char classbuf[maxvarsize];
+char relstring[CF_MAXVARSIZE];
+char classbuf[CF_MAXVARSIZE];
 
 /* Red Hat, Mandrake */
 char *vendor="";
@@ -966,9 +969,9 @@ char *edition="";
 char *release=NULL;
 
 int major = -1;
-char strmajor[maxvarsize];
+char strmajor[CF_MAXVARSIZE];
 int minor = -1;
-char strminor[maxvarsize];
+char strminor[CF_MAXVARSIZE];
 
 /* Grab the first line from the file and then close it. */
  if ((fp = fopen(RH_REL_FILENAME,"r")) == NULL)
@@ -1083,16 +1086,16 @@ int linux_suse_version(void)
 #define SUSE_RELEASE_FLAG "Linux "
 
 /* The full string read in from SuSE-release */
-char relstring[maxvarsize];
-char classbuf[maxvarsize];
+char relstring[CF_MAXVARSIZE];
+char classbuf[CF_MAXVARSIZE];
 
 /* Where the numerical release will be found */
 char *release=NULL;
 
 int major = -1;
-char strmajor[maxvarsize];
+char strmajor[CF_MAXVARSIZE];
 int minor = -1;
-char strminor[maxvarsize];
+char strminor[CF_MAXVARSIZE];
 
 FILE *fp;
 
@@ -1144,7 +1147,7 @@ int debian_version(void) /* Andrew Stribblehill */
 #define DEBIAN_VERSION_FILENAME "/etc/debian_version"
 int major = -1; 
 int release = -1;
-char classname[maxvarsize] = "";
+char classname[CF_MAXVARSIZE] = "";
 FILE *fp;
 
 if ((fp = fopen(DEBIAN_VERSION_FILENAME,"r")) == NULL)
@@ -1157,12 +1160,12 @@ switch (fscanf(fp, "%d.%d", &major, &release))
     {
     case 2:
         Verbose("This appears to be a Debian %u.%u system.", major, release);
-        snprintf(classname, maxvarsize, "debian_%u_%u", major, release);
+        snprintf(classname, CF_MAXVARSIZE, "debian_%u_%u", major, release);
         AddClassToHeap(classname);
         /* Fall-through */
     case 1:
         Verbose("This appears to be a Debian %u system.", major);
-        snprintf(classname, maxvarsize, "debian_%u", major);
+        snprintf(classname, CF_MAXVARSIZE, "debian_%u", major);
         AddClassToHeap(classname);
         break;
     case 0:

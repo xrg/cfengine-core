@@ -60,7 +60,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = pub src contrib inputs doc
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -83,6 +83,8 @@ AWK = @AWK@
 BERKELEY_DB_CFLAGS = @BERKELEY_DB_CFLAGS@
 BERKELEY_DB_LDFLAGS = @BERKELEY_DB_LDFLAGS@
 BERKELEY_DB_LIB = @BERKELEY_DB_LIB@
+BUILD_DOC_FALSE = @BUILD_DOC_FALSE@
+BUILD_DOC_TRUE = @BUILD_DOC_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -180,7 +182,9 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = pub src contrib inputs doc 
+@BUILD_DOC_FALSE@DOC_DIR = 
+@BUILD_DOC_TRUE@DOC_DIR = doc
+SUBDIRS = pub src contrib inputs $(DOC_DIR)
 EXTRA_DIST = acconfig.h doc/cfengine.8 COPYING ChangeLog INSTALL NEWS README
 
 #
@@ -392,7 +396,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(SUBDIRS)'; for subdir in $$list; do \
+	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d "$(distdir)/$$subdir" \
 	    || mkdir "$(distdir)/$$subdir" \

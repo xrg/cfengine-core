@@ -294,7 +294,7 @@ True if file 1's attributes were changed in any way before file 2's (ctime).
 True if the named file object exists.
 @item IPRange(@var{address-range})
 True if the current host lies within the specified range
-@item HostRange(@var{basename,start-stop})
+@item HostRange(@var{basename,start/stop})
 True if the current relative domain name begins with basename and ends with an integer
 between start and stop
 @item IsDefined(@var{command})
@@ -307,8 +307,7 @@ True if the named file object is a symbolic link.
 True if the named file object is a plain file.
 @item PrepModule(@var{module},@var{arg1 arg2...})
 True if the named module exists and can be executed. The module is assumed to
-follow the standard programming interface for modules, @xref{Writing plugin modules,Writing plugin
-modules,Writing plugin modules,cfengine-Tutorial}.
+follow the standard programming interface for modules (see Writing plugin modules in tutorial).
 Unlike actionsequence modules, these modules are evaluated immediately on parsing.
 @item Regcmp(@var{regexp},@var{string or list separated string})
 True if the string matched the regular expression.
@@ -500,7 +499,22 @@ for a few days more and try again.
 @node Cfagent intro, Variable expansion and contexts, Cfagent reference, Cfagent reference
 @section Cfagent intro
 
+Cfagent is the workhorse of cfengine. It interprets and computes the necessary strategies
+for implementing convergent maintenance. In order to carry out work efficiently,
+the agent groups similar actions together. The order of these actions is goverened by
+a list called the actionsequence.
 
+In many cases, cfagent will be able to complete all its work in a single
+pass of the actionsequence. However, in complex configurations, it is
+hard to resolve all of the ordering dependencies automatically in a
+single pass. Cfagent keeps track both of all actions that have been
+performed and of those that might still need to be performed (given that
+some actions depend on the later outcomes of others). If there is a
+possibility that an action ordering dilemma might occur, it runs a
+second pass of the actionsequence to more quickly resolve the dependency
+(avoiding the wait for next scheduled run).  No actions are performed
+twice however, since the agent checks off actions that have already been
+performed to avoid unnecessary multiplicity.
 
 @menu
 * The file cfagent.conf::       
@@ -1037,6 +1051,7 @@ The name or mail address of the system administrator.
 The current timezone as defined in @code{control}.
 @vindex $(timezone)
 
+
 @item UnderscoreClasses
 If this is set to `on' cfengine uses hard-classes which begin with
 an underscore, so as to avoid name collisions. See also Runtime Options in the
@@ -1047,6 +1062,10 @@ Reference manual.
 @cindex Hostname collision
 @cindex Hard class name collision
 @vindex underscoreclasses
+
+@item version
+The current version string as defined in the code.
+@vindex $(version)
 
 @item year
 The current year.
@@ -1879,7 +1898,7 @@ alerts:
       SysLog(@var{priority},@var{message})
       SetState(@var{name},@var{ttl},@var{policy})
       UnSetState(@var{name})
-      FriendStatus(@var{minutes})
+      FriendStatus(@var{hours})
 
 @end smallexample
 For example:
@@ -1966,12 +1985,14 @@ Existing persistent classes can be deleted with:
           UnsetState(myclass)
 
 @end smallexample
-The @code{FriendStatus} function is available from version 2.1.4 and displays
-a message if hosts that normally have a cfengine protocol connection with the current
-host have not connected for more than than specified number of minutes. If the number
-of minutes is set to zero, cfengine uses a machine-learned expectation value for the
-time and uses this. The friend status of a host is thus the expectation that there
-is a problem with a remote peer.
+The @code{FriendStatus} function is available from version 2.1.4 and
+displays a message if hosts that normally have a cfengine protocol
+connection with the current host have not connected for more than than
+specified number of hours. If the number of hours is set to zero,
+cfengine uses a machine-learned expectation value for the time and uses
+this to report. The friend status of a host is thus the expectation that
+there is a problem with a remote peer. Expected contact rates of less than
+once are week are ignored as spurious.
 
 @cindex FriendStatus
 @cindex Peer watching (FriendStatus)
@@ -5368,9 +5389,6 @@ This should be used in conjunction with the
 decision structures @code{BeginGroupIfNoLineMatching} and
 @code{BreakIfLineMatches}.
 
-@item   AppendIfNoSuchLine @var{quoted-string}
-Add a line containing the quoted string to the end of the file
-if the file doesn't contain the exact line already.
 
 @item AppendIfNoLineMatching  @var{quoted-regex}/ "ThisLine"
 A new version of the older @code{AppendIfNoSuchLine}
@@ -5395,6 +5413,15 @@ editfiles:
 @end smallexample
 @cindex Merging files.
 
+@item   AppendIfNoSuchLine @var{quoted-string}
+Add a line containing the quoted string to the end of the file
+if the file doesn't contain the exact line already.
+
+@item   AppendIfNoSuchLinesFromFile @var{filename}
+For each line in the named file, call AppendIfNoSuchLine.  This adds
+lines containing the strings listed in the named file to the end of the
+current file if the file doesn't contain the exact line already.
+@cindex @code{AppendIfNoSuchLinesFromFile}
 
 @item AppendToLineIfNotContains @var{quoted-string}
 This commands looks for an exact match of the quoted string
@@ -7597,11 +7624,12 @@ the resource file.  @xref{cfrc resource file}.
 @cindex Private modules
 @vindex methods
 
-From version 2.1.0, cfagent provides for the execution of closed functions or "methods".
-Methods are similar to the old idea of modules, but they are implemented in a way
-that allows collaboration between different hosts within a network, using a common
-standard. Methods must be cfengine programs however, wheras the module
-interface can be written in any script language.
+From version 2.1.0, cfagent provides for the execution of closed
+functions or "methods".  Methods are similar to the old idea of modules,
+but they are implemented in a way that allows collaboration between
+different hosts within a network, using a common standard. Methods must
+be cfengine programs however, wheras the module interface can be written
+in any script language.
 
 @emph{Modules are designed to offer a firewall-like proxy interface for remote
 method execution. We can call methods a form of `voluntary RPC', in which
@@ -7610,14 +7638,21 @@ builds in anti-spamming protection. The principle used is that hosts
 should be immune to Denial of Service attacks; they should
 only be able to disadvanatge themselves with the attempt.}
 
-(Remote method execution was not implemented until version 2.1.3)
+(Remote method execution was not implemented until version 2.1.3. It is still
+considered experimental and is not recommended for large
+production environments until this paragraph is removed from the
+documentation.)
 
-Methods allow you to call an independent cfengine program, pass it arguments and classes,
-and collect the results for use in your main program. It thus introduces
-parent-child semantics into cfengine "imports". A method is more than an import.
-(Import is analagous to a C #include, while a method is like a C function.)
-Communication is peer to peer, by mutual consent. There is no "method server"
-that executes methods on remote hosts. Hosts exchange information by invitation
+@cindex Warning remote methods
+@cindex Methods, remote caution
+
+Methods allow you to call an independent cfengine program, pass it
+arguments and classes, and collect the results for use in your main
+program. It thus introduces parent-child semantics into cfengine
+"imports". A method is more than an import.  (Import is analagous to a C
+#include, while a method is like a C function.)  Communication is peer
+to peer, by mutual consent. There is no "method server" that executes
+methods on remote hosts. Hosts exchange information by invitation
 only. This is an unreliable service (in the sense of UDP).
 
 The order of method exeuction is not guaranteed. This results from the
@@ -7640,6 +7675,8 @@ decoupling between client request and service provision.
 
       server=@var{ip-host/*}
 
+      forcereplyto=@var{ip address}
+
       owner=@var{setuid}
       group=@var{setgid}
       chdir=@var{cd for child}
@@ -7647,6 +7684,22 @@ decoupling between client request and service provision.
 
 @end smallexample
 @end cartouche
+Most of these functions will be familiar from other cfengine commands. Some special ones are
+noted below:
+
+@table @code
+@item action
+The name of the method file that should be defined in the modules directory of the server host.
+@item forcereplyto
+Sometimes nameservice problems (especially with remote devices) can lead to confusion about
+where a method should be sent. The caller can therefore declare to the server which address
+it wants the reply to be marked for.
+@item returnvars
+Returns the values of the variables to the parent process.
+@item returnclasses
+Returns the classes to the parent process, if and only if they are defined at the end of the current method.
+@end table
+
 The function arguments may not be empty, but a null value
 can be transmitted with a dummy value, e.g. @code{Function(null)} or @code{function(void)}.
 Here is an example method call.
@@ -8758,7 +8811,7 @@ shellcommands:
           umask=@var{octal number}
           owner=@var{uid}
           group=@var{gid}
-          define=@var{class-list}
+
           background=@b{false}@var{/true}
           chdir=@var{directory}
           chroot=@var{directory}
@@ -8769,6 +8822,9 @@ shellcommands:
 
           ifelapsed=@var{mins} 
           expireafter=@var{mins}
+
+          define=@var{class-list}
+          elsedefine=@var{class-list}
 
 @end smallexample
 @end cartouche
@@ -9952,8 +10008,9 @@ the system administrator will be emailed a summary of any output:
 control:
 
 smtpserver    = ( mailhub.example.org ) # site MTA which can talk smtp
-sysadm        = ( mark@@example.org )    # mail address of sysadm
-EmailMaxLines = ( @var{n} )                 # max lines of output to email
+sysadm        = ( mark@@example.org )   # mail address of sysadm
+EmailMaxLines = ( @var{n} )             # max lines of output to email
+OutputPrefix  = ( "!" )                 # Line prefix
 
 @end smallexample
 

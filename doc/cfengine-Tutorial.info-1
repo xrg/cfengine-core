@@ -1,4 +1,4 @@
-This is cfengine-Tutorial.info, produced by makeinfo version 4.3 from
+This is cfengine-Tutorial.info, produced by makeinfo version 4.5 from
 cfengine-Tutorial.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.1.5 for version 2.1.5
-as last updated 25 January 2004.
+   This manual corresponds to CFENGINE Edition 2.1.6 for version 2.1.6
+as last updated 17 April 2004.
 
 * Menu:
 

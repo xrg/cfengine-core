@@ -3,7 +3,7 @@
 <title>GNU cfengine</title>
 <meta http-equiv="Content-Type" content="text/html">
 <meta name="description" content="GNU cfengine">
-<meta name="generator" content="makeinfo 4.3">
+<meta name="generator" content="makeinfo 4.5">
 <link href="http://www.gnu.org/software/texinfo/" rel="generator-home">
 </head>
 <body>
@@ -220,7 +220,7 @@ arguments in chronological order.
      <dd>True if the named file object exists. 
 <br><dt><code>IPRange(</code><var>address-range</var><code>)</code>
      <dd>True if the current host lies within the specified range
-<br><dt><code>HostRange(</code><var>basename,start-stop</var><code>)</code>
+<br><dt><code>HostRange(</code><var>basename,start/stop</var><code>)</code>
      <dd>True if the current relative domain name begins with basename and ends with an integer
 between start and stop
 <br><dt><code>IsDefined(</code><var>command</var><code>)</code>
@@ -233,7 +233,7 @@ between start and stop
      <dd>True if the named file object is a plain file. 
 <br><dt><code>PrepModule(</code><var>module</var><code>,</code><var>arg1 arg2...</var><code>)</code>
      <dd>True if the named module exists and can be executed. The module is assumed to
-follow the standard programming interface for modules, See <a href="cfengine-Tutorial.html#Writing%20plugin%20modules">Writing plugin modules</a>. 
+follow the standard programming interface for modules (see Writing plugin modules in tutorial). 
 Unlike actionsequence modules, these modules are evaluated immediately on parsing. 
 <br><dt><code>Regcmp(</code><var>regexp</var><code>,</code><var>string or list separated string</var><code>)</code>
      <dd>True if the string matched the regular expression. 
@@ -413,6 +413,23 @@ Up:<a rel="up" accesskey="u" href="#Cfagent%20reference">Cfagent reference</a>
 </div>
 
 <h3 class="section">Cfagent intro</h3>
+
+   <p>Cfagent is the workhorse of cfengine. It interprets and computes the necessary strategies
+for implementing convergent maintenance. In order to carry out work efficiently,
+the agent groups similar actions together. The order of these actions is goverened by
+a list called the actionsequence.
+
+   <p>In many cases, cfagent will be able to complete all its work in a single
+pass of the actionsequence. However, in complex configurations, it is
+hard to resolve all of the ordering dependencies automatically in a
+single pass. Cfagent keeps track both of all actions that have been
+performed and of those that might still need to be performed (given that
+some actions depend on the later outcomes of others). If there is a
+possibility that an action ordering dilemma might occur, it runs a
+second pass of the actionsequence to more quickly resolve the dependency
+(avoiding the wait for next scheduled run).  No actions are performed
+twice however, since the agent checks off actions that have already been
+performed to avoid unnecessary multiplicity.
 
 <ul class="menu">
 <li><a accesskey="1" href="#The%20file%20cfagent.conf">The file cfagent.conf</a>: 
@@ -755,7 +772,7 @@ of lines of the form:
 cfengine internal list variables, any spaces are interpreted as list
 separators. In other lists, normal rules for iteration apply. 
 </dl>
-Note that functions should have no spaces between the function name and the
+   Note that functions should have no spaces between the function name and the
 leading parenthesis, but should themselves be surrounded by white space.
 
 <p>For example:
@@ -915,6 +932,9 @@ replaces <code>/</code> (see the reference manual).
      <dd>If this is set to `on' cfengine uses hard-classes which begin with
 an underscore, so as to avoid name collisions. See also Runtime Options in the
 Reference manual.
+
+     <br><dt><code>version</code>
+     <dd>The current version string as defined in the code.
 
      <br><dt><code>year</code>
      <dd>The current year. 
@@ -1678,7 +1698,7 @@ the affected hosts.
            SysLog(<var>priority</var>,<var>message</var>)
            SetState(<var>name</var>,<var>ttl</var>,<var>policy</var>)
            UnSetState(<var>name</var>)
-           FriendStatus(<var>minutes</var>)
+           FriendStatus(<var>hours</var>)
      
      </pre>
    For example:
@@ -1754,12 +1774,14 @@ the SetState call is called again to extend its lifetime.
                UnsetState(myclass)
      
      </pre>
-   The <code>FriendStatus</code> function is available from version 2.1.4 and displays
-a message if hosts that normally have a cfengine protocol connection with the current
-host have not connected for more than than specified number of minutes. If the number
-of minutes is set to zero, cfengine uses a machine-learned expectation value for the
-time and uses this. The friend status of a host is thus the expectation that there
-is a problem with a remote peer.
+   The <code>FriendStatus</code> function is available from version 2.1.4 and
+displays a message if hosts that normally have a cfengine protocol
+connection with the current host have not connected for more than than
+specified number of hours. If the number of hours is set to zero,
+cfengine uses a machine-learned expectation value for the time and uses
+this to report. The friend status of a host is thus the expectation that
+there is a problem with a remote peer. Expected contact rates of less than
+once are week are ignored as spurious.
 
 <div class="node">
 <p><hr>
@@ -4997,10 +5019,6 @@ This should be used in conjunction with the
 decision structures <code>BeginGroupIfNoLineMatching</code> and
 <code>BreakIfLineMatches</code>.
 
-     <br><dt><code>AppendIfNoSuchLine </code><var>quoted-string</var><code></code>
-     <dd>Add a line containing the quoted string to the end of the file
-if the file doesn't contain the exact line already.
-
      <br><dt><code>AppendIfNoLineMatching  </code><var>quoted-regex</var><code>/ "ThisLine"</code>
      <dd>A new version of the older <code>AppendIfNoSuchLine</code>
 which uses a regular expression instead of a literal
@@ -5021,6 +5039,15 @@ on a convergent line-by-line basis:
            }
           
           </pre>
+
+     <br><dt><code>AppendIfNoSuchLine </code><var>quoted-string</var><code></code>
+     <dd>Add a line containing the quoted string to the end of the file
+if the file doesn't contain the exact line already.
+
+     <br><dt><code>AppendIfNoSuchLinesFromFile </code><var>filename</var><code></code>
+     <dd>For each line in the named file, call AppendIfNoSuchLine.  This adds
+lines containing the strings listed in the named file to the end of the
+current file if the file doesn't contain the exact line already.
 
      <br><dt><code>AppendToLineIfNotContains </code><var>quoted-string</var><code></code>
      <dd>This commands looks for an exact match of the quoted string
@@ -6152,7 +6179,7 @@ into a single filter.
 <br><dt><code>Result:</code>
      <dd>logical combination of above returned by filter (quoted regex)
 </dl>
-Examples: processes started between 18th Nov 2000 and now.
+   Examples: processes started between 18th Nov 2000 and now.
 <pre class="smallexample">       { filteralias
      
        FromSTime: "date(2000,11,18,0,0,0)"
@@ -7034,11 +7061,12 @@ Up:<a rel="up" accesskey="u" href="#Cfagent%20reference">Cfagent reference</a>
 
 <h3 class="section">methods</h3>
 
-   <p>From version 2.1.0, cfagent provides for the execution of closed functions or "methods". 
-Methods are similar to the old idea of modules, but they are implemented in a way
-that allows collaboration between different hosts within a network, using a common
-standard. Methods must be cfengine programs however, wheras the module
-interface can be written in any script language.
+   <p>From version 2.1.0, cfagent provides for the execution of closed
+functions or "methods".  Methods are similar to the old idea of modules,
+but they are implemented in a way that allows collaboration between
+different hosts within a network, using a common standard. Methods must
+be cfengine programs however, wheras the module interface can be written
+in any script language.
 
    <p><em>Modules are designed to offer a firewall-like proxy interface for remote
 method execution. We can call methods a form of `voluntary RPC', in which
@@ -7047,14 +7075,18 @@ builds in anti-spamming protection. The principle used is that hosts
 should be immune to Denial of Service attacks; they should
 only be able to disadvanatge themselves with the attempt.</em>
 
-   <p>(Remote method execution was not implemented until version 2.1.3)
+   <p>(Remote method execution was not implemented until version 2.1.3. It is still
+considered experimental and is not recommended for large
+production environments until this paragraph is removed from the
+documentation.)
 
-   <p>Methods allow you to call an independent cfengine program, pass it arguments and classes,
-and collect the results for use in your main program. It thus introduces
-parent-child semantics into cfengine "imports". A method is more than an import. 
-(Import is analagous to a C #include, while a method is like a C function.) 
-Communication is peer to peer, by mutual consent. There is no "method server"
-that executes methods on remote hosts. Hosts exchange information by invitation
+   <p>Methods allow you to call an independent cfengine program, pass it
+arguments and classes, and collect the results for use in your main
+program. It thus introduces parent-child semantics into cfengine
+"imports". A method is more than an import.  (Import is analagous to a C
+#include, while a method is like a C function.)  Communication is peer
+to peer, by mutual consent. There is no "method server" that executes
+methods on remote hosts. Hosts exchange information by invitation
 only. This is an unreliable service (in the sense of UDP).
 
    <p>The order of method exeuction is not guaranteed. This results from the
@@ -7075,13 +7107,31 @@ decoupling between client request and service provision.
      
            server=<var>ip-host/*</var>
      
+           forcereplyto=<var>ip address</var>
+     
            owner=<var>setuid</var>
            group=<var>setgid</var>
            chdir=<var>cd for child</var>
            chroot=<var>sandbox directory</var>
      
      </pre>
-The function arguments may not be empty, but a null value
+Most of these functions will be familiar from other cfengine commands. Some special ones are
+noted below:
+
+     <dl>
+<dt><code>action</code>
+     <dd>The name of the method file that should be defined in the modules directory of the server host. 
+<br><dt><code>forcereplyto</code>
+     <dd>Sometimes nameservice problems (especially with remote devices) can lead to confusion about
+where a method should be sent. The caller can therefore declare to the server which address
+it wants the reply to be marked for. 
+<br><dt><code>returnvars</code>
+     <dd>Returns the values of the variables to the parent process. 
+<br><dt><code>returnclasses</code>
+     <dd>Returns the classes to the parent process, if and only if they are defined at the end of the current method. 
+</dl>
+
+   <p>The function arguments may not be empty, but a null value
 can be transmitted with a dummy value, e.g. <code>Function(null)</code> or <code>function(void)</code>. 
 Here is an example method call.
 <pre class="smallexample">     
@@ -8121,7 +8171,7 @@ commands from this section.
                umask=<var>octal number</var>
                owner=<var>uid</var>
                group=<var>gid</var>
-               define=<var>class-list</var>
+     
                background=<b>false</b><var>/true</var>
                chdir=<var>directory</var>
                chroot=<var>directory</var>
@@ -8132,6 +8182,9 @@ commands from this section.
      
                ifelapsed=<var>mins</var>
                expireafter=<var>mins</var>
+     
+               define=<var>class-list</var>
+               elsedefine=<var>class-list</var>
      
      </pre>
 
@@ -8386,7 +8439,7 @@ if any file matching the specified pattern is deleted.
 same device as the root of the rescurion path.
 
    </dl>
-Take a look at the following example:
+   Take a look at the following example:
 
 <pre class="smallexample">     tidy:
      
@@ -9247,8 +9300,9 @@ the system administrator will be emailed a summary of any output:
      control:
      
      smtpserver    = ( mailhub.example.org ) # site MTA which can talk smtp
-     sysadm        = ( mark@example.org )    # mail address of sysadm
-     EmailMaxLines = ( <var>n</var> )                 # max lines of output to email
+     sysadm        = ( mark@example.org )   # mail address of sysadm
+     EmailMaxLines = ( <var>n</var> )             # max lines of output to email
+     OutputPrefix  = ( "!" )                 # Line prefix
      
      </pre>
 
@@ -10911,13 +10965,15 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>$(sysadm)</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>$(tab)</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>$(timezone)</code>: <a href="#Special%20variables">Special variables</a>
+<li><code>$(version)</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>$(year)</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>${EmailMaxLines}</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>+</code>: <a href="#groups">groups</a>
-<li><code>-D option</code>: <a href="#Cfengine%20classes">Cfengine classes</a>, <a href="#addclasses">addclasses</a>
+<li><code>-D option</code>: <a href="#addclasses">addclasses</a>, <a href="#Cfengine%20classes">Cfengine classes</a>
+<li><code>-l</code>: <a href="#tidy">tidy</a>
 <li><code>-L</code>: <a href="#Single%20links">Single links</a>
-<li><code>-l</code>: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
-<li><code>-N option</code>: <a href="#Cfengine%20classes">Cfengine classes</a>, <a href="#addclasses">addclasses</a>
+<li><code>-l</code>: <a href="#Syntax">Syntax</a>
+<li><code>-N option</code>: <a href="#addclasses">addclasses</a>, <a href="#Cfengine%20classes">Cfengine classes</a>
 <li><code>-x option</code>: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>.cfengine.rm</code>: <a href="#tidy">tidy</a>
 <li><code>/etc/host.conf</code>: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
@@ -10925,7 +10981,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>a=</code>: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li><code>AccessedBefore()</code>: <a href="#Evaluated%20classes%20and%20special%20functions">Evaluated classes and special functions</a>
 <li><code>action</code>: <a href="#Syntax">Syntax</a>
-<li><code>actionsequence</code>: <a href="#control">control</a>, <a href="#actionsequence">actionsequence</a>
+<li><code>actionsequence</code>: <a href="#actionsequence">actionsequence</a>, <a href="#control">control</a>
 <li><code>AddClasses</code>: <a href="#addclasses">addclasses</a>
 <li><code>AddInstallable</code>: <a href="#addinstallable">addinstallable</a>
 <li><code>addmounts</code>: <a href="#actionsequence">actionsequence</a>
@@ -10933,8 +10989,8 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>alerts</code>: <a href="#alerts">alerts</a>
 <li><code>AllowUsers</code>: <a href="#AllowUsers">AllowUsers</a>
 <li><code>backup=</code>: <a href="#copy">copy</a>
-<li><code>BindToInterface</code>: <a href="#BindToInterface(cfagent)">BindToInterface(cfagent)</a>, <a href="#BindToInterface">BindToInterface</a>
-<li><code>binserver</code>: <a href="#Single%20links">Single links</a>, <a href="#Link%20Children">Link Children</a>
+<li><code>BindToInterface</code>: <a href="#BindToInterface">BindToInterface</a>, <a href="#BindToInterface(cfagent)">BindToInterface(cfagent)</a>
+<li><code>binserver</code>: <a href="#Link%20Children">Link Children</a>, <a href="#Single%20links">Single links</a>
 <li><code>binservers</code>: <a href="#binservers">binservers</a>
 <li><code>broadcast</code>: <a href="#broadcast">broadcast</a>
 <li><code>cf.preconf</code>: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
@@ -10951,11 +11007,11 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>create</code>: <a href="#create">create</a>
 <li><code>directories</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>disable</code>: <a href="#disable">disable</a>, <a href="#actionsequence">actionsequence</a>
-<li><code>domain</code>: <a href="#control">control</a>, <a href="#domain">domain</a>
+<li><code>domain</code>: <a href="#domain">domain</a>, <a href="#control">control</a>
 <li><code>DryRun</code>: <a href="#dryrun">dryrun</a>
 <li><code>editbinaryfilesize</code>: <a href="#editbinaryfilesize">editbinaryfilesize</a>
 <li><code>editfiles</code>: <a href="#actionsequence">actionsequence</a>
-<li><code>editfilesize</code>: <a href="#control">control</a>, <a href="#editfilesize">editfilesize</a>
+<li><code>editfilesize</code>: <a href="#editfilesize">editfilesize</a>, <a href="#control">control</a>
 <li><code>EmailMaxLines</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li><code>empty</code>: <a href="#disable">disable</a>
 <li><code>EmptyResolvConf</code>: <a href="#emptyresolvconf">emptyresolvconf</a>
@@ -10963,16 +11019,16 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>exclude=</code>: <a href="#Syntax">Syntax</a>
 <li><code>exec</code>: <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
 <li><code>FileExtensions</code>: <a href="#fileextension">fileextension</a>
-<li><code>files</code>: <a href="#actionsequence">actionsequence</a>, <a href="#files">files</a>
+<li><code>files</code>: <a href="#files">files</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>filter</code>: <a href="#filters">filters</a>
-<li><code>force=</code>: <a href="#copy">copy</a>, <a href="#disks">disks</a>
-<li><code>freespace=</code>: <a href="#disks">disks</a>, <a href="#required">required</a>
+<li><code>force=</code>: <a href="#disks">disks</a>, <a href="#copy">copy</a>
+<li><code>freespace=</code>: <a href="#required">required</a>, <a href="#disks">disks</a>
 <li><code>g=</code>: <a href="#Syntax">Syntax</a>
 <li><code>group</code>: <a href="#Syntax">Syntax</a>
 <li><code>groups</code>: <a href="#groups">groups</a>
 <li><code>home</code>: <a href="#Syntax">Syntax</a>
-<li><code>HomePattern</code>: <a href="#homepattern">homepattern</a>
 <li><code>homepattern</code>: <a href="#mountables">mountables</a>
+<li><code>HomePattern</code>: <a href="#homepattern">homepattern</a>
 <li><code>homeservers</code>: <a href="#homeservers">homeservers</a>
 <li><code>import</code>: <a href="#import">import</a>
 <li><code>include=</code>: <a href="#Syntax">Syntax</a>
@@ -10985,7 +11041,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>l=</code>: <a href="#Syntax">Syntax</a>
 <li><code>LD_LIBRARY_PATH</code>: <a href="#control">control</a>
 <li><code>link</code>: <a href="#Syntax">Syntax</a>
-<li><code>linkchildren</code>: <a href="#Files%20linkchildren">Files linkchildren</a>, <a href="#Link%20Children">Link Children</a>
+<li><code>linkchildren</code>: <a href="#Link%20Children">Link Children</a>, <a href="#Files%20linkchildren">Files linkchildren</a>
 <li><code>links</code>: <a href="#links">links</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>m=</code>: <a href="#Syntax">Syntax</a>
 <li><code>mailcheck</code>: <a href="#mailserver">mailserver</a>, <a href="#actionsequence">actionsequence</a>
@@ -10996,12 +11052,12 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>mode</code>: <a href="#Syntax">Syntax</a>
 <li><code>module</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>moduledirectory</code>: <a href="#moduledirectory">moduledirectory</a>
-<li><code>mountables</code>: <a href="#homeservers">homeservers</a>, <a href="#mountables">mountables</a>
+<li><code>mountables</code>: <a href="#mountables">mountables</a>, <a href="#homeservers">homeservers</a>
 <li><code>mountall</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>mountinfo</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>mountpattern</code>: <a href="#mountpattern">mountpattern</a>
 <li><code>netconfig</code>: <a href="#actionsequence">actionsequence</a>
-<li><code>netmask</code>: <a href="#control">control</a>, <a href="#netmask">netmask</a>
+<li><code>netmask</code>: <a href="#netmask">netmask</a>, <a href="#control">control</a>
 <li><code>nfstype</code>: <a href="#nfstype">nfstype</a>, <a href="#control">control</a>
 <li><code>noabspath</code>: <a href="#shellcommands">shellcommands</a>
 <li><code>o=</code>: <a href="#Syntax">Syntax</a>
@@ -11015,7 +11071,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>processes</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>purge=</code>: <a href="#copy">copy</a>
 <li><code>r=</code>: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
-<li><code>recurse</code>: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
+<li><code>recurse</code>: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li><code>RepChar</code>: <a href="#repchar">repchar</a>
 <li><code>repchar</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>required</code>: <a href="#actionsequence">actionsequence</a>
@@ -11036,10 +11092,10 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>site</code>: <a href="#site">site</a>, <a href="#control">control</a>
 <li><code>SkipVerify</code>: <a href="#root%3d">root=</a>
 <li><code>smtpserver</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>
-<li><code>split</code>: <a href="#Special%20variables">Special variables</a>, <a href="#Iteration%20over%20lists">Iteration over lists</a>, <a href="#split">split</a>
+<li><code>split</code>: <a href="#split">split</a>, <a href="#Iteration%20over%20lists">Iteration over lists</a>, <a href="#Special%20variables">Special variables</a>
 <li><code>SpoolDirectories</code>: <a href="#spooldirectories">spooldirectories</a>
 <li><code>SuspiciousNames</code>: <a href="#suspiciousnames">suspiciousnames</a>
-<li><code>sysadm</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>, <a href="#sysadm">sysadm</a>, <a href="#control">control</a>, <a href="#Cfexecd%20reference">Cfexecd reference</a>
+<li><code>sysadm</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>, <a href="#sysadm">sysadm</a>, <a href="#control">control</a>
 <li><code>tidy</code>: <a href="#tidy">tidy</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>timezone</code>: <a href="#control">control</a>
 <li><code>touch</code>: <a href="#touch">touch</a>
@@ -11067,8 +11123,9 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>!: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li><code>--dry-run</code> option: <a href="#shellcommands">shellcommands</a>
 <li>-D option: <a href="#addclasses">addclasses</a>
-<li>-l option: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
+<li>-l option: <a href="#tidy">tidy</a>
 <li><code>-L</code> option: <a href="#Single%20links">Single links</a>
+<li>-l option: <a href="#Syntax">Syntax</a>
 <li>-x option: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>.cfdisabled</code>: <a href="#disable">disable</a>
 <li>.cfengine.rm: <a href="#tidy">tidy</a>
@@ -11092,6 +11149,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>AllowConnectionsFrom</code> variable: <a href="#AllowConnectionsFrom">AllowConnectionsFrom</a>
 <li>AllowUsers in cfservd: <a href="#AllowUsers">AllowUsers</a>
 <li>Andrew filesystem: <a href="#nfstype">nfstype</a>
+<li><code>AppendIfNoSuchLinesFromFile</code>: <a href="#editfiles">editfiles</a>
 <li>Array example: <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
 <li>Array from file: <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
 <li>atime tidies: <a href="#tidy">tidy</a>
@@ -11108,7 +11166,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Binary servers and links: <a href="#Link%20Children">Link Children</a>, <a href="#Single%20links">Single links</a>
 <li>Binary servers, defining: <a href="#binservers">binservers</a>
 <li>Binary servers, priority: <a href="#Single%20links">Single links</a>, <a href="#binservers">binservers</a>
-<li>Binding to one interface only: <a href="#BindToInterface(cfagent)">BindToInterface(cfagent)</a>, <a href="#BindToInterface">BindToInterface</a>
+<li>Binding to one interface only: <a href="#BindToInterface">BindToInterface</a>, <a href="#BindToInterface(cfagent)">BindToInterface(cfagent)</a>
 <li>Bootstrap file: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li>Broadcast address: <a href="#broadcast">broadcast</a>
 <li>Broadcasts to the cfengine service.: <a href="#cfrun">cfrun</a>
@@ -11140,8 +11198,8 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Class decided by shell command: <a href="#groups">groups</a>
 <li>Class dependencies: <a href="#groups">groups</a>
 <li>Class information, passing to scripts: <a href="#shellcommands">shellcommands</a>
-<li>classes: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li><code>classes</code>: <a href="#groups">groups</a>, <a href="#classes">classes</a>
+<li>classes: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Classes, adding and defining: <a href="#addclasses">addclasses</a>
 <li>Classes, compound: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Classes, defining and undefining: <a href="#Cfengine%20classes">Cfengine classes</a>
@@ -11167,21 +11225,21 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Defining a mail server: <a href="#mailserver">mailserver</a>
 <li>Defining a mountable: <a href="#mountables">mountables</a>
 <li>Defining before use: <a href="#addinstallable">addinstallable</a>
-<li>Defining classes: <a href="#addclasses">addclasses</a>, <a href="#classes">classes</a>
+<li>Defining classes: <a href="#classes">classes</a>, <a href="#addclasses">addclasses</a>
 <li>Defining groups: <a href="#groups">groups</a>
 <li>DeleteNonOwnerMail: <a href="#deletenonownerfiles">deletenonownerfiles</a>
 <li>DeleteNonUserFiles: <a href="#deletenonownerfiles">deletenonownerfiles</a>
 <li>DeleteNonUserMail DeleteNonUserFiles: <a href="#deletenonuserfiles">deletenonuserfiles</a>
 <li>Deleting directories: <a href="#tidy">tidy</a>
 <li>Deleting files: <a href="#tidy">tidy</a>
-<li>Deleting stale links: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
+<li>Deleting stale links: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li><code>DenyBadClocks</code> variable: <a href="#DenyBadClocks">DenyBadClocks</a>
 <li><code>DenyConnectionsFrom</code> variable: <a href="#DenyConnectionsFrom">DenyConnectionsFrom</a>
 <li>Dependencies: <a href="#groups">groups</a>
 <li>Device boundaries: <a href="#copy">copy</a>
 <li>Device boundaries and files: <a href="#Recursion">Recursion</a>
 <li>DFS: <a href="#nfstype">nfstype</a>
-<li>DHCP: <a href="#actionsequence">actionsequence</a>, <a href="#DynamicAddresses">DynamicAddresses</a>
+<li>DHCP: <a href="#DynamicAddresses">DynamicAddresses</a>, <a href="#actionsequence">actionsequence</a>
 <li>Directories, deleting: <a href="#tidy">tidy</a>
 <li>Directories, hidden: <a href="#fileextension">fileextension</a>
 <li>Directories, making: <a href="#directories">directories</a>
@@ -11224,7 +11282,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Force copying: <a href="#copy">copy</a>
 <li>freespace=: <a href="#required">required</a>, <a href="#disks">disks</a>
 <li>FriendStatus: <a href="#alerts">alerts</a>
-<li>Full disk warnings: <a href="#disks">disks</a>, <a href="#required">required</a>
+<li>Full disk warnings: <a href="#required">required</a>, <a href="#disks">disks</a>
 <li>Fully qualified names: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Functions, in-built: <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
 <li>Group dependencies: <a href="#groups">groups</a>
@@ -11234,7 +11292,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Groups, defining: <a href="#groups">groups</a>
 <li>Hard class name collision: <a href="#Special%20variables">Special variables</a>
 <li>Hardlinks: <a href="#Hard%20links">Hard links</a>
-<li>Hashes of files: <a href="#ChecksumDatabase">ChecksumDatabase</a>, <a href="#Syntax">Syntax</a>
+<li>Hashes of files: <a href="#Syntax">Syntax</a>, <a href="#ChecksumDatabase">ChecksumDatabase</a>
 <li>home directive: <a href="#home%20directive">home directive</a>
 <li>Home path: <a href="#homepattern">homepattern</a>
 <li>Home servers, defining: <a href="#homeservers">homeservers</a>
@@ -11255,7 +11313,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>IP address: <a href="#netmask">netmask</a>
 <li>Iterating over lists in shellcommands: <a href="#shellcommands">shellcommands</a>
 <li>Iteration in server rules: <a href="#Cfservd.conf%20and%20cfrun%20reference">Cfservd.conf and cfrun reference</a>
-<li>Iteration over lists: <a href="#Iteration%20over%20lists">Iteration over lists</a>, <a href="#split">split</a>
+<li>Iteration over lists: <a href="#split">split</a>, <a href="#Iteration%20over%20lists">Iteration over lists</a>
 <li>Key entropy and cfenvd: <a href="#Cfkey">Cfkey</a>
 <li>Key security of users: <a href="#AllowUsers">AllowUsers</a>
 <li>Key, ACL: <a href="#DFS%20ACLs">DFS ACLs</a>
@@ -11269,7 +11327,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Links, multiple: <a href="#Multiple%20Links">Multiple Links</a>
 <li>Links, removing dead: <a href="#Single%20links">Single links</a>
 <li>Links, single: <a href="#Single%20links">Single links</a>
-<li>Links, traversing in searches: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
+<li>Links, traversing in searches: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li>Local disk space, make use of: <a href="#Link%20Children">Link Children</a>
 <li>Log files, controlling the size of: <a href="#disable">disable</a>
 <li>Logical NOT: <a href="#Cfengine%20classes">Cfengine classes</a>
@@ -11285,16 +11343,17 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Merging files.: <a href="#editfiles">editfiles</a>
 <li>Message digests: <a href="#Syntax">Syntax</a>, <a href="#ChecksumDatabase">ChecksumDatabase</a>
 <li>Methods: <a href="#methods">methods</a>
+<li>Methods, remote caution: <a href="#methods">methods</a>
 <li>Miscellaneous mount operations: <a href="#miscmounts">miscmounts</a>
 <li>Module directory: <a href="#moduledirectory">moduledirectory</a>
 <li>Modules, user defined: <a href="#actionsequence">actionsequence</a>
 <li>Monitoring other hosts: <a href="#alerts">alerts</a>
 <li>Mount paths: <a href="#mountpattern">mountpattern</a>
-<li>Mountable resources, defining: <a href="#homeservers">homeservers</a>, <a href="#mountables">mountables</a>
+<li>Mountable resources, defining: <a href="#mountables">mountables</a>, <a href="#homeservers">homeservers</a>
 <li>Mounted filesystems: <a href="#copy">copy</a>
 <li>Mounting filesystems.: <a href="#miscmounts">miscmounts</a>
 <li>mtime tidies: <a href="#tidy">tidy</a>
-<li>Multihomed hosts: <a href="#BindToInterface(cfagent)">BindToInterface(cfagent)</a>, <a href="#BindToInterface">BindToInterface</a>
+<li>Multihomed hosts: <a href="#BindToInterface">BindToInterface</a>, <a href="#BindToInterface(cfagent)">BindToInterface(cfagent)</a>
 <li>Multiple links: <a href="#Multiple%20Links">Multiple Links</a>
 <li>Name collision: <a href="#Special%20variables">Special variables</a>
 <li>NAT: <a href="#Firewalls%20and%20NATs">Firewalls and NATs</a>
@@ -11398,7 +11457,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>smtpserver: <a href="#Smtpserver">Smtpserver</a>
 <li>Specifying file sizes: <a href="#tidy">tidy</a>
 <li>SplayTime in cfrun: <a href="#cfrun">cfrun</a>
-<li>split: <a href="#Iteration%20over%20lists">Iteration over lists</a>, <a href="#split">split</a>
+<li>split: <a href="#split">split</a>, <a href="#Iteration%20over%20lists">Iteration over lists</a>
 <li>SplitOn: <a href="#editfiles">editfiles</a>
 <li>SpoolDirectories: <a href="#spooldirectories">spooldirectories</a>
 <li>Subnet mask: <a href="#netmask">netmask</a>
@@ -11425,18 +11484,19 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Truncating log files: <a href="#disable">disable</a>
 <li>Trusted hosts: <a href="#copy">copy</a>
 <li><code>TrustKeysFrom</code> variable: <a href="#TrustKeysFrom">TrustKeysFrom</a>
-<li>umask: <a href="#editfiles">editfiles</a>, <a href="#processes">processes</a>, <a href="#shellcommands">shellcommands</a>
+<li>umask: <a href="#shellcommands">shellcommands</a>, <a href="#processes">processes</a>, <a href="#editfiles">editfiles</a>
 <li>underscoreclasses: <a href="#Special%20variables">Special variables</a>
 <li>Unmounting filesystems: <a href="#unmount">unmount</a>
 <li>UnsetState(): <a href="#alerts">alerts</a>
 <li><code>update.conf</code>: <a href="#Work%20directory">Work directory</a>
 <li>Variables in import files: <a href="#import">import</a>
 <li>Variables, setting to result of a shell command: <a href="#Setting%20variables%20with%20functions">Setting variables with functions</a>
-<li>Warning about full disks: <a href="#disks">disks</a>, <a href="#required">required</a>
+<li>Warning about full disks: <a href="#required">required</a>, <a href="#disks">disks</a>
+<li>Warning remote methods: <a href="#methods">methods</a>
 <li>Wildcard home: <a href="#Syntax">Syntax</a>
 <li>Wildcards in homepattern: <a href="#homepattern">homepattern</a>
 <li>WWW server logs: <a href="#disable">disable</a>
-<li>xdev: <a href="#Syntax">Syntax</a>, <a href="#copy">copy</a>, <a href="#tidy">tidy</a>
+<li>xdev: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>, <a href="#copy">copy</a>
 <li>xdev (File system boundaries): <a href="#Recursion">Recursion</a>
 <li>zeros: <a href="#broadcast">broadcast</a>
    </ul>

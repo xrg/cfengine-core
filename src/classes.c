@@ -81,7 +81,7 @@ char *CLASSTEXT[] =   /* If you change here change enum classes too! */
 
   /* remember to change cf.defs.h !!  */
 
-char *CLASSATTRIBUTES[CLSSATTR][ATTRDIM] =
+char *CLASSATTRIBUTES[CF_CLASSATTR][CF_ATTRDIM] =
    {                            /* Only as many characters */
    {"-","-","-"},                 /* as appear here are matched. The     */
    {"-","-","-"},                 /* fields are sysname and machine */
@@ -121,7 +121,7 @@ char *CLASSATTRIBUTES[CLSSATTR][ATTRDIM] =
 
 /*********************************************************************/
 
-char *VPSCOMM[CLSSATTR] =
+char *VPSCOMM[CF_CLASSATTR] =
    {
    "",
    "",
@@ -161,7 +161,7 @@ char *VPSCOMM[CLSSATTR] =
 
 /*********************************************************************/
 
-char *VPSOPTS[CLSSATTR] =
+char *VPSOPTS[CF_CLASSATTR] =
    {
    "",
    "",
@@ -201,7 +201,7 @@ char *VPSOPTS[CLSSATTR] =
 
 /*********************************************************************/
 
-char *VMOUNTCOMM[CLSSATTR] =
+char *VMOUNTCOMM[CF_CLASSATTR] =
    {
    "",                                              /* see cf.defs.h */
    "",
@@ -241,7 +241,7 @@ char *VMOUNTCOMM[CLSSATTR] =
 
 /*********************************************************************/
 
-char *VUNMOUNTCOMM[CLSSATTR] =
+char *VUNMOUNTCOMM[CF_CLASSATTR] =
    {
    "",                                              /* see cf.defs.h */
    "",
@@ -283,7 +283,7 @@ char *VUNMOUNTCOMM[CLSSATTR] =
 
 /*********************************************************************/
 
-char *VMOUNTOPTS[CLSSATTR] =
+char *VMOUNTOPTS[CF_CLASSATTR] =
    {
    "",                                              /* see cf.defs.h */
    "",
@@ -323,7 +323,7 @@ char *VMOUNTOPTS[CLSSATTR] =
 
 /*********************************************************************/
 
-char *VIFDEV[CLSSATTR] =
+char *VIFDEV[CF_CLASSATTR] =
    {
    "-",
    "-",                                              /* see cf.defs.h */
@@ -364,7 +364,7 @@ char *VIFDEV[CLSSATTR] =
 
 /*********************************************************************/
 
-char *VRESOLVCONF[CLSSATTR] =
+char *VRESOLVCONF[CF_CLASSATTR] =
    {
    "-",
    "-",                                              /* see cf.defs.h */
@@ -406,7 +406,7 @@ char *VRESOLVCONF[CLSSATTR] =
 
 /*********************************************************************/
 
-char *VFSTAB[CLSSATTR] =
+char *VFSTAB[CF_CLASSATTR] =
    {
    "-",
    "-",                                              /* see cf.defs.h */
@@ -446,7 +446,7 @@ char *VFSTAB[CLSSATTR] =
 
 /*********************************************************************/
 
-char *VMAILDIR[CLSSATTR] =
+char *VMAILDIR[CF_CLASSATTR] =
    {
    "-",
    "-",                                              /* see cf.defs.h */
@@ -486,7 +486,7 @@ char *VMAILDIR[CLSSATTR] =
 
 /*********************************************************************/
 
-char *VNETSTAT[CLSSATTR] =
+char *VNETSTAT[CF_CLASSATTR] =
    {
    "-",
    "-", 
@@ -527,7 +527,7 @@ char *VNETSTAT[CLSSATTR] =
 
 /*********************************************************************/
 
-char *VFILECOMM[CLSSATTR] =
+char *VFILECOMM[CF_CLASSATTR] =
    {
    "-",
    "-", 

@@ -50,11 +50,11 @@ int SensibleFile(char *nodename,char *path,struct Image *ip)
 
 { int i, suspicious = true;
   struct stat statbuf; 
-  unsigned char *sp, newname[bufsize],vbuff[bufsize];
+  unsigned char *sp, newname[CF_BUFSIZE],vbuff[CF_BUFSIZE];
 
 if (strlen(nodename) < 1)
    {
-   snprintf(OUTPUT,bufsize,"Empty (null) filename detected in %s\n",path);
+   snprintf(OUTPUT,CF_BUFSIZE,"Empty (null) filename detected in %s\n",path);
    CfLog(cferror,OUTPUT,"");
    return false;
    }
@@ -66,7 +66,7 @@ if (IsItemIn(SUSPICIOUSLIST,nodename))
       {
       if (S_ISREG(statbuf.st_mode))
          {
-         snprintf(OUTPUT,bufsize,"Suspicious file %s found in %s\n",nodename,path);
+         snprintf(OUTPUT,CF_BUFSIZE,"Suspicious file %s found in %s\n",nodename,path);
          CfLog(cferror,OUTPUT,"");
          return false;
          }
@@ -113,7 +113,7 @@ strcat(vbuff,nodename);
 
 if (suspicious && NONALPHAFILES)
    {
-   snprintf(OUTPUT,bufsize,"Suspicious filename %s in %s has no alphanumeric content (security)",CanonifyName(nodename),path);
+   snprintf(OUTPUT,CF_BUFSIZE,"Suspicious filename %s in %s has no alphanumeric content (security)",CanonifyName(nodename),path);
    CfLog(cfsilent,OUTPUT,"");
    strcpy(newname,vbuff);
 
@@ -127,7 +127,7 @@ if (suspicious && NONALPHAFILES)
 
    strcat(newname,".cf-nonalpha");
    
-   snprintf(OUTPUT,bufsize,"Renaming file %s to %s",vbuff,newname);
+   snprintf(OUTPUT,CF_BUFSIZE,"Renaming file %s to %s",vbuff,newname);
    CfLog(cfsilent,OUTPUT,"");
    
    if (rename(vbuff,newname) == -1)
@@ -145,7 +145,7 @@ if (strstr(nodename,".") && (EXTENSIONLIST != NULL))
    {
    if (cflstat(vbuff,&statbuf,ip) == -1)
       {
-      snprintf(OUTPUT,bufsize,"Couldn't examine %s - foreign filesystem?\n",vbuff);
+      snprintf(OUTPUT,CF_BUFSIZE,"Couldn't examine %s - foreign filesystem?\n",vbuff);
       CfLog(cfverbose,OUTPUT,"lstat");
       return true;
       }
@@ -168,7 +168,7 @@ if (strstr(nodename,".") && (EXTENSIONLIST != NULL))
          
          if ((strlen(sp) > 0) && IsItemIn(EXTENSIONLIST,sp))
             {
-            snprintf(OUTPUT,bufsize,"Suspicious directory %s in %s looks like plain file with extension .%s",nodename,path,sp);
+            snprintf(OUTPUT,CF_BUFSIZE,"Suspicious directory %s in %s looks like plain file with extension .%s",nodename,path,sp);
             CfLog(cfsilent,OUTPUT,"");
             return false;
             }
@@ -190,7 +190,7 @@ for (sp = nodename; *sp != '\0'; sp++) /* Check for files like ".. ." */
 
 if (cflstat(vbuff,&statbuf,ip) == -1)
    {
-   snprintf(OUTPUT,bufsize,"Couldn't stat %s",vbuff);
+   snprintf(OUTPUT,CF_BUFSIZE,"Couldn't stat %s",vbuff);
    CfLog(cfverbose,OUTPUT,"lstat");
    return true;
    }
@@ -200,22 +200,22 @@ if (statbuf.st_size == 0 && ! (VERBOSE||INFORM)) /* No sense in warning about em
    return false;
    }
  
-snprintf(OUTPUT,bufsize,"Suspicous looking file object \"%s\" masquerading as hidden file in %s\n",nodename,path);
+snprintf(OUTPUT,CF_BUFSIZE,"Suspicous looking file object \"%s\" masquerading as hidden file in %s\n",nodename,path);
 CfLog(cfsilent,OUTPUT,"");
 Debug("Filename looks suspicious\n"); 
  
 if (S_ISLNK(statbuf.st_mode))
    {
-   snprintf(OUTPUT,bufsize,"   %s is a symbolic link\n",nodename);
+   snprintf(OUTPUT,CF_BUFSIZE,"   %s is a symbolic link\n",nodename);
    CfLog(cfsilent,OUTPUT,"");
    }
 else if (S_ISDIR(statbuf.st_mode))
    {
-   snprintf(OUTPUT,bufsize,"   %s is a directory\n",nodename);
+   snprintf(OUTPUT,CF_BUFSIZE,"   %s is a directory\n",nodename);
    CfLog(cfsilent,OUTPUT,"");
    }
 
-snprintf(OUTPUT,bufsize,"[%s] has size %ld and full mode %o\n",nodename,(unsigned long)(statbuf.st_size),(unsigned int)(statbuf.st_mode));
+snprintf(OUTPUT,CF_BUFSIZE,"[%s] has size %ld and full mode %o\n",nodename,(unsigned long)(statbuf.st_size),(unsigned int)(statbuf.st_mode));
 CfLog(cfsilent,OUTPUT,"");
  
 return true;

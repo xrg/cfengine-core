@@ -1,4 +1,4 @@
-This is cfengine-Reference.info, produced by makeinfo version 4.3 from
+This is cfengine-Reference.info, produced by makeinfo version 4.5 from
 cfengine-Reference.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -521,6 +521,7 @@ your system!)
      If a link is created or replaced, the colon, comma or dot separated
      list of classes becomes defined.
 
+
    The final feature of the links facility is connected to the use of
 the cfengine model for mounting NFS filesystems.  In particular it
 concerns the variable `$(binserver)'.  The easiest way to understand
@@ -744,11 +745,11 @@ methods
 =======
 
    From version 2.1.0, cfagent provides for the execution of closed
-functions or "methods".  Methods are similar to the old idea of
-modules, but they are implemented in a way that allows collaboration
-between different hosts within a network, using a common standard.
-Methods must be cfengine programs however, wheras the module interface
-can be written in any script language.
+functions or "methods".  Methods are similar to the old idea of modules,
+but they are implemented in a way that allows collaboration between
+different hosts within a network, using a common standard. Methods must
+be cfengine programs however, wheras the module interface can be written
+in any script language.
 
    _Modules are designed to offer a firewall-like proxy interface for
 remote method execution. We can call methods a form of `voluntary RPC',
@@ -757,16 +758,19 @@ basis. This builds in anti-spamming protection. The principle used is
 that hosts should be immune to Denial of Service attacks; they should
 only be able to disadvanatge themselves with the attempt._
 
-   (Remote method execution was not implemented until version 2.1.3)
+   (Remote method execution was not implemented until version 2.1.3. It
+is still considered experimental and is not recommended for large
+production environments until this paragraph is removed from the
+documentation.)
 
    Methods allow you to call an independent cfengine program, pass it
 arguments and classes, and collect the results for use in your main
 program. It thus introduces parent-child semantics into cfengine
-"imports". A method is more than an import.  (Import is analagous to a
-C #include, while a method is like a C function.)  Communication is
-peer to peer, by mutual consent. There is no "method server" that
-executes methods on remote hosts. Hosts exchange information by
-invitation only. This is an unreliable service (in the sense of UDP).
+"imports". A method is more than an import.  (Import is analagous to a C
+#include, while a method is like a C function.)  Communication is peer
+to peer, by mutual consent. There is no "method server" that executes
+methods on remote hosts. Hosts exchange information by invitation only.
+This is an unreliable service (in the sense of UDP).
 
    The order of method exeuction is not guaranteed. This results from
 the decoupling between client request and service provision.
@@ -786,11 +790,33 @@ the decoupling between client request and service provision.
      
            server=IP-HOST/*
      
+           forcereplyto=IP ADDRESS
+     
            owner=SETUID
            group=SETGID
            chdir=CD FOR CHILD
            chroot=SANDBOX DIRECTORY
-The function arguments may not be empty, but a null value can be
+Most of these functions will be familiar from other cfengine
+commands. Some special ones are noted below:
+
+`action'
+     The name of the method file that should be defined in the modules
+     directory of the server host.
+
+`forcereplyto'
+     Sometimes nameservice problems (especially with remote devices)
+     can lead to confusion about where a method should be sent. The
+     caller can therefore declare to the server which address it wants
+     the reply to be marked for.
+
+`returnvars'
+     Returns the values of the variables to the parent process.
+
+`returnclasses'
+     Returns the classes to the parent process, if and only if they are
+     defined at the end of the current method.
+
+   The function arguments may not be empty, but a null value can be
 transmitted with a dummy value, e.g. `Function(null)' or
 `function(void)'.  Here is an example method call.
 

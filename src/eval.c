@@ -92,7 +92,7 @@ return -1;
 
 void AddInstallable(char *classlist)
 
-{ char *sp, currentitem[maxvarsize];
+{ char *sp, currentitem[CF_MAXVARSIZE];
 
 if (classlist == NULL)
    {
@@ -125,28 +125,28 @@ Debug("AddInstallable(%s)\n",classlist);
 
 void AddPrefixedMultipleClasses(char *name,char *classlist)
 
-{ char *sp, currentitem[maxvarsize],local[maxvarsize],pref[bufsize];
+{ char *sp, currentitem[CF_MAXVARSIZE],local[CF_MAXVARSIZE],pref[CF_BUFSIZE];
  
 if ((classlist == NULL) || strlen(classlist) == 0)
    {
    return;
    }
 
-memset(local,0,maxvarsize);
-strncpy(local,classlist,maxvarsize-1);
+memset(local,0,CF_MAXVARSIZE);
+strncpy(local,classlist,CF_MAXVARSIZE-1);
 
 Debug("AddPrefixedMultipleClasses(%s,%s)\n",name,local);
 
 for (sp = local; *sp != '\0'; sp++)
    {
-   memset(currentitem,0,maxvarsize);
+   memset(currentitem,0,CF_MAXVARSIZE);
 
    sscanf(sp,"%250[^.:,]",currentitem);
 
    sp += strlen(currentitem);
 
    pref[0] = '\0';
-   snprintf(pref,bufsize,"%s_%s",name,currentitem);
+   snprintf(pref,CF_BUFSIZE,"%s_%s",name,currentitem);
 
    
    if (IsHardClass(pref))
@@ -162,21 +162,21 @@ for (sp = local; *sp != '\0'; sp++)
 
 void AddMultipleClasses(char *classlist)
 
-{ char *sp, currentitem[maxvarsize],local[maxvarsize];
+{ char *sp, currentitem[CF_MAXVARSIZE],local[CF_MAXVARSIZE];
  
 if ((classlist == NULL) || strlen(classlist) == 0)
    {
    return;
    }
 
-memset(local,0,maxvarsize);
-strncpy(local,classlist,maxvarsize-1);
+memset(local,0,CF_MAXVARSIZE);
+strncpy(local,classlist,CF_MAXVARSIZE-1);
 
 Debug("AddMultipleClasses(%s)\n",local);
 
 for (sp = local; *sp != '\0'; sp++)
    {
-   memset(currentitem,0,maxvarsize);
+   memset(currentitem,0,CF_MAXVARSIZE);
 
    sscanf(sp,"%250[^.:,]",currentitem);
 
@@ -338,7 +338,7 @@ Debug("AddClassToHeap(%s)\n",class);
 
 /*if (! IsItemIn(VALLADDCLASSES,class))
    {
-   snprintf(OUTPUT,bufsize,"Defining class %s -- but it isn't declared installable",class);
+   snprintf(OUTPUT,CF_BUFSIZE,"Defining class %s -- but it isn't declared installable",class);
    yyerror(OUTPUT);
    }*/
 
@@ -487,7 +487,7 @@ int IsInstallable(char *class)
   /* Evaluates to true if the class string COULD become true in */
   /* the course of the execution - but might not be true now    */
 
-{ char buffer[bufsize], *sp;
+{ char buffer[CF_BUFSIZE], *sp;
   int i = 0;
 
 for (sp = class; *sp != '\0'; sp++)
@@ -512,7 +512,7 @@ return (EvaluateORString(buffer,VALLADDCLASSES)||EvaluateORString(class,VALLADDC
 void NegateCompoundClass(char *class,struct Item **heap)
 
 { char *sp = class;
-  char cbuff[maxvarsize];
+  char cbuff[CF_MAXVARSIZE];
 
 Debug1("NegateCompoundClass(%s)",class);
 
@@ -531,7 +531,7 @@ while(*sp != '\0')
       }
 
    if (IsHardClass(cbuff))
-      { char err[bufsize];
+      { char err[CF_BUFSIZE];
       yyerror("Illegal exception");
       sprintf (err,"Cannot negate the reserved class [%s]\n",cbuff);
       FatalError(err);
@@ -547,7 +547,7 @@ while(*sp != '\0')
 
 int EvaluateORString(char *class,struct Item *list)
 
-{ char *sp, cbuff[bufsize];
+{ char *sp, cbuff[CF_BUFSIZE];
   int result = false;
 
 if (class == NULL)
@@ -564,7 +564,7 @@ for (sp = class; *sp != '\0'; sp++)
       sp++;
       }
 
-   memset(cbuff,0,bufsize);
+   memset(cbuff,0,CF_BUFSIZE);
 
    sp += GetORAtom(sp,cbuff);
 
@@ -602,7 +602,7 @@ return result;
 int EvaluateANDString(char *class,struct Item *list)
 
 { char *sp, *atom;
-  char cbuff[bufsize];
+  char cbuff[CF_BUFSIZE];
   int count = 1;
   int negation = false;
 
@@ -621,7 +621,7 @@ while(*sp != '\0')
       sp++;
       }
 
-   memset(cbuff,0,bufsize);
+   memset(cbuff,0,CF_BUFSIZE);
 
    sp += GetANDAtom(sp,cbuff) + 1;
 

@@ -1,4 +1,4 @@
-This is cfengine-Reference.info, produced by makeinfo version 4.3 from
+This is cfengine-Reference.info, produced by makeinfo version 4.5 from
 cfengine-Reference.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -35,7 +35,7 @@ alias for the class `any' that is defined on the affected hosts.
            SysLog(PRIORITY,MESSAGE)
            SetState(NAME,TTL,POLICY)
            UnSetState(NAME)
-           FriendStatus(MINUTES)
+           FriendStatus(HOURS)
    For example:
 
 
@@ -101,10 +101,11 @@ lifetime.
    The `FriendStatus' function is available from version 2.1.4 and
 displays a message if hosts that normally have a cfengine protocol
 connection with the current host have not connected for more than than
-specified number of minutes. If the number of minutes is set to zero,
+specified number of hours. If the number of hours is set to zero,
 cfengine uses a machine-learned expectation value for the time and uses
-this. The friend status of a host is thus the expectation that there is
-a problem with a remote peer.
+this to report. The friend status of a host is thus the expectation that
+there is a problem with a remote peer. Expected contact rates of less
+than once are week are ignored as spurious.
 
 
 File: cfengine-Reference.info,  Node: binservers,  Next: broadcast,  Prev: alerts,  Up: Cfagent reference
@@ -494,6 +495,7 @@ Here is a more complete description of the meaning of these keywords.
 `processes'
      executes commands defined under the `processes' section of the
      program.
+
 
    Under normal circumstances this coarse ordering is enough to suit
 most purposes.  In some cases you might want to, say, only perform half

@@ -37,6 +37,7 @@
 void InstallStrategy(char *alias,char *classes)
 
 { struct Strategy *ptr;
+  char ebuff[CF_EXPANDSIZE];
  
  Debug1("InstallStrategy(%s,%s)\n",alias,classes);
  
@@ -46,21 +47,21 @@ void InstallStrategy(char *alias,char *classes)
     return;
     }
  
- ExpandVarstring(alias,VBUFF,"");
+ ExpandVarstring(alias,ebuff,"");
  
  if ((ptr = (struct Strategy *)malloc(sizeof(struct Strategy))) == NULL)
     {
     FatalError("Memory Allocation failed for InstallStrategy() #1");
     }
  
- if ((ptr->name = strdup(VBUFF)) == NULL)
+ if ((ptr->name = strdup(ebuff)) == NULL)
     {
     FatalError("Memory Allocation failed in InstallStrategy");
     }
 
- ExpandVarstring(classes,VBUFF,"");
+ ExpandVarstring(classes,ebuff,"");
 
- if ((ptr->classes = strdup(VBUFF)) == NULL)
+ if ((ptr->classes = strdup(ebuff)) == NULL)
     {
     FatalError("Memory Allocation failed in InstallStrategy");
     }
@@ -87,7 +88,7 @@ void InstallStrategy(char *alias,char *classes)
 void AddClassToStrategy(char *alias,char *class,char *value)
 
 { struct Strategy *sp;
-  char buf[maxvarsize];
+  char buf[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
   int val = -1;
 
 if (class[strlen(class)-1] != ':')
@@ -96,13 +97,13 @@ if (class[strlen(class)-1] != ':')
    return;
    }
   
-memset(buf,0,maxvarsize);
+memset(buf,0,CF_MAXVARSIZE);
 sscanf(class,"%[^:]",&buf);
  
-ExpandVarstring(value,VBUFF,"");
-Debug("AddClassToStrategy(%s,%s,%s)\n",alias,class,VBUFF);
+ExpandVarstring(value,ebuff,"");
+Debug("AddClassToStrategy(%s,%s,%s)\n",alias,class,ebuff);
 
-sscanf(VBUFF,"%d",&val);
+sscanf(ebuff,"%d",&val);
 
 if (val <= 0)
    {
@@ -114,7 +115,7 @@ for (sp = VSTRATEGYLIST; sp != NULL; sp=sp->next)
    {
    if (strcmp(alias,sp->name) == 0)
       {
-      AppendItem(&(sp->strategies),buf,VBUFF);
+      AppendItem(&(sp->strategies),buf,ebuff);
       AddInstallable(buf);
       }
    }

@@ -48,7 +48,7 @@ extern FILE *yyin;
 
 int ParseInputFile(char *file)
 
-{ char filename[bufsize], *sp;
+{ char filename[CF_BUFSIZE], *sp;
   struct Item *ptr;
   struct stat s;
 
@@ -94,17 +94,17 @@ for (ptr = VIMPORT; ptr != NULL; ptr=ptr->next)
    ParseFile(filename,sp);
    }
 
+PARSING = false;
+DeleteParser();
+
+Debug("(END OF PARSING %s)\n",file);
+Verbose("Finished with %s\n\n",file); 
  
 if (strcmp(file,"update.conf") == 0)
    {
    GetRemoteMethods();
    }
   
-PARSING = false;
-DeleteParser();
-
-Debug("(END OF PARSING %s)\n",file);
-Verbose("Finished with %s\n\n",file); 
 return true; 
 }
 
@@ -114,40 +114,40 @@ void NewParser()
 
 {
  Debug("New Parser Object::");
- FINDERTYPE = (char *) malloc(bufsize);
- strncpy(FINDERTYPE, "*", bufsize); /* "*" = no findertype set */
- VUIDNAME = (char *) malloc(bufsize);
- VGIDNAME = (char *) malloc(bufsize);
- FILTERNAME = (char *) malloc(bufsize);
- STRATEGYNAME = (char *) malloc(bufsize);
- CURRENTITEM = (char *) malloc(bufsize);
- GROUPBUFF = (char *) malloc(bufsize);
- ACTIONBUFF = (char *) malloc(bufsize);
- CURRENTOBJECT = (char *) malloc(bufsize);
- CURRENTAUTHPATH = (char *) malloc(bufsize);
- CLASSBUFF = (char *) malloc(bufsize);
- LINKFROM = (char *) malloc(bufsize);
- LINKTO = (char *) malloc(bufsize);
- ERROR = (char *) malloc(bufsize);
- EXPR = (char *) malloc(bufsize);
- MOUNTFROM = (char *) malloc(bufsize);
- MOUNTONTO = (char *) malloc(bufsize);
+ FINDERTYPE = (char *) malloc(CF_BUFSIZE);
+ strncpy(FINDERTYPE, "*", CF_BUFSIZE); /* "*" = no findertype set */
+ VUIDNAME = (char *) malloc(CF_BUFSIZE);
+ VGIDNAME = (char *) malloc(CF_BUFSIZE);
+ FILTERNAME = (char *) malloc(CF_BUFSIZE);
+ STRATEGYNAME = (char *) malloc(CF_BUFSIZE);
+ CURRENTITEM = (char *) malloc(CF_BUFSIZE);
+ GROUPBUFF = (char *) malloc(CF_BUFSIZE);
+ ACTIONBUFF = (char *) malloc(CF_BUFSIZE);
+ CURRENTOBJECT = (char *) malloc(CF_BUFSIZE);
+ CURRENTAUTHPATH = (char *) malloc(CF_BUFSIZE);
+ CLASSBUFF = (char *) malloc(CF_BUFSIZE);
+ LINKFROM = (char *) malloc(CF_BUFSIZE);
+ LINKTO = (char *) malloc(CF_BUFSIZE);
+ ERROR = (char *) malloc(CF_BUFSIZE);
+ EXPR = (char *) malloc(CF_BUFSIZE);
+ MOUNTFROM = (char *) malloc(CF_BUFSIZE);
+ MOUNTONTO = (char *) malloc(CF_BUFSIZE);
  *MOUNTFROM = '\0';
  *MOUNTONTO = '\0';
- MOUNTOPTS = (char *) malloc(bufsize);
+ MOUNTOPTS = (char *) malloc(CF_BUFSIZE);
 
- PKGVER = (char *) malloc(bufsize);
+ PKGVER = (char *) malloc(CF_BUFSIZE);
  PKGVER[0] = '\0';
 
- DESTINATION = (char *) malloc(bufsize);
+ DESTINATION = (char *) malloc(CF_BUFSIZE);
 
- IMAGEACTION = (char *) malloc(bufsize);
+ IMAGEACTION = (char *) malloc(CF_BUFSIZE);
 
- CHDIR = (char *) malloc(bufsize);
- RESTART = (char *) malloc(bufsize);
- LOCALREPOS = (char *) malloc(bufsize);
- FILTERDATA = (char *) malloc(bufsize);
- STRATEGYDATA = (char *) malloc(bufsize);
+ CHDIR = (char *) malloc(CF_BUFSIZE);
+ RESTART = (char *) malloc(CF_BUFSIZE);
+ LOCALREPOS = (char *) malloc(CF_BUFSIZE);
+ FILTERDATA = (char *) malloc(CF_BUFSIZE);
+ STRATEGYDATA = (char *) malloc(CF_BUFSIZE);
 }
 
 /*******************************************************************/
@@ -440,7 +440,7 @@ void HandleClass (char *id)
       {
       case '-':
       case '*':
-   snprintf(OUTPUT,bufsize,"Illegal character (%c) in class %s",*sp,id);
+   snprintf(OUTPUT,CF_BUFSIZE,"Illegal character (%c) in class %s",*sp,id);
    yyerror(OUTPUT);
       }
    }
@@ -523,7 +523,7 @@ switch (ACTION)
         else if (HAVE_RESTART)
            {
            Debug1("Installing restart expression\n");
-           strncpy(RESTART,qstring,bufsize-1);
+           strncpy(RESTART,qstring,CF_BUFSIZE-1);
            ACTIONPENDING = true;
            } 
         break;
@@ -534,7 +534,7 @@ switch (ACTION)
         
     default:
         InstallPending(ACTION); 
-        strncpy(CURRENTOBJECT,qstring,bufsize-1);
+        strncpy(CURRENTOBJECT,qstring,CF_BUFSIZE-1);
         ACTIONPENDING = true;
         return;
     } 
@@ -598,13 +598,13 @@ void HandleGroupRValue(char *rval)        /* Assignment in groups/classes */
 
 void HandleFunctionObject(char *fn) /* Function in main body */
 
-{ char local[bufsize];
+{ char local[CF_BUFSIZE];
 
 Debug("HandleFunctionObject(%s)\n",fn); 
 
 if (ACTION == methods)
    {
-   strncpy(CURRENTOBJECT,fn,bufsize-1);
+   strncpy(CURRENTOBJECT,fn,CF_BUFSIZE-1);
    ACTIONPENDING = true; 
    return;
    }
@@ -633,7 +633,7 @@ if (IsBuiltinFunction(fn))
           if (strcmp(local,"noinstall") != 0)
              {
              Debug("Recognized function %s\n",fn);
-             strncpy(CURRENTOBJECT,fn,bufsize-1);
+             strncpy(CURRENTOBJECT,fn,CF_BUFSIZE-1);
              ACTIONPENDING = true;
              }
           else
@@ -642,7 +642,7 @@ if (IsBuiltinFunction(fn))
              }
           break;
           
-      default: snprintf(OUTPUT,bufsize,"Function call %s out of place",fn);
+      default: snprintf(OUTPUT,CF_BUFSIZE,"Function call %s out of place",fn);
           yyerror(OUTPUT);
       }
    }
@@ -655,13 +655,13 @@ void HandleVarObject(char *object)
 {
 Debug1("Handling Object = (%s)\n",object);
 
-strncpy(CURRENTOBJECT,object,bufsize-1);        /* Yes this must be here */
+strncpy(CURRENTOBJECT,object,CF_BUFSIZE-1);        /* Yes this must be here */
 
 ACTIONPENDING = true;                         /* we're parsing an action */
 
 if (ACTION_IS_LINK || ACTION_IS_LINKCHILDREN)      /* to-link (after ->) */
    {
-   strncpy(LINKTO,CURRENTOBJECT,bufsize-1);
+   strncpy(LINKTO,CURRENTOBJECT,CF_BUFSIZE-1);
    return;
    }
 
@@ -732,14 +732,14 @@ switch (ACTION)
           }
        else
           {
-          strncpy(CURRENTITEM,object,bufsize-1);
+          strncpy(CURRENTITEM,object,CF_BUFSIZE-1);
           ACTIONPENDING = true;
           }
        break;
        
    case disks:
        
-   case required:   strncpy(CURRENTOBJECT,object,bufsize-1);
+   case required:   strncpy(CURRENTOBJECT,object,CF_BUFSIZE-1);
        break;
        
    case shellcommands:
@@ -760,25 +760,25 @@ switch (ACTION)
 
    case mailserver: InstallMailserverPath(object);
        break;
-   case tidy:       strncpy(CURRENTITEM,object,bufsize-1);
+   case tidy:       strncpy(CURRENTITEM,object,CF_BUFSIZE-1);
        break;
 
    case rename_disable:
-   case disable:    strncpy(CURRENTOBJECT,object,bufsize-1);
+   case disable:    strncpy(CURRENTOBJECT,object,CF_BUFSIZE-1);
                     ACTIONPENDING = true;
                     break;
       
-   case makepath:   strncpy(CURRENTOBJECT,object,bufsize-1);
+   case makepath:   strncpy(CURRENTOBJECT,object,CF_BUFSIZE-1);
                     break;
       
-   case ignore:     strncpy(CURRENTOBJECT,object,bufsize-1);
+   case ignore:     strncpy(CURRENTOBJECT,object,CF_BUFSIZE-1);
                     break;
        
    case misc_mounts:
        if (! MOUNT_FROM)
           {
           MOUNT_FROM = true;
-          strncpy(MOUNTFROM,CURRENTOBJECT,bufsize-1);
+          strncpy(MOUNTFROM,CURRENTOBJECT,CF_BUFSIZE-1);
           }
        else
           {
@@ -788,12 +788,12 @@ switch (ACTION)
              FatalError("miscmounts: syntax error");
              }
           MOUNT_ONTO = true;
-          strncpy(MOUNTONTO,CURRENTOBJECT,bufsize-1);
+          strncpy(MOUNTONTO,CURRENTOBJECT,CF_BUFSIZE-1);
           }
        break;
        
    case unmounta:
-       strncpy(CURRENTOBJECT,object,bufsize-1);
+       strncpy(CURRENTOBJECT,object,CF_BUFSIZE-1);
        break;
        
    case image:
@@ -801,7 +801,7 @@ switch (ACTION)
        break;
        
    case editfiles:  /* file recorded in CURRENTOBJECT */
-       strncpy(CURRENTOBJECT,object,bufsize-1);
+       strncpy(CURRENTOBJECT,object,CF_BUFSIZE-1);
        break;
        
    case processes:
@@ -825,7 +825,7 @@ switch (ACTION)
        else if (HAVE_RESTART)
           {
           Debug1("Installing restart expression\n");
-          strncpy(RESTART,object,bufsize-1);
+          strncpy(RESTART,object,CF_BUFSIZE-1);
           ACTIONPENDING = true;
           }
        else
@@ -843,7 +843,7 @@ switch (ACTION)
    case packages:
        break;
 
-   case methods:    if (strlen(object) > bufsize-1)
+   case methods:    if (strlen(object) > CF_BUFSIZE-1)
                        {
          yyerror("Method argument string is too long");
                        }
@@ -857,7 +857,7 @@ switch (ACTION)
 
 void HandleServerRule(char *object)
 
-{ char buffer[bufsize];
+{ char buffer[CF_EXPANDSIZE];
 
 ExpandVarstring(object,buffer,"");
 Debug("HandleServerRule(%s=%s)\n",object,buffer);
@@ -995,11 +995,11 @@ if ((yyin = fopen(filename,"r")) == NULL)      /* Open root file */
 
    if (env == NULL)
       {
-      printf("%s: (%s is set to <nothing>)\n",VPREFIX,CFINPUTSVAR);
+      printf("%s: (%s is set to <nothing>)\n",VPREFIX,CF_INPUTSVAR);
       }
    else
       {
-      printf("%s: (%s is set to %s)\n",VPREFIX,CFINPUTSVAR,env);
+      printf("%s: (%s is set to %s)\n",VPREFIX,CF_INPUTSVAR,env);
       }
    
    exit (1);
@@ -1108,11 +1108,11 @@ result[0] = '\0';
 if (MINUSF && (*filename == '.' || *filename == '/'))
    {
    Verbose("Manually overidden relative path (%s)\n",filename);
-   strncpy(result,filename,bufsize-1);
+   strncpy(result,filename,CF_BUFSIZE-1);
    return result;
    }
  
-if ((sp=getenv(CFINPUTSVAR)) != NULL)
+if ((sp=getenv(CF_INPUTSVAR)) != NULL)
    {
    if (!IsAbsoluteFileName(filename))     /* Don't prepend to absolute names */
       { 
@@ -1121,7 +1121,7 @@ if ((sp=getenv(CFINPUTSVAR)) != NULL)
       if (! IsAbsoluteFileName(result))
          {
          Verbose("CFINPUTS was not an absolute path, overriding with %s\n",WORKDIR);
-         snprintf(result,bufsize,"%s/inputs",WORKDIR);
+         snprintf(result,CF_BUFSIZE,"%s/inputs",WORKDIR);
          }
       
       AddSlash(result);
@@ -1160,7 +1160,7 @@ void InitializeAction()                                   /* Set defaults */
  VRECURSE = 0;
  HAVE_RESTART = false;
  VAGE = 99999;
- strncpy(FINDERTYPE,"*",bufsize);
+ strncpy(FINDERTYPE,"*",CF_BUFSIZE);
  strcpy(VUIDNAME,"*");
  strcpy(VGIDNAME,"*");
  HAVE_RESTART = 0;
@@ -1182,6 +1182,7 @@ void InitializeAction()                                   /* Set defaults */
  METHODFILENAME[0] = '\0';
  METHODRETURNCLASSES[0] = '\0';
  METHODREPLYTO[0] = '\0';
+ METHODFORCE[0] = '\0';
  CHROOT[0] = '\0';
  strcpy(VIFNAME,"");
  PTRAVLINKS = (short) '?';
@@ -1222,13 +1223,13 @@ void InitializeAction()                                   /* Set defaults */
 
  STRATEGYNAME[0] = '\0';
  FILTERNAME[0] = '\0';
- memset(ALLCLASSBUFFER,0,bufsize);
- memset(ELSECLASSBUFFER,0,bufsize);
+ memset(ALLCLASSBUFFER,0,CF_BUFSIZE);
+ memset(ELSECLASSBUFFER,0,CF_BUFSIZE);
  
  strcpy(CFSERVER,"localhost");
  
  IMGCOMP = DISCOMP='>';
- IMGSIZE = DISABLESIZE=cfnosize;
+ IMGSIZE = DISABLESIZE=CF_NOSIZE;
  DELETEDIR = 'y';   /* t=true */
  DELETEFSTAB = 'y';
  FORCE = 'n';
@@ -1262,8 +1263,8 @@ void InitializeAction()                                   /* Set defaults */
 
  if ( ! ACTION_IS_LINK && ! ACTION_IS_LINKCHILDREN)
     {
-    memset(LINKFROM,0,bufsize);
-    memset(LINKTO,0,bufsize);  /* ALSO RESTART */
+    memset(LINKFROM,0,CF_BUFSIZE);
+    memset(LINKTO,0,CF_BUFSIZE);  /* ALSO RESTART */
     LINKSILENT = false;
     LINKTYPE = 's';
     FORCELINK = 'n';
@@ -1275,7 +1276,7 @@ void InitializeAction()                                   /* Set defaults */
 
 void SetMountPath (char *value)
 
-{ char buff[bufsize];
+{ char buff[CF_EXPANDSIZE];
 
 ExpandVarstring(value,buff,"");
  
@@ -1288,7 +1289,8 @@ AppendItem(&VMOUNTLIST,buff,CLASSBUFF);
 
 void SetRepository (char *value)
 
-{
+{ char ebuff[CF_EXPANDSIZE];
+ 
 if (*value != '/')
    {
    yyerror("File repository must be an absolute directory name");
@@ -1299,8 +1301,8 @@ if (strlen(VREPOSITORY) != 0)
    yyerror("Redefinition of system variable repository");
    }
 
-ExpandVarstring(value,VBUFF,"");
-VREPOSITORY = strdup(VBUFF);
+ExpandVarstring(value,ebuff,"");
+VREPOSITORY = strdup(ebuff);
 }
 
 /* EOF */

@@ -336,7 +336,7 @@ CheckDFSACE(struct CFACE     * aces,
   if ((action == warnall)   ||
       (action == warnplain) ||
       (action == warndirs)) {
-    snprintf(OUTPUT,bufsize,"File %s needs ACL update\n", filename);
+    snprintf(OUTPUT,CF_BUFSIZE,"File %s needs ACL update\n", filename);
     CfLog(cfinform, OUTPUT, "");
     aclStatus = sec_acl_not_authorized;
   } else {
@@ -347,7 +347,7 @@ CheckDFSACE(struct CFACE     * aces,
       &aclStatus);
 
     if (aclStatus == error_status_ok) {
-      snprintf(OUTPUT,bufsize,"ACL for file %s updated\n", filename);
+      snprintf(OUTPUT,CF_BUFSIZE,"ACL for file %s updated\n", filename);
       CfLog(cfinform, OUTPUT, "");
     } else {
       logError("sec_acl_replace", cferror, aclStatus);
@@ -523,7 +523,7 @@ aclTypePrintableToBinary(const char     * tString,
     }
   }
 
-  snprintf(OUTPUT,bufsize,"Invalid DCE/DFS acl type '%s'\n", tString);
+  snprintf(OUTPUT,CF_BUFSIZE,"Invalid DCE/DFS acl type '%s'\n", tString);
   CfLog(cferror, OUTPUT, "");
   *status = sec_acl_invalid_acl_type;
   return(0);
@@ -570,7 +570,7 @@ permSetPrintableToBinary(const char        * perms,
    if (isAdd) SetBit(newPermSet, bitmask);
    else     UnSetBit(newPermSet, bitmask);
  } else {
-   snprintf(OUTPUT,bufsize,
+   snprintf(OUTPUT,CF_BUFSIZE,
     "Invalid mode '%c' in DCE/DFS acl: %s\n",
     curPerm,
     perms);
@@ -648,7 +648,7 @@ logError(const char         * routine,
     CfLog(level, msgText, routine);
     free(msgText);
   } else {
-    snprintf(OUTPUT,bufsize,
+    snprintf(OUTPUT,CF_BUFSIZE,
      "<unable to retrieve message for status code %ld; "
      "retrieval code %ld>\n",
      status,

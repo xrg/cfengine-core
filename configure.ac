@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.1.5)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.1.6)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -645,6 +645,12 @@ AC_DEFINE_UNQUOTED(AUTOCONF_SYSNAME, "$target_os")
 dnl ######################################################################
 dnl Now make the Makefiles
 dnl ######################################################################
+
+AC_ARG_WITH(docs,
+[  --with-docs          build the documentation],
+[ want_doc=true ],
+[ want_doc=false ])
+AM_CONDITIONAL(BUILD_DOC, test x$want_doc = xtrue)
 
 AC_OUTPUT(pub/Makefile src/Makefile contrib/Makefile inputs/Makefile \
 Makefile doc/Makefile src/cflex.l contrib/vicf )

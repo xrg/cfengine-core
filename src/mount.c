@@ -49,7 +49,7 @@ int MatchAFileSystem(char *server,char *lastlink)
 
 { struct Item *mp;
   char *sp;
-  char host[maxvarsize];
+  char host[CF_MAXVARSIZE];
 
 for (mp = VMOUNTED; mp != NULL; mp=mp->next)
    {
@@ -92,7 +92,7 @@ int IsMountedFileSystem (struct stat *childstat,char *dir,int rlevel)
 
 { struct stat parentstat;
   struct Mountables *mp;
-  char host[maxvarsize];
+  char host[CF_MAXVARSIZE];
 
 for (mp = VMOUNTABLES; mp !=NULL; mp=mp->next)
    {

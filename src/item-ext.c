@@ -48,9 +48,9 @@ struct Item *ListFromArgs(char *string)
   int dquote_level = 0,i = 0;
   int paren_level = 0;
   char *sp,lastch = '\0';
-  char item[bufsize];
+  char item[CF_BUFSIZE];
 
-memset(item,0,bufsize);
+memset(item,0,CF_BUFSIZE);
      
 for (sp = string; *sp != '\0'; sp++)
    {
@@ -96,7 +96,7 @@ for (sp = string; *sp != '\0'; sp++)
              item[i] = '\0';
              i = 0;
              AppendItem(&ip,item,"");
-             memset(item,0,bufsize);
+             memset(item,0,CF_BUFSIZE);
              continue;
              }
       }
@@ -756,7 +756,7 @@ return DeleteItemGeneral(list,string,NOTliteralSomewhere);
 int CommentItemStarting(struct Item **list,char *string,char *comm,char *end)
 
 { struct Item *ip;
-  char buff[bufsize];
+  char buff[CF_BUFSIZE];
 
 for (ip = *list; ip != NULL; ip=ip->next)
    {
@@ -773,7 +773,7 @@ for (ip = *list; ip != NULL; ip=ip->next)
       
    if (strncmp(ip->name,string,strlen(string)) == 0)
       {
-      if (strlen(ip->name)+strlen(comm)+strlen(end)+2 > bufsize)
+      if (strlen(ip->name)+strlen(comm)+strlen(end)+2 > CF_BUFSIZE)
          {
          CfLog(cferror,"Bufsize overflow while commenting line - abort\n","");
          return false;
@@ -786,7 +786,7 @@ for (ip = *list; ip != NULL; ip=ip->next)
 
       EditVerbose("Commenting %s%s%s\n",comm,ip->name,end);
 
-      snprintf(buff,bufsize,"%s%s%s",comm,ip->name,end);
+      snprintf(buff,CF_BUFSIZE,"%s%s%s",comm,ip->name,end);
       free(ip->name);
 
       if ((ip->name = malloc(strlen(buff)+1)) == NULL)
@@ -810,7 +810,7 @@ return false;
 int CommentItemContaining(struct Item **list,char *string,char *comm,char *end)
 
 { struct Item *ip;
-  char buff[bufsize];
+  char buff[CF_BUFSIZE];
 
 for (ip = *list; ip != NULL; ip=ip->next)
    {
@@ -827,7 +827,7 @@ for (ip = *list; ip != NULL; ip=ip->next)
       
    if (strstr(ip->name,string))
       {
-      if (strlen(ip->name)+strlen(comm)+strlen(end)+2 > bufsize)
+      if (strlen(ip->name)+strlen(comm)+strlen(end)+2 > CF_BUFSIZE)
          {
          CfLog(cferror,"Bufsize overflow while commenting line - abort\n","");
          return false;
@@ -840,7 +840,7 @@ for (ip = *list; ip != NULL; ip=ip->next)
 
       EditVerbose("Commenting %s%s%s\n",comm,ip->name,end);
 
-      snprintf(buff,bufsize,"%s%s%s",comm,ip->name,end);
+      snprintf(buff,CF_BUFSIZE,"%s%s%s",comm,ip->name,end);
       free(ip->name);
 
       if ((ip->name = malloc(strlen(buff)+1)) == NULL)
@@ -864,7 +864,7 @@ return false;
 int CommentItemMatching(struct Item **list,char *string,char *comm,char *end)
 
 { struct Item *ip;
-  char buff[bufsize];
+  char buff[CF_BUFSIZE];
   regex_t rx,rxcache;
   regmatch_t pmatch;
 
@@ -893,7 +893,7 @@ for (ip = *list; ip != NULL; ip=ip->next)
       {
       if ((pmatch.rm_so == 0) && (pmatch.rm_eo == strlen(ip->name)))
          {
-         if (strlen(ip->name)+strlen(comm)+strlen(end)+2 > bufsize)
+         if (strlen(ip->name)+strlen(comm)+strlen(end)+2 > CF_BUFSIZE)
             {
             CfLog(cferror,"Bufsize overflow while commenting line - abort\n","");
             regfree(&rx);
@@ -907,7 +907,7 @@ for (ip = *list; ip != NULL; ip=ip->next)
          
          EditVerbose("Commenting %s%s%s\n",comm,ip->name,end);
          
-         snprintf(buff,bufsize,"%s%s%s",comm,ip->name,end);
+         snprintf(buff,CF_BUFSIZE,"%s%s%s",comm,ip->name,end);
          free(ip->name);
          
          if ((ip->name = malloc(strlen(buff)+1)) == NULL)
@@ -940,7 +940,7 @@ int UnCommentItemMatching(struct Item **list,char *string,char *comm,char *end)
 
 if (CfRegcomp(&rxcache,string, REG_EXTENDED) != 0)
    {
-   snprintf(OUTPUT,bufsize,"Failed to compile expression %s",string);
+   snprintf(OUTPUT,CF_BUFSIZE,"Failed to compile expression %s",string);
    CfLog(cferror,OUTPUT,"");
    return false;
    }
@@ -958,7 +958,7 @@ for (ip = *list; ip != NULL; ip=ip->next)
       {
       if ((pmatch.rm_so == 0) && (pmatch.rm_eo == strlen(ip->name)))
          {
-         if (strlen(ip->name)+strlen(comm)+strlen(end)+2 > bufsize)
+         if (strlen(ip->name)+strlen(comm)+strlen(end)+2 > CF_BUFSIZE)
             {
             CfLog(cferror,"Bufsize overflow while commenting line - abort\n","");
             regfree(&rx);
@@ -1207,7 +1207,7 @@ sscanf(string,"%d", &N);
 
 if (N < 1)
    {
-   snprintf(OUTPUT,bufsize*2,"Illegal number value in DeleteNLines: %s\n",string);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Illegal number value in DeleteNLines: %s\n",string);
    CfLog(cferror,OUTPUT,"");
    return false;
    }
@@ -1269,7 +1269,7 @@ for (ip = CURRENTLINEPTR; ip != NULL; ip = CURRENTLINEPTR)
 
 if (ctr-1 < N)
    {
-   snprintf(OUTPUT,bufsize*2,"DeleteNLines deleted only %d lines (not %d)\n",ctr-1,N);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"DeleteNLines deleted only %d lines (not %d)\n",ctr-1,N);
    CfLog(cfsilent,OUTPUT,"");
    }
 
@@ -1360,7 +1360,7 @@ for (ip = *liststart; ip != NULL; ip=ip->next)
       continue;
       }
 
-   memset(VBUFF,0,bufsize);
+   memset(VBUFF,0,CF_BUFSIZE);
    
    i = 0;
 
@@ -1395,9 +1395,9 @@ for (ip = *liststart; ip != NULL; ip=ip->next)
    
    if (regexec(&rx,VBUFF,1,&matchcheck,0) == 0)
       {
-      snprintf(OUTPUT,bufsize*2,"WARNING: Non-convergent edit operation ReplaceAll [%s] With [%s]",replace,search);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"WARNING: Non-convergent edit operation ReplaceAll [%s] With [%s]",replace,search);
       CfLog(cferror,OUTPUT,"");
-      snprintf(OUTPUT,bufsize*2,"Line begins [%.40s]",ip->name);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Line begins [%.40s]",ip->name);
       CfLog(cferror,OUTPUT,"");
       CfLog(cferror,"Replacement matches search string and will thus replace every time - edit was not done","");
       return false;
@@ -1431,7 +1431,7 @@ sscanf(string,"%d", &N);
 
 if (N < 1)
    {
-   snprintf(OUTPUT,bufsize*2,"Illegal number value in CommentNLines: %s\n",string);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Illegal number value in CommentNLines: %s\n",string);
    CfLog(cferror,OUTPUT,"");
    return false;
    }
@@ -1439,7 +1439,7 @@ if (N < 1)
 
 if (CURRENTLINEPTR == NULL)  /* Shouldn't happen */
    {
-   snprintf(OUTPUT,bufsize*2,"File line-pointer undefined during editfile action\n");
+   snprintf(OUTPUT,CF_BUFSIZE*2,"File line-pointer undefined during editfile action\n");
    CfLog(cferror,OUTPUT,"");
    return true;
    }
@@ -1501,7 +1501,7 @@ for (ip = CURRENTLINEPTR; ip != NULL; ip = CURRENTLINEPTR)
 
 if (ctr-1 < N)
    {
-   snprintf(OUTPUT,bufsize*2,"CommentNLines commented only %d lines (not %d)\n",ctr-1,N);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"CommentNLines commented only %d lines (not %d)\n",ctr-1,N);
    CfLog(cfinform,OUTPUT,"");
    }
 
@@ -1524,7 +1524,7 @@ sscanf(string,"%d", &N);
 
 if (N < 1)
    {
-   snprintf(OUTPUT,bufsize*2,"Illegal number value in CommentNLines: %s\n",string);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Illegal number value in CommentNLines: %s\n",string);
    CfLog(cferror,OUTPUT,"");
    return false;
    }
@@ -1532,7 +1532,7 @@ if (N < 1)
 
 if (CURRENTLINEPTR == NULL)  /* Shouldn't happen */
    {
-   snprintf(OUTPUT,bufsize*2,"File line-pointer undefined during editfile action\n");
+   snprintf(OUTPUT,CF_BUFSIZE*2,"File line-pointer undefined during editfile action\n");
    CfLog(cferror,OUTPUT,"");
    return true;
    }
@@ -1618,7 +1618,7 @@ for (ip = CURRENTLINEPTR; ip != NULL; ip = CURRENTLINEPTR)
 
 if (ctr-1 < N)
    {
-   snprintf(OUTPUT,bufsize*2,"CommentNLines commented only %d lines (not %d)\n",ctr-1,N);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"CommentNLines commented only %d lines (not %d)\n",ctr-1,N);
    CfLog(cfinform,OUTPUT,"");
    }
 
@@ -1659,7 +1659,7 @@ return false;
 void ReplaceWithFieldMatch(struct Item **filestart,char *field,char *replace,char split,char *filename)
 
 { struct Item *ip;
-  char match[bufsize], linefield[bufsize], *sp, *sps, *spe;
+  char match[CF_BUFSIZE], linefield[CF_BUFSIZE], *sp, *sps, *spe;
   int matching_field = 0, fcount, i, linenum, count = 0;
 
 Debug("ReplaceWithFieldMatch(%s,%s,%c)\n",field,replace,split);
@@ -1671,7 +1671,7 @@ if ((replace == NULL) || (strlen(replace) == 0))
    }
   
 matching_field = atoi(field);
-memset(match,0,bufsize);
+memset(match,0,CF_BUFSIZE);
 
 fcount = 1;
 sps = spe = NULL;
@@ -1697,7 +1697,7 @@ for (sp = replace; *sp != '\0'; sp++)
 if (fcount < matching_field)
    {
    CfLog(cfsilent,"File formats did not completely match in ReplaceLinesMatchingField\n","");
-   snprintf(OUTPUT,bufsize*2,"while editing %s\n",filename);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"while editing %s\n",filename);
    CfLog(cfsilent,OUTPUT,"");
    return;
    }
@@ -1718,7 +1718,7 @@ linenum = 1;
 
 for (ip = *filestart; ip != NULL; ip=ip->next, linenum++)
    {
-   memset(linefield,0,bufsize);
+   memset(linefield,0,CF_BUFSIZE);
    fcount = 1;
    sps = spe = NULL;
 
@@ -1773,7 +1773,7 @@ for (ip = *filestart; ip != NULL; ip=ip->next, linenum++)
       
       if (count > 1)
          {
-         snprintf(OUTPUT,bufsize*2,"Several lines in %s matched key %s\n",filename,match);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Several lines in %s matched key %s\n",filename,match);
          CfLog(cfsilent,OUTPUT,"");
          }
       
@@ -1816,16 +1816,16 @@ int CfRegcomp(regex_t *preg,const char *regex,int cflags)
 
 
 { int code;
-  char buf[bufsize];
+  char buf[CF_BUFSIZE];
 
 code = regcomp(preg,regex,cflags);
  
 if (code != 0)
    {
-   snprintf(buf,bufsize,"Regular expression error %d for %s\n", code, regex);
+   snprintf(buf,CF_BUFSIZE,"Regular expression error %d for %s\n", code, regex);
    CfLog(cferror,buf,"");
 
-   regerror(code,preg,buf,bufsize);
+   regerror(code,preg,buf,CF_BUFSIZE);
    CfLog(cferror,buf,"");
    return -1;
    }

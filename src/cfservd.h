@@ -48,11 +48,11 @@ struct cfd_connection
    int  trust;
    int  sd_reply;
    unsigned char *session_key;
-   char hostname[maxvarsize];
-   char username[maxvarsize];
+   char hostname[CF_MAXVARSIZE];
+   char username[CF_MAXVARSIZE];
    uid_t uid;
-   char ipaddr[cfmaxiplen];
-   char output[bufsize*2];   /* Threadsafe output channel */
+   char ipaddr[CF_MAX_IP_LEN];
+   char output[CF_BUFSIZE*2];   /* Threadsafe output channel */
    };
 
 struct cfd_get_arg
@@ -69,7 +69,7 @@ struct cfd_get_arg
 /* PARSER                                                          */
 /*******************************************************************/
 
-char CFRUNCOMMAND[bufsize];
+char CFRUNCOMMAND[CF_BUFSIZE];
 time_t CFDSTARTTIME;
 
 #ifdef RE_DUP_MAX
