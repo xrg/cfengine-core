@@ -649,6 +649,15 @@ char *TCPNAMES[CF_NETATTR] =
       NULL
       };
 
+  /*********************************************************************/
+  /* The names of the possible package-related actions */
+  PRIVATE char *PKGACTIONTEXT[] =
+      {
+      "install",
+      "remove",
+      NULL
+      };
+
 /*******************************************************************/
 /*                                                                 */
 /* parse object : variables belonging to the Parse object          */
@@ -802,6 +811,7 @@ char *TCPNAMES[CF_NETATTR] =
   PRIVATE enum cmpsense CMPSENSE = cmpsense_eq; /* Comparison for packages: */
   PRIVATE enum pkgmgrs PKGMGR = pkgmgr_none;  /* Which package mgr to query */
   PRIVATE enum pkgmgrs DEFAULTPKGMGR = pkgmgr_none;
+  PRIVATE enum pkgactions PKGACTION = pkgaction_none;
 
   PRIVATE flag ACTION_IS_LINK = false;
   PRIVATE flag ACTION_IS_LINKCHILDREN = false;

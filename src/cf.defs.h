@@ -1164,6 +1164,15 @@ enum pkgmgrs    /* Available package managers to query in packages: */
 
 /*******************************************************************/
 
+enum pkgactions /* What to do with a package if it is found/not found */
+    {
+    pkgaction_install,
+    pkgaction_remove,
+    pkgaction_none
+    };
+
+/*******************************************************************/
+
 typedef char flag;
 
 enum socks
@@ -1833,6 +1842,7 @@ struct Package      /* For packages: */
    char              *ver;
    enum cmpsense     cmp;
    enum pkgmgrs      pkgmgr;
+   enum pkgactions   action;
    struct Package    *next;
    int ifelapsed;
    int expireafter;

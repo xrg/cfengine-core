@@ -1248,6 +1248,7 @@ void InitializeAction()                                   /* Set defaults */
  VTIMEOUT=0;
 
  PKGMGR = DEFAULTPKGMGR; /* pkgmgr_none */
+ PKGACTION = pkgaction_none;
  CMPSENSE = cmpsense_eq;
  PKGVER[0] = '\0';
 

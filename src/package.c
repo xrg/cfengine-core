@@ -267,6 +267,105 @@ DeleteItemList(evrlist);
 return 0;
 }
 
+int InstallPackage(char *name, enum pkgmgrs pkgmgr)
+{
+    char rawinstcmd[CF_BUFSIZE];
+    /* Make the instcmd twice the normal buffer size since the package list
+       limit is CF_BUFSIZE so this can obviously get larger! */
+    char instcmd[CF_BUFSIZE*2];
+    char line[CF_BUFSIZE];
+    char *percent;
+    char *ptr;
+    FILE *pp;
+
+    /* Determine the command to use for the install. */
+    switch(pkgmgr)
+    {
+        /* RPM */
+        case pkgmgr_rpm:
+        if (!GetMacroValue(CONTEXTID,"RPMInstallCommand"))
+          {
+          Verbose("RPMInstallCommand NOT Set.  Package Installation Not Possible!\n");
+          return 0;
+          }
+        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"RPMInstallCommand"),
+                    CF_BUFSIZE);
+        break;
+
+        /* Debian */
+        case pkgmgr_dpkg:
+        if (!GetMacroValue(CONTEXTID,"DPKGInstallCommand"))
+          {
+          Verbose("DPKGInstallCommand NOT Set.  Package Installation Not Possible!\n");
+          return 0;
+          }
+        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"DPKGInstallCommand"),
+                    CF_BUFSIZE);
+        break;
+
+        /* Solaris */
+        case pkgmgr_sun:
+        if (!GetMacroValue(CONTEXTID,"SUNInstallCommand"))
+          {
+          Verbose("SUNInstallCommand NOT Set.  Package Installation Not Possible!\n");
+          return 0;
+          }
+        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"SUNInstallCommand"),
+                    CF_BUFSIZE);
+        break;
+
+        /* Default */
+        default:
+        Verbose("InstallPackage(): Unknown package manager %d\n",
+                    pkgmgr);
+        break;
+    }
+
+    /* Common to all pkg managers */
+
+    /* This could probably be a bit more complete, but I don't think
+        that anyone would want to expand the package name more than
+        once in a single command invocation anyhow. */
+    if (percent = strstr(rawinstcmd, "%s"))
+      {
+      *percent = '\0';
+      strncpy(instcmd, rawinstcmd, CF_BUFSIZE*2);
+      ptr = instcmd + strlen(rawinstcmd);
+      *percent = '%';
+      strcat(ptr, name);
+      ptr += strlen(name);
+      percent += 2;
+      strncpy(ptr, percent, (CF_BUFSIZE*2 - (ptr-instcmd)));
+      }
+    else
+      {
+      sprintf(instcmd, "%s %s", rawinstcmd, name);
+      }
+    Verbose("Installing package(s) %s using %s\n", name, instcmd);
+    if ((pp = cfpopen(instcmd, "r")) == NULL)
+      {
+      Verbose("Could not execute package install command\n");
+      /* Return that the package is still not installed */
+      return 0;
+      }
+    while (!feof(pp))
+      {
+      ReadLine(line,CF_BUFSIZE-1,pp);
+      printf("%s:package install: %s\n",VPREFIX,line);
+      }
+    if (cfpclose(pp) != 0)
+      {
+      Verbose("Package install command was not successful\n");
+      return 0;
+      }
+    return 1;
+}
+
+int RemovePackage(char *name, enum pkgmgrs pkgmgr)
+{
+    Verbose("Package removal not yet implemented");
+    return 1;
+}
 
 /*********************************************************************/
 /* Debian */

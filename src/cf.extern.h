@@ -463,6 +463,7 @@ extern char *VUNMOUNTCOMM[];
 extern char *VRESOURCES[];
 extern char *CMPSENSETEXT[];
 extern char *PKGMGRTEXT[];
+extern char *PKGACTIONTEXT[];
 
 extern int VTIMEOUT;
 extern mode_t UMASK;
@@ -486,6 +487,7 @@ extern enum fileactions FILEACTION;
 extern enum cmpsense CMPSENSE;
 extern enum pkgmgrs PKGMGR;
 extern enum pkgmgrs DEFAULTPKGMGR;
+extern enum pkgactions PKGACTION;
 
 extern unsigned short PORTNUMBER;
 

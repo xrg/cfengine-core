@@ -1344,7 +1344,9 @@ switch(GetCommAttribute(item))
                    break;
    case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
                    break;
-
+   case cfaction:
+                   PKGACTION = (enum pkgactions) GetPkgAction(value);
+                   break;
    default:        yyerror("Illegal packages attribute");
    }
 }
@@ -2644,7 +2646,7 @@ switch (action)
        break;
        
    case packages:
-       InstallPackagesItem(CURRENTOBJECT,PKGVER,CMPSENSE,PKGMGR);
+       InstallPackagesItem(CURRENTOBJECT,PKGVER,CMPSENSE,PKGMGR,PKGACTION);
        break;
    }
 
@@ -4660,7 +4662,7 @@ AddInstallable(ptr->elsedef);
 
 /*******************************************************************/
 
-void InstallPackagesItem(char *name,char *ver,enum cmpsense sense,enum pkgmgrs mgr)
+void InstallPackagesItem(char *name,char *ver,enum cmpsense sense,enum pkgmgrs mgr,enum pkgactions action)
 
 { struct Package *ptr;
   char buffer[CF_EXPANDSIZE];
@@ -4681,8 +4683,8 @@ if ( PKGMGR == pkgmgr_none )
    return;
    }
 
-Debug1("InstallPackagesItem(%s,%s,%s,%s)\n",
-        name,ver,CMPSENSETEXT[sense],PKGMGRTEXT[mgr]);
+Debug1("InstallPackagesItem(%s,%s,%s,%s,%s)\n",
+        name,ver,CMPSENSETEXT[sense],PKGMGRTEXT[mgr],PKGACTIONTEXT[action]);
 
 if ((ptr = (struct Package *)malloc(sizeof(struct Package))) == NULL)
    {
@@ -4752,6 +4754,7 @@ ptr->log = LOGP;
 ptr->inform = INFORMP;
 ptr->cmp = sense;
 ptr->pkgmgr = mgr;
+ptr->action = action;
 ptr->done = 'n';
 ptr->scope = strdup(CONTEXTID);
 
@@ -4793,6 +4796,23 @@ for (i = 0; PKGMGRTEXT[i] != '\0'; i++)
 
 yyerror("Unknown package manager");
 return (int) pkgmgr_none;
+}
+
+/*******************************************************************/
+
+int GetPkgAction(char *pkgaction)
+
+{ int i;
+for (i = 0; PKGACTIONTEXT[i] != '\0'; i++)
+   {
+   if (strcmp(pkgaction,PKGACTIONTEXT[i]) == 0)
+      {
+      return i;
+      }
+   }
+
+yyerror("Unknown package action");
+return (int) pkgaction_none;
 }
 
 /*******************************************************************/

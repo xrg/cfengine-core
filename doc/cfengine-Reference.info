@@ -13,7 +13,7 @@ END-INFO-DIR-ENTRY
 
 Indirect:
 cfengine-Reference.info-1: 478
-cfengine-Reference.info-2: 299004
+cfengine-Reference.info-2: 299313
 
 Tag Table:
 (Indirect)
@@ -124,87 +124,87 @@ Node: Too many open files139323
 Node: defaultroute140051
 Node: disks140775
 Node: directories143401
-Node: disable144859
-Node: editfiles150092
-Node: files180024
-Node: Syntax180473
-Node: Recursion189817
-Node: Directory permissions190615
-Node: home directive191418
-Node: Owner and group wildcards192589
-Node: Files linkchildren193060
-Node: touch193549
-Node: create193925
-Node: filters194281
-Node: Complete filter examples199924
-Node: groups201457
-Node: homeservers205670
-Node: ignore207934
-Node: import209528
-Node: interfaces210579
-Node: links211312
-Node: Single links212729
-Node: Multiple Links218510
-Node: Link Children219650
-Node: Relative and absolute links222818
-Node: Hard links223942
-Node: mailserver225249
-Node: methods226413
-Node: localhost examples231241
-Node: remotehost examples236930
-Node: miscmounts238840
-Node: mountables240114
-Node: processes241643
-Node: packages252314
-Node: rename258060
-Node: required258262
-Node: resolve260444
-Node: shellcommands262235
-Node: strategies266267
-Node: tidy267769
-Node: unmount276325
-Node: Cfservd.conf and cfrun reference277684
-Node: cfservd control280528
-Node: IP address ranges281103
-Node: AllowConnectionsFrom282068
-Node: AllowMultipleConnectionsFrom282763
-Node: AllowUsers283572
-Node: AutoExecCommand284636
-Node: AutoExecInterval284859
-Node: BindToInterface285094
-Node: ChecksumDatabase in cfservd285626
-Node: cfrunCommand286267
-Node: DenyBadClocks286539
-Node: DenyConnectionsFrom286981
-Node: cfservd HostnameKeys287357
-Node: cfservd IfElapsed288041
-Node: LogAllConnections288464
-Node: MaxConnections288920
-Node: TrustKeysFrom289260
-Node: DynamicAddresses290006
-Node: admit grant and deny291191
-Node: root=291431
-Node: encrypt=292391
-Node: SkipVerify292753
-Node: cfrun293528
-Node: Firewalls and NATs297780
-Node: Cfexecd reference299004
-Node: Problem solving301509
-Node: cf.preconf bootstrap file301737
-Node: cfrc resource file304007
-Node: Example configuration file306886
-Node: cfagent.conf307364
-Node: cf.groups308450
-Node: cf.main309897
-Node: cf.site315248
-Node: cf.motd326215
-Node: cf.users327269
-Node: cf.solaris330904
-Node: cf.linux336411
-Node: cf.freebsd338631
-Node: cfservd.conf340351
-Node: Variable Index341458
-Node: Concept Index356991
-Node: FAQ Index391788
+Node: disable145168
+Node: editfiles150401
+Node: files180333
+Node: Syntax180782
+Node: Recursion190126
+Node: Directory permissions190924
+Node: home directive191727
+Node: Owner and group wildcards192898
+Node: Files linkchildren193369
+Node: touch193858
+Node: create194234
+Node: filters194590
+Node: Complete filter examples200233
+Node: groups201766
+Node: homeservers205979
+Node: ignore208243
+Node: import209837
+Node: interfaces210888
+Node: links211621
+Node: Single links213038
+Node: Multiple Links218819
+Node: Link Children219959
+Node: Relative and absolute links223127
+Node: Hard links224251
+Node: mailserver225558
+Node: methods226722
+Node: localhost examples231550
+Node: remotehost examples237239
+Node: miscmounts239149
+Node: mountables240423
+Node: processes241952
+Node: packages252623
+Node: rename258369
+Node: required258571
+Node: resolve260753
+Node: shellcommands262544
+Node: strategies266576
+Node: tidy268078
+Node: unmount276634
+Node: Cfservd.conf and cfrun reference277993
+Node: cfservd control280837
+Node: IP address ranges281412
+Node: AllowConnectionsFrom282377
+Node: AllowMultipleConnectionsFrom283072
+Node: AllowUsers283881
+Node: AutoExecCommand284945
+Node: AutoExecInterval285168
+Node: BindToInterface285403
+Node: ChecksumDatabase in cfservd285935
+Node: cfrunCommand286576
+Node: DenyBadClocks286848
+Node: DenyConnectionsFrom287290
+Node: cfservd HostnameKeys287666
+Node: cfservd IfElapsed288350
+Node: LogAllConnections288773
+Node: MaxConnections289229
+Node: TrustKeysFrom289569
+Node: DynamicAddresses290315
+Node: admit grant and deny291500
+Node: root=291740
+Node: encrypt=292700
+Node: SkipVerify293062
+Node: cfrun293837
+Node: Firewalls and NATs298089
+Node: Cfexecd reference299313
+Node: Problem solving301818
+Node: cf.preconf bootstrap file302046
+Node: cfrc resource file304316
+Node: Example configuration file307195
+Node: cfagent.conf307673
+Node: cf.groups308759
+Node: cf.main310206
+Node: cf.site315557
+Node: cf.motd326524
+Node: cf.users327578
+Node: cf.solaris331213
+Node: cf.linux336720
+Node: cf.freebsd338940
+Node: cfservd.conf340660
+Node: Variable Index341767
+Node: Concept Index357300
+Node: FAQ Index392243
 
 End Tag Table

@@ -498,9 +498,10 @@ void InstallProcessItem ARGLIST((char *expr, char *restart, short int matches, c
 void InstallImageItem ARGLIST((char *cf_findertype, char *path, mode_t plus, mode_t minus, char *destination, char *action, char *uidnames, char *gidnames, int size, char comp, int rec, char type, char lntype, char *server));
 void InstallMethod ARGLIST((char *function, char *file));
 void InstallAuthItem ARGLIST((char *path, char *attribute, struct Auth **list, struct Auth **listtop, char *classes));
-void InstallPackagesItem ARGLIST((char *name, char *ver, enum cmpsense sense, enum pkgmgrs mgr));
+void InstallPackagesItem ARGLIST((char *name, char *ver, enum cmpsense sense, enum pkgmgrs mgr, enum pkgactions action));
 int GetCmpSense ARGLIST((char *sense));
 int GetPkgMgr ARGLIST((char *mgr));
+int GetPkgAction ARGLIST((char *pkgaction));
 int GetCommAttribute ARGLIST((char *s));
 void HandleRecurse ARGLIST((char *value));
 void HandleCopyType ARGLIST((char *value));
@@ -852,6 +853,8 @@ void DoAlerts ARGLIST((void));
 int RPMPackageCheck ARGLIST((char *package, char *version, enum cmpsense cmp));
 int DPKGPackageCheck ARGLIST((char *package, char *version, enum cmpsense cmp));
 int SUNPackageCheck ARGLIST((char *package, char *version, enum cmpsense cmp));
+int InstallPackage  ARGLIST((char *name, enum pkgmgrs pkgmgr));
+int RemovePackage  ARGLIST((char *name, enum pkgmgrs pkgmgr));
 
 /* popen.c */
 

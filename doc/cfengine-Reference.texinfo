@@ -2456,6 +2456,7 @@ The meaning of each of these lines is described below.
 * deletenonownermail::          
 * domain::                      
 * dryrun::                      
+* dpkginstallcommand::                      
 * editbinaryfilesize::          
 * editfilesize::                
 * emptyresolvconf::             
@@ -2482,6 +2483,7 @@ The meaning of each of these lines is described below.
 * repchar::                     
 * repository::                  
 * RPMcommand::                  
+* rpminstallcommand::                  
 * schedule::                    
 * secureinput::                 
 * sensiblecount::               
@@ -2494,6 +2496,7 @@ The meaning of each of these lines is described below.
 * SplayTime::                   
 * split::                       
 * spooldirectories::            
+* suninstallcommand::                  
 * suspiciousnames::             
 * sysadm::                      
 * Syslog::                      
@@ -2714,8 +2717,10 @@ of nameservers in the file @file{/etc/resolv.conf}.
 @item packages
 executes commands defined under the @code{packages} section
 of the program.  This will query the system's package database
-for the specified packages, at the specified versions, and set
-classes based on whether or not those packages exist.
+for the specified packages, at the specified versions, set
+classes based on whether or not those packages exist, and
+optionally install those packages using a pre-defined package
+manager command.
 
 @item shellcommands
 executes all the commands defined under the @code{shellcommands}
@@ -3231,7 +3236,7 @@ known user.
 @c SUBSECTION
 @c .....................................................
 
-@node domain, dryrun, deletenonownermail, control
+@node domain, dpkginstallcommand, deletenonownermail, control
 @subsection domain
 @cindex domain
 @vindex domain
@@ -3255,7 +3260,26 @@ can fail to be defined if cfengine is not able to figure out the domain name.
 @c SUBSECTION
 @c .....................................................
 
-@node dryrun, editbinaryfilesize, domain, control
+@node dpkginstallcommand, dryrun, domain, control
+@subsection DPKGInstallCommand
+
+Sets the command used to install packages that need to be installed
+under the DPKG package manager.
+
+@smallexample
+DPKGInstallCommand = ( "/usr/bin/pkgmgr %s" )
+@end smallexample
+
+By default, this variable is not set, meaning that any packages with
+action=install will NOT be installed if installation is required.  Note
+the "'s around the string, and the %s is replaced with the list of
+packages to be installed, each separated by a ' ' (space).
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node dryrun, editbinaryfilesize, dpkginstallcommand, control
 @subsection DryRun
 @cindex DryRun
 @vindex DryRun
@@ -4046,7 +4070,7 @@ This affects files saved using @code{disable}, @code{copy},
 @c SUBSECTION
 @c .....................................................
 
-@node RPMcommand, schedule, repository, control
+@node RPMcommand, rpminstallcommand, repository, control
 @subsection RPMcommand
 
 The default value of the Red Hat Package manager command @file{/bin/rpm} can be altered
@@ -4059,7 +4083,26 @@ RPMcommand = ( /usr/bin/rpm )
 @c SUBSECTION
 @c .....................................................
 
-@node schedule, secureinput, RPMcommand, control
+@node rpminstallcommand, schedule, RPMcommand, control
+@subsection RPMInstallCommand
+
+Sets the command used to install packages that need to be installed
+under the RPM package manager.
+
+@smallexample
+RPMInstallCommand = ( "/usr/bin/pkgmgr %s" )
+@end smallexample
+
+By default, this variable is not set, meaning that any packages with
+action=install will NOT be installed if installation is required.  Note
+the "'s around the string, and the %s is replaced with the list of
+packages to be installed, each separated by a ' ' (space).
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node schedule, secureinput, rpminstallcommand, control
 @subsection Schedule
 @cindex scheduling
 @vindex scheduling
@@ -4323,7 +4366,7 @@ environment variables in the shell.
 @c SUBSECTION
 @c .....................................................
 
-@node spooldirectories, suspiciousnames, split, control
+@node spooldirectories, suninstallcommand, split, control
 @subsection SpoolDirectories
 @cindex SpoolDirectories
 @vindex SpoolDirectories
@@ -4338,12 +4381,30 @@ See also: @code{DeleteNonOwnerFiles}, @code{DeleteNonUserFiles}.
   SpoolDirectories = ( /var/spool/cron/crontabs /var/spool/cron/atjobs )
 @end example
 
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node suninstallcommand, suspiciousnames, spooldirectories, control
+@subsection SUNInstallCommand
+
+Sets the command used to install packages that need to be installed
+under the SUN package manager.
+
+@smallexample
+SUNInstallCommand = ( "/usr/bin/pkgmgr %s" )
+@end smallexample
+
+By default, this variable is not set, meaning that any packages with
+action=install will NOT be installed if installation is required.  Note
+the "'s around the string, and the %s is replaced with the list of
+packages to be installed, each separated by a ' ' (space).
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 
-@node suspiciousnames, sysadm, spooldirectories, control
+@node suspiciousnames, sysadm, suninstallcommand, control
 @subsection suspiciousnames
 @cindex suspiciousnames
 @vindex SuspiciousNames
@@ -8933,7 +8994,10 @@ See also filters @xref{filters}, for more complex searches.
 @cindex Checking for installed packages
 
 The packages action allows you to check for the existance of packages
-on the system, as determined by the package database you select.
+on the system, as determined by the package database you select.  Optionally,
+if a package install command was specified, the package can be installed
+if it is not there.
+
 This operation is set up such that it tries not to make assumptions about
 the package manager in use.  For example, it should be possible to use
 RPM on a Solaris box.
@@ -8950,20 +9014,18 @@ packages:
    @var{class}::
 
       @var{package-name}
-                        pkgmgr=@b{none}/@var{rpm}
+                        pkgmgr=@b{none}/@var{rpm/dpkg/sun}
                         cmp=@b{eq}/@var{lt/gt/ge/le/ne}
                         version=@var{version-string}
                         define=@var{class-list}(,:.)
                         elsedefine=@var{class-list}(,:.)
+                        action=@b{none}/@var{install/remove}
 
                         ifelapsed=@var{mins} 
                         expireafter=@var{mins}
 
 @end smallexample
 @end cartouche
-
-@noindent
-Associated variables in control are @code{DefaultPkgMgr} and @code{RPMcommand}.
 @table @code
 
 @item cmp
@@ -9048,6 +9110,14 @@ an epoch of 0.  The rule here is basically to always check the epoch of
 the package you really want, and specify it.  It may take a few extra
 extra seconds to check, but it will save you lots of headaches later.
 
+@item dpkg
+@cindex Debian Package Database Queries
+Please document me!
+
+@item sun
+@cindex Sun Package Database Queries
+Please document me!
+
 @end table
 
 @item define
@@ -9058,17 +9128,64 @@ installed.
 Specifies the list of classes to define if the specified package is not
 installed.
 
+@item action
+Specifies whether the packages should actually do anything about the
+situation it finds.  The default for this is to do nothing.  Of course,
+the classes in @code{define} and @code{elsedefine} will alwass be defined,
+as applicable, regardless of the action specified.
+
+@table @code
+@item install
+Installs the package using the command associated with the selected
+package manager, if it is not currently on the system at the requested
+version, as follows:
+
+@itemize @bullet
+@item
+RPM - 
+RPMInstallCommand
+@item
+DPKG - 
+DPKGInstallCommand
+@item
+SUN - 
+SUNInstallCommand
+@end itemize
+
+Each variable is of the format:
+
+@smallexample
+FOOInstallCommand = ( "/usr/bin/foo --args %s --more-args" )
+@end smallexample
+
+The ---args are of course optional.  The %s is replaced with a space-separated
+list of the package names that were checked, and found to not be installed.
+
+@item remove
+CURRENTLY PARSED BUT NOT IMPLEMENTED
+@end table
 @end table
 
-Example:
+@noindent
+NOTE: classes are defined according to the result of the check, not
+any action performed as a result of that check.  In otherwords, if for
+example you have a situation where a package is not installed,
+and the action= is set to install, the classes in @code{elsedefine} will
+be defined @b{regardless} of whether or not the install was successful.
+Assuming the package installed, the next run of cfagent will pick up that
+fact.  This has to be done since the package installs are batched, so there
+is no reliable way to know if a given package was installed.
+
+@noindent
+Examples:
 
 @smallexample
 packages:
 
     redhat_8_0::
         m4  version=0:1.4.1-11 cmp=eq pkgmgr=rpm elsedefine=needsm4
-
 @end smallexample
+
 @noindent
 In this first example, we are looking for the m4 package at exactly version
 0:1.4.1-11.  The installed m4 package on a redhat_8_0 box has no epoch
@@ -9086,12 +9203,39 @@ packages:
         make version=0:4.5-2 cmp=ge define=hasmake elsedefine=needsmake
 
 @end smallexample
+
 @noindent
 In the second example, we use the DefaultPkgMgr variable to set the default
 for the @code{pkgmgr} attribute to @code{rpm}.  The actual version of make
 installed on recent redhat_8_0 machine is 1:3.79.1-14.  Since the check is
 for greater than or equal to this version, the hasmake class will be
 defined.
+
+@smallexample
+control:
+    redhat:;
+        DefaultPkgMgr = ( rpm )
+        RPMInstallCommand = ( "/usr/sbin/up2date %s" )
+
+packages:
+    redhat_8_0::
+        make define=hasmake elsedefine=needsmake action=install
+@end smallexample
+
+@noindent
+This example is much like the second example, except that if the package is
+not installed, cfengine will attempt to install it using the command in
+RPMInstallCommand, replacing the %s with the package name, @code{make}.
+If there were multiple packages specified in this way, the package installation
+would occur at the end of the package checks, and one command would be run,
+with %s replaced with a list of all package names.  In this example we chose
+not to use a version spec, but it is allowed, and as always, is optional.
+
+@noindent
+NOTE here that if make was not installed when the check is made,
+@code{needsmake} is defined, regardless of whether or not the
+install succeeds.  If the install is successful, the next cfagent
+run will define @code{hasmake}.
 
 @page
 

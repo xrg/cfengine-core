@@ -36,7 +36,7 @@ may be included in a translation approved by the author instead of in
 the original English.
 
    This manual corresponds to CFENGINE Edition 2.1.15a1 for version
-2.1.15a1 as last updated 10 February 2005.
+2.1.15a1 as last updated 23 February 2005.
 
 * Menu:
 
@@ -4158,6 +4158,19 @@ actions at run time.
    The creation of a path will fail if one of the links in the path is a
 plain file or device node.  A list of classes may optionally be defined
 here if a directory is created.
+
+   If the `owner' value is set to the literal "LastNode", then the
+owner will be exchanged for the last node of the path. This allows the
+creation of home directories owned by users.
+
+
+     control:
+
+       homedirs = ( mark:simen:luke:aeleen )
+
+     directories:
+
+       /home/$(listcontent) owner=LastNode
 
 
 File: cfengine-Reference.info,  Node: disable,  Next: editfiles,  Prev: directories,  Up: Cfagent reference

@@ -2663,6 +2663,10 @@ void CheckPackages()
 
 { struct Package *ptr;
   int match = 0;
+  int i;
+  /* pkgmgr_none will always be the highest number in the enum so set
+     the array size with that */
+  char *package_install_list[pkgmgr_none] = { NULL };
 
 for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
    {
@@ -2705,6 +2709,38 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
          CfLog(cferror,OUTPUT,"");
          break;
      }
+
+   /* Handle install/remove logic now. */
+   if (match)
+     {
+     if (ptr->action == pkgaction_remove)
+       {
+       match = match;
+       }
+     }
+   else
+     {
+     if (ptr->action == pkgaction_install)
+       {
+         /* Initial allocation of memory if we have not yet allocated any */
+         if(package_install_list[ptr->pkgmgr] == NULL)
+         {
+         package_install_list[ptr->pkgmgr] = malloc(CF_BUFSIZE);
+         ((char **)package_install_list[ptr->pkgmgr])[0] = NULL;
+         }
+
+         /* Make sure we don't overflow the buffer */
+         if(strlen(ptr->name) >
+           (CF_BUFSIZE - strlen(package_install_list[ptr->pkgmgr])))
+         {
+            Verbose("Package list exceeds CF_BUFSIZE.  Skipping %s", ptr->name);
+         }
+
+         /* Finally add the name to the list. */
+         strcat(package_install_list[ptr->pkgmgr], ptr->name);
+         strcat(package_install_list[ptr->pkgmgr], " ");
+       }
+     }
    
    if (match)
       {
@@ -2718,6 +2754,19 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
    ptr->done = 'y';
    ReleaseCurrentLock();
    }
+
+/* Run through the package managers, and execute the package install
+ * for each of them... */
+for(i=0; i < pkgmgr_none; i++)
+{
+    if(package_install_list[i] != NULL)
+    {
+        Verbose("Package install list for %s is: %s\n", PKGMGRTEXT[i],
+                    package_install_list[i]);
+        InstallPackage(package_install_list[i], i);
+        free(package_install_list[i]);
+    }
+}
 
 }
 
