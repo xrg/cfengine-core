@@ -72,7 +72,7 @@ if (strlen(from) == 0)     /* Check for root dir */
 
   /* Check that dest dir exists before starting */
 
-strcpy(newto,to);
+strncpy(newto,to,bufsize-2);
 AddSlash(newto);
 
 if (! MakeDirectoriesFor(newto,ip->forcedirs))
@@ -85,7 +85,7 @@ if (! MakeDirectoriesFor(newto,ip->forcedirs))
 if ((dirh = cfopendir(from,ip)) == NULL)
    {
    snprintf(OUTPUT,bufsize*2,"copy can't open directory [%s]\n",from);
-   CfLog(cfinform,OUTPUT,"");
+   CfLog(cfverbose,OUTPUT,"");
    return;
    }
 
@@ -106,9 +106,9 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
       continue;
       }
 
-   strcpy(newfrom,from);                                   /* Assemble pathname */
+   strncpy(newfrom,from,bufsize-2);                             /* Assemble pathname */
    AddSlash(newfrom);
-   strcpy(newto,to);
+   strncpy(newto,to,bufsize-2);
    AddSlash(newto);
 
    if (BufferOverflow(newfrom,dirp->d_name))
@@ -118,7 +118,7 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
       return;
       }
 
-   strcat(newfrom,dirp->d_name);
+   strncat(newfrom,dirp->d_name,bufsize-2);
 
    if (BufferOverflow(newto,dirp->d_name))
       {
@@ -131,6 +131,9 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
 
    if (TRAVLINKS || ip->linktype == 'n')
       {
+      /* No point in checking if there are untrusted symlinks here,
+         since this is from a trusted source, by defintion */
+      
       if (cfstat(newfrom,&statbuf,ip) == -1)
          {
          Verbose("%s: (Can't stat %s)\n",VPREFIX,newfrom);
@@ -273,7 +276,7 @@ for (itp = VMOUNTLIST; itp != NULL; itp=itp->next)
       if ((dirh2 = opendir(homedir)) == NULL)
          {
 	 snprintf(OUTPUT,bufsize*2,"Can't open directory %s\n",homedir);
-	 CfLog(cfinform,OUTPUT,"opendir");
+	 CfLog(cfverbose,OUTPUT,"opendir");
          return;
          }
 
@@ -514,84 +517,86 @@ Debug("PurgeFiles(%s)\n",directory);
     return;
     }
 
- for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
-    {
-    if (!SensibleFile(dirp->d_name,directory,NULL))
-       {
-       continue;
-       }
+for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
+   {
+   if (!SensibleFile(dirp->d_name,directory,NULL))
+      {
+      continue;
+      }
+   
+   if (! IsItemIn(filelist,dirp->d_name))
+      {
+      strncpy(filename,directory,bufsize-2);
+      AddSlash(filename);
+      strncat(filename,dirp->d_name,bufsize-2);
+      
+      Debug("Checking purge %s..\n",filename);
+      
+      if (DONTDO)
+	 {
+	 printf("Need to purge %s from copy dest directory\n",filename);
+	 }
+      else
+	 {
+	 snprintf(OUTPUT,bufsize*2,"Purging %s in copy dest directory\n",filename);
+	 CfLog(cfsilent,OUTPUT,"");
+	 
+	 if (lstat(filename,&statbuf) == -1)
+	    {
+	    snprintf(OUTPUT,bufsize*2,"Couldn't stat %s while purging\n",filename);
+	    CfLog(cfverbose,OUTPUT,"stat");
+	    }
+	 
+	 if (S_ISDIR(statbuf.st_mode))
+	    {
+	    struct Tidy tp;
+	    struct TidyPattern tpat;
+	    
+	    tp.maxrecurse = 2;
+	    tp.done = 'n';
+	    tp.tidylist = &tpat;
+	    tp.next = NULL;
+	    tp.path = filename;
+	    tp.exclusions = inclusions; /* exclude means don't purge, i.e. include here */
+	    tp.ignores = NULL;
 
-    if (! IsItemIn(filelist,dirp->d_name))
-       {
-       strcpy(filename,directory);
-       AddSlash(filename);
-       strcat(filename,dirp->d_name);
-
-       Debug("Checking purge %s..\n",filename);
-       
-       if (DONTDO)
-	  {
-	  printf("Need to purge %s from copy dest directory\n",filename);
-	  }
-       else
-	  {
-	  snprintf(OUTPUT,bufsize*2,"Purging %s in copy dest directory\n",filename);
-	  CfLog(cfsilent,OUTPUT,"");
-	  
-	  if (lstat(filename,&statbuf) == -1)
-	     {
-	     snprintf(OUTPUT,bufsize*2,"Couldn't stat %s while purging\n",filename);
-	     CfLog(cfverbose,OUTPUT,"stat");
-	     }
-
-	  if (S_ISDIR(statbuf.st_mode))
-	     {
-	     struct Tidy tp;
-	     struct TidyPattern tpat;
-	     
-	     tp.maxrecurse = 2;
-	     tp.tidylist = &tpat;
-	     tp.next = NULL;
-	     tp.path = filename;
-	     tp.exclusions = inclusions; /* exclude means don't purge, i.e. include here */
-             tp.ignores = NULL;
-	     
-	     tpat.recurse = INFINITERECURSE;
-	     tpat.age = 0;
-	     tpat.size = 0;
-	     tpat.pattern = strdup("*");
-	     tpat.classes = strdup("any");
-	     tpat.defines = NULL;
-	     tpat.elsedef = NULL;
-	     tpat.dirlinks = 'y';
-	     tpat.travlinks = 'n';
-	     tpat.rmdirs = 'y';
-	     tpat.searchtype = 'a';
-	     tpat.log = 'd';
-	     tpat.inform = 'd';
-	     tpat.next = NULL;
-	     RecursiveTidySpecialArea(filename,&tp,INFINITERECURSE);
-	     free(tpat.pattern);
-	     free(tpat.classes);
-	     
-	     if (rmdir(filename) == -1)
-		{
-		snprintf(OUTPUT,bufsize*2,"Couldn't remove directory %s while purging\n",filename);
-		CfLog(cfverbose,OUTPUT,"rmdir");
-		}
-	     
-	     continue;
-	     }
-	  else if (unlink(filename) == -1)
-	     {
-	     snprintf(OUTPUT,bufsize*2,"Couldn't unlink %s while purging\n",filename);
-	     CfLog(cfverbose,OUTPUT,"");
-	     }
-	  }
-       }
-    }
+	    tpat.filters = NULL;	    
+	    tpat.recurse = INFINITERECURSE;
+	    tpat.age = 0;
+	    tpat.size = 0;
+	    tpat.pattern = strdup("*");
+	    tpat.classes = strdup("any");
+	    tpat.defines = NULL;
+	    tpat.elsedef = NULL;
+	    tpat.dirlinks = 'y';
+	    tpat.travlinks = 'n';
+	    tpat.rmdirs = 'y';
+	    tpat.searchtype = 'a';
+	    tpat.log = 'd';
+	    tpat.inform = 'd';
+	    tpat.next = NULL;
+	    RecursiveTidySpecialArea(filename,&tp,INFINITERECURSE,&statbuf);
+	    free(tpat.pattern);
+	    free(tpat.classes);
+	    
+	    if (rmdir(filename) == -1)
+	       {
+	       snprintf(OUTPUT,bufsize*2,"Couldn't remove directory %s while purging\n",filename);
+	       CfLog(cfverbose,OUTPUT,"rmdir");
+	       }
+	    
+	    continue;
+	    }
+	 else if (unlink(filename) == -1)
+	    {
+	    snprintf(OUTPUT,bufsize*2,"Couldn't unlink %s while purging\n",filename);
+	    CfLog(cfverbose,OUTPUT,"");
+	    }
+	 }
+      }
+   }
  
- closedir(dirh);
+closedir(dirh);
 }
 
 
@@ -678,7 +683,7 @@ found = lstat(destfile,&deststatbuf);
 
 if (found != -1)
    {
-   if (S_ISLNK(deststatbuf.st_mode) && (ip->linktype == 'n'))
+   if ((S_ISLNK(deststatbuf.st_mode) && (ip->linktype == 'n')) || (S_ISLNK(deststatbuf.st_mode)  && ! S_ISLNK(sourcestatbuf.st_mode)))
       {
       if (unlink(destfile) == -1)
 	 {
@@ -813,8 +818,8 @@ if (found == -1)
          strcpy(VBUFF,sourcefile);
          ChopLastNode(VBUFF);
          AddSlash(VBUFF);
-         strcat(VBUFF,linkbuf);
-         strcpy(linkbuf,VBUFF);
+         strncat(VBUFF,linkbuf,bufsize-1);
+         strncpy(linkbuf,VBUFF,bufsize-1);
          }
       
       switch (ip->linktype)
@@ -1178,7 +1183,8 @@ if (strcmp(ip->server,"localhost") == 0)
       {
       return NULL;
       }
-   strncpy(dir.d_name,dirp->d_name,bufsize);
+
+   strncpy(dir.d_name,dirp->d_name,bufsize-1);
    return &dir;
    }
 else

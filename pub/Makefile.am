@@ -15,7 +15,8 @@ EXTRA_DIST =								\
 	getopt.h							\
 	global.h							\
 	gnuregex.h							\
-	snprintf.h
+	snprintf.h							\
+	LICENSE.txt
 
 #
 # Some basic clean ups

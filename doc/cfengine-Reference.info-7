@@ -1082,7 +1082,8 @@ Variable Index
 * files <1>:                             actionsequence.
 * files:                                 files.
 * filter:                                filters.
-* force=:                                copy.
+* force= <1>:                            copy.
+* force=:                                disks.
 * freespace= <1>:                        required.
 * freespace=:                            disks.
 * g=:                                    Syntax.

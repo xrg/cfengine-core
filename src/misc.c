@@ -37,6 +37,87 @@
 
 /*********************************************************************/
 /* TOOLKIT : files/directories                                       */
+/*********************************************************************/
+
+int DirPush(name,sb)          /* Enter dir and check for race exploits */
+
+char *name;
+struct stat *sb;
+
+{
+if (chdir(name) == -1)
+   {
+   snprintf(OUTPUT,bufsize,"Could not change to directory %s, mode %o in tidy",name,sb->st_mode & 07777);
+   CfLog(cfinform,OUTPUT,"chdir");
+   return false;
+   }
+else
+   {
+   Debug("Changed directory to %s\n",name);
+   }
+
+CheckLinkSecurity(sb,name);
+return true; 
+}
+
+/**********************************************************************/
+
+void DirPop(goback,name,sb)      /* Exit dir and check for race exploits */
+
+char *name;
+int goback;
+struct stat *sb;
+
+{
+if (goback && TRAVLINKS)
+   {
+   if (chdir(name) == -1)
+      {
+      snprintf(OUTPUT,bufsize,"Error in backing out of recursive descent securely to %s",name);
+      CfLog(cferror,OUTPUT,"chdir");
+      HandleSignal(SIGTERM);
+      }
+   
+   CheckLinkSecurity(sb,name); 
+   }
+else if (goback)
+   {
+   if (chdir("..") == -1)
+      {
+      snprintf(OUTPUT,bufsize,"Error in backing out of recursive descent securely to %s",name);
+      CfLog(cferror,OUTPUT,"chdir");
+      HandleSignal(SIGTERM);
+      }
+   }
+}
+
+/**********************************************************************/
+
+void CheckLinkSecurity(sb,name)
+
+struct stat *sb;
+char *name;
+
+{ struct stat security;
+
+Debug("Checking the inode and device to make sure we are where we think we are...\n"); 
+
+if (stat(".",&security) == -1)
+   {
+   snprintf(OUTPUT,bufsize,"Could not stat directory %s after entering!",name);
+   CfLog(cferror,OUTPUT,"stat");
+   return;
+   }
+
+if ((sb->st_dev != security.st_dev) || (sb->st_ino != security.st_ino))
+   {
+   snprintf(OUTPUT,bufsize,"SERIOUS SECURITY ALERT: path race exploited in recursion to/from %s. Not safe for agent to continue - aborting",name);
+   CfLog(cferror,OUTPUT,"");
+   HandleSignal(SIGTERM);
+   /* Exits */
+   }
+}
+
 /**********************************************************************/
 
 void TruncateFile(name)

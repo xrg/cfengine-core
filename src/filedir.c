@@ -99,7 +99,7 @@ Debug2("cfengine: EmptyDir(%s)\n",path);
 if ((dirh = opendir(path)) == NULL)
    {
    snprintf(OUTPUT,bufsize*2,"Can't open directory %s\n",path);
-   CfLog(cferror,OUTPUT,"opendir");
+   CfLog(cfverbose,OUTPUT,"opendir");
    return true;
    }
 
@@ -120,7 +120,7 @@ return (!count);
 
 /*********************************************************************/
 
-void RecursiveCheck(name,plus,minus,action,uidlist,gidlist,recurse,rlevel,ptr)
+int RecursiveCheck(name,plus,minus,action,uidlist,gidlist,recurse,rlevel,ptr,sb)
 
 char *name;
 mode_t plus,minus;
@@ -130,35 +130,42 @@ enum fileactions action;
 int recurse;
 int rlevel;
 struct File *ptr;
+struct stat *sb;
 
 { DIR *dirh;
+  int goback; 
   struct dirent *dirp;
   char pcwd[bufsize];
   struct stat statbuf;
-
+  
 if (recurse == -1)
    {
-   return;
+   return false;
    }
 
 if (rlevel > recursion_limit)
    {
    snprintf(OUTPUT,bufsize*2,"WARNING: Very deep nesting of directories (>%d deep): %s (Aborting files)",rlevel,name);
    CfLog(cferror,OUTPUT,"");
-   return;
+   return false;
    }
  
 bzero(pcwd,bufsize); 
 
 Debug("RecursiveCheck(%s,+%o,-%o)\n",name,plus,minus);
 
-if ((dirh = opendir(name)) == NULL)
+if (!DirPush(name,sb))
+   {
+   return false;
+   }
+ 
+if ((dirh = opendir(".")) == NULL)
    {
    if (lstat(name,&statbuf) != -1)
       {
       CheckExistingFile(name,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
       }
-   return;
+   return true;
    }
 
 for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
@@ -178,22 +185,35 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
 
    if (BufferOverflow(pcwd,dirp->d_name))
       {
-      return;
+      closedir(dirh);
+      return true;
       }
 
    strcat(pcwd,dirp->d_name);
-   
-   
-   if (lstat(pcwd,&statbuf) == -1)
+
+   if (lstat(dirp->d_name,&statbuf) == -1)
       {
-      snprintf(OUTPUT,bufsize*2,"RecursiveCheck was working in %s when this happened:\n",pcwd);
+      snprintf(OUTPUT,bufsize*2,"RecursiveCheck was looking at %s when this happened:\n",pcwd);
       CfLog(cferror,OUTPUT,"lstat");
       continue;
       }
    
    if (TRAVLINKS)
       {
-      if (stat(pcwd,&statbuf) == -1)
+      if (lstat(dirp->d_name,&statbuf) == -1)
+         {
+         snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",pcwd);
+	 CfLog(cferror,OUTPUT,"stat");
+         continue;
+         }
+
+      if (S_ISLNK(statbuf.st_mode) && (statbuf.st_mode != getuid()))	  
+	 {
+	 snprintf(OUTPUT,bufsize,"File %s is an untrusted link. cfagent will not follow it with a destructive operation (tidy)",pcwd);
+	 continue;
+	 }
+
+      if (stat(dirp->d_name,&statbuf) == -1)
          {
          snprintf(OUTPUT,bufsize*2,"RecursiveCheck was working on %s when this happened:\n",pcwd);
 	 CfLog(cferror,OUTPUT,"stat");
@@ -219,7 +239,8 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
          if ((ptr->recurse > 1) || (ptr->recurse == INFINITERECURSE))
             {
             CheckExistingFile(pcwd,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
-            RecursiveCheck(pcwd,plus,minus,action,uidlist,gidlist,recurse-1,rlevel+1,ptr);
+            goback = RecursiveCheck(pcwd,plus,minus,action,uidlist,gidlist,recurse-1,rlevel+1,ptr,&statbuf);
+	    DirPop(goback,name,sb);
             }
          else
             {
@@ -234,6 +255,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    }
 
 closedir(dirh);
+return true; 
 }
 
 

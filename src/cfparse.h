@@ -1,31 +1,37 @@
-#ifndef YYSTYPE
-#define YYSTYPE int
-#endif
-#define	ID	258
-#define	LIST	259
-#define	ITEM	260
-#define	VARPATH	261
-#define	PATH	262
-#define	LBRACK	263
-#define	RBRACK	264
-#define	CONTROL	265
-#define	GROUPS	266
-#define	ARROW	267
-#define	EQUALS	268
-#define	EDITFILES	269
-#define	QSTRING	270
-#define	VARITEM	271
-#define	WILDCARD	272
-#define	LBRACE	273
-#define	RBRACE	274
-#define	PARSECLASS	275
-#define	LARROW	276
-#define	ACL	277
-#define	ADMIT	278
-#define	DENY	279
-#define	FILTERS	280
-#define	STRATEGIES	281
-#define	ACTIONTYPE	282
+#ifndef BISON_Y_TAB_H
+# define BISON_Y_TAB_H
+
+# ifndef YYSTYPE
+#  define YYSTYPE int
+#  define YYSTYPE_IS_TRIVIAL 1
+# endif
+# define	ID	257
+# define	LIST	258
+# define	ITEM	259
+# define	VARPATH	260
+# define	PATH	261
+# define	LBRACK	262
+# define	RBRACK	263
+# define	CONTROL	264
+# define	GROUPS	265
+# define	ARROW	266
+# define	EQUALS	267
+# define	EDITFILES	268
+# define	QSTRING	269
+# define	VARITEM	270
+# define	WILDCARD	271
+# define	LBRACE	272
+# define	RBRACE	273
+# define	PARSECLASS	274
+# define	LARROW	275
+# define	ACL	276
+# define	ADMIT	277
+# define	DENY	278
+# define	FILTERS	279
+# define	STRATEGIES	280
+# define	ACTIONTYPE	281
 
 
 extern YYSTYPE yylval;
+
+#endif /* not BISON_Y_TAB_H */

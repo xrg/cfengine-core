@@ -1464,11 +1464,13 @@ else
 /* Linking simplification                                      */
 /***************************************************************/
 
-void RecursiveTidySpecialArea(name,tp,maxrecurse)
+int RecursiveTidySpecialArea(name,tp,maxrecurse,sb)
 
 char *name;
 struct Tidy *tp;
 int maxrecurse;
+struct stat *sb;
 
 {
+ return true;
 }

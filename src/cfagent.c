@@ -93,7 +93,7 @@ PreNetConfig();
 
 ReadRCFile(); /* Should come before parsing so that it can be overridden */
 
-if (IsPrivileged() && !MINUSF)
+if (IsPrivileged() && !MINUSF && !PRMAILSERVER)
    {
    if (ParseBootFiles())
       {
@@ -149,8 +149,7 @@ if (PRMAILSERVER)
 if (PARSEONLY)                            /* Establish lock for root */
    {
    exit(0);
-   }
- 
+   } 
  
 openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_USER);
 
@@ -746,6 +745,7 @@ if (DONTDO && (VERBOSE || DEBUG || D2))
 if (TRAVLINKS && (VERBOSE || DEBUG || D2))
    {
    printf("cfagent -l : will traverse symbolic links\n");
+   printf("             WARNING: This is inherently insecure, if there are untrusted users!\n");
    }
 
 if ( ! IFCONF && (VERBOSE || DEBUG || D2))

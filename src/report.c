@@ -548,7 +548,9 @@ printf ("\nDEFINED REQUIRE\n\n");
 
 for (ptr = VREQUIRED; ptr != NULL; ptr=ptr->next)
    {
-   printf("%s, freespace=%d, define=%s\n",ptr->name,ptr->freespace,ptr->define);
+   /* HvB : Bas van der Vlies */
+   printf("%s, freespace=%d, force=%c, define=%s\n",
+	ptr->name,ptr->freespace, ptr->force,ptr->define);
    }
 }
 

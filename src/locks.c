@@ -107,6 +107,7 @@ if ((errno = db_create(&DBP,NULL,0)) != 0)
    {
    snprintf(OUTPUT,bufsize*2,"Couldn't open lock database %s\n",LOCKDB);
    CfLog(cferror,OUTPUT,"db_open");
+   IGNORELOCK = true;
    return;
    }
  
@@ -227,14 +228,16 @@ if (lastcompleted != 0)
 	 kill(pid,SIGKILL);
 	 sleep(1);
 
-	 if (kill(pid,SIGTERM) == ESRCH)
-	    {
-	    snprintf(OUTPUT,bufsize*2,"Unable to kill expired process %d, exiting this time..\n",pid);
-	    CfLog(cferror,OUTPUT,"");
-	    FatalError("");;
+	 if ((kill(pid,SIGTERM) < 0) && (errno == ESRCH))
+	    {	    	 
+	    LockLog(pid,"Lock expired, process killed",operator,operand);
 	    }
-	 
-	 LockLog(pid,"Lock expired, process killed",operator,operand);
+	 else
+	    {
+	    snprintf(OUTPUT,bufsize*2,"Unable to kill expired cfagent process %d, exiting this time..\n",pid);
+	    CfLog(cferror,OUTPUT,"kill");
+	    FatalError("");
+	    }
 	 }
 
       unlink(CFLOCK);
@@ -429,6 +432,11 @@ key.data = name;
 key.size = strlen(name)+1;
 
 InitializeLocks();
+
+if (IGNORELOCK)
+   {
+   return 0;
+   }
  
 if ((errno = DBP->del(DBP,NULL,&key,0)) != 0)
    {

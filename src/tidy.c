@@ -34,20 +34,26 @@
 /*                                                                   */
 /*********************************************************************/
 
-void RecursiveHomeTidy(name,level)
+int RecursiveHomeTidy(name,level,sb)
 
 char *name;
 int level;
+struct stat *sb;
 
 { struct stat statbuf;
   DIR *dirh;
   struct dirent *dirp;
   char pcwd[bufsize];
   time_t ticks;
-  int done = false;
+  int done = false,goback;
 
 Debug("\n RecursiveHomeTidy(%s,%d)\n\n",name,level);
 
+if (!DirPush(name,sb))
+   {
+   return false;
+   }
+ 
 if (strlen(name) == 0)
    {
    name = "/";
@@ -57,16 +63,16 @@ if (level > recursion_limit)
    {
    snprintf(OUTPUT,bufsize*2,"WARNING: Very deep nesting of directories (> %d deep): %s (Aborting tidy)",level,name);
    CfLog(cferror,OUTPUT,"");
-   return;
+   return true;
    }
 
-Debug2("HomeTidy: Opening %s\n",name);
+Debug2("HomeTidy: Opening %s as .\n",name);
 
-if ((dirh = opendir(name)) == NULL)
+if ((dirh = opendir(".")) == NULL)
    {
    snprintf(OUTPUT,bufsize*2,"Can't open directory %s\n",name);
-   CfLog(cfinform,OUTPUT,"");
-   return;
+   CfLog(cfverbose,OUTPUT,"");
+   return true;
    }
 
 if (level == 2)
@@ -126,14 +132,28 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
 
    if (BufferOverflow(pcwd,dirp->d_name))
       {
-      return;
+      return true;
       }
 
    strcat(pcwd,dirp->d_name);
 
    if (TRAVLINKS)
       {
-      if (stat(pcwd,&statbuf) == -1)
+      Verbose("Warning: you are using travlinks=true. It is a potential security hazard if there are untrusted users\n");
+      if (lstat(dirp->d_name,&statbuf) == -1)
+         {
+         snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",pcwd);
+	 CfLog(cferror,OUTPUT,"stat");
+         continue;
+         }
+
+      if (S_ISLNK(statbuf.st_mode) && (statbuf.st_mode != getuid()))	  
+	 {
+	 snprintf(OUTPUT,bufsize,"File %s is an untrusted link. cfagent will not follow it with a destructive operation (tidy)",pcwd);
+	 continue;
+	 }
+      
+      if (stat(dirp->d_name,&statbuf) == -1)
          {
          snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",pcwd);
 	 CfLog(cferror,OUTPUT,"stat");
@@ -170,7 +190,12 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
          {
 	 if (!done)
 	    {
-	    RecursiveHomeTidy(pcwd,level+1);
+	    /* Note, here we pass on the full path name, not relative name to retain
+	    state, but we have statted the right file above with opendir("."), so 
+	    the race test is still secure for the next recursion level */
+
+	    goback = RecursiveHomeTidy(pcwd,level+1,&statbuf);
+	    DirPop(goback,name,sb);	    
 	    }
          }
       }
@@ -193,6 +218,7 @@ if (level == 2)
    }
 
 closedir(dirh);
+ return true;
 }
 
 
@@ -288,36 +314,43 @@ return true;
 
 /*********************************************************************/
 
-void RecursiveTidySpecialArea(name,tp,maxrecurse)
+int RecursiveTidySpecialArea(name,tp,maxrecurse,sb)
 
 char *name;
 struct Tidy *tp;
 int maxrecurse;
+struct stat *sb;
 
 { struct stat statbuf,topstatbuf;
   DIR *dirh;
   struct dirent *dirp;
   char pcwd[bufsize];
-  int is_dir,level,nostat=false;
+  int is_dir,level,goback;
 
+Debug("RecursiveTidySpecialArea(%s)\n",name);
 bzero(&statbuf,sizeof(statbuf));
-  
+
+if (!DirPush(name,sb))
+   {
+   return false;
+   }
+ 
 if (maxrecurse == -1)
    {
    Debug2("MAXRECURSE ran out, quitting at %s\n",name);
-   return;
+   return true;
    }
 
 if (IgnoredOrExcluded(tidy,name,NULL,tp->exclusions))
   {
   Debug("Skipping ignored/excluded file %s\n",name);
-  return;
+  return true;
   }
 
 if (IgnoreFile(name,"",NULL))
    {
    Debug2("cfengine: Ignoring directory %s\n",name);
-   return;
+   return true;
    }
 
 if (strlen(name) == 0)     /* Check for root dir */
@@ -342,15 +375,15 @@ if (maxrecurse == tp->maxrecurse)
 	    CfLog(cferror,OUTPUT,"");
 	    }
          }
-      return;
+      return true;
       }
    }
 
-if ((dirh = opendir(name)) == NULL)
+if ((dirh = opendir(".")) == NULL)
    {
    snprintf(OUTPUT,bufsize*2,"Can't open directory [%s]\n",name);
-   CfLog(cfinform,OUTPUT,"opendir");
-   return;
+   CfLog(cfverbose,OUTPUT,"opendir");
+   return true;
    }
 
 Debug("Tidy: opening dir %s\n",name);
@@ -372,14 +405,29 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
 
    if (BufferOverflow(pcwd,dirp->d_name))
       {
-      return;
+      return true;
       }
 
    strcat(pcwd,dirp->d_name);
 
-   if (stat(pcwd,&statbuf) == -1)
+   if (lstat(dirp->d_name,&statbuf) == -1)          /* Check for links first */
       {
-      nostat=true;
+      Verbose("Can't stat %s (%s)\n",dirp->d_name,pcwd);
+      continue;
+      }
+   else
+      {
+      if (S_ISLNK(statbuf.st_mode) && (statbuf.st_mode != getuid()))	  
+	 {
+	 snprintf(OUTPUT,bufsize,"File %s is an untrusted link. cfagent will not follow it with a destructive operation (tidy)",pcwd);
+	 continue;
+	 }
+      }
+   
+   if (TRAVLINKS && (stat(dirp->d_name,&statbuf) == -1))
+      {
+      Verbose("Can't stat %s (%s)\n",dirp->d_name,pcwd);
+      continue;
       }
 
    if (S_ISDIR(statbuf.st_mode))
@@ -391,25 +439,6 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       is_dir = false;
       }
    
-   if (!TRAVLINKS || nostat)   /* Don't try to travlinks where we can't stat destination - just remove them */
-      {
-      if (lstat(pcwd,&statbuf) == -1)
-         {
-         if (DEBUG || D2 || VERBOSE)
-            {
-            snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",pcwd);
-	    CfLog(cferror,OUTPUT,"lstat");
-	    bzero(VBUFF,bufsize);
-            if (readlink(pcwd,VBUFF,bufsize-1) != -1)
-               {
-               snprintf(OUTPUT,bufsize*2,"File is link to -> %s\n",VBUFF);
-	       CfLog(cferror,OUTPUT,"");
-               }
-            }
-         continue;
-         }
-      }
-
    level = tp->maxrecurse - maxrecurse;
 
    if (S_ISDIR(statbuf.st_mode))              /* note lstat above! */
@@ -420,8 +449,13 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
          }
       else
          {
-         RecursiveTidySpecialArea(pcwd,tp,maxrecurse-1);
-         }
+	 /* Note, here we pass on the full path name, not relative name to retain
+	    state, but we have statted the right file above with opendir("."), so 
+	    the race test is still secure for the next recursion level */
+	 
+         goback = RecursiveTidySpecialArea(pcwd,tp,maxrecurse-1,&statbuf);
+	 DirPop(goback,name,sb);
+         }	 
 
       TidyParticularFile(pcwd,dirp->d_name,tp,&statbuf,is_dir,level);
       }
@@ -436,9 +470,12 @@ closedir(dirh);
 if (maxrecurse == tp->maxrecurse)
    {
    Debug("Checking tidy topmost directory %s\n",name);
+   chdir("/");
 
    TidyParticularFile(name,ReadLastNode(name),tp,&topstatbuf,true,tp->maxrecurse);
    }
+
+return true; 
 }
 
 /*********************************************************************/
@@ -546,6 +583,8 @@ short logging_this;
 
 Debug2("DoTidyFile(%s,%s)\n",path,name);
 
+/* Here we can assume that we are in the right directory with chdir()! */
+ 
 nowticks = time((time_t *)NULL);             /* cmp time in days */
 
 switch (tlp->searchtype)
@@ -599,7 +638,7 @@ if (age_match && size_match)
       {
       if (S_ISDIR(statbuf->st_mode))
 	 {
-	 if (rmdir(path) == -1)
+	 if (rmdir(name) == -1)
 	    {
 	    CfLog(cferror,"","unlink");
 	    }
@@ -612,9 +651,9 @@ if (age_match && size_match)
 	 {
 	 if (tlp->compress == 'y')
 	    {
-	    CompressFile(path);
+	    CompressFile(name);
 	    }
-         else if (unlink(path) == -1)
+         else if (unlink(name) == -1)
 	    {
 	    snprintf(OUTPUT,bufsize*2,"Couldn't unlink %s tidying\n",path);
             CfLog(cfverbose,OUTPUT,"unlink");

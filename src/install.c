@@ -678,6 +678,10 @@ switch(GetCommAttribute(item))
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
                    break;
 
+   /* HvB: Bas van der Vlies */
+   case cfforce:   HandleCharSwitch("force",value,&FORCE);
+                   break;
+
    default:        yyerror("Illegal disk/required attribute");
    }
 
@@ -1898,6 +1902,9 @@ ptr->log = LOGP;
 ptr->inform = INFORMP;
 ptr->done = 'n'; 
 
+/* HvB : Bas van der Vlies */
+ptr->force = FORCE;
+
 VREQUIREDTOP = ptr;
 
 InitializeAction();
@@ -2638,6 +2645,10 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
 	 case ElseDefineClasses:
 	 case EditFilter:
 	 case DefineClasses:
+	     if (EDITGROUPLEVEL > 0 || FOREACHLEVEL > 0)
+		{
+		yyerror("Class definitions inside conditionals or loops are not allowed");
+		}
 	     AddInstallable(new->data);
 	     break;
 	 case EditRepos:
@@ -4028,7 +4039,7 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
    if (PURGE == 'y')
       {
       ptr->forcedirs = 'y';
-      ptr->typecheck = 'y';
+      ptr->typecheck = 'n';
       }
    else
       {
@@ -4067,7 +4078,7 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
 	 yyerror("DNS lookup failure. Unknown host");
 	 printf("Culprit: %s\n",server);
 	 printf("Make sure that fully qualified names can be looked up at your site!\n");
-	 printf("i.e. prep.ai.mit.edu, not just prep. If you use NIS or /etc/hosts\n");
+	 printf("i.e. www.gnu.org, not just www. If you use NIS or /etc/hosts\n");
 	 printf("make sure that the full form is registered too as an alias!\n");
 	 perror("gethostbyname: ");
 	 exit(1);

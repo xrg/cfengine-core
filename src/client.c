@@ -172,9 +172,9 @@ if (ip->encrypt == 'y')
       return -1;
       }
    
-   snprintf(in,bufsize,"SYNCH %d STAT %s",tloc,file);
+   snprintf(in,bufsize-1,"SYNCH %d STAT %s",tloc,file);
    cipherlen = EncryptString(in,out,CONN->session_key,strlen(in)+1);
-   snprintf(sendbuffer,bufsize,"SSYNCH %d",cipherlen);
+   snprintf(sendbuffer,bufsize-1,"SSYNCH %d",cipherlen);
    bcopy(out,sendbuffer+CF_PROTO_OFFSET,cipherlen);
    tosend = cipherlen+CF_PROTO_OFFSET;
    }

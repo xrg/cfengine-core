@@ -331,8 +331,8 @@ extern int errno;
 #define Debug   if (DEBUG || D1 || D2) printf
 #define DebugVoid if (false) printf
 #define Silent if (! SILENT || VERBOSE || DEBUG || D2) printf
-#define DaemonOnly if (ISCFENGINE) yyerror("This belongs in cfd.conf")
-#define CfengineOnly if (! ISCFENGINE) yyerror("This belongs in cfengine.conf")
+#define DaemonOnly if (ISCFENGINE) yyerror("This belongs in cfservd.conf")
+#define CfengineOnly if (! ISCFENGINE) yyerror("This belongs in cfagent.conf")
 
 /* GNU REGEX */
 
@@ -894,7 +894,7 @@ enum editnames
    EditRepos,
    EditUmask,
    EditUseShell,
-   EditFilter,
+   EditFilter
    };
 
 enum RegExpTypes
@@ -1169,6 +1169,7 @@ struct Disk
    char  *classes;
    char  *define;
    char  *elsedef;
+   char   force;	/* HvB: Bas van der Vlies */
    int    freespace;
    struct Disk *next;
    char   log;

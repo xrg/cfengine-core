@@ -69,7 +69,7 @@
 %p 9000
 %n 800
 
-actiont   copy:|resolve:|files:|tidy:|homeservers:|binservers:|mailserver:|disks:|mountables:|links:|import:|shellcommands:|disable:|directories:|ignore:|interfaces:|defaultroute:|miscmounts:|unmount:|processes:|required:|broadcast:
+actiont   copy:|resolve:|files:|tidy:|homeservers:|binservers:|mailserver:|disks:|mountables:|links:|shellcommands:|disable:|directories:|ignore:|interfaces:|defaultroute:|miscmounts:|unmount:|processes:|required:|broadcast:
 space     [ \t]+
 comment   #.*
 linedir   #line[ \t]+[0-9]+.*
@@ -164,6 +164,12 @@ filters:               {
 {actiont}              {
                        CfengineOnly;
 
+                       BEGIN INITIAL;
+                       SetAction(ActionStringToCode(yytext));
+                       return ACTIONTYPE;
+                       }
+
+import:                {
                        BEGIN INITIAL;
                        SetAction(ActionStringToCode(yytext));
                        return ACTIONTYPE;

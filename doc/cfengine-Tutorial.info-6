@@ -145,25 +145,25 @@ Concept Index
 * Binary servers, declaring:             How does it work?.
 * binserver variable and actionsequence: Special variables.
 * cfagent, starting:                     Invoking cfagent.
-* cfagent.conf <1>:                      CFINPUTS environment variable.
-* cfagent.conf:                          Invoking cfagent.
+* cfagent.conf <1>:                      Invoking cfagent.
+* cfagent.conf:                          CFINPUTS environment variable.
 * cfagent.conf file:                     What services?.
 * CFALLCLASSES:                          Variable substitution.
 * cfengine model:                        NFS resources.
 * cfengine model, how it works:          How does it work?.
-* cfexecd <1>:                           Running cfengine permanently.
-* cfexecd:                               Functionality.
-* CFINPUTS variable <1>:                 Configuration file cfservd.conf.
-* CFINPUTS variable:                     CFINPUTS environment variable.
+* cfexecd <1>:                           Functionality.
+* cfexecd:                               Running cfengine permanently.
+* CFINPUTS variable <1>:                 CFINPUTS environment variable.
+* CFINPUTS variable:                     Configuration file cfservd.conf.
 * cfrun:                                 Access control.
 * cfrun program <1>:                     What services?.
-* cfrun program <2>:                     Remote execution of cfagent.
-* cfrun program:                         Emulating rdist.
+* cfrun program <2>:                     Emulating rdist.
+* cfrun program:                         Remote execution of cfagent.
 * cfservd and access keyword:            Access control.
 * cfservd daemon:                        What services?.
 * cfservd dameon:                        Remote execution of cfagent.
-* cfservd.conf file <1>:                 Configuration file cfservd.conf.
-* cfservd.conf file:                     What services?.
+* cfservd.conf file <1>:                 What services?.
+* cfservd.conf file:                     Configuration file cfservd.conf.
 * cfwatcher program:                     What services?.
 * Class data and scripts:                Variable substitution.
 * Class, generic any:                    The generic class any.
@@ -278,12 +278,13 @@ Concept Index
 * Program format:                        Program structure.
 * Program structure:                     Program structure.
 * Quoting strings:                       Quoted strings.
+* Race condition:                        Security in File sweeps.
 * Race condition with public keys:       Trust and key races.
 * Random numbers:                        Variable substitution.
 * rdist program:                         What services?.
 * Remote distribution of files:          What services?.
-* Remote execution of cfagent <1>:       What services?.
-* Remote execution of cfagent:           Remote execution of cfagent.
+* Remote execution of cfagent <1>:       Remote execution of cfagent.
+* Remote execution of cfagent:           What services?.
 * Rereading cfservd.conf:                Installation of cfservd.
 * Restarting cfservd:                    Installation of cfservd.
 * Restricting access:                    Access control.
@@ -291,6 +292,7 @@ Concept Index
 * Running cfagent remotely:              Remote execution of cfagent.
 * Scripts, passing classes to:           Variable substitution.
 * Sections, order of:                    Program structure.
+* Security: link races and travlinks:    Security in File sweeps.
 * server=:                               Emulating rdist.
 * server= when copying to localhost:     Deadlocks and runaway loops.
 * setgid root log:                       Log files.
@@ -309,6 +311,7 @@ Concept Index
 * tidy, file sweeps:                     File sweeps.
 * Tidying files:                         Files and links.
 * Time classes:                          Building flexible time classes.
+* travlinks:                             Security in File sweeps.
 * Trusted Third Party:                   Trust and key races.
 * underscoreclasses:                     Variable substitution.
 * User programs which define classes:    shellcommand classes.

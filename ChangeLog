@@ -1,6 +1,42 @@
 
+        Fix for freebsd fix...ugh
+
+2.0.3
+	import in cfservd.conf was blocked.
+	update.conf run when doing -a or -z
+	DESTINATION used in link.c (legacy) without allocation - caused segfault.
+	IMPORT in cfservd was excluded
+	-b for --update-only was used up, changed to -B (too many options!)
+
+	hyphen in cfservd.conf admit/deny hostname was misinterpreted as IP range in 2.0.2
+	Fixed
+
+	Interface detection on FreeBSD messed up. Fixed.
+	Unknown edit command error in include/exclude.
+
+	SECURITY : Recursive descent functions vulernable to race
+	conditions. Directories could be replaced by symbolic links and
+	this would affect any operation that relies on directory parsing;
+	files, tidy, editfiles (copy is non-destructive). Recursive
+	descent functions are reworked to check inode numbers and device
+	numbers in order to detect attacks. This leads to a small inefficiency
+	in recursive descent. The solution is to chdir to the actual directory
+	concerned, check that it is the same one we stat'ed and scan only those
+	relative names afterwards, so we freeze each directory one at a
+	time.  The problem only applies to systems who have non-trusted
+	users.
+
+	Editfiles error messages added for class definitions within conditionals.
+	Some segmentation faults corrected.
+
+	Check added to prevent cfagent from following links it does not own.
+	
+	Work around to delete cfparse.c from the distribution cause autoconf won't do it.
+	This was causing incorrect alloca() usage for HPUX and AIX.
+
+	
 2.0.2
-	New option -b --update-only
+	New option -b --update-only (changed in 2.0.3 to -B)
         Runs only the update.conf script
 	
         Host ranges in IP addresses 128.39.89.10-34 or CIDR notation 129.39.89.1/24

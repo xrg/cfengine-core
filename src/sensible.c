@@ -109,13 +109,13 @@ strcat(VBUFF,nodename);
 
 if (suspicious && NONALPHAFILES)
    {
-   snprintf(OUTPUT,bufsize,"Suspicious filename %s in %s has no alphanumeric content (security)",nodename,path);
+   snprintf(OUTPUT,bufsize,"Suspicious filename %s in %s has no alphanumeric content (security)",CanonifyName(nodename),path);
    CfLog(cfsilent,OUTPUT,"");
    strcpy(newname,VBUFF);
 
    for (sp = newname+strlen(path); *sp != '\0'; sp++)
       {
-      if ((*sp > 126) || (*sp < 32))
+      if ((*sp > 126) || (*sp < 33))
 	 {
 	 *sp = 50 + (*sp / 50);  /* Create a visible ASCII interpretation */
 	 }
@@ -123,7 +123,7 @@ if (suspicious && NONALPHAFILES)
 
    strcat(newname,".cf-nonalpha");
    
-   snprintf(OUTPUT,bufsize,"Disabling file %s to %s",VBUFF,newname);
+   snprintf(OUTPUT,bufsize,"Renaming file %s to %s",VBUFF,newname);
    CfLog(cfsilent,OUTPUT,"");
    
    if (rename(VBUFF,newname) == -1)

@@ -21,8 +21,8 @@ Concept Index
 * !:                                     Cfengine classes.
 * --dry-run option:                      shellcommands.
 * -D option:                             addclasses.
-* -l option <1>:                         Syntax.
-* -l option:                             tidy.
+* -l option <1>:                         tidy.
+* -l option:                             Syntax.
 * -L option:                             Single links.
 * -x option:                             cf.preconf bootstrap file.
 * .cfdisabled:                           disable.
@@ -59,8 +59,8 @@ Concept Index
 * Binary servers and links <1>:          Link Children.
 * Binary servers and links:              Single links.
 * Binary servers, defining:              binservers.
-* Binary servers, priority <1>:          Single links.
-* Binary servers, priority:              binservers.
+* Binary servers, priority <1>:          binservers.
+* Binary servers, priority:              Single links.
 * Bootstrap file:                        cf.preconf bootstrap file.
 * Broadcast address:                     broadcast.
 * Broadcasts to the cfengine service.:   cfrun.
@@ -72,8 +72,8 @@ Concept Index
 * cf.site <1>:                           cf.site.
 * cf.site:                               cfservd.conf.
 * cfagent.conf:                          cfagent.conf.
-* CFALLCLASSES <1>:                      Special variables.
-* CFALLCLASSES:                          shellcommands.
+* CFALLCLASSES <1>:                      shellcommands.
+* CFALLCLASSES:                          Special variables.
 * cfenvd and key entropy:                Cfkey.
 * cfexecd:                               Cfexecd reference.
 * cfrc resource file:                    cfrc resource file.
@@ -187,8 +187,8 @@ Concept Index
 * Groups, defining:                      groups.
 * Hard class name collision:             Special variables.
 * Hardlinks:                             Hard links.
-* Hashes of files <1>:                   ChecksumDatabase.
-* Hashes of files:                       Syntax.
+* Hashes of files <1>:                   Syntax.
+* Hashes of files:                       ChecksumDatabase.
 * home directive:                        home directive.
 * Home path:                             homepattern.
 * Home servers, defining:                homeservers.
@@ -212,20 +212,20 @@ Concept Index
 * Key security of users:                 AllowUsers.
 * Key, ACL:                              DFS ACLs.
 * Kilobyte, filesize unit:               tidy.
-* Linkchildren <1>:                      Files linkchildren.
-* Linkchildren:                          Link Children.
+* Linkchildren <1>:                      Link Children.
+* Linkchildren:                          Files linkchildren.
 * Links and binary servers <1>:          Single links.
 * Links and binary servers:              Link Children.
 * Links, absolute:                       Single links.
-* Links, deleting stale <1>:             tidy.
-* Links, deleting stale:                 Syntax.
+* Links, deleting stale <1>:             Syntax.
+* Links, deleting stale:                 tidy.
 * Links, forcing for non-existent files: Single links.
 * Links, making:                         links.
 * Links, multiple:                       Multiple Links.
 * Links, removing dead:                  Single links.
 * Links, single:                         Single links.
-* Links, traversing in searches <1>:     tidy.
-* Links, traversing in searches:         Syntax.
+* Links, traversing in searches <1>:     Syntax.
+* Links, traversing in searches:         tidy.
 * Local disk space, make use of:         Link Children.
 * Log files, controlling the size of:    disable.
 * Logical NOT:                           Cfengine classes.
@@ -255,13 +255,14 @@ Concept Index
 * Negating entries from netgroups:       groups.
 * Netgroups:                             groups.
 * Netgroups, negating entries:           groups.
-* netmask:                               netmask.
 * Netmask:                               netmask.
+* netmask:                               netmask.
 * Network address translator:            Firewalls and NATs.
 * Network Address Translators:           SkipVerify.
 * Network interfaces, several:           interfaces.
 * New systems, support for:              cfrc resource file.
 * nfs:                                   nfstype.
+* NFS filesystems and disk checking:     disks.
 * NFS mount model and automounter:       editfiles.
 * nfstype:                               nfstype.
 * NIS, netgroup support:                 groups.
@@ -312,10 +313,13 @@ Concept Index
 * Searching for home directories:        homepattern.
 * Searching, advanced:                   filters.
 * Secure input:                          secureinput.
+* Security risk:                         SkipVerify.
+* Security: link races and travlinks:    tidy.
 * sed, editing:                          editfiles.
 * Selecting files in searches:           filters.
 * Sensible file sizes:                   sensiblesize.
 * Sensible limits on files in a directory: sensiblecount.
+* Setting classes based on non-local disks: disks.
 * Setting uid on restarted processes:    processes.
 * Several files:                         import.
 * Shell command to decide class:         groups.
@@ -345,15 +349,16 @@ Concept Index
 * Timeouts during iterations:            shellcommands.
 * Too many open files error:             Too many open files.
 * Touching files:                        touch.
+* travlinks:                             tidy.
 * Tree copying, exact:                   copy.
-* Tripwire functionality <1>:            Syntax.
-* Tripwire functionality:                ChecksumDatabase.
+* Tripwire functionality <1>:            ChecksumDatabase.
+* Tripwire functionality:                Syntax.
 * Truncating log files:                  disable.
 * Trusted hosts:                         copy.
 * TrustKeysFrom variable:                TrustKeysFrom.
 * umask <1>:                             editfiles.
-* umask <2>:                             processes.
-* umask:                                 shellcommands.
+* umask <2>:                             shellcommands.
+* umask:                                 processes.
 * underscoreclasses:                     Special variables.
 * Unmounting filesystems:                unmount.
 * Variables in import files:             import.

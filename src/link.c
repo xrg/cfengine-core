@@ -1177,14 +1177,15 @@ char *from, *relto;
 
 { char *sp;
   int pop = 1;
- 
+  static char destination[bufsize];
+  
 if (*relto == '/')
    {
    printf("Cfengine internal error: call to AbsLInkPath with absolute pathname\n");
    FatalError("");
    }
 
-strcpy(DESTINATION,from);  /* reuse to save stack space */
+strcpy(destination,from);  /* reuse to save stack space */
  
 for (sp = relto; *sp != '\0'; sp++)
    {
@@ -1206,20 +1207,20 @@ for (sp = relto; *sp != '\0'; sp++)
 
 while (pop > 0)
     {
-    ChopLastNode(DESTINATION);
+    ChopLastNode(destination);
     pop--;
     }
 
-if (strlen(DESTINATION) == 0)
+if (strlen(destination) == 0)
    {
-   strcpy(DESTINATION,"/");
+   strcpy(destination,"/");
    }
 else
    {
-   AddSlash(DESTINATION);
+   AddSlash(destination);
    }
  
-strcat(DESTINATION,sp);
-Debug("Reconstructed absolute linkname = %s\n",DESTINATION);
-return DESTINATION; 
+strcat(destination,sp);
+Debug("Reconstructed absolute linkname = %s\n",destination);
+return destination; 
 }

@@ -44,6 +44,7 @@ char *startpath;
 void *vp;
 
 { struct Tidy *tp;
+  struct stat sb; 
 
 tp = (struct Tidy *) vp;
 
@@ -60,8 +61,15 @@ if (!GetLock(ASUniqueName("tidy"),CanonifyName(startpath),VIFELAPSED,VEXPIREAFTE
    {
    return;
    }
+
+if (stat(startpath,&sb) == -1)
+   {
+   snprintf(OUTPUT,bufsize,"Tidy directory %s cannot be accessed",startpath);
+   CfLog(cfinform,OUTPUT,"stat");
+   return;
+   }
  
-RecursiveTidySpecialArea(startpath,tp,tp->maxrecurse);
+RecursiveTidySpecialArea(startpath,tp,tp->maxrecurse,&sb);
 
 ReleaseCurrentLock(); 
 }
@@ -73,7 +81,8 @@ void RecHomeTidyWrapper(startpath,vp)
 char *startpath;
 void *vp;
 
-{
+{ struct stat sb;
+ 
 Verbose("Tidying Home partition %s...\n",startpath);
 
 if (!GetLock(ASUniqueName("tidy"),CanonifyName(startpath),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
@@ -81,7 +90,14 @@ if (!GetLock(ASUniqueName("tidy"),CanonifyName(startpath),VIFELAPSED,VEXPIREAFTE
    return;
    }
 
-RecursiveHomeTidy(startpath,1);
+if (stat(startpath,&sb) == -1)
+   {
+   snprintf(OUTPUT,bufsize,"Tidy directory %s cannot be accessed",startpath);
+   CfLog(cfinform,OUTPUT,"stat");
+   return;
+   }
+
+RecursiveHomeTidy(startpath,1,&sb);
  
 ReleaseCurrentLock();
 }
@@ -250,9 +266,8 @@ else
 	 Verbose("%s: Skipping ignored directory %s\n",VPREFIX,startpath);
 	 CheckExistingFile(startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
 	 }
-
           
-      RecursiveCheck(startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,ptr->recurse,0,ptr);
+      RecursiveCheck(startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,ptr->recurse,0,ptr,&statbuf);
       }
    else
       {

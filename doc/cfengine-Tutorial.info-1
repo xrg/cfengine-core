@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.0.2 for version 2.0.2
-as last updated 24 May 2002.
+   This manual corresponds to CFENGINE Edition 2.0.3 for version 2.0.3
+as last updated 20 June 2002.
 
 * Menu:
 
@@ -1165,6 +1165,7 @@ More advanced concepts
 * Access control::              specifying user access to programs
 * Wildcards in directory names::  multiple searches
 * File sweeps::
+* Security in File sweeps::
 * Log files::
 * Quoted strings::
 * Regular expressions::

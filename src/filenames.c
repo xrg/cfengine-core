@@ -392,7 +392,7 @@ if (lstat(pathbuf,&statbuf) != -1)
 		  tpat.log = 'd';
 		  tpat.inform = 'd';
 		  tpat.next = NULL;
-		  RecursiveTidySpecialArea(currentpath,&tp,INFINITERECURSE);
+		  RecursiveTidySpecialArea(currentpath,&tp,INFINITERECURSE,&sbuf);
 		  free(tpat.pattern);
 		  free(tpat.classes);
 		  

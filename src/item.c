@@ -330,12 +330,25 @@ int FuzzyMatchParse(s)
 char *s;
 
 { char *sp;
-  short isCIDR = false, isrange = false, isv6 = false, isv4 = false; 
+  short isCIDR = false, isrange = false, isv6 = false, isv4 = false, isADDR = false; 
   char address[128];
   int mask;
 
-  Debug("ParsingIPRange(%s)\n",s);
-  
+Debug("ParsingIPRange(%s)\n",s);
+
+for (sp = s; *sp != '\0'; sp++)
+   {
+   if (isdigit((int)*sp))
+      {
+      isADDR = true;
+      }
+   }
+
+if (! isADDR)
+   {
+   return true;
+   }
+ 
 if (strstr(s,"/") != 0)
    {
    isCIDR = true;

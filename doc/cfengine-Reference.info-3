@@ -290,8 +290,8 @@ copying. Cfengine attempts to prevent this during remote copies._
      tell the difference between a valid empty directory and a missing
      NFS file system.  If you use purge, use a remote copy also._ If we
      specify purge, then the following options will also be set and
-     cannot be altered: `forcedirs=true', `typecheck=false', since any
-     other default could be very destructive.
+     cannot be altered: `forcedirs=true', `typecheck=false', since
+     other defaults could be very destructive.
 
 Example:
 
@@ -441,7 +441,7 @@ variable `$(binserver)' here.
      
          /FILESYSTEM freespace=SIZE-LIMIT define=CLASS-LIST(,:.)
      
-          inform=TRUE log=TRUE
+          inform=TRUE log=TRUE force=TRUE
 
    Files or filesystems which you consider to be essential to the
 operation of the system can be declared as `required'.  Cfengine will
@@ -475,6 +475,12 @@ is issued.
 cfagent issues warnings when free disk space falls below this threshold.
 Any define-classes also become defined in this instance.  (the default
 units are kilobytes, but you may specify bytes or megabytes), e.g.
+
+   If the option `force=true' is used, cfengine will parse filesystems
+even on NFS mounted filesystems. Normally it does not make sense to
+check filesystems that are not native to the local host, but
+occasionally ne would like to force such a check in order to set a
+class, based on the result, for instance.
 
 
 File: cfengine-Reference.info,  Node: directories,  Next: disable,  Prev: disks,  Up: Cfagent reference

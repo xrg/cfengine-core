@@ -35,7 +35,7 @@
 char CFLOCK[bufsize];
 
 void Initialize ARGLIST((void));
-void RecursiveTidySpecialArea ARGLIST((char *name, struct Tidy *tp, int maxrecurse));
+int RecursiveTidySpecialArea ARGLIST((char *name, struct Tidy *tp, int maxrecurse, struct stat *sb));
 
 /*****************************************************************************/
 
@@ -173,11 +173,13 @@ void ReleaseCurrentLock()
 }
 
 
-void RecursiveTidySpecialArea(name,tp,maxrecurse)
+int RecursiveTidySpecialArea(name,tp,maxrecurse,sb)
 
 char *name;
 struct Tidy *tp;
 int maxrecurse;
+struct stat *sb;
 
 {
+ return true;
 }

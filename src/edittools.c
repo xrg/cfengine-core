@@ -39,27 +39,34 @@ char EDITBUFF[bufsize];
 /* EDIT Data structure routines                                     */
 /********************************************************************/
 
-void DoRecursiveEditFiles(name,level,ptr)
+int DoRecursiveEditFiles(name,level,ptr,sb)
 
 char *name;
 int level;
 struct Edit *ptr;
+struct stat *sb;
 
 { DIR *dirh;
   struct dirent *dirp;
   char pcwd[bufsize];
   struct stat statbuf;
+  int goback;
 
 if (level == -1)
    {
-   return;
+   return false;
    }
 
-printf("RecursiveEditFiles(%s)\n",name);
+Debug("RecursiveEditFiles(%s)\n",name);
 
-if ((dirh = opendir(name)) == NULL)
+if (!DirPush(name,sb))
    {
-   return;
+   return false;
+   }
+ 
+if ((dirh = opendir(".")) == NULL)
+   {
+   return true;
    }
 
 for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
@@ -79,7 +86,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
 
    if (BufferOverflow(pcwd,dirp->d_name))
       {
-      return;
+      return true;
       }
 
    strcat(pcwd,dirp->d_name);
@@ -92,7 +99,20 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       
    if (TRAVLINKS)
       {
-      if (stat(pcwd,&statbuf) == -1)
+      if (lstat(dirp->d_name,&statbuf) == -1)
+         {
+         snprintf(OUTPUT,bufsize*2,"Can't stat %s\n",pcwd);
+	 CfLog(cferror,OUTPUT,"stat");
+         continue;
+         }
+
+      if (S_ISLNK(statbuf.st_mode) && (statbuf.st_mode != getuid()))	  
+	 {
+	 snprintf(OUTPUT,bufsize,"File %s is an untrusted link. cfagent will not follow it with a destructive operation (tidy)",pcwd);
+	 continue;
+	 }
+      
+      if (stat(dirp->d_name,&statbuf) == -1)
          {
          snprintf(OUTPUT,bufsize*2,"RecursiveCheck was working on %s when this happened:\n",pcwd);
 	 CfLog(cferror,OUTPUT,"stat");
@@ -101,7 +121,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       }
    else
       {
-      if (lstat(pcwd,&statbuf) == -1)
+      if (lstat(dirp->d_name,&statbuf) == -1)
          {
          snprintf(OUTPUT,bufsize*2,"RecursiveCheck was working in %s when this happened:\n",pcwd);
          CfLog(cferror,OUTPUT,"lstat");
@@ -119,7 +139,8 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
          {
          if ((ptr->recurse > 1) || (ptr->recurse == INFINITERECURSE))
             {
-            DoRecursiveEditFiles(pcwd,level-1,ptr);
+            goback = DoRecursiveEditFiles(pcwd,level-1,ptr,&statbuf);
+	    DirPop(goback,name,sb);
             }
          else
             {
@@ -134,6 +155,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    }
 
 closedir(dirh);
+return true; 
 }
 
 /********************************************************************/
@@ -425,7 +447,12 @@ while (ep != NULL)
       case EditBackup:
       case EditUmask:
       case AutoCreate:
-               break;
+      case EditInclude:
+      case EditExclude:
+      case EditFilter:
+      case DefineClasses:
+      case ElseDefineClasses:
+	       break;
 
       case EditUseShell:
 	       if (strcmp(expdata,"false") == 0)
@@ -1057,11 +1084,6 @@ while (ep != NULL)
 	       AppendToLine(CURRENTLINEPTR,expdata,filename);
 	       break;
 
-      case EditFilter:
-      case DefineClasses:
-      case ElseDefineClasses:
-	       break;
-
       default: snprintf(OUTPUT,bufsize*2,"Unknown action in editing of file %s\n",filename);
 	       CfLog(cferror,OUTPUT,"");
                break;
@@ -1533,7 +1555,18 @@ if (editsdone)
 
       if (ep->code == DefineClasses)
 	 {
-	 break;
+	 Debug("AddEditfileClasses(%s)\n",ep->data);
+	 
+	 for (sp = ep->data; *sp != '\0'; sp++)
+	    {
+	    currentitem[0] = '\0';
+	    
+	    sscanf(sp,"%[^,:.]",currentitem);
+	    
+	    sp += strlen(currentitem);
+	    
+	    AddClassToHeap(currentitem);
+	    }
 	 }
       }
    }
@@ -1548,7 +1581,18 @@ else
       
       if (ep->code == ElseDefineClasses)
 	 {
-	 break;
+	 Debug("Entering AddEditfileClasses(%s)\n",ep->data);
+	 
+	 for (sp = ep->data; *sp != '\0'; sp++)
+	    {
+	    currentitem[0] = '\0';
+	    
+	    sscanf(sp,"%[^,:.]",currentitem);
+	    
+	    sp += strlen(currentitem);
+	    
+	    AddClassToHeap(currentitem);
+	    }
 	 }
       }
    }
@@ -1558,18 +1602,6 @@ if (ep == NULL)
    return;
    }
 
-Debug("Entering AddEditfileClasses(%s)\n",ep->data);
- 
-for (sp = ep->data; *sp != '\0'; sp++)
-   {
-   currentitem[0] = '\0';
-
-   sscanf(sp,"%[^,:.]",currentitem);
-
-   sp += strlen(currentitem);
-
-   AddClassToHeap(currentitem);
-   }
 }
 
 /**************************************************************/

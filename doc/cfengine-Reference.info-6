@@ -129,11 +129,15 @@ lower case and abbreviated by any unique abbreviation.
 `dirlinks=KEEP/TIDY/DELETE'
      This value is used to decide whether cfengine will delete links
      which point to directories. The default value is to keep the
-     links. Note that, if the travlinks option is switched on, cfengine
-     will not tidy or delete links which point to directories, instead
-     it follows them into the subdirectory. This is a supplement to the
-     `rmdirs' option. You need both to make links to directories
-     disappear.
+     links. Note that, if the `travlinks' option is switched on,
+     cfengine will not tidy or delete links which point to directories,
+     instead it follows them into the subdirectory. This is a supplement
+     to the `rmdirs' option. You need both to make links to directories
+     disappear. Note that, even if `travlinks' is set to true, cfagent
+     will not follow symbolic links that are not owned by the agent
+     user ID; this is to prevent link race attacks, in which users with
+     write access could divert the agent to another part of the
+     filesystem,
 
 `rmdirs=TRUE/FALSE/ALL/SUB'
      Normally cfengine will not delete directories. If this option is
@@ -285,6 +289,8 @@ follows:
             LogAllConnections = ( FALSE/TRUE )
      
             SkipVerify = ( IP NUMBERS )
+     
+            DynamicAddresses = ( IP NUMBERS )
      
       groups:
      
@@ -605,11 +611,13 @@ SkipVerify
    If connecting hosts use a Network Address Translator in order to
 share an IP address, reverse lookup will fail to give a correct
 verification of host identity.  You can switch off cfservd's
-verification of host identity for specific IP addresses or patterns
+verification of IP host identity for specific IP addresses or patterns
 using this command. E.g.
 
 
      SkipVerify = ( 192.0.0.10  192.0.2.  )
+
+   This does not affect key verification.
 
    NOTE!! This is a security risk because it means that cfservd
 implicitly trusts the connecting hosts! You should be very careful in

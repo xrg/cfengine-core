@@ -957,7 +957,8 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
 
    if ((rp->freespace != -1))
      {
-     if (!CheckFreeSpace(path,rp->freespace))
+     /* HvB : Bas van der Vlies */
+     if (!CheckFreeSpace(path,rp))
 	{
 	Verbose("Free space below %d, defining %s\n",rp->freespace, rp->define);
 	AddMultipleClasses(rp->define);
@@ -2139,7 +2140,7 @@ for (ptr=VEDITLIST; ptr!=NULL; ptr=ptr->next)
 	 {
 	 if (S_ISDIR(statbuf.st_mode))
 	    {
-	    DoRecursiveEditFiles(ptr->fname,ptr->recurse,ptr);
+	    DoRecursiveEditFiles(ptr->fname,ptr->recurse,ptr,&statbuf);
 	    }
 	 else
 	    {
@@ -2229,13 +2230,22 @@ for (ip = filebase; ip != NULL; ip=ip->next)
       }
    }
 
-
 snprintf(VBUFF,bufsize,"search %s",ToLowerStr(VDOMAIN));
-if (IsItemIn(filebase,VBUFF))
+
+/* if (IsItemIn(filebase,VBUFF))
    {
    DeleteItemStarting(&filebase,VBUFF);
+   } */
+
+if (LocateNextItemStarting(filebase,VBUFF) != NULL)
+   {
+   Verbose("File %s has already a line starting %s\n",VRESOLVCONF[VSYSTEMHARDCLASS],VBUFF);
    }
-PrependItem(&filebase,VBUFF,NULL);
+ else
+    {
+    PrependItem(&filebase,VBUFF,NULL);
+    }
+
 
 DeleteItemStarting(&filebase,"domain");
 snprintf(VBUFF,bufsize,"domain %s",ToLowerStr(VDOMAIN));
@@ -2837,13 +2847,14 @@ else
 
 /*******************************************************************/
 
-int CheckFreeSpace (file,kilobytes)
+int CheckFreeSpace (file,disk_ptr)
 
 char *file;
-int kilobytes;
+struct Disk *disk_ptr;
 
 { struct stat statbuf;
   int free;
+  int kilobytes;
 
 if (stat(file,&statbuf) == -1)
    {
@@ -2852,11 +2863,19 @@ if (stat(file,&statbuf) == -1)
    return true;
    }
 
-if (IsMountedFileSystem(&statbuf,file,1)) /* only do this on server */
+/* HvB : Bas van der Vlies 
+	 if force is specified then skip this check if this 
+	 is on the file server.
+*/
+if ( disk_ptr->force != 'y' )
    {
-   return true;
+   if (IsMountedFileSystem(&statbuf,file,1))
+      {
+      return true;
+      }
    }
 
+kilobytes = disk_ptr->freespace;
 if (kilobytes < 0)  /* percentage */
    {
    free = GetDiskUsage(file,cfpercent);
@@ -3148,6 +3167,7 @@ char *startpath;
 void *vp;
 
 { struct File *ptr;
+  struct stat sb; 
 
 ptr = (struct File *)vp;
 
@@ -3158,7 +3178,15 @@ if (!GetLock(ASUniqueName("files"),startpath,VIFELAPSED,VEXPIREAFTER,VUQNAME,CFS
    return;
    }
  
-RecursiveCheck(startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,ptr->recurse,0,ptr);
+if (stat(startpath,&sb) == -1)
+   {
+   snprintf(OUTPUT,bufsize,"Directory %s cannot be accessed in files",startpath);
+   CfLog(cfinform,OUTPUT,"stat");
+   return;
+   }
+ 
+RecursiveCheck(startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,ptr->recurse,0,ptr,&sb);
+ 
 ReleaseCurrentLock(); 
 }
 

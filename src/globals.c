@@ -333,7 +333,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
       { "force-net-copy",no_argument,0,'b'},
       { "secure-input",no_argument,0,'Y'},
       { "zone-info",no_argument,0,'z'},
-      { "update-only",no_argument,0,'b'},
+      { "update-only",no_argument,0,'B'},
       { "check-contradictions",no_argument,0,'g'},
       { NULL,0,0,0 }
       };

@@ -203,7 +203,7 @@ int RequiredFileSystemOkay ARGLIST((char *name));
 void InstallMountedItem ARGLIST((char *host, char *mountdir));
 void InstallMountableItem ARGLIST((char *path, char *mnt_opts, flag readonly));
 void AddToFstab ARGLIST((char *host, char *mountpt, char *rmountpt, char *mode, char *options, int ismounted));
-int CheckFreeSpace ARGLIST((char *file, int kilobytes));
+int CheckFreeSpace ARGLIST((char *file, struct Disk *ptr));
 void CheckHome ARGLIST((struct File *ptr));
 void EditItemsInResolvConf ARGLIST((struct Item *from, struct Item **list));
 int TZCheck ARGLIST((char *tzsys, char *tzlist));
@@ -214,7 +214,7 @@ int MatchStringInFstab ARGLIST((char *str));
 
 /* edittools.c */
 
-void DoRecursiveEditFiles ARGLIST((char *name, int level, struct Edit *ptr));
+int DoRecursiveEditFiles ARGLIST((char *name, int level, struct Edit *ptr,struct stat *sb));
 void DoEditHomeFiles ARGLIST((struct Edit *ptr));
 void WrapDoEditFile ARGLIST((struct Edit *ptr, char *filename));
 void DoEditFile ARGLIST((struct Edit *ptr, char *filename));
@@ -280,7 +280,7 @@ int IsBracketed ARGLIST((char *s));
 
 int IsHomeDir ARGLIST((char *name));
 int EmptyDir ARGLIST((char *path));
-void RecursiveCheck ARGLIST((char *name, mode_t plus, mode_t minus, enum fileactions action, struct UidList *uidlist, struct GidList *gidlist, int recurse, int rlevel, struct File *ptr));
+int RecursiveCheck ARGLIST((char *name, mode_t plus, mode_t minus, enum fileactions action, struct UidList *uidlist, struct GidList *gidlist, int recurse, int rlevel, struct File *ptr,struct stat *sb));
 void CheckExistingFile ARGLIST((char *file, mode_t plus, mode_t minus, enum fileactions action, struct UidList *uidlist, struct GidList *gidlist, struct stat *dstat, struct File *ptr, struct Item *acl_aliases));
 void CheckCopiedFile ARGLIST((char *file, mode_t plus, mode_t minus, enum fileactions action, struct UidList *uidlist, struct GidList *gidlist, struct stat *dstat, struct stat *sstat, struct File *ptr, struct Item *acl_aliases));
 int CheckOwner ARGLIST((char *file, enum fileactions action, struct UidList *uidlist, struct GidList *gidlist, struct stat *statbuf));
@@ -588,6 +588,9 @@ void DeleteMacro  ARGLIST((char *name));
 
 /* misc.c */
 
+int DirPush ARGLIST((char *name,struct stat *sb));
+void DirPop ARGLIST((int goback,char *name,struct stat *sb));
+void CheckLinkSecurity ARGLIST((struct stat *sb, char *name));
 void GetNameInfo ARGLIST((void));
 void AddNetworkClass ARGLIST((char *netmask));
 void TruncateFile ARGLIST((char *name));
@@ -764,9 +767,9 @@ int SensibleFile ARGLIST((char *nodename, char *path, struct Image *ip));
 
 /* tidy.c */
 
-void RecursiveHomeTidy ARGLIST((char *name, int level));
+int RecursiveHomeTidy ARGLIST((char *name, int level,struct stat *sb));
 int TidyHomeFile ARGLIST((char *path, char *name,struct stat *statbuf, int level));
-void RecursiveTidySpecialArea ARGLIST((char *name, struct Tidy *tp, int maxrecurse));
+int RecursiveTidySpecialArea ARGLIST((char *name, struct Tidy *tp, int maxrecurse, struct stat *sb));
 void TidyParticularFile ARGLIST((char *path, char *name, struct Tidy *tp, struct stat *statbuf, int is_dir, int level));
 void DoTidyFile ARGLIST((char *path, char *name, struct TidyPattern *tlp, struct stat *statbuf, short int logging_this));
 void DeleteTidyList ARGLIST((struct TidyPattern *list));

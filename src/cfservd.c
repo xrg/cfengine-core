@@ -128,6 +128,7 @@ int cfscanf ARGLIST((char *in, int len1, int len2, char *out1, char *out2, char 
 int AuthenticationDialogue ARGLIST((struct cfd_connection *conn,char *buffer));
 char *MapAddress ARGLIST((char *addr));
 int IsWildKnownHost ARGLIST((RSA *oldkey,RSA *newkey,char *addr,char *user));
+void AddToKeyDB ARGLIST((RSA *key,char *addr));
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -2053,6 +2054,7 @@ if ((newkey->n = BN_mpi2bn(recvbuffer,len,NULL)) == NULL)
    }
 
 /* proposition C3 */ 
+
 if ((len=ReceiveTransaction(conn->sd_reply,recvbuffer,NULL)) == 0)
    {
    CfLog(cfinform,"Protocol error in RSA authentation from IP %s\n",conn->hostname);
@@ -2758,6 +2760,7 @@ if (savedkey = HavePublicKey(keyname))
 	 return false;
 	 }
       }
+   
    return true;
    }
 else if ((TRUSTKEYLIST != NULL) && IsFuzzyItemIn(TRUSTKEYLIST,MapAddress(conn->ipaddr)))
@@ -2767,6 +2770,7 @@ else if ((TRUSTKEYLIST != NULL) && IsFuzzyItemIn(TRUSTKEYLIST,MapAddress(conn->i
    /* conn->maproot = false; ?? */
    SendTransaction(conn->sd_reply,"OK: key was accepted on trust",0,CF_DONE);
    SavePublicKey(keyname,key);
+   AddToKeyDB(key,MapAddress(conn->ipaddr));
    return true;
    }
 else
@@ -2784,6 +2788,10 @@ int IsWildKnownHost(oldkey,newkey,mipaddr,username)
 RSA *oldkey, *newkey;
 char *mipaddr, *username;
 
+/* This builds security from trust only gradually with DHCP - takes time!
+   But what else are we going to do? ssh doesn't have this problem - it
+   just asks the user interactively. We can't do that ... */
+
 { DBT key,value;
   DB *dbp;
   int trust = false;
@@ -2792,62 +2800,125 @@ char *mipaddr, *username;
 
 snprintf(keyname,maxvarsize,"%s-%s",username,mipaddr);
 snprintf(keydb,maxvarsize,"%s/ppkeys/dynamic",WORKDIR); 
+
+Debug("The key does not match the known, key but the host has dynamic IP...\n"); 
  
 if ((TRUSTKEYLIST != NULL) && IsFuzzyItemIn(TRUSTKEYLIST,mipaddr))
    {
+   Debug("We will accept a new key for this IP on trust\n");
    trust = true;
    }
+else
+   {
+   Debug("Will not accept the new key, unless we have seen it before\n");
+   }
 
-/* If the host is allowed to have a variable IP range, we can
-   accept the new key on trust provided we have seen it before.
-   Check for it in a database .. */ 
+/* If the host is allowed to have a variable IP range, we can accept
+   the new key on trust for the given IP address provided we have seen
+   the key before.  Check for it in a database .. */
+
+Debug("Checking to see if we have seen the new key before..\n"); 
   
 if ((errno = db_create(&dbp,NULL,0)) != 0)
    {
    sprintf(OUTPUT,"Couldn't open average database %s\n",keydb);
    CfLog(cferror,OUTPUT,"db_open");
-   return 0;
+   return false;
    }
  
 if ((errno = dbp->open(dbp,keydb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
    {
    sprintf(OUTPUT,"Couldn't open average database %s\n",keydb);
    CfLog(cferror,OUTPUT,"db_open");
-   return 0;
+   return false;
    }
 
-bzero(&key,sizeof(key));       
+bzero(&key,sizeof(newkey));       
 bzero(&value,sizeof(value));
       
-key.data = oldkey;
+key.data = newkey;
 key.size = sizeof(RSA);
 
 if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
    {
-   if (errno != DB_NOTFOUND)
+   Debug("The new key is not previously known, so we need to use policy for trusting the host %s\n",mipaddr);
+
+   if (trust)
       {
-      dbp->err(dbp,errno,NULL);
-      dbp->close(dbp,0);
-      return 0;
+      Debug("Policy says to trust the changed key from %s and note that it could vary in future\n",mipaddr);
+      bzero(&key,sizeof(key));       
+      bzero(&value,sizeof(value));
+      
+      key.data = newkey;
+      key.size = sizeof(RSA);
+      
+      value.data = mipaddr;
+      value.size = strlen(mipaddr)+1;
+      
+      if ((errno = dbp->put(dbp,NULL,&key,&value,0)) != 0)
+	 {
+	 dbp->err(dbp,errno,NULL);
+	 }
+      }
+   else
+      {
+      Debug("Found no grounds for trusting this new key from %s\n",mipaddr);
       }
    }
 else
    {
-   snprintf(OUTPUT,bufsize,"Public key was previously owned by IP address %s - now by %s\n",value.data,mipaddr);
+   snprintf(OUTPUT,bufsize,"Public key was previously owned by %s now by %s - updating\n",value.data,mipaddr);
    CfLog(cfverbose,OUTPUT,"");
+   Debug("Now trusting this new key, because we have seen it before\n");
    DeletePublicKey(keyname);
    SavePublicKey(keyname,newkey);
    trust = true;
    }
 
-/* save this value in the database, for future reference, regardless
+/* save this new key in the database, for future reference, regardless
    of whether we accept, but only change IP if trusted  */ 
 
-if (trust)
+
+dbp->close(dbp,0);
+chmod(keydb,0644); 
+ 
+return trust; 
+}
+
+/***************************************************************/
+
+void AddToKeyDB(newkey,mipaddr)
+
+RSA *newkey;
+char *mipaddr;
+
+{ DBT key,value;
+  DB *dbp;
+  char keydb[maxvarsize];
+
+snprintf(keydb,maxvarsize,"%s/ppkeys/dynamic",WORKDIR); 
+  
+if ((DHCPLIST != NULL) && IsFuzzyItemIn(DHCPLIST,mipaddr))
    {
+   /* Cache keys in the db as we see them is there are dynamical addresses */
+   
+   if ((errno = db_create(&dbp,NULL,0)) != 0)
+      {
+      sprintf(OUTPUT,"Couldn't open average database %s\n",keydb);
+      CfLog(cferror,OUTPUT,"db_open");
+      return;
+      }
+   
+   if ((errno = dbp->open(dbp,keydb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+      {
+      sprintf(OUTPUT,"Couldn't open average database %s\n",keydb);
+      CfLog(cferror,OUTPUT,"db_open");
+      return;
+      }
+   
    bzero(&key,sizeof(key));       
    bzero(&value,sizeof(value));
- 
+   
    key.data = newkey;
    key.size = sizeof(RSA);
    
@@ -2857,15 +2928,11 @@ if (trust)
    if ((errno = dbp->put(dbp,NULL,&key,&value,0)) != 0)
       {
       dbp->err(dbp,errno,NULL);
-      dbp->close(dbp,0);
-      return trust;
       }
+   
+   dbp->close(dbp,0);
+   chmod(keydb,0644); 
    }
-
-dbp->close(dbp,0);
-chmod(keydb,0644); 
- 
-return trust; 
 }
 
 /***************************************************************/
@@ -2952,13 +3019,15 @@ return (len1 + len2 + len3 + 2);
 /* Linking simplification                                      */
 /***************************************************************/
 
-void RecursiveTidySpecialArea(name,tp,maxrecurse)
+int RecursiveTidySpecialArea(name,tp,maxrecurse,sb)
 
 char *name;
 struct Tidy *tp;
 int maxrecurse;
+struct stat *sb;
 
 {
+ return true;
 }
 
 int CompareMD5Net(file1,file2,ip)

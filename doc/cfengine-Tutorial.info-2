@@ -848,7 +848,7 @@ used to specify patterns when tidying files and under `files' all files
 are considered, (see Reference manual),
 
 
-File: cfengine-Tutorial.info,  Node: File sweeps,  Next: Log files,  Prev: Wildcards in directory names,  Up: More advanced concepts
+File: cfengine-Tutorial.info,  Node: File sweeps,  Next: Security in File sweeps,  Prev: Wildcards in directory names,  Up: More advanced concepts
 
 Recursive file sweeps/directory traversals
 ==========================================
@@ -947,7 +947,35 @@ add lines to the edit stanza:
       }
 
 
-File: cfengine-Tutorial.info,  Node: Log files,  Next: Quoted strings,  Prev: File sweeps,  Up: More advanced concepts
+File: cfengine-Tutorial.info,  Node: Security in File sweeps,  Next: Log files,  Prev: File sweeps,  Up: More advanced concepts
+
+Security in Recursive file sweeps
+=================================
+
+   Recursively descending into directories and performing a globally
+`destructive' change is an inherently risky thing to do, unless you are
+certain of the directory structure.
+
+   Suppose, for instance, that a user with write access to the
+filesystem added a symbolic link to `/etc/passwd', and we were doing a
+recursive deletion. Suddlenly, cfengine becomes a destructive weapon.
+The default behaviour is that cfengine does not follow symbolic links
+in recursive descents, for this reason. The option `travlinks' can be
+set to true, in order to change this.  However, in general, you should
+never change this option, especially if untrusted users have access to
+parts of the filesystem, e.g. if you clear `/tmp' recursively.
+
+   Cfagent checks for link race attacks, in which users try to swap a
+directory for a link, in between system calls, to trick cfagent into
+believing that a link is a directory, as of version 2.0.3 (and 1.6.4).
+
+   Note that, even if `travlinks' is set to true, cfagent will not
+follow symbolic links that are not owned by the agent user ID; this is
+to minimize the possibilty of link race attacks, in which users with
+write access could divert the agent to another part of the filesystem.
+
+
+File: cfengine-Tutorial.info,  Node: Log files,  Next: Quoted strings,  Prev: Security in File sweeps,  Up: More advanced concepts
 
 Log files written by cfagent
 ============================

@@ -3408,7 +3408,7 @@ difference between a valid empty directory and a missing NFS file system.
 If you use purge, use a remote copy also.</em>
 If we specify purge, then the following options will also be set and
 cannot be altered: <code>forcedirs=true</code>, <code>typecheck=false</code>, since
-any other default could be very destructive.
+other defaults could be very destructive.
 
 </dl>
 
@@ -3581,7 +3581,7 @@ special variable <code>$(binserver)</code> here.
 
     /<var>filesystem</var> freespace=<var>size-limit</var> define=<var>class-list</var>(,:.)
 
-     inform=<var>true</var> log=<var>true</var>
+     inform=<var>true</var> log=<var>true</var> force=<var>true</var>
 
 </pre>
 
@@ -3621,6 +3621,12 @@ cfagent issues warnings when free disk space falls below this threshold.
 Any define-classes also become defined in this instance. 
 (the default units are kilobytes,
 but you may specify bytes or megabytes), e.g.
+
+<p>If the option <code>force=true</code> is used, cfengine will parse filesystems
+even on NFS mounted filesystems. Normally it does not make sense to
+check filesystems that are not native to the local host, but occasionally
+ne would like to force such a check in order to set a class, based on the
+result, for instance.
 
 <p><hr>
 Node:<a name="directories">directories</a>,
@@ -6645,11 +6651,15 @@ or permissions of the file were changed.
 <br><dt><code>dirlinks=<var>keep/tidy/delete</var></code>
 <dd>This value is used to decide whether cfengine will delete
 links which point to directories. The default value is to keep
-the links. Note that, if the travlinks option is switched on,
+the links. Note that, if the <code>travlinks</code> option is switched on,
 cfengine will not tidy or delete links which point to directories,
 instead it follows them into the subdirectory. This is a supplement
 to the <code>rmdirs</code> option. You need both to make links
-to directories disappear.
+to directories disappear. Note that, even if <code>travlinks</code>
+is set to true, cfagent will not follow symbolic links that are
+not owned by the agent user ID; this is to prevent link race attacks,
+in which users with write access could divert the agent to another part
+of the filesystem,
 
 <br><dt><code>rmdirs=<var>true/false/all/sub</var></code>
 <dd>Normally cfengine will not delete directories. If this option is
@@ -6813,6 +6823,8 @@ file is as follows:
        LogAllConnections = ( <var>false/true</var> )
 
        SkipVerify = ( <var>IP numbers</var> )
+
+       DynamicAddresses = ( <var>IP numbers</var> )
 
  groups:
 
@@ -7209,13 +7221,15 @@ Up:<a rel=up href="#admit%20grant%20and%20deny">admit grant and deny</a>
 
 <p>If connecting hosts use a Network Address Translator in order to share an IP address,
 reverse lookup will fail to give a correct verification of host identity. 
-You can switch off cfservd's verification of host identity for specific IP addresses
+You can switch off cfservd's verification of IP host identity for specific IP addresses
 or patterns using this command. E.g.
 
 <pre>
 SkipVerify = ( 192.0.0.10  192.0.2.  )
 
 </pre>
+
+<p>This does not affect key verification.
 
 <p>NOTE!! This is a security risk because it means that cfservd implicitly
 trusts the connecting hosts! You should be very careful in using
@@ -9072,7 +9086,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li><code>FileExtensions</code>: <a href="#fileextension">fileextension</a>
 <li><code>files</code>: <a href="#actionsequence">actionsequence</a>, <a href="#files">files</a>
 <li><code>filter</code>: <a href="#filters">filters</a>
-<li><code>force=</code>: <a href="#copy">copy</a>
+<li><code>force=</code>: <a href="#copy">copy</a>, <a href="#disks">disks</a>
 <li><code>freespace=</code>: <a href="#required">required</a>, <a href="#disks">disks</a>
 <li><code>g=</code>: <a href="#Syntax">Syntax</a>
 <li><code>group</code>: <a href="#Syntax">Syntax</a>
@@ -9165,7 +9179,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>!: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li><code>--dry-run</code> option: <a href="#shellcommands">shellcommands</a>
 <li>-D option: <a href="#addclasses">addclasses</a>
-<li>-l option: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
+<li>-l option: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li><code>-L</code> option: <a href="#Single%20links">Single links</a>
 <li>-x option: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>.cfdisabled</code>: <a href="#disable">disable</a>
@@ -9201,7 +9215,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li><code>BeginGroupIfNotDefined</code>: <a href="#editfiles">editfiles</a>
 <li>Binary servers and links: <a href="#Link%20Children">Link Children</a>, <a href="#Single%20links">Single links</a>
 <li>Binary servers, defining: <a href="#binservers">binservers</a>
-<li>Binary servers, priority: <a href="#Single%20links">Single links</a>, <a href="#binservers">binservers</a>
+<li>Binary servers, priority: <a href="#binservers">binservers</a>, <a href="#Single%20links">Single links</a>
 <li>Bootstrap file: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li>Broadcast address: <a href="#broadcast">broadcast</a>
 <li>Broadcasts to the cfengine service.: <a href="#cfrun">cfrun</a>
@@ -9212,7 +9226,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>cf.preconf bootstrap file: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>cf.site</code>: <a href="#cf.site">cf.site</a>, <a href="#cfservd.conf">cfservd.conf</a>
 <li><code>cfagent.conf</code>: <a href="#cfagent.conf">cfagent.conf</a>
-<li>CFALLCLASSES: <a href="#Special%20variables">Special variables</a>, <a href="#shellcommands">shellcommands</a>
+<li>CFALLCLASSES: <a href="#shellcommands">shellcommands</a>, <a href="#Special%20variables">Special variables</a>
 <li>cfenvd and key entropy: <a href="#Cfkey">Cfkey</a>
 <li>cfexecd: <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li>cfrc resource file: <a href="#cfrc%20resource%20file">cfrc resource file</a>
@@ -9321,7 +9335,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Groups, defining: <a href="#groups">groups</a>
 <li>Hard class name collision: <a href="#Special%20variables">Special variables</a>
 <li>Hardlinks: <a href="#Hard%20links">Hard links</a>
-<li>Hashes of files: <a href="#ChecksumDatabase">ChecksumDatabase</a>, <a href="#Syntax">Syntax</a>
+<li>Hashes of files: <a href="#Syntax">Syntax</a>, <a href="#ChecksumDatabase">ChecksumDatabase</a>
 <li>home directive: <a href="#home%20directive">home directive</a>
 <li>Home path: <a href="#homepattern">homepattern</a>
 <li>Home servers, defining: <a href="#homeservers">homeservers</a>
@@ -9345,16 +9359,16 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Key security of users: <a href="#AllowUsers">AllowUsers</a>
 <li>Key, ACL: <a href="#DFS%20ACLs">DFS ACLs</a>
 <li>Kilobyte, filesize unit: <a href="#tidy">tidy</a>
-<li>Linkchildren: <a href="#Files%20linkchildren">Files linkchildren</a>, <a href="#Link%20Children">Link Children</a>
+<li>Linkchildren: <a href="#Link%20Children">Link Children</a>, <a href="#Files%20linkchildren">Files linkchildren</a>
 <li>Links and binary servers: <a href="#Single%20links">Single links</a>, <a href="#Link%20Children">Link Children</a>
 <li>Links, absolute: <a href="#Single%20links">Single links</a>
-<li>Links, deleting stale: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
+<li>Links, deleting stale: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li>Links, forcing for non-existent files: <a href="#Single%20links">Single links</a>
 <li>Links, making: <a href="#links">links</a>
 <li>Links, multiple: <a href="#Multiple%20Links">Multiple Links</a>
 <li>Links, removing dead: <a href="#Single%20links">Single links</a>
 <li>Links, single: <a href="#Single%20links">Single links</a>
-<li>Links, traversing in searches: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
+<li>Links, traversing in searches: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li>Local disk space, make use of: <a href="#Link%20Children">Link Children</a>
 <li>Log files, controlling the size of: <a href="#disable">disable</a>
 <li>Logical NOT: <a href="#Cfengine%20classes">Cfengine classes</a>
@@ -9382,13 +9396,14 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Negating entries from netgroups: <a href="#groups">groups</a>
 <li>Netgroups: <a href="#groups">groups</a>
 <li>Netgroups, negating entries: <a href="#groups">groups</a>
-<li>netmask: <a href="#netmask">netmask</a>
 <li>Netmask: <a href="#netmask">netmask</a>
+<li>netmask: <a href="#netmask">netmask</a>
 <li>Network address translator: <a href="#Firewalls%20and%20NATs">Firewalls and NATs</a>
 <li>Network Address Translators: <a href="#SkipVerify">SkipVerify</a>
 <li>Network interfaces, several: <a href="#interfaces">interfaces</a>
 <li>New systems, support for: <a href="#cfrc%20resource%20file">cfrc resource file</a>
 <li>nfs: <a href="#nfstype">nfstype</a>
+<li>NFS filesystems and disk checking: <a href="#disks">disks</a>
 <li>NFS mount model and automounter: <a href="#editfiles">editfiles</a>
 <li>nfstype: <a href="#nfstype">nfstype</a>
 <li>NIS, netgroup support: <a href="#groups">groups</a>
@@ -9439,10 +9454,13 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Searching for home directories: <a href="#homepattern">homepattern</a>
 <li>Searching, advanced: <a href="#filters">filters</a>
 <li>Secure input: <a href="#secureinput">secureinput</a>
+<li>Security risk: <a href="#SkipVerify">SkipVerify</a>
+<li>Security: link races and travlinks: <a href="#tidy">tidy</a>
 <li>sed, editing: <a href="#editfiles">editfiles</a>
 <li>Selecting files in searches: <a href="#filters">filters</a>
 <li>Sensible file sizes: <a href="#sensiblesize">sensiblesize</a>
 <li>Sensible limits on files in a directory: <a href="#sensiblecount">sensiblecount</a>
+<li>Setting classes based on non-local disks: <a href="#disks">disks</a>
 <li>Setting uid on restarted processes: <a href="#processes">processes</a>
 <li>Several files: <a href="#import">import</a>
 <li>Shell command to decide class: <a href="#groups">groups</a>
@@ -9472,12 +9490,13 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Timeouts during iterations: <a href="#shellcommands">shellcommands</a>
 <li>Too many open files error: <a href="#Too%20many%20open%20files">Too many open files</a>
 <li>Touching files: <a href="#touch">touch</a>
+<li>travlinks: <a href="#tidy">tidy</a>
 <li>Tree copying, exact: <a href="#copy">copy</a>
-<li>Tripwire functionality: <a href="#Syntax">Syntax</a>, <a href="#ChecksumDatabase">ChecksumDatabase</a>
+<li>Tripwire functionality: <a href="#ChecksumDatabase">ChecksumDatabase</a>, <a href="#Syntax">Syntax</a>
 <li>Truncating log files: <a href="#disable">disable</a>
 <li>Trusted hosts: <a href="#copy">copy</a>
 <li><code>TrustKeysFrom</code> variable: <a href="#TrustKeysFrom">TrustKeysFrom</a>
-<li>umask: <a href="#editfiles">editfiles</a>, <a href="#processes">processes</a>, <a href="#shellcommands">shellcommands</a>
+<li>umask: <a href="#editfiles">editfiles</a>, <a href="#shellcommands">shellcommands</a>, <a href="#processes">processes</a>
 <li>underscoreclasses: <a href="#Special%20variables">Special variables</a>
 <li>Unmounting filesystems: <a href="#unmount">unmount</a>
 <li>Variables in import files: <a href="#import">import</a>

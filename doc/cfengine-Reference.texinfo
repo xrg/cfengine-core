@@ -3827,7 +3827,7 @@ difference between a valid empty directory and a missing NFS file system.
 If you use purge, use a remote copy also.}
 If we specify purge, then the following options will also be set and
 cannot be altered: @code{forcedirs=true}, @code{typecheck=false}, since
-any other default could be very destructive.
+other defaults could be very destructive.
 
 @end table
 
@@ -4006,7 +4006,7 @@ special variable @code{$(binserver)} here.
 
     /@var{filesystem} freespace=@var{size-limit} define=@var{class-list}(,:.) 
 
-     inform=@var{true} log=@var{true}
+     inform=@var{true} log=@var{true} force=@var{true}
 
 @end smallexample
 @end cartouche
@@ -4052,6 +4052,15 @@ but you may specify bytes or megabytes), e.g.
 @cindex freespace=
 @cindex Warning about full disks
 @cindex Full disk warnings
+
+If the option @code{force=true} is used, cfengine will parse filesystems
+even on NFS mounted filesystems. Normally it does not make sense to
+check filesystems that are not native to the local host, but occasionally
+ne would like to force such a check in order to set a class, based on the
+result, for instance.
+@vindex force=
+@cindex NFS filesystems and disk checking
+@cindex Setting classes based on non-local disks
 
 
 @c -------------------------------------------------------------------------------
@@ -4645,7 +4654,8 @@ expression in quotes.
 
 @item DefineClasses "@var{class1}:@var{class2}:..."
 Activate the following colon, comma or dot-separated list of classes if
-and only if the file is edited.
+and only if the file is edited. 
+
 
 @item DeleteLinesAfterThisMatching @var{quoted-regex}
 Delete lines after the current position which match the quoted expression.
@@ -7475,11 +7485,17 @@ or permissions of the file were changed.
 @item dirlinks=@var{keep/tidy/delete}
 This value is used to decide whether cfengine will delete
 links which point to directories. The default value is to keep
-the links. Note that, if the travlinks option is switched on,
+the links. Note that, if the @code{travlinks} option is switched on,
 cfengine will not tidy or delete links which point to directories,
 instead it follows them into the subdirectory. This is a supplement
 to the @code{rmdirs} option. You need both to make links
-to directories disappear.
+to directories disappear. Note that, even if @code{travlinks}
+is set to true, cfagent will not follow symbolic links that are
+not owned by the agent user ID; this is to prevent link race attacks,
+in which users with write access could divert the agent to another part
+of the filesystem,
+@cindex Security: link races and travlinks
+@cindex travlinks
 
 @cindex Tidy by ctime, mtime, atime
 @cindex ctime tidies
@@ -7674,6 +7690,8 @@ file is as follows:
        LogAllConnections = ( @var{false/true} )
 
        SkipVerify = ( @var{IP numbers} )
+
+       DynamicAddresses = ( @var{IP numbers} )
 
  groups:
 
@@ -8076,7 +8094,7 @@ a working OpenSSL library.
 
 If connecting hosts use a Network Address Translator in order to share an IP address,
 reverse lookup will fail to give a correct verification of host identity.
-You can switch off cfservd's verification of host identity for specific IP addresses
+You can switch off cfservd's verification of IP host identity for specific IP addresses
 or patterns using this command. E.g.
 
 @smallexample
@@ -8085,11 +8103,14 @@ SkipVerify = ( 192.0.0.10  192.0.2.  )
 
 @end smallexample
 
+This does not affect key verification.
+
 NOTE!! This is a security risk because it means that cfservd implicitly
 trusts the connecting hosts! You should be very careful in using
 Network Address Translators in a secure environment. It is not recommended
 for sites which require a high level of security.
 @cindex Network Address Translators
+@cindex Security risk
 
 @c -------------------------------------------------------------------------------
 @c SECTION

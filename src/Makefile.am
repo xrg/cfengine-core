@@ -73,7 +73,7 @@ cfservd_SOURCES =							\
 	functions.c							\
 	install.c							\
 	ip.c								\
-	cfparse.c							\
+	cfparse.y							\
 	chflags.c							\
 	cflex.l								\
 	item.c								\
@@ -199,7 +199,7 @@ noinst_HEADERS =							\
 #
 # Some basic clean ups
 #
-MOSTLYCLEANFILES = *~ *.orig
+MOSTLYCLEANFILES = *~ *.orig *.rej
 
 #
 # Get everything removed down to where rebuilding requires:

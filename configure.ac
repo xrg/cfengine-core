@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.0.2)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.0.3)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -588,6 +588,7 @@ AC_MSG_WARN(   from www.openssl.org)
 AC_MSG_WARN( )
 AC_MSG_WARN(=====================================================)
 
+rm -f src/cfparse.c src/cfparse.h
 
 AC_MSG_RESULT(DONE: Configuration done. Run make/gmake to build cfengine.)
 

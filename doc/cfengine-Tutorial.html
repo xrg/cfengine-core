@@ -1247,6 +1247,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li><a href="#Access%20control">Access control</a>:               specifying user access to programs
 <li><a href="#Wildcards%20in%20directory%20names">Wildcards in directory names</a>:   multiple searches
 <li><a href="#File%20sweeps">File sweeps</a>: 
+<li><a href="#Security%20in%20File%20sweeps">Security in File sweeps</a>: 
 <li><a href="#Log%20files">Log files</a>: 
 <li><a href="#Quoted%20strings">Quoted strings</a>: 
 <li><a href="#Regular%20expressions">Regular expressions</a>: 
@@ -2220,7 +2221,7 @@ search, only where to begin.  The <code>pattern</code> directive in
 
 <p><hr>
 Node:<a name="File%20sweeps">File sweeps</a>,
-Next:<a rel=next href="#Log%20files">Log files</a>,
+Next:<a rel=next href="#Security%20in%20File%20sweeps">Security in File sweeps</a>,
 Previous:<a rel=previous href="#Wildcards%20in%20directory%20names">Wildcards in directory names</a>,
 Up:<a rel=up href="#More%20advanced%20concepts">More advanced concepts</a>
 <br>
@@ -2331,9 +2332,41 @@ editfiles:
 </pre>
 
 <p><hr>
+Node:<a name="Security%20in%20File%20sweeps">Security in File sweeps</a>,
+Next:<a rel=next href="#Log%20files">Log files</a>,
+Previous:<a rel=previous href="#File%20sweeps">File sweeps</a>,
+Up:<a rel=up href="#More%20advanced%20concepts">More advanced concepts</a>
+<br>
+
+<h2>Security in Recursive file sweeps</h2>
+
+<p>Recursively descending into directories and performing a globally `destructive'
+change is an inherently risky thing to do, unless you are certain of the
+directory structure.
+
+<p>Suppose, for instance, that a user with write access to the filesystem
+added a symbolic link to <code>/etc/passwd</code>, and we were doing a
+recursive deletion. Suddlenly, cfengine becomes a destructive
+weapon. The default behaviour is that cfengine does not follow symbolic
+links in recursive descents, for this reason. The option
+<code>travlinks</code> can be set to true, in order to change this.  However,
+in general, you should never change this option, especially if untrusted
+users have access to parts of the filesystem, e.g. if you clear <code>/tmp</code>
+recursively.
+
+<p>Cfagent checks for link race attacks, in which users try to swap a
+directory for a link, in between system calls, to trick cfagent into
+believing that a link is a directory, as of version 2.0.3 (and 1.6.4).
+
+<p>Note that, even if <code>travlinks</code> is set to true, cfagent will not
+follow symbolic links that are not owned by the agent user ID; this is
+to minimize the possibilty of link race attacks, in which users with
+write access could divert the agent to another part of the filesystem.
+
+<p><hr>
 Node:<a name="Log%20files">Log files</a>,
 Next:<a rel=next href="#Quoted%20strings">Quoted strings</a>,
-Previous:<a rel=previous href="#File%20sweeps">File sweeps</a>,
+Previous:<a rel=previous href="#Security%20in%20File%20sweeps">Security in File sweeps</a>,
 Up:<a rel=up href="#More%20advanced%20concepts">More advanced concepts</a>
 <br>
 
@@ -6739,22 +6772,21 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Binary servers, declaring: <a href="#How%20does%20it%20work%3f">How does it work?</a>
 <li>binserver variable and actionsequence: <a href="#Special%20variables">Special variables</a>
 <li>cfagent, starting: <a href="#Invoking%20cfagent">Invoking cfagent</a>
-<li><code>cfagent.conf</code>: <a href="#CFINPUTS%20environment%20variable">CFINPUTS environment variable</a>, <a href="#Invoking%20cfagent">Invoking cfagent</a>
+<li><code>cfagent.conf</code>: <a href="#Invoking%20cfagent">Invoking cfagent</a>, <a href="#CFINPUTS%20environment%20variable">CFINPUTS environment variable</a>
 <li><code>cfagent.conf</code> file: <a href="#What%20services%3f">What services?</a>
 <li>CFALLCLASSES: <a href="#Variable%20substitution">Variable substitution</a>
 <li>cfengine model: <a href="#NFS%20resources">NFS resources</a>
 <li>cfengine model, how it works: <a href="#How%20does%20it%20work%3f">How does it work?</a>
-<li>cfexecd: <a href="#Running%20cfengine%20permanently">Running cfengine permanently</a>, <a href="#Functionality">Functionality</a>
-<li><code>CFINPUTS</code> variable: <a href="#Configuration%20file%20cfservd.conf">Configuration file cfservd.conf</a>
+<li>cfexecd: <a href="#Functionality">Functionality</a>, <a href="#Running%20cfengine%20permanently">Running cfengine permanently</a>
 <li>CFINPUTS variable: <a href="#CFINPUTS%20environment%20variable">CFINPUTS environment variable</a>
+<li><code>CFINPUTS</code> variable: <a href="#Configuration%20file%20cfservd.conf">Configuration file cfservd.conf</a>
 <li>cfrun: <a href="#Access%20control">Access control</a>
-<li><code>cfrun</code> program: <a href="#What%20services%3f">What services?</a>
+<li><code>cfrun</code> program: <a href="#What%20services%3f">What services?</a>, <a href="#Emulating%20rdist">Emulating rdist</a>
 <li>cfrun program: <a href="#Remote%20execution%20of%20cfagent">Remote execution of cfagent</a>
-<li><code>cfrun</code> program: <a href="#Emulating%20rdist">Emulating rdist</a>
 <li>cfservd and access keyword: <a href="#Access%20control">Access control</a>
 <li><code>cfservd</code> daemon: <a href="#What%20services%3f">What services?</a>
 <li>cfservd dameon: <a href="#Remote%20execution%20of%20cfagent">Remote execution of cfagent</a>
-<li><code>cfservd.conf</code> file: <a href="#Configuration%20file%20cfservd.conf">Configuration file cfservd.conf</a>, <a href="#What%20services%3f">What services?</a>
+<li><code>cfservd.conf</code> file: <a href="#What%20services%3f">What services?</a>, <a href="#Configuration%20file%20cfservd.conf">Configuration file cfservd.conf</a>
 <li><code>cfwatcher</code> program: <a href="#What%20services%3f">What services?</a>
 <li>Class data and scripts: <a href="#Variable%20substitution">Variable substitution</a>
 <li>Class, generic any: <a href="#The%20generic%20class%20any">The generic class any</a>
@@ -6868,11 +6900,12 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Program format: <a href="#Program%20structure">Program structure</a>
 <li>Program structure: <a href="#Program%20structure">Program structure</a>
 <li>Quoting strings: <a href="#Quoted%20strings">Quoted strings</a>
+<li>Race condition: <a href="#Security%20in%20File%20sweeps">Security in File sweeps</a>
 <li>Race condition with public keys: <a href="#Trust%20and%20key%20races">Trust and key races</a>
 <li>Random numbers: <a href="#Variable%20substitution">Variable substitution</a>
 <li><code>rdist</code> program: <a href="#What%20services%3f">What services?</a>
 <li>Remote distribution of files: <a href="#What%20services%3f">What services?</a>
-<li>Remote execution of cfagent: <a href="#What%20services%3f">What services?</a>, <a href="#Remote%20execution%20of%20cfagent">Remote execution of cfagent</a>
+<li>Remote execution of cfagent: <a href="#Remote%20execution%20of%20cfagent">Remote execution of cfagent</a>, <a href="#What%20services%3f">What services?</a>
 <li>Rereading <code>cfservd.conf</code>: <a href="#Installation%20of%20cfservd">Installation of cfservd</a>
 <li>Restarting cfservd: <a href="#Installation%20of%20cfservd">Installation of cfservd</a>
 <li>Restricting access: <a href="#Access%20control">Access control</a>
@@ -6880,6 +6913,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Running cfagent remotely: <a href="#Remote%20execution%20of%20cfagent">Remote execution of cfagent</a>
 <li>Scripts, passing classes to: <a href="#Variable%20substitution">Variable substitution</a>
 <li>Sections, order of: <a href="#Program%20structure">Program structure</a>
+<li>Security: link races and travlinks: <a href="#Security%20in%20File%20sweeps">Security in File sweeps</a>
 <li><code>server=</code>: <a href="#Emulating%20rdist">Emulating rdist</a>
 <li>server= when copying to localhost: <a href="#Deadlocks%20and%20runaway%20loops">Deadlocks and runaway loops</a>
 <li>setgid root log: <a href="#Log%20files">Log files</a>
@@ -6898,6 +6932,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li><code>tidy</code>, file sweeps: <a href="#File%20sweeps">File sweeps</a>
 <li>Tidying files: <a href="#Files%20and%20links">Files and links</a>
 <li>Time classes: <a href="#Building%20flexible%20time%20classes">Building flexible time classes</a>
+<li><code>travlinks</code>: <a href="#Security%20in%20File%20sweeps">Security in File sweeps</a>
 <li>Trusted Third Party: <a href="#Trust%20and%20key%20races">Trust and key races</a>
 <li>underscoreclasses: <a href="#Variable%20substitution">Variable substitution</a>
 <li>User programs which define classes: <a href="#shellcommand%20classes">shellcommand classes</a>
@@ -6991,6 +7026,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li><a href="#Access%20control">Access control</a>
 <li><a href="#Wildcards%20in%20directory%20names">Wildcards in directory names</a>
 <li><a href="#File%20sweeps">Recursive file sweeps/directory traversals</a>
+<li><a href="#Security%20in%20File%20sweeps">Security in Recursive file sweeps</a>
 <li><a href="#Log%20files">Log files written by cfagent</a>
 <li><a href="#Quoted%20strings">Quoted strings</a>
 <li><a href="#Regular%20expressions">Regular expressions</a>
