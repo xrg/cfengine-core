@@ -1,4 +1,4 @@
-This is cfengine-Tutorial.info, produced by makeinfo version 4.0 from
+This is cfengine-Tutorial.info, produced by makeinfo version 4.3 from
 cfengine-Tutorial.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -916,6 +916,9 @@ variable `backup=false', but a better way of managing disabled and
 backed-up files is to use a directory in which you collect all such
 files for the whole system. This directory is called the file
 repository and is set in the control part of the program, as follows:
+In the `copy' directive, the option `backup=timestamp' can be used to
+allow multiple backups. This is useful when using cfengine to make disk
+backups for users, since it allows multiple versions to co-exist.
 
 
        control:

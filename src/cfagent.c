@@ -1,6 +1,6 @@
 /* 
 
-        Copyright (C) 1995-2000
+        Copyright (C) 1994-
         Free Software Foundation, Inc.
 
    This file is part of GNU cfengine - written and maintained 
@@ -104,6 +104,7 @@ if (IsPrivileged() && !MINUSF && !PRMAILSERVER)
       CheckSystemVariables();
       if (!PARSEONLY)
 	 {
+	 SetStrategies(); 
 	 DoTree(1,"Update");
 	 EmptyActionSequence();
 	 DeleteMacros();
@@ -118,7 +119,12 @@ if (UPDATEONLY)
    }
 
 SetContext("main");
-GetEnvironment(); 
+
+if (!PARSEONLY)
+   {
+   GetEnvironment();
+   }
+ 
 ParseInputFiles();
 CheckFilters();
 SetStrategies(); 
@@ -166,6 +172,8 @@ SetReferenceTime(false); /* Reset */
 
 DoTree(2,"Main Tree"); 
 
+DoAlerts();
+ 
 closelog();
 exit(0);
 return 0;
@@ -180,7 +188,9 @@ void SetContext(id)
 char *id;
 
 {
-Verbose("\n * (Changing context state to: %s) *\n\n",id);
+Verbose("\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
+Verbose(" * (Changing context state to: %s) *",id);
+Verbose("\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n\n"); 
 strncpy(CONTEXTID,id,31);
 }
 
@@ -225,6 +235,9 @@ strcpy(VNFSTYPE,"nfs");
 InitHashTable();
 
 AddClassToHeap("any");      /* This is a reserved word / wildcard */
+
+snprintf(VBUFF,bufsize,"cfengine_%s",CanonifyName(VERSION));
+AddClassToHeap(VBUFF);
 
 if (stat("/etc/redhat-release",&statbuf) != -1)
    {
@@ -289,6 +302,13 @@ VEXPIREAFTER = VDEFAULTEXPIREAFTER;
 VIFELAPSED = VDEFAULTIFELAPSED;
 TRAVLINKS = false;
  
+sprintf(VBUFF,"%s/cf_procs",WORKDIR);
+ 
+ if (stat(VBUFF,&statbuf) == -1)
+    {
+    CreateEmptyFile(VBUFF);
+    }
+ 
 strcpy(VLOGDIR,WORKDIR); 
 strcpy(VLOCKDIR,VLOGDIR);  /* Same since 2.0.a8 */
 
@@ -298,6 +318,7 @@ CheckWorkDirectories();
 RandomSeed();
  
 RAND_bytes(s,16);
+s[15] = '\0';
 seed = ElfHash(s);
 srand48((long)seed);  
 CheckOpts(cfargc,cfargv);
@@ -516,10 +537,27 @@ void GetEnvironment()
 
 { char env[bufsize],class[bufsize],name[maxvarsize],value[maxvarsize];
   FILE *fp;
+  struct stat statbuf;
 
 Debug1("GetEnvironment()\n");
 snprintf(env,bufsize,"%s/%s",WORKDIR,ENV_FILE);
 
+if (stat(env,&statbuf) == -1)
+   {
+   Verbose("\nUnable to detect environment from cfenvd\n\n");
+   return;
+   }
+
+ if (!GetMacroValue("env_time"))
+    {
+    snprintf(env,maxvarsize-1,"%s",ctime(&statbuf.st_mtime));
+    AddMacroValue("env_time",value);
+    }
+ else
+    {
+    CfLog(cferror,"Reserved variable $(env_time) in use","");
+    }
+ 
 if ((fp = fopen(env,"r")) == NULL)
    {
    Verbose("\nUnable to detect environment from cfenvd\n\n");
@@ -529,6 +567,8 @@ if ((fp = fopen(env,"r")) == NULL)
 while (!feof(fp))
    {
    class[0] = '\0';
+   name[0] = '\0';
+   value[0] = '\0';
    fscanf(fp,"%256s",class);
 
    if (feof(fp))
@@ -657,6 +697,8 @@ if (DEBUG || D2 || D3)
    printf("\nDefault route for packets %s\n\n",VDEFAULTROUTE);
    printf("\nFile repository = %s\n\n",VREPOSITORY);
    printf("\nNet interface name = %s\n",VIFDEV[VSYSTEMHARDCLASS]);
+   printf("------------------------------------------------------------\n");
+   ListDefinedAlerts();
    printf("------------------------------------------------------------\n");
    ListDefinedStrategies();
    printf("------------------------------------------------------------\n");
@@ -787,7 +829,7 @@ if (GetMacroValue("LockDirectory"))
 
 if (GetMacroValue("LogDirectory"))
    {
-   Verbose("\n[LogDirectory is no longer runtime configurable: use configure --with-logdir=LOGDIR ]\n\n");
+   Verbose("\n[LogDirectory is no longer runtime configurable: use configure --with-workdir=WORKDIR ]\n\n");
    }
 
 Verbose("LogDirectory = %s\n",VLOGDIR);
@@ -977,28 +1019,34 @@ if (NOSPLAY)
 
 time = 0;
 hash = Hash(VFQNAME);
- 
-if (GetMacroValue("SplayTime"))
+
+if (!NOSPLAY)
    {
-   time = atoi(GetMacroValue("SplayTime"));
-
-   if (time < 0)
+   if (GetMacroValue("SplayTime"))
       {
-      CfLog(cfinform,"SplayTime with negative value, ignoring.\n","");
-      return;
+      time = atoi(GetMacroValue("SplayTime"));
+      
+      if (time < 0)
+	 {
+	 CfLog(cfinform,"SplayTime with negative value, ignoring.\n","");
+	 return;
+	 }
+      
+      if (!DONESPLAY)
+	 {
+	 if (!PARSEONLY)
+	    {
+	    DONESPLAY = true;
+	    Verbose("Sleeping for SplayTime %d seconds\n\n",(int)(time*60*hash/hashtablesize));
+	    sleep((int)(time*60*hash/hashtablesize));
+	    }
+	 }
+      else
+	 {
+	 Verbose("Time splayed once already - not repeating\n");
+	 }
       }
-
-   if (!DONESPLAY)
-      {
-      DONESPLAY = true;
-      Verbose("Sleeping for SplayTime %d seconds\n\n",(int)(time*60*hash/hashtablesize));
-      sleep((int)(time*60*hash/hashtablesize));
-      }
-   else
-      {
-      Verbose("Time splayed once already - not repeating\n");
-      }
-   }
+   } 
 
 if (GetMacroValue("LogTidyHomeFiles") && (strcmp(GetMacroValue("LogTidyHomeFiles"),"off") == 0))
    {
@@ -1387,11 +1435,14 @@ if ((VERBOSE || DEBUG || D2) && *classlist != NULL)
       }
    }
 
+ACTION = none;
+ 
 for (i = 0; ACTIONSEQTEXT[i] != NULL; i++)
    {
    if (strcmp(ACTIONSEQTEXT[i],actiontxt) == 0)
       {
       Debug("Actionsequence item %s\n",actiontxt);
+      ACTION = i;
       return (enum aseq) i;
       }
    }
@@ -1539,7 +1590,7 @@ while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o
       case 'L': KILLOLDLINKS = true;
                 break;
 
-      case 'V': printf("GNU %s\n%s\n",VERSION,COPYRIGHT);
+      case 'V': printf("GNU cfengine %s\n%s\n",VERSION,COPYRIGHT);
 	        printf("This program is covered by the GNU Public License and may be\n");
 		printf("copied free of charge.  No warranty is implied.\n\n");
                 exit(0);

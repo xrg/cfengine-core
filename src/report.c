@@ -78,6 +78,30 @@ if (VEXCLUDECOPY != NULL)
    printf (")\n");
    }
 
+if (VSINGLECOPY != NULL)
+   {
+   printf("Patterns to copy one time: = (");
+
+   for (ptr = VSINGLECOPY; ptr != NULL; ptr=ptr->next)
+      {
+      printf("%s ",ptr->name);
+      }
+
+   printf (")\n");
+   }
+
+if (VAUTODEFINE != NULL)
+   {
+   printf("Patterns to autodefine: = (");
+
+   for (ptr = VAUTODEFINE; ptr != NULL; ptr=ptr->next)
+      {
+      printf("%s ",ptr->name);
+      }
+
+   printf (")\n");
+   }
+
 if (VEXCLUDELINK != NULL)
    {
    printf("Patterns to exclude from links: = (");
@@ -279,6 +303,20 @@ for (ptr = VRESOLVE; ptr != NULL; ptr=ptr->next)
 
 /*********************************************************************/
 
+void ListDefinedAlerts()
+
+{ struct Item *ptr;
+
+printf ("\nDEFINED ALERTS\n\n");
+
+for (ptr = VALERTS; ptr != NULL; ptr=ptr->next)
+   {
+   printf("%s: [%s]\n",ptr->classes,ptr->name);
+   }
+}
+
+/*********************************************************************/
+
 void ListDefinedScripts()
 
 { struct ShellComm *ptr;
@@ -474,6 +512,16 @@ for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
       printf("%s (maxrecurse = %d)\n",ptr->path,ptr->maxrecurse);
       }
    
+   for (ip = ptr->exclusions; ip != NULL; ip = ip->next)
+      {
+      printf(" Exclude %s\n",ip->name);
+      }
+   
+   for (ip = ptr->ignores; ip != NULL; ip = ip->next)
+      {
+      printf(" Ignore %s\n",ip->name);
+      }
+      
    for(tp = ptr->tidylist; tp != NULL; tp=tp->next)
       {
       printf("    pat=%s, %c-age=%d, size=%d, linkdirs=%c, rmdirs=%c, travlinks=%c compress=%c\n",
@@ -801,6 +849,7 @@ printf("\nDEFINED UNMOUNTS\n\n");
 for (ptr=VUNMOUNT; ptr!=NULL; ptr=ptr->next)
    {
    printf("%s (classes=%s) deletedir=%c deletefstab=%c force=%c\n",ptr->name,ptr->classes,ptr->deletedir,ptr->deletefstab,ptr->force);
+   printf(" Context scope: %s\n",ptr->scope);
    }
 }
 
@@ -921,6 +970,7 @@ printf("\nDEFINED FILE EDITS\n\n");
 for (ptr=VEDITLIST; ptr != NULL; ptr=ptr->next)
    {
    printf("%s (%c)(r=%d)\n",ptr->fname,ptr->done,ptr->recurse);
+   printf(" Context scope: %s\n",ptr->scope);
    
    if (ptr->repository)
       {

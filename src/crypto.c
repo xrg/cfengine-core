@@ -34,6 +34,43 @@
 #include "cf.extern.h"
 #include "../pub/global.h"
 
+/**********************************************************************/
+
+void RandomSeed()
+
+{ static unsigned char digest[EVP_MAX_MD_SIZE+1];
+  struct stat statbuf;
+  
+/* Use the system database as the entropy source for random numbers */
+
+Debug("RandomSeed() work directory is %s\n",VLOGDIR);
+
+snprintf(VBUFF,bufsize,"%s/randseed",VLOGDIR); 
+
+ if (stat(VBUFF,&statbuf) == -1)
+    {
+    snprintf(AVDB,bufsize,"%s/%s",WORKDIR,AVDB_FILE);
+    }
+ else
+    {
+    strcpy(AVDB,VBUFF);
+    }
+
+Verbose("Looking for a source of entropy in %s\n",AVDB);
+
+if (!RAND_load_file(AVDB,-1))
+   {
+   snprintf(OUTPUT,bufsize,"Could not read sufficient randomness from %s\n",AVDB);
+   CfLog(cfverbose,OUTPUT,"");
+   }
+
+while (!RAND_status())
+   {
+   MD5Random(digest);
+   RAND_seed((void *)digest,16);
+   }
+}
+
 /*********************************************************************/
 
 void LoadSecretKeys()

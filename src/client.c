@@ -552,7 +552,7 @@ if (ip->encrypt == 'y')
       }
    
    snprintf(in,bufsize-CF_PROTO_OFFSET,"GET dummykey %s",source);
-   cipherlen = EncryptString(in,out,CONN->session_key,strlen(in));
+   cipherlen = EncryptString(in,out,CONN->session_key,strlen(in)+1);
    snprintf(sendbuffer,bufsize,"SGET %4d %4d",cipherlen,buf_size);
    bcopy(out,sendbuffer+CF_PROTO_OFFSET,cipherlen);
    tosend=cipherlen+CF_PROTO_OFFSET;   

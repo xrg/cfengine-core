@@ -1,4 +1,4 @@
-This is cfengine-Reference.info, produced by makeinfo version 4.0 from
+This is cfengine-Reference.info, produced by makeinfo version 4.3 from
 cfengine-Reference.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -282,7 +282,7 @@ definitions made in imported files always come later than things in the
 main program.
 
 
-File: cfengine-Reference.info,  Node: AllowRedefinitionOf,  Next: BinaryPaddingChar,  Prev: addinstallable,  Up: control
+File: cfengine-Reference.info,  Node: AllowRedefinitionOf,  Next: AutoDefine,  Prev: addinstallable,  Up: control
 
 AllowRedefinitionOf
 -------------------
@@ -301,7 +301,25 @@ add the name of the variable to this list, and the warning disappears.
      cfrep = ( blo )
 
 
-File: cfengine-Reference.info,  Node: BinaryPaddingChar,  Next: ChecksumDatabase,  Prev: AllowRedefinitionOf,  Up: control
+File: cfengine-Reference.info,  Node: AutoDefine,  Next: BinaryPaddingChar,  Prev: AllowRedefinitionOf,  Up: control
+
+AutoDefine
+----------
+
+
+     control:
+     
+        hup_syslogd::
+     
+          autodefine = ( /etc/syslog.conf )
+
+   Referring to the class that prefixes it, `autodefine' will define
+the class if the names file is copied in any statement.  This helps to
+avoid having to write a large number of file-specific copy: lines with
+define=class configured.
+
+
+File: cfengine-Reference.info,  Node: BinaryPaddingChar,  Next: ChecksumDatabase,  Prev: AutoDefine,  Up: control
 
 BinaryPaddingChar
 -----------------
@@ -1034,7 +1052,7 @@ smaller than the value of `sensiblesize' a warning is issued.  The
 default value for this variable is 1000 bytes.
 
 
-File: cfengine-Reference.info,  Node: showactions,  Next: site,  Prev: sensiblesize,  Up: control
+File: cfengine-Reference.info,  Node: showactions,  Next: singlecopy,  Prev: sensiblesize,  Up: control
 
 ShowActions
 -----------
@@ -1047,7 +1065,42 @@ This is intended only for third party tools which collect and parse the
 cfengine output. It will be of little interest to humans.
 
 
-File: cfengine-Reference.info,  Node: site,  Next: SplayTime,  Prev: showactions,  Up: control
+File: cfengine-Reference.info,  Node: singlecopy,  Next: site,  Prev: showactions,  Up: control
+
+SingleCopy
+----------
+
+
+     	singlecopy = ( on )
+
+   If `singlecopy' is defined the behavior of copy: is modified so that
+a file will only be copied once, helping to achieve hierarchical or
+"most specific" file copy overrides, provided that the most specific
+file occurs first.  With the following file structure on a host running
+cfservd:
+
+   	/dist/hosts/loghost1.example.com/etc/syslog.conf
+/dist/solaris/etc/syslog.conf 	/dist/all/etc/syslog.conf
+
+   The configuration:
+
+     control:
+     	singlecopy = ( on )
+     
+     copy:
+     
+      /dist/${fqhost}       dest=/ inform=true syslog=true r=inf server=disthost
+      /dist/${ostype}       dest=/ inform=true syslog=true r=inf server=disthost
+      /dist/all             dest=/ inform=true syslog=true r=inf server=disthost
+
+Would result in:
+
+     /dist/hosts/loghost1.example.com/etc/syslog.conf being copied to loghost1.example.com
+     /dist/solaris/etc/syslog.conf being copied to Solaris systems
+     /dist/all/etc/syslog.conf being copied to all other systems
+
+
+File: cfengine-Reference.info,  Node: site,  Next: Smtpserver,  Prev: singlecopy,  Up: control
 
 site/faculty
 ------------
@@ -1069,7 +1122,17 @@ into a configuration for any site.
 interchangeably.
 
 
-File: cfengine-Reference.info,  Node: SplayTime,  Next: split,  Prev: site,  Up: control
+File: cfengine-Reference.info,  Node: Smtpserver,  Next: SplayTime,  Prev: site,  Up: control
+
+smtpserver
+----------
+
+       smtpserver = ( MAILHOST )
+
+   This variable specified the destination for Email sent by cfexecd.
+
+
+File: cfengine-Reference.info,  Node: SplayTime,  Next: split,  Prev: Smtpserver,  Up: control
 
 SplayTime
 ---------

@@ -36,6 +36,11 @@
 #include "../pub/getopt.h"
 #include "cf.defs.h"
 #include "cf.extern.h"
+#ifdef HAVE_SYS_LOADAVG_H
+# include <sys/loadavg.h>
+#else
+# define LOADAVG_5MIN    1
+#endif
 #include <math.h>
 #include <db.h>
 
@@ -45,15 +50,19 @@
 
 #define CFGRACEPERIOD 4.0   /* training period in units of counters (weeks,iterations)*/
 
-int HISTOGRAM[ATTR*2+4][7][GRAINS];
+unsigned int HISTOGRAM[ATTR*2+5+PH_LIMIT][7][GRAINS];
 
 int HISTO = false;
 int NUMBER_OF_USERS;
 int ROOTPROCS;
 int OTHERPROCS;
 int DISKFREE;
+int LOADAVG;
 int INCOMING[ATTR];
 int OUTGOING[ATTR];
+int PH_SAMP[PH_LIMIT];
+int PH_LAST[PH_LIMIT];
+int PH_DELTA[PH_LIMIT];
 int SLEEPTIME = 5 * 60;
 int BATCH_MODE = false;
 double ITER = 0.0;        /* Iteration since start */
@@ -89,8 +98,6 @@ struct option CFDENVOPTIONS[] =
 
 short NO_FORK = false;
 
-char DISTDB[1024];
-
 /*****************************************************************************/
 
 enum socks
@@ -123,6 +130,15 @@ char *ECGSOCKS[ATTR][2] =
    {"23","telnet"},
    };
 
+char *PH_BINARIES[PH_LIMIT] =   /* Miss leading slash */
+   {
+   "usr/sbin/atd",
+   "sbin/getty",
+   "bin/bash",
+   "usr/sbin/exim",
+   "bin/run-parts",
+   };
+
 /*******************************************************************/
 /* Prototypes                                                      */
 /*******************************************************************/
@@ -131,7 +147,7 @@ void CheckOptsAndInit ARGLIST((int argc,char **argv));
 void Syntax ARGLIST((void));
 void StartServer ARGLIST((int argc, char **argv));
 void DoBatch ARGLIST((void));
-void ExitCleanly ARGLIST((void));
+void *ExitCleanly ARGLIST((void));
 void yyerror ARGLIST((char *s));
 void FatalError ARGLIST((char *s));
 void RotateFiles ARGLIST((char *s, int n));
@@ -145,7 +161,9 @@ void ArmClasses ARGLIST((struct Averages newvals,char *timekey));
 
 void GatherProcessData ARGLIST((void));
 void GatherDiskData ARGLIST((void));
+void GatherLoadData ARGLIST((void));
 void GatherSocketData ARGLIST((void));
+void GatherPhData ARGLIST((void));
 struct Averages *GetCurrentAverages ARGLIST((char *timekey));
 void UpdateAverages ARGLIST((char *timekey, struct Averages newvals));
 void UpdateDistributions ARGLIST((char *timekey, struct Averages *av));
@@ -154,6 +172,7 @@ void SetClasses ARGLIST((double expect,double delta,double sigma,double lexpect,
 void SetVariable ARGLIST((char *name,double now, double average, double stddev, struct Item **list));
 void RecordChangeOfState  ARGLIST((struct Item *list,char *timekey));
 double RejectAnomaly ARGLIST((double new,double av,double var,double av2,double var2));
+int HashPhKey ARGLIST((char *s));
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -165,8 +184,6 @@ int argc;
 char **argv;
 
 {
-openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_USER);
- 
 CheckOptsAndInit(argc,argv);
 GetNameInfo();
 
@@ -196,6 +213,7 @@ char **argv;
  int c, i,j,k;
 
 umask(077);
+sprintf(VPREFIX,"cfenvd"); 
 openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_DAEMON);
 
 strcpy(CFLOCK,"cfenvd");
@@ -254,14 +272,23 @@ while ((c=getopt_long(argc,argv,"d:f:vhHFV",CFDENVOPTIONS,&optindex)) != EOF)
 
 LOGGING = true;                    /* Do output to syslog */
  
-sprintf(VPREFIX,"cfenvd:%s:",VUQNAME); 
 sprintf(VBUFF,"%s/test",WORKDIR);
 MakeDirectoriesFor(VBUFF,'y');
 strncpy(VLOCKDIR,WORKDIR,bufsize-1);
 strncpy(VLOGDIR,WORKDIR,bufsize-1);
 
+for (i = 0; i < ATTR; i++)
+   {
+   sprintf(VBUFF,"%s/cf_incoming.%s",WORKDIR,ECGSOCKS[i][1]);
+   CreateEmptyFile(VBUFF);
+   sprintf(VBUFF,"%s/cf_outgoing.%s",WORKDIR,ECGSOCKS[i][1]);
+   CreateEmptyFile(VBUFF);
+   }
+
+sprintf(VBUFF,"%s/cf_users",WORKDIR);
+CreateEmptyFile(VBUFF);
+ 
 snprintf(AVDB,bufsize,"%s/%s",WORKDIR,AVDB_FILE);
-snprintf(DISTDB,bufsize,"%s/%s",WORKDIR,DISTDB_FILE); 
 snprintf(STATELOG,bufsize,"%s/%s",WORKDIR,STATELOG_FILE);
 snprintf(ENV_NEW,bufsize,"%s/%s",WORKDIR,ENV_NEW_FILE);
 snprintf(ENV,bufsize,"%s/%s",WORKDIR,ENV_FILE);
@@ -273,10 +300,12 @@ if (!BATCH_MODE)
    LOCALAV.expect_rootprocs = 0.0;
    LOCALAV.expect_otherprocs = 0.0;
    LOCALAV.expect_diskfree = 0.0;
+   LOCALAV.expect_loadavg = 0.0;
    LOCALAV.var_number_of_users = 0.0; 
    LOCALAV.var_rootprocs = 0.0;
    LOCALAV.var_otherprocs = 0.0;
    LOCALAV.var_diskfree = 0.0;
+   LOCALAV.var_loadavg = 0.0;
 
    for (i = 0; i < ATTR; i++)
       {
@@ -285,11 +314,18 @@ if (!BATCH_MODE)
       LOCALAV.var_incoming[i] = 0.0;
       LOCALAV.var_outgoing[i] = 0.0;
       }
+
+   for (i = 0; i < PH_LIMIT; i++)
+      {
+      LOCALAV.expect_pH[i] = 0.0;
+      LOCALAV.var_pH[i] = 0.0;
+      }
+
    }
 
 for (i = 0; i < 7; i++)
    {
-   for (j = 0; j < ATTR*2+4; j++)
+   for (j = 0; j < ATTR*2+5+PH_LIMIT; j++)
       {
       for (k = 0; k < GRAINS; k++)
 	  {
@@ -298,6 +334,11 @@ for (i = 0; i < 7; i++)
       }
    }
 
+for (i = 0; i < PH_LIMIT; i++)
+   {
+   PH_SAMP[i] = PH_LAST[i] = 0.0;
+   }
+ 
 srand((unsigned int)time(NULL)); 
 LoadHistogram(); 
 }
@@ -338,8 +379,12 @@ if ((errno = db_create(&dbp,NULL,0)) != 0)
    CfLog(cferror,OUTPUT,"db_open");
    return;
    }
- 
+
+#ifdef CF_OLD_DB
 if ((errno = dbp->open(dbp,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+if ((errno = dbp->open(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
+#endif
    {
    snprintf(OUTPUT,bufsize,"Couldn't open average database %s\n",AVDB);
    CfLog(cferror,OUTPUT,"db_open");
@@ -402,7 +447,7 @@ if (HISTO)
       {
       fscanf(fp,"%d ",&position);
       
-      for (i = 0; i < 4 + 2*ATTR; i++)
+      for (i = 0; i < 5 + 2*ATTR+PH_LIMIT; i++)
 	 {
 	 for (day = 0; day < 7; day++)
 	    {
@@ -434,8 +479,12 @@ if ((errno = db_create(&dbp,NULL,0)) != 0)
    CfLog(cferror,OUTPUT,"db_open");
    return;
    }
- 
+
+#ifdef CF_OLD_DB
 if ((errno = dbp->open(dbp,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+if ((errno = dbp->open(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
+#endif
    {
    sprintf(OUTPUT,"Couldn't open average database %s\n",AVDB);
    CfLog(cferror,OUTPUT,"db_open");
@@ -511,13 +560,7 @@ if ((!NO_FORK) && (fork() != 0))
 
 if (!NO_FORK)
    {
-#ifdef HAVE_SETSID
-   setsid();
-#endif 
-   fclose (stdin);
-   fclose (stdout);
-   fclose (stderr);
-   closelog();
+   ActAsDaemon(0);
    }
 
 signal (SIGTERM,HandleSignal);                   /* Signal Handler */
@@ -588,6 +631,7 @@ Debug("========================= GET Q ==============================\n");
 GatherProcessData();
 GatherDiskData();
 GatherSocketData();
+GatherPhData(); 
 }
 
 
@@ -617,7 +661,8 @@ char *t;
 
 { struct Averages *currentvals,newvals;
   int i; 
-  double Number_Of_Users,Rootprocs,Otherprocs,Diskfree,Incoming[ATTR],Outgoing[ATTR];
+  double Number_Of_Users,Rootprocs,Otherprocs,Diskfree,LoadAvg;
+  double Incoming[ATTR],Outgoing[ATTR],pH_delta[PH_LIMIT];
 
 if ((currentvals = GetCurrentAverages(t)) == NULL)
    {
@@ -650,6 +695,13 @@ Diskfree = RejectAnomaly(DISKFREE,
                          LOCALAV.expect_diskfree,
                          LOCALAV.var_diskfree);
 
+LoadAvg = RejectAnomaly(LOADAVG,
+                         currentvals->expect_loadavg,
+                         currentvals->var_loadavg, 
+                         LOCALAV.expect_loadavg,
+                         LOCALAV.var_loadavg);
+
+ 
 for (i = 0; i < ATTR; i++)
    {
    Incoming[i] = RejectAnomaly(INCOMING[i],
@@ -665,31 +717,45 @@ for (i = 0; i < ATTR; i++)
                                LOCALAV.var_outgoing[i]);
    }
 
+
+for (i = 0; i < PH_LIMIT; i++)
+   {
+   pH_delta[i] = RejectAnomaly(PH_DELTA[i],
+                               currentvals->expect_pH[i],
+                               currentvals->var_pH[i],
+                               LOCALAV.expect_pH[i],
+                               LOCALAV.var_pH[i]);
+   }
+ 
 newvals.expect_number_of_users = WAverage(Number_Of_Users,currentvals->expect_number_of_users,WAGE);
 newvals.expect_rootprocs = WAverage(Rootprocs,currentvals->expect_rootprocs,WAGE);
 newvals.expect_otherprocs = WAverage(Otherprocs,currentvals->expect_otherprocs,WAGE);
 newvals.expect_diskfree = WAverage(Diskfree,currentvals->expect_diskfree,WAGE);
+newvals.expect_loadavg = WAverage(LoadAvg,currentvals->expect_loadavg,WAGE); 
 
 LOCALAV.expect_number_of_users = WAverage(newvals.expect_number_of_users,LOCALAV.expect_number_of_users,ITER); 
 LOCALAV.expect_rootprocs = WAverage(newvals.expect_rootprocs,LOCALAV.expect_rootprocs,ITER);
 LOCALAV.expect_otherprocs = WAverage(newvals.expect_otherprocs,LOCALAV.expect_otherprocs,ITER);
 LOCALAV.expect_diskfree = WAverage(newvals.expect_diskfree,LOCALAV.expect_diskfree,ITER);
+LOCALAV.expect_loadavg = WAverage(newvals.expect_loadavg,LOCALAV.expect_loadavg,ITER); 
  
 newvals.var_number_of_users = WAverage((Number_Of_Users-newvals.expect_number_of_users)*(Number_Of_Users-newvals.expect_number_of_users),currentvals->var_number_of_users,WAGE);
 newvals.var_rootprocs = WAverage((Rootprocs-newvals.expect_rootprocs)*(Rootprocs-newvals.expect_rootprocs),currentvals->var_rootprocs,WAGE);
 newvals.var_otherprocs = WAverage((Otherprocs-newvals.expect_otherprocs)*(Otherprocs-newvals.expect_otherprocs),currentvals->var_otherprocs,WAGE);
 newvals.var_diskfree = WAverage((Diskfree-newvals.expect_diskfree)*(Diskfree-newvals.expect_diskfree),currentvals->var_diskfree,WAGE);
+newvals.var_loadavg = WAverage((LoadAvg-newvals.expect_loadavg)*(LoadAvg-newvals.expect_loadavg),currentvals->var_loadavg,WAGE); 
 
 LOCALAV.var_number_of_users = WAverage((Number_Of_Users-LOCALAV.expect_number_of_users)*(Number_Of_Users-LOCALAV.expect_number_of_users),LOCALAV.var_number_of_users,ITER);
 LOCALAV.var_rootprocs = WAverage((Rootprocs-LOCALAV.expect_rootprocs)*(Rootprocs-LOCALAV.expect_rootprocs),LOCALAV.var_rootprocs,ITER);
 LOCALAV.var_otherprocs = WAverage((Otherprocs-LOCALAV.expect_otherprocs)*(Otherprocs-LOCALAV.expect_otherprocs),LOCALAV.var_otherprocs,ITER);
 LOCALAV.var_diskfree = WAverage((Diskfree-LOCALAV.expect_diskfree)*(Diskfree-LOCALAV.expect_diskfree),LOCALAV.var_diskfree,ITER);
-
+LOCALAV.var_loadavg = WAverage((LoadAvg-LOCALAV.expect_loadavg)*(LoadAvg-LOCALAV.expect_loadavg),currentvals->var_loadavg,WAGE); 
  
 Verbose("Users              = %4d -> (%f#%f) local [%f#%f]\n",NUMBER_OF_USERS,newvals.expect_number_of_users,sqrt(newvals.var_number_of_users),LOCALAV.expect_number_of_users,sqrt(LOCALAV.var_number_of_users));
 Verbose("Rootproc           = %4d -> (%f#%f) local [%f#%f]\n",ROOTPROCS,newvals.expect_rootprocs,sqrt(newvals.var_rootprocs),LOCALAV.expect_rootprocs,sqrt(LOCALAV.var_rootprocs));
 Verbose("Otherproc          = %4d -> (%f#%f) local [%f#%f]\n",OTHERPROCS,newvals.expect_otherprocs,sqrt(newvals.var_otherprocs),LOCALAV.expect_otherprocs,sqrt(LOCALAV.var_otherprocs));
 Verbose("Diskpercent        = %4d -> (%f#%f) local [%f#%f]\n",DISKFREE,newvals.expect_diskfree,sqrt(newvals.var_diskfree),LOCALAV.expect_diskfree,sqrt(LOCALAV.var_diskfree));
+Verbose("Load Average       = %4d -> (%f#%f) local [%f#%f]\n",LOADAVG,newvals.expect_loadavg,sqrt(newvals.var_loadavg),LOCALAV.expect_loadavg,sqrt(LOCALAV.var_loadavg)); 
  
 for (i = 0; i < ATTR; i++)
    {
@@ -708,6 +774,25 @@ for (i = 0; i < ATTR; i++)
    Verbose("%-14s-out = %4d -> (%f#%f) local [%f#%f]\n",ECGSOCKS[i][1],OUTGOING[i],newvals.expect_outgoing[i],sqrt(newvals.var_outgoing[i]),LOCALAV.expect_outgoing[i],sqrt(LOCALAV.var_outgoing[i]));
    }
 
+
+for (i = 0; i < PH_LIMIT; i++)
+   {
+   if (PH_BINARIES[i] == NULL)
+      {
+      continue;
+      }
+   
+   newvals.expect_pH[i] = WAverage(pH_delta[i],currentvals->expect_pH[i],WAGE);
+   newvals.var_pH[i] = WAverage((pH_delta[i]-newvals.expect_pH[i])*(pH_delta[i]-newvals.expect_pH[i]),currentvals->var_pH[i],WAGE);
+
+
+   LOCALAV.expect_pH[i] = WAverage(newvals.expect_pH[i],LOCALAV.expect_pH[i],ITER);
+   LOCALAV.var_pH[i] = WAverage((pH_delta[i]-LOCALAV.expect_pH[i])*(pH_delta[i]-LOCALAV.expect_pH[i]),LOCALAV.var_pH[i],ITER);
+
+   Verbose("%-15s-in = %4d -> (%f#%f) local [%f#%f]\n",CanonifyName(PH_BINARIES[i]),PH_DELTA[i],newvals.expect_pH[i],sqrt(newvals.var_pH[i]),LOCALAV.expect_pH[i],sqrt(LOCALAV.var_pH[i]));
+
+   }
+ 
 UpdateAverages(t,newvals);
  
 if (WAGE > CFGRACEPERIOD)
@@ -775,6 +860,12 @@ SetClasses(av.expect_diskfree,delta,sigma,
 
 SetVariable("diskfree",DISKFREE,av.expect_diskfree,lsigma,&classlist);
 
+SetClasses(av.expect_loadavg,delta,sigma,
+	   LOCALAV.expect_loadavg,ldelta,lsigma,
+	   "LoadAvg",&classlist,timekey);
+
+SetVariable("loadavg",LOADAVG,av.expect_loadavg,lsigma,&classlist);
+ 
 for (i = 0; i < ATTR; i++)
    {
    char name[256];
@@ -805,6 +896,26 @@ for (i = 0; i < ATTR; i++)
    SetVariable(name,OUTGOING[i],av.expect_outgoing[i],lsigma,&classlist);
    }
 
+for (i = 0; i < PH_LIMIT; i++)
+   {
+   if (PH_BINARIES[i] == NULL)
+      {
+      continue;
+      }
+   
+   delta = PH_DELTA[i] - av.expect_pH[i];
+   sigma = sqrt(av.var_pH[i]);
+   ldelta = PH_DELTA[i] - LOCALAV.expect_pH[i];
+   lsigma = sqrt(LOCALAV.var_pH[i]);
+      
+   SetClasses(av.expect_pH[i],delta,sigma,
+	      LOCALAV.expect_pH[i],ldelta,lsigma,
+	      CanonifyName(PH_BINARIES[i]),&classlist,timekey);
+
+   SetVariable(CanonifyName(PH_BINARIES[i]),PH_DELTA[i],av.expect_pH[i],lsigma,&classlist);
+   }
+
+ 
 /*
 if (WAGE > CFGRACEPERIOD)
    {
@@ -921,6 +1032,9 @@ while (!feof(pp))
 
 cfpclose(pp);
 
+snprintf(VBUFF,maxvarsize,"%s/cf_users",WORKDIR);
+SaveItemList(list,VBUFF,"none");
+ 
 Verbose("(Users,root,other) = (%d,%d,%d)\n",NUMBER_OF_USERS,ROOTPROCS,OTHERPROCS);
 }
 
@@ -933,20 +1047,46 @@ DISKFREE = GetDiskUsage("/",cfpercent);
 Verbose("Disk free = %d %%\n",DISKFREE);
 }
 
+
+/*****************************************************************************/
+
+void GatherLoadData()
+
+{ double load[4] = {0,0,0,0}, sum=0; 
+ int i,n;
+ 
+ if ((n = getloadavg(load,LOADAVG_5MIN)) == -1)
+    {
+    LOADAVG = 0.0;
+    }
+ else
+    {
+    for (i = 0; i < n; i++)
+       {
+       sum += load[i];
+       }
+    }
+
+    LOADAVG = sum/(double)n;
+Verbose("Load Average = %d %%\n",LOADAVG);
+}
+
 /*****************************************************************************/
 
 void GatherSocketData()
 
 { FILE *pp,*fpout;
   char local[bufsize],remote[bufsize],comm[bufsize];
-  int i;
+  struct Item *in[ATTR],*out[ATTR];
   char *sp;
+  int i;
   
 Debug("GatherSocketData()\n");
   
 for (i = 0; i < ATTR; i++)
    {
    INCOMING[i] = OUTGOING[i] = 0;
+   in[i] = out[i] = NULL;
    }
 
 if (ALL_INCOMING != NULL)
@@ -1030,11 +1170,13 @@ while (!feof(pp))
       if (strcmp(local+strlen(local)-strlen(ECGSOCKS[i][0]),ECGSOCKS[i][0]) == 0)
 	 {
 	 INCOMING[i]++;
+	 AppendItem(&in[i],VBUFF,"");
 	 }
 
       if (strcmp(remote+strlen(remote)-strlen(ECGSOCKS[i][0]),ECGSOCKS[i][0]) == 0)
 	 {
 	 OUTGOING[i]++;
+	 AppendItem(&out[i],VBUFF,"");
 	 }
       }
    }
@@ -1044,7 +1186,136 @@ cfpclose(pp);
 for (i = 0; i < ATTR; i++)
    {
    Verbose("%s = (%d,%d)\n",ECGSOCKS[i][1],INCOMING[i],OUTGOING[i]);
-   } 
+ 
+   snprintf(VBUFF,maxvarsize,"%s/cf_incoming.%s",WORKDIR,ECGSOCKS[i][1]);
+   SaveItemList(in[i],VBUFF,"none");
+   Debug("Saved netstat data in %s\n",VBUFF); 
+   snprintf(VBUFF,maxvarsize,"%s/cf_outgoing.%s",WORKDIR,ECGSOCKS[i][1]);
+   SaveItemList(out[i],VBUFF,"none");
+   DeleteItemList(in[i]);
+   DeleteItemList(out[i]);
+   }
+
+}
+
+/*****************************************************************************/
+
+void GatherPhData()
+
+{ DIR *dirh;
+  struct dirent *dirp;
+  struct stat statbuf;
+  char file[64];
+  char key[256];
+  FILE *fp;
+  int i,h,pid,value,profile;
+  
+if (stat("/proc",&statbuf) == -1)
+   {
+   Debug("No /proc data\n");
+   return;
+   }
+
+Debug("Saving last Ph snapshot to compute delta...\n");
+ 
+for (i = 0; i < PH_LIMIT; i++)
+   {
+   PH_LAST[i] = PH_SAMP[i];
+   }
+ 
+Debug("Looking for proc data\n"); 
+
+if ((dirh = opendir("/proc")) == NULL)
+   {
+   snprintf(OUTPUT,bufsize*2,"Can't open directory /proc\n");
+   CfLog(cfverbose,OUTPUT,"opendir");
+   return;
+   }
+
+for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
+   {
+   pid = atoi(dirp->d_name);
+   if (pid > 0)
+      {
+      Debug("Found pid %d\n",pid);
+      }
+   else
+      {
+      continue;
+      }
+
+   snprintf(file,63,"/proc/%s/pH",dirp->d_name);
+   
+   if ((fp = fopen(file,"r")) == NULL)
+      {
+      Debug("Cannot open file %s\n",file);
+      continue;
+      }
+
+   key[0] = '\0';
+   value = 0;
+   profile = false;
+   
+   while (!feof(fp))
+      {
+      fgets(VBUFF,64,fp);
+
+      if (strncmp(VBUFF,"No profile",strlen("No profile")) == 0)
+	 {
+	 break;
+	 }
+
+      if (strncmp(VBUFF,"profile-count",strlen("profile-count")) == 0)
+	 {
+	 char *sp;
+
+	 for (sp = VBUFF+strlen("profile-count"); !isdigit((int)*sp) ; sp++)
+	    {
+	    }
+	 value = atoi(sp);
+	 profile = true;
+	 continue;
+	 }
+
+      if (strncmp(VBUFF,"profile",strlen("profile")) == 0)
+	 {
+	 char *sp;
+
+	 for (sp = VBUFF+strlen("profile"); (*sp == ':') && isspace((int)*sp) ; sp++)
+	    {
+	    }
+
+	 Chop(sp);
+	 strncpy(key,sp,255);
+	 continue;
+	 }
+
+      }
+
+   if (strlen(key) == 0)
+      {
+      continue;
+      }
+   
+   h = HashPhKey(key);
+   PH_SAMP[h] = value;
+
+   if (PH_LAST[h] == 0)
+      {
+      PH_DELTA[h] = 0;
+      }
+   else
+      {
+      PH_DELTA[h] = PH_SAMP[h]-PH_LAST[h];
+      }
+
+   Debug("Profile [%s] with value %d and delta %d\n",key,value,PH_DELTA[h]);
+
+   
+   fclose(fp);
+   }
+
+closedir(dirh);
 }
 
 /*****************************************************************************/
@@ -1064,8 +1335,12 @@ if ((errno = db_create(&dbp,NULL,0)) != 0)
    CfLog(cferror,OUTPUT,"db_open");
    return NULL;
    }
- 
+
+#ifdef CF_OLD_DB 
 if ((errno = dbp->open(dbp,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+if ((errno = dbp->open(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
+#endif
    {
    sprintf(OUTPUT,"Couldn't open average database %s\n",AVDB);
    CfLog(cferror,OUTPUT,"db_open");
@@ -1124,8 +1399,12 @@ if ((errno = db_create(&dbp,NULL,0)) != 0)
    CfLog(cferror,OUTPUT,"db_open");
    return;
    }
- 
+
+#ifdef CF_OLD_DB 
 if ((errno = dbp->open(dbp,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+if ((errno = dbp->open(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
+#endif
    {
    sprintf(OUTPUT,"Couldn't open average database %s\n",AVDB);
    CfLog(cferror,OUTPUT,"db_open");
@@ -1210,21 +1489,42 @@ if (HISTO)
       {
       HISTOGRAM[3][day][position]++;
       }
-   
+
+   position = GRAINS/2 + (int)(0.5+(LOADAVG - av->expect_loadavg)*GRAINS/(4*sqrt((av->var_loadavg))));
+   if (0 <= position && position < GRAINS)
+      {
+      HISTOGRAM[4][day][position]++;
+      }
+
    for (i = 0; i < ATTR; i++)
       {
       position = GRAINS/2 + (int)(0.5+(INCOMING[i] - av->expect_incoming[i])*GRAINS/(4*sqrt((av->var_incoming[i]))));
       if (0 <= position && position < GRAINS)
 	 {
-	 HISTOGRAM[4+i][day][position]++;
+	 HISTOGRAM[5+i][day][position]++;
 	 }
       
       position = GRAINS/2 + (int)(0.5+(OUTGOING[i] - av->expect_outgoing[i])*GRAINS/(4*sqrt((av->var_outgoing[i]))));
       if (0 <= position && position < GRAINS)
 	 {
-	 HISTOGRAM[4+ATTR+i][day][position]++;
+	 HISTOGRAM[5+ATTR+i][day][position]++;
 	 }
       }
+
+   for (i = 0; i < PH_LIMIT; i++)
+      {
+      if (PH_BINARIES[i] == NULL)
+	 {
+	 continue;
+	 }
+      
+      position = GRAINS/2 + (int)(0.5+(PH_DELTA[i] - av->expect_pH[i])*GRAINS/(4*sqrt((av->var_pH[i]))));
+      if (0 <= position && position < GRAINS)
+	 {
+	 HISTOGRAM[5+2*ATTR+i][day][position]++;
+	 }
+      }
+
    
    if (time_to_update)
       {
@@ -1241,13 +1541,13 @@ if (HISTO)
       
       for (position = 0; position < GRAINS; position++)
 	 {
-	 fprintf(fp,"%d ",position);
+	 fprintf(fp,"%u ",position);
 	 
-	 for (i = 0; i < 4 + 2*ATTR; i++)
+	 for (i = 0; i < 5 + 2*ATTR+PH_LIMIT; i++)
 	    {
 	    for (day = 0; day < 7; day++)
 	       {
-	       fprintf(fp,"%d ",HISTOGRAM[i][day][position]);
+	       fprintf(fp,"%u ",HISTOGRAM[i][day][position]);
 	       }
 	    }
 	 fprintf(fp,"\n");
@@ -1437,6 +1737,29 @@ else
 }
 
 /***************************************************************/
+
+int HashPhKey(key)
+
+char *key;
+
+{ int hash;
+
+/* Don't really know how to do this for the best yet,
+   so just use a list of likely names as long as this
+   is experimental .. */
+
+for (hash = 0; hash < PH_LIMIT; hash++)
+   {
+   if (strstr(key,PH_BINARIES[hash]) == 0)
+      {
+      return hash;
+      }
+   }
+
+return hash;
+}
+
+/***************************************************************/
 /* Linking simplification                                      */
 /***************************************************************/
 
@@ -1448,5 +1771,15 @@ int maxrecurse;
 struct stat *sb;
 
 {
- return true;
+return true;
+}
+
+/***************************************************************/
+
+int Repository(file,repository)
+
+char *file, *repository;
+
+{
+ return false;
 }

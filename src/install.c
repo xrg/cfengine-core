@@ -345,6 +345,10 @@ switch (ScanVariable(CURRENTITEM))
    case cfexcludecp:
                   PrependItem(&VEXCLUDECOPY,value,CLASSBUFF);
                   break;
+
+   case cfsinglecp:
+                  PrependItem(&VSINGLECOPY,value,CLASSBUFF);
+                  break;
 		  
    case cfexcludeln:
                   PrependItem(&VEXCLUDELINK,value,CLASSBUFF);
@@ -1594,9 +1598,7 @@ if (! IsInstallable(CLASSBUFF))
    return;
    }
 
-Debug1("Installing item (%s) in  list for homeservers (%s) in group (%s)\n",item,CLASSBUFF,GROUPBUFF);
-
-AppendItem(&VHOMESERVERS,item,CLASSBUFF);
+AppendItem(&VHOMESERVERS,VBUFF,CLASSBUFF);
 }
 
 /*******************************************************************/
@@ -1612,7 +1614,9 @@ if (! IsInstallable(CLASSBUFF))
    return;
    }
 
-AppendItem(&VBINSERVERS,item,CLASSBUFF);
+ExpandVarstring(item,VBUFF,""); 
+
+AppendItem(&VBINSERVERS,VBUFF,CLASSBUFF);
 }
 
 /*******************************************************************/
@@ -1665,7 +1669,7 @@ ExpandVarstring(from,VBUFF,"");
 
 ExpandVarstring(to,buffer,"");
 
-if (strlen(VBUFF) > 1)
+if (strlen(buffer) > 1)
    { 
    DeleteSlash(buffer);
    }
@@ -1701,7 +1705,7 @@ ExpandVarstring(ELSECLASSBUFFER,buffer,"");
 
 if ((ptr->elsedef = strdup(buffer)) == NULL)
    {
-   FatalError("Memory Allocation failed for Installrequied() #2");
+   FatalError("Memory Allocation failed xxx");
    }
  
 AddInstallable(ptr->defines);
@@ -1741,7 +1745,8 @@ ptr->nofile = DEADLINKS;
 ptr->log = LOGP;
 ptr->inform = INFORMP;
 ptr->done = 'n';
-
+ptr->scope = strdup(CONTEXTID);
+ 
 VLINKTOP = ptr;
 
 if (ptr->recurse != 0)
@@ -1829,6 +1834,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    ptr->type = LINKTYPE;
    ptr->next = NULL;
    ptr->copy = VCPLNPARSE;
+   ptr->nofile = DEADLINKS;
    ptr->exclusions = VEXCLUDEPARSE;
    ptr->inclusions = VINCLUDEPARSE;
    ptr->ignores = VIGNOREPARSE;
@@ -1836,7 +1842,8 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    ptr->log = LOGP;
    ptr->inform = INFORMP;
    ptr->done = 'n';
-
+   ptr->scope = strdup(CONTEXTID);
+ 
    VCHLINKTOP = ptr;
 
    if (ptr->recurse != 0 && strcmp(ptr->to,"linkchildren") == 0)
@@ -1859,73 +1866,84 @@ char *path;
 int freespace;
 
 { struct Disk *ptr;
-  char buffer[bufsize];
+  char buffer[bufsize],*sp;
+  struct TwoDimList *tp = NULL;
 
-Debug1("Installing item (%s) in the required list\n",path);
 
-if ( ! IsInstallable(CLASSBUFF))
+Build2DListFromVarstring(&tp,path,'/');
+    
+Set2DList(tp);
+
+for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    {
-   InitializeAction();
-   Debug1("Not installing %s, no match\n",path);
-   return;
-   }
-
-VBUFF[0] = '\0';
-ExpandVarstring(path,VBUFF,"");
-
-if ((ptr = (struct Disk *)malloc(sizeof(struct Disk))) == NULL)
-   {
-   FatalError("Memory Allocation failed for InstallRequired() #1");
-   }
-
-if ((ptr->name = strdup(VBUFF)) == NULL)
-   {
-   FatalError("Memory Allocation failed for InstallRequired() #2");
-   }
-
-if ((ptr->classes = strdup(CLASSBUFF)) == NULL)
-   {
-   FatalError("Memory Allocation failed for InstallRequired() #2");
-   }
-
-ExpandVarstring(ALLCLASSBUFFER,buffer,"");
-
-if ((ptr->define = strdup(buffer)) == NULL)
-   {
-   FatalError("Memory Allocation failed for Installrequied() #2");
-   }
-
-ExpandVarstring(ELSECLASSBUFFER,buffer,"");
-
-if ((ptr->elsedef = strdup(buffer)) == NULL)
-   {
-   FatalError("Memory Allocation failed for Installrequied() #2");
-   }
+   Debug1("Installing item (%s) in the required list\n",sp);
+   
+   if ( ! IsInstallable(CLASSBUFF))
+      {
+      InitializeAction();
+      Debug1("Not installing %s, no match\n",sp);
+      return;
+      }
+   
+   VBUFF[0] = '\0';
+   ExpandVarstring(sp,VBUFF,"");
+   
+   if ((ptr = (struct Disk *)malloc(sizeof(struct Disk))) == NULL)
+      {
+      FatalError("Memory Allocation failed for InstallRequired() #1");
+      }
+   
+   if ((ptr->name = strdup(VBUFF)) == NULL)
+      {
+      FatalError("Memory Allocation failed for InstallRequired() #2");
+      }
+   
+   if ((ptr->classes = strdup(CLASSBUFF)) == NULL)
+      {
+      FatalError("Memory Allocation failed for InstallRequired() #2");
+      }
+   
+   ExpandVarstring(ALLCLASSBUFFER,buffer,"");
+   
+   if ((ptr->define = strdup(buffer)) == NULL)
+      {
+      FatalError("Memory Allocation failed for Installrequied() #2");
+      }
+   
+   ExpandVarstring(ELSECLASSBUFFER,buffer,"");
+   
+   if ((ptr->elsedef = strdup(buffer)) == NULL)
+      {
+      FatalError("Memory Allocation failed for Installrequied() #2");
+      }
+   
+   if (VREQUIRED == NULL)                 /* First element in the list */
+      {
+      VREQUIRED = ptr;
+      }
+   else
+      {
+      VREQUIREDTOP->next = ptr;
+      }
+   
+   AddInstallable(ptr->define);
+   AddInstallable(ptr->elsedef);
+   
+   ptr->freespace = freespace;
+   ptr->next = NULL;
+   ptr->log = LOGP;
+   ptr->inform = INFORMP;
+   ptr->done = 'n'; 
+   ptr->scope = strdup(CONTEXTID);
  
-if (VREQUIRED == NULL)                 /* First element in the list */
-   {
-   VREQUIRED = ptr;
-   }
-else
-   {
-   VREQUIREDTOP->next = ptr;
-   }
-
-AddInstallable(ptr->define);
-AddInstallable(ptr->elsedef);
- 
-ptr->freespace = freespace;
-ptr->next = NULL;
-ptr->log = LOGP;
-ptr->inform = INFORMP;
-ptr->done = 'n'; 
-
 /* HvB : Bas van der Vlies */
-ptr->force = FORCE;
+   ptr->force = FORCE;
+   
+   VREQUIREDTOP = ptr;
+   }
 
-VREQUIREDTOP = ptr;
-
-InitializeAction();
+Delete2DList(tp);
+InitializeAction(); 
 }
 
 /*******************************************************************/
@@ -1988,7 +2006,9 @@ else
 
 ptr->readonly = readonly;
 ptr->next = NULL;
-
+ ptr->done = 'n';
+ ptr->scope = strdup(CONTEXTID);
+ 
 if (VMOUNTABLESTOP == NULL)                 /* First element in the list */
    {
    VMOUNTABLES = ptr;
@@ -2048,7 +2068,9 @@ ptr->next = NULL;
 ptr->deletedir = deldir;  /* t/f - true false */
 ptr->deletefstab = delfstab;
 ptr->force = force;
-ptr->done = 'n'; 
+ptr->done = 'n';
+ptr->scope = strdup(CONTEXTID);
+
 VUNMOUNTTOP = ptr;
 }
 
@@ -2107,7 +2129,8 @@ else
    }
 
 ptr->next = NULL;
-ptr->done = 'n'; 
+ptr->done = 'n';
+ptr->scope = strdup(CONTEXTID); 
 VMISCMOUNTTOP = ptr;
 }
 
@@ -2199,6 +2222,9 @@ switch (action)
                   AppendScript(CURRENTPATH,VTIMEOUT,USESHELL,VUIDNAME,VGIDNAME);
 		  break;
 
+   case alerts:
+       		  AppendItem(&VALERTS,CURRENTITEM,CLASSBUFF);
+                  break;
    case interfaces:
                   AppendInterface(VIFNAME,DESTINATION,CURRENTPATH);
 		  break;
@@ -2307,8 +2333,22 @@ if ((strcmp(value,"false") == 0) || (strcmp(value,"off") == 0))
    return;
    }
 
-printf("Switch %s=(true/false)|(on/off)",name); 
-yyerror("Illegal switch value");
+if ((strcmp(value,"timestamp") == 0))
+   {
+   *pflag = 's';
+   return;
+   }
+ 
+ if (ACTION == image)
+    {
+    printf("Switch %s=(true/false/timestamp)|(on/off)",name); 
+    yyerror("Illegal switch value");
+    }
+ else
+    {
+    printf("Switch %s=(true/false)|(on/off)",name); 
+    yyerror("Illegal switch value");
+    }
 }
 
 /*******************************************************************/
@@ -2467,6 +2507,7 @@ if ( ! IsInstallable(CLASSBUFF))
     }
 
  ptr->done = 'n';
+ ptr->scope = strdup(CONTEXTID);
  ptr->recurse = 0;
  ptr->useshell = 'y';
  ptr->binary = 'n';
@@ -2561,6 +2602,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
          {
 	 case EditUmask:
 	     HandleUmask(data);
+	     ptr->umask = UMASK;
 	 case EditIgnore:
 	     PrependItem(&(ptr->ignores),data,CF_ANYCLASS);
 	     break;
@@ -2770,6 +2812,7 @@ if (VIFLISTTOP == NULL)                 /* First element in the list */
 
 ifp->next = NULL;
 ifp->done = 'n';
+ifp->scope = strdup(CONTEXTID); 
  
 VIFLISTTOP = ifp;
  
@@ -2915,6 +2958,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    ptr->preview = PREVIEW;
    ptr->next = NULL;
    ptr->done = 'n';
+   ptr->scope = strdup(CONTEXTID);
 
    ExpandVarstring(ALLCLASSBUFFER,VBUFF,"");
    
@@ -3040,6 +3084,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    ptr->log = LOGP;
    ptr->inform = INFORMP;
    ptr->done = 'n';
+   ptr->scope = strdup(CONTEXTID);
    ptr->action = PROACTION;
    
    VDISABLETOP = ptr;
@@ -3167,7 +3212,8 @@ ptr->filters = NULL;
 ptr->inform = INFORMP;
 ptr->plus_flags = PLUSFLAG;
 ptr->minus_flags = MINUSFLAG;
-ptr->done = 'n'; 
+ptr->done = 'n';
+ptr->scope = strdup(CONTEXTID); 
  
 ptr->next = NULL;
 VMAKEPATHTOP = ptr;
@@ -3688,6 +3734,7 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
    ptr->plus_flags = PLUSFLAG;
    ptr->minus_flags = MINUSFLAG;
    ptr->done = 'n';
+   ptr->scope = strdup(CONTEXTID);
 
    VFILETOP = ptr;
    Debug1("Installed file object %s\n",spl);
@@ -3798,61 +3845,62 @@ ptr->exclusions = VEXCLUDEPARSE;
 ptr->inclusions = VINCLUDEPARSE;
 ptr->filters = ptr->filters = VFILTERBUILD;
 ptr->done = 'n';
-
-   if (*uidname == '*')
-      {
-      ptr->uid = -1;      
-      }
-   else if (isdigit((int)*uidname))
-      {
-      sscanf(uidname,"%d",&uid);
-      if (uid == CF_NOUSER)
-	 {
-	 yyerror("Unknown or silly restart user id");
-	 return;
-	 }
-      else
-	 {
-	 ptr->uid = uid;
-	 }
-      }
-   else if ((pw = getpwnam(uidname)) == NULL)
+ptr->scope = strdup(CONTEXTID);
+ 
+if (*uidname == '*')
+   {
+   ptr->uid = -1;      
+   }
+else if (isdigit((int)*uidname))
+   {
+   sscanf(uidname,"%d",&uid);
+   if (uid == CF_NOUSER)
       {
       yyerror("Unknown or silly restart user id");
       return;
       }
    else
       {
-      ptr->uid = pw->pw_uid;
+      ptr->uid = uid;
       }
-
-   if (*gidname == '*')
-      {
-      ptr->gid = -1;
-      }
-   else if (isdigit((int)*gidname))
-      {
-      sscanf(gidname,"%d",&gid);
-      if (gid == CF_NOUSER)
-	 {
-	 yyerror("Unknown or silly restart group id");
-	 return;
-	 }
-      else
-	 {
-	 ptr->gid = gid;
-	 }
-      }
-   else if ((gw = getgrnam(gidname)) == NULL)
-      {
-      yyerror("Unknown or silly restart group id");
-      return;
-      }
-   else
-      {
-      ptr->gid = gw->gr_gid;
-      }
-
+   }
+ else if ((pw = getpwnam(uidname)) == NULL)
+    {
+    yyerror("Unknown or silly restart user id");
+    return;
+    }
+ else
+    {
+    ptr->uid = pw->pw_uid;
+    }
+ 
+ if (*gidname == '*')
+    {
+    ptr->gid = -1;
+    }
+ else if (isdigit((int)*gidname))
+    {
+    sscanf(gidname,"%d",&gid);
+    if (gid == CF_NOUSER)
+       {
+       yyerror("Unknown or silly restart group id");
+       return;
+       }
+    else
+       {
+       ptr->gid = gid;
+       }
+    }
+ else if ((gw = getgrnam(gidname)) == NULL)
+    {
+    yyerror("Unknown or silly restart group id");
+    return;
+    }
+ else
+    {
+    ptr->gid = gw->gr_gid;
+    }
+ 
 VPROCTOP = ptr;
 InitializeAction();
 AddInstallable(ptr->defines);
@@ -4033,6 +4081,7 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
    ptr->next = NULL;
    ptr->backup = IMAGEBACKUP;
    ptr->done = 'n';
+   ptr->scope = strdup(CONTEXTID);
    
    if (strlen(LOCALREPOS) > 0)
       {
@@ -4988,13 +5037,16 @@ if (rec != INFINITERECURSE && strncmp("home/",ptr->path,5) == 0) /* Is this a su
       }
    }
 
-ptr->done = 'n'; 
+ptr->done = 'n';
+ptr->scope = strdup(CONTEXTID); 
 ptr->tidylist = NULL;
 ptr->maxrecurse = rec + no_of_links;
 ptr->next = NULL;
 ptr->exclusions = VEXCLUDEPARSE;
 ptr->ignores = VIGNOREPARSE;      
-   
+
+VEXCLUDEPARSE = NULL; 
+VIGNOREPARSE = NULL;      
 VTIDYTOP = ptr;
 
 AddTidyItem(path,wild,rec+no_of_links,age,travlinks,tidysize,type,ldirs,tidydirs,classes);
@@ -5011,6 +5063,7 @@ char type, ldirs,*classes, travlinks;
 
 { char varbuff[bufsize];
   struct Tidy *ptr;
+  struct Item *ip;
 
 Debug1("AddTidyItem(%s,pat=%s,size=%d)\n",path,wild,tidysize);
 
@@ -5029,7 +5082,19 @@ for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
    if (strcmp(ptr->path,varbuff) == 0)
       {
       PrependTidy(&(ptr->tidylist),wild,rec,age,travlinks,tidysize,type,ldirs,tidydirs,classes);
+
+      for (ip = VEXCLUDEPARSE; ip != NULL; ip=ip->next)
+	 {
+	 AppendItem(&(ptr->exclusions),ip->name,ip->classes);
+	 }
       
+      for (ip = VIGNOREPARSE; ip != NULL; ip=ip->next)
+	 {
+	 AppendItem(&(ptr->ignores),ip->name,ip->classes);
+	 }
+
+      DeleteItemList(VEXCLUDEPARSE);
+      DeleteItemList(VIGNOREPARSE);
       /* Must have the maximum recursion level here */
 
       if (rec == INFINITERECURSE || ((ptr->maxrecurse < rec) && (ptr->maxrecurse != INFINITERECURSE)))

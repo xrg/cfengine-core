@@ -705,3 +705,26 @@ buffer[i] = '\0';
 
 return buffer;
 }
+
+
+/*********************************************************************/
+
+void CreateEmptyFile(name)
+
+char *name;
+
+{ FILE *fp;
+
+if ((fp = fopen(name,"w")) == NULL)
+   {
+   snprintf(OUTPUT,bufsize,"Cannot create file %s",name);
+   CfLog(cfverbose,OUTPUT,"fopen");
+   return;
+   }
+
+fclose(fp);
+}
+
+
+/*********************************************************************/
+

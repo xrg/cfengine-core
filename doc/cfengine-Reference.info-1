@@ -1,4 +1,4 @@
-This is cfengine-Reference.info, produced by makeinfo version 4.0 from
+This is cfengine-Reference.info, produced by makeinfo version 4.3 from
 cfengine-Reference.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.0.4 for version 2.0.4
-as last updated 28 August 2002.
+   This manual corresponds to CFENGINE Edition 2.0.5 for version 2.0.5
+as last updated 15 February 2003.
 
 * Menu:
 
@@ -333,6 +333,7 @@ Cfagent reference
 * Special variables::
 * Cfengine classes::
 * acl::
+* alerts::
 * binservers::
 * broadcast::
 * control::
@@ -658,6 +659,9 @@ internal variables.
      This variable is identical to `$(faculty)' and may be used
      interchangeably.
 
+`smtpserver'
+     The name of the host to which mail output should be sent.
+
 `split'
      The character on which list variables are split (see the reference
      manual).
@@ -885,7 +889,7 @@ variable._ The dots in this string will be replaced by underscores.
      OR is the weakest operator.
 
 
-File: cfengine-Reference.info,  Node: acl,  Next: binservers,  Prev: Cfengine classes,  Up: Cfagent reference
+File: cfengine-Reference.info,  Node: acl,  Next: alerts,  Prev: Cfengine classes,  Up: Cfagent reference
 
 acl
 ===
@@ -1228,7 +1232,51 @@ one DCE/DFS ACL:
              }
 
 
-File: cfengine-Reference.info,  Node: binservers,  Next: broadcast,  Prev: acl,  Up: Cfagent reference
+File: cfengine-Reference.info,  Node: alerts,  Next: binservers,  Prev: acl,  Up: Cfagent reference
+
+alerts
+======
+
+   Alerts are messages that are printed when classes become activated.
+Alerts can quote special functions, like `ShowState()'.  Alerts cannot
+belong to the class `any'.
+
+     alerts:
+     
+        class::
+     
+           QUOTED MESSAGE
+           ShowState(PARAMETER)
+   For example:
+
+
+     alerts:
+     
+       nfsd_in_high_dev2::
+     
+       "High NFS server access rate 2dev at $(host) value $(value_nfsd_in) av $(average_nfsd_in) pm $(stddev_nfsd_in)"
+       ShowState(incoming.nfs)
+     
+     
+     
+      # ROOT PROCS
+     
+       anomaly_hosts.RootProcs_high_dev2::
+     
+        "RootProc anomaly high 2 dev on $(host) value $(value_rootprocs) av $(average_rootprocs) pm $(stddev_rootprocs)"
+       ShowState(procs)
+
+   The `ShowState()' function reports on state gathered by the cfenvd
+daemon.
+     ShowState(incoming.smtp)
+     ShowState(outgoing.smtp)
+     ShowState(incoming.www)
+     ShowState(outgoing.www)
+     ShowState(procs)
+     ShowState(users)
+
+
+File: cfengine-Reference.info,  Node: binservers,  Next: broadcast,  Prev: alerts,  Up: Cfagent reference
 
 binservers
 ==========
@@ -1362,6 +1410,7 @@ cfengine.
 * addclasses::
 * addinstallable::
 * AllowRedefinitionOf::
+* AutoDefine::
 * BinaryPaddingChar::
 * ChecksumDatabase::
 * ChecksumUpdates::
@@ -1401,7 +1450,9 @@ cfengine.
 * sensiblecount::
 * sensiblesize::
 * showactions::
+* singlecopy::
 * site::
+* Smtpserver::
 * SplayTime::
 * split::
 * spooldirectories::

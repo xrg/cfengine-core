@@ -203,6 +203,9 @@ extern char VFQNAME[];
 extern char VUQNAME[];
 extern char LOGFILE[];
 
+extern struct Item *VEXCLUDECACHE;
+extern struct Item *VSINGLECOPY;
+extern struct Item *VAUTODEFINE;
 extern struct Item *VEXCLUDECOPY;
 extern struct Item *VEXCLUDELINK;
 extern struct Item *VCOPYLINKS;
@@ -224,6 +227,7 @@ extern struct Mountables *VMOUNTABLES;  /* Points to the list of mountables */
 extern struct Mountables *VMOUNTABLESTOP;
 extern flag  MOUNT_RO;                  /* mount directory readonly */
 
+extern struct Item *VALERTS;
 extern struct Item *VMOUNTED;
 extern struct Tidy *VTIDY;               /* Points to the list of tidy specs */
 extern struct Disk *VREQUIRED;              /* List of required file systems */

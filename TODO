@@ -1,4 +1,3 @@
-0-  Hr00_Q1::  Q1,Q2,Q3...etc time classes
 
 1. Out of processes strategy. Get cfexecd to remember processes
    which might be killed, as well as highest process number
@@ -12,9 +11,8 @@
 3. cfenvd remember last state and record persistence time of
    anomalies
 
-4. cfenvd save netstat record when there is an anomaly?, or save
-   last process table and netstat, so we can get addresses.
-
+4. Variables from modules cannot be used in all places because they
+are defined at runtime
 
 5. What about remembering the stable core of processes, regardless
    of who owns them? i.e. like pH og cfenvd on the ps table?? Then
@@ -24,16 +22,14 @@
 
    import: subroutine xxx
 
-6. UDP packets in cfenvd
-
-7. log files in cfenvd
+7. SNMP CLI module
 
 9. Rewrite ifconfig stuff
     - routing sockets
     - find out the configured IP address for DHCP clients
     - what happens on multi-homed hosts
 
-
+10: way of escaping list separator in strings
 
 splint *.c +unixlib
 

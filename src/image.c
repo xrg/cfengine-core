@@ -46,8 +46,9 @@ int maxrecurse;
 { struct stat statbuf, deststatbuf;
   char newfrom[bufsize];
   char newto[bufsize];
-  int save_uid, save_gid;
+  int save_uid, save_gid, succeed;
   struct Item *namecache = NULL;
+  struct Item *ptr, *ptr1;
   struct cfdirent *dirp;
   CFDIR *dirh;
 
@@ -158,7 +159,30 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
       {
       continue;
       }
-   
+
+   if (!S_ISDIR(statbuf.st_mode))
+      {
+      succeed = 0;
+      for (ptr = VEXCLUDECACHE; ptr != NULL; ptr=ptr->next)
+          {
+          if ((strncmp(ptr->name,newto,strlen(newto)) == 0) && (strncmp(ptr->classes,ip->classes,strlen(ip->classes)) == 0))
+             {
+             succeed = 1;
+             }
+          }
+
+      if (succeed)
+         {
+         snprintf(OUTPUT,bufsize*2,"Skipping excluded file %s class %s\n",newto,ip->classes);
+         CfLog(cfverbose,OUTPUT,"");
+         continue;
+         }
+      else
+         {
+         Debug2("file %s class %s was not excluded\n",newto,ip->classes);
+         }
+      }
+
    if (S_ISDIR(statbuf.st_mode))
       {
       if (TRAVLINKS || ip->linktype == 'n')
@@ -616,10 +640,11 @@ struct Image *ip;
 { char linkbuf[bufsize], *lastnode;
   struct stat deststatbuf;
   struct Link empty;
+  struct Item *ptr, *ptr1;
   int succeed, silent = false, enforcelinks;
   mode_t srcmode = sourcestatbuf.st_mode;
   int ok_to_copy = false, found;
-  
+
 Debug2("ImageCopy(%s,%s,+%o,-%o)\n",sourcefile,destfile,ip->plus,ip->minus);
 
 if ((strcmp(sourcefile,destfile) == 0) && (strcmp(ip->server,"localhost") == 0))
@@ -628,19 +653,37 @@ if ((strcmp(sourcefile,destfile) == 0) && (strcmp(ip->server,"localhost") == 0))
    CfLog(cfinform,OUTPUT,"");
    return;
    }
- 
 empty.defines = NULL;
 empty.elsedef = NULL;
- 
 if (IgnoredOrExcluded(image,sourcefile,ip->inclusions,ip->exclusions))
    {
    return;
    }
 
+succeed = 0;
+for (ptr = VEXCLUDECACHE; ptr != NULL; ptr=ptr->next)
+    {
+    if ((strncmp(ptr->name,destfile,strlen(destfile)) == 0) && (strncmp(ptr->classes,ip->classes,strlen(ip->classes)) == 0))
+       {
+       succeed = 1;
+       }
+    }
+
+if (succeed)
+   {
+   snprintf(OUTPUT,bufsize*2,"Skipping excluded file %s class %s\n",destfile,ip->classes);
+   CfLog(cfverbose,OUTPUT,"");
+   return;
+   }
+else
+   {
+   Debug2("file %s class %s was not excluded\n",destfile,ip->classes);
+   }
+
+
 if (ip->linktype != 'n')
    {
    lastnode=ReadLastNode(sourcefile);
-   
    if (IsWildItemIn(VLINKCOPIES,lastnode) || IsWildItemIn(ip->symlink,lastnode))
       {
       Verbose("cfengine: copy item %s marked for linking instead\n",sourcefile);
@@ -773,6 +816,49 @@ if (found == -1)
 	 stat(destfile,&deststatbuf);
 	 CheckCopiedFile(destfile,ip->plus,ip->minus,fixall,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
 	 AddMultipleClasses(ip->defines);
+
+	 for (ptr = VAUTODEFINE; ptr != NULL; ptr=ptr->next)
+	     {
+	     if (strncmp(ptr->name,destfile,strlen(destfile)) == 0) 
+		{
+		snprintf(OUTPUT,bufsize*2,"cfengine: image %s was set to autodefine %s\n",ptr->name,ptr->classes);
+		CfLog(cfinform,OUTPUT,"");
+		AddMultipleClasses(ptr->classes);
+		}
+	     }
+
+         succeed = 1;
+
+	 for (ptr = VSINGLECOPY; ptr != NULL; ptr=ptr->next)
+	    {
+	    if ((strcmp(ptr->name,"on") != 0) && (strcmp(ptr->name,"true") != 0))
+	       {
+	       continue;
+	       }
+	    
+	    if (strncmp(ptr->classes,ip->classes,strlen(ip->classes)) == 0)
+	       {
+	       for (ptr1 = VEXCLUDECACHE; ptr1 != NULL; ptr1=ptr1->next)
+		  {
+		  if ((strncmp(ptr1->name,destfile,strlen(destfile)) == 0) && (strncmp(ptr1->classes,ip->classes,strlen(ip->classes)) == 0))
+		     {
+		     succeed = 0;		
+		     }
+		  }
+	       }
+	    }
+	 
+         if (succeed)
+            {
+            Debug("Appending image %s class %s to singlecopy list\n",destfile,ip->classes);
+            AppendItem(&VEXCLUDECACHE,destfile,ip->classes);
+            }
+         else
+            {
+            snprintf(OUTPUT,bufsize*2,"cfengine: error with singlecopy list\n");
+            CfLog(cfverbose,OUTPUT,"");
+            }
+
          }
       else
 	 {
@@ -976,11 +1062,49 @@ else
 
 	 AddMultipleClasses(ip->defines);
 
+	 for (ptr = VAUTODEFINE; ptr != NULL; ptr=ptr->next)
+	     {
+	     if (strncmp(ptr->name,destfile,strlen(destfile)) == 0)
+		{
+		snprintf(OUTPUT,bufsize*2,"cfengine: image %s was set to autodefine %s\n",ptr->name,ptr->classes);
+		CfLog(cfinform,OUTPUT,"");
+		AddMultipleClasses(ptr->classes);
+		}
+	     }	
+
          if (CopyReg(sourcefile,destfile,sourcestatbuf,deststatbuf,ip))
             {
             stat(destfile,&deststatbuf);
 	    CheckCopiedFile(destfile,ip->plus,ip->minus,fixall,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
-            }
+
+            succeed = 1;
+            for (ptr = VSINGLECOPY; ptr != NULL; ptr=ptr->next)
+                {
+                if (strncmp(ptr->classes,ip->classes,strlen(ip->classes)) == 0)
+                   {
+                   for (ptr1 = VEXCLUDECACHE; ptr1 != NULL; ptr1=ptr1->next)
+                       {
+                       if ((strncmp(ptr1->name,destfile,strlen(destfile)) == 0) && (strncmp(ptr1->classes,ip->classes,strlen(ip->classes)) == 0))
+                          {
+                          succeed = 0;
+                          }
+                       }
+                    }
+                 }
+
+            if (succeed)
+               {
+               snprintf(OUTPUT,bufsize*2,"cfengine: appending image %s class %s to singlecopy list\n",destfile,ip->classes);
+               CfLog(cfverbose,OUTPUT,"");
+               AppendItem(&VEXCLUDECACHE,destfile,ip->classes);
+               }
+            else
+               {
+               snprintf(OUTPUT,bufsize*2,"cfengine: error with singlecopy list\n");
+               CfLog(cfverbose,OUTPUT,"");
+               }
+
+	   }	
 	 else
 	    {
 	    AddMultipleClasses(ip->failover);
@@ -1037,6 +1161,33 @@ else
    else
       {
       CheckCopiedFile(destfile,ip->plus,ip->minus,fixall,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
+
+      succeed = 1;
+      for (ptr = VSINGLECOPY; ptr != NULL; ptr=ptr->next)
+          {
+          if (strncmp(ptr->classes,ip->classes,strlen(ip->classes)) == 0)
+             {
+             for (ptr1 = VEXCLUDECACHE; ptr1 != NULL; ptr1=ptr1->next)
+                 {
+                 if ((strncmp(ptr1->name,destfile,strlen(destfile)) == 0) && (strncmp(ptr1->classes,ip->classes,strlen(ip->classes)) == 0))
+                    {
+                    succeed = 0;
+                    }
+                 }
+              }
+           }
+
+      if (succeed)
+         {
+         snprintf(OUTPUT,bufsize*2,"cfengine: appending image %s class %s to singlecopy list\n",destfile,ip->classes);
+         CfLog(cfverbose,OUTPUT,"");
+         AppendItem(&VEXCLUDECACHE,destfile,ip->classes);
+         }
+      else
+         {
+         snprintf(OUTPUT,bufsize*2,"cfengine: error with singlecopy list\n");
+         CfLog(cfverbose,OUTPUT,"");
+         }
 
       Debug("cfengine: image file is up to date: %s\n",destfile);
       AddMultipleClasses(ip->elsedef);
@@ -1328,9 +1479,21 @@ else
 
 Debug("CopyReg succeeded in copying to %s to %s\n",source,new);
 
-if (IMAGEBACKUP == 'y')
+if (IMAGEBACKUP != 'n')
    {
+   char stamp[bufsize];
+   time_t STAMPNOW;
+   STAMPNOW = time((time_t *)NULL);
+   
+   sprintf(stamp, "_%d_%s", CFSTARTTIME, CanonifyName(ctime(&STAMPNOW)));
+
    strcpy(backup,dest);
+
+   if (IMAGEBACKUP == 's')
+      {
+      strcat(backup,stamp);
+      }
+
    strcat(backup,CF_SAVED);
 
    if (IsItemIn(VREPOSLIST,backup))

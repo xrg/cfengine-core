@@ -66,6 +66,8 @@ char *VVNAMES[] =
    "min",
    "allclasses",
    "excludecopy",
+   "singlecopy",
+   "autodefine",
    "excludelink",
    "copylinks",
    "linkcopies",
@@ -200,8 +202,9 @@ char *string, *buffer, *bserver;
   int len;
   time_t tloc;
   
-buffer[0] = '\0';
 
+bzero(buffer,bufsize);
+ 
 if (string == 0 || strlen(string) == 0)
    {
    return false;
@@ -593,7 +596,14 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
 
                    Debug("Currently non existent variable $(%s)\n",currentitem);
 
-		   snprintf(name,maxvarsize,"${%s}",currentitem);
+		   if (varstring == '}')
+		      {
+		      snprintf(name,maxvarsize,"${%s}",currentitem);
+		      }
+		   else
+		      {
+		      snprintf(name,maxvarsize,"$(%s)",currentitem);
+		      }
                    strcat(buffer,name);
          }
 

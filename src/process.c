@@ -45,7 +45,7 @@ struct Item **procdata;
 char *psopts;
 
 { FILE *pp;
-  char pscomm[maxlinksize];
+  char pscomm[maxlinksize], imgbackup;
 
 snprintf(pscomm,maxlinksize,"%s %s",VPSCOMM[VSYSTEMHARDCLASS],psopts);
 
@@ -66,6 +66,13 @@ while (!feof(pp))
    }
 
 cfpclose(pp);
+
+snprintf(VBUFF,maxvarsize,"%s/cf_procs",WORKDIR);
+
+imgbackup = IMAGEBACKUP;
+IMAGEBACKUP = 'n'; 
+SaveItemList(*procdata,VBUFF,"none");
+IMAGEBACKUP = imgbackup; 
 return true;
 }
 
@@ -163,7 +170,7 @@ if (strlen(pp->restart) != 0)
 
    sscanf(pp->restart,"%255s",argz);
 
-   if ((stat(argz,&statbuf) == -1) || (statbuf.st_mode & 0111 == 0))
+   if ((stat(argz,&statbuf) != -1) && (statbuf.st_mode & 0111 == 0))
       {
       snprintf(OUTPUT,bufsize,"Restart sequence %s could not be executed (mode=%o), while searching (%s)",pp->restart,statbuf.st_mode &7777,pp->expr);
       CfLog(cferror,OUTPUT,"");

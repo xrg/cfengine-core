@@ -40,6 +40,7 @@ void HandleReturnsZero ARGLIST((char* args,char *value));
 void HandleIPRange ARGLIST((char* args,char *value));
 void HandleIsDefined ARGLIST((char* args,char *value));
 void HandleStrCmp ARGLIST((char* args,char *value));
+void HandleShowState ARGLIST((char* args,char *value));
 
 /*********************************************************************/
 
@@ -104,6 +105,9 @@ switch (fn = FunctionStringToCode(name))
        break;
    case fn_strcmp:
        HandleStrCmp(args,value);
+       break;
+   case fn_showstate:
+       HandleShowState(args,value);
        break;
    }
  
@@ -496,3 +500,63 @@ if (strcmp(nfrom,nto) == 0)
     strcpy(value,CF_NOCLASS);
     } 
 }
+
+
+
+/*********************************************************************/
+
+void HandleShowState(args,value)
+
+char *args,*value;
+
+{ struct stat statbuf;
+  char buffer[bufsize]; 
+  FILE *fp;
+  int i = 0;
+  
+if (PARSING)
+   {
+   return;
+   }
+  
+if (ACTION != alerts)
+   {
+   yyerror("Use of ShowState(type) outside of alert declaration");
+   }
+
+Debug("ShowState(%s)\n",args); 
+
+snprintf(buffer,bufsize,"%s/cf_%s",WORKDIR,args);
+
+if (stat(buffer,&statbuf) == 0)
+   {
+   if ((fp = fopen(buffer,"r")) == NULL)
+      {
+      Verbose("Could not open state %s\n",buffer);
+      return;
+      }
+
+   while(!feof(fp))
+      {
+      buffer[0] = '\0';
+      
+      fgets(buffer,bufsize,fp);
+      i++;
+
+      if (strlen(buffer) > 0)
+	 {
+	 printf("%s: (%2d) %s",VPREFIX,i,buffer);
+	 }
+      }
+   
+   fclose(fp);
+   snprintf(buffer,bufsize,"State of %s recorded at %s\n",args,ctime(&statbuf.st_mtime));
+   strcpy(value,buffer);
+   }
+else 
+   {
+   snprintf(buffer,bufsize,"State parameter %s is not known or recorded\n",args);
+   strcpy(value,buffer);
+   }
+}
+

@@ -240,7 +240,7 @@ do
                     break;
       case solaris:
       case solarisx86:
-      case hp10:
+
       case hp:      
                     if (buf3[0] == '/')
                        {
@@ -310,7 +310,7 @@ for (ptr = VMAKEPATH; ptr != NULL; ptr=ptr->next)
       continue;
       }
 
-   if (ptr->done == 'y')
+   if (ptr->done == 'y' || strcmp(ptr->scope,CONTEXTID))
       {
       continue;
       }
@@ -391,7 +391,7 @@ for (lp = VCHLINK; lp != NULL; lp = lp->next)
       continue;
       }
 
-   if (lp->done == 'y')
+   if (lp->done == 'y' || strcmp(lp->scope,CONTEXTID))
       {
       continue;
       }
@@ -502,7 +502,7 @@ for (lp = VLINK; lp != NULL; lp = lp->next)
       continue;
       }
 
-   if (lp->done == 'y')
+   if (lp->done == 'y' || strcmp(lp->scope,CONTEXTID))
       {
       continue;
       }
@@ -903,7 +903,7 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
       continue;
       }
 
-   if (rp->done == 'y')
+   if (rp->done == 'y' || strcmp(rp->scope,CONTEXTID))
       {
       continue;
       }
@@ -1143,7 +1143,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
       continue;
       }
 
-   if (ptr->done == 'y')
+   if (ptr->done == 'y' || strcmp(ptr->scope,CONTEXTID))
       {
       continue;
       }
@@ -1420,7 +1420,7 @@ for (ptr = VFILE; ptr != NULL; ptr=ptr->next)
       continue;
       }
 
-   if (ptr->done == 'y')
+   if (ptr->done == 'y' || strcmp(ptr->scope,CONTEXTID))
       {
       continue;
       }
@@ -1517,7 +1517,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
       continue;
       }
 
-   if (dp->done == 'y')
+   if (dp->done == 'y' || strcmp(dp->scope,CONTEXTID))
       {
       continue;
       }
@@ -1756,7 +1756,6 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
 
 /*******************************************************************/
 
-
 void MountHomeBinServers()
 
 { struct Mountables *mp;
@@ -1789,7 +1788,7 @@ for (mp = VMOUNTABLES; mp != NULL; mp=mp->next)
    {
    sscanf(mp->filesystem,"%[^:]:%s",host,mountdir);
 
-   if (mp->done == 'y')
+   if (mp->done == 'y' || strcmp(mp->scope,CONTEXTID))
       {
       continue;
       }
@@ -1885,7 +1884,7 @@ for (mp = VMISCMOUNT; mp != NULL; mp=mp->next)
    {
    sscanf(mp->from,"%[^:]:%s",host,mountdir);
 
-   if (mp->done == 'y')
+   if (mp->done == 'y' || strcmp(mp->scope,CONTEXTID))
       {
       continue;
       }
@@ -1959,7 +1958,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
       continue;
       }
    
-   if (ptr->done == 'y')
+   if (ptr->done == 'y' || strcmp(ptr->scope,CONTEXTID))
       {
       continue;
       }
@@ -2060,11 +2059,12 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
 	 strcat (VBUFF,":");
 	 
 	 item = LocateNextItemContaining(filelist,VBUFF);
-	 
-	 if (item->next == NULL)
+
+	 if (item == NULL || item->next == NULL)
 	    {
 	    snprintf(OUTPUT,bufsize*2,"Bad format in %s\n",VFSTAB[aix]);
 	    CfLog(cferror,OUTPUT,"");
+	    continue;
 	    }
 	 
 	 DeleteItem(&filelist,item->next);
@@ -2127,7 +2127,7 @@ Debug("Editfile()\n");
   
 for (ptr=VEDITLIST; ptr!=NULL; ptr=ptr->next)
    {
-   if (ptr->done == 'y')
+   if (ptr->done == 'y' || strcmp(ptr->scope,CONTEXTID))
       {
       continue;
       }
@@ -2313,7 +2313,14 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
 
    for (ip = VIMAGE; ip != NULL; ip=ip->next)
       {
-      if (strcmp(svp->name,ip->server) != 0)  /* group together similar hosts so */
+      ExpandVarstring(ip->server,server,NULL);
+      ExpandVarstring(ip->path,path,NULL);
+      ExpandVarstring(ip->destination,destination,NULL);
+      
+      Verbose("Checking copy from %s:%s to %s\n",server,path,destination);
+      
+
+      if (strcmp(svp->name,server) != 0)  /* group together similar hosts so */
 	 {                                    /* can can do multiple transactions */
 	 continue;                            /* on one connection */
 	 }
@@ -2323,7 +2330,7 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
 	 continue;
 	 }
 
-      if (ip->done == 'y')
+      if (ip->done == 'y' || strcmp(ip->scope,CONTEXTID))
 	 {
 	 continue;
 	 }
@@ -2347,12 +2354,6 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
    
       IMAGEBACKUP = true;
 
-      ExpandVarstring(ip->server,server,NULL);
-      ExpandVarstring(ip->path,path,NULL);
-      ExpandVarstring(ip->destination,destination,NULL);
-      
-      Verbose("Checking copy from %s:%s to %s\n",server,path,destination);
-      
       savesilent = SILENT;
       
       if (strcmp(ip->action,"silent") == 0)
@@ -2447,7 +2448,7 @@ for (ifp = VIFLIST; ifp != NULL; ifp=ifp->next)
       continue;
       }
 
-   if (ifp->done == 'y')
+   if (ifp->done == 'y' || strcmp(ifp->scope,CONTEXTID))
       {
       continue;
       }
@@ -2537,7 +2538,7 @@ for (pp = VPROCLIST; pp != NULL; pp=pp->next)
       continue;
       }
 
-   if (pp->done == 'y')
+   if (pp->done == 'y' || strcmp(pp->scope,CONTEXTID))
       {
       continue;
       }
@@ -2680,9 +2681,12 @@ if (IsItemIn(VMOUNTED,buf))
    {
    if (! SILENT || !WARNINGS)
       {
-      snprintf(OUTPUT,bufsize*2,"WARNING mount item %s\n",buf);
-      CfLog(cferror,OUTPUT,"");
-      CfLog(cferror,"is mounted multiple times!\n","");
+      if (!strstr(buf,"swap"))
+	 {
+	 snprintf(OUTPUT,bufsize*2,"WARNING mount item %s\n",buf);
+	 CfLog(cferror,OUTPUT,"");
+	 CfLog(cferror,"is mounted multiple times!\n","");
+	 }
       }
    }
 
@@ -2732,7 +2736,6 @@ switch (VSYSTEMHARDCLASS)
                  break;
    case ultrx:   snprintf(fstab,bufsize,"%s@%s:%s:%s:0:0:%s:%s",rmountpt,host,mountpt,mode,VNFSTYPE,opts);
                  break;
-   case hp10:
    case hp:      snprintf(fstab,bufsize,"%s:%s %s \t %s \t %s,%s 0 0",host,rmountpt,mountpt,VNFSTYPE,mode,opts);
                  break;
    case aix:     snprintf(fstab,bufsize,"%s:\n\tdev\t= %s\n\ttype\t= %s\n\tvfs\t= %s\n\tnodename\t= %s\n\tmount\t= true\n\toptions\t= %s,%s\n\taccount\t= false\n\n",mountpt,rmountpt,VNFSTYPE,VNFSTYPE,host,mode,opts);
@@ -2795,6 +2798,8 @@ if (MatchStringInFstab(mountpt))
       cleaner.deletedir   = 'n';
       cleaner.deletefstab = 'y';
       cleaner.force       = 'n';
+      cleaner.done        = 'n';
+      cleaner.scope       = CONTEXTID;
       cleaner.next        = NULL;
 
       VUNMOUNT = &cleaner;
@@ -3037,18 +3042,29 @@ void *argptr;
  /* matching file or directory                                    */
 
  
-{ char *rest, extract[bufsize], construct[bufsize],varstring[bufsize], *work;
+{ char *rest, extract[bufsize], construct[bufsize],varstring[bufsize],cleaned[bufsize], *work;
   struct stat statbuf;
   DIR *dirh;
   struct dirent *dp;
-  int count, isdir = false;
+  int count, isdir = false,i,j;
 
 varstring[0] = '\0';
 
-ExpandVarstring(wildpath,varstring,NULL);
+bzero(cleaned,bufsize); 
+ 
+for (i = j = 0; wildpath[i] != '\0'; i++,j++)
+   {
+   if ((i > 0) && (wildpath[i] == '/') && (wildpath[i-1] == '/'))
+      {
+      j--;
+      }
+   cleaned[j] = wildpath[i];
+   }
+
+ExpandVarstring(cleaned,varstring,NULL);
 work = varstring;
 
-Debug2("ExpandWildCardsAndDo(%s=%s)\n",wildpath,work);
+Debug2("ExpandWildCardsAndDo(%s=%s)\n",cleaned,work);
  
 extract[0] = '\0';
 

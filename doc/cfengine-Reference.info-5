@@ -1,4 +1,4 @@
-This is cfengine-Reference.info, produced by makeinfo version 4.0 from
+This is cfengine-Reference.info, produced by makeinfo version 4.3 from
 cfengine-Reference.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -1140,6 +1140,7 @@ shell commands from this section.
                chdir=DIRECTORY
                chroot=DIRECTORY
                preview=TRUE/false
+               inform=false/TRUE
 
 The user and group ID's of the process can be set to restrict the
 permissions of the shellcommand to another user only if cfengine is

@@ -292,7 +292,10 @@ int  StoreInFile;
   char *sp,forceipv4='n';
   FILE  *fp;
   struct Image addresses;
-
+#ifdef HAVE_GETADDRINFO
+  struct addrinfo query, *response=NULL, *ap;
+#endif
+  
 CONN = NewAgentConn();
 
 if (StoreInFile)
@@ -312,6 +315,34 @@ port = ParseHostname(host,parsed_host);
  
 FileVerbose(fp, "Connecting to server %s to port %d with options %s %s\n",parsed_host,port,options,CFRUNOPTIONS);
 
+#ifdef HAVE_GETADDRINFO
+
+ Debug("Using v6 compatible lookup...\n"); 
+
+bzero(&query,sizeof(struct addrinfo));
+query.ai_family = AF_UNSPEC;
+query.ai_socktype = SOCK_STREAM;
+query.ai_flags = AI_PASSIVE;
+ 
+if ((err=getaddrinfo(parsed_host,NULL,&query,&response)) != 0)
+   {
+   snprintf(OUTPUT,bufsize,"Unable to lookup %s (%s)",parsed_host,gai_strerror(err));
+   CfLog(cferror,OUTPUT,"");
+   }
+ 
+for (ap = response; ap != NULL; ap = ap->ai_next)
+   {
+   snprintf(CONN->remoteip,cfmaxiplen,"%s",sockaddr_ntop(ap->ai_addr));
+   break;
+   }
+
+if (response != NULL)
+   {
+   freeaddrinfo(response);
+   }
+
+#else 
+ 
 if ((hp = gethostbyname(parsed_host)) == NULL)
    {
    printf("Unknown host: %s\n", parsed_host);
@@ -321,7 +352,6 @@ if ((hp = gethostbyname(parsed_host)) == NULL)
    FileOutput(fp, fopl_error, "Unknown host\n");
    exit(1);
    }
-
  
 bzero(&raddr,sizeof(raddr));
  
@@ -348,11 +378,14 @@ raddr.sin_family = AF_INET;
 
 snprintf(CONN->remoteip,cfmaxiplen,"%s",inet_ntoa(raddr.sin_addr));
 
+#endif
+ 
 addresses.trustkey = 'n'; 
 addresses.encrypt = 'n';
 addresses.server = strdup(parsed_host);
  
 snprintf(sendbuffer,bufsize,"root-%s",CONN->remoteip);
+
  
 if (HavePublicKey(sendbuffer) == NULL)
    {

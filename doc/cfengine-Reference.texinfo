@@ -447,6 +447,7 @@ for a few days more and try again.
 * Special variables::           
 * Cfengine classes::            
 * acl::                         
+* alerts::                      
 * binservers::                  
 * broadcast::                   
 * control::                     
@@ -807,6 +808,9 @@ replaces @samp{/} (see the reference manual).
 This variable is identical to @code{$(faculty)} and may be used interchangeably.
 @vindex $(site) 
 
+@item smtpserver
+The name of the host to which mail output should be sent.
+
 @item split
 The character on which list variables are split (see the reference manual).
 @vindex split
@@ -1124,7 +1128,7 @@ OR is the weakest operator.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node acl, binservers, Cfengine classes, Cfagent reference
+@node acl, alerts, Cfengine classes, Cfagent reference
 @section acl
 @cindex Access control lists
 @cindex ACLs
@@ -1525,13 +1529,67 @@ acl:
         @}
 @end smallexample
 
+@c -------------------------------------------------------------------------------
+@c SECTION
+@c -------------------------------------------------------------------------------
 
+@node alerts, binservers, acl, Cfagent reference
+@section alerts
+@cindex Alerts
+@vindex alerts
+
+Alerts are messages that are printed when classes become activated.
+Alerts can quote special functions, like @code{ShowState()}.
+Alerts cannot belong to the class @code{any}.
+@smallexample
+
+alerts:
+
+   class::
+
+      @var{quoted message}
+      ShowState(@var{parameter})
+
+@end smallexample
+For example:
+@cindex ShowState()
+
+@smallexample
+
+alerts:
+
+  nfsd_in_high_dev2::
+
+  "High NFS server access rate 2dev at $(host) value $(value_nfsd_in) av $(average_nfsd_in) pm $(stddev_nfsd_in)"
+  ShowState(incoming.nfs)
+
+
+
+ # ROOT PROCS
+
+  anomaly_hosts.RootProcs_high_dev2::
+
+   "RootProc anomaly high 2 dev on $(host) value $(value_rootprocs) av $(average_rootprocs) pm $(stddev_rootprocs)"
+  ShowState(procs)
+
+@end smallexample
+
+The @code{ShowState()} function reports on state gathered by the cfenvd
+daemon.
+@smallexample
+ShowState(incoming.smtp)
+ShowState(outgoing.smtp)
+ShowState(incoming.www)
+ShowState(outgoing.www)
+ShowState(procs)
+ShowState(users)
+@end smallexample
 
 @c -------------------------------------------------------------------------------
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node binservers, broadcast, acl, Cfagent reference
+@node binservers, broadcast, alerts, Cfagent reference
 @section binservers
 @cindex Binary servers, defining
 @cindex Defining a binary server
@@ -1708,6 +1766,7 @@ The meaning of each of these lines is described below.
 * addclasses::                  
 * addinstallable::              
 * AllowRedefinitionOf::         
+* AutoDefine::                  
 * BinaryPaddingChar::           
 * ChecksumDatabase::            
 * ChecksumUpdates::             
@@ -1747,7 +1806,9 @@ The meaning of each of these lines is described below.
 * sensiblecount::               
 * sensiblesize::                
 * showactions::                 
+* singlecopy::                  
 * site::                        
+* Smtpserver::                  
 * SplayTime::                   
 * split::                       
 * spooldirectories::            
@@ -2152,7 +2213,7 @@ made in imported files always come later than things in the main program.
 @c SUBSECTION
 @c .....................................................
 
-@node AllowRedefinitionOf, BinaryPaddingChar, addinstallable, control
+@node AllowRedefinitionOf, AutoDefine, addinstallable, control
 @subsection AllowRedefinitionOf
 
 Normally cfagent warns about redefinitions of variables during parsing.
@@ -2176,7 +2237,29 @@ cfrep = ( blo )
 @c SUBSECTION
 @c .....................................................
 
-@node BinaryPaddingChar, ChecksumDatabase, AllowRedefinitionOf, control
+@node AutoDefine, BinaryPaddingChar, AllowRedefinitionOf, control
+@subsection AutoDefine
+
+@smallexample
+
+control:
+
+   hup_syslogd::
+
+     autodefine = ( /etc/syslog.conf )
+
+@end smallexample
+
+Referring to the class that prefixes it, @code{autodefine} will define the class
+if the names file is copied in any statement.  This helps to avoid having
+to write a large number of file-specific copy: lines with define=class
+configured.
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node BinaryPaddingChar, ChecksumDatabase, AutoDefine, control
 @subsection BinaryPaddingChar
 @smallexample
 BinaryPaddingChar = ( \0 )
@@ -3177,7 +3260,7 @@ default value for this variable is 1000 bytes.
 @c SUBSECTION
 @c .....................................................
 
-@node showactions, site, sensiblesize, control
+@node showactions, singlecopy, sensiblesize, control
 @subsection ShowActions
 
 @vindex ShowActions
@@ -3195,7 +3278,52 @@ the cfengine output. It will be of little interest to humans.
 @c SUBSECTION
 @c .....................................................
 
-@node site, SplayTime, showactions, control
+@node singlecopy, site, showactions, control
+@subsection SingleCopy
+
+@smallexample
+
+	singlecopy = ( on )
+
+@end smallexample
+
+If @code{singlecopy} is defined the behavior of copy: is modified so that a file will
+only be copied once, helping to achieve hierarchical or "most specific"
+file copy overrides, provided that the most specific file occurs first. 
+With the following file structure on a host running cfservd:
+
+	/dist/hosts/loghost1.example.com/etc/syslog.conf
+	/dist/solaris/etc/syslog.conf
+	/dist/all/etc/syslog.conf
+
+The configuration:
+
+@smallexample
+control:
+	singlecopy = ( on ) 
+
+copy: 
+  
+ /dist/$@{fqhost@}       dest=/ inform=true syslog=true r=inf server=disthost
+ /dist/$@{ostype@}       dest=/ inform=true syslog=true r=inf server=disthost
+ /dist/all             dest=/ inform=true syslog=true r=inf server=disthost
+
+@end smallexample
+
+@noindent Would result in:
+
+@smallexample
+/dist/hosts/loghost1.example.com/etc/syslog.conf being copied to loghost1.example.com
+/dist/solaris/etc/syslog.conf being copied to Solaris systems
+/dist/all/etc/syslog.conf being copied to all other systems
+@end smallexample
+
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node site, Smtpserver, singlecopy, control
 @subsection site/faculty
 @cindex site
 @vindex site
@@ -3221,12 +3349,27 @@ into a configuration for any site.
 @code{faculty} is a synonym for @code{site}.  The two names
 may be used interchangeably.
 
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node Smtpserver, SplayTime, site, control
+@subsection smtpserver
+
+@example
+  smtpserver = ( @var{mailhost} )
+@end example
+
+This variable specified the destination for Email sent by cfexecd.
+@cindex Mailhost
+@cindex smtpserver
+
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 
-@node SplayTime, split, site, control
+@node SplayTime, split, Smtpserver, control
 @subsection SplayTime
 
 @example
@@ -3588,8 +3731,8 @@ copy:
                         mode=@var{mode}
                         owner=@var{owner} 
                         group=@var{group} 
-                        action=@var{silent/fix}
-                        backup=@b{true}@var{/false}
+                        action=@var{warn/silent/fix}
+                        backup=@b{true}@var{/false/timestamp}
                         repository=@var{backup directory}
                         stealth=@var{true/on/@b{false/off}}
                         timestamps=@b{preserve/keep}
@@ -3645,11 +3788,11 @@ and group of the images are specified as in the @code{files} function
 @xref{files}. 
 
 @item action
-The action may take the values @code{warn} or
-@code{silent}. The default action is @code{fix}, i.e.  copy files. If @code{warn}
-is specified, only a warning is issued about files which require
-updating. If @code{silent} is given, then cfengine will copy the files
-but not report the fact. 
+The action may take the values @code{warn}, @code{silent} or
+@code{fix}. The default action is @code{fix}, i.e.  copy files. If
+@code{warn} is specified, only a warning is issued about files which
+require updating. If @code{silent} is given, then cfengine will copy
+the files but not report the fact.
 
 @item force
 If set to `true', this option causes cfengine to copy files regardless
@@ -3668,7 +3811,9 @@ occurs; the file is moved to filename@file{.cf-moved}.
 
 @item backup
 If the @code{backup} option is set to "false", cfengine
-will not make a backup copy of the file before copying.
+will not make a backup copy of the file before copying. The default value is "true".
+If the option "timestamp" is chosen, a unique timestamp will be appended
+to the saved filename.
 @cindex Backup of files in copy
 @vindex backup=
 @cindex Switching off backup in copy
@@ -4620,46 +4765,46 @@ Default is on.
 
 @item BeginGroupIfDefined @var{quoted-string}
 The lines following, up to the first @code{EndGroup}
-are executed if the quoted class is defined.
+are executed if the quoted class is defined. Edit groups may be nested.
 @cindex @code{BeginGroupIfDefined}
 
 @item BeginGroupIfNotDefined @var{quoted-string}
 The lines following, up to the first @code{EndGroup}
-are executed if the quoted class is not defined.
+are executed if the quoted class is not defined. Edit groups may be nested.
 @cindex @code{BeginGroupIfNotDefined}
 
 @item BeginGroupIfFileExists @var{quoted-string}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted filename exists (can be statted).
 Files which are not readable by the running process are
-for all intents and purposes non-existent.
+for all intents and purposes non-existent. Edit groups may be nested.
 @cindex @code{BeginGroupIfFileExists}
 
 @item BeginGroupIfFileIsNewer @var{quoted-string}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted filename is newer than the file being
-edited.
+edited. Edit groups may be nested.
 @cindex @code{BeginGroupIfFileIsNewer}
 
 @item BeginGroupIfNoLineContaining @var{quoted-string}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted string does not appear in
-any line in the file.
+any line in the file. Edit groups may be nested.
 
 @item BeginGroupIfNoLineMatching @var{quoted-regex}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted regular expression
-does not match any line in the file.
+does not match any line in the file. Edit groups may be nested.
 
 @item BeginGroupIfNoMatch @var{quoted-regex}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted regular expression does
-not match the current line.
+not match the current line. Edit groups may be nested.
 
 @item BeginGroupIfNoSuchLine @var{quoted-string}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted literal string
-does not match any line in the file.
+does not match any line in the file. Edit groups may be nested.
 
 @item BreakIfLineMatches  @var{quoted-regex}
 Terminates further editing of the current
@@ -4733,6 +4878,16 @@ given expression, a warning is only printed in
 verbose mode, but all edits are immediately
 abandoned.
 
+@item EditBackup
+The default is to produce time-stamped backups of files; this may be
+coded explicitly by setting to "timestamp" or "stamp". If set to "false"
+or "off", no backup is kept of the edited file. If the value is set to
+"single" or "one" then only the last version of the file is kept, overwriting
+any previously saved versions.
+@smallexample
+   EditBackup "single"
+@end smallexample 
+@cindex EditBackup
 
 @item EditMode "Binary"
 If set to binary, the file will be edited as if it were a non-ASCII file.
@@ -4809,8 +4964,9 @@ pointer is not set, the file is inserted at the start
 of the file.
 
 @item InsertLine @var{quoted-string}
-Inserts the quoted string as a line at the current
-position in the file. After the insert, the file
+
+Inserts the quoted string as a line after the current
+line pointer in the file. After the insert, the line
 pointer is incremented by one so that subsequent
 inserted lines are placed after the first.
 This should probably be used in conjunction with the
@@ -4819,13 +4975,15 @@ inserted on every run.
 
 
 @item LocateLineMatching @var{quoted-regex}
-Moves the current-position pointer to the start
-of the line matching the quoted regular expression.
-If there is no match, a warning is only issued in
-verbose mode, but all editing is immediately
-aborted. See also @code{WarnIfNoLineMatching}
-so that you can get an explicit warning, even
-out of verbose mode.
+
+Moves the current line pointer to the line matching the
+quoted regular expression. If there is no match, a
+warning is only issued in verbose mode, but all 
+editing is immediately aborted. See also
+@code{WarnIfNoLineMatching} so that you can get an 
+explicit warning, even out of verbose mode.
+
+
 
 @item   PercentCommentLinesContaining @var{quoted-string}
 Add a @samp{%} to the start of any line containing the quoted string.
@@ -5191,19 +5349,21 @@ unique abbreviation.
 @vindex owner
 @vindex g=
 @vindex group
-A file object is interpreted as a directory if you write it in the
-following form: @file{/directory-path/.}. i.e. a trailing dot signifies
-a directory. This then becomes the same as the @code{directory} command.
 
 @table @code
 
-@item @var{/directory}
-This is the only obligatory part of a file action.  This is a directory
-at which a file search should begin.  This may be a single file or a
-directory.  The recursion specifier may be used to force cfengine to
-descend into subdirectories in a controlled fashion, starting from this
-point, checking files there also.  The wildcard @code{home} may also be
-used.  @xref{home directive}.
+@item @var{/file-object}
+This is the only obligatory part of a file action. This may be a
+single file or a directory.  If it is a directory then it indicates
+where does the file search should begin.  The recursion specifier may
+be used to force cfengine to descend into subdirectories in a
+controlled fashion, starting from this point, checking files there
+also.  The wildcard @code{home} may also be used.  @xref{home
+directive}.
+
+A file object is interpreted as a directory if you write it in the
+following form: @file{/directory-path/.}. i.e. a trailing dot signifies
+a directory. This then becomes the same as the @code{directory} command.
 @cindex home wildcard
 @cindex Wildcard home
 @vindex home
@@ -7287,6 +7447,7 @@ shellcommands:
           chdir=@var{directory}
           chroot=@var{directory}
           preview=@var{true}/@b{false}
+          inform=@b{false}@var{/true}
 
 @end smallexample
 @end cartouche
@@ -7464,6 +7625,11 @@ A wildcard or filename to match the files you wish to be deleted.  The
 pattern may contain the special symbols @samp{?} which matches a single
 character and @samp{*} which matches any number of characters as in the
 shell. These two options are synonymous, as of version 2.0.x.
+Note that, this pattern is processed as a filter before any other filter
+and, for safety reasons, it defaults to nothing. Thus, if you want to
+use a filter to select the files, you should set @samp{pattern=*}, else
+the filter will not see any files at all.
+@cindex pattern= and filtering
 @vindex Wildcards
 
 @item exclude=@var{wildcard}
@@ -8057,7 +8223,7 @@ trusted, if cfservd does not know their public key. This
 allows public keys to be exchanged. Cfservd will not automatically
 accept a public key from a host it does not know, since the
 key will be used to assert strong authentication later.
-Once a pubic key has been associated with an IP address, it
+Once a public key has been associated with an IP address, it
 will never be updated, unless the existing key is deleted by hand.
 
 @smallexample

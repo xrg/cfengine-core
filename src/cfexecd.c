@@ -85,7 +85,7 @@ char MAILTO[bufsize];
 void CheckOptsAndInit ARGLIST((int argc,char **argv));
 void StartServer ARGLIST((int argc, char **argv));
 void Syntax ARGLIST((void));
-void ExitCleanly ARGLIST((void));
+void *ExitCleanly ARGLIST((void));
 void *LocalExec ARGLIST((void *dummy));
 void MailResult ARGLIST((char *filename, char *to));
 int ScheduleRun ARGLIST((void));
@@ -150,7 +150,8 @@ char **argv;
   int c;
 
 ld_library_path[0] = '\0';
-  
+
+sprintf(VPREFIX, "cfexecd"); 
 openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_DAEMON);
 
 while ((c=getopt_long(argc,argv,"L:d:f:vhpFV1g",CFDOPTIONS,&optindex)) != EOF)
@@ -249,13 +250,7 @@ if ((!NO_FORK) && (fork() != 0))
 
 if (!NO_FORK)
   {
-#ifdef HAVE_SETSID
-  setsid();
-#endif 
-  fclose (stdin);
-  fclose (stdout);
-  fclose (stderr);
-  closelog();
+  ActAsDaemon(0);
   }
 
 signal(SIGINT,(void *)ExitCleanly);
@@ -503,7 +498,7 @@ return false;
 /* Level 3                                                           */
 /*********************************************************************/
 
-void ExitCleanly()
+void *ExitCleanly()
 
 {
 ReleaseCurrentLock();
@@ -643,7 +638,7 @@ else
 
    if (!md)
       {
-      return NULL;
+      return 0;
       }
    
    EVP_DigestInit(&context,md);
@@ -661,7 +656,7 @@ else
    return(md_len);
    }
 
-return NULL; 
+return 0; 
 }
 
 
@@ -702,9 +697,10 @@ if ((fp=fopen(prev_file,"r")) != NULL)
 	 {
 	 /* Current file will now be the previous result */
 	 unlink(prev_file);
-	 if ( symlink(filename, prev_file) == -1 ) 
+	 if (symlink(filename, prev_file) == -1) 
 	    {
-            perror("symlink");
+  	    snprintf(OUTPUT,bufsize,"Could not link %s and %s",filename,prev_file);
+	    CfLog(cfinform,OUTPUT,"symlink");
             }
 
          return(1);
@@ -718,11 +714,14 @@ else
    /* no previous file */
    if ( symlink(filename, prev_file) == -1 ) 
       {
-      perror("symlink");
+      snprintf(OUTPUT,bufsize,"Could not link %s and %s",filename,prev_file);
+      CfLog(cfinform,OUTPUT,"symlink");
       }
    return(1);
    }
 }
+
+/***********************************************************************/
 
 void MailResult(file,to)
 
@@ -805,7 +804,7 @@ if ((hp = gethostbyname(VMAILSERVER)) == NULL)
 
 if ((server = getservbyname("smtp","tcp")) == NULL)
    {
-   perror("getservbyname");
+   CfLog(cferror,"Unable to lookup smtp service","getservbyname");
    return;
    }
 

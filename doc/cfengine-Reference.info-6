@@ -1,4 +1,4 @@
-This is cfengine-Reference.info, produced by makeinfo version 4.0 from
+This is cfengine-Reference.info, produced by makeinfo version 4.3 from
 cfengine-Reference.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -60,7 +60,10 @@ lower case and abbreviated by any unique abbreviation.
      The pattern may contain the special symbols `?' which matches a
      single character and `*' which matches any number of characters as
      in the shell. These two options are synonymous, as of version
-     2.0.x.
+     2.0.x.  Note that, this pattern is processed as a filter before
+     any other filter and, for safety reasons, it defaults to nothing.
+     Thus, if you want to use a filter to select the files, you should
+     set `pattern=*', else the filter will not see any files at all.
 
 `exclude=WILDCARD'
      This does not work for the home directive; use the global ignore
@@ -531,7 +534,7 @@ TrustKeysFrom
 cfservd does not know their public key. This allows public keys to be
 exchanged. Cfservd will not automatically accept a public key from a
 host it does not know, since the key will be used to assert strong
-authentication later.  Once a pubic key has been associated with an IP
+authentication later.  Once a public key has been associated with an IP
 address, it will never be updated, unless the existing key is deleted
 by hand.
 

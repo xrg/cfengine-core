@@ -150,7 +150,11 @@ extern int errno;
 
 #ifdef HAVE_MALLOC_H
 #ifndef OPENBSD
+#ifdef __FreeBSD__
+#include <stdlib.h>
+#else
 #include <malloc.h>
+#endif
 #endif
 #endif
 
@@ -283,8 +287,7 @@ extern int errno;
 
 /*******************************************************************/
 
-#define AVDB_FILE     "av.db"
-#define DISTDB_FILE   "dist.db"
+#define AVDB_FILE     "cf_averages.db"
 #define STATELOG_FILE "state_log"
 #define ENV_NEW_FILE  "env_data.new"
 #define ENV_FILE      "env_data"
@@ -339,12 +342,14 @@ extern int errno;
 
 #define BYTEWIDTH 8
 
-#define GRAINS 64
-#define ATTR   11
-#define CFWEEK (7.0*24.0*3600.0)
+/*****************************************************************************/
+
+#define GRAINS   64
+#define ATTR     11
+#define PH_LIMIT 10
+#define CFWEEK   (7.0*24.0*3600.0)
 #define MEASURE_INTERVAL (5.0*60.0)
 
-/*****************************************************************************/
 
 struct Averages
    {
@@ -352,15 +357,19 @@ struct Averages
    double expect_rootprocs;
    double expect_otherprocs;
    double expect_diskfree;
+   double expect_loadavg;
    double expect_incoming[ATTR];
    double expect_outgoing[ATTR];
-
+   double expect_pH[PH_LIMIT];
+      
    double var_number_of_users;
    double var_rootprocs;
    double var_otherprocs;
    double var_diskfree;
+   double var_loadavg;
    double var_incoming[ATTR];
    double var_outgoing[ATTR];
+   double var_pH[PH_LIMIT];      
    };
 
 /*******************************************************************/
@@ -509,7 +518,8 @@ enum builtin
    fn_returnszero,
    fn_iprange,
    fn_isdefined,
-   fn_strcmp
+   fn_strcmp,
+   fn_showstate
    };
 
 /*******************************************************************/
@@ -518,6 +528,7 @@ enum actions
    {
    none,
    control,
+   alerts,
    groups,
    image,
    resolve,
@@ -557,7 +568,6 @@ enum classes
    soft,
    sun4,
    ultrx,
-   hp10,
    hp,
    aix,
    linuxx,
@@ -726,6 +736,8 @@ enum vnames
    cfmin,
    cfallclass,
    cfexcludecp,
+   cfsinglecp,
+   cfautodef,
    cfexcludeln,
    cfcplinks,
    cflncopies,
@@ -993,6 +1005,7 @@ struct CompressedArray
 struct Interface
    {
    char done;
+   char *scope;
    char *ifdev;
    char *netmask;
    char *broadcast;
@@ -1008,6 +1021,7 @@ struct Item
    char *name;
    char *classes;
    struct Item *next;
+   char *scope;
    };
 
 /*******************************************************************/
@@ -1027,6 +1041,7 @@ struct TwoDimList
 struct Process
    {
    char done;
+   char *scope;
    char           *expr;          /* search regex */
    char           *restart;       /* shell comm to be done after */
    char           *chdir;
@@ -1058,6 +1073,7 @@ struct Process
 struct Mountables
    {
    char         	done;
+   char                 *scope;
    char			readonly;	/* y/n - true false */
    char			*filesystem;
    char			*mountopts;
@@ -1070,6 +1086,7 @@ struct Tidy
    {
    int          maxrecurse;              /* sets maxval */
    char         done;       /* Too intensive in Tidy Pattern */
+   char         *scope;
    char        *path;
    struct Item *exclusions;
    struct Item *ignores;      
@@ -1104,6 +1121,7 @@ struct Tidy
 
 struct Mounted
    {
+   char *scope;
    char *name;
    char *on;
    char *options;
@@ -1115,6 +1133,7 @@ struct Mounted
 struct MiscMount
    {
    char done;
+   char *scope;
    char *from;
    char *onto;
    char *options;
@@ -1127,6 +1146,7 @@ struct MiscMount
 struct UnMount
    {
    char done;
+   char *scope;
    char *name;
    char *classes;
    char deletedir;  /* y/n - true false */
@@ -1140,6 +1160,7 @@ struct UnMount
 struct File
    {
    char   done;
+   char *scope;
    char   *path;
    char   *defines;
    char   *elsedef;
@@ -1170,6 +1191,7 @@ struct File
 struct Disk
    {
    char  done;
+   char *scope;
    char  *name;
    char  *classes;
    char  *define;
@@ -1186,6 +1208,7 @@ struct Disk
 struct Disable
    {
    char  done;
+   char *scope;
    char  *name;
    char  *classes;
    char  *type;
@@ -1207,6 +1230,7 @@ struct Disable
 struct Image
    {
    char   done;
+   char   *scope;
    char   *path;
    char   *destination;
    char   *server;
@@ -1321,6 +1345,7 @@ struct CFACE
 struct Link
    {
    char   done;
+   char   *scope;
    char   *from;
    char   *to;
    char   *classes;
@@ -1347,6 +1372,7 @@ struct Link
 struct Edit
    {
    char done;     /* Have this here, too dangerous in Edlist */
+   char *scope;
    char *fname;
    char *defines;
    char *elsedef;
@@ -1432,6 +1458,7 @@ struct Filter
 struct ShellComm
    {
    char              done;
+   char              *scope;
    char              *name;
    char              *classes;
    char              *chdir;

@@ -4,7 +4,7 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 sbindir=@sbindir@
 EDITOR="${EDITOR-vi}"
-CFINPUTS="${CFINPUTS-"@pkgdata@"}
+CFINPUTS="${CFINPUTS-"@pkgdata@"}"
 export EDITOR CFINPUTS
 NOPARSE="cf.preconf|cfd.conf"
 

@@ -417,6 +417,9 @@ struct Link *ptr;
   char to[bufsize],linkbuf[bufsize],saved[bufsize],absto[bufsize],*lastnode;
   struct UidList fakeuid;
   struct Image ip;
+  char stamp[bufsize];
+  time_t STAMPNOW;
+  STAMPNOW = time((time_t *)NULL);
 
 bzero(to,bufsize);
 bzero(&ip, sizeof(ip));
@@ -496,10 +499,6 @@ if (!nofile)
      return(false);  /* no error warning, since the higher level routine uses this */
      }
   }
-else
-   {
-   Verbose("Not checking whether link pointed object exists\n");
-   }
  
 Debug2("Trying to link %s -> %s (%s)\n",from,to,absto);
 
@@ -526,6 +525,10 @@ if (lstat(from,&buf) == 0)
 
       saved[0] = '\0';
       strcpy(saved,from);
+
+      sprintf(stamp, "_%d_%s", CFSTARTTIME, CanonifyName(ctime(&STAMPNOW)));
+      strcat(saved,stamp);
+      
       strcat(saved,CF_SAVED);
 
       if (rename(from,saved) == -1)
@@ -553,6 +556,10 @@ if (lstat(from,&buf) == 0)
 
       saved[0] = '\0';
       strcpy(saved,from);
+
+      sprintf(stamp, "_%d_%s", CFSTARTTIME, CanonifyName(ctime(&STAMPNOW)));
+      strcat(saved,stamp);
+
       strcat(saved,CF_SAVED);
       strcat(saved,".dir");
 
@@ -656,10 +663,9 @@ char *from, *to;
 struct Item *inclusions, *exclusions,*copy;
 short nofile;
 struct Link *ptr;
-/* global char LINKTO[] */
 
 { char *sp, *commonto, *commonfrom;
-  char buff[bufsize];
+  char buff[bufsize],linkto[bufsize];
   int levels=0;
   
 Debug2("RelativeLink(%s,%s)\n",from,to);
@@ -669,14 +675,14 @@ if (*to == '.')
    return LinkFiles(from,to,inclusions,exclusions,copy,nofile,ptr);
    }
 
-if (!CompressPath(LINKTO,to))
+if (!CompressPath(linkto,to))
    {
    snprintf(OUTPUT,bufsize*2,"Failed to link %s to %s\n",from,to);
    CfLog(cferror,OUTPUT,"");
    return false;
    }
 
-commonto = LINKTO;
+commonto = linkto;
 commonfrom = from;
 
 if (strcmp(commonto,commonfrom) == 0)
@@ -892,6 +898,9 @@ struct Link *ptr;
   char saved[bufsize], *lastnode;
   struct UidList fakeuid;
   struct Image ip;
+  char stamp[bufsize];
+  time_t STAMPNOW;
+  STAMPNOW = time((time_t *)NULL);
   
 for (lastnode = from+strlen(from); *lastnode != '/'; lastnode--)
    {
@@ -993,6 +1002,10 @@ if (ENFORCELINKS)
 
    saved[0] = '\0';
    strcpy(saved,from);
+
+   sprintf(stamp, "_%d_%s", CFSTARTTIME, CanonifyName(ctime(&STAMPNOW)));
+   strcat(saved,stamp);
+
    strcat(saved,CF_SAVED);
 
    if (rename(from,saved) == -1)

@@ -53,7 +53,7 @@ struct Image *ip;
 
 { int i, suspicious = true;
   struct stat statbuf; 
-  unsigned char *sp, newname[bufsize];
+  unsigned char *sp, newname[bufsize],vbuff[bufsize];
 
 if (strlen(nodename) < 1)
    {
@@ -103,15 +103,15 @@ for (sp = nodename; *sp != '\0'; sp++)
       }
    }
 
-strcpy(VBUFF,path);
-AddSlash(VBUFF);
-strcat(VBUFF,nodename); 
+strcpy(vbuff,path);
+AddSlash(vbuff);
+strcat(vbuff,nodename); 
 
 if (suspicious && NONALPHAFILES)
    {
    snprintf(OUTPUT,bufsize,"Suspicious filename %s in %s has no alphanumeric content (security)",CanonifyName(nodename),path);
    CfLog(cfsilent,OUTPUT,"");
-   strcpy(newname,VBUFF);
+   strcpy(newname,vbuff);
 
    for (sp = newname+strlen(path); *sp != '\0'; sp++)
       {
@@ -123,10 +123,10 @@ if (suspicious && NONALPHAFILES)
 
    strcat(newname,".cf-nonalpha");
    
-   snprintf(OUTPUT,bufsize,"Renaming file %s to %s",VBUFF,newname);
+   snprintf(OUTPUT,bufsize,"Renaming file %s to %s",vbuff,newname);
    CfLog(cfsilent,OUTPUT,"");
    
-   if (rename(VBUFF,newname) == -1)
+   if (rename(vbuff,newname) == -1)
       {
       CfLog(cfverbose,"Rename failed - foreign filesystem?\n","rename");
       }
@@ -139,9 +139,9 @@ if (suspicious && NONALPHAFILES)
 
 if (strstr(nodename,".") && (EXTENSIONLIST != NULL))
    {
-   if (cflstat(VBUFF,&statbuf,ip) == -1)
+   if (cflstat(vbuff,&statbuf,ip) == -1)
       {
-      snprintf(OUTPUT,bufsize,"Couldn't examine %s - foreign filesystem?\n",VBUFF);
+      snprintf(OUTPUT,bufsize,"Couldn't examine %s - foreign filesystem?\n",vbuff);
       CfLog(cfverbose,OUTPUT,"lstat");
       return true;
       }
@@ -185,15 +185,13 @@ snprintf(OUTPUT,bufsize,"Suspicous looking file object \"%s\" masquerading as hi
 CfLog(cfsilent,OUTPUT,"");
 Debug("Filename looks suspicious\n"); 
 
+/* removed if (EXTENSIONLIST==NULL) mb */ 
 
-if (EXTENSIONLIST == NULL)
+if (cflstat(vbuff,&statbuf,ip) == -1)
    {
-   if (cflstat(VBUFF,&statbuf,ip) == -1)
-      {
-      snprintf(OUTPUT,bufsize,"Couldn't stat %s",VBUFF);
-      CfLog(cfverbose,OUTPUT,"lstat");
-      return true;
-      }
+   snprintf(OUTPUT,bufsize,"Couldn't stat %s",vbuff);
+   CfLog(cfverbose,OUTPUT,"lstat");
+   return true;
    }
 
 if (S_ISLNK(statbuf.st_mode))
@@ -207,7 +205,7 @@ else if (S_ISDIR(statbuf.st_mode))
    CfLog(cfsilent,OUTPUT,"");
    }
 
-snprintf(OUTPUT,bufsize,"[%s] has size %d and full mode %o\n",nodename,statbuf.st_size,statbuf.st_mode);
+snprintf(OUTPUT,bufsize,"[%s] has size %ld and full mode %o\n",nodename,(unsigned long)(statbuf.st_size),(unsigned int)(statbuf.st_mode));
 CfLog(cfsilent,OUTPUT,"");
  
 return true;

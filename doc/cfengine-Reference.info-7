@@ -1,4 +1,4 @@
-This is cfengine-Reference.info, produced by makeinfo version 4.0 from
+This is cfengine-Reference.info, produced by makeinfo version 4.3 from
 cfengine-Reference.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -1026,8 +1026,8 @@ Variable Index
 * $(timezone):                           Special variables.
 * $(year):                               Special variables.
 * +:                                     groups.
-* -D option <1>:                         addclasses.
-* -D option:                             Cfengine classes.
+* -D option <1>:                         Cfengine classes.
+* -D option:                             addclasses.
 * -l <1>:                                tidy.
 * -l:                                    Syntax.
 * -L:                                    Single links.
@@ -1037,8 +1037,8 @@ Variable Index
 * .cfengine.rm:                          tidy.
 * /etc/host.conf:                        cf.preconf bootstrap file.
 * /var/cfengine/output:                  Cfexecd reference.
-* a= <1>:                                tidy.
-* a=:                                    Syntax.
+* a= <1>:                                Syntax.
+* a=:                                    tidy.
 * AccessedBefore():                      Evaluated classes.
 * action:                                Syntax.
 * actionsequence <1>:                    actionsequence.
@@ -1047,6 +1047,7 @@ Variable Index
 * AddInstallable:                        addinstallable.
 * addmounts:                             actionsequence.
 * age:                                   tidy.
+* alerts:                                alerts.
 * AllowUsers:                            AllowUsers.
 * backup=:                               copy.
 * binserver <1>:                         Single links.
@@ -1082,8 +1083,8 @@ Variable Index
 * files <1>:                             actionsequence.
 * files:                                 files.
 * filter:                                filters.
-* force= <1>:                            copy.
-* force=:                                disks.
+* force= <1>:                            disks.
+* force=:                                copy.
 * freespace= <1>:                        disks.
 * freespace=:                            required.
 * g=:                                    Syntax.
@@ -1109,8 +1110,8 @@ Variable Index
 * links <1>:                             links.
 * links:                                 actionsequence.
 * m=:                                    Syntax.
-* mailcheck <1>:                         actionsequence.
-* mailcheck:                             mailserver.
+* mailcheck <1>:                         mailserver.
+* mailcheck:                             actionsequence.
 * mailserver:                            mailserver.
 * MaxCfengines:                          Special variables.
 * miscmounts:                            miscmounts.
@@ -1123,8 +1124,8 @@ Variable Index
 * mountinfo:                             actionsequence.
 * mountpattern:                          mountpattern.
 * netconfig:                             actionsequence.
-* netmask <1>:                           control.
-* netmask:                               netmask.
+* netmask <1>:                           netmask.
+* netmask:                               control.
 * nfstype <1>:                           nfstype.
 * nfstype:                               control.
 * o=:                                    Syntax.
@@ -1149,25 +1150,24 @@ Variable Index
 * rotate=:                               disable.
 * scheduling:                            schedule.
 * SecureInput:                           secureinput.
-* sensiblecount:                         control.
 * SensibleCount:                         sensiblecount.
-* SensibleSize:                          sensiblesize.
+* sensiblecount:                         control.
 * sensiblesize:                          control.
+* SensibleSize:                          sensiblesize.
 * shellcommands:                         actionsequence.
 * ShowActions:                           showactions.
 * singlelinks:                           actionsequence.
-* site <1>:                              control.
-* site:                                  site.
+* site <1>:                              site.
+* site:                                  control.
 * SkipVerify:                            root=.
 * smtpserver:                            Cfexecd reference.
-* split <1>:                             split.
-* split:                                 Special variables.
+* split <1>:                             Special variables.
+* split:                                 split.
 * SpoolDirectories:                      spooldirectories.
 * SuspiciousNames:                       suspiciousnames.
 * sysadm <1>:                            control.
 * sysadm <2>:                            Cfexecd reference.
-* sysadm <3>:                            sysadm.
-* sysadm:                                Cfexecd reference.
+* sysadm:                                sysadm.
 * tidy <1>:                              actionsequence.
 * tidy:                                  tidy.
 * timezone:                              control.

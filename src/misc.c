@@ -269,8 +269,12 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    CfLog(cferror,OUTPUT,"db_open");
    return false;
    }
- 
+
+#ifdef CF_OLD_DB
 if ((errno = dbp->open(dbp,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+if ((errno = dbp->open(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#endif
    {
    snprintf(OUTPUT,bufsize*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
    CfLog(cferror,OUTPUT,"db_open");
@@ -842,14 +846,14 @@ if ((fp = fopen(DEBIAN_VERSION_FILENAME,"r")) == NULL)
 Verbose("Looking for Debian version...\n");
 switch (fscanf(fp, "%d.%d", &major, &release))
     {
-    case 1:
-        Verbose("This appears to be a Debian %u system..", major);
-        snprintf(classname, maxvarsize, "debian_%u", major);
+    case 2:
+        Verbose("This appears to be a Debian %u.%u system.", major, release);
+        snprintf(classname, maxvarsize, "debian_%u_%u", major, release);
         AddClassToHeap(classname);
         /* Fall-through */
-    case 2:
-        Verbose("This appears to be a Debian %u.%u system..", major, release);
-        snprintf(classname, maxvarsize, "debian_%u_%u", major, release);
+    case 1:
+        Verbose("This appears to be a Debian %u system.", major);
+        snprintf(classname, maxvarsize, "debian_%u", major);
         AddClassToHeap(classname);
         break;
     case 0:

@@ -1,4 +1,4 @@
-This is cfengine-Reference.info, produced by makeinfo version 4.0 from
+This is cfengine-Reference.info, produced by makeinfo version 4.3 from
 cfengine-Reference.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -21,8 +21,8 @@ Concept Index
 * !:                                     Cfengine classes.
 * --dry-run option:                      shellcommands.
 * -D option:                             addclasses.
+* -l option:                             tidy.
 * -L option:                             Single links.
-* -l option <1>:                         tidy.
 * -l option:                             Syntax.
 * -x option:                             cf.preconf bootstrap file.
 * .cfdisabled:                           disable.
@@ -42,6 +42,7 @@ Concept Index
 * Adding defined classes:                addclasses.
 * Adding new classes:                    cfrc resource file.
 * AFS:                                   nfstype.
+* Alerts:                                alerts.
 * allclasses variable:                   shellcommands.
 * AllowConnectionsFrom variable:         AllowConnectionsFrom.
 * AllowUsers in cfservd:                 AllowUsers.
@@ -59,8 +60,8 @@ Concept Index
 * Binary servers and links <1>:          Single links.
 * Binary servers and links:              Link Children.
 * Binary servers, defining:              binservers.
-* Binary servers, priority <1>:          binservers.
-* Binary servers, priority:              Single links.
+* Binary servers, priority <1>:          Single links.
+* Binary servers, priority:              binservers.
 * Bootstrap file:                        cf.preconf bootstrap file.
 * Broadcast address:                     broadcast.
 * Broadcasts to the cfengine service.:   cfrun.
@@ -91,10 +92,9 @@ Concept Index
 * Class decided by shell command:        groups.
 * Class dependencies:                    groups.
 * Class information, passing to scripts: shellcommands.
-* classes <1>:                           groups.
-* classes <2>:                           classes.
-* classes <3>:                           Cfengine classes.
-* classes:                               groups.
+* classes <1>:                           classes.
+* classes <2>:                           groups.
+* classes:                               Cfengine classes.
 * Classes, adding and defining:          addclasses.
 * Classes, compound:                     Cfengine classes.
 * Classes, defining and undefining:      Cfengine classes.
@@ -129,16 +129,16 @@ Concept Index
 * DeleteNonUserMail DeleteNonUserFiles:  deletenonuserfiles.
 * Deleting directories:                  tidy.
 * Deleting files:                        tidy.
-* Deleting stale links <1>:              Syntax.
-* Deleting stale links:                  tidy.
+* Deleting stale links <1>:              tidy.
+* Deleting stale links:                  Syntax.
 * DenyBadClocks variable:                DenyBadClocks.
 * DenyConnectionsFrom variable:          DenyConnectionsFrom.
 * Dependencies:                          groups.
 * Device boundaries:                     copy.
 * Device boundaries and files:           Recursion.
 * DFS:                                   nfstype.
-* DHCP <1>:                              DynamicAddresses.
-* DHCP:                                  actionsequence.
+* DHCP <1>:                              actionsequence.
+* DHCP:                                  DynamicAddresses.
 * Directories, deleting:                 tidy.
 * Directories, hidden:                   fileextension.
 * Directories, making:                   directories.
@@ -156,6 +156,7 @@ Concept Index
 * Dual homed hosts:                      interfaces.
 * Dynamic addresses:                     DynamicAddresses.
 * DynamicAddresses variable:             DynamicAddresses.
+* EditBackup:                            editfiles.
 * Empty files:                           tidy.
 * Emptying old nameservers from /etc/resolv.conf: emptyresolvconf.
 * Environment variable CFALLCLASSES:     Cfagent Runtime Options.
@@ -218,22 +219,23 @@ Concept Index
 * Kilobyte, filesize unit:               tidy.
 * Linkchildren <1>:                      Link Children.
 * Linkchildren:                          Files linkchildren.
-* Links and binary servers <1>:          Single links.
-* Links and binary servers:              Link Children.
+* Links and binary servers <1>:          Link Children.
+* Links and binary servers:              Single links.
 * Links, absolute:                       Single links.
-* Links, deleting stale <1>:             tidy.
-* Links, deleting stale:                 Syntax.
+* Links, deleting stale <1>:             Syntax.
+* Links, deleting stale:                 tidy.
 * Links, forcing for non-existent files: Single links.
 * Links, making:                         links.
 * Links, multiple:                       Multiple Links.
 * Links, removing dead:                  Single links.
 * Links, single:                         Single links.
-* Links, traversing in searches <1>:     Syntax.
-* Links, traversing in searches:         tidy.
+* Links, traversing in searches <1>:     tidy.
+* Links, traversing in searches:         Syntax.
 * Local disk space, make use of:         Link Children.
 * Log files, controlling the size of:    disable.
 * Logical NOT:                           Cfengine classes.
 * Mail server, defining:                 mailserver.
+* Mailhost:                              Smtpserver.
 * Mailing output:                        Cfexecd reference.
 * Making directories:                    directories.
 * Making links:                          links.
@@ -259,8 +261,8 @@ Concept Index
 * Negating entries from netgroups:       groups.
 * Netgroups:                             groups.
 * Netgroups, negating entries:           groups.
-* Netmask:                               netmask.
 * netmask:                               netmask.
+* Netmask:                               netmask.
 * Network address translator:            Firewalls and NATs.
 * Network Address Translators:           SkipVerify.
 * Network interfaces, several:           interfaces.
@@ -281,6 +283,7 @@ Concept Index
 * Path to mounted filesystems:           mountpattern.
 * Paths, making:                         directories.
 * Pattern matching in file sweeps:       Syntax.
+* pattern= and filtering:                tidy.
 * Percentage disk space:                 required.
 * Permissions, directories:              Directory permissions.
 * Port, connecting to different:         Firewalls and NATs.
@@ -330,11 +333,13 @@ Concept Index
 * Setting uid on restarted processes:    processes.
 * Several files:                         import.
 * Shell command to decide class:         groups.
+* ShowState():                           alerts.
 * Single links:                          Single links.
 * Single quotes:                         editfiles.
 * site:                                  site.
 * size field in disable:                 disable.
 * SkipVerify and public-private keys:    root=.
+* smtpserver:                            Smtpserver.
 * Specifying file sizes:                 tidy.
 * SplayTime in cfrun:                    cfrun.
 * split:                                 split.
@@ -364,8 +369,8 @@ Concept Index
 * Truncating log files:                  disable.
 * Trusted hosts:                         copy.
 * TrustKeysFrom variable:                TrustKeysFrom.
-* umask <1>:                             editfiles.
-* umask <2>:                             shellcommands.
+* umask <1>:                             shellcommands.
+* umask <2>:                             editfiles.
 * umask:                                 processes.
 * underscoreclasses:                     Special variables.
 * Unmounting filesystems:                unmount.

@@ -398,7 +398,7 @@ if ((pp = cfpopen(VNETSTAT[VSYSTEMHARDCLASS],"r")) == NULL)
 while (!feof(pp))
    {
    ReadLine(VBUFF,bufsize,pp);
-   
+
    if (strncmp(VBUFF,"default",7) == 0)
       {
       if (strstr(VBUFF,VDEFAULTROUTE))

@@ -1,3 +1,4 @@
+
 /* cfengine for GNU
  
         Copyright (C) 1995/6,2000
@@ -780,7 +781,7 @@ char **crit,**names,**line;
 {
 if (crit[filterowner] != NULL)
    {
-   if (FilterProcMatch("UID","UID",crit[filterowner],names,line))
+   if (FilterProcMatch("UID","USER",crit[filterowner],names,line))
       {
       PrependItem(attr,"Owner","");
       }
@@ -1009,6 +1010,8 @@ char **names,**line;
   regex_t rx;
   regmatch_t pmatch;
 
+  Debug("FilterProcMatch(%s,%s,%s,%s,[%s])\n",name1,name2,expr,names,line);
+
 if (CfRegcomp(&rx,expr,REG_EXTENDED) != 0)
    {
    return false;
@@ -1018,6 +1021,7 @@ for (i = 0; names[i] != NULL; i++)
    {
    if ((strcmp(names[i],name1) == 0) || (strcmp(names[i],name2) == 0))
       {
+      Debug("Match (%s) to (%s)\n",expr,line[i]);
       if (regexec(&rx,line[i],1,&pmatch,0) == 0)
 	 {
 	 if ((pmatch.rm_so == 0) && (pmatch.rm_eo == strlen(line[i])))
@@ -1439,6 +1443,8 @@ struct Item *filterlist;
 
 { int i,s,e;
 
+Debug("SplitLine(%s)\n",proc); 
+ 
 for (i = 0; i < noproccols; i++)
    {
    line[i] = NULL;
@@ -1458,7 +1464,7 @@ for (i = 0; names[i] != NULL; i++)
       s = 0;
       }
    
-   if (isspace((int)proc[s]))
+   while (isspace((int)proc[s]))
       {
       s++;
       }
@@ -1473,7 +1479,7 @@ for (i = 0; names[i] != NULL; i++)
 	 {
 	 }
       
-      if (isspace((int)proc[e]))
+      while (isspace((int)proc[e]))
 	 {
 	 if (e > 0)
 	    {

@@ -49,11 +49,11 @@
 # include <sched.h>
 #endif
 
-#ifdef HAVE_PTHREAD_H
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
 pthread_attr_t PTHREADDEFAULTS;
 pthread_mutex_t MUTEX_COUNT = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUTEX_HOSTNAME = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t MUTEX_MALLOC = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 /*******************************************************************/
@@ -105,7 +105,7 @@ void SpawnConnection ARGLIST((int sd_reply, char *ipaddr));
 void CheckFileChanges ARGLIST((int argc, char **argv, int sd));
 void *HandleConnection ARGLIST((struct cfd_connection *conn));
 int BusyWithConnection ARGLIST((struct cfd_connection *conn));
-void ExitCleanly ARGLIST((int signum));
+void *ExitCleanly ARGLIST((int signum));
 int MatchClasses ARGLIST((struct cfd_connection *conn));
 void DoExec ARGLIST((struct cfd_connection *conn, char *sendbuffer, char *args));
 int GetCommand ARGLIST((char *str));
@@ -130,7 +130,8 @@ int AuthenticationDialogue ARGLIST((struct cfd_connection *conn,char *buffer));
 char *MapAddress ARGLIST((char *addr));
 int IsWildKnownHost ARGLIST((RSA *oldkey,RSA *newkey,char *addr,char *user));
 void AddToKeyDB ARGLIST((RSA *key,char *addr));
-
+int SafeOpen ARGLIST((char *filename));
+void SafeClose ARGLIST((int fd));
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -174,6 +175,7 @@ char **argv;
   struct stat statbuf;
   int c;
 
+sprintf(VPREFIX, "cfservd");
 openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_DAEMON);
 strcpy(VINPUTFILE,CFD_INPUT);
 strcpy(CFLOCK,"cfservd");
@@ -356,7 +358,8 @@ if (GetMacroValue("ChecksumDatabase"))
 
  
 bzero(VBUFF,bufsize);
-
+bzero(CFRUNCOMMAND,bufsize);
+ 
 if (GetMacroValue("cfrunCommand"))
    {
    ExpandVarstring("$(cfrunCommand)",VBUFF,NULL);
@@ -542,44 +545,16 @@ char **argv;
   struct sockaddr_in cin;
 #endif
   
-if ((!NO_FORK) && (fork() != 0))
-   {
-   snprintf(OUTPUT,bufsize*2,"cfservd starting %.24s\n",ctime(&CFDSTARTTIME));
-   CfLog(cfinform,OUTPUT,"");
-   exit(0);
-   }
-
-if (!NO_FORK)
-   {
-   int fd;
-#ifdef HAVE_SETSID
-   setsid();
-#endif 
-   fd = open("/dev/null", O_RDWR, 0);
-   fclose (stdin);
-   fclose (stdout);
-   fclose (stderr);
-   closelog();
-   
-   if (fd != -1)
-      {
-      dup2(fd,STDIN_FILENO);
-      dup2(fd,STDOUT_FILENO);
-      dup2(fd,STDERR_FILENO);
-      close(fd);
-      }
-   }
- 
-signal(SIGINT,(void*)ExitCleanly);
-signal(SIGTERM,(void*)ExitCleanly);
-signal(SIGHUP,SIG_IGN);
-signal(SIGPIPE,SIG_IGN);
-
 if ((sd = OpenReceiverChannel()) == -1)
    {
    CfLog(cferror,"Unable to start server","");
    exit(1);
    }
+
+signal(SIGINT,(void*)ExitCleanly);
+signal(SIGTERM,(void*)ExitCleanly);
+signal(SIGHUP,SIG_IGN);
+signal(SIGPIPE,SIG_IGN);
  
 if (listen(sd,queuesize) == -1)
    {
@@ -589,9 +564,24 @@ if (listen(sd,queuesize) == -1)
 
 Verbose("Listening for connections ...\n");
 
+if ((!NO_FORK) && (fork() != 0))
+   {
+   snprintf(OUTPUT,bufsize*2,"cfservd starting %.24s\n",ctime(&CFDSTARTTIME));
+   CfLog(cfinform,OUTPUT,"");
+   exit(0);
+   }
+
+if (!NO_FORK)
+   {
+       ActAsDaemon(sd);
+   }
+ 
 ageing = 0;
 FD_ZERO(&rset);
 FD_SET(sd,&rset);
+
+/* Andrew Stribblehill <ads@debian.org> -- close sd on exec */ 
+fcntl(sd, F_SETFD, FD_CLOEXEC);
  
 while (true)
    {
@@ -600,7 +590,11 @@ while (true)
       CheckFileChanges(argc,argv,sd);
       }
    
-   select((sd+1),&rset,NULL,NULL,NULL);
+   if ((select((sd+1),&rset,NULL,NULL,NULL) == -1) && (errno != EINTR))
+      {
+      CfLog(cferror, "select failed", "select");
+      exit(1);
+      }
    
    if ((sd_reply = accept(sd,(struct sockaddr *)&cin,&addrlen)) != -1)
       {
@@ -1388,7 +1382,7 @@ return false;
 
 /**************************************************************/
 
-void ExitCleanly(signum)
+void *ExitCleanly(signum)
 
 int signum;
 
@@ -1406,6 +1400,7 @@ for (i = 0; i < MAXTHREAD ; i++)
 #endif 
  
 HandleSignal(signum);
+return NULL;
 }
 
 /**************************************************************/
@@ -1644,6 +1639,7 @@ char buf[bufsize];
   int matched = false;
 #ifdef HAVE_GETADDRINFO
   struct addrinfo query, *response=NULL, *ap;
+  int err;
 #else
   struct sockaddr_in raddr;
   int i,j,len = sizeof(struct sockaddr_in);
@@ -1668,9 +1664,9 @@ if (IsFuzzyItemIn(SKIPVERIFY,MapAddress(conn->ipaddr)))
    {
    snprintf(conn->output,bufsize*2,"Allowing %s to connect without (re)checking ID\n",ip_assert);
    CfLog(cfverbose,conn->output,"");
-   Verbose("Non-verified Host ID is %s\n",dns_assert);
+   Verbose("Non-verified Host ID is %s (Using skipverify)\n",dns_assert);
    strncpy(conn->hostname,dns_assert,maxvarsize); 
-   Verbose("Non-verified User ID seems to be %s\n",username); 
+   Verbose("Non-verified User ID seems to be %s (Using skipverify)\n",username); 
    strncpy(conn->username,username,maxvarsize);
    return true;
    }
@@ -1686,26 +1682,32 @@ Verbose("Socket caller address appears honest (%s matches %s)\n",ip_assert,MapAd
 snprintf(conn->output,bufsize,"Socket originates from %s=%s\n",ip_assert,dns_assert);
 CfLog(cfverbose,conn->output,""); 
 
-Debug("Attempting to look up hostname (%s)\n",dns_assert);
+Debug("Attempting to verify honesty by looking up hostname (%s)\n",dns_assert);
 
 /* Do a reverse DNS lookup, like tcp wrappers to see if hostname matches IP */
  
 #ifdef HAVE_GETADDRINFO
 
+ Debug("Using v6 compatible lookup...\n"); 
+
 bzero(&query,sizeof(struct addrinfo));
 query.ai_family = AF_UNSPEC;
 query.ai_socktype = SOCK_STREAM;
+query.ai_flags = AI_PASSIVE;
  
-if (getaddrinfo(dns_assert,"cfengine",&query,&response) != 0)
+if ((err=getaddrinfo(dns_assert,NULL,&query,&response)) != 0)
    {
-   snprintf(conn->output,bufsize,"Unable to lookup %s",dns_assert);
-   CfLog(cferror,conn->output,"getaddrinfo");
+   snprintf(conn->output,bufsize,"Unable to lookup %s (%s)",dns_assert,gai_strerror(err));
+   CfLog(cferror,conn->output,"");
    }
  
 for (ap = response; ap != NULL; ap = ap->ai_next)
    {
+   Debug("CMP: %s %s\n",MapAddress(conn->ipaddr),sockaddr_ntop(ap->ai_addr));
+   
    if (strcmp(MapAddress(conn->ipaddr),sockaddr_ntop(ap->ai_addr)) == 0)
       {
+      Debug("Found match\n");
       matched = true;
       }
    }
@@ -2015,7 +2017,7 @@ if ((strcmp(sauth,"SAUTH") != 0) || (nonce_len == 0) || (crypt_len == 0))
 Debug("Challenge encryption = %c, nonce = %d, buf = %d\n",iscrypt,nonce_len,crypt_len);
 
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
- if (pthread_mutex_lock(&MUTEX_MALLOC) != 0)
+ if (pthread_mutex_lock(&MUTEX_SYSCALL) != 0)
     {
     CfLog(cferror,"pthread_mutex_lock failed","lock");
     }
@@ -2034,6 +2036,13 @@ if (iscrypt == 'y')
       snprintf(conn->output,bufsize,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
       CfLog(cferror,conn->output,"");
       free(decrypted_nonce);
+
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+      if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
+	 {
+	 CfLog(cferror,"pthread_mutex_unlock failed","lock");
+	 }
+#endif 
       return false;
       }
    }
@@ -2043,7 +2052,7 @@ else
    }
 
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-if (pthread_mutex_unlock(&MUTEX_MALLOC) != 0)
+if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
    {
    CfLog(cferror,"pthread_mutex_unlock failed","lock");
    }
@@ -2058,7 +2067,7 @@ free(decrypted_nonce);
 
  
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-if (pthread_mutex_lock(&MUTEX_MALLOC) != 0)
+if (pthread_mutex_lock(&MUTEX_SYSCALL) != 0)
    {
    CfLog(cferror,"pthread_mutex_lock failed","lock");
    }
@@ -2067,7 +2076,7 @@ if (pthread_mutex_lock(&MUTEX_MALLOC) != 0)
 newkey = RSA_new();
 
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-if (pthread_mutex_unlock(&MUTEX_MALLOC) != 0)
+if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
    {
    CfLog(cferror,"pthread_mutex_lock failed","lock");
    }
@@ -2139,7 +2148,7 @@ encrypted_len = BN_num_bytes(newkey->n); /* encryption buffer is always the same
 
  
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-if (pthread_mutex_lock(&MUTEX_MALLOC) != 0)
+if (pthread_mutex_lock(&MUTEX_SYSCALL) != 0)
    {
    CfLog(cferror,"pthread_mutex_lock failed","lock");
    }
@@ -2151,7 +2160,7 @@ if ((out = malloc(encrypted_len)) == NULL)
    }
 
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-if (pthread_mutex_unlock(&MUTEX_MALLOC) != 0)
+if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
    {
    CfLog(cferror,"pthread_mutex_unlock failed","lock");
    }
@@ -2221,7 +2230,7 @@ keylen = ReceiveTransaction(conn->sd_reply,in,NULL);
 
  
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-if (pthread_mutex_lock(&MUTEX_MALLOC) != 0)
+if (pthread_mutex_lock(&MUTEX_SYSCALL) != 0)
    {
    CfLog(cferror,"pthread_mutex_lock failed","lock");
    }
@@ -2230,7 +2239,7 @@ if (pthread_mutex_lock(&MUTEX_MALLOC) != 0)
 conn->session_key = malloc(keylen);
 
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-if (pthread_mutex_unlock(&MUTEX_MALLOC) != 0)
+if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
    {
    CfLog(cferror,"pthread_mutex_unlock failed","lock");
    }
@@ -2481,7 +2490,7 @@ if (args->encrypt)
       }
    }
  
-if ((fd = open(filename,O_RDONLY)) == -1)
+if ((fd = SafeOpen(filename)) == -1)
    {
    snprintf(sendbuffer,bufsize,"Open error of file [%s]\n",filename);
    CfLog(cferror,sendbuffer,"open");
@@ -2590,7 +2599,8 @@ void CompareLocalChecksum(conn,sendbuffer,recvbuffer)
 struct cfd_connection *conn;
 char *sendbuffer, *recvbuffer;
 
-{ unsigned char digest[EVP_MAX_MD_SIZE+1],filename[bufsize];
+{ unsigned char digest[EVP_MAX_MD_SIZE+1];
+  char filename[bufsize];
   char *sp;
   int i;
 
@@ -2916,7 +2926,11 @@ if ((errno = db_create(&dbp,NULL,0)) != 0)
    return false;
    }
  
+#ifdef CF_OLD_DB
 if ((errno = dbp->open(dbp,keydb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+if ((errno = dbp->open(dbp,NULL,keydb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
+#endif
    {
    sprintf(OUTPUT,"Couldn't open average database %s\n",keydb);
    CfLog(cferror,OUTPUT,"db_open");
@@ -2998,8 +3012,12 @@ if ((DHCPLIST != NULL) && IsFuzzyItemIn(DHCPLIST,mipaddr))
       CfLog(cferror,OUTPUT,"db_open");
       return;
       }
-   
+
+#ifdef CF_OLD_DB
    if ((errno = dbp->open(dbp,keydb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+   if ((errno = dbp->open(dbp,NULL,keydb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#endif
       {
       sprintf(OUTPUT,"Couldn't open average database %s\n",keydb);
       CfLog(cferror,OUTPUT,"db_open");
@@ -3036,7 +3054,7 @@ int sd;
 { struct cfd_connection *conn;
 
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
- if (pthread_mutex_lock(&MUTEX_MALLOC) != 0)
+ if (pthread_mutex_lock(&MUTEX_SYSCALL) != 0)
     {
     CfLog(cferror,"pthread_mutex_lock failed","lock");
     }
@@ -3045,7 +3063,7 @@ int sd;
 conn = (struct cfd_connection *) malloc(sizeof(struct cfd_connection));
 
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
- if (pthread_mutex_unlock(&MUTEX_MALLOC) != 0)
+ if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
     {
     CfLog(cferror,"pthread_mutex_unlock failed","lock");
     }
@@ -3090,7 +3108,7 @@ if (conn->ipaddr != NULL)
       {
       CfLog(cferror,"pthread_mutex_lock failed","pthread_mutex_lock");
       DeleteConn(conn);
-      return NULL;
+      return;
       }
 #endif
 
@@ -3099,9 +3117,9 @@ if (conn->ipaddr != NULL)
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
    if (pthread_mutex_unlock(&MUTEX_COUNT) != 0)
       {
-      CfLog(cferror,"pthread_mutex_unlock failed","pthread_mutex_lock");
+      CfLog(cferror,"pthread_mutex_unlock failed","pthread_mutex_unlock");
       DeleteConn(conn);
-      return NULL;
+      return;
       }
 #endif
    }
@@ -3111,6 +3129,58 @@ free ((char *)conn);
 
 /***************************************************************/
 /* ERS                                                         */
+/***************************************************************/
+
+int SafeOpen(filename)
+
+char *filename;
+
+{ int fd;
+
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+ if (pthread_mutex_lock(&MUTEX_SYSCALL) != 0)
+    {
+    CfLog(cferror,"pthread_mutex_lock failed","pthread_mutex_lock");
+    }
+#endif
+ 
+fd = open(filename,O_RDONLY);
+
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+ if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
+    {
+    CfLog(cferror,"pthread_mutex_unlock failed","pthread_mutex_unlock");
+    }
+#endif
+
+return fd;
+}
+
+    
+/***************************************************************/
+    
+void SafeClose(fd)
+
+int fd;
+
+{
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+ if (pthread_mutex_lock(&MUTEX_SYSCALL) != 0)
+    {
+    CfLog(cferror,"pthread_mutex_lock failed","pthread_mutex_lock");
+    }
+#endif
+ 
+close(fd);
+
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+ if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
+    {
+    CfLog(cferror,"pthread_mutex_unlock failed","pthread_mutex_unlock");
+    }
+#endif
+}
+
 /***************************************************************/
 
 int cfscanf(in,len1,len2,out1,out2,out3)

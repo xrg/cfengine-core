@@ -369,7 +369,7 @@ currenteditscript[0] = '\0';
 searchstr[0] = '\0';
 bzero(EDITBUFF,bufsize);
 AUTOCREATED = false;
-IMAGEBACKUP = true;
+IMAGEBACKUP = 's';
 
 if (IgnoredOrExcluded(editfiles,filename,ptr->inclusions,ptr->exclusions))
    {
@@ -402,10 +402,7 @@ if (ptr->binary == 'y')
    return;
    }
 
-EditVerbose ("(Setting umask to %o)\n",ptr->umask);
-maskval = umask(ptr->umask);
- 
-CheckEditSwitches(filename,ptr->actions);
+CheckEditSwitches(filename,ptr);
 
 if (! LoadItemList(&filestart,filename))
    {
@@ -1103,6 +1100,7 @@ EDABORTMODE = false;
 
 if (DONTDO || CompareToFile(filestart,filename))
    {
+   EditVerbose("Unchanged file: %s\n",filename);
    NUMBEROFEDITS = 0;
    }
  
@@ -1118,8 +1116,6 @@ else
 
 ResetOutputRoute('d','d');
 ReleaseCurrentLock();
-
-umask(maskval);
 
 DeleteItemList(filestart);
 
@@ -1446,17 +1442,18 @@ for (mp = VMOUNTABLES; mp != NULL; mp=mp->next)
 
 /**************************************************************/
 
-void CheckEditSwitches(filename,actions)
+void CheckEditSwitches(filename,ptr)
 
 char *filename;
-struct Edlist *actions;
+struct Edit *ptr;
 
 { struct stat statbuf;
   struct Edlist *ep;
   char inform = 'd', log = 'd';
   char expdata[bufsize];
   int fd;
-
+struct Edlist *actions = ptr->actions;
+  
 PARSING = true;
  
 for (ep = actions; ep != NULL; ep=ep->next)
@@ -1473,10 +1470,11 @@ for (ep = actions; ep != NULL; ep=ep->next)
       case AutoCreate: if (!DONTDO)
 	                  { mode_t mask;
 
-			  mask = umask(0);
-			  
 			  if (stat(filename,&statbuf) == -1)
 			     {
+			     Debug("Setting umask to %o\n",ptr->umask);
+			     mask=umask(ptr->umask);
+			     
 			     if ((fd = creat(filename,0644)) == -1)
 				{
 				snprintf(OUTPUT,bufsize*2,"Unable to create file %s\n",filename);
@@ -1487,21 +1485,30 @@ for (ep = actions; ep != NULL; ep=ep->next)
 				AUTOCREATED = true;
 				close(fd);
 				}
-			     snprintf(OUTPUT,bufsize*2,"Creating file %s, mode 644\n",filename);
+			     snprintf(OUTPUT,bufsize*2,"Creating file %s, mode %o\n",filename,(0644 & ~ptr->umask));
 			     CfLog(cfinform,OUTPUT,"");
 			     umask(mask);
 			     return;
-			     }
-			  
-			  umask(mask);
+			     }			 
 			  }
                        
                        break;
       
       case EditBackup: if (strcmp("false",ToLowerStr(expdata)) == 0 || strcmp("off",ToLowerStr(expdata)) == 0)
 	                  {
-			  IMAGEBACKUP = false;
+			  IMAGEBACKUP = 'n';
 	                  }
+
+  	               if (strcmp("single",ToLowerStr(expdata)) == 0 || strcmp("one",ToLowerStr(expdata)) == 0)
+	                  {
+			  IMAGEBACKUP = 'n';
+	                  }
+
+		       if (strcmp("timestamp",ToLowerStr(expdata)) == 0 || strcmp("stamp",ToLowerStr(expdata)) == 0)
+	                  {
+			  IMAGEBACKUP = 's';
+	                  }
+
                        break;
 		       
       case EditLog:    if (strcmp(ToLowerStr(expdata),"true") == 0 || strcmp(ToLowerStr(expdata),"on") == 0)

@@ -5,7 +5,7 @@
  OpenSSL library. (http://www.openssl.org)
 
  On some systems, code under the Frontier Artistic License 
- (/pub/snprintf) might be compiled. This is compatible with the
+ (/pub/snprintf) might become compiled. This is compatible with the
  GPL.
 
 

@@ -1175,8 +1175,10 @@ host% cfagent --help
 @cindex Config file, default name
 @cindex @file{cfagent.conf}
 The first of these (the default command, with no arguments) causes
-cfagent to look for a file called @file{cfagent.conf} in the current
-directory and execute it silently.  The second command reads the file
+cfagent to look for a file called @file{cfagent.conf} in the directory 
+pointed to by the environment variables @code{CFINPUTS} 
+or @file{/var/cfengine/inputs} by default,
+and execute it silently.  The second command reads the file
 @file{myfile} and works silently.  The third works in verbose mode and
 the @code{-n} option means that no actions should actually be carried
 out, only warnings should be printed.  The final example causes cfagent
@@ -4235,6 +4237,10 @@ generation in the copy feature by setting the variable
 files is to use a directory in which you collect all such files for the
 whole system. This directory is called the file repository and is set in
 the control part of the program, as follows:
+In the @code{copy} directive, the option @code{backup=timestamp} can be
+used to allow multiple backups. This is useful when using cfengine to make
+disk backups for users, since it allows multiple versions to co-exist.
+@cindex Timestamp backups
 
 @smallexample
 

@@ -69,7 +69,7 @@
 %p 9000
 %n 800
 
-actiont   copy:|resolve:|files:|tidy:|homeservers:|binservers:|mailserver:|disks:|mountables:|links:|shellcommands:|disable:|directories:|ignore:|interfaces:|defaultroute:|miscmounts:|unmount:|processes:|required:|broadcast:
+actiont   copy:|resolve:|files:|tidy:|homeservers:|binservers:|mailserver:|disks:|mountables:|links:|shellcommands:|disable:|directories:|ignore:|interfaces:|defaultroute:|miscmounts:|unmount:|processes:|required:|broadcast:|alerts:
 space     [ \t]+
 comment   #.*
 linedir   #line[ \t]+[0-9]+.*
@@ -126,6 +126,7 @@ control:               {
                        SetAction(control);
                        return CONTROL;
                        }
+
 
 strategies:            {
                        BEGIN IDENT;
@@ -313,9 +314,9 @@ editfiles:             {
 
 
 <INITIAL>{item}        {
-                       if (ACTION == shellcommands)
+                       if (ACTION == shellcommands || ACTION == alerts)
                           {
-                          yyerror("Shell commands must be quoted strings");
+                          yyerror("Shell commands and alerts must be quoted strings");
                           }
 
                        if (ACTION == editfiles)
@@ -362,9 +363,9 @@ editfiles:             {
 
 
 <INITIAL>{path}        {
-                       if (ACTION == shellcommands)
+                       if (ACTION == shellcommands || ACTION == alerts)
                           {
-                          yyerror("Shell commands must be quoted strings");
+                          yyerror("Shell commands and alerts must be quoted strings");
                           }
 
                        if (strncmp("home",(char *)yytext,4)==0)

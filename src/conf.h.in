@@ -95,6 +95,9 @@
 #undef AUTOCONF_HOSTNAME
 #undef AUTOCONF_SYSNAME
 
+/* Define if old Berkeley API */
+#undef CF_OLD_DB
+
 /* Define if you have the `bcopy' function. */
 #undef HAVE_BCOPY
 
@@ -254,6 +257,9 @@
 /* Define if you have the `strstr' function. */
 #undef HAVE_STRSTR
 
+/* Define if you have the `sysconf' function. */
+#undef HAVE_SYSCONF
+
 /* Define if you have the `sysinfo' function. */
 #undef HAVE_SYSINFO
 
@@ -265,6 +271,9 @@
 
 /* Define if you have the <sys/filesys.h> header file. */
 #undef HAVE_SYS_FILESYS_H
+
+/* Define if you have the <sys/loadavg.h> header file. */
+#undef HAVE_SYS_LOADAVG_H
 
 /* Define if you have the <sys/mount.h> header file. */
 #undef HAVE_SYS_MOUNT_H

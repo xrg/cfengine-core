@@ -40,8 +40,15 @@ void CheckWorkDirectories()
 { struct stat statbuf;
   char *sp;
 
-Debug("CheckWorkDirectories()\n");  
-snprintf(LOGFILE,bufsize,"%s/cfagent.%s.log",VLOGDIR,VUQNAME);
+Debug("CheckWorkDirectories()\n");
+
+ if (uname(&VSYSNAME) == -1)
+   {
+   perror("uname ");
+   FatalError("Uname couldn't get kernel name info!!\n");
+   }
+ 
+snprintf(LOGFILE,bufsize,"%s/cfagent.%s.log",VLOGDIR,VSYSNAME.nodename);
 VSETUIDLOG = strdup(LOGFILE); 
  
 if (!IsPrivileged())
@@ -83,45 +90,8 @@ if (stat(VBUFF,&statbuf) == -1)
       }
    }
 
-chown(VLOCKDIR,0,0);
+chown(VLOCKDIR,getuid(),getgid());
 chmod(VLOCKDIR,(mode_t)0755); /* Locks must be immutable to others */
-}
-
-/**********************************************************************/
-
-void RandomSeed()
-
-{ static unsigned char digest[EVP_MAX_MD_SIZE+1];
-  struct stat statbuf;
-  
-/* Use the system database as the entropy source for random numbers */
-
-Debug("RandomSeed() work directory is %s\n",VLOGDIR);
-
-snprintf(VBUFF,bufsize,"%s/randseed",VLOGDIR); 
-
- if (stat(VBUFF,&statbuf) == -1)
-    {
-    snprintf(AVDB,bufsize,"%s/%s",WORKDIR,AVDB_FILE);
-    }
- else
-    {
-    strcpy(AVDB,VBUFF);
-    }
-
-Verbose("Looking for a source of entropy in %s\n",AVDB);
-
-if (!RAND_load_file(AVDB,-1))
-   {
-   snprintf(OUTPUT,bufsize,"Could not read sufficient randomness from %s\n",AVDB);
-   CfLog(cfverbose,OUTPUT,"");
-   }
-
-while (!RAND_status())
-   {
-   MD5Random(digest);
-   RAND_seed((void *)digest,16);
-   }
 }
 
 /**********************************************************************/
@@ -137,7 +107,6 @@ void SetSignals()
  SIGNALS[SIGKILL] = strdup("SIGKILL");
  SIGNALS[SIGPIPE] = strdup("SIGPIPE");
  SIGNALS[SIGCONT] = strdup("SIGCONT");
- SIGNALS[SIGINT] = strdup("SIGINT");
  SIGNALS[SIGABRT] = strdup("SIGABRT");
  SIGNALS[SIGSTOP] = strdup("SIGSTOP");
  SIGNALS[SIGQUIT] = strdup("SIGQUIT");
@@ -157,3 +126,37 @@ void SetSignals()
     }
 }
 
+/**********************************************************************/
+
+void ActAsDaemon(int preserve)
+{
+   int fd, maxfd;
+#ifdef HAVE_SETSID
+   setsid();
+#endif 
+   closelog();
+   fflush(NULL);
+   fd = open("/dev/null", O_RDWR, 0);
+   if (fd != -1)
+      {
+      dup2(fd,STDIN_FILENO);
+      dup2(fd,STDOUT_FILENO);
+      dup2(fd,STDERR_FILENO);
+      if (fd > STDERR_FILENO) close(fd);
+      }
+
+#ifdef HAVE_SYSCONF
+   maxfd = sysconf(_SC_OPEN_MAX);
+#else
+# ifdef _POXIX_OPEN_MAX
+   maxfd = _POSIX_OPEN_MAX;
+# else
+   maxfd = 1024;
+# endif
+#endif
+
+for (fd=STDERR_FILENO+1; fd<maxfd; ++fd)
+   {
+   if (fd != preserve) close(fd);
+   }
+}

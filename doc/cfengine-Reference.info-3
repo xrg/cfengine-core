@@ -1,4 +1,4 @@
-This is cfengine-Reference.info, produced by makeinfo version 4.0 from
+This is cfengine-Reference.info, produced by makeinfo version 4.3 from
 cfengine-Reference.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -42,8 +42,8 @@ copying. Cfengine attempts to prevent this during remote copies._
                              mode=MODE
                              owner=OWNER
                              group=GROUP
-                             action=SILENT/FIX
-                             backup=true/FALSE
+                             action=WARN/SILENT/FIX
+                             backup=true/FALSE/TIMESTAMP
                              repository=BACKUP DIRECTORY
                              stealth=TRUE/ON/FALSE/OFF
                              timestamps=preserve/keep
@@ -92,11 +92,11 @@ copying. Cfengine attempts to prevent this during remote copies._
      the `files' function *Note files::.
 
 `action'
-     The action may take the values `warn' or `silent'. The default
-     action is `fix', i.e.  copy files. If `warn' is specified, only a
-     warning is issued about files which require updating. If `silent'
-     is given, then cfengine will copy the files but not report the
-     fact.
+     The action may take the values `warn', `silent' or `fix'. The
+     default action is `fix', i.e.  copy files. If `warn' is specified,
+     only a warning is issued about files which require updating. If
+     `silent' is given, then cfengine will copy the files but not
+     report the fact.
 
 `force'
      If set to `true', this option causes cfengine to copy files
@@ -115,7 +115,9 @@ copying. Cfengine attempts to prevent this during remote copies._
 
 `backup'
      If the `backup' option is set to "false", cfengine will not make a
-     backup copy of the file before copying.
+     backup copy of the file before copying. The default value is
+     "true".  If the option "timestamp" is chosen, a unique timestamp
+     will be appended to the saved filename.
 
 `repository'
      This allows a local override of the `Repository' variable, on an

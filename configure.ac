@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.0.4)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.0.5)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -91,7 +91,7 @@ if test "x$BERKELEY_DB_DIR" = "xno" ; then
     AC_MSG_ERROR(This release of cfengine requires BerkeleyDB 3.2 or later)
 else
     if test "x$BERKELEY_DB_DIR" = "xyes" ; then
-        for v in BerkeleyDB.3.2 BerkeleyDB.3.3 BerkeleyDB.4.0; do
+        for v in BerkeleyDB.3.2 BerkeleyDB.3.3 BerkeleyDB.4.0  BerkeleyDB.4.1  BerkeleyDB.4.2; do
             for d in /opt /usr/local /usr; do
                 test -d "$d/$v" && BERKELEY_DB_DIR="$d/$v"
             done
@@ -99,7 +99,7 @@ else
     fi
     if test "x$BERKELEY_DB_DIR" = "xyes" ; then
         for d in /opt /usr/local /usr; do
-            for v in db4 db3 db; do
+            for v in db-4 db4 db3 db; do
                 if test -f "$d/include/$v/db.h" ; then
                     test "x$d" != "x/usr" && BERKELEY_DB_LDFLAGS="-L$d/lib"
                     BERKELEY_DB_CFLAGS="-I$d/include/$v"
@@ -159,6 +159,24 @@ int main(void)
        ],
        [AC_MSG_RESULT(OK)],
        [AC_MSG_ERROR(This release of cfengine requires BerkeleyDB 3.2 or later)]
+    )
+
+    AC_MSG_CHECKING(Berkeley DB API)
+
+    AC_TRY_RUN(
+       [
+#include <db.h>
+#include <stdio.h>
+int main(void)
+{
+    printf("%d.%d.%d ",DB_VERSION_MAJOR,DB_VERSION_MINOR,DB_VERSION_PATCH);
+    if (DB_VERSION_MAJOR < 4 || (DB_VERSION_MAJOR == 4 && DB_VERSION_MINOR < 1))
+        exit(1);
+    exit(0);
+}
+       ],
+       [AC_MSG_RESULT(OK)],
+       [AC_DEFINE(CF_OLD_DB,1,Define if old Berkeley API)]
     )
 
     AC_CHECK_LIB(db, db_create)
@@ -267,7 +285,7 @@ dnl ######################################################################
 dnl Checks for header files.
 dnl ######################################################################
 
-AC_CHECK_HEADERS(unistd.h stdlib.h)
+AC_CHECK_HEADERS(unistd.h stdlib.h sys/loadavg.h)
 AC_CHECK_HEADERS(sys/mount.h)
 AC_CHECK_HEADERS(utime.h)
 AC_CHECK_HEADERS(time.h)
@@ -315,7 +333,7 @@ AC_CHECK_FUNCS(getcwd getnetgrent waitpid seteuid setegid setreuid setregid)
 AC_CHECK_FUNCS(uname gethostname realpath regcomp chflags)
 AC_CHECK_FUNCS(strstr putenv drand48 srand48 getaddrinfo)
 AC_CHECK_FUNCS(bcopy mkfifo statfs statvfs door)
-AC_CHECK_FUNCS(sysinfo setsid strdup strrchr strerror snprintf)
+AC_CHECK_FUNCS(sysinfo setsid strdup strrchr strerror snprintf sysconf)
 
 dnl #######################################################################
 dnl Newer BSD systems don't have a compatible rtentry - use ortentry
@@ -499,7 +517,7 @@ case "$target_os" in
         ;;
 esac
 
-dnl LIBS="$LIBS -L../pub -lpub"
+dnl LIBS="-L../pub -lpub $LIBS"
 
 dnl #####################################################################
 dnl Configure LOCKDIR and LOGDIR
@@ -540,7 +558,7 @@ fi
 
 AC_SUBST(NOWRAP)
 
-LIBS="$LIBS -L../pub -lpub"
+LIBS="-L../pub -lpub $LIBS"
 
 dnl ####################################################################
 dnl Set GCC CFLAGS only if using GCC.

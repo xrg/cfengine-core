@@ -1,4 +1,4 @@
-This is cfengine-Reference.info, produced by makeinfo version 4.0 from
+This is cfengine-Reference.info, produced by makeinfo version 4.3 from
 cfengine-Reference.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -212,37 +212,42 @@ expressions.
 
 `BeginGroupIfDefined QUOTED-STRING'
      The lines following, up to the first `EndGroup' are executed if
-     the quoted class is defined.
+     the quoted class is defined. Edit groups may be nested.
 
 `BeginGroupIfNotDefined QUOTED-STRING'
      The lines following, up to the first `EndGroup' are executed if
-     the quoted class is not defined.
+     the quoted class is not defined. Edit groups may be nested.
 
 `BeginGroupIfFileExists QUOTED-STRING'
      The lines following, up to the first `EndGroup' are executed if
      the quoted filename exists (can be statted).  Files which are not
      readable by the running process are for all intents and purposes
-     non-existent.
+     non-existent. Edit groups may be nested.
 
 `BeginGroupIfFileIsNewer QUOTED-STRING'
      The lines following, up to the first `EndGroup' are executed if
-     the quoted filename is newer than the file being edited.
+     the quoted filename is newer than the file being edited. Edit
+     groups may be nested.
 
 `BeginGroupIfNoLineContaining QUOTED-STRING'
      The lines following, up to the first `EndGroup' are executed if
-     the quoted string does not appear in any line in the file.
+     the quoted string does not appear in any line in the file. Edit
+     groups may be nested.
 
 `BeginGroupIfNoLineMatching QUOTED-REGEX'
      The lines following, up to the first `EndGroup' are executed if
      the quoted regular expression does not match any line in the file.
+     Edit groups may be nested.
 
 `BeginGroupIfNoMatch QUOTED-REGEX'
      The lines following, up to the first `EndGroup' are executed if
      the quoted regular expression does not match the current line.
+     Edit groups may be nested.
 
 `BeginGroupIfNoSuchLine QUOTED-STRING'
      The lines following, up to the first `EndGroup' are executed if
      the quoted literal string does not match any line in the file.
+     Edit groups may be nested.
 
 `BreakIfLineMatches  QUOTED-REGEX'
      Terminates further editing of the current file if the current line
@@ -313,6 +318,14 @@ expressions.
      line matches the given expression, a warning is only printed in
      verbose mode, but all edits are immediately abandoned.
 
+`EditBackup'
+     The default is to produce time-stamped backups of files; this may
+     be coded explicitly by setting to "timestamp" or "stamp". If set
+     to "false" or "off", no backup is kept of the edited file. If the
+     value is set to "single" or "one" then only the last version of
+     the file is kept, overwriting any previously saved versions.
+             EditBackup "single"
+
 `EditMode "Binary"'
      If set to binary, the file will be edited as if it were a
      non-ASCII file.  See discussion below.
@@ -380,18 +393,18 @@ expressions.
      inserted at the start of the file.
 
 `InsertLine QUOTED-STRING'
-     Inserts the quoted string as a line at the current position in the
-     file. After the insert, the file pointer is incremented by one so
-     that subsequent inserted lines are placed after the first.  This
-     should probably be used in conjunction with the conditional
+     Inserts the quoted string as a line after the current line pointer
+     in the file. After the insert, the line pointer is incremented by
+     one so that subsequent inserted lines are placed after the first.
+     This should probably be used in conjunction with the conditional
      begin-end tests to avoid lines being inserted on every run.
 
 `LocateLineMatching QUOTED-REGEX'
-     Moves the current-position pointer to the start of the line
-     matching the quoted regular expression.  If there is no match, a
-     warning is only issued in verbose mode, but all editing is
-     immediately aborted. See also `WarnIfNoLineMatching' so that you
-     can get an explicit warning, even out of verbose mode.
+     Moves the current line pointer to the line matching the quoted
+     regular expression. If there is no match, a warning is only issued
+     in verbose mode, but all editing is immediately aborted. See also
+     `WarnIfNoLineMatching' so that you can get an explicit warning,
+     even out of verbose mode.
 
 `PercentCommentLinesContaining QUOTED-STRING'
      Add a `%' to the start of any line containing the quoted string.
@@ -692,18 +705,20 @@ An example would be the following:
 The meaning of these item is sketched out below and becomes clearer on
 looking at a number of examples.  Note that, each of the options below
 can be written in either upper or lower case and abbreviated by any
-unique abbreviation.  A file object is interpreted as a directory if
-you write it in the following form: `/directory-path/.'. i.e. a
-trailing dot signifies a directory. This then becomes the same as the
-`directory' command.
+unique abbreviation.
 
-`/DIRECTORY'
-     This is the only obligatory part of a file action.  This is a
-     directory at which a file search should begin.  This may be a
-     single file or a directory.  The recursion specifier may be used
-     to force cfengine to descend into subdirectories in a controlled
-     fashion, starting from this point, checking files there also.  The
-     wildcard `home' may also be used.  *Note home directive::.
+`/FILE-OBJECT'
+     This is the only obligatory part of a file action. This may be a
+     single file or a directory.  If it is a directory then it indicates
+     where does the file search should begin.  The recursion specifier
+     may be used to force cfengine to descend into subdirectories in a
+     controlled fashion, starting from this point, checking files there
+     also.  The wildcard `home' may also be used.  *Note home
+     directive::.
+
+     A file object is interpreted as a directory if you write it in the
+     following form: `/directory-path/.'. i.e. a trailing dot signifies
+     a directory. This then becomes the same as the `directory' command.
 
 `mode=MODESTRING'
      Specifies what the allowed permissions for files are.  If cfengine

@@ -164,8 +164,8 @@ int EmbeddedWrite ARGLIST((char *new,int dd,char *buf,struct Image *ip,int towri
 
 /* dce_acl.c */
 
-struct CFACE;
-int CheckDFSACE ARGLIST((struct CFACE *aces, char method, char *filename, enum fileactions action));
+/*struct CFACE;
+  int CheckDFSACE ARGLIST((struct CFACE *aces, char method, char *filename, enum fileactions action));*/
 
 /* df.c */
 
@@ -224,7 +224,7 @@ int ReplaceEditLineWith  ARGLIST((char *string));
 int RunEditScript  ARGLIST((char *script, char *fname, struct Item **filestart, struct Edit *ptr));
 void DoFixEndOfLine ARGLIST((struct Item *list, char *type));
 void HandleAutomountResources ARGLIST((struct Item **filestart, char *opts));
-void CheckEditSwitches ARGLIST((char *filename, struct Edlist *actions));
+void CheckEditSwitches ARGLIST((char *filename, struct Edit *ptr));
 void AddEditfileClasses  ARGLIST((struct Edit *list, int editsdone));
 struct Edlist *ThrowAbort ARGLIST((struct Edlist *from));
 struct Edlist *SkipToEndGroup ARGLIST((struct Edlist *ep, char *filename));
@@ -237,6 +237,7 @@ int BinaryReplaceRegex ARGLIST((void *memseg, off_t size, char *search, char *re
 
 /* crypto.c */
 
+void RandomSeed ARGLIST((void));
 void LoadSecretKeys ARGLIST((void));
 void MD5Random ARGLIST((unsigned char digest[EVP_MAX_MD_SIZE+1]));
 int EncryptString ARGLIST((char *in, char *out, unsigned char *key, int len));
@@ -293,6 +294,7 @@ void CompressFile ARGLIST((char *file));
 /* filenames.c */
 
 int IsAbsoluteFileName ARGLIST((char *f));
+void CreateEmptyFile ARGLIST((char *f));
 int RootDirLength ARGLIST((char *f));
 void AddSlash ARGLIST((char *str));
 void DeleteSlash ARGLIST((char *str));
@@ -368,8 +370,8 @@ void RegisterHardLink ARGLIST((int i, char *value, struct Image *ip));
 /* init.c */
 
 void CheckWorkDirectories ARGLIST((void));
-void RandomSeed ARGLIST((void));
 void SetSignals ARGLIST((void));
+void ActAsDaemon ARGLIST((int preserve));
 
 /* install.c */
 
@@ -703,6 +705,10 @@ int setegid ARGLIST((gid_t egid));
 
 int IsPrivileged ARGLIST((void));
 
+/* alerts.c */
+
+void DoAlerts ARGLIST((void));
+
 /* popen.c */
 
 FILE *cfpopensetuid ARGLIST((char *command, char *type, uid_t uid, gid_t gid, char *chdirv, char *chrootv));
@@ -711,7 +717,7 @@ FILE *cfpopen_sh ARGLIST((char *command, char *type));
 FILE *cfpopen_shsetuid ARGLIST((char *command, char *type, uid_t uid, gid_t gid, char *chdirv, char *chrootv));
 int cfpclose ARGLIST((FILE *pp));
 int cfpclose_def ARGLIST((FILE *pp, char *defines, char *elsedef));
-int SplitCommand ARGLIST((char *comm, char (*arg)[4096]));
+int SplitCommand ARGLIST((char *comm, char (*arg)[bufsize]));
 
 /* process.c */
 
@@ -733,6 +739,7 @@ int ReadLine ARGLIST((char *buff, int size, FILE *fp));
 /* report.c */
 
 void ListDefinedClasses ARGLIST((void));
+void ListDefinedAlerts ARGLIST((void));
 void ListDefinedStrategies ARGLIST((void));
 void ListDefinedInterfaces ARGLIST((void));
 void ListDefinedHomePatterns ARGLIST((void));

@@ -45,7 +45,6 @@ char *CLASSTEXT[] =   /* If you change here change enum classes too! */
    "<soft>",
    "sun4",
    "ultrix",
-   "hpux10",
    "hpux",
    "aix",
    "linux",
@@ -88,7 +87,6 @@ char *CLASSATTRIBUTES[CLSSATTR][ATTRDIM] =
    {"-","-","-"},                 /* fields are sysname and machine */
    {"sunos","*","4*"},           /* sun 4  */
    {"ultrix","risc","4*"},       /* ultrix */
-   {"hp-ux","9000*","?.1?.*"},   /* hpux10 */
    {"hp-ux","9000*","*"},        /* hpux */
    {"aix","*","*"},              /* aix */
    {"linux","*","*"},            /* linux */
@@ -129,7 +127,6 @@ char *VPSCOMM[CLSSATTR] =
    "",
    "/bin/ps",       /* sun 4  */
    "/bin/ps",       /* ultrix */
-   "/bin/ps",       /* hpux10 */
    "/bin/ps",       /* hpux */
    "/bin/ps",       /* aix */
    "/bin/ps",       /* linux */
@@ -170,7 +167,6 @@ char *VPSOPTS[CLSSATTR] =
    "",
    "auxw",   /* sun4 */
    "auxw",   /* ultrix */
-   "-ef",    /* hp10 */
    "-ef",    /* hpux */
    "-ef",    /* aix */
    "auxw",   /* linux */
@@ -211,8 +207,7 @@ char *VMOUNTCOMM[CLSSATTR] =
    "",
    "/etc/mount -va",      /* sun4 */
    "/etc/mount -va",      /* ultrix */
-   "/sbin/mount -ea",      /* hpux10 */
-   "/etc/mount -va",      /* hpux */
+   "/sbin/mount -ea",      /* hpux */
    "/etc/mount -t nfs",   /* aix */
    "/bin/mount -va",      /* linux */
    "/usr/sbin/mount -a",  /* solaris */
@@ -252,8 +247,7 @@ char *VUNMOUNTCOMM[CLSSATTR] =
    "",
    "/etc/umount",      /* sun4 */
    "/etc/umount",      /* ultrix */
-   "/sbin/umount",     /* hpux10 */
-   "/etc/umount",      /* hpux */
+   "/sbin/umount",     /* hpux */
    "/etc/umount",      /* aix */
    "/bin/umount",      /* linux */
    "/etc/umount",      /* solaris */
@@ -295,7 +289,6 @@ char *VMOUNTOPTS[CLSSATTR] =
    "",
    "bg,hard,intr",    /* sun4 */
    "bg,hard,intr",    /* ultrix */
-   "bg,hard,intr",    /* hpux10 */
    "bg,hard,intr",    /* hpux */
    "bg,hard,intr",    /* aix */
    "defaults",        /* linux */
@@ -336,7 +329,6 @@ char *VIFDEV[CLSSATTR] =
    "-",                                              /* see cf.defs.h */
    "le0",    /* sun4 */
    "ln0",    /* ultrix */
-   "lan0",   /* hpux10 */
    "lan0",   /* hpux */
    "en0",    /* aix */
    "eth0",   /* linux */ 
@@ -378,7 +370,6 @@ char *VRESOLVCONF[CLSSATTR] =
    "-",                                              /* see cf.defs.h */
    "/etc/resolv.conf",     /* sun4 */
    "/etc/resolv.conf",     /* ultrix */
-   "/etc/resolv.conf",     /* hpux10 */
    "/etc/resolv.conf",     /* hpux */
    "/etc/resolv.conf",     /* aix */
    "/etc/resolv.conf",     /* linux */   
@@ -421,8 +412,7 @@ char *VFSTAB[CLSSATTR] =
    "-",                                              /* see cf.defs.h */
    "/etc/fstab",       /* sun4 */
    "/etc/fstab",       /* ultrix */
-   "/etc/fstab",       /* hpux10 */
-   "/etc/checklist",   /* hpux */
+   "/etc/fstab",       /* hpux */
    "/etc/filesystems", /* aix */
    "/etc/fstab",       /* linux */
    "/etc/vfstab",      /* solaris */
@@ -462,8 +452,7 @@ char *VMAILDIR[CLSSATTR] =
    "-",                                              /* see cf.defs.h */
    "/var/spool/mail",    /* sun4 */
    "/usr/spool/mail",    /* ultrix */
-   "/var/mail",          /* hpux10 */
-   "/usr/mail",          /* hpux */
+   "/var/mail",          /* hpux */
    "/var/spool/mail",    /* aix */
    "/var/spool/mail",    /* linux */  
    "/var/mail",          /* solaris */
@@ -503,11 +492,10 @@ char *VNETSTAT[CLSSATTR] =
    "-", 
    "/usr/ucb/netstat -rn",   /* sun4 */
    "/usr/ucb/netstat -rn",   /* ultrix */
-   "/usr/bin/netstat -rn",   /* hpux10 */
    "/usr/bin/netstat -rn",   /* hpux */
    "/usr/bin/netstat -rn",   /* aix */
    "/bin/netstat -rn",       /* linux */
-   "/usr/ucb/netstat -rn",   /* solaris */
+   "/usr/bin/netstat -rn",   /* solaris */
    "/usr/sbin/netstat -rn",  /* osf1 */
    "/usr/sbin/netstat -rn",  /* digital */   
    "/usr/ucb/netstat -rn",   /* sun3 */
@@ -545,7 +533,6 @@ char *VFILECOMM[CLSSATTR] =
    "-", 
    "/usr/bin/file",   /* sun4 */
    "/usr/bin/file",   /* ultrix */
-   "/usr/bin/file",   /* hpux10 */
    "/usr/bin/file",   /* hpux */
    "/usr/bin/file",   /* aix */
    "/usr/bin/file",   /* linux */

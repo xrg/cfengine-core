@@ -82,7 +82,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
 /*                                                                 */
 /*******************************************************************/
 
-  PUBLIC char *COPYRIGHT = "Free Software Foundation 1994-2001\nDonated by Mark Burgess, Faculty of Engineering,\nOslo University College, 0254 Oslo, Norway";
+  PUBLIC char *COPYRIGHT = "Free Software Foundation 1994-\nDonated by Mark Burgess, Faculty of Engineering,\nOslo University College, 0254 Oslo, Norway";
 
   PRIVATE char *VPRECONFIG = "cf.preconf";
   PRIVATE char *VRCFILE = "cfrc";
@@ -150,6 +150,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PROTECTED int VDEFAULTEXPIREAFTER = 120; /* minutes */
 
   PUBLIC struct cfagent_connection *CONN = NULL;
+  PUBLIC struct Item *VEXCLUDECACHE = NULL;
 
 /*******************************************************************/
  /* Data structures - root pointers                                 */
@@ -158,6 +159,8 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PROTECTED  struct Item *VTIMEZONE = NULL;
   PROTECTED  struct Item *VMOUNTLIST = NULL;
   PROTECTED  struct Item *VEXCLUDECOPY = NULL;
+  PROTECTED  struct Item *VAUTODEFINE = NULL;
+  PROTECTED  struct Item *VSINGLECOPY = NULL;
   PROTECTED  struct Item *VEXCLUDELINK = NULL;
   PROTECTED  struct Item *VCOPYLINKS = NULL;
   PROTECTED  struct Item *VLINKCOPIES = NULL;
@@ -175,7 +178,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PROTECTED  struct Mountables *VMOUNTABLES = NULL;         /* Points to the list of mountables */
   PROTECTED  struct Mountables *VMOUNTABLESTOP = NULL;
 
-
+  PROTECTED  struct Item *VALERTS = NULL;
   PROTECTED  struct Item *VMOUNTED = NULL;
   PROTECTED  struct Tidy *VTIDY = NULL;               /* Points to the list of tidy specs */
   PROTECTED  struct Tidy *VTIDYTOP = NULL;
@@ -355,6 +358,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
       {
       "",
       "Control Defintions:",
+      "Alerts:",
       "Groups:",
       "File Imaging:",
       "Resolve:",
@@ -392,6 +396,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
       {                        /* macros in the "special" section of the file   */
       "",
       "control",
+      "alerts",
       "groups",
       "copy",
       "resolve",
@@ -440,6 +445,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
       "iprange",
       "isdefined",
       "strcmp",
+      "showstate",
       NULL
       };
 

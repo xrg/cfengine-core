@@ -122,8 +122,6 @@ if ((sp = malloc(strlen(VSYSNAME.nodename)+1)) == NULL)
 strcpy(sp,VSYSNAME.nodename);
 SetDomainName(sp);
 
-strcpy(VPREFIX,VSYSNAME.nodename);
-
 for (sp2=sp; *sp2 != '\0'; sp2++)  /* Truncate fully qualified name */
    {
    if (*sp2 == '.')
@@ -305,6 +303,15 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
        }
 
    Verbose("Interface %d: %s\n", j+1, ifp->ifr_name);
+   if(UNDERSCORE_CLASSES)
+   {
+   snprintf(VBUFF, bufsize, "_net_iface_%s", CanonifyName(ifp->ifr_name));
+   }
+   else
+   {
+   snprintf(VBUFF, bufsize, "net_iface_%s", CanonifyName(ifp->ifr_name));
+   }
+   AddClassToHeap(VBUFF);
 
    if (ifp->ifr_addr.sa_family == AF_INET)
       {
@@ -485,9 +492,16 @@ switch (sa->sa_family)
    {
    case AF_INET:
        Debug("IPV4 address\n");
-       sprintf(addrbuf,"%.19s",inet_ntoa(((struct sockaddr_in *)sa)->sin_addr));
+       snprintf(addrbuf,20,"%.19s",inet_ntoa(((struct sockaddr_in *)sa)->sin_addr));
        break;
-       
+
+#ifdef AF_LOCAL
+   case AF_LOCAL:
+       Debug("Local socket\n") ;
+       strcpy(addrbuf, "127.0.0.1") ;
+       break;
+#endif
+
 #if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
    case AF_INET6:
        Debug("IPV6 address\n");
@@ -559,7 +573,7 @@ switch (af)
 #endif
    default:
        Debug("Address family was %d\n",af);
-       FatalError("Software failure in sockaddr_ntop\n");
+       FatalError("Software failure in sockaddr_pton\n");
    }
 
  return NULL; 

@@ -1,4 +1,4 @@
-This is cfengine-Tutorial.info, produced by makeinfo version 4.0 from
+This is cfengine-Tutorial.info, produced by makeinfo version 4.3 from
 cfengine-Tutorial.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.0.4 for version 2.0.4
-as last updated 1 August 2002.
+   This manual corresponds to CFENGINE Edition 2.0.5 for version 2.0.5
+as last updated 9 February 2003.
 
 * Menu:
 
@@ -993,12 +993,13 @@ Invoking cfagent
      host% cfagent --help
 
    The first of these (the default command, with no arguments) causes
-cfagent to look for a file called `cfagent.conf' in the current
-directory and execute it silently.  The second command reads the file
-`myfile' and works silently.  The third works in verbose mode and the
-`-n' option means that no actions should actually be carried out, only
-warnings should be printed.  The final example causes cfagent to print
-out a list of its command line options.
+cfagent to look for a file called `cfagent.conf' in the directory
+pointed to by the environment variables `CFINPUTS' or
+`/var/cfengine/inputs' by default, and execute it silently.  The second
+command reads the file `myfile' and works silently.  The third works in
+verbose mode and the `-n' option means that no actions should actually
+be carried out, only warnings should be printed.  The final example
+causes cfagent to print out a list of its command line options.
 
    The complete list of options is listed in the summary at the
 beginning of this manual, or you can see it by giving the `-h' option,

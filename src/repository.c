@@ -63,7 +63,7 @@ else
    strcpy(localrepository,repository);
    }
 
-if (!IMAGEBACKUP)
+if (IMAGEBACKUP == 'n')
    {
    return true;
    }

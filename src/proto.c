@@ -75,7 +75,7 @@ char *localip;
   struct sockaddr_in myaddr;
   struct in_addr *iaddr;
   struct hostent *hp;
-  int len;
+  int len,err;
   struct passwd *user_ptr;
   char *uname;
   
@@ -118,9 +118,10 @@ Debug("Identifying this agent as %s i.e. %s, with signature %d\n",localip,VFQNAM
 
 #if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
 
-if (getnameinfo((struct sockaddr *)&myaddr,sizeof(myaddr),dnsname,maxvarsize,NULL,0,0) != 0)
+if ((err=getnameinfo((struct sockaddr *)&myaddr,len,dnsname,maxvarsize,NULL,0,0)) != 0)
    {
-   CfLog(cferror,"Couldn't lookup IP6 address\n","gethostbyaddr");
+   snprintf(OUTPUT,bufsize,"Couldn't look up address v6 for %s: %s\n",dnsname,gai_strerror(err));
+   CfLog(cferror,OUTPUT,"");
    return false;
    }
  

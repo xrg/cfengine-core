@@ -104,6 +104,7 @@ Verbose("Looking for a bootstrap file %s\n",filename);
 if (stat(filename,&s) == -1)
    {
    Verbose("(No bootstrap file)\n");
+   DeleteParser();
    return false;
    }
  
@@ -320,6 +321,7 @@ switch (ACTION)
    case required:
    case disks:
    case shellcommands:
+   case alerts:
    case unmounta:
    case processes:  InitializeAction();
    }
@@ -470,7 +472,11 @@ if (IsBuiltinFunction(item))
 	  break;
       case control: InstallLocalInfo(local);
 	  break;
-      default: yyerror("Builtin function outside control or classes");
+      case alerts:
+	  InstallPending(ACTION);
+	  AppendItem(&VALERTS,item,CLASSBUFF);
+	  break;
+      default: yyerror("Builtin function outside control, classes or alerts");
       }
    }
 else if (item[0] == '+')                               /* Lookup in NIS */
@@ -550,6 +556,11 @@ else
    switch(ACTION)
       {
       case control:     InstallLocalInfo(item);
+			if (CONTROLVAR == cfautodef)
+			   {
+			   PrependItem(&VAUTODEFINE,item,CLASSBUFF);
+			   AddInstallable(CLASSBUFF);
+			   }
                         break;
       case groups:      HandleGroupItem(item,simple);
                         break;
@@ -723,6 +734,19 @@ else
 			  InstallPending(ACTION);
 			  }
 		       break;
+
+      case alerts:
+                 if (strcmp(CLASSBUFF,"any") == 0)
+		    {
+		    yyerror("Alert specified with no class membership");
+		    }
+		 else
+		    {
+		    strcpy(CURRENTITEM,item);
+		    ACTIONPENDING=true;
+		    }
+		 
+   	         break;
 
       default:          yyerror("Unknown item or out of context");
       }
@@ -1034,6 +1058,14 @@ else
       
 		        break;
 
+      case mountables: break;
+
+      case binservers: InstallBinserverItem(varpath);
+	               break;
+
+      case homeservers: InstallHomeserverItem(varpath);
+                        break;
+
       case misc_mounts:if (! MOUNT_FROM)
                           {
                           MOUNT_FROM = true;
@@ -1191,6 +1223,9 @@ switch (ACTION)
                  HandleOptionalScriptAttribute(wildcard);
 		 break;
 
+   case alerts:  yyerror("No attributes to alerts");
+                 break;
+
    case disks:
    case required:
                  HandleOptionalRequired(wildcard);
@@ -1239,7 +1274,7 @@ switch (ACTION)
 		    }
 		 break;
 
-		 
+
    default:
                  yyerror("Wildcards cannot be used in this context:");
    }

@@ -71,7 +71,7 @@ Debug2("HomeTidy: Opening %s as .\n",name);
 if ((dirh = opendir(".")) == NULL)
    {
    snprintf(OUTPUT,bufsize*2,"Can't open directory %s\n",name);
-   CfLog(cfverbose,OUTPUT,"");
+   CfLog(cfverbose,OUTPUT,"opendir");
    return true;
    }
 
@@ -279,8 +279,6 @@ for (tp = VTIDY; tp != NULL; tp=tp->next)
          KILLOLDLINKS = true;
          }
 
-      TRAVLINKS = savetravlinks;
-
       
       if (!FileObjectFilter(path,statbuf,tlp->filters,tidy))
 	 {
@@ -327,7 +325,7 @@ struct stat *sb;
   struct dirent *dirp;
   char pcwd[bufsize];
   int is_dir,level,goback;
-
+  
 Debug("RecursiveTidySpecialArea(%s)\n",name);
 bzero(&statbuf,sizeof(statbuf));
 
@@ -418,19 +416,19 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       }
    else
       {
-      if (S_ISLNK(statbuf.st_mode) && (statbuf.st_mode != getuid()))	  
+      if (S_ISLNK(statbuf.st_mode) && (statbuf.st_uid != getuid()))	  
 	 {
 	 snprintf(OUTPUT,bufsize,"File %s is an untrusted link. cfagent will not follow it with a destructive operation (tidy)",pcwd);
 	 continue;
 	 }
       }
-   
+
    if (TRAVLINKS && (stat(dirp->d_name,&statbuf) == -1))
       {
       Verbose("Can't stat %s (%s)\n",dirp->d_name,pcwd);
       continue;
       }
-
+   
    if (S_ISDIR(statbuf.st_mode))
       {
       is_dir =  true;
@@ -489,6 +487,7 @@ struct stat *statbuf;
 int level,is_dir;
 
 { struct TidyPattern *tlp;
+  short savekilloldlinks = KILLOLDLINKS;
 
 Debug2("TidyParticularFile(%s,%s)\n",path,name);
 
@@ -507,6 +506,29 @@ for (tlp = tp->tidylist; tlp != NULL; tlp=tlp->next)
       continue;
       }
 
+   savekilloldlinks = KILLOLDLINKS;
+
+   if (tlp->travlinks == 'K')
+      {
+      KILLOLDLINKS = true;
+      }
+
+   if (S_ISLNK(statbuf->st_mode))             /* No point in checking permission on a link */
+      {
+      Debug("Checking for dead links\n");
+      if (tlp != NULL)
+	 {
+	 KillOldLink(path,tlp->defines);
+	 }
+      else
+	 {
+	 KillOldLink(path,NULL);
+	 }
+      continue;
+      }
+
+   KILLOLDLINKS = savekilloldlinks;
+   
    if (is_dir && tlp->rmdirs == 'n')               /* not allowed to rmdir */
       {
       ResetOutputRoute('d','d');
@@ -535,12 +557,14 @@ for (tlp = tp->tidylist; tlp != NULL; tlp=tlp->next)
 
    if (! WildMatch(tlp->pattern,name))
       {
+      Debug("Pattern did not match (first filter) %s\n",path);
       ResetOutputRoute('d','d');
       continue;
       }
 
    if (!FileObjectFilter(path,statbuf,tlp->filters,tidy))
       {
+      Debug("Skipping filtered file %s\n",path);
       continue;
       }
 
@@ -556,8 +580,7 @@ for (tlp = tp->tidylist; tlp != NULL; tlp=tlp->next)
       }
    else if (is_dir && !EmptyDir(path))
       {
-      snprintf(OUTPUT,bufsize*2,"Non-empty directory %s, skipping..\n",path);
-      CfLog(cfinform,OUTPUT,"");
+      Debug("Non-empty directory %s, skipping..\n",path);
       ResetOutputRoute('d','d');
       continue;
       }
@@ -657,11 +680,13 @@ if (age_match && size_match)
 	 }
       else
 	 {
+	 int ret=false;
+	 
 	 if (tlp->compress == 'y')
 	    {
 	    CompressFile(name);
 	    }
-         else if (unlink(name) == -1)
+         else if ((ret = unlink(name)) == -1)
 	    {
 	    snprintf(OUTPUT,bufsize*2,"Couldn't unlink %s tidying\n",path);
             CfLog(cfverbose,OUTPUT,"unlink");
@@ -672,8 +697,11 @@ if (age_match && size_match)
 	 snprintf(OUTPUT,bufsize*2,"Size=%d bytes, %c-age=%d days\n",
 		 statbuf->st_size,tlp->searchtype,(nowticks-fileticks)/ticksperday);
 	 CfLog(cfverbose,OUTPUT,"");
-	 
-	 AddMultipleClasses(tlp->defines);
+
+	 if (ret != -1)
+	    {
+	    AddMultipleClasses(tlp->defines);
+	    }
 	 }
       }
    else

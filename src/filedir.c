@@ -476,9 +476,12 @@ if ((ptr != NULL) && S_ISREG(dstat->st_mode) && (ptr->checksum != 'n'))
 
     bzero(digest,EVP_MAX_MD_SIZE+1);
     ChecksumFile(file,digest,ptr->checksum);
-    
-    if (ChecksumChanged(file,digest,cferror,false,ptr->checksum))
+
+    if (!DONTDO)
        {
+       if (ChecksumChanged(file,digest,cferror,false,ptr->checksum))
+	  {
+	  }
        }
     }
 

@@ -1,3 +1,61 @@
+2.0.5
+
+	Cfrun ipv6 patch
+	
+        Syslog messages name patch
+
+	mountables, binservers variable usage fix
+	
+	backup=timestamp added in copy so that multiple backups can coexist.
+	Other backups use this by default.
+	
+	Cfenvd records loadaverage - and av.db renamed to cf_averages.db since
+	records in av.db no longer compatible.
+	
+	Iteration added to disk paths
+
+	Typo in filters.c UID -> USER meant that Owner field in filters would not always
+	work for processes.
+	Bug in removal of spaces in process-filter matches could cause some criteria
+	to fail to match.
+
+	
+        Netstat changed entry in solaris 2.9
+	Hard class hpux10 -> hpux and the old hpux is deprecated
+
+        tidy //tmp would start tidying / due to error in ExpandWildcardsAndDo. FIxed
+
+	Cfenvd netstat state recorded in separate files now in WORKDIR, by
+	protocol and incoming/outgoing. This allows accurate record of the
+	state to which classes refer.
+
+	excludes and ignores would not appended in a tidy command if 
+	a path already existed in another previous command. Fixed so that all excludes
+	and ignores are concatenated for all related paths.
+
+	Local AF_LOCAL addresses not handled by sockaddr in IPv6 compatible functions.
+	Now returns 127.0.0.1 (why not ::1??)
+
+        Typo in tidy.c prevented tidy old links from working.
+	Documentation patches.
+
+	Checksums no longer performed on dry run (-n) in files, but still in
+	copy.
+
+	No errors written to syslog in dryrun mode.
+	Umask patch in editfiles - umask was not properly installed
+
+	New copy options / variables singlecopy= and autodefine added.
+
+	Alerts added as own section alerts: allow users to define a custom message
+	triggered by a class activation. Alerts can also quote state information
+	from cfenvd and the process table.
+
+	tidy define= does not set class if file could not be tidied.
+
+	debian detect patch (Andy Stribblehill)
+	cfservd descriptor leak (Andy Stribblehill)
+	cfservd daemonize modification
 2.0.4
 
 	cfexecd now reports identical messages only once per day. (Bas)

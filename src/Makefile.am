@@ -11,6 +11,7 @@ cfagent_SOURCES =							\
 	cfagent.c							\
 	init.c								\
         do.c                                                            \
+	alerts.c							\
         wrapper.c                                                       \
         report.c                                                        \
 	client.c							\
@@ -126,7 +127,8 @@ cfexecd_SOURCES =							\
 	granules.c							\
 	eval.c								\
 	item-ext.c							\
-	item.c
+	item.c								\
+	init.c
 
 cfexecd_LDADD = $(LEXLIB)  @BERKELEY_DB_LIB@ @OPENSSL_LIB_LIB@
 
@@ -173,6 +175,7 @@ cfenvd_SOURCES =							\
 	classes.c							\
 	item.c								\
 	item-ext.c							\
+	item-file.c							\
 	eval.c								\
 	wildcard.c							\
 	df.c								\
@@ -181,7 +184,8 @@ cfenvd_SOURCES =							\
 	log.c								\
 	popen.c								\
 	patches.c							\
-	locks.c		
+	locks.c								\
+	init.c
 
 cfenvgraph_SOURCES =							\
 	cfenvgraph.c							\

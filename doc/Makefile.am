@@ -24,7 +24,7 @@ EXTRA_DIST = cfengine.8 texinfo.tex $(htmlfiles)
 SUFFIXES = html latex
 
 %.html : %.texinfo
-	${MAKEINFO} -I $(srcdir) --html $<
+	${MAKEINFO} -I $(srcdir) --html --no-split $<
 
 %.dvi : %.latex
 	${LATEX} $<

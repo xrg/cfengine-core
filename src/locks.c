@@ -128,8 +128,14 @@ if ((errno = db_create(&DBP,NULL,0)) != 0)
    IGNORELOCK = true;
    return;
    }
- 
+
+
+
+#ifdef CF_OLD_DB
 if ((errno = DBP->open(DBP,LOCKDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+if ((errno = DBP->open(DBP,NULL,LOCKDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
+#endif
    {
    snprintf(OUTPUT,bufsize*2,"Couldn't open lock database %s\n",LOCKDB);
    CfLog(cferror,OUTPUT,"db_open");
@@ -161,6 +167,7 @@ int ifelapsed, expireafter;
 time_t now;
 
 { unsigned int pid;
+  int err; 
   time_t lastcompleted = 0, elapsedtime;
 
 if (IGNORELOCK)
@@ -210,7 +217,7 @@ if (elapsedtime < 0)
 
 if (elapsedtime < ifelapsed)
    {
-   snprintf(OUTPUT,bufsize*2,"Too soon for %s.%s (%u/%u minutes elapsed)\n",operator,operand,elapsedtime,ifelapsed);
+   snprintf(OUTPUT,bufsize*2,"Nothing scheduled for %s.%s (%u/%u minutes elapsed)\n",operator,operand,elapsedtime,ifelapsed);
    CfLog(cfverbose,OUTPUT,"");
    return false;
    }
@@ -237,28 +244,45 @@ if (lastcompleted != 0)
       else
 	 {
 	 Verbose("Trying to kill expired process, pid %d\n",pid);
-	 kill(pid,SIGCONT);
-	 sleep(3);
-	 kill(pid,SIGINT);
-	 sleep(1);
-	 kill(pid,SIGTERM);
-	 sleep(5);
-	 kill(pid,SIGKILL);
-	 sleep(1);
 
-	 if ((kill(pid,SIGTERM) < 0) && (errno == ESRCH))
-	    {	    	 
+	 err = 0;
+	 
+	 if (((err = kill(pid,SIGCONT)) == -1) && (errno != ESRCH))
+	    {
+	    sleep(3);
+	    err=0;
+	    
+	    if ((err = kill(pid,SIGINT)) == -1)
+	       {
+	       sleep(1);
+	       err=0;
+	       
+	       if ((err = kill(pid,SIGTERM)) == -1)
+		  {		 
+		  sleep(5);
+		  err=0;
+		  
+		  if ((err = kill(pid,SIGKILL)) == -1)
+		     {
+		     sleep(1);
+		     }
+		  }
+	       }
+	    }
+
+	 if (err == 0 || errno == ESRCH)
+	    {
 	    LockLog(pid,"Lock expired, process killed",operator,operand);
+	    unlink(CFLOCK);
 	    }
 	 else
 	    {
-	    snprintf(OUTPUT,bufsize*2,"Unable to kill expired cfagent process %d, exiting this time..\n",pid);
+	    snprintf(OUTPUT,bufsize*2,"Unable to kill expired cfagent process %d from lock %s, exiting this time..\n",pid,CFLOCK);
 	    CfLog(cferror,OUTPUT,"kill");
+	    
 	    FatalError("");
 	    }
 	 }
-
-      unlink(CFLOCK);
       }
    else
       {

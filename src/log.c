@@ -85,7 +85,7 @@ switch(level)
 			endl = true;
                         }
 		     
-		     if (LOGGING && IsPrivileged())
+		     if (LOGGING && IsPrivileged() && !DONTDO)
 			{
 			syslog(LOG_NOTICE, "%s", buffer); 
 
@@ -123,7 +123,7 @@ switch(level)
                      break;
 
    case cflogonly:
-                     if (LOGGING && IsPrivileged())
+                     if (LOGGING && IsPrivileged() && !DONTDO)
 			{
 			syslog(LOG_ERR," %s",buffer);    
 			
@@ -138,8 +138,8 @@ switch(level)
    case cferror:
                      printf("%s: %s",VPREFIX,buffer);
 
-		     if (LOGGING && IsPrivileged())
-			{
+		     if (LOGGING && IsPrivileged() && !DONTDO)
+			{			
 			syslog(LOG_ERR," %s",buffer);    
 			}
  
@@ -154,7 +154,7 @@ switch(level)
 		        printf("%s: %s: %s\n",VPREFIX,errstr,strerror(errno));
 			endl = true;
 			
-			if (LOGGING && IsPrivileged())
+			if (LOGGING && IsPrivileged() && !DONTDO)
 			   {
 			   syslog(LOG_ERR, " %s: %s",errstr,strerror(errno));   
 			   }

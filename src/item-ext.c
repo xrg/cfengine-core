@@ -1406,11 +1406,11 @@ for (ip = *liststart; ip != NULL; ip=ip->next)
 
    if (regexec(&rx,VBUFF,1,&matchcheck,0) == 0)
       {
-      snprintf(OUTPUT,bufsize*2,"WARNING: Non-convergent edit ReplaceAll [%s] With [%s]",replace,search);
+      snprintf(OUTPUT,bufsize*2,"WARNING: Non-convergent edit operation ReplaceAll [%s] With [%s]",replace,search);
       CfLog(cferror,OUTPUT,"");
       snprintf(OUTPUT,bufsize*2,"Line begins [%.40s]",ip->name);
       CfLog(cferror,OUTPUT,"");
-      CfLog(cferror,"Replace contains search string - edit was not done","");
+      CfLog(cferror,"Replacement matches search string and will thus replace every time - edit was not done","");
       return false;
       }
 

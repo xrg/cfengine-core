@@ -101,6 +101,9 @@ char *file, *repository;
   char new[bufsize],backup[bufsize];
   FILE *fp;
   mode_t mask;
+  char stamp[bufsize]; 
+  time_t STAMPNOW;
+  STAMPNOW = time((time_t *)NULL);
 
 if (stat(file,&statbuf) == -1)
    {
@@ -112,7 +115,16 @@ if (stat(file,&statbuf) == -1)
 
 strcpy(new,file);
 strcat(new,CF_EDITED);
+
 strcpy(backup,file);
+
+sprintf(stamp, "_%d_%s", CFSTARTTIME, CanonifyName(ctime(&STAMPNOW)));
+
+if (IMAGEBACKUP == 's')
+   {
+   strcat(backup,stamp);
+   }
+ 
 strcat(backup,CF_SAVED);
  
 unlink(new); /* Just in case of races */ 
@@ -135,21 +147,27 @@ if (fclose(fp) == -1)
    return false;
    }
  
-snprintf(OUTPUT,bufsize*2,"Edited file %s \n",file);
-CfLog(cfinform,OUTPUT,""); 
-
-if (! IsItemIn(VREPOSLIST,new))
+if (ISCFENGINE && (ACTION == editfiles))
    {
-   if (rename(file,backup) == -1)
+   snprintf(OUTPUT,bufsize*2,"Edited file %s \n",file);
+   CfLog(cfinform,OUTPUT,""); 
+   }
+
+if (IMAGEBACKUP != 'n')
+   {
+   if (! IsItemIn(VREPOSLIST,new))
       {
-      snprintf(OUTPUT,bufsize*2,"Error while renaming backup %s\n",file);
-      CfLog(cferror,OUTPUT,"rename ");
-      unlink(new);
-      return false;
-      }
-   else if (Repository(backup,repository))
-      {
-      unlink(backup);
+      if (rename(file,backup) == -1)
+	 {
+	 snprintf(OUTPUT,bufsize*2,"Error while renaming backup %s\n",file);
+	 CfLog(cferror,OUTPUT,"rename ");
+	 unlink(new);
+	 return false;
+	 }
+      else if (Repository(backup,repository))
+	 {
+	 unlink(backup);
+	 }
       }
    }
 
