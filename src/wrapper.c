@@ -162,9 +162,9 @@ if (ptr->inclusions != NULL && !IsWildItemIn(ptr->inclusions,lastnode))
    if (stat(startpath,&statbuf) != -1)
       {
       if (!S_ISDIR(statbuf.st_mode))
-  {
-  return;  /* assure that we recurse into directories */
-  }
+         {
+         return;  /* assure that we recurse into directories */
+         }
       }
    }
 
@@ -174,7 +174,9 @@ if (IsWildItemIn(ptr->exclusions,lastnode))
    ReleaseCurrentLock();
    return;
    }
-    
+
+Debug("Checking wrapped file object %s\n",ptr->path);
+
 if (stat(startpath,&statbuf) == -1)
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot access file/directory %s\n",ptr->path);
@@ -251,7 +253,6 @@ else
       ReleaseCurrentLock();
       return;
       }
-   
    
    if (ptr->action == linkchildren)
       {

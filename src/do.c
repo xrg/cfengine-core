@@ -2514,7 +2514,7 @@ void ConfigureInterfaces()
 { struct Interface *ifp;
 
 Banner("Network interface configuration");
- 
+
 if (GetLock("netconfig",VIFDEV[VSYSTEMHARDCLASS],VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
    {
    if (strlen(VNETMASK) != 0)
@@ -3481,7 +3481,7 @@ int TouchDirectory(struct File *ptr)                     /* True if file path in
 
 { char *sp;
 
-if (ptr->action == touch)
+if (ptr->action == touch||ptr->action == create)
    {
    sp = ptr->path+strlen(ptr->path)-2;
 

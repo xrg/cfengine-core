@@ -40,6 +40,7 @@
 	  gt:: "$(a) GREATER THAN $(b)"
 
 
+	Bugfix for cfshow -c options (Nathan Hruby)
 	
 2.1.13
 	Mistake in placement of update.conf runs fixed.
