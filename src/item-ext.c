@@ -1395,12 +1395,24 @@ for (ip = *liststart; ip != NULL; ip=ip->next)
    
    if (regexec(&rx,VBUFF,1,&matchcheck,0) == 0)
       {
-      snprintf(OUTPUT,CF_BUFSIZE*2,"WARNING: Non-convergent edit operation ReplaceAll [%s] With [%s]",replace,search);
-      CfLog(cferror,OUTPUT,"");
-      snprintf(OUTPUT,CF_BUFSIZE*2,"Line begins [%.40s]",ip->name);
-      CfLog(cferror,OUTPUT,"");
-      CfLog(cferror,"Replacement matches search string and will thus replace every time - edit was not done","");
-      return false;
+      if (EDITGROUPLEVEL <= 0)
+         {
+         snprintf(OUTPUT,CF_BUFSIZE*2,"WARNING: Non-convergent edit operation ReplaceAll [%s] With [%s]",search,replace);
+         CfLog(cferror,OUTPUT,"");
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Line begins [%.40s]",ip->name);
+         CfLog(cferror,OUTPUT,"");
+         CfLog(cferror,"Replacement matches search string and will thus replace every time - edit was not done","");
+         return false;
+         }
+      else
+         {
+         /* This needs to be a smarter check - to see if the group fixes the problem or not*/
+         snprintf(OUTPUT,CF_BUFSIZE*2,"WARNING: Possible non-convergent edit operation ReplaceAll [%s] With [%s]",search,replace);
+         CfLog(cfinform,OUTPUT,"");
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Line begins [%.40s]",ip->name);
+         CfLog(cfinform,OUTPUT,"");
+         CfLog(cfinform,"Replacement, although predicated, could match search string and might thus replace every time - edit was not done","");
+         }
       }
 
    CURRENTLINEPTR = ip;

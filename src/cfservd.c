@@ -565,6 +565,8 @@ signal(SIGTERM,(void*)ExitCleanly);
 signal(SIGHUP,SIG_IGN);
 signal(SIGPIPE,SIG_IGN);
 signal(SIGCHLD,SIG_IGN);
+signal(SIGUSR1,HandleSignal);
+signal(SIGUSR2,HandleSignal);
  
 if (listen(sd,queuesize) == -1)
    {

@@ -117,9 +117,22 @@ if (signum != SIGCHLD)
       closelog();
       exit(0);
       }
-   }
-else /* zombie cleanup - how hard does it have to be? */
-   {
+   else if (signum == SIGUSR1)
+	  {
+	  DEBUG= true;
+	  D2= true;
+	  }
+   else if (signum == SIGUSR2)
+	  {
+	  DEBUG= false;
+	  D2= false;
+	  }
+   else /* zombie cleanup - how hard does it have to be? */
+	  {
+	  }
+
+   /* Reset the signal handler */
+   signal(signum,HandleSignal);
    }
 }
 

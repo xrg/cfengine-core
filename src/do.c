@@ -597,8 +597,8 @@ void MailCheck()
 
 { char mailserver[CF_BUFSIZE];
   char mailhost[CF_MAXVARSIZE];
-  char rmailpath[CF_MAXVARSIZE];
-  char lmailpath[CF_MAXVARSIZE];
+  char rmailpath[CF_BUFSIZE];
+  char lmailpath[CF_BUFSIZE];
 
 
 if (!GetLock("Mailcheck",CanonifyName(VFSTAB[VSYSTEMHARDCLASS]),0,VEXPIREAFTER,VUQNAME,CFSTARTTIME))

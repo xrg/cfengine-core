@@ -79,6 +79,8 @@ signal (SIGTERM,HandleSignal);                   /* Signal Handler */
 signal (SIGHUP,HandleSignal);
 signal (SIGINT,HandleSignal);
 signal (SIGPIPE,HandleSignal);
+signal (SIGUSR1,HandleSignal);
+signal (SIGUSR2,HandleSignal);
 
 Initialize(argc,argv); 
 SetReferenceTime(true);
@@ -1088,7 +1090,7 @@ if (!NOSPLAY)
 void SetReferenceTime(int setclasses)
 
 { time_t tloc;
- char vbuff[CF_MAXVARSIZE];
+ char vbuff[CF_BUFSIZE];
  
 if ((tloc = time((time_t *)NULL)) == -1)
    {

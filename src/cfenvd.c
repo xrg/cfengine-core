@@ -280,7 +280,7 @@ for (i = 0; i < CF_NETATTR; i++)
 sprintf(VBUFF,"%s/state/cf_users",CFWORKDIR);
 CreateEmptyFile(VBUFF);
  
-snprintf(AVDB,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_AVDB_FILE);
+snprintf(AVDB,CF_MAXVARSIZE,"%s/state/%s",CFWORKDIR,CF_AVDB_FILE);
 snprintf(STATELOG,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_STATELOG_FILE);
 snprintf(ENV_NEW,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_ENVNEW_FILE);
 snprintf(ENV,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_ENV_FILE);
@@ -488,6 +488,8 @@ signal (SIGHUP,HandleSignal);
 signal (SIGINT,HandleSignal);
 signal (SIGPIPE,HandleSignal);
 signal (SIGSEGV,HandleSignal);
+signal (SIGUSR1,HandleSignal);
+signal (SIGUSR2,HandleSignal);
 
 VCANONICALFILE = strdup("db");
  

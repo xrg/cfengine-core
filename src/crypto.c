@@ -49,7 +49,7 @@ snprintf(VBUFF,CF_BUFSIZE,"%s/randseed",VLOGDIR);
 
  if (stat(VBUFF,&statbuf) == -1)
     {
-    snprintf(AVDB,CF_BUFSIZE,"%s/%s",CFWORKDIR,CF_AVDB_FILE);
+    snprintf(AVDB,CF_MAXVARSIZE,"%s/%s",CFWORKDIR,CF_AVDB_FILE);
     }
  else
     {
@@ -276,7 +276,7 @@ void MD5Random(unsigned char digest[EVP_MAX_MD_SIZE+1])
       MD5. We can use this as a seed for pseudo random generator */
 
 { unsigned char buffer[CF_BUFSIZE];
-  char pscomm[CF_MAXLINKSIZE];
+  char pscomm[CF_BUFSIZE];
   char uninitbuffer[100];
   int md_len;
   const EVP_MD *md;

@@ -289,6 +289,8 @@ signal(SIGINT,(void *)ExitCleanly);
 signal(SIGTERM,(void *)ExitCleanly);
 signal(SIGHUP,SIG_IGN);
 signal(SIGPIPE,SIG_IGN);
+signal(SIGUSR1,HandleSignal);
+signal(SIGUSR2,HandleSignal);
  
 umask(077);
 

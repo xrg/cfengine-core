@@ -79,7 +79,7 @@ extern char CFDES3[8];
 extern char CFPUBKEYFILE[CF_BUFSIZE];
 extern char CFPRIVKEYFILE[CF_BUFSIZE];
 extern char CFWORKDIR[CF_BUFSIZE];
-extern char AVDB[1024];
+extern char AVDB[CF_MAXVARSIZE];
 
 extern dev_t ROOTDEVICE;
 extern char *VPRECONFIG;

@@ -1,3 +1,7 @@
+2.1.14
+	Exception for ReplaceALL convergence warning. Warning is not fatal
+	if the operation is inside an editgroup.
+
 2.1.13
 	Mistake in placement of update.conf runs fixed.
 
