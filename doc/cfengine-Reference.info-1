@@ -36,7 +36,7 @@ may be included in a translation approved by the author instead of in
 the original English.
 
    This manual corresponds to CFENGINE Edition 2.1.14 for version
-2.1.14 as last updated 16 March 2005.
+2.1.14 as last updated 6 April 2005.
 
 * Menu:
 
@@ -403,8 +403,8 @@ File: cfengine-Reference.info,  Node: Cfshow,  Next: Cfagent reference,  Prev: C
 ******************
 
 The `cfshow' command was introduced in cfengine 2.1.11 in order to
-provide a simple command line query of the various databases used to
-store operational state by cfagent.
+provide a simple way to show some of the data stored by cfagent for
+operational purposes.
 
      everyhost# cfshow -a
      everyhost# cfshow -l
@@ -3831,9 +3831,9 @@ copying. Cfengine attempts to prevent this during remote copies._
      global list of patterns can also be defined in the control section
      of the program.
 
-     If the `purge' option is used in copying, then the include option
-     has the effect of the excluding files from the purge, i.e. include
-     means `keep' the named files.  
+     If the `purge' option is used in copying, then the `ignore' option
+     has the effect of the excluding files from the purge, i.e.
+     `ignore' means `keep' the named files.
 
 `exclude'
      This option may be repeated a number of times to specify the names
@@ -6940,6 +6940,8 @@ process command is
 
      processes:
 
+       CLASS::
+
          "QUOTED REGULAR EXPRESSION"
 
                              restart "SHELL COMMAND"
@@ -7521,9 +7523,9 @@ File: cfengine-Reference.info,  Node: shellcommands,  Next: strategies,  Prev: r
 4.34 shellcommands
 ==================
 
-Cfengine focuses on fairly simple minded tasks in order to be as general
-as possible.  In many cases you will therefore want to write a script to
-do something special on your system.  You can still take advantage of
+Cfengine focuses on fairly simple-minded tasks in order to be as general
+as possible.  In many cases, you will therefore want to write a script
+to do something special on your system.  You can still take advantage of
 the classes you have defined by executing these scripts or shell
 commands from this section.
 
@@ -7531,7 +7533,9 @@ commands from this section.
 
      shellcommands:
 
-       "COMMAND-STRING"
+       CLASS::
+
+         "COMMAND-STRING"
 
                timeout=SECONDS
                useshell=true/FALSE
@@ -7553,16 +7557,88 @@ commands from this section.
                define=CLASS-LIST
                elsedefine=CLASS-LIST
 
-The user and group ID's of the process can be set to restrict the
-permissions of the shellcommand to another user only if cfengine is
-executed by root. If you set the optional timeout string, then cfengine
-will abort the shellcommand if it exceeds the specified time-limit in
-seconds. This can be useful for avoiding situations caused by hung
-network connections etc.  
 
-   Normally, cfagent requires the command string to begin with a `/'
-since it is dangerous to rely on an implicit path. However, sometimes it
-it is appropriate to override this.  
+`COMMAND-STRING'
+     This is the command to be executed.
+
+`TIMEOUT'
+     If you set the optional TIMEOUT parameter, then cfengine will
+     abort the specified shellcommand if it exceeds the given
+     time-limit (specified in seconds).  This can be useful for
+     avoiding hung programs caused by hung network connections, etc.  
+
+`USESHELL'
+     Some program lines, especially those that do not use any
+     shell-specific capabilities (such as redirection and wildcard
+     expansion) can be run without the shell.  This is typically more
+     secure, as the command line is not altered by the user or by the
+     system.  It is also faster, as the shell does not have to be
+     spawned in order to run the given command.  Use the USESHELL
+     parameter to tell cfengine to not use the shell to run this
+     shellcommand.
+
+`UMASK'
+     The umask affects the permissions given to a file created by this
+     shellcommand.  The umask specifies, specifically, the permissions
+     that are to be taken away.
+
+`OWNER'
+
+`GROUP'
+     The user and group ID's of the process can be set (using the OWNER
+     and GROUP parameters respectively) to restrict the permissions of
+     the shellcommand. This can only be done if cfengine is executed by
+     root; otherwise, the user and group will remain that of the the
+     user who started cfengine.
+
+`BACKGROUND'
+     Run this command in the background if this is specified true.
+     This will make cfengine run faster, but no tests can be made (at
+     least directly) on the results of this command.
+
+`CHDIR'
+     Change to the specified directory before running this command.
+
+`CHROOT'
+     The `chroot' option changes the process root directory of the
+     command, creating a `sandbox' which the process cannot escape
+     from. Best used together with a change of owner (using the `owner'
+     parameter), since a root process can break out of a chrooted
+     environment.
+
+`PREVIEW'
+     The `preview' option means that the shellcommand will also be
+     executed during the `--dry-run' (`-n') options. This allows
+     cfengine to be more aware of the results of scripts which define
+     classes. This option should be used with care.
+
+     Scripts should conform to the protocol of not executing
+     unnecessary commands when the classes `opt_dry_run' is defined.  
+
+`INFORM'
+
+`NOABSPATH'
+     Normally, cfagent requires the command string to begin with a `/'
+     since it is dangerous to rely on an implicit path. However,
+     sometimes it it is appropriate to override this.  This behavior
+     can be overridden using the NOABSPATH parameter.  
+
+`IFELAPSED'
+     The shellcommand specified will not be run unless the specified
+     amount of time (in minutes) has elapsed since the command was
+     previously run.
+
+`EXPIREAFTER'
+     If this amount of time (in minutes) has elapsed since the command
+     started, then the command is aborted.
+
+`DEFINE'
+     Define the specified classes if the command finishes successfully.
+
+`ELSEDEFINE'
+     Define the specified classes if the command does not finish
+     successfully.
+
 
    Variable substitution works within the strings.  Here are some
 examples.
@@ -7585,9 +7661,10 @@ examples.
            "/usr/etc/catman -w -M /usr/man"
            "/usr/etc/catman -w -M /usr/local/gnu/man"
 
-If you need to write more advanced scripts, which make detailed use of
+If you need to write more advanced scripts which make detailed use of
 the classes defined by cfengine, use the `$(allclasses)' variable to
-send a complete list of classes to your script in the format
+send a complete list of classes to your script.  An enviornment
+variable, CFALLCLASSES, is set and is in the format
 
 
      CFALLCLASSES=class1:class2:class3...
@@ -7618,21 +7695,9 @@ least one space between each variable. For example:
         "/bin/echo $(var1) $(var2)"
    This iterates over all values of the list variables. *Note Iterating
 over lists: (cfengine-Tutorial)Iterating over lists.  If you are
-iterating over a list, the timeout applies to each separate iteration,
-not to the sum of all the iterations.  
-
-   The `chroot' option changes the process root directory of the
-command, creating a `sandbox' which the process cannot escape from. Best
-used together with a change of owner, since a root process can break out
-of such a confinement in principle. The `chdir' option changes the
-current working directory of the restarted process.
-
-   The `preview' option means that the shellcommand will also be
-executed during the `--dry-run' (`-n') options. This allows cfengine to
-be more aware of the results of scripts which define classes. This
-option should be used with care.  Scripts should conform to the
-protocol of not executing unnecessary commands when the classes
-`opt_dry_run' is defined.
+iterating over a list, the time limit (in seconds) which is specified
+in the TIMEOUT parameter applies to each separate iteration, not to the
+sum total of all the iterations.  
 
 
 File: cfengine-Reference.info,  Node: strategies,  Next: tidy,  Prev: shellcommands,  Up: Cfagent reference
@@ -7640,10 +7705,9 @@ File: cfengine-Reference.info,  Node: strategies,  Next: tidy,  Prev: shellcomma
 4.35 strategies
 ===============
 
-Strategies are introduced as of cfengine version 2.0.x. A strategy is a
-probability distribution of classes. In game theoretical language, a
-strategy is a mixed strategy. Each class label is a pure strategy, or a
-possible course of action. A strategy group is defined as follows:
+Strategies (introduced in cfengine version 2.0) are a way of picking
+from a set of classes randomly.  Each class is a possible course of
+action.  A strategy group (of classes) is defined as follows:
 
      strategies:
 
@@ -7665,20 +7729,20 @@ possible course of action. A strategy group is defined as follows:
       class2.Hr02::
 
         /home pat=*.wav age=0
-   The idea here is to randomly pick from different alternatives
 
-   Formally, each strategy is a class which is defined with a certain
-probability. An integer weight is provided in quotes to represent the
-probability of the classes. When cfengine is run, it picks on of the
-classes from each strategy by `throwing dice' to select a strategy at
-random. Think of Star Trek, when the Captain says "rotate shield
-modulations". Using strategies, you can choose different ways of
-configuring or protecting a system, at random, thus confounding
-environmental attempts to break (into) the system.
+   The idea here is to randomly pick from a selected set of classes.
 
-   Note that each strategy has a formal name, but this name is not used
-to attach a strategy to an action, as in filters, or acls. Rather,
-think of this simply as a way of defining classes at random, from a set.
+   Specifically, each strategy is a class which is defined with a
+certain probability. An integer weight is provided in quotes to
+represent the probability weight of the associated class. When cfengine
+is run, it randomly picks one of the classes from each strategy.  Using
+strategies, you can choose different ways of configuring or protecting
+a system, at random, thus confounding environmental attempts to break
+into the system.
+
+   Note that each strategy has a formal name (such as
+`my_strategy_alias' in the example), but this name is not used to
+attach a strategy to an action the same way that filters or ACLs are.
 
 
 File: cfengine-Reference.info,  Node: tidy,  Next: unmount,  Prev: strategies,  Up: Cfagent reference
@@ -8352,25 +8416,4 @@ If this option is set, cfservd will only serve the named files if the
 copy access type is `secure', i.e. on an encrypted link. This
 presupposes that cfengine has been compiled with a working OpenSSL
 library.
-
-
-File: cfengine-Reference.info,  Node: SkipVerify,  Prev: encrypt=,  Up: admit grant and deny
-
-5.2.3 SkipVerify
-----------------
-
-If connecting hosts use a Network Address Translator in order to share
-an IP address, reverse lookup will fail to give a correct verification
-of host identity.  You can switch off cfservd's verification of IP host
-identity for specific IP addresses or patterns using this command. E.g.
-
-
-     SkipVerify = ( 192.0.0.10  192.0.2.  )
-
-   This does not affect key verification.
-
-   NOTE!! This is a security risk because it means that cfservd
-implicitly trusts the connecting hosts! You should be very careful in
-using Network Address Translators in a secure environment. It is not
-recommended for sites which require a high level of security.  
 

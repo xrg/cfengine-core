@@ -430,8 +430,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <h2 class="chapter">3 Cfshow reference</h2>
 
 <p>The <code>cfshow</code> command was introduced in cfengine 2.1.11 in order to
-provide a simple command line query of the various databases used to store
-operational state by cfagent.
+provide a simple way to show some of the data stored by cfagent for
+operational purposes.
 
 <pre class="smallexample">     everyhost# cfshow -a
      everyhost# cfshow -l
@@ -4629,11 +4629,11 @@ operation. Specifying one of these automatically excludes everything
 else except further include patterns.  A global list of patterns can
 also be defined in the control section of the program.
 
-     <p>If the <code>purge</code> option is used in copying, then the include option
-has the effect of the excluding files from the purge, i.e. include means
-`keep' the named files. 
-<a name="index-Purge_002c-excluding-files-293"></a>
-<br><dt><code>exclude</code><dd>This option may be repeated a number of times to specify the
+     <p><a name="index-Purge_002c-excluding-files-293"></a>If the <code>purge</code> option is used in copying, then the <code>ignore</code> option
+has the effect of the excluding files from the purge, i.e. <code>ignore</code> means
+`keep' the named files.
+
+     <br><dt><code>exclude</code><dd>This option may be repeated a number of times to specify the
 names of files, or wildcards which match files which are to
 be excluded from a copy operation. A global list of
 patterns can also be defined in the control section of the program
@@ -8013,6 +8013,8 @@ form of a process command is
 
 <!-- /@w --><pre class="smallexample">     processes:
      
+       <var>class</var>::
+     
          <var>"quoted regular expression"</var>
      
                              restart <var>"shell command"</var>
@@ -8644,8 +8646,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 <h3 class="section">4.34 shellcommands</h3>
 
-<p>Cfengine focuses on fairly simple minded tasks in order to be as general
-as possible.  In many cases you will therefore want to write a script to
+<p>Cfengine focuses on fairly simple-minded tasks in order to be as general
+as possible.  In many cases, you will therefore want to write a script to
 do something special on your system.  You can still take advantage of
 the classes you have defined by executing these scripts or shell
 commands from this section.
@@ -8656,7 +8658,9 @@ commands from this section.
 
 <!-- /@w --><pre class="smallexample">     shellcommands:
      
-       "<var>command-string</var>"
+       <var>class</var>::
+     
+         "<var>command-string</var>"
      
                timeout=<var>seconds</var>
                useshell=<b>true</b><var>/false</var>
@@ -8681,18 +8685,69 @@ commands from this section.
 </pre>
    </td></tr></table>
    <a name="index-umask-528"></a>
-The user and group ID's of the process can be set to restrict the
-permissions of the shellcommand to another user only if cfengine is
-executed by root. If you set the optional timeout string, then cfengine
-will abort the shellcommand if it exceeds the specified time-limit in
-seconds. This can be useful for avoiding situations caused by hung
-network connections etc. 
+     <dl>
+<dt><var>command-string</var><dd>This is the command to be executed.
+
+     <br><dt><var>timeout</var><dd>If you set the optional <var>timeout</var> parameter, then cfengine
+will abort the specified shellcommand if it exceeds
+the given time-limit (specified in seconds). 
+This can be useful for avoiding hung programs caused by hung
+network connections, etc. 
 <a name="index-_0040code_007btimeout_003d_007d-in-shellcommands-529"></a><a name="index-How-can-I-set-a-timeout-for-a-shell-command_003f-530"></a><a name="index-How-can-I-avoid-hanging-shellcommands_003f-531"></a><a name="index-Hanging-commands_002c-timeouts-532"></a>
-Normally, cfagent requires the command string to begin with a <span class="samp">/</span>
+<br><dt><var>useshell</var><dd>Some program lines, especially those that do not use any shell-specific
+capabilities (such as redirection and wildcard expansion) can be run without the shell. 
+This is typically more secure, as the command line is not altered by the
+user or by the system.  It is also faster, as the shell does not have
+to be spawned in order to run the given command.  Use the <var>useshell</var>
+parameter to tell cfengine to not use the shell to run this shellcommand.
+
+     <br><dt><var>umask</var><dd>The umask affects the permissions given to a file created by this shellcommand. 
+The umask specifies, specifically, the permissions that are to be taken away.
+
+     <br><dt><var>owner</var><br><dt><var>group</var><dd>The user and group ID's of the process can be set (using the <var>owner</var>
+and <var>group</var> parameters respectively) to restrict the
+permissions of the shellcommand. This can only be done if cfengine is
+executed by root; otherwise, the user and group will remain that of the
+the user who started cfengine.
+
+     <br><dt><var>background</var><dd>Run this command in the background if this is specified true.  This will make
+cfengine run faster, but no tests can be made (at least directly) on the results
+of this command.
+
+     <br><dt><var>chdir</var><dd>Change to the specified directory before running this command.
+
+     <br><dt><var>chroot</var><dd>The <code>chroot</code> option changes the process root directory of the
+command, creating a `sandbox' which the process cannot escape from. Best
+used together with a change of owner (using the <code>owner</code> parameter),
+since a root process can break out of a chrooted environment.
+
+     <br><dt><var>preview</var><dd>The <code>preview</code> option means that the shellcommand will also be executed during
+the <code>--dry-run</code><!-- /@w --> (<code>-n</code>) options. This allows cfengine to be more aware
+of the results of scripts which define classes. This option should be used
+with care.
+
+     <p>Scripts should conform to the protocol of not executing unnecessary commands
+when the classes <code>opt_dry_run</code> is defined. 
+<a name="index-Previewing-shellcommands-533"></a><a name="index-_0040code_007b_002d_002ddry_002drun_007d-option-534"></a>
+<br><dt><var>inform</var>
+<br><dt><var>noabspath</var><dd>Normally, cfagent requires the command string to begin with a <span class="samp">/</span>
 since it is dangerous to rely on an implicit path. However, sometimes it
-it is appropriate to override this. 
-<a name="index-noabspath-533"></a><a name="index-noabspath-534"></a><a name="index-Shellcommands-must-start-with-absolute-path-535"></a><a name="index-Absolute-path-and-shellcommands-536"></a>
-Variable substitution works within the strings.  Here are some examples.
+it is appropriate to override this.  This behavior can be overridden using
+the <var>noabspath</var> parameter. 
+<a name="index-noabspath-535"></a><a name="index-noabspath-536"></a><a name="index-Shellcommands-must-start-with-absolute-path-537"></a><a name="index-Absolute-path-and-shellcommands-538"></a>
+<br><dt><var>ifelapsed</var><dd>The shellcommand specified will not be run unless the specified amount of
+time (in minutes) has elapsed since the command was previously run.
+
+     <br><dt><var>expireafter</var><dd>If this amount of time (in minutes) has elapsed since the command started,
+then the command is aborted.
+
+     <br><dt><var>define</var><dd>Define the specified classes if the command finishes successfully.
+
+     <br><dt><var>elsedefine</var><dd>Define the specified classes if the command does not finish successfully.
+
+   </dl>
+
+   <p>Variable substitution works within the strings.  Here are some examples.
 
 <pre class="smallexample">     
      shellcommands:
@@ -8713,9 +8768,10 @@ Variable substitution works within the strings.  Here are some examples.
            "/usr/etc/catman -w -M /usr/local/gnu/man"
      
 </pre>
-   <p class="noindent">If you need to write more advanced scripts, which make detailed use of the
+   <p class="noindent">If you need to write more advanced scripts which make detailed use of the
 classes defined by cfengine, use the <code>$(allclasses)</code> variable to send
-a complete list of classes to your script in the format
+a complete list of classes to your script.  An enviornment variable,
+CFALLCLASSES, is set and is in the format
 
 <pre class="smallexample">     
      CFALLCLASSES=class1:class2:class3...
@@ -8727,7 +8783,7 @@ which are defined.  The command line option <span class="samp">-u</span> or
 will be inherited by all scripts and contains the same information. 
 This is not the standard approach, since some systems cannot
 cope with this rapid change of environment and generate a Bus Error. 
-<a name="index-CFALLCLASSES-537"></a><a name="index-allclasses-variable-538"></a><a name="index-Scripts-and-class-information-539"></a><a name="index-Class-information_002c-passing-to-scripts-540"></a>
+<a name="index-CFALLCLASSES-539"></a><a name="index-allclasses-variable-540"></a><a name="index-Scripts-and-class-information-541"></a><a name="index-Class-information_002c-passing-to-scripts-542"></a>
 Commands can be iterated over variable lists, provided there is
 at least one space between each variable. For example:
 
@@ -8748,21 +8804,10 @@ at least one space between each variable. For example:
      
 </pre>
    <p class="noindent">This iterates over all values of the list variables. See <a href="cfengine-Tutorial.html#Iterating-over-lists">Iterating over lists (cfengine-Tutorial)</a>. 
-<a name="index-Iterating-over-lists-in-shellcommands-541"></a>If you are iterating over a list, the timeout applies to each separate
-iteration, not to the sum of all the iterations. 
-<a name="index-Timeouts-during-iterations-542"></a>
-The <code>chroot</code> option changes the process root directory of the
-command, creating a `sandbox' which the process cannot escape from. Best
-used together with a change of owner, since a root process can break out
-of such a confinement in principle. The <code>chdir</code> option changes the
-current working directory of the restarted process.
-
-   <p>The <code>preview</code> option means that the shellcommand will also be executed during
-the <code>--dry-run</code> (<code>-n</code>) options. This allows cfengine to be more aware
-of the results of scripts which define classes. This option should be used
-with care. 
-<a name="index-Previewing-shellcommands-543"></a><a name="index-_0040code_007b_002d_002ddry_002drun_007d-option-544"></a>Scripts should conform to the protocol of not executing unnecessary commands
-when the classes <code>opt_dry_run</code> is defined.
+<a name="index-Iterating-over-lists-in-shellcommands-543"></a>If you are iterating over a list, the time limit (in seconds) which is
+specified in the <var>timeout</var> parameter applies to each separate
+iteration, not to the sum total of all the iterations. 
+<a name="index-Timeouts-during-iterations-544"></a>
 
 <!--  -->
 <!-- SECTION -->
@@ -8778,10 +8823,10 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 <h3 class="section">4.35 strategies</h3>
 
 <p><a name="index-Gaming-stratgies-545"></a><a name="index-Strategy_002c-random-546"></a><a name="index-Randomizing-strategy-547"></a>
-Strategies are introduced as of cfengine version 2.0.x. A strategy is a
-probability distribution of classes. In game theoretical language, a
-strategy is a mixed strategy. Each class label is a pure strategy, or a
-possible course of action. A strategy group is defined as follows:
+Strategies (introduced in cfengine version 2.0)
+are a way of picking from a set of classes randomly. 
+Each class is a possible course of action. 
+A strategy group (of classes) is defined as follows:
 
 <pre class="smallexample">     strategies:
      
@@ -8804,20 +8849,20 @@ possible course of action. A strategy group is defined as follows:
      
         /home pat=*.wav age=0
 </pre>
-   <p>The idea here is to randomly pick from different alternatives
+   <p>The idea here is to randomly pick from a selected set of
+classes.
 
-   <p>Formally, each strategy is a class which is defined with a certain
+   <p>Specifically, each strategy is a class which is defined with a certain
 probability. An integer weight is provided in quotes to represent the
-probability of the classes. When cfengine is run, it picks on of the
-classes from each strategy by `throwing dice' to select a strategy at
-random. Think of Star Trek, when the Captain says "rotate shield
-modulations". Using strategies, you can choose different ways of
+probability weight of the associated class. When cfengine is run,
+it randomly picks one of the classes from each strategy. 
+Using strategies, you can choose different ways of
 configuring or protecting a system, at random, thus confounding
-environmental attempts to break (into) the system.
+environmental attempts to break into the system.
 
-   <p>Note that each strategy has a formal name, but this name is not used to
-attach a strategy to an action, as in filters, or acls. Rather, think of
-this simply as a way of defining classes at random, from a set.
+   <p>Note that each strategy has a formal name (such as <span class="samp">my_strategy_alias</span>
+in the example), but this name is not used to
+attach a strategy to an action the same way that filters or ACLs are.
 
 <!--  -->
 <!-- SECTION -->
@@ -11781,7 +11826,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-netmask-137"><code>netmask</code></a>: <a href="#control">control</a></li>
 <li><a href="#index-nfstype-246"><code>nfstype</code></a>: <a href="#nfstype">nfstype</a></li>
 <li><a href="#index-nfstype-139"><code>nfstype</code></a>: <a href="#control">control</a></li>
-<li><a href="#index-noabspath-534"><code>noabspath</code></a>: <a href="#shellcommands">shellcommands</a></li>
+<li><a href="#index-noabspath-536"><code>noabspath</code></a>: <a href="#shellcommands">shellcommands</a></li>
 <li><a href="#index-o_003d-380"><code>o=</code></a>: <a href="#Syntax">Syntax</a></li>
 <li><a href="#index-ones-125"><code>ones</code></a>: <a href="#broadcast">broadcast</a></li>
 <li><a href="#index-OutputPrefix-61"><code>OutputPrefix</code></a>: <a href="#Special-variables">Special variables</a></li>
@@ -11855,7 +11900,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 
 <ul class="index-cp" compact>
 <li><a href="#index-_0021-96">!</a>: <a href="#Cfengine-classes">Cfengine classes</a></li>
-<li><a href="#index-_0040code_007b_002d_002ddry_002drun_007d-option-544"><code>--dry-run</code> option</a>: <a href="#shellcommands">shellcommands</a></li>
+<li><a href="#index-_0040code_007b_002d_002ddry_002drun_007d-option-534"><code>--dry-run</code> option</a>: <a href="#shellcommands">shellcommands</a></li>
 <li><a href="#index-_002dD-option-178">-D option</a>: <a href="#addclasses">addclasses</a></li>
 <li><a href="#index-_002dl-option-561">-l option</a>: <a href="#tidy">tidy</a></li>
 <li><a href="#index-_0040code_007b_002dL_007d-option-460"><code>-L</code> option</a>: <a href="#Single-links">Single links</a></li>
@@ -11883,7 +11928,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Adding-new-classes-657">Adding new classes</a>: <a href="#cfrc-resource-file">cfrc resource file</a></li>
 <li><a href="#index-AFS-247">AFS</a>: <a href="#nfstype">nfstype</a></li>
 <li><a href="#index-Alerts-109">Alerts</a>: <a href="#alerts">alerts</a></li>
-<li><a href="#index-allclasses-variable-538">allclasses variable</a>: <a href="#shellcommands">shellcommands</a></li>
+<li><a href="#index-allclasses-variable-540">allclasses variable</a>: <a href="#shellcommands">shellcommands</a></li>
 <li><a href="#index-_0040code_007bAllowConnectionsFrom_007d-variable-588"><code>AllowConnectionsFrom</code> variable</a>: <a href="#AllowConnectionsFrom">AllowConnectionsFrom</a></li>
 <li><a href="#index-AllowUsers-in-cfservd-594">AllowUsers in cfservd</a>: <a href="#AllowUsers">AllowUsers</a></li>
 <li><a href="#index-Andrew-filesystem-248">Andrew filesystem</a>: <a href="#nfstype">nfstype</a></li>
@@ -11923,7 +11968,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-_0040file_007bcf_002esite_007d-666"><span class="file">cf.site</span></a>: <a href="#cfservd_002econf">cfservd.conf</a></li>
 <li><a href="#index-_0040file_007bcf_002esite_007d-664"><span class="file">cf.site</span></a>: <a href="#cf_002esite">cf.site</a></li>
 <li><a href="#index-_0040file_007bcfagent_002econf_007d-661"><span class="file">cfagent.conf</span></a>: <a href="#cfagent_002econf">cfagent.conf</a></li>
-<li><a href="#index-CFALLCLASSES-537">CFALLCLASSES</a>: <a href="#shellcommands">shellcommands</a></li>
+<li><a href="#index-CFALLCLASSES-539">CFALLCLASSES</a>: <a href="#shellcommands">shellcommands</a></li>
 <li><a href="#index-CFALLCLASSES-46">CFALLCLASSES</a>: <a href="#Special-variables">Special variables</a></li>
 <li><a href="#index-cfenvd-and-key-entropy-21">cfenvd and key entropy</a>: <a href="#Cfkey">Cfkey</a></li>
 <li><a href="#index-cfexecd-638">cfexecd</a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
@@ -11943,7 +11988,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Class-data-and-scripts-48">Class data and scripts</a>: <a href="#Special-variables">Special variables</a></li>
 <li><a href="#index-Class-decided-by-shell-command-437">Class decided by shell command</a>: <a href="#groups">groups</a></li>
 <li><a href="#index-Class-dependencies-434">Class dependencies</a>: <a href="#groups">groups</a></li>
-<li><a href="#index-Class-information_002c-passing-to-scripts-540">Class information, passing to scripts</a>: <a href="#shellcommands">shellcommands</a></li>
+<li><a href="#index-Class-information_002c-passing-to-scripts-542">Class information, passing to scripts</a>: <a href="#shellcommands">shellcommands</a></li>
 <li><a href="#index-_0040code_007bclasses_007d-424"><code>classes</code></a>: <a href="#groups">groups</a></li>
 <li><a href="#index-_0040code_007bclasses_007d-278"><code>classes</code></a>: <a href="#classes">classes</a></li>
 <li><a href="#index-classes-87">classes</a>: <a href="#Cfengine-classes">Cfengine classes</a></li>
@@ -12072,7 +12117,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-IP-address-240">IP address</a>: <a href="#netmask">netmask</a></li>
 <li><a href="#index-IsGreatThan-5">IsGreatThan</a>: <a href="#Evaluated-classes-and-special-functions">Evaluated classes and special functions</a></li>
 <li><a href="#index-IsLessThan-6">IsLessThan</a>: <a href="#Evaluated-classes-and-special-functions">Evaluated classes and special functions</a></li>
-<li><a href="#index-Iterating-over-lists-in-shellcommands-541">Iterating over lists in shellcommands</a>: <a href="#shellcommands">shellcommands</a></li>
+<li><a href="#index-Iterating-over-lists-in-shellcommands-543">Iterating over lists in shellcommands</a>: <a href="#shellcommands">shellcommands</a></li>
 <li><a href="#index-Iteration-in-server-rules-586">Iteration in server rules</a>: <a href="#Cfservd_002econf-and-cfrun-reference">Cfservd.conf and cfrun reference</a></li>
 <li><a href="#index-Iteration-over-lists-269">Iteration over lists</a>: <a href="#split">split</a></li>
 <li><a href="#index-Iteration-over-lists-84">Iteration over lists</a>: <a href="#Iteration-over-lists">Iteration over lists</a></li>
@@ -12149,7 +12194,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-nfstype-245">nfstype</a>: <a href="#nfstype">nfstype</a></li>
 <li><a href="#index-NIS_002c-netgroup-support-428">NIS, netgroup support</a>: <a href="#groups">groups</a></li>
 <li><a href="#index-no_005fdefault_005froute-class-309">no_default_route class</a>: <a href="#defaultroute">defaultroute</a></li>
-<li><a href="#index-noabspath-533">noabspath</a>: <a href="#shellcommands">shellcommands</a></li>
+<li><a href="#index-noabspath-535">noabspath</a>: <a href="#shellcommands">shellcommands</a></li>
 <li><a href="#index-NOT-operator-93">NOT operator</a>: <a href="#Cfengine-classes">Cfengine classes</a></li>
 <li><a href="#index-NT_002c-ACL-108">NT, ACL</a>: <a href="#NT-ACLs">NT ACLs</a></li>
 <li><a href="#index-ones-128">ones</a>: <a href="#broadcast">broadcast</a></li>
@@ -12170,7 +12215,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Port_002c-connecting-to-different-630">Port, connecting to different</a>: <a href="#Firewalls-and-NATs">Firewalls and NATs</a></li>
 <li><a href="#index-PrepModule-3">PrepModule</a>: <a href="#Evaluated-classes-and-special-functions">Evaluated classes and special functions</a></li>
 <li><a href="#index-Preserving-file-times-in-copy-290">Preserving file times in copy</a>: <a href="#copy">copy</a></li>
-<li><a href="#index-Previewing-shellcommands-543">Previewing shellcommands</a>: <a href="#shellcommands">shellcommands</a></li>
+<li><a href="#index-Previewing-shellcommands-533">Previewing shellcommands</a>: <a href="#shellcommands">shellcommands</a></li>
 <li><a href="#index-Private-modules-491">Private modules</a>: <a href="#methods">methods</a></li>
 <li><a href="#index-PRNG-not-seeded-22">PRNG not seeded</a>: <a href="#Cfkey">Cfkey</a></li>
 <li><a href="#index-Processes_002c-0-to-3-504">Processes, 0 to 3</a>: <a href="#processes">processes</a></li>
@@ -12210,7 +12255,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Running-_0040code_007bcfrun_007d-620">Running <code>cfrun</code></a>: <a href="#cfrun">cfrun</a></li>
 <li><a href="#index-scanarrivals_003d-319">scanarrivals=</a>: <a href="#disks">disks</a></li>
 <li><a href="#index-scheduling-253">scheduling</a>: <a href="#schedule">schedule</a></li>
-<li><a href="#index-Scripts-and-class-information-539">Scripts and class information</a>: <a href="#shellcommands">shellcommands</a></li>
+<li><a href="#index-Scripts-and-class-information-541">Scripts and class information</a>: <a href="#shellcommands">shellcommands</a></li>
 <li><a href="#index-Scripts_002c-passing-classes-to-49">Scripts, passing classes to</a>: <a href="#Special-variables">Special variables</a></li>
 <li><a href="#index-Search-patterns-in-_0040code_007bfiles_007d-387">Search patterns in <code>files</code></a>: <a href="#Syntax">Syntax</a></li>
 <li><a href="#index-Searching-for-home-directories-218">Searching for home directories</a>: <a href="#homepattern">homepattern</a></li>
@@ -12260,7 +12305,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Tidying-empty-files-569">Tidying empty files</a>: <a href="#tidy">tidy</a></li>
 <li><a href="#index-Tidying-files-548">Tidying files</a>: <a href="#tidy">tidy</a></li>
 <li><a href="#index-_0040code_007btimeout_003d_007d-in-shellcommands-529"><code>timeout=</code> in shellcommands</a>: <a href="#shellcommands">shellcommands</a></li>
-<li><a href="#index-Timeouts-during-iterations-542">Timeouts during iterations</a>: <a href="#shellcommands">shellcommands</a></li>
+<li><a href="#index-Timeouts-during-iterations-544">Timeouts during iterations</a>: <a href="#shellcommands">shellcommands</a></li>
 <li><a href="#index-Too-many-open-files-error-307">Too many open files error</a>: <a href="#Too-many-open-files">Too many open files</a></li>
 <li><a href="#index-Touching-files-414">Touching files</a>: <a href="#touch">touch</a></li>
 <li><a href="#index-travlinks-571">travlinks</a>: <a href="#tidy">tidy</a></li>
@@ -12303,7 +12348,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 
 
 <ul class="index-mb" compact>
-<li><a href="#index-Absolute-path-and-shellcommands-536">Absolute path and shellcommands</a>: <a href="#shellcommands">shellcommands</a></li>
+<li><a href="#index-Absolute-path-and-shellcommands-538">Absolute path and shellcommands</a>: <a href="#shellcommands">shellcommands</a></li>
 <li><a href="#index-Brackets-_0028parentheses_0029-in-classes_002e-101">Brackets (parentheses) in classes.</a>: <a href="#Cfengine-classes">Cfengine classes</a></li>
 <li><a href="#index-Can_0027t-stat-error-when-remote-copying-604">Can't stat error when remote copying</a>: <a href="#DenyBadClocks">DenyBadClocks</a></li>
 <li><a href="#index-Changing-repository-name-conventions-252">Changing repository name conventions</a>: <a href="#repchar">repchar</a></li>
@@ -12323,7 +12368,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-MD5-checksums-take-a-long-time-to-compute_002e-600">MD5 checksums take a long time to compute.</a>: <a href="#ChecksumDatabase-in-cfservd">ChecksumDatabase in cfservd</a></li>
 <li><a href="#index-Parentheses-in-classes_002e-102">Parentheses in classes.</a>: <a href="#Cfengine-classes">Cfengine classes</a></li>
 <li><a href="#index-Remote-copy-problems_002c-can_0027t-stat-296">Remote copy problems, can't stat</a>: <a href="#copy">copy</a></li>
-<li><a href="#index-Shellcommands-must-start-with-absolute-path-535">Shellcommands must start with absolute path</a>: <a href="#shellcommands">shellcommands</a></li>
+<li><a href="#index-Shellcommands-must-start-with-absolute-path-537">Shellcommands must start with absolute path</a>: <a href="#shellcommands">shellcommands</a></li>
 <li><a href="#index-Too-many-open-files-error-308">Too many open files error</a>: <a href="#Too-many-open-files">Too many open files</a></li>
    </ul><p><a name="Contents">
 

@@ -35,7 +35,7 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   Edition 2.1.14 for version 2.1.14 as last updated 17 February 2005.
+   Edition 2.1.14 for version 2.1.14 as last updated 30 March 2005.
 
 * Menu:
 
@@ -413,6 +413,17 @@ meant for continuous viewing. The data are averages, not time-series.
      host$ gnuplot
      gnuplot> plot "www-in.cfenv" with errorbars
      gnuplot> plot "www-in.cfenv" with lines
+
+   The new version of `xmgr' is called `xmgrace'. It can be invoked as
+follows:
+
+     host$ xmgrace -nxy cfenv-averages
+     host$ xmgrace  rootprocs.cfenv
+     host$ xmgrace -settype xydy  rootprocs.cfenv
+     host$ xmgrace -settype xydy  rootprocs.cfenv -hardcopy -hdevice JPEG
+
+   If you see the error "Strings are not allowed", it might be because
+some "nan" values have come into the text file.
 
 
 File: cfengine-Anomalies.info,  Node: Fluctuation profiles,  Next: Starting with anomaly detection,  Prev: cfenvgraph,  Up: Overview
@@ -895,6 +906,7 @@ Concept Index
 * Microanomaly:                          cfenvd.               (line 41)
 * normal:                                Anomaly Classes.      (line 90)
 * Random numbers:                        cfenvd.               (line 11)
+* xmgrace:                               cfenvgraph.           (line 98)
 
 
 File: cfengine-Anomalies.info,  Node: FAQ Index,  Prev: Concept Index,  Up: Top
@@ -908,21 +920,21 @@ FAQ Index
 
 Tag Table:
 Node: Top478
-Node: Overview1641
-Node: Intrusion detection2606
-Node: Cryptographic checksums4752
-Node: cfenvd6622
-Node: Anomaly research11415
-Node: cfenvgraph14115
-Node: Fluctuation profiles18113
-Node: Starting with anomaly detection18746
-Node: Anomaly response29135
-Node: Anomaly Classes29364
-Node: Entropy32555
-Node: Log utilities33590
-Node: Persistent alerts33970
-Node: Variable Index35157
-Node: Concept Index35321
-Node: FAQ Index36354
+Node: Overview1638
+Node: Intrusion detection2603
+Node: Cryptographic checksums4749
+Node: cfenvd6619
+Node: Anomaly research11412
+Node: cfenvgraph14112
+Node: Fluctuation profiles18511
+Node: Starting with anomaly detection19144
+Node: Anomaly response29533
+Node: Anomaly Classes29762
+Node: Entropy32953
+Node: Log utilities33988
+Node: Persistent alerts34368
+Node: Variable Index35555
+Node: Concept Index35719
+Node: FAQ Index36825
 
 End Tag Table

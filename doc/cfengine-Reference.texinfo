@@ -517,8 +517,8 @@ for a few days more and try again.
 @chapter Cfshow reference
 
 The @code{cfshow} command was introduced in cfengine 2.1.11 in order to
-provide a simple command line query of the various databases used to store
-operational state by cfagent.
+provide a simple way to show some of the data stored by cfagent for
+operational purposes.
 
 @smallexample
 everyhost# cfshow -a
@@ -4930,10 +4930,11 @@ operation. Specifying one of these automatically excludes everything
 else except further include patterns.  A global list of patterns can
 also be defined in the control section of the program.
 
-If the @code{purge} option is used in copying, then the include option
-has the effect of the excluding files from the purge, i.e. include means
-`keep' the named files.
 @cindex Purge, excluding files
+If the @code{purge} option is used in copying, then the @code{ignore} option
+has the effect of the excluding files from the purge, i.e. @code{ignore} means
+`keep' the named files.
+
 
 @item exclude
 This option may be repeated a number of times to specify the
@@ -8744,6 +8745,8 @@ form of a process command is
 @smallexample
 processes:
 
+  @var{class}::
+
     @var{"quoted regular expression"} 
 
                         restart @var{"shell command"} 
@@ -9458,8 +9461,8 @@ is not added to the line.
 @node shellcommands, strategies, resolve, Cfagent reference
 @section shellcommands
 
-Cfengine focuses on fairly simple minded tasks in order to be as general
-as possible.  In many cases you will therefore want to write a script to
+Cfengine focuses on fairly simple-minded tasks in order to be as general
+as possible.  In many cases, you will therefore want to write a script to
 do something special on your system.  You can still take advantage of
 the classes you have defined by executing these scripts or shell
 commands from this section.
@@ -9472,7 +9475,9 @@ The syntax is simply to quote the command you wish to be executed.
 @smallexample
 shellcommands:
 
-  "@var{command-string}"  
+  @var{class}::
+
+    "@var{command-string}"  
 
           timeout=@var{seconds} 
           useshell=@b{true}@var{/false}
@@ -9499,24 +9504,94 @@ shellcommands:
 @cindex umask
 
 @noindent
-The user and group ID's of the process can be set to restrict the
-permissions of the shellcommand to another user only if cfengine is
-executed by root. If you set the optional timeout string, then cfengine
-will abort the shellcommand if it exceeds the specified time-limit in
-seconds. This can be useful for avoiding situations caused by hung
-network connections etc.
+@table @code
+
+@item @var{command-string}
+This is the command to be executed.
+
+@item @var{timeout} 
+If you set the optional @var{timeout} parameter, then cfengine
+will abort the specified shellcommand if it exceeds
+the given time-limit (specified in seconds).
+This can be useful for avoiding hung programs caused by hung
+network connections, etc.
 @cindex @code{timeout=} in shellcommands
 @mbindex How can I set a timeout for a shell command?
 @mbindex How can I avoid hanging shellcommands?
 @mbindex Hanging commands, timeouts
 
+@item @var{useshell}
+Some program lines, especially those that do not use any shell-specific
+capabilities (such as redirection and wildcard expansion) can be run without the shell.
+This is typically more secure, as the command line is not altered by the
+user or by the system.  It is also faster, as the shell does not have
+to be spawned in order to run the given command.  Use the @var{useshell}
+parameter to tell cfengine to not use the shell to run this shellcommand.
+
+@item @var{umask}
+The umask affects the permissions given to a file created by this shellcommand.
+The umask specifies, specifically, the permissions that are to be taken away.
+
+@item @var{owner}
+@item @var{group}
+The user and group ID's of the process can be set (using the @var{owner}
+and @var{group} parameters respectively) to restrict the
+permissions of the shellcommand. This can only be done if cfengine is
+executed by root; otherwise, the user and group will remain that of the
+the user who started cfengine.
+
+@item @var{background}
+Run this command in the background if this is specified true.  This will make
+cfengine run faster, but no tests can be made (at least directly) on the results
+of this command.
+
+@item @var{chdir}
+Change to the specified directory before running this command.
+
+@item @var{chroot}
+The @code{chroot} option changes the process root directory of the
+command, creating a `sandbox' which the process cannot escape from. Best
+used together with a change of owner (using the @code{owner} parameter),
+since a root process can break out of a chrooted environment.
+
+@item @var{preview}
+The @code{preview} option means that the shellcommand will also be executed during
+the @w{@code{--dry-run}} (@code{-n}) options. This allows cfengine to be more aware
+of the results of scripts which define classes. This option should be used
+with care.
+
+Scripts should conform to the protocol of not executing unnecessary commands
+when the classes @code{opt_dry_run} is defined.
+@cindex Previewing shellcommands
+@cindex @code{--dry-run} option
+
+@item @var{inform}
+
+@item @var{noabspath}
 Normally, cfagent requires the command string to begin with a @samp{/}
 since it is dangerous to rely on an implicit path. However, sometimes it
-it is appropriate to override this.
+it is appropriate to override this.  This behavior can be overridden using
+the @var{noabspath} parameter.
 @cindex noabspath
 @vindex noabspath 
 @mbindex Shellcommands must start with absolute path
 @mbindex Absolute path and shellcommands
+
+@item @var{ifelapsed}
+The shellcommand specified will not be run unless the specified amount of
+time (in minutes) has elapsed since the command was previously run.
+
+@item @var{expireafter}
+If this amount of time (in minutes) has elapsed since the command started,
+then the command is aborted.
+
+@item @var{define}
+Define the specified classes if the command finishes successfully.
+
+@item @var{elsedefine}
+Define the specified classes if the command does not finish successfully.
+
+@end table
 
 Variable substitution works within the strings.  Here are some examples.
 
@@ -9543,9 +9618,10 @@ shellcommands:
 
 @noindent
 
-If you need to write more advanced scripts, which make detailed use of the
+If you need to write more advanced scripts which make detailed use of the
 classes defined by cfengine, use the @code{$(allclasses)} variable to send
-a complete list of classes to your script in the format
+a complete list of classes to your script.  An enviornment variable,
+CFALLCLASSES, is set and is in the format
 
 @smallexample
 
@@ -9588,24 +9664,11 @@ shellcommands:
 @noindent
 This iterates over all values of the list variables. @xref{Iterating over lists,Iterating over lists,Iterating over lists,cfengine-Tutorial}.
 @cindex Iterating over lists in shellcommands
-If you are iterating over a list, the timeout applies to each separate
-iteration, not to the sum of all the iterations.
+If you are iterating over a list, the time limit (in seconds) which is
+specified in the @var{timeout} parameter applies to each separate
+iteration, not to the sum total of all the iterations.
 @cindex Timeouts during iterations
 
-The @code{chroot} option changes the process root directory of the
-command, creating a `sandbox' which the process cannot escape from. Best
-used together with a change of owner, since a root process can break out
-of such a confinement in principle. The @code{chdir} option changes the
-current working directory of the restarted process.
-
-The @code{preview} option means that the shellcommand will also be executed during
-the @code{--dry-run} (@code{-n}) options. This allows cfengine to be more aware
-of the results of scripts which define classes. This option should be used
-with care.
-@cindex Previewing shellcommands
-@cindex @code{--dry-run} option
-Scripts should conform to the protocol of not executing unnecessary commands
-when the classes @code{opt_dry_run} is defined.
 @page
 
 @c -------------------------------------------------------------------------------
@@ -9618,10 +9681,10 @@ when the classes @code{opt_dry_run} is defined.
 @cindex Strategy, random
 @vindex Randomizing strategy
 
-Strategies are introduced as of cfengine version 2.0.x. A strategy is a
-probability distribution of classes. In game theoretical language, a
-strategy is a mixed strategy. Each class label is a pure strategy, or a
-possible course of action. A strategy group is defined as follows:
+Strategies (introduced in cfengine version 2.0)
+are a way of picking from a set of classes randomly.
+Each class is a possible course of action.
+A strategy group (of classes) is defined as follows:
 
 @smallexample
 strategies:
@@ -9645,21 +9708,23 @@ tidy:
 
    /home pat=*.wav age=0
 @end smallexample
-The idea here is to randomly pick from different alternatives
 
- Formally, each strategy is a class which is defined with a certain
+The idea here is to randomly pick from a selected set of
+classes.
+
+Specifically, each strategy is a class which is defined with a certain
 probability. An integer weight is provided in quotes to represent the
-probability of the classes. When cfengine is run, it picks on of the
-classes from each strategy by `throwing dice' to select a strategy at
-random. Think of Star Trek, when the Captain says "rotate shield
-modulations". Using strategies, you can choose different ways of
+probability weight of the associated class. When cfengine is run,
+it randomly picks one of the classes from each strategy.
+Using strategies, you can choose different ways of
 configuring or protecting a system, at random, thus confounding
-environmental attempts to break (into) the system.
+environmental attempts to break into the system.
 
-Note that each strategy has a formal name, but this name is not used to
-attach a strategy to an action, as in filters, or acls. Rather, think of
-this simply as a way of defining classes at random, from a set.
+Note that each strategy has a formal name (such as @samp{my_strategy_alias}
+in the example), but this name is not used to
+attach a strategy to an action the same way that filters or ACLs are.
 
+@page
 
 @c -------------------------------------------------------------------------------
 @c SECTION

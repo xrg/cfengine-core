@@ -36,7 +36,7 @@ may be included in a translation approved by the author instead of in
 the original English.
 
    This manual corresponds to CFENGINE Edition 2.1.14 for version
-2.1.14 as last updated 8 February 2005.
+2.1.14 as last updated 4 April 2005.
 
 * Menu:
 
@@ -78,26 +78,33 @@ Cfengine is a tool for setting up and maintaining computer systems.  It
 consists of several components:
 
 cfagent
-     An autonomous configuration agent (required)
+     An autonomous configuration agent (required).
 
 cfservd
-     A file server and remote activation service (optional)
+     A file server and remote activation service (optional).
 
 cfexecd
-     A scheduling and report service (recommended)
+     A scheduling and report service (recommended).
 
 cfenvd
-     An anomaly detection service (strongly recommended)
+     An anomaly detection service (strongly recommended).
+
+cfrun
+     A way of activating cfagent remotely (use this as you need to).
+
+cfshow
+     A way of examining the contents of helper databases (helper).
 
 cfenvgraph
-     Ancillary tool for cfenvd (helper)
+     Ancillary tool for cfenvd (helper).
 
 cfkey
-     Key generation tool (run once on every host)
+     Key generation tool (run once on every host).
 
-   The agent `cfagent' can be used without the other components, but
-not all of the functionality of cfengine will be available unless the
-components are deployed appropriately.
+
+   The agent `cfagent' can be used without the other programs, but not
+all of the capabilities of cfengine will be available unless the
+components are installed and used appropriately.
 
    Cfengine incorporates a declarative language--much higher level than
 Perl or shell: a single statement can result in many hundreds of
@@ -110,24 +117,24 @@ configuration.
 
    The main purpose of cfengine is to allow you to create a single,
 central system configuration which will define how every host on your
-network should be configured in an intuitive way.  An interpreter runs
-on every host on your network and parses the master file (or file set).
-The configuration of each host is checked against this file; then, if
-you request it, any deviations from the defined configuration are fixed
-automatically.  You do not have to mention every host specifically by
-name in order to configure them: instead you can refer to the
-properties which distinguish hosts from one another.  Cfengine uses a
-flexible system of "classes" which helps you to single out a specific
-group of hosts with a single statement.
+network should be configured, and to do so in an intuitive way.  An
+interpreter runs on every host on your network and parses the master
+file (or file set). The configuration of each host is checked against
+this file; then, if you request it, any deviations from the defined
+configuration are fixed automatically.  You do not have to mention
+every host specifically by name in order to configure them: instead you
+can refer to the properties which distinguish hosts from one another.
+Cfengine uses a flexible system of "classes" which helps you to single
+out a specific group of hosts with a single statement.
 
    Cfengine grew out of the need to control the accumulation of complex
 shell scripts used in the automation of key system maintenance at
 Unversity College in Oslo. There were a lot of scripts, written in
 shell and in Perl, performing system administration tasks such as file
 tidying, find-database updates, process checking and several other
-tasks.  In a heterogeneous environment, shell scripts work very poorly:
-shell commands have differing syntax across different operating
-systems, and the locations and names of key files differ. In fact, the
+tasks.  In a mixed environment, shell scripts work very poorly: shell
+commands have differing syntax across different operating systems, and
+the locations and names of key files differ. In fact, the
 non-uniformity of Unix was a major headache. Scripts were filled with
 tests to determine what kind of operating system they were being run
 on, to the point where they became so complicated and unreadable that
@@ -150,14 +157,14 @@ final result should be like, rather than on how to get there (with
 shell and Perl you specify what to do, rather than what you would like).
 
    The remainder of this manual assumes that you know a little about
-BSD and UNIX System V systems and have everyday experience in using
-either the C shell or the Bourne shell, or their derivatives.  If you
-are experienced in system administration, you might like to skip the
-earlier chapters and turn straight to the example in the section
-_Example configuration file_ of the Reference manual.  This is the
-probably quickest way to learn cfengine for the initiated.  If you are
-not so familiar with system administration and would like a more gentle
-introduction, then we begin here...
+BSD and UNIX System V systems and have every day experience in using
+either the C shell (csh) or the Bourne shell (sh), or their
+derivatives.  If you are experienced in system administration, you
+might like to skip the earlier chapters and turn straight to the
+example in the section _Example configuration file_ of the Reference
+manual.  This is the probably quickest way to learn cfengine for the
+initiated.  If you are not so familiar with system administration and
+would like a more gentle introduction, then we begin here...
 
 
 File: cfengine-Tutorial.info,  Node: Site configuration,  Next: Key concepts,  Prev: What is cfengine?,  Up: Overview
@@ -184,11 +191,11 @@ to help you automate the task, but end up with an enormous number of
 `if..then..else..' tests which make it hard to see what is really going
 on.
 
-   To manage a network with many different flavours of operating
-system, in a systematic way, what is needed is a more disciplined way
-of making changes which is robust against re-installation.  After all,
-it would be tragic to spend many hours setting up a system by hand only
-to lose everything in an unfortunate disk crash a week or even a year
+   To manage a network with many different flavours of operating system
+in a systematic way, what is needed is a more disciplined way of making
+changes which is robust against system re-installation.  After all, it
+would be tragic to spend many hours setting up a system by hand only to
+lose everything in an unfortunate disk crash a week or even a year
 later when you have forgotten what you had to do.  Upgrades of the
 operating system software might delete your carefully worked out
 configuration.  What is needed is a separate record of all of the
@@ -235,7 +242,7 @@ that they are configured through human-readable text files.  To add a
 new user to the system you edit `/etc/passwd', to add a new disk you
 must edit `/etc/fstab', etc.  Many applications are also configured
 with the help of text files.  When installing a new system for the
-first time, or when changing updating the setup of an old system you
+first time, or when changing updating the setup of an old system, you
 are faced with having to edit lots of files.  In some cases you will
 have to add precisely the same line to the same file on every system in
 your network as a change is made, so it is handy to have a way of
@@ -253,23 +260,23 @@ File: cfengine-Tutorial.info,  Node: Network interface,  Next: Network File Syst
 1.3.2 Network interface
 -----------------------
 
-Each host which you connect to an ethernet-based network running TCP/IP
+Each host which you connect to an Ethernet-based network running TCP/IP
 protocols must have a so-called `net interface'.  This network interface
-must be configured before it will work.  Normally one does this with the
-help of the `ifconfig' command.  This can also be checked and
+must be configured before it will work.  Normally, one does this with
+the help of the `ifconfig' command.  This can also be checked and
 configured automatically by cfagent.
 
    Network configuration involves telling the interface hardware what
 the internet (IP) address of your system is, so that it knows which
 incoming `packets' of data to pay attention to.  It involves telling the
 interface how to interpret the addresses it receives by setting the
-`netmask' for your network (see below).  Finally you must tell it which
+`netmask' for your network (see below).  Finally, you must tell it which
 dummy address is to be used for messages which are broadcast to all
-hosts on your network simultaneously (see the reference manual).
+hosts on your network simultaneously (see the Reference Manual).
 
    Cfagent's features are mainly meant for hosts which use static IP
-addresses, if you are using DHCP clients then you will not need the net
-configuration features.  
+addresses; if you are using DHCP clients, then you will not need the
+net configuration features.  
 
 
 File: cfengine-Tutorial.info,  Node: Network File System (NFS),  Next: Name servers (DNS),  Prev: Network interface,  Up: Key concepts
@@ -278,18 +285,19 @@ File: cfengine-Tutorial.info,  Node: Network File System (NFS),  Next: Name serv
 -----------------------------------------------------
 
 Probably the first thing you are interested in doing with a network
-(after you've had your fill of the world wide web) is to make your files
+(after you've had your fill of the World-Wide Web) is to make your files
 available to some or all hosts on the network, no matter where in your
 corporate empire (or university dungeon) you might be sitting.  In other
 words, if you have a disk which is physically connected to host A, you
-would like to make the contents of that disk available to hosts B, C,
-D...  etc.  NFS (the network filesystem) does this for you.  The process
-works by `filesystems'.
+would like to make the contents of that disk available to hosts B, C, D
+..., etc.  NFS (the Network FileSystem) makes this possible.
 
-   A filesystem is one partition of a disk drive - or one unit of disk
-space which can be accessed by a single `logical device'
-`/dev/something'.  To make a filesystem available to other hosts you
-have to do three things.
+   The process works by `filesystems'.  A filesystem is one partition
+of a disk drive - or one unit of disk space which can be accessed by a
+single `logical device' `/dev/something'.
+
+   To make a filesystem available to other hosts you have to do three
+things.
 
    * On the host the disk is physically connected to you must _export_
      the filesystem by adding something to the file `/etc/exports'.
@@ -308,13 +316,14 @@ have to do three things.
 Only after all three of these have been done will a filesystem become
 available across the network.  Cfagent will help you with the last two
 in a very transparent way.  You could also use the text-editing facility
-in cfagent to edit the exports file, but there are other ways update
-the exports file using _netgroups_ which we shall not go into here.  If
-you are in doubt, look up the manual page on exports.
+in cfagent to edit the `exports' file, but there are other ways to
+update the `exports' file using NIS and _netgroups_, which we shall not
+go into here.  If you are in doubt, look up the manual page on
+exports(5).
 
-   Some sites prefer to minimize the use of NFS filesystems, to avoid
+   Some sites prefer to minimize the use of NFS filesystems to avoid
 one machine being dependent on another. They prefer to make a local
-copy of the files on a remote machine instead.  Traditionally programs
+copy of the files on a remote machine instead.  Traditionally, programs
 like `rdist' have been used for this purpose. You may also use cfagent
 to copy files in this way, *Note Emulating rdist::.
 
@@ -325,25 +334,27 @@ File: cfengine-Tutorial.info,  Node: Name servers (DNS),  Next: Monitoring impor
 ------------------------
 
 There are two ways to specify addresses on the internet (called IP
-addresses).  One is to use the textual address like `ftp.uu.net' and
-the other is to use the numerical form `192.48.96.9'.  Alas, there is
-no one-to-one correspondence between the numerical addresses and the
-textual ones, thus a service is required to map one to the other.
+addresses).  One is to use the text address like `ftp.uu.net' and the
+other is to use the numerical form `192.48.96.9'.  Alas, there is no
+direct one-to-one correspondence between the numerical addresses and
+the textual ones, thus a service (called DNS) is required to map one to
+the other.
 
    The service is performed by one or more special hosts on the network
-called _nameservers_.  Each host must know how to contact a nameserver
-or it will probably hang the first time you give it an IP address.  You
-tell it how to contact a nameserver by editing the text-file
-`/etc/resolv.conf'.  This file must contain the domain name for your
-domain and a list of possible nameservers which can be contacted, in
-order of priority.  Because this is a special file which every host
-must have, you don't have to use the editing facilities in cfagent
-explicitly.  You can just define the nameservers for each host in the
-cfagent file and cfagent will do the editing automatically.  If you
-want to change the priority of nameservers later, or even change the
-list then a simple change of one or two lines in the configuration file
-will enable you to reconfigure every host on your network automatically
-without having to do any editing yourself!
+called _name servers_.  Each host must know how to contact a name
+server or it will probably hang the first time you give it an IP
+address.  You tell it how to contact a name server by editing the
+text-file `/etc/resolv.conf'.  This file must contain the domain name
+for your domain and a list of possible name servers which can be
+contacted, in order of priority.  Since this is a special file which
+every host must have, you don't have to use the general text file
+editing facilities in cfagent.  You can just define the name servers
+for each host in the cfagent file and cfagent will do the editing to
+`/etc/resolv.conf' automatically.  If you want to change the priority
+of name servers later, or even change the list then a simple change of
+one or two lines in the configuration file will enable you to
+reconfigure every host on your network automatically without having to
+do any editing yourself!
 
 
 File: cfengine-Tutorial.info,  Node: Monitoring important files,  Next: Making links,  Prev: Name servers (DNS),  Up: Key concepts
@@ -403,8 +414,8 @@ all time.  Cfengine won't forget it, and you won't forget it because the
 setup is defined in one central place.
 
    Cfagent will also allow you to make hard links to regular files, but
-not other kinds of file. A hard link to a symbolic link, is the same as
-a hard link to the file the symbolic link points to.  
+not to other kinds of files. A hard link that points to a symbolic link
+is the same as a hard link to the file the symbolic link points to.  
 
 
 File: cfengine-Tutorial.info,  Node: Functionality,  Prev: Key concepts,  Up: Overview
@@ -413,35 +424,35 @@ File: cfengine-Tutorial.info,  Node: Functionality,  Prev: Key concepts,  Up: Ov
 =================
 
 The notes above give you a rough idea of what cfengine can be used for.
-Here is a summary of cfagent's capabilities.
+Here is a quick summary of cfagent's capabilities.
 
    * Check and configure the network interface.
 
    * Edit textfiles for the system and for all users.
 
-   * Make and maintain symbolic links, including multiple links from a
-     single command.
+   * Make and maintain symbolic links, including multiple links, using
+     a single command.
 
    * Check and set the permissions and ownership of files.
 
-   * Tidy (delete) junk files which clutter the system.
+   * Tidy (i.e., delete) junk files which clutter the system.
 
-   * Systematic, automated mounting of NFS filesystems.
+   * Systematic and automated mounting of NFS filesystems.
 
    * Checking for the presence of important files and filesystems.
 
    * Controlled execution of user scripts and shell commands.
 
-   * Cfengine follows a class-based decision structure.
+   * A class-based decision structure.
 
    * Process management.
 
 
    How do you run cfagent? You can run it as a cron job, or you can run
 it manually. You may run cfagent scripts/programs as often as you like.
-Each time you run a script, the engine determines whether anything
-needs to be done -- if nothing needs to be done, nothing is done!  If
-you use it to monitor and configure your entire network from a central
+Each time you run a script, cfengine determines whether anything needs
+to be done -- if nothing needs to be done, nothing is done!  If you use
+it to monitor and configure your entire network from a central
 file-base, then the natural thing is to run cfengine repeatedly with
 the help of `cron' and/or `cfexecd'.  
 
@@ -517,15 +528,15 @@ program:
 
 In simple example above has three of the four types of object described
 above.  The `control:' section of any program tells cfengine how to
-behave.  In this example it adds the action LINKS to the
-actionsequence.  For LINKS you could replace some other action.  The
+behave.  In this example it adds the action LINKS to the action
+sequence.  For LINKS you could replace some other action.  The
 essential point is that, if you don't have an action sequence, your
 cfengine program will do absolutely nothing! The action sequence is a
 list which tells cfagent what do to and in which order.
 
    The `links:' section of the file tells cfagent that what follows is
 a number of links to be made.  If you write this part of the file, but
-forget to add links to the actionsequence, then nothing will be done!
+forget to add links to the action sequence, then nothing will be done!
 You can add any number of links in this part of the file and they will
 all be dealt with in order when--and only when--you write LINKS in the
 action sequence.
@@ -539,14 +550,14 @@ action sequence.
 
 
    Now let's think a bit about how useful this short example program is.
-On a SunOS system, where the directory `/bin' is in fact supposed to be
-a link, such a check could be useful, but on some other system where
-`/bin' is a not a link but a separate directory, this would result in
-an error message from cfagent, telling you that `/bin' exists and is
-not a link.  The lesson is that, if we want to use cfagent to make _one
-single_ program which can be run on any host of any type, then we need
-some way of restricting the above link so that it only gets checked on
-SunOS systems.  We can write the following:
+On a SunOS (Solaris) system, where the directory `/bin' is in fact
+supposed to be a link, such a check could be useful, but on some other
+system where `/bin' is a not a link but a separate directory, this would
+result in an error message from cfagent, telling you that `/bin' exists
+and is not a link.  The lesson is that, if we want to use cfagent to
+make _one single_ program which can be run on any host of any type,
+then we need some way of restricting the above link so that it only
+gets checked on SunOS systems.  We can write the following:
 
 
      # Comment...
@@ -6523,119 +6534,119 @@ FAQ Index
 
 Tag Table:
 Node: Top474
-Node: Overview1849
-Node: What is cfengine?2281
-Node: Site configuration6780
-Node: Key concepts9409
-Node: Control files9973
-Node: Network interface11168
-Node: Network File System (NFS)12321
-Node: Name servers (DNS)14772
-Node: Monitoring important files16256
-Node: Making links17703
-Node: Functionality19293
-Node: Getting started20585
-Node: What you must have21148
-Node: Program structure26859
-Node: Building a distributed configuration30332
-Node: Startup update.conf31367
-Node: Startup cfservd.conf34359
-Node: Options35772
-Node: Invoking cfagent38737
-Node: Running cfengine permanently monitoring and restarting cfexecd40697
-Node: CFINPUTS environment variable43052
-Node: What to aim for44627
-Node: More advanced concepts46659
-Node: Classes basics47304
-Node: Variable substitution55691
-Node: Undefined variables64108
-Node: Defining classes65058
-Node: Command line classes66452
-Node: actionsequence classes67574
-Node: shellcommand classes68741
-Node: Feedback classes70020
-Node: Writing plugin modules70851
-Node: The generic class any73889
-Node: Debugging tips74411
-Node: Access control75091
-Node: Wildcards in directory names76137
-Node: File sweeps77383
-Node: Security in File sweeps81140
-Node: Log files82569
-Node: Quoted strings83882
-Node: Regular expressions85062
-Node: Iterating over lists89785
-Node: Global configurations92286
-Node: General considerations92979
-Node: Using netgroups94638
-Node: Files and links96568
-Ref: Files and links-Footnote-1102808
-Node: Copying files102868
-Node: Managing processes104619
-Node: NFS resources105228
-Node: NFS filesystem resources106401
-Node: Unique filesystem mountpoints108026
-Ref: Unique filesystem mountpoints-Footnote-1111732
-Node: How does it work?111846
-Node: Special variables113316
-Node: Mount example115568
-Ref: Mount example-Footnote-1121762
-Ref: Mount example-Footnote-2121934
-Node: Using the automounter122160
-Node: Editing files127339
-Node: Disabling and the file repository131651
-Node: Running user scripts134505
-Node: Compressing logs136719
-Node: ACLs137655
-Node: Using cfengine as a front-end for cron147306
-Node: Structuring cfagent.conf149415
-Node: Splaying host times150753
-Node: Building flexible time classes152365
-Node: Scheduling interval155335
-Node: Cfengine network services156233
-Node: What services?156739
-Node: How it works158841
-Node: Emulating rdist159153
-Node: Remote execution of cfagent162613
-Node: Spamming and security164463
-Ref: Spamming and security-Footnote-1169835
-Ref: Spamming and security-Footnote-2169901
-Ref: Spamming and security-Footnote-3169967
-Node: cfservd protocol170016
-Node: Deadlocks and runaway loops170934
-Node: Configuring cfservd173024
-Node: Installation of cfservd173264
-Node: Configuration file cfservd.conf174229
-Node: Security and cfengine179462
-Node: What is security?180710
-Node: A word of warning185021
-Node: Automation185799
-Node: Trust188446
-Node: Why trust cfengine?190394
-Node: Configuration193015
-Node: Disabling and replacing software194806
-Node: Process monitoring201560
-Node: Monitoring files204234
-Node: The setuid log206178
-Node: Suspicious filenames206994
-Node: Checksums and Tripwire functionality208789
-Node: FileExtensions210859
-Node: NonAlphaNumFiles211374
-Node: Defensive garbage collection212024
-Node: Anonymous FTP example216216
-Node: WWW security220371
-Node: Miscellaneous security of cfengine itself223495
-Node: Privacy (encryption)223941
-Node: Trust and key races227632
-Node: Adaptive locks230413
-Node: Spoofing231307
-Node: Race conditions in file copying231857
-Node: size= in copy232606
-Node: useshell= and owner= in shellcommands233316
-Node: Firewalls234291
-Node: Summary234959
-Node: Variable Index235756
-Node: Concept Index243248
-Node: FAQ Index267522
+Node: Overview1846
+Node: What is cfengine?2278
+Node: Site configuration6959
+Node: Key concepts9594
+Node: Control files10158
+Node: Network interface11354
+Node: Network File System (NFS)12510
+Node: Name servers (DNS)14986
+Node: Monitoring important files16520
+Node: Making links17967
+Node: Functionality19572
+Node: Getting started20862
+Node: What you must have21425
+Node: Program structure27148
+Node: Building a distributed configuration30621
+Node: Startup update.conf31656
+Node: Startup cfservd.conf34648
+Node: Options36061
+Node: Invoking cfagent39026
+Node: Running cfengine permanently monitoring and restarting cfexecd40986
+Node: CFINPUTS environment variable43341
+Node: What to aim for44916
+Node: More advanced concepts46948
+Node: Classes basics47593
+Node: Variable substitution55980
+Node: Undefined variables64397
+Node: Defining classes65347
+Node: Command line classes66741
+Node: actionsequence classes67863
+Node: shellcommand classes69030
+Node: Feedback classes70309
+Node: Writing plugin modules71140
+Node: The generic class any74178
+Node: Debugging tips74700
+Node: Access control75380
+Node: Wildcards in directory names76426
+Node: File sweeps77672
+Node: Security in File sweeps81429
+Node: Log files82858
+Node: Quoted strings84171
+Node: Regular expressions85351
+Node: Iterating over lists90074
+Node: Global configurations92575
+Node: General considerations93268
+Node: Using netgroups94927
+Node: Files and links96857
+Ref: Files and links-Footnote-1103097
+Node: Copying files103157
+Node: Managing processes104908
+Node: NFS resources105517
+Node: NFS filesystem resources106690
+Node: Unique filesystem mountpoints108315
+Ref: Unique filesystem mountpoints-Footnote-1112021
+Node: How does it work?112135
+Node: Special variables113605
+Node: Mount example115857
+Ref: Mount example-Footnote-1122051
+Ref: Mount example-Footnote-2122223
+Node: Using the automounter122449
+Node: Editing files127628
+Node: Disabling and the file repository131940
+Node: Running user scripts134794
+Node: Compressing logs137008
+Node: ACLs137944
+Node: Using cfengine as a front-end for cron147595
+Node: Structuring cfagent.conf149704
+Node: Splaying host times151042
+Node: Building flexible time classes152654
+Node: Scheduling interval155624
+Node: Cfengine network services156522
+Node: What services?157028
+Node: How it works159130
+Node: Emulating rdist159442
+Node: Remote execution of cfagent162902
+Node: Spamming and security164752
+Ref: Spamming and security-Footnote-1170124
+Ref: Spamming and security-Footnote-2170190
+Ref: Spamming and security-Footnote-3170256
+Node: cfservd protocol170305
+Node: Deadlocks and runaway loops171223
+Node: Configuring cfservd173313
+Node: Installation of cfservd173553
+Node: Configuration file cfservd.conf174518
+Node: Security and cfengine179751
+Node: What is security?180999
+Node: A word of warning185310
+Node: Automation186088
+Node: Trust188735
+Node: Why trust cfengine?190683
+Node: Configuration193304
+Node: Disabling and replacing software195095
+Node: Process monitoring201849
+Node: Monitoring files204523
+Node: The setuid log206467
+Node: Suspicious filenames207283
+Node: Checksums and Tripwire functionality209078
+Node: FileExtensions211148
+Node: NonAlphaNumFiles211663
+Node: Defensive garbage collection212313
+Node: Anonymous FTP example216505
+Node: WWW security220660
+Node: Miscellaneous security of cfengine itself223784
+Node: Privacy (encryption)224230
+Node: Trust and key races227921
+Node: Adaptive locks230702
+Node: Spoofing231596
+Node: Race conditions in file copying232146
+Node: size= in copy232895
+Node: useshell= and owner= in shellcommands233605
+Node: Firewalls234580
+Node: Summary235248
+Node: Variable Index236045
+Node: Concept Index243537
+Node: FAQ Index267811
 
 End Tag Table

@@ -150,22 +150,34 @@ consists of several components:
 
 @table @r
 @item @b{cfagent}
-An autonomous configuration agent (required)
+An autonomous configuration agent (required).
+
 @item @b{cfservd}
-A file server and remote activation service (optional)
+A file server and remote activation service (optional).
+
 @item @b{cfexecd}
-A scheduling and report service (recommended)
+A scheduling and report service (recommended).
+
 @item @b{cfenvd}
-An anomaly detection service (strongly recommended)
+An anomaly detection service (strongly recommended).
+
+@item @b{cfrun}
+A way of activating cfagent remotely (use this as you need to).
+
+@item @b{cfshow}
+A way of examining the contents of helper databases (helper).
+
 @item @b{cfenvgraph}
-Ancillary tool for cfenvd (helper)
+Ancillary tool for cfenvd (helper).
+
 @item @b{cfkey}
-Key generation tool (run once on every host)
+Key generation tool (run once on every host).
+
 @end table
 
-The agent @file{cfagent} can be used without the other components,
-but not all of the functionality of cfengine will be available unless
-the components are deployed appropriately.
+The agent @file{cfagent} can be used without the other programs,
+but not all of the capabilities of cfengine will be available unless
+the components are installed and used appropriately.
 
 Cfengine incorporates a declarative language---much higher
 level than Perl or shell: a single statement can result in many hundreds
@@ -178,8 +190,9 @@ configuration.
 
 The main purpose of cfengine is to allow you to create a single, central
 system configuration which will define how every host on your network
-should be configured in an intuitive way.  An interpreter runs on every
-host on your network and parses the master file (or file set). The
+should be configured, and to do so in an intuitive way.
+An interpreter runs on every host on your network and parses
+the master file (or file set). The
 configuration of each host is checked against this file; then, if you
 request it, any deviations from the defined configuration are fixed
 automatically.  You do not have to mention every host specifically by
@@ -193,7 +206,7 @@ shell scripts used in the automation of key system maintenance at
 Unversity College in Oslo. There were a lot of
 scripts, written in shell and in Perl,
 performing system administration tasks such as file tidying, find-database updates, process
-checking and several other tasks.  In a heterogeneous environment,
+checking and several other tasks.  In a mixed environment,
 shell scripts work very poorly: shell commands have differing syntax
 across different operating systems, and the locations and names of key files
 differ. In fact, the non-uniformity of Unix was a major
@@ -218,8 +231,8 @@ result should be like, rather than on how to get there (with shell and Perl
 you specify what to do, rather than what you would like).
 
 The remainder of this manual assumes that you know a little about
-BSD and UNIX System V systems and have everyday experience in using either the
-C shell or the Bourne shell, or their derivatives.  If you are
+BSD and UNIX System V systems and have every day experience in using either the
+C shell (csh) or the Bourne shell (sh), or their derivatives.  If you are
 experienced in system administration, you might like to skip the earlier
 chapters and turn straight to the example in the section @emph{Example
 configuration file} of the Reference manual.  This is the probably
@@ -253,9 +266,9 @@ to help you automate the task, but end up with an enormous number of
 @samp{if..then..else..} tests which make it hard to see what is really
 going on.
 
-To manage a network with many different flavours of operating system, in
+To manage a network with many different flavours of operating system in
 a systematic way, what is needed is a more disciplined way of making
-changes which is robust against re-installation.  After all, it would be
+changes which is robust against system re-installation.  After all, it would be
 tragic to spend many hours setting up a system by hand only to lose
 everything in an unfortunate disk crash a week or even a year later when
 you have forgotten what you had to do.  Upgrades of the operating system
@@ -308,7 +321,7 @@ that they are configured through human-readable text files.  To add a
 new user to the system you edit @file{/etc/passwd}, to add a new
 disk you must edit @file{/etc/fstab}, etc.  Many applications are also
 configured with the help of text files.  When installing a new system
-for the first time, or when changing updating the setup of an old system
+for the first time, or when changing updating the setup of an old system,
 you are faced with having to edit lots of files.  In some cases you will
 have to add precisely the same line to the same file on every system in
 your network as a change is made, so it is handy to have a way of
@@ -330,9 +343,9 @@ by cfengine, but this requires more care.
 @cindex network interface
 @cindex network configuration
 
-Each host which you connect to an ethernet-based network running TCP/IP
+Each host which you connect to an Ethernet-based network running TCP/IP
 protocols must have a so-called `net interface'.  This network interface
-must be configured before it will work.  Normally one does this with the
+must be configured before it will work.  Normally, one does this with the
 help of the @code{ifconfig} command.  This can also be checked and
 configured automatically by cfagent.
 
@@ -340,12 +353,12 @@ Network configuration involves telling the interface hardware what the
 internet (IP) address of your system is, so that it knows which incoming
 `packets' of data to pay attention to.  It involves telling the
 interface how to interpret the addresses it receives by setting the
-`netmask' for your network (see below).  Finally you must tell it which
+`netmask' for your network (see below).  Finally, you must tell it which
 dummy address is to be used for messages which are broadcast to all
-hosts on your network simultaneously (see the reference manual).
+hosts on your network simultaneously (see the Reference Manual).
 
-Cfagent's features are mainly meant for hosts which use static IP addresses,
-if you are using DHCP clients then you will not need the net configuration
+Cfagent's features are mainly meant for hosts which use static IP addresses;
+if you are using DHCP clients, then you will not need the net configuration
 features.
 @cindex DHCP
 
@@ -359,17 +372,19 @@ features.
 @cindex NFS
 
 Probably the first thing you are interested in doing with a network
-(after you've had your fill of the world wide web) is to make your files
+(after you've had your fill of the World-Wide Web) is to make your files
 available to some or all hosts on the network, no matter where in your
 corporate empire (or university dungeon) you might be sitting.  In other
 words, if you have a disk which is physically connected to host A, you
 would like to make the contents of that disk available to hosts B, C,
-D...  etc.  NFS (the network filesystem) does this for you.  The process
-works by `filesystems'.
+D @dots{}, etc.  NFS (the Network FileSystem) makes this possible.
 
-A filesystem is one partition of a disk drive -- or one unit of disk
+The process works by `filesystems'.  A filesystem is one
+partition of a disk drive -- or one unit of disk
 space which can be accessed by a single `logical device'
-@samp{/dev/something}.  To make a filesystem available to other hosts
+@samp{/dev/something}.
+
+To make a filesystem available to other hosts
 you have to do three things.
 
 @itemize @bullet
@@ -391,14 +406,14 @@ analogous to opening a file: files are opened, filesystems are mounted.
 Only after all three of these have been done will a filesystem become
 available across the network.  Cfagent will help you with the last two
 in a very transparent way.  You could also use the text-editing facility
-in cfagent to edit the exports file, but there are other ways update
-the exports file using @emph{netgroups} which we shall not go into here.
-If you are in doubt, look up the manual page on exports.
+in cfagent to edit the @file{exports} file, but there are other ways to update
+the @file{exports} file using NIS and @emph{netgroups}, which we shall not go into here.
+If you are in doubt, look up the manual page on exports(5).
 
-Some sites prefer to minimize the use of NFS filesystems, to
+Some sites prefer to minimize the use of NFS filesystems to
 avoid one machine being dependent on another. They prefer to
 make a local copy of the files on a remote machine instead.
-Traditionally programs like @code{rdist} have been used for
+Traditionally, programs like @code{rdist} have been used for
 this purpose. You may also use cfagent to copy files in this
 way, @xref{Emulating rdist}.
 
@@ -412,23 +427,23 @@ way, @xref{Emulating rdist}.
 @cindex DNS
 
 There are two ways to specify addresses on the internet (called IP
-addresses).  One is to use the textual address like @samp{ftp.uu.net}
+addresses).  One is to use the text address like @samp{ftp.uu.net}
 and the other is to use the numerical form @samp{192.48.96.9}.  Alas,
-there is no one-to-one correspondence between the numerical addresses
-and the textual ones, thus a service is required to map one to the
-other.
+there is no direct one-to-one correspondence between the numerical addresses
+and the textual ones, thus a service (called DNS) is required to
+map one to the other.
 
 The service is performed by one or more special hosts on the network
-called @emph{nameservers}.  Each host must know how to contact a
-nameserver or it will probably hang the first time you give it an IP
-address.  You tell it how to contact a nameserver by editing the
+called @emph{name servers}.  Each host must know how to contact a
+name server or it will probably hang the first time you give it an IP
+address.  You tell it how to contact a name server by editing the
 text-file @file{/etc/resolv.conf}.  This file must contain the domain
-name for your domain and a list of possible nameservers which can be
-contacted, in order of priority.  Because this is a special file which
-every host must have, you don't have to use the editing facilities in
-cfagent explicitly.  You can just define the nameservers for each host
-in the cfagent file and cfagent will do the editing automatically.  If
-you want to change the priority of nameservers later, or even change the
+name for your domain and a list of possible name servers which can be
+contacted, in order of priority.  Since this is a special file which
+every host must have, you don't have to use the general text file editing
+facilities in cfagent.  You can just define the name servers for each host
+in the cfagent file and cfagent will do the editing to @file{/etc/resolv.conf}
+automatically.  If you want to change the priority of name servers later, or even change the
 list then a simple change of one or two lines in the configuration file
 will enable you to reconfigure every host on your network automatically
 without having to do any editing yourself!
@@ -499,7 +514,7 @@ time.  Cfengine won't forget it, and you won't forget it because the
 setup is defined in one central place.
 
 Cfagent will also allow you to make hard links to regular files, but
-not other kinds of file. A hard link to a symbolic link, is the same
+not to other kinds of files. A hard link that points to a symbolic link is the same
 as a hard link to the file the symbolic link points to.
 @cindex Hard links
 
@@ -511,7 +526,7 @@ as a hard link to the file the symbolic link points to.
 @section Functionality
 
 The notes above give you a rough idea of what cfengine can be used for.
-Here is a summary of cfagent's capabilities.
+Here is a quick summary of cfagent's capabilities.
 
 @itemize @bullet
 
@@ -519,20 +534,20 @@ Here is a summary of cfagent's capabilities.
 
 @item Edit textfiles for the system and for all users.
 
-@item Make and maintain symbolic links, including multiple links from
+@item Make and maintain symbolic links, including multiple links, using
 a single command.
 
 @item Check and set the permissions and ownership of files.
 
-@item Tidy (delete) junk files which clutter the system.
+@item Tidy (i.e., delete) junk files which clutter the system.
 
-@item Systematic, automated mounting of NFS filesystems.
+@item Systematic and automated mounting of NFS filesystems.
 
 @item Checking for the presence of important files and filesystems.
 
 @item Controlled execution of user scripts and shell commands.
 
-@item Cfengine follows a class-based decision structure.
+@item A class-based decision structure.
 
 @item Process management.
 
@@ -540,7 +555,7 @@ a single command.
 
 How do you run cfagent? You can run it as a cron job, or you can run it
 manually. You may run cfagent scripts/programs as often
-as you like.  Each time you run a script, the engine determines whether
+as you like.  Each time you run a script, cfengine determines whether
 anything needs to be done --- if nothing needs to be done, nothing is
 done!  If you use it to monitor and configure your entire network from a
 central file-base, then the natural thing is to run cfengine repeatedly with
@@ -637,14 +652,14 @@ of the equals sign.
 In simple example above has three of the four types of object described
 above.  The @code{control:} section of any program tells cfengine how to
 behave.  In this example it adds the action @var{links} to the
-actionsequence.  For @var{links} you could replace some other action.
+action sequence.  For @var{links} you could replace some other action.
 The essential point is that, if you don't have an action sequence, your
 cfengine program will do absolutely nothing! The action sequence is a
 list which tells cfagent what do to and in which order.
 
 The @code{links:} section of the file tells cfagent that what follows
 is a number of links to be made.  If you write this part of the file,
-but forget to add links to the actionsequence, then nothing will be
+but forget to add links to the action sequence, then nothing will be
 done! You can add any number of links in this part of the file and they
 will all be dealt with in order when---and only when---you write
 @var{links} in the action sequence.
@@ -661,7 +676,7 @@ how many times and in which order they should be processed.
 @end itemize
 
 Now let's think a bit about how useful this short example program is.
-On a SunOS system, where the directory @file{/bin} is in fact supposed
+On a SunOS (Solaris) system, where the directory @file{/bin} is in fact supposed
 to be a link, such a check could be useful, but on some other system
 where @file{/bin} is a not a link but a separate directory, this would
 result in an error message from cfagent, telling you that @file{/bin}

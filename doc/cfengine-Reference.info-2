@@ -11,6 +11,27 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: SkipVerify,  Prev: encrypt=,  Up: admit grant and deny
+
+5.2.3 SkipVerify
+----------------
+
+If connecting hosts use a Network Address Translator in order to share
+an IP address, reverse lookup will fail to give a correct verification
+of host identity.  You can switch off cfservd's verification of IP host
+identity for specific IP addresses or patterns using this command. E.g.
+
+
+     SkipVerify = ( 192.0.0.10  192.0.2.  )
+
+   This does not affect key verification.
+
+   NOTE!! This is a security risk because it means that cfservd
+implicitly trusts the connecting hosts! You should be very careful in
+using Network Address Translators in a secure environment. It is not
+recommended for sites which require a high level of security.  
+
+
 File: cfengine-Reference.info,  Node: cfrun,  Next: Firewalls and NATs,  Prev: admit grant and deny,  Up: Cfservd.conf and cfrun reference
 
 5.3 `cfrun'
@@ -1884,7 +1905,7 @@ Variable Index
 * netmask:                               control.             (line  66)
 * nfstype <1>:                           nfstype.             (line   6)
 * nfstype:                               control.             (line  66)
-* noabspath:                             shellcommands.       (line  47)
+* noabspath:                             shellcommands.       (line 104)
 * o=:                                    Syntax.              (line  47)
 * ones:                                  broadcast.           (line  22)
 * OutputPrefix:                          Special variables.   (line  98)
@@ -1957,7 +1978,7 @@ Concept Index
 * Menu:
 
 * !:                                     Cfengine classes.    (line  94)
-* --dry-run option:                      shellcommands.       (line 115)
+* --dry-run option:                      shellcommands.       (line  96)
 * -D option:                             addclasses.          (line  20)
 * -l option:                             tidy.                (line  84)
 * -L option:                             Single links.        (line  22)
@@ -1990,7 +2011,7 @@ Concept Index
 * Adding new classes:                    cfrc resource file.  (line  39)
 * AFS:                                   nfstype.             (line  22)
 * Alerts:                                alerts.              (line   6)
-* allclasses variable:                   shellcommands.       (line  82)
+* allclasses variable:                   shellcommands.       (line 157)
 * AllowConnectionsFrom variable:         AllowConnectionsFrom.
                                                               (line  16)
 * AllowUsers in cfservd:                 AllowUsers.          (line  25)
@@ -2038,7 +2059,7 @@ Concept Index
 * cf.site <1>:                           cfservd.conf.        (line   6)
 * cf.site:                               cf.site.             (line   6)
 * cfagent.conf:                          cfagent.conf.        (line   6)
-* CFALLCLASSES <1>:                      shellcommands.       (line  82)
+* CFALLCLASSES <1>:                      shellcommands.       (line 157)
 * CFALLCLASSES:                          Special variables.   (line  16)
 * cfenvd and key entropy:                Cfkey.               (line  14)
 * cfexecd:                               Cfexecd reference.   (line  44)
@@ -2061,7 +2082,7 @@ Concept Index
 * Class data and scripts:                Special variables.   (line  16)
 * Class decided by shell command:        groups.              (line 102)
 * Class dependencies:                    groups.              (line  73)
-* Class information, passing to scripts: shellcommands.       (line  82)
+* Class information, passing to scripts: shellcommands.       (line 157)
 * classes <1>:                           groups.              (line  10)
 * classes <2>:                           classes.             (line   6)
 * classes:                               Cfengine classes.    (line   6)
@@ -2085,7 +2106,7 @@ Concept Index
 * DCE key:                               DFS ACLs.            (line   6)
 * Deadlock:                              cf.preconf bootstrap file.
                                                               (line   6)
-* Deadlock zombie bug in restart:        processes.           (line 118)
+* Deadlock zombie bug in restart:        processes.           (line 120)
 * Debian Package Database Queries:       packages.            (line 109)
 * Declaring classes:                     addinstallable.      (line   6)
 * Decrementing line pointer in editfiles: editfiles.          (line 444)
@@ -2205,7 +2226,7 @@ Concept Index
                                                               (line  61)
 * IsLessThan:                            Evaluated classes and special functions.
                                                               (line  61)
-* Iterating over lists in shellcommands: shellcommands.       (line 102)
+* Iterating over lists in shellcommands: shellcommands.       (line 177)
 * Iteration in server rules:             Cfservd.conf and cfrun reference.
                                                               (line  93)
 * Iteration over lists <1>:              split.               (line  15)
@@ -2287,7 +2308,7 @@ Concept Index
 * nfstype:                               nfstype.             (line   6)
 * NIS, netgroup support:                 groups.              (line  40)
 * no_default_route class:                defaultroute.        (line  41)
-* noabspath:                             shellcommands.       (line  47)
+* noabspath:                             shellcommands.       (line 104)
 * NOT operator:                          Cfengine classes.    (line  94)
 * NT, ACL:                               NT ACLs.             (line   6)
 * ones:                                  broadcast.           (line  22)
@@ -2312,15 +2333,15 @@ Concept Index
 * PrepModule:                            Evaluated classes and special functions.
                                                               (line  51)
 * Preserving file times in copy:         copy.                (line 160)
-* Previewing shellcommands:              shellcommands.       (line 115)
+* Previewing shellcommands:              shellcommands.       (line  96)
 * Private modules:                       methods.             (line   6)
 * PRNG not seeded:                       Cfkey.               (line  18)
-* Processes, 0 to 3:                     processes.           (line  95)
-* Processes, checking existence of:      processes.           (line 187)
-* Processes, counting:                   processes.           (line 159)
-* Processes, signalling:                 processes.           (line 187)
+* Processes, 0 to 3:                     processes.           (line  97)
+* Processes, checking existence of:      processes.           (line 189)
+* Processes, counting:                   processes.           (line 161)
+* Processes, signalling:                 processes.           (line 189)
 * Public keys:                           copy.                (line 259)
-* Purge, excluding files:                copy.                (line 192)
+* Purge, excluding files:                copy.                (line 190)
 * Quoted strings:                        editfiles.           (line  63)
 * Random numbers:                        Setting variables with functions.
                                                               (line  23)
@@ -2347,7 +2368,7 @@ Concept Index
 * resolv.conf:                           resolve.             (line   6)
 * Resolver configuration:                resolve.             (line   6)
 * Resource file:                         cfrc resource file.  (line   6)
-* Restart zombie deadlock bug:           processes.           (line 118)
+* Restart zombie deadlock bug:           processes.           (line 120)
 * Restricting the size of binary files to be edited: editbinaryfilesize.
                                                               (line   6)
 * Restricting the size of files to be edited: editfilesize.   (line   6)
@@ -2359,7 +2380,7 @@ Concept Index
 * Running cfrun:                         cfrun.               (line  41)
 * scanarrivals=:                         disks.               (line  64)
 * scheduling:                            schedule.            (line   6)
-* Scripts and class information:         shellcommands.       (line  82)
+* Scripts and class information:         shellcommands.       (line 157)
 * Scripts, passing classes to:           Special variables.   (line  16)
 * Search patterns in files:              Syntax.              (line 132)
 * Searching for home directories:        homepattern.         (line  23)
@@ -2377,7 +2398,7 @@ Concept Index
 * Sensible limits on files in a directory: sensiblecount.     (line   6)
 * SetState():                            alerts.              (line  27)
 * Setting classes based on non-local disks: disks.            (line  62)
-* Setting uid on restarted processes:    processes.           (line 120)
+* Setting uid on restarted processes:    processes.           (line 122)
 * Several files:                         import.              (line   6)
 * Shell command to decide class:         groups.              (line 102)
 * ShowState():                           alerts.              (line  27)
@@ -2413,8 +2434,8 @@ Concept Index
 * Tidy log files for users:              LogTidyHomeFiles.    (line  12)
 * Tidying empty files:                   tidy.                (line 112)
 * Tidying files:                         tidy.                (line   6)
-* timeout= in shellcommands:             shellcommands.       (line  43)
-* Timeouts during iterations:            shellcommands.       (line 104)
+* timeout= in shellcommands:             shellcommands.       (line  48)
+* Timeouts during iterations:            shellcommands.       (line 180)
 * Too many open files error:             Too many open files. (line   6)
 * Touching files:                        touch.               (line   6)
 * travlinks:                             tidy.                (line 135)
@@ -2425,8 +2446,8 @@ Concept Index
 * Trust, key exchange with cfrun:        cfrun.               (line  31)
 * Trusted hosts:                         copy.                (line 259)
 * TrustKeysFrom variable:                TrustKeysFrom.       (line  18)
-* umask <1>:                             shellcommands.       (line  37)
-* umask <2>:                             processes.           (line  42)
+* umask <1>:                             shellcommands.       (line  39)
+* umask <2>:                             processes.           (line  44)
 * umask:                                 editfiles.           (line 621)
 * underscoreclasses:                     Special variables.   (line 123)
 * Unmounting filesystems:                unmount.             (line   6)
@@ -2456,7 +2477,7 @@ FAQ Index
  [index ]
 * Menu:
 
-* Absolute path and shellcommands:       shellcommands.       (line  47)
+* Absolute path and shellcommands:       shellcommands.       (line 104)
 * Brackets (parentheses) in classes.:    Cfengine classes.    (line 157)
 * Can't stat error when remote copying:  DenyBadClocks.       (line   9)
 * Changing repository name conventions:  repchar.             (line  14)
@@ -2466,13 +2487,13 @@ FAQ Index
 * ctime copy doesn't always copy files:  copy.                (line 155)
 * Denial of service attacks:             AllowConnectionsFrom.
                                                               (line  16)
-* Hanging commands, timeouts:            shellcommands.       (line  43)
+* Hanging commands, timeouts:            shellcommands.       (line  48)
 * Hanging connections attacks:           AllowConnectionsFrom.
                                                               (line  16)
 * Hey! Cannot stat file error:           copy.                (line 242)
-* How can I avoid hanging shellcommands?: shellcommands.      (line  43)
+* How can I avoid hanging shellcommands?: shellcommands.      (line  48)
 * How can I set a timeout for a shell command?: shellcommands.
-                                                              (line  43)
+                                                              (line  48)
 * How to create files while editing:     editfiles.           (line 210)
 * Iterating over lists <1>:              split.               (line  15)
 * Iterating over lists:                  Iteration over lists.
@@ -2482,7 +2503,7 @@ FAQ Index
                                                               (line  12)
 * Parentheses in classes.:               Cfengine classes.    (line 157)
 * Remote copy problems, can't stat:      copy.                (line 242)
-* Shellcommands must start with absolute path: shellcommands. (line  47)
+* Shellcommands must start with absolute path: shellcommands. (line 104)
 * Too many open files error:             Too many open files. (line   6)
 
 
