@@ -76,6 +76,10 @@ else
    snprintf(CFPUBKEYFILE,bufsize,"%s/ppkeys/localhost.pub",WORKDIR);
    }
 
+ 
+snprintf(VBUFF,bufsize,"%s/modules/test",VLOCKDIR);
+MakeDirectoriesFor(VBUFF,'n');
+ 
 snprintf(VBUFF,bufsize,"%s/ppkeys/test",VLOCKDIR);
 MakeDirectoriesFor(VBUFF,'n');
 snprintf(VBUFF,bufsize,"%s/ppkeys",VLOCKDIR); 

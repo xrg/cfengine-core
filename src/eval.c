@@ -306,7 +306,13 @@ char *class;
 {
 Debug("AddClassToHeap(%s)\n",class);
 
- if (IsItemIn(VHEAP,class))
+/*if (! IsItemIn(VALLADDCLASSES,class))
+   {
+   snprintf(OUTPUT,bufsize,"Defining class %s -- but it isn't declared installable",class);
+   yyerror(OUTPUT);
+   }*/
+ 
+if (IsItemIn(VHEAP,class))
    {
    return;
    }

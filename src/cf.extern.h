@@ -146,8 +146,8 @@ extern char  INFORMP;
 
 extern char *FILTERNAME;
 extern char *STRATEGYNAME;
+extern char *CURRENTOBJECT;
 extern char *CURRENTITEM;
-extern char *CURRENTPATH;
 extern char *GROUPBUFF;
 extern char *ACTIONBUFF;
 extern char *CLASSBUFF;

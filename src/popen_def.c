@@ -93,6 +93,7 @@ if (status == 0)
    }
 else
    {
+   AddMultipleClasses(elsedef);
    Debug("Child returned status %d\n",status);
    }
 

@@ -104,11 +104,6 @@ struct Item *list;
 char *item;
 
 { struct Item *ptr;
-
-if (item != NULL && list != NULL)
-   {
-   Debug("IsWildItem(%s,%s)\n",item,list->name);
-   }
  
 for (ptr = list; ptr != NULL; ptr=ptr->next)
    {
@@ -119,6 +114,7 @@ for (ptr = list; ptr != NULL; ptr=ptr->next)
 
    if (WildMatch(ptr->name,item))
       {
+      Debug("IsWildItem(%s,%s)\n",item,ptr->name);
       return(true);
       }
    }

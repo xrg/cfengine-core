@@ -73,7 +73,7 @@ char *argv[];
 int argc;
 
 { struct Item *ip;
-
+ 
 SetContext("global");
  
 signal (SIGTERM,HandleSignal);                   /* Signal Handler */
@@ -187,8 +187,12 @@ SetReferenceTime(false); /* Reset */
 DoTree(2,"Main Tree"); 
 DoAlerts();
 
-SummarizeObjects();
+if (GetMacroValue(CONTEXTID,"ChecksumPurge") && (strcmp(GetMacroValue(CONTEXTID,"ChecksumPurge"),"on") == 0))
+   {
+   ChecksumPurge();
+   }
  
+SummarizeObjects();
 closelog();
 return 0;
 }
@@ -246,6 +250,7 @@ if (stat("/etc/SuSE-release",&statbuf) != -1)
    {
    Verbose("\nThis appears to be a SuSE system.\n");
    AddClassToHeap("SuSE");
+   linux_suse_version();
    }
 
 if (stat("/etc/slackware-release",&statbuf) != -1)
@@ -259,6 +264,12 @@ if (stat("/etc/debian_version",&statbuf) != -1)
    Verbose("\nThis appears to be a debian system.\n");
    AddClassToHeap("debian");
    debian_version();
+   }
+
+if (stat("/etc/UnitedLinux-release",&statbuf) != -1)
+   {
+   Verbose("\nThis appears to be a UnitedLinux system.\n");
+   AddClassToHeap("UnitedLinux");
    }
  
 /* Note we need to fix the options since the argv mechanism doesn't */
@@ -298,7 +309,7 @@ VEXPIREAFTER = VDEFAULTEXPIREAFTER;
 VIFELAPSED = VDEFAULTIFELAPSED;
 TRAVLINKS = false;
  
-sprintf(VBUFF,"%s/cf_procs",WORKDIR);
+sprintf(VBUFF,"%s/state/cf_procs",WORKDIR);
  
  if (stat(VBUFF,&statbuf) == -1)
     {
@@ -705,6 +716,8 @@ if (DEBUG || D2 || D3)
    printf("\nDefault route for packets %s\n\n",VDEFAULTROUTE);
    printf("\nFile repository = %s\n\n",VREPOSITORY);
    printf("\nNet interface name = %s\n",VIFDEV[VSYSTEMHARDCLASS]);
+   printf("------------------------------------------------------------\n");
+   ListDefinedVariables();
    printf("------------------------------------------------------------\n");
    ListDefinedAlerts();
    printf("------------------------------------------------------------\n");
@@ -1298,6 +1311,7 @@ int NothingLeftToDo()
   struct UnMount *vunmount;
   struct Edit *veditlist;
   struct Process *vproclist;
+  struct Tidy *vtidy;
 
 for (vproclist = VPROCLIST; vproclist != NULL; vproclist=vproclist->next)
    {
@@ -1323,6 +1337,14 @@ for (vfile = VFILE; vfile != NULL; vfile=vfile->next)
       }
    }
 
+for (vtidy = VTIDY; vtidy != NULL; vtidy=vtidy->next)
+   {
+   if (vtidy->done == 'n')
+      {
+      return false;
+      }
+   }
+ 
 for (veditlist = VEDITLIST; veditlist != NULL; veditlist=veditlist->next)
    {
    if (veditlist->done == 'n')
@@ -1690,8 +1712,7 @@ for (i = 0; VRESOURCES[i] != '\0'; i++)
 snprintf (VBUFF,bufsize,"Unknown resource %s in %s",var,VRCFILE);
 
 FatalError(VBUFF);
-
-return 0; /* This to placate insight */
+return 0;
 }
 
 /*******************************************************************/
@@ -1787,9 +1808,7 @@ if (GetMacroValue(CONTEXTID,"moduledirectory"))
    }
 else
    {
-   snprintf(OUTPUT,bufsize*2,"Plugin was called in ActionSequence but moduledirectory was not defined\n");
-   CfLog(cfinform,OUTPUT,"");
-   return;
+   snprintf(VBUFF,bufsize,"%s/modules",WORKDIR);
    }
 
 AddSlash(VBUFF);

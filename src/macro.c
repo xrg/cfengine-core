@@ -72,7 +72,7 @@ for (i = 0; i < hashtablesize; i++)
    {
    if (table[i] != NULL)
       {
-      printf ("%d : %s\n",i,table[i]);
+      printf ("   %d : %s\n",i,table[i]);
       }
    }
 }
@@ -166,7 +166,7 @@ if (ptr->hashtable[slot] != 0)
       {
       if (PARSING && !IsItemIn(VREDEFINES,name))
 	 {
-	 snprintf(VBUFF,bufsize,"Redefinition of macro %s=%s",name,exp);
+	 snprintf(VBUFF,bufsize,"Redefinition of macro %s=%s (or perhaps missing quote)",name,exp);
 	 Warning(VBUFF);
 	 }
       free(ptr->hashtable[slot]);

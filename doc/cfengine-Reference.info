@@ -13,182 +13,183 @@ END-INFO-DIR-ENTRY
 
 Indirect:
 cfengine-Reference.info-1: 478
-cfengine-Reference.info-2: 47517
-cfengine-Reference.info-3: 95639
-cfengine-Reference.info-4: 122543
-cfengine-Reference.info-5: 171431
-cfengine-Reference.info-6: 217199
-cfengine-Reference.info-7: 261790
-cfengine-Reference.info-8: 299230
+cfengine-Reference.info-2: 47935
+cfengine-Reference.info-3: 96872
+cfengine-Reference.info-4: 123776
+cfengine-Reference.info-5: 173197
+cfengine-Reference.info-6: 218965
+cfengine-Reference.info-7: 263837
+cfengine-Reference.info-8: 301453
 
 Tag Table:
 (Indirect)
 Node: Top478
-Node: Reference introduction1838
-Node: Installation2568
-Node: Work directory3338
-Node: Hard classes5215
-Node: Evaluated classes6755
-Node: Filenames and paths8396
-Node: Cfkey10153
-Node: Cfagent reference11158
-Node: Cfagent intro11759
-Node: The file cfagent.conf11983
-Node: Cfagent Runtime Options12389
-Node: Special variables18225
-Node: Cfengine classes22765
-Node: acl28724
-Node: ACEs31127
-Node: Solaris ACLs33625
-Node: DFS ACLs34294
-Node: NT ACLs35961
-Node: ACL Example38937
-Node: alerts40371
-Node: binservers41457
-Node: broadcast43234
-Node: control44351
-Node: access46963
-Node: actionsequence47517
-Node: addclasses55281
-Node: addinstallable56857
-Node: AllowRedefinitionOf58374
-Node: AutoDefine58887
-Node: BinaryPaddingChar59361
-Node: ChecksumDatabase59791
-Node: ChecksumUpdates60166
-Node: childlibpath60964
-Node: copylinks61615
-Node: defaultcopytype62319
-Node: deletenonuserfiles62701
-Node: deletenonownerfiles63213
-Node: deletenonusermail63722
-Node: deletenonownermail64061
-Node: domain64383
-Node: dryrun65244
-Node: editbinaryfilesize65604
-Node: editfilesize66148
-Node: emptyresolvconf67020
-Node: exclamation67347
-Node: excludecopy67679
-Node: excludelinks68334
-Node: ExpireAfter68993
-Node: homepattern69778
-Node: IfElapsed71377
-Node: Inform72073
-Node: interfacename72578
-Node: fileextension73333
-Node: linkcopies73800
-Node: LogDirectory74463
-Node: LogTidyHomeFiles74771
-Node: moduledirectory75080
-Node: mountpattern75557
-Node: netmask76881
-Node: nonalphanumfiles80535
-Node: nfstype81112
-Node: repchar82161
-Node: repository82735
-Node: schedule83233
-Node: secureinput84308
-Node: sensiblecount84617
-Node: sensiblesize85180
-Node: showactions85818
-Node: singlecopy86248
-Node: site87431
-Node: Smtpserver88110
-Node: SplayTime88335
-Node: split88664
-Node: spooldirectories89422
-Node: suspiciousnames89978
-Node: sysadm90450
-Node: Syslog91051
-Node: timezone91363
-Node: TimeOut92478
-Node: Verbose92814
-Node: Warnings93519
-Node: warnnonuserfiles93956
-Node: warnnonownerfiles94286
-Node: warnnonusermail94800
-Node: warnnonownermail95133
-Node: classes95436
-Node: copy95639
-Node: hard links in copy110604
-Node: Too many open files112587
-Node: defaultroute113304
-Node: disks114056
-Node: directories116299
-Node: disable117677
-Node: editfiles122543
-Node: files150237
-Node: Syntax150679
-Node: Recursion159711
-Node: Directory permissions160496
-Node: home directive161298
-Node: Owner and group wildcards162472
-Node: Files linkchildren162932
-Node: touch163415
-Node: create163785
-Node: filters164130
-Node: Complete filter examples169816
-Node: groups171431
-Node: homeservers175409
-Node: ignore177673
-Node: import179287
-Node: interfaces180356
-Node: links181097
-Node: Single links182446
-Node: Multiple Links188246
-Node: Link Children189383
-Node: Relative and absolute links192570
-Node: Hard links193682
-Node: mailserver194982
-Node: miscmounts196145
-Node: mountables197411
-Node: processes198945
-Node: required209553
-Node: resolve211703
-Node: shellcommands213448
-Node: tidy217199
-Node: unmount225510
-Node: Cfservd.conf and cfrun reference226829
-Node: cfservd control229103
-Node: IP address ranges229625
-Node: AllowConnectionsFrom230579
-Node: AllowMultipleConnectionsFrom231266
-Node: AllowUsers232066
-Node: AutoExecCommand233119
-Node: AutoExecInterval233333
-Node: ChecksumDatabase in cfservd233569
-Node: cfrunCommand234200
-Node: DenyBadClocks234461
-Node: DenyConnectionsFrom234890
-Node: cfservd IfElapsed235253
-Node: LogAllConnections235664
-Node: MaxConnections236109
-Node: TrustKeysFrom236436
-Node: DynamicAddresses237173
-Node: admit grant and deny238347
-Node: root=238579
-Node: encrypt=239528
-Node: SkipVerify239881
-Node: cfrun240645
-Node: Firewalls and NATs244860
-Node: Cfexecd reference246003
-Node: Problem solving247881
-Node: cf.preconf bootstrap file248105
-Node: cfrc resource file250205
-Node: Example configuration file253078
-Node: cfagent.conf253555
-Node: cf.groups254678
-Node: cf.main256167
-Node: cf.site261790
-Node: cf.motd273364
-Node: cf.users274455
-Node: cf.solaris278210
-Node: cf.linux284034
-Node: cf.freebsd286431
-Node: cfservd.conf288241
-Node: Variable Index289418
-Node: Concept Index299230
-Node: FAQ Index318888
+Node: Reference introduction1840
+Node: Installation2570
+Node: Work directory3340
+Node: Hard classes5217
+Node: Evaluated classes6757
+Node: Filenames and paths8398
+Node: Cfkey10155
+Node: Cfagent reference11160
+Node: Cfagent intro11761
+Node: The file cfagent.conf11985
+Node: Cfagent Runtime Options12391
+Node: Special variables18227
+Node: Cfengine classes22983
+Node: acl28942
+Node: ACEs31345
+Node: Solaris ACLs33843
+Node: DFS ACLs34512
+Node: NT ACLs36179
+Node: ACL Example39155
+Node: alerts40589
+Node: binservers41675
+Node: broadcast43452
+Node: control44569
+Node: access47381
+Node: actionsequence47935
+Node: addclasses55699
+Node: addinstallable57275
+Node: AllowRedefinitionOf58792
+Node: AutoDefine59305
+Node: BinaryPaddingChar59779
+Node: ChecksumDatabase60209
+Node: ChecksumPurge60582
+Node: ChecksumUpdates61270
+Node: childlibpath62065
+Node: copylinks62716
+Node: defaultcopytype63420
+Node: deletenonuserfiles63802
+Node: deletenonownerfiles64314
+Node: deletenonusermail64823
+Node: deletenonownermail65162
+Node: domain65484
+Node: dryrun66345
+Node: editbinaryfilesize66705
+Node: editfilesize67249
+Node: emptyresolvconf68121
+Node: exclamation68448
+Node: excludecopy68780
+Node: excludelinks69435
+Node: ExpireAfter70094
+Node: homepattern70879
+Node: IfElapsed72478
+Node: Inform73174
+Node: interfacename73679
+Node: fileextension74434
+Node: linkcopies74901
+Node: LogDirectory75564
+Node: LogTidyHomeFiles75872
+Node: moduledirectory76181
+Node: mountpattern76790
+Node: netmask78114
+Node: nonalphanumfiles81768
+Node: nfstype82345
+Node: repchar83394
+Node: repository83968
+Node: schedule84466
+Node: secureinput85541
+Node: sensiblecount85850
+Node: sensiblesize86413
+Node: showactions87051
+Node: singlecopy87481
+Node: site88664
+Node: Smtpserver89343
+Node: SplayTime89568
+Node: split89897
+Node: spooldirectories90655
+Node: suspiciousnames91211
+Node: sysadm91683
+Node: Syslog92284
+Node: timezone92596
+Node: TimeOut93711
+Node: Verbose94047
+Node: Warnings94752
+Node: warnnonuserfiles95189
+Node: warnnonownerfiles95519
+Node: warnnonusermail96033
+Node: warnnonownermail96366
+Node: classes96669
+Node: copy96872
+Node: hard links in copy111837
+Node: Too many open files113820
+Node: defaultroute114537
+Node: disks115289
+Node: directories117532
+Node: disable118910
+Node: editfiles123776
+Node: files152003
+Node: Syntax152445
+Node: Recursion161477
+Node: Directory permissions162262
+Node: home directive163064
+Node: Owner and group wildcards164238
+Node: Files linkchildren164698
+Node: touch165181
+Node: create165551
+Node: filters165896
+Node: Complete filter examples171582
+Node: groups173197
+Node: homeservers177175
+Node: ignore179439
+Node: import181053
+Node: interfaces182122
+Node: links182863
+Node: Single links184212
+Node: Multiple Links190012
+Node: Link Children191149
+Node: Relative and absolute links194336
+Node: Hard links195448
+Node: mailserver196748
+Node: miscmounts197911
+Node: mountables199177
+Node: processes200711
+Node: required211319
+Node: resolve213469
+Node: shellcommands215214
+Node: tidy218965
+Node: unmount227276
+Node: Cfservd.conf and cfrun reference228595
+Node: cfservd control230869
+Node: IP address ranges231391
+Node: AllowConnectionsFrom232345
+Node: AllowMultipleConnectionsFrom233032
+Node: AllowUsers233832
+Node: AutoExecCommand234885
+Node: AutoExecInterval235099
+Node: ChecksumDatabase in cfservd235335
+Node: cfrunCommand235966
+Node: DenyBadClocks236227
+Node: DenyConnectionsFrom236656
+Node: cfservd IfElapsed237019
+Node: LogAllConnections237430
+Node: MaxConnections237875
+Node: TrustKeysFrom238202
+Node: DynamicAddresses238939
+Node: admit grant and deny240113
+Node: root=240345
+Node: encrypt=241294
+Node: SkipVerify241647
+Node: cfrun242411
+Node: Firewalls and NATs246626
+Node: Cfexecd reference247769
+Node: Problem solving249928
+Node: cf.preconf bootstrap file250152
+Node: cfrc resource file252252
+Node: Example configuration file255125
+Node: cfagent.conf255602
+Node: cf.groups256725
+Node: cf.main258214
+Node: cf.site263837
+Node: cf.motd275411
+Node: cf.users276502
+Node: cf.solaris280257
+Node: cf.linux286081
+Node: cf.freebsd288478
+Node: cfservd.conf290288
+Node: Variable Index291465
+Node: Concept Index301453
+Node: FAQ Index321266
 
 End Tag Table

@@ -35,7 +35,7 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   Edition 2.0.6 for version 2.0.6 as last updated 1 August 2002.
+   Edition 2.0.7p3 for version 2.0.7p3 as last updated 13 May 2003.
 
 * Menu:
 
@@ -66,6 +66,7 @@ without having to watch control panels, or time-series traces.
 * cfenvd::
 * Anomaly research::
 * cfenvgraph::
+* Fluctuation profiles::
 * Starting with anomaly detection::
 
 
@@ -190,7 +191,7 @@ arrange for particularly resource-intensive maintenance to be delayed
 until the expected activity was low.
 
 
-File: cfengine-Anomalies.info,  Node: cfenvgraph,  Next: Starting with anomaly detection,  Prev: Anomaly research,  Up: Overview
+File: cfengine-Anomalies.info,  Node: cfenvgraph,  Next: Fluctuation profiles,  Prev: Anomaly research,  Up: Overview
 
 cfenvgraph
 ==========
@@ -207,7 +208,7 @@ this time for the job, unless an anomalous load is detected.
 
    The cfenvgraph command is used to extract data from the database
 used by the cfenvd environment daemon.
-     cfenvgraph -f FILENAME.DB [-R -T -T -S -E]
+     cfenvgraph -f FILENAME.DB [-r -T -t -s -e]
    The command normally generates two files with format
      t, y_1, y_2, y_3, y_4...
    in a sub-directory of the current directory `cfenvgraphs-snapshot'
@@ -289,7 +290,23 @@ meant for continuous viewing. The data are averages, not time-series.
      gnuplot> plot "www-in.cfenv" with lines
 
 
-File: cfengine-Anomalies.info,  Node: Starting with anomaly detection,  Prev: cfenvgraph,  Up: Overview
+File: cfengine-Anomalies.info,  Node: Fluctuation profiles,  Next: Starting with anomaly detection,  Prev: cfenvgraph,  Up: Overview
+
+Fluctuation profiles
+====================
+
+   Any model of fluctuating values is based on the idea that the
+changing signal has a basic separation of signal and noise. The
+variability of the signal is generally characterized by a probability
+distribution. Some tools and many papers assume that the distribution
+of fluctuations is Gaussian. This is almost never the case in real
+computer systems.
+
+   Hurst exponent measures the degree of stability in the signal, in
+the following sense....
+
+
+File: cfengine-Anomalies.info,  Node: Starting with anomaly detection,  Prev: Fluctuation profiles,  Up: Overview
 
 Starting with anomaly detection
 ===============================
@@ -409,13 +426,14 @@ FAQ Index
 
 Tag Table:
 Node: Top478
-Node: Overview1615
-Node: cfenvd2500
-Node: Anomaly research5546
-Node: cfenvgraph8241
-Node: Starting with anomaly detection12243
-Node: Variable Index14942
-Node: Concept Index15086
-Node: FAQ Index15378
+Node: Overview1617
+Node: cfenvd2527
+Node: Anomaly research5573
+Node: cfenvgraph8268
+Node: Fluctuation profiles12259
+Node: Starting with anomaly detection12887
+Node: Variable Index15596
+Node: Concept Index15740
+Node: FAQ Index16032
 
 End Tag Table

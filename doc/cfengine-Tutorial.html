@@ -2526,7 +2526,13 @@ string itself. The same goes for the other types of string delimiters.
 Unlike the shell, cfengine treats these three delimiters in precisely
 the same way. There is no difference between them. 
 If you need to quote a quoted string, then you should choose a delimiter
-which does not conflict with the substring.
+which does not conflict with the substring before version 2.0.7. 
+From version 2.0.7, you can escape quotes.
+
+<pre class="smallexample">     
+       qstring = ( "One string\"with substring\" escaped" )
+     
+     </pre>
 
    <p>Note that you can use special variables for certain symbols in a string
 See <a href="#Variable%20substitution">Variable substitution</a>.

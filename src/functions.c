@@ -167,7 +167,7 @@ char *args,*value;
 
 if (ACTION != control)
    {
-   yyerror("Use of RandInt(a,b) outside of variable assignment");
+   yyerror("Use of RandomInt(a,b) outside of variable assignment");
    }
   
 for (sp = args; *sp != '\0'; sp++)

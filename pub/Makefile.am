@@ -1,5 +1,5 @@
 
-CFLAGS = @CFLAGS@ @GCC_CFLAG@
+AM_CFLAGS = @CFLAGS@ @GCC_CFLAG@
 INCLUDES = @BERKELEY_DB_CFLAGS@ @OPENSSL_LIB_CPPFLAGS@
 
 noinst_LIBRARIES = libpub.a
@@ -9,6 +9,7 @@ libpub_a_SOURCES =							\
 	getopt1.c							\
 	full-write.c							\
 	regex.c								\
+	getloadavg.c							\
 	snprintf.c
 
 EXTRA_DIST =								\

@@ -669,6 +669,11 @@ be interpreted as a list variable, since it contains the default separator
      <br><dt><code>domain</code>
      <dd>The currently defined domain.
 
+     <br><dt><code>EmailMaxLines</code>
+     <dd>Most lines of output to email from a single cfexecd-induced run of
+cfagent. If undefined, defaults to 100. Set to 0, no email is sent by
+cfexecd. Set to <code>inf</code>, no maximum is enforced.
+
      <br><dt><code>faculty</code>
      <dd>The faculty or site as defined in control (see site).
 
@@ -1530,7 +1535,7 @@ executed. The syntax of declarations here is:
      
           <var>classes</var>::
      
-             <var>variable</var> = ( <var>list or value</var> )
+             <var>variable</var> = ( <var>list or value</var> <var>function</var>(<var>args</var>) )
      
      </pre>
 
@@ -1563,10 +1568,16 @@ like the following example:
      
        myvariable = ( something )
        mymacro    = ( somethingelse )
+       myrandom   = ( RandInt(3,6) )
      
      </pre>
 
-<p>Parentheses are required when making a declaring information in cfengine.
+<p>Parentheses are required when making a declaring information in cfengine. 
+Note that a limited number of in-built functions exists:
+     <ul>
+<li><code>RandomInt(a,b)</code>
+Is substituted for a random number between (a,b). 
+</ul>
 
    <p>The meaning of each of these lines is described below.
 
@@ -1579,7 +1590,8 @@ like the following example:
 <li><a accesskey="6" href="#AutoDefine">AutoDefine</a>: 
 <li><a accesskey="7" href="#BinaryPaddingChar">BinaryPaddingChar</a>: 
 <li><a accesskey="8" href="#ChecksumDatabase">ChecksumDatabase</a>: 
-<li><a accesskey="9" href="#ChecksumUpdates">ChecksumUpdates</a>: 
+<li><a accesskey="9" href="#ChecksumPurge">ChecksumPurge</a>: 
+<li><a href="#ChecksumUpdates">ChecksumUpdates</a>: 
 <li><a href="#childlibpath">childlibpath</a>: 
 <li><a href="#copylinks">copylinks</a>: 
 <li><a href="#defaultcopytype">defaultcopytype</a>: 
@@ -2036,7 +2048,7 @@ or text messages within program code.
 <div class="node">
 <p><hr>
 Node:<a name="ChecksumDatabase">ChecksumDatabase</a>,
-Next:<a rel="next" accesskey="n" href="#ChecksumUpdates">ChecksumUpdates</a>,
+Next:<a rel="next" accesskey="n" href="#ChecksumPurge">ChecksumPurge</a>,
 Previous:<a rel="previous" accesskey="p" href="#BinaryPaddingChar">BinaryPaddingChar</a>,
 Up:<a rel="up" accesskey="u" href="#control">control</a>
 <br>
@@ -2054,9 +2066,49 @@ for security purposes, See <a href="#files">files</a>, <code>checksum=</code>.
 
 <div class="node">
 <p><hr>
+Node:<a name="ChecksumPurge">ChecksumPurge</a>,
+Next:<a rel="next" accesskey="n" href="#ChecksumUpdates">ChecksumUpdates</a>,
+Previous:<a rel="previous" accesskey="p" href="#ChecksumDatabase">ChecksumDatabase</a>,
+Up:<a rel="up" accesskey="u" href="#control">control</a>
+<br>
+</div>
+
+<h4 class="subsection">ChecksumPurge</h4>
+
+<pre class="smallexample">     ChecksumPurge = ( on )
+     
+     </pre>
+
+   <p>This variable defaults to `off'. If set to true, cfagent will
+look at all of the registered files in the database and check
+whether thet still exist. If the file no longer exists, it
+is removed from the database and a warning is issued.
+
+   <p>To purge files now and then, but at no particular time, one could do
+something like this:
+<pre class="smallexample">     
+     strategies:
+     
+      { purging
+     
+      NowAndThen: 1
+      ElseWhen:   49
+      }
+     
+     control:
+     
+      NowAndThen::
+     
+        ChecksumPurge = ( on )
+     
+     
+     </pre>
+
+<div class="node">
+<p><hr>
 Node:<a name="ChecksumUpdates">ChecksumUpdates</a>,
 Next:<a rel="next" accesskey="n" href="#childlibpath">childlibpath</a>,
-Previous:<a rel="previous" accesskey="p" href="#ChecksumDatabase">ChecksumDatabase</a>,
+Previous:<a rel="previous" accesskey="p" href="#ChecksumPurge">ChecksumPurge</a>,
 Up:<a rel="up" accesskey="u" href="#control">control</a>
 <br>
 </div>
@@ -2705,7 +2757,9 @@ Up:<a rel="up" accesskey="u" href="#control">control</a>
    <p>This is the directory where cfengine will look for plug-in modules
 for the actionsequence, See <a href="#actionsequence">actionsequence</a>. Plugin modules
 may be used to activate classes using special algorithms. 
-See <a href="cfengine-Tutorial.html#Writing%20plugin%20modules">Writing plugin modules</a>.
+See <a href="cfengine-Tutorial.html#Writing%20plugin%20modules">Writing plugin modules</a>. 
+This variable defaults to <code>/var/cfengine/modules</code> for privileged users and
+to <code>$HOME)/.cfengine/modules</code> for non-privileged users.
 
 <div class="node">
 <p><hr>
@@ -4298,6 +4352,9 @@ double quotes and vice-versa. Otherwise a double quoted string
 may not currently contain double quotes and likewise for
 single quoted strings.
 
+   <p>As of version 2.0.6 quoted strings may contain escaped quotes
+using <code>\"</code>.
+
    <p>As of version 1.3.0, you can use the <code>home</code> directive in
 edit filenames, enabling you to edit files for every user
 on the system, provided they exist. For example, to edit
@@ -4358,17 +4415,19 @@ in a file once only, you could write:
          IncrementPointer   "1"
      
          BeginGroupIfNoMatch "# cfengine - 2/Jan/95"
-           IncremenetPointer "-1"
+           IncrementPointer "-1"
            InsertLine "# cfengine - 2/Jan/95"
            InsertLine "/local/bin/start-xdm"
-     
+           DefineInGroup "AddedXDM"
          EndGroup
         }
      
      </pre>
 
 <p>Since the first inserted line matches the predicate on subsequent calls,
-the grouped lines will only be carried out once.
+the grouped lines will only be carried out once. When the grouped
+lines are run, the <code>AddedXDM</code> class will be activated for use by
+a later part of the script.
 
    <p>The full list of editing actions is given below in alphabetical order. 
 Note that some commands refer to regular expressions and some refer to
@@ -4455,7 +4514,14 @@ file named <code>/etc/auto_direct</code>.
 
      <br><dt><code>Backup </code><var>quoted-string</var><code></code>
      <dd>Set to true or false, on or off to set inform level for this file. 
-Default is on.
+Default is on. 
+The default is to produce time-stamped backups of files; this may be
+coded explicitly by setting to "timestamp" or "stamp". If set to "false"
+or "off", no backup is kept of the edited file. If the value is set to
+"single" or "one" then only the last version of the file is kept, overwriting
+any previously saved versions.
+     <pre class="smallexample">             Backup "single"
+          </pre>
 
      <br><dt><code>BeginGroupIfDefined </code><var>quoted-string</var><code></code>
      <dd>The lines following, up to the first <code>EndGroup</code>
@@ -4565,6 +4631,13 @@ conditional on entry to a BeginGroup ... EngGroup block. For example,
 either line is added, but additionally myservice1_added if myservice1
 was added and likewise for myservice2_added.
 
+     <br><dt><code>DefineInGroup "</code><var>class1</var><code>:</code><var>class2</var><code>:..."</code>
+     <dd>Activate the following colon, comma or dot-separated list of classes
+if execution reaches the <code>BeginGroup</code> ... <code>EndGroup</code>
+section(s) containing this command. If you think you want to put
+DefineClasses within a <code>BeginGroup</code> ... <code>EndGroup</code> section,
+you actually want this.
+
      <br><dt><code>DeleteLinesAfterThisMatching </code><var>quoted-regex</var><code></code>
      <dd>Delete lines after the current position which match the quoted expression.
 
@@ -4590,15 +4663,6 @@ in the quoted string. If no line matches the
 given expression, a warning is only printed in
 verbose mode, but all edits are immediately
 abandoned.
-
-     <br><dt><code>EditBackup</code>
-     <dd>The default is to produce time-stamped backups of files; this may be
-coded explicitly by setting to "timestamp" or "stamp". If set to "false"
-or "off", no backup is kept of the edited file. If the value is set to
-"single" or "one" then only the last version of the file is kept, overwriting
-any previously saved versions.
-     <pre class="smallexample">             EditBackup "single"
-          </pre>
 
      <br><dt><code>EditMode "Binary"</code>
      <dd>If set to binary, the file will be edited as if it were a non-ASCII file. 
@@ -7970,13 +8034,18 @@ the system administrator will be emailed a summary of any output:
 <pre class="smallexample">     
      control:
      
-     smtpserver = ( mailhub.example.org ) # site MTA which can talk smtp
-     sysadm     = ( mark@example.org )   # mail address of sysadm
+     smtpserver    = ( mailhub.example.org ) # site MTA which can talk smtp
+     sysadm        = ( mark@example.org )    # mail address of sysadm
+     EmailMaxLines = ( <var>n</var> )                 # max lines of output to email
      
      </pre>
 
-<p>Fill in suitable values for these variables. 
-An alternative, or additional way to run cfengine, is to run the <code>cfexecd</code>
+<p>Fill in suitable values for these variables. <code>EmailMaxLines</code> may
+be set to 0 to disable email output, a postive integer to set a limit,
+or <code>inf</code> to email the whole output regardless of its size. If
+undefined, <code>EmailMaxLines</code> defaults to 100.
+
+   <p>An alternative, or additional way to run cfengine, is to run the <code>cfexecd</code>
 program is daemon mode (without the <code>-F</code>) option. In this mode, the daemon
 lives in the background and sleeps, activating only in accordance with
 a scheduling policy. The default policy is to run once every hour (equivalent
@@ -9631,9 +9700,10 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>$(tab)</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>$(timezone)</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>$(year)</code>: <a href="#Special%20variables">Special variables</a>
+<li><code>${EmailMaxLines}</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>+</code>: <a href="#groups">groups</a>
-<li><code>-D option</code>: <a href="#Cfengine%20classes">Cfengine classes</a>, <a href="#addclasses">addclasses</a>
-<li><code>-l</code>: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
+<li><code>-D option</code>: <a href="#addclasses">addclasses</a>, <a href="#Cfengine%20classes">Cfengine classes</a>
+<li><code>-l</code>: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li><code>-L</code>: <a href="#Single%20links">Single links</a>
 <li><code>-N option</code>: <a href="#addclasses">addclasses</a>, <a href="#Cfengine%20classes">Cfengine classes</a>
 <li><code>-x option</code>: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
@@ -9659,6 +9729,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>cfrc</code>: <a href="#cfrc%20resource%20file">cfrc resource file</a>
 <li><code>ChangedBefore()</code>: <a href="#Evaluated%20classes">Evaluated classes</a>
 <li><code>ChecksumDatabase</code>: <a href="#ChecksumDatabase">ChecksumDatabase</a>
+<li><code>ChecksumPurge</code>: <a href="#ChecksumPurge">ChecksumPurge</a>
 <li><code>ChecksumUpdates</code>: <a href="#ChecksumUpdates">ChecksumUpdates</a>
 <li><code>checktimezone</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>childlinks</code>: <a href="#actionsequence">actionsequence</a>
@@ -9671,6 +9742,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>editbinaryfilesize</code>: <a href="#editbinaryfilesize">editbinaryfilesize</a>
 <li><code>editfiles</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>editfilesize</code>: <a href="#control">control</a>, <a href="#editfilesize">editfilesize</a>
+<li><code>EmailMaxLines</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li><code>empty</code>: <a href="#disable">disable</a>
 <li><code>EmptyResolvConf</code>: <a href="#emptyresolvconf">emptyresolvconf</a>
 <li><code>Exclamation</code>: <a href="#exclamation">exclamation</a>
@@ -9679,13 +9751,13 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>files</code>: <a href="#actionsequence">actionsequence</a>, <a href="#files">files</a>
 <li><code>filter</code>: <a href="#filters">filters</a>
 <li><code>force=</code>: <a href="#disks">disks</a>, <a href="#copy">copy</a>
-<li><code>freespace=</code>: <a href="#disks">disks</a>, <a href="#required">required</a>
+<li><code>freespace=</code>: <a href="#required">required</a>, <a href="#disks">disks</a>
 <li><code>g=</code>: <a href="#Syntax">Syntax</a>
 <li><code>group</code>: <a href="#Syntax">Syntax</a>
 <li><code>groups</code>: <a href="#groups">groups</a>
 <li><code>home</code>: <a href="#Syntax">Syntax</a>
-<li><code>homepattern</code>: <a href="#mountables">mountables</a>
 <li><code>HomePattern</code>: <a href="#homepattern">homepattern</a>
+<li><code>homepattern</code>: <a href="#mountables">mountables</a>
 <li><code>homeservers</code>: <a href="#homeservers">homeservers</a>
 <li><code>import</code>: <a href="#import">import</a>
 <li><code>include=</code>: <a href="#Syntax">Syntax</a>
@@ -9698,10 +9770,10 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>l=</code>: <a href="#Syntax">Syntax</a>
 <li><code>LD_LIBRARY_PATH</code>: <a href="#control">control</a>
 <li><code>link</code>: <a href="#Syntax">Syntax</a>
-<li><code>linkchildren</code>: <a href="#Link%20Children">Link Children</a>, <a href="#Files%20linkchildren">Files linkchildren</a>
-<li><code>links</code>: <a href="#links">links</a>, <a href="#actionsequence">actionsequence</a>
+<li><code>linkchildren</code>: <a href="#Files%20linkchildren">Files linkchildren</a>, <a href="#Link%20Children">Link Children</a>
+<li><code>links</code>: <a href="#actionsequence">actionsequence</a>, <a href="#links">links</a>
 <li><code>m=</code>: <a href="#Syntax">Syntax</a>
-<li><code>mailcheck</code>: <a href="#mailserver">mailserver</a>, <a href="#actionsequence">actionsequence</a>
+<li><code>mailcheck</code>: <a href="#actionsequence">actionsequence</a>, <a href="#mailserver">mailserver</a>
 <li><code>mailserver</code>: <a href="#mailserver">mailserver</a>
 <li><code>MaxCfengines</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>miscmounts</code>: <a href="#miscmounts">miscmounts</a>
@@ -9723,7 +9795,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>pattern</code>: <a href="#tidy">tidy</a>
 <li><code>processes</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>purge=</code>: <a href="#copy">copy</a>
-<li><code>r=</code>: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
+<li><code>r=</code>: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li><code>recurse</code>: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li><code>repchar</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>RepChar</code>: <a href="#repchar">repchar</a>
@@ -9748,7 +9820,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>SpoolDirectories</code>: <a href="#spooldirectories">spooldirectories</a>
 <li><code>SuspiciousNames</code>: <a href="#suspiciousnames">suspiciousnames</a>
 <li><code>sysadm</code>: <a href="#control">control</a>, <a href="#Cfexecd%20reference">Cfexecd reference</a>, <a href="#sysadm">sysadm</a>
-<li><code>tidy</code>: <a href="#actionsequence">actionsequence</a>, <a href="#tidy">tidy</a>
+<li><code>tidy</code>: <a href="#tidy">tidy</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>timezone</code>: <a href="#control">control</a>
 <li><code>touch</code>: <a href="#touch">touch</a>
 <li><code>truncate</code>: <a href="#disable">disable</a>
@@ -9805,14 +9877,15 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>AutoExecInterval</code> variable: <a href="#AutoExecInterval">AutoExecInterval</a>
 <li>automounter: <a href="#editfiles">editfiles</a>
 <li>awk, editing: <a href="#editfiles">editfiles</a>
+<li>Backup: <a href="#editfiles">editfiles</a>
 <li>Backup of files in copy: <a href="#copy">copy</a>
 <li><code>BeginGroupIfDefined</code>: <a href="#editfiles">editfiles</a>
 <li><code>BeginGroupIfFileExists</code>: <a href="#editfiles">editfiles</a>
 <li><code>BeginGroupIfFileIsNewer</code>: <a href="#editfiles">editfiles</a>
 <li><code>BeginGroupIfNotDefined</code>: <a href="#editfiles">editfiles</a>
-<li>Binary servers and links: <a href="#Single%20links">Single links</a>, <a href="#Link%20Children">Link Children</a>
+<li>Binary servers and links: <a href="#Link%20Children">Link Children</a>, <a href="#Single%20links">Single links</a>
 <li>Binary servers, defining: <a href="#binservers">binservers</a>
-<li>Binary servers, priority: <a href="#Single%20links">Single links</a>, <a href="#binservers">binservers</a>
+<li>Binary servers, priority: <a href="#binservers">binservers</a>, <a href="#Single%20links">Single links</a>
 <li>Bootstrap file: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li>Broadcast address: <a href="#broadcast">broadcast</a>
 <li>Broadcasts to the cfengine service.: <a href="#cfrun">cfrun</a>
@@ -9824,7 +9897,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>cf.preconf bootstrap file: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>cf.site</code>: <a href="#cf.site">cf.site</a>, <a href="#cfservd.conf">cfservd.conf</a>
 <li><code>cfagent.conf</code>: <a href="#cfagent.conf">cfagent.conf</a>
-<li>CFALLCLASSES: <a href="#Special%20variables">Special variables</a>, <a href="#shellcommands">shellcommands</a>
+<li>CFALLCLASSES: <a href="#shellcommands">shellcommands</a>, <a href="#Special%20variables">Special variables</a>
 <li>cfenvd and key entropy: <a href="#Cfkey">Cfkey</a>
 <li>cfexecd: <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li>cfrc resource file: <a href="#cfrc%20resource%20file">cfrc resource file</a>
@@ -9835,14 +9908,15 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Checksum warning, turning off exclamation: <a href="#exclamation">exclamation</a>
 <li>ChecksumDatabase: <a href="#ChecksumDatabase">ChecksumDatabase</a>
 <li><code>ChecksumDatabase</code> variable: <a href="#ChecksumDatabase%20in%20cfservd">ChecksumDatabase in cfservd</a>
+<li>ChecksumPurge: <a href="#ChecksumPurge">ChecksumPurge</a>
 <li>ChecksumUpdates: <a href="#ChecksumUpdates">ChecksumUpdates</a>
 <li>CIDR: <a href="#groups">groups</a>
 <li>Class data and scripts: <a href="#Special%20variables">Special variables</a>
 <li>Class decided by shell command: <a href="#groups">groups</a>
 <li>Class dependencies: <a href="#groups">groups</a>
 <li>Class information, passing to scripts: <a href="#shellcommands">shellcommands</a>
-<li><code>classes</code>: <a href="#classes">classes</a>, <a href="#groups">groups</a>
 <li>classes: <a href="#Cfengine%20classes">Cfengine classes</a>
+<li><code>classes</code>: <a href="#groups">groups</a>, <a href="#classes">classes</a>, <a href="#groups">groups</a>
 <li>Classes, adding and defining: <a href="#addclasses">addclasses</a>
 <li>Classes, compound: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Classes, defining and undefining: <a href="#Cfengine%20classes">Cfengine classes</a>
@@ -9875,14 +9949,14 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>DeleteNonUserMail DeleteNonUserFiles: <a href="#deletenonuserfiles">deletenonuserfiles</a>
 <li>Deleting directories: <a href="#tidy">tidy</a>
 <li>Deleting files: <a href="#tidy">tidy</a>
-<li>Deleting stale links: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
+<li>Deleting stale links: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li><code>DenyBadClocks</code> variable: <a href="#DenyBadClocks">DenyBadClocks</a>
 <li><code>DenyConnectionsFrom</code> variable: <a href="#DenyConnectionsFrom">DenyConnectionsFrom</a>
 <li>Dependencies: <a href="#groups">groups</a>
 <li>Device boundaries: <a href="#copy">copy</a>
 <li>Device boundaries and files: <a href="#Recursion">Recursion</a>
 <li>DFS: <a href="#nfstype">nfstype</a>
-<li>DHCP: <a href="#DynamicAddresses">DynamicAddresses</a>, <a href="#actionsequence">actionsequence</a>
+<li>DHCP: <a href="#actionsequence">actionsequence</a>, <a href="#DynamicAddresses">DynamicAddresses</a>
 <li>Directories, deleting: <a href="#tidy">tidy</a>
 <li>Directories, hidden: <a href="#fileextension">fileextension</a>
 <li>Directories, making: <a href="#directories">directories</a>
@@ -9900,7 +9974,6 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Dual homed hosts: <a href="#interfaces">interfaces</a>
 <li>Dynamic addresses: <a href="#DynamicAddresses">DynamicAddresses</a>
 <li><code>DynamicAddresses</code> variable: <a href="#DynamicAddresses">DynamicAddresses</a>
-<li>EditBackup: <a href="#editfiles">editfiles</a>
 <li>Empty files: <a href="#tidy">tidy</a>
 <li>Emptying old nameservers from <code>/etc/resolv.conf</code>: <a href="#emptyresolvconf">emptyresolvconf</a>
 <li>Environment variable CFALLCLASSES: <a href="#Cfagent%20Runtime%20Options">Cfagent Runtime Options</a>
@@ -9925,12 +9998,12 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Files, syntax: <a href="#Syntax">Syntax</a>
 <li>Force copying: <a href="#copy">copy</a>
 <li>freespace=: <a href="#disks">disks</a>, <a href="#required">required</a>
-<li>Full disk warnings: <a href="#required">required</a>, <a href="#disks">disks</a>
+<li>Full disk warnings: <a href="#disks">disks</a>, <a href="#required">required</a>
 <li>Fully qualified names: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Group dependencies: <a href="#groups">groups</a>
 <li>Group field, editing: <a href="#editfiles">editfiles</a>
-<li>groups: <a href="#classes">classes</a>
 <li><code>groups</code>: <a href="#groups">groups</a>
+<li>groups: <a href="#classes">classes</a>
 <li>Groups, defining: <a href="#groups">groups</a>
 <li>Hard class name collision: <a href="#Special%20variables">Special variables</a>
 <li>Hardlinks: <a href="#Hard%20links">Hard links</a>
@@ -9961,13 +10034,13 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Linkchildren: <a href="#Link%20Children">Link Children</a>, <a href="#Files%20linkchildren">Files linkchildren</a>
 <li>Links and binary servers: <a href="#Single%20links">Single links</a>, <a href="#Link%20Children">Link Children</a>
 <li>Links, absolute: <a href="#Single%20links">Single links</a>
-<li>Links, deleting stale: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
+<li>Links, deleting stale: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li>Links, forcing for non-existent files: <a href="#Single%20links">Single links</a>
 <li>Links, making: <a href="#links">links</a>
 <li>Links, multiple: <a href="#Multiple%20Links">Multiple Links</a>
 <li>Links, removing dead: <a href="#Single%20links">Single links</a>
 <li>Links, single: <a href="#Single%20links">Single links</a>
-<li>Links, traversing in searches: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
+<li>Links, traversing in searches: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li>Local disk space, make use of: <a href="#Link%20Children">Link Children</a>
 <li>Log files, controlling the size of: <a href="#disable">disable</a>
 <li>Logical NOT: <a href="#Cfengine%20classes">Cfengine classes</a>
@@ -9981,7 +10054,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>MaxConnections</code> variable: <a href="#MaxConnections">MaxConnections</a>
 <li>Megabytes, filesize unit: <a href="#tidy">tidy</a>
 <li>Merging files.: <a href="#editfiles">editfiles</a>
-<li>Message digests: <a href="#ChecksumDatabase">ChecksumDatabase</a>, <a href="#Syntax">Syntax</a>
+<li>Message digests: <a href="#Syntax">Syntax</a>, <a href="#ChecksumDatabase">ChecksumDatabase</a>
 <li>Miscellaneous mount operations: <a href="#miscmounts">miscmounts</a>
 <li>Module directory: <a href="#moduledirectory">moduledirectory</a>
 <li>Modules, user defined: <a href="#actionsequence">actionsequence</a>
@@ -10033,6 +10106,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Public keys: <a href="#copy">copy</a>
 <li>Purge, excluding files: <a href="#copy">copy</a>
 <li>Quoted strings: <a href="#editfiles">editfiles</a>
+<li>RandomInt() function: <a href="#control">control</a>
 <li>Recursion in files: <a href="#Recursion">Recursion</a>
 <li>Redefinition of macros: <a href="#AllowRedefinitionOf">AllowRedefinitionOf</a>
 <li>Relative links: <a href="#Single%20links">Single links</a>
@@ -10195,6 +10269,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#AutoDefine">AutoDefine</a>
 <li><a href="#BinaryPaddingChar">BinaryPaddingChar</a>
 <li><a href="#ChecksumDatabase">ChecksumDatabase</a>
+<li><a href="#ChecksumPurge">ChecksumPurge</a>
 <li><a href="#ChecksumUpdates">ChecksumUpdates</a>
 <li><a href="#childlibpath">ChildLibPath</a>
 <li><a href="#copylinks">CopyLinks</a>

@@ -1,3 +1,44 @@
+2.1.0
+	Procedure calls
+
+2.0.8
+        Parser bugfix for group defintions from script (compat obsolete syntax)
+
+2.0.7
+
+	Resolv.conf search directive removed from code. This was wrong, in spite
+	of pressure to put it in.
+	
+	EditBackup -> Backup corrected in manual
+	Check for class definitions that are not installable
+	
+	SMTP client handling patch in cfexecd - must wait for reply
+	
+        AppendIfNoLineMatching replaced with regex, not Setline value
+        
+	ChecksumPurge = ( on ) causes cfagent to purge its checksum database of
+	files that no longer exist.
+        
+	Forgotten built in function RandomInt(a,b) - returns a random number in variable
+	assignments. Actually introduced in 2.0.6. Forgot this
+
+	control:
+	
+ 	   rand = ( RandomInt(4,7) )
+
+	Major rewrite of parser
+
+	- code simplifications
+	- Allowed escaping of quotes in strings and newlines e.g.
+
+	var1 = ( "a b c\"substring\" d e" )
+	var2 = ( "a b 
+	c" )
+
+	Tidy code tidied and bug fixed for new scheduler
+
+	Moduledirectory defaults to /var/cfengine/modules
+	
 2.0.6
 	SKIPVERIFY removed from AccessControl checks. This was wrongly allowing
 	access to files if they only had an accepted encryption key.

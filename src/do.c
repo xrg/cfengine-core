@@ -1012,7 +1012,7 @@ void TidyFiles()
   struct Tidy *tp;
   struct Item *ip1,*ip2;
   struct stat statbuf;
-  int homesearch = 0;
+  int homesearch = false, pathsearch = false;
 
 Banner("Tidying Spool Directories");
 
@@ -1041,45 +1041,36 @@ for (tp = VTIDY; tp != NULL; tp=tp->next)
       continue;
       }
 
+   pathsearch = false;
+   
    for (tlp = tp->tidylist; tlp != NULL; tlp=tlp->next)
       {
       if (IsExcluded(tlp->classes))
          {
          continue;
          }
-
-      Verbose("Directory %s\n",tp->path);
-      strcpy(VBUFF,tp->path);
-      AddSlash(VBUFF);
-      strcat(VBUFF,tlp->pattern);
-
-      if (stat(VBUFF,&statbuf) != -1)   /* not lstat - could confuse user */
-         {
-         if (S_ISDIR(statbuf.st_mode))
-            {
-	    if (! tlp->rmdirs)          /* Are we allowed to rm empty dirs? */
-	       {
-               Verbose("%s: will not delete directories (matching %s)!\n",VPREFIX,tlp->pattern);
-	       Verbose("%s: Applies to %s\n",VPREFIX,VBUFF);
-               DeleteTidyList(tp->tidylist);
-	       tp->tidylist = NULL;
-               continue;
-	       }
-            }
-         }
+      pathsearch = true;
       }
 
-   basename[0] = '\0';
-
-   ExpandWildCardsAndDo(tp->path,basename,TidyWrapper,tp);
-   
-   DeleteTidyList(tp->tidylist);
-   tp->tidylist = NULL;
+   if (pathsearch && (tp->done == 'n'))
+      {
+      Debug("\nTidying from base directory %s\n",tp->path);
+      basename[0] = '\0';
+      ExpandWildCardsAndDo(tp->path,basename,TidyWrapper,tp);
+      tp->done = 'y';
+      }
+   else
+      {
+      Debug("\nNo patterns active in base directory %s\n",tp->path);
+      }
    }
 
 
 Debug2("End PATHTIDY:\n");
 
+
+Banner("Tidying home directories");
+ 
 if (!homesearch)                           /* If there are "home" wildcards */
    {                                 /* Don't go rummaging around the disks */
    Verbose("No home patterns to search\n");
@@ -1091,9 +1082,6 @@ if (!IsPrivileged())
    CfLog(cferror,"Only root can delete others' files.\n","");
    return;
    }
-
-
-Banner("Tidying home directories");
 
 if (!MountPathDefined())
    {
@@ -2230,31 +2218,13 @@ for (ip = filebase; ip != NULL; ip=ip->next)
       }
    }
 
+
+
+DeleteItemStarting(&filebase,"domain");
 while(DeleteItemStarting(&filebase,"search"))
    {
    }
  
-snprintf(VBUFF,bufsize,"search %s",ToLowerStr(VDOMAIN));
-
-/* if (IsItemIn(filebase,VBUFF))
-   {
-   DeleteItemStarting(&filebase,VBUFF);
-   } */
-
-if (LocateNextItemStarting(filebase,VBUFF) != NULL)
-   {
-   Verbose("File %s has already a line starting %s\n",VRESOLVCONF[VSYSTEMHARDCLASS],VBUFF);
-   }
- else
-    {
-    PrependItem(&filebase,VBUFF,NULL);
-    }
-
-
-DeleteItemStarting(&filebase,"domain");
-snprintf(VBUFF,bufsize,"domain %s",ToLowerStr(VDOMAIN));
-PrependItem(&filebase,VBUFF,NULL);
-
 if (GetMacroValue(CONTEXTID,"EmptyResolvConf") && (strcmp(GetMacroValue(CONTEXTID,"EmptyResolvConf"),"true") == 0))
    {
    while (DeleteItemStarting(&filebase,"nameserver "))
@@ -2263,6 +2233,9 @@ if (GetMacroValue(CONTEXTID,"EmptyResolvConf") && (strcmp(GetMacroValue(CONTEXTI
    }
  
 EditItemsInResolvConf(VRESOLVE,&filebase); 
+
+snprintf(VBUFF,bufsize,"domain %s",ToLowerStr(VDOMAIN));
+PrependItem(&filebase,VBUFF,NULL);
  
 if (DONTDO)
    {
@@ -2541,7 +2514,7 @@ for (pp = VPROCLIST; pp != NULL; pp=pp->next)
       continue;
       }
 
-   if (pp->done == 'y' || strcmp(pp->scope,CONTEXTID))
+   if (pp->done == 'y' || strcmp(pp->scope,CONTEXTID) != 0)
       {
       continue;
       }

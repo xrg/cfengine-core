@@ -93,7 +93,8 @@ void MailResult ARGLIST((char *filename, char *to));
 int ScheduleRun ARGLIST((void));
 void AddClassToHeap ARGLIST((char *class));
 void DeleteClassFromHeap ARGLIST((char *class));
-void Dialogue  ARGLIST((int sd,char *class));
+int Dialogue  ARGLIST((int sd,char *class));
+int OpeningCeremony(int sd);
 void GetCfStuff ARGLIST((void));
 
 /* 
@@ -856,16 +857,38 @@ if (connect(sd,(void *) &raddr,sizeof(raddr)) == -1)
    return;
    }
 
+/* read greeting */
+ 
+if (!Dialogue(sd,NULL))
+   {
+   goto mail_err;
+   }
+ 
 sprintf(VBUFF,"HELO %s\r\n",VFQNAME); 
-Dialogue(sd,VBUFF);
 
+ if (!Dialogue(sd,VBUFF))
+     {
+     goto mail_err;
+     }
+ 
 sprintf(VBUFF,"MAIL FROM: <cfengine@%s>\r\n",VFQNAME);
-Dialogue(sd,VBUFF);
 
+if (!Dialogue(sd,VBUFF))
+   {
+   goto mail_err;
+   }
+ 
 sprintf(VBUFF,"RCPT TO: <%s>\r\n",to);
-Dialogue(sd,VBUFF);
+ 
+if (!Dialogue(sd,VBUFF))
+    {
+    goto mail_err;
+    }
 
-Dialogue(sd,"DATA\r\n"); 
+if (!Dialogue(sd,"DATA\r\n"))
+    {
+    goto mail_err;
+    }
 
 sprintf(VBUFF,"Subject: (%s/%s)\r\n",VFQNAME,VIPADDRESS); 
 sent=send(sd,VBUFF,strlen(VBUFF),0);
@@ -891,39 +914,61 @@ while(!feof(fp))
       }
    } 
 
-Dialogue(sd,".\r\n"); 
-Dialogue(sd,"QUIT\r\n");
-
+if (!Dialogue(sd,".\r\n"))
+   {
+   goto mail_err;
+   }
  
+Dialogue(sd,"QUIT\r\n");
+Debug("Done sending mail\n");
+return;
+ 
+mail_err: 
+
 fclose(fp);
 close(sd); 
-Debug("Done sending mail\n");
+sprintf(VBUFF, "Cannot mail to %s.", to);
+CfLog(cferror,VBUFF,"");
 }
 
 /******************************************************************/
 /* Level 5                                                        */
 /******************************************************************/
 
-void Dialogue(sd,s)
+int Dialogue(sd,s)
 
 int sd;
 char *s;
 
 { int sent;
-  char ch,buf[bufsize];
+  char ch,f = '\0';
 
-snprintf(buf,bufsize-1,s);
-sent=send(sd,s,strlen(s),0);
-
-Debug("SENT(%d)->%s",sent,s);
+if ((s != NULL) && (*s != '\0'))
+   {
+   sent=send(sd,s,strlen(s),0);
+   Debug("SENT(%d)->%s",sent,s);
+   }
+else
+   {
+   Debug("Nothing to send .. waiting for opening\n");
+   }
 
 while (recv(sd,&ch,1,0))
    {
+   if (f == '\0')
+      {
+      f = ch;
+      }
+
+   Debug("%c",ch);
+   
    if (ch == '\n' || ch == '\0')
       {
       break;
       }
-   } 
+   }
+
+return ((f == '2') || (f == '3')); /* return code 200 or 300 from smtp*/
 }
 
 /******************************************************************/

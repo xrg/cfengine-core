@@ -78,6 +78,9 @@ cfengine. If you use single quotes, your strings may contain double
 quotes and vice-versa. Otherwise a double quoted string may not
 currently contain double quotes and likewise for single quoted strings.
 
+   As of version 2.0.6 quoted strings may contain escaped quotes using
+`\"'.
+
    As of version 1.3.0, you can use the `home' directive in edit
 filenames, enabling you to edit files for every user on the system,
 provided they exist. For example, to edit every user's login files, you
@@ -132,15 +135,17 @@ file once only, you could write:
          IncrementPointer   "1"
      
          BeginGroupIfNoMatch "# cfengine - 2/Jan/95"
-           IncremenetPointer "-1"
+           IncrementPointer "-1"
            InsertLine "# cfengine - 2/Jan/95"
            InsertLine "/local/bin/start-xdm"
-     
+           DefineInGroup "AddedXDM"
          EndGroup
         }
 
 Since the first inserted line matches the predicate on subsequent calls,
-the grouped lines will only be carried out once.
+the grouped lines will only be carried out once. When the grouped lines
+are run, the `AddedXDM' class will be activated for use by a later part
+of the script.
 
    The full list of editing actions is given below in alphabetical
 order.  Note that some commands refer to regular expressions and some
@@ -221,7 +226,13 @@ expressions.
 
 `Backup QUOTED-STRING'
      Set to true or false, on or off to set inform level for this file.
-     Default is on.
+     Default is on.  The default is to produce time-stamped backups of
+     files; this may be coded explicitly by setting to "timestamp" or
+     "stamp". If set to "false" or "off", no backup is kept of the
+     edited file. If the value is set to "single" or "one" then only
+     the last version of the file is kept, overwriting any previously
+     saved versions.
+             Backup "single"
 
 `BeginGroupIfDefined QUOTED-STRING'
      The lines following, up to the first `EndGroup' are executed if
@@ -331,6 +342,13 @@ expressions.
      either line is added, but additionally myservice1_added if
      myservice1 was added and likewise for myservice2_added.
 
+`DefineInGroup "CLASS1:CLASS2:..."'
+     Activate the following colon, comma or dot-separated list of
+     classes if execution reaches the `BeginGroup' ... `EndGroup'
+     section(s) containing this command. If you think you want to put
+     DefineClasses within a `BeginGroup' ... `EndGroup' section, you
+     actually want this.
+
 `DeleteLinesAfterThisMatching QUOTED-REGEX'
      Delete lines after the current position which match the quoted
      expression.
@@ -355,14 +373,6 @@ expressions.
      line matching the regular expression in the quoted string. If no
      line matches the given expression, a warning is only printed in
      verbose mode, but all edits are immediately abandoned.
-
-`EditBackup'
-     The default is to produce time-stamped backups of files; this may
-     be coded explicitly by setting to "timestamp" or "stamp". If set
-     to "false" or "off", no backup is kept of the edited file. If the
-     value is set to "single" or "one" then only the last version of
-     the file is kept, overwriting any previously saved versions.
-             EditBackup "single"
 
 `EditMode "Binary"'
      If set to binary, the file will be edited as if it were a

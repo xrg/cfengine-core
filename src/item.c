@@ -78,7 +78,7 @@ char *item;
 
 { struct Item *ptr; 
 
-Debug("FuzzyItemIn(%s)\n",item);
+Debug("\nFuzzyItemIn(LIST,%s)\n",item);
  
 if ((item == NULL) || (strlen(item) == 0))
    {
@@ -87,6 +87,8 @@ if ((item == NULL) || (strlen(item) == 0))
  
 for (ptr = list; ptr != NULL; ptr=ptr->next)
    {
+   Debug(" Try FuzzySetMatch(%s,%s)\n",ptr->name,item);
+   
    if (FuzzySetMatch(ptr->name,item) == 0)
       {
       return(true);
@@ -357,7 +359,7 @@ char *s;
   char address[128];
   int mask,count = 0;
 
-Debug("ParsingIPRange(%s)\n",s);
+Debug("Check ParsingIPRange(%s)\n",s);
 
 for (sp = s; *sp != '\0'; sp++)  /* Is this an address or hostname */
    {

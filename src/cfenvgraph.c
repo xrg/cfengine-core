@@ -50,6 +50,8 @@ void ReadAverages ARGLIST((void));
 void SummarizeAverages ARGLIST((void));
 void WriteGraphFiles ARGLIST((void));
 void WriteHistograms ARGLIST((void));
+void FindHurstExponents ARGLIST((void));
+struct Averages FindHurstFunction ARGLIST((int sameples_per_grain, int grains));
 
 /*****************************************************************************/
 
@@ -108,7 +110,7 @@ int errno,i,j,k,count=0, its;
 time_t NOW; 
 DBT key,value;
 DB *DBP;
-static struct Averages ENTRY,MAX,DET;
+static struct Averages ENTRY,MAX,MIN,DET;
 char TIMEKEY[64],FLNAME[256],*sp;
 double AGE;
 FILE *FPAV=NULL,*FPVAR=NULL,*FPROOT=NULL,*FPUSER=NULL,*FPOTHER=NULL;
@@ -127,6 +129,7 @@ ReadAverages();
 SummarizeAverages();
 WriteGraphFiles();
 WriteHistograms();
+FindHurstExponents();
 return 0;
 }
 
@@ -161,24 +164,42 @@ if ((errno = DBP->open(DBP,NULL,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
 bzero(&key,sizeof(key));       
 bzero(&value,sizeof(value));
 
-MAX.expect_number_of_users = 0.1;
-MAX.expect_rootprocs = 0.1;
-MAX.expect_otherprocs = 0.1;
-MAX.expect_diskfree = 0.1;
-MAX.expect_loadavg = 0.1; 
+MAX.expect_number_of_users = 0.01;
+MAX.expect_rootprocs = 0.01;
+MAX.expect_otherprocs = 0.01;
+MAX.expect_diskfree = 0.01;
+MAX.expect_loadavg = 0.01; 
 
-MAX.var_number_of_users = 0.1;
-MAX.var_rootprocs = 0.1;
-MAX.var_otherprocs = 0.1;
-MAX.var_diskfree = 0.1;
-MAX.var_loadavg = 0.1; 
+MAX.var_number_of_users = 0.01;
+MAX.var_rootprocs = 0.01;
+MAX.var_otherprocs = 0.01;
+MAX.var_diskfree = 0.01;
+MAX.var_loadavg = 0.01; 
 
+MIN.expect_number_of_users = 9999.0;
+MIN.expect_rootprocs = 9999.0;
+MIN.expect_otherprocs = 9999.0;
+MIN.expect_diskfree = 9999.0;
+MIN.expect_loadavg = 9999.0; 
+
+MIN.var_number_of_users = 9999.0;
+MIN.var_rootprocs = 9999.0;
+MIN.var_otherprocs = 9999.0;
+MIN.var_diskfree = 9999.0;
+MIN.var_loadavg = 9999.0; 
+
+ 
 for (i = 0; i < ATTR; i++)
    {
-   MAX.var_incoming[i] = 0.1;
-   MAX.var_outgoing[i] = 0.1;
-   MAX.expect_incoming[i] = 0.1;
-   MAX.expect_outgoing[i] = 0.1;
+   MAX.var_incoming[i] = 0.01;
+   MAX.var_outgoing[i] = 0.01;
+   MAX.expect_incoming[i] = 0.01;
+   MAX.expect_outgoing[i] = 0.01;
+
+   MIN.var_incoming[i] = 9999.0;
+   MIN.var_outgoing[i] = 9999.0;
+   MIN.expect_incoming[i] = 9999.0;
+   MIN.expect_outgoing[i] = 9999.0;
    }
 
 for (NOW = cf_monday_morning; NOW < cf_monday_morning+CFWEEK; NOW += MEASURE_INTERVAL)
@@ -228,7 +249,7 @@ for (NOW = cf_monday_morning; NOW < cf_monday_morning+CFWEEK; NOW += MEASURE_INT
 	 }
       if (fabs(ENTRY.expect_loadavg) > MAX.expect_loadavg)
 	 {
-	 MAX.expect_diskfree = fabs(ENTRY.expect_loadavg);
+	 MAX.expect_loadavg = fabs(ENTRY.expect_loadavg);
 	 }
 
       for (i = 0; i < ATTR; i++)
@@ -243,6 +264,45 @@ for (NOW = cf_monday_morning; NOW < cf_monday_morning+CFWEEK; NOW += MEASURE_INT
 	    }
 	 }
 
+
+      if (fabs(ENTRY.expect_number_of_users) < MIN.expect_number_of_users)
+	 {
+	 MIN.expect_number_of_users = fabs(ENTRY.expect_number_of_users);
+	 }
+      if (fabs(ENTRY.expect_number_of_users) < MIN.expect_number_of_users)
+	 {
+	 MIN.expect_number_of_users = fabs(ENTRY.expect_number_of_users);
+	 }      
+      if (fabs(ENTRY.expect_rootprocs) < MIN.expect_rootprocs)
+	 {
+	 MIN.expect_rootprocs = fabs(ENTRY.expect_rootprocs);
+	 }
+      if (fabs(ENTRY.expect_otherprocs) < MIN.expect_otherprocs)
+	 {
+	 MIN.expect_otherprocs = fabs(ENTRY.expect_otherprocs);
+	 }      
+      if (fabs(ENTRY.expect_diskfree) < MIN.expect_diskfree)
+	 {
+	 MIN.expect_diskfree = fabs(ENTRY.expect_diskfree);
+	 }
+      if (fabs(ENTRY.expect_loadavg) < MIN.expect_loadavg)
+	 {
+	 MIN.expect_loadavg = fabs(ENTRY.expect_loadavg);
+	 }
+
+      for (i = 0; i < ATTR; i++)
+	 {
+	 if (fabs(ENTRY.expect_incoming[i]) < MIN.expect_incoming[i])
+	    {
+	    MIN.expect_incoming[i] = fabs(ENTRY.expect_incoming[i]);
+	    }
+	 if (fabs(ENTRY.expect_outgoing[i]) < MIN.expect_outgoing[i])
+	    {
+	    MIN.expect_outgoing[i] = fabs(ENTRY.expect_outgoing[i]);
+	    }
+	 }
+
+      
       if (fabs(ENTRY.var_number_of_users) > MAX.var_number_of_users)
 	 {
 	 MAX.var_number_of_users = fabs(ENTRY.var_number_of_users);
@@ -312,16 +372,16 @@ void SummarizeAverages()
 {
  
 printf(" x  yN (Variable content)\n---------------------------------------------------------\n");
-printf(" 1. MAX <number of users> = %10f +/- %10f\n",MAX.expect_number_of_users,sqrt(MAX.var_number_of_users));
-printf(" 2. MAX <rootprocs>       = %10f +/- %10f\n",MAX.expect_rootprocs,sqrt(MAX.var_rootprocs));
-printf(" 3. MAX <otherprocs>      = %10f +/- %10f\n",MAX.expect_otherprocs,sqrt(MAX.var_otherprocs));
-printf(" 4. MAX <diskfree>        = %10f +/- %10f\n",MAX.expect_diskfree,sqrt(MAX.var_diskfree));
-printf(" 5. MAX <loadavg>         = %10f +/- %10f\n",MAX.expect_loadavg,sqrt(MAX.var_loadavg)); 
+printf(" 1. MAX <number of users> = %10f - %10f u %10f\n",MIN.expect_number_of_users,MAX.expect_number_of_users,sqrt(MAX.var_number_of_users));
+printf(" 2. MAX <rootprocs>       = %10f - %10f u %10f\n",MIN.expect_rootprocs,MAX.expect_rootprocs,sqrt(MAX.var_rootprocs));
+printf(" 3. MAX <otherprocs>      = %10f - %10f u %10f\n",MIN.expect_otherprocs,MAX.expect_otherprocs,sqrt(MAX.var_otherprocs));
+printf(" 4. MAX <diskfree>        = %10f - %10f u %10f\n",MIN.expect_diskfree,MAX.expect_diskfree,sqrt(MAX.var_diskfree));
+printf(" 5. MAX <loadavg>         = %10f - %10f u %10f\n",MIN.expect_loadavg,MAX.expect_loadavg,sqrt(MAX.var_loadavg)); 
 
  for (i = 0; i < ATTR*2; i+=2)
    {
-   printf("%2d. MAX <%-10s-in>   = %10f +/- %10f\n",6+i,ECGSOCKS[i/2][1],MAX.expect_incoming[i/2],sqrt(MAX.var_incoming[i/2]));
-   printf("%2d. MAX <%-10s-out>  = %10f +/- %10f\n",7+i,ECGSOCKS[i/2][1],MAX.expect_outgoing[i/2],sqrt(MAX.var_outgoing[i/2]));
+   printf("%2d. MAX <%-10s-in>   = %10f - %10f u %10f\n",6+i,ECGSOCKS[i/2][1],MIN.expect_incoming[i/2],MAX.expect_incoming[i/2],sqrt(MAX.var_incoming[i/2]));
+   printf("%2d. MAX <%-10s-out>  = %10f - %10f u %10f\n",7+i,ECGSOCKS[i/2][1],MIN.expect_outgoing[i/2],MAX.expect_outgoing[i/2],sqrt(MAX.var_outgoing[i/2]));
    }
 
  for (i = 0; i < PH_LIMIT; i++)
@@ -330,7 +390,7 @@ printf(" 5. MAX <loadavg>         = %10f +/- %10f\n",MAX.expect_loadavg,sqrt(MAX
       {
       continue;
       }
-   printf("%2d. MAX <%-10s-in>   = %10f +/- %10f\n",i+5+ATTR,PH_BINARIES[i],MAX.expect_pH[i],sqrt(MAX.var_pH[i]));
+   printf("%2d. MAX <%-10s-in>   = %10f - %10f u %10f\n",i+5+ATTR,PH_BINARIES[i],MIN.expect_pH[i],MAX.expect_pH[i],sqrt(MAX.var_pH[i]));
    }
 
  
@@ -784,9 +844,9 @@ for (i = 0; i < 7; i++)
 if (SEPARATE)
    {
    int position,day;
-   int weekly[ATTR*2+5][GRAINS];
+   int weekly[ATTR*2+5+PH_LIMIT][GRAINS];
    
-   snprintf(FLNAME,bufsize,"%s/histograms",WORKDIR);
+   snprintf(FLNAME,bufsize,"%s/state/histograms",WORKDIR);
    
    if ((fp = fopen(FLNAME,"r")) == NULL)
       {
@@ -899,7 +959,7 @@ if (SEPARATE)
 	 }
 
       sprintf(FLNAME,"%s.distr",CanonifyName(PH_BINARIES[i])); 
-      if ((FPOUT[i] = fopen(FLNAME,"w")) == NULL)
+      if ((FPPH[i] = fopen(FLNAME,"w")) == NULL)
          {
          perror("fopen");
          exit(1);
@@ -967,6 +1027,78 @@ if (SEPARATE)
 
 /*****************************************************************************/
 
+void FindHurstExponents()
+
+{ int delta_t[5],grains[5],i,j;
+  int samples_per_grain[5];
+  double dilatation, uncertainty;
+  struct Averages H[5],M[5],h2;
+  
+/* Dilatation intervals */
+  
+delta_t[0] = MEASURE_INTERVAL*2;
+delta_t[1] = 3600;
+delta_t[2] = 6 * 3600;
+delta_t[3] = 24 * 3600;
+delta_t[4] = CFWEEK; 
+
+bzero(&h2,sizeof(struct Averages));
+ 
+for (i = 0; i < 5; i++)
+   {
+   grains[i] = CFWEEK/delta_t[i];
+   samples_per_grain[i] = delta_t[i]/MEASURE_INTERVAL;
+   H[i] = FindHurstFunction(samples_per_grain[i],grains[i]);
+   }
+ 
+for (i = 1; i < 5; i++)
+   {
+   dilatation = (double)delta_t[i]/(double)delta_t[0];
+   M[i].expect_number_of_users = log(H[i].expect_number_of_users/H[0].expect_number_of_users)/log(dilatation);
+   M[i].expect_rootprocs = log(H[i].expect_rootprocs/H[0].expect_rootprocs)/log(dilatation);
+   M[i].expect_otherprocs = log(H[i].expect_otherprocs/H[0].expect_otherprocs)/log(dilatation);
+   M[i].expect_diskfree = log(H[i].expect_diskfree/H[0].expect_diskfree)/log(dilatation);
+   M[i].expect_loadavg = log(H[i].expect_loadavg/H[0].expect_loadavg)/log(dilatation);
+   
+   for (j = 0; j < ATTR; j++)
+      {
+      M[i].expect_incoming[j] = log(H[i].expect_incoming[j]/H[0].expect_incoming[j])/log(dilatation);
+      M[i].expect_outgoing[j] = log(H[i].expect_outgoing[j]/H[0].expect_outgoing[j])/log(dilatation);
+      }
+   
+   h2.expect_number_of_users += M[i].expect_number_of_users * M[i].expect_number_of_users/4.0;
+   h2.expect_rootprocs += M[i].expect_rootprocs * M[i].expect_rootprocs/4.0;
+   h2.expect_otherprocs += M[i].expect_otherprocs * M[i].expect_otherprocs/4.0;
+   h2.expect_diskfree += M[i].expect_diskfree * M[i].expect_diskfree/4.0;
+   h2.expect_loadavg += M[i].expect_loadavg * M[i].expect_loadavg/4.0;
+   
+   for (j = 0; j < ATTR; j++)
+      {
+      h2.expect_incoming[j] += M[i].expect_incoming[j] * M[i].expect_incoming[j]/4.0;
+      h2.expect_outgoing[j] += M[i].expect_outgoing[j] * M[i].expect_outgoing[j]/4.0;
+      }
+   
+   uncertainty = 1.0/fabs(1.0/H[i].expect_number_of_users - 1.0/H[0].expect_number_of_users)*sqrt(MAX.var_number_of_users/log(dilatation))/(MAX.expect_number_of_users*2.0);
+   }
+
+ printf("Hurst exponent for no. of users        = %.1f u %.2f - order of mag\n",sqrt(h2.expect_number_of_users),uncertainty);
+ printf("Hurst exponent for rootprocs           = %.1f\n",sqrt(h2.expect_rootprocs));
+ printf("Hurst exponent for otherprocs          = %.1f\n",sqrt(h2.expect_otherprocs));
+ printf("Hurst exponent for diskfree            = %.1f\n",sqrt(h2.expect_diskfree));
+ printf("Hurst exponent for loadavg             = %.1f\n",sqrt(h2.expect_loadavg));
+ 
+ for (j = 0; j < ATTR; j++)
+    {
+    printf("Hurst exponent for incoming %10s = %.1f\n",ECGSOCKS[j][1],sqrt(h2.expect_incoming[j]));
+    printf("Hurst exponent for outgoing %10s = %.1f\n",ECGSOCKS[j][1],sqrt(h2.expect_outgoing[j]));   
+    } 
+ 
+}
+
+/*****************************************************************************/
+/* Level 2                                                                   */
+/*****************************************************************************/
+
 void CheckOpts(argc,argv)
 
 char **argv;
@@ -976,7 +1108,7 @@ int argc;
   int optindex = 0;
   int c;
 
-snprintf(FILENAME,bufsize,"%s/%s",WORKDIR,AVDB_FILE);
+snprintf(FILENAME,bufsize,"%s/state/%s",WORKDIR,AVDB_FILE);
 
 while ((c=getopt_long(argc,argv,"Thtf:rsen",GRAPHOPTIONS,&optindex)) != EOF)
   {
@@ -1052,4 +1184,221 @@ for (sp = buffer; *sp != '\0'; sp++)
     }
 
 return buffer;
+}
+
+/*********************************************************************/
+
+struct Averages FindHurstFunction(samples_per_grain,grains)
+
+/* Find the average of (max-min) over all intervals of width delta_t */
+
+int samples_per_grain,grains;
+
+{ static struct Averages lmin,lmax,av;
+ int control = 0;
+
+if ((errno = db_create(&DBP,NULL,0)) != 0)
+   {
+   printf("Couldn't create average database %s\n",FILENAME);
+   exit(1);
+   }
+
+#ifdef CF_OLD_DB 
+if ((errno = DBP->open(DBP,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
+#else
+if ((errno = DBP->open(DBP,NULL,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)    
+#endif
+   {
+   printf("Couldn't open average database %s\n",FILENAME);
+   DBP->err(DBP,errno,NULL);
+   exit(1);
+   }
+
+bzero(&key,sizeof(key));       
+bzero(&value,sizeof(value));
+bzero(&av,sizeof(av)); 
+
+lmax.expect_number_of_users = 0.01;
+lmax.expect_rootprocs = 0.01;
+lmax.expect_otherprocs = 0.01;
+lmax.expect_diskfree = 0.01;
+lmax.expect_loadavg = 0.01; 
+
+lmin.expect_number_of_users = 9999.0;
+lmin.expect_rootprocs = 9999.0;
+lmin.expect_otherprocs = 9999.0;
+lmin.expect_diskfree = 9999.0;
+lmin.expect_loadavg = 9999.0; 
+
+ 
+for (i = 0; i < ATTR; i++)
+   {
+   lmax.expect_incoming[i] = 0.01;
+   lmax.expect_outgoing[i] = 0.01;
+   lmin.expect_incoming[i] = 9999.0;
+   lmin.expect_outgoing[i] = 9999.0;
+   }
+
+count = 0;
+ 
+for (NOW = cf_monday_morning; NOW < cf_monday_morning+CFWEEK; NOW += MEASURE_INTERVAL)
+   {
+   bzero(&key,sizeof(key));       
+   bzero(&value,sizeof(value));
+   bzero(&ENTRY,sizeof(ENTRY));
+
+   strcpy(TIMEKEY,GenTimeKey(NOW));
+
+   key.data = TIMEKEY;
+   key.size = strlen(TIMEKEY)+1;
+   
+   if ((errno = DBP->get(DBP,NULL,&key,&value,0)) != 0)
+      {
+      if (errno != DB_NOTFOUND)
+	 {
+	 DBP->err(DBP,errno,NULL);
+	 exit(1);
+	 }
+      }
+   
+   count++;
+   
+   if (value.data != NULL)
+      {
+      bcopy(value.data,&ENTRY,sizeof(ENTRY));
+
+      if (false) /* This conformal scaling has no effect on the Hurst parameter expect div by zero errors! */
+	 {
+	 ENTRY.expect_number_of_users = ENTRY.expect_number_of_users/sqrt(ENTRY.var_number_of_users);
+	 ENTRY.expect_rootprocs = ENTRY.expect_rootprocs/sqrt(ENTRY.var_rootprocs);
+	 ENTRY.expect_otherprocs = ENTRY.expect_otherprocs/sqrt(ENTRY.var_otherprocs);
+	 ENTRY.expect_diskfree = ENTRY.expect_diskfree/sqrt(ENTRY.var_diskfree);
+	 ENTRY.expect_loadavg = ENTRY.expect_loadavg/sqrt(ENTRY.var_loadavg);
+
+	 for (i = 0; i < ATTR; i++)
+	    {
+	    ENTRY.expect_incoming[i] = ENTRY.expect_incoming[i]/sqrt(ENTRY.var_incoming[i]);
+	    ENTRY.expect_outgoing[i] = ENTRY.expect_outgoing[i]/sqrt(ENTRY.var_outgoing[i]);
+	    }	 
+	 }
+      
+      if (fabs(ENTRY.expect_number_of_users) > lmax.expect_number_of_users)
+	 {
+	 lmax.expect_number_of_users = fabs(ENTRY.expect_number_of_users);
+	 }
+      if (fabs(ENTRY.expect_rootprocs) > lmax.expect_rootprocs)
+	 {
+	 lmax.expect_rootprocs = fabs(ENTRY.expect_rootprocs);
+	 }
+      if (fabs(ENTRY.expect_otherprocs) >  lmax.expect_otherprocs)
+	 {
+	 lmax.expect_otherprocs = fabs(ENTRY.expect_otherprocs);
+	 }      
+      if (fabs(ENTRY.expect_diskfree) > lmax.expect_diskfree)
+	 {
+	 lmax.expect_diskfree = fabs(ENTRY.expect_diskfree);
+	 }
+      if (fabs(ENTRY.expect_loadavg) > lmax.expect_loadavg)
+	 {
+	 lmax.expect_loadavg = fabs(ENTRY.expect_loadavg);
+	 }
+
+      for (i = 0; i < ATTR; i++)
+	 {
+	 if (fabs(ENTRY.expect_incoming[i]) > lmax.expect_incoming[i])
+	    {
+	    lmax.expect_incoming[i] = fabs(ENTRY.expect_incoming[i]);
+	    }
+	 if (fabs(ENTRY.expect_outgoing[i]) > lmax.expect_outgoing[i])
+	    {
+	    lmax.expect_outgoing[i] = fabs(ENTRY.expect_outgoing[i]);
+	    }
+	 }
+
+
+      if (fabs(ENTRY.expect_number_of_users) < lmin.expect_number_of_users)
+	 {
+	 lmin.expect_number_of_users = fabs(ENTRY.expect_number_of_users);
+	 }
+      if (fabs(ENTRY.expect_number_of_users) < lmin.expect_number_of_users)
+	 {
+	 lmin.expect_number_of_users = fabs(ENTRY.expect_number_of_users);
+	 }      
+      if (fabs(ENTRY.expect_rootprocs) < lmin.expect_rootprocs)
+	 {
+	 lmin.expect_rootprocs = fabs(ENTRY.expect_rootprocs);
+	 }
+      if (fabs(ENTRY.expect_otherprocs) < lmin.expect_otherprocs)
+	 {
+	 lmin.expect_otherprocs = fabs(ENTRY.expect_otherprocs);
+	 }      
+      if (fabs(ENTRY.expect_diskfree) < lmin.expect_diskfree)
+	 {
+	 lmin.expect_diskfree = fabs(ENTRY.expect_diskfree);
+	 }
+      if (fabs(ENTRY.expect_loadavg) < lmin.expect_loadavg)
+	 {
+	 lmin.expect_loadavg = fabs(ENTRY.expect_loadavg);
+	 }
+
+      for (i = 0; i < ATTR; i++)
+	 {
+	 if (fabs(ENTRY.expect_incoming[i]) < lmin.expect_incoming[i])
+	    {
+	    lmin.expect_incoming[i] = fabs(ENTRY.expect_incoming[i]);
+	    }
+	 if (fabs(ENTRY.expect_outgoing[i]) < lmin.expect_outgoing[i])
+	    {
+	    lmin.expect_outgoing[i] = fabs(ENTRY.expect_outgoing[i]);
+	    }
+	 }      
+      }
+
+   /* For each grain, find the difference of the max and min values for final average */
+
+   if (count == samples_per_grain)
+      {
+      count = 0;
+      control += samples_per_grain;
+	  
+      /* av += lmax - lmin; */
+
+      av.expect_number_of_users += (lmax.expect_number_of_users - lmin.expect_number_of_users)/(double)grains;
+      av.expect_rootprocs += (lmax.expect_rootprocs - lmin.expect_rootprocs)/(double)grains;
+      av.expect_otherprocs += (lmax.expect_otherprocs - lmin.expect_otherprocs)/(double)grains;
+      av.expect_diskfree += (lmax.expect_diskfree - lmin.expect_diskfree)/(double)grains;
+      av.expect_loadavg += (lmax.expect_loadavg - lmin.expect_loadavg)/(double)grains;
+      
+      for (i = 0; i < ATTR; i++)
+	 {
+	 av.expect_incoming[i] = (lmax.expect_incoming[i] - lmin.expect_incoming[i])/(double)grains;
+	 av.expect_outgoing[i] = (lmax.expect_outgoing[i] - lmin.expect_outgoing[i])/(double)grains;
+      	 }      
+      
+      lmax.expect_number_of_users = 0.01;
+      lmax.expect_rootprocs = 0.01;
+      lmax.expect_otherprocs = 0.01;
+      lmax.expect_diskfree = 0.01;
+      lmax.expect_loadavg = 0.01; 
+      
+      lmin.expect_number_of_users = 9999.0;
+      lmin.expect_rootprocs = 9999.0;
+      lmin.expect_otherprocs = 9999.0;
+      lmin.expect_diskfree = 9999.0;
+      lmin.expect_loadavg = 9999.0; 
+      
+      for (i = 0; i < ATTR; i++)
+	 {
+	 lmax.expect_incoming[i] = 0.01;
+	 lmax.expect_outgoing[i] = 0.01;
+     	 lmin.expect_incoming[i] = 9999.0;
+	 lmin.expect_outgoing[i] = 9999.0;
+	 }
+      }
+   }
+
+printf("Scanned %d grains of size %d for Hurst function\n",control,samples_per_grain); 
+ 
+DBP->close(DBP,0);
+return(av);
 }

@@ -32,56 +32,46 @@
 /*                                                                 */
 /*******************************************************************/
 
-
- /* Here we define a two state lexer. The states exclude
-    certain regular expression matches so as to more easily
-    distinguish between class constructions like 
-
-       compound.class::
-
-    identifiers like
-
-       group = ( .... )
-
-    and items inside the parentheses like
-
-       .... = ( alpha beta gamma )
-
-    The state
-    <IDENT> recognizes identifiers and <INITIAL> recognizes what
-    is an item in a LisT.
-
- */
-
-
 #include "cfparse.h"
 #include "cf.defs.h"
 #include "cf.extern.h"
 
 
   /* Note the %o %a declarations to allow more internal workspace */
+
 %}
 
 %option noyywrap
-%s IDENT
+%s INCONTROL BRACELIST INASSIGN CFSERVD
 %o 30000
 %a 16000
 %p 9000
 %n 800
 
 actiont   copy:|resolve:|files:|tidy:|homeservers:|binservers:|mailserver:|disks:|mountables:|links:|shellcommands:|disable:|directories:|ignore:|interfaces:|defaultroute:|miscmounts:|unmount:|processes:|required:|broadcast:|alerts:
+
 space     [ \t]+
+
 comment   #.*
+
 linedir   #line[ \t]+[0-9]+.*
 function  [a-zA-Z_]+\([^)]*\)
-qstring   \"[^"\n]*\"|\'[^'\n]*\'|`[^`\n]*`
+
+qstring  \"((\\\")|[^"])*\"|\'((\\\')|[^'])*\'|`[^`]*`
+
+
 item      [+]?[-.,!@a-zA-Z0-9_\200-\377]+
-id        [.|!,;a-zA-Z0-9_\200-\377]+
+
+id        [a-zA-Z0-9_\200-\377]+
+
+lvalue    [a-zA-Z0-9_\200-\377]+
+
 classt    [.|!,;a-zA-Z0-9_()\200-\377]+::
-path      [-:.,;/a-zA-Z0-9%_\200-\377]+
-varpath   [/$<][-.,;a-zA-Z0-9<>%@+:$*?(){}/_\200-\377]*
-varitem   [-.,a-zA-Z0-9<>$*?()={}/_\200-\377]*
-wildcard  [^\135 ()>\t\n|&@\175\200-\377]+
+
+option    [a-z0-9]+=[^ \t\n]+
+
+varobj    [^ \t\n]+
+
 newline   [\n]
 lbrack    \(
 rbrack    \)
@@ -98,8 +88,10 @@ larrow    \+>
 
 admit:                 {
                        DaemonOnly;
+                       InstallPending(ACTION);           /* Flush any existing actions */
+                       InitializeAction();                 /* Clear data for files/dirs  */
 
-                       BEGIN IDENT;
+                       BEGIN CFSERVD;
                        SetAction(admit);
                        return ADMIT;
                        }
@@ -107,41 +99,57 @@ admit:                 {
 
 grant:                 {
                        DaemonOnly;
+                       InstallPending(ACTION);           /* Flush any existing actions */
+                       InitializeAction();                 /* Clear data for files/dirs  */
 
-                       BEGIN IDENT;
+                       BEGIN CFSERVD;
                        SetAction(admit);
                        return ADMIT;
                        }
 
 deny:                  {
                        DaemonOnly;
+                       InstallPending(ACTION);           /* Flush any existing actions */
+                       InitializeAction();                 /* Clear data for files/dirs  */
 
-                       BEGIN IDENT;
+                       BEGIN CFSERVD;
                        SetAction(deny);
                        return DENY;
                        }
 
 control:               {
-                       BEGIN IDENT;
+                       InstallPending(ACTION);           /* Flush any existing actions */
+                       InitializeAction();                 /* Clear data for files/dirs  */
+
+                       BEGIN INCONTROL;
                        SetAction(control);
                        return CONTROL;
                        }
 
 
 strategies:            {
-                       BEGIN IDENT;
+                       InstallPending(ACTION);           /* Flush any existing actions */
+                       InitializeAction();                 /* Clear data for files/dirs  */
+
+                       BEGIN BRACELIST;
                        SetAction(strategies);
                        return STRATEGIES;
                        }
 
 groups:                {
-                       BEGIN IDENT;
+                       InstallPending(ACTION);           /* Flush any existing actions */
+                       InitializeAction();                 /* Clear data for files/dirs  */
+
+                       BEGIN INCONTROL;
                        SetAction(groups);
                        return GROUPS;
                        }
 
-classes:               {                       /* Synonym for groups */
-                       BEGIN IDENT;
+classes:               {                                           /* Synonym for groups */
+                       InstallPending(ACTION);             /* Flush any existing actions */
+                       InitializeAction();                 /* Clear data for files/dirs  */
+
+                       BEGIN INCONTROL;
                        SetAction(groups);
                        return GROUPS;
                        }
@@ -149,7 +157,10 @@ classes:               {                       /* Synonym for groups */
 acl:                   {
                        CfengineOnly;
 
-                       BEGIN IDENT;
+                       InstallPending(ACTION);           /* Flush any existing actions */
+                       InitializeAction();                 /* Clear data for files/dirs  */
+
+                       BEGIN BRACELIST;
                        SetAction(acls);
                        return ACL;
                        }
@@ -157,7 +168,10 @@ acl:                   {
 filters:               {
                        CfengineOnly;
 
-                       BEGIN INITIAL;
+                       InstallPending(ACTION);           /* Flush any existing actions */
+                       InitializeAction();                 /* Clear data for files/dirs  */
+
+                       BEGIN BRACELIST;
                        SetAction(filters);
                        return FILTERS;
                        }
@@ -165,12 +179,18 @@ filters:               {
 {actiont}              {
                        CfengineOnly;
 
+                       InstallPending(ACTION);           /* Flush any existing actions */
+                       InitializeAction();                 /* Clear data for files/dirs  */
+
                        BEGIN INITIAL;
                        SetAction(ActionStringToCode(yytext));
                        return ACTIONTYPE;
                        }
 
 import:                {
+                       InstallPending(ACTION);           /* Flush any existing actions */
+                       InitializeAction();                 /* Clear data for files/dirs  */
+
                        BEGIN INITIAL;
                        SetAction(ActionStringToCode(yytext));
                        return ACTIONTYPE;
@@ -179,7 +199,10 @@ import:                {
 editfiles:             {
                        CfengineOnly;
 
-                       BEGIN INITIAL;
+                       InstallPending(ACTION);           /* Flush any existing actions */
+                       InitializeAction();                 /* Clear data for files/dirs  */
+
+                       BEGIN BRACELIST;
                        SetAction(editfiles);
                        return EDITFILES;
                        }
@@ -200,7 +223,8 @@ editfiles:             {
 
 
 {lforcearrow}          {
-                       strcpy(LINKFROM,CURRENTPATH);
+                       Debug1("LFARROW %s\n",yytext);
+                       strcpy(LINKFROM,CURRENTOBJECT);
                        ACTION_IS_LINKCHILDREN = true;
                        FORCELINK='y';
                        return LARROW;
@@ -208,14 +232,16 @@ editfiles:             {
 
 
 {forcearrow}           {
-                       strcpy(LINKFROM,CURRENTPATH);
+                       Debug1("FARROW %s\n",yytext);
+                       strcpy(LINKFROM,CURRENTOBJECT);
                        ACTION_IS_LINK = true;
                        FORCELINK='y';
                        return ARROW;
                        }
 
 {arrow}                {
-                       strcpy(LINKFROM,CURRENTPATH);
+                       Debug1("ARROW %s\n",yytext);
+                       strcpy(LINKFROM,CURRENTOBJECT);
                        ACTION_IS_LINK = true;
                        FORCELINK='n';
                        return ARROW;
@@ -223,7 +249,8 @@ editfiles:             {
 
 
 {larrow}               {
-                       strcpy(LINKFROM,CURRENTPATH);
+                       Debug1("LARROW %s\n",yytext);
+                       strcpy(LINKFROM,CURRENTOBJECT);
                        ACTION_IS_LINKCHILDREN = true;
                        FORCELINK='n';
                        return LARROW;
@@ -231,37 +258,52 @@ editfiles:             {
 
 
 {equals}               {
+                       Debug1("EQUALS %s\n",yytext);
                        return EQUALS;
                        }
 
 
-{id}::                 {
-                       Debug1("Class:: %s\n",yytext);   
-
-
-                       yytext[strlen((char *)yytext)-2] = '\0';
-                       HandleClass(yytext);
-                       return PARSECLASS;
-                       }
-
-
 {classt}               {
-                       Debug1("Class:: %s\n",yytext);   
+                       Debug1("\nNEW CLASS PREDICATE:: %s\n",yytext);
+
+                       InstallPending(ACTION);           /* Flush any existing actions */
+                       InitializeAction();                 /* Clear data for files/dirs  */
 
                        yytext[strlen((char *)yytext)-2] = '\0';
                        HandleClass(yytext);
                        return PARSECLASS;
                        }
 
-<IDENT>{id}            {
-                       HandleId(yytext);
-                       return(ID);
+<INCONTROL>{lvalue}      {
+                       Debug1("LVALUE %s\n",yytext);
+                       HandleLValue(yytext);
+                       return LVALUE;
+                       }
+
+<BRACELIST>{id}:       {
+                       Debug1("BRACELIST-CLASSIFIER %s\n",yytext);
+                       HandleBraceObjectClassifier(yytext);
+                       return BCLASS;
+                       }
+
+<BRACELIST>{id}        {
+                       Debug1("BRACELIST-ID %s\n",yytext);
+
+                       if (ACTION == editfiles)   /* Syntax different for editfiles :(  */
+                          {
+                          HandleBraceObjectClassifier(yytext);
+                          }
+                       else
+                          {
+                          HandleBraceObjectID(yytext);
+                          }
+                       return ID;
                        }
 
 
 {lbrack}               {
                        Debug1("LEFTBRACK\n");
-                       BEGIN INITIAL;
+                       BEGIN INASSIGN;
                        return LBRACK;
                        }
 
@@ -274,8 +316,8 @@ editfiles:             {
                        }
 
 {rbrack}               {
-                       Debug1("RIGHTBRACK\n");
-                       BEGIN IDENT;
+                       Debug1("RIGHTBRACK\n\n");
+                       BEGIN INCONTROL;
                        return RBRACK;
                        }
 
@@ -297,207 +339,148 @@ editfiles:             {
                           yyerror("ForEachLineIn/EndLoop mismatch before or at line");
                           }
 
-                       if (MOUNT_FROM || MOUNT_ONTO)
-                          {
-                          yyerror("Missing rw/ro mode in mount syntax");
-                          MOUNT_FROM = false;
-                          MOUNT_ONTO = false;
-                          }
-
+                       InstallPending(ACTION);
+                       InitializeAction();
                        return RBRACE;
                        }
 
-{function}             {
-                       HandleItem(yytext);
-                       return ITEM;
-                       }
 
 
-<INITIAL>{item}        {
-                       if (ACTION == shellcommands || ACTION == alerts)
+<INASSIGN>{qstring}    {
+                       char *sp = NULL;
+                       Debug1("RVAL-QSTRING %s\n",yytext);
+                       *(yytext+strlen((char *)yytext)-1) = '\0';
+
+                       if ((sp = strdup(yytext+1)) == NULL)
                           {
-                          yyerror("Shell commands and alerts must be quoted strings");
+                          FatalError("Malloc failure in parsing");
                           }
 
-                       if (ACTION == editfiles)
-                          {
-                          if (strcmp((char *)yytext,"EndGroup") == 0 || 
-                              strcmp((char *)yytext,"GotoLastLine") == 0 || 
-                              strcmp((char *)yytext,"AutoCreate") == 0  ||
-                              strcmp((char *)yytext,"EndLoop") == 0  ||
-                              strcmp((char *)yytext,"CatchAbort") == 0  ||
-                              strcmp((char *)yytext,"EmptyEntireFilePlease") == 0)
-                             {
-                             HandleEdit(CURRENTPATH,yytext,NULL);
-                             return ITEM;
-                             }
-                          }
+                       RemoveEscapeSequences(yytext+1,sp);
 
-                       if (ACTION != control && strcmp((char *)yytext,"home") == 0)
+                       switch (ACTION)
                           {
-                          if (DEBUG || D1)
-                             {
-                             printf("SPECIAL VARIABLE home\n");
-                             }
-                          HandlePath(yytext);
-                          return PATH;
-                          }
-                       else if (ACTION == tidy)
-                          {
-                          if (yytext[0] == '\\')       /* ignore \ in \# */
-                             {
-                             HandleWildcard(yytext+1);
-                             }
-                          else
-                             {
-                             HandleWildcard(yytext);
-                             }
-                          return WILDCARD;
-                          }
-                       else
-                          {
-                          HandleItem(yytext);
-                          return ITEM;
+                          case control:	
+                             InstallControlRValue(CURRENTITEM,sp);
+                             free(sp);
+                             return RVALUE;
+                          case groups:
+                             HandleGroupRValue(sp);
+                             return RVALUE;
                           }
                        }
 
-
-<INITIAL>{path}        {
-                       if (ACTION == shellcommands || ACTION == alerts)
-                          {
-                          yyerror("Shell commands and alerts must be quoted strings");
-                          }
-
-                       if (strncmp("home",(char *)yytext,4)==0)
-                          {
-                          HandlePath(yytext);
-                          return PATH;
-                          }
-
-                       if (ACTION == control)
-                          {
-                          HandleItem(yytext);
-                          return ITEM;
-                          }
-
-                       if (ACTION != mountables  && ACTION != mailserver && ACTION != filters && ACTION != misc_mounts &&  ACTION != unmounta && !IsAbsoluteFileName(yytext))
-                          {
-                          if (CONTROLVAR == cfhomepat)
-                             {
-                             HandleWildcard(yytext);
-                             return WILDCARD;
-                             }
-
-                          if (ACTION_IS_LINK || ACTION_IS_LINKCHILDREN)
-                             {
-                             HandlePath(yytext);
-                             return PATH;
-                             }
-
-                          sprintf(ERROR,"%s is not an absolute pathname",yytext);
-                          yyerror(ERROR);
-                          }
-
-                       HandlePath(yytext);
-                       return PATH;
-                       }
 
 {qstring}              {
-                       if (ACTION == editfiles)
+                       char *sp = NULL;
+                       Debug1("QSTRING %s\n",yytext);
+                       *(yytext+strlen((char *)yytext)-1) = '\0';
+                       if ((sp = strdup(yytext+1)) == NULL)
                           {
-                          *(yytext+strlen((char *)yytext)-1) = '\0';
-                          HandleEdit(CURRENTPATH,CURRENTITEM,yytext+1);
-                          return QSTRING;
+                          FatalError("Malloc failure in parsing");
                           }
-                       else if (ACTION == filters)
+
+                       RemoveEscapeSequences(yytext+1,sp);
+
+                       HandleQuotedString(sp);
+                       return QSTRING;
+                       }
+
+<INASSIGN>{function}   {
+                       Debug1("RVAL-FUNCTION %s\n",yytext);
+
+                       HandleFunctionObject(yytext);
+                       return FUNCTION;
+                       }
+
+
+{function}             {
+                       InstallPending(ACTION);           /* Flush any existing actions */
+                       InitializeAction();                 /* Clear data for files/dirs  */
+
+                       Debug1("FUNCTION %s\n",yytext);
+
+                       if (ACTION == alerts)
                           {
-                          *(yytext+strlen((char *)yytext)-1) = '\0';
-                          HandleWildcard(yytext+1);
-                          return WILDCARD;
+                          ACTIONPENDING = true;
                           }
-                       else if (ACTION == groups)
+
+                       HandleFunctionObject(yytext);
+                       return FUNCTION;
+                       }
+
+{option}               {
+                       Debug1("\nOPTION %s\n",yytext);
+                       HandleOption(yytext);
+                       return OPTION;
+                       }
+
+<INITIAL>{varobj}      {
+                       if ((ACTION_IS_LINK || ACTION_IS_LINKCHILDREN) && (strlen(LINKTO)==0))
                           {
-                          HandleItem(yytext);
-                          return ITEM;
-                          }
-                       else if (ACTION == control)
-                          {
-                          *(yytext+strlen((char *)yytext)-1) = '\0';
-                          HandleItem(yytext+1);
-                          Debug1("Quoted macro string %s\n",yytext+1);
-                          return QSTRING;
+                          Debug("Pending link destination...\n");
                           }
                        else
                           {
-                          *(yytext+strlen((char *)yytext)-1) = '\0';
- 
-                          if (yytext[1] == '/')
+                          /* Check anomalour process syntax */
+                          if (ACTION == processes && 
+                              (strcmp(ToLowerStr(yytext),"restart") == 0 || 
+                               strcmp(ToLowerStr(yytext),"setoptionstring") == 0))
                              {
-                             HandlePath(yytext+1);
                              }
-                          else
+                          else if (ACTIONPENDING)
                              {
-                             HandleItem(yytext+1);
+                             InstallPending(ACTION);             /* Flush any existing actions */
+                             InitializeAction();                 /* Clear data for files/dirs  */
                              }
-                          return QSTRING;
                           }
-                       }
 
+                       Debug1("VAROBJ %s\n",yytext);
 
-{varpath}              {
                        IsVarString(yytext);        /* Syntax check */
-                       HandleVarpath(yytext);
-                       return VARPATH;
+                       HandleVarObject(yytext);
+                       return VAROBJ;
                        }
 
-{varitem}              {
-                       if (ACTION_IS_LINK || ACTION_IS_LINKCHILDREN)
+<INASSIGN>{varobj}     {
+                       Debug1("RVAL-VAROBJ %s\n",yytext);
+
+                       switch(ACTION)
                           {
-                          if (strlen(LINKTO) == 0)
-                             {
-                             HandlePath(yytext);
-                             return PATH;
-                             }
+                          case control:
+                             InstallControlRValue(CURRENTITEM,yytext);
+                             return RVALUE;
+                          case groups:
+                             HandleGroupRValue(yytext);
+                             return RVALUE;
+                          default:
+                             yyerror("Misplaced assignment");
                           }
-
-                       HandleWildcard(yytext);
-
-                       if (IsVarString(yytext))
-                          {
-                          return VARITEM;
-                          }
-
-                       return WILDCARD;
                        }
 
+<BRACELIST>{varobj}    {
+                       Debug1("BRACELIST-VAROBJ %s\n",yytext);
 
-{wildcard}             {
-                       Debug1("LEX: wildcard, I think I lov you...but i wanna know for sure\n");
-
-                       if (ACTION_IS_LINK || ACTION_IS_LINKCHILDREN)
+                       if (ACTION == acls && strlen(CURRENTOBJECT) > 0) /* Irregular acl syntax */
                           {
-                          if (strlen(LINKTO) == 0)
-                             {
-                             HandlePath(yytext);
-                             return PATH;
-                             }
+                          HandleBraceObjectClassifier(yytext);
                           }
-
-                       if (IsVarString(yytext))
+                       else
                           {
-                          HandleWildcard(yytext);
-                          return VARITEM;
+                          HandleBraceObjectID(yytext);
                           }
-
-                       HandleWildcard(yytext);
-                       return WILDCARD;
+                       return VAROBJ;
                        }
-
-
-
 
 .                      {
                        return yytext[0];
+                       }
+
+<CFSERVD>{varobj}      {
+                       Debug1("\nCFSERVD-VAROBJ %s\n",yytext);
+
+                       HandleServerRule(yytext);
+                       return ACCESSOBJ;
                        }
 
 %%

@@ -67,7 +67,7 @@ while (!feof(pp))
 
 cfpclose(pp);
 
-snprintf(VBUFF,maxvarsize,"%s/cf_procs",WORKDIR);
+snprintf(VBUFF,maxvarsize,"%s/state/cf_procs",WORKDIR);
 
 imgbackup = IMAGEBACKUP;
 IMAGEBACKUP = 'n'; 

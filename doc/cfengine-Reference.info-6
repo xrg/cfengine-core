@@ -782,16 +782,22 @@ system administrator will be emailed a summary of any output:
 
      control:
      
-     smtpserver = ( mailhub.example.org ) # site MTA which can talk smtp
-     sysadm     = ( mark@example.org )   # mail address of sysadm
+     smtpserver    = ( mailhub.example.org ) # site MTA which can talk smtp
+     sysadm        = ( mark@example.org )    # mail address of sysadm
+     EmailMaxLines = ( N )                 # max lines of output to email
 
-Fill in suitable values for these variables.  An alternative, or
-additional way to run cfengine, is to run the `cfexecd' program is
-daemon mode (without the `-F') option. In this mode, the daemon lives
-in the background and sleeps, activating only in accordance with a
-scheduling policy. The default policy is to run once every hour
-(equivalent to `Min00_05'). Here is how you would modify `cfagent.conf'
-in order to make the daemon execute cfagent every half-hour:
+Fill in suitable values for these variables. `EmailMaxLines' may be set
+to 0 to disable email output, a postive integer to set a limit, or
+`inf' to email the whole output regardless of its size. If undefined,
+`EmailMaxLines' defaults to 100.
+
+   An alternative, or additional way to run cfengine, is to run the
+`cfexecd' program is daemon mode (without the `-F') option. In this
+mode, the daemon lives in the background and sleeps, activating only in
+accordance with a scheduling policy. The default policy is to run once
+every hour (equivalent to `Min00_05'). Here is how you would modify
+`cfagent.conf' in order to make the daemon execute cfagent every
+half-hour:
        control:
      
         # When should cfexecd in daemon mode wake up the agent?

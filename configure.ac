@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.0.6)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.0.7p3)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -45,6 +45,11 @@ do
   fi
 done
 
+ACX_PTHREAD
+CC=$PTHREAD_CC
+CFLAGS="$PTHREAD_CFLAGS $CFLAGS"
+CPPFLAGS="$PTHREAD_CPPFLAGS $CPPFLAGS"
+LDFLAGS="$PTHREAD_LDFLAGS $LDFLAGS"
 
 dnl ######################################################################
 dnl Checks for programs.
@@ -55,7 +60,10 @@ AM_PROG_LEX
 AC_PROG_YACC
 AC_PROG_RANLIB
 AC_PROG_INSTALL
+
+AC_CONFIG_LIBOBJ_DIR(pub)
 AC_FUNC_GETLOADAVG 
+
 
 AC_PATH_PROG(LATEX, latex, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin)
 AC_PATH_PROG(TEXI2DVI, texi2dvi, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin)
@@ -342,9 +350,15 @@ dnl #######################################################################
  
 rtry=none
 AC_MSG_CHECKING(for either struct rtentry or struct ortentry)
-AC_EGREP_HEADER(rtentry, net/route.h, AC_DEFINE(HAVE_RTENTRY) rtry=rtentry)
-AC_EGREP_HEADER(ortentry, net/route.h, AC_DEFINE(HAVE_ORTENTRY) rtry=ortentry)
-AC_MSG_RESULT($rtry)
+AC_EGREP_HEADER(rtentry, net/route.h, rtry=rtentry)
+if test "$rtry" = rtentry; then
+ AC_DEFINE(HAVE_RTENTRY)
+fi
+AC_EGREP_HEADER(ortentry, net/route.h, rtry=ortentry)
+if test "$rtry" = ortentry; then
+ AC_DEFINE(HAVE_ORTENTRY)
+fi
+AC_MSG_RESULT([$rtry])
 
 dnl #######################################################################
 dnl Handle DCE + threading stuff
@@ -435,6 +449,7 @@ case "$target_os" in
 	AC_DEFINE(OSF)
         ;;
    irix6*)
+	# rtentry is detected OK on a 6.5.19 system.
         AC_DEFINE(HAVE_ORTENTRY) # Have to hack this for 6.* owing to bug
 	AC_DEFINE(IRIX)
         CFLAGS="$CFLAGS -w"

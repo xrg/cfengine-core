@@ -52,16 +52,17 @@ Concept Index
 * AutoExecInterval variable:             AutoExecInterval.
 * automounter:                           editfiles.
 * awk, editing:                          editfiles.
+* Backup:                                editfiles.
 * Backup of files in copy:               copy.
 * BeginGroupIfDefined:                   editfiles.
 * BeginGroupIfFileExists:                editfiles.
 * BeginGroupIfFileIsNewer:               editfiles.
 * BeginGroupIfNotDefined:                editfiles.
-* Binary servers and links <1>:          Single links.
-* Binary servers and links:              Link Children.
+* Binary servers and links <1>:          Link Children.
+* Binary servers and links:              Single links.
 * Binary servers, defining:              binservers.
-* Binary servers, priority <1>:          Single links.
-* Binary servers, priority:              binservers.
+* Binary servers, priority <1>:          binservers.
+* Binary servers, priority:              Single links.
 * Bootstrap file:                        cf.preconf bootstrap file.
 * Broadcast address:                     broadcast.
 * Broadcasts to the cfengine service.:   cfrun.
@@ -74,8 +75,8 @@ Concept Index
 * cf.site <1>:                           cf.site.
 * cf.site:                               cfservd.conf.
 * cfagent.conf:                          cfagent.conf.
-* CFALLCLASSES <1>:                      Special variables.
-* CFALLCLASSES:                          shellcommands.
+* CFALLCLASSES <1>:                      shellcommands.
+* CFALLCLASSES:                          Special variables.
 * cfenvd and key entropy:                Cfkey.
 * cfexecd:                               Cfexecd reference.
 * cfrc resource file:                    cfrc resource file.
@@ -86,15 +87,17 @@ Concept Index
 * Checksum warning, turning off exclamation: exclamation.
 * ChecksumDatabase:                      ChecksumDatabase.
 * ChecksumDatabase variable:             ChecksumDatabase in cfservd.
+* ChecksumPurge:                         ChecksumPurge.
 * ChecksumUpdates:                       ChecksumUpdates.
 * CIDR:                                  groups.
 * Class data and scripts:                Special variables.
 * Class decided by shell command:        groups.
 * Class dependencies:                    groups.
 * Class information, passing to scripts: shellcommands.
-* classes <1>:                           classes.
+* classes <1>:                           Cfengine classes.
 * classes <2>:                           groups.
-* classes:                               Cfengine classes.
+* classes <3>:                           classes.
+* classes:                               groups.
 * Classes, adding and defining:          addclasses.
 * Classes, compound:                     Cfengine classes.
 * Classes, defining and undefining:      Cfengine classes.
@@ -129,16 +132,16 @@ Concept Index
 * DeleteNonUserMail DeleteNonUserFiles:  deletenonuserfiles.
 * Deleting directories:                  tidy.
 * Deleting files:                        tidy.
-* Deleting stale links <1>:              tidy.
-* Deleting stale links:                  Syntax.
+* Deleting stale links <1>:              Syntax.
+* Deleting stale links:                  tidy.
 * DenyBadClocks variable:                DenyBadClocks.
 * DenyConnectionsFrom variable:          DenyConnectionsFrom.
 * Dependencies:                          groups.
 * Device boundaries:                     copy.
 * Device boundaries and files:           Recursion.
 * DFS:                                   nfstype.
-* DHCP <1>:                              DynamicAddresses.
-* DHCP:                                  actionsequence.
+* DHCP <1>:                              actionsequence.
+* DHCP:                                  DynamicAddresses.
 * Directories, deleting:                 tidy.
 * Directories, hidden:                   fileextension.
 * Directories, making:                   directories.
@@ -156,7 +159,6 @@ Concept Index
 * Dual homed hosts:                      interfaces.
 * Dynamic addresses:                     DynamicAddresses.
 * DynamicAddresses variable:             DynamicAddresses.
-* EditBackup:                            editfiles.
 * Empty files:                           tidy.
 * Emptying old nameservers from /etc/resolv.conf: emptyresolvconf.
 * Environment variable CFALLCLASSES:     Cfagent Runtime Options.
@@ -182,13 +184,13 @@ Concept Index
 * Force copying:                         copy.
 * freespace= <1>:                        disks.
 * freespace=:                            required.
-* Full disk warnings <1>:                required.
-* Full disk warnings:                    disks.
+* Full disk warnings <1>:                disks.
+* Full disk warnings:                    required.
 * Fully qualified names:                 Cfengine classes.
 * Group dependencies:                    groups.
 * Group field, editing:                  editfiles.
-* groups <1>:                            classes.
-* groups:                                groups.
+* groups <1>:                            groups.
+* groups:                                classes.
 * Groups, defining:                      groups.
 * Hard class name collision:             Special variables.
 * Hardlinks:                             Hard links.
@@ -222,15 +224,15 @@ Concept Index
 * Links and binary servers <1>:          Single links.
 * Links and binary servers:              Link Children.
 * Links, absolute:                       Single links.
-* Links, deleting stale <1>:             Syntax.
-* Links, deleting stale:                 tidy.
+* Links, deleting stale <1>:             tidy.
+* Links, deleting stale:                 Syntax.
 * Links, forcing for non-existent files: Single links.
 * Links, making:                         links.
 * Links, multiple:                       Multiple Links.
 * Links, removing dead:                  Single links.
 * Links, single:                         Single links.
-* Links, traversing in searches <1>:     Syntax.
-* Links, traversing in searches:         tidy.
+* Links, traversing in searches <1>:     tidy.
+* Links, traversing in searches:         Syntax.
 * Local disk space, make use of:         Link Children.
 * Log files, controlling the size of:    disable.
 * Logical NOT:                           Cfengine classes.
@@ -244,8 +246,8 @@ Concept Index
 * MaxConnections variable:               MaxConnections.
 * Megabytes, filesize unit:              tidy.
 * Merging files.:                        editfiles.
-* Message digests <1>:                   ChecksumDatabase.
-* Message digests:                       Syntax.
+* Message digests <1>:                   Syntax.
+* Message digests:                       ChecksumDatabase.
 * Miscellaneous mount operations:        miscmounts.
 * Module directory:                      moduledirectory.
 * Modules, user defined:                 actionsequence.
@@ -298,6 +300,7 @@ Concept Index
 * Public keys:                           copy.
 * Purge, excluding files:                copy.
 * Quoted strings:                        editfiles.
+* RandomInt() function:                  control.
 * Recursion in files:                    Recursion.
 * Redefinition of macros:                AllowRedefinitionOf.
 * Relative links:                        Single links.

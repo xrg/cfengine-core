@@ -417,6 +417,74 @@ else
    }
 }
 
+
+/***************************************************************/
+
+void ChecksumPurge()
+
+/* Go through the database and purge records about non-existent files */
+
+{ DBT key,value;
+  DB *dbp;
+  DBC *dbcp;
+  DB_ENV *dbenv = NULL;
+  int ret;
+  struct stat statbuf;
+  
+if ((errno = db_create(&dbp,dbenv,0)) != 0)
+   {
+   snprintf(OUTPUT,bufsize*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
+   CfLog(cferror,OUTPUT,"db_open");
+   return;
+   }
+
+#ifdef CF_OLD_DB
+if ((errno = dbp->open(dbp,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+if ((errno = dbp->open(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#endif
+   {
+   snprintf(OUTPUT,bufsize*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
+   CfLog(cferror,OUTPUT,"db_open");
+   dbp->close(dbp,0);
+   return;
+   }
+
+/* Acquire a cursor for the database. */
+
+ if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
+    {
+    CfLog(cferror,"Error reading from checksum database","");
+    dbp->err(dbp, ret, "DB->cursor");
+    return;
+    }
+
+ /* Initialize the key/data return pair. */
+
+ memset(&key, 0, sizeof(key));
+ memset(&value, 0, sizeof(value));
+ 
+ /* Walk through the database and print out the key/data pairs. */
+
+ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
+    {
+    if (stat(key.data,&statbuf) == -1)
+       {
+       Verbose("Purging file %s from checksum db - no longer exists\n",(char *)key.data);
+       snprintf(OUTPUT,bufsize*2,"SECURITY INFO: Checksum for %s purged - file no longer exists!",key.data);
+       CfLog(cferror,OUTPUT,"");
+
+       if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
+	  {
+	  CfLog(cferror,"","db_store");
+	  }
+       }
+    }
+ 
+dbcp->c_close(dbcp);
+dbp->close(dbp,0);
+}
+
 /*************************************************************************/
 
 int IgnoredOrExcluded(action,file,inclusions,exclusions)
@@ -802,9 +870,17 @@ char strminor[maxvarsize];
  else
     {
     release += strlen(RELEASE_FLAG);
-    sscanf(release, "%d.%d", &major, &minor);
-    sprintf(strmajor, "%d", major);
-    sprintf(strminor, "%d", minor);
+    if (sscanf(release, "%d.%d", &major, &minor) == 2)
+       {
+       sprintf(strmajor, "%d", major);
+       sprintf(strminor, "%d", minor);
+       }
+    /* red hat 9 is *not* red hat 9.0. */
+    else if (sscanf(release, "%d", &major) == 1)
+       {
+       sprintf(strmajor, "%d", major);
+       minor = -2;
+       };
     }
  
  if(major != -1 && minor != -1 && vendor != "")
@@ -821,11 +897,77 @@ char strminor[maxvarsize];
        }
     strcat(classbuf, strmajor);
     AddClassToHeap(classbuf);
+    if (minor != -2)
+       {
+       strcat(classbuf, "_");
+       strcat(classbuf, strminor);
+       AddClassToHeap(classbuf);
+       }
+    }
+ return 0;
+}
+
+/******************************************************************/
+
+int linux_suse_version(void)
+{
+#define SUSE_REL_FILENAME "/etc/SuSE-release"
+#define SUSE_ID "SuSE Linux"
+#define SUSE_RELEASE_FLAG "Linux "
+
+/* The full string read in from SuSE-release */
+char relstring[maxvarsize];
+char classbuf[maxvarsize];
+
+/* Where the numerical release will be found */
+char *release=NULL;
+
+int major = -1;
+char strmajor[maxvarsize];
+int minor = -1;
+char strminor[maxvarsize];
+
+FILE *fp;
+
+ /* Grab the first line from the file and then close it. */
+ if ((fp = fopen(SUSE_REL_FILENAME,"r")) == NULL)
+    {
+    return 1;
+    }
+ fgets(relstring, sizeof(relstring), fp);
+ fclose(fp);
+ 
+ /* Determine release version. We assume that the version follows
+  * the string "SuSE Linux".
+  */
+ release = strstr(relstring, SUSE_RELEASE_FLAG);
+ if(release == NULL)
+    {
+    Verbose("Could not find a numeric OS release in %s\n",
+            SUSE_REL_FILENAME);
+    return 2;
+    }
+ else
+    {
+    release += strlen(SUSE_RELEASE_FLAG);
+    sscanf(release, "%d.%d", &major, &minor);
+    sprintf(strmajor, "%d", major);
+    sprintf(strminor, "%d", minor);
+    }
+    if(major != -1 && minor != -1)
+    {
+    classbuf[0] = '\0';
+    strcat(classbuf, "SuSE");
+    AddClassToHeap(classbuf);
+    strcat(classbuf, "_");
+    strcat(classbuf, strmajor);
+    AddClassToHeap(classbuf);
     strcat(classbuf, "_");
     strcat(classbuf, strminor);
     AddClassToHeap(classbuf);
     }
- return 0;
+ 
+return 0;
 }
 
 /******************************************************************/

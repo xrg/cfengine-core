@@ -219,7 +219,7 @@ if (level == 2)
    }
 
 closedir(dirh);
- return true;
+return true;
 }
 
 
@@ -240,13 +240,26 @@ int level;
   struct TidyPattern *tlp;
   short savetravlinks = TRAVLINKS, savekilloldlinks = KILLOLDLINKS;
 
+/* Note that we have to go through the whole tidy list here, even non-home,
+   so be careful to pick out the rules the affect us! The info
+   about home dissappears here, since we have expanded the home/
+   directive into an actual path, so we make sure that no non-home
+   rules can be applied to home directories */
+  
 for (tp = VTIDY; tp != NULL; tp=tp->next)
    {
-   if (tp->tidylist == NULL)  /* used to eliminate non-home searches */
+   if ((strncmp(tp->path,"home/",5) != 0) && (strcmp(tp->path,"home") != 0))
       {
       continue;
       }
 
+   if (tp->tidylist == NULL || tp->done == 'y')
+      {
+      continue;
+      }
+
+   Debug("  Check rule %s ...\n",tp->path);
+   
    if ((tp->maxrecurse != INFINITERECURSE) && (level > tp->maxrecurse+1))
       {
       Debug("Recursion maxed out at level %d/%d\n",level,tp->maxrecurse+1);
@@ -498,6 +511,11 @@ if (tp->tidylist == NULL)
 
 for (tlp = tp->tidylist; tlp != NULL; tlp=tlp->next)
    {
+   if (IsExcluded(tlp->classes))
+      {
+      continue;
+      }
+   
    ResetOutputRoute(tlp->log,tlp->inform);
 
    if (S_ISLNK(statbuf->st_mode) && is_dir && (tlp->dirlinks == 'k') && (tlp->rmdirs == 'n'))  /* Keep links to directories */
@@ -557,7 +575,7 @@ for (tlp = tp->tidylist; tlp != NULL; tlp=tlp->next)
 
    if (! WildMatch(tlp->pattern,name))
       {
-      Debug("Pattern did not match (first filter) %s\n",path);
+      Debug("Pattern did not match (first filter %s) %s\n",tlp->pattern,path);
       ResetOutputRoute('d','d');
       continue;
       }
@@ -669,6 +687,9 @@ if (age_match && size_match)
       {
       if (S_ISDIR(statbuf->st_mode))
 	 {
+	 snprintf(OUTPUT,bufsize*2,"Deleting directory %s\n",path);
+	 CfLog(cfinform,OUTPUT,"");
+
 	 if (rmdir(name) == -1)
 	    {
 	    CfLog(cferror,"","unlink");
@@ -692,7 +713,7 @@ if (age_match && size_match)
             CfLog(cfverbose,OUTPUT,"unlink");
 	    }
 
-	 snprintf(OUTPUT,bufsize*2,"Deleting %s\n",path);
+	 snprintf(OUTPUT,bufsize*2,"Deleting file %s\n",path);
 	 CfLog(cfinform,OUTPUT,"");
 	 snprintf(OUTPUT,bufsize*2,"Size=%d bytes, %c-age=%d days\n",
 		 statbuf->st_size,tlp->searchtype,(nowticks-fileticks)/ticksperday);

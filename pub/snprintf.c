@@ -184,6 +184,11 @@
  *		  not used;
  */
 
+#include "../src/conf.h"
+
+#ifndef HAVE_SNPRINTF
+# include "snprintf.h"
+#endif
 
 /* Define HAVE_SNPRINTF if your system already has snprintf and vsnprintf.
  *
@@ -193,6 +198,7 @@
  * (and portable_vsnprintf).
  */
 /* #define HAVE_SNPRINTF */
+
 
 /* Define PREFER_PORTABLE_SNPRINTF if your system does have snprintf and
  * vsnprintf but you would prefer to use the portable routine(s) instead.

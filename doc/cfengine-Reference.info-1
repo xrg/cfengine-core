@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.0.6 for version 2.0.6
-as last updated 30 March 2003.
+   This manual corresponds to CFENGINE Edition 2.0.7p3 for version
+2.0.7p3 as last updated 16 May 2003.
 
 * Menu:
 
@@ -617,6 +617,11 @@ internal variables.
 
 `domain'
      The currently defined domain.
+
+`EmailMaxLines'
+     Most lines of output to email from a single cfexecd-induced run of
+     cfagent. If undefined, defaults to 100. Set to 0, no email is sent
+     by cfexecd. Set to `inf', no maximum is enforced.
 
 `faculty'
      The faculty or site as defined in control (see site).
@@ -1366,7 +1371,7 @@ executed. The syntax of declarations here is:
      
           CLASSES::
      
-             VARIABLE = ( LIST OR VALUE )
+             VARIABLE = ( LIST OR VALUE FUNCTION(ARGS) )
 
    The control section is a sequence of declarations which looks
 something like the following example:
@@ -1397,9 +1402,11 @@ something like the following example:
      
        myvariable = ( something )
        mymacro    = ( somethingelse )
+       myrandom   = ( RandInt(3,6) )
 
 Parentheses are required when making a declaring information in
-cfengine.
+cfengine.  Note that a limited number of in-built functions exists:
+   * `RandomInt(a,b)' Is substituted for a random number between (a,b).
 
    The meaning of each of these lines is described below.
 
@@ -1413,6 +1420,7 @@ cfengine.
 * AutoDefine::
 * BinaryPaddingChar::
 * ChecksumDatabase::
+* ChecksumPurge::
 * ChecksumUpdates::
 * childlibpath::
 * copylinks::

@@ -353,7 +353,7 @@ char *filename;
    /* item.c toolkit since they operate on linked lists    */
 
 { struct Edlist *ep, *loopstart, *loopend, *ThrowAbort();
-  struct Item *filestart = NULL, *newlineptr;
+  struct Item *filestart = NULL, *newlineptr = NULL;
   char currenteditscript[bufsize], searchstr[bufsize], expdata[bufsize];
   char *sp, currentitem[maxvarsize];
   struct stat tmpstat;
@@ -549,7 +549,7 @@ while (ep != NULL)
 	       
                if (LocateNextItemMatching(filestart,expdata) == NULL)
 	          {
-                  AppendItem(&filestart,expdata,NULL);
+                  AppendItem(&filestart,EDITBUFF,NULL);
                   }
                break;
 

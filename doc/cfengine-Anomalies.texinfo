@@ -141,6 +141,7 @@ traces.
 * cfenvd::                      
 * Anomaly research::            
 * cfenvgraph::                  
+* Fluctuation profiles::        
 * Starting with anomaly detection::  
 @end menu
 
@@ -280,7 +281,7 @@ until the expected activity was low.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node cfenvgraph, Starting with anomaly detection, Anomaly research, Overview
+@node cfenvgraph, Fluctuation profiles, Anomaly research, Overview
 @section cfenvgraph
 
 The @samp{cfenvgraph} command can use used to dump a graph of averages for
@@ -299,7 +300,7 @@ load is detected.
 The cfenvgraph command is used to extract data from the database used by
 the cfenvd environment daemon.
 @smallexample
-cfenvgraph -f @var{filename.db [-r -T -t -s -e]}
+cfenvgraph -f @var{filename.db} [-r -T -t -s -e]
 @end smallexample
 The command normally generates two files with format
 @smallexample
@@ -396,7 +397,23 @@ gnuplot> plot "www-in.cfenv" with lines
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node Starting with anomaly detection,  , cfenvgraph, Overview
+@node Fluctuation profiles, Starting with anomaly detection, cfenvgraph, Overview
+@section Fluctuation profiles
+
+Any model of fluctuating values is based on the idea that the changing signal
+has a basic separation of signal and noise. The variability of the signal
+is generally characterized by a probability distribution. Some tools and
+many papers assume that the distribution of fluctuations is Gaussian. This is almost
+never the case in real computer systems.
+
+Hurst exponent measures the degree of stability in the signal, in the following sense....
+
+
+@c -------------------------------------------------------------------------------
+@c SECTION
+@c -------------------------------------------------------------------------------
+
+@node Starting with anomaly detection,  , Fluctuation profiles, Overview
 @section Starting with anomaly detection
 
 @c looks for eps or png/jpg

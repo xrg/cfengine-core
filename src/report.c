@@ -185,7 +185,7 @@ for (ptr = VBINSERVERS; ptr != NULL; ptr=ptr->next)
    
    if (ptr->classes)
       {
-      printf("(if defined %s), ",ptr->classes);
+      printf("(pred::%s), ",ptr->classes);
       }
    }
 
@@ -203,7 +203,7 @@ printf ("\nDEFINED LINKS\n\n");
 
 for (ptr = VLINK; ptr != NULL; ptr=ptr->next)
    {
-   printf("\nFrom %s -> %s force=%c, attr=%d type=%c nofile=%d\n",ptr->from,ptr->to,ptr->force,ptr->silent,ptr->type, ptr->nofile);
+   printf("\nLINK %s -> %s force=%c, attr=%d type=%c nofile=%d\n",ptr->from,ptr->to,ptr->force,ptr->silent,ptr->type, ptr->nofile);
    for (ip = ptr->copy; ip != NULL; ip = ip->next)
       {
       printf(" Copy %s\n",ip->name);
@@ -252,7 +252,7 @@ printf ("\nDEFINED CHILD LINKS\n\n");
 
 for (ptr = VCHLINK; ptr != NULL; ptr=ptr->next)
    {
-   printf("\n%s->%s force=%c attr=%d, rec=%d\n",ptr->from,ptr->to,
+   printf("\nCLINK %s->%s force=%c attr=%d, rec=%d\n",ptr->from,ptr->to,
 	  ptr->force,ptr->silent,ptr->recurse);
    
    for (ip = ptr->copy; ip != NULL; ip = ip->next)
@@ -325,7 +325,7 @@ printf ("\nDEFINED SHELLCOMMANDS\n\n");
 
 for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
    {
-   printf("\n%s\n timeout=%d\n uid=%d,gid=%d\n",ptr->name,ptr->timeout,ptr->uid,ptr->gid);
+   printf("\nSHELLCOMMAND %s\n timeout=%d\n uid=%d,gid=%d\n",ptr->name,ptr->timeout,ptr->uid,ptr->gid);
    printf(" umask = %o, background = %c\n",ptr->umask,ptr->fork);
    printf (" ChDir=%s, ChRoot=%s\n",ptr->chdir,ptr->chroot);
    
@@ -367,7 +367,7 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
 	 continue;                             /* on one connection */
 	 } 
       
-      printf("\n%s\n +%o\n -%o\n dest: %s\n action: %s\n",ptr->path,ptr->plus,ptr->minus,
+      printf("\nCOPY %s\n Mode +%o\n     -%o\n TO dest: %s\n action: %s\n",ptr->path,ptr->plus,ptr->minus,
 	     ptr->destination,ptr->action);
 
       printf(" Size %c %d\n",ptr->comp,ptr->size);
@@ -505,11 +505,11 @@ for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
    {
    if (ptr->maxrecurse == INFINITERECURSE)
       {
-      printf("%s (maxrecurse = inf)\n",ptr->path);
+      printf("\nTIDY %s (maxrecurse = inf)\n",ptr->path);
       }
    else
       {
-      printf("%s (maxrecurse = %d)\n",ptr->path,ptr->maxrecurse);
+      printf("\nTIDY %s (maxrecurse = %d)\n",ptr->path,ptr->maxrecurse);
       }
    
    for (ip = ptr->exclusions; ip != NULL; ip = ip->next)
@@ -524,6 +524,7 @@ for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
       
    for(tp = ptr->tidylist; tp != NULL; tp=tp->next)
       {
+      printf("\n    FOR CLASSES (%s)\n",tp->classes);
       printf("    pat=%s, %c-age=%d, size=%d, linkdirs=%c, rmdirs=%c, travlinks=%c compress=%c\n",
 	     tp->pattern,tp->searchtype,tp->age,tp->size,tp->dirlinks,tp->rmdirs,tp->travlinks,tp->compress);
       
@@ -639,7 +640,7 @@ printf ("\nDEFINED DISABLE\n\n");
 
 for (ptr = VDISABLELIST; ptr != NULL; ptr=ptr->next)
    {
-   printf("\n %s:\n rotate=%d, type=%s, size%c%d action=%c\n",
+   printf("\nDISABLE %s:\n rotate=%d, type=%s, size%c%d action=%c\n",
 	  ptr->name,ptr->rotate,ptr->type,ptr->comp,ptr->size,ptr->action);
 
    if (ptr->repository)
@@ -672,7 +673,7 @@ printf ("\nDEFINED DIRECTORIES\n\n");
 
 for (ptr = VMAKEPATH; ptr != NULL; ptr=ptr->next)
    {
-   printf("%s\n +%o\n -%o\n %s\n",ptr->path,ptr->plus,ptr->minus,FILEACTIONTEXT[ptr->action]);
+   printf("DIRECTORY %s\n +%o\n -%o\n %s\n",ptr->path,ptr->plus,ptr->minus,FILEACTIONTEXT[ptr->action]);
 
    if (ptr->recurse == INFINITERECURSE)
       {
@@ -756,7 +757,7 @@ printf ("\nDEFINED FILES\n\n");
 
 for (ptr = VFILE; ptr != NULL; ptr=ptr->next)
    {
-   printf("\n%s\n +%o\n -%o\n +%o\n -%o\n %s\n travelinks=%c\n",
+   printf("\nFILE OBJECT %s\n +%o\n -%o\n +%o\n -%o\n %s\n travelinks=%c\n",
 	  ptr->path,ptr->plus,ptr->minus,ptr->plus_flags,ptr->minus_flags,
 	  FILEACTIONTEXT[ptr->action],ptr->travlinks);
    
@@ -874,7 +875,7 @@ for (ptr = VPROCLIST; ptr != NULL; ptr=ptr->next)
       sp = ptr->restart;
       }
    
-   printf("\n%s\n Restart = %s (useshell=%c)\n matches: %c%d\n signal=%s\n action=%c\n",
+   printf("\nPROCESS %s\n Restart = %s (useshell=%c)\n matches: %c%d\n signal=%s\n action=%c\n",
 	  ptr->expr,sp,ptr->useshell,ptr->comp,ptr->matches,SIGNALS[ptr->signal],ptr->action);
 
    printf (" ChDir=%s, ChRoot=%s\n",ptr->chdir,ptr->chroot);
@@ -969,7 +970,7 @@ printf("\nDEFINED FILE EDITS\n\n");
 
 for (ptr=VEDITLIST; ptr != NULL; ptr=ptr->next)
    {
-   printf("%s (%c)(r=%d)\n",ptr->fname,ptr->done,ptr->recurse);
+   printf("EDITFILE  %s (%c)(r=%d)\n",ptr->fname,ptr->done,ptr->recurse);
    printf(" Context scope: %s\n",ptr->scope);
    
    if (ptr->repository)
@@ -1023,4 +1024,19 @@ for (ptr=VFILTERLIST; ptr != NULL; ptr=ptr->next)
 	 }
       }
    }
+}
+
+/*******************************************************************/
+
+void ListDefinedVariables()
+
+{ struct cfObject *cp = NULL;
+
+ printf("\nDEFINED MACRO/VARIABLES (by contexts)\n");
+ 
+ for (cp = VOBJ; cp != NULL; cp=cp->next)
+    {
+    printf("\nOBJECT: %s\n",cp->scope);
+    PrintHashTable(cp->hashtable);
+    }
 }

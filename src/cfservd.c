@@ -149,7 +149,7 @@ ParseInputFiles();
 CheckVariables();
 SummarizeParsing();
 
- if (PARSEONLY)
+if (PARSEONLY)
    {
    exit(0);
    }
@@ -264,6 +264,7 @@ if (stat("/etc/SuSE-release",&statbuf) != -1)
    {
    Verbose("\nThis appears to be a SuSE system.\n");
    AddClassToHeap("SuSE");
+   linux_suse_version();
    }
 
 if (stat("/etc/slackware-release",&statbuf) != -1)
@@ -277,6 +278,12 @@ if (stat("/etc/debian_version",&statbuf) != -1)
    Verbose("\nThis appears to be a debian system.\n");
    AddClassToHeap("debian");
    debian_version();
+   }
+
+if (stat("/etc/UnitedLinux-release",&statbuf) != -1)
+   {
+   Verbose("\nThis appears to be a UnitedLinux system.\n");
+   AddClassToHeap("UnitedLinux");
    }
 
 if ((CFINITSTARTTIME = time((time_t *)NULL)) == -1)
@@ -1881,7 +1888,8 @@ bzero(realname,bufsize);
 if (lstat(filename,&statbuf) == -1)
    {
    snprintf(conn->output,bufsize*2,"Couldn't stat filename %s from host %s\n",filename,conn->hostname);
-   CfLog(cfverbose,conn->output,"lstat");   
+   CfLog(cfverbose,conn->output,"lstat");
+   CfLog(cflogonly,conn->output,"lstat");   
    return false;
    }
 
@@ -1895,7 +1903,8 @@ if (S_ISLNK(statbuf.st_mode))
     if (realpath(filename,realname) == NULL)
        {
        snprintf(conn->output,bufsize*2,"Couldn't resolve filename %s from host %s\n",filename,conn->hostname);
-       CfLog(cfverbose,conn->output,"lstat");   
+       CfLog(cfverbose,conn->output,"lstat");
+       CfLog(cflogonly,conn->output,"lstat");   
        return false;
        }
 #else
@@ -1916,8 +1925,8 @@ conn->maproot = false;
 for (ap = VADMIT; ap != NULL; ap=ap->next)
    {
    int res = false;
-   
-   if ((strlen(realname) > strlen(ap->path))  && strncmp(ap->path,realname,strlen(ap->path)) == 0 && realname[strlen(ap->path) == '/'])
+
+   if ((strlen(realname) > strlen(ap->path))  && strncmp(ap->path,realname,strlen(ap->path)) == 0 && realname[strlen(ap->path)] == '/')
       {
       res = true;    /* Substring means must be a / to link, else just a substring og filename */
       }
@@ -1929,7 +1938,7 @@ for (ap = VADMIT; ap != NULL; ap=ap->next)
    
    if (res)
       {
-      Debug("Found a match for in access list (%s,%s)\n",realname,ap->path);
+      Debug("Found a matching rule in access list (%s,%s)\n",realname,ap->path);
       if (stat(ap->path,&statbuf) == -1)
 	 {
 	 Verbose("Warning cannot stat file object %s in admit/grant, or access list refers to dangling link\n",ap->path);
@@ -1944,12 +1953,18 @@ for (ap = VADMIT; ap != NULL; ap=ap->next)
 	 }
       else
 	 {
+	 Debug("Checking whether to map root privileges..\n");
+	 
 	 if (IsWildItemIn(ap->maproot,conn->hostname) ||
 	     IsWildItemIn(ap->maproot,MapAddress(conn->ipaddr)) ||
 	     IsFuzzyItemIn(ap->maproot,MapAddress(conn->ipaddr)))
 	    {
 	    conn->maproot = true;
 	    Debug("Mapping root privileges\n");
+	    }
+	 else
+	    {
+	    Debug("No root privileges granted\n");
 	    }
 	 
 	 if (IsWildItemIn(ap->accesslist,conn->hostname) ||
@@ -1987,7 +2002,8 @@ if (access)
 else
    {
    snprintf(conn->output,bufsize*2,"Host %s denied access to %s\n",conn->hostname,realname);
-   CfLog(cfinform,conn->output,"");
+   CfLog(cfverbose,conn->output,"");
+   CfLog(cflogonly,conn->output,"");
    }
 
 
@@ -2294,7 +2310,7 @@ char *sendbuffer, *filename;
 
 bzero(&cfst,sizeof(struct cfstat));
   
-if (strlen(filename) > maxlinksize)
+if (strlen(ReadLastNode(filename)) > maxlinksize)
    {
    snprintf(sendbuffer,bufsize*2,"BAD: Filename suspiciously long [%s]\n",filename);
    CfLog(cferror,sendbuffer,"");

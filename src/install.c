@@ -37,9 +37,9 @@
 
 /*******************************************************************/
 
-void InstallLocalInfo (varvalue)
+void InstallControlRValue(lvalue,varvalue)
 
-char *varvalue;
+char *lvalue,*varvalue;
 
 { int number = -1;
   char buffer[maxvarsize], command[maxvarsize], *sp;
@@ -80,27 +80,20 @@ if (strncmp(value,"exec ",5) == 0)
    }
 
 /* end version 1 compat*/ 
-
-if (IsBuiltinFunction(value))
-   {
-   strcpy(value,EvaluateFunction(value,VBUFF));
-   }
  
-Debug1("\n(Action is control, variable [%s=%s])\n",CURRENTITEM,value);
-
 /* Actionsequence needs to be dynamical here, so make exception - should be IsInstallable?? */
  
-if ((ScanVariable(CURRENTITEM) != cfactseq) && !IsDefinedClass(CLASSBUFF))
+if ((ScanVariable(lvalue) != cfactseq) && !IsDefinedClass(CLASSBUFF))
    {
    Debug("Class %s not defined, not defining\n",CLASSBUFF);
    return;
    }
 else
    {
-   Debug1("Define:: variable [%s=%s] when %s)\n",CURRENTITEM,value,CLASSBUFF);
+   Debug1("Assign variable [%s=%s] when %s)\n",lvalue,value,CLASSBUFF);
    }
  
-switch (ScanVariable(CURRENTITEM))
+switch (ScanVariable(lvalue))
    {
    case cfsite:
    case cffaculty:  if (!IsDefinedClass(CLASSBUFF))
@@ -447,7 +440,7 @@ switch (ScanVariable(CURRENTITEM))
 		   break;
 
    default:
-                  AddMacroValue(CONTEXTID,CURRENTITEM,value);
+                  AddMacroValue(CONTEXTID,lvalue,value);
                   break;
    }
 }
@@ -459,6 +452,13 @@ void HandleEdit(file,edit,string)      /* child routines in edittools.c */
 char *file, *edit, *string;
 
 {
+if ( ! IsInstallable(CLASSBUFF))
+   {
+   InitializeAction();
+   Debug1("Not installing Edit no match\n");
+   return;
+   }
+
 if (string == NULL)
    {
    Debug1("Handling Edit of %s, action [%s] with no data\n",file,edit);
@@ -718,7 +718,7 @@ if (value[0] == '\0')
    yyerror("intefaces attribute with no value");
    }
 
-Debug1("HandleOptionalRequiredAttribute(%s)\n",value);
+Debug1("HandleOptionalInterfaceAttribute(value=%s)\n",value);
 
 switch(GetCommAttribute(item))
    {
@@ -1141,11 +1141,6 @@ char *item;
 
 { char value[maxvarsize];
 
-if (HAVE_RESTART)     /* wrote `restart' without following by ".." */
-   {
-   yyerror("Missing restart command (quoted string expected) or bad SetOptionString placement");
-   }
-
 VBUFF[0] = value[0] = '\0';
 
 ExpandVarstring(item,VBUFF,NULL);
@@ -1179,8 +1174,10 @@ switch(GetCommAttribute(item))
 		      }
                    break;
    case cfmatches: HandleProcessMatches(value);
+                   ACTIONPENDING = true;
                    break;
    case cfsignal:  HandleProcessSignal(value);
+                   ACTIONPENDING = true;
                    break;
    case cfdefine:  HandleDefine(value);
                    break;
@@ -1211,6 +1208,8 @@ switch(GetCommAttribute(item))
 		   
    default:        yyerror("Illegal process attribute");
    }
+
+ 
 }
 
 /*******************************************************************/
@@ -1308,7 +1307,7 @@ char *item;
 if (strcmp(item,"home") == 0)
    {
    ACTIONPENDING=true;
-   strcpy(CURRENTPATH,"home");
+   strcpy(CURRENTOBJECT,"home");
    return;
    }
 
@@ -1407,7 +1406,7 @@ else
 
 /*******************************************************************/
 
-void HandleGroupItem(item,type)
+void InstallGroupRValue(item,type)
 
 char *item;
 enum itemtypes type;
@@ -1424,7 +1423,7 @@ else
    ExpandVarstring(item,buff,NULL);
    }
 
-Debug1("Handling group item (%s) in group (%s), type=%d\n",buff,GROUPBUFF,type);
+Debug1("HandleGroupRVal(%s) group (%s), type=%d\n",buff,GROUPBUFF,type);
 
 switch (type)
    {
@@ -1452,7 +1451,7 @@ switch (type)
                       break;
                       }
 
-		   Debug("No match of class\n");
+		   Debug("[No match of class]\n\n");
 
                    break;
 
@@ -1577,7 +1576,7 @@ if (strcmp(item,VCURRENTFILE) == 0)
    FatalError("Infinite self-reference in class inheritance");
    }
 
-Debug1(">>Installing item (%s) in the import list\n",item);
+Debug1("\n\n [Installing item (%s) in the import list]\n\n",item);
 
 ExpandVarstring(item,VBUFF,"");
  
@@ -1644,6 +1643,8 @@ if (! IsInstallable(CLASSBUFF))
    Debug1("Not installing %s, no match\n",item);
    return;
    }
+
+ExpandVarstring(item,VBUFF,"");  
 
 AppendItem(&VHOMESERVERS,VBUFF,CLASSBUFF);
 }
@@ -2193,7 +2194,7 @@ char *path;
 
 Debug1("Installing item (%s) in the ignore list\n",path);
 
-if ( ! IsInstallable(CLASSBUFF))
+if (!IsInstallable(CLASSBUFF))
    {
    Debug1("Not installing %s, no match\n",path);
    return;
@@ -2237,7 +2238,7 @@ switch (action)
                   AddClassToStrategy(STRATEGYNAME,CURRENTITEM,STRATEGYDATA);
 		  break;
    case files:
-                  InstallFileListItem(CURRENTPATH,PLUSMASK,MINUSMASK,FILEACTION,VUIDNAME,
+                  InstallFileListItem(CURRENTOBJECT,PLUSMASK,MINUSMASK,FILEACTION,VUIDNAME,
 				      VGIDNAME,VRECURSE,(char)PTRAVLINKS,CHECKSUM);
                   break;
 
@@ -2245,9 +2246,12 @@ switch (action)
 				      PROSIGNAL,PROACTION,CLASSBUFF,USESHELL,VUIDNAME,VGIDNAME);
                    break;
    case image:
-                  InstallImageItem(CURRENTPATH,PLUSMASK,MINUSMASK,DESTINATION,
+                  InstallImageItem(CURRENTOBJECT,PLUSMASK,MINUSMASK,DESTINATION,
 				   IMAGEACTION,VUIDNAME,VGIDNAME,IMGSIZE,IMGCOMP,
 				   VRECURSE,COPYTYPE,LINKTYPE,CFSERVER);
+                  break;
+
+   case ignore:   AppendIgnore(CURRENTOBJECT);
                   break;
 
    case tidy:     if (VAGE >= 99999)
@@ -2255,35 +2259,39 @@ switch (action)
                      yyerror("Must specify an age for tidy actions");
                      return;
                      }
-                  InstallTidyItem(CURRENTPATH,CURRENTITEM,VRECURSE,VAGE,(char)PTRAVLINKS,
+                  InstallTidyItem(CURRENTOBJECT,CURRENTITEM,VRECURSE,VAGE,(char)PTRAVLINKS,
 				  TIDYSIZE,AGETYPE,LINKDIRS,TIDYDIRS,CLASSBUFF);
                   break;
 
-   case makepath: InstallMakePath(CURRENTPATH,PLUSMASK,MINUSMASK,VUIDNAME,VGIDNAME);
+   case makepath: InstallMakePath(CURRENTOBJECT,PLUSMASK,MINUSMASK,VUIDNAME,VGIDNAME);
                   break;
 
-   case disable:  AppendDisable(CURRENTPATH,CURRENTITEM,ROTATE,DISCOMP,DISABLESIZE);
+   case disable:  AppendDisable(CURRENTOBJECT,CURRENTITEM,ROTATE,DISCOMP,DISABLESIZE);
                   break;
 
    case shellcommands:
-                  AppendScript(CURRENTPATH,VTIMEOUT,USESHELL,VUIDNAME,VGIDNAME);
+                  AppendScript(CURRENTOBJECT,VTIMEOUT,USESHELL,VUIDNAME,VGIDNAME);
+		  InitializeAction();
 		  break;
 
    case alerts:
-       		  AppendItem(&VALERTS,CURRENTITEM,CLASSBUFF);
+                  if (strlen(CURRENTITEM) > 0)
+	             {
+                     AppendItem(&VALERTS,CURRENTITEM,CLASSBUFF);
+	             }
                   break;
    case interfaces:
-                  AppendInterface(VIFNAME,DESTINATION,CURRENTPATH);
+                  AppendInterface(VIFNAME,DESTINATION,CURRENTOBJECT);
 		  break;
 
    case disks:
    case required:
-                  InstallRequiredPath(CURRENTPATH,IMGSIZE);
+                  InstallRequiredPath(CURRENTOBJECT,IMGSIZE);
                   break;
 
    /* HvB: Bas van der Vlies */
    case mountables:
-		  InstallMountableItem(CURRENTPATH,MOUNTOPTS,MOUNT_RO);
+		  InstallMountableItem(CURRENTOBJECT,MOUNTOPTS,MOUNT_RO);
 		  break;
 
    case misc_mounts:
@@ -2320,11 +2328,10 @@ switch (action)
 		  break;
 
    case unmounta:
-                  AppendUmount(CURRENTPATH,DELETEDIR,DELETEFSTAB,FORCE);
+                  AppendUmount(CURRENTOBJECT,DELETEDIR,DELETEFSTAB,FORCE);
 		  break;
 		   
    case links:
-
                   if (LINKTO[0] == '\0')
                      {
                      return;
@@ -2354,6 +2361,7 @@ ACTIONPENDING = false;
 CURRENTITEM[0] = '\0';
 VRECURSE = 0;
 VAGE=99999;
+
 Debug1("   END InstallPending]\n\n");
 }
 
@@ -2399,7 +2407,6 @@ if ((strcmp(value,"timestamp") == 0))
 }
 
 /*******************************************************************/
-
 
 int EditFileExists(file)
 
@@ -2503,11 +2510,11 @@ char *file,*edit,*data;
 
 if (data == NULL)
    {
-   Debug1("InstallEditFile(%s,%s,-)\n",file,edit);
+   Debug1("InstallEditFile(%s,%s,-) with classes %s\n",file,edit,CLASSBUFF);
    }
 else
    {
-   Debug1("InstallEditFile(%s,%s,%s)\n",file,edit,data);
+   Debug1("InstallEditFile(%s,%s,%s) with classes\n",file,edit,data,CLASSBUFF);
    }
 
 if ( ! IsInstallable(CLASSBUFF))
@@ -2642,7 +2649,8 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
 
       if ((new->code = EditActionsToCode(edit)) == NoEdit)
          {
-         yyerror("Unknown edit action");
+	 snprintf(OUTPUT,bufsize,"Unknown edit action \"%s\"",edit);
+         yyerror(OUTPUT);
          }
 
       switch(new->code)
@@ -2735,6 +2743,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
                    {
                    yyerror("DefineInGroup outside a group");
                    }
+		AddInstallable(new->data);
                 break;
 	 case SetLine:
 	        if (FOREACHLEVEL > 0)
@@ -2760,7 +2769,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
 	 case DefineClasses:
 	     if (EDITGROUPLEVEL > 0 || FOREACHLEVEL > 0)
 		{
-		yyerror("Class definitions inside conditionals or loops are not allowed");
+		yyerror("Class definitions inside conditionals or loops are not allowed. Did you mean DefineInGroup?");
 		}
 	     AddInstallable(new->data);
 	     break;
@@ -2902,13 +2911,6 @@ Set2DList(tp);
 
 for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    {
-   if (*sp != '/')
-      {
-      yyerror("scripts or commands must have absolute path names");
-      printf ("cfengine: concerns: %s\n",sp);
-      return;
-      }
-
    if ((ptr = (struct ShellComm *)malloc(sizeof(struct ShellComm))) == NULL)
       {
       FatalError("Memory Allocation failed for AppendScript() #1");
@@ -2918,6 +2920,14 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       {
       FatalError("Memory Allocation failed for Appendscript() #2");
       }
+
+   if (*sp != '/')
+      {
+      yyerror("scripts or commands must have absolute path names");
+      printf ("cfengine: concerns: %s\n",sp);
+      return;
+      }
+
 
    if ((ptr->name = strdup(sp)) == NULL)
       {
@@ -3280,7 +3290,7 @@ void HandleTravLinks(value)
 char *value;
 
 {
-if (ACTION == tidy && strncmp(CURRENTPATH,"home",4) == 0)
+if (ACTION == tidy && strncmp(CURRENTOBJECT,"home",4) == 0)
    {
    yyerror("Can't use links= option with special variable home in tidy");
    yyerror("Use command line options instead.\n");
@@ -3837,6 +3847,15 @@ if ((ptr->expr = strdup(buf)) == NULL)
    }
 
 ExpandVarstring(restart,buf,"");
+
+if (strcmp(buf,"SetOptionString") == 0)
+   {
+   if ((strlen(buf) > 0) && buf[0] != '/')
+      {
+      snprintf(OUTPUT,bufsize,"Restart command (%s) does not have an absolute pathname",buf);
+      yyerror(OUTPUT);
+      }
+   }
  
 if ((ptr->restart = strdup(buf)) == NULL)
    {
@@ -4093,7 +4112,8 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
 	 }
       else
 	 {
-	 yyerror("Image needs an absolute pathname");
+	 snprintf(OUTPUT,bufsize,"Image %s needs an absolute pathname",buf2);
+	 yyerror(OUTPUT);
 	 return;
 	 }
       }
@@ -4245,6 +4265,9 @@ InitializeAction();
 
 void InstallAuthItem(path,attribute,list,listtop,classes)
 
+/* This is the top level interface for installing access rules
+   for the server. Picks out the structures by name. */
+
 char *path, *attribute, *classes;
 struct Auth **list, **listtop;
 
@@ -4270,7 +4293,6 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    }
 
 Delete2DList(tp);
-InitializeAction();
 }
 
 /*******************************************************************/
@@ -4320,7 +4342,7 @@ if (strcmp(value,"inf") == 0)
 else
    {
    /* Bas
-   if (strncmp(CURRENTPATH,"home",4) == 0)
+   if (strncmp(CURRENTOBJECT,"home",4) == 0)
       {
       Bas
       yyerror("Recursion is always infinite for home");
@@ -4469,6 +4491,7 @@ if (i < 0)
    }
 
 PROMATCHES = (short) i;
+ACTIONPENDING = true; 
 }
 
 /*******************************************************************/
@@ -4508,6 +4531,7 @@ if (i < 1 && i >= highest_signal)
    yyerror("Unknown signal in attribute - try using a number");
    }
 
+ACTIONPENDING = true; 
 PROSIGNAL = (short) i;
 }
 
@@ -4535,26 +4559,27 @@ void HandleBroadcast(value)
 char *value;
 
 {
-if (strlen(CURRENTPATH) != 0)
-    {
-    yyerror("redefinition of broadcast address");
-    }
-
+if (strlen(CURRENTOBJECT) != 0)
+   {	
+   yyerror("redefinition of broadcast address");
+   printf("Previous val = %s\n",CURRENTOBJECT);
+   }	
+ 
 if (strcmp("ones",value) == 0)
    {
-   strcpy(CURRENTPATH,"one");
+   strcpy(CURRENTOBJECT,"one");
    return;
    }
 
 if (strcmp("zeroes",value) == 0)
    {
-   strcpy(CURRENTPATH,"zero");
+   strcpy(CURRENTOBJECT,"zero");
    return;
    }
 
 if (strcmp("zeros",value) == 0)
    {
-   strcpy(CURRENTPATH,"zero");
+   strcpy(CURRENTOBJECT,"zero");
    return;
    }
 
@@ -5292,10 +5317,11 @@ struct Auth **list, **listtop;
 if (!IsDefinedClass(classes))
    {
    Debug1("Not installing Auth path, no match\n");
+   InitializeAction();
    return;
    }
 
-Debug1("InstallAuthPath(%s,%s)\n",path,hostname);
+Debug1("InstallAuthPath(%s,%s) for %s\n",path,hostname,classes);
 
 VBUFF[0]='\0';                                /* Expand any variables */
 ExpandVarstring(path,VBUFF,"");
@@ -5423,14 +5449,15 @@ Debug1("HandleAdmitFileAttribute(%s)\n",value);
 
 switch(GetCommAttribute(attribute))
    {
-   case cfencryp:  if ((strcmp(value,"on")==0) || (strcmp(value,"true")==0))
+   case cfencryp:  Debug("\nENCRYPTION tag %s\n",value);
+                   if ((strcmp(value,"on")==0) || (strcmp(value,"true")==0))
                       {
 		      ptr->encrypt = true;
 		      return true;
 		      }
                    break;
 
-   case cfroot:   
+   case cfroot:   Debug("\nROOTMAP tag %s\n",value);
                   ExpandVarstring(value,buffer,"");
  
 		  for (sp = buffer; *sp != '\0'; sp+=strlen(host))
@@ -5441,29 +5468,41 @@ switch(GetCommAttribute(attribute))
 			}
 
 		     host[0] = '\0';
-		     
-		     if (sscanf(sp,"%[^,]",host))
+
+		     if (sscanf(sp,"%[^,\n]",host))
 			{
-			if (!strstr(host,"."))
+			char copyhost[bufsize];
+
+			strncpy(copyhost,host,bufsize-1);
+			
+			if (!strstr(copyhost,"."))
 			   {
-			   if (strlen(host)+strlen(VDOMAIN) < maxvarsize-2)
+			   if (strlen(copyhost)+strlen(VDOMAIN) < maxvarsize-2)
 			      {
-			      strcat(host,".");
-			      strcat(host,VDOMAIN);
+			      strcat(copyhost,".");
+			      strcat(copyhost,VDOMAIN);
 			      }
 			   else
 			      {
 			      yyerror("Server name too long");
 			      }
 			   }
-			PrependItem(&(ptr->maproot),host,NULL);
+
+			if (!IsItemIn(ptr->maproot,copyhost))
+			   {
+			   PrependItem(&(ptr->maproot),copyhost,NULL);
+			   }
+			else
+			   {
+			   Debug("Not installing %s in rootmap\n",host);
+			   }
 			}
 		     }
 		  return true;
 		  break;
    }
 
-yyerror("Illegal admit attribute"); 
+yyerror("Illegal admit/deny attribute"); 
 return false;
 }
 

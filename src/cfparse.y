@@ -39,10 +39,10 @@ extern char *yytext;
 
 %}
 
-%token ID LIST ITEM VARPATH PATH LBRACK RBRACK CONTROL GROUPS
-%token ARROW EQUALS EDITFILES QSTRING VARITEM WILDCARD
-%token LBRACE RBRACE PARSECLASS LARROW
-%token ACL ADMIT DENY FILTERS STRATEGIES ACTIONTYPE
+%token LVALUE ID LIST ITEM VAROBJ LBRACK RBRACK CONTROL GROUPS
+%token ARROW EQUALS EDITFILES QSTRING WILDCARD RVALUE BCLASS
+%token LBRACE RBRACE PARSECLASS LARROW OPTION FUNCTION
+%token ACL ADMIT DENY FILTERS STRATEGIES ACTIONTYPE ACCESSOBJ
 
 %%
 
@@ -58,18 +58,18 @@ statement:             CONTROL controllist
                      | GROUPS
                      | ACTIONTYPE classlist
                      | ACTIONTYPE
+                     | EDITFILES
+                     | EDITFILES objects
                      | ACL objects
                      | ACL
                      | FILTERS objects
                      | FILTERS
                      | STRATEGIES objects
                      | STRATEGIES
-                     | ADMIT classlist
+                     | ADMIT classaccesslist
                      | ADMIT
-                     | DENY classlist
-                     | DENY
-                     | EDITFILES
-                     | EDITFILES objects;
+                     | DENY classaccesslist
+                     | DENY;
 
 controllist:           declarations
                      | PARSECLASS declarations
@@ -80,41 +80,46 @@ controllist:           declarations
 declarations:          declaration
                      | declarations declaration;
 
-classlist:             list
-                     | PARSECLASS list
+classlist:             entries
+                     | PARSECLASS entries
                      | PARSECLASS
                      | classlist PARSECLASS
-                     | classlist PARSECLASS list;
+                     | classlist PARSECLASS entries;
 
-declaration:           ID EQUALS bracketlist;
+classaccesslist:       accessentries
+                     | PARSECLASS accessentries
+                     | PARSECLASS
+                     | classaccesslist PARSECLASS
+                     | classaccesslist PARSECLASS accessentries;
 
-bracketlist:           LBRACK list RBRACK;
+declaration:           LVALUE EQUALS bracketlist;
 
-list:                  entry
-                     | list entry;
+bracketlist:           LBRACK rvalues RBRACK;
 
-entry:                 ITEM              
-                     | PATH ARROW PATH
-                     | PATH ARROW VARPATH 
-                     | PATH LARROW PATH
-                     | PATH LARROW ITEM
-                     | PATH LARROW VARPATH
-                     | PATH ARROW WILDCARD
-                     | VARPATH ARROW WILDCARD
-                     | PATH LARROW WILDCARD
-                     | VARPATH LARROW WILDCARD
-                     | VARPATH ARROW PATH
-                     | VARPATH ARROW VARPATH 
-                     | VARPATH LARROW PATH
-                     | VARPATH LARROW ITEM
-                     | VARPATH LARROW VARPATH
-                     | PATH
-                     | ID
-                     | VARPATH
-                     | VARITEM
-                     | WILDCARD       
-                     | QSTRING;
+rvalues:               RVALUE
+                     | FUNCTION
+                     | rvalues FUNCTION
+                     | rvalues RVALUE;
 
+entries:               entry
+                     | entries entry;
+
+accessentries:         accessentry
+                     | accessentries accessentry;
+
+entry:                 FUNCTION
+                     | VAROBJ options
+                     | VAROBJ ARROW VAROBJ options
+                     | VAROBJ LARROW VAROBJ options
+                     | QSTRING options;
+
+accessentry:           ACCESSOBJ
+                     | accessentry ACCESSOBJ
+                     | accessentry options;
+
+options:
+                     | options OPTION
+                     | OPTION;
 
 objects:               objectbrackets
                      | PARSECLASS
@@ -125,19 +130,16 @@ objects:               objectbrackets
 objectbrackets:        objectbracket
                      | objectbrackets objectbracket;
 
-objectbracket:         LBRACE PATH objlist RBRACE
-                     | LBRACE VARPATH objlist RBRACE
-                     | LBRACE ID objlist RBRACE
-                     | LBRACE ITEM objlist RBRACE;
+objectbracket:         LBRACE VAROBJ objlist RBRACE
+                     | LBRACE ID objlist RBRACE;
 
 objlist:               obj
                      | objlist obj;
 
-obj:                   ITEM QSTRING
-                     | ITEM
-                     | PATH
-                     | WILDCARD
-                     | WILDCARD QSTRING;
+obj:                   BCLASS QSTRING
+                     | ID QSTRING
+                     | ID
+                     | VAROBJ;
 
 %%
 

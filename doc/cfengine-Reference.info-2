@@ -331,7 +331,7 @@ space character, since this is normally used to edit filenames or text
 messages within program code.
 
 
-File: cfengine-Reference.info,  Node: ChecksumDatabase,  Next: ChecksumUpdates,  Prev: BinaryPaddingChar,  Up: control
+File: cfengine-Reference.info,  Node: ChecksumDatabase,  Next: ChecksumPurge,  Prev: BinaryPaddingChar,  Up: control
 
 ChecksumDatabase
 ----------------
@@ -343,7 +343,37 @@ digests (i.e. cryptographic checksums) of files for security purposes,
 *Note files::, `checksum='.
 
 
-File: cfengine-Reference.info,  Node: ChecksumUpdates,  Next: childlibpath,  Prev: ChecksumDatabase,  Up: control
+File: cfengine-Reference.info,  Node: ChecksumPurge,  Next: ChecksumUpdates,  Prev: ChecksumDatabase,  Up: control
+
+ChecksumPurge
+-------------
+
+     ChecksumPurge = ( on )
+
+   This variable defaults to `off'. If set to true, cfagent will look
+at all of the registered files in the database and check whether thet
+still exist. If the file no longer exists, it is removed from the
+database and a warning is issued.
+
+   To purge files now and then, but at no particular time, one could do
+something like this:
+
+     strategies:
+     
+      { purging
+     
+      NowAndThen: 1
+      ElseWhen:   49
+      }
+     
+     control:
+     
+      NowAndThen::
+     
+        ChecksumPurge = ( on )
+
+
+File: cfengine-Reference.info,  Node: ChecksumUpdates,  Next: childlibpath,  Prev: ChecksumPurge,  Up: control
 
 ChecksumUpdates
 ---------------
@@ -806,7 +836,9 @@ moduledirectory
    This is the directory where cfengine will look for plug-in modules
 for the actionsequence, *Note actionsequence::. Plugin modules may be
 used to activate classes using special algorithms.  *Note Writing
-plugin modules: (cfengine-Tutorial)Writing plugin modules.
+plugin modules: (cfengine-Tutorial)Writing plugin modules.  This
+variable defaults to `/var/cfengine/modules' for privileged users and
+to `$HOME)/.cfengine/modules' for non-privileged users.
 
 
 File: cfengine-Reference.info,  Node: mountpattern,  Next: netmask,  Prev: moduledirectory,  Up: control

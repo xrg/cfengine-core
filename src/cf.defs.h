@@ -261,7 +261,7 @@ extern int errno;
 #define recursion_limit 100
 #define cf_monday_morning 342000
 
-#define exec_ifelapsed 5
+#define exec_ifelapsed 2
 #define exec_expireafter 10
 
 

@@ -1025,11 +1025,12 @@ Variable Index
 * $(tab):                                Special variables.
 * $(timezone):                           Special variables.
 * $(year):                               Special variables.
+* ${EmailMaxLines}:                      Special variables.
 * +:                                     groups.
-* -D option <1>:                         Cfengine classes.
-* -D option:                             addclasses.
-* -l <1>:                                tidy.
-* -l:                                    Syntax.
+* -D option <1>:                         addclasses.
+* -D option:                             Cfengine classes.
+* -l <1>:                                Syntax.
+* -l:                                    tidy.
 * -L:                                    Single links.
 * -N option <1>:                         addclasses.
 * -N option:                             Cfengine classes.
@@ -1060,6 +1061,7 @@ Variable Index
 * cfrc:                                  cfrc resource file.
 * ChangedBefore():                       Evaluated classes.
 * ChecksumDatabase:                      ChecksumDatabase.
+* ChecksumPurge:                         ChecksumPurge.
 * ChecksumUpdates:                       ChecksumUpdates.
 * checktimezone:                         actionsequence.
 * childlinks:                            actionsequence.
@@ -1075,6 +1077,7 @@ Variable Index
 * editfiles:                             actionsequence.
 * editfilesize <1>:                      control.
 * editfilesize:                          editfilesize.
+* EmailMaxLines:                         Cfexecd reference.
 * empty:                                 disable.
 * EmptyResolvConf:                       emptyresolvconf.
 * Exclamation:                           exclamation.
@@ -1085,14 +1088,14 @@ Variable Index
 * filter:                                filters.
 * force= <1>:                            disks.
 * force=:                                copy.
-* freespace= <1>:                        disks.
-* freespace=:                            required.
+* freespace= <1>:                        required.
+* freespace=:                            disks.
 * g=:                                    Syntax.
 * group:                                 Syntax.
 * groups:                                groups.
 * home:                                  Syntax.
-* homepattern:                           mountables.
 * HomePattern:                           homepattern.
+* homepattern:                           mountables.
 * homeservers:                           homeservers.
 * import:                                import.
 * include=:                              Syntax.
@@ -1105,13 +1108,13 @@ Variable Index
 * l=:                                    Syntax.
 * LD_LIBRARY_PATH:                       control.
 * link:                                  Syntax.
-* linkchildren <1>:                      Link Children.
-* linkchildren:                          Files linkchildren.
-* links <1>:                             links.
-* links:                                 actionsequence.
+* linkchildren <1>:                      Files linkchildren.
+* linkchildren:                          Link Children.
+* links <1>:                             actionsequence.
+* links:                                 links.
 * m=:                                    Syntax.
-* mailcheck <1>:                         mailserver.
-* mailcheck:                             actionsequence.
+* mailcheck <1>:                         actionsequence.
+* mailcheck:                             mailserver.
 * mailserver:                            mailserver.
 * MaxCfengines:                          Special variables.
 * miscmounts:                            miscmounts.
@@ -1136,8 +1139,8 @@ Variable Index
 * pattern:                               tidy.
 * processes:                             actionsequence.
 * purge=:                                copy.
-* r= <1>:                                tidy.
-* r=:                                    Syntax.
+* r= <1>:                                Syntax.
+* r=:                                    tidy.
 * recurse <1>:                           tidy.
 * recurse:                               Syntax.
 * repchar:                               Special variables.
@@ -1168,8 +1171,8 @@ Variable Index
 * sysadm <1>:                            control.
 * sysadm <2>:                            Cfexecd reference.
 * sysadm:                                sysadm.
-* tidy <1>:                              actionsequence.
-* tidy:                                  tidy.
+* tidy <1>:                              tidy.
+* tidy:                                  actionsequence.
 * timezone:                              control.
 * touch:                                 touch.
 * truncate:                              disable.

@@ -2789,7 +2789,14 @@ the same way. There is no difference between them.
 @vindex `
 @mbindex How do I quote quotes?
 If you need to quote a quoted string, then you should choose a delimiter
-which does not conflict with the substring.
+which does not conflict with the substring before version 2.0.7.
+From version 2.0.7, you can escape quotes.
+
+@smallexample
+
+  qstring = ( "One string\"with substring\" escaped" )
+
+@end smallexample
 
 Note that you can use special variables for certain symbols in a string
 @xref{Variable substitution}.

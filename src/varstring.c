@@ -143,6 +143,8 @@ char *str;
   int dollar = false;
   int bracks = 0, vars = 0;
 
+Debug1("IsVarString(%s) - syntax verify\n",str);
+  
 for (sp = str; *sp != '\0' ; sp++)       /* check for varitems */
    {
    switch (*sp)

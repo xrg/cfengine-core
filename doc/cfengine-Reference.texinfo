@@ -759,6 +759,12 @@ be interpreted as a list variable, since it contains the default separator
 The currently defined domain.
 @vindex $(domain)
 
+@item EmailMaxLines
+Most lines of output to email from a single cfexecd-induced run of
+cfagent. If undefined, defaults to 100. Set to 0, no email is sent by
+cfexecd. Set to @code{inf}, no maximum is enforced.
+@vindex $@{EmailMaxLines@}
+
 @item faculty
 The faculty or site as defined in control (see site).
 @vindex $(faculty)
@@ -1706,7 +1712,7 @@ executed. The syntax of declarations here is:
 
      @var{classes}::
 
-        @var{variable} = ( @var{list or value} )
+        @var{variable} = ( @var{list or value} @var{function}(@var{args}) )
 
 @end smallexample
 @end cartouche
@@ -1741,11 +1747,20 @@ control:
 
   myvariable = ( something )
   mymacro    = ( somethingelse )
+  myrandom   = ( RandInt(3,6) )
 
 @end smallexample 
 
 @noindent
 Parentheses are required when making a declaring information in cfengine.
+Note that a limited number of in-built functions exists:
+@cindex RandomInt() function
+@itemize @bullet
+@item 
+@code{RandomInt(a,b)}
+Is substituted for a random number between (a,b).
+@end itemize
+
 @vindex site
 @vindex domain
 @vindex sysadm
@@ -1769,6 +1784,7 @@ The meaning of each of these lines is described below.
 * AutoDefine::                  
 * BinaryPaddingChar::           
 * ChecksumDatabase::            
+* ChecksumPurge::               
 * ChecksumUpdates::             
 * childlibpath::                
 * copylinks::                   
@@ -2274,7 +2290,7 @@ or text messages within program code.
 @c SUBSECTION
 @c .....................................................
 
-@node ChecksumDatabase, ChecksumUpdates, BinaryPaddingChar, control
+@node ChecksumDatabase, ChecksumPurge, BinaryPaddingChar, control
 @subsection ChecksumDatabase
 
 @smallexample
@@ -2295,7 +2311,48 @@ for security purposes, @xref{files}, @code{checksum=}.
 @c SUBSECTION
 @c .....................................................
 
-@node ChecksumUpdates, childlibpath, ChecksumDatabase, control
+@node ChecksumPurge, ChecksumUpdates, ChecksumDatabase, control
+@subsection ChecksumPurge
+
+
+@smallexample
+ChecksumPurge = ( on )
+
+@end smallexample
+
+@cindex ChecksumPurge
+@vindex ChecksumPurge
+This variable defaults to `off'. If set to true, cfagent will
+look at all of the registered files in the database and check
+whether thet still exist. If the file no longer exists, it
+is removed from the database and a warning is issued.
+
+To purge files now and then, but at no particular time, one could do
+something like this:
+@smallexample
+
+strategies:
+
+ @{ purging
+
+ NowAndThen: 1
+ ElseWhen:   49
+ @}
+
+control:
+
+ NowAndThen::
+
+   ChecksumPurge = ( on )
+
+
+@end smallexample
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node ChecksumUpdates, childlibpath, ChecksumPurge, control
 @subsection ChecksumUpdates
 
 
@@ -2316,6 +2373,7 @@ switched to `off' again to reduce the risk of missing a security
 alert. Alternatively, if you are confident that the first message is
 sufficient, it can be left as `on' so that only one message is
 given.
+
 
 @c .....................................................
 @c SUBSECTION
@@ -2933,6 +2991,8 @@ This is the directory where cfengine will look for plug-in modules
 for the actionsequence, @xref{actionsequence}. Plugin modules
 may be used to activate classes using special algorithms. 
 @xref{Writing plugin modules,Writing plugin modules,Writing plugin modules,cfengine-Tutorial}.
+This variable defaults to @file{/var/cfengine/modules} for privileged users and
+to @file{$HOME)/.cfengine/modules} for non-privileged users.
 
 @c .....................................................
 @c SUBSECTION
@@ -4601,6 +4661,8 @@ double quotes and vice-versa. Otherwise a double quoted string
 may not currently contain double quotes and likewise for
 single quoted strings.
 
+As of version 2.0.6 quoted strings may contain escaped quotes
+using @code{\"}.
 
 As of version 1.3.0, you can use the @samp{home} directive in
 edit filenames, enabling you to edit files for every user
@@ -4671,10 +4733,10 @@ in a file once only, you could write:
     IncrementPointer   "1"
 
     BeginGroupIfNoMatch "# cfengine - 2/Jan/95"
-      IncremenetPointer "-1"
+      IncrementPointer "-1"
       InsertLine "# cfengine - 2/Jan/95"
       InsertLine "/local/bin/start-xdm"
-
+      DefineInGroup "AddedXDM"
     EndGroup
    @}
 
@@ -4682,7 +4744,9 @@ in a file once only, you could write:
 
 @noindent
 Since the first inserted line matches the predicate on subsequent calls,
-the grouped lines will only be carried out once.  
+the grouped lines will only be carried out once. When the grouped
+lines are run, the @samp{AddedXDM} class will be activated for use by
+a later part of the script.
 
 
 
@@ -4781,6 +4845,16 @@ file named @file{/etc/auto_direct}.
 @item Backup @var{quoted-string}
 Set to true or false, on or off to set inform level for this file.
 Default is on.
+The default is to produce time-stamped backups of files; this may be
+coded explicitly by setting to "timestamp" or "stamp". If set to "false"
+or "off", no backup is kept of the edited file. If the value is set to
+"single" or "one" then only the last version of the file is kept, overwriting
+any previously saved versions.
+@smallexample
+   Backup "single"
+@end smallexample 
+@cindex Backup
+
 
 @item BeginGroupIfDefined @var{quoted-string}
 The lines following, up to the first @code{EndGroup}
@@ -4896,6 +4970,12 @@ This will define service_added and service_added_another_way if
 either line is added, but additionally myservice1_added if myservice1
 was added and likewise for myservice2_added.
 
+@item DefineInGroup "@var{class1}:@var{class2}:..."
+Activate the following colon, comma or dot-separated list of classes
+if execution reaches the @code{BeginGroup} ... @code{EndGroup}
+section(s) containing this command. If you think you want to put
+DefineClasses within a @code{BeginGroup} ... @code{EndGroup} section,
+you actually want this.
 
 @item DeleteLinesAfterThisMatching @var{quoted-regex}
 Delete lines after the current position which match the quoted expression.
@@ -4923,16 +5003,6 @@ given expression, a warning is only printed in
 verbose mode, but all edits are immediately
 abandoned.
 
-@item EditBackup
-The default is to produce time-stamped backups of files; this may be
-coded explicitly by setting to "timestamp" or "stamp". If set to "false"
-or "off", no backup is kept of the edited file. If the value is set to
-"single" or "one" then only the last version of the file is kept, overwriting
-any previously saved versions.
-@smallexample
-   EditBackup "single"
-@end smallexample 
-@cindex EditBackup
 
 @item EditMode "Binary"
 If set to binary, the file will be edited as if it were a non-ASCII file.
@@ -8588,16 +8658,22 @@ the system administrator will be emailed a summary of any output:
 
 control:
 
-smtpserver = ( mailhub.example.org ) # site MTA which can talk smtp
-sysadm     = ( mark@@example.org )   # mail address of sysadm
+smtpserver    = ( mailhub.example.org ) # site MTA which can talk smtp
+sysadm        = ( mark@@example.org )    # mail address of sysadm
+EmailMaxLines = ( @var{n} )                 # max lines of output to email
 
 @end smallexample
 
 @noindent
-Fill in suitable values for these variables.
+Fill in suitable values for these variables. @code{EmailMaxLines} may
+be set to 0 to disable email output, a postive integer to set a limit,
+or @code{inf} to email the whole output regardless of its size. If
+undefined, @code{EmailMaxLines} defaults to 100.
+
 @cindex Mailing output
 @vindex smtpserver
 @vindex sysadm
+@vindex EmailMaxLines
 @cindex cfexecd
 An alternative, or additional way to run cfengine, is to run the @file{cfexecd}
 program is daemon mode (without the @samp{-F}) option. In this mode, the daemon

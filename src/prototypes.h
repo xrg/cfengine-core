@@ -375,7 +375,7 @@ void ActAsDaemon ARGLIST((int preserve));
 
 /* install.c */
 
-void InstallLocalInfo  ARGLIST((char *varvalue));
+void InstallControlRValue ARGLIST((char *lvalue,char *varvalue));
 void HandleEdit ARGLIST((char *file, char *edit, char *string));
 void HandleOptionalFileAttribute ARGLIST((char *item));
 void HandleOptionalMountablesAttribute ARGLIST((char *item));
@@ -396,7 +396,7 @@ void HandleFileItem ARGLIST((char *item));
 void InstallObject ARGLIST((char *name));
 void InstallBroadcastItem ARGLIST((char *item));
 void InstallDefaultRouteItem ARGLIST((char *item));
-void HandleGroupItem ARGLIST((char *item, enum itemtypes type));
+void InstallGroupRValue ARGLIST((char *rval, enum itemtypes type));
 void HandleHomePattern ARGLIST((char *pattern));
 void AppendNameServer ARGLIST((char *item));
 void AppendImport ARGLIST((char *item));
@@ -582,6 +582,7 @@ void ShowAction ARGLIST((void));
 
 /* macro.c */
 
+void SetContext ARGLIST((char *id));
 void InitHashTable ARGLIST((char **table));
 void PrintHashTable ARGLIST((char **table));
 int Hash ARGLIST((char *name));
@@ -597,6 +598,7 @@ struct cfObject *ObjectContext ARGLIST((char *scope));
 /* misc.c */
 
 int linux_redhat_version ARGLIST((void));
+int linux_suse_version ARGLIST((void));
 int debian_version ARGLIST((void));
 char * UnQuote ARGLIST((char *name));
 int DirPush ARGLIST((char *name,struct stat *sb));
@@ -610,6 +612,7 @@ int ChecksumChanged ARGLIST((char *filename, unsigned char digest[EVP_MAX_MD_SIZ
 char *ChecksumPrint   ARGLIST((char type,unsigned char digest[EVP_MAX_MD_SIZE+1]));
 void ChecksumFile  ARGLIST((char *filename,unsigned char digest[EVP_MAX_MD_SIZE+1],char type));
 int ChecksumsMatch ARGLIST((unsigned char digest1[EVP_MAX_MD_SIZE+1],unsigned char digest2[EVP_MAX_MD_SIZE+1],char type));
+void ChecksumPurge ARGLIST((void));
 void ChecksumString  ARGLIST((char *buffer,int len,unsigned char digest[EVP_MAX_MD_SIZE+1],char type));
 int IgnoredOrExcluded ARGLIST((enum actions action, char *file, struct Item *inclusions, struct Item *exclusions));
 void Banner ARGLIST((char *string));
@@ -639,24 +642,6 @@ int ReceiveTransaction ARGLIST((int sd, char *buffer,int *more));
 int RecvSocketStream ARGLIST((int sd, char *buffer, int toget, int nothing));
 int SendSocketStream ARGLIST((int sd, char *buffer, int toget, int flags));
 
-/* parse.c */
-
-void ParseInputFiles ARGLIST((void));
-int ParseBootFiles ARGLIST((void));
-void ParseFile ARGLIST((char *f,char *env));
-void NewParser ARGLIST((void));
-void DeleteParser ARGLIST((void));
-void SetAction  ARGLIST((enum actions action));
-void HandleId ARGLIST((char *id));
-void HandleClass  ARGLIST((char *id));
-void HandleItem  ARGLIST((char *item));
-void HandlePath  ARGLIST((char *path));
-void HandleVarpath  ARGLIST((char *varpath));
-void HandleWildcard ARGLIST((char *wildcard));
-int CompoundId ARGLIST((char *id));
-void InitializeAction ARGLIST((void));
-void SetMountPath  ARGLIST((char *value));
-void SetRepository  ARGLIST((char *value));
 
 /* strategies.c */
 
@@ -664,6 +649,32 @@ void InstallStrategy ARGLIST((char *value, char *classes));
 void AddClassToStrategy ARGLIST((char *alias,char *class,char *value));
 void SetStrategies ARGLIST((void));
 void GetNonMarkov ARGLIST((void));
+
+/* parse.c */
+
+void ParseInputFiles ARGLIST((void));
+int ParseBootFiles ARGLIST((void));
+void ParseFile ARGLIST((char *f,char *env));
+void NewParser ARGLIST((void));
+void RemoveEscapeSequences ARGLIST((char *from,char *to));
+void DeleteParser ARGLIST((void));
+void SetAction ARGLIST((enum actions action));
+void HandleLValue ARGLIST((char *id));
+void HandleBraceObjectClassifier ARGLIST((char *id));
+void HandleBraceObjectID ARGLIST((char *id));
+void HandleClass ARGLIST((char *id));
+void HandleServerRule ARGLIST((char *obj));
+void HandleGroupRValue ARGLIST((char *item));
+void HandleFunctionObject  ARGLIST((char *fn));
+void HandleQuotedString  ARGLIST((char *qstring));
+void HandleVarObject  ARGLIST((char *path));
+void HandleVarpath  ARGLIST((char *varpath));
+void HandleOption ARGLIST((char *option));
+int CompoundId ARGLIST((char *id));
+void InitializeAction ARGLIST((void));
+void SetMountPath  ARGLIST((char *value));
+void SetRepository  ARGLIST((char *value));
+
 
 /* patches.c */
 
