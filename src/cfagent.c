@@ -63,6 +63,7 @@ void CheckClass ARGLIST((char *class, char *source));
 void SetContext ARGLIST((char *id));
 void DeleteCaches ARGLIST((void));
 void CheckForMethod ARGLIST((void));
+void CheckMethodReply ARGLIST((void));
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -82,8 +83,7 @@ signal (SIGHUP,HandleSignal);
 signal (SIGINT,HandleSignal);
 signal (SIGPIPE,HandleSignal);
 
-Initialize(argc,argv);
-
+Initialize(argc,argv); 
 SetReferenceTime(true);
 SetStartTime(false);
  
@@ -107,7 +107,6 @@ if (IsPrivileged() && !MINUSF && !PRMAILSERVER)
       CheckSystemVariables();
       if (!PARSEONLY)
 	 {
-	 SetStrategies(); 
 	 DoTree(1,"Update");
 	 EmptyActionSequence();
 	 DeleteClassesFromContext("update");
@@ -127,12 +126,12 @@ SetContext("main");
 
 if (!PARSEONLY)
    {
+   PersistentClassesToHeap();
    GetEnvironment();
    }
  
 ParseInputFile(VINPUTFILE);
 CheckFilters();
-SetStrategies(); 
 EchoValues();
 CheckForMethod();
  
@@ -180,8 +179,7 @@ if (PARSEONLY)                            /* Establish lock for root */
    exit(0);
    } 
  
-openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_USER);
-
+CfOpenLog();
 CheckSystemVariables();
 
 SetReferenceTime(false); /* Reset */
@@ -189,6 +187,8 @@ SetReferenceTime(false); /* Reset */
 DoTree(2,"Main Tree"); 
 DoAlerts();
 
+CheckMethodReply();
+ 
 if (OptionIs(CONTEXTID,"ChecksumPurge", true)) 
    {
    ChecksumPurge();
@@ -229,7 +229,10 @@ ALLCLASSBUFFER[0] = '\0';
 VREPOSITORY = strdup("\0");
 
 strcpy(METHODNAME,"cf-nomethod"); 
-
+METHODREPLYTO[0] = '\0';
+METHODRETURNVARS[0] = '\0';
+METHODRETURNCLASSES[0] = '\0';
+ 
 #ifndef HAVE_REGCOMP
 re_syntax_options |= RE_INTERVALS;
 #endif
@@ -432,7 +435,7 @@ void DeleteCaches()
 
 void ReadRCFile()
 
-{ char filename[bufsize], buffer[bufsize], *sp, *mp;
+{ char filename[bufsize], buffer[bufsize], *mp;
   char class[maxvarsize], variable[maxvarsize], value[maxvarsize];
   int c;
   FILE *fp;
@@ -440,17 +443,7 @@ void ReadRCFile()
 filename[0] = buffer[0] = class[0] = variable[0] = value[0] = '\0';
 LINENUMBER = 0;
 
-if ((sp=getenv(CFINPUTSVAR)) != NULL)
-   {
-   strcpy(filename,sp);
-   if (filename[strlen(filename)-1] != '/')
-      {
-      strcat(filename,"/");
-      }
-   }
-
-strcat(filename,VRCFILE);
-
+snprintf(filename,bufsize,"%s/inputs/%s",WORKDIR,VRCFILE);
 if ((fp = fopen(filename,"r")) == NULL)      /* Open root file */
    {
    return;
@@ -561,7 +554,7 @@ void GetEnvironment()
   struct stat statbuf;
 
 Debug1("GetEnvironment()\n");
-snprintf(env,bufsize,"%s/%s",WORKDIR,ENV_FILE);
+snprintf(env,bufsize,"%s/state/%s",WORKDIR,ENV_FILE);
 
 if (stat(env,&statbuf) == -1)
    {
@@ -869,10 +862,17 @@ Verbose("LogDirectory = %s\n",VLOGDIR);
   
 LoadSecretKeys();
  
-if (GetMacroValue(CONTEXTID,"libpath"))
-   { 
-   snprintf(VBUFF,bufsize,"LD_LIBRARY_PATH=%s",GetMacroValue(CONTEXTID,"libpath"));
-   putenv(VBUFF);
+if (GetMacroValue(CONTEXTID,"childlibpath"))
+   {
+   snprintf(VBUFF,bufsize,"LD_LIBRARY_PATH=%s",GetMacroValue(CONTEXTID,"childlibpath"));
+   if (putenv(strdup(VBUFF)) == 0)
+      {
+      Verbose("Setting %s\n",VBUFF);
+      }
+   else
+      {
+      Verbose("Failed to set %s\n",GetMacroValue(CONTEXTID,"childlibpath"));
+      }
    }
 
 if (GetMacroValue(CONTEXTID,"MaxCfengines"))
@@ -1012,7 +1012,7 @@ else
    }
 
 Verbose("Checksum database is %s\n",CHECKSUMDB); 
-
+ 
 if (GetMacroValue(CONTEXTID,"CompressCommand"))
    {
    ExpandVarstring("$(CompressCommand)",VBUFF,NULL);
@@ -1218,6 +1218,7 @@ for (PASS = 1; PASS <= passes; PASS++)
 	     break;
 	     
 	 case disabl:
+	 case renam:
 	     DisableFiles();
 	     break;
 	     
@@ -1554,7 +1555,7 @@ int argc;
   int optindex = 0;
   int c;
 
-while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o:",OPTIONS,&optindex)) != EOF)
+while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o:Z:",OPTIONS,&optindex)) != EOF)
   {
   switch ((char) c)
       {
@@ -1591,6 +1592,8 @@ while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o
 		   case '3': D3 = true;
 		             VERBOSE = true;
 		             break;
+		   case '4': D4 = true;
+		             break;
                    default:  DEBUG = true;
                              break;
                    }
@@ -1606,7 +1609,7 @@ while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o
       case 'A': IGNORELOCK = true;
 	        break;
 		
-      case 'D': AddCompoundClass(optarg);
+      case 'D': AddMultipleClasses(optarg);
                 break;
 
       case 'N': NegateCompoundClass(optarg,&VNEGHEAP);
@@ -1627,7 +1630,7 @@ while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o
       case 'v': VERBOSE = true;
                 break;
 
-      case 'l': TRAVLINKS = true;
+      case 'l': FatalError("Option -l is deprecated -- too dangerous");
                 break;
 
       case 'n': DONTDO = true;
@@ -1664,6 +1667,10 @@ while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o
 		PARSEONLY = true;
 		break;
 
+      case 'Z': strncpy(METHODMD5,optarg,bufsize-1);
+  	        Debug("Got method call reference %s\n",METHODMD5);
+   	        break;
+		
       case 'L': KILLOLDLINKS = true;
                 break;
 
@@ -1729,10 +1736,18 @@ void CheckForMethod()
 
 { struct Item *ip,*ip1,*ip2,*args = NULL;
   char argbuffer[bufsize];
- 
+  struct Method *mp;
+  int i = 0;
+
+  
 if (strcmp(METHODNAME,"cf-nomethod") == 0)
    {
    return;
+   }
+
+if (! MINUSF)
+   {
+   FatalError("Input files claim to be a module but this is a parent process\n");
    }
 
 Verbose("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n+\n");
@@ -1745,33 +1760,55 @@ if (METHODARGS == NULL)
 else
    {
    Verbose("+\n+ Method argument prototype = (");
+
+   i = 1;
+   
    for (ip = METHODARGS; ip != NULL; ip=ip->next)
       {
-      if (IsDefinedClass(ip->classes))
-	 {
-	 Verbose(" %s",ip->name);
-	 }
+      i++;
       }
+
+   METHODARGV = (char **) malloc(sizeof(char *) * i); 
+   
+   i = 0;
+
+   for (ip = METHODARGS; ip != NULL; ip=ip->next)
+      {
+      /* Fill this temporarily with the formal parameters */
+      METHODARGV[i++] = ip->name; 
+      }
+
+   METHODARGC = i;
+   
    Verbose(" )\n+\n");
    }
  
 Verbose("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n");
 
-Verbose("Looking for a data package for this method...");
- 
+Verbose("Looking for a data package for this method (%s)\n",METHODMD5);
 
-printf("REPLY-PROTOTYPE: ");
+if (!ChildLoadMethodPackage(METHODNAME,METHODMD5))
+   {
+   snprintf(OUTPUT,bufsize,"No valid incoming request to execute method (%s)\n",METHODNAME);
+   CfLog(cfinform,OUTPUT,"");
+   exit(0);
+   }
+}
 
-// Print protolist
 
-LoadMethodPackage(METHODNAME);     
- 
-Verbose("Collecting arg list");
- 
-fgets(argbuffer,bufsize-1,stdin);  /* Read authorization prototype */
+/*******************************************************************/
 
-args = ListFromArgs(argbuffer);
+void CheckMethodReply()
 
+{
+if (ScopeIsMethod())
+    {
+    if (strlen(METHODREPLYTO) > 0)
+       {
+       Banner("Method reply message");
+       DispatchMethodReply();
+       }
+    }
 }
 
 /*******************************************************************/
@@ -2023,7 +2060,7 @@ for (i=0; OPTIONS[i].name != NULL; i++)
    printf("--%-20s    (-%c)\n",OPTIONS[i].name,(char)OPTIONS[i].val);
    }
 
-printf("\nDebug levels: 1=parsing, 2=running, 3=summary\n");
+printf("\nDebug levels: 1=parsing, 2=running, 3=summary, 4=expression eval\n");
 
 printf("\nBug reports to bug-cfengine@gnu.org (News: gnu.cfengine.bug)\n");
 printf("General help to help-cfengine@gnu.org (News: gnu.cfengine.help)\n");

@@ -1,11 +1,12 @@
-man_MANS = cfengine.8
+man_MANS = cfengine.8 cfagent.8  cfenvd.8  cfenvgraph.8  cfexecd.8  cfkey.8  cfrun.8  cfservd.8
+
 info_TEXINFOS = cfengine-Reference.texinfo cfengine-Tutorial.texinfo cfengine-Anomalies.texinfo
 
 docdir = $(prefix)/doc/$(PACKAGE)-$(VERSION)
 doc_DATA =
 # Info used in building and installing HTML files
 htmldir = $(pkgdatadir)/html
-htmlfiles = cfengine-Reference.html cfengine-Tutorial.html 
+htmlfiles = cfengine-Reference.html cfengine-Tutorial.html cfengine-Anomalies.html
 html_DATA = $(htmlfiles)
 
 # Info used in building and installing Postscript files
@@ -20,7 +21,7 @@ psdir = $(pkgdatadir)/doc
 ps_DATA = $(psfiles)
 
 # Make sure these get distributed with everything else.
-EXTRA_DIST = cfengine.8 texinfo.tex $(htmlfiles)
+EXTRA_DIST = cfagent.8 cfenvd.8 cfenvgraph.8 cfexecd.8 cfkey.8 cfrun.8 cfservd.8 cfengine.8 texinfo.tex $(htmlfiles)
 SUFFIXES = html latex
 
 %.html : %.texinfo

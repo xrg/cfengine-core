@@ -482,6 +482,9 @@ type.  In such an example we can avoid using classes altogether.
           links
           )
      
+       mountpattern = ( /univ )
+       homepattern = ( home? )
+     
      binservers:
      
         hal

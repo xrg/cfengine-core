@@ -273,6 +273,8 @@ extern int errno;
 #define recursion_limit 100
 #define cf_monday_morning 342000
 
+#define cfmethodexec 0
+#define cfmethodreply  1
 #define exec_ifelapsed 5
 #define exec_expireafter 10
 
@@ -300,6 +302,7 @@ extern int errno;
 /*******************************************************************/
 
 #define AVDB_FILE     "cf_averages.db"
+#define STATEDB_FILE  "cf_state.db"
 #define STATELOG_FILE "state_log"
 #define ENV_NEW_FILE  "env_data.new"
 #define ENV_FILE      "env_data"
@@ -329,7 +332,7 @@ extern int errno;
 #define CF_DONE 't'
 #define CF_MORE 'm'
 
-#define CFFAILEDSTR "BAD: Host authentication failed. Did you forget the domain name?"
+#define CFFAILEDSTR "BAD: Host authentication failed. Did you forget the domain name or IP/DNS address registration (for ipv4 or ipv6)?"
 #define CFCHANGEDSTR1 "BAD: File changed "   /* Split this so it cannot be recognized */
 #define CFCHANGEDSTR2 "while copying"
 
@@ -341,6 +344,7 @@ extern int errno;
 
 #define Verbose if (VERBOSE || DEBUG || D2) printf
 #define EditVerbose  if (EDITVERBOSE || DEBUG || D2) printf
+#define Debug4  if (D4) printf
 #define Debug3  if (D3 || DEBUG || D2) printf
 #define Debug2  if (DEBUG || D2) printf
 #define Debug1  if (DEBUG || D1) printf
@@ -361,7 +365,6 @@ extern int errno;
 #define PH_LIMIT 10
 #define CFWEEK   (7.0*24.0*3600.0)
 #define MEASURE_INTERVAL (5.0*60.0)
-
 
 struct Averages
    {
@@ -522,6 +525,14 @@ enum cfsizes
    cfpercent
    };
 
+/*******************************************************************/
+
+enum statepolicy
+   {
+   cfreset,        /* Policy when trying to add already defined persistent states */
+   cfpreserve
+   };
+
 
 /*******************************************************************/
 
@@ -542,7 +553,12 @@ enum builtin
    fn_isdefined,
    fn_strcmp,
    fn_showstate,
-   fn_readfile
+   fn_readfile,
+   fn_returnvars,
+   fn_returnclasses,
+   fn_syslog,
+   fn_setstate,
+   fn_unsetstate
    };
 
 /*******************************************************************/
@@ -568,6 +584,7 @@ enum actions
    import,
    shellcommands,
    disable,
+   rename_disable,
    makepath,
    ignore,
    broadcast,
@@ -810,6 +827,20 @@ enum vnames
 
 /*******************************************************************/
 
+enum methproto
+   {
+   cfmeth_name,
+   cfmeth_file,
+   cfmeth_time,
+   cfmeth_replyto,
+   cfmeth_sendclass,
+   cfmeth_attacharg,
+   cfmeth_isreply,
+   badmeths
+   };
+
+/*******************************************************************/
+
 enum resc
    {
    rmountcom,
@@ -837,6 +868,7 @@ enum aseq
    shellcom,
    chkfiles,
    disabl,
+   renam,
    mountresc,
    edfil,
    mountall,
@@ -859,8 +891,11 @@ enum editnames
    {
    NoEdit,
    DeleteLinesStarting,
+   DeleteLinesNotStarting,
    DeleteLinesContaining,
+   DeleteLinesNotContaining,
    DeleteLinesMatching,
+   DeleteLinesNotMatching,
    AppendIfNoSuchLine,
    PrependIfNoSuchLine,
    WarnIfNoSuchLine,
@@ -1103,17 +1138,24 @@ struct Method
    {
    char done;
    char *scope;
-   struct Item *send_args;
-   struct Item *send_classes;
-   struct Item *servers;
-   struct Item *return_vars;
-   struct Item *return_classes;
-   char *file;
-   char *name;
-   char *classes;
-   char invitation;
-   int ifelapsed;
-   int expireafter;
+   char           *chdir;
+   char           *chroot;
+   uid_t          uid;
+   gid_t          gid;
+   char           useshell;
+   struct Item   *send_args;
+   struct Item   *send_classes;
+   struct Item   *servers;
+   struct Item   *return_vars;
+   struct Item   *return_classes;
+   char          *file;
+   char          *name;
+   char          *classes;
+   char           invitation;
+   int            ifelapsed;
+   int            expireafter;
+   char           log;
+   char           inform;
    struct Method *next;
    };
 
@@ -1333,6 +1375,7 @@ struct Disable
    char  done;
    char *scope;
    char  *name;
+   char  *destination;
    char  *classes;
    char  *type;
    char  *repository;
@@ -1450,7 +1493,11 @@ enum matchtypes
     literalStart,
     literalComplete,
     literalSomewhere,
-    regexComplete
+    regexComplete,
+    NOTliteralStart,
+    NOTliteralComplete,
+    NOTliteralSomewhere,
+    NOTregexComplete
     };
 
 
@@ -1639,6 +1686,7 @@ struct Auth
 
 struct Strategy
    {
+   char    done;
    char   *name;
    char   *classes;
    char   type;                 /* default r=random */

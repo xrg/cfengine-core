@@ -11,6 +11,435 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: cfrc resource file,  Prev: cf.preconf bootstrap file,  Up: Problem solving
+
+`cfrc' resource file
+====================
+
+   If, for some reason you are not satisfied with the defaults which
+cfengine uses, then you can change them by making an entry in the
+resource file.  The default values are defined in the source code file
+`classes.c' in the distribution.  The format of the resource file is:
+
+     hardclass.variable: value
+
+For example, you might want to forget about where your HPUX system
+mounts its mail directory and mount it under `/usr/spool/mail'.  In
+this case you would add the line:
+
+     hpux.maildir: /usr/spool/mail
+
+To redefine the filesystem table for GNU/linux, you would write:
+     linux.fstab: /etc/linuxfstab
+
+The full list of re-definable resources is:
+
+        mountcomm       # command used to mount filesystems
+        unmountcomm     # command used to unmount filesystems
+        ethernet        # name of the ethernet device
+        mountopts       # options to above mount command
+        fstab           # the name of the filesystemtable
+        maildir         # the location of the mail directory
+        netstat         # the full path to netstat and options
+        pscomm          # the path to the system's ps command
+        psopts          # the options used by ps (default aux/ef)
+
+   You should never need to redefine resources unless you decide to do
+something non-standard.  Interested readers are referred to the values
+in `classes.c'.
+
+   Cfengine is easily extensible so as to support a variety of
+architectures.  You can even add your own.  To do so you need, first of
+all, to define a new class for the operating system concerned.  The file
+_classes.c_ has been separated off from the remainder of the source
+code so that you can easily see which data structures need to be
+extended.
+
+   To make life as straightforward as possible, three unused classes
+have been defined.  They are called (unremarkably) _unused1_, _unused2_
+and _unused3_.  If you add any further classes, it will be necessary to
+increase the constant _clssattr_ defined in _cf.defs.h_ by one for
+every new addition.  You do not need to change _clssattr_ if you simple
+replace one of the unused classes by a real class.
+
+   To see fully the impact of what you need to do, you should make a
+search for the strings _unused?_ in all of the source files.  Certain
+special cases need to be handled for each operating system.  For
+example, the form of the filesystem table is quite radically different
+on some systems such as AIX.  One thing you must do is to fill in the
+default values for the new operating system in the file _classes.c_.
+
+   If you fill in the details for a new operating system before it finds
+its way into a new release, you might consider sending the details to
+the bug list in the next paragraph.
+
+
+File: cfengine-Reference.info,  Node: Example configuration file,  Next: Variable Index,  Prev: Problem solving,  Up: Top
+
+Example configuration files
+***************************
+
+   Here is a sample from a large configuration file, just to give you
+some ideas. The file is broken up into manageable pieces for
+convenience.
+
+* Menu:
+
+* cfagent.conf::
+* cf.groups::
+* cf.main::
+* cf.site::
+* cf.motd::
+* cf.users::
+* cf.solaris::
+* cf.linux::
+* cf.freebsd::
+* cfservd.conf::
+
+
+File: cfengine-Reference.info,  Node: cfagent.conf,  Next: cf.groups,  Prev: Example configuration file,  Up: Example configuration file
+
+cfagent.conf
+============
+
+     #####################################################################
+     #
+     #  CFENGINE CONFIGURATION FOR site = iu.hioslo.no
+     #
+     #  This file is for root only.
+     #
+     ######################################################################
+     
+     ###
+     #
+     # BEGIN cfagent.conf
+     #
+     ###
+     
+     import:
+     
+        #
+        # Split things up to keep things tidy
+        #
+     
+        any::
+                         cf.groups
+                         cf.main
+                         cf.site
+                         cf.motd
+     
+        hpux::           cf.hpux
+        linux::          cf.linux
+        solaris::        cf.solaris
+        sun4::           cf.sun4
+        ultrix::         cf.ultrix
+        freebsd::        cf.freebsd
+     
+        #
+        # Do you want to do this ?
+        #
+     
+        AllHomeServers:: cf.users
+     
+     
+     ###
+     #
+     # END cfengine.conf
+     #
+     ###
+
+
+File: cfengine-Reference.info,  Node: cf.groups,  Next: cf.main,  Prev: cfagent.conf,  Up: Example configuration file
+
+cf.groups
+=========
+
+     ##############################################################
+     #
+     # cf.groups - for iu.hioslo.no
+     #
+     # This file contains  all group/class definitions
+     #
+     #################################################################
+     
+     ###
+     #
+     # BEGIN cf.groups
+     #
+     ###
+     
+     groups:
+     
+        #
+        # Define some groups
+        #
+     
+        iu = ( nexus ferengi regula borg dax lore axis worf daystrom voyager
+               aud1 aud2 aud3 aud4 bajor ds9 takpah takpeh nostromo galron
+               thistledown rama chaos pc-steinarj pc-hildeh way jart kosh )
+     
+        diskless   = ( regula ferengi lore )
+     
+        standalone = ( nexus axis dax borg worf daystrom voyager
+                       aud1 aud2 aud3 aud4 bajor ds9 takpah takpeh
+                       nostromo galron thistledown rama pc-torejo
+                       pc-steinarj pc-hildeh )
+     
+        AllHomeServers   = ( nexus )
+        AllBinaryServers = ( nexus borg )
+     
+        XBootServer  = ( nexus )
+        WWWServers   = ( nexus )
+        FTPserver    = ( nexus )
+        NameServers  = ( nexus )
+        PasswdServer = ( nexus )
+        BackupHost   = ( nexus )
+     
+        MailHub      = ( nexus )
+        MailClients  = ( iu -nexus )
+     
+     ###
+     #
+     # END cf.groups
+     #
+     ###
+
+
+File: cfengine-Reference.info,  Node: cf.main,  Next: cf.site,  Prev: cf.groups,  Up: Example configuration file
+
+cf.main
+=======
+
+     ##############################################################
+     #
+     # cf.main - for iu.hioslo.no
+     #
+     # This file contains generic config stuff
+     #
+     #################################################################
+     
+     ###
+     #
+     # BEGIN cf.main
+     #
+     ###
+     
+     control:
+     
+        access    = ( root )        # Only root should run this
+     
+        site      = ( iu )
+        domain    = ( iu.hioslo.no )
+        sysadm    = ( drift@iu.hioslo.no )
+     
+        repository = ( /var/spool/cfengine )
+     
+        netmask   = ( 255.255.255.0 )
+        timezone  = ( MET )
+        nfstype   = ( nfs )
+     
+        sensiblesize  = ( 1000 )
+        sensiblecount = ( 2 )
+        editfilesize  = ( 20000 )
+     
+        mountpattern = ( /$(site)/$(host) )
+        homepattern  = ( u? )
+     
+        #
+        # If we undefine this with cfengine -N longjob
+        # then we switch off all jobs labelled with this class
+        #
+     
+        addclasses = ( longjob )
+     
+        #
+        # Macros & constants are inherited downwards in imports
+        # but are not passed up to parent files. Good idea to
+        # define them all here
+        #
+     
+        masterfiles = ( /iu/nexus/local/iu )
+        main_server = ( nexus )
+        cfbin       = ( /iu/nexus/local/gnu/lib/cfengine/bin )
+        gnu         = ( /local/gnu )
+        ftp         = ( /local/iu/ftp )
+        nisslave    = ( dax )
+        nisfiles    = ( /iu/nexus/local/iu/etc )
+     
+        #
+        # The action sequence for daily (full) runs and
+        # for hourly updates (called with -DHourly)
+        #
+     
+        Hr00::
+     
+           actionsequence =
+              (
+              copy
+              mountall
+              mountinfo
+              checktimezone
+              netconfig
+              resolve
+              unmount
+              shellcommands
+              addmounts
+              links.Prepare
+              files.Prepare
+              directories
+              links.Rest
+              mailcheck
+              mountall
+              required
+              tidy
+              disable
+              editfiles
+              files.Rest
+              processes
+              )
+     
+        !Hr00::
+     
+           actionsequence =
+              (
+              resolve
+              shellcommands
+              copy
+              editfiles
+              processes
+     	 links
+              )
+     
+        force::
+     
+           actionsequence =
+              (
+              files.Prepare.Rest
+              tidy
+              )
+     
+     ######################################################################
+     
+     homeservers:
+     
+        iu:: nexus
+     
+     binservers:
+     
+        iu.solaris::                 nexus
+        iu.linux::                   borg
+     
+     mailserver:
+     
+        any:: nexus:/var/mail
+     
+     mountables:
+     
+        any::
+              nexus:/iu/nexus/u1
+              nexus:/iu/nexus/u2
+              nexus:/iu/nexus/u3
+              nexus:/iu/nexus/u4
+              nexus:/iu/nexus/u5
+              nexus:/iu/nexus/u6
+              nexus:/iu/nexus/ua
+              nexus:/iu/nexus/ud
+              nexus:/iu/nexus/local
+              nexus:/opt/NeWSprint
+              nexus:/opt/AcroRead
+              borg:/iu/borg/local
+              dax:/iu/dax/local
+     
+     miscmounts:
+     
+        linux||freebsd::   nexus:/iu/nexus/local /iu/nexus/local ro
+     
+     ######################################################################
+     
+     broadcast:
+     
+       ones
+     
+     defaultroute:
+     
+        cadeler30-gw
+     
+     ######################################################################
+     
+     resolve:
+     
+           128.39.89.10  # nexus
+           158.36.85.10  # samson.hioslo.no
+           129.241.1.99
+     
+     ######################################################################
+     
+     tidy:
+     
+        #
+        # Some global tidy-ups
+        #
+     
+           /tmp/                    pat=*             r=inf     A=1
+           /var/tmp                 pat=*             r=inf     A=1
+           /                        pat=core          r=1       A=0
+           /etc                     pat=core          r=1       A=0
+     
+     ######################################################################
+     
+     ignore:                       # Don't check or tidy these directories
+     
+           /local/lib/gnu/emacs/lock/
+           /local/tmp
+           ftp
+           projects
+           /local/bin/top
+           /local/lib/tex/fonts
+           /local/iu/etc
+           /local/etc
+           /local/iu/httpd/conf
+           /usr/tmp/locktelelogic
+           /usr/tmp/lockIDE
+           RootMailLog
+     
+           #
+           # Emacs lock files etc
+           #
+     
+           !*
+           /local/lib/xemacs
+     
+           #
+           # X11 keeps X server data in /tmp/.X11
+           # better not delete this!
+           #
+     
+           .X11
+     
+           #
+           # Some users like to give a file or two 777 protection here
+           # so netsurfers can update a log or counter when running as
+           # `nobody'
+           #
+     
+           www
+     
+     #####################################################################
+     
+     disable:
+     
+        /etc/hosts.equiv
+        /etc/nologin
+        /usr/lib/sendmail.fc
+     
+     
+     ###
+     #
+     # END cf.main
+     #
+     ###
+
+
 File: cfengine-Reference.info,  Node: cf.site,  Next: cf.motd,  Prev: cf.main,  Up: Example configuration file
 
 cf.site
@@ -1027,10 +1456,10 @@ Variable Index
 * $(year):                               Special variables.
 * ${EmailMaxLines}:                      Special variables.
 * +:                                     groups.
-* -D option <1>:                         addclasses.
-* -D option:                             Cfengine classes.
-* -l <1>:                                tidy.
-* -l:                                    Syntax.
+* -D option <1>:                         Cfengine classes.
+* -D option:                             addclasses.
+* -l <1>:                                Syntax.
+* -l:                                    tidy.
 * -L:                                    Single links.
 * -N option <1>:                         Cfengine classes.
 * -N option:                             addclasses.
@@ -1057,8 +1486,8 @@ Variable Index
 * binservers:                            binservers.
 * broadcast:                             broadcast.
 * cf.preconf:                            cf.preconf bootstrap file.
-* CFALLCLASSES <1>:                      Special variables.
-* CFALLCLASSES:                          Cfagent Runtime Options.
+* CFALLCLASSES <1>:                      Cfagent Runtime Options.
+* CFALLCLASSES:                          Special variables.
 * cfrc:                                  cfrc resource file.
 * ChangedBefore():                       Evaluated classes.
 * ChecksumDatabase:                      ChecksumDatabase.
@@ -1070,15 +1499,15 @@ Variable Index
 * control:                               control.
 * create:                                create.
 * directories:                           actionsequence.
-* disable <1>:                           actionsequence.
-* disable:                               disable.
-* domain <1>:                            domain.
-* domain:                                control.
+* disable <1>:                           disable.
+* disable:                               actionsequence.
+* domain <1>:                            control.
+* domain:                                domain.
 * DryRun:                                dryrun.
 * editbinaryfilesize:                    editbinaryfilesize.
 * editfiles:                             actionsequence.
-* editfilesize <1>:                      control.
-* editfilesize:                          editfilesize.
+* editfilesize <1>:                      editfilesize.
+* editfilesize:                          control.
 * EmailMaxLines:                         Cfexecd reference.
 * empty:                                 disable.
 * EmptyResolvConf:                       emptyresolvconf.
@@ -1090,14 +1519,14 @@ Variable Index
 * filter:                                filters.
 * force= <1>:                            copy.
 * force=:                                disks.
-* freespace= <1>:                        required.
-* freespace=:                            disks.
+* freespace= <1>:                        disks.
+* freespace=:                            required.
 * g=:                                    Syntax.
 * group:                                 Syntax.
 * groups:                                groups.
 * home:                                  Syntax.
-* homepattern:                           mountables.
 * HomePattern:                           homepattern.
+* homepattern:                           mountables.
 * homeservers:                           homeservers.
 * import:                                import.
 * include=:                              Syntax.
@@ -1119,6 +1548,7 @@ Variable Index
 * mailcheck:                             mailserver.
 * mailserver:                            mailserver.
 * MaxCfengines:                          Special variables.
+* methods:                               methods.
 * miscmounts:                            miscmounts.
 * mode:                                  Syntax.
 * module:                                actionsequence.
@@ -1129,10 +1559,10 @@ Variable Index
 * mountinfo:                             actionsequence.
 * mountpattern:                          mountpattern.
 * netconfig:                             actionsequence.
-* netmask <1>:                           control.
-* netmask:                               netmask.
-* nfstype <1>:                           nfstype.
-* nfstype:                               control.
+* netmask <1>:                           netmask.
+* netmask:                               control.
+* nfstype <1>:                           control.
+* nfstype:                               nfstype.
 * o=:                                    Syntax.
 * ones:                                  broadcast.
 * OutputPrefix:                          Special variables.
@@ -1143,12 +1573,12 @@ Variable Index
 * pkgmgr=:                               packages.
 * processes:                             actionsequence.
 * purge=:                                copy.
-* r= <1>:                                Syntax.
-* r=:                                    tidy.
+* r= <1>:                                tidy.
+* r=:                                    Syntax.
 * recurse <1>:                           Syntax.
 * recurse:                               tidy.
-* repchar:                               Special variables.
 * RepChar:                               repchar.
+* repchar:                               Special variables.
 * required:                              actionsequence.
 * resolve <1>:                           resolve.
 * resolve:                               actionsequence.
@@ -1157,8 +1587,8 @@ Variable Index
 * rotate=:                               disable.
 * scheduling:                            schedule.
 * SecureInput:                           secureinput.
-* sensiblecount:                         control.
 * SensibleCount:                         sensiblecount.
+* sensiblecount:                         control.
 * SensibleSize:                          sensiblesize.
 * sensiblesize:                          control.
 * shellcommands:                         actionsequence.
@@ -1173,9 +1603,8 @@ Variable Index
 * SpoolDirectories:                      spooldirectories.
 * SuspiciousNames:                       suspiciousnames.
 * sysadm <1>:                            Cfexecd reference.
-* sysadm <2>:                            control.
-* sysadm <3>:                            sysadm.
-* sysadm:                                Cfexecd reference.
+* sysadm <2>:                            sysadm.
+* sysadm:                                control.
 * tidy <1>:                              tidy.
 * tidy:                                  actionsequence.
 * timezone:                              control.

@@ -35,17 +35,18 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   Edition 2.0.8p1 for version 2.0.8p1 as last updated 13 May 2003.
+   Edition 2.1.0p1 for version 2.1.0p1 as last updated 22 October 2003.
 
 * Menu:
 
 * Overview::
+* Anomaly response::
 * Variable Index::
 * Concept Index::
 * FAQ Index::
 
 
-File: cfengine-Anomalies.info,  Node: Overview,  Next: Variable Index,  Prev: Top,  Up: Top
+File: cfengine-Anomalies.info,  Node: Overview,  Next: Anomaly response,  Prev: Top,  Up: Top
 
 Overview
 ********
@@ -63,6 +64,8 @@ without having to watch control panels, or time-series traces.
 
 * Menu:
 
+* Intrusion detection::
+* Cryptographic checksums::
 * cfenvd::
 * Anomaly research::
 * cfenvgraph::
@@ -70,7 +73,97 @@ without having to watch control panels, or time-series traces.
 * Starting with anomaly detection::
 
 
-File: cfengine-Anomalies.info,  Node: cfenvd,  Next: Anomaly research,  Prev: Overview,  Up: Overview
+File: cfengine-Anomalies.info,  Node: Intrusion detection,  Next: Cryptographic checksums,  Prev: Overview,  Up: Overview
+
+Intrusion detection
+===================
+
+   What is an intrusion or an attempted intrusion? This can be
+difficult to define. If someone tries to login at root once? If someone
+tries to login at root fifty times? Port scanning, SATAN or ISS scan?
+Someone trying a known security hole?
+
+   The aim of an intrusion detection system is to detect break-ins in
+progress so that something can be done about them. Obviously the first
+thing one should worry about is how difficult it is to break in in the
+first place. If we have done the job of securing data well enough, why
+are we worried that anyone will be able to get in?
+
+   Intrusion detection is a form of fault-diagnosis. Faults (in a
+security system) are not supposed to happen, but the fact is that they
+do happen. As with all fault diagnosis systems, IDS give the wrong
+answers from time to time. Because it is so difficult to define what
+intrusion actually means in a generic sense (it's political) intrusion
+detection systems tend to err on the side of caution and report many
+false positives, i.e. false alarms.
+
+   This is a very difficult problem to do in real time. What does
+real-time mean? Some attacks are stealthy and occur over many hours or
+days. How can we make a prompt notification about such attempts? The
+intrusion detection will have to be fast to detect quick break-ins, but
+have a long memory in order to see slow ones (like the thief digging a
+tunnel into the bank with a tea-spoon).
+
+   How will we be alerted or notified about intrusions? By alarm on the
+screen? By E-mail or pager alert? What if the attacker first knocks out
+E-mail or the pager link?
+
+   User privacy is also a problem. If an intrusion detection system
+examines everything going on within the system, looking for suspicious
+behaviour, is that an intrusion of privacy? What if humans never see the
+data, but only the warnings? Where do we draw the line between justified
+and unjustified surveillance? Law enforcement agencies have been arguing
+about that one for years!
+
+
+File: cfengine-Anomalies.info,  Node: Cryptographic checksums,  Next: cfenvd,  Prev: Intrusion detection,  Up: Overview
+
+Cryptographic checksums
+=======================
+
+   Change detection is about monitoring whether files and other aspects
+of a system change. The idea was originally advanced in the program
+Tripwire, which collected a "snaphot" of the system in the form of a
+database of file checksums (hashes) and permissions and rechecked the
+system against this database at regular intervals. Tripwire examines
+only files, and looks for any change at all. If a legitimate change is
+made to the system, it responds to  this as a potential threat.
+Databases must then be altered, or rebuilt.
+
+   Cfengine adopted part of Tripwire's idea. It collects MD5 hash data
+for specified files. Its model for checking permissions is somewhat
+different however. Cfengine expects systems to change dynamically, so
+it allows users to define a policy for allowed change. It can also
+check for processes, not merely files. Integrity checks on files whose
+contents are supposed to be static are a good way to detect tampering
+with the system, from whatever source. Running MD5 or SHA1 checksums of
+files regularly provides us with a way of determining even the smallest
+changes to file contents. Here is an excerpt from a cfengine
+configuration program that would check the /usr/local filesystem for
+file changes. Note that it excludes files such as log files that are
+supposed to change:
+
+     control:
+     
+     actionsequence = ( files )
+     
+     #####################################################################
+     
+     files:
+     
+       /usr/local o=root,bin,man action=warnall mode=o-w r=inf checksum=md5
+                          ignore=logs exclude=*.log
+
+* Menu:
+
+* cfenvd::
+* Anomaly research::
+* cfenvgraph::
+* Fluctuation profiles::
+* Starting with anomaly detection::
+
+
+File: cfengine-Anomalies.info,  Node: cfenvd,  Next: Anomaly research,  Prev: Cryptographic checksums,  Up: Overview
 
 An environment detector: cfenvd
 ===============================
@@ -313,91 +406,229 @@ Starting with anomaly detection
 
    Try importing the following file:
 
+
+     ###
      #
-     # cf.environ
+     # BEGIN cf.environ
+     #
+     ###
+     
      #
      # Just a test for responses to measured anomalies
      #
      
      classes:
      
-      #
-      # those hosts we wat to monitor
-      #
+      anomaly_hosts = ( myhost1 myhost2 )
      
-      anomaly_hosts = ( nexus cube dax )
      
-     shellcommands:
+     #################################################
+     
+     alerts:
      
        nfsd_in_high_dev2::
      
-       "/bin/echo High NFS server access rate 2dev at $(host) value $(value_nfsd_in) \
-     average $(average_nfsd_in) pm $(stddev_nfsd_in)"
+       "High NFS server access rate 2dev at $(host)/$(env_time)
+     current value $(value_nfsd_in) av $(average_nfsd_in)
+     pm $(stddev_nfsd_in)"
+     
+       ShowState(incoming.nfs)
      
      
       # ROOT PROCS
      
        anomaly_hosts.RootProcs_high_dev2::
      
-        "/bin/echo RootProc anomaly high 2 dev on $(host) value $(value_rootprocs) \
-     average $(average_rootprocs) pm $(stddev_rootprocs)"
+        "RootProc anomaly high 2 dev on $(host)/$(env_time)
+     current value $(value_rootprocs) av $(average_rootprocs)
+     pm $(stddev_rootprocs)"
+       ShowState(procs)
+     
+     
      
       # USER PROCS
      
       anomaly_hosts.UserProcs_high_dev2::
      
-        "/bin/echo UserProc anomaly high 2 dev on $(host) value $(value_userprocs) \
-     average $(average_userprocs) pm $(stddev_userprocs)"
+        "UserProc anomaly high 2 dev on $(host)/$(env_time)
+     current value $(value_userprocs) av $(average_userprocs)
+     pm $(stddev_userprocs)"
+        ShowState(procs)
+     
      
       anomaly_hosts.UserProcs_high_anomaly::
      
-        "/bin/echo UserProc anomaly high 3 dev!! on $(host)"
+        "UserProc anomaly high 3 dev!! on $(host)/$(env_time)"
+        ShowState(procs)
+     
+     
      
       # WWW IN
      
       anomaly_hosts.www_in_high_dev2::
      
-        "/bin/echo Incoming www anomaly high 2 dev on $(host) - value $(value_www_in) \
-     average $(average_www_in) pm $(stddev_www_in)"
+        "Incoming www anomaly high 2 dev on $(host)/$(env_time) -
+     current value $(value_www_in) av $(average_www_in)
+     pm $(stddev_www_in)"
+        ShowState(incoming.www)
+     
      
       anomaly_hosts.www_in_high_anomaly::
      
-        "/bin/echo Incoming www anomaly high anomaly dev!! on $(host) - value \
-     $(value_www_in) average $(average_www_in) pm $(stddev_www_in)"
+        "Incoming www anomaly high anomaly dev!! on $(host)/$(env_time)
+     - current value $(value_www_in) av $(average_www_in)
+     pm $(stddev_www_in)"
+        ShowState(incoming.www)
+     
+     
      
       # SMTP IN
      
+      anomaly_hosts.smtp_in_high_dev1::
+     
+        "Incoming smtp anomaly high 1 dev on $(host)/$(env_time)
+     current value $(value_smtp_in) av  $(average_smtp_in)
+     pm $(stddev_smtp_in)"
+        ShowState(incoming.smtp)
+     
       anomaly_hosts.smtp_in_high_dev2::
      
-        "/bin/echo Incoming smtp anomaly high 2 dev on $(host)  value $(value_smtp_in)\
-      average  $(average_smtp_in) pm $(stddev_smtp_in)"
+        "Incoming smtp anomaly high 2 dev on $(host)/$(env_time)
+     current value $(value_smtp_in) av  $(average_smtp_in)
+     pm $(stddev_smtp_in)"
+        ShowState(incoming.smtp)
+     
      
       anomaly_hosts.smtp_in_high_anomaly::
      
-        "/bin/echo Incoming smtp anomaly high anomaly !! on $(host)  value $(value_smtp_in)\
-      average  $(average_smtp_in) pm $(stddev_smtp_in)"
+        "Incoming smtp anomaly high anomaly !! on $(host)/$(env_time)
+     current value $(value_smtp_in) av  $(average_smtp_in)
+      pm $(stddev_smtp_in)"
+        ShowState(incoming.smtp)
+     
      
       # SMTP OUT
      
       anomaly_hosts.smtp_out_high_dev2::
      
-        "/bin/echo Outgoing smtp anomaly high 2 dev on $(host) value $(value_smtp_out) \
-     average  $(average_smtp_out) pm $(stddev_smtp_out)"
+        "Outgoing smtp anomaly high 2 dev on $(host)/$(env_time)
+     current value $(value_smtp_out) av  $(average_smtp_out)
+     pm $(stddev_smtp_out)"
+        ShowState(outgoing.smtp)
+     
      
       anomaly_hosts.smtp_out_high_anomaly::
      
-        "/bin/echo Outgoing smtp anomaly high anomaly dev!! on $(host) value \
-     $(value_smtp_out) average $(average_smtp_out) pm $(stddev_smtp_out)"
+        "Outgoing smtp anomaly high anomaly dev!! on $(host)/$(env_time)
+     current value $(value_smtp_out) av $(average_smtp_out)
+     pm $(stddev_smtp_out)"
+        ShowState(outgoing.smtp)
+     
      
       # SAMBA
      
       anomaly_hosts.netbiosssn_in_high_dev2::
      
-        "/bin/echo SAMBA access high 2 on $(host) value $(value_netbiosssn_in)\
-      average $(average_netbiosssn_in) pm $(stddev_netbiosssn_in)"
+        "SAMBA access high 2 on $(host)/$(env_time)
+     current value $(value_netbiosssn_in) av $(average_netbiosssn_in)
+     pm $(stddev_netbiosssn_in)"
+        ShowState(incoming.smtp)
+     
+     ###
+     #
+     # END cf.environ
+     #
+     ###
+
+   The output generated by this file shows the current value of the
+quantity and a summary of the highest values during the last 40 minutes:
+
+
+     cf:cube: Incoming www anomaly high 2 dev on cube/Wed Oct 22 10:27:08 2003 - current value 12 av 6.8 pm 5.0
+     cf:cube: -----------------------------------------------------------------------------------
+     cf:cube: In the last 40 minutes, the peak state was:
+     cf:cube: ( 1) tcp        0      0 128.39.74.16:80         216.39.50.74:39973      TIME_WAIT
+     cf:cube: ( 2) tcp        0      0 128.39.74.16:80         64.68.80.44:15197       TIME_WAIT
+     cf:cube: ( 3) tcp        0      0 128.39.74.16:80         64.68.80.44:15393       TIME_WAIT
+     cf:cube: ( 4) tcp        0      0 128.39.74.16:80         128.39.75.115:1786      ESTABLISHED
+     cf:cube: ( 5) tcp        0      0 128.39.74.16:80         128.39.75.115:1785      FIN_WAIT2
+     cf:cube: ( 6) tcp        0      0 128.39.74.16:80         158.39.114.20:3784      ESTABLISHED
+     cf:cube: ( 7) tcp        0      0 128.39.74.16:80         158.39.114.20:3785      ESTABLISHED
+     cf:cube: ( 8) tcp        0      0 128.39.74.16:80         158.39.114.20:3780      TIME_WAIT
+     cf:cube: ( 9) tcp        0      0 128.39.74.16:80         158.39.114.20:3781      TIME_WAIT
+     cf:cube: (10) tcp        0      0 128.39.74.16:80         158.39.114.20:3783      TIME_WAIT
+     cf:cube: (11) tcp        0      0 128.39.74.16:80         195.75.201.8:30050      ESTABLISHED
+     cf:cube: (12) tcp        0      0 128.39.74.16:80         195.75.201.8:30049      ESTABLISHED
+     cf:cube: (13) tcp        0      0 128.39.74.16:80         128.39.74.131:1268      ESTABLISHED
+     cf:cube: (14) tcp        0      0 128.39.74.16:80         128.39.74.131:1269      ESTABLISHED
+     cf:cube: (15) tcp        0      0 128.39.74.16:80         195.75.201.8:30062      ESTABLISHED
+     cf:cube: (16) tcp        0      0 128.39.74.16:80         195.75.201.8:30061      ESTABLISHED
+      DNS key: 216.39.50.74 = 216.39.50.74
+      DNS key: 64.68.80.44 = crawl23.googlebot.com
+      DNS key: 128.39.75.115 = pc115-75.iu.hio.no
+      DNS key: 158.39.114.20 = heracleum.stud.hitos.no
+      DNS key: 195.75.201.8 = 195.75.201.8
+      DNS key: 128.39.74.131 = pc131-74.iu.hio.no
+     cf:cube: -----------------------------------------------------------------------------------
+     cf:cube: State of incoming.www peaked at Wed Oct 22 10:22:07 2003
 
 
-File: cfengine-Anomalies.info,  Node: Variable Index,  Next: Concept Index,  Prev: Overview,  Up: Top
+File: cfengine-Anomalies.info,  Node: Anomaly response,  Next: Variable Index,  Prev: Overview,  Up: Top
+
+Anomaly response
+****************
+
+* Menu:
+
+* Log utilities::
+* Persistent alerts::
+
+
+File: cfengine-Anomalies.info,  Node: Log utilities,  Next: Persistent alerts,  Prev: Anomaly response,  Up: Anomaly response
+
+Log utilities
+=============
+
+   How shall we respond to an anomalous event?  Alerts can be
+channelled directly to syslog:
+
+       SysLog(LOG_ERR,"Test syslog message")
+   Software that processes logs can thus be interfaced with via the
+syslog interface.
+
+
+File: cfengine-Anomalies.info,  Node: Persistent alerts,  Prev: Log utilities,  Up: Anomaly response
+
+Persistent alerts
+=================
+
+   DEFCON 1
+
+   Another application for alerts is to pass signals from one cfengine
+to another by persistent, shared memory.  For example, suppose a
+short-lived anomaly event triggers a class that relates to a security
+alert. The event class might be too short-lived to be followed up by
+cfagent in full. One could thus set a long term class that would
+trigger up several follow-up checks.  A persistent class could also be
+used to exclude an operation for an interval of time.
+
+   Persistent class memory can be added through a system alert
+functions to give timer behaviour.  For example, consider setting a
+class that acts like a non-resettable timer. It is defined for exactly
+10 minutes before expiring.
+
+       SetState("preserved_class",10,Preserve)
+   Or to set a class that acts as a resettable timer. It is defined for
+60 minutes unless the SetState call is called again to extend its
+lifetime.
+
+       SetState(non_preserved_class,60,Reset)
+   Existing persistent classes can be deleted with:
+
+               UnsetState(myclass)
+
+
+File: cfengine-Anomalies.info,  Node: Variable Index,  Next: Concept Index,  Prev: Anomaly response,  Up: Top
 
 Variable Index
 **************
@@ -426,14 +657,19 @@ FAQ Index
 
 Tag Table:
 Node: Top478
-Node: Overview1617
-Node: cfenvd2527
-Node: Anomaly research5573
-Node: cfenvgraph8268
-Node: Fluctuation profiles12259
-Node: Starting with anomaly detection12887
-Node: Variable Index15596
-Node: Concept Index15740
-Node: FAQ Index16032
+Node: Overview1642
+Node: Intrusion detection2606
+Node: Cryptographic checksums4747
+Node: cfenvd6632
+Node: Anomaly research9693
+Node: cfenvgraph12388
+Node: Fluctuation profiles16379
+Node: Starting with anomaly detection17007
+Node: Anomaly response22987
+Node: Log utilities23180
+Node: Persistent alerts23564
+Node: Variable Index24746
+Node: Concept Index24898
+Node: FAQ Index25190
 
 End Tag Table

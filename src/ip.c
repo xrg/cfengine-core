@@ -192,3 +192,105 @@ if (strstr(name,":") == NULL)
 return true;
 }
 
+
+/*****************************************************************************/
+
+char *Hostname2IPString(hostname)
+
+char *hostname;
+
+{ static char ipbuffer[65];
+  int err;
+ 
+#ifdef HAVE_GETADDRINFO /* --------------we have ipv6 ------------------- */
+
+ struct addrinfo query, *response, *ap;
+ query.ai_family = AF_UNSPEC;
+ query.ai_socktype = SOCK_STREAM;
+
+ bzero(ipbuffer,63);
+
+if ((err = getaddrinfo(hostname,NULL,&query,&response)) != 0)
+   {
+   snprintf(OUTPUT,bufsize,"Unable to lookup hostname or cfengine service: %s",gai_strerror(err));
+   CfLog(cferror,OUTPUT,"");
+   return NULL;
+   }
+ 
+for (ap = response; ap != NULL; ap = ap->ai_next)
+   {
+   strncpy(ipbuffer,sockaddr_ntop(ap->ai_addr),64);
+   Verbose("Found address (%s) for host %s\n",ipbuffer,hostname);
+   
+   freeaddrinfo(response);   
+   return ipbuffer;
+   }
+#else
+ struct hostent *hp;
+ struct sockaddr_in cin;
+ bzero(&cin,sizeof(cin));
+
+ bzero(ipbuffer,63);
+
+if ((hp = gethostbyname(hostname)) != NULL)
+   {
+   cin.sin_addr.s_addr = ((struct in_addr *)(hp->h_addr))->s_addr;
+   strncpy(ipbuffer,inet_ntoa(cin.sin_addr),63);
+   Verbose("Found address (%s) for host %s\n",ipbuffer,hostname);
+   return ipbuffer;
+   }
+#endif
+   
+snprintf(ipbuffer,63,"Unknown IP %s",hostname);
+return ipbuffer;
+}
+
+
+/*****************************************************************************/
+
+char *IPString2Hostname(ipaddress)
+
+char *ipaddress; /* String form */
+
+{ static char hostbuffer[128];
+  int err;
+
+#ifdef HAVE_GETADDRINFO
+
+ struct addrinfo query, *response, *ap;
+
+bzero(&query,sizeof(query));
+bzero(&response,sizeof(response));
+
+query.ai_flags = AI_CANONNAME;
+
+bzero(hostbuffer,128);
+
+if ((err = getaddrinfo(ipaddress,NULL,&query,&response)) != 0)
+   {
+   snprintf(OUTPUT,bufsize,"Unable to lookup IP address (%s): %s",ipaddress,gai_strerror(err));
+   CfLog(cferror,OUTPUT,"");
+   snprintf(hostbuffer,127,"(Non regitered IP)"); 
+   return hostbuffer;
+   }
+
+for (ap = response; ap != NULL; ap = ap->ai_next)
+   {   
+   if ((err = getnameinfo(ap->ai_addr,ap->ai_addrlen,hostbuffer,127,0,0,0)) != 0)
+      {
+      snprintf(hostbuffer,127,"(Non registered IP)");
+      freeaddrinfo(response);
+      return hostbuffer;
+      }
+   
+   Debug("Found address (%s) for host %s\n",hostbuffer,ipaddress);
+   freeaddrinfo(response);
+   return hostbuffer;
+   }
+
+ snprintf(hostbuffer,127,"(Non registered IP)"); 
+#else
+ snprintf(hostbuffer,127,"(Not for old BIND)"); 
+#endif
+ return hostbuffer;
+}

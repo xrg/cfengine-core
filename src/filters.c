@@ -100,10 +100,15 @@ void InstallFilterTest(alias,type,data)
 
 char *alias,*type,*data;
 
-{ int crit = (int) FilterActionsToCode(type), i = -1;
+{ int crit, i = -1;
   struct Filter *fp;
   char buffer[bufsize],units='x',*sp;
   time_t now;
+
+if (strlen(type) == 0)
+   {
+   return;
+   }
   
 Debug("InstallFilterTest(%s,%s,%s)\n",alias,type,data);
 
@@ -111,13 +116,16 @@ if (time(&now) == -1)
    {
    FatalError("Unable to access clock");
    }
+
+crit = (int) FilterActionsToCode(type); 
  
 buffer[0] = '\0'; 
 ExpandVarstring(data,buffer,NULL);
  
 if (crit == NoFilter)
    {
-   yyerror("Unknown filter criterion");
+   snprintf(OUTPUT,bufsize,"Unknown filter criterion (%s)\n",type);
+   yyerror(OUTPUT);
    }
 else
    {
@@ -364,16 +372,17 @@ char *filtertype;
 
 { int i;
 
-Debug1("FilterActionsToCode(%s)\n",filtertype);
+Debug("FilterActionsToCode(%s)\n",filtertype);
 
 if (filtertype[strlen(filtertype)-1] != ':')
    {
    yyerror("Syntax error in filter type");
    return NoFilter;
    }
-
-filtertype[strlen(filtertype)-1] = '\0';
  
+filtertype[strlen(filtertype)-1] = '\0';
+
+
 for (i = 0; VFILTERNAMES[i] != '\0'; i++)
    {
    if (strcmp(VFILTERNAMES[i],filtertype) == 0)
@@ -583,7 +592,7 @@ if (strlen(proc) == 0)
    return false;
    }
  
-SplitLine(proc,filterlist,names,start,end,line);
+SplitLine(proc,names,start,end,line);
 
 for (fp = VFILTERLIST; fp != NULL; fp=fp->next)
    {
@@ -650,7 +659,7 @@ for (fp = VFILTERLIST; fp != NULL; fp=fp->next)
       
       if (fp->criteria[filterresult] == NULL)
 	 {
-	 fp->criteria[filterresult] = strdup("Type.Owner.Group.Mode.Ctime.Mtime.Atime.Size.ExecRegex.NameRegex.IsSymLinkTo.Exec");
+	 fp->criteria[filterresult] = strdup("Type.Owner.Group.Mode.Ctime.Mtime.Atime.Size.ExecRegex.NameRegex.IsSymLinkTo.ExecProgram");
 	 }
       
       DoFilter(&tests,fp->criteria,lstatptr,file);
@@ -1010,7 +1019,7 @@ char **names,**line;
   regex_t rx;
   regmatch_t pmatch;
 
-  Debug("FilterProcMatch(%s,%s,%s,%s,[%s])\n",name1,name2,expr,names,line);
+  Debug("FilterProcMatch(%s,%s,%s,<%x>,<%x>)\n",name1,name2,expr,names,line);
 
 if (CfRegcomp(&rx,expr,REG_EXTENDED) != 0)
    {
@@ -1095,10 +1104,13 @@ for (i = 0; names[i] != NULL; i++)
 return false;
 }
 
+/*******************************************************************/
+
 /*
  * HvB: Bas van der Vlies
  *  Parse different TTime values
 */
+
 void ParseTTime(line, time_str)
 
 char *line;
@@ -1460,8 +1472,8 @@ for (sp = proc; *sp != '\0'; sp++)
    else if (start[col] == -1)
       {
       start[col] = offset;
-      Debug("Start of %s is %d\n",title,offset);
       sscanf(sp,"%15s",title);
+      Debug("Start of %s is %d\n",title,offset);
       names[col] = strdup(title);
       Debug("Col[%d]=%s\n",col,names[col]);
       }
@@ -1476,11 +1488,10 @@ if (end[col] == -1)
 
 /*******************************************************************/
 
-void SplitLine(proc,filterlist,names,start,end,line)
+void SplitLine(proc,names,start,end,line)
 
 char *proc, **names, **line;
 int *start,*end;
-struct Item *filterlist;
 
 { int i,s,e;
 
@@ -1493,9 +1504,6 @@ for (i = 0; i < noproccols; i++)
  
 for (i = 0; names[i] != NULL; i++)
    {
-   s = start[i];
-   e = end[i];
-
    for (s = start[i]; (s >= 0) && !isspace((int)*(proc+s)); s--)
       {
       }
@@ -1529,10 +1537,17 @@ for (i = 0; names[i] != NULL; i++)
 	 }
       }
 
-   line[i] = (char *)malloc(e-s+2);
-
-   bzero(line[i],(e-s+2));
-   strncpy(line[i],(char *)(proc+s),(e-s+1));
+   if (s <= e)
+      {
+      line[i] = (char *)malloc(e-s+2);
+      bzero(line[i],(e-s+2));
+      strncpy(line[i],(char *)(proc+s),(e-s+1));
+      }
+   else
+      {
+      line[i] = (char *)malloc(1);
+      line[i][0] = '\0';
+      }
    
    Debug("  %s=(%s) of [%s]\n",names[i],line[i],proc);
    }

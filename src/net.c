@@ -88,7 +88,7 @@ char *buffer;
 int sd,*more;
 
 { char proto[9];
-  char status;
+  char status = 'x';
   unsigned int len = 0;
  
 bzero(proto,9);

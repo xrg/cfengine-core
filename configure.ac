@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.0.8p1)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.1.0p1)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -139,6 +139,28 @@ else
   
         BERKELEY_DB_CFLAGS="-I$BERKELEY_DB_DIR/include"
         BERKELEY_DB_LIB="-ldb"
+        AC_MSG_RESULT($BERKELEY_DB_DIR)
+    elif test -d "$BERKELEY_DB_DIR"; then
+
+        BERKELEY_DB_CFLAGS="-I$BERKELEY_DB_DIR/include"
+        for v in . db41 db40 db4 db33 db32 db3 db; do
+            if test -f "$BERKELEY_DB_DIR/include/$v/db.h"; then
+                BERKELEY_DB_CFLAGS="-I$BERKELEY_DB_DIR/include/$v"
+            fi
+        done
+
+        BERKELEY_DB_LIB="-ldb"
+        for v in db41 db40 db4 db33 db32 db3 db; do
+            if test -f "$BERKELEY_DB_DIR/lib/lib$v.so"; then
+                BERKELEY_DB_LIB="-l$v"
+            fi
+        done
+
+        case "$target_os" in
+        solaris*)  BERKELEY_DB_LDFLAGS="-L$BERKELEY_DB_DIR/lib -R$BERKELEY_DB_DIR/lib";;
+        *)         BERKELEY_DB_LDFLAGS="-L$BERKELEY_DB_DIR/lib";;
+        esac
+  
         AC_MSG_RESULT($BERKELEY_DB_DIR)
     else
         AC_MSG_ERROR(Cannot find BerkeleyDB)

@@ -55,8 +55,7 @@ char *file;
   struct stat s;
 
 NewParser();
-PARSING = true;
- 
+PARSING = true; 
 sp = FindInputFile(filename,file);
 
 Debug("(BEGIN PARSING %s)\n",file); 
@@ -92,7 +91,7 @@ for (ptr = VIMPORT; ptr != NULL; ptr=ptr->next)
  
 PARSING = false;
 DeleteParser();
- 
+
 Debug("(END OF PARSING %s)\n",file);
 Verbose("Finished with %s\n",file); 
 return true; 
@@ -233,6 +232,8 @@ enum actions action;
 {
 InstallPending(ACTION);   /* Flush any existing actions */
 
+SetStrategies(); 
+
 Debug1("\n\n==============================BEGIN NEW ACTION %s=============\n\n",ACTIONTEXT[action]);
 
 ACTION = action;
@@ -245,6 +246,7 @@ switch (ACTION)
    case makepath:
    case tidy:
    case disable:
+   case rename_disable:
    case filters:
    case strategies:		   
    case image:
@@ -259,8 +261,6 @@ switch (ACTION)
    case methods:
    case processes:  InitializeAction();
    }
-
-
 
 Debug1("\nResetting CLASS to ANY\n\n"); 
 strcpy(CLASSBUFF,CF_ANYCLASS);    /* default class */
@@ -607,6 +607,8 @@ char *fn;
 
 { char local[bufsize];
 
+Debug("HandleFunctionObject(%s)\n",fn); 
+
 if (ACTION == methods)
    {
    strncpy(CURRENTOBJECT,fn,bufsize-1);
@@ -618,6 +620,7 @@ if (IsBuiltinFunction(fn))
    {
    local[0] = '\0';
    strcpy(local,EvaluateFunction(fn,local));
+   
    switch (ACTION)
       {
       case groups:
@@ -627,8 +630,12 @@ if (IsBuiltinFunction(fn))
 	  InstallControlRValue(CURRENTITEM,local);
 	  break;
       case alerts:
-          strncpy(CURRENTOBJECT,fn,bufsize-1);
-          ACTIONPENDING = true; 
+
+	  if (strcmp(local,"noinstall") != 0)
+	     {
+	     strncpy(CURRENTOBJECT,fn,bufsize-1);
+	     ACTIONPENDING = true;
+	     }
 	  break;
 
     default: snprintf(OUTPUT,bufsize,"Function call %s out of place",fn);
@@ -754,6 +761,7 @@ switch (ACTION)
    case tidy:       strncpy(CURRENTITEM,object,bufsize-1);
        break;
 
+   case rename_disable:
    case disable:    strncpy(CURRENTOBJECT,object,bufsize-1);
                     ACTIONPENDING = true;
                     break;
@@ -811,6 +819,16 @@ switch (ACTION)
 	  Debug1("\nFound SetOptionString\n");
 	  strcpy(CURRENTOBJECT,"SetOptionString");
 	  strcpy(EXPR,"SetOptionString");
+	  }
+       else if (HAVE_RESTART)
+	   {
+	   Debug1("Installing restart expression\n");
+	   strncpy(RESTART,object,bufsize-1);
+	   ACTIONPENDING = true;
+	   }
+       else
+	  {
+	  Debug1("Dropped %s :(\n",object);
 	  }
        break;
        
@@ -891,6 +909,7 @@ switch (ACTION)
 		 break;
 
    case disable:
+   case rename_disable:
                  HandleOptionalDisableAttribute(option);
                  break;
    case links:
@@ -1133,6 +1152,9 @@ void InitializeAction()                                   /* Set defaults */
  *FILTERDATA = '\0';
  *STRATEGYDATA = '\0';
  *CHDIR ='\0';
+ METHODFILENAME[0] = '\0';
+ METHODRETURNCLASSES[0] = '\0';
+ METHODREPLYTO[0] = '\0';
  CHROOT[0] = '\0';
  strcpy(VIFNAME,"");
  PTRAVLINKS = (short) '?';

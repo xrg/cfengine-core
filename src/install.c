@@ -47,13 +47,13 @@ char *lvalue,*varvalue;
   
 if (!IsInstallable(CLASSBUFF))
    {
-   Debug1("Not installing %s, no match\n",value);
+   Debug1("Not installing %s=%s, no match (%s)\n",lvalue,varvalue,CLASSBUFF);
    return;
    }
 
 if (strcmp(varvalue,CF_NOCLASS) == 0)
    {
-   Debug1("Not installing %s, evaluated to false\n",value);
+   Debug1("Not installing %s, evaluated to false\n",varvalue);
    return;
    }
  
@@ -328,7 +328,12 @@ switch (ScanVariable(lvalue))
                   break;
 
    case cfmethodname:
+                  if (strcmp(METHODNAME,"cf-nomethod") != 0)
+		     {
+		     yyerror("Redefinition of method name");
+		     }
                   strncpy(METHODNAME,value,bufsize-1);
+		  SetContext("private-method");
                   break;
 
    case cfarglist:
@@ -336,7 +341,7 @@ switch (ScanVariable(lvalue))
                   break;
 		  
    case cfaddclass:
-                  AddCompoundClass(value);
+                  AddMultipleClasses(value);
                   break;
 
    case cfinstallclass:
@@ -1123,6 +1128,8 @@ switch(GetCommAttribute(item))
                    break;
    case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
                    break;
+   case cfdest:    strncpy(DESTINATION,value,bufsize-1);
+                   break;
 
    default:        yyerror("Illegal disable attribute");
    }
@@ -1324,7 +1331,7 @@ void HandleOptionalMethodsAttribute(item)
 
 char *item;
 
-{ char value[maxvarsize];
+{ char value[bufsize];
 
 VBUFF[0] = value[0] = '\0';
 
@@ -1334,7 +1341,7 @@ sscanf(VBUFF,"%*[^=]=%s",value);
 
 if (value[0] == '\0')
    {
-   yyerror("Packages attribute with no value");
+   yyerror("Methods attribute with no value");
    }
 
  switch(GetCommAttribute(item))
@@ -1346,19 +1353,29 @@ if (value[0] == '\0')
 	           break;
 
     case cfretvars:
-	           strncpy(VUIDNAME,value,bufsize-1);
+	           strncpy(METHODFILENAME,value,bufsize-1);
 	           break;
     case cfretclasses:
- 	           strncpy(VGIDNAME,value,bufsize-1);
+ 	           strncpy(METHODRETURNCLASSES,value,bufsize-1);
 	           break;
 
     case cfsendclasses:
- 	            strncpy(LINKFROM,value,bufsize-1);
+ 	            strncpy(METHODREPLYTO,value,bufsize-1);
 	            break;
     case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
 	            break;
     case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
-	break;
+           	    break;
+
+   case cfowner:     strncpy(VUIDNAME,value,bufsize-1);
+		     break;
+   case cfgroup:     strncpy(VGIDNAME,value,bufsize-1);
+                     break;
+   case cfchdir:     HandleChDir(value);
+                     break;
+   case cfchroot:    HandleChRoot(value);
+                     break;		     
+
 	
     default:       yyerror("Illegal methods attribute");
     }
@@ -1456,7 +1473,6 @@ switch(GetCommAttribute(item))
 
    default:         yyerror("Illegal alerts attribute");
    }
-
 }
 
 /*******************************************************************/
@@ -1605,6 +1621,12 @@ enum itemtypes type;
 
 { char *machine, *user, *domain;
   char buff[bufsize];
+
+if (!IsDefinedClass(CLASSBUFF))
+   {
+   Debug("Not defining class (%s) - no match of container class (%s)\n",item,CLASSBUFF);
+   return;
+   }
 
 if (*item == '\'' || *item == '"' || *item == '`')
    {
@@ -2514,11 +2536,16 @@ else
 switch (action)
    {
    case filters:  InstallFilterTest(FILTERNAME,CURRENTITEM,FILTERDATA);
+                  CURRENTITEM[0] = '\0';
+		  FILTERDATA[0] = '\0'; 
                   break;
 
    case strategies:
                   AddClassToStrategy(STRATEGYNAME,CURRENTITEM,STRATEGYDATA);
 		  break;
+
+   case resolve:  AppendNameServer(CURRENTOBJECT);
+                  break;
    case files:
                   InstallFileListItem(CURRENTOBJECT,PLUSMASK,MINUSMASK,FILEACTION,VUIDNAME,
 				      VGIDNAME,VRECURSE,(char)PTRAVLINKS,CHECKSUM);
@@ -2550,7 +2577,8 @@ switch (action)
 
    case methods:  InstallMethod(CURRENTOBJECT,ACTIONBUFF);
                   break;
-		  
+
+   case rename_disable:
    case disable:  AppendDisable(CURRENTOBJECT,CURRENTITEM,ROTATE,DISCOMP,DISABLESIZE);
                   break;
 
@@ -2559,8 +2587,14 @@ switch (action)
 		  InitializeAction();
 		  break;
 
-   case alerts:
-                  InstallItem(&VALERTS,CURRENTOBJECT,CLASSBUFF,0,0);
+   case alerts:   if (strcmp(CLASSBUFF,"any") == 0)
+                     {
+		     yyerror("Alerts cannot be in class any - probably a mistake");
+		     }
+                  else
+		     {
+		     InstallItem(&VALERTS,CURRENTOBJECT,CLASSBUFF,0,0);
+		     }
                   break;
    case interfaces:
                   AppendInterface(VIFNAME,DESTINATION,CURRENTOBJECT);
@@ -2640,13 +2674,7 @@ switch (action)
                   break;
    }
 
-LINKFROM[0] = '\0';
-LINKTO[0] = '\0';
-ACTIONPENDING = false;
-CURRENTITEM[0] = '\0';
-VRECURSE = 0;
-VAGE=99999;
-
+ 
 Debug1("   END InstallPending]\n\n");
 }
 
@@ -3231,11 +3259,11 @@ int timeout;
   int uid = CF_NOUSER; 
   int gid = CF_NOUSER;
   
-Debug1("Installing item (%s) in the script list\n",item);
+Debug1("Installing shellcommand (%s) in the script list\n",item);
 
 if (!IsInstallable(CLASSBUFF))
    {
-   Debug1("Not installing %s, no match (%s)\n",item,CLASSBUFF);
+   Debug1("Not installing (%s), no class match (%s)\n",item,CLASSBUFF);
    InitializeAction();
    return;
    }
@@ -3446,7 +3474,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    if ((ptr->defines = strdup(VBUFF)) == NULL)
       {
       FatalError("Memory Allocation failed for AppendDisable() #3");
-      } 
+      }
 
    ExpandVarstring(ELSECLASSBUFFER,VBUFF,"");
 
@@ -3473,7 +3501,15 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       {
       FatalError("Memory Allocation failed for AppendDisable() #4");
       }
-   
+
+
+   ExpandVarstring(DESTINATION,VBUFF,"");
+
+   if ((ptr->destination = strdup(VBUFF)) == NULL)
+      {
+      FatalError("Memory Allocation failed for AppendDisable() #3");
+      }
+
    if (VDISABLETOP == NULL)                 /* First element in the list */
       {
       VDISABLELIST = ptr;
@@ -3538,7 +3574,11 @@ char *function, *file;
 
 { char *sp, work[bufsize],name[bufsize];
   struct Method *ptr;
- 
+  uid_t uid = CF_NOUSER;
+  gid_t gid = CF_NOUSER;
+  struct passwd *pw;
+  struct group *gw;
+   
 Debug1("Installing item (%s=%s) in the methods list\n",function,file);
 
 bzero(name,bufsize-1);
@@ -3599,8 +3639,13 @@ for (sp = work; sp != NULL; sp++) /* Pick out the args*/
  
 sp++; 
 
+if (strlen(sp) == 0)
+   {
+   yyerror("Missing argument (void?) to method");
+   }
+ 
 ptr->send_args = ListFromArgs(sp);
-ptr->send_classes = SplitStringAsItemList(LINKFROM,','); 
+ptr->send_classes = SplitStringAsItemList(METHODREPLYTO,','); 
  
 if ((ptr->name = strdup(name)) == NULL)
    {
@@ -3636,10 +3681,67 @@ if ((ptr->classes = strdup(CLASSBUFF)) == NULL)
  
 ptr->file = strdup(file); 
 ptr->servers = SplitStringAsItemList(CFSERVER,',');
-ptr->return_vars = SplitStringAsItemList(VUIDNAME,',');
-ptr->return_classes = SplitStringAsItemList(VGIDNAME,','); 
+ptr->return_vars = SplitStringAsItemList(METHODFILENAME,',');
+ptr->return_classes = SplitStringAsItemList(METHODRETURNCLASSES,','); 
 ptr->scope = strdup(CONTEXTID);
+ptr->useshell = USESHELL;
+ptr->log = LOGP;
+ptr->inform = INFORMP;
  
+if (*VUIDNAME == '*')
+   {
+   ptr->uid = sameowner;      
+   }
+else if (isdigit((int)*VUIDNAME))
+   {
+   sscanf(VUIDNAME,"%d",&uid);
+   if (uid == CF_NOUSER)
+      {
+      yyerror("Unknown or silly user id");
+      return;
+      }
+   else
+      {
+      ptr->uid = uid;
+      }
+   }
+else if ((pw = getpwnam(VUIDNAME)) == NULL)
+   {
+   yyerror("Unknown or silly user id");
+   return;
+   }
+else
+   {
+   ptr->uid = pw->pw_uid;
+   }
+
+if (*VGIDNAME == '*')
+   {
+   ptr->gid = samegroup;
+   }
+else if (isdigit((int)*VGIDNAME))
+   {
+   sscanf(VGIDNAME,"%d",&gid);
+   if (gid == CF_NOUSER)
+      {
+      yyerror("Unknown or silly group id");
+      return;
+      }
+   else
+      {
+      ptr->gid = gid;
+      }
+   }
+else if ((gw = getgrnam(VGIDNAME)) == NULL)
+   {
+   yyerror("Unknown or silly group id");
+   return;
+   }
+else
+   {
+   ptr->gid = gw->gr_gid;
+   }
+  
 if (PIFELAPSED != -1)
    {
    ptr->ifelapsed = PIFELAPSED;
@@ -3656,6 +3758,20 @@ if (PEXPIREAFTER != -1)
 else
    {
    ptr->expireafter = VEXPIREAFTER;
+   }
+
+ExpandVarstring(CHROOT,work,"");
+ 
+if ((ptr->chroot = strdup(work)) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallProcItem() #4b");
+   }
+
+ExpandVarstring(CHDIR,work,"");
+ 
+if ((ptr->chdir = strdup(work)) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallProcItem() #4c");
    }
  
 ptr->next = NULL;
@@ -4703,8 +4819,8 @@ int rec, size;
   
 if ( ! IsInstallable(CLASSBUFF))
    {
+   Debug1("Not installing copy item, no match (%s)\n",CLASSBUFF);
    InitializeAction();
-   Debug1("Not installing copy item, no match\n");
    return;
    }
   

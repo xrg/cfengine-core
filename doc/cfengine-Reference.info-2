@@ -686,7 +686,7 @@ version 2.1.0, you can define the expiry time on a per-command basis,
 as options of the form `expireafter=10'.
 
 
-File: cfengine-Reference.info,  Node: homepattern,  Next: IfElapsed,  Prev: ExpireAfter,  Up: control
+File: cfengine-Reference.info,  Node: homepattern,  Next: HostnameKeys,  Prev: ExpireAfter,  Up: control
 
 HomePattern
 -----------
@@ -727,7 +727,25 @@ achieve the same this as follows:
       HomePattern = ( staff students )
 
 
-File: cfengine-Reference.info,  Node: IfElapsed,  Next: Inform,  Prev: homepattern,  Up: control
+File: cfengine-Reference.info,  Node: HostnameKeys,  Next: IfElapsed,  Prev: homepattern,  Up: control
+
+HostnameKeys
+------------
+
+   If this variable is set to true/on, it causes cfagent to lookup and
+store trusted public keys according to their DNS fully qualified host
+name, instead of using the IP address.  This can be useful in
+environments where hosts do not have fixed IP addresses, but do have
+fixed hostnames.
+
+
+       HostnameKeys = ( on )
+   This method of storing keys is not recommended for sites with fixed
+IP addresses, since it removes one security barrier from a potential
+attacker by potentially allowing DNS spoofing.
+
+
+File: cfengine-Reference.info,  Node: IfElapsed,  Next: Inform,  Prev: HostnameKeys,  Up: control
 
 IfElapsed
 ---------
@@ -1037,7 +1055,7 @@ quoted with either single or double quotes in order to encompass spaces
 etc.
 
 
-File: cfengine-Reference.info,  Node: repository,  Next: schedule,  Prev: repchar,  Up: control
+File: cfengine-Reference.info,  Node: repository,  Next: RPMcommand,  Prev: repchar,  Up: control
 
 Repository
 ----------
@@ -1051,7 +1069,17 @@ path from which they originate.  This affects files saved using
 repository: (cfengine-Tutorial)Disabling and the file repository.
 
 
-File: cfengine-Reference.info,  Node: schedule,  Next: secureinput,  Prev: repository,  Up: control
+File: cfengine-Reference.info,  Node: RPMcommand,  Next: schedule,  Prev: repository,  Up: control
+
+RPMcommand
+----------
+
+   The default value of the Red Hat Package manager command `/bin/rpm'
+can be altered for non-standard systems with this variable.
+     RPMcommand = ( /usr/bin/rpm )
+
+
+File: cfengine-Reference.info,  Node: schedule,  Next: secureinput,  Prev: RPMcommand,  Up: control
 
 Schedule
 --------
@@ -1286,7 +1314,7 @@ files which cfengine creates for each user after tidying files, so you
 should make this an address which users can mail if they have troubles.
 
 
-File: cfengine-Reference.info,  Node: Syslog,  Next: timezone,  Prev: sysadm,  Up: control
+File: cfengine-Reference.info,  Node: Syslog,  Next: SyslogFacility,  Prev: sysadm,  Up: control
 
 Syslog
 ------
@@ -1305,7 +1333,30 @@ Syslog
         Syslog = ( on )
 
 
-File: cfengine-Reference.info,  Node: timezone,  Next: TimeOut,  Prev: Syslog,  Up: control
+File: cfengine-Reference.info,  Node: SyslogFacility,  Next: timezone,  Prev: Syslog,  Up: control
+
+SyslogFacility
+--------------
+
+
+       SyslogFacility = ( FACILITY )
+
+   This variable alters the syslog facility level.  e.g.
+
+
+        SyslogFacility = ( LOG_LOCAL1 )
+
+   Valid arguments are
+     LOG_USER
+     LOG_DAEMON
+     LOG_LOCAL0
+     LOG_LOCAL1
+     LOG_LOCAL2
+     LOG_LOCAL3
+     LOG_LOCAL4
+
+
+File: cfengine-Reference.info,  Node: timezone,  Next: TimeOut,  Prev: SyslogFacility,  Up: control
 
 timezone
 --------
@@ -1367,62 +1418,4 @@ this output level on selected hosts one writes:
         Verbose = ( on )
 
    For related more limited output, *Note Inform::.
-
-
-File: cfengine-Reference.info,  Node: Warnings,  Next: warnnonuserfiles,  Prev: Verbose,  Up: control
-
-Warnings
---------
-
-
-       Warnings = ( ON/off )
-
-   This variable switches on the parser-output level whereby cfengine
-reports non-fatal warnings.  This is equivalent to setting the command
-line switch `--no-warn', or `-w'.  To set this output level on selected
-hosts one writes:
-
-
-      CLASSES::
-     
-        Warnings = ( on )
-
-
-File: cfengine-Reference.info,  Node: warnnonuserfiles,  Next: warnnonownerfiles,  Prev: Warnings,  Up: control
-
-WarnNonUserFiles
-----------------
-
-   If this parameter is set to true, cfengine will warn about files in
-spool directories which do not have a name belonging to a known user id.
-
-   See also `DeleteNonUserFiles'.
-
-
-File: cfengine-Reference.info,  Node: warnnonownerfiles,  Next: warnnonusermail,  Prev: warnnonuserfiles,  Up: control
-
-WarnNonOwnerFiles
------------------
-
-   If this parameter is set to true, cfengine will warn about files on
-mailservers whose names do not correspond to a known user name, but
-might be owned by a known user.
-
-
-     SpoolDirectories = ( /var/spool/cron/crontabs )
-     
-     WarnNonOwnerFiles = ( true )
-
-   See also `DeleteNonOwnerFiles'. This generalizes and succeeds
-`DeleteNonOwnerMail'.
-
-
-File: cfengine-Reference.info,  Node: warnnonusermail,  Next: warnnonownermail,  Prev: warnnonownerfiles,  Up: control
-
-WarnNonUserMail
----------------
-
-   If this parameter is set to true, cfengine will warn about mail
-files on mailservers which do not have a name belonging to a known user
-id. This does not include lock files.
 

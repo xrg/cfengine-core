@@ -71,7 +71,7 @@ int IdentifyForVerification(sd,localip,family)
 int sd,family;
 char *localip;
 
-{ char sendbuff[bufsize],dnsname[maxvarsize];
+{ char sendbuff[bufsize],dnsname[bufsize];
   struct sockaddr_in myaddr;
   struct in_addr *iaddr;
   struct hostent *hp;
@@ -80,7 +80,7 @@ char *localip;
   char *uname;
   
 bzero(sendbuff,bufsize);
-bzero(dnsname,maxvarsize);
+bzero(dnsname,bufsize);
  
 if (strcmp(VDOMAIN,CF_START_DOMAIN) == 0)
    {
@@ -136,7 +136,7 @@ if ((hp == NULL) || (hp->h_name == NULL))
    return false;
    }
 
-strcpy(dnsname,hp->h_name);
+strncpy(dnsname,hp->h_name,maxvarsize);
  
 if ((strstr(hp->h_name,".") == 0) && (strlen(VDOMAIN) > 0))
    {
@@ -152,12 +152,21 @@ uname = user_ptr ? user_ptr->pw_name : "UNKNOWN";
 
 if ((strlen(VDOMAIN) > 0) && !IsIPV6Address(dnsname) && !strchr(dnsname,'.'))
    {
+   Debug("Appending domain %s to %s\n",VDOMAIN,dnsname);
    strcat(dnsname,".");
    strncat(dnsname,VDOMAIN,maxvarsize/2);
    }  
- 
-snprintf(sendbuff,bufsize,"CAUTH %s %s %s %d",localip,dnsname,uname,CFSIGNATURE);
 
+if (strncmp(dnsname,localip,strlen(localip)) == 0)
+   {
+   /* Seems to be a bug in some resolvers that adds garbage, when it just returns the input */
+   strcpy(dnsname,localip);
+   }
+
+ snprintf(sendbuff,bufsize-1,"CAUTH %s %s %s %d",localip,dnsname,uname,CFSIGNATURE);
+
+Debug("SENT:::%s\n",sendbuff);
+ 
 SendTransaction(sd,sendbuff,0,CF_DONE);
 return true;
 }
@@ -199,12 +208,20 @@ ChecksumString(in,nonce_len,digest,'m');
 
 /* We assume that the server bound to the remote socket is the official one i.e. = root's */
 
-snprintf(keyname,bufsize,"root-%s",CONN->remoteip); 
+if (OptionIs(CONTEXTID,"HostnameKeys",true))
+   {
+   snprintf(keyname,bufsize,"root-%s",ip->server); 
+   }
+else
+   {
+   snprintf(keyname,bufsize,"root-%s",CONN->remoteip); 
+   }
 
 if (server_pubkey = HavePublicKey(keyname))
    {
    cant_trust_server = 'y';
-   encrypted_len = BN_num_bytes(server_pubkey->n);
+   /* encrypted_len = BN_num_bytes(server_pubkey->n);*/   
+   encrypted_len = RSA_size(server_pubkey);
    }
 else 
    {

@@ -173,8 +173,9 @@ char **argv;
   struct stat statbuf;
   int c;
 
+SetContext("server");
 sprintf(VPREFIX, "cfservd");
-openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_DAEMON);
+CfOpenLog();
 strcpy(VINPUTFILE,CFD_INPUT);
 strcpy(CFLOCK,"cfservd");
 OUTPUT[0] = '\0';
@@ -192,7 +193,6 @@ PARSEONLY  = false;
 ld_library_path[0] = '\0';
 
 InstallObject("server"); 
-SetContext("server");
 
 AddClassToHeap("any");      /* This is a reserved word / wildcard */
 
@@ -216,7 +216,7 @@ while ((c=getopt_long(argc,argv,"L:d:f:vmhpFV",CFDOPTIONS,&optindex)) != EOF)
                    }
 		
 		NO_FORK = true;
-		printf("cfservd Debug mode: running in foreground\n");
+		printf("cfservd: Debug mode: running in foreground\n");
                 break;
 
       case 'v': VERBOSE = true;
@@ -1060,6 +1060,12 @@ struct cfd_connection *conn;
 sigemptyset(&sigmask);
 pthread_sigmask(SIG_BLOCK,&sigmask,NULL); 
 #endif
+
+if (conn == NULL)
+   {
+   Debug("Null connection\n");
+   return NULL;
+   }
  
 if (pthread_mutex_lock(&MUTEX_COUNT) != 0)
    {
@@ -1148,7 +1154,7 @@ struct cfd_connection *conn;
   /* and extract the information from the message */
 
 { time_t tloc, trem = 0;
-  char recvbuffer[bufsize], sendbuffer[bufsize],check[bufsize];  
+  char recvbuffer[bufsize+128], sendbuffer[bufsize],check[bufsize];  
   char filename[bufsize],buffer[bufsize],args[bufsize],out[bufsize];
   long time_no_see = 0;
   int len=0, drift, plainlen, received;
@@ -1742,7 +1748,11 @@ Debug("(ipstring=[%s],fqname=[%s],username=[%s],socket=[%s])\n",ipstring,fqname,
 strncpy(dns_assert,ToLowerStr(fqname),maxvarsize-1);
 strncpy(ip_assert,ipstring,maxvarsize-1);
 
-if (IsFuzzyItemIn(SKIPVERIFY,MapAddress(conn->ipaddr)))
+/* It only makes sense to check DNS by reverse lookup if the key had to be accepted
+   on trust. Once we have a positive key ID, the IP address is irrelevant fr authentication...
+   We can save a lot of time by not looking this up ... */
+ 
+if ((conn->trust == false) || IsFuzzyItemIn(SKIPVERIFY,MapAddress(conn->ipaddr)))
    {
    snprintf(conn->output,bufsize*2,"Allowing %s to connect without (re)checking ID\n",ip_assert);
    CfLog(cfverbose,conn->output,"");
@@ -1752,8 +1762,7 @@ if (IsFuzzyItemIn(SKIPVERIFY,MapAddress(conn->ipaddr)))
    strncpy(conn->username,username,maxvarsize);
 
    if ((pw=getpwnam(username)) == NULL) /* Keep this inside mutex */
-      {
-      
+      {      
       printf("username was");
       conn->uid = -2;
       }
@@ -2104,12 +2113,12 @@ return access;
 int AuthenticationDialogue(conn,recvbuffer)
 
 struct cfd_connection *conn;
-char recvbuffer[bufsize];
+char *recvbuffer;
 
 { char in[bufsize],*out, *decrypted_nonce;
   BIGNUM *counter_challenge = NULL;
   unsigned char digest[EVP_MAX_MD_SIZE+1];
-  int crypt_len, nonce_len = 0,len = 0, encrypted_len, keylen;
+  unsigned int crypt_len, nonce_len = 0,len = 0, encrypted_len, keylen;
   char sauth[10], iscrypt ='n';
   unsigned long err;
   RSA *newkey;
@@ -2202,9 +2211,16 @@ if (pthread_mutex_unlock(&MUTEX_SYSCALL) != 0)
 
  
 /* proposition C2 */ 
-if ((len = ReceiveTransaction(conn->sd_reply,recvbuffer,NULL)) == 0)
+if ((len = ReceiveTransaction(conn->sd_reply,recvbuffer,NULL)) == -1)
    {
-   CfLog(cfinform,"Protocol error in RSA authentation from IP %s\n",conn->hostname);
+   CfLog(cfinform,"Protocol error 1 in RSA authentation from IP %s\n",conn->hostname);
+   RSA_free(newkey);
+   return false;
+   }
+
+if (len == 0)
+   {
+   CfLog(cfinform,"Protocol error 2 in RSA authentation from IP %s\n",conn->hostname);
    RSA_free(newkey);
    return false;
    }
@@ -2220,9 +2236,16 @@ if ((newkey->n = BN_mpi2bn(recvbuffer,len,NULL)) == NULL)
 
 /* proposition C3 */ 
 
-if ((len=ReceiveTransaction(conn->sd_reply,recvbuffer,NULL)) == 0)
+if ((len=ReceiveTransaction(conn->sd_reply,recvbuffer,NULL)) == -1)
    {
-   CfLog(cfinform,"Protocol error in RSA authentation from IP %s\n",conn->hostname);
+   CfLog(cfinform,"Protocol error 3 in RSA authentation from IP %s\n",conn->hostname);
+   RSA_free(newkey);
+   return false;
+   }
+
+ if (len == 0)
+   {
+   CfLog(cfinform,"Protocol error 4 in RSA authentation from IP %s\n",conn->hostname);
    RSA_free(newkey);
    return false;
    }
@@ -2260,8 +2283,11 @@ SendTransaction(conn->sd_reply,digest,16,CF_DONE);
 counter_challenge = BN_new();
 BN_rand(counter_challenge,256,0,0);
 nonce_len = BN_bn2mpi(counter_challenge,in);
-ChecksumString(in,nonce_len,digest,'m'); 
-encrypted_len = BN_num_bytes(newkey->n); /* encryption buffer is always the same size as n */
+ChecksumString(in,nonce_len,digest,'m');
+ 
+/* encrypted_len = BN_num_bytes(newkey->n);  encryption buffer is always the same size as n */
+
+encrypted_len = RSA_size(newkey); /* encryption buffer is always the same size as n */ 
 
  
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
@@ -2271,7 +2297,7 @@ if (pthread_mutex_lock(&MUTEX_SYSCALL) != 0)
    }
 #endif
  
-if ((out = malloc(encrypted_len)) == NULL)
+if ((out = malloc(encrypted_len+1)) == NULL)
    {
    FatalError("memory failure");
    }
@@ -2290,6 +2316,7 @@ if (RSA_public_encrypt(nonce_len,in,out,newkey,RSA_PKCS1_PADDING) <= 0)
    snprintf(conn->output,bufsize,"Public encryption failed = %s\n",ERR_reason_error_string(err));
    CfLog(cferror,conn->output,"");
    RSA_free(newkey);
+   free(out);
    return false;
    }
 
@@ -2936,7 +2963,14 @@ RSA *key;
 { RSA *savedkey;
  char keyname[maxvarsize];
 
-snprintf(keyname,maxvarsize,"%s-%s",conn->username,MapAddress(conn->ipaddr));
+if (OptionIs(CONTEXTID,"HostnameKeys",true))
+   {
+   snprintf(keyname,maxvarsize,"%s-%s",conn->username,conn->hostname);
+   }
+else
+   {
+   snprintf(keyname,maxvarsize,"%s-%s",conn->username,MapAddress(conn->ipaddr));
+   }
  
 if (savedkey = HavePublicKey(keyname))
    {
@@ -3351,6 +3385,13 @@ struct Image *ip;
  return 0;
 }
 
+struct Method *IsDefinedMethod(name,s)
+
+char *name,*s;
+
+{
+return NULL; 
+}
 /* EOF */
 
 

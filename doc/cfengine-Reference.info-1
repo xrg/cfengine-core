@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.0.8p1 for version
-2.0.8p1 as last updated 1 September 2003.
+   This manual corresponds to CFENGINE Edition 2.1.0p1 for version
+2.1.0p1 as last updated 22 October 2003.
 
 * Menu:
 
@@ -353,10 +353,12 @@ Cfagent reference
 * interfaces::
 * links::
 * mailserver::
+* methods::
 * miscmounts::
 * mountables::
 * processes::
 * packages::
+* rename::
 * required::
 * resolve::
 * shellcommands::
@@ -1243,9 +1245,15 @@ File: cfengine-Reference.info,  Node: alerts,  Next: binservers,  Prev: acl,  Up
 alerts
 ======
 
-   Alerts are messages that are printed when classes become activated.
-Alerts can quote special functions, like `ShowState()'.  Alerts cannot
-belong to the class `any'.
+   Alerts are normally just messages that are printed when classes
+become activated in order to alert the system administrator to some
+condition that has arisen.  Alerts can also be special functions, like
+`ShowState()' that generate system output.
+
+   Alerts cannot belong to the class `any', that would generate a
+message from every host. In a huge network this could result in vast
+amounts of Email. This behaviour can be forced, however, by creating an
+alias for the class `any' that is defined on the affected hosts.
 
      alerts:
      
@@ -1253,6 +1261,9 @@ belong to the class `any'.
      
            QUOTED MESSAGE ifelapsed=TIME
            ShowState(PARAMETER)
+           SysLog(PRIORITY,MESSAGE)
+           SetState(NAME,TTL,POLICY)
+           UnSetState(NAME)
    For example:
 
 
@@ -1280,6 +1291,41 @@ daemon.
      ShowState(outgoing.www)
      ShowState(procs)
      ShowState(users)
+
+   To limit the frequency of alerts, you can set locking times:
+      # ROOT PROCS
+     
+       anomaly_hosts.RootProcs_high_dev2::
+     
+        "RootProc anomaly high 2 dev on $(host) value $(value_rootprocs) av $(average_rootprocs) pm $(stddev_rootprocs)"
+     
+        ShowState(procs)  ifelapsed=10 expireafter=20
+   Alerts can also be channeled directly to syslog, to avoid extraneous
+console messages or email.
+
+       SysLog(LOG_ERR,"Test syslog message")
+   One application for alerts is to pass signals from one cfengine to
+another by persistent, shared memory.  For example, suppose a
+short-lived anomaly event triggers a class that relates to a security
+alert. The event class might be too short-lived to be followed up by
+cfagent in full. One could thus set a long term class that would
+trigger up several follow-up checks.  A persistent class could also be
+used to exclude an operation for an interval of time.
+
+   Persistent class memory can be added through a system alert
+functions to give timer behaviour.  For example, consider setting a
+class that acts like a non-resettable timer. It is defined for exactly
+10 minutes before expiring.
+
+       SetState("preserved_class",10,Preserve)
+   Or to set a class that acts as a resettable timer. It is defined for
+60 minutes unless the SetState call is called again to extend its
+lifetime.
+
+       SetState(non_preserved_class,60,Reset)
+   Existing persistent classes can be deleted with:
+
+               UnsetState(myclass)
 
 
 File: cfengine-Reference.info,  Node: binservers,  Next: broadcast,  Prev: alerts,  Up: Cfagent reference
@@ -1445,6 +1491,7 @@ cfengine.  Note that a limited number of in-built functions exists:
 * excludelinks::
 * ExpireAfter::
 * homepattern::
+* HostnameKeys::
 * IfElapsed::
 * Inform::
 * interfacename::
@@ -1459,6 +1506,7 @@ cfengine.  Note that a limited number of in-built functions exists:
 * nfstype::
 * repchar::
 * repository::
+* RPMcommand::
 * schedule::
 * secureinput::
 * sensiblecount::
@@ -1473,6 +1521,7 @@ cfengine.  Note that a limited number of in-built functions exists:
 * suspiciousnames::
 * sysadm::
 * Syslog::
+* SyslogFacility::
 * timezone::
 * TimeOut::
 * Verbose::

@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.0.8p1 for version
-2.0.8p1 as last updated 10 May 2003.
+   This manual corresponds to CFENGINE Edition 2.1.0p1 for version
+2.1.0p1 as last updated 21 October 2003.
 
 * Menu:
 
@@ -901,7 +901,11 @@ to download it. Here is a simple get-started file which does this:
         # Grant access to all hosts at example.org.
         # Files should be world readable
      
-        /masterfiles/inputs   *.example.org
+        /masterfiles/inputs        *.example.org
+     
+        # Make sure there is permission to execute by cfrun
+     
+        /var/cfengine/bin/cfagent  *.example.org
      
      ########
      #

@@ -379,10 +379,12 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#interfaces">interfaces</a>: 
 <li><a href="#links">links</a>: 
 <li><a href="#mailserver">mailserver</a>: 
+<li><a href="#methods">methods</a>: 
 <li><a href="#miscmounts">miscmounts</a>: 
 <li><a href="#mountables">mountables</a>: 
 <li><a href="#processes">processes</a>: 
 <li><a href="#packages">packages</a>: 
+<li><a href="#rename">rename</a>: 
 <li><a href="#required">required</a>: 
 <li><a href="#resolve">resolve</a>: 
 <li><a href="#shellcommands">shellcommands</a>: 
@@ -1384,9 +1386,15 @@ Up:<a rel="up" accesskey="u" href="#Cfagent%20reference">Cfagent reference</a>
 
 <h3 class="section">alerts</h3>
 
-   <p>Alerts are messages that are printed when classes become activated. 
-Alerts can quote special functions, like <code>ShowState()</code>. 
-Alerts cannot belong to the class <code>any</code>.
+   <p>Alerts are normally just messages that are printed when classes become activated
+in order to alert the system administrator to some condition that has arisen. 
+Alerts can also be special functions, like <code>ShowState()</code> that generate
+system output.
+
+   <p>Alerts cannot belong to the class <code>any</code>, that would generate a message from
+every host. In a huge network this could result in vast amounts of Email. This behaviour
+can be forced, however, by creating an alias for the class `any' that is defined on
+the affected hosts.
 <pre class="smallexample">     
      alerts:
      
@@ -1394,6 +1402,9 @@ Alerts cannot belong to the class <code>any</code>.
      
            <var>quoted message</var> ifelapsed=<var>time</var>
            ShowState(<var>parameter</var>)
+           SysLog(<var>priority</var>,<var>message</var>)
+           SetState(<var>name</var>,<var>ttl</var>,<var>policy</var>)
+           UnSetState(<var>name</var>)
      
      </pre>
    For example:
@@ -1425,6 +1436,49 @@ daemon.
      ShowState(outgoing.www)
      ShowState(procs)
      ShowState(users)
+     </pre>
+
+   <p>To limit the frequency of alerts, you can set locking times:
+<pre class="smallexample">      # ROOT PROCS
+     
+       anomaly_hosts.RootProcs_high_dev2::
+     
+        "RootProc anomaly high 2 dev on $(host) value $(value_rootprocs) av $(average_rootprocs) pm $(stddev_rootprocs)"
+     
+        ShowState(procs)  ifelapsed=10 expireafter=20
+     
+     </pre>
+   Alerts can also be channeled directly to syslog, to avoid extraneous console messages or email.
+<pre class="smallexample">     
+       SysLog(LOG_ERR,"Test syslog message")
+     
+     </pre>
+   One application for alerts is to pass signals from one cfengine to
+another by persistent, shared memory.  For example, suppose a short-lived anomaly event
+triggers a class that relates to a security alert. The event class might be too short-lived
+to be followed up by cfagent in full. One could thus set a long term class that would
+trigger up several follow-up checks. 
+A persistent class could also be used to exclude an operation for an interval of time.
+
+   <p>Persistent class memory can be
+added through a system alert functions to give timer behaviour. 
+For example, consider setting
+a class that acts like a non-resettable timer. It is defined for exactly 10
+minutes before expiring.
+<pre class="smallexample">     
+       SetState("preserved_class",10,Preserve)
+     
+     </pre>
+   Or to set a class that acts as a resettable timer. It is defined for 60 minutes unless
+the SetState call is called again to extend its lifetime.
+<pre class="smallexample">     
+       SetState(non_preserved_class,60,Reset)
+     
+     </pre>
+   Existing persistent classes can be deleted with:
+<pre class="smallexample">     
+               UnsetState(myclass)
+     
      </pre>
 
 <div class="node">
@@ -1614,6 +1668,7 @@ A maximum number of bytes is read from the named file and placed in a variable.
 <li><a href="#excludelinks">excludelinks</a>: 
 <li><a href="#ExpireAfter">ExpireAfter</a>: 
 <li><a href="#homepattern">homepattern</a>: 
+<li><a href="#HostnameKeys">HostnameKeys</a>: 
 <li><a href="#IfElapsed">IfElapsed</a>: 
 <li><a href="#Inform">Inform</a>: 
 <li><a href="#interfacename">interfacename</a>: 
@@ -1628,6 +1683,7 @@ A maximum number of bytes is read from the named file and placed in a variable.
 <li><a href="#nfstype">nfstype</a>: 
 <li><a href="#repchar">repchar</a>: 
 <li><a href="#repository">repository</a>: 
+<li><a href="#RPMcommand">RPMcommand</a>: 
 <li><a href="#schedule">schedule</a>: 
 <li><a href="#secureinput">secureinput</a>: 
 <li><a href="#sensiblecount">sensiblecount</a>: 
@@ -1642,6 +1698,7 @@ A maximum number of bytes is read from the named file and placed in a variable.
 <li><a href="#suspiciousnames">suspiciousnames</a>: 
 <li><a href="#sysadm">sysadm</a>: 
 <li><a href="#Syslog">Syslog</a>: 
+<li><a href="#SyslogFacility">SyslogFacility</a>: 
 <li><a href="#timezone">timezone</a>: 
 <li><a href="#TimeOut">TimeOut</a>: 
 <li><a href="#Verbose">Verbose</a>: 
@@ -2547,7 +2604,7 @@ as options of the form <code>expireafter=10</code>.
 <div class="node">
 <p><hr>
 Node:<a name="homepattern">homepattern</a>,
-Next:<a rel="next" accesskey="n" href="#IfElapsed">IfElapsed</a>,
+Next:<a rel="next" accesskey="n" href="#HostnameKeys">HostnameKeys</a>,
 Previous:<a rel="previous" accesskey="p" href="#ExpireAfter">ExpireAfter</a>,
 Up:<a rel="up" accesskey="u" href="#control">control</a>
 <br>
@@ -2595,9 +2652,34 @@ to achieve the same this as follows:
 
 <div class="node">
 <p><hr>
+Node:<a name="HostnameKeys">HostnameKeys</a>,
+Next:<a rel="next" accesskey="n" href="#IfElapsed">IfElapsed</a>,
+Previous:<a rel="previous" accesskey="p" href="#homepattern">homepattern</a>,
+Up:<a rel="up" accesskey="u" href="#control">control</a>
+<br>
+</div>
+
+<h4 class="subsection">HostnameKeys</h4>
+
+   <p>If this variable is set to true/on, it causes cfagent to
+lookup and store trusted public keys according to their
+DNS fully qualified host name, instead of using the IP address. 
+This can be useful in environments where hosts do not have fixed
+IP addresses, but do have fixed hostnames.
+
+<pre class="smallexample">     
+       HostnameKeys = ( on )
+     
+     </pre>
+   This method of storing keys is not recommended for sites with
+fixed IP addresses, since it removes one security barrier
+from a potential attacker by potentially allowing DNS spoofing.
+
+<div class="node">
+<p><hr>
 Node:<a name="IfElapsed">IfElapsed</a>,
 Next:<a rel="next" accesskey="n" href="#Inform">Inform</a>,
-Previous:<a rel="previous" accesskey="p" href="#homepattern">homepattern</a>,
+Previous:<a rel="previous" accesskey="p" href="#HostnameKeys">HostnameKeys</a>,
 Up:<a rel="up" accesskey="u" href="#control">control</a>
 <br>
 </div>
@@ -3007,7 +3089,7 @@ order to encompass spaces etc.
 <div class="node">
 <p><hr>
 Node:<a name="repository">repository</a>,
-Next:<a rel="next" accesskey="n" href="#schedule">schedule</a>,
+Next:<a rel="next" accesskey="n" href="#RPMcommand">RPMcommand</a>,
 Previous:<a rel="previous" accesskey="p" href="#repchar">repchar</a>,
 Up:<a rel="up" accesskey="u" href="#control">control</a>
 <br>
@@ -3026,9 +3108,25 @@ This affects files saved using <code>disable</code>, <code>copy</code>,
 
 <div class="node">
 <p><hr>
+Node:<a name="RPMcommand">RPMcommand</a>,
+Next:<a rel="next" accesskey="n" href="#schedule">schedule</a>,
+Previous:<a rel="previous" accesskey="p" href="#repository">repository</a>,
+Up:<a rel="up" accesskey="u" href="#control">control</a>
+<br>
+</div>
+
+<h4 class="subsection">RPMcommand</h4>
+
+   <p>The default value of the Red Hat Package manager command <code>/bin/rpm</code> can be altered
+for non-standard systems with this variable.
+<pre class="example">     RPMcommand = ( /usr/bin/rpm )
+     </pre>
+
+<div class="node">
+<p><hr>
 Node:<a name="schedule">schedule</a>,
 Next:<a rel="next" accesskey="n" href="#secureinput">secureinput</a>,
-Previous:<a rel="previous" accesskey="p" href="#repository">repository</a>,
+Previous:<a rel="previous" accesskey="p" href="#RPMcommand">RPMcommand</a>,
 Up:<a rel="up" accesskey="u" href="#control">control</a>
 <br>
 </div>
@@ -3348,7 +3446,7 @@ should make this an address which users can mail if they have troubles.
 <div class="node">
 <p><hr>
 Node:<a name="Syslog">Syslog</a>,
-Next:<a rel="next" accesskey="n" href="#timezone">timezone</a>,
+Next:<a rel="next" accesskey="n" href="#SyslogFacility">SyslogFacility</a>,
 Previous:<a rel="previous" accesskey="p" href="#sysadm">sysadm</a>,
 Up:<a rel="up" accesskey="u" href="#control">control</a>
 <br>
@@ -3375,9 +3473,43 @@ the `inform' level.
 
 <div class="node">
 <p><hr>
+Node:<a name="SyslogFacility">SyslogFacility</a>,
+Next:<a rel="next" accesskey="n" href="#timezone">timezone</a>,
+Previous:<a rel="previous" accesskey="p" href="#Syslog">Syslog</a>,
+Up:<a rel="up" accesskey="u" href="#control">control</a>
+<br>
+</div>
+
+<h4 class="subsection">SyslogFacility</h4>
+
+<pre class="smallexample">     
+       SyslogFacility = ( <var>facility</var> )
+     
+     </pre>
+
+   <p>This variable alters the syslog facility level. 
+e.g.
+
+<pre class="smallexample">     
+        SyslogFacility = ( LOG_LOCAL1 )
+     
+     </pre>
+
+   <p>Valid arguments are
+<pre class="smallexample">     LOG_USER
+     LOG_DAEMON
+     LOG_LOCAL0
+     LOG_LOCAL1
+     LOG_LOCAL2
+     LOG_LOCAL3
+     LOG_LOCAL4
+     </pre>
+
+<div class="node">
+<p><hr>
 Node:<a name="timezone">timezone</a>,
 Next:<a rel="next" accesskey="n" href="#TimeOut">TimeOut</a>,
-Previous:<a rel="previous" accesskey="p" href="#Syslog">Syslog</a>,
+Previous:<a rel="previous" accesskey="p" href="#SyslogFacility">SyslogFacility</a>,
 Up:<a rel="up" accesskey="u" href="#control">control</a>
 <br>
 </div>
@@ -4190,6 +4322,8 @@ be examined later.  The syntax is
         <var>class</var>::
      
            /<var>filename</var>
+                           dest=<var>filename</var>
+     
                            type=<var>plain/file/link/links</var>
                            rotate=<var>empty/truncate/numerical-value</var>
                            size=<var>numerical-value</var>
@@ -4204,7 +4338,10 @@ be examined later.  The syntax is
      
      </pre>
 
-<p>Cfengine renames a given file by appending the name of the file with the
+<p>If a destination filename is specified, cfagent renames the source file to
+the destination, where possible (renaming across filesystems is not allowed). 
+If no destination is given,
+cfagent renames a given file by appending the name of the file with the
 suffix <code>.cfdisabled</code>.  A typical example of a file you would
 probably want to disable would be the <code>/etc/hosts.equiv</code> file which
 is often found with the <code>+</code> symbol written in it, opening the
@@ -4704,7 +4841,10 @@ you actually want this.
      <dd>Delete all lines containing the exact string quoted.
 
      <br><dt><code>DeleteLinesMatching </code><var>quoted-regex</var><code></code>
-     <dd>Delete all lines matching the quoted regular expression.
+     <dd>Delete all lines fully matching the tied quoted regular expression.
+
+     <br><dt><code>DeleteLinesNotMatching </code><var>quoted-regex</var><code></code>
+     <dd>Delete all lines not fully matching the tied quoted regular expression.
 
      <br><dt><code>DeleteLinesStarting </code><var>quoted-string</var><code></code>
      <dd>Delete all lines beginning with the exact string quoted.
@@ -5781,20 +5921,22 @@ an example of the syntax:
 <pre class="smallexample">     
      groups:
      
-        science = ( saga tor odin )
+       ANDed_class::
      
-        packages = ( saga )
+         science = ( saga tor odin )
      
-        AllHomeServers   = ( saga )
-        AllBinaryServers = ( saga )
+         packages = ( saga )
      
-        OIH_servers = ( saga )
-        OIH_clients = ( tor odin )
+         AllHomeServers   = ( saga )
+         AllBinaryServers = ( saga )
      
-        notthis = ( !this )
+         OIH_servers = ( saga )
+         OIH_clients = ( tor odin )
      
-        ip_in_range = ( IPRange(129.0.0.1-15) )  # host is in ip address range
-        ip_in_range = ( IPRange(129.0.0.1/24) )  # host is in ip address range (CIDR notation)
+         notthis = ( !this )
+     
+         ip_in_range = ( IPRange(129.0.0.1-15) )  # host is in ip address range
+         ip_in_range = ( IPRange(129.0.0.1/24) )  # host is in ip address range (CIDR notation)
      
      </pre>
 
@@ -5840,7 +5982,7 @@ subtract two netgroups in the following manner.
 hosts in <code>smallnetgroup</code> exist in <code>bignetgroup</code> then the
 command has no effect.
 
-   <p>Groups may now contain previously defined cfengine groups too. This
+   <p>Groups may contain previously defined cfengine groups too. This
 allows one class to inherit the attributes of another class, for instance:
 
 <pre class="smallexample">     
@@ -5863,6 +6005,17 @@ several other basic classes, e.g.
 <p>which evaluates to true every day when it between 00:00 hours and 00:59,
 all day Monday and all day on the first day of every month.
 
+   <p>If you apply a class predicate before a definition then the result
+is effectively the AND of the classes:
+
+<pre class="smallexample">     
+      Hr00::
+     
+       SpecialTime = ( Monday Tuesday )
+     
+     </pre>
+   defines <code>SpecialTime</code> at Hr00 on Monday or Tuesday.
+
    <p>Finally, you can define groups (strictly classes) by the result of a shell
 command. A shell command or program is deemed to be `true' if it
 exits with a status of zero, i.e. it calls <code>exit(0)</code>. Any other
@@ -5880,8 +6033,6 @@ true. Of course, you can put any script or program in the single quotes as
 long as they adhere to the convention that zero exit status means true. 
 If you have several members which are shell commands, then the effect is
 to make the class the logical OR of the scripts' results.
-
-   <p>As of version 1.4.0, you may use the synonym <code>classes</code> for <code>groups</code>.
 
 <div class="node">
 <p><hr>
@@ -6487,7 +6638,7 @@ numbers of the file pointed to.
 <div class="node">
 <p><hr>
 Node:<a name="mailserver">mailserver</a>,
-Next:<a rel="next" accesskey="n" href="#miscmounts">miscmounts</a>,
+Next:<a rel="next" accesskey="n" href="#methods">methods</a>,
 Previous:<a rel="previous" accesskey="p" href="#links">links</a>,
 Up:<a rel="up" accesskey="u" href="#Cfagent%20reference">Cfagent reference</a>
 <br>
@@ -6522,9 +6673,326 @@ the resource file.  See <a href="#cfrc%20resource%20file">cfrc resource file</a>
 
 <div class="node">
 <p><hr>
+Node:<a name="methods">methods</a>,
+Next:<a rel="next" accesskey="n" href="#miscmounts">miscmounts</a>,
+Previous:<a rel="previous" accesskey="p" href="#mailserver">mailserver</a>,
+Up:<a rel="up" accesskey="u" href="#Cfagent%20reference">Cfagent reference</a>
+<br>
+</div>
+
+<h3 class="section">methods</h3>
+
+   <p>From version 2.1.0, cfagent provides for the execution of closed functions or "methods". 
+Methods are similar to the old idea of modules, but they are implemented in a way
+that allows collaboration between different hosts within a network, using a common
+standard. Methods must be cfengine programs however, wheras the module
+interface can be written in any script language.
+
+   <p><em>Modules are designed to offer a firewall-like proxy interface for remote
+method execution. We can call methods a form of `voluntary RPC', in which
+hosts execute methods for one another on a purely voluntary basis. This
+builds in anti-spamming protection. The principle used is that hosts
+should be immune to Denial of Service attacks; they should
+only be able to disadvanatge themselves with the attempt.</em>
+
+   <p>(Remote method execution is not implemented in version 2.1.0, but will follow
+in a later release, when additional research has been carried out.)
+
+   <p>Methods allow you to call an independent cfengine program, pass it arguments and classes,
+and collect the results for use in your main program. It thus introduces
+parent-child semantics into cfengine "imports". A method is more than an import. 
+(Import is like a C #include, while a method is like a C function.) 
+Communication is peer to peer, by mutual consent. There is no "method server"
+that executes methods on remote hosts. Hosts exchange information by invitation
+only. This is an unreliable service (in the sense of UDP).
+
+   <p>The order of method exeuction is not guaranteed. This results from the
+decoupling between client request and service provision.
+
+<pre class="smallexample">     
+       methods:
+     
+          <var>class</var>::
+     
+     
+            <var>function_name</var>(<var>parameters or none</var>)
+     
+           action=<code>filename</code>
+     
+           returnvars=<var>comma separated variable list or void</var>
+           returnclasses=<var>comma separated class list</var>
+     
+           server=<var>ip-host</var>
+     
+           owner=<var>setuid</var>
+           group=<var>setgid</var>
+           chdir=<var>cd for child</var>
+           chroot=<var>sandbox directory</var>
+     
+     </pre>
+The function arguments may not be empty, but a null value
+can be transmitted with a dummy value, e.g. <code>Function(null)</code> or <code>function(void)</code>. 
+Here is an example method call.
+<pre class="smallexample">     
+      # cfagent.conf
+     
+     control:
+     
+        actionsequence = ( methods )
+     
+     #################################################
+     
+     methods:
+     
+      any::
+     
+        SimpleMethod(null)
+     
+           action=cf.simple
+           returnvars=null
+           returnclasses=null
+           server=localhost
+     
+     
+     </pre>
+   With method file (located in the ModulesDirectory),
+<pre class="smallexample">     
+      # cf.simple
+     
+       control:
+     
+         MethodName       = ( SimpleMethod )
+         MethodParameters = ( null )
+         actionsequence   = ( timezone )
+     
+     ####################################################
+     
+     alerts:
+     
+       "This simple method does nothing"
+     
+       ReturnVariables(void)
+       ReturnClasses(void)
+     
+     </pre>
+   On executing this example, the output is:
+<pre class="example">     nexus$ ./cfagent -f ./cftest
+     cfengine:myhost:SimpleMethod: cfengine:nexus: This simple method does nothing
+     
+     </pre>
+
+   <p>The following example
+collects the tar file, unpacks it,
+configures and compiles it, then tidies its files.
+<pre class="smallexample">     ####################################################
+     #
+     # This is a cfengine file that calls a method.
+     # It should be in the usual place for cfinputs
+     #
+     ####################################################
+     
+     control:
+     
+        actionsequence = ( methods )
+     
+     #####################################################
+     
+     methods:
+     
+        InstallTar(cfengine-2.1.0b7,/local/gnu)
+     
+           action=cf.install
+           returnvars=null
+           returnclasses=null
+           server=localhost
+     
+     </pre>
+   We must install the method in the trusted modules directory
+(normally /var/cfengine/modules or WORKDIR/modules).
+
+<pre class="smallexample">     ####################################################
+     #
+     # This is an example method file, that needs to be
+     # in the module directory /var/cfengine/modules
+     # since this is the trusted directory
+     #
+     # e.g. InstallFromTar(cfengine-2.1.0,/usr/local/gnu)
+     #
+     ####################################################
+     
+     control:
+     
+     
+      MethodName       = ( InstallTar )
+      MethodParameters = ( filename gnuprefix )
+     
+      path = ( /usr/local/gnu/bin )
+     
+     
+      TrustedWorkDir = ( /tmp )
+     
+      TrustedSources = ( /iu/nexus/ud/mark/tmp )
+      TrustedSourceServer = ( localhost )
+     
+      actionsequence = ( copy editfiles shellcommands tidy )
+     
+     ####################################################
+     
+     classes:
+     
+       Force = ( any )
+     
+     ####################################################
+     
+     copy:
+     
+      $(TrustedSources)/$(filename).tar.gz
+     
+         dest=$(TrustedWorkDir)/$(filename).tar.gz
+         server=$(TrustedSourceServer)
+     
+     ####################################################
+     
+     shellcommands:
+     
+      "$(path)/tar zxf $(filename).tar.gz"
+     
+          chdir=$(TrustedWorkDir)
+     
+      "$(TrustedWorkDir)/$(filename)/configure --prefix=$(gnuprefix)"
+     
+         chdir=$(TrustedWorkDir)/$(filename)
+         define=okay
+     
+      okay::
+     
+      "$(path)/make"
+     
+          chdir=$(TrustedWorkDir)/$(filename)
+     
+     ####################################################
+     
+     tidy:
+     
+       $(TrustedWorkDir) pattern=$(filename) r=inf rmdirs=true age=0
+     
+     
+     ####################################################
+     
+     #editfiles:
+     #
+     #{ $(TrustedWorkDir)/$(filename)/configure-opts
+     #
+     #AppendIfNoSuchLine "Something ???"
+     #}
+     
+     ####################################################
+     
+     alerts:
+     
+      Force::
+     
+       ReturnVariables(none)
+       ReturnClasses(success)
+     
+     </pre>
+
+   <p>A more complex example is given below:
+<pre class="smallexample">       GetAnalysis("${parent1}",param2,ReadFile("/etc/passwd",300))
+     
+         # The name of the method that is in modulesdir
+     
+         action=cf.methodtest
+     
+         # The variables that we get back should be called these names
+         # with method name prefix
+     
+         returnvars=a,b,c,d
+     
+         # This is an access list for returned classes. Classes will
+         # only be handed back if they are included here
+     
+         returnclasses=define1,define2,class1
+     
+         # The host(s) that should execute the method
+     
+         server=localhost
+     
+         # Only localhost can decide these - not a remote caller
+         #    owner=25
+         #    group=root
+         #    chdir=/var/cfengine
+         #    chroot=/tmp
+     
+     </pre>
+   Here the function being called is the cfengine program <code>cf.methodtest</code>. 
+It is passed three arguments: the contents of variable <var>parent1</var>, the literal
+string "param2" and the first 300 bytes of the file <code>/etc/passwd</code>. 
+On return, if the method gets executed, the values will be placed in the four
+variables:
+<pre class="smallexample">     $(GetAnalysis.a) $(GetAnalysis.b) $(GetAnalysis.c) $(GetAnalysis.d)
+     </pre>
+   If the classes <code>define1</code> etc are returned by the method, then we
+set them also in the main program (<code>returnclasses</code> is an access
+control list for setting classes). The remaining options are as those
+for executing shell commands, and apply only on the host that executes
+the function.
+
+   <p>Both the client and server hosts must have a copy of the same method
+declaration. The client should have a non-empty <code>server=</code> declaration. 
+The server side should have no <code>server=</code> declaration unless it is sending
+the request on recursively to other hosts. 
+At present only requests to localhost are allowed, so only there is automatic
+access to the rule.
+
+   <p>The cfagent file that contains the method code must have the following
+declarations:
+
+   <p>control:
+
+   <p>MethodName       = ( <var>identifier</var> )
+    MethodParameters = ( <var>spaced list of recipient variables or files</var> )
+
+   <p># ....
+
+   <p>alerts:
+
+   <p># Return variables are alerts to parent
+
+   <p>ReturnVariables(<var>comma separated list of variables or functions or void</var>)
+    ReturnClasses(<var>comma separated list of classes</var>)
+
+   e.g.
+<pre class="smallexample">     control:
+     
+      MethodName       = ( GetAnalysis )
+      MethodParameters = ( value1 value2 /tmp/file1 )
+     
+      # ....
+     
+     alerts:
+     
+       # Return variables are alerts to parent
+     
+       ReturnVariables("${var1}","${var2}","var3",literal_value)
+       ReturnClasses(class1,class2)
+     
+     </pre>
+
+   <p>The parameters transmitted by the parent are read into the formal
+parameters <code>value1</code>, <code>value2</code> and the the file excerpt is
+placed in the temporary file <code>/tmp/file1</code>.
+
+   <p>The return clases are passed in their current state to the parent;
+i.e. if class1 is defined then it is offered to the parent, but if it
+is not defined in the method, it is not passed on. The parent can then
+choose to accept or ignore the value.
+
+<div class="node">
+<p><hr>
 Node:<a name="miscmounts">miscmounts</a>,
 Next:<a rel="next" accesskey="n" href="#mountables">mountables</a>,
-Previous:<a rel="previous" accesskey="p" href="#mailserver">mailserver</a>,
+Previous:<a rel="previous" accesskey="p" href="#methods">methods</a>,
 Up:<a rel="up" accesskey="u" href="#Cfagent%20reference">Cfagent reference</a>
 <br>
 </div>
@@ -6908,7 +7376,7 @@ of matches is greater than 20, one would write:
 <div class="node">
 <p><hr>
 Node:<a name="packages">packages</a>,
-Next:<a rel="next" accesskey="n" href="#required">required</a>,
+Next:<a rel="next" accesskey="n" href="#rename">rename</a>,
 Previous:<a rel="previous" accesskey="p" href="#processes">processes</a>,
 Up:<a rel="up" accesskey="u" href="#Cfagent%20reference">Cfagent reference</a>
 <br>
@@ -6941,6 +7409,7 @@ RPM on a Solaris box.
      
      </pre>
 
+<p>Associated variables in control are <code>DefaultPkgMgr</code> and <code>RPMcommand</code>.
      <dl>
 
      <br><dt><code>cmp</code>
@@ -7025,7 +7494,7 @@ installed.
      <dd>Specifies the list of classes to define if the specified package is not
 installed.
 
-</dl>
+   </dl>
 
    <p>Example:
 
@@ -7060,9 +7529,22 @@ defined.
 
 <div class="node">
 <p><hr>
+Node:<a name="rename">rename</a>,
+Next:<a rel="next" accesskey="n" href="#required">required</a>,
+Previous:<a rel="previous" accesskey="p" href="#packages">packages</a>,
+Up:<a rel="up" accesskey="u" href="#Cfagent%20reference">Cfagent reference</a>
+<br>
+</div>
+
+<h3 class="section">rename</h3>
+
+   <p>As of version 2.1.0 rename is a synonym for disable, See <a href="#disable">disable</a>.
+
+<div class="node">
+<p><hr>
 Node:<a name="required">required</a>,
 Next:<a rel="next" accesskey="n" href="#resolve">resolve</a>,
-Previous:<a rel="previous" accesskey="p" href="#packages">packages</a>,
+Previous:<a rel="previous" accesskey="p" href="#rename">rename</a>,
 Up:<a rel="up" accesskey="u" href="#Cfagent%20reference">Cfagent reference</a>
 <br>
 </div>
@@ -7644,6 +8126,8 @@ file is as follows:
      
             BindToInterface = ( <var>IP number</var>/<var>hostname</var> )
      
+            HostnameKeys = ( <var>true/false</var> )
+     
       groups:
      
         <var>Group definitions</var>
@@ -7696,6 +8180,7 @@ Up:<a rel="up" accesskey="u" href="#Cfservd.conf%20and%20cfrun%20reference">Cfse
 <li><a accesskey="9" href="#cfrunCommand">cfrunCommand</a>: 
 <li><a href="#DenyBadClocks">DenyBadClocks</a>: 
 <li><a href="#DenyConnectionsFrom">DenyConnectionsFrom</a>: 
+<li><a href="#cfservd%20HostnameKeys">cfservd HostnameKeys</a>: 
 <li><a href="#cfservd%20IfElapsed">cfservd IfElapsed</a>: 
 <li><a href="#LogAllConnections">LogAllConnections</a>: 
 <li><a href="#MaxConnections">MaxConnections</a>: 
@@ -7909,7 +8394,7 @@ messages of the form `Can't stat' file when remote copying.
 <div class="node">
 <p><hr>
 Node:<a name="DenyConnectionsFrom">DenyConnectionsFrom</a>,
-Next:<a rel="next" accesskey="n" href="#cfservd%20IfElapsed">cfservd IfElapsed</a>,
+Next:<a rel="next" accesskey="n" href="#cfservd%20HostnameKeys">cfservd HostnameKeys</a>,
 Previous:<a rel="previous" accesskey="p" href="#DenyBadClocks">DenyBadClocks</a>,
 Up:<a rel="up" accesskey="u" href="#cfservd%20control">cfservd control</a>
 <br>
@@ -7927,9 +8412,34 @@ denied access using this list.
 
 <div class="node">
 <p><hr>
+Node:<a name="cfservd%20HostnameKeys">cfservd HostnameKeys</a>,
+Next:<a rel="next" accesskey="n" href="#cfservd%20IfElapsed">cfservd IfElapsed</a>,
+Previous:<a rel="previous" accesskey="p" href="#DenyConnectionsFrom">DenyConnectionsFrom</a>,
+Up:<a rel="up" accesskey="u" href="#cfservd%20control">cfservd control</a>
+<br>
+</div>
+
+<h4 class="subsection">HostnameKeys</h4>
+
+   <p>If this variable is set to true/on, it causes cfservd to
+lookup and store trusted public keys according to their
+DNS fully qualified host name, instead of using the IP address. 
+This can be useful in environments where hosts do not have fixed
+IP addresses, but do have fixed hostnames.
+
+<pre class="smallexample">     
+       HostnameKeys = ( on )
+     
+     </pre>
+   This method of storing keys is not recommended for sites with
+fixed IP addresses, since it removes one security barrier
+from a potential attacker by potentially allowing DNS spoofing.
+
+<div class="node">
+<p><hr>
 Node:<a name="cfservd%20IfElapsed">cfservd IfElapsed</a>,
 Next:<a rel="next" accesskey="n" href="#LogAllConnections">LogAllConnections</a>,
-Previous:<a rel="previous" accesskey="p" href="#DenyConnectionsFrom">DenyConnectionsFrom</a>,
+Previous:<a rel="previous" accesskey="p" href="#cfservd%20HostnameKeys">cfservd HostnameKeys</a>,
 Up:<a rel="up" accesskey="u" href="#cfservd%20control">cfservd control</a>
 <br>
 </div>
@@ -9964,8 +10474,8 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>$(year)</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>${EmailMaxLines}</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>+</code>: <a href="#groups">groups</a>
-<li><code>-D option</code>: <a href="#addclasses">addclasses</a>, <a href="#Cfengine%20classes">Cfengine classes</a>
-<li><code>-l</code>: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
+<li><code>-D option</code>: <a href="#Cfengine%20classes">Cfengine classes</a>, <a href="#addclasses">addclasses</a>
+<li><code>-l</code>: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li><code>-L</code>: <a href="#Single%20links">Single links</a>
 <li><code>-N option</code>: <a href="#Cfengine%20classes">Cfengine classes</a>, <a href="#addclasses">addclasses</a>
 <li><code>-x option</code>: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
@@ -9988,7 +10498,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>binservers</code>: <a href="#binservers">binservers</a>
 <li><code>broadcast</code>: <a href="#broadcast">broadcast</a>
 <li><code>cf.preconf</code>: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
-<li><code>CFALLCLASSES</code>: <a href="#Special%20variables">Special variables</a>, <a href="#Cfagent%20Runtime%20Options">Cfagent Runtime Options</a>
+<li><code>CFALLCLASSES</code>: <a href="#Cfagent%20Runtime%20Options">Cfagent Runtime Options</a>, <a href="#Special%20variables">Special variables</a>
 <li><code>cfrc</code>: <a href="#cfrc%20resource%20file">cfrc resource file</a>
 <li><code>ChangedBefore()</code>: <a href="#Evaluated%20classes">Evaluated classes</a>
 <li><code>ChecksumDatabase</code>: <a href="#ChecksumDatabase">ChecksumDatabase</a>
@@ -10000,12 +10510,12 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>control</code>: <a href="#control">control</a>
 <li><code>create</code>: <a href="#create">create</a>
 <li><code>directories</code>: <a href="#actionsequence">actionsequence</a>
-<li><code>disable</code>: <a href="#actionsequence">actionsequence</a>, <a href="#disable">disable</a>
-<li><code>domain</code>: <a href="#domain">domain</a>, <a href="#control">control</a>
+<li><code>disable</code>: <a href="#disable">disable</a>, <a href="#actionsequence">actionsequence</a>
+<li><code>domain</code>: <a href="#control">control</a>, <a href="#domain">domain</a>
 <li><code>DryRun</code>: <a href="#dryrun">dryrun</a>
 <li><code>editbinaryfilesize</code>: <a href="#editbinaryfilesize">editbinaryfilesize</a>
 <li><code>editfiles</code>: <a href="#actionsequence">actionsequence</a>
-<li><code>editfilesize</code>: <a href="#control">control</a>, <a href="#editfilesize">editfilesize</a>
+<li><code>editfilesize</code>: <a href="#editfilesize">editfilesize</a>, <a href="#control">control</a>
 <li><code>EmailMaxLines</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li><code>empty</code>: <a href="#disable">disable</a>
 <li><code>EmptyResolvConf</code>: <a href="#emptyresolvconf">emptyresolvconf</a>
@@ -10015,13 +10525,13 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>files</code>: <a href="#actionsequence">actionsequence</a>, <a href="#files">files</a>
 <li><code>filter</code>: <a href="#filters">filters</a>
 <li><code>force=</code>: <a href="#copy">copy</a>, <a href="#disks">disks</a>
-<li><code>freespace=</code>: <a href="#required">required</a>, <a href="#disks">disks</a>
+<li><code>freespace=</code>: <a href="#disks">disks</a>, <a href="#required">required</a>
 <li><code>g=</code>: <a href="#Syntax">Syntax</a>
 <li><code>group</code>: <a href="#Syntax">Syntax</a>
 <li><code>groups</code>: <a href="#groups">groups</a>
 <li><code>home</code>: <a href="#Syntax">Syntax</a>
-<li><code>homepattern</code>: <a href="#mountables">mountables</a>
 <li><code>HomePattern</code>: <a href="#homepattern">homepattern</a>
+<li><code>homepattern</code>: <a href="#mountables">mountables</a>
 <li><code>homeservers</code>: <a href="#homeservers">homeservers</a>
 <li><code>import</code>: <a href="#import">import</a>
 <li><code>include=</code>: <a href="#Syntax">Syntax</a>
@@ -10040,6 +10550,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>mailcheck</code>: <a href="#actionsequence">actionsequence</a>, <a href="#mailserver">mailserver</a>
 <li><code>mailserver</code>: <a href="#mailserver">mailserver</a>
 <li><code>MaxCfengines</code>: <a href="#Special%20variables">Special variables</a>
+<li><code>methods</code>: <a href="#methods">methods</a>
 <li><code>miscmounts</code>: <a href="#miscmounts">miscmounts</a>
 <li><code>mode</code>: <a href="#Syntax">Syntax</a>
 <li><code>module</code>: <a href="#actionsequence">actionsequence</a>
@@ -10049,8 +10560,8 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>mountinfo</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>mountpattern</code>: <a href="#mountpattern">mountpattern</a>
 <li><code>netconfig</code>: <a href="#actionsequence">actionsequence</a>
-<li><code>netmask</code>: <a href="#control">control</a>, <a href="#netmask">netmask</a>
-<li><code>nfstype</code>: <a href="#nfstype">nfstype</a>, <a href="#control">control</a>
+<li><code>netmask</code>: <a href="#netmask">netmask</a>, <a href="#control">control</a>
+<li><code>nfstype</code>: <a href="#control">control</a>, <a href="#nfstype">nfstype</a>
 <li><code>o=</code>: <a href="#Syntax">Syntax</a>
 <li><code>ones</code>: <a href="#broadcast">broadcast</a>
 <li><code>OutputPrefix</code>: <a href="#Special%20variables">Special variables</a>
@@ -10061,10 +10572,10 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>pkgmgr=</code>: <a href="#packages">packages</a>
 <li><code>processes</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>purge=</code>: <a href="#copy">copy</a>
-<li><code>r=</code>: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
+<li><code>r=</code>: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li><code>recurse</code>: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
-<li><code>repchar</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>RepChar</code>: <a href="#repchar">repchar</a>
+<li><code>repchar</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>required</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>resolve</code>: <a href="#resolve">resolve</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>Restricting access</code>: <a href="#access">access</a>
@@ -10072,8 +10583,8 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>rotate=</code>: <a href="#disable">disable</a>
 <li><code>scheduling</code>: <a href="#schedule">schedule</a>
 <li><code>SecureInput</code>: <a href="#secureinput">secureinput</a>
-<li><code>sensiblecount</code>: <a href="#control">control</a>
 <li><code>SensibleCount</code>: <a href="#sensiblecount">sensiblecount</a>
+<li><code>sensiblecount</code>: <a href="#control">control</a>
 <li><code>SensibleSize</code>: <a href="#sensiblesize">sensiblesize</a>
 <li><code>sensiblesize</code>: <a href="#control">control</a>
 <li><code>shellcommands</code>: <a href="#actionsequence">actionsequence</a>
@@ -10085,7 +10596,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>split</code>: <a href="#Special%20variables">Special variables</a>, <a href="#split">split</a>
 <li><code>SpoolDirectories</code>: <a href="#spooldirectories">spooldirectories</a>
 <li><code>SuspiciousNames</code>: <a href="#suspiciousnames">suspiciousnames</a>
-<li><code>sysadm</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>, <a href="#control">control</a>, <a href="#sysadm">sysadm</a>, <a href="#Cfexecd%20reference">Cfexecd reference</a>
+<li><code>sysadm</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>, <a href="#sysadm">sysadm</a>, <a href="#control">control</a>
 <li><code>tidy</code>: <a href="#tidy">tidy</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>timezone</code>: <a href="#control">control</a>
 <li><code>touch</code>: <a href="#touch">touch</a>
@@ -10113,8 +10624,8 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>!: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li><code>--dry-run</code> option: <a href="#shellcommands">shellcommands</a>
 <li>-D option: <a href="#addclasses">addclasses</a>
-<li>-l option: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li><code>-L</code> option: <a href="#Single%20links">Single links</a>
+<li>-l option: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li>-x option: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>.cfdisabled</code>: <a href="#disable">disable</a>
 <li>.cfengine.rm: <a href="#tidy">tidy</a>
@@ -10162,9 +10673,9 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><code>cf.main</code>: <a href="#cf.main">cf.main</a>
 <li><code>cf.motd</code>: <a href="#cf.motd">cf.motd</a>
 <li>cf.preconf bootstrap file: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
-<li><code>cf.site</code>: <a href="#cf.site">cf.site</a>, <a href="#cfservd.conf">cfservd.conf</a>
+<li><code>cf.site</code>: <a href="#cfservd.conf">cfservd.conf</a>, <a href="#cf.site">cf.site</a>
 <li><code>cfagent.conf</code>: <a href="#cfagent.conf">cfagent.conf</a>
-<li>CFALLCLASSES: <a href="#shellcommands">shellcommands</a>, <a href="#Special%20variables">Special variables</a>
+<li>CFALLCLASSES: <a href="#Special%20variables">Special variables</a>, <a href="#shellcommands">shellcommands</a>
 <li>cfenvd and key entropy: <a href="#Cfkey">Cfkey</a>
 <li>cfexecd: <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li>cfrc resource file: <a href="#cfrc%20resource%20file">cfrc resource file</a>
@@ -10183,8 +10694,8 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Class decided by shell command: <a href="#groups">groups</a>
 <li>Class dependencies: <a href="#groups">groups</a>
 <li>Class information, passing to scripts: <a href="#shellcommands">shellcommands</a>
-<li><code>classes</code>: <a href="#groups">groups</a>, <a href="#classes">classes</a>, <a href="#groups">groups</a>
 <li>classes: <a href="#Cfengine%20classes">Cfengine classes</a>
+<li><code>classes</code>: <a href="#groups">groups</a>, <a href="#classes">classes</a>
 <li>Classes, adding and defining: <a href="#addclasses">addclasses</a>
 <li>Classes, compound: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Classes, defining and undefining: <a href="#Cfengine%20classes">Cfengine classes</a>
@@ -10217,7 +10728,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>DeleteNonUserMail DeleteNonUserFiles: <a href="#deletenonuserfiles">deletenonuserfiles</a>
 <li>Deleting directories: <a href="#tidy">tidy</a>
 <li>Deleting files: <a href="#tidy">tidy</a>
-<li>Deleting stale links: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
+<li>Deleting stale links: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li><code>DenyBadClocks</code> variable: <a href="#DenyBadClocks">DenyBadClocks</a>
 <li><code>DenyConnectionsFrom</code> variable: <a href="#DenyConnectionsFrom">DenyConnectionsFrom</a>
 <li>Dependencies: <a href="#groups">groups</a>
@@ -10265,7 +10776,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Files, setting owner: <a href="#files">files</a>
 <li>Files, syntax: <a href="#Syntax">Syntax</a>
 <li>Force copying: <a href="#copy">copy</a>
-<li>freespace=: <a href="#required">required</a>, <a href="#disks">disks</a>
+<li>freespace=: <a href="#disks">disks</a>, <a href="#required">required</a>
 <li>Full disk warnings: <a href="#required">required</a>, <a href="#disks">disks</a>
 <li>Fully qualified names: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Group dependencies: <a href="#groups">groups</a>
@@ -10275,7 +10786,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Groups, defining: <a href="#groups">groups</a>
 <li>Hard class name collision: <a href="#Special%20variables">Special variables</a>
 <li>Hardlinks: <a href="#Hard%20links">Hard links</a>
-<li>Hashes of files: <a href="#ChecksumDatabase">ChecksumDatabase</a>, <a href="#Syntax">Syntax</a>
+<li>Hashes of files: <a href="#Syntax">Syntax</a>, <a href="#ChecksumDatabase">ChecksumDatabase</a>
 <li>home directive: <a href="#home%20directive">home directive</a>
 <li>Home path: <a href="#homepattern">homepattern</a>
 <li>Home servers, defining: <a href="#homeservers">homeservers</a>
@@ -10300,15 +10811,15 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Key, ACL: <a href="#DFS%20ACLs">DFS ACLs</a>
 <li>Kilobyte, filesize unit: <a href="#tidy">tidy</a>
 <li>Linkchildren: <a href="#Files%20linkchildren">Files linkchildren</a>, <a href="#Link%20Children">Link Children</a>
-<li>Links and binary servers: <a href="#Single%20links">Single links</a>, <a href="#Link%20Children">Link Children</a>
+<li>Links and binary servers: <a href="#Link%20Children">Link Children</a>, <a href="#Single%20links">Single links</a>
 <li>Links, absolute: <a href="#Single%20links">Single links</a>
-<li>Links, deleting stale: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
+<li>Links, deleting stale: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
 <li>Links, forcing for non-existent files: <a href="#Single%20links">Single links</a>
 <li>Links, making: <a href="#links">links</a>
 <li>Links, multiple: <a href="#Multiple%20Links">Multiple Links</a>
 <li>Links, removing dead: <a href="#Single%20links">Single links</a>
 <li>Links, single: <a href="#Single%20links">Single links</a>
-<li>Links, traversing in searches: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
+<li>Links, traversing in searches: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li>Local disk space, make use of: <a href="#Link%20Children">Link Children</a>
 <li>Log files, controlling the size of: <a href="#disable">disable</a>
 <li>Logical NOT: <a href="#Cfengine%20classes">Cfengine classes</a>
@@ -10323,11 +10834,12 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Megabytes, filesize unit: <a href="#tidy">tidy</a>
 <li>Merging files.: <a href="#editfiles">editfiles</a>
 <li>Message digests: <a href="#Syntax">Syntax</a>, <a href="#ChecksumDatabase">ChecksumDatabase</a>
+<li>Methods: <a href="#methods">methods</a>
 <li>Miscellaneous mount operations: <a href="#miscmounts">miscmounts</a>
 <li>Module directory: <a href="#moduledirectory">moduledirectory</a>
 <li>Modules, user defined: <a href="#actionsequence">actionsequence</a>
 <li>Mount paths: <a href="#mountpattern">mountpattern</a>
-<li>Mountable resources, defining: <a href="#homeservers">homeservers</a>, <a href="#mountables">mountables</a>
+<li>Mountable resources, defining: <a href="#mountables">mountables</a>, <a href="#homeservers">homeservers</a>
 <li>Mounted filesystems: <a href="#copy">copy</a>
 <li>Mounting filesystems.: <a href="#miscmounts">miscmounts</a>
 <li>mtime tidies: <a href="#tidy">tidy</a>
@@ -10339,8 +10851,8 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Negating entries from netgroups: <a href="#groups">groups</a>
 <li>Netgroups: <a href="#groups">groups</a>
 <li>Netgroups, negating entries: <a href="#groups">groups</a>
-<li>Netmask: <a href="#netmask">netmask</a>
 <li>netmask: <a href="#netmask">netmask</a>
+<li>Netmask: <a href="#netmask">netmask</a>
 <li>Network address translator: <a href="#Firewalls%20and%20NATs">Firewalls and NATs</a>
 <li>Network Address Translators: <a href="#SkipVerify">SkipVerify</a>
 <li>Network interfaces, several: <a href="#interfaces">interfaces</a>
@@ -10368,6 +10880,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Port, connecting to different: <a href="#Firewalls%20and%20NATs">Firewalls and NATs</a>
 <li>Preserving file times in copy: <a href="#copy">copy</a>
 <li>Previewing shellcommands: <a href="#shellcommands">shellcommands</a>
+<li>Private modules: <a href="#methods">methods</a>
 <li>PRNG not seeded: <a href="#Cfkey">Cfkey</a>
 <li>Processes, 0 to 3: <a href="#processes">processes</a>
 <li>Processes, checking existence of: <a href="#processes">processes</a>
@@ -10411,6 +10924,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Selecting files in searches: <a href="#filters">filters</a>
 <li>Sensible file sizes: <a href="#sensiblesize">sensiblesize</a>
 <li>Sensible limits on files in a directory: <a href="#sensiblecount">sensiblecount</a>
+<li>SetState(): <a href="#alerts">alerts</a>
 <li>Setting classes based on non-local disks: <a href="#disks">disks</a>
 <li>Setting uid on restarted processes: <a href="#processes">processes</a>
 <li>Several files: <a href="#import">import</a>
@@ -10435,6 +10949,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Symbolic links, absolute: <a href="#Single%20links">Single links</a>
 <li>Symbolic links, relative: <a href="#Single%20links">Single links</a>
 <li>sysadm: <a href="#sysadm">sysadm</a>
+<li>SysLog(): <a href="#alerts">alerts</a>
 <li>Testing files: <a href="#Evaluated%20classes">Evaluated classes</a>
 <li>Tidy by ctime, mtime, atime: <a href="#tidy">tidy</a>
 <li>Tidy log files for users: <a href="#LogTidyHomeFiles">LogTidyHomeFiles</a>
@@ -10446,20 +10961,21 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li>Touching files: <a href="#touch">touch</a>
 <li>travlinks: <a href="#tidy">tidy</a>
 <li>Tree copying, exact: <a href="#copy">copy</a>
-<li>Tripwire functionality: <a href="#ChecksumDatabase">ChecksumDatabase</a>, <a href="#Syntax">Syntax</a>
+<li>Tripwire functionality: <a href="#Syntax">Syntax</a>, <a href="#ChecksumDatabase">ChecksumDatabase</a>
 <li>Truncating log files: <a href="#disable">disable</a>
 <li>Trusted hosts: <a href="#copy">copy</a>
 <li><code>TrustKeysFrom</code> variable: <a href="#TrustKeysFrom">TrustKeysFrom</a>
 <li>umask: <a href="#processes">processes</a>, <a href="#editfiles">editfiles</a>, <a href="#shellcommands">shellcommands</a>
 <li>underscoreclasses: <a href="#Special%20variables">Special variables</a>
 <li>Unmounting filesystems: <a href="#unmount">unmount</a>
+<li>UnsetState(): <a href="#alerts">alerts</a>
 <li><code>update.conf</code>: <a href="#Work%20directory">Work directory</a>
 <li>Variables in import files: <a href="#import">import</a>
 <li>Warning about full disks: <a href="#disks">disks</a>, <a href="#required">required</a>
 <li>Wildcard home: <a href="#Syntax">Syntax</a>
 <li>Wildcards in homepattern: <a href="#homepattern">homepattern</a>
 <li>WWW server logs: <a href="#disable">disable</a>
-<li>xdev: <a href="#copy">copy</a>, <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
+<li>xdev: <a href="#copy">copy</a>, <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li>xdev (File system boundaries): <a href="#Recursion">Recursion</a>
 <li>zeros: <a href="#broadcast">broadcast</a>
    </ul>
@@ -10562,6 +11078,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#excludelinks">ExcludeLink</a>
 <li><a href="#ExpireAfter">ExpireAfter</a>
 <li><a href="#homepattern">HomePattern</a>
+<li><a href="#HostnameKeys">HostnameKeys</a>
 <li><a href="#IfElapsed">IfElapsed</a>
 <li><a href="#Inform">Inform</a>
 <li><a href="#interfacename">InterfaceName</a>
@@ -10576,6 +11093,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#nfstype">nfstype</a>
 <li><a href="#repchar">RepChar</a>
 <li><a href="#repository">Repository</a>
+<li><a href="#RPMcommand">RPMcommand</a>
 <li><a href="#schedule">Schedule</a>
 <li><a href="#secureinput">SecureInput</a>
 <li><a href="#sensiblecount">SensibleCount</a>
@@ -10590,6 +11108,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#suspiciousnames">suspiciousnames</a>
 <li><a href="#sysadm">sysadm</a>
 <li><a href="#Syslog">Syslog</a>
+<li><a href="#SyslogFacility">SyslogFacility</a>
 <li><a href="#timezone">timezone</a>
 <li><a href="#TimeOut">TimeOut</a>
 <li><a href="#Verbose">Verbose</a>
@@ -10639,10 +11158,12 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#Hard%20links">Hard Links</a>
 </li></ul>
 <li><a href="#mailserver">mailserver</a>
+<li><a href="#methods">methods</a>
 <li><a href="#miscmounts">miscmounts</a>
 <li><a href="#mountables">mountables</a>
 <li><a href="#processes">processes</a>
 <li><a href="#packages">packages</a>
+<li><a href="#rename">rename</a>
 <li><a href="#required">required</a>
 <li><a href="#resolve">resolve</a>
 <li><a href="#shellcommands">shellcommands</a>
@@ -10664,6 +11185,7 @@ Up:<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#cfrunCommand">cfrunCommand</a>
 <li><a href="#DenyBadClocks">DenyBadClocks</a>
 <li><a href="#DenyConnectionsFrom">DenyConnectionsFrom</a>
+<li><a href="#cfservd%20HostnameKeys">HostnameKeys</a>
 <li><a href="#cfservd%20IfElapsed">IfElapsed</a>
 <li><a href="#LogAllConnections">LogAllConnections</a>
 <li><a href="#MaxConnections">MaxConnections</a>

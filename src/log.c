@@ -35,6 +35,56 @@ extern char CFLOCK[bufsize];
 
 /*****************************************************************************/
 
+void CfOpenLog()
+
+{ char value[bufsize];
+  int facility = LOG_USER; 
+ 
+if (GetMacroValue(CONTEXTID,"SyslogFacility"))
+   {
+   strncpy(value,GetMacroValue(CONTEXTID,"SyslogFacility"),32);
+   
+   if (strcmp(value,"LOG_USER") == 0)
+      {
+      facility = LOG_USER;
+      }
+   if (strcmp(value,"LOG_DAEMON") == 0)
+      {
+      facility = LOG_DAEMON;
+      }
+   if (strcmp(value,"LOG_LOCAL0") == 0)
+      {
+      facility = LOG_LOCAL0;
+      }
+   if (strcmp(value,"LOG_LOCAL1") == 0)
+      {
+      facility = LOG_LOCAL1;
+      }
+   if (strcmp(value,"LOG_LOCAL2") == 0)
+      {
+      facility = LOG_LOCAL2;
+      }
+   if (strcmp(value,"LOG_LOCAL3") == 0)
+      {
+      facility = LOG_LOCAL3;
+      }
+   if (strcmp(value,"LOG_LOCAL4") == 0)
+      {
+      facility = LOG_LOCAL4;
+      }
+   }
+else if (ISCFENGINE)
+   {
+   openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_USER);
+   }
+else
+   {
+   openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_DAEMON);
+   }
+}
+
+/*****************************************************************************/
+
 void CfLog(level,string,errstr)
 
 enum cfoutputlevel level;
@@ -132,12 +182,12 @@ switch(level)
                           }
                      break;
 
-   case cflogonly:
+   case cflogonly: 
                      if (LOGGING && IsPrivileged() && !DONTDO)
 			{
 			syslog(LOG_ERR," %s",buffer);    
 			
-			if ((errstr == NULL) || (strlen(errstr) > 0))
+			if ((errstr != NULL) && (strlen(errstr) > 0))
 			   {
 			   syslog(LOG_ERR," %s",errstr);  
 			   }

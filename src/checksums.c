@@ -180,6 +180,41 @@ else
 
 /*******************************************************************/
 
+void ChecksumList(list,digest,type)
+
+struct Item *list;
+char type;
+unsigned char digest[EVP_MAX_MD_SIZE+1];
+
+{ struct Item *ip;
+  EVP_MD_CTX context;
+  int md_len;
+  const EVP_MD *md = NULL;
+
+Debug2("ChecksumList(%c)\n",type);
+
+ switch (type)
+    {
+    case 's': md = EVP_get_digestbyname("sha");
+	break;
+    case 'm': md = EVP_get_digestbyname("md5");
+	break;
+    default: FatalError("Software failure in ChecksumList");
+    }
+ 
+ EVP_DigestInit(&context,md);
+ 
+ for (ip = list; ip != NULL; ip=ip->next) 
+    {
+    EVP_DigestUpdate(&context,ip->name,strlen(ip->name));
+    }
+ 
+ EVP_DigestFinal(&context,digest,&md_len);
+ 
+}
+
+/*******************************************************************/
+
 void ChecksumString(buffer,len,digest,type)
 
 char *buffer,type;

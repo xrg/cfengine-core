@@ -38,6 +38,40 @@
 /* TOOLKIT : Item list                                               */
 /*********************************************************************/
 
+int ListLen(list)
+
+struct Item *list;
+
+{ int count = 0;
+  struct Item *ip;
+ 
+for (ip = list; ip != NULL; ip=ip->next)
+   {
+   count++;
+   }
+
+return count; 
+}
+
+/*********************************************************************/
+
+int ByteSizeList(list)
+
+struct Item *list;
+
+{ int count = 0;
+  struct Item *ip;
+ 
+for (ip = list; ip != NULL; ip=ip->next)
+   {
+   count+=strlen(ip->name);
+   }
+
+return count; 
+}
+
+/*********************************************************************/
+
 int IsItemIn(list,item)
 
 struct Item *list;
@@ -206,7 +240,7 @@ else
    lp->next = ip;
    }
 
-if ((classes!= NULL) && (spe = malloc(strlen(classes)+2)) == NULL)
+if ((classes != NULL) && (spe = malloc(strlen(classes)+2)) == NULL)
    {
    CfLog(cferror,"","malloc");
    FatalError("");
@@ -544,13 +578,14 @@ if (isv4 && isrange)
    
    for (i = 0; i < 4; i++)
       {
+      buffer1[0] = '\0';
       sscanf(sp1,"%[^.]",buffer1);
       sp1 += strlen(buffer1)+1;
       
       if (strstr(buffer1,"-"))
 	 {
 	 sscanf(buffer1,"%ld-%ld",&from,&to);
-	 sscanf(buffer2,"%ld",&cmp);
+
 	 if (from < 0 || to < 0)
 	    {
 	    yyerror("Error in IP range - looks like address, or bad hostname");
@@ -563,20 +598,6 @@ if (isv4 && isrange)
 	    return false;
 	    }
 	 
-	 if ((from >= cmp) || (cmp > to))
-	    {
-	    return false;
-	    }
-	 }
-      else
-	 {
-	 sscanf(buffer1,"%ld",&from);
-	 sscanf(buffer2,"%ld",&cmp);
-	 
-	 if (from != cmp)
-	    {
-	    return false;
-	    }
 	 }
       }
    }
@@ -897,77 +918,3 @@ for (sp = string; *sp != '\0'; sp++)
 
 return liststart;
 }
-
-/*********************************************************************************/
-
-struct Item *ListFromArgs(string)
-
-/* Splits a string with quoted components etc */
-
-char *string;
-
-{ struct Item *ip = NULL;
-  int dquote_level = 0,i = 0;
-  int paren_level = 0;
-  char *sp,lastch = '\0';
-  char item[bufsize];
-
-bzero(item,bufsize);
-     
-for (sp = string; *sp != '\0'; sp++)
-   {
-   switch (*sp)
-      {
-      case '\"':
-
-	  if (lastch == '\\')  /* Escaped quote */
-	     {
-	     sp--;
-	     *sp = ')';
-	     continue;
-	     }
-	  else
-	     {
-	     if (dquote_level == 0)
-		{
-		dquote_level = 1;
-		continue;
-		}
-	     else
-		{
-		dquote_level = 0;
-		continue;
-		}
-	     }
-	  break;
-
-      case '(':
-
-	  paren_level++;
-	  break;
-
-      case ')':
-
-	  paren_level--;
-	  break;
-
-      case ',':
-
-	  if (dquote_level == 0 && paren_level == 0)
-	     {
-	     item[i] = '\0';
-	     i = 0;
-	     AppendItem(&ip,item,"");
-	     bzero(item,bufsize);
-	     continue;
-	     }
-      }
-
-   item[i++] = *sp;
-   lastch = *sp;
-   }
-
-AppendItem(&ip,item,""); 
-return ip;
-}
-

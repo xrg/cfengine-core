@@ -112,7 +112,7 @@ enum socks
    www,
    ftp,
    ssh,
-   telnet
+   wwws
    };
 
 char *ECGSOCKS[ATTR][2] =
@@ -127,7 +127,7 @@ char *ECGSOCKS[ATTR][2] =
    {"80","www"},
    {"21","ftp"},
    {"22","ssh"},
-   {"23","telnet"},
+   {"443","wwws"},
    };
 
 char *PH_BINARIES[PH_LIMIT] =   /* Miss leading slash */
@@ -388,6 +388,7 @@ if ((errno = dbp->open(dbp,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 if ((errno = dbp->open(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
 #endif
    {
+   AGE = WAGE = 0;
    snprintf(OUTPUT,bufsize,"Couldn't open average database %s\n",AVDB);
    CfLog(cferror,OUTPUT,"db_open");
    return;
@@ -496,6 +497,7 @@ if ((errno = dbp->open(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 if ((fp=fopen(BATCHFILE,"r")) == NULL)
    {
    printf("Cannot open %s\n",BATCHFILE);
+   dbp->close(dbp,0);
    return;
    }
 
@@ -528,8 +530,8 @@ while (!feof(fp))
    OUTGOING[ftp] = (double)v22;
    INCOMING[ssh] = (double)v23;
    OUTGOING[ssh] = (double)v24;
-   INCOMING[telnet] = (double)v25;
-   OUTGOING[telnet] = (double)v26;
+   INCOMING[wwws] = (double)v25;
+   OUTGOING[wwws] = (double)v26;
 
    strcpy(timekey,ConvTimeKey(time));
 
@@ -813,7 +815,7 @@ void ArmClasses(av,timekey)
 struct Averages av;
 char *timekey;
 
-{ double sigma,delta,lsigma,ldelta;
+{ double sigma,delta,lsigma,ldelta,sig;
   struct Item *classlist = NULL, *ip;
   int i;
   FILE *fp;
@@ -822,52 +824,56 @@ delta = NUMBER_OF_USERS - av.expect_number_of_users;
 sigma = sqrt(av.var_number_of_users);
 ldelta = NUMBER_OF_USERS - LOCALAV.expect_number_of_users;
 lsigma = sqrt(LOCALAV.var_number_of_users);
+sig = sqrt(sigma*sigma+lsigma*lsigma);
  
 SetClasses(av.expect_number_of_users,delta,sigma,
 	   LOCALAV.expect_number_of_users,ldelta,lsigma,
 	   "Users",&classlist,timekey);
 
-SetVariable("users",NUMBER_OF_USERS,av.expect_number_of_users,lsigma,&classlist);
+SetVariable("users",NUMBER_OF_USERS,av.expect_number_of_users,sig,&classlist);
 
 delta = ROOTPROCS - av.expect_rootprocs;
 sigma = sqrt(av.var_rootprocs);
 ldelta = ROOTPROCS - LOCALAV.expect_rootprocs;
 lsigma = sqrt(LOCALAV.var_rootprocs);
+sig = sqrt(sigma*sigma+lsigma*lsigma); 
 
 SetClasses(av.expect_rootprocs,delta,sigma,
 	   LOCALAV.expect_rootprocs,ldelta,lsigma,
 	   "RootProcs",&classlist,timekey);
 
-SetVariable("rootprocs",ROOTPROCS,av.expect_rootprocs,lsigma,&classlist);
+SetVariable("rootprocs",ROOTPROCS,av.expect_rootprocs,sig,&classlist);
 
 delta = OTHERPROCS - av.expect_otherprocs;
 sigma = sqrt(av.var_otherprocs);
 ldelta = OTHERPROCS - LOCALAV.expect_otherprocs;
 lsigma = sqrt(LOCALAV.var_otherprocs);
+sig = sqrt(sigma*sigma+lsigma*lsigma); 
 
 SetClasses(av.expect_otherprocs,delta,sigma,
-	   LOCALAV.expect_otherprocs,ldelta,lsigma,
+	   LOCALAV.expect_otherprocs,ldelta,sig,
 	   "UserProcs",&classlist,timekey);
 
 
-SetVariable("userprocs",OTHERPROCS,av.expect_otherprocs,lsigma,&classlist);
+SetVariable("userprocs",OTHERPROCS,av.expect_otherprocs,sig,&classlist);
 
 delta = DISKFREE - av.expect_diskfree;
 sigma = sqrt(av.var_diskfree);
 ldelta = DISKFREE - LOCALAV.expect_diskfree;
 lsigma = sqrt(LOCALAV.var_diskfree);
+sig = sqrt(sigma*sigma+lsigma*lsigma); 
  
 SetClasses(av.expect_diskfree,delta,sigma,
 	   LOCALAV.expect_diskfree,ldelta,lsigma,
 	   "DiskFree",&classlist,timekey);
 
-SetVariable("diskfree",DISKFREE,av.expect_diskfree,lsigma,&classlist);
+SetVariable("diskfree",DISKFREE,av.expect_diskfree,sig,&classlist);
 
 SetClasses(av.expect_loadavg,delta,sigma,
 	   LOCALAV.expect_loadavg,ldelta,lsigma,
 	   "LoadAvg",&classlist,timekey);
 
-SetVariable("loadavg",LOADAVG,av.expect_loadavg,lsigma,&classlist);
+SetVariable("loadavg",LOADAVG,av.expect_loadavg,sig,&classlist);
  
 for (i = 0; i < ATTR; i++)
    {
@@ -878,12 +884,13 @@ for (i = 0; i < ATTR; i++)
    sigma = sqrt(av.var_incoming[i]);
    ldelta = INCOMING[i] - LOCALAV.expect_incoming[i];
    lsigma = sqrt(LOCALAV.var_incoming[i]);
-      
+   sig = sqrt(sigma*sigma+lsigma*lsigma);
+   
    SetClasses(av.expect_incoming[i],delta,sigma,
 	      LOCALAV.expect_incoming[i],ldelta,lsigma,
 	      name,&classlist,timekey);
 
-   SetVariable(name,INCOMING[i],av.expect_incoming[i],lsigma,&classlist);
+   SetVariable(name,INCOMING[i],av.expect_incoming[i],sig,&classlist);
 
    strcpy(name,ECGSOCKS[i][1]);
    strcat(name,"_out");
@@ -891,12 +898,13 @@ for (i = 0; i < ATTR; i++)
    sigma = sqrt(av.var_outgoing[i]);
    ldelta = OUTGOING[i] - LOCALAV.expect_outgoing[i];
    lsigma = sqrt(LOCALAV.var_outgoing[i]);
+   sig = sqrt(sigma*sigma+lsigma*lsigma);
    
    SetClasses(av.expect_outgoing[i],delta,sigma,
 	      LOCALAV.expect_outgoing[i],ldelta,lsigma,
 	      name,&classlist,timekey);
 
-   SetVariable(name,OUTGOING[i],av.expect_outgoing[i],lsigma,&classlist);
+   SetVariable(name,OUTGOING[i],av.expect_outgoing[i],sig,&classlist);
    }
 
 for (i = 0; i < PH_LIMIT; i++)
@@ -915,7 +923,7 @@ for (i = 0; i < PH_LIMIT; i++)
 	      LOCALAV.expect_pH[i],ldelta,lsigma,
 	      CanonifyName(PH_BINARIES[i]),&classlist,timekey);
 
-   SetVariable(CanonifyName(PH_BINARIES[i]),PH_DELTA[i],av.expect_pH[i],lsigma,&classlist);
+   SetVariable(CanonifyName(PH_BINARIES[i]),PH_DELTA[i],av.expect_pH[i],sig,&classlist);
    }
 
  
@@ -961,7 +969,7 @@ for (ip = ALL_INCOMING; ip != NULL; ip=ip->next)
    if (print)
       {
       Debug("Port(in,%s) ",ip->name);
-      fprintf(fp,"pin-%s\n",ip->name);
+/*      fprintf(fp,"pin_%s\n",ip->name);*/
       }
    }
 
@@ -1195,19 +1203,53 @@ while (!feof(pp))
 
 cfpclose(pp);
 
+/* Now save the state for ShowState() alert function IFF the state is not smaller than the last or
+   at least 40 minutes older. This mirrors the persistence of the maxima classes */
+ 
 for (i = 0; i < ATTR; i++)
    {
-   Verbose("%s = (%d,%d)\n",ECGSOCKS[i][1],INCOMING[i],OUTGOING[i]);
- 
+   struct stat statbuf;
+   time_t now = time(NULL);
+
+   Debug("save incoming %s\n",ECGSOCKS[i][1]);
    snprintf(VBUFF,maxvarsize,"%s/state/cf_incoming.%s",WORKDIR,ECGSOCKS[i][1]);
+   if (stat(VBUFF,&statbuf) != -1)
+      {
+      if ((ByteSizeList(in[i]) < statbuf.st_size) && (now < statbuf.st_mtime+40*60))
+	 {
+	 Verbose("New state %s is smaller, retaining old for 40 mins longer\n",ECGSOCKS[i][1]);
+	 DeleteItemList(in[i]);
+	 continue;
+	 }
+      }
+ 
    SaveItemList(in[i],VBUFF,"none");
-   Debug("Saved netstat data in %s\n",VBUFF); 
-   snprintf(VBUFF,maxvarsize,"%s/state/cf_outgoing.%s",WORKDIR,ECGSOCKS[i][1]);
-   SaveItemList(out[i],VBUFF,"none");
    DeleteItemList(in[i]);
-   DeleteItemList(out[i]);
+   Debug("Saved in netstat data in %s\n",VBUFF); 
    }
 
+ for (i = 0; i < ATTR; i++)
+    {
+    struct stat statbuf;
+    time_t now = time(NULL); 
+
+    Debug("save outgoing %s\n",ECGSOCKS[i][1]);
+    snprintf(VBUFF,maxvarsize,"%s/state/cf_outgoing.%s",WORKDIR,ECGSOCKS[i][1]);
+
+    if (stat(VBUFF,&statbuf) != -1)
+       {       
+       if ((ByteSizeList(out[i]) < statbuf.st_size) && (now < statbuf.st_mtime+40*60))
+	  {
+	  Verbose("New state %s is smaller, retaining old for 40 mins longer\n",ECGSOCKS[i][1]);
+	  DeleteItemList(out[i]);
+	  continue;
+	  }
+       }
+    
+    SaveItemList(out[i],VBUFF,"none");
+    Debug("Saved out netstat data in %s\n",VBUFF); 
+    DeleteItemList(out[i]);
+    }
 }
 
 /*****************************************************************************/
@@ -1261,7 +1303,8 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    if ((fp = fopen(file,"r")) == NULL)
       {
       Debug("Cannot open file %s\n",file);
-      continue;
+      closedir(dirh);
+      return;
       }
 
    key[0] = '\0';
@@ -1610,14 +1653,18 @@ char *timekey;
 
 { char buffer[bufsize],buffer2[bufsize];
   double dev;
+
+Debug("Setting classes for %s...\n",name);
  
 if (sigma == 0.0 || lsigma == 0.0)
    {
+   Debug("No sigma variation .. can't measure class\n");
    return;
    }
 
-if (expect < 1 && delta < 2)
+if (delta < 5) /* Arbitrary limits on sensitivity  */
    {
+   Debug("Sensitivity too high .. can't measure class\n");
    return; /* Granularity makes this silly */
    }
  
@@ -1652,12 +1699,17 @@ else
    strcat(buffer2,"_dev1");
    AppendItem(classlist,buffer2,"0");
    }
+
+ /* Now use persistent classes so that serious anomalies last for about
+    2 autocorrelation lengths, so that they can be cross correlated and
+    seen by normally scheduled cfagent processes ... */
  
 if (dev > 2.0*sqrt(2.0))
    {
    strcpy(buffer2,buffer);
    strcat(buffer2,"_dev2");
    AppendItem(classlist,buffer2,"2");
+   AddPersistentClass(buffer2,40,cfpreserve); 
    }
  
 if (dev > 3.0*sqrt(2.0))
@@ -1665,6 +1717,7 @@ if (dev > 3.0*sqrt(2.0))
    strcpy(buffer2,buffer);
    strcat(buffer2,"_anomalous");
    AppendItem(classlist,buffer2,"3");
+   AddPersistentClass(buffer2,40,cfpreserve); 
    }
 }
 
@@ -1740,7 +1793,16 @@ delta = sqrt((new-average)*(new-average)+(new-localav)*(new-localav));
 
 if (delta > 4.0*dev)  /* IR */
    {
-   return average + delta/2.0;    /* Damping */
+   srand((unsigned int)time(NULL)); 
+   
+   if (drand48() < 0.7) /* 70% chance of using full value - as in learning policy */
+      {
+      return new;
+      }
+   else
+      {
+      return average+2.0*dev;
+      }
    }
 else
    {
@@ -1794,4 +1856,19 @@ char *file, *repository;
 
 {
  return false;
+}
+
+
+char *GetMacroValue(s,sp)
+
+char *s,*sp;
+{
+ return NULL;
+}
+
+void Banner(s)
+
+char *s;
+
+{
 }

@@ -37,13 +37,22 @@ extern RSA *PRIVKEY, *PUBKEY;
 
 /* cfengine */
 
+extern char **METHODARGV;
+extern char METHODRETURNVARS[bufsize];
+extern char METHODRETURNCLASSES[maxvarsize];
+extern char METHODFILENAME[bufsize];
+extern char *VMETHODPROTO[];
+extern int METHODARGC;
+extern char METHODREPLYTO[maxvarsize];
 extern char CONTEXTID[32];
 extern char METHODNAME[bufsize];
+extern char METHODMD5[bufsize];
 extern char PADCHAR;
 extern struct cfagent_connection *CONN;
 extern int AUTHENTICATED;
 
 extern char CFLOCK[bufsize];
+extern char SAVELOCK[bufsize];
 extern char CFLOG[bufsize];
 extern char CFLAST[bufsize];
 extern char LOCKDB[bufsize];
@@ -331,6 +340,7 @@ extern short DEBUG;
 extern short D1;
 extern short D2;
 extern short D3;
+extern short D4;
 
 extern short PARSING;
 extern short ISCFENGINE;

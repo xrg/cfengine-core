@@ -1,5 +1,106 @@
 2.1.0
 
+	************************************************************************************
+	* * * * * * * * * * * * * * * ** * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+	Main addition to 2.1.0 is * methods *. Methods replace modules for most applications
+                                   =========
+	* * * * * * * * * * * * * * * ** * * * * * * * * * * * * * * * * * * * * * * * * * *	
+	************************************************************************************
+
+	Error in cfenvd update policy for huge anomalies. Could never learn large values.
+	
+	New parser did not pick up restart sequence in processes if not enclosed by quotes.
+	
+	Bug in AppendIfNoLineMatching - infinite loop is SetLine not set, fixed,
+	ExecProgram was incorrectly listed as Exec in filters. fixed
+
+	Minor alterations to cfenvd policy. Calculational details, and
+	persistent information now lasts up to 30 minutes.
+	
+        Patch for red hat enterprise server classes
+
+	New variable 
+
+	  HostnameKeys = ( true )
+
+	if this is set, public keys are stored as user-hostname rather than
+	user-ipaddress. This can be useful for dhcp hosts. However, there is
+	a potential loss of security during key-exchange
+	due to implicit reliance on DNS or asserted
+	identity.
+	
+	------------------------------------------------------------------------------
+	DeleteItemNotMatching added to editfiles
+	DeleteItemNotStarting added to editfiles
+	DeleteItemNotContaining added to editfiles
+	
+
+	SyslogFacility = ( ) new variable to alter syslog facility level.
+	Possible values:
+
+	LOG_USER, LOG_DAEMON, LOG_LOCAL0-4
+	
+	--------------------------------------------------------------------------------
+
+	Persistent state memory can be added through a system alert functions:
+
+	 SetState(name,ttl,policy)
+
+	Set a class that acts like a non-resettable timer. It is defined for exactly 10
+	minutes
+	
+          SetState("preserved_class",10,Preserve)
+
+	Set a class that acts as a resettable timer. It is defined for 10 minutes unless
+	the SetState call is called again to extend its lifetime.
+	
+          SetState(non_preserved_class,6,Reset)
+
+	Delete a persistent class.
+
+	Delete an existing class:
+	
+          UnsetState(myclass)
+
+	--------------------------------------------------------------------------------
+	
+	rename: is now a synonym for disable: and a new option dest= is added to
+	these so that you can formally rename a file with any destination, not just suffix ".cfdisabled"
+	(though this remains the default).
+
+	
+	Classes now allowed in group / classes definitions for consistency and ANDing of classes
+
+        Added to Alerts to send messages directly and silently to syslog
+
+	   SysLog(LOG_ERR,"Test syslog message")
+
+	--------------------------------------------------------------------------------
+	
+	b2
+
+	cfservd no longer does reverse DNS lookup on keys that do not have to
+	be trusted, i.e. existing keys whose identity has been confirmed.
+	
+	Strategy evaluation was performed too late, so that it could not be
+	used to define variables. Fixed. Now strategies are evaluated as
+	soon as they are defined,, just define them at the start of the program..
+
+	Various minor patches.
+	
+	2.1.0b1
+	
+	Patch to packages for non linux rpm
+	
+	localhost method calls implemented
+		- todo: multiple methods calls
+	
+	---------------------------------------------------------------------------------
+	KNOWN BUGS : Functions cannot contain both subfunctions and spaces in strings
+	This will not be fixed until the language becomes fixed
+	---------------------------------------------------------------------------------	
+
 	Error in init.c erroneously referred to old directory .cfengine instead of .cfagent for
 	non-root users.
 	
@@ -24,10 +125,8 @@
 	Suspicious names now applies only to regular files 	
 
 	2.1.a8
-
-	recursive parse imports immediately, not after cfagent.conf
 	
-	Imports allows in update.conf
+	Imports allowed in update.conf
 	Extra locking applied to methods
 	Parser error in cfservd fixed. Would ignore single character objects (ordering
 	error in lexer).

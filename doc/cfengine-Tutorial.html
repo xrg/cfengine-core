@@ -991,7 +991,11 @@ this:
         # Grant access to all hosts at example.org.
         # Files should be world readable
      
-        /masterfiles/inputs   *.example.org
+        /masterfiles/inputs        *.example.org
+     
+        # Make sure there is permission to execute by cfrun
+     
+        /var/cfengine/bin/cfagent  *.example.org
      
      ########
      #
@@ -3462,6 +3466,9 @@ type.  In such an example we can avoid using classes altogether.
           links
           )
      
+       mountpattern = ( /univ )
+       homepattern = ( home? )
+     
      binservers:
      
         hal
@@ -5261,6 +5268,12 @@ all hosts from a particular domain.
      #####################################################
      
      admit:   # Can also call this grant:
+     
+     
+         # Note that we must grant access to the
+         # agent if we wan to start it remotely with cfrun
+     
+           /var/cfengine/bin/cfagent
      
         PasswdHost::
      

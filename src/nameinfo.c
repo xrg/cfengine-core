@@ -137,6 +137,7 @@ VDEFAULTBINSERVER.name = sp;
 
 AddClassToHeap(CanonifyName(sp));
 
+ 
 if ((tloc = time((time_t *)NULL)) == -1)
    {
    printf("Couldn't read system clock\n");

@@ -468,10 +468,12 @@ for a few days more and try again.
 * interfaces::                  
 * links::                       
 * mailserver::                  
+* methods::                     
 * miscmounts::                  
 * mountables::                  
 * processes::                   
 * packages::                    
+* rename::                      
 * required::                    
 * resolve::                     
 * shellcommands::               
@@ -1546,9 +1548,15 @@ acl:
 @cindex Alerts
 @vindex alerts
 
-Alerts are messages that are printed when classes become activated.
-Alerts can quote special functions, like @code{ShowState()}.
-Alerts cannot belong to the class @code{any}.
+Alerts are normally just messages that are printed when classes become activated
+in order to alert the system administrator to some condition that has arisen.
+Alerts can also be special functions, like @code{ShowState()} that generate
+system output.
+
+Alerts cannot belong to the class @code{any}, that would generate a message from
+every host. In a huge network this could result in vast amounts of Email. This behaviour
+can be forced, however, by creating an alias for the class `any' that is defined on
+the affected hosts.
 @smallexample
 
 alerts:
@@ -1557,10 +1565,16 @@ alerts:
 
       @var{quoted message} ifelapsed=@var{time}
       ShowState(@var{parameter})
+      SysLog(@var{priority},@var{message})
+      SetState(@var{name},@var{ttl},@var{policy})
+      UnSetState(@var{name})
 
 @end smallexample
 For example:
 @cindex ShowState()
+@cindex SysLog()
+@cindex SetState()
+@cindex UnsetState()
 
 @smallexample
 
@@ -1591,6 +1605,54 @@ ShowState(incoming.www)
 ShowState(outgoing.www)
 ShowState(procs)
 ShowState(users)
+@end smallexample
+
+To limit the frequency of alerts, you can set locking times:
+@smallexample
+ # ROOT PROCS
+
+  anomaly_hosts.RootProcs_high_dev2::
+
+   "RootProc anomaly high 2 dev on $(host) value $(value_rootprocs) av $(average_rootprocs) pm $(stddev_rootprocs)"
+
+   ShowState(procs)  ifelapsed=10 expireafter=20
+
+@end smallexample
+Alerts can also be channeled directly to syslog, to avoid extraneous console messages or email.
+@smallexample
+
+  SysLog(LOG_ERR,"Test syslog message")
+
+@end smallexample
+One application for alerts is to pass signals from one cfengine to
+another by persistent, shared memory.  For example, suppose a short-lived anomaly event
+triggers a class that relates to a security alert. The event class might be too short-lived
+to be followed up by cfagent in full. One could thus set a long term class that would
+trigger up several follow-up checks.
+A persistent class could also be used to exclude an operation for an interval of time.
+
+Persistent class memory can be
+added through a system alert functions to give timer behaviour.
+For example, consider setting 
+a class that acts like a non-resettable timer. It is defined for exactly 10
+minutes before expiring.
+@smallexample
+
+  SetState("preserved_class",10,Preserve)
+
+@end smallexample
+Or to set a class that acts as a resettable timer. It is defined for 60 minutes unless
+the SetState call is called again to extend its lifetime.
+@smallexample
+
+  SetState(non_preserved_class,60,Reset)
+
+@end smallexample
+Existing persistent classes can be deleted with:
+@smallexample
+
+          UnsetState(myclass)
+
 @end smallexample
 
 @c -------------------------------------------------------------------------------
@@ -1811,6 +1873,7 @@ The meaning of each of these lines is described below.
 * excludelinks::                
 * ExpireAfter::                 
 * homepattern::                 
+* HostnameKeys::                
 * IfElapsed::                   
 * Inform::                      
 * interfacename::               
@@ -1825,6 +1888,7 @@ The meaning of each of these lines is described below.
 * nfstype::                     
 * repchar::                     
 * repository::                  
+* RPMcommand::                  
 * schedule::                    
 * secureinput::                 
 * sensiblecount::               
@@ -1839,6 +1903,7 @@ The meaning of each of these lines is described below.
 * suspiciousnames::             
 * sysadm::                      
 * Syslog::                      
+* SyslogFacility::              
 * timezone::                    
 * TimeOut::                     
 * Verbose::                     
@@ -2458,6 +2523,7 @@ e.g.
 
 @end smallexample
 
+
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
@@ -2772,7 +2838,7 @@ as options of the form @code{expireafter=10}.
 @c SUBSECTION
 @c .....................................................
 
-@node homepattern, IfElapsed, ExpireAfter, control
+@node homepattern, HostnameKeys, ExpireAfter, control
 @subsection HomePattern
 @cindex Home path
 @cindex Path to home directories
@@ -2830,7 +2896,29 @@ to achieve the same this as follows:
 @c SUBSECTION
 @c .....................................................
 
-@node IfElapsed, Inform, homepattern, control
+@node HostnameKeys, IfElapsed, homepattern, control
+@subsection HostnameKeys
+
+If this variable is set to true/on, it causes cfagent to
+lookup and store trusted public keys according to their
+DNS fully qualified host name, instead of using the IP address.
+This can be useful in environments where hosts do not have fixed
+IP addresses, but do have fixed hostnames.
+
+@smallexample
+
+  HostnameKeys = ( on )
+
+@end smallexample
+This method of storing keys is not recommended for sites with
+fixed IP addresses, since it removes one security barrier
+from a potential attacker by potentially allowing DNS spoofing.
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node IfElapsed, Inform, HostnameKeys, control
 @subsection IfElapsed
 
 If you change the value of this parameter, it should be one of the
@@ -3255,7 +3343,7 @@ order to encompass spaces etc.
 @c SUBSECTION
 @c .....................................................
 
-@node repository, schedule, repchar, control
+@node repository, RPMcommand, repchar, control
 @subsection Repository
 
 
@@ -3269,12 +3357,24 @@ which identifies the path from which they originate.
 This affects files saved using @code{disable}, @code{copy},
 @code{links} and @code{editfiles} @xref{Disabling and the file repository,Disabling and the file repository,Disabling and the file repository,cfengine-Tutorial}.
 
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node RPMcommand, schedule, repository, control
+@subsection RPMcommand
+
+The default value of the Red Hat Package manager command @file{/bin/rpm} can be altered
+for non-standard systems with this variable.
+@example
+RPMcommand = ( /usr/bin/rpm )
+@end example
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 
-@node schedule, secureinput, repository, control
+@node schedule, secureinput, RPMcommand, control
 @subsection Schedule
 @cindex scheduling
 @vindex scheduling
@@ -3595,7 +3695,7 @@ should make this an address which users can mail if they have troubles.
 @c SUBSECTION
 @c .....................................................
 
-@node Syslog, timezone, sysadm, control
+@node Syslog, SyslogFacility, sysadm, control
 @subsection Syslog
 
 @smallexample
@@ -3617,12 +3717,44 @@ To set this output level one writes:
 
 @end smallexample
 
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node SyslogFacility, timezone, Syslog, control
+@subsection SyslogFacility
+
+@smallexample
+
+  SyslogFacility = ( @var{facility} )
+
+@end smallexample
+
+This variable alters the syslog facility level.
+e.g.
+
+@smallexample
+
+   SyslogFacility = ( LOG_LOCAL1 )
+
+@end smallexample
+
+Valid arguments are 
+@smallexample
+LOG_USER
+LOG_DAEMON
+LOG_LOCAL0
+LOG_LOCAL1
+LOG_LOCAL2
+LOG_LOCAL3
+LOG_LOCAL4
+@end smallexample
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 
-@node timezone, TimeOut, Syslog, control
+@node timezone, TimeOut, SyslogFacility, control
 @subsection timezone
 
 @example
@@ -4465,6 +4597,8 @@ be examined later.  The syntax is
    @var{class}::
 
       /@var{filename}
+                      dest=@var{filename}
+
                       type=@var{plain/file/link/links}
                       rotate=@var{empty/truncate/numerical-value}
                       size=@var{numerical-value}
@@ -4481,7 +4615,10 @@ be examined later.  The syntax is
 @end cartouche
 
 @noindent
-Cfengine renames a given file by appending the name of the file with the
+If a destination filename is specified, cfagent renames the source file to
+the destination, where possible (renaming across filesystems is not allowed).
+If no destination is given,
+cfagent renames a given file by appending the name of the file with the
 suffix @file{.cfdisabled}.  A typical example of a file you would
 probably want to disable would be the @code{/etc/hosts.equiv} file which
 is often found with the @samp{+} symbol written in it, opening the
@@ -5047,7 +5184,10 @@ Delete lines after the current position which match the quoted expression.
 Delete all lines containing the exact string quoted.
 
 @item   DeleteLinesMatching @var{quoted-regex}
-Delete all lines matching the quoted regular expression.
+Delete all lines fully matching the tied quoted regular expression.
+
+@item   DeleteLinesNotMatching @var{quoted-regex}
+Delete all lines not fully matching the tied quoted regular expression.
 
 @item   DeleteLinesStarting @var{quoted-string}
 Delete all lines beginning with the exact string quoted.
@@ -6197,21 +6337,23 @@ an example of the syntax:
 @smallexample
 
 groups:
+
+  ANDed_class::
  
-   science = ( saga tor odin )
+    science = ( saga tor odin )
 
-   packages = ( saga ) 
+    packages = ( saga ) 
 
-   AllHomeServers   = ( saga )
-   AllBinaryServers = ( saga )
+    AllHomeServers   = ( saga )
+    AllBinaryServers = ( saga )
 
-   OIH_servers = ( saga )
-   OIH_clients = ( tor odin )
+    OIH_servers = ( saga )
+    OIH_clients = ( tor odin )
 
-   notthis = ( !this )
+    notthis = ( !this )
 
-   ip_in_range = ( IPRange(129.0.0.1-15) )  # host is in ip address range
-   ip_in_range = ( IPRange(129.0.0.1/24) )  # host is in ip address range (CIDR notation)
+    ip_in_range = ( IPRange(129.0.0.1-15) )  # host is in ip address range
+    ip_in_range = ( IPRange(129.0.0.1/24) )  # host is in ip address range (CIDR notation)
 
 @end smallexample 
 @cindex CIDR
@@ -6276,7 +6418,7 @@ command has no effect.
 @cindex Group dependencies
 @cindex Class dependencies
 @cindex Dependencies
-Groups may now contain previously defined cfengine groups too. This
+Groups may contain previously defined cfengine groups too. This
 allows one class to inherit the attributes of another class, for instance:
 
 @smallexample
@@ -6303,6 +6445,19 @@ several other basic classes, e.g.
 which evaluates to true every day when it between 00:00 hours and 00:59,
 all day Monday and all day on the first day of every month.
 
+If you apply a class predicate before a definition then the result
+is effectively the AND of the classes:
+
+
+@smallexample
+
+ Hr00::
+
+  SpecialTime = ( Monday Tuesday )
+
+@end smallexample
+defines @code{SpecialTime} at Hr00 on Monday or Tuesday.
+
 @cindex Shell command to decide class
 @cindex Class decided by shell command
 Finally, you can define groups (strictly classes) by the result of a shell
@@ -6325,8 +6480,6 @@ long as they adhere to the convention that zero exit status means true.
 If you have several members which are shell commands, then the effect is
 to make the class the logical OR of the scripts' results.
 
-As of version 1.4.0, you may use the synonym @code{classes} for @code{groups}.
-@cindex @code{classes}
 
 
 @page
@@ -7001,7 +7154,7 @@ numbers of the file pointed to.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node mailserver, miscmounts, links, Cfagent reference
+@node mailserver, methods, links, Cfagent reference
 @section mailserver
 @cindex Mail server, defining
 @cindex Defining a mail server
@@ -7042,7 +7195,338 @@ the resource file.  @xref{cfrc resource file}.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node miscmounts, mountables, mailserver, Cfagent reference
+@node methods, miscmounts, mailserver, Cfagent reference
+@section methods
+@cindex Methods
+@cindex Private modules
+@vindex methods
+
+From version 2.1.0, cfagent provides for the execution of closed functions or "methods".
+Methods are similar to the old idea of modules, but they are implemented in a way
+that allows collaboration between different hosts within a network, using a common
+standard. Methods must be cfengine programs however, wheras the module
+interface can be written in any script language.
+
+@emph{Modules are designed to offer a firewall-like proxy interface for remote
+method execution. We can call methods a form of `voluntary RPC', in which
+hosts execute methods for one another on a purely voluntary basis. This
+builds in anti-spamming protection. The principle used is that hosts
+should be immune to Denial of Service attacks; they should
+only be able to disadvanatge themselves with the attempt.}
+
+(Remote method execution is not implemented in version 2.1.0, but will follow
+in a later release, when additional research has been carried out.)
+
+Methods allow you to call an independent cfengine program, pass it arguments and classes,
+and collect the results for use in your main program. It thus introduces
+parent-child semantics into cfengine "imports". A method is more than an import.
+(Import is like a C #include, while a method is like a C function.)
+Communication is peer to peer, by mutual consent. There is no "method server"
+that executes methods on remote hosts. Hosts exchange information by invitation
+only. This is an unreliable service (in the sense of UDP).
+
+The order of method exeuction is not guaranteed. This results from the
+decoupling between client request and service provision.
+
+@cartouche
+@smallexample
+
+  methods:
+
+     @var{class}::
+
+
+       @var{function_name}(@var{parameters or none})
+
+      action=@file{filename}                
+
+      returnvars=@var{comma separated variable list or void}
+      returnclasses=@var{comma separated class list}
+
+      server=@var{ip-host}
+
+      owner=@var{setuid}
+      group=@var{setgid}
+      chdir=@var{cd for child}
+      chroot=@var{sandbox directory}
+
+@end smallexample
+@end cartouche
+The function arguments may not be empty, but a null value
+can be transmitted with a dummy value, e.g. @code{Function(null)} or @code{function(void)}.
+Here is an example method call.
+@smallexample
+
+ # cfagent.conf
+
+control:
+
+   actionsequence = ( methods )
+
+#################################################
+
+methods:
+
+ any::
+
+   SimpleMethod(null)
+
+      action=cf.simple
+      returnvars=null
+      returnclasses=null
+      server=localhost
+
+
+@end smallexample
+With method file (located in the ModulesDirectory),
+@smallexample
+
+ # cf.simple
+
+  control:
+
+    MethodName       = ( SimpleMethod )
+    MethodParameters = ( null )
+    actionsequence   = ( timezone )
+
+####################################################
+
+alerts:
+
+  "This simple method does nothing"
+
+  ReturnVariables(void)
+  ReturnClasses(void)
+
+@end smallexample
+On executing this example, the output is:
+@example
+nexus$ ./cfagent -f ./cftest
+cfengine:myhost:SimpleMethod: cfengine:nexus: This simple method does nothing
+
+@end example
+
+The following example
+collects the tar file, unpacks it,
+configures and compiles it, then tidies its files.
+@smallexample
+####################################################
+#
+# This is a cfengine file that calls a method.
+# It should be in the usual place for cfinputs
+#
+####################################################
+ 
+control:
+
+   actionsequence = ( methods )
+
+#####################################################
+
+methods:
+
+   InstallTar(cfengine-2.1.0b7,/local/gnu)
+
+      action=cf.install
+      returnvars=null
+      returnclasses=null
+      server=localhost
+
+@end smallexample
+We must install the method in the trusted modules directory
+(normally /var/cfengine/modules or WORKDIR/modules).
+
+@smallexample
+####################################################
+#
+# This is an example method file, that needs to be
+# in the module directory /var/cfengine/modules
+# since this is the trusted directory
+#
+# e.g. InstallFromTar(cfengine-2.1.0,/usr/local/gnu)
+#
+####################################################
+
+control:
+
+
+ MethodName       = ( InstallTar )
+ MethodParameters = ( filename gnuprefix )
+ 
+ path = ( /usr/local/gnu/bin )
+
+
+ TrustedWorkDir = ( /tmp )
+
+ TrustedSources = ( /iu/nexus/ud/mark/tmp )
+ TrustedSourceServer = ( localhost )
+
+ actionsequence = ( copy editfiles shellcommands tidy )
+
+####################################################
+
+classes:
+
+  Force = ( any )
+
+####################################################
+
+copy:
+
+ $(TrustedSources)/$(filename).tar.gz 
+
+    dest=$(TrustedWorkDir)/$(filename).tar.gz 
+    server=$(TrustedSourceServer)
+
+####################################################
+
+shellcommands:
+
+ "$(path)/tar zxf $(filename).tar.gz" 
+
+     chdir=$(TrustedWorkDir)
+
+ "$(TrustedWorkDir)/$(filename)/configure --prefix=$(gnuprefix)" 
+
+    chdir=$(TrustedWorkDir)/$(filename)
+    define=okay
+
+ okay::
+
+ "$(path)/make" 
+
+     chdir=$(TrustedWorkDir)/$(filename)
+
+####################################################
+
+tidy:
+
+  $(TrustedWorkDir) pattern=$(filename) r=inf rmdirs=true age=0
+
+
+####################################################
+
+#editfiles:
+#
+#@{ $(TrustedWorkDir)/$(filename)/configure-opts
+#
+#AppendIfNoSuchLine "Something ???"
+#@}
+
+####################################################
+
+alerts:
+
+ Force::
+
+  ReturnVariables(none)
+  ReturnClasses(success)
+
+@end smallexample
+
+
+
+A more complex example is given below:
+@smallexample
+  GetAnalysis("$@{parent1@}",param2,ReadFile("/etc/passwd",300))
+
+    # The name of the method that is in modulesdir
+
+    action=cf.methodtest                  
+
+    # The variables that we get back should be called these names
+    # with method name prefix
+
+    returnvars=a,b,c,d               
+
+    # This is an access list for returned classes. Classes will
+    # only be handed back if they are included here
+
+    returnclasses=define1,define2,class1 
+
+    # The host(s) that should execute the method
+
+    server=localhost                    
+
+    # Only localhost can decide these - not a remote caller
+    #    owner=25
+    #    group=root
+    #    chdir=/var/cfengine
+    #    chroot=/tmp
+
+@end smallexample
+Here the function being called is the cfengine program @file{cf.methodtest}.
+It is passed three arguments: the contents of variable @var{parent1}, the literal
+string "param2" and the first 300 bytes of the file @file{/etc/passwd}.
+On return, if the method gets executed, the values will be placed in the four
+variables:
+@smallexample
+$(GetAnalysis.a) $(GetAnalysis.b) $(GetAnalysis.c) $(GetAnalysis.d)
+@end smallexample
+If the classes @code{define1} etc are returned by the method, then we
+set them also in the main program (@code{returnclasses} is an access
+control list for setting classes). The remaining options are as those
+for executing shell commands, and apply only on the host that executes
+the function.
+
+Both the client and server hosts must have a copy of the same method
+declaration. The client should have a non-empty @code{server=} declaration.
+The server side should have no @code{server=} declaration unless it is sending
+the request on recursively to other hosts.
+At present only requests to localhost are allowed, so only there is automatic
+access to the rule.
+
+The cfagent file that contains the method code must have the following
+declarations:
+
+@cartouche
+  control:
+
+    MethodName       = ( @var{identifier} )
+    MethodParameters = ( @var{spaced list of recipient variables or files} )
+ 
+   # ....
+
+  alerts:
+
+   # Return variables are alerts to parent
+
+    ReturnVariables(@var{comma separated list of variables or functions or void})
+    ReturnClasses(@var{comma separated list of classes})
+
+@end cartouche
+e.g.
+@smallexample
+control:
+
+ MethodName       = ( GetAnalysis )
+ MethodParameters = ( value1 value2 /tmp/file1 )
+ 
+ # ....
+
+alerts:
+
+  # Return variables are alerts to parent
+
+  ReturnVariables("$@{var1@}","$@{var2@}","var3",literal_value)
+  ReturnClasses(class1,class2)
+
+@end smallexample
+
+The parameters transmitted by the parent are read into the formal
+parameters @code{value1}, @code{value2} and the the file excerpt is
+placed in the temporary file @file{/tmp/file1}.
+
+The return clases are passed in their current state to the parent;
+i.e. if class1 is defined then it is offered to the parent, but if it
+is not defined in the method, it is not passed on. The parent can then
+choose to accept or ignore the value.
+
+@c -------------------------------------------------------------------------------
+@c SECTION
+@c -------------------------------------------------------------------------------
+
+@node miscmounts, mountables, methods, Cfagent reference
 @section miscmounts
 @cindex Mounting filesystems.
 @cindex Miscellaneous mount operations
@@ -7461,7 +7945,7 @@ See also filters @xref{filters}, for more complex searches.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node packages, required, processes, Cfagent reference
+@node packages, rename, processes, Cfagent reference
 @section packages
 @cindex packages
 @cindex Checking for installed packages
@@ -7495,7 +7979,7 @@ packages:
 @end cartouche
 
 @noindent
-
+Associated variables in control are @code{DefaultPkgMgr} and @code{RPMcommand}.
 @table @code
 
 @item cmp
@@ -7631,7 +8115,18 @@ defined.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node required, resolve, packages, Cfagent reference
+@node rename, required, packages, Cfagent reference
+@section rename
+
+As of version 2.1.0 rename is a synonym for disable, @xref{disable}.
+
+@page
+
+@c -------------------------------------------------------------------------------
+@c SECTION
+@c -------------------------------------------------------------------------------
+
+@node required, resolve, rename, Cfagent reference
 @section required
 
 This is a synonym for disks, @xref{disks}.
@@ -8303,6 +8798,8 @@ file is as follows:
 
        BindToInterface = ( @var{IP number}/@var{hostname} )
 
+       HostnameKeys = ( @var{true/false} )
+
  groups:
 
    @var{Group definitions}
@@ -8362,6 +8859,7 @@ The file consists of a control section and access information.
 * cfrunCommand::                
 * DenyBadClocks::               
 * DenyConnectionsFrom::         
+* cfservd HostnameKeys::        
 * cfservd IfElapsed::           
 * LogAllConnections::           
 * MaxConnections::              
@@ -8564,7 +9062,7 @@ messages of the form `Can't stat' file when remote copying.
 @c SUBSECTION
 @c ...........................................
 
-@node DenyConnectionsFrom, cfservd IfElapsed, DenyBadClocks, cfservd control
+@node DenyConnectionsFrom, cfservd HostnameKeys, DenyBadClocks, cfservd control
 @subsection DenyConnectionsFrom
 
 Hosts which are included by the allow-list above can be explicitly
@@ -8577,11 +9075,33 @@ denied access using this list.
 @end smallexample
 @cindex @code{DenyConnectionsFrom} variable
 
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node cfservd HostnameKeys, cfservd IfElapsed, DenyConnectionsFrom, cfservd control
+@subsection HostnameKeys
+
+If this variable is set to true/on, it causes cfservd to
+lookup and store trusted public keys according to their
+DNS fully qualified host name, instead of using the IP address.
+This can be useful in environments where hosts do not have fixed
+IP addresses, but do have fixed hostnames.
+
+@smallexample
+
+  HostnameKeys = ( on )
+
+@end smallexample
+This method of storing keys is not recommended for sites with
+fixed IP addresses, since it removes one security barrier
+from a potential attacker by potentially allowing DNS spoofing.
+
 @c ...........................................
 @c SUBSECTION
 @c ...........................................
 
-@node cfservd IfElapsed, LogAllConnections, DenyConnectionsFrom, cfservd control
+@node cfservd IfElapsed, LogAllConnections, cfservd HostnameKeys, cfservd control
 @subsection IfElapsed
 The @code{IfElapsed} anti-spamming filter is also built into
 @code{cfservd} so that a remote user cannot even get as far as

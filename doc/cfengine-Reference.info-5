@@ -28,20 +28,22 @@ Here is an example of the syntax:
 
      groups:
      
-        science = ( saga tor odin )
+       ANDed_class::
      
-        packages = ( saga )
+         science = ( saga tor odin )
      
-        AllHomeServers   = ( saga )
-        AllBinaryServers = ( saga )
+         packages = ( saga )
      
-        OIH_servers = ( saga )
-        OIH_clients = ( tor odin )
+         AllHomeServers   = ( saga )
+         AllBinaryServers = ( saga )
      
-        notthis = ( !this )
+         OIH_servers = ( saga )
+         OIH_clients = ( tor odin )
      
-        ip_in_range = ( IPRange(129.0.0.1-15) )  # host is in ip address range
-        ip_in_range = ( IPRange(129.0.0.1/24) )  # host is in ip address range (CIDR notation)
+         notthis = ( !this )
+     
+         ip_in_range = ( IPRange(129.0.0.1-15) )  # host is in ip address range
+         ip_in_range = ( IPRange(129.0.0.1/24) )  # host is in ip address range (CIDR notation)
 
 To include a list of hosts from a NIS netgroup, you use the `+' symbol,
 or the `+@' construction.  For example:
@@ -79,7 +81,7 @@ The `minus' command effectively eliminates its members from
 `bignetgroup' if they exist within that group.  If none of the hosts in
 `smallnetgroup' exist in `bignetgroup' then the command has no effect.
 
-   Groups may now contain previously defined cfengine groups too. This
+   Groups may contain previously defined cfengine groups too. This
 allows one class to inherit the attributes of another class, for
 instance:
 
@@ -99,6 +101,15 @@ several other basic classes, e.g.
 which evaluates to true every day when it between 00:00 hours and 00:59,
 all day Monday and all day on the first day of every month.
 
+   If you apply a class predicate before a definition then the result
+is effectively the AND of the classes:
+
+
+      Hr00::
+     
+       SpecialTime = ( Monday Tuesday )
+   defines `SpecialTime' at Hr00 on Monday or Tuesday.
+
    Finally, you can define groups (strictly classes) by the result of a
 shell command. A shell command or program is deemed to be `true' if it
 exits with a status of zero, i.e. it calls `exit(0)'. Any other value
@@ -114,8 +125,6 @@ true. Of course, you can put any script or program in the single quotes
 as long as they adhere to the convention that zero exit status means
 true.  If you have several members which are shell commands, then the
 effect is to make the class the logical OR of the scripts' results.
-
-   As of version 1.4.0, you may use the synonym `classes' for `groups'.
 
 
 File: cfengine-Reference.info,  Node: homeservers,  Next: ignore,  Prev: groups,  Up: Cfagent reference
@@ -629,7 +638,7 @@ filesystem cfengine determines the status of hard links by comparing
 the device and inode numbers of the file pointed to.
 
 
-File: cfengine-Reference.info,  Node: mailserver,  Next: miscmounts,  Prev: links,  Up: Cfagent reference
+File: cfengine-Reference.info,  Node: mailserver,  Next: methods,  Prev: links,  Up: Cfagent reference
 
 mailserver
 ==========
@@ -658,7 +667,303 @@ other words, on an HPUX system, the spool directory is mounted on
 resource file.  *Note cfrc resource file::.
 
 
-File: cfengine-Reference.info,  Node: miscmounts,  Next: mountables,  Prev: mailserver,  Up: Cfagent reference
+File: cfengine-Reference.info,  Node: methods,  Next: miscmounts,  Prev: mailserver,  Up: Cfagent reference
+
+methods
+=======
+
+   From version 2.1.0, cfagent provides for the execution of closed
+functions or "methods".  Methods are similar to the old idea of
+modules, but they are implemented in a way that allows collaboration
+between different hosts within a network, using a common standard.
+Methods must be cfengine programs however, wheras the module interface
+can be written in any script language.
+
+   _Modules are designed to offer a firewall-like proxy interface for
+remote method execution. We can call methods a form of `voluntary RPC',
+in which hosts execute methods for one another on a purely voluntary
+basis. This builds in anti-spamming protection. The principle used is
+that hosts should be immune to Denial of Service attacks; they should
+only be able to disadvanatge themselves with the attempt._
+
+   (Remote method execution is not implemented in version 2.1.0, but
+will follow in a later release, when additional research has been
+carried out.)
+
+   Methods allow you to call an independent cfengine program, pass it
+arguments and classes, and collect the results for use in your main
+program. It thus introduces parent-child semantics into cfengine
+"imports". A method is more than an import.  (Import is like a C
+#include, while a method is like a C function.)  Communication is peer
+to peer, by mutual consent. There is no "method server" that executes
+methods on remote hosts. Hosts exchange information by invitation only.
+This is an unreliable service (in the sense of UDP).
+
+   The order of method exeuction is not guaranteed. This results from
+the decoupling between client request and service provision.
+
+
+       methods:
+     
+          CLASS::
+     
+     
+            FUNCTION_NAME(PARAMETERS OR NONE)
+     
+           action=`filename'
+     
+           returnvars=COMMA SEPARATED VARIABLE LIST OR VOID
+           returnclasses=COMMA SEPARATED CLASS LIST
+     
+           server=IP-HOST
+     
+           owner=SETUID
+           group=SETGID
+           chdir=CD FOR CHILD
+           chroot=SANDBOX DIRECTORY
+The function arguments may not be empty, but a null value can be
+transmitted with a dummy value, e.g. `Function(null)' or
+`function(void)'.  Here is an example method call.
+
+      # cfagent.conf
+     
+     control:
+     
+        actionsequence = ( methods )
+     
+     #################################################
+     
+     methods:
+     
+      any::
+     
+        SimpleMethod(null)
+     
+           action=cf.simple
+           returnvars=null
+           returnclasses=null
+           server=localhost
+   With method file (located in the ModulesDirectory),
+
+      # cf.simple
+     
+       control:
+     
+         MethodName       = ( SimpleMethod )
+         MethodParameters = ( null )
+         actionsequence   = ( timezone )
+     
+     ####################################################
+     
+     alerts:
+     
+       "This simple method does nothing"
+     
+       ReturnVariables(void)
+       ReturnClasses(void)
+   On executing this example, the output is:
+     nexus$ ./cfagent -f ./cftest
+     cfengine:myhost:SimpleMethod: cfengine:nexus: This simple method does nothing
+
+   The following example collects the tar file, unpacks it, configures
+and compiles it, then tidies its files.
+     ####################################################
+     #
+     # This is a cfengine file that calls a method.
+     # It should be in the usual place for cfinputs
+     #
+     ####################################################
+     
+     control:
+     
+        actionsequence = ( methods )
+     
+     #####################################################
+     
+     methods:
+     
+        InstallTar(cfengine-2.1.0b7,/local/gnu)
+     
+           action=cf.install
+           returnvars=null
+           returnclasses=null
+           server=localhost
+   We must install the method in the trusted modules directory
+(normally /var/cfengine/modules or WORKDIR/modules).
+
+     ####################################################
+     #
+     # This is an example method file, that needs to be
+     # in the module directory /var/cfengine/modules
+     # since this is the trusted directory
+     #
+     # e.g. InstallFromTar(cfengine-2.1.0,/usr/local/gnu)
+     #
+     ####################################################
+     
+     control:
+     
+     
+      MethodName       = ( InstallTar )
+      MethodParameters = ( filename gnuprefix )
+     
+      path = ( /usr/local/gnu/bin )
+     
+     
+      TrustedWorkDir = ( /tmp )
+     
+      TrustedSources = ( /iu/nexus/ud/mark/tmp )
+      TrustedSourceServer = ( localhost )
+     
+      actionsequence = ( copy editfiles shellcommands tidy )
+     
+     ####################################################
+     
+     classes:
+     
+       Force = ( any )
+     
+     ####################################################
+     
+     copy:
+     
+      $(TrustedSources)/$(filename).tar.gz
+     
+         dest=$(TrustedWorkDir)/$(filename).tar.gz
+         server=$(TrustedSourceServer)
+     
+     ####################################################
+     
+     shellcommands:
+     
+      "$(path)/tar zxf $(filename).tar.gz"
+     
+          chdir=$(TrustedWorkDir)
+     
+      "$(TrustedWorkDir)/$(filename)/configure --prefix=$(gnuprefix)"
+     
+         chdir=$(TrustedWorkDir)/$(filename)
+         define=okay
+     
+      okay::
+     
+      "$(path)/make"
+     
+          chdir=$(TrustedWorkDir)/$(filename)
+     
+     ####################################################
+     
+     tidy:
+     
+       $(TrustedWorkDir) pattern=$(filename) r=inf rmdirs=true age=0
+     
+     
+     ####################################################
+     
+     #editfiles:
+     #
+     #{ $(TrustedWorkDir)/$(filename)/configure-opts
+     #
+     #AppendIfNoSuchLine "Something ???"
+     #}
+     
+     ####################################################
+     
+     alerts:
+     
+      Force::
+     
+       ReturnVariables(none)
+       ReturnClasses(success)
+
+   A more complex example is given below:
+       GetAnalysis("${parent1}",param2,ReadFile("/etc/passwd",300))
+     
+         # The name of the method that is in modulesdir
+     
+         action=cf.methodtest
+     
+         # The variables that we get back should be called these names
+         # with method name prefix
+     
+         returnvars=a,b,c,d
+     
+         # This is an access list for returned classes. Classes will
+         # only be handed back if they are included here
+     
+         returnclasses=define1,define2,class1
+     
+         # The host(s) that should execute the method
+     
+         server=localhost
+     
+         # Only localhost can decide these - not a remote caller
+         #    owner=25
+         #    group=root
+         #    chdir=/var/cfengine
+         #    chroot=/tmp
+   Here the function being called is the cfengine program
+`cf.methodtest'.  It is passed three arguments: the contents of
+variable PARENT1, the literal string "param2" and the first 300 bytes
+of the file `/etc/passwd'.  On return, if the method gets executed, the
+values will be placed in the four variables:
+     $(GetAnalysis.a) $(GetAnalysis.b) $(GetAnalysis.c) $(GetAnalysis.d)
+   If the classes `define1' etc are returned by the method, then we set
+them also in the main program (`returnclasses' is an access control
+list for setting classes). The remaining options are as those for
+executing shell commands, and apply only on the host that executes the
+function.
+
+   Both the client and server hosts must have a copy of the same method
+declaration. The client should have a non-empty `server=' declaration.
+The server side should have no `server=' declaration unless it is
+sending the request on recursively to other hosts.  At present only
+requests to localhost are allowed, so only there is automatic access to
+the rule.
+
+   The cfagent file that contains the method code must have the
+following declarations:
+
+   control:
+
+   MethodName       = ( IDENTIFIER )     MethodParameters = ( SPACED
+LIST OF RECIPIENT VARIABLES OR FILES )
+
+   # ....
+
+   alerts:
+
+   # Return variables are alerts to parent
+
+   ReturnVariables(COMMA SEPARATED LIST OF VARIABLES OR FUNCTIONS OR
+VOID)     ReturnClasses(COMMA SEPARATED LIST OF CLASSES)
+
+   e.g.
+     control:
+     
+      MethodName       = ( GetAnalysis )
+      MethodParameters = ( value1 value2 /tmp/file1 )
+     
+      # ....
+     
+     alerts:
+     
+       # Return variables are alerts to parent
+     
+       ReturnVariables("${var1}","${var2}","var3",literal_value)
+       ReturnClasses(class1,class2)
+
+   The parameters transmitted by the parent are read into the formal
+parameters `value1', `value2' and the the file excerpt is placed in the
+temporary file `/tmp/file1'.
+
+   The return clases are passed in their current state to the parent;
+i.e. if class1 is defined then it is offered to the parent, but if it
+is not defined in the method, it is not passed on. The parent can then
+choose to accept or ignore the value.
+
+
+File: cfengine-Reference.info,  Node: miscmounts,  Next: mountables,  Prev: methods,  Up: Cfagent reference
 
 miscmounts
 ==========
@@ -1002,260 +1307,4 @@ greater than 20, one would write:
      "XXX" matches=<20  action=bymatch signal=kill
 
    See also filters *Note filters::, for more complex searches.
-
-
-File: cfengine-Reference.info,  Node: packages,  Next: required,  Prev: processes,  Up: Cfagent reference
-
-packages
-========
-
-   The packages action allows you to check for the existance of packages
-on the system, as determined by the package database you select.  This
-operation is set up such that it tries not to make assumptions about
-the package manager in use.  For example, it should be possible to use
-RPM on a Solaris box.
-
-   The syntax summary is:
-
-
-     packages:
-     
-        CLASS::
-     
-           PACKAGE-NAME
-                             pkgmgr=none/RPM
-                             cmp=eq/LT/GT/GE/LE/NE
-                             version=VERSION-STRING
-                             define=CLASS-LIST(,:.)
-                             elsedefine=CLASS-LIST(,:.)
-     
-                             ifelapsed=MINS
-                             expireafter=MINS
-
-`cmp'
-     Determines how the version of the installed package will be
-     compared to that specified by the `version' attribute.  Possible
-     values include:
-
-        * `eq' The version installed must be equal to `version'
-
-        * `lt' The version installed must be less than `version'
-
-        * `gt' The version installed must be greater than `version'
-
-        * `le' The version installed must be less than or equal to
-          `version'
-
-        * `ge' The version installed must be creater than or equal to
-          `version'
-
-        * `ne' The version installed must not be equal to `version'
-
-     The default value for this attribute is `eq'.
-
-`version'
-     Specifies the package manager specific version string to match.  If
-     this is not specified, then any version matches, and the value of
-     the `cmp' attribute is ignored.  See the allowed values of
-     `pkgmgr' below for an explation of how each package manager will
-     interpret this.
-
-`pkgmgr'
-     Selects the package manager database to query.  This defaults to
-     either the value of the `DefaultPkgMgr' variable, or if that is
-     not set, there is no default.  In that case, no checking will be
-     done unless `pkgmgr' is set explicitly for each package.  Note
-     that the default value '`none'' listed is merely a pseudo-value,
-     and cannot actually be used, since it would make no sense anyway.
-
-     Each package manager will interpret the `version' and `cmp'
-     attributes in its own way.  So, for example, when you use
-     `pkgmgr=rpm', the comparison will be done with the same rules that
-     RPM use if it were not being run through cfengine.
-
-     Currently, the following values are accepted:
-
-    `rpm'
-          This uses the rpm command, which cfengine expects to find as
-          `/bin/rpm' to query the machine's RPM database.  The `rpm'
-          check assumes that you are using a version of RPM that
-          understands the concept of an epoch, which means that you
-          will want to use RPM version 3.0.3 or greater.  Versions as
-          early as 2.5.6 may work, but it is doubtful.  If multiple
-          packages of the same name are installed (i.e. kernel), then
-          the check considers the package to be installed at the
-          specified version if at least one of them satisifies the
-          criteria specified by `cmp' and `version'.
-
-          The format of a RPM version string is:
-          [epoch:]version[-release].  The version[-release] can be seen
-          by simply running: `rpm -q <pkg>'.  In order to see the
-          epoch, you must use a query format, like this: `rpm -q
-          --queryformat "%{EPOCH}:%{VERSION}-%{RELEASE}\n" <pkg>'.
-          Most packages do not have an epoch, and will print `(none)'
-          in the epoch space.  In recent incarnations of RPM, the
-          absense of an epoch is interpreted as 0.  This is also how
-          cfengine will interpret it.  _Be careful with this.  If the
-          installed version of a package has an epoch greater than 0,
-          and you do not specify the epoch, unexpected results may
-          happen._  For example, if you have a package installed,
-          `foo-1:2.0-1', and you specify a `version=3.0-1' and a
-          `cmp=gt', the check will be true, because the installed
-          version has an epoch of 1, and you did not specify an epoch,
-          which implies you wanted an epoch of 0.  The rule here is
-          basically to always check the epoch of the package you really
-          want, and specify it.  It may take a few extra extra seconds
-          to check, but it will save you lots of headaches later.
-
-`define'
-     Specifies the list of classes to define if the specified package is
-     installed.
-
-`elsedefine'
-     Specifies the list of classes to define if the specified package
-     is not installed.
-
-Example:
-
-     packages:
-     
-         redhat_8_0::
-             m4  version=0:1.4.1-11 cmp=eq pkgmgr=rpm elsedefine=needsm4
-
-In this first example, we are looking for the m4 package at exactly
-version 0:1.4.1-11.  The installed m4 package on a redhat_8_0 box has
-no epoch which is the same as zero.  Specifying it will keep you out of
-trouble.  This check will cause `needsm4' to be defined if the exact
-version of m4 specified is not installed.
-
-     control:
-         redhat:;
-             DefaultPkgMgr = ( rpm )
-     
-     packages:
-         redhat_8_0::
-             make version=0:4.5-2 cmp=ge define=hasmake elsedefine=needsmake
-
-In the second example, we use the DefaultPkgMgr variable to set the
-default for the `pkgmgr' attribute to `rpm'.  The actual version of make
-installed on recent redhat_8_0 machine is 1:3.79.1-14.  Since the check
-is for greater than or equal to this version, the hasmake class will be
-defined.
-
-
-File: cfengine-Reference.info,  Node: required,  Next: resolve,  Prev: packages,  Up: Cfagent reference
-
-required
-========
-
-   This is a synonym for disks, *Note disks::.  This action tests for
-the existence of a file or filesystem.  It should be called after all
-NFS filesystems have been mounted.  You may use the special variable
-`$(binserver)' here.
-
-
-       required:
-     
-         /FILESYSTEM freespace=SIZE-LIMIT define=CLASS-LIST(,:.)
-     
-          ifelapsed=MINS expireafter=MINS
-
-   Files or filesystems which you consider to be essential to the
-operation of the system can be declared as `required'.  Cfengine will
-warn if such files are not found, or if they look funny.
-
-   Suppose you mount your filesystem `/usr/local' via NFS from some
-binary server.  You might want to check that this filesystem is not
-empty! This might occur if the filesystem was actually _not_ mounted as
-expected, but failed for some reason.  It is therefore not enough to
-check whether the directory `/usr/local' exists, one must also check
-whether it contains anything sensible.
-
-   Cfengine uses two variables: `sensiblesize' and `sensiblecount' to
-figure out whether a file or filesystem is sensible or not.  You can
-change the default values of these variables (which are 1000 and 2
-respectively) in the `control' section.  *Note control::.
-
-   If a file is smaller than `sensiblesize' or does not exist, it fails
-the `required' test.  If a directory does not exist, or contains fewer
-than `sensiblecount' files, then it also fails the test and a warning
-is issued.
-
-
-     required:
-     
-        any::
-     
-           /$(site)/$(binserver)/local
-
-   If you set the `freespace' variable to a value (the default units
-are kilobytes, but you may specify bytes or megabytes), e.g.
-
-
-     required:
-     
-       /site/host/home1 freespace=50mb define=dotidy
-       /site/host/home2 freespace=10% define=dotidy
-
-then cfengine will warn when the filesystem concerned has less than this
-amount of free space. By adding a `define' tag, you can switch on any
-number of classes if this happens. This allows you to activate special
-measures for dealing with a filesystem which is in danger of becoming
-full.
-
-
-File: cfengine-Reference.info,  Node: resolve,  Next: shellcommands,  Prev: required,  Up: Cfagent reference
-
-resolve
-=======
-
-   The file `/etc/resolv.conf' specifies the default nameserver for
-each host, as well as the local domain name.  This file can also contain
-other information, but these are the only two things cfengine currently
-cares about.  In specifying nameservers you should use the dotted
-numerical form of the IP addresses since your system may not understand
-the text form if it is not correctly configured.  You may list as many
-nameservers as you wish, with the default server at the top of the list.
-The resolver normally ignores entries if you add more than three.  The
-statement:
-
-
-     resolve:
-     
-       mygroup::
-     
-          129.240.22.35
-          129.240.22.222
-          129.240.2.3
-
-declares a list of nameservers for hosts in the group or class
-`mygroup'.  When you add the `resolve' command to the `actionsequence',
-this declaration together with the `domain' variable (set here to
-`uio.no') results in a `/etc/resolv.conf' file of the form:
-
-
-     domain uio.no
-     nameserver 129.240.22.35
-     nameserver 129.240.22.222
-     nameserver 129.240.2.3
-
-Note that the `resolve' action does not delete anything from the file
-`/etc/resolv.conf'.  It adds nameservers which do not previously exist
-and reorders the lines of servers which do exist.
-
-   As of version 1.3.11, you may use a quoted string to add
-non-nameserver lines to this file. For example:
-
-
-     resolve:
-     
-       mygroup::
-     
-          129.240.22.35
-          129.240.22.222
-          "# Comment line"
-          "order bind, files"
-
-If the line begins with a non-numeric character, the word `nameserver'
-is not added to the line.
 

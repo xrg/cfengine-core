@@ -48,6 +48,21 @@ strncpy(CONTEXTID,id,31);
 
 /*******************************************************************/
 
+int ScopeIsMethod()
+
+{
+ if (strcmp(CONTEXTID,"private-method") == 0)
+    {
+    return true;
+    }
+ else
+    {
+    return false;
+    }
+}
+
+/*******************************************************************/
+
 void InitHashTable(table)
 
 char **table;
@@ -357,8 +372,6 @@ if (macro == NULL || name == NULL)
    }
 
 sscanf(macro,"%[^=]",buffer);
-
-Debug1("CompareMacro(%s,%s)=%s\n",name,macro,buffer);
 return(strcmp(buffer,name));
 }
 

@@ -357,7 +357,11 @@ expressions.
      Delete all lines containing the exact string quoted.
 
 `DeleteLinesMatching QUOTED-REGEX'
-     Delete all lines matching the quoted regular expression.
+     Delete all lines fully matching the tied quoted regular expression.
+
+`DeleteLinesNotMatching QUOTED-REGEX'
+     Delete all lines not fully matching the tied quoted regular
+     expression.
 
 `DeleteLinesStarting QUOTED-STRING'
      Delete all lines beginning with the exact string quoted.

@@ -85,6 +85,23 @@ void PreLockState()
 
 /********************************************************************/
 
+void SaveExecLock()
+
+{
+ strcpy(SAVELOCK,CFLOCK);
+}
+
+
+/********************************************************************/
+
+void RestoreExecLock()
+
+{
+ strcpy(CFLOCK,SAVELOCK);
+}
+
+/********************************************************************/
+
 void HandleSignal(signum)
  
 int signum;
@@ -247,25 +264,27 @@ if (lastcompleted != 0)
 
 	 err = 0;
 	 
-	 if (((err = kill(pid,SIGCONT)) == -1) && (errno != ESRCH))
+/*	 if (((err = kill(pid,SIGCONT)) == -1) && (errno != ESRCH))
 	    {
 	    sleep(3);
 	    err=0;
+
+Does anyone remember who put this in or why it was here?
+*/
+	 
+	 if ((err = kill(pid,SIGINT)) == -1)
+	    {
+	    sleep(1);
+	    err=0;
 	    
-	    if ((err = kill(pid,SIGINT)) == -1)
-	       {
-	       sleep(1);
+	    if ((err = kill(pid,SIGTERM)) == -1)
+	       {		 
+	       sleep(5);
 	       err=0;
 	       
-	       if ((err = kill(pid,SIGTERM)) == -1)
-		  {		 
-		  sleep(5);
-		  err=0;
-		  
-		  if ((err = kill(pid,SIGKILL)) == -1)
-		     {
-		     sleep(1);
-		     }
+	       if ((err = kill(pid,SIGKILL)) == -1)
+		  {
+		  sleep(1);
 		  }
 	       }
 	    }

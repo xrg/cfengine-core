@@ -42,14 +42,33 @@ char *item;
 { char name[maxvarsize],args[bufsize];
   char c1 = '?',c2 = '?' ;
 
+name[0] = '\0';
+args[0] = '\0';
+    
 sscanf(item,"%255[a-zA-Z0-9_]%c%255[^)]%c",name,&c1,args,&c2);
 
 if (c1 != '(' || c2 != ')')
    {
+   if (PARSING)
+      {
+      yyerror("Empty or bad function argument");
+      }
    return false;
    }
 
 Debug("IsBuiltinFunction: %s(%s)\n",name,args);
+
+ if (strlen(args) == 0)
+   {
+   if (PARSING)
+      {
+      yyerror("Empty function argument");
+      }
+   return false;
+   }
+ else
+    {
+    }
 return true; 
 }
 
@@ -103,6 +122,46 @@ switch (fn = FunctionStringToCode(name))
    case fn_readfile:
        HandleReadFile(args,value);
        break;
+   case fn_syslog:
+       HandleSyslogFn(args,value);
+       break;
+
+   case fn_setstate:
+       HandleSetState(args,value);
+       break;
+       
+   case fn_unsetstate:
+       HandleUnsetState(args,value);
+       break;
+       
+   case fn_returnvars:
+
+       if (ScopeIsMethod())
+	  {
+	  HandleReturnValues(args,value);
+	  ACTIONPENDING = false;
+	  }
+       else
+	  {
+	  snprintf(OUTPUT,bufsize,"Function %s can only be used within a private method context",f);
+	  yyerror(OUTPUT);
+	  }
+       break;
+       
+   case fn_returnclasses:
+       
+       if (ScopeIsMethod())
+	  {
+	  HandleReturnClasses(args,value);
+	  ACTIONPENDING = false;
+	  }
+       else
+	  {
+	  snprintf(OUTPUT,bufsize,"Function %s can only be used within a private method context",f);
+	  yyerror(OUTPUT);
+	  }
+       break;
+       
    default: snprintf(OUTPUT,bufsize,"No such builtin function %s\n",f);
        CfLog(cferror,OUTPUT,"");
    }
@@ -111,7 +170,7 @@ return value;
 }
 
 /*********************************************************************/
-/* level 1                                                           */
+/* level 2                                                           */
 /*********************************************************************/
 
 enum builtin FunctionStringToCode(str)
@@ -123,7 +182,7 @@ char *str;
   enum builtin fn;
 
 fn = nofn;
-
+ 
 for (sp = str; *sp != '\0'; sp++)
    {
    *sp = ToLower(*sp);
@@ -133,7 +192,7 @@ for (sp = str; *sp != '\0'; sp++)
       }
    }
 
-for (i = 1; BUILTINS[i] != '\0'; i++)
+for (i = 1; BUILTINS[i] != NULL; i++)
    {
    if (strcmp(BUILTINS[i],str) == 0)
       {
@@ -144,7 +203,7 @@ for (i = 1; BUILTINS[i] != '\0'; i++)
 
 if (fn == nofn)
   {
-  snprintf(OUTPUT,bufsize,"Internal function %s not recognized",str);
+  snprintf(OUTPUT,bufsize,"Internal function (%s) not recognized",str);
   yyerror(OUTPUT);
   FatalError("Could not parse function");
   }
@@ -159,29 +218,18 @@ void GetRandom(args,value)
 char *args,*value;
 
 { int result,count=0,from=-1,to=-1;
-  char *sp;
+ char tbuff[bufsize],fbuff[bufsize];
 
 if (ACTION != control)
    {
    yyerror("Use of RandomInt(a,b) outside of variable assignment");
    }
   
-for (sp = args; *sp != '\0'; sp++)
-   {
-   if (*sp == ',')
-      {
-      count++;
-      }
-   }
 
-if (count != 1)
-   {
-   yyerror("RandomInt(a,b): argument error");
-   return;
-   }
+TwoArgs(args,fbuff,tbuff); 
+from = atoi(fbuff);
+to = atoi(tbuff);
  
-sscanf(args,"%d,%d",&from,&to);
-
 if ((from < 0) || (to < 0) || (from == to))
    {
    yyerror("RandomInt(a,b) must have different non-negative arguments < INT_MAX");
@@ -296,32 +344,7 @@ char *args,*value;
   char *sp,from[bufsize],to[bufsize];
   int count = 0;
 
-from[0] = '\0';
-to[0] = '\0';
-
-for (sp = args; *sp != '\0'; sp++)
-   {
-   if (*sp == ',')
-      {
-      count++;
-      }
-   }
-
-if (count != 1)
-   {
-   yyerror("RandomInt(a,b): argument error");
-   return;
-   }
- 
-sscanf(args,"%[^,],%[^)]",from,to);
-Debug("Comparing [%s] < [%s]\n",from,to);
- 
-if (from[0]=='\0' || to[0] == '\0')
-   {
-   yyerror("Argument error in class-function");
-   return;
-   }
-
+TwoArgs(args,from,to); 
 strcpy(value,CF_NOCLASS);
  
 if (stat(from,&frombuf) == -1)
@@ -448,6 +471,58 @@ if (GetMacroValue(CONTEXTID,args))
 strcpy(value,CF_NOCLASS); 
 }
 
+/*********************************************************************/
+
+void HandleSyslogFn(args,value)
+
+char *args,*value;
+
+{ char from[bufsize],to[bufsize];
+  int priority = LOG_ERR;
+
+TwoArgs(args,from,to);
+
+value[0] = '\0';
+
+if (strcmp(from,"LOG_EMERG") == 0)
+   {
+   priority = LOG_EMERG;
+   }
+else if (strcmp(from,"LOG_ALERT") == 0)
+   {
+   priority = LOG_ALERT;
+   }
+else if (strcmp(from,"LOG_CRIT") == 0)
+   {
+   priority = LOG_CRIT;
+   }
+else if (strcmp(from,"LOG_NOTICE") == 0)
+   {
+   priority = LOG_NOTICE;
+   } 
+else if (strcmp(from,"LOG_WARNING") == 0)
+   {
+   priority = LOG_WARNING;
+   }
+else if (strcmp(from,"LOG_ERR") == 0)
+   {
+   priority = LOG_ERR;
+   }
+else
+   {
+   snprintf(OUTPUT,bufsize,"Unknown syslog priority (%s) - changing to LOG_ERR",from);
+   CfLog(cferror,OUTPUT,"");
+   priority = LOG_ERR;
+   }
+
+Debug("Alerting to syslog(%s,%s)\n",from,to);
+
+if (!DONTDO)
+   {
+   syslog(priority," %s",to);
+   } 
+}
+
 
 /*********************************************************************/
 
@@ -455,39 +530,12 @@ void HandleStrCmp(args,value)
 
 char *args,*value;
 
-{ char *sp,from[bufsize],to[bufsize],*nfrom,*nto;
+{ char *sp,from[bufsize],to[bufsize];
   int count = 0;
 
-from[0] = '\0';
-to[0] = '\0';
-
-for (sp = args; *sp != '\0'; sp++)
-   {
-   if (*sp == ',')
-      {
-      count++;
-      }
-   }
-
-if (count != 1)
-   {
-   yyerror("StrCmp(a,b): argument error");
-   return;
-   }
+TwoArgs(args,from,to); 
  
-sscanf(args,"%[^,],%[^)]",from,to);
-Debug("Comparing [%s] < [%s]\n",from,to);
- 
-if (from[0]=='\0' || to[0] == '\0')
-   {
-   yyerror("Argument error in class-function");
-   return;
-   }
-
-nfrom = UnQuote(from);
-nto = UnQuote(to);
- 
-if (strcmp(nfrom,nto) == 0)
+if (strcmp(from,to) == 0)
    {
    strcpy(value,CF_ANYCLASS); 
    }
@@ -497,48 +545,20 @@ else
    } 
 }
 
+
 /*********************************************************************/
 
 void HandleReadFile(args,value)
 
 char *args,*value;
 
-{ char *sp,filename[bufsize],maxbytes[bufsize],*nf,*nm;
-  int count = 0,val = 0;
+{ char *sp,filename[bufsize],maxbytes[bufsize];
+  int val = 0;
   FILE *fp;
 
-filename[0] = '\0';
-maxbytes[0] = '\0';
-
-bzero(value,bufsize);
+TwoArgs(args,filename,maxbytes);
  
-for (sp = args; *sp != '\0'; sp++)
-   {
-   if (*sp == ',')
-      {
-      count++;
-      }
-   }
-
-if (count != 1)
-   {
-   yyerror("ReadFile(filename,maxbytes): argument error");
-   return;
-   }
- 
-sscanf(args,"%[^,],%[^)]",filename,maxbytes);
-Debug("ReadFile [%s] < [%s]\n",filename,maxbytes);
- 
-if (filename[0]=='\0' || maxbytes[0] == '\0')
-   {
-   yyerror("Argument error in class-function");
-   return;
-   }
-
-nf = UnQuote(filename);
-nm = UnQuote(maxbytes);
-
-val = atoi(nm);
+val = atoi(maxbytes);
 
 if ((fp = fopen(filename,"r")) == NULL)
    {
@@ -562,6 +582,47 @@ fclose(fp);
 }
 
 
+/*********************************************************************/
+
+void HandleReturnValues(args,value)
+
+char *args,*value;
+
+{
+Verbose("This is a method with return value list: (%s)\n",args);
+
+ if (strlen(METHODRETURNVARS) == 0)
+    {
+    strncpy(METHODRETURNVARS,args,bufsize-1);
+    }
+ else
+    {
+    yyerror("Redefinition of method return values");
+    }
+
+strcpy(value,"noinstall");
+}
+
+/*********************************************************************/
+
+void HandleReturnClasses(args,value)
+
+char *args,*value;
+
+{
+Verbose("This is a method with return class list: %s\n",args);
+
+ if (strlen(METHODRETURNCLASSES) == 0)
+    {
+    strncpy(METHODRETURNCLASSES,args,bufsize-1);
+    }
+ else
+    {
+    yyerror("Redefinition of method return classes");
+    }
+
+ strcpy(value,"noinstall");
+}
 
 /*********************************************************************/
 
@@ -570,7 +631,8 @@ void HandleShowState(args,value)
 char *args,*value;
 
 { struct stat statbuf;
-  char buffer[bufsize]; 
+  char buffer[bufsize];
+  struct Item *addresses = NULL,*ip;
   FILE *fp;
   int i = 0;
   
@@ -597,9 +659,12 @@ if (stat(buffer,&statbuf) == 0)
       return;
       }
 
+   printf("%s: -----------------------------------------------------------------------------------\n",VPREFIX);
+   printf("%s: In the last 40 minutes, the peak state was:\n",VPREFIX);
    while(!feof(fp))
       {
-      buffer[0] = '\0';
+      char *sp,local[bufsize],remote[bufsize];
+      buffer[0] = local[0] = remote[0] = '\0';
       
       fgets(buffer,bufsize,fp);
       i++;
@@ -607,17 +672,220 @@ if (stat(buffer,&statbuf) == 0)
       if (strlen(buffer) > 0)
 	 {
 	 printf("%s: (%2d) %s",VPREFIX,i,buffer);
+
+	 if (strncmp(args,"incoming",8) == 0 || strncmp(args,"outgoing",8) == 0)
+	    {
+	    if (strncmp(buffer,"tcp",3) == 0)
+	       {
+	       sscanf(buffer,"%*s %*s %*s %s %s",local,remote); /* linux-like */
+	       }
+	    else
+	       {
+	       sscanf(buffer,"%s %s",local,remote);             /* solaris-like */
+	       }
+	    
+	    strncpy(VBUFF,remote,bufsize-1);
+	    
+	    for (sp = VBUFF+strlen(VBUFF)-1; isdigit((int)*sp); sp--)
+	       {	    
+	       }
+	    
+	    *sp = '\0';
+	    
+	    if (!IsItemIn(addresses,VBUFF))
+	       {
+	       AppendItem(&addresses,VBUFF,"");
+	       }
+	    }
 	 }
       }
    
    fclose(fp);
-   snprintf(buffer,bufsize,"State of %s recorded at %s\n",args,ctime(&statbuf.st_mtime));
+
+   if (addresses != NULL)
+      {
+      printf("\n");
+      }
+
+   for (ip = addresses; ip != NULL; ip=ip->next)
+      {
+      printf(" DNS key: %s = %s\n",ip->name,IPString2Hostname(ip->name));
+      }
+
+   if (addresses != NULL)
+      {
+      printf("\n");
+      }
+
+   printf("%s: -----------------------------------------------------------------------------------\n",VPREFIX);
+   snprintf(buffer,bufsize,"State of %s peaked at %s\n",args,ctime(&statbuf.st_mtime));
    strcpy(value,buffer);
    }
 else 
    {
-   snprintf(buffer,bufsize,"State parameter %s is not known or recorded\n",args);
+   snprintf(buffer,bufsize,"State parameter %s is not known or recorded\n",args);   
    strcpy(value,buffer);
    }
 }
 
+/*********************************************************************/
+
+void HandleSetState(args,value)
+
+char *args,*value;
+
+{ char name[bufsize],ttlbuf[bufsize],policy[bufsize];
+ unsigned int ttl = 0;
+
+value[0] = '\0';
+ 
+ThreeArgs(args,name,ttlbuf,policy);
+ttl = atoi(ttlbuf);
+
+Debug("HandleSetState(%s,%d,%s)\n",name,ttl,policy);
+ 
+if (ttl == 0)
+   {
+   yyerror("No expiry date set on persistent class");
+   return;
+   }
+
+if (strcmp(ToLowerStr(policy),"preserve") == 0)
+   {
+   if (!PARSING && !DONTDO)
+      {
+      AddPersistentClass(name,ttl,cfpreserve);
+      }
+   }
+else if (strcmp(ToLowerStr(policy),"reset") == 0)
+   {
+   if (!PARSING & !DONTDO)
+      {
+      AddPersistentClass(name,ttl,cfreset);
+      }
+   }
+else
+   {
+   yyerror("Unknown update policy");
+   }
+}
+
+/*********************************************************************/
+
+void HandleUnsetState(args,value)
+
+char *args,*value;
+
+{ char arg1[bufsize];
+ 
+value[0] = '\0';
+OneArg(args,arg1);
+
+Debug("HandleUnsetState(%s)\n",arg1); 
+DeletePersistentClass(arg1);
+}
+
+/*********************************************************************/
+/* Level 3                                                           */
+/*********************************************************************/
+
+void OneArg(args,arg1)
+
+char *args,*arg1;
+
+{ char one[bufsize];
+
+bzero(one,bufsize);
+ 
+if (strchr(args,','))
+   {
+   yyerror("Illegal argument to unary function");
+   return;
+   }
+
+strcpy(arg1,UnQuote(args));
+}
+
+/*********************************************************************/
+
+void TwoArgs(args,arg1,arg2)
+
+char *args,*arg1,*arg2;
+
+{ char one[bufsize],two[bufsize];
+  char *sp;
+  int count = 0;
+ 
+bzero(one,bufsize);
+bzero(two,bufsize); 
+ 
+for (sp = args; *sp != '\0'; sp++)
+   {
+   if (*sp == ',')
+      {
+      count++;
+      }
+   }
+
+if (count != 1)
+   {
+   yyerror("Two arguments to function required");
+   return;
+   }
+ 
+sscanf(args,"%[^,],%[^)]",one,two);
+Debug("TwoArgs [%s] [%s]\n",one,two);
+ 
+if (one[0]=='\0' || two[0] == '\0')
+   {
+   yyerror("Argument error in cfunction");
+   return;
+   }
+
+strcpy(arg1,UnQuote(one));
+strcpy(arg2,UnQuote(two));
+}
+
+
+/*********************************************************************/
+
+void ThreeArgs(args,arg1,arg2,arg3)
+
+char *args,*arg1,*arg2,*arg3;
+
+{ char one[bufsize],two[bufsize],three[bufsize];
+  char *sp;
+  int count = 0;
+  
+bzero(one,bufsize);
+bzero(two,bufsize);
+bzero(three,bufsize);
+ 
+for (sp = args; *sp != '\0'; sp++)
+   {
+   if (*sp == ',')
+      {
+      count++;
+      }
+   }
+
+if (count != 2)
+   {
+   yyerror("Three arguments to function required");
+   return;
+   }
+
+ 
+sscanf(args,"%[^,],%[^,],%[^)]",one,two,three);
+Debug("ThreeArgs [%s] [%s] [%s]\n",one,two,three);
+ 
+if (one[0]=='\0' || two[0] == '\0' || three[0] == '\0')
+   {
+   yyerror("Argument error in function");
+   return;
+   }
+
+strcpy(arg1,UnQuote(one));
+strcpy(arg2,UnQuote(two));
+strcpy(arg3,UnQuote(three));
+}

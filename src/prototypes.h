@@ -135,7 +135,14 @@ void HandleIsDefined ARGLIST((char* args,char *value));
 void HandleStrCmp ARGLIST((char* args,char *value));
 void HandleShowState ARGLIST((char* args,char *value));
 void HandleReadFile ARGLIST((char *args,char *value));
-
+void HandleReturnValues ARGLIST((char *args,char *value));
+void HandleReturnClasses ARGLIST((char *args,char *value));
+void HandleSyslogFn ARGLIST((char *args,char *value));
+void HandleSetState ARGLIST((char *args,char *value));
+void HandleUnsetState ARGLIST((char *args,char *value));
+void OneArg ARGLIST((char *args,char *arg1));
+void TwoArgs ARGLIST((char *args,char *arg1,char *arg2));
+void ThreeArgs ARGLIST((char *args,char *arg1,char *arg2,char *arg3));
 
 /* granules.c  */
 
@@ -283,7 +290,7 @@ int IsSpecialClass ARGLIST((char *class));
 int IsExcluded ARGLIST((char *exception));
 int IsDefinedClass ARGLIST((char *class));
 int IsInstallable ARGLIST((char *class));
-void AddCompoundClass ARGLIST((char *class));
+void AddPrefixedMultipleClasses ARGLIST((char *prefix,char *class));
 void NegateCompoundClass ARGLIST((char *class, struct Item **heap));
 int EvaluateORString ARGLIST((char *class, struct Item *list));
 int EvaluateANDString ARGLIST((char *class, struct Item *list));
@@ -338,7 +345,7 @@ void InstallFilterTest ARGLIST((char *alias, char *type, char *data));
 enum filternames FilterActionsToCode ARGLIST((char *filtertype));
 int FilterExists ARGLIST((char *name));
 int ProcessFilter ARGLIST((char *proc, struct Item *filterlist,char **names,int *start,int *stop));
-void SplitLine ARGLIST((char *proc, struct Item *filterlist,char **names,int *start,int *stop,char **line));
+void SplitLine ARGLIST((char *proc, char **names,int *start,int *stop,char **line));
 int FileObjectFilter ARGLIST((char *file, struct stat *statptr, struct Item *filterlist, enum actions context));
 time_t Date2Number ARGLIST((char *string, time_t now));
 void Size2Number ARGLIST((char *buffer));
@@ -510,6 +517,8 @@ char *sockaddr_ntop ARGLIST((struct sockaddr *sa));
 void *sockaddr_pton ARGLIST((int af,void *src));
 short CfenginePort ARGLIST((void));
 int IsIPV6Address ARGLIST((char *name));
+char *Hostname2IPString ARGLIST((char *name));
+char *IPString2Hostname ARGLIST((char *name));
 
 /* item-ext.c */
 
@@ -527,8 +536,11 @@ int DeleteToRegExp ARGLIST((struct Item **filestart, char *string));
 int DeleteItemGeneral ARGLIST((struct Item **filestart, char *string, enum matchtypes type));
 int DeleteItemLiteral ARGLIST((struct Item **filestart, char *string));
 int DeleteItemStarting ARGLIST((struct Item **list,char *string));
+int DeleteItemNotStarting ARGLIST((struct Item **list,char *string));
 int DeleteItemMatching ARGLIST((struct Item **list,char *string));
+int DeleteItemNotMatching ARGLIST((struct Item **list,char *string));
 int DeleteItemContaining ARGLIST((struct Item **list,char *string));
+int DeleteItemNotContaining ARGLIST((struct Item **list,char *string));
 int CommentItemStarting ARGLIST((struct Item **list, char *string, char *comm, char *end));
 int CommentItemContaining ARGLIST((struct Item **list, char *string, char *comm, char *end));
 int CommentItemMatching ARGLIST((struct Item **list, char *string, char *comm, char *end));
@@ -554,6 +566,8 @@ int CompareToFile ARGLIST((struct Item *liststart, char *file));
 
 /* item.c */
 
+int ListLen ARGLIST((struct Item *list));
+int ByteSizeList ARGLIST((struct Item *list));
 int IsItemIn ARGLIST((struct Item *list, char *item));
 int IsClassedItemIn ARGLIST((struct Item *list, char *item));
 int IsFuzzyItemIn ARGLIST((struct Item *list, char *item));
@@ -590,6 +604,8 @@ char *AbsLinkPath ARGLIST((char *from, char *relto));
 /* locks.c */
 
 void PreLockState ARGLIST((void));
+void SaveExecLock ARGLIST((void));
+void RestoreExecLock ARGLIST((void));
 void InitializeLocks ARGLIST((void));
 void CloseLocks ARGLIST((void));
 void HandleSignal ARGLIST((int signum));
@@ -610,10 +626,12 @@ pid_t GetLockPid ARGLIST((char *name));
 void CfLog ARGLIST((enum cfoutputlevel level, char *string, char *errstr));
 void ResetOutputRoute  ARGLIST((char log, char inform));
 void ShowAction ARGLIST((void));
+void CfOpenLog ARGLIST((void));
 
 /* macro.c */
 
 void SetContext ARGLIST((char *id));
+int ScopeIsMethod  ARGLIST((void));
 void InitHashTable ARGLIST((char **table));
 void PrintHashTable ARGLIST((char **table));
 int Hash ARGLIST((char *name));
@@ -625,6 +643,8 @@ int CompareMacro ARGLIST((char *name, char *macro));
 void DeleteMacros ARGLIST((char *scope));
 void DeleteMacro  ARGLIST((char *scope,char *name));
 struct cfObject *ObjectContext ARGLIST((char *scope));
+void DispatchMethodReply ARGLIST((void));
+void EncapsulateReply ARGLIST((char *name));
 
 /* HvB */
 int OptionIs ARGLIST((char *scope, char *name, short on));
@@ -632,11 +652,19 @@ int OptionIs ARGLIST((char *scope, char *name, short on));
 /* methods.c */
 
 void DispatchNewMethod ARGLIST((struct Method *ptr));
-struct Method *GetPendingMethods ARGLIST((void));
-void LoadMethodPackage ARGLIST((char *));
-void EvaluatePendingMethod ARGLIST((struct Method *ptr));
+struct Item *GetPendingMethods ARGLIST((int state));
+int ChildLoadMethodPackage ARGLIST((char *name, char *md5));
+int ParentLoadReplyPackage ARGLIST((char *name));
+char *GetMethodFilename ARGLIST ((struct Method *ptr));
+void EvaluatePendingMethod ARGLIST((char *name));
 void DeleteMethodList ARGLIST((struct Method *ptr));
 void EncapsulateMethod ARGLIST((struct Method *ptr,char *name));
+enum methproto ConvertMethodProto ARGLIST((char *name));
+struct Method *IsDefinedMethod ARGLIST((char *name,char *digeststr));
+int CountAttachments ARGLIST((char *name));
+void SplitMethodName ARGLIST((char *name,char *client,char *server,char *methodname,char *digeststr,char *extra));
+int CheckForMethodPackage ARGLIST((char *name));
+
 
 /* misc.c */
 
@@ -654,6 +682,7 @@ int FileSecure  ARGLIST((char *name));
 int ChecksumChanged ARGLIST((char *filename, unsigned char digest[EVP_MAX_MD_SIZE+1], int warnlevel, int refresh, char type));
 char *ChecksumPrint   ARGLIST((char type,unsigned char digest[EVP_MAX_MD_SIZE+1]));
 void ChecksumFile  ARGLIST((char *filename,unsigned char digest[EVP_MAX_MD_SIZE+1],char type));
+void ChecksumLIst  ARGLIST((struct Item *list,unsigned char digest[EVP_MAX_MD_SIZE+1],char type));
 int ChecksumsMatch ARGLIST((unsigned char digest1[EVP_MAX_MD_SIZE+1],unsigned char digest2[EVP_MAX_MD_SIZE+1],char type));
 void ChecksumPurge ARGLIST((void));
 void ChecksumString  ARGLIST((char *buffer,int len,unsigned char digest[EVP_MAX_MD_SIZE+1],char type));
@@ -844,6 +873,13 @@ void RotateFiles ARGLIST((char *name, int number));
 int SensibleFile ARGLIST((char *nodename, char *path, struct Image *ip));
 void RegisterRecursionRootDevice ARGLIST((dev_t device));
 int DeviceChanged ARGLIST((dev_t thisdevice));
+
+/* state.c */
+
+void AddPersistentClass ARGLIST((char *name,unsigned int ttl_minutes, enum statepolicy policy));
+void DeletePersistentClass ARGLIST((char *name));
+void PersistentClassesToHeap ARGLIST((void));
+
 
 /* tidy.c */
 

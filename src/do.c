@@ -848,7 +848,7 @@ while (!feof(pp))
    {
    if (ferror(pp))  /* abortable */
       {
-      CfLog(cferror,"Error mounting filesystems\n","ferror");
+      CfLog(cfinform,"Error mounting filesystems\n","ferror");
       break;
       }
    
@@ -856,7 +856,7 @@ while (!feof(pp))
 
    if (ferror(pp))  /* abortable */
       {
-      CfLog(cferror,"Error mounting filesystems\n","ferror");
+      CfLog(cfinform,"Error mounting filesystems\n","ferror");
       break;
       }
 
@@ -872,9 +872,9 @@ while (!feof(pp))
 
    if (strstr(VBUFF,"denied") || strstr(VBUFF,"RPC"))
       {
-      CfLog(cferror,"There was a mount error, trying to mount one of the filesystems on this host.\n","");
+      CfLog(cfinform,"There was a mount error, trying to mount one of the filesystems on this host.\n","");
       snprintf(OUTPUT,bufsize*2,"%s\n",VBUFF);
-      CfLog(cferror,OUTPUT,"");
+      CfLog(cfinform,OUTPUT,"");
       GOTMOUNTINFO = false;
       break;
       }
@@ -1125,6 +1125,8 @@ void Scripts()
   char line[bufsize];
   char comm[20], *sp;
   char execstr[bufsize];
+  char chdir_buf[bufsize];
+  char chroot_buf[bufsize];
   int print;
   mode_t maskval = 0;
   FILE *pp;
@@ -1197,12 +1199,15 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
 	 snprintf(OUTPUT,bufsize*2,"Programming %s running with umask 0! Use umask= to set\n",execstr);
 	 CfLog(cfsilent,OUTPUT,"");
 	 }
+
+      ExpandVarstring(ptr->chdir,chdir_buf,"");
+      ExpandVarstring(ptr->chroot,chroot_buf,"");
       
       switch (ptr->useshell)
 	 {
-	 case 'y':  pp = cfpopen_shsetuid(execstr,"r",ptr->uid,ptr->gid,ptr->chdir,ptr->chroot);
+	 case 'y':  pp = cfpopen_shsetuid(execstr,"r",ptr->uid,ptr->gid,chdir_buf,chroot_buf);
 	            break;
-	 default:   pp = cfpopensetuid(execstr,"r",ptr->uid,ptr->gid,ptr->chdir,ptr->chroot);
+	 default:   pp = cfpopensetuid(execstr,"r",ptr->uid,ptr->gid,chdir_buf,chroot_buf);
 	            break;	     
 	 }
 
@@ -1224,7 +1229,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
 	    break;
 	    }
 	 
-	 ReadLine(line,bufsize,pp);
+	 ReadLine(line,bufsize-1,pp);
 	 
 	 if (strstr(line,"cfengine-die"))
 	    {
@@ -1539,6 +1544,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
       continue;
       }
 
+
    if (S_ISDIR(statbuf.st_mode))
       {
       if ((strcmp(dp->type,"file") != 0) && (strcmp(dp->type,"link") != 0))
@@ -1666,11 +1672,36 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
 	 }
 
       if (dp->rotate == 0)
-         {
-         strcpy(path,workname);
-         strcat(path,".cfdisabled");
+         {	
+	 if (strlen(dp->destination) > 0)
+	    {
+	    if (IsFileSep(dp->destination[0]))
+	       {
+	       strncpy(path,dp->destination,bufsize-1);
+	       }
+	    else
+	       {
+	       strcpy(path,workname);
+	       ChopLastNode(path);
+	       AddSlash(path);
+	       if (BufferOverflow(path,dp->destination))
+		  {
+		  snprintf(OUTPUT,bufsize*2,"Buffer overflow occurred while renaming %s\n",workname);
+		  CfLog(cferror,OUTPUT,"");
+		  ResetOutputRoute('d','d');
+		  ReleaseCurrentLock();
+		  continue;
+		  }
+	       strcat(path,dp->destination);
+	       }
+	    }
+	 else
+	    {
+	    strcpy(path,workname);
+	    strcat(path,".cfdisabled");
+	    }
 
-         snprintf(OUTPUT,bufsize*2,"Disabling file %s\n",workname);
+         snprintf(OUTPUT,bufsize*2,"Disabling/renaming file %s to %s\n",workname,path);
          CfLog(cfinform,OUTPUT,"");
 	 
          if (! DONTDO)
@@ -2622,10 +2653,11 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
 
 void DoMethods()
 
-{ struct Method *ptr, *pending = NULL;
-
-pending = GetPendingMethods();
- 
+{ struct Method *ptr;
+  struct Item *ip;
+  char label[bufsize];
+  unsigned char digest[EVP_MAX_MD_SIZE+1];
+    
 Banner("Dispatching new methods");
 
 for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
@@ -2638,8 +2670,11 @@ for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
       {
       ptr->done = 'y';
       }
-   
-   if (!GetLock(ASUniqueName("methods"),CanonifyName(ptr->name),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
+
+   ChecksumList(ptr->send_args,digest,'m');
+   snprintf(label,bufsize-1,"%s/rpc_in/localhost_localhost_%s_%s",VLOCKDIR,ptr->name,ChecksumPrint('m',digest));
+
+   if (!GetLock(ASUniqueName("methods-dispatch"),CanonifyName(label),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
       {
       continue;
       }
@@ -2650,13 +2685,26 @@ for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
    ReleaseCurrentLock();
    }
 
-Banner("Evaluating new methods");
+Banner("Evaluating incoming methods that policy accepts...");
 
-for (ptr = GetPendingMethods(); ptr != NULL; ptr=ptr->next)
+for (ip = GetPendingMethods(cfmethodexec); ip != NULL; ip=ip->next)
    {
-   // Get ready to dispatch methods
-   EvaluatePendingMethod(ptr);
+   /* Call child process to execute method*/
+   EvaluatePendingMethod(ip->name);
    }
+
+DeleteItemList(ip);
+ 
+Banner("Fetching replies to finished methods");
+ 
+for (ip = GetPendingMethods(cfmethodreply); ip != NULL; ip=ip->next)
+   {
+   if (ParentLoadReplyPackage(ip->name))
+      {
+      }
+   }
+
+DeleteItemList(ip); 
 }
 
 /*******************************************************************/

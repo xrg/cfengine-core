@@ -127,6 +127,45 @@ Debug("AddInstallable(%s)\n",classlist);
 
 /*********************************************************************/
 
+void AddPrefixedMultipleClasses(name,classlist)
+
+char *name,*classlist;
+
+{ char *sp, currentitem[maxvarsize],local[maxvarsize],pref[bufsize];
+ 
+if ((classlist == NULL) || strlen(classlist) == 0)
+   {
+   return;
+   }
+
+bzero(local,maxvarsize);
+strncpy(local,classlist,maxvarsize-1);
+
+Debug("AddPrefixedMultipleClasses(%s,%s)\n",name,local);
+
+for (sp = local; *sp != '\0'; sp++)
+   {
+   bzero(currentitem,maxvarsize);
+
+   sscanf(sp,"%250[^.:,]",currentitem);
+
+   sp += strlen(currentitem);
+
+   pref[0] = '\0';
+   snprintf(pref,bufsize,"%s_%s",name,currentitem);
+
+   
+   if (IsHardClass(pref))
+      {
+      FatalError("cfengine: You cannot use -D to define a reserved class!");
+      }
+
+   AddClassToHeap(CanonifyName(pref));
+   }
+}
+
+/*********************************************************************/
+
 void AddMultipleClasses(classlist)
 
 char *classlist;
@@ -139,7 +178,7 @@ if ((classlist == NULL) || strlen(classlist) == 0)
    }
 
 bzero(local,maxvarsize);
-strcpy(local,classlist);
+strncpy(local,classlist,maxvarsize-1);
 
 Debug("AddMultipleClasses(%s)\n",local);
 
@@ -150,6 +189,11 @@ for (sp = local; *sp != '\0'; sp++)
    sscanf(sp,"%250[^.:,]",currentitem);
 
    sp += strlen(currentitem);
+      
+   if (IsHardClass(currentitem))
+      {
+      FatalError("cfengine: You cannot use -D to define a reserved class!");
+      }
 
    AddClassToHeap(CanonifyName(currentitem));
    }
@@ -483,42 +527,11 @@ for (sp = class; *sp != '\0'; sp++)
 
 buffer[i] = '\0';
  
+/* return (EvaluateORString(buffer,VALLADDCLASSES)||EvaluateORString(class,VADDCLASSES));*/
+
 return (EvaluateORString(buffer,VALLADDCLASSES)||EvaluateORString(class,VALLADDCLASSES)||EvaluateORString(class,VADDCLASSES));
 }
 
-/*********************************************************************/
-
-void AddCompoundClass(class)
-
-char *class;
-
-{ char *sp = class;
-  char cbuff[maxvarsize];
-
-Debug1("AddCompoundClass(%s)",class);
-
-while(*sp != '\0')
-   {
-   sscanf(sp,"%[^.]",cbuff);
-
-   while ((*sp != '\0') && (*sp !='.'))
-      {
-      sp++;
-      }
-
-   if (*sp == '.')
-      {
-      sp++;
-      }
-
-   if (IsHardClass(cbuff))
-      {
-      FatalError("cfengine: You cannot use -D to define a reserved class!");
-      }
-
-   AddClassToHeap(cbuff);
-   }
-}
 
 /*********************************************************************/
 
@@ -574,6 +587,8 @@ if (class == NULL)
    return false;
    }
 
+Debug4("EvaluateORString(%s)\n",class);
+ 
 for (sp = class; *sp != '\0'; sp++)
    {
    while (*sp == '|')
@@ -589,6 +604,7 @@ for (sp = class; *sp != '\0'; sp++)
       {
       break;
       }
+
 
    if (IsBracketed(cbuff)) /* Strip brackets */
       {
@@ -607,6 +623,7 @@ for (sp = class; *sp != '\0'; sp++)
       }
    }
 
+Debug4("EvaluateORString(%s) returns %d\n",class,result); 
 return result;
 }
 
@@ -624,9 +641,11 @@ struct Item *list;
   int count = 1;
   int negation = false;
 
+Debug4("EvaluateANDString(%s)\n",class);
+
 count = CountEvalAtoms(class);
 sp = class;
-
+ 
 while(*sp != '\0')
    {
    negation = false;
@@ -725,18 +744,21 @@ while(*sp != '\0')
       {
       count--;
       }
-   else
+   else       
       {
       return false;
       }
    }
 
+ 
 if (count == 0)
    {
+   Debug4("EvaluateANDString(%s) returns true\n",class);
    return(true);
    }
 else
    {
+   Debug4("EvaluateANDString(%s) returns false\n",class);
    return(false);
    }
 }
@@ -755,20 +777,24 @@ while ((*sp != '\0') && !((*sp == '|') && (bracklevel == 0)))
    {
    if (*sp == '(')
       {
+      Debug4("+(\n");
       bracklevel++;
       }
 
    if (*sp == ')')
       {
+      Debug4("-)\n");
       bracklevel--;
       }
 
+   Debug4("(%c)",*sp);
    *spc++ = *sp++;
    len++;
    }
 
 *spc = '\0';
 
+Debug4("GetORATom(%s)->%s\n",start,buffer); 
 return len;
 }
 
@@ -788,11 +814,13 @@ while ((*sp != '\0') && !((*sp == '.') && (bracklevel == 0)))
    {
    if (*sp == '(')
       {
+      Debug4("+(\n");
       bracklevel++;
       }
 
    if (*sp == ')')
       {
+      Debug("-)\n");
       bracklevel--;
       }
 
@@ -802,6 +830,7 @@ while ((*sp != '\0') && !((*sp == '.') && (bracklevel == 0)))
    }
 
 *spc = '\0';
+Debug4("GetANDATom(%s)->%s\n",start,buffer);  
 
 return len;
 }
@@ -819,12 +848,14 @@ for (sp = class; *sp != '\0'; sp++)
    {
    if (*sp == '(')
       {
+      Debug4("+(\n");
       bracklevel++;
       continue;
       }
 
    if (*sp == ')')
       {
+      Debug4("-)\n");
       bracklevel--;
       continue;
       }

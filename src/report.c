@@ -313,7 +313,7 @@ printf ("\nDEFINED ALERTS\n\n");
 
 for (ptr = VALERTS; ptr != NULL; ptr=ptr->next)
    {
-   printf("%s: [%s] ifelapsed %d, expireafter %d\n",ptr->classes,ptr->name,ptr->ifelapsed,ptr->expireafter);
+   printf("%s: if [%s] ifelapsed %d, expireafter %d\n",ptr->name,ptr->classes,ptr->ifelapsed,ptr->expireafter);
    }
 }
 
@@ -331,7 +331,9 @@ for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
    {
    printf("\n METHOD: [%s] if class (%s)\n",ptr->name,ptr->classes);
    printf("   IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
-   printf("   In file: %s\n",ptr->file);
+   printf("   Executable file: %s\n",ptr->file);
+   printf("   Run with Uid=%d,Gid=%d\n",ptr->uid,ptr->gid);
+   printf("   Run in chdir=%s, chroot=%s\n",ptr->chdir,ptr->chroot);
 
    i = 1;
    
@@ -366,8 +368,7 @@ for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
    for (ip = ptr->return_classes; ip != NULL; ip=ip->next)
       {
       printf("   Return class %d: %s\n",i++,ip->name);
-      }
-
+      }   
    }
 }
 
@@ -712,9 +713,15 @@ printf ("\nDEFINED DISABLE\n\n");
 
 for (ptr = VDISABLELIST; ptr != NULL; ptr=ptr->next)
    {
-   printf("\nDISABLE %s:\n rotate=%d, type=%s, size%c%d action=%c\n",
+   if (strlen(ptr->destination) > 0)
+      {
+      printf("\nRENAME: %s to %s\n",ptr->name,ptr->destination);
+      }
+   else
+      {
+      printf("\nDISABLE %s:\n rotate=%d, type=%s, size%c%d action=%c\n",
 	  ptr->name,ptr->rotate,ptr->type,ptr->comp,ptr->size,ptr->action);
-
+      }
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    if (ptr->repository)
       {

@@ -51,6 +51,7 @@ void SummarizeAverages ARGLIST((void));
 void WriteGraphFiles ARGLIST((void));
 void WriteHistograms ARGLIST((void));
 void FindHurstExponents ARGLIST((void));
+void GetFQHN ARGLIST((void));
 struct Averages FindHurstFunction ARGLIST((int sameples_per_grain, int grains));
 
 /*****************************************************************************/
@@ -79,6 +80,7 @@ int NOSCALING = true;
 char FILENAME[bufsize];
 unsigned int HISTOGRAM[ATTR*2+5+PH_LIMIT][7][GRAINS];
 int SMOOTHHISTOGRAM[ATTR*2+5+PH_LIMIT][7][GRAINS];
+char VFQNAME[bufsize];
 
 /*****************************************************************************/
 
@@ -94,7 +96,7 @@ char *ECGSOCKS[ATTR][2] =
    {".80","www"},
    {".21","ftp"},
    {".22","ssh"},
-   {".23","telnet"},
+   {".443","wwws"},
    };
 
 char *PH_BINARIES[PH_LIMIT] =   /* Miss leading slash */
@@ -125,6 +127,7 @@ char **argv;
 
 {
 CheckOpts(argc,argv);
+GetFQHN();
 ReadAverages(); 
 SummarizeAverages();
 WriteGraphFiles();
@@ -136,6 +139,49 @@ return 0;
 /*****************************************************************************/
 /* Level 1                                                                   */
 /*****************************************************************************/
+
+void GetFQHN()
+
+{ FILE *pp;
+  char cfcom[bufsize];
+  static char line[bufsize];
+
+snprintf(cfcom,bufsize-1,"%s/bin/cfagent -z",WORKDIR);
+ 
+if ((pp=popen(cfcom,"r")) ==  NULL)
+   {
+   printf("Couldn't open cfengine data ");
+   perror("popen");
+   exit(0);
+   }
+
+line[0] = '\0'; 
+fgets(line,bufsize,pp); 
+fgets(line,bufsize,pp); 
+line[0] = '\0'; 
+fgets(line,bufsize,pp);  
+strcpy(VFQNAME,line);
+
+if (strlen(VFQNAME) == 0)
+   {
+   struct utsname sys;
+   if (uname(&sys) == -1)
+      {
+      perror("uname ");
+      exit(0);
+      }
+   strcpy(VFQNAME,sys.sysname);
+   } 
+else
+   {
+   VFQNAME[strlen(VFQNAME)-1] = '\0';
+   printf("Got fully qualified name (%s)\n",VFQNAME);
+   }
+ 
+pclose(pp);
+}
+
+/****************************************************************************/
 
 void ReadAverages()
 
@@ -445,7 +491,7 @@ if (TIMESTAMPS)
       printf("Couldn't read system clock\n");
       }
      
-   sprintf(FLNAME,"cfenvgraphs-%s",ctime(&NOW));
+   sprintf(FLNAME,"cfenvgraphs-%s-%s",VFQNAME,ctime(&NOW));
 
    for (sp = FLNAME; *sp != '\0'; sp++)
       {
@@ -457,7 +503,7 @@ if (TIMESTAMPS)
    }
  else
    {
-   sprintf(FLNAME,"cfenvgraphs-snapshot");
+   sprintf(FLNAME,"cfenvgraphs-snapshot-%s",VFQNAME);
    }
 
 printf("Creating sub-directory %s\n",FLNAME);

@@ -48,7 +48,7 @@
 %p 12000
 %n 2000
 
-actiont   copy:|resolve:|files:|tidy:|homeservers:|binservers:|mailserver:|disks:|mountables:|links:|shellcommands:|disable:|directories:|ignore:|interfaces:|defaultroute:|miscmounts:|unmount:|processes:|required:|broadcast:|alerts:|packages:|methods:
+actiont   copy:|resolve:|files:|tidy:|homeservers:|binservers:|mailserver:|disks:|mountables:|links:|shellcommands:|disable:|directories:|ignore:|interfaces:|defaultroute:|miscmounts:|unmount:|processes:|required:|broadcast:|alerts:|packages:|methods:|rename:
 
 space     [ \t]+
 
@@ -274,7 +274,7 @@ editfiles:             {
                        return PARSECLASS;
                        }
 
-<INCONTROL>{lvalue}      {
+<INCONTROL>{lvalue}    {
                        Debug1("LVALUE %s\n",yytext);
                        HandleLValue(yytext);
                        return LVALUE;
@@ -341,6 +341,7 @@ editfiles:             {
 
                        InstallPending(ACTION);
                        InitializeAction();
+
                        return RBRACE;
                        }
 
@@ -435,7 +436,7 @@ editfiles:             {
                           {
                           /* Check anomalour process syntax */
                           if (ACTION == processes && 
-                              (strcmp(ToLowerStr(yytext),"restart") == 0 || 
+                              (strcmp(ToLowerStr(yytext),"restart") == 0 || HAVE_RESTART || 
                                strcmp(ToLowerStr(yytext),"setoptionstring") == 0))
                              {
                              }

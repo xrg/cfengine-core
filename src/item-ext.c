@@ -38,6 +38,79 @@
 #include "cf.extern.h"
 
 
+/*********************************************************************************/
+
+struct Item *ListFromArgs(string)
+
+/* Splits a string with quoted components etc */
+
+char *string;
+
+{ struct Item *ip = NULL;
+  int dquote_level = 0,i = 0;
+  int paren_level = 0;
+  char *sp,lastch = '\0';
+  char item[bufsize];
+
+bzero(item,bufsize);
+     
+for (sp = string; *sp != '\0'; sp++)
+   {
+   switch (*sp)
+      {
+      case '\"':
+
+	  if (lastch == '\\')  /* Escaped quote */
+	     {
+	     sp--;
+	     *sp = ')';
+	     continue;
+	     }
+	  else
+	     {
+	     if (dquote_level == 0)
+		{
+		dquote_level = 1;
+		continue;
+		}
+	     else
+		{
+		dquote_level = 0;
+		continue;
+		}
+	     }
+	  break;
+
+      case '(':
+
+	  paren_level++;
+	  break;
+
+      case ')':
+
+	  paren_level--;
+	  break;
+
+      case ',':
+
+	  if (dquote_level == 0 && paren_level == 0)
+	     {
+	     item[i] = '\0';
+	     i = 0;
+	     AppendItem(&ip,item,"");
+	     bzero(item,bufsize);
+	     continue;
+	     }
+      }
+
+   item[i++] = *sp;
+   lastch = *sp;
+   }
+
+AppendItem(&ip,item,""); 
+return ip;
+}
+
 /*********************************************************************/
 
 int OrderedListsMatch(list1,list2)
@@ -246,7 +319,7 @@ if (CfRegcomp(&rxcache,string, REG_EXTENDED) != 0)
    return NULL;
    }
 
-for (ip = list; (ip != NULL); ip=ip->next)
+for (ip = list; ip != NULL; ip=ip->next)
    {
    if (ip->name == NULL)
       {
@@ -318,7 +391,10 @@ char *string;
   regmatch_t pmatch;
   int line = CURRENTLINENUMBER;
 
-Debug("LocateItemMatchingRexExp(%s,%s)\n",list->name,string);
+if (list != NULL)
+   {
+   Debug("LocateItemMatchingRexExp(%s,%s)\n",list->name,string);
+   }
   
 if (CfRegcomp(&rxcache,string, REG_EXTENDED) != 0)
    {
@@ -544,17 +620,18 @@ if (list == NULL)
    {
    return false;
    }
-
+ 
 switch (type)
    {
    case literalStart:
        matchlen = strlen(string);
        break;
    case regexComplete:
+   case NOTregexComplete:
        if (CfRegcomp(&rxcache,string, REG_EXTENDED) != 0)
-           {
-           return false;
-           }
+	  {
+	  return false;
+	  }
        break;
    }
 
@@ -573,26 +650,44 @@ for (ip = *list; ip != NULL; ip=ip->next)
 
    switch(type)
       {
+      case NOTliteralStart:
+	  match = (strncmp(ip->name, string, matchlen) != 0);
+	  break;
       case literalStart:
           match = (strncmp(ip->name, string, matchlen) == 0);
           break;
+      case NOTliteralComplete:
+	  match = (strcmp(ip->name, string) != 0);
+	  break;
       case literalComplete:
           match = (strcmp(ip->name, string) == 0);
           break;
+      case NOTliteralSomewhere:
+	  match = (strstr(ip->name, string) == NULL);
+	  break;
       case literalSomewhere:
           match = (strstr(ip->name, string) != NULL);
           break;
+      case NOTregexComplete:
       case regexComplete:
           /* To fix a bug on some implementations where rx gets emptied */
           bcopy(&rxcache,&rx,sizeof(rx));
-          match = (regexec(&rx,ip->name,1,&pmatch,0) == 0) && \
-              (pmatch.rm_so == 0) && (pmatch.rm_eo == strlen(ip->name));
+          match = (regexec(&rx,ip->name,1,&pmatch,0) == 0) && (pmatch.rm_so == 0) && (pmatch.rm_eo == strlen(ip->name));
+
+	  if (type == NOTregexComplete)
+	     {
+	     match = !match;
+	     }
           break;
       }
           
    if (match)
       {
-      if (type == regexComplete) regfree(&rx);
+      if (type == regexComplete || type == NOTregexComplete)
+	  {
+	  regfree(&rx);
+	  }
+      
       EditVerbose("Deleted item %s\n",ip->name);
       if (ip == *list)
          {
@@ -641,6 +736,17 @@ return DeleteItemGeneral(list,string,literalStart);
 
 /*********************************************************************/
 
+int DeleteItemNotStarting(list,string)  /* delete 1st item starting with string */
+
+struct Item **list;
+char *string;
+
+{
+return DeleteItemGeneral(list,string,NOTliteralStart);
+}
+
+/*********************************************************************/
+
 int DeleteItemLiteral(list,string)  /* delete 1st item which is string */
 
 struct Item **list;
@@ -663,6 +769,17 @@ return DeleteItemGeneral(list,string,regexComplete);
 
 /*********************************************************************/
 
+int DeleteItemNotMatching(list,string)  /* delete 1st item fully matching regex */
+
+struct Item **list;
+char *string;
+
+{
+return DeleteItemGeneral(list,string,NOTregexComplete);
+}
+
+/*********************************************************************/
+
 int DeleteItemContaining(list,string) /* delete first item containing string */
 
 struct Item **list;
@@ -670,6 +787,17 @@ char *string;
 
 {
 return DeleteItemGeneral(list,string,literalSomewhere);
+}
+
+/*********************************************************************/
+
+int DeleteItemNotContaining(list,string) /* delete first item containing string */
+
+struct Item **list;
+char *string;
+
+{
+return DeleteItemGeneral(list,string,NOTliteralSomewhere);
 }
 
 

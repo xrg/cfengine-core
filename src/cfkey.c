@@ -183,3 +183,10 @@ struct stat *sb;
 {
  return true;
 }
+
+char *GetMacroValue(s,sp)
+
+char *s,*sp;
+{
+ return NULL;
+}

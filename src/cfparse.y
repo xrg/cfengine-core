@@ -39,10 +39,12 @@ extern char *yytext;
 
 %}
 
-%token LVALUE ID LIST ITEM VAROBJ LBRACK RBRACK CONTROL GROUPS
-%token ARROW EQUALS EDITFILES QSTRING WILDCARD RVALUE BCLASS
+%token LVALUE ID VAROBJ LBRACK RBRACK CONTROL GROUPS
+%token ARROW EQUALS EDITFILES QSTRING RVALUE BCLASS
 %token LBRACE RBRACE PARSECLASS LARROW OPTION FUNCTION
 %token ACL ADMIT DENY FILTERS STRATEGIES ACTIONTYPE ACCESSOBJ
+
+
 
 %%
 
@@ -54,7 +56,7 @@ statements:            statement
 
 statement:             CONTROL controllist
                      | CONTROL
-                     | GROUPS declarations
+                     | GROUPS controllist
                      | GROUPS
                      | ACTIONTYPE classlist
                      | ACTIONTYPE
@@ -75,7 +77,7 @@ controllist:           declarations
                      | PARSECLASS declarations
                      | PARSECLASS
                      | controllist PARSECLASS
-                     | controllist PARSECLASS declarations;
+                     | controllist PARSECLASS declarations; 
 
 declarations:          declaration
                      | declarations declaration;
@@ -109,17 +111,19 @@ accessentries:         accessentry
 
 entry:                 FUNCTION
                      | FUNCTION options
+                     | VAROBJ
                      | VAROBJ options
                      | VAROBJ ARROW VAROBJ options
+                     | VAROBJ ARROW VAROBJ
                      | VAROBJ LARROW VAROBJ options
+                     | VAROBJ LARROW VAROBJ
+                     | QSTRING
                      | QSTRING options;
 
 accessentry:           ACCESSOBJ
-                     | accessentry ACCESSOBJ
-                     | accessentry options;
+                     | ACCESSOBJ options;
 
-options:
-                     | options OPTION
+options:               options OPTION
                      | OPTION;
 
 objects:               objectbrackets
@@ -139,7 +143,7 @@ objlist:               obj
 
 obj:                   BCLASS QSTRING
                      | ID QSTRING
-                     | ID
+                     | ID 
                      | VAROBJ;
 
 %%

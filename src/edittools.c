@@ -489,6 +489,18 @@ while (ep != NULL)
                   }
                break;
 
+      case DeleteLinesNotStarting:
+               while (DeleteItemNotStarting(&filestart,expdata))
+                  {
+                  }
+               break;
+
+      case DeleteLinesNotContaining:
+               while (DeleteItemNotContaining(&filestart,expdata))
+                  {
+                  }
+               break;
+
       case DeleteLinesAfterThisMatching:
 
                if ((filestart == NULL) || (CURRENTLINEPTR == NULL))
@@ -508,7 +520,13 @@ while (ep != NULL)
                  {
 		 }
                break;
-	       
+
+      case DeleteLinesNotMatching:
+               while (DeleteItemNotMatching(&filestart,expdata))
+                 {
+		 }
+               break;
+
       case Append:
               AppendItem(&filestart,expdata,NULL);
               break;
@@ -527,14 +545,13 @@ while (ep != NULL)
 
       case AppendIfNoLineMatching:
 
-
     	       Debug("AppendIfNoLineMatching : %s\n",EDITBUFF);
 
                if (strcmp(EDITBUFF,"") == 0)
                   {
                   snprintf(OUTPUT,bufsize*2,"SetLine not set when calling AppendIfNoLineMatching %s\n",expdata);
 		  CfLog(cferror,OUTPUT,"");
-                  continue;
+                  break;
                   }
 
 	       if (strcmp(expdata,"ThisLine") == 0)
@@ -570,7 +587,7 @@ while (ep != NULL)
                   {
                   snprintf(OUTPUT,bufsize,"SetLine not set when calling PrependIfNoLineMatching %s\n",expdata);
 		  CfLog(cferror,OUTPUT,"");
-                  continue;
+                  break;
                   }
 
                if (LocateNextItemMatching(filestart,expdata) == NULL)

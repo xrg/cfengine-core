@@ -66,6 +66,7 @@ cfagent_SOURCES =							\
 	nameinfo.c							\
 	strategies.c                         				\
 	methods.c							\
+	state.c								\
 	package.c
 
 cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
@@ -108,6 +109,7 @@ cfservd_SOURCES =							\
         filters.c                                                       \
 	patches.c							\
 	checksums.c							\
+	state.c								\
 	nameinfo.c							\
 	strategies.c
 
@@ -188,11 +190,12 @@ cfenvd_SOURCES =							\
 	popen.c								\
 	patches.c							\
 	locks.c								\
+	state.c								\
 	init.c
 
 cfenvgraph_SOURCES =							\
 	cfenvgraph.c							\
-	granules.c
+	granules.c							
 
 #
 # Pickup header files here so Automake knows about them

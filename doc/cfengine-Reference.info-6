@@ -11,6 +11,271 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: packages,  Next: rename,  Prev: processes,  Up: Cfagent reference
+
+packages
+========
+
+   The packages action allows you to check for the existance of packages
+on the system, as determined by the package database you select.  This
+operation is set up such that it tries not to make assumptions about
+the package manager in use.  For example, it should be possible to use
+RPM on a Solaris box.
+
+   The syntax summary is:
+
+
+     packages:
+     
+        CLASS::
+     
+           PACKAGE-NAME
+                             pkgmgr=none/RPM
+                             cmp=eq/LT/GT/GE/LE/NE
+                             version=VERSION-STRING
+                             define=CLASS-LIST(,:.)
+                             elsedefine=CLASS-LIST(,:.)
+     
+                             ifelapsed=MINS
+                             expireafter=MINS
+
+Associated variables in control are `DefaultPkgMgr' and `RPMcommand'.
+`cmp'
+     Determines how the version of the installed package will be
+     compared to that specified by the `version' attribute.  Possible
+     values include:
+
+        * `eq' The version installed must be equal to `version'
+
+        * `lt' The version installed must be less than `version'
+
+        * `gt' The version installed must be greater than `version'
+
+        * `le' The version installed must be less than or equal to
+          `version'
+
+        * `ge' The version installed must be creater than or equal to
+          `version'
+
+        * `ne' The version installed must not be equal to `version'
+
+     The default value for this attribute is `eq'.
+
+`version'
+     Specifies the package manager specific version string to match.  If
+     this is not specified, then any version matches, and the value of
+     the `cmp' attribute is ignored.  See the allowed values of
+     `pkgmgr' below for an explation of how each package manager will
+     interpret this.
+
+`pkgmgr'
+     Selects the package manager database to query.  This defaults to
+     either the value of the `DefaultPkgMgr' variable, or if that is
+     not set, there is no default.  In that case, no checking will be
+     done unless `pkgmgr' is set explicitly for each package.  Note
+     that the default value '`none'' listed is merely a pseudo-value,
+     and cannot actually be used, since it would make no sense anyway.
+
+     Each package manager will interpret the `version' and `cmp'
+     attributes in its own way.  So, for example, when you use
+     `pkgmgr=rpm', the comparison will be done with the same rules that
+     RPM use if it were not being run through cfengine.
+
+     Currently, the following values are accepted:
+
+    `rpm'
+          This uses the rpm command, which cfengine expects to find as
+          `/bin/rpm' to query the machine's RPM database.  The `rpm'
+          check assumes that you are using a version of RPM that
+          understands the concept of an epoch, which means that you
+          will want to use RPM version 3.0.3 or greater.  Versions as
+          early as 2.5.6 may work, but it is doubtful.  If multiple
+          packages of the same name are installed (i.e. kernel), then
+          the check considers the package to be installed at the
+          specified version if at least one of them satisifies the
+          criteria specified by `cmp' and `version'.
+
+          The format of a RPM version string is:
+          [epoch:]version[-release].  The version[-release] can be seen
+          by simply running: `rpm -q <pkg>'.  In order to see the
+          epoch, you must use a query format, like this: `rpm -q
+          --queryformat "%{EPOCH}:%{VERSION}-%{RELEASE}\n" <pkg>'.
+          Most packages do not have an epoch, and will print `(none)'
+          in the epoch space.  In recent incarnations of RPM, the
+          absense of an epoch is interpreted as 0.  This is also how
+          cfengine will interpret it.  _Be careful with this.  If the
+          installed version of a package has an epoch greater than 0,
+          and you do not specify the epoch, unexpected results may
+          happen._  For example, if you have a package installed,
+          `foo-1:2.0-1', and you specify a `version=3.0-1' and a
+          `cmp=gt', the check will be true, because the installed
+          version has an epoch of 1, and you did not specify an epoch,
+          which implies you wanted an epoch of 0.  The rule here is
+          basically to always check the epoch of the package you really
+          want, and specify it.  It may take a few extra extra seconds
+          to check, but it will save you lots of headaches later.
+
+`define'
+     Specifies the list of classes to define if the specified package is
+     installed.
+
+`elsedefine'
+     Specifies the list of classes to define if the specified package
+     is not installed.
+
+   Example:
+
+     packages:
+     
+         redhat_8_0::
+             m4  version=0:1.4.1-11 cmp=eq pkgmgr=rpm elsedefine=needsm4
+
+In this first example, we are looking for the m4 package at exactly
+version 0:1.4.1-11.  The installed m4 package on a redhat_8_0 box has
+no epoch which is the same as zero.  Specifying it will keep you out of
+trouble.  This check will cause `needsm4' to be defined if the exact
+version of m4 specified is not installed.
+
+     control:
+         redhat:;
+             DefaultPkgMgr = ( rpm )
+     
+     packages:
+         redhat_8_0::
+             make version=0:4.5-2 cmp=ge define=hasmake elsedefine=needsmake
+
+In the second example, we use the DefaultPkgMgr variable to set the
+default for the `pkgmgr' attribute to `rpm'.  The actual version of make
+installed on recent redhat_8_0 machine is 1:3.79.1-14.  Since the check
+is for greater than or equal to this version, the hasmake class will be
+defined.
+
+
+File: cfengine-Reference.info,  Node: rename,  Next: required,  Prev: packages,  Up: Cfagent reference
+
+rename
+======
+
+   As of version 2.1.0 rename is a synonym for disable, *Note disable::.
+
+
+File: cfengine-Reference.info,  Node: required,  Next: resolve,  Prev: rename,  Up: Cfagent reference
+
+required
+========
+
+   This is a synonym for disks, *Note disks::.  This action tests for
+the existence of a file or filesystem.  It should be called after all
+NFS filesystems have been mounted.  You may use the special variable
+`$(binserver)' here.
+
+
+       required:
+     
+         /FILESYSTEM freespace=SIZE-LIMIT define=CLASS-LIST(,:.)
+     
+          ifelapsed=MINS expireafter=MINS
+
+   Files or filesystems which you consider to be essential to the
+operation of the system can be declared as `required'.  Cfengine will
+warn if such files are not found, or if they look funny.
+
+   Suppose you mount your filesystem `/usr/local' via NFS from some
+binary server.  You might want to check that this filesystem is not
+empty! This might occur if the filesystem was actually _not_ mounted as
+expected, but failed for some reason.  It is therefore not enough to
+check whether the directory `/usr/local' exists, one must also check
+whether it contains anything sensible.
+
+   Cfengine uses two variables: `sensiblesize' and `sensiblecount' to
+figure out whether a file or filesystem is sensible or not.  You can
+change the default values of these variables (which are 1000 and 2
+respectively) in the `control' section.  *Note control::.
+
+   If a file is smaller than `sensiblesize' or does not exist, it fails
+the `required' test.  If a directory does not exist, or contains fewer
+than `sensiblecount' files, then it also fails the test and a warning
+is issued.
+
+
+     required:
+     
+        any::
+     
+           /$(site)/$(binserver)/local
+
+   If you set the `freespace' variable to a value (the default units
+are kilobytes, but you may specify bytes or megabytes), e.g.
+
+
+     required:
+     
+       /site/host/home1 freespace=50mb define=dotidy
+       /site/host/home2 freespace=10% define=dotidy
+
+then cfengine will warn when the filesystem concerned has less than this
+amount of free space. By adding a `define' tag, you can switch on any
+number of classes if this happens. This allows you to activate special
+measures for dealing with a filesystem which is in danger of becoming
+full.
+
+
+File: cfengine-Reference.info,  Node: resolve,  Next: shellcommands,  Prev: required,  Up: Cfagent reference
+
+resolve
+=======
+
+   The file `/etc/resolv.conf' specifies the default nameserver for
+each host, as well as the local domain name.  This file can also contain
+other information, but these are the only two things cfengine currently
+cares about.  In specifying nameservers you should use the dotted
+numerical form of the IP addresses since your system may not understand
+the text form if it is not correctly configured.  You may list as many
+nameservers as you wish, with the default server at the top of the list.
+The resolver normally ignores entries if you add more than three.  The
+statement:
+
+
+     resolve:
+     
+       mygroup::
+     
+          129.240.22.35
+          129.240.22.222
+          129.240.2.3
+
+declares a list of nameservers for hosts in the group or class
+`mygroup'.  When you add the `resolve' command to the `actionsequence',
+this declaration together with the `domain' variable (set here to
+`uio.no') results in a `/etc/resolv.conf' file of the form:
+
+
+     domain uio.no
+     nameserver 129.240.22.35
+     nameserver 129.240.22.222
+     nameserver 129.240.2.3
+
+Note that the `resolve' action does not delete anything from the file
+`/etc/resolv.conf'.  It adds nameservers which do not previously exist
+and reorders the lines of servers which do exist.
+
+   As of version 1.3.11, you may use a quoted string to add
+non-nameserver lines to this file. For example:
+
+
+     resolve:
+     
+       mygroup::
+     
+          129.240.22.35
+          129.240.22.222
+          "# Comment line"
+          "order bind, files"
+
+If the line begins with a non-numeric character, the word `nameserver'
+is not added to the line.
+
+
 File: cfengine-Reference.info,  Node: shellcommands,  Next: tidy,  Prev: resolve,  Up: Cfagent reference
 
 shellcommands
@@ -419,6 +684,8 @@ follows:
      
             BindToInterface = ( IP NUMBER/HOSTNAME )
      
+            HostnameKeys = ( TRUE/FALSE )
+     
       groups:
      
         GROUP DEFINITIONS
@@ -465,6 +732,7 @@ control
 * cfrunCommand::
 * DenyBadClocks::
 * DenyConnectionsFrom::
+* cfservd HostnameKeys::
 * cfservd IfElapsed::
 * LogAllConnections::
 * MaxConnections::
@@ -616,7 +884,7 @@ access to systems whose clocks differ by more than one hour. This can
 prevent messages of the form `Can't stat' file when remote copying.
 
 
-File: cfengine-Reference.info,  Node: DenyConnectionsFrom,  Next: cfservd IfElapsed,  Prev: DenyBadClocks,  Up: cfservd control
+File: cfengine-Reference.info,  Node: DenyConnectionsFrom,  Next: cfservd HostnameKeys,  Prev: DenyBadClocks,  Up: cfservd control
 
 DenyConnectionsFrom
 -------------------
@@ -628,7 +896,25 @@ denied access using this list.
            DenyConnectionsFrom = ( 128.39.89.76 )  # rogue host
 
 
-File: cfengine-Reference.info,  Node: cfservd IfElapsed,  Next: LogAllConnections,  Prev: DenyConnectionsFrom,  Up: cfservd control
+File: cfengine-Reference.info,  Node: cfservd HostnameKeys,  Next: cfservd IfElapsed,  Prev: DenyConnectionsFrom,  Up: cfservd control
+
+HostnameKeys
+------------
+
+   If this variable is set to true/on, it causes cfservd to lookup and
+store trusted public keys according to their DNS fully qualified host
+name, instead of using the IP address.  This can be useful in
+environments where hosts do not have fixed IP addresses, but do have
+fixed hostnames.
+
+
+       HostnameKeys = ( on )
+   This method of storing keys is not recommended for sites with fixed
+IP addresses, since it removes one security barrier from a potential
+attacker by potentially allowing DNS spoofing.
+
+
+File: cfengine-Reference.info,  Node: cfservd IfElapsed,  Next: LogAllConnections,  Prev: cfservd HostnameKeys,  Up: cfservd control
 
 IfElapsed
 ---------
@@ -1031,433 +1317,4 @@ for the current system (e.g.  `ultrix').  Here is an example:
          /bin/cp $backupdir/passwd.linux /etc/passwd
         fi
      fi
-
-
-File: cfengine-Reference.info,  Node: cfrc resource file,  Prev: cf.preconf bootstrap file,  Up: Problem solving
-
-`cfrc' resource file
-====================
-
-   If, for some reason you are not satisfied with the defaults which
-cfengine uses, then you can change them by making an entry in the
-resource file.  The default values are defined in the source code file
-`classes.c' in the distribution.  The format of the resource file is:
-
-     hardclass.variable: value
-
-For example, you might want to forget about where your HPUX system
-mounts its mail directory and mount it under `/usr/spool/mail'.  In
-this case you would add the line:
-
-     hpux.maildir: /usr/spool/mail
-
-To redefine the filesystem table for GNU/linux, you would write:
-     linux.fstab: /etc/linuxfstab
-
-The full list of re-definable resources is:
-
-        mountcomm       # command used to mount filesystems
-        unmountcomm     # command used to unmount filesystems
-        ethernet        # name of the ethernet device
-        mountopts       # options to above mount command
-        fstab           # the name of the filesystemtable
-        maildir         # the location of the mail directory
-        netstat         # the full path to netstat and options
-        pscomm          # the path to the system's ps command
-        psopts          # the options used by ps (default aux/ef)
-
-   You should never need to redefine resources unless you decide to do
-something non-standard.  Interested readers are referred to the values
-in `classes.c'.
-
-   Cfengine is easily extensible so as to support a variety of
-architectures.  You can even add your own.  To do so you need, first of
-all, to define a new class for the operating system concerned.  The file
-_classes.c_ has been separated off from the remainder of the source
-code so that you can easily see which data structures need to be
-extended.
-
-   To make life as straightforward as possible, three unused classes
-have been defined.  They are called (unremarkably) _unused1_, _unused2_
-and _unused3_.  If you add any further classes, it will be necessary to
-increase the constant _clssattr_ defined in _cf.defs.h_ by one for
-every new addition.  You do not need to change _clssattr_ if you simple
-replace one of the unused classes by a real class.
-
-   To see fully the impact of what you need to do, you should make a
-search for the strings _unused?_ in all of the source files.  Certain
-special cases need to be handled for each operating system.  For
-example, the form of the filesystem table is quite radically different
-on some systems such as AIX.  One thing you must do is to fill in the
-default values for the new operating system in the file _classes.c_.
-
-   If you fill in the details for a new operating system before it finds
-its way into a new release, you might consider sending the details to
-the bug list in the next paragraph.
-
-
-File: cfengine-Reference.info,  Node: Example configuration file,  Next: Variable Index,  Prev: Problem solving,  Up: Top
-
-Example configuration files
-***************************
-
-   Here is a sample from a large configuration file, just to give you
-some ideas. The file is broken up into manageable pieces for
-convenience.
-
-* Menu:
-
-* cfagent.conf::
-* cf.groups::
-* cf.main::
-* cf.site::
-* cf.motd::
-* cf.users::
-* cf.solaris::
-* cf.linux::
-* cf.freebsd::
-* cfservd.conf::
-
-
-File: cfengine-Reference.info,  Node: cfagent.conf,  Next: cf.groups,  Prev: Example configuration file,  Up: Example configuration file
-
-cfagent.conf
-============
-
-     #####################################################################
-     #
-     #  CFENGINE CONFIGURATION FOR site = iu.hioslo.no
-     #
-     #  This file is for root only.
-     #
-     ######################################################################
-     
-     ###
-     #
-     # BEGIN cfagent.conf
-     #
-     ###
-     
-     import:
-     
-        #
-        # Split things up to keep things tidy
-        #
-     
-        any::
-                         cf.groups
-                         cf.main
-                         cf.site
-                         cf.motd
-     
-        hpux::           cf.hpux
-        linux::          cf.linux
-        solaris::        cf.solaris
-        sun4::           cf.sun4
-        ultrix::         cf.ultrix
-        freebsd::        cf.freebsd
-     
-        #
-        # Do you want to do this ?
-        #
-     
-        AllHomeServers:: cf.users
-     
-     
-     ###
-     #
-     # END cfengine.conf
-     #
-     ###
-
-
-File: cfengine-Reference.info,  Node: cf.groups,  Next: cf.main,  Prev: cfagent.conf,  Up: Example configuration file
-
-cf.groups
-=========
-
-     ##############################################################
-     #
-     # cf.groups - for iu.hioslo.no
-     #
-     # This file contains  all group/class definitions
-     #
-     #################################################################
-     
-     ###
-     #
-     # BEGIN cf.groups
-     #
-     ###
-     
-     groups:
-     
-        #
-        # Define some groups
-        #
-     
-        iu = ( nexus ferengi regula borg dax lore axis worf daystrom voyager
-               aud1 aud2 aud3 aud4 bajor ds9 takpah takpeh nostromo galron
-               thistledown rama chaos pc-steinarj pc-hildeh way jart kosh )
-     
-        diskless   = ( regula ferengi lore )
-     
-        standalone = ( nexus axis dax borg worf daystrom voyager
-                       aud1 aud2 aud3 aud4 bajor ds9 takpah takpeh
-                       nostromo galron thistledown rama pc-torejo
-                       pc-steinarj pc-hildeh )
-     
-        AllHomeServers   = ( nexus )
-        AllBinaryServers = ( nexus borg )
-     
-        XBootServer  = ( nexus )
-        WWWServers   = ( nexus )
-        FTPserver    = ( nexus )
-        NameServers  = ( nexus )
-        PasswdServer = ( nexus )
-        BackupHost   = ( nexus )
-     
-        MailHub      = ( nexus )
-        MailClients  = ( iu -nexus )
-     
-     ###
-     #
-     # END cf.groups
-     #
-     ###
-
-
-File: cfengine-Reference.info,  Node: cf.main,  Next: cf.site,  Prev: cf.groups,  Up: Example configuration file
-
-cf.main
-=======
-
-     ##############################################################
-     #
-     # cf.main - for iu.hioslo.no
-     #
-     # This file contains generic config stuff
-     #
-     #################################################################
-     
-     ###
-     #
-     # BEGIN cf.main
-     #
-     ###
-     
-     control:
-     
-        access    = ( root )        # Only root should run this
-     
-        site      = ( iu )
-        domain    = ( iu.hioslo.no )
-        sysadm    = ( drift@iu.hioslo.no )
-     
-        repository = ( /var/spool/cfengine )
-     
-        netmask   = ( 255.255.255.0 )
-        timezone  = ( MET )
-        nfstype   = ( nfs )
-     
-        sensiblesize  = ( 1000 )
-        sensiblecount = ( 2 )
-        editfilesize  = ( 20000 )
-     
-        mountpattern = ( /$(site)/$(host) )
-        homepattern  = ( u? )
-     
-        #
-        # If we undefine this with cfengine -N longjob
-        # then we switch off all jobs labelled with this class
-        #
-     
-        addclasses = ( longjob )
-     
-        #
-        # Macros & constants are inherited downwards in imports
-        # but are not passed up to parent files. Good idea to
-        # define them all here
-        #
-     
-        masterfiles = ( /iu/nexus/local/iu )
-        main_server = ( nexus )
-        cfbin       = ( /iu/nexus/local/gnu/lib/cfengine/bin )
-        gnu         = ( /local/gnu )
-        ftp         = ( /local/iu/ftp )
-        nisslave    = ( dax )
-        nisfiles    = ( /iu/nexus/local/iu/etc )
-     
-        #
-        # The action sequence for daily (full) runs and
-        # for hourly updates (called with -DHourly)
-        #
-     
-        Hr00::
-     
-           actionsequence =
-              (
-              copy
-              mountall
-              mountinfo
-              checktimezone
-              netconfig
-              resolve
-              unmount
-              shellcommands
-              addmounts
-              links.Prepare
-              files.Prepare
-              directories
-              links.Rest
-              mailcheck
-              mountall
-              required
-              tidy
-              disable
-              editfiles
-              files.Rest
-              processes
-              )
-     
-        !Hr00::
-     
-           actionsequence =
-              (
-              resolve
-              shellcommands
-              copy
-              editfiles
-              processes
-     	 links
-              )
-     
-        force::
-     
-           actionsequence =
-              (
-              files.Prepare.Rest
-              tidy
-              )
-     
-     ######################################################################
-     
-     homeservers:
-     
-        iu:: nexus
-     
-     binservers:
-     
-        iu.solaris::                 nexus
-        iu.linux::                   borg
-     
-     mailserver:
-     
-        any:: nexus:/var/mail
-     
-     mountables:
-     
-        any::
-              nexus:/iu/nexus/u1
-              nexus:/iu/nexus/u2
-              nexus:/iu/nexus/u3
-              nexus:/iu/nexus/u4
-              nexus:/iu/nexus/u5
-              nexus:/iu/nexus/u6
-              nexus:/iu/nexus/ua
-              nexus:/iu/nexus/ud
-              nexus:/iu/nexus/local
-              nexus:/opt/NeWSprint
-              nexus:/opt/AcroRead
-              borg:/iu/borg/local
-              dax:/iu/dax/local
-     
-     miscmounts:
-     
-        linux||freebsd::   nexus:/iu/nexus/local /iu/nexus/local ro
-     
-     ######################################################################
-     
-     broadcast:
-     
-       ones
-     
-     defaultroute:
-     
-        cadeler30-gw
-     
-     ######################################################################
-     
-     resolve:
-     
-           128.39.89.10  # nexus
-           158.36.85.10  # samson.hioslo.no
-           129.241.1.99
-     
-     ######################################################################
-     
-     tidy:
-     
-        #
-        # Some global tidy-ups
-        #
-     
-           /tmp/                    pat=*             r=inf     A=1
-           /var/tmp                 pat=*             r=inf     A=1
-           /                        pat=core          r=1       A=0
-           /etc                     pat=core          r=1       A=0
-     
-     ######################################################################
-     
-     ignore:                       # Don't check or tidy these directories
-     
-           /local/lib/gnu/emacs/lock/
-           /local/tmp
-           ftp
-           projects
-           /local/bin/top
-           /local/lib/tex/fonts
-           /local/iu/etc
-           /local/etc
-           /local/iu/httpd/conf
-           /usr/tmp/locktelelogic
-           /usr/tmp/lockIDE
-           RootMailLog
-     
-           #
-           # Emacs lock files etc
-           #
-     
-           !*
-           /local/lib/xemacs
-     
-           #
-           # X11 keeps X server data in /tmp/.X11
-           # better not delete this!
-           #
-     
-           .X11
-     
-           #
-           # Some users like to give a file or two 777 protection here
-           # so netsurfers can update a log or counter when running as
-           # `nobody'
-           #
-     
-           www
-     
-     #####################################################################
-     
-     disable:
-     
-        /etc/hosts.equiv
-        /etc/nologin
-        /usr/lib/sendmail.fc
-     
-     
-     ###
-     #
-     # END cf.main
-     #
-     ###
 

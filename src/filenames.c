@@ -671,7 +671,7 @@ if (strlen(str) >= bufsize)
    FatalError(tmp);
    }
 
-for (i = 0; str[i] != '\0'; i++)
+for (i = 0;  (str[i] != '\0') && (i < bufsize-1); i++)
    {
    buffer[i] = ToUpper(str[i]);
    }
@@ -693,15 +693,15 @@ char *str;
 
 bzero(buffer,bufsize);
 
-if (strlen(str) >= bufsize)
+if (strlen(str) >= bufsize-1)
    {
    char *tmp;
    tmp = malloc(40+strlen(str));
-   sprintf(tmp,"String too long in ToLowerStr: %s",str);
+   snprintf(tmp,bufsize-1,"String too long in ToLowerStr: %s",str);
    FatalError(tmp);
    }
 
-for (i = 0; str[i] != '\0'; i++)
+for (i = 0; (str[i] != '\0') && (i < bufsize-1); i++)
    {
    buffer[i] = ToLower(str[i]);
    }

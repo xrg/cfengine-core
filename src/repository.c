@@ -124,7 +124,7 @@ if (stat(file,&sstat) == -1)
 stat(buffer,&dstat);
 
 imagecopy = IMAGEBACKUP;   /* without this there would be loop between this */
-IMAGEBACKUP = false;       /* and Repository */
+IMAGEBACKUP = 'n';       /* and Repository */
 
 dummy.server = "localhost";
 dummy.inode_cache = NULL;

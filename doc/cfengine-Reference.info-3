@@ -11,6 +11,64 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: Warnings,  Next: warnnonuserfiles,  Prev: Verbose,  Up: control
+
+Warnings
+--------
+
+
+       Warnings = ( ON/off )
+
+   This variable switches on the parser-output level whereby cfengine
+reports non-fatal warnings.  This is equivalent to setting the command
+line switch `--no-warn', or `-w'.  To set this output level on selected
+hosts one writes:
+
+
+      CLASSES::
+     
+        Warnings = ( on )
+
+
+File: cfengine-Reference.info,  Node: warnnonuserfiles,  Next: warnnonownerfiles,  Prev: Warnings,  Up: control
+
+WarnNonUserFiles
+----------------
+
+   If this parameter is set to true, cfengine will warn about files in
+spool directories which do not have a name belonging to a known user id.
+
+   See also `DeleteNonUserFiles'.
+
+
+File: cfengine-Reference.info,  Node: warnnonownerfiles,  Next: warnnonusermail,  Prev: warnnonuserfiles,  Up: control
+
+WarnNonOwnerFiles
+-----------------
+
+   If this parameter is set to true, cfengine will warn about files on
+mailservers whose names do not correspond to a known user name, but
+might be owned by a known user.
+
+
+     SpoolDirectories = ( /var/spool/cron/crontabs )
+     
+     WarnNonOwnerFiles = ( true )
+
+   See also `DeleteNonOwnerFiles'. This generalizes and succeeds
+`DeleteNonOwnerMail'.
+
+
+File: cfengine-Reference.info,  Node: warnnonusermail,  Next: warnnonownermail,  Prev: warnnonownerfiles,  Up: control
+
+WarnNonUserMail
+---------------
+
+   If this parameter is set to true, cfengine will warn about mail
+files on mailservers which do not have a name belonging to a known user
+id. This does not include lock files.
+
+
 File: cfengine-Reference.info,  Node: warnnonownermail,  Prev: warnnonusermail,  Up: control
 
 WarnNonOwnerMail
@@ -587,6 +645,8 @@ be examined later.  The syntax is
         CLASS::
      
            /FILENAME
+                           dest=FILENAME
+     
                            type=PLAIN/FILE/LINK/LINKS
                            rotate=EMPTY/TRUNCATE/NUMERICAL-VALUE
                            size=NUMERICAL-VALUE
@@ -599,12 +659,14 @@ be examined later.  The syntax is
                            ifelapsed=MINS
                            expireafter=MINS
 
-Cfengine renames a given file by appending the name of the file with the
-suffix `.cfdisabled'.  A typical example of a file you would probably
-want to disable would be the `/etc/hosts.equiv' file which is often
-found with the `+' symbol written in it, opening the system concerned
-to the entire NIS universe without password protection!  Here is an
-example:
+If a destination filename is specified, cfagent renames the source file
+to the destination, where possible (renaming across filesystems is not
+allowed).  If no destination is given, cfagent renames a given file by
+appending the name of the file with the suffix `.cfdisabled'.  A
+typical example of a file you would probably want to disable would be
+the `/etc/hosts.equiv' file which is often found with the `+' symbol
+written in it, opening the system concerned to the entire NIS universe
+without password protection!  Here is an example:
 
 
      disable:

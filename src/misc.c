@@ -693,6 +693,39 @@ else                                    /* parent */
 return false;
 }
 
+
+/**********************************************************************/
+
+void SetSignals()
+
+
+{ int i;
+
+ SIGNALS[SIGHUP] = strdup("SIGHUP");
+ SIGNALS[SIGINT] = strdup("SIGINT");
+ SIGNALS[SIGTRAP] = strdup("SIGTRAP");
+ SIGNALS[SIGKILL] = strdup("SIGKILL");
+ SIGNALS[SIGPIPE] = strdup("SIGPIPE");
+ SIGNALS[SIGCONT] = strdup("SIGCONT");
+ SIGNALS[SIGABRT] = strdup("SIGABRT");
+ SIGNALS[SIGSTOP] = strdup("SIGSTOP");
+ SIGNALS[SIGQUIT] = strdup("SIGQUIT");
+ SIGNALS[SIGTERM] = strdup("SIGTERM");
+ SIGNALS[SIGCHLD] = strdup("SIGCHLD");
+ SIGNALS[SIGUSR1] = strdup("SIGUSR1");
+ SIGNALS[SIGUSR2] = strdup("SIGUSR2");
+ SIGNALS[SIGBUS] = strdup("SIGBUS");
+ SIGNALS[SIGSEGV] = strdup("SIGSEGV");
+
+ for (i = 0; i < highest_signal; i++)
+    {
+    if (SIGNALS[i] == NULL)
+       {
+       SIGNALS[i] = strdup("NOSIG");
+       }
+    }
+}
+
 /*********************************************************************/
 
 void SetClassesOnScript(execstr,classes,elseclasses,useshell)
@@ -794,6 +827,7 @@ int linux_redhat_version(void)
 {
 #define REDHAT_ID "Red Hat Linux"
 #define REDHAT_AS_ID "Red Hat Linux Advanced Server"
+#define REDHAT_ES_ID "Red Hat Enterprise Linux ES"
 #define MANDRAKE_ID "Linux Mandrake"
 
 #define RELEASE_FLAG "release "
@@ -803,19 +837,20 @@ int linux_redhat_version(void)
  * Red Hat Linux release 6.2 (Zoot)
  * Red Hat Linux Advanced Server release 2.1AS (Pensacola)
  * Linux Mandrake release 7.1 (helium)
+ * Red Hat Enterprise Linux ES release 2.1 (Panama)
  */
 
 #define RH_REL_FILENAME "/etc/redhat-release"
 
 FILE *fp;
 
-/* The full string red in from redhat-release */
+/* The full string read in from redhat-release */
 char relstring[maxvarsize];
 char classbuf[maxvarsize];
 
 /* Red Hat, Mandrake */
 char *vendor="";
-/* as (Advanced Server) */
+/* as (Advanced Server, Enterprise) */
 char *edition="";
 /* Where the numerical release will be found */
 char *release=NULL;
@@ -836,7 +871,12 @@ char strminor[maxvarsize];
  Verbose("Looking for redhat linux info...\n");
  
  /* First, try to grok the vendor and the edition (if any) */
- if(!strncmp(relstring, REDHAT_AS_ID, strlen(REDHAT_AS_ID)))
+ if(!strncmp(relstring, REDHAT_ES_ID, strlen(REDHAT_ES_ID)))
+    {
+    vendor = "redhat";
+    edition = "es";
+    }
+ else if(!strncmp(relstring, REDHAT_AS_ID, strlen(REDHAT_AS_ID)))
     {
     vendor = "redhat";
     edition = "as";

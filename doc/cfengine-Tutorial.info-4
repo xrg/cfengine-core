@@ -1060,6 +1060,12 @@ hosts from a particular domain.
      
      admit:   # Can also call this grant:
      
+     
+         # Note that we must grant access to the
+         # agent if we wan to start it remotely with cfrun
+     
+           /var/cfengine/bin/cfagent
+     
         PasswdHost::
      
           /etc/passwd

@@ -161,6 +161,8 @@ if ((pp->action == 'm') && !dosignals && (matches != 0))
 if (strlen(pp->restart) != 0)
    {
    char argz[256];
+
+   Verbose("Existing restart sequence found (%s)\n",pp->restart);
    
    if ((matches != 0) && (pp->signal != cfkill) && (pp->signal != cfterm))
       {

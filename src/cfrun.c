@@ -290,6 +290,7 @@ int  StoreInFile;
   struct servent *server;
   int err,n_read,first,port;
   char *sp,forceipv4='n';
+  void *gotkey;
   FILE  *fp;
   struct Image addresses;
 #ifdef HAVE_GETADDRINFO
@@ -384,10 +385,16 @@ addresses.trustkey = 'n';
 addresses.encrypt = 'n';
 addresses.server = strdup(parsed_host);
  
-snprintf(sendbuffer,bufsize,"root-%s",CONN->remoteip);
-
+snprintf(sendbuffer,bufsize,"root-%s",parsed_host);
+gotkey = HavePublicKey(sendbuffer);
  
-if (HavePublicKey(sendbuffer) == NULL)
+if (!gotkey)
+   {
+   snprintf(sendbuffer,bufsize,"root-%s",CONN->remoteip);
+   gotkey = HavePublicKey(sendbuffer);
+   }
+ 
+if (!gotkey)
    {
    if (TRUSTALL)
       {
@@ -964,6 +971,19 @@ void yyerror(s)
 char *s;
 
 {
+}
+
+char *GetMacroValue(s,sp)
+
+char *s,*sp;
+{
+ return NULL;
+}
+
+
+int OptionIs ARGLIST((char *scope, char *name, short on))
+{
+ return false;
 }
 
 /* EOF */

@@ -87,10 +87,20 @@ void *vp;
  
 Verbose("Tidying Home partition %s...\n",startpath);
 
-if (!GetLock(ASUniqueName("tidy"),CanonifyName(startpath),tp->ifelapsed,tp->expireafter,VUQNAME,CFSTARTTIME))
-   {
-   return;
-   }
+ if (tp != NULL)
+    {
+    if (!GetLock(ASUniqueName("tidy"),CanonifyName(startpath),tp->ifelapsed,tp->expireafter,VUQNAME,CFSTARTTIME))
+       {
+       return;
+       }
+    }
+ else
+    {
+    if (!GetLock(ASUniqueName("tidy"),CanonifyName(startpath),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+       {
+       return;
+       }
+    }
 
 if (stat(startpath,&sb) == -1)
    {

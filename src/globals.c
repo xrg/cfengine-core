@@ -57,7 +57,6 @@ int PASS;
 char *CHECKSUMDB;
 char PADCHAR = ' ';
 char CONTEXTID[32];
-char METHODNAME[bufsize];
 char CFPUBKEYFILE[bufsize];
 char CFPRIVKEYFILE[bufsize];
 char AVDB[1024];
@@ -109,13 +108,13 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
   PUBLIC char ELSECLASSBUFFER[bufsize];
   PUBLIC char FAILOVERBUFFER[bufsize];
   PUBLIC char CHROOT[bufsize];
-
   PUBLIC char EDITBUFF[bufsize];
 
   PUBLIC short DEBUG = false;
   PUBLIC short D1 = false;
   PUBLIC short D2 = false;
   PUBLIC short D3 = false;
+  PUBLIC short D4 = false;
   PUBLIC short VERBOSE = false;
   PUBLIC short INFORM = false;
   PUBLIC short CHECK = false;
@@ -167,9 +166,33 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
 
   PUBLIC struct cfObject *OBJECTLIST = NULL;
 
-  PUBLIC struct Item *METHODARGS = NULL;
+ /*******************************************************************/
+ /* Methods                                                         */
+ /*******************************************************************/
 
-/*******************************************************************/
+  PUBLIC struct Item *METHODARGS = NULL;
+  PUBLIC char ** METHODARGV = NULL;
+  PUBLIC int METHODARGC = 0;
+  PRIVATE char *VMETHODPROTO[] =
+     {
+     "NAME:",
+     "TRUSTEDFILE:",
+     "TIMESTAMP:",
+     "REPLYTO:",
+     "SENDCLASS:",
+     "ATTACH-ARG:",
+     "ISREPLY:",
+     NULL
+     };
+
+  PUBLIC char METHODNAME[bufsize];
+  PUBLIC char METHODFILENAME[bufsize];
+  PUBLIC char METHODREPLYTO[maxvarsize];
+  PUBLIC char METHODRETURNVARS[bufsize];
+  PUBLIC char METHODRETURNCLASSES[maxvarsize];
+  PUBLIC char METHODMD5[bufsize];
+
+ /*******************************************************************/
  /* Data structures - root pointers                                 */
  /*******************************************************************/
 
@@ -326,7 +349,8 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
  PRIVATE struct option OPTIONS[] =
       {
       { "help",no_argument,0,'h' },
-      { "debug",optional_argument,0,'d' }, 
+      { "debug",optional_argument,0,'d' },
+      { "method",required_argument,0,'Z' }, 
       { "verbose",no_argument,0,'v' },
       { "traverse-links",no_argument,0,'l' },
       { "recon",no_argument,0,'n' },
@@ -399,7 +423,8 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
       "Links:",
       "Import files:",
       "User Shell Commands:",
-      "Disable Files:",
+      "Rename or Disable Files:",
+      "Rename files:",
       "Make Directory Path:",
       "Ignore File Paths:",
       "Broadcast Mode:",
@@ -440,6 +465,7 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
       "import",
       "shellcommands",
       "disable",
+      "rename",
       "directories",
       "ignore",
       "broadcast",
@@ -476,6 +502,11 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
       "strcmp",
       "showstate",
       "readfile",
+      "returnvariables",
+      "returnclasses",
+      "syslog",
+      "setstate",
+      "unsetstate",
       NULL
       };
 
@@ -512,6 +543,7 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
       "shellcommands",
       "files",
       "disable",
+      "rename",
       "addmounts",
       "editfiles",
       "mountall",
@@ -870,8 +902,11 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
      {
      "NoEdit",
      "DeleteLinesStarting",
+     "DeleteLinesNotStarting",
      "DeleteLinesContaining",
+     "DeleteLinesNotStarting",
      "DeleteLinesMatching",
+     "DeleteLinesNotMatching",
      "AppendIfNoSuchLine",
      "PrependIfNoSuchLine",
      "WarnIfNoSuchLine",
@@ -1027,7 +1062,8 @@ pthread_mutex_t MUTEX_SYSCALL = PTHREAD_MUTEX_INITIALIZER;
 
   PUBLIC FILE *VLOGFP = NULL;
 
-  PUBLIC char CFLOCK[bufsize]; 
+  PUBLIC char CFLOCK[bufsize];
+  PUBLIC char SAVELOCK[bufsize]; 
   PUBLIC char CFLOG[bufsize];
   PUBLIC char CFLAST[bufsize]; 
   PUBLIC char LOCKDB[bufsize];

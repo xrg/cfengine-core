@@ -96,6 +96,7 @@ void DeleteClassFromHeap ARGLIST((char *class));
 int Dialogue  ARGLIST((int sd,char *class));
 int OpeningCeremony(int sd);
 void GetCfStuff ARGLIST((void));
+void Banner ARGLIST((char * s));
 
 /* 
  * HvB: Bas van der Vlies
@@ -116,26 +117,15 @@ char **argv;
  
 CheckOptsAndInit(argc,argv);
 
-if (!ONCE)
-   {
-   /* Get a lock as long as no other cfexecd is running. */
-
-   if (!GetLock("cfexecd","execd",0,0,VUQNAME,starttime))
-      {
-      snprintf(OUTPUT,bufsize*2,"cfexecd: Couldn't get a lock -- exists or too soon: IfElapsed %d, ExpireAfter %d\n",0,0);
-      CfLog(cfverbose,OUTPUT,"");
-      return 1;
-      }
-   }
-   
 StartServer(argc,argv);
 
 if (!ONCE)
    {
+   RestoreExecLock(); 
    ReleaseCurrentLock();
    }
- 
-return 0;
+
+ return 0;
 }
 
 /********************************************************************/
@@ -153,6 +143,8 @@ char **argv;
   int c;
 
 ld_library_path[0] = '\0';
+
+Banner("Check options"); 
 
 sprintf(VPREFIX, "cfexecd"); 
 openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_DAEMON);
@@ -174,6 +166,7 @@ while ((c=getopt_long(argc,argv,"L:d:vhpFV1g",CFDOPTIONS,&optindex)) != EOF)
                    }
 		
 		NO_FORK = true;
+		VERBOSE = true;
 		printf("cfexecd Debug mode: running in foreground\n");
                 break;
 
@@ -192,9 +185,12 @@ while ((c=getopt_long(argc,argv,"L:d:vhpFV1g",CFDOPTIONS,&optindex)) != EOF)
       case 'g': NO_FORK = true;
 	        break;
 
-      case 'L': Verbose("Setting LD_LIBRARY_PATH=%s\n",optarg);
+      case 'L': 
 	        snprintf(ld_library_path,bufsize-1,"LD_LIBRARY_PATH=%s",optarg);
-		putenv(ld_library_path);
+		if (putenv(strdup(ld_library_path)) != 0)
+		   {
+		   }
+		
 		break;
 
       case 'F':
@@ -242,6 +238,8 @@ char **argv;
 { int time_to_run = false;
   time_t now = time(NULL); 
 
+Banner("Starting server");
+  
 if ((!NO_FORK) && (fork() != 0))
    {
    snprintf(OUTPUT,bufsize*2,"cfexecd starting %.24s\n",ctime(&now));
@@ -249,6 +247,18 @@ if ((!NO_FORK) && (fork() != 0))
    exit(0);
    }
 
+if (!ONCE)
+   {
+   if (!GetLock("cfexecd","execd",0,0,VUQNAME,now))
+      {
+      snprintf(OUTPUT,bufsize*2,"cfexecd: Couldn't get a lock -- exists or too soon: IfElapsed %d, ExpireAfter %d\n",0,0);
+      CfLog(cfverbose,OUTPUT,"");
+      return;
+      }
+
+   SaveExecLock(); 
+   }
+ 
 if (!NO_FORK)
   {
   ActAsDaemon(0);
@@ -829,12 +839,14 @@ if ((hp = gethostbyname(VMAILSERVER)) == NULL)
    printf("Make sure that fully qualified names can be looked up at your site!\n");
    printf("i.e. www.gnu.org, not just www. If you use NIS or /etc/hosts\n");
    printf("make sure that the full form is registered too as an alias!\n");
+   fclose(fp);
    return;
    }
 
 if ((server = getservbyname("smtp","tcp")) == NULL)
    {
    CfLog(cferror,"Unable to lookup smtp service","getservbyname");
+   fclose(fp);
    return;
    }
 
@@ -847,6 +859,7 @@ raddr.sin_family = AF_INET;
 if ((sd = socket(AF_INET,SOCK_STREAM,0)) == -1)
    {
    CfLog(cferror,"Couldn't open a socket","socket");
+   fclose(fp);
    return;
    }
    
@@ -854,6 +867,7 @@ if (connect(sd,(void *) &raddr,sizeof(raddr)) == -1)
    {
    snprintf(OUTPUT,bufsize*2,"Couldn't connect to host %s\n",VMAILSERVER);
    CfLog(cfinform,OUTPUT,"connect");
+   fclose(fp);
    close(sd);
    return;
    }
@@ -922,6 +936,8 @@ if (!Dialogue(sd,".\r\n"))
  
 Dialogue(sd,"QUIT\r\n");
 Debug("Done sending mail\n");
+fclose(fp);
+close(sd);
 return;
  
 mail_err: 
@@ -976,6 +992,19 @@ return ((f == '2') || (f == '3')); /* return code 200 or 300 from smtp*/
 /*  Dummies                                                       */
 /******************************************************************/
 
+void Banner(string)
+
+char *string;
+
+{
+Verbose("---------------------------------------------------------------------\n");
+Verbose("%s\n",string);
+Verbose("---------------------------------------------------------------------\n\n");
+}
+
+/*********************************************************************/
+
+
 void RotateFiles(name,number)
 
 char *name;
@@ -1006,6 +1035,13 @@ char *s;
  printf("%s\n",s);
 }
 
+
+char *GetMacroValue(s,sp)
+
+char *s,*sp;
+{
+ return NULL;
+}
 /* EOF */
 
 
