@@ -36,7 +36,7 @@ may be included in a translation approved by the author instead of in
 the original English.
 
    This manual corresponds to CFENGINE Edition 2.1.13 for version
-2.1.13 as last updated 20 January 2005.
+2.1.13 as last updated 6 February 2005.
 
 * Menu:
 
@@ -77,12 +77,24 @@ File: cfengine-Tutorial.info,  Node: What is cfengine?,  Next: Site configuratio
 Cfengine is a tool for setting up and maintaining computer systems.  It
 consists of several components:
 
-      cfagent     - An autonomous configuration agent (required)
-      cfservd     - A file server and remote activation service (optional)
-      cfexecd     - A scheduling and report service (recommended)
-      cfenvd      - An anomaly detection service (strongly recommended)
-      cfenvgraph  - Ancillary tool for cfenvd (helper)
-      cfkey       - Key generation tool (run once on every host)
+cfagent
+     An autonomous configuration agent (required)
+
+cfservd
+     A file server and remote activation service (optional)
+
+cfexecd
+     A scheduling and report service (recommended)
+
+cfenvd
+     An anomaly detection service (strongly recommended)
+
+cfenvgraph
+     Ancillary tool for cfenvd (helper)
+
+cfkey
+     Key generation tool (run once on every host)
+
    The agent `cfagent' can be used without the other components, but
 not all of the functionality of cfengine will be available unless the
 components are deployed appropriately.
@@ -93,57 +105,58 @@ operations being performed on multiple hosts. Cfengine is good at
 performing a lot of common system administration tasks, and allows you
 to build on its strengths with your own scripts. You can also use it as
 a netwide front-end for `cron'.  Once you have set up cfengine, you'll
-be free to use your time being like a human being, instead of playing
-R2-D2 with the system.
+be free to use your time doing other things instead of manual
+configuration.
 
    The main purpose of cfengine is to allow you to create a single,
 central system configuration which will define how every host on your
 network should be configured in an intuitive way.  An interpreter runs
-on every host on your network and parses the master file (or file-set);
-the configuration of each host is checked against this file and then,
-if you request it, any deviations from the defined configuration are
-fixed automatically.  You do not have to mention every host
-specifically by name in order to configure them: instead you can refer
-to the properties which distinguish hosts from one another.  Cfengine
-uses a flexible system of "classes" which helps you to single out a
-specific group of hosts with a single statement.
+on every host on your network and parses the master file (or file set).
+The configuration of each host is checked against this file; then, if
+you request it, any deviations from the defined configuration are fixed
+automatically.  You do not have to mention every host specifically by
+name in order to configure them: instead you can refer to the
+properties which distinguish hosts from one another.  Cfengine uses a
+flexible system of "classes" which helps you to single out a specific
+group of hosts with a single statement.
 
    Cfengine grew out of the need to control the accumulation of complex
-shell scripts used in the automation of key system maintenance at Oslo.
-There were very many scripts, written in shell and in perl, performing
-tasks such as file tidying, find-database updates, process checking and
-several other tasks.  In a heterogeneous environment, shell-scripts
-work very poorly: shell commands have differing syntax across different
-operating systems, the locations and names of key files differ. In
-fact, the non-uniformity of Unix was a major headache. Scripts were
-filled with tests to determine what kind of operating system they were
-being run on, to the point where they became so complicated an
-unreadable that no-one was quite sure what they did anymore. Other
-scripts were placed only on the systems where they were relevant, out
-of sight and out of mind.  It quickly became clear that our dream
-solution would be to replace this proliferation of scripts by a single
-file containing everything to be checked on every host on the network.
-By defining a new language, this file could hide all of the tests by
-using classes (a generalized `switch/case' syntax) to label operations
-and improve the readability greatly. The gradual refinement of this
-idea resulted in the present day cfengine.
+shell scripts used in the automation of key system maintenance at
+Unversity College in Oslo. There were a lot of scripts, written in
+shell and in Perl, performing system administration tasks such as file
+tidying, find-database updates, process checking and several other
+tasks.  In a heterogeneous environment, shell scripts work very poorly:
+shell commands have differing syntax across different operating
+systems, and the locations and names of key files differ. In fact, the
+non-uniformity of Unix was a major headache. Scripts were filled with
+tests to determine what kind of operating system they were being run
+on, to the point where they became so complicated and unreadable that
+no one was quite sure what they did anymore. Other scripts were placed
+only on the systems where they were relevant, out of sight and out of
+mind.  It quickly became clear that our dream solution would be to
+replace this proliferation of scripts by a single file containing
+everything to be checked on every host on the network. By defining a
+new language, this file could hide all of the tests by using classes (a
+generalized `switch/case' syntax) to label operations and improve the
+readability greatly. The gradual refinement of this idea resulted in
+the present day cfengine.
 
    As an inexperienced cfengine user, you will probably find yourself
-trying to do things as you would have tried to do them i Shell or Perl.
-This is probably not the right way to think, when using cfengine. You
+trying to do things as you would have tried to do them in shell or Perl.
+This is probably not the right way to think when using cfengine. You
 will need to think in a more `cfengine way'. When reading the manual,
 keep in mind that cfengine's way of working is to think about what the
 final result should be like, rather than on how to get there (with
-Shell and Perl you specify what to do, rather than what you would like).
+shell and Perl you specify what to do, rather than what you would like).
 
    The remainder of this manual assumes that you know a little about
-BSD/System-5 systems and have everyday experience in using either the
-C-shell or the Bourne shell, or their derivatives.  If you are
-experienced in system administration, you might like to skip the earlier
-chapters and turn straight to the example in the section _Example
-configuration file_ of the Reference manual.  This is the probably
-quickest way to learn cfengine for the initiated.  If you are not so
-familiar with system administration and would like a more gentle
+BSD and UNIX System V systems and have everyday experience in using
+either the C shell or the Bourne shell, or their derivatives.  If you
+are experienced in system administration, you might like to skip the
+earlier chapters and turn straight to the example in the section
+_Example configuration file_ of the Reference manual.  This is the
+probably quickest way to learn cfengine for the initiated.  If you are
+not so familiar with system administration and would like a more gentle
 introduction, then we begin here...
 
 
@@ -164,7 +177,7 @@ types of operating system and each type of system has to be configured
 in a special way, you have to make patches to each system and you can't
 remember whether you fixed that host on the other side of the
 building...  Also, you discover fairly quickly that what you thought of
-as BSD or System 5 is not as standard as you thought and that none of
+as BSD or System V is not as standard as you thought and that none of
 your simple scripts that worked on one system work on the others without
 a considerable amount of hacking and testing.  You try writing a script
 to help you automate the task, but end up with an enormous number of
@@ -175,7 +188,7 @@ on.
 system, in a systematic way, what is needed is a more disciplined way
 of making changes which is robust against re-installation.  After all,
 it would be tragic to spend many hours setting up a system by hand only
-to lose everything in an unfortunate disk-crash a week or even a year
+to lose everything in an unfortunate disk crash a week or even a year
 later when you have forgotten what you had to do.  Upgrades of the
 operating system software might delete your carefully worked out
 configuration.  What is needed is a separate record of all of the
@@ -217,22 +230,22 @@ File: cfengine-Tutorial.info,  Node: Control files,  Next: Network interface,  P
 1.3.1 Configuration files and registries
 ----------------------------------------
 
-One of the endearing characteristics of BSD and system 5 systems is
+One of the endearing characteristics of BSD and System V systems is
 that they are configured through human-readable text files.  To add a
 new user to the system you edit `/etc/passwd', to add a new disk you
-must edit `/etc/fstab' etc.  Many applications are also configured with
-the help of text files.  When installing a new system for the first
-time, or when changing updating the setup of an old system you are
-faced with having to edit lots of files.  In some cases you will have
-to add precisely the same line to the same file on every system in your
-network as a change is made, so it is handy to have a way of automating
-this procedure so that you don't have to load every file into an editor
-by hand and make the changes yourself.  This is one of the tasks which
-cfagent will automate for you.
+must edit `/etc/fstab', etc.  Many applications are also configured
+with the help of text files.  When installing a new system for the
+first time, or when changing updating the setup of an old system you
+are faced with having to edit lots of files.  In some cases you will
+have to add precisely the same line to the same file on every system in
+your network as a change is made, so it is handy to have a way of
+automating this procedure so that you don't have to load every file into
+an editor by hand and make the changes yourself.  This is one of the
+tasks which cfagent will automate for you.
 
    On Windows systems, configuration data are stored in a system
-registery.  This can also be edited by cfengine, with the right tools,
-but this requires more care.
+registry.  With the right tools, the Windows system registry can also
+be edited by cfengine, but this requires more care.
 
 
 File: cfengine-Tutorial.info,  Node: Network interface,  Next: Network File System (NFS),  Prev: Control files,  Up: Key concepts
@@ -339,26 +352,26 @@ File: cfengine-Tutorial.info,  Node: Monitoring important files,  Next: Making l
 --------------------------------
 
 Security is an important issue on any system.  In the busy life of a
-system administrator it is not always easy to remember to set the
-correct access rights on every file and this can result in either a
+system administrator, it is not always easy to remember to set the
+correct access rights on every file; this can result in either a
 security breach or problems in accessing files.
 
    A common scenario is that you, as administrator, fetch a new package
-using ftp, compile it and install it without thinking too carefully.
-Since the owner and permissions of the files in an ftp archive remains
+using FTP, compile it and install it without thinking too carefully.
+Since the owner and permissions of the files in an FTP archive remains
 those of the program author, it often happens that the software is left
 lying around with the owner and permissions as set by the author of the
-program rather than any user-name on _your_ system.  The user-id of the
+program rather than any user name on _your_ system.  The userid of the
 author might be anybody on your system -- or perhaps nobody at all!
-The files should clearly be owned by root and made readable and
-unwritable to normal users.
+The files should clearly be owned by root and made readable but
+unwritable by normal users.
 
    Simple accidents and careless actions under stress could result in,
-say, the password file being writable to ordinary users.  If this were
-the case, the security of the entire system would be compromised.
-Cfagent therefore allows you to monitor the permissions, ownership and
-general existence of files and directories and, if you wish, correct
-them or warn about them automatically.
+for example, the password file being writable to ordinary users.  If
+this were the case, the security of the entire system would be
+compromised.  Cfagent therefore allows you to monitor the permissions,
+ownership, and general existence of files and directories and, if you
+wish, to either correct them or warn about them automatically.
 
 
 File: cfengine-Tutorial.info,  Node: Making links,  Prev: Monitoring important files,  Up: Key concepts
@@ -367,7 +380,7 @@ File: cfengine-Tutorial.info,  Node: Making links,  Prev: Monitoring important f
 ------------------
 
 One of the difficulties with having so many different variations on the
-theme of BSD and system 5 based operating systems is that similar files
+theme of BSD and System V based operating systems is that similar files
 are not always where you expect to find them.  They have different names
 or lie in different directories.  The usual solution to the problem is
 to make an alias for these files, or a pointer from one filename to
@@ -376,6 +389,7 @@ another.  The name for such an alias is a _symbolic link_.
    It is often very convenient to make symbolic links.  For example, you
 might want the sendmail configuration file `/etc/sendmail.cf' to be a
 link to a global configuration file, say,
+
      `/usr/local/mail/etc/sendmail.cf'
 
 on every single host on your network so that there is only one file to
@@ -383,9 +397,9 @@ edit.  If you had to make all of these links yourself, it would take a
 lifetime.  Cfagent will make such a link automatically and check it
 each time it is run.  You can also ask it to tidy up old links which
 have been left around and no longer point to existing files.  If you
-reinstall your operating system later it doesn't matter because all your
-links are defined in your cfagent configuration file, recorded for all
-time.  Cfengine won't forget it, and you won't forget it because the
+reinstall your operating system later, it doesn't matter because all
+your links are defined in your cfagent configuration file, recorded for
+all time.  Cfengine won't forget it, and you won't forget it because the
 setup is defined in one central place.
 
    Cfagent will also allow you to make hard links to regular files, but
@@ -773,6 +787,7 @@ File: cfengine-Tutorial.info,  Node: Startup update.conf,  Next: Startup cfservd
 
 The file `update.conf' can have more or less the same form for all
 sites, looking something like this.
+
      #######
      #
      # BEGIN update.conf
@@ -1010,6 +1025,7 @@ beginning of this manual, or you can see it by giving the `-h' option,
    In addition to running cfagent with a filename, you can also treat
 cfagent files as scripts by starting your cfagent program with the
 standard shell line:
+
      #!/usr/local/sbin/cfagent -f
      #
      # My config script
@@ -1035,11 +1051,13 @@ File: cfengine-Tutorial.info,  Node: Running cfengine permanently monitoring and
 Once you are happy using cfengine, you will want it to run least once
 per hour on your systems. This is easily achieved by adding the
 following line to the root crontab file of each system:
+
      0,30 * * * * /usr/local/sbin/cfexecd -F
    This is enough to ensure that cfengine will get run. Any output
 generated by this job, will be stored in `/var/cfengine/outputs'.  In
 addition, if you add the following to the file `cfagent.conf', the
 system administrator will be emailed a summary of any output:
+
 
      control:
 
@@ -1053,11 +1071,13 @@ in the background and sleeps, activating only in accordance with a
 scheduling policy. The default policy is to run once every hour
 (equivalent to `Min00_05'). Here is how you would modify `cfagent.conf'
 in order to make the daemon execute cfagent every half-hour:
+
       control:
 
         # When should cfexecd in daemon mode wake up the agent?
 
         schedule   = ( Min00_05 Min30_35 )
+
    Note that the time specifications are the basic cfengine _time
 classes_, *Note Building flexible time classes::.  Although one of
 these methods should suffice, no harm will arise from running both cron
@@ -1065,11 +1085,13 @@ and the cfexecd side-by-side.  Cfagents locking mechanisms ensure that
 no contention will occur.
 
    The other components of cfengine can be started by cfagent itself:
+
      processes:
 
       "cfenvd"  restart "/usr/local/sbin/cfenvd"
       "cfservd" restart "/usr/local/sbin/cfservd"
    Note that, to start cfexecd by cfengine, one must do this
+
      processes:
 
       "cfexecd$"  restart "/usr/local/sbin/cfexecd"
@@ -1107,10 +1129,10 @@ example:
 
      host# cfagent -f myfile
 
-In this example, cfengine tries to open
-`/usr/local/masterfiles/cfengine/inputs/myfile'.  If no value is set
-for `CFINPUTS', then the default location is the trusted cfengine
-directory `/var/cfengine/inputs'.
+In this example, cfengine tries to open `myfile'.  in the directory
+`/usr/local/masterfiles/cfengine/inputs'.  If no value is set for
+`CFINPUTS', then the default location is the trusted cfengine directory
+`/var/cfengine/inputs'.
 
 
 File: cfengine-Tutorial.info,  Node: What to aim for,  Prev: CFINPUTS environment variable,  Up: Getting started
@@ -1245,30 +1267,31 @@ A single class can be one of several things:
 
    * The name of a user-defined group of hosts.
 
-   * A day of the week (in the form `Monday Tuesday Wednesday..').
+   * A day of the week (in the form `Monday', `Tuesday',
+     `Wednesday'...).
 
-   * An hour of the day (in the form `Hr00, Hr01 ... Hr23').
+   * An hour of the day (in the form `Hr00', `Hr01', ... `Hr23').
 
-   * Minutes in the hour (in the form `Min00, Min17 ... Min45').
+   * Minutes in the hour (in the form `Min00', `Min17', ... `Min45').
 
-   * A five minute interval in the hour (in the form `Min00_05,
-     Min05_10 ... Min55_00')
+   * A five minute interval in the hour (in the form `Min00_05',
+     `Min05_10', ... `Min55_00')
 
    * A quart hour (in the form `Q1, Q2, Q3, Q4')
 
    * An abbreviated time with quarter hour specified (in the form
-     `Hr00_Q1, Hr23_Q4' etc.)
+     `Hr00_Q1', `Hr23_Q4', etc.)
 
    * A day of the month (in the form `Day1 ... Day31').
 
-   * A month (in the form `January, February, ... December').
+   * A month (in the form `January', `February', ... `December').
 
-   * A year (in the form `Yr1997, Yr2001').
+   * A year (in the form `Yr1997', `Yr2001').
 
    * An arbitrary user-defined string.  (see the reference manual).
 
-   * The ip-address octets of any active interface, in the form
-     (`ipv4_192_0_0_1', `ipv4_192_0_0',`ipv4_192_0',`ipv4_192').
+   * The ip-address octets of any active interface (in the form
+     `ipv4_192_0_0_1', `ipv4_192_0_0', `ipv4_192_0,`ipv4_192'').
 
 
    A compound class is a sequence of simple classes connected by dots or
@@ -1360,7 +1383,7 @@ for your systems you can run cfengine in `parse-only-verbose' mode:
 
 
        cfagent -p -v
-   and these will be displayed. For example, solaris 2.4 systems
+   and these will be displayed. For example, Solaris 2.4 systems
 generate the additional classes `sunos_5_4' and `sunos_sun4m',
 `sunos_sun4m_5_4'.
 
@@ -1446,6 +1469,7 @@ expands a variable it looks first at the name in its list of special
 variables, then in the list of user-defined macros and finally in the
 shell environment for a match.  If none of these are found it expands to
 the empty string. If you nest macros,
+
 
      control:
 
@@ -1550,6 +1574,7 @@ internal variables.
      the string, or have a different prefix for different hosts. The
      value in this variable is appended with the name of the host. The
      default is equivalent to,
+
             OutputPrefix = ( "cfengine:$(host):")
      
 `RepChar'
@@ -1657,6 +1682,7 @@ preceding the definition with a class name.  For example:
 classes evaluates to true.  This feature can be used to good effect to
 define the mail address of a suitable system administrator for different
 groups of host.
+
      control:
 
       physics::   sysadm = ( mark,fred )
@@ -1677,6 +1703,7 @@ be replaced by an empty string, as in Perl. In versions 1.6.x and
 later, the variable string remains un-substituted, if the varaiable
 does not exist. For instance,
 
+
      control:
 
        actionsequence = ( shellcommands )
@@ -1687,6 +1714,7 @@ does not exist. For instance,
 
       "/bin/echo $(myvar) $(myvar2)"
    results in:
+
 
      cfengine:host: Executing script /bin/echo test string  $(myvar2)
      cfengine:host:/bin/echo test : sh: syntax error at line 1: `(' unexpected
@@ -1775,6 +1803,7 @@ a class name to one on the actions in action sequence by using a dot
 `.' to separate the words.  In this case the symbol only evaluates to
 `true' for the duration of the action to which it attached.  Here is an
 example:
+
 
        links.onlysome
        shellcommands.othersymbols.onlysome
@@ -1883,6 +1912,7 @@ defined in as `AddInstallables', if this is more convenient. NOTE: you
 _must_ declare the classes before using them in the cfagent
 configuration, or else those actions will be ignored.  Next we write
 the plugin itself.
+
      #!/usr/bin/perl
      #
      # module:myplugin
@@ -1897,6 +1927,7 @@ the plugin itself.
 
    Modules inherit the environment variables from cfagent and accept
 arguments, just as a regular shellcommand does.
+
      #!/bin/sh
      #
      # module:myplugin
@@ -1921,6 +1952,7 @@ programs have access to these. E.g. try the following module:
    Modules can define macros in cfagent by outputting strings of the
 form
 
+
      =VARIABLENAME=VALUE
 
 
@@ -1932,6 +1964,7 @@ File: cfengine-Tutorial.info,  Node: The generic class any,  Next: Debugging tip
 The generic wildcard `any' may be used to stand for any class.  Thus
 instead of assigning actions for the class `sun4' only you might define
 actions for any architecture by specifying:
+
 
        any::
              ACTIONS
@@ -2065,6 +2098,7 @@ directories.
    For file sweeps within  `files' and  `copy' you can specify specific
 search parameters using the keywords `include=' and `exclude=' and as
 of version 1.6.x `filter='.  For example,
+
      files:
 
         /usr/local/bin m=0755 exclude=*.ps action=fixall
@@ -2085,6 +2119,7 @@ inclusions.
 special way, you need to code an explicit check for that pattern as a
 separate entity. For example, to handle the exluded  `.ps' files above,
 you would need to code something like this:
+
      files:
 
         /usr/local/bin m=0644 include=*.ps action=fixall
@@ -2586,6 +2621,7 @@ plain files or directories only. Safe defaults exist for these
 directives so that in practice they may be treated as options.
 
    For example,
+
      files:
 
        any::
@@ -3300,16 +3336,16 @@ File: cfengine-Tutorial.info,  Node: Editing files,  Next: Disabling and the fil
 4.8 Editing Files
 =================
 
-A very convenient characteristic of BSD/System 5 systems is that they
-are configured primarily by human-readable textfiles. This makes it easy
-for humans to configure the system and it also simplifies the automation
-of the procedure.  Most configuration files are line-based text files, a
-fact which explains the popularity of, for example, the Perl programming
-language.  Cfengine does not attempt to compete with Perl or its peers.
-Its internal editing functions operate at a higher level which are
-designed for transparency rather than flexibility.  Fortunately most
-editing operations involve appending a few lines to a file, commenting
-out certain lines or deleting lines.
+A very convenient characteristic of BSD and UNIX System V systems is
+that they are configured primarily by human-readable textfiles. This
+makes it easy for humans to configure the system and it also simplifies
+the automation of the procedure.  Most configuration files are
+line-based text files, a fact which explains the popularity of, for
+example, the Perl programming language.  Cfengine does not attempt to
+compete with Perl or its peers. Its internal editing functions operate
+at a higher level which are designed for transparency rather than
+flexibility.  Fortunately most editing operations involve appending a
+few lines to a file, commenting out certain lines or deleting lines.
 
    For example, some administrators consider the finger service to be a
 threat to security and want to disable it. This could be done as
@@ -3420,7 +3456,7 @@ deleting it.
 
 Other files compromise the system because they grow so large that they
 fill an entire disk partition. This is typically true of log files such
-as the system 5 files `/var/adm/wtmpx' and `/var/lp/logs/lpsched'.
+as the System V files `/var/adm/wtmpx' and `/var/lp/logs/lpsched'.
 Other files like /VAR/ADM/MESSAGES get "rotated" by the system so that
 they do not grow so large as to fill the disk. You can make cfagent
 rotate these files too, by writing 
@@ -3519,7 +3555,7 @@ defined classes. You can do this in one of two ways:
    * Use the command line option `-u' or `--use-env'. When this is
      defined, cfagent defines an internal environment variable called
      `CFALLCLASSES' which contains the same list as above.
-     Unfortunately, system 5 boxes don't seem to like having to update
+     Unfortunately, System V boxes don't seem to like having to update
      an environment variable continuously and tend to dump core, so
      this is not the default behaviour!
 
@@ -4945,7 +4981,7 @@ configuration.
    Let us step through some basic idioms which can repeated in
 different contexts.
 
-   As representative examples we shall take solaris and GNU/Linux as
+   As representative examples we shall take Solaris and GNU/Linux as
 example operating systems. This is not to single them out as being
 particularly secure or insecure, it is merely due to their widespread
 use and for definiteness.
@@ -5548,7 +5584,7 @@ would notice the incorrect checksum (md5) and move the bad program to
 ls.cf-saved and immediately replace it with the correct version without
 waiting for the adminstrator to act. The inform and syslog options ask
 for an explicit warning to be made about this copy.  Here is a complete
-anonymous ftp setup and maintenance program for solaris hosts.
+anonymous ftp setup and maintenance program for Solaris hosts.
 
      control:
 
@@ -6001,66 +6037,66 @@ Variable Index
  [index ]
 * Menu:
 
-* !:                                     Classes basics.      (line 132)
+* !:                                     Classes basics.      (line 133)
 * ":                                     Quoted strings.      (line  30)
 * $(arch):                               Variable substitution.
-                                                              (line 113)
+                                                              (line 114)
 * $(binserver):                          Variable substitution.
-                                                              (line 117)
+                                                              (line 118)
 * $(class):                              Variable substitution.
-                                                              (line 121)
+                                                              (line 122)
 * $(cr):                                 Variable substitution.
-                                                              (line 204)
+                                                              (line 206)
 * $(date):                               Variable substitution.
-                                                              (line 126)
+                                                              (line 127)
 * $(dblquote):                           Variable substitution.
-                                                              (line 207)
+                                                              (line 209)
 * $(dollar):                             Variable substitution.
-                                                              (line 210)
+                                                              (line 212)
 * $(domain):                             Variable substitution.
-                                                              (line 129)
+                                                              (line 130)
 * $(faculty):                            Variable substitution.
-                                                              (line 132)
+                                                              (line 133)
 * $(fqhost):                             Variable substitution.
-                                                              (line 136)
+                                                              (line 137)
 * $(host):                               Variable substitution.
-                                                              (line 139)
+                                                              (line 140)
 * $(ipaddress):                          Variable substitution.
-                                                              (line 143)
+                                                              (line 144)
 * $(lf):                                 Variable substitution.
-                                                              (line 213)
+                                                              (line 215)
 * $(n):                                  Variable substitution.
-                                                              (line 216)
+                                                              (line 218)
 * $(quote):                              Variable substitution.
-                                                              (line 219)
+                                                              (line 221)
 * $(site):                               Variable substitution.
-                                                              (line 169)
+                                                              (line 171)
 * $(spc):                                Variable substitution.
-                                                              (line 223)
+                                                              (line 225)
 * $(sysadm):                             Variable substitution.
-                                                              (line 176)
+                                                              (line 178)
 * $(tab):                                Variable substitution.
-                                                              (line 226)
+                                                              (line 228)
 * $(timezone):                           Variable substitution.
-                                                              (line 179)
+                                                              (line 181)
 * $(year):                               Variable substitution.
-                                                              (line 187)
+                                                              (line 189)
 * ':                                     Quoted strings.      (line  30)
 * -a option:                             Variable substitution.
-                                                              (line 271)
-* -D option:                             Classes basics.      (line 130)
+                                                              (line 274)
+* -D option:                             Classes basics.      (line 131)
 * -f option <1>:                         CFINPUTS environment variable.
                                                               (line  10)
 * -f option:                             Invoking cfagent.    (line  23)
 * -h option:                             Invoking cfagent.    (line  27)
 * -N option <1>:                         Debugging tips.      (line  19)
-* -N option:                             Classes basics.      (line 130)
+* -N option:                             Classes basics.      (line 131)
 * -n option:                             Invoking cfagent.    (line  23)
 * -v option:                             Invoking cfagent.    (line  23)
 * /etc/exports:                          Using netgroups.     (line   6)
 * /var/cfengine/cfengine.log:            Log files.           (line  17)
 * /var/cfengine/output:                  Running cfengine permanently monitoring and restarting cfexecd.
-                                                              (line  11)
+                                                              (line  12)
 * `:                                     Quoted strings.      (line  30)
 * acl:                                   ACLs.                (line  74)
 * any:                                   The generic class any.
@@ -6069,12 +6105,12 @@ Variable Index
 * binserver:                             Variable substitution.
                                                               (line   6)
 * CFALLCLASSES:                          Variable substitution.
-                                                              (line 109)
+                                                              (line 110)
 * domain:                                Variable substitution.
                                                               (line   6)
 * exclude=:                              File sweeps.         (line  50)
 * exec:                                  Variable substitution.
-                                                              (line  67)
+                                                              (line  68)
 * faculty:                               Variable substitution.
                                                               (line   6)
 * filter=:                               File sweeps.         (line  50)
@@ -6082,29 +6118,29 @@ Variable Index
                                                               (line   6)
 * include=:                              File sweeps.         (line  50)
 * MaxCfengines:                          Variable substitution.
-                                                              (line 149)
+                                                              (line 150)
 * moduledirectory:                       Writing plugin modules.
                                                               (line  16)
 * OutputPrefix:                          Variable substitution.
-                                                              (line 161)
+                                                              (line 163)
 * repchar:                               Variable substitution.
-                                                              (line 165)
+                                                              (line 167)
 * site:                                  Variable substitution.
                                                               (line   6)
 * smtpserver:                            Running cfengine permanently monitoring and restarting cfexecd.
-                                                              (line  20)
+                                                              (line  22)
 * Split:                                 Iterating over lists.
                                                               (line  33)
 * split:                                 Variable substitution.
-                                                              (line 173)
+                                                              (line 175)
 * sysadm <1>:                            Variable substitution.
                                                               (line   6)
 * sysadm:                                Running cfengine permanently monitoring and restarting cfexecd.
-                                                              (line  20)
+                                                              (line  22)
 * timezone:                              Variable substitution.
                                                               (line   6)
 * underscoreclasses:                     Variable substitution.
-                                                              (line 184)
+                                                              (line 186)
 
 
 File: cfengine-Tutorial.info,  Node: Concept Index,  Next: FAQ Index,  Prev: Variable Index,  Up: Top
@@ -6115,7 +6151,7 @@ Concept Index
  [index ]
 * Menu:
 
-* !:                                     Classes basics.      (line 132)
+* !:                                     Classes basics.      (line 133)
 * -h option:                             Invoking cfagent.    (line  27)
 * -N option:                             Debugging tips.      (line  19)
 * .cfdisabled files:                     Disabling and the file repository.
@@ -6135,7 +6171,7 @@ Concept Index
                                                               (line  24)
 * /var/cfengine/cfengine.log:            Log files.           (line   6)
 * /var/cfengine/output:                  Running cfengine permanently monitoring and restarting cfexecd.
-                                                              (line  11)
+                                                              (line  12)
 * /var/log/cfengine/cfengine.log:        Log files.           (line   6)
 * /var/lp/logs/lpsched:                  Disabling and the file repository.
                                                               (line  24)
@@ -6148,7 +6184,7 @@ Concept Index
 * ACL aliases:                           ACLs.                (line  74)
 * ACLs:                                  ACLs.                (line   6)
 * ACLs, DFS:                             ACLs.                (line 181)
-* ACLs, solaris:                         ACLs.                (line 178)
+* ACLs, Solaris:                         ACLs.                (line 178)
 * Actions, order of:                     Program structure.   (line  42)
 * AFS:                                   Using the automounter.
                                                               (line  78)
@@ -6163,7 +6199,7 @@ Concept Index
                                                               (line  34)
 * automount:                             Using the automounter.
                                                               (line   6)
-* Backup policy:                         Files and links.     (line 110)
+* Backup policy:                         Files and links.     (line 111)
 * Binary server:                         NFS filesystem resources.
                                                               (line  20)
 * Binary server, matching:               Special variables.   (line  33)
@@ -6175,14 +6211,14 @@ Concept Index
 * cfagent.conf:                          Invoking cfagent.    (line  16)
 * cfagent.conf file:                     What services?.      (line  16)
 * CFALLCLASSES:                          Variable substitution.
-                                                              (line 109)
+                                                              (line 110)
 * cfengine model:                        NFS resources.       (line   6)
 * cfengine model, how it works:          How does it work?.   (line   6)
 * cfexecd <1>:                           Running cfengine permanently monitoring and restarting cfexecd.
-                                                              (line  20)
+                                                              (line  22)
 * cfexecd:                               Functionality.       (line  37)
 * cfexecd restarting by processes:       Running cfengine permanently monitoring and restarting cfexecd.
-                                                              (line  49)
+                                                              (line  55)
 * CFINPUTS variable <1>:                 Configuration file cfservd.conf.
                                                               (line  20)
 * CFINPUTS variable:                     CFINPUTS environment variable.
@@ -6201,22 +6237,22 @@ Concept Index
 * cfservd.conf file:                     What services?.      (line  23)
 * cfwatcher program:                     What services?.      (line   8)
 * Class data and scripts:                Variable substitution.
-                                                              (line 109)
+                                                              (line 110)
 * Class, generic any:                    The generic class any.
                                                               (line   6)
 * Classes:                               Classes basics.      (line   6)
 * Classes based on shell commands:       shellcommand classes.
                                                               (line  25)
-* Classes, compound:                     Classes basics.      (line  94)
-* Classes, defining and undefining:      Classes basics.      (line 130)
+* Classes, compound:                     Classes basics.      (line  95)
+* Classes, defining and undefining:      Classes basics.      (line 131)
 * Clock synchronization during copying:  Emulating rdist.     (line  46)
 * Comments:                              Program structure.   (line   6)
-* Compound classes:                      Classes basics.      (line  94)
+* Compound classes:                      Classes basics.      (line  95)
 * Config file, default name:             Invoking cfagent.    (line  16)
 * Configuration files and registries:    Control files.       (line   6)
 * Contention during copying under load:  Splaying host times. (line  30)
 * copy, file sweeps:                     File sweeps.         (line  16)
-* core files, caution!:                  Files and links.     (line 136)
+* core files, caution!:                  Files and links.     (line 137)
 * Cron jobs, controlling with cfengine:  Using cfengine as a front-end for cron.
                                                               (line  21)
 * Day of the week:                       Building flexible time classes.
@@ -6226,7 +6262,7 @@ Concept Index
 * Debugging, annulling entries:          Debugging tips.      (line  19)
 * Default file:                          Invoking cfagent.    (line  16)
 * Defining variables using other variables: Variable substitution.
-                                                              (line  61)
+                                                              (line  62)
 * Device boundaries and remote copy access: Configuration file cfservd.conf.
                                                               (line 185)
 * DFS:                                   Using the automounter.
@@ -6237,7 +6273,7 @@ Concept Index
 * Distributed configuration:             Building a distributed configuration.
                                                               (line   6)
 * DNS:                                   Name servers (DNS).  (line   6)
-* Dots in hostnames:                     Classes basics.      (line 193)
+* Dots in hostnames:                     Classes basics.      (line 194)
 * editfiles, file sweeps:                File sweeps.         (line  19)
 * Environment variable, CFINPUTS:        CFINPUTS environment variable.
                                                               (line  10)
@@ -6245,7 +6281,7 @@ Concept Index
                                                               (line   6)
 * Exceptions:                            Defining classes.    (line   6)
 * exclude=:                              File sweeps.         (line  50)
-* exclude=, problems:                    File sweeps.         (line  77)
+* exclude=, problems:                    File sweeps.         (line  79)
 * Excluding actions in a controlled way: Defining classes.    (line   6)
 * ExpireAfter, caution setting to zero!: Deadlocks and runaway loops.
                                                               (line  22)
@@ -6261,25 +6297,25 @@ Concept Index
 * filter=:                               File sweeps.         (line  50)
 * Format:                                Program structure.   (line  47)
 * Free format:                           Program structure.   (line  47)
-* Fully qualified names:                 Classes basics.      (line 193)
+* Fully qualified names:                 Classes basics.      (line 194)
 * Functions, in-built:                   Variable substitution.
-                                                              (line  79)
+                                                              (line  80)
 * Grouping time values:                  Building flexible time classes.
                                                               (line  51)
 * groups and time intervals:             Building flexible time classes.
                                                               (line  51)
 * Hard class name collision:             Variable substitution.
-                                                              (line 184)
-* Hard links:                            Making links.        (line  30)
+                                                              (line 186)
+* Hard links:                            Making links.        (line  31)
 * Help:                                  Invoking cfagent.    (line  27)
 * Home directories and automount:        Using the automounter.
                                                               (line  84)
 * Home server:                           NFS filesystem resources.
                                                               (line  20)
 * Home servers, declaring:               How does it work?.   (line   6)
-* Host name gets truncated:              Classes basics.      (line 193)
+* Host name gets truncated:              Classes basics.      (line 194)
 * Hostname collision:                    Variable substitution.
-                                                              (line 184)
+                                                              (line 186)
 * HUP and cfservd, don't need to:        Installation of cfservd.
                                                               (line  29)
 * ifconfig:                              Network interface.   (line   6)
@@ -6291,7 +6327,7 @@ Concept Index
 * Immune identity:                       Privacy (encryption).
                                                               (line  37)
 * In-built functions:                    Variable substitution.
-                                                              (line  79)
+                                                              (line  80)
 * include=:                              File sweeps.         (line  50)
 * Infinite loops:                        Deadlocks and runaway loops.
                                                               (line  10)
@@ -6308,11 +6344,11 @@ Concept Index
 * Log files:                             Log files.           (line   6)
 * Log files, rotating:                   Disabling and the file repository.
                                                               (line  39)
-* Logical NOT:                           Classes basics.      (line 132)
+* Logical NOT:                           Classes basics.      (line 133)
 * Macros:                                Variable substitution.
                                                               (line   6)
 * Mailing output:                        Running cfengine permanently monitoring and restarting cfexecd.
-                                                              (line  20)
+                                                              (line  22)
 * moduledirectory:                       Writing plugin modules.
                                                               (line  16)
 * Modules, user defined plug-ins:        Defining classes.    (line  20)
@@ -6326,12 +6362,12 @@ Concept Index
                                                               (line  83)
 * Musts in cfengine:                     What you must have.  (line   6)
 * Name collision:                        Variable substitution.
-                                                              (line 184)
+                                                              (line 186)
 * Name server:                           Name servers (DNS).  (line   6)
 * Naming convention:                     Unique filesystem mountpoints.
                                                               (line   6)
 * Nested macros:                         Variable substitution.
-                                                              (line  61)
+                                                              (line  62)
 * netgroups:                             Using netgroups.     (line   6)
 * network configuration:                 Network interface.   (line   6)
 * network interface:                     Network interface.   (line   6)
@@ -6341,14 +6377,14 @@ Concept Index
 * NFS resources:                         NFS filesystem resources.
                                                               (line   6)
 * NIS:                                   Using netgroups.     (line   6)
-* NOT operator:                          Classes basics.      (line 132)
-* Operator ordering:                     Classes basics.      (line 195)
+* NOT operator:                          Classes basics.      (line 133)
+* Operator ordering:                     Classes basics.      (line 196)
 * Optional features in cfagent:          Options.             (line   6)
 * Order of actions:                      Program structure.   (line  42)
 * Ordinary users, lock files:            Spamming and security.
                                                               (line 129)
 * Output logs:                           Running cfengine permanently monitoring and restarting cfexecd.
-                                                              (line  11)
+                                                              (line  12)
 * Package configuration, multiple:       Iterating over lists.
                                                               (line  83)
 * Path to input files:                   CFINPUTS environment variable.
@@ -6363,7 +6399,7 @@ Concept Index
                                                               (line  12)
 * Privileged ports:                      Trust and key races. (line  34)
 * processes cannot start cfexecd:        Running cfengine permanently monitoring and restarting cfexecd.
-                                                              (line  49)
+                                                              (line  55)
 * Program format:                        Program structure.   (line  47)
 * Program structure:                     Program structure.   (line   6)
 * Quoting strings:                       Quoted strings.      (line  30)
@@ -6371,7 +6407,7 @@ Concept Index
                                                               (line  21)
 * Race condition with public keys:       Trust and key races. (line  19)
 * Random numbers:                        Variable substitution.
-                                                              (line  79)
+                                                              (line  80)
 * rdist program:                         What services?.      (line  41)
 * Remote distribution of files:          What services?.      (line  41)
 * Remote execution of cfagent <1>:       Remote execution of cfagent.
@@ -6380,7 +6416,7 @@ Concept Index
 * Rereading cfservd.conf:                Installation of cfservd.
                                                               (line  29)
 * Restarting cfexecd:                    Running cfengine permanently monitoring and restarting cfexecd.
-                                                              (line  49)
+                                                              (line  55)
 * Restarting cfservd:                    Installation of cfservd.
                                                               (line  29)
 * Restricting access:                    Access control.      (line  18)
@@ -6389,7 +6425,7 @@ Concept Index
 * Running cfagent remotely:              Remote execution of cfagent.
                                                               (line  21)
 * Scripts, passing classes to:           Variable substitution.
-                                                              (line 109)
+                                                              (line 110)
 * Sections, order of:                    Program structure.   (line  42)
 * Security, link races and travlinks:    Security in File sweeps.
                                                               (line  26)
@@ -6411,11 +6447,11 @@ Concept Index
 * Strings:                               Quoted strings.      (line  30)
 * Structure of a program:                Program structure.   (line   6)
 * System administrator, name:            Variable substitution.
-                                                              (line 271)
+                                                              (line 274)
 * System policy:                         General considerations.
                                                               (line  12)
 * tidy, file sweeps:                     File sweeps.         (line  13)
-* Tidying files:                         Files and links.     (line 110)
+* Tidying files:                         Files and links.     (line 111)
 * Time classes:                          Building flexible time classes.
                                                               (line   6)
 * Timestamp backups:                     Disabling and the file repository.
@@ -6424,7 +6460,7 @@ Concept Index
                                                               (line  23)
 * Trusted Third Party:                   Trust and key races. (line  38)
 * underscoreclasses:                     Variable substitution.
-                                                              (line 184)
+                                                              (line 186)
 * User programs which define classes:    shellcommand classes.
                                                               (line  25)
 * Variable substitution:                 Variable substitution.
@@ -6437,10 +6473,10 @@ Concept Index
 * Variables, environment:                Variable substitution.
                                                               (line   6)
 * Variables, setting to result of a shell command: Variable substitution.
-                                                              (line  67)
+                                                              (line  68)
 * Variables, using:                      Variable substitution.
-                                                              (line 249)
-* Verifying with -n option:              Invoking cfagent.    (line  36)
+                                                              (line 251)
+* Verifying with -n option:              Invoking cfagent.    (line  37)
 * Wildcard, any class:                   The generic class any.
                                                               (line   6)
 * Wildcards:                             Wildcards in directory names.
@@ -6459,7 +6495,7 @@ FAQ Index
  [index ]
 * Menu:
 
-* Brackets (parentheses) in classes.:    Classes basics.      (line 195)
+* Brackets (parentheses) in classes.:    Classes basics.      (line 196)
 * Configure multiple packages:           Iterating over lists.
                                                               (line  83)
 * Define classes based on result of user program: shellcommand classes.
@@ -6473,7 +6509,7 @@ FAQ Index
                                                               (line  89)
 * Iterating over lists:                  Iterating over lists.
                                                               (line  33)
-* Parentheses in classes.:               Classes basics.      (line 195)
+* Parentheses in classes.:               Classes basics.      (line 196)
 * Split, using a space:                  Iterating over lists.
                                                               (line  63)
 * Time classes, picking out complex time intervals: Building flexible time classes.
@@ -6489,117 +6525,117 @@ Tag Table:
 Node: Top474
 Node: Overview1849
 Node: What is cfengine?2281
-Node: Site configuration6779
-Node: Key concepts9408
-Node: Control files9972
-Node: Network interface11144
-Node: Network File System (NFS)12297
-Node: Name servers (DNS)14748
-Node: Monitoring important files16232
-Node: Making links17662
-Node: Functionality19250
-Node: Getting started20542
-Node: What you must have21105
-Node: Program structure26816
-Node: Building a distributed configuration30289
-Node: Startup update.conf31324
-Node: Startup cfservd.conf34315
-Node: Options35728
-Node: Invoking cfagent38693
-Node: Running cfengine permanently monitoring and restarting cfexecd40652
-Node: CFINPUTS environment variable43001
-Node: What to aim for44555
-Node: More advanced concepts46587
-Node: Classes basics47232
-Node: Variable substitution55583
-Node: Undefined variables63997
-Node: Defining classes64945
-Node: Command line classes66339
-Node: actionsequence classes67461
-Node: shellcommand classes68627
-Node: Feedback classes69906
-Node: Writing plugin modules70737
-Node: The generic class any73772
-Node: Debugging tips74293
-Node: Access control74973
-Node: Wildcards in directory names76019
-Node: File sweeps77265
-Node: Security in File sweeps81020
-Node: Log files82449
-Node: Quoted strings83762
-Node: Regular expressions84942
-Node: Iterating over lists89665
-Node: Global configurations92166
-Node: General considerations92859
-Node: Using netgroups94518
-Node: Files and links96448
-Ref: Files and links-Footnote-1102687
-Node: Copying files102747
-Node: Managing processes104498
-Node: NFS resources105107
-Node: NFS filesystem resources106280
-Node: Unique filesystem mountpoints107905
-Ref: Unique filesystem mountpoints-Footnote-1111611
-Node: How does it work?111725
-Node: Special variables113195
-Node: Mount example115447
-Ref: Mount example-Footnote-1121641
-Ref: Mount example-Footnote-2121813
-Node: Using the automounter122039
-Node: Editing files127218
-Node: Disabling and the file repository131521
-Node: Running user scripts134375
-Node: Compressing logs136589
-Node: ACLs137525
-Node: Using cfengine as a front-end for cron147176
-Node: Structuring cfagent.conf149285
-Node: Splaying host times150623
-Node: Building flexible time classes152235
-Node: Scheduling interval155205
-Node: Cfengine network services156103
-Node: What services?156609
-Node: How it works158711
-Node: Emulating rdist159023
-Node: Remote execution of cfagent162483
-Node: Spamming and security164333
-Ref: Spamming and security-Footnote-1169705
-Ref: Spamming and security-Footnote-2169771
-Ref: Spamming and security-Footnote-3169837
-Node: cfservd protocol169886
-Node: Deadlocks and runaway loops170804
-Node: Configuring cfservd172894
-Node: Installation of cfservd173134
-Node: Configuration file cfservd.conf174099
-Node: Security and cfengine179332
-Node: What is security?180580
-Node: A word of warning184891
-Node: Automation185669
-Node: Trust188316
-Node: Why trust cfengine?190264
-Node: Configuration192885
-Node: Disabling and replacing software194676
-Node: Process monitoring201430
-Node: Monitoring files204104
-Node: The setuid log206048
-Node: Suspicious filenames206864
-Node: Checksums and Tripwire functionality208659
-Node: FileExtensions210729
-Node: NonAlphaNumFiles211244
-Node: Defensive garbage collection211894
-Node: Anonymous FTP example216086
-Node: WWW security220241
-Node: Miscellaneous security of cfengine itself223365
-Node: Privacy (encryption)223811
-Node: Trust and key races227502
-Node: Adaptive locks230283
-Node: Spoofing231177
-Node: Race conditions in file copying231727
-Node: size= in copy232476
-Node: useshell= and owner= in shellcommands233186
-Node: Firewalls234161
-Node: Summary234829
-Node: Variable Index235626
-Node: Concept Index243118
-Node: FAQ Index267392
+Node: Site configuration6780
+Node: Key concepts9409
+Node: Control files9973
+Node: Network interface11168
+Node: Network File System (NFS)12321
+Node: Name servers (DNS)14772
+Node: Monitoring important files16256
+Node: Making links17703
+Node: Functionality19293
+Node: Getting started20585
+Node: What you must have21148
+Node: Program structure26859
+Node: Building a distributed configuration30332
+Node: Startup update.conf31367
+Node: Startup cfservd.conf34359
+Node: Options35772
+Node: Invoking cfagent38737
+Node: Running cfengine permanently monitoring and restarting cfexecd40697
+Node: CFINPUTS environment variable43052
+Node: What to aim for44627
+Node: More advanced concepts46659
+Node: Classes basics47304
+Node: Variable substitution55691
+Node: Undefined variables64108
+Node: Defining classes65058
+Node: Command line classes66452
+Node: actionsequence classes67574
+Node: shellcommand classes68741
+Node: Feedback classes70020
+Node: Writing plugin modules70851
+Node: The generic class any73889
+Node: Debugging tips74411
+Node: Access control75091
+Node: Wildcards in directory names76137
+Node: File sweeps77383
+Node: Security in File sweeps81140
+Node: Log files82569
+Node: Quoted strings83882
+Node: Regular expressions85062
+Node: Iterating over lists89785
+Node: Global configurations92286
+Node: General considerations92979
+Node: Using netgroups94638
+Node: Files and links96568
+Ref: Files and links-Footnote-1102808
+Node: Copying files102868
+Node: Managing processes104619
+Node: NFS resources105228
+Node: NFS filesystem resources106401
+Node: Unique filesystem mountpoints108026
+Ref: Unique filesystem mountpoints-Footnote-1111732
+Node: How does it work?111846
+Node: Special variables113316
+Node: Mount example115568
+Ref: Mount example-Footnote-1121762
+Ref: Mount example-Footnote-2121934
+Node: Using the automounter122160
+Node: Editing files127339
+Node: Disabling and the file repository131651
+Node: Running user scripts134505
+Node: Compressing logs136719
+Node: ACLs137655
+Node: Using cfengine as a front-end for cron147306
+Node: Structuring cfagent.conf149415
+Node: Splaying host times150753
+Node: Building flexible time classes152365
+Node: Scheduling interval155335
+Node: Cfengine network services156233
+Node: What services?156739
+Node: How it works158841
+Node: Emulating rdist159153
+Node: Remote execution of cfagent162613
+Node: Spamming and security164463
+Ref: Spamming and security-Footnote-1169835
+Ref: Spamming and security-Footnote-2169901
+Ref: Spamming and security-Footnote-3169967
+Node: cfservd protocol170016
+Node: Deadlocks and runaway loops170934
+Node: Configuring cfservd173024
+Node: Installation of cfservd173264
+Node: Configuration file cfservd.conf174229
+Node: Security and cfengine179462
+Node: What is security?180710
+Node: A word of warning185021
+Node: Automation185799
+Node: Trust188446
+Node: Why trust cfengine?190394
+Node: Configuration193015
+Node: Disabling and replacing software194806
+Node: Process monitoring201560
+Node: Monitoring files204234
+Node: The setuid log206178
+Node: Suspicious filenames206994
+Node: Checksums and Tripwire functionality208789
+Node: FileExtensions210859
+Node: NonAlphaNumFiles211374
+Node: Defensive garbage collection212024
+Node: Anonymous FTP example216216
+Node: WWW security220371
+Node: Miscellaneous security of cfengine itself223495
+Node: Privacy (encryption)223941
+Node: Trust and key races227632
+Node: Adaptive locks230413
+Node: Spoofing231307
+Node: Race conditions in file copying231857
+Node: size= in copy232606
+Node: useshell= and owner= in shellcommands233316
+Node: Firewalls234291
+Node: Summary234959
+Node: Variable Index235756
+Node: Concept Index243248
+Node: FAQ Index267522
 
 End Tag Table

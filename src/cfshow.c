@@ -286,11 +286,11 @@ void ShowChecksums()
    
 if (stat("/usr/local/sbin/cfagent",&statbuf) != -1)
    {
-   snprintf(cfcom,CF_BUFSIZE-1,"/usr/local/sbin/cfagent -z",CFWORKDIR);
+   snprintf(cfcom,CF_BUFSIZE-1,"/usr/local/sbin/cfagent -W",CFWORKDIR);
    }
 else
    {
-   snprintf(cfcom,CF_BUFSIZE-1,"%s/bin/cfagent -z",CFWORKDIR);
+   snprintf(cfcom,CF_BUFSIZE-1,"%s/bin/cfagent -W",CFWORKDIR);
    }
 
 if ((pp=cfpopen(cfcom,"r")) ==  NULL)

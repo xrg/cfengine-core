@@ -10545,8 +10545,26 @@ line to the root crontab file of each system:
 @smallexample
 0,30 * * * * /usr/local/sbin/cfexecd -F
 @end smallexample
+
 This is enough to ensure that cfengine will get run. Any output generated
 by this job, will be stored in @file{/var/cfengine/outputs}.
+ 
+The program @code{cfexecd} operates as a wrapper for cfagent.  It has the
+following options:
+
+@smallexample
+-h (--help)
+-d (--debug)
+-v (--verbose)
+-f (--file)
+-q (--no-splay)
+-F (--no-fork)
+-1 (--once)
+-g (--foreground)
+-p (--parse-only)
+-L (--ld-library-path)
+@end smallexample
+
 @cindex /var/cfengine/output
 @vindex /var/cfengine/output
 @cindex Output logs
@@ -10592,17 +10610,17 @@ order to make the daemon execute cfagent every half-hour:
 Note that the time specifications are the basic cfengine @emph{time classes}.
 Although one of these methods should suffice,
 no harm will arise from running both cron and the cfexecd side-by-side.
-Cfagents locking mechanisms ensure that no contention will occur.
+Locking mechanisms are used by @code{cfagent} to ensure that no contention will occur.
 @cindex Mailing output
 @vindex smtpserver
 @vindex sysadm
 @cindex cfexecd
 
-Note, that if problems with library path for compiled in libraries occur, an
+Note, that if problems with library path for compiled-in libraries occur, an
 explicit library path can be specified with the @samp{-L} option.
 
 @smallexample
-0,30 * * * * /usr/local/sbin/cfexecd -F -L /local/iu/lib:/local/lib/mysql:/local/lib:/local/gnu/lib
+0,30 * * * * /usr/local/sbin/cfexecd -F -L /local/iu/lib:/local/lib:/local/gnu/lib
 @end smallexample
 
 

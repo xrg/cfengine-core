@@ -443,7 +443,7 @@ char *TCPNAMES[CF_NETATTR] =
       { "just",required_argument,0,'j'},
       { "avoid",required_argument,0,'o'},
       { "query",required_argument,0,'Q'},
-      { "csdb",no_argument,0,'w'},
+      { "csdb",no_argument,0,'W'},
       { NULL,0,0,0 }
       };
 

@@ -152,7 +152,7 @@ NOSPLAY = false;
 sprintf(VPREFIX, "cfexecd"); 
 openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_DAEMON);
 
-while ((c=getopt_long(argc,argv,"L:d:vhpFV1g",CFDOPTIONS,&optindex)) != EOF)
+while ((c=getopt_long(argc,argv,"L:d:vhpqFV1g",CFDOPTIONS,&optindex)) != EOF)
   {
   switch ((char) c)
       {
@@ -203,6 +203,10 @@ while ((c=getopt_long(argc,argv,"L:d:vhpFV1g",CFDOPTIONS,&optindex)) != EOF)
       case '1': ONCE = true;
           NO_FORK = true;
           break;
+          
+      case 'h':  Syntax();
+          exit(1);
+          break;  /* never reached.... */
           
       default:  Syntax();
           exit(1);

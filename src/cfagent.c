@@ -1020,7 +1020,7 @@ if (GetMacroValue(CONTEXTID,"CompressCommand"))
    
    if (*COMPRESSCOMMAND != '/')
       {
-      FatalError("$(ChecksumDatabase) does not expand to an absolute filename\n");
+      FatalError("$(CompressCommand) does not expand to an absolute filename\n");
       }
    }
 
