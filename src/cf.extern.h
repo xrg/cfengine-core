@@ -221,7 +221,7 @@ extern char VNETMASK[CF_MAXVARSIZE];
 extern char VBROADCAST[CF_MAXVARSIZE];
 extern char VMAILSERVER[CF_BUFSIZE];
 extern struct Item *VTIMEZONE;
-extern char VDEFAULTROUTE[CF_MAXVARSIZE];
+extern struct Item *VDEFAULTROUTE;
 extern char VNFSTYPE[CF_MAXVARSIZE];
 extern char *VREPOSITORY;
 extern char *LOCALREPOS;

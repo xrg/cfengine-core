@@ -1610,13 +1610,13 @@ void InstallDefaultRouteItem(char *item)
 
 Debug1("Install defaultroute mode (%s)\n",item);
 
-if (!IsDefinedClass(CLASSBUFF))
+if (!IsInstallable(CLASSBUFF))
    {
    Debug1("Not installing %s, no match\n",item);
    return;
    }
 
-if (VDEFAULTROUTE[0] != '\0')
+if (VDEFAULTROUTE != NULL)
    {
    yyerror("Multiple declaration of variable defaultroute");
    FatalError("Redefinition of basic system variable");
@@ -1624,7 +1624,7 @@ if (VDEFAULTROUTE[0] != '\0')
 
 ExpandVarstring(item,ebuff,NULL);
 
- if (inet_addr(ebuff) == -1)
+if (inet_addr(ebuff) == -1)
    {
    if ((hp = gethostbyname(ebuff)) == NULL)
       {
@@ -1635,12 +1635,12 @@ ExpandVarstring(item,ebuff,NULL);
    else
       {
       memcpy(&inaddr,hp->h_addr, hp->h_length);
-      strncpy(VDEFAULTROUTE,inet_ntoa(inaddr),CF_MAXVARSIZE);
+      PrependItem(&VDEFAULTROUTE,inet_ntoa(inaddr),CLASSBUFF);
       }
    }
 else
    {
-   strncpy(VDEFAULTROUTE,ebuff,CF_MAXVARSIZE);
+   PrependItem(&VDEFAULTROUTE,ebuff,CLASSBUFF);
    }
 }
 

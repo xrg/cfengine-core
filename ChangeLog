@@ -14,6 +14,9 @@
 	CentOS support added.
 
 	Extra encryption stage added in protocol.
+
+	Class "no_default_route" is now defined if a default route is not previously
+	set, and a default route is defined for the current host.
 	
 2.1.13
 	Mistake in placement of update.conf runs fixed.

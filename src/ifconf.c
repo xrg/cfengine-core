@@ -374,7 +374,7 @@ void SetDefaultRoute()
 
   FILE *pp;
 
-Verbose("Looking at default route...\n");
+Verbose("Looking for a default route...\n");
   
 if (!IsPrivileged())                            
    {
@@ -383,9 +383,9 @@ if (!IsPrivileged())
    return;
    }
 
-if (VDEFAULTROUTE[0] == '\0')
+if (VDEFAULTROUTE == NULL)
    {
-   Debug("cfengine: No default route is defined. Ignoring the routing tables.\n");
+   Verbose("cfengine: No default route is defined. Ignoring the routing tables.\n");
    return;
    }
 
@@ -400,24 +400,30 @@ while (!feof(pp))
    {
    ReadLine(VBUFF,CF_BUFSIZE,pp);
 
-   Debug("LINE: %s = %s?\n",VBUFF,VDEFAULTROUTE);
+   Debug("LINE: %s = %s?\n",VBUFF,VDEFAULTROUTE->name);
    
    if ((strncmp(VBUFF,"default",7) == 0)||(strncmp(VBUFF,"0.0.0.0",7) == 0))
       {
-      if (strstr(VBUFF,VDEFAULTROUTE))
+      if (strstr(VBUFF,VDEFAULTROUTE->name))
          {
-         Verbose("cfengine: default route is already set to %s\n",VDEFAULTROUTE);
+         Verbose("cfengine: default route is already set to %s\n",VDEFAULTROUTE->name);
          defaultokay = 1;
          break;
          }
       else
          {
+         Verbose("cfengine: default route is already set to %s\n",VDEFAULTROUTE->name);
          CfLog(cferror,"The default packet-route is incorrectly set\n","");
          CfLog(cferror,"Please correct this manually using route(1).\n","");
          break;
          }
       }
-   defaultokay = 0;
+   else
+      {
+      Verbose("No default route is currently set\n");
+      AddMultipleClasses("no_default_route");
+      defaultokay = 0;
+      }
    }
 
 cfpclose(pp);
@@ -425,6 +431,12 @@ cfpclose(pp);
 if (defaultokay)
    {
    return;
+   }
+
+if (IsExcluded(VDEFAULTROUTE->classes))
+   {
+   Debug("cfengine: No default route is applicable. Ignoring the routing tables.\n");
+   return;   
    }
 
 # if defined HAVE_RTENTRY || defined HAVE_ORTENTRY
@@ -437,7 +449,7 @@ if ((sk = socket(AF_INET,SOCK_RAW,0)) == -1)
 
       ShellCommandReturnsZero("/sbin/route del default");
 
-      snprintf(VBUFF,CF_MAXVARSIZE,"/sbin/route add default gw %s",VDEFAULTROUTE);
+      snprintf(VBUFF,CF_MAXVARSIZE,"/sbin/route add default gw %s",VDEFAULTROUTE->name);
       
       if (ShellCommandReturnsZero(VBUFF))
          {
@@ -460,7 +472,7 @@ sindst.sin_family = AF_INET;
 singw.sin_family = AF_INET;
 
 sindst.sin_addr.s_addr = INADDR_ANY;
-singw.sin_addr.s_addr = inet_addr(VDEFAULTROUTE);
+singw.sin_addr.s_addr = inet_addr(VDEFAULTROUTE->name);
 
 route.rt_dst = *(struct sockaddr *)&sindst;      /* This disgusting method is necessary */
 route.rt_gateway = *(struct sockaddr *)&singw;
@@ -475,7 +487,7 @@ if (! DONTDO)
       }
 
    CfLog(cferror,"The routing table did not contain a default route.\n","");
-   snprintf(OUTPUT,CF_BUFSIZE*2,"I'm setting it to %s\n",VDEFAULTROUTE);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"I'm setting it to %s\n",VDEFAULTROUTE->name);
    CfLog(cferror,OUTPUT,"");
    }
 

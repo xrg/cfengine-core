@@ -5218,10 +5218,13 @@ defaultroute:
 
      129.240.22.1
 
-
   rest::
  
      small_gw
+
+  no_default_route::
+
+     192.168.1.1
 
 @end smallexample 
 
@@ -5230,6 +5233,9 @@ Gateways and routers usually have internet address @code{aaa.bbb.ccc.1}
 --- i.e.  the first address on the subnet.  You may use the numerical
 form or a hostname for the gateway.
 
+The class @code{no_default_route} is defined if the current host does not have a currently
+defined default route, but specifies one in its configuration.
+@cindex{no_default_route class}
 
 @page
 
@@ -10557,6 +10563,17 @@ always assumed when executing cfengine remotely, so that @code{SplayTime} is
 effectively zero when polling hosts serially, and the output always
 shows what is happening on the remote hosts.
 @cindex SplayTime in cfrun
+
+@cindex @samp{-T} in cfrun.
+@cindex Trust, key exchange with cfrun
+On connecting to a remote host, cfengine attempts to obtain credentials
+by exchanging keys. Unknown keys, in a key exchange, need to be explicitly
+accepted on trust. Normally, the interactive @code{cfrun} program prompts
+the user explicitly, (like in the secure shell, @code{ssh}, connections).
+This can be annoying if there are many hosts to connect to.
+The @samp{-T} option tells cfengine to trust all new keys. This option
+should be used with caution, and only at times when one is sure that the
+hosts one is connecting to are trustworthy.
 
 Each host evaluates the classes sent by @code{cfrun}
 and decides whether cfengine should be invoked.

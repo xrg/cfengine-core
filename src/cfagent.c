@@ -216,7 +216,6 @@ VSYSADM[0] = '\0';
 VNETMASK[0]= '\0';
 VBROADCAST[0] = '\0';
 VMAILSERVER[0] = '\0';
-VDEFAULTROUTE[0] = '\0';
 ALLCLASSBUFFER[0] = '\0';
 VREPOSITORY = strdup("\0");
 
@@ -305,6 +304,7 @@ for (i = 1; i < argc; i++)
  srand48((long)seed);  
  CheckOpts(cfargc,cfargv);
 
+ AddInstallable("no_default_route");
  CfenginePort();
  StrCfenginePort();
 }
@@ -684,7 +684,13 @@ if (DEBUG || D2 || D3)
       printf ("%s ",ip->name);
       }
    printf("\n");
-   printf("\nDefault route for packets %s\n\n",VDEFAULTROUTE);
+   if (VDEFAULTROUTE != NULL)
+      {
+      if (IsDefinedClass(VDEFAULTROUTE->classes))
+         {
+         printf("\nDefault route for packets %s\n\n",VDEFAULTROUTE->name);
+         }
+      }
    printf("\nFile repository = %s\n\n",VREPOSITORY);
    printf("\nNet interface name = %s\n",VIFDEV[VSYSTEMHARDCLASS]);
    printf("------------------------------------------------------------\n");
