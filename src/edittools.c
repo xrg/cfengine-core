@@ -360,7 +360,7 @@ char *filename;
   struct stat tmpstat;
   char spliton = ':';
   mode_t maskval;
-  int todo = 0;
+  int todo = 0, potentially_outstanding = false;
   FILE *loop_fp = NULL;
 
 Debug("DoEditFile(%s)\n",filename);
@@ -433,6 +433,7 @@ while (ep != NULL)
    if (IsExcluded(ep->classes))
       {
       ep = ep->next;
+      potentially_outstanding = true;
       continue;
       }
    
@@ -1121,7 +1122,11 @@ ReleaseCurrentLock();
 umask(maskval);
 
 DeleteItemList(filestart);
-ptr->done = 'y';
+
+if (!potentially_outstanding)
+   {
+   ptr->done = 'y';
+   }
 }
 
 /********************************************************************/

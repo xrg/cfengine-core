@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.0.3)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.0.4)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -403,8 +403,8 @@ case "$target_os" in
 	  AC_DEFINE(REGEX_MALLOC)
         fi
 
-	AC_CHECK_LIB(PW, main)
         LIBS="$LIBS -lc"
+	AC_CHECK_LIB(PW, main)
         ;;
    aix*)
 	AC_DEFINE(AIX)

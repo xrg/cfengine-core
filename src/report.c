@@ -418,7 +418,12 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
 	 {
 	 printf(" ElseDefine %s\n",ptr->elsedef);
 	 }
-      
+
+      if (ptr->failover)
+	 {
+	 printf(" FailoverClasses %s\n",ptr->failover);
+	 }
+
       if (ptr->backup == 'n')
 	 {
 	 printf(" NOT BACKED UP\n");

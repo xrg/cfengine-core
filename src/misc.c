@@ -693,3 +693,170 @@ while (!feof(pp))
 
 cfpclose_def(pp,classes,elseclasses);
 }
+
+/*********************************************************************/
+
+char *UnQuote(s)
+
+char *s;
+
+{
+ if (s[strlen(s)-1] == '\"')
+    {
+    s[strlen(s)-1] = '\0';
+    }
+
+ if (s[0] == '\"')
+    {
+    return s+1;
+    }
+ else
+    {
+    return s;
+    }
+}
+
+/*********************************************************************************/
+
+int linux_redhat_version(void)
+{
+#define REDHAT_ID "Red Hat Linux"
+#define REDHAT_AS_ID "Red Hat Linux Advanced Server"
+#define MANDRAKE_ID "Linux Mandrake"
+
+#define RELEASE_FLAG "release "
+
+/* We are looking for one of the following strings...
+ *
+ * Red Hat Linux release 6.2 (Zoot)
+ * Red Hat Linux Advanced Server release 2.1AS (Pensacola)
+ * Linux Mandrake release 7.1 (helium)
+ */
+
+#define RH_REL_FILENAME "/etc/redhat-release"
+
+FILE *fp;
+
+/* The full string red in from redhat-release */
+char relstring[maxvarsize];
+char classbuf[maxvarsize];
+
+/* Red Hat, Mandrake */
+char *vendor="";
+/* as (Advanced Server) */
+char *edition="";
+/* Where the numerical release will be found */
+char *release=NULL;
+
+int major = -1;
+char strmajor[maxvarsize];
+int minor = -1;
+char strminor[maxvarsize];
+
+/* Grab the first line from the file and then close it. */
+ if ((fp = fopen(RH_REL_FILENAME,"r")) == NULL)
+    {
+    return 1;
+    }
+ fgets(relstring, sizeof(relstring), fp);
+ fclose(fp);
+ 
+ Verbose("Looking for redhat linux info...\n");
+ 
+ /* First, try to grok the vendor and the edition (if any) */
+ if(!strncmp(relstring, REDHAT_AS_ID, strlen(REDHAT_AS_ID)))
+    {
+    vendor = "redhat";
+    edition = "as";
+    }
+ else if(!strncmp(relstring, REDHAT_ID, strlen(REDHAT_ID)))
+    {
+    vendor = "redhat";
+    }
+ else if(!strncmp(relstring, MANDRAKE_ID, strlen(MANDRAKE_ID)))
+    {
+    vendor = "mandrake";
+    }
+ else
+    {
+    Verbose("Could not identify OS distro from %s\n", RH_REL_FILENAME);
+    return 2;
+    }
+ 
+ /* Now, grok the release.  For AS, we neglect the AS at the end of the
+  * numerical release because we already figured out that it *is* AS
+  * from the infomation above.  We assume that all the strings will
+  * have the word 'release' before the numerical release.
+  */
+ release = strstr(relstring, RELEASE_FLAG);
+ if(release == NULL)
+    {
+    Verbose("Could not find a numeric OS release in %s\n",
+	    RH_REL_FILENAME);
+    return 2;
+    }
+ else
+    {
+    release += strlen(RELEASE_FLAG);
+    sscanf(release, "%d.%d", &major, &minor);
+    sprintf(strmajor, "%d", major);
+    sprintf(strminor, "%d", minor);
+    }
+ 
+ if(major != -1 && minor != -1 && vendor != "")
+    {
+    classbuf[0] = '\0';
+    strcat(classbuf, vendor);
+    AddClassToHeap(classbuf);
+    strcat(classbuf, "_");
+    if(edition != "")
+       {
+       strcat(classbuf, edition);
+       AddClassToHeap(classbuf);
+       strcat(classbuf, "_");
+       }
+    strcat(classbuf, strmajor);
+    AddClassToHeap(classbuf);
+    strcat(classbuf, "_");
+    strcat(classbuf, strminor);
+    AddClassToHeap(classbuf);
+    }
+ return 0;
+}
+
+/******************************************************************/
+
+int debian_version(void) /* Andrew Stribblehill */
+{
+#define DEBIAN_VERSION_FILENAME "/etc/debian_version"
+int major = -1; 
+int release = -1;
+char classname[maxvarsize] = "";
+FILE *fp;
+
+if ((fp = fopen(DEBIAN_VERSION_FILENAME,"r")) == NULL)
+   {
+   return 1;
+   }
+
+Verbose("Looking for Debian version...\n");
+switch (fscanf(fp, "%d.%d", &major, &release))
+    {
+    case 1:
+        Verbose("This appears to be a Debian %u system..", major);
+        snprintf(classname, maxvarsize, "debian_%u", major);
+        AddClassToHeap(classname);
+        /* Fall-through */
+    case 2:
+        Verbose("This appears to be a Debian %u.%u system..", major, release);
+        snprintf(classname, maxvarsize, "debian_%u_%u", major, release);
+        AddClassToHeap(classname);
+        break;
+    case 0:
+        Verbose("No Debian version number found.\n");
+        fclose(fp);
+        return 2;
+    }
+fclose(fp);
+return 0;
+}

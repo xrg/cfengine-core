@@ -360,6 +360,7 @@ if (HavePublicKey(sendbuffer) == NULL)
       {
       printf("Accepting public key from %s\n",parsed_host);
       FileOutput(fp, fopl_inform, "Accepting public key from host\n");
+      addresses.trustkey = 'y'; 
       }
    else
       {

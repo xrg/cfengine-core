@@ -132,6 +132,7 @@ void SetSignals()
 { int i;
 
  SIGNALS[SIGHUP] = strdup("SIGHUP");
+ SIGNALS[SIGINT] = strdup("SIGINT");
  SIGNALS[SIGTRAP] = strdup("SIGTRAP");
  SIGNALS[SIGKILL] = strdup("SIGKILL");
  SIGNALS[SIGPIPE] = strdup("SIGPIPE");

@@ -1,6 +1,6 @@
 SUBDIRS = pub src contrib inputs doc 
 
-EXTRA_DIST = SURVEY acconfig.h DOCUMENTATION doc/cfengine.8 COPYING ChangeLog INSTALL NEWS README SURVEY
+EXTRA_DIST = acconfig.h DOCUMENTATION doc/cfengine.8 COPYING ChangeLog INSTALL NEWS README
 
 #
 # Some basic clean ups

@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.0.3 for version 2.0.3
-as last updated 23 June 2002.
+   This manual corresponds to CFENGINE Edition 2.0.4 for version 2.0.4
+as last updated 28 August 2002.
 
 * Menu:
 
@@ -126,10 +126,11 @@ keep this cache updated, on each host. This simplifies and consolidates
 the cfengine resources in a single place. The environment variable
 `CFINPUTS' still overrides this default location, as before, but in its
 absence or when called from the scheduler, this becomes the location of
-trusted files.  A special configuration file cf.update is parsed and
-run before the main configuration is parsed, which is used to ensure
-that the currently caches policy is up-to-date.  If no value is set for
-`CFINPUTS', then the default location is the trusted cfengine directory
+trusted files.  A special configuration file `update.conf' is parsed
+and run before the main configuration is parsed, which is used to
+ensure that the currently caches policy is up-to-date. This has private
+classes and variables.  If no value is set for `CFINPUTS', then the
+default location is the trusted cfengine directory
 `/var/cfengine/inputs'.
 
    The `outputs' directory is now a record of spooled run-reports. These
@@ -207,6 +208,10 @@ arguments in chronological order.
 `IPRange(ADDRESS-RANGE)'
      True if the current host lies within the specified range
 
+`IsDefined(COMMAND)'
+     True of the named variable is defined. NB: `IsDefines(var)', not
+     `IsDefined(${var})'
+
 `IsDir(F)'
      True if the named file object is a directory.
 
@@ -218,6 +223,9 @@ arguments in chronological order.
 
 `ReturnsZero(COMMAND)'
      True if the named shell command returns with exit code zero (okay).
+
+`Strcmp(S1,S2)'
+     True if the strings match exactly.
 
 For example:
 
@@ -556,6 +564,12 @@ Note that GNU long options are available with the syntax
 
 `-z'
      (`--smtp') Print the SMTP server for the LAN (used by cfexecd).
+
+   In version 2.0.4, an abbreviation for actionsequence exclusions was
+added:
+
+     $ cfagent --avoid resolve,copy
+     $ cfagent --just tidy --just shellcommands
 
 
 File: cfengine-Reference.info,  Node: Special variables,  Next: Cfengine classes,  Prev: Cfagent intro,  Up: Cfagent reference
@@ -1347,6 +1361,7 @@ cfengine.
 * actionsequence::
 * addclasses::
 * addinstallable::
+* AllowRedefinitionOf::
 * BinaryPaddingChar::
 * ChecksumDatabase::
 * ChecksumUpdates::

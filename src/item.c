@@ -98,6 +98,29 @@ return(false);
 
 /*********************************************************************/
 
+struct Item *ConcatLists (list1, list2)
+
+struct Item *list1, *list2;
+
+/* Notes: * Refrain from freeing list2 after using ConcatLists
+          * list1 must have at least one element in it */
+
+{ struct Item *endOfList1;
+
+if (list1 == NULL)
+   {
+   FatalError("ConcatLists: first argument must have at least one element");
+   }
+
+for (endOfList1=list1; endOfList1->next!=NULL; endOfList1=endOfList1->next)
+   {
+   }
+endOfList1->next = list2;
+return list1;
+}
+
+/*********************************************************************/
+
 void PrependItem (liststart,itemstring,classes)
 
 struct Item **liststart;
@@ -332,15 +355,36 @@ char *s;
 { char *sp;
   short isCIDR = false, isrange = false, isv6 = false, isv4 = false, isADDR = false; 
   char address[128];
-  int mask;
+  int mask,count = 0;
 
 Debug("ParsingIPRange(%s)\n",s);
 
-for (sp = s; *sp != '\0'; sp++)
+for (sp = s; *sp != '\0'; sp++)  /* Is this an address or hostname */
    {
-   if (isdigit((int)*sp))
+   if (!isxdigit((int)*sp))
+      {
+      isADDR = false;
+      break;
+      }
+   
+   if (*sp == ':')              /* Catches any ipv6 address */
       {
       isADDR = true;
+      break;
+      }
+
+   if (isdigit((int)*sp))      /* catch non-ipv4 address - no more than 3 digits */
+      {
+      count++;
+      if (count > 3)
+	 {
+	 isADDR = false;
+	 break;
+	 }
+      }
+   else
+      {
+      count = 0;
       }
    }
 
@@ -427,7 +471,7 @@ if (isv4 && isrange)
 	 sscanf(buffer2,"%ld",&cmp);
 	 if (from < 0 || to < 0)
 	    {
-	    yyerror("Error in IP range");
+	    yyerror("Error in IP range - looks like address, or bad hostname");
 	    return false;
 	    }
 	 
@@ -531,19 +575,22 @@ if (strstr(s1,":") != 0)
 
 if (isv4 && isv6)
    {
-   yyerror("Mixture of IPv6 and IPv4 addresses");
+   snprintf(OUTPUT,bufsize,"Mixture of IPv6 and IPv4 addresses: %s",s1);
+   CfLog(cferror,OUTPUT,"");
    return -1;
    }
 
 if (isCIDR && isrange)
    {
-   yyerror("Cannot mix CIDR notation with xxx-yyy range notation");
+   snprintf(OUTPUT,bufsize,"Cannot mix CIDR notation with xxx-yyy range notation: %s",s1);
+   CfLog(cferror,OUTPUT,"");
    return -1;
    }
 
 if (!(isv6 || isv4))
    {
-   yyerror("Not a valid address range");
+   snprintf(OUTPUT,bufsize,"Not a valid address range - or not a fully qualified name: %s",s1);
+   CfLog(cferror,OUTPUT,"");
    return -1;
    }
 
@@ -612,9 +659,9 @@ if (isv4)
 	       return -1;
 	       }
 
-	    if ((from >= cmp) || (cmp > to))
+	    if ((from > cmp) || (cmp > to))
 	       {
-	       Debug("Out of range\n");
+	       Debug("Out of range %d > %d > %d (range %s)\n",from,cmp,to,buffer2);
 	       return -1;
 	       }
 	    }

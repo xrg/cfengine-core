@@ -1049,8 +1049,8 @@ Variable Index
 * age:                                   tidy.
 * AllowUsers:                            AllowUsers.
 * backup=:                               copy.
-* binserver <1>:                         Link Children.
-* binserver:                             Single links.
+* binserver <1>:                         Single links.
+* binserver:                             Link Children.
 * binservers:                            binservers.
 * broadcast:                             broadcast.
 * cf.preconf:                            cf.preconf bootstrap file.
@@ -1084,8 +1084,8 @@ Variable Index
 * filter:                                filters.
 * force= <1>:                            copy.
 * force=:                                disks.
-* freespace= <1>:                        required.
-* freespace=:                            disks.
+* freespace= <1>:                        disks.
+* freespace=:                            required.
 * g=:                                    Syntax.
 * group:                                 Syntax.
 * groups:                                groups.
@@ -1109,24 +1109,24 @@ Variable Index
 * links <1>:                             links.
 * links:                                 actionsequence.
 * m=:                                    Syntax.
-* mailcheck <1>:                         mailserver.
-* mailcheck:                             actionsequence.
+* mailcheck <1>:                         actionsequence.
+* mailcheck:                             mailserver.
 * mailserver:                            mailserver.
 * MaxCfengines:                          Special variables.
 * miscmounts:                            miscmounts.
 * mode:                                  Syntax.
-* module::                               actionsequence.
+* module:                                actionsequence.
 * moduledirectory:                       moduledirectory.
-* mountables <1>:                        homeservers.
-* mountables:                            mountables.
+* mountables <1>:                        mountables.
+* mountables:                            homeservers.
 * mountall:                              actionsequence.
 * mountinfo:                             actionsequence.
 * mountpattern:                          mountpattern.
 * netconfig:                             actionsequence.
 * netmask <1>:                           control.
 * netmask:                               netmask.
-* nfstype <1>:                           control.
-* nfstype:                               nfstype.
+* nfstype <1>:                           nfstype.
+* nfstype:                               control.
 * o=:                                    Syntax.
 * ones:                                  broadcast.
 * OutputPrefix:                          Special variables.
@@ -1135,8 +1135,8 @@ Variable Index
 * pattern:                               tidy.
 * processes:                             actionsequence.
 * purge=:                                copy.
-* r= <1>:                                Syntax.
-* r=:                                    tidy.
+* r= <1>:                                tidy.
+* r=:                                    Syntax.
 * recurse <1>:                           tidy.
 * recurse:                               Syntax.
 * repchar:                               Special variables.
@@ -1156,18 +1156,20 @@ Variable Index
 * shellcommands:                         actionsequence.
 * ShowActions:                           showactions.
 * singlelinks:                           actionsequence.
-* site <1>:                              site.
-* site:                                  control.
+* site <1>:                              control.
+* site:                                  site.
+* SkipVerify:                            root=.
 * smtpserver:                            Cfexecd reference.
 * split <1>:                             split.
 * split:                                 Special variables.
 * SpoolDirectories:                      spooldirectories.
 * SuspiciousNames:                       suspiciousnames.
-* sysadm <1>:                            Cfexecd reference.
-* sysadm <2>:                            control.
-* sysadm:                                sysadm.
-* tidy <1>:                              tidy.
-* tidy:                                  actionsequence.
+* sysadm <1>:                            control.
+* sysadm <2>:                            Cfexecd reference.
+* sysadm <3>:                            sysadm.
+* sysadm:                                Cfexecd reference.
+* tidy <1>:                              actionsequence.
+* tidy:                                  tidy.
 * timezone:                              control.
 * touch:                                 touch.
 * truncate:                              disable.

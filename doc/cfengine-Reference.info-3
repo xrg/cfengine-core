@@ -64,6 +64,7 @@ copying. Cfengine attempts to prevent this during remote copies._
                              forceipv4=TRUE/ON/false/off
                              size=SIZE LIMITS
                              server=SERVER-HOST
+                             failover=CLASSES
      
                              trustkey=TRUE/false
                              secure=[deprecated]
@@ -169,6 +170,10 @@ copying. Cfengine attempts to prevent this during remote copies._
      global list of patterns can also be defined in the control section
      of the program.
 
+     If the `purge' option is used in copying, then the include option
+     has the effect of the excluding files from the purge, i.e. include
+     means `keep' the named files.
+
 `exclude'
      This option may be repeated a number of times to specify the names
      of files, or wildcards which match files which are to be excluded
@@ -195,6 +200,11 @@ copying. Cfengine attempts to prevent this during remote copies._
      `cfagent.conf' file. If you don't define a domain you will
      probably receive an error of the form `cfengine: Hey! cannot stat
      file'.
+
+`failover'
+     If a file copy fails due to an error, the classes in this
+     assignment will become active, allowing failover rules to become
+     active.
 
 `oldserver'
      If this is true, cfengine uses the old protocol specification for

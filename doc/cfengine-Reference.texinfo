@@ -205,9 +205,11 @@ keep this cache updated, on each host. This simplifies and
 consolidates the cfengine resources in a single place. The environment
 variable @code{CFINPUTS} still overrides this default location, as before,
 but in its absence or when called from the scheduler, this becomes the
-location of trusted files.  A special configuration file cf.update is
+location of trusted files.  A special configuration file @file{update.conf} is
 parsed and run before the main configuration is parsed, which is
-used to ensure that the currently caches policy is up-to-date.
+used to ensure that the currently caches policy is up-to-date. This has private
+classes and variables.
+@cindex @file{update.conf}
 If no value is set for @code{CFINPUTS}, then the default location
 is the trusted cfengine directory
 @file{/var/cfengine/inputs}.
@@ -292,6 +294,8 @@ True if file 1's attributes were changed in any way before file 2's (ctime).
 True if the named file object exists.
 @item IPRange(@var{address-range})
 True if the current host lies within the specified range
+@item IsDefined(@var{command})
+True of the named variable is defined. NB: @code{IsDefines(var)}, not @code{IsDefined($@{var@})}
 @item IsDir(@var{f})
 True if the named file object is a directory.
 @item IsLink(@var{f})
@@ -300,6 +304,8 @@ True if the named file object is a symbolic link.
 True if the named file object is a plain file.
 @item ReturnsZero(@var{command})
 True if the named shell command returns with exit code zero (okay).
+@item Strcmp(@var{s1},@var{s2})
+True if the strings match exactly.
 @end table
 
 @noindent
@@ -686,6 +692,13 @@ messages.
 
 @end table
 
+In version 2.0.4, an abbreviation for actionsequence exclusions was
+added:
+
+@smallexample
+$ cfagent --avoid resolve,copy
+$ cfagent --just tidy --just shellcommands
+@end smallexample
 
 @c -------------------------------------------------------------------------------
 @c SECTION
@@ -1694,6 +1707,7 @@ The meaning of each of these lines is described below.
 * actionsequence::              
 * addclasses::                  
 * addinstallable::              
+* AllowRedefinitionOf::         
 * BinaryPaddingChar::           
 * ChecksumDatabase::            
 * ChecksumUpdates::             
@@ -1840,7 +1854,7 @@ possibilities:
 @vindex disable
 @vindex files 
 @vindex processes
-@vindex module:
+@vindex module
 
 @noindent
 Here is a more complete description of the meaning of these
@@ -2086,7 +2100,7 @@ undefined in the actionsequence.  See next section.
 @c SUBSECTION
 @c .....................................................
 
-@node addinstallable, BinaryPaddingChar, addclasses, control
+@node addinstallable, AllowRedefinitionOf, addclasses, control
 @subsection AddInstallable
 @cindex Declaring classes
 @cindex Defining before use
@@ -2138,7 +2152,31 @@ made in imported files always come later than things in the main program.
 @c SUBSECTION
 @c .....................................................
 
-@node BinaryPaddingChar, ChecksumDatabase, addinstallable, control
+@node AllowRedefinitionOf, BinaryPaddingChar, addinstallable, control
+@subsection AllowRedefinitionOf
+
+Normally cfagent warns about redefinitions of variables during parsing.
+This is presumed to be a mistake. To avoid this behaviour, add the name
+of the variable to this list, and the warning disappears.
+@smallexample
+control:
+
+actionsequence = ( copy )
+
+AllowRedefinitionOf = ( cfrep )
+
+cfrep = ( bla )
+
+cfrep = ( blo )
+
+@end smallexample
+@cindex Redefinition of macros
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node BinaryPaddingChar, ChecksumDatabase, AllowRedefinitionOf, control
 @subsection BinaryPaddingChar
 @smallexample
 BinaryPaddingChar = ( \0 )
@@ -2449,8 +2487,9 @@ file. This option causes cfengine to remove old nameserver entries.
 @node exclamation, excludecopy, emptyresolvconf, control
 @subsection Exclamation
 
-This variable defaults to "on". If set to "off", no exclaimation
-marks are printed during security alerts, e.g. for checksum violations.
+This variable defaults to "on". If set to "off", no exclamation marks
+(Br. pling, Am: shriek) are printed during security alerts, e.g. for
+checksum violations.
 
 @example
    Exclamation  = ( off ) 
@@ -2491,12 +2530,12 @@ would define a pattern which was only valid when
 @c .....................................................
 
 @node excludelinks, ExpireAfter, excludecopy, control
-@subsection ExcludeLinks
+@subsection ExcludeLink
 This list is used to define a global list of names or patterns
 which are to be excluded from linking operations. For example
 
 @smallexample
- ExcludeLinks = ( *~ *% core )
+ ExcludeLink = ( *~ *% core )
 @end smallexample
 The same facility can be specified for each individual
 link operation using the @code{exclude} option @xref{links}.
@@ -2506,7 +2545,7 @@ are valid only as long as that class is defined. For instance
 @smallexample
   @var{class}::
 
-      ExcludeLinks = ( @var{pattern} )
+      ExcludeLink = ( @var{pattern} )
 @end smallexample
 @noindent
 would define a pattern which was only valid when
@@ -3571,6 +3610,7 @@ copy:
                         forceipv4=@var{true/on}/@b{false/off}
                         size=@var{size limits}
                         server=@var{server-host}
+                        failover=@var{classes}
 
                         trustkey=@var{true}/@b{false}
                         secure=[deprecated]
@@ -3690,6 +3730,11 @@ operation. Specifying one of these automatically excludes everything
 else except further include patterns.  A global list of patterns can
 also be defined in the control section of the program.
 
+If the @code{purge} option is used in copying, then the include option
+has the effect of the excluding files from the purge, i.e. include means
+`keep' the named files.
+@cindex Purge, excluding files
+
 @item exclude
 This option may be repeated a number of times to specify the
 names of files, or wildcards which match files which are to
@@ -3719,6 +3764,11 @@ you will probably receive an error of the form `cfengine: Hey! cannot
 stat file'.
 @mbindex Hey! Cannot stat file error
 @mbindex Remote copy problems, can't stat
+
+@item failover
+If a file copy fails due to an error, the classes in this assignment
+will become active, allowing failover rules to become active.
+@cindex failover
 
 @item oldserver
 If this is true, cfengine uses the old protocol specification for
@@ -6790,6 +6840,8 @@ processes:
                         signal=@var{signal name}
                         matches=@var{number}
                         define=@var{classlist}
+                        elsedefine=@var{classlist}
+
                         action=@b{signal}@var{/do/warn/bymatch}
                         include=@var{literal}
                         exclude=@var{literal}
@@ -6945,7 +6997,12 @@ expression matching and after includes.
 
 @item define=@var{classlist}
 The colon, command or dot separated list of classes becomes activated if the
-number of regular expression matches is non zero.
+number of regular expression matches is non-zero.
+
+@item elsedefine=@var{classlist}
+The colon, command or dot separated list of classes becomes activated if the
+number of regular expression matches is zero.
+
 
 @item action=@var{signal/do/warn}
 The default value of this option is to silently send a signal
@@ -7480,7 +7537,9 @@ This value is used to set the type of time comparison made using
 the last time the file was read. A comparison by modification 
 time (mtime) uses the last time the contents of the file was
 changed. The ctime parameter is the last time the contents, owner
-or permissions of the file were changed.
+or permissions of the file were changed. Note that on directories,
+mtime is always used for comparisons, since the very act of stat'ing
+alters atime and makes this comparison meaningless.
 
 @item dirlinks=@var{keep/tidy/delete}
 This value is used to decide whether cfengine will delete
@@ -7494,7 +7553,7 @@ is set to true, cfagent will not follow symbolic links that are
 not owned by the agent user ID; this is to prevent link race attacks,
 in which users with write access could divert the agent to another part
 of the filesystem,
-@cindex Security: link races and travlinks
+@cindex Security, link races and travlinks
 @cindex travlinks
 
 @cindex Tidy by ctime, mtime, atime
@@ -8065,13 +8124,22 @@ illegal.
 
 @node root=, encrypt=, admit grant and deny, admit grant and deny
 @subsection @code{root=}
-This list specificies the names of hosts which are to have read
+This list specifies the names of hosts which are to have read
 access to files, regardless of the owner of the file. This effectively
 gives root users on connecting hosts privileges to non-root owned
 files on the server, but not vice-versa, similar to the NFS root mapping,
 except that there is no question of a client being able to modify files
 on the server. Caution: cfservd trusts the DNS service, so be aware that
 cache poisoning attacks are a possible way of bypassing access controls.
+
+As of version 2.0.4: Once a verified host address has been identified with a functioning
+public/private key authentication, the IP address is added to the SkipVerify
+list, so that time is not wasted in verifying reverse lookups, when the
+identify can be verified more efficiently and securely by a key mechanism.
+@cindex SkipVerify and public-private keys
+@cindex Caching of reverse lookups
+@cindex Reverse lookup and SkipVerify
+@vindex SkipVerify
 
 @c ...........................................
 @c SUBSECTION

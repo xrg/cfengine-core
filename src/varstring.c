@@ -95,6 +95,7 @@ char *VVNAMES[] =
    "allowusers",
    "skipverify",
    "defaultcopytype",
+   "allowredefinitionof",
    NULL
    };
 

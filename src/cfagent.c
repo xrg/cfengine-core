@@ -58,7 +58,8 @@ void Syntax ARGLIST((void));
 void EmptyActionSequence ARGLIST((void));
 void GetEnvironment ARGLIST((void));
 int NothingLeftToDo ARGLIST((void));
-int linux_redhat_version ARGLIST((void));
+void CheckClass ARGLIST((char *class, char *source));
+void SetContext ARGLIST((char *id));
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -70,7 +71,9 @@ char *argv[];
 int argc;
 
 { struct Item *ip;
-   
+
+SetContext("global");
+ 
 signal (SIGTERM,HandleSignal);                   /* Signal Handler */
 signal (SIGHUP,HandleSignal);
 signal (SIGINT,HandleSignal);
@@ -95,6 +98,7 @@ ReadRCFile(); /* Should come before parsing so that it can be overridden */
 
 if (IsPrivileged() && !MINUSF && !PRMAILSERVER)
    {
+   SetContext("update");
    if (ParseBootFiles())
       {
       CheckSystemVariables();
@@ -102,7 +106,8 @@ if (IsPrivileged() && !MINUSF && !PRMAILSERVER)
 	 {
 	 DoTree(1,"Update");
 	 EmptyActionSequence();
-	 DeleteMacro("SplayTime");
+	 DeleteMacros();
+	 DeleteClassesFromContext("update");
 	 }
       }
    }
@@ -112,6 +117,8 @@ if (UPDATEONLY)
    return 0;
    }
 
+SetContext("main");
+GetEnvironment(); 
 ParseInputFiles();
 CheckFilters();
 SetStrategies(); 
@@ -168,30 +175,16 @@ return 0;
 /* Level 1                                                         */
 /*******************************************************************/
 
-void HandleSignal(signum)
- 
-int signum;
- 
-{
-snprintf(OUTPUT,bufsize*2,"Received signal %d while doing [%s]",signum,CFLOCK);
-Chop(OUTPUT);
-CfLog(cferror,OUTPUT,"");
-snprintf(OUTPUT,bufsize*2,"Logical start time %s ",ctime(&CFSTARTTIME));
-Chop(OUTPUT);
-CfLog(cferror,OUTPUT,"");
-snprintf(OUTPUT,bufsize*2,"This sub-task started really at %s\n",ctime(&CFINITSTARTTIME));
+void SetContext(id)
 
-CfLog(cferror,OUTPUT,"");
- 
-if (signum == SIGTERM || signum == SIGINT || signum == SIGHUP || signum == SIGSEGV || signum == SIGKILL)
-   {
-   ReleaseCurrentLock();
-   closelog();
-   exit(0);
-   }
+char *id;
+
+{
+Verbose("\n * (Changing context state to: %s) *\n\n",id);
+strncpy(CONTEXTID,id,31);
 }
 
-/********************************************************************/
+/*******************************************************************/
  
 void Initialize(argc,argv)
 
@@ -256,6 +249,7 @@ if (stat("/etc/debian_version",&statbuf) != -1)
    {
    Verbose("\nThis appears to be a debian system.\n");
    AddClassToHeap("debian");
+   debian_version();
    }
  
 /* Note we need to fix the options since the argv mechanism doesn't */
@@ -1054,8 +1048,18 @@ for (pass = 1; pass <= passes; pass++)
    {
    for (action = VACTIONSEQ; action !=NULL; action=action->next)
       {
-      SetStartTime(false);      
+      SetStartTime(false);
 
+      if (VJUSTACTIONS && (!IsItemIn(VJUSTACTIONS, action->name)))
+         {
+         continue;
+         }
+
+      if (VAVOIDACTIONS && IsItemIn(VAVOIDACTIONS, action->name))
+         {
+         continue;
+         }
+      
       if (IsExcluded(action->classes))
 	 {
 	 continue;
@@ -1396,7 +1400,10 @@ Debug("Checking if entry is a module\n");
  
 if (strncmp(actiontxt,"module:",7) == 0)
    {
-   CheckForModule(actiontxt,args);
+   if (pass == 1)
+      {
+      CheckForModule(actiontxt,args);
+      }
    return plugin;
    }
 
@@ -1415,10 +1422,11 @@ char **argv;
 int argc;
 
 { extern char *optarg;
+  struct Item *actionList;
   int optindex = 0;
   int c;
 
-while ((c=getopt_long(argc,argv,"bzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuU",OPTIONS,&optindex)) != EOF)
+while ((c=getopt_long(argc,argv,"bBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:o:",OPTIONS,&optindex)) != EOF)
   {
   switch ((char) c)
       {
@@ -1433,6 +1441,9 @@ while ((c=getopt_long(argc,argv,"bzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuU",OP
 
                 ENFORCELINKS = true;
                 break;
+
+      case 'B': UPDATEONLY = true;
+  	        break;
 
       case 'f': strcpy(VINPUTFILE,optarg);
                 MINUSF = true;
@@ -1568,6 +1579,14 @@ while ((c=getopt_long(argc,argv,"bzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuU",OP
 
       case 'Y': CFPARANOID = true;
 	        break;
+
+      case 'j': actionList = SplitStringAsItemList(optarg, ',');
+                VJUSTACTIONS = ConcatLists(actionList, VJUSTACTIONS);
+                break;
+
+      case 'o': actionList = SplitStringAsItemList(optarg, ',');
+                VAVOIDACTIONS = ConcatLists(actionList, VAVOIDACTIONS);
+                break;		
 
       default:  Syntax();
                 exit(1);
@@ -1778,10 +1797,12 @@ while (!feof(pp))
       {
       case '+':
 	  Verbose("Activated classes: %s\n",line+1);
+	  CheckClass(line+1,command);
 	  AddMultipleClasses(line+1);
 	  break;
       case '-':
 	  Verbose("Deactivated classes: %s\n",line+1);
+	  CheckClass(line+1,command);
 	  NegateCompoundClass(line+1,&VNEGHEAP);
 	  break;
       case '=':
@@ -1792,7 +1813,8 @@ while (!feof(pp))
       default:
 	  if (print)
 	     {
-	     printf("%s:%s: %s\n",VPREFIX,actiontxt,line);
+	     snprintf(OUTPUT,bufsize,"%s: %s\n",actiontxt,line);
+	     CfLog(cferror,OUTPUT,"");
 	     }
       }
    }
@@ -1822,85 +1844,28 @@ printf("General help to help-cfengine@gnu.org (News: gnu.cfengine.help)\n");
 printf("Info & fixes at http://www.iu.hio.no/cfengine\n");
 }
 
-/*********************************************************************************/
 
-int linux_redhat_version(void)
+/******************************************************************/
+/* Level 3                                                        */
+/******************************************************************/
 
-/* Contrib Pekka Savola */
+void CheckClass(name,source)
 
-{
-#define FMT_SIZ 15
-#define REDHAT_ID "Red Hat"
-#define MANDRAKE_ID "Linux Mandrake"
-#define RAWHIDE_ID "Raw Hide"
+char *name,*source;
 
-/* Linux Mandrake release 7.1 (helium)
- * Red Hat Linux release 6.2 (Zoot)
- * Raw Hide 20000526
- */
- 
-#define RH_REL_STR "%s %s"			/* "Red Hat", "Linux Mandrake" */
-#define RH_REL_STR_REDHAT "%*s %*s %u.%u %*s"	/* "Linux release 6.1 (Cartman)" */
-#define RH_REL_STR_MANDRAKE "%*s %u.%u %*s"	/* "release 7.0 (Whatever)" */
-#define RH_REL_FILENAME "/etc/redhat-release"
+{ char *sp;
 
-FILE *fp;
- 
-char fmt1[maxvarsize]; 
-char fmt2[maxvarsize];
-char fmt[2*FMT_SIZ];
- 
-char *distro="";
- 
-int major = -1; 
-int release = -1; 
-
- if ((fp = fopen(RH_REL_FILENAME,"r")) == NULL)
+ for (sp = name; *sp != '\0'; sp++)
     {
-    return 1;
-    }
-
- Verbose("Looking for redhat linux info...\n");
- 
-/* Get necessary strings to distinguish between different distros using the same 
-   file name */
- 
- fscanf(fp, RH_REL_STR, fmt1, fmt2);
- 
-/* A few sanity checks */
- if (strlen(fmt1) >= FMT_SIZ || strlen(fmt2) >= FMT_SIZ )
-    {
-    Verbose("Your %s is corrupted, either one of it's first words is longer than %i chars\n", RH_REL_FILENAME, FMT_SIZ); 
-    return 2;
+    if (!isalnum((int)*sp) && (*sp != '_'))
+       {
+       snprintf(OUTPUT,bufsize,"Module class contained an illegal character (%c). Only alphanumeric or underscores in classes.",*sp);
+       CfLog(cferror,OUTPUT,"");
+       }
     }
  
- snprintf(fmt,maxvarsize,"%s %s", fmt1, fmt2);
- 
- if (!strncmp(fmt, REDHAT_ID, sizeof(fmt)))
-    {
-    fscanf(fp, RH_REL_STR_REDHAT, &major, &release );
-    Verbose("This appears to be a Redhat %u.%u system..", major, release);
-    distro="redhat";
-    }
- else if (!strncmp(fmt, MANDRAKE_ID, sizeof(fmt)))
-    {
-    fscanf(fp, RH_REL_STR_MANDRAKE, &major, &release );
-    Verbose("This appears to be a Mandrake %u.%u system..", major, release);
-    distro="mandrake";
-    }
- 
- fclose(fp);
-
- if ( major != -1 && release != -1 && distro != "" )
-    {
-    snprintf(fmt1,maxvarsize,"%s_%u", distro, major);
-    snprintf(fmt2,maxvarsize,"%s_%u_%u", distro, major, release);
-    
-    AddClassToHeap(fmt1);
-    AddClassToHeap(fmt2);
-    }
- return 0;
 }
+
 
 
 /* EOF */

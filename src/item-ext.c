@@ -104,6 +104,11 @@ char *item;
 
 { struct Item *ptr;
 
+if (item != NULL && list != NULL)
+   {
+   Debug("IsWildItem(%s,%s)\n",item,list->name);
+   }
+ 
 for (ptr = list; ptr != NULL; ptr=ptr->next)
    {
    if (IsExcluded(ptr->classes))
@@ -1416,7 +1421,7 @@ for (ip = *liststart; ip != NULL; ip=ip->next)
    ip = oldCurrentLinePtr;
    }
  
-regfree(&rx);
+regfree(&rxcache);
 return true;
 }
 

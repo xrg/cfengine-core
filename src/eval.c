@@ -311,7 +311,7 @@ Debug("AddClassToHeap(%s)\n",class);
    return;
    }
 
-AppendItem(&VHEAP,class,NULL);
+AppendItem(&VHEAP,class,CONTEXTID);
 }
 
 /*********************************************************************/
@@ -322,6 +322,26 @@ char *class;
 
 {
 DeleteItemMatching(&VHEAP,class);
+}
+
+/*********************************************************************/
+
+void DeleteClassesFromContext(context)
+
+char *context;
+
+{ struct Item *ip;
+
+Verbose("Purging private classes from context %s\n",context);
+ 
+for (ip = VHEAP; ip != NULL; ip=ip->next)
+   {
+   if (strcmp(ip->classes,context) == 0)
+      {
+      Debug("Deleting context private class %s from heap\n",ip->name);
+      DeleteItem(&VHEAP,ip);
+      }
+   }
 }
 
 /*********************************************************************/

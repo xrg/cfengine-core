@@ -1,12 +1,84 @@
+2.0.4
 
+	cfexecd now reports identical messages only once per day. (Bas)
+
+	***************************************************************************
+	File copying failover=classes sets classes if open server connection fails,
+	or file is unavailable --
+	this allows failover rules to be activated instead.
+	***************************************************************************	
+	***************************************************************************
+	Evaluated classes added:
+	IsDefined(varname)
+	StrCmp(s1,s2)
+	***************************************************************************	
+
+	If a public key authentication succeeds, cfservd now adds a host to the
+	skipverify list, so that we don't waste time checking ID by two separate
+	methods. It has to succeed once though... and the is emptied if the config
+	file changes, and we start over again.
+	
+	elsedef didn't work in processes
+	
+	New test in processes for executability of restart sequence would fail
+	if the sequence had arguments. Fixed.
+
+	---------------------------------------------------------------------------
+	"AUTHENTICATION" BUGS:
+
+	This seems to have been due to threading collisions.
+
+	Malloc is not thread-safe. Added mutex to NewConn in cfservd. This
+	could cause new connections to be mixed up in memory, under heavy
+	load and result in authentication failure on multiprocessor
+	systems.  Also changed pthread_mutex locking around gethostbyname
+	- could cause reverse lookup to fail and create the illusion of a
+	bad public key authentication.
+
+	Implicit mallocs are also in some of the public/private key functions.
+	Moved some of the mutexs to encompass these, and it seems to have
+	fixed the authentication errors.
+
+	Change in mutex locking policy of CheckFileChanges. Don't need a mutex
+	there, just check that ACTIVE_THREADS is 0 and we're single threaded.
+
+	---------------------------------------------------------------------------
+	
+	Tidying directories with atime is meaningless, since the necessary
+	stat'ing automatically invalidates the result except for age=0.
+	Thus all directory time comparisons are now changed to mtime, regardless
+	of the type.
+	
+	Default preview value for shellcommands was true - shuld be false.
+	cfrun - with -T did not accept keys on trust (typo) fixed
+	Classes defined within update.conf are now also private, like a
+	separate module. These go away before cfagent.conf
+	
+	Typo in item-ext.c in regfree of GlobalRreplace led to segmentation
+	fault for some edits.
+	AllowRedefinitionOf = ( variable name list ) allows redefintion of the
+	named variables during parsing.
+	
+	Editfiles scheduling error for classes not immediately defined, fixed.
+	
+	Inform=false didn't affect purge=true
+	Setting chmod 000 on a directory could prevent 2.0.3 from fixing it.
+	Fix for hyphen fix - can have numbers and hyphens in hostnames...
         Fix for freebsd fix...ugh
+	IP address range minor fix >= -> > in lower range
 
+        $ cfagent --avoid resolve,copy
+	$ cfagent --just tidy --just shellcommands
+
+	The latter does tidy and shellcommands, but nothing else in the
+	action sequence.
+	
+	
 2.0.3
-	import in cfservd.conf was blocked.
-	update.conf run when doing -a or -z
-	DESTINATION used in link.c (legacy) without allocation - caused segfault.
-	IMPORT in cfservd was excluded
-	-b for --update-only was used up, changed to -B (too many options!)
+	import in cfservd.conf was blocked.  update.conf run when doing -a
+	or -z DESTINATION used in link.c (legacy) without allocation -
+	caused segfault.  IMPORT in cfservd was excluded -b for
+	--update-only was used up, changed to -B (too many options!)
 
 	hyphen in cfservd.conf admit/deny hostname was misinterpreted as IP range in 2.0.2
 	Fixed

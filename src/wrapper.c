@@ -298,13 +298,20 @@ AddSlash(directory);
 strcat(directory,".");
  
 MakeDirectoriesFor(directory,'n');
- 
+
 if (stat(directory,&statbuf) == -1)
    {
-   snprintf(OUTPUT,bufsize*2,"Cannot stat %s\n",directory);
-   CfLog(cfinform,OUTPUT,"stat");
-   return;
-   }
+   bzero(directory,bufsize);
+   ExpandVarstring(dir,directory,"");
+   chmod(directory,0500); /* Shouldn't happen - mode 000 ??*/
+ 
+   if (stat(directory,&statbuf) == -1)
+      {
+      snprintf(OUTPUT,bufsize*2,"Cannot stat %s after creating it",directory);
+      CfLog(cfinform,OUTPUT,"stat");
+      return;
+      }
+   } 
 
 if (!GetLock(ASUniqueName("directories"),CanonifyName(directory),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
    {

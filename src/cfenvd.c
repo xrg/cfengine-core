@@ -198,6 +198,8 @@ char **argv;
 umask(077);
 openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_DAEMON);
 
+strcpy(CFLOCK,"cfenvd");
+ 
 IGNORELOCK = false; 
 OUTPUT[0] = '\0';
 
@@ -577,32 +579,6 @@ exit(1);
 
 /*********************************************************************/
 /* Level 2                                                           */
-/*********************************************************************/
-
-void HandleSignal(signum)
- 
-int signum;
- 
-{
-snprintf(OUTPUT,bufsize*2,"Received signal %d while doing [%s]",signum,CFLOCK);
-Chop(OUTPUT);
-CfLog(cferror,OUTPUT,"");
-snprintf(OUTPUT,bufsize*2,"Logical start time %s ",ctime(&CFSTARTTIME));
-Chop(OUTPUT);
-CfLog(cferror,OUTPUT,"");
-snprintf(OUTPUT,bufsize*2,"This sub-task started really at %s\n",ctime(&CFINITSTARTTIME));
-
-CfLog(cferror,OUTPUT,"");
- 
-if (signum == SIGTERM || signum == SIGINT || signum == SIGHUP || signum == SIGSEGV || signum == SIGKILL)
-   {
-   ReleaseCurrentLock();
-   closelog();
-   exit(0);
-   }
-}
-
-
 /*********************************************************************/
 
 void GetQ()

@@ -240,7 +240,7 @@ run.
 undefined in the actionsequence.  See next section.
 
 
-File: cfengine-Reference.info,  Node: addinstallable,  Next: BinaryPaddingChar,  Prev: addclasses,  Up: control
+File: cfengine-Reference.info,  Node: addinstallable,  Next: AllowRedefinitionOf,  Prev: addclasses,  Up: control
 
 AddInstallable
 --------------
@@ -282,7 +282,26 @@ definitions made in imported files always come later than things in the
 main program.
 
 
-File: cfengine-Reference.info,  Node: BinaryPaddingChar,  Next: ChecksumDatabase,  Prev: addinstallable,  Up: control
+File: cfengine-Reference.info,  Node: AllowRedefinitionOf,  Next: BinaryPaddingChar,  Prev: addinstallable,  Up: control
+
+AllowRedefinitionOf
+-------------------
+
+   Normally cfagent warns about redefinitions of variables during
+parsing.  This is presumed to be a mistake. To avoid this behaviour,
+add the name of the variable to this list, and the warning disappears.
+     control:
+     
+     actionsequence = ( copy )
+     
+     AllowRedefinitionOf = ( cfrep )
+     
+     cfrep = ( bla )
+     
+     cfrep = ( blo )
+
+
+File: cfengine-Reference.info,  Node: BinaryPaddingChar,  Next: ChecksumDatabase,  Prev: AllowRedefinitionOf,  Up: control
 
 BinaryPaddingChar
 -----------------
@@ -517,8 +536,9 @@ File: cfengine-Reference.info,  Node: exclamation,  Next: excludecopy,  Prev: em
 Exclamation
 -----------
 
-   This variable defaults to "on". If set to "off", no exclaimation
-marks are printed during security alerts, e.g. for checksum violations.
+   This variable defaults to "on". If set to "off", no exclamation marks
+(Br. pling, Am: shriek) are printed during security alerts, e.g. for
+checksum violations.
 
         Exclamation  = ( off )
 
@@ -546,13 +566,13 @@ would define a pattern which was only valid when CLASS is defined.
 
 File: cfengine-Reference.info,  Node: excludelinks,  Next: ExpireAfter,  Prev: excludecopy,  Up: control
 
-ExcludeLinks
-------------
+ExcludeLink
+-----------
 
    This list is used to define a global list of names or patterns which
 are to be excluded from linking operations. For example
 
-      ExcludeLinks = ( *~ *% core )
+      ExcludeLink = ( *~ *% core )
    The same facility can be specified for each individual link
 operation using the `exclude' option *Note links::.
 
@@ -560,7 +580,7 @@ operation using the `exclude' option *Note links::.
 as long as that class is defined. For instance
        CLASS::
      
-           ExcludeLinks = ( PATTERN )
+           ExcludeLink = ( PATTERN )
 
 would define a pattern which was only valid when CLASS is defined.
 

@@ -91,7 +91,7 @@ int CheckPosixACE ARGLIST((struct CFACE *aces, char method, char *filename, enum
   since they are not called from elsewhere.
 */
 
-/* cfengine.c
+/* cfagent.c
 
   Function prototypes for cfengine.c are in cfengine.c itself, 
   since they are not called from elsewhere.
@@ -275,6 +275,7 @@ int GetANDAtom ARGLIST((char *start, char *buffer));
 int CountEvalAtoms ARGLIST((char *class));
 enum actions ActionStringToCode  ARGLIST((char *str));
 int IsBracketed ARGLIST((char *s));
+void DeleteClassesFromContext  ARGLIST((char *s));
 
 /* filedir.c */
 
@@ -455,6 +456,7 @@ void HandleLinkType ARGLIST((char *value));
 void HandleServer ARGLIST((char *value));
 void HandleDefine ARGLIST((char *value));
 void HandleElseDefine ARGLIST((char *value));
+void HandleFailover ARGLIST((char *value));
 struct UidList *MakeUidList ARGLIST((char *uidnames));
 struct GidList *MakeGidList ARGLIST((char *gidnames));
 void InstallTidyPath ARGLIST((char *path, char *wild, int rec, short int age, char travlinks, int tidysize, char type, char ldirs, short int tidydirs, char *classes));
@@ -521,6 +523,7 @@ int CompareToFile ARGLIST((struct Item *liststart, char *file));
 int IsItemIn ARGLIST((struct Item *list, char *item));
 int IsClassedItemIn ARGLIST((struct Item *list, char *item));
 int IsFuzzyItemIn ARGLIST((struct Item *list, char *item));
+struct Item *ConcatLists ARGLIST((struct Item *list1, struct Item *list2));
 int FuzzySetMatch ARGLIST((char *s1, char *s2));
 int FuzzyMatchParse ARGLIST((char *item));
 void PrependItem  ARGLIST((struct Item **liststart, char *itemstring, char *classes));
@@ -588,6 +591,9 @@ void DeleteMacro  ARGLIST((char *name));
 
 /* misc.c */
 
+int linux_redhat_version ARGLIST((void));
+int debian_version ARGLIST((void));
+char * UnQuote ARGLIST((char *name));
 int DirPush ARGLIST((char *name,struct stat *sb));
 void DirPop ARGLIST((int goback,char *name,struct stat *sb));
 void CheckLinkSecurity ARGLIST((struct stat *sb, char *name));
@@ -771,7 +777,7 @@ int RecursiveHomeTidy ARGLIST((char *name, int level,struct stat *sb));
 int TidyHomeFile ARGLIST((char *path, char *name,struct stat *statbuf, int level));
 int RecursiveTidySpecialArea ARGLIST((char *name, struct Tidy *tp, int maxrecurse, struct stat *sb));
 void TidyParticularFile ARGLIST((char *path, char *name, struct Tidy *tp, struct stat *statbuf, int is_dir, int level));
-void DoTidyFile ARGLIST((char *path, char *name, struct TidyPattern *tlp, struct stat *statbuf, short int logging_this));
+void DoTidyFile ARGLIST((char *path, char *name, struct TidyPattern *tlp, struct stat *statbuf, short int logging_this, int isdir));
 void DeleteTidyList ARGLIST((struct TidyPattern *list));
 
 /* varstring.c */

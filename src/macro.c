@@ -144,7 +144,7 @@ if (HASH[slot] != 0)
    Debug("Macro Collision!\n");
    if (CompareMacro(name,HASH[slot]) == 0)
       {
-      if (PARSING)
+      if (PARSING && !IsItemIn(VREDEFINES,name))
 	 {
 	 snprintf(VBUFF,bufsize,"Redefinition of macro %s=%s",name,exp);
 	 Warning(VBUFF);

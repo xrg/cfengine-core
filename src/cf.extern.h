@@ -32,6 +32,7 @@ extern RSA *PRIVKEY, *PUBKEY;
 
 /* cfengine */
 
+extern char CONTEXTID[32];
 extern char PADCHAR;
 extern struct cfagent_connection *CONN;
 extern int AUTHENTICATED;
@@ -40,7 +41,6 @@ extern char CFLOCK[bufsize];
 extern char CFLOG[bufsize];
 extern char CFLAST[bufsize];
 extern char LOCKDB[bufsize];
-
 
 extern char *tzname[2];
 extern char *optarg;
@@ -153,6 +153,7 @@ extern char *CLASSBUFF;
 extern char ALLCLASSBUFFER[bufsize];
 extern char CHROOT[bufsize];
 extern char ELSECLASSBUFFER[bufsize];
+extern char FAILOVERBUFFER[bufsize];
 extern char *LINKFROM;
 extern char *LINKTO;
 extern char *ERROR;
@@ -265,6 +266,8 @@ extern struct Item *VACTIONSEQ;
 extern struct Item *VACCESSLIST;
 extern struct Item *VADDCLASSES;
 extern struct Item *VALLADDCLASSES;
+extern struct Item *VJUSTACTIONS;
+extern struct Item *VAVOIDACTIONS;
 extern struct Edit *VEDITLIST;
 extern struct Edit *VEDITLISTTOP;
 extern struct Filter *VFILTERLIST;
@@ -282,6 +285,7 @@ extern struct Image *VIMAGETOP;
 extern struct Process *VPROCLIST;
 extern struct Process *VPROCTOP;
 extern struct Item *VSERVERLIST;
+extern struct Item *VREDEFINES;
 
 extern struct Item *VREPOSLIST;
 

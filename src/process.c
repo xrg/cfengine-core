@@ -79,6 +79,7 @@ struct Item *procdata;
 { char line[bufsize];
   int matches=0,dosignals=true;
   mode_t maskval;
+  struct stat statbuf;
   struct Item *killlist = NULL;
   
 matches = FindMatches(pp,procdata,&killlist); 
@@ -87,6 +88,11 @@ if (matches > 0)
    {
    Verbose("Defining classes %s\n",pp->defines);
    AddMultipleClasses(pp->defines);
+   }
+else
+   {
+   Verbose("Defining classes %s\n",pp->elsedef);
+   AddMultipleClasses(pp->elsedef);
    }
 
 if (pp->matches >= 0)
@@ -147,9 +153,20 @@ if ((pp->action == 'm') && !dosignals && (matches != 0))
  
 if (strlen(pp->restart) != 0)
    {
+   char argz[256];
+   
    if ((matches != 0) && (pp->signal != cfkill) && (pp->signal != cfterm))
       {
       Verbose("%s: Matches found for %s - no restart sequence\n",VPREFIX,pp->expr);
+      return;
+      }
+
+   sscanf(pp->restart,"%255s",argz);
+
+   if ((stat(argz,&statbuf) == -1) || (statbuf.st_mode & 0111 == 0))
+      {
+      snprintf(OUTPUT,bufsize,"Restart sequence %s could not be executed (mode=%o), while searching (%s)",pp->restart,statbuf.st_mode &7777,pp->expr);
+      CfLog(cferror,OUTPUT,"");
       return;
       }
    
@@ -271,12 +288,13 @@ for (ip = procdata; ip != NULL; ip=ip->next)
       {
       pid = -1;
       got = true;
+      Debug("Regex %s matched %s\n",ip->name,pp->expr);
       
       for (ip2 = pp->inclusions; ip2 != NULL; ip2 = ip2->next)
 	 {
 	 got = false;
 	 
-	 if (strstr(ip->name,ip2->name))
+	 if (strstr(ip->name,ip2->name) || WildMatch(ip2->name,ip->name))
 	    {
 	    got = true;
 	    break;
@@ -292,7 +310,7 @@ for (ip = procdata; ip != NULL; ip=ip->next)
       
       for (ip2 = pp->exclusions; ip2 != NULL; ip2 = ip2->next)
 	 {
-	 if (strstr(ip->name,ip2->name))
+	 if (strstr(ip->name,ip2->name) || WildMatch(ip2->name,ip->name))
 	    {
 	    got = true;
 	    break;
@@ -301,6 +319,7 @@ for (ip = procdata; ip != NULL; ip=ip->next)
 
       if (!ProcessFilter(ip->name,pp->filters,names,start,end))
 	 {
+	 Debug("%s Filtered away\n",ip->name);
 	 continue;
 	 }
       
@@ -434,9 +453,9 @@ struct Item *list;
 Verbose("DoSignals(%s)\n",pp->expr);
   
 if (list == NULL)
-    {
-    return;
-    }
+   {
+   return;
+   }
 
 if (pp->signal == cfnosignal)
    {

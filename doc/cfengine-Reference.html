@@ -118,9 +118,10 @@ keep this cache updated, on each host. This simplifies and
 consolidates the cfengine resources in a single place. The environment
 variable <code>CFINPUTS</code> still overrides this default location, as before,
 but in its absence or when called from the scheduler, this becomes the
-location of trusted files.  A special configuration file cf.update is
+location of trusted files.  A special configuration file <code>update.conf</code> is
 parsed and run before the main configuration is parsed, which is
-used to ensure that the currently caches policy is up-to-date. 
+used to ensure that the currently caches policy is up-to-date. This has private
+classes and variables. 
 If no value is set for <code>CFINPUTS</code>, then the default location
 is the trusted cfengine directory
 <code>/var/cfengine/inputs</code>.
@@ -205,6 +206,8 @@ arguments in chronological order.
 <dd>True if the named file object exists. 
 <br><dt><code>IPRange(<var>address-range</var>)</code>
 <dd>True if the current host lies within the specified range
+<br><dt><code>IsDefined(<var>command</var>)</code>
+<dd>True of the named variable is defined. NB: <code>IsDefines(var)</code>, not <code>IsDefined(${var})</code>
 <br><dt><code>IsDir(<var>f</var>)</code>
 <dd>True if the named file object is a directory. 
 <br><dt><code>IsLink(<var>f</var>)</code>
@@ -213,6 +216,8 @@ arguments in chronological order.
 <dd>True if the named file object is a plain file. 
 <br><dt><code>ReturnsZero(<var>command</var>)</code>
 <dd>True if the named shell command returns with exit code zero (okay). 
+<br><dt><code>Strcmp(<var>s1</var>,<var>s2</var>)</code>
+<dd>True if the strings match exactly. 
 </dl>
 
 <p>For example:
@@ -577,6 +582,13 @@ messages.
 <dd>(<code>--smtp</code>) Print the SMTP server for the LAN (used by cfexecd).
 
 </dl>
+
+<p>In version 2.0.4, an abbreviation for actionsequence exclusions was
+added:
+
+<pre>$ cfagent --avoid resolve,copy
+$ cfagent --just tidy --just shellcommands
+</pre>
 
 <p><hr>
 Node:<a name="Special%20variables">Special variables</a>,
@@ -1457,6 +1469,7 @@ control:
 <li><a href="#actionsequence">actionsequence</a>: 
 <li><a href="#addclasses">addclasses</a>: 
 <li><a href="#addinstallable">addinstallable</a>: 
+<li><a href="#AllowRedefinitionOf">AllowRedefinitionOf</a>: 
 <li><a href="#BinaryPaddingChar">BinaryPaddingChar</a>: 
 <li><a href="#ChecksumDatabase">ChecksumDatabase</a>: 
 <li><a href="#ChecksumUpdates">ChecksumUpdates</a>: 
@@ -1788,7 +1801,7 @@ undefined in the actionsequence.  See next section.
 
 <p><hr>
 Node:<a name="addinstallable">addinstallable</a>,
-Next:<a rel=next href="#BinaryPaddingChar">BinaryPaddingChar</a>,
+Next:<a rel=next href="#AllowRedefinitionOf">AllowRedefinitionOf</a>,
 Previous:<a rel=previous href="#addclasses">addclasses</a>,
 Up:<a rel=up href="#control">control</a>
 <br>
@@ -1835,9 +1848,33 @@ that imported files are always parsed after the main program so definitions
 made in imported files always come later than things in the main program.
 
 <p><hr>
+Node:<a name="AllowRedefinitionOf">AllowRedefinitionOf</a>,
+Next:<a rel=next href="#BinaryPaddingChar">BinaryPaddingChar</a>,
+Previous:<a rel=previous href="#addinstallable">addinstallable</a>,
+Up:<a rel=up href="#control">control</a>
+<br>
+
+<h3>AllowRedefinitionOf</h3>
+
+<p>Normally cfagent warns about redefinitions of variables during parsing. 
+This is presumed to be a mistake. To avoid this behaviour, add the name
+of the variable to this list, and the warning disappears.
+<pre>control:
+
+actionsequence = ( copy )
+
+AllowRedefinitionOf = ( cfrep )
+
+cfrep = ( bla )
+
+cfrep = ( blo )
+
+</pre>
+
+<p><hr>
 Node:<a name="BinaryPaddingChar">BinaryPaddingChar</a>,
 Next:<a rel=next href="#ChecksumDatabase">ChecksumDatabase</a>,
-Previous:<a rel=previous href="#addinstallable">addinstallable</a>,
+Previous:<a rel=previous href="#AllowRedefinitionOf">AllowRedefinitionOf</a>,
 Up:<a rel=up href="#control">control</a>
 <br>
 
@@ -2141,8 +2178,9 @@ Up:<a rel=up href="#control">control</a>
 
 <h3>Exclamation</h3>
 
-<p>This variable defaults to "on". If set to "off", no exclaimation
-marks are printed during security alerts, e.g. for checksum violations.
+<p>This variable defaults to "on". If set to "off", no exclamation marks
+(Br. pling, Am: shriek) are printed during security alerts, e.g. for
+checksum violations.
 
 <pre>   Exclamation  = ( off )
 </pre>
@@ -2181,12 +2219,12 @@ Previous:<a rel=previous href="#excludecopy">excludecopy</a>,
 Up:<a rel=up href="#control">control</a>
 <br>
 
-<h3>ExcludeLinks</h3>
+<h3>ExcludeLink</h3>
 
 <p>This list is used to define a global list of names or patterns
 which are to be excluded from linking operations. For example
 
-<pre> ExcludeLinks = ( *~ *% core )
+<pre> ExcludeLink = ( *~ *% core )
 </pre>
 The same facility can be specified for each individual
 link operation using the <code>exclude</code> option See <a href="#links">links</a>.
@@ -2195,7 +2233,7 @@ link operation using the <code>exclude</code> option See <a href="#links">links<
 are valid only as long as that class is defined. For instance
 <pre>  <var>class</var>::
 
-      ExcludeLinks = ( <var>pattern</var> )
+      ExcludeLink = ( <var>pattern</var> )
 </pre>
 
 <p>would define a pattern which was only valid when
@@ -3175,6 +3213,7 @@ copy:
                         forceipv4=<var>true/on</var>/<b>false/off</b>
                         size=<var>size limits</var>
                         server=<var>server-host</var>
+                        failover=<var>classes</var>
 
                         trustkey=<var>true</var>/<b>false</b>
                         secure=[deprecated]
@@ -3283,6 +3322,10 @@ operation. Specifying one of these automatically excludes everything
 else except further include patterns.  A global list of patterns can
 also be defined in the control section of the program.
 
+<p>If the <code>purge</code> option is used in copying, then the include option
+has the effect of the excluding files from the purge, i.e. include means
+`keep' the named files.
+
 <br><dt><code>exclude</code>
 <dd>This option may be repeated a number of times to specify the
 names of files, or wildcards which match files which are to
@@ -3310,6 +3353,10 @@ have defined the variable <code>domain</code> in the control section
 of the <code>cfagent.conf</code> file. If you don't define a domain
 you will probably receive an error of the form `cfengine: Hey! cannot
 stat file'.
+
+<br><dt><code>failover</code>
+<dd>If a file copy fails due to an error, the classes in this assignment
+will become active, allowing failover rules to become active.
 
 <br><dt><code>oldserver</code>
 <dd>If this is true, cfengine uses the old protocol specification for
@@ -6043,6 +6090,8 @@ form of a process command is
                         signal=<var>signal name</var>
                         matches=<var>number</var>
                         define=<var>classlist</var>
+                        elsedefine=<var>classlist</var>
+
                         action=<b>signal</b><var>/do/warn/bymatch</var>
                         include=<var>literal</var>
                         exclude=<var>literal</var>
@@ -6187,7 +6236,11 @@ expression matching and after includes.
 
 <br><dt><code>define=<var>classlist</var></code>
 <dd>The colon, command or dot separated list of classes becomes activated if the
-number of regular expression matches is non zero.
+number of regular expression matches is non-zero.
+
+<br><dt><code>elsedefine=<var>classlist</var></code>
+<dd>The colon, command or dot separated list of classes becomes activated if the
+number of regular expression matches is zero.
 
 <br><dt><code>action=<var>signal/do/warn</var></code>
 <dd>The default value of this option is to silently send a signal
@@ -6646,7 +6699,9 @@ for <code>disable</code>.
 the last time the file was read. A comparison by modification
 time (mtime) uses the last time the contents of the file was
 changed. The ctime parameter is the last time the contents, owner
-or permissions of the file were changed.
+or permissions of the file were changed. Note that on directories,
+mtime is always used for comparisons, since the very act of stat'ing
+alters atime and makes this comparison meaningless.
 
 <br><dt><code>dirlinks=<var>keep/tidy/delete</var></code>
 <dd>This value is used to decide whether cfengine will delete
@@ -7189,13 +7244,18 @@ Up:<a rel=up href="#admit%20grant%20and%20deny">admit grant and deny</a>
 
 <h3><code>root=</code></h3>
 
-<p>This list specificies the names of hosts which are to have read
+<p>This list specifies the names of hosts which are to have read
 access to files, regardless of the owner of the file. This effectively
 gives root users on connecting hosts privileges to non-root owned
 files on the server, but not vice-versa, similar to the NFS root mapping,
 except that there is no question of a client being able to modify files
 on the server. Caution: cfservd trusts the DNS service, so be aware that
 cache poisoning attacks are a possible way of bypassing access controls.
+
+<p>As of version 2.0.4: Once a verified host address has been identified with a functioning
+public/private key authentication, the IP address is added to the SkipVerify
+list, so that time is not wasted in verifying reverse lookups, when the
+identify can be verified more efficiently and securely by a key mechanism.
 
 <p><hr>
 Node:<a name="encrypt%3d">encrypt=</a>,
@@ -9059,7 +9119,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li><code>age</code>: <a href="#tidy">tidy</a>
 <li><code>AllowUsers</code>: <a href="#AllowUsers">AllowUsers</a>
 <li><code>backup=</code>: <a href="#copy">copy</a>
-<li><code>binserver</code>: <a href="#Link%20Children">Link Children</a>, <a href="#Single%20links">Single links</a>
+<li><code>binserver</code>: <a href="#Single%20links">Single links</a>, <a href="#Link%20Children">Link Children</a>
 <li><code>binservers</code>: <a href="#binservers">binservers</a>
 <li><code>broadcast</code>: <a href="#broadcast">broadcast</a>
 <li><code>cf.preconf</code>: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
@@ -9087,7 +9147,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li><code>files</code>: <a href="#actionsequence">actionsequence</a>, <a href="#files">files</a>
 <li><code>filter</code>: <a href="#filters">filters</a>
 <li><code>force=</code>: <a href="#copy">copy</a>, <a href="#disks">disks</a>
-<li><code>freespace=</code>: <a href="#required">required</a>, <a href="#disks">disks</a>
+<li><code>freespace=</code>: <a href="#disks">disks</a>, <a href="#required">required</a>
 <li><code>g=</code>: <a href="#Syntax">Syntax</a>
 <li><code>group</code>: <a href="#Syntax">Syntax</a>
 <li><code>groups</code>: <a href="#groups">groups</a>
@@ -9109,20 +9169,20 @@ Up:<a rel=up href="#Top">Top</a>
 <li><code>linkchildren</code>: <a href="#Link%20Children">Link Children</a>, <a href="#Files%20linkchildren">Files linkchildren</a>
 <li><code>links</code>: <a href="#links">links</a>, <a href="#actionsequence">actionsequence</a>
 <li><code>m=</code>: <a href="#Syntax">Syntax</a>
-<li><code>mailcheck</code>: <a href="#mailserver">mailserver</a>, <a href="#actionsequence">actionsequence</a>
+<li><code>mailcheck</code>: <a href="#actionsequence">actionsequence</a>, <a href="#mailserver">mailserver</a>
 <li><code>mailserver</code>: <a href="#mailserver">mailserver</a>
 <li><code>MaxCfengines</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>miscmounts</code>: <a href="#miscmounts">miscmounts</a>
 <li><code>mode</code>: <a href="#Syntax">Syntax</a>
-<li><code>module:</code>: <a href="#actionsequence">actionsequence</a>
+<li><code>module</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>moduledirectory</code>: <a href="#moduledirectory">moduledirectory</a>
-<li><code>mountables</code>: <a href="#homeservers">homeservers</a>, <a href="#mountables">mountables</a>
+<li><code>mountables</code>: <a href="#mountables">mountables</a>, <a href="#homeservers">homeservers</a>
 <li><code>mountall</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>mountinfo</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>mountpattern</code>: <a href="#mountpattern">mountpattern</a>
 <li><code>netconfig</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>netmask</code>: <a href="#control">control</a>, <a href="#netmask">netmask</a>
-<li><code>nfstype</code>: <a href="#control">control</a>, <a href="#nfstype">nfstype</a>
+<li><code>nfstype</code>: <a href="#nfstype">nfstype</a>, <a href="#control">control</a>
 <li><code>o=</code>: <a href="#Syntax">Syntax</a>
 <li><code>ones</code>: <a href="#broadcast">broadcast</a>
 <li><code>OutputPrefix</code>: <a href="#Special%20variables">Special variables</a>
@@ -9131,7 +9191,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li><code>pattern</code>: <a href="#tidy">tidy</a>
 <li><code>processes</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>purge=</code>: <a href="#copy">copy</a>
-<li><code>r=</code>: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
+<li><code>r=</code>: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li><code>recurse</code>: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li><code>repchar</code>: <a href="#Special%20variables">Special variables</a>
 <li><code>RepChar</code>: <a href="#repchar">repchar</a>
@@ -9149,13 +9209,14 @@ Up:<a rel=up href="#Top">Top</a>
 <li><code>shellcommands</code>: <a href="#actionsequence">actionsequence</a>
 <li><code>ShowActions</code>: <a href="#showactions">showactions</a>
 <li><code>singlelinks</code>: <a href="#actionsequence">actionsequence</a>
-<li><code>site</code>: <a href="#site">site</a>, <a href="#control">control</a>
+<li><code>site</code>: <a href="#control">control</a>, <a href="#site">site</a>
+<li><code>SkipVerify</code>: <a href="#root%3d">root=</a>
 <li><code>smtpserver</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li><code>split</code>: <a href="#split">split</a>, <a href="#Special%20variables">Special variables</a>
 <li><code>SpoolDirectories</code>: <a href="#spooldirectories">spooldirectories</a>
 <li><code>SuspiciousNames</code>: <a href="#suspiciousnames">suspiciousnames</a>
-<li><code>sysadm</code>: <a href="#Cfexecd%20reference">Cfexecd reference</a>, <a href="#control">control</a>, <a href="#sysadm">sysadm</a>
-<li><code>tidy</code>: <a href="#tidy">tidy</a>, <a href="#actionsequence">actionsequence</a>
+<li><code>sysadm</code>: <a href="#control">control</a>, <a href="#Cfexecd%20reference">Cfexecd reference</a>, <a href="#sysadm">sysadm</a>, <a href="#Cfexecd%20reference">Cfexecd reference</a>
+<li><code>tidy</code>: <a href="#actionsequence">actionsequence</a>, <a href="#tidy">tidy</a>
 <li><code>timezone</code>: <a href="#control">control</a>
 <li><code>touch</code>: <a href="#touch">touch</a>
 <li><code>truncate</code>: <a href="#disable">disable</a>
@@ -9179,8 +9240,8 @@ Up:<a rel=up href="#Top">Top</a>
 <li>!: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li><code>--dry-run</code> option: <a href="#shellcommands">shellcommands</a>
 <li>-D option: <a href="#addclasses">addclasses</a>
-<li>-l option: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li><code>-L</code> option: <a href="#Single%20links">Single links</a>
+<li>-l option: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li>-x option: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>.cfdisabled</code>: <a href="#disable">disable</a>
 <li>.cfengine.rm: <a href="#tidy">tidy</a>
@@ -9213,12 +9274,13 @@ Up:<a rel=up href="#Top">Top</a>
 <li><code>BeginGroupIfFileExists</code>: <a href="#editfiles">editfiles</a>
 <li><code>BeginGroupIfFileIsNewer</code>: <a href="#editfiles">editfiles</a>
 <li><code>BeginGroupIfNotDefined</code>: <a href="#editfiles">editfiles</a>
-<li>Binary servers and links: <a href="#Link%20Children">Link Children</a>, <a href="#Single%20links">Single links</a>
+<li>Binary servers and links: <a href="#Single%20links">Single links</a>, <a href="#Link%20Children">Link Children</a>
 <li>Binary servers, defining: <a href="#binservers">binservers</a>
 <li>Binary servers, priority: <a href="#binservers">binservers</a>, <a href="#Single%20links">Single links</a>
 <li>Bootstrap file: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li>Broadcast address: <a href="#broadcast">broadcast</a>
 <li>Broadcasts to the cfengine service.: <a href="#cfrun">cfrun</a>
+<li>Caching of reverse lookups: <a href="#root%3d">root=</a>
 <li>CatchAbort: <a href="#editfiles">editfiles</a>
 <li><code>cf.groups</code>: <a href="#cf.groups">cf.groups</a>
 <li><code>cf.main</code>: <a href="#cf.main">cf.main</a>
@@ -9226,7 +9288,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>cf.preconf bootstrap file: <a href="#cf.preconf%20bootstrap%20file">cf.preconf bootstrap file</a>
 <li><code>cf.site</code>: <a href="#cf.site">cf.site</a>, <a href="#cfservd.conf">cfservd.conf</a>
 <li><code>cfagent.conf</code>: <a href="#cfagent.conf">cfagent.conf</a>
-<li>CFALLCLASSES: <a href="#shellcommands">shellcommands</a>, <a href="#Special%20variables">Special variables</a>
+<li>CFALLCLASSES: <a href="#Special%20variables">Special variables</a>, <a href="#shellcommands">shellcommands</a>
 <li>cfenvd and key entropy: <a href="#Cfkey">Cfkey</a>
 <li>cfexecd: <a href="#Cfexecd%20reference">Cfexecd reference</a>
 <li>cfrc resource file: <a href="#cfrc%20resource%20file">cfrc resource file</a>
@@ -9243,9 +9305,9 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Class decided by shell command: <a href="#groups">groups</a>
 <li>Class dependencies: <a href="#groups">groups</a>
 <li>Class information, passing to scripts: <a href="#shellcommands">shellcommands</a>
-<li><code>classes</code>: <a href="#groups">groups</a>
+<li><code>classes</code>: <a href="#groups">groups</a>, <a href="#classes">classes</a>
 <li>classes: <a href="#Cfengine%20classes">Cfengine classes</a>
-<li><code>classes</code>: <a href="#classes">classes</a>
+<li><code>classes</code>: <a href="#groups">groups</a>
 <li>Classes, adding and defining: <a href="#addclasses">addclasses</a>
 <li>Classes, compound: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Classes, defining and undefining: <a href="#Cfengine%20classes">Cfengine classes</a>
@@ -9271,7 +9333,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Defining a mail server: <a href="#mailserver">mailserver</a>
 <li>Defining a mountable: <a href="#mountables">mountables</a>
 <li>Defining before use: <a href="#addinstallable">addinstallable</a>
-<li>Defining classes: <a href="#classes">classes</a>, <a href="#addclasses">addclasses</a>
+<li>Defining classes: <a href="#addclasses">addclasses</a>, <a href="#classes">classes</a>, <a href="#addclasses">addclasses</a>
 <li>Defining groups: <a href="#groups">groups</a>
 <li>DeleteNonOwnerMail: <a href="#deletenonownerfiles">deletenonownerfiles</a>
 <li>DeleteNonUserFiles: <a href="#deletenonownerfiles">deletenonownerfiles</a>
@@ -9310,6 +9372,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Exclamation marks, turning off: <a href="#exclamation">exclamation</a>
 <li>Excluding classes: <a href="#addclasses">addclasses</a>
 <li>Excluding files from a file sweep: <a href="#Syntax">Syntax</a>
+<li>failover: <a href="#copy">copy</a>
 <li>Field separator in editfiles: <a href="#editfiles">editfiles</a>
 <li>File images (copy): <a href="#copy">copy</a>
 <li>File management: <a href="#files">files</a>
@@ -9325,8 +9388,8 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Files, setting owner: <a href="#files">files</a>
 <li>Files, syntax: <a href="#Syntax">Syntax</a>
 <li>Force copying: <a href="#copy">copy</a>
-<li>freespace=: <a href="#required">required</a>, <a href="#disks">disks</a>
-<li>Full disk warnings: <a href="#required">required</a>, <a href="#disks">disks</a>
+<li>freespace=: <a href="#disks">disks</a>, <a href="#required">required</a>
+<li>Full disk warnings: <a href="#disks">disks</a>, <a href="#required">required</a>
 <li>Fully qualified names: <a href="#Cfengine%20classes">Cfengine classes</a>
 <li>Group dependencies: <a href="#groups">groups</a>
 <li>Group field, editing: <a href="#editfiles">editfiles</a>
@@ -9335,7 +9398,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Groups, defining: <a href="#groups">groups</a>
 <li>Hard class name collision: <a href="#Special%20variables">Special variables</a>
 <li>Hardlinks: <a href="#Hard%20links">Hard links</a>
-<li>Hashes of files: <a href="#Syntax">Syntax</a>, <a href="#ChecksumDatabase">ChecksumDatabase</a>
+<li>Hashes of files: <a href="#ChecksumDatabase">ChecksumDatabase</a>, <a href="#Syntax">Syntax</a>
 <li>home directive: <a href="#home%20directive">home directive</a>
 <li>Home path: <a href="#homepattern">homepattern</a>
 <li>Home servers, defining: <a href="#homeservers">homeservers</a>
@@ -9362,7 +9425,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Linkchildren: <a href="#Link%20Children">Link Children</a>, <a href="#Files%20linkchildren">Files linkchildren</a>
 <li>Links and binary servers: <a href="#Single%20links">Single links</a>, <a href="#Link%20Children">Link Children</a>
 <li>Links, absolute: <a href="#Single%20links">Single links</a>
-<li>Links, deleting stale: <a href="#Syntax">Syntax</a>, <a href="#tidy">tidy</a>
+<li>Links, deleting stale: <a href="#tidy">tidy</a>, <a href="#Syntax">Syntax</a>
 <li>Links, forcing for non-existent files: <a href="#Single%20links">Single links</a>
 <li>Links, making: <a href="#links">links</a>
 <li>Links, multiple: <a href="#Multiple%20Links">Multiple Links</a>
@@ -9429,8 +9492,10 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Processes, counting: <a href="#processes">processes</a>
 <li>Processes, signalling: <a href="#processes">processes</a>
 <li>Public keys: <a href="#copy">copy</a>
+<li>Purge, excluding files: <a href="#copy">copy</a>
 <li>Quoted strings: <a href="#editfiles">editfiles</a>
 <li>Recursion in files: <a href="#Recursion">Recursion</a>
+<li>Redefinition of macros: <a href="#AllowRedefinitionOf">AllowRedefinitionOf</a>
 <li>Relative links: <a href="#Single%20links">Single links</a>
 <li>Removing directories: <a href="#tidy">tidy</a>
 <li>Removing entries from netgroups: <a href="#groups">groups</a>
@@ -9443,6 +9508,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Restart zombie deadlock bug: <a href="#processes">processes</a>
 <li>Restricting the size of binary files to be edited: <a href="#editbinaryfilesize">editbinaryfilesize</a>
 <li>Restricting the size of files to be edited: <a href="#editfilesize">editfilesize</a>
+<li>Reverse lookup and SkipVerify: <a href="#root%3d">root=</a>
 <li>rmdirs: <a href="#tidy">tidy</a>
 <li>Rotating log files: <a href="#disable">disable</a>
 <li>Running cfengine from a single master host: <a href="#cfrun">cfrun</a>
@@ -9455,7 +9521,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Searching, advanced: <a href="#filters">filters</a>
 <li>Secure input: <a href="#secureinput">secureinput</a>
 <li>Security risk: <a href="#SkipVerify">SkipVerify</a>
-<li>Security: link races and travlinks: <a href="#tidy">tidy</a>
+<li>Security, link races and travlinks: <a href="#tidy">tidy</a>
 <li>sed, editing: <a href="#editfiles">editfiles</a>
 <li>Selecting files in searches: <a href="#filters">filters</a>
 <li>Sensible file sizes: <a href="#sensiblesize">sensiblesize</a>
@@ -9468,6 +9534,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Single quotes: <a href="#editfiles">editfiles</a>
 <li>site: <a href="#site">site</a>
 <li>size field in disable: <a href="#disable">disable</a>
+<li>SkipVerify and public-private keys: <a href="#root%3d">root=</a>
 <li>Specifying file sizes: <a href="#tidy">tidy</a>
 <li>SplayTime in cfrun: <a href="#cfrun">cfrun</a>
 <li>split: <a href="#split">split</a>
@@ -9492,15 +9559,16 @@ Up:<a rel=up href="#Top">Top</a>
 <li>Touching files: <a href="#touch">touch</a>
 <li>travlinks: <a href="#tidy">tidy</a>
 <li>Tree copying, exact: <a href="#copy">copy</a>
-<li>Tripwire functionality: <a href="#ChecksumDatabase">ChecksumDatabase</a>, <a href="#Syntax">Syntax</a>
+<li>Tripwire functionality: <a href="#Syntax">Syntax</a>, <a href="#ChecksumDatabase">ChecksumDatabase</a>
 <li>Truncating log files: <a href="#disable">disable</a>
 <li>Trusted hosts: <a href="#copy">copy</a>
 <li><code>TrustKeysFrom</code> variable: <a href="#TrustKeysFrom">TrustKeysFrom</a>
 <li>umask: <a href="#editfiles">editfiles</a>, <a href="#shellcommands">shellcommands</a>, <a href="#processes">processes</a>
 <li>underscoreclasses: <a href="#Special%20variables">Special variables</a>
 <li>Unmounting filesystems: <a href="#unmount">unmount</a>
+<li><code>update.conf</code>: <a href="#Work%20directory">Work directory</a>
 <li>Variables in import files: <a href="#import">import</a>
-<li>Warning about full disks: <a href="#required">required</a>, <a href="#disks">disks</a>
+<li>Warning about full disks: <a href="#disks">disks</a>, <a href="#required">required</a>
 <li>Wildcard home: <a href="#Syntax">Syntax</a>
 <li>Wildcards in homepattern: <a href="#homepattern">homepattern</a>
 <li>WWW server logs: <a href="#disable">disable</a>
@@ -9578,6 +9646,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li><a href="#actionsequence">actionsequence</a>
 <li><a href="#addclasses">AddClasses</a>
 <li><a href="#addinstallable">AddInstallable</a>
+<li><a href="#AllowRedefinitionOf">AllowRedefinitionOf</a>
 <li><a href="#BinaryPaddingChar">BinaryPaddingChar</a>
 <li><a href="#ChecksumDatabase">ChecksumDatabase</a>
 <li><a href="#ChecksumUpdates">ChecksumUpdates</a>
@@ -9595,7 +9664,7 @@ Up:<a rel=up href="#Top">Top</a>
 <li><a href="#emptyresolvconf">EmptyResolvConf</a>
 <li><a href="#exclamation">Exclamation</a>
 <li><a href="#excludecopy">ExcludeCopy</a>
-<li><a href="#excludelinks">ExcludeLinks</a>
+<li><a href="#excludelinks">ExcludeLink</a>
 <li><a href="#ExpireAfter">ExpireAfter</a>
 <li><a href="#homepattern">HomePattern</a>
 <li><a href="#IfElapsed">IfElapsed</a>

@@ -69,13 +69,6 @@
 
 DB *DBP;
 
- /* The locks need these in case of signals */
-
-char CFLOCK[bufsize];
-char CFLOG[bufsize];
-char CFLAST[bufsize];
-char LOCKDB[bufsize];
-
 struct LockData
    {
    pid_t pid;
@@ -88,6 +81,31 @@ void PreLockState()
 
 {
  strcpy(CFLOCK,"pre-lock-state");
+}
+
+/********************************************************************/
+
+void HandleSignal(signum)
+ 
+int signum;
+ 
+{
+snprintf(OUTPUT,bufsize*2,"Received signal %d (%s) while doing [%s]",signum,SIGNALS[signum],CFLOCK);
+Chop(OUTPUT);
+CfLog(cferror,OUTPUT,"");
+snprintf(OUTPUT,bufsize*2,"Logical start time %s ",ctime(&CFSTARTTIME));
+Chop(OUTPUT);
+CfLog(cferror,OUTPUT,"");
+snprintf(OUTPUT,bufsize*2,"This sub-task started really at %s\n",ctime(&CFINITSTARTTIME));
+
+CfLog(cferror,OUTPUT,"");
+ 
+if (signum == SIGTERM || signum == SIGINT || signum == SIGHUP || signum == SIGSEGV || signum == SIGKILL)
+   {
+   ReleaseCurrentLock();
+   closelog();
+   exit(0);
+   }
 }
 
 /************************************************************************/

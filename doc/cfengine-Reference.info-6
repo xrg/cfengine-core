@@ -124,7 +124,9 @@ lower case and abbreviated by any unique abbreviation.
      time the file was read. A comparison by modification time (mtime)
      uses the last time the contents of the file was changed. The ctime
      parameter is the last time the contents, owner or permissions of
-     the file were changed.
+     the file were changed. Note that on directories, mtime is always
+     used for comparisons, since the very act of stat'ing alters atime
+     and makes this comparison meaningless.
 
 `dirlinks=KEEP/TIDY/DELETE'
      This value is used to decide whether cfengine will delete links
@@ -583,13 +585,19 @@ File: cfengine-Reference.info,  Node: root=,  Next: encrypt=,  Prev: admit grant
 `root='
 -------
 
-   This list specificies the names of hosts which are to have read
-access to files, regardless of the owner of the file. This effectively
-gives root users on connecting hosts privileges to non-root owned files
-on the server, but not vice-versa, similar to the NFS root mapping,
-except that there is no question of a client being able to modify files
-on the server. Caution: cfservd trusts the DNS service, so be aware that
-cache poisoning attacks are a possible way of bypassing access controls.
+   This list specifies the names of hosts which are to have read access
+to files, regardless of the owner of the file. This effectively gives
+root users on connecting hosts privileges to non-root owned files on
+the server, but not vice-versa, similar to the NFS root mapping, except
+that there is no question of a client being able to modify files on the
+server. Caution: cfservd trusts the DNS service, so be aware that cache
+poisoning attacks are a possible way of bypassing access controls.
+
+   As of version 2.0.4: Once a verified host address has been
+identified with a functioning public/private key authentication, the IP
+address is added to the SkipVerify list, so that time is not wasted in
+verifying reverse lookups, when the identify can be verified more
+efficiently and securely by a key mechanism.
 
 
 File: cfengine-Reference.info,  Node: encrypt=,  Next: SkipVerify,  Prev: root=,  Up: admit grant and deny

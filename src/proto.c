@@ -268,7 +268,7 @@ ReceiveTransaction(CONN->sd,in,NULL);
 
 if (BadProtoReply(in))
    {
-   CfLog(cfinform,in,"");
+   CfLog(cferror,in,"");
    return false;
    }
 
@@ -281,7 +281,7 @@ ReceiveTransaction(CONN->sd,in,NULL);
 if (!ChecksumsMatch(digest,in,'m')) 
    {
    snprintf(OUTPUT,bufsize,"Challenge response from server %s/%s was incorrect!",ip->server,CONN->remoteip);
-   CfLog(cfverbose,OUTPUT,"");
+   CfLog(cferror,OUTPUT,"");
    return false;
    }
 else
@@ -301,7 +301,7 @@ else
       else
 	 {
 	 snprintf(OUTPUT,bufsize,"Not authorized to trust the server=%s's public key (trustkey=false)\n",ip->server);
-	 CfLog(cfverbose,OUTPUT,"");
+	 CfLog(cferror,OUTPUT,"");
 	 return false;
 	 }
       }
@@ -345,7 +345,7 @@ if (server_pubkey == NULL)
    /* proposition S4 - conditional */  
    if ((len = ReceiveTransaction(CONN->sd,in,NULL)) == 0)
       {
-      CfLog(cfinform,"Protocol error in RSA authentation from IP %s\n",ip->server);
+      CfLog(cferror,"Protocol error in RSA authentation from IP %s\n",ip->server);
       return false;
       }
    

@@ -94,6 +94,11 @@ void DeleteClassFromHeap ARGLIST((char *class));
 void Dialogue  ARGLIST((int sd,char *class));
 void GetCfStuff ARGLIST((void));
 
+/* 
+ * HvB: Bas van der Vlies
+*/
+int CompareResult ARGLIST((char *filename, char *prev_file));
+int FileChecksum ARGLIST((char *filename, unsigned char *digest, char type));
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -110,10 +115,7 @@ CheckOptsAndInit(argc,argv);
 
 if (!ONCE)
    {
-   /* Hacked timeouts - the normal cfengine lock does not seem appropriate
-    * here - I simply want to get the lock as long as no other cfexecd is
-    * running.
-    */
+   /* Get a lock as long as no other cfexecd is running. */
 
    if (!GetLock("cfexecd","execd",0,0,VUQNAME,starttime))
       {
@@ -325,7 +327,7 @@ else
 	 pthread_attr_setdetachstate(&PTHREADDEFAULTS,PTHREAD_CREATE_DETACHED);
 
 #ifdef HAVE_PTHREAD_ATTR_SETSTACKSIZE
-	 pthread_attr_setstacksize(&PTHREADDEFAULTS,(size_t)1024*1024);
+	 pthread_attr_setstacksize(&PTHREADDEFAULTS,(size_t)2048*1024);
 #endif
 
 	 if (pthread_create(&tid,&PTHREADDEFAULTS,LocalExec,NULL) != 0)
@@ -605,6 +607,123 @@ return NULL;
 /* Level 4                                                        */
 /******************************************************************/
 
+/*
+ * HvB: Bas van der Vlies
+ * This function is "stolen" from the checksum.c. Else we have to link so
+ * many more files with cfexecd. There also some small changes.
+*/
+int FileChecksum(filename,digest,type)
+
+char *filename,type;
+unsigned char digest[EVP_MAX_MD_SIZE+1];
+
+{ FILE *file;
+  EVP_MD_CTX context;
+  int len, md_len;
+  unsigned char buffer[1024];
+  const EVP_MD *md = NULL;
+
+Debug2("ChecksumFile(%c,%s)\n",type,filename);
+OpenSSL_add_all_digests();
+
+if ((file = fopen (filename, "rb")) == NULL)
+   {
+   printf ("%s can't be opened\n", filename);
+   }
+else
+   {
+   switch (type)
+      {
+      case 's': md = EVP_get_digestbyname("sha");
+  	        break;
+      case 'm': md = EVP_get_digestbyname("md5");
+	        break;
+      default: FatalError("Software failure in ChecksumFile");
+      }
+
+   if (!md)
+      {
+      return NULL;
+      }
+   
+   EVP_DigestInit(&context,md);
+
+   while (len = fread(buffer,1,1024,file))
+      {
+      EVP_DigestUpdate(&context,buffer,len);
+      }
+
+   EVP_DigestFinal(&context,digest,&md_len);
+
+   /* Digest length stored in md_len */
+   fclose (file);
+
+   return(md_len);
+   }
+
+return NULL; 
+}
+
+
+/*
+ * HvB: Bas van der Vlies
+ *  This function compare the current result with the previous run
+ *  and returns:
+ *    0 : if the files are the same
+ *    1 : if the files differ
+*/
+int CompareResult(filename, prev_file)
+
+char *filename, *prev_file; 
+
+{ int i;
+  char digest1[EVP_MAX_MD_SIZE+1];
+  char digest2[EVP_MAX_MD_SIZE+1];
+  int  md_len1, md_len2;
+  FILE *fp;
+
+Verbose("Comparing files  %s with %s\n", prev_file, filename);
+
+if ((fp=fopen(prev_file,"r")) != NULL)
+   {
+   fclose(fp);
+
+   md_len1 = FileChecksum(prev_file, digest1, 'm');
+   md_len2 = FileChecksum(filename,  digest2, 'm');
+
+   if (md_len1 != md_len2)
+      {
+      return(1);
+      }
+
+   for (i = 0; i < md_len1; i++)
+      {
+      if (digest1[i] != digest2[i])
+	 {
+	 /* Current file will now be the previous result */
+	 unlink(prev_file);
+	 if ( symlink(filename, prev_file) == -1 ) 
+	    {
+            perror("symlink");
+            }
+
+         return(1);
+	 }
+      }
+
+   return(0);
+   }
+else
+   {
+   /* no previous file */
+   if ( symlink(filename, prev_file) == -1 ) 
+      {
+      perror("symlink");
+      }
+   return(1);
+   }
+}
+
 void MailResult(file,to)
 
 char *file,*to;
@@ -616,6 +735,9 @@ char *file,*to;
   struct stat statbuf;
   FILE *fp;
 
+  /* HvB: Bas van der Vlies */
+  char prev_file[bufsize];
+
 if ((strlen(VMAILSERVER) == 0) || (strlen(to) == 0))
    {
    /* Syslog should have done this*/
@@ -626,12 +748,35 @@ if (stat(file,&statbuf) == -1)
    {
    exit(0);
    }
+
+/* HvB: Bas van der Vlies */
+snprintf(prev_file,bufsize-1,"%s/outputs/previous",WORKDIR);
  
 if (statbuf.st_size == 0)
    {
    unlink(file);
+
+   /* HvB: Bas van der Vlies 
+    * also remove previous file 
+   */
+   if ((fp=fopen(prev_file, "r")) != NULL )
+      {
+      fclose(fp);
+      unlink(prev_file);
+      }
+
    Debug("Nothing to report in %s\n",file);
    return;
+   }
+
+/*
+ * HvB: Check if the result is the same as the previous run.
+ *
+*/
+if ( CompareResult(file,prev_file) == 0 ) 
+   {
+         Verbose("Previous output is the same as current so do not mail it\n");
+	 return;
    }
 
 Debug("Mailing results of (%s) to (%s)\n",file,to);

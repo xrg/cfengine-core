@@ -55,6 +55,7 @@ int CHECKSUMUPDATES = false;
 
 char *CHECKSUMDB;
 char PADCHAR = ' ';
+char CONTEXTID[32];
 
 char CFPUBKEYFILE[bufsize];
 char CFPRIVKEYFILE[bufsize];
@@ -99,6 +100,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PUBLIC char VLOGFILE[bufsize];
   PUBLIC char ALLCLASSBUFFER[bufsize];
   PUBLIC char ELSECLASSBUFFER[bufsize];
+  PUBLIC char FAILOVERBUFFER[bufsize];
   PUBLIC char CHROOT[bufsize];
 
   PUBLIC short DEBUG = false;
@@ -164,6 +166,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PROTECTED  struct Item *VINCLUDEPARSE = NULL;
   PROTECTED  struct Item *VIGNOREPARSE = NULL;
   PROTECTED  struct Item *VSERVERLIST = NULL;
+  PROTECTED  struct Item *VREDEFINES = NULL;
 
   PROTECTED  struct Item *VHEAP = NULL;      /* Points to the base of the attribute heap */
   PROTECTED  struct Item *VNEGHEAP = NULL;
@@ -221,6 +224,8 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PROTECTED  struct Item *VACCESSLIST=NULL;
   PROTECTED  struct Item *VADDCLASSES=NULL;           /* Action sequence defs  */
   PROTECTED  struct Item *VALLADDCLASSES=NULL;        /* All classes */
+  PROTECTED  struct Item *VJUSTACTIONS=NULL;
+  PROTECTED  struct Item *VAVOIDACTIONS=NULL;
   PROTECTED  struct UnMount *VUNMOUNT=NULL;
   PROTECTED  struct UnMount *VUNMOUNTTOP=NULL;
   PROTECTED  struct Edit *VEDITLIST=NULL;
@@ -335,6 +340,8 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
       { "zone-info",no_argument,0,'z'},
       { "update-only",no_argument,0,'B'},
       { "check-contradictions",no_argument,0,'g'},
+      { "just",required_argument,0,'j'},
+      { "avoid",required_argument,0,'o'},
       { NULL,0,0,0 }
       };
 
@@ -431,6 +438,8 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
       "execresult",
       "returnszero",
       "iprange",
+      "isdefined",
+      "strcmp",
       NULL
       };
 
@@ -669,6 +678,7 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
      "server",
      "define",
      "elsedefine",
+     "failover",
      "timeout",
      "freespace",
      "nofile",
@@ -928,9 +938,14 @@ RSA *PRIVKEY = NULL, *PUBKEY = NULL;
   PUBLIC char VLOCKDIR[bufsize];
   PUBLIC char VLOGDIR[bufsize];
 
-  PUBLIC char *VCANONICALFILE;
+  PUBLIC char *VCANONICALFILE = NULL;
 
   PUBLIC FILE *VLOGFP = NULL;
+
+  PUBLIC char CFLOCK[bufsize]; 
+  PUBLIC char CFLOG[bufsize];
+  PUBLIC char CFLAST[bufsize]; 
+  PUBLIC char LOCKDB[bufsize];
 
 /* EOF */
 

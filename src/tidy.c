@@ -150,6 +150,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       if (S_ISLNK(statbuf.st_mode) && (statbuf.st_mode != getuid()))	  
 	 {
 	 snprintf(OUTPUT,bufsize,"File %s is an untrusted link. cfagent will not follow it with a destructive operation (tidy)",pcwd);
+	 CfLog(cfinform,OUTPUT,"");
 	 continue;
 	 }
       
@@ -300,7 +301,7 @@ for (tp = VTIDY; tp != NULL; tp=tp->next)
 	    continue;
 	    }
 	 
-         DoTidyFile(path,name,tlp,statbuf,CF_USELOGFILE);
+         DoTidyFile(path,name,tlp,statbuf,CF_USELOGFILE,false);
 	 }
       
       ResetOutputRoute('d','d');
@@ -562,7 +563,7 @@ for (tlp = tp->tidylist; tlp != NULL; tlp=tlp->next)
       }
    
    Debug2("Matched %s to %s in %s\n",name,tlp->pattern,path);
-   DoTidyFile(path,name,tlp,statbuf,CF_NOLOGFILE);
+   DoTidyFile(path,name,tlp,statbuf,CF_NOLOGFILE,is_dir);
    ResetOutputRoute('d','d');
    }
 }
@@ -571,12 +572,13 @@ for (tlp = tp->tidylist; tlp != NULL; tlp=tlp->next)
 /* Level 2                                                           */
 /*********************************************************************/
 
-void DoTidyFile(path,name,tlp,statbuf,logging_this)
+void DoTidyFile(path,name,tlp,statbuf,logging_this,isreallydir)
 
 char *path, *name;
 struct TidyPattern *tlp;
 struct stat *statbuf;
 short logging_this;
+int isreallydir;
 
 { time_t nowticks, fileticks = 0;
   int size_match = false, age_match = false;
@@ -599,6 +601,12 @@ switch (tlp->searchtype)
              break;
    }
 
+if (isreallydir)
+   {
+   /* Directory age comparison by mtime, since examining will always alter atime */
+   fileticks = statbuf->st_mtime;
+   }
+ 
 if (nowticks-fileticks < 0)
    {
    snprintf(OUTPUT,bufsize*2,"ALERT: atime for %s is in the future. Check system clock!\n",path);

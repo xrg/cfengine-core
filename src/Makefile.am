@@ -73,6 +73,7 @@ cfservd_SOURCES =							\
 	functions.c							\
 	install.c							\
 	ip.c								\
+	report.c							\
 	cfparse.y							\
 	chflags.c							\
 	cflex.l								\

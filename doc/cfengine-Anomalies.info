@@ -3,7 +3,7 @@ cfengine-Anomalies.texinfo.
 
 INFO-DIR-SECTION System Utilities
 START-INFO-DIR-ENTRY
-* cfengine Tutorial: (cfengine-Tutorial.info).
+* cfengine Anomalies: (cfengine-Anomalies.info).
                         Cfengine is a language based tool specifically
                         designed for configuring and maintaining BSD
                         and System-5-like operating systems attached
@@ -35,7 +35,7 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   Edition 2.0.3 for version 2.0.3 as last updated 24 May 2002.
+   Edition 2.0.4 for version 2.0.4 as last updated 1 August 2002.
 
 * Menu:
 
@@ -408,14 +408,14 @@ FAQ Index
 
 
 Tag Table:
-Node: Top476
-Node: Overview1611
-Node: cfenvd2496
-Node: Anomaly research5542
-Node: cfenvgraph8237
-Node: Starting with anomaly detection12239
-Node: Variable Index14938
-Node: Concept Index15082
-Node: FAQ Index15374
+Node: Top478
+Node: Overview1615
+Node: cfenvd2500
+Node: Anomaly research5546
+Node: cfenvgraph8241
+Node: Starting with anomaly detection12243
+Node: Variable Index14942
+Node: Concept Index15086
+Node: FAQ Index15378
 
 End Tag Table

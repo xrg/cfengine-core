@@ -292,7 +292,7 @@ Concept Index
 * Running cfagent remotely:              Remote execution of cfagent.
 * Scripts, passing classes to:           Variable substitution.
 * Sections, order of:                    Program structure.
-* Security: link races and travlinks:    Security in File sweeps.
+* Security, link races and travlinks:    Security in File sweeps.
 * server=:                               Emulating rdist.
 * server= when copying to localhost:     Deadlocks and runaway loops.
 * setgid root log:                       Log files.

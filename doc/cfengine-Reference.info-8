@@ -21,9 +21,9 @@ Concept Index
 * !:                                     Cfengine classes.
 * --dry-run option:                      shellcommands.
 * -D option:                             addclasses.
+* -L option:                             Single links.
 * -l option <1>:                         tidy.
 * -l option:                             Syntax.
-* -L option:                             Single links.
 * -x option:                             cf.preconf bootstrap file.
 * .cfdisabled:                           disable.
 * .cfengine.rm:                          tidy.
@@ -56,14 +56,15 @@ Concept Index
 * BeginGroupIfFileExists:                editfiles.
 * BeginGroupIfFileIsNewer:               editfiles.
 * BeginGroupIfNotDefined:                editfiles.
-* Binary servers and links <1>:          Link Children.
-* Binary servers and links:              Single links.
+* Binary servers and links <1>:          Single links.
+* Binary servers and links:              Link Children.
 * Binary servers, defining:              binservers.
 * Binary servers, priority <1>:          binservers.
 * Binary servers, priority:              Single links.
 * Bootstrap file:                        cf.preconf bootstrap file.
 * Broadcast address:                     broadcast.
 * Broadcasts to the cfengine service.:   cfrun.
+* Caching of reverse lookups:            root=.
 * CatchAbort:                            editfiles.
 * cf.groups:                             cf.groups.
 * cf.main:                               cf.main.
@@ -72,8 +73,8 @@ Concept Index
 * cf.site <1>:                           cf.site.
 * cf.site:                               cfservd.conf.
 * cfagent.conf:                          cfagent.conf.
-* CFALLCLASSES <1>:                      shellcommands.
-* CFALLCLASSES:                          Special variables.
+* CFALLCLASSES <1>:                      Special variables.
+* CFALLCLASSES:                          shellcommands.
 * cfenvd and key entropy:                Cfkey.
 * cfexecd:                               Cfexecd reference.
 * cfrc resource file:                    cfrc resource file.
@@ -91,8 +92,9 @@ Concept Index
 * Class dependencies:                    groups.
 * Class information, passing to scripts: shellcommands.
 * classes <1>:                           groups.
-* classes <2>:                           Cfengine classes.
-* classes:                               classes.
+* classes <2>:                           classes.
+* classes <3>:                           Cfengine classes.
+* classes:                               groups.
 * Classes, adding and defining:          addclasses.
 * Classes, compound:                     Cfengine classes.
 * Classes, defining and undefining:      Cfengine classes.
@@ -118,7 +120,8 @@ Concept Index
 * Defining a mail server:                mailserver.
 * Defining a mountable:                  mountables.
 * Defining before use:                   addinstallable.
-* Defining classes <1>:                  classes.
+* Defining classes <1>:                  addclasses.
+* Defining classes <2>:                  classes.
 * Defining classes:                      addclasses.
 * Defining groups:                       groups.
 * DeleteNonOwnerMail:                    deletenonownerfiles.
@@ -160,6 +163,7 @@ Concept Index
 * Exclamation marks, turning off:        exclamation.
 * Excluding classes:                     addclasses.
 * Excluding files from a file sweep:     Syntax.
+* failover:                              copy.
 * Field separator in editfiles:          editfiles.
 * File images (copy):                    copy.
 * File management:                       files.
@@ -175,10 +179,10 @@ Concept Index
 * Files, setting owner:                  files.
 * Files, syntax:                         Syntax.
 * Force copying:                         copy.
-* freespace= <1>:                        required.
-* freespace=:                            disks.
-* Full disk warnings <1>:                required.
-* Full disk warnings:                    disks.
+* freespace= <1>:                        disks.
+* freespace=:                            required.
+* Full disk warnings <1>:                disks.
+* Full disk warnings:                    required.
 * Fully qualified names:                 Cfengine classes.
 * Group dependencies:                    groups.
 * Group field, editing:                  editfiles.
@@ -187,8 +191,8 @@ Concept Index
 * Groups, defining:                      groups.
 * Hard class name collision:             Special variables.
 * Hardlinks:                             Hard links.
-* Hashes of files <1>:                   Syntax.
-* Hashes of files:                       ChecksumDatabase.
+* Hashes of files <1>:                   ChecksumDatabase.
+* Hashes of files:                       Syntax.
 * home directive:                        home directive.
 * Home path:                             homepattern.
 * Home servers, defining:                homeservers.
@@ -217,8 +221,8 @@ Concept Index
 * Links and binary servers <1>:          Single links.
 * Links and binary servers:              Link Children.
 * Links, absolute:                       Single links.
-* Links, deleting stale <1>:             Syntax.
-* Links, deleting stale:                 tidy.
+* Links, deleting stale <1>:             tidy.
+* Links, deleting stale:                 Syntax.
 * Links, forcing for non-existent files: Single links.
 * Links, making:                         links.
 * Links, multiple:                       Multiple Links.
@@ -288,8 +292,10 @@ Concept Index
 * Processes, counting:                   processes.
 * Processes, signalling:                 processes.
 * Public keys:                           copy.
+* Purge, excluding files:                copy.
 * Quoted strings:                        editfiles.
 * Recursion in files:                    Recursion.
+* Redefinition of macros:                AllowRedefinitionOf.
 * Relative links:                        Single links.
 * Removing directories:                  tidy.
 * Removing entries from netgroups:       groups.
@@ -302,6 +308,7 @@ Concept Index
 * Restart zombie deadlock bug:           processes.
 * Restricting the size of binary files to be edited: editbinaryfilesize.
 * Restricting the size of files to be edited: editfilesize.
+* Reverse lookup and SkipVerify:         root=.
 * rmdirs:                                tidy.
 * Rotating log files:                    disable.
 * Running cfengine from a single master host: cfrun.
@@ -314,7 +321,7 @@ Concept Index
 * Searching, advanced:                   filters.
 * Secure input:                          secureinput.
 * Security risk:                         SkipVerify.
-* Security: link races and travlinks:    tidy.
+* Security, link races and travlinks:    tidy.
 * sed, editing:                          editfiles.
 * Selecting files in searches:           filters.
 * Sensible file sizes:                   sensiblesize.
@@ -327,6 +334,7 @@ Concept Index
 * Single quotes:                         editfiles.
 * site:                                  site.
 * size field in disable:                 disable.
+* SkipVerify and public-private keys:    root=.
 * Specifying file sizes:                 tidy.
 * SplayTime in cfrun:                    cfrun.
 * split:                                 split.
@@ -351,8 +359,8 @@ Concept Index
 * Touching files:                        touch.
 * travlinks:                             tidy.
 * Tree copying, exact:                   copy.
-* Tripwire functionality <1>:            ChecksumDatabase.
-* Tripwire functionality:                Syntax.
+* Tripwire functionality <1>:            Syntax.
+* Tripwire functionality:                ChecksumDatabase.
 * Truncating log files:                  disable.
 * Trusted hosts:                         copy.
 * TrustKeysFrom variable:                TrustKeysFrom.
@@ -361,9 +369,10 @@ Concept Index
 * umask:                                 processes.
 * underscoreclasses:                     Special variables.
 * Unmounting filesystems:                unmount.
+* update.conf:                           Work directory.
 * Variables in import files:             import.
-* Warning about full disks <1>:          required.
-* Warning about full disks:              disks.
+* Warning about full disks <1>:          disks.
+* Warning about full disks:              required.
 * Wildcard home:                         Syntax.
 * Wildcards in homepattern:              homepattern.
 * WWW server logs:                       disable.

@@ -521,7 +521,7 @@ else if ((item[0] == '-') && (ACTION != processes))
          HandleGroupItem(item,deletion);
          }
       else
-         {
+	 {
 	 if (ACTION != processes)
 	    {
 	    yyerror("Illegal deletion sign or octal number?");
@@ -1423,7 +1423,7 @@ void InitializeAction()                                   /* Set defaults */
  TYPECHECK = 'y';
  UMASK = 077;     /* Default umask for scripts/files */
  FORK = 'n';
- PREVIEW = 'y';
+ PREVIEW = 'n';
  COMPATIBILITY = 'n';
 
  if (MOUNT_FROM && MOUNT_ONTO)

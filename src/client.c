@@ -57,7 +57,7 @@ if (CONN->sd == cf_not_connected)
 
    if (!RemoteConnect(ip->server,ip->forceipv4))
       {
-      CfLog(cferror,"Couldn't open a socket","socket");
+      CfLog(cfinform,"Couldn't open a socket","socket");
       if (CONN->sd != cf_not_connected)
 	 {
 	 CloseServerConnection();
@@ -84,7 +84,7 @@ if (CONN->sd == cf_not_connected)
    
    else if (!KeyAuthentication(ip))
       {
-      snprintf(OUTPUT,bufsize,"Key-authentication for %s failed\n",VFQNAME);
+      snprintf(OUTPUT,bufsize,"Authentication dialogue with %s failed\n",ip->server);
       CfLog(cferror,OUTPUT,"");
       errno = EPERM;
       CloseServerConnection();
@@ -508,10 +508,12 @@ off_t size;
 
 { int dd, buf_size,n_read = 0,toget,towrite,plainlen,more = true;
   int last_write_made_hole = 0, done = false,tosend,cipherlen=0;
-  char *buf,in[bufsize],out[bufsize],sendbuffer[bufsize];
+  char *buf,in[bufsize],out[bufsize],sendbuffer[bufsize],cfchangedstr[265];
   unsigned char iv[] = {1,2,3,4,5,6,7,8};
   long n_read_total = 0;  
   EVP_CIPHER_CTX ctx;
+
+snprintf(cfchangedstr,255,"%s%s",CFCHANGEDSTR1,CFCHANGEDSTR2);
   
 EVP_CIPHER_CTX_init(&ctx);  
 
@@ -635,7 +637,7 @@ while (!done)
       return false;      
       }
 
-   if (strncmp(buf,CFCHANGEDSTR,strlen(CFCHANGEDSTR)) == 0)
+   if (strncmp(buf,cfchangedstr,strlen(cfchangedstr)) == 0)
       {
       snprintf(OUTPUT,bufsize*2,"File %s:%s changed while copying\n",ip->server,source);
       RecvSocketStream(CONN->sd,buf,buf_size-n_read,0); /* flush rest of transaction */

@@ -62,7 +62,7 @@ as last updated @value{UPDATED}.
 @ifinfo
 @dircategory System Utilities
 @direntry
-* cfengine Tutorial: (cfengine-Tutorial.info).
+* cfengine Anomalies: (cfengine-Anomalies.info).
                         Cfengine is a language based tool specifically
                         designed for configuring and maintaining BSD
                         and System-5-like operating systems attached

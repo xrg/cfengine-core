@@ -38,6 +38,8 @@ void HandleStatInfo ARGLIST((enum builtin fn,char* args,char *value));
 void HandleCompareStat ARGLIST((enum builtin fn,char* args,char *value));
 void HandleReturnsZero ARGLIST((char* args,char *value));
 void HandleIPRange ARGLIST((char* args,char *value));
+void HandleIsDefined ARGLIST((char* args,char *value));
+void HandleStrCmp ARGLIST((char* args,char *value));
 
 /*********************************************************************/
 
@@ -96,6 +98,12 @@ switch (fn = FunctionStringToCode(name))
        break;
    case fn_iprange:
        HandleIPRange(args,value);
+       break;
+   case fn_isdefined:
+       HandleIsDefined(args,value);
+       break;
+   case fn_strcmp:
+       HandleStrCmp(args,value);
        break;
    }
  
@@ -414,4 +422,77 @@ if (*args == '/')
     }
 
 strcpy(value,CF_NOCLASS); 
+}
+
+
+/*********************************************************************/
+
+void HandleIsDefined(args,value)
+
+char *args,*value;
+
+{
+if (ACTION != groups)
+   {
+   yyerror("Use of IsDefined(s) outside of class assignment");
+   }
+
+Debug("HandleIsDefined(%s)\n",args); 
+ 
+if (GetMacroValue(args))
+   {
+   strcpy(value,CF_ANYCLASS);
+   return;
+   }
+
+strcpy(value,CF_NOCLASS); 
+}
+
+
+/*********************************************************************/
+
+void HandleStrCmp(args,value)
+
+char *args,*value;
+
+{ char *sp,from[bufsize],to[bufsize],*nfrom,*nto;
+  int count = 0;
+
+from[0] = '\0';
+to[0] = '\0';
+
+for (sp = args; *sp != '\0'; sp++)
+   {
+   if (*sp == ',')
+      {
+      count++;
+      }
+   }
+
+if (count != 1)
+   {
+   yyerror("StrCmp(a,b): argument error");
+   return;
+   }
+ 
+sscanf(args,"%[^,],%[^)]",from,to);
+Debug("Comparing [%s] < [%s]\n",from,to);
+ 
+if (from[0]=='\0' || to[0] == '\0')
+   {
+   yyerror("Argument error in class-function");
+   return;
+   }
+
+nfrom = UnQuote(from);
+nto = UnQuote(to);
+ 
+if (strcmp(nfrom,nto) == 0)
+   {
+   strcpy(value,CF_ANYCLASS); 
+   }
+ else
+    {
+    strcpy(value,CF_NOCLASS);
+    } 
 }

@@ -774,6 +774,8 @@ process command is
                              signal=SIGNAL NAME
                              matches=NUMBER
                              define=CLASSLIST
+                             elsedefine=CLASSLIST
+     
                              action=signal/DO/WARN/BYMATCH
                              include=LITERAL
                              exclude=LITERAL
@@ -913,7 +915,11 @@ it in memory. The process table is only re-consulted if
 
 `define=CLASSLIST'
      The colon, command or dot separated list of classes becomes
-     activated if the number of regular expression matches is non zero.
+     activated if the number of regular expression matches is non-zero.
+
+`elsedefine=CLASSLIST'
+     The colon, command or dot separated list of classes becomes
+     activated if the number of regular expression matches is zero.
 
 `action=SIGNAL/DO/WARN'
      The default value of this option is to silently send a signal (if

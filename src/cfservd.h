@@ -30,7 +30,7 @@
 
 extern FILE *yyin;
 
-#define queuesize 20
+#define queuesize 50
 #define connection 1
 #define CFD_INPUT "cfservd.conf"
 #define CFD_SOURCE 1

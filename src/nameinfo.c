@@ -322,9 +322,7 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
          Now check whether it is configured ...
       */
       
-      /*if ((ifr.ifr_flags == IFF_BROADCAST) && !(ifr.ifr_flags & IFF_LOOPBACK))*/
-      
-      if (!(ifr.ifr_flags & IFF_LOOPBACK))	  
+      if ((ifr.ifr_flags & IFF_BROADCAST) && !(ifr.ifr_flags & IFF_LOOPBACK))
          {
          sin=(struct sockaddr_in *)&ifp->ifr_addr;
    

@@ -539,7 +539,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       else
 	 {
 	 snprintf(OUTPUT,bufsize*2,"Purging %s in copy dest directory\n",filename);
-	 CfLog(cfsilent,OUTPUT,"");
+	 CfLog(cfinform,OUTPUT,"");
 	 
 	 if (lstat(filename,&statbuf) == -1)
 	    {
@@ -578,6 +578,8 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
 	    RecursiveTidySpecialArea(filename,&tp,INFINITERECURSE,&statbuf);
 	    free(tpat.pattern);
 	    free(tpat.classes);
+
+	    chdir("..");
 	    
 	    if (rmdir(filename) == -1)
 	       {
@@ -685,15 +687,28 @@ if (found != -1)
    {
    if ((S_ISLNK(deststatbuf.st_mode) && (ip->linktype == 'n')) || (S_ISLNK(deststatbuf.st_mode)  && ! S_ISLNK(sourcestatbuf.st_mode)))
       {
-      if (unlink(destfile) == -1)
+      if (!S_ISLNK(sourcestatbuf.st_mode) && (ip->typecheck == 'y'))
 	 {
-	 snprintf(OUTPUT,bufsize*2,"Couldn't remove link %s",destfile);
-	 CfLog(cferror,OUTPUT,"unlink");
-	 return;
+	 printf("%s: image exists but destination type is silly (file/dir/link doesn't match)\n",VPREFIX);
+ 	 printf("%s: source=%s, dest=%s\n",VPREFIX,sourcefile,destfile);
+ 	 return;
 	 }
-      Verbose("Removing old symbolic link %s to make way for copy\n",destfile);
-      found = -1;
-      }
+      if (DONTDO)
+	 {
+	 Verbose("Need to remove old symbolic link %s to make way for copy\n",destfile);
+	 }
+      else 
+	 {
+	 if (unlink(destfile) == -1)
+	    {
+	    snprintf(OUTPUT,bufsize*2,"Couldn't remove link %s",destfile);
+	    CfLog(cferror,OUTPUT,"unlink");
+	    return;
+	    }
+	 Verbose("Removing old symbolic link %s to make way for copy\n",destfile);
+	 found = -1;
+	 }
+      } 
    }
 
 if (ip->size != cfnosize)
@@ -759,6 +774,10 @@ if (found == -1)
 	 CheckCopiedFile(destfile,ip->plus,ip->minus,fixall,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
 	 AddMultipleClasses(ip->defines);
          }
+      else
+	 {
+	 AddMultipleClasses(ip->failover);
+	 }
 
       Debug2("Leaving ImageCopy\n");
       return;
@@ -962,7 +981,11 @@ else
             stat(destfile,&deststatbuf);
 	    CheckCopiedFile(destfile,ip->plus,ip->minus,fixall,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
             }
-
+	 else
+	    {
+	    AddMultipleClasses(ip->failover);
+	    }
+	 
          return;
          }
 

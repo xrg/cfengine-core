@@ -315,7 +315,8 @@ extern int errno;
 #define CF_MORE 'm'
 
 #define CFFAILEDSTR "BAD: Host authentication failed. Did you forget the domain name?"
-#define CFCHANGEDSTR "BAD: File changed while copying"
+#define CFCHANGEDSTR1 "BAD: File changed "   /* Split this so it cannot be recognized */
+#define CFCHANGEDSTR2 "while copying"
 
 #define CF_START_DOMAIN "undefined.domain"
 
@@ -506,7 +507,9 @@ enum builtin
    fn_isplain,
    fn_execresult,
    fn_returnszero,
-   fn_iprange
+   fn_iprange,
+   fn_isdefined,
+   fn_strcmp
    };
 
 /*******************************************************************/
@@ -637,6 +640,7 @@ enum fileattr  /* See COMMATTRIBUTES[] in globals.c  for matching entry */
    cfserver,
    cfdefine,
    cfelsedef,
+   cffailover,
    cftimeout,
    cffree,
    cfnofile,
@@ -751,6 +755,7 @@ enum vnames
    cfallowusers,
    cfskipverify,
    cfdefcopy,
+   cfredef,
    nonexistentvar
    };
 
@@ -1214,6 +1219,7 @@ struct Image
    char   *classes;
    char   *defines;
    char   *elsedef;
+   char   *failover;
    char   force;                                     /* true false */
    char   forcedirs;
    char   forceipv4;

@@ -1241,39 +1241,39 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
 	    CfLog(cferror,OUTPUT,"ferror");
 	    break;
 	    }
-
-	 if (preview)
+	 
+	 if (preview == 'y')
 	    {
 	    /*
 	     * Preview script - try to parse line as log message. If line does
 	     * not parse, then log as error.
 	     */
-
+	    
 	    int i;
 	    int level = cferror;
 	    char *message = line;
-
+	    
 	    /*
 	     * Table matching cfoutputlevel enums to log prefixes.
 	     */
-
+	    
 	    char *prefixes[] =
-	       {
-	       ":silent:",
-	       ":inform:",
-	       ":verbose:",
-	       ":editverbose:",
-	       ":error:",
-	       ":logonly:",
-	       };
+		{
+		    ":silent:",
+		    ":inform:",
+		    ":verbose:",
+		    ":editverbose:",
+		    ":error:",
+		    ":logonly:",
+		};
 	    int precount = sizeof(prefixes)/sizeof(char *);
-
+	    
 	    if (line[0] == ':')
 	       {
 	       /*
 	        * Line begins with colon - see if it matches a log prefix.
 		*/
-
+	       
 	       for (i=0; i<precount; i++)
 		  {
 		  int prelen = 0;
@@ -1290,16 +1290,18 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
 		     }
 		  }
 	       }
-	    CfLog(level, message, "");
+
+	    snprintf(OUTPUT,bufsize,"%s (preview of %s)\n",message,comm);
+	    CfLog(level,OUTPUT,"");
 	    }
 	 else 
 	    {
 	    /*
 	     * Dumb script - echo non-empty lines to standard output.
 	     */
-
+	    
 	    print = false;
-	 
+	    
 	    for (sp = line; *sp != '\0'; sp++)
 	       {
 	       if (! isspace((int)*sp))
@@ -1308,7 +1310,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
 		  break;
 		  }
 	       }
-	    
+
 	    if (print)
 	       {
 	       printf("%s:%s: %s\n",VPREFIX,comm,line);
@@ -2152,8 +2154,6 @@ for (ptr=VEDITLIST; ptr!=NULL; ptr=ptr->next)
 	 DoEditFile(ptr,ptr->fname);	 
 	 }
       }
-   
-   /* ptr->done = 'y'; */
    }
 
 EDITVERBOSE = false;
@@ -2335,7 +2335,8 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
       if (!OpenServerConnection(ip))
 	 {
 	 snprintf(OUTPUT,bufsize*2,"Unable to establish connection with %s\n",svp->name);
-	 CfLog(cferror,OUTPUT,"");
+	 CfLog(cfinform,OUTPUT,"");
+	 AddMultipleClasses(ip->failover);
 	 continue;
 	 }
 
@@ -2975,7 +2976,7 @@ void EditItemsInResolvConf(from,list)
 
 struct Item *from, **list;
 
-{ char buf[maxvarsize];
+{ char buf[maxvarsize],work[bufsize];
 
 if ((from != NULL) && !IsDefinedClass(from->classes))
    {
@@ -2988,14 +2989,15 @@ if (from == NULL)
    }
 else
    {
+   ExpandVarstring(from->name,work,"");
    EditItemsInResolvConf(from->next,list);
-   if (isdigit((int)*(from->name)))
+   if (isdigit((int)*(work)))
       {
-      snprintf(buf,bufsize,"nameserver %s",from->name);
+      snprintf(buf,bufsize,"nameserver %s",work);
       }
    else
       {
-      strcpy(buf,from->name);
+      strcpy(buf,work);
       }
    
    DeleteItemMatching(list,buf); /* del+prep = move to head of list */
@@ -3012,7 +3014,7 @@ int TZCheck(tzsys,tzlist)
 char *tzsys,*tzlist;
 
 {
-if ((strncmp(tzsys,"GMT+",4) == 0) || (strncmp(tzsys,"GMT-",4) == 0))
+if (strncmp(tzsys,"GMT",3) == 0)
    {
    return (strncmp(tzsys,tzlist,5) == 0); /* e.g. GMT+1 */
    }

@@ -88,15 +88,17 @@ if (IsBuiltinFunction(value))
  
 Debug1("\n(Action is control, variable [%s=%s])\n",CURRENTITEM,value);
 
-if (!IsDefinedClass(CLASSBUFF))
+/* Actionsequence needs to be dynamical here, so make exception - should be IsInstallable?? */
+ 
+if ((ScanVariable(CURRENTITEM) != cfactseq) && !IsDefinedClass(CLASSBUFF))
    {
    Debug("Class %s not defined, not defining\n",CLASSBUFF);
    return;
    }
- else
-    {
-    Debug1("Define:: variable [%s=%s])\n",CURRENTITEM,value);
-    }
+else
+   {
+   Debug1("Define:: variable [%s=%s] when %s)\n",CURRENTITEM,value,CLASSBUFF);
+   }
  
 switch (ScanVariable(CURRENTITEM))
    {
@@ -223,7 +225,9 @@ switch (ScanVariable(CURRENTITEM))
    case cfskipverify:
                   AppendItem(&SKIPVERIFY,value,CLASSBUFF);
 		  break;
-		  
+   case cfredef:
+                  AppendItem(&VREDEFINES,value,CLASSBUFF);
+		  break;  
    case cfattackers:
                   AppendItem(&ATTACKERLIST,value,CLASSBUFF);
 		  break;
@@ -521,9 +525,11 @@ switch(GetCommAttribute(item))
                    break;
    case cflinks:   HandleTravLinks(value);
                    break;
-   case cfexclude: PrependItem(&VEXCLUDEPARSE,value,CF_ANYCLASS);
+   case cfexclude: DeleteSlash(value);
+                   PrependItem(&VEXCLUDEPARSE,value,CF_ANYCLASS);
                    break;
-   case cfinclude: PrependItem(&VINCLUDEPARSE,value,CF_ANYCLASS);
+   case cfinclude: DeleteSlash(value);
+                   PrependItem(&VINCLUDEPARSE,value,CF_ANYCLASS);
                    break;
    case cfignore:  PrependItem(&VIGNOREPARSE,value,CF_ANYCLASS);
                    break;
@@ -614,7 +620,9 @@ switch(GetCommAttribute(item))
    case cfdefine:  HandleDefine(value);       
                    break;
    case cfelsedef: HandleElseDefine(value);
-                   break;		   
+                   break;
+   case cffailover: HandleFailover(value);
+                   break;		   		   
    case cfsize:    HandleCopySize(value);
                    break;
    case cfacl:     PrependItem(&VACLBUILD,value,CF_ANYCLASS);
@@ -1401,30 +1409,40 @@ char *item;
 enum itemtypes type;
 
 { char *machine, *user, *domain;
+  char buff[bufsize];
 
-Debug1("Handling group item (%s) in group (%s), type=%d\n",item,GROUPBUFF,type);
+if (*item == '\'' || *item == '"' || *item == '`')
+   {
+   ExpandVarstring(item+1,buff,NULL);
+   }
+else
+   {
+   ExpandVarstring(item,buff,NULL);
+   }
+
+Debug1("Handling group item (%s) in group (%s), type=%d\n",buff,GROUPBUFF,type);
 
 switch (type)
    {
-   case simple:    if (strcmp(item,VDEFAULTBINSERVER.name) == 0)
+   case simple:    if (strcmp(buff,VDEFAULTBINSERVER.name) == 0)
                       {
                       AddClassToHeap(GROUPBUFF);
                       break;
                       }
 
-                   if (strcmp(item,VFQNAME) == 0)
+                   if (strcmp(buff,VFQNAME) == 0)
                       {
                       AddClassToHeap(GROUPBUFF);
                       break;
                       }
 
-                   if (IsItemIn(VHEAP,item))  /* group reference */
+                   if (IsItemIn(VHEAP,buff))  /* group reference */
                       {
                       AddClassToHeap(GROUPBUFF);
                       break;
                       }
 
-		   if (IsDefinedClass(item))
+		   if (IsDefinedClass(buff))
                       {
                       AddClassToHeap(GROUPBUFF);
                       break;
@@ -1434,20 +1452,20 @@ switch (type)
 
                    break;
 
-   case netgroup:  setnetgrent(item);
+   case netgroup:  setnetgrent(buff);
 
                    while (getnetgrent(&machine,&user,&domain))
                       {
                       if (strcmp(machine,VDEFAULTBINSERVER.name) == 0)
                          {
-                         Debug1("Matched %s in netgroup %s\n",machine,item);
+                         Debug1("Matched %s in netgroup %s\n",machine,buff);
                          AddClassToHeap(GROUPBUFF);
                          break;
                          }
 
 		      if (strcmp(machine,VFQNAME) == 0)
                          {
-                         Debug1("Matched %s in netgroup %s\n",machine,item);
+                         Debug1("Matched %s in netgroup %s\n",machine,buff);
                          AddClassToHeap(GROUPBUFF);
                          break;
                          }
@@ -1459,20 +1477,20 @@ switch (type)
 
    case groupdeletion: 
 
-                   setnetgrent(item);
+                   setnetgrent(buff);
 
                    while (getnetgrent(&machine,&user,&domain))
                       {
                       if (strcmp(machine,VDEFAULTBINSERVER.name) == 0)
                          {
-                         Debug1("Matched delete item %s in netgroup %s\n",machine,item);
+                         Debug1("Matched delete item %s in netgroup %s\n",machine,buff);
                          DeleteItemStarting(&VHEAP,GROUPBUFF);
                          break;
                          }
 		      
                       if (strcmp(machine,VFQNAME) == 0)
                          {
-                         Debug1("Matched delete item %s in netgroup %s\n",machine,item);
+                         Debug1("Matched delete item %s in netgroup %s\n",machine,buff);
                          DeleteItemStarting(&VHEAP,GROUPBUFF);
                          break;
                          }
@@ -1484,18 +1502,16 @@ switch (type)
 
    case classscript:
 
-                   VBUFF[0] = '\0';
-                   ExpandVarstring (item+1,VBUFF,NULL);
-                   if (VBUFF[0] != '/')
+                   if (buff[0] != '/')
                       {
                       yyerror("Quoted scripts must begin with / for absolute path");
                       break;
                       }
 
-		   SetClassesOnScript(VBUFF,GROUPBUFF,NULL,false);
+		   SetClassesOnScript(buff,GROUPBUFF,NULL,false);
                    break;
 
-   case deletion:  if (IsDefinedClass(item))
+   case deletion:  if (IsDefinedClass(buff))
                       {
                       DeleteItemStarting(&VHEAP,GROUPBUFF);
                       }
@@ -1533,7 +1549,9 @@ if ( ! IsInstallable(CLASSBUFF))
    return;
    }
 
-AppendItem(&VRESOLVE,item,CLASSBUFF);
+ExpandVarstring(item,VBUFF,"");
+ 
+AppendItem(&VRESOLVE,VBUFF,CLASSBUFF);
 }
 
 /*******************************************************************/
@@ -3940,7 +3958,14 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
       {
       FatalError("Memory Allocation failed for InstallImageItem() #7");
       }
+
+   ExpandVarstring(FAILOVERBUFFER,buf4,"");
    
+   if ((ptr->failover = strdup(buf4)) == NULL)
+      {
+      FatalError("Memory Allocation failed for InstallImageItem() #8");
+      }
+
    if (strlen(destination) == 0)
       {
       strcpy(buf2,spl);
@@ -4459,7 +4484,7 @@ sp = action;
 while (*sp != '\0')
    {
    ++j;
-   sscanf(sp,"%[^.]",cbuff);
+   sscanf(sp,"%[^. ]",cbuff);
 
    while ((*sp != '\0') && (*sp !='.'))
       {
@@ -4486,9 +4511,9 @@ while (*sp != '\0')
       strcpy(actiontxt,cbuff);
       continue;
       }
-   else if ((!IsSpecialClass(cbuff)) && (!IsItemIn(VALLADDCLASSES,cbuff)))
+   else if (!IsSpecialClass(cbuff))
       {
-      PrependItem(&VALLADDCLASSES,cbuff,NULL);
+      AddInstallable(cbuff);
       }
    }
 }
@@ -4667,7 +4692,7 @@ char *value;
 
 { char *sp;
  
-Debug("Define default classes: %s\n",value);
+Debug("Define elsedefault classes: %s\n",value);
 
 if (strlen(value) > bufsize)
    {
@@ -4686,6 +4711,38 @@ for (sp = value; *sp != '\0'; sp++)
    if (! isalnum((int)*sp) && *sp != '_')
       {
       snprintf(OUTPUT,bufsize*2,"Illegal class list in elsedefine=%s\n",value);
+      yyerror(OUTPUT);
+      }
+   }
+}
+
+/*******************************************************************/
+
+void HandleFailover(value)
+
+char *value;
+
+{ char *sp;
+ 
+Debug("Define failover classes: %s\n",value);
+
+if (strlen(value) > bufsize)
+   {
+   yyerror("class list too long - can't handle it!");
+   }
+
+strcpy(FAILOVERBUFFER,value);
+
+for (sp = value; *sp != '\0'; sp++)
+   {
+   if (*sp == ':' || *sp == ',' || *sp == '.')
+      {
+      continue;
+      }
+   
+   if (! isalnum((int)*sp) && *sp != '_')
+      {
+      snprintf(OUTPUT,bufsize*2,"Illegal class list in failover=%s\n",value);
       yyerror(OUTPUT);
       }
    }
@@ -4751,7 +4808,7 @@ for (sp = buffer; *sp != '\0'; sp+=strlen(uidbuff))
 	       if (!PARSING)
 		  {
 		  snprintf(OUTPUT,bufsize*2,"Unknown user [%s]\n",ip->name);
-		  CfLog(cfverbose,OUTPUT,"getpwnam");
+		  CfLog(cferror,OUTPUT,"");
 		  }
 	       uid = unknown_owner;	/* signal user not found */
 	       usercopy = ip->name;
@@ -4783,7 +4840,7 @@ for (sp = buffer; *sp != '\0'; sp+=strlen(uidbuff))
 	    if (!PARSING)
 	       {
 	       snprintf(OUTPUT,bufsize,"Unknown user %s\n",uidbuff);
-	       yyerror(OUTPUT);
+	       CfLog(cferror,OUTPUT,"");
 	       }
 	    uid = unknown_owner;		/* signal user not found */
 	    usercopy = uidbuff;
@@ -4848,7 +4905,7 @@ for (sp = buffer; *sp != '\0'; sp+=strlen(gidbuff))
 	    if (!PARSING)
 	       {
 	       snprintf(OUTPUT,bufsize,"Unknown group %s\n",gidbuff);
-	       yyerror(OUTPUT);
+	       CfLog(cferror,OUTPUT,"");
 	       }
 	    
 	    gid = unknown_group;

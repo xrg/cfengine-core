@@ -55,6 +55,7 @@ if ((PRIVKEY = PEM_read_RSAPrivateKey(fp,(RSA **)NULL,NULL,passphrase)) == NULL)
    snprintf(OUTPUT,bufsize,"Error reading Private Key = %s\n",ERR_reason_error_string(err));
    CfLog(cferror,OUTPUT,"");
    PRIVKEY = NULL;
+   fclose(fp);
    return;
    }
 
@@ -65,7 +66,7 @@ Verbose("Loaded %s\n",CFPRIVKEYFILE);
 if ((fp = fopen(CFPUBKEYFILE,"r")) == NULL)
    {
    snprintf(OUTPUT,bufsize,"Couldn't find a public key (%s) - use cfkey to get one",CFPUBKEYFILE);
-   CfLog(cferror,OUTPUT,"open");
+   CfLog(cferror,OUTPUT,"fopen");
    return;
    }
  
@@ -75,6 +76,7 @@ if ((PUBKEY = PEM_read_RSAPublicKey(fp,NULL,NULL,passphrase)) == NULL)
    snprintf(OUTPUT,bufsize,"Error reading Private Key = %s\n",ERR_reason_error_string(err));
    CfLog(cferror,OUTPUT,"");
    PUBKEY = NULL;
+   fclose(fp);
    return;
    }
 
@@ -127,7 +129,7 @@ else
    {
    if ((fp = fopen(filename,"r")) == NULL)
       {
-      snprintf(OUTPUT,bufsize,"Couldn't find a public key (%s) - use cfkey to get one",CFPUBKEYFILE);
+      snprintf(OUTPUT,bufsize,"Couldn't find a public key (%s) - use cfkey to get one",filename);
       CfLog(cferror,OUTPUT,"open");
       return NULL;
       }
@@ -137,6 +139,7 @@ else
       err = ERR_get_error();
       snprintf(OUTPUT,bufsize,"Error reading Private Key = %s\n",ERR_reason_error_string(err));
       CfLog(cferror,OUTPUT,"");
+      fclose(fp);
       return NULL;
       }
    
