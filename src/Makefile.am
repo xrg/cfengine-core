@@ -226,7 +226,7 @@ cfenvgraph_SOURCES =							\
 # Pickup header files here so Automake knows about them
 #
 noinst_HEADERS =							\
-	cfservd.h								\
+	cfservd.h							\
 	cfparse.h							\
 	cf.defs.h							\
 	cf.extern.h                                                     \

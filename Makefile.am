@@ -8,6 +8,9 @@ SUBDIRS = pub src contrib inputs $(DOC_DIR)
 
 EXTRA_DIST = acconfig.h doc/cfengine.8 COPYING ChangeLog INSTALL NEWS README
 
+docdir = $(pkgdatadir)
+doc_DATA = README ChangeLog INSTALL NEWS
+
 #
 # Some basic clean ups
 #
@@ -31,5 +34,5 @@ DISTCLEANFILES =
 # "configure; make; make install"
 #
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 config.guess config.sub \
-	configure install-sh missing mkinstalldirs depcomp ylwrap ltmain.sh
-
+	configure install-sh missing mkinstalldirs depcomp ylwrap \
+	ltmain.sh mdate-sh

@@ -1,7 +1,7 @@
 dnl ##########################################################################
 dnl #
-dnl # Process this file with autoconf then autoheader to build a configure script
-dnl # automake -a -c; autoconf
+dnl # Process this file with autoconf then autoheader to build a configure
+dnl # script => automake -a -c; autoconf
 dnl #
 dnl ##########################################################################
 
@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.1.13)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.1.14)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 

@@ -367,7 +367,7 @@ if (CHECKSUMDB == NULL)
     
     if (ISCFENGINE)
        {
-       snprintf(OUTPUT,CF_BUFSIZE,"File %s was not in md5 database - new file found",filename);
+       snprintf(OUTPUT,CF_BUFSIZE,"File %s was not in database - new file found",filename);
        CfLog(cfsilent,OUTPUT,"");
        }
     

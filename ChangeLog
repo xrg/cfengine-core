@@ -2,6 +2,11 @@
 	Exception for ReplaceALL convergence warning. Warning is not fatal
 	if the operation is inside an editgroup.
 
+	md5/sha1 message incorrect on new file found.
+
+       Fixup Makefile.am and doc/Makefile.am.  Docs are now installed
+       in the CFEngine "share" directory where they belong.
+	
 2.1.13
 	Mistake in placement of update.conf runs fixed.
 

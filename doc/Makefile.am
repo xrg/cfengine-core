@@ -1,24 +1,24 @@
+# Info used in building the MAN files
 man_MANS = cfengine.8 cfagent.8  cfenvd.8  cfenvgraph.8  cfexecd.8  cfkey.8  cfrun.8  cfservd.8 cfshow.8
 
+# Info used in building the Info files
 info_TEXINFOS = cfengine-Reference.texinfo cfengine-Tutorial.texinfo cfengine-Anomalies.texinfo
-
-docdir = $(prefix)/doc/$(PACKAGE)-$(VERSION)
-doc_DATA =
+infofiles = $(info_TEXINFOS:.texinfo=.info)
+MAKEINFOHTML = $(MAKEINFO) --html --no-split
 
 # Info used in building and installing HTML files
+htmlfiles = $(info_TEXINFOS:.texinfo=.html)
+
 htmldir = $(pkgdatadir)/html
-htmlfiles = cfengine-Reference.html cfengine-Tutorial.html cfengine-Anomalies.html
 html_DATA = $(htmlfiles)
 
 # Info used in building and installing Postscript files
+psfiles = $(info_TEXINFOS:.texinfo=.ps)
+pdffiles = $(info_TEXINFOS:.texinfo=.pdf)
+dvifiles = $(info_TEXINFOS:.texinfo=.dvi)
 
-psfiles = cfengine-Tutorial.ps cfengine-Reference.ps cfengine-Anomalies.ps
-pdffiles = cfengine-Tutorial.pdf cfengine-Reference.pdf cfengine-Anomalies.pdf
-
-psdir = $(pkgdatadir)/doc
-ps_DATA = $(psfiles) $(pdffiles)
-
-MAKEINFOHTML = $(MAKEINFO) --html --no-split
+docdir = $(pkgdatadir)/doc
+doc_DATA = $(psfiles) $(pdffiles)
 
 # Make sure these get distributed with everything else.
 
@@ -26,17 +26,17 @@ EXTRA_DIST = cfagent.8 cfenvd.8 cfenvgraph.8 cfexecd.8 cfkey.8 cfrun.8 cfservd.8
 
 SUFFIXES = html latex pdf ps dvi
 
-#%.html : %.texinfo
-#	${MAKEINFO} -I $(srcdir) --html --no-split $<
-#
-#%.dvi : %.latex
-#	${LATEX} $<
+%.html : %.texinfo
+	${MAKEINFO} -I $(srcdir) --html --no-split $<
 
-#%.dvi : %.texinfo
-#	${TEXI2DVI} $<
+%.dvi : %.latex
+	${LATEX} $<
 
-#%.pdf : %.ps
-#	${PS2PDF} $<
+%.dvi : %.texinfo
+	${TEXI2DVI} $<
+
+%.pdf : %.ps
+	${PS2PDF} $<
 
 #
 # Some basic clean ups
@@ -47,7 +47,7 @@ MOSTLYCLEANFILES = *~ *.orig
 # Get everything removed down to where rebuilding requires:
 # "make; make install"
 # 
-CLEANFILES = $(htmlfiles) $(psfiles)
+CLEANFILES = $(htmlfiles) $(psfiles) $(pdffiles)
 
 #
 # Get everything removed down to where rebuilding requires:
