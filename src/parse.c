@@ -158,6 +158,8 @@ void NewParser()
  LOCALREPOS = (char *) malloc(CF_BUFSIZE);
  FILTERDATA = (char *) malloc(CF_BUFSIZE);
  STRATEGYDATA = (char *) malloc(CF_BUFSIZE);
+
+ memset(CLASSBUFF,0,CF_BUFSIZE);
 }
 
 /*******************************************************************/
