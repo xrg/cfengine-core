@@ -33,7 +33,6 @@
 /*                                                                           */
 /*****************************************************************************/
 
-#include "../pub/getopt.h"
 #include "cf.defs.h"
 #include "cf.extern.h"
 #include <math.h>
@@ -156,9 +155,9 @@ void GetFQHN()
 
 { FILE *pp;
   char cfcom[CF_BUFSIZE];
-  static char line[CF_BUFSIZE];
+  static char line[CF_BUFSIZE],*sp;
 
-snprintf(cfcom,CF_BUFSIZE-1,"%s/bin/cfagent -z",CFWORKDIR);
+snprintf(cfcom,CF_BUFSIZE-1,"%s/bin/cfagent -Q fqhost",CFWORKDIR);
  
 if ((pp=popen(cfcom,"r")) ==  NULL)
    {
@@ -168,10 +167,16 @@ if ((pp=popen(cfcom,"r")) ==  NULL)
    }
 
 line[0] = '\0'; 
-fgets(line,CF_BUFSIZE,pp); 
-fgets(line,CF_BUFSIZE,pp); 
-line[0] = '\0'; 
-fgets(line,CF_BUFSIZE,pp);  
+fgets(line,CF_BUFSIZE,pp);
+for (sp = line; *sp != '\0'; sp++)
+   {
+   if (*sp == '=')
+      {
+      sp++;
+      break;
+      }
+   }
+
 strcpy(VFQNAME,line);
 
 if (strlen(VFQNAME) == 0)

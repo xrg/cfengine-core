@@ -32,7 +32,6 @@
 /*                                                                 */
 /*******************************************************************/
 
-#include "../pub/getopt.h"
 #include "cf.defs.h"
 #include "cf.extern.h"
 

@@ -33,7 +33,6 @@
 /*                                                                           */
 /*****************************************************************************/
 
-#include "../pub/getopt.h"
 #include "cf.defs.h"
 #include "cf.extern.h"
 #ifdef HAVE_SYS_LOADAVG_H

@@ -29,8 +29,12 @@
 /*******************************************************************/
 
 #include "conf.h"
+
 #include <stdio.h>
 
+#ifndef _GETOPT_H
+#include "../pub/getopt.h"
+#endif
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
