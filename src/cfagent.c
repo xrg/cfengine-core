@@ -1055,7 +1055,8 @@ if (NOSPLAY)
    }
 
 time = 0;
-hash = Hash(VFQNAME);
+snprintf(ebuff,CF_BUFSIZE,"%s+%s",VFQNAME,VIPADDRESS);
+hash = Hash(ebuff);
 
 if (!NOSPLAY)
    {
