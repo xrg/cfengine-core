@@ -85,14 +85,14 @@ fd = open(CFPRIVKEYFILE,O_WRONLY | O_CREAT | O_TRUNC, 0600);
 if (fd < 0)
    {
    printf("Ppen %s failed: %s.",CFPRIVKEYFILE,strerror(errno));
-   return 0;
+   return 1;
    }
  
 if ((fp = fdopen(fd, "w")) == NULL )
    {
    printf("fdopen %s failed: %s.",CFPRIVKEYFILE, strerror(errno));
    close(fd);
-   return 0;
+   return 1;
    }
 
 printf("Writing private key to %s\n",CFPRIVKEYFILE);
@@ -111,14 +111,14 @@ fd = open(CFPUBKEYFILE,O_WRONLY | O_CREAT | O_TRUNC, 0600);
 if (fd < 0)
    {
    printf("open %s failed: %s.",CFPUBKEYFILE,strerror(errno));
-   return 0;
+   return 1;
    }
  
 if ((fp = fdopen(fd, "w")) == NULL )
    {
    printf("fdopen %s failed: %s.",CFPUBKEYFILE, strerror(errno));
    close(fd);
-   return 0;
+   return 1;
    }
 
 printf("Writing public key to %s\n",CFPUBKEYFILE);
