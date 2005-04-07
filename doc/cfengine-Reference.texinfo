@@ -8928,7 +8928,9 @@ The colon, comma or dot separated list of classes becomes activated if the
 number of regular expression matches is zero.
 
 
-@item action=@var{signal/do/warn}
+@vindex bymatch
+@vindex signal
+@item action=@var{signal/do/warn/bymatch}
 The default value of this option is to silently send a signal
 (if one was defined using the @code{signal} option) to matching
 processes. This is equivalent to setting the value of this
