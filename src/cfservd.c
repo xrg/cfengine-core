@@ -594,7 +594,10 @@ fcntl(sd, F_SETFD, FD_CLOEXEC);
  
 while (true)
    {
-   CheckFileChanges(argc,argv,sd);
+   if (ACTIVE_THREADS == 0)
+      {
+      CheckFileChanges(argc,argv,sd);
+      }
    
    FD_ZERO(&rset);
    FD_SET(sd,&rset);
