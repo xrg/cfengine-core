@@ -594,10 +594,7 @@ fcntl(sd, F_SETFD, FD_CLOEXEC);
  
 while (true)
    {
-   if (ACTIVE_THREADS == 0)
-      {
-      CheckFileChanges(argc,argv,sd);
-      }
+   CheckFileChanges(argc,argv,sd);
    
    FD_ZERO(&rset);
    FD_SET(sd,&rset);
@@ -1044,6 +1041,7 @@ if (CFDSTARTTIME < newstat.st_mtime)
    DeleteItemList(VHEAP);
    DeleteItemList(VNEGHEAP);
    DeleteItemList(TRUSTKEYLIST);
+   DeleteItemList(VIMPORT);
    DeleteAuthList(VADMIT);
    DeleteAuthList(VDENY);
    strcpy(VDOMAIN,"undefined.domain");
@@ -1051,6 +1049,7 @@ if (CFDSTARTTIME < newstat.st_mtime)
    VADMIT = VADMITTOP = NULL;
    VDENY  = VDENYTOP  = NULL;
    VHEAP  = VNEGHEAP  = NULL;
+   VIMPORT = NULL;
    TRUSTKEYLIST = NULL;
 
    AddClassToHeap("any");
