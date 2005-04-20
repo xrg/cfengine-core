@@ -1433,8 +1433,6 @@ if (stat(buffer,&statbuf) == 0)
       return;
       }
 
-   printf("%s: -----------------------------------------------------------------------------------\n",VPREFIX);
-   printf("%s: In the last 40 minutes, the peak state was:\n",VPREFIX);
    while(!feof(fp))
       {
       char local[CF_BUFSIZE],remote[CF_BUFSIZE];
@@ -1510,7 +1508,10 @@ if (stat(buffer,&statbuf) == 0)
    
    fclose(fp);
    conns--;
-   
+
+   printf("%s: -----------------------------------------------------------------------------------\n",VPREFIX);
+   printf("%s: In the last 40 minutes, the peak state was q = %d:\n",VPREFIX,conns);
+
    if (IsSocketType(args)||IsTCPType(args))
       {
       if (addresses != NULL)

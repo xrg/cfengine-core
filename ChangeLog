@@ -1,4 +1,14 @@
+2.1.15 (alphas)
+
+	-f removal in cfservd patch
+
+
 2.1.14
+
+	Alerts processed now in update context.
+
+	More locking canonification fixes
+	
 	Exception for ReplaceALL convergence warning. Warning is not fatal
 	if the operation is inside an editgroup.
 

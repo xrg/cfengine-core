@@ -886,6 +886,7 @@ enum vnames
    cfcr,
    cfn,
    cfdblquote,
+   cfcolon,
    cfquote,
    cfdollar,
    cfrepchar,

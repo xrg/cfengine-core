@@ -36,7 +36,7 @@ may be included in a translation approved by the author instead of in
 the original English.
 
    This manual corresponds to CFENGINE Edition 2.1.14 for version
-2.1.14 as last updated 6 April 2005.
+2.1.14 as last updated 7 April 2005.
 
 * Menu:
 
@@ -7105,7 +7105,7 @@ it in memory. The process table is only re-consulted if
      The colon, comma or dot separated list of classes becomes
      activated if the number of regular expression matches is zero.
 
-`action=SIGNAL/DO/WARN'
+`action=SIGNAL/DO/WARN/BYMATCH'
      The default value of this option is to silently send a signal (if
      one was defined using the `signal' option) to matching processes.
      This is equivalent to setting the value of this parameter to
@@ -8405,15 +8405,4 @@ identified with a functioning public/private key authentication, the IP
 address is added to the SkipVerify list, so that time is not wasted in
 verifying reverse lookups, when the identify can be verified more
 efficiently and securely by a key mechanism.  
-
-
-File: cfengine-Reference.info,  Node: encrypt=,  Next: SkipVerify,  Prev: root=,  Up: admit grant and deny
-
-5.2.2 `encrypt=true'
---------------------
-
-If this option is set, cfservd will only serve the named files if the
-copy access type is `secure', i.e. on an encrypted link. This
-presupposes that cfengine has been compiled with a working OpenSSL
-library.
 

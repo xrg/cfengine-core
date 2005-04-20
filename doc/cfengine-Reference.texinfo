@@ -1334,6 +1334,10 @@ troublesome special characters in strings.
 Expands to the carriage return character.
 @vindex $(cr)
 
+@item colon
+Expands to the colon @samp{:} character.
+@vindex $(colon)
+
 @item dblquote
 Expands to a double quote @code{"}
 @vindex $(dblquote)

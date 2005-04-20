@@ -13,7 +13,7 @@ END-INFO-DIR-ENTRY
 
 Indirect:
 cfengine-Reference.info-1: 478
-cfengine-Reference.info-2: 300475
+cfengine-Reference.info-2: 300121
 
 Tag Table:
 (Indirect)
@@ -158,56 +158,56 @@ Node: remotehost examples240152
 Node: miscmounts242062
 Node: mountables243336
 Node: processes244865
-Node: packages255552
-Node: rename263983
-Node: required264185
-Node: resolve266367
-Node: shellcommands268158
-Node: strategies274179
-Node: tidy275491
-Node: unmount284047
-Node: Cfservd.conf and cfrun reference285406
-Node: cfservd control288250
-Node: IP address ranges288825
-Node: AllowConnectionsFrom289790
-Node: AllowMultipleConnectionsFrom290485
-Node: AllowUsers291294
-Node: AutoExecCommand292358
-Node: AutoExecInterval292581
-Node: BindToInterface292816
-Node: ChecksumDatabase in cfservd293348
-Node: cfrunCommand293989
-Node: DenyBadClocks294261
-Node: DenyConnectionsFrom294703
-Node: cfservd HostnameKeys295079
-Node: cfservd IfElapsed295763
-Node: LogAllConnections296186
-Node: MaxConnections296642
-Node: TrustKeysFrom296982
-Node: DynamicAddresses297728
-Node: admit grant and deny298913
-Node: root=299153
-Node: encrypt=300113
-Node: SkipVerify300475
-Node: cfrun301250
-Node: Firewalls and NATs306036
-Node: Cfexecd reference307260
-Node: Problem solving309765
-Node: cf.preconf bootstrap file309993
-Node: cfrc resource file312263
-Node: Example configuration file315142
-Node: cfagent.conf315620
-Node: cf.groups316706
-Node: cf.main318153
-Node: cf.site323504
-Node: cf.motd334471
-Node: cf.users335525
-Node: cf.solaris339160
-Node: cf.linux344667
-Node: cf.freebsd346887
-Node: cfservd.conf348607
-Node: Variable Index349714
-Node: Concept Index365247
-Node: FAQ Index401175
+Node: packages255560
+Node: rename263991
+Node: required264193
+Node: resolve266375
+Node: shellcommands268166
+Node: strategies274187
+Node: tidy275499
+Node: unmount284055
+Node: Cfservd.conf and cfrun reference285414
+Node: cfservd control288258
+Node: IP address ranges288833
+Node: AllowConnectionsFrom289798
+Node: AllowMultipleConnectionsFrom290493
+Node: AllowUsers291302
+Node: AutoExecCommand292366
+Node: AutoExecInterval292589
+Node: BindToInterface292824
+Node: ChecksumDatabase in cfservd293356
+Node: cfrunCommand293997
+Node: DenyBadClocks294269
+Node: DenyConnectionsFrom294711
+Node: cfservd HostnameKeys295087
+Node: cfservd IfElapsed295771
+Node: LogAllConnections296194
+Node: MaxConnections296650
+Node: TrustKeysFrom296990
+Node: DynamicAddresses297736
+Node: admit grant and deny298921
+Node: root=299161
+Node: encrypt=300121
+Node: SkipVerify300483
+Node: cfrun301258
+Node: Firewalls and NATs306044
+Node: Cfexecd reference307268
+Node: Problem solving309773
+Node: cf.preconf bootstrap file310001
+Node: cfrc resource file312271
+Node: Example configuration file315150
+Node: cfagent.conf315628
+Node: cf.groups316714
+Node: cf.main318161
+Node: cf.site323512
+Node: cf.motd334479
+Node: cf.users335533
+Node: cf.solaris339168
+Node: cf.linux344675
+Node: cf.freebsd346895
+Node: cfservd.conf348615
+Node: Variable Index349722
+Node: Concept Index365401
+Node: FAQ Index401329
 
 End Tag Table

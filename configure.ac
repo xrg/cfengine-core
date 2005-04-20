@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.1.14)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.1.15a1)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -737,6 +737,8 @@ dnl ####################################################################
 AC_MSG_CHECKING(Checking for GCC Specific compile flags)
 if test x"$GCC" = "xyes"; then
 	
+dnl # -Wformat - to be considered
+
 	GCC_CFLAG="-g -O2 -Wreturn-type -Wmissing-prototypes -Wuninitialized"		
 	AC_MSG_RESULT(yes)
 	AC_SUBST(GCC_CFLAG)

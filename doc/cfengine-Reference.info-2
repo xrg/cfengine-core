@@ -11,6 +11,17 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: encrypt=,  Next: SkipVerify,  Prev: root=,  Up: admit grant and deny
+
+5.2.2 `encrypt=true'
+--------------------
+
+If this option is set, cfservd will only serve the named files if the
+copy access type is `secure', i.e. on an encrypted link. This
+presupposes that cfengine has been compiled with a working OpenSSL
+library.
+
+
 File: cfengine-Reference.info,  Node: SkipVerify,  Prev: encrypt=,  Up: admit grant and deny
 
 5.2.3 SkipVerify
@@ -1816,6 +1827,7 @@ Variable Index
 * binserver:                             Single links.        (line 110)
 * binservers:                            binservers.          (line   6)
 * broadcast:                             broadcast.           (line   6)
+* bymatch:                               processes.           (line 181)
 * cf.preconf:                            cf.preconf bootstrap file.
                                                               (line   6)
 * CFALLCLASSES <1>:                      Special variables.   (line  16)
@@ -1939,6 +1951,7 @@ Variable Index
 * sensiblesize:                          control.             (line  66)
 * shellcommands:                         actionsequence.      (line  35)
 * ShowActions:                           showactions.         (line   6)
+* signal:                                processes.           (line 181)
 * singlelinks:                           actionsequence.      (line  35)
 * site <1>:                              site.                (line   6)
 * site:                                  control.             (line  66)

@@ -79,6 +79,7 @@ char *VVNAMES[] =
    "cr",
    "n",
    "dblquote",
+   "colon",
    "quote",
    "dollar",
    "repchar",
@@ -695,6 +696,15 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
                 }
              strcat(buffer,"\'");
              break;
+
+	 case cfcolon:
+             if (ExpandOverflow(buffer," "))
+                { 
+                FatalError("Can't expandvarstring");
+                }
+             strcat(buffer,":");
+             break;
+
              
          case cfdollar:
              
