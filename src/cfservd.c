@@ -1603,7 +1603,7 @@ if (GetMacroValue(CONTEXTID,"cfrunCommand") == NULL)
 
 for (sp = args; *sp != '\0'; sp++) /* Blank out -K -f */
    {
-   if ((strncmp(sp,"-K",2) == 0) || (strncmp(sp,"-f",2) == 0))
+   if ((strncmp(sp,"-K",2) == 0) || (strncmp(sp,"-f",2) == 0) || (strncmp(sp,"f ",2) == 0))
       {
       *sp = ' ';
       *(sp+1) = ' ';
