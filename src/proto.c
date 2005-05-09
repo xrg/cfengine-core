@@ -407,6 +407,7 @@ if (server_pubkey == NULL)
       }
 
    SavePublicKey(keyname,newkey);
+   server_pubkey = RSAPublicKey_dup(newkey);
    RSA_free(newkey);
    }
  
