@@ -118,12 +118,18 @@ int GetDiskUsage (char *file,enum cfsizes type)
     avail = (buf.f_bavail * buf.f_frsize) / blocksize;
 #endif
 
-#if defined AIX || defined SCO || defined CFCRAY || defined LINUX
+#if defined AIX || defined SCO || defined CFCRAY
     total = buf.f_blocks * ((float)buf.f_bsize / blocksize);
     used = (buf.f_blocks - buf.f_bfree) * ((float)buf.f_bsize / blocksize);
     avail = buf.f_bfree * ((float)buf.f_bsize / blocksize);
 #endif
 
+#if defined LINUX
+    total = buf.f_blocks * ((float)buf.f_bsize / blocksize);
+    used = (buf.f_blocks - buf.f_bfree) * ((float)buf.f_bsize / blocksize);
+    avail = buf.f_bavail * ((float)buf.f_bsize / blocksize);
+#endif
+    
 #if defined IRIX
     /* Float fix by arjen@sara.nl */
     total = buf.f_blocks *  ((float)buf.f_bsize / blocksize);
