@@ -231,7 +231,7 @@ while ((c=getopt_long(argc,argv,"d:vhHFVT",CFDENVOPTIONS,&optindex)) != EOF)
          break;
 
       case 'T': TCPDUMP = true;
-             break;
+                break;
   
       default:  Syntax();
                 exit(1);
@@ -509,6 +509,9 @@ if (TCPDUMP)
          {
          TCPDUMP = false;
          }
+
+      /* Skip first banner */
+      fgets(tcpbuffer,CF_BUFSIZE-1,TCPPIPE);
       }
    else
       {
@@ -525,6 +528,7 @@ if (TCPDUMP)
 
    if (TCPDUMP)
       {
+      printf("Reading from tcpdump...\n");
       memset(tcpbuffer,0,CF_BUFSIZE);      
       ZeroArrivals();
       signal(SIGALRM,(void *)TimeOut);
@@ -545,9 +549,10 @@ if (TCPDUMP)
             break;
             }
 
-         if (strstr(tcpbuffer,":")) /* Error message protect sleeptime */
+         if (strstr(tcpbuffer,"tcpdump:")) /* Error message protect sleeptime */
             {
-            signal(SIGALRM,SIG_DFL);
+            Debug("Error - (%s)\n",tcpbuffer);
+            alarm(0);
             TCPDUMP = false;
             break;
             }
@@ -565,7 +570,8 @@ if (TCPDUMP)
          }
       }
    else
-      {      
+      {
+      printf("Sleeping...\n");
       sleep(SLEEPTIME);
       }
    
@@ -1239,8 +1245,6 @@ while (!feof(pp))
          }
       
       spend++;
-      
-      Debug("Comparing (%s) with (%s) in %s\n",spend,ECGSOCKS[i][0],remote);
       
       if (strcmp(spend,ECGSOCKS[i][0]) == 0)
          {
