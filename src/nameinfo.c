@@ -135,6 +135,22 @@ if ((sp = malloc(strlen(VSYSNAME.nodename)+1)) == NULL)
 strcpy(sp,VSYSNAME.nodename);
 SetDomainName(sp);
 
+for (sp2=sp; *sp2 != '\0'; sp2++)  /* Add some domain hierarchy classes */
+   {
+   if (*sp2 == '.')
+      {
+      if (*(sp2+1) != '\0')
+         {
+         Debug("Defining domain #%s#\n",(sp2+1));
+         AddClassToHeap(CanonifyName(sp2+1));
+         }
+      else
+         {
+         Debug("Domain rejected\n");
+         }      
+      }
+   }
+
 for (sp2=sp; *sp2 != '\0'; sp2++)  /* Truncate fully qualified name */
    {
    if (*sp2 == '.')
