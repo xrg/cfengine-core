@@ -364,7 +364,7 @@ extern int errno;
 
 #    ifdef SUNOS_5
 #     include <fcntl.h>
-#     include <kvm.h>
+//#     include <kvm.h>
 #     include <kstat.h>
 #    endif
 

@@ -1055,6 +1055,8 @@ if (CFDSTARTTIME < newstat.st_mtime)
    VIMPORT = NULL;
    TRUSTKEYLIST = NULL;
 
+   BlankHashTable("server");
+
    AddClassToHeap("any");
    GetNameInfo();
    GetInterfaceInfo();

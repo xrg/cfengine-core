@@ -31,6 +31,8 @@
 #include "conf.h"
 
 #include <stdio.h>
+#include <math.h>
+#include <db.h>
 
 #ifndef _GETOPT_H
 #include "../pub/getopt.h"
@@ -1995,6 +1997,4 @@ struct Package      /* For packages: */
 /* All prototypes                                                   */
 /********************************************************************/
 
-#include <math.h>
-#include <db.h>
 #include "prototypes.h"

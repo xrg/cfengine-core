@@ -653,7 +653,7 @@ while (!done)
    
    if (ip->encrypt == 'y')
       {
-      if (!EVP_DecryptUpdate(&ctx,sendbuffer,&plainlen,buf,cipherlen))
+      if (!EVP_DecryptUpdate(&ctx,(unsigned char *)sendbuffer,&plainlen,(unsigned char*)buf,cipherlen))
          {
          Debug("Decryption failed\n");
          return false;

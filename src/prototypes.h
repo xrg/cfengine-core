@@ -677,6 +677,7 @@ void CfOpenLog ARGLIST((void));
 void SetContext ARGLIST((char *id));
 int ScopeIsMethod  ARGLIST((void));
 void InitHashTable ARGLIST((char **table));
+void BlankHashTable ARGLIST((char *scope));
 void PrintHashTable ARGLIST((char **table));
 int Hash ARGLIST((char *name));
 int ElfHash ARGLIST((char *name));

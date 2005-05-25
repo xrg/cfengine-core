@@ -117,6 +117,31 @@ for (i = 0; i < CF_HASHTABLESIZE; i++)
 
 /*******************************************************************/
 
+void BlankHashTable(char *scope)
+
+{ int i;
+  struct cfObject *ptr;
+
+for (ptr = VOBJ; ptr != NULL; ptr=ptr->next)
+   {
+   if (strcmp(ptr->scope,scope) == 0)
+      {
+      Verbose("Clearing macros in scope(%s)\n",scope);
+      
+      for (i = 0; i < CF_HASHTABLESIZE; i++)
+         {
+         if (ptr->hashtable[i] != NULL)
+            {
+            free(ptr->hashtable[i]);
+            ptr->hashtable[i] = NULL;
+            }
+         }
+      }
+   }
+}
+
+/*******************************************************************/
+
 void PrintHashTable(char **table)
 
 { int i;
