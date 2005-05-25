@@ -555,6 +555,7 @@ for (ip = SCHEDULE; ip != NULL; ip = ip->next)
       DeleteItemList(VHEAP);
       VHEAP = NULL;
       GetNameInfo();
+      strcpy(VUQNAME,VSYSNAME.nodename);
       return true;
       }
    }
@@ -562,6 +563,7 @@ for (ip = SCHEDULE; ip != NULL; ip = ip->next)
 DeleteItemList(VHEAP);
 VHEAP = NULL; 
 GetNameInfo();
+strcpy(VUQNAME,VSYSNAME.nodename);
 return false;
 }
 
