@@ -98,7 +98,7 @@ char *CLASSATTRIBUTES[CF_CLASSATTR][CF_ATTRDIM] =
    {"irix4","ip*","4*"},         /* irix4 */
    {"irix", "ip*","*"},          /* irix */
    {"irix64","ip*","*"},         /* irix64 */
-   {"freebsd","i?86","*"},       /* freebsd */
+   {"freebsd","*","*"},       /* freebsd */
    {"sunos","i86pc","5*"},       /* solarisx86 */
    {"bsd","*","*"},              /* bsd 4.3 */
    {"newsos","*","*"},           /* newsos4 */
