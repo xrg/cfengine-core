@@ -81,7 +81,7 @@ int NOSCALING = true;
 char FILENAME[CF_BUFSIZE];
 unsigned int HISTOGRAM[ATTR*2+CF_NETATTR*2+5+PH_LIMIT][7][CF_GRAINS];
 int SMOOTHHISTOGRAM[ATTR*2+CF_NETATTR*2+5+PH_LIMIT][7][CF_GRAINS];
-char VFQNAME[CF_BUFSIZE];
+char VFQNAME[CF_MAXVARSIZE];
 
 /*****************************************************************************/
 /*
