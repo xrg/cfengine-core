@@ -32,7 +32,8 @@
 
 #include <stdio.h>
 #include <math.h>
-#include <db.h>
+
+
 
 #ifndef _GETOPT_H
 #include "../pub/getopt.h"
@@ -208,6 +209,8 @@ extern int errno;
 #include <pwd.h>
 #include <grp.h>
 
+
+
 #ifdef HAVE_SYS_SOCKIO_H
 # include <sys/sockio.h>
 #endif
@@ -310,10 +313,14 @@ extern int errno;
 /* Need this to to avoid conflict with solaris 2.6 and db.h */
 
 #ifdef SOLARIS
-# define u_int32_t uint32_t
-# define u_int16_t uint16_t
-# define u_int8_t uint8_t
+# ifndef u_int32_t
+#  define u_int32_t uint32_t
+#  define u_int16_t uint16_t
+#  define u_int8_t uint8_t
+# endif
 #endif
+
+#include <db.h>
 
 
 /*******************************************************************/

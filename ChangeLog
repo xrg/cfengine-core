@@ -2,6 +2,17 @@
 
 	-f removal in cfservd patch
 
+	Segmentatin fault in cfservd with RSA key exchange fixed.
+
+	Disk freespace alerting bug - did not agree with manual specification. Message
+	appears only in verbose. Fixed. 
+
+	Autodefine install patch.
+
+	Abspath in shellcommands was not parsed and acted on...
+
+	Warnall action was not respected in copy. Permissions were altered on destination file anyway.
+	
 
 2.1.14
 
@@ -57,7 +68,7 @@
 
 	Alteration to lock hashing to avoid conflicts
 
-	Mandrake version type patch/repatch d 
+	Mandrake version type patch/repatched 
 
 	Error message in disable now
 	underlines move to respository where defined.
