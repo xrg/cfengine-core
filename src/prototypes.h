@@ -330,7 +330,7 @@ int RecursiveCheck ARGLIST((char *name, mode_t plus, mode_t minus, enum fileacti
 int CheckFinderType ARGLIST((char *file, enum fileactions action, char *cf_findertype, struct stat *statbuf)); 
 #endif
 void CheckExistingFile ARGLIST((char *cf_findertype,char *file, mode_t plus, mode_t minus, enum fileactions action, struct UidList *uidlist, struct GidList *gidlist, struct stat *dstat, struct File *ptr, struct Item *acl_aliases));
-void CheckCopiedFile ARGLIST((char *cf_findertype,char *file, mode_t plus, mode_t minus, enum fileactions action, struct UidList *uidlist, struct GidList *gidlist, struct stat *dstat, struct stat *sstat, struct File *ptr, struct Item *acl_aliases));
+void CheckCopiedFile ARGLIST((char *cf_findertype,char *file, mode_t plus, mode_t minus, char *action, struct UidList *uidlist, struct GidList *gidlist, struct stat *dstat, struct stat *sstat, struct File *ptr, struct Item *acl_aliases));
 int CheckOwner ARGLIST((char *file, enum fileactions action, struct UidList *uidlist, struct GidList *gidlist, struct stat *statbuf));
 int CheckHomeSubDir ARGLIST((char *testpath, char *tidypath, int recurse));
 int FileIsNewer ARGLIST((char *file1, char *file2));

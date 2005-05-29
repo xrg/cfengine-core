@@ -818,9 +818,10 @@ if (ptr != NULL)
 
 /*********************************************************************/
 
-void CheckCopiedFile(char *cf_findertype,char *file,mode_t plus,mode_t minus,enum fileactions action,struct UidList *uidlist,struct GidList *gidlist,struct stat *dstat,struct stat *sstat,struct File *ptr,struct Item *acl_aliases)
+void CheckCopiedFile(char *cf_findertype,char *file,mode_t plus,mode_t minus,char *action,struct UidList *uidlist,struct GidList *gidlist,struct stat *dstat,struct stat *sstat,struct File *ptr,struct Item *acl_aliases)
 
 { mode_t newplus,newminus;
+  enum fileactions convert;
 
  /* plus/minus must be relative to source file, not to
     perms of newly created file! */
@@ -829,8 +830,18 @@ Debug("CheckCopiedFile(%s,+%o,-%o)\n",file,plus,minus);
 
 newplus = (sstat->st_mode & 07777) | plus;
 newminus = ~(newplus & ~minus) & 07777;
+
+
+if (strcmp(action,"fix") == 0 || strcmp(action,"silent") == 0)
+   {
+   convert = fixall;
+   }
+else if (strcmp(action,"warn") == 0)
+   {
+   convert = warnall;
+   }
    
-CheckExistingFile(cf_findertype,file,newplus,newminus,fixall,uidlist,gidlist,dstat,NULL,acl_aliases);
+CheckExistingFile(cf_findertype,file,newplus,newminus,convert,uidlist,gidlist,dstat,NULL,acl_aliases);
 }
 
 #ifdef DARWIN

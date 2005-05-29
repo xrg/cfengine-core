@@ -284,7 +284,7 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
             }
          }
       
-      CheckCopiedFile(ip->cf_findertype,newto,ip->plus,ip->minus,fixall,ip->uid,ip->gid,&deststatbuf,&statbuf,NULL,ip->acl_aliases);
+      CheckCopiedFile(ip->cf_findertype,newto,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&statbuf,NULL,ip->acl_aliases);
       
       (ip->uid)->uid = save_uid;
       (ip->gid)->gid = save_gid;
@@ -526,7 +526,7 @@ if (S_ISDIR(sourcestatbuf.st_mode))
        }
     else
        {
-       CheckCopiedFile(ip->cf_findertype,destdir,ip->plus,ip->minus,fixall,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
+       CheckCopiedFile(ip->cf_findertype,destdir,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
        }
 
    for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
@@ -789,7 +789,7 @@ if (ip->linktype != 'n')
             }
          else
             {
-            CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,fixall,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
+            CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
             }     
          }      
       return;
@@ -899,7 +899,7 @@ if (ip->linktype != 'n')
              }
           else
              {
-             CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,fixall,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
+             CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
              }
           
           AddMultipleClasses(ip->defines);
@@ -1047,7 +1047,7 @@ if (ip->linktype != 'n')
             }
          else
             {
-            CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,fixall,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
+            CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
             }
          AddMultipleClasses(ip->defines);
          }
@@ -1192,7 +1192,7 @@ if (ip->linktype != 'n')
                 }
              else
                 {
-                CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,fixall,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
+                CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
                 }
              
              if (VSINGLECOPY != NULL)
@@ -1271,14 +1271,14 @@ if (ip->linktype != 'n')
           
           if (succeed)
              {
-             CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,fixall,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
+             CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
              }
           ENFORCELINKS = enforcelinks;
           }
        }
     else
        {
-       CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,fixall,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
+       CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
        
        if (VSINGLECOPY != NULL)
           {
@@ -1818,7 +1818,7 @@ if (rsrcfork)
     
 #ifdef DARWIN
     }
-#endif
+ #endif
  
  if ((IMAGEBACKUP != 'n') && backupisdir)
     {
