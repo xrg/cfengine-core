@@ -671,7 +671,6 @@ char *TCPNAMES[CF_NETATTR] =
 
   PUBLIC  short SHOWDB = false;
   PUBLIC  short PARSING = false;
-  PRIVATE short NOABSPATH = false;
   PRIVATE short TRAVLINKS = false;
   PRIVATE short PTRAVLINKS = false;
   PRIVATE short DEADLINKS = true;
@@ -718,6 +717,7 @@ char *TCPNAMES[CF_NETATTR] =
   PROTECTED  struct Item *VFILTERBUILD = NULL;
   PROTECTED  struct Item *VSTRATEGYBUILD = NULL;
 
+  PRIVATE char NOABSPATH = 'n';
   PRIVATE char TIDYDIRS = 'n';
   PRIVATE char XDEV = false;
   PRIVATE char IMAGEBACKUP='y';

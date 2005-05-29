@@ -1236,7 +1236,7 @@ void InitializeAction()                                   /* Set defaults */
  INFORMP = 'd';
  PURGE = 'n';
  TRUSTKEY = 'n';
- NOABSPATH = false;
+ NOABSPATH = 'n';
  SCAN = 'n';
  CHECKSUM = 'n';
  TIDYDIRS = 'n';

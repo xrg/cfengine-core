@@ -1483,11 +1483,12 @@ switch(GetCommAttribute(item))
                      break;       
    case cfpreview:   HandleCharSwitch("preview",value,&PREVIEW);
                      break;       
+   case cfnoabspath: HandleCharSwitch("noabspath",value,&NOABSPATH);
+                     break;
    case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
                    break;
    case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
                    break;
-
    default:         yyerror("Illegal shellcommand attribute");
    }
 
@@ -3277,7 +3278,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       FatalError("Memory Allocation failed for Appendscript() #2");
       }
 
-   if (*sp != '/' && !NOABSPATH)
+   if (*sp != '/' && NOABSPATH != 'y')
       {
       yyerror("scripts or commands must have absolute path names");
       printf ("cfengine: concerns: %s\n",sp);
@@ -3392,6 +3393,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    ptr->umask = UMASK;
    ptr->fork = FORK;
    ptr->preview = PREVIEW;
+   ptr->noabspath = NOABSPATH;
    ptr->next = NULL;
    ptr->done = 'n';
    ptr->scope = strdup(CONTEXTID);

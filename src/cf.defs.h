@@ -1811,6 +1811,7 @@ struct ShellComm
    char              *defines;
    char              *elsedef;
    char              preview;
+   char              noabspath;
    int ifelapsed;
    int expireafter;
    };

@@ -388,6 +388,7 @@ if (server_pubkey == NULL)
       err = ERR_get_error();
       snprintf(OUTPUT,CF_BUFSIZE,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
       CfLog(cferror,OUTPUT,"");
+      RSA_free(newkey);
       return false;
       }
 
@@ -395,6 +396,7 @@ if (server_pubkey == NULL)
    if ((len=ReceiveTransaction(CONN->sd,in,NULL)) == 0)
       {
       CfLog(cfinform,"Protocol error in RSA authentation from IP %s\n",ip->server);
+      RSA_free(newkey);
       return false;
       }
    
@@ -403,6 +405,7 @@ if (server_pubkey == NULL)
       err = ERR_get_error();
       snprintf(OUTPUT,CF_BUFSIZE,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
       CfLog(cferror,OUTPUT,"");
+      RSA_free(newkey);
       return false;
       }
 
@@ -428,7 +431,7 @@ else
    DebugBinOut(CONN->session_key,CF_BLOWFISHSIZE);
    }
 
-//blowfishmpisize = BN_bn2mpi((BIGNUM *)CONN->session_key,in);
+/* blowfishmpisize = BN_bn2mpi((BIGNUM *)CONN->session_key,in); */
 
 DebugBinOut(CONN->session_key,CF_BLOWFISHSIZE);
 

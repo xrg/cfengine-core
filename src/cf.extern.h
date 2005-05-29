@@ -233,7 +233,7 @@ extern char VFQNAME[];
 extern char VUQNAME[];
 extern char LOGFILE[];
 
-extern short NOABSPATH;
+extern char NOABSPATH;
 
 extern struct Item *VEXCLUDECACHE;
 extern struct Item *VSINGLECOPY;
