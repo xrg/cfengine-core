@@ -966,12 +966,14 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
       /* HvB : Bas van der Vlies */
       if (!CheckFreeSpace(path,rp))
          {
-         Verbose("Free space below %d, defining %s\n",rp->freespace, rp->define);
+         snprintf(OUTPUT,CF_BUFSIZE,"Free space below %d, defining %s\n",rp->freespace, rp->define);
+         CfLog(cfinform,OUTPUT,"");
          AddMultipleClasses(rp->define);
          }
       else
          {
-         Verbose("Free space above %d, defining %s\n",rp->freespace, rp->elsedef);
+         snprintf(OUTPUT,CF_BUFSIZE,"Free space above %d, defining %s\n",rp->freespace, rp->elsedef);
+         CfLog(cfinform,OUTPUT,"");
          AddMultipleClasses(rp->elsedef);
          }
       }
