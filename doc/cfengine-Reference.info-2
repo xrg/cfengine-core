@@ -1,4 +1,4 @@
-This is cfengine-Reference.info, produced by makeinfo version 4.7 from
+This is cfengine-Reference.info, produced by makeinfo version 4.8 from
 cfengine-Reference.texinfo.
 
 INFO-DIR-SECTION System Utilities
@@ -1772,22 +1772,23 @@ Variable Index
 * $(arch):                               Special variables.   (line  20)
 * $(binserver):                          Special variables.   (line  23)
 * $(class):                              Special variables.   (line  36)
+* $(colon):                              Special variables.   (line 148)
 * $(cr):                                 Special variables.   (line 145)
 * $(date):                               Special variables.   (line  41)
-* $(dblquote):                           Special variables.   (line 148)
-* $(dollar):                             Special variables.   (line 151)
+* $(dblquote):                           Special variables.   (line 151)
+* $(dollar):                             Special variables.   (line 154)
 * $(domain):                             Special variables.   (line  44)
 * $(faculty):                            Special variables.   (line  60)
 * $(fqhost):                             Special variables.   (line  63)
 * $(host):                               Special variables.   (line  66)
 * $(ipaddress):                          Special variables.   (line  70)
-* $(lf):                                 Special variables.   (line 154)
-* $(n):                                  Special variables.   (line 157)
-* $(quote):                              Special variables.   (line 160)
+* $(lf):                                 Special variables.   (line 157)
+* $(n):                                  Special variables.   (line 160)
+* $(quote):                              Special variables.   (line 163)
 * $(site):                               Special variables.   (line 106)
-* $(spc):                                Special variables.   (line 164)
+* $(spc):                                Special variables.   (line 167)
 * $(sysadm):                             Special variables.   (line 115)
-* $(tab):                                Special variables.   (line 167)
+* $(tab):                                Special variables.   (line 170)
 * $(timezone):                           Special variables.   (line 118)
 * $(version):                            Special variables.   (line 126)
 * $(year):                               Special variables.   (line 129)

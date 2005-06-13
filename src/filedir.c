@@ -821,7 +821,7 @@ if (ptr != NULL)
 void CheckCopiedFile(char *cf_findertype,char *file,mode_t plus,mode_t minus,char *action,struct UidList *uidlist,struct GidList *gidlist,struct stat *dstat,struct stat *sstat,struct File *ptr,struct Item *acl_aliases)
 
 { mode_t newplus,newminus;
-  enum fileactions convert;
+  enum fileactions convert = fixall;
 
  /* plus/minus must be relative to source file, not to
     perms of newly created file! */
