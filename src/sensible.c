@@ -73,9 +73,9 @@ if (IsItemIn(SUSPICIOUSLIST,nodename))
       }
    }
  
-if ((strcmp(nodename,"...") == 0) && (strcmp(path,"/") == 0))
+if (strcmp(nodename,"...") == 0)
    {
-   Verbose("DFS cell node detected in /...\n");
+   Verbose("Possible DFS/FS cell node detected in %s...\n",path);
    return true;
    }
   
@@ -200,7 +200,7 @@ if (statbuf.st_size == 0 && ! (VERBOSE||INFORM)) /* No sense in warning about em
    return false;
    }
  
-snprintf(OUTPUT,CF_BUFSIZE,"Suspicous looking file object \"%s\" masquerading as hidden file in %s\n",nodename,path);
+snprintf(OUTPUT,CF_BUFSIZE,"Suspicious looking file object \"%s\" masquerading as hidden file in %s\n",nodename,path);
 CfLog(cfsilent,OUTPUT,"");
 Debug("Filename looks suspicious\n"); 
  
