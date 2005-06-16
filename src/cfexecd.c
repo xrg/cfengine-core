@@ -452,7 +452,7 @@ while (!feof(pp))
    if (strcmp(name,"ipaddress") == 0)
       {
       Debug("%s/%s\n",name,content);
-      strncpy(VIPADDRESS,content,CF_MAXVARSIZE-1);
+      strncpy(VIPADDRESS,content,17);
       continue;
       }
 

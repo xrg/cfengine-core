@@ -307,7 +307,6 @@ if (IsExcluded(ptr->classes))
  
 ResetOutputRoute(ptr->log,ptr->inform);
 
-//if (!GetLock(ASUniqueName("method-exec"),CanonifyName(ptr->name),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
 if (!GetLock(ASUniqueName("method-exec"),CanonifyName(methodname),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
    {
    return;
