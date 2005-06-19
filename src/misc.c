@@ -1262,6 +1262,7 @@ int linux_mandrake_version(void)
 /* We are looking for one of the following strings... */
 #define MANDRAKE_ID "Linux Mandrake"
 #define MANDRAKE_REV_ID "Mandrake Linux"
+#define MANDRAKE_10_1_ID "Mandrakelinux"
 
 #define RELEASE_FLAG "release "
 #define MANDRAKE_REL_FILENAME "/etc/mandrake-release"
@@ -1299,6 +1300,11 @@ char strminor[CF_MAXVARSIZE];
     vendor = "mandrake";
     }
  else if(!strncmp(relstring, MANDRAKE_REV_ID, strlen(MANDRAKE_REV_ID)))
+    {
+    vendor = "mandrake";
+    }
+
+ else if(!strncmp(relstring, MANDRAKE_10_1_ID, strlen(MANDRAKE_10_1_ID)))
     {
     vendor = "mandrake";
     }
