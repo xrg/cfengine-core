@@ -967,13 +967,13 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
       if (!CheckFreeSpace(path,rp))
          {
          snprintf(OUTPUT,CF_BUFSIZE,"Free space below %d, defining %s\n",rp->freespace, rp->define);
-         CfLog(cfinform,OUTPUT,"");
+         CfLog(cfverbose,OUTPUT,"");
          AddMultipleClasses(rp->define);
          }
       else
          {
          snprintf(OUTPUT,CF_BUFSIZE,"Free space above %d, defining %s\n",rp->freespace, rp->elsedef);
-         CfLog(cfinform,OUTPUT,"");
+         CfLog(cfverbose,OUTPUT,"");
          AddMultipleClasses(rp->elsedef);
          }
       }
