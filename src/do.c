@@ -967,7 +967,7 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
       if (!CheckFreeSpace(path,rp))
          {
          snprintf(OUTPUT,CF_BUFSIZE,"Free space below %d, defining %s\n",rp->freespace, rp->define);
-         CfLog(cfverbose,OUTPUT,"");
+         CfLog(cfinform,OUTPUT,"");
          AddMultipleClasses(rp->define);
          }
       else
