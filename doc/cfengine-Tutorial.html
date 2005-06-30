@@ -1292,11 +1292,15 @@ Cfagents locking mechanisms ensure that no contention will occur.
 
 <pre class="smallexample">     processes:
      
-      "cfexecd$"  restart "/usr/local/sbin/cfexecd"
+      "bin/cfexecd$"  restart "/usr/local/sbin/cfexecd"
      
 </pre>
-   <p>If cfagent is run by <code>cfexecd -F</code> then this process will match and prevent
-execution unless the <code>$</code> regular expression is used to make the match exact. 
+   <p>It's important to use as specific a regular expression as possible in match
+statements (the path to the program and the regular expression metacharacter
+<code>$</code> meaning "end of line", in this example) because bare strings can
+often match unexepted processes. For instance, using <code>cfexecd</code> by
+itself will also match a process spawned by <code>cfagent -F</code>, which shows
+up as <code>/var/cfagent/bin/cfagent -Dfrom_cfexecd</code> in the process table! 
 <a name="index-Restarting-cfexecd-48"></a><a name="index-cfexecd-restarting-by-processes-49"></a><a name="index-processes-cannot-start-cfexecd-50"></a>
 <!--  -->
 <!-- SECTION -->

@@ -35,7 +35,7 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   Edition 2.1.15 for version 2.1.15 as last updated 30 March 2005.
+   Edition 2.1.16a for version 2.1.16a as last updated 30 March 2005.
 
 * Menu:
 
@@ -920,21 +920,21 @@ FAQ Index
 
 Tag Table:
 Node: Top478
-Node: Overview1638
-Node: Intrusion detection2603
-Node: Cryptographic checksums4749
-Node: cfenvd6619
-Node: Anomaly research11412
-Node: cfenvgraph14112
-Node: Fluctuation profiles18511
-Node: Starting with anomaly detection19144
-Node: Anomaly response29533
-Node: Anomaly Classes29762
-Node: Entropy32953
-Node: Log utilities33988
-Node: Persistent alerts34368
-Node: Variable Index35555
-Node: Concept Index35719
-Node: FAQ Index36825
+Node: Overview1640
+Node: Intrusion detection2605
+Node: Cryptographic checksums4751
+Node: cfenvd6621
+Node: Anomaly research11414
+Node: cfenvgraph14114
+Node: Fluctuation profiles18513
+Node: Starting with anomaly detection19146
+Node: Anomaly response29535
+Node: Anomaly Classes29764
+Node: Entropy32955
+Node: Log utilities33990
+Node: Persistent alerts34370
+Node: Variable Index35557
+Node: Concept Index35721
+Node: FAQ Index36827
 
 End Tag Table
