@@ -986,29 +986,40 @@ int FuzzyHostParse(char *s)
   int n;
   Debug("SRDEBUG in FuzzyHostParse(): %s\n",s);
   args = SplitStringAsItemList(s,',');
-  if ( args->next == NULL ) { 
-    yyerror("HostRange() syntax error: not enough args (expecting two)");
-    return false;
-  }
-  if ( args->next->next != NULL ) { 
-    yyerror("HostRange() syntax error: too many args (expecting two)");
-    return false;
-  }
-  sp = args->next->name;
-  n = sscanf(sp,"%ld-%ld%n",&start,&end,&where);
-  Debug("SRDEBUG start=%d end=%d num_matched=%d\n",start,end,n);
-  if ( n >= 2 && sp[where] != '\0' ) {
-    /* X-Ycrud syntax error */
-    yyerror("HostRange() syntax error: second arg should have X-Y format where X and Y are decimal numbers");
-    return false;
-  }
-  if ( n != 2 ) {
-    /* all other syntax errors */    
-    yyerror("HostRange() syntax error: second arg should have X-Y format where X and Y are decimal numbers");
-    return false;
-  } 
-  Debug("SRDEBUG syntax is okay\n");
-  return true; 
+
+if ( args->next == NULL )
+   { 
+   yyerror("HostRange() syntax error: not enough args (expecting two)");
+   return false;
+   }
+
+if ( args->next->next != NULL )
+   { 
+   yyerror("HostRange() syntax error: too many args (expecting two)");
+   return false;
+   }
+
+sp = args->next->name;
+
+n = sscanf(sp,"%ld-%ld%n",&start,&end,&where);
+
+Debug("SRDEBUG start=%d end=%d num_matched=%d\n",start,end,n);
+
+if ( n >= 2 && sp[where] != '\0' )
+   {
+   /* X-Ycrud syntax error */
+   yyerror("HostRange() syntax error: second arg should have X-Y format where X and Y are decimal numbers");
+   return false;
+   }
+
+if ( n != 2 )
+   {
+   /* all other syntax errors */    
+   yyerror("HostRange() syntax error: second arg should have X-Y format where X and Y are decimal numbers");
+   return false;
+   } 
+Debug("SRDEBUG syntax is okay\n");
+return true; 
 }
 
 /*********************************************************************/

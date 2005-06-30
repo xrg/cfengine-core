@@ -407,6 +407,7 @@ for (lp = VCHLINK; lp != NULL; lp = lp->next)
 
    if (!GetLock(ASUniqueName("link"),CanonifyName(VBUFF),lp->ifelapsed,lp->expireafter,VUQNAME,CFSTARTTIME))
       {
+      lp->done = 'y';
       continue;
       }
 
@@ -518,6 +519,7 @@ for (lp = VLINK; lp != NULL; lp = lp->next)
    
    if (!GetLock(ASUniqueName("link"),CanonifyName(VBUFF),lp->ifelapsed,lp->expireafter,VUQNAME,CFSTARTTIME))
       {
+      lp->done = 'y';
       continue;
       }
 
@@ -922,6 +924,7 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
    
    if (!GetLock(ASUniqueName("disks"),rp->name,rp->ifelapsed,rp->expireafter,VUQNAME,CFSTARTTIME))
       {
+      rp->done = 'y';
       continue;
       }
  
@@ -1240,6 +1243,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
    
    if (!GetLock(ASUniqueName("shellcommand"),execstr,ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
       {
+      ptr->done = 'y';
       continue;
       }
 
@@ -1615,6 +1619,8 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
       {
       continue;
       }
+
+   dp->done = 'y';
 
    ExpandVarstring(dp->name,workname,NULL);
    
@@ -2077,6 +2083,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
 
    if (!GetLock(ASUniqueName("unmount"),CanonifyName(ptr->name),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
       {
+      ptr->done = 'y';
       continue;
       }
 
@@ -2463,6 +2470,7 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
          {
          SILENT = savesilent;
          ResetOutputRoute('d','d');
+         ip->done = 'y';
          continue;
          }
       
@@ -2532,6 +2540,7 @@ for (ifp = VIFLIST; ifp != NULL; ifp=ifp->next)
    {
    if (!GetLock("netconfig",ifp->ifdev,VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
       {
+      ifp->done = 'y';
       continue;
       }
 
@@ -2634,6 +2643,7 @@ for (pp = VPROCLIST; pp != NULL; pp=pp->next)
    
    if (!GetLock(ASUniqueName("processes"),CanonifyName(VBUFF),pp->ifelapsed,pp->expireafter,VUQNAME,CFSTARTTIME))
       {
+      pp->done = 'y';
       continue;
       }
 
@@ -2688,6 +2698,7 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
 
    if (!GetLock(ASUniqueName("packages"),CanonifyName(ptr->name),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
       {
+      ptr->done = 'y';
       continue;
       }
    
@@ -2804,6 +2815,7 @@ for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
 
    if (!GetLock(ASUniqueName("methods-dispatch"),CanonifyName(label),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
       {
+      ptr->done = 'y';
       continue;
       }
    

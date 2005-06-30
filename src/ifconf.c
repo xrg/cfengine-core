@@ -363,6 +363,14 @@ void SetDefaultRoute()
 
 { int sk, defaultokay = 1;
   struct sockaddr_in sindst,singw;
+  char oldroute[INET_ADDRSTRLEN];
+  char routefmt[CF_MAXVARSIZE];
+
+/* These OSes have these structs defined but use the route command */
+# if defined DARWIN || defined FREEBSD || defined OPENBSD || defined SOLARIS
+#  undef HAVE_RTENTRY
+#  undef HAVE_ORTENTRY
+# endif
 
 # ifdef HAVE_ORTENTRY
    struct ortentry route;
@@ -404,18 +412,23 @@ while (!feof(pp))
    
    if ((strncmp(VBUFF,"default",7) == 0)||(strncmp(VBUFF,"0.0.0.0",7) == 0))
       {
-      if (strstr(VBUFF,VDEFAULTROUTE->name))
-         {
-         Verbose("cfengine: default route is already set to %s\n",VDEFAULTROUTE->name);
-         defaultokay = 1;
-         break;
-         }
-      else
-         {
-         Verbose("cfengine: default route is already set, but not to %s.\n",VDEFAULTROUTE->name);
-         defaultokay = 2;
-         break;
-         }
+      /* extract the default route */
+      /* format: default|0.0.0.0 <whitespace> route <whitespace> etc */
+      if ((sscanf(VBUFF, "%*[default0. ]%s%*[ ]", &oldroute)) == 1)
+        {
+        if ((strncmp(VDEFAULTROUTE->name, oldroute, INET_ADDRSTRLEN)) == 0)
+          {
+          Verbose("cfengine: default route is already set to %s\n",VDEFAULTROUTE->name);
+          defaultokay = 1;
+          break;
+          }
+        else
+          {
+          Verbose("cfengine: default route is set to %s, but should be %s.\n",oldroute,VDEFAULTROUTE->name);
+          defaultokay = 2;
+          break;
+          }
+        }
       }
    else
       {
@@ -443,20 +456,34 @@ if (IsExcluded(VDEFAULTROUTE->classes))
    return;   
    }
 
-CfLog(cferror,"The default packet-route is incorrectly set, trying to correct\n","");
+CfLog(cferror,"The default route is incorrect, trying to correct\n","");
 
-# if defined HAVE_RTENTRY || defined HAVE_ORTENTRY
- 
-if ((sk = socket(AF_INET,SOCK_RAW,0)) == -1)
+if ( strcmp(VROUTE[VSYSTEMHARDCLASS], "-") != 0 )
    {
-   if (VSYSTEMHARDCLASS == linuxx)
+
+   Debug ("Using route shell commands to set default route\n");
+   if (defaultokay == 2)
       {
-      Debug ("No raw socket protocol for linux -- faking with shell commands\n");
-
-      ShellCommandReturnsZero("/sbin/route del default");
-
-      snprintf(VBUFF,CF_MAXVARSIZE,"/sbin/route add default gw %s",VDEFAULTROUTE->name);
-      
+      if (! DONTDO)
+         {
+         /* get the route command and the format for the delete argument */
+         snprintf(routefmt,CF_MAXVARSIZE,"%s %s",VROUTE[VSYSTEMHARDCLASS],VROUTEDELFMT[VSYSTEMHARDCLASS]);
+         snprintf(VBUFF,CF_MAXVARSIZE,routefmt,"default",VDEFAULTROUTE->name);
+         if (ShellCommandReturnsZero(VBUFF))
+            {
+            CfLog(cfinform,"Removing old default route","");
+            CfLog(cfinform,VBUFF,"");
+            }
+         else
+            {
+            CfLog(cferror,"Error removing route","");
+            }
+         }
+      }
+   if (! DONTDO)
+      {
+      snprintf(routefmt,CF_MAXVARSIZE,"%s %s",VROUTE[VSYSTEMHARDCLASS],VROUTEADDFMT[VSYSTEMHARDCLASS]);
+      snprintf(VBUFF,CF_MAXVARSIZE,routefmt,"default",VDEFAULTROUTE->name);
       if (ShellCommandReturnsZero(VBUFF))
          {
          CfLog(cfinform,"Setting default route","");
@@ -466,44 +493,54 @@ if ((sk = socket(AF_INET,SOCK_RAW,0)) == -1)
          {
          CfLog(cferror,"Error setting route","");
          }
-      return;
       }
-
-   printf("System class %s\n",CLASSTEXT[VSYSTEMHARDCLASS]);
-   perror("cfengine: socket");
-   FatalError("Error in SetDefaultRoute()");
+   return;
    }
-
-sindst.sin_family = AF_INET;
-singw.sin_family = AF_INET;
-
-sindst.sin_addr.s_addr = INADDR_ANY;
-singw.sin_addr.s_addr = inet_addr(VDEFAULTROUTE->name);
-
-route.rt_dst = *(struct sockaddr *)&sindst;      /* This disgusting method is necessary */
-route.rt_gateway = *(struct sockaddr *)&singw;
-route.rt_flags = RTF_GATEWAY;
-
-if (! DONTDO)
+else
    {
-   if (ioctl(sk,SIOCADDRT, (caddr_t) &route) == -1)   /* Get the device status flags */
+#if defined HAVE_RTENTRY || defined HAVE_ORTENTRY
+   Debug ("Using route ioctl to set default route\n");
+   if ((sk = socket(AF_INET,SOCK_RAW,0)) == -1)
       {
-      CfLog(cferror,"","ioctl SIOCADDRT:");
-      FatalError("Software error: set default route");
+      CfLog(cferror,"System class: ", CLASSTEXT[VSYSTEMHARDCLASS]);
+      CfLog(cferror,"","Error in SetDefaultRoute():");
+      perror("cfengine: socket");
       }
+   else
+      {
+      sindst.sin_family = AF_INET;
+      singw.sin_family = AF_INET;
 
-   CfLog(cferror,"The routing table did not contain a default route.\n","");
-   snprintf(OUTPUT,CF_BUFSIZE*2,"I'm setting it to %s\n",VDEFAULTROUTE->name);
-   CfLog(cferror,OUTPUT,"");
-   }
+      sindst.sin_addr.s_addr = INADDR_ANY;
+      singw.sin_addr.s_addr = inet_addr(VDEFAULTROUTE->name);
 
-# else
+      route.rt_dst = *(struct sockaddr *)&sindst;      /* This disgusting method is necessary */
+      route.rt_gateway = *(struct sockaddr *)&singw;
+      route.rt_flags = RTF_GATEWAY;
 
-/* Socket routing - don't really know how to do this yet */ 
+      if (! DONTDO)
+         {
+         if (ioctl(sk,SIOCADDRT, (caddr_t) &route) == -1)   /* Get the device status flags */
+            {
+            CfLog(cferror,"Error setting route:","");
+            perror("cfengine: ioctl SIOCADDRT:");
+            }
+         else
+            {
+            CfLog(cferror,"Setting default route.\n","");
+            snprintf(OUTPUT,CF_BUFSIZE*2,"I'm setting it to %s\n",VDEFAULTROUTE->name);
+            CfLog(cferror,OUTPUT,"");
+            }
+         }
+      }
+#else
 
-Verbose("Sorry don't know how to do routing on this platform\n");
+   /* Socket routing - don't really know how to do this yet */ 
+
+   Verbose("Sorry don't know how to do routing on this platform\n");
  
-# endif
+#endif
+   }
 }
 
 #else /* NT or IRIX */

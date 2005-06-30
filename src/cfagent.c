@@ -107,7 +107,7 @@ ReadRCFile(); /* Should come before parsing so that it can be overridden */
 
        if (!PARSEONLY && (QUERYVARS == NULL))
           {
-          DoTree(1,"Update");
+          DoTree(2,"Update");
           DoAlerts();
           EmptyActionSequence();
           DeleteClassesFromContext("update");
@@ -179,7 +179,7 @@ ReadRCFile(); /* Should come before parsing so that it can be overridden */
 
  QueryCheck();
      
- DoTree(2,"Main Tree"); 
+ DoTree(4,"Main Tree"); 
  DoAlerts();
  
  CheckMethodReply();
@@ -1168,7 +1168,7 @@ for (PASS = 1; PASS <= passes; PASS++)
       
       if ((PASS > 1) && NothingLeftToDo())
          {
-         continue;
+         break;
          }
       
       Verbose("\n*********************************************************************\n");
@@ -1359,92 +1359,146 @@ int NothingLeftToDo()
   struct Tidy *vtidy;
   struct Package *vpkg;
 
-for (vproclist = VPROCLIST; vproclist != NULL; vproclist=vproclist->next)
+if (IsWildItemIn(VACTIONSEQ,"process*"))
    {
-   if (vproclist->done == 'n' && IsDefinedClass(vproclist->classes))
+   for (vproclist = VPROCLIST; vproclist != NULL; vproclist=vproclist->next)
       {
-      return false;
-      }
-   }
- 
- for (vscript = VSCRIPT; vscript != NULL; vscript=vscript->next)
-    {
-    if (vscript->done == 'n'  && IsDefinedClass(vscript->classes))
-       {
-       return false;
-       }
-    }
- 
-for (vfile = VFILE; vfile != NULL; vfile=vfile->next)
-   {
-   if (vfile->done == 'n' && IsDefinedClass(vfile->classes))
-      {
-      return false;
+      if ((vproclist->done == 'n') && IsDefinedClass(vproclist->classes))
+         {
+         printf("Still waiting for rule:: Proc <%s> / %s\n",vproclist->expr,vproclist->classes);
+         return false;
+         }
       }
    }
 
-for (vtidy = VTIDY; vtidy != NULL; vtidy=vtidy->next)
+if (IsWildItemIn(VACTIONSEQ,"shellcommand*"))
    {
-   if (vtidy->done == 'n')
+   for (vscript = VSCRIPT; vscript != NULL; vscript=vscript->next)
       {
-      return false;
-      }
-   }
- 
-for (veditlist = VEDITLIST; veditlist != NULL; veditlist=veditlist->next)
-   {
-   if (veditlist->done == 'n')
-      {
-      return false;
+      if (vscript->done == 'n'  && IsDefinedClass(vscript->classes))
+         {
+         printf("Still waiting for rule:: Shell <%s> / %s\n",vscript->name,vscript->classes);
+         return false;
+         }
       }
    }
 
-for (vdisablelist = VDISABLELIST; vdisablelist != NULL; vdisablelist=vdisablelist->next)
+if (IsWildItemIn(VACTIONSEQ,"file*"))
    {
-   if (vdisablelist->done == 'n' && IsDefinedClass(vdisablelist->classes))
+   for (vfile = VFILE; vfile != NULL; vfile=vfile->next)
       {
-      return false;
+      if (vfile->done == 'n' && IsDefinedClass(vfile->classes))
+         {
+         printf("Still waiting for rule:: File <%s>/ %s\n",vfile->path,vfile->classes);
+         return false;
+         }
       }
    }
 
-for (vmakepath = VMAKEPATH; vmakepath != NULL; vmakepath=vmakepath->next)
+if (IsWildItemIn(VACTIONSEQ,"tid*"))
    {
-   if (vmakepath->done == 'n' && IsDefinedClass(vmakepath->classes))
+   for (vtidy = VTIDY; vtidy != NULL; vtidy=vtidy->next)
       {
-      return false;
+      if (vtidy->done == 'n')
+         {
+         printf("Still waiting for rule:: Tidy <%s>\n",vtidy->path);
+         return false;
+         }
       }
    }
 
-for (vlink = VLINK; vlink != NULL; vlink=vlink->next)
+if (IsWildItemIn(VACTIONSEQ,"editfile*"))
    {
-   if (vlink->done == 'n' && IsDefinedClass(vlink->classes))
-      {
-      return false;
+   for (veditlist = VEDITLIST; veditlist != NULL; veditlist=veditlist->next) 
+      { 
+      struct Edlist *ep;
+      int something_to_do = false;
+      
+      for (ep = veditlist->actions; ep != NULL; ep=ep->next)
+         {
+         if (IsDefinedClass(ep->classes))
+            {
+            something_to_do = true;
+            printf("Defined Edit %s / %s\n",ep->data,ep->classes);
+            break;
+            }
+         }
+   
+      if (veditlist->done == 'n' && something_to_do)
+         {
+         printf("Still waiting for rule:: Edit <%s>\n",veditlist->fname);
+         return false;
+         }
       }
    }
 
-for (vchlink = VCHLINK; vchlink != NULL; vchlink=vchlink->next)
+if (IsWildItemIn(VACTIONSEQ,"process*"))
    {
-   if (vchlink->done == 'n' && IsDefinedClass(vchlink->classes))
+   for (vdisablelist = VDISABLELIST; vdisablelist != NULL; vdisablelist=vdisablelist->next)
       {
-      return false;
+      if (vdisablelist->done == 'n' && IsDefinedClass(vdisablelist->classes))
+         {
+         printf("Still waiting for rule:: Disable <%s> / %s\n",vdisablelist->name,vdisablelist->classes);
+         return false;
+         }
+      }
+   }
+
+if (IsWildItemIn(VACTIONSEQ,"director*"))
+   {
+   for (vmakepath = VMAKEPATH; vmakepath != NULL; vmakepath=vmakepath->next)
+      {
+      if (vmakepath->done == 'n' && IsDefinedClass(vmakepath->classes))
+         {
+         printf("Still waiting for rule:: makePath <%s>\n",vmakepath->path);
+         return false;
+         }
+      }
+   }
+
+if (IsWildItemIn(VACTIONSEQ,"link*"))
+   {
+   for (vlink = VLINK; vlink != NULL; vlink=vlink->next)
+      {
+      if (vlink->done == 'n' && IsDefinedClass(vlink->classes))
+         {
+         printf("Still waiting for rule:: Link <%s>\n",vlink->from);
+         return false;
+         }
+      }
+   
+   for (vchlink = VCHLINK; vchlink != NULL; vchlink=vchlink->next)
+      {
+      if (vchlink->done == 'n' && IsDefinedClass(vchlink->classes))
+         {
+         printf("Still waiting for rule:: CLink <%s>\n",vlink->from);
+         return false;
+         }
       }
    }
 
 
-for (vunmount = VUNMOUNT; vunmount != NULL; vunmount=vunmount->next)
+if (IsWildItemIn(VACTIONSEQ,"unmoun*"))
    {
-   if (vunmount->done == 'n' && IsDefinedClass(vunmount->classes))
+   for (vunmount = VUNMOUNT; vunmount != NULL; vunmount=vunmount->next)
       {
-      return false;
+      if (vunmount->done == 'n' && IsDefinedClass(vunmount->classes))
+         {
+         printf("Still waiting for rule:: Umount <%s>\n",vunmount->name);
+         return false;
+         }
       }
    }
 
-for (vpkg = VPKG; vpkg != NULL; vpkg=vpkg->next)
+if (IsWildItemIn(VACTIONSEQ,"packag*"))
    {
-   if (vpkg->done == 'n' && IsDefinedClass(vpkg->classes))
+   for (vpkg = VPKG; vpkg != NULL; vpkg=vpkg->next)
       {
-      return false;
+      if (vpkg->done == 'n' && IsDefinedClass(vpkg->classes))
+         {
+         printf("Still waiting for rule:: Packages <%s>\n",vpkg->name);
+         return false;
+         }
       }
    }
 

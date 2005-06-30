@@ -539,6 +539,129 @@ char *VNETSTAT[CF_CLASSATTR] =
 
 /*********************************************************************/
 
+char *VROUTE[CF_CLASSATTR] =
+   {
+   "-",
+   "-", 
+   "-",   /* sun4 */
+   "-",   /* ultrix */
+   "-",   /* hpux */
+   "-",   /* aix */
+   "/sbin/route",       /* linux */
+   "/usr/sbin/route",   /* solaris */
+   "-",  /* osf1 */
+   "-",  /* digital */   
+   "-",   /* sun3 */
+   "-",   /* irix4 */
+   "-",   /* irix */
+   "-",   /* irix64 */
+   "/sbin/route",   /* freebsd */
+   "/usr/sbin/route",       /* solarisx86 */
+   "-",   /* bsd4.3 */
+   "-",   /* newsos4 */
+   "-",   /* netbsd */
+   "-",   /* AOS */
+   "-",  /* BSDI */
+   "-",   /* nextstep */
+   "-",   /* cray */
+   "-",       /* gnu */
+   "-", /* NT */
+   "-",   /* Unixware */
+   "/sbin/route",   /* openbsd */
+   "-",   /* sco */
+   "/sbin/route",  /* darwin */
+   "-",   /* ux4800 */
+   "-",   /* qnx */
+   "unused-blah",
+   "unused-blah",
+   "unused-blah",
+   NULL
+   };
+
+/*********************************************************************/
+
+char *VROUTEADDFMT[CF_CLASSATTR] =
+   {
+   "-",
+   "-", 
+   "-",   /* sun4 */
+   "-",   /* ultrix */
+   "-",   /* hpux */
+   "-",   /* aix */
+   "add %s gw %s",       /* linux */
+   "add %s %s",   /* solaris */
+   "-",  /* osf1 */
+   "-",  /* digital */   
+   "-",   /* sun3 */
+   "-",   /* irix4 */
+   "-",   /* irix */
+   "-",   /* irix64 */
+   "add %s %s",   /* freebsd */
+   "add %s %s",       /* solarisx86 */
+   "-",   /* bsd4.3 */
+   "-",   /* newsos4 */
+   "-",   /* netbsd */
+   "-",   /* AOS */
+   "-",  /* BSDI */
+   "-",   /* nextstep */
+   "-",   /* cray */
+   "-",       /* gnu */
+   "-", /* NT */
+   "-",   /* Unixware */
+   "add %s %s",   /* openbsd */
+   "-",   /* sco */
+   "add %s %s",  /* darwin */
+   "-",   /* ux4800 */
+   "-",   /* qnx */
+   "unused-blah",
+   "unused-blah",
+   "unused-blah",
+   NULL
+   };
+
+/*********************************************************************/
+
+char *VROUTEDELFMT[CF_CLASSATTR] =
+   {
+   "-",
+   "-", 
+   "-",   /* sun4 */
+   "-",   /* ultrix */
+   "-",   /* hpux */
+   "-",   /* aix */
+   "del %s",       /* linux */
+   "delete %s",   /* solaris */
+   "-",  /* osf1 */
+   "-",  /* digital */   
+   "-",   /* sun3 */
+   "-",   /* irix4 */
+   "-",   /* irix */
+   "-",   /* irix64 */
+   "delete %s",   /* freebsd */
+   "delete %s",       /* solarisx86 */
+   "-",   /* bsd4.3 */
+   "-",   /* newsos4 */
+   "-",   /* netbsd */
+   "-",   /* AOS */
+   "-",  /* BSDI */
+   "-",   /* nextstep */
+   "-",   /* cray */
+   "-",       /* gnu */
+   "-", /* NT */
+   "-",   /* Unixware */
+   "delete %s",   /* openbsd */
+   "-",   /* sco */
+   "delete %s",  /* darwin */
+   "-",   /* ux4800 */
+   "-",   /* qnx */
+   "unused-blah",
+   "unused-blah",
+   "unused-blah",
+   NULL
+   };
+
+/*********************************************************************/
+
 char *VFILECOMM[CF_CLASSATTR] =
    {
    "-",

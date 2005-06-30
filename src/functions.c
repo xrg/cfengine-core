@@ -422,6 +422,7 @@ if (!FuzzyHostParse(args))
    strcpy(value,CF_NOCLASS);
    return;
    }
+
 /* VDEFAULTBINSERVER.name is relative domain name */
 /* (see nameinfo.c ~line 145)                     */
 

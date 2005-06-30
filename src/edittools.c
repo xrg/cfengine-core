@@ -378,6 +378,7 @@ if (todo == 0)   /* Because classes are stored per edit, not per file */
 
 if (!GetLock(ASUniqueName("editfile"),CanonifyName(filename),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
    {
+   ptr->done = 'y';
    return;
    }
  

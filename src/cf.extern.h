@@ -29,6 +29,8 @@
 /*******************************************************************/
 
 
+#include "../pub/getopt.h"
+
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
 extern pthread_mutex_t MUTEX_SYSCALL;
 extern pthread_mutex_t MUTEX_LOCK;
@@ -456,6 +458,9 @@ extern char *VHOSTEQUIV[];
 extern char *VFSTAB[];
 extern char *VMAILDIR[];
 extern char *VNETSTAT[];
+extern char *VROUTE[];
+extern char *VROUTEADDFMT[];
+extern char *VROUTEDELFMT[];
 extern char *VFILECOMM[];
 extern char *ACTIONSEQTEXT[];
 extern char *VEDITNAMES[];
