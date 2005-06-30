@@ -33,6 +33,7 @@
 #include "cf.extern.h"
 #include "cfservd.h"
 #include <db.h>
+#include <sys/time.h>
 
 /*******************************************************************/
 /* Pthreads                                                        */
@@ -237,10 +238,10 @@ while ((c=getopt_long(argc,argv,"L:d:f:vmhpFV",CFDOPTIONS,&optindex)) != EOF)
          break;
 
       case 'L': Verbose("Setting LD_LIBRARY_PATH=%s\n",optarg);
-         snprintf(ld_library_path,CF_BUFSIZE-1,"LD_LIBRARY_PATH=%s",optarg);
-             putenv(ld_library_path);
-  break;
-   
+          snprintf(ld_library_path,CF_BUFSIZE-1,"LD_LIBRARY_PATH=%s",optarg);
+          putenv(ld_library_path);
+          break;
+          
       case 'm': /* No longer needed */
          break;
 
@@ -462,42 +463,42 @@ if (DEBUG || D2 || D3)
       printf("Path: %s (encrypt=%d)\n",ptr->path,ptr->encrypt);
 
       for (ip = ptr->accesslist; ip != NULL; ip=ip->next)
-  {
-  printf("   Admit: %s root=",ip->name);
-  for (ipr = ptr->maproot; ipr !=NULL; ipr=ipr->next)
-     {
-     printf("%s,",ipr->name);
-     }
-  printf("\n");
-  }
+         {
+         printf("   Admit: %s root=",ip->name);
+         for (ipr = ptr->maproot; ipr !=NULL; ipr=ipr->next)
+            {
+            printf("%s,",ipr->name);
+            }
+         printf("\n");
+         }
       }
-
+   
    printf("ACCESS DENIAL ------------------------ :\n\n");
-
+   
    for (ptr = VDENY; ptr != NULL; ptr=ptr->next)
       {
       printf("Path: %s\n",ptr->path);
-
+      
       for (ip = ptr->accesslist; ip != NULL; ip=ip->next)
-  {
-  printf("   Deny: %s\n",ip->name);
-  }      
+         {
+         printf("   Deny: %s\n",ip->name);
+         }      
       }
    
    printf("Host IPs allowed connection access :\n\n");
-
+   
    for (ip = NONATTACKERLIST; ip != NULL; ip=ip->next)
       {
       printf("IP: %s\n",ip->name);
       }
-
+   
    printf("Host IPs denied connection access :\n\n");
-
+   
    for (ip = ATTACKERLIST; ip != NULL; ip=ip->next)
       {
       printf("IP: %s\n",ip->name);
       }
-
+   
    printf("Host IPs allowed multiple connection access :\n\n");
 
    for (ip = MULTICONNLIST; ip != NULL; ip=ip->next)
@@ -544,6 +545,8 @@ void StartServer(int argc,char **argv)
   int sd,sd_reply,ageing;
   fd_set rset;
   time_t now;
+  struct timeval timeout;
+  int ret_val;
 
 #if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
   int addrlen=sizeof(struct sockaddr_in6);
@@ -601,8 +604,12 @@ while (true)
    
    FD_ZERO(&rset);
    FD_SET(sd,&rset);
-
-   if (select((sd+1),&rset,NULL,NULL,NULL) == -1)
+   
+   timeout.tv_sec = 5;  // Set a 5 second timeout for select
+   timeout.tv_usec = 0;
+   
+   ret_val = select((sd+1),&rset,NULL,NULL,&timeout);
+   if (ret_val == -1)   // Error received from call to select
       {
       if (errno == EINTR)
          {
@@ -613,6 +620,10 @@ while (true)
          CfLog(cferror, "select failed", "select");
          exit(1);
          }
+      }
+   else if (!ret_val)   // No data waiting, we must have timed out!
+      {
+      continue;
       }
    
    if ((sd_reply = accept(sd,(struct sockaddr *)&cin,&addrlen)) != -1)
@@ -1032,7 +1043,7 @@ if (stat(filename,&newstat) == -1)
    return;
    }
 
-Debug("Checking file updates on %s (%x/%x)\n",filename, newstat.st_ctime, CFDSTARTTIME);
+Debug("Checking file updates on %s (%x/%x)\n",filename, newstat.st_mtime, CFDSTARTTIME);
 
 if (CFDSTARTTIME < newstat.st_mtime)
    {

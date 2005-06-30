@@ -1,4 +1,9 @@
-2.1.15 (alphas)
+2.1.16
+
+	Cfservd reread patch. Timeout on polling for linux,
+
+	
+2.1.15 
 
 	-f removal in cfservd patch
 
