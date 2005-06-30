@@ -5,7 +5,7 @@ LDADD = -L../pub -lpub $(BERKELEY_DB_LDFLAGSD) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_
 INCLUDES = $(BERKELEY_DB_CFLAGS) $(OPENSSL_LIB_CPPFLAGS)
 AM_LDFLAGS = $(BERKELEY_DB_LDFLAGS) $(OPENSSL_LIB_LDFLAGS) @LDFLAGS@
 
-sbin_PROGRAMS = cfagent cfservd cfrun cfkey cfenvd cfenvgraph cfexecd cfshow
+sbin_PROGRAMS = cfagent cfservd cfrun cfkey cfenvd cfenvgraph cfexecd cfshow cfetool cfetoolgraph
 
 cfshow_SOURCES =							\
 	cfshow.c							\
@@ -221,6 +221,33 @@ cfenvgraph_SOURCES =							\
 	cfenvgraph.c							\
 	granules.c							\
 	globals.c
+
+cfetool_SOURCES =							\
+	cfetool.c							\
+	globals.c							\
+	filenames.c							\
+	nameinfo.c							\
+	sockaddr.c							\
+	classes.c							\
+	item.c								\
+	item-ext.c							\
+	item-file.c							\
+	eval.c								\
+	wildcard.c							\
+	df.c								\
+	read.c								\
+	granules.c							\
+	log.c								\
+	popen.c								\
+	patches.c							\
+	locks.c								\
+	dtypes.c							\
+	state.c								\
+	init.c
+
+cfetoolgraph_SOURCES =							\
+	cfetoolgraph.c							\
+	granules.c
 
 #
 # Pickup header files here so Automake knows about them

@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 
-SOURCES = $(cfagent_SOURCES) $(cfenvd_SOURCES) $(cfenvgraph_SOURCES) $(cfexecd_SOURCES) $(cfkey_SOURCES) $(cfrun_SOURCES) $(cfservd_SOURCES) $(cfshow_SOURCES)
+SOURCES = $(cfagent_SOURCES) $(cfenvd_SOURCES) $(cfenvgraph_SOURCES) $(cfetool_SOURCES) $(cfetoolgraph_SOURCES) $(cfexecd_SOURCES) $(cfkey_SOURCES) $(cfrun_SOURCES) $(cfservd_SOURCES) $(cfshow_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -42,7 +42,8 @@ host_triplet = @host@
 target_triplet = @target@
 sbin_PROGRAMS = cfagent$(EXEEXT) cfservd$(EXEEXT) cfrun$(EXEEXT) \
 	cfkey$(EXEEXT) cfenvd$(EXEEXT) cfenvgraph$(EXEEXT) \
-	cfexecd$(EXEEXT) cfshow$(EXEEXT)
+	cfexecd$(EXEEXT) cfshow$(EXEEXT) cfetool$(EXEEXT) \
+	cfetoolgraph$(EXEEXT)
 subdir = src
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/cflex.l.in $(srcdir)/conf.h.in \
@@ -100,6 +101,22 @@ cfenvgraph_OBJECTS = $(am_cfenvgraph_OBJECTS)
 cfenvgraph_LDADD = $(LDADD)
 cfenvgraph_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
+am_cfetool_OBJECTS = cfetool.$(OBJEXT) globals.$(OBJEXT) \
+	filenames.$(OBJEXT) nameinfo.$(OBJEXT) sockaddr.$(OBJEXT) \
+	classes.$(OBJEXT) item.$(OBJEXT) item-ext.$(OBJEXT) \
+	item-file.$(OBJEXT) eval.$(OBJEXT) wildcard.$(OBJEXT) \
+	df.$(OBJEXT) read.$(OBJEXT) granules.$(OBJEXT) log.$(OBJEXT) \
+	popen.$(OBJEXT) patches.$(OBJEXT) locks.$(OBJEXT) \
+	dtypes.$(OBJEXT) state.$(OBJEXT) init.$(OBJEXT)
+cfetool_OBJECTS = $(am_cfetool_OBJECTS)
+cfetool_LDADD = $(LDADD)
+cfetool_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
+am_cfetoolgraph_OBJECTS = cfetoolgraph.$(OBJEXT) granules.$(OBJEXT)
+cfetoolgraph_OBJECTS = $(am_cfetoolgraph_OBJECTS)
+cfetoolgraph_LDADD = $(LDADD)
+cfetoolgraph_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_cfexecd_OBJECTS = cfexecd.$(OBJEXT) popen.$(OBJEXT) \
 	globals.$(OBJEXT) sockaddr.$(OBJEXT) read.$(OBJEXT) \
 	classes.$(OBJEXT) nameinfo.$(OBJEXT) wildcard.$(OBJEXT) \
@@ -165,10 +182,12 @@ LEXCOMPILE = $(LEX) $(LFLAGS) $(AM_LFLAGS)
 YLWRAP = $(top_srcdir)/ylwrap
 YACCCOMPILE = $(YACC) $(YFLAGS) $(AM_YFLAGS)
 SOURCES = $(cfagent_SOURCES) $(cfenvd_SOURCES) $(cfenvgraph_SOURCES) \
-	$(cfexecd_SOURCES) $(cfkey_SOURCES) $(cfrun_SOURCES) \
-	$(cfservd_SOURCES) $(cfshow_SOURCES)
+	$(cfetool_SOURCES) $(cfetoolgraph_SOURCES) $(cfexecd_SOURCES) \
+	$(cfkey_SOURCES) $(cfrun_SOURCES) $(cfservd_SOURCES) \
+	$(cfshow_SOURCES)
 DIST_SOURCES = $(cfagent_SOURCES) $(cfenvd_SOURCES) \
-	$(cfenvgraph_SOURCES) $(cfexecd_SOURCES) $(cfkey_SOURCES) \
+	$(cfenvgraph_SOURCES) $(cfetool_SOURCES) \
+	$(cfetoolgraph_SOURCES) $(cfexecd_SOURCES) $(cfkey_SOURCES) \
 	$(cfrun_SOURCES) $(cfservd_SOURCES) $(cfshow_SOURCES)
 HEADERS = $(noinst_HEADERS)
 ETAGS = etags
@@ -502,6 +521,33 @@ cfenvgraph_SOURCES = \
 	granules.c							\
 	globals.c
 
+cfetool_SOURCES = \
+	cfetool.c							\
+	globals.c							\
+	filenames.c							\
+	nameinfo.c							\
+	sockaddr.c							\
+	classes.c							\
+	item.c								\
+	item-ext.c							\
+	item-file.c							\
+	eval.c								\
+	wildcard.c							\
+	df.c								\
+	read.c								\
+	granules.c							\
+	log.c								\
+	popen.c								\
+	patches.c							\
+	locks.c								\
+	dtypes.c							\
+	state.c								\
+	init.c
+
+cfetoolgraph_SOURCES = \
+	cfetoolgraph.c							\
+	granules.c
+
 
 #
 # Pickup header files here so Automake knows about them
@@ -627,6 +673,12 @@ cfenvd$(EXEEXT): $(cfenvd_OBJECTS) $(cfenvd_DEPENDENCIES)
 cfenvgraph$(EXEEXT): $(cfenvgraph_OBJECTS) $(cfenvgraph_DEPENDENCIES) 
 	@rm -f cfenvgraph$(EXEEXT)
 	$(LINK) $(cfenvgraph_LDFLAGS) $(cfenvgraph_OBJECTS) $(cfenvgraph_LDADD) $(LIBS)
+cfetool$(EXEEXT): $(cfetool_OBJECTS) $(cfetool_DEPENDENCIES) 
+	@rm -f cfetool$(EXEEXT)
+	$(LINK) $(cfetool_LDFLAGS) $(cfetool_OBJECTS) $(cfetool_LDADD) $(LIBS)
+cfetoolgraph$(EXEEXT): $(cfetoolgraph_OBJECTS) $(cfetoolgraph_DEPENDENCIES) 
+	@rm -f cfetoolgraph$(EXEEXT)
+	$(LINK) $(cfetoolgraph_LDFLAGS) $(cfetoolgraph_OBJECTS) $(cfetoolgraph_LDADD) $(LIBS)
 cfexecd$(EXEEXT): $(cfexecd_OBJECTS) $(cfexecd_DEPENDENCIES) 
 	@rm -f cfexecd$(EXEEXT)
 	$(LINK) $(cfexecd_LDFLAGS) $(cfexecd_OBJECTS) $(cfexecd_LDADD) $(LIBS)
@@ -655,6 +707,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfagent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfenvd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfenvgraph.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfetool.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfetoolgraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfexecd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfkey.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cflex.Po@am__quote@
