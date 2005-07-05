@@ -400,11 +400,14 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
                AddClassToHeap(CanonifyName(inet_ntoa(sin->sin_addr)));
                Debug("Adding hostname %s..\n",hp->h_name);
                AddClassToHeap(CanonifyName(hp->h_name));
-               
-               for (i=0;hp->h_aliases[i]!=NULL;i++)
+
+               if (hp->h_aliases != NULL)
                   {
-                  Debug("Adding alias %s..\n",hp->h_aliases[i]);
-                  AddClassToHeap(CanonifyName(hp->h_aliases[i]));
+                  for (i=0; hp->h_aliases[i] != NULL; i++)
+                     {
+                     Debug("Adding alias %s..\n",hp->h_aliases[i]);
+                     AddClassToHeap(CanonifyName(hp->h_aliases[i]));
+                     }
                   }
                }               
 
