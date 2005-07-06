@@ -691,7 +691,7 @@ while(*sp != '\0')
       {
       atom = cbuff+1;
 
-      Debug4("Checking AND Atom %s?\n");
+      Debug4("Checking AND Atom %s?\n",atom);
       
       cbuff[strlen(cbuff)-1] = '\0';
       

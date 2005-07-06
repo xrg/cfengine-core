@@ -987,7 +987,7 @@ if (strlen(MAILFROM) > 0)
 else
    {
    domain[0] = '\0';
-   sscanf(to,"%*[^@]@%.64s",domain);
+   sscanf(to,"%*[^@]@%64s",domain);
    
    if (strlen(domain) > 0)
       {
