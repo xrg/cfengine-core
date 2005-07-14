@@ -8486,9 +8486,15 @@ variables:
 @smallexample
 $(GetAnalysis.a) $(GetAnalysis.b) $(GetAnalysis.c) $(GetAnalysis.d)
 @end smallexample
-If the classes @code{define1} etc are returned by the method, then we
-set them also in the main program (@code{returnclasses} is an access
-control list for setting classes). The remaining options are as those
+If the classes @code{define1} etc, are returned by the method, then we
+set them also in the main program as
+@smallexample
+GetAnalysis_define::
+@end smallexample
+In other words, the class name is also prefixed with the method name to distinguish it.
+(@code{returnclasses} works like an access
+control list for setting classes, deciding whether or not the main
+script should accept the results from the child method.). The remaining options are as those
 for executing shell commands, and apply only on the host that executes
 the function.
 

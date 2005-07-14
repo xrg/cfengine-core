@@ -7897,9 +7897,14 @@ variables:
 
 <pre class="smallexample">     $(GetAnalysis.a) $(GetAnalysis.b) $(GetAnalysis.c) $(GetAnalysis.d)
 </pre>
-   <p>If the classes <code>define1</code> etc are returned by the method, then we
-set them also in the main program (<code>returnclasses</code> is an access
-control list for setting classes). The remaining options are as those
+   <p>If the classes <code>define1</code> etc, are returned by the method, then we
+set them also in the main program as
+<pre class="smallexample">     GetAnalysis_define::
+</pre>
+   <p>In other words, the class name is also prefixed with the method name to distinguish it. 
+(<code>returnclasses</code> works like an access
+control list for setting classes, deciding whether or not the main
+script should accept the results from the child method.). The remaining options are as those
 for executing shell commands, and apply only on the host that executes
 the function.
 

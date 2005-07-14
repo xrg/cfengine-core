@@ -36,7 +36,7 @@ may be included in a translation approved by the author instead of in
 the original English.
 
    This manual corresponds to CFENGINE Edition 2.1.16a for version
-2.1.16a as last updated 20 April 2005.
+2.1.16a as last updated 14 July 2005.
 
 * Menu:
 
@@ -6728,11 +6728,15 @@ of the file `/etc/passwd'.  On return, if the method gets executed, the
 values will be placed in the four variables:
 
      $(GetAnalysis.a) $(GetAnalysis.b) $(GetAnalysis.c) $(GetAnalysis.d)
-   If the classes `define1' etc are returned by the method, then we set
-them also in the main program (`returnclasses' is an access control
-list for setting classes). The remaining options are as those for
-executing shell commands, and apply only on the host that executes the
-function.
+   If the classes `define1' etc, are returned by the method, then we
+set them also in the main program as
+     GetAnalysis_define::
+   In other words, the class name is also prefixed with the method name
+to distinguish it.  (`returnclasses' works like an access control list
+for setting classes, deciding whether or not the main script should
+accept the results from the child method.). The remaining options are
+as those for executing shell commands, and apply only on the host that
+executes the function.
 
    Both the client and server hosts must have a copy of the same method
 declaration. The client should have a non-empty `server=' declaration.

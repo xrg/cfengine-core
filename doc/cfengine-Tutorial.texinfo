@@ -1324,7 +1324,7 @@ processes:
 It's important to use as specific a regular expression as possible in match
 statements (the path to the program and the regular expression metacharacter 
 @code{$} meaning "end of line", in this example) because bare strings can 
-often match unexepted processes. For instance, using @code{cfexecd} by 
+often match unexpected processes. For instance, using @code{cfexecd} by 
 itself will also match a process spawned by @code{cfagent -F}, which shows 
 up as @code{/var/cfagent/bin/cfagent -Dfrom_cfexecd} in the process table!
 @cindex Restarting cfexecd

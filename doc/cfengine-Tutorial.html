@@ -1298,7 +1298,7 @@ Cfagents locking mechanisms ensure that no contention will occur.
    <p>It's important to use as specific a regular expression as possible in match
 statements (the path to the program and the regular expression metacharacter
 <code>$</code> meaning "end of line", in this example) because bare strings can
-often match unexepted processes. For instance, using <code>cfexecd</code> by
+often match unexpected processes. For instance, using <code>cfexecd</code> by
 itself will also match a process spawned by <code>cfagent -F</code>, which shows
 up as <code>/var/cfagent/bin/cfagent -Dfrom_cfexecd</code> in the process table! 
 <a name="index-Restarting-cfexecd-48"></a><a name="index-cfexecd-restarting-by-processes-49"></a><a name="index-processes-cannot-start-cfexecd-50"></a>
