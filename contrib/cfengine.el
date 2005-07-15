@@ -324,7 +324,7 @@ Comments are handled using standard Emacs conventions, including:
     '("^[ \t]*\\([a-zA-Z0-9_\\(\\)\\.\\|\\!]+\\)::" (1 font-lock-function-name-face))
     ;;
     ;; variables
-    '("$(\\([a-zA-Z0-9_]+\\))" (1 font-lock-variable-name-face))
+    '("\\$[{(]\\([a-zA-Z0-9_]+\\)[)}]" (1 font-lock-variable-name-face))
     ))
   "Gaudy level highlighting for Cfengine mode.")
 
