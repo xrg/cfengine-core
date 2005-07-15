@@ -318,7 +318,7 @@ else
 void GetInterfaceInfo(void)
 
 { int fd,len,i,j;
-  struct ifreq ifbuf[512],ifr, *ifp;
+  struct ifreq ifbuf[8192],ifr, *ifp;
   struct ifconf list;
   struct sockaddr_in *sin;
   struct hostent *hp;
@@ -479,6 +479,16 @@ void GetV6InterfaceInfo(void)
            return;
            }
         
+        break;
+
+    case hpux:
+        
+        if ((pp = cfpopen("/usr/sbin/ifconfig -a","r")) == NULL)
+           {
+           Verbose("Could not find interface info\n");
+           return;
+           }
+
         break;
         
     default:
