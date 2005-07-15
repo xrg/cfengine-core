@@ -49,7 +49,7 @@ snprintf(VBUFF,CF_BUFSIZE,"%s/randseed",VLOGDIR);
 
  if (stat(VBUFF,&statbuf) == -1)
     {
-    snprintf(AVDB,CF_MAXVARSIZE-1,"%s/%s",CFWORKDIR,CF_AVDB_FILE);
+    snprintf(AVDB,CF_MAXVARSIZE-1,"%s/state/%s",CFWORKDIR,CF_AVDB_FILE);
     }
  else
     {
