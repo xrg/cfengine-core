@@ -481,7 +481,7 @@ void GetV6InterfaceInfo(void)
         
         break;
 
-    case hpux:
+    case hp:
         
         if ((pp = cfpopen("/usr/sbin/ifconfig -a","r")) == NULL)
            {
