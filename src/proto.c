@@ -73,70 +73,76 @@ int IdentifyForVerification(int sd,char *localip,int family)
 memset(sendbuff,0,CF_BUFSIZE);
 memset(dnsname,0,CF_BUFSIZE);
 
-
 if (!SKIPIDENTIFY && (strcmp(VDOMAIN,CF_START_DOMAIN) == 0))
    {
    CfLog(cferror,"Undefined domain name","");
    return false;
    }
- 
+
+if (!SKIPIDENTIFY)
+   {
 /* First we need to find out the IP address and DNS name of the socket
    we are sending from. This is not necessarily the same as VFQNAME if
    the machine has a different uname from its IP name (!) This can
    happen on stupidly set up machines or on hosts with multiple
    interfaces, with different names on each interface ... */ 
-
- switch (family)
-    {
-    case AF_INET: len = sizeof(struct sockaddr_in);
-        break;
+   
+   switch (family)
+      {
+      case AF_INET: len = sizeof(struct sockaddr_in);
+          break;
 #if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
-    case AF_INET6: len = sizeof(struct sockaddr_in6);
-        break;
+      case AF_INET6: len = sizeof(struct sockaddr_in6);
+          break;
 #endif
-    default:
-        CfLog(cferror,"Software error in IdentifyForVerification","");
-    }
- 
- if (getsockname(sd,(struct sockaddr *)&myaddr,&len) == -1)
-    {
-    CfLog(cferror,"Couldn't get socket address\n","getsockname");
-    return false;
-    }
- 
- snprintf(localip,CF_MAX_IP_LEN-1,"%s",sockaddr_ntop((struct sockaddr *)&myaddr)); 
- 
- Debug("Identifying this agent as %s i.e. %s, with signature %d\n",localip,VFQNAME,CFSIGNATURE);
- 
+      default:
+          CfLog(cferror,"Software error in IdentifyForVerification","");
+      }
+   
+   if (getsockname(sd,(struct sockaddr *)&myaddr,&len) == -1)
+      {
+      CfLog(cferror,"Couldn't get socket address\n","getsockname");
+      return false;
+      }
+   
+   snprintf(localip,CF_MAX_IP_LEN-1,"%s",sockaddr_ntop((struct sockaddr *)&myaddr)); 
+   
+   Debug("Identifying this agent as %s i.e. %s, with signature %d\n",localip,VFQNAME,CFSIGNATURE);
+   
 #if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
- 
- if ((err=getnameinfo((struct sockaddr *)&myaddr,len,dnsname,CF_MAXVARSIZE,NULL,0,0)) != 0)
-    {
-    snprintf(OUTPUT,CF_BUFSIZE,"Couldn't look up address v6 for %s: %s\n",dnsname,gai_strerror(err));
-    CfLog(cferror,OUTPUT,"");
-    return false;
-    }
- 
+   
+   if ((err=getnameinfo((struct sockaddr *)&myaddr,len,dnsname,CF_MAXVARSIZE,NULL,0,0)) != 0)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Couldn't look up address v6 for %s: %s\n",dnsname,gai_strerror(err));
+      CfLog(cferror,OUTPUT,"");
+      return false;
+      }
+   
 #else 
- 
- iaddr = &(myaddr.sin_addr); 
- hp = gethostbyaddr((void *)iaddr,sizeof(myaddr.sin_addr),family);
- 
- if ((hp == NULL) || (hp->h_name == NULL))
-    {
-    CfLog(cferror,"Couldn't lookup IP address\n","gethostbyaddr");
-    return false;
-    }
- 
- strncpy(dnsname,hp->h_name,CF_MAXVARSIZE);
- 
- if ((strstr(hp->h_name,".") == 0) && (strlen(VDOMAIN) > 0))
-    {
-    strcat(dnsname,".");
-    strcat(dnsname,VDOMAIN);
-    } 
+   
+   iaddr = &(myaddr.sin_addr); 
+   hp = gethostbyaddr((void *)iaddr,sizeof(myaddr.sin_addr),family);
+   
+   if ((hp == NULL) || (hp->h_name == NULL))
+      {
+      CfLog(cferror,"Couldn't lookup IP address\n","gethostbyaddr");
+      return false;
+      }
+   
+   strncpy(dnsname,hp->h_name,CF_MAXVARSIZE);
+   
+   if ((strstr(hp->h_name,".") == 0) && (strlen(VDOMAIN) > 0))
+      {
+      strcat(dnsname,".");
+      strcat(dnsname,VDOMAIN);
+      } 
 #endif 
- 
+   }
+else
+   {
+   strcat(dnsname,"skipident");
+   }
+
 user_ptr = getpwuid(getuid());
 uname = user_ptr ? user_ptr->pw_name : "UNKNOWN";
 

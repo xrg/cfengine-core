@@ -3718,8 +3718,17 @@ if ((ptr->classes = strdup(CLASSBUFF)) == NULL)
     return;
     }
  
-ptr->file = strdup(file); 
-ptr->servers = SplitStringAsItemList(CFSERVER,',');
+ptr->file = strdup(file);
+
+if (strlen(CFSERVER) > 0)
+   {
+   ptr->servers = SplitStringAsItemList(CFSERVER,',');
+   }
+else
+   {
+   ptr->servers = SplitStringAsItemList("localhost",',');
+   }
+
 ptr->bundle = NULL;
 ptr->return_vars = SplitStringAsItemList(METHODFILENAME,',');
 ptr->return_classes = SplitStringAsItemList(PARSEMETHODRETURNCLASSES,','); 

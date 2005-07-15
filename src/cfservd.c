@@ -1809,6 +1809,13 @@ if (strlen(dns_assert) == 0)
    return false;
    }
 
+if (strcmp(dns_assert,"skipident") == 0)
+   {
+   Verbose("DNS asserted name was withheld before key exchange - untrustworthy connection\n");
+   return false;   
+   }
+
+
 Verbose("Socket caller address appears honest (%s matches %s)\n",ip_assert,MapAddress(conn->ipaddr));
  
 snprintf(conn->output,CF_BUFSIZE,"Socket originates from %s=%s\n",ip_assert,dns_assert);
