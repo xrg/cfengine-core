@@ -276,8 +276,11 @@ if (ptr->hashtable[slot] != 0)
       
       if (CompareMacro(name,ptr->hashtable[slot]) == 0)
          {
-         snprintf(VBUFF,CF_BUFSIZE,"Redefinition of macro %s=%s",name,exp);
-         Warning(VBUFF);
+          if (PARSING && !IsItemIn(VREDEFINES,name))
+             {
+             snprintf(VBUFF,CF_BUFSIZE,"Redefinition of macro %s=%s",name,exp);
+             Warning(VBUFF);
+             }
          free(ptr->hashtable[slot]);
          ptr->hashtable[slot] = sp;
          return;
