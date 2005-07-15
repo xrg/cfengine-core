@@ -1,10 +1,26 @@
 2.1.16
 
+	SEG fault fixed when signalling cfenvd
+	
+	Alf Wachsmann and Elizabeth Cassel's cfetool added, based on cfenvd.
+
+	Bug fix for multipass evaluation when resolving dependencies.
+
 	Cfservd reread patch. Timeout on polling for linux,
 
-	Alf Wachsmann and Elizabeth Cassel's cfetool added, based on cfenvd.
-	
+	Default route code now uses "route" command exclusively for portability.
 
+	EmailFrom patch to cfexecd / redundant code was paste error
+
+	Increase pass depth in evaluation of action sequence.
+
+	Skipident patch
+
+	Size increase for interface buffer list
+
+	HPUX ifconfig location fix
+
+	Methods documentation improved.
 	
 2.1.15 
 
@@ -20,7 +36,8 @@
 	Abspath in shellcommands was not parsed and acted on...
 
 	Warnall action was not respected in copy. Permissions were altered on destination file anyway.
-	
+
+	cfcolon added to special symbols.
 
 2.1.14
 
