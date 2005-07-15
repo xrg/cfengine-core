@@ -649,38 +649,6 @@ return false;
 }
 
 
-/**********************************************************************/
-
-void SetSignals()
-
-
-{ int i;
-
- SIGNALS[SIGHUP] = strdup("SIGHUP");
- SIGNALS[SIGINT] = strdup("SIGINT");
- SIGNALS[SIGTRAP] = strdup("SIGTRAP");
- SIGNALS[SIGKILL] = strdup("SIGKILL");
- SIGNALS[SIGPIPE] = strdup("SIGPIPE");
- SIGNALS[SIGCONT] = strdup("SIGCONT");
- SIGNALS[SIGABRT] = strdup("SIGABRT");
- SIGNALS[SIGSTOP] = strdup("SIGSTOP");
- SIGNALS[SIGQUIT] = strdup("SIGQUIT");
- SIGNALS[SIGTERM] = strdup("SIGTERM");
- SIGNALS[SIGCHLD] = strdup("SIGCHLD");
- SIGNALS[SIGUSR1] = strdup("SIGUSR1");
- SIGNALS[SIGUSR2] = strdup("SIGUSR2");
- SIGNALS[SIGBUS] = strdup("SIGBUS");
- SIGNALS[SIGSEGV] = strdup("SIGSEGV");
-
- for (i = 0; i < highest_signal; i++)
-    {
-    if (SIGNALS[i] == NULL)
-       {
-       SIGNALS[i] = strdup("NOSIG");
-       }
-    }
-}
-
 /*********************************************************************/
 
 void SetClassesOnScript(char *execstr,char *classes,char *elseclasses,int useshell)

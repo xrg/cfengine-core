@@ -241,6 +241,10 @@ while ((c=getopt_long(argc,argv,"d:vhHFVT",CFDENVOPTIONS,&optindex)) != EOF)
 
 LOGGING = true;                    /* Do output to syslog */
 
+SetReferenceTime(false);
+SetStartTime(false);
+SetSignals();
+
 /* XXX Initialize workdir for non privileged users */
 
 strcpy(CFWORKDIR,WORKDIR);

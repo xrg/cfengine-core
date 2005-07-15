@@ -1092,30 +1092,6 @@ if (!NOSPLAY)
     } 
 }
 
-/*******************************************************************/
-
-void SetReferenceTime(int setclasses)
-
-{ time_t tloc;
- char vbuff[CF_BUFSIZE];
- 
-if ((tloc = time((time_t *)NULL)) == -1)
-   {
-   CfLog(cferror,"Couldn't read system clock\n","");
-   }
-
-CFSTARTTIME = tloc;
-
-snprintf(vbuff,CF_BUFSIZE,"%s",ctime(&tloc));
-
-Verbose("Reference time set to %s\n",ctime(&tloc));
-
-if (setclasses)
-   {
-   AddTimeClass(vbuff);
-   }
-}
-
 
 /*******************************************************************/
 
@@ -1914,22 +1890,6 @@ for (i = 0; VRESOURCES[i] != '\0'; i++)
 snprintf (OUTPUT,CF_BUFSIZE,"Unknown resource %s in %s",var,VRCFILE);
 FatalError(OUTPUT);
 return 0;
-}
-
-/*******************************************************************/
-
-void SetStartTime(int setclasses)
-
-{ time_t tloc;
- 
-if ((tloc = time((time_t *)NULL)) == -1)
-   {
-   CfLog(cferror,"Couldn't read system clock\n","");
-   }
-
-CFINITSTARTTIME = tloc;
-
-Debug("Job start time set to %s\n",ctime(&tloc));
 }
 
 /*******************************************************************/

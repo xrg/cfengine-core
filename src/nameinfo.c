@@ -603,3 +603,45 @@ if (strstr(VFQNAME,".") == 0 && (strcmp(VDOMAIN,CF_START_DOMAIN) != 0))
 AddClassToHeap(CanonifyName(VDOMAIN));
 DeleteClassFromHeap("undefined_domain");
 }
+
+
+/*******************************************************************/
+
+void SetReferenceTime(int setclasses)
+
+{ time_t tloc;
+ char vbuff[CF_BUFSIZE];
+ 
+if ((tloc = time((time_t *)NULL)) == -1)
+   {
+   CfLog(cferror,"Couldn't read system clock\n","");
+   }
+
+CFSTARTTIME = tloc;
+
+snprintf(vbuff,CF_BUFSIZE,"%s",ctime(&tloc));
+
+Verbose("Reference time set to %s\n",ctime(&tloc));
+
+if (setclasses)
+   {
+   AddTimeClass(vbuff);
+   }
+}
+
+
+/*******************************************************************/
+
+void SetStartTime(int setclasses)
+
+{ time_t tloc;
+ 
+if ((tloc = time((time_t *)NULL)) == -1)
+   {
+   CfLog(cferror,"Couldn't read system clock\n","");
+   }
+
+CFINITSTARTTIME = tloc;
+
+Debug("Job start time set to %s\n",ctime(&tloc));
+}

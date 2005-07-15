@@ -745,6 +745,9 @@ void IDClasses ARGLIST((void));
 void AddListSeparator(char *s);
 void ChopListSeparator(char *s);
 
+void SetReferenceTime(int setclasses);
+void SetStartTime(int setclasses);
+
 /* modes.c */
 
 void ParseModeString ARGLIST((char *modestring, mode_t *plusmask, mode_t *minusmask));
