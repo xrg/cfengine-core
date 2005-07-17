@@ -203,7 +203,7 @@ group of hosts with a single statement.
 
 Cfengine grew out of the need to control the accumulation of complex
 shell scripts used in the automation of key system maintenance at
-Unversity College in Oslo. There were a lot of
+University College in Oslo. There were a lot of
 scripts, written in shell and in Perl,
 performing system administration tasks such as file tidying, find-database updates, process
 checking and several other tasks.  In a mixed environment,
@@ -934,7 +934,7 @@ hosts. To do that, a separate configuration file is used. Why?
 
 Imagine what would happen if you made a mistake in the configuration,
 i.e. a syntax error which got distributed to every host. Now all
-the hosts wuld be unable to run cfengine, and thereafter unable
+the hosts would be unable to run cfengine, and thereafter unable
 to download a corrected configuration file. The whole setup would
 be broken. To prevent this kind of accident, a separate configuration
 file is used to copy the files and binaries to each host. This
@@ -1829,7 +1829,7 @@ is already defined.
 
 You can also import values from the execution of a shell command
 by prefixing a command with the word @code{exec}. This method is deprecated
-in version 2 an replaced by a function.
+in version 2 and replaced by a function.
 
 @cindex Variables, setting to result of a shell command
 @vindex @code{exec}
@@ -2652,7 +2652,7 @@ The tidy action is slightly different in this respect, since it already
 always expects to match a specific pattern. One is generally not
 interested in a search which deletes everything except for a named
 pattern: this would be too dangerous. For this reason, the syntax of
-@code{tidy} does not allow ignore,include and exclude.  It is documented
+@code{tidy} does not allow ignore, include and exclude.  It is documented
 in the section on tidying, (see Reference manual).
 
 Items declared under the global @code{ignore} section affect files,
@@ -2744,7 +2744,7 @@ directory structure.
 
 Suppose, for instance, that a user with write access to the filesystem
 added a symbolic link to @file{/etc/passwd}, and we were doing a
-recursive deletion. Suddlenly, cfengine becomes a destructive
+recursive deletion. Suddenly, cfengine becomes a destructive
 weapon. The default behaviour is that cfengine does not follow symbolic
 links in recursive descents, for this reason. The option
 @code{travlinks} can be set to true, in order to change this.  However,
@@ -3195,7 +3195,7 @@ Sometimes people claim that they need such great flexibility that all
 their machines should be different. This belief tends to be inversely
 proportional to the number of machines they run and generally only
 applies to very special development environments!  Usually you will only
-need one or to machines to be special and most can be made very similar.
+need one or two machines to be special and most can be made very similar.
 
 Site configuration is about sharing and controlling resources.  The
 resources include disks (filespace), files, data, programs, passwords
@@ -5147,7 +5147,7 @@ may be run, without giving away any special user privileges.
 @subsection Remote file distribution
 
 This section describes how you can set up @code{cfservd} as a remote file
-server which can result in the distrubution of files to client hosts in
+server which can result in the distribution of files to client hosts in
 a more democratic way than with programs like rdist.
 
 An important difference between cfengine and other systems has to do
