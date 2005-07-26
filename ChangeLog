@@ -1,6 +1,8 @@
 2.1.16
 
 	SEG fault fixed when signalling cfenvd
+
+	SkipIdentify partial fix
 	
 	Alf Wachsmann and Elizabeth Cassel's cfetool added, based on cfenvd.
 
@@ -18,9 +20,12 @@
 
 	Size increase for interface buffer list
 
-	HPUX ifconfig location fix
+	HPUX,AIX ifconfig location fix
 
 	Methods documentation improved.
+
+	New control function for testing tcp services
+          var = ReadTCP(host,port,"send string",maxbytes)
 	
 2.1.15 
 
