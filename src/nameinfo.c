@@ -490,6 +490,16 @@ void GetV6InterfaceInfo(void)
            }
 
         break;
+
+    case aix:
+        
+        if ((pp = cfpopen("/etc/ifconfig -a","r")) == NULL)
+           {
+           Verbose("Could not find interface info\n");
+           return;
+           }
+
+        break;
         
     default:
         
