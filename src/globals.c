@@ -571,6 +571,7 @@ char *TCPNAMES[CF_NETATTR] =
       "selectpartitionneighbors",
       "isgreaterthan",
       "islessthan",
+      "readtcp",
       NULL
       };
 
@@ -830,7 +831,7 @@ char *TCPNAMES[CF_NETATTR] =
   /*
    * HvB: Bas van der Vlies
   */
-  PRIVATE flag MOUNT_RO = false;
+  PRIVATE flag CF_MOUNT_RO = false;
 
   PRIVATE char *COMMATTRIBUTES[] =
      {

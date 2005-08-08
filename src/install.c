@@ -826,7 +826,7 @@ switch(GetCommAttribute(item))
    case cfreadonly: 
        if ((strcmp(value,"on")==0) || (strcmp(value,"true")==0))
           {
-          MOUNT_RO=true;
+          CF_MOUNT_RO=true;
           }
        break; 
        
@@ -2590,7 +2590,7 @@ switch (action)
 
    /* HvB: Bas van der Vlies */
    case mountables:
-       InstallMountableItem(CURRENTOBJECT,MOUNTOPTS,MOUNT_RO);
+       InstallMountableItem(CURRENTOBJECT,MOUNTOPTS,CF_MOUNT_RO);
        break;
 
    case misc_mounts:

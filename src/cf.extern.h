@@ -271,7 +271,7 @@ extern struct cfObject *VOBJ;
 extern char *PARSEMETHODRETURNCLASSES;
 
 extern struct Item *METHODARGS;
-extern flag  MOUNT_RO;                  /* mount directory readonly */
+extern flag  CF_MOUNT_RO;                  /* mount directory readonly */
 
 extern struct Item *VALERTS;
 extern struct Item *VMOUNTED;

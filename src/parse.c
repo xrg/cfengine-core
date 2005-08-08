@@ -652,8 +652,8 @@ if (IsBuiltinFunction(fn))
       case groups:
           InstallGroupRValue(local,simple);
           break;
-      case control:
           
+      case control:          
           if (strncmp("CF_ASSOCIATIVE_ARRAY",local,strlen("CF_ASSOCIATIVE_ARRAY")) == 0)
              {
              break;
@@ -1289,7 +1289,7 @@ void InitializeAction()                                   /* Set defaults */
  /* 
   * HvB: Bas van der Vlies
  */
- MOUNT_RO=false;
+ CF_MOUNT_RO=false;
  MOUNTOPTS[0]='\0';
  
  /* Make sure we don't clean the buffer in the middle of a link! */
