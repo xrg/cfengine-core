@@ -1,5 +1,7 @@
 2.1.16
 
+	MOUNT_RO name collision fix
+	
 	SEG fault fixed when signalling cfenvd
 
 	SkipIdentify partial fix
