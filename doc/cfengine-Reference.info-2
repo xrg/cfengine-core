@@ -11,6 +11,38 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: admit grant and deny,  Next: cfrun,  Prev: cfservd control,  Up: Cfservd.conf and cfrun reference
+
+5.2 admit, grant and deny
+=========================
+
+* Menu:
+
+* root=::
+* encrypt=::
+* SkipVerify::
+
+
+File: cfengine-Reference.info,  Node: root=,  Next: encrypt=,  Prev: admit grant and deny,  Up: admit grant and deny
+
+5.2.1 `root='
+-------------
+
+This list specifies the names of hosts which are to have read access to
+files, regardless of the owner of the file. This effectively gives root
+users on connecting hosts privileges to non-root owned files on the
+server, but not vice-versa, similar to the NFS root mapping, except
+that there is no question of a client being able to modify files on the
+server. Caution: cfservd trusts the DNS service, so be aware that cache
+poisoning attacks are a possible way of bypassing access controls.
+
+   As of version 2.0.4: Once a verified host address has been
+identified with a functioning public/private key authentication, the IP
+address is added to the SkipVerify list, so that time is not wasted in
+verifying reverse lookups, when the identify can be verified more
+efficiently and securely by a key mechanism.  
+
+
 File: cfengine-Reference.info,  Node: encrypt=,  Next: SkipVerify,  Prev: root=,  Up: admit grant and deny
 
 5.2.2 `encrypt=true'
@@ -2032,9 +2064,9 @@ Concept Index
 * Andrew filesystem:                     nfstype.             (line  22)
 * AppendIfNoSuchLinesFromFile:           editfiles.           (line 195)
 * Array example:                         Setting variables with functions.
-                                                              (line 174)
+                                                              (line 207)
 * Array from file:                       Setting variables with functions.
-                                                              (line 174)
+                                                              (line 207)
 * Associative arrays.:                   Setting variables with functions.
                                                               (line  40)
 * atime tidies:                          tidy.                (line 137)
@@ -2338,7 +2370,7 @@ Concept Index
 * Pattern matching in file sweeps:       Syntax.              (line 132)
 * pattern= and filtering:                tidy.                (line  56)
 * Peer to peer methods:                  Setting variables with functions.
-                                                              (line 118)
+                                                              (line 151)
 * Peer watching (FriendStatus):          alerts.              (line 105)
 * Percentage disk space:                 required.            (line  54)
 * Permissions, directories:              Directory permissions.
@@ -2361,11 +2393,11 @@ Concept Index
                                                               (line  23)
 * RandomInt() function:                  control.             (line  54)
 * Read array from file:                  Setting variables with functions.
-                                                              (line 174)
+                                                              (line 207)
 * Read array from table:                 Setting variables with functions.
                                                               (line  94)
 * ReadArray:                             Setting variables with functions.
-                                                              (line 174)
+                                                              (line 207)
 * ReadFile:                              Setting variables with functions.
                                                               (line  82)
 * ReadFile() function:                   control.             (line  54)
@@ -2405,9 +2437,9 @@ Concept Index
 * sed, editing:                          editfiles.           (line  10)
 * Selecting files in searches:           filters.             (line   6)
 * SelectPartitionGroup:                  Setting variables with functions.
-                                                              (line 118)
+                                                              (line 151)
 * SelectPartitionLeader:                 Setting variables with functions.
-                                                              (line 136)
+                                                              (line 169)
 * Sensible file sizes:                   sensiblesize.        (line   6)
 * Sensible limits on files in a directory: sensiblecount.     (line   6)
 * SetState():                            alerts.              (line  27)

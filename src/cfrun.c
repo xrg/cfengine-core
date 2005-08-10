@@ -52,6 +52,7 @@ int  FileFlag = 0;
 int  TRUSTALL = false;
 enum fileoutputlevels  OUTPUTLEVEL = fopl_normal;
 char OUTPUTDIR[CF_BUFSIZE];
+char INCLUDEFILE[CF_BUFSIZE];
 
 struct Item *VCFRUNCLASSES = NULL;
 struct Item *VCFRUNOPTIONHOSTS = NULL;
@@ -70,7 +71,7 @@ int PollServer ARGLIST((char *host, char *options, int storeinfile));
 void SendClassData ARGLIST((int sd, char *sendbuffer));
 void CheckAccess ARGLIST((char *users));
 void cfrunSyntax ARGLIST((void));
-void ReadCfrunConf ARGLIST((void));
+void ReadCfrunConf ARGLIST((char* cfg_fic));
 int ParseHostname ARGLIST((char *hostname, char *new_hostname));
 void FileOutput ARGLIST((FILE *fp, enum fileoutputlevels level, char *message));
 
@@ -245,7 +246,7 @@ for (i = 1; i < argc; i++)
        }
     }
 
- ReadCfrunConf(); 
+ ReadCfrunConf(VCFRUNHOSTS); 
  
  GetNameInfo();
 
@@ -424,7 +425,7 @@ if (!gotkey)
       }
    }
  
-if (!RemoteConnect(parsed_host,forceipv4))
+if (!RemoteConnect(parsed_host,forceipv4,SHORT_CFENGINEPORT,STR_CFENGINEPORT))
    {
    CfLog(cferror,"Couldn't open a socket","socket");
    FileOutput(fp, fopl_error, "Couldn't open a socket\n");
@@ -553,8 +554,7 @@ return true;
 /* Level 2                                                          */
 /********************************************************************/
 
-void ReadCfrunConf()
-
+void ReadCfrunConf(char* cfg_fic)
 { char filename[CF_BUFSIZE], *sp;
   char buffer[CF_MAXVARSIZE], options[CF_BUFSIZE], line[CF_BUFSIZE];
   FILE *fp;
@@ -578,7 +578,7 @@ if (!strchr(VCFRUNHOSTS, '/'))
       }
    }
  
-strcat(filename,VCFRUNHOSTS);
+strcat(filename,cfg_fic);
 
 if ((fp = fopen(filename,"r")) == NULL)      /* Open root file */
    {
@@ -669,6 +669,14 @@ while (!feof(fp))
       continue;
       }
    
+   if (strncmp(line,"include", strlen("include")) == 0)
+      {
+      sscanf(line,"include = %295[^# \n]", INCLUDEFILE);
+      Verbose("cfrun: include = %s\n", INCLUDEFILE);
+      ReadCfrunConf(INCLUDEFILE);
+      continue;
+      }
+   
    if (strncmp(line,"access",6) == 0)
       {
       for (sp = line; (*sp != '=') && (*sp != '\0'); sp++)
@@ -695,6 +703,7 @@ while (!feof(fp))
       {
       continue;
       }
+   
 
 
    if (VCFRUNOPTIONHOSTS != NULL && !IsItemIn(VCFRUNOPTIONHOSTS,buffer))
@@ -888,6 +897,7 @@ void cfrunSyntax()
  printf("      cfrun -v -- -k -- solaris  Local verbose, all solaris, but no copy\n\n");
  printf("cfrun.hosts file syntax:\n");
  printf("# starts a comment\n");
+ printf("include = [file]\t# External cfrun.hosts file to include.\n");
  printf("domain = [domain]\t# Domain to use for connection(s).\n");
  printf("maxchild = [num]\t# Maximum number of children to spawn during run.\n");
  printf("outputdir = [dir]\t# Directory where to put host output files.\n");
@@ -896,37 +906,6 @@ void cfrunSyntax()
  printf("\t\t\t# Only the hosts are required for cfrun to operate.\n");
  
  exit(0);
-}
-
-/*********************************************************************/
-
-struct cfagent_connection *NewAgentConn()
-
-{ struct cfagent_connection *ap = (struct cfagent_connection *)malloc(sizeof(struct cfagent_connection));
-
-ap->sd = CF_NOT_CONNECTED;
-ap->family = AF_INET; 
-ap->trust = false;
-ap->localip[0] = '\0';
-ap->remoteip[0] = '\0';
-ap->session_key = NULL;
-return ap;
-};
-
-/*********************************************************************/
-
-void DeleteAgentConn(ap)
-
-struct cfagent_connection *ap;
-
-{
-if (ap->session_key != NULL)
-   {
-   free(ap->session_key);
-   }
-
-free(ap);
-ap = NULL; 
 }
 
 /***************************************************************/

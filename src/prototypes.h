@@ -140,6 +140,7 @@ void HandleShowState ARGLIST((char* args,char *value));
 void HandleReadFile ARGLIST((char *args,char *value));
 void HandleReadArray ARGLIST((char *args,char *value));
 void HandleReadList ARGLIST((char *args,char *value));
+void HandleReadTCP ARGLIST((char *args,char *value));
 void HandleReadTable ARGLIST((char *args,char *value));
 void HandleReturnValues ARGLIST((char *args,char *value));
 void HandleReturnClasses ARGLIST((char *args,char *value));
@@ -182,7 +183,7 @@ void FlushToEnd ARGLIST((int sd, int toget));
 int cfprintf(char *out, int len2, char *in1, char *in2, char *in3);
 struct cfagent_connection *NewAgentConn ARGLIST((void));
 void DeleteAgentConn ARGLIST((struct cfagent_connection *ap));
-int RemoteConnect ARGLIST((char *host,char forceipv4));
+int RemoteConnect ARGLIST((char *host,char forceipv4,short oldport,char *newport));
 
 /* comparray.c */
 

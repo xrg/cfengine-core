@@ -36,7 +36,7 @@ may be included in a translation approved by the author instead of in
 the original English.
 
    This manual corresponds to CFENGINE Edition 2.1.16a for version
-2.1.16a as last updated 30 June 2005.
+2.1.16a as last updated 17 July 2005.
 
 * Menu:
 
@@ -129,7 +129,7 @@ out a specific group of hosts with a single statement.
 
    Cfengine grew out of the need to control the accumulation of complex
 shell scripts used in the automation of key system maintenance at
-Unversity College in Oslo. There were a lot of scripts, written in
+University College in Oslo. There were a lot of scripts, written in
 shell and in Perl, performing system administration tasks such as file
 tidying, find-database updates, process checking and several other
 tasks.  In a mixed environment, shell scripts work very poorly: shell
@@ -778,12 +778,12 @@ configuration file is used. Why?
 
    Imagine what would happen if you made a mistake in the configuration,
 i.e. a syntax error which got distributed to every host. Now all the
-hosts wuld be unable to run cfengine, and thereafter unable to download
-a corrected configuration file. The whole setup would be broken. To
-prevent this kind of accident, a separate configuration file is used to
-copy the files and binaries to each host. This configuration should be
-simple, and should almost never be edited: they key word here is
-_reliability_.
+hosts would be unable to run cfengine, and thereafter unable to
+download a corrected configuration file. The whole setup would be
+broken. To prevent this kind of accident, a separate configuration file
+is used to copy the files and binaries to each host. This configuration
+should be simple, and should almost never be edited: they key word here
+is _reliability_.
 
 * Menu:
 
@@ -1494,7 +1494,7 @@ already defined.
 
    You can also import values from the execution of a shell command by
 prefixing a command with the word `exec'. This method is deprecated in
-version 2 an replaced by a function.
+version 2 and replaced by a function.
 
 
        control:
@@ -2100,7 +2100,7 @@ You might wish to perform a search
 already always expects to match a specific pattern. One is generally not
 interested in a search which deletes everything except for a named
 pattern: this would be too dangerous. For this reason, the syntax of
-`tidy' does not allow ignore,include and exclude.  It is documented in
+`tidy' does not allow ignore, include and exclude.  It is documented in
 the section on tidying, (see Reference manual).
 
    Items declared under the global `ignore' section affect files, copy,
@@ -2172,7 +2172,7 @@ certain of the directory structure.
 
    Suppose, for instance, that a user with write access to the
 filesystem added a symbolic link to `/etc/passwd', and we were doing a
-recursive deletion. Suddlenly, cfengine becomes a destructive weapon.
+recursive deletion. Suddenly, cfengine becomes a destructive weapon.
 The default behaviour is that cfengine does not follow symbolic links
 in recursive descents, for this reason. The option `travlinks' can be
 set to true, in order to change this.  However, in general, you should
@@ -2542,7 +2542,7 @@ users are.  Sometimes people claim that they need such great
 flexibility that all their machines should be different. This belief
 tends to be inversely proportional to the number of machines they run
 and generally only applies to very special development environments!
-Usually you will only need one or to machines to be special and most
+Usually you will only need one or two machines to be special and most
 can be made very similar.
 
    Site configuration is about sharing and controlling resources.  The
@@ -4164,7 +4164,7 @@ File: cfengine-Tutorial.info,  Node: Emulating rdist,  Next: Remote execution of
 ------------------------------
 
 This section describes how you can set up `cfservd' as a remote file
-server which can result in the distrubution of files to client hosts in
+server which can result in the distribution of files to client hosts in
 a more democratic way than with programs like rdist.
 
    An important difference between cfengine and other systems has to do
@@ -6540,117 +6540,117 @@ Tag Table:
 Node: Top474
 Node: Overview1848
 Node: What is cfengine?2280
-Node: Site configuration6961
-Node: Key concepts9596
-Node: Control files10160
-Node: Network interface11356
-Node: Network File System (NFS)12512
-Node: Name servers (DNS)14988
-Node: Monitoring important files16522
-Node: Making links17969
-Node: Functionality19574
-Node: Getting started20864
-Node: What you must have21427
-Node: Program structure27150
-Node: Building a distributed configuration30623
-Node: Startup update.conf31658
-Node: Startup cfservd.conf34650
-Node: Options36063
-Node: Invoking cfagent39028
-Node: Running cfengine permanently monitoring and restarting cfexecd40988
-Node: CFINPUTS environment variable43624
-Node: What to aim for45199
-Node: More advanced concepts47231
-Node: Classes basics47876
-Node: Variable substitution56263
-Node: Undefined variables64680
-Node: Defining classes65630
-Node: Command line classes67024
-Node: actionsequence classes68146
-Node: shellcommand classes69313
-Node: Feedback classes70592
-Node: Writing plugin modules71423
-Node: The generic class any74461
-Node: Debugging tips74983
-Node: Access control75663
-Node: Wildcards in directory names76709
-Node: File sweeps77955
-Node: Security in File sweeps81712
-Node: Log files83141
-Node: Quoted strings84454
-Node: Regular expressions85634
-Node: Iterating over lists90357
-Node: Global configurations92858
-Node: General considerations93551
-Node: Using netgroups95210
-Node: Files and links97140
-Ref: Files and links-Footnote-1103380
-Node: Copying files103440
-Node: Managing processes105191
-Node: NFS resources105800
-Node: NFS filesystem resources106973
-Node: Unique filesystem mountpoints108598
-Ref: Unique filesystem mountpoints-Footnote-1112304
-Node: How does it work?112418
-Node: Special variables113888
-Node: Mount example116140
-Ref: Mount example-Footnote-1122334
-Ref: Mount example-Footnote-2122506
-Node: Using the automounter122732
-Node: Editing files127911
-Node: Disabling and the file repository132223
-Node: Running user scripts135077
-Node: Compressing logs137291
-Node: ACLs138227
-Node: Using cfengine as a front-end for cron147878
-Node: Structuring cfagent.conf149987
-Node: Splaying host times151325
-Node: Building flexible time classes152937
-Node: Scheduling interval155907
-Node: Cfengine network services156805
-Node: What services?157311
-Node: How it works159413
-Node: Emulating rdist159725
-Node: Remote execution of cfagent163185
-Node: Spamming and security165035
-Ref: Spamming and security-Footnote-1170407
-Ref: Spamming and security-Footnote-2170473
-Ref: Spamming and security-Footnote-3170539
-Node: cfservd protocol170588
-Node: Deadlocks and runaway loops171506
-Node: Configuring cfservd173596
-Node: Installation of cfservd173836
-Node: Configuration file cfservd.conf174801
-Node: Security and cfengine180034
-Node: What is security?181282
-Node: A word of warning185593
-Node: Automation186371
-Node: Trust189018
-Node: Why trust cfengine?190966
-Node: Configuration193587
-Node: Disabling and replacing software195378
-Node: Process monitoring202132
-Node: Monitoring files204806
-Node: The setuid log206750
-Node: Suspicious filenames207566
-Node: Checksums and Tripwire functionality209361
-Node: FileExtensions211431
-Node: NonAlphaNumFiles211946
-Node: Defensive garbage collection212596
-Node: Anonymous FTP example216788
-Node: WWW security220943
-Node: Miscellaneous security of cfengine itself224067
-Node: Privacy (encryption)224513
-Node: Trust and key races228204
-Node: Adaptive locks230985
-Node: Spoofing231879
-Node: Race conditions in file copying232429
-Node: size= in copy233178
-Node: useshell= and owner= in shellcommands233888
-Node: Firewalls234863
-Node: Summary235531
-Node: Variable Index236328
-Node: Concept Index243820
-Node: FAQ Index268094
+Node: Site configuration6962
+Node: Key concepts9597
+Node: Control files10161
+Node: Network interface11357
+Node: Network File System (NFS)12513
+Node: Name servers (DNS)14989
+Node: Monitoring important files16523
+Node: Making links17970
+Node: Functionality19575
+Node: Getting started20865
+Node: What you must have21428
+Node: Program structure27151
+Node: Building a distributed configuration30624
+Node: Startup update.conf31660
+Node: Startup cfservd.conf34652
+Node: Options36065
+Node: Invoking cfagent39030
+Node: Running cfengine permanently monitoring and restarting cfexecd40990
+Node: CFINPUTS environment variable43626
+Node: What to aim for45201
+Node: More advanced concepts47233
+Node: Classes basics47878
+Node: Variable substitution56265
+Node: Undefined variables64683
+Node: Defining classes65633
+Node: Command line classes67027
+Node: actionsequence classes68149
+Node: shellcommand classes69316
+Node: Feedback classes70595
+Node: Writing plugin modules71426
+Node: The generic class any74464
+Node: Debugging tips74986
+Node: Access control75666
+Node: Wildcards in directory names76712
+Node: File sweeps77958
+Node: Security in File sweeps81716
+Node: Log files83144
+Node: Quoted strings84457
+Node: Regular expressions85637
+Node: Iterating over lists90360
+Node: Global configurations92861
+Node: General considerations93554
+Node: Using netgroups95214
+Node: Files and links97144
+Ref: Files and links-Footnote-1103384
+Node: Copying files103444
+Node: Managing processes105195
+Node: NFS resources105804
+Node: NFS filesystem resources106977
+Node: Unique filesystem mountpoints108602
+Ref: Unique filesystem mountpoints-Footnote-1112308
+Node: How does it work?112422
+Node: Special variables113892
+Node: Mount example116144
+Ref: Mount example-Footnote-1122338
+Ref: Mount example-Footnote-2122510
+Node: Using the automounter122736
+Node: Editing files127915
+Node: Disabling and the file repository132227
+Node: Running user scripts135081
+Node: Compressing logs137295
+Node: ACLs138231
+Node: Using cfengine as a front-end for cron147882
+Node: Structuring cfagent.conf149991
+Node: Splaying host times151329
+Node: Building flexible time classes152941
+Node: Scheduling interval155911
+Node: Cfengine network services156809
+Node: What services?157315
+Node: How it works159417
+Node: Emulating rdist159729
+Node: Remote execution of cfagent163189
+Node: Spamming and security165039
+Ref: Spamming and security-Footnote-1170411
+Ref: Spamming and security-Footnote-2170477
+Ref: Spamming and security-Footnote-3170543
+Node: cfservd protocol170592
+Node: Deadlocks and runaway loops171510
+Node: Configuring cfservd173600
+Node: Installation of cfservd173840
+Node: Configuration file cfservd.conf174805
+Node: Security and cfengine180038
+Node: What is security?181286
+Node: A word of warning185597
+Node: Automation186375
+Node: Trust189022
+Node: Why trust cfengine?190970
+Node: Configuration193591
+Node: Disabling and replacing software195382
+Node: Process monitoring202136
+Node: Monitoring files204810
+Node: The setuid log206754
+Node: Suspicious filenames207570
+Node: Checksums and Tripwire functionality209365
+Node: FileExtensions211435
+Node: NonAlphaNumFiles211950
+Node: Defensive garbage collection212600
+Node: Anonymous FTP example216792
+Node: WWW security220947
+Node: Miscellaneous security of cfengine itself224071
+Node: Privacy (encryption)224517
+Node: Trust and key races228208
+Node: Adaptive locks230989
+Node: Spoofing231883
+Node: Race conditions in file copying232433
+Node: size= in copy233182
+Node: useshell= and owner= in shellcommands233892
+Node: Firewalls234867
+Node: Summary235535
+Node: Variable Index236332
+Node: Concept Index243824
+Node: FAQ Index268098
 
 End Tag Table

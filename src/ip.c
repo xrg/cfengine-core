@@ -36,7 +36,7 @@
 
 /*****************************************************************************/
 
-int RemoteConnect(char *host,char forceipv4)          /* Handle ipv4 or ipv6 connection */
+int RemoteConnect(char *host,char forceipv4,short oldport, char *newport) 
 
 { int err;
 
@@ -53,7 +53,7 @@ if (forceipv4 == 'n')
    query.ai_family = AF_UNSPEC;
    query.ai_socktype = SOCK_STREAM;
 
-   if ((err = getaddrinfo(host,STR_CFENGINEPORT,&query,&response)) != 0)
+   if ((err = getaddrinfo(host,newport,&query,&response)) != 0)
       {
       snprintf(OUTPUT,CF_BUFSIZE,"Unable to find hostname or cfengine service: (%s/%s) %s",host,STR_CFENGINEPORT,gai_strerror(err));
       CfLog(cfinform,OUTPUT,"");
@@ -62,7 +62,7 @@ if (forceipv4 == 'n')
    
    for (ap = response; ap != NULL; ap = ap->ai_next)
       {
-      Verbose("Connect to %s = %s on port cfengine\n",host,sockaddr_ntop(ap->ai_addr));
+      Verbose("Connect to %s = %s on port %s\n",host,sockaddr_ntop(ap->ai_addr),newport);
       
       if ((CONN->sd = socket(ap->ai_family,ap->ai_socktype,ap->ai_protocol)) == -1)
          {
@@ -154,7 +154,7 @@ if (forceipv4 == 'n')
       return false;
       }
    
-   cin.sin_port = SHORT_CFENGINEPORT;
+   cin.sin_port = oldport;
    cin.sin_addr.s_addr = ((struct in_addr *)(hp->h_addr))->s_addr;
    cin.sin_family = AF_INET; 
    
@@ -610,3 +610,41 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
 dbcp->c_close(dbcp);
 dbp->close(dbp,0);
 }
+
+
+/*********************************************************************/
+
+struct cfagent_connection *NewAgentConn()
+
+{ struct cfagent_connection *ap;
+
+if ((ap = (struct cfagent_connection *)malloc(sizeof(struct cfagent_connection))) == NULL)
+   {
+   return NULL;
+   }
+
+Debug("New server connection...\n");
+ap->sd = CF_NOT_CONNECTED;
+ap->family = AF_INET; 
+ap->trust = false;
+ap->localip[0] = '\0';
+ap->remoteip[0] = '\0';
+ap->session_key = NULL;
+ap->error = false; 
+return ap;
+};
+
+/*********************************************************************/
+
+void DeleteAgentConn(struct cfagent_connection *ap)
+
+{
+if (ap->session_key != NULL)
+   {
+   free(ap->session_key);
+   }
+
+free(ap);
+ap = NULL; 
+}
+

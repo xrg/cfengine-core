@@ -149,9 +149,14 @@ switch (fn = FunctionStringToCode(name))
    case fn_readfile:
        HandleReadFile(args,value);
        break;
+
    case fn_readarray:
        HandleReadArray(args,value);
        break;
+   case fn_readtcp:
+       HandleReadTCP(args,value);
+       break;
+       
    case fn_readtable:
        HandleReadTable(args,value);
        break;
@@ -1060,6 +1065,64 @@ for (ip = list; ip != NULL; ip=ip->next)
    }
 
 value[strlen(value)-1] = '\0';
+}
+
+/*********************************************************************/
+
+void HandleReadTCP(char *args,char *value)
+
+{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+  char *sp,*hostnameip=argv[0],*maxbytes=argv[3],*port=argv[1];
+  char *sendstring=argv[2],buffer[CF_BUFSIZE];
+  int val = 0, n_read = 0;
+  short portnum;
+  struct Item *list = NULL,*ip;
+  FILE *fp;
+
+FunctionArgs(args,argv,4);
+ 
+val = atoi(maxbytes);
+portnum = (short) atoi(port);
+
+if (val > CF_BUFSIZE+1)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"Too many bytes to read from TCP port %s@%s",port,hostnameip);
+   CfLog(cferror,OUTPUT,"");
+   }
+
+CONN = NewAgentConn();
+
+if (!RemoteConnect(hostnameip,'n',portnum,port))
+   {
+   CfLog(cferror,"Couldn't open a tcp socket","socket");
+
+   if (CONN->sd != CF_NOT_CONNECTED)
+      {
+      close(CONN->sd);
+      CONN->sd = CF_NOT_CONNECTED;
+      }
+
+   DeleteAgentConn(CONN);
+   return;
+   }
+
+if (strlen(sendstring) > 0)
+   {
+   if (SendSocketStream(CONN->sd,sendstring,strlen(sendstring),0) == -1)
+      {
+      DeleteAgentConn(CONN);
+      return;   
+      }
+   }
+
+if ((n_read = recv(CONN->sd,value,val,0)) == -1)
+   {
+   }
+
+close(CONN->sd);
+DeleteAgentConn(CONN);
+
+/* value set to result */
 }
 
 /*********************************************************************/

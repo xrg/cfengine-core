@@ -990,15 +990,16 @@ Generate a random integer between a and b.
 
 
 @item ReadArray(@var{filename},@var{fileformat},@var{separator},@var{comment},@var{Max number of bytes})
-Reads up to a maximum number of bytes from a properly formatted file into a one-dimensional associated array. File formats
-are:
+Reads up to a maximum number of bytes from a properly formatted file
+into a one-dimensional associated array. File formats are:
 @table @code
 @item autokey
-If this format is specified, @code{ReadArray} tries to interpret the file as a table of
-items separated with the separator character. Blank lines and comments (to end of line) are ignored.
-Items are keyed numerically starting from 1 to the maximum number in the file.
-The newline @code{$(n)} is always considered to be a separator, no matter what the current
-separator is.
+If this format is specified, @code{ReadArray} tries to interpret the
+file as a table of items separated with the separator character. Blank
+lines and comments (to end of line) are ignored.  Items are keyed
+numerically starting from 1 to the maximum number in the file.  The
+newline @code{$(n)} is always considered to be a separator, no matter
+what the current separator is.
 @cindex Associative arrays.
 
 @item textkey
@@ -1055,6 +1056,44 @@ hosts = ( ReadList(/var/cfengine/inputs/datafile,lines,#,1000) )
 
 @end smallexample
 
+@item ReadTCP(@var{host/IP},@var{portnumber},@var{send string},@var{Max number of bytes})
+Reads up to a maximum number of bytes from a TCP service. Can be used
+to test whether certain services are responding to queries. It is
+recommended that this be used primarily to check services running on
+localhost. Bear in mind that this clause, executed on 100 hosts will produce
+the effect of a distributed denial of service attack, so the probe should be
+restricted to a single representative tester-host. For example:
+
+@smallexample
+
+one_host_only::
+ 
+ # USE WITH CAUTION !
+
+ probewww = ( ReadTCP(localhost,80,'GET index.html',1000) )
+
+@end smallexample
+Or testing a network service:
+@smallexample
+control:
+
+ checkhost::
+
+ probesmtp = ( ReadTCP(localhost,25,"",1024) )
+ probewww  = ( ReadTCP(project.iu.hio.no,80,"GET /viewcvs HTTP/1.0 $@{n@}$@{n@}",1024) )
+
+classes:
+
+  viewcvs_error = ( RegCmp(".*Python Traceback.*","$@{probewww@}") )
+
+alerts:
+
+  viewcvs_error::
+
+     "Received viewcvs error from web server"
+@end smallexample
+
+
 @item SelectPartitionGroup(@var{filename},@var{comment},@var{Policy},@var{group size})
 
 This function is for use in peer to peer monitoring applications. It allows individual
@@ -1075,6 +1114,7 @@ returns a list variable, delimited by the list separation character, for use wit
    /data/file dest=/p2prepository/file server=$(allpeers)
 
 @end smallexample
+
 @item SelectPartitionLeader(@var{filename},@var{comment},@var{Policy},@var{group size})
 
 This function is for use in peer to peer monitoring applications. It allows individual
@@ -10726,10 +10766,15 @@ is as follows
  @var{hostname1}            @var{options}
  @var{hostname2}:@var{port} @var{options}
  ...
-
+ include=cfrun.site1.external.hosts
+ include=cfrun.site1.internal.hosts
+ include=cfrun.site2.private.hosts
+ include=cfrun.site2.shared.hosts
+ 
 @end smallexample
 @end cartouche
 @cindex hostnamekeys
+@cindex include in cfrun
 
 @noindent
 If the option @code{outputdir} is present, cfrun forks a separate

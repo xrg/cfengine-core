@@ -36,7 +36,7 @@ may be included in a translation approved by the author instead of in
 the original English.
 
    This manual corresponds to CFENGINE Edition 2.1.16a for version
-2.1.16a as last updated 14 July 2005.
+2.1.16a as last updated 22 July 2005.
 
 * Menu:
 
@@ -873,6 +873,39 @@ quotes.
 
 
           hosts = ( ReadList(/var/cfengine/inputs/datafile,lines,#,1000) )
+
+`ReadTCP(HOST/IP,PORTNUMBER,SEND STRING,MAX NUMBER OF BYTES)'
+     Reads up to a maximum number of bytes from a TCP service. Can be
+     used to test whether certain services are responding to queries.
+     It is recommended that this be used primarily to check services
+     running on localhost. Bear in mind that this clause, executed on
+     100 hosts will produce the effect of a distributed denial of
+     service attack, so the probe should be restricted to a single
+     representative tester-host. For example:
+
+
+          one_host_only::
+
+           # USE WITH CAUTION !
+
+           probewww = ( ReadTCP(localhost,80,'GET index.html',1000) )
+     Or testing a network service:
+          control:
+
+           checkhost::
+
+           probesmtp = ( ReadTCP(localhost,25,"",1024) )
+           probewww  = ( ReadTCP(project.iu.hio.no,80,"GET /viewcvs HTTP/1.0 ${n}${n}",1024) )
+
+          classes:
+
+            viewcvs_error = ( RegCmp(".*Python Traceback.*","${probewww}") )
+
+          alerts:
+
+            viewcvs_error::
+
+               "Received viewcvs error from web server"
 
 `SelectPartitionGroup(FILENAME,COMMENT,POLICY,GROUP SIZE)'
      This function is for use in peer to peer monitoring applications.
@@ -8380,36 +8413,4 @@ trust to accept the connection and replace the IP-key binding.
 fixed keys are kept in files for easy administration. If host keys
 change or are reinstalled on the dynamically allocated hosts, then this
 database should probably be deleted to purge keys that become illegal.
-
-
-File: cfengine-Reference.info,  Node: admit grant and deny,  Next: cfrun,  Prev: cfservd control,  Up: Cfservd.conf and cfrun reference
-
-5.2 admit, grant and deny
-=========================
-
-* Menu:
-
-* root=::
-* encrypt=::
-* SkipVerify::
-
-
-File: cfengine-Reference.info,  Node: root=,  Next: encrypt=,  Prev: admit grant and deny,  Up: admit grant and deny
-
-5.2.1 `root='
--------------
-
-This list specifies the names of hosts which are to have read access to
-files, regardless of the owner of the file. This effectively gives root
-users on connecting hosts privileges to non-root owned files on the
-server, but not vice-versa, similar to the NFS root mapping, except
-that there is no question of a client being able to modify files on the
-server. Caution: cfservd trusts the DNS service, so be aware that cache
-poisoning attacks are a possible way of bypassing access controls.
-
-   As of version 2.0.4: Once a verified host address has been
-identified with a functioning public/private key authentication, the IP
-address is added to the SkipVerify list, so that time is not wasted in
-verifying reverse lookups, when the identify can be verified more
-efficiently and securely by a key mechanism.  
 

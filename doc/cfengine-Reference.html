@@ -870,14 +870,15 @@ lists, normal rules for iteration apply.
 
      <br><dt><code>RandomInt(</code><var>a</var><code>,</code><var>b</var><code>)</code><dd>Generate a random integer between a and b.
 
-     <br><dt><code>ReadArray(</code><var>filename</var><code>,</code><var>fileformat</var><code>,</code><var>separator</var><code>,</code><var>comment</var><code>,</code><var>Max number of bytes</var><code>)</code><dd>Reads up to a maximum number of bytes from a properly formatted file into a one-dimensional associated array. File formats
-are:
+     <br><dt><code>ReadArray(</code><var>filename</var><code>,</code><var>fileformat</var><code>,</code><var>separator</var><code>,</code><var>comment</var><code>,</code><var>Max number of bytes</var><code>)</code><dd>Reads up to a maximum number of bytes from a properly formatted file
+into a one-dimensional associated array. File formats are:
           <dl>
-<dt><code>autokey</code><dd>If this format is specified, <code>ReadArray</code> tries to interpret the file as a table of
-items separated with the separator character. Blank lines and comments (to end of line) are ignored. 
-Items are keyed numerically starting from 1 to the maximum number in the file. 
-The newline <code>$(n)</code> is always considered to be a separator, no matter what the current
-separator is. 
+<dt><code>autokey</code><dd>If this format is specified, <code>ReadArray</code> tries to interpret the
+file as a table of items separated with the separator character. Blank
+lines and comments (to end of line) are ignored.  Items are keyed
+numerically starting from 1 to the maximum number in the file.  The
+newline <code>$(n)</code> is always considered to be a separator, no matter
+what the current separator is. 
 <a name="index-Associative-arrays_002e-33"></a>
 <br><dt><code>textkey</code><dd>If this format is specified, <code>ReadArray</code> tries to interpret the file as a list
 of lines of the form:
@@ -913,6 +914,39 @@ items on separate lines. The value returned is a list formatted by the <code>Spl
 <!-- /@w -->     <pre class="smallexample">          
           hosts = ( ReadList(/var/cfengine/inputs/datafile,lines,#,1000) )
           
+     </pre>
+     <br><dt><code>ReadTCP(</code><var>host/IP</var><code>,</code><var>portnumber</var><code>,</code><var>send string</var><code>,</code><var>Max number of bytes</var><code>)</code><dd>Reads up to a maximum number of bytes from a TCP service. Can be used
+to test whether certain services are responding to queries. It is
+recommended that this be used primarily to check services running on
+localhost. Bear in mind that this clause, executed on 100 hosts will produce
+the effect of a distributed denial of service attack, so the probe should be
+restricted to a single representative tester-host. For example:
+
+     <pre class="smallexample">          
+          one_host_only::
+          
+           # USE WITH CAUTION !
+          
+           probewww = ( ReadTCP(localhost,80,'GET index.html',1000) )
+          
+     </pre>
+     <p>Or testing a network service:
+     <pre class="smallexample">          control:
+          
+           checkhost::
+          
+           probesmtp = ( ReadTCP(localhost,25,"",1024) )
+           probewww  = ( ReadTCP(project.iu.hio.no,80,"GET /viewcvs HTTP/1.0 ${n}${n}",1024) )
+          
+          classes:
+          
+            viewcvs_error = ( RegCmp(".*Python Traceback.*","${probewww}") )
+          
+          alerts:
+          
+            viewcvs_error::
+          
+               "Received viewcvs error from web server"
      </pre>
      <br><dt><code>SelectPartitionGroup(</code><var>filename</var><code>,</code><var>comment</var><code>,</code><var>Policy</var><code>,</code><var>group size</var><code>)</code><dd>
 This function is for use in peer to peer monitoring applications. It allows individual
