@@ -1,5 +1,9 @@
 2.1.16
 
+	Function arg expansion bug and improvement fix
+	
+	Include directive added to cfrun.hosts (Olivier Fauchon)
+	
 	MOUNT_RO name collision fix
 	
 	SEG fault fixed when signalling cfenvd
