@@ -459,8 +459,17 @@ while (!feof(pp))
    if (strcmp(name,"EmailMaxLines") == 0)
       {
       Debug("%s/%s\n",name,content);
-      MAXLINES = 20;
-      sscanf(content,"%d",&MAXLINES);
+
+      MAXLINES = 100;
+      if (strcmp(content,"inf") == 0)
+         {
+         MAXLINES = -2;
+         Debug("EmailMaxLines set to infinity\n");
+         }
+      else 
+         {
+         sscanf(content,"%d",&MAXLINES);
+         }
       continue;
       }
 

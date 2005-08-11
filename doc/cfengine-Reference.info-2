@@ -149,6 +149,10 @@ the `cfrun' command. The format of the file is as follows
       HOSTNAME1            OPTIONS
       HOSTNAME2:PORT OPTIONS
       ...
+      include=cfrun.site1.external.hosts
+      include=cfrun.site1.internal.hosts
+      include=cfrun.site2.private.hosts
+      include=cfrun.site2.shared.hosts
 
 If the option `outputdir' is present, cfrun forks a separate process
 for each host and passes the output to files in a named directory.  The
@@ -2141,7 +2145,7 @@ Concept Index
 * Comparing file objects:                Evaluated classes and special functions.
                                                               (line 102)
 * Compound classes:                      Cfengine classes.    (line  55)
-* Contacting specific hosts with cfrun:  cfrun.               (line 112)
+* Contacting specific hosts with cfrun:  cfrun.               (line 116)
 * control section:                       control.             (line   6)
 * Controlling the size of log files:     disable.             (line  86)
 * copy:                                  copy.                (line   6)
@@ -2255,12 +2259,13 @@ Concept Index
 * Host name gets truncated:              Cfengine classes.    (line 155)
 * Hostname collision:                    Special variables.   (line 123)
 * HostnameKeys:                          Firewalls and NATs.  (line  28)
-* hostnamekeys:                          cfrun.               (line  75)
+* hostnamekeys:                          cfrun.               (line  79)
 * Hung machine:                          cf.preconf bootstrap file.
                                                               (line   6)
 * ignore command:                        ignore.              (line  18)
 * Import files, variables in:            import.              (line  33)
 * Importing files:                       import.              (line   6)
+* include in cfrun:                      cfrun.               (line  79)
 * Incrementing line pointer in editfiles: editfiles.          (line 444)
 * Interface name, redefining by class:   interfacename.       (line   6)
 * InterfaceName:                         interfacename.       (line   6)
@@ -2422,7 +2427,7 @@ Concept Index
 * rmdirs:                                tidy.                (line 147)
 * Rotating log files:                    disable.             (line  86)
 * RPM Database Queries:                  packages.            (line  77)
-* Running cfengine from a single master host: cfrun.          (line  90)
+* Running cfengine from a single master host: cfrun.          (line  94)
 * Running cfrun:                         cfrun.               (line  41)
 * scanarrivals=:                         disks.               (line  64)
 * scheduling:                            schedule.            (line   6)

@@ -257,7 +257,8 @@ noinst_HEADERS =							\
 	cfparse.h							\
 	cf.defs.h							\
 	cf.extern.h                                                     \
-	prototypes.h
+	prototypes.h							\
+	cfetooldefs.h
 
 #
 # Some basic clean ups

@@ -35,7 +35,7 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   Edition 2.1.16a for version 2.1.16a as last updated 30 March 2005.
+   Edition 2.1.16a for version 2.1.16a as last updated 6 August 2005.
 
 * Menu:
 
@@ -675,6 +675,72 @@ quantity and a summary of the highest values during the last 40 minutes:
      cf:cube: -----------------------------------------------------------------------------------
      cf:cube: State of incoming.www peaked at Fri Feb 20 19:57:23 2004
 
+   Another example of a low entropy smtp (possible distributed spam
+operation in progress):
+
+
+     cf:nexus: HIGH ENTROPY Incoming smtp anomaly high 2 dev on nexus/Sat Aug  6 14:29:58 2005
+     cf:nexus: -----------------------------------------------------------------------------------
+     cf:nexus: In the last 40 minutes, the peak state was q = 25:
+      {
+      DNS key: 81.218.96.62 = bzq-218-96-62.red.bezeqint.net (1/25)
+      DNS key: 85.152.128.208 = cm-85-152-128-208.telecable.es (1/25)
+      DNS key: 82.40.141.102 = 82-40-141-102.cable.ubr04.uddi.blueyonder.co.uk (1/25)
+      DNS key: 68.189.49.33 = 68-189-49-33.dhcp.rdng.ca.charter.com (1/25)
+      DNS key: 61.47.218.167 = 61.47.218.167 (1/25)
+      DNS key: 211.170.184.229 = 211.170.184.229 (2/25)
+      DNS key: 64.65.134.186 = static-64-65-134-186.dsl.pdx.eschelon.com (1/25)
+      DNS key: 61.9.82.105 = 61.9.82.105.mozcom.net (1/25)
+      DNS key: 219.234.19.166 = 219.234.19.166 (1/25)
+      DNS key: 68.60.199.206 = pcp07641774pcs.calhun01.ga.comcast.net (1/25)
+      DNS key: 82.216.163.149 = ip-149.net-82-216-163.suresnes3.rev.numericable.fr (1/25)
+      DNS key: 84.9.43.170 = host-84-9-43-170.bulldogdsl.com (1/25)
+      DNS key: 84.59.55.171 = dsl-084-059-055-171.arcor-ip.net (1/25)
+      DNS key: 200.104.102.141 = pc-141-102-104-200.cm.vtr.net (1/25)
+      DNS key: 85.152.225.126 = cm-85-152-225-126.telecable.es (1/25)
+      DNS key: 218.81.136.17 = 218.81.136.17 (1/25)
+      DNS key: 83.84.225.251 = 5354E1FB.cable.casema.nl (1/25)
+      DNS key: 60.198.145.92 = 60-198-145-92.static.tfn.net.tw (1/25)
+      DNS key: 61.53.185.218 = 61.53.185.218 (1/25)
+      DNS key: 81.53.86.235 = ANantes-154-1-63-235.w81-53.abo.wanadoo.fr (1/25)
+      DNS key: 58.142.251.14 = 58.142.251.14 (1/25)
+      DNS key: 220.234.173.3 = 220.234.173.3 (1/25)
+      DNS key: 219.251.118.195 = 219.251.118.195 (1/25)
+      DNS key: 68.44.158.165 = pcp04364785pcs.glstrt01.nj.comcast.net (1/25)
+      -
+      Frequency: 211.170.184.229  |**        (2/25)
+      Frequency: 68.44.158.165    |*         (1/25)
+      Frequency: 219.251.118.195  |*         (1/25)
+      Frequency: 220.234.173.3    |*         (1/25)
+      Frequency: 58.142.251.14    |*         (1/25)
+      Frequency: 81.53.86.235     |*         (1/25)
+      Frequency: 61.53.185.218    |*         (1/25)
+      Frequency: 60.198.145.92    |*         (1/25)
+      Frequency: 83.84.225.251    |*         (1/25)
+      Frequency: 218.81.136.17    |*         (1/25)
+      Frequency: 85.152.225.126   |*         (1/25)
+      Frequency: 200.104.102.141  |*         (1/25)
+      Frequency: 84.59.55.171     |*         (1/25)
+      Frequency: 84.9.43.170      |*         (1/25)
+      Frequency: 82.216.163.149   |*         (1/25)
+      Frequency: 68.60.199.206    |*         (1/25)
+      Frequency: 219.234.19.166   |*         (1/25)
+      Frequency: 61.9.82.105      |*         (1/25)
+      Frequency: 64.65.134.186    |*         (1/25)
+      Frequency: 61.47.218.167    |*         (1/25)
+      Frequency: 68.189.49.33     |*         (1/25)
+      Frequency: 82.40.141.102    |*         (1/25)
+      Frequency: 85.152.128.208   |*         (1/25)
+      Frequency: 81.218.96.62     |*         (1/25)
+      }
+      -
+      Scaled entropy of addresses = 4.0 %
+      (Entropy = 0 for single source, 100 for flatly distributed source)
+      -
+     cf:nexus: -----------------------------------------------------------------------------------
+     cf:nexus: State of incoming.smtp peaked at Sat Aug  6 14:29:58 2005
+     cf:nexus: HIGH ENTROPY Incoming smtp anomaly high anomaly !! on nexus/Sat Aug  6 14:29:58 2005
+
 
 File: cfengine-Anomalies.info,  Node: Anomaly response,  Next: Variable Index,  Prev: Overview,  Up: Top
 
@@ -928,13 +994,13 @@ Node: Anomaly research11414
 Node: cfenvgraph14114
 Node: Fluctuation profiles18513
 Node: Starting with anomaly detection19146
-Node: Anomaly response29535
-Node: Anomaly Classes29764
-Node: Entropy32955
-Node: Log utilities33990
-Node: Persistent alerts34370
-Node: Variable Index35557
-Node: Concept Index35721
-Node: FAQ Index36827
+Node: Anomaly response33164
+Node: Anomaly Classes33393
+Node: Entropy36584
+Node: Log utilities37619
+Node: Persistent alerts37999
+Node: Variable Index39186
+Node: Concept Index39350
+Node: FAQ Index40456
 
 End Tag Table

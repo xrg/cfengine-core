@@ -84,8 +84,8 @@ return true;
 char *EvaluateFunction(char *f,char *value)
 
 { enum builtin fn;
-  char name[CF_MAXVARSIZE],vargs[CF_BUFSIZE],args[CF_EXPANDSIZE];
-  int negated = false;
+ char *sp,name[CF_MAXVARSIZE],args[CF_EXPANDSIZE];
+  int negated = false,count = 0;
 
 if (*f == '!')
    {
@@ -93,8 +93,27 @@ if (*f == '!')
    f++;
    }
  
-sscanf(f,"%255[^(](%255[^)])",name,vargs);
-ExpandVarstring(vargs,args,NULL); 
+sscanf(f,"%255[^(]",name);
+
+for (sp = f+strlen(name); *sp != '\0'; sp++)
+   {
+   if (*sp == '(')
+      {
+      count++;
+      }
+
+   if (*sp == ')')
+      {
+      count--;
+      if (count == 0)
+         {
+         *sp = '\0';
+         }
+      }
+   }
+
+strncpy(args,f+strlen(name)+1,CF_EXPANDSIZE);
+    
 Debug("HandleFunction: %s(%s)\n",name,args);
 
 switch (fn = FunctionStringToCode(name))
@@ -287,7 +306,7 @@ return (enum builtin) i;
 void GetRandom(char *args,char *value)
 
 { int result,from=-1,to=-1;
-  char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+  char argv[CF_MAXFARGS][CF_EXPANDSIZE];
  
 if (ACTION != control)
    {
@@ -320,7 +339,7 @@ snprintf(value,CF_BUFSIZE,"%u",result);
 void HandleStatInfo(enum builtin fn,char *args,char *value)
 
 { struct stat statbuf;
-  char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+  char argv[CF_MAXFARGS][CF_EXPANDSIZE];
 
 FunctionArgs(args,argv,1);
 
@@ -450,7 +469,7 @@ return;
 void HandleCompareStat(enum builtin fn,char *args,char *value)
 
 { struct stat frombuf,tobuf;
-  char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+  char argv[CF_MAXFARGS][CF_EXPANDSIZE];
 
 FunctionArgs(args,argv,2); 
 strcpy(value,CF_NOCLASS);
@@ -577,7 +596,7 @@ strcpy(value,CF_NOCLASS);
 
 void HandleSyslogFn(char *args,char *value)
 
-{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE];
   int priority = LOG_ERR;
 
 FunctionArgs(args,argv,2);
@@ -634,7 +653,7 @@ if (!DONTDO)
 
 void HandleStrCmp(char *args,char *value)
 
-{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE];
 
 FunctionArgs(args,argv,2); 
  
@@ -652,7 +671,7 @@ else
 
 void HandleGreaterThan(char *args,char *value,char ch)
 
-{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE];
   double a = CF_NOVAL,b = CF_NOVAL;
  
 FunctionArgs(args,argv,2); 
@@ -720,7 +739,7 @@ else
 
 void HandleRegCmp(char *args,char *value)
 
-{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE];
   struct Item *list = NULL, *ret; 
 
 FunctionArgs(args,argv,2);
@@ -730,6 +749,8 @@ if (ACTION != groups)
    yyerror("Function RegCmp() used outside of classes/groups");
    return;
    }
+
+Debug("List source = (%d)[%s]\n",strlen(argv[1]),argv[1]);
 
 list = SplitStringAsItemList(argv[1],LISTSEPARATOR);
 
@@ -752,7 +773,7 @@ DeleteItemList(list);
 
 void HandleReadFile(char *args,char *value)
 
-{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE];
   int i,val = 0;
   FILE *fp;
 
@@ -795,7 +816,7 @@ fclose(fp);
 
 void HandleReadArray(char *args,char *value)
 
-{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE];
   char *sp,*filename=argv[0],*maxbytes=argv[4],*formattype=argv[1];
   char *commentchar=argv[3],*sepchar=argv[2],buffer[CF_BUFSIZE];
   int i=0,val = 0,read = 0;
@@ -868,7 +889,7 @@ while (!feof(fp))
       }
    else if (strcmp(formattype,"textkey") == 0)
       {
-      char argv[CF_MAXFARGS][CF_MAXVARSIZE],lvalue[CF_BUFSIZE];
+      char argv[CF_MAXFARGS][CF_EXPANDSIZE],lvalue[CF_BUFSIZE];
       if (!FunctionArgs(buffer,argv,2))
          {
          break;
@@ -894,7 +915,7 @@ while (!feof(fp))
 
 void HandleReadTable(char *args,char *value)
 
-{  char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+{  char argv[CF_MAXFARGS][CF_EXPANDSIZE];
   char *sp,*filename=argv[0],*maxbytes=argv[4],*formattype=argv[1];
   char *commentchar=argv[3],*sepchar=argv[2],buffer[CF_BUFSIZE];
   int i=0,j=0,val = 0,read = 0;
@@ -970,7 +991,7 @@ while (!feof(fp))
       }
    else if (strcmp(formattype,"textkey") == 0)
       {
-      char argv[CF_MAXFARGS][CF_MAXVARSIZE],lvalue[CF_BUFSIZE];
+      char argv[CF_MAXFARGS][CF_EXPANDSIZE],lvalue[CF_BUFSIZE];
       if (!FunctionArgs(buffer,argv,3))
          {
          break;
@@ -996,7 +1017,7 @@ snprintf(value,CF_BUFSIZE-1,"CF_ASSOCIATIVE_ARRAY%s",args);
 
 void HandleReadList(char *args,char *value)
 
-{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE];
   char *sp,*filename=argv[0],*maxbytes=argv[3],*formattype=argv[1];
   char *commentchar=argv[2],buffer[CF_BUFSIZE];
   int val = 0;
@@ -1071,7 +1092,7 @@ value[strlen(value)-1] = '\0';
 
 void HandleReadTCP(char *args,char *value)
 
-{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE];
   char *sp,*hostnameip=argv[0],*maxbytes=argv[3],*port=argv[1];
   char *sendstring=argv[2],buffer[CF_BUFSIZE];
   int val = 0, n_read = 0;
@@ -1084,11 +1105,13 @@ FunctionArgs(args,argv,4);
 val = atoi(maxbytes);
 portnum = (short) atoi(port);
 
-if (val > CF_BUFSIZE+1)
+if (val > CF_BUFSIZE-1)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Too many bytes to read from TCP port %s@%s",port,hostnameip);
    CfLog(cferror,OUTPUT,"");
    }
+
+Debug("Want to read %d bytes from port %d at %s\n",val,portnum,hostnameip);
 
 CONN = NewAgentConn();
 
@@ -1131,7 +1154,7 @@ void HandleSelectPLeader(char *args,char *value)
 
 { FILE *fp;
   char machine[128],first[128];
-  char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+  char argv[CF_MAXFARGS][CF_EXPANDSIZE];
   char *filename=argv[0],*commentchar=argv[1];
   char *policy=argv[2],*size=argv[3];
   struct Item *list = NULL,*ip;
@@ -1293,7 +1316,7 @@ fclose(fp);
 
 void HandleSelectPGroup(char *args,char *value)
 
-{ char argv[CF_MAXFARGS][CF_MAXVARSIZE],machine[128],first[128];
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE],machine[128],first[128];
   char *filename=argv[0],*commentchar=argv[1];
   char *policy=argv[2],*size=argv[3];
   struct Item *list = NULL,*ip;
@@ -1688,7 +1711,7 @@ if (dist)
 
 void HandleFriendStatus(char *args,char *value)
 
-{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE];
   int time = -1;
   
 if ((ACTION != alerts) && PARSING)
@@ -1718,7 +1741,7 @@ strcpy(value,""); /* No reply */
 
 void HandleSetState(char *args,char *value)
 
-{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE];
   char *name=argv[0],*ttlbuf=argv[1],*policy=argv[2];
   unsigned int ttl = 0;
 
@@ -1759,7 +1782,7 @@ else
 
 void HandleUnsetState(char *args,char *value)
 
-{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE];
   
 value[0] = '\0';
 FunctionArgs(args,argv,1);
@@ -1773,7 +1796,7 @@ DeletePersistentClass(argv[0]);
 
 void HandlePrepModule(char *args,char *value)
 
-{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE];
   char ebuff[CF_EXPANDSIZE];
 
 ExpandVarstring(args,ebuff,NULL);
@@ -1797,7 +1820,7 @@ else
 
 void HandleAssociation(char *args,char *value)
 
-{ char argv[CF_MAXFARGS][CF_MAXVARSIZE],lvalue[CF_BUFSIZE];
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE],lvalue[CF_BUFSIZE];
  
 value[0] = '\0';
 FunctionArgs(args,argv,2);
@@ -1813,80 +1836,52 @@ snprintf(value,CF_BUFSIZE-1,"CF_ASSOCIATIVE_ARRAY%s",args);
 /* Level 3                                                           */
 /*********************************************************************/
 
-int FunctionArgs(char *args,char arg[CF_MAXFARGS][CF_MAXVARSIZE],int number)
+int FunctionArgs(char *args,char arg[CF_MAXFARGS][CF_EXPANDSIZE],int number)
 
-{ char argv[CF_MAXFARGS][CF_MAXVARSIZE];
-  char *sp,*start[CF_MAXFARGS];
+{ char *sp,*start[CF_MAXFARGS],exbuf[CF_EXPANDSIZE];
   int count = 0, i;
+  struct Item *ip =  NULL, *ipp;
 
 if (number > CF_MAXFARGS)
    {
    FatalError("Software error: too many function arguments");
    }
-  
+
+ip = ListFromArgs(args);
+
+if (DEBUG)
+   {
+   DebugListItemList(ip);
+   }
+
+count = ListLen(ip);
+
+if (count != number)
+   {
+   if (PARSING)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Function or format of input file requires %d argument items",number);
+      yyerror(OUTPUT);
+      }
+   else
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Assignment (%s) with format error - %d/%d expected args",args,count,number);
+      CfLog(cferror,OUTPUT,"");
+      }
+   return false;
+   }
+
+ipp = ip;
+
 for (i = 0; i < number; i++)
    {
-   memset(argv[i],0,CF_MAXVARSIZE);
+   ExpandVarstring(ipp->name,exbuf,NULL);
+   strncpy(arg[i],exbuf,CF_EXPANDSIZE);
+   ipp = ipp->next;
    }
 
-start[0] = args; 
+DeleteItemList(ip);
 
-for (sp = args; *sp != '\0'; sp++)
-   {
-   if (*sp == '\"')
-      {
-      while (*++sp != '\"')
-         {
-         }
-      continue;
-      }
-   
-   if (*sp == '\'')
-      {
-      while (*++sp != '\'')
-         {
-         }
-      continue;
-      }
-   
-   if (*sp == ',')
-      {
-      if (++count > number-1)
-         {
-         break;
-         }
-      
-      start[count] = sp+1;
-      }
-   }
- 
- if (count != number-1)
-    {
-    if (PARSING)
-       {
-       snprintf(OUTPUT,CF_BUFSIZE,"Function or format of input file requires %d argument items",number);
-       yyerror(OUTPUT);
-       }
-    else
-       {
-       snprintf(OUTPUT,CF_BUFSIZE,"Assignment (%s) with format error",args);
-       CfLog(cferror,OUTPUT,"");
-       }
-    return false;
-    }
- 
- for (i = 0; i < number-1; i++)
-    {
-    strncpy(argv[i],start[i],start[i+1]-start[i]-1);
-    }
- 
- sscanf(start[number-1],"%[^)]",argv[number-1]); 
- 
- for (i = 0; i < number; i++)
-    {
-    strncpy(arg[i],UnQuote(argv[i]),CF_MAXVARSIZE-1);
-    }
- 
 return true;
 }
 

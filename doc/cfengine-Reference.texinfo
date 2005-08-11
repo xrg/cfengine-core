@@ -2744,7 +2744,7 @@ The syntax
 declares a user defined module which can potentially set the classes
 @var{class1} etc. Classes returned by the module must be declared so
 that cfengine knows to pay attention to rules which use these classes
-when parsing; this is done using @code{AddInstallables}. If
+when parsing; this is done using @code{AddInstallable}. If
 arguments are passed to the module, the whole string must be quoted like
 a shellcommand.  @xref{Writing plugin modules,Writing plugin
 modules,Writing plugin modules,cfengine-Tutorial}.  Whether or not these
@@ -7068,7 +7068,7 @@ Filters:
   FromSize:  "10000"                   # File size interval
   ToSize:    "10mb"
 
-  ExecRegex: "/usr/bin/file(.*ascii.*)"# Result from "files" command 
+  ExecRegex: "/usr/bin/file $(this) (.*ascii.*)"# Result from "files" command 
 
   Type:      "dir|link"                # reg|link|dir|socket|fifo|door|char|block
 

@@ -151,7 +151,7 @@ void HandleSetState ARGLIST((char *args,char *value));
 void HandleUnsetState ARGLIST((char *args,char *value));
 void HandlePrepModule ARGLIST((char *args,char *value));
 void HandleAssociation ARGLIST((char *args,char *value));
-int FunctionArgs ARGLIST((char *args,char argv[CF_MAXFARGS][CF_MAXVARSIZE],int number));
+int FunctionArgs ARGLIST((char *args,char argv[CF_MAXFARGS][CF_EXPANDSIZE],int number));
 void FiveArgs ARGLIST((char *args,char *arg1,char *arg2,char *arg3, char *arg4,char *arg5));
 int IsSocketType ARGLIST((char *s));
 int IsTCPType ARGLIST((char *s));

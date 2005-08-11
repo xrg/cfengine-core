@@ -36,7 +36,7 @@ may be included in a translation approved by the author instead of in
 the original English.
 
    This manual corresponds to CFENGINE Edition 2.1.16a for version
-2.1.16a as last updated 22 July 2005.
+2.1.16a as last updated 11 August 2005.
 
 * Menu:
 
@@ -2184,15 +2184,15 @@ Here is a more complete description of the meaning of these keywords.
      classes CLASS1 etc. Classes returned by the module must be
      declared so that cfengine knows to pay attention to rules which
      use these classes when parsing; this is done using
-     `AddInstallables'. If arguments are passed to the module, the
-     whole string must be quoted like a shellcommand.  *Note Writing
-     plugin modules: (cfengine-Tutorial)Writing plugin modules.
-     Whether or not these classes become set or not depends on the
-     behaviour of your module. The classes continue to apply for all
-     actions which occur after the module's execution. The module must
-     be owned by the user executing cfengine or root (for security
-     reasons), it must be named `module:MODULE-NAME' and must lie in a
-     special directory, *Note moduledirectory::.
+     `AddInstallable'. If arguments are passed to the module, the whole
+     string must be quoted like a shellcommand.  *Note Writing plugin
+     modules: (cfengine-Tutorial)Writing plugin modules.  Whether or
+     not these classes become set or not depends on the behaviour of
+     your module. The classes continue to apply for all actions which
+     occur after the module's execution. The module must be owned by
+     the user executing cfengine or root (for security reasons), it
+     must be named `module:MODULE-NAME' and must lie in a special
+     directory, *Note moduledirectory::.
 
 `mountall'
      mounts all filesystems defined in the hosts filesystem table.  This
@@ -5573,7 +5573,7 @@ contain. Here is are examples of file filters:
        FromSize:  "10000"                   # File size interval
        ToSize:    "10mb"
 
-       ExecRegex: "/usr/bin/file(.*ascii.*)"# Result from "files" command
+       ExecRegex: "/usr/bin/file $(this) (.*ascii.*)"# Result from "files" command
 
        Type:      "dir|link"                # reg|link|dir|socket|fifo|door|char|block
 

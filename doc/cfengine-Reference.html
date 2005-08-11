@@ -2384,7 +2384,7 @@ The syntax
      <p>declares a user defined module which can potentially set the classes
 <var>class1</var> etc. Classes returned by the module must be declared so
 that cfengine knows to pay attention to rules which use these classes
-when parsing; this is done using <code>AddInstallables</code>. If
+when parsing; this is done using <code>AddInstallable</code>. If
 arguments are passed to the module, the whole string must be quoted like
 a shellcommand.  See <a href="cfengine-Tutorial.html#Writing-plugin-modules">Writing plugin modules</a>.  Whether or not these
 classes become set or not depends on the behaviour of your module. The
@@ -6590,7 +6590,7 @@ criteria they contain. Here is are examples of file filters:
        FromSize:  "10000"                   # File size interval
        ToSize:    "10mb"
      
-       ExecRegex: "/usr/bin/file(.*ascii.*)"# Result from "files" command
+       ExecRegex: "/usr/bin/file $(this) (.*ascii.*)"# Result from "files" command
      
        Type:      "dir|link"                # reg|link|dir|socket|fifo|door|char|block
      
@@ -10096,10 +10096,14 @@ is as follows
       <var>hostname1</var>            <var>options</var>
       <var>hostname2</var>:<var>port</var> <var>options</var>
       ...
+      include=cfrun.site1.external.hosts
+      include=cfrun.site1.internal.hosts
+      include=cfrun.site2.private.hosts
+      include=cfrun.site2.shared.hosts
      
 </pre>
    </td></tr></table>
-   <a name="index-hostnamekeys-625"></a>
+   <a name="index-hostnamekeys-625"></a><a name="index-include-in-cfrun-626"></a>
 If the option <code>outputdir</code> is present, cfrun forks a separate
 process for each host and passes the output to files in a named directory. 
 The <code>maxchild</code> line limits the number of forked processes.
@@ -10115,7 +10119,7 @@ a line like this:
        funny.domain -- -i  # problem host
      
 </pre>
-   <p><a name="index-Running-cfengine-from-a-single-master-host-626"></a><a name="index-Running-cfengine-from-a-single-master-host-627"></a>You could use <code>cfrun</code> inside one of your cfengine configuration
+   <p><a name="index-Running-cfengine-from-a-single-master-host-627"></a><a name="index-Running-cfengine-from-a-single-master-host-628"></a>You could use <code>cfrun</code> inside one of your cfengine configuration
 files in order to remotely execute cfengine on all of the other network
 machines, by setting up a host list. The disadvantage however is that
 cfengine has to poll the systems on the network, which means that
@@ -10140,7 +10144,7 @@ the list of hosts.
      cfrun -v host1 host2 -- -p
      
 </pre>
-   <p><a name="index-Contacting-specific-hosts-with-cfrun-628"></a>
+   <p><a name="index-Contacting-specific-hosts-with-cfrun-629"></a>
 <div class="node">
 <p><hr>
 <a name="Firewalls-and-NATs"></a>
@@ -10176,11 +10180,11 @@ Here is an example (<samp><span class="file">cfrun.hosts</span></samp>):
      node2.example.org:22001
      
 </pre>
-   <p><a name="index-HostnameKeys-629"></a>
+   <p><a name="index-HostnameKeys-630"></a>
 This connects to: 1) node1 with standard port, 2) node2 with port 22000 and extra options -DNis
 and, 3) node2 with port 22000.
 
-   <p><a name="index-NAT-630"></a><a name="index-Network-address-translator-631"></a><a name="index-Changing-cfengine-port-632"></a><a name="index-Port_002c-connecting-to-different-633"></a>
+   <p><a name="index-NAT-631"></a><a name="index-Network-address-translator-632"></a><a name="index-Changing-cfengine-port-633"></a><a name="index-Port_002c-connecting-to-different-634"></a>
 <!-- ********************************************************************** -->
 <!-- CHAPTER -->
 <!-- ********************************************************************** -->
@@ -10218,7 +10222,7 @@ following options:
      -p (--parse-only)
      -L (--ld-library-path)
 </pre>
-   <p><a name="index-g_t_002fvar_002fcfengine_002foutput-634"></a><a name="index-g_t_002fvar_002fcfengine_002foutput-635"></a><a name="index-Output-logs-636"></a>In addition, if you add the following to the file <samp><span class="file">cfagent.conf</span></samp>,
+   <p><a name="index-g_t_002fvar_002fcfengine_002foutput-635"></a><a name="index-g_t_002fvar_002fcfengine_002foutput-636"></a><a name="index-Output-logs-637"></a>In addition, if you add the following to the file <samp><span class="file">cfagent.conf</span></samp>,
 the system administrator will be emailed a summary of any output:
 
 <pre class="smallexample">     
@@ -10235,7 +10239,7 @@ be set to 0 to disable email output, a postive integer to set a limit,
 or <code>inf</code> to email the whole output regardless of its size. If
 undefined, <code>EmailMaxLines</code> defaults to 100.
 
-   <p><a name="index-Mailing-output-637"></a><a name="index-smtpserver-638"></a><a name="index-sysadm-639"></a><a name="index-EmailMaxLines-640"></a><a name="index-cfexecd-641"></a>An alternative, or additional way to run cfengine, is to run the <samp><span class="file">cfexecd</span></samp>
+   <p><a name="index-Mailing-output-638"></a><a name="index-smtpserver-639"></a><a name="index-sysadm-640"></a><a name="index-EmailMaxLines-641"></a><a name="index-cfexecd-642"></a>An alternative, or additional way to run cfengine, is to run the <samp><span class="file">cfexecd</span></samp>
 program is daemon mode (without the `<samp><span class="samp">-F</span></samp>') option. In this mode, the daemon
 lives in the background and sleeps, activating only in accordance with
 a scheduling policy. The default policy is to run once every hour (equivalent
@@ -10252,7 +10256,7 @@ order to make the daemon execute cfagent every half-hour:
 Although one of these methods should suffice,
 no harm will arise from running both cron and the cfexecd side-by-side. 
 Locking mechanisms are used by <code>cfagent</code> to ensure that no contention will occur. 
-<a name="index-Mailing-output-642"></a><a name="index-smtpserver-643"></a><a name="index-sysadm-644"></a><a name="index-cfexecd-645"></a>
+<a name="index-Mailing-output-643"></a><a name="index-smtpserver-644"></a><a name="index-sysadm-645"></a><a name="index-cfexecd-646"></a>
 Note, that if problems with library path for compiled-in libraries occur, an
 explicit library path can be specified with the `<samp><span class="samp">-L</span></samp>' option.
 
@@ -10292,7 +10296,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Problem-solving">Problem solving</a>
 
 <h3 class="section">7.1 <samp><span class="file">cf.preconf</span></samp> bootstrap file</h3>
 
-<p><a name="index-cf_002epreconf-bootstrap-file-646"></a><a name="index-cf_002epreconf-647"></a><a name="index-Bootstrap-file-648"></a><a name="index-Deadlock-649"></a><a name="index-Hung-machine-650"></a>
+<p><a name="index-cf_002epreconf-bootstrap-file-647"></a><a name="index-cf_002epreconf-648"></a><a name="index-Bootstrap-file-649"></a><a name="index-Deadlock-650"></a><a name="index-Hung-machine-651"></a>
 In some cases you will want to run cfengine on a system to configure it
 from scratch.  If the system is in a very bad way, it might not even be
 able to parse the cfengine configuration file, perhaps because the
@@ -10362,13 +10366,13 @@ for the current system (e.g.  <code>ultrix</code>).  Here is an example:
      fi
      
 </pre>
-   <p><a name="index-g_t_002fetc_002fhost_002econf-651"></a><a name="index-g_t_002fetc_002fhost_002econf-652"></a><a name="index-g_t_002dx-option-653"></a><a name="index-g_t_002dx-option-654"></a>
+   <p><a name="index-g_t_002fetc_002fhost_002econf-652"></a><a name="index-g_t_002fetc_002fhost_002econf-653"></a><a name="index-g_t_002dx-option-654"></a><a name="index-g_t_002dx-option-655"></a>
 Note - in some circumstances, it might be appropriate to exit cfengine
 altogether after this script. If the script outputs a string containing
 the text "cfengine-preconf-abort", then cfagent will abort execution
 immediately after this.
 
-   <p><a name="index-Emergency-abort-655"></a><a name="index-Abort-cfengine-after-cf_002epreconf-656"></a>
+   <p><a name="index-Emergency-abort-656"></a><a name="index-Abort-cfengine-after-cf_002epreconf-657"></a>
 <!--  -->
 <!-- SECTION -->
 <!--  -->
@@ -10383,7 +10387,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Problem-solving">Problem solving</a>
 
 <h3 class="section">7.2 <samp><span class="file">cfrc</span></samp> resource file</h3>
 
-<p><a name="index-cfrc-resource-file-657"></a><a name="index-Resource-file-658"></a><a name="index-cfrc-659"></a>
+<p><a name="index-cfrc-resource-file-658"></a><a name="index-Resource-file-659"></a><a name="index-cfrc-660"></a>
 If, for some reason you are not satisfied with the defaults which
 cfengine uses, then you can change them by making an entry in the
 resource file.  The default values are defined in the source code file
@@ -10417,7 +10421,7 @@ this case you would add the line:
    <p>You should never need to redefine resources unless you decide to do something
 non-standard.  Interested readers are referred to the values in <code>classes.c</code>.
 
-   <p><a name="index-Adding-new-classes-660"></a><a name="index-Support-for-new-systems-661"></a><a name="index-New-systems_002c-support-for-662"></a>
+   <p><a name="index-Adding-new-classes-661"></a><a name="index-Support-for-new-systems-662"></a><a name="index-New-systems_002c-support-for-663"></a>
 Cfengine is easily extensible so as to support a variety of
 architectures.  You can even add your own.  To do so you need, first of
 all, to define a new class for the operating system concerned.  The file
@@ -10459,7 +10463,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 
 <h2 class="chapter">8 Example configuration files</h2>
 
-<p><a name="index-Example-configuration-files-663"></a>
+<p><a name="index-Example-configuration-files-664"></a>
 Here is a sample from a large configuration file, just to give you
 some ideas. The file is broken up into manageable pieces for
 convenience.
@@ -10492,7 +10496,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Example-configuration-file">Example co
 
 <h3 class="section">8.1 cfagent.conf</h3>
 
-<p><a name="index-g_t_0040file_007bcfagent_002econf_007d-664"></a>
+<p><a name="index-g_t_0040file_007bcfagent_002econf_007d-665"></a>
 <!-- /@w -->
 
 <pre class="smallexample">     #####################################################################
@@ -10556,7 +10560,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Example-configuration-file">Example co
 
 <h3 class="section">8.2 cf.groups</h3>
 
-<p><a name="index-g_t_0040file_007bcf_002egroups_007d-665"></a>
+<p><a name="index-g_t_0040file_007bcf_002egroups_007d-666"></a>
 <!-- /@w -->
 
 <pre class="smallexample">     ##############################################################
@@ -10625,7 +10629,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Example-configuration-file">Example co
 
 <h3 class="section">8.3 cf.main</h3>
 
-<p><a name="index-g_t_0040file_007bcf_002emain_007d-666"></a>
+<p><a name="index-g_t_0040file_007bcf_002emain_007d-667"></a>
 <!-- /@w -->
 
 <pre class="smallexample">     ##############################################################
@@ -10873,7 +10877,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Example-configuration-file">Example co
 
 <h3 class="section">8.4 cf.site</h3>
 
-<p><a name="index-g_t_0040file_007bcf_002esite_007d-667"></a>
+<p><a name="index-g_t_0040file_007bcf_002esite_007d-668"></a>
 <!-- /@w -->
 
 <pre class="smallexample">     ##############################################################
@@ -11260,7 +11264,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Example-configuration-file">Example co
 
 <h3 class="section">8.5 cf.motd</h3>
 
-<p><a name="index-g_t_0040file_007bcf_002emotd_007d-668"></a>
+<p><a name="index-g_t_0040file_007bcf_002emotd_007d-669"></a>
 <!-- /@w -->
 
 <pre class="smallexample">     
@@ -11875,7 +11879,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Example-configuration-file">Example co
 
 <h3 class="section">8.10 cfservd.conf</h3>
 
-<p><a name="index-g_t_0040file_007bcf_002esite_007d-669"></a>
+<p><a name="index-g_t_0040file_007bcf_002esite_007d-670"></a>
 <!-- /@w -->
 
 <pre class="smallexample">     #########################################################
@@ -11971,10 +11975,10 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-g_t_002dl-394"><code>-l</code></a>: <a href="#Syntax">Syntax</a></li>
 <li><a href="#index-g_t_002dN-option-181"><code>-N option</code></a>: <a href="#addclasses">addclasses</a></li>
 <li><a href="#index-g_t_002dN-option-91"><code>-N option</code></a>: <a href="#Cfengine-classes">Cfengine classes</a></li>
-<li><a href="#index-g_t_002dx-option-654"><code>-x option</code></a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
+<li><a href="#index-g_t_002dx-option-655"><code>-x option</code></a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
 <li><a href="#index-g_t_002ecfengine_002erm-585"><code>.cfengine.rm</code></a>: <a href="#tidy">tidy</a></li>
-<li><a href="#index-g_t_002fetc_002fhost_002econf-652"><code>/etc/host.conf</code></a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
-<li><a href="#index-g_t_002fvar_002fcfengine_002foutput-635"><code>/var/cfengine/output</code></a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
+<li><a href="#index-g_t_002fetc_002fhost_002econf-653"><code>/etc/host.conf</code></a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
+<li><a href="#index-g_t_002fvar_002fcfengine_002foutput-636"><code>/var/cfengine/output</code></a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
 <li><a href="#index-a_003d-556"><code>a=</code></a>: <a href="#tidy">tidy</a></li>
 <li><a href="#index-a_003d-379"><code>a=</code></a>: <a href="#Syntax">Syntax</a></li>
 <li><a href="#index-AccessedBefore_0028_0029-19"><code>AccessedBefore()</code></a>: <a href="#Evaluated-classes-and-special-functions">Evaluated classes and special functions</a></li>
@@ -11995,10 +11999,10 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-binservers-122"><code>binservers</code></a>: <a href="#binservers">binservers</a></li>
 <li><a href="#index-broadcast-125"><code>broadcast</code></a>: <a href="#broadcast">broadcast</a></li>
 <li><a href="#index-bymatch-510"><code>bymatch</code></a>: <a href="#processes">processes</a></li>
-<li><a href="#index-cf_002epreconf-647"><code>cf.preconf</code></a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
+<li><a href="#index-cf_002epreconf-648"><code>cf.preconf</code></a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
 <li><a href="#index-CFALLCLASSES-47"><code>CFALLCLASSES</code></a>: <a href="#Special-variables">Special variables</a></li>
 <li><a href="#index-CFALLCLASSES-26"><code>CFALLCLASSES</code></a>: <a href="#Cfagent-Runtime-Options">Cfagent Runtime Options</a></li>
-<li><a href="#index-cfrc-659"><code>cfrc</code></a>: <a href="#cfrc-resource-file">cfrc resource file</a></li>
+<li><a href="#index-cfrc-660"><code>cfrc</code></a>: <a href="#cfrc-resource-file">cfrc resource file</a></li>
 <li><a href="#index-ChangedBefore_0028_0029-14"><code>ChangedBefore()</code></a>: <a href="#Evaluated-classes-and-special-functions">Evaluated classes and special functions</a></li>
 <li><a href="#index-ChecksumDatabase-191"><code>ChecksumDatabase</code></a>: <a href="#ChecksumDatabase">ChecksumDatabase</a></li>
 <li><a href="#index-ChecksumPurge-196"><code>ChecksumPurge</code></a>: <a href="#ChecksumPurge">ChecksumPurge</a></li>
@@ -12018,7 +12022,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-editfiles-159"><code>editfiles</code></a>: <a href="#actionsequence">actionsequence</a></li>
 <li><a href="#index-editfilesize-209"><code>editfilesize</code></a>: <a href="#editfilesize">editfilesize</a></li>
 <li><a href="#index-editfilesize-143"><code>editfilesize</code></a>: <a href="#control">control</a></li>
-<li><a href="#index-EmailMaxLines-640"><code>EmailMaxLines</code></a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
+<li><a href="#index-EmailMaxLines-641"><code>EmailMaxLines</code></a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
 <li><a href="#index-empty-340"><code>empty</code></a>: <a href="#disable">disable</a></li>
 <li><a href="#index-EmptyResolvConf-211"><code>EmptyResolvConf</code></a>: <a href="#emptyresolvconf">emptyresolvconf</a></li>
 <li><a href="#index-Exclamation-212"><code>Exclamation</code></a>: <a href="#exclamation">exclamation</a></li>
@@ -12114,13 +12118,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-site-264"><code>site</code></a>: <a href="#site">site</a></li>
 <li><a href="#index-site-135"><code>site</code></a>: <a href="#control">control</a></li>
 <li><a href="#index-SkipVerify-617"><code>SkipVerify</code></a>: <a href="#root_003d">root=</a></li>
-<li><a href="#index-smtpserver-638"><code>smtpserver</code></a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
+<li><a href="#index-smtpserver-639"><code>smtpserver</code></a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
 <li><a href="#index-split-272"><code>split</code></a>: <a href="#split">split</a></li>
 <li><a href="#index-split-87"><code>split</code></a>: <a href="#Iteration-over-lists">Iteration over lists</a></li>
 <li><a href="#index-split-64"><code>split</code></a>: <a href="#Special-variables">Special variables</a></li>
 <li><a href="#index-SpoolDirectories-274"><code>SpoolDirectories</code></a>: <a href="#spooldirectories">spooldirectories</a></li>
 <li><a href="#index-SuspiciousNames-276"><code>SuspiciousNames</code></a>: <a href="#suspiciousnames">suspiciousnames</a></li>
-<li><a href="#index-sysadm-639"><code>sysadm</code></a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
+<li><a href="#index-sysadm-640"><code>sysadm</code></a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
 <li><a href="#index-sysadm-278"><code>sysadm</code></a>: <a href="#sysadm">sysadm</a></li>
 <li><a href="#index-sysadm-137"><code>sysadm</code></a>: <a href="#control">control</a></li>
 <li><a href="#index-tidy-553"><code>tidy</code></a>: <a href="#tidy">tidy</a></li>
@@ -12158,18 +12162,18 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-g_t_0040code_007b_002dL_007d-option-461"><code>-L</code> option</a>: <a href="#Single-links">Single links</a></li>
 <li><a href="#index-g_t_002dl-option-395">-l option</a>: <a href="#Syntax">Syntax</a></li>
 <li><a href="#index-g_t_0040samp_007b_002dT_007d-in-cfrun_002e-621">`<samp><span class="samp">-T</span></samp>' in cfrun.</a>: <a href="#cfrun">cfrun</a></li>
-<li><a href="#index-g_t_002dx-option-653">-x option</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
+<li><a href="#index-g_t_002dx-option-654">-x option</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
 <li><a href="#index-g_t_0040code_007b_002ecfdisabled_007d-331"><code>.cfdisabled</code></a>: <a href="#disable">disable</a></li>
 <li><a href="#index-g_t_002ecfengine_002erm-584">.cfengine.rm</a>: <a href="#tidy">tidy</a></li>
 <li><a href="#index-g_t_0040file_007b_002ecfnew_007d-files-285"><samp><span class="file">.cfnew</span></samp> files</a>: <a href="#copy">copy</a></li>
 <li><a href="#index-g_t_0040file_007b_002ecfsaved_007d-files-477"><samp><span class="file">.cfsaved</span></samp> files</a>: <a href="#Multiple-Links">Multiple Links</a></li>
 <li><a href="#index-g_t_002eX11-directory-445">.X11 directory</a>: <a href="#ignore">ignore</a></li>
-<li><a href="#index-g_t_002fetc_002fhost_002econf-651">/etc/host.conf</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
+<li><a href="#index-g_t_002fetc_002fhost_002econf-652">/etc/host.conf</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
 <li><a href="#index-g_t_0040file_007b_002fetc_002fhosts_002eequiv_007d-330"><samp><span class="file">/etc/hosts.equiv</span></samp></a>: <a href="#disable">disable</a></li>
-<li><a href="#index-g_t_002fvar_002fcfengine_002foutput-634">/var/cfengine/output</a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
+<li><a href="#index-g_t_002fvar_002fcfengine_002foutput-635">/var/cfengine/output</a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
 <li><a href="#index-g_t_003c-8">&lt;</a>: <a href="#Evaluated-classes-and-special-functions">Evaluated classes and special functions</a></li>
 <li><a href="#index-g_t_003e-7">&gt;</a>: <a href="#Evaluated-classes-and-special-functions">Evaluated classes and special functions</a></li>
-<li><a href="#index-Abort-cfengine-after-cf_002epreconf-656">Abort cfengine after cf.preconf</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
+<li><a href="#index-Abort-cfengine-after-cf_002epreconf-657">Abort cfengine after cf.preconf</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
 <li><a href="#index-Absolute-links-466">Absolute links</a>: <a href="#Single-links">Single links</a></li>
 <li><a href="#index-Access-control-146">Access control</a>: <a href="#access">access</a></li>
 <li><a href="#index-Access-control-lists-104">Access control lists</a>: <a href="#acl">acl</a></li>
@@ -12177,7 +12181,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-ACLs-105">ACLs</a>: <a href="#acl">acl</a></li>
 <li><a href="#index-action-sequence-148">action sequence</a>: <a href="#actionsequence">actionsequence</a></li>
 <li><a href="#index-Adding-defined-classes-175">Adding defined classes</a>: <a href="#addclasses">addclasses</a></li>
-<li><a href="#index-Adding-new-classes-660">Adding new classes</a>: <a href="#cfrc-resource-file">cfrc resource file</a></li>
+<li><a href="#index-Adding-new-classes-661">Adding new classes</a>: <a href="#cfrc-resource-file">cfrc resource file</a></li>
 <li><a href="#index-AFS-248">AFS</a>: <a href="#nfstype">nfstype</a></li>
 <li><a href="#index-Alerts-110">Alerts</a>: <a href="#alerts">alerts</a></li>
 <li><a href="#index-allclasses-variable-543">allclasses variable</a>: <a href="#shellcommands">shellcommands</a></li>
@@ -12206,30 +12210,30 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Binary-servers_002c-priority-123">Binary servers, priority</a>: <a href="#binservers">binservers</a></li>
 <li><a href="#index-Binding-to-one-interface-only-601">Binding to one interface only</a>: <a href="#BindToInterface">BindToInterface</a></li>
 <li><a href="#index-Binding-to-one-interface-only-194">Binding to one interface only</a>: <a href="#BindToInterface_0028cfagent_0029">BindToInterface(cfagent)</a></li>
-<li><a href="#index-Bootstrap-file-648">Bootstrap file</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
+<li><a href="#index-Bootstrap-file-649">Bootstrap file</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
 <li><a href="#index-Broadcast-address-124">Broadcast address</a>: <a href="#broadcast">broadcast</a></li>
 <li><a href="#index-Broadcasts-to-the-cfengine-service_002e-624">Broadcasts to the cfengine service.</a>: <a href="#cfrun">cfrun</a></li>
 <li><a href="#index-Broken-resolver-227">Broken resolver</a>: <a href="#lastseen">lastseen</a></li>
 <li><a href="#index-Built_002din-functions-29">Built-in functions</a>: <a href="#Setting-variables-with-functions">Setting variables with functions</a></li>
 <li><a href="#index-Caching-of-reverse-lookups-615">Caching of reverse lookups</a>: <a href="#root_003d">root=</a></li>
 <li><a href="#index-CatchAbort-360">CatchAbort</a>: <a href="#editfiles">editfiles</a></li>
-<li><a href="#index-g_t_0040file_007bcf_002egroups_007d-665"><samp><span class="file">cf.groups</span></samp></a>: <a href="#cf_002egroups">cf.groups</a></li>
-<li><a href="#index-g_t_0040file_007bcf_002emain_007d-666"><samp><span class="file">cf.main</span></samp></a>: <a href="#cf_002emain">cf.main</a></li>
-<li><a href="#index-g_t_0040file_007bcf_002emotd_007d-668"><samp><span class="file">cf.motd</span></samp></a>: <a href="#cf_002emotd">cf.motd</a></li>
-<li><a href="#index-cf_002epreconf-bootstrap-file-646">cf.preconf bootstrap file</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
-<li><a href="#index-g_t_0040file_007bcf_002esite_007d-669"><samp><span class="file">cf.site</span></samp></a>: <a href="#cfservd_002econf">cfservd.conf</a></li>
-<li><a href="#index-g_t_0040file_007bcf_002esite_007d-667"><samp><span class="file">cf.site</span></samp></a>: <a href="#cf_002esite">cf.site</a></li>
-<li><a href="#index-g_t_0040file_007bcfagent_002econf_007d-664"><samp><span class="file">cfagent.conf</span></samp></a>: <a href="#cfagent_002econf">cfagent.conf</a></li>
+<li><a href="#index-g_t_0040file_007bcf_002egroups_007d-666"><samp><span class="file">cf.groups</span></samp></a>: <a href="#cf_002egroups">cf.groups</a></li>
+<li><a href="#index-g_t_0040file_007bcf_002emain_007d-667"><samp><span class="file">cf.main</span></samp></a>: <a href="#cf_002emain">cf.main</a></li>
+<li><a href="#index-g_t_0040file_007bcf_002emotd_007d-669"><samp><span class="file">cf.motd</span></samp></a>: <a href="#cf_002emotd">cf.motd</a></li>
+<li><a href="#index-cf_002epreconf-bootstrap-file-647">cf.preconf bootstrap file</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
+<li><a href="#index-g_t_0040file_007bcf_002esite_007d-670"><samp><span class="file">cf.site</span></samp></a>: <a href="#cfservd_002econf">cfservd.conf</a></li>
+<li><a href="#index-g_t_0040file_007bcf_002esite_007d-668"><samp><span class="file">cf.site</span></samp></a>: <a href="#cf_002esite">cf.site</a></li>
+<li><a href="#index-g_t_0040file_007bcfagent_002econf_007d-665"><samp><span class="file">cfagent.conf</span></samp></a>: <a href="#cfagent_002econf">cfagent.conf</a></li>
 <li><a href="#index-CFALLCLASSES-542">CFALLCLASSES</a>: <a href="#shellcommands">shellcommands</a></li>
 <li><a href="#index-CFALLCLASSES-46">CFALLCLASSES</a>: <a href="#Special-variables">Special variables</a></li>
 <li><a href="#index-cfenvd-and-key-entropy-21">cfenvd and key entropy</a>: <a href="#Cfkey">Cfkey</a></li>
-<li><a href="#index-cfexecd-641">cfexecd</a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
-<li><a href="#index-cfrc-resource-file-657">cfrc resource file</a>: <a href="#cfrc-resource-file">cfrc resource file</a></li>
+<li><a href="#index-cfexecd-642">cfexecd</a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
+<li><a href="#index-cfrc-resource-file-658">cfrc resource file</a>: <a href="#cfrc-resource-file">cfrc resource file</a></li>
 <li><a href="#index-cfrun_002c-limiting-users-on-server-594">cfrun, limiting users on server</a>: <a href="#AllowUsers">AllowUsers</a></li>
 <li><a href="#index-g_t_0040code_007bcfrunCommand_007d-variable-605"><code>cfrunCommand</code> variable</a>: <a href="#cfrunCommand">cfrunCommand</a></li>
 <li><a href="#index-g_t_0040file_007bcfservd_002econf_007d-file-588"><samp><span class="file">cfservd.conf</span></samp> file</a>: <a href="#Cfservd_002econf-and-cfrun-reference">Cfservd.conf and cfrun reference</a></li>
 <li><a href="#index-cfservd_002econf-iteration-590">cfservd.conf iteration</a>: <a href="#Cfservd_002econf-and-cfrun-reference">Cfservd.conf and cfrun reference</a></li>
-<li><a href="#index-Changing-cfengine-port-632">Changing cfengine port</a>: <a href="#Firewalls-and-NATs">Firewalls and NATs</a></li>
+<li><a href="#index-Changing-cfengine-port-633">Changing cfengine port</a>: <a href="#Firewalls-and-NATs">Firewalls and NATs</a></li>
 <li><a href="#index-Checking-for-installed-packages-515">Checking for installed packages</a>: <a href="#packages">packages</a></li>
 <li><a href="#index-Checksum-warning_002c-turning-off-exclamation-213">Checksum warning, turning off exclamation</a>: <a href="#exclamation">exclamation</a></li>
 <li><a href="#index-ChecksumDatabase-187">ChecksumDatabase</a>: <a href="#ChecksumDatabase">ChecksumDatabase</a></li>
@@ -12251,7 +12255,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Classless-IP-addresses-427">Classless IP addresses</a>: <a href="#groups">groups</a></li>
 <li><a href="#index-Comparing-file-objects-12">Comparing file objects</a>: <a href="#Evaluated-classes-and-special-functions">Evaluated classes and special functions</a></li>
 <li><a href="#index-Compound-classes-89">Compound classes</a>: <a href="#Cfengine-classes">Cfengine classes</a></li>
-<li><a href="#index-Contacting-specific-hosts-with-cfrun-628">Contacting specific hosts with cfrun</a>: <a href="#cfrun">cfrun</a></li>
+<li><a href="#index-Contacting-specific-hosts-with-cfrun-629">Contacting specific hosts with cfrun</a>: <a href="#cfrun">cfrun</a></li>
 <li><a href="#index-control-section-131">control section</a>: <a href="#control">control</a></li>
 <li><a href="#index-Controlling-the-size-of-log-files-336">Controlling the size of log files</a>: <a href="#disable">disable</a></li>
 <li><a href="#index-copy-282">copy</a>: <a href="#copy">copy</a></li>
@@ -12260,7 +12264,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Creating-files-417">Creating files</a>: <a href="#create">create</a></li>
 <li><a href="#index-ctime-tidies-576">ctime tidies</a>: <a href="#tidy">tidy</a></li>
 <li><a href="#index-DCE-key-107">DCE key</a>: <a href="#DFS-ACLs">DFS ACLs</a></li>
-<li><a href="#index-Deadlock-649">Deadlock</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
+<li><a href="#index-Deadlock-650">Deadlock</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
 <li><a href="#index-Deadlock-zombie-bug-in-restart-506">Deadlock zombie bug in restart</a>: <a href="#processes">processes</a></li>
 <li><a href="#index-Debian-Package-Database-Queries-520">Debian Package Database Queries</a>: <a href="#packages">packages</a></li>
 <li><a href="#index-Declaring-classes-183">Declaring classes</a>: <a href="#addinstallable">addinstallable</a></li>
@@ -12305,11 +12309,11 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Dual-homed-hosts-454">Dual homed hosts</a>: <a href="#interfaces">interfaces</a></li>
 <li><a href="#index-Dynamic-addresses-613">Dynamic addresses</a>: <a href="#DynamicAddresses">DynamicAddresses</a></li>
 <li><a href="#index-g_t_0040code_007bDynamicAddresses_007d-variable-611"><code>DynamicAddresses</code> variable</a>: <a href="#DynamicAddresses">DynamicAddresses</a></li>
-<li><a href="#index-Emergency-abort-655">Emergency abort</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
+<li><a href="#index-Emergency-abort-656">Emergency abort</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
 <li><a href="#index-Empty-files-571">Empty files</a>: <a href="#tidy">tidy</a></li>
 <li><a href="#index-Emptying-old-nameservers-from-_0040file_007b_002fetc_002fresolv_002econf_007d-210">Emptying old nameservers from <samp><span class="file">/etc/resolv.conf</span></samp></a>: <a href="#emptyresolvconf">emptyresolvconf</a></li>
 <li><a href="#index-Environment-variable-CFALLCLASSES-25">Environment variable CFALLCLASSES</a>: <a href="#Cfagent-Runtime-Options">Cfagent Runtime Options</a></li>
-<li><a href="#index-Example-configuration-files-663">Example configuration files</a>: <a href="#Example-configuration-file">Example configuration file</a></li>
+<li><a href="#index-Example-configuration-files-664">Example configuration files</a>: <a href="#Example-configuration-file">Example configuration file</a></li>
 <li><a href="#index-Exclamation-marks_002c-turning-off-214">Exclamation marks, turning off</a>: <a href="#exclamation">exclamation</a></li>
 <li><a href="#index-Excluding-classes-182">Excluding classes</a>: <a href="#addclasses">addclasses</a></li>
 <li><a href="#index-Excluding-files-from-a-file-sweep-392">Excluding files from a file sweep</a>: <a href="#Syntax">Syntax</a></li>
@@ -12355,12 +12359,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Homepattern-variable_002e-503">Homepattern variable.</a>: <a href="#mountables">mountables</a></li>
 <li><a href="#index-Host-name-gets-truncated-100">Host name gets truncated</a>: <a href="#Cfengine-classes">Cfengine classes</a></li>
 <li><a href="#index-Hostname-collision-70">Hostname collision</a>: <a href="#Special-variables">Special variables</a></li>
-<li><a href="#index-HostnameKeys-629">HostnameKeys</a>: <a href="#Firewalls-and-NATs">Firewalls and NATs</a></li>
+<li><a href="#index-HostnameKeys-630">HostnameKeys</a>: <a href="#Firewalls-and-NATs">Firewalls and NATs</a></li>
 <li><a href="#index-hostnamekeys-625">hostnamekeys</a>: <a href="#cfrun">cfrun</a></li>
-<li><a href="#index-Hung-machine-650">Hung machine</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
+<li><a href="#index-Hung-machine-651">Hung machine</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
 <li><a href="#index-ignore-command-444">ignore command</a>: <a href="#ignore">ignore</a></li>
 <li><a href="#index-Import-files_002c-variables-in-452">Import files, variables in</a>: <a href="#import">import</a></li>
 <li><a href="#index-Importing-files-446">Importing files</a>: <a href="#import">import</a></li>
+<li><a href="#index-include-in-cfrun-626">include in cfrun</a>: <a href="#cfrun">cfrun</a></li>
 <li><a href="#index-Incrementing-line-pointer-in-editfiles-361">Incrementing line pointer in editfiles</a>: <a href="#editfiles">editfiles</a></li>
 <li><a href="#index-Interface-name_002c-redefining-by-class-222">Interface name, redefining by class</a>: <a href="#interfacename">interfacename</a></li>
 <li><a href="#index-InterfaceName-220">InterfaceName</a>: <a href="#interfacename">interfacename</a></li>
@@ -12400,7 +12405,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Logical-NOT-95">Logical NOT</a>: <a href="#Cfengine-classes">Cfengine classes</a></li>
 <li><a href="#index-Mail-server_002c-defining-487">Mail server, defining</a>: <a href="#mailserver">mailserver</a></li>
 <li><a href="#index-Mailhost-267">Mailhost</a>: <a href="#Smtpserver">Smtpserver</a></li>
-<li><a href="#index-Mailing-output-637">Mailing output</a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
+<li><a href="#index-Mailing-output-638">Mailing output</a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
 <li><a href="#index-Making-directories-323">Making directories</a>: <a href="#directories">directories</a></li>
 <li><a href="#index-Making-links-456">Making links</a>: <a href="#links">links</a></li>
 <li><a href="#index-Making-paths-324">Making paths</a>: <a href="#directories">directories</a></li>
@@ -12428,7 +12433,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Multihomed-hosts-192">Multihomed hosts</a>: <a href="#BindToInterface_0028cfagent_0029">BindToInterface(cfagent)</a></li>
 <li><a href="#index-Multiple-links-475">Multiple links</a>: <a href="#Multiple-Links">Multiple Links</a></li>
 <li><a href="#index-Name-collision-69">Name collision</a>: <a href="#Special-variables">Special variables</a></li>
-<li><a href="#index-NAT-630">NAT</a>: <a href="#Firewalls-and-NATs">Firewalls and NATs</a></li>
+<li><a href="#index-NAT-631">NAT</a>: <a href="#Firewalls-and-NATs">Firewalls and NATs</a></li>
 <li><a href="#index-Negating-classes-173">Negating classes</a>: <a href="#actionsequence">actionsequence</a></li>
 <li><a href="#index-Negating-entries-from-netgroups-432">Negating entries from netgroups</a>: <a href="#groups">groups</a></li>
 <li><a href="#index-Netgroups-428">Netgroups</a>: <a href="#groups">groups</a></li>
@@ -12436,10 +12441,10 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Netmask-243">Netmask</a>: <a href="#netmask">netmask</a></li>
 <li><a href="#index-netmask-238">netmask</a>: <a href="#netmask">netmask</a></li>
 <li><a href="#index-Network-Address-Translation-266">Network Address Translation</a>: <a href="#SkipIdentify">SkipIdentify</a></li>
-<li><a href="#index-Network-address-translator-631">Network address translator</a>: <a href="#Firewalls-and-NATs">Firewalls and NATs</a></li>
+<li><a href="#index-Network-address-translator-632">Network address translator</a>: <a href="#Firewalls-and-NATs">Firewalls and NATs</a></li>
 <li><a href="#index-Network-Address-Translators-618">Network Address Translators</a>: <a href="#SkipVerify">SkipVerify</a></li>
 <li><a href="#index-Network-interfaces_002c-several-453">Network interfaces, several</a>: <a href="#interfaces">interfaces</a></li>
-<li><a href="#index-New-systems_002c-support-for-662">New systems, support for</a>: <a href="#cfrc-resource-file">cfrc resource file</a></li>
+<li><a href="#index-New-systems_002c-support-for-663">New systems, support for</a>: <a href="#cfrc-resource-file">cfrc resource file</a></li>
 <li><a href="#index-nfs-245">nfs</a>: <a href="#nfstype">nfstype</a></li>
 <li><a href="#index-NFS-filesystems-and-disk-checking-317">NFS filesystems and disk checking</a>: <a href="#disks">disks</a></li>
 <li><a href="#index-NFS-mount-model-and-automounter-353">NFS mount model and automounter</a>: <a href="#editfiles">editfiles</a></li>
@@ -12451,7 +12456,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-NT_002c-ACL-109">NT, ACL</a>: <a href="#NT-ACLs">NT ACLs</a></li>
 <li><a href="#index-ones-129">ones</a>: <a href="#broadcast">broadcast</a></li>
 <li><a href="#index-Operator-ordering-101">Operator ordering</a>: <a href="#Cfengine-classes">Cfengine classes</a></li>
-<li><a href="#index-Output-logs-636">Output logs</a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
+<li><a href="#index-Output-logs-637">Output logs</a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
 <li><a href="#index-Ownership-of-files-410">Ownership of files</a>: <a href="#Owner-and-group-wildcards">Owner and group wildcards</a></li>
 <li><a href="#index-packages-514">packages</a>: <a href="#packages">packages</a></li>
 <li><a href="#index-Password-file_002c-editing-364">Password file, editing</a>: <a href="#editfiles">editfiles</a></li>
@@ -12464,7 +12469,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Peer-watching-_0028FriendStatus_0029-118">Peer watching (FriendStatus)</a>: <a href="#alerts">alerts</a></li>
 <li><a href="#index-Percentage-disk-space-526">Percentage disk space</a>: <a href="#required">required</a></li>
 <li><a href="#index-Permissions_002c-directories-407">Permissions, directories</a>: <a href="#Directory-permissions">Directory permissions</a></li>
-<li><a href="#index-Port_002c-connecting-to-different-633">Port, connecting to different</a>: <a href="#Firewalls-and-NATs">Firewalls and NATs</a></li>
+<li><a href="#index-Port_002c-connecting-to-different-634">Port, connecting to different</a>: <a href="#Firewalls-and-NATs">Firewalls and NATs</a></li>
 <li><a href="#index-PrepModule-3">PrepModule</a>: <a href="#Evaluated-classes-and-special-functions">Evaluated classes and special functions</a></li>
 <li><a href="#index-Preserving-file-times-in-copy-291">Preserving file times in copy</a>: <a href="#copy">copy</a></li>
 <li><a href="#index-Previewing-shellcommands-536">Previewing shellcommands</a>: <a href="#shellcommands">shellcommands</a></li>
@@ -12495,7 +12500,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Repository-filenames_002c-changing-252">Repository filenames, changing</a>: <a href="#repchar">repchar</a></li>
 <li><a href="#index-resolv_002econf-529">resolv.conf</a>: <a href="#resolve">resolve</a></li>
 <li><a href="#index-Resolver-configuration-528">Resolver configuration</a>: <a href="#resolve">resolve</a></li>
-<li><a href="#index-Resource-file-658">Resource file</a>: <a href="#cfrc-resource-file">cfrc resource file</a></li>
+<li><a href="#index-Resource-file-659">Resource file</a>: <a href="#cfrc-resource-file">cfrc resource file</a></li>
 <li><a href="#index-Restart-zombie-deadlock-bug-507">Restart zombie deadlock bug</a>: <a href="#processes">processes</a></li>
 <li><a href="#index-Restricting-the-size-of-binary-files-to-be-edited-206">Restricting the size of binary files to be edited</a>: <a href="#editbinaryfilesize">editbinaryfilesize</a></li>
 <li><a href="#index-Restricting-the-size-of-files-to-be-edited-208">Restricting the size of files to be edited</a>: <a href="#editfilesize">editfilesize</a></li>
@@ -12503,7 +12508,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-rmdirs-579">rmdirs</a>: <a href="#tidy">tidy</a></li>
 <li><a href="#index-Rotating-log-files-338">Rotating log files</a>: <a href="#disable">disable</a></li>
 <li><a href="#index-RPM-Database-Queries-519">RPM Database Queries</a>: <a href="#packages">packages</a></li>
-<li><a href="#index-Running-cfengine-from-a-single-master-host-626">Running cfengine from a single master host</a>: <a href="#cfrun">cfrun</a></li>
+<li><a href="#index-Running-cfengine-from-a-single-master-host-627">Running cfengine from a single master host</a>: <a href="#cfrun">cfrun</a></li>
 <li><a href="#index-Running-_0040code_007bcfrun_007d-623">Running <code>cfrun</code></a>: <a href="#cfrun">cfrun</a></li>
 <li><a href="#index-scanarrivals_003d-320">scanarrivals=</a>: <a href="#disks">disks</a></li>
 <li><a href="#index-scheduling-254">scheduling</a>: <a href="#schedule">schedule</a></li>
@@ -12543,7 +12548,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Strategy_002c-random-549">Strategy, random</a>: <a href="#strategies">strategies</a></li>
 <li><a href="#index-Subnet-mask-244">Subnet mask</a>: <a href="#netmask">netmask</a></li>
 <li><a href="#index-Sun-Package-Database-Queries-521">Sun Package Database Queries</a>: <a href="#packages">packages</a></li>
-<li><a href="#index-Support-for-new-systems-661">Support for new systems</a>: <a href="#cfrc-resource-file">cfrc resource file</a></li>
+<li><a href="#index-Support-for-new-systems-662">Support for new systems</a>: <a href="#cfrc-resource-file">cfrc resource file</a></li>
 <li><a href="#index-suspiciousnames-275">suspiciousnames</a>: <a href="#suspiciousnames">suspiciousnames</a></li>
 <li><a href="#index-Switching-off-backup-in-copy-288">Switching off backup in copy</a>: <a href="#copy">copy</a></li>
 <li><a href="#index-Switching-off-built_002din-classes-24">Switching off built-in classes</a>: <a href="#Cfagent-Runtime-Options">Cfagent Runtime Options</a></li>
