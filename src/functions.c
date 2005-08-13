@@ -85,7 +85,7 @@ char *EvaluateFunction(char *f,char *value)
 
 { enum builtin fn;
  char *sp,name[CF_MAXVARSIZE],args[CF_EXPANDSIZE];
-  int negated = false,count = 0;
+  int negated = false,count = 1;
 
 if (*f == '!')
    {
@@ -95,7 +95,10 @@ if (*f == '!')
  
 sscanf(f,"%255[^(]",name);
 
-for (sp = f+strlen(name); *sp != '\0'; sp++)
+
+strncpy(args,f+strlen(name)+1,CF_EXPANDSIZE);
+
+for (sp = args; *sp != '\0'; sp++)
    {
    if (*sp == '(')
       {
@@ -112,8 +115,7 @@ for (sp = f+strlen(name); *sp != '\0'; sp++)
       }
    }
 
-strncpy(args,f+strlen(name)+1,CF_EXPANDSIZE);
-    
+
 Debug("HandleFunction: %s(%s)\n",name,args);
 
 switch (fn = FunctionStringToCode(name))
