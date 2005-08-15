@@ -223,6 +223,14 @@ if (strstr(value,exp))
    return;
    }
 
+snprintf(exp,CF_BUFSIZE,"$(%s)",name);
+
+if (strstr(value,exp))
+   {
+   yyerror("Macro contains itself and is previously undefined");
+   return;
+   }
+
 ExpandVarstring(value,exp,NULL);
 
 ptr = ObjectContext(scope);
