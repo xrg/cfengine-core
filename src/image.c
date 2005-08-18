@@ -138,11 +138,14 @@ if (strlen(from) == 0)     /* Check for root dir */
 strncpy(newto,to,CF_BUFSIZE-2);
 AddSlash(newto);
 
-if (! MakeDirectoriesFor(newto,ip->forcedirs))
+if (strcmp(ip->action,"warn") != 0)
    {
-   snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to make directory for %s in copy: %s to %s\n",newto,ip->path,ip->destination);
-   CfLog(cferror,OUTPUT,"");
-   return;
+   if (! MakeDirectoriesFor(newto,ip->forcedirs))
+      {
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to make directory for %s in copy: %s to %s\n",newto,ip->path,ip->destination);
+      CfLog(cferror,OUTPUT,"");
+      return;
+      }
    }
 
 if ((dirh = cfopendir(from,ip)) == NULL)
@@ -871,9 +874,9 @@ if (ip->linktype != 'n')
     if (strcmp(ip->action,"warn") == 0)
        {
        snprintf(OUTPUT,CF_BUFSIZE*2,"Image file %s is non-existent\n",destfile);
-       CfLog(cfinform,OUTPUT,"");
+       CfLog(cferror,OUTPUT,"");
        snprintf(OUTPUT,CF_BUFSIZE*2,"(should be copy of %s)\n",sourcefile);
-       CfLog(cfinform,OUTPUT,"");
+       CfLog(cferror,OUTPUT,"");
        return;
        }
     
