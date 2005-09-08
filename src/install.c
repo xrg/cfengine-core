@@ -739,7 +739,7 @@ if (value[0] == '\0')
 
 Debug1("HandleOptionalRequiredAttribute(%s)\n",value);
 
-switch(GetCommAttribute(item))
+switch(GetCommAttribute(ebuff))
    {
    case cffree:    HandleRequiredSize(value);
                    break;
