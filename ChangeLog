@@ -1,5 +1,10 @@
 2.1.16
 
+	Moved method parameter setting to fix a bug where parameters would
+	be set too late to be used in the parser
+	
+	action=warn in copy required inform=true to work, fixed.
+	
 	Function arg expansion bug and improvement fix
 	
 	Include directive added to cfrun.hosts (Olivier Fauchon)
