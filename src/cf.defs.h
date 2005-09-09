@@ -1559,7 +1559,7 @@ struct Image
    mode_t minus;
    struct UidList *uid;
    struct GidList *gid;
-   char   *action;                                   /* fix / warn */
+   char   *action;                           /* fix / warn /silent */
    char   *classes;
    char   *defines;
    char   *elsedef;

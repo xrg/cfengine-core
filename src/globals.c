@@ -215,6 +215,7 @@ char *TCPNAMES[CF_NETATTR] =
  /* Methods                                                         */
  /*******************************************************************/
 
+  PUBLIC int GOTMETHODARGS = false;
   PUBLIC struct Item *METHODARGS = NULL;
   PUBLIC char ** METHODARGV = NULL;
   PUBLIC int METHODARGC = 0;

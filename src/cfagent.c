@@ -59,8 +59,6 @@ int NothingLeftToDo ARGLIST((void));
 void SummarizeObjects ARGLIST((void));
 void SetContext ARGLIST((char *id));
 void DeleteCaches ARGLIST((void));
-void CheckForMethod ARGLIST((void));
-void CheckMethodReply ARGLIST((void));
 void QueryCheck(void);
 
 /*******************************************************************/
@@ -143,7 +141,8 @@ ReadRCFile(); /* Should come before parsing so that it can be overridden */
  ParseInputFile(VINPUTFILE);
  CheckFilters();
  EchoValues();
- CheckForMethod();
+ 
+/* CheckForMethod(); Move to InitializeAction */
  
  if (PRSYSADM)                                           /* -a option */
     {
@@ -770,7 +769,7 @@ sprintf(id,"%d",geteuid());   /* get effective user id */
 
 if (VACCESSLIST != NULL && !IsItemIn(VACCESSLIST,id))
    {
-   FatalError("Access denied");
+   FatalError("Access denied - user not listed in access list");
    }
 
 Debug2("cfagent -d : Debugging output enabled.\n");
@@ -1794,84 +1793,6 @@ while ((c=getopt_long(argc,argv,"WbBzMgAbKqkhYHd:vlniIf:pPmcCtsSaeEVD:N:LwxXuUj:
   }
 }
 
-/*******************************************************************/
-
-void CheckForMethod()
-
-{ struct Item *ip;
-  int i = 0;
-
-if (strcmp(METHODNAME,"cf-nomethod") == 0)
-   {
-   return;
-   }
-
-if (! MINUSF)
-   {
-   FatalError("Input files claim to be a module but this is a parent process\n");
-   }
-
-Verbose("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n+\n");
-Verbose("+ This is a private method: %s\n",METHODNAME);
-
-if (METHODARGS == NULL)
-   {
-   FatalError("This module was declared a method but no MethodParameters declaration was given");
-   }
-else
-   {
-   Verbose("+\n+ Method argument prototype = (");
-
-   i = 1;
-   
-   for (ip = METHODARGS; ip != NULL; ip=ip->next)
-      {
-      i++;
-      }
-
-   METHODARGV = (char **) malloc(sizeof(char *) * i); 
-   
-   i = 0;
-
-   for (ip = METHODARGS; ip != NULL; ip=ip->next)
-      {
-      /* Fill this temporarily with the formal parameters */
-      METHODARGV[i++] = ip->name; 
-      }
-
-   METHODARGC = i;
-   
-   Verbose(" )\n+\n");
-   }
- 
-Verbose("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n");
-
-Verbose("Looking for a data package for this method (%s)\n",METHODMD5);
-
-if (!ChildLoadMethodPackage(METHODNAME,METHODMD5))
-   {
-   snprintf(OUTPUT,CF_BUFSIZE,"No valid incoming request to execute method (%s)\n",METHODNAME);
-   CfLog(cfinform,OUTPUT,"");
-   exit(0);
-   }
-
-Debug("Method package looks ok -- proceeding\n"); 
-}
-
-/*******************************************************************/
-
-void CheckMethodReply()
-
-{
-if (ScopeIsMethod())
-   {
-   if (strlen(METHODREPLYTO) > 0)
-      {
-      Banner("Method reply message");
-      DispatchMethodReply();
-      }
-   }
-}
 
 /*******************************************************************/
 

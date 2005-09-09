@@ -697,6 +697,8 @@ int OptionIs ARGLIST((char *scope, char *name, short on));
 
 /* methods.c */
 
+void CheckForMethod ARGLIST((void));
+void CheckMethodReply ARGLIST((void));
 void DispatchNewMethod ARGLIST((struct Method *ptr));
 struct Item *GetPendingMethods ARGLIST((int state));
 int ChildLoadMethodPackage ARGLIST((char *name, char *md5));

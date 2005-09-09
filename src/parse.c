@@ -1183,6 +1183,13 @@ void InitializeAction()                                   /* Set defaults */
 
  {
  Debug1("InitializeAction()\n");
+
+ if (!GOTMETHODARGS && (METHODARGS != NULL))
+    {
+    Verbose("This looks like a private method, adding transferred parameters.\n");
+    CheckForMethod();
+    GOTMETHODARGS = true;
+    }
  
  ACTIONPENDING = false;
 

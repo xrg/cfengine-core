@@ -3472,6 +3472,10 @@ struct Method *IsDefinedMethod(char *name,char *s)
 {
 return NULL; 
 }
+
+void CheckForMethod()
+{
+}
 /* EOF */
 
 
