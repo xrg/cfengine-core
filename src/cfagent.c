@@ -1054,7 +1054,7 @@ if (NOSPLAY)
    }
 
 time = 0;
-snprintf(ebuff,CF_BUFSIZE,"%s+%s",VFQNAME,VIPADDRESS);
+snprintf(ebuff,CF_BUFSIZE,"%s+%s+%d",VFQNAME,VIPADDRESS,getuid());
 hash = Hash(ebuff);
 
 if (!NOSPLAY)
