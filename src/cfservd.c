@@ -76,7 +76,6 @@ struct option CFDOPTIONS[] =
    { "file",required_argument,0,'f' },
    { "no-fork",no_argument,0,'F' },
    { "parse-only",no_argument,0,'p'},
-   { "multithread",no_argument,0,'m'},
    { "ld-library-path",required_argument,0,'L'},
    { NULL,0,0,0 }
    };
