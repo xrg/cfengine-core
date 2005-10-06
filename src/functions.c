@@ -394,8 +394,11 @@ strcpy(value,CF_NOCLASS);
 void HandleIPRange(char *args,char *value)
 
 { struct Item *ip;
+  char argv[CF_MAXFARGS][CF_EXPANDSIZE];
+
+FunctionArgs(args,argv,1);
  
-if (strchr(args,','))
+if (strchr(argv[0],','))
    {
    yyerror("Illegal argument to unary class-function");
    return;
@@ -403,7 +406,7 @@ if (strchr(args,','))
  
 strcpy(value,CF_NOCLASS);
 
-if (!FuzzyMatchParse(args))
+if (!FuzzyMatchParse(argv[0]))
    {
    return;
    }
@@ -413,7 +416,7 @@ for (ip = IPADDRESSES; ip != NULL; ip = ip->next)
    {
    Debug("Checking IP Range against iface %s\n",VIPADDRESS);
    
-   if (FuzzySetMatch(args,ip->name) == 0)
+   if (FuzzySetMatch(argv[0],ip->name) == 0)
       {
       Debug("IPRange Matched\n");
       strcpy(value,CF_ANYCLASS);
@@ -424,7 +427,7 @@ for (ip = IPADDRESSES; ip != NULL; ip = ip->next)
 
 Debug("Checking IP Range against RDNS %s\n",VIPADDRESS);
 
-if (FuzzySetMatch(args,VIPADDRESS) == 0)
+if (FuzzySetMatch(argv[0],VIPADDRESS) == 0)
    {
    Debug("IPRange Matched\n");
    strcpy(value,CF_ANYCLASS);
@@ -439,11 +442,14 @@ strcpy(value,CF_NOCLASS);
 
 void HandleHostRange(char *args,char *value)
 
-{
-Debug("SRDEBUG in HandleHostRange()\n"); 
-Debug("SRDEBUG args=%s value=%s\n",args,value);
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE];
 
-if (!FuzzyHostParse(args))
+FunctionArgs(args,argv,1);
+
+Debug("SRDEBUG in HandleHostRange()\n"); 
+Debug("SRDEBUG args=%s value=%s\n",argv[0],value);
+
+if (!FuzzyHostParse(argv[0]))
    {
    strcpy(value,CF_NOCLASS);
    return;
@@ -452,7 +458,7 @@ if (!FuzzyHostParse(args))
 /* VDEFAULTBINSERVER.name is relative domain name */
 /* (see nameinfo.c ~line 145)                     */
 
-if (FuzzyHostMatch(args,VDEFAULTBINSERVER.name) == 0)
+if (FuzzyHostMatch(argv[0],VDEFAULTBINSERVER.name) == 0)
    {
    Debug("SRDEBUG SUCCESS!\n");
    strcpy(value,CF_ANYCLASS);
@@ -522,22 +528,26 @@ strcpy(value,CF_NOCLASS);
 void HandleFunctionExec(char *args,char *value)
 
 { char command[CF_MAXVARSIZE];
+  char argv[CF_MAXFARGS][CF_EXPANDSIZE];
+  
+FunctionArgs(args,argv,1); 
 
- if (ACTION != control)
+if (ACTION != control)
    {
    yyerror("Use of ExecResult(s) outside of variable assignment");
    }
  
-if (*args == '/')
+if (*argv[0] == '/')
    {
-   strncpy(command,args,CF_MAXVARSIZE);
+   strncpy(command,argv[0],CF_MAXVARSIZE);
    GetExecOutput(command,value);
    Chop(value);
    value[CF_MAXVARSIZE-1] = '\0';  /* Truncate to CF_MAXVARSIZE */
    }
  else
     {
-    yyerror("ExecResult(/command) must specify an absolute path");
+    snprintf(OUTPUT,CF_BUFSIZE,"ExecResult(%s) must specify an absolute path",argv[0]);
+    yyerror(OUTPUT);
     } 
 }
 
@@ -546,17 +556,20 @@ if (*args == '/')
 void HandleReturnsZero(char *args,char *value)
 
 { char command[CF_BUFSIZE];
-
+  char argv[CF_MAXFARGS][CF_EXPANDSIZE];
+  
 if (ACTION != groups)
    {
    yyerror("Use of ReturnsZero(s) outside of class assignment");
    }
 
-Debug("HandleReturnsZero(%s)\n",args); 
+FunctionArgs(args,argv,1); 
+
+Debug("HandleReturnsZero(%s)\n",argv); 
  
-if (*args == '/')
+if (*argv[0] == '/')
    {
-   strncpy(command,args,CF_BUFSIZE);
+   strncpy(command,argv[0],CF_BUFSIZE);
    
    if (ShellCommandReturnsZero(command))
       {
@@ -577,15 +590,18 @@ if (*args == '/')
 
 void HandleIsDefined(char *args,char *value)
 
-{
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE];
+
+FunctionArgs(args,argv,1);
+
 if (ACTION != groups)
    {
    yyerror("Use of IsDefined(s) outside of class assignment");
    }
 
-Debug("HandleIsDefined(%s)\n",args); 
+Debug("HandleIsDefined(%s)\n",argv[0]); 
  
-if (GetMacroValue(CONTEXTID,args))
+if (GetMacroValue(CONTEXTID,argv[0]))
    {
    strcpy(value,CF_ANYCLASS);
    return;
@@ -1457,10 +1473,13 @@ fclose(fp);
 void HandleReturnValues(char *args,char *value)
 
 { struct Item *ip;
- 
-Verbose("This is a method with return value list: (%s)\n",args);
+  char argv[CF_MAXFARGS][CF_EXPANDSIZE];
 
-for (ip = SplitStringAsItemList(args,','); ip != NULL; ip=ip->next)
+FunctionArgs(args,argv,1);
+ 
+Verbose("This is a method with return value list: (%s)\n",argv[0]);
+
+for (ip = SplitStringAsItemList(argv[0],','); ip != NULL; ip=ip->next)
    {
    AppendItem(&METHODRETURNVARS,ip->name,CLASSBUFF);
    }
@@ -1473,12 +1492,15 @@ strcpy(value,"noinstall");
 void HandleReturnClasses(char *args,char *value)
 
 { struct Item *ip;
- 
-Verbose("This is a method with return class list: %s\n",args);
+  char argv[CF_MAXFARGS][CF_EXPANDSIZE];
 
-for (ip = SplitStringAsItemList(args,','); ip != NULL; ip=ip->next)
+FunctionArgs(args,argv,1);
+ 
+Verbose("This is a method with return class list: %s\n",argv[0]);
+
+for (ip = SplitStringAsItemList(argv[0],','); ip != NULL; ip=ip->next)
    {
-   AppendItem(&METHODRETURNCLASSES,args,CLASSBUFF);
+   AppendItem(&METHODRETURNCLASSES,argv[0],CLASSBUFF);
    }
 
 strcpy(value,"noinstall");
@@ -1496,8 +1518,10 @@ void HandleShowState(char *args,char *value)
   int maxlen = 0,count;
   double *dist = NULL, S = 0.0;
   char *offset = NULL;
-  
-  
+  char argv[CF_MAXFARGS][CF_EXPANDSIZE];
+
+FunctionArgs(args,argv,1);
+
 if ((ACTION != alerts) && PARSING)
    {
    yyerror("Use of ShowState(type) outside of alert declaration");
@@ -1511,7 +1535,7 @@ if (PARSING)
    return;
    }
  
-snprintf(buffer,CF_BUFSIZE-1,"%s/state/cf_%s",CFWORKDIR,args);
+snprintf(buffer,CF_BUFSIZE-1,"%s/state/cf_%s",CFWORKDIR,argv[0]);
 
 if (stat(buffer,&statbuf) == 0)
    {
@@ -1534,9 +1558,9 @@ if (stat(buffer,&statbuf) == 0)
          {
          Verbose("%s: (%2d) %s",VPREFIX,conns,buffer);
          
-         if (IsSocketType(args))
+         if (IsSocketType(argv[0]))
             {
-            if (strncmp(args,"incoming",8) == 0 || strncmp(args,"outgoing",8) == 0)
+            if (strncmp(argv[0],"incoming",8) == 0 || strncmp(argv[0],"outgoing",8) == 0)
                {
                if (strncmp(buffer,"tcp",3) == 0)
                   {
@@ -1551,7 +1575,7 @@ if (stat(buffer,&statbuf) == 0)
                DePort(vbuff);
                }
             }
-         else if (IsTCPType(args))
+         else if (IsTCPType(argv[0]))
             {
             count = 1;
             sscanf(buffer,"%d %[^\n]",&count,remote);
@@ -1601,7 +1625,7 @@ if (stat(buffer,&statbuf) == 0)
    printf("%s: -----------------------------------------------------------------------------------\n",VPREFIX);
    printf("%s: In the last 40 minutes, the peak state was q = %d:\n",VPREFIX,conns);
 
-   if (IsSocketType(args)||IsTCPType(args))
+   if (IsSocketType(argv[0])||IsTCPType(argv[0]))
       {
       if (addresses != NULL)
          {
@@ -1692,12 +1716,12 @@ if (stat(buffer,&statbuf) == 0)
       }
    
    printf("%s: -----------------------------------------------------------------------------------\n",VPREFIX);
-   snprintf(buffer,CF_BUFSIZE,"State of %s peaked at %s\n",args,ctime(&statbuf.st_mtime));
+   snprintf(buffer,CF_BUFSIZE,"State of %s peaked at %s\n",argv[0],ctime(&statbuf.st_mtime));
    strcpy(value,buffer);
    }
 else 
    {
-   snprintf(buffer,CF_BUFSIZE,"State parameter %s is not known or recorded\n",args);   
+   snprintf(buffer,CF_BUFSIZE,"State parameter %s is not known or recorded\n",argv[0]);
    strcpy(value,buffer);
    }
 
@@ -1879,6 +1903,7 @@ for (i = 0; i < number; i++)
    {
    ExpandVarstring(ipp->name,exbuf,NULL);
    strncpy(arg[i],exbuf,CF_EXPANDSIZE);
+   Debug("ARG[%d] %s\n",i,arg[i]);
    ipp = ipp->next;
    }
 

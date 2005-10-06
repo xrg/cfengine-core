@@ -161,11 +161,9 @@ for (sp2=sp; *sp2 != '\0'; sp2++)  /* Truncate fully qualified name */
       }
    }
 
- 
 VDEFAULTBINSERVER.name = sp;
 
 AddClassToHeap(CanonifyName(sp));
-
  
 if ((tloc = time((time_t *)NULL)) == -1)
    {

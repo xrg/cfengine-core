@@ -1,3 +1,9 @@
+2.1.17a 
+
+	Patch for missing variable expansion after function
+	parameter rewrite in 2.1.16. Some functions were not fully ported.
+	
+
 2.1.16
 
 	Moved method parameter setting to fix a bug where parameters would
