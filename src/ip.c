@@ -208,7 +208,7 @@ if ((server = getservbyname(CFENGINE_SERVICE,"tcp")) == NULL)
    }
 else
    {
-   SHORT_CFENGINEPORT = htons(server->s_port);
+   SHORT_CFENGINEPORT = server->s_port;
    }
 
 Verbose("Setting cfengine new port to %u\n",SHORT_CFENGINEPORT);
@@ -227,7 +227,7 @@ if ((server = getservbyname(CFENGINE_SERVICE,"tcp")) == NULL)
    }
 else
    {
-   snprintf(STR_CFENGINEPORT,15,"%d",htons(server->s_port));
+   snprintf(STR_CFENGINEPORT,15,"%d",ntohs(server->s_port));
    }
 
 Verbose("Setting cfengine old port to %s\n",STR_CFENGINEPORT);

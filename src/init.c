@@ -214,21 +214,25 @@ chmod(VLOCKDIR,(mode_t)0755); /* Locks must be immutable to others */
 void ActAsDaemon(int preserve)
 
 { int fd, maxfd;
-#ifdef HAVE_SETSID
-   setsid();
-#endif
-   
-   closelog();
-   fflush(NULL);
-   fd = open("/dev/null", O_RDWR, 0);
-   if (fd != -1)
-      {
-      dup2(fd,STDIN_FILENO);
-      dup2(fd,STDOUT_FILENO);
-      dup2(fd,STDERR_FILENO);
-      if (fd > STDERR_FILENO) close(fd);
-      }
 
+#ifdef HAVE_SETSID
+setsid();
+#endif
+
+closelog();
+
+fflush(NULL);
+fd = open("/dev/null", O_RDWR, 0);
+if (fd != -1)
+   {
+   dup2(fd,STDIN_FILENO);
+   dup2(fd,STDOUT_FILENO);
+   dup2(fd,STDERR_FILENO);
+   if (fd > STDERR_FILENO) close(fd);
+   }
+
+chdir("/");
+   
 #ifdef HAVE_SYSCONF
    maxfd = sysconf(_SC_OPEN_MAX);
 #else

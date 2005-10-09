@@ -636,7 +636,7 @@ if (ACTION == methods)
    return;
    }
 
-if (!IsDefinedClass(CLASSBUFF))
+if ((ACTION != alerts) && (!IsDefinedClass(CLASSBUFF)))
    {
    Debug("Function object class was beyond current environment (%s)\n",CLASSBUFF);
    return;

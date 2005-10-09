@@ -2464,7 +2464,7 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
          continue;
          }
       
-      snprintf(vbuff,CF_BUFSIZE,"%.50s.%.50s_%.50s",path,destination,server); /* Unique ID for copy locking */
+      snprintf(vbuff,CF_BUFSIZE,"%.255s.%.50s_%.50s",path,destination,server); /* Unique ID for copy locking */
       
       if (!GetLock(ASUniqueName("copy"),CanonifyName(vbuff),ip->ifelapsed,ip->expireafter,VUQNAME,CFSTARTTIME))
          {

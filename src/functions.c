@@ -1831,7 +1831,9 @@ value[0] = '\0';
 FunctionArgs(ebuff,argv,2);
 
 Debug("PrepModule(%s,%s)\n",argv[0],argv[1]);
- 
+
+BuildClassEnvironment();
+
 if (CheckForModule(argv[0],argv[1]))
    {
    strcpy(value,CF_ANYCLASS);
