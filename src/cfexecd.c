@@ -988,27 +988,16 @@ if (!Dialogue(sd,VBUFF))
    goto mail_err;
    }
 
-if (strlen(MAILFROM) > 0)
-   {
-   sprintf(VBUFF,"MAIL FROM: <%s>\r\n",MAILFROM);
-   Debug("%s",VBUFF);   
-   }
-else
-   {
-   domain[0] = '\0';
-   sscanf(to,"%*[^@]@%64s",domain);
-   
-   if (strlen(domain) > 0)
-      {
-      sprintf(VBUFF,"MAIL FROM: <cfengine@%s>\r\n",domain);
-      Debug("%s",VBUFF);
-      }
-   else
-      {
-      sprintf(VBUFF,"MAIL FROM: <%s>\r\n",to);
-      Debug("%s",VBUFF);   
-      }
-   }
+ if (strlen(MAILFROM) == 0)
+    {
+    sprintf(VBUFF,"MAIL FROM: <cfengine@%s>\r\n",VFQNAME);
+    Debug("%s",VBUFF);
+    }
+ else
+    {
+    sprintf(VBUFF,"MAIL FROM: <%s>\r\n",MAILFROM);
+    Debug("%s",VBUFF);    
+    }
 
 if (!Dialogue(sd,VBUFF))
    {
@@ -1051,7 +1040,7 @@ sent=send(sd,VBUFF,strlen(VBUFF),0);
 
  if (strlen(MAILFROM) == 0)
     {
-    sprintf(VBUFF,"From: cfengine@%s\r\n",domain);
+    sprintf(VBUFF,"From: cfengine@%s\r\n",VFQNAME);
     Debug("%s",VBUFF);
     }
  else
