@@ -1,5 +1,13 @@
 2.1.17a 
 
+	Templating in editfiles. A new editfiles directive "ExpandVariables"
+	adds an "m4" like function to cfengine -- allowing predefined variable strings
+	to be expanded into text.
+	
+	Patch contributed: avor Ocelic <docelic@mail.inet.hr>
+	
+	Alerts patch - some alerts not installed, if classes not defined.
+	
 	Patch for missing variable expansion after function
 	parameter rewrite in 2.1.16. Some functions were not fully ported.
 
@@ -30,6 +38,13 @@
 	
 	Alf Wachsmann and Elizabeth Cassel's cfetool added, based on cfenvd.
 
+	"cfetool makes a standalone tool out of cfenvd that accepts arbitrary
+	periodic data. In addition, it has support for yearly periodic data.
+	It's function and the user interface is in many aspects like rrdtool's.
+	cfetoolgraph was added to work with the new features of cfetool.
+	It works basically like cfenvgraph."
+
+	
 	Bug fix for multipass evaluation when resolving dependencies.
 
 	Cfservd reread patch. Timeout on polling for linux,

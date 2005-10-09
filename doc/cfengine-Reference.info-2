@@ -11,6 +11,33 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: DynamicAddresses,  Prev: TrustKeysFrom,  Up: cfservd control
+
+5.1.17 DynamicAddresses
+-----------------------
+
+Hosts which are included in this list are assumed to have IP addresses
+which can change with time, e.g. hosts which are given IP addresses by
+DHCP or a BOOTP like protocol.
+
+          control:
+
+           DynamicAddresses = ( 128.39.74.100-200 )  # DHCP range
+   
+   If cfservd receives a connection from an IP address that is in this
+list, and trustkey is _true_, the existing key for that IP address can
+be replaced with a new key, and the old key is recorded in a "used keys"
+list, access is granted. If trust is switched off, the server looks in
+the "used key list" to see if the key has been seen before. If not
+access is refused. If it has been seen before - it uses this earlier
+trust to accept the connection and replace the IP-key binding.  
+
+   Note that used keys are kept in a database for easy lookup, whereas
+fixed keys are kept in files for easy administration. If host keys
+change or are reinstalled on the dynamically allocated hosts, then this
+database should probably be deleted to purge keys that become illegal.
+
+
 File: cfengine-Reference.info,  Node: admit grant and deny,  Next: cfrun,  Prev: cfservd control,  Up: Cfservd.conf and cfrun reference
 
 5.2 admit, grant and deny
@@ -1869,7 +1896,7 @@ Variable Index
                                                               (line   6)
 * CFALLCLASSES <1>:                      Special variables.   (line  16)
 * CFALLCLASSES:                          Cfagent Runtime Options.
-                                                              (line 142)
+                                                              (line 145)
 * cfrc:                                  cfrc resource file.  (line   6)
 * ChangedBefore():                       Evaluated classes and special functions.
                                                               (line 102)
@@ -2159,7 +2186,7 @@ Concept Index
 * Deadlock zombie bug in restart:        processes.           (line 120)
 * Debian Package Database Queries:       packages.            (line 109)
 * Declaring classes:                     addinstallable.      (line   6)
-* Decrementing line pointer in editfiles: editfiles.          (line 444)
+* Decrementing line pointer in editfiles: editfiles.          (line 450)
 * Defining a binary server:              binservers.          (line   6)
 * Defining a home server:                homeservers.         (line   6)
 * Defining a mail server:                mailserver.          (line   6)
@@ -2207,14 +2234,15 @@ Concept Index
 * Emptying old nameservers from /etc/resolv.conf: emptyresolvconf.
                                                               (line   6)
 * Environment variable CFALLCLASSES:     Cfagent Runtime Options.
-                                                              (line 142)
+                                                              (line 145)
 * Example configuration files:           Example configuration file.
                                                               (line   6)
 * Exclamation marks, turning off:        exclamation.         (line  12)
 * Excluding classes:                     addclasses.          (line  30)
 * Excluding files from a file sweep:     Syntax.              (line 137)
+* ExpandVariables:                       editfiles.           (line 409)
 * failover:                              copy.                (line 247)
-* Field separator in editfiles:          editfiles.           (line 614)
+* Field separator in editfiles:          editfiles.           (line 620)
 * File images (copy):                    copy.                (line   6)
 * File management:                       files.               (line   6)
 * File sizes, specifying:                tidy.                (line 112)
@@ -2241,7 +2269,7 @@ Concept Index
                                                               (line  23)
 * Gaming stratgies:                      strategies.          (line   6)
 * Group dependencies:                    groups.              (line  73)
-* Group field, editing:                  editfiles.           (line 614)
+* Group field, editing:                  editfiles.           (line 620)
 * groups <1>:                            groups.              (line  10)
 * groups:                                classes.             (line   6)
 * Groups, defining:                      groups.              (line   6)
@@ -2266,7 +2294,7 @@ Concept Index
 * Import files, variables in:            import.              (line  33)
 * Importing files:                       import.              (line   6)
 * include in cfrun:                      cfrun.               (line  79)
-* Incrementing line pointer in editfiles: editfiles.          (line 444)
+* Incrementing line pointer in editfiles: editfiles.          (line 450)
 * Interface name, redefining by class:   interfacename.       (line   6)
 * InterfaceName:                         interfacename.       (line   6)
 * Internal classes, switching off:       Cfagent Runtime Options.
@@ -2308,6 +2336,7 @@ Concept Index
 * Local disk space, make use of:         Link Children.       (line  34)
 * Log files, controlling the size of:    disable.             (line  86)
 * Logical NOT:                           Cfengine classes.    (line  94)
+* m4 functionality:                      editfiles.           (line 409)
 * Mail server, defining:                 mailserver.          (line   6)
 * Mailhost:                              Smtpserver.          (line   8)
 * Mailing output:                        Cfexecd reference.   (line  44)
@@ -2368,7 +2397,7 @@ Concept Index
 * Ownership of files:                    Owner and group wildcards.
                                                               (line   6)
 * packages:                              packages.            (line   6)
-* Password file, editing:                editfiles.           (line 614)
+* Password file, editing:                editfiles.           (line 620)
 * Path to home directories:              homepattern.         (line   6)
 * Path to mounted filesystems:           mountpattern.        (line   6)
 * Paths, making:                         directories.         (line   6)
@@ -2465,7 +2494,7 @@ Concept Index
 * split <1>:                             split.               (line  15)
 * split:                                 Iteration over lists.
                                                               (line  83)
-* SplitOn:                               editfiles.           (line 614)
+* SplitOn:                               editfiles.           (line 620)
 * SpoolDirectories:                      spooldirectories.    (line   6)
 * Strategy, random:                      strategies.          (line   6)
 * Subnet mask:                           netmask.             (line  14)
@@ -2479,6 +2508,7 @@ Concept Index
 * Symbolic links, relative:              Single links.        (line  64)
 * sysadm:                                sysadm.              (line   6)
 * SysLog():                              alerts.              (line  27)
+* Templates:                             editfiles.           (line 409)
 * Testing files:                         Evaluated classes and special functions.
                                                               (line 102)
 * Tidy by ctime, mtime, atime:           tidy.                (line 137)
@@ -2499,7 +2529,7 @@ Concept Index
 * TrustKeysFrom variable:                TrustKeysFrom.       (line  18)
 * umask <1>:                             shellcommands.       (line  39)
 * umask <2>:                             processes.           (line  44)
-* umask:                                 editfiles.           (line 621)
+* umask:                                 editfiles.           (line 627)
 * underscoreclasses:                     Special variables.   (line 123)
 * Unmounting filesystems:                unmount.             (line   6)
 * UnsetState():                          alerts.              (line  27)

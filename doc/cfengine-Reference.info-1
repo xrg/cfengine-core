@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.1.16a for version
-2.1.16a as last updated 11 August 2005.
+   This manual corresponds to CFENGINE Edition 2.1.17 for version
+2.1.17 as last updated 9 October 2005.
 
 * Menu:
 
@@ -663,6 +663,9 @@ Note that GNU long options are available with the syntax
      (`--parse-only') Parse file and then stop.  Used for checking the
      syntax of a program.  You do not have to be superuser to use this
      option.
+
+`-P'
+     (`--no-processes') Do not execute the processes action.
 
 `-q'
      (`--no-splay') Switch off host splaying (sleeping).
@@ -4845,6 +4848,12 @@ expressions.
 `EndLoop'
      Terminates a loop. See `ForEachLineIn'
 
+`ExpandVariables'
+     This causes cfengine to run through the contents of the file and
+     expand any recognisable editfile strings in the file, if they are
+     defined within the scope of the cfagent script. This gives
+     cfengine an m4 like capacity.  
+
 `ExpireAfter MINS'
 
 `Filter FILTERALIAS'
@@ -8387,30 +8396,3 @@ by hand.
            TrustKeysFrom = ( 128.39.89.76 )     # trusted host
            TrustKeysFrom = ( 128.39.89.76/24 )  # trusted subnet
    
-
-File: cfengine-Reference.info,  Node: DynamicAddresses,  Prev: TrustKeysFrom,  Up: cfservd control
-
-5.1.17 DynamicAddresses
------------------------
-
-Hosts which are included in this list are assumed to have IP addresses
-which can change with time, e.g. hosts which are given IP addresses by
-DHCP or a BOOTP like protocol.
-
-          control:
-
-           DynamicAddresses = ( 128.39.74.100-200 )  # DHCP range
-   
-   If cfservd receives a connection from an IP address that is in this
-list, and trustkey is _true_, the existing key for that IP address can
-be replaced with a new key, and the old key is recorded in a "used keys"
-list, access is granted. If trust is switched off, the server looks in
-the "used key list" to see if the key has been seen before. If not
-access is refused. If it has been seen before - it uses this earlier
-trust to accept the connection and replace the IP-key binding.  
-
-   Note that used keys are kept in a database for easy lookup, whereas
-fixed keys are kept in files for easy administration. If host keys
-change or are reinstalled on the dynamically allocated hosts, then this
-database should probably be deleted to purge keys that become illegal.
-

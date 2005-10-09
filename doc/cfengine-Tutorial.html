@@ -926,6 +926,7 @@ they key word here is <em>reliability</em>.
 <ul class="menu">
 <li><a accesskey="1" href="#Startup-update_002econf">Startup update.conf</a>
 <li><a accesskey="2" href="#Startup-cfservd_002econf">Startup cfservd.conf</a>
+<li><a accesskey="3" href="#Where-should-I-put-the-files_003f">Where should I put the files?</a>
 </ul>
 
 <div class="node">
@@ -1038,6 +1039,7 @@ the same form for all sites, looking something like this.
 <p><hr>
 <a name="Startup-cfservd.conf"></a>
 <a name="Startup-cfservd_002econf"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#Where-should-I-put-the-files_003f">Where should I put the files?</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="#Startup-update_002econf">Startup update.conf</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#Building-a-distributed-configuration">Building a distributed configuration</a>
 
@@ -1092,6 +1094,86 @@ this:
      ########
      
 </pre>
+   <!-- ..................................................... -->
+<!-- SUBSECTION -->
+<!-- ..................................................... -->
+<div class="node">
+<p><hr>
+<a name="Where-should-I-put-the-files%3f"></a>
+<a name="Where-should-I-put-the-files_003f"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#Startup-cfservd_002econf">Startup cfservd.conf</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Building-a-distributed-configuration">Building a distributed configuration</a>
+
+</div>
+
+<h4 class="subsection">2.3.3 Where should I put the files?</h4>
+
+<p>Where should the files be located? To organize your files, you should think of three
+potential locations, for different purposes:
+
+     <ul>
+<li>A version controlled repository for authoring, testing and applying changes to the files. 
+Once a version is approved for release, these master files should be moved on to a
+publishing area. e.g. <samp><span class="file">/usr/local/masterfiles/cfengine/inputs</span></samp> on `masterhost'.
+
+     <li>A centralized location, into which you publish your altered and tested
+configurations.  This is the `buffer' location from which each client
+will download new and tested versions of the master
+configuration. e.g. <samp><span class="file">/usr/local/masterfiles/cfengine/inputs</span></samp> on
+`masterhost'.  It acts as a buffer between the testing ground and the
+production location.
+
+     <li>The Work Directory. This is the production location. It is a location
+that is normally chosen to be the private directory where cfagent
+expects to find its configuration files,
+<samp><span class="file">/var/cfengine/inputs</span></samp>. Your <samp><span class="file">update.conf</span></samp> file has the job
+of copying from the master location (second bullet) above to this location. 
+<a name="index-Work-Directory-27"></a></ul>
+
+   <p>Modules and methods are normally kept in a separate directory than inputs
+files are kept in, because they require a directory with special authorizations
+whe executing. This is good practice
+ As long as the <samp><span class="file">update.conf</span></samp> places the master versions
+in the correct location (usually <samp><span class="file">/var/cfengine/modules</span></samp>) on the local host,
+all will be okay.
+
+   <p>You should not try to copy files directly from a version controlled repository,
+as you might end up sending out an incomplete or partially tested version of the
+files to all your hosts.
+
+<pre class="smallexample">     
+     # Example update.conf
+     
+     control:
+     
+        master_cfinput  = ( /usr/local/masterfiles/cfengine/inputs )
+        workdir         = ( /var/cfengine )
+     
+     copy:
+     
+        # Copy from bullet 2 to bullet 3
+     
+          $(master_cfinput)            dest=$(workdir)/inputs
+                                       r=inf
+                                       mode=700
+                                       type=binary
+                                       exclude=*.lst
+                                       exclude=*~
+                                       exclude=#*
+                                       server=$(policyhost)
+                                       trustkey=true
+     
+          $(master_modules)            dest=$(workdir)/modules
+                                       r=inf
+                                       mode=700
+                                       type=binary
+                                       exclude=*.lst
+                                       exclude=*~
+                                       exclude=#*
+                                       server=$(policyhost)
+                                       trustkey=true
+     
+</pre>
    <!--  -->
 <!-- SECTION -->
 <!--  -->
@@ -1106,7 +1188,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Getting-started">Getting started</a>
 
 <h3 class="section">2.4 Optional features in cfagent</h3>
 
-<p><a name="index-Optional-features-in-cfagent-27"></a>
+<p><a name="index-Optional-features-in-cfagent-28"></a>
 Cfagent doesn't do anything unless you ask it to.  When you run a
 cfagent program it generates no output unless it finds something it
 believes to be wrong.  It does not carry out any actions unless they are
@@ -1182,7 +1264,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Getting-started">Getting started</a>
 
 <h3 class="section">2.5 Invoking cfagent</h3>
 
-<p><a name="index-Invoking-cfagent-28"></a><a name="index-Starting-cfagent-29"></a><a name="index-cfagent_002c-starting-30"></a>
+<p><a name="index-Invoking-cfagent-29"></a><a name="index-Starting-cfagent-30"></a><a name="index-cfagent_002c-starting-31"></a>
 Cfagent may be invoked in a number of ways.  Here are some examples:
 
 <pre class="example">     host% cfagent
@@ -1193,7 +1275,7 @@ Cfagent may be invoked in a number of ways.  Here are some examples:
      
      host% cfagent --help
 </pre>
-   <p><a name="index-Default-file-31"></a><a name="index-Config-file_002c-default-name-32"></a><a name="index-g_t_0040file_007bcfagent_002econf_007d-33"></a>The first of these (the default command, with no arguments) causes
+   <p><a name="index-Default-file-32"></a><a name="index-Config-file_002c-default-name-33"></a><a name="index-g_t_0040file_007bcfagent_002econf_007d-34"></a>The first of these (the default command, with no arguments) causes
 cfagent to look for a file called <samp><span class="file">cfagent.conf</span></samp> in the directory
 pointed to by the environment variables <code>CFINPUTS</code>
 or <samp><span class="file">/var/cfengine/inputs</span></samp> by default,
@@ -1202,11 +1284,11 @@ and execute it silently.  The second command reads the file
 the <code>-n</code> option means that no actions should actually be carried
 out, only warnings should be printed.  The final example causes cfagent
 to print out a list of its command line options. 
-<a name="index-g_t_002dn-option-34"></a><a name="index-g_t_002df-option-35"></a><a name="index-g_t_002dv-option-36"></a>
+<a name="index-g_t_002dn-option-35"></a><a name="index-g_t_002df-option-36"></a><a name="index-g_t_002dv-option-37"></a>
 The complete list of options is listed in the summary at the beginning
 of this manual, or you can see it by giving the <code>-h</code> option,
 (see the reference manual). 
-<a name="index-Help-37"></a><a name="index-g_t_002dh-option-38"></a><a name="index-g_t_002dh-option-39"></a>
+<a name="index-Help-38"></a><a name="index-g_t_002dh-option-39"></a><a name="index-g_t_002dh-option-40"></a>
 In addition to running cfagent with a filename, you can also treat
 cfagent files as scripts by starting your cfagent program with the
 standard shell line:
@@ -1216,7 +1298,7 @@ standard shell line:
      # My config script
      #
 </pre>
-   <p class="noindent"><a name="index-Verifying-with-_002dn-option-40"></a>Here we assume that you have installed cfengine under the directory
+   <p class="noindent"><a name="index-Verifying-with-_002dn-option-41"></a>Here we assume that you have installed cfengine under the directory
 <samp><span class="file">/usr/local/sbin</span></samp>.  By adding a header like this to the first line
 of your program and making the file executable with the <code>chmod</code>
 shell command, you can execute the program just by typing its
@@ -1250,7 +1332,7 @@ line to the root crontab file of each system:
 </pre>
    <p>This is enough to ensure that cfengine will get run. Any output generated
 by this job, will be stored in <samp><span class="file">/var/cfengine/outputs</span></samp>. 
-<a name="index-g_t_002fvar_002fcfengine_002foutput-41"></a><a name="index-g_t_002fvar_002fcfengine_002foutput-42"></a><a name="index-Output-logs-43"></a>In addition, if you add the following to the file <samp><span class="file">cfagent.conf</span></samp>,
+<a name="index-g_t_002fvar_002fcfengine_002foutput-42"></a><a name="index-g_t_002fvar_002fcfengine_002foutput-43"></a><a name="index-Output-logs-44"></a>In addition, if you add the following to the file <samp><span class="file">cfagent.conf</span></samp>,
 the system administrator will be emailed a summary of any output:
 
 <pre class="smallexample">     
@@ -1261,7 +1343,7 @@ the system administrator will be emailed a summary of any output:
      
 </pre>
    <p class="noindent">Fill in suitable values for these variables. 
-<a name="index-Mailing-output-44"></a><a name="index-smtpserver-45"></a><a name="index-sysadm-46"></a><a name="index-cfexecd-47"></a>An alternative, or additional way to run cfengine, is to run the <samp><span class="file">cfexecd</span></samp>
+<a name="index-Mailing-output-45"></a><a name="index-smtpserver-46"></a><a name="index-sysadm-47"></a><a name="index-cfexecd-48"></a>An alternative, or additional way to run cfengine, is to run the <samp><span class="file">cfexecd</span></samp>
 program is daemon mode (without the `<samp><span class="samp">-F</span></samp>') option. In this mode, the daemon
 lives in the background and sleeps, activating only in accordance with
 a scheduling policy. The default policy is to run once every hour (equivalent
@@ -1301,7 +1383,7 @@ statements (the path to the program and the regular expression metacharacter
 often match unexpected processes. For instance, using <code>cfexecd</code> by
 itself will also match a process spawned by <code>cfagent -F</code>, which shows
 up as <code>/var/cfagent/bin/cfagent -Dfrom_cfexecd</code> in the process table! 
-<a name="index-Restarting-cfexecd-48"></a><a name="index-cfexecd-restarting-by-processes-49"></a><a name="index-processes-cannot-start-cfexecd-50"></a>
+<a name="index-Restarting-cfexecd-49"></a><a name="index-cfexecd-restarting-by-processes-50"></a><a name="index-processes-cannot-start-cfexecd-51"></a>
 <!--  -->
 <!-- SECTION -->
 <!--  -->
@@ -1322,15 +1404,15 @@ an absolute name (that is a name which begins from <samp><span class="file">/</s
 <code>/usr/file</code>), is it a file in the directory in which you invoke
 cfengine or is it a file which should be searched for in a special
 place? 
-<a name="index-g_t_002df-option-51"></a><a name="index-CFINPUTS-variable-52"></a><a name="index-Environment-variable_002c-CFINPUTS-53"></a><a name="index-File-search-paths-54"></a><a name="index-Path-to-input-files-55"></a>
+<a name="index-g_t_002df-option-52"></a><a name="index-CFINPUTS-variable-53"></a><a name="index-Environment-variable_002c-CFINPUTS-54"></a><a name="index-File-search-paths-55"></a><a name="index-Path-to-input-files-56"></a>
 If you use an absolute filename either on the command line using
 <code>-f</code> or in the <code>import</code> section of your program (a name which
 begins with a slash '/'), then cfengine trusts the name of the file you
 have given and treats it literally. If you specify the name of the
 file as simple `<samp><span class="samp">.</span></samp>' or `<samp><span class="samp">-</span></samp>' then cfengine reads its input from the
 standard input. 
-<a name="index-STDIN_002c-reading-from-56"></a><a name="index-Piping-input-into-cfengine-57"></a>
-<a name="index-g_t_0040file_007bcfagent_002econf_007d-58"></a>If you run cfengine without arguments (so that the default filename is
+<a name="index-STDIN_002c-reading-from-57"></a><a name="index-Piping-input-into-cfengine-58"></a>
+<a name="index-g_t_0040file_007bcfagent_002econf_007d-59"></a>If you run cfengine without arguments (so that the default filename is
 <samp><span class="file">cfagent.conf</span></samp>) or you specify a file without a leading slash in
 the <code>import</code> section, then the value of the environment variable
 <code>CFINPUTS</code> is prepended to the start of the file name.  This allows
@@ -1447,7 +1529,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#More-advanced-concepts">More advanced 
 
 <h3 class="section">3.1 Classes</h3>
 
-<p><a name="index-Classes-59"></a>
+<p><a name="index-Classes-60"></a>
 The idea of classes is central to the operation of cfengine.  Saying
 that cfengine is `class orientated' means that it doesn't make decisions
 using <code>if</code>...<code>then</code>...<code>else</code> constructions the way other
@@ -1536,7 +1618,7 @@ the name.
    <p>A compound class is a sequence of simple classes connected by dots or
 `pipe' symbols (vertical bars).  For example:
 
-   <p><a name="index-Compound-classes-60"></a><a name="index-Classes_002c-compound-61"></a>
+   <p><a name="index-Compound-classes-61"></a><a name="index-Classes_002c-compound-62"></a>
 <!-- /@w -->
 
 <pre class="smallexample">     
@@ -1583,8 +1665,8 @@ rules of this type, and then switching them on and off, you can also
 switch on and off the corresponding actions in a controlled way.  The
 command line options <code>-D</code> and <code>-N</code> can be used for this
 purpose.  See also <code>addclasses</code> in the Reference manual. 
-<a name="index-g_t_002dN-option-62"></a><a name="index-g_t_002dD-option-63"></a><a name="index-Classes_002c-defining-and-undefining-64"></a>
-<a name="index-NOT-operator-65"></a><a name="index-Logical-NOT-66"></a><a name="index-g_t_0021-67"></a><a name="index-g_t_0021-68"></a>A logical NOT operator has been added to allow you to exclude
+<a name="index-g_t_002dN-option-63"></a><a name="index-g_t_002dD-option-64"></a><a name="index-Classes_002c-defining-and-undefining-65"></a>
+<a name="index-NOT-operator-66"></a><a name="index-Logical-NOT-67"></a><a name="index-g_t_0021-68"></a><a name="index-g_t_0021-69"></a>A logical NOT operator has been added to allow you to exclude
 certain specific hosts in a more flexible way. The logical NOT
 operator is (as in C and C++) `<samp><span class="samp">!</span></samp>'. For instance, the
 following example would allow all hosts except for <code>myhost</code>:
@@ -1648,9 +1730,9 @@ refer to a domain name, then cfengine will be confused. The moral is:
 don't have dots in your host names! <em>NOTE: in order to ensure that
 the fully qualified name of the host becomes a class you must define the
 domain variable.</em> The dots in this string will be replaced by underscores. 
-<a name="index-Fully-qualified-names-69"></a><a name="index-Dots-in-hostnames-70"></a><a name="index-Host-name-gets-truncated-71"></a>
+<a name="index-Fully-qualified-names-70"></a><a name="index-Dots-in-hostnames-71"></a><a name="index-Host-name-gets-truncated-72"></a>
 In summary, the operator ordering in cfengine classes is as follows:
-<a name="index-Operator-ordering-72"></a><a name="index-Brackets-_0028parentheses_0029-in-classes_002e-73"></a><a name="index-Parentheses-in-classes_002e-74"></a>
+<a name="index-Operator-ordering-73"></a><a name="index-Brackets-_0028parentheses_0029-in-classes_002e-74"></a><a name="index-Parentheses-in-classes_002e-75"></a>
      <dl>
 <dt>`<samp><span class="samp">()</span></samp>'<dd>Parentheses override everything.
 
@@ -1676,8 +1758,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#More-advanced-concepts">More advanced 
 
 <h3 class="section">3.2 Variable substitution</h3>
 
-<p><a name="index-Variable-substitution-75"></a><a name="index-Variables_002c-environment-76"></a><a name="index-Variables_002c-cfengine-77"></a><a name="index-Environment-variables-78"></a><a name="index-site-79"></a><a name="index-faculty-80"></a><a name="index-binserver-81"></a><a name="index-host-82"></a><a name="index-timezone-83"></a><a name="index-domain-84"></a><a name="index-sysadm-85"></a>
-<a name="index-Variables-and-Macros-86"></a><a name="index-Macros-87"></a><a name="index-Environment-variables-88"></a>
+<p><a name="index-Variable-substitution-76"></a><a name="index-Variables_002c-environment-77"></a><a name="index-Variables_002c-cfengine-78"></a><a name="index-Environment-variables-79"></a><a name="index-site-80"></a><a name="index-faculty-81"></a><a name="index-binserver-82"></a><a name="index-host-83"></a><a name="index-timezone-84"></a><a name="index-domain-85"></a><a name="index-sysadm-86"></a>
+<a name="index-Variables-and-Macros-87"></a><a name="index-Macros-88"></a><a name="index-Environment-variables-89"></a>
 When you are building up a configuration file it is very useful to be
 able to use variables.  If you can define your configuration in terms of
 some key variables, it can be changed more easily later, it is more
@@ -1740,13 +1822,13 @@ the empty string. If you nest macros,
    <p>then you must quote the right hand side
 and ensure that the value
 is already defined. 
-<a name="index-Nested-macros-89"></a><a name="index-Defining-variables-using-other-variables-90"></a>
+<a name="index-Nested-macros-90"></a><a name="index-Defining-variables-using-other-variables-91"></a>
 
    <p>You can also import values from the execution of a shell command
 by prefixing a command with the word <code>exec</code>. This method is deprecated
 in version 2 and replaced by a function.
 
-   <p><a name="index-Variables_002c-setting-to-result-of-a-shell-command-91"></a><a name="index-g_t_0040code_007bexec_007d-92"></a>
+   <p><a name="index-Variables_002c-setting-to-result-of-a-shell-command-92"></a><a name="index-g_t_0040code_007bexec_007d-93"></a>
 <!-- /@w -->
 
 <pre class="smallexample">     
@@ -1763,7 +1845,7 @@ in version 2 and replaced by a function.
 </pre>
    <p class="noindent">This sets the variable `listing' to the output of the command in the
 quotes. 
-<a name="index-In_002dbuilt-functions-93"></a><a name="index-Functions_002c-in_002dbuilt-94"></a><a name="index-Random-numbers-95"></a>
+<a name="index-In_002dbuilt-functions-94"></a><a name="index-Functions_002c-in_002dbuilt-95"></a><a name="index-Random-numbers-96"></a>
 Some other internal functions are
 
      <dl>
@@ -1792,37 +1874,37 @@ following special internal variables.
 variable is a summary of all the defined classes at any given time. It
 is always kept up to date so that scripts can make use of cfengine's
 class data. 
-<a name="index-CFALLCLASSES-96"></a><a name="index-CFALLCLASSES-97"></a><a name="index-Class-data-and-scripts-98"></a><a name="index-Scripts_002c-passing-classes-to-99"></a>
+<a name="index-CFALLCLASSES-97"></a><a name="index-CFALLCLASSES-98"></a><a name="index-Class-data-and-scripts-99"></a><a name="index-Scripts_002c-passing-classes-to-100"></a>
 <br><dt><code>arch</code><dd>The current detailed architecture string&mdash;an amalgamation of the
 information from <em>uname</em>. Non-definable. 
-<a name="index-g_t_0024_0028arch_0029-100"></a>
+<a name="index-g_t_0024_0028arch_0029-101"></a>
 <br><dt><code>binserver</code><dd>The default server for binary data.  See <a href="#NFS-resources">NFS resources</a>. 
 Non definable. 
-<a name="index-g_t_0024_0028binserver_0029-101"></a>
+<a name="index-g_t_0024_0028binserver_0029-102"></a>
 <br><dt><code>class</code><dd>The currently defined system hard-class (e.g. <code>sun4</code>, <code>hpux</code>). 
 Non-definable. 
-<a name="index-g_t_0024_0028class_0029-102"></a>
+<a name="index-g_t_0024_0028class_0029-103"></a>
 <br><dt><code>date</code><dd>The current date string. Note that if you use this in a shell command it might
 be interpreted as a list variable, since it contains the default separator
 `<samp><span class="samp">:</span></samp>'. 
-<a name="index-g_t_0024_0028date_0029-103"></a>
+<a name="index-g_t_0024_0028date_0029-104"></a>
 <br><dt><code>domain</code><dd>The currently defined domain. 
-<a name="index-g_t_0024_0028domain_0029-104"></a>
+<a name="index-g_t_0024_0028domain_0029-105"></a>
 <br><dt><code>faculty</code><dd>The faculty or site as defined in control (see site). 
-<a name="index-g_t_0024_0028faculty_0029-105"></a>
+<a name="index-g_t_0024_0028faculty_0029-106"></a>
 <br><dt><code>fqhost</code><dd>The fully qualified (DNS/BIND) hostname of the system, which
 includes the domain name as well. 
-<a name="index-g_t_0024_0028fqhost_0029-106"></a>
+<a name="index-g_t_0024_0028fqhost_0029-107"></a>
 <br><dt><code>host</code><dd>The hostname of the machine running the program. 
-<a name="index-g_t_0024_0028host_0029-107"></a>
+<a name="index-g_t_0024_0028host_0029-108"></a>
 <br><dt><code>ipaddress</code><dd>The numerical form of the internet address of the host currently running
 cfengine. 
-<a name="index-g_t_0024_0028ipaddress_0029-108"></a>
+<a name="index-g_t_0024_0028ipaddress_0029-109"></a>
 <br><dt><code>MaxCfengines</code><dd>The maximum number of cfengines which should be allowed to
 co-exist concurrently on the system. This can prevent excessive
 load due to unintentional spamming in situations where several
 cfagents are started independently. The default value is unlimited. 
-<a name="index-MaxCfengines-109"></a>
+<a name="index-MaxCfengines-110"></a>
 <br><dt><code>ostype</code><dd>A short for of <code>$(arch)</code>.
 
      <br><dt><code>OutputPrefix</code><dd>This quoted string can be used to change the default `cfengine:'
@@ -1833,25 +1915,25 @@ equivalent to,
 
      <pre class="smallexample">            OutputPrefix = ( "cfengine:$(host):")
      </pre>
-     <p><a name="index-OutputPrefix-110"></a>
+     <p><a name="index-OutputPrefix-111"></a>
 <br><dt><code>RepChar</code><dd>The character value of the string used by the file repository in
 constructing unique filenames from path names. This is the character which
 replaces `<samp><span class="samp">/</span></samp>' (see the reference manual). 
-<a name="index-repchar-111"></a>
+<a name="index-repchar-112"></a>
 <br><dt><code>site</code><dd>This variable is identical to <code>$(faculty)</code> and may be used interchangeably. 
-<a name="index-g_t_0024_0028site_0029-112"></a>
+<a name="index-g_t_0024_0028site_0029-113"></a>
 <br><dt><code>split</code><dd>The character on which list variables are split (see the reference manual). 
-<a name="index-split-113"></a>
+<a name="index-split-114"></a>
 <br><dt><code>sysadm</code><dd>The name or mail address of the system administrator. 
-<a name="index-g_t_0024_0028sysadm_0029-114"></a>
+<a name="index-g_t_0024_0028sysadm_0029-115"></a>
 <br><dt><code>timezone</code><dd>The current timezone as defined in <code>control</code>. 
-<a name="index-g_t_0024_0028timezone_0029-115"></a>
+<a name="index-g_t_0024_0028timezone_0029-116"></a>
 <br><dt><code>UnderscoreClasses</code><dd>If this is set to `on' cfengine uses hard-classes which begin with
 an underscore, so as to avoid name collisions. See also Runtime Options in the
 Reference manual. 
-<a name="index-underscoreclasses-116"></a><a name="index-underscoreclasses-117"></a><a name="index-Name-collision-118"></a><a name="index-Hostname-collision-119"></a><a name="index-Hard-class-name-collision-120"></a><a name="index-underscoreclasses-121"></a>
+<a name="index-underscoreclasses-117"></a><a name="index-underscoreclasses-118"></a><a name="index-Name-collision-119"></a><a name="index-Hostname-collision-120"></a><a name="index-Hard-class-name-collision-121"></a><a name="index-underscoreclasses-122"></a>
 <br><dt><code>year</code><dd>The current year. 
-<a name="index-g_t_0024_0028year_0029-122"></a></dl>
+<a name="index-g_t_0024_0028year_0029-123"></a></dl>
 
 <p class="noindent">These variables are kept special because they play a special role in
 setting up a system configuration.  See <a href="#Global-configurations">Global configurations</a>. 
@@ -1872,24 +1954,24 @@ user macros, so you should not define your own macros with these names.</em>
 troublesome special characters in strings.
      <dl>
 <dt><code>cr</code><dd>Expands to the carriage-return character. 
-<a name="index-g_t_0024_0028cr_0029-123"></a>
+<a name="index-g_t_0024_0028cr_0029-124"></a>
 <br><dt><code>dblquote</code><dd>Expands to a double quote <code>"</code>
-<a name="index-g_t_0024_0028dblquote_0029-124"></a>
+<a name="index-g_t_0024_0028dblquote_0029-125"></a>
 <br><dt><code>dollar</code><dd>Expands to `<samp><span class="samp">$</span></samp>'. 
-<a name="index-g_t_0024_0028dollar_0029-125"></a>
+<a name="index-g_t_0024_0028dollar_0029-126"></a>
 <br><dt><code>lf</code><dd>Expands to a line-feed character (Unix end of line). 
-<a name="index-g_t_0024_0028lf_0029-126"></a>
+<a name="index-g_t_0024_0028lf_0029-127"></a>
 <br><dt><code>n</code><dd>Expands to a newline character. 
-<a name="index-g_t_0024_0028n_0029-127"></a>
+<a name="index-g_t_0024_0028n_0029-128"></a>
 
      <br><dt><code>quote</code><dd>Expands to a single quote <code>'</code>. 
-<a name="index-g_t_0024_0028quote_0029-128"></a>
+<a name="index-g_t_0024_0028quote_0029-129"></a>
 
      <br><dt><code>spc</code><dd>Expands simply to a single space. This can be used to place spaces in
 filenames etc. 
-<a name="index-g_t_0024_0028spc_0029-129"></a>
+<a name="index-g_t_0024_0028spc_0029-130"></a>
 <br><dt><code>tab</code><dd>Expands to a single tab character. 
-<a name="index-g_t_0024_0028tab_0029-130"></a>
+<a name="index-g_t_0024_0028tab_0029-131"></a>
 </dl>
 
 <p class="noindent">You can use variables in the following places:
@@ -1917,7 +1999,7 @@ filenames etc.
         '/bin/echo "double quotes!"'
      
 </pre>
-   <p><a name="index-Variables_002c-using-131"></a>
+   <p><a name="index-Variables_002c-using-132"></a>
 The latter possibility enables cfengine's variables to be passed
 on to user-defined scripts.
 
@@ -1946,7 +2028,7 @@ groups of host.
       chemistry:: sysadm = ( localsys@domain )
      
 </pre>
-   <p><a name="index-g_t_002da-option-132"></a><a name="index-System-administrator_002c-name-133"></a>
+   <p><a name="index-g_t_002da-option-133"></a><a name="index-System-administrator_002c-name-134"></a>
 Note, incidentally, that the `<samp><span class="samp">-a</span></samp>' option
 can be used to print out the mail address of the system administrator
 for any wrapper scripts.
@@ -2003,7 +2085,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#More-advanced-concepts">More advanced 
 
 <h3 class="section">3.4 Defining classes and making exceptions</h3>
 
-<p><a name="index-Exceptions-134"></a><a name="index-Excluding-actions-in-a-controlled-way-135"></a>
+<p><a name="index-Exceptions-135"></a><a name="index-Excluding-actions-in-a-controlled-way-136"></a>
 Cfengine communicates with itself by passing messages in the form of
 classes. When a class becomes switched on or off, cfengine's
 program effectively becomes modified. There are several ways in which
@@ -2020,7 +2102,7 @@ execute only some of the actions within a special category.
 repair the system's configuration.
 
      <li>Classes may be defined by user-defined plug-in modules. 
-<a name="index-Plug_002din-modules-136"></a><a name="index-Modules_002c-user-defined-plug_002dins-137"></a>
+<a name="index-Plug_002din-modules-137"></a><a name="index-Modules_002c-user-defined-plug_002dins-138"></a>
 </ul>
 
    <p>Because cfagent works at a very high level, doing very many things for
@@ -2159,7 +2241,7 @@ false. Since groups are the logical OR of their members (it is
 sufficient that one of the members matches the current system), the
 class `<samp><span class="samp">have_cc</span></samp>' will be defined above if either <samp><span class="file">/usr/ucb/cc</span></samp>
 or <samp><span class="file">/local/gnu/cc</span></samp> exist, or both. 
-<a name="index-Classes-based-on-shell-commands-138"></a><a name="index-Shell-commands-which-define-classes-139"></a><a name="index-User-programs-which-define-classes-140"></a><a name="index-Define-classes-based-on-result-of-user-program-141"></a>
+<a name="index-Classes-based-on-shell-commands-139"></a><a name="index-Shell-commands-which-define-classes-140"></a><a name="index-User-programs-which-define-classes-141"></a><a name="index-Define-classes-based-on-result-of-user-program-142"></a>
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
 <!-- ..................................................... -->
@@ -2215,7 +2297,7 @@ module attempts to evaluate the condition of the system.
 
    <p>Modules must lie in a special directory defined by the variable
 <code>moduledirectory</code>. 
-<a name="index-moduledirectory-142"></a><a name="index-moduledirectory-143"></a>They must have a name of the form <samp><span class="file">module:</span><var>mymodule</var></samp> and they
+<a name="index-moduledirectory-143"></a><a name="index-moduledirectory-144"></a>They must have a name of the form <samp><span class="file">module:</span><var>mymodule</var></samp> and they
 must follow a simple protocol. Cfagent will only execute a module which
 is owned either by root or the user who is running cfagent, if it lies
 in the special directory and has the special name.  A plug-in module may
@@ -2309,7 +2391,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#More-advanced-concepts">More advanced 
 
 <h3 class="section">3.5 The generic class <code>any</code></h3>
 
-<p><a name="index-any-144"></a><a name="index-Wildcard_002c-any-class-145"></a><a name="index-Class_002c-generic-any-146"></a>
+<p><a name="index-any-145"></a><a name="index-Wildcard_002c-any-class-146"></a><a name="index-Class_002c-generic-any-147"></a>
 The generic wildcard <code>any</code> may be used to stand for any class. 
 Thus instead of assigning actions for the class <code>sun4</code> only you
 might define actions for any architecture by specifying:
@@ -2350,7 +2432,7 @@ entries it does not recognize.  For example:
    <p class="noindent">Since <code>Xmyclass</code> no longer matches any defined classes, and is not
 the name of any host it will simply be ignored.  The <code>-N</code> option
 can also be used to the same effect.  (see Reference manual). 
-<a name="index-g_t_002dN-option-147"></a><a name="index-g_t_002dN-option-148"></a><a name="index-Annulling-entries-when-debugging-149"></a><a name="index-Debugging_002c-annulling-entries-150"></a>
+<a name="index-g_t_002dN-option-148"></a><a name="index-g_t_002dN-option-149"></a><a name="index-Annulling-entries-when-debugging-150"></a><a name="index-Debugging_002c-annulling-entries-151"></a>
 <!--  -->
 <!-- SECTION -->
 <!--  -->
@@ -2380,11 +2462,11 @@ except mark and root.  Such a restriction would be useful, for instance,
 if you intended to make set-user-id scripts but only wished certain
 users to be able to run them.  If the access list is absent, all users
 can execute the program. 
-<a name="index-Setuid-scripts-151"></a><a name="index-Access-control-152"></a><a name="index-Restricting-access-153"></a>
+<a name="index-Setuid-scripts-152"></a><a name="index-Access-control-153"></a><a name="index-Restricting-access-154"></a>
 Note: if you are running cfagent via the <code>cfrun</code> program
-<a name="index-cfrun-154"></a>then cfagent is always started with the same user identity as
+<a name="index-cfrun-155"></a>then cfagent is always started with the same user identity as
 the cfservd process on the remote host. 
-<a name="index-cfservd-and-access-keyword-155"></a>Normally this is the root user identity. This means that
+<a name="index-cfservd-and-access-keyword-156"></a>Normally this is the root user identity. This means that
 the access keyword will have no effect on the use of
 the command <code>cfrun</code>.
 
@@ -2402,7 +2484,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#More-advanced-concepts">More advanced 
 
 <h3 class="section">3.8 Wildcards in directory names</h3>
 
-<p><a name="index-Wildcards_002c-in-directory-names-156"></a><a name="index-Directory-Names_002c-use-of-wildcards-157"></a>
+<p><a name="index-Wildcards_002c-in-directory-names-157"></a><a name="index-Directory-Names_002c-use-of-wildcards-158"></a>
 In the two actions <code>files</code> and <code>tidy</code> you define directory
 names at which file checking or tidying searches should start.  One
 economical feature is that you can define a whole group of directories
@@ -2419,7 +2501,7 @@ directory and iterates the action over all directories which match.
    <p>The symbol `<samp><span class="samp">?</span></samp>' matches any single character, whereas `<samp><span class="samp">*</span></samp>'
 matches any number of characters, in accordance with shell
 file-substitution wildcards. 
-<a name="index-Wildcards-158"></a><a name="index-Patterns-159"></a>
+<a name="index-Wildcards-159"></a><a name="index-Patterns-160"></a>
 When this notation is used in directory names, it always defines the
 starting point for a search.  It does not tell the command how to
 search, only where to begin.  The <code>pattern</code> directive in
@@ -2447,15 +2529,15 @@ instances where one uses cfagent to perform a file sweep.
      <ul>
 <li>As part of a <code>files</code> action, for checking access rights and ownership
 of files. 
-<a name="index-g_t_0040code_007bfiles_007d_002c-file-sweeps-160"></a>
+<a name="index-g_t_0040code_007bfiles_007d_002c-file-sweeps-161"></a>
 <li>As part of a <code>tidy</code> action, for checking files for deletion. 
-<a name="index-g_t_0040code_007btidy_007d_002c-file-sweeps-161"></a>
+<a name="index-g_t_0040code_007btidy_007d_002c-file-sweeps-162"></a>
 <li>As part of a <code>copy</code> action, while recursively checking whether to
 copy a file tree. 
-<a name="index-g_t_0040code_007bcopy_007d_002c-file-sweeps-162"></a>
+<a name="index-g_t_0040code_007bcopy_007d_002c-file-sweeps-163"></a>
 <li>As part of an <code>editfiles</code> action, while recursively checking whether to
 edit the files in a tree of files. 
-<a name="index-g_t_0040code_007beditfiles_007d_002c-file-sweeps-163"></a>
+<a name="index-g_t_0040code_007beditfiles_007d_002c-file-sweeps-164"></a>
 </ul>
    The problem with file sweeps is that they can be too sweeping! Often you
 are not interested in examining every single file in a file tree. You might
@@ -2482,11 +2564,11 @@ copy, links and tidy.  For file sweeps within files, copy and links, you
 may provide private ignore lists using <code>ignore=</code>. The difference between
 exclude and ignore is that ignore can deal with absolute directories. It prunes
 directories, while exclude only looks at the files within directories. 
-<a name="index-g_t_0040code_007bignore_003d_007d-164"></a><a name="index-Ignoring_002c-private-lists-in-files_002c-copy-and-links-165"></a>
+<a name="index-g_t_0040code_007bignore_003d_007d-165"></a><a name="index-Ignoring_002c-private-lists-in-files_002c-copy-and-links-166"></a>
 For file sweeps within  <code>files</code> and  <code>copy</code> you can specify
 specific search parameters using the keywords <code>include=</code>
 and <code>exclude=</code> and as of version 1.6.x <code>filter=</code>. 
-<a name="index-g_t_0040code_007binclude_003d_007d-166"></a><a name="index-g_t_0040code_007bexclude_003d_007d-167"></a><a name="index-g_t_0040code_007bfilter_003d_007d-168"></a><a name="index-g_t_0040code_007binclude_003d_007d-169"></a><a name="index-g_t_0040code_007bexclude_003d_007d-170"></a><a name="index-g_t_0040code_007bfilter_003d_007d-171"></a>For example,
+<a name="index-g_t_0040code_007binclude_003d_007d-167"></a><a name="index-g_t_0040code_007bexclude_003d_007d-168"></a><a name="index-g_t_0040code_007bfilter_003d_007d-169"></a><a name="index-g_t_0040code_007binclude_003d_007d-170"></a><a name="index-g_t_0040code_007bexclude_003d_007d-171"></a><a name="index-g_t_0040code_007bfilter_003d_007d-172"></a>For example,
 
 <pre class="smallexample">     files:
      
@@ -2519,7 +2601,7 @@ files above, you would need to code something like this:
    <p>Note: don't be tempted to enclose your wildcards in quotes. The quotes
 will be treated literally and the pattern might not match the way you
 would expect. 
-<a name="index-exclude_003d_002c-problems-172"></a>
+<a name="index-exclude_003d_002c-problems-173"></a>
 For <code>editfiles</code> the syntax is somewhat different. Here one needs to add
 lines to the edit stanza:
 
@@ -2569,12 +2651,12 @@ recursively.
    <p>Cfagent checks for link race attacks, in which users try to swap a
 directory for a link, in between system calls, to trick cfagent into
 believing that a link is a directory, as of version 2.0.3 (and 1.6.4). 
-<a name="index-Race-condition-173"></a>
-<a name="index-g_t_0040code_007btravlinks_007d-174"></a>Note that, even if <code>travlinks</code> is set to true, cfagent will not
+<a name="index-Race-condition-174"></a>
+<a name="index-g_t_0040code_007btravlinks_007d-175"></a>Note that, even if <code>travlinks</code> is set to true, cfagent will not
 follow symbolic links that are not owned by the agent user ID; this is
 to minimize the possibilty of link race attacks, in which users with
 write access could divert the agent to another part of the filesystem. 
-<a name="index-Security_002c-link-races-and-travlinks-175"></a><a name="index-travlinks-176"></a>
+<a name="index-Security_002c-link-races-and-travlinks-176"></a><a name="index-travlinks-177"></a>
 <!--  -->
 <!-- SECTION -->
 <!--  -->
@@ -2590,7 +2672,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#More-advanced-concepts">More advanced 
 
 <h3 class="section">3.11 Log files written by cfagent</h3>
 
-<p><a name="index-Log-files-177"></a><a name="index-g_t_002ecfengine_002erm-178"></a><a name="index-g_t_002fvar_002fcfengine_002fcfengine_002elog-179"></a><a name="index-g_t_002fvar_002flog_002fcfengine_002fcfengine_002elog-180"></a>
+<p><a name="index-Log-files-178"></a><a name="index-g_t_002ecfengine_002erm-179"></a><a name="index-g_t_002fvar_002fcfengine_002fcfengine_002elog-180"></a><a name="index-g_t_002fvar_002flog_002fcfengine_002fcfengine_002elog-181"></a>
 Cfagent keeps two kinds of log-file privately and it allows you to log
 its activity to syslog.  Syslog logging may be switched on with the
 <code>Syslog</code> variable, (see Reference manual).
@@ -2603,7 +2685,7 @@ users who want to know files have been removed without their blessing.
 This helps to identify what is happening on the system in case of
 accidents.
 
-   <p><a name="index-g_t_002fvar_002fcfengine_002fcfengine_002elog-181"></a>Another file is built when cfagent searches through file trees in the
+   <p><a name="index-g_t_002fvar_002fcfengine_002fcfengine_002elog-182"></a>Another file is built when cfagent searches through file trees in the
 <code>files</code> action.  This is a list of all programs which are setuid
 root, or setgid root.  Since such files are a potential security risk,
 cfagent always prints a warning when it encounters a new one (one which
@@ -2611,7 +2693,7 @@ is not already in its list).  This allows the system administrator to
 keep a watchful eye over new programs which appear and give users root
 access.  The cfengine log is called <code>/var/cfengine/cfengine.log</code>.  The file
 is not readable for general users. 
-<a name="index-setuid-root-log-182"></a><a name="index-setgid-root-log-183"></a>
+<a name="index-setuid-root-log-183"></a><a name="index-setgid-root-log-184"></a>
 
 <!--  -->
 <!-- SECTION -->
@@ -2654,7 +2736,7 @@ order to delimit strings,
 string itself. The same goes for the other types of string delimiters. 
 Unlike the shell, cfengine treats these three delimiters in precisely
 the same way. There is no difference between them. 
-<a name="index-Strings-184"></a><a name="index-Quoting-strings-185"></a><a name="index-g_t_0022-186"></a><a name="index-g_t_0027-187"></a><a name="index-g_t_0060-188"></a><a name="index-How-do-I-quote-quotes_003f-189"></a>If you need to quote a quoted string, then you should choose a delimiter
+<a name="index-Strings-185"></a><a name="index-Quoting-strings-186"></a><a name="index-g_t_0022-187"></a><a name="index-g_t_0027-188"></a><a name="index-g_t_0060-189"></a><a name="index-How-do-I-quote-quotes_003f-190"></a>If you need to quote a quoted string, then you should choose a delimiter
 which does not conflict with the substring before version 2.0.7. 
 From version 2.0.7, you can escape quotes.
 
@@ -2845,7 +2927,7 @@ following contexts:
 
    <p>This typically allows communication with PATH-like
 environment variables in the shell. 
-<a name="index-Split-190"></a><a name="index-Iteration-over-lists-191"></a><a name="index-Iterating-over-lists-192"></a><a name="index-Split-193"></a>
+<a name="index-Split-191"></a><a name="index-Iteration-over-lists-192"></a><a name="index-Iterating-over-lists-193"></a><a name="index-Split-194"></a>
 In these contexts, any variable which has the form of
 a list joined together by colons will be iterated over
 at compilation time. Note that you can change the value
@@ -2878,7 +2960,7 @@ just a string you do not expect to match any file.
 
    <p>Alternatively, you might want to define an internal list using
 a space as a separator:
-<a name="index-Split_002c-using-a-space-194"></a>
+<a name="index-Split_002c-using-a-space-195"></a>
 <pre class="smallexample">     
      control:
      
@@ -2899,7 +2981,7 @@ restricted to one or two, since the haphazard combination of two lists
 will seldom lead to any meaningful pattern.  The only obvious exception
 is perhaps to iterate over a common set of child-directories like
 <samp><span class="file">bin</span></samp>, <samp><span class="file">lib</span></samp> etc in several different package directories. 
-<a name="index-Multiple-package-configuration-195"></a><a name="index-Package-configuration_002c-multiple-196"></a><a name="index-Configure-multiple-packages-197"></a>
+<a name="index-Multiple-package-configuration-196"></a><a name="index-Package-configuration_002c-multiple-197"></a><a name="index-Configure-multiple-packages-198"></a>
 
 <!-- ********************************************************************** -->
 <!-- CHAPTER -->
@@ -2953,7 +3035,7 @@ what you are willing to do to achieve the results. You need to decide
 what you will consider to be acceptable and what is to be considered
 completely untenable. You need to make these decisions because otherwise
 you will only be confused later when things don't go the way you expected. 
-<a name="index-System-policy-198"></a><a name="index-Policy-for-running-the-system-199"></a>
+<a name="index-System-policy-199"></a><a name="index-Policy-for-running-the-system-200"></a>
 Experience shows that the most successful policies for automation involve
 keeping everything as simple as possible. The more uniform or alike your
 machines are, the easier they are to run and the happier users are. 
@@ -2986,7 +3068,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Global-configurations">Global configur
 
 <h3 class="section">4.2 Using netgroups</h3>
 
-<p><a name="index-netgroups-200"></a><a name="index-NIS-201"></a><a name="index-g_t_002fetc_002fexports-202"></a><a name="index-Exporting-filesystems-203"></a>
+<p><a name="index-netgroups-201"></a><a name="index-NIS-202"></a><a name="index-g_t_002fetc_002fexports-203"></a><a name="index-Exporting-filesystems-204"></a>
 If you use the network information service (NIS) on your local network
 then you may already have defined <em>netgroups</em> consisting of lists
 of hosts which belong to specific owners at your site.  If you have,
@@ -3154,7 +3236,7 @@ files, in this example, are deleted immediately, whereas files in the
 subdirectory <samp><span class="file">.wastebasket</span></samp> are deleted
 only after they have lain there untouched for 14 days, and so on.
 
-   <p><a name="index-Tidying-files-204"></a><a name="index-Backup-policy-205"></a>
+   <p><a name="index-Tidying-files-205"></a><a name="index-Backup-policy-206"></a>
 As a system administrator you should, of course, exercise great caution
 when making rules which can delete users' files.  A single slip of the
 hand can result in a rule which will irretrievably delete files.
@@ -3182,7 +3264,7 @@ a command such as
 </pre>
    <p class="noindent">could be useful.  Nonsense files, such as `core' files could be tidied every night.
 
-   <p><a name="index-core-files_002c-caution_0021-206"></a><em>NOTE! Be careful when telling cfagent to delete core files.  If
+   <p><a name="index-core-files_002c-caution_0021-207"></a><em>NOTE! Be careful when telling cfagent to delete core files.  If
 you write a wildcard like </em><code>core*</code><em>, then you could risk deleting
 important system files such as </em><code>core.h</code><em>.</em>
 
@@ -3275,7 +3357,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Global-configurations">Global configur
 
 <h3 class="section">4.6 Cfengine's model for NFS-mounted filesystems</h3>
 
-<p><a name="index-cfengine-model-207"></a><a name="index-NFS-mounted-filesystems-208"></a>
+<p><a name="index-cfengine-model-208"></a><a name="index-NFS-mounted-filesystems-209"></a>
 Most of the filesystems that you will want to make available across the
 network are going to fall into one of two categories.  In cfengine
 parlance these are called <em>home directories</em> and <em>binary
@@ -3311,7 +3393,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#NFS-resources">NFS resources</a>
 
 <h4 class="subsection">4.6.1 NFS filesystem resources</h4>
 
-<p><a name="index-NFS-resources-209"></a>
+<p><a name="index-NFS-resources-210"></a>
 Using the Network File System (NFS) in a large workstation environment
 requires a bit of planning.  The idea of NFS is to share files on one
 host with other hosts.  In most cases, filesystems to be shared across
@@ -3326,7 +3408,7 @@ one possibility, but not a very intelligent one.  As experienced users
 will realize, cross-mounting too many NFS filesystems is a recipe for
 all kinds of trouble.
 
-   <p><a name="index-Binary-server-210"></a><a name="index-Home-server-211"></a>Cfengine offers a simple model which can help you pick out only the
+   <p><a name="index-Binary-server-211"></a><a name="index-Home-server-212"></a>Cfengine offers a simple model which can help you pick out only the
 resources you need from the list of NFS filesystems.  It will then mount
 them automatically and edit the appropriate filesystem tables.  It does
 this by defining classes of hosts.  For instance &mdash; you really don't
@@ -3352,7 +3434,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#NFS-resources">NFS resources</a>
 
 <h4 class="subsection">4.6.2 Unique filesystem mountpoints</h4>
 
-<p><a name="index-Mount-points-212"></a><a name="index-Naming-convention-213"></a>
+<p><a name="index-Mount-points-213"></a><a name="index-Naming-convention-214"></a>
 The first step towards treating NFS filesystems as network resources is
 to invent a naming scheme so that every filesystem has a unique name on
 which it can be mounted.  If we don't sort this out now, we could find
@@ -3447,7 +3529,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#NFS-resources">NFS resources</a>
 
 <h4 class="subsection">4.6.3 How does it work?</h4>
 
-<p><a name="index-Binary-servers_002c-declaring-214"></a><a name="index-Home-servers_002c-declaring-215"></a><a name="index-cfengine-model_002c-how-it-works-216"></a>
+<p><a name="index-Binary-servers_002c-declaring-215"></a><a name="index-Home-servers_002c-declaring-216"></a><a name="index-cfengine-model_002c-how-it-works-217"></a>
 Once you have defined your unique names, how does cfagent know what to
 mount? The idea is now to define a list of servers for each class of
 hosts.
@@ -3507,7 +3589,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#NFS-resources">NFS resources</a>
 
 <h4 class="subsection">4.6.4 Special variables</h4>
 
-<p><a name="index-Linking-to-binservers-217"></a><a name="index-Special-variables-218"></a><a name="index-Variables_002c-cfengine-model-219"></a><a name="index-binserver-220"></a>
+<p><a name="index-Linking-to-binservers-218"></a><a name="index-Special-variables-219"></a><a name="index-Variables_002c-cfengine-model-220"></a><a name="index-binserver-221"></a>
 Once you have mounted a resource on a unique directory, you have access
 to all of the relevant filesystems on your network &mdash; but you really
 wanted the `local' filesystem to be mounted on <code>/usr/local</code>.  All
@@ -3537,7 +3619,7 @@ treats <code>$(host)</code> as the highest priority binary server for any
 host.  That means that if you have a local filesystem, it will always
 have priority.
 
-   <p><a name="index-Binary-server_002c-matching-221"></a><a name="index-binserver-variable-and-actionsequence-222"></a><a name="index-binserver-223"></a>In contrast, if the host `schwinger' ran the command above, it would
+   <p><a name="index-Binary-server_002c-matching-222"></a><a name="index-binserver-variable-and-actionsequence-223"></a><a name="index-binserver-224"></a>In contrast, if the host `schwinger' ran the command above, it would
 find no local filesystem called <code>/physics/schwinger/local</code>, so it
 would go along the list of defined binary servers, find `einstein' and
 try again.  It will succeed in finding `einstein' <em>provided all the
@@ -3548,7 +3630,7 @@ filesystems are mounted before any links are made.
    <p>With a little practice, the cfengine model can lead to an enormous
 simplification of the issue of NFS-mountable resources.
 
-   <p><a name="index-Exporting-filesystems-224"></a>NOTE: cfengine does not try to export filesystems, only mount already
+   <p><a name="index-Exporting-filesystems-225"></a>NOTE: cfengine does not try to export filesystems, only mount already
 exported filesystems.  If you want to automate this procedure also, you
 can use the <code>editfiles</code> facility to add entries to
 <samp><span class="file">/etc/exports</span></samp> (see <code>editfiles</code> in the Reference manual).  In practice this is very
@@ -3762,7 +3844,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Global-configurations">Global configur
 
 <h3 class="section">4.7 Using the automounter</h3>
 
-<p><a name="index-automount-225"></a>
+<p><a name="index-automount-226"></a>
 The automounter is a daemon based service which replaces static mounting
 of NFS filesystems with a dynamical model. When the automounter is
 running, filesystems are mounted only when a user tries to access a file
@@ -3792,7 +3874,7 @@ by exports or share on the relevant server), thus a request to mount
 a non-exported filesystem will result in an access denial. The automounter
 is configured locally on each host in files named <samp><span class="file">/etc/auto_master</span></samp>,
 <samp><span class="file">auto_direct</span></samp> etc. 
-<a name="index-g_t_0040file_007bauto_005fmaster_007d-226"></a><a name="index-g_t_0040file_007bauto_005fdirect_007d-227"></a>
+<a name="index-g_t_0040file_007bauto_005fmaster_007d-227"></a><a name="index-g_t_0040file_007bauto_005fdirect_007d-228"></a>
 In the cfengine static mounting scheme, you define a list of binary
 and home servers. The filesystem table is modified on the basis of
 these decisions, and filesystems are only added if cfagent deems it
@@ -3841,18 +3923,18 @@ naming scheme, you can achieve the same thing more cleanly, without all
 of the gratuitous linking and unlinking which the automounter performs
 by itself. Moreover, the idea of a unique name-space is better practice
 and more in keeping with new global filesystem ideas such as AFS and DFS. 
-<a name="index-AFS-228"></a><a name="index-DFS-229"></a>The only advantage of the automounter is that one avoids the annoying
+<a name="index-AFS-229"></a><a name="index-DFS-230"></a>The only advantage of the automounter is that one avoids the annoying
 error messages from hung servers about "NFS server not responding". 
 In that respect, it seems sensible to use only direct mounts and a
 unique name space.
 
-   <p><a name="index-Home-directories-and-automount-230"></a><a name="index-g_t_0040file_007b_002fhome_007d-231"></a><a name="index-g_t_0040file_007b_002fusers_007d-232"></a>Some systems advocate grouping all users' login (home) directories
+   <p><a name="index-Home-directories-and-automount-231"></a><a name="index-g_t_0040file_007b_002fhome_007d-232"></a><a name="index-g_t_0040file_007b_002fusers_007d-233"></a>Some systems advocate grouping all users' login (home) directories
 under a common directory called <samp><span class="file">/home</span></samp> or <samp><span class="file">users</span></samp>. 
 The automounter goes through all manner of contortions to achieve
 this task. If you use a unique naming scheme like the one
 advocated here, this is a trivial task. You simply arrange to mount
 or automount all user directories, such as
-<a name="index-How-to-keep-all-users-in-_0040file_007b_002fhome_007d-233"></a>
+<a name="index-How-to-keep-all-users-in-_0040file_007b_002fhome_007d-234"></a>
 <pre class="smallexample">        /<var>site</var>/<var>host</var>/home1
         /<var>site</var>/<var>host</var>/home2
         ...
@@ -4005,7 +4087,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Global-configurations">Global configur
 system and you may wish to ensure that they do not exist. For example,
 some manufacturers sell their workstations with a `<samp><span class="samp">+</span></samp>' symbol in
 the file <samp><span class="file">/etc/hosts.equiv</span></samp>. 
-<a name="index-g_t_0040file_007b_002fetc_002fhosts_002eequiv_007d-234"></a>This means that anyone in your NIS domain has password free access
+<a name="index-g_t_0040file_007b_002fetc_002fhosts_002eequiv_007d-235"></a>This means that anyone in your NIS domain has password free access
 to the system!! Since this is probably not a good idea, you will
 want to disable this file by renaming it, or simply deleting it.
 
@@ -4022,7 +4104,7 @@ the System V files <samp><span class="file">/var/adm/wtmpx</span></samp> and
 get "rotated" by the system so that they do not grow so large as to
 fill the disk. You can make cfagent rotate these files too, by
 writing
-<a name="index-g_t_0040file_007b_002fvar_002fadm_002fwtmpx_007d-235"></a><a name="index-g_t_0040file_007b_002fvar_002flp_002flogs_002flpsched_007d-236"></a>
+<a name="index-g_t_0040file_007b_002fvar_002fadm_002fwtmpx_007d-236"></a><a name="index-g_t_0040file_007b_002fvar_002flp_002flogs_002flpsched_007d-237"></a>
 <pre class="smallexample">     
      disable:
      
@@ -4039,14 +4121,14 @@ are deleted permanently. This procedure prevents any log files
 from growing too large. If you are not interested in keeping
 back-logs, then you may write <code>rotate=empty</code> and cfagent
 will simply empty the log file. 
-<a name="index-Rotating-files-237"></a><a name="index-Log-files_002c-rotating-238"></a>
+<a name="index-Rotating-files-238"></a><a name="index-Log-files_002c-rotating-239"></a>
 When ever cfagent disables a file (<code>disable</code> or <code>links</code> with
 the `<samp><span class="samp">!</span></samp>'  operator), or saves a new file on top of an old one
 (<code>copy</code> or <code>editfiles</code>), it makes a backup of the
 original. Usually disabled files are renamed by appending the string
 <samp><span class="file">.cfdisabled</span></samp> the filename; copied files are saved by appending
 the string <samp><span class="file">.cfsaved</span></samp>. 
-<a name="index-g_t_0040file_007b_002ecfsaved_007d-files-239"></a><a name="index-g_t_0040file_007b_002ecfdisabled_007d-files-240"></a>It is possible to switch off backup file
+<a name="index-g_t_0040file_007b_002ecfsaved_007d-files-240"></a><a name="index-g_t_0040file_007b_002ecfdisabled_007d-files-241"></a>It is possible to switch off backup file
 generation in the copy feature by setting the variable
 <code>backup=false</code>, but a better way of managing disabled and backed-up
 files is to use a directory in which you collect all such files for the
@@ -4055,7 +4137,7 @@ the control part of the program, as follows:
 In the <code>copy</code> directive, the option <code>backup=timestamp</code> can be
 used to allow multiple backups. This is useful when using cfengine to make
 disk backups for users, since it allows multiple versions to co-exist. 
-<a name="index-Timestamp-backups-241"></a>
+<a name="index-Timestamp-backups-242"></a>
 <pre class="smallexample">     
        control:
      
@@ -4183,7 +4265,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Global-configurations">Global configur
 
 <h3 class="section">4.12 Managing ACLs</h3>
 
-<p><a name="index-Access-control-lists-242"></a><a name="index-ACLs-243"></a><a name="index-Permissions_002c-extended-244"></a>
+<p><a name="index-Access-control-lists-243"></a><a name="index-ACLs-244"></a><a name="index-Permissions_002c-extended-245"></a>
 Access control lists are extended file permissions. They allow you to
 open or close a file to a named list of users (without having to
 create a special group for those users).  They also allow you to open
@@ -4254,7 +4336,7 @@ but ACLs would be a valuable addition to the security of our data.
        # ... more below
      
 </pre>
-   <p><a name="index-g_t_0040code_007bacl_007d-245"></a><a name="index-ACL-aliases-246"></a>This program simply checks the permissions and ownership of the named
+   <p><a name="index-g_t_0040code_007bacl_007d-246"></a><a name="index-ACL-aliases-247"></a>This program simply checks the permissions and ownership of the named
 file. The regular file mode, owner and group are specified
 straightforwardly.  The new feature here is the <code>acl</code> directive. It
 is a deceptively simply looking animal, but it hides a wealth of
@@ -4364,10 +4446,10 @@ the ACLs may be removed for <code>jacobs</code> with the syntax
    <p>In Solaris, files inherit default ACLs from the directory they
 lie in; these are modified by the umask setting to generate
 their own default mask. 
-<a name="index-ACLs_002c-Solaris-247"></a>
+<a name="index-ACLs_002c-Solaris-248"></a>
 DFS ACLs look a little different. They are examined with the
 `<samp><span class="samp">acl_edit</span></samp>' command or with
-<a name="index-ACLs_002c-DFS-248"></a>
+<a name="index-ACLs_002c-DFS-249"></a>
 <pre class="smallexample">     dcecp -c acl show &lt;filename&gt;
 </pre>
    <p class="noindent">In order to effect changes to the DFS, you have to perform a DCE login
@@ -4474,7 +4556,7 @@ system when you have everything in one place.
      <li>You can use all of your carefully crafted groups and user-defined
 classes to identify which host should run which programs. 
 </ul>
-   <a name="index-Cron-jobs_002c-controlling-with-cfengine-249"></a>
+   <a name="index-Cron-jobs_002c-controlling-with-cfengine-250"></a>
 The central idea behind this scheme is to set up a regular cron
 job on every system which executes cfagent at frequent intervals. 
 Each time cfagent is started, it evaluates time classes and
@@ -4485,7 +4567,7 @@ hosts. Cfengine's time classes are at least as powerful as <code>cron</code>'s
 time specification possibilities, so this does not restrict you
 in any way, See <a href="#Building-flexible-time-classes">Building flexible time classes</a>. The only price
 is the overhead of parsing the cfengine configuration file. 
-<a name="index-How-can-I-use-cfengine-to-make-a-global-cron-file_003f-250"></a>
+<a name="index-How-can-I-use-cfengine-to-make-a-global-cron-file_003f-251"></a>
 To be more concrete, imagine installing the following <samp><span class="file">crontab</span></samp>
 file onto every host on your network:
 
@@ -4609,7 +4691,7 @@ shorter the interval, the more clustered the hosts will be. The longer
 the interval, the lighter the load on your servers.  This `splaying' of
 the run times will lighten the load on servers, even if they come
 from domains not under your control but have a similar cron policy. 
-<a name="index-Splaying-host-times-251"></a><a name="index-Contention-during-copying-under-load-252"></a><a name="index-Load-balancing-253"></a>
+<a name="index-Splaying-host-times-252"></a><a name="index-Contention-during-copying-under-load-253"></a><a name="index-Load-balancing-254"></a>
 Splaying can be switched off temporarily with the `<samp><span class="samp">-q</span></samp>' or `<samp><span class="samp">--no-splay</span></samp>'
 options.
 
@@ -4627,22 +4709,22 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Using-cfengine-as-a-front_002dend-for-
 
 <h3 class="section">5.3 Building flexible time classes</h3>
 
-<p><a name="index-Time-classes-254"></a><a name="index-How-can-I-make-complex-time-intervals-using-time-classes_003f-255"></a><a name="index-Time-classes_002c-picking-out-complex-time-intervals-256"></a>Each time cfagent is run, it reads the system clock and defines the
+<p><a name="index-Time-classes-255"></a><a name="index-How-can-I-make-complex-time-intervals-using-time-classes_003f-256"></a><a name="index-Time-classes_002c-picking-out-complex-time-intervals-257"></a>Each time cfagent is run, it reads the system clock and defines the
 following classes based on the time and date:
 
      <dl>
 <dt><code>Yr</code><var>xx</var><code>::</code><dd>The current year, e.g. `<samp><span class="samp">Yr1997</span></samp>', `<samp><span class="samp">Yr2001</span></samp>'. This class is probably
 not useful very often, but it might help you to turn on the new-year lights,
 or shine up your systems for the new millenium! 
-<a name="index-Years-257"></a>
+<a name="index-Years-258"></a>
 <br><dt><var>Month</var><code>::</code><dd>The current month can be used for defining very long term variations in
 the system configuration, e.g. `<samp><span class="samp">January</span></samp>', `<samp><span class="samp">February</span></samp>'. These
 classes could be used to determine when students have their summer vacation,
 for instance, in order to perform extra tidying, or to specially maintain some
 administrative policy for the duration of a conference. 
-<a name="index-Months-258"></a>
+<a name="index-Months-259"></a>
 <br><dt><var>Day</var><code>::</code><dd>The day of the week may be used as a class, e.g. `<samp><span class="samp">Monday</span></samp>', `<samp><span class="samp">Sunday</span></samp>'. 
-<a name="index-Day-of-the-week-259"></a>
+<a name="index-Day-of-the-week-260"></a>
 <br><dt><code>Day</code><var>xx</var><code>::</code><dd>A day in the month (date) may be used to single out by date, e.g. the first
 day of each month defines `<samp><span class="samp">Day1</span></samp>', the 21st `<samp><span class="samp">Day21</span></samp>' etc.
 
@@ -4666,7 +4748,7 @@ were started. The real purpose in being able to detect the precise
 start time is to define composite classes which refer to arbitrary
 intervals of time. To do this, we use the <code>group</code> or <code>classes</code>
 action to create an alias for a group of time values. 
-<a name="index-Grouping-time-values-260"></a><a name="index-g_t_0040code_007bgroups_007d-and-time-intervals-261"></a>Here are some creative examples:
+<a name="index-Grouping-time-values-261"></a><a name="index-g_t_0040code_007bgroups_007d-and-time-intervals-262"></a>Here are some creative examples:
 
 <pre class="smallexample">     
      classes:  # synonym groups:
@@ -4764,21 +4846,21 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-network-services">Cfengine ne
 <p>By starting the daemon called <code>cfservd</code>, you can set up a line of
 communication between hosts, allowing them to exchange files across
 the network or execute cfengine remotely on another system. 
-<a name="index-g_t_0040code_007bcfservd_007d-daemon-262"></a><a name="index-g_t_0040code_007bcfrun_007d-program-263"></a><a name="index-g_t_0040code_007bcfwatcher_007d-program-264"></a>Cfengine network services are built around the following components:
+<a name="index-g_t_0040code_007bcfservd_007d-daemon-263"></a><a name="index-g_t_0040code_007bcfrun_007d-program-264"></a><a name="index-g_t_0040code_007bcfwatcher_007d-program-265"></a>Cfengine network services are built around the following components:
 
      <dl>
 <dt><code>cfagent</code><dd>The configuration engine, whose only contact with the network is via
 remote copy requests. This component does the hard work of configuring
 the system based on rules specified in the file <samp><span class="file">cfagent.conf</span></samp>. It
 does not and cannot grant any access to a system from the network. 
-<a name="index-g_t_0040file_007bcfagent_002econf_007d-file-265"></a>
+<a name="index-g_t_0040file_007bcfagent_002econf_007d-file-266"></a>
 <br><dt><code>cfservd</code><dd>A daemon which acts as both a file server and a remote-cfagent
 executor. This daemon authenticates requests from the network and
 processes them according to rules specified in <samp><span class="file">cfservd.conf</span></samp>. 
 It works as a file server and as a mechanism for starting
 cfagent on a local host and piping its output back to the
 network connection. 
-<a name="index-g_t_0040file_007bcfservd_002econf_007d-file-266"></a>
+<a name="index-g_t_0040file_007bcfservd_002econf_007d-file-267"></a>
 <br><dt><code>cfrun</code><dd>This is a simple initiation program which can be used
 to run cfagent on a number of remote hosts. It cannot
 be used to tell cfagent what to do, it can only ask cfagent
@@ -4795,7 +4877,7 @@ their output.
    </dl>
 
 <p class="noindent">With these components you can emulate programs like <code>rdist</code>
-<a name="index-g_t_0040code_007brdist_007d-program-267"></a><a name="index-Remote-distribution-of-files-268"></a><a name="index-Remote-execution-of-cfagent-269"></a>whose job it is to check and maintain copies of files on client machines. 
+<a name="index-g_t_0040code_007brdist_007d-program-268"></a><a name="index-Remote-distribution-of-files-269"></a><a name="index-Remote-execution-of-cfagent-270"></a>whose job it is to check and maintain copies of files on client machines. 
 You may also decide who has permission to run cfagent and how often it
 may be run, without giving away any special user privileges.
 
@@ -4859,11 +4941,11 @@ access to a system using the <samp><span class="file">.rhosts</span></samp> file
 <samp><span class="file">/etc/hosts.equiv</span></samp> file. It is sufficient to run the daemon as
 root.  You can not run it by adding it to the <samp><span class="file">/etc/inetd.conf</span></samp>
 file on your system however. 
-<a name="index-g_t_0040file_007b_002fetc_002finetd_002econf_007d-file-and-cfengine-270"></a>The restricted functionality of the daemon protects your system from
+<a name="index-g_t_0040file_007b_002fetc_002finetd_002econf_007d-file-and-cfengine-271"></a>The restricted functionality of the daemon protects your system from
 attempts to execute general commands as the root user using <code>rsh</code>.
 
    <p>To remotely access files on a server, you add the keyword <code>server=</code><var>host</var>
-<a name="index-g_t_0040code_007bserver_003d_007d-271"></a>to a copy command. Consider the following example
+<a name="index-g_t_0040code_007bserver_003d_007d-272"></a>to a copy command. Consider the following example
 which illustrates how you might distribute a password file from a masterhost
 to some clients.
 
@@ -4880,10 +4962,10 @@ will make contact with the daemon and attempt to obtain information
 about the file. During this process, cfengine verifies that the system
 clocks of the two hosts are reasonably synchronized. If they are not,
 it will not permit remote copying. 
-<a name="index-Clock-synchronization-during-copying-272"></a>If cfagent determines that a file needs to be updated from a remote
+<a name="index-Clock-synchronization-during-copying-273"></a>If cfagent determines that a file needs to be updated from a remote
 server it begins copying the remote file to a new file on the same
 filesystem as the destination-file. This file has the suffix <samp><span class="file">.cfnew</span></samp>. 
-<a name="index-g_t_0040file_007b_002ecfnew_007d-files-273"></a>Only when the file has been successfully collected will cfagent make a
+<a name="index-g_t_0040file_007b_002ecfnew_007d-files-274"></a>Only when the file has been successfully collected will cfagent make a
 copy of the old file, (see <code>repository</code> in the Reference manual),
 and rename the new file into place. This behaviour is designed to avoid
 race-conditions which can occur during network connections and indeed
@@ -4898,7 +4980,7 @@ avoid hanging processes.
 Such a connection may be initiated by a request for remote files from a
 running cfengine program on another host, or it might be initiated by
 the program <code>cfrun</code> which simply asks the
-<a name="index-g_t_0040code_007bcfrun_007d-program-274"></a>host running the daemon to run the cfengine program locally.
+<a name="index-g_t_0040code_007bcfrun_007d-program-275"></a>host running the daemon to run the cfengine program locally.
 
 <!-- ........................................... -->
 <!-- SUBSECTION -->
@@ -4914,7 +4996,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#How-it-works">How it works</a>
 
 <h4 class="subsection">6.2.2 Remote execution of cfagent</h4>
 
-<p><a name="index-Remote-execution-of-cfagent-275"></a>It is a good idea to execute cfagent by getting <code>cron</code> to
+<p><a name="index-Remote-execution-of-cfagent-276"></a>It is a good idea to execute cfagent by getting <code>cron</code> to
 run it regularly.  This ensures that cfagent will be run even if you are
 unable to log onto a host to run it yourself. Sometimes however you
 will want to run cfagent immediately in order to implement a change in
@@ -4931,7 +5013,7 @@ ran cfagent, printing the output on your own screen:
 </pre>
    <p class="noindent">A simple user interface is provided to accomplish this. <code>cfrun</code>
 makes a connection to a remote cfservd-daemon
-<a name="index-cfservd-dameon-276"></a><a name="index-cfrun-program-277"></a><a name="index-Running-cfagent-remotely-278"></a>and executes cfagent on that system with the privileges of the
+<a name="index-cfservd-dameon-277"></a><a name="index-cfrun-program-278"></a><a name="index-Running-cfagent-remotely-279"></a>and executes cfagent on that system with the privileges of the
 cfservd-daemon (usually <code>root</code>). This has a two advantages:
 
      <ul>
@@ -5085,7 +5167,7 @@ not be killed while processing `files' until after 180 minutes
    <p>These locks do not prevent the whole of cfagent from running,
 only so-called `atoms'. Several different atoms can be
 run concurrently by different cfagents. 
-<a name="index-Atoms-in-cfagent-279"></a><a name="index-Atomic-operations-in-cfagent-280"></a>Assuming that the time conditions set above allow you to start
+<a name="index-Atoms-in-cfagent-280"></a><a name="index-Atomic-operations-in-cfagent-281"></a>Assuming that the time conditions set above allow you to start
 cfengine, the locks ensure that atoms will never
 be started by two cfagents at the same time, causing
 contention and wasting CPU cycles. 
@@ -5108,7 +5190,7 @@ since they can lead to contention.
 
    </dl>
 
-   <p><a name="index-Lock-files-for-ordinary-users-281"></a><a name="index-Ordinary-users_002c-lock-files-282"></a>Cfagent creates a directory <samp><span class="file">~/.cfengine</span></samp> for writing lock files
+   <p><a name="index-Lock-files-for-ordinary-users-282"></a><a name="index-Ordinary-users_002c-lock-files-283"></a>Cfagent creates a directory <samp><span class="file">~/.cfengine</span></samp> for writing lock files
 for ordinary users.
 
    <p>The option `<samp><span class="samp">-K</span></samp>' or `<samp><span class="samp">--no-lock</span></samp>' can be used to switch off the
@@ -5160,7 +5242,7 @@ ourselves up the possibilty of deadlock. This is a situation where two
 or more processes are locked in a vicious stalemate from which none can
 escape. Another problem is that it might be possible to start an infinite loop:
 cfagent starts itself. 
-<a name="index-Deadlock-protection-283"></a><a name="index-Infinite-loops-284"></a>
+<a name="index-Deadlock-protection-284"></a><a name="index-Infinite-loops-285"></a>
 Cfagent protects you from such loops to a large
 degree. It should not be possible to make such a loop by accident. 
 The reason for this is the locking mechanism which prevents tasks
@@ -5173,7 +5255,7 @@ you will simply have wasted a little CPU time. When the first
 cfagent returns, the tasks which the second cfagent completed
 will not be repeated unless you have set the <code>IfElapsed</code> time
 or the <code>ExpireAfter</code> time to zero. 
-<a name="index-IfElapsed_002c-caution-setting-to-zero_0021-285"></a><a name="index-ExpireAfter_002c-caution-setting-to-zero_0021-286"></a>In general, if you wish to avoid problems like this, you
+<a name="index-IfElapsed_002c-caution-setting-to-zero_0021-286"></a><a name="index-ExpireAfter_002c-caution-setting-to-zero_0021-287"></a>In general, if you wish to avoid problems like this, you
 should not disable the locking mechanism by setting these two
 times to zero.
 
@@ -5182,7 +5264,7 @@ not attempt to use the network to copy a file which can be copied
 internally from some machine to itself. It will always replace the
 <code>server=</code> directive in a copy with `localhost' to avoid unnecessary
 network connections. 
-<a name="index-server_003d-when-copying-to-localhost-287"></a><a name="index-localhost-and-remote-copying-288"></a>This prevents one kind of deadlock which could occur: namely cfrun
+<a name="index-server_003d-when-copying-to-localhost-288"></a><a name="index-localhost-and-remote-copying-289"></a>This prevents one kind of deadlock which could occur: namely cfrun
 executes cfagent on host A (cfservd on host A is then blocked until this
 completes), but the host A configuration file contains a remote copy
 from itself to itself.  This remote copy would then have to wait for cfservd
@@ -5251,7 +5333,7 @@ of the following type in your system startup files:
    <p class="noindent">Note that <code>cfservd</code> will re-read its configuration file whenever
 it detects that it has been changed, so you should not have to restart
 the daemon, not send it the HUP signal as with other daemons. 
-<a name="index-HUP-and-cfservd_002c-don_0027t-need-to-289"></a><a name="index-Restarting-cfservd-290"></a><a name="index-Rereading-_0040file_007bcfservd_002econf_007d-291"></a>
+<a name="index-HUP-and-cfservd_002c-don_0027t-need-to-290"></a><a name="index-Restarting-cfservd-291"></a><a name="index-Rereading-_0040file_007bcfservd_002econf_007d-292"></a>
 <!-- ........................................... -->
 <!-- SUBSECTION -->
 <!-- ........................................... -->
@@ -5269,7 +5351,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Configuring-cfservd">Configuring cfser
 
 <p>The server daemon is controlled by a file called
 <samp><span class="file">cfservd.conf</span></samp>. 
-<a name="index-g_t_0040file_007bcfservd_002econf_007d-file-292"></a>The syntax of this configuration file is deliberately modelled on
+<a name="index-g_t_0040file_007bcfservd_002econf_007d-file-293"></a>The syntax of this configuration file is deliberately modelled on
 cfengine's own configuration file, but despite the similarities, you cannot
 mix the contents of the two files.
 
@@ -5284,7 +5366,7 @@ different files.
 
      <li>Both files are searched for using the contents of the variable
 <code>CFINPUTS</code>. 
-<a name="index-g_t_0040code_007bCFINPUTS_007d-variable-293"></a>
+<a name="index-g_t_0040code_007bCFINPUTS_007d-variable-294"></a>
 <li>You can use <code>groups</code> and <code>import</code> in both files
 to break up files into convenient modules and to import
 common resources, such as lists of groups.
@@ -5454,8 +5536,8 @@ relationship here.  There is no way to verify whether the user on the
 remote host is the same user as the user with the same name on the local
 host.</b>
 
-   <p><a name="index-Access-control-by-directory-294"></a><a name="index-Device-boundaries-and-remote-copy-access-295"></a><a name="index-Why-does-cfservd-give-access-to-files-on-a-different-filesystem_003f-296"></a><a name="index-Why-do-I-get-network-access-denied-to-files-I-have-granted-access-to_003f-297"></a>
-<a name="index-Access-control-in-cfservd-298"></a>
+   <p><a name="index-Access-control-by-directory-295"></a><a name="index-Device-boundaries-and-remote-copy-access-296"></a><a name="index-Why-does-cfservd-give-access-to-files-on-a-different-filesystem_003f-297"></a><a name="index-Why-do-I-get-network-access-denied-to-files-I-have-granted-access-to_003f-298"></a>
+<a name="index-Access-control-in-cfservd-299"></a>
 <!-- ********************************************************************** -->
 <!-- CHAPTER -->
 <!-- ********************************************************************** -->
@@ -6792,7 +6874,7 @@ impossible to forge. Our bodies use a similar method of receptor
 identification of molecules for immune responses as well as for smell
 (with some subtleties).  Without matching secrets it is impossible to
 prove someone's identity. 
-<a name="index-Immune-identity-299"></a>
+<a name="index-Immune-identity-300"></a>
 To copy a file over an encrypted link, you write:
 <pre class="smallexample">     
       copy:
@@ -6858,7 +6940,7 @@ keys, you could arrange to exchange key files manually, e.g.
    <p class="noindent">or you could arrange to connect at a specific time, so minimize the chances
 of spoofer racing you to the finishing line in transferring a key for a
 given user at a given host. 
-<a name="index-Race-condition-with-public-keys-300"></a>
+<a name="index-Race-condition-with-public-keys-301"></a>
 Note that, even program like ssh which use "privileged ports" are no
 longer immune to spoofing. Privileged ports are ports which only the
 root user can bind to. The idea used to be, a connection on a privileged
@@ -6872,13 +6954,13 @@ one has is in being able to keep a secret key. However, if someone
 gets there before you, with a fake key, and claims to be you, the receiver
 cannot know better. This applies to any and all cryptographic software.
 
-   <p><a name="index-Privileged-ports-301"></a>
+   <p><a name="index-Privileged-ports-302"></a>
 Cfengine secure copy is not based on SSL/TLS (although it shares some of
 the lower level libraries). SSL is not appropriate for a system
 administration tool, because it uses a trust model based on a third
 party, such as Verisign.  Most adminisrators are not prepared to
 pay a fee to register every host on their network, with a trusted third party. 
-<a name="index-Trusted-Third-Party-302"></a>Cfengine does not use the Secure Shell
+<a name="index-Trusted-Third-Party-303"></a>Cfengine does not use the Secure Shell
 protocol either. The ssh protocol is not directly appropriate for a
 system management tool, because it provides only unilateral
 authentication of user to server. Cfengine authenticates these parties
@@ -7055,67 +7137,67 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <h2 class="unnumbered">Variable Index</h2>
 
 <ul class="index-vr" compact>
-<li><a href="#index-g_t_0021-67"><code>!</code></a>: <a href="#Classes-basics">Classes basics</a></li>
-<li><a href="#index-g_t_0022-186"><code>"</code></a>: <a href="#Quoted-strings">Quoted strings</a></li>
-<li><a href="#index-g_t_0024_0028arch_0029-100"><code>$(arch)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028binserver_0029-101"><code>$(binserver)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028class_0029-102"><code>$(class)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028cr_0029-123"><code>$(cr)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028date_0029-103"><code>$(date)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028dblquote_0029-124"><code>$(dblquote)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028dollar_0029-125"><code>$(dollar)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028domain_0029-104"><code>$(domain)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028faculty_0029-105"><code>$(faculty)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028fqhost_0029-106"><code>$(fqhost)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028host_0029-107"><code>$(host)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028ipaddress_0029-108"><code>$(ipaddress)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028lf_0029-126"><code>$(lf)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028n_0029-127"><code>$(n)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028quote_0029-128"><code>$(quote)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028site_0029-112"><code>$(site)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028spc_0029-129"><code>$(spc)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028sysadm_0029-114"><code>$(sysadm)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028tab_0029-130"><code>$(tab)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028timezone_0029-115"><code>$(timezone)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0024_0028year_0029-122"><code>$(year)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0027-187"><code>'</code></a>: <a href="#Quoted-strings">Quoted strings</a></li>
-<li><a href="#index-g_t_002da-option-132"><code>-a option</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_002dD-option-63"><code>-D option</code></a>: <a href="#Classes-basics">Classes basics</a></li>
-<li><a href="#index-g_t_002df-option-51"><code>-f option</code></a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
-<li><a href="#index-g_t_002df-option-35"><code>-f option</code></a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
-<li><a href="#index-g_t_002dh-option-39"><code>-h option</code></a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
-<li><a href="#index-g_t_002dN-option-147"><code>-N option</code></a>: <a href="#Debugging-tips">Debugging tips</a></li>
-<li><a href="#index-g_t_002dN-option-62"><code>-N option</code></a>: <a href="#Classes-basics">Classes basics</a></li>
-<li><a href="#index-g_t_002dn-option-34"><code>-n option</code></a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
-<li><a href="#index-g_t_002dv-option-36"><code>-v option</code></a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
-<li><a href="#index-g_t_002fetc_002fexports-202"><code>/etc/exports</code></a>: <a href="#Using-netgroups">Using netgroups</a></li>
-<li><a href="#index-g_t_002fvar_002fcfengine_002fcfengine_002elog-181"><code>/var/cfengine/cfengine.log</code></a>: <a href="#Log-files">Log files</a></li>
-<li><a href="#index-g_t_002fvar_002fcfengine_002foutput-42"><code>/var/cfengine/output</code></a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
-<li><a href="#index-g_t_0060-188"><code>`</code></a>: <a href="#Quoted-strings">Quoted strings</a></li>
-<li><a href="#index-g_t_0040code_007bacl_007d-245"><code>acl</code></a>: <a href="#ACLs">ACLs</a></li>
-<li><a href="#index-any-144"><code>any</code></a>: <a href="#The-generic-class-any">The generic class any</a></li>
-<li><a href="#index-binserver-220"><code>binserver</code></a>: <a href="#Special-variables">Special variables</a></li>
-<li><a href="#index-binserver-81"><code>binserver</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-CFALLCLASSES-97"><code>CFALLCLASSES</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-domain-84"><code>domain</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0040code_007bexclude_003d_007d-170"><code>exclude=</code></a>: <a href="#File-sweeps">File sweeps</a></li>
-<li><a href="#index-g_t_0040code_007bexec_007d-92"><code>exec</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-faculty-80"><code>faculty</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0040code_007bfilter_003d_007d-171"><code>filter=</code></a>: <a href="#File-sweeps">File sweeps</a></li>
-<li><a href="#index-host-82"><code>host</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0040code_007binclude_003d_007d-169"><code>include=</code></a>: <a href="#File-sweeps">File sweeps</a></li>
-<li><a href="#index-MaxCfengines-109"><code>MaxCfengines</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-moduledirectory-143"><code>moduledirectory</code></a>: <a href="#Writing-plugin-modules">Writing plugin modules</a></li>
-<li><a href="#index-OutputPrefix-110"><code>OutputPrefix</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-repchar-111"><code>repchar</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-site-79"><code>site</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-smtpserver-45"><code>smtpserver</code></a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
-<li><a href="#index-Split-193"><code>Split</code></a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
-<li><a href="#index-split-113"><code>split</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-sysadm-85"><code>sysadm</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-sysadm-46"><code>sysadm</code></a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
-<li><a href="#index-timezone-83"><code>timezone</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-underscoreclasses-116"><code>underscoreclasses</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0021-68"><code>!</code></a>: <a href="#Classes-basics">Classes basics</a></li>
+<li><a href="#index-g_t_0022-187"><code>"</code></a>: <a href="#Quoted-strings">Quoted strings</a></li>
+<li><a href="#index-g_t_0024_0028arch_0029-101"><code>$(arch)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028binserver_0029-102"><code>$(binserver)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028class_0029-103"><code>$(class)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028cr_0029-124"><code>$(cr)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028date_0029-104"><code>$(date)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028dblquote_0029-125"><code>$(dblquote)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028dollar_0029-126"><code>$(dollar)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028domain_0029-105"><code>$(domain)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028faculty_0029-106"><code>$(faculty)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028fqhost_0029-107"><code>$(fqhost)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028host_0029-108"><code>$(host)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028ipaddress_0029-109"><code>$(ipaddress)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028lf_0029-127"><code>$(lf)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028n_0029-128"><code>$(n)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028quote_0029-129"><code>$(quote)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028site_0029-113"><code>$(site)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028spc_0029-130"><code>$(spc)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028sysadm_0029-115"><code>$(sysadm)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028tab_0029-131"><code>$(tab)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028timezone_0029-116"><code>$(timezone)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0024_0028year_0029-123"><code>$(year)</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0027-188"><code>'</code></a>: <a href="#Quoted-strings">Quoted strings</a></li>
+<li><a href="#index-g_t_002da-option-133"><code>-a option</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_002dD-option-64"><code>-D option</code></a>: <a href="#Classes-basics">Classes basics</a></li>
+<li><a href="#index-g_t_002df-option-52"><code>-f option</code></a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
+<li><a href="#index-g_t_002df-option-36"><code>-f option</code></a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
+<li><a href="#index-g_t_002dh-option-40"><code>-h option</code></a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
+<li><a href="#index-g_t_002dN-option-148"><code>-N option</code></a>: <a href="#Debugging-tips">Debugging tips</a></li>
+<li><a href="#index-g_t_002dN-option-63"><code>-N option</code></a>: <a href="#Classes-basics">Classes basics</a></li>
+<li><a href="#index-g_t_002dn-option-35"><code>-n option</code></a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
+<li><a href="#index-g_t_002dv-option-37"><code>-v option</code></a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
+<li><a href="#index-g_t_002fetc_002fexports-203"><code>/etc/exports</code></a>: <a href="#Using-netgroups">Using netgroups</a></li>
+<li><a href="#index-g_t_002fvar_002fcfengine_002fcfengine_002elog-182"><code>/var/cfengine/cfengine.log</code></a>: <a href="#Log-files">Log files</a></li>
+<li><a href="#index-g_t_002fvar_002fcfengine_002foutput-43"><code>/var/cfengine/output</code></a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
+<li><a href="#index-g_t_0060-189"><code>`</code></a>: <a href="#Quoted-strings">Quoted strings</a></li>
+<li><a href="#index-g_t_0040code_007bacl_007d-246"><code>acl</code></a>: <a href="#ACLs">ACLs</a></li>
+<li><a href="#index-any-145"><code>any</code></a>: <a href="#The-generic-class-any">The generic class any</a></li>
+<li><a href="#index-binserver-221"><code>binserver</code></a>: <a href="#Special-variables">Special variables</a></li>
+<li><a href="#index-binserver-82"><code>binserver</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-CFALLCLASSES-98"><code>CFALLCLASSES</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-domain-85"><code>domain</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0040code_007bexclude_003d_007d-171"><code>exclude=</code></a>: <a href="#File-sweeps">File sweeps</a></li>
+<li><a href="#index-g_t_0040code_007bexec_007d-93"><code>exec</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-faculty-81"><code>faculty</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0040code_007bfilter_003d_007d-172"><code>filter=</code></a>: <a href="#File-sweeps">File sweeps</a></li>
+<li><a href="#index-host-83"><code>host</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0040code_007binclude_003d_007d-170"><code>include=</code></a>: <a href="#File-sweeps">File sweeps</a></li>
+<li><a href="#index-MaxCfengines-110"><code>MaxCfengines</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-moduledirectory-144"><code>moduledirectory</code></a>: <a href="#Writing-plugin-modules">Writing plugin modules</a></li>
+<li><a href="#index-OutputPrefix-111"><code>OutputPrefix</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-repchar-112"><code>repchar</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-site-80"><code>site</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-smtpserver-46"><code>smtpserver</code></a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
+<li><a href="#index-Split-194"><code>Split</code></a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
+<li><a href="#index-split-114"><code>split</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-sysadm-86"><code>sysadm</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-sysadm-47"><code>sysadm</code></a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
+<li><a href="#index-timezone-84"><code>timezone</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-underscoreclasses-117"><code>underscoreclasses</code></a>: <a href="#Variable-substitution">Variable substitution</a></li>
    </ul><div class="node">
 <p><hr>
 <a name="Concept-Index"></a>
@@ -7130,230 +7212,231 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 
 
 <ul class="index-cp" compact>
-<li><a href="#index-g_t_0021-68">!</a>: <a href="#Classes-basics">Classes basics</a></li>
-<li><a href="#index-g_t_002dh-option-38">-h option</a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
-<li><a href="#index-g_t_002dN-option-148">-N option</a>: <a href="#Debugging-tips">Debugging tips</a></li>
-<li><a href="#index-g_t_0040file_007b_002ecfdisabled_007d-files-240"><samp><span class="file">.cfdisabled</span></samp> files</a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
-<li><a href="#index-g_t_002ecfengine_002erm-178">.cfengine.rm</a>: <a href="#Log-files">Log files</a></li>
-<li><a href="#index-g_t_0040file_007b_002ecfnew_007d-files-273"><samp><span class="file">.cfnew</span></samp> files</a>: <a href="#Emulating-rdist">Emulating rdist</a></li>
-<li><a href="#index-g_t_0040file_007b_002ecfsaved_007d-files-239"><samp><span class="file">.cfsaved</span></samp> files</a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
-<li><a href="#index-g_t_0040file_007b_002fetc_002fhosts_002eequiv_007d-234"><samp><span class="file">/etc/hosts.equiv</span></samp></a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
-<li><a href="#index-g_t_0040file_007b_002fetc_002finetd_002econf_007d-file-and-cfengine-270"><samp><span class="file">/etc/inetd.conf</span></samp> file and cfengine</a>: <a href="#Emulating-rdist">Emulating rdist</a></li>
-<li><a href="#index-g_t_0040file_007b_002fhome_007d-231"><samp><span class="file">/home</span></samp></a>: <a href="#Using-the-automounter">Using the automounter</a></li>
-<li><a href="#index-g_t_0040file_007b_002fusers_007d-232"><samp><span class="file">/users</span></samp></a>: <a href="#Using-the-automounter">Using the automounter</a></li>
-<li><a href="#index-g_t_0040file_007b_002fvar_002fadm_002fwtmpx_007d-235"><samp><span class="file">/var/adm/wtmpx</span></samp></a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
-<li><a href="#index-g_t_002fvar_002fcfengine_002fcfengine_002elog-179">/var/cfengine/cfengine.log</a>: <a href="#Log-files">Log files</a></li>
-<li><a href="#index-g_t_002fvar_002fcfengine_002foutput-41">/var/cfengine/output</a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
-<li><a href="#index-g_t_002fvar_002flog_002fcfengine_002fcfengine_002elog-180">/var/log/cfengine/cfengine.log</a>: <a href="#Log-files">Log files</a></li>
-<li><a href="#index-g_t_0040file_007b_002fvar_002flp_002flogs_002flpsched_007d-236"><samp><span class="file">/var/lp/logs/lpsched</span></samp></a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
-<li><a href="#index-Access-control-152">Access control</a>: <a href="#Access-control">Access control</a></li>
-<li><a href="#index-Access-control-by-directory-294">Access control by directory</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
-<li><a href="#index-Access-control-in-cfservd-298">Access control in cfservd</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
-<li><a href="#index-Access-control-lists-242">Access control lists</a>: <a href="#ACLs">ACLs</a></li>
-<li><a href="#index-ACL-aliases-246">ACL aliases</a>: <a href="#ACLs">ACLs</a></li>
-<li><a href="#index-ACLs-243">ACLs</a>: <a href="#ACLs">ACLs</a></li>
-<li><a href="#index-ACLs_002c-DFS-248">ACLs, DFS</a>: <a href="#ACLs">ACLs</a></li>
-<li><a href="#index-ACLs_002c-Solaris-247">ACLs, Solaris</a>: <a href="#ACLs">ACLs</a></li>
+<li><a href="#index-g_t_0021-69">!</a>: <a href="#Classes-basics">Classes basics</a></li>
+<li><a href="#index-g_t_002dh-option-39">-h option</a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
+<li><a href="#index-g_t_002dN-option-149">-N option</a>: <a href="#Debugging-tips">Debugging tips</a></li>
+<li><a href="#index-g_t_0040file_007b_002ecfdisabled_007d-files-241"><samp><span class="file">.cfdisabled</span></samp> files</a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
+<li><a href="#index-g_t_002ecfengine_002erm-179">.cfengine.rm</a>: <a href="#Log-files">Log files</a></li>
+<li><a href="#index-g_t_0040file_007b_002ecfnew_007d-files-274"><samp><span class="file">.cfnew</span></samp> files</a>: <a href="#Emulating-rdist">Emulating rdist</a></li>
+<li><a href="#index-g_t_0040file_007b_002ecfsaved_007d-files-240"><samp><span class="file">.cfsaved</span></samp> files</a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
+<li><a href="#index-g_t_0040file_007b_002fetc_002fhosts_002eequiv_007d-235"><samp><span class="file">/etc/hosts.equiv</span></samp></a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
+<li><a href="#index-g_t_0040file_007b_002fetc_002finetd_002econf_007d-file-and-cfengine-271"><samp><span class="file">/etc/inetd.conf</span></samp> file and cfengine</a>: <a href="#Emulating-rdist">Emulating rdist</a></li>
+<li><a href="#index-g_t_0040file_007b_002fhome_007d-232"><samp><span class="file">/home</span></samp></a>: <a href="#Using-the-automounter">Using the automounter</a></li>
+<li><a href="#index-g_t_0040file_007b_002fusers_007d-233"><samp><span class="file">/users</span></samp></a>: <a href="#Using-the-automounter">Using the automounter</a></li>
+<li><a href="#index-g_t_0040file_007b_002fvar_002fadm_002fwtmpx_007d-236"><samp><span class="file">/var/adm/wtmpx</span></samp></a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
+<li><a href="#index-g_t_002fvar_002fcfengine_002fcfengine_002elog-180">/var/cfengine/cfengine.log</a>: <a href="#Log-files">Log files</a></li>
+<li><a href="#index-g_t_002fvar_002fcfengine_002foutput-42">/var/cfengine/output</a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
+<li><a href="#index-g_t_002fvar_002flog_002fcfengine_002fcfengine_002elog-181">/var/log/cfengine/cfengine.log</a>: <a href="#Log-files">Log files</a></li>
+<li><a href="#index-g_t_0040file_007b_002fvar_002flp_002flogs_002flpsched_007d-237"><samp><span class="file">/var/lp/logs/lpsched</span></samp></a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
+<li><a href="#index-Access-control-153">Access control</a>: <a href="#Access-control">Access control</a></li>
+<li><a href="#index-Access-control-by-directory-295">Access control by directory</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
+<li><a href="#index-Access-control-in-cfservd-299">Access control in cfservd</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
+<li><a href="#index-Access-control-lists-243">Access control lists</a>: <a href="#ACLs">ACLs</a></li>
+<li><a href="#index-ACL-aliases-247">ACL aliases</a>: <a href="#ACLs">ACLs</a></li>
+<li><a href="#index-ACLs-244">ACLs</a>: <a href="#ACLs">ACLs</a></li>
+<li><a href="#index-ACLs_002c-DFS-249">ACLs, DFS</a>: <a href="#ACLs">ACLs</a></li>
+<li><a href="#index-ACLs_002c-Solaris-248">ACLs, Solaris</a>: <a href="#ACLs">ACLs</a></li>
 <li><a href="#index-Actions_002c-order-of-22">Actions, order of</a>: <a href="#Program-structure">Program structure</a></li>
-<li><a href="#index-AFS-228">AFS</a>: <a href="#Using-the-automounter">Using the automounter</a></li>
-<li><a href="#index-Annulling-entries-when-debugging-149">Annulling entries when debugging</a>: <a href="#Debugging-tips">Debugging tips</a></li>
-<li><a href="#index-Atomic-operations-in-cfagent-280">Atomic operations in cfagent</a>: <a href="#Spamming-and-security">Spamming and security</a></li>
-<li><a href="#index-Atoms-in-cfagent-279">Atoms in cfagent</a>: <a href="#Spamming-and-security">Spamming and security</a></li>
-<li><a href="#index-g_t_0040file_007bauto_005fdirect_007d-227"><samp><span class="file">auto_direct</span></samp></a>: <a href="#Using-the-automounter">Using the automounter</a></li>
-<li><a href="#index-g_t_0040file_007bauto_005fmaster_007d-226"><samp><span class="file">auto_master</span></samp></a>: <a href="#Using-the-automounter">Using the automounter</a></li>
-<li><a href="#index-automount-225">automount</a>: <a href="#Using-the-automounter">Using the automounter</a></li>
-<li><a href="#index-Backup-policy-205">Backup policy</a>: <a href="#Files-and-links">Files and links</a></li>
-<li><a href="#index-Binary-server-210">Binary server</a>: <a href="#NFS-filesystem-resources">NFS filesystem resources</a></li>
-<li><a href="#index-Binary-server_002c-matching-221">Binary server, matching</a>: <a href="#Special-variables">Special variables</a></li>
-<li><a href="#index-Binary-servers_002c-declaring-214">Binary servers, declaring</a>: <a href="#How-does-it-work_003f">How does it work?</a></li>
-<li><a href="#index-binserver-variable-and-actionsequence-222">binserver variable and actionsequence</a>: <a href="#Special-variables">Special variables</a></li>
-<li><a href="#index-cfagent_002c-starting-30">cfagent, starting</a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
-<li><a href="#index-g_t_0040file_007bcfagent_002econf_007d-58"><samp><span class="file">cfagent.conf</span></samp></a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
-<li><a href="#index-g_t_0040file_007bcfagent_002econf_007d-33"><samp><span class="file">cfagent.conf</span></samp></a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
-<li><a href="#index-g_t_0040file_007bcfagent_002econf_007d-file-265"><samp><span class="file">cfagent.conf</span></samp> file</a>: <a href="#What-services_003f">What services?</a></li>
-<li><a href="#index-CFALLCLASSES-96">CFALLCLASSES</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-cfengine-model-207">cfengine model</a>: <a href="#NFS-resources">NFS resources</a></li>
-<li><a href="#index-cfengine-model_002c-how-it-works-216">cfengine model, how it works</a>: <a href="#How-does-it-work_003f">How does it work?</a></li>
-<li><a href="#index-cfexecd-47">cfexecd</a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
+<li><a href="#index-AFS-229">AFS</a>: <a href="#Using-the-automounter">Using the automounter</a></li>
+<li><a href="#index-Annulling-entries-when-debugging-150">Annulling entries when debugging</a>: <a href="#Debugging-tips">Debugging tips</a></li>
+<li><a href="#index-Atomic-operations-in-cfagent-281">Atomic operations in cfagent</a>: <a href="#Spamming-and-security">Spamming and security</a></li>
+<li><a href="#index-Atoms-in-cfagent-280">Atoms in cfagent</a>: <a href="#Spamming-and-security">Spamming and security</a></li>
+<li><a href="#index-g_t_0040file_007bauto_005fdirect_007d-228"><samp><span class="file">auto_direct</span></samp></a>: <a href="#Using-the-automounter">Using the automounter</a></li>
+<li><a href="#index-g_t_0040file_007bauto_005fmaster_007d-227"><samp><span class="file">auto_master</span></samp></a>: <a href="#Using-the-automounter">Using the automounter</a></li>
+<li><a href="#index-automount-226">automount</a>: <a href="#Using-the-automounter">Using the automounter</a></li>
+<li><a href="#index-Backup-policy-206">Backup policy</a>: <a href="#Files-and-links">Files and links</a></li>
+<li><a href="#index-Binary-server-211">Binary server</a>: <a href="#NFS-filesystem-resources">NFS filesystem resources</a></li>
+<li><a href="#index-Binary-server_002c-matching-222">Binary server, matching</a>: <a href="#Special-variables">Special variables</a></li>
+<li><a href="#index-Binary-servers_002c-declaring-215">Binary servers, declaring</a>: <a href="#How-does-it-work_003f">How does it work?</a></li>
+<li><a href="#index-binserver-variable-and-actionsequence-223">binserver variable and actionsequence</a>: <a href="#Special-variables">Special variables</a></li>
+<li><a href="#index-cfagent_002c-starting-31">cfagent, starting</a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
+<li><a href="#index-g_t_0040file_007bcfagent_002econf_007d-59"><samp><span class="file">cfagent.conf</span></samp></a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
+<li><a href="#index-g_t_0040file_007bcfagent_002econf_007d-34"><samp><span class="file">cfagent.conf</span></samp></a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
+<li><a href="#index-g_t_0040file_007bcfagent_002econf_007d-file-266"><samp><span class="file">cfagent.conf</span></samp> file</a>: <a href="#What-services_003f">What services?</a></li>
+<li><a href="#index-CFALLCLASSES-97">CFALLCLASSES</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-cfengine-model-208">cfengine model</a>: <a href="#NFS-resources">NFS resources</a></li>
+<li><a href="#index-cfengine-model_002c-how-it-works-217">cfengine model, how it works</a>: <a href="#How-does-it-work_003f">How does it work?</a></li>
+<li><a href="#index-cfexecd-48">cfexecd</a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
 <li><a href="#index-cfexecd-15">cfexecd</a>: <a href="#Functionality">Functionality</a></li>
-<li><a href="#index-cfexecd-restarting-by-processes-49">cfexecd restarting by processes</a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
-<li><a href="#index-g_t_0040code_007bCFINPUTS_007d-variable-293"><code>CFINPUTS</code> variable</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
-<li><a href="#index-CFINPUTS-variable-52">CFINPUTS variable</a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
-<li><a href="#index-cfrun-154">cfrun</a>: <a href="#Access-control">Access control</a></li>
-<li><a href="#index-cfrun-program-277">cfrun program</a>: <a href="#Remote-execution-of-cfagent">Remote execution of cfagent</a></li>
-<li><a href="#index-g_t_0040code_007bcfrun_007d-program-274"><code>cfrun</code> program</a>: <a href="#Emulating-rdist">Emulating rdist</a></li>
-<li><a href="#index-g_t_0040code_007bcfrun_007d-program-263"><code>cfrun</code> program</a>: <a href="#What-services_003f">What services?</a></li>
-<li><a href="#index-cfservd-and-access-keyword-155">cfservd and access keyword</a>: <a href="#Access-control">Access control</a></li>
-<li><a href="#index-g_t_0040code_007bcfservd_007d-daemon-262"><code>cfservd</code> daemon</a>: <a href="#What-services_003f">What services?</a></li>
-<li><a href="#index-cfservd-dameon-276">cfservd dameon</a>: <a href="#Remote-execution-of-cfagent">Remote execution of cfagent</a></li>
-<li><a href="#index-g_t_0040file_007bcfservd_002econf_007d-file-292"><samp><span class="file">cfservd.conf</span></samp> file</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
-<li><a href="#index-g_t_0040file_007bcfservd_002econf_007d-file-266"><samp><span class="file">cfservd.conf</span></samp> file</a>: <a href="#What-services_003f">What services?</a></li>
-<li><a href="#index-g_t_0040code_007bcfwatcher_007d-program-264"><code>cfwatcher</code> program</a>: <a href="#What-services_003f">What services?</a></li>
-<li><a href="#index-Class-data-and-scripts-98">Class data and scripts</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-Class_002c-generic-any-146">Class, generic any</a>: <a href="#The-generic-class-any">The generic class any</a></li>
-<li><a href="#index-Classes-59">Classes</a>: <a href="#Classes-basics">Classes basics</a></li>
-<li><a href="#index-Classes-based-on-shell-commands-138">Classes based on shell commands</a>: <a href="#shellcommand-classes">shellcommand classes</a></li>
-<li><a href="#index-Classes_002c-compound-61">Classes, compound</a>: <a href="#Classes-basics">Classes basics</a></li>
-<li><a href="#index-Classes_002c-defining-and-undefining-64">Classes, defining and undefining</a>: <a href="#Classes-basics">Classes basics</a></li>
-<li><a href="#index-Clock-synchronization-during-copying-272">Clock synchronization during copying</a>: <a href="#Emulating-rdist">Emulating rdist</a></li>
+<li><a href="#index-cfexecd-restarting-by-processes-50">cfexecd restarting by processes</a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
+<li><a href="#index-g_t_0040code_007bCFINPUTS_007d-variable-294"><code>CFINPUTS</code> variable</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
+<li><a href="#index-CFINPUTS-variable-53">CFINPUTS variable</a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
+<li><a href="#index-cfrun-155">cfrun</a>: <a href="#Access-control">Access control</a></li>
+<li><a href="#index-cfrun-program-278">cfrun program</a>: <a href="#Remote-execution-of-cfagent">Remote execution of cfagent</a></li>
+<li><a href="#index-g_t_0040code_007bcfrun_007d-program-275"><code>cfrun</code> program</a>: <a href="#Emulating-rdist">Emulating rdist</a></li>
+<li><a href="#index-g_t_0040code_007bcfrun_007d-program-264"><code>cfrun</code> program</a>: <a href="#What-services_003f">What services?</a></li>
+<li><a href="#index-cfservd-and-access-keyword-156">cfservd and access keyword</a>: <a href="#Access-control">Access control</a></li>
+<li><a href="#index-g_t_0040code_007bcfservd_007d-daemon-263"><code>cfservd</code> daemon</a>: <a href="#What-services_003f">What services?</a></li>
+<li><a href="#index-cfservd-dameon-277">cfservd dameon</a>: <a href="#Remote-execution-of-cfagent">Remote execution of cfagent</a></li>
+<li><a href="#index-g_t_0040file_007bcfservd_002econf_007d-file-293"><samp><span class="file">cfservd.conf</span></samp> file</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
+<li><a href="#index-g_t_0040file_007bcfservd_002econf_007d-file-267"><samp><span class="file">cfservd.conf</span></samp> file</a>: <a href="#What-services_003f">What services?</a></li>
+<li><a href="#index-g_t_0040code_007bcfwatcher_007d-program-265"><code>cfwatcher</code> program</a>: <a href="#What-services_003f">What services?</a></li>
+<li><a href="#index-Class-data-and-scripts-99">Class data and scripts</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-Class_002c-generic-any-147">Class, generic any</a>: <a href="#The-generic-class-any">The generic class any</a></li>
+<li><a href="#index-Classes-60">Classes</a>: <a href="#Classes-basics">Classes basics</a></li>
+<li><a href="#index-Classes-based-on-shell-commands-139">Classes based on shell commands</a>: <a href="#shellcommand-classes">shellcommand classes</a></li>
+<li><a href="#index-Classes_002c-compound-62">Classes, compound</a>: <a href="#Classes-basics">Classes basics</a></li>
+<li><a href="#index-Classes_002c-defining-and-undefining-65">Classes, defining and undefining</a>: <a href="#Classes-basics">Classes basics</a></li>
+<li><a href="#index-Clock-synchronization-during-copying-273">Clock synchronization during copying</a>: <a href="#Emulating-rdist">Emulating rdist</a></li>
 <li><a href="#index-Comments-19">Comments</a>: <a href="#Program-structure">Program structure</a></li>
-<li><a href="#index-Compound-classes-60">Compound classes</a>: <a href="#Classes-basics">Classes basics</a></li>
-<li><a href="#index-Config-file_002c-default-name-32">Config file, default name</a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
+<li><a href="#index-Compound-classes-61">Compound classes</a>: <a href="#Classes-basics">Classes basics</a></li>
+<li><a href="#index-Config-file_002c-default-name-33">Config file, default name</a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
 <li><a href="#index-Configuration-files-and-registries-1">Configuration files and registries</a>: <a href="#Control-files">Control files</a></li>
-<li><a href="#index-Contention-during-copying-under-load-252">Contention during copying under load</a>: <a href="#Splaying-host-times">Splaying host times</a></li>
-<li><a href="#index-g_t_0040code_007bcopy_007d_002c-file-sweeps-162"><code>copy</code>, file sweeps</a>: <a href="#File-sweeps">File sweeps</a></li>
-<li><a href="#index-core-files_002c-caution_0021-206">core files, caution!</a>: <a href="#Files-and-links">Files and links</a></li>
-<li><a href="#index-Cron-jobs_002c-controlling-with-cfengine-249">Cron jobs, controlling with cfengine</a>: <a href="#Using-cfengine-as-a-front_002dend-for-cron">Using cfengine as a front-end for cron</a></li>
-<li><a href="#index-Day-of-the-week-259">Day of the week</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
-<li><a href="#index-Deadlock-protection-283">Deadlock protection</a>: <a href="#Deadlocks-and-runaway-loops">Deadlocks and runaway loops</a></li>
-<li><a href="#index-Debugging_002c-annulling-entries-150">Debugging, annulling entries</a>: <a href="#Debugging-tips">Debugging tips</a></li>
-<li><a href="#index-Default-file-31">Default file</a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
-<li><a href="#index-Defining-variables-using-other-variables-90">Defining variables using other variables</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-Device-boundaries-and-remote-copy-access-295">Device boundaries and remote copy access</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
-<li><a href="#index-DFS-229">DFS</a>: <a href="#Using-the-automounter">Using the automounter</a></li>
+<li><a href="#index-Contention-during-copying-under-load-253">Contention during copying under load</a>: <a href="#Splaying-host-times">Splaying host times</a></li>
+<li><a href="#index-g_t_0040code_007bcopy_007d_002c-file-sweeps-163"><code>copy</code>, file sweeps</a>: <a href="#File-sweeps">File sweeps</a></li>
+<li><a href="#index-core-files_002c-caution_0021-207">core files, caution!</a>: <a href="#Files-and-links">Files and links</a></li>
+<li><a href="#index-Cron-jobs_002c-controlling-with-cfengine-250">Cron jobs, controlling with cfengine</a>: <a href="#Using-cfengine-as-a-front_002dend-for-cron">Using cfengine as a front-end for cron</a></li>
+<li><a href="#index-Day-of-the-week-260">Day of the week</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
+<li><a href="#index-Deadlock-protection-284">Deadlock protection</a>: <a href="#Deadlocks-and-runaway-loops">Deadlocks and runaway loops</a></li>
+<li><a href="#index-Debugging_002c-annulling-entries-151">Debugging, annulling entries</a>: <a href="#Debugging-tips">Debugging tips</a></li>
+<li><a href="#index-Default-file-32">Default file</a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
+<li><a href="#index-Defining-variables-using-other-variables-91">Defining variables using other variables</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-Device-boundaries-and-remote-copy-access-296">Device boundaries and remote copy access</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
+<li><a href="#index-DFS-230">DFS</a>: <a href="#Using-the-automounter">Using the automounter</a></li>
 <li><a href="#index-DHCP-7">DHCP</a>: <a href="#Network-interface">Network interface</a></li>
-<li><a href="#index-Directory-Names_002c-use-of-wildcards-157">Directory Names, use of wildcards</a>: <a href="#Wildcards-in-directory-names">Wildcards in directory names</a></li>
+<li><a href="#index-Directory-Names_002c-use-of-wildcards-158">Directory Names, use of wildcards</a>: <a href="#Wildcards-in-directory-names">Wildcards in directory names</a></li>
 <li><a href="#index-Distributed-configuration-26">Distributed configuration</a>: <a href="#Building-a-distributed-configuration">Building a distributed configuration</a></li>
 <li><a href="#index-DNS-10">DNS</a>: <a href="#Name-servers-_0028DNS_0029">Name servers (DNS)</a></li>
-<li><a href="#index-Dots-in-hostnames-70">Dots in hostnames</a>: <a href="#Classes-basics">Classes basics</a></li>
-<li><a href="#index-g_t_0040code_007beditfiles_007d_002c-file-sweeps-163"><code>editfiles</code>, file sweeps</a>: <a href="#File-sweeps">File sweeps</a></li>
-<li><a href="#index-Environment-variable_002c-CFINPUTS-53">Environment variable, CFINPUTS</a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
-<li><a href="#index-Environment-variables-78">Environment variables</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-Exceptions-134">Exceptions</a>: <a href="#Defining-classes">Defining classes</a></li>
-<li><a href="#index-g_t_0040code_007bexclude_003d_007d-167"><code>exclude=</code></a>: <a href="#File-sweeps">File sweeps</a></li>
-<li><a href="#index-exclude_003d_002c-problems-172">exclude=, problems</a>: <a href="#File-sweeps">File sweeps</a></li>
-<li><a href="#index-Excluding-actions-in-a-controlled-way-135">Excluding actions in a controlled way</a>: <a href="#Defining-classes">Defining classes</a></li>
-<li><a href="#index-ExpireAfter_002c-caution-setting-to-zero_0021-286">ExpireAfter, caution setting to zero!</a>: <a href="#Deadlocks-and-runaway-loops">Deadlocks and runaway loops</a></li>
-<li><a href="#index-Exporting-filesystems-224">Exporting filesystems</a>: <a href="#Special-variables">Special variables</a></li>
-<li><a href="#index-Exporting-filesystems-203">Exporting filesystems</a>: <a href="#Using-netgroups">Using netgroups</a></li>
-<li><a href="#index-File-search-paths-54">File search paths</a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
+<li><a href="#index-Dots-in-hostnames-71">Dots in hostnames</a>: <a href="#Classes-basics">Classes basics</a></li>
+<li><a href="#index-g_t_0040code_007beditfiles_007d_002c-file-sweeps-164"><code>editfiles</code>, file sweeps</a>: <a href="#File-sweeps">File sweeps</a></li>
+<li><a href="#index-Environment-variable_002c-CFINPUTS-54">Environment variable, CFINPUTS</a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
+<li><a href="#index-Environment-variables-79">Environment variables</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-Exceptions-135">Exceptions</a>: <a href="#Defining-classes">Defining classes</a></li>
+<li><a href="#index-g_t_0040code_007bexclude_003d_007d-168"><code>exclude=</code></a>: <a href="#File-sweeps">File sweeps</a></li>
+<li><a href="#index-exclude_003d_002c-problems-173">exclude=, problems</a>: <a href="#File-sweeps">File sweeps</a></li>
+<li><a href="#index-Excluding-actions-in-a-controlled-way-136">Excluding actions in a controlled way</a>: <a href="#Defining-classes">Defining classes</a></li>
+<li><a href="#index-ExpireAfter_002c-caution-setting-to-zero_0021-287">ExpireAfter, caution setting to zero!</a>: <a href="#Deadlocks-and-runaway-loops">Deadlocks and runaway loops</a></li>
+<li><a href="#index-Exporting-filesystems-225">Exporting filesystems</a>: <a href="#Special-variables">Special variables</a></li>
+<li><a href="#index-Exporting-filesystems-204">Exporting filesystems</a>: <a href="#Using-netgroups">Using netgroups</a></li>
+<li><a href="#index-File-search-paths-55">File search paths</a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
 <li><a href="#index-Files_002c-checking-permissions-12">Files, checking permissions</a>: <a href="#Monitoring-important-files">Monitoring important files</a></li>
 <li><a href="#index-Files_002c-configuration-3">Files, configuration</a>: <a href="#Control-files">Control files</a></li>
 <li><a href="#index-Files_002c-control-2">Files, control</a>: <a href="#Control-files">Control files</a></li>
-<li><a href="#index-g_t_0040code_007bfiles_007d_002c-file-sweeps-160"><code>files</code>, file sweeps</a>: <a href="#File-sweeps">File sweeps</a></li>
-<li><a href="#index-g_t_0040code_007bfilter_003d_007d-168"><code>filter=</code></a>: <a href="#File-sweeps">File sweeps</a></li>
+<li><a href="#index-g_t_0040code_007bfiles_007d_002c-file-sweeps-161"><code>files</code>, file sweeps</a>: <a href="#File-sweeps">File sweeps</a></li>
+<li><a href="#index-g_t_0040code_007bfilter_003d_007d-169"><code>filter=</code></a>: <a href="#File-sweeps">File sweeps</a></li>
 <li><a href="#index-Format-25">Format</a>: <a href="#Program-structure">Program structure</a></li>
 <li><a href="#index-Free-format-23">Free format</a>: <a href="#Program-structure">Program structure</a></li>
-<li><a href="#index-Fully-qualified-names-69">Fully qualified names</a>: <a href="#Classes-basics">Classes basics</a></li>
-<li><a href="#index-Functions_002c-in_002dbuilt-94">Functions, in-built</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-Grouping-time-values-260">Grouping time values</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
-<li><a href="#index-g_t_0040code_007bgroups_007d-and-time-intervals-261"><code>groups</code> and time intervals</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
-<li><a href="#index-Hard-class-name-collision-120">Hard class name collision</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-Fully-qualified-names-70">Fully qualified names</a>: <a href="#Classes-basics">Classes basics</a></li>
+<li><a href="#index-Functions_002c-in_002dbuilt-95">Functions, in-built</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-Grouping-time-values-261">Grouping time values</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
+<li><a href="#index-g_t_0040code_007bgroups_007d-and-time-intervals-262"><code>groups</code> and time intervals</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
+<li><a href="#index-Hard-class-name-collision-121">Hard class name collision</a>: <a href="#Variable-substitution">Variable substitution</a></li>
 <li><a href="#index-Hard-links-14">Hard links</a>: <a href="#Making-links">Making links</a></li>
-<li><a href="#index-Help-37">Help</a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
-<li><a href="#index-Home-directories-and-automount-230">Home directories and automount</a>: <a href="#Using-the-automounter">Using the automounter</a></li>
-<li><a href="#index-Home-server-211">Home server</a>: <a href="#NFS-filesystem-resources">NFS filesystem resources</a></li>
-<li><a href="#index-Home-servers_002c-declaring-215">Home servers, declaring</a>: <a href="#How-does-it-work_003f">How does it work?</a></li>
-<li><a href="#index-Host-name-gets-truncated-71">Host name gets truncated</a>: <a href="#Classes-basics">Classes basics</a></li>
-<li><a href="#index-Hostname-collision-119">Hostname collision</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-HUP-and-cfservd_002c-don_0027t-need-to-289">HUP and cfservd, don't need to</a>: <a href="#Installation-of-cfservd">Installation of cfservd</a></li>
+<li><a href="#index-Help-38">Help</a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
+<li><a href="#index-Home-directories-and-automount-231">Home directories and automount</a>: <a href="#Using-the-automounter">Using the automounter</a></li>
+<li><a href="#index-Home-server-212">Home server</a>: <a href="#NFS-filesystem-resources">NFS filesystem resources</a></li>
+<li><a href="#index-Home-servers_002c-declaring-216">Home servers, declaring</a>: <a href="#How-does-it-work_003f">How does it work?</a></li>
+<li><a href="#index-Host-name-gets-truncated-72">Host name gets truncated</a>: <a href="#Classes-basics">Classes basics</a></li>
+<li><a href="#index-Hostname-collision-120">Hostname collision</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-HUP-and-cfservd_002c-don_0027t-need-to-290">HUP and cfservd, don't need to</a>: <a href="#Installation-of-cfservd">Installation of cfservd</a></li>
 <li><a href="#index-ifconfig-4">ifconfig</a>: <a href="#Network-interface">Network interface</a></li>
-<li><a href="#index-IfElapsed_002c-caution-setting-to-zero_0021-285">IfElapsed, caution setting to zero!</a>: <a href="#Deadlocks-and-runaway-loops">Deadlocks and runaway loops</a></li>
-<li><a href="#index-g_t_0040code_007bignore_003d_007d-164"><code>ignore=</code></a>: <a href="#File-sweeps">File sweeps</a></li>
-<li><a href="#index-Ignoring_002c-private-lists-in-files_002c-copy-and-links-165">Ignoring, private lists in files, copy and links</a>: <a href="#File-sweeps">File sweeps</a></li>
-<li><a href="#index-Immune-identity-299">Immune identity</a>: <a href="#Privacy-_0028encryption_0029">Privacy (encryption)</a></li>
-<li><a href="#index-In_002dbuilt-functions-93">In-built functions</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0040code_007binclude_003d_007d-166"><code>include=</code></a>: <a href="#File-sweeps">File sweeps</a></li>
-<li><a href="#index-Infinite-loops-284">Infinite loops</a>: <a href="#Deadlocks-and-runaway-loops">Deadlocks and runaway loops</a></li>
-<li><a href="#index-Invoking-cfagent-28">Invoking cfagent</a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
-<li><a href="#index-Iteration-over-lists-191">Iteration over lists</a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
-<li><a href="#index-Linking-to-binservers-217">Linking to binservers</a>: <a href="#Special-variables">Special variables</a></li>
+<li><a href="#index-IfElapsed_002c-caution-setting-to-zero_0021-286">IfElapsed, caution setting to zero!</a>: <a href="#Deadlocks-and-runaway-loops">Deadlocks and runaway loops</a></li>
+<li><a href="#index-g_t_0040code_007bignore_003d_007d-165"><code>ignore=</code></a>: <a href="#File-sweeps">File sweeps</a></li>
+<li><a href="#index-Ignoring_002c-private-lists-in-files_002c-copy-and-links-166">Ignoring, private lists in files, copy and links</a>: <a href="#File-sweeps">File sweeps</a></li>
+<li><a href="#index-Immune-identity-300">Immune identity</a>: <a href="#Privacy-_0028encryption_0029">Privacy (encryption)</a></li>
+<li><a href="#index-In_002dbuilt-functions-94">In-built functions</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0040code_007binclude_003d_007d-167"><code>include=</code></a>: <a href="#File-sweeps">File sweeps</a></li>
+<li><a href="#index-Infinite-loops-285">Infinite loops</a>: <a href="#Deadlocks-and-runaway-loops">Deadlocks and runaway loops</a></li>
+<li><a href="#index-Invoking-cfagent-29">Invoking cfagent</a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
+<li><a href="#index-Iteration-over-lists-192">Iteration over lists</a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
+<li><a href="#index-Linking-to-binservers-218">Linking to binservers</a>: <a href="#Special-variables">Special variables</a></li>
 <li><a href="#index-Links-13">Links</a>: <a href="#Making-links">Making links</a></li>
-<li><a href="#index-Load-balancing-253">Load balancing</a>: <a href="#Splaying-host-times">Splaying host times</a></li>
-<li><a href="#index-localhost-and-remote-copying-288">localhost and remote copying</a>: <a href="#Deadlocks-and-runaway-loops">Deadlocks and runaway loops</a></li>
-<li><a href="#index-Lock-files-for-ordinary-users-281">Lock files for ordinary users</a>: <a href="#Spamming-and-security">Spamming and security</a></li>
-<li><a href="#index-Log-files-177">Log files</a>: <a href="#Log-files">Log files</a></li>
-<li><a href="#index-Log-files_002c-rotating-238">Log files, rotating</a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
-<li><a href="#index-Logical-NOT-66">Logical NOT</a>: <a href="#Classes-basics">Classes basics</a></li>
-<li><a href="#index-Macros-87">Macros</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-Mailing-output-44">Mailing output</a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
-<li><a href="#index-moduledirectory-142">moduledirectory</a>: <a href="#Writing-plugin-modules">Writing plugin modules</a></li>
-<li><a href="#index-Modules_002c-user-defined-plug_002dins-137">Modules, user defined plug-ins</a>: <a href="#Defining-classes">Defining classes</a></li>
+<li><a href="#index-Load-balancing-254">Load balancing</a>: <a href="#Splaying-host-times">Splaying host times</a></li>
+<li><a href="#index-localhost-and-remote-copying-289">localhost and remote copying</a>: <a href="#Deadlocks-and-runaway-loops">Deadlocks and runaway loops</a></li>
+<li><a href="#index-Lock-files-for-ordinary-users-282">Lock files for ordinary users</a>: <a href="#Spamming-and-security">Spamming and security</a></li>
+<li><a href="#index-Log-files-178">Log files</a>: <a href="#Log-files">Log files</a></li>
+<li><a href="#index-Log-files_002c-rotating-239">Log files, rotating</a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
+<li><a href="#index-Logical-NOT-67">Logical NOT</a>: <a href="#Classes-basics">Classes basics</a></li>
+<li><a href="#index-Macros-88">Macros</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-Mailing-output-45">Mailing output</a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
+<li><a href="#index-moduledirectory-143">moduledirectory</a>: <a href="#Writing-plugin-modules">Writing plugin modules</a></li>
+<li><a href="#index-Modules_002c-user-defined-plug_002dins-138">Modules, user defined plug-ins</a>: <a href="#Defining-classes">Defining classes</a></li>
 <li><a href="#index-Monitoring-important-files-11">Monitoring important files</a>: <a href="#Monitoring-important-files">Monitoring important files</a></li>
-<li><a href="#index-Months-258">Months</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
-<li><a href="#index-Mount-points-212">Mount points</a>: <a href="#Unique-filesystem-mountpoints">Unique filesystem mountpoints</a></li>
-<li><a href="#index-Multiple-package-configuration-195">Multiple package configuration</a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
+<li><a href="#index-Months-259">Months</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
+<li><a href="#index-Mount-points-213">Mount points</a>: <a href="#Unique-filesystem-mountpoints">Unique filesystem mountpoints</a></li>
+<li><a href="#index-Multiple-package-configuration-196">Multiple package configuration</a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
 <li><a href="#index-Musts-in-cfengine-16">Musts in cfengine</a>: <a href="#What-you-must-have">What you must have</a></li>
-<li><a href="#index-Name-collision-118">Name collision</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-Name-collision-119">Name collision</a>: <a href="#Variable-substitution">Variable substitution</a></li>
 <li><a href="#index-Name-server-9">Name server</a>: <a href="#Name-servers-_0028DNS_0029">Name servers (DNS)</a></li>
-<li><a href="#index-Naming-convention-213">Naming convention</a>: <a href="#Unique-filesystem-mountpoints">Unique filesystem mountpoints</a></li>
-<li><a href="#index-Nested-macros-89">Nested macros</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-netgroups-200">netgroups</a>: <a href="#Using-netgroups">Using netgroups</a></li>
+<li><a href="#index-Naming-convention-214">Naming convention</a>: <a href="#Unique-filesystem-mountpoints">Unique filesystem mountpoints</a></li>
+<li><a href="#index-Nested-macros-90">Nested macros</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-netgroups-201">netgroups</a>: <a href="#Using-netgroups">Using netgroups</a></li>
 <li><a href="#index-network-configuration-6">network configuration</a>: <a href="#Network-interface">Network interface</a></li>
 <li><a href="#index-network-interface-5">network interface</a>: <a href="#Network-interface">Network interface</a></li>
 <li><a href="#index-NFS-8">NFS</a>: <a href="#Network-File-System-_0028NFS_0029">Network File System (NFS)</a></li>
-<li><a href="#index-NFS-mounted-filesystems-208">NFS mounted filesystems</a>: <a href="#NFS-resources">NFS resources</a></li>
-<li><a href="#index-NFS-resources-209">NFS resources</a>: <a href="#NFS-filesystem-resources">NFS filesystem resources</a></li>
-<li><a href="#index-NIS-201">NIS</a>: <a href="#Using-netgroups">Using netgroups</a></li>
-<li><a href="#index-NOT-operator-65">NOT operator</a>: <a href="#Classes-basics">Classes basics</a></li>
-<li><a href="#index-Operator-ordering-72">Operator ordering</a>: <a href="#Classes-basics">Classes basics</a></li>
-<li><a href="#index-Optional-features-in-cfagent-27">Optional features in cfagent</a>: <a href="#Options">Options</a></li>
+<li><a href="#index-NFS-mounted-filesystems-209">NFS mounted filesystems</a>: <a href="#NFS-resources">NFS resources</a></li>
+<li><a href="#index-NFS-resources-210">NFS resources</a>: <a href="#NFS-filesystem-resources">NFS filesystem resources</a></li>
+<li><a href="#index-NIS-202">NIS</a>: <a href="#Using-netgroups">Using netgroups</a></li>
+<li><a href="#index-NOT-operator-66">NOT operator</a>: <a href="#Classes-basics">Classes basics</a></li>
+<li><a href="#index-Operator-ordering-73">Operator ordering</a>: <a href="#Classes-basics">Classes basics</a></li>
+<li><a href="#index-Optional-features-in-cfagent-28">Optional features in cfagent</a>: <a href="#Options">Options</a></li>
 <li><a href="#index-Order-of-actions-20">Order of actions</a>: <a href="#Program-structure">Program structure</a></li>
-<li><a href="#index-Ordinary-users_002c-lock-files-282">Ordinary users, lock files</a>: <a href="#Spamming-and-security">Spamming and security</a></li>
-<li><a href="#index-Output-logs-43">Output logs</a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
-<li><a href="#index-Package-configuration_002c-multiple-196">Package configuration, multiple</a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
-<li><a href="#index-Path-to-input-files-55">Path to input files</a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
-<li><a href="#index-Patterns-159">Patterns</a>: <a href="#Wildcards-in-directory-names">Wildcards in directory names</a></li>
-<li><a href="#index-Permissions_002c-extended-244">Permissions, extended</a>: <a href="#ACLs">ACLs</a></li>
-<li><a href="#index-Piping-input-into-cfengine-57">Piping input into cfengine</a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
-<li><a href="#index-Plug_002din-modules-136">Plug-in modules</a>: <a href="#Defining-classes">Defining classes</a></li>
-<li><a href="#index-Policy-for-running-the-system-199">Policy for running the system</a>: <a href="#General-considerations">General considerations</a></li>
-<li><a href="#index-Privileged-ports-301">Privileged ports</a>: <a href="#Trust-and-key-races">Trust and key races</a></li>
-<li><a href="#index-processes-cannot-start-cfexecd-50">processes cannot start cfexecd</a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
+<li><a href="#index-Ordinary-users_002c-lock-files-283">Ordinary users, lock files</a>: <a href="#Spamming-and-security">Spamming and security</a></li>
+<li><a href="#index-Output-logs-44">Output logs</a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
+<li><a href="#index-Package-configuration_002c-multiple-197">Package configuration, multiple</a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
+<li><a href="#index-Path-to-input-files-56">Path to input files</a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
+<li><a href="#index-Patterns-160">Patterns</a>: <a href="#Wildcards-in-directory-names">Wildcards in directory names</a></li>
+<li><a href="#index-Permissions_002c-extended-245">Permissions, extended</a>: <a href="#ACLs">ACLs</a></li>
+<li><a href="#index-Piping-input-into-cfengine-58">Piping input into cfengine</a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
+<li><a href="#index-Plug_002din-modules-137">Plug-in modules</a>: <a href="#Defining-classes">Defining classes</a></li>
+<li><a href="#index-Policy-for-running-the-system-200">Policy for running the system</a>: <a href="#General-considerations">General considerations</a></li>
+<li><a href="#index-Privileged-ports-302">Privileged ports</a>: <a href="#Trust-and-key-races">Trust and key races</a></li>
+<li><a href="#index-processes-cannot-start-cfexecd-51">processes cannot start cfexecd</a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
 <li><a href="#index-Program-format-24">Program format</a>: <a href="#Program-structure">Program structure</a></li>
 <li><a href="#index-Program-structure-17">Program structure</a>: <a href="#Program-structure">Program structure</a></li>
-<li><a href="#index-Quoting-strings-185">Quoting strings</a>: <a href="#Quoted-strings">Quoted strings</a></li>
-<li><a href="#index-Race-condition-173">Race condition</a>: <a href="#Security-in-File-sweeps">Security in File sweeps</a></li>
-<li><a href="#index-Race-condition-with-public-keys-300">Race condition with public keys</a>: <a href="#Trust-and-key-races">Trust and key races</a></li>
-<li><a href="#index-Random-numbers-95">Random numbers</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-g_t_0040code_007brdist_007d-program-267"><code>rdist</code> program</a>: <a href="#What-services_003f">What services?</a></li>
-<li><a href="#index-Remote-distribution-of-files-268">Remote distribution of files</a>: <a href="#What-services_003f">What services?</a></li>
-<li><a href="#index-Remote-execution-of-cfagent-275">Remote execution of cfagent</a>: <a href="#Remote-execution-of-cfagent">Remote execution of cfagent</a></li>
-<li><a href="#index-Remote-execution-of-cfagent-269">Remote execution of cfagent</a>: <a href="#What-services_003f">What services?</a></li>
-<li><a href="#index-Rereading-_0040file_007bcfservd_002econf_007d-291">Rereading <samp><span class="file">cfservd.conf</span></samp></a>: <a href="#Installation-of-cfservd">Installation of cfservd</a></li>
-<li><a href="#index-Restarting-cfexecd-48">Restarting cfexecd</a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
-<li><a href="#index-Restarting-cfservd-290">Restarting cfservd</a>: <a href="#Installation-of-cfservd">Installation of cfservd</a></li>
-<li><a href="#index-Restricting-access-153">Restricting access</a>: <a href="#Access-control">Access control</a></li>
-<li><a href="#index-Rotating-files-237">Rotating files</a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
-<li><a href="#index-Running-cfagent-remotely-278">Running cfagent remotely</a>: <a href="#Remote-execution-of-cfagent">Remote execution of cfagent</a></li>
-<li><a href="#index-Scripts_002c-passing-classes-to-99">Scripts, passing classes to</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-Quoting-strings-186">Quoting strings</a>: <a href="#Quoted-strings">Quoted strings</a></li>
+<li><a href="#index-Race-condition-174">Race condition</a>: <a href="#Security-in-File-sweeps">Security in File sweeps</a></li>
+<li><a href="#index-Race-condition-with-public-keys-301">Race condition with public keys</a>: <a href="#Trust-and-key-races">Trust and key races</a></li>
+<li><a href="#index-Random-numbers-96">Random numbers</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-g_t_0040code_007brdist_007d-program-268"><code>rdist</code> program</a>: <a href="#What-services_003f">What services?</a></li>
+<li><a href="#index-Remote-distribution-of-files-269">Remote distribution of files</a>: <a href="#What-services_003f">What services?</a></li>
+<li><a href="#index-Remote-execution-of-cfagent-276">Remote execution of cfagent</a>: <a href="#Remote-execution-of-cfagent">Remote execution of cfagent</a></li>
+<li><a href="#index-Remote-execution-of-cfagent-270">Remote execution of cfagent</a>: <a href="#What-services_003f">What services?</a></li>
+<li><a href="#index-Rereading-_0040file_007bcfservd_002econf_007d-292">Rereading <samp><span class="file">cfservd.conf</span></samp></a>: <a href="#Installation-of-cfservd">Installation of cfservd</a></li>
+<li><a href="#index-Restarting-cfexecd-49">Restarting cfexecd</a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
+<li><a href="#index-Restarting-cfservd-291">Restarting cfservd</a>: <a href="#Installation-of-cfservd">Installation of cfservd</a></li>
+<li><a href="#index-Restricting-access-154">Restricting access</a>: <a href="#Access-control">Access control</a></li>
+<li><a href="#index-Rotating-files-238">Rotating files</a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
+<li><a href="#index-Running-cfagent-remotely-279">Running cfagent remotely</a>: <a href="#Remote-execution-of-cfagent">Remote execution of cfagent</a></li>
+<li><a href="#index-Scripts_002c-passing-classes-to-100">Scripts, passing classes to</a>: <a href="#Variable-substitution">Variable substitution</a></li>
 <li><a href="#index-Sections_002c-order-of-21">Sections, order of</a>: <a href="#Program-structure">Program structure</a></li>
-<li><a href="#index-Security_002c-link-races-and-travlinks-175">Security, link races and travlinks</a>: <a href="#Security-in-File-sweeps">Security in File sweeps</a></li>
-<li><a href="#index-g_t_0040code_007bserver_003d_007d-271"><code>server=</code></a>: <a href="#Emulating-rdist">Emulating rdist</a></li>
-<li><a href="#index-server_003d-when-copying-to-localhost-287">server= when copying to localhost</a>: <a href="#Deadlocks-and-runaway-loops">Deadlocks and runaway loops</a></li>
-<li><a href="#index-setgid-root-log-183">setgid root log</a>: <a href="#Log-files">Log files</a></li>
-<li><a href="#index-setuid-root-log-182">setuid root log</a>: <a href="#Log-files">Log files</a></li>
-<li><a href="#index-Setuid-scripts-151">Setuid scripts</a>: <a href="#Access-control">Access control</a></li>
-<li><a href="#index-Shell-commands-which-define-classes-139">Shell commands which define classes</a>: <a href="#shellcommand-classes">shellcommand classes</a></li>
-<li><a href="#index-Special-variables-218">Special variables</a>: <a href="#Special-variables">Special variables</a></li>
-<li><a href="#index-Splaying-host-times-251">Splaying host times</a>: <a href="#Splaying-host-times">Splaying host times</a></li>
-<li><a href="#index-Split-190">Split</a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
-<li><a href="#index-Starting-cfagent-29">Starting cfagent</a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
-<li><a href="#index-STDIN_002c-reading-from-56">STDIN, reading from</a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
-<li><a href="#index-Strings-184">Strings</a>: <a href="#Quoted-strings">Quoted strings</a></li>
+<li><a href="#index-Security_002c-link-races-and-travlinks-176">Security, link races and travlinks</a>: <a href="#Security-in-File-sweeps">Security in File sweeps</a></li>
+<li><a href="#index-g_t_0040code_007bserver_003d_007d-272"><code>server=</code></a>: <a href="#Emulating-rdist">Emulating rdist</a></li>
+<li><a href="#index-server_003d-when-copying-to-localhost-288">server= when copying to localhost</a>: <a href="#Deadlocks-and-runaway-loops">Deadlocks and runaway loops</a></li>
+<li><a href="#index-setgid-root-log-184">setgid root log</a>: <a href="#Log-files">Log files</a></li>
+<li><a href="#index-setuid-root-log-183">setuid root log</a>: <a href="#Log-files">Log files</a></li>
+<li><a href="#index-Setuid-scripts-152">Setuid scripts</a>: <a href="#Access-control">Access control</a></li>
+<li><a href="#index-Shell-commands-which-define-classes-140">Shell commands which define classes</a>: <a href="#shellcommand-classes">shellcommand classes</a></li>
+<li><a href="#index-Special-variables-219">Special variables</a>: <a href="#Special-variables">Special variables</a></li>
+<li><a href="#index-Splaying-host-times-252">Splaying host times</a>: <a href="#Splaying-host-times">Splaying host times</a></li>
+<li><a href="#index-Split-191">Split</a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
+<li><a href="#index-Starting-cfagent-30">Starting cfagent</a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
+<li><a href="#index-STDIN_002c-reading-from-57">STDIN, reading from</a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
+<li><a href="#index-Strings-185">Strings</a>: <a href="#Quoted-strings">Quoted strings</a></li>
 <li><a href="#index-Structure-of-a-program-18">Structure of a program</a>: <a href="#Program-structure">Program structure</a></li>
-<li><a href="#index-System-administrator_002c-name-133">System administrator, name</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-System-policy-198">System policy</a>: <a href="#General-considerations">General considerations</a></li>
-<li><a href="#index-g_t_0040code_007btidy_007d_002c-file-sweeps-161"><code>tidy</code>, file sweeps</a>: <a href="#File-sweeps">File sweeps</a></li>
-<li><a href="#index-Tidying-files-204">Tidying files</a>: <a href="#Files-and-links">Files and links</a></li>
-<li><a href="#index-Time-classes-254">Time classes</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
-<li><a href="#index-Timestamp-backups-241">Timestamp backups</a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
-<li><a href="#index-g_t_0040code_007btravlinks_007d-174"><code>travlinks</code></a>: <a href="#Security-in-File-sweeps">Security in File sweeps</a></li>
-<li><a href="#index-Trusted-Third-Party-302">Trusted Third Party</a>: <a href="#Trust-and-key-races">Trust and key races</a></li>
-<li><a href="#index-underscoreclasses-117">underscoreclasses</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-User-programs-which-define-classes-140">User programs which define classes</a>: <a href="#shellcommand-classes">shellcommand classes</a></li>
-<li><a href="#index-Variable-substitution-75">Variable substitution</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-Variables-and-Macros-86">Variables and Macros</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-Variables_002c-cfengine-77">Variables, cfengine</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-Variables_002c-cfengine-model-219">Variables, cfengine model</a>: <a href="#Special-variables">Special variables</a></li>
-<li><a href="#index-Variables_002c-environment-76">Variables, environment</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-Variables_002c-setting-to-result-of-a-shell-command-91">Variables, setting to result of a shell command</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-Variables_002c-using-131">Variables, using</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-Verifying-with-_002dn-option-40">Verifying with -n option</a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
-<li><a href="#index-Wildcard_002c-any-class-145">Wildcard, any class</a>: <a href="#The-generic-class-any">The generic class any</a></li>
-<li><a href="#index-Wildcards-158">Wildcards</a>: <a href="#Wildcards-in-directory-names">Wildcards in directory names</a></li>
-<li><a href="#index-Wildcards_002c-in-directory-names-156">Wildcards, in directory names</a>: <a href="#Wildcards-in-directory-names">Wildcards in directory names</a></li>
-<li><a href="#index-Years-257">Years</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
+<li><a href="#index-System-administrator_002c-name-134">System administrator, name</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-System-policy-199">System policy</a>: <a href="#General-considerations">General considerations</a></li>
+<li><a href="#index-g_t_0040code_007btidy_007d_002c-file-sweeps-162"><code>tidy</code>, file sweeps</a>: <a href="#File-sweeps">File sweeps</a></li>
+<li><a href="#index-Tidying-files-205">Tidying files</a>: <a href="#Files-and-links">Files and links</a></li>
+<li><a href="#index-Time-classes-255">Time classes</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
+<li><a href="#index-Timestamp-backups-242">Timestamp backups</a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
+<li><a href="#index-g_t_0040code_007btravlinks_007d-175"><code>travlinks</code></a>: <a href="#Security-in-File-sweeps">Security in File sweeps</a></li>
+<li><a href="#index-Trusted-Third-Party-303">Trusted Third Party</a>: <a href="#Trust-and-key-races">Trust and key races</a></li>
+<li><a href="#index-underscoreclasses-118">underscoreclasses</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-User-programs-which-define-classes-141">User programs which define classes</a>: <a href="#shellcommand-classes">shellcommand classes</a></li>
+<li><a href="#index-Variable-substitution-76">Variable substitution</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-Variables-and-Macros-87">Variables and Macros</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-Variables_002c-cfengine-78">Variables, cfengine</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-Variables_002c-cfengine-model-220">Variables, cfengine model</a>: <a href="#Special-variables">Special variables</a></li>
+<li><a href="#index-Variables_002c-environment-77">Variables, environment</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-Variables_002c-setting-to-result-of-a-shell-command-92">Variables, setting to result of a shell command</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-Variables_002c-using-132">Variables, using</a>: <a href="#Variable-substitution">Variable substitution</a></li>
+<li><a href="#index-Verifying-with-_002dn-option-41">Verifying with -n option</a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
+<li><a href="#index-Wildcard_002c-any-class-146">Wildcard, any class</a>: <a href="#The-generic-class-any">The generic class any</a></li>
+<li><a href="#index-Wildcards-159">Wildcards</a>: <a href="#Wildcards-in-directory-names">Wildcards in directory names</a></li>
+<li><a href="#index-Wildcards_002c-in-directory-names-157">Wildcards, in directory names</a>: <a href="#Wildcards-in-directory-names">Wildcards in directory names</a></li>
+<li><a href="#index-Work-Directory-27">Work Directory</a>: <a href="#Where-should-I-put-the-files_003f">Where should I put the files?</a></li>
+<li><a href="#index-Years-258">Years</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
    </ul><div class="node">
 <p><hr>
 <a name="FAQ-Index"></a>
@@ -7367,19 +7450,19 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 
 
 <ul class="index-mb" compact>
-<li><a href="#index-Brackets-_0028parentheses_0029-in-classes_002e-73">Brackets (parentheses) in classes.</a>: <a href="#Classes-basics">Classes basics</a></li>
-<li><a href="#index-Configure-multiple-packages-197">Configure multiple packages</a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
-<li><a href="#index-Define-classes-based-on-result-of-user-program-141">Define classes based on result of user program</a>: <a href="#shellcommand-classes">shellcommand classes</a></li>
-<li><a href="#index-How-can-I-make-complex-time-intervals-using-time-classes_003f-255">How can I make complex time intervals using time classes?</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
-<li><a href="#index-How-can-I-use-cfengine-to-make-a-global-cron-file_003f-250">How can I use cfengine to make a global cron file?</a>: <a href="#Using-cfengine-as-a-front_002dend-for-cron">Using cfengine as a front-end for cron</a></li>
-<li><a href="#index-How-do-I-quote-quotes_003f-189">How do I quote quotes?</a>: <a href="#Quoted-strings">Quoted strings</a></li>
-<li><a href="#index-How-to-keep-all-users-in-_0040file_007b_002fhome_007d-233">How to keep all users in <samp><span class="file">/home</span></samp></a>: <a href="#Using-the-automounter">Using the automounter</a></li>
-<li><a href="#index-Iterating-over-lists-192">Iterating over lists</a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
-<li><a href="#index-Parentheses-in-classes_002e-74">Parentheses in classes.</a>: <a href="#Classes-basics">Classes basics</a></li>
-<li><a href="#index-Split_002c-using-a-space-194">Split, using a space</a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
-<li><a href="#index-Time-classes_002c-picking-out-complex-time-intervals-256">Time classes, picking out complex time intervals</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
-<li><a href="#index-Why-do-I-get-network-access-denied-to-files-I-have-granted-access-to_003f-297">Why do I get network access denied to files I have granted access to?</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
-<li><a href="#index-Why-does-cfservd-give-access-to-files-on-a-different-filesystem_003f-296">Why does cfservd give access to files on a different filesystem?</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
+<li><a href="#index-Brackets-_0028parentheses_0029-in-classes_002e-74">Brackets (parentheses) in classes.</a>: <a href="#Classes-basics">Classes basics</a></li>
+<li><a href="#index-Configure-multiple-packages-198">Configure multiple packages</a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
+<li><a href="#index-Define-classes-based-on-result-of-user-program-142">Define classes based on result of user program</a>: <a href="#shellcommand-classes">shellcommand classes</a></li>
+<li><a href="#index-How-can-I-make-complex-time-intervals-using-time-classes_003f-256">How can I make complex time intervals using time classes?</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
+<li><a href="#index-How-can-I-use-cfengine-to-make-a-global-cron-file_003f-251">How can I use cfengine to make a global cron file?</a>: <a href="#Using-cfengine-as-a-front_002dend-for-cron">Using cfengine as a front-end for cron</a></li>
+<li><a href="#index-How-do-I-quote-quotes_003f-190">How do I quote quotes?</a>: <a href="#Quoted-strings">Quoted strings</a></li>
+<li><a href="#index-How-to-keep-all-users-in-_0040file_007b_002fhome_007d-234">How to keep all users in <samp><span class="file">/home</span></samp></a>: <a href="#Using-the-automounter">Using the automounter</a></li>
+<li><a href="#index-Iterating-over-lists-193">Iterating over lists</a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
+<li><a href="#index-Parentheses-in-classes_002e-75">Parentheses in classes.</a>: <a href="#Classes-basics">Classes basics</a></li>
+<li><a href="#index-Split_002c-using-a-space-195">Split, using a space</a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
+<li><a href="#index-Time-classes_002c-picking-out-complex-time-intervals-257">Time classes, picking out complex time intervals</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
+<li><a href="#index-Why-do-I-get-network-access-denied-to-files-I-have-granted-access-to_003f-298">Why do I get network access denied to files I have granted access to?</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
+<li><a href="#index-Why-does-cfservd-give-access-to-files-on-a-different-filesystem_003f-297">Why does cfservd give access to files on a different filesystem?</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
    </ul><p><a name="Contents">
 
 
@@ -7410,6 +7493,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <ul>
 <li><a href="#Startup-update_002econf">2.3.1 Startup update.conf</a>
 <li><a href="#Startup-cfservd_002econf">2.3.2 Startup cfservd.conf</a>
+<li><a href="#Where-should-I-put-the-files_003f">2.3.3 Where should I put the files?</a>
 </li></ul>
 <li><a href="#Options">2.4 Optional features in cfagent</a>
 <li><a href="#Invoking-cfagent">2.5 Invoking cfagent</a>

@@ -789,6 +789,9 @@ or undefine (set value to @emph{false}) a compound class of the form
 syntax of a program.  You do not have to be superuser to use this
 option.
 
+@item -P
+(@code{--no-processes}) Do not execute the processes action.
+
 @item -q
 (@code{--no-splay}) Switch off host splaying (sleeping).
 
@@ -6172,6 +6175,15 @@ Terminates a begin-end conditional structure.
 
 @item EndLoop
 Terminates a loop. See @code{ForEachLineIn}
+
+@item ExpandVariables
+This causes cfengine to run through the contents of the file
+and expand any recognisable editfile strings in the file, if they
+are defined within the scope of the cfagent script. This gives
+cfengine an m4 like capacity.
+@cindex ExpandVariables
+@cindex Templates
+@cindex m4 functionality
 
 @item ExpireAfter @var{mins}
 

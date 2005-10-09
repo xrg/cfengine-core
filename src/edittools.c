@@ -805,6 +805,14 @@ while (ep != NULL)
              }
           break;
           
+      case ExpandVariables:
+          if (!ExpandAllVariables(filestart))
+             {
+             printf("Aborting edit of file %s\n",filename);
+             continue;
+             }
+          break;
+          
       case DeleteToLineMatching:
           if (! DeleteToRegExp(&filestart,expdata))
              {
@@ -1373,6 +1381,41 @@ strcpy(sp,string);
 free (CURRENTLINEPTR->name);
 CURRENTLINEPTR->name = sp;
 NUMBEROFEDITS++;
+return true;
+}
+
+/********************************************************************/
+
+int ExpandAllVariables (struct Item *list)
+
+{ char *sp;
+  int i = 1;
+  struct Item *ip;
+
+  for (ip = list; ip != NULL; ip=ip->next, i++)
+    {
+
+    if ((sp = malloc(CF_EXPANDSIZE)) == NULL)
+      {
+      printf("Memory allocation failed in ExpandEditLineVariables, aborting edit.\n");
+      return false;
+      }
+
+    memset( sp, 0, CF_EXPANDSIZE);
+    ExpandVarstring(ip->name,sp,NULL);
+
+    if (strcmp(sp,ip->name) == 0)
+      {
+      EditVerbose("ExpandVariables - no expansions in %10s...\n", sp);
+      continue;
+      }
+
+    EditVerbose("Expanded line %d to %10s...\n",i,sp);
+    free (ip->name);
+    ip->name = sp;
+    NUMBEROFEDITS++;
+  }
+
 return true;
 }
 

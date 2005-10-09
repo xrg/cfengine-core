@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.1.16a for version
-2.1.16a as last updated 17 July 2005.
+   This manual corresponds to CFENGINE Edition 2.1.17 for version
+2.1.17 as last updated 9 October 2005.
 
 * Menu:
 
@@ -789,6 +789,7 @@ is _reliability_.
 
 * Startup update.conf::
 * Startup cfservd.conf::
+* Where should I put the files?::
 
 
 File: cfengine-Tutorial.info,  Node: Startup update.conf,  Next: Startup cfservd.conf,  Prev: Building a distributed configuration,  Up: Building a distributed configuration
@@ -887,7 +888,7 @@ sites, looking something like this.
      #######
 
 
-File: cfengine-Tutorial.info,  Node: Startup cfservd.conf,  Prev: Startup update.conf,  Up: Building a distributed configuration
+File: cfengine-Tutorial.info,  Node: Startup cfservd.conf,  Next: Where should I put the files?,  Prev: Startup update.conf,  Up: Building a distributed configuration
 
 2.3.2 Startup cfservd.conf
 --------------------------
@@ -936,6 +937,77 @@ to download it. Here is a simple get-started file which does this:
      # END cfservd.conf
      #
      ########
+
+
+File: cfengine-Tutorial.info,  Node: Where should I put the files?,  Prev: Startup cfservd.conf,  Up: Building a distributed configuration
+
+2.3.3 Where should I put the files?
+-----------------------------------
+
+Where should the files be located? To organize your files, you should
+think of three potential locations, for different purposes:
+
+   * A version controlled repository for authoring, testing and
+     applying changes to the files.  Once a version is approved for
+     release, these master files should be moved on to a publishing
+     area. e.g. `/usr/local/masterfiles/cfengine/inputs' on
+     `masterhost'.
+
+   * A centralized location, into which you publish your altered and
+     tested configurations.  This is the `buffer' location from which
+     each client will download new and tested versions of the master
+     configuration. e.g. `/usr/local/masterfiles/cfengine/inputs' on
+     `masterhost'.  It acts as a buffer between the testing ground and
+     the production location.
+
+   * The Work Directory. This is the production location. It is a
+     location that is normally chosen to be the private directory where
+     cfagent expects to find its configuration files,
+     `/var/cfengine/inputs'. Your `update.conf' file has the job of
+     copying from the master location (second bullet) above to this
+     location.  
+
+   Modules and methods are normally kept in a separate directory than
+inputs files are kept in, because they require a directory with special
+authorizations whe executing. This is good practice  As long as the
+`update.conf' places the master versions in the correct location
+(usually `/var/cfengine/modules') on the local host, all will be okay.
+
+   You should not try to copy files directly from a version controlled
+repository, as you might end up sending out an incomplete or partially
+tested version of the files to all your hosts.
+
+
+     # Example update.conf
+
+     control:
+
+        master_cfinput  = ( /usr/local/masterfiles/cfengine/inputs )
+        workdir         = ( /var/cfengine )
+
+     copy:
+
+        # Copy from bullet 2 to bullet 3
+
+          $(master_cfinput)            dest=$(workdir)/inputs
+                                       r=inf
+                                       mode=700
+                                       type=binary
+                                       exclude=*.lst
+                                       exclude=*~
+                                       exclude=#*
+                                       server=$(policyhost)
+                                       trustkey=true
+
+          $(master_modules)            dest=$(workdir)/modules
+                                       r=inf
+                                       mode=700
+                                       type=binary
+                                       exclude=*.lst
+                                       exclude=*~
+                                       exclude=#*
+                                       server=$(policyhost)
+                                       trustkey=true
 
 
 File: cfengine-Tutorial.info,  Node: Options,  Next: Invoking cfagent,  Prev: Building a distributed configuration,  Up: Getting started
@@ -6498,6 +6570,8 @@ Concept Index
                                                               (line  20)
 * Wildcards, in directory names:         Wildcards in directory names.
                                                               (line   6)
+* Work Directory:                        Where should I put the files?.
+                                                              (line  27)
 * Years:                                 Building flexible time classes.
                                                               (line  12)
 
@@ -6553,104 +6627,105 @@ Node: Getting started20865
 Node: What you must have21428
 Node: Program structure27151
 Node: Building a distributed configuration30624
-Node: Startup update.conf31660
-Node: Startup cfservd.conf34652
-Node: Options36065
-Node: Invoking cfagent39030
-Node: Running cfengine permanently monitoring and restarting cfexecd40990
-Node: CFINPUTS environment variable43626
-Node: What to aim for45201
-Node: More advanced concepts47233
-Node: Classes basics47878
-Node: Variable substitution56265
-Node: Undefined variables64683
-Node: Defining classes65633
-Node: Command line classes67027
-Node: actionsequence classes68149
-Node: shellcommand classes69316
-Node: Feedback classes70595
-Node: Writing plugin modules71426
-Node: The generic class any74464
-Node: Debugging tips74986
-Node: Access control75666
-Node: Wildcards in directory names76712
-Node: File sweeps77958
-Node: Security in File sweeps81716
-Node: Log files83144
-Node: Quoted strings84457
-Node: Regular expressions85637
-Node: Iterating over lists90360
-Node: Global configurations92861
-Node: General considerations93554
-Node: Using netgroups95214
-Node: Files and links97144
-Ref: Files and links-Footnote-1103384
-Node: Copying files103444
-Node: Managing processes105195
-Node: NFS resources105804
-Node: NFS filesystem resources106977
-Node: Unique filesystem mountpoints108602
-Ref: Unique filesystem mountpoints-Footnote-1112308
-Node: How does it work?112422
-Node: Special variables113892
-Node: Mount example116144
-Ref: Mount example-Footnote-1122338
-Ref: Mount example-Footnote-2122510
-Node: Using the automounter122736
-Node: Editing files127915
-Node: Disabling and the file repository132227
-Node: Running user scripts135081
-Node: Compressing logs137295
-Node: ACLs138231
-Node: Using cfengine as a front-end for cron147882
-Node: Structuring cfagent.conf149991
-Node: Splaying host times151329
-Node: Building flexible time classes152941
-Node: Scheduling interval155911
-Node: Cfengine network services156809
-Node: What services?157315
-Node: How it works159417
-Node: Emulating rdist159729
-Node: Remote execution of cfagent163189
-Node: Spamming and security165039
-Ref: Spamming and security-Footnote-1170411
-Ref: Spamming and security-Footnote-2170477
-Ref: Spamming and security-Footnote-3170543
-Node: cfservd protocol170592
-Node: Deadlocks and runaway loops171510
-Node: Configuring cfservd173600
-Node: Installation of cfservd173840
-Node: Configuration file cfservd.conf174805
-Node: Security and cfengine180038
-Node: What is security?181286
-Node: A word of warning185597
-Node: Automation186375
-Node: Trust189022
-Node: Why trust cfengine?190970
-Node: Configuration193591
-Node: Disabling and replacing software195382
-Node: Process monitoring202136
-Node: Monitoring files204810
-Node: The setuid log206754
-Node: Suspicious filenames207570
-Node: Checksums and Tripwire functionality209365
-Node: FileExtensions211435
-Node: NonAlphaNumFiles211950
-Node: Defensive garbage collection212600
-Node: Anonymous FTP example216792
-Node: WWW security220947
-Node: Miscellaneous security of cfengine itself224071
-Node: Privacy (encryption)224517
-Node: Trust and key races228208
-Node: Adaptive locks230989
-Node: Spoofing231883
-Node: Race conditions in file copying232433
-Node: size= in copy233182
-Node: useshell= and owner= in shellcommands233892
-Node: Firewalls234867
-Node: Summary235535
-Node: Variable Index236332
-Node: Concept Index243824
-Node: FAQ Index268098
+Node: Startup update.conf31694
+Node: Startup cfservd.conf34686
+Node: Where should I put the files?36137
+Node: Options39184
+Node: Invoking cfagent42149
+Node: Running cfengine permanently monitoring and restarting cfexecd44109
+Node: CFINPUTS environment variable46745
+Node: What to aim for48320
+Node: More advanced concepts50352
+Node: Classes basics50997
+Node: Variable substitution59384
+Node: Undefined variables67802
+Node: Defining classes68752
+Node: Command line classes70146
+Node: actionsequence classes71268
+Node: shellcommand classes72435
+Node: Feedback classes73714
+Node: Writing plugin modules74545
+Node: The generic class any77583
+Node: Debugging tips78105
+Node: Access control78785
+Node: Wildcards in directory names79831
+Node: File sweeps81077
+Node: Security in File sweeps84835
+Node: Log files86263
+Node: Quoted strings87576
+Node: Regular expressions88756
+Node: Iterating over lists93479
+Node: Global configurations95980
+Node: General considerations96673
+Node: Using netgroups98333
+Node: Files and links100263
+Ref: Files and links-Footnote-1106503
+Node: Copying files106563
+Node: Managing processes108314
+Node: NFS resources108923
+Node: NFS filesystem resources110096
+Node: Unique filesystem mountpoints111721
+Ref: Unique filesystem mountpoints-Footnote-1115427
+Node: How does it work?115541
+Node: Special variables117011
+Node: Mount example119263
+Ref: Mount example-Footnote-1125457
+Ref: Mount example-Footnote-2125629
+Node: Using the automounter125855
+Node: Editing files131034
+Node: Disabling and the file repository135346
+Node: Running user scripts138200
+Node: Compressing logs140414
+Node: ACLs141350
+Node: Using cfengine as a front-end for cron151001
+Node: Structuring cfagent.conf153110
+Node: Splaying host times154448
+Node: Building flexible time classes156060
+Node: Scheduling interval159030
+Node: Cfengine network services159928
+Node: What services?160434
+Node: How it works162536
+Node: Emulating rdist162848
+Node: Remote execution of cfagent166308
+Node: Spamming and security168158
+Ref: Spamming and security-Footnote-1173530
+Ref: Spamming and security-Footnote-2173596
+Ref: Spamming and security-Footnote-3173662
+Node: cfservd protocol173711
+Node: Deadlocks and runaway loops174629
+Node: Configuring cfservd176719
+Node: Installation of cfservd176959
+Node: Configuration file cfservd.conf177924
+Node: Security and cfengine183157
+Node: What is security?184405
+Node: A word of warning188716
+Node: Automation189494
+Node: Trust192141
+Node: Why trust cfengine?194089
+Node: Configuration196710
+Node: Disabling and replacing software198501
+Node: Process monitoring205255
+Node: Monitoring files207929
+Node: The setuid log209873
+Node: Suspicious filenames210689
+Node: Checksums and Tripwire functionality212484
+Node: FileExtensions214554
+Node: NonAlphaNumFiles215069
+Node: Defensive garbage collection215719
+Node: Anonymous FTP example219911
+Node: WWW security224066
+Node: Miscellaneous security of cfengine itself227190
+Node: Privacy (encryption)227636
+Node: Trust and key races231327
+Node: Adaptive locks234108
+Node: Spoofing235002
+Node: Race conditions in file copying235552
+Node: size= in copy236301
+Node: useshell= and owner= in shellcommands237011
+Node: Firewalls237986
+Node: Summary238654
+Node: Variable Index239451
+Node: Concept Index246943
+Node: FAQ Index271362
 
 End Tag Table

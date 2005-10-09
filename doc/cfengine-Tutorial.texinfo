@@ -948,6 +948,7 @@ they key word here is @emph{reliability}.
 @menu
 * Startup update.conf::         
 * Startup cfservd.conf::        
+* Where should I put the files?::  
 @end menu
 
 @node Startup update.conf, Startup cfservd.conf, Building a distributed configuration , Building a distributed configuration
@@ -1050,7 +1051,7 @@ tidy:
 @c SUBSECTION
 @c .....................................................
 
-@node Startup cfservd.conf,  , Startup update.conf, Building a distributed configuration
+@node Startup cfservd.conf, Where should I put the files?, Startup update.conf, Building a distributed configuration
 @subsection Startup cfservd.conf
 
 In order to set up remote distribution from a central server, you will
@@ -1099,6 +1100,91 @@ grant:
 # END cfservd.conf
 #
 ########
+
+@end smallexample
+
+
+
+
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node Where should I put the files?,  , Startup cfservd.conf, Building a distributed configuration
+@subsection Where should I put the files?
+
+
+Where should the files be located? To organize your files, you should think of three
+potential locations, for different purposes:
+
+@itemize @bullet
+
+@item 
+A version controlled repository for authoring, testing and applying changes to the files.
+Once a version is approved for release, these master files should be moved on to a
+publishing area. e.g. @file{/usr/local/masterfiles/cfengine/inputs} on `masterhost'.
+
+@item
+A centralized location, into which you publish your altered and tested
+configurations.  This is the `buffer' location from which each client
+will download new and tested versions of the master
+configuration. e.g. @file{/usr/local/masterfiles/cfengine/inputs} on
+`masterhost'.  It acts as a buffer between the testing ground and the
+production location.
+
+@item
+The Work Directory. This is the production location. It is a location
+that is normally chosen to be the private directory where cfagent
+expects to find its configuration files,
+@file{/var/cfengine/inputs}. Your @file{update.conf} file has the job
+of copying from the master location (second bullet) above to this location.
+@cindex Work Directory
+@end itemize
+
+Modules and methods are normally kept in a separate directory than inputs
+files are kept in, because they require a directory with special authorizations
+whe executing. This is good practice 
+ As long as the @file{update.conf} places the master versions 
+in the correct location (usually @file{/var/cfengine/modules}) on the local host,
+all will be okay.
+
+You should not try to copy files directly from a version controlled repository,
+as you might end up sending out an incomplete or partially tested version of the
+files to all your hosts.
+
+@smallexample
+
+# Example update.conf
+
+control:
+
+   master_cfinput  = ( /usr/local/masterfiles/cfengine/inputs )
+   workdir         = ( /var/cfengine )
+
+copy:
+
+   # Copy from bullet 2 to bullet 3
+
+     $(master_cfinput)            dest=$(workdir)/inputs
+                                  r=inf
+                                  mode=700
+                                  type=binary
+                                  exclude=*.lst
+                                  exclude=*~
+                                  exclude=#*
+                                  server=$(policyhost)
+                                  trustkey=true
+
+     $(master_modules)            dest=$(workdir)/modules
+                                  r=inf
+                                  mode=700
+                                  type=binary
+                                  exclude=*.lst
+                                  exclude=*~
+                                  exclude=#*
+                                  server=$(policyhost)
+                                  trustkey=true
 
 @end smallexample
 

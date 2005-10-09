@@ -265,6 +265,7 @@ void DoEditFile ARGLIST((struct Edit *ptr, char *filename));
 int IncrementEditPointer ARGLIST((char *str, struct Item *liststart));
 int ResetEditSearch  ARGLIST((char *str, struct Item *list));
 int ReplaceEditLineWith  ARGLIST((char *string));
+int ExpandAllVariables  ARGLIST((struct Item *list));
 int RunEditScript  ARGLIST((char *script, char *fname, struct Item **filestart, struct Edit *ptr));
 void DoFixEndOfLine ARGLIST((struct Item *list, char *type));
 void HandleAutomountResources ARGLIST((struct Item **filestart, char *opts));

@@ -1025,6 +1025,7 @@ char *TCPNAMES[CF_NETATTR] =
      "AppendIfNoSuchLinesFromFile",
      "IncrementPointer",
      "ReplaceLineWith",
+     "ExpandVariables",
      "DeleteToLineMatching",
      "HashCommentToLineMatching",
      "PercentCommentToLineMatching",
