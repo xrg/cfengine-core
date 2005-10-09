@@ -1051,7 +1051,7 @@ sent=send(sd,VBUFF,strlen(VBUFF),0);
 
  if (strlen(MAILFROM) == 0)
     {
-    sprintf(VBUFF,"From: cfengine@%s\r\n",VFQNAME);
+    sprintf(VBUFF,"From: cfengine@%s\r\n",domain);
     Debug("%s",VBUFF);
     }
  else
