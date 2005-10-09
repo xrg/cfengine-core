@@ -119,6 +119,8 @@ int CompareBinarySums ARGLIST((char *file1, char *file2, struct Image *ip, struc
 
 /* functions.c */
 
+void BuildClassEnvironment ARGLIST((void));
+
 char *EvaluateFunction ARGLIST((char *function, char *value));
 enum builtin FunctionStringToCode ARGLIST((char *str));
 int IsBuiltinFunction  ARGLIST((char *function));
