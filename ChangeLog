@@ -2,7 +2,14 @@
 
 	Patch for missing variable expansion after function
 	parameter rewrite in 2.1.16. Some functions were not fully ported.
-	
+
+	vicf eliminated from distribution	
+
+	PrepMpdule environment fix
+
+	Compilation error C++ mixed into cfetool fix
+
+	Chdir to / when ascting as a daemon for cfservd, cfexecd etc
 
 2.1.16
 
