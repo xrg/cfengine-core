@@ -1,0 +1,38 @@
+.TH cfengine 8 "Maintenance Commands" HiOslo
+.SH NAME
+cfshow \- Execute remote cfagents
+.SH SYNOPSIS
+
+/usr/local/sbin/cfshow [options] 
+
+.SH DESCRIPTION
+.B cfengine
+is a language based system specifically designed
+for testing and configuring unix\-like systems attached to
+a TCP/IP network. 
+
+.PP
+cfshow is a tool for showing the contents of the internal databases
+used by cfengine in its operation. Most users will not care about these
+internal details, while cfengine manages transparently. More advanced
+users might desire a simple way to dump the contents of these databases
+to text.
+
+.SH EXAMPLES
+
+cfshow --locks
+cfshow --last-seen
+cfshow --checksum
+cfshow --active
+
+.PP
+These show the names databases. 
+
+.SH FILES
+cfshow reads private database files that are normally stored in the Work Directory /var/cfengine.
+
+.SH AUTHOR
+Mark Burgess, Oslo University College
+.SH INFORMATION
+http://www.cfengine.org
+
