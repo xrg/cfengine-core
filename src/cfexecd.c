@@ -244,9 +244,8 @@ strncpy(VLOCKDIR,CFWORKDIR,CF_BUFSIZE-1);
 strncpy(VLOGDIR,CFWORKDIR,CF_BUFSIZE-1);
 
 VCANONICALFILE = strdup(CanonifyName(VINPUTFILE));
-GetNameInfo();
 
-strcpy(VUQNAME,VSYSNAME.nodename);
+GetCfStuff();
 
 MAILTO[0] = '\0';
 MAILFROM[0] = '\0';
@@ -411,7 +410,7 @@ void GetCfStuff()
 
 /* Do not init variables here, in case we can use previous values. */
   
-snprintf(cfcom,CF_BUFSIZE-1,"%s/bin/cfagent -Q smtpserver,sysadm,fqhost,ipaddress,EmailMaxLines,EmailFrom,EmailTo -D from_cfexecd",CFWORKDIR);
+snprintf(cfcom,CF_BUFSIZE-1,"%s/bin/cfagent -Q smtpserver,sysadm,fqhost,host,domain,ipaddress,EmailMaxLines,EmailFrom,EmailTo -D from_cfexecd",CFWORKDIR);
 
 if ((pp=cfpopen(cfcom,"r")) ==  NULL)
    {
@@ -446,6 +445,20 @@ while (!feof(pp))
       {
       Debug("%s/%s\n",name,content);
       strncpy(VFQNAME,content,CF_MAXVARSIZE-1);
+      continue;
+      }
+
+   if (strcmp(name,"host") == 0)
+      {
+      Debug("%s/%s\n",name,content);
+      strncpy(VUQNAME,content,CF_MAXVARSIZE-1);
+      continue;
+      }
+
+   if (strcmp(name,"domain") == 0)
+      {
+      Debug("%s/%s\n",name,content);
+      strncpy(VDOMAIN,content,CF_MAXVARSIZE-1);
       continue;
       }
 
@@ -496,7 +509,7 @@ while (!feof(pp))
 
 cfpclose(pp);
 
-Debug("Got(to:%s,serv:%s,host:%s,ip:%s,max:%d,from:%s)\n",MAILTO,VMAILSERVER,VFQNAME,VIPADDRESS,MAXLINES,MAILFROM); 
+Debug("Got(to:%s,serv:%s,fqhost:%s,host:%s,domain:%s,ip:%s,max:%d,from:%s)\n",MAILTO,VMAILSERVER,VFQNAME,VUQNAME,VDOMAIN,VIPADDRESS,MAXLINES,MAILFROM); 
  
 /* Now get schedule */
   
@@ -563,16 +576,12 @@ for (ip = SCHEDULE; ip != NULL; ip = ip->next)
       Verbose("Waking up the agent at %s ~ %s \n",timekey,ip->name);
       DeleteItemList(VHEAP);
       VHEAP = NULL;
-      GetNameInfo();
-      strcpy(VUQNAME,VSYSNAME.nodename);
       return true;
       }
    }
 
 DeleteItemList(VHEAP);
 VHEAP = NULL; 
-GetNameInfo();
-strcpy(VUQNAME,VSYSNAME.nodename);
 return false;
 }
 
