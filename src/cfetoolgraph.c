@@ -542,6 +542,9 @@ void WriteGraphFiles(int dbtype)
 void WriteHistogram(int dbtype)
 {
   int numdays=0;
+  int position, day;
+  int weekly[CF_GRAINS];
+
   /* Finally, look at the histogram */
 
   printf("Writing histogram file now!\n");
@@ -554,8 +557,6 @@ void WriteHistogram(int dbtype)
     }
   }
 
-  int position, day;
-  int weekly[CF_GRAINS];
 
   switch(dbtype)
   {
