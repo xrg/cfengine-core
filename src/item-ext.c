@@ -175,7 +175,7 @@ for (ptr = list; ptr != NULL; ptr=ptr->next)
       continue;
       }
 
-   if (WildMatch(ptr->name,item))
+   if (WildMatch(item,ptr->name))
       {
       Debug("IsWildItem(%s,%s)\n",item,ptr->name);
       return(true);

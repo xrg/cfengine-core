@@ -511,15 +511,17 @@ int IsDefinedClass(char *class)
   /* Evaluates a.b.c|d.e.f etc and returns true if the class */
   /* is currently true, given the defined heap and negations */
 
-{
+{ int ret;
 Debug4("IsDefinedClass(%s,VADDCLASSES)\n",class);
 
 if (class == NULL)
    {
    return true;
    }
- 
-return EvaluateORString(class,VADDCLASSES);
+
+ret = EvaluateORString(class,VADDCLASSES);
+
+return ret;
 }
 
 
@@ -720,7 +722,7 @@ while(*sp != '\0')
             return false;
             }
          }
-      
+
       continue;
       }
    else
@@ -753,7 +755,7 @@ while(*sp != '\0')
       {
       if (negation)
          {
-         Debug4("EvaluateANDString(%s) returns false by negation\n",class);
+         Debug4("EvaluateANDString(%s) returns false by negation 1\n",class);
          return false;
          }
       else

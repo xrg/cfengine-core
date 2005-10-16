@@ -1345,11 +1345,11 @@ if (IsWildItemIn(VACTIONSEQ,"process*"))
       }
    }
 
-if (IsWildItemIn(VACTIONSEQ,"shellcommand*"))
+if (IsWildItemIn(VACTIONSEQ,"shellcomman*"))
    {
    for (vscript = VSCRIPT; vscript != NULL; vscript=vscript->next)
       {
-      if (vscript->done == 'n'  && IsDefinedClass(vscript->classes))
+      if ((vscript->done == 'n')  && IsDefinedClass(vscript->classes))
          {
          printf("Still waiting for rule:: Shell <%s> / %s\n",vscript->name,vscript->classes);
          return false;
@@ -1361,7 +1361,7 @@ if (IsWildItemIn(VACTIONSEQ,"file*"))
    {
    for (vfile = VFILE; vfile != NULL; vfile=vfile->next)
       {
-      if (vfile->done == 'n' && IsDefinedClass(vfile->classes))
+      if ((vfile->done == 'n') && IsDefinedClass(vfile->classes))
          {
          printf("Still waiting for rule:: File <%s>/ %s\n",vfile->path,vfile->classes);
          return false;
@@ -1475,6 +1475,7 @@ if (IsWildItemIn(VACTIONSEQ,"packag*"))
          }
       }
    }
+
 
 return true; 
 }

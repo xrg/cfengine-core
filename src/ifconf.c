@@ -480,6 +480,7 @@ if ( strcmp(VROUTE[VSYSTEMHARDCLASS], "-") != 0 )
             }
          }
       }
+   
    if (! DONTDO)
       {
       snprintf(routefmt,CF_MAXVARSIZE,"%s %s",VROUTE[VSYSTEMHARDCLASS],VROUTEADDFMT[VSYSTEMHARDCLASS]);
