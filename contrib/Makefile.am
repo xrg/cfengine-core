@@ -1,10 +1,10 @@
 s1 = cfdoc
 s2 = cfengine.el
 
-sbin_SCRIPTS = vicf $(s1)
+sbin_SCRIPTS = $(s1)
 pkgdata_SCRIPTS = $(s2)
 
-EXTRA_DIST = README README.vicf $(s1) $(s2)
+EXTRA_DIST = README $(s1) $(s2)
 
 #
 # Some basic clean ups

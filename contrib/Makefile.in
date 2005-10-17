@@ -38,8 +38,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 subdir = contrib
-DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/vicf.in
+DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
 	$(top_srcdir)/configure.ac
@@ -47,7 +46,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/conf.h
-CONFIG_CLEAN_FILES = vicf
+CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(sbindir)"
 pkgdataSCRIPT_INSTALL = $(INSTALL_SCRIPT)
 sbinSCRIPT_INSTALL = $(INSTALL_SCRIPT)
@@ -170,9 +169,9 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 s1 = cfdoc
 s2 = cfengine.el
-sbin_SCRIPTS = vicf $(s1)
+sbin_SCRIPTS = $(s1)
 pkgdata_SCRIPTS = $(s2)
-EXTRA_DIST = README README.vicf $(s1) $(s2)
+EXTRA_DIST = README $(s1) $(s2)
 
 #
 # Some basic clean ups
@@ -229,8 +228,6 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-vicf: $(top_builddir)/config.status $(srcdir)/vicf.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 install-pkgdataSCRIPTS: $(pkgdata_SCRIPTS)
 	@$(NORMAL_INSTALL)
 	test -z "$(pkgdatadir)" || $(mkdir_p) "$(DESTDIR)$(pkgdatadir)"
