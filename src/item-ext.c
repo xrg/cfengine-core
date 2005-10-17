@@ -162,7 +162,7 @@ return(false);
 
 /*********************************************************************/
 
-int IsWildItemIn(struct Item *list,char *item)
+int IsWildItemIn(struct Item *list,char *wildcard)
 
    /* Checks whether item matches a list of wildcards */
 
@@ -175,9 +175,9 @@ for (ptr = list; ptr != NULL; ptr=ptr->next)
       continue;
       }
 
-   if (WildMatch(item,ptr->name))
+   if (WildMatch(wildcard,ptr->name) || WildMatch(ptr->name,wildcard))
       {
-      Debug("IsWildItem(%s,%s)\n",item,ptr->name);
+      Debug("IsWildItem(%s,%s)\n",wildcard,ptr->name);
       return(true);
       }
    }
