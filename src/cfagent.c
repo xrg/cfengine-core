@@ -1339,7 +1339,7 @@ if (IsWildItemIn(VACTIONSEQ,"process*"))
       {
       if ((vproclist->done == 'n') && IsDefinedClass(vproclist->classes))
          {
-         printf("Still waiting for rule:: Proc <%s> / %s\n",vproclist->expr,vproclist->classes);
+         Verbose("Still waiting for rule:: Proc <%s> / %s\n",vproclist->expr,vproclist->classes);
          return false;
          }
       }
@@ -1351,7 +1351,7 @@ if (IsWildItemIn(VACTIONSEQ,"shellcomman*"))
       {
       if ((vscript->done == 'n')  && IsDefinedClass(vscript->classes))
          {
-         printf("Still waiting for rule:: Shell <%s> / %s\n",vscript->name,vscript->classes);
+         Verbose("Still waiting for rule:: Shell <%s> / %s\n",vscript->name,vscript->classes);
          return false;
          }
       }
@@ -1363,7 +1363,7 @@ if (IsWildItemIn(VACTIONSEQ,"file*"))
       {
       if ((vfile->done == 'n') && IsDefinedClass(vfile->classes))
          {
-         printf("Still waiting for rule:: File <%s>/ %s\n",vfile->path,vfile->classes);
+         Verbose("Still waiting for rule:: File <%s>/ %s\n",vfile->path,vfile->classes);
          return false;
          }
       }
@@ -1375,7 +1375,7 @@ if (IsWildItemIn(VACTIONSEQ,"tid*"))
       {
       if (vtidy->done == 'n')
          {
-         printf("Still waiting for rule:: Tidy <%s>\n",vtidy->path);
+         Verbose("Still waiting for rule:: Tidy <%s>\n",vtidy->path);
          return false;
          }
       }
@@ -1393,14 +1393,14 @@ if (IsWildItemIn(VACTIONSEQ,"editfile*"))
          if (IsDefinedClass(ep->classes))
             {
             something_to_do = true;
-            printf("Defined Edit %s / %s\n",ep->data,ep->classes);
+            Verbose("Defined Edit %s / %s\n",ep->data,ep->classes);
             break;
             }
          }
    
       if (veditlist->done == 'n' && something_to_do)
          {
-         printf("Still waiting for rule:: Edit <%s>\n",veditlist->fname);
+         Verbose("Still waiting for rule:: Edit <%s>\n",veditlist->fname);
          return false;
          }
       }
@@ -1412,7 +1412,7 @@ if (IsWildItemIn(VACTIONSEQ,"process*"))
       {
       if (vdisablelist->done == 'n' && IsDefinedClass(vdisablelist->classes))
          {
-         printf("Still waiting for rule:: Disable <%s> / %s\n",vdisablelist->name,vdisablelist->classes);
+         Verbose("Still waiting for rule:: Disable <%s> / %s\n",vdisablelist->name,vdisablelist->classes);
          return false;
          }
       }
@@ -1424,7 +1424,7 @@ if (IsWildItemIn(VACTIONSEQ,"director*"))
       {
       if (vmakepath->done == 'n' && IsDefinedClass(vmakepath->classes))
          {
-         printf("Still waiting for rule:: makePath <%s>\n",vmakepath->path);
+         Verbose("Still waiting for rule:: makePath <%s>\n",vmakepath->path);
          return false;
          }
       }
@@ -1436,7 +1436,7 @@ if (IsWildItemIn(VACTIONSEQ,"link*"))
       {
       if (vlink->done == 'n' && IsDefinedClass(vlink->classes))
          {
-         printf("Still waiting for rule:: Link <%s>\n",vlink->from);
+         Verbose("Still waiting for rule:: Link <%s>\n",vlink->from);
          return false;
          }
       }
@@ -1445,7 +1445,7 @@ if (IsWildItemIn(VACTIONSEQ,"link*"))
       {
       if (vchlink->done == 'n' && IsDefinedClass(vchlink->classes))
          {
-         printf("Still waiting for rule:: CLink <%s>\n",vlink->from);
+         Verbose("Still waiting for rule:: CLink <%s>\n",vlink->from);
          return false;
          }
       }
@@ -1458,7 +1458,7 @@ if (IsWildItemIn(VACTIONSEQ,"unmoun*"))
       {
       if (vunmount->done == 'n' && IsDefinedClass(vunmount->classes))
          {
-         printf("Still waiting for rule:: Umount <%s>\n",vunmount->name);
+         Verbose("Still waiting for rule:: Umount <%s>\n",vunmount->name);
          return false;
          }
       }
@@ -1470,7 +1470,7 @@ if (IsWildItemIn(VACTIONSEQ,"packag*"))
       {
       if (vpkg->done == 'n' && IsDefinedClass(vpkg->classes))
          {
-         printf("Still waiting for rule:: Packages <%s>\n",vpkg->name);
+         Verbose("Still waiting for rule:: Packages <%s>\n",vpkg->name);
          return false;
          }
       }
