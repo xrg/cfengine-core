@@ -389,7 +389,7 @@ if (GetMacroValue(CONTEXTID,"MaxConnections"))
    
    MAXTRIES = CFD_MAXPROCESSES / 3;  /* How many attempted connections over max
             before we commit suicide? */
-   if ((CFD_MAXPROCESSES < 1) || (CFD_MAXPROCESSES > 1000))
+   if ((CFD_MAXPROCESSES < 1) || (CFD_MAXPROCESSES > 10000))
       {
       FatalError("cfservd MaxConnections with silly value");
       }
