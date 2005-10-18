@@ -6085,11 +6085,11 @@ Use the current value of the comment delimiters set using
 from the current position in a file to a line matching the given regular
 expression in quotes.
 
-@item DefineClasses ``@var{class1}:@var{class2}:...''
+@item DefineClasses "@var{class1}:@var{class2}:..."
 Activate the following colon, comma or dot-separated list of classes if
 and only if the file is edited. 
 
-@item DefineInGroup ``@var{class1}:@var{class2}:...''
+@item DefineInGroup "@var{class1}:@var{class2}:..."
 Activate the following colon, comma or dot-separated list of classes if
 the edit group is entered. This can be combined with other classes
 to identify what particular edits took place.
@@ -6115,7 +6115,7 @@ This will define service_added and service_added_another_way if
 either line is added, but additionally myservice1_added if myservice1
 was added and likewise for myservice2_added.
 
-@item DefineInGroup ``@var{class1}:@var{class2}:...''
+@item DefineInGroup "@var{class1}:@var{class2}:..."
 Activate the following colon, comma or dot-separated list of classes
 if execution reaches the @code{BeginGroup} ... @code{EndGroup}
 section(s) containing this command. If you think you want to put
@@ -6156,7 +6156,7 @@ verbose mode, but all edits are immediately
 abandoned.
 
 
-@item EditMode ``Binary''
+@item EditMode "Binary"
 If set to binary, the file will be edited as if it were a non-ASCII file.
 See discussion below.
 
@@ -6467,7 +6467,7 @@ and also
 @item UnsetAbort  @var{quoted-string}
 Switches off the feature @code{AbortAtLineMatching}.
 
-@item UseShell ``false''
+@item UseShell "false"
 Normally cfengine uses a shell based exec function to run
 scripts during editing. This involves the inheritance of
 environment variables and path, which carries with it an
