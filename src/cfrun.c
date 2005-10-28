@@ -603,9 +603,9 @@ while (!feof(fp))
 
    if (strncmp(line,"hostnamekeys",6) == 0)
       {
-      char buf[16];
+      char buf[256];
       buf[0] = '\0';
-      sscanf(line,"hostnamekeys = %295[^# \n]",buf);
+      sscanf(line,"hostnamekeys = %255[^# \n]",buf);
       Verbose("Hostname keys\n");
 
       if (strcmp(buf,"yes") == 0||strcmp(buf,"true") == 0)
