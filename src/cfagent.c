@@ -1375,8 +1375,23 @@ if (IsWildItemIn(VACTIONSEQ,"tid*"))
       {
       if (vtidy->done == 'n')
          {
-         Verbose("Checking for potential rule:: Tidy <%s>\n",vtidy->path);
-         return false;
+         struct TidyPattern *tp;
+         int active = 0;
+         
+         for (tp = vtidy->tidylist; tp != NULL; tp=tp->next)
+            {
+            if (IsDefinedClass(tp->classes))
+               {
+               active=1;
+               break;
+               }
+            }
+
+         if (active)
+            {
+            Verbose("Checking for potential rule:: Tidy <%s>\n",vtidy->path);
+            return false;
+            }
          }
       }
    }
