@@ -177,7 +177,7 @@ ReadRCFile(); /* Should come before parsing so that it can be overridden */
 
  QueryCheck();
      
- DoTree(4,"Main Tree"); 
+ DoTree(3,"Main Tree"); 
  DoAlerts();
  
  CheckMethodReply();
@@ -1339,7 +1339,7 @@ if (IsWildItemIn(VACTIONSEQ,"process*"))
       {
       if ((vproclist->done == 'n') && IsDefinedClass(vproclist->classes))
          {
-         Verbose("Still waiting for rule:: Proc <%s> / %s\n",vproclist->expr,vproclist->classes);
+         Verbose("Checking for potential rule:: Proc <%s> / %s\n",vproclist->expr,vproclist->classes);
          return false;
          }
       }
@@ -1351,7 +1351,7 @@ if (IsWildItemIn(VACTIONSEQ,"shellcomman*"))
       {
       if ((vscript->done == 'n')  && IsDefinedClass(vscript->classes))
          {
-         Verbose("Still waiting for rule:: Shell <%s> / %s\n",vscript->name,vscript->classes);
+         Verbose("Checking for potential rule:: Shell <%s> / %s\n",vscript->name,vscript->classes);
          return false;
          }
       }
@@ -1363,7 +1363,7 @@ if (IsWildItemIn(VACTIONSEQ,"file*"))
       {
       if ((vfile->done == 'n') && IsDefinedClass(vfile->classes))
          {
-         Verbose("Still waiting for rule:: File <%s>/ %s\n",vfile->path,vfile->classes);
+         Verbose("Checking for potential rule:: File <%s>/ %s\n",vfile->path,vfile->classes);
          return false;
          }
       }
@@ -1375,7 +1375,7 @@ if (IsWildItemIn(VACTIONSEQ,"tid*"))
       {
       if (vtidy->done == 'n')
          {
-         Verbose("Still waiting for rule:: Tidy <%s>\n",vtidy->path);
+         Verbose("Checking for potential rule:: Tidy <%s>\n",vtidy->path);
          return false;
          }
       }
@@ -1400,7 +1400,7 @@ if (IsWildItemIn(VACTIONSEQ,"editfile*"))
    
       if (veditlist->done == 'n' && something_to_do)
          {
-         Verbose("Still waiting for rule:: Edit <%s>\n",veditlist->fname);
+         Verbose("Checking for potential rule:: Edit <%s>\n",veditlist->fname);
          return false;
          }
       }
@@ -1412,7 +1412,7 @@ if (IsWildItemIn(VACTIONSEQ,"process*"))
       {
       if (vdisablelist->done == 'n' && IsDefinedClass(vdisablelist->classes))
          {
-         Verbose("Still waiting for rule:: Disable <%s> / %s\n",vdisablelist->name,vdisablelist->classes);
+         Verbose("Checking for potential rule:: Disable <%s> / %s\n",vdisablelist->name,vdisablelist->classes);
          return false;
          }
       }
@@ -1424,7 +1424,7 @@ if (IsWildItemIn(VACTIONSEQ,"director*"))
       {
       if (vmakepath->done == 'n' && IsDefinedClass(vmakepath->classes))
          {
-         Verbose("Still waiting for rule:: makePath <%s>\n",vmakepath->path);
+         Verbose("Checking for potential rule:: makePath <%s>\n",vmakepath->path);
          return false;
          }
       }
@@ -1436,7 +1436,7 @@ if (IsWildItemIn(VACTIONSEQ,"link*"))
       {
       if (vlink->done == 'n' && IsDefinedClass(vlink->classes))
          {
-         Verbose("Still waiting for rule:: Link <%s>\n",vlink->from);
+         Verbose("Checking for potential rule:: Link <%s>\n",vlink->from);
          return false;
          }
       }
@@ -1445,7 +1445,7 @@ if (IsWildItemIn(VACTIONSEQ,"link*"))
       {
       if (vchlink->done == 'n' && IsDefinedClass(vchlink->classes))
          {
-         Verbose("Still waiting for rule:: CLink <%s>\n",vlink->from);
+         Verbose("Checking for potential rule:: CLink <%s>\n",vlink->from);
          return false;
          }
       }
@@ -1458,7 +1458,7 @@ if (IsWildItemIn(VACTIONSEQ,"unmoun*"))
       {
       if (vunmount->done == 'n' && IsDefinedClass(vunmount->classes))
          {
-         Verbose("Still waiting for rule:: Umount <%s>\n",vunmount->name);
+         Verbose("Checking for potential rule:: Umount <%s>\n",vunmount->name);
          return false;
          }
       }
@@ -1470,7 +1470,7 @@ if (IsWildItemIn(VACTIONSEQ,"packag*"))
       {
       if (vpkg->done == 'n' && IsDefinedClass(vpkg->classes))
          {
-         Verbose("Still waiting for rule:: Packages <%s>\n",vpkg->name);
+         Verbose("Checking for potential rule:: Packages <%s>\n",vpkg->name);
          return false;
          }
       }
