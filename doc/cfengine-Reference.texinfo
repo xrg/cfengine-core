@@ -6024,6 +6024,20 @@ are executed if the quoted filename is newer than the file being
 edited. Edit groups may be nested.
 @cindex @code{BeginGroupIfFileIsNewer}
 
+@item BeginGroupIfLineContaining @var{quoted-string}
+The lines following, up to the first @code{EndGroup}
+are executed if the quoted string appears in
+any line in the file. Edit groups may be nested.
+
+@item BeginGroupIfLineMatching @var{quoted-regex}
+The lines following, up to the first @code{EndGroup}
+are executed if the quoted regular expression
+matches any line in the file. Edit groups may be nested.
+
+@item BeginGroupIfMatch @var{quoted-regex}
+The lines following, up to the first @code{EndGroup}
+are executed if the quoted regular expression matches the current line. Edit groups may be nested.
+
 @item BeginGroupIfNoLineContaining @var{quoted-string}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted string does not appear in

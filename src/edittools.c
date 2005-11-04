@@ -969,6 +969,28 @@ while (ep != NULL)
              EDITGROUPLEVEL++;
              }
           break;
+
+      case BeginGroupIfMatch:
+          
+          if (CURRENTLINEPTR == NULL || CURRENTLINEPTR->name == NULL )
+             {
+             EditVerbose("(Begin Group - no match for %s - file empty)\n",expdata);
+             break;
+             }
+          
+          if (LineMatches(CURRENTLINEPTR->name,expdata))
+             {
+             EditVerbose("(Begin Group - match for %s)\n",expdata);
+             EDITGROUPLEVEL++;
+             }
+          else
+             {
+             EditVerbose("(Begin Group - skipping %s)\n",expdata);
+             ep = SkipToEndGroup(ep,filename);
+             }
+
+          break;
+
           
       case BeginGroupIfNoLineMatching:
           if (LocateItemMatchingRegExp(filestart,expdata) != 0)
@@ -982,6 +1004,20 @@ while (ep != NULL)
              EDITGROUPLEVEL++;
              }
           break;
+
+      case BeginGroupIfLineMatching:
+          if (LocateItemMatchingRegExp(filestart,expdata) == 0)
+             {
+             EditVerbose("(Begin Group - skipping %s)\n",expdata);
+             ep = SkipToEndGroup(ep,filename);
+             }
+          else
+             {
+             EditVerbose("(Begin Group - line matching %s)\n",expdata);
+             EDITGROUPLEVEL++;
+             }
+          break;
+
           
       case BeginGroupIfNoLineContaining:
           if (LocateNextItemContaining(filestart,expdata) != 0)
@@ -992,6 +1028,19 @@ while (ep != NULL)
           else
              {
              EditVerbose("(Begin Group - no line containing %s)\n",expdata);
+             EDITGROUPLEVEL++;
+             }
+          break;
+          
+      case BeginGroupIfLineContaining:
+          if (LocateNextItemContaining(filestart,expdata) == 0)
+             {
+             EditVerbose("(Begin Group - skipping, string matched)\n");
+             ep = SkipToEndGroup(ep,filename);
+             }
+          else
+             {
+             EditVerbose("(Begin Group - line containing %s)\n",expdata);
              EDITGROUPLEVEL++;
              }
           break;
