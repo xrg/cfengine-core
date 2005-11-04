@@ -604,11 +604,11 @@ while (true)
    FD_ZERO(&rset);
    FD_SET(sd,&rset);
    
-   timeout.tv_sec = 5;  // Set a 5 second timeout for select
+   timeout.tv_sec = 5;  /* Set a 5 second timeout for select */
    timeout.tv_usec = 0;
    
    ret_val = select((sd+1),&rset,NULL,NULL,&timeout);
-   if (ret_val == -1)   // Error received from call to select
+   if (ret_val == -1)   /* Error received from call to select */
       {
       if (errno == EINTR)
          {
@@ -620,7 +620,7 @@ while (true)
          exit(1);
          }
       }
-   else if (!ret_val)   // No data waiting, we must have timed out!
+   else if (!ret_val)   /* No data waiting, we must have timed out! */
       {
       continue;
       }
