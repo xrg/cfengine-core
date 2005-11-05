@@ -210,11 +210,11 @@ if (stat(startpath,&statbuf) == -1)
                 AddMultipleClasses(ptr->elsedef);
                 return;
                 }
-         else
-            {
-            AddMultipleClasses(ptr->defines);
-            close(fd);
-            }
+             else
+                {
+                AddMultipleClasses(ptr->defines);
+                close(fd);
+                }
              
              CheckExistingFile("*",startpath,ptr->plus,ptr->minus,fixall,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
              }
@@ -222,6 +222,7 @@ if (stat(startpath,&statbuf) == -1)
           snprintf(OUTPUT,CF_BUFSIZE*2,"Creating file %s, mode = %o\n",ptr->path,filemode);
           CfLog(cfinform,OUTPUT,"");
           break;
+          
       case alert:
       case linkchildren: 
       case warnall:
@@ -250,6 +251,7 @@ else
 */
    if (ptr->action == create)
       {
+      CheckExistingFile("*",startpath,ptr->plus,ptr->minus,fixall,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
       ReleaseCurrentLock();
       return;
       }
