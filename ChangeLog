@@ -1,5 +1,20 @@
-2.1.17a 
 
+2.1.18
+	Bug in implementation of tidy scheduling during dependent classes fixed.
+
+	BeginGroupIfLineMatch
+	BeginGroupIfMatch
+	BeginGroupIfLineContaining operations added
+
+	Function ExecShellResult similar to ExecResult, but a shell is used,
+
+2.1.17
+
+	This is a minor bugfix release
+
+	IsWildItemIn now has reflexive check - some confusion in the code about whether
+	the needle or the haystack is the wildcard.
+	
 	Templating in editfiles. A new editfiles directive "ExpandVariables"
 	adds an "m4" like function to cfengine -- allowing predefined variable strings
 	to be expanded into text.
@@ -13,13 +28,14 @@
 
 	vicf eliminated from distribution	
 
-	PrepMpdule environment fix
+	PrepModule environment fix
 
 	Compilation error C++ mixed into cfetool fix
 
 	Chdir to / when ascting as a daemon for cfservd, cfexecd etc
 
 2.1.16
+	Bugfix release
 
 	Moved method parameter setting to fix a bug where parameters would
 	be set too late to be used in the parser

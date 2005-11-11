@@ -74,7 +74,7 @@ if (strncmp(value,"exec ",5) == 0)
    if (*sp == '/')
       {
       strncpy(command,sp,CF_MAXVARSIZE);
-      GetExecOutput(command,value);
+      GetExecOutput(command,value,false);
       Chop(value);
       value[CF_MAXVARSIZE-1] = '\0';  /* Truncate to CF_MAXVARSIZE */
       }
@@ -2752,7 +2752,7 @@ return false;
 
 /********************************************************************/
 
-void GetExecOutput(char *command,char *buffer)
+void GetExecOutput(char *command,char *buffer,int useshell)
 
 /* Buffer initially contains whole exec string */
 
@@ -2767,7 +2767,16 @@ if (DONTDO)
    return;
    }
 
-if ((pp = cfpopen(command,"r")) == NULL)
+if (useshell)
+   {
+   pp = cfpopen_sh(command,"r");
+   }
+else
+   {
+   pp = cfpopen(command,"r");
+   }
+
+if (pp == NULL)
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open pipe to command %s\n",command);
    CfLog(cfinform,OUTPUT,"pipe");

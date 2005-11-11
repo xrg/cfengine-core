@@ -135,7 +135,10 @@ switch (fn = FunctionStringToCode(name))
        HandleStatInfo(fn,args,value);
        break;
    case fn_execresult:
-       HandleFunctionExec(args,value);
+       HandleFunctionExec(args,value,false);
+       break;
+   case fn_execshellresult:
+       HandleFunctionExec(args,value,true);
        break;
    case fn_returnszero:
        HandleReturnsZero(args,value);
@@ -525,7 +528,7 @@ strcpy(value,CF_NOCLASS);
 
 /*********************************************************************/
 
-void HandleFunctionExec(char *args,char *value)
+void HandleFunctionExec(char *args,char *value,int useshell)
 
 { char command[CF_MAXVARSIZE];
   char argv[CF_MAXFARGS][CF_EXPANDSIZE];
@@ -534,19 +537,19 @@ FunctionArgs(args,argv,1);
 
 if (ACTION != control)
    {
-   yyerror("Use of ExecResult(s) outside of variable assignment");
+   yyerror("Use of Exec[Shell]Result(s) outside of variable assignment");
    }
  
 if (*argv[0] == '/')
    {
    strncpy(command,argv[0],CF_MAXVARSIZE);
-   GetExecOutput(command,value);
+   GetExecOutput(command,value,useshell);
    Chop(value);
    value[CF_MAXVARSIZE-1] = '\0';  /* Truncate to CF_MAXVARSIZE */
    }
  else
     {
-    snprintf(OUTPUT,CF_BUFSIZE,"ExecResult(%s) must specify an absolute path",argv[0]);
+    snprintf(OUTPUT,CF_BUFSIZE,"Exec[Shell]Result(%s) must specify an absolute path",argv[0]);
     yyerror(OUTPUT);
     } 
 }

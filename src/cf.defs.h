@@ -624,6 +624,7 @@ enum builtin
    fn_islink,
    fn_isplain,
    fn_execresult,
+   fn_execshellresult,
    fn_returnszero,
    fn_iprange,
    fn_hostrange,

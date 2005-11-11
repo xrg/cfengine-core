@@ -548,6 +548,7 @@ char *TCPNAMES[CF_NETATTR] =
       "islink",
       "isplain",
       "execresult",
+      "execshellresult",
       "returnszero",
       "iprange",
       "hostrange",

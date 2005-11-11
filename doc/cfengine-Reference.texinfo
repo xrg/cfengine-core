@@ -982,7 +982,13 @@ copy:
 @end smallexample
 
 @item ExecResult(@var{command})
-Executes the named shell command and inserts the output into the
+Executes the named command without a shell-wrapper and inserts the output into the
+variable. Note that, when this is used in cfengine built-in list
+variables, any spaces are interpreted as list separators. In other
+lists, normal rules for iteration apply.
+
+@item ExecShellResult(@var{command})
+Executes the named command with a shell-wrapper and inserts the output into the
 variable. Note that, when this is used in cfengine built-in list
 variables, any spaces are interpreted as list separators. In other
 lists, normal rules for iteration apply.
