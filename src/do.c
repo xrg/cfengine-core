@@ -2676,6 +2676,7 @@ void CheckPackages()
 { struct Package *ptr;
   int match = 0;
   int i;
+  char lock[CF_BUFSIZE];
   /* pkgmgr_none will always be the highest number in the enum so set
      the array size with that */
   char *package_install_list[pkgmgr_none] = { NULL };
@@ -2696,7 +2697,9 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       continue;
       }
 
-   if (!GetLock(ASUniqueName("packages"),CanonifyName(ptr->name),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
+   snprintf(lock,CF_BUFSIZE-1,"%s_%d_%d",ptr->name,ptr->cmp,ptr->action);
+   
+   if (!GetLock(ASUniqueName("packages"),CanonifyName(lock),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
       {
       ptr->done = 'y';
       continue;
