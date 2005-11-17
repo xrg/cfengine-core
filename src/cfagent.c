@@ -1408,7 +1408,14 @@ if (IsWildItemIn(VACTIONSEQ,"editfile*"))
          if (IsDefinedClass(ep->classes))
             {
             something_to_do = true;
-            Verbose("Defined Edit %s / %s\n",ep->data,ep->classes);
+            if (ep->data)
+               {
+               Verbose("Defined Edit %s / %s\n",ep->data,ep->classes);
+               }
+            else
+               {
+               Verbose("Defined Edit nodata / %s\n",ep->classes);
+               }
             break;
             }
          }
