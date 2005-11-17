@@ -45,7 +45,7 @@ struct Item *ListFromArgs(char *string)
 /* Splits a string with quoted components etc */
 
 { struct Item *ip = NULL;
-  int dquote_level = 0,i = 0;
+  int inquotes_level = 0,i = 0;
   int paren_level = 0;
   char *sp,lastch = '\0';
   char item[CF_BUFSIZE];
@@ -60,38 +60,40 @@ for (sp = string; *sp != '\0'; sp++)
           
           if (lastch == '\\')  /* Escaped quote */
              {
-             sp--;
-             *sp = ')';
-             continue;
+             if (inquotes_level == 0)
+                {
+                yyerror("Quoting error - escaped quote outside string");
+                FatalError("Unrecoverable");
+                }
+             
+             i--;
              }
           else
              {
-             if (dquote_level == 0)
-                {
-                dquote_level = 1;
-                continue;
-                }
-             else
-                {
-                dquote_level = 0;
-                continue;
-                }
+             inquotes_level = 1 - inquotes_level; /* toggle */
+             continue;
              }
           break;
           
       case '(':
-          
-          paren_level++;
+
+          if (inquotes_level == 0)
+             {
+             paren_level++;
+             }
           break;
           
       case ')':
           
-          paren_level--;
+          if (inquotes_level == 0)
+             {          
+             paren_level--;
+             }
           break;
           
       case ',':
           
-          if (dquote_level == 0 && paren_level == 0)
+          if (inquotes_level == 0 && paren_level == 0)
              {
              item[i] = '\0';
              i = 0;
