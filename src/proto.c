@@ -63,7 +63,7 @@ return(strncmp(buf,CF_FAILEDSTR,strlen(CF_FAILEDSTR)) == 0);
 int IdentifyForVerification(int sd,char *localip,int family)
 
 { char sendbuff[CF_BUFSIZE],dnsname[CF_BUFSIZE];
-  struct sockaddr_in myaddr;
+  struct sockaddr_in6 myaddr;
   struct in_addr *iaddr;
   struct hostent *hp;
   int len,err;
