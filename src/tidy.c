@@ -692,7 +692,7 @@ else
    size_match = (tlp->size <= statbuf->st_size);
    }
 
-age_match = tlp->age*CF_TICKS_PER_DAY <= (nowticks-fileticks);
+age_match = tlp->age*CF_TICKS_PER_DAY <= (nowticks-fileticks) || (nowticks < fileticks);
 
 if (age_match && size_match)
    {
