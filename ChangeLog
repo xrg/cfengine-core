@@ -1,5 +1,10 @@
 
 2.1.18
+
+	Segmentation fault when in verbose mode fixed - editfiles pointer.
+	
+	Error in parsing quotes and escaped quotes in functions.
+
 	Bug in implementation of tidy scheduling during dependent classes fixed.
 
 	BeginGroupIfLineMatch
