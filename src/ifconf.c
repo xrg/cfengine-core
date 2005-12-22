@@ -68,6 +68,10 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
+#ifndef INET_ADDRSTRLEN
+#define INET_ADDRSTRLEN sizeof("255.255.255.255")
+#endif
+
 #if !defined(NT) && !defined(IRIX)
 
 /* IRIX makes the routing stuff obsolete unless we do this */

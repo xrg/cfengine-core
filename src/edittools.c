@@ -759,7 +759,7 @@ while (ep != NULL)
           
           if (CURRENTLINEPTR == NULL)
              {
-             newlineptr == NULL;
+             newlineptr = NULL;
              }
           else
              {
@@ -1519,11 +1519,13 @@ if (pp == NULL)
 
 while (!feof(pp))   
    {
-   ReadLine(CURRENTITEM,CF_BUFSIZE,pp);
+   char buffer[CF_BUFSIZE];
+   
+   ReadLine(buffer,CF_BUFSIZE-1,pp);
 
    if (!feof(pp))
       {
-      EditVerbose("%s\n",CURRENTITEM);
+      EditVerbose("%s\n",buffer);
       }
    }
 

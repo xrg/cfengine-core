@@ -1692,11 +1692,11 @@ enum fileactions action;/* The action to be performed */
 
 /*****************************************************************************/
 
-int CheckNTACE(aces,method,filename,action)
-struct CFACE *aces;     /* List built up during parsing of config file */
-char method;   /* ACL operation method (o/a) */
-char *filename;   /* The filename */
-enum fileactions action;/* The action to be performed */
+int CheckNTACE(
+       struct CFACE *aces,     /* List built up during parsing of config file */
+       char method,   /* ACL operation method (o/a) */
+       char *filename,   /* The filename */
+       enum fileactions action)/* The action to be performed */
 {
 #ifdef NT
  struct CFACE *ep;
@@ -1718,11 +1718,7 @@ enum fileactions action;/* The action to be performed */
 
 /*************************** END NT Addition *******************************/
 
-int CheckPosixACE(aces,method,filename,action)
-struct CFACE *aces;
-char method;
-char *filename;
-enum fileactions action;
+int CheckPosixACE(struct CFACE *aces,char method,char *filename,enum fileactions action)
 {
 #if defined(HAVE_SYS_ACL_H) && defined(SOLARIS)
  struct CFACE *ep;

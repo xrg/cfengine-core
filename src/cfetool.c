@@ -839,7 +839,7 @@ void Create(int step, int dbtype)
   time_t timestamp;
   char filename[CF_BUFSIZE];
   int cwdbufsize = CF_BUFSIZE - strlen(PATHNAME) - strlen(NAME);
-  char current_dir[cwdbufsize];
+  char current_dir[CF_BUFSIZE];
 
   AGE = WAGE = 0;
   ITER = 0;
@@ -1255,7 +1255,7 @@ void Dump(FILE * fp, int dbtype)
       break;
   }
 
-  Verbose("Dumping database: %s\n");
+  Verbose("Dumping database: %s\n",AVDB);
 
   if(OpenDatabase(false) != 0)
     exit(1);

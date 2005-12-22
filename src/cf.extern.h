@@ -43,10 +43,10 @@ extern char *ECGSOCKS[ATTR][2];
 extern char *TCPNAMES[CF_NETATTR];
 extern char **METHODARGV;
 extern int GOTMETHODARGS;
-
 extern struct Item *QUERYVARS;
-extern struct Item *METHODRETURNVARS;;
+extern struct Item *METHODRETURNVARS;
 extern struct Item *METHODRETURNCLASSES;
+
 extern char METHODFILENAME[CF_BUFSIZE];
 extern char *VMETHODPROTO[];
 extern int METHODARGC;

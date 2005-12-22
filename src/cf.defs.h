@@ -1131,7 +1131,7 @@ enum SignalNames
    cfsys,
    cfpipe,
    cfalrm,
-   cfterm,
+   cfterm
    };
 
 #define highest_signal 64
