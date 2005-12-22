@@ -2428,6 +2428,9 @@ memset(in,0,CF_BUFSIZE);
 
 if (ReceiveTransaction(conn->sd_reply,in,NULL) == -1)
    {
+   BN_free(counter_challenge);
+   free(out);
+   RSA_free(newkey);   
    return false;
    }
  
@@ -2461,11 +2464,17 @@ memset(in,0,CF_BUFSIZE);
 
 if ((keylen = ReceiveTransaction(conn->sd_reply,in,NULL)) == -1)
    {
+   BN_free(counter_challenge);
+   free(out);
+   RSA_free(newkey); 
    return false;
    }
 
 if (keylen > CF_BUFSIZE/2)
    {
+   BN_free(counter_challenge);
+   free(out);
+   RSA_free(newkey); 
    snprintf(conn->output,CF_BUFSIZE,"Session key length received from %s is too long",conn->ipaddr);
    CfLog(cfinform,conn->output,"");
    return false;
@@ -2487,9 +2496,11 @@ conn->session_key = malloc(CF_BLOWFISHSIZE);
 
 if (conn->session_key == NULL)
    {
+   BN_free(counter_challenge);
+   free(out);
+   RSA_free(newkey); 
    return false;
    }
-
 
 if (keylen == CF_BLOWFISHSIZE) /* Old, non-encrypted */
    {
@@ -2510,7 +2521,6 @@ else /* New encrypted */
       
       snprintf(conn->output,CF_BUFSIZE,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
       CfLog(cferror,conn->output,"");
-      conn->session_key = NULL;
       return false;
       }
    

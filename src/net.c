@@ -130,12 +130,12 @@ int RecvSocketStream(int sd,char buffer[CF_BUFSIZE],int toget,int nothing)
 
 Debug("RecvSocketStream(%d)\n",toget);
 
-if (toget > CF_BUFSIZE)
+if (toget > CF_BUFSIZE-1)
    {
    CfLog(cferror,"Bad software request for overfull buffer","");
    return -1;
    }
- 
+
 for (already = 0; already != toget; already += got)
    {
    got = recv(sd,buffer+already,toget-already,0);
@@ -150,6 +150,7 @@ for (already = 0; already != toget; already += got)
       {
       Debug("Transmission empty or timed out...\n");
       fraction = 0;
+      buffer[already] = '\0';
       return already;
       }
 
@@ -158,10 +159,12 @@ for (already = 0; already != toget; already += got)
    if (strncmp(buffer,"AUTH",4) == 0 && (already == CF_BUFSIZE))
       {
       fraction = 0;
+      buffer[already] = '\0';
       return already;
       }
    }
 
+buffer[toget] = '\0';
 return toget;
 }
 

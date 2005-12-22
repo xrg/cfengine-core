@@ -39,7 +39,7 @@ void CfOpenLog()
 
 { char value[CF_BUFSIZE];
   int facility = LOG_USER; 
-  static lastsyslog=0;
+  static int lastsyslog = 0;
  
 if (GetMacroValue(CONTEXTID,"SyslogFacility"))
    {

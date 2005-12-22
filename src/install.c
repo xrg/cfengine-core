@@ -448,7 +448,7 @@ else
            yyerror("Silly interface name, (should be something link eth0)");
            }
         
-        strcpy(VIFNAMEOVERRIDE,value);
+        strncpy(VIFNAMEOVERRIDE,value,15);
         VIFDEV[VSYSTEMHARDCLASS] = VIFNAMEOVERRIDE; /* override */
         Debug("Overriding interface with %s\n",VIFDEV[VSYSTEMHARDCLASS]);
         break;
