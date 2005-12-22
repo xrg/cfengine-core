@@ -46,6 +46,7 @@ struct Item *ListFromArgs(char *string)
 
 { struct Item *ip = NULL;
   int inquotes_level = 0,i = 0;
+  int inquote_level = 0;
   int paren_level = 0;
   char *sp,lastch = '\0';
   char item[CF_BUFSIZE];
@@ -74,7 +75,26 @@ for (sp = string; *sp != '\0'; sp++)
              continue;
              }
           break;
+
+      case '\'':
           
+          if (lastch == '\\')  /* Escaped quote */
+             {
+             if (inquote_level == 0)
+                {
+                yyerror("Quoting error - escaped quote outside string");
+                FatalError("Unrecoverable");
+                }
+             
+             i--;
+             }
+          else
+             {
+             inquote_level = 1 - inquote_level; /* toggle */
+             continue;
+             }
+          break;
+
       case '(':
 
           if (inquotes_level == 0)
@@ -93,7 +113,7 @@ for (sp = string; *sp != '\0'; sp++)
           
       case ',':
           
-          if (inquotes_level == 0 && paren_level == 0)
+          if (inquotes_level == 0 && paren_level == 0 && inquote_level)
              {
              item[i] = '\0';
              i = 0;

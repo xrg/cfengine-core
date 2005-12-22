@@ -13,10 +13,22 @@
 
 	Function ExecShellResult similar to ExecResult, but a shell is used,
 
+	cfservd some additional memory reclamation during file updates, could cause memory leaks..
+	
 2.1.17
 
-	This is a minor bugfix release
+		This is a minor bugfix release
 
+	
+	WARNING	- the handling of function arguments has been changed. You are recommended to
+	use normal C/Perl quoting of argument strings., e.g.
+
+	  result = ( ExecResult("/bin/sh -c \"${pf_cc} -V | head -1 | cut -d\  -f3\"") )
+
+	not
+
+  	  result = ( ExecResult(/bin/sh -c "${pf_cc} -V | head -1 | cut -d\  -f3") )
+	
 	IsWildItemIn now has reflexive check - some confusion in the code about whether
 	the needle or the haystack is the wildcard.
 	

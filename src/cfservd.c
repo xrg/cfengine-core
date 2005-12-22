@@ -142,9 +142,12 @@ int main (int argc,char **argv)
 {
 CheckOptsAndInit(argc,argv);
 ParseInputFile(VINPUTFILE);
+
 /* We call CfOpenLog again so, if we configure SyslogFacility, 
    we open syslog again */
+closelog();
 CfOpenLog();
+
 CheckVariables();
 SummarizeParsing();
 
@@ -581,6 +584,7 @@ if ((!NO_FORK) && (fork() != 0))
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"cfservd starting %.24s\n",ctime(&CFDSTARTTIME));
    CfLog(cfinform,OUTPUT,"");
+   closelog();
    exit(0);
    }
 
@@ -608,6 +612,7 @@ while (true)
    timeout.tv_usec = 0;
    
    ret_val = select((sd+1),&rset,NULL,NULL,&timeout);
+
    if (ret_val == -1)   /* Error received from call to select */
       {
       if (errno == EINTR)
@@ -697,7 +702,6 @@ while (true)
       return;
       }
 #endif
-
       
       SpawnConnection(sd_reply,ipaddr);
       }
@@ -1055,8 +1059,14 @@ if (CFDSTARTTIME < newstat.st_mtime)
    DeleteItemList(VNEGHEAP);
    DeleteItemList(TRUSTKEYLIST);
    DeleteItemList(VIMPORT);
+   DeleteItemList(SKIPVERIFY);
+   DeleteItemList(DHCPLIST);
+   DeleteItemList(ATTACKERLIST);
+   DeleteItemList(NONATTACKERLIST);
+   DeleteItemList(MULTICONNLIST);
    DeleteAuthList(VADMIT);
    DeleteAuthList(VDENY);
+
    strcpy(VDOMAIN,"undefined.domain");
 
    VADMIT = VADMITTOP = NULL;
@@ -1064,6 +1074,11 @@ if (CFDSTARTTIME < newstat.st_mtime)
    VHEAP  = VNEGHEAP  = NULL;
    VIMPORT = NULL;
    TRUSTKEYLIST = NULL;
+   SKIPVERIFY = NULL;
+   DHCPLIST = NULL;
+   ATTACKERLIST = NULL;
+   NONATTACKERLIST = NULL;
+   MULTICONNLIST = NULL;
 
    BlankHashTable("server");
 
@@ -2495,7 +2510,6 @@ else /* New encrypted */
       
       snprintf(conn->output,CF_BUFSIZE,"Private decrypt failed = %s\n",ERR_reason_error_string(err));
       CfLog(cferror,conn->output,"");
-      free(conn->session_key);
       conn->session_key = NULL;
       return false;
       }
@@ -3340,6 +3354,11 @@ void DeleteConn(struct cfd_connection *conn) /* destruct */
 Debug("***Closing socket %d from %s\n",conn->sd_reply,conn->ipaddr);
 
 close(conn->sd_reply);
+
+if (conn->session_key != NULL)
+   {
+   free(conn->session_key);
+   }
  
 if (conn->ipaddr != NULL)
    {
