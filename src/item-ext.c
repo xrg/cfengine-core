@@ -80,7 +80,7 @@ for (sp = string; *sp != '\0'; sp++)
           
           if (lastch == '\\')  /* Escaped quote */
              {
-             if (inquote_level == 0)
+             if (inquotes_level == 0)
                 {
                 yyerror("Quoting error - escaped quote outside string");
                 FatalError("Unrecoverable");
