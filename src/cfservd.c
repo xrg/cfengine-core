@@ -3233,6 +3233,8 @@ if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
          {
          dbp->err(dbp,errno,NULL);
          }
+
+      DeletePublicKey(keyname);
       }
    else
       {
