@@ -482,6 +482,7 @@ if (found == -1)
    snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",source);
    CfLog(cferror,OUTPUT,"");
    FlushClientCache(ip);
+   AddMultipleClasses(ip->elsedef);
    return;
    }
 
