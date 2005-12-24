@@ -608,7 +608,7 @@ while (true)
    FD_ZERO(&rset);
    FD_SET(sd,&rset);
    
-   timeout.tv_sec = 5;  /* Set a 5 second timeout for select */
+   timeout.tv_sec = 10;  /* Set a 10 second timeout for select */
    timeout.tv_usec = 0;
    
    ret_val = select((sd+1),&rset,NULL,NULL,&timeout);
@@ -2602,8 +2602,7 @@ if (S_ISLNK(statbuf.st_mode))
 
    cfst.cf_readlink = linkbuf;
    }
-
-if (stat(filename,&statbuf) == -1)
+else if (stat(filename,&statbuf) == -1)
    {
    snprintf(sendbuffer,CF_BUFSIZE,"BAD: unable to stat file %s\n",filename);
    CfLog(cfverbose,conn->output,"stat");
@@ -3035,7 +3034,7 @@ else
    }
  
 snprintf(sendbuffer,CF_BUFSIZE,"%s",CF_FAILEDSTR);
-CfLog(cfinform,"Host authorization/authentication failed or access denied\n","");
+CfLog(cfinform,"Unspecified refusal by server\n","");
 SendTransaction(conn->sd_reply,sendbuffer,size,CF_DONE);
 snprintf(sendbuffer,CF_BUFSIZE,"From (host=%s,user=%s,ip=%s)",hostname,username,ipaddr);
 CfLog(cfinform,sendbuffer,"");

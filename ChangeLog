@@ -1,6 +1,16 @@
 
 2.1.18
+	Error in stat'ing links that point to non-existent files in
+	cfservd. Missing "else" caused this to be reported as an error in
+	remote file copy.
 
+	5 second timeout reduced to 10 in cfservd file change check.
+	
+	Error message returned by cfservd is non-specific and previously
+	said authentication denied, regardless of failure. The daemon now replies
+	"Unspecified refusal". Users should use -v or -d2 on both sides of a connection
+	to diagnose the true cause of failure,
+	
 	Segmentation fault when in verbose mode fixed - editfiles pointer.
 	
 	Error in parsing quotes and escaped quotes in functions.
