@@ -281,6 +281,12 @@ int InstallPackage(char *name, enum pkgmgrs pkgmgr)
     char *ptr;
     FILE *pp;
 
+    if (DONTDO)
+       {
+       Verbose("Need to install package %s\n",name);
+       return 0;
+       }
+    
     /* Determine the command to use for the install. */
     switch(pkgmgr)
     {
@@ -291,8 +297,7 @@ int InstallPackage(char *name, enum pkgmgrs pkgmgr)
           Verbose("RPMInstallCommand NOT Set.  Package Installation Not Possible!\n");
           return 0;
           }
-        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"RPMInstallCommand"),
-                    CF_BUFSIZE);
+        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"RPMInstallCommand"),CF_BUFSIZE);
         break;
 
         /* Debian */
