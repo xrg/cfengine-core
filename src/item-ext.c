@@ -113,7 +113,7 @@ for (sp = string; *sp != '\0'; sp++)
           
       case ',':
           
-          if (inquotes_level == 0 && paren_level == 0 && inquote_level)
+          if ((inquotes_level == 0) && (paren_level == 0))
              {
              item[i] = '\0';
              i = 0;
@@ -122,13 +122,15 @@ for (sp = string; *sp != '\0'; sp++)
              continue;
              }
       }
-   
+
+   Debug("ListArg[%d]=(%s)\n",i,sp);
    item[i++] = *sp;
    lastch = *sp;
    }
- 
- AppendItem(&ip,item,""); 
- return ip;
+
+item[i] = '\0';
+AppendItem(&ip,item,""); 
+return ip;
 }
 
 /*********************************************************************/

@@ -481,8 +481,8 @@ if ((ptr != NULL) && S_ISREG(dstat->st_mode) && (ptr->checksum != 'n'))
     if (!DONTDO)
        {
        if (ChecksumChanged(file,digest,cferror,false,ptr->checksum))
-   {
-   }
+          {
+          }
        }
     }
 

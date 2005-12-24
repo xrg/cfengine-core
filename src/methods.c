@@ -129,7 +129,7 @@ for (ip = ptr->servers; ip != NULL; ip=ip->next)
       Verbose("\nDispatch method localhost:%s to %s/rpc_in\n",ptr->name,VLOCKDIR);
 
       ptr->invitation = 'y';
-      snprintf(label,CF_BUFSIZE-1,"%s/rpc_in/localhost_localhost_%s_%s",VLOCKDIR,ptr->name,ChecksumPrint('m',ptr->digest));
+      snprintf(label,CF_BUFSIZE-1,"%s/rpc_in/localhost+localhost+%s+%s",VLOCKDIR,ptr->name,ChecksumPrint('m',ptr->digest));
       EncapsulateMethod(ptr,label);
       }
    else
@@ -153,7 +153,7 @@ for (ip = ptr->servers; ip != NULL; ip=ip->next)
          }
       
       Verbose("Hailing server (%s) from our calling id %s\n",serverip,VFQNAME);
-      snprintf(label,CF_BUFSIZE-1,"%s/rpc_out/%s_%s_%s_%s",VLOCKDIR,clientip,serverip,ptr->name,ChecksumPrint('m',ptr->digest));
+      snprintf(label,CF_BUFSIZE-1,"%s/rpc_out/%s+%s+%s+%s",VLOCKDIR,clientip,serverip,ptr->name,ChecksumPrint('m',ptr->digest));
       EncapsulateMethod(ptr,label);
       Debug("\nDispatched method %s to %s/rpc_out\n",label,VLOCKDIR);
       }
@@ -745,8 +745,7 @@ else
    strncpy(ipaddress,"localhost",63);     
    }
 
-
-snprintf(basepackage,CF_BUFSIZE-1,"%s/rpc_in/%s_%s_%s_%s",VLOCKDIR,clientip,ipaddress,METHODNAME,METHODMD5);
+snprintf(basepackage,CF_BUFSIZE-1,"%s/rpc_in/%s+%s+%s+%s",VLOCKDIR,clientip,ipaddress,METHODNAME,METHODMD5);
 
 argnum = CountAttachments(basepackage);
  
@@ -971,7 +970,7 @@ Verbose("DispatchMethodReply()\n\n");
 
 if (strcmp(METHODREPLYTO,"localhost") == 0 || strcmp(METHODREPLYTO,"::1") == 0 || strcmp(METHODREPLYTO,"127.0.0.1") == 0)
    {    
-   snprintf(label,CF_BUFSIZE-1,"%s/rpc_in/localhost_localhost_%s:Reply_%s",VLOCKDIR,METHODNAME,METHODMD5);
+   snprintf(label,CF_BUFSIZE-1,"%s/rpc_in/localhost+localhost+%s:Reply+%s",VLOCKDIR,METHODNAME,METHODMD5);
    EncapsulateReply(label);
    }
 else
@@ -981,7 +980,7 @@ else
 
    Verbose("\nDispatch method %s:%s to %s/rpc_out\n",METHODREPLYTO,METHODNAME,VLOCKDIR);
 
-   snprintf(label,CF_BUFSIZE-1,"%s/rpc_out/%s_%s_%s:Reply_%s",VLOCKDIR,clientip,ipaddress,METHODNAME,METHODMD5);
+   snprintf(label,CF_BUFSIZE-1,"%s/rpc_out/%s+%s+%s:Reply+%s",VLOCKDIR,clientip,ipaddress,METHODNAME,METHODMD5);
    EncapsulateReply(label);
    }
 }
@@ -1328,11 +1327,11 @@ if ((fp = fopen(name,"w")) == NULL)
        {
        char correction[CF_BUFSIZE];
        snprintf(correction,CF_BUFSIZE-1,"%s/rpc_in/%s",VLOCKDIR,name+strlen(VLOCKDIR)+2+strlen("rpc_out"));
-       fprintf(fp,"%s %s_%d\n",VMETHODPROTO[cfmeth_attacharg],correction,i);
+       fprintf(fp,"%s %s+%d\n",VMETHODPROTO[cfmeth_attacharg],correction,i);
        }
     else
        {
-       fprintf(fp,"%s %s_%d\n",VMETHODPROTO[cfmeth_attacharg],name,i);
+       fprintf(fp,"%s %s+%d\n",VMETHODPROTO[cfmeth_attacharg],name,i);
        }
     }
 
@@ -1349,7 +1348,7 @@ if ((fp = fopen(name,"w")) == NULL)
  for (ip = ptr->send_args; ip != NULL; ip=ip->next)
     {
     i++;    
-    snprintf(filename,CF_BUFSIZE-1,"%s_%d",name,i);
+    snprintf(filename,CF_BUFSIZE-1,"%s+%d",name,i);
     Debug("Create arg_file %s\n",filename);
     
     if (IsBuiltinFunction(ip->name))
@@ -1519,11 +1518,11 @@ if ((fp = fopen(name,"w")) == NULL)
        {
        char correction[CF_BUFSIZE];
        snprintf(correction,CF_BUFSIZE-1,"%s/rpc_in/%s",VLOCKDIR,name+strlen(VLOCKDIR)+2+strlen("rpc_out"));
-       fprintf(fp,"%s %s_%d (%s)\n",VMETHODPROTO[cfmeth_attacharg],correction,i,expbuf);
+       fprintf(fp,"%s %s+%d (%s)\n",VMETHODPROTO[cfmeth_attacharg],correction,i,expbuf);
        }
     else
        {
-       fprintf(fp,"%s %s_%d (%s)\n",VMETHODPROTO[cfmeth_attacharg],name,i,expbuf);
+       fprintf(fp,"%s %s+%d (%s)\n",VMETHODPROTO[cfmeth_attacharg],name,i,expbuf);
        }
     }
 
@@ -1541,7 +1540,7 @@ if ((fp = fopen(name,"w")) == NULL)
  for (ip = METHODRETURNVARS; ip != NULL; ip=ip->next)
     {
     i++;    
-    snprintf(filename,CF_BUFSIZE-1,"%s_%d",name,i);
+    snprintf(filename,CF_BUFSIZE-1,"%s+%d",name,i);
     Debug("Create arg_file %s\n",filename);
     
     if (IsBuiltinFunction(ip->name))
@@ -1664,5 +1663,11 @@ server[0] = '\0';
 digeststring[0] = '\0';
 extra[0] = '\0';
  
-sscanf(name,"%1024[^_]_%1024[^_]_%1024[^_]_%[^_]_%64s",client,server,methodname,digeststring,extra);
+sscanf(name,"%1024[^+]+%1024[^+]+%1024[^+]+%[^+]+%64s",client,server,methodname,digeststring,extra);
+
+Debug("Method client -> %s\n",client);
+Debug("Method server -> %s\n",server);
+Debug("Method name -> %s\n",methodname);
+Debug("Method digeststring -> %s\n",digeststring);
+Debug("Method extra -> %s\n",extra);
 }

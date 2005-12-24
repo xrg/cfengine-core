@@ -2814,7 +2814,7 @@ for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
       }
 
    ChecksumList(ptr->send_args,digest,'m');
-   snprintf(label,CF_BUFSIZE-1,"%s/rpc_in/localhost_localhost_%s_%s",VLOCKDIR,ptr->name,ChecksumPrint('m',digest));
+   snprintf(label,CF_BUFSIZE-1,"%s/rpc_in/localhost+localhost+%s+%s",VLOCKDIR,ptr->name,ChecksumPrint('m',digest));
 
    if (!GetLock(ASUniqueName("methods-dispatch"),CanonifyName(label),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
       {
