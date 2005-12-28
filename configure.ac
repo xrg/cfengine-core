@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.1.17)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.1.18)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -568,7 +568,14 @@ case "$target_os" in
    solaris2*)
 	AC_DEFINE(SOLARIS)
         AC_DEFINE(__BIT_TYPES_DEFINED__) # avoid conflict with db.h
-        AC_DEFINE(_POSIX_C_SOURCE)
+
+       AC_PREPROC_IFELSE([
+                         AC_LANG_PROGRAM([[
+#define _POSIX_C_SOURCE 1
+#include <unistd.h>
+                           ]], [])],
+                           [AC_DEFINE(_POSIX_C_SOURCE)],
+                           [AC_DEFINE(_POSIX_C_SOURCE, 200112loL)])
         AC_DEFINE(__EXTENSIONS__)
         LIBS="$LIBS -lelf -lsec"
         ;;
@@ -770,7 +777,7 @@ AC_ARG_WITH(docs,
 AM_CONDITIONAL(BUILD_DOC, test x$want_doc = xtrue)
 
 AC_OUTPUT(pub/Makefile src/Makefile contrib/Makefile inputs/Makefile \
-Makefile doc/Makefile src/cflex.l contrib/vicf )
+Makefile doc/Makefile src/cflex.l  )
 
 
 AC_MSG_WARN(=====================================================)

@@ -1702,7 +1702,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=cfengine
- VERSION=2.1.15
+ VERSION=2.1.18
 
 
 cat >>confdefs.h <<_ACEOF
@@ -14986,10 +14986,58 @@ _ACEOF
 #define __BIT_TYPES_DEFINED__ 1
 _ACEOF
  # avoid conflict with db.h
-        cat >>confdefs.h <<\_ACEOF
+
+       cat >conftest.$ac_ext <<_ACEOF
+
+                         /* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#define _POSIX_C_SOURCE 1
+#include <unistd.h>
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  cat >>confdefs.h <<\_ACEOF
 #define _POSIX_C_SOURCE 1
 _ACEOF
 
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  cat >>confdefs.h <<\_ACEOF
+#define _POSIX_C_SOURCE 200112loL
+_ACEOF
+
+fi
+rm -f conftest.err conftest.$ac_ext
         cat >>confdefs.h <<\_ACEOF
 #define __EXTENSIONS__ 1
 _ACEOF
@@ -16042,7 +16090,7 @@ else
 fi
 
 
-                                                                                ac_config_files="$ac_config_files pub/Makefile src/Makefile contrib/Makefile inputs/Makefile Makefile doc/Makefile src/cflex.l contrib/vicf"
+                                                                      ac_config_files="$ac_config_files pub/Makefile src/Makefile contrib/Makefile inputs/Makefile Makefile doc/Makefile src/cflex.l"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -16613,7 +16661,6 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
   "src/cflex.l" ) CONFIG_FILES="$CONFIG_FILES src/cflex.l" ;;
-  "contrib/vicf" ) CONFIG_FILES="$CONFIG_FILES contrib/vicf" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/conf.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/conf.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

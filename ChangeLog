@@ -1,5 +1,10 @@
 
 2.1.18
+
+	elsedefine was not defined if a copy was requested of a non-existent file. Fixed.
+	
+	HostnameKeys (dynamic keys for dhcp clients) fix for cfservd.
+	
 	Error in stat'ing links that point to non-existent files in
 	cfservd. Missing "else" caused this to be reported as an error in
 	remote file copy.
