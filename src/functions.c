@@ -348,7 +348,7 @@ void HandleStatInfo(enum builtin fn,char *args,char *value)
 
 FunctionArgs(args,argv,1);
 
-if (lstat(args,&statbuf) == -1)
+if (lstat(argv[0],&statbuf) == -1)
    {
    strcpy(value,CF_NOCLASS);
    return;

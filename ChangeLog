@@ -1,5 +1,6 @@
 
 2.1.18
+	Error in FileExists() left over from 2.1.16 changes. Fixed
 
 	elsedefine was not defined if a copy was requested of a non-existent file. Fixed.
 	
