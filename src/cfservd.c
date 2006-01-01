@@ -2014,40 +2014,46 @@ int AccessControl(char *filename,struct cfd_connection *conn,int encrypt)
 
 { struct Auth *ap;
   int access = false;
-  char realname[CF_BUFSIZE];
+  char realname[CF_BUFSIZE],path[CF_BUFSIZE],lastnode[CF_BUFSIZE];
   struct stat statbuf;
 
 Debug("AccessControl(%s)\n",filename);
 memset(realname,0,CF_BUFSIZE);
 
-if (lstat(filename,&statbuf) == -1)
+/* Separate path first, else this breaks for lastnode = symlink */
+
+strncpy(path,filename,CF_BUFSIZE-1);
+strncpy(lastnode,ReadLastNode(filename),CF_BUFSIZE-1);
+ChopLastNode(path);
+
+/* Eliminate links from path */
+
+#ifdef HAVE_REALPATH
+if (realpath(path,realname) == NULL)
    {
-   snprintf(conn->output,CF_BUFSIZE*2,"Couldn't stat filename %s from host %s\n",filename,conn->hostname);
+   snprintf(conn->output,CF_BUFSIZE*2,"Couldn't resolve filename %s from host %s\n",filename,conn->hostname);
+   CfLog(cfverbose,conn->output,"lstat");
+   CfLog(cflogonly,conn->output,"lstat");   
+   return false;
+   }
+#else
+CompressPath(realname,path); /* in links.c */
+#endif
+
+/* Rejoin the last node and stat the real thing */
+
+AddSlash(realname);
+strcat(realname,lastnode);
+
+if (lstat(realname,&statbuf) == -1)
+   {
+   snprintf(conn->output,CF_BUFSIZE*2,"Couldn't stat filename %s (i.e. %s) from host %s\n",filename,realname,conn->hostname);
    CfLog(cfverbose,conn->output,"lstat");
    CfLog(cflogonly,conn->output,"lstat");   
    return false;
    }
 
-if (S_ISLNK(statbuf.st_mode)) 
-   {
-   strncpy(realname,filename,CF_BUFSIZE);
-   }
- else
-    {
-#ifdef HAVE_REALPATH
-    if (realpath(filename,realname) == NULL)
-       {
-       snprintf(conn->output,CF_BUFSIZE*2,"Couldn't resolve filename %s from host %s\n",filename,conn->hostname);
-       CfLog(cfverbose,conn->output,"lstat");
-       CfLog(cflogonly,conn->output,"lstat");   
-       return false;
-       }
-#else
-    CompressPath(realname,filename); /* in links.c */
-#endif
-    }
- 
-Debug("AccessControl(%s,%s) encrypt request=%d\n",realname,conn->hostname,encrypt);
+Debug("AccessControl, match(%s,%s) encrypt request=%d\n",realname,conn->hostname,encrypt);
  
 if (VADMIT == NULL)
    {
