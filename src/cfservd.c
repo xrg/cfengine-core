@@ -1614,7 +1614,7 @@ while (true && (count < 10))  /* arbitrary check to avoid infinite loop, DoS att
 void DoExec(struct cfd_connection *conn,char *sendbuffer,char *args)
 
 { char ebuff[CF_EXPANDSIZE], line[CF_BUFSIZE], *sp;
-  int print = false,i;
+  int print = false,i, opt=false;
   FILE *pp;
 
 if ((CFSTARTTIME = time((time_t *)NULL)) == -1)
@@ -1632,7 +1632,7 @@ if (GetMacroValue(CONTEXTID,"cfrunCommand") == NULL)
 
 for (sp = args; *sp != '\0'; sp++) /* Blank out -K -f */
    {
-   if ((strncmp(sp,"-K",2) == 0) || (strncmp(sp,"-f",2) == 0) || (strncmp(sp,"f ",2) == 0))
+   if ((strncmp(sp,"-K",2) == 0) || (strncmp(sp,"-f",2) == 0))
       {
       *sp = ' ';
       *(sp+1) = ' ';
@@ -1651,6 +1651,36 @@ for (sp = args; *sp != '\0'; sp++) /* Blank out -K -f */
          *(sp+i) = ' ';
          }
       }
+   }
+
+for (sp = args; *sp != '\0'; sp++) /* Blank out -f */
+   { 
+
+   if (strncmp(sp,"-D",2) == 0)
+      {
+      opt = false;
+      sp+=2;
+      }
+
+   if (strncmp(sp,"--define",8) == 0)
+      {
+      opt = false;
+      sp+=8;
+      }
+
+   switch (*sp)
+      {
+      case '-': opt = true;
+          break;
+      case ' ': opt = false;
+          break;
+      case 'f': if (opt)
+                   {
+                   *sp = 'q'; /* Replace with non-empty char which is defined anyway */
+                   }
+          break;
+      }
+   
    }
     
 ExpandVarstring("$(cfrunCommand) --no-splay --inform",ebuff,"");
@@ -2080,7 +2110,7 @@ for (ap = VADMIT; ap != NULL; ap=ap->next)
    
    if (res)
       {
-      Debug("Found a matching rule in access list (%s,%s)\n",realname,ap->path);
+      Debug("Found a matching rule in access list (%s in %s)\n",realname,ap->path);
       if (stat(ap->path,&statbuf) == -1)
          {
          snprintf(OUTPUT,CF_BUFSIZE,"Warning cannot stat file object %s in admit/grant, or access list refers to dangling link\n",ap->path);
