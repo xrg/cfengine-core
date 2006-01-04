@@ -121,6 +121,7 @@ if (!SKIPIDENTIFY)
 #else 
    
    iaddr = &(myaddr.sin_addr); 
+
    hp = gethostbyaddr((void *)iaddr,sizeof(myaddr.sin_addr),family);
    
    if ((hp == NULL) || (hp->h_name == NULL))
@@ -140,7 +141,15 @@ if (!SKIPIDENTIFY)
    }
 else
    {
-   strcat(dnsname,"skipident");
+   if (strlen(VFQNAME) > 0)
+      {
+      Verbose("SkipIdent was requested, so we are trusting and annoucning the identity as (%s) for this host\n",VFQNAME);
+      strcat(dnsname,VFQNAME);
+      }
+   else
+      {
+      strcat(dnsname,"skipident");
+      }
    }
 
 user_ptr = getpwuid(getuid());

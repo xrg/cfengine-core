@@ -2,7 +2,7 @@ Basic Installation
 ==================
 
 
- Cfengine depends on two packages. You must install the latest
+ Cfengine depends on two packages. You should install up to date
  versions of these first.
 
  Berkeley Database obtainable from http://www.sleepycat.com
