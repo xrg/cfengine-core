@@ -63,12 +63,12 @@ return(strncmp(buf,CF_FAILEDSTR,strlen(CF_FAILEDSTR)) == 0);
 int IdentifyForVerification(int sd,char *localip,int family)
 
 { char sendbuff[CF_BUFSIZE],dnsname[CF_BUFSIZE];
-  struct sockaddr_in6 myaddr;
   struct in_addr *iaddr;
   struct hostent *hp;
   int len,err;
   struct passwd *user_ptr;
   char *uname;
+  char myaddr[256]; /* Compilation trick for systems that don't know ipv6 */
   
 memset(sendbuff,0,CF_BUFSIZE);
 memset(dnsname,0,CF_BUFSIZE);

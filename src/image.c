@@ -760,6 +760,7 @@ else
 if (ip->linktype != 'n')
    {
    lastnode=ReadLastNode(sourcefile);
+
    if (IsWildItemIn(VLINKCOPIES,lastnode) || IsWildItemIn(ip->symlink,lastnode))
       {
       Verbose("cfengine: copy item %s marked for linking instead\n",sourcefile);
