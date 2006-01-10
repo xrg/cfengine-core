@@ -2226,6 +2226,8 @@ For example:
 
 alerts:
 
+  myclass::
+
   "Reminder: say hello every hour" ifelapsed=60
 
   nfsd_in_high_dev2::
@@ -5589,7 +5591,7 @@ files:
 
    some::
 
-      /var/spool/cron/at.allow =0644 N [root] [wheel] touch
+      /var/spool/cron/at.allow =0644 N owner=root group=wheel touch
 
 @end smallexample 
 
