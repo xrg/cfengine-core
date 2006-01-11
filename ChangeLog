@@ -1,5 +1,13 @@
+2.1.19
+        Files is the suspicious list were marked bad so that follow-up rules e.g. to delete them would not be triggered
 
+	More memory leaks in cfservd
+
+	Compilation fix for non-IPv6 savvy machines
+	
 2.1.18
+	
+	
 	Error in FileExists() left over from 2.1.16 changes. Fixed
 
 	elsedefine was not defined if a copy was requested of a non-existent file. Fixed.
