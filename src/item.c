@@ -984,8 +984,8 @@ int FuzzyHostParse(char *s)
   char *sp;
   long start = -1, end = -1, where = -1;
   int n;
-  Debug("SRDEBUG in FuzzyHostParse(): %s\n",s);
-  args = SplitStringAsItemList(s,',');
+
+args = SplitStringAsItemList(s,',');
 
 if ( args->next == NULL )
    { 
@@ -1003,8 +1003,6 @@ sp = args->next->name;
 
 n = sscanf(sp,"%ld-%ld%n",&start,&end,&where);
 
-Debug("SRDEBUG start=%d end=%d num_matched=%d\n",start,end,n);
-
 if ( n >= 2 && sp[where] != '\0' )
    {
    /* X-Ycrud syntax error */
@@ -1018,7 +1016,7 @@ if ( n != 2 )
    yyerror("HostRange() syntax error: second arg should have X-Y format where X and Y are decimal numbers");
    return false;
    } 
-Debug("SRDEBUG syntax is okay\n");
+
 return true; 
 }
 
@@ -1049,60 +1047,51 @@ char *s1, *s2;
   char *sp;
   long cmp = -1, start = -1, end = -1;
   char host_basename[CF_MAXVARSIZE];
-  Debug("SRDEBUG in FuzzyHostMatch(): %s vs %s\n",s2,s1);
-  args = SplitStringAsItemList(s1,',');
-  sp = s2;
+
+args = SplitStringAsItemList(s1,',');
+sp = s2;
   
-  for (sp = s2+strlen(s2)-1; sp > s2; sp--)
-     {
-     if ( ! isdigit((int)*sp) )
-        {
-        sp++;
-        if ( sp != s2+strlen(s2) )
-           {
-           Debug("SRDEBUG extracted string %s\n",sp);
-           }
-        break;
-        }
-     }
-  
-  if ( sp == s2+strlen(s2) )
-     {
-     Debug("SRDEBUG FuzzyHostMatch() failed: did not extract int from the end of %s\n",s2);
-     return 1;
-     }
-  sscanf(sp,"%ld",&cmp);
-  Debug("SRDEBUG extracted int %d\n",cmp,sp);
+for (sp = s2+strlen(s2)-1; sp > s2; sp--)
+   {
+   if ( ! isdigit((int)*sp) )
+      {
+      sp++;
+      if ( sp != s2+strlen(s2) )
+         {
+         Debug("SRDEBUG extracted string %s\n",sp);
+         }
+      break;
+      }
+   }
 
-  /* HvB basename is */
-  strncpy(host_basename, s2, strlen(s2) - strlen(sp));
-  Debug("SRDEBUG host basename is  %s\n",host_basename,sp);
+if ( sp == s2+strlen(s2) )
+   {
+   return 1;
+   }
 
-  if ( cmp < 0 )
-     {
-     Debug("SRDEBUG FuzzyHostMatch() failed: %s doesn't have an int in it's domain name\n",s2);
-     return 1;
-     }
+sscanf(sp,"%ld",&cmp);
 
-  sscanf(args->next->name,"%ld-%ld",&start,&end);
-  if ( cmp < start || cmp > end )
-     {
-     Debug("SRDEBUG FuzzyHostMatch() failed: %ld is not in (%ld..%ld)\n",cmp,start,end);
-     return 1;
-     }
-  Debug("SRDEBUG FuzzyHostMatch() %s is in (%ld..%ld)\n",s2,start,end);
+/* HvB basename is */
+strncpy(host_basename, s2, strlen(s2) - strlen(sp));
 
+if ( cmp < 0 )
+   {
+   return 1;
+   }
 
-  Debug("SRDEBUG host basename check: %s vs %s...\n",host_basename,args->name);
-  if ( strcmp(host_basename,args->name) != 0 )
-     {
-     Debug("SRDEBUG FuzzyHostMatch() failed: basename %s does not match %s\n",s2,args->name);
-     return 1;
-     }
-  Debug("SRDEBUG basename matches\n");
+sscanf(args->next->name,"%ld-%ld",&start,&end);
 
-  Debug("SRDEBUG FuzzyHostMatch() succeeded\n");
-  return 0;
+if ( cmp < start || cmp > end )
+   {
+   return 1;
+   }
+
+if ( strcmp(host_basename,args->name) != 0 )
+   {
+   return 1;
+   }
+
+return 0;
 }
 
 

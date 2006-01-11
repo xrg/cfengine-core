@@ -911,7 +911,7 @@ if (strstr(arrival,"tcp") || strstr(arrival,"ack"))
     
     switch (flag)
        {
-       case 'S': Debug("%1.1f: TCP new connection from %s to %d - i am %s\n",ITER,src,dest,VIPADDRESS);
+       case 'S': Debug("%1.1f: TCP new connection from %s to %s - i am %s\n",ITER,src,dest,VIPADDRESS);
     if (IsInterfaceAddress(dest))
        {
        NETIN[tcpsyn]++;

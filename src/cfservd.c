@@ -416,7 +416,9 @@ if (OptionIs(CONTEXTID,"ChecksumUpdates", false))
  
 i = 0;
 
-if (StrStr(VSYSNAME.nodename,ToLowerStr(VDOMAIN)))
+strncpy(ebuff,ToLowerStr(VDOMAIN),127);
+
+if (StrStr(VSYSNAME.nodename,ebuff))
    {
    strncpy(VFQNAME,VSYSNAME.nodename,CF_MAXVARSIZE-1);
    
