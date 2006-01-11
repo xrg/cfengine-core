@@ -56,7 +56,7 @@ if (strlen(nodename) < 1)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Empty (null) filename detected in %s\n",path);
    CfLog(cferror,OUTPUT,"");
-   return false;
+   return true;
    }
 
 if (IsItemIn(SUSPICIOUSLIST,nodename))
