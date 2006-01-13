@@ -540,6 +540,7 @@ snprintf(buf,CF_BUFSIZE,"rpc_in_%s_%s",methodname,digeststring);
 
 if (IsDefinedClass(CanonifyName(buf)))
    {
+   free((char *)methodargv);
    return false;
    }
 else
@@ -621,6 +622,7 @@ if ((fp = fopen(basepackage,"r")) == NULL)
                  {
                  snprintf(OUTPUT,CF_BUFSIZE,"could not open argument bundle %s\n",arg);
                  CfLog(cferror,OUTPUT,"fopen");
+                 free((char *)methodargv);
                  return false;
                  }
               
@@ -628,6 +630,7 @@ if ((fp = fopen(basepackage,"r")) == NULL)
                  {
                  snprintf(OUTPUT,CF_BUFSIZE,"Could not write to local parameter file %s\n",methodargv[argnum]);
                  CfLog(cferror,OUTPUT,"fopen");
+                 free((char *)methodargv);
                  fclose(fin);
                  return false;
                  }

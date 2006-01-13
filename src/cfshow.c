@@ -36,7 +36,7 @@ enum databases
    cf_db_lastseen,
    cf_db_locks,
    cf_db_active,
-   cf_db_checksum,
+   cf_db_checksum
    };
 
 enum databases TODO = -1;

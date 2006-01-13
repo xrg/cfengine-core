@@ -3291,6 +3291,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       {
       yyerror("scripts or commands must have absolute path names");
       printf ("cfengine: concerns: %s\n",sp);
+      free(ptr->classes);
       return;
       }
 
@@ -3753,6 +3754,7 @@ if (*VUIDNAME == '*')
 else if (isdigit((int)*VUIDNAME))
    {
    sscanf(VUIDNAME,"%d",&uid);
+
    if (uid == CF_NOUSER)
       {
       yyerror("Unknown or silly user id");
@@ -4896,6 +4898,7 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
    for (ep = expserver; ep != NULL; ep=ep->next)
       {
       Debug("\nBegin pass with server = %s\n",ep->name);
+      
       if ((ptr = (struct Image *)malloc(sizeof(struct Image))) == NULL)
          {
          FatalError("Memory Allocation failed for InstallImageItem() #1");

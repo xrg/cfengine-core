@@ -607,6 +607,8 @@ else if (pid == 0)                     /* child */
       perror("execvp");
       exit(1);
       }
+
+   free((char *)argv);
    }
 else                                    /* parent */
    {
@@ -898,7 +900,7 @@ char strmajor[CF_MAXVARSIZE];
        }
     }
  
- if (major != -1 && vendor != "")
+ if (major != -1 && (strcmp(vendor,"") != 0))
     {
     classbuf[0] = '\0';
     strcat(classbuf, vendor);
@@ -1072,21 +1074,23 @@ Verbose("Looking for redhat linux info in \"%s\"\n",relstring);
        {
        sprintf(strmajor, "%d", major);
        minor = -2;
-       };
+       }
     }
  
- if (major != -1 && minor != -1 && vendor != "")
+ if (major != -1 && minor != -1 && (strcmp(vendor,"") != 0))
     {
     classbuf[0] = '\0';
     strcat(classbuf, vendor);
     AddClassToHeap(classbuf);
     strcat(classbuf, "_");
-    if(edition != "")
+    
+    if (strcmp(edition,"") != 0)
        {
        strcat(classbuf, edition);
        AddClassToHeap(classbuf);
        strcat(classbuf, "_");
        }
+    
     strcat(classbuf, strmajor);
     AddClassToHeap(classbuf);
     if (minor != -2)
@@ -1304,10 +1308,10 @@ char strminor[CF_MAXVARSIZE];
        {
        Verbose("Could not break down release version numbers in %s\n",
        MANDRAKE_REL_FILENAME);
-       };
+       }
     }
 
- if (major != -1 && minor != -1 && vendor != "")
+ if (major != -1 && minor != -1 && strcmp(vendor, ""))
     {
     classbuf[0] = '\0';
     strcat(classbuf, vendor);

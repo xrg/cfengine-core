@@ -233,7 +233,7 @@ if (CURRENTLINEPTR == NULL)   /* File is empty */
    {
    if (filestart == NULL)
       {
-      *filestart = ip;
+      filestart = ip;
       ip->next = NULL;
       }
    else
@@ -816,7 +816,7 @@ for (ip = *list; ip != NULL; ip=ip->next)
       if ((ip->name = malloc(strlen(buff)+1)) == NULL)
          {
          CfLog(cferror,"malloc in CommentItemStarting\n","");
-         FatalError("");;
+         FatalError("");
          }
 
       strcpy(ip->name,buff);
@@ -870,7 +870,7 @@ for (ip = *list; ip != NULL; ip=ip->next)
       if ((ip->name = malloc(strlen(buff)+1)) == NULL)
          {
          CfLog(cferror,"malloc in CommentItemContaining\n","");
-         FatalError("");;
+         FatalError("");
          }
 
       strcpy(ip->name,buff);
@@ -937,7 +937,7 @@ for (ip = *list; ip != NULL; ip=ip->next)
          if ((ip->name = malloc(strlen(buff)+1)) == NULL)
             {
             CfLog(cferror,"malloc in CommentItemContaining\n ","");
-            FatalError("");;
+            FatalError("");
             }
          
          strcpy(ip->name,buff);

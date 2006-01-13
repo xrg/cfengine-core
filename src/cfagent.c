@@ -1118,7 +1118,7 @@ exit(0);
 void DoTree(int passes,char *info)
 
 { struct Item *action;
- 
+
 for (PASS = 1; PASS <= passes; PASS++)
    {
    for (action = VACTIONSEQ; action !=NULL; action=action->next)
@@ -1149,7 +1149,7 @@ for (PASS = 1; PASS <= passes; PASS++)
       Verbose(" %s Sched: %s pass %d @ %s",info,action->name,PASS,ctime(&CFINITSTARTTIME));
       Verbose("*********************************************************************\n\n");
       
-      switch(ACTION = EvaluateAction(action->name,&VADDCLASSES,PASS))
+      switch (EvaluateAction(action->name,&VADDCLASSES,PASS))
          {
          case mountinfo:
              if (PASS == 1)
@@ -1467,7 +1467,7 @@ if (IsWildItemIn(VACTIONSEQ,"link*"))
       {
       if (vchlink->done == 'n' && IsDefinedClass(vchlink->classes))
          {
-         Verbose("Checking for potential rule:: CLink <%s>\n",vlink->from);
+         Verbose("Checking for potential rule:: CLink <%s>\n",vchlink->from);
          return false;
          }
       }

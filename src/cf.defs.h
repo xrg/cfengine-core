@@ -275,12 +275,12 @@ extern int errno;
 #define true  1
 #define false 0
 #define CF_BUFSIZE 4096
-#define CF_EXPANDSIZE 2*CF_BUFSIZE
-#define CF_ALLCLASSSIZE 4*CF_BUFSIZE
+#define CF_EXPANDSIZE (2*CF_BUFSIZE)
+#define CF_ALLCLASSSIZE (4*CF_BUFSIZE)
 #define CF_BUFFERMARGIN 32
 #define CF_BLOWFISHSIZE 16
 #define CF_MAXVARSIZE 1024
-#define CF_NONCELEN CF_BUFSIZE/16
+#define CF_NONCELEN (CF_BUFSIZE/16)
 #define CF_MAXLINKSIZE 256
 #define CF_MAXLINKLEVEL 4
 #define CF_MAXARGS 31
@@ -291,13 +291,13 @@ extern int errno;
 #define CF_MACROALPHABET 61    /* a-z, A-Z plus a bit */
 #define CF_MAXSHELLARGS 30
 #define CF_SAMEMODE 0
-#define CF_SAME_OWNER (uid_t)-1
-#define CF_UNKNOWN_OWNER (uid_t)-2
-#define CF_SAME_GROUP (gid_t)-1
-#define CF_UNKNOWN_GROUP (gid_t)-2
+#define CF_SAME_OWNER ((uid_t)-1)
+#define CF_UNKNOWN_OWNER ((uid_t)-2)
+#define CF_SAME_GROUP ((gid_t)-1)
+#define CF_UNKNOWN_GROUP ((gid_t)-2)
 #define CF_NOSIZE    -1
 #define CF_EXTRASPC 8      /* pads items during AppendItem for eol handling in editfiles */
-#define CF_INFINITY (int)999999999
+#define CF_INFINITY ((int)999999999)
 #define CF_TICKS_PER_DAY 86400 /* 60 * 60 *24 */
 #define CF_NOT_CONNECTED -1
 #define CF_RECURSION_LIMIT 100

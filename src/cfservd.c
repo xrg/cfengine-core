@@ -2200,8 +2200,9 @@ int AuthenticationDialogue(struct cfd_connection *conn,char *recvbuffer, int rec
 { char in[CF_BUFSIZE],*out, *decrypted_nonce;
   BIGNUM *counter_challenge = NULL;
   unsigned char digest[EVP_MAX_MD_SIZE+1];
-  unsigned int crypt_len, nonce_len = 0,len = 0, encrypted_len = 0, keylen;
+  unsigned int crypt_len, nonce_len = 0,encrypted_len = 0;
   char sauth[10], iscrypt ='n';
+  int len = 0,keylen;
   unsigned long err;
   RSA *newkey;
 

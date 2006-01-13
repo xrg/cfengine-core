@@ -116,7 +116,7 @@ if (value.data != NULL)
    }
  else
     {
-    Verbose("New state %s with expiry %d, policy %d\n",key.data,state.expires,state.policy);
+    Verbose("New state %s but empty\n",key.data);
     }
  
  

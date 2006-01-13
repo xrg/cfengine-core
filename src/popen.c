@@ -262,6 +262,7 @@ FILE *cfpopensetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,ch
           {
           snprintf(OUTPUT,CF_BUFSIZE,"Couldn't chroot to %s\n",chrootv);
           CfLog(cferror,OUTPUT,"chroot");
+          free((char *)argv);
           return NULL;
           }
        }
@@ -272,6 +273,7 @@ FILE *cfpopensetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,ch
           {
           snprintf(OUTPUT,CF_BUFSIZE,"Couldn't chdir to %s\n",chdirv);
           CfLog(cferror,OUTPUT,"chdir");
+          free((char *)argv);
           return NULL;
           }
        }
@@ -284,6 +286,7 @@ FILE *cfpopensetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,ch
           {
           snprintf(OUTPUT,CF_BUFSIZE,"Couldn't set gid to %d\n",gid);
           CfLog(cferror,OUTPUT,"setgid");
+          free((char *)argv);
           return NULL;
           }
        }
@@ -296,6 +299,7 @@ FILE *cfpopensetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,ch
           {
           snprintf(OUTPUT,CF_BUFSIZE,"Couldn't effective uid to %d\n",uid);
           CfLog(cferror,OUTPUT,"setuid");
+          free((char *)argv);
           return NULL;
           }
        }

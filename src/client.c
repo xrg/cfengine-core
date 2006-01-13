@@ -353,6 +353,7 @@ snprintf(sendbuffer,CF_BUFSIZE,"OPENDIR %s",dirname);
 
 if (SendTransaction(CONN->sd,sendbuffer,0,CF_DONE) == -1)
    {
+   free((char *)cfdirh);
    return NULL;
    }
 
@@ -364,7 +365,9 @@ while (!done)
          {
          continue;
          }
-      return false;
+
+      free((char *)cfdirh);
+      return NULL;
       }
 
    if (n == 0)
@@ -376,19 +379,23 @@ while (!done)
       {
       snprintf(OUTPUT,CF_BUFSIZE*2,"Network access to %s:%s denied\n",ip->server,dirname);
       CfLog(cfinform,OUTPUT,"");
-      return false;      
+
+      free((char *)cfdirh);
+      return NULL;      
       }
 
    if (BadProtoReply(recvbuffer))
       {
       snprintf(OUTPUT,CF_BUFSIZE*2,"%s\n",recvbuffer+4);
       CfLog(cfinform,OUTPUT,"");
-      return false;      
+
+      free((char *)cfdirh);
+      return NULL;      
       }
 
    for (sp = recvbuffer; *sp != '\0'; sp++)
       {
-      if (strncmp(sp,CFD_TERMINATOR,strlen(CFD_TERMINATOR)) == 0)        /* End transmission */
+      if (strncmp(sp,CFD_TERMINATOR,strlen(CFD_TERMINATOR)) == 0)    /* End transmission */
          {
          cfdirh->cf_listpos = cfdirh->cf_list;
          return cfdirh;

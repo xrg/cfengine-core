@@ -413,8 +413,6 @@ if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
       }
    }
  
-dbp->close(dbp,0);
-
 if (value.data != NULL)
    {
    AGE = *(double *)(value.data);
@@ -426,6 +424,8 @@ else
    Debug("No previous AGE\n");
    AGE = 0.0;
    }
+
+dbp->close(dbp,0);
 }
 
 /*********************************************************************/
@@ -1217,7 +1217,7 @@ while (!feof(pp))
       PrependItem(&ALL_INCOMING,sp,NULL);
       }
    
-   for (sp = remote+strlen(remote); !isdigit((int)*sp); sp--)
+   for (sp = remote+strlen(remote); (sp >= remote) && !isdigit((int)*sp); sp--)
       {
       }
 
@@ -1244,7 +1244,7 @@ while (!feof(pp))
          AppendItem(&in[i],VBUFF,"");
          }
       
-      for (spend = remote+strlen(remote)-1; isdigit((int)*spend); spend--)
+      for (spend = remote+strlen(remote)-1; (sp >= remote) && isdigit((int)*spend); spend--)
          {
          }
       
@@ -1695,7 +1695,7 @@ if (HISTO)
       position = CF_GRAINS/2 + (int)(0.5+(PH_DELTA[i] - av->expect_pH[i])*CF_GRAINS/(4*sqrt((av->var_pH[i]))));
       if (0 <= position && position < CF_GRAINS)
          {
-         HISTOGRAM[5+2*CF_NETATTR+2*2*ATTR+i][day][position]++;
+         HISTOGRAM[5+2*CF_NETATTR+2*ATTR+i][day][position]++;
          }
       }
    

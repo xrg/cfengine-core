@@ -52,7 +52,7 @@ Debug1("ParseModeString(%s)\n",modestring);
 gotaction = false;
 *plusmask = *minusmask = 0;
 
-for (sp = modestring; true ; *sp++)
+for (sp = modestring; true ; sp++)
    {
    switch (*sp)
       {

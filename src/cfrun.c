@@ -489,7 +489,7 @@ while (true)
 
       close(CONN->sd);
       free(addresses.server);
-      return true;;
+      return true;
       }
 
    if ((sp = strstr(recvbuffer,CFD_TERMINATOR)) != NULL)

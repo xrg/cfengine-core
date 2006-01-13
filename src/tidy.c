@@ -373,6 +373,8 @@ if (maxrecurse == tp->maxrecurse)
             CfLog(cferror,OUTPUT,"");
             }
          }
+
+      free(name);
       return true;
       }
    }
@@ -381,6 +383,7 @@ if (maxrecurse == tp->maxrecurse)
     {
     snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open directory [%s]\n",name);
     CfLog(cfverbose,OUTPUT,"opendir");
+    free(name);
     return true;
     }
 
@@ -403,6 +406,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
 
    if (BufferOverflow(pcwd,dirp->d_name))
       {
+      free(name);
       return true;
       }
 
@@ -520,6 +524,7 @@ if (maxrecurse == tp->maxrecurse)
       }
    }
 
+free(name);
 return true; 
 }
 

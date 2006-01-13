@@ -39,7 +39,7 @@
 #define middleofstrings 11
 #define endofstrings    12
 
-#define Wild(c)  (c == '*' || c == '?') ? true : false
+#define Wild(c)  ((c == '*' || c == '?') ? true : false)
 
 #include <string.h>
 

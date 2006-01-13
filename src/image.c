@@ -866,7 +866,7 @@ if (ip->linktype != 'n')
               CfLog(cfinform,OUTPUT,"");
               return;
               }
-           break;;
+           break;
        }
     }
  
@@ -1121,7 +1121,7 @@ if (ip->linktype != 'n')
 
           case 'a':
 
-              ok_to_copy = (deststatbuf.st_ctime < sourcestatbuf.st_ctime)||(deststatbuf.st_mtime < sourcestatbuf.st_mtime)||CompareBinarySums(sourcefile,destfile,ip,&sourcestatbuf,&deststatbuf);;
+              ok_to_copy = (deststatbuf.st_ctime < sourcestatbuf.st_ctime)||(deststatbuf.st_mtime < sourcestatbuf.st_mtime)||CompareBinarySums(sourcefile,destfile,ip,&sourcestatbuf,&deststatbuf);
               
               if (ok_to_copy && strcmp(ip->action,"warn") == 0)
                  { 

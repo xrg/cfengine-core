@@ -993,7 +993,7 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
 
 if (missing)
    {
-   time_t tloc;;
+   time_t tloc;
 
    if ((tloc = time((time_t *)NULL)) == -1)
       {

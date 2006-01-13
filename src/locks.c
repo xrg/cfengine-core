@@ -487,7 +487,7 @@ if (PutLock(CFLOCK) == -1)
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"GetLock: can't open new lock file %s\n",CFLOCK);
    CfLog(cferror,OUTPUT,"fopen");
-   FatalError("");;
+   FatalError("");
    }
 }
 

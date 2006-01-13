@@ -902,7 +902,7 @@ for (sp = class; *sp != '\0'; sp++)
 if (bracklevel != 0)
    {
    sprintf(OUTPUT,"Bracket mismatch, in [class=%s], level = %d\n",class,bracklevel);
-   yyerror(OUTPUT);;
+   yyerror(OUTPUT);
    FatalError("Aborted");
    }
 

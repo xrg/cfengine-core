@@ -1052,7 +1052,7 @@ val = atoi(maxbytes);
 if (strcmp(formattype,"lines") != 0)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Unknown format type in ReadList(%s)",args);
-   CfLog(cferror,OUTPUT,"");;
+   CfLog(cferror,OUTPUT,"");
    }
     
 if ((fp = fopen(filename,"r")) == NULL)
