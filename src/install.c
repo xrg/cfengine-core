@@ -869,6 +869,7 @@ switch(GetCommAttribute(item))
           DELETEDIR = 'n';
           break;
           }
+       break;
        
    case cfdelfstab:
        if (strcmp(value,"true") == 0 || strcmp(value,"yes") == 0)
@@ -882,6 +883,7 @@ switch(GetCommAttribute(item))
           DELETEFSTAB = 'n';
           break;
           }   
+       break;
        
    case cfforce:
        if (strcmp(value,"true") == 0 || strcmp(value,"yes") == 0)
@@ -895,7 +897,8 @@ switch(GetCommAttribute(item))
           FORCE = 'n';
           break;
           }
-       
+       break;
+              
    case cfifelap:
        HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
        break;
@@ -3006,6 +3009,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
              HandleUmask(data);
              ptr->umask = UMASK;
              UMASK = saved_umask;
+             break;
 
          case WarnIfFileMissing: ptr->warn = 'y';
              break;
@@ -3038,6 +3042,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
                 {
                 yyerror("Append used outside of Group - non-convergent");
                 }
+             break;
              
          case EditMode:
              if (strcmp(data,"Binary") == 0)

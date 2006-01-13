@@ -502,12 +502,16 @@ switch(action)
                  Debug("Skipping excluded pattern %s\n",file);
                  return true;
                  }
+              break;
+              
    case links:
               if (IsWildItemIn(VEXCLUDELINK,lastnode) || IsWildItemIn(exclusions,lastnode))
                  {
                  Debug("Skipping excluded pattern %s\n",file);
                  return true;
                  }
+              
+              break;
    default:
               if (IsWildItemIn(exclusions,lastnode))
                  {

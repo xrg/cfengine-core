@@ -1716,6 +1716,8 @@ for (ep = actions; ep != NULL; ep=ep->next)
              log = 'n';
              break;
              }
+
+          break;
           
       case EditInform:
           if (strcmp(ToLowerStr(expdata),"true") == 0 || strcmp(ToLowerStr(expdata),"on") == 0)
@@ -1728,7 +1730,9 @@ for (ep = actions; ep != NULL; ep=ep->next)
              {
              inform = 'n';
              break;
-             }                   
+             }
+
+          break;
       }
    }
 
@@ -1830,6 +1834,7 @@ if (!LoadItemList(&infilelist,infile))
       {
       case DeleteLinesStartingFileItems:
           positive = true;
+
       case DeleteLinesNotStartingFileItems:
           matches = 0;
           
@@ -1859,6 +1864,7 @@ if (!LoadItemList(&infilelist,infile))
           
       case DeleteLinesContainingFileItems:
           positive = true;
+
       case DeleteLinesNotContainingFileItems:
           matches = 0;
           

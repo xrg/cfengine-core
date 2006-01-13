@@ -372,11 +372,11 @@ printf("Info & fixes at http://www.iu.hio.no/cfengine\n");
 
 void GetDatabaseAge()
 
-{ int errno;
+{ int err_no;
   DBT key,value;
   DB *dbp;
 
-if ((errno = db_create(&dbp,NULL,0)) != 0)
+if ((err_no = db_create(&dbp,NULL,0)) != 0)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Couldn't open average database %s\n",AVDB);
    CfLog(cferror,OUTPUT,"db_open");
@@ -384,9 +384,9 @@ if ((errno = db_create(&dbp,NULL,0)) != 0)
    }
 
 #ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((err_no = dbp->open(dbp,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((errno = dbp->open(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
+if ((err_no = dbp->open(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
 #endif
    {
    AGE = WAGE = 0;
@@ -403,11 +403,11 @@ memset(&value,0,sizeof(value));
 key.data = "DATABASE_AGE";
 key.size = strlen("DATABASE_AGE")+1;
 
-if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
+if ((err_no = dbp->get(dbp,NULL,&key,&value,0)) != 0)
    {
-   if (errno != DB_NOTFOUND)
+   if (err_no != DB_NOTFOUND)
       {
-      dbp->err(dbp,errno,NULL);
+      dbp->err(dbp,err_no,NULL);
       dbp->close(dbp,0);
       return;
       }
@@ -1488,12 +1488,12 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
 
 struct Averages *GetCurrentAverages(char *timekey)
 
-{ int errno;
+{ int err_no;
   DBT key,value;
   DB *dbp;
   static struct Averages entry;
  
-if ((errno = db_create(&dbp,NULL,0)) != 0)
+if ((err_no = db_create(&dbp,NULL,0)) != 0)
    {
    sprintf(OUTPUT,"Couldn't open average database %s\n",AVDB);
    CfLog(cferror,OUTPUT,"db_open");
@@ -1501,9 +1501,9 @@ if ((errno = db_create(&dbp,NULL,0)) != 0)
    }
 
 #ifdef CF_OLD_DB 
-if ((errno = dbp->open(dbp,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((err_no = dbp->open(dbp,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((errno = dbp->open(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
+if ((err_no = dbp->open(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
 #endif
    {
    sprintf(OUTPUT,"Couldn't open average database %s\n",AVDB);
@@ -1518,11 +1518,11 @@ memset(&entry,0,sizeof(entry));
 key.data = timekey;
 key.size = strlen(timekey)+1;
 
-if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
+if ((err_no = dbp->get(dbp,NULL,&key,&value,0)) != 0)
    {
-   if (errno != DB_NOTFOUND)
+   if (err_no != DB_NOTFOUND)
       {
-      dbp->err(dbp,errno,NULL);
+      dbp->err(dbp,err_no,NULL);
       dbp->close(dbp,0);
       return NULL;
       }
@@ -1550,11 +1550,11 @@ else
 
 void UpdateAverages(char *timekey,struct Averages newvals)
 
-{ int errno;
+{ int err_no;
   DBT key,value;
   DB *dbp;
  
-if ((errno = db_create(&dbp,NULL,0)) != 0)
+if ((err_no = db_create(&dbp,NULL,0)) != 0)
    {
    sprintf(OUTPUT,"Couldn't open average database %s\n",AVDB);
    CfLog(cferror,OUTPUT,"db_open");
@@ -1562,9 +1562,9 @@ if ((errno = db_create(&dbp,NULL,0)) != 0)
    }
 
 #ifdef CF_OLD_DB 
-if ((errno = dbp->open(dbp,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((err_no = dbp->open(dbp,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((errno = dbp->open(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
+if ((err_no = dbp->open(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
 #endif
    {
    sprintf(OUTPUT,"Couldn't open average database %s\n",AVDB);
@@ -1581,9 +1581,9 @@ key.size = strlen(timekey)+1;
 value.data = &newvals;
 value.size = sizeof(newvals);
  
-if ((errno = dbp->put(dbp,NULL,&key,&value,0)) != 0)
+if ((err_no = dbp->put(dbp,NULL,&key,&value,0)) != 0)
    {
-   dbp->err(dbp,errno,NULL);
+   dbp->err(dbp,err_no,NULL);
    dbp->close(dbp,0);
    return;
    } 
@@ -1596,9 +1596,9 @@ value.size = sizeof(double);
 key.data = "DATABASE_AGE";
 key.size = strlen("DATABASE_AGE")+1;
 
-if ((errno = dbp->put(dbp,NULL,&key,&value,0)) != 0)
+if ((err_no = dbp->put(dbp,NULL,&key,&value,0)) != 0)
    {
-   dbp->err(dbp,errno,NULL);
+   dbp->err(dbp,err_no,NULL);
    dbp->close(dbp,0);
    return;
    }

@@ -283,8 +283,8 @@ do
       case cfsco: CfLog(cferror,"Don't understand SCO mount format, no data","");
 
       default:
-                    printf("cfengine software error: case %d = %s\n",VSYSTEMHARDCLASS,CLASSTEXT[VSYSTEMHARDCLASS]);
-                    FatalError("System error in GetMountInfo - no such class!");
+          printf("cfengine software error: case %d = %s\n",VSYSTEMHARDCLASS,CLASSTEXT[VSYSTEMHARDCLASS]);
+          FatalError("System error in GetMountInfo - no such class!");
       }
 
    InstallMountedItem(host,mounton);

@@ -1,4 +1,7 @@
 2.1.19
+
+	Minor error fixes discovered by Joe Buehler and his wonderful software.
+	
         Files is the suspicious list were marked bad so that follow-up rules e.g. to delete them would not be triggered
 
 	More memory leaks in cfservd
