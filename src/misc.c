@@ -1112,10 +1112,9 @@ Verbose("Looking for redhat linux info in \"%s\"\n",relstring);
 int linux_suse_version(void)
 {
 #define SUSE_REL_FILENAME "/etc/SuSE-release"
-#define SUSE_ID "SuSE Linux"
 #define SUSE_SLES8_ID "SuSE SLES-8"
 #define SUSE_SLES9_ID "SUSE LINUX Enterprise Server 9"
-#define SUSE_RELEASE_FLAG "Linux "
+#define SUSE_RELEASE_FLAG "linux "
 
 /* The full string read in from SuSE-release */
 char relstring[CF_MAXVARSIZE];
@@ -1124,6 +1123,7 @@ char classbuf[CF_MAXVARSIZE];
 /* Where the numerical release will be found */
 char *release=NULL;
 
+int i;
 int major = -1;
 char strmajor[CF_MAXVARSIZE];
 int minor = -1;
@@ -1156,13 +1156,18 @@ FILE *fp;
     strcat(classbuf, "SLES9");
     AddClassToHeap(classbuf);
     }
- 
-   /* Determine release version. We assume that the version follows
-    * the string "SuSE Linux".
-    */
- 
+
+ /* Convert relstring to lowercase to handle rename of SuSE to 
+  * SUSE with SUSE 10.0. 
+  */
+
+ for (i = 0; i < strlen(relstring); i++)
+    {
+    relstring[i] = tolower(relstring[i]);
+    }
+
  /* Determine release version. We assume that the version follows
-  * the string "SuSE Linux".
+  * the string "SuSE Linux" or "SUSE LINUX".
   */
  release = strstr(relstring, SUSE_RELEASE_FLAG);
  if(release == NULL)

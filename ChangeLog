@@ -1,4 +1,5 @@
 2.1.19
+	SuSE 10 detection patch
 
 	Minor error fixes discovered by Joe Buehler and his wonderful software.
 	
@@ -63,7 +64,7 @@
 	adds an "m4" like function to cfengine -- allowing predefined variable strings
 	to be expanded into text.
 	
-	Patch contributed: avor Ocelic <docelic@mail.inet.hr>
+	Patch contributed to expansvariables: Davor Ocelic <docelic@mail.inet.hr>
 	
 	Alerts patch - some alerts not installed, if classes not defined.
 	
