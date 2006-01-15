@@ -125,6 +125,7 @@ else
         if (strlen(value) > 0)
            {
            strcpy(VDOMAIN,value);
+           DeleteClassFromHeap("undefined_domain");
            }
         else
            {
@@ -150,6 +151,7 @@ else
         
         if (! NOHARDCLASSES)
            {
+           char *ptr;
            if (strlen(VFQNAME) > CF_MAXVARSIZE-1)
               {
               FatalError("The fully qualified name is longer than CF_MAXVARSIZE!!");
@@ -158,6 +160,22 @@ else
            strcpy(buffer,VFQNAME);
            
            AddClassToHeap(CanonifyName(buffer));
+           /* Add some domain hierarchy classes */
+           for (ptr=VFQNAME; *ptr != '\0'; ptr++)
+              {
+              if (*ptr == '.')
+                 {
+                 if (*(ptr+1) != '\0')
+                    {
+                    Debug("Defining domain #%s#\n",(ptr+1));
+                    AddClassToHeap(CanonifyName(ptr+1));
+                    }
+                 else
+                    {
+                    Debug("Domain rejected\n");
+                    }      
+                 }
+              }
            }
         
         break;

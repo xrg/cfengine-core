@@ -135,22 +135,6 @@ if ((sp = malloc(strlen(VSYSNAME.nodename)+1)) == NULL)
 strcpy(sp,VSYSNAME.nodename);
 SetDomainName(sp);
 
-for (sp2=sp; *sp2 != '\0'; sp2++)  /* Add some domain hierarchy classes */
-   {
-   if (*sp2 == '.')
-      {
-      if (*(sp2+1) != '\0')
-         {
-         Debug("Defining domain #%s#\n",(sp2+1));
-         AddClassToHeap(CanonifyName(sp2+1));
-         }
-      else
-         {
-         Debug("Domain rejected\n");
-         }      
-      }
-   }
-
 for (sp2=sp; *sp2 != '\0'; sp2++)  /* Truncate fully qualified name */
    {
    if (*sp2 == '.')
@@ -164,6 +148,9 @@ for (sp2=sp; *sp2 != '\0'; sp2++)  /* Truncate fully qualified name */
 VDEFAULTBINSERVER.name = sp;
 
 AddClassToHeap(CanonifyName(sp));
+
+free(sp); /* Release the ressource */
+
  
 if ((tloc = time((time_t *)NULL)) == -1)
    {
@@ -582,24 +569,46 @@ void AddNetworkClass(char *netmask) /* Function contrib David Brownlee <abs@mono
 
 /*********************************************************************/
 
-void SetDomainName(char *sp)           /* Bas van der Vlies */
+void SetDomainName(char *hostname)
 
 { char fqn[CF_MAXVARSIZE];
   char *ptr;
   char buffer[CF_BUFSIZE];
+ 
+strcpy(VFQNAME,hostname); // By default VFQNAME = hostname (nodename)
 
-if (gethostname(fqn, sizeof(fqn)) != -1)
+if (strstr(VFQNAME,".") == 0)
    {
-   strcpy(VFQNAME,fqn);
-   strcpy(buffer,VFQNAME);
-   AddClassToHeap(CanonifyName(buffer));
-   AddClassToHeap(CanonifyName(ToLowerStr(buffer)));
+   // The nodename is not full qualified
+   // We'll try to find the FQDN hostname
 
-   if (strstr(fqn,"."))
+   if (gethostname(fqn, sizeof(fqn)) != -1)
       {
-      ptr = strchr(fqn, '.');
-      strcpy(VDOMAIN, ++ptr);
+      struct hostent *hp;
+
+      if (hp = gethostbyname(fqn))
+         {
+         if (strstr(hp->h_name,"."))
+            {
+            // We find a FQDN hostname
+            // So we change the VFQNAME variable
+            strncpy(VFQNAME,hp->h_name,CF_MAXVARSIZE);
+            VFQNAME[CF_MAXVARSIZE-1]=0; // Be sure the string is null terminated
+            }
+         }
       }
+   }
+
+strcpy(buffer,VFQNAME);
+AddClassToHeap(CanonifyName(buffer));
+AddClassToHeap(CanonifyName(ToLowerStr(buffer)));
+
+if (strstr(VFQNAME,"."))
+   {
+// If VFQNAME is full qualified we can create VDOMAIN variable
+   ptr = strchr(VFQNAME, '.');
+   strcpy(VDOMAIN, ++ptr);
+   DeleteClassFromHeap("undefined_domain");
    }
 
 if (strstr(VFQNAME,".") == 0 && (strcmp(VDOMAIN,CF_START_DOMAIN) != 0))
@@ -608,10 +617,27 @@ if (strstr(VFQNAME,".") == 0 && (strcmp(VDOMAIN,CF_START_DOMAIN) != 0))
    strcat(VFQNAME,VDOMAIN);
    }
 
+if (strstr(VFQNAME,"."))
+   {
+   /* Add some domain hierarchy classes */
+   for (ptr=VFQNAME; *ptr != '\0'; ptr++)
+      {
+      if (*ptr == '.')
+         {
+         if (*(ptr+1) != '\0')
+            {
+            Debug("Defining domain #%s#\n",(ptr+1));
+            AddClassToHeap(CanonifyName(ptr+1));
+            }
+         else
+            {
+            Debug("Domain rejected\n");
+            }      
+         }
+      }
+   }
 AddClassToHeap(CanonifyName(VDOMAIN));
-DeleteClassFromHeap("undefined_domain");
 }
-
 
 /*******************************************************************/
 

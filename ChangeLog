@@ -1,4 +1,6 @@
 2.1.19
+	Patches to setting unqualified and qualified names
+	
 	SuSE 10 detection patch
 
 	Minor error fixes discovered by Joe Buehler and his wonderful software.

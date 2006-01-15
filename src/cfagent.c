@@ -602,6 +602,23 @@ void EchoValues()
   char ebuff[CF_EXPANDSIZE];
 
 ebuff[0] = '\0';
+
+if (!StrStr(VSYSNAME.nodename,VDOMAIN))
+   {
+   snprintf(VFQNAME,CF_BUFSIZE,"%s.%s",VSYSNAME.nodename,ToLowerStr(VDOMAIN));
+   strcpy(VUQNAME,VSYSNAME.nodename);
+   }
+else
+   {
+   int n = 0;
+   strcpy(VFQNAME,VSYSNAME.nodename);
+   
+   while(VSYSNAME.nodename[n++] != '.')
+      {
+      }
+   
+   strncpy(VUQNAME,VSYSNAME.nodename,n-1);        
+   }
   
 Verbose("Accepted domain name: %s\n\n",VDOMAIN); 
 
