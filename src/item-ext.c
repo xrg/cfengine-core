@@ -231,9 +231,9 @@ if ((sp = malloc(strlen(string)+1)) == NULL)
 
 if (CURRENTLINEPTR == NULL)   /* File is empty */
    {
-   if (filestart == NULL)
+   if (*filestart == NULL)
       {
-      filestart = ip;
+      *filestart = ip;
       ip->next = NULL;
       }
    else
