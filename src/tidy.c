@@ -324,6 +324,7 @@ int RecursiveTidySpecialArea(char *name,struct Tidy *tp,int maxrecurse,struct st
   struct dirent *dirp;
   char pcwd[CF_BUFSIZE], *parentdir;
   int is_dir,level,goback;
+  static char *defaultname = "/";
        
 Debug("RecursiveTidySpecialArea(%s)\n",name);
 memset(&statbuf,0,sizeof(statbuf));
@@ -353,9 +354,7 @@ if (IgnoreFile(name,"",tp->ignores))
 
 if (strlen(name) == 0)     /* Check for root dir */
    {
-   name = (char *) malloc(2);
-   name[0] = '/';
-   name[1] = '\0';
+   name = defaultname;
    }
 
 if (maxrecurse == tp->maxrecurse)
@@ -374,7 +373,6 @@ if (maxrecurse == tp->maxrecurse)
             }
          }
 
-      free(name);
       return true;
       }
    }
@@ -406,7 +404,6 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
 
    if (BufferOverflow(pcwd,dirp->d_name))
       {
-      free(name);
       return true;
       }
 
@@ -524,7 +521,6 @@ if (maxrecurse == tp->maxrecurse)
       }
    }
 
-free(name);
 return true; 
 }
 

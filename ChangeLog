@@ -5,7 +5,9 @@
 
 	Minor error fixes discovered by Joe Buehler and his wonderful software.
 	
-        Files is the suspicious list were marked bad so that follow-up rules e.g. to delete them would not be triggered
+        Files is the "suspicious" list were marked "not sensible" so that
+	follow-up rules e.g. to delete them would not be triggered This is
+	now considered a confusion of roles. Suspicious files are no longer skipped.
 
 	More memory leaks in cfservd
 
