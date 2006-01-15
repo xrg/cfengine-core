@@ -249,6 +249,8 @@ for (tp = VTIDY; tp != NULL; tp=tp->next)
       continue;
       }
 
+   tp->done = 'y';
+   
    Debug("  Check rule %s ...\n",tp->path);
    
    if ((tp->maxrecurse != CF_INF_RECURSE) && (level > tp->maxrecurse+1))
