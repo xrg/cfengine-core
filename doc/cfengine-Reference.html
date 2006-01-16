@@ -1926,6 +1926,8 @@ the affected hosts.
 <pre class="smallexample">     
      alerts:
      
+       myclass::
+     
        "Reminder: say hello every hour" ifelapsed=60
      
        nfsd_in_high_dev2::
@@ -5332,7 +5334,7 @@ See <a href="#files">files</a>,
      
         some::
      
-           /var/spool/cron/at.allow =0644 N [root] [wheel] touch
+           /var/spool/cron/at.allow =0644 N owner=root group=wheel touch
      
 </pre>
    <p class="noindent">which would create an empty security file <samp><span class="file">at.allow</span></samp>. 

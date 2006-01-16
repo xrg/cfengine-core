@@ -1,4 +1,9 @@
 2.1.19
+
+	Serious bug in binserver handling fixed.
+	
+	home tidying did not set the "done flag" for multiple pass avoidance.
+	
 	Patches to setting unqualified and qualified names
 	
 	SuSE 10 detection patch

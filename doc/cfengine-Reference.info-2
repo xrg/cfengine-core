@@ -2297,7 +2297,7 @@ Concept Index
 * Force copying:                         copy.                (line 380)
 * freespace= <1>:                        required.            (line  47)
 * freespace=:                            disks.               (line  56)
-* FriendStatus:                          alerts.              (line 105)
+* FriendStatus:                          alerts.              (line 107)
 * Full disk warnings <1>:                required.            (line  47)
 * Full disk warnings:                    disks.               (line  56)
 * Fully qualified names:                 Cfengine classes.    (line 155)
@@ -2352,7 +2352,7 @@ Concept Index
 * Key, ACL:                              DFS ACLs.            (line   6)
 * Kilobyte, filesize unit:               tidy.                (line 112)
 * Last Seen database <1>:                lastseenexpireafter. (line  12)
-* Last Seen database:                    alerts.              (line 105)
+* Last Seen database:                    alerts.              (line 107)
 * LastNode literal:                      directories.         (line  52)
 * LastSeen:                              lastseen.            (line  10)
 * Linkchildren <1>:                      Link Children.       (line   6)
@@ -2395,7 +2395,7 @@ Concept Index
 * Modules executed immediately:          Evaluated classes and special functions.
                                                               (line  51)
 * Modules, user defined:                 actionsequence.      (line  79)
-* Monitoring other hosts:                alerts.              (line 105)
+* Monitoring other hosts:                alerts.              (line 107)
 * Mount paths:                           mountpattern.        (line   6)
 * Mountable resources, defining <1>:     mountables.          (line   6)
 * Mountable resources, defining:         homeservers.         (line  35)
@@ -2442,7 +2442,7 @@ Concept Index
 * pattern= and filtering:                tidy.                (line  56)
 * Peer to peer methods:                  Setting variables with functions.
                                                               (line 157)
-* Peer watching (FriendStatus):          alerts.              (line 105)
+* Peer watching (FriendStatus):          alerts.              (line 107)
 * Percentage disk space:                 required.            (line  54)
 * Permissions, directories:              Directory permissions.
                                                               (line   6)

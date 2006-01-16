@@ -75,20 +75,20 @@ for (ip = VMOUNTLIST; ip != NULL; ip=ip->next)
          {
          continue;
          }
-
+      
       strcpy(VBUFF,ip->name);
       AddSlash(VBUFF);
       strcat(VBUFF,dirp->d_name);
-
+      
       if (IsHomeDir(VBUFF))
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Host defines a home directory %s\n",VBUFF);
-  CfLog(cfverbose,OUTPUT,"");
+         CfLog(cfverbose,OUTPUT,"");
          }
       else
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Host defines a potential mount point %s\n",VBUFF);
-  CfLog(cfverbose,OUTPUT,"");
+         CfLog(cfverbose,OUTPUT,"");
          }
 
       snprintf(path,CF_BUFSIZE,"%s%s",ip->name,dirp->d_name);
@@ -99,7 +99,7 @@ for (ip = VMOUNTLIST; ip != NULL; ip=ip->next)
          if ( MOUNTCHECK && ! RequiredFileSystemOkay(path) && VERBOSE)
             {
             snprintf(OUTPUT,CF_BUFSIZE*2,"Found a mountpoint %s but there was\n",path);
-     CfLog(cfinform,OUTPUT,"");
+            CfLog(cfinform,OUTPUT,"");
             CfLog(cfinform,"nothing mounted on it.\n\n","");
             }
          }
@@ -1898,6 +1898,8 @@ if (!IsPrivileged())
 
 Banner("Checking home and binservers");
 
+Debug("BINSERVER = %s\n",VDEFAULTBINSERVER.name);
+
 for (mp = VMOUNTABLES; mp != NULL; mp=mp->next)
    {
    sscanf(mp->filesystem,"%[^:]:%s",host,mountdir);
@@ -1923,6 +1925,8 @@ for (mp = VMOUNTABLES; mp != NULL; mp=mp->next)
       {
       strcat(maketo,"/.");
       }
+
+   Debug("I am [%s], you are [%s]\n",host,VDEFAULTBINSERVER.name);
 
    if (strcmp(host,VDEFAULTBINSERVER.name) == 0) /* A host never mounts itself nfs */
       {
@@ -2285,7 +2289,7 @@ void CheckResolv()
 
 Verbose("Checking config in %s\n",VRESOLVCONF[VSYSTEMHARDCLASS]);
   
-if (VDOMAIN == NULL)
+if (strcmp(VDOMAIN,"") == 0)
    {
    CfLog(cferror,"Domain name not specified. Can't configure resolver\n","");
    return;

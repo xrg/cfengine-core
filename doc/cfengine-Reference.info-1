@@ -35,8 +35,8 @@ versions, except that the section entitled "GNU General Public License"
 may be included in a translation approved by the author instead of in
 the original English.
 
-   This manual corresponds to CFENGINE Edition 2.1.18 for version
-2.1.18 as last updated 24 December 2005.
+   This manual corresponds to CFENGINE Edition 2.1.18p1 for version
+2.1.18p1 as last updated 10 January 2006.
 
 * Menu:
 
@@ -1789,6 +1789,8 @@ alias for the class `any' that is defined on the affected hosts.
 
 
      alerts:
+
+       myclass::
 
        "Reminder: say hello every hour" ifelapsed=60
 
@@ -4369,7 +4371,7 @@ files::,
 
         some::
 
-           /var/spool/cron/at.allow =0644 N [root] [wheel] touch
+           /var/spool/cron/at.allow =0644 N owner=root group=wheel touch
 
 which would create an empty security file `at.allow'.  See also your
 system manual pages for the `at' command if you don't understand why

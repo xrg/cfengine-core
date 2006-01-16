@@ -71,7 +71,7 @@ if ((ptr = (struct cfObject *)malloc(sizeof(struct cfObject))) == NULL)
    {
    FatalError("Memory Allocation failed for cfObject");
    }
- 
+
 if (VOBJTOP == NULL)
    {
    VOBJ = ptr;
