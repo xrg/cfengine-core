@@ -94,7 +94,7 @@ void CheckOptsAndInit ARGLIST((int argc,char **argv));
 void StartServer ARGLIST((int argc, char **argv));
 void Syntax ARGLIST((void));
 void *ExitCleanly ARGLIST((void));
-void *LocalExec ARGLIST((void *dummy));
+void *LocalExec ARGLIST((void *scheduled_run));
 void MailResult ARGLIST((char *filename, char *to));
 int ScheduleRun ARGLIST((void));
 void AddClassToHeap ARGLIST((char *class));
@@ -298,7 +298,7 @@ umask(077);
 if (ONCE)
    {
    GetCfStuff();
-   LocalExec(NULL);
+   LocalExec((void *)0);
    }
 else
    { char **nargv;
@@ -344,7 +344,9 @@ else
           */
          
          Debug("Spawning %s\n", nargv[0]);
+
          pid = spawnvp((int)_P_NOWAIT, nargv[0], nargv);
+
          if (pid < 1)
             {
             CfLog(cfinform,"Can't spawn run","spawnvp");
@@ -360,15 +362,15 @@ else
          pthread_attr_setstacksize(&PTHREADDEFAULTS,(size_t)2048*1024);
 #endif
          
-         if (pthread_create(&tid,&PTHREADDEFAULTS,LocalExec,NULL) != 0)
+         if (pthread_create(&tid,&PTHREADDEFAULTS,LocalExec,(void *)1) != 0)
             {
             CfLog(cfinform,"Can't create thread!","pthread_create");
-            LocalExec(NULL);
+            LocalExec((void *)1);
             }
          
          pthread_attr_destroy(&PTHREADDEFAULTS);
 #else
-         LocalExec(NULL);  
+         LocalExec((void *)1);  
 #endif
 #endif
          
@@ -617,7 +619,7 @@ static char *timestamp(time_t stamp, char *buf, size_t len)
 
 /**************************************************************/
 
-void *LocalExec(void *dummy)
+void *LocalExec(void *scheduled_run)
 
 { FILE *pp; 
   char line[CF_BUFSIZE],filename[CF_BUFSIZE],*sp;
@@ -634,19 +636,15 @@ pthread_sigmask(SIG_BLOCK,&sigmask,NULL);
 
  
 Verbose("------------------------------------------------------------------\n\n");
-Verbose("  LocalExec at %s\n",ctime(&starttime));
+Verbose("  LocalExec(%sscheduled) at %s\n", scheduled_run ? "" : "not ", ctime(&starttime));
 Verbose("------------------------------------------------------------------\n"); 
 
 /* Need to make sure we have LD_LIBRARY_PATH here or children will die  */
 
-if (NOSPLAY)
-   {
-   snprintf(cmd,CF_BUFSIZE-1,"%s/bin/cfagent -q -Dfrom_cfexecd",CFWORKDIR);
-   }
-else
-   {
-   snprintf(cmd,CF_BUFSIZE-1,"%s/bin/cfagent -Dfrom_cfexecd",CFWORKDIR);
-   }
+snprintf(cmd,CF_BUFSIZE-1,"%s/bin/cfagent%s -Dfrom_cfexecd%s",
+		 CFWORKDIR,
+		 NOSPLAY ? " -q" : "",
+		 scheduled_run ? ":scheduled_run" : "");
  
 timestamp(starttime, line, CF_BUFSIZE);
 

@@ -1,5 +1,7 @@
 2.1.19
 
+	Joe Buehler's harmless patch to cfexecd to flag daemon and batch mode.
+	
 	Serious bug in binserver handling fixed.
 	
 	home tidying did not set the "done flag" for multiple pass avoidance.
