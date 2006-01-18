@@ -972,7 +972,7 @@ return -1;
 /* written by steve rader <rader@hep.wisc.edu>                       */
 /*********************************************************************/
 
-int FuzzyHostParse(char *s)
+int FuzzyHostParse(char *arg1,char *arg2)
 
 /*
  * do something like...
@@ -985,23 +985,7 @@ int FuzzyHostParse(char *s)
   long start = -1, end = -1, where = -1;
   int n;
 
-args = SplitStringAsItemList(s,',');
-
-if ( args->next == NULL )
-   { 
-   yyerror("HostRange() syntax error: not enough args (expecting two)");
-   return false;
-   }
-
-if ( args->next->next != NULL )
-   { 
-   yyerror("HostRange() syntax error: too many args (expecting two)");
-   return false;
-   }
-
-sp = args->next->name;
-
-n = sscanf(sp,"%ld-%ld%n",&start,&end,&where);
+n = sscanf(arg2,"%ld-%ld%n",&start,&end,&where);
 
 if ( n >= 2 && sp[where] != '\0' )
    {
@@ -1022,71 +1006,48 @@ return true;
 
 /*********************************************************************/
 
-
-int FuzzyHostMatch(s1,s2)
+int FuzzyHostMatch(char *arg0, char* arg1, char *refhost)
 
 /*
  * do something like...
  *   @args = split(/,/,$s1);
- *   if ( $s2 !~ /(\d+)$/ ) {
+ *   if ( $refhost !~ /(\d+)$/ ) {
  *     return 1; # failure: no num in hostname
  *   }
  *   if ( $1 < $args[1] || $1 > $args[2] ) {
  *     return 1; # failure: hostname num not in range
  *   }
- *   $s2 =~ s/^(.*?)\d.*$/$1/;
- *   if ( $s2 ne $args[0] ) {
+ *   $refhost =~ s/^(.*?)\d.*$/$1/;
+ *   if ( $refhost ne $args[0] ) {
  *     return 1; # failure: hostname doesn't match basename
  *   }
  *   return 0; # success
  */
 
-char *s1, *s2;
-
 { struct Item *args;
-  char *sp;
+ char *sp, refbase[CF_MAXVARSIZE];
   long cmp = -1, start = -1, end = -1;
-  char host_basename[CF_MAXVARSIZE];
 
-args = SplitStringAsItemList(s1,',');
-sp = s2;
-  
-for (sp = s2+strlen(s2)-1; sp > s2; sp--)
-   {
-   if ( ! isdigit((int)*sp) )
-      {
-      sp++;
-      if ( sp != s2+strlen(s2) )
-         {
-         Debug("SRDEBUG extracted string %s\n",sp);
-         }
-      break;
-      }
-   }
+sscanf(refhost,"%.128[^0-9]%ld",&refbase,&cmp);
 
-if ( sp == s2+strlen(s2) )
+if (cmp < 0)
    {
    return 1;
    }
 
-sscanf(sp,"%ld",&cmp);
-
-/* HvB basename is */
-strncpy(host_basename, s2, strlen(s2) - strlen(sp));
-
-if ( cmp < 0 )
+if (strlen(refbase) == 0)
    {
    return 1;
    }
 
-sscanf(args->next->name,"%ld-%ld",&start,&end);
+sscanf(arg1,"%ld-%ld",&start,&end);
 
 if ( cmp < start || cmp > end )
    {
    return 1;
    }
 
-if ( strcmp(host_basename,args->name) != 0 )
+if (strcmp(refhost,arg0) != 0)
    {
    return 1;
    }

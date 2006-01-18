@@ -447,12 +447,9 @@ void HandleHostRange(char *args,char *value)
 
 { char argv[CF_MAXFARGS][CF_EXPANDSIZE];
 
-FunctionArgs(args,argv,1);
+FunctionArgs(args,argv,2);
 
-Debug("SRDEBUG in HandleHostRange()\n"); 
-Debug("SRDEBUG args=%s value=%s\n",argv[0],value);
-
-if (!FuzzyHostParse(argv[0]))
+if (!FuzzyHostParse(argv[0],argv[1]))
    {
    strcpy(value,CF_NOCLASS);
    return;
@@ -461,7 +458,7 @@ if (!FuzzyHostParse(argv[0]))
 /* VDEFAULTBINSERVER.name is relative domain name */
 /* (see nameinfo.c ~line 145)                     */
 
-if (FuzzyHostMatch(argv[0],VDEFAULTBINSERVER.name) == 0)
+if (FuzzyHostMatch(argv[0],argv[1],VDEFAULTBINSERVER.name) == 0)
    {
    Debug("SRDEBUG SUCCESS!\n");
    strcpy(value,CF_ANYCLASS);

@@ -1,4 +1,7 @@
-2.1.19
+	2.1.19 
+
+	HostRange bug - recoding not implemented properly from
+	2.1.16. Caused seg fault.
 
 	Joe Buehler's harmless patch to cfexecd to flag daemon and batch mode.
 	
