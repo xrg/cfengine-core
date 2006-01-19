@@ -57,7 +57,7 @@ int xisupper(int c)
 
 int xisalpha(int c)
 {
- return (xislower(c) || xisupper(c));
+return (xislower(c) || xisupper(c));
 }
 
 int xisdigit(int c)
@@ -270,275 +270,317 @@ DeleteItemList(evrlist);
 return 0;
 }
 
-int InstallPackage(char *name, enum pkgmgrs pkgmgr)
-{
-    char rawinstcmd[CF_BUFSIZE];
-    /* Make the instcmd twice the normal buffer size since the package list
-       limit is CF_BUFSIZE so this can obviously get larger! */
-    char instcmd[CF_BUFSIZE*2];
-    char line[CF_BUFSIZE];
-    char *percent;
-    char *ptr;
-    FILE *pp;
+/*********************************************************************************/
 
-    if (DONTDO)
-       {
-       Verbose("Need to install package %s\n",name);
-       return 0;
-       }
-    
-    /* Determine the command to use for the install. */
-    switch(pkgmgr)
-    {
-        /* RPM */
-        case pkgmgr_rpm:
-        if (!GetMacroValue(CONTEXTID,"RPMInstallCommand"))
+int InstallPackage(char *name, enum pkgmgrs pkgmgr)
+
+{ char rawinstcmd[CF_BUFSIZE];
+ /* Make the instcmd twice the normal buffer size since the package list
+    limit is CF_BUFSIZE so this can obviously get larger! */
+ char instcmd[CF_BUFSIZE*2];
+ char line[CF_BUFSIZE];
+ char *percent;
+ char *ptr;
+ FILE *pp;
+
+if (DONTDO)
+   {
+   Verbose("Need to install package %s\n",name);
+   return 0;
+   }
+
+/* Determine the command to use for the install. */
+switch(pkgmgr)
+   {
+   /* RPM */
+   case pkgmgr_rpm:
+
+       if (!GetMacroValue(CONTEXTID,"RPMInstallCommand"))
           {
           Verbose("RPMInstallCommand NOT Set.  Package Installation Not Possible!\n");
           return 0;
           }
-        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"RPMInstallCommand"),CF_BUFSIZE);
-        break;
+       strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"RPMInstallCommand"),CF_BUFSIZE);
+       break;
+       
+       /* Debian */
+   case pkgmgr_dpkg:
 
-        /* Debian */
-        case pkgmgr_dpkg:
-        if (!GetMacroValue(CONTEXTID,"DPKGInstallCommand"))
+       if (!GetMacroValue(CONTEXTID,"DPKGInstallCommand"))
           {
           Verbose("DPKGInstallCommand NOT Set.  Package Installation Not Possible!\n");
           return 0;
           }
-        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"DPKGInstallCommand"),
-                    CF_BUFSIZE);
-        break;
+       strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"DPKGInstallCommand"),
+               CF_BUFSIZE);
+       break;
+       
+       /* Solaris */
+   case pkgmgr_sun:
 
-        /* Solaris */
-        case pkgmgr_sun:
-        if (!GetMacroValue(CONTEXTID,"SUNInstallCommand"))
+       if (!GetMacroValue(CONTEXTID,"SUNInstallCommand"))
           {
           Verbose("SUNInstallCommand NOT Set.  Package Installation Not Possible!\n");
           return 0;
           }
-        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"SUNInstallCommand"),
-                    CF_BUFSIZE);
-        break;
+       strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"SUNInstallCommand"),
+               CF_BUFSIZE);
+       break;
+       
+       /* Default */
+   default:
+       Verbose("InstallPackage(): Unknown package manager %d\n",pkgmgr);
+       break;
+   }
 
-        /* Default */
-        default:
-        Verbose("InstallPackage(): Unknown package manager %d\n",
-                    pkgmgr);
-        break;
-    }
+/* Common to all pkg managers */
 
-    /* Common to all pkg managers */
+/* This could probably be a bit more complete, but I don't think
+   that anyone would want to expand the package name more than
+   once in a single command invocation anyhow. */
 
-    /* This could probably be a bit more complete, but I don't think
-        that anyone would want to expand the package name more than
-        once in a single command invocation anyhow. */
-    if (percent = strstr(rawinstcmd, "%s"))
-      {
-      *percent = '\0';
-      strncpy(instcmd, rawinstcmd, CF_BUFSIZE*2);
-      ptr = instcmd + strlen(rawinstcmd);
-      *percent = '%';
-      strcat(ptr, name);
-      ptr += strlen(name);
-      percent += 2;
-      strncpy(ptr, percent, (CF_BUFSIZE*2 - (ptr-instcmd)));
-      }
-    else
-      {
-      sprintf(instcmd, "%s %s", rawinstcmd, name);
-      }
-    Verbose("Installing package(s) %s using %s\n", name, instcmd);
-    if ((pp = cfpopen(instcmd, "r")) == NULL)
-      {
-      Verbose("Could not execute package install command\n");
-      /* Return that the package is still not installed */
-      return 0;
-      }
-    while (!feof(pp))
-      {
-      ReadLine(line,CF_BUFSIZE-1,pp);
-      printf("%s:package install: %s\n",VPREFIX,line);
-      }
-    if (cfpclose(pp) != 0)
-      {
-      Verbose("Package install command was not successful\n");
-      return 0;
-      }
-    return 1;
+if (percent = strstr(rawinstcmd, "%s"))
+   {
+   *percent = '\0';
+   strncpy(instcmd, rawinstcmd, CF_BUFSIZE*2);
+   ptr = instcmd + strlen(rawinstcmd);
+   *percent = '%';
+   strcat(ptr, name);
+   ptr += strlen(name);
+   percent += 2;
+   strncpy(ptr, percent, (CF_BUFSIZE*2 - (ptr-instcmd)));
+   }
+else
+   {
+   sprintf(instcmd, "%s %s", rawinstcmd, name);
+   }
+
+snprintf(OUTPUT,CF_BUFSIZE,"Installing package(s) %s using %s\n", name, instcmd);
+CfLog(cfinform,OUTPUT,"");
+
+if ((pp = cfpopen(instcmd, "r")) == NULL)
+   {
+   Verbose("Could not execute package install command\n");
+   /* Return that the package is still not installed */
+   return 0;
+   }
+
+while (!feof(pp))
+   {
+   ReadLine(line,CF_BUFSIZE-1,pp);
+   snprintf(OUTPUT,CF_BUFSIZE,"%s:package install: %s\n",VPREFIX,line);
+   CfLog(cfinform,OUTPUT,"");
+   }
+
+if (cfpclose(pp) != 0)
+   {
+   Verbose("Package install command was not successful\n");
+   return 0;
+   }
+
+return 1;
 }
+
+/*********************************************************************/
 
 int RemovePackage(char *name, enum pkgmgrs pkgmgr)
 {
-    Verbose("Package removal not yet implemented");
-    return 1;
+ Verbose("Package removal not yet implemented");
+ return 1;
 }
 
 /*********************************************************************/
-/* Debian */
+/* Debian                                                            */
+/*********************************************************************/
 
 int DPKGPackageCheck(char *package,char *version,enum cmpsense cmp)
 
-{ 
-  FILE *pp;
-  struct Item *evrlist = NULL;
-  struct Item *evr;
-  char *evrstart;
-  enum cmpsense result;
-  int match = 0;
-  char tmpBUFF[CF_BUFSIZE];
+{ FILE *pp;
+ struct Item *evrlist = NULL;
+ struct Item *evr;
+ char *evrstart;
+ enum cmpsense result;
+ int match = 0;
+ char tmpBUFF[CF_BUFSIZE];
+ 
+Verbose ("Package: ");
+Verbose (package);
+Verbose ("\n");
 
-  Verbose ("Package: ");
-  Verbose (package);
-  Verbose ("\n");
+/* check that the package exists in the package database */
+snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/apt-cache policy %s 2>&1 | grep -v " \
+          "\"W: Unable to locate package \"", package);
 
-  /* check that the package exists in the package database */
-  snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/apt-cache policy %s 2>&1 | grep -v " \
-	    "\"W: Unable to locate package \"", package);
-  if ((pp = cfpopen (VBUFF, "r")) == NULL) {
-    Verbose ("Could not execute APT-command (apt-cache).\n");
-    return 0;
-  }
-  while (!feof (pp)) {
-    *VBUFF = '\0';
-    ReadLine (VBUFF, CF_BUFSIZE, pp);
-  }
-  if (cfpclose (pp) != 0) {
-    Verbose ("The package %s did not exist in the package database.\n", \
-	     package);
-    return 0;
-  }
+if ((pp = cfpopen (VBUFF, "r")) == NULL)
+   {
+   Verbose ("Could not execute APT-command (apt-cache).\n");
+   return 0;
+   }
 
-  /* check what version is installed on the system (if any) */
-  snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/apt-cache policy %s", package);
+while (!feof (pp))
+   {
+   *VBUFF = '\0';
+   ReadLine (VBUFF, CF_BUFSIZE, pp);
+   }
 
-  if ((pp = cfpopen (VBUFF, "r")) == NULL) {
-    Verbose ("Could not execute APT-command (apt-cache policy).\n");
-    return 0;
-  }
-  while (!feof (pp)) {
-    *VBUFF = '\0';
-    ReadLine (VBUFF, CF_BUFSIZE, pp);
-    if (*VBUFF != '\0') {
-      if (sscanf (VBUFF, "  Installed: %s", tmpBUFF) > 0) {
-	AppendItem (&evrlist, tmpBUFF, "");
+if (cfpclose (pp) != 0)
+   {
+   Verbose ("The package %s did not exist in the package database.\n",package);
+   return 0;
+   }
+
+/* check what version is installed on the system (if any) */
+snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/apt-cache policy %s", package);
+
+if ((pp = cfpopen (VBUFF, "r")) == NULL)
+   {
+   Verbose ("Could not execute APT-command (apt-cache policy).\n");
+   return 0;
+   }
+
+while (!feof (pp))
+   {
+   *VBUFF = '\0';
+   ReadLine (VBUFF, CF_BUFSIZE, pp);
+   if (*VBUFF != '\0')
+      {
+      if (sscanf (VBUFF, "  Installed: %s", tmpBUFF) > 0)
+         {
+         AppendItem (&evrlist, tmpBUFF, "");
+         }
       }
-    }
-  }
-  if (cfpclose (pp) != 0) {
-    Verbose ("Something impossible happened... ('grep' exited abnormally).\n");
-    DeleteItemList (evrlist);
-    return 0;
-  }
+   }
 
-  /* Assume that there is only one package in the list */
-  evr = evrlist;
+if (cfpclose (pp) != 0)
+   {
+   Verbose ("Something impossible happened... ('grep' exited abnormally).\n");
+   DeleteItemList (evrlist);
+   return 0;
+   }
 
-  if (evr == NULL) {
-    /* We did not find a match, and returns */
-    DeleteItemList (evrlist);
-    return 0;
-  }
+/* Assume that there is only one package in the list */
+evr = evrlist;
 
-  evrstart = evr->name;
+if (evr == NULL)
+   {
+   /* We did not find a match, and returns */
+   DeleteItemList (evrlist);
+   return 0;
+   }
 
-  /* if version value is "(null)", the packages was not installed
-     -> the package has no version and dpkg --compare-versions will
-     treat "" as "no version" */
+evrstart = evr->name;
+
+/* if version value is "(null)", the packages was not installed
+   -> the package has no version and dpkg --compare-versions will
+   treat "" as "no version" */
+
+if (strncmp (evrstart, "(none)", strlen ("(none)")) == 0)
+   {
+   sprintf (evrstart, "\"\"");
+   }
+
+if (strncmp (version, "(none)", strlen ("(none)")) == 0)
+   {
+   sprintf (version, "\"\"");
+   }
+
+/* the evrstart shall be a version number which we will
+   compare to version using '/usr/bin/dpkg --compare-versions' */
+
+/* start with assuming that the versions are equal */
+
+result = cmpsense_eq;
+
+/* check if installed version is gt version */
+
+snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/dpkg --compare-versions %s gt %s", evrstart, version);
   
-  if (strncmp (evrstart, "(none)", strlen ("(none)")) == 0) {
-    sprintf (evrstart, "\"\"");
-  }
+if ((pp = cfpopen (VBUFF, "r")) == NULL)
+   {
+   Verbose ("Could not execute DPKG-command.\n");
+   return 0;
+   }
 
-  if (strncmp (version, "(none)", strlen ("(none)")) == 0) {
-    sprintf (version, "\"\"");
-  }
+while (!feof (pp))
+   {
+   *VBUFF = '\0';
+   ReadLine (VBUFF, CF_BUFSIZE, pp);
+   }
 
-  /* the evrstart shall be a version number which we will
-     compare to version using '/usr/bin/dpkg --compare-versions' */
-  
-  /* start with assuming that the versions are equal */
-  result = cmpsense_eq;
-  
-  /* check if installed version is gt version */
-  snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/dpkg --compare-versions %s gt " \
-	    "%s", evrstart, version);
-  
-  if ((pp = cfpopen (VBUFF, "r")) == NULL) {
-    Verbose ("Could not execute DPKG-command.\n");
-    return 0;
-  }
-  while (!feof (pp)) {
-    *VBUFF = '\0';
-    ReadLine (VBUFF, CF_BUFSIZE, pp);
-  }
-  /* if dpkg --compare-versions exits with zero result the condition
-     was satisfied, else not satisfied */
-  if (cfpclose (pp) == 0) {
-    result = cmpsense_gt;
-  }    
-  
-  /* check if installed version is lt version */
-  snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/dpkg --compare-versions %s lt " \
-	    "%s", evrstart, version);
+/* if dpkg --compare-versions exits with zero result the condition
+   was satisfied, else not satisfied */
+if (cfpclose (pp) == 0)
+   {
+   result = cmpsense_gt;
+   }    
 
-  if ((pp = cfpopen (VBUFF, "r")) == NULL) {
-    Verbose ("Could not execute DPKG-command.\n");
-    return 0;
-  }
-  while (!feof (pp)) {
-    *VBUFF = '\0';
-    ReadLine (VBUFF, CF_BUFSIZE, pp);
-  }
-  /* if dpkg --compare-versions exits with zero result the condition
-     was satisfied, else not satisfied */
-  if (cfpclose (pp) == 0) {
-    result = cmpsense_lt;
-  }    
-  
-  Verbose ("Comparison result: %s\n", CMPSENSETEXT[result]);
-  
-  switch (cmp) {
-    case cmpsense_gt:
-      match = (result == cmpsense_gt);
-      break;
-    case cmpsense_ge:
-      match = (result == cmpsense_gt || result == cmpsense_eq);
-      break;
-    case cmpsense_lt:
-      match = (result == cmpsense_lt);
-      break;
-    case cmpsense_le:
-      match = (result == cmpsense_lt || result == cmpsense_eq);
-      break;
-    case cmpsense_eq:
-      match = (result == cmpsense_eq);
-      break;
-    case cmpsense_ne:
-      match = (result != cmpsense_eq);
-      break;
-  }
-  
-  if (match) {
-    DeleteItemList (evrlist);
-    return 1;
-  }
+/* check if installed version is lt version */
+snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/dpkg --compare-versions %s lt %s", evrstart, version);
 
-  Verbose("\n");
+if ((pp = cfpopen (VBUFF, "r")) == NULL)
+   {
+   Verbose ("Could not execute DPKG-command.\n");
+   return 0;
+   }
 
-  /* if we manage to make it here, we did not find a match */
-  DeleteItemList (evrlist);
-  return 0;
+while (!feof (pp))
+   {
+   *VBUFF = '\0';
+   ReadLine (VBUFF, CF_BUFSIZE, pp);
+   }
+
+/* if dpkg --compare-versions exits with zero result the condition
+   was satisfied, else not satisfied */
+
+if (cfpclose (pp) == 0)
+   {
+   result = cmpsense_lt;
+   }    
+  
+Verbose ("Comparison result: %s\n", CMPSENSETEXT[result]);
+  
+switch (cmp)
+   {
+   case cmpsense_gt:
+       match = (result == cmpsense_gt);
+       break;
+   case cmpsense_ge:
+       match = (result == cmpsense_gt || result == cmpsense_eq);
+       break;
+   case cmpsense_lt:
+       match = (result == cmpsense_lt);
+       break;
+   case cmpsense_le:
+       match = (result == cmpsense_lt || result == cmpsense_eq);
+       break;
+   case cmpsense_eq:
+       match = (result == cmpsense_eq);
+       break;
+   case cmpsense_ne:
+       match = (result != cmpsense_eq);
+       break;
+   }
+
+if (match)
+   {
+   DeleteItemList (evrlist);
+   return 1;
+   }
+
+Verbose("\n");
+
+/* if we manage to make it here, we did not find a match */
+DeleteItemList (evrlist);
+return 0;
 }
 
 /*********************************************************************/
-/* Sun - pkginfo/pkgadd/pkgrm */
+/* Sun - pkginfo/pkgadd/pkgrm                                        */
+/*********************************************************************/
 
 int SUNPackageCheck(char *package,char *version,enum cmpsense cmp)
 
-{ 
-  FILE *pp;
+{ FILE *pp;
   struct Item *evrlist = NULL;
   struct Item *evr;
   char *evrstart;
@@ -552,73 +594,89 @@ int SUNPackageCheck(char *package,char *version,enum cmpsense cmp)
   int microA = 0;
   int microB = 0;
 
-  Verbose ("Package: ");
-  Verbose (package);
-  Verbose ("\n");
+Verbose ("Package: ");
+Verbose (package);
+Verbose ("\n");
 
-  /* check that the package exists in the package database */
-  snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/pkginfo -i -q %s", package);
-  if ((pp = cfpopen (VBUFF, "r")) == NULL) {
-    Verbose ("Could not execute pkginfo -i -q.\n");
-    return 0;
-  }
-  while (!feof (pp)) {
-    *VBUFF = '\0';
-    ReadLine (VBUFF, CF_BUFSIZE, pp);
-  }
-  if (cfpclose (pp) != 0) {
-    Verbose ("The package %s did not exist in the package database.\n", \
-	     package);
-    return 0;
-  }
+/* check that the package exists in the package database */
 
-  /* If no version was specified, we're just checking if the package
-   * is present, not for a particular number, and we can skip the
-   * version number fetch and check.
-   */
-  if(!*version)
+snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/pkginfo -i -q %s", package);
+
+if ((pp = cfpopen (VBUFF, "r")) == NULL)
+   {
+   Verbose ("Could not execute pkginfo -i -q.\n");
+   return 0;
+   }
+
+while (!feof (pp))
+   {
+   *VBUFF = '\0';
+   ReadLine (VBUFF, CF_BUFSIZE, pp);
+   }
+
+if (cfpclose (pp) != 0)
+   {
+   Verbose ("The package %s did not exist in the package database.\n",package);
+   return 0;
+   }
+
+/* If no version was specified, we're just checking if the package
+ * is present, not for a particular number, and we can skip the
+ * version number fetch and check.
+ */
+
+if(!*version)
   {
-    return 1;
+  return 1;
   }
 
-  /* check what version is installed on the system (if any) */
-  snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/pkginfo -i -l %s", package);
+/* check what version is installed on the system (if any) */
 
-  if ((pp = cfpopen (VBUFF, "r")) == NULL) {
-    Verbose ("Could not execute pkginfo -i -l.\n");
-    return 0;
-  }
-  while (!feof (pp)) {
-    *VBUFF = '\0';
-    ReadLine (VBUFF, CF_BUFSIZE, pp);
-    if (*VBUFF != '\0') {
-      if (sscanf (VBUFF, "   VERSION:  %s", tmpBUFF) > 0) {
-	AppendItem (&evrlist, tmpBUFF, "");
+snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/pkginfo -i -l %s", package);
+
+if ((pp = cfpopen (VBUFF, "r")) == NULL)
+   {
+   Verbose ("Could not execute pkginfo -i -l.\n");
+   return 0;
+   }
+
+while (!feof (pp))
+   {
+   *VBUFF = '\0';
+   ReadLine (VBUFF, CF_BUFSIZE, pp);
+   if (*VBUFF != '\0')
+      {
+      if (sscanf (VBUFF, "   VERSION:  %s", tmpBUFF) > 0)
+         {
+         AppendItem (&evrlist, tmpBUFF, "");
+         }
       }
-    }
-  }
-  if (cfpclose (pp) != 0) {
-    Verbose ("pkginfo -i -l exited abnormally.\n");
-    DeleteItemList (evrlist);
-    return 0;
-  }
+   }
+
+if (cfpclose (pp) != 0)
+   {
+   Verbose ("pkginfo -i -l exited abnormally.\n");
+   DeleteItemList (evrlist);
+   return 0;
+   }
 
 /* Parse the Sun Version we are looking for once at the start */
+
 ParseSUNVR(version, &majorB, &minorB, &microB);
 
 /* The rule here will be: if any package in the list matches, then the
  * first one to match wins, and we bail out. */
 
- for (evr = evrlist; evr != NULL; evr=evr->next)
+for (evr = evrlist; evr != NULL; evr=evr->next)
    {
    char *evrstart;
    evrstart = evr->name;
-
+   
    /* Start out assuming the comparison will be equal. */
    result = cmpsense_eq;
-
+   
    ParseSUNVR(evrstart, &majorA, &minorA, &microA);
-
+   
    /* Compare the major versions. */
    if(majorA > majorB)
       {
@@ -631,18 +689,19 @@ ParseSUNVR(version, &majorB, &minorB, &microB);
 
    /* If the major versions are the same, check the minor versions. */
    if(result == cmpsense_eq)
-   {
+      {
       if(minorA > minorB)
          {
          result = cmpsense_gt;
          }
+
       if(minorA < minorB)
          {
          result = cmpsense_lt;
          }
-
-
+      
       /* If the minor versions match, compare the micro versions. */
+
       if(result == cmpsense_eq)
          {
          if(microA > microB)
@@ -655,7 +714,7 @@ ParseSUNVR(version, &majorB, &minorB, &microB);
             }
          }
       }
-
+   
    switch(cmp)
       {
       case cmpsense_gt:
@@ -712,33 +771,32 @@ void ParseSUNVR (char * vr, int *major, int *minor, int *micro)
 
   /* Break the copy in to major, minor, and micro. */
   for(p = tmpcpy; *p; p++)
-  {
-    if(*p == '.')
-    {
-      *p = '\0';
-      if(startMinor == NULL)
-      {
-        startMinor = p+1;
-      }
-      else if (startMicro == NULL)
-      {
-        startMicro = p+1;
-      }
-    }
-  }
-
+     {
+     if(*p == '.')
+        {
+        *p = '\0';
+        if(startMinor == NULL)
+           {
+           startMinor = p+1;
+           }
+        else if (startMicro == NULL)
+           {
+           startMicro = p+1;
+           }
+        }
+     }
+  
   *major = atoi(tmpcpy);
   if(startMinor)
-  {
-    *minor = atoi(startMinor);
-  }
+     {
+     *minor = atoi(startMinor);
+     }
   if(startMicro)
-  {
-    *micro = atoi(startMicro);
-  }
-
-  free(tmpcpy);
-
+     {
+     *micro = atoi(startMicro);
+     }
+  
+  free(tmpcpy);  
 }
 
 
@@ -755,7 +813,9 @@ void ParseSUNVR (char * vr, int *major, int *minor, int *micro)
 /*        0: a and b are the same version */
 /*       -1: b is newer than a */
 
+
 int rpmvercmp(const char * a, const char * b)
+
 {
  char oldch1, oldch2;
  char * str1, * str2;
