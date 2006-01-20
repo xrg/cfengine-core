@@ -350,8 +350,8 @@ performed, otherwise a string comparison is used.
 	
 	classes:
 
-	lt = ( LessThan($@{a@},$@{b@}) )
-   	gt = ( GreaterThan($@{a@},$@{b@}) )
+	lt = ( IsLessThan($@{a@},$@{b@}) )
+   	gt = ( IsGreaterThan($@{a@},$@{b@}) )
 
 	alerts:
 
