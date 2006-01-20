@@ -458,6 +458,8 @@ if (!FuzzyHostParse(argv[0],argv[1]))
 /* VDEFAULTBINSERVER.name is relative domain name */
 /* (see nameinfo.c ~line 145)                     */
 
+Debug("Parsing fuzzy host succeeded\n");
+
 if (FuzzyHostMatch(argv[0],argv[1],VDEFAULTBINSERVER.name) == 0)
    {
    Debug("SRDEBUG SUCCESS!\n");

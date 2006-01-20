@@ -981,18 +981,10 @@ int FuzzyHostParse(char *arg1,char *arg2)
  */ 
 
 { struct Item *args;
-  char *sp;
   long start = -1, end = -1, where = -1;
   int n;
 
 n = sscanf(arg2,"%ld-%ld%n",&start,&end,&where);
-
-if ( n >= 2 && sp[where] != '\0' )
-   {
-   /* X-Ycrud syntax error */
-   yyerror("HostRange() syntax error: second arg should have X-Y format where X and Y are decimal numbers");
-   return false;
-   }
 
 if ( n != 2 )
    {
@@ -1028,7 +1020,9 @@ int FuzzyHostMatch(char *arg0, char* arg1, char *refhost)
  char *sp, refbase[CF_MAXVARSIZE];
   long cmp = -1, start = -1, end = -1;
 
-sscanf(refhost,"%.128[^0-9]%ld",&refbase,&cmp);
+sscanf(refhost,"%[^0-9]%ld",&refbase,&cmp);
+
+Debug("Found refbase=%s,cmp=%d\n",refbase,cmp);
 
 if (cmp < 0)
    {
@@ -1044,11 +1038,13 @@ sscanf(arg1,"%ld-%ld",&start,&end);
 
 if ( cmp < start || cmp > end )
    {
+   Debug("Failed on numberical range (%d < %d < %d)",end,cmp,start);
    return 1;
    }
 
-if (strcmp(refhost,arg0) != 0)
+if (strcmp(refbase,arg0) != 0)
    {
+   Debug("Failed on name %s != %s)",refbase,arg0);
    return 1;
    }
 
