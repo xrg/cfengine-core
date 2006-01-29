@@ -74,7 +74,7 @@ DB *DBP;
 void PreLockState()
 
 {
- strcpy(CFLOCK,"pre-lock-state");
+strcpy(CFLOCK,"pre-lock-state");
 }
 
 /********************************************************************/
@@ -96,6 +96,25 @@ strcpy(CFLOCK,SAVELOCK);
 
 /********************************************************************/
 
+void WritePID(char *filename)
+
+{ FILE *fp;
+
+snprintf(PIDFILE,CF_BUFSIZE-1,"%s/%s",WORKDIR,filename);
+ 
+if ((fp = fopen(PIDFILE,"w")) == NULL)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"Could not write to PID file %s\n",filename);
+   CfLog(cfinform,OUTPUT,"fopen");
+   }
+
+fprintf(fp,"%d\n",getpid());
+
+fclose(fp);
+}
+
+/********************************************************************/
+
 void HandleSignal(int signum)
  
 {
@@ -113,6 +132,7 @@ if (signum != SIGCHLD)
    
    if (signum == SIGTERM || signum == SIGINT || signum == SIGHUP || signum == SIGSEGV || signum == SIGKILL|| signum == SIGPIPE)
       {
+      unlink(PIDFILE);
       ReleaseCurrentLock();
       closelog();
       exit(0);

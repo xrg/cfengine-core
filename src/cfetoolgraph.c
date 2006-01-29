@@ -82,14 +82,14 @@ DB *DBP;
 FILE *FPAV = NULL, *FPVAR = NULL, *FPHIST = NULL, *FP = NULL;
 
 
-void ReadAverages ARGLIST((int dbtype));
-void SummarizeAverages ARGLIST((void));
-void WriteGraphFiles ARGLIST((int dbtype));
-void WriteHistogram ARGLIST((int dbtype));
-void FindHurstExponents ARGLIST((int dbtype));
+void ReadAverages (int dbtype);
+void SummarizeAverages (void);
+void WriteGraphFiles (int dbtype);
+void WriteHistogram (int dbtype);
+void FindHurstExponents (int dbtype);
 struct Average FindHurstFunction
-ARGLIST((int sameples_per_grain, int grains, int dbtype));
-void Syntax ARGLIST((void));
+(int sameples_per_grain, int grains, int dbtype);
+void Syntax (void);
 
 /*********************************************************************/
 

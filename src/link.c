@@ -38,7 +38,7 @@ int LinkChildFiles(char *from,char *to,char type,struct Item *inclusions,struct 
   struct dirent *dirp;
   char pcwdto[CF_BUFSIZE],pcwdfrom[CF_BUFSIZE];
   struct stat statbuf;
-  int (*linkfiles) ARGLIST((char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr));
+  int (*linkfiles)(char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr);
 
 Debug("LinkChildFiles(%s,%s)\n",from,to);
   
@@ -130,7 +130,7 @@ void LinkChildren(char *path,char type,struct stat *rootstat,uid_t uid,gid_t gid
   struct dirent *dirp;
   struct stat statbuf;
   int matched = false;
-  int (*linkfiles) ARGLIST((char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr));
+  int (*linkfiles)(char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr);
 
 Debug("LinkChildren(%s)\n",path);
   
@@ -252,7 +252,7 @@ int RecursiveLink(struct Link *lp,char *from,char *to,int maxrecurse)
   char newfrom[CF_BUFSIZE];
   char newto[CF_BUFSIZE];
   void *bug_check;
-  int (*linkfiles) ARGLIST((char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr));
+  int (*linkfiles)(char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr);
  
 if (maxrecurse == 0)  /* reached depth limit */
    {

@@ -41,7 +41,7 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
-void CheckClass ARGLIST((char *class, char *source));
+void CheckClass(char *class, char *source);
 
 /*******************************************************************/
 

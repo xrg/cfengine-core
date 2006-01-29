@@ -39,25 +39,25 @@
 /* Functions internal to cfengine.c                                */
 /*******************************************************************/
 
-int main ARGLIST((int argc,char *argv[]));
-void Initialize ARGLIST((int argc, char **argv));
-void PreNetConfig ARGLIST((void));
-void ReadRCFile ARGLIST((void));
-void EchoValues ARGLIST((void));
-void CheckSystemVariables ARGLIST((void));
-void SetReferenceTime ARGLIST((int setclasses));
-void SetStartTime ARGLIST((int setclasses));
-void DoTree ARGLIST((int passes, char *info));
-enum aseq EvaluateAction ARGLIST((char *action, struct Item **classlist, int pass));
-void CheckOpts ARGLIST((int argc, char **argv));
-int GetResource ARGLIST((char *var));
-void Syntax ARGLIST((void));
-void EmptyActionSequence ARGLIST((void));
-void GetEnvironment ARGLIST((void));
-int NothingLeftToDo ARGLIST((void));
-void SummarizeObjects ARGLIST((void));
-void SetContext ARGLIST((char *id));
-void DeleteCaches ARGLIST((void));
+int main (int argc,char *argv[]);
+void Initialize (int argc, char **argv);
+void PreNetConfig (void);
+void ReadRCFile (void);
+void EchoValues (void);
+void CheckSystemVariables (void);
+void SetReferenceTime (int setclasses);
+void SetStartTime (int setclasses);
+void DoTree (int passes, char *info);
+enum aseq EvaluateAction (char *action, struct Item **classlist, int pass);
+void CheckOpts (int argc, char **argv);
+int GetResource (char *var);
+void Syntax (void);
+void EmptyActionSequence (void);
+void GetEnvironment (void);
+int NothingLeftToDo (void);
+void SummarizeObjects (void);
+void SetContext (char *id);
+void DeleteCaches (void);
 void QueryCheck(void);
 
 /*******************************************************************/

@@ -31,9 +31,9 @@
 
 /* Local prototypes that nobody else should care about... */
 
-void ParseEVR ARGLIST((char * evr, const char **ep, const char **vp, const char **rp));
-void ParseSUNVR ARGLIST((char * vr, int *major, int *minor, int *micro));
-int rpmvercmp ARGLIST((const char *a, const char *b));
+void ParseEVR(char * evr, const char **ep, const char **vp, const char **rp);
+void ParseSUNVR(char * vr, int *major, int *minor, int *micro);
+int rpmvercmp(const char *a, const char *b);
 int xislower(int c);
 int xisupper(int c);
 int xisalpha(int c);

@@ -125,41 +125,41 @@ char *PH_BINARIES[PH_LIMIT] =   /* Miss leading slash */
 /* Prototypes                                                      */
 /*******************************************************************/
 
-void CheckOptsAndInit ARGLIST((int argc,char **argv));
-void Syntax ARGLIST((void));
-void StartServer ARGLIST((int argc, char **argv));
-void *ExitCleanly ARGLIST((void));
-void yyerror ARGLIST((char *s));
-void FatalError ARGLIST((char *s));
-void RotateFiles ARGLIST((char *s, int n));
+void CheckOptsAndInit (int argc,char **argv);
+void Syntax (void);
+void StartServer (int argc, char **argv);
+void *ExitCleanly (void);
+void yyerror (char *s);
+void FatalError (char *s);
+void RotateFiles (char *s, int n);
 
-void GetDatabaseAge ARGLIST((void));
-void LoadHistogram  ARGLIST((void));
-void GetQ ARGLIST((void));
-char *GetTimeKey ARGLIST((void));
-struct Averages EvalAvQ ARGLIST((char *timekey));
-void ArmClasses ARGLIST((struct Averages newvals,char *timekey));
+void GetDatabaseAge (void);
+void LoadHistogram  (void);
+void GetQ (void);
+char *GetTimeKey (void);
+struct Averages EvalAvQ (char *timekey);
+void ArmClasses (struct Averages newvals,char *timekey);
 
-void GatherProcessData ARGLIST((void));
-void GatherDiskData ARGLIST((void));
-void GatherLoadData ARGLIST((void));
-void GatherSocketData ARGLIST((void));
-void GatherPhData ARGLIST((void));
-struct Averages *GetCurrentAverages ARGLIST((char *timekey));
-void UpdateAverages ARGLIST((char *timekey, struct Averages newvals));
-void UpdateDistributions ARGLIST((char *timekey, struct Averages *av));
-double WAverage ARGLIST((double newvals,double oldvals, double age));
-double SetClasses ARGLIST((char *name,double variable,double av_expect,double av_var,double localav_expect,double localav_var,struct Item **classlist,char *timekey));
-void SetVariable ARGLIST((char *name,double now, double average, double stddev, struct Item **list));
-void RecordChangeOfState  ARGLIST((struct Item *list,char *timekey));
-double RejectAnomaly ARGLIST((double new,double av,double var,double av2,double var2));
-int HashPhKey ARGLIST((char *s));
-void SetEntropyClasses ARGLIST((char *service,struct Item *list,char *inout));
-void AnalyzeArrival ARGLIST((char *tcpbuffer));
-void ZeroArrivals ARGLIST((void));
-void TimeOut ARGLIST((void));
-void IncrementCounter ARGLIST((struct Item **list,char *name));
-void SaveTCPEntropyData ARGLIST((struct Item *list,int i, char *inout));
+void GatherProcessData (void);
+void GatherDiskData (void);
+void GatherLoadData (void);
+void GatherSocketData (void);
+void GatherPhData (void);
+struct Averages *GetCurrentAverages (char *timekey);
+void UpdateAverages (char *timekey, struct Averages newvals);
+void UpdateDistributions (char *timekey, struct Averages *av);
+double WAverage (double newvals,double oldvals, double age);
+double SetClasses (char *name,double variable,double av_expect,double av_var,double localav_expect,double localav_var,struct Item **classlist,char *timekey);
+void SetVariable (char *name,double now, double average, double stddev, struct Item **list);
+void RecordChangeOfState  (struct Item *list,char *timekey);
+double RejectAnomaly (double new,double av,double var,double av2,double var2);
+int HashPhKey (char *s);
+void SetEntropyClasses (char *service,struct Item *list,char *inout);
+void AnalyzeArrival (char *tcpbuffer);
+void ZeroArrivals (void);
+void TimeOut (void);
+void IncrementCounter (struct Item **list,char *name);
+void SaveTCPEntropyData (struct Item *list,int i, char *inout);
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -486,6 +486,7 @@ if (!NO_FORK)
    ActAsDaemon(0);
    }
 
+WritePID("cfenvd.pid");
 signal (SIGTERM,HandleSignal);                   /* Signal Handler */
 signal (SIGHUP,HandleSignal);
 signal (SIGINT,HandleSignal);

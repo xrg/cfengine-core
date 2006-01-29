@@ -4939,7 +4939,7 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
          ep->name = strdup("localhost");
          }
             
-      if (strlen(ep->name) > 128)
+      if (strlen(ep->name) > MAXHOSTNAMELEN)
          {
          snprintf(OUTPUT,CF_BUFSIZE,"Server name (%s) is too long",ep->name);
          yyerror(OUTPUT);

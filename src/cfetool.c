@@ -163,48 +163,48 @@ char ENV[CF_BUFSIZE];
 #define Debugging if(DEBUGGING) printf
 #define Debugging2 if(DEBUGGING2) printf
 
-void parse_create_opts ARGLIST((int argc, char **argv));
-void parse_update_opts ARGLIST((int argc, char **argv));
-void parse_check_opts ARGLIST((int argc, char **argv));
-void parse_info_opts ARGLIST((int argc, char **argv));
-void parse_dump_opts ARGLIST((int argc, char **argv));
-void parse_import_opts ARGLIST((int argc, char **argv));
-void Create ARGLIST((int step, int dbtype));
-int Update ARGLIST((double value, time_t u_time, int dbtype));
-int Check ARGLIST((double value, time_t u_time, int dbtype, int *bucket));
-void Info ARGLIST((int dbtype));
-void Dump ARGLIST((FILE * fp, int dbtype));
-void Import ARGLIST((FILE * fp, int dbtype));
-void skip ARGLIST((char **buf));
-void parse_entry ARGLIST((char **buffer));
-void GetDatabaseAge ARGLIST((int dbtype));
-struct Average EvalAvQ ARGLIST((char *t, int dbtype, int update));
-struct Average *GetCurrentAverage ARGLIST((char *timekey, int dbtype));
-void UpdateAverage ARGLIST((char *timekey, struct Average newvals));
-void UpdateDistribution ARGLIST((char *timekey, struct Average * av, int dbtype));
-double RejectAnomaly ARGLIST((double new, double av, double var,
-                              double av2, double var2));
-double WAverage ARGLIST((double newvals, double oldvals, double age));
-void LoadHistogram ARGLIST((int dbtype));
-int ArmClasses ARGLIST((struct Average av, char *timekey));
-int SetClasses ARGLIST((char *name, double variable, double av_expect,
+void parse_create_opts (int argc, char **argv);
+void parse_update_opts (int argc, char **argv);
+void parse_check_opts (int argc, char **argv);
+void parse_info_opts (int argc, char **argv);
+void parse_dump_opts (int argc, char **argv);
+void parse_import_opts (int argc, char **argv);
+void Create (int step, int dbtype);
+int Update (double value, time_t u_time, int dbtype);
+int Check (double value, time_t u_time, int dbtype, int *bucket);
+void Info (int dbtype);
+void Dump (FILE * fp, int dbtype);
+void Import (FILE * fp, int dbtype);
+void skip (char **buf);
+void parse_entry (char **buffer);
+void GetDatabaseAge (int dbtype);
+struct Average EvalAvQ (char *t, int dbtype, int update);
+struct Average *GetCurrentAverage (char *timekey, int dbtype);
+void UpdateAverage (char *timekey, struct Average newvals);
+void UpdateDistribution (char *timekey, struct Average * av, int dbtype);
+double RejectAnomaly (double new, double av, double var,
+                              double av2, double var2);
+double WAverage (double newvals, double oldvals, double age);
+void LoadHistogram (int dbtype);
+int ArmClasses (struct Average av, char *timekey);
+int SetClasses (char *name, double variable, double av_expect,
                          double av_var, double localav_expect,
                          double localav_var, struct Item ** classlist,
-                         char *timekey, int *code));
-void SetVariable ARGLIST((char *name,double now, double average,
-                          double stddev, struct Item **list));
-void Syntax ARGLIST((void));
-void CreateSyntax ARGLIST((void));
-void UpdateSyntax ARGLIST((void));
-void CheckSyntax ARGLIST((void));
-void InfoSyntax ARGLIST((void));
-void DumpSyntax ARGLIST((void));
-void ImportSyntax ARGLIST((void));
-void FatalError ARGLIST((char *s));
-void yyerror ARGLIST((char *s));
-void DoBatch ARGLIST((int dbtype));
-void CloseDatabase ARGLIST((void));
-int OpenDatabase ARGLIST((int create));
+                         char *timekey, int *code);
+void SetVariable (char *name,double now, double average,
+                          double stddev, struct Item **list);
+void Syntax (void);
+void CreateSyntax (void);
+void UpdateSyntax (void);
+void CheckSyntax (void);
+void InfoSyntax (void);
+void DumpSyntax (void);
+void ImportSyntax (void);
+void FatalError (char *s);
+void yyerror (char *s);
+void DoBatch (int dbtype);
+void CloseDatabase (void);
+int OpenDatabase (int create);
 
 /*********************************************************************/
 

@@ -12,5 +12,5 @@ struct Average {
   double var;
 };
 
-char *GenTimeKey2 ARGLIST((time_t now, int dbtype));
-char *ConvTimeKey2 ARGLIST((char *str, int dbtype));
+char *GenTimeKey2 (time_t now, int dbtype);
+char *ConvTimeKey2 (char *str, int dbtype);

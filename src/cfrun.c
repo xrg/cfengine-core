@@ -66,14 +66,14 @@ char CFLOCK[CF_BUFSIZE] = "dummy";
 /* Functions internal to cfrun.c                                   */
 /*******************************************************************/
 
-void CheckOptsAndInit  ARGLIST((int argc,char **argv));
-int PollServer ARGLIST((char *host, char *options, int storeinfile));
-void SendClassData ARGLIST((int sd, char *sendbuffer));
-void CheckAccess ARGLIST((char *users));
-void cfrunSyntax ARGLIST((void));
-void ReadCfrunConf ARGLIST((char* cfg_fic));
-int ParseHostname ARGLIST((char *hostname, char *new_hostname));
-void FileOutput ARGLIST((FILE *fp, enum fileoutputlevels level, char *message));
+void CheckOptsAndInit  (int argc,char **argv);
+int PollServer (char *host, char *options, int storeinfile);
+void SendClassData (int sd, char *sendbuffer);
+void CheckAccess (char *users);
+void cfrunSyntax (void);
+void ReadCfrunConf (char* cfg_fic);
+int ParseHostname (char *hostname, char *new_hostname);
+void FileOutput (FILE *fp, enum fileoutputlevels level, char *message);
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */

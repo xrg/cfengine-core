@@ -88,50 +88,50 @@ struct Item *CONNECTIONLIST = NULL;
 /* Functions internal to cfservd.c                                 */
 /*******************************************************************/
 
-void CheckOptsAndInit ARGLIST((int argc,char **argv));
-void CheckVariables ARGLIST((void));
-void SummarizeParsing ARGLIST((void));
-void StartServer ARGLIST((int argc, char **argv));
-int OpenReceiverChannel ARGLIST((void));
-void Syntax ARGLIST((void));
-void PurgeOldConnections ARGLIST((struct Item **list,time_t now));
-void SpawnConnection ARGLIST((int sd_reply, char *ipaddr));
-void CheckFileChanges ARGLIST((int argc, char **argv, int sd));
-void *HandleConnection ARGLIST((struct cfd_connection *conn));
-int BusyWithConnection ARGLIST((struct cfd_connection *conn));
-void *ExitCleanly ARGLIST((int signum));
-int MatchClasses ARGLIST((struct cfd_connection *conn));
-void DoExec ARGLIST((struct cfd_connection *conn, char *sendbuffer, char *args));
-int GetCommand ARGLIST((char *str));
-int VerifyConnection ARGLIST((struct cfd_connection *conn, char *buf));
-void RefuseAccess ARGLIST((struct cfd_connection *conn, char *sendbuffer, int size, char *errormsg));
-int AccessControl ARGLIST((char *filename, struct cfd_connection *conn, int encrypt));
-int CheckStoreKey  ARGLIST((struct cfd_connection *conn, RSA *key));
-int StatFile ARGLIST((struct cfd_connection *conn, char *sendbuffer, char *filename));
-void CfGetFile ARGLIST((struct cfd_get_arg *args));
-void CompareLocalChecksum ARGLIST((struct cfd_connection *conn, char *sendbuffer, char *recvbuffer));
-int CfOpenDirectory ARGLIST((struct cfd_connection *conn, char *sendbuffer, char *dirname));
-void Terminate ARGLIST((int sd));
-void DeleteAuthList ARGLIST((struct Auth *ap));
-int AllowedUser ARGLIST((char *user));
-void ReplyNothing ARGLIST((struct cfd_connection *conn));
-struct cfd_connection *NewConn ARGLIST((int sd));
-void DeleteConn ARGLIST((struct cfd_connection *conn));
-time_t SecondsTillAuto ARGLIST((void));
-void SetAuto ARGLIST((int seconds));
-int cfscanf ARGLIST((char *in, int len1, int len2, char *out1, char *out2, char *out3));
-int AuthenticationDialogue ARGLIST((struct cfd_connection *conn,char *buffer, int buffersize));
-char *MapAddress ARGLIST((char *addr));
-int IsWildKnownHost ARGLIST((RSA *oldkey,RSA *newkey,char *addr,char *user));
-void AddToKeyDB ARGLIST((RSA *key,char *addr));
-int SafeOpen ARGLIST((char *filename));
-void SafeClose ARGLIST((int fd));
+void CheckOptsAndInit (int argc,char **argv);
+void CheckVariables (void);
+void SummarizeParsing (void);
+void StartServer (int argc, char **argv);
+int OpenReceiverChannel (void);
+void Syntax (void);
+void PurgeOldConnections (struct Item **list,time_t now);
+void SpawnConnection (int sd_reply, char *ipaddr);
+void CheckFileChanges (int argc, char **argv, int sd);
+void *HandleConnection (struct cfd_connection *conn);
+int BusyWithConnection (struct cfd_connection *conn);
+void *ExitCleanly (int signum);
+int MatchClasses (struct cfd_connection *conn);
+void DoExec (struct cfd_connection *conn, char *sendbuffer, char *args);
+int GetCommand (char *str);
+int VerifyConnection (struct cfd_connection *conn, char *buf);
+void RefuseAccess (struct cfd_connection *conn, char *sendbuffer, int size, char *errormsg);
+int AccessControl (char *filename, struct cfd_connection *conn, int encrypt);
+int CheckStoreKey  (struct cfd_connection *conn, RSA *key);
+int StatFile (struct cfd_connection *conn, char *sendbuffer, char *filename);
+void CfGetFile (struct cfd_get_arg *args);
+void CompareLocalChecksum (struct cfd_connection *conn, char *sendbuffer, char *recvbuffer);
+int CfOpenDirectory (struct cfd_connection *conn, char *sendbuffer, char *dirname);
+void Terminate (int sd);
+void DeleteAuthList (struct Auth *ap);
+int AllowedUser (char *user);
+void ReplyNothing (struct cfd_connection *conn);
+struct cfd_connection *NewConn (int sd);
+void DeleteConn (struct cfd_connection *conn);
+time_t SecondsTillAuto (void);
+void SetAuto (int seconds);
+int cfscanf (char *in, int len1, int len2, char *out1, char *out2, char *out3);
+int AuthenticationDialogue (struct cfd_connection *conn,char *buffer, int buffersize);
+char *MapAddress (char *addr);
+int IsWildKnownHost (RSA *oldkey,RSA *newkey,char *addr,char *user);
+void AddToKeyDB (RSA *key,char *addr);
+int SafeOpen (char *filename);
+void SafeClose (int fd);
 
 /*
  * HvB
 */
 
-unsigned find_inet_addr ARGLIST((char *host));
+unsigned find_inet_addr (char *host);
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -594,7 +594,8 @@ if (!NO_FORK)
    {
    ActAsDaemon(sd);
    }
- 
+
+WritePID("cfservd.pid");
 ageing = 0;
 
 /* Andrew Stribblehill <ads@debian.org> -- close sd on exec */ 
@@ -1543,6 +1544,7 @@ for (i = 0; i < MAXTHREAD ; i++)
 #endif 
  
 HandleSignal(signum);
+unlink(PIDFILE);
 return NULL;
 }
 

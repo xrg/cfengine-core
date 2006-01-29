@@ -566,16 +566,16 @@ void InstallACL(char *alias,char *classes)
 #include <windows.h>
 
 
-DWORD getNTModeMask ARGLIST((char *new_mode, DWORD old_mode));
-DWORD getNTACEs_Size ARGLIST((struct CFACE *));
-SECURITY_DESCRIPTOR* getNTACLInformation ARGLIST((char *filename, PACL *old_pacl, BOOL *haveACL, ACL_SIZE_INFORMATION *oldACLSize));
-void attachToNTACEs ARGLIST((struct CFACE *new_aces, char *user, char *mode, char *access, char *classes, DWORD NTMask));
-void appendNTACEs ARGLIST((struct CFACE *aces, struct CFACE *new_aces, ACL_SIZE_INFORMATION oldACLSize, PACL old_pacl));
-void AddNTACEs ARGLIST((char *accessType, struct CFACE *new_aces, PACL *new_pacl));
-void createNTACL ARGLIST((struct CFACE *aces, char method, char *filename, enum fileactions action));
+DWORD getNTModeMask (char *new_mode, DWORD old_mode);
+DWORD getNTACEs_Size (struct CFACE *);
+SECURITY_DESCRIPTOR* getNTACLInformation (char *filename, PACL *old_pacl, BOOL *haveACL, ACL_SIZE_INFORMATION *oldACLSize);
+void attachToNTACEs (struct CFACE *new_aces, char *user, char *mode, char *access, char *classes, DWORD NTMask);
+void appendNTACEs (struct CFACE *aces, struct CFACE *new_aces, ACL_SIZE_INFORMATION oldACLSize, PACL old_pacl);
+void AddNTACEs (char *accessType, struct CFACE *new_aces, PACL *new_pacl);
+void createNTACL (struct CFACE *aces, char method, char *filename, enum fileactions action);
 #endif
 
-int CheckNTACE ARGLIST((struct CFACE *aces, char method, char *filename, enum fileactions action));
+int CheckNTACE (struct CFACE *aces, char method, char *filename, enum fileactions action);
 
 #ifdef NT
 

@@ -42,17 +42,17 @@
 /* Prototypes                                                                */
 /*****************************************************************************/
 
-int main ARGLIST((int argc, char **argv));
-void CheckOpts ARGLIST((int argc, char **argv));
-void Syntax ARGLIST((void));
-void ReadAverages ARGLIST((void));
-void SummarizeAverages ARGLIST((void));
-void WriteGraphFiles ARGLIST((void));
-void WriteHistograms ARGLIST((void));
-void FindHurstExponents ARGLIST((void));
-void DiskArrivals ARGLIST((void));
-void GetFQHN ARGLIST((void));
-struct Averages FindHurstFunction ARGLIST((int sameples_per_grain, int grains));
+int main (int argc, char **argv);
+void CheckOpts (int argc, char **argv);
+void Syntax (void);
+void ReadAverages (void);
+void SummarizeAverages (void);
+void WriteGraphFiles (void);
+void WriteHistograms (void);
+void FindHurstExponents (void);
+void DiskArrivals (void);
+void GetFQHN (void);
+struct Averages FindHurstFunction (int sameples_per_grain, int grains);
 
 /*****************************************************************************/
 

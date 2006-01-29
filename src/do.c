@@ -490,7 +490,7 @@ void MakeLinks()     /* <binserver> should expand to a best fit filesys */
   int matched,varstring;
   short saveenforce;
   short savesilent;
-  int (*linkfiles) ARGLIST((char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr));
+  int (*linkfiles)(char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr);
 
 if (NOLINKS)
    {

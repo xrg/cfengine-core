@@ -90,25 +90,25 @@ const int INF_LINES = -2;
 /* Functions internal to cfservd.c                                 */
 /*******************************************************************/
 
-void CheckOptsAndInit ARGLIST((int argc,char **argv));
-void StartServer ARGLIST((int argc, char **argv));
-void Syntax ARGLIST((void));
-void *ExitCleanly ARGLIST((void));
-void *LocalExec ARGLIST((void *scheduled_run));
-void MailResult ARGLIST((char *filename, char *to));
-int ScheduleRun ARGLIST((void));
-void AddClassToHeap ARGLIST((char *class));
-void DeleteClassFromHeap ARGLIST((char *class));
-int Dialogue  ARGLIST((int sd,char *class));
+void CheckOptsAndInit (int argc,char **argv);
+void StartServer (int argc, char **argv);
+void Syntax (void);
+void *ExitCleanly (void);
+void *LocalExec (void *scheduled_run);
+void MailResult (char *filename, char *to);
+int ScheduleRun (void);
+void AddClassToHeap (char *class);
+void DeleteClassFromHeap (char *class);
+int Dialogue  (int sd,char *class);
 int OpeningCeremony(int sd);
-void GetCfStuff ARGLIST((void));
-void Banner ARGLIST((char * s));
+void GetCfStuff (void);
+void Banner (char * s);
 
 /* 
  * HvB: Bas van der Vlies
 */
-int CompareResult ARGLIST((char *filename, char *prev_file));
-int FileChecksum ARGLIST((char *filename, unsigned char *digest, char type));
+int CompareResult (char *filename, char *prev_file);
+int FileChecksum (char *filename, unsigned char *digest, char type);
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -286,6 +286,7 @@ if (!NO_FORK)
   ActAsDaemon(0);
   }
 
+WritePID("cfexecd.pid");
 signal(SIGINT,(void *)ExitCleanly);
 signal(SIGTERM,(void *)ExitCleanly);
 signal(SIGHUP,SIG_IGN);
@@ -596,7 +597,7 @@ void *ExitCleanly()
 {
 ReleaseCurrentLock();
 closelog();
- 
+unlink(PIDFILE);
 exit(0);
 }
 
