@@ -1103,11 +1103,12 @@ alerts:
 @end smallexample
 
 
-@item SelectPartitionGroup(@var{filename},@var{comment},@var{Policy},@var{group size})
+@item SelectPartitionNeighbours(@var{filename},@var{comment},@var{Policy},@var{group size})
 
-This function is for use in peer to peer monitoring applications. It allows individual
-hosts to identify themselves as part of a group and find their peers. The function
-returns a list variable, delimited by the list separation character, for use with Split.
+This function is for use in peer to peer monitoring applications. It
+allows individual hosts to identify themselves as part of a group and
+find their peers. The function returns a list variable, delimited by
+the list separation character, for use with Split.
 @cindex SelectPartitionGroup
 @cindex Peer to peer methods
 
@@ -1116,7 +1117,7 @@ returns a list variable, delimited by the list separation character, for use wit
 
  control:
 
-   allpeers = ( SelectPartitionGroup(/var/cfengine/inputs/cfrun.hosts,#,random,4) )
+   allpeers = ( SelectPartitionNeighbours(/var/cfengine/inputs/cfrun.hosts,#,random,4) )
 
  copy:
 
@@ -1126,11 +1127,13 @@ returns a list variable, delimited by the list separation character, for use wit
 
 @item SelectPartitionLeader(@var{filename},@var{comment},@var{Policy},@var{group size})
 
-This function is for use in peer to peer monitoring applications. It allows individual
-hosts to identify themselves as part of a group and select a leader.
-This function reads a text file of hostnames or IP addresses, one host per line, with blank
-lines and comments and partitions it into groups of a fixed size. It then returns picks
-a leader for the the group and returns its name as the value of the function.
+This function is for use in peer to peer monitoring applications. It
+allows individual hosts to identify themselves as part of a group and
+select a leader.  This function reads a text file of hostnames or IP
+addresses, one host per line, with blank lines and comments and
+partitions it into groups of a fixed size. It then returns picks a
+leader for the the group and returns its name as the value of the
+function.
 @cindex SelectPartitionLeader
 @cindex Peer to peer methods
 

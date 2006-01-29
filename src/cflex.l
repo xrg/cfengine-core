@@ -55,10 +55,10 @@ space     [ \t]+
 comment   #.*
 
 linedir   #line[ \t]+[0-9]+.*
-function  [!a-zA-Z0-9_]+\([^)]*\)
 
 qstring  \"((\\\")|[^"])*\"|\'((\\\')|[^'])*\'|`[^`]*`
 
+function  [!a-zA-Z0-9_]+\({qstring}*[^)]*\)
 
 item      [+]?[-.,!@a-zA-Z0-9_\200-\377]+
 
