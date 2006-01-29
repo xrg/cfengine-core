@@ -878,9 +878,14 @@ expanded remain as dollar strings. Variables belonging to a context that is not
 the current one may be referred to as
 
 @smallexample
-$(@var{context}.variable) $@{@var{context}.variable@}
+$(@var{context}.variable)  or  $@{@var{context}.variable@}
 @end smallexample
-e.g.
+There is no difference between these forms as far as cfengine is concered.
+Some authors like to use the () form for cfengine variables, to distinguish them with shell
+variables in command strings. When using the () form in function arguments, they should be
+quoted to avoid parsing errors.
+
+Consider the example:
 
 @smallexample
 $(global.env_time)

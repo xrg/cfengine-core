@@ -271,8 +271,8 @@ performed, otherwise a string comparison is used.
           
           	classes:
           
-          	lt = ( LessThan(${a},${b}) )
-             	gt = ( GreaterThan(${a},${b}) )
+          	lt = ( IsLessThan(${a},${b}) )
+             	gt = ( IsGreaterThan(${a},${b}) )
           
           	alerts:
           
@@ -776,9 +776,14 @@ In the "current" context, variables have the form
 expanded remain as dollar strings. Variables belonging to a context that is not
 the current one may be referred to as
 
-<pre class="smallexample">     $(<var>context</var>.variable) ${<var>context</var>.variable}
+<pre class="smallexample">     $(<var>context</var>.variable)  or  ${<var>context</var>.variable}
 </pre>
-   <p>e.g.
+   <p>There is no difference between these forms as far as cfengine is concered. 
+Some authors like to use the () form for cfengine variables, to distinguish them with shell
+variables in command strings. When using the () form in function arguments, they should be
+quoted to avoid parsing errors.
+
+   <p>Consider the example:
 
 <pre class="smallexample">     $(global.env_time)
 </pre>
@@ -955,17 +960,18 @@ restricted to a single representative tester-host. For example:
           
                "Received viewcvs error from web server"
      </pre>
-     <br><dt><code>SelectPartitionGroup(</code><var>filename</var><code>,</code><var>comment</var><code>,</code><var>Policy</var><code>,</code><var>group size</var><code>)</code><dd>
-This function is for use in peer to peer monitoring applications. It allows individual
-hosts to identify themselves as part of a group and find their peers. The function
-returns a list variable, delimited by the list separation character, for use with Split. 
+     <br><dt><code>SelectPartitionNeighbours(</code><var>filename</var><code>,</code><var>comment</var><code>,</code><var>Policy</var><code>,</code><var>group size</var><code>)</code><dd>
+This function is for use in peer to peer monitoring applications. It
+allows individual hosts to identify themselves as part of a group and
+find their peers. The function returns a list variable, delimited by
+the list separation character, for use with Split. 
 <a name="index-SelectPartitionGroup-38"></a><a name="index-Peer-to-peer-methods-39"></a>
 <!-- /@w -->
 
      <pre class="smallexample">          
            control:
           
-             allpeers = ( SelectPartitionGroup(/var/cfengine/inputs/cfrun.hosts,#,random,4) )
+             allpeers = ( SelectPartitionNeighbours(/var/cfengine/inputs/cfrun.hosts,#,random,4) )
           
            copy:
           
@@ -973,11 +979,13 @@ returns a list variable, delimited by the list separation character, for use wit
           
      </pre>
      <br><dt><code>SelectPartitionLeader(</code><var>filename</var><code>,</code><var>comment</var><code>,</code><var>Policy</var><code>,</code><var>group size</var><code>)</code><dd>
-This function is for use in peer to peer monitoring applications. It allows individual
-hosts to identify themselves as part of a group and select a leader. 
-This function reads a text file of hostnames or IP addresses, one host per line, with blank
-lines and comments and partitions it into groups of a fixed size. It then returns picks
-a leader for the the group and returns its name as the value of the function. 
+This function is for use in peer to peer monitoring applications. It
+allows individual hosts to identify themselves as part of a group and
+select a leader.  This function reads a text file of hostnames or IP
+addresses, one host per line, with blank lines and comments and
+partitions it into groups of a fixed size. It then returns picks a
+leader for the the group and returns its name as the value of the
+function. 
 <a name="index-SelectPartitionLeader-40"></a><a name="index-Peer-to-peer-methods-41"></a>
 <!-- /@w -->
 

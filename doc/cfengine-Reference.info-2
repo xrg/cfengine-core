@@ -11,6 +11,16 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
 
+File: cfengine-Reference.info,  Node: MaxConnections,  Next: TrustKeysFrom,  Prev: LogAllConnections,  Up: cfservd control
+
+5.1.15 MaxConnections
+---------------------
+
+This integer value sets a limit on the maximum number of child daemon
+threads which cfservd will `fork' in order to handle remote requests.
+The default value is ten.  
+
+
 File: cfengine-Reference.info,  Node: TrustKeysFrom,  Next: DynamicAddresses,  Prev: MaxConnections,  Up: cfservd control
 
 5.1.16 TrustKeysFrom

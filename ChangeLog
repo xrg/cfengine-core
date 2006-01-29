@@ -1,5 +1,7 @@
 2.1.19 
 
+	PID file added for each daemin in WORKDIR == /var/cfengine
+	
 	Patch for function argument parsing
 	
 	Typo in docs. SelectPartitionGroup -> SelectPartitionNeighbours
@@ -11,7 +13,7 @@
 
 	Joe Buehler's harmless patch to cfexecd to flag daemon and batch mode.
 	
-	Serious bug in binserver handling fixed.
+	Serious bug in binserver handling fixed. (Rarely used feature)
 	
 	home tidying did not set the "done flag" for multiple pass avoidance.
 	

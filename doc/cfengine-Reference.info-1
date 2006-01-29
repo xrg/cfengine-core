@@ -36,7 +36,7 @@ may be included in a translation approved by the author instead of in
 the original English.
 
    This manual corresponds to CFENGINE Edition 2.1.18p1 for version
-2.1.18p1 as last updated 10 January 2006.
+2.1.18p1 as last updated 29 January 2006.
 
 * Menu:
 
@@ -272,8 +272,8 @@ arguments in chronological order.
 
           	classes:
 
-          	lt = ( LessThan(${a},${b}) )
-             	gt = ( GreaterThan(${a},${b}) )
+          	lt = ( IsLessThan(${a},${b}) )
+             	gt = ( IsGreaterThan(${a},${b}) )
 
           	alerts:
 
@@ -744,8 +744,14 @@ update and main.  In the "current" context, variables have the form
 cannot be expanded remain as dollar strings. Variables belonging to a
 context that is not the current one may be referred to as
 
-     $(CONTEXT.variable) ${CONTEXT.variable}
-   e.g.
+     $(CONTEXT.variable)  or  ${CONTEXT.variable}
+   There is no difference between these forms as far as cfengine is
+concered.  Some authors like to use the () form for cfengine variables,
+to distinguish them with shell variables in command strings. When using
+the () form in function arguments, they should be quoted to avoid
+parsing errors.
+
+   Consider the example:
 
      $(global.env_time)
    Some variables in cfengine are associative arrays (as made famous by
@@ -916,7 +922,7 @@ quotes.
 
                "Received viewcvs error from web server"
 
-`SelectPartitionGroup(FILENAME,COMMENT,POLICY,GROUP SIZE)'
+`SelectPartitionNeighbours(FILENAME,COMMENT,POLICY,GROUP SIZE)'
      This function is for use in peer to peer monitoring applications.
      It allows individual hosts to identify themselves as part of a
      group and find their peers. The function returns a list variable,
@@ -925,7 +931,7 @@ quotes.
 
            control:
 
-             allpeers = ( SelectPartitionGroup(/var/cfengine/inputs/cfrun.hosts,#,random,4) )
+             allpeers = ( SelectPartitionNeighbours(/var/cfengine/inputs/cfrun.hosts,#,random,4) )
 
            copy:
 
@@ -8397,14 +8403,4 @@ If set to true, every successful connection will be logged to syslog.
 This could be useful for identifying abuses of the service, if the
 server should come under attack, e.g. a denial of service attack. The
 IP address can then be excluded from the allowed connections list.
-
-
-File: cfengine-Reference.info,  Node: MaxConnections,  Next: TrustKeysFrom,  Prev: LogAllConnections,  Up: cfservd control
-
-5.1.15 MaxConnections
----------------------
-
-This integer value sets a limit on the maximum number of child daemon
-threads which cfservd will `fork' in order to handle remote requests.
-The default value is ten.  
 
