@@ -237,7 +237,7 @@ Verbose("Setting cfengine old port to %s\n",STR_CFENGINEPORT);
 
 char *Hostname2IPString(char *hostname)
 
-{ static char ipbuffer[65];
+{ static char ipbuffer[CF_SMALLBUF];
   int err;
  
 #if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
@@ -248,7 +248,7 @@ char *Hostname2IPString(char *hostname)
  query.ai_family = AF_UNSPEC;
  query.ai_socktype = SOCK_STREAM;
 
- memset(ipbuffer,0,63);
+ memset(ipbuffer,0,CF_SMALLBUF-1);
  
 if ((err = getaddrinfo(hostname,NULL,&query,&response)) != 0)
    {
@@ -264,7 +264,7 @@ for (ap = response; ap != NULL; ap = ap->ai_next)
 
    if (strlen(ipbuffer) == 0)
       {
-      snprintf(ipbuffer,63,"Empty IP result for %s",hostname);
+      snprintf(ipbuffer,CF_SMALLBUF-1,"Empty IP result for %s",hostname);
       }
    freeaddrinfo(response);   
    return ipbuffer;
@@ -274,18 +274,18 @@ for (ap = response; ap != NULL; ap = ap->ai_next)
  struct sockaddr_in cin;
  memset(&cin,0,sizeof(cin));
 
- memset(ipbuffer,0,63);
+ memset(ipbuffer,0,CF_SMALLBUF-1);
 
 if ((hp = gethostbyname(hostname)) != NULL)
    {
    cin.sin_addr.s_addr = ((struct in_addr *)(hp->h_addr))->s_addr;
-   strncpy(ipbuffer,inet_ntoa(cin.sin_addr),63);
+   strncpy(ipbuffer,inet_ntoa(cin.sin_addr),CF_SMALLBUF-1);
    Verbose("Found address (%s) for host %s\n",ipbuffer,hostname);
    return ipbuffer;
    }
 #endif
    
-snprintf(ipbuffer,63,"Unknown IP %s",hostname);
+snprintf(ipbuffer,CF_SMALLBUF-1,"Unknown IP %s",hostname);
 return ipbuffer;
 }
 
@@ -294,7 +294,7 @@ return ipbuffer;
 
 char *IPString2Hostname(char *ipaddress)
 
-{ static char hostbuffer[128];
+{ static char hostbuffer[MAXHOSTNAMELEN];
   int err;
 
 #if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
@@ -306,21 +306,21 @@ memset(&response,0,sizeof(response));
 
 query.ai_flags = AI_CANONNAME;
 
-memset(hostbuffer,0,128);
+memset(hostbuffer,0,MAXHOSTNAMELEN);
 
 if ((err = getaddrinfo(ipaddress,NULL,&query,&response)) != 0)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Unable to lookup IP address (%s): %s",ipaddress,gai_strerror(err));
    CfLog(cferror,OUTPUT,"");
-   snprintf(hostbuffer,127,"(Non registered IP)"); 
+   snprintf(hostbuffer,MAXHOSTNAMELEN-1,"(Non registered IP)"); 
    return hostbuffer;
    }
 
 for (ap = response; ap != NULL; ap = ap->ai_next)
    {   
-   if ((err = getnameinfo(ap->ai_addr,ap->ai_addrlen,hostbuffer,127,0,0,0)) != 0)
+   if ((err = getnameinfo(ap->ai_addr,ap->ai_addrlen,hostbuffer,MAXHOSTNAMELEN,0,0,0)) != 0)
       {
-      snprintf(hostbuffer,127,"(Non registered IP)");
+      snprintf(hostbuffer,MAXHOSTNAMELEN-1,"(Non registered IP)");
       freeaddrinfo(response);
       return hostbuffer;
       }
@@ -330,13 +330,15 @@ for (ap = response; ap != NULL; ap = ap->ai_next)
    return hostbuffer;
    }
 
- snprintf(hostbuffer,127,"(Non registered IP)"); 
+ snprintf(hostbuffer,MAXHOSTNAMELEN-1,"(Non registered IP)");
+ 
 #else
+
 struct hostent *hp;
 struct sockaddr_in myaddr;
 struct in_addr iaddr;
   
-memset(hostbuffer,0,128);
+memset(hostbuffer,0,;MAXHOSTNAMELEN);
 
 if ((iaddr.s_addr = inet_addr(ipaddress)) != -1)
    {
@@ -348,7 +350,7 @@ if ((iaddr.s_addr = inet_addr(ipaddress)) != -1)
       return hostbuffer;
       }
 
-   strncpy(hostbuffer,hp->h_name,CF_MAXVARSIZE);
+   strncpy(hostbuffer,hp->h_name,CF_MAXHOSTAMELEN-1);
    }
 else
    {

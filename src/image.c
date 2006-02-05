@@ -52,7 +52,7 @@ NewParser();
 
 for (ip = VRPCPEERLIST; ip != NULL; ip = ip->next)
    {
-   strncpy(client,ip->name,64);
+   strncpy(client,ip->name,MAXHOSTNAMELEN);
    
    if (strstr(ip->name,".")||strstr(ip->name,":"))
       {

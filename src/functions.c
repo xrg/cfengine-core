@@ -1173,7 +1173,7 @@ DeleteAgentConn(CONN);
 void HandleSelectPLeader(char *args,char *value)
 
 { FILE *fp;
-  char machine[128],first[128];
+  char machine[MAXHOSTNAMELEN],first[MAXHOSTNAMELEN];
   char argv[CF_MAXFARGS][CF_EXPANDSIZE];
   char *filename=argv[0],*commentchar=argv[1];
   char *policy=argv[2],*size=argv[3];
@@ -1229,9 +1229,9 @@ while (!feof(fp))
          }
       }
    
-   memset(machine,0,127);
+   memset(machine,0,MAXHOSTNAMELEN-1);
    
-   sscanf(buffer,"%127s",machine);
+   sscanf(buffer,"%255s",machine);
 
    if (strlen(machine) == 0)
       {
@@ -1246,7 +1246,7 @@ while (!feof(fp))
 
    if (strlen(first) == 0)
       {
-      strncpy(first,machine,127);
+      strncpy(first,machine,MAXHOSTNAMELEN-1);
       }
    
    if ((count == psize) || ((count > 0) && feof(fp)))
@@ -1278,11 +1278,11 @@ while (!feof(fp))
                Verbose(" %s (leader)\n",ip->name);
                if (strlen(ip->name) > 0)
                   {
-                  strncpy(value,ip->name,127);
+                  strncpy(value,ip->name,MAXHOSTNAMELEN-1);
                   }
                else
                   {
-                  strncpy(value,first,127);
+                  strncpy(value,first,MAXHOSTNAMELEN-1);
                   }
                done = true;
                }
@@ -1320,7 +1320,7 @@ while (!feof(fp))
 
 if (!done)
    {
-   strncpy(value,first,127); /* Fill up blanks in peer groups */
+   strncpy(value,first,MAXHOSTNAMELEN-1); /* Fill up blanks in peer groups */
    }
 
 if (list != NULL)
@@ -1336,7 +1336,7 @@ fclose(fp);
 
 void HandleSelectPGroup(char *args,char *value)
 
-{ char argv[CF_MAXFARGS][CF_EXPANDSIZE],machine[128],first[128];
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE],machine[MAXHOSTNAMELEN],first[MAXHOSTNAMELEN];
   char *filename=argv[0],*commentchar=argv[1];
   char *policy=argv[2],*size=argv[3];
   struct Item *list = NULL,*ip;
@@ -1393,7 +1393,7 @@ while (!feof(fp))
       }
    
    machine[0] = '\0';
-   sscanf(buffer,"%127s",machine);
+   sscanf(buffer,"%255s",machine);
 
    if (strlen(machine) == 0)
       {
@@ -1408,7 +1408,7 @@ while (!feof(fp))
 
    if (strlen(first) == 0)
       {
-      strncpy(first,machine,127);
+      strncpy(first,machine,MAXHOSTNAMELEN-1);
       }
 
    if ((count == psize) || ((count > 0) && feof(fp)))
@@ -1464,7 +1464,7 @@ while (!feof(fp))
 
 if (!done)
    {
-   strncat(value,first,127); /* Fill up blanks in peer groups */
+   strncat(value,first,MAXHOSTNAMELEN-1); /* Fill up blanks in peer groups */
    }
  
 fclose(fp); 

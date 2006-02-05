@@ -1,5 +1,8 @@
 2.1.19 
 
+	Constant-cosmetics and length alterations. CF_SMALLBUF introduced,
+	and MAXHOSTNAMELEN used
+
 	PID file added for each daemin in WORKDIR == /var/cfengine
 	
 	Patch for function argument parsing
