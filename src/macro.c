@@ -401,6 +401,7 @@ else
       {
       }
 
+   Debug1("Return Macrovalue={%s}\n",sp+1);
    return(sp+1);
    }   
 }

@@ -331,7 +331,7 @@ int ExpandVarstring(char *string,char buffer[CF_EXPANDSIZE],char *bserver)
 { char *sp,*env;
   char varstring = false;
   char currentitem[CF_EXPANDSIZE],temp[CF_BUFSIZE],name[CF_MAXVARSIZE];
-  int len;
+  int len,increment;
   time_t tloc;
   
 memset(buffer,0,CF_EXPANDSIZE);
@@ -388,6 +388,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
       if (strstr(temp,"$"))
          {
          Debug("Nested variables");
+         increment = strlen(temp)-3;
          ExpandVarstring(temp,currentitem,"");
          CheckVarID(currentitem);
          sp += 3; /* $() */
@@ -395,6 +396,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
       else
          {
          strncpy(currentitem,temp,CF_BUFSIZE-1);
+         increment = strlen(currentitem);
          }
 
       Debug("Scanning variable %s\n",currentitem);
@@ -766,8 +768,9 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
                    {
                    FatalError("Can't expandvarstring");
                    }
+                
                 strcat(buffer,env);
-                Debug("Expansion gave (%s)\n",buffer);             
+                Debug("Expansion gave (%s), len = %d\n",buffer,strlen(currentitem));             
 
                 break;
                 }
@@ -785,7 +788,8 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              strcat(buffer,name);
          }
       
-      sp += strlen(currentitem);
+      sp += increment;
+
       currentitem[0] = '\0';
       }
    }
