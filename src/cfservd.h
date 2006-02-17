@@ -37,6 +37,8 @@ extern FILE *yyin;
 #define RFC931_PORT 113
 #define CFSERVD 1
 
+#define CF_BUFEXT 128
+
 /**********************************************************************/
 
 struct cfd_connection

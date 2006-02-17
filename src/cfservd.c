@@ -1201,13 +1201,13 @@ int BusyWithConnection(struct cfd_connection *conn)
   /* and extract the information from the message */
 
 { time_t tloc, trem = 0;
-  char recvbuffer[CF_BUFSIZE+128], sendbuffer[CF_BUFSIZE],check[CF_BUFSIZE];  
+  char recvbuffer[CF_BUFSIZE+CF_BUFEXT], sendbuffer[CF_BUFSIZE],check[CF_BUFSIZE];  
   char filename[CF_BUFSIZE],buffer[CF_BUFSIZE],args[CF_BUFSIZE],out[CF_BUFSIZE];
   long time_no_see = 0;
   int len=0, drift, plainlen, received;
   struct cfd_get_arg get_args;
 
-memset(recvbuffer,0,CF_BUFSIZE+128);
+memset(recvbuffer,0,CF_BUFSIZE+CF_BUFEXT);
 memset(&get_args,0,sizeof(get_args));
 
 if ((received = ReceiveTransaction(conn->sd_reply,recvbuffer,NULL)) == -1)
@@ -2791,7 +2791,7 @@ if (uid != 0 && !args->connect->maproot) /* should remote root be local root */
       }
    }
  
- if (args->buf_size < 512)
+ if (args->buf_size < SMALL_BLOCK_BUF_SIZE)
     {
     snprintf(args->connect->output,CF_BUFSIZE,"blocksize for %s was only %d\n",filename,args->buf_size);
     CfLog(cferror,args->connect->output,"");

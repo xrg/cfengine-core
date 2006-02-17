@@ -832,6 +832,13 @@ if (stat("/etc/UnitedLinux-release",&statbuf) != -1)
    Verbose("\nThis appears to be a UnitedLinux system.\n");
    AddClassToHeap("UnitedLinux");
    }
+
+if (stat("/etc/issue",&statbuf) != -1)
+   {
+   Verbose("\nThis appears to be a VMWare ESX system.\n");
+   AddClassToHeap("VMWare_ESX");
+   ESX_version();
+   }
  
 }
 
@@ -1339,3 +1346,22 @@ char strminor[CF_MAXVARSIZE];
 }
 
 /******************************************************************/
+
+/******************************************************************/
+
+int ESX_version(void)
+
+{ FILE *fp;
+  char buffer[CF_BUFSIZE];
+
+if ((fp = fopen("/etc/issue","r")) == NULL)
+   {
+   return 1;   
+   }
+
+fgets(buffer,sizeof(buffer), fp);
+AddClassToHeap(CanonifyName(buffer));
+
+fclose(fp);
+return 0;
+}

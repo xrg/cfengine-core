@@ -305,6 +305,9 @@ extern int errno;
 #define CF_MONDAY_MORNING 342000
 #define CF_NOVAL -0.7259285297502359
 
+#define CF_IFREQ 8192
+#define CF_ADDRSIZE 128
+
 #define CF_METHODEXEC 0
 #define CF_METHODREPLY  1
 #define CF_EXEC_IFELAPSED 5
@@ -474,6 +477,7 @@ struct LockData
    (including indirect blocks). */
 
 
+#define SMALL_BLOCK_BUF_SIZE 512
 
 #ifndef HAVE_ST_BLOCKS
 # define ST_BLKSIZE(statbuf) DEV_BSIZE

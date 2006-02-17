@@ -1,5 +1,7 @@
 2.1.19 
 
+	VMWare ESX recognition.
+	
 	Bug in cfservd stat-mode on symbolic links not correctly evaluated.
 	Bug in linktype=copy for copy fixed.
 	

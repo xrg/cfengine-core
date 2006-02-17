@@ -564,7 +564,7 @@ int FuzzyMatchParse(char *s)
 
 { char *sp;
   short isCIDR = false, isrange = false, isv6 = false, isv4 = false, isADDR = false; 
-  char address[128];
+  char address[CF_ADDRSIZE];
   int mask,count = 0;
 
 Debug("Check ParsingIPRange(%s)\n",s);
@@ -698,7 +698,7 @@ if (isv4 && isrange)
  
  if (isv6 && isCIDR)
     {
-    char address[128];
+    char address[CF_ADDRSIZE];
     int mask,blocks;
     
     if (strlen(s) < 20)
@@ -743,7 +743,7 @@ int FuzzySetMatch(char *s1,char *s2)
    FuzzySetMatch("128.39.74.10/23","128.39.75.56") == 0 */
 
 { short isCIDR = false, isrange = false, isv6 = false, isv4 = false;
-  char address[128];
+  char address[CF_ADDRSIZE];
   int mask;
   unsigned long a1,a2;
 

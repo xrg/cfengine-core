@@ -118,7 +118,7 @@ void DispatchNewMethod(struct Method *ptr)
 
 { struct Item *ip;
   char label[CF_BUFSIZE]; 
-  char serverip[64],clientip[64];
+  char serverip[CF_SMALLBUF],clientip[CF_SMALLBUF];
 
 serverip[0] = clientip[0] = '\0';
   
@@ -479,7 +479,7 @@ return;
 int ParentLoadReplyPackage(char *methodname)
 
 { char client[CF_MAXVARSIZE],server[CF_BUFSIZE],name[CF_BUFSIZE],buf[CF_BUFSIZE];
-  char line[CF_BUFSIZE],type[64],arg[CF_BUFSIZE], **methodargv = NULL;
+  char line[CF_BUFSIZE],type[CF_SMALLBUF],arg[CF_BUFSIZE], **methodargv = NULL;
   char basepackage[CF_BUFSIZE],digeststring[CF_BUFSIZE],extra[CF_MAXVARSIZE];
   char *sp;
   struct Item *ip;
@@ -720,7 +720,7 @@ return true;
 
 int ChildLoadMethodPackage(char *name,char *digeststring)
 
-{ char line[CF_BUFSIZE],type[64],arg[CF_BUFSIZE];
+{ char line[CF_BUFSIZE],type[CF_SMALLBUF],arg[CF_BUFSIZE];
   char basepackage[CF_BUFSIZE],cffilename[CF_BUFSIZE],buf[CF_BUFSIZE],ebuff[CF_EXPANDSIZE];
   char clientip[CF_BUFSIZE],ipaddress[CF_BUFSIZE];
   struct stat statbuf;
@@ -967,7 +967,7 @@ return true;
 void DispatchMethodReply()
 
 { char label[CF_BUFSIZE]; 
-  char ipaddress[64],clientip[64];
+  char ipaddress[CF_SMALLBUF],clientip[CF_SMALLBUF];
 
 Verbose("DispatchMethodReply()\n\n");
 
@@ -993,7 +993,7 @@ else
 
 char *GetMethodFilename(struct Method *ptr)
 
-{ char line[CF_BUFSIZE],type[64],arg[CF_BUFSIZE];
+{ char line[CF_BUFSIZE],type[CF_SMALLBUF],arg[CF_BUFSIZE];
   char basepackage[CF_BUFSIZE],cffilename[CF_BUFSIZE],ebuff[CF_EXPANDSIZE];
   static char returnfile[CF_BUFSIZE];
   FILE *fp;

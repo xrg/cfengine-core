@@ -644,7 +644,7 @@ GatherPhData();
 char *GetTimeKey()
 
 { time_t now;
-  char str[64];
+  char str[CF_SMALLBUF];
   
 if ((now = time((time_t *)NULL)) == -1)
    {
@@ -816,7 +816,7 @@ SetVariable("loadavg",LOADAVG,av.expect_loadavg,sig,&classlist);
  
 for (i = 0; i < ATTR; i++)
    {
-   char name[256];
+   char name[CF_MAXLINKSIZE];
    strcpy(name,ECGSOCKS[i][1]);
    strcat(name,"_in");
    
@@ -843,7 +843,7 @@ for (i = 0; i < PH_LIMIT; i++)
 
 for (i = 0; i < CF_NETATTR; i++)
    {
-   char name[256];
+   char name[CF_MAXLINKSIZE];
    strcpy(name,TCPNAMES[i]);
    strcat(name,"_in");
    sig = SetClasses(name,NETIN[i],av.expect_netin[i],av.var_netin[i],LOCALAV.expect_netin[i],LOCALAV.var_netin[i],&classlist,timekey);
@@ -1371,8 +1371,8 @@ void GatherPhData()
 { DIR *dirh;
   struct dirent *dirp;
   struct stat statbuf;
-  char file[64];
-  char key[256];
+  char file[CF_SMALLBUF];
+  char key[CF_MAXLINKSIZE];
   FILE *fp;
   int i,h,pid,value,profile;
   
@@ -1410,7 +1410,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       continue;
       }
 
-   snprintf(file,63,"/proc/%s/pH",dirp->d_name);
+   snprintf(file,CF_SMALLBUF-1,"/proc/%s/pH",dirp->d_name);
    
    if ((fp = fopen(file,"r")) == NULL)
       {
@@ -1425,7 +1425,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    
    while (!feof(fp))
       {
-      fgets(VBUFF,64,fp);
+      fgets(VBUFF,CF_SMALLBUF,fp);
       
       if (strncmp(VBUFF,"No profile",strlen("No profile")) == 0)
          {

@@ -414,7 +414,7 @@ time_t Date2Number(char *string,time_t now)
     
   */
 
-{ char type[16],datestr[63];
+{ char type[CF_SMALLBUF],datestr[CF_SMALLBUF];
   int year=-1,month=-1,day=-1,hr=-1,min=-1,sec=-1; 
   time_t time;
   struct tm tmv;
@@ -1152,7 +1152,7 @@ return false;
 int FilterOwnerMatch(struct stat *lstatptr,char *crit)
 
 { struct Item *attrib = NULL;
-  char buffer[64];
+  char buffer[CF_SMALLBUF];
   struct passwd *pw;
 
 sprintf(buffer,"%d",lstatptr->st_uid);
@@ -1184,7 +1184,7 @@ else
 int FilterGroupMatch(struct stat *lstatptr,char *crit)
 
 { struct Item *attrib = NULL;
-  char buffer[64];
+  char buffer[CF_SMALLBUF];
   struct group *gr;
 
 sprintf(buffer,"%d",lstatptr->st_gid);

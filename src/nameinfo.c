@@ -303,7 +303,7 @@ else
 void GetInterfaceInfo(void)
 
 { int fd,len,i,j;
-  struct ifreq ifbuf[8192],ifr, *ifp;
+  struct ifreq ifbuf[CF_IFREQ],ifr, *ifp;
   struct ifconf list;
   struct sockaddr_in *sin;
   struct hostent *hp;
