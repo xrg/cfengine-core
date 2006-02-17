@@ -1,5 +1,10 @@
 2.1.19 
 
+	Bug in cfservd stat-mode on symbolic links not correctly evaluated.
+	Bug in linktype=copy for copy fixed.
+	
+	Bug in array expansion fixed - would truncate string after expansion
+
 	Constant-cosmetics and length alterations. CF_SMALLBUF introduced,
 	and MAXHOSTNAMELEN used
 

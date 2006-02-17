@@ -2643,7 +2643,8 @@ if (S_ISLNK(statbuf.st_mode))
 
    cfst.cf_readlink = linkbuf;
    }
-else if (stat(filename,&statbuf) == -1)
+
+if (stat(filename,&statbuf) == -1)
    {
    snprintf(sendbuffer,CF_BUFSIZE,"BAD: unable to stat file %s\n",filename);
    CfLog(cfverbose,conn->output,"stat");
@@ -2731,7 +2732,7 @@ snprintf(sendbuffer,CF_BUFSIZE,"OK: %d %d %d %d %d %ld %d %d %d %d %d %d %d",
 
 SendTransaction(conn->sd_reply,sendbuffer,0,CF_DONE);
 
- memset(sendbuffer,0,CF_BUFSIZE);
+memset(sendbuffer,0,CF_BUFSIZE);
 
 if (cfst.cf_readlink != NULL)
    {

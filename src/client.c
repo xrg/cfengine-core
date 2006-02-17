@@ -137,7 +137,7 @@ int cf_rstat(char *file,struct stat *buf,struct Image *ip,char *stattype)
   int ret,tosend,cipherlen;
   time_t tloc;
 
-Debug("cf_rstat(%s)\n",file);
+  Debug("cf_rstat(%s,%s)\n",file,stattype);
 memset(recvbuffer,0,CF_BUFSIZE); 
 
 if (strlen(file) > CF_BUFSIZE-30)

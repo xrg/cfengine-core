@@ -470,6 +470,7 @@ Debug2("CheckImage (source=%s destination=%s)\n",source,destination);
 
 if (ip->linktype == 'n')
    {
+   Debug("Treating links as files for %s\n",source);
    found = cfstat(source,&sourcestatbuf,ip);
    }
 else
@@ -556,14 +557,28 @@ if (S_ISDIR(sourcestatbuf.st_mode))
          }
       
       strcat(destfile, dirp->d_name);
-      
-      if (cflstat(sourcefile,&sourcestatbuf,ip) == -1)
+
+      if (ip->linktype == 'n')
          {
-         printf("%s: Can't stat %s\n",VPREFIX,sourcefile);
-         FlushClientCache(ip);       
-         (ip->uid)->uid = save_uid;
-         (ip->gid)->gid = save_gid;
-         return;
+         if (cfstat(sourcefile,&sourcestatbuf,ip) == -1)
+            {
+            printf("%s: Can't stat %s\n",VPREFIX,sourcefile);
+            FlushClientCache(ip);       
+            (ip->uid)->uid = save_uid;
+            (ip->gid)->gid = save_gid;
+            return;
+            }
+         }
+      else
+         {
+         if (cflstat(sourcefile,&sourcestatbuf,ip) == -1)
+            {
+            printf("%s: Can't stat %s\n",VPREFIX,sourcefile);
+            FlushClientCache(ip);       
+            (ip->uid)->uid = save_uid;
+            (ip->gid)->gid = save_gid;
+            return;
+            }
          }
       
       ImageCopy(sourcefile,destfile,sourcestatbuf,ip);
@@ -801,204 +816,205 @@ if (ip->linktype != 'n')
       }
    }
  
- if (strcmp(ip->action,"silent") == 0)
-    {
-    silent = true;
-    }
- 
- memset(linkbuf,0,CF_BUFSIZE);
- 
- found = lstat(destfile,&deststatbuf);
- 
- if (found != -1)
-    {
-    if ((S_ISLNK(deststatbuf.st_mode) && (ip->linktype == 'n')) || (S_ISLNK(deststatbuf.st_mode)  && ! S_ISLNK(sourcestatbuf.st_mode)))
-       {
-       if (!S_ISLNK(sourcestatbuf.st_mode) && (ip->typecheck == 'y'))
-          {
-          printf("%s: image exists but destination type is silly (file/dir/link doesn't match)\n",VPREFIX);
-          printf("%s: source=%s, dest=%s\n",VPREFIX,sourcefile,destfile);
-          return;
-          }
-       if (DONTDO)
-          {
-          Verbose("Need to remove old symbolic link %s to make way for copy\n",destfile);
-          }
-       else 
-          {
-          if (unlink(destfile) == -1)
-             {
-             snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't remove link %s",destfile);
-             CfLog(cferror,OUTPUT,"unlink");
-             return;
-             }
-          Verbose("Removing old symbolic link %s to make way for copy\n",destfile);
-          found = -1;
-          }
-       } 
-    }
- 
- if (ip->size != CF_NOSIZE)
-    {
-    switch (ip->comp)
-       {
-       case '<':  if (sourcestatbuf.st_size > ip->size)
-          {
-          snprintf(OUTPUT,CF_BUFSIZE*2,"Source file %s is > %d bytes in copy (omitting)\n",sourcefile,ip->size);
-          CfLog(cfinform,OUTPUT,"");
-          return;
-          }
-           break;
-           
-       case '=':
-           if (sourcestatbuf.st_size != ip->size)
-              {
-              snprintf(OUTPUT,CF_BUFSIZE*2,"Source file %s is not %d bytes in copy (omitting)\n",sourcefile,ip->size);
-              CfLog(cfinform,OUTPUT,"");
-              return;
-              }
-           break;
-           
-       default:
-           if (sourcestatbuf.st_size < ip->size)
-              {
-              snprintf(OUTPUT,CF_BUFSIZE*2,"Source file %s is < %d bytes in copy (omitting)\n",sourcefile,ip->size);
-              CfLog(cfinform,OUTPUT,"");
-              return;
-              }
-           break;
-       }
-    }
- 
- 
- if (found == -1)
-    {
-    if (strcmp(ip->action,"warn") == 0)
-       {
-       snprintf(OUTPUT,CF_BUFSIZE*2,"Image file %s is non-existent\n",destfile);
-       CfLog(cferror,OUTPUT,"");
-       snprintf(OUTPUT,CF_BUFSIZE*2,"(should be copy of %s)\n",sourcefile);
-       CfLog(cferror,OUTPUT,"");
-       return;
-       }
-    
-    if (S_ISREG(srcmode))
-       {
-       snprintf(OUTPUT,CF_BUFSIZE*2,"%s wasn't at destination (copying)",destfile);
-       if (DONTDO)
-          {
-          printf("Need this: %s\n",OUTPUT);
-          return;
-          }
-       
-       CfLog(cfverbose,OUTPUT,"");
-       snprintf(OUTPUT,CF_BUFSIZE*2,"Copying from %s:%s\n",server,sourcefile);
-       CfLog(cfinform,OUTPUT,"");
-       
-       if (CopyReg(sourcefile,destfile,sourcestatbuf,deststatbuf,ip))
-          {
-          if (stat(destfile,&deststatbuf) == -1)
-             {
-             snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",destfile);
-             CfLog(cferror,OUTPUT,"stat");
-             }
-          else
-             {
-             CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
-             }
-          
-          AddMultipleClasses(ip->defines);
-          
-          for (ptr = VAUTODEFINE; ptr != NULL; ptr=ptr->next)
-             {
-             if (strncmp(ptr->name,destfile,strlen(destfile)+1) == 0) 
-                {
-                snprintf(OUTPUT,CF_BUFSIZE*2,"cfengine: image %s was set to autodefine %s\n",ptr->name,ptr->classes);
-                CfLog(cfinform,OUTPUT,"");
-                AddMultipleClasses(ptr->classes);
-                }
-             }
-          
-          if (VSINGLECOPY != NULL)
-             {
-             succeed = 1;
-             }
-          else
-             {
-             succeed = 0;
-             }
-          
-          for (ptr = VSINGLECOPY; ptr != NULL; ptr=ptr->next)
-             {
-             if ((strcmp(ptr->name,"on") != 0) && (strcmp(ptr->name,"true") != 0))
-                {
-                continue;
-                }
-             
-             if (strncmp(ptr->classes,ip->classes,strlen(ip->classes)+1) == 0)
-                {
-                for (ptr1 = VEXCLUDECACHE; ptr1 != NULL; ptr1=ptr1->next)
-                   {
-                   if ((strncmp(ptr1->name,destfile,strlen(destfile)+1) == 0) && (strncmp(ptr1->classes,ip->classes,strlen(ip->classes)+1) == 0))
-                      {
-                      succeed = 0;  
-                      }
-                   }
-                }
-             }
-          
-          if (succeed)
-             {
-             Debug("Appending image %s class %s to singlecopy list\n",destfile,ip->classes);
-             AppendItem(&VEXCLUDECACHE,destfile,ip->classes);
-             }
-          }
-       else
-          {
-          AddMultipleClasses(ip->failover);
-          }
-       
-       Debug2("Leaving ImageCopy\n");
-       return;
-       }
-    
-    if (S_ISFIFO (srcmode))
-       {
-#ifdef HAVE_MKFIFO
-       if (DONTDO)
-          {
-          Silent("%s: Make FIFO %s\n",VPREFIX,destfile);
-          }
-       else if (mkfifo (destfile,srcmode))
-          {
-          snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot create fifo `%s'", destfile);
-          CfLog(cferror,OUTPUT,"mkfifo");
-          return;
-          }
-       
-       AddMultipleClasses(ip->defines);
-#endif
-       }
-    else
-       {
-       if (S_ISBLK (srcmode) || S_ISCHR (srcmode) || S_ISSOCK (srcmode))
-          {
-          if (DONTDO)
-             {
-             Silent("%s: Make BLK/CHR/SOCK %s\n",VPREFIX,destfile);
-             }
-          else if (mknod (destfile, srcmode, sourcestatbuf.st_rdev))
-             {
-             snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot create special file `%s'",destfile);
-             CfLog(cferror,OUTPUT,"mknod");
-             return;
-             }
-          
-          AddMultipleClasses(ip->defines);
-         }
-       }
+if (strcmp(ip->action,"silent") == 0)
+   {
+   silent = true;
+   }
 
-   if (S_ISLNK(srcmode))
+memset(linkbuf,0,CF_BUFSIZE);
+
+found = lstat(destfile,&deststatbuf);
+
+if (found != -1)
+   {
+   if ((S_ISLNK(deststatbuf.st_mode) && (ip->linktype == 'n')) || (S_ISLNK(deststatbuf.st_mode) && ! S_ISLNK(sourcestatbuf.st_mode)))
+      {
+      if ((!S_ISLNK(sourcestatbuf.st_mode) && (ip->typecheck == 'y')) && (ip->linktype != 'n'))
+         {
+         printf("%s: image exists but destination type is silly (file/dir/link doesn't match) - %c\n",VPREFIX,ip->linktype);
+         printf("%s: source=%s, dest=%s\n",VPREFIX,sourcefile,destfile);
+         return;
+         }
+      
+      if (DONTDO)
+         {
+         Verbose("Need to remove old symbolic link %s to make way for copy\n",destfile);
+         }
+      else 
+         {
+         if (unlink(destfile) == -1)
+            {
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't remove link %s",destfile);
+            CfLog(cferror,OUTPUT,"unlink");
+            return;
+            }
+         Verbose("Removing old symbolic link %s to make way for copy\n",destfile);
+         found = -1;
+         }
+      } 
+   }
+
+if (ip->size != CF_NOSIZE)
+   {
+   switch (ip->comp)
+      {
+      case '<':  if (sourcestatbuf.st_size > ip->size)
+         {
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Source file %s is > %d bytes in copy (omitting)\n",sourcefile,ip->size);
+         CfLog(cfinform,OUTPUT,"");
+         return;
+         }
+          break;
+          
+      case '=':
+          if (sourcestatbuf.st_size != ip->size)
+             {
+             snprintf(OUTPUT,CF_BUFSIZE*2,"Source file %s is not %d bytes in copy (omitting)\n",sourcefile,ip->size);
+             CfLog(cfinform,OUTPUT,"");
+             return;
+             }
+          break;
+          
+      default:
+          if (sourcestatbuf.st_size < ip->size)
+             {
+             snprintf(OUTPUT,CF_BUFSIZE*2,"Source file %s is < %d bytes in copy (omitting)\n",sourcefile,ip->size);
+             CfLog(cfinform,OUTPUT,"");
+             return;
+             }
+          break;
+      }
+   }
+
+
+if (found == -1)
+   {
+   if (strcmp(ip->action,"warn") == 0)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Image file %s is non-existent\n",destfile);
+      CfLog(cferror,OUTPUT,"");
+      snprintf(OUTPUT,CF_BUFSIZE*2,"(should be copy of %s)\n",sourcefile);
+      CfLog(cferror,OUTPUT,"");
+      return;
+      }
+   
+   if (S_ISREG(srcmode) || (S_ISLNK(srcmode) && ip->linktype == 'n'))
+      {
+      snprintf(OUTPUT,CF_BUFSIZE*2,"%s wasn't at destination (copying)",destfile);
+      if (DONTDO)
+         {
+         printf("Need this: %s\n",OUTPUT);
+         return;
+         }
+      
+      CfLog(cfverbose,OUTPUT,"");
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Copying from %s:%s\n",server,sourcefile);
+      CfLog(cfinform,OUTPUT,"");
+      
+      if (CopyReg(sourcefile,destfile,sourcestatbuf,deststatbuf,ip))
+         {
+         if (stat(destfile,&deststatbuf) == -1)
+            {
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",destfile);
+            CfLog(cferror,OUTPUT,"stat");
+            }
+         else
+            {
+            CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
+            }
+         
+         AddMultipleClasses(ip->defines);
+         
+         for (ptr = VAUTODEFINE; ptr != NULL; ptr=ptr->next)
+            {
+            if (strncmp(ptr->name,destfile,strlen(destfile)+1) == 0) 
+               {
+               snprintf(OUTPUT,CF_BUFSIZE*2,"cfengine: image %s was set to autodefine %s\n",ptr->name,ptr->classes);
+               CfLog(cfinform,OUTPUT,"");
+               AddMultipleClasses(ptr->classes);
+               }
+            }
+         
+         if (VSINGLECOPY != NULL)
+            {
+            succeed = 1;
+            }
+         else
+            {
+            succeed = 0;
+            }
+         
+         for (ptr = VSINGLECOPY; ptr != NULL; ptr=ptr->next)
+            {
+            if ((strcmp(ptr->name,"on") != 0) && (strcmp(ptr->name,"true") != 0))
+               {
+               continue;
+               }
+            
+            if (strncmp(ptr->classes,ip->classes,strlen(ip->classes)+1) == 0)
+               {
+               for (ptr1 = VEXCLUDECACHE; ptr1 != NULL; ptr1=ptr1->next)
+                  {
+                  if ((strncmp(ptr1->name,destfile,strlen(destfile)+1) == 0) && (strncmp(ptr1->classes,ip->classes,strlen(ip->classes)+1) == 0))
+                     {
+                     succeed = 0;  
+                     }
+                  }
+               }
+            }
+         
+         if (succeed)
+            {
+            Debug("Appending image %s class %s to singlecopy list\n",destfile,ip->classes);
+            AppendItem(&VEXCLUDECACHE,destfile,ip->classes);
+            }
+         }
+      else
+         {
+         AddMultipleClasses(ip->failover);
+         }
+      
+      Debug2("Leaving ImageCopy\n");
+      return;
+      }
+   
+   if (S_ISFIFO (srcmode))
+      {
+#ifdef HAVE_MKFIFO
+      if (DONTDO)
+         {
+         Silent("%s: Make FIFO %s\n",VPREFIX,destfile);
+         }
+      else if (mkfifo (destfile,srcmode))
+         {
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot create fifo `%s'", destfile);
+         CfLog(cferror,OUTPUT,"mkfifo");
+         return;
+         }
+      
+      AddMultipleClasses(ip->defines);
+#endif
+      }
+   else
+      {
+      if (S_ISBLK (srcmode) || S_ISCHR (srcmode) || S_ISSOCK (srcmode))
+         {
+         if (DONTDO)
+            {
+            Silent("%s: Make BLK/CHR/SOCK %s\n",VPREFIX,destfile);
+            }
+         else if (mknod (destfile, srcmode, sourcestatbuf.st_rdev))
+            {
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot create special file `%s'",destfile);
+            CfLog(cferror,OUTPUT,"mknod");
+            return;
+            }
+         
+         AddMultipleClasses(ip->defines);
+         }
+      }
+   
+   if (S_ISLNK(srcmode) && ip->linktype != 'n')
       {
       if (cfreadlink(sourcefile,linkbuf,CF_BUFSIZE,ip) == -1)
          {
@@ -1038,8 +1054,12 @@ if (ip->linktype != 'n')
          case 'a':
              succeed = AbsoluteLink(destfile,linkbuf,NULL,NULL,NULL,true,&empty);
              break;
+
+         case 'n': /* Link copied instead */
+             break;
+             
          default:
-             printf("cfengine: internal error, link type was [%c] in ImageCopy\n",ip->linktype);
+             printf("cfengine: internal error, link type was [%c] in ImageCopy 2\n",ip->linktype);
              return;
          }
       
@@ -1145,7 +1165,7 @@ if (ip->linktype != 'n')
        }
     
     
-    if (ip->typecheck == 'y')
+    if (ip->typecheck == 'y' && ip->linktype != 'n')
        {
        if ((S_ISDIR(deststatbuf.st_mode)  && ! S_ISDIR(sourcestatbuf.st_mode))  ||
            (S_ISREG(deststatbuf.st_mode)  && ! S_ISREG(sourcestatbuf.st_mode))  ||
@@ -1164,7 +1184,7 @@ if (ip->linktype != 'n')
     
     if ((ip->force == 'y') || ok_to_copy || S_ISLNK(sourcestatbuf.st_mode))  /* Always check links */
        {
-       if (S_ISREG(srcmode))
+       if (S_ISREG(srcmode) || ip->linktype == 'n')
           {
           snprintf(OUTPUT,CF_BUFSIZE*2,"Update of image %s from master %s on %s",destfile,sourcefile,server);
           
