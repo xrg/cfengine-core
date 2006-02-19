@@ -338,7 +338,7 @@ struct hostent *hp;
 struct sockaddr_in myaddr;
 struct in_addr iaddr;
   
-memset(hostbuffer,0,;MAXHOSTNAMELEN);
+memset(hostbuffer,0,MAXHOSTNAMELEN);
 
 if ((iaddr.s_addr = inet_addr(ipaddress)) != -1)
    {
@@ -350,7 +350,7 @@ if ((iaddr.s_addr = inet_addr(ipaddress)) != -1)
       return hostbuffer;
       }
 
-   strncpy(hostbuffer,hp->h_name,CF_MAXHOSTAMELEN-1);
+   strncpy(hostbuffer,hp->h_name,MAXHOSTNAMELEN-1);
    }
 else
    {
