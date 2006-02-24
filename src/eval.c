@@ -377,14 +377,15 @@ void AddClassToHeap(char *class)
 {
 Debug("AddClassToHeap(%s)\n",class);
 
-/*if (! IsItemIn(VALLADDCLASSES,class))
-   {
-   snprintf(OUTPUT,CF_BUFSIZE,"Defining class %s -- but it isn't declared installable",class);
-   yyerror(OUTPUT);
-   }*/
-
 Chop(class);
- 
+
+if (IsItemIn(ABORTHEAP,class))
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"Cfagent aborted on defined class %s\n",class);
+   CfLog(cferror,OUTPUT,"");
+   exit(1);
+   }
+
 if (IsItemIn(VHEAP,class))
    {
    return;

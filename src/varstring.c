@@ -104,6 +104,7 @@ char *VVNAMES[] =
    "defaultcopytype",
    "allowredefinitionof",
    "defaultpkgmgr",     /* For packages */
+   "abortclasses",
    NULL
    };
 

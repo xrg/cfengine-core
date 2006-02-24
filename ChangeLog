@@ -1,5 +1,10 @@
 2.1.19 
 
+	cfagent will now exit and cease processing if any class in the defined
+	control list
+
+	 AbortClasses = ( class_name_1 class_name_2 ... )
+	
 	VMWare ESX recognition.
 	
 	Bug in cfservd stat-mode on symbolic links not correctly evaluated.

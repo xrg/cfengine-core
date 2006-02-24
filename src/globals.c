@@ -245,6 +245,8 @@ char *TCPNAMES[CF_NETATTR] =
  /* Data/list structures - root pointers                            */
  /*******************************************************************/
 
+  PUBLIC struct Item *ABORTHEAP = NULL;
+  
   PROTECTED  struct Item *VTIMEZONE = NULL;
   PROTECTED  struct Item *VMOUNTLIST = NULL;
   PROTECTED  struct Item *VEXCLUDECOPY = NULL;

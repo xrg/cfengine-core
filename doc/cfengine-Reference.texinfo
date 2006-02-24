@@ -2525,6 +2525,7 @@ For more functions, @xref{Setting variables with functions}.
 @vindex editfilesize
 @vindex actionsequence
 @vindex LD_LIBRARY_PATH
+@vindex AbortClasses
 
 The meaning of each of these lines is described below.
 
@@ -2605,6 +2606,40 @@ The meaning of each of these lines is described below.
 * warnnonownermail::            
 @end menu
 
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node AbortClasses
+@subsection AbortClasses
+
+The @code{AbortClasses} list is a list of class identifiers that will
+result in the abortion of the current cfagent instanitation with an error message
+containing the name of the offending class.
+
+@smallexample
+
+ AbortClasses = ( emergency nologin_exists )
+
+@end smallexample
+@cindex Aborting cfagent
+@cindex AbortClasses
+This mechanism allows one to make controlled exceptions at the agent level. For example
+
+@smallexample
+control:
+
+ actionsequence = ( shellcommands )
+
+ AbortClasses = ( danger_will_robinson )
+
+shellcommands:
+
+  "shellcom 1"
+  "shellcom 2" define=ok elsedefine=danger_will_robinson
+
+@end smallexample
 
 @c .....................................................
 @c SUBSECTION
@@ -3042,10 +3077,12 @@ control:
 
 @end smallexample
 
-Referring to the class that prefixes it, @code{autodefine} will define the class
-if the names file is copied in any statement.  This helps to avoid having
-to write a large number of file-specific copy: lines with define=class
-configured.
+Referring to the class that prefixes the command, @code{autodefine} is
+a list of files that will define the said class, if a named file is copied
+in any statement.  This helps to avoid having to write a large number
+of file-specific copy: lines with define=class configured. In the example
+above, the class @code{hup_syslogd} would be defined if @file{/etc/syslog.conf}
+is copied at any time.
 
 @c .....................................................
 @c SUBSECTION

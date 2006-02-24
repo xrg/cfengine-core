@@ -250,6 +250,11 @@ else
     case cftrustkeys:
         AppendItems(&TRUSTKEYLIST,value,CLASSBUFF);
         break;
+
+    case cfabortclasses:
+        AppendItem(&ABORTHEAP,value,CLASSBUFF);
+        break;
+        
     case cfdynamic:
         AppendItems(&DHCPLIST,value,CLASSBUFF);
         break;

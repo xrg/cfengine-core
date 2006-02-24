@@ -2657,10 +2657,12 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
           autodefine = ( /etc/syslog.conf )
      
 </pre>
-   <p>Referring to the class that prefixes it, <code>autodefine</code> will define the class
-if the names file is copied in any statement.  This helps to avoid having
-to write a large number of file-specific copy: lines with define=class
-configured.
+   <p>Referring to the class that prefixes the command, <code>autodefine</code> is
+a list of files that will define the said class, if a named file is copied
+in any statement.  This helps to avoid having to write a large number
+of file-specific copy: lines with define=class configured. In the example
+above, the class <code>hup_syslogd</code> would be defined if <samp><span class="file">/etc/syslog.conf</span></samp>
+is copied at any time.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->

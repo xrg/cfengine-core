@@ -927,6 +927,7 @@ enum vnames
    cfdefcopy,
    cfredef,
    cfdefpkgmgr,
+   cfabortclasses,
    nonexistentvar
    };
 
