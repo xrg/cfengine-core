@@ -1769,7 +1769,7 @@ if (editsdone)
             
             sscanf(sp,"%[^,:.]",currentitem);
             
-            sp += strlen(currentitem);
+            sp += strlen(currentitem) - 1;
             
             AddClassToHeap(currentitem);
             }
@@ -1795,7 +1795,7 @@ if (editsdone)
              
              sscanf(sp,"%[^,:.]",currentitem);
              
-             sp += strlen(currentitem);
+             sp += strlen(currentitem) - 1;
              
              AddClassToHeap(currentitem);
              }
