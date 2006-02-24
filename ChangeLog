@@ -4,6 +4,12 @@
 	control list
 
 	 AbortClasses = ( class_name_1 class_name_2 ... )
+
+	The singlecopy feature has been rewritten after reports of it not
+	working, besides, the code was bizarre and the documentation was
+	even worse.
+	The autodefine code also patched and tested. In both these cases,
+	there are lists of *patterns* or wildcards. The code and docs now agree
 	
 	VMWare ESX recognition.
 	

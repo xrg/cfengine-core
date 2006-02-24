@@ -42,7 +42,15 @@ void InstallControlRValue(char *lvalue,char *varvalue)
 { int number = -1;
   char buffer[CF_MAXVARSIZE], command[CF_MAXVARSIZE], *sp;
   char value[CF_EXPANDSIZE];
+
+ExpandVarstring(varvalue,value,NULL);
   
+if (ScanVariable(lvalue) == cfautodef)
+   {
+   AppendItems(&VAUTODEFINE,value,CLASSBUFF);
+   return;
+   }
+
 if (!IsInstallable(CLASSBUFF))
    {
    Debug1("Not installing %s=%s, no match (%s)\n",lvalue,varvalue,CLASSBUFF);
@@ -54,15 +62,6 @@ if (strcmp(varvalue,CF_NOCLASS) == 0)
    Debug1("Not installing %s, evaluated to false\n",varvalue);
    return;
    }
-
-
-ExpandVarstring(varvalue,value,NULL);
-
-if (ScanVariable(lvalue) == cfautodef)
-    {
-    AppendItems(&VAUTODEFINE,value,CLASSBUFF);
-    return;
-    }
 
 /* begin version compat */ 
 if (strncmp(value,"exec ",5) == 0)

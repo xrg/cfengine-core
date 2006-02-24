@@ -234,6 +234,7 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
    if (!S_ISDIR(statbuf.st_mode))
       {
       succeed = 0;
+      
       for (ptr = VEXCLUDECACHE; ptr != NULL; ptr=ptr->next)
           {
           if ((strncmp(ptr->name,newto,strlen(newto)+1) == 0) && (strncmp(ptr->classes,ip->classes,strlen(ip->classes)+1) == 0))
@@ -244,7 +245,7 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
 
       if (succeed)
          {
-         snprintf(OUTPUT,CF_BUFSIZE*2,"Skipping excluded file %s class %s\n",newto,ip->classes);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Skipping already-copied file %s class %s\n",newto,ip->classes);
          CfLog(cfverbose,OUTPUT,"");
          continue;
          }
@@ -727,7 +728,7 @@ void ImageCopy(char *sourcefile,char *destfile,struct stat sourcestatbuf,struct 
   struct stat deststatbuf;
   struct Link empty;
   struct Item *ptr, *ptr1;
-  int succeed, silent = false, enforcelinks;
+  int succeed = false,silent = false, enforcelinks;
   mode_t srcmode = sourcestatbuf.st_mode;
   int ok_to_copy = false, found;
 
@@ -742,35 +743,20 @@ if ((strcmp(sourcefile,destfile) == 0) && (strcmp(ip->server,"localhost") == 0))
    return;
    }
 
- empty.defines = NULL;
- empty.elsedef = NULL;
+empty.defines = NULL;
+empty.elsedef = NULL;
 
- if (IgnoredOrExcluded(image,sourcefile,ip->inclusions,ip->exclusions))
-    {
-    return;
-    }
- 
- succeed = 0;
-
- for (ptr = VEXCLUDECACHE; ptr != NULL; ptr=ptr->next)
-    {
-    if ((strncmp(ptr->name,destfile,strlen(destfile)+1) == 0) && (strncmp(ptr->classes,ip->classes,strlen(ip->classes)+1) == 0))
-       {
-       succeed = 1;
-       }
-    }
- 
-if (succeed)
+if (IgnoredOrExcluded(image,sourcefile,ip->inclusions,ip->exclusions))
    {
-   snprintf(OUTPUT,CF_BUFSIZE*2,"Skipping excluded file %s class %s\n",destfile,ip->classes);
+   return;
+   }
+
+if (IsItemIn(VEXCLUDECACHE,destfile))
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Skipping single-copied file %s class %s\n",destfile,ip->classes);
    CfLog(cfverbose,OUTPUT,"");
    return;
    }
-else
-   {
-   Debug2("file %s class %s was not excluded\n",destfile,ip->classes);
-   }
-
 
 if (ip->linktype != 'n')
    {
@@ -925,49 +911,24 @@ if (found == -1)
          
          AddMultipleClasses(ip->defines);
          
+         if (IsWildItemIn(VSINGLECOPY,destfile))
+            {
+            if (!IsItemIn(VEXCLUDECACHE,destfile))
+               {
+               Debug("Appending image %s class %s to singlecopy list\n",destfile,ip->classes);
+               PrependItem(&VEXCLUDECACHE,destfile,NULL);
+               }
+            }         
+
          for (ptr = VAUTODEFINE; ptr != NULL; ptr=ptr->next)
             {
-            if (strncmp(ptr->name,destfile,strlen(destfile)+1) == 0) 
+            if (WildMatch(ptr->name,destfile))
                {
-               snprintf(OUTPUT,CF_BUFSIZE*2,"cfengine: image %s was set to autodefine %s\n",ptr->name,ptr->classes);
+               snprintf(OUTPUT,CF_BUFSIZE*2,"Image %s was set to autodefine class %s\n",ptr->name,ptr->classes);
                CfLog(cfinform,OUTPUT,"");
                AddMultipleClasses(ptr->classes);
                }
-            }
-         
-         if (VSINGLECOPY != NULL)
-            {
-            succeed = 1;
-            }
-         else
-            {
-            succeed = 0;
-            }
-         
-         for (ptr = VSINGLECOPY; ptr != NULL; ptr=ptr->next)
-            {
-            if ((strcmp(ptr->name,"on") != 0) && (strcmp(ptr->name,"true") != 0))
-               {
-               continue;
-               }
-            
-            if (strncmp(ptr->classes,ip->classes,strlen(ip->classes)+1) == 0)
-               {
-               for (ptr1 = VEXCLUDECACHE; ptr1 != NULL; ptr1=ptr1->next)
-                  {
-                  if ((strncmp(ptr1->name,destfile,strlen(destfile)+1) == 0) && (strncmp(ptr1->classes,ip->classes,strlen(ip->classes)+1) == 0))
-                     {
-                     succeed = 0;  
-                     }
-                  }
-               }
-            }
-         
-         if (succeed)
-            {
-            Debug("Appending image %s class %s to singlecopy list\n",destfile,ip->classes);
-            AppendItem(&VEXCLUDECACHE,destfile,ip->classes);
-            }
+            } 
          }
       else
          {
@@ -1200,9 +1161,9 @@ if (found == -1)
           
           for (ptr = VAUTODEFINE; ptr != NULL; ptr=ptr->next)
              {
-             if (strncmp(ptr->name,destfile,strlen(destfile)+1) == 0)
+             if (WildMatch(ptr->name,destfile))
                 {
-                snprintf(OUTPUT,CF_BUFSIZE*2,"cfengine: image %s was set to autodefine %s\n",ptr->name,ptr->classes);
+                snprintf(OUTPUT,CF_BUFSIZE*2,"Image %s was set to autodefine class %s\n",ptr->name,ptr->classes);
                 CfLog(cfinform,OUTPUT,"");
                 AddMultipleClasses(ptr->classes);
                 }
@@ -1220,33 +1181,14 @@ if (found == -1)
                 CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
                 }
              
-             if (VSINGLECOPY != NULL)
+             if (IsWildItemIn(VSINGLECOPY,destfile))
                 {
-                succeed = 1;
-                }
-             else
-                {
-                succeed = 0;
-                }
-             
-             for (ptr = VSINGLECOPY; ptr != NULL; ptr=ptr->next)
-                {
-                if (strncmp(ptr->classes,ip->classes,strlen(ip->classes)+1) == 0)
+                if (!IsItemIn(VEXCLUDECACHE,destfile))
                    {
-                   for (ptr1 = VEXCLUDECACHE; ptr1 != NULL; ptr1=ptr1->next)
-                      {
-                      if ((strncmp(ptr1->name,destfile,strlen(destfile)+1) == 0) && (strncmp(ptr1->classes,ip->classes,strlen(ip->classes)+1) == 0))
-                         {
-                         succeed = 0;
-                         }
-                      }
+                   Debug("Appending image %s class %s to singlecopy list\n",destfile,ip->classes);
+                   PrependItem(&VEXCLUDECACHE,destfile,NULL);
                    }
-                }
-             
-             if (succeed)
-                {
-                AppendItem(&VEXCLUDECACHE,destfile,ip->classes);
-                }
+                }                      
              } 
           else
              {
@@ -1304,34 +1246,17 @@ if (found == -1)
     else
        {
        CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
+
+       /* Now we have to check for single copy, even though nothing was copied
+          otherwise we can get oscillations between multipe versions if type is based on a checksum */
        
-       if (VSINGLECOPY != NULL)
+       if (IsWildItemIn(VSINGLECOPY,destfile))
           {
-          succeed = 1;
-          }
-       else
-          {
-          succeed = 0;
-          }
-       
-       for (ptr = VSINGLECOPY; ptr != NULL; ptr=ptr->next)
-          {
-          if (strncmp(ptr->classes,ip->classes,strlen(ip->classes)+1) == 0)
+          if (!IsItemIn(VEXCLUDECACHE,destfile))
              {
-             for (ptr1 = VEXCLUDECACHE; ptr1 != NULL; ptr1=ptr1->next)
-                {
-                if ((strncmp(ptr1->name,destfile,strlen(destfile)+1) == 0) && (strncmp(ptr1->classes,ip->classes,strlen(ip->classes)+1) == 0))
-                   {
-                   succeed = 0;
-                   }
-                }
+             Debug("Appending image %s class %s to singlecopy list\n",destfile,ip->classes);
+             PrependItem(&VEXCLUDECACHE,destfile,NULL);
              }
-          }
-       
-       if (succeed)
-          {
-          Debug("Appending image %s class %s to singlecopy list\n",destfile,ip->classes);
-          AppendItem(&VEXCLUDECACHE,destfile,ip->classes);
           }
        
        Debug("Image file is up to date: %s\n",destfile);

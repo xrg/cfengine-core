@@ -3073,12 +3073,12 @@ control:
 
    hup_syslogd::
 
-     autodefine = ( /etc/syslog.conf )
+     autodefine = ( /etc/syslog.c* )
 
 @end smallexample
 
 Referring to the class that prefixes the command, @code{autodefine} is
-a list of files that will define the said class, if a named file is copied
+a list of file patterns that will define the said class, if a named file is copied
 in any statement.  This helps to avoid having to write a large number
 of file-specific copy: lines with define=class configured. In the example
 above, the class @code{hup_syslogd} would be defined if @file{/etc/syslog.conf}
@@ -4351,43 +4351,16 @@ the cfengine output. It will be of little interest to humans.
 @w{}
 @smallexample
 
-	singlecopy = ( on )
+	singlecopy = ( path_and_filename_wildcard )
 
 @end smallexample
 
-If @code{singlecopy} is defined the behavior of copy: is modified so that a file will
-only be copied once, helping to achieve hierarchical or ``most specific''
-file copy overrides, provided that the most specific file occurs first. 
-With the following file structure on a host running cfservd:
+If a @code{singlecopy} pattern is defined the behavior of copy: is modified so
+that a given destination file, matching the pattern, will only be updated once. In other words,
+if someone tries to copy more then one source file to the same location, the destination will not
+be overwritten in the same run.
 
-	/dist/hosts/loghost1.example.com/etc/syslog.conf
-	/dist/solaris/etc/syslog.conf
-	/dist/all/etc/syslog.conf
 
-The configuration:
-
-@smallexample
-control:
-	singlecopy = ( on ) 
-
-copy: 
-  
- /dist/$@{fqhost@}       dest=/ inform=true syslog=true r=inf server=disthost
- /dist/$@{ostype@}       dest=/ inform=true syslog=true r=inf server=disthost
- /dist/all             dest=/ inform=true syslog=true r=inf server=disthost
-
-@end smallexample
-
-@noindent Would result in:
-
-@w{}
-@smallexample
-/dist/hosts/loghost1.example.com/etc/syslog.conf being copied to loghost1.example.com
-/dist/solaris/etc/syslog.conf being copied to Solaris systems
-/dist/all/etc/syslog.conf being copied to all other systems
-@end smallexample
-
-CAUTION: this feature is necessarily memory intensive. 
 
 @c .....................................................
 @c SUBSECTION
