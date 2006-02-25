@@ -104,13 +104,14 @@ void Build2DListFromVarstring(struct TwoDimList **TwoDimlist, char *varstring, c
   char node[CF_BUFSIZE];
   int i;
 
-Debug1("Build2DListFromVarstring(%s,sep=%c)\n",varstring,sep);
+Debug1("Build2DListFromVarstring([%s],sep=%c)\n",varstring,sep);
 
 if ((strlen(varstring) == 1) && (varstring[0] == sep))
    {
    AppendTwoDimItem(TwoDimlist,SplitVarstring("",'$'),sep);
    return;
    }
+
 
 snprintf(format,6,"%%[^%c]",sep);   /* set format string to search */
 
@@ -133,8 +134,10 @@ for (sp = varstring; *sp != '\0'; sp++)
             }
          }
       }
-   
+
    *(node+i) = '\0';
+
+   Debug("2DListNode = [%s]\n",node);
    
    sp += i-1;
    
@@ -147,6 +150,7 @@ for (sp = varstring; *sp != '\0'; sp++)
    
    if (*sp == '\0')
       {
+      Debug("2DListNode(done)\n");
       break;
       }
    }

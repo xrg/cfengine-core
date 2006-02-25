@@ -176,7 +176,11 @@ for (sp = str; *sp != '\0' ; sp++)       /* check for varitems */
    {
    switch (*sp)
       {
-      case '$': dollar = true;
+      case '$':
+          if (*(sp+1) == '{' || *(sp+1) == '(')
+             {
+             dollar = true;
+             }
           break;
       case '(':
       case '{': 
@@ -903,7 +907,7 @@ struct Item *SplitVarstring(char *varstring,char sep)
   char before[CF_BUFSIZE],after[CF_BUFSIZE],result[CF_BUFSIZE];
   int i;
   
-Debug("SplitVarstring(%s,%c=%d)\n",varstring,sep,sep);
+Debug("SplitVarstring([%s],%c=%d)\n",varstring,sep,sep);
 
 memset(before,0,CF_BUFSIZE);
 memset(after,0,CF_BUFSIZE);

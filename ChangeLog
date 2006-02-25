@@ -10,6 +10,9 @@
 	even worse.
 	The autodefine code also patched and tested. In both these cases,
 	there are lists of *patterns* or wildcards. The code and docs now agree
+
+	Error parsing strings (esp shellcommands) that contain the $ symbol due to
+	a bug in 2D-lists.
 	
 	VMWare ESX recognition.
 	
