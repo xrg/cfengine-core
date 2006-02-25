@@ -1681,7 +1681,15 @@ for (ep = actions; ep != NULL; ep=ep->next)
                 CfLog(cfinform,OUTPUT,"");
                 umask(mask);
                 return;
-                }    
+                }
+             }
+          else
+             {
+             if (stat(filename,&statbuf) == -1)
+                {
+                snprintf(OUTPUT,CF_BUFSIZE*2,"Should create and edit file %s, mode %o\n",filename,(0644 & ~ptr->umask));
+                CfLog(cfinform,OUTPUT,"");
+                }
              }
           
           break;

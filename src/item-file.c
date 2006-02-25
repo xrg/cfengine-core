@@ -42,9 +42,18 @@ int LoadItemList(struct Item **liststart,char *file)
 
 if (stat(file,&statbuf) == -1)
    {
-   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't stat %s\n",file);
-   CfLog(cfverbose,OUTPUT,"stat");
-   return false;
+   if (DONTDO)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Currently no file %s to edit\n",file);
+      CfLog(cfverbose,OUTPUT,"");
+      return false;
+      }
+   else
+      {
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't stat %s - no file to edit\n",file);
+      CfLog(cfverbose,OUTPUT,"stat");
+      return false;
+      }
    }
 
 if ((EDITFILESIZE != 0) &&(statbuf.st_size > EDITFILESIZE))

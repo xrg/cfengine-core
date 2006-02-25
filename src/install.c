@@ -2787,11 +2787,6 @@ void GetExecOutput(char *command,char *buffer,int useshell)
 
 Debug1("GetExecOutput(%s,%s)\n",command,buffer);
   
-if (DONTDO)
-   {
-   return;
-   }
-
 if (useshell)
    {
    pp = cfpopen_sh(command,"r");
