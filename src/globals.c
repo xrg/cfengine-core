@@ -94,7 +94,7 @@ pthread_mutex_t MUTEX_LOCK = PTHREAD_MUTEX_INITIALIZER;
 /*                                                                 */
 /*******************************************************************/
 
-  PUBLIC char *COPYRIGHT = "Free Software Foundation 1994-\nDonated by Mark Burgess, Faculty of Engineering,\nOslo University College, 0254 Oslo, Norway";
+  PUBLIC char *COPYRIGHT = "Free Software Foundation 1994-\nDonated by Mark Burgess, Faculty of Engineering,\nOslo University College, Norway";
 
   PRIVATE char *VPRECONFIG = "cf.preconf";
   PRIVATE char *VRCFILE = "cfrc";

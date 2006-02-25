@@ -433,8 +433,8 @@ for (lp = VCHLINK; lp != NULL; lp = lp->next)
          if (stat(from,&statbuf) == -1)
             {
             snprintf(OUTPUT,CF_BUFSIZE*2,"Makechildlinks() can't stat %s\n",from);
-     CfLog(cferror,OUTPUT,"stat");
-     ResetOutputRoute('d','d');
+            CfLog(cferror,OUTPUT,"stat");
+            ResetOutputRoute('d','d');
             continue;
             }
          LinkChildren(from,lp->type,&statbuf,0,0,lp->inclusions,lp->exclusions,lp->copy,lp->nofile,lp);

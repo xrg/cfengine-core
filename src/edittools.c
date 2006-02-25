@@ -1640,20 +1640,39 @@ void CheckEditSwitches(char *filename,struct Edit *ptr)
 
 { struct stat statbuf;
   struct Edlist *ep;
-  char inform = 'd', log = 'd';
+  char inform, log;
   char expdata[CF_EXPANDSIZE];
   int fd;
-struct Edlist *actions = ptr->actions;
+  struct Edlist *actions = ptr->actions;
   
 PARSING = true;
- 
+
+if (INFORM)
+   {
+   inform = 'y';
+   }
+else
+   {
+   inform = 'n';
+   }
+
+if (LOGGING)
+   {
+   log = 'y';
+   }
+else
+   {
+   log = 'n';
+   }
+
+
 for (ep = actions; ep != NULL; ep=ep->next)
    {
    if (IsExcluded(ep->classes))
       {
       continue;
       }
-
+   
    ExpandVarstring(ep->data,expdata,NULL);
    
    switch(ep->code)
@@ -1680,7 +1699,7 @@ for (ep = actions; ep != NULL; ep=ep->next)
                 snprintf(OUTPUT,CF_BUFSIZE*2,"Creating file %s, mode %o\n",filename,(0644 & ~ptr->umask));
                 CfLog(cfinform,OUTPUT,"");
                 umask(mask);
-                return;
+                break;
                 }
              }
           else
@@ -1708,8 +1727,7 @@ for (ep = actions; ep != NULL; ep=ep->next)
           if (strcmp("timestamp",ToLowerStr(expdata)) == 0 || strcmp("stamp",ToLowerStr(expdata)) == 0)
              {
              IMAGEBACKUP = 's';
-             }
-          
+             }          
           break;
           
       case EditLog:
@@ -1728,6 +1746,7 @@ for (ep = actions; ep != NULL; ep=ep->next)
           break;
           
       case EditInform:
+
           if (strcmp(ToLowerStr(expdata),"true") == 0 || strcmp(ToLowerStr(expdata),"on") == 0)
              {
              inform = 'y';

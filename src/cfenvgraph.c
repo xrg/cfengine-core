@@ -56,7 +56,7 @@ struct Averages FindHurstFunction (int sameples_per_grain, int grains);
 
 /*****************************************************************************/
 
-/* char *COPYRIGHT = "Free Software Foundation 2001-\nDonated by Mark Burgess, Faculty of Engineering,\nOslo University College, 0254 Oslo, Norway";
+/* char *COPYRIGHT = "Free Software Foundation 2001-\nDonated by Mark Burgess, Faculty of Engineering,\nOslo University College, Norway";
  */
 
 struct option GRAPHOPTIONS[] =

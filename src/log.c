@@ -281,6 +281,7 @@ switch(level)
 void ResetOutputRoute (char log,char inform)
 
 {
+
 if ((log == 'y') || (log == 'n') || (inform == 'y') || (inform == 'n'))
    {
    INFORM_save = INFORM;
