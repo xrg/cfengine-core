@@ -30,12 +30,6 @@
 /*                                                                           */
 /* Created: Tue Feb 28 13:55:50 2006                                         */
 /*                                                                           */
-/* Author:                                           >                       */
-/*                                                                           */
-/* Revision: $Id$                                                            */
-/*                                                                           */
-/* Description:                                                              */
-/*                                                                           */
 /*****************************************************************************/
 
 #include "cf.defs.h"
@@ -54,12 +48,6 @@ ExpandVarstring(varvalue,value,NULL);
 if (ScanVariable(lvalue) == cfautodef)
    {
    AppendItems(&VAUTODEFINE,value,CLASSBUFF);
-   return;
-   }
-
-if (!IsInstallable(CLASSBUFF))
-   {
-   Debug1("Not installing %s=%s, no match (%s)\n",lvalue,varvalue,CLASSBUFF);
    return;
    }
 
@@ -520,13 +508,6 @@ else
 void HandleEdit(char *file,char *edit,char *string)      /* child routines in edittools.c */
 
 {
-if (! IsInstallable(CLASSBUFF))
-   {
-   InitializeAction();
-   Debug1("Not installing Edit no match\n");
-   return;
-   }
-
 if (string == NULL)
    {
    Debug1("Handling Edit of %s, action [%s] with no data if (%s)\n",file,edit,CLASSBUFF);
@@ -1605,12 +1586,6 @@ void InstallBroadcastItem(char *item)
 {
 Debug1("Install broadcast mode (%s)\n",item);
 
-if ( ! IsInstallable(CLASSBUFF))
-   {
-   Debug1("Not installing %s, no match\n",item);
-   return;
-   }
-
 if (VBROADCAST[0] != '\0')
    {
    yyerror("Multiple declaration of variable broadcast");
@@ -1648,12 +1623,6 @@ void InstallDefaultRouteItem(char *item)
   char ebuff[CF_EXPANDSIZE];
 
 Debug1("Install defaultroute mode (%s)\n",item);
-
-if (!IsInstallable(CLASSBUFF))
-   {
-   Debug1("Not installing %s, no match\n",item);
-   return;
-   }
 
 if (VDEFAULTROUTE != NULL)
    {
@@ -1820,12 +1789,6 @@ void AppendNameServer(char *item)
  
 Debug1("Installing item (%s) in the nameserver list\n",item);
 
-if (!IsInstallable(CLASSBUFF))
-   {
-   Debug1("Not installing %s, no match\n",item);
-   return;
-   }
-
 ExpandVarstring(item,ebuff,"");
 
 list = SplitStringAsItemList(ebuff,LISTSEPARATOR);
@@ -1842,11 +1805,6 @@ void AppendImport(char *item)
 
 { char ebuff[CF_EXPANDSIZE];
  
-if (!IsInstallable(CLASSBUFF))
-   {
-   Debug1("Not installing %s, no match\n",item);
-   return;
-   }
 
 if (strcmp(item,VCURRENTFILE) == 0)
    {
@@ -1867,12 +1825,6 @@ void InstallHomeserverItem(char *item)
 
 { char ebuff[CF_EXPANDSIZE];
  
-if (!IsInstallable(CLASSBUFF))
-   {
-   Debug1("Not installing %s, no match\n",item);
-   return;
-   }
-
 ExpandVarstring(item,ebuff,"");  
 
 AppendItem(&VHOMESERVERS,ebuff,CLASSBUFF);
@@ -1884,12 +1836,6 @@ void InstallBinserverItem(char *item)
 
 { char ebuff[CF_EXPANDSIZE];
  
-if (!IsInstallable(CLASSBUFF))
-   {
-   Debug1("Not installing %s, no match\n",item);
-   return;
-   }
-
 ExpandVarstring(item,ebuff,""); 
 
 AppendItem(&VBINSERVERS,ebuff,CLASSBUFF);
@@ -1900,11 +1846,6 @@ AppendItem(&VBINSERVERS,ebuff,CLASSBUFF);
 void InstallMailserverPath(char *path)
 
 {
-if (!IsInstallable(CLASSBUFF))
-   {
-   Debug1("Not installing %s, no match\n",path);
-   return;
-   }
 
 if (VMAILSERVER[0] != '\0')
    {
@@ -1925,13 +1866,6 @@ void InstallLinkItem(char *from,char *to)
   char ebuff[CF_EXPANDSIZE];
   
 Debug1("Storing Link: (From)%s->(To)%s\n",from,to);
-
-if (!IsInstallable(CLASSBUFF))
-   {
-   InitializeAction();
-   Debug1("Not installing link no match\n");
-   return;
-   }
 
 ExpandVarstring(from,ebuff,"");
 
@@ -2058,13 +1992,6 @@ void InstallLinkChildrenItem (char *from,char *to)
 
 Debug1("Storing Linkchildren item: %s -> %s\n",from,to);
 
-if (!IsInstallable(CLASSBUFF))
-   {
-   InitializeAction();
-   Debug1("Not installing linkchildren no match\n");
-   return;
-   }
-
 ExpandVarstring(from,ebuff,"");
 ExpandVarstring(ALLCLASSBUFFER,buffer,""); 
 
@@ -2182,13 +2109,6 @@ Set2DList(tp);
 for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    {
    Debug1("Installing item (%s) in the required list\n",sp);
-   
-   if (!IsInstallable(CLASSBUFF))
-      {
-      InitializeAction();
-      Debug1("Not installing %s, no match\n",sp);
-      return;
-      }
    
    ExpandVarstring(sp,ebuff,"");
    
@@ -2347,13 +2267,6 @@ void AppendUmount(char *path,char deldir,char delfstab,char force)
 { struct UnMount *ptr;
   char ebuff[CF_EXPANDSIZE]; 
  
-if (!IsInstallable(CLASSBUFF))
-   {
-   InitializeAction();
-   Debug1("Not installing %s, no match\n",path);
-   return;
-   }
-
 ExpandVarstring(path,ebuff,"");
 
  if ((ptr = (struct UnMount *)malloc(sizeof(struct UnMount))) == NULL)
@@ -2416,12 +2329,6 @@ void AppendMiscMount(char *from,char *onto,char *opts)
   char ebuff[CF_EXPANDSIZE]; 
 
 Debug1("Adding misc mountable %s %s (%s) to list\n",from,onto,opts);
-
-if (!IsInstallable(CLASSBUFF))
-   {
-   Debug1("Not installing %s, no match\n",from);
-   return;
-   }
 
 if ((ptr = (struct MiscMount *)malloc(sizeof(struct MiscMount))) == NULL)
    {
@@ -2494,12 +2401,6 @@ void AppendIgnore(char *path)
   char *sp;
 
 Debug1("Installing item (%s) in the ignore list\n",path);
-
-if (!IsInstallable(CLASSBUFF))
-   {
-   Debug1("Not installing %s, no match\n",path);
-   return;
-   }
 
 Build2DListFromVarstring(&tp,path,'/');
     
@@ -2872,13 +2773,6 @@ else
    Debug1("InstallEditFile(%s,%s,%s) with classes %s\n",file,edit,data,CLASSBUFF);
    }
 
-if (!IsInstallable(CLASSBUFF))
-   {
-   InitializeAction();
-   Debug1("Not installing Edit no match\n");
-   return;
-   }
-
 ExpandVarstring(file,ebuff,"");
  
 if ((ptr = (struct Edit *)malloc(sizeof(struct Edit))) == NULL)
@@ -2966,12 +2860,6 @@ if (data == NULL)
 else
    {
    Debug2("AddEditAction(%s,%s,%s)\n",file,edit,data);
-   }
-
-if (!IsInstallable(CLASSBUFF))
-   {
-   Debug1("Not installing Edit no match\n");
-   return;
    }
 
 for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
@@ -3209,13 +3097,6 @@ void AppendInterface(char *ifname,char *address,char *netmask,char *broadcast)
  
 Debug1("Installing item (%s:%s:%s) in the interfaces list\n",ifname,netmask,broadcast);
 
-if (!IsInstallable(CLASSBUFF))
-   {
-   InitializeAction();
-   Debug1("Not installing %s, no match\n",ifname);
-   return;
-   }
-
 if (strlen(netmask) < 7)
    {
    yyerror("illegal or missing netmask");
@@ -3291,13 +3172,6 @@ void AppendScript(char *item,int timeout,char useshell,char *uidname,char *gidna
   int gid = CF_NOUSER;
   
 Debug1("Installing shellcommand (%s) in the script list\n",item);
-
-if (!IsInstallable(CLASSBUFF))
-   {
-   Debug1("Not installing (%s), no class match (%s)\n",item,CLASSBUFF);
-   InitializeAction();
-   return;
-   }
 
 Build2DListFromVarstring(&tp,item,' '); /* Must be at least one space between each var */
 
@@ -3468,13 +3342,6 @@ void AppendDisable(char *path,char *type,short rotate,char comp,int size)
   char ebuff[CF_EXPANDSIZE];
  
 Debug1("Installing item (%s) in the disable list\n",path);
-
-if (!IsInstallable(CLASSBUFF))
-   {
-   InitializeAction();
-   Debug1("Not installing %s, no match\n",path);
-   return;
-   }
 
 Build2DListFromVarstring(&tp,path,' '); /* Must be at least one space between each var */
 
@@ -3919,13 +3786,6 @@ void InstallMakePath(char *path,mode_t plus,mode_t minus,char *uidnames,char *gi
   int lastnode = false;
   
 Debug1("InstallMakePath (%s) (+%o)(-%o)(%s)(%s)\n",path,plus,minus,uidnames,gidnames);
-
-if (!IsInstallable(CLASSBUFF))
-   {
-   InitializeAction();
-   Debug1("Not installing directory item, no match\n");
-   return;
-   }
 
 Build2DListFromVarstring(&tp,path,'/');
 
@@ -4429,14 +4289,6 @@ void InstallFileListItem(char *path,mode_t plus,mode_t minus,enum fileactions ac
 
 Debug1("InstallFileaction (%s) (+%o)(-%o) (%s) (%d) (%c)\n",path,plus,minus,FILEACTIONTEXT[action],action,travlinks);
 
-if (!IsInstallable(CLASSBUFF))
-   {
-   InitializeAction();
-   Debug1("Not installing file item, no match\n");
-   return;
-   }
-
- 
 Build2DListFromVarstring(&tp,path,'/');
     
 Set2DList(tp);
@@ -4548,12 +4400,6 @@ void InstallProcessItem(char *expr,char *restart,short matches,char comp,short s
 
 Debug1("InstallProcessItem(%s,%s,%d,%d,%c)\n",expr,restart,matches,signal,action);
 
-if ( ! IsInstallable(CLASSBUFF))
-   {
-   InitializeAction();
-   Debug1("Not installing process item, no match\n");
-   return;
-   }
 
 if ((ptr = (struct Process *)malloc(sizeof(struct Process))) == NULL)
    {
@@ -4725,13 +4571,6 @@ void InstallPackagesItem(char *name,char *ver,enum cmpsense sense,enum pkgmgrs m
 { struct Package *ptr;
   char buffer[CF_EXPANDSIZE];
 
-if ( ! IsInstallable(CLASSBUFF))
-   {
-   InitializeAction();
-   Debug1("Not installing packages item, no match\n");
-   return;
-   }
-
 /* If the package manager is set to pkgmgr_none, then an invalid
  * manager was specified, so we don't need to do anything */
 if ( PKGMGR == pkgmgr_none )
@@ -4883,13 +4722,6 @@ void InstallImageItem(char *cf_findertype,char *path,mode_t plus,mode_t minus,ch
   struct TwoDimList *tp = NULL;
   struct Item *expserver = NULL, *ep;
   
-if (!IsInstallable(CLASSBUFF))
-   {
-   Debug1("Not installing copy item, no match (%s,%s)\n",path,CLASSBUFF);
-   InitializeAction();
-   return;
-   }
-
 buf2[0] = '\0';
   
 Debug1("InstallImageItem (%s) (+%o)(-%o) (%s), server=%s\n",path,plus,minus,destination,server);
@@ -5959,13 +5791,6 @@ void InstallTidyPath(char *path,char *wild,int rec,short age,char travlinks,int 
   char *sp,ebuff[CF_EXPANDSIZE];
   int no_of_links = 0;
 
-if (!IsInstallable(classes))
-   {
-   InitializeAction();
-   Debug1("Not installing tidy path, no match\n");
-   return;
-   }
-
 VBUFF[0]='\0';                                /* Expand any variables */
 ExpandVarstring(path,ebuff,"");
 
@@ -6047,13 +5872,6 @@ void AddTidyItem(char *path,char *wild,int rec,short age,char travlinks,int tidy
   struct Item *ip;
 
 Debug1("AddTidyItem(%s,pat=%s,size=%d)\n",path,wild,tidysize);
-
-if (!IsInstallable(CLASSBUFF))
-   {
-   InitializeAction();
-   Debug1("Not installing TidyItem no match\n");
-   return;
-   }
 
 for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
    {

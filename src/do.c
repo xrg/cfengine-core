@@ -1876,6 +1876,7 @@ void MountHomeBinServers()
   char host[CF_MAXVARSIZE];
   char mountdir[CF_BUFSIZE];
   char maketo[CF_BUFSIZE];
+  struct Item *ip;
 
   /*
    * HvB: Bas van der Vlies
@@ -3061,7 +3062,6 @@ if (IsItemIn(VMOUNTED,buf))
 }
 
 /*******************************************************************/
-
 
 void AddToFstab(char *host,char *rmountpt,char *mountpt,char *mode,char *options,int ismounted)
 

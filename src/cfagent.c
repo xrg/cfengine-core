@@ -1064,21 +1064,20 @@ if (GetMacroValue(CONTEXTID,"TimeOut"))
       }
    }
 
-if (NOSPLAY)
-   {
-   return;
-   }
 
 if (VBINSERVERS != NULL)
    {
    if (VBINSERVERS->name != NULL)
       {
       VDEFAULTBINSERVER = *VBINSERVERS;
+      Verbose("Default binary server seems to be %s\n",VDEFAULTBINSERVER.name);
       }
-
-   Debug("Default binary server seems to be %s\n",VDEFAULTBINSERVER.name);
    }
 
+if (NOSPLAY)
+   {
+   return;
+   }
 
 time = 0;
 snprintf(ebuff,CF_BUFSIZE,"%s+%s+%d",VFQNAME,VIPADDRESS,getuid());
