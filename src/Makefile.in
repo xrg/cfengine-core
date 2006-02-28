@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 
-SOURCES = $(cfagent_SOURCES) $(cfenvd_SOURCES) $(cfenvgraph_SOURCES) $(cfetool_SOURCES) $(cfetoolgraph_SOURCES) $(cfexecd_SOURCES) $(cfkey_SOURCES) $(cfrun_SOURCES) $(cfservd_SOURCES) $(cfshow_SOURCES)
+SOURCES = $(cfagent_SOURCES) $(cfconvert_SOURCES) $(cfenvd_SOURCES) $(cfenvgraph_SOURCES) $(cfetool_SOURCES) $(cfetoolgraph_SOURCES) $(cfexecd_SOURCES) $(cfkey_SOURCES) $(cfrun_SOURCES) $(cfservd_SOURCES) $(cfshow_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -43,7 +43,7 @@ target_triplet = @target@
 sbin_PROGRAMS = cfagent$(EXEEXT) cfservd$(EXEEXT) cfrun$(EXEEXT) \
 	cfkey$(EXEEXT) cfenvd$(EXEEXT) cfenvgraph$(EXEEXT) \
 	cfexecd$(EXEEXT) cfshow$(EXEEXT) cfetool$(EXEEXT) \
-	cfetoolgraph$(EXEEXT)
+	cfetoolgraph$(EXEEXT) cfconvert$(EXEEXT)
 subdir = src
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/cflex.l.in $(srcdir)/conf.h.in \
@@ -83,6 +83,30 @@ am_cfagent_OBJECTS = cfagent.$(OBJEXT) init.$(OBJEXT) do.$(OBJEXT) \
 cfagent_OBJECTS = $(am_cfagent_OBJECTS)
 am__DEPENDENCIES_1 =
 cfagent_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_cfconvert_OBJECTS = cfconvert.$(OBJEXT) init.$(OBJEXT) do.$(OBJEXT) \
+	modules.$(OBJEXT) alerts.$(OBJEXT) wrapper.$(OBJEXT) \
+	report.$(OBJEXT) client.$(OBJEXT) ip.$(OBJEXT) \
+	process.$(OBJEXT) ifconf.$(OBJEXT) image.$(OBJEXT) \
+	item.$(OBJEXT) item-ext.$(OBJEXT) item-file.$(OBJEXT) \
+	2Dlist.$(OBJEXT) globals.$(OBJEXT) classes.$(OBJEXT) \
+	misc.$(OBJEXT) convparse.$(OBJEXT) functions.$(OBJEXT) \
+	edittools.$(OBJEXT) patches.$(OBJEXT) convinstall.$(OBJEXT) \
+	link.$(OBJEXT) tidy.$(OBJEXT) filedir.$(OBJEXT) eval.$(OBJEXT) \
+	modes.$(OBJEXT) sockaddr.$(OBJEXT) chflags.$(OBJEXT) \
+	locks.$(OBJEXT) mount.$(OBJEXT) macro.$(OBJEXT) \
+	filenames.$(OBJEXT) varstring.$(OBJEXT) wildcard.$(OBJEXT) \
+	cfparse.$(OBJEXT) comparray.$(OBJEXT) read.$(OBJEXT) \
+	checksums.$(OBJEXT) proto.$(OBJEXT) filters.$(OBJEXT) \
+	copy.$(OBJEXT) repository.$(OBJEXT) rotate.$(OBJEXT) \
+	errors.$(OBJEXT) cflex.$(OBJEXT) net.$(OBJEXT) df.$(OBJEXT) \
+	log.$(OBJEXT) crypto.$(OBJEXT) popen.$(OBJEXT) \
+	popen_def.$(OBJEXT) sensible.$(OBJEXT) acl.$(OBJEXT) \
+	dce_acl.$(OBJEXT) nameinfo.$(OBJEXT) strategies.$(OBJEXT) \
+	granules.$(OBJEXT) methods.$(OBJEXT) dtypes.$(OBJEXT) \
+	state.$(OBJEXT) package.$(OBJEXT)
+cfconvert_OBJECTS = $(am_cfconvert_OBJECTS)
+cfconvert_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_cfenvd_OBJECTS = cfenvd.$(OBJEXT) globals.$(OBJEXT) \
 	filenames.$(OBJEXT) nameinfo.$(OBJEXT) sockaddr.$(OBJEXT) \
@@ -181,12 +205,12 @@ LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 LEXCOMPILE = $(LEX) $(LFLAGS) $(AM_LFLAGS)
 YLWRAP = $(top_srcdir)/ylwrap
 YACCCOMPILE = $(YACC) $(YFLAGS) $(AM_YFLAGS)
-SOURCES = $(cfagent_SOURCES) $(cfenvd_SOURCES) $(cfenvgraph_SOURCES) \
-	$(cfetool_SOURCES) $(cfetoolgraph_SOURCES) $(cfexecd_SOURCES) \
-	$(cfkey_SOURCES) $(cfrun_SOURCES) $(cfservd_SOURCES) \
-	$(cfshow_SOURCES)
-DIST_SOURCES = $(cfagent_SOURCES) $(cfenvd_SOURCES) \
+SOURCES = $(cfagent_SOURCES) $(cfconvert_SOURCES) $(cfenvd_SOURCES) \
 	$(cfenvgraph_SOURCES) $(cfetool_SOURCES) \
+	$(cfetoolgraph_SOURCES) $(cfexecd_SOURCES) $(cfkey_SOURCES) \
+	$(cfrun_SOURCES) $(cfservd_SOURCES) $(cfshow_SOURCES)
+DIST_SOURCES = $(cfagent_SOURCES) $(cfconvert_SOURCES) \
+	$(cfenvd_SOURCES) $(cfenvgraph_SOURCES) $(cfetool_SOURCES) \
 	$(cfetoolgraph_SOURCES) $(cfexecd_SOURCES) $(cfkey_SOURCES) \
 	$(cfrun_SOURCES) $(cfservd_SOURCES) $(cfshow_SOURCES)
 HEADERS = $(noinst_HEADERS)
@@ -388,6 +412,73 @@ cfagent_SOURCES = \
 	package.c
 
 cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
+cfconvert_SOURCES = \
+	cfconvert.c							\
+	init.c								\
+        do.c                                                            \
+	modules.c							\
+	alerts.c							\
+        wrapper.c                                                       \
+        report.c                                                        \
+	client.c							\
+	ip.c								\
+	process.c							\
+	ifconf.c							\
+	image.c								\
+	item.c								\
+	item-ext.c							\
+	item-file.c							\
+	2Dlist.c							\
+	globals.c							\
+	classes.c							\
+	misc.c								\
+	convparse.c							\
+	functions.c							\
+	edittools.c							\
+	patches.c							\
+	convinstall.c							\
+	link.c								\
+	tidy.c								\
+	filedir.c							\
+	eval.c								\
+	modes.c								\
+	sockaddr.c							\
+	chflags.c							\
+	locks.c								\
+	mount.c								\
+	macro.c								\
+	filenames.c							\
+	varstring.c							\
+	wildcard.c							\
+	cfparse.y							\
+	comparray.c							\
+	read.c								\
+	checksums.c							\
+	proto.c								\
+        filters.c                                                       \
+	copy.c								\
+	repository.c							\
+	rotate.c							\
+	errors.c							\
+	cflex.l								\
+	net.c								\
+	df.c								\
+	log.c								\
+	crypto.c							\
+	popen.c								\
+	popen_def.c							\
+	sensible.c							\
+	acl.c								\
+	dce_acl.c							\
+	nameinfo.c							\
+	strategies.c                         				\
+	granules.c							\
+	methods.c							\
+	dtypes.c							\
+	state.c								\
+	package.c
+
+cfconvert_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 cfservd_SOURCES = \
 	cfservd.c							\
 	parse.c								\
@@ -668,6 +759,9 @@ cfparse.h: cfparse.c
 cfagent$(EXEEXT): $(cfagent_OBJECTS) $(cfagent_DEPENDENCIES) 
 	@rm -f cfagent$(EXEEXT)
 	$(LINK) $(cfagent_LDFLAGS) $(cfagent_OBJECTS) $(cfagent_LDADD) $(LIBS)
+cfconvert$(EXEEXT): $(cfconvert_OBJECTS) $(cfconvert_DEPENDENCIES) 
+	@rm -f cfconvert$(EXEEXT)
+	$(LINK) $(cfconvert_LDFLAGS) $(cfconvert_OBJECTS) $(cfconvert_LDADD) $(LIBS)
 cfenvd$(EXEEXT): $(cfenvd_OBJECTS) $(cfenvd_DEPENDENCIES) 
 	@rm -f cfenvd$(EXEEXT)
 	$(LINK) $(cfenvd_LDFLAGS) $(cfenvd_OBJECTS) $(cfenvd_LDADD) $(LIBS)
@@ -706,6 +800,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/acl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alerts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfagent.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfconvert.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfenvd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfenvgraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfetool.Po@am__quote@
@@ -722,6 +817,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/classes.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/client.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comparray.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/convinstall.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/convparse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/copy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crypto.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dce_acl.Po@am__quote@
