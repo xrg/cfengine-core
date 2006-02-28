@@ -375,13 +375,17 @@ return -1;
 void AddClassToHeap(char *class)
 
 {
+Chop(class);
 Debug("AddClassToHeap(%s)\n",class);
 
-Chop(class);
+if (strlen(class) == 0)
+   {
+   return;
+   }
 
 if (IsItemIn(ABORTHEAP,class))
    {
-   snprintf(OUTPUT,CF_BUFSIZE,"Cfagent aborted on defined class %s\n",class);
+   snprintf(OUTPUT,CF_BUFSIZE,"Cfagent aborted on defined class [%s]\n",class);
    CfLog(cferror,OUTPUT,"");
    exit(1);
    }
