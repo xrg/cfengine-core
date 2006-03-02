@@ -1066,6 +1066,8 @@ if (GetMacroValue(CONTEXTID,"TimeOut"))
       }
    }
 
+/* Make sure we have a healthy binserver list so binserver expansion works, even if binserver not defined */
+
 if (VBINSERVERS == NULL)
    {
    PrependItem(&VBINSERVERS,VUQNAME,NULL);
@@ -1076,6 +1078,10 @@ if (VBINSERVERS->name != NULL)
    VDEFAULTBINSERVER = *VBINSERVERS;
    Verbose("Default binary server seems to be %s\n",VDEFAULTBINSERVER.name);
    }
+
+AppendItem(&VBINSERVERS,VUQNAME,NULL);
+
+/* Done binserver massage */
 
 if (NOSPLAY)
    {
