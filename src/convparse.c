@@ -52,7 +52,8 @@ int ParseInputFile(char *file)
   struct Item *ptr;
   struct stat s;
   struct Item *done = NULL;
-   
+
+  ISCFENGINE = true;
 
 NewParser();
 PARSING = true;

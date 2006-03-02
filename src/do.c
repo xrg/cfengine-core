@@ -556,7 +556,7 @@ for (lp = VLINK; lp != NULL; lp = lp->next)
 
    matched = varstring = false;
 
-   for( ip = VBINSERVERS; ip != NULL && (!matched); ip = ip->next)
+   for(ip = VBINSERVERS; ip != NULL && (!matched); ip = ip->next)
       {
       path[0] = '\0';
 
@@ -569,7 +569,7 @@ for (lp = VLINK; lp != NULL; lp = lp->next)
       else if (! varstring)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Error while trying to link %s -> %s\n",from,path);
-  CfLog(cfinform,OUTPUT,"");
+         CfLog(cfinform,OUTPUT,"");
          }
 
       if (! varstring)                       /* don't iterate over binservers if not var */

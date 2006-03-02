@@ -601,26 +601,6 @@ void EchoValues()
 { struct Item *ip,*p2;
   char ebuff[CF_EXPANDSIZE];
 
-ebuff[0] = '\0';
-
-if (!StrStr(VSYSNAME.nodename,VDOMAIN))
-   {
-   snprintf(VFQNAME,CF_BUFSIZE,"%s.%s",VSYSNAME.nodename,ToLowerStr(VDOMAIN));
-   strcpy(VUQNAME,VSYSNAME.nodename);
-   }
-else
-   {
-   int n = 0;
-   strcpy(VFQNAME,VSYSNAME.nodename);
-   
-   while(VSYSNAME.nodename[n++] != '.')
-      {
-      }
-   
-   strncpy(VUQNAME,VSYSNAME.nodename,n-1);        
-   }
-  
-Verbose("Accepted domain name: %s\n\n",VDOMAIN); 
 
 if (GetMacroValue(CONTEXTID,"OutputPrefix"))
    {
@@ -782,6 +762,28 @@ if (VACTIONSEQ == NULL)
    }
 
 sprintf(id,"%d",geteuid());   /* get effective user id */
+
+ebuff[0] = '\0';
+
+if (!StrStr(VSYSNAME.nodename,VDOMAIN))
+   {
+   snprintf(VFQNAME,CF_BUFSIZE,"%s.%s",VSYSNAME.nodename,ToLowerStr(VDOMAIN));
+   strcpy(VUQNAME,VSYSNAME.nodename);
+   }
+else
+   {
+   int n = 0;
+   strcpy(VFQNAME,VSYSNAME.nodename);
+   
+   while(VSYSNAME.nodename[n++] != '.')
+      {
+      }
+   
+   strncpy(VUQNAME,VSYSNAME.nodename,n-1);        
+   }
+  
+Verbose("Accepted domain name: %s\n\n",VDOMAIN); 
+
 
 if (VACCESSLIST != NULL && !IsItemIn(VACCESSLIST,id))
    {
@@ -1064,14 +1066,15 @@ if (GetMacroValue(CONTEXTID,"TimeOut"))
       }
    }
 
-
-if (VBINSERVERS != NULL)
+if (VBINSERVERS == NULL)
    {
-   if (VBINSERVERS->name != NULL)
-      {
-      VDEFAULTBINSERVER = *VBINSERVERS;
-      Verbose("Default binary server seems to be %s\n",VDEFAULTBINSERVER.name);
-      }
+   PrependItem(&VBINSERVERS,VUQNAME,NULL);
+   }
+
+if (VBINSERVERS->name != NULL)
+   {
+   VDEFAULTBINSERVER = *VBINSERVERS;
+   Verbose("Default binary server seems to be %s\n",VDEFAULTBINSERVER.name);
    }
 
 if (NOSPLAY)

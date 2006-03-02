@@ -55,9 +55,12 @@ void Initialize (int argc, char **argv);
 void CheckSystemVariables (void);
 void CheckOpts (int argc, char **argv);
 void Syntax (void);
-int NothingLeftToDo (void);
+int  NothingLeftToDo (void);
 void SummarizeObjects (void);
 void EchoValues (void);
+
+void ConvShellCommands(void);
+void ConvControl(void);
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -68,10 +71,12 @@ int main(int argc,char *argv[])
 { struct Item *ip;
     
 Initialize(argc,argv); 
- 
-ParseInputFile(VINPUTFILE);
 
-EchoValues();
+printf("--------------------------------------------------\n\n");
+printf("Ignore this program - it is for developer use only\n\n");
+printf("--------------------------------------------------\n\n");
+
+ParseInputFile(VINPUTFILE);
 
 if (ERRORCOUNT > 0)
    {
@@ -80,7 +85,9 @@ if (ERRORCOUNT > 0)
    }
  
 CheckSystemVariables();
- 
+EchoValues();
+
+
 closelog();
 return 0;
 }
@@ -125,109 +132,22 @@ void EchoValues()
 
   ebuff[0] = '\0';
   
-  ListDefinedClasses();
-  
-  printf("\nGlobal expiry time for locks: %d minutes\n",VEXPIREAFTER);
-  printf("\nGlobal anti-spam elapse time: %d minutes\n\n",VIFELAPSED);
-  
-  printf("Extensions which should not be directories = ( ");
-  for (ip = EXTENSIONLIST; ip != NULL; ip=ip->next)
-     {
-     printf("%s ",ip->name);
-     }
-  printf(")\n");
-  
-  printf("Suspicious filenames to be warned about = ( ");
-  for (ip = SUSPICIOUSLIST; ip != NULL; ip=ip->next)
-     {
-     printf("%s ",ip->name);
-     }
-  printf(")\n");   
-  
-   ListDefinedInterfaces();
-   printf("------------------------------------------------------------\n");
-   ListDefinedBinservers();
-   printf("------------------------------------------------------------\n");
-   ListDefinedHomeservers();
-   printf("------------------------------------------------------------\n");
-   ListDefinedHomePatterns();
-   printf("------------------------------------------------------------\n");
-   ListActionSequence();
-
-   printf("\nWill need to copy from the following trusted sources = ( ");
-
-   for (ip = VSERVERLIST; ip !=NULL; ip=ip->next)
-      {
-      printf("%s ",ip->name);
-      }
-   printf(")\n");
-   printf("\nUsing mailserver %s\n",VMAILSERVER);
-   printf("\nLocal mountpoints: ");
-   for (ip = VMOUNTLIST; ip != NULL; ip=ip->next)
-      {
-      printf ("%s ",ip->name);
-      }
-   printf("\n");
-   if (VDEFAULTROUTE != NULL)
-      {
-      if (IsDefinedClass(VDEFAULTROUTE->classes))
-         {
-         printf("\nDefault route for packets %s\n\n",VDEFAULTROUTE->name);
-         }
-      }
-   printf("\nFile repository = %s\n\n",VREPOSITORY);
-   printf("\nNet interface name = %s\n",VIFDEV[VSYSTEMHARDCLASS]);
-   printf("------------------------------------------------------------\n");
-   ListDefinedVariables();
-   printf("------------------------------------------------------------\n");
-   ListDefinedAlerts();
-   printf("------------------------------------------------------------\n");
-   ListDefinedStrategies();
-   printf("------------------------------------------------------------\n");
-   ListDefinedResolvers();
-   printf("------------------------------------------------------------\n");
-   ListDefinedRequired();
-   printf("------------------------------------------------------------\n");
-   ListDefinedMountables();
-   printf("------------------------------------------------------------\n");
-   ListMiscMounts();
-   printf("------------------------------------------------------------\n");
-   ListUnmounts();
-   printf("------------------------------------------------------------\n");
-   ListDefinedMakePaths();
-   printf("------------------------------------------------------------\n");
-   ListDefinedImports();
-   printf("------------------------------------------------------------\n");
-   ListFiles();
-   printf("------------------------------------------------------------\n");
-   ListACLs();
-   printf("------------------------------------------------------------\n");
-   ListFilters();
-   printf("------------------------------------------------------------\n");   
-   ListDefinedIgnore();
-   printf("------------------------------------------------------------\n");
-   ListFileEdits();
-   printf("------------------------------------------------------------\n");
-   ListProcesses();
-   printf("------------------------------------------------------------\n");
-   ListDefinedImages();
-   printf("------------------------------------------------------------\n");
-   ListDefinedTidy();
-   printf("------------------------------------------------------------\n");
-   ListDefinedDisable();
-   printf("------------------------------------------------------------\n");
-   ListDefinedLinks();
-   printf("------------------------------------------------------------\n");
-   ListDefinedLinkchs();
-   printf("------------------------------------------------------------\n");
-   ListDefinedScripts();
-   printf("------------------------------------------------------------\n");
-   ListDefinedPackages();
-   printf("------------------------------------------------------------\n");
-   ListDefinedMethods();
-   printf("------------------------------------------------------------\n");
+if (strcmp(VINPUTFILE,"cfagent.conf") == 0)
+   {
+   printf("method cfagent\n{\n");
+   }
+else
+   {
+   printf("method %s\n{\n",ReadLastNode(VINPUTFILE));
+   }
 
 
+printf("control:\n\n");
+printf("vars:\n\n");
+ConvControl();
+ConvShellCommands();
+
+printf("\n}\n");
 }
 
 /*******************************************************************/
@@ -237,12 +157,10 @@ void CheckSystemVariables()
 { char id[CF_MAXVARSIZE],ebuff[CF_EXPANDSIZE];
   int time, hash, activecfs, locks;
 
- 
 if (ERRORCOUNT > 0)
    {
    FatalError("Execution terminated after parsing due to errors in program");
-   }
- 
+   } 
 }
 
 
@@ -317,4 +235,48 @@ printf("\nBug reports to bug-cfengine@gnu.org (News: gnu.cfengine.bug)\n");
 printf("General help to help-cfengine@gnu.org (News: gnu.cfengine.help)\n");
 printf("Info & fixes at http://www.cfengine.org\n");
 }
+
+
+/*******************************************************************/
+
+void ConvControl()
+
+{
+}
+
+/*******************************************************************/
+
+void ConvShellCommands()
+
+{ struct ShellComm *ptr;
+ 
+printf("commands:\n\n");
+
+for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
+   {
+   printf("  %s::\n\n",VSCRIPT->classes);
+   printf("\n   %s\n various promises ...\n",ptr->name);
+   printf("\ntimeout=%d\n uid=%d,gid=%d\n",ptr->timeout,ptr->uid,ptr->gid);
+   printf(" umask = %o, background = %c\n",ptr->umask,ptr->fork);
+   printf (" ChDir=%s, ChRoot=%s\n",ptr->chdir,ptr->chroot);
+   printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+   
+   if (ptr->defines)
+      {
+      printf(" Define %s\n",ptr->defines);
+      }
+
+   if (ptr->elsedef)
+      {
+      printf(" ElseDefine %s\n",ptr->elsedef);
+      }
+
+   }
+ 
+}
+
+
+
+
+
 /* EOF */
