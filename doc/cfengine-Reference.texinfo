@@ -2530,6 +2530,7 @@ For more functions, @xref{Setting variables with functions}.
 The meaning of each of these lines is described below.
 
 @menu
+* AbortClasses::                
 * access::                      
 * actionsequence::              
 * addclasses::                  
@@ -2550,8 +2551,8 @@ The meaning of each of these lines is described below.
 * deletenonusermail::           
 * deletenonownermail::          
 * domain::                      
+* dpkginstallcommand::          
 * dryrun::                      
-* dpkginstallcommand::                      
 * editbinaryfilesize::          
 * editfilesize::                
 * emptyresolvconf::             
@@ -2578,7 +2579,7 @@ The meaning of each of these lines is described below.
 * repchar::                     
 * repository::                  
 * RPMcommand::                  
-* rpminstallcommand::                  
+* rpminstallcommand::           
 * schedule::                    
 * secureinput::                 
 * sensiblecount::               
@@ -2591,7 +2592,7 @@ The meaning of each of these lines is described below.
 * SplayTime::                   
 * split::                       
 * spooldirectories::            
-* suninstallcommand::                  
+* suninstallcommand::           
 * suspiciousnames::             
 * sysadm::                      
 * Syslog::                      
@@ -2611,7 +2612,7 @@ The meaning of each of these lines is described below.
 @c SUBSECTION
 @c .....................................................
 
-@node AbortClasses
+@node AbortClasses, access, control, control
 @subsection AbortClasses
 
 The @code{AbortClasses} list is a list of class identifiers that will
@@ -2645,7 +2646,7 @@ shellcommands:
 @c SUBSECTION
 @c .....................................................
 
-@node access, actionsequence, control, control
+@node access, actionsequence, AbortClasses, control
 @subsection access
 @cindex Access control
 @vindex Restricting access

@@ -1,3 +1,6 @@
+2.1.20
+	ipv6 structure compilation error for Tru64
+
 2.1.19 
 
 	cfagent will now exit and cease processing if any class in the defined
@@ -8,16 +11,20 @@
 	The singlecopy feature has been rewritten after reports of it not
 	working, besides, the code was bizarre and the documentation was
 	even worse.
-	The autodefine code also patched and tested. In both these cases,
-	there are lists of *patterns* or wildcards. The code and docs now agree
 
-	Error parsing strings (esp shellcommands) that contain the $ symbol due to
-	a bug in 2D-lists.
+	The autodefine code also patched and tested. In both these cases,
+	there are lists of *patterns* or wildcards. The code and docs now
+	agree
+
+	ExecResult now runs its command in -n mode
+	
+	Error parsing strings (esp shellcommands) that contain the $
+	symbol due to a bug in 2D-lists.
 	
 	VMWare ESX recognition.
 	
-	Bug in cfservd stat-mode on symbolic links not correctly evaluated.
-	Bug in linktype=copy for copy fixed.
+	Bug in cfservd stat-mode on symbolic links not correctly
+	evaluated.  Bug in linktype=copy for copy fixed.
 	
 	Bug in array expansion fixed - would truncate string after expansion
 
@@ -45,11 +52,13 @@
 	
 	SuSE 10 detection patch
 
-	Minor error fixes discovered by Joe Buehler and his wonderful software.
+	Minor error fixes discovered by Joe Buehler and his wonderful
+	software.
 	
         Files is the "suspicious" list were marked "not sensible" so that
 	follow-up rules e.g. to delete them would not be triggered This is
-	now considered a confusion of roles. Suspicious files are no longer skipped.
+	now considered a confusion of roles. Suspicious files are no
+	longer skipped.
 
 	More memory leaks in cfservd
 
