@@ -68,7 +68,11 @@ int IdentifyForVerification(int sd,char *localip,int family)
   int len,err;
   struct passwd *user_ptr;
   char *uname;
+#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
   char myaddr[256]; /* Compilation trick for systems that don't know ipv6 */
+#else
+  struct sockaddr_in myaddr;
+#endif
   
 memset(sendbuff,0,CF_BUFSIZE);
 memset(dnsname,0,CF_BUFSIZE);
