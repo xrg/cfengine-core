@@ -1,6 +1,16 @@
+
+
 2.1.20
 	ipv6 structure compilation error for Tru64
 
+	Tested for compilation with latest Berkeley4.4-NC
+
+2.1.19p1	   
+
+	If you are experiencing problems with 2.1.19 please get 2.1.19a.
+	One of the changes in 2.1.19 has had bizarre side effects in links
+	and disks.
+	
 2.1.19 
 
 	cfagent will now exit and cease processing if any class in the defined
