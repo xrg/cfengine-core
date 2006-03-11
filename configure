@@ -8322,8 +8322,8 @@ echo $ECHO_N "checking for BerkeleyDB location in $BERKELEY_DB_DIR... $ECHO_C" >
 if test "x$BERKELEY_DB_DIR" = "xno" ; then
     echo "$as_me:$LINENO: result: " >&5
 echo "${ECHO_T}" >&6
-    { { echo "$as_me:$LINENO: error: This release of cfengine requires BerkeleyDB 3.2 or later" >&5
-echo "$as_me: error: This release of cfengine requires BerkeleyDB 3.2 or later" >&2;}
+    { { echo "$as_me:$LINENO: error: This release of cfengine requires a version of BerkeleyDB 3.2 or later" >&5
+echo "$as_me: error: This release of cfengine requires a version of BerkeleyDB 3.2 or later" >&2;}
    { (exit 1); exit 1; }; }
 else
     if test "x$BERKELEY_DB_DIR" = "xdefault" ; then
@@ -8539,7 +8539,7 @@ echo "${ECHO_T}$BERKELEY_DB_DIR" >&6
         done
 
         BERKELEY_DB_LIB="-ldb"
-        for v in db41 db40 db4 db33 db32 db3 db; do
+        for v in db4.4 db44 db41 db40 db4 db33 db32 db3 db; do
             if test -f "$BERKELEY_DB_DIR/lib/lib$v.so"; then
                 BERKELEY_DB_LIB="-l$v"
 		break

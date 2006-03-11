@@ -4114,12 +4114,37 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
      	singlecopy = ( path_and_filename_wildcard )
      
 </pre>
-   <p>If a <code>singlecopy</code> pattern is defined the behavior of copy: is modified so
-that a given destination file, matching the pattern, will only be updated once. In other words,
-if someone tries to copy more then one source file to the same location, the destination will not
-be overwritten in the same run.
+   <p>If a <code>singlecopy</code> pattern is defined the behavior of copy: is
+modified so that a given destination file, matching the pattern, will
+only be updated once. In other words, if someone tries to copy more
+then one source file to the same location, the destination will not be
+overwritten in the same run. For example:
 
-<!-- ..................................................... -->
+<pre class="smallexample">     control:
+     
+       actionsequence = ( copy )
+     
+       singlecopy = ( /tmp/* )
+     
+       addinstallables = ( zzz )
+     
+      zzz::
+     
+       autodefine = ( /tmp/* )
+     
+     copy:
+     
+      /etc/passwd dest=/tmp/bla type=binary
+      /etc/group  dest=/tmp/bla type=binary
+     
+     alerts:
+     
+      zzz::
+     
+       "Copied something in /tmp"
+     
+</pre>
+   <!-- ..................................................... -->
 <!-- SUBSECTION -->
 <!-- ..................................................... -->
 <div class="node">

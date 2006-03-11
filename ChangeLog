@@ -5,6 +5,12 @@
 
 	Tested for compilation with latest Berkeley4.4-NC
 
+	New option in cfservd.conf "LogEncryptedTransfers" (true/false).
+	If true, any file that is granted access and is marked "encrypt=true"
+	will be logged in syslog. i.e. one can keep a record of sensitive
+	transfers.
+	
+
 2.1.19p1	   
 
 	If you are experiencing problems with 2.1.19 please get 2.1.19a.

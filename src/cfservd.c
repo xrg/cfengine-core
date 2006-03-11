@@ -67,6 +67,7 @@ int MULTIPLECONNS = false;
 int TRIES = 0;
 int MAXTRIES = 5;
 int LOGCONNS = false;
+int LOGENCRYPT = false;
 
 struct option CFDOPTIONS[] =
    {
@@ -349,6 +350,11 @@ if (OptionIs(CONTEXTID,"DenyBadClocks", false))
 if (OptionIs(CONTEXTID,"LogAllConnections", true)) 
    {
    LOGCONNS = true;
+   }
+
+if (OptionIs(CONTEXTID,"LogEncryptedTransfers", true)) 
+   {
+   LOGENCRYPT = true;
    }
 
 if (GetMacroValue(CONTEXTID,"ChecksumDatabase"))
@@ -2176,6 +2182,12 @@ for (ap = VADMIT; ap != NULL; ap=ap->next)
     {
     snprintf(conn->output,CF_BUFSIZE*2,"Host %s granted access to %s\n",conn->hostname,realname);
     CfLog(cfverbose,conn->output,"");
+    
+    if (encrypt && LOGENCRYPT)
+       {
+       /* Log files that were marked as requiring encryption */
+       CfLog(cflogonly,conn->output,"");
+       }
     }
  else
     {
@@ -2183,7 +2195,6 @@ for (ap = VADMIT; ap != NULL; ap=ap->next)
     CfLog(cfverbose,conn->output,"");
     CfLog(cflogonly,conn->output,"");
     }
- 
  
  if (!conn->rsa_auth)
     {

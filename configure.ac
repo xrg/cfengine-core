@@ -101,7 +101,7 @@ AC_MSG_CHECKING(for BerkeleyDB location in $BERKELEY_DB_DIR)
 
 if test "x$BERKELEY_DB_DIR" = "xno" ; then
     AC_MSG_RESULT( )
-    AC_MSG_ERROR(This release of cfengine requires BerkeleyDB 3.2 or later)
+    AC_MSG_ERROR(This release of cfengine requires a version of BerkeleyDB 3.2 or later)
 else
     if test "x$BERKELEY_DB_DIR" = "xdefault" ; then
         for v in BerkeleyDB.3.2 BerkeleyDB.3.3 BerkeleyDB.4.0  BerkeleyDB.4.1  BerkeleyDB.4.2 BerkeleyDB.4.3 BerkeleyDB.4.4; do
@@ -188,7 +188,7 @@ else
         done
 
         BERKELEY_DB_LIB="-ldb"
-        for v in db41 db40 db4 db33 db32 db3 db; do
+        for v in db4.4 db44 db41 db40 db4 db33 db32 db3 db; do
             if test -f "$BERKELEY_DB_DIR/lib/lib$v.so"; then
                 BERKELEY_DB_LIB="-l$v"
 		break
