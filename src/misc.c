@@ -833,11 +833,14 @@ if (stat("/etc/UnitedLinux-release",&statbuf) != -1)
    AddClassToHeap("UnitedLinux");
    }
 
-if (stat("/etc/issue",&statbuf) != -1)
+if (stat("/etc/vmware",&statbuf) != -1)
    {
-   Verbose("\nThis appears to be a VMWare ESX system.\n");
-   AddClassToHeap("VMWare_ESX");
-   ESX_version();
+   if (S_ISDIR(statbuf.st_mode))
+      {
+      Verbose("\nThis appears to be a VMWare xSX system.\n");
+      AddClassToHeap("VMWare");
+      VM_version();
+      }
    }
  
 }
@@ -1349,10 +1352,11 @@ char strminor[CF_MAXVARSIZE];
 
 /******************************************************************/
 
-int ESX_version(void)
+int VM_version(void)
 
 { FILE *fp;
   char buffer[CF_BUFSIZE];
+  struct stat statbuf;
 
 if ((fp = fopen("/etc/issue","r")) == NULL)
    {

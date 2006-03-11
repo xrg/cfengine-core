@@ -701,7 +701,7 @@ int CheckForMethodPackage (char *name);
 
 /* misc.c */
 
-int ESX_version (void);
+int VM_version (void);
 int linux_fedora_version (void);
 int linux_redhat_version (void);
 int linux_mandrake_version (void);
