@@ -1703,7 +1703,7 @@ Debug1("HandleGroupRVal(%s) group (%s), type=%d\n",ebuff,GROUPBUFF,type);
 
 switch (type)
    {
-   case simple:    if (strcmp(ebuff,VDEFAULTBINSERVER.name) == 0)
+   case simple:    if (strcmp(ebuff,VUQNAME) == 0)
                       {
                       AddClassToHeap(GROUPBUFF);
                       break;
@@ -1729,7 +1729,7 @@ switch (type)
 
                    while (getnetgrent(&machine,&user,&domain))
                       {
-                      if (strcmp(machine,VDEFAULTBINSERVER.name) == 0)
+                      if (strcmp(machine,VUQNAME) == 0)
                          {
                          Debug1("Matched %s in netgroup %s\n",machine,ebuff);
                          AddClassToHeap(GROUPBUFF);
@@ -1754,7 +1754,7 @@ switch (type)
 
                    while (getnetgrent(&machine,&user,&domain))
                       {
-                      if (strcmp(machine,VDEFAULTBINSERVER.name) == 0)
+                      if (strcmp(machine,VUQNAME) == 0)
                          {
                          Debug1("Matched delete item %s in netgroup %s\n",machine,ebuff);
                          DeleteItemStarting(&VHEAP,GROUPBUFF);
