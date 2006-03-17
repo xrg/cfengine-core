@@ -838,7 +838,7 @@ if (stat("/etc/vmware",&statbuf) != -1)
    if (S_ISDIR(statbuf.st_mode))
       {
       Verbose("\nThis appears to be a VMWare xSX system.\n");
-      AddClassToHeap("VMWare");
+      AddClassToHeap("VMware");
       VM_version();
       }
    }
