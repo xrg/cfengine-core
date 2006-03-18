@@ -236,6 +236,20 @@ switch(level)
        
        break;
 
+   case cfloginform: 
+
+       if (LOGGING && IsPrivileged() && !DONTDO)
+          {
+          syslog(LOG_INFO," %s",buffer);    
+          
+          if ((errstr != NULL) && (strlen(errstr) > 0))
+             {
+             syslog(LOG_INFO," %s",errstr);  
+             }
+          }
+       
+       break;
+
    case cferror:
        printf("%s: %s",VPREFIX,buffer);
        

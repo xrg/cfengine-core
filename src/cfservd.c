@@ -2186,14 +2186,14 @@ for (ap = VADMIT; ap != NULL; ap=ap->next)
     if (encrypt && LOGENCRYPT)
        {
        /* Log files that were marked as requiring encryption */
-       CfLog(cflogonly,conn->output,"");
+       CfLog(cfloginform,conn->output,"");
        }
     }
  else
     {
     snprintf(conn->output,CF_BUFSIZE*2,"Host %s denied access to %s\n",conn->hostname,realname);
     CfLog(cfverbose,conn->output,"");
-    CfLog(cflogonly,conn->output,"");
+    CfLog(cfloginform,conn->output,"");
     }
  
  if (!conn->rsa_auth)
@@ -3097,7 +3097,7 @@ CfLog(cfinform,sendbuffer,"");
 if (strlen(errmesg) > 0)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"ID from connecting host: (%s)",errmesg);
-   CfLog(cflogonly,OUTPUT,"");
+   CfLog(cfloginform,OUTPUT,"");
    }
 }
 

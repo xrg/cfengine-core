@@ -1151,7 +1151,8 @@ enum cfoutputlevel
    cfverbose,
    cfeditverbose,
    cferror,
-   cflogonly
+   cflogonly,
+   cfloginform
    };
 
 /*******************************************************************/
