@@ -39,7 +39,8 @@
 int BadProtoReply(char *buf)
 
 {
-return (strncmp(buf,"BAD:",4) == 0);
+ Debug("Protoreply: (%s)\n",buf);
+ return (strncmp(buf,"BAD:",4) == 0);
 }
 
 /*********************************************************************/

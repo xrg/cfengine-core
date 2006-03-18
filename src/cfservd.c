@@ -2609,6 +2609,7 @@ int StatFile(struct cfd_connection *conn,char *sendbuffer,char *filename)
 { struct cfstat cfst;
   struct stat statbuf;
   char linkbuf[CF_BUFSIZE];
+  int islink = false;
 
   Debug("StatFile(%s)\n",filename);
 
@@ -2638,6 +2639,7 @@ memset(linkbuf,0,CF_BUFSIZE);
 
 if (S_ISLNK(statbuf.st_mode))
    {
+   islink = true;
    cfst.cf_type = cf_link;                   /* pointless - overwritten */
    cfst.cf_lmode = statbuf.st_mode & 07777;
    cfst.cf_nlink = statbuf.st_nlink;
@@ -2655,7 +2657,7 @@ if (S_ISLNK(statbuf.st_mode))
    cfst.cf_readlink = linkbuf;
    }
 
-if (stat(filename,&statbuf) == -1)
+if (!islink && (stat(filename,&statbuf) == -1))
    {
    snprintf(sendbuffer,CF_BUFSIZE,"BAD: unable to stat file %s\n",filename);
    CfLog(cfverbose,conn->output,"stat");
