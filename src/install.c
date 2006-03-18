@@ -3077,8 +3077,11 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
              break;
              
          case BeginGroupIfNoMatch:
+         case BeginGroupIfMatch:
          case BeginGroupIfNoLineMatching:
+         case BeginGroupIfLineMatching:
          case BeginGroupIfNoLineContaining:
+         case BeginGroupIfLineContaining:
          case BeginGroupIfNoSuchLine:
          case BeginGroupIfDefined:
          case BeginGroupIfNotDefined: 

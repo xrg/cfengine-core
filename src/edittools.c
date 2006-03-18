@@ -1993,11 +1993,14 @@ while(ep != NULL)
    {
    switch (ep->code)
       {
+      case BeginGroupIfMatch:
       case BeginGroupIfNoMatch:
       case BeginGroupIfNoLineMatching:
+      case BeginGroupIfLineMatching:
       case BeginGroupIfNoSuchLine:
       case BeginGroupIfFileIsNewer:
       case BeginGroupIfFileExists:
+      case BeginGroupIfLineContaining:
       case BeginGroupIfNoLineContaining:
       case BeginGroupIfDefined:
       case BeginGroupIfNotDefined:
