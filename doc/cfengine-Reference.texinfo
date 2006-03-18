@@ -4349,7 +4349,6 @@ the cfengine output. It will be of little interest to humans.
 @node singlecopy, site, showactions, control
 @subsection SingleCopy
 
-@w{}
 @smallexample
 
 	singlecopy = ( path_and_filename_wildcard )
@@ -4360,7 +4359,9 @@ If a @code{singlecopy} pattern is defined the behavior of copy: is
 modified so that a given destination file, matching the pattern, will
 only be updated once. In other words, if someone tries to copy more
 then one source file to the same location, the destination will not be
-overwritten in the same run. For example:
+overwritten in the same run. If the path name and wildcard is any of '*',
+'on' or 'true', then the list applies to all files.
+For example:
 
 @smallexample
 control:
@@ -4377,8 +4378,8 @@ control:
 
 copy:
 
- /etc/passwd dest=/tmp/bla type=binary
- /etc/group  dest=/tmp/bla type=binary
+ /etc/passwd dest=/tmp/destination type=binary
+ /etc/group  dest=/tmp/destination type=binary
 
 alerts:
 
@@ -4388,6 +4389,27 @@ alerts:
 
 @end smallexample
 
+Note (Warning) that this feature has several problems. It assumes an order
+dependence that cfengine generally tries to avoid. The first copy that
+takes place wins. Also, if files are locked at different times, this
+can result in oscillations between several different source files.
+e.g.
+
+@smallexample
+
+copy:
+
+ /etc/passwd dest=/tmp/bla type=binary ifelapsed=2
+ /etc/group  dest=/tmp/bla type=binary ifelapsed=1
+
+@end smallexample
+
+In order to avoid explicit looping, cfengine assumes that a file has
+been copied even if no actual copy took place -- i.e. as long as a
+file is apparently up to date, that counts as a valid copy update and the
+promise/action is considered done. If this were not the case, then the
+following promises would still be in line for execution and cfengine
+would loop between the different versions on subsequent invocations.
 
 @c .....................................................
 @c SUBSECTION
@@ -10334,6 +10356,7 @@ The file consists of a control section and access information.
 * cfservd HostnameKeys::        
 * cfservd IfElapsed::           
 * LogAllConnections::           
+* LogEncryptedTransfers::       
 * MaxConnections::              
 * TrustKeysFrom::               
 * DynamicAddresses::            
@@ -10590,7 +10613,7 @@ the default is one hour.
 @c SUBSECTION
 @c ...........................................
 
-@node LogAllConnections, MaxConnections, cfservd IfElapsed, cfservd control
+@node LogAllConnections, LogEncryptedTransfers, cfservd IfElapsed, cfservd control
 @subsection LogAllConnections
 
 If set to true, every successful connection will be logged to syslog.
@@ -10602,7 +10625,7 @@ can then be excluded from the allowed connections list.
 @c SUBSECTION
 @c ...........................................
 
-@node LogEncryptedTransfers
+@node LogEncryptedTransfers, MaxConnections, LogAllConnections, cfservd control
 @subsection LogEncryptedTransfers
 
 If set to true, every successful request for a file that is granted
@@ -10612,7 +10635,7 @@ access only with an encrypted connection is logged in syslog.
 @c SUBSECTION
 @c ...........................................
 
-@node MaxConnections, TrustKeysFrom, LogAllConnections, cfservd control
+@node MaxConnections, TrustKeysFrom, LogEncryptedTransfers, cfservd control
 @subsection MaxConnections
 This integer value sets a limit on the maximum number of
 child daemon threads which cfservd will `fork' in order

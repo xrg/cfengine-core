@@ -911,7 +911,7 @@ if (found == -1)
          
          AddMultipleClasses(ip->defines);
          
-         if (IsWildItemIn(VSINGLECOPY,destfile))
+         if (ALL_SINGLECOPY || IsWildItemIn(VSINGLECOPY,destfile))
             {
             if (!IsItemIn(VEXCLUDECACHE,destfile))
                {
@@ -1181,7 +1181,7 @@ else
                CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
                }
             
-            if (IsWildItemIn(VSINGLECOPY,destfile))
+            if (ALL_SINGLECOPY || IsWildItemIn(VSINGLECOPY,destfile))
                {
                if (!IsItemIn(VEXCLUDECACHE,destfile))
                   {
@@ -1250,7 +1250,7 @@ else
       /* Now we have to check for single copy, even though nothing was copied
          otherwise we can get oscillations between multipe versions if type is based on a checksum */
       
-      if (IsWildItemIn(VSINGLECOPY,destfile))
+      if (ALL_SINGLECOPY || IsWildItemIn(VSINGLECOPY,destfile))
          {
          if (!IsItemIn(VEXCLUDECACHE,destfile))
             {

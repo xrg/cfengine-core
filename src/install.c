@@ -399,10 +399,18 @@ else
         
     case cfsinglecp:
         PrependItem(&VSINGLECOPY,value,CLASSBUFF);
+
+        if ((strcmp(value,"on")==0) || (strcmp(value,"true")==0) || (strcmp(value,"*")==0))
+           {
+           ALL_SINGLECOPY = true;
+           }
+       break; 
+
         break;
         
     case cfexcludeln:
         PrependItem(&VEXCLUDELINK,value,CLASSBUFF);
+        
         break;
         
     case cfcplinks:

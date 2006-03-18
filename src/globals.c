@@ -135,6 +135,7 @@ pthread_mutex_t MUTEX_LOCK = PTHREAD_MUTEX_INITIALIZER;
   PUBLIC short LOGTIDYHOMEFILES = true;
   PUBLIC short UPDATEONLY = false;
   PUBLIC short SKIPIDENTIFY = false;
+  PUBLIC short ALL_SINGLECOPY = false;
 
   PUBLIC char FORK = 'n';
 
