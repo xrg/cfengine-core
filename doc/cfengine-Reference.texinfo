@@ -6065,7 +6065,7 @@ mountables). Note that this is added to the current file and not to a
 file named @file{/etc/auto_direct}.
 
 @item Backup @var{quoted-string}
-Set to true or false, on or off to set inform level for this file.
+Set to true or false, on or off to set backup policy for this file.
 Default is on.
 The default is to produce time-stamped backups of files; this may be
 coded explicitly by setting to ``timestamp'' or ``stamp''. If set to ``false''
@@ -6323,8 +6323,10 @@ start of file or end of file.
 @cindex Decrementing line pointer in editfiles
 
 @item Inform @var{quoted-string}
-Set to true or false, on or off to set inform level for this file.
-Default is off.
+Set to true or false, on or off to set the inform level for this file.
+Default is off. Note that, owing to the way that cfengine re-uses code,
+this feature does not work very well. Detailed messages are not
+available, only a summary of whether or not the file changed.
 
 @item InsertFile @var{quoted-string}
 Inserts the named file after the current line position
