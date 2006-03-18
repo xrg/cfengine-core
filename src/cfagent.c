@@ -172,11 +172,11 @@ ReadRCFile(); /* Should come before parsing so that it can be overridden */
  
  CfOpenLog();
  CheckSystemVariables();
- 
+
  SetReferenceTime(false); /* Reset */
 
  QueryCheck();
-     
+
  DoTree(3,"Main Tree"); 
  DoAlerts();
  
@@ -1155,6 +1155,8 @@ void DoTree(int passes,char *info)
 
 { struct Item *action;
 
+Debug("DoTree(%d,%s)\n",passes,info);
+ 
 for (PASS = 1; PASS <= passes; PASS++)
    {
    for (action = VACTIONSEQ; action !=NULL; action=action->next)
@@ -1368,6 +1370,7 @@ int NothingLeftToDo()
   struct Process *vproclist;
   struct Tidy *vtidy;
   struct Package *vpkg;
+  struct Image *vcopy;
 
 if (IsWildItemIn(VACTIONSEQ,"process*"))
    {
@@ -1392,6 +1395,19 @@ if (IsWildItemIn(VACTIONSEQ,"shellcomman*"))
          }
       }
    }
+
+if (IsWildItemIn(VACTIONSEQ,"cop*"))
+   {
+   for (vcopy = VIMAGE; vcopy != NULL; vcopy=vcopy->next)
+      {
+      if ((vcopy->done == 'n')  && IsDefinedClass(vcopy->classes))
+         {
+         Verbose("Checking for potential rule:: Copy <%s> / %s\n",vcopy->path,vcopy->classes);
+         return false;
+         }
+      }
+   }
+
 
 if (IsWildItemIn(VACTIONSEQ,"file*"))
    {
