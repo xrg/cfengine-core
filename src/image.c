@@ -234,24 +234,12 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
    if (!S_ISDIR(statbuf.st_mode))
       {
       succeed = 0;
-      
-      for (ptr = VEXCLUDECACHE; ptr != NULL; ptr=ptr->next)
-          {
-          if ((strncmp(ptr->name,newto,strlen(newto)+1) == 0) && (strncmp(ptr->classes,ip->classes,strlen(ip->classes)+1) == 0))
-             {
-             succeed = 1;
-             }
-          }
 
-      if (succeed)
+      if (IsItemIn(VEXCLUDECACHE,newto))
          {
-         snprintf(OUTPUT,CF_BUFSIZE*2,"Skipping already-copied file %s class %s\n",newto,ip->classes);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Skipping single-copied file %s class %s\n",newto,ip->classes);
          CfLog(cfverbose,OUTPUT,"");
          continue;
-         }
-      else
-         {
-         Debug2("file %s class %s was not excluded\n",newto,ip->classes);
          }
       }
 
