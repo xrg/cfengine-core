@@ -1180,7 +1180,8 @@ enum cmpsense   /* For package version comparison */
    cmpsense_lt,
    cmpsense_ge,
    cmpsense_le,
-   cmpsense_ne
+   cmpsense_ne,
+   cmpsense_none
    };
 
 /*******************************************************************/

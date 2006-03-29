@@ -477,7 +477,25 @@ evrstart = evr->name;
 if (strncmp (evrstart, "(none)", strlen ("(none)")) == 0)
    {
    sprintf (evrstart, "\"\"");
+
+   /* RB 34.02.06:
+   *   Set compare result to nothing when (not)installed version is none
+   *   because else we might return True for package check
+   *   if checking without version/cmp statement.
+   *
+   *   Or else it will cause us to assume package is installed
+   *   while it is actually not.
+   */
+
+   result = cmpsense_none;
    }
+   else
+     {
+
+     /* start with assuming that the versions are equal */
+
+     result = cmpsense_eq;
+     }
 
 if (strncmp (version, "(none)", strlen ("(none)")) == 0)
    {
@@ -486,10 +504,6 @@ if (strncmp (version, "(none)", strlen ("(none)")) == 0)
 
 /* the evrstart shall be a version number which we will
    compare to version using '/usr/bin/dpkg --compare-versions' */
-
-/* start with assuming that the versions are equal */
-
-result = cmpsense_eq;
 
 /* check if installed version is gt version */
 
@@ -567,7 +581,10 @@ if (match)
    return 1;
    }
 
-Verbose("\n");
+/* RB 24.03.06: Why do we need an extra blank line here?: ugly
+ * 
+ * Verbose("\n");
+ */
 
 /* if we manage to make it here, we did not find a match */
 DeleteItemList (evrlist);

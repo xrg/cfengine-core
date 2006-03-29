@@ -644,6 +644,7 @@ char *TCPNAMES[CF_NETATTR] =
       "ge",
       "le",
       "ne",
+      "none",
       NULL
       };
 
