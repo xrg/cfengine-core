@@ -1707,7 +1707,7 @@ else
    ExpandVarstring(item,ebuff,NULL);
    }
 
-Debug1("HandleGroupRVal(%s) group (%s), type=%d\n",ebuff,GROUPBUFF,type);
+Debug1("HandleGroupRVal(%s) group (%s), type=%d with fqname=%s,uqname=%s\n",ebuff,GROUPBUFF,type,VFQNAME,VUQNAME);
 
 switch (type)
    {
@@ -1729,7 +1729,7 @@ switch (type)
                       break;
                       }
 
-     Debug("[No match of class %s]\n\n",ebuff);
+                   Debug("[No match of class %s]\n\n",ebuff);
 
                    break;
 

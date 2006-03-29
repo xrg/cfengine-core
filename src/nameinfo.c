@@ -134,13 +134,15 @@ if ((sp = malloc(strlen(VSYSNAME.nodename)+1)) == NULL)
 
 strcpy(sp,VSYSNAME.nodename);
 SetDomainName(sp);
-
+strncpy(VUQNAME,sp,MAXHOSTNAMELEN);  /* Default assume non-qualified kernel name, correct below */
+      
 for (sp2=sp; *sp2 != '\0'; sp2++)  /* Truncate fully qualified name */
    {
    if (*sp2 == '.')
       {
       *sp2 = '\0';
       Debug("Truncating fully qualified hostname %s to %s\n",VSYSNAME.nodename,sp);
+      strncpy(VUQNAME,sp,MAXHOSTNAMELEN);
       break;
       }
    }
