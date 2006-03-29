@@ -329,7 +329,7 @@ if (ioctl(fd, SIOCGIFCONF, &list) == -1 || (list.ifc_len < (sizeof(struct ifreq)
 if (ioctl(fd, OSIOCGIFCONF, &list) == -1 || (list.ifc_len < (sizeof(struct ifreq))))
 #endif
    {
-   CfLog(cferror,"Couldn't get interfaces","ioctl");
+   CfLog(cferror,"Couldn't get interfaces - old kernel? Try setting CF_IFREQ to 1024","ioctl");
    exit(1);
    }
 
