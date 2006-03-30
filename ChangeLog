@@ -9,9 +9,15 @@
 	If true, any file that is granted access and is marked "encrypt=true"
 	will be logged in syslog. i.e. one can keep a record of sensitive
 	transfers.
-	
 
-2.1.19p1	   
+	Linkcopy fix in 2.1.19 broke copying of links that point
+	nowhere. Fixed.
+
+	Copy was missing from the multi-pass detection. Fixed
+
+	Patch to debian package management. (bastiaans@sara.nl)
+	"Cfengine will check if a package is installed, if it's not: install it.
+	However the "Comparison result" is always "eq" (equal) somehow for me... "
 
 	If you are experiencing problems with 2.1.19 please get 2.1.19a.
 	One of the changes in 2.1.19 has had bizarre side effects in links

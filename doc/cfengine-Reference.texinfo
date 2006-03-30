@@ -1565,6 +1565,10 @@ A @emph{cfengine action} looks like this:
 @end smallexample 
 
 @noindent
+A single class is an identifier that may consist of any alphanumeric
+character or the underscore, just like identifiers in ordinary programming
+languages. Classes that are derived from data like IP addresses or host names
+convert any other characters (like @samp{.} or @samp{-}) into underscores.
 A single class can be one of several things:
 
 @itemize @bullet

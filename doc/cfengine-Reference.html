@@ -1309,7 +1309,11 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
      
             <var>declaration</var>
 </pre>
-   <p class="noindent">A single class can be one of several things:
+   <p class="noindent">A single class is an identifier that may consist of any alphanumeric
+character or the underscore, just like identifiers in ordinary programming
+languages. Classes that are derived from data like IP addresses or host names
+convert any other characters (like `<samp><span class="samp">.</span></samp>' or `<samp><span class="samp">-</span></samp>') into underscores. 
+A single class can be one of several things:
 
      <ul>
 <li>The name of an operating system architecture e.g.  <code>ultrix</code>, <code>sun4</code>, etc. 
@@ -4110,7 +4114,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 <h4 class="subsection">4.9.56 SingleCopy</h4>
 
-<!-- /@w --><pre class="smallexample">     
+<pre class="smallexample">     
      	singlecopy = ( path_and_filename_wildcard )
      
 </pre>
@@ -4118,7 +4122,9 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 modified so that a given destination file, matching the pattern, will
 only be updated once. In other words, if someone tries to copy more
 then one source file to the same location, the destination will not be
-overwritten in the same run. For example:
+overwritten in the same run. If the path name and wildcard is any of '*',
+'on' or 'true', then the list applies to all files. 
+For example:
 
 <pre class="smallexample">     control:
      
@@ -4134,8 +4140,8 @@ overwritten in the same run. For example:
      
      copy:
      
-      /etc/passwd dest=/tmp/bla type=binary
-      /etc/group  dest=/tmp/bla type=binary
+      /etc/passwd dest=/tmp/destination type=binary
+      /etc/group  dest=/tmp/destination type=binary
      
      alerts:
      
@@ -4144,7 +4150,27 @@ overwritten in the same run. For example:
        "Copied something in /tmp"
      
 </pre>
-   <!-- ..................................................... -->
+   <p>Note (Warning) that this feature has several problems. It assumes an order
+dependence that cfengine generally tries to avoid. The first copy that
+takes place wins. Also, if files are locked at different times, this
+can result in oscillations between several different source files. 
+e.g.
+
+<pre class="smallexample">     
+     copy:
+     
+      /etc/passwd dest=/tmp/bla type=binary ifelapsed=2
+      /etc/group  dest=/tmp/bla type=binary ifelapsed=1
+     
+</pre>
+   <p>In order to avoid explicit looping, cfengine assumes that a file has
+been copied even if no actual copy took place &ndash; i.e. as long as a
+file is apparently up to date, that counts as a valid copy update and the
+promise/action is considered done. If this were not the case, then the
+following promises would still be in line for execution and cfengine
+would loop between the different versions on subsequent invocations.
+
+<!-- ..................................................... -->
 <!-- SUBSECTION -->
 <!-- ..................................................... -->
 <div class="node">
@@ -5716,7 +5742,7 @@ e.g. <code>``-nosuid''</code> for non setuid mounting (of all the
 mountables). Note that this is added to the current file and not to a
 file named <samp><span class="file">/etc/auto_direct</span></samp>.
 
-     <br><dt><code>Backup </code><var>quoted-string</var><dd>Set to true or false, on or off to set inform level for this file. 
+     <br><dt><code>Backup </code><var>quoted-string</var><dd>Set to true or false, on or off to set backup policy for this file. 
 Default is on. 
 The default is to produce time-stamped backups of files; this may be
 coded explicitly by setting to &ldquo;timestamp&rdquo; or &ldquo;stamp&rdquo;. If set to &ldquo;false&rdquo;
@@ -5911,8 +5937,10 @@ outside of the file boundaries the pointer `bumps'
 into the boundary and remains there, i.e. either at
 start of file or end of file. 
 <a name="index-Incrementing-line-pointer-in-editfiles-367"></a><a name="index-Decrementing-line-pointer-in-editfiles-368"></a>
-<br><dt><code>Inform </code><var>quoted-string</var><dd>Set to true or false, on or off to set inform level for this file. 
-Default is off.
+<br><dt><code>Inform </code><var>quoted-string</var><dd>Set to true or false, on or off to set the inform level for this file. 
+Default is off. Note that, owing to the way that cfengine re-uses code,
+this feature does not work very well. Detailed messages are not
+available, only a summary of whether or not the file changed.
 
      <br><dt><code>InsertFile </code><var>quoted-string</var><dd>Inserts the named file after the current line position
 in the file. This should be used in conjunction
@@ -9461,6 +9489,8 @@ file is as follows:
      
             LogAllConnections = ( <var>false/true</var> )
      
+            LogEncryptedTransfers = ( <var>false/true</var> )
+     
             SkipVerify = ( <var>IP numbers</var> )
      
             DynamicAddresses = ( <var>IP numbers</var> )
@@ -9553,6 +9583,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfservd_002econf-and-cfrun-reference">
 <li><a href="#cfservd-HostnameKeys">cfservd HostnameKeys</a>
 <li><a href="#cfservd-IfElapsed">cfservd IfElapsed</a>
 <li><a href="#LogAllConnections">LogAllConnections</a>
+<li><a href="#LogEncryptedTransfers">LogEncryptedTransfers</a>
 <li><a href="#MaxConnections">MaxConnections</a>
 <li><a href="#TrustKeysFrom">TrustKeysFrom</a>
 <li><a href="#DynamicAddresses">DynamicAddresses</a>
@@ -9880,7 +9911,7 @@ the default is one hour.
 <div class="node">
 <p><hr>
 <a name="LogAllConnections"></a>
-Next:&nbsp;<a rel="next" accesskey="n" href="#MaxConnections">MaxConnections</a>,
+Next:&nbsp;<a rel="next" accesskey="n" href="#LogEncryptedTransfers">LogEncryptedTransfers</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="#cfservd-IfElapsed">cfservd IfElapsed</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#cfservd-control">cfservd control</a>
 
@@ -9898,14 +9929,31 @@ can then be excluded from the allowed connections list.
 <!-- ........................................... -->
 <div class="node">
 <p><hr>
-<a name="MaxConnections"></a>
-Next:&nbsp;<a rel="next" accesskey="n" href="#TrustKeysFrom">TrustKeysFrom</a>,
+<a name="LogEncryptedTransfers"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#MaxConnections">MaxConnections</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="#LogAllConnections">LogAllConnections</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#cfservd-control">cfservd control</a>
 
 </div>
 
-<h4 class="subsection">5.1.15 MaxConnections</h4>
+<h4 class="subsection">5.1.15 LogEncryptedTransfers</h4>
+
+<p>If set to true, every successful request for a file that is granted
+access only with an encrypted connection is logged in syslog.
+
+<!-- ........................................... -->
+<!-- SUBSECTION -->
+<!-- ........................................... -->
+<div class="node">
+<p><hr>
+<a name="MaxConnections"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#TrustKeysFrom">TrustKeysFrom</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#LogEncryptedTransfers">LogEncryptedTransfers</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#cfservd-control">cfservd control</a>
+
+</div>
+
+<h4 class="subsection">5.1.16 MaxConnections</h4>
 
 <p>This integer value sets a limit on the maximum number of
 child daemon threads which cfservd will `fork' in order
@@ -9924,7 +9972,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#cfservd-control">cfservd control</a>
 
 </div>
 
-<h4 class="subsection">5.1.16 TrustKeysFrom</h4>
+<h4 class="subsection">5.1.17 TrustKeysFrom</h4>
 
 <p>Hosts which are included in this list are automatically
 trusted, if cfservd does not know their public key. This
@@ -9953,7 +10001,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#cfservd-control">cfservd control</a>
 
 </div>
 
-<h4 class="subsection">5.1.17 DynamicAddresses</h4>
+<h4 class="subsection">5.1.18 DynamicAddresses</h4>
 
 <p>Hosts which are included in this list are assumed to have IP addresses which
 can change with time, e.g. hosts which are given IP addresses by DHCP
@@ -12932,9 +12980,10 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#cfservd-HostnameKeys">5.1.12 HostnameKeys</a>
 <li><a href="#cfservd-IfElapsed">5.1.13 IfElapsed</a>
 <li><a href="#LogAllConnections">5.1.14 LogAllConnections</a>
-<li><a href="#MaxConnections">5.1.15 MaxConnections</a>
-<li><a href="#TrustKeysFrom">5.1.16 TrustKeysFrom</a>
-<li><a href="#DynamicAddresses">5.1.17 DynamicAddresses</a>
+<li><a href="#LogEncryptedTransfers">5.1.15 LogEncryptedTransfers</a>
+<li><a href="#MaxConnections">5.1.16 MaxConnections</a>
+<li><a href="#TrustKeysFrom">5.1.17 TrustKeysFrom</a>
+<li><a href="#DynamicAddresses">5.1.18 DynamicAddresses</a>
 </li></ul>
 <li><a href="#admit-grant-and-deny">5.2 admit, grant and deny</a>
 <ul>
