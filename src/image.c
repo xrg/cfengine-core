@@ -1584,30 +1584,28 @@ if (IMAGEBACKUP != 'n')
    /* rely on prior BufferOverflow() and on strlen(CF_SAVED) < CF_BUFFERMARGIN */
    strcat(backup,CF_SAVED);
 
-   if (IsItemIn(VREPOSLIST,backup))
+   if (!IsItemIn(VREPOSLIST,backup))
       {
-      return true;
-      }
-
-   /* Mainly important if there is a dir in the way */
-
-   if (lstat(backup,&s) != -1)
-      {
-      if (S_ISDIR(s.st_mode))
+      /* Mainly important if there is a dir in the way */
+      
+      if (lstat(backup,&s) != -1)
          {
-         backupisdir = true;
-         PurgeFiles(NULL,backup,NULL);
-         rmdir(backup);
+         if (S_ISDIR(s.st_mode))
+            {
+            backupisdir = true;
+            PurgeFiles(NULL,backup,NULL);
+            rmdir(backup);
+            }
+         
+         unlink(backup);
          }
       
-      unlink(backup);
+      if (rename(dest,backup) == -1)
+         {
+         /* ignore */
+         }
+      backupok = (lstat(backup,&s) != -1); /* Did the rename() succeed? NFS-safe */
       }
-   
-   if (rename(dest,backup) == -1)
-      {
-      /* ignore */
-      }
-   backupok = (lstat(backup,&s) != -1); /* Did the rename() succeed? NFS-safe */
    }
  else
     {
@@ -1765,7 +1763,10 @@ if (rsrcfork)
     }
  else if ((IMAGEBACKUP != 'n') && Repository(backup,ip->repository))
     {
-    unlink(backup);
+    if (!IsItemIn(VREPOSLIST,backup))
+       {
+       unlink(backup);
+       }
     }
  
  if (ip->preservetimes == 'y')
