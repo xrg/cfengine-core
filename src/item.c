@@ -666,7 +666,7 @@ if (isv4 && isCIDR)
 if (isv4 && isrange)
    {
    long i, from = -1, to = -1;
-   char *sp1,buffer1[8];
+   char *sp1,buffer1[CF_MAX_IP_LEN];
    
    sp1 = s;
    
@@ -830,7 +830,7 @@ if (isv4)
    else
       {
       long i, from = -1, to = -1, cmp = -1;
-      char *sp1,*sp2,buffer1[8],buffer2[8];
+      char *sp1,*sp2,buffer1[CF_MAX_IP_LEN],buffer2[CF_MAX_IP_LEN];
       
       sp1 = s1;
       sp2 = s2;
@@ -919,7 +919,7 @@ if (isv6)
    else
       {
       long i, from = -1, to = -1, cmp = -1;
-      char *sp1,*sp2,buffer1[16],buffer2[16];
+      char *sp1,*sp2,buffer1[CF_MAX_IP_LEN],buffer2[CF_MAX_IP_LEN];
 
       sp1 = s1;
       sp2 = s2;
