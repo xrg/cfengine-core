@@ -67,7 +67,7 @@ void QueryCheck(void);
 int main(int argc,char *argv[])
 
 { struct Item *ip;
-    
+ 
 SetContext("global");
 SetSignals(); 
  

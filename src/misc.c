@@ -1350,12 +1350,10 @@ char strminor[CF_MAXVARSIZE];
 
 /******************************************************************/
 
-/******************************************************************/
-
 int VM_version(void)
 
 { FILE *fp;
-  char buffer[CF_BUFSIZE];
+ char *sp,buffer[CF_BUFSIZE];
   struct stat statbuf;
 
 if ((fp = fopen("/etc/issue","r")) == NULL)
@@ -1364,7 +1362,18 @@ if ((fp = fopen("/etc/issue","r")) == NULL)
    }
 
 fgets(buffer,sizeof(buffer), fp);
+Chop(buffer);
+
 AddClassToHeap(CanonifyName(buffer));
+
+for (sp = buffer+strlen(buffer); sp > buffer; sp--)
+   {
+   if (*sp == ' ')
+      {
+      Chop(buffer);
+      AddClassToHeap(CanonifyName(buffer));
+      }
+   }
 
 fclose(fp);
 return 0;
