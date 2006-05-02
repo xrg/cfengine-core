@@ -577,12 +577,11 @@ void SetDomainName(char *hostname)
   char *ptr;
   char buffer[CF_BUFSIZE];
  
-strcpy(VFQNAME,hostname); // By default VFQNAME = hostname (nodename)
+  strcpy(VFQNAME,hostname); /* By default VFQNAME = hostname (nodename) */
 
 if (strstr(VFQNAME,".") == 0)
    {
-   // The nodename is not full qualified
-   // We'll try to find the FQDN hostname
+   /* The nodename is not full qualified - try to find the FQDN hostname */
 
    if (gethostname(fqn, sizeof(fqn)) != -1)
       {
@@ -592,10 +591,9 @@ if (strstr(VFQNAME,".") == 0)
          {
          if (strstr(hp->h_name,"."))
             {
-            // We find a FQDN hostname
-            // So we change the VFQNAME variable
+            /* We find a FQDN hostname So we change the VFQNAME variable */
             strncpy(VFQNAME,hp->h_name,CF_MAXVARSIZE);
-            VFQNAME[CF_MAXVARSIZE-1]=0; // Be sure the string is null terminated
+            VFQNAME[CF_MAXVARSIZE-1]= '\0'; 
             }
          }
       }
@@ -607,7 +605,7 @@ AddClassToHeap(CanonifyName(ToLowerStr(buffer)));
 
 if (strstr(VFQNAME,"."))
    {
-// If VFQNAME is full qualified we can create VDOMAIN variable
+   /* If VFQNAME is full qualified we can create VDOMAIN variable */
    ptr = strchr(VFQNAME, '.');
    strcpy(VDOMAIN, ++ptr);
    DeleteClassFromHeap("undefined_domain");
