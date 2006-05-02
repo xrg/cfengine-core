@@ -50,9 +50,9 @@ int IsSocketType(char *s)
 
 for (i = 0; i < ATTR; i++)
    {
-   if (strstr(s,ECGSOCKS[i][1]))
+   if (strstr(s,ECGSOCKS[i].name))
       {
-      Debug("IsSocketType(%s=%s)\n",s,ECGSOCKS[i][1]);
+      Debug("IsSocketType(%s=%s)\n",s,ECGSOCKS[i].name);
       
       return true;
       }

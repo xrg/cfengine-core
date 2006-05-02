@@ -414,42 +414,25 @@ extern int errno;
 #define CF_WEEK   (7.0*24.0*3600.0)
 #define CF_MEASURE_INTERVAL (5.0*60.0)
 
-struct Averages
-   {
-   double expect_number_of_users;
-   double expect_rootprocs;
-   double expect_otherprocs;
-   double expect_diskfree;
-   double expect_loadavg;
-   double expect_incoming[ATTR];
-   double expect_outgoing[ATTR];
-   double expect_pH[PH_LIMIT];
-      
-   double var_number_of_users;
-   double var_rootprocs;
-   double var_otherprocs;
-   double var_diskfree;
-   double var_loadavg;
-   double var_incoming[ATTR];
-   double var_outgoing[ATTR];
-   double var_pH[PH_LIMIT];
+#define CF_OBSERVABLES 91
 
-      /* tcpdump data - tag them on here ... */
-      
-   double expect_netin[CF_NETATTR];
-   double expect_netout[CF_NETATTR];
-   double var_netin[CF_NETATTR];
-   double var_netout[CF_NETATTR];
+struct QPoint
+   {
+   double q;
+   double expect;
+   double var;
    };
 
+struct Averages
+   {
+   struct QPoint Q[CF_OBSERVABLES];
+   };
 
 struct LastSeen
    {
    double expect_lastseen;
    time_t lastseen;      
    };
-
-
 
 struct LockData
    {
@@ -1232,6 +1215,62 @@ enum iptypes
    tcpfin,
    tcpmisc
    };
+
+enum observables
+    {
+    ob_users,
+    ob_rootprocs,
+    ob_otherprocs,
+    ob_diskfree,
+    ob_loadavg,
+    ob_netbiosns_in,
+    ob_netbiosns_out,
+    ob_netbiosdgm_in,
+    ob_netbiosdgm_out,
+    ob_netbiosssn_in,
+    ob_netbiosssn_out,
+    ob_irc_in,
+    ob_irc_out,
+    ob_cfengine_in,
+    ob_cfengine_out,
+    ob_nfsd_in,
+    ob_nfsd_out,
+    ob_smtp_in,
+    ob_smtp_out,
+    ob_www_in,
+    ob_www_out,
+    ob_ftp_in,
+    ob_ftp_out,
+    ob_ssh_in,
+    ob_ssh_out,
+    ob_wwws_in,
+    ob_wwws_out,
+    ob_icmp_in,
+    ob_icmp_out,
+    ob_udp_in,
+    ob_udp_out,
+    ob_dns_in,
+    ob_dns_out,
+    ob_tcpsyn_in,
+    ob_tcpsyn_out,
+    ob_tcpack_in,
+    ob_tcpack_out,
+    ob_tcpfin_in,
+    ob_tcpfin_out,
+    ob_tcpmisc_in,
+    ob_tcpmisc_out,
+    ob_spares
+    };
+
+
+struct sock
+   {
+   char *portnr;
+   char *name;
+   enum observables in;
+   enum observables out;
+   };
+
 
 /*******************************************************************/
 

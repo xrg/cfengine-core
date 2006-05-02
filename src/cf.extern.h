@@ -40,7 +40,7 @@ extern short ALL_SINGLECOPY;
 extern int PASS;
 extern RSA *PRIVKEY, *PUBKEY;
 extern char BINDINTERFACE[CF_BUFSIZE];
-extern char *ECGSOCKS[ATTR][2];
+extern struct sock ECGSOCKS[ATTR];
 extern char *TCPNAMES[CF_NETATTR];
 extern char **METHODARGV;
 extern int GOTMETHODARGS;
@@ -138,7 +138,6 @@ extern time_t CFINITSTARTTIME;
 extern int CF_TIMEOUT;
 
 extern struct utsname VSYSNAME;
-
 extern int LINENUMBER;
 extern mode_t DEFAULTMODE;
 extern mode_t DEFAULTSYSTEMMODE;
@@ -510,6 +509,8 @@ extern int SEARCHREPLACELEVEL;
 extern int FOREACHLEVEL;
 
 extern char COMMENTSTART[], COMMENTEND[];
+
+extern char *OBS[CF_OBSERVABLES];
 
 /* GNU REGEXP */
 

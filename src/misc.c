@@ -1366,7 +1366,7 @@ Chop(buffer);
 
 AddClassToHeap(CanonifyName(buffer));
 
-for (sp = buffer+strlen(buffer); sp > buffer; sp--)
+for (sp = buffer+strlen(buffer)-1; sp > buffer; sp--)
    {
    if (*sp == ' ')
       {
