@@ -340,11 +340,12 @@ extern int errno;
 
 /*******************************************************************/
 
-#define CF_AVDB_FILE     "cf_learning.db"
+#define CF_AVDB_FILE     "cf_observations.db"
+#define CF_OLDAVDB_FILE  "cf_learning.db"
 #define CF_STATEDB_FILE  "cf_state.db"
 #define CF_LASTDB_FILE   "cf_lastseen.db"
 #define CF_STATELOG_FILE "state_log"
-#define CF_ENVNEW_FILE  "env_data.new"
+#define CF_ENVNEW_FILE   "env_data.new"
 #define CF_ENV_FILE      "env_data"
 #define CF_TCPDUMP_COMM "/usr/sbin/tcpdump -t -n -v"
 
@@ -433,6 +434,32 @@ struct LastSeen
    double expect_lastseen;
    time_t lastseen;      
    };
+
+struct OldAverages /* For conversion to new db */
+   {
+   double expect_number_of_users;
+   double expect_rootprocs;
+   double expect_otherprocs;
+   double expect_diskfree;
+   double expect_loadavg;
+   double expect_incoming[ATTR];
+   double expect_outgoing[ATTR];
+   double expect_pH[PH_LIMIT];      
+   double var_number_of_users;
+   double var_rootprocs;
+   double var_otherprocs;
+   double var_diskfree;
+   double var_loadavg;
+   double var_incoming[ATTR];
+   double var_outgoing[ATTR];
+   double var_pH[PH_LIMIT];
+   double expect_netin[CF_NETATTR];
+   double expect_netout[CF_NETATTR];
+   double var_netin[CF_NETATTR];
+   double var_netout[CF_NETATTR];
+   };
+
+/******************************************************************/
 
 struct LockData
    {
