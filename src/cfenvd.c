@@ -84,10 +84,13 @@ struct Item *NETOUT_DIST[CF_NETATTR];
 
 /* Leap Detection vars */
 
-double LDTBUF[CF_OBSERVABLES][LDT_BUFSIZE];
+double LDT_BUF[CF_OBSERVABLES][LDT_BUFSIZE];
+double LDT_SUM[CF_OBSERVABLES];
+double LDT_AVG[CF_OBSERVABLES];
 double CHI_LIMIT[CF_OBSERVABLES];
 double CHI[CF_OBSERVABLES];
 int LDT_POS = 0;
+int LDT_FULL = false;
 
 /* Entropy etc */
 
@@ -342,7 +345,7 @@ void GetDatabaseAge()
 
 if ((err_no = db_create(&dbp,NULL,0)) != 0)
    {
-   snprintf(OUTPUT,CF_BUFSIZE,"Couldn't open average database %s\n",AVDB);
+   snprintf(OUTPUT,CF_BUFSIZE,"Couldn't initialize average database %s\n",AVDB);
    CfLog(cferror,OUTPUT,"db_open");
    return;
    }
@@ -528,11 +531,16 @@ void ConvertDatabase()
 snprintf(filename,CF_BUFSIZE-1,"%s/state/%s",CFWORKDIR,CF_OLDAVDB_FILE);
 snprintf(new,CF_BUFSIZE-1,"%s/state/%s",CFWORKDIR,CF_AVDB_FILE);
 
-if (stat(new,&statbuf) == -1)
+if (stat(new,&statbuf) != -1)
    {
    return;
    }
- 
+
+if (stat(filename,&statbuf) == -1)
+   {
+   return;
+   }
+
 printf("Found old database %s\n",filename);
   
 if ((errno = db_create(&dbp,NULL,0)) != 0)
@@ -806,7 +814,15 @@ for (i = 0; i < CF_OBSERVABLES; i++)
 
    newvals.Q[i].q = THIS[i];
    LOCALAV.Q[i].q = THIS[i];
+
+   /* Leap Detection update */
    
+   LDT_AVG[i] = LDT_AVG[i] - LDT_SUM[i]/((double)LDT_BUFSIZE) + THIS[i]/((double)LDT_BUFSIZE);
+   LDT_SUM[i] = LDT_SUM[i] - LDT_BUF[LDT_POS][i] + THIS[i];
+   LDT_BUF[LDT_POS][i] = THIS[i];
+
+   /* Periodic */
+       
    This[i] = RejectAnomaly(THIS[i],currentvals->Q[i].expect,currentvals->Q[i].var,LOCALAV.Q[i].expect,LOCALAV.Q[i].var);
 
    newvals.Q[i].expect = WAverage(This[i],currentvals->Q[i].expect,WAGE);
@@ -832,11 +848,41 @@ return newvals;
 
 void LeapDetection()
 
-{
+{ int i,j;
+  double ldt_max, n,d;
+  double padding = 0.2;
 
-if (LDT_POS++ >= LDT_BUFSIZE)
+for (i = 0; i < CF_OBSERVABLES; i++)
+   {
+   ldt_max = 0;
+   
+   for (j = 0; j < LDT_BUFSIZE; j++)
+      {
+      if (LDT_BUF[i][j] > ldt_max)
+         {
+         ldt_max = LDT_BUF[i][j];
+         }
+      }
+
+   n = (LDT_SUM[i] - (double)LDT_BUFSIZE * ldt_max);
+   d = (double)(LDT_BUFSIZE * (LDT_BUFSIZE + 1)) * LDT_AVG[i];
+
+   CHI_LIMIT[i] = padding + sqrt(n*n/d);
+
+   n = (LDT_SUM[i] - (double)LDT_BUFSIZE * THIS[i]);
+   CHI[i] = sqrt(n*n/d);
+   }
+
+if (++LDT_POS >= LDT_BUFSIZE)
    {
    LDT_POS = 0;
+   
+   if (!LDT_FULL)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"LDT Buffer full at %d\n",LDT_BUFSIZE);
+      CfLog(cflogonly,OUTPUT,"");
+      LDT_FULL = true;
+      }
    }
 }
 
@@ -855,6 +901,14 @@ for (i = 0; i < CF_OBSERVABLES; i++)
    {
    sigma = SetClasses(OBS[i],THIS[i],av.Q[i].expect,av.Q[i].var,LOCALAV.Q[i].expect,LOCALAV.Q[i].var,&classlist,timekey);
    SetVariable(OBS[i],THIS[i],av.Q[i].expect,sigma,&classlist);
+
+   if (LDT_FULL && (CHI[i] > CHI_LIMIT[i]))
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"LDT anomaly in %s chi = %.2f thresh %.2f \n",OBS[i],CHI[i],CHI_LIMIT[i]);
+      CfLog(cflogonly,OUTPUT,"");
+
+      /* Here we arm some kind of class */
+      }
    }
 
 unlink(ENV_NEW);
@@ -1376,7 +1430,7 @@ struct Averages *GetCurrentAverages(char *timekey)
  
 if ((err_no = db_create(&dbp,NULL,0)) != 0)
    {
-   sprintf(OUTPUT,"Couldn't open average database %s\n",AVDB);
+   sprintf(OUTPUT,"Couldn't initialize average database %s\n",AVDB);
    CfLog(cferror,OUTPUT,"db_open");
    return NULL;
    }

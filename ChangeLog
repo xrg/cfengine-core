@@ -2,6 +2,9 @@
 	Some buffer limits too small and hardcoded in item.c - fix
 	PH support removed from cfenvd during code rationalization - never used
 
+	Cfenvd code rationalization and channge in database format.
+	THe first time cfenvd runs, it will convert the database into the new format,
+	be aware that this could take some time as it is disk intensive.
 2.1.20
 	ipv6 structure compilation error for Tru64
 
