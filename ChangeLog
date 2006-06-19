@@ -1,4 +1,6 @@
-
+2.1.21
+	Some buffer limits too small and hardcoded in item.c - fix
+	PH support removed from cfenvd during code rationalization - never used
 
 2.1.20
 	ipv6 structure compilation error for Tru64
@@ -15,9 +17,13 @@
 
 	Copy was missing from the multi-pass detection. Fixed
 
-	Patch to debian package management. (bastiaans@sara.nl)
-	"Cfengine will check if a package is installed, if it's not: install it.
-	However the "Comparison result" is always "eq" (equal) somehow for me... "
+	Patch to debian package management. (bastiaans@sara.nl) fixed -
+	debian package always returned eq/true without cmp/version
+	statement" (checking if a package is installed, regardless of
+	version, now works
+	
+	However the "Comparison result" is always "eq" (equal) somehow for
+	me... "
 
 	If you are experiencing problems with 2.1.19 please get 2.1.19a.
 	One of the changes in 2.1.19 has had bizarre side effects in links

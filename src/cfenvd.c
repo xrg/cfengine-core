@@ -50,7 +50,9 @@
 #define cf_noise_threshold 10 /* number that does not warrent large anomaly status */
 #define big_number 100000
 
-unsigned int HISTOGRAM[2*CF_NETATTR+ATTR*2+5+PH_LIMIT][7][CF_GRAINS];
+#define LDT_BUFSIZE 10
+
+unsigned int HISTOGRAM[CF_OBSERVABLES][7][CF_GRAINS];
 
 int HISTO = false;
 
@@ -80,6 +82,14 @@ struct Item *ALL_OUTGOING = NULL;
 struct Item *NETIN_DIST[CF_NETATTR];
 struct Item *NETOUT_DIST[CF_NETATTR];
 
+/* Leap Detection vars */
+
+double LDTBUF[CF_OBSERVABLES][LDT_BUFSIZE];
+double CHI_LIMIT[CF_OBSERVABLES];
+double CHI[CF_OBSERVABLES];
+int LDT_POS = 0;
+
+/* Entropy etc */
 
 double ENTROPY = 0.0;
 double LAST_HOUR_ENTROPY = 0.0;
@@ -128,6 +138,7 @@ void GatherProcessData (void);
 void GatherDiskData (void);
 void GatherLoadData (void);
 void GatherSocketData (void);
+void LeapDetection (void);
 struct Averages *GetCurrentAverages (char *timekey);
 void UpdateAverages (char *timekey, struct Averages newvals);
 void UpdateDistributions (char *timekey, struct Averages *av);
@@ -422,7 +433,7 @@ if (HISTO)
 void StartServer(int argc,char **argv)
 
 { char *timekey;
-  struct Averages averages;
+ struct Averages averages;
   void HandleSignal();
   int i;
 
@@ -462,6 +473,7 @@ OpenSniffer();
    GetQ();
    timekey = GetTimeKey();
    averages = EvalAvQ(timekey);
+   LeapDetection();
    ArmClasses(averages,timekey);
 
    if (TCPDUMP)
@@ -516,7 +528,7 @@ void ConvertDatabase()
 snprintf(filename,CF_BUFSIZE-1,"%s/state/%s",CFWORKDIR,CF_OLDAVDB_FILE);
 snprintf(new,CF_BUFSIZE-1,"%s/state/%s",CFWORKDIR,CF_AVDB_FILE);
 
-if (stat(filename,&statbuf) == -1)
+if (stat(new,&statbuf) == -1)
    {
    return;
    }
@@ -660,6 +672,7 @@ for (now = CF_MONDAY_MORNING; now < CF_MONDAY_MORNING+CF_WEEK; now += CF_MEASURE
  
 dbp->close(dbp,0);
 unlink(filename);
+printf("Converted and removed old database\n");
 }
 
 
@@ -813,6 +826,18 @@ if (WAGE > CFGRACEPERIOD)
    }
  
 return newvals;
+}
+
+/*********************************************************************/
+
+void LeapDetection()
+
+{
+
+if (LDT_POS++ >= LDT_BUFSIZE)
+   {
+   LDT_POS = 0;
+   }
 }
 
 /*********************************************************************/
