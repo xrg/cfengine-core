@@ -815,12 +815,6 @@ for (i = 0; i < CF_OBSERVABLES; i++)
    newvals.Q[i].q = THIS[i];
    LOCALAV.Q[i].q = THIS[i];
 
-   /* Leap Detection update */
-   
-   LDT_AVG[i] = LDT_AVG[i] - LDT_SUM[i]/((double)LDT_BUFSIZE) + THIS[i]/((double)LDT_BUFSIZE);
-   LDT_SUM[i] = LDT_SUM[i] - LDT_BUF[LDT_POS][i] + THIS[i];
-   LDT_BUF[LDT_POS][i] = THIS[i];
-
    /* Periodic */
        
    This[i] = RejectAnomaly(THIS[i],currentvals->Q[i].expect,currentvals->Q[i].var,LOCALAV.Q[i].expect,LOCALAV.Q[i].var);
@@ -852,8 +846,15 @@ void LeapDetection()
   double ldt_max, n,d;
   double padding = 0.2;
 
+  
 for (i = 0; i < CF_OBSERVABLES; i++)
    {
+   /* Note AVG should contain n+1 but not SUM, hence funny increments */
+   
+   LDT_AVG[i] = LDT_AVG[i] + THIS[i]/((double)LDT_BUFSIZE + 1.0);
+   LDT_SUM[i] = LDT_SUM[i] - LDT_BUF[LDT_POS][i] + THIS[i];
+   LDT_BUF[LDT_POS][i] = THIS[i];
+
    ldt_max = 0;
    
    for (j = 0; j < LDT_BUFSIZE; j++)
@@ -871,6 +872,8 @@ for (i = 0; i < CF_OBSERVABLES; i++)
 
    n = (LDT_SUM[i] - (double)LDT_BUFSIZE * THIS[i]);
    CHI[i] = sqrt(n*n/d);
+   
+   LDT_AVG[i] = LDT_AVG[i] - LDT_SUM[i]/((double)LDT_BUFSIZE + 1.0);
    }
 
 if (++LDT_POS >= LDT_BUFSIZE)
@@ -907,7 +910,17 @@ for (i = 0; i < CF_OBSERVABLES; i++)
       snprintf(OUTPUT,CF_BUFSIZE,"LDT anomaly in %s chi = %.2f thresh %.2f \n",OBS[i],CHI[i],CHI_LIMIT[i]);
       CfLog(cflogonly,OUTPUT,"");
 
-      /* Here we arm some kind of class */
+      if (THIS[i] > av.Q[i].expect)
+         {
+         snprintf(OUTPUT,CF_BUFSIZE,"%s_high_ldt",OBS[i]);
+         }
+      else
+         {
+         snprintf(OUTPUT,CF_BUFSIZE,"%s_high_ldt",OBS[i]);
+         }
+
+      AppendItem(&classlist,OUTPUT,"2");
+      AddPersistentClass(OUTPUT,40,cfpreserve); 
       }
    }
 
