@@ -197,6 +197,8 @@ int CompareToFile(struct Item *liststart,char *file)
 { FILE *fp;
   struct stat statbuf;
   struct Item *ip = liststart;
+  unsigned char *finmem = NULL, fdata;
+  unsigned long fip = 0, tmplen, idx;
 
 Debug("CompareToFile(%s)\n",file);
 
@@ -209,52 +211,55 @@ if (liststart == NULL)
    {
    return false;
    }
+
+for (ip = liststart; ip != NULL; ip=ip->next)
+   {
+   tmplen = strlen(ip->name);
+   if ((finmem = realloc(finmem, fip+tmplen+1)) == NULL)
+	{
+	Debug("CompareToFile(%s): can't realloc() memory\n",file);
+	free(finmem);
+	return false;
+	}
+   memcpy(finmem+fip, ip->name, tmplen);
+   fip += tmplen;
+   *(finmem+fip++) = '\n';
+   }
+
+if (statbuf.st_size != fip)
+   {
+   Debug("CompareToFile(%s): sizes are different: MEM:(%u) FILE:(%u)\n",file, fip, statbuf.st_size);
+   free(finmem);
+   return false;
+   }
  
 if ((fp = fopen(file,"r")) == NULL)
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't read file %s for editing\n",file);
    CfLog(cferror,OUTPUT,"fopen");
+   free(finmem);
    return false;
    }
 
-memset(VBUFF,0,CF_BUFSIZE);
-
-for (ip = liststart; ip != NULL; ip=ip->next)
+for (idx = 0; idx < fip; idx++)
    {
-   ReadLine(VBUFF,CF_BUFSIZE,fp);
-   
-   if (feof(fp) && (ip->next != NULL))
-      {
-      fclose(fp);
-      return false;
-      }
-
-   if ((ip->name == NULL) && (strlen(VBUFF) == 0))
-      {
-      continue;
-      }
-   
-   if (ip->name == NULL)
-      {
-      fclose(fp);
-      return false;
-      }
-   
-   if (strcmp(ip->name,VBUFF) != 0)
-      {
-      fclose(fp);
-      return false;
-      }
-
-   VBUFF[0] = '\0';
+   if (fread(&fdata, 1, 1, fp) != 1)
+	{
+	Debug("CompareToFile(%s): non-zero fread() before file-in-mem finished at %u-th byte MEM:(0x%x/%c)\n",file, idx, *(finmem+idx), *(finmem+idx));
+	free(finmem);
+	fclose(fp);
+	return false;
+	}
+   if (fdata != *(finmem+idx))
+	{
+	Debug("CompareToFile(%s): difference found at %u-th byte MEM:(0x%x/%c) != FILE:(0x%x/%c)\n",file, idx, *(finmem+idx), *(finmem+idx), fdata, fdata);
+	free(finmem);
+	fclose(fp);
+	return false;
+	}
    }
 
-if (!feof(fp) && (ReadLine(VBUFF,CF_BUFSIZE,fp) != false))
-   {
-   fclose(fp);
-   return false;
-   }
-
+free(finmem);
 fclose(fp);
 return (true);
 }
