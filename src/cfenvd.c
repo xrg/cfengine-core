@@ -58,11 +58,11 @@ int HISTO = false;
 
 double THIS[CF_OBSERVABLES]; /* New from 2.1.21 replacing above - current observation */
 
-int SLEEPTIME = 2.5 * 60; /* Should be a fraction of 5 minutes */
+int SLEEPTIME = 2.5 * 60;    /* Should be a fraction of 5 minutes */
 int BATCH_MODE = false;
 
-double ITER = 0.0;        /* Iteration since start */
-double AGE,WAGE;          /* Age and weekly age of database */
+double ITER = 0.0;           /* Iteration since start */
+double AGE,WAGE;             /* Age and weekly age of database */
 
 char OUTPUT[CF_BUFSIZE*2];
 
@@ -89,6 +89,7 @@ double LDT_SUM[CF_OBSERVABLES];
 double LDT_AVG[CF_OBSERVABLES];
 double CHI_LIMIT[CF_OBSERVABLES];
 double CHI[CF_OBSERVABLES];
+double LDT_MAX[CF_OBSERVABLES];
 int LDT_POS = 0;
 int LDT_FULL = false;
 
@@ -307,7 +308,20 @@ for (i = 0; i < 7; i++)
          }
       }
    }
- 
+
+for (i = 0; i < CF_OBSERVABLES; i++)
+   {
+   CHI[i] = 0;
+   CHI_LIMIT[i] = 0.1;
+   LDT_AVG[i] = 0;
+   LDT_SUM[i] = 0;
+   
+   for (j = 0; j < LDT_BUFSIZE; j++)
+      {
+      LDT_BUF[i][j];
+      }
+   }
+
 srand((unsigned int)time(NULL)); 
 LoadHistogram(); 
 ConvertDatabase();
@@ -843,7 +857,7 @@ return newvals;
 void LeapDetection()
 
 { int i,j;
-  double ldt_max, n,d;
+  double n1,n2,d;
   double padding = 0.2;
 
   
@@ -852,28 +866,49 @@ for (i = 0; i < CF_OBSERVABLES; i++)
    /* Note AVG should contain n+1 but not SUM, hence funny increments */
    
    LDT_AVG[i] = LDT_AVG[i] + THIS[i]/((double)LDT_BUFSIZE + 1.0);
-   LDT_SUM[i] = LDT_SUM[i] - LDT_BUF[LDT_POS][i] + THIS[i];
-   LDT_BUF[LDT_POS][i] = THIS[i];
 
-   ldt_max = 0;
-   
-   for (j = 0; j < LDT_BUFSIZE; j++)
+   if (THIS[i] > 0)
       {
-      if (LDT_BUF[i][j] > ldt_max)
-         {
-         ldt_max = LDT_BUF[i][j];
-         }
+      Verbose("Storing %.2f in %s\n",THIS[i],OBS[i]);
       }
 
-   n = (LDT_SUM[i] - (double)LDT_BUFSIZE * ldt_max);
    d = (double)(LDT_BUFSIZE * (LDT_BUFSIZE + 1)) * LDT_AVG[i];
 
-   CHI_LIMIT[i] = padding + sqrt(n*n/d);
+   if (LDT_FULL && (LDT_POS == 0))
+      {
+      n2 = (LDT_SUM[i] - (double)LDT_BUFSIZE * LDT_MAX[i]);
+      
+      if (d < 0.001)
+         {
+         CHI_LIMIT[i] = 0.5;
+         }
+      else
+         {
+         CHI_LIMIT[i] = padding + sqrt(n2*n2/d);
+         }
+      
+      LDT_MAX[i] = 0.0;
+      }
 
-   n = (LDT_SUM[i] - (double)LDT_BUFSIZE * THIS[i]);
-   CHI[i] = sqrt(n*n/d);
+   if (THIS[i] > LDT_MAX[i])
+      {
+      LDT_MAX[i] = THIS[i];
+      }
    
-   LDT_AVG[i] = LDT_AVG[i] - LDT_SUM[i]/((double)LDT_BUFSIZE + 1.0);
+   n1 = (LDT_SUM[i] - (double)LDT_BUFSIZE * THIS[i]);
+
+   if (d < 0.001)
+      {
+      CHI[i] = 0.0;
+      }
+   else
+      {
+      CHI[i] = sqrt(n1*n1/d);
+      }
+
+   LDT_AVG[i] = LDT_AVG[i] - LDT_BUF[i][LDT_POS]/((double)LDT_BUFSIZE + 1.0);
+   LDT_BUF[i][LDT_POS] = THIS[i];
+   LDT_SUM[i] = LDT_SUM[i] - LDT_BUF[i][LDT_POS] + THIS[i];
    }
 
 if (++LDT_POS >= LDT_BUFSIZE)
@@ -895,8 +930,9 @@ void ArmClasses(struct Averages av,char *timekey)
 
 { double sigma;
   struct Item *classlist = NULL, *ip;
-  int i;
+  int i,j,k,pos;
   FILE *fp;
+  char buff[CF_BUFSIZE];
 
 Debug("Arm classes for %s\n",timekey);
  
@@ -907,8 +943,26 @@ for (i = 0; i < CF_OBSERVABLES; i++)
 
    if (LDT_FULL && (CHI[i] > CHI_LIMIT[i]))
       {
-      snprintf(OUTPUT,CF_BUFSIZE,"LDT anomaly in %s chi = %.2f thresh %.2f \n",OBS[i],CHI[i],CHI_LIMIT[i]);
+      snprintf(OUTPUT,CF_BUFSIZE,"LDT(%d) in %s chi = %.2f thresh %.2f \n",LDT_POS,OBS[i],CHI[i],CHI_LIMIT[i]);
       CfLog(cflogonly,OUTPUT,"");
+      Verbose(OUTPUT);
+      
+      snprintf(OUTPUT,CF_BUFSIZE,"LDT_BUF (%s): Rot ",OBS[i]);
+
+      for (j = LDT_POS-1, k = 0; k < LDT_BUFSIZE; j++,k++)
+         {
+         if (j == LDT_BUFSIZE) /* Wrap */
+            {
+            j = 0;
+            }
+         
+         snprintf(buff,CF_BUFSIZE," %.2f",LDT_BUF[i][j]);
+         strcat(OUTPUT,buff);
+         }
+
+      strcat(OUTPUT,"\n");
+      CfLog(cflogonly,OUTPUT,"");
+      Verbose(OUTPUT);
 
       if (THIS[i] > av.Q[i].expect)
          {
