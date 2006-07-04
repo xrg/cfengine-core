@@ -601,6 +601,7 @@ void EchoValues()
 { struct Item *ip,*p2;
   char ebuff[CF_EXPANDSIZE];
 
+ebuff[0] = '\0';
 
 if (GetMacroValue(CONTEXTID,"OutputPrefix"))
    {
