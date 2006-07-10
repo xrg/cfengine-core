@@ -272,6 +272,7 @@ RSA *HavePublicKey (char *ipaddress);
 void SavePublicKey (char *ipaddress, RSA *key);
 void DeletePublicKey (char *ipaddress);
 void GenerateRandomSessionKey (void);
+char *KeyPrint(RSA *key);
 
 /* errors.c */
 

@@ -194,3 +194,13 @@ char *GetMacroValue(char *s,char *sp)
 {
  return NULL;
 }
+
+
+void ChecksumString(char *buffer,int len,unsigned char digest[EVP_MAX_MD_SIZE+1],char type)
+{
+}
+
+char *ChecksumPrint(char type,unsigned char digest[EVP_MAX_MD_SIZE+1])
+{
+ return NULL;
+}

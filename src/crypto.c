@@ -138,7 +138,7 @@ RSA *HavePublicKey(char *name)
   FILE *fp;
   RSA *newkey = NULL;
 
-Debug("Havekey(%s)\n",name);
+Debug("HavePublickey(%s)\n",name);
   
 if (!IsPrivileged())
    {
@@ -399,4 +399,21 @@ for (sp = buffer; (sp < buffer+len); sp++)
    }
  
 Debug("] = %d\n",check); 
+}
+
+
+/*********************************************************************/
+
+char *KeyPrint(RSA *pubkey)
+
+{ unsigned char digest[EVP_MAX_MD_SIZE+1];
+ int i;
+
+for (i = 0; i < EVP_MAX_MD_SIZE+1; i++)
+   {
+   digest[i] = 0;
+   }
+ 
+ChecksumString((char *)pubkey,sizeof(BIGNUM)-4,digest,'m');
+return ChecksumPrint('m',digest);
 }

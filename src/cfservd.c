@@ -3191,22 +3191,45 @@ if (savedkey = HavePublicKey(keyname))
    
    return true;
    }
- else if ((TRUSTKEYLIST != NULL) && IsFuzzyItemIn(TRUSTKEYLIST,MapAddress(conn->ipaddr)))
-    {
-    Verbose("Host %s/%s was found in the list of hosts to trust\n",conn->hostname,conn->ipaddr);
-    conn->trust = true;
-    /* conn->maproot = false; ?? */
-    SendTransaction(conn->sd_reply,"OK: key was accepted on trust",0,CF_DONE);
-    SavePublicKey(keyname,key);
-    AddToKeyDB(key,MapAddress(conn->ipaddr));
-    return true;
-    }
- else
-    {
-    Verbose("No previous key found, and unable to accept this one on trust\n");
-    SendTransaction(conn->sd_reply,"BAD: key could not be accepted on trust",0,CF_DONE);
-    return false; 
-    }
+else if ((DHCPLIST != NULL) && IsFuzzyItemIn(DHCPLIST,MapAddress(conn->ipaddr)))
+   {
+   /* If the host is expected to have a dynamic address, check for the key */
+   
+   if ((DHCPLIST != NULL) && IsFuzzyItemIn(DHCPLIST,MapAddress(conn->ipaddr)))
+      {
+      int result;
+      result = IsWildKnownHost(savedkey,key,MapAddress(conn->ipaddr),conn->username);
+      RSA_free(savedkey);
+      if (result)
+         {
+         SendTransaction(conn->sd_reply,"OK: key accepted",0,CF_DONE);
+         }
+      else
+         {
+         SendTransaction(conn->sd_reply,"BAD: keys did not match",0,CF_DONE);
+         }
+      return result;
+      }
+   }
+
+/* Finally, if we're still here, we should consider trusting a new key ... */
+
+if ((TRUSTKEYLIST != NULL) && IsFuzzyItemIn(TRUSTKEYLIST,MapAddress(conn->ipaddr)))
+   {
+   Verbose("Host %s/%s was found in the list of hosts to trust\n",conn->hostname,conn->ipaddr);
+   conn->trust = true;
+   /* conn->maproot = false; ?? */
+   SendTransaction(conn->sd_reply,"OK: unknown key was accepted on trust",0,CF_DONE);
+   SavePublicKey(keyname,key);
+   AddToKeyDB(key,MapAddress(conn->ipaddr));
+   return true;
+   }
+else
+   {
+   Verbose("No previous key found, and unable to accept this one on trust\n");
+   SendTransaction(conn->sd_reply,"BAD: key could not be accepted on trust",0,CF_DONE);
+   return false; 
+   }
 }
 
 /***************************************************************/
@@ -3226,7 +3249,7 @@ int IsWildKnownHost(RSA *oldkey,RSA *newkey,char *mipaddr,char *username)
 snprintf(keyname,CF_MAXVARSIZE,"%s-%s",username,mipaddr);
 snprintf(keydb,CF_MAXVARSIZE,"%s/ppkeys/dynamic",CFWORKDIR); 
 
-Debug("The key does not match the known, key but the host has dynamic IP...\n"); 
+Debug("The key does not match a known key but the host could have a dynamic IP...\n"); 
  
 if ((TRUSTKEYLIST != NULL) && IsFuzzyItemIn(TRUSTKEYLIST,mipaddr))
    {
@@ -3235,14 +3258,14 @@ if ((TRUSTKEYLIST != NULL) && IsFuzzyItemIn(TRUSTKEYLIST,mipaddr))
    }
 else
    {
-   Debug("Will not accept the new key, unless we have seen it before\n");
+   Debug("Will not accept this key, unless we have seen it before\n");
    }
 
 /* If the host is allowed to have a variable IP range, we can accept
    the new key on trust for the given IP address provided we have seen
    the key before.  Check for it in a database .. */
 
-Debug("Checking to see if we have seen the new key before..\n"); 
+Debug("Checking to see if we have seen the key before..\n"); 
   
 if ((errno = db_create(&dbp,NULL,0)) != 0)
    {
@@ -3293,7 +3316,7 @@ if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
       }
    else
       {
-      Debug("Found no grounds for trusting this new key from %s\n",mipaddr);
+      Debug("Found no grounds for trusting this new from %s\n",mipaddr);
       }
    }
 else

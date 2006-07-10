@@ -534,32 +534,6 @@ Verbose("%s\n",string);
 Verbose("---------------------------------------------------------------------\n\n");
 }
 
-/*********************************************************************/
-
-char *ChecksumPrint(char type,unsigned char digest[EVP_MAX_MD_SIZE+1])
-
-{ unsigned int i;
-  static char buffer[EVP_MAX_MD_SIZE*4];
-  int len = 16;
-
-switch(type)
-   {
-   case 's': sprintf(buffer,"SHA=  ");
-       len = 20;
-       break;
-   case 'm': sprintf(buffer,"MD5=  ");
-       len = 16;
-       break;
-   }
-  
-for (i = 0; i < len; i++)
-   {
-   sprintf((char *)(buffer+4+2*i),"%02x", digest[i]);
-   }
-
-return buffer; 
-}    
-
 /*******************************************************************/
 
 int ShellCommandReturnsZero(char *comm,int useshell)
