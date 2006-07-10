@@ -254,8 +254,6 @@ if ((out = malloc(encrypted_len)) == NULL)
 
 if (server_pubkey != NULL)
    {
-   printf("PUBKEY: %s %s\n",KeyPrint(server_pubkey),ip->server);
-
    if (RSA_public_encrypt(nonce_len,in,out,server_pubkey,RSA_PKCS1_PADDING) <= 0)
       {
       err = ERR_get_error();
