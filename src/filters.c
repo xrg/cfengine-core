@@ -1369,7 +1369,7 @@ DeleteMacro(CONTEXTID,"this");
 
 Debug("Executing filter command [%s]\n",ebuff);
 
-if (ShellCommandReturnsZero(ebuff))
+if (ShellCommandReturnsZero(ebuff,false))
    {
    return true;
    }

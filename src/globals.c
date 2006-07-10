@@ -648,6 +648,7 @@ char *OBS[CF_OBSERVABLES] =
       "execresult",
       "execshellresult",
       "returnszero",
+      "returnszeroshell",
       "iprange",
       "hostrange",
       "isdefined",

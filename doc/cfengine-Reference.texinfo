@@ -1,4 +1,4 @@
-\input texinfo @c -*-texinfo-*-
+\input texinfo @c -*-texinfo-*-exec
 @c *********************************************************************
 @c
 @c  This is a TEXINFO file. It generates both TEX documentation and
@@ -323,8 +323,15 @@ Note that the module should be specified relative to the authorized module direc
 @cindex Modules executed immediately
 @item Regcmp(@var{regexp},@var{string or list separated string})
 True if the string matched the regular expression regexp.
+
 @item ReturnsZero(@var{command})
 True if the named shell command returns with exit code zero (success).
+The command is executed without a shell wrapper.
+
+@item ReturnsZeroShell(@var{command})
+True if the named shell command returns with exit code zero (success) when executed
+in the environment of a shell wrapper.
+
 @item Strcmp(@var{s1},@var{s2})
 True if the string s1 exactly matches s2
 @cindex IsGreatThan

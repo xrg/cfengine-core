@@ -45,7 +45,7 @@ struct Item *ListFromArgs(char *string)
 /* Splits a string with quoted components etc */
 
 { struct Item *ip = NULL;
-  int inquotes_level = 0,i = 0;
+ int inquotes_level = 0,i = 0,argc=0;
   int inquote_level = 0;
   int paren_level = 0;
   char *sp,lastch = '\0';
@@ -118,18 +118,19 @@ for (sp = string; *sp != '\0'; sp++)
              item[i] = '\0';
              i = 0;
              AppendItem(&ip,item,"");
+             Debug("ListArg[%d]=(%s)\n",argc++,item);
              memset(item,0,CF_BUFSIZE);
              continue;
              }
       }
 
-   Debug("ListArg[%d]=(%s)\n",i,sp);
    item[i++] = *sp;
    lastch = *sp;
    }
 
 item[i] = '\0';
-AppendItem(&ip,item,""); 
+AppendItem(&ip,item,"");
+Debug("ListArg[%d]=(%s)\n",argc,item);
 return ip;
 }
 

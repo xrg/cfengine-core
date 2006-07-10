@@ -641,6 +641,7 @@ enum builtin
    fn_execresult,
    fn_execshellresult,
    fn_returnszero,
+   fn_returnszeroshell,
    fn_iprange,
    fn_hostrange,
    fn_isdefined,

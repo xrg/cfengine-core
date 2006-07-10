@@ -562,27 +562,30 @@ return buffer;
 
 /*******************************************************************/
 
-int ShellCommandReturnsZero(char *comm)
+int ShellCommandReturnsZero(char *comm,int useshell)
 
-{ int status, i, argc;
+{ int status, i, argc = 0;
   pid_t pid;
   char arg[CF_MAXSHELLARGS][CF_BUFSIZE];
   char **argv;
 
-/* Build argument array */
-
-for (i = 0; i < CF_MAXSHELLARGS; i++)
+if (!useshell)
    {
-   memset (arg[i],0,CF_BUFSIZE);
-   }
+   /* Build argument array */
 
-argc = SplitCommand(comm,arg);
+   for (i = 0; i < CF_MAXSHELLARGS; i++)
+      {
+      memset (arg[i],0,CF_BUFSIZE);
+      }
 
-if (argc == -1)
-   {
-   snprintf(OUTPUT,CF_BUFSIZE,"Too many arguments in %s\n",comm);
-   CfLog(cferror,OUTPUT,"");
-   return false;
+   argc = SplitCommand(comm,arg);
+
+   if (argc == -1)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Too many arguments in %s\n",comm);
+      CfLog(cferror,OUTPUT,"");
+      return false;
+      }
    }
     
 if ((pid = fork()) < 0)
@@ -591,28 +594,40 @@ if ((pid = fork()) < 0)
    }
 else if (pid == 0)                     /* child */
    {
-   argv = (char **) malloc((argc+1)*sizeof(char *));
-
-   if (argv == NULL)
+   if (useshell)
       {
-      FatalError("Out of memory");
+      if (execl("/bin/sh","sh","-c",comm,NULL) == -1)
+         {
+         yyerror("script failed");
+         perror("execl");
+         exit(1);
+         }
       }
-   
-   for (i = 0; i < argc; i++)
+   else
       {
-      argv[i] = arg[i];
+      argv = (char **) malloc((argc+1)*sizeof(char *));
+
+      if (argv == NULL)
+         {
+         FatalError("Out of memory");
+         }
+
+      for (i = 0; i < argc; i++)
+         {
+         argv[i] = arg[i];
+         }
+
+      argv[i] = (char *) NULL;
+
+      if (execv(arg[0],argv) == -1)
+         {
+         yyerror("script failed");
+         perror("execvp");
+         exit(1);
+         }
+
+      free((char *)argv);
       }
-
-   argv[i] = (char *) NULL;
-
-   if (execv(arg[0],argv) == -1)
-      {
-      yyerror("script failed");
-      perror("execvp");
-      exit(1);
-      }
-
-   free((char *)argv);
    }
 else                                    /* parent */
    {
@@ -646,7 +661,7 @@ else                                    /* parent */
       }
    else
       {
-      Debug("Shell command was non-zero\n");
+      Debug("Shell command was non-zero: %d\n",WEXITSTATUS(status));
       return false;
       }
    }

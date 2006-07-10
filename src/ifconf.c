@@ -473,7 +473,7 @@ if ( strcmp(VROUTE[VSYSTEMHARDCLASS], "-") != 0 )
          /* get the route command and the format for the delete argument */
          snprintf(routefmt,CF_MAXVARSIZE,"%s %s",VROUTE[VSYSTEMHARDCLASS],VROUTEDELFMT[VSYSTEMHARDCLASS]);
          snprintf(VBUFF,CF_MAXVARSIZE,routefmt,"default",VDEFAULTROUTE->name);
-         if (ShellCommandReturnsZero(VBUFF))
+         if (ShellCommandReturnsZero(VBUFF,false))
             {
             CfLog(cfinform,"Removing old default route","");
             CfLog(cfinform,VBUFF,"");
@@ -489,7 +489,7 @@ if ( strcmp(VROUTE[VSYSTEMHARDCLASS], "-") != 0 )
       {
       snprintf(routefmt,CF_MAXVARSIZE,"%s %s",VROUTE[VSYSTEMHARDCLASS],VROUTEADDFMT[VSYSTEMHARDCLASS]);
       snprintf(VBUFF,CF_MAXVARSIZE,routefmt,"default",VDEFAULTROUTE->name);
-      if (ShellCommandReturnsZero(VBUFF))
+      if (ShellCommandReturnsZero(VBUFF,false))
          {
          CfLog(cfinform,"Setting default route","");
          CfLog(cfinform,VBUFF,"");
