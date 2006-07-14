@@ -175,7 +175,6 @@ struct Item *GetPendingMethods(int state)
   
 Debug("GetPendingMethods(%d) in (%s/rpc_in)\n",state,VLOCKDIR);
 
-
 Debug("Processing applications...\n");
  
 snprintf(filename,CF_MAXVARSIZE-1,"%s/rpc_in",VLOCKDIR);
@@ -325,7 +324,7 @@ void EvaluatePendingMethod(char *methodname)
 
 { struct Method *ptr;
   char line[CF_BUFSIZE];
-  char options[32];
+  char options[CF_BUFSIZE];
   char client[CF_BUFSIZE],server[CF_BUFSIZE],name[CF_BUFSIZE],digeststring[CF_BUFSIZE],extra[CF_BUFSIZE];
   char *sp;
   char execstr[CF_BUFSIZE];
@@ -345,7 +344,6 @@ else
    Debug("Nothing to do for %s\n",methodname);
    return;
    }
- 
 
 options[0] = '\0';
 
