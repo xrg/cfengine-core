@@ -1055,7 +1055,7 @@ if ((fp = fopen(basepackage,"r")) == NULL)
                  snprintf(OUTPUT,CF_BUFSIZE,"SECURITY ALERT. Method (%s) source is a symbolic link",ptr->name);
                  CfLog(cferror,OUTPUT,"");
                  fclose(fp);
-                 continue;
+                 return returnfile;
                  }
               }
            
@@ -1064,7 +1064,7 @@ if ((fp = fopen(basepackage,"r")) == NULL)
               snprintf(OUTPUT,CF_BUFSIZE,"Method name %s did not find package name %s",ptr->name,cffilename);
               CfLog(cfinform,OUTPUT,"stat");
               fclose(fp);
-              continue;
+              return returnfile;
               }
            
            strncpy(returnfile,cffilename,CF_MAXVARSIZE);
