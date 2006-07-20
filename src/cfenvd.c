@@ -835,10 +835,11 @@ for (i = 0; i < CF_OBSERVABLES; i++)
 
    newvals.Q[i].expect = WAverage(This[i],currentvals->Q[i].expect,WAGE);
    LOCALAV.Q[i].expect = WAverage(newvals.Q[i].expect,LOCALAV.Q[i].expect,ITER);
-
+   
    delta2 = (This[i] - newvals.Q[i].expect)*(This[i] - newvals.Q[i].expect);
    newvals.Q[i].var = WAverage(delta2,currentvals->Q[i].var,WAGE);
-   
+   LOCALAV.Q[i].var = WAverage(newvals.Q[i].var,LOCALAV.Q[i].var,ITER);
+      
    Verbose("%s              = %4d -> (%lf#%lf) local [%lf#%lf]\n",OBS[i],THIS[i],newvals.Q[i].expect,sqrt(newvals.Q[i].var),LOCALAV.Q[i].expect,sqrt(LOCALAV.Q[i].var));
    }
    
