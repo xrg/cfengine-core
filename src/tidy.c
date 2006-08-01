@@ -672,7 +672,7 @@ if (isreallydir)
    fileticks = statbuf->st_mtime;
    }
  
-if (nowticks-fileticks < 0)
+if ((nowticks-fileticks < 0) && (tlp->age > 0))
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"ALERT: atime for %s is in the future. Check system clock!\n",path);
    CfLog(cfinform,OUTPUT,"");
