@@ -41,13 +41,14 @@
 # define LOADAVG_5MIN    1
 #endif
 
+#include <math.h>
 
 /*****************************************************************************/
 /* Globals                                                                   */
 /*****************************************************************************/
 
 #define CFGRACEPERIOD 4.0     /* training period in units of counters (weeks,iterations)*/
-#define cf_noise_threshold 10 /* number that does not warrent large anomaly status */
+#define cf_noise_threshold 6  /* number that does not warrent large anomaly status */
 #define big_number 100000
 
 #define LDT_BUFSIZE 10
@@ -775,7 +776,13 @@ fflush(TCPPIPE);
 
 void GetQ()
 
-{
+{ int i;
+
+for (i = 0; i < CF_OBSERVABLES; i++)
+   {
+   THIS[i] = 0.0;
+   }
+ 
 Debug("========================= GET Q ==============================\n");
 
 ENTROPIES = NULL;
@@ -833,14 +840,28 @@ for (i = 0; i < CF_OBSERVABLES; i++)
        
    This[i] = RejectAnomaly(THIS[i],currentvals->Q[i].expect,currentvals->Q[i].var,LOCALAV.Q[i].expect,LOCALAV.Q[i].var);
 
+
+   Debug("Current %s.q %lf\n",OBS[i],currentvals->Q[i].q);
+   Debug("Current %s.var %lf\n",OBS[i],currentvals->Q[i].var);
+   Debug("Current %s.ex %lf\n",OBS[i],currentvals->Q[i].expect);
+   Debug("THIS[%s] = %lf\n",OBS[i],THIS[i]);
+   Debug("This[%s] = %lf\n",OBS[i],This[i]);
+
    newvals.Q[i].expect = WAverage(This[i],currentvals->Q[i].expect,WAGE);
    LOCALAV.Q[i].expect = WAverage(newvals.Q[i].expect,LOCALAV.Q[i].expect,ITER);
    
-   delta2 = (This[i] - newvals.Q[i].expect)*(This[i] - newvals.Q[i].expect);
+   delta2 = (This[i] - currentvals->Q[i].expect)*(This[i] - currentvals->Q[i].expect);
+
    newvals.Q[i].var = WAverage(delta2,currentvals->Q[i].var,WAGE);
    LOCALAV.Q[i].var = WAverage(newvals.Q[i].var,LOCALAV.Q[i].var,ITER);
-      
-   Verbose("%s              = %4d -> (%lf#%lf) local [%lf#%lf]\n",OBS[i],THIS[i],newvals.Q[i].expect,sqrt(newvals.Q[i].var),LOCALAV.Q[i].expect,sqrt(LOCALAV.Q[i].var));
+
+   Debug("New %s.q %lf\n",OBS[i],newvals.Q[i].q);
+   Debug("New %s.var %lf\n",OBS[i],newvals.Q[i].var);
+   Debug("New %s.ex %lf\n",OBS[i],newvals.Q[i].expect);
+
+   
+
+   Verbose("%s = %lf -> (%f#%f) local [%f#%f]\n",OBS[i],This[i],newvals.Q[i].expect,sqrt(newvals.Q[i].var),LOCALAV.Q[i].expect,sqrt(LOCALAV.Q[i].var));
    }
    
 UpdateAverages(t,newvals);
@@ -1815,6 +1836,7 @@ if (fabs(delta) < cf_noise_threshold) /* Arbitrary limits on sensitivity  */
        AppendItem(classlist,buffer2,"3");
        AddPersistentClass(buffer2,40,cfpreserve); 
        }
+
     return sig; 
     }
 }
@@ -1873,7 +1895,7 @@ if (new > big_number)
    return average;
    }
 
-if ((new - average)*(new-average) < cf_noise_threshold*cf_noise_threshold)
+if ((new-average)*(new-average) < cf_noise_threshold*cf_noise_threshold)
    {
    return new;
    }
