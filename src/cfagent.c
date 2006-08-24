@@ -569,7 +569,8 @@ while (!feof(fp))
    class[0] = '\0';
    name[0] = '\0';
    value[0] = '\0';
-   fscanf(fp,"%256s",class);
+
+   fgets(class,CF_BUFSIZE-1,fp);
 
    if (feof(fp))
       {
@@ -578,7 +579,8 @@ while (!feof(fp))
 
    if (strstr(class,"="))
       {
-      sscanf(class,"%255[^=]=%255s",name,value);
+      sscanf(class,"%255[^=]=%255[^\n]",name,value);
+
       if (!GetMacroValue(CONTEXTID,name))
          {
          AddMacroValue(CONTEXTID,name,value);

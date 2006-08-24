@@ -954,7 +954,7 @@ void ArmClasses(struct Averages av,char *timekey)
   struct Item *classlist = NULL, *ip;
   int i,j,k,pos;
   FILE *fp;
-  char buff[CF_BUFSIZE];
+  char buff[CF_BUFSIZE],ldt_buff[CF_BUFSIZE];
 
 Debug("Arm classes for %s\n",timekey);
  
@@ -962,6 +962,7 @@ for (i = 0; i < CF_OBSERVABLES; i++)
    {
    sigma = SetClasses(OBS[i],THIS[i],av.Q[i].expect,av.Q[i].var,LOCALAV.Q[i].expect,LOCALAV.Q[i].var,&classlist,timekey);
    SetVariable(OBS[i],THIS[i],av.Q[i].expect,sigma,&classlist);
+   ldt_buff[0] = '\0';
 
    if (LDT_FULL && (CHI[i] > CHI_LIMIT[i]))
       {
@@ -980,6 +981,7 @@ for (i = 0; i < CF_OBSERVABLES; i++)
          
          snprintf(buff,CF_BUFSIZE," %.2f",LDT_BUF[i][j]);
          strcat(OUTPUT,buff);
+         strcat(ldt_buff,buff);
          }
 
       strcat(OUTPUT,"\n");
@@ -998,6 +1000,22 @@ for (i = 0; i < CF_OBSERVABLES; i++)
       AppendItem(&classlist,OUTPUT,"2");
       AddPersistentClass(OUTPUT,40,cfpreserve); 
       }
+   else
+      {
+      for (j = LDT_POS-1, k = 0; k < LDT_BUFSIZE; j++,k++)
+         {
+         if (j == LDT_BUFSIZE) /* Wrap */
+            {
+            j = 0;
+            }
+         
+         snprintf(buff,CF_BUFSIZE," %.2f",LDT_BUF[i][j]);
+         strcat(ldt_buff,buff);
+         }
+      }
+
+   snprintf(buff,CF_MAXVARSIZE,"ldtbuf_%s=%s",OBS[i],ldt_buff);
+   AppendItem(&classlist,buff,"");
    }
 
 unlink(ENV_NEW);
