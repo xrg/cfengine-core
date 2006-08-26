@@ -882,6 +882,18 @@ void LeapDetection()
   double n1,n2,d;
   double padding = 0.2;
 
+if (++LDT_POS >= LDT_BUFSIZE)
+   {
+   LDT_POS = 0;
+   
+   if (!LDT_FULL)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"LDT Buffer full at %d\n",LDT_BUFSIZE);
+      CfLog(cflogonly,OUTPUT,"");
+      LDT_FULL = true;
+      }
+   }
+
   
 for (i = 0; i < CF_OBSERVABLES; i++)
    {
@@ -932,18 +944,6 @@ for (i = 0; i < CF_OBSERVABLES; i++)
    LDT_BUF[i][LDT_POS] = THIS[i];
    LDT_SUM[i] = LDT_SUM[i] - LDT_BUF[i][LDT_POS] + THIS[i];
    }
-
-if (++LDT_POS >= LDT_BUFSIZE)
-   {
-   LDT_POS = 0;
-   
-   if (!LDT_FULL)
-      {
-      snprintf(OUTPUT,CF_BUFSIZE,"LDT Buffer full at %d\n",LDT_BUFSIZE);
-      CfLog(cflogonly,OUTPUT,"");
-      LDT_FULL = true;
-      }
-   }
 }
 
 /*********************************************************************/
@@ -972,14 +972,24 @@ for (i = 0; i < CF_OBSERVABLES; i++)
       
       snprintf(OUTPUT,CF_BUFSIZE,"LDT_BUF (%s): Rot ",OBS[i]);
 
-      for (j = LDT_POS-1, k = 0; k < LDT_BUFSIZE; j++,k++)
+      /* Last printed element is now */
+      
+      for (j = LDT_POS+1, k = 0; k < LDT_BUFSIZE; j++,k++)
          {
          if (j == LDT_BUFSIZE) /* Wrap */
             {
             j = 0;
             }
          
-         snprintf(buff,CF_BUFSIZE," %.2f",LDT_BUF[i][j]);
+         if (j == LDT_POS)
+            {
+            snprintf(buff,CF_BUFSIZE," *%.2f*",LDT_BUF[i][j]);
+            }
+         else
+            {
+            snprintf(buff,CF_BUFSIZE," %.2f",LDT_BUF[i][j]);
+            }
+
          strcat(OUTPUT,buff);
          strcat(ldt_buff,buff);
          }
@@ -1002,19 +1012,32 @@ for (i = 0; i < CF_OBSERVABLES; i++)
       }
    else
       {
-      for (j = LDT_POS-1, k = 0; k < LDT_BUFSIZE; j++,k++)
+      for (j = LDT_POS+1, k = 0; k < LDT_BUFSIZE; j++,k++)
          {
          if (j == LDT_BUFSIZE) /* Wrap */
             {
             j = 0;
             }
-         
-         snprintf(buff,CF_BUFSIZE," %.2f",LDT_BUF[i][j]);
+
+         if (j == LDT_POS)
+            {
+            snprintf(buff,CF_BUFSIZE," *%.2f*",LDT_BUF[i][j]);
+            }
+         else
+            {
+            snprintf(buff,CF_BUFSIZE," %.2f",LDT_BUF[i][j]);
+            }
          strcat(ldt_buff,buff);
          }
       }
 
    snprintf(buff,CF_MAXVARSIZE,"ldtbuf_%s=%s",OBS[i],ldt_buff);
+   AppendItem(&classlist,buff,"");
+
+   snprintf(buff,CF_MAXVARSIZE,"ldtchi_%s=%.2f",OBS[i],CHI[i]);
+   AppendItem(&classlist,buff,"");
+   
+   snprintf(buff,CF_MAXVARSIZE,"ldtlimit_%s=%.2f",OBS[i],CHI_LIMIT[i]);
    AppendItem(&classlist,buff,"");
    }
 
