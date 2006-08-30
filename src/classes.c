@@ -212,7 +212,8 @@ char *VMOUNTCOMM[CF_CLASSATTR] =
    "/etc/mount -va",      /* sun4 */
    "/etc/mount -va",      /* ultrix */
    "/sbin/mount -ea",      /* hpux */
-   "/etc/mount -t nfs",   /* aix */
+   /*"/etc/mount -t nfs",*/   /* aix */
+   "/usr/sbin/mount -t nfs",   /* aix */
    "/bin/mount -va",      /* linux */
    "/usr/sbin/mount -a",  /* solaris */
    "/usr/sbin/mount -va", /* osf1 */

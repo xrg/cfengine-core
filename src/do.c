@@ -3068,6 +3068,7 @@ void AddToFstab(char *host,char *rmountpt,char *mountpt,char *mode,char *options
 { char fstab[CF_BUFSIZE];
   char *opts;
   FILE *fp;
+  char aix_lsnfsmnt[CF_BUFSIZE];
 
 Debug("AddToFstab(%s)\n",mountpt);
 
@@ -3103,7 +3104,11 @@ switch (VSYSTEMHARDCLASS)
                  break;
    case hp:      snprintf(fstab,CF_BUFSIZE,"%s:%s %s \t %s \t %s,%s 0 0",host,rmountpt,mountpt,VNFSTYPE,mode,opts);
                  break;
-   case aix:     snprintf(fstab,CF_BUFSIZE,"%s:\n\tdev\t= %s\n\ttype\t= %s\n\tvfs\t= %s\n\tnodename\t= %s\n\tmount\t= true\n\toptions\t= %s,%s\n\taccount\t= false\n\n",mountpt,rmountpt,VNFSTYPE,VNFSTYPE,host,mode,opts);
+   case aix:     snprintf(fstab,CF_BUFSIZE,"%s:\n\tdev\t= %s\n\ttype\t= %s\n\tvfs\t= %s\n\tnodename\t= %s\n\tmount\t= true\n\toptions\t= %s,%s\n\taccount\t= false\n",mountpt,rmountpt,VNFSTYPE,VNFSTYPE,host,mode,opts);
+		 snprintf(aix_lsnfsmnt, CF_BUFSIZE, 
+				 "%s:%s:%s:%s:%s",
+				 mountpt, rmountpt, host, VNFSTYPE, mode
+			 );
                  break;
    case GnU:
    case linuxx:  snprintf(fstab,CF_BUFSIZE,"%s:%s \t %s \t %s \t %s,%s",host,rmountpt,mountpt,VNFSTYPE,mode,opts);
@@ -3133,60 +3138,151 @@ switch (VSYSTEMHARDCLASS)
 
 if (MatchStringInFstab(mountpt))
    {
-   /* if the fstab entry has changed, remove the old entry and update */
-   if (!MatchStringInFstab(fstab))
-      { struct UnMount *saved_VUNMOUNT = VUNMOUNT;
-        char mountspec[MAXPATHLEN];
-        struct Item *mntentry = NULL;
-        struct UnMount cleaner;
-      
-      snprintf(OUTPUT,CF_BUFSIZE*2,"Removing \"%s\" entry from %s to allow update:\n",mountpt,VFSTAB[VSYSTEMHARDCLASS]);
-      CfLog(cfinform,OUTPUT,"");
-      CfLog(cfinform,"---------------------------------------------------","");
-      
-      /* delete current fstab entry and unmount if necessary */
-      snprintf(mountspec,CF_BUFSIZE,".+:%s",mountpt);
-      mntentry = LocateItemContainingRegExp(VMOUNTED,mountspec);
-      if (mntentry)
-         {
-         sscanf(mntentry->name,"%[^:]:",mountspec);  /* extract current host */
-         strcat(mountspec,":");
-         strcat(mountspec,mountpt);
-         }
-      else  /* mountpt isn't mounted, so Unmount can use dummy host name */
-          snprintf(mountspec,CF_BUFSIZE,"host:%s",mountpt);
-      
-      /* delete current fstab entry and unmount if necessary (don't rmdir) */
-      cleaner.name        = mountspec;
-      cleaner.classes     = NULL;
-      cleaner.deletedir   = 'n';
-      cleaner.deletefstab = 'y';
-      cleaner.force       = 'n';
-      cleaner.done        = 'n';
-      cleaner.scope       = CONTEXTID;
-      cleaner.next        = NULL;
-      
-      VUNMOUNT = &cleaner;
-      Unmount();
-      VUNMOUNT = saved_VUNMOUNT;
-      CfLog(cfinform,"---------------------------------------------------","");
-      }
-   else /* no need to update fstab - this mount entry is already there */
+   if (VSYSTEMHARDCLASS == aix) /* This AIX code by Graham Bevan */
       {
-      /* warn if entry's already in the fstab but hasn't been mounted */
-      if (!ismounted && !SILENT && !strstr(mountpt,"cdrom"))
+      FILE *pp;
+      int fs_found = 0;
+      int fs_changed = 0;
+      char comm[CF_BUFSIZE];
+
+      if ((pp = cfpopen("/usr/sbin/lsnfsmnt -c", "r")) == NULL)
          {
-         snprintf(OUTPUT,CF_BUFSIZE*2,"Warning the file system %s seems to be in %s\n",mountpt,VFSTAB[VSYSTEMHARDCLASS]);
-         CfLog(cfinform,OUTPUT,"");
-         snprintf(OUTPUT,CF_BUFSIZE*2,"already, but I was not able to mount it.\n");
-         CfLog(cfinform,OUTPUT,"");
-         snprintf(OUTPUT,CF_BUFSIZE*2,"Check the exports file on host %s? Check for file with same name as dir?\n",host);
-         CfLog(cfinform,OUTPUT,"");
+         CfLog(cferror,"Failed to open pipe to /usr/sbin/lsnfsmnt command.", "");
+         return;
          }
       
-      return;
+      while(!feof(pp))
+         {
+         ReadLine(VBUFF, CF_BUFSIZE, pp);
+         if (VBUFF[0] == '#')
+            {
+            continue;
+            }
+
+         if (strstr(VBUFF,mountpt))
+            {
+            fs_found++;
+            if (!strstr(VBUFF,aix_lsnfsmnt))
+               {
+               fs_changed = 1;
+               }
+            }
+         }
+      fclose(pp);
+      
+      if (fs_found == 1 && !fs_changed)
+         {
+         return;
+         }
+      else
+         {
+         /* if entry not found, duplicates found or entry is different from lookup string
+          * then remove for re-add */
+         int failed = 0;
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Removing \"%s\" entry from %s to allow update (fs_found=%d):\n",
+                  mountpt,
+                  VFSTAB[VSYSTEMHARDCLASS],
+                  fs_found
+                  );
+
+         CfLog(cfinform,OUTPUT,"");
+         CfLog(cfinform,"---------------------------------------------------","");
+
+         snprintf(comm, CF_BUFSIZE, "/usr/sbin/rmnfsmnt -f %s", mountpt);
+
+         if ((pp = cfpopen(comm,"r")) == NULL)
+            {
+            CfLog(cferror,"Failed to open pipe to /usr/sbin/rmnfsmnt command.", "");
+            return;
+            }
+         
+         while(!feof(pp))
+            {
+            ReadLine(VBUFF, CF_BUFSIZE, pp);
+            if (VBUFF[0] == '#')
+               {
+               continue;
+               }
+            if (strstr(VBUFF,"busy"))
+               {
+               snprintf(OUTPUT,CF_BUFSIZE*2,"umount warned that the device under %s\n",mountpt);
+               CfLog(cfinform,OUTPUT,"");
+               CfLog(cfinform,"was busy. Cannot unmount (rmnfsmnt) that device.\n","");
+               failed = 1;
+               }
+            }
+         
+         if (fclose(pp) != 0)
+            {
+            snprintf(OUTPUT,CF_BUFSIZE*2,"rmnfsmnt failed on fclose() for %s: %s\n",mountpt, strerror(errno));
+            CfLog(cferror,OUTPUT,"");
+            return;
+            }
+         
+         if (failed)
+            {
+            return;
+            }
+         }
+      
+      } /* if aix */
+   else
+      { 
+      /* if the fstab entry has changed, remove the old entry and update */
+      if (!MatchStringInFstab(fstab))
+         { struct UnMount *saved_VUNMOUNT = VUNMOUNT;
+           char mountspec[MAXPATHLEN];
+           struct Item *mntentry = NULL;
+           struct UnMount cleaner;
+         
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Removing \"%s\" entry from %s to allow update:\n",mountpt,VFSTAB[VSYSTEMHARDCLASS]);
+         CfLog(cfinform,OUTPUT,"");
+         CfLog(cfinform,"---------------------------------------------------","");
+         
+         /* delete current fstab entry and unmount if necessary */
+         snprintf(mountspec,CF_BUFSIZE,".+:%s",mountpt);
+         mntentry = LocateItemContainingRegExp(VMOUNTED,mountspec);
+         if (mntentry)
+            {
+            sscanf(mntentry->name,"%[^:]:",mountspec);  /* extract current host */
+            strcat(mountspec,":");
+            strcat(mountspec,mountpt);
+            }
+         else  /* mountpt isn't mounted, so Unmount can use dummy host name */
+             snprintf(mountspec,CF_BUFSIZE,"host:%s",mountpt);
+         
+         /* delete current fstab entry and unmount if necessary (don't rmdir) */
+         cleaner.name        = mountspec;
+         cleaner.classes     = NULL;
+         cleaner.deletedir   = 'n';
+         cleaner.deletefstab = 'y';
+         cleaner.force       = 'n';
+         cleaner.done        = 'n';
+         cleaner.scope       = CONTEXTID;
+         cleaner.next        = NULL;
+         
+         VUNMOUNT = &cleaner;
+         Unmount();
+         VUNMOUNT = saved_VUNMOUNT;
+         CfLog(cfinform,"---------------------------------------------------","");
+         }
+      else /* no need to update fstab - this mount entry is already there */
+         {
+         /* warn if entry's already in the fstab but hasn't been mounted */
+         if (!ismounted && !SILENT && !strstr(mountpt,"cdrom"))
+            {
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Warning the file system %s seems to be in %s\n",mountpt,VFSTAB[VSYSTEMHARDCLASS]);
+            CfLog(cfinform,OUTPUT,"");
+            snprintf(OUTPUT,CF_BUFSIZE*2,"already, but I was not able to mount it.\n");
+            CfLog(cfinform,OUTPUT,"");
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Check the exports file on host %s? Check for file with same name as dir?\n",host);
+            CfLog(cfinform,OUTPUT,"");
+            }
+         
+         return;
+         }
       }
-   }
+   } /* if aix */
  
  if (DONTDO)
     {
@@ -3641,4 +3737,4 @@ fclose(fp);
 return(false);
 }
 
-
+/* vim:expandtab:smarttab:sw=3 */
