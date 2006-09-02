@@ -955,6 +955,9 @@ void ArmClasses(struct Averages av,char *timekey)
   int i,j,k,pos;
   FILE *fp;
   char buff[CF_BUFSIZE],ldt_buff[CF_BUFSIZE];
+  static int anomaly[CF_OBSERVABLES][LDT_BUFSIZE];
+  static double anomaly_chi[CF_OBSERVABLES];
+  static double anomaly_chi_limit[CF_OBSERVABLES];
 
 Debug("Arm classes for %s\n",timekey);
  
@@ -964,8 +967,21 @@ for (i = 0; i < CF_OBSERVABLES; i++)
    SetVariable(OBS[i],THIS[i],av.Q[i].expect,sigma,&classlist);
    ldt_buff[0] = '\0';
 
+   anomaly[i][LDT_POS] = false;
+
+   if (!LDT_FULL)
+      {
+      anomaly[i][LDT_POS] = false;
+      anomaly_chi[i] = 0.0;
+      anomaly_chi_limit[i] = 0.0;
+      }
+   
    if (LDT_FULL && (CHI[i] > CHI_LIMIT[i]))
       {
+      anomaly[i][LDT_POS] = true;                   /* Remember the last anomaly value */
+      anomaly_chi[i] = CHI[i];
+      anomaly_chi_limit[i] = CHI_LIMIT[i];
+      
       snprintf(OUTPUT,CF_BUFSIZE,"LDT(%d) in %s chi = %.2f thresh %.2f \n",LDT_POS,OBS[i],CHI[i],CHI_LIMIT[i]);
       CfLog(cflogonly,OUTPUT,"");
       Verbose(OUTPUT);
@@ -981,7 +997,7 @@ for (i = 0; i < CF_OBSERVABLES; i++)
             j = 0;
             }
          
-         if (j == LDT_POS)
+         if (anomaly[i][j])
             {
             snprintf(buff,CF_BUFSIZE," *%.2f*",LDT_BUF[i][j]);
             }
@@ -1019,7 +1035,7 @@ for (i = 0; i < CF_OBSERVABLES; i++)
             j = 0;
             }
 
-         if (j == LDT_POS)
+         if (anomaly[i][j])
             {
             snprintf(buff,CF_BUFSIZE," *%.2f*",LDT_BUF[i][j]);
             }
@@ -1034,10 +1050,10 @@ for (i = 0; i < CF_OBSERVABLES; i++)
    snprintf(buff,CF_MAXVARSIZE,"ldtbuf_%s=%s",OBS[i],ldt_buff);
    AppendItem(&classlist,buff,"");
 
-   snprintf(buff,CF_MAXVARSIZE,"ldtchi_%s=%.2f",OBS[i],CHI[i]);
+   snprintf(buff,CF_MAXVARSIZE,"ldtchi_%s=%.2f",OBS[i],anomaly_chi[i]);
    AppendItem(&classlist,buff,"");
    
-   snprintf(buff,CF_MAXVARSIZE,"ldtlimit_%s=%.2f",OBS[i],CHI_LIMIT[i]);
+   snprintf(buff,CF_MAXVARSIZE,"ldtlimit_%s=%.2f",OBS[i],anomaly_chi_limit[i]);
    AppendItem(&classlist,buff,"");
    }
 
