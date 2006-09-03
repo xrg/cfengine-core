@@ -50,7 +50,7 @@
 #define CFGRACEPERIOD 4.0     /* training period in units of counters (weeks,iterations)*/
 #define cf_noise_threshold 6  /* number that does not warrent large anomaly status */
 #define big_number 100000
-
+#define CF_PERSISTENCE 30
 #define LDT_BUFSIZE 10
 
 unsigned int HISTOGRAM[CF_OBSERVABLES][7][CF_GRAINS];
@@ -1024,7 +1024,7 @@ for (i = 0; i < CF_OBSERVABLES; i++)
          }
 
       AppendItem(&classlist,OUTPUT,"2");
-      AddPersistentClass(OUTPUT,40,cfpreserve); 
+      AddPersistentClass(OUTPUT,CF_PERSISTENCE,cfpreserve); 
       }
    else
       {
@@ -1836,7 +1836,7 @@ if (fabs(delta) < cf_noise_threshold) /* Arbitrary limits on sensitivity  */
        strcpy(buffer2,buffer);
        strcat(buffer2,"_microanomaly");
        AppendItem(classlist,buffer2,"2");
-       AddPersistentClass(buffer2,40,cfpreserve); 
+       AddPersistentClass(buffer2,CF_PERSISTENCE,cfpreserve); 
        }
    
    return sig; /* Granularity makes this silly */
@@ -1883,7 +1883,7 @@ if (fabs(delta) < cf_noise_threshold) /* Arbitrary limits on sensitivity  */
        strcpy(buffer2,buffer);
        strcat(buffer2,"_dev2");
        AppendItem(classlist,buffer2,"2");
-       AddPersistentClass(buffer2,40,cfpreserve); 
+       AddPersistentClass(buffer2,CF_PERSISTENCE,cfpreserve); 
        }
     
     if (dev > 3.0*sqrt(2.0))
@@ -1891,7 +1891,7 @@ if (fabs(delta) < cf_noise_threshold) /* Arbitrary limits on sensitivity  */
        strcpy(buffer2,buffer);
        strcat(buffer2,"_anomaly");
        AppendItem(classlist,buffer2,"3");
-       AddPersistentClass(buffer2,40,cfpreserve); 
+       AddPersistentClass(buffer2,CF_PERSISTENCE,cfpreserve); 
        }
 
     return sig; 
