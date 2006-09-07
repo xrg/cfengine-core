@@ -1343,7 +1343,7 @@ void HandleSelectPGroup(char *args,char *value)
   char *filename=argv[0],*commentchar=argv[1];
   char *policy=argv[2],*size=argv[3];
   struct Item *list = NULL,*ip;
-  int i,psize = -1, count,done = false;
+  int i,psize = -1, count,done = false,len = 0;
   FILE *fp;
 
 FunctionArgs(args,argv,4);
@@ -1417,6 +1417,7 @@ while (!feof(fp))
    if ((count == psize) || ((count > 0) && feof(fp)))
       {
       done = false;
+      len = 0;
       
       if (IsItemIn(list,VFQNAME)||IsItemIn(list,VIPADDRESS))
          {
@@ -1434,12 +1435,14 @@ while (!feof(fp))
                   return;
                   }
                
-               snprintf(value+strlen(value),CF_BUFSIZE,"%s%c",ip->name,LISTSEPARATOR);
-               Verbose(" %s (added peer) = %s\n",ip->name,value);            
+               snprintf(value+len,CF_BUFSIZE,"%s%c",ip->name,LISTSEPARATOR);
+               Verbose(" %s (added peer) = %s\n",ip->name,value);
+               len += strlen(ip->name)+1;
                }
             done = true;
             }
-         value[strlen(value)-1] = '\0';
+         
+         value[strlen(value)-1] = '\0'; /* Remove last separator from list */
          }
       else
          {
