@@ -764,7 +764,7 @@ void IDClasses()
 { struct stat statbuf;
   char *sp;
   int i = 0;
- 
+
 AddClassToHeap("any");      /* This is a reserved word / wildcard */
  
 snprintf(VBUFF,CF_BUFSIZE,"cfengine_%s",CanonifyName(VERSION));
@@ -1113,16 +1113,18 @@ int linux_suse_version(void)
 #define SUSE_REL_FILENAME "/etc/SuSE-release"
 #define SUSE_SLES8_ID "SuSE SLES-8"
 #define SUSE_SLES9_ID "SUSE LINUX Enterprise Server 9"
+#define SUSE_SLES_ID "SUSE LINUX Enterprise Server"
 #define SUSE_RELEASE_FLAG "linux "
 
 /* The full string read in from SuSE-release */
 char relstring[CF_MAXVARSIZE];
 char classbuf[CF_MAXVARSIZE];
+char vbuf[CF_BUFSIZE];
 
 /* Where the numerical release will be found */
 char *release=NULL;
 
-int i;
+int i,version;
 int major = -1;
 char strmajor[CF_MAXVARSIZE];
 int minor = -1;
@@ -1131,69 +1133,87 @@ char strminor[CF_MAXVARSIZE];
 FILE *fp;
 
  /* Grab the first line from the file and then close it. */
- if ((fp = fopen(SUSE_REL_FILENAME,"r")) == NULL)
-    {
-    return 1;
-    }
- fgets(relstring, sizeof(relstring), fp);
- fclose(fp);
+
+if ((fp = fopen(SUSE_REL_FILENAME,"r")) == NULL)
+   {
+   return 1;
+   }
+
+fgets(relstring, sizeof(relstring), fp);
+fclose(fp);
+  
+   /* Check if it's a SuSE Enterprise version  */
+
+Verbose("Looking for SuSE enterprise info in \"%s\"\n",relstring);
+ 
+if (!strncmp(relstring, SUSE_SLES8_ID, strlen(SUSE_SLES8_ID)))
+   {
+   classbuf[0] = '\0';
+   strcat(classbuf, "SLES8");
+   AddClassToHeap(classbuf);
+   }
+else if (!strncmp(relstring, SUSE_SLES9_ID, strlen(SUSE_SLES9_ID)))
+   {
+   classbuf[0] = '\0';
+   strcat(classbuf, "SLES9");
+   AddClassToHeap(classbuf);
+   }
 
   
-   /* Check if it's a SuSE Enterprise version
-   */
- Verbose("Looking for SuSE enterprise info in \"%s\"\n",relstring);
- 
- if(!strncmp(relstring, SUSE_SLES8_ID, strlen(SUSE_SLES8_ID)))
-    {
-    classbuf[0] = '\0';
-    strcat(classbuf, "SLES8");
-    AddClassToHeap(classbuf);
-     }
- else if(!strncmp(relstring, SUSE_SLES9_ID, strlen(SUSE_SLES9_ID)))
-    {
-    classbuf[0] = '\0';
-    strcat(classbuf, "SLES9");
-    AddClassToHeap(classbuf);
-    }
 
+for (version = 9; version < 13; version++)
+   {
+   snprintf(vbuf,CF_BUFSIZE,"%s %d",SUSE_SLES_ID,version);
+   Debug("Checking for suse [%s]\n",vbuf);
+   
+   if (!strncmp(relstring, SUSE_SLES_ID, strlen(relstring)))
+      {
+      snprintf(classbuf,CF_MAXVARSIZE,"SLES%d",version);
+      AddClassToHeap(classbuf);
+      }
+   }
+    
  /* Convert relstring to lowercase to handle rename of SuSE to 
   * SUSE with SUSE 10.0. 
   */
 
- for (i = 0; i < strlen(relstring); i++)
-    {
-    relstring[i] = tolower(relstring[i]);
-    }
+for (i = 0; i < strlen(relstring); i++)
+   {
+   relstring[i] = tolower(relstring[i]);
+   }
 
  /* Determine release version. We assume that the version follows
   * the string "SuSE Linux" or "SUSE LINUX".
   */
- release = strstr(relstring, SUSE_RELEASE_FLAG);
- if(release == NULL)
-    {
-    Verbose("Could not find a numeric OS release in %s\n",SUSE_REL_FILENAME);
-    return 2;
-    }
- else
-    {
-    release += strlen(SUSE_RELEASE_FLAG);
-    sscanf(release, "%d.%d", &major, &minor);
-    sprintf(strmajor, "%d", major);
-    sprintf(strminor, "%d", minor);
-    }
-    if(major != -1 && minor != -1)
-    {
-    classbuf[0] = '\0';
-    strcat(classbuf, "SuSE");
-    AddClassToHeap(classbuf);
-    strcat(classbuf, "_");
-    strcat(classbuf, strmajor);
-    AddClassToHeap(classbuf);
-    strcat(classbuf, "_");
-    strcat(classbuf, strminor);
-    AddClassToHeap(classbuf);
-    }
- 
+
+release = strstr(relstring, SUSE_RELEASE_FLAG);
+
+if (release == NULL)
+   {
+   Verbose("Could not find a numeric OS release in %s\n",SUSE_REL_FILENAME);
+   return 2;
+   }
+else
+   {
+   release += strlen(SUSE_RELEASE_FLAG);
+   sscanf(release, "%d.%d", &major, &minor);
+   sprintf(strmajor, "%d", major);
+   sprintf(strminor, "%d", minor);
+   }
+
+if(major != -1 && minor != -1)
+   {
+   classbuf[0] = '\0';
+   strcat(classbuf, "SuSE");
+   AddClassToHeap(classbuf);
+   strcat(classbuf, "_");
+   strcat(classbuf, strmajor);
+   AddClassToHeap(classbuf);
+   strcat(classbuf, "_");
+   strcat(classbuf, strminor);
+   AddClassToHeap(classbuf);
+   }
+
 return 0;
 }
 
