@@ -1258,7 +1258,7 @@ while (!feof(fp))
 
       done = false;
       
-      if (IsItemIn(list,VFQNAME)||IsItemIn(list,VIPADDRESS))
+      if (IsItemIn(list,VUQNAME)||IsItemIn(list,VFQNAME)||IsItemIn(list,VIPADDRESS))
          {
          /* This is my peer group */
          Verbose("Found my peer group:\n");
@@ -1419,7 +1419,7 @@ while (!feof(fp))
       done = false;
       len = 0;
       
-      if (IsItemIn(list,VFQNAME)||IsItemIn(list,VIPADDRESS))
+      if (IsItemIn(list,VUQNAME)||IsItemIn(list,VFQNAME)||IsItemIn(list,VIPADDRESS))
          {
          /* This is my peer group */
          Verbose("Found my peer group:\n");
