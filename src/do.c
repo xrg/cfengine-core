@@ -2412,8 +2412,11 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
    for (ip = VIMAGE; ip != NULL; ip=ip->next)
       {
       ExpandVarstring(ip->server,server,NULL);            
+      AddMacroValue(CONTEXTID,"this",server);
       ExpandVarstring(ip->path,path,NULL);
       ExpandVarstring(ip->destination,destination,NULL);
+      DeleteMacro(CONTEXTID,"this");
+
 
       if (strcmp(listserver,server) != 0)  /* group together similar hosts so */
          {                                /* can can do multiple transactions */

@@ -723,7 +723,7 @@ void ImageCopy(char *sourcefile,char *destfile,struct stat sourcestatbuf,struct 
 Debug2("ImageCopy(%s,%s,+%o,-%o)\n",sourcefile,destfile,ip->plus,ip->minus);
 
 ExpandVarstring(ip->server,server,NULL);
-
+      
 if ((strcmp(sourcefile,destfile) == 0) && (strcmp(ip->server,"localhost") == 0))
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Image loop: file/dir %s copies to itself",sourcefile);

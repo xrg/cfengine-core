@@ -1,4 +1,12 @@
 2.1.21
+
+	copy action now supports this $(this) variable which is made equal to the
+	current server. This allows separating files from multiple hosts when downloading.
+	
+	cfenvd LDT fixes
+
+	Bugs in PeerLeader/Group functions fixed.
+
 	Some buffer limits too small and hardcoded in item.c - fix
 	PH support removed from cfenvd during code rationalization - never used
 
@@ -221,7 +229,7 @@
 
 	-f removal in cfservd patch
 
-	Segmentatin fault in cfservd with RSA key exchange fixed.
+	Segmentation fault in cfservd with RSA key exchange fixed.
 
 	Disk freespace alerting bug - did not agree with manual specification. Message
 	appears only in verbose. Fixed. 

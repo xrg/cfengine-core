@@ -10691,6 +10691,7 @@ will never be updated, unless the existing key is deleted by hand.
 Hosts which are included in this list are assumed to have IP addresses which
 can change with time, e.g. hosts which are given IP addresses by DHCP
 or a BOOTP like protocol.
+@cindex DHCP addresses
 
 @smallexample
      control:
@@ -10715,6 +10716,11 @@ fixed keys are kept in files for easy administration. If host keys
 change or are reinstalled on the dynamically allocated hosts, then
 this database should probably be deleted to purge keys that become
 illegal.
+
+DHCP addresses have no effect on hosts that use IPV6, since IPV6 addresses
+are generally issued based on an interface MAC address and do not therefore
+change.
+@cindex IPV6 and DHCP
 
 @c -------------------------------------------------------------------------------
 @c SECTION

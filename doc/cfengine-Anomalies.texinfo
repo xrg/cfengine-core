@@ -875,12 +875,13 @@ cf:nexus: HIGH ENTROPY Incoming smtp anomaly high anomaly !! on nexus/Sat Aug  6
 
 @menu
 * Anomaly Classes::             
+* Variables::                   
 * Entropy::                     
 * Log utilities::               
 * Persistent alerts::           
 @end menu
 
-@node Anomaly Classes, Entropy, Anomaly response, Anomaly response
+@node Anomaly Classes, Variables, Anomaly response, Anomaly response
 @section Anomaly Classes
 
 When cfengine detects an anomaly, it classified the current statistical
@@ -996,7 +997,101 @@ www_in_high_anomaly
 smtp_out_high_dev2
 @end smallexample
 
-@node Entropy, Log utilities, Anomaly Classes, Anomaly response
+
+@menu
+* Cfenvd Class list::           
+@end menu
+
+@node Cfenvd Class list,  , Anomaly Classes, Anomaly Classes
+@subsection Cfenvd Class list
+
+
+@cindex Anomalies
+Base classes:
+@smallexample
+  users
+  rootprocs
+  otherprocs
+  diskfree
+  loadavg
+  netbiosns_in
+  netbiosns_out
+  netbiosdgm_in
+  netbiosdgm_out
+  netbiosssn_in
+  netbiosssn_out
+  irc_in
+  irc_out
+  cfengine_in
+  cfengine_out
+  nfsd_in
+  nfsd_out
+  smtp_in
+  smtp_out
+  www_in
+  www_out
+  ftp_in
+  ftp_out
+  ssh_in
+  ssh_out
+  wwws_in
+  wwws_out
+  icmp_in
+  icmp_out
+  udp_in
+  udp_out
+  dns_in
+  dns_out
+  tcpsyn_in
+  tcpsyn_out
+  tcpack_in
+  tcpack_out
+  tcpfin_in
+  tcpfin_out
+  tcpmisc_in
+  tcpmisc_out
+@end smallexample
+Suffixes:
+@smallexample
+_high_microanomaly
+_low_microanomaly
+
+_high_dev1
+_low_dev1
+
+_high_dev2
+_low_dev2
+
+_high_anomaly
+_low_anomaly
+
+_high_ldt
+_low_ldt
+@end smallexample
+
+
+@node Variables, Entropy, Anomaly Classes, Anomaly response
+@section Variables
+
+Cfenvd sets variables which cache the values that were valid at the
+time of the anomaly's occurrance. These are of the same form as above.
+@smallexample
+value_rootprocs
+average_rootprocs
+stddev_rootprocs
+
+value_nsfd_in
+average_nfsd_in
+stddev_nfsd_in
+@end smallexample
+The Leap Detection Test buffer is called
+@smallexample
+ldtbuf_users
+ldtbuf_otherprocs
+@end smallexample
+etc.
+
+@node Entropy, Log utilities, Variables, Anomaly response
 @section Entropy
 
 Entropy is a statistical characterization of the distribution 
