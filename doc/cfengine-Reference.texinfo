@@ -4938,6 +4938,9 @@ copy:
 @end cartouche
 
 @noindent
+Note that the @code{$(this)} variable may be used in the source and
+destination strings in order to tailor the filename when downloading from
+multiple sources (see below).
 
 @table @code
 
