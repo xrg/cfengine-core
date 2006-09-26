@@ -146,6 +146,8 @@ if (!SKIPIDENTIFY)
    }
 else
    {
+   strcpy(localip,VIPADDRESS);
+   
    if (strlen(VFQNAME) > 0)
       {
       Verbose("SkipIdent was requested, so we are trusting and annoucning the identity as (%s) for this host\n",VFQNAME);
