@@ -889,7 +889,7 @@ if (++LDT_POS >= LDT_BUFSIZE)
    if (!LDT_FULL)
       {
       snprintf(OUTPUT,CF_BUFSIZE,"LDT Buffer full at %d\n",LDT_BUFSIZE);
-      CfLog(cflogonly,OUTPUT,"");
+      CfLog(cfloginform,OUTPUT,"");
       LDT_FULL = true;
       }
    }
@@ -983,7 +983,11 @@ for (i = 0; i < CF_OBSERVABLES; i++)
       anomaly_chi_limit[i] = CHI_LIMIT[i];
       
       snprintf(OUTPUT,CF_BUFSIZE,"LDT(%d) in %s chi = %.2f thresh %.2f \n",LDT_POS,OBS[i],CHI[i],CHI_LIMIT[i]);
-      CfLog(cflogonly,OUTPUT,"");
+
+      if (VERBOSE)
+         {
+         CfLog(cfloginform,OUTPUT,"");
+         }
       Verbose(OUTPUT);
       
       snprintf(OUTPUT,CF_BUFSIZE,"LDT_BUF (%s): Rot ",OBS[i]);
@@ -1011,7 +1015,11 @@ for (i = 0; i < CF_OBSERVABLES; i++)
          }
 
       strcat(OUTPUT,"\n");
-      CfLog(cflogonly,OUTPUT,"");
+
+      if (VERBOSE)
+         {
+         CfLog(cfloginform,OUTPUT,"");
+         }
       Verbose(OUTPUT);
 
       if (THIS[i] > av.Q[i].expect)
