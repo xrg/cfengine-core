@@ -1891,10 +1891,21 @@ for (ip = *filestart; ip != NULL; ip=ip->next, linenum++)
 void AppendToLine(struct Item *current,char *text,char *filename)
 
 { char *new;
+ int wasblank = false;
 
-if (strstr(current->name,text))
+if (current == NULL)
    {
-   return;
+   FatalError("Software error -- attempt to append to a non-existent line (shouldn't happen)");
+   }
+ 
+if (current->name != NULL)
+   {
+   wasblank = false;
+   
+   if (strstr(current->name,text))
+      {
+      return;
+      }
    }
 
 EditVerbose("Appending %s to line %-60s...\n",text,current->name);
@@ -1904,7 +1915,11 @@ strcpy(new,current->name);
 strcat(new,text);
 NUMBEROFEDITS++;
 
-free(current->name);
+if (!wasblank)
+   {
+   free(current->name);
+   }
+
 current->name = new;
 }
 

@@ -1248,7 +1248,15 @@ while (ep != NULL)
           break;
           
       case AppendToLineIfNotContains:
-          AppendToLine(CURRENTLINEPTR,expdata,filename);
+          
+          if (CURRENTLINEPTR == NULL)
+             {
+             PrependItem(&filestart,expdata,NULL);
+             }
+          else
+             {
+             AppendToLine(CURRENTLINEPTR,expdata,filename);
+             }
           break;
           
       default: snprintf(OUTPUT,CF_BUFSIZE*2,"Unknown action in editing of file %s\n",filename);
