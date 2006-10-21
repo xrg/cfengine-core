@@ -2568,6 +2568,7 @@ switch (action)
        break;
 
    case tidy:
+
        if (VAGE >= 99999)
           {
           yyerror("Must specify an age for tidy actions");

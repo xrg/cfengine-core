@@ -690,6 +690,11 @@ Debug1("Handling Object = (%s)\n",object);
 
 strncpy(CURRENTOBJECT,object,CF_BUFSIZE-1);        /* Yes this must be here */
 
+if (object[strlen(object)-1] == ':')
+   {
+   yyerror("There seems to be an action or class syntax error");
+   }
+
 ACTIONPENDING = true;                         /* we're parsing an action */
 
 if (ACTION_IS_LINK || ACTION_IS_LINKCHILDREN)      /* to-link (after ->) */
