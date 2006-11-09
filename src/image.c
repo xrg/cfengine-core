@@ -1582,9 +1582,10 @@ if (IMAGEBACKUP != 'n')
       }
 
    /* rely on prior BufferOverflow() and on strlen(CF_SAVED) < CF_BUFFERMARGIN */
+
    strcat(backup,CF_SAVED);
 
-   if (!IsItemIn(VREPOSLIST,backup))
+   if (IsItemIn(VREPOSLIST,backup))
       {
       /* Mainly important if there is a dir in the way */
       
@@ -1604,41 +1605,42 @@ if (IMAGEBACKUP != 'n')
          {
          /* ignore */
          }
+
       backupok = (lstat(backup,&s) != -1); /* Did the rename() succeed? NFS-safe */
       }
    }
- else
-    {
-    /* Mainly important if there is a dir in the way */
-    
-    if (stat(dest,&s) != -1)
-       {
-       if (S_ISDIR(s.st_mode))
-          {
-          PurgeFiles(NULL,dest,NULL);
-          rmdir(dest);
-          }
-       }
-    }
- 
- if (stat(new,&dstat) == -1)
-    {
-    snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat new file %s\n",new);
-    CfLog(cferror,OUTPUT,"stat");
-    return false;
-    }
- 
- if (dstat.st_size != sstat.st_size)
-    {
-    snprintf(OUTPUT,CF_BUFSIZE*2,"WARNING: new file %s seems to have been corrupted in transit (sizes %d and %d), aborting!\n",new, (int) dstat.st_size, (int) sstat.st_size);
-    CfLog(cfverbose,OUTPUT,"");
-    if (backupok)
-       {
-       rename(backup,dest); /* ignore failure */
-       }
-    return false;
-    }
- 
+else
+   {
+   /* Mainly important if there is a dir in the way */
+   
+   if (stat(dest,&s) != -1)
+      {
+      if (S_ISDIR(s.st_mode))
+         {
+         PurgeFiles(NULL,dest,NULL);
+         rmdir(dest);
+         }
+      }
+   }
+
+if (stat(new,&dstat) == -1)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat new file %s\n",new);
+   CfLog(cferror,OUTPUT,"stat");
+   return false;
+   }
+
+if (dstat.st_size != sstat.st_size)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"WARNING: new file %s seems to have been corrupted in transit (sizes %d and %d), aborting!\n",new, (int) dstat.st_size, (int) sstat.st_size);
+   CfLog(cfverbose,OUTPUT,"");
+   if (backupok)
+      {
+      rename(backup,dest); /* ignore failure */
+      }
+   return false;
+   }
+
 if (ip->verify == 'y')
    {
    Verbose("Final verification of transmission.\n");

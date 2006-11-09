@@ -2243,7 +2243,7 @@ if (! IsItemIn(VREPOSLIST,new))
       unlink(new);
       return false;
       }
-   else if(Repository(backup,repository))
+   else if (Repository(backup,repository))
       {
       if (rename(new,file) == -1)
          {
