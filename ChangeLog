@@ -1,3 +1,6 @@
+2.1.22
+	ShowState(rootprocs), ShowState(otherprocs) added for better process reporting
+
 2.1.21
 
 	copy action now supports this $(this) variable which is made equal to the

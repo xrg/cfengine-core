@@ -2259,7 +2259,7 @@ alerts:
   anomaly_hosts.RootProcs_high_dev2::
 
    "RootProc anomaly high 2 dev on $(host) value $(value_rootprocs) av $(average_rootprocs) pm $(stddev_rootprocs)"
-  ShowState(procs)
+  ShowState(rootprocs)
 
 @end smallexample
 
@@ -2272,6 +2272,8 @@ ShowState(outgoing.smtp)
 ShowState(incoming.www)
 ShowState(outgoing.www)
 ShowState(procs)
+ShowState(rootprocs)
+ShowState(otherprocs)
 ShowState(users)
 @end smallexample
 
@@ -2284,7 +2286,7 @@ To limit the frequency of alerts, you can set locking times:
 
    "RootProc anomaly high 2 dev on $(host) value $(value_rootprocs) av $(average_rootprocs) pm $(stddev_rootprocs)"
 
-   ShowState(procs)  ifelapsed=10 expireafter=20
+   ShowState(rootprocs)  ifelapsed=10 expireafter=20
 
 @end smallexample
 Alerts can also be channeled directly to syslog, to avoid extraneous console messages or email.

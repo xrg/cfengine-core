@@ -208,7 +208,18 @@ only files, and looks for any change at all. If a legitimate change is
 made to the system, it responds to
  this as a potential threat. Databases must then be altered, or rebuilt. 
 
-Cfengine adopted part of Tripwire's idea. It collects MD5 hash data for specified files. Its model for checking permissions is somewhat different however. Cfengine expects systems to change dynamically, so it allows users to define a policy for allowed change. It can also check for processes, not merely files. Integrity checks on files whose contents are supposed to be static are a good way to detect tampering with the system, from whatever source. Running MD5 or SHA1 checksums of files regularly provides us with a way of determining even the smallest changes to file contents. Here is an excerpt from a cfengine configuration program that would check the /usr/local filesystem for file changes. Note that it excludes files such as log files that are supposed to change: 
+Cfengine adopted part of Tripwire's idea. It collects MD5 hash data
+for specified files. Its model for checking permissions is somewhat
+different however. Cfengine expects systems to change dynamically, so
+it allows users to define a policy for allowed change. It can also
+check for processes, not merely files. Integrity checks on files whose
+contents are supposed to be static are a good way to detect tampering
+with the system, from whatever source. Running MD5 or SHA1 checksums
+of files regularly provides us with a way of determining even the
+smallest changes to file contents. Here is an excerpt from a cfengine
+configuration program that would check the /usr/local filesystem for
+file changes. Note that it excludes files such as log files that are
+supposed to change:
 @smallexample
 
 control:
