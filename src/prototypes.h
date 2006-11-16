@@ -596,6 +596,7 @@ int IsClassedItemIn (struct Item *list, char *item);
 int IsFuzzyItemIn (struct Item *list, char *item);
 int GetItemListCounter (struct Item *list, char *item);
 struct Item *ConcatLists (struct Item *list1, struct Item *list2);
+void CopyList (struct Item **dest,struct Item *source);
 int FuzzySetMatch (char *s1, char *s2);
 int FuzzyMatchParse (char *item);
 int FuzzyHostMatch (char *arg0, char *arg1,char *basename);

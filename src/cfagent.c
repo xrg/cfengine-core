@@ -287,7 +287,21 @@ for (i = 1; i < argc; i++)
     {
     CreateEmptyFile(ebuff);
     }
+
+ sprintf(ebuff,"%s/state/cf_rootprocs",CFWORKDIR);
  
+ if (stat(ebuff,&statbuf) == -1)
+    {
+    CreateEmptyFile(ebuff);
+    }
+ 
+ sprintf(ebuff,"%s/state/cf_otherprocs",CFWORKDIR);
+ 
+ if (stat(ebuff,&statbuf) == -1)
+    {
+    CreateEmptyFile(ebuff);
+    }
+
  strcpy(VLOGDIR,CFWORKDIR); 
  strcpy(VLOCKDIR,VLOGDIR);  /* Same since 2.0.a8 */
  

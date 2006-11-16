@@ -43,6 +43,8 @@ int LoadProcessTable(struct Item **procdata,char *psopts)
 
 { FILE *pp;
   char pscomm[CF_MAXLINKSIZE], imgbackup;
+  struct Item *rootprocs = NULL;
+  struct Item *otherprocs = NULL;
 
 snprintf(pscomm,CF_MAXLINKSIZE,"%s %s",VPSCOMM[VSYSTEMHARDCLASS],psopts);
 
@@ -64,12 +66,35 @@ while (!feof(pp))
 
 cfpclose(pp);
 
-snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_procs",CFWORKDIR);
+/* Now save the data */
 
 imgbackup = IMAGEBACKUP;
 IMAGEBACKUP = 'n'; 
+
+snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_procs",CFWORKDIR);
 SaveItemList(*procdata,VBUFF,"none");
-IMAGEBACKUP = imgbackup; 
+
+CopyList(&rootprocs,*procdata);
+CopyList(&otherprocs,*procdata);
+
+while (DeleteItemNotMatching(&rootprocs,".*root.*"))
+   {
+   }
+
+while (DeleteItemMatching(&otherprocs,".*root.*"))
+   {
+   }
+
+snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_rootprocs",CFWORKDIR);
+SaveItemList(rootprocs,VBUFF,"none");
+DeleteItemList(rootprocs);
+    
+snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_otherprocs",CFWORKDIR);
+SaveItemList(otherprocs,VBUFF,"none");
+DeleteItemList(otherprocs);
+
+IMAGEBACKUP = imgbackup;
+
 return true;
 }
 

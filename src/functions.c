@@ -1594,6 +1594,7 @@ if (stat(buffer,&statbuf) == 0)
             }
          else      
             {
+            /* If we get here this is a process thing */
             if (offset == NULL)
                {
                if (offset = strstr(buffer,"CMD"))

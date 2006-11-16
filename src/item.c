@@ -187,6 +187,30 @@ return(false);
 
 /*********************************************************************/
 
+void CopyList (struct Item **dest, struct Item *source)
+
+/* Copy or concat lists */
+    
+{ struct Item *ip;
+
+if (*dest != NULL)
+   {
+   FatalError("CopyList - list not initialized");
+   }
+ 
+if (source == NULL)
+   {
+   return;
+   }
+ 
+for (ip = source; ip != NULL; ip = ip ->next)
+   {
+   AppendItem(dest,ip->name,ip->classes);
+   }
+}
+
+/*********************************************************************/
+
 struct Item *ConcatLists (struct Item *list1,struct Item *list2)
 
 /* Notes: * Refrain from freeing list2 after using ConcatLists
@@ -202,6 +226,7 @@ if (list1 == NULL)
 for (endOfList1=list1; endOfList1->next!=NULL; endOfList1=endOfList1->next)
    {
    }
+
 endOfList1->next = list2;
 return list1;
 }
