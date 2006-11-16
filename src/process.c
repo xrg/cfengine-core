@@ -85,6 +85,8 @@ while (DeleteItemMatching(&otherprocs,".*root.*"))
    {
    }
 
+PrependItem(&rootprocs,otherprocs->name,NULL);
+
 snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_rootprocs",CFWORKDIR);
 SaveItemList(rootprocs,VBUFF,"none");
 DeleteItemList(rootprocs);
