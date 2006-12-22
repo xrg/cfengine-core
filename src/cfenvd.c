@@ -965,6 +965,9 @@ for (i = 0; i < CF_OBSERVABLES; i++)
    {
    sigma = SetClasses(OBS[i],THIS[i],av.Q[i].expect,av.Q[i].var,LOCALAV.Q[i].expect,LOCALAV.Q[i].var,&classlist,timekey);
    SetVariable(OBS[i],THIS[i],av.Q[i].expect,sigma,&classlist);
+
+   /* LDT */
+
    ldt_buff[0] = '\0';
 
    anomaly[i][LDT_POS] = false;
@@ -1065,6 +1068,8 @@ for (i = 0; i < CF_OBSERVABLES; i++)
    AppendItem(&classlist,buff,"");
    }
 
+/* Publish class list */
+
 unlink(ENV_NEW);
  
 if ((fp = fopen(ENV_NEW,"a")) == NULL)
@@ -1097,6 +1102,8 @@ rename(ENV_NEW,ENV);
 
 void AnalyzeArrival(char *arrival)
 
+/* This coarsely classifies TCP dump data */
+    
 { char src[CF_BUFSIZE],dest[CF_BUFSIZE], flag = '.';
   
 src[0] = dest[0] = '\0';
@@ -1771,7 +1778,7 @@ double WAverage(double anew,double aold,double age)
 { double av;
   double wnew,wold;
 
-if (age < 2.0)  
+if (age < 2.0)  /* More aggressive learning for young database */
    {
    wnew = 0.7;
    wold = 0.3;
