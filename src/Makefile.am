@@ -5,7 +5,7 @@ LDADD = -L../pub -lpub $(BERKELEY_DB_LDFLAGSD) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_
 INCLUDES = $(BERKELEY_DB_CFLAGS) $(OPENSSL_LIB_CPPFLAGS)
 AM_LDFLAGS = $(BERKELEY_DB_LDFLAGS) $(OPENSSL_LIB_LDFLAGS) @LDFLAGS@
 
-sbin_PROGRAMS = cfagent cfservd cfrun cfkey cfenvd cfenvgraph cfexecd cfshow cfetool cfetoolgraph cfconvert
+sbin_PROGRAMS = cfagent cfservd cfrun cfkey cfenvd cfenvgraph cfexecd cfshow cfetool cfetoolgraph
 
 cfshow_SOURCES =							\
 	cfshow.c							\
@@ -82,77 +82,14 @@ cfagent_SOURCES =							\
 	methods.c							\
 	dtypes.c							\
 	state.c								\
+	expand-files.c							\
+	expand-tidy.c							\
+	expand-image.c							\
+	expand-editfiles.c						\
 	package.c
 
 cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 
-cfconvert_SOURCES =							\
-	cfconvert.c							\
-	init.c								\
-        do.c                                                            \
-	modules.c							\
-	alerts.c							\
-        wrapper.c                                                       \
-        report.c                                                        \
-	client.c							\
-	ip.c								\
-	process.c							\
-	ifconf.c							\
-	image.c								\
-	item.c								\
-	item-ext.c							\
-	item-file.c							\
-	2Dlist.c							\
-	globals.c							\
-	classes.c							\
-	misc.c								\
-	convparse.c							\
-	functions.c							\
-	edittools.c							\
-	patches.c							\
-	convinstall.c							\
-	link.c								\
-	tidy.c								\
-	filedir.c							\
-	eval.c								\
-	modes.c								\
-	sockaddr.c							\
-	chflags.c							\
-	locks.c								\
-	mount.c								\
-	macro.c								\
-	filenames.c							\
-	varstring.c							\
-	wildcard.c							\
-	cfparse.y							\
-	comparray.c							\
-	read.c								\
-	checksums.c							\
-	proto.c								\
-        filters.c                                                       \
-	copy.c								\
-	repository.c							\
-	rotate.c							\
-	errors.c							\
-	cflex.l								\
-	net.c								\
-	df.c								\
-	log.c								\
-	crypto.c							\
-	popen.c								\
-	popen_def.c							\
-	sensible.c							\
-	acl.c								\
-	dce_acl.c							\
-	nameinfo.c							\
-	strategies.c                         				\
-	granules.c							\
-	methods.c							\
-	dtypes.c							\
-	state.c								\
-	package.c
-
-cfconvert_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 
 cfservd_SOURCES =							\
 	cfservd.c							\

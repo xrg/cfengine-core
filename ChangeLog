@@ -1,6 +1,11 @@
 2.1.22
 	ShowState(rootprocs), ShowState(otherprocs) added for better process reporting
 
+
+	Code reorganization for better separation of concerns.
+
+	cfconvert removed. Change of strategy.
+	
 2.1.21
 
 	copy action now supports this $(this) variable which is made equal to the
