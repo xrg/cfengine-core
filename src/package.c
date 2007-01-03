@@ -33,6 +33,7 @@
 
 void ParseEVR(char * evr, const char **ep, const char **vp, const char **rp);
 void ParseSUNVR(char * vr, int *major, int *minor, int *micro);
+void ParseAIXVR(char * vr, int *ver, int *release, int *maint, int *fix);
 int rpmvercmp(const char *a, const char *b);
 int xislower(int c);
 int xisupper(int c);
@@ -327,6 +328,18 @@ switch(pkgmgr)
                CF_BUFSIZE);
        break;
        
+       /* AIX */
+   case pkgmgr_aix:
+	if (!GetMacroValue(CONTEXTID,"AIXInstallCommand"))
+          {
+          Verbose("AIXInstallCommand NOT Set.  Package Installation Not Possible!\n");
+          return 0;
+          }
+       strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"AIXInstallCommand"),
+               CF_BUFSIZE);
+	
+       break;
+
        /* Default */
    default:
        Verbose("InstallPackage(): Unknown package manager %d\n",pkgmgr);
@@ -816,6 +829,227 @@ void ParseSUNVR (char * vr, int *major, int *minor, int *micro)
   free(tmpcpy);  
 }
 
+/*********************************************************************/
+/* AIX - lslpp/installp                                              */
+/*********************************************************************/
+int AIXPackageCheck(char *package,char *version,enum cmpsense cmp)
+{ FILE *pp;
+struct Item *evrlist = NULL;
+struct Item *evr;
+char *evrstart;
+enum cmpsense result;
+int match = 0;
+char tmpBUFF[CF_BUFSIZE];
+char *vs, *ve;
+int verA = 0;
+int verB = 0;
+int releaseA = 0;
+int releaseB = 0;
+int maintA = 0;
+int maintB = 0;
+int fixA = 0;
+int fixB = 0;
+
+Verbose ("Package: ");
+Verbose (package);
+Verbose ("\n");
+
+/* check that the package exists in the package database */
+/* we're using -l here so that RPM pkgs aren't included.  These should
+be treated seperatly */
+snprintf(VBUFF, CF_BUFSIZE, "/usr/bin/lslpp -qcl %s", package);
+
+if((pp = cfpopen (VBUFF, "r")) == NULL)
+  {
+  Verbose ("Could not execute lslpp -qcl.\n");
+  return 0;
+  }
+
+while (!feof (pp))
+   {
+   *VBUFF = '\0';
+   ReadLine (VBUFF, CF_BUFSIZE, pp);
+   }
+
+if (cfpclose (pp) != 0)
+   {
+   Verbose ("The package %s did not exist in the package database.\n",package);
+   return 0;
+   }
+
+/* If no version was specified, we're just checking if the package
+ * is present, not for a particular number, and we can skip the
+ * version number fetch and check.
+ */
+
+if(!*version)
+  {
+  return 1;
+  }
+
+/* check what version is installed on the system (if any) */
+/* now that we know its installed and not an rpm we can use -L to consolidate
+the Usr and ROOT portions for the version check */
+
+snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/lslpp -qcL %s", package);
+
+if((pp = cfpopen (VBUFF, "r")) == NULL)
+  {
+  Verbose ("Could not execute lslpp -qcL.\n");
+  return 0;
+  }
+
+while (!feof (pp))
+   {
+   *VBUFF = '\0';
+   ReadLine (VBUFF, CF_BUFSIZE, pp);
+   if (*VBUFF != '\0')
+      {
+      /* find third field of : delimited string */
+      if (sscanf (VBUFF, "%*[^:]:%*[^:]:%[^:]:%*s",tmpBUFF) > 0)
+         {
+            AppendItem (&evrlist, tmpBUFF, "");
+         }
+      }
+   }
+if (cfpclose (pp) != 0)
+   {   
+   Verbose ("lslpp -qcL exited abnormally.\n");
+   DeleteItemList (evrlist);
+   return 0;
+   }
+
+/* Parse the AIX Version we are looking for once at the start */
+
+ParseAIXVR(version, &verB, &releaseB, &maintB, &fixB);
+
+/* The rule here will be: if any package in the list matches, then the
+ * first one to match wins, and we bail out. */
+
+for (evr = evrlist; evr != NULL; evr=evr->next)
+   {
+     char *evrstart;
+     evrstart = evr->name;
+
+     /* Start out assuming the comparison will be equal. */
+     result = cmpsense_eq;
+     
+     ParseAIXVR(evrstart, &verA, &releaseA, &maintA, &fixA);
+
+     /* Compare the major versions. */
+     if(verA > verB)
+        {
+        result = cmpsense_gt;
+        }
+     if(verA < verB)
+        {
+        result = cmpsense_lt;
+        }
+
+     /* If the major versions are teh same, check the release */
+
+     if(result == cmpsense_eq)
+        {
+        if(releaseA > releaseB)
+           {
+           result = cmpsense_gt;
+           }
+        if(releaseA < releaseB)
+           {
+           result = cmpsense_lt;
+           }
+
+     /* If the releases match, compare the maint version */
+
+        if(result == cmpsense_eq)
+           {
+
+           if(maintA > maintB)
+              {
+              result = cmpsense_gt;
+              }
+           if(maintA < maintB)
+              {
+              result = cmpsense_lt;
+              }
+
+     /* If the maint versions match, compare the fix level */
+
+           if(result == cmpsense_eq)
+              {
+
+           if(fixA > fixB)
+              {
+              result = cmpsense_gt;
+              }
+           if(fixA < fixB)
+              {
+              result = cmpsense_lt;
+              }
+           }
+        }
+     }
+
+   switch(cmp)
+     {
+           case cmpsense_gt:
+          match = (result == cmpsense_gt);
+          break;
+      case cmpsense_ge:
+          match = (result == cmpsense_gt || result == cmpsense_eq);
+          break;
+      case cmpsense_lt:
+          match = (result == cmpsense_lt);
+          break;
+      case cmpsense_le:
+          match = (result == cmpsense_lt || result == cmpsense_eq);
+          break;
+      case cmpsense_eq:
+          match = (result == cmpsense_eq);
+          break;
+      case cmpsense_ne:
+          match = (result != cmpsense_eq);
+          break;
+     } 
+
+   /* If we find a match, skip checking the rest, and return this one. */
+   if (match)
+      {
+      DeleteItemList(evrlist);
+      return 1;
+      }
+   }
+/* If we made it out of the loop, there were no matches. */
+DeleteItemList(evrlist);
+return 0;
+}
+
+/*********************************************************************/
+/* AIX docs describe the version as:
+ * Version.Release.Maintenance/Modification.Fix (V.R.M.F).  
+ * any non digits [0-9] in these fields will be ignored and only the 
+ * numeric digits will be extracted.  standalone non-digits will be 
+ * treated as 0 for the entire field.  V.R.M.F shouldn't contain any 
+ * non numeric data (this is enforced by IBM tools like mkinstallp)
+ */ 
+
+void ParseAIXVR(char * vr, int *ver, int *release, int *maint, int *fix)
+{
+int v,r,m,f;
+  /* Set up values. */
+  *ver = 0;
+  *release = 0;
+  *maint = 0;
+  *fix = 0;
+  if(sscanf(vr,"%d.%*s",&v) > 0)
+    *ver = v;
+  if(sscanf(vr,"%*[^.].%d.%*s",&r) > 0)
+    *release = r;
+  if(sscanf(vr,"%*[^.].%*[^.].%d.%*s",&m) > 0)
+    *maint = m;
+  if(sscanf(vr,"%*[^.].%*[^.].%*[^.].%d%*s",&f) > 0)
+    *fix = f;
+}
 
 /*********************************************************************/
 /* RPM Version string comparison logic

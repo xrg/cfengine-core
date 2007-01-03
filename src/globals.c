@@ -752,6 +752,7 @@ char *OBS[CF_OBSERVABLES] =
       "rpm",
       "dpkg",   /* aptget ? */
       "sun",    /* pkginfo/pkgadd/pkgrm */
+      "aix",    /* lslpp/installp */
       NULL
       };
 
