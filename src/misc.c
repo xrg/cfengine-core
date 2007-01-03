@@ -1362,16 +1362,22 @@ char strminor[CF_MAXVARSIZE];
 int VM_version(void)
 
 { FILE *fp;
- char *sp,buffer[CF_BUFSIZE];
+  char *sp,buffer[CF_BUFSIZE];
   struct stat statbuf;
+  int len = 0;
 
 if ((fp = fopen("/etc/issue","r")) == NULL)
    {
    return 1;   
    }
 
-fgets(buffer,sizeof(buffer), fp);
-Chop(buffer);
+do
+   {
+   fgets(buffer,sizeof(buffer), fp);
+   Chop(buffer);
+   len = strlen(buffer);
+   }
+while (len == 0);
 
 AddClassToHeap(CanonifyName(buffer));
 
@@ -1379,7 +1385,7 @@ for (sp = buffer+strlen(buffer)-1; sp > buffer; sp--)
    {
    if (*sp == ' ')
       {
-      Chop(buffer);
+      *sp = '\0';
       AddClassToHeap(CanonifyName(buffer));
       }
    }
