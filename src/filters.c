@@ -987,7 +987,8 @@ int FilterProcMatch(char *name1,char *name2,char *expr,char **names,char **line)
   regex_t rx;
   regmatch_t pmatch;
 
-  Debug("FilterProcMatch(%s,%s,%s,<%x>,<%x>)\n",name1,name2,expr,names,line);
+Debug("FilterProcMatch(%s,%s,%s,<%x>,<%x>)\n",name1,name2,expr,names,line);
+
 
 if (CfRegcomp(&rx,expr,REG_EXTENDED) != 0)
    {

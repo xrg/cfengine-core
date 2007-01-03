@@ -99,13 +99,29 @@ strcpy(CFLOCK,SAVELOCK);
 void WritePID(char *filename)
 
 { FILE *fp;
+  char *sp;
 
-snprintf(PIDFILE,CF_BUFSIZE-1,"%s/%s",WORKDIR,filename);
- 
+if (!IsPrivileged())
+   {
+   Verbose("\n(Non privileged user...)\n\n");
+   
+   if ((sp = getenv("HOME")) == NULL)
+      {
+      FatalError("You do not have a HOME variable pointing to your home directory");
+      }
+   
+   snprintf(PIDFILE,CF_BUFSIZE-1,"%s/%s",sp,filename);
+   }
+else
+   {
+   snprintf(PIDFILE,CF_BUFSIZE-1,"%s/%s",WORKDIR,filename);
+   }
+
 if ((fp = fopen(PIDFILE,"w")) == NULL)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Could not write to PID file %s\n",filename);
    CfLog(cfinform,OUTPUT,"fopen");
+   return;
    }
 
 fprintf(fp,"%d\n",getpid());
