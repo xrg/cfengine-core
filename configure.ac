@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.1.21)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.1.22a)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -101,10 +101,10 @@ AC_MSG_CHECKING(for BerkeleyDB location in $BERKELEY_DB_DIR)
 
 if test "x$BERKELEY_DB_DIR" = "xno" ; then
     AC_MSG_RESULT( )
-    AC_MSG_ERROR(This release of cfengine requires a version of BerkeleyDB 3.2 or later)
+    AC_MSG_ERROR(This release of cfengine requires a version of BerkeleyDB 4.4 or later)
 else
     if test "x$BERKELEY_DB_DIR" = "xdefault" ; then
-        for v in BerkeleyDB.3.2 BerkeleyDB.3.3 BerkeleyDB.4.0  BerkeleyDB.4.1  BerkeleyDB.4.2 BerkeleyDB.4.3 BerkeleyDB.4.4; do
+        for v in BerkeleyDB.4.2 BerkeleyDB.4.3 BerkeleyDB.4.4 BerkeleyDB.4.5 BerkeleyDB.4.6; do
             for d in $prefix /opt /usr/local /usr; do
                 test -d "$d/$v" && BERKELEY_DB_DIR="$d/$v"
             done
@@ -784,7 +784,7 @@ AC_MSG_WARN(=====================================================)
 AC_MSG_WARN( )
 AC_MSG_WARN( DFS users should use --enable-DCE)
 AC_MSG_WARN( )
-AC_MSG_WARN( This version requires Berkeley db version 3.2 or)
+AC_MSG_WARN( This version requires Berkeley db version 4.4 or)
 AC_MSG_WARN(   later from www.sleepycat.com)
 AC_MSG_WARN( This version requires OpenSSL 0.9.7 or later)
 AC_MSG_WARN(   from www.openssl.org)

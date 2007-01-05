@@ -274,3 +274,21 @@ for (i = 0; i < len; i++)
 
 return buffer; 
 }    
+
+/*********************************************************************/
+
+char ChecksumType(char *typestr)
+
+{ int i;
+
+for (i = 0; CF_DIGEST_TYPES[i][0] != NULL; i++)
+   {
+   if (strcmp(typestr,CF_DIGEST_TYPES[i][0]) == 0)
+      {
+      return *CF_DIGEST_TYPES[i][1];
+      }
+   }
+
+return 'x';
+}
+

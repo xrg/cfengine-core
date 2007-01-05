@@ -14,6 +14,7 @@ cfshow_SOURCES =							\
 	log.c								\
 	errors.c							\
 	filenames.c							\
+	checksums.c							\
 	patches.c
 
 cfshow_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
@@ -86,6 +87,7 @@ cfagent_SOURCES =							\
 	expand-tidy.c							\
 	expand-image.c							\
 	expand-editfiles.c						\
+	checksum_db.c							\
 	package.c
 
 cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
@@ -132,6 +134,7 @@ cfservd_SOURCES =							\
         filters.c                                                       \
 	patches.c							\
 	checksums.c							\
+	checksum_db.c							\
 	state.c								\
 	nameinfo.c							\
 	strategies.c

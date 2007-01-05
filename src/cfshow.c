@@ -281,30 +281,10 @@ void ShowChecksums()
   DB_ENV *dbenv = NULL;
   int ret;
   FILE *pp;
-  char checksumdb[CF_BUFSIZE],cfcom[CF_BUFSIZE];
+  char checksumdb[CF_BUFSIZE];
   struct stat statbuf;
-   
-if (stat("/usr/local/sbin/cfagent",&statbuf) != -1)
-   {
-   snprintf(cfcom,CF_BUFSIZE-1,"/usr/local/sbin/cfagent -W",CFWORKDIR);
-   }
-else
-   {
-   snprintf(cfcom,CF_BUFSIZE-1,"%s/bin/cfagent -W",CFWORKDIR);
-   }
-
-if ((pp=cfpopen(cfcom,"r")) ==  NULL)
-   {
-   CfLog(cferror,"Couldn't start cfengine!","cfpopen");
-   checksumdb[0] = '\0';
-   return;
-   }
-
-checksumdb[0] = '\0'; 
-fgets(checksumdb,CF_BUFSIZE,pp); 
-Chop(checksumdb); 
-
-cfpclose(pp);
+ 
+snprintf(checksumdb,CF_BUFSIZE,"%s/%s",CFWORKDIR,CF_CHKDB);
   
 if ((errno = db_create(&dbp,dbenv,0)) != 0)
    {
@@ -313,11 +293,7 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    return;
    }
 
-#ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,checksumdb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
-#else
 if ((errno = dbp->open(dbp,NULL,checksumdb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
-#endif
    {
    printf("Couldn't open checksum database %s\n",checksumdb);
    perror("db_open");
@@ -343,8 +319,30 @@ if ((errno = dbp->open(dbp,NULL,checksumdb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 
  while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
     {
-    printf("%s = ",(char *)key.data);
-    printf("%s\n",ChecksumDump(value.data));
+    char type;
+    char strtype[CF_MAXVARSIZE];
+    char name[CF_BUFSIZE];
+    struct Checksum_Value chk_val;
+    unsigned char digest[EVP_MAX_MD_SIZE+1];
+    
+    memset(digest,0,EVP_MAX_MD_SIZE+1);
+    memset(&chk_val,0,sizeof(chk_val));
+    
+    memcpy(&chk_val,value.data,sizeof(chk_val));
+    memcpy(digest,chk_val.mess_digest,EVP_MAX_MD_SIZE+1);
+
+    strncpy(strtype,key.data,CF_MAXDIGESTNAMELEN);
+    strncpy(name,key.data+CF_CHKSUMKEYOFFSET,CF_BUFSIZE-1);
+
+    type = ChecksumType(strtype);
+
+    printf("%c %s ",type,strtype);
+    printf("%s = ",name);
+    printf("%s\n",ChecksumPrint(type,digest));
+    /* attr_digest too here*/
+
+    memset(&key,0,sizeof(key));
+    memset(&value,0,sizeof(value));
     }
  
 dbcp->c_close(dbcp);
@@ -491,4 +489,10 @@ char *GetMacroValue(char *scope,char *name)
 
 {
  return NULL;
+}
+
+
+int CompareMD5Net (char *file1, char *file2, struct Image *ip)
+{
+ return 0;
 }

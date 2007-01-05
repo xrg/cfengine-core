@@ -1,6 +1,10 @@
 2.1.22
 	ShowState(rootprocs), ShowState(otherprocs) added for better process reporting
 
+	Package manager for AIX code added, courtesy of Anthony Rassin
+
+	Rewritten the checksum subsystem to allow for future development and improvements
+	and tidied the fragile Berkeley DB code.
 
 	Code reorganization for better separation of concerns.
 

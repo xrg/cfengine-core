@@ -193,8 +193,6 @@ if ((errno = db_create(&DBP,NULL,0)) != 0)
    return;
    }
 
-
-
 #ifdef CF_OLD_DB
 if ((errno = DBP->open(DBP,LOCKDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else

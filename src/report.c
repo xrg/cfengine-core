@@ -844,6 +844,7 @@ for (ptr = VFILE; ptr != NULL; ptr=ptr->next)
    FILEACTIONTEXT[ptr->action],ptr->travlinks);
 
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+
    if (ptr->recurse == CF_INF_RECURSE)
       {
       printf(" recurse=inf\n");
@@ -853,6 +854,7 @@ for (ptr = VFILE; ptr != NULL; ptr=ptr->next)
       printf(" recurse=%d\n",ptr->recurse);
       }
 
+   printf(" checksum-type = %c\n",ptr->checksum);
    printf(" xdev = %c\n",ptr->xdev);
    
    printf(" uids = ( ");

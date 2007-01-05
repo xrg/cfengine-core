@@ -1271,5 +1271,24 @@ char *OBS[CF_OBSERVABLES] =
   PUBLIC char CFLAST[CF_BUFSIZE]; 
   PUBLIC char LOCKDB[CF_BUFSIZE];
 
+
+/*******************************************************************/
+/*                                                                 */
+/* Checksums                                                       */
+/*                                                                 */
+/*******************************************************************/
+
+/* These string lengths should not exceed CF_MAXDIGESTNAMELEN
+   characters for packing */
+
+  PUBLIC char *CF_DIGEST_TYPES[4][2] =
+   {
+   "MD5","m",
+   "SHA1","s",
+   "SHA","s",   /* Should come last, since substring */
+   NULL,NULL
+   };
+
+
 /* EOF */
 

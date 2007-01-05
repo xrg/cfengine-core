@@ -305,6 +305,9 @@ extern int errno;
 #define CF_MONDAY_MORNING 342000
 #define CF_NOVAL -0.7259285297502359
 
+#define CF_MAXDIGESTNAMELEN 7
+#define CF_CHKSUMKEYOFFSET  CF_MAXDIGESTNAMELEN+1
+
 #define CF_IFREQ 8192
 #define CF_ADDRSIZE 128
 
@@ -349,6 +352,8 @@ extern int errno;
 #define CF_ENV_FILE      "env_data"
 #define CF_TCPDUMP_COMM "/usr/sbin/tcpdump -t -n -v"
 
+
+#define CF_CHKDB "checksum_digests.db"
 
 #define CF_INPUTSVAR "CFINPUTS"          /* default name for file path var */
 #define CF_ALLCLASSESVAR "CFALLCLASSES"  /* default name for CFALLCLASSES env */
@@ -1466,7 +1471,7 @@ struct Mountables
 struct Tidy
    {
    int          maxrecurse;              /* sets maxval */
-   char         done;       /* Too intensive in Tidy Pattern */
+   char         done;                    /* Too intensive in Tidy Pattern */
    char         *scope;
    char        *path;
    char         xdev;
@@ -1947,6 +1952,17 @@ struct Package      /* For packages: */
    struct Package    *next;
    int ifelapsed;
    int expireafter;
+   };
+
+
+/*******************************************************************/
+/* Checksum database structures                                    */
+/*******************************************************************/
+
+struct Checksum_Value
+   {
+   unsigned char mess_digest[EVP_MAX_MD_SIZE+1];  /* Content digest */
+   unsigned char attr_digest[EVP_MAX_MD_SIZE+1];  /* Attribute digest */
    };
 
 /*******************************************************************/

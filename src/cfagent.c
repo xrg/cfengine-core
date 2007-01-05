@@ -1029,18 +1029,11 @@ if (GetMacroValue(CONTEXTID,"DefaultCopyType"))
  
 if (GetMacroValue(CONTEXTID,"ChecksumDatabase"))
    {
-   ExpandVarstring("$(ChecksumDatabase)",ebuff,NULL);
-
-   CHECKSUMDB = strdup(ebuff);
-
-   if (*CHECKSUMDB != '/')
-      {
-      FatalError("$(ChecksumDatabase) does not expand to an absolute filename\n");
-      }
+   FatalError("ChecksumDatabase variable is deprecated - comment it out");
    }
 else
    {
-   snprintf(ebuff,CF_BUFSIZE,"%s/checksum.db",CFWORKDIR);
+   snprintf(ebuff,CF_BUFSIZE,"%s/%s",CFWORKDIR,CF_CHKDB);
    CHECKSUMDB = strdup(ebuff);
    }
 

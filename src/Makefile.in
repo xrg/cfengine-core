@@ -81,7 +81,7 @@ am_cfagent_OBJECTS = cfagent.$(OBJEXT) init.$(OBJEXT) do.$(OBJEXT) \
 	granules.$(OBJEXT) methods.$(OBJEXT) dtypes.$(OBJEXT) \
 	state.$(OBJEXT) expand-files.$(OBJEXT) expand-tidy.$(OBJEXT) \
 	expand-image.$(OBJEXT) expand-editfiles.$(OBJEXT) \
-	package.$(OBJEXT)
+	checksum_db.$(OBJEXT) package.$(OBJEXT)
 cfagent_OBJECTS = $(am_cfagent_OBJECTS)
 am__DEPENDENCIES_1 =
 cfagent_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -162,14 +162,14 @@ am_cfservd_OBJECTS = cfservd.$(OBJEXT) parse.$(OBJEXT) \
 	copy.$(OBJEXT) rotate.$(OBJEXT) net.$(OBJEXT) acl.$(OBJEXT) \
 	dce_acl.$(OBJEXT) log.$(OBJEXT) errors.$(OBJEXT) \
 	crypto.$(OBJEXT) filters.$(OBJEXT) patches.$(OBJEXT) \
-	checksums.$(OBJEXT) state.$(OBJEXT) nameinfo.$(OBJEXT) \
-	strategies.$(OBJEXT)
+	checksums.$(OBJEXT) checksum_db.$(OBJEXT) state.$(OBJEXT) \
+	nameinfo.$(OBJEXT) strategies.$(OBJEXT)
 cfservd_OBJECTS = $(am_cfservd_OBJECTS)
 cfservd_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am_cfshow_OBJECTS = cfshow.$(OBJEXT) globals.$(OBJEXT) popen.$(OBJEXT) \
 	log.$(OBJEXT) errors.$(OBJEXT) filenames.$(OBJEXT) \
-	patches.$(OBJEXT)
+	checksums.$(OBJEXT) patches.$(OBJEXT)
 cfshow_OBJECTS = $(am_cfshow_OBJECTS)
 cfshow_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
@@ -320,6 +320,7 @@ cfshow_SOURCES = \
 	log.c								\
 	errors.c							\
 	filenames.c							\
+	checksums.c							\
 	patches.c
 
 cfshow_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
@@ -391,6 +392,7 @@ cfagent_SOURCES = \
 	expand-tidy.c							\
 	expand-image.c							\
 	expand-editfiles.c						\
+	checksum_db.c							\
 	package.c
 
 cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
@@ -435,6 +437,7 @@ cfservd_SOURCES = \
         filters.c                                                       \
 	patches.c							\
 	checksums.c							\
+	checksum_db.c							\
 	state.c								\
 	nameinfo.c							\
 	strategies.c
@@ -723,6 +726,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfrun.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfservd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfshow.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/checksum_db.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/checksums.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chflags.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/classes.Po@am__quote@

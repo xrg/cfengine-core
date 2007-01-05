@@ -35,6 +35,18 @@
 
 int cf_full_write (int desc, char *ptr, size_t len);
 
+/* checksum_db.c */
+
+int ReadChecksum(DB *dbp,char type,char *name,unsigned char digest[EVP_MAX_MD_SIZE+1], unsigned char *attr);
+int WriteChecksum(DB *dbp,char type,char *name,unsigned char digest[EVP_MAX_MD_SIZE+1], unsigned char *attr);
+void DeleteChecksum(DB *dbp,char type,char *name);
+DBT *NewChecksumKey(char type,char *name);
+void DeleteChecksumKey(DBT *key);
+DBT *NewChecksumValue(unsigned char digest[EVP_MAX_MD_SIZE+1],unsigned char attr[EVP_MAX_MD_SIZE+1]);
+void DeleteChecksumValue(DBT *value);
+
+
+
 /* 2Dlist.c */
 
 void Set2DList (struct TwoDimList *list);
@@ -97,7 +109,9 @@ int yyparse (void);
 
 int CompareCheckSums (char *file1, char *file2, struct Image *ip, struct stat *sstat, struct stat *dstat);
 int CompareBinarySums (char *file1, char *file2, struct Image *ip, struct stat *sstat, struct stat *dstat);
+char ChecksumType(char *typestr);
 
+    
 /* functions.c */
 
 void BuildClassEnvironment (void);

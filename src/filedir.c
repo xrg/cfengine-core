@@ -190,7 +190,6 @@ if (!IsPrivileged())
 
  /* directories must have x set if r set, regardless  */
 
-
 newperm = (dstat->st_mode & 07777);
 newperm |= plus;
 newperm &= ~minus;

@@ -516,3 +516,6 @@ extern char *OBS[CF_OBSERVABLES];
 
 extern struct re_pattern_buffer *SEARCHPATTBUFF;
 extern struct re_pattern_buffer *PATTBUFFER;
+
+
+extern char *CF_DIGEST_TYPES[4][2];
