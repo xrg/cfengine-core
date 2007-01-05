@@ -144,14 +144,7 @@ if ((file = fopen (filename, "rb")) == NULL)
    }
 else
    {
-   switch (type)
-      {
-      case 's': md = EVP_get_digestbyname("sha");
-           break;
-      case 'm': md = EVP_get_digestbyname("md5");
-         break;
-      default: FatalError("Software failure in ChecksumFile");
-      }
+   md = EVP_get_digestbyname(ChecksumName(type));
    
    EVP_DigestInit(&context,md);
 
@@ -178,25 +171,17 @@ void ChecksumList(struct Item *list,unsigned char digest[EVP_MAX_MD_SIZE+1],char
 
 Debug2("ChecksumList(%c)\n",type);
 
- switch (type)
-    {
-    case 's': md = EVP_get_digestbyname("sha");
- break;
-    case 'm': md = EVP_get_digestbyname("md5");
- break;
-    default: FatalError("Software failure in ChecksumList");
-    }
- 
- EVP_DigestInit(&context,md);
- 
- for (ip = list; ip != NULL; ip=ip->next) 
-    {
-    Debug(" digesting %s\n",ip->name);
-    EVP_DigestUpdate(&context,ip->name,strlen(ip->name));
-    }
- 
- EVP_DigestFinal(&context,digest,&md_len);
+md = EVP_get_digestbyname(ChecksumName(type));
 
+EVP_DigestInit(&context,md);
+
+for (ip = list; ip != NULL; ip=ip->next) 
+   {
+   Debug(" digesting %s\n",ip->name);
+   EVP_DigestUpdate(&context,ip->name,strlen(ip->name));
+   }
+
+EVP_DigestFinal(&context,digest,&md_len);
 }
 
 /*******************************************************************/
@@ -209,15 +194,8 @@ void ChecksumString(char *buffer,int len,unsigned char digest[EVP_MAX_MD_SIZE+1]
 
 Debug2("ChecksumString(%c)\n",type);
 
-switch (type)
-   {
-   case 's': md = EVP_get_digestbyname("sha");
-       break;
-   case 'm': md = EVP_get_digestbyname("md5");
-       break;
-   default: FatalError("Software failure in ChecksumFile");
-   }
- 
+md = EVP_get_digestbyname(ChecksumName(type));
+
 EVP_DigestInit(&context,md); 
 EVP_DigestUpdate(&context,(unsigned char*)buffer,len);
 EVP_DigestFinal(&context,digest,&md_len);
@@ -230,13 +208,7 @@ int ChecksumsMatch(unsigned char digest1[EVP_MAX_MD_SIZE+1],unsigned char digest
 
 { int i,size = EVP_MAX_MD_SIZE;
  
-switch(type)  /* Size of message digests */
-   {
-   case 'm': size = CF_MD5_LEN;
-       break;
-   case 's': size = CF_SHA_LEN;
-       break;
-   }
+size = ChecksumSize(type);
 
 for (i = 0; i < size; i++)
    {
@@ -289,6 +261,46 @@ for (i = 0; CF_DIGEST_TYPES[i][0] != NULL; i++)
       }
    }
 
+if (PARSING)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"Illegal checksum/digest type: %s",typestr);
+   yyerror(OUTPUT);
+   FatalError("Should be md5,sha,sha1,sha224,sha256,sha348,sha512");
+   }
+
 return 'x';
 }
 
+/*********************************************************************/
+
+char *ChecksumName(char type)
+
+{ int i;
+
+for (i = 0; CF_DIGEST_TYPES[i][0] != NULL; i++)
+   {
+   if (type == *CF_DIGEST_TYPES[i][1])
+      {
+      return CF_DIGEST_TYPES[i][0];
+      }
+   }
+
+return NULL;
+}
+
+/*********************************************************************/
+
+int ChecksumSize(char type)
+
+{ int i,size = 0;
+ 
+for (i = 0; CF_DIGEST_TYPES[i][0] != NULL; i++)
+   {
+   if (type == *CF_DIGEST_TYPES[i][1])
+      {
+      return CF_DIGEST_SIZES[i];
+      }
+   }
+
+return size;
+}

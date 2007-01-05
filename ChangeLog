@@ -9,6 +9,8 @@
 	Code reorganization for better separation of concerns.
 
 	cfconvert removed. Change of strategy.
+
+	ChecksumDatabase variable is not longer used.
 	
 2.1.21
 

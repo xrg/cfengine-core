@@ -375,8 +375,15 @@ extern int errno;
 #define CF_PROTO_OFFSET 16
 #define CF_INBAND_OFFSET 8
 #define CF_SMALL_OFFSET 2
+
+/* digest sizes */
 #define CF_MD5_LEN 16
 #define CF_SHA_LEN 20
+#define CF_SHA1_LEN 20
+#define CF_SHA224_LEN 28
+#define CF_SHA256_LEN 32
+#define CF_SHA384_LEN 48
+#define CF_SHA512_LEN 64
 
 #define CF_DONE 't'
 #define CF_MORE 'm'

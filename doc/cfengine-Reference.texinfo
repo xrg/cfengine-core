@@ -6915,15 +6915,13 @@ If a file operation results in action being taken to fix a file,
 the colon, comma or dot separated list of classes becomes defined.
 Warnings do not activate the classes.
 
-@item checksum=@var{md5/sha}
+@item checksum=@var{md5/sha/sha1/sha224/sha256/sha384/sha512}
 If set this option causes cfengine to add a checksum for the named file
 to a database. Changes in the value of this checksum are then warned as
 a security issue. This should normally only be used to monitor binary
 files which one would not expect to change often. Note also that the use
-of this option can mean a significant performance penalty. The variable
-@code{ChecksumDatabase} should be set in @code{control:} to the filename
-of a database file which is used to cache checksum values. Note that it
-is also possible to use a database file for cfservd's remote copying by
+of this option can mean a significant performance penalty. Note that it
+is also possible to use the same database file for cfservd's remote copying by
 checksum.  If you use the same file for both purposes you risk losing
 warnings.  Security warning messages are issued only once and the value
 in the database is then changed to the new value of the file
@@ -10260,7 +10258,7 @@ file is as follows:
 
        MaxConnections = ( @var{maximum number of forked daemons} )
 
-       ChecksumDatabase = ( @var{filename} )
+       # ChecksumDatabase = ( @var{filename} ) - deprecated
 
        IfElapsed = ( @var{time-in-minutes} )
 
@@ -10534,6 +10532,9 @@ configured with an IP address in order to be bound.
 
 @node ChecksumDatabase in cfservd, cfrunCommand, BindToInterface, cfservd control
 @subsection ChecksumDatabase
+
+(This variable is deprecated as of version 2.1.21. The location of the
+database will be fixed internally.)
 
 This is the path and filename to a database which will cache
 MD5 checksum values server-side. This optimization is only available

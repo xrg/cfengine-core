@@ -51,14 +51,8 @@ int ChecksumChanged(char *filename,unsigned char digest[EVP_MAX_MD_SIZE+1],int w
   FILE *fp;
 
   Debug("ChecksumChanged: key %s (type=%c) with data %s\n",filename,type,ChecksumPrint(type,digest));
- 
-switch(type)  /* Size of message digests */
-   {
-   case 'm': size = CF_MD5_LEN;
-       break;
-   case 's': size = CF_SHA_LEN;
-       break;
-   }
+
+size = ChecksumSize(type);
 
 memset(current_digest,0,EVP_MAX_MD_SIZE+1);
 memset(attr_digest,0,EVP_MAX_MD_SIZE+1);
@@ -363,15 +357,7 @@ if ((key = (DBT *)malloc(sizeof(DBT))) == NULL)
 memset(key,0,sizeof(DBT));
 memset(chk_key,0,strlen(name)+CF_MAXDIGESTNAMELEN+2);
 
-switch (type)
-   {
-   case 'm':
-       strncpy(chk_key,"MD5",3);
-       break;
-   case 's':
-       strncpy(chk_key,"SHA1",4);
-       break;
-   }
+strcpy(chk_key,ChecksumName(type)); /* safe */
 
 /*Berkeley DB needs this packed */
 

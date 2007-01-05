@@ -496,3 +496,7 @@ int CompareMD5Net (char *file1, char *file2, struct Image *ip)
 {
  return 0;
 }
+
+void yyerror(char *s)
+{
+}

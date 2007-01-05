@@ -2942,6 +2942,8 @@ void CompareLocalChecksum(struct cfd_connection *conn,char *sendbuffer,char *rec
   char *sp;
   int i;
 
+/* TODO - when safe change this to sha2 */
+  
 sscanf(recvbuffer,"MD5 %[^\n]",filename);
 
 sp = recvbuffer + strlen(recvbuffer) + CF_SMALL_OFFSET;

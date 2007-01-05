@@ -110,6 +110,8 @@ int yyparse (void);
 int CompareCheckSums (char *file1, char *file2, struct Image *ip, struct stat *sstat, struct stat *dstat);
 int CompareBinarySums (char *file1, char *file2, struct Image *ip, struct stat *sstat, struct stat *dstat);
 char ChecksumType(char *typestr);
+char *ChecksumName(char type);
+int ChecksumSize(char type);
 
     
 /* functions.c */

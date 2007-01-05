@@ -4377,19 +4377,7 @@ yyerror("Illegal attribute for useshell= ");
 void HandleChecksum(char *value)
 
 {
-if (strcmp(value,"md5") == 0)
-   {
-   CHECKSUM = 'm';
-   return;
-   }
-
-if (strncmp(value,"sha1",strlen(value)) == 0)
-   {
-   CHECKSUM = 's';
-   return;
-   } 
-
-yyerror("Illegal attribute for checksum= ");
+CHECKSUM = ChecksumType(ToLowerStr(value));
 }
 
 /*******************************************************************/

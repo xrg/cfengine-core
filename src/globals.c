@@ -1281,13 +1281,29 @@ char *OBS[CF_OBSERVABLES] =
 /* These string lengths should not exceed CF_MAXDIGESTNAMELEN
    characters for packing */
 
-  PUBLIC char *CF_DIGEST_TYPES[4][2] =
-   {
-   "MD5","m",
-   "SHA1","s",
-   "SHA","s",   /* Should come last, since substring */
-   NULL,NULL
-   };
+  PUBLIC char *CF_DIGEST_TYPES[8][2] =
+     {
+     "md5","m",
+     "sha224","c",
+     "sha256","C",
+     "sha384","h",
+     "sha512","H",
+     "sha1","S",
+     "sha","s",   /* Should come last, since substring */
+     NULL,NULL
+     };
+
+  PUBLIC int CF_DIGEST_SIZES[8] =
+     {
+     CF_MD5_LEN,
+     CF_SHA224_LEN,
+     CF_SHA256_LEN,
+     CF_SHA384_LEN,
+     CF_SHA512_LEN,
+     CF_SHA1_LEN,
+     CF_SHA_LEN,
+     0
+     };
 
 
 /* EOF */
