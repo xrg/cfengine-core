@@ -199,7 +199,7 @@ void ShowLastSeen()
   DB_ENV *dbenv = NULL;
   time_t now = time(NULL);
   char name[CF_BUFSIZE],hostname[CF_BUFSIZE];
-  static struct LastSeen entry;
+  struct QPoint entry;
   double average = 0;
   int ret;
   
@@ -212,11 +212,7 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    return;
    }
 
-#ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
-#else
 if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
-#endif
    {
    printf("Couldn't open last-seen database %s\n",name);
    perror("db_open");
@@ -253,8 +249,8 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
    if (value.data != NULL)
       {
       memcpy(&entry,value.data,sizeof(entry));
-      then = (time_t)entry.lastseen;
-      average = (double)entry.expect_lastseen;
+      then = (time_t)entry.q;
+      average = (double)entry.expect;
       }
    else
       {

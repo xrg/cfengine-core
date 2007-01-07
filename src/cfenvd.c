@@ -1791,11 +1791,6 @@ else
 
 av = (wnew*anew + wold*aold)/(wnew+wold); 
 
-if (av > big_number) /* some kind of bug? */
-   {
-   return 10.0;
-   }
- 
 return av;
 }
 

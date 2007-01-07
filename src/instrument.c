@@ -38,21 +38,24 @@
 
 void LastSeen(char *hostname,enum roles role)
 
-{ DBT key,value;
-  DB *dbp;
+{ DB *dbp;
   DB_ENV *dbenv = NULL;
   char name[CF_BUFSIZE],databuf[CF_BUFSIZE];
-  time_t lastseen,now = time(NULL);
-  static struct LastSeen entry;
-  double average;
+  time_t now = time(NULL);
+  struct QPoint q,newq;
+  double lastseen,delta2;
 
 if (strlen(hostname) == 0)
    {
-   snprintf(OUTPUT,CF_BUFSIZE,"LastSeen registry found empty hostname with role %d",role);
+   snprintf(OUTPUT,CF_BUFSIZE,"LastSeen registry for empty hostname with role %d",role);
    CfLog(cflogonly,OUTPUT,"");
    return;
    }
-  
+
+/* Tidy old versions - temporary */
+snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_OLDLASTDB_FILE);
+unlink(name);
+
 snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
 
 if ((errno = db_create(&dbp,dbenv,0)) != 0)
@@ -62,11 +65,7 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    return;
    }
 
-#ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
-#else
 if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
-#endif
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
    CfLog(cferror,OUTPUT,"db_open");
@@ -74,73 +73,26 @@ if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
    return;
    }
 
-memset(&value,0,sizeof(value)); 
-memset(&key,0,sizeof(key));       
-
 switch (role)
    {
    case cf_accept:
-       snprintf(databuf,CF_BUFSIZE-1,"%s (hailed us)",Hostname2IPString(hostname));
+       snprintf(databuf,CF_BUFSIZE-1,"-%s",Hostname2IPString(hostname));
        break;
    case cf_connect:
-       snprintf(databuf,CF_BUFSIZE-1,"%s (answered us)",Hostname2IPString(hostname));
+       snprintf(databuf,CF_BUFSIZE-1,"+%s",Hostname2IPString(hostname));
        break;
    }
- 
-key.data = databuf;
-key.size = strlen(databuf)+1;
 
-if ((errno = dbp->get(dbp,NULL,&key,&value,0)) == 0)
-   {
-   memcpy(&entry,value.data,sizeof(entry));   
-   average = (double)entry.expect_lastseen;
-   lastseen = entry.lastseen;
 
-   /* Update the geometrical memory of the expectation value for this arrival-process */
-   
-   entry.lastseen = now;
-   entry.expect_lastseen = (0.7 * average + 0.3 * (double)(now - lastseen));
-   
-   key.data = databuf;
-   key.size = strlen(databuf)+1;
-   
-   Verbose("Updating last-seen time for %s\n",hostname);
-   
-   if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
-      {
-      CfLog(cferror,"","db->del");
-      }
-   
-   key.data = databuf;
-   key.size = strlen(databuf)+1;
-   value.data = (void *) &entry;
-   value.size = sizeof(entry);
-   
-   if ((errno = dbp->put(dbp,NULL,&key,&value,0)) != 0)
-      {
-      CfLog(cferror,"put failed","db->put");
-      }
- 
-   dbp->close(dbp,0);
-   }
-else
-   {
-   key.data = databuf;
-   key.size = strlen(databuf)+1;
+ReadDB(dbp,databuf,&q,sizeof(q));
 
-   entry.lastseen = now;
-   entry.expect_lastseen = 0;
-   
-   value.data = (void *) &entry;
-   value.size = sizeof(entry);
-   
-   if ((errno = dbp->put(dbp,NULL,&key,&value,0)) != 0)
-      {
-      CfLog(cferror,"put failed","db->put");
-      }
-   
-   dbp->close(dbp,0);
-   }
+lastseen = (double)now - q.q;
+newq.q = lastseen;                              /* Last seen is now-then */
+newq.expect = SWAverage(lastseen,q.expect);
+delta2 = (lastseen - q.expect)*(lastseen - q.expect);
+newq.var = SWAverage(delta2,q.var);
+
+WriteDB(dbp,databuf,&newq,sizeof(newq));   
 }
 
 /***************************************************************/
@@ -157,8 +109,8 @@ void CheckFriendConnections(int hours)
   int ret, secs = 3600*hours, criterion;
   time_t now = time(NULL),splaytime = 0,lsea = -1;
   char name[CF_BUFSIZE],hostname[CF_BUFSIZE];
-  static struct LastSeen entry;
-  double average = 0;
+  struct QPoint entry;
+  double then = 0.0, average = 0.0, var = 0.0,ticksperhour = (double)CF_TICKS_PER_HOUR;
 
 if (GetMacroValue(CONTEXTID,"SplayTime"))
    {
@@ -201,7 +153,6 @@ if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
    }
 
  /* Initialize the key/data return pair. */
-
  
 memset(&key, 0, sizeof(key));
 memset(&value, 0, sizeof(value));
@@ -219,13 +170,16 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
    if (value.data != NULL)
       {
       memcpy(&entry,value.data,sizeof(entry));
-      then = (time_t)entry.lastseen;
-      average = (double)entry.expect_lastseen;
+      then = (time_t)entry.q;
+      average = (double)entry.expect;
+      var = (double)entry.var;
       }
    else
       {
       continue;
       }
+
+   /* Got data, now get expiry criterion */
 
    if (secs == 0)
       {
@@ -239,7 +193,7 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
    if (GetMacroValue(CONTEXTID,"LastSeenExpireAfter"))
       {
       lsea = atoi(GetMacroValue(CONTEXTID,"LastSeenExpireAfter"));
-      lsea *= 3600*24;
+      lsea *= CF_TICKS_PER_DAY;
       }
 
    if (lsea < 0)
@@ -247,19 +201,19 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       lsea = CF_WEEK;
       }
 
-   if ((int)average > lsea)   /* Don't care about outliers */
+   if (average > (double)lsea)   /* Don't care about outliers */
       {
       criterion = false;
       }
 
-   if (average < 1800)  /* anomalous couplings do not count*/
+   if (average < CF_HALF_HOUR)  /* rapid repetition checks do not count */
       {
       criterion = false;
       }
    
-   snprintf(OUTPUT,CF_BUFSIZE,"Host %s last at %s\ti.e. not seen for %.2f hours\n\t(Expected <delta_t> = %.2f secs (= %.2f hours) (Expires %d days)",hostname,ctime(&then),((double)(now-then))/3600.0,average,average/3600.0,lsea/3600/24);
+   snprintf(OUTPUT,CF_BUFSIZE,"Host %s last at %s\ti.e. not seen for %.2f hours\n\t(Expected <delta_t> = %.2f secs (= %.2f hours) (Expires %d days)",hostname,ctime(&then),((double)(now-then))/ticksperhour,average,average/ticksperhour,lsea/3600/24);
 
-   if (now > lsea + then + splaytime + 2*3600)
+   if (now > lsea + then + splaytime)
       {
       snprintf(OUTPUT,CF_BUFSIZE*2,"INFO: Giving up on %s, last seen more than %d days ago at %s.",hostname,lsea/3600/24,ctime(&then));
       CfLog(cferror,OUTPUT,"");
@@ -284,3 +238,165 @@ dbcp->c_close(dbcp);
 dbp->close(dbp,0);
 }
 
+
+/*****************************************************************************/
+/* level 1                                                                   */
+/*****************************************************************************/
+
+int ReadDB(DB *dbp,char *name,void *ptr,int size)
+
+{ DBT *key,value;
+  
+key = NewDBKey(name);
+
+if ((errno = dbp->get(dbp,NULL,key,&value,0)) == 0)
+   {
+   memset(ptr,0,size);
+   memcpy(ptr,value.data,size);
+   
+   Debug("READ %s\n",name);
+   DeleteDBKey(key);
+   return true;
+   }
+else
+   {
+   return false;
+   }
+}
+
+/*****************************************************************************/
+
+int WriteDB(DB *dbp,char *name,void *ptr,int size)
+
+{ DBT *key,*value;
+ 
+key = NewDBKey(name); 
+value = NewDBValue(ptr,size);
+
+if ((errno = dbp->put(dbp,NULL,key,value,0)) != 0)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"Checksum write failed: %s",db_strerror(errno));
+   CfLog(cferror,OUTPUT,"db->put");
+   
+   DeleteDBKey(key);
+   DeleteDBValue(value);
+   return false;
+   }
+else
+   {
+   DeleteDBKey(key);
+   DeleteDBValue(value);
+   return true;
+   }
+}
+
+/*****************************************************************************/
+
+void DeleteDB(DB *dbp,char *name)
+
+{ DBT *key;
+
+key = NewDBKey(name);
+
+if ((errno = dbp->del(dbp,NULL,key,0)) != 0)
+   {
+   CfLog(cferror,"","db_store");
+   }
+
+Debug("DELETED DB %s\n",name);
+}
+
+
+/*****************************************************************************/
+/* Level 2                                                                   */
+/*****************************************************************************/
+
+DBT *NewDBKey(char *name)
+
+{ char *dbkey;
+  DBT *key;
+
+if ((dbkey = malloc(strlen(name)+1)) == NULL)
+   {
+   FatalError("NewChecksumKey malloc error");
+   }
+
+if ((key = (DBT *)malloc(sizeof(DBT))) == NULL)
+   {
+   FatalError("DBT  malloc error");
+   }
+
+memset(key,0,sizeof(DBT));
+memset(dbkey,0,strlen(name)+1);
+
+strncpy(dbkey,name,strlen(name));
+
+Debug("StringKEY => %s\n",dbkey);
+
+key->data = (void *)dbkey;
+key->size = strlen(name)+1;
+
+return key;
+}
+
+/*****************************************************************************/
+
+void DeleteDBKey(DBT *key)
+
+{
+free((char *)key->data);
+free((char *)key);
+}
+
+/*****************************************************************************/
+
+DBT *NewDBValue(void *ptr,int size)
+
+{ void *val;
+  DBT *value;
+
+if ((val = (void *)malloc(size)) == NULL)
+   {
+   FatalError("NewDBKey malloc error");
+   }
+
+if ((value = (DBT *) malloc(sizeof(DBT))) == NULL)
+   {
+   FatalError("DBT Value malloc error");
+   }
+
+memset(value,0,sizeof(DBT)); 
+memset(val,0,size);
+memcpy(val,ptr,size);
+
+value->data = val;
+value->size = size;
+
+return value;
+}
+
+/*****************************************************************************/
+
+void DeleteDBValue(DBT *value)
+
+{
+free((char *)value->data);
+free((char *)value);
+}
+
+/*****************************************************************************/
+/* Toolkit                                                                   */
+/*****************************************************************************/
+
+double SWAverage(double anew,double aold)
+
+{ double av;
+  double wnew,wold;
+
+wnew = 0.3;
+wold = 0.7;
+
+av = (wnew*anew + wold*aold)/(wnew+wold); 
+
+return av;
+}

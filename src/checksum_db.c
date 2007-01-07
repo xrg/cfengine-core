@@ -374,10 +374,7 @@ return key;
 
 void DeleteChecksumKey(DBT *key)
 
-{ struct Checksum_Key *chk_key;
-
-chk_key = (struct Checksum_Key *) key->data;
-
+{
 free((char *)key->data);
 free((char *)key);
 }

@@ -300,6 +300,8 @@ extern int errno;
 #define CF_EXTRASPC 8      /* pads items during AppendItem for eol handling in editfiles */
 #define CF_INFINITY ((int)999999999)
 #define CF_TICKS_PER_DAY 86400 /* 60 * 60 *24 */
+#define CF_TICKS_PER_HOUR 3600 /* 60 * 60 */
+#define CF_HALF_HOUR 1800      /* 60 * 30 */ 
 #define CF_NOT_CONNECTED -1
 #define CF_RECURSION_LIMIT 100
 #define CF_MONDAY_MORNING 342000
@@ -346,7 +348,8 @@ extern int errno;
 #define CF_AVDB_FILE     "cf_observations.db"
 #define CF_OLDAVDB_FILE  "cf_learning.db"
 #define CF_STATEDB_FILE  "cf_state.db"
-#define CF_LASTDB_FILE   "cf_lastseen.db"
+#define CF_OLDLASTDB_FILE "cf_lastseen.db"
+#define CF_LASTDB_FILE   "cf_LastSeen.db"
 #define CF_STATELOG_FILE "state_log"
 #define CF_ENVNEW_FILE   "env_data.new"
 #define CF_ENV_FILE      "env_data"
@@ -439,12 +442,6 @@ struct QPoint
 struct Averages
    {
    struct QPoint Q[CF_OBSERVABLES];
-   };
-
-struct LastSeen
-   {
-   double expect_lastseen;
-   time_t lastseen;      
    };
 
 struct OldAverages /* For conversion to new db */

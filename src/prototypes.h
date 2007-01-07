@@ -557,8 +557,15 @@ char *IPString2Hostname (char *name);
 
 void LastSeen (char *host,enum roles role);
 void CheckFriendConnections(int hours);
-
-
+DBT *NewDBKey(char *name);
+void DeleteDBKey(DBT *key);
+DBT *NewDBValue(void *ptr,int size);
+void DeleteDBValue(DBT *value);
+int ReadDB(DB *dbp,char *name,void *ptr,int size);
+int WriteDB(DB *dbp,char *name,void *ptr,int size);
+void DeleteDB(DB *dbp,char *name);
+double SWAverage(double anew,double aold);
+    
 /* item-ext.c */
 
 int OrderedListsMatch (struct Item *list1, struct Item *list2);
