@@ -1227,6 +1227,10 @@ if (IMAGEBACKUP != 'n')
    {
    char stamp[CF_BUFSIZE];
    time_t STAMPNOW;
+
+
+   Debug("Backup file %s\n",source);
+
    STAMPNOW = time((time_t *)NULL);
    
    sprintf(stamp, "_%d_%s", CFSTARTTIME, CanonifyName(ctime(&STAMPNOW)));
@@ -1236,6 +1240,7 @@ if (IMAGEBACKUP != 'n')
       printf(" culprit: CopyReg\n");
       return false;
       }
+
    strcpy(backup,dest);
 
    if (IMAGEBACKUP == 's')
@@ -1247,29 +1252,26 @@ if (IMAGEBACKUP != 'n')
 
    strcat(backup,CF_SAVED);
 
-   if (IsItemIn(VREPOSLIST,backup))
+   /* Now in case of multiple copies of same object, try to avoid overwriting original backup */
+   
+   if (lstat(backup,&s) != -1)
       {
-      /* Mainly important if there is a dir in the way */
-      
-      if (lstat(backup,&s) != -1)
+      if (S_ISDIR(s.st_mode))      /* if there is a dir in the way */
          {
-         if (S_ISDIR(s.st_mode))
-            {
-            backupisdir = true;
-            PurgeFiles(NULL,backup,NULL);
-            rmdir(backup);
-            }
-         
-         unlink(backup);
+         backupisdir = true;
+         PurgeFiles(NULL,backup,NULL);
+         rmdir(backup);
          }
       
-      if (rename(dest,backup) == -1)
-         {
-         /* ignore */
-         }
-
-      backupok = (lstat(backup,&s) != -1); /* Did the rename() succeed? NFS-safe */
+      unlink(backup);
       }
+   
+   if (rename(dest,backup) == -1)
+      {
+      /* ignore */
+      }
+   
+   backupok = (lstat(backup,&s) != -1); /* Did the rename() succeed? NFS-safe */
    }
 else
    {
@@ -1427,10 +1429,7 @@ if (rsrcfork)
     }
  else if ((IMAGEBACKUP != 'n') && Repository(backup,ip->repository))
     {
-    if (!IsItemIn(VREPOSLIST,backup))
-       {
-       unlink(backup);
-       }
+    unlink(backup);
     }
  
  if (ip->preservetimes == 'y')

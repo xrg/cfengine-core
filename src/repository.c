@@ -102,7 +102,7 @@ AddSlash(buffer);
 
 if (BufferOverflow(buffer,node))
    {
-   printf("culprit: Repository()\n");
+   Debug("culprit: Repository()\n");
    return false;
    }
 
@@ -143,6 +143,8 @@ if (CopyReg(file,buffer,sstat,dstat,&dummy))
    }
 else
    {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Failed to move %s to repository location %s\n",file,buffer);
+   CfLog(cfinform,OUTPUT,"");
    IMAGEBACKUP = imagecopy;
    return false;
    }
