@@ -359,14 +359,10 @@ if (OptionIs(CONTEXTID,"LogEncryptedTransfers", true))
 
 if (GetMacroValue(CONTEXTID,"ChecksumDatabase"))
    {
-   ExpandVarstring("$(ChecksumDatabase)",ebuff,NULL);
-
+   snprintf(ebuff,CF_BUFSIZE,"%s/%s",CFWORKDIR,CF_CHKDB);
    CHECKSUMDB = strdup(ebuff);
 
-   if (*CHECKSUMDB != '/')
-      {
-      FatalError("$(ChecksumDatabase) does not expand to an absolute filename\n");
-      }
+   Verbose("Checksum database is now at a fixed location %s\n",ebuff);
    }
 
  memset(CFRUNCOMMAND,0,CF_BUFSIZE);
@@ -552,7 +548,7 @@ if (ERRORCOUNT > 0)
 void StartServer(int argc,char **argv)
 
 { char ipaddr[CF_MAXVARSIZE],intime[64];
-  int sd,sd_reply,ageing;
+  int sd,sd_reply;
   fd_set rset;
   time_t now;
   struct timeval timeout;
@@ -602,7 +598,6 @@ if (!NO_FORK)
    }
 
 WritePID("cfservd.pid");
-ageing = 0;
 
 /* Andrew Stribblehill <ads@debian.org> -- close sd on exec */ 
 fcntl(sd, F_SETFD, FD_CLOEXEC);
@@ -641,12 +636,6 @@ while (true)
    
    if ((sd_reply = accept(sd,(struct sockaddr *)&cin,&addrlen)) != -1)
       {
-      if (ageing++ > CFD_MAXPROCESSES*50) /* Insurance against stale db */
-         {                                /* estimate number of clients */
-         unlink(CHECKSUMDB);              /* arbitrary policy ..        */
-         ageing = 0;
-         }
-      
       memset(ipaddr,0,CF_MAXVARSIZE);
       snprintf(ipaddr,CF_MAXVARSIZE-1,"%s",sockaddr_ntop((struct sockaddr *)&cin));
       
