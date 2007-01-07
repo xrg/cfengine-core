@@ -62,24 +62,25 @@ PROGRAMS = $(sbin_PROGRAMS)
 am_cfagent_OBJECTS = cfagent.$(OBJEXT) init.$(OBJEXT) do.$(OBJEXT) \
 	modules.$(OBJEXT) alerts.$(OBJEXT) wrapper.$(OBJEXT) \
 	report.$(OBJEXT) client.$(OBJEXT) ip.$(OBJEXT) \
-	process.$(OBJEXT) ifconf.$(OBJEXT) image.$(OBJEXT) \
-	item.$(OBJEXT) item-ext.$(OBJEXT) item-file.$(OBJEXT) \
-	2Dlist.$(OBJEXT) globals.$(OBJEXT) classes.$(OBJEXT) \
-	misc.$(OBJEXT) parse.$(OBJEXT) functions.$(OBJEXT) \
-	edittools.$(OBJEXT) patches.$(OBJEXT) install.$(OBJEXT) \
-	link.$(OBJEXT) tidy.$(OBJEXT) filedir.$(OBJEXT) eval.$(OBJEXT) \
-	modes.$(OBJEXT) sockaddr.$(OBJEXT) chflags.$(OBJEXT) \
-	locks.$(OBJEXT) mount.$(OBJEXT) macro.$(OBJEXT) \
-	filenames.$(OBJEXT) varstring.$(OBJEXT) wildcard.$(OBJEXT) \
-	cfparse.$(OBJEXT) comparray.$(OBJEXT) read.$(OBJEXT) \
-	checksums.$(OBJEXT) proto.$(OBJEXT) filters.$(OBJEXT) \
-	copy.$(OBJEXT) repository.$(OBJEXT) rotate.$(OBJEXT) \
-	errors.$(OBJEXT) cflex.$(OBJEXT) net.$(OBJEXT) df.$(OBJEXT) \
-	log.$(OBJEXT) crypto.$(OBJEXT) popen.$(OBJEXT) \
-	popen_def.$(OBJEXT) sensible.$(OBJEXT) acl.$(OBJEXT) \
-	dce_acl.$(OBJEXT) nameinfo.$(OBJEXT) strategies.$(OBJEXT) \
-	granules.$(OBJEXT) methods.$(OBJEXT) dtypes.$(OBJEXT) \
-	state.$(OBJEXT) expand-files.$(OBJEXT) expand-tidy.$(OBJEXT) \
+	instrument.$(OBJEXT) process.$(OBJEXT) ifconf.$(OBJEXT) \
+	image.$(OBJEXT) item.$(OBJEXT) item-ext.$(OBJEXT) \
+	item-file.$(OBJEXT) 2Dlist.$(OBJEXT) globals.$(OBJEXT) \
+	classes.$(OBJEXT) misc.$(OBJEXT) parse.$(OBJEXT) \
+	functions.$(OBJEXT) edittools.$(OBJEXT) patches.$(OBJEXT) \
+	install.$(OBJEXT) link.$(OBJEXT) tidy.$(OBJEXT) \
+	filedir.$(OBJEXT) eval.$(OBJEXT) modes.$(OBJEXT) \
+	sockaddr.$(OBJEXT) chflags.$(OBJEXT) locks.$(OBJEXT) \
+	mount.$(OBJEXT) macro.$(OBJEXT) filenames.$(OBJEXT) \
+	varstring.$(OBJEXT) wildcard.$(OBJEXT) cfparse.$(OBJEXT) \
+	comparray.$(OBJEXT) read.$(OBJEXT) checksums.$(OBJEXT) \
+	proto.$(OBJEXT) filters.$(OBJEXT) copy.$(OBJEXT) \
+	repository.$(OBJEXT) rotate.$(OBJEXT) errors.$(OBJEXT) \
+	cflex.$(OBJEXT) net.$(OBJEXT) df.$(OBJEXT) log.$(OBJEXT) \
+	crypto.$(OBJEXT) popen.$(OBJEXT) popen_def.$(OBJEXT) \
+	sensible.$(OBJEXT) acl.$(OBJEXT) dce_acl.$(OBJEXT) \
+	nameinfo.$(OBJEXT) strategies.$(OBJEXT) granules.$(OBJEXT) \
+	methods.$(OBJEXT) dtypes.$(OBJEXT) state.$(OBJEXT) \
+	expand-files.$(OBJEXT) expand-tidy.$(OBJEXT) \
 	expand-image.$(OBJEXT) expand-editfiles.$(OBJEXT) \
 	checksum_db.$(OBJEXT) package.$(OBJEXT)
 cfagent_OBJECTS = $(am_cfagent_OBJECTS)
@@ -141,29 +142,29 @@ am_cfrun_OBJECTS = cfrun.$(OBJEXT) item.$(OBJEXT) item-ext.$(OBJEXT) \
 	varstring.$(OBJEXT) filenames.$(OBJEXT) sockaddr.$(OBJEXT) \
 	nameinfo.$(OBJEXT) eval.$(OBJEXT) wildcard.$(OBJEXT) \
 	proto.$(OBJEXT) popen.$(OBJEXT) net.$(OBJEXT) ip.$(OBJEXT) \
-	checksums.$(OBJEXT) classes.$(OBJEXT) read.$(OBJEXT) \
-	log.$(OBJEXT) crypto.$(OBJEXT) patches.$(OBJEXT) \
-	init.$(OBJEXT) granules.$(OBJEXT) macro.$(OBJEXT) \
-	globals.$(OBJEXT)
+	instrument.$(OBJEXT) checksums.$(OBJEXT) classes.$(OBJEXT) \
+	read.$(OBJEXT) log.$(OBJEXT) crypto.$(OBJEXT) \
+	patches.$(OBJEXT) init.$(OBJEXT) granules.$(OBJEXT) \
+	macro.$(OBJEXT) globals.$(OBJEXT)
 cfrun_OBJECTS = $(am_cfrun_OBJECTS)
 cfrun_LDADD = $(LDADD)
 cfrun_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am_cfservd_OBJECTS = cfservd.$(OBJEXT) parse.$(OBJEXT) \
 	dtypes.$(OBJEXT) functions.$(OBJEXT) install.$(OBJEXT) \
-	sockaddr.$(OBJEXT) ip.$(OBJEXT) report.$(OBJEXT) \
-	cfparse.$(OBJEXT) chflags.$(OBJEXT) cflex.$(OBJEXT) \
-	item.$(OBJEXT) item-ext.$(OBJEXT) varstring.$(OBJEXT) \
-	popen.$(OBJEXT) popen_def.$(OBJEXT) globals.$(OBJEXT) \
-	filenames.$(OBJEXT) macro.$(OBJEXT) eval.$(OBJEXT) \
-	read.$(OBJEXT) classes.$(OBJEXT) modules.$(OBJEXT) \
-	misc.$(OBJEXT) 2Dlist.$(OBJEXT) modes.$(OBJEXT) \
-	locks.$(OBJEXT) init.$(OBJEXT) wildcard.$(OBJEXT) \
-	copy.$(OBJEXT) rotate.$(OBJEXT) net.$(OBJEXT) acl.$(OBJEXT) \
-	dce_acl.$(OBJEXT) log.$(OBJEXT) errors.$(OBJEXT) \
-	crypto.$(OBJEXT) filters.$(OBJEXT) patches.$(OBJEXT) \
-	checksums.$(OBJEXT) checksum_db.$(OBJEXT) state.$(OBJEXT) \
-	nameinfo.$(OBJEXT) strategies.$(OBJEXT)
+	sockaddr.$(OBJEXT) ip.$(OBJEXT) instrument.$(OBJEXT) \
+	report.$(OBJEXT) cfparse.$(OBJEXT) chflags.$(OBJEXT) \
+	cflex.$(OBJEXT) item.$(OBJEXT) item-ext.$(OBJEXT) \
+	varstring.$(OBJEXT) popen.$(OBJEXT) popen_def.$(OBJEXT) \
+	globals.$(OBJEXT) filenames.$(OBJEXT) macro.$(OBJEXT) \
+	eval.$(OBJEXT) read.$(OBJEXT) classes.$(OBJEXT) \
+	modules.$(OBJEXT) misc.$(OBJEXT) 2Dlist.$(OBJEXT) \
+	modes.$(OBJEXT) locks.$(OBJEXT) init.$(OBJEXT) \
+	wildcard.$(OBJEXT) copy.$(OBJEXT) rotate.$(OBJEXT) \
+	net.$(OBJEXT) acl.$(OBJEXT) dce_acl.$(OBJEXT) log.$(OBJEXT) \
+	errors.$(OBJEXT) crypto.$(OBJEXT) filters.$(OBJEXT) \
+	patches.$(OBJEXT) checksums.$(OBJEXT) checksum_db.$(OBJEXT) \
+	state.$(OBJEXT) nameinfo.$(OBJEXT) strategies.$(OBJEXT)
 cfservd_OBJECTS = $(am_cfservd_OBJECTS)
 cfservd_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
@@ -334,6 +335,7 @@ cfagent_SOURCES = \
         report.c                                                        \
 	client.c							\
 	ip.c								\
+	instrument.c							\
 	process.c							\
 	ifconf.c							\
 	image.c								\
@@ -404,6 +406,7 @@ cfservd_SOURCES = \
 	install.c							\
 	sockaddr.c							\
 	ip.c								\
+	instrument.c							\
 	report.c							\
 	cfparse.y							\
 	chflags.c							\
@@ -478,6 +481,7 @@ cfrun_SOURCES = \
 	popen.c								\
 	net.c								\
 	ip.c								\
+	instrument.c							\
 	checksums.c							\
 	classes.c							\
 	read.c								\
@@ -755,6 +759,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/image.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/install.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/instrument.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ip.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/item-ext.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/item-file.Po@am__quote@

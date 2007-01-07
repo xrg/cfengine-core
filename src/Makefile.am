@@ -29,6 +29,7 @@ cfagent_SOURCES =							\
         report.c                                                        \
 	client.c							\
 	ip.c								\
+	instrument.c							\
 	process.c							\
 	ifconf.c							\
 	image.c								\
@@ -101,6 +102,7 @@ cfservd_SOURCES =							\
 	install.c							\
 	sockaddr.c							\
 	ip.c								\
+	instrument.c							\
 	report.c							\
 	cfparse.y							\
 	chflags.c							\
@@ -177,6 +179,7 @@ cfrun_SOURCES =								\
 	popen.c								\
 	net.c								\
 	ip.c								\
+	instrument.c							\
 	checksums.c							\
 	classes.c							\
 	read.c								\
