@@ -1,3 +1,4 @@
+
 /* cfengine for GNU
  
         Copyright (C) 1995
@@ -1518,7 +1519,7 @@ for (ep = actions; ep != NULL; ep=ep->next)
           
           if (strcmp("single",ToLowerStr(expdata)) == 0 || strcmp("one",ToLowerStr(expdata)) == 0)
              {
-             IMAGEBACKUP = 'n';
+             IMAGEBACKUP = 'y';
              }
           
           if (strcmp("timestamp",ToLowerStr(expdata)) == 0 || strcmp("stamp",ToLowerStr(expdata)) == 0)
