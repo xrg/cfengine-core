@@ -1,16 +1,19 @@
-2.1.22
-	ShowState(rootprocs), ShowState(otherprocs) added for better process reporting
+	2.1.22 ShowState(rootprocs), ShowState(otherprocs) added for
+	better process reporting
 
 	Package manager for AIX code added, courtesy of Anthony Rassin
 
-	Rewritten the checksum subsystem to allow for future development and improvements
-	and tidied the fragile Berkeley DB code.
+	Rewritten the checksum subsystem to allow for future development
+	and improvements and tidied the fragile Berkeley DB code.
 
 	Code reorganization for better separation of concerns.
 
 	cfconvert removed. Change of strategy.
 
 	ChecksumDatabase variable is not longer used.
+
+	Rationalization of internal instrumentation and better integration
+	with cfenvd.
 	
 2.1.21
 

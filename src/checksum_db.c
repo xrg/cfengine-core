@@ -244,7 +244,7 @@ if ((errno = dbp->open(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 
  while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
     {
-    if (stat(key.data,&statbuf) == -1)
+    if (stat((char *)key.data+CF_CHKSUMKEYOFFSET,&statbuf) == -1)
        {
        Verbose("Purging file %s from checksum db - no longer exists\n",(char *)key.data+CF_CHKSUMKEYOFFSET);
        snprintf(OUTPUT,CF_BUFSIZE*2,"SECURITY INFO: %s checksum for %s purged - file no longer exists!",key.data,key.data+CF_CHKSUMKEYOFFSET);

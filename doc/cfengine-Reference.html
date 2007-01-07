@@ -1958,7 +1958,7 @@ the affected hosts.
        anomaly_hosts.RootProcs_high_dev2::
      
         "RootProc anomaly high 2 dev on $(host) value $(value_rootprocs) av $(average_rootprocs) pm $(stddev_rootprocs)"
-       ShowState(procs)
+       ShowState(rootprocs)
      
 </pre>
    <p>The <code>ShowState()</code> function reports on state gathered by the cfenvd
@@ -1969,6 +1969,8 @@ daemon.
      ShowState(incoming.www)
      ShowState(outgoing.www)
      ShowState(procs)
+     ShowState(rootprocs)
+     ShowState(otherprocs)
      ShowState(users)
 </pre>
    <p>To limit the frequency of alerts, you can set locking times:
@@ -1979,7 +1981,7 @@ daemon.
      
         "RootProc anomaly high 2 dev on $(host) value $(value_rootprocs) av $(average_rootprocs) pm $(stddev_rootprocs)"
      
-        ShowState(procs)  ifelapsed=10 expireafter=20
+        ShowState(rootprocs)  ifelapsed=10 expireafter=20
      
 </pre>
    <p>Alerts can also be channeled directly to syslog, to avoid extraneous console messages or email.
@@ -6409,14 +6411,12 @@ achieved with the <code>directories</code> directive, See <a href="#directories"
 the colon, comma or dot separated list of classes becomes defined. 
 Warnings do not activate the classes.
 
-     <br><dt><code>checksum=</code><var>md5/sha</var><dd>If set this option causes cfengine to add a checksum for the named file
+     <br><dt><code>checksum=</code><var>md5/sha/sha1</var><dd>If set this option causes cfengine to add a checksum for the named file
 to a database. Changes in the value of this checksum are then warned as
 a security issue. This should normally only be used to monitor binary
 files which one would not expect to change often. Note also that the use
-of this option can mean a significant performance penalty. The variable
-<code>ChecksumDatabase</code> should be set in <code>control:</code> to the filename
-of a database file which is used to cache checksum values. Note that it
-is also possible to use a database file for cfservd's remote copying by
+of this option can mean a significant performance penalty. Note that it
+is also possible to use the same database file for cfservd's remote copying by
 checksum.  If you use the same file for both purposes you risk losing
 warnings.  Security warning messages are issued only once and the value
 in the database is then changed to the new value of the file
@@ -9480,7 +9480,7 @@ file is as follows:
      
             MaxConnections = ( <var>maximum number of forked daemons</var> )
      
-            ChecksumDatabase = ( <var>filename</var> )
+            # ChecksumDatabase = ( <var>filename</var> ) - deprecated
      
             IfElapsed = ( <var>time-in-minutes</var> )
      
@@ -9794,7 +9794,10 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#cfservd-control">cfservd control</a>
 
 <h4 class="subsection">5.1.8 ChecksumDatabase</h4>
 
-<p>This is the path and filename to a database which will cache
+<p>(This variable is deprecated as of version 2.1.21. The location of the
+database will be fixed internally.)
+
+   <p>This is the path and filename to a database which will cache
 MD5 checksum values server-side. This optimization is only available
 if you have the Berkeley database library `<samp><span class="samp">libdb</span></samp>' on your
 system. If this variable is not defined, no database caching

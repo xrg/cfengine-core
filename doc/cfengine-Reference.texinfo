@@ -6915,7 +6915,7 @@ If a file operation results in action being taken to fix a file,
 the colon, comma or dot separated list of classes becomes defined.
 Warnings do not activate the classes.
 
-@item checksum=@var{md5/sha/sha1/sha224/sha256/sha384/sha512}
+@item checksum=@var{md5/sha/sha1}
 If set this option causes cfengine to add a checksum for the named file
 to a database. Changes in the value of this checksum are then warned as
 a security issue. This should normally only be used to monitor binary

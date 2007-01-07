@@ -17559,8 +17559,8 @@ echo "$as_me: WARNING: DFS users should use --enable-DCE" >&2;}
 echo "$as_me: WARNING: " >&2;}
 { echo "$as_me:$LINENO: WARNING: This version requires Berkeley db version 4.4 or" >&5
 echo "$as_me: WARNING: This version requires Berkeley db version 4.4 or" >&2;}
-{ echo "$as_me:$LINENO: WARNING: later from www.sleepycat.com" >&5
-echo "$as_me: WARNING: later from www.sleepycat.com" >&2;}
+{ echo "$as_me:$LINENO: WARNING: later from www.sleepycat.com - now owned by Oracle" >&5
+echo "$as_me: WARNING: later from www.sleepycat.com - now owned by Oracle" >&2;}
 { echo "$as_me:$LINENO: WARNING: This version requires OpenSSL 0.9.7 or later" >&5
 echo "$as_me: WARNING: This version requires OpenSSL 0.9.7 or later" >&2;}
 { echo "$as_me:$LINENO: WARNING: from www.openssl.org" >&5
