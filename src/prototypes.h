@@ -199,8 +199,9 @@ int EmbeddedWrite (char *new,int dd,char *buf,struct Image *ip,int towrite,int *
 
 /* dce_acl.c */
 
-/*struct CFACE;
-  int CheckDFSACE (struct CFACE *aces, char method, char *filename, enum fileactions action);*/
+#ifndef HAVE_DCE_DACLIF_H
+int CheckDFSACE(struct CFACE *aces, char method, char *filename, enum fileactions action);
+#endif
 
 /* df.c */
 
