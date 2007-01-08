@@ -424,7 +424,7 @@ Verbose ("\n");
 snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/apt-cache policy %s 2>&1 | grep -v " \
           "\"W: Unable to locate package \"", package);
 
-if ((pp = cfpopen (VBUFF, "r")) == NULL)
+if ((pp = cfpopen_sh(VBUFF, "r")) == NULL)
    {
    Verbose ("Could not execute APT-command (apt-cache).\n");
    return 0;
