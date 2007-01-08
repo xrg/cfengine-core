@@ -310,7 +310,7 @@ extern int errno;
 #define CF_MAXDIGESTNAMELEN 7
 #define CF_CHKSUMKEYOFFSET  CF_MAXDIGESTNAMELEN+1
 
-#define CF_IFREQ 8192
+#define CF_IFREQ 2048    /* Reportedly the largest size that does not segfault 32/64 bit*/
 #define CF_ADDRSIZE 128
 
 #define CF_METHODEXEC 0
