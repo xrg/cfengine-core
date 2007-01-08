@@ -147,7 +147,9 @@ for (sp = var; *sp != '\0'; sp++)
    if (isalnum((int)*sp))
       {
       }
-   else if ((*sp == '_') || (*sp == '[') || (*sp == ']'))
+   else if ((*sp == '_')
+            || (*sp == '[') || (*sp == ']')
+            || (*sp == '.'))
       {
       }
    else
@@ -250,11 +252,16 @@ for (sp = str; *sp != '\0' ; sp++)       /* check for varitems */
           break;
           
       default:
-          if (isalnum((int)*sp) || (*sp != '_') || (*sp != '[')|| (*sp != ']'))
+          if (isalnum((int)*sp)
+              || (*sp == '_')
+              || (*sp == '[') || (*sp == ']')
+              || (*sp == '$')
+              || (*sp == '.'))
              {
              }
           else
              {
+             Debug("Illegal character found: '%c'\n", *sp);
              yyerror("Illegal character somewhere in variable or nested expansion");
              }
       }
@@ -396,7 +403,14 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
          increment = strlen(temp)-3;
          ExpandVarstring(temp,currentitem,"");
          CheckVarID(currentitem);
-         sp += 3; /* $() */
+
+         /* forward the cursor to the point right after the stuff
+            already processed */
+         sp += strlen(temp);
+
+         /* later we add strlen(currentitem) for non-nested stuff
+            so we must correct this here */
+         sp -= strlen(currentitem);
          }
       else
          {

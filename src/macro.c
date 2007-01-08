@@ -367,6 +367,9 @@ if (ptr == NULL)
    ptr = ObjectContext(scope);
    }
  
+Debug("GetMacroValue(%s,%s): using scope '%s' for variable '%s'\n",
+      scope,name,ptr->scope,vname);
+ 
 i = slot = Hash(vname);
  
 if (CompareMacro(vname,ptr->hashtable[slot]) != 0)
