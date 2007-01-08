@@ -80,123 +80,121 @@ if (CHECKSUMDB == NULL)
       }
    }
  
- if (refresh)
-    {
-    /* Check whether database is current wrt local file - simple cheap test */
-
-    if (stat(filename,&stat1) == -1)
-       {
-       snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't stat %s\n",filename);
-       CfLog(cferror,OUTPUT,"stat");
-       return false;
-       }
+if (refresh) /* this section should not be used anymore */
+   {
+   /* Check whether database is current wrt local file - simple cheap test */
+   
+   if (stat(filename,&stat1) == -1)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't stat %s\n",filename);
+      CfLog(cferror,OUTPUT,"stat");
+      return false;
+      }
     
-    if (stat(CHECKSUMDB,&stat2) != -1)
-       {
-       if (stat1.st_mtime > stat2.st_mtime)
-          {
-          Debug("Checksum database is older than %s...refresh needed\n",filename);
-          needupdate = true;
-          }
-       else
-          {
-          Debug("Checksum up to date..\n");
-          }
-       }
-    else
-       {
-       needupdate = true;
-       }      
-    }
- 
- if ((errno = db_create(&dbp,dbenv,0)) != 0)
-    {
-    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
-    CfLog(cferror,OUTPUT,"db_open");
-    return false;
-    }
- 
- if ((errno = dbp->open(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
-    {
-    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
-    CfLog(cferror,OUTPUT,"db_open");
-    dbp->close(dbp,0);
-    return false;
-    }
+   if (stat(CHECKSUMDB,&stat2) != -1)
+      {
+      if (stat1.st_mtime > stat2.st_mtime)
+         {
+         Debug("Checksum database is older than %s...refresh needed\n",filename);
+         needupdate = true;
+         }
+      else
+         {
+         Debug("Checksum up to date..\n");
+         }
+      }
+   else
+      {
+      needupdate = true;
+      }      
+   }
 
- 
- if (needupdate)
-    {
-    DeleteChecksum(dbp,type,filename);    
-    WriteChecksum(dbp,type,filename,current_digest,attr_digest);
-    }
- 
- if (ReadChecksum(dbp,type,filename,dbdigest,dbattr))
-    {
-     /* Ignoring attr for now - future development */
-     
-    for (i = 0; i < size; i++)
-       {
-       if (current_digest[i] != dbdigest[i])
-          {
-          Debug("Found checksum for %s in database but it didn't match\n",filename);
-          
-          if (EXCLAIM)
-             {
-             CfLog(warnlevel,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!","");
-             }
-          
-          snprintf(OUTPUT,CF_BUFSIZE*2,"SECURITY ALERT: Checksum for %s changed!",filename);
-          CfLog(warnlevel,OUTPUT,"");
-          
-          if (EXCLAIM)
-             {
-             CfLog(warnlevel,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!","");
-             }
-          
-          if (CHECKSUMUPDATES)
-             {
-             Verbose("Updating checksum for %s to %s\n",filename,ChecksumPrint(type,current_digest));
-             
-             DeleteChecksum(dbp,type,filename);
-             WriteChecksum(dbp,type,filename,current_digest,attr_digest);
-             }
-          
-          dbp->close(dbp,0);
-          return true;                        /* Checksum updated but was changed */
-          }
-       }
-    
-    Debug("Found checksum for %s in database and it matched\n",filename);
-    dbp->close(dbp,0);
-    return false;
-    }
- else
-    {
-    /* Key was not found, so install it */
-    
-    if (ISCFENGINE)
-       {
-       snprintf(OUTPUT,CF_BUFSIZE,"File %s was not in database - new file found",filename);
-       CfLog(cfsilent,OUTPUT,"");
-       }
+if ((errno = db_create(&dbp,dbenv,0)) != 0)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
+   CfLog(cferror,OUTPUT,"db_open");
+   return false;
+   }
 
-    Debug("Storing checksum for %s in database %s\n",filename,ChecksumPrint(type,current_digest));
-    WriteChecksum(dbp,type,filename,current_digest,attr_digest);
+if ((errno = dbp->open(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
+   CfLog(cferror,OUTPUT,"db_open");
+   dbp->close(dbp,0);
+   return false;
+   }
 
-    dbp->close(dbp,0);
-    
-    if (ISCFENGINE)
-       {
-       return false;      /* No need to warn when first installed */
-       }
-    else
-       {
-       return true;
-       }
-    }
+if (needupdate)
+   {
+   DeleteChecksum(dbp,type,filename);    
+   WriteChecksum(dbp,type,filename,current_digest,attr_digest);
+   }
+
+if (ReadChecksum(dbp,type,filename,dbdigest,dbattr))
+   {
+   /* Ignoring attr for now - future development */
+   
+   for (i = 0; i < size; i++)
+      {
+      if (current_digest[i] != dbdigest[i])
+         {
+         Debug("Found checksum for %s in database but it didn't match\n",filename);
+         
+         if (EXCLAIM)
+            {
+            CfLog(warnlevel,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!","");
+            }
+         
+         snprintf(OUTPUT,CF_BUFSIZE*2,"SECURITY ALERT: Checksum for %s changed!",filename);
+         CfLog(warnlevel,OUTPUT,"");
+         
+         if (EXCLAIM)
+            {
+            CfLog(warnlevel,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!","");
+            }
+         
+         if (CHECKSUMUPDATES)
+            {
+            Verbose("Updating checksum for %s to %s\n",filename,ChecksumPrint(type,current_digest));
+            
+            DeleteChecksum(dbp,type,filename);
+            WriteChecksum(dbp,type,filename,current_digest,attr_digest);
+            }
+         
+         dbp->close(dbp,0);
+         return true;                        /* Checksum updated but was changed */
+         }
+      }
+   
+   Debug("Found checksum for %s in database and it matched\n",filename);
+   dbp->close(dbp,0);
+   return false;
+   }
+else
+   {
+   /* Key was not found, so install it */
+   
+   if (ISCFENGINE)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"File %s was not in database - new file found",filename);
+      CfLog(cfsilent,OUTPUT,"");
+      }
+   
+   Debug("Storing checksum for %s in database %s\n",filename,ChecksumPrint(type,current_digest));
+   WriteChecksum(dbp,type,filename,current_digest,attr_digest);
+   
+   dbp->close(dbp,0);
+   
+   if (ISCFENGINE)
+      {
+      return false;      /* No need to warn when first installed */
+      }
+   else
+      {
+      return true;
+      }
+   }
 }
-
 
 /***************************************************************/
 
@@ -260,8 +258,6 @@ if ((errno = dbp->open(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 dbcp->c_close(dbcp);
 dbp->close(dbp,0);
 }
-
-
 
 /*****************************************************************************/
 

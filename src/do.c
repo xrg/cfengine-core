@@ -3079,7 +3079,7 @@ void AddToFstab(char *host,char *rmountpt,char *mountpt,char *mode,char *options
 Debug("AddToFstab(%s)\n",mountpt);
 
 
-if ( options != NULL)
+if (options != NULL)
    {
    opts = options;
    }

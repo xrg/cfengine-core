@@ -360,12 +360,12 @@ if (OptionIs(CONTEXTID,"LogEncryptedTransfers", true))
 if (GetMacroValue(CONTEXTID,"ChecksumDatabase"))
    {
    snprintf(ebuff,CF_BUFSIZE,"%s/%s",CFWORKDIR,CF_CHKDB);
-   CHECKSUMDB = strdup(ebuff);
-
-   Verbose("Checksum database is now at a fixed location %s\n",ebuff);
+   /* CHECKSUMDB = strdup(ebuff);*/
+   CHECKSUMDB = NULL;
+   Verbose("Checksum database is no longer used in cfservd\n");
    }
 
- memset(CFRUNCOMMAND,0,CF_BUFSIZE);
+memset(CFRUNCOMMAND,0,CF_BUFSIZE);
  
 if (GetMacroValue(CONTEXTID,"cfrunCommand"))
    {
