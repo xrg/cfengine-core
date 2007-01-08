@@ -1613,16 +1613,22 @@ if (editsdone)
        if (ep->code == ElseDefineClasses)
           {
           Debug("Entering AddEditfileClasses(%s)\n",ep->data);
-          
-          for (sp = ep->data; *sp != '\0'; sp++)
+
+          sp = ep->data; 
+          while(*sp != '\0')
              {
              currentitem[0] = '\0';
              
              sscanf(sp,"%[^,:.]",currentitem);
              
-             sp += strlen(currentitem) - 1;
+             sp += strlen(currentitem);
              
              AddClassToHeap(currentitem);
+
+             if (strlen(sp) > 0)
+                {
+                sp++;
+                }
              }
           }
        }
