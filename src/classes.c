@@ -524,7 +524,7 @@ char *VNETSTAT[CF_CLASSATTR] =
    "/usr/ucb/netstat -rn",   /* nextstep */
    "/usr/ucb/netstat -rn",   /* cray */
    "/bin/netstat -rn",       /* gnu */
-   "/C/WINNT/System32/netstat", /* NT */
+   "/cygdrive/c/WINNT/System32/netstat", /* NT */
    "/usr/bin/netstat -rn",   /* Unixware */
    "/usr/bin/netstat -rn",   /* openbsd */
    "/usr/bin/netstat -rn",   /* sco */
