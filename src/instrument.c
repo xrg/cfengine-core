@@ -52,6 +52,8 @@ if (strlen(hostname) == 0)
    return;
    }
 
+Debug("LastSeen(%s) reg\n",hostname);
+
 /* Tidy old versions - temporary */
 snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_OLDLASTDB_FILE);
 unlink(name);
@@ -93,6 +95,7 @@ delta2 = (lastseen - q.expect)*(lastseen - q.expect);
 newq.var = SWAverage(delta2,q.var);
 
 WriteDB(dbp,databuf,&newq,sizeof(newq));   
+dbp->close(dbp,0);
 }
 
 /***************************************************************/
@@ -131,11 +134,7 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    return;
    }
 
-#ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
-#else
 if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
-#endif
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
    CfLog(cferror,OUTPUT,"db_open");
