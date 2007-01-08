@@ -2691,6 +2691,11 @@ void CheckPackages()
 
 for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
    {
+   if (IsExcluded(ptr->classes))
+      {
+      continue;
+      }
+
    if (ptr->done == 'y' || strcmp(ptr->scope,CONTEXTID) != 0)
       {
       continue;
@@ -2698,11 +2703,6 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
    else
       {
       ptr->done = 'y';
-      }
-
-   if (IsExcluded(ptr->classes))
-      {
-      continue;
       }
 
    snprintf(lock,CF_BUFSIZE-1,"%s_%d_%d",ptr->name,ptr->cmp,ptr->action);
