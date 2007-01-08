@@ -5537,6 +5537,7 @@ The form of a declaration is:
                          owner=@var{uid}
                          group=@var{gid}
                          define=@var{classlist}
+                         elsedefine=@var{classlist}
                          syslog=@var{true/on}/@var{false/off}
                          inform=@var{true/on}/@var{false/off}
 
