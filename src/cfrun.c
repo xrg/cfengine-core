@@ -289,8 +289,8 @@ int PollServer(char *host,char *options,int storeinfile)
   struct Image addresses;
 #ifdef HAVE_GETADDRINFO
   struct addrinfo query, *response=NULL, *ap;
-  char strport[16];
 #endif
+  char strport[16];
   
 CONN = NewAgentConn();
 
@@ -425,7 +425,7 @@ if (!gotkey)
       }
    }
  
-if (!RemoteConnect(parsed_host,forceipv4,SHORT_CFENGINEPORT,STR_CFENGINEPORT))
+if (!RemoteConnect(parsed_host,forceipv4,port,strport))
    {
    CfLog(cferror,"Couldn't open a socket","socket");
    FileOutput(fp, fopl_error, "Couldn't open a socket\n");
