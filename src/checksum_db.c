@@ -50,7 +50,7 @@ int ChecksumChanged(char *filename,unsigned char digest[EVP_MAX_MD_SIZE+1],int w
   DB_ENV *dbenv = NULL;
   FILE *fp;
 
-  Debug("ChecksumChanged: key %s (type=%c) with data %s\n",filename,type,ChecksumPrint(type,digest));
+Debug("ChecksumChanged: key %s (type=%c) with data %s\n",filename,type,ChecksumPrint(type,digest));
 
 size = ChecksumSize(type);
 
@@ -124,7 +124,7 @@ if ((errno = dbp->open(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
    return false;
    }
 
-if (needupdate)
+if (needupdate) /* This section should not be needed any more */
    {
    DeleteChecksum(dbp,type,filename);    
    WriteChecksum(dbp,type,filename,current_digest,attr_digest);
@@ -226,35 +226,33 @@ if ((errno = dbp->open(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 
 /* Acquire a cursor for the database. */
 
- if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
-    {
-    CfLog(cferror,"Error reading from checksum database","");
-    dbp->err(dbp, ret, "DB->cursor");
-    return;
-    }
+if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
+   {
+   CfLog(cferror,"Error reading from checksum database","");
+   dbp->err(dbp, ret, "DB->cursor");
+   return;
+   }
 
- /* Initialize the key/data return pair. */
-
- memset(&key,0,sizeof(key));
- memset(&value,0,sizeof(value));
- 
  /* Walk through the database and print out the key/data pairs. */
 
- while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
-    {
-    if (stat((char *)key.data+CF_CHKSUMKEYOFFSET,&statbuf) == -1)
-       {
-       Verbose("Purging file %s from checksum db - no longer exists\n",(char *)key.data+CF_CHKSUMKEYOFFSET);
-       snprintf(OUTPUT,CF_BUFSIZE*2,"SECURITY INFO: %s checksum for %s purged - file no longer exists!",key.data,key.data+CF_CHKSUMKEYOFFSET);
-       CfLog(cferror,OUTPUT,"");
+while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
+   {
+   memset(&key,0,sizeof(key));
+   memset(&value,0,sizeof(value));
 
-       if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
-          {
-          CfLog(cferror,"","db_store");
-          }
-       }
-    }
- 
+   if (stat((char *)(key.data+CF_CHKSUMKEYOFFSET),&statbuf) == -1)
+      {
+      Verbose("Purging file %s from checksum db - no longer exists\n",(char *)key.data+CF_CHKSUMKEYOFFSET);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"SECURITY INFO: %s checksum for %s purged - file no longer exists!",key.data,key.data+CF_CHKSUMKEYOFFSET);
+      CfLog(cferror,OUTPUT,"");
+      
+      if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
+         {
+         CfLog(cferror,"","db_store");
+         }
+      }
+   }
+
 dbcp->c_close(dbcp);
 dbp->close(dbp,0);
 }
@@ -267,6 +265,8 @@ int ReadChecksum(DB *dbp,char type,char *name,unsigned char digest[EVP_MAX_MD_SI
   struct Checksum_Value chk_val;
   
 key = NewChecksumKey(type,name);
+
+memset(&value,0,sizeof(value));
 
 if ((errno = dbp->get(dbp,NULL,key,&value,0)) == 0)
    {
@@ -282,6 +282,10 @@ if ((errno = dbp->get(dbp,NULL,key,&value,0)) == 0)
    }
 else
    {
+   printf("Debug - read failed on %s,%s\n",(char *)key->data,(char *)key->data+CF_CHKSUMKEYOFFSET);
+   snprintf(OUTPUT,CF_BUFSIZE,"Checksum read failed: %s",db_strerror(errno));
+   CfLog(cferror,OUTPUT,"db->get");
+
    return false;
    }
 }

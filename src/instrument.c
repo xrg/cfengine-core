@@ -151,17 +151,14 @@ if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
    return;
    }
 
- /* Initialize the key/data return pair. */
- 
-memset(&key, 0, sizeof(key));
-memset(&value, 0, sizeof(value));
-memset(&entry, 0, sizeof(entry)); 
- 
  /* Walk through the database and print out the key/data pairs. */
 
 while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
    {
    time_t then;
+   memset(&key, 0, sizeof(key));
+   memset(&value, 0, sizeof(value));
+   memset(&entry, 0, sizeof(entry)); 
 
    memcpy(&then,value.data,sizeof(then));
    strcpy(hostname,(char *)key.data);
