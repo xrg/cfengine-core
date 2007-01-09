@@ -2033,11 +2033,11 @@ for (mp = VMISCMOUNT; mp != NULL; mp=mp->next)
    if (!IsItemIn(VMOUNTED,mtpt))
       {
       MakeDirectoriesFor(maketo,'n');
-      AddToFstab(host,mountdir,mp->onto,mp->options,NULL,false);
+      AddToFstab(host,mountdir,mp->onto,NULL,mp->options,false);
       }
    else
       {
-      AddToFstab(host,mountdir,mp->onto,mp->options,NULL,true);
+      AddToFstab(host,mountdir,mp->onto,NULL,mp->options,true);
       }
    }
 }
@@ -3078,6 +3078,10 @@ void AddToFstab(char *host,char *rmountpt,char *mountpt,char *mode,char *options
 
 Debug("AddToFstab(%s)\n",mountpt);
 
+if (mode == NULL)
+   {
+   mode = "rw";
+   }
 
 if (options != NULL)
    {
