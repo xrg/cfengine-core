@@ -1,4 +1,8 @@
-	2.1.22 ShowState(rootprocs), ShowState(otherprocs) added for
+2.1.22 
+	Package manager debian patch added to iterate over packages
+	under installation.
+	
+	ShowState(rootprocs), ShowState(otherprocs) added for
 	better process reporting
 
 	Package manager for AIX code added, courtesy of Anthony Rassin

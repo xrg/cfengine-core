@@ -281,8 +281,11 @@ int InstallPackage(char *name, enum pkgmgrs pkgmgr)
  char instcmd[CF_BUFSIZE*2];
  char line[CF_BUFSIZE];
  char *percent;
- char *ptr;
  FILE *pp;
+ char *ptr, *arg_ptr, *next_ptr;
+ int instcmd_args, package_args;
+ int instcmd_tail_len = 0;
+ int instcmd_len, arg_len;
 
 if (DONTDO)
    {
@@ -348,6 +351,12 @@ switch(pkgmgr)
 
 /* Common to all pkg managers */
 
+    /* How many words are there in the package manager invocation? */
+for (ptr = rawinstcmd, instcmd_args = 1; NULL != ptr; ptr = strchr(++ptr, ' '))
+   {
+   ++instcmd_args;
+   }
+
 /* This could probably be a bit more complete, but I don't think
    that anyone would want to expand the package name more than
    once in a single command invocation anyhow. */
@@ -355,18 +364,15 @@ switch(pkgmgr)
 if (percent = strstr(rawinstcmd, "%s"))
    {
    *percent = '\0';
-   strncpy(instcmd, rawinstcmd, CF_BUFSIZE*2);
-   ptr = instcmd + strlen(rawinstcmd);
-   *percent = '%';
-   strcat(ptr, name);
-   ptr += strlen(name);
    percent += 2;
-   strncpy(ptr, percent, (CF_BUFSIZE*2 - (ptr-instcmd)));
+   instcmd_tail_len = strlen(percent);
+   --instcmd_args;
    }
-else
-   {
-   sprintf(instcmd, "%s %s", rawinstcmd, name);
-   }
+
+instcmd_len = strlen(rawinstcmd);
+
+/* Copy the initial part of the install command */
+strncpy(instcmd, rawinstcmd, CF_BUFSIZE*2);
 
 snprintf(OUTPUT,CF_BUFSIZE,"Installing package(s) %s using %s\n", name, instcmd);
 CfLog(cfinform,OUTPUT,"");
@@ -378,17 +384,67 @@ if ((pp = cfpopen(instcmd, "r")) == NULL)
    return 0;
    }
 
-while (!feof(pp))
-   {
-   ReadLine(line,CF_BUFSIZE-1,pp);
-   snprintf(OUTPUT,CF_BUFSIZE,"%s:package install: %s\n",VPREFIX,line);
-   CfLog(cfinform,OUTPUT,"");
-   }
+  /* Loop over packages until we reach the maximum number that cfpopen
+     can take */
 
-if (cfpclose(pp) != 0)
+ptr = name;
+
+while (NULL != ptr)
    {
-   Verbose("Package install command was not successful\n");
-   return 0;
+   arg_ptr = &instcmd[instcmd_len];
+   
+   for (package_args = instcmd_args;(package_args < CF_MAXSHELLARGS) && (NULL != ptr);package_args++)
+      {
+      next_ptr = strchr(ptr, ' ');
+      if (next_ptr)
+         {
+         *next_ptr = '\0';
+         }
+      
+      arg_len = strlen(ptr);
+      *arg_ptr++ = ' ';
+      strncpy(arg_ptr, ptr, &instcmd[CF_BUFSIZE*2] - arg_ptr);
+      arg_ptr += arg_len;
+      
+      if (next_ptr)
+         {
+         *next_ptr++ = ' ';
+         }
+      
+      ptr = next_ptr;
+      }
+   
+   if (arg_ptr != &instcmd[instcmd_len])
+      {      
+      /* Have a full command line, so append the tail, if necessary,
+         and run it */
+      
+      if (instcmd_tail_len > 0)
+         {
+         strncpy(arg_ptr, percent, &instcmd[CF_BUFSIZE*2] - arg_ptr);
+         }
+      
+      Verbose("Installing package group using %s\n", instcmd);
+      
+      if ((pp = cfpopen(instcmd, "r")) == NULL)
+         {
+         Verbose("Could not execute package install command\n");
+         /* Return that the package is still not installed */
+         return 0;
+         }
+      
+      while (!feof(pp))
+         {
+         ReadLine(line,CF_BUFSIZE-1,pp);
+         snprintf(OUTPUT,CF_BUFSIZE,"Package install: %s\n",line);
+         }
+      
+      if (cfpclose(pp) != 0)
+         {
+         Verbose("Package install command was not successful\n");
+         return 0;
+         }
+      }
    }
 
 return 1;
@@ -397,9 +453,10 @@ return 1;
 /*********************************************************************/
 
 int RemovePackage(char *name, enum pkgmgrs pkgmgr)
+
 {
- Verbose("Package removal not yet implemented");
- return 1;
+Verbose("Package removal not yet implemented");
+return 1;
 }
 
 /*********************************************************************/
