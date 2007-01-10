@@ -468,7 +468,7 @@ void InstallLinkChildrenItem  (char *from, char *to);
 void InstallRequiredPath (char *path, int freespace);
 void AppendMountable (char *path);
 void AppendUmount (char *path, char deldir, char delfstab, char force);
-void AppendMiscMount (char *from, char *onto, char *perm);
+void AppendMiscMount (char *from, char *onto, char * mode,char *opts);
 void AppendIgnore (char *path);
 void InstallPending (enum actions action);
 int EditFileExists (char *file);

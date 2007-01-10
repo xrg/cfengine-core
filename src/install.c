@@ -971,6 +971,7 @@ switch(GetCommAttribute(item))
            {/* just in case */
            DeleteItemList(MOUNTOPTLIST);
            }
+
         MOUNTOPTLIST = SplitStringAsItemList(value,',');
         
         for (op = MOUNTOPTLIST; op != NULL; op = next)
@@ -986,11 +987,6 @@ switch(GetCommAttribute(item))
            else if (strcmp(op->name,"ro") == 0)
               {
               MOUNTMODE='o';
-              DeleteItem(&MOUNTOPTLIST,op);
-              }
-           else if (strcmp(op->name,"bg") == 0)
-              {
-              /* backgrounded mounts can hang MountFileSystems */
               DeleteItem(&MOUNTOPTLIST,op);
               }
            /* validate other mount options here */
@@ -2412,7 +2408,7 @@ VUNMOUNTTOP = ptr;
 
 /*******************************************************************/
 
-void AppendMiscMount(char *from,char *onto,char *opts)
+void AppendMiscMount(char *from,char *onto,char *mode, char *opts)
 
 { struct MiscMount *ptr;
   char ebuff[CF_EXPANDSIZE]; 
@@ -2447,6 +2443,11 @@ if ((ptr->onto = strdup(ebuff)) == NULL)
 if ((ptr->options = strdup(opts)) == NULL)
    {
    FatalError("Memory Allocation failed for AppendMiscMount() #4");
+   }
+
+if ((ptr->mode = strdup(mode)) == NULL)
+   {
+   FatalError("Memory Allocation failed for AppendMiscMount() #4a");
    }
 
 if ((ptr->classes = strdup(CLASSBUFF)) == NULL)
@@ -2629,31 +2630,36 @@ switch (action)
 
    case misc_mounts:
        if ((strlen(MOUNTFROM) != 0) && (strlen(MOUNTONTO) != 0))
-          {
+          {          
+          struct Item *op;
+          
+          /* Reconcat list */
+          
+          for (op = MOUNTOPTLIST; op != NULL; op = op->next)
+             {
+             if (BufferOverflow(MOUNTOPTS,op->name))
+                {
+                printf(" culprit: InstallPending, skipping miscmount %s %s\n",
+                       MOUNTFROM, MOUNTONTO);
+                return;
+                }
+             
+             strcat(MOUNTOPTS,op->name);
+             strcat(MOUNTOPTS,",");
+             }
+          
+          MOUNTOPTS[strlen(MOUNTOPTS)-1] = '\0';
+
           switch (MOUNTMODE)
              {
-             case 'o': strcpy(MOUNTOPTS,"ro");
+             case 'o':
+                 AppendMiscMount(MOUNTFROM,MOUNTONTO,"ro",MOUNTOPTS);
                  break;
-             case 'w': strcpy(MOUNTOPTS,"rw");
+             case 'w':
+                 AppendMiscMount(MOUNTFROM,MOUNTONTO,"rw",MOUNTOPTS);
                  break;
              default:  printf("Install pending, miscmount, shouldn't happen\n");
                  MOUNTOPTS[0] = '\0'; /* no mount mode set! */
-             }
-          
-          if (strlen(MOUNTOPTS) != 0)     /* valid mount mode set */
-             { struct Item *op;
-             for (op = MOUNTOPTLIST; op != NULL; op = op->next)
-                {
-                if (BufferOverflow(MOUNTOPTS,op->name))
-                   {
-                   printf(" culprit: InstallPending, skipping miscmount %s %s\n",
-                          MOUNTFROM, MOUNTONTO);
-                   return;
-                   }
-                strcat(MOUNTOPTS,",");
-                strcat(MOUNTOPTS,op->name);
-                }
-             AppendMiscMount(MOUNTFROM,MOUNTONTO,MOUNTOPTS);
              }
           }
        

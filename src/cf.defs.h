@@ -1530,6 +1530,7 @@ struct MiscMount
    char *scope;
    char *from;
    char *onto;
+   char *mode;
    char *options;
    char *classes;
    int ifelapsed;

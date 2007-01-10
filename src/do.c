@@ -1936,7 +1936,7 @@ for (mp = VMOUNTABLES; mp != NULL; mp=mp->next)
       }
 
    /* HvB: Bas van der Vlies */
-   if ( mp->readonly ) 
+   if (mp->readonly) 
       {
       strcpy(mountmode, "ro");
       }
@@ -2033,11 +2033,11 @@ for (mp = VMISCMOUNT; mp != NULL; mp=mp->next)
    if (!IsItemIn(VMOUNTED,mtpt))
       {
       MakeDirectoriesFor(maketo,'n');
-      AddToFstab(host,mountdir,mp->onto,NULL,mp->options,false);
+      AddToFstab(host,mountdir,mp->onto,mp->mode,mp->options,false);
       }
    else
       {
-      AddToFstab(host,mountdir,mp->onto,NULL,mp->options,true);
+      AddToFstab(host,mountdir,mp->onto,mp->mode,mp->options,true);
       }
    }
 }
@@ -3083,7 +3083,7 @@ if (mode == NULL)
    mode = "rw";
    }
 
-if (options != NULL)
+if ((options != NULL) && (strlen(options) > 0))
    {
    opts = options;
    }
@@ -3301,20 +3301,28 @@ if (MatchStringInFstab(mountpt))
     }
  else
     {
-    if ((fp = fopen(VFSTAB[VSYSTEMHARDCLASS],"a")) == NULL)
+    struct Item *filelist = NULL;
+
+    if (! LoadItemList(&filelist,VFSTAB[VSYSTEMHARDCLASS]))
        {
-       snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open %s for appending\n",VFSTAB[VSYSTEMHARDCLASS]);
-       CfLog(cferror,OUTPUT,"fopen");
-       ReleaseCurrentLock();
+       snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open %s!\n",VFSTAB[VSYSTEMHARDCLASS]);
+       CfLog(cferror,OUTPUT,"");
        return;
        }
+    
+    NUMBEROFEDITS = 0;
     
     snprintf(OUTPUT,CF_BUFSIZE*2,"Adding filesystem to %s\n",VFSTAB[VSYSTEMHARDCLASS]);
     CfLog(cfinform,OUTPUT,"");
     snprintf(OUTPUT,CF_BUFSIZE*2,"%s\n",fstab);
     CfLog(cfinform,OUTPUT,"");
-    fprintf(fp,"%s\n",fstab);
-    fclose(fp);
+
+    if (!IsItemIn(filelist,fstab))
+       {
+       AppendItem(&filelist,fstab,NULL);
+       }
+
+    SaveItemList(filelist,VFSTAB[VSYSTEMHARDCLASS],VREPOSITORY);
     
     chmod(VFSTAB[VSYSTEMHARDCLASS],DEFAULTSYSTEMMODE);
     }

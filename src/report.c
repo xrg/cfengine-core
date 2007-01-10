@@ -660,7 +660,7 @@ printf ("\nDEFINED MISC MOUNTABLES\n\n");
 
 for (ptr = VMISCMOUNT; ptr != NULL; ptr=ptr->next)
    {
-   printf("%s on %s (%s)\n",ptr->from,ptr->onto,ptr->options);
+   printf("%s on %s mode = (%s) options (%s)\n",ptr->from,ptr->onto,ptr->mode,ptr->options);
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    }
 }
