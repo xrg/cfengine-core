@@ -33,6 +33,7 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
+/* Alter this code at your peril. Berkeley DB is *very* sensitive to errors. */
 
 /***************************************************************/
 

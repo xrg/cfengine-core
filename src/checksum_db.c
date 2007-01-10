@@ -33,6 +33,8 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
+/* Alter this code at your peril. Berkeley DB is *very* sensitive to errors. */
+
 /***************************************************************/
 
 int ChecksumChanged(char *filename,unsigned char digest[EVP_MAX_MD_SIZE+1],int warnlevel,int refresh,char type)
@@ -282,10 +284,8 @@ if ((errno = dbp->get(dbp,NULL,key,&value,0)) == 0)
    }
 else
    {
-   printf("Debug - read failed on %s,%s\n",(char *)key->data,(char *)key->data+CF_CHKSUMKEYOFFSET);
-   snprintf(OUTPUT,CF_BUFSIZE,"Checksum read failed: %s",db_strerror(errno));
-   CfLog(cferror,OUTPUT,"db->get");
-
+   Debug("Checksum read failed: %s",db_strerror(errno));
+   DeleteChecksumKey(key);
    return false;
    }
 }
@@ -331,6 +331,7 @@ if ((errno = dbp->del(dbp,NULL,key,0)) != 0)
    CfLog(cferror,"","db_store");
    }
 
+DeleteChecksumKey(key);
 Debug("DELETED %s\n",name);
 }
 
