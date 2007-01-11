@@ -1248,6 +1248,8 @@ char *OBS[CF_OBSERVABLES] =
    "SAUTH",
    "SSYNCH",
    "SGET",
+   "VERSION",
+   "SOPENDIR",
    NULL
    };
 

@@ -93,6 +93,7 @@ if (CONN->sd == CF_NOT_CONNECTED)
       return false;
       }
 
+   /*CheckRemoteVersion();*/
    AUTHENTICATED = true;
    return true;
    }
@@ -101,7 +102,10 @@ else
    Debug("Server connection to %s already open on %d\n",server,CONN->sd);
    }
 
-AUTHENTICATED = true; 
+AUTHENTICATED = true;
+
+/*CheckRemoteVersion();*/
+
 return true; 
 }
 
@@ -137,7 +141,7 @@ int cf_rstat(char *file,struct stat *buf,struct Image *ip,char *stattype)
   int ret,tosend,cipherlen;
   time_t tloc;
 
-  Debug("cf_rstat(%s,%s)\n",file,stattype);
+Debug("cf_rstat(%s,%s)\n",file,stattype);
 memset(recvbuffer,0,CF_BUFSIZE); 
 
 if (strlen(file) > CF_BUFSIZE-30)

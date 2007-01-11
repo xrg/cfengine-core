@@ -490,3 +490,41 @@ free(out);
 return true; 
 }
 
+/*********************************************************************/
+
+void CheckRemoteVersion()
+
+{ char sendbuffer[CF_BUFSIZE];
+  char recvbuffer[CF_BUFSIZE];
+  int tosend;
+
+Debug("CheckRemoteVersion\n");  
+snprintf(sendbuffer,CF_BUFSIZE,"VERSION");
+tosend = strlen(sendbuffer);
+
+if (SendTransaction(CONN->sd,sendbuffer,tosend,CF_DONE) == -1)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Transmission failed while checking version");
+   CfLog(cfinform,OUTPUT,"send");
+   return;
+   }
+
+if (ReceiveTransaction(CONN->sd,recvbuffer,NULL) == -1)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Reply failed while checking version");
+   CfLog(cfinform,OUTPUT,"send");
+   CONN->protoversion = 0;
+   return;
+   }
+
+if (BadProtoReply(recvbuffer))
+   {
+   CONN->protoversion = 0;
+   return;
+   }
+else
+   {
+   CONN->protoversion = 1;
+   return;
+   }
+}

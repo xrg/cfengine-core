@@ -116,13 +116,6 @@ if (stat(file,&statbuf) == -1)
    return false;
    }
 
-if ((EDITFILESIZE != 0) && (statbuf.st_size > EDITFILESIZE))
-   {
-   snprintf(OUTPUT,CF_BUFSIZE*2,"File %s is bigger than the limit <editfilesize>\n",file);
-   CfLog(cfinform,OUTPUT,"");
-   return(false);
-   }
-
 strcpy(new,file);
 strcat(new,CF_EDITED);
 

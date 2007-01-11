@@ -90,7 +90,7 @@ switch (role)
 ReadDB(dbp,databuf,&q,sizeof(q));
 
 lastseen = (double)now - q.q;
-newq.q = lastseen;                              /* Last seen is now-then */
+newq.q = (double)now;                   /* Last seen is now-then */
 newq.expect = SWAverage(lastseen,q.expect);
 delta2 = (lastseen - q.expect)*(lastseen - q.expect);
 newq.var = SWAverage(delta2,q.var);

@@ -547,6 +547,8 @@ enum PROTOS
    cfd_sauth,
    cfd_ssynch,
    cfd_sget,
+   cfd_version,
+   cfd_sopendir,
    cfd_bad
    };
 
@@ -1316,6 +1318,7 @@ struct cfagent_connection
    {
    int sd;
    int trust;
+   int protoversion;
    int family;     /* AF_INET or AF_INET6 */
    char localip[CF_MAX_IP_LEN];
    char remoteip[CF_MAX_IP_LEN];

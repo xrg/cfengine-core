@@ -197,10 +197,9 @@ void ShowLastSeen()
   DB *dbp;
   DBC *dbcp;
   DB_ENV *dbenv = NULL;
-  time_t now = time(NULL);
+  double now = (double)time(NULL),average = 0, var = 0;;
   char name[CF_BUFSIZE],hostname[CF_BUFSIZE];
   struct QPoint entry;
-  double average = 0;
   int ret;
   
 snprintf(name,CF_BUFSIZE-1,"%s/%s",CFWORKDIR,CF_LASTDB_FILE);
@@ -240,7 +239,8 @@ memset(&entry, 0, sizeof(entry));
 
 while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
    {
-   time_t then;
+   double then;
+   time_t fthen;
    char tbuf[CF_BUFSIZE];
 
    memcpy(&then,value.data,sizeof(then));
@@ -249,18 +249,20 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
    if (value.data != NULL)
       {
       memcpy(&entry,value.data,sizeof(entry));
-      then = (time_t)entry.q;
+      then = entry.q;
       average = (double)entry.expect;
+      var = (double)entry.var;
       }
    else
       {
       continue;
       }
 
-   snprintf(tbuf,CF_BUFSIZE-1,"%s",ctime(&then));
+   fthen = (time_t)then;
+   snprintf(tbuf,CF_BUFSIZE-1,"%s",ctime(&fthen));
    tbuf[strlen(tbuf)-1] = '\0';
 
-   printf("%s at [%s] i.e. not seen for !%.2f! hours; <delta_t> = {%.2f} hours\n",hostname,tbuf,((double)(now-then))/3600.0,average/3600.0);
+   printf("%s at [%s] i.e. not seen for !%.2f! hours; Av %.2f +/- %.2f hours\n",hostname,tbuf,((double)(now-then))/3600.0,average/3600.0,sqrt(var)/3600.0);
    }
  
 dbcp->c_close(dbcp);

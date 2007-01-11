@@ -904,6 +904,7 @@ int KeyAuthentication (struct Image *ip);
 int BadProtoReply  (char *buf);
 int OKProtoReply  (char *buf);
 int FailedProtoReply  (char *buf);
+void CheckRemoteVersion(void);
 
 /* read.c */
 int ReadLine (char *buff, int size, FILE *fp);

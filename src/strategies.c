@@ -115,8 +115,11 @@ for (sp = VSTRATEGYLIST; sp != NULL; sp=sp->next)
    {
    if (strcmp(alias,sp->name) == 0)
       {
-      AppendItem(&(sp->strategies),buf,ebuff);
-      AddInstallable(buf);
+      if (!IsItemIn(sp->strategies,buf))
+         {
+         AppendItem(&(sp->strategies),buf,ebuff);
+         AddInstallable(buf);
+         }
       }
    }
 }
@@ -143,9 +146,11 @@ for (ptr = VSTRATEGYLIST; ptr != NULL; ptr=ptr->next)
       }
    
    Verbose("\n  Evaluating strategy %s (type=%c)\n",ptr->name,ptr->type);
+
    if (ptr->strategies)
       {
       total = count = 0;
+      
       for (ip = ptr->strategies; ip !=NULL; ip=ip->next)
          {
          count++;
@@ -172,10 +177,10 @@ for (ptr = VSTRATEGYLIST; ptr != NULL; ptr=ptr->next)
       
       fluct = drand48();
       
-      count = 1;
+      count = 0;
       cum = 0.0;
       
-      for (ip = ptr->strategies; ip !=NULL; ip=ip->next)
+      for (ip = ptr->strategies; ip != NULL; ip=ip->next)
          {
          Verbose("    Class %d: %f-%f\n",count,cumulative[count-1],cumulative[count]);
          if ((cumulative[count-1] < fluct) && (fluct < cumulative[count]))

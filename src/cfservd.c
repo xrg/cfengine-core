@@ -1257,6 +1257,17 @@ switch (GetCommand(recvbuffer))
        DoExec(conn,sendbuffer,args);
        Terminate(conn->sd_reply);
        return false;
+
+   case cfd_version:
+
+       if (! conn->id_verified)
+          {
+          RefuseAccess(conn,sendbuffer,0,recvbuffer);
+          }
+
+       snprintf(conn->output,CF_BUFSIZE,"OK: %s",VERSION);
+       SendTransaction(conn->sd_reply,conn->output,0,CF_DONE);
+       return conn->id_verified;
        
    case cfd_cauth:
 
