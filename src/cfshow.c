@@ -197,7 +197,8 @@ void ShowLastSeen()
   DB *dbp;
   DBC *dbcp;
   DB_ENV *dbenv = NULL;
-  double now = (double)time(NULL),average = 0, var = 0;;
+  double now = (double)time(NULL),average = 0, var = 0;
+  double ticksperhr = (double)CF_TICKS_PER_HOUR;
   char name[CF_BUFSIZE],hostname[CF_BUFSIZE];
   struct QPoint entry;
   int ret;
@@ -241,7 +242,7 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
    {
    double then;
    time_t fthen;
-   char tbuf[CF_BUFSIZE];
+   char tbuf[CF_BUFSIZE],addr[CF_BUFSIZE];
 
    memcpy(&then,value.data,sizeof(then));
    strcpy(hostname,(char *)key.data);
@@ -258,11 +259,27 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       continue;
       }
 
-   fthen = (time_t)then;
+   fthen = (time_t)then;                            /* format date */
    snprintf(tbuf,CF_BUFSIZE-1,"%s",ctime(&fthen));
-   tbuf[strlen(tbuf)-1] = '\0';
+   tbuf[strlen(tbuf)-9] = '\0';                     /* Chop off second and year */
 
-   printf("%s at [%s] i.e. not seen for !%.2f! hours; Av %.2f +/- %.2f hours\n",hostname,tbuf,((double)(now-then))/3600.0,average/3600.0,sqrt(var)/3600.0);
+   if (strlen(hostname+1) > 15)
+      {
+      snprintf(addr,15,"...%s",hostname+strlen(hostname)-10); /* ipv6 */
+      }
+   else
+      {
+      snprintf(addr,15,"%s",hostname+1);
+      }
+   
+   printf("IP %c %25.25s %15.15s  @ [%s] not seen for (%.2f) hrs, Av %.2f +/- %.2f hrs\n",
+          *hostname,
+          IPString2Hostname(hostname+1),
+          addr,
+          tbuf,
+          ((double)(now-then))/ticksperhr,
+          average/ticksperhr,
+          sqrt(var)/ticksperhr);
    }
  
 dbcp->c_close(dbcp);
@@ -369,11 +386,7 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    return;
    }
 
-#ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,lockdb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
-#else
 if ((errno = dbp->open(dbp,NULL,lockdb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
-#endif
    {
    printf("Couldn't open checksum database %s\n",lockdb);
    perror("db_open");

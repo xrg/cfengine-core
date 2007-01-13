@@ -45,6 +45,7 @@ void LastSeen(char *hostname,enum roles role)
   time_t now = time(NULL);
   struct QPoint q,newq;
   double lastseen,delta2;
+  int lsea = -1;
 
 if (strlen(hostname) == 0)
    {
@@ -86,16 +87,43 @@ switch (role)
        break;
    }
 
+if (GetMacroValue(CONTEXTID,"LastSeenExpireAfter"))
+   {
+   lsea = atoi(GetMacroValue(CONTEXTID,"LastSeenExpireAfter"));
+   lsea *= CF_TICKS_PER_DAY;
+   }
 
-ReadDB(dbp,databuf,&q,sizeof(q));
+if (lsea < 0)
+   {
+   lsea = CF_WEEK;
+   }
+   
+if (ReadDB(dbp,databuf,&q,sizeof(q)))
+   {
+   lastseen = (double)now - q.q;
+   newq.q = (double)now;                   /* Last seen is now-then */
+   newq.expect = SWAverage(lastseen,q.expect);
+   delta2 = (lastseen - q.expect)*(lastseen - q.expect);
+   newq.var = SWAverage(delta2,q.var);
+   }
+else
+   {
+   lastseen = 0.0;
+   newq.q = (double)now;
+   newq.expect = 0.0;
+   newq.var = 0.0;
+   }
 
-lastseen = (double)now - q.q;
-newq.q = (double)now;                   /* Last seen is now-then */
-newq.expect = SWAverage(lastseen,q.expect);
-delta2 = (lastseen - q.expect)*(lastseen - q.expect);
-newq.var = SWAverage(delta2,q.var);
+if (lastseen > (double)lsea)
+   {
+   Verbose("Last seen %s expired\n",databuf);
+   DeleteDB(dbp,databuf);   
+   }
+else
+   {
+   WriteDB(dbp,databuf,&newq,sizeof(newq));
+   }
 
-WriteDB(dbp,databuf,&newq,sizeof(newq));   
 dbp->close(dbp,0);
 }
 
@@ -110,11 +138,12 @@ void CheckFriendConnections(int hours)
   DB *dbp;
   DBC *dbcp;
   DB_ENV *dbenv = NULL;
-  int ret, secs = 3600*hours, criterion;
-  time_t now = time(NULL),splaytime = 0,lsea = -1;
+  int ret, secs = CF_TICKS_PER_HOUR*hours, criterion;
+  time_t now = time(NULL),splaytime = 0,lsea = -1, tthen;
   char name[CF_BUFSIZE],hostname[CF_BUFSIZE];
   struct QPoint entry;
-  double then = 0.0, average = 0.0, var = 0.0,ticksperhour = (double)CF_TICKS_PER_HOUR;
+  double then = 0.0, average = 0.0, var = 0.0;
+  double ticksperhour = (double)CF_TICKS_PER_HOUR,ticksperday = (double)CF_TICKS_PER_DAY;
 
 if (GetMacroValue(CONTEXTID,"SplayTime"))
    {
@@ -162,6 +191,7 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
    memset(&entry, 0, sizeof(entry)); 
 
    memcpy(&then,value.data,sizeof(then));
+
    strcpy(hostname,(char *)key.data);
 
    if (value.data != NULL)
@@ -180,11 +210,11 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
 
    if (secs == 0)
       {
-      criterion = (now > then + splaytime + (int)(average+0.5));
+      criterion = (then + (int)(average+0.5) > now + splaytime);
       }
    else
       {
-      criterion = (now > then + splaytime + secs);
+      criterion = (then + secs > now + splaytime);
       }
    
    if (GetMacroValue(CONTEXTID,"LastSeenExpireAfter"))
@@ -207,20 +237,11 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       {
       criterion = false;
       }
-   
-   snprintf(OUTPUT,CF_BUFSIZE,"Host %s last at %s\ti.e. not seen for %.2f hours\n\t(Expected <delta_t> = %.2f secs (= %.2f hours) (Expires %d days)",hostname,ctime(&then),((double)(now-then))/ticksperhour,average,average/ticksperhour,lsea/3600/24);
 
-   if (now > lsea + then + splaytime)
-      {
-      snprintf(OUTPUT,CF_BUFSIZE*2,"INFO: Giving up on %s, last seen more than %d days ago at %s.",hostname,lsea/3600/24,ctime(&then));
-      CfLog(cferror,OUTPUT,"");
+   tthen = (time_t)then;
+
+   snprintf(OUTPUT,CF_BUFSIZE,"IP %36s last seen at [%s] not seen for !%.2f! hours; Av %.2f +/- %.2f hours\n",hostname,ctime(&tthen),((double)(now-then))/ticksperhour,average/ticksperhour,sqrt(var)/ticksperhour);
       
-      if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
-         {
-         CfLog(cferror,"","db_store");
-         }
-      }
-
    if (criterion)
       {
       CfLog(cferror,OUTPUT,"");
@@ -245,6 +266,7 @@ int ReadDB(DB *dbp,char *name,void *ptr,int size)
 { DBT *key,value;
   
 key = NewDBKey(name);
+memset(&value,0,sizeof(DBT));
 
 if ((errno = dbp->get(dbp,NULL,key,&value,0)) == 0)
    {
