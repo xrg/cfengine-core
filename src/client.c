@@ -331,7 +331,9 @@ CFDIR *cf_ropendir(char *dirname,struct Image *ip)
 
 { char sendbuffer[CF_BUFSIZE];
   char recvbuffer[CF_BUFSIZE];
-  int n, done=false;
+  char in[CF_BUFSIZE];
+  char out[CF_BUFSIZE];
+  int n, done=false, cipherlen = 0,plainlen = 0,tosend;
   CFDIR *cfdirh;
   char *sp;
 
@@ -353,9 +355,27 @@ cfdirh->cf_list = NULL;
 cfdirh->cf_listpos = NULL;
 cfdirh->cf_dirh = NULL;
 
-snprintf(sendbuffer,CF_BUFSIZE,"OPENDIR %s",dirname);
+if (ip->encrypt == 'y' && FULLENCRYPT)
+   {
+   if (CONN->session_key == NULL)
+      {
+      CfLog(cferror,"Cannot do encrypted copy without keys (use cfkey)","");
+      return NULL;
+      }
+   
+   snprintf(in,CF_BUFSIZE,"OPENDIR %s",dirname);
+   cipherlen = EncryptString(in,out,CONN->session_key,strlen(in)+1);
+   snprintf(sendbuffer,CF_BUFSIZE-1,"SOPENDIR %d",cipherlen);
+   memcpy(sendbuffer+CF_PROTO_OFFSET,out,cipherlen);
+   tosend = cipherlen+CF_PROTO_OFFSET;
+   }
+else
+   {
+   snprintf(sendbuffer,CF_BUFSIZE,"OPENDIR %s",dirname);
+   tosend = strlen(sendbuffer);
+   }
 
-if (SendTransaction(CONN->sd,sendbuffer,0,CF_DONE) == -1)
+if (SendTransaction(CONN->sd,sendbuffer,tosend,CF_DONE) == -1)
    {
    free((char *)cfdirh);
    return NULL;
@@ -377,6 +397,12 @@ while (!done)
    if (n == 0)
       {
       break;
+      }
+
+   if (ip->encrypt == 'y' && FULLENCRYPT)
+      {
+      memcpy(in,recvbuffer,n);
+      plainlen = DecryptString(in,recvbuffer,CONN->session_key,n);
       }
 
    if (FailedProtoReply(recvbuffer))

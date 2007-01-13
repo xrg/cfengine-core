@@ -112,6 +112,7 @@ int StatFile (struct cfd_connection *conn, char *sendbuffer, char *filename);
 void CfGetFile (struct cfd_get_arg *args);
 void CompareLocalChecksum (struct cfd_connection *conn, char *sendbuffer, char *recvbuffer);
 int CfOpenDirectory (struct cfd_connection *conn, char *sendbuffer, char *dirname);
+int CfSecOpenDirectory (struct cfd_connection *conn, char *sendbuffer, char *dirname);
 void Terminate (int sd);
 void DeleteAuthList (struct Auth *ap);
 int AllowedUser (char *user);
@@ -1390,6 +1391,52 @@ switch (GetCommand(recvbuffer))
        get_args.replyfile = filename;
        
        CfGetFile(&get_args);
+       return true;
+
+   case cfd_sopendir:
+
+       memset(buffer,0,CF_BUFSIZE);
+       sscanf(recvbuffer,"SOPENDIR %d",&len);
+
+       if (received != len+CF_PROTO_OFFSET)
+          {
+          Debug("Protocol error: %d\n",len);
+          RefuseAccess(conn,sendbuffer,0,recvbuffer);
+          return false;
+          }
+
+       if (conn->session_key == NULL)
+          {
+          RefuseAccess(conn,sendbuffer,0,recvbuffer);
+          return false;
+          }
+
+       memcpy(out,recvbuffer+CF_PROTO_OFFSET,len);
+       
+       plainlen = DecryptString(out,recvbuffer,conn->session_key,len);
+
+       if (strncmp(recvbuffer,"OPENDIR",7) !=0)
+          {
+          RefuseAccess(conn,sendbuffer,0,recvbuffer);
+          return true;
+          }
+
+       memset(filename,0,CF_BUFSIZE);
+       sscanf(recvbuffer,"OPENDIR %[^\n]",filename);
+       
+       if (! conn->id_verified)
+          {
+          RefuseAccess(conn,sendbuffer,0,recvbuffer);
+          return false;
+          }
+       
+       if (!AccessControl(filename,conn,true)) /* opendir don't care about privacy */
+          {
+          RefuseAccess(conn,sendbuffer,0,recvbuffer);
+          return false;   
+          }       
+       
+       CfSecOpenDirectory(conn,sendbuffer,filename);
        return true;
        
    case cfd_opendir:
@@ -3017,6 +3064,61 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
 strcpy(sendbuffer+offset,CFD_TERMINATOR);
 SendTransaction(conn->sd_reply,sendbuffer,offset+2+strlen(CFD_TERMINATOR),CF_DONE);
 Debug("END CfOpenDirectory(%s)\n",dirname);
+closedir(dirh);
+return 0;
+}
+
+/**************************************************************/
+
+int CfSecOpenDirectory(struct cfd_connection *conn,char *sendbuffer,char *dirname)
+
+{ DIR *dirh;
+  struct dirent *dirp;
+  int offset,cipherlen;
+  char out[CF_BUFSIZE];
+
+Debug("CfSecOpenDirectory(%s)\n",dirname);
+  
+if (*dirname != '/')
+   {
+   sprintf(sendbuffer,"BAD: request to access a non-absolute filename\n");
+   SendTransaction(conn->sd_reply,sendbuffer,0,CF_DONE);
+   return -1;
+   }
+
+if ((dirh = opendir(dirname)) == NULL)
+   {
+   Debug("cfengine, couldn't open dir %s\n",dirname);
+   snprintf(sendbuffer,CF_BUFSIZE,"BAD: cfengine, couldn't open dir %s\n",dirname);
+   SendTransaction(conn->sd_reply,sendbuffer,0,CF_DONE);
+   return -1;
+   }
+
+/* Pack names for transmission */
+
+memset(sendbuffer,0,CF_BUFSIZE);
+
+offset = 0;
+
+for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
+   {
+   if (strlen(dirp->d_name)+1+offset >= CF_BUFSIZE - CF_MAXLINKSIZE)
+      {
+      cipherlen = EncryptString(sendbuffer,out,CONN->session_key,offset+1);
+      SendTransaction(conn->sd_reply,out,cipherlen,CF_MORE);
+      offset = 0;
+      memset(sendbuffer,0,CF_BUFSIZE);
+      memset(out,0,CF_BUFSIZE);
+      }
+
+   strncpy(sendbuffer+offset,dirp->d_name,CF_MAXLINKSIZE);
+   offset += strlen(dirp->d_name) + 1;     /* + zero byte separator */
+   }
+ 
+strcpy(sendbuffer+offset,CFD_TERMINATOR);
+cipherlen = EncryptString(sendbuffer,out,CONN->session_key,offset+2+strlen(CFD_TERMINATOR));
+SendTransaction(conn->sd_reply,sendbuffer,cipherlen,CF_DONE);
+Debug("END CfSecOpenDirectory(%s)\n",dirname);
 closedir(dirh);
 return 0;
 }

@@ -164,6 +164,7 @@ extern char PRESERVETIMES;
 extern char TRUSTKEY;
 extern char FORK;
 
+extern short FULLENCRYPT;
 extern short SKIPIDENTIFY;
 extern short COMPATIBILITY_MODE;
 extern short LINKSILENT;

@@ -12,6 +12,8 @@ cfshow_SOURCES =							\
 	globals.c							\
 	popen.c								\
 	log.c								\
+	ipname.c							\
+	sockaddr.c							\
 	errors.c							\
 	filenames.c							\
 	checksums.c							\
@@ -29,6 +31,7 @@ cfagent_SOURCES =							\
         report.c                                                        \
 	client.c							\
 	ip.c								\
+	ipname.c							\
 	instrument.c							\
 	process.c							\
 	ifconf.c							\
@@ -102,6 +105,7 @@ cfservd_SOURCES =							\
 	install.c							\
 	sockaddr.c							\
 	ip.c								\
+	ipname.c							\
 	instrument.c							\
 	report.c							\
 	cfparse.y							\
@@ -179,6 +183,7 @@ cfrun_SOURCES =								\
 	popen.c								\
 	net.c								\
 	ip.c								\
+	ipname.c							\
 	instrument.c							\
 	checksums.c							\
 	classes.c							\
