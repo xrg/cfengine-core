@@ -32,6 +32,7 @@
 	Support for old Berkeley DB APIs abandoned.
 
 	Encryption level added for full encryption of opendir traffic.
+	Must set FullEncryption = ( true ) in control for compatability
 	
 2.1.21
 

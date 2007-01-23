@@ -357,46 +357,34 @@ for (ip = procdata; ip != NULL; ip=ip->next)
       
       Debug("Matched proc[%s]\n",ip->name);
 
-      one_space = false;
-      
       for (sp = ip->name; *sp != '\0'; sp++) /* if first field contains alpha, skip */
          {
          while (true)
             {
-            while (!isdigit((int)*sp) && (*sp != '\0'))
-               {
-               if (*sp == ' ')
-                  {
-                  one_space = true;
-                  }
-               sp++;
-               }
-
-            if (!one_space)
-               {
-               while(*sp != ' ' && *sp != '\t')
+            /* HvB If start with alpha then skip it till the first space */
+	    if (isalnum((int)*sp))
+	       {
+	       while ((*sp != ' ') && (*sp != '\0'))
                   {
                   sp++;
-                  }
-               }
-            
-            if ((sp > ip->name) && isalnum((int)*(sp-1))) /* Username contains number*/
-               {
-               sp++;
-               }
-            else
-               {
-               break;
-               }
-            }
+		  }
+	       }
+
+	       /* skip spaces and tabs */
+               while ((*sp == ' ') && (*sp == '\t'))
+	          {
+		  sp++;
+		  }
+             break;
+             } /* end while */
   
          sscanf(sp,"%d",&pid);
-         
+	
          if (pid != -1)
             {
             break;
             }
-         }  
+         } /* end for */
       
       if (pid == -1)
          {
