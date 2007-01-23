@@ -463,7 +463,7 @@ if (!FuzzyHostParse(argv[0],argv[1]))
 
 Debug("Parsing fuzzy host succeeded\n");
 
-if (FuzzyHostMatch(argv[0],argv[1],VDEFAULTBINSERVER.name) == 0)
+if (FuzzyHostMatch(argv[0],argv[1],VUQNAME) == 0)
    {
    Debug("SRDEBUG SUCCESS!\n");
    strcpy(value,CF_ANYCLASS);
