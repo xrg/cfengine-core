@@ -2573,6 +2573,7 @@ The meaning of each of these lines is described below.
 * excludecopy::                 
 * excludelinks::                
 * ExpireAfter::                 
+* FullEncryption::              
 * homepattern::                 
 * HostnameKeys::                
 * IfElapsed::                   
@@ -3591,7 +3592,7 @@ would define a pattern which was only valid when
 @c SUBSECTION
 @c .....................................................
 
-@node ExpireAfter, homepattern, excludelinks, control
+@node ExpireAfter, FullEncryption, excludelinks, control
 @subsection ExpireAfter
 
 If you change the value of this parameter, it should be one of the
@@ -3636,7 +3637,33 @@ as options of the form @code{expireafter=10}.
 @c SUBSECTION
 @c .....................................................
 
-@node homepattern, HostnameKeys, ExpireAfter, control
+@node FullEncryption, homepattern, ExpireAfter, control
+@subsection FullEncryption
+
+From version 2.1.22. This is false for protocol compatability with older
+servers.
+
+If this is set to true, directory filenames are encrypted in addition
+to file contents. If transferred data are not especially secret or
+travel over public networks this is a waste of CPU time. In high
+security environments it provides full privacy of data transmission.
+
+@cartouche
+
+@w{}
+@smallexample
+ 
+ FullEncryption = ( true )
+
+@end smallexample
+@end cartouche
+
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node homepattern, HostnameKeys, FullEncryption, control
 @subsection HomePattern
 @cindex Home path
 @cindex Path to home directories

@@ -1,4 +1,8 @@
 2.1.22 
+
+	IMPORTANT: cfshow output formatting changes
+	           database internal format changes
+	
 	Package manager debian patch added to iterate over packages
 	under installation.
 	
@@ -16,8 +20,18 @@
 
 	ChecksumDatabase variable is not longer used.
 
+	The checksum code has been rewritten with a new database model, so all
+	old data will be rebuilt. The checksum database has been renamed.
+
 	Rationalization of internal instrumentation and better integration
 	with cfenvd.
+
+	Bug fixes to miscmounts. Editing was broken with respect to editfilesize variable.
+	Option processing for miscmounts was also broken.
+
+	Support for old Berkeley DB APIs abandoned.
+
+	Encryption level added for full encryption of opendir traffic.
 	
 2.1.21
 

@@ -1117,18 +1117,6 @@ int v,r,m,f;
     *fix = f;
 }
 
-/*********************************************************************/
-/* RPM Version string comparison logic
- *
- * ParseEVR and rpmvercmp are taken directly from the rpm 4.1 sources.
- * ParseEVR is taken from the parseEVR routine in lib/rpmds.c and rpmvercmp
- * is taken from llib/rpmvercmp.c
- */
-
-/* compare alpha and numeric segments of two versions */
-/* return 1: a is newer than b */
-/*        0: a and b are the same version */
-/*       -1: b is newer than a */
 
 /*********************************************************************/
 /* Gentoo Portage                                                    */
@@ -1141,186 +1129,199 @@ int PortagePackageCheck(char *package,char *version,enum cmpsense cmp)
   struct Item *ebuild;
   enum cmpsense result;
   int match = 0;
-
-  /* Yes, it's an ugly python one-liner that does something beautiful */
-  snprintf(VBUFF,CF_BUFSIZE,"/usr/bin/python -c 'import portage, re, sys; "
-    "[sys.stdout.write(re.sub(\"\\w*?\\-\\w*?\\/([a-zA-Z0-9_+]|\\-(?![0-9]))*\\-\", \"\", package, 1) + "
-    "\"\\n\") for package in portage.db[\"/\"][\"vartree\"].dbapi.match("
-    "\"%s\")]'", package);
-
-  if ((pp = cfpopen(VBUFF, "r")) == NULL)
-  {
-    Verbose("Could not execute the equery command.  Assuming package not installed.\n");
-    return 0;
-  }
-
-  while(!feof(pp))
-  {
-    *VBUFF = '\0';
-
-    ReadLine(VBUFF,CF_BUFSIZE,pp);
-
-    if (*VBUFF != '\0')
-    {
-      AppendItem(&ebuildlist,VBUFF,"");
-    }
-  }
- 
-  /* Non-zero exit status means that we could not find the package, so
-   * zero the list and bail. */
-
-  if (cfpclose(pp) != 0)
-  {
-    DeleteItemList(ebuildlist);
-    ebuildlist = NULL;
-  }
- 
-  if (ebuildlist == NULL)
-  {
-    Verbose("Package %s not installed.\n", package);
-    return 0;
-  }
- 
-
-  Verbose("PortageCheckPackage(): Requested %s %s %s\n", package, CMPSENSETEXT[cmp],(version[0] ? version : "ANY"));
-
-  /* If no version was specified, just return 1, because if we got this far
-   * some package by that name exists. */
-
-  if (!version[0])
-  {
-    DeleteItemList(ebuildlist);
-    return 1;
-  }
-
-  /* The rule here will be: if any package in the list matches, then the
-   * first one to match wins, and we bail out. */
-
   char *comparehead = NULL;
   char *comparetail = NULL;
   char *installedhead = NULL;
   char *installedtail = NULL;
 
-  for (ebuild = ebuildlist; ebuild != NULL; ebuild=ebuild->next)
-  {
-    char *ebuildver;
-    ebuildver = ebuild->name;
+  /* Yes, it's an ugly python one-liner that does something beautiful */
 
-    Verbose("PortageCheckPackage(): Trying installed version %s\n", ebuildver);
+snprintf(VBUFF,CF_BUFSIZE,"/usr/bin/python -c 'import portage, re, sys; "
+         "[sys.stdout.write(re.sub(\"\\w*?\\-\\w*?\\/([a-zA-Z0-9_+]|\\-(?![0-9]))*\\-\", \"\", package, 1) + "
+         "\"\\n\") for package in portage.db[\"/\"][\"vartree\"].dbapi.match("
+         "\"%s\")]'", package);
 
-    /* Start out assuming the comparison will be equal. */
-    result = cmpsense_eq;
+if ((pp = cfpopen(VBUFF, "r")) == NULL)
+   {
+   Verbose("Could not execute the equery command.  Assuming package not installed.\n");
+   return 0;
+   }
 
-    comparehead = version;
-    comparetail = NULL;
-    installedhead = ebuildver;
-    installedtail = NULL;
-
-    /* Iterate over version portions delimited by `-' */
-    while (result == cmpsense_eq)
-    {
-      if (*comparehead == '\0' && *installedhead == '\0')
+while(!feof(pp))
+   {
+   *VBUFF = '\0';
+   
+   ReadLine(VBUFF,CF_BUFSIZE,pp);
+   
+   if (*VBUFF != '\0')
       {
+      AppendItem(&ebuildlist,VBUFF,"");
+      }
+   }
+
+/* Non-zero exit status means that we could not find the package, so
+ * zero the list and bail. */
+
+if (cfpclose(pp) != 0)
+   {
+   DeleteItemList(ebuildlist);
+   ebuildlist = NULL;
+   }
+
+if (ebuildlist == NULL)
+   {
+   Verbose("Package %s not installed.\n", package);
+   return 0;
+   }
+
+
+Verbose("PortageCheckPackage(): Requested %s %s %s\n", package, CMPSENSETEXT[cmp],(version[0] ? version : "ANY"));
+
+/* If no version was specified, just return 1, because if we got this far
+ * some package by that name exists. */
+
+if (!version[0])
+   {
+   DeleteItemList(ebuildlist);
+   return 1;
+   }
+
+/* The rule here will be: if any package in the list matches, then the
+ * first one to match wins, and we bail out. */
+
+
+for (ebuild = ebuildlist; ebuild != NULL; ebuild=ebuild->next)
+  {
+  char *ebuildver;
+  ebuildver = ebuild->name;
+  
+  Verbose("PortageCheckPackage(): Trying installed version %s\n", ebuildver);
+  
+  /* Start out assuming the comparison will be equal. */
+  result = cmpsense_eq;
+  
+  comparehead = version;
+  comparetail = NULL;
+  installedhead = ebuildver;
+  installedtail = NULL;
+  
+  /* Iterate over version portions delimited by `-' */
+  while (result == cmpsense_eq)
+     {
+     if (*comparehead == '\0' && *installedhead == '\0')
+        {
         /* No substrings remain, break from while */
         break;
-      }
-      else if (*comparehead == '\0')
-      {
+        }
+     else if (*comparehead == '\0')
+        {
         /* Installed version has more version substrings than given */
         result = cmpsense_gt;
-      }
-      else if (*installedhead == '\0')
-      {
+        }
+     else if (*installedhead == '\0')
+        {
         /* Installed version has less version substrings than given */
         result = cmpsense_lt;
-      }
-      else
-      {
+        }
+     else
+        {
         /* New substring in both to test */
         comparetail = strchr(comparehead, '-');
         installedtail = strchr(installedhead, '-');
-
+        
         /* Throw a \0 over the `-' so just the substring is tested.
          * If the tail is less than the head, we must be at last substring,
          * as no `-'s were found (so the `\0' is already there) */
         if (comparetail > comparehead) *comparetail = '\0';
         if (installedtail > installedhead) *installedtail = '\0';
-
+        
         switch (rpmvercmp(installedhead, comparehead))
-        {
-        case 1:
-          result = cmpsense_gt;
-          break;
-        case -1:
-          result = cmpsense_lt;
-          break;
-        }
-
+           {
+           case 1:
+               result = cmpsense_gt;
+               break;
+           case -1:
+               result = cmpsense_lt;
+               break;
+           }
+        
         if (comparetail > comparehead)
-        {
-          /* Restore `-' at tail and move head just past it */
-          *comparetail = '-';
-          comparehead = comparetail + 1;
-        }
+           {
+           /* Restore `-' at tail and move head just past it */
+           *comparetail = '-';
+           comparehead = comparetail + 1;
+           }
         else
-        {
-          /* Move head to the end of the line (`\0') */
-          comparehead = comparehead + strlen(comparehead);
-        }
+           {
+           /* Move head to the end of the line (`\0') */
+           comparehead = comparehead + strlen(comparehead);
+           }
         if (installedtail > installedhead)
-        {
-          /* Restore `-' at tail and move head just past it */
-          *installedtail = '-';
-          installedhead = installedtail + 1;
-        }
+           {
+           /* Restore `-' at tail and move head just past it */
+           *installedtail = '-';
+           installedhead = installedtail + 1;
+           }
         else
-        {
-          /* Move head to the end of the line (`\0') */
-          installedhead = installedhead + strlen(installedhead);
+           {
+           /* Move head to the end of the line (`\0') */
+           installedhead = installedhead + strlen(installedhead);
+           }
         }
-      }
-    }
-
-    Verbose("Comparison result: %s\n",CMPSENSETEXT[result]);
-   
-    switch(cmp)
-    {
-    case cmpsense_gt:
-      match = (result == cmpsense_gt);
-      break;
-    case cmpsense_ge:
-      match = (result == cmpsense_gt || result == cmpsense_eq);
-      break;
-    case cmpsense_lt:
-      match = (result == cmpsense_lt);
-      break;
-    case cmpsense_le:
-      match = (result == cmpsense_lt || result == cmpsense_eq);
-      break;
-    case cmpsense_eq:
-      match = (result == cmpsense_eq);
-      break;
-    case cmpsense_ne:
-      match = (result != cmpsense_eq);
-      break;
-    }
-   
-    /* If we find a match, just return it now, and don't bother checking
-     * other ebuilds */
-   
-    if (match)
-    {
-      DeleteItemList(ebuildlist);
-      return 1;
-    }
+     }
+  
+  Verbose("Comparison result: %s\n",CMPSENSETEXT[result]);
+  
+  switch(cmp)
+     {
+     case cmpsense_gt:
+         match = (result == cmpsense_gt);
+         break;
+     case cmpsense_ge:
+         match = (result == cmpsense_gt || result == cmpsense_eq);
+         break;
+     case cmpsense_lt:
+         match = (result == cmpsense_lt);
+         break;
+     case cmpsense_le:
+         match = (result == cmpsense_lt || result == cmpsense_eq);
+         break;
+     case cmpsense_eq:
+         match = (result == cmpsense_eq);
+         break;
+     case cmpsense_ne:
+         match = (result != cmpsense_eq);
+         break;
+     }
+  
+  /* If we find a match, just return it now, and don't bother checking
+   * other ebuilds */
+  
+  if (match)
+     {
+     DeleteItemList(ebuildlist);
+     return 1;
+     }
   }
- 
-  /* if we manage to make it out of the loop, we did not find a match. */
 
-  DeleteItemList(ebuildlist);
-  return 0;
+/* if we manage to make it out of the loop, we did not find a match. */
 
+DeleteItemList(ebuildlist);
+return 0;
 }
+
+/*********************************************************************/
+/* RPM Version string comparison logic
+ *
+ * ParseEVR and rpmvercmp are taken directly from the rpm 4.1 sources.
+ * ParseEVR is taken from the parseEVR routine in lib/rpmds.c and rpmvercmp
+ * is taken from llib/rpmvercmp.c
+ */
+
+/* compare alpha and numeric segments of two versions */
+/* return 1: a is newer than b */
+/*        0: a and b are the same version */
+/*       -1: b is newer than a */
 
 int rpmvercmp(const char * a, const char * b)
 
