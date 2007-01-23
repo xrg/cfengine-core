@@ -3116,8 +3116,8 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    }
  
 strcpy(sendbuffer+offset,CFD_TERMINATOR);
-cipherlen = EncryptString(sendbuffer,out,CONN->session_key,offset+2+strlen(CFD_TERMINATOR));
-SendTransaction(conn->sd_reply,sendbuffer,cipherlen,CF_DONE);
+cipherlen = EncryptString(sendbuffer,out,conn->session_key,offset+2+strlen(CFD_TERMINATOR));
+SendTransaction(conn->sd_reply,out,cipherlen,CF_DONE);
 Debug("END CfSecOpenDirectory(%s)\n",dirname);
 closedir(dirh);
 return 0;

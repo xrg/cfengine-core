@@ -430,7 +430,7 @@ while (!done)
          cfdirh->cf_listpos = cfdirh->cf_list;
          return cfdirh;
          }
-      
+
       AppendItem(&(cfdirh->cf_list),sp,NULL);
       
       while(*sp != '\0')

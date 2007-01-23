@@ -928,6 +928,11 @@ if (OptionIs(CONTEXTID,"LastSeen",false))
    LASTSEEN = false;
    }
 
+if (OptionIs(CONTEXTID,"FullEncrypt",true))
+   {
+   FULLENCRYPT = true;
+   }
+
 if (OptionIs(CONTEXTID,"Inform",true))
    {
    INFORM = true;
