@@ -1214,6 +1214,7 @@ enum pkgmgrs    /* Available package managers to query in packages: */
    pkgmgr_dpkg,
    pkgmgr_sun,
    pkgmgr_aix,
+   pkgmgr_portage,
    pkgmgr_none
    };
 

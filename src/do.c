@@ -2727,6 +2727,9 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
      case pkgmgr_aix:
        match = AIXPackageCheck(ptr->name, ptr->ver, ptr->cmp);
        break;
+     case pkgmgr_portage:
+       match = PortagePackageCheck(ptr->name, ptr->ver, ptr->cmp);
+       break;
      default:
        /* UGH!  This should *never* happen.  GetPkgMgr() and
         * InstallPackagesItem() should have caught this before it

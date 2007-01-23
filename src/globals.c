@@ -754,6 +754,7 @@ char *OBS[CF_OBSERVABLES] =
       "dpkg",   /* aptget ? */
       "sun",    /* pkginfo/pkgadd/pkgrm */
       "aix",    /* lslpp/installp */
+      "portage",
       NULL
       };
 
