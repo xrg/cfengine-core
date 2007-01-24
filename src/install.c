@@ -638,9 +638,7 @@ switch(GetCommAttribute(item))
 
 void HandleOptionalImageAttribute(char *item)
 
-{ char value[CF_BUFSIZE],ebuff[CF_EXPANDSIZE];
-
-value[0] = '\0';
+{ char value[CF_EXPANDSIZE],ebuff[CF_EXPANDSIZE];
 
 ExpandVarstring(item,ebuff,NULL);
 

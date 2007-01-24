@@ -399,8 +399,8 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
       
       if (strstr(temp,"$"))
          {
-         Debug("Nested variables");
-         increment = strlen(temp)-3;
+         Debug("Nested variables - %s\n",temp);
+         increment = strlen(temp);
          ExpandVarstring(temp,currentitem,"");
          CheckVarID(currentitem);
 
@@ -790,7 +790,6 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
                 
                 strcat(buffer,env);
                 Debug("Expansion gave (%s), len = %d\n",buffer,strlen(currentitem));             
-
                 break;
                 }
 
@@ -808,12 +807,13 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
          }
       
       sp += increment;
-
       currentitem[0] = '\0';
       }
    }
- 
- return varstring;
+
+
+Debug("Returning varstring (%s)\n",buffer);
+return varstring;
 }
 
 /*********************************************************************/
