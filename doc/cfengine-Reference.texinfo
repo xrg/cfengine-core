@@ -8379,7 +8379,6 @@ decoupling between client request and service provision.
 
 @cartouche
 
-@w{}
 @smallexample
 
   methods:
@@ -8387,7 +8386,7 @@ decoupling between client request and service provision.
      @var{class}::
 
 
-       @var{function_name}(@var{parameters or none})
+      @var{function_name}(@var{parameters or none})
 
       action=@file{filename}                
 
@@ -8396,7 +8395,7 @@ decoupling between client request and service provision.
       returnvars=@var{comma separated variable list or void}
       returnclasses=@var{comma separated class list}
 
-      server=@var{ip-host/*}
+      server=@var{ip-host/localhost/none}
 
       forcereplyto=@var{ip address}
 
@@ -8407,8 +8406,8 @@ decoupling between client request and service provision.
 
 @end smallexample
 @end cartouche
-Most of these functions will be familiar from other cfengine commands. Some special ones are
-noted below:
+Most of these functions will be familiar from other cfengine
+commands. Some special ones are noted below:
 
 @table @code
 @item action
@@ -8436,9 +8435,15 @@ defined in the child process, else they remain undefined. The class may
 still be defined in the child by independent local definitions.
 @end table
 
-The function arguments may not be empty, but a null value
-can be transmitted with a dummy value, e.g. @code{Function(null)} or @code{function(void)}.
-Here is an example method call.
+If the server is set to @code{localhost}, the method will be
+evaluated on the local machine. If the server is set of @code{none},
+the method will not be executed at all.
+@cindex none in server
+@vindex none
+
+The function arguments may not be empty, but a null value can be
+transmitted with a dummy value, e.g. @code{Function(null)} or
+@code{function(void)}.  Here is an example method call.
 
 @smallexample
 

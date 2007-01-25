@@ -123,7 +123,13 @@ void DispatchNewMethod(struct Method *ptr)
 serverip[0] = clientip[0] = '\0';
   
 for (ip = ptr->servers; ip != NULL; ip=ip->next)
-   {  
+   {
+   if (strcmp(ip->name,"none") == 0)
+      {
+      Verbose("Method with no server is a no-op\n");
+      continue;
+      }
+   
    if ((strcmp(ip->name,"localhost") == 0) || (strcmp(ip->name,"::1") == 0) || (strcmp(ip->name,"127.0.0.1") == 0))
       {
       Verbose("\nDispatch method localhost:%s to %s/rpc_in\n",ptr->name,VLOCKDIR);
