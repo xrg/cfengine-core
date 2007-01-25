@@ -141,20 +141,20 @@ return false;
 int CheckVarID(char *var)
 
 { char *sp;
- 
+
+ Debug("CheckVarID(%s)\n",var);
+
 for (sp = var; *sp != '\0'; sp++)
    {
    if (isalnum((int)*sp))
       {
       }
-   else if ((*sp == '_')
-            || (*sp == '[') || (*sp == ']')
-            || (*sp == '.'))
+   else if ((*sp == '_') || (*sp == '[') || (*sp == ']') || (*sp == '.'))
       {
       }
    else
       {
-      snprintf(OUTPUT,CF_BUFSIZE,"Non identifier character (%c) in variable identifier (%s)",*sp,var);
+      snprintf(OUTPUT,CF_BUFSIZE,"Non identifier character (%c) in variable identifier (%s) - ",*sp,var);
       yyerror(OUTPUT);
       return false;
       }
@@ -234,11 +234,13 @@ char *ExtractInnerVarString(char *str,char *substr)
 { char *sp;
   int bracks = 1;
 
-Debug1("ExtractInnerVarString(%s) - syntax verify\n",str);
+Debug1("ExtractInnerVarString( %s ) - syntax verify\n",str);
 
 memset(substr,0,CF_BUFSIZE);
- 
-for (sp = str; *sp != '\0' ; sp++)       /* check for varitems */
+
+/* Start this from after the opening $( */
+
+for (sp = str+2; *sp != '\0' ; sp++)       /* check for varitems */
    {
    switch (*sp)
       {
@@ -268,7 +270,7 @@ for (sp = str; *sp != '\0' ; sp++)       /* check for varitems */
    
    if (bracks == 0)
       {
-      strncpy(substr,str,sp-str);
+      strncpy(substr,str+2,sp-str-2);
       Debug("Returning substring value %s\n",substr);
       return substr;
       }
@@ -330,7 +332,7 @@ for (sp = str; *sp != '\0' ; sp++)       /* check for varitems */
  if (bracks != 0)
     {
     yyerror("Incomplete variable syntax or bracket mismatch");
-    return false;
+    return NULL;
     }
  
  return sp-1;
@@ -353,14 +355,19 @@ if (string == 0 || strlen(string) == 0)
    return false;
    }
 
-Debug("ExpandVarstring(%s)\n",string);
+Debug("ExpandVarstring( %s )\n",string);
 
 for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
    {
+   if (*sp == '\0')
+      {
+      break;
+      }
+
    currentitem[0] = '\0';
-
+   
    sscanf(sp,"%[^$]",currentitem);
-
+   
    if (ExpandOverflow(buffer,currentitem))
       {
       FatalError("Can't expand varstring");
@@ -368,6 +375,11 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
    
    strcat(buffer,currentitem);
    sp += strlen(currentitem);
+
+   if (*sp == '\0')
+      {
+      break;
+      }
 
    if (*sp == '$')
       {
@@ -379,438 +391,423 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
          case '{': 
                    varstring = '}';
                    break;
+
          default: 
                    strcat(buffer,"$");
                    continue;
          }
-      sp++;
       }
 
    currentitem[0] = '\0';
 
-   if (*sp == '\0')
+   temp[0] = '\0';
+   ExtractInnerVarString(sp,temp);
+   
+   if (strstr(temp,"$"))
       {
-      break;
+      Debug("Nested variables - %s\n",temp);
+
+      ExpandVarstring(temp,currentitem,"");
+      CheckVarID(currentitem);
       }
    else
       {
-      temp[0] = '\0';
-      ExtractInnerVarString(++sp,temp);
-      
-      if (strstr(temp,"$"))
-         {
-         Debug("Nested variables - %s\n",temp);
-         increment = strlen(temp);
-         ExpandVarstring(temp,currentitem,"");
-         CheckVarID(currentitem);
-
-         /* forward the cursor to the point right after the stuff
-            already processed */
-         sp += strlen(temp);
-
-         /* later we add strlen(currentitem) for non-nested stuff
-            so we must correct this here */
-         sp -= strlen(currentitem);
-         }
-      else
-         {
-         strncpy(currentitem,temp,CF_BUFSIZE-1);
-         increment = strlen(currentitem);
-         }
-
-      Debug("Scanning variable %s\n",currentitem);
-      
-      switch (ScanVariable(currentitem))
-         {
-         case cfversionvar:
-             if (ExpandOverflow(buffer,VERSION))
-                {
-                FatalError("Can't expand varstring");
-                }
-             strcat(buffer,VERSION);
-	     break;
-             
-         case cffaculty:
-         case cfsite:
-             if (VFACULTY[0] == '\0')
-                {
-                yyerror("faculty/site undefined variable");
-                }
-             
-             if (ExpandOverflow(buffer,VFACULTY))
-                {
-                FatalError("Can't expand varstring");
-                }
-             strcat(buffer,VFACULTY);
-             break;
-             
-             
-         case cfhost:
-             if (strlen(VUQNAME) == 0)
-                {
-                if (ExpandOverflow(buffer,VDEFAULTBINSERVER.name))
-                   {
-                   FatalError("Can't expand varstring");
-                   }
-                strcat(buffer,VDEFAULTBINSERVER.name);
-                }
-             else
-                {
-                if (ExpandOverflow(buffer,VUQNAME))
-                   {
-                   FatalError("Can't expand varstring");
-                   }
-                strcat(buffer,VUQNAME);
-                }
-             break;
-             
-         case cffqhost:
-             if (ExpandOverflow(buffer,VFQNAME))
-                {
-                FatalError("Can't expand varstring");
-                }
-             strcat(buffer,VFQNAME);
-             break;
-             
-         case cfnetmask:
-             if (ExpandOverflow(buffer,VNETMASK))
-                {
-                FatalError("Can't expand varstring");
-                }
-             strcat(buffer,VNETMASK);
-             break;
-             
-             
-         case cfipaddr:
-             if (ExpandOverflow(buffer,VIPADDRESS))
-                {
-                FatalError("Can't expand varstring");
-                }
-             strcat(buffer,VIPADDRESS);
-             break;
-             
-         case cfbinserver:
-             if (ACTION != links && ACTION != required)
-                {
-                yyerror("Inappropriate use of variable binserver");
-                FatalError("Bad variable");
-                }
-             
-             if (ExpandOverflow(buffer,"$(binserver)"))
-                {
-                FatalError("Can't expand varstring");
-                }
-             strcat(buffer,"$(binserver)");
-             break;
-             
-         case cfsysadm:
-             if (VSYSADM[0] == '\0')
-                {
-                yyerror("sysadm undefined variable");
-                }
-             
-             if (ExpandOverflow(buffer,VSYSADM))
-                {
-                FatalError("Can't expand varstring");
-                }
-             strcat(buffer,VSYSADM);
-             break;
-             
-         case cfdomain:
-             if (VDOMAIN[0] == '\0')
-                {
-                yyerror("domain undefined variable");
-                }
-             
-             if (ExpandOverflow(buffer,VDOMAIN))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             strcat(buffer,ToLowerStr(VDOMAIN));
-             break;
-             
-         case cfnfstype:
-             if (ExpandOverflow(buffer,VNFSTYPE))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             strcat(buffer,VNFSTYPE);
-             break;
-             
-         case cftimezone:
-             if (VTIMEZONE == NULL)
-                {
-                yyerror("timezone undefined variable");
-                }
-             
-             if (ExpandOverflow(buffer,VTIMEZONE->name))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             strcat(buffer,VTIMEZONE->name);
-             break;
-             
-         case cfclass:
-             if (ExpandOverflow(buffer,CLASSTEXT[VSYSTEMHARDCLASS]))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             strcat(buffer,CLASSTEXT[VSYSTEMHARDCLASS]);
-             break;
-             
-         case cfarch:
-             if (ExpandOverflow(buffer,VARCH))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             strcat(buffer,VARCH);
-             break;
-             
-         case cfarch2:
-             if (ExpandOverflow(buffer,VARCH2))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             strcat(buffer,VARCH2);
-             break;
-             
-             
-         case cfdate:
-             
-             if ((tloc = time((time_t *)NULL)) == -1)
-                {
-                snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't read system clock\n");
-                CfLog(cferror,"Couldn't read clock","time");
-                }
-             
-             if (ExpandOverflow(buffer,ctime(&tloc)))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             else
-                {
-                strcat(buffer,Space2Score(ctime(&tloc)));
-                Chop(buffer);
-                }
-             
-             break;
-             
-         case cfyear:
-             if (ExpandOverflow(buffer,VYEAR))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             else
-                {
-                strcat(buffer,VYEAR);
-                }
-             break;
-             
-         case cfmonth:
-             if (ExpandOverflow(buffer,VMONTH))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             else
-                {
-                strcat(buffer,VMONTH);
-                }
-             break;
-             
-         case cfday:
-             if (ExpandOverflow(buffer,VDAY))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             else
-                {
-                strcat(buffer,VDAY);
-                }
-             break;
-         case cfhr:
-             if (ExpandOverflow(buffer,VHR))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             else
-                {
-                strcat(buffer,VHR);
-                }
-             break;
-             
-         case cfmin:
-             if (ExpandOverflow(buffer,VMINUTE))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             else
-                {
-                strcat(buffer,VMINUTE);
-                }
-             break;
-             
-         case cfallclass:
-             if (strlen(ALLCLASSBUFFER) == 0)
-                {
-                snprintf(name,CF_MAXVARSIZE,"$(%s)",currentitem);
-                strcat(buffer,name);
-                }
-             
-             if (ExpandOverflow(buffer,ALLCLASSBUFFER))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             strcat(buffer,ALLCLASSBUFFER);
-             break;
-             
-         case cfspc:
-             if (ExpandOverflow(buffer," "))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             strcat(buffer," ");
-             break;
-             
-         case cftab:
-             if (ExpandOverflow(buffer," "))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             strcat(buffer,"\t");
-             break;
-             
-         case cflf:
-             if (ExpandOverflow(buffer," "))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             strcat(buffer,"\012");
-             break;
-             
-         case cfcr:
-             if (ExpandOverflow(buffer," "))
-                { 
-                FatalError("Can't expandvarstring");
-                }
-             strcat(buffer,"\015");
-             break;
-             
-         case cfn:
-             if (ExpandOverflow(buffer," "))
-                { 
-                FatalError("Can't expandvarstring");
-                }
-             strcat(buffer,"\n");
-             break;
-             
-         case cfdblquote:
-             if (ExpandOverflow(buffer," "))
-                { 
-                FatalError("Can't expandvarstring");
-                }
-             strcat(buffer,"\"");
-             break;
-         case cfquote:
-             if (ExpandOverflow(buffer," "))
-                { 
-                FatalError("Can't expandvarstring");
-                }
-             strcat(buffer,"\'");
-             break;
-
-	 case cfcolon:
-             if (ExpandOverflow(buffer," "))
-                { 
-                FatalError("Can't expandvarstring");
-                }
-             strcat(buffer,":");
-             break;
-
-             
-         case cfdollar:
-             
-             if (!PARSING)
-                {
-                if (ExpandOverflow(buffer," "))
-                   { 
-                   FatalError("Can't expandvarstring");
-                   }
-                strcat(buffer,"$");
-                }
-             else
-                {
-                if (ExpandOverflow(buffer,"$(dollar)"))
-                   { 
-                   FatalError("Can't expandvarstring");
-                   }
-                strcat(buffer,"$(dollar)");
-                }
-             break;
-             
-             
-         case cfrepchar:
-             if (ExpandOverflow(buffer," "))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             len = strlen(buffer);
-             buffer[len] = REPOSCHAR;
-             buffer[len+1] = '\0';
-             break;
-
-         case cfrepos:
-             if (VREPOSITORY != NULL)
-                {
-                if (ExpandOverflow(buffer,VREPOSITORY))
-                   {
-                   FatalError("Can't expandvarstring");
-                   }
-                strcat(buffer,VREPOSITORY);
-                }
-             break;
-             
-         case cflistsep:
-             if (ExpandOverflow(buffer,""))
-                {
-                FatalError("Can't expandvarstring");
-                }
-             len = strlen(buffer);
-             buffer[len] = LISTSEPARATOR;
-             buffer[len+1] = '\0';
-             break;
-             
-         default:
-             
-             if ((env = GetMacroValue(CONTEXTID,currentitem)) != NULL)
-                {
-                if (ExpandOverflow(buffer,env))
-                   {
-                   FatalError("Can't expandvarstring");
-                   }
-                
-                strcat(buffer,env);
-                Debug("Expansion gave (%s), len = %d\n",buffer,strlen(currentitem));             
-                break;
-                }
-
-             Debug("Currently non existent variable $(%s)\n",currentitem);
-             
-             if (varstring == '}')
-                {
-                snprintf(name,CF_MAXVARSIZE,"${%s}",currentitem);
-                }
-             else
-                {
-                snprintf(name,CF_MAXVARSIZE,"$(%s)",currentitem);
-                }
-             strcat(buffer,name);
-         }
-      
-      sp += increment;
-      currentitem[0] = '\0';
+      strncpy(currentitem,temp,CF_BUFSIZE-1);
       }
-   }
 
+   increment = strlen(currentitem)+strlen("()");
+   Debug("Scanning variable %s\n",currentitem);
+   
+   switch (ScanVariable(currentitem))
+      {
+      case cfversionvar:
+          if (ExpandOverflow(buffer,VERSION))
+             {
+             FatalError("Can't expand varstring");
+             }
+          strcat(buffer,VERSION);
+          break;
+          
+      case cffaculty:
+      case cfsite:
+          if (VFACULTY[0] == '\0')
+             {
+             yyerror("faculty/site undefined variable");
+             }
+          
+          if (ExpandOverflow(buffer,VFACULTY))
+             {
+             FatalError("Can't expand varstring");
+             }
+          strcat(buffer,VFACULTY);
+          break;
+          
+          
+      case cfhost:
+          if (strlen(VUQNAME) == 0)
+             {
+             if (ExpandOverflow(buffer,VDEFAULTBINSERVER.name))
+                {
+                FatalError("Can't expand varstring");
+                }
+             strcat(buffer,VDEFAULTBINSERVER.name);
+             }
+          else
+             {
+             if (ExpandOverflow(buffer,VUQNAME))
+                {
+                FatalError("Can't expand varstring");
+                }
+             strcat(buffer,VUQNAME);
+             }
+          break;
+          
+      case cffqhost:
+          if (ExpandOverflow(buffer,VFQNAME))
+             {
+             FatalError("Can't expand varstring");
+             }
+          strcat(buffer,VFQNAME);
+          break;
+          
+      case cfnetmask:
+          if (ExpandOverflow(buffer,VNETMASK))
+             {
+             FatalError("Can't expand varstring");
+             }
+          strcat(buffer,VNETMASK);
+          break;
+          
+          
+      case cfipaddr:
+          if (ExpandOverflow(buffer,VIPADDRESS))
+             {
+             FatalError("Can't expand varstring");
+             }
+          strcat(buffer,VIPADDRESS);
+          break;
+          
+      case cfbinserver:
+          if (ACTION != links && ACTION != required)
+             {
+             yyerror("Inappropriate use of variable binserver");
+             FatalError("Bad variable");
+             }
+          
+          if (ExpandOverflow(buffer,"$(binserver)"))
+             {
+             FatalError("Can't expand varstring");
+             }
+          strcat(buffer,"$(binserver)");
+          break;
+          
+      case cfsysadm:
+          if (VSYSADM[0] == '\0')
+             {
+             yyerror("sysadm undefined variable");
+             }
+          
+          if (ExpandOverflow(buffer,VSYSADM))
+             {
+             FatalError("Can't expand varstring");
+             }
+          strcat(buffer,VSYSADM);
+          break;
+          
+      case cfdomain:
+          if (VDOMAIN[0] == '\0')
+             {
+             yyerror("domain undefined variable");
+             }
+          
+          if (ExpandOverflow(buffer,VDOMAIN))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          strcat(buffer,ToLowerStr(VDOMAIN));
+          break;
+          
+      case cfnfstype:
+          if (ExpandOverflow(buffer,VNFSTYPE))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          strcat(buffer,VNFSTYPE);
+          break;
+          
+      case cftimezone:
+          if (VTIMEZONE == NULL)
+             {
+             yyerror("timezone undefined variable");
+             }
+          
+          if (ExpandOverflow(buffer,VTIMEZONE->name))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          strcat(buffer,VTIMEZONE->name);
+          break;
+          
+      case cfclass:
+          if (ExpandOverflow(buffer,CLASSTEXT[VSYSTEMHARDCLASS]))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          strcat(buffer,CLASSTEXT[VSYSTEMHARDCLASS]);
+          break;
+          
+      case cfarch:
+          if (ExpandOverflow(buffer,VARCH))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          strcat(buffer,VARCH);
+          break;
+          
+      case cfarch2:
+          if (ExpandOverflow(buffer,VARCH2))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          strcat(buffer,VARCH2);
+          break;
+          
+          
+      case cfdate:
+          
+          if ((tloc = time((time_t *)NULL)) == -1)
+             {
+             snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't read system clock\n");
+             CfLog(cferror,"Couldn't read clock","time");
+             }
+          
+          if (ExpandOverflow(buffer,ctime(&tloc)))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          else
+             {
+             strcat(buffer,Space2Score(ctime(&tloc)));
+             Chop(buffer);
+             }
+          
+          break;
+          
+      case cfyear:
+          if (ExpandOverflow(buffer,VYEAR))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          else
+             {
+             strcat(buffer,VYEAR);
+             }
+          break;
+          
+      case cfmonth:
+          if (ExpandOverflow(buffer,VMONTH))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          else
+             {
+             strcat(buffer,VMONTH);
+             }
+          break;
+          
+      case cfday:
+          if (ExpandOverflow(buffer,VDAY))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          else
+             {
+             strcat(buffer,VDAY);
+             }
+          break;
+          
+      case cfhr:
+          if (ExpandOverflow(buffer,VHR))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          else
+             {
+             strcat(buffer,VHR);
+             }
+          break;
+          
+      case cfmin:
+          if (ExpandOverflow(buffer,VMINUTE))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          else
+             {
+             strcat(buffer,VMINUTE);
+             }
+          break;
+          
+      case cfallclass:
+          if (strlen(ALLCLASSBUFFER) == 0)
+             {
+             snprintf(name,CF_MAXVARSIZE,"$(%s)",currentitem);
+             strcat(buffer,name);
+             }
+          
+          if (ExpandOverflow(buffer,ALLCLASSBUFFER))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          strcat(buffer,ALLCLASSBUFFER);
+          break;
+          
+      case cfspc:
+          if (ExpandOverflow(buffer," "))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          strcat(buffer," ");
+          break;
+          
+      case cftab:
+          if (ExpandOverflow(buffer," "))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          strcat(buffer,"\t");
+          break;
+          
+      case cflf:
+          if (ExpandOverflow(buffer," "))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          strcat(buffer,"\012");
+          break;
+          
+      case cfcr:
+          if (ExpandOverflow(buffer," "))
+             { 
+             FatalError("Can't expandvarstring");
+             }
+          strcat(buffer,"\015");
+          break;
+          
+      case cfn:
+          if (ExpandOverflow(buffer," "))
+             { 
+             FatalError("Can't expandvarstring");
+             }
+          strcat(buffer,"\n");
+          break;
+          
+      case cfdblquote:
+          if (ExpandOverflow(buffer," "))
+             { 
+             FatalError("Can't expandvarstring");
+             }
+          strcat(buffer,"\"");
+          break;
+      case cfquote:
+          if (ExpandOverflow(buffer," "))
+             { 
+             FatalError("Can't expandvarstring");
+             }
+          strcat(buffer,"\'");
+          break;
+          
+      case cfcolon:
+          if (ExpandOverflow(buffer," "))
+             { 
+             FatalError("Can't expandvarstring");
+             }
+          strcat(buffer,":");
+          break;
+          
+          
+      case cfdollar:
+          
+          if (!PARSING)
+             {
+             if (ExpandOverflow(buffer," "))
+                { 
+                FatalError("Can't expandvarstring");
+                }
+             strcat(buffer,"$");
+             }
+          else
+             {
+             if (ExpandOverflow(buffer,"$(dollar)"))
+                { 
+                FatalError("Can't expandvarstring");
+                }
+             strcat(buffer,"$(dollar)");
+             }
+          break;
+          
+          
+      case cfrepchar:
+          if (ExpandOverflow(buffer," "))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          len = strlen(buffer);
+          buffer[len] = REPOSCHAR;
+          buffer[len+1] = '\0';
+          break;
+          
+      case cfrepos:
+          if (VREPOSITORY != NULL)
+             {
+             if (ExpandOverflow(buffer,VREPOSITORY))
+                {
+                FatalError("Can't expandvarstring");
+                }
+             strcat(buffer,VREPOSITORY);
+             }
+          break;
+          
+      case cflistsep:
+          if (ExpandOverflow(buffer,""))
+             {
+             FatalError("Can't expandvarstring");
+             }
+          len = strlen(buffer);
+          buffer[len] = LISTSEPARATOR;
+          buffer[len+1] = '\0';
+          break;
+          
+      default:
+          
+          if ((env = GetMacroValue(CONTEXTID,currentitem)) != NULL)
+             {
+             if (ExpandOverflow(buffer,env))
+                {
+                FatalError("Can't expandvarstring");
+                }
+             
+             strcat(buffer,env);
+             Debug("Expansion gave (%s), len = %d\n",buffer,strlen(currentitem));             
+             break;
+             }
+          
+          Debug("Currently non existent variable $(%s)\n",currentitem);
+          
+          if (varstring == '}')
+             {
+             snprintf(name,CF_MAXVARSIZE,"${%s}",currentitem);
+             }
+          else
+             {
+             snprintf(name,CF_MAXVARSIZE,"$(%s)",currentitem);
+             }
+          strcat(buffer,name);
+      }
+   
+   sp += increment;
+   currentitem[0] = '\0';
+   }
 
 Debug("Returning varstring (%s)\n",buffer);
 return varstring;
