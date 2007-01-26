@@ -338,11 +338,6 @@ if (OptionIs(CONTEXTID,"CheckIdent", true))
    CHECK_RFC931 = true;
    }
 
-if (OptionIs(CONTEXTID,"LastSeen",false))
-   {
-   LASTSEEN = false;
-   }
-
 if (OptionIs(CONTEXTID,"DenyBadClocks", false)) 
    {
    DENYBADCLOCKS = false;
@@ -1890,11 +1885,7 @@ if ((conn->trust == false) || IsFuzzyItemIn(SKIPVERIFY,MapAddress(conn->ipaddr))
       conn->uid = pw->pw_uid;
       }
 
-   if (LASTSEEN)
-      {
-      LastSeen(dns_assert,cf_accept);
-      }
-   
+   LastSeen(dns_assert,cf_accept);
    return true;
    }
  

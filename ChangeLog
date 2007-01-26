@@ -2,26 +2,31 @@
 
 	IMPORTANT: cfshow output formatting changes
 	           database internal format changes
+
+	Rewritten the checksum subsystem to allow for future development
+	and improvements and tidied the fragile Berkeley DB code. Cfservd
+	no longer caches checksums, as this causes update issues. This could
+	lead to additional load.
+
+	The checksum code has been rewritten with a new database model, so all
+	old data will be rebuilt. The checksum database has been renamed.
 	
+	ChecksumDatabase variable is not longer used.
+
 	Package manager debian patch added to iterate over packages
 	under installation.
+	
+	Package manager for AIX code added, courtesy of Anthony Rassin
+
+	Package manager for Gentoo added, courtesy of Eric Searcy 
 	
 	ShowState(rootprocs), ShowState(otherprocs) added for
 	better process reporting
 
-	Package manager for AIX code added, courtesy of Anthony Rassin
+	General code reorganization for better separation of concerns, looking
+	towards cfengine 3.
 
-	Rewritten the checksum subsystem to allow for future development
-	and improvements and tidied the fragile Berkeley DB code.
-
-	Code reorganization for better separation of concerns.
-
-	cfconvert removed. Change of future strategy.
-
-	ChecksumDatabase variable is not longer used.
-
-	The checksum code has been rewritten with a new database model, so all
-	old data will be rebuilt. The checksum database has been renamed.
+	cfconvert removed. Change of future strategy for cfengine 3 migration.
 
 	Rationalization of internal instrumentation and better integration
 	with cfenvd.
@@ -34,7 +39,7 @@
 	Encryption level added for full encryption of opendir traffic.
 	Must set FullEncryption = ( true ) in control for compatability
 
-	server=none now signals noop in method execution.
+	server=none now signals noop in method execution and copy.
 
         Varstring expansion bug for nested variables.
 	

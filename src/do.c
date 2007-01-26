@@ -2417,7 +2417,12 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
       ExpandVarstring(ip->destination,destination,NULL);
       DeleteMacro(CONTEXTID,"this");
 
-
+      if (strcmp(server,"none") == 0)
+         {
+         Verbose("Server none is a no-op\n");
+         continue;
+         }
+      
       if (strcmp(listserver,server) != 0)  /* group together similar hosts so */
          {                                /* can can do multiple transactions */
          continue;                        /* on one connection */
