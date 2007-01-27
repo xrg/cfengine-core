@@ -275,7 +275,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    
    if (mp = IsDefinedMethod(ip->name,digeststring))
       {
-      if (IsItemIn(mp->servers,"localhost") || IsItemIn(mp->servers,IPString2Hostname(server)) || IsItemIn(mp->servers,VIPADDRESS) || IsItemIn(mp->servers,server) || IsItemIn(mp->servers,VFQNAME))
+      if (IsItemIn(mp->servers,"localhost") || IsItemIn(mp->servers,IPString2Hostname(server)) || IsItemIn(mp->servers,IPString2UQHostname(server)) || IsItemIn(mp->servers,VIPADDRESS) || IsItemIn(mp->servers,server) || IsItemIn(mp->servers,VFQNAME) || IsItemIn(mp->servers,VUQNAME))
          {
          if (state == CF_METHODREPLY)
             {
@@ -299,6 +299,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       else
          {
          Verbose("No local method match on this host for received request (%s) for host %s=%s=%s in\n",dirp->d_name,server,IPString2Hostname(server),VIPADDRESS);
+
          if (VERBOSE)
             {
             DebugListItemList(mp->servers);

@@ -63,9 +63,7 @@ for (ip = VRPCPEERLIST; ip != NULL; ip = ip->next)
       strcat(client,VDOMAIN);
       }
    
-   Verbose(" Hailing remote peer %s\n",client);
-   
-   if (strcmp(client,VFQNAME) == 0)
+   if ((strcmp(client,VFQNAME) == 0) || (strcmp(client,VUQNAME) == 0))
       {
       /* Do not need to do this to ourselves ..  */
       continue;

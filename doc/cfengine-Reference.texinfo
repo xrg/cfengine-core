@@ -2590,6 +2590,7 @@ The meaning of each of these lines is described below.
 * netmask::                     
 * nonalphanumfiles::            
 * nfstype::                     
+* PortageInstallCommand::       
 * repchar::                     
 * repository::                  
 * RPMcommand::                  
@@ -4169,7 +4170,7 @@ ascii codes less than 32 and greater than 126.
 @c SUBSECTION
 @c .....................................................
 
-@node nfstype, repchar, nonalphanumfiles, control
+@node nfstype, PortageInstallCommand, nonalphanumfiles, control
 @subsection nfstype
 @cindex nfs
 @cindex nfstype
@@ -4203,11 +4204,32 @@ DFS, you don't need to use cfengine's mounting commands at all.
 @c SUBSECTION
 @c .....................................................
 
-@node repchar, repository, nfstype, control
+@node PortageInstallCommand, repchar, nfstype, control
+@subsection PortageInstallCommand
+
+Sets the path to `emerge' which is used to install packages that need
+to be installed under Gentoo Portage.
+
+@smallexample
+
+     PortageInstallCommand = ( "/usr/bin/emerge --nocolor %s" )
+
+@end smallexample
+
+By default, this variable is not set, meaning that any packages with
+action=install will NOT be installed if installation is required. Note
+the quotes around the string, and the @code{%s} is replaced with the list of
+packages to be installed, each separated by a space.
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node repchar, repository, PortageInstallCommand, control
 @subsection RepChar
 
 @example
-   RepChar  = ( @var{character} ) 
+   RepChar = ( @var{character} )
 @end example
 
 The value of this variable determines the characters which is used by
@@ -9354,6 +9376,48 @@ an epoch of 1, and you did not specify an epoch, which implies you wanted
 an epoch of 0.  The rule here is basically to always check the epoch of
 the package you really want, and specify it.  It may take a few extra
 extra seconds to check, but it will save you lots of headaches later.
+
+@item portage
+@cindex Gentoo Package Database Queries
+
+This uses the emerge command to install packages on a Gentoo Linux
+system.  The `portage' Python module is used to query the system and
+find installed packages.  The @i{package_name} and @i{version} support
+any package that conforms to the Gentoo package naming specification
+@url{http://www.gentoo.org/proj/en/devrel/handbook/handbook.xml?part=2&chap=1#doc_chap2_sect2},
+and even most of those in the Portage tree that do not.  Because
+Gentoo package atoms are flexible, you can use the name of the
+package, along with a @i{version} and the @i{cmp} cfengine logic, or
+you can put the comparison operator and version in the @i{package_name}
+field and leave out the @i{cmp} operator.  Because cfengine builds the
+install string out of the package name, and ignores the @i{version}
+you were comparing against, using a package atom with a version is the
+only way to have a specific version emerged.
+
+@smallexample
+
+ packages:
+
+  any::
+
+   # Using cmp, if the version of tar is less than
+   # 1.16-r2, then the *latest* version of tar will be
+   # installed:
+
+   app-arch/tar cmp=ge version=1.16-r2 action=install
+
+   # This is equivalent, but uses the package atom to
+   # define the version comparison:
+
+   >=app-arch/tar-1.16-r2 action=install
+
+   # Use a Portage package atom that includes the
+   # version.  If version 4.1.22-r1 is not installed,
+   # that *exact* version will be installed:
+
+   =dev-db/mysql-4.1.22-r1 action=install 
+
+@end smallexample
 
 @item dpkg
 @cindex Debian Package Database Queries

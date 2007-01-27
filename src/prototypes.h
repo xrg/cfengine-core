@@ -552,6 +552,7 @@ int IsIPV4Address (char *name);
 int IsIPV6Address (char *name);
 char *Hostname2IPString (char *name);
 char *IPString2Hostname (char *name);
+char *IPString2UQHostname (char *name);
 
 
 /* instrument.c */
