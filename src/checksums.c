@@ -171,6 +171,8 @@ void ChecksumList(struct Item *list,unsigned char digest[EVP_MAX_MD_SIZE+1],char
 
 Debug2("ChecksumList(%c)\n",type);
 
+memset(digest,0,EVP_MAX_MD_SIZE+1);
+
 md = EVP_get_digestbyname(ChecksumName(type));
 
 EVP_DigestInit(&context,md);

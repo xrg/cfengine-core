@@ -369,7 +369,7 @@ for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
    
    for (ip = ptr->return_classes; ip != NULL; ip=ip->next)
       {
-      printf("   Return class %d: %s\n",i++,ip->name);
+      printf("   Return class %d: %s_%s\n",i++,ptr->name,ip->name);
       }   
    }
 }

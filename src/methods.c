@@ -153,12 +153,12 @@ for (ip = ptr->servers; ip != NULL; ip=ip->next)
      
       if (strcmp(clientip,serverip) == 0)
          {
-         Verbose("Invitation to accept remote method %s on this host\n",ip->name);
-         Verbose("(Note that this is not a method to be executed as server localhost)\n");
+         Debug("Invitation to accept remote method on this host %s\n",ip->name);
+         Debug("(Note that this is not a method to be executed as server localhost)\n");
          continue;
          }
       
-      Verbose("Hailing server (%s) from our calling id %s\n",serverip,VFQNAME);
+      Verbose("Posting to server (%s) from our calling id %s\n",serverip,VFQNAME);
       snprintf(label,CF_BUFSIZE-1,"%s/rpc_out/%s+%s+%s+%s",VLOCKDIR,clientip,serverip,ptr->name,ChecksumPrint('m',ptr->digest));
       EncapsulateMethod(ptr,label);
       Debug("\nDispatched method %s to %s/rpc_out\n",label,VLOCKDIR);
@@ -177,7 +177,7 @@ struct Item *GetPendingMethods(int state)
   struct Method *mp;
   struct Item *list = NULL, *ip;
   struct stat statbuf;
-  int belongs_here;
+  int belongs_here, correct_server,I_am_server;
   
 Debug("GetPendingMethods(%d) in (%s/rpc_in)\n",state,VLOCKDIR);
 
@@ -239,7 +239,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    
    if (!belongs_here)
       {
-      Verbose("Purging stray community file that does not belong here: %s\n",dirp->d_name);
+      Debug("Purging stray community file that does not belong here: %s\n",dirp->d_name);
       unlink(path);
       continue;
       }
@@ -259,7 +259,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    
    if ((state == CF_METHODREPLY) && (strstr(name,":Reply") == 0))
       {
-      Debug("Ignoring bundle (%s) from waiting function call\n",name);
+      Debug("Ignoring bundle (%s->%s) from waiting function call\n",dirp->d_name,name);
       continue;
       }
    
@@ -269,46 +269,68 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       continue;
       }
 
-   Verbose("Looking at method (%s) from (%s) intended for exec on (%s) with arghash %s\n",name,client,server,digeststring);
+   if (state == CF_METHODEXEC)
+      {
+      Debug("Looking at method (%s) from (%s) intended for exec on (%s) with arghash %s\n",name,client,server,digeststring);
+      }
+   else
+      {
+      Debug("Looking for reply to (%s) from (%s) to (%s) with arghash %s\n",name,client,server,digeststring);
+      }
 
    ip = SplitStringAsItemList(name,':');
+
+   I_am_server = (IsItemIn(IPADDRESSES,server) || strstr(server,"localhost"));
    
    if (mp = IsDefinedMethod(ip->name,digeststring))
       {
-      if (IsItemIn(mp->servers,"localhost") || IsItemIn(mp->servers,IPString2Hostname(server)) || IsItemIn(mp->servers,IPString2UQHostname(server)) || IsItemIn(mp->servers,VIPADDRESS) || IsItemIn(mp->servers,server) || IsItemIn(mp->servers,VFQNAME) || IsItemIn(mp->servers,VUQNAME))
-         {
-         if (state == CF_METHODREPLY)
-            {
-            Verbose("Found a local approval to forward reply from local method (%s) to final destination sender %s\n",name,client);
-            }
-         else
-            {
-            if (IsDefinedClass(mp->classes))
-               {
-               Verbose("Found a local approval to execute this method (%s) on behalf of sender %s if (%s)\n",name,IPString2Hostname(client),mp->classes);
-               }
-            else
-               {
-               Verbose("No local approval in methods list on this host for received request (%s) if (%s)\n",dirp->d_name,mp->classes);
-               continue;
-               }
-            }
-         AppendItem(&list,dirp->d_name,"");
-         mp->bundle = strdup(dirp->d_name);
-         }
-      else
-         {
-         Verbose("No local method match on this host for received request (%s) for host %s=%s=%s in\n",dirp->d_name,server,IPString2Hostname(server),VIPADDRESS);
+      correct_server = (IsItemIn(mp->servers,"localhost")||
+                        IsItemIn(mp->servers,IPString2Hostname(server)) ||
+                        IsItemIn(mp->servers,IPString2UQHostname(server)) ||
+                        IsItemIn(mp->servers,server));
 
-         if (VERBOSE)
-            {
-            DebugListItemList(mp->servers);
-            }
-         unlink(path);
+      switch(state)
+         {
+         case CF_METHODREPLY:  /* if receiving reply then we are the client */
+             
+             if (correct_server && IsDefinedClass(mp->classes))
+                {
+                Verbose("Found an approval to issue reply from a locally executed method (%s) to final destination sender %s\n",name,client);
+                }
+             else
+                {
+                Debug("No local recipient for this reply (%s) if (%s)\n",dirp->d_name,mp->classes);
+                DeleteItemList(ip);
+                unlink(path);
+                continue;
+                }
+             break;
+             
+         case CF_METHODEXEC: /* if we are the server, the registered server (mp->server)
+                                should match the arrived request (server)
+                                AND it should match our identity */
+             
+             if (correct_server && I_am_server && IsDefinedClass(mp->classes))
+                {
+                Verbose("Found a local approval to execute this method (%s) on behalf of sender %s if (%s)\n",name,IPString2Hostname(client),mp->classes);
+                }
+             else
+                {
+                Debug("No local approval for executing received request (%s) if (%s)\n",dirp->d_name,mp->classes);
+                DeleteItemList(ip);
+                continue;
+                }
          }
+      
+      AppendItem(&list,dirp->d_name,"");
+      mp->bundle = strdup(dirp->d_name);
+      DeleteItemList(ip);
       }
-   
-   DeleteItemList(ip);
+   else
+      {
+      Debug("No such method pending (%s) in this context for host %s=%s=%s in\n",dirp->d_name,server,IPString2Hostname(server),VIPADDRESS);
+      DeleteItemList(ip);
+      }
    }
  
 closedir(dirh);
@@ -550,7 +572,7 @@ if (IsDefinedClass(CanonifyName(buf)))
    }
 else
    {
-   Debug("No further replies can be accepted yet (tot %d mins)\n",mp->ifelapsed);
+   Verbose("No further replies can be accepted yet (tot %d mins)\n",mp->ifelapsed);
    AddPersistentClass(CanonifyName(buf),mp->ifelapsed,cfpreserve);
    }
 
@@ -700,7 +722,7 @@ if ((fp = fopen(basepackage,"r")) == NULL)
            break;
            
        default:
-           Debug("Protocol error (%s) in package received for method %s",type,basepackage);
+           Debug("Protocol error (%s) in package received for method %s\n",type,basepackage);
            break;
        }
     }
@@ -1205,24 +1227,25 @@ struct Method *IsDefinedMethod(char *name,char *digeststring)
 
 for (mp = VMETHODS; mp != NULL; mp=mp->next)
    {
-   Debug("Check for defined method (%s=%s)(%s)\n",name,mp->name,digeststring);
+   Debug("Check for potentially defined method (%s=%s)(%s)\n",name,mp->name,digeststring);
    
    if (strncmp(mp->name,name,strlen(mp->name)) == 0)
       {
       Debug("  Comparing digests: %s=%s\n",digeststring,ChecksumPrint('m',mp->digest));
+
       if (strcmp(digeststring,ChecksumPrint('m',mp->digest)) == 0)
          {
-         Debug("Method %s is defined\n",name);
+         Verbose("Method %s is defined\n",name);
          return mp;
          }
       else
          {
-         Verbose("Method %s found, but arguments did not match\n",name);
+         Debug("Method %s instance found, but arguments did not match\n",name);
          }
       }
    }
 
-Verbose("Method %s not defined\n",name); 
+Debug("Method %s not defined\n",name); 
 return NULL; 
 }
 
@@ -1665,6 +1688,7 @@ DeleteItemList(ip);
 void SplitMethodName(char *name,char *client,char *server,char *methodname,char *digeststring,char *extra)
 
 {
+Debug("SplitMethodName(%s)\n",name);
 methodname[0] = '\0';
 client[0] = '\0';
 server[0] = '\0';
