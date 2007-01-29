@@ -3610,7 +3610,7 @@ void InstallMethod(char *function,char *file)
 
 { char *sp, work[CF_EXPANDSIZE],name[CF_BUFSIZE];
   struct Method *ptr;
-  struct Item *bare_send_args = NULL;
+  struct Item *bare_send_args = NULL, *sip;
   uid_t uid = CF_NOUSER;
   gid_t gid = CF_NOUSER;
   struct passwd *pw;
@@ -3693,10 +3693,6 @@ if (strlen(sp) == 0)
    yyerror("Missing argument (void?) to method");
    }
  
-bare_send_args = ListFromArgs(sp);
-ChecksumList(bare_send_args,ptr->digest,'m');
-DeleteItemList(bare_send_args);
- 
 /* Now expand variables */
  
 ExpandVarstring(function,work,"");
@@ -3776,6 +3772,19 @@ else
    {
    ptr->servers = SplitStringAsItemList("localhost",',');
    }
+
+bare_send_args = ListFromArgs(sp);
+
+/* Append server to make this unique */
+for (sip = ptr->servers; sip != NULL; sip = sip->next)
+   {
+   PrependItem(&bare_send_args,sip->name,NULL);
+   }
+
+ChecksumList(bare_send_args,ptr->digest,'m');
+DeleteItemList(bare_send_args);
+ 
+
 
 ptr->bundle = NULL;
 ptr->return_vars = SplitStringAsItemList(METHODFILENAME,',');

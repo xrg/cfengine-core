@@ -359,18 +359,35 @@ for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
       }
 
    i = 1;
-   
-   for (ip = ptr->return_vars; ip != NULL; ip=ip->next)
-      {
-      printf("   Return value %d: $(%s.%s)\n",i++,ptr->name,ip->name);
-      }
 
-   i = 1;
-   
-   for (ip = ptr->return_classes; ip != NULL; ip=ip->next)
+   if (ListLen(ptr->servers) > 1)
       {
-      printf("   Return class %d: %s_%s\n",i++,ptr->name,ip->name);
-      }   
+      for (ip = ptr->return_vars; ip != NULL; ip=ip->next)
+         {
+         printf("   Return value %d: $(%s_X.%s) - X = 1,2,..\n",i++,ptr->name,ip->name);
+         }
+      
+      i = 1;
+      
+      for (ip = ptr->return_classes; ip != NULL; ip=ip->next)
+         {
+         printf("   Return class %d: %s_X_%s\n",i++,ptr->name,ip->name);
+         }      
+      }
+   else
+      {      
+      for (ip = ptr->return_vars; ip != NULL; ip=ip->next)
+         {
+         printf("   Return value %d: $(%s.%s)\n",i++,ptr->name,ip->name);
+         }
+      
+      i = 1;
+      
+      for (ip = ptr->return_classes; ip != NULL; ip=ip->next)
+         {
+         printf("   Return class %d: %s_%s\n",i++,ptr->name,ip->name);
+         }
+      }
    }
 }
 

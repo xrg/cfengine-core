@@ -2810,7 +2810,7 @@ for(i=0; i < pkgmgr_none; i++)
 void DoMethods()
 
 { struct Method *ptr;
-  struct Item *ip;
+  struct Item *ip, *uniqueid;
   char label[CF_BUFSIZE];
   unsigned char digest[EVP_MAX_MD_SIZE+1];
     
@@ -2832,7 +2832,19 @@ for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
       ptr->done = 'y';
       }
 
+   uniqueid = NULL;
+   
+   CopyList(&uniqueid,ptr->send_args);
+   /* Append server to make this unique */
+
+   for (ip = ptr->servers; ip != NULL; ip=ip->next)
+      {
+      PrependItem(&uniqueid,ip->name,NULL);
+      }
+
    ChecksumList(ptr->send_args,digest,'m');
+   DeleteItemList(uniqueid);
+   
    snprintf(label,CF_BUFSIZE-1,"%s/rpc_in/localhost+localhost+%s+%s",VLOCKDIR,ptr->name,ChecksumPrint('m',digest));
 
    if (!GetLock(ASUniqueName("methods-dispatch"),CanonifyName(label),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))

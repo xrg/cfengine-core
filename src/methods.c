@@ -618,8 +618,30 @@ if ((fp = fopen(basepackage,"r")) == NULL)
            
            if (IsItemIn(mp->return_classes,arg))
               {
-              Verbose("Setting method classes %s_%s\n",name,arg);
-              AddPrefixedMultipleClasses(name,arg);
+              char classname[CF_MAXVARSIZE];
+              
+              if (ListLen(mp->servers) > 1)
+                 {
+                 struct Item *ip;
+                 int i = 1;
+                 
+                 for (ip = mp->servers; ip != NULL; ip=ip->next)
+                    {
+                    if (strcmp(ip->name,server) == 0)
+                       {
+                       snprintf(classname,CF_MAXVARSIZE-1,"%s_%d",name,i++);
+                       Verbose("Setting method class %s\n",classname);
+                       break;
+                       }
+                    }
+                 }
+              else
+                 {
+                 snprintf(classname,CF_MAXVARSIZE-1,"%s",name);
+                 Verbose("Setting method classes %s\n",classname);                 
+                 }
+              
+              AddPrefixedMultipleClasses(classname,arg);
               }
            else
               {
@@ -705,8 +727,26 @@ if ((fp = fopen(basepackage,"r")) == NULL)
 
               if (IsItemIn(mp->return_vars,methodargv[argnum]))
                  {
-                 snprintf(newname,CF_MAXVARSIZE-1,"%s.%s",name,methodargv[argnum]);
-                 Verbose("Setting variable %s to %s\n",newname,argbuf);
+                 if (ListLen(mp->servers) > 1)
+                    {
+                    struct Item *ip;
+                    int i = 1;
+                    
+                    for (ip = mp->servers; ip != NULL; ip=ip->next)
+                       {
+                       if (strcmp(ip->name,server) == 0)
+                          {
+                          snprintf(newname,CF_MAXVARSIZE-1,"%s_%d.%s",name,i++,methodargv[argnum]);
+                          Verbose("Setting variable %s to %s\n",newname,argbuf);
+                          break;
+                          }
+                       }
+                    }
+                 else
+                    {
+                    snprintf(newname,CF_MAXVARSIZE-1,"%s.%s",name,methodargv[argnum]);
+                    Verbose("Setting variable %s to %s\n",newname,argbuf);
+                    }
                  AddMacroValue(CONTEXTID,newname,argbuf);
                  }
               else
