@@ -738,6 +738,7 @@ int linux_redhat_version (void);
 int linux_mandrake_version (void);
 int linux_suse_version (void);
 int debian_version (void);
+int lsb_version (void);
 char * UnQuote (char *name);
 int DirPush (char *name,struct stat *sb);
 void DirPop (int goback,char *name,struct stat *sb);

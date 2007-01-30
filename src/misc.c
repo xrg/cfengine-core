@@ -524,6 +524,8 @@ if (stat("/etc/UnitedLinux-release",&statbuf) != -1)
    AddClassToHeap("UnitedLinux");
    }
 
+lsb_version();
+
 if (stat("/etc/vmware",&statbuf) != -1)
    {
    if (S_ISDIR(statbuf.st_mode))
@@ -1057,6 +1059,106 @@ char strminor[CF_MAXVARSIZE];
        }
     }
  return 0;
+}
+
+/******************************************************************/
+
+static void * lsb_release(const char *command, const char *key)
+{
+    char * info = NULL;
+    FILE * fp;
+
+    snprintf(VBUFF, CF_BUFSIZE, "%s %s", command, key);
+    if ((fp = cfpopen(VBUFF, "r")) == NULL)
+        return NULL;
+
+    if (ReadLine(VBUFF, CF_BUFSIZE, fp))
+        {
+        char * buffer = VBUFF;
+        strsep(&buffer, ":");
+
+        while((*buffer != '\0') && isspace(*buffer))
+            buffer++;
+
+        info = buffer;
+        while((*buffer != '\0') && !isspace(*buffer))
+            *buffer = tolower(*buffer++);
+
+        *buffer = '\0';
+        info = strdup(info);
+        }
+
+    cfpclose(fp);
+    return info;
+}
+
+int lsb_version(void)
+{
+#define LSB_RELEASE_COMMAND "lsb_release"
+
+char classname[CF_MAXVARSIZE];
+char *distrib  = NULL;
+char *release  = NULL;
+char *codename = NULL;
+int major = 0;
+int minor = 0;
+
+char *path, *dir, *rest;
+struct stat statbuf;
+
+path = rest = strdup(getenv("PATH"));
+for (; dir = strsep(&rest, ":") ;)
+    {
+    snprintf(VBUFF, CF_BUFSIZE, "%s/" LSB_RELEASE_COMMAND, dir);
+    if (stat(VBUFF,&statbuf) != -1)
+        {
+        free(path);
+        path = strdup(VBUFF);
+
+        Verbose("\nThis appears to be a LSB compliant system.\n");
+        AddClassToHeap("lsb_compliant");
+        break;
+        }
+    }
+
+if (!dir)
+    {
+    free(path);
+    return 1;
+    }
+
+if ((distrib  = lsb_release(path, "--id")) != NULL)
+    {
+    snprintf(classname, CF_MAXVARSIZE, "%s", distrib);
+    AddClassToHeap(classname);
+
+    if ((codename = lsb_release(path, "--codename")) != NULL)
+        {
+        snprintf(classname, CF_MAXVARSIZE, "%s_%s", distrib, codename);
+        AddClassToHeap(classname);
+        }
+
+    if ((release  = lsb_release(path, "--release")) != NULL)
+        {
+        switch (sscanf(release, "%d.%d\n", &major, &minor))
+            {
+            case 2:
+                snprintf(classname, CF_MAXVARSIZE, "%s_%u_%u", distrib, major, minor);
+                AddClassToHeap(classname);
+            case 1:
+                snprintf(classname, CF_MAXVARSIZE, "%s_%u", distrib, major);
+                AddClassToHeap(classname);
+            }
+        }
+
+    free(path);
+    return 0;
+    }
+else
+    {
+    free(path);
+    return 2;
+    }
 }
 
 /******************************************************************/
