@@ -817,6 +817,7 @@ int linux_suse_version(void)
 #define SUSE_REL_FILENAME "/etc/SuSE-release"
 #define SUSE_SLES8_ID "SuSE SLES-8"
 #define SUSE_SLES9_ID "SUSE LINUX Enterprise Server 9"
+#define SUSE_SLES10_ID "SUSE Linux Enterprise Server 10"
 #define SUSE_SLES_ID "SUSE LINUX Enterprise Server"
 #define SUSE_RELEASE_FLAG "linux "
 
@@ -860,6 +861,12 @@ else if (!strncmp(relstring, SUSE_SLES9_ID, strlen(SUSE_SLES9_ID)))
    {
    classbuf[0] = '\0';
    strcat(classbuf, "SLES9");
+   AddClassToHeap(classbuf);
+   }
+else if (!strncmp(relstring, SUSE_SLES10_ID, strlen(SUSE_SLES10_ID)))
+   {
+   classbuf[0] = '\0';
+   strcat(classbuf, "SLES10");
    AddClassToHeap(classbuf);
    }
 
