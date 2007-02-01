@@ -676,7 +676,8 @@ enum builtin
    fn_selectpna,
    fn_greaterthan,
    fn_lessthan,
-   fn_readtcp
+   fn_readtcp,
+   fn_printfile
    };
 
 /*******************************************************************/

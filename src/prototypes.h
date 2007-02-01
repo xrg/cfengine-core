@@ -138,6 +138,7 @@ void HandleRegCmp (char* args,char *value);
 void HandleShowState (char* args,char *value);
 void HandleReadFile (char *args,char *value);
 void HandleReadArray (char *args,char *value);
+void HandlePrintFile (char *args,char *value);
 void HandleReadList (char *args,char *value);
 void HandleReadTCP (char *args,char *value);
 void HandleReadTable (char *args,char *value);

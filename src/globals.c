@@ -674,6 +674,7 @@ char *OBS[CF_OBSERVABLES] =
       "isgreaterthan",
       "islessthan",
       "readtcp",
+      "printfile",
       NULL
       };
 

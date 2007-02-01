@@ -176,6 +176,9 @@ switch (fn = FunctionStringToCode(name))
    case fn_readfile:
        HandleReadFile(args,value);
        break;
+   case fn_printfile:
+       HandlePrintFile(args,value);
+       break;
 
    case fn_readarray:
        HandleReadArray(args,value);
@@ -1768,6 +1771,60 @@ if (time >= 0)
    {
    CheckFriendConnections(time);
    }
+ 
+strcpy(value,""); /* No reply */
+}
+
+/*********************************************************************/
+
+void HandlePrintFile(char *args,char *value)
+
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE];
+  FILE *fp;
+  int max = -1, lines = 0, count = 0;
+  
+if ((ACTION != alerts) && PARSING)
+   {
+   yyerror("Use of PrintFile(name) outside of alert declaration");
+   }
+ 
+FunctionArgs(args,argv,2);
+
+if (PARSING)
+   {
+   strcpy(value,"doinstall");
+   return;
+   }
+
+max = atoi(argv[1]);
+
+if (max < 0)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"Max lines argument to PrintFile(%s,%d) cannot be read\n",argv[0],max);
+   CfLog(cferror,OUTPUT,"");
+   max = 2;
+   }
+
+if ((fp = fopen(argv[0],"r")) == NULL)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"File argument to PrintFile(%s,%d) cannot be read\n",argv[0],max);
+   CfLog(cferror,OUTPUT,"");
+   strcpy(value,""); /* No reply */
+   return;
+   }
+
+snprintf(OUTPUT,CF_BUFSIZE,"PrintFile(%s,%d lines)\n",argv[0],max);
+CfLog(cfinform,OUTPUT,"");
+
+while (!feof(fp) && (lines < max))
+   {
+   fgets(OUTPUT,CF_BUFSIZE,fp);
+   lines++;
+   printf("%s",OUTPUT);
+   OUTPUT[0] = '\0';
+   }
+
+fclose(fp);
  
 strcpy(value,""); /* No reply */
 }
