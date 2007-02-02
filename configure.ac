@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.1.22)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.2.0a2)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -293,6 +293,7 @@ else
                 break
             fi
         done
+
         if test x"$OPENSSL_LIB_LIB" = x ; then
             AC_MSG_ERROR(Cannot find OpenSSL)
         fi
@@ -375,7 +376,7 @@ AC_ARG_WITH(pcre,
                             CPPFLAGS="$CPPFLAGS -I$d/include"
                             LDFLAGS="$LDFLAGS -L$d/lib"
                             PCRE_LIB="-lpcreposix"
-                            AC_MSG_RESULT = "$d"
+                            AC_MSG_RESULT("$d)
                             break
                         fi
                     done
@@ -386,13 +387,13 @@ AC_ARG_WITH(pcre,
                 if test -f "${withval}/include/pcreposix.h" ; then
                     CPPFLAGS="$CPPFLAGS -I${withval}/include"
                     LDFLAGS="$LDFLAGS -L${withval}/lib"
-                    AC_MSG_RESULT = "${withval}"
+                    AC_MSG_RESULT("${withval}")
                 else
                     AC_MSG_ERROR(Cannot find PCRE)
                 fi
                 fi
             else
-                AC_MSG_RESULT = "yes"
+               AC_MSG_RESULT("yes")
             fi
             LIBS="$LIBS -lpcreposix"
             AC_DEFINE(USE_PCRE, 1, [Define if PCRE is available.])
@@ -458,7 +459,7 @@ dnl ######################################################################
 
 AC_CHECK_FUNCS(getcwd getnetgrent waitpid seteuid setegid setreuid setregid)
 AC_CHECK_FUNCS(uname gethostname realpath regcomp chflags)
-AC_CHECK_FUNCS(strstr putenv drand48 srand48 getaddrinfo)
+AC_CHECK_FUNCS(strstr strsep putenv drand48 srand48 getaddrinfo)
 AC_CHECK_FUNCS(bcopy mkfifo statfs statvfs door)
 AC_CHECK_FUNCS(sysinfo setsid strdup strrchr strerror snprintf sysconf)
 

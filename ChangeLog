@@ -1,3 +1,8 @@
+
+2.2.0
+
+	PrintFile("name") function added to alerts
+
 2.1.22 
 
 	IMPORTANT: cfshow output formatting changes

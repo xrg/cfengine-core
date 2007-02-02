@@ -2232,6 +2232,7 @@ alerts:
       SetState(@var{name},@var{ttl},@var{policy})
       UnSetState(@var{name})
       FriendStatus(@var{hours})
+      PrintFile(@file{filename},@var{lines})
 
 @end smallexample
 For example:
@@ -2342,6 +2343,10 @@ the variable @code{LastSeenExpireAfter} are ignored as spurious, @xref{lastseene
 @cindex Last Seen database
 @cindex Peer watching (FriendStatus)
 @cindex Monitoring other hosts
+@cindex PrintFile
+
+The @code{PrintFile} function can be used to display short excerpts from text files.
+The arguments are the filename and a maximum number of lines to be printed.
 
 
 @c -------------------------------------------------------------------------------

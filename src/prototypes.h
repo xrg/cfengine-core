@@ -859,6 +859,10 @@ char *strrchr (char *str,char ch);
 char *strerror (int err);
 #endif
 
+#ifndef HAVE_STRSEP
+char *strsep(char **stringp, const char *delim);
+#endif
+    
 #ifndef HAVE_PUTENV
 int putenv  (char *s);
 #endif

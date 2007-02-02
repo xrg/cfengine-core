@@ -1071,33 +1071,42 @@ char strminor[CF_MAXVARSIZE];
 /******************************************************************/
 
 static void * lsb_release(const char *command, const char *key)
-{
-    char * info = NULL;
-    FILE * fp;
 
-    snprintf(VBUFF, CF_BUFSIZE, "%s %s", command, key);
-    if ((fp = cfpopen(VBUFF, "r")) == NULL)
-        return NULL;
+{ char * info = NULL;
+ FILE * fp;
 
-    if (ReadLine(VBUFF, CF_BUFSIZE, fp))
-        {
-        char * buffer = VBUFF;
-        strsep(&buffer, ":");
+snprintf(VBUFF, CF_BUFSIZE, "%s %s", command, key);
+if ((fp = cfpopen(VBUFF, "r")) == NULL)
+   {
+   return NULL;
+   }
 
-        while((*buffer != '\0') && isspace(*buffer))
-            buffer++;
+if (ReadLine(VBUFF, CF_BUFSIZE, fp))
+   {
+   char * buffer = VBUFF;
+   strsep(&buffer, ":");
+   
+   while((*buffer != '\0') && isspace(*buffer))
+      {
+      buffer++;
+      }
+   
+   info = buffer;
+   while((*buffer != '\0') && !isspace(*buffer))
+      {
+      *buffer = tolower(*buffer++);
+      }
+   
+   *buffer = '\0';
+   info = strdup(info);
+   }
 
-        info = buffer;
-        while((*buffer != '\0') && !isspace(*buffer))
-            *buffer = tolower(*buffer++);
-
-        *buffer = '\0';
-        info = strdup(info);
-        }
-
-    cfpclose(fp);
-    return info;
+cfpclose(fp);
+return info;
 }
+
+
+/******************************************************************/
 
 int lsb_version(void)
 {
