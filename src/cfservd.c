@@ -2127,7 +2127,7 @@ if (lstat(realname,&statbuf) == -1)
    {
    snprintf(conn->output,CF_BUFSIZE*2,"Couldn't stat filename %s (i.e. %s) from host %s\n",filename,realname,conn->hostname);
    CfLog(cfverbose,conn->output,"lstat");
-   CfLog(cflogonly,conn->output,"lstat");   
+   /*CfLog(cflogonly,conn->output,"lstat");   */
    return false;
    }
 
@@ -3192,7 +3192,14 @@ CfLog(cfinform,sendbuffer,"");
 if (strlen(errmesg) > 0)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"ID from connecting host: (%s)",errmesg);
-   CfLog(cfloginform,OUTPUT,"");
+   if (LOGCONNS)
+      {
+      CfLog(cfloginform,OUTPUT,"");
+      }
+   else
+      {
+      CfLog(cfverbose,OUTPUT,"");
+      }
    }
 }
 

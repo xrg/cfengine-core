@@ -2471,7 +2471,7 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
       if (cfstat(path,&statbuf,ip) == -1)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s in copy\n",path);
-         CfLog(cfinform,OUTPUT,"");
+         CfLog(cfverbose,OUTPUT,"");
          SILENT = savesilent;
          ResetOutputRoute('d','d');
          continue;
