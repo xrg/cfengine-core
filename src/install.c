@@ -2963,8 +2963,10 @@ void AddEditAction(char *file,char *edit,char *data)
 
 { struct Edit *ptr;
   struct Edlist *top,*new;
+  struct TwoDimList *tp = NULL;
   char varbuff[CF_EXPANDSIZE];
   mode_t saved_umask;
+  char *sp;
 
 if (data == NULL)
    {
@@ -2987,203 +2989,211 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
 
    if (strcmp(ptr->fname,varbuff) == 0)
       {
-      if ((new = (struct Edlist *)malloc(sizeof(struct Edlist))) == NULL)
+      /* 2D list wrapper start - variable is data */
+      
+      Build2DListFromVarstring(&tp,data,LISTSEPARATOR);
+      Set2DList(tp);
+      
+      for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
          {
-         FatalError("Memory Allocation failed for AddEditAction() #1");
-         }
-
-      if (ptr->actions == NULL)
-         {
-         ptr->actions = new;
-         }
-      else
-         {
-         for (top = ptr->actions; top->next != NULL; top=top->next)
-            {
-            }
-         top->next = new;
-         }
-
-      if (data == NULL)
-         {
-         new->data = NULL;
-         }
-      else
-         {
-         char ebuff[CF_EXPANDSIZE];
-         ExpandVarstring(data,ebuff,"");
-
-         if ((new->data = strdup(ebuff)) == NULL)
+         if ((new = (struct Edlist *)malloc(sizeof(struct Edlist))) == NULL)
             {
             FatalError("Memory Allocation failed for AddEditAction() #1");
             }
-         }
-
-      new->next = NULL;
-
-      if ((new->classes = strdup(CLASSBUFF)) == NULL)
-         {
-         FatalError("Memory Allocation failed for InstallEditFile() #3");
-         }
-      
-      if ((new->code = EditActionsToCode(edit)) == NoEdit)
-         {
-         snprintf(OUTPUT,CF_BUFSIZE,"Unknown edit action \"%s\"",edit);
-         yyerror(OUTPUT);
-         }
-      
-      switch(new->code)
-         {
-         case EditUmask:
-             saved_umask = UMASK;
-             HandleUmask(data);
-             ptr->umask = UMASK;
-             UMASK = saved_umask;
-             break;
-
-         case WarnIfFileMissing: ptr->warn = 'y';
-             break;
-         case EditIgnore:
-             PrependItem(&(ptr->ignores),data,CF_ANYCLASS);
-             break;
-         case EditExclude:
-             PrependItem(&(ptr->exclusions),data,CF_ANYCLASS);
-             break;
-         case EditInclude:
-             PrependItem(&(ptr->inclusions),data,CF_ANYCLASS);
-             break;
-         case EditRecurse:
-             if (strcmp(data,"inf") == 0)
-                {
-                ptr->recurse = CF_INF_RECURSE;
-                }
-             else
-                {
-                ptr->recurse = atoi(data);
-                if (ptr->recurse < 0)
+         
+         if (ptr->actions == NULL)
+            {
+            ptr->actions = new;
+            }
+         else
+            {
+            for (top = ptr->actions; top->next != NULL; top=top->next)
+               {
+               }
+            top->next = new;
+            }
+         
+         if (data == NULL)
+            {
+            new->data = NULL;
+            }
+         else
+            {
+            if ((new->data = strdup(sp)) == NULL)
+               {
+               FatalError("Memory Allocation failed for AddEditAction() #1");
+               }
+            }
+         
+         new->next = NULL;
+         
+         if ((new->classes = strdup(CLASSBUFF)) == NULL)
+            {
+            FatalError("Memory Allocation failed for InstallEditFile() #3");
+            }
+         
+         if ((new->code = EditActionsToCode(edit)) == NoEdit)
+            {
+            snprintf(OUTPUT,CF_BUFSIZE,"Unknown edit action \"%s\"",edit);
+            yyerror(OUTPUT);
+            }
+         
+         switch(new->code)
+            {
+            case EditUmask:
+                saved_umask = UMASK;
+                HandleUmask(sp);
+                ptr->umask = UMASK;
+                UMASK = saved_umask;
+                break;
+                
+            case WarnIfFileMissing: ptr->warn = 'y';
+                break;
+            case EditIgnore:
+                PrependItem(&(ptr->ignores),sp,CF_ANYCLASS);
+                break;
+            case EditExclude:
+                PrependItem(&(ptr->exclusions),sp,CF_ANYCLASS);
+                break;
+            case EditInclude:
+                PrependItem(&(ptr->inclusions),sp,CF_ANYCLASS);
+                break;
+            case EditRecurse:
+                if (strcmp(data,"inf") == 0)
                    {
-                   yyerror("Illegal recursion value");
+                   ptr->recurse = CF_INF_RECURSE;
                    }
-                }
-             break;
-             
-         case Append:
-             if (EDITGROUPLEVEL == 0)
-                {
-                yyerror("Append used outside of Group - non-convergent");
-                }
-             break;
-             
-         case EditMode:
-             if (strcmp(data,"Binary") == 0)
-                {
-                ptr->binary = 'y';
-                }
-             break;
-             
-         case BeginGroupIfNoMatch:
-         case BeginGroupIfMatch:
-         case BeginGroupIfNoLineMatching:
-         case BeginGroupIfLineMatching:
-         case BeginGroupIfNoLineContaining:
-         case BeginGroupIfLineContaining:
-         case BeginGroupIfNoSuchLine:
-         case BeginGroupIfDefined:
-         case BeginGroupIfNotDefined: 
-         case BeginGroupIfFileIsNewer:
-         case BeginGroupIfFileExists:
-             EDITGROUPLEVEL++;
-             break;
-             
-         case EndGroup:
-             EDITGROUPLEVEL--;
-             if (EDITGROUPLEVEL < 0)
-                {
-                yyerror("EndGroup without Begin");
-                }
-             break;
-             
-         case ReplaceAll:
-             if (SEARCHREPLACELEVEL > 0)
-                {
-                yyerror("ReplaceAll without With before or at line");
-                }
-             
-             SEARCHREPLACELEVEL++;
-             break;
-
-         case ReplaceFirst:
-             if (SEARCHREPLACELEVEL > 0)
-                {
-                yyerror("ReplaceFirst without With before or at line");
-                }
-             
-             SEARCHREPLACELEVEL++;
-             break;
-             
-         case With:
-             SEARCHREPLACELEVEL--;
-             break;
-             
-         case ForEachLineIn:
-             if (FOREACHLEVEL > 0)
-                {
-                yyerror("Nested ForEach loops not allowed");
-                }
-             
-             FOREACHLEVEL++;
-             break;
-             
-         case EndLoop:
-             FOREACHLEVEL--;
-             if (FOREACHLEVEL < 0)
-                {
-                yyerror("EndLoop without ForEachLineIn");
-                }
-             break;
-             
-         case DefineInGroup:
-             if (EDITGROUPLEVEL <= 0)
-                {
-                yyerror("DefineInGroup outside a group");
-                }
-             AddInstallable(new->data);
-             break;
-             
-         case SetLine:
-             if (FOREACHLEVEL > 0)
-                {
-                yyerror("SetLine inside ForEachLineIn loop");
-                }
-             break;
-             
-         case FixEndOfLine:
-             if (strlen(data) > CF_EXTRASPC - 1)
-                {
-                yyerror("End of line type is too long!");
-                printf("          (max %d characters allowed)\n",CF_EXTRASPC);
-                }
-             break;
-         case ReplaceLinesMatchingField:
-             if (atoi(data) == 0)
-                {
-                yyerror("Argument must be an integer, greater than zero");
-                }
-             break;
-         case ElseDefineClasses:
-         case EditFilter:
-         case DefineClasses:
-             if (EDITGROUPLEVEL > 0 || FOREACHLEVEL > 0)
-                {
-                yyerror("Class definitions inside conditionals or loops are not allowed. Did you mean DefineInGroup?");
-                }
-             AddInstallable(new->data);
-             break;
-         case EditRepos:
-             ptr->repository = strdup(data);
-             break;
+                else
+                   {
+                   ptr->recurse = atoi(data);
+                   if (ptr->recurse < 0)
+                      {
+                      yyerror("Illegal recursion value");
+                      }
+                   }
+                break;
+                
+            case Append:
+                if (EDITGROUPLEVEL == 0)
+                   {
+                   yyerror("Append used outside of Group - non-convergent");
+                   }
+                break;
+                
+            case EditMode:
+                if (strcmp(data,"Binary") == 0)
+                   {
+                   ptr->binary = 'y';
+                   }
+                break;
+                
+            case BeginGroupIfNoMatch:
+            case BeginGroupIfMatch:
+            case BeginGroupIfNoLineMatching:
+            case BeginGroupIfLineMatching:
+            case BeginGroupIfNoLineContaining:
+            case BeginGroupIfLineContaining:
+            case BeginGroupIfNoSuchLine:
+            case BeginGroupIfDefined:
+            case BeginGroupIfNotDefined: 
+            case BeginGroupIfFileIsNewer:
+            case BeginGroupIfFileExists:
+                EDITGROUPLEVEL++;
+                break;
+                
+            case EndGroup:
+                EDITGROUPLEVEL--;
+                if (EDITGROUPLEVEL < 0)
+                   {
+                   yyerror("EndGroup without Begin");
+                   }
+                break;
+                
+            case ReplaceAll:
+                if (SEARCHREPLACELEVEL > 0)
+                   {
+                   yyerror("ReplaceAll without With before or at line");
+                   }
+                
+                SEARCHREPLACELEVEL++;
+                break;
+                
+            case ReplaceFirst:
+                if (SEARCHREPLACELEVEL > 0)
+                   {
+                   yyerror("ReplaceFirst without With before or at line");
+                   }
+                
+                SEARCHREPLACELEVEL++;
+                break;
+                
+            case With:
+                SEARCHREPLACELEVEL--;
+                break;
+                
+            case ForEachLineIn:
+                if (FOREACHLEVEL > 0)
+                   {
+                   yyerror("Nested ForEach loops not allowed");
+                   }
+                
+                FOREACHLEVEL++;
+                break;
+                
+            case EndLoop:
+                FOREACHLEVEL--;
+                if (FOREACHLEVEL < 0)
+                   {
+                   yyerror("EndLoop without ForEachLineIn");
+                   }
+                break;
+                
+            case DefineInGroup:
+                if (EDITGROUPLEVEL <= 0)
+                   {
+                   yyerror("DefineInGroup outside a group");
+                   }
+                AddInstallable(new->data);
+                break;
+                
+            case SetLine:
+                if (FOREACHLEVEL > 0)
+                   {
+                   yyerror("SetLine inside ForEachLineIn loop");
+                   }
+                break;
+                
+            case FixEndOfLine:
+                if (strlen(sp) > CF_EXTRASPC - 1)
+                   {
+                   yyerror("End of line type is too long!");
+                   printf("          (max %d characters allowed)\n",CF_EXTRASPC);
+                   }
+                break;
+            case ReplaceLinesMatchingField:
+                if (atoi(sp) == 0)
+                   {
+                   yyerror("Argument must be an integer, greater than zero");
+                   }
+                break;
+            case ElseDefineClasses:
+            case EditFilter:
+            case DefineClasses:
+                if (EDITGROUPLEVEL > 0 || FOREACHLEVEL > 0)
+                   {
+                   yyerror("Class definitions inside conditionals or loops are not allowed. Did you mean DefineInGroup?");
+                   }
+                AddInstallable(new->data);
+                break;
+            case EditRepos:
+                ptr->repository = strdup(sp);
+                break;
+            }
+         
+         /* 2d wrapper end */
          }
       
+      Delete2DList(tp);
       return;
       }
    }

@@ -106,12 +106,17 @@ void Build2DListFromVarstring(struct TwoDimList **TwoDimlist, char *varstring, c
 
 Debug1("Build2DListFromVarstring([%s],sep=%c)\n",varstring,sep);
 
+if (varstring == NULL)
+   {
+   AppendTwoDimItem(TwoDimlist,NULL,sep);
+   return;
+   }
+
 if ((strlen(varstring) == 1) && (varstring[0] == sep))
    {
    AppendTwoDimItem(TwoDimlist,SplitVarstring("",'$'),sep);
    return;
    }
-
 
 snprintf(format,6,"%%[^%c]",sep);   /* set format string to search */
 
@@ -249,12 +254,12 @@ void AppendTwoDimItem(struct TwoDimList **liststart,struct Item *itemlist,char s
 
 Debug1("AppendTwoDimItem(itemlist, sep=%c)\n",sep);
 
- if (liststart == NULL)
-    {
-    Debug("SOFTWARE ERROR in AppendTwoDimItem()\n ");
-    return;
-    }
- 
+if (liststart == NULL)
+   {
+   Debug("SOFTWARE ERROR in AppendTwoDimItem()\n ");
+   return;
+   }
+
 if ((ip = (struct TwoDimList *)malloc(sizeof(struct TwoDimList))) == NULL)
    {
    CfLog(cferror,"AppendTwoDimItem","malloc");
