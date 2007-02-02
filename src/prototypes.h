@@ -343,6 +343,7 @@ void CompressFile (char *file);
 
 /* filenames.c */
 
+int IsIn(char c,char *s);
 int IsAbsoluteFileName (char *f);
 void CreateEmptyFile (char *f);
 int RootDirLength (char *f);

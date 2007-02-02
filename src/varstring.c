@@ -254,11 +254,7 @@ for (sp = str+2; *sp != '\0' ; sp++)       /* check for varitems */
           break;
           
       default:
-          if (isalnum((int)*sp)
-              || (*sp == '_')
-              || (*sp == '[') || (*sp == ']')
-              || (*sp == '$')
-              || (*sp == '.'))
+          if (isalnum((int)*sp) || IsIn(*sp,"_[]$.:-"))
              {
              }
           else
@@ -343,7 +339,7 @@ for (sp = str; *sp != '\0' ; sp++)       /* check for varitems */
 int ExpandVarstring(char *string,char buffer[CF_EXPANDSIZE],char *bserver) 
 
 { char *sp,*env;
-  char varstring = false;
+  int varstring = false;
   char currentitem[CF_EXPANDSIZE],temp[CF_BUFSIZE],name[CF_MAXVARSIZE];
   int len,increment;
   time_t tloc;
@@ -359,12 +355,17 @@ Debug("ExpandVarstring( %s )\n",string);
 
 for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
    {
+   char var[CF_BUFSIZE];
+   
+   memset(var,0,CF_BUFSIZE);
+   increment = 0;
+
    if (*sp == '\0')
       {
       break;
       }
 
-   currentitem[0] = '\0';
+   memset(currentitem,0,CF_EXPANDSIZE);
    
    sscanf(sp,"%[^$]",currentitem);
    
@@ -375,7 +376,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
    
    strcat(buffer,currentitem);
    sp += strlen(currentitem);
-
+   
    if (*sp == '\0')
       {
       break;
@@ -383,6 +384,8 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
 
    if (*sp == '$')
       {
+      ExtractOuterVarString(sp,var);
+      
       switch (*(sp+1))
          {
          case '(': 
@@ -398,7 +401,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
          }
       }
 
-   currentitem[0] = '\0';
+   memset(currentitem,0,CF_EXPANDSIZE);
 
    temp[0] = '\0';
    ExtractInnerVarString(sp,temp);
@@ -415,7 +418,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
       strncpy(currentitem,temp,CF_BUFSIZE-1);
       }
 
-   increment = strlen(currentitem)+strlen("()");
+   increment = strlen(var) - 1;
    Debug("Scanning variable %s\n",currentitem);
    
    switch (ScanVariable(currentitem))
@@ -779,7 +782,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
           break;
           
       default:
-          
+
           if ((env = GetMacroValue(CONTEXTID,currentitem)) != NULL)
              {
              if (ExpandOverflow(buffer,env))
@@ -804,7 +807,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
              }
           strcat(buffer,name);
       }
-   
+
    sp += increment;
    currentitem[0] = '\0';
    }
