@@ -295,7 +295,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
              
              if (correct_server && IsDefinedClass(mp->classes))
                 {
-                Verbose("Found an approval to issue reply from a locally executed method (%s) to final destination sender %s\n",name,client);
+                Verbose("Found an approval to issue reply from a locally executed method (%s) to client %s from server %s\n",name,client,server);
                 }
              else
                 {
@@ -563,7 +563,8 @@ if (argnum != methodargc)
    return false;
    }
 
-snprintf(buf,CF_BUFSIZE,"rpc_in_%s_%s",methodname,digeststring);
+snprintf(buf,CF_BUFSIZE,"rpc_in_%s_%s_%s",name,server,digeststring);
+Debug("Checking the neuronic deadtime to see if we just did a version of this: class %s\n",buf);
 
 if (IsDefinedClass(CanonifyName(buf)))
    {
@@ -595,10 +596,14 @@ if ((fp = fopen(basepackage,"r")) == NULL)
     arg[0] = '\0';
     
     sscanf(line,"%63s %s",type,arg);
+    Debug("\nReading line: %s",line);
     
     switch (ConvertMethodProto(type))
        {
        case cfmeth_name:
+
+           Debug("Handling name %s=%s\n",arg,name);
+           
            if (strncmp(arg,name,strlen(name)) != 0)
               {
               snprintf(OUTPUT,CF_BUFSIZE,"Method name %s did not match package name %s",name,arg);
@@ -611,10 +616,14 @@ if ((fp = fopen(basepackage,"r")) == NULL)
            break;
            
        case cfmeth_isreply:
+
+           Debug("Method identifies itself as a reply\n");
            isreply = true;
            break;
            
        case cfmeth_sendclass:
+
+           Debug("Method is sending us as classlist: %s\n",arg);
            
            if (IsItemIn(mp->return_classes,arg))
               {
@@ -627,21 +636,25 @@ if ((fp = fopen(basepackage,"r")) == NULL)
                  
                  for (ip = mp->servers; ip != NULL; ip=ip->next)
                     {
-                    if (strcmp(ip->name,server) == 0)
+                    if ((strcmp(ip->name,IPString2Hostname(server)) == 0) ||
+                        (strcmp(ip->name,IPString2UQHostname(server)) == 0) ||
+                        (strcmp(ip->name,server) == 0)
+                        )
                        {
-                       snprintf(classname,CF_MAXVARSIZE-1,"%s_%d",name,i++);
+                       snprintf(classname,CF_MAXVARSIZE-1,"%s_%d",name,i);
                        Verbose("Setting method class %s\n",classname);
+                       AddPrefixedMultipleClasses(classname,arg);
                        break;
                        }
+                    i++;
                     }
                  }
               else
                  {
                  snprintf(classname,CF_MAXVARSIZE-1,"%s",name);
-                 Verbose("Setting method classes %s\n",classname);                 
+                 Verbose("Setting method classes %s\n",classname);
+                 AddPrefixedMultipleClasses(classname,arg);
                  }
-              
-              AddPrefixedMultipleClasses(classname,arg);
               }
            else
               {
@@ -650,13 +663,17 @@ if ((fp = fopen(basepackage,"r")) == NULL)
            break;
            
        case cfmeth_attacharg:
+
+           Debug("Method has attached an argument\n",arg);
            
            if (methodargv[argnum][0] == '/')
               {
               int val;
               struct stat statbuf;
               FILE *fin,*fout;
-              
+
+              Debug("Method's reply is supposed to be a file %s\n",methodargv[argnum]);
+                         
               if (stat (arg,&statbuf) == -1)
                  {
                  Verbose("Unable to stat file %s\n",arg);
@@ -713,7 +730,8 @@ if ((fp = fopen(basepackage,"r")) == NULL)
               {
               char argbuf[CF_BUFSIZE],newname[CF_MAXVARSIZE];
               memset(argbuf,0,CF_BUFSIZE);
-              
+
+              Debug("Method reply is meant to be a variable\n");
               Debug("Read arg from file %s in parent load\n",arg);
               
               if ((fin = fopen(arg,"r")) == NULL)
@@ -723,31 +741,42 @@ if ((fp = fopen(basepackage,"r")) == NULL)
                  }
               
               fread(argbuf,CF_BUFSIZE-1,1,fin);
+              Debug("ARG read as: %40.40s\n",argbuf);
               fclose(fin);
 
               if (IsItemIn(mp->return_vars,methodargv[argnum]))
                  {
+                 Debug("ARG passes the return ACL: %s\n",methodargv[argnum]);
+                 
                  if (ListLen(mp->servers) > 1)
                     {
                     struct Item *ip;
                     int i = 1;
                     
+                    Debug("Multi-server reply from [%s]\n",server);
+                    
                     for (ip = mp->servers; ip != NULL; ip=ip->next)
                        {
-                       if (strcmp(ip->name,server) == 0)
+                       if ((strcmp(ip->name,IPString2Hostname(server)) == 0) ||
+                           (strcmp(ip->name,IPString2UQHostname(server)) == 0) ||
+                           (strcmp(ip->name,server) == 0)
+                           )
                           {
-                          snprintf(newname,CF_MAXVARSIZE-1,"%s_%d.%s",name,i++,methodargv[argnum]);
+                          snprintf(newname,CF_MAXVARSIZE-1,"%s_%d.%s",name,i,methodargv[argnum]);
                           Verbose("Setting variable %s to %s\n",newname,argbuf);
+                          AddMacroValue(CONTEXTID,newname,argbuf);
                           break;
                           }
+                       i++;
                        }
                     }
                  else
                     {
+                    Debug("Single server reply\n");
                     snprintf(newname,CF_MAXVARSIZE-1,"%s.%s",name,methodargv[argnum]);
                     Verbose("Setting variable %s to %s\n",newname,argbuf);
+                    AddMacroValue(CONTEXTID,newname,argbuf);
                     }
-                 AddMacroValue(CONTEXTID,newname,argbuf);
                  }
               else
                  {
@@ -757,8 +786,10 @@ if ((fp = fopen(basepackage,"r")) == NULL)
            
            Debug("Unlink %s\n",arg);
            unlink(arg);
-           argnum++;
-           
+           argnum++;           
+           break;
+
+       case cfmeth_time:
            break;
            
        default:
@@ -1589,11 +1620,11 @@ if ((fp = fopen(name,"w")) == NULL)
        {
        char correction[CF_BUFSIZE];
        snprintf(correction,CF_BUFSIZE-1,"%s/rpc_in/%s",VLOCKDIR,name+strlen(VLOCKDIR)+2+strlen("rpc_out"));
-       fprintf(fp,"%s %s+%d (%s)\n",VMETHODPROTO[cfmeth_attacharg],correction,i,expbuf);
+       fprintf(fp,"%s %s+%d\n",VMETHODPROTO[cfmeth_attacharg],correction,i);
        }
     else
        {
-       fprintf(fp,"%s %s+%d (%s)\n",VMETHODPROTO[cfmeth_attacharg],name,i,expbuf);
+       fprintf(fp,"%s %s+%d\n",VMETHODPROTO[cfmeth_attacharg],name,i);
        }
     }
 

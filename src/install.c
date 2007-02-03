@@ -3793,7 +3793,6 @@ for (sip = ptr->servers; sip != NULL; sip = sip->next)
 
 ChecksumList(bare_send_args,ptr->digest,'m');
 DeleteItemList(bare_send_args);
- 
 
 
 ptr->bundle = NULL;
