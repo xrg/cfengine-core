@@ -1188,7 +1188,7 @@ void CompressFile(char *file)
 { char comm[CF_BUFSIZE];
   FILE *pp;
  
-  if ((COMPRESSCOMMAND == NULL) || strlen(COMPRESSCOMMAND) == 0)
+if ((COMPRESSCOMMAND == NULL) || strlen(COMPRESSCOMMAND) == 0)
    {
    CfLog(cferror,"CompressCommand variable is not defined","");
    return;

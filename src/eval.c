@@ -581,7 +581,7 @@ Debug1("NegateCompoundClass(%s)",class);
 
 while(*sp != '\0')
    {
-   sscanf(sp,"%[^.]",cbuff);
+   sscanf(sp,"%255[^.]",cbuff);
 
    while ((*sp != '\0') && ((*sp !='.')||(*sp == '&')))
       {

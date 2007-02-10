@@ -773,7 +773,7 @@ for (ip = VCFRUNCLASSES; ip != NULL; ip = ip->next)
       memset(sendbuffer,0,CF_BUFSIZE);
       }
    
-   strcat(sendbuffer,ip->name);
+   strncat(sendbuffer,ip->name,CF_BUFSIZE-CF_BUFFERMARGIN);
    strcat(sendbuffer," ");
 
    sp += strlen(ip->name)+1;

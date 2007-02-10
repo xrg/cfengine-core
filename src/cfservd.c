@@ -1749,7 +1749,7 @@ else
    if ((args != NULL) & (strlen(args) > 0))
       {
       strcat(ebuff," ");
-      strcat(ebuff,args);
+      strncat(ebuff,args,CF_BUFSIZE-strlen(ebuff));
 
       snprintf(sendbuffer,CF_BUFSIZE,"cfservd Executing %s\n",ebuff);
       SendTransaction(conn->sd_reply,sendbuffer,0,CF_DONE);
