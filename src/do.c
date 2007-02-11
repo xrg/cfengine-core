@@ -1162,7 +1162,7 @@ for (tp = VTIDY; tp != NULL; tp=tp->next)
    }
  
  
- Debug2("End PATHTIDY:\n");
+Debug2("End PATHTIDY:\n");
 
 
 Banner("Tidying home directories");

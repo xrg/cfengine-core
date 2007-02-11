@@ -1289,6 +1289,7 @@ switch(GetCommAttribute(item))
        else if (strcmp(value,"warn") == 0)
           {
           PROACTION = 'w';
+          ACTIONPENDING = true;
           }
        else
           {
@@ -6473,8 +6474,9 @@ tp->next = *list;
 tp->dirlinks = ldirs;
 tp->log = LOGP;
 tp->inform = INFORMP;
-tp->compress=COMPRESS;
-tp->rmdirs =tidydirs;
+tp->compress = COMPRESS;
+tp->rmdirs = tidydirs;
+tp->tidied = false;
 
 *list = tp;
 

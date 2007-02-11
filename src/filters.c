@@ -179,6 +179,7 @@ else
                 
                 sprintf(ebuff,"%d",i);
                 break;
+                
             case filterexecregex:
                 for (sp = ebuff+strlen(ebuff)-1; (*sp != '(') && (sp > ebuff); sp--)
                    {
@@ -336,13 +337,18 @@ for (fp = VFILTERLIST; fp != NULL; fp = fp->next)
          CfLog(cferror,OUTPUT,"");
          FatalError("Consistency errors");
          }
+
       if (strncmp(fp->criteria[filterfromttime],"accumulated",strlen("accumulated")) != 0)
          {
          yyerror("Must use accumulated time in FromTtime");
          }
+
       if (strncmp(fp->criteria[filtertottime],"accumulated",strlen("accumulated")) != 0)
          {
-         yyerror("Must use accumulated time in ToTtime");
+         if (strcmp(fp->criteria[filtertottime],"inf") != 0)
+            {
+            yyerror("Must use accumulated time in ToTtime");
+            }
          }
       }
    
@@ -1141,7 +1147,7 @@ for (i = 0; names[i] != NULL; i++)
       ParseTTime(line[i], timestr);
       Debug("ParseTTime = %s\n",timestr); 
       pstime = Date2Number(timestr,now);
-
+      
       return ((fromtime < pstime) && (pstime < totime));
       }
    } 

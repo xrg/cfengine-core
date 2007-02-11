@@ -384,14 +384,14 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
 
    if (*sp == '$')
       {
-      ExtractOuterVarString(sp,var);
-      
       switch (*(sp+1))
          {
-         case '(': 
+         case '(':
+                   ExtractOuterVarString(sp,var);
                    varstring = ')';
                    break;
-         case '{': 
+         case '{':
+                   ExtractOuterVarString(sp,var);
                    varstring = '}';
                    break;
 

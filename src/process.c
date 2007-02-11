@@ -109,7 +109,9 @@ void DoProcessCheck(struct Process *pp,struct Item *procdata)
   mode_t maskval;
   struct stat statbuf;
   struct Item *killlist = NULL;
-  
+
+Debug("DoProcessCheck()\n");
+
 matches = FindMatches(pp,procdata,&killlist); 
 
 if (matches > 0)

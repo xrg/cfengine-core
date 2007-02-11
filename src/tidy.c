@@ -73,6 +73,7 @@ for (tlp = tp->tidylist; tlp != NULL; tlp=tlp->next)
       if (tlp != NULL)
          {
          KillOldLink(path,tlp->defines);
+         tlp->tidied = true;
          }
       else
          {
@@ -141,6 +142,10 @@ for (tlp = tp->tidylist; tlp != NULL; tlp=tlp->next)
    Debug2("Matched %s to %s in %s\n",name,tlp->pattern,path);
    DoTidyFile(path,name,tlp,statbuf,CF_NOLOGFILE,is_dir,usepath);
    ResetOutputRoute('d','d');
+   if (!tlp->tidied)
+      {
+      AddMultipleClasses(tlp->elsedef);
+      }
    }
 }
 
@@ -230,6 +235,7 @@ if (age_match && size_match)
             else
                {
                AddMultipleClasses(tlp->defines);
+               tlp->tidied = true;
                }
             }
          else
@@ -242,6 +248,7 @@ if (age_match && size_match)
             else
                {
                AddMultipleClasses(tlp->defines);
+               tlp->tidied = true;
                }
             }
          }
@@ -268,6 +275,7 @@ if (age_match && size_match)
          if (ret != -1)
             {
             AddMultipleClasses(tlp->defines);
+            tlp->tidied = true;
             }
          }
       }

@@ -1482,13 +1482,13 @@ struct Tidy
    int          maxrecurse;              /* sets maxval */
    char         done;                    /* Too intensive in Tidy Pattern */
    char         *scope;
-   char        *path;
+   char         *path;
    char         xdev;
-   int ifelapsed;
-   int expireafter;
+   int          ifelapsed;
+   int          expireafter;
 
-   struct Item *exclusions;
-   struct Item *ignores;      
+   struct Item        *exclusions;
+   struct Item        *ignores;      
    struct TidyPattern *tidylist;
    struct Tidy        *next;   
    };
@@ -1504,6 +1504,7 @@ struct Tidy
          struct Item        *filters;
 	 char               *classes;
 	 char               *defines;
+         char               tidied;
 	 char		    *elsedef;
          char               compress;
          char               travlinks;
