@@ -237,11 +237,11 @@ if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
 
  /* Walk through the database and print out the key/data pairs. */
 
+memset(&key,0,sizeof(key));
+memset(&value,0,sizeof(value));
+
 while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
    {
-   memset(&key,0,sizeof(key));
-   memset(&value,0,sizeof(value));
-
    if (stat((char *)(key.data+CF_CHKSUMKEYOFFSET),&statbuf) == -1)
       {
       Verbose("Purging file %s from checksum db - no longer exists\n",(char *)key.data+CF_CHKSUMKEYOFFSET);
@@ -253,6 +253,9 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
          CfLog(cferror,"","db_store");
          }
       }
+   
+   memset(&key,0,sizeof(key));
+   memset(&value,0,sizeof(value));
    }
 
 dbcp->c_close(dbcp);
