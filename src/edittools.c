@@ -38,8 +38,6 @@
 /* EDIT Data structure routines                                     */
 /********************************************************************/
 
-/********************************************************************/
-
 void WrapDoEditFile(struct Edit *ptr,char *filename)
 
 { struct stat statbuf,statbuf2;
@@ -137,7 +135,8 @@ void DoEditFile(struct Edit *ptr,char *filename)
   int todo = 0, potentially_outstanding = false;
   FILE *loop_fp = NULL;
   int DeleteItemNotContaining(),DeleteItemNotStarting(),DeleteItemNotMatching();
-  int global_replace = -1;
+  int global_replace = -1, ifel=-1,expaf=-1;
+  int ifelapsed=VIFELAPSED,expireafter=VEXPIREAFTER;
 
 Debug("DoEditFile(%s)\n",filename);
 filestart = NULL;
@@ -159,6 +158,24 @@ for (ep = ptr->actions; ep != NULL; ep=ep->next)
       {
       todo++;
       }
+
+   switch (ep->code)
+      {
+      case EditIfElapsed:
+          ifel = atoi(ep->data);
+          if (ifel > 0)
+             {
+             ifelapsed = ifel;
+             }
+          break;
+      case EditExpireAfter:
+          expaf = atoi(ep->data);
+          if (expaf > 0)
+             {
+             expireafter = expaf;
+             }
+          break;
+      }
    }
 
 if (todo == 0)   /* Because classes are stored per edit, not per file */
@@ -166,7 +183,7 @@ if (todo == 0)   /* Because classes are stored per edit, not per file */
    return;
    }
 
-if (!GetLock(ASUniqueName("editfile"),CanonifyName(filename),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+if (!GetLock(ASUniqueName("editfile"),CanonifyName(filename),ifelapsed,expireafter,VUQNAME,CFSTARTTIME))
    {
    ptr->done = 'y';
    return;
@@ -233,6 +250,8 @@ while (ep != NULL)
       case EditFilter:
       case DefineClasses:
       case ElseDefineClasses:
+      case EditIfElapsed:
+      case EditExpireAfter:
         break;
 
       case EditUseShell:
