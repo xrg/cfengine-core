@@ -37,6 +37,69 @@
 
 /***************************************************************/
 
+void RecordPerformance(char *eventname,time_t t,double value)
+
+{ DB *dbp;
+  DB_ENV *dbenv = NULL;
+  char name[CF_BUFSIZE],databuf[CF_BUFSIZE];
+  struct Event e,newe;
+  double lastseen,delta2;
+  int lsea = CF_WEEK;
+  time_t now = time(NULL);
+
+Debug("PerformanceEvent(%s,%.1f s)\n",eventname,value);
+
+snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_PERFORMANCE);
+
+if ((errno = db_create(&dbp,dbenv,0)) != 0)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open performance database %s\n",name);
+   CfLog(cferror,OUTPUT,"db_open");
+   return;
+   }
+
+if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open performance database %s\n",name);
+   CfLog(cferror,OUTPUT,"db_open");
+   dbp->close(dbp,0);
+   return;
+   }
+
+if (ReadDB(dbp,databuf,&e,sizeof(e)))
+   {
+   lastseen = now - e.t;
+   newe.t = t;
+   newe.Q.q = value;
+   newe.Q.expect = SWAverage(value,e.Q.expect);
+   delta2 = (value - e.Q.expect)*(value - e.Q.expect);
+   newe.Q.var = SWAverage(delta2,e.Q.var);
+   }
+else
+   {
+   lastseen = 0.0;
+   newe.t = t;
+   newe.Q.q = value;
+   newe.Q.expect = value;
+   newe.Q.var = 0.0;
+   }
+
+if (lastseen > (double)lsea)
+   {
+   Verbose("Performance record %s expired\n",eventname);
+   DeleteDB(dbp,eventname);   
+   }
+else
+   {
+   Verbose("Performance(%s): time=%.2f secs, av=%.2f +/- %.2f",eventname,value,newe.Q.expect,sqrt(newe.Q.var));
+   WriteDB(dbp,eventname,&newe,sizeof(newe));
+   }
+
+dbp->close(dbp,0);
+}
+
+/***************************************************************/
+
 void LastSeen(char *hostname,enum roles role)
 
 { DB *dbp;
@@ -139,20 +202,12 @@ void CheckFriendConnections(int hours)
   DBC *dbcp;
   DB_ENV *dbenv = NULL;
   int ret, secs = CF_TICKS_PER_HOUR*hours, criterion;
-  time_t now = time(NULL),splaytime = 0,lsea = -1, tthen;
-  char name[CF_BUFSIZE],hostname[CF_BUFSIZE];
+  time_t now = time(NULL),lsea = -1, tthen;
+  char name[CF_BUFSIZE],hostname[CF_BUFSIZE],datebuf[CF_MAXVARSIZE];
+  char addr[CF_BUFSIZE],type[CF_BUFSIZE];
   struct QPoint entry;
-  double then = 0.0, average = 0.0, var = 0.0;
+  double then = 0.0, average = 0.0, var = 0.0, ticksperminute = 60.0;
   double ticksperhour = (double)CF_TICKS_PER_HOUR,ticksperday = (double)CF_TICKS_PER_DAY;
-
-if (GetMacroValue(CONTEXTID,"SplayTime"))
-   {
-   splaytime = atoi(GetMacroValue(CONTEXTID,"SplayTime"));
-   if (splaytime < 0)
-      {
-      splaytime = 0;   
-      }
-   }
 
 Verbose("CheckFriendConnections(%d)\n",hours);
 snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
@@ -209,13 +264,13 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
 
    if (secs == 0)
       {
-      criterion = (then + (int)(average+0.5) > now + splaytime);
+      criterion = (now - then > (int)(average+0.5));
       }
    else
       {
-      criterion = (then + secs > now + splaytime);
+      criterion = (now - then > secs);
       }
-   
+
    if (GetMacroValue(CONTEXTID,"LastSeenExpireAfter"))
       {
       lsea = atoi(GetMacroValue(CONTEXTID,"LastSeenExpireAfter"));
@@ -226,28 +281,56 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       {
       lsea = CF_WEEK;
       }
-
-   if (average > (double)lsea)   /* Don't care about outliers */
-      {
-      criterion = false;
-      }
-
-   if (average < CF_HALF_HOUR)  /* rapid repetition checks do not count */
-      {
-      criterion = false;
-      }
-
+   
    tthen = (time_t)then;
 
-   snprintf(OUTPUT,CF_BUFSIZE,"IP %36s last seen at [%s] not seen for !%.2f! hours; Av %.2f +/- %.2f hours\n",hostname,ctime(&tthen),((double)(now-then))/ticksperhour,average/ticksperhour,sqrt(var)/ticksperhour);
-      
+   snprintf(datebuf,CF_BUFSIZE-1,"%s",ctime(&tthen));
+   datebuf[strlen(datebuf)-9] = '\0';                     /* Chop off second and year */
+
+   if (strlen(hostname+1) > 15)
+      {
+      snprintf(addr,15,"...%s",hostname+strlen(hostname)-10); /* ipv6 */
+      }
+   else
+      {
+      snprintf(addr,15,"%s",hostname+1);
+      }
+
+   switch(*hostname)
+      {
+      case '+':
+          snprintf(type,CF_BUFSIZE,"last responded to hails");
+          break;
+      case'-':
+          snprintf(type,CF_BUFSIZE,"last hailed us");
+          break;
+      }
+
+   snprintf(OUTPUT,CF_BUFSIZE,"Host %s i.e. %s %s @ [%s]",
+            IPString2Hostname(hostname+1),
+            addr,
+            type,
+            datebuf);
+   
+   snprintf(OUTPUT,CF_BUFSIZE,"i.e. (%.2f) hrs ago, Av %.2f +/- %.2f hrs\n",
+            ((double)(now-then))/ticksperhour,
+            average/ticksperhour,
+            sqrt(var)/ticksperhour);
+   
    if (criterion)
       {
       CfLog(cferror,OUTPUT,"");
       }
    else
-      {      
+      {
+      CfLog(cfverbose,OUTPUT,"");
+      }
+   
+   if (now - then > lsea)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Giving up on host %s -- too long since last seen",IPString2Hostname(hostname+1));
       CfLog(cfinform,OUTPUT,"");
+      DeleteDB(dbp,hostname);
       }
 
    memset(&value, 0, sizeof(value));

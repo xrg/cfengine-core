@@ -559,6 +559,7 @@ char *IPString2UQHostname (char *name);
 
 /* instrument.c */
 
+void RecordPerformance(char *name, time_t t, double value);
 void LastSeen (char *host,enum roles role);
 void CheckFriendConnections(int hours);
 DBT *NewDBKey(char *name);

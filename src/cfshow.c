@@ -25,6 +25,7 @@ struct option CFDOPTIONS[] =
    { "verbose",no_argument,0,'v' },
    { "locks",no_argument,0,'l'},
    { "last-seen",no_argument,0,'s'},
+   { "performance",no_argument,0,'p'},
    { "checksum",no_argument,0,'c'},
    { "active",no_argument,0,'a'},
    { "version",no_argument,0,'V'},
@@ -36,7 +37,8 @@ enum databases
    cf_db_lastseen,
    cf_db_locks,
    cf_db_active,
-   cf_db_checksum
+   cf_db_checksum,
+   cf_db_performance
    };
 
 enum databases TODO = -1;
@@ -54,6 +56,7 @@ void PrintDB(void);
 void ShowLastSeen(void);
 void ShowChecksums(void);
 void ShowLocks(int active);
+void ShowPerformance(void);
 char *ChecksumDump(unsigned char digest[EVP_MAX_MD_SIZE+1]);
 
 /*******************************************************************/
@@ -85,20 +88,20 @@ while ((c=getopt_long(argc,argv,"hdvaVlsc",CFDOPTIONS,&optindex)) != EOF)
       {
       case 'd': 
 
-                switch ((optarg==NULL)?3:*optarg)
-                   {
-                   case '1': D1 = true;
-                             break;
-                   case '2': D2 = true;
-                             break;
-                   default:  DEBUG = true;
-                             break;
-                   }
-                
-                VERBOSE = true;
-                printf("cfexecd Debug mode: running in foreground\n");
-                break;
-
+          switch ((optarg==NULL)?3:*optarg)
+             {
+             case '1': D1 = true;
+                 break;
+             case '2': D2 = true;
+                 break;
+             default:  DEBUG = true;
+                 break;
+             }
+          
+          VERBOSE = true;
+          printf("cfexecd Debug mode: running in foreground\n");
+          break;
+          
       case 'v': VERBOSE = true;
          break;
 
@@ -122,6 +125,10 @@ while ((c=getopt_long(argc,argv,"hdvaVlsc",CFDOPTIONS,&optindex)) != EOF)
 
       case 'c':
           TODO = cf_db_checksum;
+          break;
+
+      case 'p':
+          TODO = cf_db_performance;
           break;
           
       default:  Syntax();
@@ -163,6 +170,9 @@ switch (TODO)
        break;
    case cf_db_checksum:
        ShowChecksums();
+       break;
+   case cf_db_performance:
+       ShowPerformance();
        break;
    }
 }
@@ -280,6 +290,88 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
           ((double)(now-then))/ticksperhr,
           average/ticksperhr,
           sqrt(var)/ticksperhr);
+   }
+ 
+dbcp->c_close(dbcp);
+dbp->close(dbp,0);
+}
+
+/*******************************************************************/
+
+void ShowPerformance()
+
+{ DBT key,value;
+  DB *dbp;
+  DBC *dbcp;
+  DB_ENV *dbenv = NULL;
+  double now = (double)time(NULL),average = 0, var = 0;
+  double ticksperminute = 60.0;
+  char name[CF_BUFSIZE],eventname[CF_BUFSIZE];
+  struct Event entry;
+  int ret;
+  
+snprintf(name,CF_BUFSIZE-1,"%s/%s",CFWORKDIR,CF_PERFORMANCE);
+
+if ((errno = db_create(&dbp,dbenv,0)) != 0)
+   {
+   printf("Couldn't open last-seen database %s\n",name);
+   perror("db_open");
+   return;
+   }
+
+if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+   {
+   printf("Couldn't open last-seen database %s\n",name);
+   perror("db_open");
+   dbp->close(dbp,0);
+   return;
+   }
+
+/* Acquire a cursor for the database. */
+
+if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
+   {
+   printf("Error reading from last-seen database: ");
+   dbp->err(dbp, ret, "DB->cursor");
+   return;
+   }
+
+ /* Initialize the key/data return pair. */
+
+ 
+memset(&key, 0, sizeof(key));
+memset(&value, 0, sizeof(value));
+memset(&entry, 0, sizeof(entry)); 
+ 
+ /* Walk through the database and print out the key/data pairs. */
+
+while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
+   {
+   double measure;
+   time_t then;
+   char tbuf[CF_BUFSIZE],addr[CF_BUFSIZE];
+
+   memcpy(&then,value.data,sizeof(then));
+   strcpy(eventname,(char *)key.data);
+
+   if (value.data != NULL)
+      {
+      memcpy(&entry,value.data,sizeof(entry));
+
+      then    = entry.t;
+      measure = entry.Q.q/ticksperminute;;
+      average = entry.Q.expect/ticksperminute;;
+      var     = entry.Q.var;
+
+      snprintf(tbuf,CF_BUFSIZE-1,"%s",ctime(&then));
+      tbuf[strlen(tbuf)-9] = '\0';                     /* Chop off second and year */
+
+      printf("(%.3f mins @ %s) Av %.3f +/- %.3f for %s \n",measure,tbuf,average,sqrt(var)/ticksperminute,eventname);
+      }
+   else
+      {
+      continue;
+      }
    }
  
 dbcp->c_close(dbcp);
@@ -483,6 +575,8 @@ for (i = 0; i < len; i++)
 return buffer; 
 }    
 
+
+/*********************************************************************/
 
 int RecursiveTidySpecialArea(char *name,struct Tidy *tp,int maxrecurse,struct stat *sb)
 

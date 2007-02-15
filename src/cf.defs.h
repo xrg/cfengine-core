@@ -345,18 +345,20 @@ extern int errno;
 
 /*******************************************************************/
 
+#define CF_PERFORMANCE   "performance.db"
+#define CF_CHKDB         "checksum_digests.db"
 #define CF_AVDB_FILE     "cf_observations.db"
 #define CF_OLDAVDB_FILE  "cf_learning.db"
 #define CF_STATEDB_FILE  "cf_state.db"
 #define CF_OLDLASTDB_FILE "cf_lastseen.db"
 #define CF_LASTDB_FILE   "cf_LastSeen.db"
+
 #define CF_STATELOG_FILE "state_log"
 #define CF_ENVNEW_FILE   "env_data.new"
 #define CF_ENV_FILE      "env_data"
+
 #define CF_TCPDUMP_COMM "/usr/sbin/tcpdump -t -n -v"
 
-
-#define CF_CHKDB "checksum_digests.db"
 
 #define CF_INPUTSVAR "CFINPUTS"          /* default name for file path var */
 #define CF_ALLCLASSESVAR "CFALLCLASSES"  /* default name for CFALLCLASSES env */
@@ -437,6 +439,12 @@ struct QPoint
    double q;
    double expect;
    double var;
+   };
+
+struct Event
+   {
+   time_t t;
+   struct QPoint Q;
    };
 
 struct Averages

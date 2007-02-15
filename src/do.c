@@ -1210,11 +1210,12 @@ Verbose("Done with home directories\n");
 void Scripts()
 
 { struct ShellComm *ptr;
-  char line[CF_BUFSIZE];
+  char line[CF_BUFSIZE],eventname[CF_BUFSIZE];
   char comm[20], *sp;
   char execstr[CF_EXPANDSIZE];
   char chdir_buf[CF_EXPANDSIZE];
   char chroot_buf[CF_EXPANDSIZE];
+  time_t start,end;
   int print;
   mode_t maskval = 0;
   FILE *pp;
@@ -1240,17 +1241,18 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
 
    ResetOutputRoute(ptr->log,ptr->inform);
    ExpandVarstring(ptr->name,execstr,NULL);
-   
+
    if (!GetLock(ASUniqueName("shellcommand"),execstr,ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
       {
       ptr->done = 'y';
       continue;
       }
-
    
    snprintf(OUTPUT,CF_BUFSIZE*2,"Executing script %s...(timeout=%d,uid=%d,gid=%d)\n",execstr,ptr->timeout,ptr->uid,ptr->gid);
    CfLog(cfinform,OUTPUT,"");
-   
+
+   start = time(NULL);
+
    if (DONTDO && preview != 'y')
       {
       printf("%s: execute script %s\n",VPREFIX,execstr);
@@ -1348,13 +1350,14 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
             
             char *prefixes[] =
                 {
-                    ":silent:",
-                    ":inform:",
-                    ":verbose:",
-                    ":editverbose:",
-                    ":error:",
-                    ":logonly:",
+                ":silent:",
+                ":inform:",
+                ":verbose:",
+                ":editverbose:",
+                ":error:",
+                ":logonly:",
                 };
+            
             int precount = sizeof(prefixes)/sizeof(char *);
             
             if (line[0] == ':')
@@ -1363,7 +1366,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
                 * Line begins with colon - see if it matches a log prefix.
                 */
                
-               for (i=0; i<precount; i++)
+               for (i=0; i < precount; i++)
                   {
                   int prelen = 0;
                   prelen = strlen(prefixes[i]);
@@ -1423,6 +1426,10 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
    
    ResetOutputRoute('d','d');
    ReleaseCurrentLock();
+   
+   end = time(NULL);
+   snprintf(eventname,CF_BUFSIZE-1,"Exec(%s)",execstr);
+   RecordPerformance(eventname,start,(double)(end-start));
    }
 }
 
@@ -2411,6 +2418,11 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
 
    for (ip = VIMAGE; ip != NULL; ip=ip->next)
       {
+      time_t start, end;
+      char eventname[CF_BUFSIZE];
+
+      start = time(NULL);
+      
       ExpandVarstring(ip->server,server,NULL);            
       AddMacroValue(CONTEXTID,"this",server);
       ExpandVarstring(ip->path,path,NULL);
@@ -2523,6 +2535,10 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
       ReleaseCurrentLock();
       SILENT = savesilent;
       ResetOutputRoute('d','d');
+
+      end = time(NULL);
+      snprintf(eventname,CF_BUFSIZE-1,"Copy(%s:%s > %s)",server,path,destination);
+      RecordPerformance(eventname,start,(double)(end-start));
       }
    
    CloseServerConnection();
