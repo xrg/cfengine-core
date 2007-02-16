@@ -57,7 +57,7 @@ char *Hostname2IPString(char *hostname)
 
 { static char ipbuffer[CF_SMALLBUF];
   int err;
- 
+
 #if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
 
  struct addrinfo query, *response, *ap;
@@ -102,7 +102,7 @@ if ((hp = gethostbyname(hostname)) != NULL)
    return ipbuffer;
    }
 #endif
-   
+
 snprintf(ipbuffer,CF_SMALLBUF-1,"Unknown IP %s",hostname);
 return ipbuffer;
 }
@@ -117,7 +117,7 @@ char *IPString2Hostname(char *ipaddress)
 
 #if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
 
- struct addrinfo query, *response, *ap;
+  struct addrinfo query, *response, *ap;
 
 memset(&query,0,sizeof(query));
 memset(&response,0,sizeof(response));

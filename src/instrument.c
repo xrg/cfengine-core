@@ -33,6 +33,10 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
+# if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+pthread_mutex_t MUTEX_GETADDR = PTHREAD_MUTEX_INITIALIZER;
+# endif
+
 /* Alter this code at your peril. Berkeley DB is *very* sensitive to errors. */
 
 /***************************************************************/
@@ -140,6 +144,14 @@ if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
    return;
    }
 
+#ifdef HAVE_PTHREAD_H  
+if (pthread_mutex_lock(&MUTEX_GETADDR) != 0)
+   {
+   CfLog(cferror,"pthread_mutex_lock failed","unlock");
+   exit(1);
+   }
+#endif
+
 switch (role)
    {
    case cf_accept:
@@ -149,6 +161,15 @@ switch (role)
        snprintf(databuf,CF_BUFSIZE-1,"+%s",Hostname2IPString(hostname));
        break;
    }
+
+#ifdef HAVE_PTHREAD_H  
+if (pthread_mutex_unlock(&MUTEX_GETADDR) != 0)
+   {
+   CfLog(cferror,"pthread_mutex_unlock failed","unlock");
+   exit(1);
+   }
+#endif
+
 
 if (GetMacroValue(CONTEXTID,"LastSeenExpireAfter"))
    {
@@ -287,14 +308,7 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
    snprintf(datebuf,CF_BUFSIZE-1,"%s",ctime(&tthen));
    datebuf[strlen(datebuf)-9] = '\0';                     /* Chop off second and year */
 
-   if (strlen(hostname+1) > 15)
-      {
-      snprintf(addr,15,"...%s",hostname+strlen(hostname)-10); /* ipv6 */
-      }
-   else
-      {
-      snprintf(addr,15,"%s",hostname+1);
-      }
+   snprintf(addr,15,"%s",hostname+1);
 
    switch(*hostname)
       {
@@ -306,12 +320,21 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
           break;
       }
 
-   snprintf(OUTPUT,CF_BUFSIZE,"Host %s i.e. %s %s @ [%s]",
+   snprintf(OUTPUT,CF_BUFSIZE,"Host %s i.e. %s %s @ [%s] (overdue)",
             IPString2Hostname(hostname+1),
             addr,
             type,
             datebuf);
-   
+
+   if (criterion)
+      {
+      CfLog(cferror,OUTPUT,"");
+      }
+   else
+      {
+      CfLog(cfverbose,OUTPUT,"");
+      }
+
    snprintf(OUTPUT,CF_BUFSIZE,"i.e. (%.2f) hrs ago, Av %.2f +/- %.2f hrs\n",
             ((double)(now-then))/ticksperhour,
             average/ticksperhour,

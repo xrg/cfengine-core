@@ -1327,9 +1327,9 @@ struct sock
 struct cfagent_connection
    {
    int sd;
-   int trust;
+      int trust;            /* true if key being accepted on trust */
    int protoversion;
-   int family;     /* AF_INET or AF_INET6 */
+   int family;                              /* AF_INET or AF_INET6 */
    char localip[CF_MAX_IP_LEN];
    char remoteip[CF_MAX_IP_LEN];
    unsigned char *session_key;
