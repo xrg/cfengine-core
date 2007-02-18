@@ -95,7 +95,7 @@ if (lastseen > (double)lsea)
    }
 else
    {
-   Verbose("Performance(%s): time=%.2f secs, av=%.2f +/- %.2f",eventname,value,newe.Q.expect,sqrt(newe.Q.var));
+   Verbose("Performance(%s): time=%.2f secs, av=%.2f +/- %.2f\n",eventname,value,newe.Q.expect,sqrt(newe.Q.var));
    WriteDB(dbp,eventname,&newe,sizeof(newe));
    }
 
@@ -285,7 +285,7 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
 
    if (secs == 0)
       {
-      criterion = (now - then > (int)(average+0.5));
+      criterion = (now - then > (int)(average+sqrt(var)+0.5));
       }
    else
       {
