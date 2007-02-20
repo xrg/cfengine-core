@@ -820,6 +820,8 @@ int linux_suse_version(void)
 #define SUSE_SLES10_ID "SUSE Linux Enterprise Server 10"
 #define SUSE_SLES_ID "SUSE LINUX Enterprise Server"
 #define SUSE_RELEASE_FLAG "linux "
+#define SUSE_SLES_ID_2 "SUSE Linux Enterprise Server"
+#define SUSE_SLES10_ID "SUSE Linux Enterprise Server 10"
 
 /* The full string read in from SuSE-release */
 char relstring[CF_MAXVARSIZE];
@@ -869,6 +871,12 @@ else if (!strncmp(relstring, SUSE_SLES10_ID, strlen(SUSE_SLES10_ID)))
    strcat(classbuf, "SLES10");
    AddClassToHeap(classbuf);
    }
+else if (!strncmp(relstring, SUSE_SLES10_ID, strlen(SUSE_SLES10_ID)))
+   {
+   classbuf[0] = '\0';
+   strcat(classbuf, "SLES10");
+   AddClassToHeap(classbuf);
+   }
 
   
 
@@ -881,6 +889,17 @@ for (version = 9; version < 13; version++)
       {
       snprintf(classbuf,CF_MAXVARSIZE,"SLES%d",version);
       AddClassToHeap(classbuf);
+      continue;
+      }
+
+   snprintf(vbuf,CF_BUFSIZE,"%s %d",SUSE_SLES_ID_2,version);
+   Debug("Checking for suse [%s]\n",vbuf);
+   
+   if (!strncmp(relstring, SUSE_SLES_ID_2, strlen(relstring)))
+      {
+      snprintf(classbuf,CF_MAXVARSIZE,"SLES%d",version);
+      AddClassToHeap(classbuf);
+      continue;
       }
    }
     
