@@ -999,3 +999,22 @@ for (sp = buffer; *sp != '\0'; sp++)
 return liststart;
 }
 
+/*********************************************************/
+
+int IsListVar(char *name)
+
+{ char test[CF_EXPANDSIZE];
+  char *sp;
+ 
+ExpandVarstring(name,test,NULL);
+
+for (sp = test; *sp != '\0'; sp++)
+   {
+   if (*sp == LISTSEPARATOR)
+      {
+      return true;
+      }
+   }
+
+return false;
+}

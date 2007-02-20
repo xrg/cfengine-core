@@ -1216,7 +1216,7 @@ void Scripts()
   char chdir_buf[CF_EXPANDSIZE];
   char chroot_buf[CF_EXPANDSIZE];
   time_t start,end;
-  int print;
+  int print, outsourced;
   mode_t maskval = 0;
   FILE *pp;
   int preview = false;
@@ -1248,7 +1248,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
       continue;
       }
    
-   snprintf(OUTPUT,CF_BUFSIZE*2,"Executing script %s...(timeout=%d,uid=%d,gid=%d)\n",execstr,ptr->timeout,ptr->uid,ptr->gid);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"\nExecuting script %s...(timeout=%d,uid=%d,gid=%d)\n",execstr,ptr->timeout,ptr->uid,ptr->gid);
    CfLog(cfinform,OUTPUT,"");
 
    start = time(NULL);
@@ -1274,162 +1274,181 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
       
       memset(comm,0,20);
       strncpy(comm,sp,15);
-      
-      if (ptr->timeout != 0)
+
+      if (ptr->fork == 'y')
          {
-         signal(SIGALRM,(void *)TimeOut);
-         alarm(ptr->timeout);
+         Verbose("Backgrounding job %s\n",execstr);
+         outsourced = fork();
          }
-      
-      Verbose("(Setting umask to %o)\n",ptr->umask);
-      maskval = umask(ptr->umask);
-      
-      if (ptr->umask == 0)
+      else
          {
-         snprintf(OUTPUT,CF_BUFSIZE*2,"Programming %s running with umask 0! Use umask= to set\n",execstr);
-         CfLog(cfsilent,OUTPUT,"");
+         outsourced = false;
          }
-      
-      ExpandVarstring(ptr->chdir,chdir_buf,"");
-      ExpandVarstring(ptr->chroot,chroot_buf,"");
-      
-      switch (ptr->useshell)
+
+      if (outsourced || !ptr->fork)
          {
-         case 'y':  pp = cfpopen_shsetuid(execstr,"r",ptr->uid,ptr->gid,chdir_buf,chroot_buf);
-             break;
-         default:   pp = cfpopensetuid(execstr,"r",ptr->uid,ptr->gid,chdir_buf,chroot_buf);
-             break;      
-         }
-      
-      if (pp == NULL)
-         {
-         snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open pipe to command %s\n",execstr);
-         CfLog(cferror,OUTPUT,"popen");
-         ResetOutputRoute('d','d');
-         ReleaseCurrentLock();
-         continue;
-         } 
-      
-      while (!feof(pp))
-         {
-         if (ferror(pp))  /* abortable */
+         if (ptr->timeout != 0)
             {
-            snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
-            CfLog(cferror,OUTPUT,"ferror");
-            break;
+            signal(SIGALRM,(void *)TimeOut);
+            alarm(ptr->timeout);
             }
          
-         ReadLine(line,CF_BUFSIZE-1,pp);
+         Verbose("(Setting umask to %o)\n",ptr->umask);
+         maskval = umask(ptr->umask);
          
-         if (strstr(line,"cfengine-die"))
+         if (ptr->umask == 0)
             {
-            break;
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Programming %s running with umask 0! Use umask= to set\n",execstr);
+            CfLog(cfsilent,OUTPUT,"");
             }
          
-         if (ferror(pp))  /* abortable */
+         ExpandVarstring(ptr->chdir,chdir_buf,"");
+         ExpandVarstring(ptr->chroot,chroot_buf,"");
+         
+         switch (ptr->useshell)
             {
-            snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
-            CfLog(cferror,OUTPUT,"ferror");
-            break;
+            case 'y':  pp = cfpopen_shsetuid(execstr,"r",ptr->uid,ptr->gid,chdir_buf,chroot_buf);
+                break;
+            default:   pp = cfpopensetuid(execstr,"r",ptr->uid,ptr->gid,chdir_buf,chroot_buf);
+                break;      
             }
          
-         if (preview == 'y')
+         if (pp == NULL)
             {
-            /*
-             * Preview script - try to parse line as log message. If line does
-             * not parse, then log as error.
-             */
+            snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open pipe to command %s\n",execstr);
+            CfLog(cferror,OUTPUT,"popen");
+            ResetOutputRoute('d','d');
+            ReleaseCurrentLock();
+            continue;
+            } 
+         
+         while (!feof(pp))
+            {
+            if (ferror(pp))  /* abortable */
+               {
+               snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
+               CfLog(cferror,OUTPUT,"ferror");
+               break;
+               }
             
-            int i;
-            int level = cferror;
-            char *message = line;
+            ReadLine(line,CF_BUFSIZE-1,pp);
             
-            /*
-             * Table matching cfoutputlevel enums to log prefixes.
-             */
+            if (strstr(line,"cfengine-die"))
+               {
+               break;
+               }
             
-            char *prefixes[] =
-                {
-                ":silent:",
-                ":inform:",
-                ":verbose:",
-                ":editverbose:",
-                ":error:",
-                ":logonly:",
-                };
+            if (ferror(pp))  /* abortable */
+               {
+               snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
+               CfLog(cferror,OUTPUT,"ferror");
+               break;
+               }
             
-            int precount = sizeof(prefixes)/sizeof(char *);
-            
-            if (line[0] == ':')
+            if (preview == 'y')
                {
                /*
-                * Line begins with colon - see if it matches a log prefix.
+                * Preview script - try to parse line as log message. If line does
+                * not parse, then log as error.
                 */
                
-               for (i=0; i < precount; i++)
+               int i;
+               int level = cferror;
+               char *message = line;
+               
+               /*
+                * Table matching cfoutputlevel enums to log prefixes.
+                */
+               
+               char *prefixes[] =
+                   {
+                       ":silent:",
+                       ":inform:",
+                       ":verbose:",
+                       ":editverbose:",
+                       ":error:",
+                       ":logonly:",
+                   };
+               
+               int precount = sizeof(prefixes)/sizeof(char *);
+               
+               if (line[0] == ':')
                   {
-                  int prelen = 0;
-                  prelen = strlen(prefixes[i]);
-                  if (strncmp(line, prefixes[i], prelen) == 0)
+                  /*
+                   * Line begins with colon - see if it matches a log prefix.
+                   */
+                  
+                  for (i=0; i < precount; i++)
                      {
-                     /*
-                      * Found log prefix - set logging level, and remove the
-                      * prefix from the log message.
-                      */
-                     level = i;
-                     message += prelen;
+                     int prelen = 0;
+                     prelen = strlen(prefixes[i]);
+                     if (strncmp(line, prefixes[i], prelen) == 0)
+                        {
+                        /*
+                         * Found log prefix - set logging level, and remove the
+                         * prefix from the log message.
+                         */
+                        level = i;
+                        message += prelen;
+                        break;
+                        }
+                     }
+                  }
+               
+               snprintf(OUTPUT,CF_BUFSIZE,"%s (preview of %s)\n",message,comm);
+               CfLog(level,OUTPUT,"");
+               }
+            else 
+               {
+               /*
+                * Dumb script - echo non-empty lines to standard output.
+                */
+               
+               print = false;
+               
+               for (sp = line; *sp != '\0'; sp++)
+                  {
+                  if (! isspace((int)*sp))
+                     {
+                     print = true;
                      break;
                      }
                   }
-               }
-            
-            snprintf(OUTPUT,CF_BUFSIZE,"%s (preview of %s)\n",message,comm);
-            CfLog(level,OUTPUT,"");
-            }
-         else 
-            {
-            /*
-             * Dumb script - echo non-empty lines to standard output.
-             */
-            
-            print = false;
-            
-            for (sp = line; *sp != '\0'; sp++)
-               {
-               if (! isspace((int)*sp))
+               
+               if (print)
                   {
-                  print = true;
-                  break;
+                  printf("%s:%s: %s\n",VPREFIX,comm,line);
                   }
                }
-            
-            if (print)
-               {
-               printf("%s:%s: %s\n",VPREFIX,comm,line);
-               }
             }
+         
+         cfpclose_def(pp,ptr->defines,ptr->elsedef);
+         }
+   
+      if (ptr->timeout != 0)
+         {
+         alarm(0);
+         signal(SIGALRM,SIG_DFL);
          }
       
-      cfpclose_def(pp,ptr->defines,ptr->elsedef);
+      umask(maskval);
+      
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Finished script %s\n",execstr);
+      CfLog(cfinform,OUTPUT,"");
+      
+      ResetOutputRoute('d','d');
+      ReleaseCurrentLock();
+      
+      end = time(NULL);
+      snprintf(eventname,CF_BUFSIZE-1,"Exec(%s)",execstr);
+      RecordPerformance(eventname,start,(double)(end-start));
+
+      if (ptr->fork == 'y' && outsourced)
+         {
+         Verbose("Backgrounded shell command (%s) exiting\n",execstr);
+         exit(0);
+         }
       }
-   
-   if (ptr->timeout != 0)
-      {
-      alarm(0);
-      signal(SIGALRM,SIG_DFL);
-      }
-   
-   umask(maskval);
-   
-   snprintf(OUTPUT,CF_BUFSIZE*2,"Finished script %s\n",execstr);
-   CfLog(cfinform,OUTPUT,"");
-   
-   ResetOutputRoute('d','d');
-   ReleaseCurrentLock();
-   
-   end = time(NULL);
-   snprintf(eventname,CF_BUFSIZE-1,"Exec(%s)",execstr);
-   RecordPerformance(eventname,start,(double)(end-start));
    }
 }
 

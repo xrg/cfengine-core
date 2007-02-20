@@ -234,16 +234,16 @@ if (fd != -1)
 chdir("/");
    
 #ifdef HAVE_SYSCONF
-   maxfd = sysconf(_SC_OPEN_MAX);
+maxfd = sysconf(_SC_OPEN_MAX);
 #else
 # ifdef _POXIX_OPEN_MAX
-   maxfd = _POSIX_OPEN_MAX;
+maxfd = _POSIX_OPEN_MAX;
 # else
-   maxfd = 1024;
+maxfd = 1024;
 # endif
 #endif
 
-for (fd=STDERR_FILENO+1; fd<maxfd; ++fd)
+for (fd=STDERR_FILENO+1; fd < maxfd; ++fd)
    {
    if (fd != preserve) close(fd);
    }

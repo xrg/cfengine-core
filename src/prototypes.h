@@ -985,6 +985,7 @@ void DeleteTidyList (struct TidyPattern *list);
 
 /* varstring.c */
 
+int IsListVar(char *name);
 int TrueVar (char *var);
 int CheckVarID (char *var);
 int IsVarString (char *str);

@@ -3013,7 +3013,14 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
                }
             top->next = new;
             }
-         
+
+                  
+         if ((new->code = EditActionsToCode(edit)) == NoEdit)
+            {
+            snprintf(OUTPUT,CF_BUFSIZE,"Unknown edit action \"%s\"",edit);
+            yyerror(OUTPUT);
+            }
+
          if (data == NULL)
             {
             new->data = NULL;
@@ -3031,12 +3038,6 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
          if ((new->classes = strdup(CLASSBUFF)) == NULL)
             {
             FatalError("Memory Allocation failed for InstallEditFile() #3");
-            }
-         
-         if ((new->code = EditActionsToCode(edit)) == NoEdit)
-            {
-            snprintf(OUTPUT,CF_BUFSIZE,"Unknown edit action \"%s\"",edit);
-            yyerror(OUTPUT);
             }
          
          switch(new->code)
@@ -3099,6 +3100,11 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
             case BeginGroupIfNotDefined: 
             case BeginGroupIfFileIsNewer:
             case BeginGroupIfFileExists:
+                if (IsListVar(data))
+                   {
+                   yyerror("List variables are not currently supported in BeginGroup*");
+                   }
+
                 EDITGROUPLEVEL++;
                 break;
                 
@@ -3116,6 +3122,11 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
                    yyerror("ReplaceAll without With before or at line");
                    }
                 
+                if (IsListVar(data))
+                   {
+                   yyerror("List variables are not currently supported in ReplaceAll/With");
+                   }
+            
                 SEARCHREPLACELEVEL++;
                 break;
                 
@@ -3129,6 +3140,12 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
                 break;
                 
             case With:
+
+                if (IsListVar(data))
+                   {
+                   yyerror("List variables are not currently supported in ReplaceAll/With");
+                   }
+
                 SEARCHREPLACELEVEL--;
                 break;
                 
