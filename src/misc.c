@@ -815,13 +815,10 @@ Verbose("Looking for redhat linux info in \"%s\"\n",relstring);
 int linux_suse_version(void)
 {
 #define SUSE_REL_FILENAME "/etc/SuSE-release"
-#define SUSE_SLES8_ID "SuSE SLES-8"
-#define SUSE_SLES9_ID "SUSE LINUX Enterprise Server 9"
-#define SUSE_SLES10_ID "SUSE Linux Enterprise Server 10"
-#define SUSE_SLES_ID "SUSE LINUX Enterprise Server"
+/* Check if it's a SuSE Enterprise version (all in lowercase) */
+#define SUSE_SLES8_ID "suse sles-8"
+#define SUSE_SLES_ID  "suse linux enterprise server"
 #define SUSE_RELEASE_FLAG "linux "
-#define SUSE_SLES_ID_2 "SUSE Linux Enterprise Server"
-#define SUSE_SLES10_ID "SUSE Linux Enterprise Server 10"
 
 /* The full string read in from SuSE-release */
 char relstring[CF_MAXVARSIZE];
@@ -853,56 +850,6 @@ fclose(fp);
 
 Verbose("Looking for SuSE enterprise info in \"%s\"\n",relstring);
  
-if (!strncmp(relstring, SUSE_SLES8_ID, strlen(SUSE_SLES8_ID)))
-   {
-   classbuf[0] = '\0';
-   strcat(classbuf, "SLES8");
-   AddClassToHeap(classbuf);
-   }
-else if (!strncmp(relstring, SUSE_SLES9_ID, strlen(SUSE_SLES9_ID)))
-   {
-   classbuf[0] = '\0';
-   strcat(classbuf, "SLES9");
-   AddClassToHeap(classbuf);
-   }
-else if (!strncmp(relstring, SUSE_SLES10_ID, strlen(SUSE_SLES10_ID)))
-   {
-   classbuf[0] = '\0';
-   strcat(classbuf, "SLES10");
-   AddClassToHeap(classbuf);
-   }
-else if (!strncmp(relstring, SUSE_SLES10_ID, strlen(SUSE_SLES10_ID)))
-   {
-   classbuf[0] = '\0';
-   strcat(classbuf, "SLES10");
-   AddClassToHeap(classbuf);
-   }
-
-  
-
-for (version = 9; version < 13; version++)
-   {
-   snprintf(vbuf,CF_BUFSIZE,"%s %d",SUSE_SLES_ID,version);
-   Debug("Checking for suse [%s]\n",vbuf);
-   
-   if (!strncmp(relstring, SUSE_SLES_ID, strlen(relstring)))
-      {
-      snprintf(classbuf,CF_MAXVARSIZE,"SLES%d",version);
-      AddClassToHeap(classbuf);
-      continue;
-      }
-
-   snprintf(vbuf,CF_BUFSIZE,"%s %d",SUSE_SLES_ID_2,version);
-   Debug("Checking for suse [%s]\n",vbuf);
-   
-   if (!strncmp(relstring, SUSE_SLES_ID_2, strlen(relstring)))
-      {
-      snprintf(classbuf,CF_MAXVARSIZE,"SLES%d",version);
-      AddClassToHeap(classbuf);
-      continue;
-      }
-   }
-    
  /* Convert relstring to lowercase to handle rename of SuSE to 
   * SUSE with SUSE 10.0. 
   */
@@ -912,6 +859,29 @@ for (i = 0; i < strlen(relstring); i++)
    relstring[i] = tolower(relstring[i]);
    }
 
+   /* Check if it's a SuSE Enterprise version (all in lowercase) */
+
+if (!strncmp(relstring, SUSE_SLES8_ID, strlen(SUSE_SLES8_ID)))
+   {
+   classbuf[0] = '\0';
+   strcat(classbuf, "SLES8");
+   AddClassToHeap(classbuf);
+   }
+else
+   {
+   for (version = 9; version < 13; version++)
+      {
+      snprintf(vbuf,CF_BUFSIZE,"%s %d ",SUSE_SLES_ID,version);
+      Debug("Checking for suse [%s]\n",vbuf);
+      
+      if (!strncmp(relstring, vbuf, strlen(vbuf)))
+         {
+         snprintf(classbuf,CF_MAXVARSIZE,"SLES%d",version);
+         AddClassToHeap(classbuf);
+         }
+      }
+   }
+    
  /* Determine release version. We assume that the version follows
   * the string "SuSE Linux" or "SUSE LINUX".
   */
