@@ -315,7 +315,7 @@ for (sp = str; *sp != '\0' ; sp++)       /* check for varitems */
    if (dollar && (bracks == 0) && onebrack)
       {
       strncpy(substr,str,sp-str+1);
-      Debug("Extracted outer variable %s\n",substr);
+      Debug("Extracted outer variable |%s|\n",substr);
       return substr;
       }
    }
@@ -376,6 +376,8 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
    
    strcat(buffer,currentitem);
    sp += strlen(currentitem);
+
+   Debug("Add |%s| to str, waiting at |%s|\n",buffer,sp);
    
    if (*sp == '\0')
       {
@@ -942,10 +944,11 @@ sprintf(format,"%%[^%c]",sep);   /* set format string to search */
 
 i = 0; /* extract variable */
 
-for(sp = varstring; *sp != '$' && *sp != '\0' ; sp++)
+for (sp = varstring; *sp != '$' && *sp != '\0' ; sp++)
    {
    before[i++] = *sp;
    }
+
 before[i] = '\0';
 
 ExtractOuterVarString(varstring,variable); 
@@ -959,16 +962,23 @@ if (strcmp(variable,"$(date)") == 0)        /* Exception! $(date) contains : but
  
 ExpandVarstring(variable,buffer,"");
 
-Debug("EXPAND %s -> %s\n",variable,buffer);
+Debug("EXPAND |%s| -> |%s|, remain %s\n",variable,buffer,sp);
 
-sp += strlen(variable);
- 
-while(*sp != '\0')
+sp = varstring+strlen(variable);
+
+i = 0;;
+
+Debug("REMAIN |%s|\n",sp);
+
+while (*sp != '\0')
    {
    after[i++] = *sp++;
    }
 
-for (sp = buffer; *sp != '\0'; sp++)
+Debug("CONTINUE |%s| -> |%s|\n",sp,after);
+ 
+
+for (sp = buffer+strlen(before); *sp != '\0'; sp++)
    {
    memset(node,0,CF_MAXLINKSIZE);
    sscanf(sp,format,node);

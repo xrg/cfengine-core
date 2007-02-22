@@ -198,6 +198,14 @@ else
    newq.var = 0.0;
    }
 
+#ifdef HAVE_PTHREAD_H  
+if (pthread_mutex_lock(&MUTEX_GETADDR) != 0)
+   {
+   CfLog(cferror,"pthread_mutex_lock failed","unlock");
+   exit(1);
+   }
+#endif
+
 if (lastseen > (double)lsea)
    {
    Verbose("Last seen %s expired\n",databuf);
@@ -207,6 +215,14 @@ else
    {
    WriteDB(dbp,databuf,&newq,sizeof(newq));
    }
+
+#ifdef HAVE_PTHREAD_H  
+if (pthread_mutex_unlock(&MUTEX_GETADDR) != 0)
+   {
+   CfLog(cferror,"pthread_mutex_unlock failed","unlock");
+   exit(1);
+   }
+#endif
 
 dbp->close(dbp,0);
 }
@@ -300,7 +316,7 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
 
    if (lsea < 0)
       {
-      lsea = CF_WEEK;
+      lsea = (time_t)CF_WEEK/7;
       }
    
    tthen = (time_t)then;
@@ -349,10 +365,10 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       CfLog(cfverbose,OUTPUT,"");
       }
    
-   if (now - then > lsea)
+   if ((now-then) > lsea)
       {
       snprintf(OUTPUT,CF_BUFSIZE,"Giving up on host %s -- too long since last seen",IPString2Hostname(hostname+1));
-      CfLog(cfinform,OUTPUT,"");
+      CfLog(cferror,OUTPUT,"");
       DeleteDB(dbp,hostname);
       }
 
