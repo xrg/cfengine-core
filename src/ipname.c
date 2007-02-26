@@ -48,7 +48,7 @@ else
    snprintf(STR_CFENGINEPORT,15,"%d",ntohs(server->s_port));
    }
 
-Verbose("Setting cfengine old port to %s\n",STR_CFENGINEPORT);
+Debug("Setting cfengine old port to %s\n",STR_CFENGINEPORT);
 }
 
 /*****************************************************************************/
