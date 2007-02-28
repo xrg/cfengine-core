@@ -1285,7 +1285,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
          outsourced = false;
          }
 
-      if (outsourced || !ptr->fork)
+      if (outsourced || ptr->fork != 'y')
          {
          if (ptr->timeout != 0)
             {
