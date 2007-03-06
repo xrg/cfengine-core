@@ -446,6 +446,7 @@ while (NULL != ptr)
          {
          ReadLine(line,CF_BUFSIZE-1,pp);
          snprintf(OUTPUT,CF_BUFSIZE,"Package install: %s\n",line);
+         CfLog(cfinform,OUTPUT,""); 
          }
       
       if (cfpclose(pp) != 0)

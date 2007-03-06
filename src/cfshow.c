@@ -222,7 +222,11 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    return;
    }
 
+#ifdef CF_OLD_DB
+if ((errno = dbp->open(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
 if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#endif
    {
    printf("Couldn't open last-seen database %s\n",name);
    perror("db_open");
@@ -400,7 +404,11 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    return;
    }
 
+#ifdef CF_OLD_DB
+if ((errno = dbp->open(dbp,checksumdb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
 if ((errno = dbp->open(dbp,NULL,checksumdb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#endif
    {
    printf("Couldn't open checksum database %s\n",checksumdb);
    perror("db_open");
@@ -478,7 +486,11 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    return;
    }
 
+#ifdef CF_OLD_DB
+if ((errno = dbp->open(dbp,lockdb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
 if ((errno = dbp->open(dbp,NULL,lockdb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#endif
    {
    printf("Couldn't open checksum database %s\n",lockdb);
    perror("db_open");
