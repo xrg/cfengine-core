@@ -2645,11 +2645,11 @@ int StatFile(struct cfd_connection *conn,char *sendbuffer,char *filename)
 /* plain text and interpret them on the other side. */
 
 { struct cfstat cfst;
-  struct stat statbuf;
+ struct stat statbuf,statlinkbuf;
   char linkbuf[CF_BUFSIZE];
   int islink = false;
 
-  Debug("StatFile(%s)\n",filename);
+Debug("StatFile(%s)\n",filename);
 
 memset(&cfst,0,sizeof(struct cfstat));
   
@@ -2701,6 +2701,13 @@ if (!islink && (stat(filename,&statbuf) == -1))
    CfLog(cfverbose,conn->output,"stat");
    SendTransaction(conn->sd_reply,sendbuffer,0,CF_DONE);
    return -1;
+   }
+
+Debug("Getting size of link deref %s\n",linkbuf);
+
+if (islink && (stat(filename,&statlinkbuf) != -1)) /* linktype=copy used by agent */
+   {
+   statbuf.st_size = statlinkbuf.st_size;
    }
 
 if (S_ISDIR(statbuf.st_mode))
