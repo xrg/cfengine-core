@@ -928,7 +928,7 @@ if (OptionIs(CONTEXTID,"LastSeen",false))
    LASTSEEN = false;
    }
 
-if (OptionIs(CONTEXTID,"FullEncrypt",true))
+if (OptionIs(CONTEXTID,"FullEncryption",true))
    {
    FULLENCRYPT = true;
    }
