@@ -454,7 +454,7 @@ void GetV6InterfaceInfo(void)
     {
     case cfnt:
         /* NT cannot do this */
-        break;
+        return;
 
     case irix:
     case irix4:
@@ -495,43 +495,50 @@ void GetV6InterfaceInfo(void)
            Verbose("Could not find interface info\n");
            return;
            }
-        
-        while (!feof(pp))
-           {    
-           fgets(buffer,CF_BUFSIZE-1,pp);
-           
-           if (StrStr(buffer,"inet6"))
-              {
-              struct Item *ip,*list = NULL;
-              char *sp;
-              
-              list = SplitStringAsItemList(buffer,' ');
-              
-              for (ip = list; ip != NULL; ip=ip->next)
-                 {
-                 for (sp = ip->name; *sp != '\0'; sp++)
-                    {
-                    if (*sp == '/')  /* Remove CIDR mask */
-                       {
-                       *sp = '\0';
-                       }
-                    }
-                 
-                 if (IsIPV6Address(ip->name) && (strcmp(ip->name,"::1") != 0))
-                    {
-                    Verbose("Found IPv6 address %s\n",ip->name);
-                    AppendItem(&IPADDRESSES,ip->name,"");
-                    AddClassToHeap(CanonifyName(ip->name));
-                    }
-                 }
-              
-              DeleteItemList(list);
-              }
-           }
-        
-        cfpclose(pp);
-        break;
+
     }
+
+/* Don't know the output format of ifconfig on all these .. hope for the best*/
+ 
+while (!feof(pp))
+   {    
+   fgets(buffer,CF_BUFSIZE-1,pp);
+
+   if (ferror(pp))  /* abortable */
+      {
+      break;
+      }
+   
+   if (StrStr(buffer,"inet6"))
+      {
+      struct Item *ip,*list = NULL;
+      char *sp;
+      
+      list = SplitStringAsItemList(buffer,' ');
+      
+      for (ip = list; ip != NULL; ip=ip->next)
+         {
+         for (sp = ip->name; *sp != '\0'; sp++)
+            {
+            if (*sp == '/')  /* Remove CIDR mask */
+               {
+               *sp = '\0';
+               }
+            }
+         
+         if (IsIPV6Address(ip->name) && (strcmp(ip->name,"::1") != 0))
+            {
+            Verbose("Found IPv6 address %s\n",ip->name);
+            AppendItem(&IPADDRESSES,ip->name,"");
+            AddClassToHeap(CanonifyName(ip->name));
+            }
+         }
+      
+      DeleteItemList(list);
+      }
+   }
+
+cfpclose(pp);
 }
 
 /*********************************************************************/
