@@ -1,3 +1,4 @@
+
 #define DAILY 1
 #define WEEKLY 2
 #define YEARLY 3
@@ -7,10 +8,11 @@
 #define ONE_DAY 86400
 #define ONE_WEEK 604800
 
-struct Average {
-  double expect;
-  double var;
-};
+struct Average
+   {
+   double expect;
+   double var;
+   };
 
 char *GenTimeKey2 (time_t now, int dbtype);
 char *ConvTimeKey2 (char *str, int dbtype);
