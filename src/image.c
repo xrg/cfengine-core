@@ -126,7 +126,7 @@ else
    {
    found = cflstat(source,&sourcestatbuf,ip);
    }
- 
+
 if (found == -1)
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",source);

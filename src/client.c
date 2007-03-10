@@ -355,7 +355,7 @@ cfdirh->cf_list = NULL;
 cfdirh->cf_listpos = NULL;
 cfdirh->cf_dirh = NULL;
 
-if (ip->encrypt == 'y' && FULLENCRYPT)
+if ((ip->encrypt == 'y') && FULLENCRYPT)
    {
    if (CONN->session_key == NULL)
       {
