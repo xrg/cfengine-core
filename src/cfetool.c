@@ -957,10 +957,10 @@ switch(dbtype)
    case YEARLY:
        sprintf(AVDB, "%s/yearly.db", LOCATION);
        break;
-    default: /* weekly */
-      sprintf(AVDB, "%s/weekly.db", LOCATION);
-      break;
-  }
+   default: /* weekly */
+       sprintf(AVDB, "%s/weekly.db", LOCATION);
+       break;
+   }
 
 Verbose("Creating new database: %s\n", AVDB);
 MakeDirectoriesFor(AVDB, 'n');
@@ -1189,7 +1189,7 @@ for (i = 0; i < 7; i++)
       }
    }
 
-if(OpenDatabase(false) != 0)
+if (OpenDatabase(false) != 0)
    {
    exit(1);
    }

@@ -671,7 +671,6 @@ return result;
 
 void DoFilter(struct Item **attr,char **crit,struct stat *lstatptr,char *filename)
 
-
 {
 if (crit[filtertype] != NULL)
    {

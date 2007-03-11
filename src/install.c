@@ -3194,8 +3194,10 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
                    yyerror("Argument must be an integer, greater than zero");
                    }
                 break;
-            case ElseDefineClasses:
             case EditFilter:
+                PrependItem(&(ptr->filters),data,NULL);
+                break;
+            case ElseDefineClasses:
             case DefineClasses:
                 if (EDITGROUPLEVEL > 0 || FOREACHLEVEL > 0)
                    {

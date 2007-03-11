@@ -1070,6 +1070,7 @@ void ListFileEdits()
 
 { struct Edit *ptr;
   struct Edlist *ep;
+  struct Item *ip;
 
 printf("\nDEFINED FILE EDITS\n\n");
 
@@ -1083,6 +1084,13 @@ for (ptr=VEDITLIST; ptr != NULL; ptr=ptr->next)
       {
       printf(" Local repository = %s\n",ptr->repository);
       }
+
+   printf(" Filters:");
+   for (ip = ptr->filters; ip != NULL; ip=ip->next)
+      {
+      printf (" %s",ip->name);
+      }
+   printf("\n");
    
    for (ep = ptr->actions; ep != NULL; ep=ep->next)
       {
