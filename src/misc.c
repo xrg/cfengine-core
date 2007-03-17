@@ -629,9 +629,13 @@ int linux_redhat_version(void)
 #define REDHAT_AS21_ID "Red Hat Linux Advanced Server"
 #define REDHAT_ES_ID "Red Hat Enterprise Linux ES"
 #define REDHAT_WS_ID "Red Hat Enterprise Linux WS"
+#define REDHAT_C_ID "Red Hat Enterprise Linux Client"
+#define REDHAT_S_ID "Red Hat Enterprise Linux Server"
+#define REDHAT_SERVER_ID "Red Hat Enterprise Linux Server"
 #define MANDRAKE_ID "Linux Mandrake"
 #define MANDRAKE_10_1_ID "Mandrakelinux"
-#define FEDORA_ID "Fedora Core"
+#undef FEDORA_ID
+#define FEDORA_ID "Fedora"
 #define WHITEBOX_ID "White Box Enterprise Linux"
 #define CENTOS_ID "CentOS"
 #define SCIENTIFIC_SL_ID "Scientific Linux SL"
@@ -644,12 +648,16 @@ int linux_redhat_version(void)
  * Red Hat Linux Advanced Server release 2.1AS (Pensacola)
  * Red Hat Enterprise Linux AS release 3 (Taroon)
  * Red Hat Enterprise Linux WS release 3 (Taroon)
+ * Red Hat Enterprise Linux Client release 5 (Tikanga)
+ * Red Hat Enterprise Linux Server release 5 (Tikanga)
  * Linux Mandrake release 7.1 (helium)
  * Red Hat Enterprise Linux ES release 2.1 (Panama)
  * Fedora Core release 1 (Yarrow)
+ * Fedora release 7 (Foobar)
  * White Box Enterprise linux release 3.0 (Liberation)
  * Scientific Linux SL Release 4.0 (Beryllium)
  * CentOS release 4.0 (Final)
+ * Red Hat Enterprise Linux Server release 5 (Tikanga)
  */
 
 #define RH_REL_FILENAME "/etc/redhat-release"
@@ -698,11 +706,26 @@ Verbose("Looking for redhat linux info in \"%s\"\n",relstring);
     vendor = "redhat";
     edition = "ws";
     }
+ else if(!strncmp(relstring, REDHAT_SERVER_ID, strlen(REDHAT_SERVER_ID)))
+    {
+    vendor = "redhat";
+    edition = "server";
+    }
  else if(!strncmp(relstring, REDHAT_AS_ID, strlen(REDHAT_AS_ID)) ||
   !strncmp(relstring, REDHAT_AS21_ID, strlen(REDHAT_AS21_ID)))
     {
     vendor = "redhat";
     edition = "as";
+    }
+ else if(!strncmp(relstring, REDHAT_S_ID, strlen(REDHAT_S_ID)))
+    {
+    vendor = "redhat";
+    edition = "s";
+    }
+ else if(!strncmp(relstring, REDHAT_C_ID, strlen(REDHAT_C_ID)))
+    {
+    vendor = "redhat";
+    edition = "c";
     }
  else if(!strncmp(relstring, REDHAT_ID, strlen(REDHAT_ID)))
     {
