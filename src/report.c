@@ -146,7 +146,7 @@ void ListDefinedInterfaces()
 
 { struct Interface *ifp;
 
- printf ("\nDEFINED INTERFACES\n\n");
+ printf ("\nDEFINED INTERFACE PROMISES\n\n");
  
 for (ifp = VIFLIST; ifp !=NULL; ifp=ifp->next)
    {
@@ -199,11 +199,12 @@ void ListDefinedLinks()
 { struct Link *ptr;
   struct Item *ip;
   
-printf ("\nDEFINED LINKS\n\n");
+printf ("\nDEFINED LINK PROMISES\n\n");
 
 for (ptr = VLINK; ptr != NULL; ptr=ptr->next)
    {
-   printf("\nLINK %s -> %s force=%c, attr=%d type=%c nofile=%d\n",ptr->from,ptr->to,ptr->force,ptr->silent,ptr->type, ptr->nofile);
+   printf("\n%s will be a link to %s\n Body force=%c, attr=%d type=%c nofile=%d\n",ptr->from,ptr->to,ptr->force,ptr->silent,ptr->type, ptr->nofile);
+
    for (ip = ptr->copy; ip != NULL; ip = ip->next)
       {
       printf(" Copy %s\n",ip->name);
@@ -248,11 +249,11 @@ void ListDefinedLinkchs()
 { struct Link *ptr;
   struct Item *ip;
 
-printf ("\nDEFINED CHILD LINKS\n\n");
+printf ("\nDEFINED CHILD LINK PROMISES\n\n");
 
 for (ptr = VCHLINK; ptr != NULL; ptr=ptr->next)
    {
-   printf("\nCLINK %s->%s force=%c attr=%d, rec=%d\n",ptr->from,ptr->to,
+   printf("\n%s will be linked to children of %s\n Body force=%c attr=%d, rec=%d\n",ptr->from,ptr->to,
    ptr->force,ptr->silent,ptr->recurse);
 
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
@@ -295,11 +296,11 @@ void ListDefinedResolvers()
 
 { struct Item *ptr;
 
-printf ("\nDEFINED NAMESERVERS\n\n");
+printf ("\nDEFINED NAMESERVER PROMISES\n\n");
 
 for (ptr = VRESOLVE; ptr != NULL; ptr=ptr->next)
    {
-   printf("%s (%s)\n",ptr->name,ptr->classes);
+   printf(" %s (%s) will be in resolver config\n",ptr->name,ptr->classes);
    }
 }
 
@@ -309,7 +310,7 @@ void ListDefinedAlerts()
 
 { struct Item *ptr;
 
-printf ("\nDEFINED ALERTS\n\n");
+printf ("\nDEFINED ALERT PROMISES\n\n");
 
 for (ptr = VALERTS; ptr != NULL; ptr=ptr->next)
    {
@@ -325,11 +326,11 @@ void ListDefinedMethods()
   struct Item *ip;
   int i;
 
-printf ("\nDEFINED METHODS\n\n");
+printf ("\nDEFINED METHOD PROMISES\n\n");
 
 for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
    {
-   printf("\n METHOD: [%s] if class (%s)\n",ptr->name,ptr->classes);
+   printf("\n Serve|Use method: [%s] if class (%s)\n",ptr->name,ptr->classes);
    printf("   IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    printf("   Executable file: %s\n",ptr->file);
    printf("   Run with Uid=%d,Gid=%d\n",ptr->uid,ptr->gid);
@@ -397,11 +398,11 @@ void ListDefinedScripts()
 
 { struct ShellComm *ptr;
 
-printf ("\nDEFINED SHELLCOMMANDS\n\n");
+printf ("\nDEFINED SHELLCOMMAND PROMISES\n\n");
 
 for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
    {
-   printf("\nSHELLCOMMAND %s\n timeout=%d\n uid=%d,gid=%d\n",ptr->name,ptr->timeout,ptr->uid,ptr->gid);
+   printf("\nExecute %s\n Body: timeout=%d\n uid=%d,gid=%d\n",ptr->name,ptr->timeout,ptr->uid,ptr->gid);
    printf(" umask = %o, background = %c\n",ptr->umask,ptr->fork);
    printf (" ChDir=%s, ChRoot=%s\n",ptr->chdir,ptr->chroot);
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
@@ -432,7 +433,7 @@ void ListDefinedImages()
   struct GidList *gp;
   struct Item *iip, *svp;
   
-printf ("\nDEFINED FILE IMAGES\n\n");
+printf ("\nDEFINED FILE IMAGE PROMISES\n\n");
 
  for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
     {
@@ -443,128 +444,127 @@ printf ("\nDEFINED FILE IMAGES\n\n");
           continue;                             /* on one connection */
           } 
        
-       printf("\nCOPY %s\n Mode +%o\n     -%o\n TO dest: %s\n action: %s\n",ptr->path,ptr->plus,ptr->minus,
-              ptr->destination,ptr->action);
-       
-       printf(" Size %c %d\n",ptr->comp,ptr->size);
-       printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+       printf("\n %s will be a copy of %s:%s\n   Body: action = %s\n",ptr->destination,ptr->server,ptr->path,ptr->action);
+       printf("   Mode +%o,-%o\n",ptr->plus,ptr->minus);
+       printf("   Size %c %d\n",ptr->comp,ptr->size);
+       printf("   IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
        
        if (ptr->recurse == CF_INF_RECURSE)
           {
-          printf(" recurse=inf\n");
+          printf("   recurse=inf\n");
           }
        else
           {
-          printf(" recurse=%d\n",ptr->recurse);
+          printf("   recurse=%d\n",ptr->recurse);
           }
        
-       printf(" xdev = %c\n",ptr->xdev);
+       printf("   xdev = %c\n",ptr->xdev);
        
-       printf(" uids = ( ");
+       printf("   uids = ( ");
        
        for (up = ptr->uid; up != NULL; up=up->next)
           {
           printf("%d ",up->uid);
           }
        
-       printf(")\n gids = ( ");
+       printf(")\n   gids = ( ");
        
        for (gp = ptr->gid; gp != NULL; gp=gp->next)
           {
           printf("%d ",gp->gid);
           }
        
-       printf(")\n filters:");
+       printf(")\n   filters:");
        
        for (iip = ptr->filters; iip != NULL; iip=iip->next)
           {
           printf(" %s",iip->name);
           }
        
-       printf("\n exclude:");
+       printf("\n   exclude:");
        
        for (iip = ptr->acl_aliases; iip != NULL; iip=iip->next)
           {
-          printf(" ACL object %s\n",iip->name);
+          printf("   ACL object %s\n",iip->name);
           }
        
-       printf("\n ignore:");
+       printf("\n   ignore:");
        
        for (iip = ptr->ignores; iip != NULL; iip = iip->next)
           {
-          printf(" %s",iip->name);
+          printf("   %s",iip->name);
           }
        
        printf("\n");
-       printf(" symlink:");
+       printf("   symlink:");
        
        for (iip = ptr->symlink; iip != NULL; iip = iip->next)
           {
-          printf(" %s",iip->name);
+          printf("   %s",iip->name);
           }
        
-       printf("\n include:");
+       printf("\n   include:");
        
        for (iip = ptr->inclusions; iip != NULL; iip = iip->next)
           {
-          printf(" %s",iip->name);
+          printf("   %s",iip->name);
           }
        printf("\n");
        
-       printf(" classes = %s\n",ptr->classes);
+       printf("   classes = %s\n",ptr->classes);
        
-       printf(" method = %c (time/checksum)\n",ptr->type);
+       printf("   method = %c (time/checksum)\n",ptr->type);
        
-       printf(" server = %s (encrypt=%c,verified=%c)\n",ptr->server,ptr->encrypt,ptr->verify);
-       printf(" accept the server's public key on trust? %c\n",ptr->trustkey);
+       printf("   server = %s (encrypt=%c,verified=%c)\n",ptr->server,ptr->encrypt,ptr->verify);
+       printf("   accept the server's public key on trust? %c\n",ptr->trustkey);
        
-       printf(" purging = %c\n",ptr->purge);
+       printf("   purging = %c\n",ptr->purge);
        
        if (ptr->defines)
           {
-          printf(" Define %s\n",ptr->defines);
+          printf("   Define %s\n",ptr->defines);
           }
        
        if (ptr->elsedef)
           {
-          printf(" ElseDefine %s\n",ptr->elsedef);
+          printf("   ElseDefine %s\n",ptr->elsedef);
           }
        
        if (ptr->failover)
           {
-          printf(" FailoverClasses %s\n",ptr->failover);
+          printf("   FailoverClasses %s\n",ptr->failover);
           }
        
        switch (ptr->backup)
           {
-          case 'n': printf(" NOT BACKED UP\n");
+          case 'n': printf("   NOT BACKED UP\n");
               break;
-          case 'y': printf(" Single backup archive\n");
+          case 'y': printf("   Single backup archive\n");
               break;
-          case 's': printf(" Timestamped backups (full history)\n");
+          case 's': printf("   Timestamped backups (full history)\n");
               break;
-          default: printf (" UNKNOWN BACKUP POLICY!!\n");
+          default: printf ("   UNKNOWN BACKUP POLICY!!\n");
           }
        
        
        if (ptr->repository)
           {
-          printf(" Local repository = %s\n",ptr->repository);
+          printf("   Local repository = %s\n",ptr->repository);
           }
        
        if (ptr->stealth == 'y')
           {
-          printf(" Stealth copy\n");
+          printf("   Stealth copy\n");
           }
        
        if (ptr->preservetimes == 'y')
           {
-          printf(" File times preserved\n");
+          printf("   File times preserved\n");
           }
        
        if (ptr->forcedirs == 'y')
           {
-          printf(" Forcible movement of obstructing files in recursion\n");
+          printf("   Forcible movement of obstructing files in recursion\n");
           }
        
        }
@@ -579,19 +579,20 @@ void ListDefinedTidy()
   struct TidyPattern *tp;
   struct Item *ip;
 
-printf ("\nDEFINED TIDY MASKS\n\n");
+printf ("\nDEFINED TIDY PROMISES\n\n");
 
 for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
    {
    if (ptr->maxrecurse == CF_INF_RECURSE)
       {
-      printf("\nTIDY %s (maxrecurse = inf)\n",ptr->path);
+      printf("\nTIDY files starting from %s (maxrecurse = inf)\n",ptr->path);
       }
    else
       {
-      printf("\nTIDY %s (maxrecurse = %d)\n",ptr->path,ptr->maxrecurse);
+      printf("\nTIDY object matching %s (maxrecurse = %d)\n",ptr->path,ptr->maxrecurse);
       }
 
+   printf(" Body:");
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    printf(" xdev = %c\n",ptr->xdev);
    
@@ -607,8 +608,8 @@ for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
       
    for(tp = ptr->tidylist; tp != NULL; tp=tp->next)
       {
-      printf("\n    FOR CLASSES (%s)\n",tp->classes);
-      printf("    pat=%s, %c-age=%d, size=%d, linkdirs=%c, rmdirs=%c, travlinks=%c compress=%c\n",
+      printf("    For classes (%s)\n",tp->classes);
+      printf("    Match pattern=%s, %c-age=%d, size=%d, linkdirs=%c, rmdirs=%c, travlinks=%c compress=%c\n",
              tp->pattern,tp->searchtype,tp->age,tp->size,tp->dirlinks,tp->rmdirs,tp->travlinks,tp->compress);
       
       if (tp->defines)
@@ -644,7 +645,7 @@ void ListDefinedMountables()
 
 { struct Mountables *ptr;
 
-printf ("\nDEFINED MOUNTABLES\n\n");
+printf ("\nPROMISED MOUNTABLES\n\n");
 
 for (ptr = VMOUNTABLES; ptr != NULL; ptr=ptr->next)
    {
@@ -673,7 +674,7 @@ void ListMiscMounts()
 
 { struct MiscMount *ptr;
 
-printf ("\nDEFINED MISC MOUNTABLES\n\n");
+printf ("\nPROMISED MISC MOUNTABLES\n\n");
 
 for (ptr = VMISCMOUNT; ptr != NULL; ptr=ptr->next)
    {
@@ -688,12 +689,12 @@ void ListDefinedRequired()
 
 { struct Disk *ptr;
 
-printf ("\nDEFINED REQUIRE\n\n");
+printf ("\nDEFINED REQUIRE PROMISES\n\n");
 
 for (ptr = VREQUIRED; ptr != NULL; ptr=ptr->next)
    {
    /* HvB : Bas van der Vlies */
-   printf("%s, freespace=%d, force=%c, define=%s\n",ptr->name,ptr->freespace, ptr->force,ptr->define);
+   printf("%s is promised to exist with body attributes:\n  freespace=%d, force=%c, define=%s\n",ptr->name,ptr->freespace, ptr->force,ptr->define);
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    printf(" scanarrivals=%c\n",ptr->scanarrivals);
    }
@@ -705,7 +706,7 @@ void ListDefinedHomeservers()
 
 { struct Item *ptr;
 
-printf ("\nDefined home servers = ( ");
+printf ("\nPromised home servers = ( ");
 
 for (ptr = VHOMESERVERS; ptr != NULL; ptr=ptr->next)
    {
@@ -727,17 +728,17 @@ void ListDefinedDisable()
 
 { struct Disable *ptr;
 
-printf ("\nDEFINED DISABLE\n\n");
+printf ("\nDEFINED DISABLE PROMISES\n\n");
 
 for (ptr = VDISABLELIST; ptr != NULL; ptr=ptr->next)
    {
    if (strlen(ptr->destination) > 0)
       {
-      printf("\nRENAME: %s to %s\n",ptr->name,ptr->destination);
+      printf("\nPromise to RENAME: %s to %s\n",ptr->name,ptr->destination);
       }
    else
       {
-      printf("\nDISABLE %s:\n rotate=%d, type=%s, size%c%d action=%c\n",
+      printf("\nPromise to DISABLE %s:\n rotate=%d, type=%s, size%c%d action=%c\n",
              ptr->name,ptr->rotate,ptr->type,ptr->comp,ptr->size,ptr->action);
       }
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
@@ -767,11 +768,11 @@ void ListDefinedMakePaths()
   struct GidList *gp;
   struct Item *ip;
   
-printf ("\nDEFINED DIRECTORIES\n\n");
+printf ("\nPROMISED DIRECTORIES\n\n");
 
 for (ptr = VMAKEPATH; ptr != NULL; ptr=ptr->next)
    {
-   printf("\nDIRECTORY %s\n +%o\n -%o\n %s\n",ptr->path,ptr->plus,ptr->minus,FILEACTIONTEXT[ptr->action]);
+   printf("\nDIRECTORY %s\n Body: +%o\n -%o\n %s\n",ptr->path,ptr->plus,ptr->minus,FILEACTIONTEXT[ptr->action]);
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    
    if (ptr->recurse == CF_INF_RECURSE)
@@ -821,7 +822,7 @@ void ListDefinedImports()
 
 { struct Item *ptr;
 
-printf ("\nDEFINED IMPORTS\n\n");
+printf ("\nPROMISED IMPORTS\n\n");
 
 for (ptr = VIMPORT; ptr != NULL; ptr=ptr->next)
    {
@@ -835,11 +836,11 @@ void ListDefinedIgnore()
 
 { struct Item *ptr;
 
-printf ("\nDEFINED IGNORE\n\n");
+printf ("\nIGNORE PROMISES\n\n");
 
 for (ptr = VIGNORE; ptr != NULL; ptr=ptr->next)
    {
-   printf("%s\n",ptr->name);
+   printf("  %s\n",ptr->name);
    }
 }
 
@@ -852,11 +853,11 @@ void ListFiles()
   struct UidList *up;
   struct GidList *gp;
 
-printf ("\nDEFINED FILES\n\n");
+printf ("\nDEFINED FILE PROMISES\n\n");
 
 for (ptr = VFILE; ptr != NULL; ptr=ptr->next)
    {
-   printf("\nFILE OBJECT %s\n +%o\n -%o\n +%o\n -%o\n %s\n travelinks=%c\n",
+   printf("\nFILE OBJECT %s\n will have attributes described by body:\n  +%o\n -%o\n +%o\n -%o\n %s\n travelinks=%c\n",
    ptr->path,ptr->plus,ptr->minus,ptr->plus_flags,ptr->minus_flags,
    FILEACTIONTEXT[ptr->action],ptr->travlinks);
 
@@ -949,13 +950,13 @@ void ListUnmounts()
 
 { struct UnMount *ptr;
 
-printf("\nDEFINED UNMOUNTS\n\n");
+printf("\nDEFINED UNMOUNT PROMISES\n\n");
 
 for (ptr=VUNMOUNT; ptr!=NULL; ptr=ptr->next)
    {
-   printf("%s (classes=%s) deletedir=%c deletefstab=%c force=%c\n",ptr->name,ptr->classes,ptr->deletedir,ptr->deletefstab,ptr->force);
-   printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
-   printf(" Context scope: %s\n",ptr->scope);
+   printf("Will unmount %s if classes=%s\n  Body: deletedir=%c deletefstab=%c force=%c\n",ptr->name,ptr->classes,ptr->deletedir,ptr->deletefstab,ptr->force);
+   printf("  IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+   printf("  Context scope: %s\n",ptr->scope);
    }
 }
 
@@ -967,7 +968,7 @@ void ListProcesses()
   struct Item *ip; 
   char *sp;
 
-printf("\nDEFINED PROCESSES\n\n");
+printf("\nPROCESSES PROMISES\n\n");
 
 for (ptr = VPROCLIST; ptr != NULL; ptr=ptr->next)
    {
@@ -980,10 +981,11 @@ for (ptr = VPROCLIST; ptr != NULL; ptr=ptr->next)
       sp = ptr->restart;
       }
    
-   printf("\nPROCESS %s\n Restart = %s (useshell=%c)\n matches: (%c)%d\n signal=%s\n action=%c\n",
-   ptr->expr,sp,ptr->useshell,ptr->comp,ptr->matches,SIGNALS[ptr->signal],ptr->action);
+   printf("\nPROCESS %s\n Will be started with = %s (useshell=%c) if nonexistent\n",ptr->expr,sp,ptr->useshell);
 
-   printf (" ChDir=%s, ChRoot=%s\n",ptr->chdir,ptr->chroot);
+   printf(" Or if matches: (%c)%d, will receive signal=%s\n action=%c\n",ptr->comp,ptr->matches,SIGNALS[ptr->signal],ptr->action);
+
+   printf(" ChDir=%s, ChRoot=%s\n",ptr->chdir,ptr->chroot);
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    
    if (ptr->defines)
@@ -1022,7 +1024,7 @@ void ListACLs()
 { struct CFACL *ptr;
   struct CFACE *ep;
 
-printf("\nDEFINED ACCESS CONTROL LISTS\n\n");
+printf("\nDEFINED ACCESS CONTROL PROMISE BODIES\n\n");
 
 for (ptr = VACLLIST; ptr != NULL; ptr=ptr->next)
    {
@@ -1072,17 +1074,18 @@ void ListFileEdits()
   struct Edlist *ep;
   struct Item *ip;
 
-printf("\nDEFINED FILE EDITS\n\n");
+printf("\nDEFINED FILE EDIT PROMISES\n\n");
 
 for (ptr=VEDITLIST; ptr != NULL; ptr=ptr->next)
    {
    printf("EDITFILE  %s (%c)(r=%d)\n",ptr->fname,ptr->done,ptr->recurse);
    printf(" Context scope: %s\n",ptr->scope);
+   printf(" Promises to enforce:\n");
    printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
    
    if (ptr->repository)
       {
-      printf(" Local repository = %s\n",ptr->repository);
+      printf(" With local repository = %s\n",ptr->repository);
       }
 
    printf(" Filters:");
@@ -1161,7 +1164,7 @@ void ListDefinedPackages()
 
 { struct Package *ptr = NULL;
 
- printf("\nDEFINED PACKAGE CHECKS\n\n");
+ printf("\nPROMISED PACKAGE CHECKS\n\n");
 
  for (ptr = VPKG; ptr != NULL; ptr = ptr->next)
     {
@@ -1171,21 +1174,26 @@ void ListDefinedPackages()
     
     if (ptr->ver && *(ptr->ver) != '\0')
        {
-       printf(" Version is %s %s\n",
-                CMPSENSETEXT[ptr->cmp], ptr->ver);
+       printf(" Will have version %s %s\n",CMPSENSETEXT[ptr->cmp], ptr->ver);
        }
     else
        {
-       printf(" Matches any package version.\n");
+       printf(" Can have any package version.\n");
        }
-    if (ptr->defines)
+
+    if (ptr->action != pkgaction_none)
        {
-       printf(" Define %s\n",ptr->defines);
+       printf(" Promise to:\n   %s package\n",PKGACTIONTEXT[ptr->action]);
        }
     
+    if (ptr->defines)
+       {
+       printf("   Define %s\n",ptr->defines);
+       }
+
     if (ptr->elsedef)
        {
-       printf(" ElseDefine %s\n",ptr->elsedef);
+       printf("   ElseDefine %s\n",ptr->elsedef);
        }
     }
  printf("\n");
