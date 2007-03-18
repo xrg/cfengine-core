@@ -293,7 +293,7 @@ if (elapsedtime < 0)
 
 if (elapsedtime < ifelapsed)
    {
-   snprintf(OUTPUT,CF_BUFSIZE*2,"Nothing scheduled for [%s.%s] (%u/%u minutes elapsed)\n",operator,operand,elapsedtime,ifelapsed);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Nothing promised for [%s.%s] (%u/%u minutes elapsed)\n",operator,operand,elapsedtime,ifelapsed);
    CfLog(cfverbose,OUTPUT,"");
    return false;
    }
