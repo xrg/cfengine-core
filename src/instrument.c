@@ -242,7 +242,7 @@ void CheckFriendConnections(int hours)
   DB *dbp;
   DBC *dbcp;
   DB_ENV *dbenv = NULL;
-  int ret, secs = CF_TICKS_PER_HOUR*hours, criterion;
+  int ret, secs = CF_TICKS_PER_HOUR*hours, criterion, overdue;
   time_t now = time(NULL),lsea = -1, tthen;
   char name[CF_BUFSIZE],hostname[CF_BUFSIZE],datebuf[CF_MAXVARSIZE];
   char addr[CF_BUFSIZE],type[CF_BUFSIZE];
@@ -309,11 +309,14 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
 
    if (secs == 0)
       {
-      criterion = (now - then > (int)(average+sqrt(var)+0.5));
+      /* Twice the delta  is significant */
+      criterion = (now - then > (int)(average+sqrt(var)+0.5) * 2);
+      overdue = now - then - (int)(average+sqrt(var)+0.5) * 2;
       }
    else
       {
       criterion = (now - then > secs);
+      overdue =  (now - then - secs);
       }
 
    if (GetMacroValue(CONTEXTID,"LastSeenExpireAfter"))
@@ -344,11 +347,12 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
           break;
       }
 
-   snprintf(OUTPUT,CF_BUFSIZE,"Host %s i.e. %s %s @ [%s] (overdue)",
+   snprintf(OUTPUT,CF_BUFSIZE,"Host %s i.e. %s %s @ [%s] (overdue by %d mins)",
             IPString2Hostname(hostname+1),
             addr,
             type,
-            datebuf);
+            datebuf,
+            overdue);
 
    if (criterion)
       {
