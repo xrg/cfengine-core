@@ -1122,6 +1122,14 @@ int rsrcfork;
 rsrcfork=0;
 #endif
 
+#ifdef WITH_SELINUX
+int selinux_enabled=0;
+/* need to keep track of security context of destination file (if any) */
+security_context_t scontext=NULL;
+struct stat cur_dest;
+int dest_exists;
+selinux_enabled = (is_selinux_enabled()>0);
+#endif
 
 Debug2("CopyReg(%s,%s)\n",source,dest);
 
@@ -1130,6 +1138,24 @@ if (DONTDO)
    printf("%s: copy from %s to %s\n",VPREFIX,source,dest);
    return false;
    }
+
+#ifdef WITH_SELINUX
+if(selinux_enabled)
+    {
+    dest_exists = stat(dest,&cur_dest);
+    if(dest_exists == 0)
+        {
+        /* get current security context of destination file */
+        getfilecon(dest,&scontext);
+        }
+    else
+        {
+        /* use default security context when creating destination file */
+        matchpathcon(dest,0,&scontext);
+        setfscreatecon(scontext);
+        }
+    }
+#endif
 
  /* Make an assoc array of inodes used to preserve hard links */
 
@@ -1438,7 +1464,24 @@ if (rsrcfork)
     utime(dest,&timebuf);
 #endif
     }
- 
+
+#ifdef WITH_SELINUX
+if(selinux_enabled)
+    {
+    if(dest_exists == 0)
+        {
+        /* set dest context to whatever it was before copy */
+        setfilecon(dest,scontext);
+        }
+    else
+        {
+        /* set create context back to default */
+        setfscreatecon(NULL);
+        }
+    freecon(scontext);
+    }
+#endif
+
  return true;
 }
 

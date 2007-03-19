@@ -107,6 +107,17 @@ int SaveItemList(struct Item *liststart,char *file,char *repository)
   char stamp[CF_BUFSIZE]; 
   time_t STAMPNOW;
   STAMPNOW = time((time_t *)NULL);
+#ifdef WITH_SELINUX
+  int selinux_enabled=0;
+  security_context_t scontext=NULL;
+
+  selinux_enabled = (is_selinux_enabled()>0);
+  if(selinux_enabled)
+      {
+      /* get current security context */
+      getfilecon(file, &scontext);
+      }
+#endif
 
 if (stat(file,&statbuf) == -1)
    {
@@ -185,6 +196,13 @@ mask = umask(0);
 chmod(file,statbuf.st_mode);                    /* Restore file permissions etc */
 chown(file,statbuf.st_uid,statbuf.st_gid);
 umask(mask); 
+#ifdef WITH_SELINUX
+if(selinux_enabled)
+    {
+    /* restore file context */
+    setfilecon(file,scontext);
+    }
+#endif
 return true;
 }
 

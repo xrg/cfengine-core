@@ -5505,6 +5505,9 @@ all hosts from a particular domain.
      
               *
      
+         # These file paths must not contain symbolic
+         # links. Access control does not follow symlinks.
+     
          any::
      
             $CFINPUTS/cfrun.sh
@@ -5536,8 +5539,14 @@ relationship here.  There is no way to verify whether the user on the
 remote host is the same user as the user with the same name on the local
 host.</b>
 
-   <p><a name="index-Access-control-by-directory-295"></a><a name="index-Device-boundaries-and-remote-copy-access-296"></a><a name="index-Why-does-cfservd-give-access-to-files-on-a-different-filesystem_003f-297"></a><a name="index-Why-do-I-get-network-access-denied-to-files-I-have-granted-access-to_003f-298"></a>
-<a name="index-Access-control-in-cfservd-299"></a>
+   <p><b>NOTE III: Cfservd requires you to grant access to files without following any symbolic
+links. You must grant access to the real file or directory in order to access
+the file object.</b> This is a security feature in case parties with login access
+to the server could grant access to additional files by having the permission
+to create symbolic links in a transitory directory, e.g. <samp><span class="file">/tmp</span></samp>.
+
+   <p><a name="index-Symbolic-links-in-admit-295"></a><a name="index-Links-in-access-control-296"></a><a name="index-Access-control-by-directory-297"></a><a name="index-Access-control-and-symlinks-298"></a><a name="index-Device-boundaries-and-remote-copy-access-299"></a><a name="index-Why-does-cfservd-give-access-to-files-on-a-different-filesystem_003f-300"></a><a name="index-Why-do-I-get-network-access-denied-to-files-I-have-granted-access-to_003f-301"></a>
+<a name="index-Access-control-in-cfservd-302"></a>
 <!-- ********************************************************************** -->
 <!-- CHAPTER -->
 <!-- ********************************************************************** -->
@@ -6874,7 +6883,7 @@ impossible to forge. Our bodies use a similar method of receptor
 identification of molecules for immune responses as well as for smell
 (with some subtleties).  Without matching secrets it is impossible to
 prove someone's identity. 
-<a name="index-Immune-identity-300"></a>
+<a name="index-Immune-identity-303"></a>
 To copy a file over an encrypted link, you write:
 <pre class="smallexample">     
       copy:
@@ -6940,7 +6949,7 @@ keys, you could arrange to exchange key files manually, e.g.
    <p class="noindent">or you could arrange to connect at a specific time, so minimize the chances
 of spoofer racing you to the finishing line in transferring a key for a
 given user at a given host. 
-<a name="index-Race-condition-with-public-keys-301"></a>
+<a name="index-Race-condition-with-public-keys-304"></a>
 Note that, even program like ssh which use "privileged ports" are no
 longer immune to spoofing. Privileged ports are ports which only the
 root user can bind to. The idea used to be, a connection on a privileged
@@ -6954,13 +6963,13 @@ one has is in being able to keep a secret key. However, if someone
 gets there before you, with a fake key, and claims to be you, the receiver
 cannot know better. This applies to any and all cryptographic software.
 
-   <p><a name="index-Privileged-ports-302"></a>
+   <p><a name="index-Privileged-ports-305"></a>
 Cfengine secure copy is not based on SSL/TLS (although it shares some of
 the lower level libraries). SSL is not appropriate for a system
 administration tool, because it uses a trust model based on a third
 party, such as Verisign.  Most adminisrators are not prepared to
 pay a fee to register every host on their network, with a trusted third party. 
-<a name="index-Trusted-Third-Party-303"></a>Cfengine does not use the Secure Shell
+<a name="index-Trusted-Third-Party-306"></a>Cfengine does not use the Secure Shell
 protocol either. The ssh protocol is not directly appropriate for a
 system management tool, because it provides only unilateral
 authentication of user to server. Cfengine authenticates these parties
@@ -7229,8 +7238,9 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-g_t_002fvar_002flog_002fcfengine_002fcfengine_002elog-181">/var/log/cfengine/cfengine.log</a>: <a href="#Log-files">Log files</a></li>
 <li><a href="#index-g_t_0040file_007b_002fvar_002flp_002flogs_002flpsched_007d-237"><samp><span class="file">/var/lp/logs/lpsched</span></samp></a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
 <li><a href="#index-Access-control-153">Access control</a>: <a href="#Access-control">Access control</a></li>
-<li><a href="#index-Access-control-by-directory-295">Access control by directory</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
-<li><a href="#index-Access-control-in-cfservd-299">Access control in cfservd</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
+<li><a href="#index-Access-control-and-symlinks-298">Access control and symlinks</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
+<li><a href="#index-Access-control-by-directory-297">Access control by directory</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
+<li><a href="#index-Access-control-in-cfservd-302">Access control in cfservd</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
 <li><a href="#index-Access-control-lists-243">Access control lists</a>: <a href="#ACLs">ACLs</a></li>
 <li><a href="#index-ACL-aliases-247">ACL aliases</a>: <a href="#ACLs">ACLs</a></li>
 <li><a href="#index-ACLs-244">ACLs</a>: <a href="#ACLs">ACLs</a></li>
@@ -7291,7 +7301,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Debugging_002c-annulling-entries-151">Debugging, annulling entries</a>: <a href="#Debugging-tips">Debugging tips</a></li>
 <li><a href="#index-Default-file-32">Default file</a>: <a href="#Invoking-cfagent">Invoking cfagent</a></li>
 <li><a href="#index-Defining-variables-using-other-variables-91">Defining variables using other variables</a>: <a href="#Variable-substitution">Variable substitution</a></li>
-<li><a href="#index-Device-boundaries-and-remote-copy-access-296">Device boundaries and remote copy access</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
+<li><a href="#index-Device-boundaries-and-remote-copy-access-299">Device boundaries and remote copy access</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
 <li><a href="#index-DFS-230">DFS</a>: <a href="#Using-the-automounter">Using the automounter</a></li>
 <li><a href="#index-DHCP-7">DHCP</a>: <a href="#Network-interface">Network interface</a></li>
 <li><a href="#index-Directory-Names_002c-use-of-wildcards-158">Directory Names, use of wildcards</a>: <a href="#Wildcards-in-directory-names">Wildcards in directory names</a></li>
@@ -7333,7 +7343,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-IfElapsed_002c-caution-setting-to-zero_0021-286">IfElapsed, caution setting to zero!</a>: <a href="#Deadlocks-and-runaway-loops">Deadlocks and runaway loops</a></li>
 <li><a href="#index-g_t_0040code_007bignore_003d_007d-165"><code>ignore=</code></a>: <a href="#File-sweeps">File sweeps</a></li>
 <li><a href="#index-Ignoring_002c-private-lists-in-files_002c-copy-and-links-166">Ignoring, private lists in files, copy and links</a>: <a href="#File-sweeps">File sweeps</a></li>
-<li><a href="#index-Immune-identity-300">Immune identity</a>: <a href="#Privacy-_0028encryption_0029">Privacy (encryption)</a></li>
+<li><a href="#index-Immune-identity-303">Immune identity</a>: <a href="#Privacy-_0028encryption_0029">Privacy (encryption)</a></li>
 <li><a href="#index-In_002dbuilt-functions-94">In-built functions</a>: <a href="#Variable-substitution">Variable substitution</a></li>
 <li><a href="#index-g_t_0040code_007binclude_003d_007d-167"><code>include=</code></a>: <a href="#File-sweeps">File sweeps</a></li>
 <li><a href="#index-Infinite-loops-285">Infinite loops</a>: <a href="#Deadlocks-and-runaway-loops">Deadlocks and runaway loops</a></li>
@@ -7341,6 +7351,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Iteration-over-lists-192">Iteration over lists</a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
 <li><a href="#index-Linking-to-binservers-218">Linking to binservers</a>: <a href="#Special-variables">Special variables</a></li>
 <li><a href="#index-Links-13">Links</a>: <a href="#Making-links">Making links</a></li>
+<li><a href="#index-Links-in-access-control-296">Links in access control</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
 <li><a href="#index-Load-balancing-254">Load balancing</a>: <a href="#Splaying-host-times">Splaying host times</a></li>
 <li><a href="#index-localhost-and-remote-copying-289">localhost and remote copying</a>: <a href="#Deadlocks-and-runaway-loops">Deadlocks and runaway loops</a></li>
 <li><a href="#index-Lock-files-for-ordinary-users-282">Lock files for ordinary users</a>: <a href="#Spamming-and-security">Spamming and security</a></li>
@@ -7380,13 +7391,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Piping-input-into-cfengine-58">Piping input into cfengine</a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
 <li><a href="#index-Plug_002din-modules-137">Plug-in modules</a>: <a href="#Defining-classes">Defining classes</a></li>
 <li><a href="#index-Policy-for-running-the-system-200">Policy for running the system</a>: <a href="#General-considerations">General considerations</a></li>
-<li><a href="#index-Privileged-ports-302">Privileged ports</a>: <a href="#Trust-and-key-races">Trust and key races</a></li>
+<li><a href="#index-Privileged-ports-305">Privileged ports</a>: <a href="#Trust-and-key-races">Trust and key races</a></li>
 <li><a href="#index-processes-cannot-start-cfexecd-51">processes cannot start cfexecd</a>: <a href="#Running-cfengine-permanently-monitoring-and-restarting-cfexecd">Running cfengine permanently monitoring and restarting cfexecd</a></li>
 <li><a href="#index-Program-format-24">Program format</a>: <a href="#Program-structure">Program structure</a></li>
 <li><a href="#index-Program-structure-17">Program structure</a>: <a href="#Program-structure">Program structure</a></li>
 <li><a href="#index-Quoting-strings-186">Quoting strings</a>: <a href="#Quoted-strings">Quoted strings</a></li>
 <li><a href="#index-Race-condition-174">Race condition</a>: <a href="#Security-in-File-sweeps">Security in File sweeps</a></li>
-<li><a href="#index-Race-condition-with-public-keys-301">Race condition with public keys</a>: <a href="#Trust-and-key-races">Trust and key races</a></li>
+<li><a href="#index-Race-condition-with-public-keys-304">Race condition with public keys</a>: <a href="#Trust-and-key-races">Trust and key races</a></li>
 <li><a href="#index-Random-numbers-96">Random numbers</a>: <a href="#Variable-substitution">Variable substitution</a></li>
 <li><a href="#index-g_t_0040code_007brdist_007d-program-268"><code>rdist</code> program</a>: <a href="#What-services_003f">What services?</a></li>
 <li><a href="#index-Remote-distribution-of-files-269">Remote distribution of files</a>: <a href="#What-services_003f">What services?</a></li>
@@ -7414,6 +7425,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-STDIN_002c-reading-from-57">STDIN, reading from</a>: <a href="#CFINPUTS-environment-variable">CFINPUTS environment variable</a></li>
 <li><a href="#index-Strings-185">Strings</a>: <a href="#Quoted-strings">Quoted strings</a></li>
 <li><a href="#index-Structure-of-a-program-18">Structure of a program</a>: <a href="#Program-structure">Program structure</a></li>
+<li><a href="#index-Symbolic-links-in-admit-295">Symbolic links in admit</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
 <li><a href="#index-System-administrator_002c-name-134">System administrator, name</a>: <a href="#Variable-substitution">Variable substitution</a></li>
 <li><a href="#index-System-policy-199">System policy</a>: <a href="#General-considerations">General considerations</a></li>
 <li><a href="#index-g_t_0040code_007btidy_007d_002c-file-sweeps-162"><code>tidy</code>, file sweeps</a>: <a href="#File-sweeps">File sweeps</a></li>
@@ -7421,7 +7433,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Time-classes-255">Time classes</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
 <li><a href="#index-Timestamp-backups-242">Timestamp backups</a>: <a href="#Disabling-and-the-file-repository">Disabling and the file repository</a></li>
 <li><a href="#index-g_t_0040code_007btravlinks_007d-175"><code>travlinks</code></a>: <a href="#Security-in-File-sweeps">Security in File sweeps</a></li>
-<li><a href="#index-Trusted-Third-Party-303">Trusted Third Party</a>: <a href="#Trust-and-key-races">Trust and key races</a></li>
+<li><a href="#index-Trusted-Third-Party-306">Trusted Third Party</a>: <a href="#Trust-and-key-races">Trust and key races</a></li>
 <li><a href="#index-underscoreclasses-118">underscoreclasses</a>: <a href="#Variable-substitution">Variable substitution</a></li>
 <li><a href="#index-User-programs-which-define-classes-141">User programs which define classes</a>: <a href="#shellcommand-classes">shellcommand classes</a></li>
 <li><a href="#index-Variable-substitution-76">Variable substitution</a>: <a href="#Variable-substitution">Variable substitution</a></li>
@@ -7461,8 +7473,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Parentheses-in-classes_002e-75">Parentheses in classes.</a>: <a href="#Classes-basics">Classes basics</a></li>
 <li><a href="#index-Split_002c-using-a-space-195">Split, using a space</a>: <a href="#Iterating-over-lists">Iterating over lists</a></li>
 <li><a href="#index-Time-classes_002c-picking-out-complex-time-intervals-257">Time classes, picking out complex time intervals</a>: <a href="#Building-flexible-time-classes">Building flexible time classes</a></li>
-<li><a href="#index-Why-do-I-get-network-access-denied-to-files-I-have-granted-access-to_003f-298">Why do I get network access denied to files I have granted access to?</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
-<li><a href="#index-Why-does-cfservd-give-access-to-files-on-a-different-filesystem_003f-297">Why does cfservd give access to files on a different filesystem?</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
+<li><a href="#index-Why-do-I-get-network-access-denied-to-files-I-have-granted-access-to_003f-301">Why do I get network access denied to files I have granted access to?</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
+<li><a href="#index-Why-does-cfservd-give-access-to-files-on-a-different-filesystem_003f-300">Why does cfservd give access to files on a different filesystem?</a>: <a href="#Configuration-file-cfservd_002econf">Configuration file cfservd.conf</a></li>
    </ul><p><a name="Contents">
 
 

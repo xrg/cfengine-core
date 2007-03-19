@@ -4,6 +4,25 @@
 	PrintFile("name") function added to alerts
 	List expansion in editfiles actions
 
+	elsdefine fixed in tidy
+	processes with action=warn only install fix
+	ifelapsed/expireafter fixed in editfiles
+
+	Instrumentation of copy/shellcommands measuring time/averages
+	use cfshow --performance
+
+	background=true in shellcommands was not implemented! (Fixed)
+
+	SLES10 recognition
+	RedHat/Fedora further classes
+
+	SELinux support begun by Jeff Sheltren UCSB, who notes. 
+
+	> Currently, I have editfiles and copy working with selinux security
+	> contexts, although so far copy only has support for regular files; I
+	> haven't worked on links, etc. yet.
+	> Use --enable-selinux during compilation
+	
 2.1.22 
 
 	IMPORTANT: cfshow output formatting changes

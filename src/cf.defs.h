@@ -267,6 +267,9 @@ extern int errno;
 # include <sched.h>
 #endif
 
+#ifdef WITH_SELINUX
+# include <selinux/selinux.h> 
+#endif
 
 /*******************************************************************/
 /* Various defines                                                 */

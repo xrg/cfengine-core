@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.2.0a2)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.2.0a3)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -535,6 +535,18 @@ AC_ARG_ENABLE(DCE,[  --enable-DCE            support for DCE and ACLs],[
 	;;
   esac
 ])
+
+
+dnl ######################################################################
+dnl Give the chance to enable SELINUX
+dnl ######################################################################
+dnl 
+AC_ARG_ENABLE(selinux, dnl 
+               [  --enable-selinux              Enable use of the SELINUX libraries],
+               [AC_DEFINE(WITH_SELINUX, 1, [Define if you want to use SELINUX])
+               LIB_SELINUX="-lselinux"
+               LIBS="$LIBS $LIB_SELINUX"
+               AC_SUBST(LIB_SELINUX)])
 
 
 dnl ######################################################################

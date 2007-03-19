@@ -146,7 +146,6 @@ implement configurations in practice.
 * Installation::                
 * Work directory::              
 * Hard classes::                
-* Evaluated classes and special functions::  
 * Filenames and paths::         
 * Debugging with signals::      
 @end menu
@@ -231,7 +230,7 @@ to another central location and viewed in an alternative browser..
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node Hard classes, Evaluated classes and special functions, Work directory, Reference introduction
+@node Hard classes, Filenames and paths, Work directory, Reference introduction
 @section Cfengine hard classes
 
 
@@ -282,125 +281,7 @@ file is secure.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node Evaluated classes and special functions, Filenames and paths, Hard classes, Reference introduction
-@section Evaluated classes and special functions
-
-Cfengine provides a number of built-in functions for evaluating classes,
-based on file tests. Using these built-in functions is quicker than
-calling the shell @code{test} function. The time functions place their
-arguments in chronological order.
-
-@table @code
-@item IsNewerThan(@var{f1},@var{f2})
-True if file 2 was modified more recently than file 1 (UNIX mtime)
-@item AccessedBefore(@var{f1},@var{f2})
-True if file 1 was accessed more recently than file 2 (UNIX atime)
-@item ChangedBefore(@var{f1},@var{f2})
-True if file 1's attributes were changed in any way more recently than file 2's (UNIX ctime)
-@item FileExists(@var{file})
-True if the named file object exists.
-@item IPRange(@var{address-range})
-True if the current host lies within the specified IP range
-@item HostRange(@var{basename,start-stop})
-True if the current relative domain name begins with basename and ends with an integer
-between start and stop
-@item IsDefined(@var{variable-id})
-True if the named variable is defined. Note well: use the variable name, not its contents (that is,
-@code{IsDefined(var)}, and not @code{IsDefined($@{var@})})
-@item IsDir(@var{f})
-True if the file f is a directory
-@item IsLink(@var{f})
-True if the file f is a symbolic link
-@item IsPlain(@var{f})
-True if the file f is a plain file
-@item PrepModule(@var{module},@var{arg1 arg2...})
-True if the named module exists and can be executed. The module is assumed to
-follow the standard programming interface for modules (see Writing plugin modules in tutorial).
-Unlike actionsequence modules, these modules are evaluated immediately on parsing.
-Note that the module should be specified relative to the authorized module directory.
-@cindex Module directory
-@cindex PrepModule
-@cindex Modules executed immediately
-@item Regcmp(@var{regexp},@var{string or list separated string})
-True if the string matched the regular expression regexp.
-
-@item ReturnsZero(@var{command})
-True if the named shell command returns with exit code zero (success).
-The command is executed without a shell wrapper.
-
-@item ReturnsZeroShell(@var{command})
-True if the named shell command returns with exit code zero (success) when executed
-in the environment of a shell wrapper.
-
-@item Strcmp(@var{s1},@var{s2})
-True if the string s1 exactly matches s2
-@cindex IsGreatThan
-@cindex IsLessThan
-@cindex >
-@cindex <
-@item IsGreaterThan(@var{s1},@var{s2})
-Returns true if the value of s1 is greater than the value of s2. Note
-that, if the strings have numerical values, a numerical comparison is
-performed, otherwise a string comparison is used.
-@item IsLessThan(@var{s1},@var{s2})
-Returns true if the value of s1 is less than the value of s2. Note
-that, if the strings have numerical values, a numerical comparison is
-performed, otherwise a string comparison is used.
-@smallexample
-
-	control:
-	
-  	 actionsequence = ( files )
-	
-	 a = ( 2.12 )
- 	 b = ( 2.11 )	
-	
-	classes:
-
-	lt = ( IsLessThan($@{a@},$@{b@}) )
-   	gt = ( IsGreaterThan($@{a@},$@{b@}) )
-
-	alerts:
-
-	  lt:: "$(a) LESS THAN $(b)"
-	  gt:: "$(a) GREATER THAN $(b)"
-@end smallexample
-@end table
-
-
-@noindent
-For example:
-
-@smallexample
-
-classes:
-
- access_to_dir = ( ReturnsZero(/bin/cd /mydir) )
- compare       = ( ChangedBefore(/etc/passwd_master,/etc/passwd) )
- isplain       = ( IsPlain(/tmp/import) )
- inrange       = ( IPRange(128.39.89.10-15) )
- CIDR          = ( IPRange(128.39.89.10/24) )
- compute_nodes = ( HostRange(cpu-,01-32)
- gotinit       = ( PrepModule(startup2,"arg1 arg2") )
-
-@end smallexample
-@cindex Classes, built-in functions
-@cindex Testing files
-@cindex File types
-@cindex Comparing file objects
-@vindex ReturnsZero()
-@vindex ChangedBefore()
-@vindex IsPlain()
-@vindex IsDir()
-@vindex IsLink()
-@vindex IsNewerThan()
-@vindex AccessedBefore()
-
-@c -------------------------------------------------------------------------------
-@c SECTION
-@c -------------------------------------------------------------------------------
-
-@node Filenames and paths, Debugging with signals, Evaluated classes and special functions, Reference introduction
+@node Filenames and paths, Debugging with signals, Hard classes, Reference introduction
 @section Filenames and paths
 
 Filenames in Unix-like operating systems
@@ -532,6 +413,7 @@ everyhost# cfshow -a
 everyhost# cfshow -l
 everyhost# cfshow -c
 everyhost# cfshow -s
+everyhost# cfshow -p
 @end smallexample
 @noindent
 
@@ -541,6 +423,11 @@ The command line options are
 @item -a @code{--active}
 This prints a list of any currently active locks, i.e. tasks that cfengine believes
 it is currently enagaged in.
+
+@item -c @code{--checksum}
+This lists all of the files and their current checksum values in the
+current checksum database.
+
 @item -l @code{--locks}
 This prints a list of the locks and the last times an active lock was secured for each
 cfengine acivity. This list is potentially very long.
@@ -551,12 +438,26 @@ printed. See FriendStatus. The output format is in a form that can easily be par
 user scripts. e.g.
 
 @smallexample
-192.0.2.1 (answered us) at [Wed May 26 16:39:03 2004] i.e. not seen for !2860.08! hours; <delta_t> = @{63325.64@} hours
-192.0.2.3 (answered us) at [Wed May 26 16:39:03 2004] i.e. not seen for !2860.08! hours; <delta_t> = @{90465.20@} hours
+IP + 192.168.1.101 192.168.1.101  @ [Tue Jan 23 16:13] not seen for (6.42) hrs, Av 0.02 +/- 0.01 hrs
+IP - 192.168.1.101 192.168.1.101  @ [Tue Jan 23 16:13] not seen for (6.42) hrs, Av 0.02 +/- 0.01 hrs
 @end smallexample
-@item -c @code{--checksum}
-This lists all of the files and their current checksum values in the
-current checksum database.
+
+Lines marked with a + are attempts to connect by cfagent, lines with a - are connections
+into cfservd.
+
+@item -s @code{--performance}
+Shows the time in seconds required to complete copies and shell executions.
+
+@smallexample
+(0.00 mins @ Tue Feb 13 19:05) Av 0.00 +/- 0.00 for Copy(localhost:/usr/local/sbin/cfagent > /var/cfengine/bin/cfagent)
+(0.00 mins @ Tue Feb 13 19:05) Av 0.00 +/- 0.00 for Copy(localhost:/usr/local/sbin/cfenvd > /var/cfengine/bin/cfenvd)
+(0.02 mins @ Tue Feb 13 19:05) Av 0.02 +/- 0.00 for Copy(localhost:/usr/local/sbin/cfexecd > /var/cfengine/bin/cfexecd)
+(0.00 mins @ Tue Feb 13 19:05) Av 0.00 +/- 0.00 for Copy(localhost:/usr/local/sbin/cfservd > /var/cfengine/bin/cfservd)
+(6.41 mins @ Tue Feb 13 18:50) Av 0.00 +/- 0.00 for Exec(/usr/bin/updatedb --prunepaths=/media)
+(0.00 mins @ Tue Feb 13 19:05) Av 0.00 +/- 0.00 for Exec(/usr/sbin/ntpdate 128.39.74.16 > /dev/null)
+@end smallexample
+
+
 
 @end table
 
@@ -1037,6 +938,7 @@ of lines of the form:
 @item ReadFile(@var{filename},@var{Max number of bytes})
 Read a maximum number of bytes from a file.
 @cindex ReadFile
+
 @item ReadTable(@var{filename},@var{fileformat},@var{separator},@var{comment},@var{Max number of bytes})
 Reads up to a maximum number of bytes from a properly formatted file into a two-dimensional associated array.
 @table @code
@@ -1055,10 +957,14 @@ If this format is specified, @code{ReadArray} tries to interpret the file as a l
 of lines of the form:
 
 @smallexample
-  key1,key2,,value
+  key1,key2,value1
+  key3,key4,value2
 @end smallexample
 
+This variable would then be references as $(table[key1][key2]).
+
 @end table
+
 
 @item ReadList(@var{filename},@var{fileformat},@var{comment},@var{Max number of bytes})
 Reads up to a maximum number of bytes from a properly formatted file into a listvariable. File formats
@@ -1785,6 +1691,129 @@ OR is the weakest operator.
 
 @end table
 
+@c -------------------------------------------------------------------------------
+@c SECTION
+@c -------------------------------------------------------------------------------
+
+@menu
+* Setting classes with special functions::  
+@end menu
+
+@node Setting classes with special functions,  , Cfengine classes, Cfengine classes
+@subsection Setting classes with special functions
+
+Cfengine provides a number of built-in functions for evaluating classes,
+based on file tests. Using these built-in functions is quicker than
+calling the shell @code{test} function. The time functions place their
+arguments in chronological order.
+
+@table @code
+@item IsNewerThan(@var{f1},@var{f2})
+True if file 2 was modified more recently than file 1 (UNIX mtime)
+@item AccessedBefore(@var{f1},@var{f2})
+True if file 1 was accessed more recently than file 2 (UNIX atime)
+@item ChangedBefore(@var{f1},@var{f2})
+True if file 1's attributes were changed in any way more recently than file 2's (UNIX ctime)
+@item FileExists(@var{file})
+True if the named file object exists.
+@item IPRange(@var{address-range})
+True if the current host lies within the specified IP range
+@item HostRange(@var{basename,start-stop})
+True if the current relative domain name begins with basename and ends with an integer
+between start and stop
+@item IsDefined(@var{variable-id})
+True if the named variable is defined. Note well: use the variable name, not its contents (that is,
+@code{IsDefined(var)}, and not @code{IsDefined($@{var@})})
+@item IsDir(@var{f})
+True if the file f is a directory
+@item IsLink(@var{f})
+True if the file f is a symbolic link
+@item IsPlain(@var{f})
+True if the file f is a plain file
+@item PrepModule(@var{module},@var{arg1 arg2...})
+True if the named module exists and can be executed. The module is assumed to
+follow the standard programming interface for modules (see Writing plugin modules in tutorial).
+Unlike actionsequence modules, these modules are evaluated immediately on parsing.
+Note that the module should be specified relative to the authorized module directory.
+@cindex Module directory
+@cindex PrepModule
+@cindex Modules executed immediately
+@item Regcmp(@var{regexp},@var{string or list separated string})
+True if the string matched the regular expression regexp.
+
+@item ReturnsZero(@var{command})
+True if the named shell command returns with exit code zero (success).
+The command is executed without a shell wrapper.
+
+@item ReturnsZeroShell(@var{command})
+True if the named shell command returns with exit code zero (success) when executed
+in the environment of a shell wrapper.
+
+@item Strcmp(@var{s1},@var{s2})
+True if the string s1 exactly matches s2
+@cindex IsGreatThan
+@cindex IsLessThan
+@cindex >
+@cindex <
+@item IsGreaterThan(@var{s1},@var{s2})
+Returns true if the value of s1 is greater than the value of s2. Note
+that, if the strings have numerical values, a numerical comparison is
+performed, otherwise a string comparison is used.
+@item IsLessThan(@var{s1},@var{s2})
+Returns true if the value of s1 is less than the value of s2. Note
+that, if the strings have numerical values, a numerical comparison is
+performed, otherwise a string comparison is used.
+@smallexample
+
+	control:
+	
+  	 actionsequence = ( files )
+	
+	 a = ( 2.12 )
+ 	 b = ( 2.11 )	
+	
+	classes:
+
+	lt = ( IsLessThan($@{a@},$@{b@}) )
+   	gt = ( IsGreaterThan($@{a@},$@{b@}) )
+
+	alerts:
+
+	  lt:: "$(a) LESS THAN $(b)"
+	  gt:: "$(a) GREATER THAN $(b)"
+@end smallexample
+@end table
+
+
+@noindent
+For example:
+
+@smallexample
+
+classes:
+
+ access_to_dir = ( ReturnsZero(/bin/cd /mydir) )
+ compare       = ( ChangedBefore(/etc/passwd_master,/etc/passwd) )
+ isplain       = ( IsPlain(/tmp/import) )
+ inrange       = ( IPRange(128.39.89.10-15) )
+ CIDR          = ( IPRange(128.39.89.10/24) )
+ compute_nodes = ( HostRange(cpu-,01-32)
+ gotinit       = ( PrepModule(startup2,"arg1 arg2") )
+
+@end smallexample
+@cindex Classes, built-in functions
+@cindex Testing files
+@cindex File types
+@cindex Comparing file objects
+@vindex ReturnsZero()
+@vindex ChangedBefore()
+@vindex IsPlain()
+@vindex IsDir()
+@vindex IsLink()
+@vindex IsNewerThan()
+@vindex AccessedBefore()
+
+
 
 @c -------------------------------------------------------------------------------
 @c SECTION
@@ -2330,6 +2359,8 @@ Existing persistent classes can be deleted with:
           UnsetState(myclass)
 
 @end smallexample
+
+
 The @code{FriendStatus} function is available from version 2.1.4 and
 displays a message if hosts that normally have a cfengine protocol
 connection with the current host have not connected for more than than
@@ -2556,10 +2587,11 @@ The meaning of each of these lines is described below.
 * AllowRedefinitionOf::         
 * AutoDefine::                  
 * BinaryPaddingChar::           
-* ChecksumDatabase::            
 * BindToInterface(cfagent)::    
+* ChecksumDatabase::            
 * ChecksumPurge::               
 * ChecksumUpdates::             
+* CompressCommand::             
 * childlibpath::                
 * copylinks::                   
 * defaultcopytype::             
@@ -2584,9 +2616,9 @@ The meaning of each of these lines is described below.
 * IfElapsed::                   
 * Inform::                      
 * interfacename::               
-* lastseenexpireafter::         
 * fileextension::               
 * lastseen::                    
+* lastseenexpireafter::         
 * linkcopies::                  
 * LogDirectory::                
 * LogTidyHomeFiles::            
@@ -3109,7 +3141,7 @@ is copied at any time.
 @c SUBSECTION
 @c .....................................................
 
-@node BinaryPaddingChar, ChecksumDatabase, AutoDefine, control
+@node BinaryPaddingChar, BindToInterface(cfagent), AutoDefine, control
 @subsection BinaryPaddingChar
 
 @w{}
@@ -3122,11 +3154,29 @@ the space character, since this is normally used to edit filenames
 or text messages within program code.
 
 
+
+@c ...........................................
+@c SUBSECTION
+@c ...........................................
+
+@node BindToInterface(cfagent), ChecksumDatabase, BinaryPaddingChar, control
+@subsection BindToInterface
+If this is set to a specific IP address of an IP configured interface,
+cfagent will use that address for outgoing connections.  On Multi-homed
+hosts this allows one to restrict the traffic to a known interface. An interface must
+be configured with an IP address in order to be bound.
+
+This feature is not available for old operating systems.
+@cindex Multihomed hosts
+@vindex BindToInterface
+@cindex Binding to one interface only
+
+
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 
-@node ChecksumDatabase, BindToInterface(cfagent), BinaryPaddingChar, control
+@node ChecksumDatabase, ChecksumPurge, BindToInterface(cfagent), control
 @subsection ChecksumDatabase
 
 @w{}
@@ -3145,28 +3195,11 @@ message digests (i.e. cryptographic checksums) of files
 for security purposes, @xref{files}, @code{checksum=}.
 
 
-
-@c ...........................................
-@c SUBSECTION
-@c ...........................................
-
-@node BindToInterface(cfagent), ChecksumPurge, ChecksumDatabase, control
-@subsection BindToInterface
-If this is set to a specific IP address of an IP configured interface,
-cfagent will use that address for outgoing connections.  On Multi-homed
-hosts this allows one to restrict the traffic to a known interface. An interface must
-be configured with an IP address in order to be bound.
-
-This feature is not available for old operating systems.
-@cindex Multihomed hosts
-@vindex BindToInterface
-@cindex Binding to one interface only
-
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 
-@node ChecksumPurge, ChecksumUpdates, BindToInterface(cfagent), control
+@node ChecksumPurge, ChecksumUpdates, ChecksumDatabase, control
 @subsection ChecksumPurge
 
 @w{}
@@ -3208,7 +3241,7 @@ control:
 @c SUBSECTION
 @c .....................................................
 
-@node ChecksumUpdates, childlibpath, ChecksumPurge, control
+@node ChecksumUpdates, CompressCommand, ChecksumPurge, control
 @subsection ChecksumUpdates
 
 @w{}
@@ -3235,7 +3268,27 @@ given.
 @c SUBSECTION
 @c .....................................................
 
-@node childlibpath, copylinks, ChecksumUpdates, control
+@node CompressCommand, childlibpath, ChecksumUpdates, control
+@subsection CompressCommand
+
+Specified the name of a program that is used in the files @code{action=compress}
+attribute.
+
+@w{}
+@smallexample
+CompressCommand = ( /usr/bin/gzip )
+
+@end smallexample
+
+@cindex CompressCommand
+@vindex CompressCommand
+
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node childlibpath, copylinks, CompressCommand, control
 @subsection ChildLibPath
 
 Sets a value for LD_LIBRARY_PATH in child processes:
@@ -3828,7 +3881,7 @@ To set this output level one writes:
 @c SUBSECTION
 @c .....................................................
 
-@node interfacename, lastseenexpireafter, Inform, control
+@node interfacename, fileextension, Inform, control
 @subsection InterfaceName
 @cindex InterfaceName
 @vindex InterfaceName
@@ -3860,31 +3913,12 @@ choices made in the @file{cfrc} file, @xref{cfrc resource file}.
 
 
 
-@c .....................................................
-@c SUBSECTION
-@c .....................................................
-
-@node lastseenexpireafter, fileextension, interfacename, control
-@subsection LastSeenExpireAfter
-
-This value (in days) sets the time after which unseen friend hosts
-are purged from the `last seen' database, as viewed by the @code{FriendStatus}
-function, @xref{alerts}.
-
-@smallexample
-
-  LastSeenExpireAfter = ( 2 )
-
-@end smallexample
-@vindex LastSeenExpireAfter
-@cindex Last Seen database
-
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 
-@node fileextension, lastseen, lastseenexpireafter, control
+@node fileextension, lastseen, interfacename, control
 @subsection FileExtensions
 
 This list may be used to define a number of extensions
@@ -3906,7 +3940,7 @@ these extensions. They may be used to conceal directories.
 @c SUBSECTION
 @c .....................................................
 
-@node lastseen, linkcopies, fileextension, control
+@node lastseen, lastseenexpireafter, fileextension, control
 @subsection LastSeen
 
 This option is true by default. If set to off or false it prevents cfengine
@@ -3926,11 +3960,32 @@ useful when processes appear to hang on connecting.
 @end smallexample
 @vindex LastSeen
 
+
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 
-@node linkcopies, LogDirectory, lastseen, control
+@node lastseenexpireafter, linkcopies, lastseen, control
+@subsection LastSeenExpireAfter
+
+This value (in days) sets the time after which unseen friend hosts
+are purged from the `last seen' database, as viewed by the @code{FriendStatus}
+function, @xref{alerts}.
+
+@smallexample
+
+  LastSeenExpireAfter = ( 2 )
+
+@end smallexample
+@vindex LastSeenExpireAfter
+@cindex Last Seen database
+
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node linkcopies, LogDirectory, lastseenexpireafter, control
 @subsection LinkCopies
 
 This list is used to define a global list of names or patterns
@@ -9819,7 +9874,8 @@ the user who started cfengine.
 @item @var{background}
 Run this command in the background if this is specified true.  This will make
 cfengine run faster, but no tests can be made (at least directly) on the results
-of this command.
+of this command. Also when jobs are backgrounded, the output in verbose mode 
+can be somewhat erratic due to the unsychnronized streams.
 
 @item @var{chdir}
 Change to the specified directory before running this command.
@@ -10856,6 +10912,16 @@ files on the server, but not vice-versa, similar to the NFS root mapping,
 except that there is no question of a client being able to modify files
 on the server. Caution: cfservd trusts the DNS service, so be aware that
 cache poisoning attacks are a possible way of bypassing access controls.
+
+@b{Cfservd requires you to grant access to files without following any symbolic
+links. You must grant access to the real file or directory in order to access
+the file object.} This is a security feature in case parties with login access
+to the server could grant access to additional files by having the permission
+to create symbolic links in a transitory directory, e.g. @file{/tmp}.
+@cindex Symbolic links in admit
+@cindex Links in access control
+@cindex Access control by directory
+@cindex Access control and symlinks
 
 As of version 2.0.4: Once a verified host address has been identified with a functioning
 public/private key authentication, the IP address is added to the SkipVerify

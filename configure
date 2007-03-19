@@ -713,6 +713,7 @@ BERKELEY_DB_LIB
 OPENSSL_LIB_LDFLAGS
 OPENSSL_LIB_CPPFLAGS
 OPENSSL_LIB_LIB
+LIB_SELINUX
 EIGHTBIT
 NOWRAP
 GCC_CFLAG
@@ -1312,6 +1313,7 @@ Optional Features:
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
   --enable-DCE            support for DCE and ACLs
+                 --enable-selinux              Enable use of the SELINUX libraries
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -2203,7 +2205,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=cfengine
- VERSION=2.2.0a2
+ VERSION=2.2.0a3
 
 
 cat >>confdefs.h <<_ACEOF
@@ -16752,6 +16754,20 @@ fi
 
 
 
+# Check whether --enable-selinux was given.
+if test "${enable_selinux+set}" = set; then
+  enableval=$enable_selinux;
+cat >>confdefs.h <<\_ACEOF
+#define WITH_SELINUX 1
+_ACEOF
+
+               LIB_SELINUX="-lselinux"
+               LIBS="$LIBS $LIB_SELINUX"
+
+fi
+
+
+
 
 if test "$srcdir" != "."; then
   CPPFLAGS="$CPPFLAGS -I`pwd`/src"
@@ -18815,6 +18831,7 @@ BERKELEY_DB_LIB!$BERKELEY_DB_LIB$ac_delim
 OPENSSL_LIB_LDFLAGS!$OPENSSL_LIB_LDFLAGS$ac_delim
 OPENSSL_LIB_CPPFLAGS!$OPENSSL_LIB_CPPFLAGS$ac_delim
 OPENSSL_LIB_LIB!$OPENSSL_LIB_LIB$ac_delim
+LIB_SELINUX!$LIB_SELINUX$ac_delim
 EIGHTBIT!$EIGHTBIT$ac_delim
 NOWRAP!$NOWRAP$ac_delim
 GCC_CFLAG!$GCC_CFLAG$ac_delim
@@ -18824,7 +18841,7 @@ BUILD_DOC_FALSE!$BUILD_DOC_FALSE$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 24; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 25; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

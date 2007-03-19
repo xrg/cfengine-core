@@ -5844,6 +5844,9 @@ admit:   # Can also call this grant:
  
          *
 
+    # These file paths must not contain symbolic
+    # links. Access control does not follow symlinks.
+
     any::
 
        $CFINPUTS/cfrun.sh
@@ -5876,7 +5879,16 @@ relationship here.  There is no way to verify whether the user on the
 remote host is the same user as the user with the same name on the local
 host.}
 
+@b{NOTE III: Cfservd requires you to grant access to files without following any symbolic
+links. You must grant access to the real file or directory in order to access
+the file object.} This is a security feature in case parties with login access
+to the server could grant access to additional files by having the permission
+to create symbolic links in a transitory directory, e.g. @file{/tmp}.
+
+@cindex Symbolic links in admit
+@cindex Links in access control
 @cindex Access control by directory
+@cindex Access control and symlinks
 @cindex Device boundaries and remote copy access
 @mbindex Why does cfservd give access to files on a different filesystem?
 @mbindex Why do I get network access denied to files I have granted access to?
