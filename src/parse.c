@@ -190,6 +190,7 @@ free(MOUNTONTO);
 free(MOUNTOPTS);
 free(DESTINATION);
 free(IMAGEACTION);
+free(PKGVER);
 free(CHDIR);
 free(LOCALREPOS);
 free(FILTERDATA);

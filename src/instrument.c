@@ -243,11 +243,11 @@ void CheckFriendConnections(int hours)
   DBC *dbcp;
   DB_ENV *dbenv = NULL;
   int ret, secs = CF_TICKS_PER_HOUR*hours, criterion, overdue;
-  time_t now = time(NULL),lsea = -1, tthen;
+  time_t now = time(NULL),lsea = -1, tthen, then;
   char name[CF_BUFSIZE],hostname[CF_BUFSIZE],datebuf[CF_MAXVARSIZE];
   char addr[CF_BUFSIZE],type[CF_BUFSIZE];
   struct QPoint entry;
-  double then = 0.0, average = 0.0, var = 0.0, ticksperminute = 60.0;
+  double average = 0.0, var = 0.0, ticksperminute = 60.0;
   double ticksperhour = (double)CF_TICKS_PER_HOUR,ticksperday = (double)CF_TICKS_PER_DAY;
 
 Verbose("CheckFriendConnections(%d)\n",hours);
@@ -288,7 +288,6 @@ memset(&value, 0, sizeof(value));
 
 while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
    {
-   time_t then;
    memset(&entry, 0, sizeof(entry)); 
 
    strcpy(hostname,(char *)key.data);
@@ -309,9 +308,9 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
 
    if (secs == 0)
       {
-      /* Twice the delta  is significant */
-      criterion = (now - then > (int)(average+sqrt(var)+0.5) * 2);
-      overdue = now - then - (int)(average+sqrt(var)+0.5) * 2;
+      /* Twice the average delta is significant */
+      criterion = (now - then > (int)(average+2.0*sqrt(var)+0.5));
+      overdue = now - then - (int)(average);
       }
    else
       {
@@ -352,7 +351,7 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
             addr,
             type,
             datebuf,
-            overdue);
+            overdue/(int)ticksperminute);
 
    if (criterion)
       {
