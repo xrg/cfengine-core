@@ -870,6 +870,8 @@ while (!feof(fp))
    memset(buffer,0,CF_BUFSIZE);
    fgets(buffer,CF_BUFSIZE,fp);
 
+   list = NULL;
+   
    if ((read > val) && (val > 0))
       {
       Verbose("Breaking off file read after %d bytes\n",read);
@@ -915,22 +917,43 @@ while (!feof(fp))
       }
    else if (strcmp(formattype,"textkey") == 0)
       {
-      char argv[CF_MAXFARGS][CF_EXPANDSIZE],lvalue[CF_BUFSIZE];
-      if (!FunctionArgs(buffer,argv,2))
+      char lvalue[CF_BUFSIZE], rvalue[CF_BUFSIZE];
+      Debug("TEXTKEY: %s(%s)\n",CURRENTITEM,buffer);
+      list = SplitStringAsItemList(buffer,*sepchar);
+
+      if (ListLen(list) > 2)
          {
-         break;
+         Verbose("Warning: ReadArray() file format in %s is more than two elements (does this matter?)\n",filename);
+         }
+
+      if (ListLen(list) < 2)
+         {
+         yyerror("ReadArray() file format has too few elements for textkey\n");
          }
       
-      Debug("Setting %s[%s] = %s\n",CURRENTITEM,argv[0],argv[1]);
+      if (list->name != NULL)
+         {
+         snprintf(lvalue,CF_BUFSIZE-1,"%s[%s]",CURRENTITEM,list->name);
+
+         if (list->next != NULL && list->next->name != NULL)
+            {
+            Debug("Setting %s[%s] = %s\n",lvalue,list->next->name);
+            InstallControlRValue(lvalue,list->next->name);
+            }
+         else
+            {
+            yyerror("Too few data in input file\n");
+            }
+         }
       
-      snprintf(lvalue,CF_BUFSIZE-1,"%s[%s]",CURRENTITEM,argv[0]);
-      InstallControlRValue(lvalue,argv[1]);
       snprintf(value,CF_BUFSIZE-1,"CF_ASSOCIATIVE_ARRAY%s",args);
       }
    else
       {
       yyerror("No such file format specifier");
       }
+
+   DeleteItemList(list);
    }
  
  fclose(fp); 
@@ -961,7 +984,7 @@ if ((fp = fopen(filename,"r")) == NULL)
  
 if (strlen(sepchar) > 1)
    {
-   yyerror("List separator declared is not a single character in ReadArray");
+   yyerror("List separator declared is not a single character in ReadTable");
    }
 
 while (!feof(fp))
@@ -1954,7 +1977,7 @@ if (count != number)
    {
    if (PARSING)
       {
-      snprintf(OUTPUT,CF_BUFSIZE,"Function or format of input file requires %d argument items",number);
+      snprintf(OUTPUT,CF_BUFSIZE,"Function requires %d argument items",number);
       yyerror(OUTPUT);
       }
    else
@@ -1980,3 +2003,54 @@ DeleteItemList(ip);
 return true;
 }
 
+/*********************************************************************/
+
+int FileFormat(char *args,char arg[CF_MAXFARGS][CF_EXPANDSIZE],int number,char sep)
+
+{ char *sp,*start[CF_MAXFARGS],exbuf[CF_EXPANDSIZE];
+  int count = 0, i;
+  struct Item *ip =  NULL, *ipp;
+
+if (number > CF_MAXFARGS)
+   {
+   FatalError("Software error: too many file columns in FileFormat");
+   }
+
+ip = ListFromArgs(args);
+
+if (DEBUG)
+   {
+   DebugListItemList(ip);
+   }
+
+count = ListLen(ip);
+
+if (count != number)
+   {
+   if (PARSING)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"File format requires %d items",number);
+      yyerror(OUTPUT);
+      }
+   else
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Assignment (%s) with format error - %d/%d expected args",args,count,number);
+      CfLog(cferror,OUTPUT,"");
+      }
+   return false;
+   }
+
+ipp = ip;
+
+for (i = 0; i < number; i++)
+   {
+   ExpandVarstring(ipp->name,exbuf,NULL);
+   strncpy(arg[i],exbuf,CF_EXPANDSIZE);
+   Debug("ARG[%d] %s\n",i,arg[i]);
+   ipp = ipp->next;
+   }
+
+DeleteItemList(ip);
+
+return true;
+}

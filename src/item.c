@@ -42,7 +42,9 @@ int ListLen(struct Item *list)
 
 { int count = 0;
   struct Item *ip;
- 
+
+Debug("Check ListLen\n");
+  
 for (ip = list; ip != NULL; ip=ip->next)
    {
    count++;

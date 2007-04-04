@@ -152,7 +152,7 @@ void HandleUnsetState (char *args,char *value);
 void HandlePrepModule (char *args,char *value);
 void HandleAssociation (char *args,char *value);
 int FunctionArgs (char *args,char argv[CF_MAXFARGS][CF_EXPANDSIZE],int number);
-void FiveArgs (char *args,char *arg1,char *arg2,char *arg3, char *arg4,char *arg5);
+int FileFormat (char *args,char argv[CF_MAXFARGS][CF_EXPANDSIZE],int number,char sep);
 int IsSocketType (char *s);
 int IsTCPType (char *s);
 int IsProcessType (char *s);
