@@ -2092,13 +2092,21 @@ int AccessControl(char *filename,struct cfd_connection *conn,int encrypt)
 
 { struct Auth *ap;
   int access = false;
-  char realname[CF_BUFSIZE],path[CF_BUFSIZE],lastnode[CF_BUFSIZE];
+  char realname[CF_BUFSIZE],path[CF_BUFSIZE],lastnode[CF_BUFSIZE],*sp;
   struct stat statbuf;
 
 Debug("AccessControl(%s)\n",filename);
 memset(realname,0,CF_BUFSIZE);
 
 /* Separate path first, else this breaks for lastnode = symlink */
+
+for (sp = filename; *sp != '\0'; sp++) /*fix filename to not have windows slashes */
+   {
+   if (*sp == FILE_SEPARATOR)
+      {
+      *sp = '/';
+      }
+   }
 
 strncpy(path,filename,CF_BUFSIZE-1);
 strncpy(lastnode,ReadLastNode(filename),CF_BUFSIZE-1);
