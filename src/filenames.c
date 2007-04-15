@@ -129,15 +129,44 @@ if (IsFileSep(f[0]) && IsFileSep(f[1]))
 
 void AddSlash(char *str)
 
-{
+{ char *sp, *sep = FILE_SEPARATOR_STR;
+  int f = false ,b = false;
+
 if (str == NULL)
    {
    return;
    }
- 
+
+/* Try to see what convention is being used for filenames
+   in case this is a cross-system copy from Win/Unix */
+
+for (sp = str; *sp!= '\0'; sp++)
+   {
+   switch (*sp)
+      {
+      case '/':
+          f = true;
+          break;
+      case '\\':
+          b = true;
+          break;
+      default:
+          break;
+      }
+   }
+
+if (f && !b)
+   {
+   sep = "/";
+   }
+else if (b && !f)
+   {
+   sep = "\\";
+   }
+
 if (!IsFileSep(str[strlen(str)-1]))
    {
-   strcat(str,FILE_SEPARATOR_STR);
+   strcat(str,sep);
    }
 }
 

@@ -1,11 +1,30 @@
 
 2.2.0
+	Apart from minor changes, this version is about structural internal
+	changes that ease the eventual confluence with cfengine 3 and the work
+	going on behind the scenes there. Every effort is being made to
+	make this change easy for users and existing installations. New features
+	will be introduced into 2.2.x gradually, and the new front-end will
+	eventually merge into this.
 
+	This version accompanies a new introduction to cfengine published as
+	a SAGE Short Topics book.
+
+	* Some changes
+
+	EMANICS extensions and reference testing for context sensitive
+	network navigation patterns using voluntary cooperation contracts.
+	
 	PrintFile("name") function added to alerts
-	List expansion in editfiles actions
+	
+	!! List expansion in editfiles actions. This is an important change 
+	because it can potentially affect existing configurations that contain
+	variables with a list separator in them.
 
 	elsdefine fixed in tidy
+	
 	processes with action=warn only install fix
+
 	ifelapsed/expireafter fixed in editfiles
 
 	Instrumentation of copy/shellcommands measuring time/averages
@@ -22,6 +41,8 @@
 	> contexts, although so far copy only has support for regular files; I
 	> haven't worked on links, etc. yet.
 	> Use --enable-selinux during compilation
+
+	Bug / misleading error message in ReadArray fixed
 	
 2.1.22 
 

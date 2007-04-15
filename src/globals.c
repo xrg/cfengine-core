@@ -1206,6 +1206,7 @@ char *OBS[CF_OBSERVABLES] =
      "DefineInGroup",
      "IfElapsed",
      "ExpireAfter",
+     "EditSplit",
      NULL
      };
 

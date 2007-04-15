@@ -252,6 +252,7 @@ while (ep != NULL)
       case ElseDefineClasses:
       case EditIfElapsed:
       case EditExpireAfter:
+      case EditSplit:
         break;
 
       case EditUseShell:

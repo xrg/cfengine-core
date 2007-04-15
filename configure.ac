@@ -376,7 +376,7 @@ AC_ARG_WITH(pcre,
                             CPPFLAGS="$CPPFLAGS -I$d/include"
                             LDFLAGS="$LDFLAGS -L$d/lib"
                             PCRE_LIB="-lpcreposix"
-                            AC_MSG_RESULT("$d)
+                            AC_MSG_RESULT($d)
                             break
                         fi
                     done

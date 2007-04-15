@@ -6382,6 +6382,18 @@ See discussion below.
    EditMode "Binary"
 @end smallexample
 
+
+@item EditSplit @var{char}
+Editfiles treats lists as private interpretations, since iteration over
+lists could lead to unpredictable behaviour if text variables accidentally
+contain the list separator. The control option @code{Split} therefore has
+no effect on editfiles. This definition makes list expansion work in editfiles.
+
+@smallexample
+   EditSplit ","
+@end smallexample
+
+
 @item EmptyEntireFilePlease
 Deletes all lines from the current file.
 

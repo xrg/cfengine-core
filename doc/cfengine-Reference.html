@@ -6007,6 +6007,13 @@ See discussion below.
 
      <pre class="smallexample">             EditMode "Binary"
      </pre>
+     <br><dt><code>EditSplit </code><var>char</var><dd>Editfiles treats lists as private interpretations, since iteration over
+lists could lead to unpredictable behaviour if text variables accidentally
+contain the list separator. The control option <code>Split</code> therefore has
+no effect on editfiles. This definition makes list expansion work in editfiles.
+
+     <pre class="smallexample">             EditSplit ","
+     </pre>
      <br><dt><code>EmptyEntireFilePlease</code><dd>Deletes all lines from the current file.
 
      <br><dt><code>ElseDefineClasses</code><dd>See <code>DefineClasses</code>

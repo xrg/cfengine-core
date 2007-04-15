@@ -309,6 +309,7 @@ extern int errno;
 #define CF_RECURSION_LIMIT 100
 #define CF_MONDAY_MORNING 342000
 #define CF_NOVAL -0.7259285297502359
+#define CF_UNUSED_CHAR (char)127
 
 #define CF_MAXDIGESTNAMELEN 7
 #define CF_CHKSUMKEYOFFSET  CF_MAXDIGESTNAMELEN+1
@@ -1141,7 +1142,8 @@ enum editnames
    EditFilter,
    DefineInGroup,
    EditIfElapsed,
-   EditExpireAfter
+   EditExpireAfter,
+   EditSplit
    };
 
 enum RegExpTypes
@@ -1828,6 +1830,7 @@ struct Edit
    char *elsedef;
    mode_t umask;
    char useshell;
+   char split;
    char *repository;
    int   recurse;
    char  binary;   /* y/n */

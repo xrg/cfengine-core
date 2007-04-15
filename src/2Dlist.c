@@ -151,7 +151,8 @@ for (sp = varstring; *sp != '\0'; sp++)
       continue;
       }
    
-   AppendTwoDimItem(TwoDimlist,SplitVarstring(node,LISTSEPARATOR),sep);
+/*   AppendTwoDimItem(TwoDimlist,SplitVarstring(node,LISTSEPARATOR),sep);*/
+     AppendTwoDimItem(TwoDimlist,SplitVarstring(node,sep),sep);
    
    if (*sp == '\0')
       {

@@ -10266,8 +10266,8 @@ echo $ECHO_N "checking pcre... $ECHO_C" >&6; }
                             CPPFLAGS="$CPPFLAGS -I$d/include"
                             LDFLAGS="$LDFLAGS -L$d/lib"
                             PCRE_LIB="-lpcreposix"
-                            { echo "$as_me:$LINENO: result: \"$d" >&5
-echo "${ECHO_T}\"$d" >&6; }
+                            { echo "$as_me:$LINENO: result: $d" >&5
+echo "${ECHO_T}$d" >&6; }
                             break
                         fi
                     done

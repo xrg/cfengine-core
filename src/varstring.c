@@ -1011,7 +1011,7 @@ return liststart;
 
 /*********************************************************/
 
-int IsListVar(char *name)
+int IsListVar(char *name,char sep)
 
 { char test[CF_EXPANDSIZE];
   char *sp;
@@ -1020,7 +1020,7 @@ ExpandVarstring(name,test,NULL);
 
 for (sp = test; *sp != '\0'; sp++)
    {
-   if (*sp == LISTSEPARATOR)
+   if (*sp == sep)
       {
       return true;
       }

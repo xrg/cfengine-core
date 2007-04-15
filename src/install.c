@@ -2942,6 +2942,7 @@ else
    }
  
  ptr->done = 'n';
+ ptr->split = CF_UNUSED_CHAR;
  ptr->scope = strdup(CONTEXTID);
  ptr->recurse = 0;
  ptr->useshell = 'y';
@@ -2963,9 +2964,9 @@ else
 void AddEditAction(char *file,char *edit,char *data)
 
 { struct Edit *ptr;
-  struct Edlist *top,*new;
+ struct Edlist *top,*new, *ep;
   struct TwoDimList *tp = NULL;
-  char varbuff[CF_EXPANDSIZE];
+  char varbuff[CF_EXPANDSIZE], editlistseparator = CF_UNUSED_CHAR;
   mode_t saved_umask;
   char *sp;
 
@@ -2984,6 +2985,33 @@ if (!IsInstallable(CLASSBUFF))
    return;
    }
 
+/* Search first for the list separator */
+
+for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
+   {
+   ExpandVarstring(file,varbuff,"");
+
+   if (strcmp(ptr->fname,varbuff) == 0)
+      {
+      for (ep = ptr->actions; ep != NULL; ep=ep->next)
+         {
+         if (ep->code == EditSplit)
+            {
+            if (ep->data != NULL)
+               {
+               ptr->split = editlistseparator = *(ep->data);
+               Verbose("Found new editfiles list separator \"%c\"",ptr->split);
+               }
+            else
+               {
+               yyerror("Bad list separator for editfiles entry");
+               }
+            }
+         }
+      }
+   }
+
+
 for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
    {
    ExpandVarstring(file,varbuff,"");
@@ -2992,7 +3020,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
       {
       /* 2D list wrapper start - variable is data */
       
-      Build2DListFromVarstring(&tp,data,LISTSEPARATOR);
+      Build2DListFromVarstring(&tp,data,editlistseparator);
       Set2DList(tp);
       
       for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
@@ -3100,7 +3128,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
             case BeginGroupIfNotDefined: 
             case BeginGroupIfFileIsNewer:
             case BeginGroupIfFileExists:
-                if (IsListVar(data))
+                if (IsListVar(data,ptr->split))
                    {
                    yyerror("List variables are not currently supported in BeginGroup*");
                    }
@@ -3122,7 +3150,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
                    yyerror("ReplaceAll without With before or at line");
                    }
                 
-                if (IsListVar(data))
+                if (IsListVar(data,ptr->split))
                    {
                    yyerror("List variables are not currently supported in ReplaceAll/With");
                    }
@@ -3141,7 +3169,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
                 
             case With:
 
-                if (IsListVar(data))
+                if (IsListVar(data,ptr->split))
                    {
                    yyerror("List variables are not currently supported in ReplaceAll/With");
                    }
