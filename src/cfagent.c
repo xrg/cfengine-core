@@ -778,6 +778,8 @@ if (VACTIONSEQ == NULL)
    Warning("perhaps cfagent.conf/update.conf have not yet been set up?");
    }
 
+ACTION = none;
+
 sprintf(id,"%d",geteuid());   /* get effective user id */
 
 ebuff[0] = '\0';
@@ -808,6 +810,8 @@ if (VACCESSLIST != NULL && !IsItemIn(VACCESSLIST,id))
    }
 
 Debug2("cfagent -d : Debugging output enabled.\n");
+
+EDITVERBOSE = false;
 
 if (DONTDO && (VERBOSE || DEBUG || D2))
    {
