@@ -6392,7 +6392,10 @@ no effect on editfiles. This definition makes list expansion work in editfiles.
 @smallexample
    EditSplit ","
 @end smallexample
-
+@vindex EditSplit
+@vindex Split
+@cindex Split in editfiles
+@cindex Iteration over lists (editfiles)
 
 @item EmptyEntireFilePlease
 Deletes all lines from the current file.
