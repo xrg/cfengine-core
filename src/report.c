@@ -33,6 +33,8 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
+#define CF_SPACER  printf("\n.   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .\n\n")
+
 /*******************************************************************/
 
 void ListActionSequence()
@@ -206,7 +208,7 @@ printf("\nDEFINED STRATEGIES\n\n");
 
  for (ptr = VSTRATEGYLIST; ptr != NULL; ptr=ptr->next)
     {
-    printf("%s (type=%c)\n",ptr->name,ptr->type);
+    printf("Strategy %s (type=%c)\n",ptr->name,ptr->type);
     if (ptr->strategies)
        {
        for (ip = ptr->strategies; ip !=NULL; ip=ip->next)
@@ -214,7 +216,7 @@ printf("\nDEFINED STRATEGIES\n\n");
           printf("  %s - weight %s\n",ip->name,ip->classes);
           }
        }
-    printf("\n");
+    CF_SPACER;
     } 
 }
 
@@ -254,7 +256,7 @@ for (ptr = VACLLIST; ptr != NULL; ptr=ptr->next)
          printf(" Type = %s, obj=%s, mode=%s (classes=%s)\n",ep->acltype,ep->name,ep->mode,ep->classes);
          }
       }
-   printf("\n");
+   CF_SPACER;
    }
 
 }
@@ -272,7 +274,7 @@ void ListDefinedInterfaces()
 for (ifp = VIFLIST; ifp !=NULL; ifp=ifp->next)
    {
    InterfacePromise(ifp);
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -282,7 +284,7 @@ void InterfacePromise(struct Interface *ifp)
 
 {
 printf("Interface %s promise if context is [%s]\n",ifp->ifdev,ifp->classes);
-printf("  Body:\n");
+printf("  Constraint Body:\n");
 printf("     Address ipv4=%s\n",ifp->ipaddress);
 printf("     netmask=%s and broadcast=%s\n",ifp->netmask,ifp->broadcast);
 }
@@ -298,7 +300,7 @@ printf ("\nDEFINED LINK PROMISES\n\n");
 for (ptr = VLINK; ptr != NULL; ptr=ptr->next)
    {
    LinkPromise(ptr,"be a link");
-   printf("\n");
+   CF_SPACER;
    }
 
 }
@@ -315,7 +317,7 @@ printf ("\nDEFINED CHILD LINK PROMISES\n\n");
 for (ptr = VCHLINK; ptr != NULL; ptr=ptr->next)
    {
    LinkPromise(ptr,"link its children");
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -325,46 +327,49 @@ void LinkPromise(struct Link *ptr, char *type)
 
 { struct Item *ip;
  
-printf("%s will %s to %s\n",ptr->from,type,ptr->to);
+ printf("%s will %s to %s if context matches %s\n",ptr->from,type,ptr->to,ptr->classes);
 
-printf(" Body force=%c, attr=%d type=%c nofile=%d\n",ptr->force,ptr->silent,ptr->type, ptr->nofile);
+printf(" Behaviour constraint body:\n");
 
-printf(" IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+printf("   force=%c, attr=%d type=%c nofile=%d\n",ptr->force,ptr->silent,ptr->type, ptr->nofile);
 
 for (ip = ptr->copy; ip != NULL; ip = ip->next)
    {
-   printf(" Copy %s\n",ip->name);
+   printf("   Copy %s\n",ip->name);
    }
 
 for (ip = ptr->exclusions; ip != NULL; ip = ip->next)
    {
-   printf(" Exclude %s\n",ip->name);
+   printf("   Exclude %s\n",ip->name);
    }
 
 for (ip = ptr->inclusions; ip != NULL; ip = ip->next)
    {
-   printf(" Include %s\n",ip->name);
+   printf("   Include %s\n",ip->name);
    }
 
 for (ip = ptr->ignores; ip != NULL; ip = ip->next)
    {
-   printf(" Ignore %s\n",ip->name);
+   printf("   Ignore %s\n",ip->name);
    }
 
 for (ip = ptr->filters; ip != NULL; ip = ip->next)
    {
-   printf(" Filters %s\n",ip->name);
+   printf("   Filters %s\n",ip->name);
    }
 
 if (ptr->defines)
    {
-   printf(" Define %s\n",ptr->defines);
+   printf("   Define %s\n",ptr->defines);
    }
 
 if (ptr->elsedef)
    {
-   printf(" ElseDefine %s\n",ptr->elsedef);
+   printf("   ElseDefine %s\n",ptr->elsedef);
    }
+
+printf("   IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+
 }
 
 /*********************************************************************/
@@ -388,7 +393,7 @@ printf ("\nDEFINED RESOLVER CONFIGURATION PROMISES\n\n");
 for (ptr = VRESOLVE; ptr != NULL; ptr=ptr->next)
    {
    PromiseItem(ptr);
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -403,7 +408,7 @@ printf ("\nDEFINED ALERT PROMISES\n\n");
 for (ptr = VALERTS; ptr != NULL; ptr=ptr->next)
    {
    PromiseItem(ptr);
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -418,7 +423,7 @@ printf ("\nUse home servers = ( ");
 for (ptr = VHOMESERVERS; ptr != NULL; ptr=ptr->next)
    {
    PromiseItem(ptr);
-   printf("\n");
+   CF_SPACER;
    }
 
 printf(" )\n");
@@ -435,7 +440,7 @@ printf ("\nUSE IMPORTS\n\n");
 for (ptr = VIMPORT; ptr != NULL; ptr=ptr->next)
    {
    PromiseItem(ptr);
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -450,7 +455,7 @@ printf ("\nFILE SEARCH IGNORE\n\n");
 for (ptr = VIGNORE; ptr != NULL; ptr=ptr->next)
    {
    PromiseItem(ptr);
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -465,7 +470,7 @@ printf ("\nMETHOD AGREEMENTS\n\n");
 for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
    {
    PromiseMethod(ptr);
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -563,7 +568,7 @@ printf ("\nPROMISED SHELLCOMMANDS\n\n");
 for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
    {
    PromiseShellCommand(ptr);
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -574,7 +579,7 @@ void PromiseShellCommand(struct ShellComm *ptr)
 {
 printf("\nWill execute \"%s\" if context [%s]\n",ptr->name,ptr->classes);
 
-printf(" Behaviour body:\n");
+printf(" Behaviour constraint body:\n");
 printf("      Timeout=%d\n",ptr->timeout);
 printf("      Uid=%d,Gid=%d\n",ptr->uid,ptr->gid);
 printf("      Process umask = %o\n",ptr->umask);
@@ -612,7 +617,7 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
          } 
       
       PromiseFileCopy(ptr);
-      printf("\n");
+      CF_SPACER;
       }
    }
 }
@@ -627,7 +632,7 @@ void PromiseFileCopy(struct Image *ptr)
 
 printf("%s promises to be a copy of %s:/%s if context = %s\n",ptr->destination,ptr->server,ptr->path,ptr->classes);
   
-printf("   Behaviour body:\n");
+printf("   Behaviour constraint body:\n");
 printf("         Action on deviation: %s\n",ptr->action);
 
 printf("         Comparison method = %c (time/checksum)\n",ptr->type);
@@ -765,7 +770,7 @@ printf ("\nDEFINED TIDY PROMISES\n\n");
 for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
    {
    PromiseTidy(ptr);
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -788,7 +793,7 @@ else
 
 printf("in base directory: %s\n",ptr->path);
 
-printf(" Constraint body:\n");
+printf(" Search constraint body:\n");
 
 for(tp = ptr->tidylist; tp != NULL; tp=tp->next)
    {
@@ -798,11 +803,11 @@ for(tp = ptr->tidylist; tp != NULL; tp=tp->next)
 
    if (tp->recurse == CF_INF_RECURSE)
       {
-      printf("      Will descending into all child directories\n");
+      printf("       Will descend into any/all sub-directories\n");
       }
    else
       {
-      printf("       Pattern will descend %d levels\n",tp->recurse);
+      printf("       Pattern will descend %d directory level(s)\n",tp->recurse);
       }
 
    printf("       Options: Linkdirs=%c, Rmdirs=%c, Travlinks=%c, Compress=%c\n",tp->dirlinks,tp->rmdirs,tp->travlinks,tp->compress);
@@ -814,7 +819,7 @@ for(tp = ptr->tidylist; tp != NULL; tp=tp->next)
    
    if (tp->elsedef)
       {
-      printf("       ElseDefine %s\n",tp->elsedef);
+      printf("       ElseDefine \"%s\"\n",tp->elsedef);
       }
    
    for (ip = tp->filters; ip != NULL; ip=ip->next)
@@ -823,19 +828,19 @@ for(tp = ptr->tidylist; tp != NULL; tp=tp->next)
       }
    }
 
-printf(" Behaviour body:\n    IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+printf(" Behaviour constraint body:\n    IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
 
 printf("    Filesystem boundary policy (xdev) = %c\n",ptr->xdev);
    
 
 for (ip = ptr->exclusions; ip != NULL; ip = ip->next)
    {
-   printf("    Exclude file patterns %s\n",ip->name);
+   printf("    Exclude file pattern: %s\n",ip->name);
    }
 
 for (ip = ptr->ignores; ip != NULL; ip = ip->next)
    {
-   printf("    Ignore file patterns %s\n",ip->name);
+   printf("    Ignore file pattern: %s\n",ip->name);
    }
 
 }
@@ -851,7 +856,7 @@ printf ("\nPROMISED MOUNTABLES\n\n");
 for (ptr = VMOUNTABLES; ptr != NULL; ptr=ptr->next)
    {
    PromiseMountable(ptr);
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -888,7 +893,7 @@ printf ("\nPROMISED MISC MOUNTABLES\n\n");
 for (ptr = VMISCMOUNT; ptr != NULL; ptr=ptr->next)
    {
    PromiseMiscMount(ptr);
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -898,8 +903,8 @@ void PromiseMiscMount(struct MiscMount *ptr)
 
 {
 printf("Promise to mount %s on %s mode if context is [%s]\n",ptr->from,ptr->onto, ptr->classes);
-printf(" with mode %s and options %s\n",ptr->mode,ptr->options);
-printf(" and behaviour IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+printf("   with mode %s and options %s\n",ptr->mode,ptr->options);
+printf("   Behaviour constraint body:\n     IfElapsed=%d\n      ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
 }
 
 /*********************************************************************/
@@ -913,7 +918,7 @@ printf ("\nDEFINED REQUIRE PROMISES\n\n");
 for (ptr = VREQUIRED; ptr != NULL; ptr=ptr->next)
    {
    DiskPromises(ptr);
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -923,8 +928,8 @@ void DiskPromises(struct Disk *ptr)
 
 {
 printf("Filesystem %s is promised if context matches [%s]\n",ptr->name,ptr->classes);
-printf("   Body attributes:\n     freespace=%d, force=%c, define=%s\n",ptr->freespace, ptr->force,ptr->define);
-printf("      With behaviour IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+printf("   Attribute constraint body:\n     freespace=%d\n     force=%c\n     define=%s\n",ptr->freespace, ptr->force,ptr->define);
+printf("   Behaviour contraint body:\n     IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
 printf("      Using scanarrivals=%c\n",ptr->scanarrivals);
 }
 
@@ -939,7 +944,7 @@ printf ("\nDEFINED DISABLE PROMISES\n\n");
 for (ptr = VDISABLELIST; ptr != NULL; ptr=ptr->next)
    {
    PromiseDisable(ptr);
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -956,11 +961,11 @@ else
    {
    printf("Promise to disable/transform object %s if context is [%s]\n",ptr->name,ptr->classes);
 
-   printf("   Constraint body:\n     Rotate=%d, type=%s, size %c %d, action=%c\n",
+   printf("   Constraint constraint body:\n     Rotate=%d, type=%s, size %c %d, action=%c\n",
           ptr->rotate,ptr->type,ptr->comp,ptr->size,ptr->action);
    }
 
-printf("   Behaviour body:\n     IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+printf("   Behaviour constraint body:\n     IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
 
 if (ptr->repository)
    {
@@ -989,7 +994,7 @@ printf ("\nPROMISED DIRECTORIES\n\n");
 for (ptr = VMAKEPATH; ptr != NULL; ptr=ptr->next)
    {
    PromiseDirectories(ptr);
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -1002,7 +1007,7 @@ void PromiseDirectories(struct File *ptr)
   struct Item *ip;
   
 printf("Promise attributes of %s if context matches",ptr->path,ptr->classes);
-printf("  Body:");
+printf("  Constraint Body:");
 
 printf("     Mode +%o\n -%o\n",ptr->plus,ptr->minus);
 
@@ -1062,7 +1067,7 @@ printf ("\nDEFINED FILE PROMISES\n\n");
 for (ptr = VFILE; ptr != NULL; ptr=ptr->next)
    {
    PromiseFiles(ptr);
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -1076,16 +1081,18 @@ void PromiseFiles(struct File *ptr)
 
 printf("File object %s will promise attributes if context matches [%s]\n",ptr->path,ptr->classes);
 
-printf(" Attribute body:\n  Mode +%o\n -%o\n +%o\n -%o\n",ptr->plus,ptr->minus,ptr->plus_flags,ptr->minus_flags);
+printf(" Attribute constraint body:\n");
 
-printf(" uids = ( ");
+printf("     Mode +%o,-%o | BSD +%o,-%o\n",ptr->plus,ptr->minus,ptr->plus_flags,ptr->minus_flags);
+
+printf("     Uids = ( ");
 
 for (up = ptr->uid; up != NULL; up=up->next)
    {
    printf("%d ",up->uid);
    }
 
-printf(")\n gids = ( ");
+printf(")\n     Gids = ( ");
 
 for (gp = ptr->gid; gp != NULL; gp=gp->next)
    {
@@ -1096,10 +1103,10 @@ printf(")\n");
 
 for (ip = ptr->acl_aliases; ip != NULL; ip=ip->next)
    {
-   printf(" ACL object %s\n",ip->name);
+   printf("     ACL object %s\n",ip->name);
    }
 
-printf(" Behaviour body:\n");
+printf(" Behaviour constraint body:\n");
 
 printf("     Action on deviation: %s\n",FILEACTIONTEXT[ptr->action]);
 printf("     Traverse links=%c\n",ptr->travlinks);
@@ -1162,7 +1169,7 @@ printf("\nDEFINED UNMOUNT PROMISES\n\n");
 for (ptr=VUNMOUNT; ptr!=NULL; ptr=ptr->next)
    {
    PromiseUnmount(ptr);
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -1172,7 +1179,7 @@ void PromiseUnmount(struct UnMount *ptr)
     
 {
 printf("Promise to unmount %s if context matches [%s]\n",ptr->name,ptr->classes);
-printf("Behaviour body:\n");
+printf("Behaviour constraint body:\n");
 printf("   Deletedir=%c\n   deletefstab=%c\n   force=%c\n",ptr->deletedir,ptr->deletefstab,ptr->force);
 printf("   IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
 }
@@ -1188,7 +1195,7 @@ printf("\nPROCESSES PROMISES\n\n");
 for (ptr = VPROCLIST; ptr != NULL; ptr=ptr->next)
    {
    PromiseProcess(ptr);
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -1197,56 +1204,77 @@ for (ptr = VPROCLIST; ptr != NULL; ptr=ptr->next)
 void PromiseProcess(struct Process *ptr)
     
 { struct Item *ip; 
-  char *sp;
 
-if (ptr->restart == NULL)
+if (strcmp(ptr->expr,"SetOptionString") == 0)
    {
-   sp = "";
+   printf("Promise to reset process query with body %s\n",ptr->restart);
    }
 else
    {
-   sp = ptr->restart;
-   }
-
-printf("\nProcesses matching %s are promised if context is [%s]\n",ptr->expr,ptr->classes);
-printf(" Match constraint body:\n");
-printf("     Acceptable no. of matches: (%c)%d,",ptr->comp,ptr->matches);
-
-for (ip = ptr->exclusions; ip != NULL; ip = ip->next)
-   {
-   printf("     Excluding patterns %s\n",ip->name);
-   }
-
-for (ip = ptr->inclusions; ip != NULL; ip = ip->next)
-   {
-   printf("     Including patterns %s\n",ip->name);
-   }
+   printf("\nProcesses matching \"%s\" in context [%s]\n",ptr->expr,ptr->classes);
+   printf(" Match constraint body:\n");
+   printf("     Acceptable no. of matches: %c %d\n",ptr->comp,ptr->matches);
    
-for (ip = ptr->filters; ip != NULL; ip = ip->next)
-   {
-   printf("     Using filter %s\n",ip->name);
-   }
-
-printf(" Behaviour body:\n");
-
-printf("     Matches will receive signal=%s\n action=%c\n",SIGNALS[ptr->signal],ptr->action);
-printf("     Will be (re)started with command = %s\n",sp);
-printf("     IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
-
-printf(" Started process constraint body:\n");
-
-printf("     Useshell=%c\n",ptr->useshell);
-printf("     ChDir=%s\n",ptr->chdir);
-printf("     ChRoot=%s\n",ptr->chroot);
-
-if (ptr->defines)
-   {
-   printf("     Define %s if matches found\n",ptr->defines);
-   }
-
-if (ptr->elsedef)
-   {
-   printf("     ElseDefine %s if no matches found\n",ptr->elsedef);
+   for (ip = ptr->exclusions; ip != NULL; ip = ip->next)
+      {
+      printf("     Excluding patterns %s\n",ip->name);
+      }
+   
+   for (ip = ptr->inclusions; ip != NULL; ip = ip->next)
+      {
+      printf("     Including patterns %s\n",ip->name);
+      }
+   
+   for (ip = ptr->filters; ip != NULL; ip = ip->next)
+      {
+      printf("     Using filter %s\n",ip->name);
+      }
+   
+   printf(" Behaviour constraint body:\n");
+   
+   printf("     Matches are promised signal=%s\n",SIGNALS[ptr->signal]);
+   
+   switch (ptr->action)
+      {
+      case 'w':
+          printf("     Action: warn only\n",ptr->action);
+          break;
+      case 'm':
+          printf("     Action: decide by match\n",ptr->action);
+          break;
+      case 's':
+          printf("     Action: signal\n",ptr->action);
+          break;
+      default:
+          printf("     Action: default\n",ptr->action);
+      }
+   
+   if (ptr->restart == NULL || strlen(ptr->restart) == 0)
+      {
+      printf("     No (re)start command is promised\n");
+      }
+   else
+      {
+      printf("     Will be (re)started with command = %s\n",ptr->restart);
+      }
+   
+   printf("     IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+   
+   printf(" Started process constraint body:\n");
+   
+   printf("     Useshell=%c\n",ptr->useshell);
+   printf("     ChDir=%s\n",ptr->chdir);
+   printf("     ChRoot=%s\n",ptr->chroot);
+   
+   if (ptr->defines)
+      {
+      printf("     Define %s if matches found\n",ptr->defines);
+      }
+   
+   if (ptr->elsedef)
+      {
+      printf("     ElseDefine %s if no matches found\n",ptr->elsedef);
+      }
    }
 }
 
@@ -1261,7 +1289,7 @@ printf("\nDEFINED FILE EDIT PROMISES\n\n");
 for (ptr=VEDITLIST; ptr != NULL; ptr=ptr->next)
    {
    PromiseFileEdits(ptr);
-   printf("\n");
+   CF_SPACER;
    }
 }
 
@@ -1274,7 +1302,21 @@ void PromiseFileEdits(struct Edit *ptr)
 
 printf("Edit promises for %s\n",ptr->fname);
 
-printf(" Behaviour body:\n");
+printf(" Constraint Body of convergent operations: [promise type] with \"body\":\n");
+
+for (ep = ptr->actions; ep != NULL; ep=ep->next)
+   {
+   if (ep->data == NULL)
+      {
+      printf("   [%s] \t with no body if context is [%s]\n",VEDITNAMES[ep->code],ep->classes);
+      }
+   else
+      {
+      printf("   [%s] \t with body \"%s\" if context is [%s]\n",VEDITNAMES[ep->code],ep->data,ep->classes);
+      }
+   }
+
+printf(" Behaviour constraint body:\n");
 printf("   IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
 printf("   File search recursion limit: %d\n",ptr->recurse);
 
@@ -1286,20 +1328,6 @@ if (ptr->repository)
 for (ip = ptr->filters; ip != NULL; ip=ip->next)
    {
    printf ("   Using filter %s\n",ip->name);
-   }
-
-printf(" Body of convergent operations:\n");
-
-for (ep = ptr->actions; ep != NULL; ep=ep->next)
-   {
-   if (ep->data == NULL)
-      {
-      printf("   Promise %s with body [nodata] if (%s)\n",VEDITNAMES[ep->code],ep->classes);
-      }
-   else
-      {
-      printf("   Promise %s with body [%s] if (%s)\n",VEDITNAMES[ep->code],ep->data,ep->classes);
-      }
    }
 }
 
@@ -1314,7 +1342,7 @@ printf("\nDEFINED FILTERS\n");
 
 for (ptr=VFILTERLIST; ptr != NULL; ptr=ptr->next)
    {
-   printf("\n%s :\n",ptr->alias);
+   printf("Filter name %s :\n",ptr->alias);
 
    if (ptr->defines)
       {
@@ -1333,6 +1361,8 @@ for (ptr=VFILTERLIST; ptr != NULL; ptr=ptr->next)
          printf(" (%s) [%s]\n",VFILTERNAMES[i],ptr->criteria[i]);
          }
       }
+
+   CF_SPACER;
    }
 }
 
@@ -1348,7 +1378,7 @@ void ListDefinedPackages()
  for (ptr = VPKG; ptr != NULL; ptr = ptr->next)
     {
     PromisePackages(ptr);
-    printf("\n");
+    CF_SPACER;
     }
 }
 
@@ -1357,9 +1387,9 @@ void ListDefinedPackages()
 void PromisePackages(struct Package *ptr)
 
 {
-printf("Package %s promises\n", ptr->name);
+printf("Package \"%s\" promises\n", ptr->name);
 
-printf(" Constraint body:\n");
+printf(" Search constraint body:\n");
 
 if (ptr->ver && *(ptr->ver) != '\0')
    {
@@ -1370,7 +1400,7 @@ else
    printf("   Can have any package version.\n");
    }
 
-printf(" Behaviour body:\n");
+printf(" Behaviour constraint body:\n");
 
 if (ptr->action != pkgaction_none)
    {

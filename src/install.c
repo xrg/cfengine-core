@@ -1320,7 +1320,7 @@ switch(GetCommAttribute(item))
    case cffilter:  PrependItem(&VFILTERBUILD,value,CF_ANYCLASS);
                    break;
    case cfowner:   strcpy(VUIDNAME,value);
-     break;
+                   break;
    case cfgroup:   strcpy(VGIDNAME,value);
                    break;
    case cfchdir:   HandleChDir(value);
