@@ -2754,63 +2754,63 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       }
    
    switch(ptr->pkgmgr)
-     {
-     case pkgmgr_rpm:
-       match = RPMPackageCheck(ptr->name, ptr->ver, ptr->cmp);
-       break;
-     case pkgmgr_dpkg:
-       match = DPKGPackageCheck(ptr->name, ptr->ver, ptr->cmp);
-       break;
-     case pkgmgr_sun:
-       match = SUNPackageCheck(ptr->name, ptr->ver, ptr->cmp);
-       break;
-     case pkgmgr_aix:
-       match = AIXPackageCheck(ptr->name, ptr->ver, ptr->cmp);
-       break;
-     case pkgmgr_portage:
-       match = PortagePackageCheck(ptr->name, ptr->ver, ptr->cmp);
-       break;
-     default:
-       /* UGH!  This should *never* happen.  GetPkgMgr() and
-        * InstallPackagesItem() should have caught this before it
-        * was ever installed!!!
-        * */
-         snprintf(OUTPUT,CF_BUFSIZE,"Internal error!  Tried to check package %s in an unknown database: %d.  This should never happen!\n", ptr->name, ptr->pkgmgr);
-         CfLog(cferror,OUTPUT,"");
-         break;
-     }
-
+      {
+      case pkgmgr_rpm:
+          match = RPMPackageCheck(ptr->name, ptr->ver, ptr->cmp);
+          break;
+      case pkgmgr_dpkg:
+          match = DPKGPackageCheck(ptr->name, ptr->ver, ptr->cmp);
+          break;
+      case pkgmgr_sun:
+          match = SUNPackageCheck(ptr->name, ptr->ver, ptr->cmp);
+          break;
+      case pkgmgr_aix:
+          match = AIXPackageCheck(ptr->name, ptr->ver, ptr->cmp);
+          break;
+      case pkgmgr_portage:
+          match = PortagePackageCheck(ptr->name, ptr->ver, ptr->cmp);
+          break;
+      default:
+          /* UGH!  This should *never* happen.  GetPkgMgr() and
+           * InstallPackagesItem() should have caught this before it
+           * was ever installed!!!
+           * */
+          snprintf(OUTPUT,CF_BUFSIZE,"Internal error!  Tried to check package %s in an unknown database: %d.  This should never happen!\n", ptr->name, ptr->pkgmgr);
+          CfLog(cferror,OUTPUT,"");
+          break;
+      }
+   
    /* Handle install/remove logic now. */
    if (match)
-     {
-     if (ptr->action == pkgaction_remove)
-       {
-       match = match;
-       }
-     }
+      {
+      if (ptr->action == pkgaction_remove)
+         {
+         match = match;
+         }
+      }
    else
-     {
-     if (ptr->action == pkgaction_install)
-       {
+      {
+      if (ptr->action == pkgaction_install)
+         {
          /* Initial allocation of memory if we have not yet allocated any */
          if(package_install_list[ptr->pkgmgr] == NULL)
-         {
-         package_install_list[ptr->pkgmgr] = malloc(CF_BUFSIZE);
-         ((char **)package_install_list[ptr->pkgmgr])[0] = NULL;
-         }
-
+            {
+            package_install_list[ptr->pkgmgr] = malloc(CF_BUFSIZE);
+            ((char **)package_install_list[ptr->pkgmgr])[0] = NULL;
+            }
+         
          /* Make sure we don't overflow the buffer */
          if(strlen(ptr->name) >
-           (CF_BUFSIZE - strlen(package_install_list[ptr->pkgmgr])))
-         {
+            (CF_BUFSIZE - strlen(package_install_list[ptr->pkgmgr])))
+            {
             Verbose("Package list exceeds CF_BUFSIZE.  Skipping %s", ptr->name);
-         }
-
+            }
+         
          /* Finally add the name to the list. */
          strcat(package_install_list[ptr->pkgmgr], ptr->name);
          strcat(package_install_list[ptr->pkgmgr], " ");
-       }
-     }
+         }
+      }
    
    if (match)
       {

@@ -1485,6 +1485,7 @@ struct Mountables
    char			readonly;	/* y/n - true false */
    char			*filesystem;
    char			*mountopts;
+   char                 *classes;
    struct Mountables	*next;
    };
 

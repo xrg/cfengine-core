@@ -2308,11 +2308,16 @@ if ((ptr->filesystem = strdup(ebuff)) == NULL)
    FatalError("Memory Allocation failed for InstallMountableItem() #2");
    }
 
+if ((ptr->filesystem = strdup(CLASSBUFF)) == NULL)
+   {
+   FatalError("Memory Allocation failed for InstallMountableItem() #3");
+   }
+
 if ( mnt_opts[0] != '\0' )
    {
    if ( (ptr->mountopts = strdup(mnt_opts)) == NULL )
       {
-      FatalError("Memory Allocation failed for InstallMountableItem() #3");
+      FatalError("Memory Allocation failed for InstallMountableItem() #4");
       }
    }
 else

@@ -952,6 +952,24 @@ void ListACLs (void);
 void ListFileEdits (void);
 void ListFilters (void);
 
+void InterfacePromise(struct Interface *ifp);
+void LinkPromise(struct Link *ptr, char *type);
+void PromiseItem(struct Item *ptr);
+void PromiseMethod(struct Method *ptr);
+void PromiseShellCommand(struct ShellComm *ptr);
+void PromiseFileCopy(struct Image *ptr);
+void PromiseTidy(struct Tidy *ptr);
+void PromiseMountable(struct Mountables *ptr);
+void PromiseMiscMount(struct MiscMount *ptr);
+void DiskPromises(struct Disk *ptr);
+void PromiseDisable(struct Disable *ptr);
+void PromiseDirectories(struct File *ptr);
+void PromiseFiles(struct File *ptr);
+void PromiseUnmount(struct UnMount *ptr);
+void PromiseFileEdits(struct Edit *ptr);
+void PromiseProcess(struct Process *ptr);
+void PromisePackages(struct Package *ptr);
+
 /* repository.c */
 
 int Repository (char *file, char *repository);

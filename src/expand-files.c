@@ -33,7 +33,6 @@
 /*                                                                           */
 /*****************************************************************************/
 
-
 int RecursiveCheck(char *name,mode_t plus,mode_t minus,enum fileactions action,struct UidList *uidlist,struct GidList *gidlist,int recurse,int rlevel,struct File *ptr,struct stat *sb)
 
 { DIR *dirh;
