@@ -19,7 +19,7 @@
 	
 	!! List expansion in editfiles actions. This is an important change 
 	because it can potentially affect existing configurations that contain
-	variables with a list separator in them.
+	variables with a list separator in them. EditSplit is used for this.
 
 	elsdefine fixed in tidy
 	
