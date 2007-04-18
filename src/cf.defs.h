@@ -362,6 +362,7 @@ extern int errno;
 #define CF_ENV_FILE      "env_data"
 
 #define CF_TCPDUMP_COMM "/usr/sbin/tcpdump -t -n -v"
+#define CF_SCLI_COMM "/usr/local/sbin/scli"
 
 
 #define CF_INPUTSVAR "CFINPUTS"          /* default name for file path var */
@@ -730,7 +731,8 @@ enum actions
    filters,
    strategies,
    packages,
-   methods
+   methods,
+   scli
    };
 
 /*******************************************************************/

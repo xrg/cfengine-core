@@ -591,6 +591,7 @@ char *OBS[CF_OBSERVABLES] =
       "Strategies:",
       "Package Checks:",
       "Method Function Calls",
+      "SCLI SNMP Agent Calls",
       NULL
       };
 
@@ -632,6 +633,7 @@ char *OBS[CF_OBSERVABLES] =
       "strategies",
       "packages",
       "methods",
+      "scli",
       NULL
       };
 

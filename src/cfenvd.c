@@ -1590,6 +1590,8 @@ void GatherSNMPData()
 { char snmpbuffer[CF_BUFSIZE];
  FILE *pp;
 
+/* This is for collecting known counters.  */
+ 
 if (SCLI)
    {
    struct stat statbuf;
