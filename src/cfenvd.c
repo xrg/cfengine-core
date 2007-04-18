@@ -72,6 +72,7 @@ char STATELOG[CF_BUFSIZE];
 char ENV_NEW[CF_BUFSIZE];
 char ENV[CF_BUFSIZE];
 
+short SCLI = false;
 short TCPDUMP = false;
 short TCPPAUSE = false;
 FILE *TCPPIPE;
@@ -143,6 +144,8 @@ void GatherProcessData (void);
 void GatherDiskData (void);
 void GatherLoadData (void);
 void GatherSocketData (void);
+void GatherSNMPData(void);
+
 void LeapDetection (void);
 struct Averages *GetCurrentAverages (char *timekey);
 void UpdateAverages (char *timekey, struct Averages newvals);
@@ -792,6 +795,7 @@ GatherProcessData();
 GatherLoadData(); 
 GatherDiskData();
 GatherSocketData();
+GatherSNMPData();
 }
 
 
@@ -1579,6 +1583,31 @@ while (!feof(pp))
 
 }
 
+/*****************************************************************************/
+
+void GatherSNMPData()
+
+{ char snmpbuffer[CF_BUFSIZE];
+ FILE *pp;
+
+if (SCLI)
+   {
+   struct stat statbuf;
+   char buffer[CF_MAXVARSIZE];
+   sscanf(CF_SCLI_COMM,"%s",buffer);
+   
+   if (stat(buffer,&statbuf) != -1)
+      {
+      if ((pp = cfpopen(CF_SCLI_COMM,"r")) == NULL)
+         {
+         return;
+         }
+
+      /* Skip first banner */
+      fgets(snmpbuffer,CF_BUFSIZE-1,pp);
+      }
+   }
+}
 
 /*****************************************************************************/
 
