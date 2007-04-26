@@ -1154,6 +1154,14 @@ for (tp = VTIDY; tp != NULL; tp=tp->next)
       basename[0] = '\0';
       ExpandWildCardsAndDo(tp->path,basename,TidyWrapper,tp);
       tp->done = 'y';
+      if (tp->tidylist->next != NULL) 
+         {
+         tp->done = 'n';
+         }
+      else 
+         {
+         tp->done = 'y';
+         }
       }
    else
       {
