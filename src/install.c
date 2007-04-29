@@ -2603,7 +2603,13 @@ switch (action)
        AppendScript(CURRENTOBJECT,VTIMEOUT,USESHELL,VUIDNAME,VGIDNAME);
        InitializeAction();
        break;
+
+   case scli:
        
+       AppendSCLI(CURRENTOBJECT,VTIMEOUT,USESHELL,VUIDNAME,VGIDNAME);
+       InitializeAction();
+       break;
+
    case alerts:
 
        if (strcmp(CLASSBUFF,"any") == 0)
@@ -3515,19 +3521,191 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    
    if ((ptr->defines = strdup(ebuff)) == NULL)
       {
-      FatalError("Memory Allocation failed for AppendDisable() #3");
+      FatalError("Memory Allocation failed for AppendShellcommand() #3");
       }
 
    ExpandVarstring(ELSECLASSBUFFER,ebuff,"");
    
    if ((ptr->elsedef = strdup(ebuff)) == NULL)
       {
-      FatalError("Memory Allocation failed for AppendDisable() #3");
+      FatalError("Memory Allocation failed for AppendShellcommand() #4");
       }
    
    AddInstallable(ptr->defines);
    AddInstallable(ptr->elsedef);
    VSCRIPTTOP = ptr;
+   }
+
+Delete2DList(tp);
+}
+
+/*******************************************************************/
+
+void AppendSCLI(char *item,int timeout,char useshell,char *uidname,char *gidname)
+
+{ struct TwoDimList *tp = NULL;
+  struct ShellComm *ptr;
+  struct passwd *pw;
+  struct group *gw;
+  char *sp, ebuff[CF_EXPANDSIZE];
+  int uid = CF_NOUSER; 
+  int gid = CF_NOUSER;
+  
+Debug1("Installing SCLI (SNMP) command (%s) in the list\n",item);
+
+if (!IsInstallable(CLASSBUFF))
+   {
+   Debug1("Not installing (%s), no class match (%s)\n",item,CLASSBUFF);
+   InitializeAction();
+   return;
+   }
+
+Build2DListFromVarstring(&tp,item,'\"'); /* Must be at least one space between each var */
+
+Set2DList(tp);
+
+for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
+   {
+   if ((ptr = (struct ShellComm *)malloc(sizeof(struct ShellComm))) == NULL)
+      {
+      FatalError("Memory Allocation failed for AppendScli() #1");
+      }
+
+   if ((ptr->classes = strdup(CLASSBUFF)) == NULL)
+      {
+      FatalError("Memory Allocation failed for Appendscli() #2");
+      }
+
+   if ((ptr->name = strdup(sp)) == NULL)
+      {
+      FatalError("Memory Allocation failed for Appendscli() #3");
+      }
+
+   ExpandVarstring(CHROOT,ebuff,"");
+
+   if ((ptr->chroot = strdup(ebuff)) == NULL)
+      {
+      FatalError("Memory Allocation failed for Appendscli() #4b");
+      }
+   
+   ExpandVarstring(CHDIR,ebuff,"");
+   
+   if ((ptr->chdir = strdup(ebuff)) == NULL)
+      {
+      FatalError("Memory Allocation failed for Appendscli() #4c");
+      }
+   
+   if (VSCLITOP == NULL)                 /* First element in the list */
+      {
+      VSCLI = ptr;
+      }
+   else
+      {
+      VSCLITOP->next = ptr;
+      }
+
+
+   if (*uidname == '*')
+      {
+      ptr->uid = CF_SAME_OWNER;      
+      }
+   else if (isdigit((int)*uidname))
+      {
+      sscanf(uidname,"%d",&uid);
+      if (uid == CF_NOUSER)
+         {
+         yyerror("Unknown or silly user id");
+         return;
+         }
+      else
+         {
+         ptr->uid = uid;
+         }
+      }
+   else if ((pw = getpwnam(uidname)) == NULL)
+      {
+      yyerror("Unknown or silly user id");
+      return;
+      }
+   else
+      {
+      ptr->uid = pw->pw_uid;
+      }
+
+   if (*gidname == '*')
+      {
+      ptr->gid = CF_SAME_GROUP;
+      }
+   else if (isdigit((int)*gidname))
+      {
+      sscanf(gidname,"%d",&gid);
+      if (gid == CF_NOUSER)
+         {
+         yyerror("Unknown or silly group id");
+         continue;
+         }
+      else
+         {
+         ptr->gid = gid;
+         }
+      }
+   else if ((gw = getgrnam(gidname)) == NULL)
+      {
+      yyerror("Unknown or silly group id");
+      continue;
+      }
+   else
+      {
+      ptr->gid = gw->gr_gid;
+      }
+
+   if (PIFELAPSED != -1)
+      {
+      ptr->ifelapsed = PIFELAPSED;
+      }
+   else
+      {
+      ptr->ifelapsed = VIFELAPSED;
+      }
+   
+   if (PEXPIREAFTER != -1)
+      {
+      ptr->expireafter = PEXPIREAFTER;
+      }
+   else
+      {
+      ptr->expireafter = VEXPIREAFTER;
+      }
+
+   ptr->log = LOGP;
+   ptr->inform = INFORMP;
+   ptr->timeout = timeout;
+   ptr->useshell = useshell;
+   ptr->umask = UMASK;
+   ptr->fork = FORK;
+   ptr->preview = PREVIEW;
+   ptr->noabspath = NOABSPATH;
+   ptr->next = NULL;
+   ptr->done = 'n';
+   ptr->scope = strdup(CONTEXTID);
+
+   ExpandVarstring(ALLCLASSBUFFER,ebuff,"");
+   
+   if ((ptr->defines = strdup(ebuff)) == NULL)
+      {
+      FatalError("Memory Allocation failed for AppendSCLI() #3");
+      }
+
+   ExpandVarstring(ELSECLASSBUFFER,ebuff,"");
+   
+   if ((ptr->elsedef = strdup(ebuff)) == NULL)
+      {
+      FatalError("Memory Allocation failed for AppendSCLI() #3");
+      }
+   
+   AddInstallable(ptr->defines);
+   AddInstallable(ptr->elsedef);
+   VSCLITOP = ptr;
    }
 
 Delete2DList(tp);

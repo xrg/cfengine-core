@@ -574,6 +574,21 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
 
 /*********************************************************************/
 
+void ListDefinedSCLI()
+
+{ struct ShellComm *ptr;
+
+printf ("\nPROMISED SCLI (snmp) COMMANDS\n\n");
+
+for (ptr = VSCLI; ptr != NULL; ptr=ptr->next)
+   {
+   PromiseShellCommand(ptr);
+   CF_SPACER;
+   }
+}
+
+/*********************************************************************/
+
 void PromiseShellCommand(struct ShellComm *ptr)
 
 {

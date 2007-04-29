@@ -276,6 +276,7 @@ switch (ACTION)
    case required:
    case disks:
    case shellcommands:
+   case scli:
    case alerts:
    case unmounta:
    case admit:
@@ -782,6 +783,7 @@ switch (ACTION)
        break;
        
    case shellcommands:
+   case scli:
        break;
        
        /* HvB : Bas van der Vlies */
@@ -970,6 +972,7 @@ switch (ACTION)
    break;
    
    case shellcommands:
+   case scli:
                  HandleOptionalScriptAttribute(option);
    break;
 

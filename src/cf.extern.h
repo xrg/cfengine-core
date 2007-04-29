@@ -285,6 +285,8 @@ extern struct Disk *VREQUIRED;              /* List of required file systems */
 extern struct Disk *VREQUIREDTOP;
 extern struct ShellComm *VSCRIPT;              /* List of scripts to execute */
 extern struct ShellComm *VSCRIPTTOP;
+extern struct ShellComm *VSCLI;
+extern struct ShellComm *VSCLITOP;
 extern struct Interface *VIFLIST;
 extern struct Interface *VIFLISTTOP;
 extern struct Mounted *MOUNTED;             /* Files systems already mounted */
