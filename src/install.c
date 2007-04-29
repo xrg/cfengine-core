@@ -4987,7 +4987,7 @@ if (strlen(buf1) > 1)
 
 expserver = SplitStringAsItemList(buf3,LISTSEPARATOR);
    
-Build2DListFromVarstring(&tp,path,'/');  /* Must split on space in comm string */
+Build2DListFromVarstring(&tp,path,' ');  /* Must split on space in comm string */
     
 Set2DList(tp);
 
