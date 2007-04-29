@@ -2281,7 +2281,9 @@ if (!IsDefinedClass(CLASSBUFF))
    }
  
 ExpandVarstring(path,ebuff,"");
- 
+
+Debug1("Adding mountable %s to list\n",ebuff);
+
 /* 
  * Check if mount entry already exists
  */
@@ -2308,7 +2310,7 @@ if ((ptr->filesystem = strdup(ebuff)) == NULL)
    FatalError("Memory Allocation failed for InstallMountableItem() #2");
    }
 
-if ((ptr->filesystem = strdup(CLASSBUFF)) == NULL)
+if ((ptr->classes = strdup(CLASSBUFF)) == NULL)
    {
    FatalError("Memory Allocation failed for InstallMountableItem() #3");
    }
