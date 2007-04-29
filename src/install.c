@@ -2065,7 +2065,7 @@ if (!IsInstallable(CLASSBUFF))
 ExpandVarstring(from,ebuff,"");
 ExpandVarstring(ALLCLASSBUFFER,buffer,""); 
 
-Build2DListFromVarstring(&tp,to,' ');
+Build2DListFromVarstring(&tp,to,'\"');
     
 Set2DList(tp);
 
@@ -2172,7 +2172,7 @@ void InstallRequiredPath(char *path,int freespace)
   char buffer[CF_EXPANDSIZE],ebuff[CF_EXPANDSIZE],*sp;
   struct TwoDimList *tp = NULL;
 
-Build2DListFromVarstring(&tp,path,' ');
+Build2DListFromVarstring(&tp,path,'\"');
     
 Set2DList(tp);
 
@@ -2510,7 +2510,7 @@ if (!IsInstallable(CLASSBUFF))
    return;
    }
 
-Build2DListFromVarstring(&tp,path,' ');
+Build2DListFromVarstring(&tp,path,'\"');
     
 Set2DList(tp);
 
@@ -3374,7 +3374,7 @@ if (!IsInstallable(CLASSBUFF))
    return;
    }
 
-Build2DListFromVarstring(&tp,item,' '); /* Must be at least one space between each var */
+Build2DListFromVarstring(&tp,item,'\"'); /* Must be at least one space between each var */
 
 Set2DList(tp);
 
@@ -3551,7 +3551,7 @@ if (!IsInstallable(CLASSBUFF))
    return;
    }
 
-Build2DListFromVarstring(&tp,path,' '); /* Must be at least one space between each var */
+Build2DListFromVarstring(&tp,path,'\"'); /* Must be at least one space between each var */
 
 Set2DList(tp);
 
@@ -3970,7 +3970,7 @@ if (strcmp(path,"/") != 0)
    DeleteSlash(path);
    }
 
-Build2DListFromVarstring(&tp,path,' '); /* Must not be / */
+Build2DListFromVarstring(&tp,path,'\"'); /* Must not be / */
 
 Set2DList(tp);
 
@@ -4010,7 +4010,7 @@ if (!IsInstallable(CLASSBUFF))
    return;
    }
 
-Build2DListFromVarstring(&tp,path,' ');
+Build2DListFromVarstring(&tp,path,'\"');
 
 Set2DList(tp);
 
@@ -4508,7 +4508,7 @@ if (!IsInstallable(CLASSBUFF))
    }
 
  
-Build2DListFromVarstring(&tp,path,' ');
+Build2DListFromVarstring(&tp,path,'\"');
     
 Set2DList(tp);
 
@@ -4987,7 +4987,7 @@ if (strlen(buf1) > 1)
 
 expserver = SplitStringAsItemList(buf3,LISTSEPARATOR);
    
-Build2DListFromVarstring(&tp,path,' ');  /* Must split on space in comm string */
+Build2DListFromVarstring(&tp,path,'\"');  /* Must split on space in comm string */
     
 Set2DList(tp);
 
@@ -5254,7 +5254,7 @@ Debug1("InstallAuthItem(%s,%s)\n",path,attribute);
   
 vlist = SplitStringAsItemList(attribute,LISTSEPARATOR);
  
-Build2DListFromVarstring(&tp,path,' ');
+Build2DListFromVarstring(&tp,path,'\"');
    
 Set2DList(tp);
 
