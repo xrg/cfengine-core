@@ -1029,14 +1029,14 @@ int FuzzyHostMatch(char *arg0, char* arg1, char *refhost)
 
 /*
  * do something like...
- *   @args = split(/,/,$s1);
  *   if ( $refhost !~ /(\d+)$/ ) {
- *     return 1; # failure: no num in hostname
+ *     return 1; # failure: refhost doesn't end in numeral
  *   }
- *   if ( $1 < $args[1] || $1 > $args[2] ) {
- *     return 1; # failure: hostname num not in range
+ *   $hostnum = $1;
+ *   if ( $hostnum < $args[1] || $hostnum > $args[2] ) {
+ *     return 1; # failure: refhost hostnum not in range
  *   }
- *   $refhost =~ s/^(.*?)\d.*$/$1/;
+ *   $refhost =~ s/^(.*)\d.*$/$1/;
  *   if ( $refhost ne $args[0] ) {
  *     return 1; # failure: hostname doesn't match basename
  *   }
@@ -1044,12 +1044,16 @@ int FuzzyHostMatch(char *arg0, char* arg1, char *refhost)
  */
 
 { struct Item *args;
- char *sp, refbase[CF_MAXVARSIZE];
+  char *sp, refbase[CF_MAXVARSIZE];
   long cmp = -1, start = -1, end = -1;
 
-sscanf(refhost,"%[^0-9]%ld",&refbase,&cmp);
-
-Debug("Found refbase=%s,cmp=%d\n",refbase,cmp);
+strncpy(refbase,refhost,strlen(refhost));
+sp = refbase + strlen(refbase) - 1;
+while ( isdigit((int)*sp) ) { sp--; }
+sp++;
+sscanf(sp,"%ld",&cmp);
+*sp = '\0';
+Debug("SRDEBUG FuzzyHostMatch: refbase=%s,cmp=%d\n",refbase,cmp);
 
 if (cmp < 0)
    {
@@ -1065,13 +1069,13 @@ sscanf(arg1,"%ld-%ld",&start,&end);
 
 if ( cmp < start || cmp > end )
    {
-   Debug("Failed on numberical range (%d < %d < %d)",end,cmp,start);
+   Debug("SRDEBUG Failed on numberical range (%d < %d < %d)\n",end,cmp,start);
    return 1;
    }
 
 if (strcmp(refbase,arg0) != 0)
    {
-   Debug("Failed on name %s != %s)",refbase,arg0);
+   Debug("SRDEBUG Failed on name (%s != %s)\n",refbase,arg0);
    return 1;
    }
 

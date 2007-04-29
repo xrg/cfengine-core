@@ -865,7 +865,19 @@ for (ptr = VMOUNTABLES; ptr != NULL; ptr=ptr->next)
 void PromiseMountable(struct Mountables *ptr)
 
 {
-printf(" Promise to use filesystem %s if context matches [%s]\n",ptr->filesystem,ptr->classes);
+if (ptr == NULL)
+   {
+   return;
+   }
+
+if (ptr->classes == NULL)
+   {
+   printf("  Promise to use filesystem %s if context matches [any]\n",ptr->filesystem);
+   }
+else
+   {
+   printf("  Promise to use filesystem %s if context matches [%s]\n",ptr->filesystem,ptr->classes);
+   }
 
 if (ptr->readonly)
    {

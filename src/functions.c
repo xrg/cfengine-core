@@ -464,16 +464,16 @@ if (!FuzzyHostParse(argv[0],argv[1]))
 /* VDEFAULTBINSERVER.name is relative domain name */
 /* (see nameinfo.c ~line 145)                     */
 
-Debug("Parsing fuzzy host succeeded\n");
+Debug("SRDEBUG FuzzyHostParse(%s,%s) succeeded for %s\n",argv[0],argv[1],VUQNAME);
 
 if (FuzzyHostMatch(argv[0],argv[1],VUQNAME) == 0)
    {
-   Debug("SRDEBUG SUCCESS!\n");
+   Debug("SRDEBUG FuzzyHostMatch(%s,%s,%s) succeeded\n",argv[0],argv[1],VUQNAME);
    strcpy(value,CF_ANYCLASS);
    }
 else
    {
-   Debug("SRDEBUG FAILURE\n");
+   Debug("SRDEBUG FuzzyHostMatch(%s,%s,%s) failed\n",argv[0],argv[1],VUQNAME);
    strcpy(value,CF_NOCLASS);
    }
  
