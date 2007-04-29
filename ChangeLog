@@ -43,6 +43,8 @@
 	> Use --enable-selinux during compilation
 
 	Bug / misleading error message in ReadArray fixed
+
+	HostRange bug for numericals in hostname fixed by Steve Radar.
 	
 2.1.22 
 
