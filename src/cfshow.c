@@ -82,7 +82,7 @@ void CheckOptsAndInit(int argc,char **argv)
   int optindex = 0;
   int c;
 
-while ((c=getopt_long(argc,argv,"hdvaVlsc",CFDOPTIONS,&optindex)) != EOF)
+while ((c=getopt_long(argc,argv,"hdvaVlscp",CFDOPTIONS,&optindex)) != EOF)
   {
   switch ((char) c)
       {
