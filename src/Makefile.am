@@ -92,7 +92,8 @@ cfagent_SOURCES =							\
 	expand-image.c							\
 	expand-editfiles.c						\
 	checksum_db.c							\
-	package.c
+	package.c							\
+	scli.c
 
 cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 

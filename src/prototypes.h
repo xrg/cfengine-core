@@ -980,6 +980,10 @@ int Repository (char *file, char *repository);
 
 void RotateFiles (char *name, int number);
 
+/* scli.c */
+
+void SCLIScript(void);
+
 /* sensible.c */
 
 int SensibleFile (char *nodename, char *path, struct Image *ip);

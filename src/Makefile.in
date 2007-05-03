@@ -80,7 +80,7 @@ am_cfagent_OBJECTS = cfagent.$(OBJEXT) init.$(OBJEXT) do.$(OBJEXT) \
 	granules.$(OBJEXT) methods.$(OBJEXT) dtypes.$(OBJEXT) \
 	state.$(OBJEXT) expand-files.$(OBJEXT) expand-tidy.$(OBJEXT) \
 	expand-image.$(OBJEXT) expand-editfiles.$(OBJEXT) \
-	checksum_db.$(OBJEXT) package.$(OBJEXT)
+	checksum_db.$(OBJEXT) package.$(OBJEXT) scli.$(OBJEXT)
 cfagent_OBJECTS = $(am_cfagent_OBJECTS)
 am__DEPENDENCIES_1 =
 cfagent_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -406,7 +406,8 @@ cfagent_SOURCES = \
 	expand-image.c							\
 	expand-editfiles.c						\
 	checksum_db.c							\
-	package.c
+	package.c							\
+	scli.c
 
 cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 cfservd_SOURCES = \
@@ -800,6 +801,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/report.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/repository.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rotate.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scli.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sensible.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sockaddr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/state.Po@am__quote@
