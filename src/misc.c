@@ -481,9 +481,13 @@ for (sp = VBUFF+strlen(VBUFF); i < 2; sp--)
       AddClassToHeap(VBUFF);
       }
    }
+
+#ifdef LINUX
+
 /* {Mandrake,Fedora} has a symlink at /etc/redhat-release pointing to
  * /etc/{mandrake,fedora}-release, so we else-if around that
  */
+
 if (stat("/etc/mandrake-release",&statbuf) != -1)
    {
    Verbose("This appears to be a mandrake system.\n");
@@ -533,6 +537,8 @@ if (stat("/etc/UnitedLinux-release",&statbuf) != -1)
    }
 
 lsb_version();
+
+#endif
 
 if (stat("/etc/vmware",&statbuf) != -1)
    {
@@ -1129,6 +1135,12 @@ char *path, *dir, *rest;
 struct stat statbuf;
 
 path = rest = strdup(getenv("PATH"));
+
+if (strlen(path) == 0)
+   {
+   return 1;
+   }
+
 for (; dir = strsep(&rest, ":") ;)
     {
     snprintf(VBUFF, CF_BUFSIZE, "%s/" LSB_RELEASE_COMMAND, dir);
