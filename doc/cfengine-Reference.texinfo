@@ -513,6 +513,7 @@ Shows the time in seconds required to complete copies and shell executions.
 * rename::                      
 * required::                    
 * resolve::                     
+* scli::                        
 * shellcommands::               
 * strategies::                  
 * tidy::                        
@@ -1716,11 +1717,14 @@ True if file 1 was accessed more recently than file 2 (UNIX atime)
 True if file 1's attributes were changed in any way more recently than file 2's (UNIX ctime)
 @item FileExists(@var{file})
 True if the named file object exists.
+
 @item IPRange(@var{address-range})
 True if the current host lies within the specified IP range
+
 @item HostRange(@var{basename,start-stop})
 True if the current relative domain name begins with basename and ends with an integer
-between start and stop
+between start and stop.  Note well: matching is case insensitive (both hostname and basename are converted to all upper case for comparison.) 
+
 @item IsDefined(@var{variable-id})
 True if the named variable is defined. Note well: use the variable name, not its contents (that is,
 @code{IsDefined(var)}, and not @code{IsDefined($@{var@})})
@@ -8447,7 +8451,7 @@ different hosts within a network, using a common standard. Methods must
 be cfengine programs however, wheras the module interface can be written
 in any script language.
 
-@emph{Modules are designed to offer a firewall-like proxy interface for remote
+@emph{Methods are designed to offer a firewall-like proxy interface for remote
 method execution. We can call methods a form of `voluntary RPC', in which
 hosts execute methods for one another on a purely voluntary basis. This
 builds in anti-spamming protection. The principle used is that hosts
@@ -8859,14 +8863,21 @@ Methods can also be scheduled for execution on remote hosts.
 Remote method execution is the same as local method execution except for
 some additional requirements. A list of collaborating peers must be added
 to the control section of @file{update.conf}.
+In order the the requests to be collected automatically, you must have @code{copy}
+in the action sequence of the @file{update.conf} file.
+
 
 @smallexample
 control:
 
- MethodPeers = ( @var{hostname list} )
+ MethodPeers = ( @var{hostname list} ) # Must have copy in actionsequence
+
 @end smallexample
 This list tells the agent which remote hosts to collaborate with, i.e.
 whom should we contact to look for work that we have promised to perform?
+In order the the requests to be collected automatically, you must have @code{copy}
+in the action sequence of the @file{update.conf} file.
+
 For example, to make two hosts collaborate:
 
 @smallexample
@@ -8894,6 +8905,8 @@ it receives from the other. This feature will not be to everyone's taste, and it
 is unconventional. However, voluntary cooperation provides a way of collaborating
 without trust in a framework that forces us to confront the security issues directly.
 As such, it is a successful experiment.
+
+
 
 @c -------------------------------------------------------------------------------
 @c SECTION
@@ -9724,7 +9737,7 @@ full.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node resolve, shellcommands, required, Cfagent reference
+@node resolve, scli, required, Cfagent reference
 @section resolve
 
 @cindex DNS
@@ -9802,7 +9815,45 @@ is not added to the line.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node shellcommands, strategies, resolve, Cfagent reference
+@node scli, shellcommands, resolve, Cfagent reference
+@section scli
+
+SCLI is an SNMP command line interpreter written by IETF leader Juergen
+Schoenwaelder of the Jacobs University of Bremen. It is a command interpreter
+used to simplify the interaction with SNMP enabled devices. 
+
+This cfengine interface is a special case of the @code{shellcommands}
+interface, which passes commands to SCLI instead of to @file{/bin/sh}.
+The command options are the same as those below for @code{shellcommands}.
+
+
+@cartouche
+
+@w{}
+@smallexample
+shellcommands:
+
+  @var{class}::
+
+    "@var{scli-string}"  @var{shellcommand options}
+    "@var{scli-string}"  
+
+@end smallexample
+@end cartouche
+
+@vindex scli command interpreter
+@vindex SNMP
+
+@i{This integration was funded by the IST-EMANICS Network of Excellence in Network and
+Service Management, of which Oslo University College and the Jacobs University of
+Bremen are members}.
+
+
+@c -------------------------------------------------------------------------------
+@c SECTION
+@c -------------------------------------------------------------------------------
+
+@node shellcommands, strategies, scli, Cfagent reference
 @section shellcommands
 
 Cfengine focuses on fairly simple-minded tasks in order to be as general

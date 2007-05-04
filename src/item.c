@@ -1053,7 +1053,7 @@ while ( isdigit((int)*sp) ) { sp--; }
 sp++;
 sscanf(sp,"%ld",&cmp);
 *sp = '\0';
-Debug("SRDEBUG FuzzyHostMatch: refbase=%s,cmp=%d\n",refbase,cmp);
+Debug("SRDEBUG FuzzyHostMatch: split refhost=%s into refbase=%s and cmp=%d\n",refhost,refbase,cmp);
 
 if (cmp < 0)
    {
@@ -1073,15 +1073,14 @@ if ( cmp < start || cmp > end )
    return 1;
    }
 
-if (strcmp(refbase,arg0) != 0)
+if (strcmp(refbase,ToUpperStr(arg0)) != 0)
    {
-   Debug("SRDEBUG Failed on name (%s != %s)\n",refbase,arg0);
+   Debug("SRDEBUG Failed on name (%s != %s)\n",refbase,ToUpperStr(arg0));
    return 1;
    }
 
 return 0;
 }
-
 
 /*********************************************************************/
 /* String Handling                                                   */

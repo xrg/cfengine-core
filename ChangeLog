@@ -1,4 +1,9 @@
 
+2.2.1
+	scli: type section added. This is a special case of shellcommands, which
+	send commands to the special shell scli by Juergen Schoenwaelder for
+	communicating with snmp devices.
+	
 2.2.0
 	Apart from minor changes, this version is about structural internal
 	changes that ease the eventual confluence with cfengine 3 and the work
