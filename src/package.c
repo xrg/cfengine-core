@@ -351,6 +351,16 @@ switch(pkgmgr)
        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"PortageInstallCommand"),CF_BUFSIZE);
        break;
        
+       /* FreeBSD */
+   case pkgmgr_freebsd:
+       
+       if (!GetMacroValue(CONTEXTID,"FreeBSDInstallCommand"))
+          {
+          Verbose("FreeBSDInstallCommand NOT Set.  Package Installation Not Possible!\n");
+          return 0;
+          }
+       strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"FreeBSDInstallCommand"),CF_BUFSIZE);
+       break;
        
        /* Default */
    default:
@@ -1309,6 +1319,100 @@ for (ebuild = ebuildlist; ebuild != NULL; ebuild=ebuild->next)
 
 DeleteItemList(ebuildlist);
 return 0;
+}
+
+/*********************************************************************/
+/* FreeBSD - pkg_info/pkg_add/pkg_delete                             */
+/*********************************************************************/
+
+int FreeBSDPackageCheck(char *package,char *version,enum cmpsense cmp)
+
+{ FILE *pp;
+  int match = 0;
+  char line[CF_BUFSIZE];
+  char pkgname[CF_BUFSIZE];
+  char *pkgversion;
+
+  /* The package to install must contain a version number
+   * The version starts after the last '-' in the pkgname
+   */
+   strncpy(pkgname, package, CF_BUFSIZE - 1);
+   pkgversion = strrchr(pkgname, '-');
+   *pkgversion = '\0';
+   pkgversion += 1;
+
+  Verbose("FreeBSDPackageCheck(): Requested version %s %s of %s\n", CMPSENSETEXT[cmp],(version[0] ? version : "ANY"), pkgname);
+
+  /* If no version was specified, we're just checking if the package
+   * is present, not for a particular number, so >0 will match.
+   */
+  if (!*version)
+    {
+    cmp = cmpsense_gt;
+    version[0] = '0';
+    version[1] = 0;
+    }
+
+  /* Convert to > or < ... */
+  char compare_operator[3];
+   switch(cmp)
+      {
+      case cmpsense_gt:
+      	compare_operator[0] = '>';
+      	compare_operator[1] = 0;
+        break;
+      case cmpsense_lt:
+      	compare_operator[0] = '<';
+      	compare_operator[1] = 0;
+        break;
+      case cmpsense_ge:
+      	compare_operator[0] = '>';
+      	compare_operator[1] = '=';
+      	compare_operator[2] = 0;
+        break;
+      case cmpsense_le:
+      	compare_operator[0] = '<';
+      	compare_operator[1] = '=';
+      	compare_operator[2] = 0;
+        break;
+      case cmpsense_ne:
+      	compare_operator[0] = '!';
+      	compare_operator[1] = '=';
+      	compare_operator[2] = 0;
+      default:
+      	compare_operator[0] = '=';
+      	compare_operator[1] = 0;
+        break;
+	  } 
+
+  /* check what version is installed on the system (if any) */
+  Verbose("FreeBSDPackageCheck(): Running /usr/sbin/pkg_info -qE '%s%s%s'\n", pkgname, compare_operator, version);
+  snprintf (VBUFF, CF_BUFSIZE, "/usr/sbin/pkg_info -qE '%s%s%s'", pkgname, compare_operator, version);
+
+  if ((pp = cfpopen (VBUFF, "r")) == NULL)
+    {
+    Verbose ("Could not execute pkg_info.\n");
+    return 0;
+    }
+
+  while (!feof (pp))
+    {
+    *VBUFF = '\0';
+    ReadLine (line, CF_BUFSIZE - 1, pp);
+    snprintf(OUTPUT,CF_BUFSIZE,"Package install: %s\n",line);
+    }
+
+  if (cfpclose (pp) == 0)
+    {
+    Verbose ("The package and version requested are installed in the package database.\n",package);
+    match=1;
+    }
+  else 
+    {
+    Verbose ("The package and version requested do not exist in the package database.\n",package);
+    match=0;
+    }
+  return match;
 }
 
 /*********************************************************************/

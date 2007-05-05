@@ -889,6 +889,7 @@ int DPKGPackageCheck (char *package, char *version, enum cmpsense cmp);
 int SUNPackageCheck (char *package, char *version, enum cmpsense cmp);
 int PortagePackageCheck (char *package, char *version, enum cmpsense cmp);
 int AIXPackageCheck (char *package, char *version, enum cmpsense cmp);
+int FreeBSDPackageCheck (char *package, char *version, enum cmpsense cmp);
 int InstallPackage  (char *name, enum pkgmgrs pkgmgr);
 int RemovePackage  (char *name, enum pkgmgrs pkgmgr);
 

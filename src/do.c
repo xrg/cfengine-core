@@ -2359,6 +2359,7 @@ if (existed)
    LoadItemList(&filebase,VRESOLVCONF[VSYSTEMHARDCLASS]);
    }
 
+/* This code seems to solve an ancient problem that should no longer exist
 for (ip = filebase; ip != NULL; ip=ip->next)
    {
    if (strlen(ip->name) == 0)
@@ -2383,6 +2384,7 @@ for (ip = filebase; ip != NULL; ip=ip->next)
       DeleteItem(&filebase,ip);
       }
    }
+*/
 
 DeleteItemStarting(&filebase,"domain");
 
@@ -2778,6 +2780,10 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       case pkgmgr_portage:
           match = PortagePackageCheck(ptr->name, ptr->ver, ptr->cmp);
           break;
+      case pkgmgr_freebsd:
+          match = FreeBSDPackageCheck(ptr->name, ptr->ver, ptr->cmp);
+          break;
+
       default:
           /* UGH!  This should *never* happen.  GetPkgMgr() and
            * InstallPackagesItem() should have caught this before it

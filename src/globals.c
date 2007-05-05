@@ -760,6 +760,7 @@ char *OBS[CF_OBSERVABLES] =
       "sun",    /* pkginfo/pkgadd/pkgrm */
       "aix",    /* lslpp/installp */
       "portage",
+      "freebsd",
       NULL
       };
 
