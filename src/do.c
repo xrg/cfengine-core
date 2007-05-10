@@ -2807,22 +2807,23 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       if (ptr->action == pkgaction_install)
          {
          /* Initial allocation of memory if we have not yet allocated any */
-         if(package_install_list[ptr->pkgmgr] == NULL)
+         if (package_install_list[ptr->pkgmgr] == NULL)
             {
             package_install_list[ptr->pkgmgr] = malloc(CF_BUFSIZE);
             ((char **)package_install_list[ptr->pkgmgr])[0] = NULL;
             }
          
          /* Make sure we don't overflow the buffer */
-         if(strlen(ptr->name) >
-            (CF_BUFSIZE - strlen(package_install_list[ptr->pkgmgr])))
+         if (strlen(ptr->name) < (CF_BUFSIZE - strlen(package_install_list[ptr->pkgmgr])))
+            {
+            /* add the name to the list. */
+            strcat(package_install_list[ptr->pkgmgr], ptr->name);
+            strcat(package_install_list[ptr->pkgmgr], " ");
+            }
+         else
             {
             Verbose("Package list exceeds CF_BUFSIZE.  Skipping %s", ptr->name);
             }
-         
-         /* Finally add the name to the list. */
-         strcat(package_install_list[ptr->pkgmgr], ptr->name);
-         strcat(package_install_list[ptr->pkgmgr], " ");
          }
       }
    
