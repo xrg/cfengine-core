@@ -3380,7 +3380,7 @@ if (!IsInstallable(CLASSBUFF))
    return;
    }
 
-Build2DListFromVarstring(&tp,item,'\"'); /* Must be at least one space between each var */
+Build2DListFromVarstring(&tp,item,LISTSEPARATOR); /* Must be at least one space between each var */
 
 Set2DList(tp);
 
@@ -3560,7 +3560,7 @@ if (!IsInstallable(CLASSBUFF))
    return;
    }
 
-Build2DListFromVarstring(&tp,item,'\"'); /* Must be at least one space between each var */
+Build2DListFromVarstring(&tp,item,LISTSEPARATOR); /* Must be at least one space between each var */
 
 Set2DList(tp);
 
