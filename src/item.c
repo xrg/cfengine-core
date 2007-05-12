@@ -794,6 +794,16 @@ if (strstr(s1,":") != 0)
    isv6 = true;
    }
 
+if (strstr(s2,".") != 0)
+   {
+   isv4 = true;
+   }
+
+if (strstr(s2,":") != 0)
+   {
+   isv6 = true;
+   }
+
 if (isv4 && isv6)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Mixture of IPv6 and IPv4 addresses: %s",s1);
