@@ -806,8 +806,7 @@ if (strstr(s2,":") != 0)
 
 if (isv4 && isv6)
    {
-   snprintf(OUTPUT,CF_BUFSIZE,"Mixture of IPv6 and IPv4 addresses: %s",s1);
-   CfLog(cferror,OUTPUT,"");
+   /* This is just wrong */
    return -1;
    }
 
