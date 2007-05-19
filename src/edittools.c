@@ -1462,6 +1462,12 @@ void CheckEditSwitches(char *filename,struct Edit *ptr)
   char expdata[CF_EXPANDSIZE];
   int fd;
   struct Edlist *actions = ptr->actions;
+#ifdef WITH_SELINUX
+  int selinux_enabled=0;
+  security_context_t scontext=NULL;
+
+  selinux_enabled = (is_selinux_enabled()>0);
+#endif
   
 PARSING = true;
 
@@ -1503,6 +1509,15 @@ for (ep = actions; ep != NULL; ep=ep->next)
                 {
                 Debug("Setting umask to %o\n",ptr->umask);
                 mask=umask(ptr->umask);
+#ifdef WITH_SELINUX
+                if(selinux_enabled)
+                    {
+                    /* use default security context when creating destination file */
+                    matchpathcon(filename,0,&scontext);
+                    Debug("Setting SELinux context to: %s\n", scontext);
+                    setfscreatecon(scontext);
+                    }
+#endif
                 
                 if ((fd = creat(filename,0644)) == -1)
                    {
@@ -1517,6 +1532,14 @@ for (ep = actions; ep != NULL; ep=ep->next)
                 snprintf(OUTPUT,CF_BUFSIZE*2,"Creating file %s, mode %o\n",filename,(0644 & ~ptr->umask));
                 CfLog(cfinform,OUTPUT,"");
                 umask(mask);
+#ifdef WITH_SELINUX
+                if(selinux_enabled)
+                    {
+                    /* set create context back to default */
+                    setfscreatecon(NULL);
+                    freecon(scontext);
+                    }
+#endif
                 break;
                 }
              }
