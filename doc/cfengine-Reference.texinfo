@@ -9515,6 +9515,77 @@ Please document me!
 @cindex Sun Package Database Queries
 Please document me!
 
+@item freebsd
+@cindex FreeBSD Package Database Queries
+
+Jo Rhett who implemented this writes:
+It works like this:
+@smallexample
+
+control:
+  DefaultPkgMgr = ( freebsd )
+  FreeBSDInstallCommand = ( "/var/cfengine/packages/pkginstall %s" )
+
+packages:
+  bsdsar-1.10_2 action=install
+                version=1.10_2
+                cmp=ge
+
+@end smallexample
+
+Note that specifying the version of the package that is part of the freebsd package filename is required.  However, it does not use this for comparison, just for the package to install.  So you could install 1.10 only if nothing larger than 1.0 was installed.
+
+@smallexample
+packages:
+  bsdsar-1.10_2 action=install
+                version=1.0
+                cmp=ge
+
+@end smallexample
+You can also backgrade if you know that 1.2 is bad for instance.
+
+@smallexample
+packages:
+  bsdsar-1.10_2 action=install
+                version=1.1
+                cmp=gt
+@end smallexample
+
+Now, due to the unfortunate fact that freebsd doesn't provide a
+command line option -- only an environment variable -- for specifying
+the source repository, you have a few options.
+
+Get it from the main FreeBSD binary package home:
+
+@smallexample
+  FreeBSDInstallCommand = ( "pkg_add -r %s" )
+
+@end smallexample
+Or write a script that tells pkg_add where to find it, like so:
+
+@smallexample
+  FreeBSDInstallCommand = ( "/var/cfengine/packages/pkginstall %s" )
+@end smallexample
+such as 
+
+@smallexample
+#!/bin/sh
+PACKAGESITE=http://my.local.repository/packages/
+export PACKAGESITE
+/usr/sbin/pkg_add -r $*
+@end smallexample
+or even
+
+@smallexample
+#!/bin/sh
+cd /my/local/repository
+for pkg in $*
+/usr/sbin/pkg_add $@{pkg@}.tbz
+
+@end smallexample
+
+
+
 @end table
 
 @item define
