@@ -250,10 +250,12 @@ memset(&value,0,sizeof(value));
 
 while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
    {
-   if (stat((char *)(key.data+CF_CHKSUMKEYOFFSET),&statbuf) == -1)
+   char *obj = (char *)key.data + CF_CHKSUMKEYOFFSET;
+   
+   if (stat(obj,&statbuf) == -1)
       {
-      Verbose("Purging file %s from checksum db - no longer exists\n",(char *)key.data+CF_CHKSUMKEYOFFSET);
-      snprintf(OUTPUT,CF_BUFSIZE*2,"SECURITY INFO: %s checksum for %s purged - file no longer exists!",key.data,key.data+CF_CHKSUMKEYOFFSET);
+      Verbose("Purging file %s from checksum db - no longer exists\n",obj);
+      snprintf(OUTPUT,CF_BUFSIZE*2,"SECURITY INFO: %s checksum for %s purged - file no longer exists!",key.data,obj);
       CfLog(cferror,OUTPUT,"");
       
       if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
