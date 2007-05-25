@@ -238,6 +238,9 @@ extern char VFQNAME[];
 extern char VUQNAME[];
 extern char LOGFILE[];
 
+extern char *CMPSENSETEXT[];
+extern char *CMPSENSEOPERAND[];
+
 extern char NOABSPATH;
 
 extern struct Item *VEXCLUDECACHE;

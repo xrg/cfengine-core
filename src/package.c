@@ -30,11 +30,23 @@
 /****************************************************************************/
 
 /* Local prototypes that nobody else should care about... */
-
-void ParseEVR(char * evr, const char **ep, const char **vp, const char **rp);
+int BuildCommandLine  (char *resolvedcmd, char* rawcmd, char*name );
+int RPMPackageCheck (char *package, char *version, enum cmpsense cmp);
+int RPMPackageList (char *package, char *version, enum cmpsense cmp, char *pkglist);
+int DPKGPackageCheck (char *package, char *version, enum cmpsense cmp);
+int DPKGPackageList (char *package, char *version, enum cmpsense cmp, char *pkglist);
+int SUNPackageCheck (char *package, char *version, enum cmpsense cmp);
+int SUNPackageList (char *package, char *version, enum cmpsense cmp, char *pkglist);
 void ParseSUNVR(char * vr, int *major, int *minor, int *micro);
+int PortagePackageCheck (char *package, char *version, enum cmpsense cmp);
+int PortagePackageList (char *package, char *version, enum cmpsense cmp, char *pkglist);
+int AIXPackageCheck (char *package, char *version, enum cmpsense cmp);
+int AIXPackageList (char *package, char *version, enum cmpsense cmp, char *pkglist);
 void ParseAIXVR(char * vr, int *ver, int *release, int *maint, int *fix);
+int FreeBSDPackageCheck (char *package, char *version, enum cmpsense cmp);
+int FreeBSDPackageList (char *package, char *version, enum cmpsense cmp, char *pkglist);
 int rpmvercmp(const char *a, const char *b);
+void ParseEVR(char * evr, const char **ep, const char **vp, const char **rp);
 int xislower(int c);
 int xisupper(int c);
 int xisalpha(int c);
@@ -271,8 +283,48 @@ DeleteItemList(evrlist);
 return 0;
 }
 
-/*********************************************************************************/
+int RPMPackageList (char *package, char *version, enum cmpsense cmp, char *pkglist)
+{
+   return 0; /* not implemented yet */
+}
 
+/* This is moved here to allow do.c to be ignorant of the various package managers */
+int PackageCheck(char* package, enum pkgmgrs pkgmgr, char *version,enum cmpsense cmp)
+{ int match=0;
+
+switch(pkgmgr)
+   {
+   case pkgmgr_rpm:
+      match = RPMPackageCheck(package, version, cmp);
+      break;
+   case pkgmgr_dpkg:
+      match = DPKGPackageCheck(package, version, cmp);
+      break;
+   case pkgmgr_sun:
+      match = SUNPackageCheck(package, version, cmp);
+      break;
+   case pkgmgr_aix:
+      match = AIXPackageCheck(package, version, cmp);
+      break;
+   case pkgmgr_portage:
+      match = PortagePackageCheck(package, version, cmp);
+      break;
+   case pkgmgr_freebsd:
+      match = FreeBSDPackageCheck(package, version, cmp);
+      break;
+   default:
+      /* UGH!  This should *never* happen.  GetPkgMgr() and
+       * InstallPackagesItem() should have caught this before it
+       * was ever installed!!!
+       * */
+       snprintf(OUTPUT,CF_BUFSIZE,"Internal error!  Tried to check package %s in an unknown database: %d.  This should never happen!\n", package, pkgmgr);
+       CfLog(cferror,OUTPUT,"");
+       break;
+   }
+return match;
+}
+
+/*********************************************************************************/
 int InstallPackage(char *name, enum pkgmgrs pkgmgr)
 
 { char rawinstcmd[CF_BUFSIZE];
@@ -280,12 +332,7 @@ int InstallPackage(char *name, enum pkgmgrs pkgmgr)
     limit is CF_BUFSIZE so this can obviously get larger! */
  char instcmd[CF_BUFSIZE*2];
  char line[CF_BUFSIZE];
- char *percent;
  FILE *pp;
- char *ptr, *arg_ptr, *next_ptr;
- int instcmd_args, package_args;
- int instcmd_tail_len = 0;
- int instcmd_len, arg_len;
 
 if (DONTDO)
    {
@@ -351,16 +398,16 @@ switch(pkgmgr)
        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"PortageInstallCommand"),CF_BUFSIZE);
        break;
        
-       /* FreeBSD */
+   /* FreeBSD */
    case pkgmgr_freebsd:
        
-       if (!GetMacroValue(CONTEXTID,"FreeBSDInstallCommand"))
-          {
-          Verbose("FreeBSDInstallCommand NOT Set.  Package Installation Not Possible!\n");
-          return 0;
-          }
-       strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"FreeBSDInstallCommand"),CF_BUFSIZE);
-       break;
+      if (!GetMacroValue(CONTEXTID,"FreeBSDInstallCommand"))
+         {
+         Verbose("FreeBSDInstallCommand NOT Set.  Package Installation Not Possible!\n");
+         return 0;
+         }
+      strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"FreeBSDInstallCommand"),CF_BUFSIZE);
+      break;
        
        /* Default */
    default:
@@ -368,82 +415,10 @@ switch(pkgmgr)
        break;
    }
 
-/* Common to all pkg managers */
-
-    /* How many words are there in the package manager invocation? */
-for (ptr = rawinstcmd, instcmd_args = 1; NULL != ptr; ptr = strchr(++ptr, ' '))
-   {
-   ++instcmd_args;
-   }
-
-/* This could probably be a bit more complete, but I don't think
-   that anyone would want to expand the package name more than
-   once in a single command invocation anyhow. */
-
-if (percent = strstr(rawinstcmd, "%s"))
-   {
-   *percent = '\0';
-   percent += 2;
-   instcmd_tail_len = strlen(percent);
-   --instcmd_args;
-   }
-
-instcmd_len = strlen(rawinstcmd);
-
-/* Copy the initial part of the install command */
-strncpy(instcmd, rawinstcmd, CF_BUFSIZE*2);
-
-snprintf(OUTPUT,CF_BUFSIZE,"Installing package(s) %s using %s\n", name, instcmd);
-CfLog(cfinform,OUTPUT,"");
-
-if ((pp = cfpopen(instcmd, "r")) == NULL)
-   {
-   Verbose("Could not execute package install command\n");
-   /* Return that the package is still not installed */
-   return 0;
-   }
-
-  /* Loop over packages until we reach the maximum number that cfpopen
-     can take */
-
-ptr = name;
-
-while (NULL != ptr)
-   {
-   arg_ptr = &instcmd[instcmd_len];
-   
-   for (package_args = instcmd_args;(package_args < CF_MAXSHELLARGS) && (NULL != ptr);package_args++)
+   /* Common to all pkg managers */
+   if( BuildCommandLine( instcmd, rawinstcmd, name ) )
       {
-      next_ptr = strchr(ptr, ' ');
-      if (next_ptr)
-         {
-         *next_ptr = '\0';
-         }
-      
-      arg_len = strlen(ptr);
-      *arg_ptr++ = ' ';
-      strncpy(arg_ptr, ptr, &instcmd[CF_BUFSIZE*2] - arg_ptr);
-      arg_ptr += arg_len;
-      
-      if (next_ptr)
-         {
-         *next_ptr++ = ' ';
-         }
-      
-      ptr = next_ptr;
-      }
-   
-   if (arg_ptr != &instcmd[instcmd_len])
-      {      
-      /* Have a full command line, so append the tail, if necessary,
-         and run it */
-      
-      if (instcmd_tail_len > 0)
-         {
-         strncpy(arg_ptr, percent, &instcmd[CF_BUFSIZE*2] - arg_ptr);
-         }
-      
-      Verbose("Installing package group using %s\n", instcmd);
+      Verbose("Installing package using %s\n", instcmd);
       
       if ((pp = cfpopen(instcmd, "r")) == NULL)
          {
@@ -464,21 +439,174 @@ while (NULL != ptr)
          Verbose("Package install command was not successful\n");
          return 0;
          }
+      return 1;
       }
-   }
-
-return 1;
+      else 
+      {
+         Verbose("Unable to build package manager command.\n");
+         return 0;
+      }
 }
 
-/*********************************************************************/
+int RemovePackage(char *name, enum pkgmgrs pkgmgr, char* version, enum cmpsense cmp)
+{  char rawdelcmd[CF_BUFSIZE];
+   /* The removal list could be considerably bigger than the original list */
+   char pkglist[CF_BUFSIZE*2];
+ /* Make the delcmd 3x the normal buffer size since the package list
+    limit is CF_BUFSIZE*2 so this can obviously get larger! */
+   char delcmd[CF_BUFSIZE*3];
+   char line[CF_BUFSIZE];
+   FILE *pp;
 
-int RemovePackage(char *name, enum pkgmgrs pkgmgr)
+   if (DONTDO)
+      {
+      Verbose("Need to remove package(s) %s\n",name);
+      return 0;
+      }
 
-{
-Verbose("Package removal not yet implemented");
-return 1;
+   /* Determine the command to use for the removal. */
+   switch(pkgmgr)
+      {
+      /* FreeBSD */
+      case pkgmgr_freebsd:
+         if (!GetMacroValue(CONTEXTID,"FreeBSDRemoveCommand"))
+            {
+         	strncpy(rawdelcmd, "/usr/sbin/pkg_delete %s", 23 );
+            }
+         else
+            {
+            strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"FreeBSDRemoveCommand"),CF_BUFSIZE);
+            }
+
+         FreeBSDPackageList(name, version, cmp, pkglist);
+         break;
+       
+      /* Default */
+      default:
+         Verbose("Package removal not yet implemented for this package manager.");
+         break;
+      }
+   Verbose("Resolved packagelist is %s\n", pkglist);
+
+   if( BuildCommandLine( delcmd, rawdelcmd, pkglist ) )
+      {
+      Verbose("Removing package using %s\n", delcmd);
+         
+      if ((pp = cfpopen(delcmd, "r")) == NULL)
+         {
+         Verbose("Could not execute package removal command\n");
+         /* Return that the package is still not removed */
+         return 0;
+      }
+         
+      while (!feof(pp))
+         {
+         ReadLine(line,CF_BUFSIZE-1,pp);
+         snprintf(OUTPUT,CF_BUFSIZE,"Package removal: %s\n",line);
+         }
+         
+      if (cfpclose(pp) != 0)
+         {
+         Verbose("Package removal command was not successful\n");
+         return 0;
+         }
+      return 1;
+      }
+   else 
+      {
+      Verbose("Unable to evaluate package manager command.\n");
+      return 0;
+      }
 }
 
+int BuildCommandLine(char *resolvedcmd, char* rawcmd, char* name)   
+{ 
+   char *cmd_tail;
+   FILE *pp;
+   char *ptr, *arg_ptr, *next_ptr;
+   int cmd_args = 0;
+   int cmd_tail_len = 0;
+   int cmd_len, arg_len;
+
+    /* How many words are there in the package manager invocation? */
+   for (ptr = rawcmd, cmd_args = 1; NULL != ptr; ptr = strchr(++ptr, ' '))
+      {
+      ++cmd_args;
+      }
+
+   /* This could probably be a bit more complete, but I don't think
+   that anyone would want to expand the package name more than
+   once in a single command invocation anyhow. */
+   if (cmd_tail = strstr(rawcmd, "%s"))
+      {
+      *cmd_tail = '\0';
+      cmd_tail += 2;
+      cmd_tail_len = strlen(cmd_tail);
+      --cmd_args;
+      }
+   
+   cmd_len = strlen(rawcmd);
+   
+   /* Copy the initial part of the install command */
+   strncpy(resolvedcmd, rawcmd, CF_BUFSIZE*2);
+   
+   snprintf(OUTPUT,CF_BUFSIZE,"Package manager will be invoked as %s\n", resolvedcmd);
+   CfLog(cfinform,OUTPUT,"");
+   
+   if ((pp = cfpopen(resolvedcmd, "r")) == NULL)
+      {
+      Verbose("Could not execute package manager\n");
+      /* Return that the package is still not installed */
+      return 0;
+      }
+   
+   /* Loop over packages until we reach the maximum number that cfpopen can take */
+   ptr = name;
+   while (NULL != ptr)
+      {
+      
+      arg_ptr = &resolvedcmd[cmd_len];
+
+      /* Find each space, change to NULL, copy shortened string into arg_ptr, change back to space... */
+      for (;(cmd_args < CF_MAXSHELLARGS) && (NULL != ptr);cmd_args++)
+         {
+         next_ptr = strchr(ptr, ' ');
+         if (next_ptr)
+            {
+            *next_ptr = '\0';
+            }
+         
+
+         /* Skip double spaces */
+         if( arg_len = strlen(ptr) ) 
+            {
+            strncpy(arg_ptr, ptr, &resolvedcmd[CF_BUFSIZE*2] - arg_ptr);
+            arg_ptr += arg_len;
+            *arg_ptr++ = ' ';
+            }
+
+         if (next_ptr)
+            {
+            *next_ptr++ = ' ';
+            }
+         
+         ptr = next_ptr;
+         }
+      *--arg_ptr = '\0'; // Remove trailing space
+      
+      if (arg_ptr != &resolvedcmd[cmd_len])
+         {      
+         /* Have a full command line, so append the tail if necessary. */
+         if (cmd_tail_len > 0)
+            {
+            strncpy(arg_ptr, cmd_tail, &resolvedcmd[CF_BUFSIZE*2] - arg_ptr);
+            }
+         }
+      Verbose("Resolved command is '%s'\n", resolvedcmd );
+      }
+   return 1;
+}
+      
 /*********************************************************************/
 /* Debian                                                            */
 /*********************************************************************/
@@ -534,7 +662,7 @@ while (!feof (pp))
    ReadLine (VBUFF, CF_BUFSIZE, pp);
    if (*VBUFF != '\0')
       {
-      if (sscanf (VBUFF, "  Installed: %s", tmpBUFF) > 0)
+      if (sscanf (VBUFF, "  Removed: %s", tmpBUFF) > 0)
          {
          AppendItem (&evrlist, tmpBUFF, "");
          }
@@ -679,6 +807,11 @@ if (match)
 /* if we manage to make it here, we did not find a match */
 DeleteItemList (evrlist);
 return 0;
+}
+
+int DPKGPackageList (char *package, char *version, enum cmpsense cmp, char *pkglist)
+{
+   return 0; /* not implemented yet */
 }
 
 /*********************************************************************/
@@ -857,12 +990,17 @@ DeleteItemList(evrlist);
 return 0;
 }
 
+int SUNPackageList (char *package, char *version, enum cmpsense cmp, char *pkglist)
+{
+   return 0; /* not implemented yet */
+}
+
 /*********************************************************************/
 /* Sun's manual pages say that the version number is a major, minor,
  * and optional micro version number.  This code checks for that.
  * It will not handle other arbitrary and strange values people might
  * put in like "2.6d.12a" or "1.11 beta" or "pre-release 7"
- */
+/*********************************************************************/
 
 void ParseSUNVR (char * vr, int *major, int *minor, int *micro)
 {
@@ -1101,6 +1239,11 @@ DeleteItemList(evrlist);
 return 0;
 }
 
+int AIXPackageList(char *package, char *version, enum cmpsense cmp, char *pkglist)
+{
+   return 0; /* not implemented yet */
+}
+
 /*********************************************************************/
 /* AIX docs describe the version as:
  * Version.Release.Maintenance/Modification.Fix (V.R.M.F).  
@@ -1108,7 +1251,7 @@ return 0;
  * numeric digits will be extracted.  standalone non-digits will be 
  * treated as 0 for the entire field.  V.R.M.F shouldn't contain any 
  * non numeric data (this is enforced by IBM tools like mkinstallp)
- */ 
+/*********************************************************************/
 
 void ParseAIXVR(char * vr, int *ver, int *release, int *maint, int *fix)
 {
@@ -1127,7 +1270,6 @@ int v,r,m,f;
   if(sscanf(vr,"%*[^.].%*[^.].%*[^.].%d%*s",&f) > 0)
     *fix = f;
 }
-
 
 /*********************************************************************/
 /* Gentoo Portage                                                    */
@@ -1321,6 +1463,11 @@ DeleteItemList(ebuildlist);
 return 0;
 }
 
+int PortagePackageList(char *package, char *version, enum cmpsense cmp, char *pkglist)
+{
+	return 0; /* not implemented yet */
+}
+
 /*********************************************************************/
 /* FreeBSD - pkg_info/pkg_add/pkg_delete                             */
 /*********************************************************************/
@@ -1353,41 +1500,9 @@ int FreeBSDPackageCheck(char *package,char *version,enum cmpsense cmp)
     version[1] = 0;
     }
 
-  /* Convert to > or < ... */
-  char compare_operator[3];
-   switch(cmp)
-      {
-      case cmpsense_gt:
-      	compare_operator[0] = '>';
-      	compare_operator[1] = 0;
-        break;
-      case cmpsense_lt:
-      	compare_operator[0] = '<';
-      	compare_operator[1] = 0;
-        break;
-      case cmpsense_ge:
-      	compare_operator[0] = '>';
-      	compare_operator[1] = '=';
-      	compare_operator[2] = 0;
-        break;
-      case cmpsense_le:
-      	compare_operator[0] = '<';
-      	compare_operator[1] = '=';
-      	compare_operator[2] = 0;
-        break;
-      case cmpsense_ne:
-      	compare_operator[0] = '!';
-      	compare_operator[1] = '=';
-      	compare_operator[2] = 0;
-      default:
-      	compare_operator[0] = '=';
-      	compare_operator[1] = 0;
-        break;
-	  } 
-
   /* check what version is installed on the system (if any) */
-  Verbose("FreeBSDPackageCheck(): Running /usr/sbin/pkg_info -qE '%s%s%s'\n", pkgname, compare_operator, version);
-  snprintf (VBUFF, CF_BUFSIZE, "/usr/sbin/pkg_info -qE '%s%s%s'", pkgname, compare_operator, version);
+  Verbose("FreeBSDPackageCheck(): Running /usr/sbin/pkg_info -qE '%s%s%s'\n", pkgname, CMPSENSEOPERAND[cmp], version);
+  snprintf (VBUFF, CF_BUFSIZE, "/usr/sbin/pkg_info -qE '%s%s%s'", pkgname, CMPSENSEOPERAND[cmp], version);
 
   if ((pp = cfpopen (VBUFF, "r")) == NULL)
     {
@@ -1415,6 +1530,67 @@ int FreeBSDPackageCheck(char *package,char *version,enum cmpsense cmp)
   return match;
 }
 
+int FreeBSDPackageList(char *package, char *version, enum cmpsense cmp, char *pkglist)
+
+{ FILE *pp;
+  int match = 0;
+  char line[CF_BUFSIZE];
+  char pkgname[CF_BUFSIZE];
+  char *pkgversion;
+
+  /* The package name is derived by stripping off the version number
+   */
+   strncpy(pkgname, package, CF_BUFSIZE - 1);
+   pkgversion = strrchr(pkgname, '-');
+   *pkgversion = '\0';
+   pkgversion += 1;
+
+  Verbose("FreeBSDPackageList(): Requested version %s %s of %s\n", CMPSENSETEXT[cmp],(version[0] ? version : "ANY"), pkgname);
+
+  /* If no version was specified, we're just checking if the package
+   * is present, not for a particular number, so >0 will match.
+   */
+  if (!*version)
+    {
+    cmp = cmpsense_gt;
+    version[0] = '0';
+    version[1] = 0;
+    }
+
+  /* check what version is installed on the system (if any) */
+  Verbose("FreeBSDPackageList(): Running /usr/sbin/pkg_info -E '%s%s%s'\n", pkgname, CMPSENSEOPERAND[cmp], version);
+  snprintf (VBUFF, CF_BUFSIZE, "/usr/sbin/pkg_info -E '%s%s%s'", pkgname, CMPSENSEOPERAND[cmp], version);
+
+  if ((pp = cfpopen (VBUFF, "r")) == NULL)
+    {
+    Verbose ("Could not execute pkg_info.\n");
+    return 0;
+    }
+
+  while (!feof (pp))
+    {
+    *VBUFF = '\0';
+    ReadLine (line, CF_BUFSIZE - 1, pp);
+    Verbose ("PackageList: read line %s\n",line);
+    snprintf(OUTPUT,CF_BUFSIZE,"Package to remove: %s\n",line);
+	strcat( pkglist, line);
+	strcat( pkglist, " ");
+    }
+
+  if (cfpclose (pp) == 0)
+    {
+    Verbose ("The packages requested are installed in the package database.\n",package);
+    match=1;
+    }
+  else 
+    {
+    Verbose ("The package and version requested do not exist in the package database.\n",package);
+    match=0;
+    }
+  return match;
+}
+
+/*********************************************************************/
 /*********************************************************************/
 /* RPM Version string comparison logic
  *
@@ -1427,6 +1603,7 @@ int FreeBSDPackageCheck(char *package,char *version,enum cmpsense cmp)
 /* return 1: a is newer than b */
 /*        0: a and b are the same version */
 /*       -1: b is newer than a */
+/*********************************************************************/
 
 int rpmvercmp(const char * a, const char * b)
 

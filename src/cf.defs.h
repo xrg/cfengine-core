@@ -1241,6 +1241,7 @@ enum pkgactions /* What to do with a package if it is found/not found */
     {
     pkgaction_install,
     pkgaction_remove,
+    pkgaction_upgrade,
     pkgaction_none
     };
 

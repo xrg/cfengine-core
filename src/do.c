@@ -2733,11 +2733,12 @@ void CheckPackages()
 
 { struct Package *ptr;
   int match = 0;
-  int i;
+  int result = 0;
   char lock[CF_BUFSIZE];
   /* pkgmgr_none will always be the highest number in the enum so set
      the array size with that */
   char *package_install_list[pkgmgr_none] = { NULL };
+  char *package_remove_list[pkgmgr_none] = { NULL };
 
 for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
    {
@@ -2763,70 +2764,41 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       continue;
       }
    
-   switch(ptr->pkgmgr)
-      {
-      case pkgmgr_rpm:
-          match = RPMPackageCheck(ptr->name, ptr->ver, ptr->cmp);
-          break;
-      case pkgmgr_dpkg:
-          match = DPKGPackageCheck(ptr->name, ptr->ver, ptr->cmp);
-          break;
-      case pkgmgr_sun:
-          match = SUNPackageCheck(ptr->name, ptr->ver, ptr->cmp);
-          break;
-      case pkgmgr_aix:
-          match = AIXPackageCheck(ptr->name, ptr->ver, ptr->cmp);
-          break;
-      case pkgmgr_portage:
-          match = PortagePackageCheck(ptr->name, ptr->ver, ptr->cmp);
-          break;
-      case pkgmgr_freebsd:
-          match = FreeBSDPackageCheck(ptr->name, ptr->ver, ptr->cmp);
-          break;
+   match = PackageCheck(ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp);
+   Verbose("Match status for %s is %u\n", ptr->name, match );
 
-      default:
-          /* UGH!  This should *never* happen.  GetPkgMgr() and
-           * InstallPackagesItem() should have caught this before it
-           * was ever installed!!!
-           * */
-          snprintf(OUTPUT,CF_BUFSIZE,"Internal error!  Tried to check package %s in an unknown database: %d.  This should never happen!\n", ptr->name, ptr->pkgmgr);
-          CfLog(cferror,OUTPUT,"");
-          break;
-      }
-   
    /* Handle install/remove logic now. */
    if (match)
       {
-      if (ptr->action == pkgaction_remove)
+      if (ptr->action == pkgaction_remove) 
          {
-         match = match;
+         Verbose("Package removal for %s: %s\n", PKGMGRTEXT[ptr->pkgmgr], ptr->name );
+         RemovePackage( ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp );
+         }
+      else if (ptr->action == pkgaction_upgrade)
+         {
+         Verbose("Package removal for %s: %s\n", PKGMGRTEXT[ptr->pkgmgr], ptr->name );
+         if( RemovePackage( ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp ) ) 
+            {
+            Verbose("Package install for %s: %s\n", PKGMGRTEXT[ptr->pkgmgr], ptr->name );
+            InstallPackage( ptr->name, ptr->pkgmgr );
+            }
+         else 
+            {
+            Verbose("Package %s cannot be upgraded because the old version was not removed.\n", ptr->name );
+            }
          }
       }
    else
       {
       if (ptr->action == pkgaction_install)
          {
-         /* Initial allocation of memory if we have not yet allocated any */
-         if (package_install_list[ptr->pkgmgr] == NULL)
-            {
-            package_install_list[ptr->pkgmgr] = malloc(CF_BUFSIZE);
-            ((char **)package_install_list[ptr->pkgmgr])[0] = NULL;
-            }
-         
-         /* Make sure we don't overflow the buffer */
-         if (strlen(ptr->name) < (CF_BUFSIZE - strlen(package_install_list[ptr->pkgmgr])))
-            {
-            /* add the name to the list. */
-            strcat(package_install_list[ptr->pkgmgr], ptr->name);
-            strcat(package_install_list[ptr->pkgmgr], " ");
-            }
-         else
-            {
-            Verbose("Package list exceeds CF_BUFSIZE.  Skipping %s", ptr->name);
-            }
+         Verbose("Package install for %s: %s\n", PKGMGRTEXT[ptr->pkgmgr], ptr->name );
+         InstallPackage( ptr->name, ptr->pkgmgr );
          }
       }
-   
+ 
+   /* Not sure why we didn't do this above? */
    if (match)
       {
       AddMultipleClasses(ptr->defines);
@@ -2839,20 +2811,6 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
    ptr->done = 'y';
    ReleaseCurrentLock();
    }
-
-/* Run through the package managers, and execute the package install
- * for each of them... */
-for(i=0; i < pkgmgr_none; i++)
-{
-    if(package_install_list[i] != NULL)
-    {
-        Verbose("Package install list for %s is: %s\n", PKGMGRTEXT[i],
-                    package_install_list[i]);
-        InstallPackage(package_install_list[i], i);
-        free(package_install_list[i]);
-    }
-}
-
 }
 
 /*******************************************************************/

@@ -750,6 +750,18 @@ char *OBS[CF_OBSERVABLES] =
       NULL
       };
 
+  PRIVATE char *CMPSENSEOPERAND[] =
+      {
+      "=",
+      ">",
+      "<",
+      ">=",
+      "<=",
+      "!=",
+      NULL,
+      NULL
+      };
+
   /*********************************************************************/
   /* The names of the available package managers */
 
@@ -770,6 +782,7 @@ char *OBS[CF_OBSERVABLES] =
       {
       "install",
       "remove",
+      "upgrade",
       NULL
       };
 
