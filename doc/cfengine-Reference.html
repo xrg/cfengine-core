@@ -2269,6 +2269,8 @@ The meaning of each of these lines is described below.
 <li><a href="#excludecopy">excludecopy</a>
 <li><a href="#excludelinks">excludelinks</a>
 <li><a href="#ExpireAfter">ExpireAfter</a>
+<li><a href="#FreeBSDInstallCommand">FreeBSDInstallCommand</a>
+<li><a href="#FreeBSDRemoveCommand">FreeBSDRemoveCommand</a>
 <li><a href="#FullEncryption">FullEncryption</a>
 <li><a href="#homepattern">homepattern</a>
 <li><a href="#HostnameKeys">HostnameKeys</a>
@@ -2410,7 +2412,7 @@ possibilities:
            netconfig              # check net interface config
            resolve                # check resolver setup
            unmount                # unmount any filesystems
-           packages               # check for required packages
+           packages               # install/upgrade/remove packages
            shellcommands          # execute shell commands
            editfiles              # edit files
            addmounts              # add new filesystems to system
@@ -2522,8 +2524,8 @@ of nameservers in the file <samp><span class="file">/etc/resolv.conf</span></sam
 of the program.  This will query the system's package database
 for the specified packages, at the specified versions, set
 classes based on whether or not those packages exist, and
-optionally install those packages using a pre-defined package
-manager command.
+optionally install, upgrade or remove those packages using a
+pre-defined package manager command.
 
      <br><dt><code>shellcommands</code><dd>executes all the commands defined under the <code>shellcommands</code>
 section of the program.
@@ -3141,8 +3143,8 @@ under the DPKG package manager.
 </pre>
    <p>By default, this variable is not set, meaning that any packages with
 action=install will NOT be installed if installation is required.  Note
-the "'s around the string, and the %s is replaced with the list of
-packages to be installed, each separated by a ' ' (space).
+the "'s around the string, and the %s is replaced with the name of the
+package to be installed.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -3342,7 +3344,7 @@ are valid only as long as that class is defined. For instance
 <div class="node">
 <p><hr>
 <a name="ExpireAfter"></a>
-Next:&nbsp;<a rel="next" accesskey="n" href="#FullEncryption">FullEncryption</a>,
+Next:&nbsp;<a rel="next" accesskey="n" href="#FreeBSDInstallCommand">FreeBSDInstallCommand</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="#excludelinks">excludelinks</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
@@ -3386,14 +3388,64 @@ as options of the form <code>expireafter=10</code>.
 <!-- ..................................................... -->
 <div class="node">
 <p><hr>
-<a name="FullEncryption"></a>
-Next:&nbsp;<a rel="next" accesskey="n" href="#homepattern">homepattern</a>,
+<a name="FreeBSDInstallCommand"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#FreeBSDRemoveCommand">FreeBSDRemoveCommand</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="#ExpireAfter">ExpireAfter</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.32 FullEncryption</h4>
+<h4 class="subsection">4.9.32 FreeBSDInstallCommand</h4>
+
+<p>Sets the path to `pkg_add' which is used to install packages that need
+to be installed under FreeBSD.
+
+<pre class="smallexample">     
+          FreeBSDInstallCommand = ( "/usr/sbin/pkg_add -r %s" )
+     
+</pre>
+   <p>By default, this variable is not set, meaning that any packages with
+action=install will NOT be installed. Note the quotes around the string,
+and the <code>%s</code> is replaced with the name of the package to be installed.
+
+<!-- ..................................................... -->
+<!-- SUBSECTION -->
+<!-- ..................................................... -->
+<div class="node">
+<p><hr>
+<a name="FreeBSDRemoveCommand"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#FullEncryption">FullEncryption</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#FreeBSDInstallCommand">FreeBSDInstallCommand</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
+
+</div>
+
+<h4 class="subsection">4.9.33 FreeBSDRemoveCommand</h4>
+
+<p>Sets the path to `pkg_delete' which is used to remove packages that need
+to be uninstalled under FreeBSD.
+
+<pre class="smallexample">     
+          FreeBSDRemoveCommand = ( "/usr/sbin/pkg_delete %s" )
+     
+</pre>
+   <p>By default, this variable is set to /usr/sbin/pkg_delete, meaning that any
+packages with action=remove will be removed.  Note the quotes around the
+string, and the <code>%s</code> is replaced with the name of the package to be installed.
+
+<!-- ..................................................... -->
+<!-- SUBSECTION -->
+<!-- ..................................................... -->
+<div class="node">
+<p><hr>
+<a name="FullEncryption"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#homepattern">homepattern</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#FreeBSDRemoveCommand">FreeBSDRemoveCommand</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
+
+</div>
+
+<h4 class="subsection">4.9.34 FullEncryption</h4>
 
 <p>From version 2.1.22. This is false for protocol compatability with older
 servers.
@@ -3423,7 +3475,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.33 HomePattern</h4>
+<h4 class="subsection">4.9.35 HomePattern</h4>
 
 <p><a name="index-Home-path-221"></a><a name="index-Path-to-home-directories-222"></a><a name="index-HomePattern-223"></a>
 <pre class="example">        HomePattern  = ( <var>list of patterns</var> )
@@ -3475,7 +3527,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.34 HostnameKeys</h4>
+<h4 class="subsection">4.9.36 HostnameKeys</h4>
 
 <p>If this variable is set to true/on, it causes cfagent to
 lookup and store trusted public keys according to their
@@ -3506,7 +3558,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.35 IfElapsed</h4>
+<h4 class="subsection">4.9.37 IfElapsed</h4>
 
 <p>If you change the value of this parameter, it should be one of the
 first things you do in your configuration script.
@@ -3549,7 +3601,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.36 Inform</h4>
+<h4 class="subsection">4.9.38 Inform</h4>
 
 <!-- /@w --><pre class="smallexample">     
        Inform = ( <var>on/</var><b>off</b> )
@@ -3580,7 +3632,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.37 InterfaceName</h4>
+<h4 class="subsection">4.9.39 InterfaceName</h4>
 
 <p><a name="index-InterfaceName-226"></a><a name="index-InterfaceName-227"></a><a name="index-Interface-name_002c-redefining-by-class-228"></a>
 If you have an operating system which is installed on some
@@ -3617,7 +3669,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.38 FileExtensions</h4>
+<h4 class="subsection">4.9.40 FileExtensions</h4>
 
 <p>This list may be used to define a number of extensions
 which are regarded as being plain files by the system. 
@@ -3643,7 +3695,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.39 LastSeen</h4>
+<h4 class="subsection">4.9.41 LastSeen</h4>
 
 <p>This option is true by default. If set to off or false it prevents cfengine
 and/or cfservd from learning about last times hosts were observed
@@ -3671,7 +3723,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.40 LastSeenExpireAfter</h4>
+<h4 class="subsection">4.9.42 LastSeenExpireAfter</h4>
 
 <p>This value (in days) sets the time after which unseen friend hosts
 are purged from the `last seen' database, as viewed by the <code>FriendStatus</code>
@@ -3695,7 +3747,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.41 LinkCopies</h4>
+<h4 class="subsection">4.9.43 LinkCopies</h4>
 
 <p>This list is used to define a global list of names or patterns
 which are to be linked symbolically rather than copied. For example
@@ -3727,7 +3779,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.42 LogDirectory</h4>
+<h4 class="subsection">4.9.44 LogDirectory</h4>
 
 <p>This is now deprecated.
 
@@ -3751,7 +3803,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.43 LogTidyHomeFiles</h4>
+<h4 class="subsection">4.9.45 LogTidyHomeFiles</h4>
 
 <!-- /@w --><pre class="smallexample">     
        LogTidyHomeFiles = ( off )
@@ -3774,7 +3826,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.44 moduledirectory</h4>
+<h4 class="subsection">4.9.46 moduledirectory</h4>
 
 <p><a name="index-Module-directory-238"></a><a name="index-Directory-for-cfengine-modules-239"></a><a name="index-moduledirectory-240"></a>
 
@@ -3799,7 +3851,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.45 mountpattern</h4>
+<h4 class="subsection">4.9.47 mountpattern</h4>
 
 <p><a name="index-Mount-paths-241"></a><a name="index-Path-to-mounted-filesystems-242"></a><a name="index-mountpattern-243"></a>
 <pre class="example">        mountpattern  = ( <var>mount-point</var> )
@@ -3839,7 +3891,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.46 netmask</h4>
+<h4 class="subsection">4.9.48 netmask</h4>
 
 <p><a name="index-netmask-244"></a><a name="index-netmask-245"></a>
 <pre class="example">        netmask = ( <var>aaa.bbb.ccc.ddd</var> )
@@ -3920,7 +3972,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.47 NonAlphaNumFiles</h4>
+<h4 class="subsection">4.9.49 NonAlphaNumFiles</h4>
 
 <p>If enabled, this option causes cfengine to detect and
 disable files which have purely non-alphanumeric
@@ -3949,7 +4001,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.48 nfstype</h4>
+<h4 class="subsection">4.9.50 nfstype</h4>
 
 <p><a name="index-nfs-251"></a><a name="index-nfstype-252"></a><a name="index-nfstype-253"></a>
 <pre class="example">        nfstype = ( <var>nfs-type</var> )
@@ -3984,7 +4036,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.49 PortageInstallCommand</h4>
+<h4 class="subsection">4.9.51 PortageInstallCommand</h4>
 
 <p>Sets the path to `emerge' which is used to install packages that need
 to be installed under Gentoo Portage.
@@ -3995,8 +4047,8 @@ to be installed under Gentoo Portage.
 </pre>
    <p>By default, this variable is not set, meaning that any packages with
 action=install will NOT be installed if installation is required. Note
-the quotes around the string, and the <code>%s</code> is replaced with the list of
-packages to be installed, each separated by a space.
+the quotes around the string, and the <code>%s</code> is replaced with the name
+of the package to be installed.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -4010,7 +4062,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.50 RepChar</h4>
+<h4 class="subsection">4.9.52 RepChar</h4>
 
 <pre class="example">        RepChar = ( <var>character</var> )
 </pre>
@@ -4035,7 +4087,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.51 Repository</h4>
+<h4 class="subsection">4.9.53 Repository</h4>
 
 <pre class="example">        Repository  = ( <var>directory</var> )
 </pre>
@@ -4057,7 +4109,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.52 RPMcommand</h4>
+<h4 class="subsection">4.9.54 RPMcommand</h4>
 
 <p>The default value of the Red Hat Package manager command <samp><span class="file">/bin/rpm</span></samp> can be altered
 for non-standard systems with this variable.
@@ -4075,7 +4127,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.53 RPMInstallCommand</h4>
+<h4 class="subsection">4.9.55 RPMInstallCommand</h4>
 
 <p>Sets the command used to install packages that need to be installed
 under the RPM package manager.
@@ -4084,8 +4136,8 @@ under the RPM package manager.
 </pre>
    <p>By default, this variable is not set, meaning that any packages with
 action=install will NOT be installed if installation is required.  Note
-the "'s around the string, and the %s is replaced with the list of
-packages to be installed, each separated by a ' ' (space).
+the quotes around the string, and the <code>%s</code> is replaced with the name
+of the package to be installed.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -4099,7 +4151,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.54 Schedule</h4>
+<h4 class="subsection">4.9.56 Schedule</h4>
 
 <p><a name="index-scheduling-260"></a><a name="index-scheduling-261"></a>
 
@@ -4135,7 +4187,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.55 SecureInput</h4>
+<h4 class="subsection">4.9.57 SecureInput</h4>
 
 <p><a name="index-Secure-input-262"></a><a name="index-SecureInput-263"></a>
 
@@ -4157,7 +4209,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.56 SensibleCount</h4>
+<h4 class="subsection">4.9.58 SensibleCount</h4>
 
 <p><a name="index-Sensible-limits-on-files-in-a-directory-264"></a><a name="index-SensibleCount-265"></a>
 <pre class="example">        SensibleCount  = ( <var>count</var> )
@@ -4181,7 +4233,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.57 SensibleSize</h4>
+<h4 class="subsection">4.9.59 SensibleSize</h4>
 
 <p><a name="index-Sensible-file-sizes-266"></a><a name="index-SensibleSize-267"></a>
 <pre class="example">        SensibleSize  = ( <var>size</var> )
@@ -4206,7 +4258,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.58 ShowActions</h4>
+<h4 class="subsection">4.9.60 ShowActions</h4>
 
 <p><a name="index-ShowActions-268"></a>
 <pre class="example">        ShowActions  = ( <var>on</var> )
@@ -4228,7 +4280,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.59 SingleCopy</h4>
+<h4 class="subsection">4.9.61 SingleCopy</h4>
 
 <pre class="smallexample">     
      	singlecopy = ( path_and_filename_wildcard )
@@ -4298,7 +4350,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.60 site/faculty</h4>
+<h4 class="subsection">4.9.62 site/faculty</h4>
 
 <p><a name="index-site-269"></a><a name="index-site-270"></a>
 <pre class="example">       site    = ( <var>sitename</var> )
@@ -4329,7 +4381,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.61 SkipIdentify</h4>
+<h4 class="subsection">4.9.63 SkipIdentify</h4>
 
 <pre class="example">       SkipIdentify = ( true )
 </pre>
@@ -4353,7 +4405,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.62 smtpserver</h4>
+<h4 class="subsection">4.9.64 smtpserver</h4>
 
 <pre class="example">       smtpserver = ( <var>mailhost</var> )
 </pre>
@@ -4372,7 +4424,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.63 SplayTime</h4>
+<h4 class="subsection">4.9.65 SplayTime</h4>
 
 <pre class="example">       SplayTime = ( <var>time-in-minutes</var> )
 </pre>
@@ -4392,7 +4444,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.64 Split</h4>
+<h4 class="subsection">4.9.66 Split</h4>
 
 <pre class="example">        Split  = ( <var>character</var> )
 </pre>
@@ -4418,7 +4470,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.65 SpoolDirectories</h4>
+<h4 class="subsection">4.9.67 SpoolDirectories</h4>
 
 <p><a name="index-SpoolDirectories-279"></a><a name="index-SpoolDirectories-280"></a>
 A list of additional spool directories for cfengine to police. In these
@@ -4441,7 +4493,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.66 SUNInstallCommand</h4>
+<h4 class="subsection">4.9.68 SUNInstallCommand</h4>
 
 <p>Sets the command used to install packages that need to be installed
 under the SUN package manager.
@@ -4450,8 +4502,8 @@ under the SUN package manager.
 </pre>
    <p>By default, this variable is not set, meaning that any packages with
 action=install will NOT be installed if installation is required.  Note
-the "'s around the string, and the %s is replaced with the list of
-packages to be installed, each separated by a ' ' (space).
+the quotes around the string, and the <code>%s</code> is replaced with the name
+of the package to be installed.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -4465,7 +4517,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.67 suspiciousnames</h4>
+<h4 class="subsection">4.9.69 suspiciousnames</h4>
 
 <p><a name="index-suspiciousnames-281"></a><a name="index-SuspiciousNames-282"></a>
 <pre class="example">       SuspiciousNames = ( .mo lrk3 )
@@ -4487,7 +4539,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.68 sysadm</h4>
+<h4 class="subsection">4.9.70 sysadm</h4>
 
 <p><a name="index-sysadm-283"></a><a name="index-sysadm-284"></a>
 <pre class="example">        sysadm = ( <var>mail address</var> )
@@ -4513,7 +4565,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.69 Syslog</h4>
+<h4 class="subsection">4.9.71 Syslog</h4>
 
 <!-- /@w --><pre class="smallexample">     
        Syslog = ( <var>on/</var><b>off</b> )
@@ -4542,7 +4594,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.70 SyslogFacility</h4>
+<h4 class="subsection">4.9.72 SyslogFacility</h4>
 
 <!-- /@w --><pre class="smallexample">     
        SyslogFacility = ( <var>facility</var> )
@@ -4577,7 +4629,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.71 timezone</h4>
+<h4 class="subsection">4.9.73 timezone</h4>
 
 <pre class="example">        timezone = ( <var>3-character timezone</var> )
 </pre>
@@ -4613,7 +4665,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.72 TimeOut</h4>
+<h4 class="subsection">4.9.74 TimeOut</h4>
 
 <!-- /@w --><pre class="smallexample">     
        TimeOut = ( 10 )
@@ -4638,7 +4690,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.73 Verbose</h4>
+<h4 class="subsection">4.9.75 Verbose</h4>
 
 <!-- /@w --><pre class="smallexample">     
        Verbose = ( <var>on/</var><b>off</b> )
@@ -4672,7 +4724,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.74 Warnings</h4>
+<h4 class="subsection">4.9.76 Warnings</h4>
 
 <!-- /@w --><pre class="smallexample">     
        Warnings = ( <var>on/</var><b>off</b> )
@@ -4701,7 +4753,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.75 WarnNonUserFiles</h4>
+<h4 class="subsection">4.9.77 WarnNonUserFiles</h4>
 
 <p>If this parameter is set to true, cfengine will warn about files in
 spool directories which do not have a name belonging to a known user id.
@@ -4720,7 +4772,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.76 WarnNonOwnerFiles</h4>
+<h4 class="subsection">4.9.78 WarnNonOwnerFiles</h4>
 
 <p>If this parameter is set to true, cfengine will warn about files on
 mailservers whose names do not correspond to a known user name, but
@@ -4746,7 +4798,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.77 WarnNonUserMail</h4>
+<h4 class="subsection">4.9.79 WarnNonUserMail</h4>
 
 <p>If this parameter is set to true, cfengine will warn about mail files on
 mailservers which do not have a name belonging to a known user id. This
@@ -4763,7 +4815,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.78 WarnNonOwnerMail</h4>
+<h4 class="subsection">4.9.80 WarnNonOwnerMail</h4>
 
 <p>If this parameter is set to true, cfengine will warn about files on
 mailservers whose names do not correspond to a known user name, but
@@ -8839,41 +8891,52 @@ only way to have a specific version emerged.
           <br><dt><code>sun</code><dd><a name="index-Sun-Package-Database-Queries-537"></a>Please document me!
 
           <br><dt><code>freebsd</code><dd><a name="index-FreeBSD-Package-Database-Queries-538"></a>
-Jo Rhett who implemented this writes:
-It works like this:
+FreeBSD has fully working install/upgrade/delete management for
+packages.
           <pre class="smallexample">               
                control:
                  DefaultPkgMgr = ( freebsd )
-                 FreeBSDInstallCommand = ( "/var/cfengine/packages/pkginstall %s" )
+                 FreeBSDInstallCommand = ( "/usr/sbin/pkg_add -r %s" )
+                 FreeBSDRemoveCommand = ( "/usr/sbin/pkg_delete %s" )
                
                packages:
-                 bsdsar-1.10_2 action=install
+                 # install new package version 1.10_2
+                 newpackage-1.10_2 action=install
                                version=1.10_2
                                cmp=ge
                
-          </pre>
-          <p>Note that specifying the version of the package that is part of the freebsd package filename is required.  However, it does not use this for comparison, just for the package to install.  So you could install 1.10 only if nothing larger than 1.0 was installed.
-
-          <pre class="smallexample">               packages:
-                 bsdsar-1.10_2 action=install
-                               version=1.0
+                 # upgrade any installed versions of compromised to at least 1.2
+                 compromised-1.2 action=upgrade
+                               version=1.2
+                               cmp=le
+               
+                 # remove any version of useless
+                 useless action=remove
+                               version=0.1
                                cmp=ge
                
           </pre>
+          <p>Note that specifying the version of the package that is part of the freebsd package filename is required.  However, it does not use this for comparison, just for the package filename to install.  For instance, the example above install 1.10 only if nothing larger than 1.10 was installed.
+
           <p>You can also backgrade if you know that 1.2 is bad for instance.
 
           <pre class="smallexample">               packages:
-                 bsdsar-1.10_2 action=install
-                               version=1.1
+                 bsdsar-1.10_2 action=upgrade
+                               version=1.10_2
                                cmp=gt
           </pre>
-          <p>Now, due to the unfortunate fact that freebsd doesn't provide a
+          <p>The only gotcha about FreeBSD installation is trying to specify the package
+source location.  Due to the unfortunate fact that freebsd doesn't provide a
 command line option &ndash; only an environment variable &ndash; for specifying
 the source repository, you have a few options.
 
           <p>Get it from the main FreeBSD binary package home:
 
           <pre class="smallexample">                 FreeBSDInstallCommand = ( "pkg_add -r %s" )
+          </pre>
+          <p>Get it from a mounted directory
+
+          <pre class="smallexample">                 FreeBSDInstallCommand = ( "pkg_add /nfs/packages/%s" )
                
           </pre>
           <p>Or write a script that tells pkg_add where to find it, like so:
@@ -8887,25 +8950,17 @@ the source repository, you have a few options.
                export PACKAGESITE
                /usr/sbin/pkg_add -r $*
           </pre>
-          <p>or even
-
-          <pre class="smallexample">               #!/bin/sh
-               cd /my/local/repository
-               for pkg in $*
-               /usr/sbin/pkg_add ${pkg}.tbz
-               
-          </pre>
           </dl>
 
-     <br><dt><code>define</code><dd>Specifies the list of classes to define if the specified package is
-installed.
+     <br><dt><code>define</code><dd>Specifies the list of classes to define if the specified package was
+installed (prior to actions taken if any)
 
-     <br><dt><code>elsedefine</code><dd>Specifies the list of classes to define if the specified package is not
-installed.
+     <br><dt><code>elsedefine</code><dd>Specifies the list of classes to define if the specified package was not
+installed (prior to actions taken if any)
 
      <br><dt><code>action</code><dd>Specifies whether the packages should actually do anything about the
 situation it finds.  The default for this is to do nothing.  Of course,
-the classes in <code>define</code> and <code>elsedefine</code> will alwass be defined,
+the classes in <code>define</code> and <code>elsedefine</code> will always be defined,
 as applicable, regardless of the action specified.
 
           <dl>
@@ -8920,16 +8975,43 @@ RPMInstallCommand
 DPKGInstallCommand
 <li>SUN -
 SUNInstallCommand
+<li>Gentoo -
+PortageInstallCommand
+<li>FreeBSD -
+FreeBSDInstallCommand
 </ul>
 
           <p>Each variable is of the format:
 
           <pre class="smallexample">               FOOInstallCommand = ( "/usr/bin/foo --args %s --more-args" )
           </pre>
-          <p>The &mdash;args are of course optional.  The %s is replaced with a space-separated
-list of the package names that were checked, and found to not be installed.
+          <p>The &mdash;args are of course optional.  The %s is replaced with the package name
+that was checked, and found to not be installed.
 
-          <br><dt><code>remove</code><dd>CURRENTLY PARSED BUT NOT IMPLEMENTED
+          <br><dt><code>upgrade</code><dd>Upgrades the package using the commands associated with the selected
+package manager, if a matching package is found on the system at the requested
+version, as follows:
+
+               <ul>
+<li>FreeBSD -
+FreeBSDRemoveCommand followed by FreeBSDInstallCommand
+</ul>
+
+          <br><dt><code>remove</code><dd>Removes the package using the command associated with the selected
+package manager, if a matching package is found on the system at the requested
+version, as follows:
+
+               <ul>
+<li>FreeBSD -
+FreeBSDRemoveCommand
+</ul>
+
+          <p>Each variable is of the format:
+
+          <pre class="smallexample">               FOORemoveCommand = ( "/usr/bin/foo --args %s --more-args" )
+          </pre>
+          <p>The &mdash;args are of course optional.  The %s is replaced with a space-separated
+list of the package names that were checked, and found to be installed. 
 </dl>
      </dl>
 
@@ -8940,7 +9022,7 @@ and the action= is set to install, the classes in <code>elsedefine</code> will
 be defined <b>regardless</b> of whether or not the install was successful. 
 Assuming the package installed, the next run of cfagent will pick up that
 fact.  This has to be done since the package installs are batched, so there
-is no reliable way to know if a given package was installed.
+is no reliable way to know if a given package was installed successfully.
 
 <p class="noindent">Examples:
 
@@ -13166,53 +13248,55 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#excludecopy">4.9.29 ExcludeCopy</a>
 <li><a href="#excludelinks">4.9.30 ExcludeLink</a>
 <li><a href="#ExpireAfter">4.9.31 ExpireAfter</a>
-<li><a href="#FullEncryption">4.9.32 FullEncryption</a>
-<li><a href="#homepattern">4.9.33 HomePattern</a>
-<li><a href="#HostnameKeys">4.9.34 HostnameKeys</a>
-<li><a href="#IfElapsed">4.9.35 IfElapsed</a>
-<li><a href="#Inform">4.9.36 Inform</a>
-<li><a href="#interfacename">4.9.37 InterfaceName</a>
-<li><a href="#fileextension">4.9.38 FileExtensions</a>
-<li><a href="#lastseen">4.9.39 LastSeen</a>
-<li><a href="#lastseenexpireafter">4.9.40 LastSeenExpireAfter</a>
-<li><a href="#linkcopies">4.9.41 LinkCopies</a>
-<li><a href="#LogDirectory">4.9.42 LogDirectory</a>
-<li><a href="#LogTidyHomeFiles">4.9.43 LogTidyHomeFiles</a>
-<li><a href="#moduledirectory">4.9.44 moduledirectory</a>
-<li><a href="#mountpattern">4.9.45 mountpattern</a>
-<li><a href="#netmask">4.9.46 netmask</a>
-<li><a href="#nonalphanumfiles">4.9.47 NonAlphaNumFiles</a>
-<li><a href="#nfstype">4.9.48 nfstype</a>
-<li><a href="#PortageInstallCommand">4.9.49 PortageInstallCommand</a>
-<li><a href="#repchar">4.9.50 RepChar</a>
-<li><a href="#repository">4.9.51 Repository</a>
-<li><a href="#RPMcommand">4.9.52 RPMcommand</a>
-<li><a href="#rpminstallcommand">4.9.53 RPMInstallCommand</a>
-<li><a href="#schedule">4.9.54 Schedule</a>
-<li><a href="#secureinput">4.9.55 SecureInput</a>
-<li><a href="#sensiblecount">4.9.56 SensibleCount</a>
-<li><a href="#sensiblesize">4.9.57 SensibleSize</a>
-<li><a href="#showactions">4.9.58 ShowActions</a>
-<li><a href="#singlecopy">4.9.59 SingleCopy</a>
-<li><a href="#site">4.9.60 site/faculty</a>
-<li><a href="#SkipIdentify">4.9.61 SkipIdentify</a>
-<li><a href="#Smtpserver">4.9.62 smtpserver</a>
-<li><a href="#SplayTime">4.9.63 SplayTime</a>
-<li><a href="#split">4.9.64 Split</a>
-<li><a href="#spooldirectories">4.9.65 SpoolDirectories</a>
-<li><a href="#suninstallcommand">4.9.66 SUNInstallCommand</a>
-<li><a href="#suspiciousnames">4.9.67 suspiciousnames</a>
-<li><a href="#sysadm">4.9.68 sysadm</a>
-<li><a href="#Syslog">4.9.69 Syslog</a>
-<li><a href="#SyslogFacility">4.9.70 SyslogFacility</a>
-<li><a href="#timezone">4.9.71 timezone</a>
-<li><a href="#TimeOut">4.9.72 TimeOut</a>
-<li><a href="#Verbose">4.9.73 Verbose</a>
-<li><a href="#Warnings">4.9.74 Warnings</a>
-<li><a href="#warnnonuserfiles">4.9.75 WarnNonUserFiles</a>
-<li><a href="#warnnonownerfiles">4.9.76 WarnNonOwnerFiles</a>
-<li><a href="#warnnonusermail">4.9.77 WarnNonUserMail</a>
-<li><a href="#warnnonownermail">4.9.78 WarnNonOwnerMail</a>
+<li><a href="#FreeBSDInstallCommand">4.9.32 FreeBSDInstallCommand</a>
+<li><a href="#FreeBSDRemoveCommand">4.9.33 FreeBSDRemoveCommand</a>
+<li><a href="#FullEncryption">4.9.34 FullEncryption</a>
+<li><a href="#homepattern">4.9.35 HomePattern</a>
+<li><a href="#HostnameKeys">4.9.36 HostnameKeys</a>
+<li><a href="#IfElapsed">4.9.37 IfElapsed</a>
+<li><a href="#Inform">4.9.38 Inform</a>
+<li><a href="#interfacename">4.9.39 InterfaceName</a>
+<li><a href="#fileextension">4.9.40 FileExtensions</a>
+<li><a href="#lastseen">4.9.41 LastSeen</a>
+<li><a href="#lastseenexpireafter">4.9.42 LastSeenExpireAfter</a>
+<li><a href="#linkcopies">4.9.43 LinkCopies</a>
+<li><a href="#LogDirectory">4.9.44 LogDirectory</a>
+<li><a href="#LogTidyHomeFiles">4.9.45 LogTidyHomeFiles</a>
+<li><a href="#moduledirectory">4.9.46 moduledirectory</a>
+<li><a href="#mountpattern">4.9.47 mountpattern</a>
+<li><a href="#netmask">4.9.48 netmask</a>
+<li><a href="#nonalphanumfiles">4.9.49 NonAlphaNumFiles</a>
+<li><a href="#nfstype">4.9.50 nfstype</a>
+<li><a href="#PortageInstallCommand">4.9.51 PortageInstallCommand</a>
+<li><a href="#repchar">4.9.52 RepChar</a>
+<li><a href="#repository">4.9.53 Repository</a>
+<li><a href="#RPMcommand">4.9.54 RPMcommand</a>
+<li><a href="#rpminstallcommand">4.9.55 RPMInstallCommand</a>
+<li><a href="#schedule">4.9.56 Schedule</a>
+<li><a href="#secureinput">4.9.57 SecureInput</a>
+<li><a href="#sensiblecount">4.9.58 SensibleCount</a>
+<li><a href="#sensiblesize">4.9.59 SensibleSize</a>
+<li><a href="#showactions">4.9.60 ShowActions</a>
+<li><a href="#singlecopy">4.9.61 SingleCopy</a>
+<li><a href="#site">4.9.62 site/faculty</a>
+<li><a href="#SkipIdentify">4.9.63 SkipIdentify</a>
+<li><a href="#Smtpserver">4.9.64 smtpserver</a>
+<li><a href="#SplayTime">4.9.65 SplayTime</a>
+<li><a href="#split">4.9.66 Split</a>
+<li><a href="#spooldirectories">4.9.67 SpoolDirectories</a>
+<li><a href="#suninstallcommand">4.9.68 SUNInstallCommand</a>
+<li><a href="#suspiciousnames">4.9.69 suspiciousnames</a>
+<li><a href="#sysadm">4.9.70 sysadm</a>
+<li><a href="#Syslog">4.9.71 Syslog</a>
+<li><a href="#SyslogFacility">4.9.72 SyslogFacility</a>
+<li><a href="#timezone">4.9.73 timezone</a>
+<li><a href="#TimeOut">4.9.74 TimeOut</a>
+<li><a href="#Verbose">4.9.75 Verbose</a>
+<li><a href="#Warnings">4.9.76 Warnings</a>
+<li><a href="#warnnonuserfiles">4.9.77 WarnNonUserFiles</a>
+<li><a href="#warnnonownerfiles">4.9.78 WarnNonOwnerFiles</a>
+<li><a href="#warnnonusermail">4.9.79 WarnNonUserMail</a>
+<li><a href="#warnnonownermail">4.9.80 WarnNonOwnerMail</a>
 </li></ul>
 <li><a href="#classes">4.10 classes</a>
 <li><a href="#copy">4.11 copy</a>

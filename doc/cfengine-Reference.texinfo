@@ -2614,6 +2614,8 @@ The meaning of each of these lines is described below.
 * excludecopy::                 
 * excludelinks::                
 * ExpireAfter::                 
+* FreeBSDInstallCommand::
+* FreeBSDRemoveCommand::
 * FullEncryption::              
 * homepattern::                 
 * HostnameKeys::                
@@ -2750,7 +2752,7 @@ possibilities:
       netconfig              # check net interface config
       resolve                # check resolver setup
       unmount                # unmount any filesystems
-      packages               # check for required packages
+      packages               # install/upgrade/remove packages
       shellcommands          # execute shell commands
       editfiles              # edit files
       addmounts              # add new filesystems to system
@@ -2905,8 +2907,8 @@ executes commands defined under the @code{packages} section
 of the program.  This will query the system's package database
 for the specified packages, at the specified versions, set
 classes based on whether or not those packages exist, and
-optionally install those packages using a pre-defined package
-manager command.
+optionally install, upgrade or remove those packages using a 
+pre-defined package manager command.
 
 @item shellcommands
 executes all the commands defined under the @code{shellcommands}
@@ -3481,8 +3483,8 @@ DPKGInstallCommand = ( "/usr/bin/pkgmgr %s" )
 
 By default, this variable is not set, meaning that any packages with
 action=install will NOT be installed if installation is required.  Note
-the "'s around the string, and the %s is replaced with the list of
-packages to be installed, each separated by a ' ' (space).
+the "'s around the string, and the %s is replaced with the name of the
+package to be installed.
 
 @c .....................................................
 @c SUBSECTION
@@ -3655,7 +3657,7 @@ would define a pattern which was only valid when
 @c SUBSECTION
 @c .....................................................
 
-@node ExpireAfter, FullEncryption, excludelinks, control
+@node ExpireAfter, FreeBSDInstallCommand, excludelinks, control
 @subsection ExpireAfter
 
 If you change the value of this parameter, it should be one of the
@@ -3700,7 +3702,47 @@ as options of the form @code{expireafter=10}.
 @c SUBSECTION
 @c .....................................................
 
-@node FullEncryption, homepattern, ExpireAfter, control
+@node FreeBSDInstallCommand, FreeBSDRemoveCommand, ExpireAfter, control
+@subsection FreeBSDInstallCommand
+
+Sets the path to `pkg_add' which is used to install packages that need
+to be installed under FreeBSD.
+
+@smallexample
+
+     FreeBSDInstallCommand = ( "/usr/sbin/pkg_add -r %s" )
+
+@end smallexample
+
+By default, this variable is not set, meaning that any packages with
+action=install will NOT be installed. Note the quotes around the string,
+and the @code{%s} is replaced with the name of the package to be installed.
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node FreeBSDRemoveCommand, FullEncryption, FreeBSDInstallCommand, control
+@subsection FreeBSDRemoveCommand
+
+Sets the path to `pkg_delete' which is used to remove packages that need
+to be uninstalled under FreeBSD.
+
+@smallexample
+
+     FreeBSDRemoveCommand = ( "/usr/sbin/pkg_delete %s" )
+
+@end smallexample
+
+By default, this variable is set to /usr/sbin/pkg_delete, meaning that any
+packages with action=remove will be removed.  Note the quotes around the 
+string, and the @code{%s} is replaced with the name of the package to be installed.
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node FullEncryption, homepattern, FreeBSDRemoveCommand, control
 @subsection FullEncryption
 
 From version 2.1.22. This is false for protocol compatability with older
@@ -4282,8 +4324,8 @@ to be installed under Gentoo Portage.
 
 By default, this variable is not set, meaning that any packages with
 action=install will NOT be installed if installation is required. Note
-the quotes around the string, and the @code{%s} is replaced with the list of
-packages to be installed, each separated by a space.
+the quotes around the string, and the @code{%s} is replaced with the name
+of the package to be installed.
 
 @c .....................................................
 @c SUBSECTION
@@ -4354,8 +4396,8 @@ RPMInstallCommand = ( "/usr/bin/pkgmgr %s" )
 
 By default, this variable is not set, meaning that any packages with
 action=install will NOT be installed if installation is required.  Note
-the "'s around the string, and the %s is replaced with the list of
-packages to be installed, each separated by a ' ' (space).
+the quotes around the string, and the @code{%s} is replaced with the name
+of the package to be installed.
 
 @c .....................................................
 @c SUBSECTION
@@ -4677,8 +4719,8 @@ SUNInstallCommand = ( "/usr/bin/pkgmgr %s" )
 
 By default, this variable is not set, meaning that any packages with
 action=install will NOT be installed if installation is required.  Note
-the "'s around the string, and the %s is replaced with the list of
-packages to be installed, each separated by a ' ' (space).
+the quotes around the string, and the @code{%s} is replaced with the name
+of the package to be installed.
 
 @c .....................................................
 @c SUBSECTION
@@ -9518,40 +9560,46 @@ Please document me!
 @item freebsd
 @cindex FreeBSD Package Database Queries
 
-Jo Rhett who implemented this writes:
-It works like this:
+FreeBSD has fully working install/upgrade/delete management for
+packages.
 @smallexample
 
 control:
   DefaultPkgMgr = ( freebsd )
-  FreeBSDInstallCommand = ( "/var/cfengine/packages/pkginstall %s" )
+  FreeBSDInstallCommand = ( "/usr/sbin/pkg_add -r %s" )
+  FreeBSDRemoveCommand = ( "/usr/sbin/pkg_delete %s" )
 
 packages:
-  bsdsar-1.10_2 action=install
+  # install new package version 1.10_2
+  newpackage-1.10_2 action=install
                 version=1.10_2
                 cmp=ge
 
-@end smallexample
+  # upgrade any installed versions of compromised to at least 1.2
+  compromised-1.2 action=upgrade
+                version=1.2
+                cmp=le
 
-Note that specifying the version of the package that is part of the freebsd package filename is required.  However, it does not use this for comparison, just for the package to install.  So you could install 1.10 only if nothing larger than 1.0 was installed.
-
-@smallexample
-packages:
-  bsdsar-1.10_2 action=install
-                version=1.0
+  # remove any version of useless
+  useless action=remove
+                version=0.1
                 cmp=ge
 
 @end smallexample
+
+Note that specifying the version of the package that is part of the freebsd package filename is required.  However, it does not use this for comparison, just for the package filename to install.  For instance, the example above install 1.10 only if nothing larger than 1.10 was installed.
+
 You can also backgrade if you know that 1.2 is bad for instance.
 
 @smallexample
 packages:
-  bsdsar-1.10_2 action=install
-                version=1.1
+  bsdsar-1.10_2 action=upgrade
+                version=1.10_2
                 cmp=gt
 @end smallexample
 
-Now, due to the unfortunate fact that freebsd doesn't provide a
+The only gotcha about FreeBSD installation is trying to specify the package
+source location.  Due to the unfortunate fact that freebsd doesn't provide a
 command line option -- only an environment variable -- for specifying
 the source repository, you have a few options.
 
@@ -9559,8 +9607,15 @@ Get it from the main FreeBSD binary package home:
 
 @smallexample
   FreeBSDInstallCommand = ( "pkg_add -r %s" )
+@end smallexample
+
+Get it from a mounted directory
+
+@smallexample
+  FreeBSDInstallCommand = ( "pkg_add /nfs/packages/%s" )
 
 @end smallexample
+
 Or write a script that tells pkg_add where to find it, like so:
 
 @smallexample
@@ -9574,32 +9629,22 @@ PACKAGESITE=http://my.local.repository/packages/
 export PACKAGESITE
 /usr/sbin/pkg_add -r $*
 @end smallexample
-or even
-
-@smallexample
-#!/bin/sh
-cd /my/local/repository
-for pkg in $*
-/usr/sbin/pkg_add $@{pkg@}.tbz
-
-@end smallexample
-
 
 
 @end table
 
 @item define
-Specifies the list of classes to define if the specified package is
-installed.
+Specifies the list of classes to define if the specified package was
+installed (prior to actions taken if any)
 
 @item elsedefine
-Specifies the list of classes to define if the specified package is not
-installed.
+Specifies the list of classes to define if the specified package was not
+installed (prior to actions taken if any)
 
 @item action
 Specifies whether the packages should actually do anything about the
 situation it finds.  The default for this is to do nothing.  Of course,
-the classes in @code{define} and @code{elsedefine} will alwass be defined,
+the classes in @code{define} and @code{elsedefine} will always be defined,
 as applicable, regardless of the action specified.
 
 @table @code
@@ -9618,6 +9663,12 @@ DPKGInstallCommand
 @item
 SUN - 
 SUNInstallCommand
+@item
+Gentoo - 
+PortageInstallCommand
+@item
+FreeBSD - 
+FreeBSDInstallCommand
 @end itemize
 
 Each variable is of the format:
@@ -9626,11 +9677,39 @@ Each variable is of the format:
 FOOInstallCommand = ( "/usr/bin/foo --args %s --more-args" )
 @end smallexample
 
-The ---args are of course optional.  The %s is replaced with a space-separated
-list of the package names that were checked, and found to not be installed.
+The ---args are of course optional.  The %s is replaced with the package name
+that was checked, and found to not be installed.
+
+@item upgrade
+Upgrades the package using the commands associated with the selected
+package manager, if a matching package is found on the system at the requested
+version, as follows:
+
+@itemize @bullet
+@item
+FreeBSD - 
+FreeBSDRemoveCommand followed by FreeBSDInstallCommand
+@end itemize
 
 @item remove
-CURRENTLY PARSED BUT NOT IMPLEMENTED
+Removes the package using the command associated with the selected
+package manager, if a matching package is found on the system at the requested
+version, as follows:
+
+@itemize @bullet
+@item
+FreeBSD - 
+FreeBSDRemoveCommand
+@end itemize
+
+Each variable is of the format:
+
+@smallexample
+FOORemoveCommand = ( "/usr/bin/foo --args %s --more-args" )
+@end smallexample
+
+The ---args are of course optional.  The %s is replaced with a space-separated
+list of the package names that were checked, and found to be installed.
 @end table
 @end table
 
@@ -9642,7 +9721,7 @@ and the action= is set to install, the classes in @code{elsedefine} will
 be defined @b{regardless} of whether or not the install was successful.
 Assuming the package installed, the next run of cfagent will pick up that
 fact.  This has to be done since the package installs are batched, so there
-is no reliable way to know if a given package was installed.
+is no reliable way to know if a given package was installed successfully.
 
 @noindent
 Examples:
