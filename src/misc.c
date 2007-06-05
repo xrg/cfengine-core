@@ -510,6 +510,12 @@ else if (stat("/etc/redhat-release",&statbuf) != -1)
    linux_redhat_version();
    }
 
+if (stat("/etc/generic-release",&statbuf) != -1)
+   {
+   Verbose("\nThis appears to be a sun cobalt system.\n");
+   AddClassToHeap("SunCobalt");
+   }
+
 if (stat("/etc/SuSE-release",&statbuf) != -1)
    {
    Verbose("\nThis appears to be a SuSE system.\n");
@@ -521,6 +527,12 @@ if (stat("/etc/slackware-release",&statbuf) != -1)
    {
    Verbose("\nThis appears to be a slackware system.\n");
    AddClassToHeap("slackware");
+   }
+
+if (stat("/etc/generic-release",&statbuf) != -1)
+   {
+   Verbose("\nThis appears to be a sun cobalt system.\n");
+   AddClassToHeap("SunCobalt");
    }
  
 if (stat("/etc/debian_version",&statbuf) != -1)

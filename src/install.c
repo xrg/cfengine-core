@@ -6172,21 +6172,21 @@ for (sp = buffer; *sp != '\0'; sp+=strlen(gidbuff))
             }
          else if ((gr = getgrnam(gidbuff)) == NULL)
             {
-     if (!PARSING)
-        {
-        snprintf(OUTPUT,CF_BUFSIZE,"Unknown group %s\n",gidbuff);
-        CfLog(cferror,OUTPUT,"");
-        }
-     
-     gid = CF_UNKNOWN_GROUP;
-     groupcopy = gidbuff;
+            if (!PARSING)
+               {
+               snprintf(OUTPUT,CF_BUFSIZE,"Unknown group %s\n",gidbuff);
+               CfLog(cferror,OUTPUT,"");
+               }
+            
+            gid = CF_UNKNOWN_GROUP;
+            groupcopy = gidbuff;
             }
          else
             {
             gid = gr->gr_gid;
             }
          }
-
+      
       AddSimpleGidItem(&gidlist,gid,groupcopy);
       }
    }
