@@ -5,6 +5,8 @@
 	communicating with snmp devices.
 
 	Code refactoring for package management.
+
+	Bug fixes for problems introduced in 2.2.0.
 	
 2.2.0
 	Apart from minor changes, this version is about structural internal

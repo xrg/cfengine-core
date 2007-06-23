@@ -1723,7 +1723,7 @@ True if the current host lies within the specified IP range
 
 @item HostRange(@var{basename,start-stop})
 True if the current relative domain name begins with basename and ends with an integer
-between start and stop.  Note well: matching is case insensitive (both hostname and basename are converted to all upper case for comparison.) 
+between start and stop.  Note well: matching is case insensitive (both hostname and basename are converted to all lower case for comparison.) 
 
 @item IsDefined(@var{variable-id})
 True if the named variable is defined. Note well: use the variable name, not its contents (that is,

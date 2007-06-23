@@ -1082,9 +1082,10 @@ if ( cmp < start || cmp > end )
    return 1;
    }
 
-if (strcmp(refbase,ToUpperStr(arg0)) != 0)
-   {
-   Debug("SRDEBUG Failed on name (%s != %s)\n",refbase,ToUpperStr(arg0));
+ 
+if (strcmp(ToLowerStr(refbase),ToLowerStr(arg0)) != 0)
+   {   
+   Debug("SRDEBUG Failed on name (%s != %s)\n",ToLowerStr(refbase),ToLowerStr(arg0));
    return 1;
    }
 
