@@ -1055,6 +1055,7 @@ int FuzzyHostMatch(char *arg0, char* arg1, char *refhost)
 { struct Item *args;
   char *sp, refbase[CF_MAXVARSIZE];
   long cmp = -1, start = -1, end = -1;
+  char buf1[CF_BUFSIZE], buf2[CF_BUFSIZE];
 
 strncpy(refbase,refhost,strlen(refhost));
 sp = refbase + strlen(refbase) - 1;
@@ -1082,10 +1083,12 @@ if ( cmp < start || cmp > end )
    return 1;
    }
 
- 
-if (strcmp(ToLowerStr(refbase),ToLowerStr(arg0)) != 0)
-   {   
-   Debug("SRDEBUG Failed on name (%s != %s)\n",ToLowerStr(refbase),ToLowerStr(arg0));
+strncpy(buf1,ToLowerStr(refbase),strlen(refbase));
+strncpy(buf2,ToLowerStr(arg0),strlen(arg0));
+
+if (strcmp(buf1,buf2) != 0)
+   {
+   Debug("SRDEBUG Failed on name (%s != %s)\n",buf1,buf2);
    return 1;
    }
 
