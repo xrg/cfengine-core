@@ -22,11 +22,11 @@
 
 */
 
-/*****************************************************************************/
-/*                                                                           */
-/* File: scli.c                                                              */
-/*                                                                           */
-/*****************************************************************************/
+/****************************************************************************/
+/*                                                                          */
+/* File: scli.c                                                             */
+/*                                                                          */
+/****************************************************************************/
 
 #include "cf.defs.h"
 #include "cf.extern.h"
@@ -47,7 +47,7 @@ void SCLIScript()
   char chdir_buf[CF_EXPANDSIZE];
   char chroot_buf[CF_EXPANDSIZE];
   time_t start,end;
-  int print, outsourced;
+  int error,i;
   mode_t maskval = 0;
   FILE *pp;
   int preview = false;
@@ -57,15 +57,14 @@ if (VSCLI == NULL)
    return;
    }
 
-
-if (!GetLock(ASUniqueName("scli"),CF_SCLI_COMM,ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
-   {
-   ptr->done = 'y';
-   return;
-   }
-
 for (ptr = VSCLI; ptr != NULL; ptr=ptr->next)
    {
+   if (!GetLock(ASUniqueName("scli"),CF_SCLI_COMM,ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
+      {
+      ptr->done = 'y';
+      return;
+      }
+
    preview = (ptr->preview == 'y');
    
    if (IsExcluded(ptr->classes))
@@ -176,7 +175,6 @@ for (ptr = VSCLI; ptr != NULL; ptr=ptr->next)
              * not parse, then log as error.
              */
             
-            int i;
             int level = cferror;
             char *message = line;
             
@@ -224,26 +222,17 @@ for (ptr = VSCLI; ptr != NULL; ptr=ptr->next)
             }
          else 
             {
-            /*
-             * Dumb script - echo non-empty lines to standard output.
-             */
-            
-            print = false;
-            
-            for (sp = line; *sp != '\0'; sp++)
+            for (i = 0; CF_SCLICODES[i][0] != NULL; i++)
                {
-               if (! isspace((int)*sp))
+               if (strncmp(CF_SCLICODES[cfscli_ok][0],line,3) != 0)
                   {
-                  print = true;
-                  break;
+                  error = true;
+                  /* what to do with this? skip rest for this server? */
                   }
                }
             
-            if (print)
-               {
-               snprintf(OUTPUT,CF_BUFSIZE,"%s: %s\n",VPREFIX,comm,line);
-               CfLog(cfinform,OUTPUT,"");
-               }
+            snprintf(OUTPUT,CF_BUFSIZE,"%s\n",line);
+            CfLog(cfinform,OUTPUT,"");
             }
          }
       

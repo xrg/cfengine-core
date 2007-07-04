@@ -1242,7 +1242,6 @@ char *OBS[CF_OBSERVABLES] =
 /*                                                                 */
 /* Network client-server object : Net                              */
 /*                                                                 */
-/*                                                                 */
 /*******************************************************************/
 
   PRIVATE char CFSERVER[CF_MAXVARSIZE];
@@ -1278,7 +1277,6 @@ char *OBS[CF_OBSERVABLES] =
 /*******************************************************************/
 /*                                                                 */
 /* Adaptive lock object : Lock                                     */
-/*                                                                 */
 /*                                                                 */
 /*******************************************************************/
 
@@ -1328,6 +1326,33 @@ char *OBS[CF_OBSERVABLES] =
      CF_SHA_LEN,
      0
      };
+
+/*******************************************************************/
+/*                                                                 */
+/* SCLI interface                                                  */
+/*                                                                 */
+/*******************************************************************/
+
+PRIVATE char *CF_SCLICODES[CF_MAX_SCLICODES][2] =
+   {
+   "100","Arbitrary message",
+   "200","Normal return code",
+   "201","Return and exit the command loop",
+   "300","Generic error return code",
+   "301","No association to SNMP peer",
+   "302","Command does not support XML",
+   "400","Generic syntax error",
+   "401","Syntax error in number of args",
+   "402","Syntax error in regexp",
+   "403","Syntax error in number",
+   "404","Syntax error in value",
+   "405","Syntax error in tokenizer",
+   "406","Syntax error unknown command",
+   "500","Snmp error return code",
+   "501","Snmp name lookup error",
+   NULL,NULL
+   };
+
 
 
 /* EOF */

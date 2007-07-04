@@ -518,11 +518,13 @@ extern char COMMENTSTART[], COMMENTEND[];
 
 extern char *OBS[CF_OBSERVABLES];
 
+extern char *CF_SCLICODES[CF_MAX_SCLICODES][2];
+
+
 /* GNU REGEXP */
 
 extern struct re_pattern_buffer *SEARCHPATTBUFF;
 extern struct re_pattern_buffer *PATTBUFFER;
-
 
 extern char *CF_DIGEST_TYPES[4][2];
 extern int CF_DIGEST_SIZES[4];

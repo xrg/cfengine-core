@@ -294,6 +294,7 @@ extern int errno;
 #define CF_HASHTABLESIZE 4969 /* prime number */
 #define CF_MACROALPHABET 61    /* a-z, A-Z plus a bit */
 #define CF_MAXSHELLARGS 30
+#define CF_MAX_SCLICODES 15
 #define CF_SAMEMODE 0
 #define CF_SAME_OWNER ((uid_t)-1)
 #define CF_UNKNOWN_OWNER ((uid_t)-2)
@@ -1938,6 +1939,28 @@ struct ShellComm
    char              noabspath;
    int ifelapsed;
    int expireafter;
+   };
+
+
+
+enum cfscli_codes
+   {
+   cfscli_arb,
+   cfscli_ok,
+   cfscli_return,
+   cfscli_error,
+   cfscli_noconnect,
+   cfscli_noxml,
+   cfscli_syntaxerr,
+   cfscli_syntaxerr_args,
+   cfscli_syntaxerr_regex,
+   cfscli_syntaxerr_num,
+   cfscli_syntaxerr_val,
+   cfscli_syntaxerr_token,
+   cfscli_syntaxerr_badcom,
+   cfscli_snmp_return,
+   cfscli_snmp_lookup,
+   cfscli_null
    };
 
 /*******************************************************************/
