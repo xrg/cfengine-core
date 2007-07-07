@@ -2751,10 +2751,6 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       {
       continue;
       }
-   else
-      {
-      ptr->done = 'y';
-      }
 
    snprintf(lock,CF_BUFSIZE-1,"%s_%d_%d",ptr->name,ptr->cmp,ptr->action);
    
