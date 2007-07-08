@@ -32,6 +32,7 @@
 
 #include "cf.defs.h"
 #include "cf.extern.h"
+#include <math.h>
 
 # if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
 pthread_mutex_t MUTEX_GETADDR = PTHREAD_MUTEX_INITIALIZER;
@@ -62,7 +63,11 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    return;
    }
 
+#ifdef CF_OLD_DB
+if ((errno = dbp->open(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
 if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#endif
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open performance database %s\n",name);
    CfLog(cferror,OUTPUT,"db_open");
@@ -159,9 +164,9 @@ if ((errno = db_create(&dbpent,dbenv,0)) != 0)
    }
 
 #ifdef CF_OLD_DB
-if ((errno = dbp->open(dbpent,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = dbpent->open(dbpent,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((errno = dbp->open(dbpent,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = dbpent->open(dbpent,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
@@ -432,7 +437,7 @@ void CheckFriendReliability()
   struct QPoint entry;
   struct Item *ip, *hostlist = NULL;
   double entropy,average,var,sum,sum_av;
-  time_t now, then;
+  time_t now = time(NULL), then, lastseen;
 
 Verbose("CheckFriendReliability()\n");
 snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
@@ -483,36 +488,35 @@ dbp->close(dbp,0);
 
 /* Now go through each host and recompute entropy */
 
-if ((errno = db_create(&dbpent,dbenv,0)) != 0)
-   {
-   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't init reliability profile database %s\n",name);
-   CfLog(cferror,OUTPUT,"db_open");
-   return;
-   }
-
 for (ip = hostlist; ip != NULL; ip=ip->next)
    {
    snprintf(name,CF_BUFSIZE-1,"%s/%s.%s",VLOCKDIR,CF_LASTDB_FILE,ip->name);
    Verbose("Consulting profile %s\n",name);
 
+   if ((errno = db_create(&dbpent,dbenv,0)) != 0)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't init reliability profile database %s\n",name);
+      CfLog(cferror,OUTPUT,"db_open");
+      return;
+      }
+   
 #ifdef CF_OLD_DB
-   if ((errno = dbp->open(dbpent,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+   if ((errno = dbpent->open(dbpent,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-   if ((errno = dbp->open(dbpent,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+   if ((errno = dbpent->open(dbpent,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
       {
       snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
       CfLog(cferror,OUTPUT,"db_open");
-      dbp->close(dbp,0);
-      return;
+      continue;
       }
 
    for (i = 0; i < CF_RELIABLE_CLASSES; i++)
       {
-      n[i] = n_av[i] = 0;
+      n[i] = n_av[i] = 0.0;
       }
 
-   total = 0;
+   total = 0.0;
 
    for (now = CF_MONDAY_MORNING; now < CF_MONDAY_MORNING+CF_WEEK; now += CF_MEASURE_INTERVAL)
       {
@@ -537,8 +541,14 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
          {
          memcpy(&entry,value.data,sizeof(entry));
          then = (time_t)entry.q;
+         lastseen = now - then;
+         if (lastseen < 0)
+            {
+            lastseen = 0; /* Never seen before, so pretend */
+            }
          average = (double)entry.expect;
          var = (double)entry.var;
+         Debug("then = %ld, lastseen = %ld, average=%.2f\n",then,lastseen,average);
          }
       else
          {
@@ -547,11 +557,12 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
 
       for (i = 0; i < CF_RELIABLE_CLASSES; i++)
          {
-         if (then >= i*CF_HOUR && then <= (i+1)*CF_HOUR)
+         if (lastseen >= i*CF_HOUR && lastseen <= (i+1)*CF_HOUR)
             {
             n[i]++;
             }
-         if (average >= i*CF_HOUR && average <= (i+1)*CF_HOUR)
+         
+         if (average >= (double)(i*CF_HOUR) && average <= (double)((i+1)*CF_HOUR))
             {
             n_av[i]++;
             }
@@ -560,7 +571,7 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
       total++;
       }
 
-   sum = sum_av = 0;
+   sum = sum_av = 0.0;
    
    for (i = 0; i < CF_RELIABLE_CLASSES; i++)
       {
@@ -572,11 +583,23 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
 
    Verbose("Reliabilities sum to %.2f and %.2f\n",sum,sum_av);
 
-   sum = sum_av = 0;
+   sum = sum_av = 0.0;
    
    for (i = 0; i < CF_RELIABLE_CLASSES; i++)
       {
+      if (p[i] == 0.0)
+         {
+         continue;
+         }
       sum -= p[i] * log(p[i]);
+      }
+
+   for (i = 0; i < CF_RELIABLE_CLASSES; i++)
+      {
+      if (p_av[i] == 0.0)
+         {
+         continue;
+         }
       sum_av -= p_av[i] * log(p_av[i]);
       }
 
