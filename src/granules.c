@@ -100,7 +100,7 @@ return timekey;
 
 char *GenTimeKey(time_t now)
  
-{ char str[64];
+{ static char str[64];
     
 sprintf(str,"%s",ctime(&now));
 

@@ -294,7 +294,7 @@ extern int errno;
 #define CF_HASHTABLESIZE 4969 /* prime number */
 #define CF_MACROALPHABET 61    /* a-z, A-Z plus a bit */
 #define CF_MAXSHELLARGS 30
-#define CF_MAX_SCLICODES 15
+#define CF_MAX_SCLICODES 16
 #define CF_SAMEMODE 0
 #define CF_SAME_OWNER ((uid_t)-1)
 #define CF_UNKNOWN_OWNER ((uid_t)-2)
@@ -322,7 +322,6 @@ extern int errno;
 #define CF_METHODREPLY  1
 #define CF_EXEC_IFELAPSED 5
 #define CF_EXEC_EXPIREAFTER 10
-
 
 /* Need this to to avoid conflict with solaris 2.6 and db.h */
 
@@ -436,6 +435,8 @@ extern int errno;
 #define CF_NETATTR   7 /* icmp udp dns tcpsyn tcpfin tcpack */
 #define PH_LIMIT 10
 #define CF_WEEK   (7.0*24.0*3600.0)
+#define CF_HOUR   3600
+#define CF_RELIABLE_CLASSES 7*24         /* CF_WEEK/CF_HOUR */
 #define CF_MEASURE_INTERVAL (5.0*60.0)
 
 #define CF_OBSERVABLES 91

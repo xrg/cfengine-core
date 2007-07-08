@@ -117,6 +117,7 @@ cfservd_SOURCES =							\
 	varstring.c							\
 	popen.c								\
 	popen_def.c							\
+	granules.c							\
 	globals.c							\
 	filenames.c							\
 	macro.c								\

@@ -563,6 +563,7 @@ char *IPString2UQHostname (char *name);
 void RecordPerformance(char *name, time_t t, double value);
 void LastSeen (char *host,enum roles role);
 void CheckFriendConnections(int hours);
+void CheckFriendReliability(void);
 DBT *NewDBKey(char *name);
 void DeleteDBKey(DBT *key);
 DBT *NewDBValue(void *ptr,int size);

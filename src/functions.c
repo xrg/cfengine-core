@@ -1793,6 +1793,7 @@ time = atoi(argv[0]);
 if (time >= 0)
    {
    CheckFriendConnections(time);
+   CheckFriendReliability();
    }
  
 strcpy(value,""); /* No reply */

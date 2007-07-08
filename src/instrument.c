@@ -106,7 +106,7 @@ dbp->close(dbp,0);
 
 void LastSeen(char *hostname,enum roles role)
 
-{ DB *dbp;
+{ DB *dbp,*dbpent;
   DB_ENV *dbenv = NULL;
   char name[CF_BUFSIZE],databuf[CF_BUFSIZE];
   time_t now = time(NULL);
@@ -127,14 +127,14 @@ Debug("LastSeen(%s) reg\n",hostname);
 snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_OLDLASTDB_FILE);
 unlink(name);
 
-snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
-
 if ((errno = db_create(&dbp,dbenv,0)) != 0)
    {
-   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't init last-seen database %s\n",name);
    CfLog(cferror,OUTPUT,"db_open");
    return;
    }
+
+snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
 
 #ifdef CF_OLD_DB
 if ((errno = dbp->open(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
@@ -147,6 +147,29 @@ if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
    dbp->close(dbp,0);
    return;
    }
+
+/* Now open special file for peer entropy record - INRIA intermittency */
+snprintf(name,CF_BUFSIZE-1,"%s/%s.%s",VLOCKDIR,CF_LASTDB_FILE,hostname);
+
+if ((errno = db_create(&dbpent,dbenv,0)) != 0)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't init last-seen database %s\n",name);
+   CfLog(cferror,OUTPUT,"db_open");
+   return;
+   }
+
+#ifdef CF_OLD_DB
+if ((errno = dbp->open(dbpent,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+if ((errno = dbp->open(dbpent,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#endif
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
+   CfLog(cferror,OUTPUT,"db_open");
+   dbp->close(dbp,0);
+   return;
+   }
+
 
 #ifdef HAVE_PTHREAD_H  
 if (pthread_mutex_lock(&MUTEX_GETADDR) != 0)
@@ -218,6 +241,7 @@ if (lastseen > (double)lsea)
 else
    {
    WriteDB(dbp,databuf,&newq,sizeof(newq));
+   WriteDB(dbpent,GenTimeKey(now),&newq,sizeof(newq));
    }
 
 #ifdef HAVE_PTHREAD_H  
@@ -229,6 +253,7 @@ if (pthread_mutex_unlock(&MUTEX_GETADDR) != 0)
 #endif
 
 dbp->close(dbp,0);
+dbpent->close(dbpent,0);
 }
 
 /***************************************************************/
@@ -391,6 +416,178 @@ dbcp->c_close(dbcp);
 dbp->close(dbp,0);
 }
 
+
+/***************************************************************/
+
+void CheckFriendReliability()
+
+{ DBT key,value;
+  DB *dbp,*dbpent;
+  DBC *dbcp;
+  DB_ENV *dbenv = NULL;
+  int i,ret;
+  double n[CF_RELIABLE_CLASSES],n_av[CF_RELIABLE_CLASSES],total;
+  double p[CF_RELIABLE_CLASSES],p_av[CF_RELIABLE_CLASSES];
+  char name[CF_BUFSIZE],hostname[CF_BUFSIZE],timekey[CF_MAXVARSIZE];
+  struct QPoint entry;
+  struct Item *ip, *hostlist = NULL;
+  double entropy,average,var,sum,sum_av;
+  time_t now, then;
+
+Verbose("CheckFriendReliability()\n");
+snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
+
+if ((errno = db_create(&dbp,dbenv,0)) != 0)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
+   CfLog(cferror,OUTPUT,"db_open");
+   return;
+   }
+
+#ifdef CF_OLD_DB
+if ((errno = dbp->open(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#endif
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
+   CfLog(cferror,OUTPUT,"db_open");
+   dbp->close(dbp,0);
+   return;
+   }
+
+if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
+   {
+   CfLog(cferror,"Error reading from last-seen database","");
+   dbp->err(dbp, ret, "DB->cursor");
+   return;
+   }
+
+memset(&key, 0, sizeof(key));
+memset(&value, 0, sizeof(value));
+
+while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
+   {
+   strcpy(hostname,(char *)key.data+1);
+
+   if (!IsItemIn(hostlist,hostname))
+      {
+      /* Check hostname not recorded twice with +/- */
+      AppendItem(&hostlist,hostname,NULL);
+      Verbose(" Measuring reliability of %s\n",hostname);
+      }
+   }
+
+dbcp->c_close(dbcp);
+dbp->close(dbp,0);
+
+/* Now go through each host and recompute entropy */
+
+if ((errno = db_create(&dbpent,dbenv,0)) != 0)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't init reliability profile database %s\n",name);
+   CfLog(cferror,OUTPUT,"db_open");
+   return;
+   }
+
+for (ip = hostlist; ip != NULL; ip=ip->next)
+   {
+   snprintf(name,CF_BUFSIZE-1,"%s/%s.%s",VLOCKDIR,CF_LASTDB_FILE,ip->name);
+   Verbose("Consulting profile %s\n",name);
+
+#ifdef CF_OLD_DB
+   if ((errno = dbp->open(dbpent,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+   if ((errno = dbp->open(dbpent,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#endif
+      {
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
+      CfLog(cferror,OUTPUT,"db_open");
+      dbp->close(dbp,0);
+      return;
+      }
+
+   for (i = 0; i < CF_RELIABLE_CLASSES; i++)
+      {
+      n[i] = n_av[i] = 0;
+      }
+
+   total = 0;
+
+   for (now = CF_MONDAY_MORNING; now < CF_MONDAY_MORNING+CF_WEEK; now += CF_MEASURE_INTERVAL)
+      {
+      memset(&key,0,sizeof(key));       
+      memset(&value,0,sizeof(value));
+      
+      strcpy(timekey,GenTimeKey(now));
+      
+      key.data = timekey;
+      key.size = strlen(timekey)+1;
+      
+      if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
+         {
+         if (errno != DB_NOTFOUND)
+            {
+            dbp->err(dbp,errno,NULL);
+            exit(1);
+            }
+         }
+      
+      if (value.data != NULL)
+         {
+         memcpy(&entry,value.data,sizeof(entry));
+         then = (time_t)entry.q;
+         average = (double)entry.expect;
+         var = (double)entry.var;
+         }
+      else
+         {
+         continue;
+         }
+
+      for (i = 0; i < CF_RELIABLE_CLASSES; i++)
+         {
+         if (then >= i*CF_HOUR && then <= (i+1)*CF_HOUR)
+            {
+            n[i]++;
+            }
+         if (average >= i*CF_HOUR && average <= (i+1)*CF_HOUR)
+            {
+            n_av[i]++;
+            }
+         }
+       
+      total++;
+      }
+
+   sum = sum_av = 0;
+   
+   for (i = 0; i < CF_RELIABLE_CLASSES; i++)
+      {
+      p[i]    = n[i]/total;
+      p_av[i] = n_av[i]/total;
+      sum += p[i];
+      sum_av += p_av[i];
+      }
+
+   Verbose("Reliabilities sum to %.2f and %.2f\n",sum,sum_av);
+
+   sum = sum_av = 0;
+   
+   for (i = 0; i < CF_RELIABLE_CLASSES; i++)
+      {
+      sum -= p[i] * log(p[i]);
+      sum_av -= p_av[i] * log(p_av[i]);
+      }
+
+   Verbose("Scaled entropy for %s = %.1f %%\n",ip->name,sum/log((double)CF_RELIABLE_CLASSES)*100.0);
+   Verbose("Expected entropy for %s = %.1f %%\n",ip->name,sum_av/log((double)CF_RELIABLE_CLASSES)*100.0);
+   
+   dbpent->close(dbpent,0);
+   }
+
+DeleteItemList(hostlist);
+}
 
 /*****************************************************************************/
 /* level 1                                                                   */
