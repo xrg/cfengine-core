@@ -100,6 +100,7 @@ SummarizeAverages();
 WriteGraphFiles();
 WriteHistograms();
 DiskArrivals();
+
 return 0;
 }
 
@@ -887,3 +888,4 @@ if (SEPARATE)
       }
    }
 }
+

@@ -2737,8 +2737,9 @@ void CheckPackages()
   char lock[CF_BUFSIZE];
   /* pkgmgr_none will always be the highest number in the enum so set
      the array size with that */
-  char *package_install_list[pkgmgr_none] = { NULL };
-  char *package_remove_list[pkgmgr_none] = { NULL };
+  struct Item *pending_pkgs = NULL;
+  enum pkgmgrs prev_pkgmgr = pkgmgr_none;
+  enum pkgactions prev_action = pkgaction_none;
 
 for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
    {
@@ -2763,50 +2764,81 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
    match = PackageCheck(ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp);
    Verbose("Match status for %s is %u\n", ptr->name, match );
 
+   /* Process any queued actions (install/remove). */
+   if ((pending_pkgs) && ((ptr->action != prev_action) || (ptr->pkgmgr != prev_pkgmgr)))
+      {
+      ProcessPendingPackages(prev_pkgmgr, prev_action, &pending_pkgs);
+      DeleteItemList( pending_pkgs );
+      }
+
    /* Handle install/remove logic now. */
    if (match)
       {
+      AddMultipleClasses(ptr->defines);
       if (ptr->action == pkgaction_remove) 
          {
-         Verbose("Package removal for %s: %s\n", PKGMGRTEXT[ptr->pkgmgr], ptr->name );
-         RemovePackage( ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp );
+         PackageList(ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp, &pending_pkgs);
+	     AppendItem(&pending_pkgs, ptr->name, NULL);
+
+         /* Some package managers operate best doing things one at a time. */
+	     if ( (ptr->pkgmgr == pkgmgr_freebsd) || (ptr->pkgmgr == pkgmgr_sun) )
+            {
+            RemovePackage( ptr->pkgmgr, &pending_pkgs );
+            DeleteItemList( pending_pkgs );
+            }
          }
       else if (ptr->action == pkgaction_upgrade)
          {
-         Verbose("Package removal for %s: %s\n", PKGMGRTEXT[ptr->pkgmgr], ptr->name );
-         if( RemovePackage( ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp ) ) 
-            {
-            Verbose("Package install for %s: %s\n", PKGMGRTEXT[ptr->pkgmgr], ptr->name );
-            InstallPackage( ptr->name, ptr->pkgmgr );
-            }
-         else 
-            {
-            Verbose("Package %s cannot be upgraded because the old version was not removed.\n", ptr->name );
-            }
+         UpgradePackage( ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp );
          }
-      }
-   else
-      {
-      if (ptr->action == pkgaction_install)
-         {
-         Verbose("Package install for %s: %s\n", PKGMGRTEXT[ptr->pkgmgr], ptr->name );
-         InstallPackage( ptr->name, ptr->pkgmgr );
-         }
-      }
- 
-   /* Not sure why we didn't do this above? */
-   if (match)
-      {
-      AddMultipleClasses(ptr->defines);
       }
    else
       {
       AddMultipleClasses(ptr->elsedef);
+      if (ptr->action == pkgaction_install)
+         {
+	     AppendItem(&pending_pkgs, ptr->name, NULL);
+
+         /* Some package managers operate best doing things one at a time. */
+	     if ( (ptr->pkgmgr == pkgmgr_freebsd) || (ptr->pkgmgr == pkgmgr_sun) )
+            {
+            InstallPackage( ptr->pkgmgr, &pending_pkgs );
+            DeleteItemList( pending_pkgs );
+            }
+         }
       }
-   
+ 
    ptr->done = 'y';
+   if( ptr->action != pkgaction_none )
+      {
+      prev_action = ptr->action;
+      prev_pkgmgr = ptr->pkgmgr;
+      }
    ReleaseCurrentLock();
+
+   if(pending_pkgs != NULL)
+      {
+      ProcessPendingPackages(prev_pkgmgr, prev_action, &pending_pkgs);
+      DeleteItemList( pending_pkgs );
+      }
    }
+}
+
+void ProcessPendingPackages (enum pkgmgrs pkgmgr, enum pkgactions action, struct Item **pending_pkgs)
+{
+   switch(action)
+      {
+      case pkgaction_remove:
+         RemovePackage(pkgmgr, pending_pkgs);
+         break;
+      case pkgaction_install:
+         InstallPackage(pkgmgr, pending_pkgs);
+         break;
+      default:
+         snprintf(OUTPUT,CF_BUFSIZE,"Internal error!  Tried to process package with an unknown action: %d.  This should never happen!\n", action);
+         CfLog(cferror,OUTPUT,"");
+         break; 
+      }
 }
 
 /*******************************************************************/

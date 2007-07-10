@@ -163,6 +163,7 @@ while (!feof(pp))
           break;
       case '=':
           sscanf(line+1,"%[^=]=%[^\n]",name,content);
+          Verbose("Defined Macro: %s, Value: %s\n",name,content);
           AddMacroValue(CONTEXTID,name,content);
           break;
           

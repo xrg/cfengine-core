@@ -886,8 +886,11 @@ void DoAlerts (void);
 
 /* package.c */
 int PackageCheck (char *package, enum pkgmgrs pkgmgr, char *version, enum cmpsense cmp);
-int InstallPackage  (char *name, enum pkgmgrs pkgmgr);
-int RemovePackage  (char *name, enum pkgmgrs pkgmgr, char *version, enum cmpsense cmp);
+int PackageList (char *package, enum pkgmgrs pkgmgr, char *version, enum cmpsense cmp, struct Item **pkglist);
+int UpgradePackage (char *package, enum pkgmgrs pkgmgr, char *version, enum cmpsense cmp);
+int InstallPackage (enum pkgmgrs pkgmgr, struct Item **pkglist);
+int RemovePackage (enum pkgmgrs pkgmgr, struct Item **pkglist);
+void ProcessPendingPackages (enum pkgmgrs pkgmgr, enum pkgactions action, struct Item **pkglist);
 
 /* popen.c */
 
