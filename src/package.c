@@ -83,211 +83,6 @@ int xisalnum(int c)
  return (xisalpha(c) || xisdigit(c));
 }
 
-/*********************************************************************/
-/* RPM */
-/* returns: 1 - found a match
- *          0 - found no match
- */
-
-/*********************************************************************/
-
-int RPMPackageCheck(char *package,char *version,enum cmpsense cmp)
-
-{ FILE *pp;
-  struct Item *evrlist = NULL;
-  struct Item *evr;
-  int epochA = 0; /* What is installed.  Assume 0 if we don't get one. */
-  int epochB = 0; /* What we are looking for.  Assume 0 if we don't get one. */
-  const char *eA = NULL; /* What is installed */
-  const char *eB = NULL; /* What we are looking for */
-  const char *vA = NULL; /* What is installed */
-  const char *vB = NULL; /* What we are looking for */
-  const char *rA = NULL; /* What is installed */
-  const char *rB = NULL; /* What we are looking for */
-  enum cmpsense result;
-  int match = 0;
-
-if (GetMacroValue(CONTEXTID,"RPMcommand"))
-   {
-   snprintf(VBUFF,CF_BUFSIZE,"%s -q --queryformat \"%%{EPOCH}:%%{VERSION}-%%{RELEASE}\\n\" %s",GetMacroValue(CONTEXTID,"RPMcommand"),package);
-   }
-else
-   {
-   snprintf(VBUFF,CF_BUFSIZE,"/bin/rpm -q --queryformat \"%%{EPOCH}:%%{VERSION}-%%{RELEASE}\\n\" %s", package);
-   }
-
-if ((pp = cfpopen(VBUFF, "r")) == NULL)
-  {
-  Verbose("Could not execute the RPM command.  Assuming package not installed.\n");
-  return 0;
-  }
-
- while(!feof(pp))
-    {
-    *VBUFF = '\0';
-
-    ReadLine(VBUFF,CF_BUFSIZE,pp);
-
-    if (*VBUFF != '\0')
-       {
-       AppendItem(&evrlist,VBUFF,"");
-       }
-    }
- 
-/* Non-zero exit status means that we could not find the package, so
- * Zero the list and bail. */
-
- if (cfpclose(pp) != 0)
-    {
-    DeleteItemList(evrlist);
-    evrlist = NULL;
-    }
- 
- if (evrlist == NULL)
-    {
-    Verbose("RPM Package %s not installed.\n", package);
-    return 0;
-    }
- 
-
-Verbose("RPMCheckPackage(): Requested %s %s %s\n", package, CMPSENSETEXT[cmp],(version[0] ? version : "ANY"));
-
-/* If no version was specified, just return 1, because if we got this far
- * some package by that name exists. */
-
-if (!version[0])
-  {
-  DeleteItemList(evrlist);
-  return 1;
-  }
-
-/* Parse the EVR we are looking for once at the start */
- 
-ParseEVR(version, &eB, &vB, &rB);
-
-/* The rule here will be: if any package in the list matches, then the
- * first one to match wins, and we bail out. */
-
- for (evr = evrlist; evr != NULL; evr=evr->next)
-   {
-   char *evrstart;
-   evrstart = evr->name;
-
-   /* Start out assuming the comparison will be equal. */
-   result = cmpsense_eq;
-
-   /* RPM returns the string "(none)" for the epoch if there is none
-    * instead of the number 0.  This will cause ParseEVR() to misinterpret
-    * it as part of the version component, since epochs must be numeric.
-    * If we get "(none)" at the start of the EVR string, we must be careful
-    * to replace it with a 0 and reset evrstart to where the 0 is.  Ugh.
-    */
-
-   if (!strncmp(evrstart, "(none)", strlen("(none)")))
-     {
-     /* We have no EVR in the installed package.  Fudge it. */
-     evrstart = strchr(evrstart, ':') - 1;
-     *evrstart = '0';
-     }
-
-   Verbose("RPMCheckPackage(): Trying installed version %s\n", evrstart);
-   ParseEVR(evrstart, &eA, &vA, &rA);
-
-   /* Get the epochs at ints */
-   epochA = atol(eA);   /* The above code makes sure we always have this. */
-
-   if (eB && *eB) /* the B side is what the user entered.  Better check. */
-     {
-     epochB = atol(eB);
-     }
-
-   /* First try the epoch. */
-
-   if (epochA > epochB)
-     {
-     result = cmpsense_gt;
-     }
-
-   if (epochA < epochB)
-     {
-     result = cmpsense_lt;
-     }
-
-   /* If that did not decide it, try version.  We must *always* have
-    * a version string.  That's just the way it is.*/
-
-   if (result == cmpsense_eq)
-     {
-     switch (rpmvercmp(vA, vB))
-       {
-       case 1:    result = cmpsense_gt;
-                  break;
-       case -1:   result = cmpsense_lt;
-                  break;
-       }
-     }
-
-   /* if we wind up here, everything rides on the release if both have it.
-    * RPM always stores a release internally in the database, so the A side
-    * will have it.  It's just a matter of whether or not the user cares
-    * about it at this point. */
-
-   if ((result == cmpsense_eq) && (rB && *rB))
-      {
-      switch (rpmvercmp(rA, rB))
-         {
-         case 1:  result = cmpsense_gt;
-             break;
-         case -1: result = cmpsense_lt;
-             break;
-         }
-      }
-
-   Verbose("Comparison result: %s\n",CMPSENSETEXT[result]);
-   
-   switch(cmp)
-      {
-      case cmpsense_gt:
-          match = (result == cmpsense_gt);
-          break;
-      case cmpsense_ge:
-          match = (result == cmpsense_gt || result == cmpsense_eq);
-          break;
-      case cmpsense_lt:
-          match = (result == cmpsense_lt);
-          break;
-      case cmpsense_le:
-          match = (result == cmpsense_lt || result == cmpsense_eq);
-          break;
-      case cmpsense_eq:
-          match = (result == cmpsense_eq);
-          break;
-      case cmpsense_ne:
-          match = (result != cmpsense_eq);
-          break;
-      }
-   
-   /* If we find a match, just return it now, and don't bother checking
-    * anything else RPM returned, if it returns multiple packages */
-   
-   if (match)
-      {
-      DeleteItemList(evrlist);
-      return 1;
-      }
-   }
- 
-/* If we manage to make it out of the loop, we did not find a match. */
-
-DeleteItemList(evrlist);
-return 0;
-}
-
-int RPMPackageList (char *package, char *version, enum cmpsense cmp, struct Item **pkglist)
-{
-   return 0; /* not implemented yet */
-}
-
 /* This is moved here to allow do.c to be ignorant of the various package managers */
 int PackageCheck(char* package, enum pkgmgrs pkgmgr, char *version,enum cmpsense cmp)
 { int match=0;
@@ -657,6 +452,210 @@ int BuildCommandLine(char *resolvedcmd, char *rawcmd, struct Item *pkglist )
    return 1;
 }
       
+/*********************************************************************/
+/* RPM */
+/* returns: 1 - found a match
+ *          0 - found no match
+ */
+/*********************************************************************/
+
+int RPMPackageCheck(char *package,char *version,enum cmpsense cmp)
+
+{ FILE *pp;
+  struct Item *evrlist = NULL;
+  struct Item *evr;
+  int epochA = 0; /* What is installed.  Assume 0 if we don't get one. */
+  int epochB = 0; /* What we are looking for.  Assume 0 if we don't get one. */
+  const char *eA = NULL; /* What is installed */
+  const char *eB = NULL; /* What we are looking for */
+  const char *vA = NULL; /* What is installed */
+  const char *vB = NULL; /* What we are looking for */
+  const char *rA = NULL; /* What is installed */
+  const char *rB = NULL; /* What we are looking for */
+  enum cmpsense result;
+  int match = 0;
+
+if (GetMacroValue(CONTEXTID,"RPMcommand"))
+   {
+   snprintf(VBUFF,CF_BUFSIZE,"%s -q --queryformat \"%%{EPOCH}:%%{VERSION}-%%{RELEASE}\\n\" %s",GetMacroValue(CONTEXTID,"RPMcommand"),package);
+   }
+else
+   {
+   snprintf(VBUFF,CF_BUFSIZE,"/bin/rpm -q --queryformat \"%%{EPOCH}:%%{VERSION}-%%{RELEASE}\\n\" %s", package);
+   }
+
+if ((pp = cfpopen(VBUFF, "r")) == NULL)
+  {
+  Verbose("Could not execute the RPM command.  Assuming package not installed.\n");
+  return 0;
+  }
+
+ while(!feof(pp))
+    {
+    *VBUFF = '\0';
+
+    ReadLine(VBUFF,CF_BUFSIZE,pp);
+
+    if (*VBUFF != '\0')
+       {
+       AppendItem(&evrlist,VBUFF,"");
+       }
+    }
+ 
+/* Non-zero exit status means that we could not find the package, so
+ * Zero the list and bail. */
+
+ if (cfpclose(pp) != 0)
+    {
+    DeleteItemList(evrlist);
+    evrlist = NULL;
+    }
+ 
+ if (evrlist == NULL)
+    {
+    Verbose("RPM Package %s not installed.\n", package);
+    return 0;
+    }
+ 
+
+Verbose("RPMCheckPackage(): Requested %s %s %s\n", package, CMPSENSETEXT[cmp],(version[0] ? version : "ANY"));
+
+/* If no version was specified, just return 1, because if we got this far
+ * some package by that name exists. */
+
+if (!version[0])
+  {
+  DeleteItemList(evrlist);
+  return 1;
+  }
+
+/* Parse the EVR we are looking for once at the start */
+ 
+ParseEVR(version, &eB, &vB, &rB);
+
+/* The rule here will be: if any package in the list matches, then the
+ * first one to match wins, and we bail out. */
+
+ for (evr = evrlist; evr != NULL; evr=evr->next)
+   {
+   char *evrstart;
+   evrstart = evr->name;
+
+   /* Start out assuming the comparison will be equal. */
+   result = cmpsense_eq;
+
+   /* RPM returns the string "(none)" for the epoch if there is none
+    * instead of the number 0.  This will cause ParseEVR() to misinterpret
+    * it as part of the version component, since epochs must be numeric.
+    * If we get "(none)" at the start of the EVR string, we must be careful
+    * to replace it with a 0 and reset evrstart to where the 0 is.  Ugh.
+    */
+
+   if (!strncmp(evrstart, "(none)", strlen("(none)")))
+     {
+     /* We have no EVR in the installed package.  Fudge it. */
+     evrstart = strchr(evrstart, ':') - 1;
+     *evrstart = '0';
+     }
+
+   Verbose("RPMCheckPackage(): Trying installed version %s\n", evrstart);
+   ParseEVR(evrstart, &eA, &vA, &rA);
+
+   /* Get the epochs at ints */
+   epochA = atol(eA);   /* The above code makes sure we always have this. */
+
+   if (eB && *eB) /* the B side is what the user entered.  Better check. */
+     {
+     epochB = atol(eB);
+     }
+
+   /* First try the epoch. */
+
+   if (epochA > epochB)
+     {
+     result = cmpsense_gt;
+     }
+
+   if (epochA < epochB)
+     {
+     result = cmpsense_lt;
+     }
+
+   /* If that did not decide it, try version.  We must *always* have
+    * a version string.  That's just the way it is.*/
+
+   if (result == cmpsense_eq)
+     {
+     switch (rpmvercmp(vA, vB))
+       {
+       case 1:    result = cmpsense_gt;
+                  break;
+       case -1:   result = cmpsense_lt;
+                  break;
+       }
+     }
+
+   /* if we wind up here, everything rides on the release if both have it.
+    * RPM always stores a release internally in the database, so the A side
+    * will have it.  It's just a matter of whether or not the user cares
+    * about it at this point. */
+
+   if ((result == cmpsense_eq) && (rB && *rB))
+      {
+      switch (rpmvercmp(rA, rB))
+         {
+         case 1:  result = cmpsense_gt;
+             break;
+         case -1: result = cmpsense_lt;
+             break;
+         }
+      }
+
+   Verbose("Comparison result: %s\n",CMPSENSETEXT[result]);
+   
+   switch(cmp)
+      {
+      case cmpsense_gt:
+          match = (result == cmpsense_gt);
+          break;
+      case cmpsense_ge:
+          match = (result == cmpsense_gt || result == cmpsense_eq);
+          break;
+      case cmpsense_lt:
+          match = (result == cmpsense_lt);
+          break;
+      case cmpsense_le:
+          match = (result == cmpsense_lt || result == cmpsense_eq);
+          break;
+      case cmpsense_eq:
+          match = (result == cmpsense_eq);
+          break;
+      case cmpsense_ne:
+          match = (result != cmpsense_eq);
+          break;
+      }
+   
+   /* If we find a match, just return it now, and don't bother checking
+    * anything else RPM returned, if it returns multiple packages */
+   
+   if (match)
+      {
+      DeleteItemList(evrlist);
+      return 1;
+      }
+   }
+ 
+/* If we manage to make it out of the loop, we did not find a match. */
+
+DeleteItemList(evrlist);
+return 0;
+}
+
+int RPMPackageList (char *package, char *version, enum cmpsense cmp, struct Item **pkglist)
+{
+   return 0; /* not implemented yet */
+}
+
 /*********************************************************************/
 /* Debian                                                            */
 /*********************************************************************/
