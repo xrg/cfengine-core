@@ -112,7 +112,7 @@ dbp->close(dbp,0);
 void LastSeen(char *hostname,enum roles role)
 
 { DB *dbp,*dbpent;
-  DB_ENV *dbenv = NULL;
+ DB_ENV *dbenv = NULL, *dbenv2 = NULL;
   char name[CF_BUFSIZE],databuf[CF_BUFSIZE];
   time_t now = time(NULL);
   struct QPoint q,newq;
@@ -156,7 +156,7 @@ if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 /* Now open special file for peer entropy record - INRIA intermittency */
 snprintf(name,CF_BUFSIZE-1,"%s/%s.%s",VLOCKDIR,CF_LASTDB_FILE,hostname);
 
-if ((errno = db_create(&dbpent,dbenv,0)) != 0)
+if ((errno = db_create(&dbpent,dbenv2,0)) != 0)
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't init last-seen database %s\n",name);
    CfLog(cferror,OUTPUT,"db_open");
@@ -429,7 +429,7 @@ void CheckFriendReliability()
 { DBT key,value;
   DB *dbp,*dbpent;
   DBC *dbcp;
-  DB_ENV *dbenv = NULL;
+  DB_ENV *dbenv = NULL, *dbenv2 = NULL;
   int i,ret;
   double n[CF_RELIABLE_CLASSES],n_av[CF_RELIABLE_CLASSES],total;
   double p[CF_RELIABLE_CLASSES],p_av[CF_RELIABLE_CLASSES];
@@ -493,7 +493,7 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
    snprintf(name,CF_BUFSIZE-1,"%s/%s.%s",VLOCKDIR,CF_LASTDB_FILE,ip->name);
    Verbose("Consulting profile %s\n",name);
 
-   if ((errno = db_create(&dbpent,dbenv,0)) != 0)
+   if ((errno = db_create(&dbpent,dbenv2,0)) != 0)
       {
       snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't init reliability profile database %s\n",name);
       CfLog(cferror,OUTPUT,"db_open");
@@ -511,6 +511,9 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
       continue;
       }
 
+   Verbose("Reading from %s\n",name);
+
+   
    for (i = 0; i < CF_RELIABLE_CLASSES; i++)
       {
       n[i] = n_av[i] = 0.0;
@@ -527,6 +530,8 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
       
       key.data = timekey;
       key.size = strlen(timekey)+1;
+
+      Debug("Looking for %s in %s\n",timekey,name);
       
       if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
          {
@@ -552,6 +557,7 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
          }
       else
          {
+         Debug("No data recorded in %s\n",ip->name);
          continue;
          }
 

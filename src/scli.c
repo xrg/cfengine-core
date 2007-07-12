@@ -41,220 +41,206 @@ This is a special case of shell commands for the SCLI interpreter.
 void SCLIScript()
 
 { struct ShellComm *ptr;
-  char line[CF_BUFSIZE],eventname[CF_BUFSIZE];
-  char comm[20], *sp;
-  char execstr[CF_EXPANDSIZE];
+ char line[CF_BUFSIZE],eventname[CF_BUFSIZE],dummy[1];
+  char execstr[CF_EXPANDSIZE],tmpfile[CF_BUFSIZE];
   char chdir_buf[CF_EXPANDSIZE];
   char chroot_buf[CF_EXPANDSIZE];
+  char *defines = dummy,*elsedef = dummy;
   time_t start,end;
-  int error,i;
+  int error,i,ifelapsed = -1,expireafter = -1;
   mode_t maskval = 0;
-  FILE *pp;
-  int preview = false;
+  FILE *pp,*fout;
+  int have_chdir = false, have_chroot = false;
+  int uid = -1, gid = -1, timeout = -1;
 
 if (VSCLI == NULL)
    {
    return;
    }
 
+Banner("SCLI / SNMP script phase");
+
+dummy[0] = '\0';
+
+snprintf(tmpfile,CF_BUFSIZE,"%s/scli_monologue_pipe",CFWORKDIR);
+unlink(tmpfile);
+
+if ((fout = fopen(tmpfile,"w")) == NULL)
+   {
+   CfLog(cferror,"Unable to open scli monologue pipe","fopen");
+   return;
+   }
+
 for (ptr = VSCLI; ptr != NULL; ptr=ptr->next)
    {
-   if (!GetLock(ASUniqueName("scli"),CF_SCLI_COMM,ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
-      {
-      ptr->done = 'y';
-      return;
-      }
-
-   preview = (ptr->preview == 'y');
-   
    if (IsExcluded(ptr->classes))
       {
       continue;
       }
 
-   if (ptr->done == 'y' || strcmp(ptr->scope,CONTEXTID))
+   if (ptr->done == 'y')
       {
       continue;
-      }
-   else
-      {
-      ptr->done = 'y';
       }
 
    ResetOutputRoute(ptr->log,ptr->inform);
    ExpandVarstring(ptr->name,execstr,NULL);
    
-   snprintf(OUTPUT,CF_BUFSIZE*2,"\nExecuting scli dialogue %s...(timeout=%d,uid=%d,gid=%d)\n",execstr,ptr->timeout,ptr->uid,ptr->gid);
+   snprintf(OUTPUT,CF_BUFSIZE*2,"\nConstructing scli monologue %s...(timeout=%d,uid=%d,gid=%d)\n",execstr,ptr->timeout,ptr->uid,ptr->gid);
    CfLog(cfinform,OUTPUT,"");
-
-   start = time(NULL);
-
-   if (DONTDO && preview != 'y')
+   
+   if (ptr->fork == 'y')
       {
-      printf("%s: scli %s\n",VPREFIX,execstr);
+      Verbose("Cannot background SCLI scripts %s\n",execstr);
+      }
+
+   if (have_chdir)
+      {
+      CfLog(cferror,"Multiple declaration of chdir option in scli - does not make sense","");
       }
    else
       {
-      for (sp = execstr; *sp != ' ' && *sp != '\0'; sp++)
+      if (strlen(ptr->chdir) != 0)
          {
+         have_chdir = true;
+         ExpandVarstring(ptr->chdir,chdir_buf,"");
          }
-      
-      if (sp - 10 >= execstr)
-         {
-         sp -= 10;   /* copy 15 most relevant characters of command */
-         }
-      else
-         {
-         sp = execstr;
-         }
-      
-      memset(comm,0,20);
-      strncpy(comm,sp,15);
-
-      if (ptr->fork == 'y')
-         {
-         Verbose("Cannot background SCLI scripts %s\n",execstr);
-         }
-
-      if (ptr->timeout != 0)
-         {
-         signal(SIGALRM,(void *)TimeOut);
-         alarm(ptr->timeout);
-         }
-      
-      Verbose("(Setting umask to %o)\n",ptr->umask);
-      maskval = umask(ptr->umask);
-      
-      if (ptr->umask == 0)
-         {
-         snprintf(OUTPUT,CF_BUFSIZE*2,"Programming %s running with umask 0! Use umask= to set\n",execstr);
-         CfLog(cfsilent,OUTPUT,"");
-         }
-      
-      ExpandVarstring(ptr->chdir,chdir_buf,"");
-      ExpandVarstring(ptr->chroot,chroot_buf,"");
-      
-      pp = cfpopen_shsetuid(CF_SCLI_COMM,"rw",ptr->uid,ptr->gid,chdir_buf,chroot_buf);
-      
-      if (pp == NULL)
-         {
-         snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open pipe to command %s\n",execstr);
-         CfLog(cferror,OUTPUT,"popen");
-         ResetOutputRoute('d','d');
-         ReleaseCurrentLock();
-         break;
-         } 
-      
-      while (!feof(pp))
-         {
-         if (ferror(pp))  /* abortable */
-            {
-            snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
-            CfLog(cferror,OUTPUT,"ferror");
-            break;
-            }
-         
-         ReadLine(line,CF_BUFSIZE-1,pp);
-         
-         if (strstr(line,"cfengine-die"))
-            {
-            break;
-            }
-         
-         if (ferror(pp))  /* abortable */
-            {
-            snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
-            CfLog(cferror,OUTPUT,"ferror");
-            break;
-            }
-         
-         if (preview == 'y')
-            {
-            /*
-             * Preview script - try to parse line as log message. If line does
-             * not parse, then log as error.
-             */
-            
-            int level = cferror;
-            char *message = line;
-            
-            /*
-             * Table matching cfoutputlevel enums to log prefixes.
-             */
-            
-            char *prefixes[] =
-                {
-                    ":silent:",
-                    ":inform:",
-                    ":verbose:",
-                    ":editverbose:",
-                    ":error:",
-                    ":logonly:",
-                };
-            
-            int precount = sizeof(prefixes)/sizeof(char *);
-            
-            if (line[0] == ':')
-               {
-               /*
-                * Line begins with colon - see if it matches a log prefix.
-                */
-               
-               for (i=0; i < precount; i++)
-                  {
-                  int prelen = 0;
-                  prelen = strlen(prefixes[i]);
-                  if (strncmp(line, prefixes[i], prelen) == 0)
-                     {
-                     /*
-                      * Found log prefix - set logging level, and remove the
-                      * prefix from the log message.
-                      */
-                     level = i;
-                     message += prelen;
-                     break;
-                     }
-                  }
-               }
-            
-            snprintf(OUTPUT,CF_BUFSIZE,"%s (preview of %s)\n",message,comm);
-            CfLog(level,OUTPUT,"");
-            }
-         else 
-            {
-            for (i = 0; CF_SCLICODES[i][0] != NULL; i++)
-               {
-               if (strncmp(CF_SCLICODES[cfscli_ok][0],line,3) != 0)
-                  {
-                  error = true;
-                  /* what to do with this? skip rest for this server? */
-                  }
-               }
-            
-            snprintf(OUTPUT,CF_BUFSIZE,"%s\n",line);
-            CfLog(cfinform,OUTPUT,"");
-            }
-         }
-      
-      cfpclose_def(pp,ptr->defines,ptr->elsedef);
       }
+
+   /* This is fragile to silly coding in the config file - a lot of work to fix this.
+      Not worth it unless this all proves useful */
    
-   if (ptr->timeout != 0)
+   uid = ptr->uid;
+   gid = ptr->gid;
+   defines = ptr->defines;
+   elsedef = ptr->elsedef;
+   ifelapsed = ptr->ifelapsed;
+   expireafter = ptr->expireafter;
+   
+   if (have_chroot)
       {
-      alarm(0);
-      signal(SIGALRM,SIG_DFL);
+      CfLog(cferror,"Multiple declaration of chroot option in scli - does not make sense","");
+      }
+   else
+      {
+      if (strlen(ptr->chroot) != 0)
+         {
+         have_chroot = true;
+         ExpandVarstring(ptr->chdir,chdir_buf,"");
+         }
+      }
+
+   if (timeout > 0)
+      {
+      if (timeout != ptr->timeout)
+         {
+         CfLog(cferror,"Multiple declaration of timeout option in scli - does not make sense","");
+         }
+      }
+   else
+      {
+      timeout = ptr->timeout;
+      }
+      
+   ExpandVarstring(ptr->name,execstr,NULL);
+
+   fprintf(fout,"%s\n",execstr);
+   Verbose("to-scli: %s\n",execstr);
+   }
+
+fclose(fout);
+
+if (DONTDO)
+   {
+   return;
+   }
+
+if (!GetLock(ASUniqueName("scli"),CF_SCLI_COMM,ifelapsed,expireafter,VUQNAME,CFSTARTTIME))
+   {
+   return;
+   }
+
+if (timeout > 0)
+   {
+   signal(SIGALRM,(void *)TimeOut);
+   alarm(timeout);
+   }
+
+start = time(NULL);   
+
+snprintf(VBUFF,CF_BUFSIZE,"%s < %s",CF_SCLI_COMM,tmpfile);
+
+pp = cfpopen_shsetuid(VBUFF,"r",uid,gid,chdir_buf,chroot_buf);
+
+if (pp == NULL)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open pipe to command %s\n",execstr);
+   CfLog(cferror,OUTPUT,"popen");
+   ResetOutputRoute('d','d');
+   ReleaseCurrentLock();
+   return;
+   } 
+
+while (!feof(pp))
+   {
+   if (ferror(pp))  /* abortable */
+      {
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
+      CfLog(cferror,OUTPUT,"ferror");
+      break;
       }
    
-   umask(maskval);
+   ReadLine(line,CF_BUFSIZE-1,pp);
    
-   snprintf(OUTPUT,CF_BUFSIZE*2,"End scli %s\n",execstr);
+   if (strstr(line,"cfengine-die"))
+      {
+      break;
+      }
+   
+   if (ferror(pp))  /* abortable */
+      {
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
+      CfLog(cferror,OUTPUT,"ferror");
+      break;
+      }
+   
+   for (i = 0; CF_SCLICODES[i][0] != NULL; i++)
+      {
+      if (strncmp(CF_SCLICODES[cfscli_noconnect][0],line,3) == 0
+          || strncmp(CF_SCLICODES[cfscli_snmp_return][0],line,3) == 0 )
+         {
+         error = true;
+         snprintf(OUTPUT,CF_BUFSIZE,"Unable to enter snmp dialogue, %s\n",line+strlen(CF_SCLICODES[0][0])+1);
+         CfLog(cfinform,OUTPUT,"");
+         break;
+         }
+      }
+
+   snprintf(OUTPUT,CF_BUFSIZE,"%s\n",line+strlen(CF_SCLICODES[0][0])+1);
    CfLog(cfinform,OUTPUT,"");
-   
-   end = time(NULL);
-   snprintf(eventname,CF_BUFSIZE-1,"SCLIdialogue(%s)",execstr);
-   RecordPerformance(eventname,start,(double)(end-start));
+      
+   if (error)
+      {
+      break;
+      }
    }
+
+cfpclose_def(pp,defines,elsedef);
+
+if (timeout != 0)
+   {
+   alarm(0);
+   signal(SIGALRM,SIG_DFL);
+   }
+   
+snprintf(OUTPUT,CF_BUFSIZE*2,"End scli script\n");
+CfLog(cfinform,OUTPUT,"");
+
+end = time(NULL);
+snprintf(eventname,CF_BUFSIZE-1,"SCLIdialogue(%s)",execstr);
+RecordPerformance(eventname,start,(double)(end-start));
 
 ResetOutputRoute('d','d');
 ReleaseCurrentLock();
+unlink(tmpfile);
 }

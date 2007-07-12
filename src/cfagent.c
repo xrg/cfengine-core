@@ -1262,6 +1262,7 @@ for (PASS = 1; PASS <= passes; PASS++)
              if (!NOSCRIPTS)
                 {
                 Scripts();
+                SCLIScript();
                 }
              break;
              
