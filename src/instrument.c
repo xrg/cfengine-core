@@ -437,10 +437,13 @@ void CheckFriendReliability()
   struct QPoint entry;
   struct Item *ip, *hostlist = NULL;
   double entropy,average,var,sum,sum_av;
-  time_t now = time(NULL), then, lastseen;
+  time_t now = time(NULL), then, lastseen = CF_WEEK;
 
 Verbose("CheckFriendReliability()\n");
 snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
+
+average = (double) CF_HOUR;  /* It will take a week for a host to be deemed reliable */
+var = 0;
 
 if ((errno = db_create(&dbp,dbenv,0)) != 0)
    {
@@ -473,7 +476,7 @@ memset(&value, 0, sizeof(value));
 
 while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
    {
-   strcpy(hostname,(char *)key.data+1);
+   strcpy(hostname,IPString2Hostname((char *)key.data+1));
 
    if (!IsItemIn(hostlist,hostname))
       {
@@ -511,9 +514,6 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
       continue;
       }
 
-   Verbose("Reading from %s\n",name);
-
-   
    for (i = 0; i < CF_RELIABLE_CLASSES; i++)
       {
       n[i] = n_av[i] = 0.0;
@@ -531,8 +531,6 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
       key.data = timekey;
       key.size = strlen(timekey)+1;
 
-      Debug("Looking for %s in %s\n",timekey,name);
-      
       if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
          {
          if (errno != DB_NOTFOUND)
@@ -553,22 +551,25 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
             }
          average = (double)entry.expect;
          var = (double)entry.var;
-         Debug("then = %ld, lastseen = %ld, average=%.2f\n",then,lastseen,average);
+         Debug("%s => then = %ld, lastseen = %ld, average=%.2f\n",hostname,then,lastseen,average);
          }
       else
          {
-         Debug("No data recorded in %s\n",ip->name);
-         continue;
+         /* If we have no data, it means no contact for whatever reason.
+            It could be unable to respond unwilling to respond, policy etc.
+            Assume for argument that we expect regular responses ... */
+         
+         lastseen += CF_MEASURE_INTERVAL; /* infer based on no data */
          }
 
       for (i = 0; i < CF_RELIABLE_CLASSES; i++)
          {
-         if (lastseen >= i*CF_HOUR && lastseen <= (i+1)*CF_HOUR)
+         if (lastseen >= i*CF_HOUR && lastseen < (i+1)*CF_HOUR)
             {
             n[i]++;
             }
          
-         if (average >= (double)(i*CF_HOUR) && average <= (double)((i+1)*CF_HOUR))
+         if (average >= (double)(i*CF_HOUR) && average < (double)((i+1)*CF_HOUR))
             {
             n_av[i]++;
             }

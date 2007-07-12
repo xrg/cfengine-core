@@ -1,4 +1,10 @@
 
+2.2.2
+	scli modifications.
+
+	Intermittency entropy code added to the copy instrumentation for
+	automatic host reliability measurements.
+	
 2.2.1
 	scli: type section added. This is a special case of shellcommands, which
 	send commands to the special shell scli by Juergen Schoenwaelder for
