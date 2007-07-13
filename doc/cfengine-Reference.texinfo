@@ -9968,12 +9968,33 @@ is not added to the line.
 @node scli, shellcommands, resolve, Cfagent reference
 @section scli
 
-SCLI is an SNMP command line interpreter written by IETF leader Juergen
-Schoenwaelder of the Jacobs University of Bremen. It is a command interpreter
-used to simplify the interaction with SNMP enabled devices. 
+SCLI is an SNMP command line interpreter written by J@"urgen
+Sch@"onwaelder of the Jacobs University of Bremen. It is a command
+interpreter used to simplify the interaction with SNMP enabled
+devices. SNMP is a stateless, UDP based network protocol for
+communicating with supporting hardware. The SNMP model does not fit very well with
+the cfengine responsibility for self paradigm, but it can be viewed as
+simply another form of shell script. SCLI attempts to add a level of
+user friendliness and stateful behaviour to SNMP through its shell-like
+interface. This is both a help and a hindrance to cfagent.
 
-This cfengine interface is a special case of the @code{shellcommands}
-interface, which passes commands to SCLI instead of to @file{/bin/sh}.
+The intermingling of stateful and stateless processes in the dialogue
+between cfengine and scli makes their integration non-trivial. Several
+compromises have to be made to aid usability and these could lead to
+difficulties in the practical use of the tools later.
+
+The scli section of a cfagent configuration is a single script. The lines
+are passed as a collective object to the scli interpreter, not line-by-line
+as in other cases.
+
+The basic approach is to open a pipe for the reading and writing of
+dialogue with the interpreter. There are some limitations to Unix
+pipes however, in particular input and output are separated which
+makes per-transaction error control essentially impossible. A
+work-around for this has been used in the test phase.
+
+The cfengine interface is a special case of the @code{shellcommands}
+interface, passing commands to SCLI instead of to @file{/bin/sh}.
 The command options are the same as those below for @code{shellcommands}.
 
 
