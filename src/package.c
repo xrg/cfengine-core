@@ -711,7 +711,7 @@ while (!feof (pp))
    ReadLine (VBUFF, CF_BUFSIZE, pp);
    if (*VBUFF != '\0')
       {
-      if (sscanf (VBUFF, "  Removed: %s", tmpBUFF) > 0)
+      if (sscanf (VBUFF, "  Installed: %s", tmpBUFF) > 0)
          {
          AppendItem (&evrlist, tmpBUFF, "");
          }
