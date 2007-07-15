@@ -15,6 +15,7 @@
 @SET_MAKE@
 
 
+
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -54,50 +55,58 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = conf.h
 CONFIG_CLEAN_FILES = cflex.l
-am__installdirs = "$(DESTDIR)$(sbindir)"
-sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
-PROGRAMS = $(sbin_PROGRAMS)
-am_cfagent_OBJECTS = cfagent.$(OBJEXT) init.$(OBJEXT) do.$(OBJEXT) \
-	modules.$(OBJEXT) alerts.$(OBJEXT) wrapper.$(OBJEXT) \
-	report.$(OBJEXT) client.$(OBJEXT) ip.$(OBJEXT) \
-	ipname.$(OBJEXT) instrument.$(OBJEXT) process.$(OBJEXT) \
-	ifconf.$(OBJEXT) image.$(OBJEXT) item.$(OBJEXT) \
-	item-ext.$(OBJEXT) item-file.$(OBJEXT) 2Dlist.$(OBJEXT) \
-	globals.$(OBJEXT) classes.$(OBJEXT) misc.$(OBJEXT) \
-	parse.$(OBJEXT) functions.$(OBJEXT) edittools.$(OBJEXT) \
-	patches.$(OBJEXT) install.$(OBJEXT) link.$(OBJEXT) \
-	tidy.$(OBJEXT) filedir.$(OBJEXT) eval.$(OBJEXT) \
-	modes.$(OBJEXT) sockaddr.$(OBJEXT) chflags.$(OBJEXT) \
-	locks.$(OBJEXT) mount.$(OBJEXT) macro.$(OBJEXT) \
-	filenames.$(OBJEXT) varstring.$(OBJEXT) wildcard.$(OBJEXT) \
-	cfparse.$(OBJEXT) comparray.$(OBJEXT) read.$(OBJEXT) \
-	checksums.$(OBJEXT) proto.$(OBJEXT) filters.$(OBJEXT) \
-	copy.$(OBJEXT) repository.$(OBJEXT) rotate.$(OBJEXT) \
-	errors.$(OBJEXT) cflex.$(OBJEXT) net.$(OBJEXT) df.$(OBJEXT) \
-	log.$(OBJEXT) crypto.$(OBJEXT) popen.$(OBJEXT) \
-	popen_def.$(OBJEXT) sensible.$(OBJEXT) acl.$(OBJEXT) \
-	dce_acl.$(OBJEXT) nameinfo.$(OBJEXT) strategies.$(OBJEXT) \
-	granules.$(OBJEXT) methods.$(OBJEXT) dtypes.$(OBJEXT) \
-	state.$(OBJEXT) expand-files.$(OBJEXT) expand-tidy.$(OBJEXT) \
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
+am__installdirs = "$(DESTDIR)$(instdir)" "$(DESTDIR)$(sbindir)"
+instLIBRARIES_INSTALL = $(INSTALL_DATA)
+LIBRARIES = $(inst_LIBRARIES)
+AR = ar
+ARFLAGS = cru
+libcfengine_a_AR = $(AR) $(ARFLAGS)
+libcfengine_a_LIBADD =
+am_libcfengine_a_OBJECTS = init.$(OBJEXT) modules.$(OBJEXT) \
+	alerts.$(OBJEXT) wrapper.$(OBJEXT) report.$(OBJEXT) \
+	client.$(OBJEXT) ip.$(OBJEXT) ipname.$(OBJEXT) \
+	instrument.$(OBJEXT) process.$(OBJEXT) ifconf.$(OBJEXT) \
+	image.$(OBJEXT) item.$(OBJEXT) item-ext.$(OBJEXT) \
+	item-file.$(OBJEXT) 2Dlist.$(OBJEXT) globals.$(OBJEXT) \
+	classes.$(OBJEXT) misc.$(OBJEXT) parse.$(OBJEXT) \
+	functions.$(OBJEXT) edittools.$(OBJEXT) patches.$(OBJEXT) \
+	install.$(OBJEXT) link.$(OBJEXT) tidy.$(OBJEXT) \
+	filedir.$(OBJEXT) eval.$(OBJEXT) modes.$(OBJEXT) \
+	sockaddr.$(OBJEXT) chflags.$(OBJEXT) locks.$(OBJEXT) \
+	mount.$(OBJEXT) macro.$(OBJEXT) filenames.$(OBJEXT) \
+	varstring.$(OBJEXT) wildcard.$(OBJEXT) cfparse.$(OBJEXT) \
+	comparray.$(OBJEXT) read.$(OBJEXT) checksums.$(OBJEXT) \
+	proto.$(OBJEXT) filters.$(OBJEXT) copy.$(OBJEXT) \
+	repository.$(OBJEXT) rotate.$(OBJEXT) errors.$(OBJEXT) \
+	cflex.$(OBJEXT) net.$(OBJEXT) df.$(OBJEXT) log.$(OBJEXT) \
+	crypto.$(OBJEXT) popen.$(OBJEXT) popen_def.$(OBJEXT) \
+	sensible.$(OBJEXT) acl.$(OBJEXT) dce_acl.$(OBJEXT) \
+	nameinfo.$(OBJEXT) strategies.$(OBJEXT) granules.$(OBJEXT) \
+	methods.$(OBJEXT) dtypes.$(OBJEXT) state.$(OBJEXT) \
+	expand-files.$(OBJEXT) expand-tidy.$(OBJEXT) \
 	expand-image.$(OBJEXT) expand-editfiles.$(OBJEXT) \
 	checksum_db.$(OBJEXT) package.$(OBJEXT) scli.$(OBJEXT)
+libcfengine_a_OBJECTS = $(am_libcfengine_a_OBJECTS)
+sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
+PROGRAMS = $(sbin_PROGRAMS)
+am_cfagent_OBJECTS = cfagent.$(OBJEXT) do.$(OBJEXT)
 cfagent_OBJECTS = $(am_cfagent_OBJECTS)
+cfagent_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 cfagent_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_cfenvd_OBJECTS = cfenvd.$(OBJEXT) globals.$(OBJEXT) \
-	filenames.$(OBJEXT) nameinfo.$(OBJEXT) sockaddr.$(OBJEXT) \
-	classes.$(OBJEXT) item.$(OBJEXT) item-ext.$(OBJEXT) \
-	item-file.$(OBJEXT) eval.$(OBJEXT) wildcard.$(OBJEXT) \
-	df.$(OBJEXT) read.$(OBJEXT) granules.$(OBJEXT) log.$(OBJEXT) \
-	popen.$(OBJEXT) patches.$(OBJEXT) locks.$(OBJEXT) \
-	dtypes.$(OBJEXT) state.$(OBJEXT) init.$(OBJEXT)
+	$(am__DEPENDENCIES_1)
+am_cfenvd_OBJECTS = cfenvd.$(OBJEXT)
 cfenvd_OBJECTS = $(am_cfenvd_OBJECTS)
 cfenvd_LDADD = $(LDADD)
 cfenvd_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
-am_cfenvgraph_OBJECTS = cfenvgraph.$(OBJEXT) granules.$(OBJEXT) \
-	globals.$(OBJEXT)
+am_cfenvgraph_OBJECTS = cfenvgraph.$(OBJEXT)
 cfenvgraph_OBJECTS = $(am_cfenvgraph_OBJECTS)
 cfenvgraph_LDADD = $(LDADD)
 cfenvgraph_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -118,62 +127,31 @@ cfetoolgraph_OBJECTS = $(am_cfetoolgraph_OBJECTS)
 cfetoolgraph_LDADD = $(LDADD)
 cfetoolgraph_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_cfexecd_OBJECTS = cfexecd.$(OBJEXT) popen.$(OBJEXT) \
-	globals.$(OBJEXT) sockaddr.$(OBJEXT) read.$(OBJEXT) \
-	classes.$(OBJEXT) nameinfo.$(OBJEXT) wildcard.$(OBJEXT) \
-	errors.$(OBJEXT) patches.$(OBJEXT) log.$(OBJEXT) \
-	locks.$(OBJEXT) filenames.$(OBJEXT) granules.$(OBJEXT) \
-	eval.$(OBJEXT) item-ext.$(OBJEXT) item.$(OBJEXT) \
-	init.$(OBJEXT)
+am_cfexecd_OBJECTS = cfexecd.$(OBJEXT)
 cfexecd_OBJECTS = $(am_cfexecd_OBJECTS)
+cfexecd_LDADD = $(LDADD)
 cfexecd_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
-am_cfkey_OBJECTS = cfkey.$(OBJEXT) init.$(OBJEXT) filenames.$(OBJEXT) \
-	crypto.$(OBJEXT) popen.$(OBJEXT) globals.$(OBJEXT) \
-	read.$(OBJEXT) classes.$(OBJEXT) errors.$(OBJEXT) \
-	patches.$(OBJEXT) log.$(OBJEXT)
+am_cfkey_OBJECTS = cfkey.$(OBJEXT)
 cfkey_OBJECTS = $(am_cfkey_OBJECTS)
 cfkey_LDADD = $(LDADD)
 cfkey_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
-am_cfrun_OBJECTS = cfrun.$(OBJEXT) item.$(OBJEXT) item-ext.$(OBJEXT) \
-	varstring.$(OBJEXT) filenames.$(OBJEXT) sockaddr.$(OBJEXT) \
-	nameinfo.$(OBJEXT) eval.$(OBJEXT) wildcard.$(OBJEXT) \
-	proto.$(OBJEXT) popen.$(OBJEXT) net.$(OBJEXT) ip.$(OBJEXT) \
-	ipname.$(OBJEXT) instrument.$(OBJEXT) checksums.$(OBJEXT) \
-	classes.$(OBJEXT) read.$(OBJEXT) log.$(OBJEXT) \
-	crypto.$(OBJEXT) patches.$(OBJEXT) init.$(OBJEXT) \
-	granules.$(OBJEXT) macro.$(OBJEXT) globals.$(OBJEXT)
+am_cfrun_OBJECTS = cfrun.$(OBJEXT)
 cfrun_OBJECTS = $(am_cfrun_OBJECTS)
 cfrun_LDADD = $(LDADD)
 cfrun_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
-am_cfservd_OBJECTS = cfservd.$(OBJEXT) parse.$(OBJEXT) \
-	dtypes.$(OBJEXT) functions.$(OBJEXT) install.$(OBJEXT) \
-	sockaddr.$(OBJEXT) ip.$(OBJEXT) ipname.$(OBJEXT) \
-	instrument.$(OBJEXT) report.$(OBJEXT) cfparse.$(OBJEXT) \
-	chflags.$(OBJEXT) cflex.$(OBJEXT) item.$(OBJEXT) \
-	item-ext.$(OBJEXT) varstring.$(OBJEXT) popen.$(OBJEXT) \
-	popen_def.$(OBJEXT) granules.$(OBJEXT) globals.$(OBJEXT) \
-	filenames.$(OBJEXT) macro.$(OBJEXT) eval.$(OBJEXT) \
-	read.$(OBJEXT) classes.$(OBJEXT) modules.$(OBJEXT) \
-	misc.$(OBJEXT) 2Dlist.$(OBJEXT) modes.$(OBJEXT) \
-	locks.$(OBJEXT) init.$(OBJEXT) wildcard.$(OBJEXT) \
-	copy.$(OBJEXT) rotate.$(OBJEXT) net.$(OBJEXT) acl.$(OBJEXT) \
-	dce_acl.$(OBJEXT) log.$(OBJEXT) errors.$(OBJEXT) \
-	crypto.$(OBJEXT) filters.$(OBJEXT) patches.$(OBJEXT) \
-	checksums.$(OBJEXT) checksum_db.$(OBJEXT) state.$(OBJEXT) \
-	nameinfo.$(OBJEXT) strategies.$(OBJEXT)
+am_cfservd_OBJECTS = cfservd.$(OBJEXT)
 cfservd_OBJECTS = $(am_cfservd_OBJECTS)
+cfservd_LDADD = $(LDADD)
 cfservd_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
-am_cfshow_OBJECTS = cfshow.$(OBJEXT) globals.$(OBJEXT) popen.$(OBJEXT) \
-	log.$(OBJEXT) ipname.$(OBJEXT) sockaddr.$(OBJEXT) \
-	errors.$(OBJEXT) filenames.$(OBJEXT) checksums.$(OBJEXT) \
-	patches.$(OBJEXT)
+am_cfshow_OBJECTS = cfshow.$(OBJEXT)
 cfshow_OBJECTS = $(am_cfshow_OBJECTS)
+cfshow_LDADD = $(LDADD)
 cfshow_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -182,14 +160,13 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 LEXCOMPILE = $(LEX) $(LFLAGS) $(AM_LFLAGS)
-YLWRAP = $(top_srcdir)/ylwrap
 YACCCOMPILE = $(YACC) $(YFLAGS) $(AM_YFLAGS)
-SOURCES = $(cfagent_SOURCES) $(cfenvd_SOURCES) $(cfenvgraph_SOURCES) \
-	$(cfetool_SOURCES) $(cfetoolgraph_SOURCES) $(cfexecd_SOURCES) \
-	$(cfkey_SOURCES) $(cfrun_SOURCES) $(cfservd_SOURCES) \
-	$(cfshow_SOURCES)
-DIST_SOURCES = $(cfagent_SOURCES) $(cfenvd_SOURCES) \
-	$(cfenvgraph_SOURCES) $(cfetool_SOURCES) \
+SOURCES = $(libcfengine_a_SOURCES) $(cfagent_SOURCES) \
+	$(cfenvd_SOURCES) $(cfenvgraph_SOURCES) $(cfetool_SOURCES) \
+	$(cfetoolgraph_SOURCES) $(cfexecd_SOURCES) $(cfkey_SOURCES) \
+	$(cfrun_SOURCES) $(cfservd_SOURCES) $(cfshow_SOURCES)
+DIST_SOURCES = $(libcfengine_a_SOURCES) $(cfagent_SOURCES) \
+	$(cfenvd_SOURCES) $(cfenvgraph_SOURCES) $(cfetool_SOURCES) \
 	$(cfetoolgraph_SOURCES) $(cfexecd_SOURCES) $(cfkey_SOURCES) \
 	$(cfrun_SOURCES) $(cfservd_SOURCES) $(cfshow_SOURCES)
 HEADERS = $(noinst_HEADERS)
@@ -319,26 +296,19 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 AM_CFLAGS = $(GCC_CFLAG) @CFLAGS@  
 AM_YFLAGS = -d
-LDADD = -L../pub -lpub $(BERKELEY_DB_LDFLAGSD) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LDFLAGS) $(OPENSSL_LIB_LIB)
+LDADD = -L../pub -lpub -L. -lcfengine $(BERKELEY_DB_LDFLAGSD) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LDFLAGS) $(OPENSSL_LIB_LIB)
 INCLUDES = $(BERKELEY_DB_CFLAGS) $(OPENSSL_LIB_CPPFLAGS)
 AM_LDFLAGS = $(BERKELEY_DB_LDFLAGS) $(OPENSSL_LIB_LDFLAGS) @LDFLAGS@
-cfshow_SOURCES = \
-	cfshow.c							\
-	globals.c							\
-	popen.c								\
-	log.c								\
-	ipname.c							\
-	sockaddr.c							\
-	errors.c							\
-	filenames.c							\
-	checksums.c							\
-	patches.c
 
-cfshow_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
-cfagent_SOURCES = \
-	cfagent.c							\
+#
+# Fix this generically
+#
+inst_LIBRARIES = libcfengine.a
+instdir = /usr/local/lib
+
+# Separate out a library
+libcfengine_a_SOURCES = \
 	init.c								\
-        do.c                                                            \
 	modules.c							\
 	alerts.c							\
         wrapper.c                                                       \
@@ -409,145 +379,38 @@ cfagent_SOURCES = \
 	package.c							\
 	scli.c
 
-cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
+cfshow_SOURCES = \
+	cfshow.c
+
+
+#cfshow_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
+cfagent_SOURCES = \
+	cfagent.c							\
+        do.c
+
+
+#cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 cfservd_SOURCES = \
-	cfservd.c							\
-	parse.c								\
-	dtypes.c							\
-	functions.c							\
-	install.c							\
-	sockaddr.c							\
-	ip.c								\
-	ipname.c							\
-	instrument.c							\
-	report.c							\
-	cfparse.y							\
-	chflags.c							\
-	cflex.l								\
-	item.c								\
-	item-ext.c							\
-	varstring.c							\
-	popen.c								\
-	popen_def.c							\
-	granules.c							\
-	globals.c							\
-	filenames.c							\
-	macro.c								\
-	eval.c								\
-	read.c								\
-	classes.c							\
-	modules.c							\
-	misc.c								\
-	2Dlist.c							\
-	modes.c								\
-	locks.c								\
-	init.c								\
-	wildcard.c							\
-	copy.c								\
-	rotate.c							\
-	net.c								\
-	acl.c								\
-	dce_acl.c							\
-	log.c								\
-	errors.c							\
-	crypto.c							\
-        filters.c                                                       \
-	patches.c							\
-	checksums.c							\
-	checksum_db.c							\
-	state.c								\
-	nameinfo.c							\
-	strategies.c
+	cfservd.c
 
-cfservd_LDADD = $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
+
+#cfservd_LDADD = $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 cfexecd_SOURCES = \
-	cfexecd.c							\
-	popen.c								\
-	globals.c							\
-	sockaddr.c							\
-	read.c								\
-	classes.c							\
-	nameinfo.c							\
-	wildcard.c							\
-	errors.c							\
-        patches.c                                                       \
-	log.c								\
-	locks.c								\
-	filenames.c							\
-	granules.c							\
-	eval.c								\
-	item-ext.c							\
-	item.c								\
-	init.c
+	cfexecd.c
 
-cfexecd_LDADD = $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
+
+#cfexecd_LDADD = $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 cfrun_SOURCES = \
-	cfrun.c								\
-	item.c								\
-	item-ext.c							\
-	varstring.c							\
-	filenames.c							\
-	sockaddr.c							\
-	nameinfo.c							\
-	eval.c								\
-	wildcard.c							\
-	proto.c								\
-	popen.c								\
-	net.c								\
-	ip.c								\
-	ipname.c							\
-	instrument.c							\
-	checksums.c							\
-	classes.c							\
-	read.c								\
-	log.c								\
-	crypto.c							\
-	patches.c							\
-	init.c								\
-	granules.c							\
-	macro.c								\
-	globals.c
+	cfrun.c
 
 cfkey_SOURCES = \
-	cfkey.c								\
-	init.c								\
-	filenames.c							\
-	crypto.c							\
-	popen.c								\
-	globals.c							\
-	read.c								\
-	classes.c							\
-	errors.c							\
-        patches.c                                                       \
-	log.c
+	cfkey.c
 
 cfenvd_SOURCES = \
-	cfenvd.c							\
-	globals.c							\
-	filenames.c							\
-	nameinfo.c							\
-	sockaddr.c							\
-	classes.c							\
-	item.c								\
-	item-ext.c							\
-	item-file.c							\
-	eval.c								\
-	wildcard.c							\
-	df.c								\
-	read.c								\
-	granules.c							\
-	log.c								\
-	popen.c								\
-	patches.c							\
-	locks.c								\
-	dtypes.c							\
-	state.c								\
-	init.c
+	cfenvd.c
 
 cfenvgraph_SOURCES = \
-	cfenvgraph.c							\
-	granules.c							\
-	globals.c
+	cfenvgraph.c
 
 cfetool_SOURCES = \
 	cfetool.c							\
@@ -665,6 +528,44 @@ distclean-hdr:
 	-rm -f conf.h stamp-h1
 cflex.l: $(top_builddir)/config.status $(srcdir)/cflex.l.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+install-instLIBRARIES: $(inst_LIBRARIES)
+	@$(NORMAL_INSTALL)
+	test -z "$(instdir)" || $(mkdir_p) "$(DESTDIR)$(instdir)"
+	@list='$(inst_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    f=$(am__strip_dir) \
+	    echo " $(instLIBRARIES_INSTALL) '$$p' '$(DESTDIR)$(instdir)/$$f'"; \
+	    $(instLIBRARIES_INSTALL) "$$p" "$(DESTDIR)$(instdir)/$$f"; \
+	  else :; fi; \
+	done
+	@$(POST_INSTALL)
+	@list='$(inst_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    p=$(am__strip_dir) \
+	    echo " $(RANLIB) '$(DESTDIR)$(instdir)/$$p'"; \
+	    $(RANLIB) "$(DESTDIR)$(instdir)/$$p"; \
+	  else :; fi; \
+	done
+
+uninstall-instLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(inst_LIBRARIES)'; for p in $$list; do \
+	  p=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(instdir)/$$p'"; \
+	  rm -f "$(DESTDIR)$(instdir)/$$p"; \
+	done
+
+clean-instLIBRARIES:
+	-test -z "$(inst_LIBRARIES)" || rm -f $(inst_LIBRARIES)
+cfparse.h: cfparse.c
+	@if test ! -f $@; then \
+	  rm -f cfparse.c; \
+	  $(MAKE) cfparse.c; \
+	else :; fi
+libcfengine.a: $(libcfengine_a_OBJECTS) $(libcfengine_a_DEPENDENCIES) 
+	-rm -f libcfengine.a
+	$(libcfengine_a_AR) libcfengine.a $(libcfengine_a_OBJECTS) $(libcfengine_a_LIBADD)
+	$(RANLIB) libcfengine.a
 install-sbinPROGRAMS: $(sbin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	test -z "$(sbindir)" || $(mkdir_p) "$(DESTDIR)$(sbindir)"
@@ -688,11 +589,6 @@ uninstall-sbinPROGRAMS:
 
 clean-sbinPROGRAMS:
 	-test -z "$(sbin_PROGRAMS)" || rm -f $(sbin_PROGRAMS)
-cfparse.h: cfparse.c
-	@if test ! -f $@; then \
-	  rm -f cfparse.c; \
-	  $(MAKE) cfparse.c; \
-	else :; fi
 cfagent$(EXEEXT): $(cfagent_OBJECTS) $(cfagent_DEPENDENCIES) 
 	@rm -f cfagent$(EXEEXT)
 	$(LINK) $(cfagent_LDFLAGS) $(cfagent_OBJECTS) $(cfagent_LDADD) $(LIBS)
@@ -827,10 +723,30 @@ distclean-compile:
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
 .l.c:
-	$(SHELL) $(YLWRAP) $< $(LEX_OUTPUT_ROOT).c $@ -- $(LEXCOMPILE)
+	$(LEXCOMPILE) $<
+	sed '/^#/ s|$(LEX_OUTPUT_ROOT)\.c|$@|' $(LEX_OUTPUT_ROOT).c >$@
+	rm -f $(LEX_OUTPUT_ROOT).c
 
 .y.c:
-	$(SHELL) $(YLWRAP) $< y.tab.c $@ y.tab.h $*.h y.output $*.output -- $(YACCCOMPILE)
+	$(YACCCOMPILE) $<
+	if test -f y.tab.h; then \
+	  to=`echo "$*_H" | sed \
+                -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/' \
+                -e 's/[^ABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g'`; \
+	  sed -e "/^#/!b" -e "s/Y_TAB_H/$$to/g" -e "s|y\.tab\.h|$*.h|" \
+            y.tab.h >$*.ht; \
+	  rm -f y.tab.h; \
+	  if cmp -s $*.ht $*.h; then \
+	    rm -f $*.ht ;\
+	  else \
+	    mv $*.ht $*.h; \
+	  fi; \
+	fi
+	if test -f y.output; then \
+	  mv y.output $*.output; \
+	fi
+	sed '/^#/ s|y\.tab\.c|$@|' y.tab.c >$@t && mv $@t $@
+	rm -f y.tab.c
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -910,9 +826,9 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS) $(HEADERS) conf.h
+all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(HEADERS) conf.h
 installdirs:
-	for dir in "$(DESTDIR)$(sbindir)"; do \
+	for dir in "$(DESTDIR)$(instdir)" "$(DESTDIR)$(sbindir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -948,7 +864,8 @@ maintainer-clean-generic:
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-sbinPROGRAMS mostlyclean-am
+clean-am: clean-generic clean-instLIBRARIES clean-sbinPROGRAMS \
+	mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -966,7 +883,7 @@ info: info-am
 
 info-am:
 
-install-data-am:
+install-data-am: install-instLIBRARIES
 
 install-exec-am: install-sbinPROGRAMS
 
@@ -993,19 +910,21 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am uninstall-sbinPROGRAMS
+uninstall-am: uninstall-info-am uninstall-instLIBRARIES \
+	uninstall-sbinPROGRAMS
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-sbinPROGRAMS ctags distclean distclean-compile \
-	distclean-generic distclean-hdr distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-exec install-exec-am \
-	install-info install-info-am install-man install-sbinPROGRAMS \
+	clean-instLIBRARIES clean-sbinPROGRAMS ctags distclean \
+	distclean-compile distclean-generic distclean-hdr \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-exec \
+	install-exec-am install-info install-info-am \
+	install-instLIBRARIES install-man install-sbinPROGRAMS \
 	install-strip installcheck installcheck-am installdirs \
 	maintainer-clean maintainer-clean-generic mostlyclean \
 	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-info-am \
-	uninstall-sbinPROGRAMS
+	uninstall-instLIBRARIES uninstall-sbinPROGRAMS
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -189,7 +189,7 @@ typedef int YYSTYPE;
 
 
 /* Line 219 of yacc.c.  */
-#line 193 "y.tab.c"
+#line 193 "cfparse.c"
 
 #if ! defined (YYSIZE_T) && defined (__SIZE_TYPE__)
 # define YYSIZE_T __SIZE_TYPE__
@@ -1277,7 +1277,7 @@ yyreduce:
     }
 
 /* Line 1126 of yacc.c.  */
-#line 1281 "y.tab.c"
+#line 1281 "cfparse.c"
 
   yyvsp -= yylen;
   yyssp -= yylen;

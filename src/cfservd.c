@@ -3666,40 +3666,6 @@ out3[len3]='\0';
 return (len1 + len2 + len3 + 2);
 }  
    
-/***************************************************************/
-/* Linking simplification                                      */
-/***************************************************************/
-
-void GetRemoteMethods()
-
-{
-}
-
-
-/***************************************************************/
-
-int RecursiveTidySpecialArea(char *name,struct Tidy *tp,int maxrecurse,struct stat *sb)
-
-
-{
- return true;
-}
-
-int CompareMD5Net(char *file1,char *file2,struct Image *ip)
-
-{
- return 0;
-}
-
-struct Method *IsDefinedMethod(char *name,char *s)
-
-{
-return NULL; 
-}
-
-void CheckForMethod()
-{
-}
 /* EOF */
 
 

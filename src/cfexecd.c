@@ -1157,52 +1157,6 @@ while (recv(sd,&ch,1,0))
 return ((f == '2') || (f == '3')); /* return code 200 or 300 from smtp*/
 }
 
-/******************************************************************/
-/*  Dummies                                                       */
-/******************************************************************/
-
-void Banner(char *string)
-
-{
-Verbose("---------------------------------------------------------------------\n");
-Verbose("%s\n",string);
-Verbose("---------------------------------------------------------------------\n\n");
-}
-
-/*********************************************************************/
-
-void RotateFiles(char *name,int number)
-
-{
- /* dummy */
-}
-
-
-int RecursiveTidySpecialArea(char *name,struct Tidy *tp,int maxrecurse,struct stat *sb)
-
-{
- return true;
-}
-
-
-void yyerror(char *s)
-
-{
- printf("%s\n",s);
-}
-
-
-char *GetMacroValue(char *s,char *sp)
-
-{
- return NULL;
-}
-
-
-void AddMacroValue(char *scope,char *name,char *value)
-
-{
-}
 
 
 /* EOF */

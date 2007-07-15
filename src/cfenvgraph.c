@@ -49,6 +49,7 @@ void SummarizeAverages(void);
 void WriteGraphFiles(void);
 void WriteHistograms(void);
 void DiskArrivals(void);
+void PeerIntermittency(void);
 void GetFQHN(void);
 void OpenFiles(void);
 void CloseFiles(void);
@@ -100,6 +101,7 @@ SummarizeAverages();
 WriteGraphFiles();
 WriteHistograms();
 DiskArrivals();
+PeerIntermittency();
 
 return 0;
 }
@@ -712,6 +714,162 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
 closedir(dirh);
 }
 
+/***************************************************************/
+
+void PeerIntermittency()
+
+{ DBT key,value;
+  DB *dbp,*dbpent;
+  DBC *dbcp;
+  DB_ENV *dbenv = NULL, *dbenv2 = NULL;
+  int i,ret;
+  FILE *fp1,*fp2;
+  char name[CF_BUFSIZE],hostname[CF_BUFSIZE],timekey[CF_MAXVARSIZE];
+  char out1[CF_BUFSIZE],out2[CF_BUFSIZE];
+  struct QPoint entry;
+  struct Item *ip, *hostlist = NULL;
+  double entropy,average,var,sum,sum_av;
+  time_t now = time(NULL), then, lastseen = CF_WEEK;
+
+Verbose("Peer Intermittency\n");
+snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
+
+average = (double) CF_HOUR;  /* It will take a week for a host to be deemed reliable */
+var = 0;
+
+if ((errno = db_create(&dbp,dbenv,0)) != 0)
+   {
+   Verbose("Couldn't open last-seen database %s\n",name);
+   return;
+   }
+
+#ifdef CF_OLD_DB
+if ((errno = dbp->open(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#endif
+   {
+   printf("Couldn't open last-seen database %s\n",name);
+   dbp->close(dbp,0);
+   return;
+   }
+
+if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
+   {
+   printf("Error reading from last-seen database\n");
+   dbp->err(dbp, ret, "DB->cursor");
+   return;
+   }
+
+memset(&key, 0, sizeof(key));
+memset(&value, 0, sizeof(value));
+
+while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
+   {
+   strcpy(hostname,IPString2Hostname((char *)key.data+1));
+
+   if (!IsItemIn(hostlist,hostname))
+      {
+      /* Check hostname not recorded twice with +/- */
+      AppendItem(&hostlist,hostname,NULL);
+      }
+   }
+
+dbcp->c_close(dbcp);
+dbp->close(dbp,0);
+
+
+/* Now go through each host and recompute entropy */
+
+for (ip = hostlist; ip != NULL; ip=ip->next)
+   {
+   snprintf(out1,CF_BUFSIZE,"lastseen-%s.q",hostname);
+   if ((fp1 = fopen(out1,"w")) == NULL)
+      {
+      Verbose("Unable to open %s\n",out1);
+      continue;
+      }
+
+   snprintf(out2,CF_BUFSIZE,"lastseen-%s.E-sigma",hostname);
+   if ((fp2 = fopen(out2,"w")) == NULL)
+      {
+      Verbose("Unable to open %s\n",out1);
+      continue;
+      }
+   
+   snprintf(name,CF_BUFSIZE-1,"%s/%s.%s",VLOCKDIR,CF_LASTDB_FILE,ip->name);
+   Verbose("Consulting profile %s\n",name);
+
+   if ((errno = db_create(&dbpent,dbenv2,0)) != 0)
+      {
+      Verbose("Couldn't init reliability profile database %s\n",name);
+      return;
+      }
+   
+#ifdef CF_OLD_DB
+   if ((errno = dbpent->open(dbpent,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+   if ((errno = dbpent->open(dbpent,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#endif
+      {
+      Verbose("Couldn't open last-seen database %s\n",name);
+      continue;
+      }
+
+   for (now = CF_MONDAY_MORNING; now < CF_MONDAY_MORNING+CF_WEEK; now += CF_MEASURE_INTERVAL)
+      {
+      memset(&key,0,sizeof(key));       
+      memset(&value,0,sizeof(value));
+      
+      strcpy(timekey,GenTimeKey(now));
+      
+      key.data = timekey;
+      key.size = strlen(timekey)+1;
+
+      if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
+         {
+         if (errno != DB_NOTFOUND)
+            {
+            dbp->err(dbp,errno,NULL);
+            exit(1);
+            }
+         }
+      
+      if (value.data != NULL)
+         {
+         memcpy(&entry,value.data,sizeof(entry));
+         then = (time_t)entry.q;
+         lastseen = now - then;
+         if (lastseen < 0)
+            {
+            lastseen = 0; /* Never seen before, so pretend */
+            }
+         average = (double)entry.expect;
+         var = (double)entry.var;
+
+         fprintf(fp2,"%d %lf %lf\n",now,average,sqrt(var));
+         }
+      else
+         {
+         /* If we have no data, it means no contact for whatever reason.
+            It could be unable to respond unwilling to respond, policy etc.
+            Assume for argument that we expect regular responses ... */
+         
+         lastseen += CF_MEASURE_INTERVAL; /* infer based on no data */
+         }
+
+      fprintf(fp1,"%d %d\n",now,lastseen);
+      }
+
+   fclose(fp1);
+   fclose(fp2);
+   dbpent->close(dbpent,0);
+   }
+
+DeleteItemList(hostlist);
+}
+
+
 
 /*****************************************************************************/
 /* Level 2                                                                   */
@@ -789,27 +947,6 @@ for (i=0; GRAPHOPTIONS[i].name != NULL; i++)
 printf("\nBug reports to bug-cfengine@gnu.org (News: gnu.cfengine.bug)\n");
 printf("General help to help-cfengine@gnu.org (News: gnu.cfengine.help)\n");
 printf("Info & fixes at http://www.iu.hio.no/cfengine\n");
-}
-
-/*********************************************************************/
-
-char *CanonifyName(char *str)
-
-{ static char buffer[CF_BUFSIZE];
-  char *sp;
-
-memset(buffer,0,CF_BUFSIZE);
-strcpy(buffer,str);
-
-for (sp = buffer; *sp != '\0'; sp++)
-    {
-    if (!isalnum((int)*sp) || *sp == '.')
-       {
-       *sp = '_';
-       }
-    }
-
-return buffer;
 }
 
 /*********************************************************************/

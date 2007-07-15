@@ -128,7 +128,6 @@ void Syntax (void);
 void StartServer (int argc, char **argv);
 void *ExitCleanly (void);
 void yyerror (char *s);
-void FatalError (char *s);
 void RotateFiles (char *s, int n);
 
 void GetDatabaseAge (void);
@@ -158,7 +157,7 @@ double RejectAnomaly (double new,double av,double var,double av2,double var2);
 void SetEntropyClasses (char *service,struct Item *list,char *inout);
 void AnalyzeArrival (char *tcpbuffer);
 void ZeroArrivals (void);
-void TimeOut (void);
+void CfenvTimeOut (void);
 void IncrementCounter (struct Item **list,char *name);
 void SaveTCPEntropyData (struct Item *list,int i, char *inout);
 void ConvertDatabase(void);
@@ -511,20 +510,10 @@ OpenSniffer();
 }
 
 /*********************************************************************/
-
-void FatalError(char *s)
-
-{
-fprintf (stderr,"%s:%s:%s\n",VPREFIX,VCURRENTFILE,s);
-closelog(); 
-exit(1);
-}
-
-/*********************************************************************/
 /* Level 3                                                           */
 /*********************************************************************/
   
-void TimeOut()
+void CfenvTimeOut()
  
 {
 alarm(0);
@@ -741,7 +730,7 @@ void Sniff()
  
 Verbose("Reading from tcpdump...\n");
 memset(tcpbuffer,0,CF_BUFSIZE);      
-signal(SIGALRM,(void *)TimeOut);
+signal(SIGALRM,(void *)CfenvTimeOut);
 alarm(SLEEPTIME);
 TCPPAUSE = false;
 
@@ -2215,51 +2204,3 @@ else
    } 
 }
 
-/***************************************************************/
-/* Linking simplification                                      */
-/***************************************************************/
-
-int RecursiveTidySpecialArea(char *name,struct Tidy *tp,int maxrecurse,struct stat *sb)
-
-{
-return true;
-}
-
-/***************************************************************/
-
-int Repository(char *file,char *repository)
-
-{
- return false;
-}
-
-
-char *GetMacroValue(char *s,char *sp)
-
-{
- return NULL;
-}
-
-void Banner(char *s)
-
-{
-}
-
-
-void AddMacroValue(char *scope,char *name,char *value)
-
-{
-}
-
-
-void yyerror(char *s)
-
-{
- /* Dummy */
-}
-
-void RotateFiles(char *name,int number)
-
-{
- /* Dummy */
-}

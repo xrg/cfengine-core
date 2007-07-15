@@ -1,5 +1,5 @@
 
-#line 3 "lex.yy.c"
+#line 3 "cflex.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -3229,7 +3229,7 @@ char *yytext;
   /* Note the %o %a declarations to allow more internal workspace */
 
 
-#line 3233 "lex.yy.c"
+#line 3233 "cflex.c"
 
 #define INITIAL 0
 #define INCONTROL 1
@@ -3390,7 +3390,7 @@ YY_DECL
 
 
 
-#line 3394 "lex.yy.c"
+#line 3394 "cflex.c"
 
 	if ( !(yy_init) )
 		{
@@ -4009,7 +4009,7 @@ YY_RULE_SETUP
 #line 510 "cflex.l"
 ECHO;
 	YY_BREAK
-#line 4013 "lex.yy.c"
+#line 4013 "cflex.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(INCONTROL):
 case YY_STATE_EOF(BRACELIST):

@@ -1,30 +1,24 @@
 AM_CFLAGS = $(GCC_CFLAG) @CFLAGS@  
 AM_YFLAGS = -d
 LEXLIB = @LEXLIB@
-LDADD = -L../pub -lpub $(BERKELEY_DB_LDFLAGSD) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LDFLAGS) $(OPENSSL_LIB_LIB)
+LDADD = -L../pub -lpub -L. -lcfengine $(BERKELEY_DB_LDFLAGSD) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LDFLAGS) $(OPENSSL_LIB_LIB)
 INCLUDES = $(BERKELEY_DB_CFLAGS) $(OPENSSL_LIB_CPPFLAGS)
 AM_LDFLAGS = $(BERKELEY_DB_LDFLAGS) $(OPENSSL_LIB_LDFLAGS) @LDFLAGS@
 
 sbin_PROGRAMS = cfagent cfservd cfrun cfkey cfenvd cfenvgraph cfexecd cfshow cfetool cfetoolgraph
 
-cfshow_SOURCES =							\
-	cfshow.c							\
-	globals.c							\
-	popen.c								\
-	log.c								\
-	ipname.c							\
-	sockaddr.c							\
-	errors.c							\
-	filenames.c							\
-	checksums.c							\
-	patches.c
 
-cfshow_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
+#
+# Fix this generically
+#
 
-cfagent_SOURCES =							\
-	cfagent.c							\
+inst_LIBRARIES = libcfengine.a
+instdir = /usr/local/lib
+
+# Separate out a library
+
+libcfengine_a_SOURCES =							\
 	init.c								\
-        do.c                                                            \
 	modules.c							\
 	alerts.c							\
         wrapper.c                                                       \
@@ -95,150 +89,39 @@ cfagent_SOURCES =							\
 	package.c							\
 	scli.c
 
-cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
+cfshow_SOURCES =							\
+	cfshow.c
+
+#cfshow_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
+
+cfagent_SOURCES =							\
+	cfagent.c							\
+        do.c
+
+#cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 
 
 cfservd_SOURCES =							\
-	cfservd.c							\
-	parse.c								\
-	dtypes.c							\
-	functions.c							\
-	install.c							\
-	sockaddr.c							\
-	ip.c								\
-	ipname.c							\
-	instrument.c							\
-	report.c							\
-	cfparse.y							\
-	chflags.c							\
-	cflex.l								\
-	item.c								\
-	item-ext.c							\
-	varstring.c							\
-	popen.c								\
-	popen_def.c							\
-	granules.c							\
-	globals.c							\
-	filenames.c							\
-	macro.c								\
-	eval.c								\
-	read.c								\
-	classes.c							\
-	modules.c							\
-	misc.c								\
-	2Dlist.c							\
-	modes.c								\
-	locks.c								\
-	init.c								\
-	wildcard.c							\
-	copy.c								\
-	rotate.c							\
-	net.c								\
-	acl.c								\
-	dce_acl.c							\
-	log.c								\
-	errors.c							\
-	crypto.c							\
-        filters.c                                                       \
-	patches.c							\
-	checksums.c							\
-	checksum_db.c							\
-	state.c								\
-	nameinfo.c							\
-	strategies.c
+	cfservd.c
 
-cfservd_LDADD = $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
+#cfservd_LDADD = $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 
 cfexecd_SOURCES =							\
-	cfexecd.c							\
-	popen.c								\
-	globals.c							\
-	sockaddr.c							\
-	read.c								\
-	classes.c							\
-	nameinfo.c							\
-	wildcard.c							\
-	errors.c							\
-        patches.c                                                       \
-	log.c								\
-	locks.c								\
-	filenames.c							\
-	granules.c							\
-	eval.c								\
-	item-ext.c							\
-	item.c								\
-	init.c
+	cfexecd.c
 
-cfexecd_LDADD = $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
+#cfexecd_LDADD = $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 
 cfrun_SOURCES =								\
-	cfrun.c								\
-	item.c								\
-	item-ext.c							\
-	varstring.c							\
-	filenames.c							\
-	sockaddr.c							\
-	nameinfo.c							\
-	eval.c								\
-	wildcard.c							\
-	proto.c								\
-	popen.c								\
-	net.c								\
-	ip.c								\
-	ipname.c							\
-	instrument.c							\
-	checksums.c							\
-	classes.c							\
-	read.c								\
-	log.c								\
-	crypto.c							\
-	patches.c							\
-	init.c								\
-	granules.c							\
-	macro.c								\
-	globals.c
+	cfrun.c
 
 cfkey_SOURCES =								\
-	cfkey.c								\
-	init.c								\
-	filenames.c							\
-	crypto.c							\
-	popen.c								\
-	globals.c							\
-	read.c								\
-	classes.c							\
-	errors.c							\
-        patches.c                                                       \
-	log.c
-
+	cfkey.c
 
 cfenvd_SOURCES =							\
-	cfenvd.c							\
-	globals.c							\
-	filenames.c							\
-	nameinfo.c							\
-	sockaddr.c							\
-	classes.c							\
-	item.c								\
-	item-ext.c							\
-	item-file.c							\
-	eval.c								\
-	wildcard.c							\
-	df.c								\
-	read.c								\
-	granules.c							\
-	log.c								\
-	popen.c								\
-	patches.c							\
-	locks.c								\
-	dtypes.c							\
-	state.c								\
-	init.c
+	cfenvd.c
 
 cfenvgraph_SOURCES =							\
-	cfenvgraph.c							\
-	granules.c							\
-	globals.c
+	cfenvgraph.c
 
 cfetool_SOURCES =							\
 	cfetool.c							\
