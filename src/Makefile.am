@@ -12,12 +12,13 @@ sbin_PROGRAMS = cfagent cfservd cfrun cfkey cfenvd cfenvgraph cfexecd cfshow cfe
 # Fix this generically
 #
 
-inst_LIBRARIES = libcfengine.a
-instdir = /usr/local/lib
+lib_LTLIBRARIES = libcfengine.la
+
+libcfengine_la_LDFLAGS = -version-info 1:0:0
 
 # Separate out a library
 
-libcfengine_a_SOURCES =							\
+libcfengine_la_SOURCES =							\
 	init.c								\
 	modules.c							\
 	alerts.c							\
@@ -124,31 +125,10 @@ cfenvgraph_SOURCES =							\
 	cfenvgraph.c
 
 cfetool_SOURCES =							\
-	cfetool.c							\
-	globals.c							\
-	filenames.c							\
-	nameinfo.c							\
-	sockaddr.c							\
-	classes.c							\
-	item.c								\
-	item-ext.c							\
-	item-file.c							\
-	eval.c								\
-	wildcard.c							\
-	df.c								\
-	read.c								\
-	granules.c							\
-	log.c								\
-	popen.c								\
-	patches.c							\
-	locks.c								\
-	dtypes.c							\
-	state.c								\
-	init.c
+	cfetool.c
 
 cfetoolgraph_SOURCES =							\
-	cfetoolgraph.c							\
-	granules.c
+	cfetoolgraph.c
 
 #
 # Pickup header files here so Automake knows about them

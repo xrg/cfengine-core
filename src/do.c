@@ -3664,33 +3664,6 @@ else
    closedir(dirh);
    }
 }
- 
-
-/*******************************************************************/
-
-int TouchDirectory(struct File *ptr)                     /* True if file path in /. */
-
-{ char *sp;
-
-if (ptr->action == touch||ptr->action == create)
-   {
-   sp = ptr->path+strlen(ptr->path)-2;
-
-   if (strcmp(sp,"/.") == 0)
-      {
-      return(true);
-      }
-   else
-      {
-      return false;
-      }
-   }
-else
-   {
-   return false;
-   }
-}
-
 
 /*******************************************************************/
 
