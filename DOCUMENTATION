@@ -1,15 +1,21 @@
--*- text -*-
+#! /bin/sh
 
-As of version 2.0.0, the now cumbersome documentation has been
-separated from the main distribution. You may download html, postscript
-and pdf versions from the official homepage
+set -x
+aclocal -I config
+libtoolize --force --copy
+autoheader
+automake --add-missing --copy
+autoconf
 
- http://www.iu.hio.no/cfengine
+$ ./bootstrap
++ aclocal -I config
++ libtoolize --force --copy
+Putting files in AC_CONFIG_AUX_DIR, config.
++ autoheader
++ automake --add-missing --copy
+automake: configure.in: installing config/install-sh
+automake: configure.in: installing config/mkinstalldirs
+automake: configure.in: installing config/missing
++ autoconf
 
-or
 
- ftp://ftp.iu.hio.no/pub/cfengine
-
-
-Mark
-2001

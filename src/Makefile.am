@@ -14,7 +14,7 @@ sbin_PROGRAMS = cfagent cfservd cfrun cfkey cfenvd cfenvgraph cfexecd cfshow cfe
 
 lib_LTLIBRARIES = libcfengine.la
 
-libcfengine_la_LDFLAGS = -version-info 1:0:0
+libcfengine_la_LDFLAGS = -version-info 1:0:0 -no-undefined
 
 # Separate out a library
 
