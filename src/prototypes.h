@@ -147,6 +147,8 @@ void HandleReturnClasses (char *args,char *value);
 void HandleSyslogFn (char *args,char *value);
 void HandleSelectPLeader (char *args,char *value);
 void HandleSelectPGroup (char *args,char *value);
+void HandleUserExists (char *args,char *value);
+void HandleGroupExists (char *args,char *value);
 void HandleSetState (char *args,char *value);
 void HandleUnsetState (char *args,char *value);
 void HandlePrepModule (char *args,char *value);
@@ -157,7 +159,6 @@ int IsSocketType (char *s);
 int IsTCPType (char *s);
 int IsProcessType (char *s);
 void HandleFriendStatus (char *args,char *value);
-
 
 /* granules.c  */
 

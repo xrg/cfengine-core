@@ -1709,17 +1709,18 @@ calling the shell @code{test} function. The time functions place their
 arguments in chronological order.
 
 @table @code
-@item IsNewerThan(@var{f1},@var{f2})
-True if file 2 was modified more recently than file 1 (UNIX mtime)
+
 @item AccessedBefore(@var{f1},@var{f2})
 True if file 1 was accessed more recently than file 2 (UNIX atime)
+
 @item ChangedBefore(@var{f1},@var{f2})
 True if file 1's attributes were changed in any way more recently than file 2's (UNIX ctime)
+
 @item FileExists(@var{file})
 True if the named file object exists.
 
-@item IPRange(@var{address-range})
-True if the current host lies within the specified IP range
+@item GroupExists(@var{groupname}|@var{gid})
+True if the groupname or group id is registered on the system.
 
 @item HostRange(@var{basename,start-stop})
 True if the current relative domain name begins with basename and ends with an integer
@@ -1734,6 +1735,14 @@ True if the file f is a directory
 True if the file f is a symbolic link
 @item IsPlain(@var{f})
 True if the file f is a plain file
+
+@item IsNewerThan(@var{f1},@var{f2})
+True if file 2 was modified more recently than file 1 (UNIX mtime)
+
+@item IPRange(@var{address-range})
+True if the current host lies within the specified IP range
+
+
 @item PrepModule(@var{module},@var{arg1 arg2...})
 True if the named module exists and can be executed. The module is assumed to
 follow the standard programming interface for modules (see Writing plugin modules in tutorial).
@@ -1755,6 +1764,11 @@ in the environment of a shell wrapper.
 
 @item Strcmp(@var{s1},@var{s2})
 True if the string s1 exactly matches s2
+
+@item UserExists(@var{username}|@var{uid})
+True if the username or user id is registered on the system (this does not imply that
+the user can log in or has a home directory).
+
 @cindex IsGreatThan
 @cindex IsLessThan
 @cindex >

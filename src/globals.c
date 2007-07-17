@@ -679,6 +679,8 @@ char *OBS[CF_OBSERVABLES] =
       "islessthan",
       "readtcp",
       "printfile",
+      "userexists",
+      "groupexists",
       NULL
       };
 

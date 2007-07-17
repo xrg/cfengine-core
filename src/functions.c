@@ -203,6 +203,14 @@ switch (fn = FunctionStringToCode(name))
    case fn_syslog:
        HandleSyslogFn(args,value);
        break;
+
+   case fn_userexists:
+       HandleUserExists(args,value);
+       break;
+       
+   case fn_groupexists:
+       HandleGroupExists(args,value);
+       break;
        
    case fn_setstate:
        HandleSetState(args,value);
@@ -1948,6 +1956,86 @@ Debug("HandleAssociation(%s <-> %s)\n",argv[0],argv[1]);
 snprintf(lvalue,CF_BUFSIZE-1,"%s[%s]",CURRENTITEM,argv[0]);
 InstallControlRValue(lvalue,argv[1]);
 snprintf(value,CF_BUFSIZE-1,"CF_ASSOCIATIVE_ARRAY%s",args);
+}
+
+/*********************************************************************/
+
+void HandleUserExists(char *args,char *value)
+
+{ struct passwd *pw;
+  uid_t uid;
+  char argv[CF_MAXFARGS][CF_EXPANDSIZE];
+
+FunctionArgs(args,argv,1);
+ 
+if (strchr(argv[0],','))
+   {
+   yyerror("Illegal argument to unary class-function");
+   return;
+   }
+ 
+if (isdigit((int)*argv[0]))
+   {
+   sscanf(argv[0],"%d",&uid);
+
+   if (uid < 0)
+      {
+      yyerror("Illegal user id");
+      }
+
+   if ((pw = getpwuid(uid)) == NULL)
+      {
+      strcpy(value,CF_NOCLASS);
+      return;
+      }
+   }
+else if ((pw = getpwnam(argv[0])) == NULL)
+   {
+   strcpy(value,CF_NOCLASS);
+   return;
+   }
+
+strcpy(value,CF_ANYCLASS);
+}
+
+/*********************************************************************/
+
+void HandleGroupExists(char *args,char *value)
+
+{ struct group *gp;
+  gid_t gid = -1;
+  char argv[CF_MAXFARGS][CF_EXPANDSIZE];
+
+FunctionArgs(args,argv,1);
+ 
+if (strchr(argv[0],','))
+   {
+   yyerror("Illegal argument to unary class-function");
+   return;
+   }
+ 
+if (isdigit((int)*argv[0]))
+   {
+   sscanf(argv[0],"%d",&gid);
+
+   if (gid < 0)
+      {
+      yyerror("Illegal group id");
+      }
+
+   if ((gp = getgrgid(gid)) == NULL)
+      {
+      strcpy(value,CF_NOCLASS);
+      return;
+      }
+   }
+else if ((gp = getgrnam(argv[0])) == NULL)
+   {
+   strcpy(value,CF_NOCLASS);
+   return;
+   }
+
+strcpy(value,CF_ANYCLASS);
 }
 
 /*********************************************************************/

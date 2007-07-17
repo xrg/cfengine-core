@@ -588,7 +588,7 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
       sum_av += p_av[i];
       }
 
-   Verbose("Reliabilities sum to %.2f and %.2f\n",sum,sum_av);
+   Debug("Reliabilities sum to %.2f and %.2f\n",sum,sum_av);
 
    sum = sum_av = 0.0;
    

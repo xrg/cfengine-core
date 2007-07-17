@@ -731,7 +731,7 @@ void PeerIntermittency()
   double entropy,average,var,sum,sum_av;
   time_t now = time(NULL), then, lastseen = CF_WEEK;
 
-Verbose("Peer Intermittency\n");
+printf("Peer Intermittency\n");
 snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
 
 average = (double) CF_HOUR;  /* It will take a week for a host to be deemed reliable */
@@ -784,6 +784,7 @@ dbp->close(dbp,0);
 for (ip = hostlist; ip != NULL; ip=ip->next)
    {
    snprintf(out1,CF_BUFSIZE,"lastseen-%s.q",hostname);
+   
    if ((fp1 = fopen(out1,"w")) == NULL)
       {
       Verbose("Unable to open %s\n",out1);
@@ -798,7 +799,7 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
       }
    
    snprintf(name,CF_BUFSIZE-1,"%s/%s.%s",VLOCKDIR,CF_LASTDB_FILE,ip->name);
-   Verbose("Consulting profile %s\n",name);
+   printf("Consulting profile %s\n",name);
 
    if ((errno = db_create(&dbpent,dbenv2,0)) != 0)
       {

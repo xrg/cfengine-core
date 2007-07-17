@@ -22,7 +22,6 @@ libcfengine_la_SOURCES =							\
 	init.c								\
 	modules.c							\
 	alerts.c							\
-        wrapper.c                                                       \
         report.c                                                        \
 	client.c							\
 	ip.c								\
@@ -82,30 +81,24 @@ libcfengine_la_SOURCES =							\
 	methods.c							\
 	dtypes.c							\
 	state.c								\
+	checksum_db.c							\
 	expand-files.c							\
 	expand-tidy.c							\
 	expand-image.c							\
 	expand-editfiles.c						\
-	checksum_db.c							\
 	package.c							\
 	scli.c
 
 cfshow_SOURCES =							\
 	cfshow.c
 
-#cfshow_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
-
 cfagent_SOURCES =							\
 	cfagent.c							\
+        wrapper.c                                                       \
         do.c
-
-#cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
-
 
 cfservd_SOURCES =							\
 	cfservd.c
-
-#cfservd_LDADD = $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 
 cfexecd_SOURCES =							\
 	cfexecd.c

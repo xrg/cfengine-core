@@ -65,23 +65,23 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(sbindir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libcfengine_la_LIBADD =
-am_libcfengine_la_OBJECTS = init.lo modules.lo alerts.lo wrapper.lo \
-	report.lo client.lo ip.lo ipname.lo instrument.lo process.lo \
-	ifconf.lo image.lo item.lo item-ext.lo item-file.lo 2Dlist.lo \
-	globals.lo classes.lo misc.lo parse.lo functions.lo \
-	edittools.lo patches.lo install.lo link.lo tidy.lo filedir.lo \
-	eval.lo modes.lo sockaddr.lo chflags.lo locks.lo mount.lo \
-	macro.lo filenames.lo varstring.lo wildcard.lo cfparse.lo \
-	comparray.lo read.lo checksums.lo proto.lo filters.lo copy.lo \
-	repository.lo rotate.lo errors.lo cflex.lo net.lo df.lo log.lo \
-	crypto.lo popen.lo popen_def.lo sensible.lo acl.lo dce_acl.lo \
+am_libcfengine_la_OBJECTS = init.lo modules.lo alerts.lo report.lo \
+	client.lo ip.lo ipname.lo instrument.lo process.lo ifconf.lo \
+	image.lo item.lo item-ext.lo item-file.lo 2Dlist.lo globals.lo \
+	classes.lo misc.lo parse.lo functions.lo edittools.lo \
+	patches.lo install.lo link.lo tidy.lo filedir.lo eval.lo \
+	modes.lo sockaddr.lo chflags.lo locks.lo mount.lo macro.lo \
+	filenames.lo varstring.lo wildcard.lo cfparse.lo comparray.lo \
+	read.lo checksums.lo proto.lo filters.lo copy.lo repository.lo \
+	rotate.lo errors.lo cflex.lo net.lo df.lo log.lo crypto.lo \
+	popen.lo popen_def.lo sensible.lo acl.lo dce_acl.lo \
 	nameinfo.lo strategies.lo granules.lo methods.lo dtypes.lo \
-	state.lo expand-files.lo expand-tidy.lo expand-image.lo \
-	expand-editfiles.lo checksum_db.lo package.lo scli.lo
+	state.lo checksum_db.lo expand-files.lo expand-tidy.lo \
+	expand-image.lo expand-editfiles.lo package.lo scli.lo
 libcfengine_la_OBJECTS = $(am_libcfengine_la_OBJECTS)
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(sbin_PROGRAMS)
-am_cfagent_OBJECTS = cfagent.$(OBJEXT) do.$(OBJEXT)
+am_cfagent_OBJECTS = cfagent.$(OBJEXT) wrapper.$(OBJEXT) do.$(OBJEXT)
 cfagent_OBJECTS = $(am_cfagent_OBJECTS)
 cfagent_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
@@ -312,7 +312,6 @@ libcfengine_la_SOURCES = \
 	init.c								\
 	modules.c							\
 	alerts.c							\
-        wrapper.c                                                       \
         report.c                                                        \
 	client.c							\
 	ip.c								\
@@ -372,11 +371,11 @@ libcfengine_la_SOURCES = \
 	methods.c							\
 	dtypes.c							\
 	state.c								\
+	checksum_db.c							\
 	expand-files.c							\
 	expand-tidy.c							\
 	expand-image.c							\
 	expand-editfiles.c						\
-	checksum_db.c							\
 	package.c							\
 	scli.c
 
@@ -387,6 +386,7 @@ cfshow_SOURCES = \
 #cfshow_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 cfagent_SOURCES = \
 	cfagent.c							\
+        wrapper.c                                                       \
         do.c
 
 
@@ -687,7 +687,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tidy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/varstring.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wildcard.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wrapper.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wrapper.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
