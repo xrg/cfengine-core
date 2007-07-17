@@ -2,10 +2,12 @@
 2.2.2
 	The build procedure for cfengine changes in this version to
 	incorporate an intermediate library. The default behaviour is now
-	to build a shared library which will be used by cfengine 3 and
-	other application interfaces.
+	to build a static library which will be used by cfengine 3 and
+	other application interfaces. To build a shared library, use
+
+	--enable-shared=yes
 	
-	scli modifications.
+	SCLI interface modifications.
 
 	Intermittency entropy code added to the copy instrumentation for
 	automatic host reliability measurements.
