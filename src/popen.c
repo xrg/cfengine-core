@@ -162,7 +162,15 @@ FILE *cfpopen(char *command,char *type)
               }
        }
     
-    CHILD[fileno(pp)] = pid;
+    if (fileno(pp) >= MAXFD)
+       {
+       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
+       CfLog(cferror,OUTPUT,"");
+       }
+    else
+       {
+       CHILD[fileno(pp)] = pid;
+       }
     return pp;
     }
  
@@ -337,7 +345,15 @@ FILE *cfpopensetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,ch
               }
        }
     
-    CHILD[fileno(pp)] = pid;
+    if (fileno(pp) >= MAXFD)
+       {
+       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
+       CfLog(cferror,OUTPUT,"");
+       }
+    else
+       {
+       CHILD[fileno(pp)] = pid;
+       }
     return pp;
     }
  return NULL; /* cannot reach here */
@@ -443,7 +459,15 @@ FILE *cfpopen_sh(char *command,char *type)
               }
        }
     
-    CHILD[fileno(pp)] = pid;
+    if (fileno(pp) >= MAXFD)
+       {
+       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
+       CfLog(cferror,OUTPUT,"");
+       }
+    else
+       {
+       CHILD[fileno(pp)] = pid;
+       }
     return pp;
     }
  
@@ -592,7 +616,15 @@ FILE *cfpopen_shsetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv
               }
        }
     
-    CHILD[fileno(pp)] = pid;
+    if (fileno(pp) >= MAXFD)
+       {
+       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
+       CfLog(cferror,OUTPUT,"");
+       }
+    else
+       {
+       CHILD[fileno(pp)] = pid;
+       }
     return pp;
     }
  
@@ -618,12 +650,21 @@ if (CHILD == NULL)  /* popen hasn't been called */
 
 fd = fileno(pp);
 
-if ((pid = CHILD[fd]) == 0)
+if (fd >= MAXFD)
    {
+   snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child higher than "
+      "MAXFD, check for defunct children", fd);
+   CfLog(cferror,OUTPUT,"");
+   fclose(pp);
    return -1;
    }
 
 CHILD[fd] = 0;
+
+if ((pid = CHILD[fd]) == 0)
+   {
+   return -1;
+   }
 
 if (fclose(pp) == EOF)
    {
@@ -642,31 +683,31 @@ while(waitpid(pid,&status,0) < 0)
       }
    }
 
- return status; 
+return status; 
  
 #else
 
- while ((wait_result = wait(&status)) != pid)
-    {
-    if (wait_result <= 0)
-       {
-       snprintf(OUTPUT,CF_BUFSIZE,"Wait for child failed\n");
-       CfLog(cfinform,OUTPUT,"wait");
-       return -1;
-       }
-    }
+while ((wait_result = wait(&status)) != pid)
+   {
+   if (wait_result <= 0)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Wait for child failed\n");
+      CfLog(cfinform,OUTPUT,"wait");
+      return -1;
+      }
+   }
  
- if (WIFSIGNALED(status))
-    {
-    return -1;
-    }
+if (WIFSIGNALED(status))
+   {
+   return -1;
+   }
  
- if (! WIFEXITED(status))
-    {
-    return -1;
-    }
+if (! WIFEXITED(status))
+   {
+   return -1;
+   }
  
- return (WEXITSTATUS(status));
+return (WEXITSTATUS(status));
 #endif
 }
 
