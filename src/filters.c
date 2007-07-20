@@ -756,7 +756,7 @@ if (crit[filterexec] != NULL)
    {
    if (FilterExecMatch(filename,crit[filterexec]))
       {
-      PrependItem(attr,"Exec","");
+      PrependItem(attr,"ExecProgram","");
       }
    }
 }
