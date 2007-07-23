@@ -387,3 +387,19 @@ return true;
 return (getuid() == 0);
 #endif 
 }
+
+/*******************************************************************/
+
+#ifndef HAVE_LIBRT
+
+int clock_gettime(clockid_t clock_id,struct timespec *tp)
+
+{ struct time_t now = time(NULL);
+
+tp.tv_secs = now;
+tp.tv_nsec = 0;
+return 0;
+}
+
+
+#endif

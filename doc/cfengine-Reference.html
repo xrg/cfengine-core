@@ -1439,12 +1439,13 @@ calling the shell <code>test</code> function. The time functions place their
 arguments in chronological order.
 
      <dl>
-<dt><code>IsNewerThan(</code><var>f1</var><code>,</code><var>f2</var><code>)</code><dd>True if file 2 was modified more recently than file 1 (UNIX mtime)
-<br><dt><code>AccessedBefore(</code><var>f1</var><code>,</code><var>f2</var><code>)</code><dd>True if file 1 was accessed more recently than file 2 (UNIX atime)
-<br><dt><code>ChangedBefore(</code><var>f1</var><code>,</code><var>f2</var><code>)</code><dd>True if file 1's attributes were changed in any way more recently than file 2's (UNIX ctime)
-<br><dt><code>FileExists(</code><var>file</var><code>)</code><dd>True if the named file object exists.
+<dt><code>AccessedBefore(</code><var>f1</var><code>,</code><var>f2</var><code>)</code><dd>True if file 1 was accessed more recently than file 2 (UNIX atime)
 
-     <br><dt><code>IPRange(</code><var>address-range</var><code>)</code><dd>True if the current host lies within the specified IP range
+     <br><dt><code>ChangedBefore(</code><var>f1</var><code>,</code><var>f2</var><code>)</code><dd>True if file 1's attributes were changed in any way more recently than file 2's (UNIX ctime)
+
+     <br><dt><code>FileExists(</code><var>file</var><code>)</code><dd>True if the named file object exists.
+
+     <br><dt><code>GroupExists(</code><var>groupname</var><code>|</code><var>gid</var><code>)</code><dd>True if the groupname or group id is registered on the system.
 
      <br><dt><code>HostRange(</code><var>basename,start-stop</var><code>)</code><dd>True if the current relative domain name begins with basename and ends with an integer
 between start and stop.  Note well: matching is case insensitive (both hostname and basename are converted to all lower case for comparison.)
@@ -1454,7 +1455,12 @@ between start and stop.  Note well: matching is case insensitive (both hostname 
 <br><dt><code>IsDir(</code><var>f</var><code>)</code><dd>True if the file f is a directory
 <br><dt><code>IsLink(</code><var>f</var><code>)</code><dd>True if the file f is a symbolic link
 <br><dt><code>IsPlain(</code><var>f</var><code>)</code><dd>True if the file f is a plain file
-<br><dt><code>PrepModule(</code><var>module</var><code>,</code><var>arg1 arg2...</var><code>)</code><dd>True if the named module exists and can be executed. The module is assumed to
+
+     <br><dt><code>IsNewerThan(</code><var>f1</var><code>,</code><var>f2</var><code>)</code><dd>True if file 2 was modified more recently than file 1 (UNIX mtime)
+
+     <br><dt><code>IPRange(</code><var>address-range</var><code>)</code><dd>True if the current host lies within the specified IP range
+
+     <br><dt><code>PrepModule(</code><var>module</var><code>,</code><var>arg1 arg2...</var><code>)</code><dd>True if the named module exists and can be executed. The module is assumed to
 follow the standard programming interface for modules (see Writing plugin modules in tutorial). 
 Unlike actionsequence modules, these modules are evaluated immediately on parsing. 
 Note that the module should be specified relative to the authorized module directory. 
@@ -1467,7 +1473,11 @@ The command is executed without a shell wrapper.
 in the environment of a shell wrapper.
 
      <br><dt><code>Strcmp(</code><var>s1</var><code>,</code><var>s2</var><code>)</code><dd>True if the string s1 exactly matches s2
-<a name="index-IsGreatThan-89"></a><a name="index-IsLessThan-90"></a><a name="index-g_t_003e-91"></a><a name="index-g_t_003c-92"></a><br><dt><code>IsGreaterThan(</code><var>s1</var><code>,</code><var>s2</var><code>)</code><dd>Returns true if the value of s1 is greater than the value of s2. Note
+
+     <br><dt><code>UserExists(</code><var>username</var><code>|</code><var>uid</var><code>)</code><dd>True if the username or user id is registered on the system (this does not imply that
+the user can log in or has a home directory).
+
+     <p><a name="index-IsGreatThan-89"></a><a name="index-IsLessThan-90"></a><a name="index-g_t_003e-91"></a><a name="index-g_t_003c-92"></a><br><dt><code>IsGreaterThan(</code><var>s1</var><code>,</code><var>s2</var><code>)</code><dd>Returns true if the value of s1 is greater than the value of s2. Note
 that, if the strings have numerical values, a numerical comparison is
 performed, otherwise a string comparison is used. 
 <br><dt><code>IsLessThan(</code><var>s1</var><code>,</code><var>s2</var><code>)</code><dd>Returns true if the value of s1 is less than the value of s2. Note
@@ -9254,12 +9264,33 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 <h3 class="section">4.34 scli</h3>
 
-<p>SCLI is an SNMP command line interpreter written by IETF leader Juergen
-Schoenwaelder of the Jacobs University of Bremen. It is a command interpreter
-used to simplify the interaction with SNMP enabled devices.
+<p>SCLI is an SNMP command line interpreter written by J&uuml;rgen
+Sch&ouml;nwaelder of the Jacobs University of Bremen. It is a command
+interpreter used to simplify the interaction with SNMP enabled
+devices. SNMP is a stateless, UDP based network protocol for
+communicating with supporting hardware. The SNMP model does not fit very well with
+the cfengine responsibility for self paradigm, but it can be viewed as
+simply another form of shell script. SCLI attempts to add a level of
+user friendliness and stateful behaviour to SNMP through its shell-like
+interface. This is both a help and a hindrance to cfagent.
 
-   <p>This cfengine interface is a special case of the <code>shellcommands</code>
-interface, which passes commands to SCLI instead of to <samp><span class="file">/bin/sh</span></samp>. 
+   <p>The intermingling of stateful and stateless processes in the dialogue
+between cfengine and scli makes their integration non-trivial. Several
+compromises have to be made to aid usability and these could lead to
+difficulties in the practical use of the tools later.
+
+   <p>The scli section of a cfagent configuration is a single script. The lines
+are passed as a collective object to the scli interpreter, not line-by-line
+as in other cases.
+
+   <p>The basic approach is to open a pipe for the reading and writing of
+dialogue with the interpreter. There are some limitations to Unix
+pipes however, in particular input and output are separated which
+makes per-transaction error control essentially impossible. A
+work-around for this has been used in the test phase.
+
+   <p>The cfengine interface is a special case of the <code>shellcommands</code>
+interface, passing commands to SCLI instead of to <samp><span class="file">/bin/sh</span></samp>. 
 The command options are the same as those below for <code>shellcommands</code>.
 
    <p><table class="cartouche" summary="cartouche" border="1"><tr><td>

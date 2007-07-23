@@ -1223,7 +1223,9 @@ void Scripts()
   char execstr[CF_EXPANDSIZE];
   char chdir_buf[CF_EXPANDSIZE];
   char chroot_buf[CF_EXPANDSIZE];
-  time_t start,end;
+  struct timespec start,stop;
+  int measured_ok = true;
+  double dt = 0;
   int print, outsourced;
   mode_t maskval = 0;
   FILE *pp;
@@ -1259,7 +1261,11 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
    snprintf(OUTPUT,CF_BUFSIZE*2,"\nExecuting script %s...(timeout=%d,uid=%d,gid=%d)\n",execstr,ptr->timeout,ptr->uid,ptr->gid);
    CfLog(cfinform,OUTPUT,"");
 
-   start = time(NULL);
+   if (clock_gettime(CLOCK_REALTIME, &start) == -1)
+      {
+      CfLog(cfverbose,"Clock gettime failure","clock_gettime");
+      measured_ok = false;
+      }
 
    if (DONTDO && preview != 'y')
       {
@@ -1447,9 +1453,20 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
       ResetOutputRoute('d','d');
       ReleaseCurrentLock();
       
-      end = time(NULL);
+      if (clock_gettime(CLOCK_REALTIME, &stop) == -1)
+         {
+         CfLog(cfverbose,"Clock gettime failure","clock_gettime");
+         measured_ok = false;
+         }
+      
+      dt = (double)(stop.tv_sec - start.tv_sec)+(double)(stop.tv_nsec-start.tv_nsec)/(double)CF_BILLION;
+      
       snprintf(eventname,CF_BUFSIZE-1,"Exec(%s)",execstr);
-      RecordPerformance(eventname,start,(double)(end-start));
+      
+      if (measured_ok)
+         {
+         RecordPerformance(eventname,start.tv_sec,dt);
+         }
 
       if (ptr->fork == 'y' && outsourced)
          {
@@ -2447,10 +2464,16 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
 
    for (ip = VIMAGE; ip != NULL; ip=ip->next)
       {
-      time_t start, end;
+      struct timespec start,stop;
+      double dt = 0;
+      int measured_ok = true;
       char eventname[CF_BUFSIZE];
 
-      start = time(NULL);
+      if (clock_gettime(CLOCK_REALTIME, &start) == -1)
+         {
+         CfLog(cfverbose,"Clock gettime failure","clock_gettime");
+         measured_ok = false;
+         }
       
       ExpandVarstring(ip->server,server,NULL);            
       AddMacroValue(CONTEXTID,"this",server);
@@ -2565,9 +2588,20 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
       SILENT = savesilent;
       ResetOutputRoute('d','d');
 
-      end = time(NULL);
+      if (clock_gettime(CLOCK_REALTIME, &stop) == -1)
+         {
+         CfLog(cfverbose,"Clock gettime failure","clock_gettime");
+         measured_ok = false;
+         }
+
+      dt = (double)(stop.tv_sec - start.tv_sec)+(double)(stop.tv_nsec-start.tv_nsec)/(double)CF_BILLION;
+      
       snprintf(eventname,CF_BUFSIZE-1,"Copy(%s:%s > %s)",server,path,destination);
-      RecordPerformance(eventname,start,(double)(end-start));
+
+      if (measured_ok)
+         {
+         RecordPerformance(eventname,start.tv_sec,dt);
+         }
       }
    
    CloseServerConnection();
@@ -2765,8 +2799,9 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
    Verbose("Match status for %s is %u\n", ptr->name, match );
 
    /* Process any queued actions (install/remove). */
-   if ((pending_pkgs) && ((ptr->action != prev_action) || (ptr->pkgmgr != prev_pkgmgr)))
+   if ((pending_pkgs != NULL) && ((ptr->action != prev_action) || (ptr->pkgmgr != prev_pkgmgr)))
       {
+      // Verbose("New action of %s didn't match previous action %s for package %s\n", pkgactions[ptr->action], pkgactions[prev_action], ptr->name );
       ProcessPendingPackages(prev_pkgmgr, prev_action, &pending_pkgs);
       DeleteItemList( pending_pkgs );
       }
@@ -2778,10 +2813,10 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       if (ptr->action == pkgaction_remove) 
          {
          PackageList(ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp, &pending_pkgs);
-	     AppendItem(&pending_pkgs, ptr->name, NULL);
+         AppendItem(&pending_pkgs, ptr->name, NULL);
 
          /* Some package managers operate best doing things one at a time. */
-	     if ( (ptr->pkgmgr == pkgmgr_freebsd) || (ptr->pkgmgr == pkgmgr_sun) )
+         if ( (ptr->pkgmgr == pkgmgr_freebsd) || (ptr->pkgmgr == pkgmgr_sun) )
             {
             RemovePackage( ptr->pkgmgr, &pending_pkgs );
             DeleteItemList( pending_pkgs );
@@ -2797,10 +2832,10 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       AddMultipleClasses(ptr->elsedef);
       if (ptr->action == pkgaction_install)
          {
-	     AppendItem(&pending_pkgs, ptr->name, NULL);
+         AppendItem(&pending_pkgs, ptr->name, NULL);
 
          /* Some package managers operate best doing things one at a time. */
-	     if ( (ptr->pkgmgr == pkgmgr_freebsd) || (ptr->pkgmgr == pkgmgr_sun) )
+         if ( (ptr->pkgmgr == pkgmgr_freebsd) || (ptr->pkgmgr == pkgmgr_sun) )
             {
             InstallPackage( ptr->pkgmgr, &pending_pkgs );
             DeleteItemList( pending_pkgs );
@@ -2809,19 +2844,19 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       }
  
    ptr->done = 'y';
+   ReleaseCurrentLock();
    if( ptr->action != pkgaction_none )
       {
       prev_action = ptr->action;
       prev_pkgmgr = ptr->pkgmgr;
       }
-   ReleaseCurrentLock();
+   }
 
    if(pending_pkgs != NULL)
       {
       ProcessPendingPackages(prev_pkgmgr, prev_action, &pending_pkgs);
       DeleteItemList( pending_pkgs );
       }
-   }
 }
 
 void ProcessPendingPackages (enum pkgmgrs pkgmgr, enum pkgactions action, struct Item **pending_pkgs)

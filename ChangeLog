@@ -12,10 +12,15 @@
 	Intermittency entropy code added to the copy instrumentation for
 	automatic host reliability measurements.
 
+	Instrumentation changed to use realtime functions where possible. Standard
+	unix timer is too insensitive to measure performance.
+	
 	libtoolizing compilation process for migration to cfengine shared library
 	(this is to support mulitple interfaces in future, and cf 3)
 
 	UserExists("name") and GroupExists("name") functions added to builtin functions.
+
+	
 	
 2.2.1
 	scli: type section added. This is a special case of shellcommands, which

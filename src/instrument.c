@@ -100,7 +100,7 @@ if (lastseen > (double)lsea)
    }
 else
    {
-   Verbose("Performance(%s): time=%.2f secs, av=%.2f +/- %.2f\n",eventname,value,newe.Q.expect,sqrt(newe.Q.var));
+   Verbose("Performance(%s): time=%.4f secs, av=%.4f +/- %.4f\n",eventname,value,newe.Q.expect,sqrt(newe.Q.var));
    WriteDB(dbp,eventname,&newe,sizeof(newe));
    }
 

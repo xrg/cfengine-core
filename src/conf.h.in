@@ -187,6 +187,9 @@
 /* Define to 1 if you have the `PW' library (-lPW). */
 #undef HAVE_LIBPW
 
+/* Define to 1 if you have the `rt' library (-lrt). */
+#undef HAVE_LIBRT
+
 /* Define to 1 if you have the `rx' library (-lrx). */
 #undef HAVE_LIBRX
 

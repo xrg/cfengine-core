@@ -382,20 +382,14 @@ libcfengine_la_SOURCES = \
 cfshow_SOURCES = \
 	cfshow.c
 
-
-#cfshow_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 cfagent_SOURCES = \
 	cfagent.c							\
         wrapper.c                                                       \
         do.c
 
-
-#cfagent_LDADD = $(LEXLIB) $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 cfservd_SOURCES = \
 	cfservd.c
 
-
-#cfservd_LDADD = $(LEXLIB) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LIB)
 cfexecd_SOURCES = \
 	cfexecd.c
 
