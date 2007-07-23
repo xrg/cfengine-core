@@ -370,7 +370,7 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       snprintf(tbuf,CF_BUFSIZE-1,"%s",ctime(&then));
       tbuf[strlen(tbuf)-9] = '\0';                     /* Chop off second and year */
 
-      printf("(%.4f mins @ %s) Av %.4f +/- %.4f for %s \n",measure,tbuf,average,sqrt(var)/ticksperminute,eventname);
+      printf("(%7.4f mins @ %s) Av %7.4f +/- %7.4f for %s \n",measure,tbuf,average,sqrt(var)/ticksperminute,eventname);
       }
    else
       {
