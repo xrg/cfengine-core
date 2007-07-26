@@ -6,12 +6,20 @@
 	other application interfaces. To build a shared library, use
 
 	--enable-shared=yes
+
+	NOTE to developers: if running from the compiled code you now need
+	to delete the files cfagent cfservd etc and recompile to see changes
+	appear in the code. This is due to the libtool build process.
+
+	--
 	
 	SCLI interface modifications.
 
 	Intermittency entropy code added to the copy instrumentation for
 	automatic host reliability measurements.
 
+	--
+	
 	Instrumentation changed to use realtime functions where possible. Standard
 	unix timer is too insensitive to measure performance.
 	
@@ -19,8 +27,17 @@
 	(this is to support mulitple interfaces in future, and cf 3)
 
 	UserExists("name") and GroupExists("name") functions added to builtin functions.
-
 	
+	Additional octet variables added on default IPv4 address, for convenience:
+	e.g.
+	   590  : ipv4_2[eth1]=192.168
+	   1895 : ipv4[eth1]=192.168.1.101
+	   2100 : ipv4_1[eth1]=192
+	   4049 : ipv4_3[eth1]=192.168.1
+	
+
+	Methods can now expand some list variables, one list only per argument set.
+	This is a limited compromise pending cfengine 3.
 	
 2.2.1
 	scli: type section added. This is a special case of shellcommands, which

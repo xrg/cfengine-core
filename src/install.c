@@ -2595,6 +2595,7 @@ switch (action)
 
    case rename_disable:
    case disable:
+       
        AppendDisable(CURRENTOBJECT,CURRENTITEM,ROTATE,DISCOMP,DISABLESIZE);
        break;
 
@@ -3851,13 +3852,14 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
 
 void InstallMethod(char *function,char *file)
 
-{ char *sp, work[CF_EXPANDSIZE],name[CF_BUFSIZE];
+{ char *sp,*vp,work[CF_EXPANDSIZE],name[CF_BUFSIZE];
   struct Method *ptr;
   struct Item *bare_send_args = NULL, *sip;
   uid_t uid = CF_NOUSER;
   gid_t gid = CF_NOUSER;
   struct passwd *pw;
   struct group *gw;
+  struct TwoDimList *tp = NULL;
    
 Debug1("Install item (%s=%s) in the methods list iff %s?\n",function,file,CLASSBUFF);
 
@@ -3869,32 +3871,6 @@ if (strlen(file) == 0)
    }
  
 memset(name,0,CF_BUFSIZE);
-
-/* Methods need to be known to the engine even when not scheduled
-if (!IsInstallable(CLASSBUFF))
-   {
-   InitializeAction();
-   Debug1("Not installing %s, no match\n",function);
-   return;
-   }
-*/
-
-
-Debug1("Installing item (%s=%s) in the methods list iff %s\n",function,file,CLASSBUFF);
-
-if ((ptr = (struct Method *)malloc(sizeof(struct Method))) == NULL)
-   {
-   FatalError("Memory Allocation failed for InstallMethod() #1");
-   }
-
-if (VMETHODSTOP == NULL)
-   {
-   VMETHODS = ptr;
-   }
-else
-   {
-   VMETHODSTOP->next = ptr;
-   }
 
 if (!strstr(function,"("))
    {
@@ -3937,202 +3913,226 @@ if (strlen(sp) == 0)
    }
  
 /* Now expand variables */
- 
-ExpandVarstring(function,work,"");
- 
-if (work[strlen(work)-1] != ')')
-   {
-   yyerror("Illegal use of space or nested parentheses");
-   }
- 
-work [strlen(work)-1] = '\0';   /*chop last ) */
- 
-sscanf(function,"%[^(]",name); 
+/* ExpandVarstring(function,work,""); */
 
-if (strlen(name) == 0)
+strcpy(work,function);
+
+Build2DListFromVarstring(&tp,work,LISTSEPARATOR); /* Must be at least one space between each var */
+
+Set2DList(tp);
+
+for (vp = Get2DListEnt(tp); vp != NULL; vp = Get2DListEnt(tp))
    {
-   yyerror("Empty method");
-   return;
-   }
- 
-for (sp = work; sp != NULL; sp++) /* Pick out the args*/
-   {
-   if (*sp == '(')
+   Debug1("Installing item (%s=%s) in the methods list iff %s\n",function,file,CLASSBUFF);
+   
+   if ((ptr = (struct Method *)malloc(sizeof(struct Method))) == NULL)
       {
-      break;
+      FatalError("Memory Allocation failed for InstallMethod() #1");
       }
-   }
- 
-sp++; 
+   
+   if (VMETHODSTOP == NULL)
+      {
+      VMETHODS = ptr;
+      }
+   else
+      {
+      VMETHODSTOP->next = ptr;
+      }
+   
+   if (vp[strlen(vp)-1] != ')')
+      {
+      yyerror("Illegal use of space or nested parentheses");
+      }
+   
+   vp [strlen(vp)-1] = '\0';   /*chop last ) */
+   
+   sscanf(work,"%[^(]",name); 
+   
+   if (strlen(name) == 0)
+      {
+      yyerror("Empty method");
+      return;
+      }
+   
+   for (sp = vp; sp != NULL; sp++) /* Pick out the args*/
+      {
+      if (*sp == '(')
+         {
+         break;
+         }
+      }
+   
+   sp++; 
+   
+   if (strlen(sp) == 0)
+      {
+      yyerror("Missing argument (void?) to method");
+      }
+   
+   ptr->send_args = ListFromArgs(sp);
+   ptr->send_classes = SplitStringAsItemList(METHODREPLYTO,','); 
+   
+   if ((ptr->name = strdup(name)) == NULL)
+      {
+      FatalError("Memory Allocation failed for InstallMethod() #2");
+      }
+   
+   if ((ptr->classes = strdup(CLASSBUFF)) == NULL)
+      {
+      FatalError("Memory Allocation failed for InstallMethod() #3");
+      }
+   
+   if (strlen(file) == 0)
+      {
+      yyerror("Missing filename in method");
+      return;
+      }
+   
+   if (strcmp(file,"dispatch") == 0)
+      {
+      ptr->invitation = 'y';
+      }
+   else
+      {
+      ptr->invitation = 'n';
+      }
+   
+   if (file[0] == '/' || file[0] == '.')
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Method name (%s) was absolute. Must be in trusted Modules directory (no path prefix)",file);
+      yyerror(OUTPUT);
+      return;
+      }
+   
+   ptr->file = strdup(file);
+   
+   if (strlen(CFSERVER) > 0)
+      {
+      ptr->servers = SplitStringAsItemList(CFSERVER,',');
+      }
+   else
+      {
+      ptr->servers = SplitStringAsItemList("localhost",',');
+      }
+   
+   bare_send_args = ListFromArgs(sp);
+   
+   /* Append server to make this unique */
 
-if (strlen(sp) == 0)
-   {
-   yyerror("Missing argument (void?) to method");
-   }
- 
-ptr->send_args = ListFromArgs(sp);
-ptr->send_classes = SplitStringAsItemList(METHODREPLYTO,','); 
- 
-if ((ptr->name = strdup(name)) == NULL)
-   {
-   FatalError("Memory Allocation failed for InstallMethod() #2");
-   }
- 
-if ((ptr->classes = strdup(CLASSBUFF)) == NULL)
-   {
-   FatalError("Memory Allocation failed for InstallMethod() #3");
-   }
-
- if (strlen(file) == 0)
-    {
-    yyerror("Missing filename in method");
-    return;
-    }
-
- if (strcmp(file,"dispatch") == 0)
-    {
-    ptr->invitation = 'y';
-    }
- else
-    {
-    ptr->invitation = 'n';
-    }
- 
- if (file[0] == '/' || file[0] == '.')
-    {
-    snprintf(OUTPUT,CF_BUFSIZE,"Method name (%s) was absolute. Must be in trusted Modules directory (no path prefix)",file);
-    yyerror(OUTPUT);
-    return;
-    }
- 
-ptr->file = strdup(file);
-
-if (strlen(CFSERVER) > 0)
-   {
-   ptr->servers = SplitStringAsItemList(CFSERVER,',');
-   }
-else
-   {
-   ptr->servers = SplitStringAsItemList("localhost",',');
-   }
-
-bare_send_args = ListFromArgs(sp);
-
-/* Append server to make this unique */
-for (sip = ptr->servers; sip != NULL; sip = sip->next)
-   {
-   PrependItem(&bare_send_args,sip->name,NULL);
-   }
-
-ChecksumList(bare_send_args,ptr->digest,'m');
-DeleteItemList(bare_send_args);
-
-
-ptr->bundle = NULL;
-ptr->return_vars = SplitStringAsItemList(METHODFILENAME,',');
-ptr->return_classes = SplitStringAsItemList(PARSEMETHODRETURNCLASSES,','); 
-ptr->scope = strdup(CONTEXTID);
-ptr->useshell = USESHELL;
-ptr->log = LOGP;
-ptr->inform = INFORMP;
- 
-if (*VUIDNAME == '*')
-   {
-   ptr->uid = CF_SAME_OWNER;      
-   }
-else if (isdigit((int)*VUIDNAME))
-   {
-   sscanf(VUIDNAME,"%d",&uid);
-
-   if (uid == CF_NOUSER)
+   for (sip = ptr->servers; sip != NULL; sip = sip->next)
+      {
+      PrependItem(&bare_send_args,sip->name,NULL);
+      }
+   
+   ChecksumList(bare_send_args,ptr->digest,'m');
+   DeleteItemList(bare_send_args);   
+   
+   ptr->bundle = NULL;
+   ptr->return_vars = SplitStringAsItemList(METHODFILENAME,',');
+   ptr->return_classes = SplitStringAsItemList(PARSEMETHODRETURNCLASSES,','); 
+   ptr->scope = strdup(CONTEXTID);
+   ptr->useshell = USESHELL;
+   ptr->log = LOGP;
+   ptr->inform = INFORMP;
+   
+   if (*VUIDNAME == '*')
+      {
+      ptr->uid = CF_SAME_OWNER;      
+      }
+   else if (isdigit((int)*VUIDNAME))
+      {
+      sscanf(VUIDNAME,"%d",&uid);
+      
+      if (uid == CF_NOUSER)
+         {
+         yyerror("Unknown or silly user id");
+         return;
+         }
+      else
+         {
+         ptr->uid = uid;
+         }
+      }
+   else if ((pw = getpwnam(VUIDNAME)) == NULL)
       {
       yyerror("Unknown or silly user id");
       return;
       }
    else
       {
-      ptr->uid = uid;
+      ptr->uid = pw->pw_uid;
       }
-   }
-else if ((pw = getpwnam(VUIDNAME)) == NULL)
-   {
-   yyerror("Unknown or silly user id");
-   return;
-   }
-else
-   {
-   ptr->uid = pw->pw_uid;
-   }
-
-if (*VGIDNAME == '*')
-   {
-   ptr->gid = CF_SAME_GROUP;
-   }
-else if (isdigit((int)*VGIDNAME))
-   {
-   sscanf(VGIDNAME,"%d",&gid);
-   if (gid == CF_NOUSER)
+   
+   if (*VGIDNAME == '*')
+      {
+      ptr->gid = CF_SAME_GROUP;
+      }
+   else if (isdigit((int)*VGIDNAME))
+      {
+      sscanf(VGIDNAME,"%d",&gid);
+      if (gid == CF_NOUSER)
+         {
+         yyerror("Unknown or silly group id");
+         return;
+         }
+      else
+         {
+         ptr->gid = gid;
+         }
+      }
+   else if ((gw = getgrnam(VGIDNAME)) == NULL)
       {
       yyerror("Unknown or silly group id");
       return;
       }
    else
       {
-      ptr->gid = gid;
+      ptr->gid = gw->gr_gid;
       }
-   }
-else if ((gw = getgrnam(VGIDNAME)) == NULL)
-   {
-   yyerror("Unknown or silly group id");
-   return;
-   }
-else
-   {
-   ptr->gid = gw->gr_gid;
-   }
-  
-if (PIFELAPSED != -1)
-   {
-   ptr->ifelapsed = PIFELAPSED;
-   }
-else
-   {
-   ptr->ifelapsed = VIFELAPSED;
+   
+   if (PIFELAPSED != -1)
+      {
+      ptr->ifelapsed = PIFELAPSED;
+      }
+   else
+      {
+      ptr->ifelapsed = VIFELAPSED;
+      }
+   
+   if (PEXPIREAFTER != -1)
+      {
+      ptr->expireafter = PEXPIREAFTER;
+      }
+   else
+      {
+      ptr->expireafter = VEXPIREAFTER;
+      }
+   
+   ExpandVarstring(CHROOT,work,"");
+   
+   if ((ptr->chroot = strdup(work)) == NULL)
+      {
+      FatalError("Memory Allocation failed for InstallProcItem() #4b");
+      }
+   
+   ExpandVarstring(CHDIR,work,"");
+   
+   if ((ptr->chdir = strdup(work)) == NULL)
+      {
+      FatalError("Memory Allocation failed for InstallProcItem() #4c");
+      }
+   
+   ExpandVarstring(METHODFORCE,work,"");
+   
+   if ((ptr->forcereplyto = strdup(work)) == NULL)
+      {
+      FatalError("Memory Allocation failed for InstallProcItem() #4c");
+      }
+   
+   ptr->next = NULL;
+   VMETHODSTOP = ptr;
    }
 
-if (PEXPIREAFTER != -1)
-   {
-   ptr->expireafter = PEXPIREAFTER;
-   }
-else
-   {
-   ptr->expireafter = VEXPIREAFTER;
-   }
-
-ExpandVarstring(CHROOT,work,"");
- 
-if ((ptr->chroot = strdup(work)) == NULL)
-   {
-   FatalError("Memory Allocation failed for InstallProcItem() #4b");
-   }
-
-ExpandVarstring(CHDIR,work,"");
- 
-if ((ptr->chdir = strdup(work)) == NULL)
-   {
-   FatalError("Memory Allocation failed for InstallProcItem() #4c");
-   }
-
-
-ExpandVarstring(METHODFORCE,work,"");
- 
-if ((ptr->forcereplyto = strdup(work)) == NULL)
-   {
-   FatalError("Memory Allocation failed for InstallProcItem() #4c");
-   }
- 
-ptr->next = NULL;
-VMETHODSTOP = ptr;
 InitializeAction();
 }
 

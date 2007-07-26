@@ -481,8 +481,7 @@ void PromiseMethod(struct Method *ptr)
 { struct Item *ip;
  int i,amserver;
 
-amserver = (IsItemIn(ptr->servers,"localhost")||
-            IsItemIn(ptr->servers,IPString2Hostname(VFQNAME)) ||
+amserver = (IsItemIn(ptr->servers,IPString2Hostname(VFQNAME)) ||
             IsItemIn(ptr->servers,IPString2UQHostname(VUQNAME)) ||
             IsItemIn(ptr->servers,VIPADDRESS));
 
