@@ -192,7 +192,7 @@ else
         done
 
         BERKELEY_DB_LIB="-ldb"
-        for v in db4.4 db44 db41 db40 db4 db33 db32 db3 db; do
+        for v in db-4.4 db4.4 db44 db-4.3 db-4.2 db41 db40 db4 db33 db32 db3 db; do
             if test -f "$BERKELEY_DB_DIR/lib/lib$v.so"; then
                 BERKELEY_DB_LIB="-l$v"
 		break
