@@ -394,7 +394,7 @@ return (getuid() == 0);
 
 int clock_gettime(clockid_t clock_id,struct timespec *tp)
 
-{ static struct time_t now = time(NULL);
+{ static time_t now = time(NULL);
 
 tp->tv_sec = now;
 tp->tv_nsec = 0;
