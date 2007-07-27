@@ -253,8 +253,11 @@ extern int errno;
 #include "../pub/snprintf.h"
 #endif
 
-#ifndef HAVE_LIBRT
+#ifndef CLOCK_REALTIME
 #define CLOCK_REALTIME 1
+#endif
+
+#ifndef HAVE_LIBRT
 typedef int clockid_t;
 #endif
 
