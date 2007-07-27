@@ -254,11 +254,8 @@ extern int errno;
 #endif
 
 #ifndef HAVE_LIBRT
-struct timespec
-   {
-   time_t tv_secs;
-   long tv_nsec;
-   };
+#define CLOCK_REALTIME 1
+typedef int clockid_t;
 #endif
 
 #ifdef HAVE_PTHREAD_H
