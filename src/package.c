@@ -173,51 +173,51 @@ switch(pkgmgr)
 
        if (!GetMacroValue(CONTEXTID,"RPMInstallCommand"))
           {
-          Verbose("RPMInstallCommand NOT Set.  Package Installation Not Possible!\n");
+          CfLog(cferror,"RPMInstallCommand NOT Set.  Package Installation Not Possible!\n","packages");
           return 0;
           }
        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"RPMInstallCommand"),CF_BUFSIZE);
        break;
        
-       /* Debian */
+   /* Debian */
    case pkgmgr_dpkg:
 
        if (!GetMacroValue(CONTEXTID,"DPKGInstallCommand"))
           {
-          Verbose("DPKGInstallCommand NOT Set.  Package Installation Not Possible!\n");
+          CfLog(cferror,"DPKGInstallCommand NOT Set.  Package Installation Not Possible!\n","packages");
           return 0;
           }
        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"DPKGInstallCommand"),CF_BUFSIZE);
        break;
        
-       /* Solaris */
+   /* Solaris */
    case pkgmgr_sun:
 
        if (!GetMacroValue(CONTEXTID,"SUNInstallCommand"))
           {
-          Verbose("SUNInstallCommand NOT Set.  Package Installation Not Possible!\n");
+          CfLog(cferror,"SUNInstallCommand NOT Set.  Package Installation Not Possible!\n","packages");
           return 0;
           }
        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"SUNInstallCommand"),CF_BUFSIZE);
        break;
        
-       /* AIX */
+   /* AIX */
    case pkgmgr_aix:
-	if (!GetMacroValue(CONTEXTID,"AIXInstallCommand"))
+   if (!GetMacroValue(CONTEXTID,"AIXInstallCommand"))
           {
-          Verbose("AIXInstallCommand NOT Set.  Package Installation Not Possible!\n");
+          CfLog(cferror,"AIXInstallCommand NOT Set.  Package Installation Not Possible!\n","packages");
           return 0;
           }
        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"AIXInstallCommand"),CF_BUFSIZE);
-	
+
        break;
 
-       /* Portage */
+   /* Portage */
    case pkgmgr_portage:
        
        if (!GetMacroValue(CONTEXTID,"PortageInstallCommand"))
           {
-          Verbose("PortageInstallCommand NOT Set.  Package Installation Not Possible!\n");
+          CfLog(cferror,"PortageInstallCommand NOT Set.  Package Installation Not Possible!\n","packages");
           return 0;
           }
        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"PortageInstallCommand"),CF_BUFSIZE);
@@ -228,7 +228,7 @@ switch(pkgmgr)
        
       if (!GetMacroValue(CONTEXTID,"FreeBSDInstallCommand"))
          {
-         Verbose("FreeBSDInstallCommand NOT Set.  Package Installation Not Possible!\n");
+         CfLog(cferror,"FreeBSDInstallCommand NOT Set.  Package Installation Not Possible!\n","packages");
          return 0;
          }
       strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"FreeBSDInstallCommand"),CF_BUFSIZE);
@@ -236,7 +236,8 @@ switch(pkgmgr)
        
        /* Default */
    default:
-       Verbose("InstallPackage(): Unknown package manager %d\n",pkgmgr);
+       snprintf(OUTPUT,CF_BUFSIZE,"Unknown package manager %d\n",pkgmgr);
+       CfLog(cferror,OUTPUT,"packages");
        break;
    }
 
@@ -246,14 +247,14 @@ switch(pkgmgr)
       Verbose("InstallPackage(): using '%s'\n", instcmd);
       if (DONTDO)
          {
-         Verbose("--skipping because DONTDO is enabled.");
+         Verbose("--skipping because DONTDO is enabled.\n");
          result = 1;
          }
       else 
          {
          if ((pp = cfpopen(instcmd, "r")) == NULL)
             {
-            Verbose("Could not execute package install command\n");
+            CfLog(cfinform,"Could not execute package install command.\n\n","packages");
             /* Return that the package is still not installed */
             return 0;
             }
@@ -262,25 +263,27 @@ switch(pkgmgr)
             {
             ReadLine(line,CF_BUFSIZE-1,pp);
             snprintf(OUTPUT,CF_BUFSIZE,"Package install: %s\n",line);
-            CfLog(cfinform,OUTPUT,""); 
+            CfLog(cfinform,OUTPUT,"packages"); 
             }
          
          if (cfpclose(pp) != 0)
             {
-            Verbose("Package install command was not successful\n");
+            CfLog(cfinform,"Package install command was not successful.\n\n","packages");
             result = 0;
             }
          else
             {
+            CfLog(cfinform,"Successfully installed package(s).\n","packages"); 
             result = 1;
             }
          }
       }
-      else 
+   else 
       {
-         Verbose("Unable to build package manager command.\n");
-         result = 0;
+      CfLog(cferror,"Unable to evaluate package manager command.\n","packages"); 
+      result = 0;
       }
+
    return result;
 }
 
@@ -301,7 +304,7 @@ int UpgradePackage(char *name, enum pkgmgrs pkgmgr, char* version, enum cmpsense
       }
    else
       {
-      Verbose("Package %s cannot be upgraded because the old version was not removed.\n", name );
+      CfLog(cfinform,"Package cannot be upgraded because the old version was not removed.\n\n","packages");
       result = 0;
       }
    DeleteItemList(removelist);
@@ -318,7 +321,7 @@ int RemovePackage(enum pkgmgrs pkgmgr, struct Item **pkglist)
 
    if (pkglist == NULL)
       {
-      Verbose("No packages to remove.\n");
+      CfLog(cferror,"RemovePackage: no packages to remove.\n","packages"); 
       return 0;
       }
 
@@ -329,7 +332,7 @@ int RemovePackage(enum pkgmgrs pkgmgr, struct Item **pkglist)
       case pkgmgr_freebsd:
          if (!GetMacroValue(CONTEXTID,"FreeBSDRemoveCommand"))
             {
-         	strncpy(rawdelcmd, "/usr/sbin/pkg_delete %s", 23 );
+            strncpy(rawdelcmd, "/usr/sbin/pkg_delete %s", 23 );
             }
          else
             {
@@ -339,7 +342,7 @@ int RemovePackage(enum pkgmgrs pkgmgr, struct Item **pkglist)
        
       /* Default */
       default:
-         Verbose("Package removal not yet implemented for this package manager.");
+         CfLog(cferror,"RemovePackage: Package removal not yet implemented for this package manager.\n","packages"); 
          break;
       }
 
@@ -348,14 +351,14 @@ int RemovePackage(enum pkgmgrs pkgmgr, struct Item **pkglist)
       Verbose("RemovePackage(): using '%s'\n", delcmd);
       if (DONTDO)
          {
-         Verbose("--skipping because DONTDO is enabled.");
+         Verbose("--skipping because DONTDO is enabled.\n");
          result = 1;
          }
       else 
          {
          if ((pp = cfpopen(delcmd, "r")) == NULL)
             {
-            Verbose("Could not execute package removal command\n");
+            CfLog(cferror,"RemovePackage: Could not execute package removal command.\n","packages"); 
             /* Return that the package is still not removed */
             return 0;
             }
@@ -364,22 +367,24 @@ int RemovePackage(enum pkgmgrs pkgmgr, struct Item **pkglist)
             {
             ReadLine(line,CF_BUFSIZE-1,pp);
             snprintf(OUTPUT,CF_BUFSIZE,"Package removal: %s\n",line);
+            CfLog(cfinform,OUTPUT,"packages"); 
             }
             
          if (cfpclose(pp) != 0)
             {
-            Verbose("Package removal command was not successful\n");
+            CfLog(cfinform,"Package removal command was not successful.\n","packages"); 
             result = 0;
             }
          else
             {
+            CfLog(cfinform,"Successfully removed package(s).\n","packages"); 
             result = 1;
             }
          }
       }
    else 
       {
-      Verbose("Unable to evaluate package manager command.\n");
+      CfLog(cferror,"Unable to evaluate package manager command.\n","packages"); 
       result = 0;
       }
    return result;
@@ -394,6 +399,7 @@ int BuildCommandLine(char *resolvedcmd, char *rawcmd, struct Item *pkglist )
    int cmd_args = 0;
    int cmd_tail_len = 0;
    int original_len;
+   int result;
 
     /* How many words are there in the package manager invocation? */
    for (ptr = rawcmd, cmd_args = 1; NULL != ptr; ptr = strchr(++ptr, ' '))
@@ -418,38 +424,51 @@ int BuildCommandLine(char *resolvedcmd, char *rawcmd, struct Item *pkglist )
    snprintf(OUTPUT,CF_BUFSIZE,"Package manager will be invoked as %s\n", resolvedcmd);
    CfLog(cfinform,OUTPUT,"");
    
-   if ((pp = cfpopen(resolvedcmd, "r")) == NULL)
-      {
-      Verbose("Could not execute package manager\n");
-      /* Return that the package is still not installed */
-      return 0;
-      }
-   
    /* Iterator through package list until we reach the maximum number that cfpopen can take */
    original_len = strlen(resolvedcmd);
    cmd_ptr = &resolvedcmd[original_len];
    for (package = pkglist; package != NULL; package = package->next)
       {
-      Verbose("BuildCommandLine(): Adding package '%s' to the list.\n", package->name);
+      if (cmd_args == CF_MAXSHELLARGS)
+         {
+         snprintf(OUTPUT,CF_BUFSIZE,"Skipping package %s (reached CF_MAXSHELLARGS)\n", package->name);
+         CfLog(cfinform,OUTPUT,"");
+         }
+      else if ((int) cmd_ptr - (int) resolvedcmd + strlen(package->name) + 2 > CF_BUFSIZE*2)
+         {
+         snprintf(OUTPUT,CF_BUFSIZE,"Skipping package %s (max buffer size)\n", package->name);
+         CfLog(cfinform,OUTPUT,"");
+         }
+      else
+         {
+         Verbose("BuildCommandLine(): Adding package '%s' to the list.\n", package->name);
 
-      strncpy(cmd_ptr, package->name, &resolvedcmd[CF_BUFSIZE*2] - cmd_ptr);
-      cmd_ptr += strlen(package->name);
-      *cmd_ptr++ = ' ';
+         strncpy(cmd_ptr, package->name, &resolvedcmd[CF_BUFSIZE*2] - cmd_ptr);
+         cmd_ptr += strlen(package->name);
+         *cmd_ptr++ = ' ';
+         }
       }
 
-   /* Remove trailing space */
-   *--cmd_ptr = '\0';
-
-   if (cmd_ptr != &resolvedcmd[original_len])
+   /* If the revised command line is the same, we have nothing to do. */
+   if (cmd_ptr == &resolvedcmd[original_len])
+      {
+      result = 0;
+      Verbose("No packages to install.\n");
+      }
+   else
       {      
-      /* Have a full command line, so append the tail if necessary. */
+      /* Have a full command line, so remove trailing space */
+      *--cmd_ptr = '\0';
+
+      /* Append the tail if necessary. */
       if (cmd_tail_len > 0)
          {
          strncpy(cmd_ptr, cmd_tail, &resolvedcmd[CF_BUFSIZE*2] - cmd_ptr);
          }
+         result = 1;
+         Verbose("Resolved command is '%s'\n", resolvedcmd );
       }
-   Verbose("Resolved command is '%s'\n", resolvedcmd );
-   return 1;
+   return result;
 }
       
 /*********************************************************************/
@@ -1514,7 +1533,7 @@ return 0;
 
 int PortagePackageList(char *package, char *version, enum cmpsense cmp, struct Item **pkglist)
 {
-	return 0; /* not implemented yet */
+return 0; /* not implemented yet */
 }
 
 /*********************************************************************/

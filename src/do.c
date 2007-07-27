@@ -2767,10 +2767,7 @@ void CheckPackages()
 
 { struct Package *ptr;
   int match = 0;
-  int result = 0;
   char lock[CF_BUFSIZE];
-  /* pkgmgr_none will always be the highest number in the enum so set
-     the array size with that */
   struct Item *pending_pkgs = NULL;
   enum pkgmgrs prev_pkgmgr = pkgmgr_none;
   enum pkgactions prev_action = pkgaction_none;
@@ -2796,12 +2793,10 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       }
    
    match = PackageCheck(ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp);
-   Verbose("Match status for %s is %u\n", ptr->name, match );
 
    /* Process any queued actions (install/remove). */
    if ((pending_pkgs != NULL) && ((ptr->action != prev_action) || (ptr->pkgmgr != prev_pkgmgr)))
       {
-      // Verbose("New action of %s didn't match previous action %s for package %s\n", pkgactions[ptr->action], pkgactions[prev_action], ptr->name );
       ProcessPendingPackages(prev_pkgmgr, prev_action, &pending_pkgs);
       DeleteItemList( pending_pkgs );
       }

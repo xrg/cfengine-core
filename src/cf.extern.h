@@ -477,7 +477,6 @@ extern char *VEDITNAMES[];
 extern char *VFILTERNAMES[];
 extern char *VUNMOUNTCOMM[];
 extern char *VRESOURCES[];
-extern char *CMPSENSETEXT[];
 extern char *PKGMGRTEXT[];
 extern char *PKGACTIONTEXT[];
 
