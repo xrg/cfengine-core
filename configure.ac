@@ -134,7 +134,7 @@ else
 			CFLAGS="$CFLAGS $BERKELEY_DB_CFLAGS"
 			LDFLAGS="$LDFLAGS $BERKELEY_DB_LDFLAGS"
 			AC_SEARCH_LIBS(db_create, 
-				[db-4 db4 db-4.5 db-4.4 db-4.3 db-4.2 db-4.1 db-4.0], 
+				[db-4 db4 db-4.6 db-4.5 db-4.4 db-4.3 db-4.2 db-4.1 db-4.0], 
 				[BERKELEY_DB_LIB=$ac_cv_search_db_create])
 			CFLAGS="$save_CFLAGS"
 			LDFLAGS="$save_LDFLAGS"
@@ -184,7 +184,7 @@ else
     elif test -d "$BERKELEY_DB_DIR"; then
 
         BERKELEY_DB_CFLAGS="-I$BERKELEY_DB_DIR/include"
-        for v in . db44 db43 db42 db41 db40 db4 db33 db32 db3 db; do
+        for v in . db46 db45 db44 db43 db42 db41 db40 db4 db33 db32 db3 db; do
             if test -f "$BERKELEY_DB_DIR/include/$v/db.h"; then
                 BERKELEY_DB_CFLAGS="-I$BERKELEY_DB_DIR/include/$v"
 		break
@@ -192,7 +192,7 @@ else
         done
 
         BERKELEY_DB_LIB="-ldb"
-        for v in db-4.4 db4.4 db44 db-4.3 db-4.2 db41 db40 db4 db33 db32 db3 db; do
+        for v in db-4.6 db4.6 db46 db-4.5 db4.5 db45 db-4.4 db4.4 db44; do
             if test -f "$BERKELEY_DB_DIR/lib/lib$v.so"; then
                 BERKELEY_DB_LIB="-l$v"
 		break

@@ -7922,9 +7922,11 @@ should be immune to Denial of Service attacks; they should
 only be able to disadvanatge themselves with the attempt.</em>
 
    <p>(Remote method execution was not implemented until version 2.1.3. It is still
-considered experimental and is not recommended for large
-production environments until this paragraph is removed from the
-documentation.)
+considered experimental and should be tested carefully for
+production environments with at least version 2.2.2. 
+List expansion is particularly fragile in cfengine 2. This problem cannot be
+resolved in version 2, so this should not be reported as a bug. 
+)
 
    <p><a name="index-Warning-remote-methods-507"></a><a name="index-Methods_002c-remote-caution-508"></a>
 Methods allow you to call an independent cfengine program, pass it

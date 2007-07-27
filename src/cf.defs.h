@@ -253,6 +253,13 @@ extern int errno;
 #include "../pub/snprintf.h"
 #endif
 
+#ifndef HAVE_LIBRT
+struct timespec
+   {
+   time_t tv_secs;
+   long tv_nsec;
+   };
+#endif
 
 #ifdef HAVE_PTHREAD_H
 # define __USE_GNU 1
