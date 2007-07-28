@@ -659,12 +659,12 @@ if (fd >= MAXFD)
    return -1;
    }
 
-CHILD[fd] = 0;
-
 if ((pid = CHILD[fd]) == 0)
    {
    return -1;
    }
+
+CHILD[fd] = 0;
 
 if (fclose(pp) == EOF)
    {
