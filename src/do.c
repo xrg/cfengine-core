@@ -2778,7 +2778,7 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       {
       continue;
       }
-
+   
    if (ptr->done == 'y' || strcmp(ptr->scope,CONTEXTID) != 0)
       {
       continue;
@@ -2793,14 +2793,15 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       }
    
    match = PackageCheck(ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp);
-
+   
    /* Process any queued actions (install/remove). */
    if ((pending_pkgs != NULL) && ((ptr->action != prev_action) || (ptr->pkgmgr != prev_pkgmgr)))
       {
       ProcessPendingPackages(prev_pkgmgr, prev_action, &pending_pkgs);
       DeleteItemList( pending_pkgs );
+      pending_pkgs = NULL; 
       }
-
+   
    /* Handle install/remove logic now. */
    if (match)
       {
@@ -2809,12 +2810,14 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
          {
          PackageList(ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp, &pending_pkgs);
          AppendItem(&pending_pkgs, ptr->name, NULL);
-
+         
          /* Some package managers operate best doing things one at a time. */
-         if ( (ptr->pkgmgr == pkgmgr_freebsd) || (ptr->pkgmgr == pkgmgr_sun) )
+         
+         if ((ptr->pkgmgr == pkgmgr_freebsd) || (ptr->pkgmgr == pkgmgr_sun))
             {
             RemovePackage( ptr->pkgmgr, &pending_pkgs );
             DeleteItemList( pending_pkgs );
+            pending_pkgs = NULL; 
             }
          }
       else if (ptr->action == pkgaction_upgrade)
@@ -2830,45 +2833,32 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
          AppendItem(&pending_pkgs, ptr->name, NULL);
 
          /* Some package managers operate best doing things one at a time. */
-         if ( (ptr->pkgmgr == pkgmgr_freebsd) || (ptr->pkgmgr == pkgmgr_sun) )
+         
+         if ((ptr->pkgmgr == pkgmgr_freebsd) || (ptr->pkgmgr == pkgmgr_sun))
             {
             InstallPackage( ptr->pkgmgr, &pending_pkgs );
             DeleteItemList( pending_pkgs );
+            pending_pkgs = NULL; 
             }
          }
       }
  
    ptr->done = 'y';
    ReleaseCurrentLock();
-   if( ptr->action != pkgaction_none )
+   
+   if (ptr->action != pkgaction_none)
       {
       prev_action = ptr->action;
       prev_pkgmgr = ptr->pkgmgr;
       }
    }
 
-   if(pending_pkgs != NULL)
-      {
-      ProcessPendingPackages(prev_pkgmgr, prev_action, &pending_pkgs);
-      DeleteItemList( pending_pkgs );
-      }
-}
-
-void ProcessPendingPackages (enum pkgmgrs pkgmgr, enum pkgactions action, struct Item **pending_pkgs)
-{
-   switch(action)
-      {
-      case pkgaction_remove:
-         RemovePackage(pkgmgr, pending_pkgs);
-         break;
-      case pkgaction_install:
-         InstallPackage(pkgmgr, pending_pkgs);
-         break;
-      default:
-         snprintf(OUTPUT,CF_BUFSIZE,"Internal error!  Tried to process package with an unknown action: %d.  This should never happen!\n", action);
-         CfLog(cferror,OUTPUT,"");
-         break; 
-      }
+if (pending_pkgs != NULL)
+   {
+   ProcessPendingPackages(prev_pkgmgr, prev_action, &pending_pkgs);
+   DeleteItemList( pending_pkgs );
+   pending_pkgs = NULL; 
+   }
 }
 
 /*******************************************************************/
@@ -3724,6 +3714,25 @@ CheckExistingFile("*",startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->g
 RecursiveCheck(startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,ptr->recurse,0,ptr,&sb);
  
 ReleaseCurrentLock(); 
+}
+
+/*******************************************************************/
+
+void ProcessPendingPackages (enum pkgmgrs pkgmgr, enum pkgactions action, struct Item **pending_pkgs)
+{
+switch(action)
+   {
+   case pkgaction_remove:
+       RemovePackage(pkgmgr, pending_pkgs);
+       break;
+   case pkgaction_install:
+       InstallPackage(pkgmgr, pending_pkgs);
+       break;
+   default:
+       snprintf(OUTPUT,CF_BUFSIZE,"Internal error!  Tried to process package with an unknown action: %d.  This should never happen!\n", action);
+       CfLog(cferror,OUTPUT,"");
+       break; 
+   }
 }
 
 
