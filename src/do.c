@@ -2791,9 +2791,16 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       ptr->done = 'y';
       continue;
       }
-   
-   match = PackageCheck(ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp);
-   
+
+/* Check for a problem executing the command */
+   if ((match != 1) && (match != 0))
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Error: Package manager query failed, skipping %s\n", ptr->name);
+      CfLog(cferror,OUTPUT,"");
+      ptr->done = 'y';
+      continue;
+      }
+  
    /* Process any queued actions (install/remove). */
    if ((pending_pkgs != NULL) && ((ptr->action != prev_action) || (ptr->pkgmgr != prev_pkgmgr)))
       {
@@ -2809,16 +2816,6 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       if (ptr->action == pkgaction_remove) 
          {
          PackageList(ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp, &pending_pkgs);
-         AppendItem(&pending_pkgs, ptr->name, NULL);
-         
-         /* Some package managers operate best doing things one at a time. */
-         
-         if ((ptr->pkgmgr == pkgmgr_freebsd) || (ptr->pkgmgr == pkgmgr_sun))
-            {
-            RemovePackage( ptr->pkgmgr, &pending_pkgs );
-            DeleteItemList( pending_pkgs );
-            pending_pkgs = NULL; 
-            }
          }
       else if (ptr->action == pkgaction_upgrade)
          {

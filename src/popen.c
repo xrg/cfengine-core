@@ -628,7 +628,7 @@ FILE *cfpopen_shsetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv
     return pp;
     }
  
- return NULL;
+return NULL;
 }
 
 
