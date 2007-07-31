@@ -2783,7 +2783,7 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       {
       continue;
       }
-
+   
    snprintf(lock,CF_BUFSIZE-1,"%s_%d_%d",ptr->name,ptr->cmp,ptr->action);
    
    if (!GetLock(ASUniqueName("packages"),CanonifyName(lock),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
@@ -2791,8 +2791,11 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       ptr->done = 'y';
       continue;
       }
-
-/* Check for a problem executing the command */
+   
+   match = PackageCheck(ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp);
+   
+   /* Check for a problem executing the command */
+   
    if ((match != 1) && (match != 0))
       {
       snprintf(OUTPUT,CF_BUFSIZE,"Error: Package manager query failed, skipping %s\n", ptr->name);
@@ -2800,8 +2803,9 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       ptr->done = 'y';
       continue;
       }
-  
+   
    /* Process any queued actions (install/remove). */
+
    if ((pending_pkgs != NULL) && ((ptr->action != prev_action) || (ptr->pkgmgr != prev_pkgmgr)))
       {
       ProcessPendingPackages(prev_pkgmgr, prev_action, &pending_pkgs);
@@ -2809,10 +2813,11 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       pending_pkgs = NULL; 
       }
    
-   /* Handle install/remove logic now. */
+/* Handle install/remove logic now. */
    if (match)
       {
       AddMultipleClasses(ptr->defines);
+
       if (ptr->action == pkgaction_remove) 
          {
          PackageList(ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp, &pending_pkgs);
@@ -2825,10 +2830,11 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
    else
       {
       AddMultipleClasses(ptr->elsedef);
+
       if (ptr->action == pkgaction_install)
          {
          AppendItem(&pending_pkgs, ptr->name, NULL);
-
+         
          /* Some package managers operate best doing things one at a time. */
          
          if ((ptr->pkgmgr == pkgmgr_freebsd) || (ptr->pkgmgr == pkgmgr_sun))
@@ -2839,7 +2845,7 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
             }
          }
       }
- 
+   
    ptr->done = 'y';
    ReleaseCurrentLock();
    
