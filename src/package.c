@@ -165,6 +165,8 @@ int InstallPackage(enum pkgmgrs pkgmgr, struct Item **pkglist)
  FILE *pp;
    int result = 0;
 
+Verbose("Entering InstallPackage.\n");
+
 /* Determine the command to use for the install. */
 switch(pkgmgr)
    {
@@ -173,7 +175,7 @@ switch(pkgmgr)
 
        if (!GetMacroValue(CONTEXTID,"RPMInstallCommand"))
           {
-          CfLog(cferror,"RPMInstallCommand NOT Set.  Package Installation Not Possible!\n","packages");
+          CfLog(cferror,"RPMInstallCommand NOT Set.  Package Installation Not Possible!\n","");
           return 0;
           }
        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"RPMInstallCommand"),CF_BUFSIZE);
@@ -184,7 +186,7 @@ switch(pkgmgr)
 
        if (!GetMacroValue(CONTEXTID,"DPKGInstallCommand"))
           {
-          CfLog(cferror,"DPKGInstallCommand NOT Set.  Package Installation Not Possible!\n","packages");
+          CfLog(cferror,"DPKGInstallCommand NOT Set.  Package Installation Not Possible!\n","");
           return 0;
           }
        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"DPKGInstallCommand"),CF_BUFSIZE);
@@ -195,7 +197,7 @@ switch(pkgmgr)
 
        if (!GetMacroValue(CONTEXTID,"SUNInstallCommand"))
           {
-          CfLog(cferror,"SUNInstallCommand NOT Set.  Package Installation Not Possible!\n","packages");
+          CfLog(cferror,"SUNInstallCommand NOT Set.  Package Installation Not Possible!\n","");
           return 0;
           }
        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"SUNInstallCommand"),CF_BUFSIZE);
@@ -205,7 +207,7 @@ switch(pkgmgr)
    case pkgmgr_aix:
    if (!GetMacroValue(CONTEXTID,"AIXInstallCommand"))
           {
-          CfLog(cferror,"AIXInstallCommand NOT Set.  Package Installation Not Possible!\n","packages");
+          CfLog(cferror,"AIXInstallCommand NOT Set.  Package Installation Not Possible!\n","");
           return 0;
           }
        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"AIXInstallCommand"),CF_BUFSIZE);
@@ -228,7 +230,7 @@ switch(pkgmgr)
        
       if (!GetMacroValue(CONTEXTID,"FreeBSDInstallCommand"))
          {
-         CfLog(cferror,"FreeBSDInstallCommand NOT Set.  Package Installation Not Possible!\n","packages");
+         CfLog(cferror,"FreeBSDInstallCommand NOT Set.  Package Installation Not Possible!\n","");
          return 0;
          }
       strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"FreeBSDInstallCommand"),CF_BUFSIZE);
@@ -237,7 +239,7 @@ switch(pkgmgr)
        /* Default */
    default:
        snprintf(OUTPUT,CF_BUFSIZE,"Unknown package manager %d\n",pkgmgr);
-       CfLog(cferror,OUTPUT,"packages");
+       CfLog(cferror,OUTPUT,"");
        break;
    }
 
@@ -254,7 +256,7 @@ switch(pkgmgr)
          {
          if ((pp = cfpopen(instcmd, "r")) == NULL)
             {
-            CfLog(cfinform,"Could not execute package install command.\n\n","packages");
+            CfLog(cfinform,"Could not execute package install command.\n\n","popen");
             /* Return that the package is still not installed */
             return 0;
             }
@@ -263,24 +265,24 @@ switch(pkgmgr)
             {
             ReadLine(line,CF_BUFSIZE-1,pp);
             snprintf(OUTPUT,CF_BUFSIZE,"Package install: %s\n",line);
-            CfLog(cfinform,OUTPUT,"packages"); 
+            CfLog(cfinform,OUTPUT,""); 
             }
          
          if (cfpclose(pp) != 0)
             {
-            CfLog(cfinform,"Package install command was not successful.\n\n","packages");
+            CfLog(cfinform,"Package install command was not successful.\n\n","popen");
             result = 0;
             }
          else
             {
-            CfLog(cfinform,"Successfully installed package(s).\n","packages"); 
+            CfLog(cfinform,"Successfully installed package(s).\n",""); 
             result = 1;
             }
          }
       }
    else 
       {
-      CfLog(cferror,"Unable to evaluate package manager command.\n","packages"); 
+      CfLog(cferror,"Unable to evaluate package manager command.\n",""); 
       result = 0;
       }
 
@@ -304,7 +306,7 @@ int UpgradePackage(char *name, enum pkgmgrs pkgmgr, char* version, enum cmpsense
       }
    else
       {
-      CfLog(cfinform,"Package cannot be upgraded because the old version was not removed.\n\n","packages");
+      CfLog(cfinform,"Package cannot be upgraded because the old version was not removed.\n\n","");
       result = 0;
       }
    DeleteItemList(removelist);
@@ -321,7 +323,7 @@ int RemovePackage(enum pkgmgrs pkgmgr, struct Item **pkglist)
 
    if (pkglist == NULL)
       {
-      CfLog(cferror,"RemovePackage: no packages to remove.\n","packages"); 
+      CfLog(cferror,"RemovePackage: no packages to remove.\n",""); 
       return 0;
       }
 
@@ -342,7 +344,7 @@ int RemovePackage(enum pkgmgrs pkgmgr, struct Item **pkglist)
        
       /* Default */
       default:
-         CfLog(cferror,"RemovePackage: Package removal not yet implemented for this package manager.\n","packages"); 
+         CfLog(cferror,"RemovePackage: Package removal not yet implemented for this package manager.\n","p"); 
          break;
       }
 
@@ -358,7 +360,7 @@ int RemovePackage(enum pkgmgrs pkgmgr, struct Item **pkglist)
          {
          if ((pp = cfpopen(delcmd, "r")) == NULL)
             {
-            CfLog(cferror,"RemovePackage: Could not execute package removal command.\n","packages"); 
+            CfLog(cferror,"RemovePackage: Could not execute package removal command.\n","popen"); 
             /* Return that the package is still not removed */
             return 0;
             }
@@ -367,24 +369,24 @@ int RemovePackage(enum pkgmgrs pkgmgr, struct Item **pkglist)
             {
             ReadLine(line,CF_BUFSIZE-1,pp);
             snprintf(OUTPUT,CF_BUFSIZE,"Package removal: %s\n",line);
-            CfLog(cfinform,OUTPUT,"packages"); 
+            CfLog(cfinform,OUTPUT,""); 
             }
             
          if (cfpclose(pp) != 0)
             {
-            CfLog(cfinform,"Package removal command was not successful.\n","packages"); 
+            CfLog(cfinform,"Package removal command was not successful.\n",""); 
             result = 0;
             }
          else
             {
-            CfLog(cfinform,"Successfully removed package(s).\n","packages"); 
+            CfLog(cfinform,"Successfully removed package(s).\n",""); 
             result = 1;
             }
          }
       }
    else 
       {
-      CfLog(cferror,"Unable to evaluate package manager command.\n","packages"); 
+      CfLog(cferror,"Unable to evaluate package manager command.\n",""); 
       result = 0;
       }
    return result;
@@ -429,6 +431,7 @@ int BuildCommandLine(char *resolvedcmd, char *rawcmd, struct Item *pkglist )
    cmd_ptr = &resolvedcmd[original_len];
    for (package = pkglist; package != NULL; package = package->next)
       {
+      Verbose("BuildCommandLine(): Processing package %s at location %d.\n", package->name, &package );
       if (cmd_args == CF_MAXSHELLARGS)
          {
          snprintf(OUTPUT,CF_BUFSIZE,"Skipping package %s (reached CF_MAXSHELLARGS)\n", package->name);
@@ -1574,7 +1577,7 @@ int FreeBSDPackageCheck(char *package,char *version,enum cmpsense cmp)
 
   if ((pp = cfpopen (VBUFF, "r")) == NULL)
     {
-    Verbose ("Could not execute pkg_info.\n");
+    CfLog(cferror,"FATAL: Could not execute pkg_info.\n","popen");
     return 0;
     }
 
@@ -1585,16 +1588,30 @@ int FreeBSDPackageCheck(char *package,char *version,enum cmpsense cmp)
     snprintf(OUTPUT,CF_BUFSIZE,"Package install: %s\n",line);
     }
 
-  if (cfpclose (pp) == 0)
-    {
-    Verbose ("The package and version requested are installed in the package database.\n",package);
-    match=1;
-    }
-  else 
-    {
-    Verbose ("The package and version requested do not exist in the package database.\n",package);
-    match=0;
-    }
+   int result =  cfpclose( pp );
+   switch( result )
+      {
+      case 0: 
+         Verbose ("FreeBSDPackageCheck(): %s %s %s is installed on this system.\n", pkgname, CMPSENSETEXT[cmp],(version[0] ? version : "ANY") );
+         match = 1;
+         break;
+
+      case 1: 
+         Verbose ("FreeBSDPackageCheck(): %s %s %s is not installed on this system.\n", pkgname, CMPSENSETEXT[cmp],(version[0] ? version : "ANY") );
+         match = 0;
+         break;
+
+      case 256: 
+         Verbose ("FreeBSDPackageCheck(): %s %s %s is not installed on this system.\n", pkgname, CMPSENSETEXT[cmp],(version[0] ? version : "ANY") );
+         match = 0;
+         break;
+
+      default:
+         Verbose ("FreeBSDPackageCheck(): error running package query: %d\n", result );
+         match = -1;
+         break;
+      }
+
   return match;
 }
 
@@ -1647,15 +1664,30 @@ int FreeBSDPackageList(char *package, char *version, enum cmpsense cmp, struct I
          }
       }
 
-   if (cfpclose (pp) == 0)
+   int result =  cfpclose( pp );
+   switch( result )
       {
-      match = 1;
+      case 0: 
+         Verbose ("FreeBSDPackageList(): %s %s %s is installed on this system.\n", pkgname, CMPSENSETEXT[cmp],(version[0] ? version : "ANY") );
+         match=1;
+         break;
+
+      case 1: 
+         Verbose ("FreeBSDPackageList(): %s %s %s is not installed on this system.\n", pkgname, CMPSENSETEXT[cmp],(version[0] ? version : "ANY") );
+         match=0;
+         break;
+
+      case 256: 
+         Verbose ("FreeBSDPackageList(): %s %s %s is not installed on this system.\n", pkgname, CMPSENSETEXT[cmp],(version[0] ? version : "ANY") );
+         match=0;
+         break;
+
+      default:
+         Verbose ("FreeBSDPackageList(): error running package query: %d\n", result );
+         match=-1;
+         break;
       }
-   else 
-      {
-      Verbose ("The package and version requested do not exist in the package database.\n",package);
-      match = 0;
-      }
+
    return match;
 }
 
