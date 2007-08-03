@@ -1363,13 +1363,12 @@ struct cfagent_connection
 struct cfObject
    {
    char *scope;                       /* Name of object (scope) */
-   char *hashtable[CF_HASHTABLESIZE];    /* Variable heap  */
-   char *type[CF_HASHTABLESIZE];         /* scalar or itlist? */
+   void *hashtable[CF_HASHTABLESIZE];    /* Variable heap  */
+   char type[CF_HASHTABLESIZE];         /* scalar or itlist? */
    char *classlist;                   /* Private classes -- ? */
    struct Item *actionsequence;
    struct cfObject *next;
    };
-
 
 /*
 
