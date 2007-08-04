@@ -433,7 +433,7 @@ cmd_ptr = &resolvedcmd[original_len];
 
 for (package = pkglist; package != NULL; package = package->next)
    {
-   Verbose("BuildCommandLine(): Processing package %s at location %d.\n", package->name, &package );
+   Verbose("BuildCommandLine(): Processing package %s at location %u.\n", package->name, &package );
 
    if (cmd_args == CF_MAXSHELLARGS)
       {
@@ -452,6 +452,7 @@ for (package = pkglist; package != NULL; package = package->next)
       strncpy(cmd_ptr, package->name, &resolvedcmd[CF_BUFSIZE*2] - cmd_ptr);
       cmd_ptr += strlen(package->name);
       *cmd_ptr++ = ' ';
+      ++cmd_args;
       }
    }
 
@@ -1353,25 +1354,56 @@ int PortagePackageCheck(char *package,char *version,enum cmpsense cmp)
 
 { FILE *pp;
   struct Item *ebuildlist = NULL;
-  struct Item *ebuild;
-  enum cmpsense result;
+  struct Item *ebuild = NULL;
   int match = 0;
-  char *comparehead = NULL;
-  char *comparetail = NULL;
-  char *installedhead = NULL;
-  char *installedtail = NULL;
+  char *result = NULL;
+  char pkgname[CF_BUFSIZE] = {0};
+  char *nameptr = NULL;
 
-  /* Yes, it's an ugly python one-liner that does something beautiful */
+/* Create a working copy of the name */
+strncpy(pkgname, package, CF_BUFSIZE);
 
-snprintf(VBUFF,CF_BUFSIZE,"/usr/bin/python -c 'import portage, re, sys; "
-         "[sys.stdout.write(re.sub(\"\\w*?\\-\\w*?\\/([a-zA-Z0-9_+]|\\-(?![0-9]))*\\-\", \"\", package, 1) + "
-         "\"\\n\") for package in portage.db[\"/\"][\"vartree\"].dbapi.match("
-         "\"%s\")]'", package);
+/* Test if complete package atom was given */
+if (pkgname[0] == '=' || pkgname[0] == '<' || pkgname[0] == '>')
+   {
+   /* Strip version */
+   nameptr = strchr(pkgname, '/');
+   if (nameptr == NULL)
+      {
+      /* Package does not include category, which is fine */
+      nameptr = pkgname;
+      }
+   while (!xisdigit(nameptr[1]))
+      {
+      nameptr = strchr(++nameptr, '-');
+      if (nameptr == NULL)
+         {
+         snprintf(OUTPUT,CF_BUFSIZE,"Unable to parse version from %s!\n",pkgname);
+         CfLog(cferror,OUTPUT,"");
+         return -1;
+         }
+      }
+   nameptr[0] = '\0';
+
+   /* Strip comparison operator (or rather, seek past) */
+   nameptr = pkgname;
+   while (!xisalpha(nameptr[0]))
+      {
+      ++nameptr;
+      }
+   }
+else
+   {
+   nameptr = pkgname;
+   }
+
+/* Search for installed versions of package */
+snprintf(VBUFF,CF_BUFSIZE,"/usr/bin/qlist -IevC %s",nameptr);
 
 if ((pp = cfpopen(VBUFF, "r")) == NULL)
    {
-   Verbose("Could not execute the equery command.  Assuming package not installed.\n");
-   return 0;
+   CfLog(cferror,"Could not execute the qlist command. Is portage-utils installed?\n","");
+   return -1;
    }
 
 while(!feof(pp))
@@ -1386,153 +1418,88 @@ while(!feof(pp))
       }
    }
 
-/* Non-zero exit status means that we could not find the package, so
- * zero the list and bail. */
-
-if (cfpclose(pp) != 0)
-   {
-   DeleteItemList(ebuildlist);
-   ebuildlist = NULL;
-   }
+cfpclose(pp);
 
 if (ebuildlist == NULL)
    {
-   Verbose("Package %s not installed.\n", package);
+   Verbose("PortageCheckPackage(): Package %s not installed.\n", nameptr);
    return 0;
    }
 
-Verbose("PortageCheckPackage(): Requested %s %s %s\n", package, CMPSENSETEXT[cmp],(version[0] ? version : "ANY"));
+Verbose("PortageCheckPackage(): Requested %s %s %s\n", nameptr, CMPSENSETEXT[cmp],(version[0] ? version : "ANY"));
 
-/* If no version was specified, just return 1, because if we got this far
- * some package by that name exists. */
-
+/* If no version was specified, return successful (found something) */
 if (!version[0])
    {
    DeleteItemList(ebuildlist);
    return 1;
    }
 
-/* The rule here will be: if any package in the list matches, then the
- * first one to match wins, and we bail out. */
-
-
+/* Iterate through all installed versions until match is found */
 for (ebuild = ebuildlist; ebuild != NULL; ebuild=ebuild->next)
-  {
-  char *ebuildver;
-  ebuildver = ebuild->name;
-  
-  Verbose("PortageCheckPackage(): Trying installed version %s\n", ebuildver);
-  
-  /* Start out assuming the comparison will be equal. */
-  result = cmpsense_eq;
-  
-  comparehead = version;
-  comparetail = NULL;
-  installedhead = ebuildver;
-  installedtail = NULL;
-  
-  /* Iterate over version portions delimited by `-' */
-  while (result == cmpsense_eq)
-     {
-     if (*comparehead == '\0' && *installedhead == '\0')
-        {
-        /* No substrings remain, break from while */
-        break;
-        }
-     else if (*comparehead == '\0')
-        {
-        /* Installed version has more version substrings than given */
-        result = cmpsense_gt;
-        }
-     else if (*installedhead == '\0')
-        {
-        /* Installed version has less version substrings than given */
-        result = cmpsense_lt;
-        }
-     else
-        {
-        /* New substring in both to test */
-        comparetail = strchr(comparehead, '-');
-        installedtail = strchr(installedhead, '-');
-        
-        /* Throw a \0 over the `-' so just the substring is tested.
-         * If the tail is less than the head, we must be at last substring,
-         * as no `-'s were found (so the `\0' is already there) */
+   {
+   Verbose("PortageCheckPackage(): Trying installed version %s\n", ebuild->name);
 
-        if (comparetail > comparehead) *comparetail = '\0';
-        if (installedtail > installedhead) *installedtail = '\0';
-        
-        switch (rpmvercmp(installedhead, comparehead))
-           {
-           case 1:
-               result = cmpsense_gt;
-               break;
-           case -1:
-               result = cmpsense_lt;
-               break;
-           }
-        
-        if (comparetail > comparehead)
-           {
-           /* Restore `-' at tail and move head just past it */
-           *comparetail = '-';
-           comparehead = comparetail + 1;
-           }
-        else
-           {
-           /* Move head to the end of the line (`\0') */
-           comparehead = comparehead + strlen(comparehead);
-           }
-        if (installedtail > installedhead)
-           {
-           /* Restore `-' at tail and move head just past it */
-           *installedtail = '-';
-           installedhead = installedtail + 1;
-           }
-        else
-           {
-           /* Move head to the end of the line (`\0') */
-           installedhead = installedhead + strlen(installedhead);
-           }
-        }
-     }
-  
-  Verbose("Comparison result: %s\n",CMPSENSETEXT[result]);
-  
-  switch(cmp)
-     {
-     case cmpsense_gt:
-         match = (result == cmpsense_gt);
-         break;
-     case cmpsense_ge:
-         match = (result == cmpsense_gt || result == cmpsense_eq);
-         break;
-     case cmpsense_lt:
-         match = (result == cmpsense_lt);
-         break;
-     case cmpsense_le:
-         match = (result == cmpsense_lt || result == cmpsense_eq);
-         break;
-     case cmpsense_eq:
-         match = (result == cmpsense_eq);
-         break;
-     case cmpsense_ne:
-         match = (result != cmpsense_eq);
-         break;
-     }
-  
-  /* If we find a match, just return it now, and don't bother checking
-   * other ebuilds */
-  
-  if (match)
-     {
-     DeleteItemList(ebuildlist);
-     return 1;
-     }
-  }
+   /* Run comparison tool to do the grunt work */
+   snprintf(VBUFF,CF_BUFSIZE,"/usr/bin/qatom -cC %s %s-%s", ebuild->name, nameptr, version);
 
-/* if we manage to make it out of the loop, we did not find a match. */
+   if ((pp = cfpopen(VBUFF, "r")) == NULL)
+      {
+      CfLog(cferror,"Could not execute the qatom command. Is portage-utils installed?\n","");
+      continue;
+      }
+  
+   if (feof(pp))
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Internal error!  No output from %s.",VBUFF);
+      CfLog(cferror,OUTPUT,"");
+      continue;
+      }
 
+   /* Format of output is `package < package' */
+   *VBUFF = '\0';
+   ReadLine(VBUFF,CF_BUFSIZE,pp);
+   Verbose("PortagePackageCheck(): Result %s\n",VBUFF);
+   cfpclose(pp);
+
+   /* Find first space, give up otherwise */
+   result = strchr(VBUFF, ' ');
+   if (result == NULL) continue;
+
+   /* Relocate to right of space (the comparison symbol) */
+   ++result;
+
+   switch(cmp)
+      {
+      case cmpsense_gt:
+         match = (*result == *CMPSENSEOPERAND[cmpsense_gt]);
+         break;
+      case cmpsense_ge:
+         match = (*result == *CMPSENSEOPERAND[cmpsense_gt] || *result == *CMPSENSEOPERAND[cmpsense_eq]);
+         break;
+      case cmpsense_lt:
+         match = (*result == *CMPSENSEOPERAND[cmpsense_lt]);
+         break;
+      case cmpsense_le:
+         match = (*result == *CMPSENSEOPERAND[cmpsense_lt] || *result == *CMPSENSEOPERAND[cmpsense_eq]);
+         break;
+      case cmpsense_eq:
+         match = (*result == *CMPSENSEOPERAND[cmpsense_eq]);
+         break;
+      case cmpsense_ne:
+         match = (*result != *CMPSENSEOPERAND[cmpsense_eq]);
+         break;
+      }
+
+   /* Return successful on finding a match */
+   if (match)
+      {
+      DeleteItemList(ebuildlist);
+      return 1;
+      }
+   }
+
+/* No match found, return false */
 DeleteItemList(ebuildlist);
 return 0;
 }
