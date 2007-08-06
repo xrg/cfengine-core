@@ -328,6 +328,18 @@ editfiles:             {
 
 {rbrack}               {
                        Debug1("RIGHTBRACK\n\n");
+         
+                       /* If this is a method, load the received arguments as soon as possible */
+ 
+                       Verbose("Method declares received parameters, using the values promised \n");
+          
+                       if (!GOTMETHODARGS && (METHODARGS != NULL))
+                          { 
+                          Verbose("This looks like a private method, adding parameters.\n");
+                          CheckForMethod();
+                          GOTMETHODARGS = true;
+                          }
+
                        BEGIN INCONTROL;
                        return RBRACK;
                        }
@@ -398,11 +410,11 @@ editfiles:             {
                           FatalError("Malloc failure in parsing");
                           }
 
-                       if((less = RemoveEscapeSequences(yytext,sp)) > 0)
-                       {
-                       Debug1("QSTRING-LESS %d\n",less);
-                       yyless(less);
-                       }
+                       if ((less = RemoveEscapeSequences(yytext,sp)) > 0)
+                          {        
+                          Debug1("QSTRING-LESS %d\n",less);
+                          yyless(less);    
+                          }
 
                        HandleQuotedString(sp);
                        free(sp);

@@ -44,7 +44,7 @@ void InstallControlRValue(char *lvalue,char *varvalue)
   char value[CF_EXPANDSIZE];
 
 ExpandVarstring(varvalue,value,NULL);
-  
+
 if (ScanVariable(lvalue) == cfautodef)
    {
    AppendItems(&VAUTODEFINE,value,CLASSBUFF);

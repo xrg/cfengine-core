@@ -3792,13 +3792,25 @@ YY_RULE_SETUP
 #line 329 "cflex.l"
 {
                        Debug1("RIGHTBRACK\n\n");
+         
+                       /* If this is a method, load the received arguments as soon as possible */
+ 
+                       Verbose("Method declares received parameters, using the values promised \n");
+          
+                       if (!GOTMETHODARGS && (METHODARGS != NULL))
+                          { 
+                          Verbose("This looks like a private method, adding parameters.\n");
+                          CheckForMethod();
+                          GOTMETHODARGS = true;
+                          }
+
                        BEGIN INCONTROL;
                        return RBRACK;
                        }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 335 "cflex.l"
+#line 347 "cflex.l"
 {
                        Debug1("RBRACE\n");
 
@@ -3826,7 +3838,7 @@ YY_RULE_SETUP
 case 30:
 /* rule 30 can match eol */
 YY_RULE_SETUP
-#line 361 "cflex.l"
+#line 373 "cflex.l"
 {
                        char *sp = NULL;
                        int less = 0;
@@ -3859,7 +3871,7 @@ YY_RULE_SETUP
 case 31:
 /* rule 31 can match eol */
 YY_RULE_SETUP
-#line 391 "cflex.l"
+#line 403 "cflex.l"
 {
                        char *sp = NULL;
                        int less = 0;
@@ -3870,11 +3882,11 @@ YY_RULE_SETUP
                           FatalError("Malloc failure in parsing");
                           }
 
-                       if((less = RemoveEscapeSequences(yytext,sp)) > 0)
-                       {
-                       Debug1("QSTRING-LESS %d\n",less);
-                       yyless(less);
-                       }
+                       if ((less = RemoveEscapeSequences(yytext,sp)) > 0)
+                          {        
+                          Debug1("QSTRING-LESS %d\n",less);
+                          yyless(less);    
+                          }
 
                        HandleQuotedString(sp);
                        free(sp);
@@ -3884,7 +3896,7 @@ YY_RULE_SETUP
 case 32:
 /* rule 32 can match eol */
 YY_RULE_SETUP
-#line 412 "cflex.l"
+#line 424 "cflex.l"
 {
                        Debug1("RVAL-FUNCTION %s\n",yytext);
 
@@ -3895,7 +3907,7 @@ YY_RULE_SETUP
 case 33:
 /* rule 33 can match eol */
 YY_RULE_SETUP
-#line 420 "cflex.l"
+#line 432 "cflex.l"
 {
                        Debug1("FUNCTION %s\n",yytext);
 
@@ -3913,7 +3925,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 435 "cflex.l"
+#line 447 "cflex.l"
 {
                        Debug1("\nOPTION %s\n",yytext);
                        HandleOption(yytext);
@@ -3922,7 +3934,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 441 "cflex.l"
+#line 453 "cflex.l"
 {
                        Debug1("VAROBJ %s\n",yytext);
 
@@ -3952,7 +3964,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 468 "cflex.l"
+#line 480 "cflex.l"
 {
                        Debug1("RVAL-VAROBJ %s\n",yytext);
 
@@ -3971,7 +3983,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 484 "cflex.l"
+#line 496 "cflex.l"
 {
                        Debug1("BRACELIST-VAROBJ %s\n",yytext);
 
@@ -3988,7 +4000,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 498 "cflex.l"
+#line 510 "cflex.l"
 {
                        Debug1("\nCFSERVD-VAROBJ %s\n",yytext);
 
@@ -3998,7 +4010,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 505 "cflex.l"
+#line 517 "cflex.l"
 {
 	               printf("Stray character (%s)",yytext);
                        return yytext[0];
@@ -4006,10 +4018,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 510 "cflex.l"
+#line 522 "cflex.l"
 ECHO;
 	YY_BREAK
-#line 4013 "cflex.c"
+#line 4025 "cflex.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(INCONTROL):
 case YY_STATE_EOF(BRACELIST):
@@ -4980,7 +4992,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 510 "cflex.l"
+#line 522 "cflex.l"
 
 
 
