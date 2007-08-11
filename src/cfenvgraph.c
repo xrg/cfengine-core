@@ -947,7 +947,7 @@ for (i=0; GRAPHOPTIONS[i].name != NULL; i++)
 
 printf("\nBug reports to bug-cfengine@gnu.org (News: gnu.cfengine.bug)\n");
 printf("General help to help-cfengine@gnu.org (News: gnu.cfengine.help)\n");
-printf("Info & fixes at http://www.iu.hio.no/cfengine\n");
+printf("Info & fixes at http://www.cfengine.org\n");
 }
 
 /*********************************************************************/
