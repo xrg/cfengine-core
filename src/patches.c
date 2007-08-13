@@ -78,10 +78,14 @@ return strncmp(buf1,buf2,n);
 
 #ifndef HAVE_GETNETGRENT
 
-#ifndef const
-# define const
-#endif
+#if !defined __STDC__ || !__STDC__
+/* This is a separate conditional since some stdc systems
+   reject `defined (const)'.  */
 
+# ifndef const
+#  define const
+# endif
+#endif
 
 /*********************************************************/
 
@@ -117,9 +121,15 @@ void endnetgrent()
 
 #ifndef HAVE_UNAME
 
-#ifndef const
-# define const
+#if !defined __STDC__ || !__STDC__
+/* This is a separate conditional since some stdc systems
+   reject `defined (const)'.  */
+
+# ifndef const
+#  define const
+# endif
 #endif
+
 
 /***********************************************************/
 /* UNAME is missing on some weird OSes                     */
@@ -172,9 +182,16 @@ return (0);
 /***********************************************************/
 
 #ifndef HAVE_STRSTR
-#ifndef const
-# define const
+
+#if !defined __STDC__ || !__STDC__
+/* This is a separate conditional since some stdc systems
+   reject `defined (const)'.  */
+
+# ifndef const
+#  define const
+# endif
 #endif
+
 
 char *strstr(char *s1,char *s2)
 
@@ -292,10 +309,15 @@ return buffer;
 
 #ifndef HAVE_PUTENV
 
+#if !defined __STDC__ || !__STDC__
+/* This is a separate conditional since some stdc systems
+   reject `defined (const)'.  */
 
-#ifndef const
-# define const
+# ifndef const
+#  define const
+# endif
 #endif
+
 
 int putenv(char *s)
 
@@ -314,10 +336,15 @@ return 0;
 
 #ifndef HAVE_SETEUID
 
+#if !defined __STDC__ || !__STDC__
+/* This is a separate conditional since some stdc systems
+   reject `defined (const)'.  */
 
-#ifndef const
-# define const
+# ifndef const
+#  define const
+# endif
 #endif
+
 
 int seteuid (uid_t uid)
 
@@ -336,9 +363,15 @@ return -1;
 
 #ifndef HAVE_SETEGID
 
-#ifndef const
-# define const
+#if !defined __STDC__ || !__STDC__
+/* This is a separate conditional since some stdc systems
+   reject `defined (const)'.  */
+
+# ifndef const
+#  define const
+# endif
 #endif
+
 
 int setegid (gid_t gid)
 
