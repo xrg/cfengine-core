@@ -451,7 +451,7 @@ if ((errno = dbp->open(dbp,NULL,checksumdb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
     memcpy(digest,chk_val.mess_digest,EVP_MAX_MD_SIZE+1);
 
     strncpy(strtype,key.data,CF_MAXDIGESTNAMELEN);
-    strncpy(name,key.data+CF_CHKSUMKEYOFFSET,CF_BUFSIZE-1);
+    strncpy(name,(char *)key.data+CF_CHKSUMKEYOFFSET,CF_BUFSIZE-1);
 
     type = ChecksumType(strtype);
 
