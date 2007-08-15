@@ -83,6 +83,13 @@ if (ReadDB(dbp,databuf,&e,sizeof(e)))
    newe.Q.expect = SWAverage(value,e.Q.expect);
    delta2 = (value - e.Q.expect)*(value - e.Q.expect);
    newe.Q.var = SWAverage(delta2,e.Q.var);
+
+   /* Have to kickstart variance computation */
+   
+   if (newe.Q.var == 0.0)
+      {
+      newe.Q.var =  newe.Q.expect / 100.0;
+      }
    }
 else
    {
