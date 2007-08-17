@@ -192,7 +192,10 @@ sprintf(VPREFIX,"cfenvd");
 openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_DAEMON);
 
 strcpy(CFLOCK,"cfenvd");
- 
+
+SetContext("cfenvd");
+
+
 IGNORELOCK = false; 
 OUTPUT[0] = '\0';
 
