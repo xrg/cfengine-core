@@ -84,9 +84,9 @@ if (ReadDB(dbp,databuf,&e,sizeof(e)))
    delta2 = (value - e.Q.expect)*(value - e.Q.expect);
    newe.Q.var = SWAverage(delta2,e.Q.var);
 
-   /* Have to kickstart variance computation */
+   /* Have to kickstart variance computation, assume 1% to start  */
    
-   if (newe.Q.var == 0.0)
+   if (newe.Q.var <= 0.0009)
       {
       newe.Q.var =  newe.Q.expect / 100.0;
       }
@@ -97,7 +97,7 @@ else
    newe.t = t;
    newe.Q.q = value;
    newe.Q.expect = value;
-   newe.Q.var = 0.0;
+   newe.Q.var = 0.001;
    }
 
 if (lastseen > (double)lsea)

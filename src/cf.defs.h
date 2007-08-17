@@ -257,7 +257,7 @@ extern int errno;
 #define CLOCK_REALTIME 1
 #endif
 
-#ifndef HAVE_LIBRT
+#ifndef HAVE_CLOCKID_T
 typedef int clockid_t;
 #endif
 
