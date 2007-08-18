@@ -131,7 +131,7 @@ void SetStrategies()
 { struct Strategy *ptr;
   struct Item *ip; 
   int total,count;
-  double *array,*cumulative,cum,fluct;
+  double prob,cum,fluct;
 
   
 for (ptr = VSTRATEGYLIST; ptr != NULL; ptr=ptr->next)
@@ -149,28 +149,11 @@ for (ptr = VSTRATEGYLIST; ptr != NULL; ptr=ptr->next)
 
    if (ptr->strategies)
       {
-      total = count = 0;
+      total = 0;
       
       for (ip = ptr->strategies; ip !=NULL; ip=ip->next)
          {
-         count++;
          total += atoi(ip->classes);
-         }
-      
-      count++;
-      array = (double *)malloc(count*sizeof(double));
-      cumulative = (double *)malloc(count*sizeof(double));
-      count = 0;
-      cum = 0.0;
-      cumulative[0] = 0;
-      
-      for (ip = ptr->strategies; ip !=NULL; ip=ip->next)
-         {
-         array[count] = ((double)atoi(ip->classes))/((double)total);
-         cum += array[count];
-         cumulative[count] = cum;
-         Debug("%s : %f cum %f\n",ip->name,array[count],cumulative[count]);
-         count++;
          }
       
       /* Get random number 0-1 */
@@ -182,8 +165,11 @@ for (ptr = VSTRATEGYLIST; ptr != NULL; ptr=ptr->next)
       
       for (ip = ptr->strategies; ip != NULL; ip=ip->next)
          {
-         Verbose("    Class %d: %f-%f\n",count,cumulative[count-1],cumulative[count]);
-         if ((cumulative[count-1] < fluct) && (fluct < cumulative[count]))
+         prob = ((double)atoi(ip->classes))/((double)total);
+         cum += prob;
+         Debug("%s : %f cum %f\n",ip->name,prob,cum);
+         Verbose("    Class %d: %f-%f\n",count,cum-prob,cum);
+         if ((fluct < cum) || ip->next == NULL)
             {
             Verbose("   - Choosing %s (%f)\n",ip->name,fluct);
             AddClassToHeap(ip->name);
@@ -191,8 +177,6 @@ for (ptr = VSTRATEGYLIST; ptr != NULL; ptr=ptr->next)
             }
          count++;
          }
-      free(cumulative);
-      free(array);
       }
    }
 }
