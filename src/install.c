@@ -1424,9 +1424,11 @@ if (value[0] == '\0')
            strncpy(PARSEMETHODRETURNCLASSES,value,CF_BUFSIZE-1);
            }
         break;
+        
     case cfforcereplyto:
         strncpy(METHODFORCE,value,CF_BUFSIZE-1);
         break;
+        
     case cfsendclasses:
         if (strlen(METHODREPLYTO) > 0)
            {
@@ -3971,6 +3973,8 @@ for (vp = Get2DListEnt(tp); vp != NULL; vp = Get2DListEnt(tp))
    
    ptr->send_args = ListFromArgs(sp);
    ptr->send_classes = SplitStringAsItemList(METHODREPLYTO,','); 
+
+   METHODREPLYTO[0] = '\0';
    
    if ((ptr->name = strdup(name)) == NULL)
       {
