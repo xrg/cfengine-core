@@ -440,8 +440,8 @@ typedef int clockid_t;
 
 /* Auditing */
 
-
-#define CF_SUCCESS  's'
+#define CF_NOP      'n'
+#define CF_CHG      'c'
 #define CF_FAIL     'f'
 #define CF_DENIED   'd'
 
@@ -1968,8 +1968,9 @@ struct ShellComm
    char              *elsedef;
    char              preview;
    char              noabspath;
-   int ifelapsed;
-   int expireafter;
+   char              returnstatus;
+   int               ifelapsed;
+   int               expireafter;
    };
 
 

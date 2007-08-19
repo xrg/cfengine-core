@@ -2019,7 +2019,8 @@ else
    {
    ptr->expireafter = VEXPIREAFTER;
    }
- 
+
+ptr->returnstatus = CF_NOP;
 ptr->force = FORCELINK;
 ptr->silent = LINKSILENT;
 ptr->type = LINKTYPE;
@@ -2135,6 +2136,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       ptr->expireafter = VEXPIREAFTER;
       }
 
+   ptr->returnstatus = CF_NOP;
    ptr->force = FORCELINK;
    ptr->silent = LINKSILENT;
    ptr->type = LINKTYPE;
@@ -2250,6 +2252,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       ptr->expireafter = VEXPIREAFTER;
       }
 
+   ptr->returnstatus = CF_NOP;
    ptr->freespace = freespace;
    ptr->next = NULL;
    ptr->log = LOGP;
@@ -2329,6 +2332,7 @@ else
    ptr->mountopts = NULL;
    }
 
+ptr->returnstatus = CF_NOP;
  ptr->readonly = readonly;
  ptr->next = NULL;
  ptr->done = 'n';
@@ -2490,6 +2494,7 @@ else
    ptr->expireafter = VEXPIREAFTER;
    }
  
+ptr->returnstatus = CF_NOP;
 ptr->next = NULL;
 ptr->done = 'n';
 ptr->scope = strdup(CONTEXTID); 
@@ -2980,7 +2985,7 @@ else
 void AddEditAction(char *file,char *edit,char *data)
 
 { struct Edit *ptr;
- struct Edlist *top,*new, *ep;
+  struct Edlist *top,*new, *ep;
   struct TwoDimList *tp = NULL;
   char varbuff[CF_EXPANDSIZE], editlistseparator = CF_UNUSED_CHAR;
   mode_t saved_umask;
@@ -3353,6 +3358,7 @@ if (VIFLISTTOP == NULL)                 /* First element in the list */
     VIFLISTTOP->next = ifp;
     }
 
+ifp->returnstatus = CF_NOP;
 ifp->next = NULL;
 ifp->done = 'n';
 ifp->scope = strdup(CONTEXTID); 
@@ -3508,6 +3514,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       ptr->expireafter = VEXPIREAFTER;
       }
 
+   ptr->returnstatus = CF_NOP;
    ptr->log = LOGP;
    ptr->inform = INFORMP;
    ptr->timeout = timeout;
@@ -3680,6 +3687,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       ptr->expireafter = VEXPIREAFTER;
       }
 
+   ptr->returnstatus = CF_NOP;
    ptr->log = LOGP;
    ptr->inform = INFORMP;
    ptr->timeout = timeout;
@@ -3830,7 +3838,8 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       {
       ptr->expireafter = VEXPIREAFTER;
       }
-   
+
+   ptr->returnstatus = CF_NOP;
    ptr->rotate = rotate;
    ptr->comp = comp;
    ptr->size = size;
@@ -4030,7 +4039,8 @@ for (vp = Get2DListEnt(tp); vp != NULL; vp = Get2DListEnt(tp))
    
    ChecksumList(bare_send_args,ptr->digest,'m');
    DeleteItemList(bare_send_args);   
-   
+
+   ptr->returnstatus = CF_NOP;
    ptr->bundle = NULL;
    ptr->return_vars = SplitStringAsItemList(METHODFILENAME,',');
    ptr->return_classes = SplitStringAsItemList(PARSEMETHODRETURNCLASSES,','); 
@@ -4267,7 +4277,8 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       {
       ptr->expireafter = VEXPIREAFTER;
       }
-   
+
+   ptr->returnstatus = CF_NOP;
    ptr->plus = plus;
    ptr->minus = minus;
    ptr->recurse = 0;
@@ -4754,7 +4765,8 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
       {
       ptr->expireafter = VEXPIREAFTER;
       }
-   
+
+   ptr->returnstatus = CF_NOP;
    ptr->action = action;
    ptr->plus = plus;
    ptr->minus = minus;
@@ -4895,7 +4907,8 @@ else
    {
    ptr->expireafter = VEXPIREAFTER;
    }
- 
+
+ptr->returnstatus = CF_NOP;
 ptr->matches = matches;
 ptr->comp = comp;
 ptr->signal = signal;
@@ -5061,6 +5074,7 @@ else
    ptr->expireafter = VEXPIREAFTER;
    }
  
+ptr->returnstatus = CF_NOP;
 ptr->log = LOGP;
 ptr->inform = INFORMP;
 ptr->cmp = sense;
@@ -5322,6 +5336,7 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
       ptr->next = NULL;
       ptr->backup = IMAGEBACKUP;
       ptr->done = 'n';
+      ptr->returnstatus = CF_NOP;
       ptr->scope = strdup(CONTEXTID);
       
       if (strlen(LOCALREPOS) > 0)
@@ -6699,6 +6714,7 @@ if (travlinks == '?')
    travlinks = 'F';  /* False is default */
    }
 
+tp->returnstatus = CF_NOP;
 tp->size = tidysize;
 tp->recurse = rec;
 tp->age = age;
