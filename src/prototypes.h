@@ -1019,7 +1019,8 @@ char *ExtractInnerVarString (char *string, char *substr);
 char *ExtractOuterVarString (char *string, char *substr);
 int ExpandVarbinserv (char *string, char *buffer, char *bserver);
 enum vnames ScanVariable (char *name);
-struct Item *SplitVarstring (char *varstring, char sep);
+struct Item *SplitVarstring (char *varstring);
+struct Item *SplitString (char *varstring,char sep);
 
 /* wildcard.c */
 

@@ -286,9 +286,12 @@ return sp-1;
 
 char *ExtractOuterVarString(char *str,char *substr)
 
+  /* Should only by applied on str[0] == '$' */
+    
 { char *sp;
   int dollar = false;
   int bracks = 0, onebrack = false;
+  int nobracks = true;
 
 Debug("ExtractOuterVarString(%s) - syntax verify\n",str);
 
@@ -300,11 +303,21 @@ for (sp = str; *sp != '\0' ; sp++)       /* check for varitems */
       {
       case '$':
           dollar = true;
+          switch (*(sp+1))
+             {
+             case '(':
+             case '{': 
+                 break;
+             default:
+                 /* Stray dollar not a variable */
+                 return NULL;
+             }
           break;
       case '(':
       case '{': 
           bracks++;
           onebrack = true;
+          nobracks = false;
           break;
       case ')':
       case '}': 
@@ -319,19 +332,22 @@ for (sp = str; *sp != '\0' ; sp++)       /* check for varitems */
       return substr;
       }
    }
- 
- if (dollar == false)
-    {
-    return str; /* This is not a variable*/
-    }
- 
- if (bracks != 0)
-    {
-    yyerror("Incomplete variable syntax or bracket mismatch");
-    return NULL;
-    }
- 
- return sp-1;
+
+if (dollar == false)
+   {
+   return str; /* This is not a variable*/
+   }
+
+if (bracks != 0)
+   {
+   yyerror("Incomplete variable syntax or bracket mismatch");
+   return NULL;
+   }
+
+/* Return pointer to first position in string (shouldn't happen)
+   as long as we only call this function from the first $ position */
+
+return str;
 }
 
 /*********************************************************************/
@@ -911,100 +927,90 @@ return (enum vnames) i;
 
 /*********************************************************************/
 
-struct Item *SplitVarstring(char *varstring,char sep)
+struct Item *SplitVarstring(char *string)
+
+ /* Splits a string containing a separator like : 
+    into a linked list of separate items, */
+
+{ struct Item *liststart = NULL, *ip;
+  char *sp;
+  char before[CF_BUFSIZE],var[CF_BUFSIZE],exp[CF_EXPANDSIZE];
+  int i = 0;
+  
+Debug("SplitVarstring([%s])\n",string);
+
+for (sp = string; (*sp != '\0') ; sp++,i++)
+   {
+   var[0] = '\0';
+   exp[0] = '\0';
+   
+   if (*sp == '$')
+      {
+      if (ExtractOuterVarString(sp,var))
+         {
+         before[i] = '\0';
+         
+         if (strlen(before) > 0)
+            {
+            AppendItem(&liststart,before,NULL);
+            }
+  
+         ExpandVarstring(var,exp,NULL);
+         AppendItem(&liststart,exp,NULL);
+         
+         sp += strlen(var)-1;
+         before[0] = '\0'; 
+         i = -1;
+         }
+      else
+         {
+         before[i] = *sp;
+         }
+      }
+   else
+      {
+      before[i] = *sp;
+      }
+   }
+
+before[i] = '\0';
+
+if (strlen(before) > 0)
+   {
+   AppendItem(&liststart,before,NULL);
+   }
+
+return liststart;
+}
+
+/*********************************************************************/
+
+struct Item *SplitString(char *string,char sep)
 
  /* Splits a string containing a separator like : 
     into a linked list of separate items, */
 
 { struct Item *liststart = NULL;
-  char format[6], *sp;
-  char node[CF_BUFSIZE];
-  char buffer[CF_EXPANDSIZE],variable[CF_BUFSIZE];
-  char before[CF_BUFSIZE],after[CF_BUFSIZE],result[CF_BUFSIZE];
-  int i;
+  char *sp;
+  char before[CF_BUFSIZE];
+  int i = 0;
   
-Debug("SplitVarstring([%s],%c=%d)\n",varstring,sep,sep);
+Debug("SplitString([%s],%c=%d)\n",string,sep,sep);
 
-memset(before,0,CF_BUFSIZE);
-memset(after,0,CF_BUFSIZE);
-
-if (strcmp(varstring,"") == 0)   /* Handle path = / as special case */
+for (sp = string; (*sp != '\0') ; sp++,i++)
    {
-   AppendItem(&liststart,"/",NULL);
-   return liststart;
-   }
-
-if (!IsVarString(varstring))
-   {
-   AppendItem(&liststart,varstring,NULL);
-   return liststart;   
-   }
-
-sprintf(format,"%%[^%c]",sep);   /* set format string to search */
-
-i = 0; /* extract variable */
-
-for (sp = varstring; *sp != '$' && *sp != '\0' ; sp++)
-   {
-   before[i++] = *sp;
+   before[i] = *sp;
+   
+   if (*sp == sep)
+      {
+      before[i] = '\0';
+      AppendItem(&liststart,before,NULL);
+      i = -1;
+      }
    }
 
 before[i] = '\0';
-
-ExtractOuterVarString(varstring,variable); 
- 
-if (strcmp(variable,"$(date)") == 0)        /* Exception! $(date) contains : but is not a list*/
-   {
-   ExpandVarstring(varstring,buffer,"");
-   AppendItem(&liststart,buffer,NULL);
-   return liststart;
-   }
- 
-ExpandVarstring(variable,buffer,"");
-
-Debug("EXPAND |%s| -> |%s|, remain %s\n",variable,buffer,sp);
-
-sp = varstring+strlen(variable);
-
-i = 0;;
-
-Debug("REMAIN |%s|\n",sp);
-
-while (*sp != '\0')
-   {
-   after[i++] = *sp++;
-   }
-
-Debug("CONTINUE |%s| -> |%s|\n",sp,after);
- 
-
-for (sp = buffer+strlen(before); *sp != '\0'; sp++)
-   {
-   memset(node,0,CF_MAXLINKSIZE);
-   sscanf(sp,format,node);
-
-   if (strlen(node) == 0)
-      {
-      continue;
-      }
-   
-   sp += strlen(node)-1;
-
-   if (strlen(before)+strlen(node)+strlen(after) >= CF_BUFSIZE)
-      {
-      FatalError("Buffer overflow expanding variable string");
-      printf("Concerns: %s%s%s in %s",before,node,after,varstring);
-      }
-   
-   snprintf(result,CF_BUFSIZE,"%s%s%s",before,node,after);
-
-   AppendItem(&liststart,result,NULL);
-
-   if (*sp == '\0')
-      {
-      break;
-      }
-   }
+AppendItem(&liststart,before,"");
 
 return liststart;
 }

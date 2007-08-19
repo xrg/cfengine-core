@@ -84,8 +84,7 @@ for (tp = list; tp != NULL; tp=tp->next)
       }
    }
 
-
-Debug1("Get2DLIstEnt returns %s\n",entry);
+Debug("Get2DLIstEnt returns %s\n",entry);
 
 IncrementTwoDimList(list,list);
 
@@ -100,11 +99,9 @@ void Build2DListFromVarstring(struct TwoDimList **TwoDimlist, char *varstring, c
  /* sep is a separator which is used to split a many-variable */
  /* string into many strings with only one variable           */
 
-{ char format[6], *sp;
-  char node[CF_BUFSIZE];
-  int i;
+{ struct Item *ip, *basis;
 
-Debug1("Build2DListFromVarstring([%s],sep=%c)\n",varstring,sep);
+Debug1("Build2DListFromVarstring([%s],sep=[%c])\n",varstring,sep);
 
 if (varstring == NULL)
    {
@@ -112,53 +109,11 @@ if (varstring == NULL)
    return;
    }
 
-if ((strlen(varstring) == 1) && (varstring[0] == sep))
+basis = SplitVarstring(varstring);
+
+for (ip = basis; ip != NULL; ip=ip->next)
    {
-   AppendTwoDimItem(TwoDimlist,SplitVarstring("",'$'),sep);
-   return;
-   }
-
-snprintf(format,6,"%%[^%c]",sep);   /* set format string to search */
-
-for (sp = varstring; *sp != '\0'; sp++)
-   {
-   memset(node,0,CF_MAXLINKSIZE);
-   
-   *node = *sp;
-   
-   for (i = 1; (*(sp+i) != '$') && (*(sp+i) != '\0'); i++)
-      {
-      *(node+i) = *(sp+i);
-      
-      if (*(node+i) == '[')  /* Make sure there are no arrays ... */
-         {
-         while((*(node+i) != ']') && (*(sp+i) != '\0'))
-            {
-            i++;
-            *(node+i) = *(sp+i);
-            }
-         }
-      }
-
-   *(node+i) = '\0';
-
-   Debug("2DListNode = [%s]\n",node);
-   
-   sp += i-1;
-   
-   if (strlen(node) == 0)
-      {
-      continue;
-      }
-   
-/*   AppendTwoDimItem(TwoDimlist,SplitVarstring(node,LISTSEPARATOR),sep);*/
-     AppendTwoDimItem(TwoDimlist,SplitVarstring(node,sep),sep);
-   
-   if (*sp == '\0')
-      {
-      Debug("2DListNode(done)\n");
-      break;
-      }
+   AppendTwoDimItem(TwoDimlist,SplitString(ip->name,sep),sep);
    }
 }
 
@@ -253,7 +208,7 @@ void AppendTwoDimItem(struct TwoDimList **liststart,struct Item *itemlist,char s
 
 { struct TwoDimList *ip, *lp;
 
-Debug1("AppendTwoDimItem(itemlist, sep=%c)\n",sep);
+Debug1("AppendTwoDimItem(itemlist, sep=[%c])\n",sep);
 
 if (liststart == NULL)
    {
