@@ -226,13 +226,13 @@ void ListDefinedVariables()
 
 { struct cfObject *cp = NULL;
 
- printf("\nDEFINED MACRO/VARIABLES (by contexts)\n");
+printf("\nDEFINED MACRO/VARIABLES (by contexts)\n");
  
- for (cp = VOBJ; cp != NULL; cp=cp->next)
-    {
-    printf("\nOBJECT: %s\n",cp->scope);
-    PrintHashTable(cp->hashtable);
-    }
+for (cp = VOBJ; cp != NULL; cp=cp->next)
+   {
+   printf("\nOBJECT: %s\n",cp->scope);
+   PrintHashTable((char **)cp->hashtable);
+   }
 }
 
 

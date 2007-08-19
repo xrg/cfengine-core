@@ -81,7 +81,7 @@ else
    VOBJTOP->next = ptr;
    }
 
-InitHashTable(ptr->hashtable);
+InitHashTable((char **)ptr->hashtable);
  
 ptr->next = NULL;
 ptr->scope = strdup(name);

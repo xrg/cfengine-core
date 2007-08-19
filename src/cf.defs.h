@@ -444,6 +444,8 @@ typedef int clockid_t;
 #define CF_CHG      'c'
 #define CF_FAIL     'f'
 #define CF_DENIED   'd'
+#define CF_TIMEX    't'
+#define CF_INTERPT  'i'
 
 /*****************************************************************************/
 

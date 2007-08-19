@@ -197,7 +197,7 @@ do
          CfLog(cfinform,"There was an RPC timeout. Aborting mount operations.\n","");
          CfLog(cfinform,"Session failed while trying to talk to remote host\n","");
          snprintf(OUTPUT,CF_BUFSIZE*2,"%s\n",VBUFF);
-  CfLog(cfinform,OUTPUT,"");
+         CfLog(cfinform,OUTPUT,"");
          }
 
       GOTMOUNTINFO = false;
@@ -1333,6 +1333,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
             CfLog(cferror,OUTPUT,"popen");
             ResetOutputRoute('d','d');
             ReleaseCurrentLock();
+            ptr->returnstatus = CF_FAIL;
             continue;
             } 
          
@@ -1342,6 +1343,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
                {
                snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
                CfLog(cferror,OUTPUT,"ferror");
+               ptr->returnstatus = CF_TIMEX;
                break;
                }
             
@@ -1356,6 +1358,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
                {
                snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
                CfLog(cferror,OUTPUT,"ferror");
+               ptr->returnstatus = CF_TIMEX;
                break;
                }
             
@@ -1376,12 +1379,12 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
                
                char *prefixes[] =
                    {
-                       ":silent:",
-                       ":inform:",
-                       ":verbose:",
-                       ":editverbose:",
-                       ":error:",
-                       ":logonly:",
+                   ":silent:",
+                   ":inform:",
+                   ":verbose:",
+                   ":editverbose:",
+                   ":error:",
+                   ":logonly:",
                    };
                
                int precount = sizeof(prefixes)/sizeof(char *);
@@ -1449,6 +1452,8 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
       
       snprintf(OUTPUT,CF_BUFSIZE*2,"Finished script %s\n",execstr);
       CfLog(cfinform,OUTPUT,"");
+
+      ptr->returnstatus = CF_CHG;
       
       ResetOutputRoute('d','d');
       ReleaseCurrentLock();
@@ -1732,6 +1737,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
                CfLog(cferror,OUTPUT,"unlink");
                ResetOutputRoute('d','d');
                ReleaseCurrentLock();
+               dp->returnstatus = CF_CHG;
                continue;
                }
             
@@ -1822,6 +1828,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
                strcpy(path,workname);
                ChopLastNode(path);
                AddSlash(path);
+               
                if (BufferOverflow(path,dp->destination))
                   {
                   snprintf(OUTPUT,CF_BUFSIZE*2,"Buffer overflow occurred while renaming %s\n",workname);
@@ -1856,8 +1863,11 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
                      CfLog(cferror,OUTPUT,"rename");
                      ResetOutputRoute('d','d');
                      ReleaseCurrentLock();
+                     dp->returnstatus = CF_FAIL;
                      continue;
                      }
+
+                  dp->returnstatus = CF_CHG;
                   
                   if (Repository(path,dp->repository))
                      {
@@ -1884,6 +1894,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
             if (! DONTDO)
                {
                TruncateFile(workname);
+               dp->returnstatus = CF_CHG;
                AddMultipleClasses(dp->defines);
                }
             }
@@ -1903,6 +1914,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
             if (!DONTDO)
                {
                RotateFiles(workname,dp->rotate);
+               dp->returnstatus = CF_CHG;
                AddMultipleClasses(dp->defines);
                }
             else        
@@ -2014,10 +2026,12 @@ for (mp = VMOUNTABLES; mp != NULL; mp=mp->next)
          {
          MakeDirectoriesFor(maketo,'n');
          AddToFstab(host,mountdir,mountdir,mountmode,mp->mountopts,false);
+         mp->returnstatus = CF_CHG;
          }
       else if (IsClassedItemIn(VBINSERVERS,host))
          {
          AddToFstab(host,mountdir,mountdir,mountmode,mp->mountopts,true);
+         mp->returnstatus = CF_CHG;
          }
       }
    }
@@ -2085,10 +2099,12 @@ for (mp = VMISCMOUNT; mp != NULL; mp=mp->next)
       {
       MakeDirectoriesFor(maketo,'n');
       AddToFstab(host,mountdir,mp->onto,mp->mode,mp->options,false);
+      mp->returnstatus = CF_CHG;
       }
    else
       {
       AddToFstab(host,mountdir,mp->onto,mp->mode,mp->options,true);
+      mp->returnstatus = CF_CHG;
       }
    }
 }
@@ -2159,6 +2175,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
    if (strcmp(fs,"/") == 0 || strcmp(fs,"/usr") == 0)
       {
       CfLog(cfinform,"Request to unmount / or /usr is refused!\n","");
+      ptr->returnstatus = CF_FAIL;
       ReleaseCurrentLock();     
       continue;
       }
@@ -2190,6 +2207,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
          snprintf(OUTPUT,CF_BUFSIZE*2,"Unmounting %s\n",ptr->name);
          CfLog(cfinform,OUTPUT,"");
          DeleteItemStarting(&VMOUNTED,ptr->name);  /* update mount record */
+         ptr->returnstatus = CF_CHG;
          }
       
       cfpclose(pp);
@@ -2199,7 +2217,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
       {
       if (stat(fs,&statbuf) != -1)
          {
-         if ( ! S_ISDIR(statbuf.st_mode))
+         if (!S_ISDIR(statbuf.st_mode))
             {
             snprintf(OUTPUT,CF_BUFSIZE*2,"Warning! %s was not a directory.\n",fs);
             CfLog(cfinform,OUTPUT,"");
@@ -2212,6 +2230,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
                {
                snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to remove the directory %s\n",fs);
                CfLog(cferror,OUTPUT,"rmdir");
+               ptr->returnstatus = CF_CHG;
                } 
             else
                {
@@ -2270,6 +2289,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
                    snprintf(VBUFF,CF_BUFSIZE,"[^:]+:[^ \t]+[ \t]+%s[ \t]",fs);
                    break;
                }
+            
             item = LocateItemContainingRegExp(filelist,VBUFF);
             DeleteItem(&filelist,item);
             }
@@ -2282,6 +2302,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
  if ((! DONTDO) && (NUMBEROFEDITS > 0))
     {
     SaveItemList(filelist,VFSTAB[VSYSTEMHARDCLASS],VREPOSITORY);
+    ptr->returnstatus = CF_CHG;
     }
  
 DeleteItemList(filelist);
@@ -2427,6 +2448,9 @@ if (DONTDO)
 else if (!ItemListsEqual(filebase,referencefile))
    {
    SaveItemList(filebase,VRESOLVCONF[VSYSTEMHARDCLASS],VREPOSITORY);
+
+   /* Register change here  ptr->returnstatus = CF_CHG; */
+   
    chmod(VRESOLVCONF[VSYSTEMHARDCLASS],DEFAULTSYSTEMMODE);
    }
 else
@@ -2512,6 +2536,7 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to establish connection with %s (failover)\n",listserver);
          CfLog(cfinform,OUTPUT,"");
+         ip->returnstatus = CF_FAIL;
          AddMultipleClasses(ip->failover);
          continue;
          }
@@ -2644,7 +2669,8 @@ for (ifp = VIFLIST; ifp != NULL; ifp=ifp->next)
       {
       ifp->done = 'y';
       }
-   
+
+   /* Need ptr->returnstatus = CF_CHG; */
    IfConf(ifp->ifdev,ifp->ipaddress,ifp->netmask,ifp->broadcast);
    SetDefaultRoute();
    ReleaseCurrentLock();
@@ -2841,8 +2867,10 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
             {
             InstallPackage( ptr->pkgmgr, &pending_pkgs );
             DeleteItemList( pending_pkgs );
-            pending_pkgs = NULL; 
+            pending_pkgs = NULL;
             }
+
+         ptr->returnstatus = CF_CHG;
          }
       }
    
@@ -3143,7 +3171,7 @@ if (IsItemIn(VMOUNTED,buf))
       }
    }
 
- AppendItem(&VMOUNTED,buf,NULL);
+AppendItem(&VMOUNTED,buf,NULL);
 }
 
 /*******************************************************************/
@@ -3828,4 +3856,3 @@ fclose(fp);
 return(false);
 }
 
-/* vim:expandtab:smarttab:sw=3 */
