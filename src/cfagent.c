@@ -91,105 +91,104 @@ if (! NOHARDCLASSES)
    }
 
 PreNetConfig();
+ReadRCFile();   /* Should come before parsing so that it can be overridden */
 
-ReadRCFile(); /* Should come before parsing so that it can be overridden */
+if (IsPrivileged() && !MINUSF && !PRSCHEDULE)
+   {
+   SetContext("update");
+   
+   if (ParseInputFile("update.conf"))
+      {
+      CheckSystemVariables();
+      
+      if (!PARSEONLY && (QUERYVARS == NULL))
+         {
+         DoTree(2,"Update");
+         DoAlerts();
+         EmptyActionSequence();
+         DeleteClassesFromContext("update");
+         DeleteCaches();
+         }
+      
+      VIMPORT = NULL;
+      }
+   else
+      {
+      Verbose("Skipping update.conf (-F=%d)\n",MINUSF);
+      }
+   
+   if (ERRORCOUNT > 0)
+      {
+      exit(1);
+      }
+   }
 
- if (IsPrivileged() && !MINUSF && !PRSCHEDULE)
-    {
-    SetContext("update");
+if (UPDATEONLY)
+   {
+   return 0;
+   }
 
-    if (ParseInputFile("update.conf"))
-       {
-       CheckSystemVariables();
+SetContext("main");
 
-       if (!PARSEONLY && (QUERYVARS == NULL))
-          {
-          DoTree(2,"Update");
-          DoAlerts();
-          EmptyActionSequence();
-          DeleteClassesFromContext("update");
-          DeleteCaches();
-          }
+if (!PARSEONLY)
+   {
+   PersistentClassesToHeap();
+   GetEnvironment();
+   }
 
-       VIMPORT = NULL;
-       }
-    else
-       {
-       Verbose("Skipping update.conf (-F=%d)\n",MINUSF);
-       }
-    
-    if (ERRORCOUNT > 0)
-       {
-       exit(1);
-       }
-    }
- 
- if (UPDATEONLY)
-    {
-    return 0;
-    }
- 
- SetContext("main");
- 
- if (!PARSEONLY)
-    {
-    PersistentClassesToHeap();
-    GetEnvironment();
-    }
- 
- ParseInputFile(VINPUTFILE);
- CheckFilters();
- EchoValues();
- 
+ParseInputFile(VINPUTFILE);
+CheckFilters();
+EchoValues();
+
 /* CheckForMethod(); Move to InitializeAction */
- 
- if (PRSYSADM)                                           /* -a option */
-    {
-    printf("%s\n",VSYSADM);
-    exit (0);
-    }
 
- if (PRSCHEDULE)
-    {
-    for (ip = SCHEDULE; ip != NULL; ip=ip->next)
-       {
-       printf("[%s]\n",ip->name);
-       }
-    
-    printf("\n");
-    exit(0);
-    }
- 
- if (ERRORCOUNT > 0)
-    {
-    exit(1);
-    }
- 
- if (PARSEONLY)                            /* Establish lock for root */
-    {
-    exit(0);
-    } 
- 
- CfOpenLog();
- CheckSystemVariables();
+if (PRSYSADM)                                           /* -a option */
+   {
+   printf("%s\n",VSYSADM);
+   exit (0);
+   }
 
- SetReferenceTime(false); /* Reset */
+if (PRSCHEDULE)
+   {
+   for (ip = SCHEDULE; ip != NULL; ip=ip->next)
+      {
+      printf("[%s]\n",ip->name);
+      }
+   
+   printf("\n");
+   exit(0);
+   }
 
- QueryCheck();
+if (ERRORCOUNT > 0)
+   {
+   exit(1);
+   }
 
- DoTree(3,"Main Tree"); 
- DoAlerts();
- 
- CheckMethodReply();
- 
- if (OptionIs(CONTEXTID,"ChecksumPurge", true)) 
-    {
-    ChecksumPurge();
-    }
- 
- SummarizeObjects();
- closelog();
- return 0;
+if (PARSEONLY)                            /* Establish lock for root */
+   {
+   exit(0);
+   } 
+
+CfOpenLog();
+CheckSystemVariables();
+
+SetReferenceTime(false); /* Reset */
+
+QueryCheck();
+
+DoTree(3,"Main Tree"); 
+DoAlerts();
+
+CheckMethodReply();
+
+if (OptionIs(CONTEXTID,"ChecksumPurge", true)) 
+   {
+   ChecksumPurge();
+   }
+
+SummarizeObjects();
+closelog();
+return 0;
 }
 
 /*******************************************************************/

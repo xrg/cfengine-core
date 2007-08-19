@@ -3427,7 +3427,8 @@ if (stat(file,&statbuf) == -1)
   if force is specified then skip this check if this 
   is on the file server.
 */
-if ( disk_ptr->force != 'y' )
+
+if (disk_ptr->force != 'y')
    {
    if (IsMountedFileSystem(&statbuf,file,1))
       {
@@ -3436,6 +3437,7 @@ if ( disk_ptr->force != 'y' )
    }
 
 kilobytes = disk_ptr->freespace;
+
 if (kilobytes < 0)  /* percentage */
    {
    free = GetDiskUsage(file,cfpercent);

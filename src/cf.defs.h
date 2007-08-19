@@ -438,6 +438,15 @@ typedef int clockid_t;
 
 /*****************************************************************************/
 
+/* Auditing */
+
+
+#define CF_SUCCESS  's'
+#define CF_FAIL     'f'
+#define CF_DENIED   'd'
+
+/*****************************************************************************/
+
 #define CF_GRAINS   64
 #define ATTR     11
 #define CF_NETATTR   7 /* icmp udp dns tcpsyn tcpfin tcpack */
@@ -1348,7 +1357,7 @@ struct sock
 struct cfagent_connection
    {
    int sd;
-      int trust;            /* true if key being accepted on trust */
+   int trust;               /* true if key being accepted on trust */
    int protoversion;
    int family;                              /* AF_INET or AF_INET6 */
    char localip[CF_MAX_IP_LEN];
@@ -1362,10 +1371,10 @@ struct cfagent_connection
 
 struct cfObject
    {
-   char *scope;                       /* Name of object (scope) */
-   void *hashtable[CF_HASHTABLESIZE];    /* Variable heap  */
+   char *scope;                         /* Name of object (scope) */
+   void *hashtable[CF_HASHTABLESIZE];   /* Variable heap  */
    char type[CF_HASHTABLESIZE];         /* scalar or itlist? */
-   char *classlist;                   /* Private classes -- ? */
+   char *classlist;                     /* Private classes -- ? */
    struct Item *actionsequence;
    struct cfObject *next;
    };
@@ -1373,7 +1382,6 @@ struct cfObject
 /*
 
  $(globalvar)
-
  $(obj.name)
 
 */
@@ -1398,6 +1406,7 @@ struct Interface
    char *netmask;
    char *broadcast;
    char *classes;
+   char returnstatus;
    struct Interface *next;
    };
 
@@ -1428,6 +1437,7 @@ struct Method
    int            expireafter;
    char           log;
    char           inform;
+   char returnstatus;
    struct Method *next;
    };
 
@@ -1442,6 +1452,7 @@ struct Item
    int ifelapsed;
    int expireafter;
    struct Item *next;
+   char returnstatus;
    char *scope;
    };
 
@@ -1485,6 +1496,7 @@ struct Process
    struct Item    *filters;
    int ifelapsed;
    int expireafter;
+   char returnstatus;
    struct Process *next;
    };
 
@@ -1501,6 +1513,7 @@ struct Mountables
    char			*filesystem;
    char			*mountopts;
    char                 *classes;
+   char                 returnstatus;
    struct Mountables	*next;
    };
 
@@ -1533,6 +1546,7 @@ struct Tidy
          struct Item        *filters;
 	 char               *classes;
 	 char               *defines;
+         char               returnstatus;
          char               tidied;
 	 char		    *elsedef;
          char               compress;
@@ -1555,6 +1569,7 @@ struct Mounted
    char *on;
    char *options;
    char *type;
+   char returnstatus;
    };
 
 /*******************************************************************/
@@ -1570,7 +1585,7 @@ struct MiscMount
    char *classes;
    int ifelapsed;
    int expireafter;
-
+   char returnstatus;
    struct MiscMount *next;
    };
 
@@ -1585,9 +1600,9 @@ struct UnMount
    char deletedir;  /* y/n - true false */
    char deletefstab;
    char force;
-   int ifelapsed;
-   int expireafter;
-
+   int  ifelapsed;
+   int  expireafter;
+   char returnstatus;
    struct UnMount *next;
    };
 
@@ -1620,6 +1635,7 @@ struct File
    char   xdev;
    int    ifelapsed;
    int    expireafter;
+   char   returnstatus;
    char   checksum;   /* m=md5 n=none */
    u_long plus_flags;    /* for *BSD chflags */
    u_long minus_flags;    /* for *BSD chflags */
@@ -1643,6 +1659,7 @@ struct Disk
    char   log;
    char   inform;
    char   scanarrivals;
+   char   returnstatus;
    };
 
 /*******************************************************************/
@@ -1650,7 +1667,7 @@ struct Disk
 struct Disable
    {
    char  done;
-   char *scope;
+   char  *scope;
    char  *name;
    char  *destination;
    char  *classes;
@@ -1668,6 +1685,7 @@ struct Disable
    char   inform;
    int ifelapsed;
    int expireafter;
+   char returnstatus;
    };
 
 /*******************************************************************/
@@ -1705,9 +1723,10 @@ struct Image
    char   comp;
    char   purge;
 
-   int ifelapsed;
-   int expireafter;
-
+   int  ifelapsed;
+   int  expireafter;
+   char returnstatus;
+      
    struct Item *exclusions;
    struct Item *inclusions;
    struct Item *filters;      
@@ -1832,6 +1851,7 @@ struct Link
    struct Link *next;
    char   log;
    char   inform;
+   char returnstatus;
    };
 
 /*******************************************************************/
@@ -1850,8 +1870,8 @@ struct Edit
    char *repository;
    int   recurse;
    char  binary;   /* y/n */
-   int ifelapsed;
-   int expireafter;
+   int   ifelapsed;
+   int    expireafter;
    struct Item *ignores;
    struct Item *exclusions;
    struct Item *inclusions;      
@@ -1867,6 +1887,7 @@ struct Edit
          enum editnames code;
          char *data;
          struct Edlist *next;
+         char returnstatus;
          char *classes;
          };
 
@@ -2008,6 +2029,7 @@ struct Package      /* For packages: */
    char              inform;
    char              *defines;
    char              *elsedef;
+   char              returnstatus;
    char              *ver;
    enum cmpsense     cmp;
    enum pkgmgrs      pkgmgr;

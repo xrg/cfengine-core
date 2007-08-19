@@ -3045,7 +3045,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
             {
             FatalError("Memory Allocation failed for AddEditAction() #1");
             }
-         
+
          if (ptr->actions == NULL)
             {
             ptr->actions = new;
