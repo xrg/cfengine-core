@@ -33,7 +33,7 @@
 /*                                                                           */
 /*****************************************************************************/
 
-int RecursiveCheck(char *name,mode_t plus,mode_t minus,enum fileactions action,struct UidList *uidlist,struct GidList *gidlist,int recurse,int rlevel,struct File *ptr,struct stat *sb)
+int RecursiveCheck(char *name,int recurse,int rlevel,struct File *ptr,struct stat *sb)
 
 { DIR *dirh;
   int goback; 
@@ -55,7 +55,7 @@ if (rlevel > CF_RECURSION_LIMIT)
  
 memset(pcwd,0,CF_BUFSIZE); 
 
-Debug("RecursiveCheck(%s,+%o,-%o)\n",name,plus,minus);
+Debug("RecursiveCheck(%s,+%o,-%o)\n",name,ptr->plus,ptr->minus);
 
 if (!DirPush(name,sb))
    {
@@ -66,7 +66,7 @@ if ((dirh = opendir(".")) == NULL)
    {
    if (lstat(name,&statbuf) != -1)
       {
-      CheckExistingFile("*",name,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
+      CheckExistingFile("*",name,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
       }
    return true;
    }
@@ -132,7 +132,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    
    if (S_ISLNK(statbuf.st_mode))            /* should we ignore links? */
       {
-      CheckExistingFile("*",pcwd,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
+      CheckExistingFile("*",pcwd,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
       continue;
       }
    
@@ -146,19 +146,19 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
          {
          if ((ptr->recurse > 1) || (ptr->recurse == CF_INF_RECURSE))
             {
-            CheckExistingFile("*",pcwd,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
-            goback = RecursiveCheck(pcwd,plus,minus,action,uidlist,gidlist,recurse-1,rlevel+1,ptr,&statbuf);
+            CheckExistingFile("*",pcwd,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
+            goback = RecursiveCheck(pcwd,recurse-1,rlevel+1,ptr,&statbuf);
             DirPop(goback,name,sb);
             }
          else
             {
-            CheckExistingFile("*",pcwd,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
+            CheckExistingFile("*",pcwd,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
             }
          }
       }
    else
       {
-      CheckExistingFile("*",pcwd,plus,minus,action,uidlist,gidlist,&statbuf,ptr,ptr->acl_aliases);
+      CheckExistingFile("*",pcwd,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
       }
    }
 

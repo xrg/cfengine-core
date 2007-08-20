@@ -330,7 +330,7 @@ void DeleteClassesFromContext  (char *s);
 
 int IsHomeDir (char *name);
 int EmptyDir (char *path);
-int RecursiveCheck (char *name, mode_t plus, mode_t minus, enum fileactions action, struct UidList *uidlist, struct GidList *gidlist, int recurse, int rlevel, struct File *ptr,struct stat *sb);
+int RecursiveCheck (char *name, int recurse, int rlevel, struct File *ptr,struct stat *sb);
 #ifdef DARWIN
 int CheckFinderType (char *file, enum fileactions action, char *cf_findertype, struct stat *statbuf); 
 #endif

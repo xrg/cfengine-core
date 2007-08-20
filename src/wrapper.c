@@ -273,7 +273,7 @@ else
       
       CheckExistingFile("*",startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
       RegisterRecursionRootDevice(statbuf.st_dev);
-      RecursiveCheck(startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,ptr->recurse,0,ptr,&statbuf);
+      RecursiveCheck(startpath,ptr->recurse,0,ptr,&statbuf);
       }
    else
       {

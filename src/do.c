@@ -3745,7 +3745,7 @@ if (stat(startpath,&sb) == -1)
    }
 
 CheckExistingFile("*",startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&sb,ptr,ptr->acl_aliases);
-RecursiveCheck(startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,ptr->recurse,0,ptr,&sb);
+RecursiveCheck(startpath,ptr->recurse,0,ptr,&sb);
  
 ReleaseCurrentLock(); 
 }
