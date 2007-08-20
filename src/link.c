@@ -32,13 +32,13 @@
 /* TOOLKIT : links                                                   */
 /*********************************************************************/
 
-int LinkChildFiles(char *from,char *to,char type,struct Item *inclusions,struct Item *exclusions,struct Item *copy,short nofile,struct Link *ptr)
+int LinkChildFiles(char *from,char *to,struct Link *ptr)
 
 { DIR *dirh;
   struct dirent *dirp;
   char pcwdto[CF_BUFSIZE],pcwdfrom[CF_BUFSIZE];
   struct stat statbuf;
-  int (*linkfiles)(char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr);
+  int (*linkfiles)(char *from, char *to,struct Link *ptr);
 
 Debug("LinkChildFiles(%s,%s)\n",from,to);
   
@@ -79,7 +79,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       }
    strcat(pcwdfrom,dirp->d_name);
    
-   switch (type)
+   switch (ptr->type)
       {
       case 's':
           linkfiles = LinkFiles;
@@ -94,11 +94,11 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
           linkfiles = HardLinkFiles;
           break;
       default:
-          printf("Internal error, link type was [%c]\n",type);
+          printf("Internal error, link type was [%c]\n",ptr->type);
           continue;
       }
    
-   (*linkfiles)(pcwdfrom,pcwdto,inclusions,exclusions,copy,nofile,ptr);
+   (*linkfiles)(pcwdfrom,pcwdto,ptr);
    }
 
 closedir(dirh);
@@ -107,7 +107,7 @@ return true;
 
 /*********************************************************************/
 
-void LinkChildren(char *path,char type,struct stat *rootstat,uid_t uid,gid_t gid,struct Item *inclusions,struct Item *exclusions,struct Item *copy,short nofile,struct Link *ptr)
+void LinkChildren(char *path,char type,struct stat *rootstat,uid_t uid,gid_t gid,struct Link *ptr)
 
 
 /* --------------------------------------------------------------------
@@ -130,7 +130,7 @@ void LinkChildren(char *path,char type,struct stat *rootstat,uid_t uid,gid_t gid
   struct dirent *dirp;
   struct stat statbuf;
   int matched = false;
-  int (*linkfiles)(char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr);
+  int (*linkfiles)(char *from, char *to, struct Link *ptr);
 
 Debug("LinkChildren(%s)\n",path);
   
@@ -222,7 +222,7 @@ for (sp = path+strlen(path); sp != path-1; sp--)
                       continue;
                   }
                
-               matched = (*linkfiles)(from,to,inclusions,exclusions,copy,nofile,ptr);
+               matched = (*linkfiles)(from,to,ptr);
                
                if (matched && !DONTDO)
                   {
@@ -252,7 +252,7 @@ int RecursiveLink(struct Link *lp,char *from,char *to,int maxrecurse)
   char newfrom[CF_BUFSIZE];
   char newto[CF_BUFSIZE];
   void *bug_check;
-  int (*linkfiles)(char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr);
+  int (*linkfiles)(char *from, char *to, struct Link *ptr);
  
 if (maxrecurse == 0)  /* reached depth limit */
    {
@@ -376,7 +376,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
              continue;
          }
       
-      (*linkfiles)(newfrom,newto,lp->inclusions,lp->exclusions,lp->copy,lp->nofile,lp);
+      (*linkfiles)(newfrom,newto,lp);
       }
    }
 
@@ -386,7 +386,7 @@ return true;
 
 /*********************************************************************/
 
-int LinkFiles(char *from,char *to_tmp,struct Item *inclusions,struct Item *exclusions,struct Item *copy,short nofile,struct Link *ptr)
+int LinkFiles(char *from,char *to_tmp,struct Link *ptr)
 
 /* should return true if 'to' found */
 
@@ -397,7 +397,7 @@ int LinkFiles(char *from,char *to_tmp,struct Item *inclusions,struct Item *exclu
   char stamp[CF_BUFSIZE];
   time_t STAMPNOW;
   STAMPNOW = time((time_t *)NULL);
-
+      
 memset(to,0,CF_BUFSIZE);
 memset(&ip,0,sizeof(ip));
   
@@ -422,13 +422,13 @@ for (lastnode = from+strlen(from); *lastnode != '/'; lastnode--)
 
 lastnode++;
 
-if (IgnoredOrExcluded(links,lastnode,inclusions,exclusions))
+if (IgnoredOrExcluded(links,lastnode,ptr->inclusions,ptr->exclusions))
    {
    Verbose("%s: Skipping non-included pattern %s\n",VPREFIX,from);
    return true;
    }
 
-if (IsWildItemIn(VCOPYLINKS,lastnode) || IsWildItemIn(copy,lastnode))
+if (IsWildItemIn(VCOPYLINKS,lastnode) || IsWildItemIn(ptr->copy,lastnode))
    {
    fakeuid.uid = CF_SAME_OWNER;
    fakeuid.next = NULL;
@@ -469,7 +469,7 @@ else
    strcpy(absto,to);
    }
 
-if (!nofile)
+if (!ptr->nofile)
   {
   if (stat(absto,&buf) == -1)
      {
@@ -511,7 +511,7 @@ if (lstat(from,&buf) == 0)
       if (rename(from,saved) == -1)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Can't rename %s to %s\n",from,saved);
-  CfLog(cferror,OUTPUT,"rename");
+         CfLog(cferror,OUTPUT,"rename");
          return(true);
          }
 
@@ -618,7 +618,7 @@ if (readlink(from,linkbuf,CF_BUFSIZE-1) == -1)
       snprintf(OUTPUT,CF_BUFSIZE*2,"Link (%s->%s) exists.\n",from,to_tmp);
       CfLog(cfverbose,OUTPUT,"");
       
-      if (!nofile)
+      if (!ptr->nofile)
          {
          KillOldLink(from,ptr->defines);      /* Check whether link points somewhere */
          return true;
@@ -629,12 +629,12 @@ if (readlink(from,linkbuf,CF_BUFSIZE-1) == -1)
       }
    }
  
- return DoLink(from,to,ptr->defines);
+return DoLink(from,to,ptr->defines);
 }
 
 /*********************************************************************/
 
-int RelativeLink(char *from,char *to,struct Item *inclusions,struct Item *exclusions,struct Item *copy,short nofile,struct Link *ptr)
+int RelativeLink(char *from,char *to,struct Link *ptr)
 
 { char *sp, *commonto, *commonfrom;
   char buff[CF_BUFSIZE],linkto[CF_BUFSIZE];
@@ -644,7 +644,7 @@ Debug2("RelativeLink(%s,%s)\n",from,to);
 
 if (*to == '.')
    {
-   return LinkFiles(from,to,inclusions,exclusions,copy,nofile,ptr);
+   return LinkFiles(from,to,ptr);
    }
 
 if (!CompressPath(linkto,to))
@@ -712,12 +712,12 @@ if (BufferOverflow(buff,commonto))
 
 strcat(buff,commonto);
  
-return LinkFiles(from,buff,inclusions,exclusions,copy,nofile,ptr);
+return LinkFiles(from,buff,ptr);
 }
 
 /*********************************************************************/
 
-int AbsoluteLink(char *from,char *to,struct Item *inclusions,struct Item *exclusions,struct Item *copy,short nofile,struct Link *ptr)
+int AbsoluteLink(char *from,char *to,struct Link *ptr)
 
 /* global LINKTO */
 
@@ -742,7 +742,7 @@ CompressPath(absto,LINKTO);
 
 expand[0] = '\0';
 
-if (!nofile)
+if (!ptr->nofile)
    {  
    if (!ExpandLinks(expand,absto,0))  /* begin at level 1 and beam out at 15 */
       {
@@ -763,7 +763,7 @@ else
 
 CompressPath(LINKTO,expand);
 
-return LinkFiles(from,LINKTO,inclusions,exclusions,copy,nofile,ptr);
+return LinkFiles(from,LINKTO,ptr);
 }
 
 /*********************************************************************/
@@ -851,7 +851,7 @@ if (stat(VBUFF,&statbuf) == -1)               /* link points nowhere */
 
 /*********************************************************************/
 
-int HardLinkFiles(char *from,char *to,struct Item *inclusions,struct Item *exclusions,struct Item *copy,short nofile,struct Link *ptr)
+int HardLinkFiles(char *from,char *to,struct Link *ptr)
 
 /* should return true if 'to' found */
 
@@ -869,19 +869,19 @@ for (lastnode = from+strlen(from); *lastnode != '/'; lastnode--)
 
 lastnode++;
 
-if (inclusions != NULL && !IsWildItemIn(inclusions,lastnode))
+if (ptr->inclusions != NULL && !IsWildItemIn(ptr->inclusions,lastnode))
    {
    Verbose("%s: Skipping non-included pattern %s\n",VPREFIX,from);
    return true;
    }
 
-if (IsWildItemIn(VEXCLUDELINK,lastnode) || IsWildItemIn(exclusions,lastnode))
+if (IsWildItemIn(VEXCLUDELINK,lastnode) || IsWildItemIn(ptr->exclusions,lastnode))
    {
    Verbose("%s: Skipping excluded pattern %s\n",VPREFIX,from);
    return true;
    }
 
-if (IsWildItemIn(VCOPYLINKS,lastnode) || IsWildItemIn(copy,lastnode))
+if (IsWildItemIn(VCOPYLINKS,lastnode) || IsWildItemIn(ptr->copy,lastnode))
    {
    fakeuid.uid = CF_SAME_OWNER;
    fakeuid.next = NULL;

@@ -369,7 +369,6 @@ if (ptr->elsedef)
    }
 
 printf("   IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
-
 }
 
 /*********************************************************************/

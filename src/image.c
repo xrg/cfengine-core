@@ -394,6 +394,7 @@ if ((strcmp(sourcefile,destfile) == 0) && (strcmp(ip->server,"localhost") == 0))
 
 empty.defines = NULL;
 empty.elsedef = NULL;
+empty.nofile = true;
 
 if (IgnoredOrExcluded(image,sourcefile,ip->inclusions,ip->exclusions))
    {
@@ -421,13 +422,13 @@ if (ip->linktype != 'n')
       switch (ip->linktype)
          {
          case 's':
-             succeed = LinkFiles(destfile,sourcefile,NULL,NULL,NULL,true,&empty);
+             succeed = LinkFiles(destfile,sourcefile,&empty);
              break;
          case 'r':
-             succeed = RelativeLink(destfile,sourcefile,NULL,NULL,NULL,true,&empty);
+             succeed = RelativeLink(destfile,sourcefile,&empty);
              break;
          case 'a':
-             succeed = AbsoluteLink(destfile,sourcefile,NULL,NULL,NULL,true,&empty);
+             succeed = AbsoluteLink(destfile,sourcefile,&empty);
              break;
          default:
              printf("%s: internal error, link type was [%c] in ImageCopy\n",VPREFIX,ip->linktype);
@@ -658,18 +659,18 @@ if (found == -1)
          case 's':
              if (*linkbuf == '.')
                 {
-                succeed = RelativeLink(destfile,linkbuf,NULL,NULL,NULL,true,&empty);
+                succeed = RelativeLink(destfile,linkbuf,&empty);
                 }
              else
                 {
-                succeed = LinkFiles(destfile,linkbuf,NULL,NULL,NULL,true,&empty);
+                succeed = LinkFiles(destfile,linkbuf,&empty);
                 }
              break;
          case 'r':
-             succeed = RelativeLink(destfile,linkbuf,NULL,NULL,NULL,true,&empty);
+             succeed = RelativeLink(destfile,linkbuf,&empty);
              break;
          case 'a':
-             succeed = AbsoluteLink(destfile,linkbuf,NULL,NULL,NULL,true,&empty);
+             succeed = AbsoluteLink(destfile,linkbuf,&empty);
              break;
 
          case 'n': /* Link copied instead */
@@ -878,18 +879,18 @@ else
             case 's':
                 if (*linkbuf == '.')
                    {
-                   succeed = RelativeLink(destfile,linkbuf,NULL,NULL,NULL,true,&empty);
+                   succeed = RelativeLink(destfile,linkbuf,&empty);
                    }
                 else
                    {
-                   succeed = LinkFiles(destfile,linkbuf,NULL,NULL,NULL,true,&empty);
+                   succeed = LinkFiles(destfile,linkbuf,&empty);
                    }
                 break;
             case 'r':
-                succeed = RelativeLink(destfile,linkbuf,NULL,NULL,NULL,true,&empty);
+                succeed = RelativeLink(destfile,linkbuf,&empty);
                 break;
             case 'a':
-                succeed = AbsoluteLink(destfile,linkbuf,NULL,NULL,NULL,true,&empty);
+                succeed = AbsoluteLink(destfile,linkbuf,&empty);
                 break;
             default:
                 printf("cfengine: internal error, link type was [%c] in ImageCopy\n",ip->linktype);

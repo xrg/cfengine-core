@@ -654,15 +654,15 @@ struct Item *SortItemListCounters(struct Item *list);
 
 struct Link;
 
-int LinkChildFiles (char *from, char *to, char type, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr);
-void LinkChildren (char *path, char type, struct stat *rootstat, uid_t uid, gid_t gid, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr);
+int LinkChildFiles (char *from, char *to, struct Link *ptr);
+void LinkChildren (char *path, char type, struct stat *rootstat, uid_t uid, gid_t gid,struct Link *ptr);
 int RecursiveLink (struct Link *lp, char *from, char *to, int maxrecurse);
-int LinkFiles (char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short nofile, struct Link *ptr);
-int RelativeLink (char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr);
-int AbsoluteLink (char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr);
+int LinkFiles (char *from, char *to,struct Link *ptr);
+int RelativeLink (char *from, char *to,struct Link *ptr);
+int AbsoluteLink (char *from, char *to,struct Link *ptr);
 int DoLink  (char *from, char *to, char *defines);
 void KillOldLink (char *name, char *defines);
-int HardLinkFiles (char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr);
+int HardLinkFiles (char *from, char *to,struct Link *ptr);
 void DoHardLink  (char *from, char *to, char *defines);
 int ExpandLinks (char *dest, char *from, int level);
 char *AbsLinkPath (char *from, char *relto);

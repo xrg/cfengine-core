@@ -1856,8 +1856,8 @@ if (strcmp(item,VCURRENTFILE) == 0)
 Debug1("\n\n [Installing item (%s) in the import list]\n\n",item);
 
 ExpandVarstring(item,ebuff,"");
- 
-AppendItem(&VIMPORT,ebuff,CLASSBUFF);
+
+InstallItem(&VIMPORT,ebuff,CLASSBUFF,0,0);
 }
 
 /*******************************************************************/
@@ -2517,13 +2517,14 @@ if (!IsInstallable(CLASSBUFF))
    return;
    }
 
+
 Build2DListFromVarstring(&tp,path,LISTSEPARATOR);
     
 Set2DList(tp);
 
 for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    {
-   AppendItem(&VIGNORE,sp,CLASSBUFF);
+   InstallItem(&VIGNORE,sp,CLASSBUFF,0,0);
    }
 
 Delete2DList(tp);

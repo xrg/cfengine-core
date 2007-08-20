@@ -437,7 +437,8 @@ for (lp = VCHLINK; lp != NULL; lp = lp->next)
             ResetOutputRoute('d','d');
             continue;
             }
-         LinkChildren(from,lp->type,&statbuf,0,0,lp->inclusions,lp->exclusions,lp->copy,lp->nofile,lp);
+         
+         LinkChildren(from,lp->type,&statbuf,0,0,lp);
          break;
          }
 
@@ -447,16 +448,16 @@ for (lp = VCHLINK; lp != NULL; lp = lp->next)
          {
          matched = RecursiveLink(lp,from,path,lp->recurse);
          }
-      else if (LinkChildFiles(from,path,lp->type,lp->inclusions,lp->exclusions,lp->copy,lp->nofile,lp))
+      else if (LinkChildFiles(from,path,lp))
          {
          matched = true;
          }
       else if (! varstring)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Error while trying to childlink %s -> %s\n",from,path);
-  CfLog(cferror,OUTPUT,"");
+         CfLog(cferror,OUTPUT,"");
          snprintf(OUTPUT,CF_BUFSIZE*2,"The directory %s does not exist. Can't link.\n",path);
-  CfLog(cferror,OUTPUT,"");  
+         CfLog(cferror,OUTPUT,"");  
          }
 
       if (! varstring)                       /* don't iterate over binservers if not var */
@@ -490,7 +491,7 @@ void MakeLinks()     /* <binserver> should expand to a best fit filesys */
   int matched,varstring;
   short saveenforce;
   short savesilent;
-  int (*linkfiles)(char *from, char *to, struct Item *inclusions, struct Item *exclusions, struct Item *copy, short int nofile, struct Link *ptr);
+  int (*linkfiles)(char *from, char *to,struct Link *ptr);
 
 if (NOLINKS)
    {
@@ -562,7 +563,7 @@ for (lp = VLINK; lp != NULL; lp = lp->next)
 
       varstring = ExpandVarbinserv(to,path,ip->name);
 
-      if ((*linkfiles)(from,path,lp->inclusions,lp->exclusions,lp->copy,lp->nofile,lp))
+      if ((*linkfiles)(from,path,lp))
          {
          matched = true;
          }

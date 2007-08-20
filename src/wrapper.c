@@ -241,14 +241,14 @@ if (stat(startpath,&statbuf) == -1)
       }
    }
 else
-   {
-/*
-   if (TouchDirectory(ptr)) Don't check, just touch..
-      {
-      ReleaseCurrentLock();
-      return;
-      }
-*/
+   { struct Link empty;
+
+   empty.inclusions = ptr->inclusions;
+   empty.exclusions = ptr->exclusions;
+   empty.defines = NULL;
+   empty.elsedef = NULL;
+   empty.nofile = false;
+
    if (ptr->action == create)
       {
       CheckExistingFile("*",startpath,ptr->plus,ptr->minus,fixall,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
@@ -258,15 +258,7 @@ else
    
    if (ptr->action == linkchildren)
       {
-      LinkChildren(ptr->path,
-                   's',
-                   &statbuf,
-                   ptr->uid->uid,ptr->gid->gid,
-                   ptr->inclusions,
-                   ptr->exclusions,
-                   NULL,
-                   0,
-                   NULL);
+      LinkChildren(ptr->path,'s',&statbuf,ptr->uid->uid,ptr->gid->gid,&empty);
       ReleaseCurrentLock();
       return;
       }
