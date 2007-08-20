@@ -206,7 +206,7 @@ for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
             }
          }
       
-      CheckCopiedFile(ip->cf_findertype,newto,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&statbuf,NULL,ip->acl_aliases);
+      CheckCopiedFile(ip->cf_findertype,newto,&deststatbuf,&statbuf,ip);
       
       (ip->uid)->uid = save_uid;
       (ip->gid)->gid = save_gid;

@@ -334,9 +334,9 @@ int RecursiveCheck (char *name, int recurse, int rlevel, struct File *ptr,struct
 #ifdef DARWIN
 int CheckFinderType (char *file, enum fileactions action, char *cf_findertype, struct stat *statbuf); 
 #endif
-void CheckExistingFile (char *cf_findertype,char *file, mode_t plus, mode_t minus, enum fileactions action, struct UidList *uidlist, struct GidList *gidlist, struct stat *dstat, struct File *ptr, struct Item *acl_aliases);
-void CheckCopiedFile (char *cf_findertype,char *file, mode_t plus, mode_t minus, char *action, struct UidList *uidlist, struct GidList *gidlist, struct stat *dstat, struct stat *sstat, struct File *ptr, struct Item *acl_aliases);
-int CheckOwner (char *file, enum fileactions action, struct UidList *uidlist, struct GidList *gidlist, struct stat *statbuf);
+void CheckExistingFile (char *cf_findertype,char *file, struct stat *dstat, struct File *ptr);
+void CheckCopiedFile (char *cf_findertype,char *file,struct stat *dstat, struct stat *sstat, struct Image *ptr);
+int CheckOwner (char *file, struct File *ptr, struct stat *statbuf);
 int CheckHomeSubDir (char *testpath, char *tidypath, int recurse);
 int FileIsNewer (char *file1, char *file2);
 int IgnoreFile  (char *pathto, char *name, struct Item *ignores);

@@ -187,7 +187,7 @@ if (stat(startpath,&statbuf) == -1)
       MakeDirectoriesFor(startpath,'n');
       ptr->action = fixall;
       *(startpath+strlen(ptr->path)-2) = '\0';       /* trunc /. */
-      CheckExistingFile("*",startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
+      CheckExistingFile("*",startpath,&statbuf,ptr);
       ReleaseCurrentLock();
       return;
       }
@@ -216,7 +216,7 @@ if (stat(startpath,&statbuf) == -1)
                 close(fd);
                 }
              
-             CheckExistingFile("*",startpath,ptr->plus,ptr->minus,fixall,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
+             CheckExistingFile("*",startpath,&statbuf,ptr);
              }
           
           snprintf(OUTPUT,CF_BUFSIZE*2,"Creating file %s, mode = %o\n",ptr->path,filemode);
@@ -251,7 +251,11 @@ else
 
    if (ptr->action == create)
       {
-      CheckExistingFile("*",startpath,ptr->plus,ptr->minus,fixall,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
+      struct File tmp;
+      memcpy(&tmp,ptr,sizeof(struct File));
+      tmp.action = fixall;
+      
+      CheckExistingFile("*",startpath,&statbuf,&tmp);
       ReleaseCurrentLock();
       return;
       }
@@ -271,7 +275,7 @@ else
          return;
          }
       
-      CheckExistingFile("*",startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
+      CheckExistingFile("*",startpath,&statbuf,ptr);
       RegisterRecursionRootDevice(statbuf.st_dev);
       RecursiveCheck(startpath,ptr->recurse,0,ptr,&statbuf);
       }
@@ -282,7 +286,7 @@ else
          CfLog(cferror,"Unable to stat already statted object!","lstat");
          return;
          }
-      CheckExistingFile("*",startpath,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
+      CheckExistingFile("*",startpath,&statbuf,ptr);
       }
    }
  
@@ -325,7 +329,7 @@ if (!GetLock(ASUniqueName("directories"),CanonifyName(directory),ptr->ifelapsed,
    return;
    }
 
-CheckExistingFile("*",dir,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
+CheckExistingFile("*",dir,&statbuf,ptr);
 ReleaseCurrentLock(); 
 }
 

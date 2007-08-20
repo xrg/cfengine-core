@@ -66,7 +66,7 @@ if ((dirh = opendir(".")) == NULL)
    {
    if (lstat(name,&statbuf) != -1)
       {
-      CheckExistingFile("*",name,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
+      CheckExistingFile("*",name,&statbuf,ptr);
       }
    return true;
    }
@@ -132,7 +132,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    
    if (S_ISLNK(statbuf.st_mode))            /* should we ignore links? */
       {
-      CheckExistingFile("*",pcwd,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
+      CheckExistingFile("*",pcwd,&statbuf,ptr);
       continue;
       }
    
@@ -146,19 +146,19 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
          {
          if ((ptr->recurse > 1) || (ptr->recurse == CF_INF_RECURSE))
             {
-            CheckExistingFile("*",pcwd,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
+            CheckExistingFile("*",pcwd,&statbuf,ptr);
             goback = RecursiveCheck(pcwd,recurse-1,rlevel+1,ptr,&statbuf);
             DirPop(goback,name,sb);
             }
          else
             {
-            CheckExistingFile("*",pcwd,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
+            CheckExistingFile("*",pcwd,&statbuf,ptr);
             }
          }
       }
    else
       {
-      CheckExistingFile("*",pcwd,ptr->plus,ptr->minus,ptr->action,ptr->uid,ptr->gid,&statbuf,ptr,ptr->acl_aliases);
+      CheckExistingFile("*",pcwd,&statbuf,ptr);
       }
    }
 

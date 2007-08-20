@@ -181,7 +181,7 @@ if (S_ISDIR(sourcestatbuf.st_mode))
        }
     else
        {
-       CheckCopiedFile(ip->cf_findertype,destdir,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
+       CheckCopiedFile(ip->cf_findertype,destdir,&deststatbuf,&sourcestatbuf,ip);
        }
 
    for (dirp = cfreaddir(dirh,ip); dirp != NULL; dirp = cfreaddir(dirh,ip))
@@ -446,7 +446,7 @@ if (ip->linktype != 'n')
             }
          else
             {
-            CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
+            CheckCopiedFile(ip->cf_findertype,destfile,&deststatbuf,&sourcestatbuf,ip);
             }     
          }      
       return;
@@ -558,7 +558,7 @@ if (found == -1)
             }
          else
             {
-            CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
+            CheckCopiedFile(ip->cf_findertype,destfile,&deststatbuf,&sourcestatbuf,ip);
             }
 
          ip->returnstatus = CF_CHG;
@@ -690,7 +690,7 @@ if (found == -1)
             }
          else
             {
-            CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
+            CheckCopiedFile(ip->cf_findertype,destfile,&deststatbuf,&sourcestatbuf,ip);
             }
 
          ip->returnstatus = CF_CHG;
@@ -839,7 +839,7 @@ else
                }
             else
                {
-               CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
+               CheckCopiedFile(ip->cf_findertype,destfile,&deststatbuf,&sourcestatbuf,ip);
                }
             
             if (ALL_SINGLECOPY || IsWildItemIn(VSINGLECOPY,destfile))
@@ -899,7 +899,7 @@ else
          
          if (succeed)
             {
-            CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
+            CheckCopiedFile(ip->cf_findertype,destfile,&deststatbuf,&sourcestatbuf,ip);
             }
          ENFORCELINKS = enforcelinks;
          }
@@ -907,7 +907,7 @@ else
    else
       {
       /*  This check should go into CheckCopiedFile  ip->returnstatus = CF_FAIL; */
-      CheckCopiedFile(ip->cf_findertype,destfile,ip->plus,ip->minus,ip->action,ip->uid,ip->gid,&deststatbuf,&sourcestatbuf,NULL,ip->acl_aliases);
+      CheckCopiedFile(ip->cf_findertype,destfile,&deststatbuf,&sourcestatbuf,ip);
       
       /* Now we have to check for single copy, even though nothing was copied
          otherwise we can get oscillations between multipe versions if type is based on a checksum */
