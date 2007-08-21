@@ -722,6 +722,7 @@ tmp.elsedef = ptr->elsedef;
 tmp.uid = ptr->uid;
 tmp.gid = ptr->gid;
 tmp.xdev = ptr->xdev;
+tmp.checksum = 'n';
 
 CheckExistingFile(cf_findertype,file,dstat,&tmp);
 }

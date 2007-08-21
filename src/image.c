@@ -392,8 +392,7 @@ if ((strcmp(sourcefile,destfile) == 0) && (strcmp(ip->server,"localhost") == 0))
    return;
    }
 
-empty.defines = NULL;
-empty.elsedef = NULL;
+memset(&empty,0,sizeof(struct Link));
 empty.nofile = true;
 
 if (IgnoredOrExcluded(image,sourcefile,ip->inclusions,ip->exclusions))

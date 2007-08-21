@@ -386,7 +386,7 @@ return true;
 
 /*********************************************************************/
 
-int LinkFiles(char *from,char *to_tmp,struct Link *ptr)
+int LinkFiles(char *from,char *to_tmp,struct Link *lp)
 
 /* should return true if 'to' found */
 
@@ -422,13 +422,13 @@ for (lastnode = from+strlen(from); *lastnode != '/'; lastnode--)
 
 lastnode++;
 
-if (IgnoredOrExcluded(links,lastnode,ptr->inclusions,ptr->exclusions))
+if (IgnoredOrExcluded(links,lastnode,lp->inclusions,lp->exclusions))
    {
    Verbose("%s: Skipping non-included pattern %s\n",VPREFIX,from);
    return true;
    }
 
-if (IsWildItemIn(VCOPYLINKS,lastnode) || IsWildItemIn(ptr->copy,lastnode))
+if (IsWildItemIn(VCOPYLINKS,lastnode) || IsWildItemIn(lp->copy,lastnode))
    {
    fakeuid.uid = CF_SAME_OWNER;
    fakeuid.next = NULL;
@@ -439,8 +439,8 @@ if (IsWildItemIn(VCOPYLINKS,lastnode) || IsWildItemIn(ptr->copy,lastnode))
    ip.action = "do";
    ip.recurse = 0;
    ip.type = 't';
-   ip.defines = ptr->defines;
-   ip.elsedef = ptr->elsedef;
+   ip.defines = lp->defines;
+   ip.elsedef = lp->elsedef;
    ip.backup = true;
    ip.exclusions = NULL;
    ip.inclusions = NULL;
@@ -469,7 +469,7 @@ else
    strcpy(absto,to);
    }
 
-if (!ptr->nofile)
+if (!lp->nofile)
   {
   if (stat(absto,&buf) == -1)
      {
@@ -601,7 +601,7 @@ if (readlink(from,linkbuf,CF_BUFSIZE-1) == -1)
                return true;
                }
             
-            return DoLink(from,to,ptr->defines);
+            return DoLink(from,to,lp->defines);
             }
          }
       else
@@ -618,18 +618,18 @@ if (readlink(from,linkbuf,CF_BUFSIZE-1) == -1)
       snprintf(OUTPUT,CF_BUFSIZE*2,"Link (%s->%s) exists.\n",from,to_tmp);
       CfLog(cfverbose,OUTPUT,"");
       
-      if (!ptr->nofile)
+      if (!lp->nofile)
          {
-         KillOldLink(from,ptr->defines);      /* Check whether link points somewhere */
+         KillOldLink(from,lp->defines);      /* Check whether link points somewhere */
          return true;
          }
       
-      AddMultipleClasses(ptr->elsedef);
+      AddMultipleClasses(lp->elsedef);
       return(true);
       }
    }
  
-return DoLink(from,to,ptr->defines);
+return DoLink(from,to,lp->defines);
 }
 
 /*********************************************************************/
