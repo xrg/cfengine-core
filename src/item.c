@@ -1057,7 +1057,7 @@ int FuzzyHostMatch(char *arg0, char* arg1, char *refhost)
   long cmp = -1, start = -1, end = -1;
   char buf1[CF_BUFSIZE], buf2[CF_BUFSIZE];
 
-strncpy(refbase,refhost,strlen(refhost));
+strncpy(refbase,refhost,CF_MAXVARSIZE-1);
 sp = refbase + strlen(refbase) - 1;
 while ( isdigit((int)*sp) ) { sp--; }
 sp++;
@@ -1083,8 +1083,8 @@ if ( cmp < start || cmp > end )
    return 1;
    }
 
-strncpy(buf1,ToLowerStr(refbase),strlen(refbase));
-strncpy(buf2,ToLowerStr(arg0),strlen(arg0));
+strncpy(buf1,ToLowerStr(refbase),CF_BUFSIZE-1);
+strncpy(buf2,ToLowerStr(arg0),CF_BUFSIZE-1);
 
 if (strcmp(buf1,buf2) != 0)
    {
