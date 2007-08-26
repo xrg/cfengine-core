@@ -901,8 +901,8 @@ for (i=0; CFDOPTIONS[i].name != NULL; i++)
    printf("--%-20s    (-%c)\n",CFDOPTIONS[i].name,(char)CFDOPTIONS[i].val);
    }
 
-printf("\nBug reports to bug-cfengine@gnu.org (News: gnu.cfengine.bug)\n");
-printf("General help to help-cfengine@gnu.org (News: gnu.cfengine.help)\n");
+printf("\nBug reports to bug-cfengine@cfengine.org (News: gnu.cfengine.bug)\n");
+printf("General help to help-cfengine@cfengine.org (News: gnu.cfengine.help)\n");
 printf("Info & fixes at http://www.cfengine.org\n");
 }
 

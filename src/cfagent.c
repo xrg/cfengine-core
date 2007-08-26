@@ -1928,8 +1928,8 @@ for (i=0; OPTIONS[i].name != NULL; i++)
 
 printf("\nDebug levels: 1=parsing, 2=running, 3=summary, 4=expression eval\n");
 
-printf("\nBug reports to bug-cfengine@gnu.org (News: gnu.cfengine.bug)\n");
-printf("General help to help-cfengine@gnu.org (News: gnu.cfengine.help)\n");
+printf("\nBug reports to bug-cfengine@cfengine.org (News: gnu.cfengine.bug)\n");
+printf("General help to help-cfengine@cfengine.org (News: gnu.cfengine.help)\n");
 printf("Info & fixes at http://www.cfengine.org\n");
 }
 /* EOF */
