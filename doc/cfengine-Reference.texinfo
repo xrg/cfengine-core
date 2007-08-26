@@ -10680,7 +10680,7 @@ file is as follows:
 
        DenyConnectionsFrom = ( @var{IP numbers} )
 
-       AllMultipleConnectionsFrom = ( @var{IP numbers} )
+       AllowMultipleConnectionsFrom = ( @var{IP numbers} )
 
        TrustKeysFrom  = ( @var{IP numbers} )
 

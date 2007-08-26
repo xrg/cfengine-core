@@ -1,7 +1,7 @@
 AM_CFLAGS = $(GCC_CFLAG) @CFLAGS@  
 AM_YFLAGS = -d
 LEXLIB = @LEXLIB@
-LDADD = -L../pub -lpub -L. -lcfengine $(BERKELEY_DB_LDFLAGSD) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LDFLAGS) $(OPENSSL_LIB_LIB)
+LDADD =  -L. -lcfengine $(BERKELEY_DB_LDFLAGSD) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LDFLAGS) $(OPENSSL_LIB_LIB)
 INCLUDES = $(BERKELEY_DB_CFLAGS) $(OPENSSL_LIB_CPPFLAGS)
 AM_LDFLAGS = $(BERKELEY_DB_LDFLAGS) $(OPENSSL_LIB_LDFLAGS) @LDFLAGS@
 
@@ -88,6 +88,8 @@ libcfengine_la_SOURCES =							\
 	expand-editfiles.c						\
 	package.c							\
 	scli.c
+
+libcfengine_la_LIBADD = -L../pub -lpub
 
 cfshow_SOURCES =							\
 	cfshow.c

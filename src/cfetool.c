@@ -3182,9 +3182,9 @@ if ((errno = db_create(&dbp, NULL, 0)) != 0)
   }
 
 #ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp, AVDB, NULL, DB_BTREE, flags, 0644)) != 0)
+if ((errno = (dbp->open)(dbp, AVDB, NULL, DB_BTREE, flags, 0644)) != 0)
 #else
-if ((errno = dbp->open(dbp, NULL, AVDB, NULL, DB_BTREE, flags, 0644)) != 0)
+if ((errno = (dbp->open)(dbp, NULL, AVDB, NULL, DB_BTREE, flags, 0644)) != 0)
 #endif
    {
    snprintf(OUTPUT, CF_BUFSIZE, "Couldn't open average database %s\n", AVDB);

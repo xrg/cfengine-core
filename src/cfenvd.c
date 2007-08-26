@@ -371,9 +371,9 @@ if ((err_no = db_create(&dbp,NULL,0)) != 0)
    }
 
 #ifdef CF_OLD_DB
-if ((err_no = dbp->open(dbp,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((err_no = (dbp->open)(dbp,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((err_no = dbp->open(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
+if ((err_no = (dbp->open)(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
 #endif
    {
    AGE = WAGE = 0;
@@ -560,9 +560,9 @@ if ((errno = db_create(&dbp,NULL,0)) != 0)
    }
 
 #ifdef CF_OLD_DB 
-if ((errno = dbp->open(dbp,filename,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
+if ((errno = (dbp->open)(dbp,filename,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
 #else
-if ((errno = dbp->open(dbp,NULL,filename,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)    
+if ((errno = (dbp->open)(dbp,NULL,filename,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)    
 #endif
    {
    printf("Couldn't open average database %s\n",filename);
@@ -1620,9 +1620,9 @@ if ((err_no = db_create(&dbp,NULL,0)) != 0)
    }
 
 #ifdef CF_OLD_DB 
-if ((err_no = dbp->open(dbp,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((err_no = (dbp->open)(dbp,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((err_no = dbp->open(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
+if ((err_no = (dbp->open)(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
 #endif
    {
    sprintf(OUTPUT,"Couldn't open average database %s\n",AVDB);
@@ -1687,9 +1687,9 @@ if ((err_no = db_create(&dbp,NULL,0)) != 0)
    }
 
 #ifdef CF_OLD_DB 
-if ((err_no = dbp->open(dbp,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((err_no = (dbp->open)(dbp,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((err_no = dbp->open(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
+if ((err_no = (dbp->open)(dbp,NULL,AVDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
 #endif
    {
    sprintf(OUTPUT,"Couldn't open average database %s\n",AVDB);

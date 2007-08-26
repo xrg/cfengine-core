@@ -226,10 +226,10 @@ void ReadAverages(int dbtype)
 
 #ifdef CF_OLD_DB
   if ((errno =
-       DBP->open(DBP, FILENAME, NULL, DB_BTREE, DB_RDONLY, 0644)) != 0)
+       (DBP->open)(DBP, FILENAME, NULL, DB_BTREE, DB_RDONLY, 0644)) != 0)
 #else
   if ((errno =
-       DBP->open(DBP, NULL, FILENAME, NULL, DB_BTREE, DB_RDONLY, 0644)) != 0)
+       (DBP->open)(DBP, NULL, FILENAME, NULL, DB_BTREE, DB_RDONLY, 0644)) != 0)
 #endif
   {
     printf("Couldn't open average database %s\n", FILENAME);
@@ -334,10 +334,10 @@ void SummarizeAverages()
 
 #ifdef CF_OLD_DB
   if ((errno =
-       DBP->open(DBP, FILENAME, NULL, DB_BTREE, DB_RDONLY, 0644)) != 0)
+       (DBP->open)(DBP, FILENAME, NULL, DB_BTREE, DB_RDONLY, 0644)) != 0)
 #else
   if ((errno =
-       DBP->open(DBP, NULL, FILENAME, NULL, DB_BTREE, DB_RDONLY, 0644)) != 0)
+       (DBP->open)(DBP, NULL, FILENAME, NULL, DB_BTREE, DB_RDONLY, 0644)) != 0)
 #endif
   {
     printf("Couldn't open average database %s\n", FILENAME);
@@ -760,10 +760,10 @@ struct Average FindHurstFunction(int samples_per_grain, int grains, int dbtype)
 
 #ifdef CF_OLD_DB
   if ((errno =
-       DBP->open(DBP, FILENAME, NULL, DB_BTREE, DB_RDONLY, 0644)) != 0)
+       (DBP->open)(DBP, FILENAME, NULL, DB_BTREE, DB_RDONLY, 0644)) != 0)
 #else
   if ((errno =
-       DBP->open(DBP, NULL, FILENAME, NULL, DB_BTREE, DB_RDONLY, 0644)) != 0)
+       (DBP->open)(DBP, NULL, FILENAME, NULL, DB_BTREE, DB_RDONLY, 0644)) != 0)
 #endif
   {
     printf("Couldn't open average database %s\n", FILENAME);

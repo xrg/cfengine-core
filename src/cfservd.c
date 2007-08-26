@@ -3392,9 +3392,9 @@ if ((errno = db_create(&dbp,NULL,0)) != 0)
    }
  
 #ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,keydb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,keydb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((errno = dbp->open(dbp,NULL,keydb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
+if ((errno = (dbp->open)(dbp,NULL,keydb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
 #endif
    {
    sprintf(OUTPUT,"Couldn't open average database %s\n",keydb);
@@ -3478,9 +3478,9 @@ if ((DHCPLIST != NULL) && IsFuzzyItemIn(DHCPLIST,mipaddr))
       }
 
 #ifdef CF_OLD_DB
-   if ((errno = dbp->open(dbp,keydb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+   if ((errno = (dbp->open)(dbp,keydb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-   if ((errno = dbp->open(dbp,NULL,keydb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+   if ((errno = (dbp->open)(dbp,NULL,keydb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
       {
       sprintf(OUTPUT,"Couldn't open average database %s\n",keydb);

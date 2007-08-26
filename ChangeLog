@@ -37,7 +37,10 @@
 	
 
 	Methods can now expand some list variables, one list only per argument set.
-	This is a limited compromise pending cfengine 3.
+	This is a limited compromise pending cfengine 3. A patch for expansion of
+	variables in the control part of a program in methods has also been added.
+
+	Bug fix and code simplication of variable expansion.
 	
 2.2.1
 	scli: type section added. This is a special case of shellcommands, which

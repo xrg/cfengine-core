@@ -64,9 +64,9 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    }
 
 #ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open performance database %s\n",name);
@@ -149,9 +149,9 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
 snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
 
 #ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
@@ -171,9 +171,9 @@ if ((errno = db_create(&dbpent,dbenv2,0)) != 0)
    }
 
 #ifdef CF_OLD_DB
-if ((errno = dbpent->open(dbpent,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbpent->open)(dbpent,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((errno = dbpent->open(dbpent,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbpent->open)(dbpent,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
@@ -298,9 +298,9 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    }
 
 #ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
@@ -460,9 +460,9 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    }
 
 #ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
@@ -511,9 +511,9 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
       }
    
 #ifdef CF_OLD_DB
-   if ((errno = dbpent->open(dbpent,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+   if ((errno = (dbpent->open)(dbpent,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-   if ((errno = dbpent->open(dbpent,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+   if ((errno = (dbpent->open)(dbpent,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
       {
       snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);

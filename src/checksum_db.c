@@ -119,9 +119,9 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    }
 
 #ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((errno = dbp->open(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open checksum database %s\n",CHECKSUMDB);
@@ -223,9 +223,9 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    }
 
 #ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((errno = dbp->open(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,NULL,CHECKSUMDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open checksum database %s\n",CHECKSUMDB);

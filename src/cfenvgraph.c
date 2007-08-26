@@ -175,9 +175,9 @@ if ((ERRNO = db_create(&DBP,NULL,0)) != 0)
    }
 
 #ifdef CF_OLD_DB 
-if ((ERRNO = DBP->open(DBP,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
+if ((ERRNO = (DBP->open)(DBP,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
 #else
-if ((ERRNO = DBP->open(DBP,NULL,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)    
+if ((ERRNO = (DBP->open)(DBP,NULL,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)    
 #endif
    {
    printf("Couldn't open average database %s\n",FILENAME);
@@ -268,9 +268,9 @@ if ((ERRNO = db_create(&DBP,NULL,0)) != 0)
    }
 
 #ifdef CF_OLD_DB 
-if ((ERRNO = DBP->open(DBP,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
+if ((ERRNO = (DBP->open)(DBP,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
 #else
-if ((ERRNO = DBP->open(DBP,NULL,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
+if ((ERRNO = (DBP->open)(DBP,NULL,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
 #endif
    {
    printf("Couldn't open average database %s\n",FILENAME);
@@ -611,9 +611,9 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
          }
       
 #ifdef CF_OLD_DB
-      if ((ERRNO = dbp->open(dbp,database,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+      if ((ERRNO = (dbp->open)(dbp,database,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-      if ((ERRNO = dbp->open(dbp,NULL,database,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+      if ((ERRNO = (dbp->open)(dbp,NULL,database,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
          {
          printf("Couldn't open database %s\n",database);
@@ -744,9 +744,9 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    }
 
 #ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((errno = dbp->open(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
    {
    printf("Couldn't open last-seen database %s\n",name);
@@ -808,9 +808,9 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
       }
    
 #ifdef CF_OLD_DB
-   if ((errno = dbpent->open(dbpent,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+   if ((errno = (dbpent->open)(dbpent,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-   if ((errno = dbpent->open(dbpent,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+   if ((errno = (dbpent->open)(dbpent,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
       {
       Verbose("Couldn't open last-seen database %s\n",name);

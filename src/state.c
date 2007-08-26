@@ -71,9 +71,9 @@ if ((errno = db_create(&dbp,NULL,0)) != 0)
    }
 
 #ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,filename,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,filename,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((errno = dbp->open(dbp,NULL,filename,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
+if ((errno = (dbp->open)(dbp,NULL,filename,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
 #endif
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Couldn't open average database %s\n",filename);
@@ -160,9 +160,9 @@ if ((errno = db_create(&dbp,NULL,0)) != 0)
    }
 
 #ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,filename,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,filename,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((errno = dbp->open(dbp,NULL,filename,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
+if ((errno = (dbp->open)(dbp,NULL,filename,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
 #endif
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Couldn't open average database %s\n",filename);
@@ -212,9 +212,9 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    }
 
 #ifdef CF_OLD_DB
-if ((errno = dbp->open(dbp,filename,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,filename,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #else
-if ((errno = dbp->open(dbp,NULL,filename,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (dbp->open)(dbp,NULL,filename,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open persistent state database %s\n",filename);

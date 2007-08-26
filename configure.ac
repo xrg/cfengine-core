@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.2.2a2)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.2.2a3)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -64,7 +64,6 @@ AC_PROG_INSTALL
 AC_DISABLE_SHARED
 dnl AC_DISABLE_STATIC - maybe use shared libs later
 AC_PROG_LIBTOOL
-
 AC_CONFIG_LIBOBJ_DIR(pub)
 AC_FUNC_GETLOADAVG 
 
@@ -451,6 +450,7 @@ AC_TYPE_MODE_T
 AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 AC_TYPE_PID_T
+AC_CHECK_TYPES(clockid_t)
 
 dnl ######################################################################
 dnl Checks for typedefs, structures, and compiler characteristics.
