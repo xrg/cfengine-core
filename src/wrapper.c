@@ -69,6 +69,7 @@ if (stat(startpath,&sb) == -1)
 
 RegisterRecursionRootDevice(sb.st_dev);
 RecursiveTidySpecialArea(startpath,tp,tp->maxrecurse,&sb);
+tp->done = 'y';
 
 ReleaseCurrentLock(); 
 }
@@ -82,20 +83,20 @@ void RecHomeTidyWrapper(char *startpath,void *vp)
  
 Verbose("Tidying Home partition %s...\n",startpath);
 
- if (tp != NULL)
-    {
-    if (!GetLock(ASUniqueName("tidy"),CanonifyName(startpath),tp->ifelapsed,tp->expireafter,VUQNAME,CFSTARTTIME))
-       {
-       return;
-       }
-    }
- else
-    {
-    if (!GetLock(ASUniqueName("tidy"),CanonifyName(startpath),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
-       {
-       return;
-       }
-    }
+if (tp != NULL)
+   {
+   if (!GetLock(ASUniqueName("tidy"),CanonifyName(startpath),tp->ifelapsed,tp->expireafter,VUQNAME,CFSTARTTIME))
+      {
+      return;
+      }
+   }
+else
+   {
+   if (!GetLock(ASUniqueName("tidy"),CanonifyName(startpath),VIFELAPSED,VEXPIREAFTER,VUQNAME,CFSTARTTIME))
+      {
+      return;
+      }
+   }
 
 if (stat(startpath,&sb) == -1)
    {
@@ -107,7 +108,7 @@ if (stat(startpath,&sb) == -1)
 
 RegisterRecursionRootDevice(sb.st_dev); 
 RecursiveHomeTidy(startpath,1,&sb);
- 
+
 ReleaseCurrentLock();
 }
 

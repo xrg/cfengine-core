@@ -80,7 +80,7 @@ for (ip = VHOMEPATLIST; ip != NULL; ip=ip->next)
       }
    }
 
-Debug("IsHomeDir(false)\n");
+Debug("IsHomeDir(%s,false)\n",name);
 return(false);
 }
 
@@ -1064,6 +1064,8 @@ int CheckHomeSubDir(char *testpath,char *tidypath,int recurse)
   char buffer[CF_BUFSIZE];
   int homelen;
 
+Debug("CheckHomeSubDir(%s,%s)\n",testpath,tidypath);
+   
 if (strncmp(tidypath,"home/",5) == 0)
    {
    strcpy(buffer,testpath);
@@ -1083,18 +1085,18 @@ if (strncmp(tidypath,"home/",5) == 0)
       return false;
       }
 
-   Debug2("CheckHomeSubDir(%s,%s)\n",testpath,tidypath);
+   Debug("....CheckHomeSubDir(%s,%s)\n",testpath,tidypath);
 
-   subdirstart = tidypath + 4;                                   /* Ptr to start of subdir */
+   subdirstart = tidypath + strlen("home");                         /* Ptr to start of subdir */
 
    strcpy(buffer,testpath);
 
-   ChopLastNode(buffer);                                         /* Filename only */
+   /* ChopLastNode(buffer);  Filename only */
 
-   for (sp1 = buffer + homelen +1; *sp1 != '/' && *sp1 != '\0'; sp1++) /* skip user name dir */
+   for (sp1 = buffer + homelen + 1; *sp1 != '/' && *sp1 != '\0'; sp1++) /* skip user name dir */
       {
       }
-
+      
    sp2 = subdirstart;
 
    if (strncmp(sp1,sp2,strlen(sp2)) != 0)
@@ -1102,11 +1104,11 @@ if (strncmp(tidypath,"home/",5) == 0)
       return false;
       } 
 
-   Debug2("CheckHomeSubDir(true)\n");
+   Debug("CheckHomeSubDir(true)\n");
    return(true);
    }
 
-return true;
+return false;
 }
 
 /**************************************************************/

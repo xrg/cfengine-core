@@ -61,7 +61,7 @@ int WildMatch (char *wildptr,char *cmpptr)
   int i, status = startofstrings;
   char lastwild = '\0';
 
-Debug1("WildMatch(%s,%s)\n",wildptr,cmpptr);
+Debug("WildMatch(%s,%s)\n",wildptr,cmpptr);
      
 if (strstr(wildptr,"*") == NULL && strstr(wildptr,"?") == NULL)
    {

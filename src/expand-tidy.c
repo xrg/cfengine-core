@@ -42,7 +42,7 @@ int RecursiveHomeTidy(char *name,int level,struct stat *sb)
   time_t ticks;
   int done = false,goback;
 
-Debug("\n RecursiveHomeTidy(%s,%d)\n\n",name,level);
+Debug("\nHomeTidy(%s,%d)\n\n",name,level);
 
 if (!DirPush(name,sb))
    {
@@ -61,7 +61,7 @@ if (level > CF_RECURSION_LIMIT)
    return true;
    }
 
-Debug2("HomeTidy: Opening %s as .\n",name);
+Verbose("HomeTidy: Opening %s as .\n",name);
 
 if ((dirh = opendir(".")) == NULL)
    {
@@ -116,7 +116,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       {
       continue;
       }
-   
+
    if (IgnoreFile(name,dirp->d_name,NULL))  /* No ref to tp->ignores here...fix?*/
       {
       continue;
@@ -248,24 +248,20 @@ for (tp = VTIDY; tp != NULL; tp=tp->next)
       continue;
       }
 
-   tp->done = 'y';
-   
-   Debug("  Check rule %s ...\n",tp->path);
-   
    if ((tp->maxrecurse != CF_INF_RECURSE) && (level > tp->maxrecurse+1))
       {
       Debug("Recursion maxed out at level %d/%d\n",level,tp->maxrecurse+1);
       /*return false;*/
       continue;
       }
-
+ 
    for (tlp = tp->tidylist; tlp != NULL; tlp=tlp->next)
       {
       if (IsExcluded(tlp->classes))
          {
          continue;
          }
-      
+
       savetravlinks = TRAVLINKS;
       savekilloldlinks = KILLOLDLINKS;
       
@@ -283,19 +279,18 @@ for (tp = VTIDY; tp != NULL; tp=tp->next)
          {
          KILLOLDLINKS = true;
          }
-      
-      
+
       if (!FileObjectFilter(path,statbuf,tlp->filters,tidy))
          {
          continue;
          }
-      
+
       if (IgnoredOrExcluded(tidy,path,NULL,tp->exclusions))
          {
          Debug("Skipping ignored/excluded file %s\n",path);
          continue;
          }
-      
+
       if (WildMatch(tlp->pattern,name) && CheckHomeSubDir(path,tp->path,tp->maxrecurse))
          {
          if ((tlp->recurse != CF_INF_RECURSE) && (level > tlp->recurse+1))
@@ -303,7 +298,7 @@ for (tp = VTIDY; tp != NULL; tp=tp->next)
             Debug("Not tidying %s - level %d > limit %d\n",path,level,tlp->recurse+1);
             continue;
             }
-         
+
          DoTidyFile(path,name,tlp,statbuf,CF_USELOGFILE,false,false);
          }
       
