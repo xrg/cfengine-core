@@ -490,66 +490,6 @@ char *OBS[CF_OBSERVABLES] =
  PROTECTED char         VSEC[3];
 
 
- /*******************************************************************/
- /* Command line options                                            */
- /*******************************************************************/
-
-  /* GNU STUFF FOR LATER #include "getopt.h" */
- 
- 
- PRIVATE struct option OPTIONS[49] =
-      {
-      { "help",no_argument,0,'h' },
-      { "debug",optional_argument,0,'d' },
-      { "method",required_argument,0,'Z' }, 
-      { "verbose",no_argument,0,'v' },
-      { "traverse-links",no_argument,0,'l' },
-      { "recon",no_argument,0,'n' },
-      { "dry-run",no_argument,0,'n'},
-      { "just-print",no_argument,0,'n'},
-      { "no-ifconfig",no_argument,0,'i' },
-      { "file",required_argument,0,'f' },
-      { "parse-only",no_argument,0,'p' },
-      { "no-mount",no_argument,0,'m' },
-      { "no-check-files",no_argument,0,'c' },
-      { "no-check-mounts",no_argument,0,'C' },
-      { "no-tidy",no_argument,0,'t' },
-      { "no-commands",no_argument,0,'s' },
-      { "sysadm",no_argument,0,'a' },
-      { "version",no_argument,0,'V' },
-      { "define",required_argument,0,'D' },
-      { "negate",required_argument,0,'N' },
-      { "undefine",required_argument,0,'N' },
-      { "delete-stale-links",no_argument,0,'L' },
-      { "no-warn",no_argument,0,'w' },
-      { "silent",no_argument,0,'S' },
-      { "quiet",no_argument,0,'w' },
-      { "no-preconf",no_argument,0,'x' },
-      { "no-links",no_argument,0,'X'},
-      { "no-edits",no_argument,0,'e'},
-      { "enforce-links",no_argument,0,'E'},
-      { "no-copy",no_argument,0,'k'},
-      { "use-env",no_argument,0,'u'},
-      { "no-processes",no_argument,0,'P'},
-      { "underscore-classes",no_argument,0,'U'},
-      { "no-hard-classes",no_argument,0,'H'},
-      { "no-splay",no_argument,0,'q'},
-      { "no-lock",no_argument,0,'K'},
-      { "auto",no_argument,0,'A'},
-      { "inform",no_argument,0,'I'},
-      { "no-modules",no_argument,0,'M'},
-      { "force-net-copy",no_argument,0,'b'},
-      { "secure-input",no_argument,0,'Y'},
-      { "zone-info",no_argument,0,'z'},
-      { "update-only",no_argument,0,'B'},
-      { "check-contradictions",no_argument,0,'g'},
-      { "just",required_argument,0,'j'},
-      { "avoid",required_argument,0,'o'},
-      { "query",required_argument,0,'Q'},
-      { "csdb",no_argument,0,'W'},
-      { NULL,0,0,0 }
-      };
-
 
  /*********************************************************************/
  /* Actions                                                           */

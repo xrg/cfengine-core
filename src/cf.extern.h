@@ -74,9 +74,6 @@ extern char LOCKDB[CF_BUFSIZE];
 extern char EDITBUFF[CF_BUFSIZE];
 
 extern char *tzname[2];
-extern char *optarg;
-extern int optind;
-extern struct option OPTIONS[49];
 extern int CFSIGNATURE;
 extern char CFDES1[8];
 extern char CFDES2[8];
