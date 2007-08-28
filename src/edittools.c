@@ -1533,7 +1533,7 @@ for (ep = actions; ep != NULL; ep=ep->next)
                 CfLog(cfinform,OUTPUT,"");
                 umask(mask);
 #ifdef WITH_SELINUX
-                if(selinux_enabled)
+                if (selinux_enabled)
                     {
                     /* set create context back to default */
                     setfscreatecon(NULL);

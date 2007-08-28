@@ -431,6 +431,7 @@ switch (ACTION)
                      strcmp(id,"WarnIfFileMissing") == 0  ||
                      strcmp(id,"EndLoop") == 0  ||
                      strcmp(id,"CatchAbort") == 0  ||
+                     strcmp(id,"ExpandVariables") == 0  ||
                      strcmp(id,"EmptyEntireFilePlease") == 0)
                         {
                         HandleEdit(CURRENTOBJECT,id,NULL);
