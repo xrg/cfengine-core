@@ -433,13 +433,28 @@ printf(" )\n");
 void ListDefinedImports()
 
 { struct Item *ptr;
-
+  struct Audit *ap;
+ 
 printf ("\nUSE IMPORTS\n\n");
 
 for (ptr = VIMPORT; ptr != NULL; ptr=ptr->next)
    {
    PromiseItem(ptr);
    CF_SPACER;
+   }
+
+/* Report these inputs at audit */
+
+for (ap = VAUDIT; ap != NULL; ap=ap->next)
+   {
+   if (ap->version)
+      {
+      printf("File %s %30s - version %s edited %s\n",ChecksumPrint('m',ap->digest),ap->filename, ap->version,ap->date);
+      }
+   else
+      {
+      printf("File %s %30s - (no version string) edited %s\n",ChecksumPrint('m',ap->digest),ap->filename,ap->date);
+      }
    }
 }
 
@@ -553,6 +568,7 @@ printf("   IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
 printf("   Using executable file: %s\n",ptr->file);
 printf("   Running with Uid=%d,Gid=%d\n",ptr->uid,ptr->gid);
 printf("   Running in chdir=%s, chroot=%s\n",ptr->chdir,ptr->chroot);
+printf("   Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 }
 
 /*********************************************************************/
@@ -608,6 +624,7 @@ if (ptr->defines)
 if (ptr->elsedef)
    {
    printf(" ElseDefine %s\n",ptr->elsedef);
+   printf(" Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
    }
 }
 
@@ -770,6 +787,7 @@ if (ptr->forcedirs == 'y')
 
 printf("         IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
 
+printf("Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 }
 
 /*********************************************************************/
@@ -839,6 +857,8 @@ for(tp = ptr->tidylist; tp != NULL; tp=tp->next)
       {
       printf("       Use file filter %s\n",ip->name);
       }
+   
+   printf("       Rule from %s at/before line %d\n",tp->audit->filename,tp->lineno);
    }
 
 printf(" Behaviour constraint body:\n    IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
@@ -855,7 +875,6 @@ for (ip = ptr->ignores; ip != NULL; ip = ip->next)
    {
    printf("    Ignore file pattern: %s\n",ip->name);
    }
-
 }
 
 /*********************************************************************/
@@ -905,6 +924,8 @@ if (ptr->mountopts != NULL)
    {
    printf("  Using options %s\n", ptr->mountopts);
    }
+
+printf("Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 }
 
 /*********************************************************************/
@@ -930,6 +951,7 @@ void PromiseMiscMount(struct MiscMount *ptr)
 printf("Promise to mount %s on %s mode if context is [%s]\n",ptr->from,ptr->onto, ptr->classes);
 printf("   with mode %s and options %s\n",ptr->mode,ptr->options);
 printf("   Behaviour constraint body:\n     IfElapsed=%d\n      ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+printf("   Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 }
 
 /*********************************************************************/
@@ -956,6 +978,7 @@ printf("Filesystem %s is promised if context matches [%s]\n",ptr->name,ptr->clas
 printf("   Attribute constraint body:\n     freespace=%d\n     force=%c\n     define=%s\n",ptr->freespace, ptr->force,ptr->define);
 printf("   Behaviour contraint body:\n     IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
 printf("      Using scanarrivals=%c\n",ptr->scanarrivals);
+printf("   Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 }
 
 /*********************************************************************/
@@ -1006,6 +1029,8 @@ if (ptr->elsedef)
    {
    printf("   ElseDefine: %s if no changes made\n",ptr->elsedef);
    }
+
+printf("   Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 }
 
 /*********************************************************************/
@@ -1079,6 +1104,8 @@ if (ptr->elsedef)
    {
    printf(" ElseDefine %s if no action\n",ptr->elsedef);
    }
+
+printf(" Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 }
 
 /*********************************************************************/
@@ -1180,6 +1207,8 @@ if (ptr->elsedef)
    {
    printf("     ElseDefine %s on no change\n",ptr->elsedef);
    }
+
+printf("     Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 }
 
 
@@ -1207,6 +1236,7 @@ printf("Promise to unmount %s if context matches [%s]\n",ptr->name,ptr->classes)
 printf("Behaviour constraint body:\n");
 printf("   Deletedir=%c\n   deletefstab=%c\n   force=%c\n",ptr->deletedir,ptr->deletefstab,ptr->force);
 printf("   IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+printf("   Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 }
 
 /*******************************************************************/
@@ -1300,6 +1330,8 @@ else
       {
       printf("     ElseDefine %s if no matches found\n",ptr->elsedef);
       }
+
+   printf("    Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
    }
 }
 
@@ -1339,6 +1371,7 @@ for (ep = ptr->actions; ep != NULL; ep=ep->next)
       {
       printf("   [%s] \t with body \"%s\" if context is [%s]\n",VEDITNAMES[ep->code],ep->data,ep->classes);
       }
+   printf("   in %s at/before line %d\n",ep->audit->filename,ep->lineno);
    }
 
 printf(" Behaviour constraint body:\n");
@@ -1444,4 +1477,6 @@ if (ptr->elsedef)
    {
    printf("   ElseDefine %s if no match\n",ptr->elsedef);
    }
+
+printf("   Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 }

@@ -1334,7 +1334,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
             CfLog(cferror,OUTPUT,"popen");
             ResetOutputRoute('d','d');
             ReleaseCurrentLock();
-            ptr->returnstatus = CF_FAIL;
+            //ptr->returnstatus = CF_FAIL;
             continue;
             } 
          
@@ -1344,7 +1344,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
                {
                snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
                CfLog(cferror,OUTPUT,"ferror");
-               ptr->returnstatus = CF_TIMEX;
+               //ptr->returnstatus = CF_TIMEX;
                break;
                }
             
@@ -1359,7 +1359,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
                {
                snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
                CfLog(cferror,OUTPUT,"ferror");
-               ptr->returnstatus = CF_TIMEX;
+               //ptr->returnstatus = CF_TIMEX;
                break;
                }
             
@@ -1454,7 +1454,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
       snprintf(OUTPUT,CF_BUFSIZE*2,"Finished script %s\n",execstr);
       CfLog(cfinform,OUTPUT,"");
 
-      ptr->returnstatus = CF_CHG;
+      //ptr->returnstatus = CF_CHG;
       
       ResetOutputRoute('d','d');
       ReleaseCurrentLock();
@@ -1738,7 +1738,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
                CfLog(cferror,OUTPUT,"unlink");
                ResetOutputRoute('d','d');
                ReleaseCurrentLock();
-               dp->returnstatus = CF_CHG;
+               //dp->returnstatus = CF_CHG;
                continue;
                }
             
@@ -1864,11 +1864,11 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
                      CfLog(cferror,OUTPUT,"rename");
                      ResetOutputRoute('d','d');
                      ReleaseCurrentLock();
-                     dp->returnstatus = CF_FAIL;
+                     //dp->returnstatus = CF_FAIL;
                      continue;
                      }
 
-                  dp->returnstatus = CF_CHG;
+                  //dp->returnstatus = CF_CHG;
                   
                   if (Repository(path,dp->repository))
                      {
@@ -1895,7 +1895,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
             if (! DONTDO)
                {
                TruncateFile(workname);
-               dp->returnstatus = CF_CHG;
+               //dp->returnstatus = CF_CHG;
                AddMultipleClasses(dp->defines);
                }
             }
@@ -1915,7 +1915,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
             if (!DONTDO)
                {
                RotateFiles(workname,dp->rotate);
-               dp->returnstatus = CF_CHG;
+               //dp->returnstatus = CF_CHG;
                AddMultipleClasses(dp->defines);
                }
             else        
@@ -2027,12 +2027,12 @@ for (mp = VMOUNTABLES; mp != NULL; mp=mp->next)
          {
          MakeDirectoriesFor(maketo,'n');
          AddToFstab(host,mountdir,mountdir,mountmode,mp->mountopts,false);
-         mp->returnstatus = CF_CHG;
+         //mp->returnstatus = CF_CHG;
          }
       else if (IsClassedItemIn(VBINSERVERS,host))
          {
          AddToFstab(host,mountdir,mountdir,mountmode,mp->mountopts,true);
-         mp->returnstatus = CF_CHG;
+         //mp->returnstatus = CF_CHG;
          }
       }
    }
@@ -2100,12 +2100,12 @@ for (mp = VMISCMOUNT; mp != NULL; mp=mp->next)
       {
       MakeDirectoriesFor(maketo,'n');
       AddToFstab(host,mountdir,mp->onto,mp->mode,mp->options,false);
-      mp->returnstatus = CF_CHG;
+      //mp->returnstatus = CF_CHG;
       }
    else
       {
       AddToFstab(host,mountdir,mp->onto,mp->mode,mp->options,true);
-      mp->returnstatus = CF_CHG;
+      //mp->returnstatus = CF_CHG;
       }
    }
 }
@@ -2176,7 +2176,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
    if (strcmp(fs,"/") == 0 || strcmp(fs,"/usr") == 0)
       {
       CfLog(cfinform,"Request to unmount / or /usr is refused!\n","");
-      ptr->returnstatus = CF_FAIL;
+      //ptr->returnstatus = CF_FAIL;
       ReleaseCurrentLock();     
       continue;
       }
@@ -2208,7 +2208,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
          snprintf(OUTPUT,CF_BUFSIZE*2,"Unmounting %s\n",ptr->name);
          CfLog(cfinform,OUTPUT,"");
          DeleteItemStarting(&VMOUNTED,ptr->name);  /* update mount record */
-         ptr->returnstatus = CF_CHG;
+         //ptr->returnstatus = CF_CHG;
          }
       
       cfpclose(pp);
@@ -2231,7 +2231,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
                {
                snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to remove the directory %s\n",fs);
                CfLog(cferror,OUTPUT,"rmdir");
-               ptr->returnstatus = CF_CHG;
+               //ptr->returnstatus = CF_CHG;
                } 
             else
                {
@@ -2303,7 +2303,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
  if ((! DONTDO) && (NUMBEROFEDITS > 0))
     {
     SaveItemList(filelist,VFSTAB[VSYSTEMHARDCLASS],VREPOSITORY);
-    ptr->returnstatus = CF_CHG;
+    //ptr->returnstatus = CF_CHG;
     }
  
 DeleteItemList(filelist);
@@ -2537,7 +2537,7 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to establish connection with %s (failover)\n",listserver);
          CfLog(cfinform,OUTPUT,"");
-         ip->returnstatus = CF_FAIL;
+         //ip->returnstatus = CF_FAIL;
          AddMultipleClasses(ip->failover);
          continue;
          }
@@ -2671,7 +2671,7 @@ for (ifp = VIFLIST; ifp != NULL; ifp=ifp->next)
       ifp->done = 'y';
       }
 
-   /* Need ptr->returnstatus = CF_CHG; */
+   /* Need ptr->returnstatus = CF_CHG; - can't check this */
    IfConf(ifp->ifdev,ifp->ipaddress,ifp->netmask,ifp->broadcast);
    SetDefaultRoute();
    ReleaseCurrentLock();
@@ -2871,7 +2871,7 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
             pending_pkgs = NULL;
             }
 
-         ptr->returnstatus = CF_CHG;
+         //ptr->returnstatus = CF_CHG;
          }
       }
    

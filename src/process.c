@@ -225,7 +225,7 @@ if (strlen(pp->restart) != 0)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Process restart execution failed on %s\n",pp->restart);
          CfLog(cferror,OUTPUT,"popen");
-         pp->returnstatus = CF_FAIL;
+         //pp->returnstatus = CF_FAIL;
          return;
          }
       }
@@ -235,7 +235,7 @@ if (strlen(pp->restart) != 0)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Process restart execution failed on %s\n",pp->restart);
          CfLog(cferror,OUTPUT,"popen");
-         pp->returnstatus = CF_FAIL;
+         //pp->returnstatus = CF_FAIL;
          return;
          }
       }
@@ -285,7 +285,7 @@ if (strlen(pp->restart) != 0)
    snprintf(OUTPUT,CF_BUFSIZE*2,"(Done with %s)\n",pp->restart);
    CfLog(cfinform,OUTPUT,"");
    umask(maskval);
-   pp->returnstatus = CF_CHG;
+   //pp->returnstatus = CF_CHG;
    }
 }
 
@@ -513,7 +513,7 @@ for (ip = list; ip != NULL; ip=ip->next)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't send signal to pid %d\n",pid);
          CfLog(cfverbose,OUTPUT,"kill");
-         pp->returnstatus = CF_FAIL;
+         //pp->returnstatus = CF_FAIL;
          return;
          }
       
@@ -521,7 +521,7 @@ for (ip = list; ip != NULL; ip=ip->next)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Killed: %s\n",ip->name);
          CfLog(cfinform,OUTPUT,"");
-         pp->returnstatus = CF_CHG;
+         //pp->returnstatus = CF_CHG;
          }
       }
    }

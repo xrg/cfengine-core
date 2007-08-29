@@ -1273,7 +1273,6 @@ int ExpandAllVariables (struct Item *list)
 
     if (strcmp(sp,ip->name) == 0)
       {
-      EditVerbose("ExpandVariables - no expansions in %10s...\n", sp);
       continue;
       }
 

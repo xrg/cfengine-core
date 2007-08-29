@@ -48,6 +48,9 @@ extern struct Item *QUERYVARS;
 extern struct Item *METHODRETURNVARS;
 extern struct Item *METHODRETURNCLASSES;
 
+extern struct Audit *AUDITPTR;
+extern struct Audit *VAUDIT; 
+
 extern char METHODFILENAME[CF_BUFSIZE];
 extern char *VMETHODPROTO[];
 extern int METHODARGC;

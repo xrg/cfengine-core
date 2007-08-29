@@ -2020,7 +2020,8 @@ else
    ptr->expireafter = VEXPIREAFTER;
    }
 
-ptr->returnstatus = CF_NOP;
+ptr->audit = AUDITPTR;
+ptr->lineno = LINENUMBER;
 ptr->force = FORCELINK;
 ptr->silent = LINKSILENT;
 ptr->type = LINKTYPE;
@@ -2136,7 +2137,8 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       ptr->expireafter = VEXPIREAFTER;
       }
 
-   ptr->returnstatus = CF_NOP;
+   ptr->audit = AUDITPTR;
+   ptr->lineno = LINENUMBER;
    ptr->force = FORCELINK;
    ptr->silent = LINKSILENT;
    ptr->type = LINKTYPE;
@@ -2252,7 +2254,8 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       ptr->expireafter = VEXPIREAFTER;
       }
 
-   ptr->returnstatus = CF_NOP;
+   ptr->audit = AUDITPTR;
+   ptr->lineno = LINENUMBER;
    ptr->freespace = freespace;
    ptr->next = NULL;
    ptr->log = LOGP;
@@ -2332,7 +2335,8 @@ else
    ptr->mountopts = NULL;
    }
 
-ptr->returnstatus = CF_NOP;
+ ptr->audit = AUDITPTR;
+ ptr->lineno = LINENUMBER;
  ptr->readonly = readonly;
  ptr->next = NULL;
  ptr->done = 'n';
@@ -2494,7 +2498,8 @@ else
    ptr->expireafter = VEXPIREAFTER;
    }
  
-ptr->returnstatus = CF_NOP;
+ptr->audit = AUDITPTR;
+ptr->lineno = LINENUMBER;
 ptr->next = NULL;
 ptr->done = 'n';
 ptr->scope = strdup(CONTEXTID); 
@@ -3084,7 +3089,9 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
             }
          
          new->next = NULL;
-         
+         new->audit = AUDITPTR;
+         new->lineno = LINENUMBER;
+         printf("adding info %d - %d\n",AUDITPTR,LINENUMBER);         
          if ((new->classes = strdup(CLASSBUFF)) == NULL)
             {
             FatalError("Memory Allocation failed for InstallEditFile() #3");
@@ -3293,6 +3300,50 @@ return (NoEdit);
 
 /********************************************************************/
 
+void PrependAuditFile(char *file)
+
+{ struct stat statbuf;;
+ 
+if ((AUDITPTR = (struct Audit *)malloc(sizeof(struct Audit))) == NULL)
+   {
+   CfLog(cferror,"","malloc audit");
+   FatalError("");
+   }
+
+if (stat(file,&statbuf) == -1)
+   {
+   /* shouldn't happen */
+   return;
+   }
+
+ChecksumFile(file,AUDITPTR->digest,'m');
+
+AUDITPTR->next = VAUDIT;
+AUDITPTR->filename = strdup(file);
+AUDITPTR->date = strdup(ctime(&statbuf.st_mtime));
+Chop(AUDITPTR->date);
+AUDITPTR->version = NULL;
+VAUDIT = AUDITPTR;
+}
+
+/********************************************************************/
+
+void VersionAuditFile()
+
+{ char *sp;
+ 
+if (sp = GetMacroValue(CONTEXTID,"cfinputs_version"))
+   {
+   AUDITPTR->version = strdup(sp);
+   }
+else
+   {
+   Verbose("Cfengine input file had no explicit version string\n");
+   }
+}
+
+/********************************************************************/
+
 void AppendInterface(char *ifname,char *address,char *netmask,char *broadcast)
 
 { struct Interface *ifp;
@@ -3359,7 +3410,8 @@ if (VIFLISTTOP == NULL)                 /* First element in the list */
     VIFLISTTOP->next = ifp;
     }
 
-ifp->returnstatus = CF_NOP;
+ifp->audit = AUDITPTR;
+ifp->lineno = LINENUMBER;
 ifp->next = NULL;
 ifp->done = 'n';
 ifp->scope = strdup(CONTEXTID); 
@@ -3515,7 +3567,8 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       ptr->expireafter = VEXPIREAFTER;
       }
 
-   ptr->returnstatus = CF_NOP;
+   ptr->audit = AUDITPTR;
+   ptr->lineno = LINENUMBER;
    ptr->log = LOGP;
    ptr->inform = INFORMP;
    ptr->timeout = timeout;
@@ -3688,7 +3741,8 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       ptr->expireafter = VEXPIREAFTER;
       }
 
-   ptr->returnstatus = CF_NOP;
+   ptr->audit = AUDITPTR;
+   ptr->lineno = LINENUMBER;
    ptr->log = LOGP;
    ptr->inform = INFORMP;
    ptr->timeout = timeout;
@@ -3840,7 +3894,8 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       ptr->expireafter = VEXPIREAFTER;
       }
 
-   ptr->returnstatus = CF_NOP;
+   ptr->audit = AUDITPTR;
+   ptr->lineno = LINENUMBER;
    ptr->rotate = rotate;
    ptr->comp = comp;
    ptr->size = size;
@@ -4041,7 +4096,8 @@ for (vp = Get2DListEnt(tp); vp != NULL; vp = Get2DListEnt(tp))
    ChecksumList(bare_send_args,ptr->digest,'m');
    DeleteItemList(bare_send_args);   
 
-   ptr->returnstatus = CF_NOP;
+   ptr->audit = AUDITPTR;
+   ptr->lineno = LINENUMBER;
    ptr->bundle = NULL;
    ptr->return_vars = SplitStringAsItemList(METHODFILENAME,',');
    ptr->return_classes = SplitStringAsItemList(PARSEMETHODRETURNCLASSES,','); 
@@ -4279,7 +4335,8 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       ptr->expireafter = VEXPIREAFTER;
       }
 
-   ptr->returnstatus = CF_NOP;
+   ptr->audit = AUDITPTR;
+   ptr->lineno = LINENUMBER;
    ptr->plus = plus;
    ptr->minus = minus;
    ptr->recurse = 0;
@@ -4767,7 +4824,8 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
       ptr->expireafter = VEXPIREAFTER;
       }
 
-   ptr->returnstatus = CF_NOP;
+   ptr->audit = AUDITPTR;
+   ptr->lineno = LINENUMBER;
    ptr->action = action;
    ptr->plus = plus;
    ptr->minus = minus;
@@ -4909,7 +4967,8 @@ else
    ptr->expireafter = VEXPIREAFTER;
    }
 
-ptr->returnstatus = CF_NOP;
+ptr->audit = AUDITPTR;
+ptr->lineno = LINENUMBER;
 ptr->matches = matches;
 ptr->comp = comp;
 ptr->signal = signal;
@@ -5075,7 +5134,8 @@ else
    ptr->expireafter = VEXPIREAFTER;
    }
  
-ptr->returnstatus = CF_NOP;
+ptr->audit = AUDITPTR;
+ptr->lineno = LINENUMBER;
 ptr->log = LOGP;
 ptr->inform = INFORMP;
 ptr->cmp = sense;
@@ -5337,7 +5397,8 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
       ptr->next = NULL;
       ptr->backup = IMAGEBACKUP;
       ptr->done = 'n';
-      ptr->returnstatus = CF_NOP;
+      ptr->audit = AUDITPTR;
+      ptr->lineno = LINENUMBER;
       ptr->scope = strdup(CONTEXTID);
       
       if (strlen(LOCALREPOS) > 0)
@@ -6715,7 +6776,8 @@ if (travlinks == '?')
    travlinks = 'F';  /* False is default */
    }
 
-tp->returnstatus = CF_NOP;
+tp->audit = AUDITPTR;
+tp->lineno = LINENUMBER;
 tp->size = tidysize;
 tp->recurse = rec;
 tp->age = age;

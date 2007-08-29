@@ -545,6 +545,8 @@ void PrependTidy (struct TidyPattern **list, char *wild, int rec, short int age,
 void HandleShortSwitch (char *name,char *value,short *flag);
 void HandleCharSwitch (char *name,char *value,char *flag);
 void HandleIntSwitch (char *name,char *value,int *flag,int min, int max);
+void PrependAuditFile(char *file);
+void VersionAuditFile(void);
 
 /* ip.c */
 

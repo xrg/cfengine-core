@@ -1027,7 +1027,7 @@ void ParseFile(char *filename,char *env)
  
 signal(SIGALRM,(void *)TimeOut);
 alarm(RPCTIMEOUT);
- 
+
 if (!FileSecure(filename))
    {
    FatalError("Security exception");
@@ -1055,8 +1055,9 @@ Debug("\n#######################################################################
 Debug("# BEGIN PARSING %s\n",VCURRENTFILE);
 Debug("##########################################################################\n\n"); 
  
-LINENUMBER=1;
- 
+LINENUMBER = 1;
+PrependAuditFile(filename);
+
 while (!feof(yyin))
    { 
    yyparse();
@@ -1068,7 +1069,9 @@ while (!feof(yyin))
       exit(1);
       }
    }
- 
+
+VersionAuditFile();
+
 fclose (yyin);
 yyin = save_yyin;
  

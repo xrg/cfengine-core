@@ -52,7 +52,7 @@
 #define _SYS_NMLN       257
 
 struct utsname
-  {
+   {
    char    sysname[_SYS_NMLN];
    char    nodename[_SYS_NMLN];
    char    release[_SYS_NMLN];
@@ -1399,6 +1399,19 @@ struct CompressedArray
 
 /*******************************************************************/
 
+struct Audit
+   {
+   char *version;
+   char *filename;
+   char *date;
+   unsigned char digest[EVP_MAX_MD_SIZE+1];
+   struct Audit *next;
+   };
+
+/*******************************************************************/
+/* Action /promise types                                           */
+/*******************************************************************/
+
 struct Interface
    {
    char done;
@@ -1408,7 +1421,8 @@ struct Interface
    char *netmask;
    char *broadcast;
    char *classes;
-   char returnstatus;
+   int lineno;
+   struct Audit *audit;
    struct Interface *next;
    };
 
@@ -1439,7 +1453,8 @@ struct Method
    int            expireafter;
    char           log;
    char           inform;
-   char returnstatus;
+   int lineno;
+   struct Audit *audit;
    struct Method *next;
    };
 
@@ -1454,7 +1469,8 @@ struct Item
    int ifelapsed;
    int expireafter;
    struct Item *next;
-   char returnstatus;
+   struct Audit *audit;
+   int    lineno;
    char *scope;
    };
 
@@ -1496,17 +1512,15 @@ struct Process
    struct Item    *exclusions;
    struct Item    *inclusions;
    struct Item    *filters;
-   int ifelapsed;
-   int expireafter;
-   char returnstatus;
+   int            ifelapsed;
+   int            expireafter;
+   int            lineno;
+   struct Audit   *audit;
    struct Process *next;
    };
 
 /*******************************************************************/
 
-/*
- * HvB : Bas van der Vlies
-*/
 struct Mountables
    {
    char         	done;
@@ -1515,7 +1529,8 @@ struct Mountables
    char			*filesystem;
    char			*mountopts;
    char                 *classes;
-   char                 returnstatus;
+   struct               Audit *audit;
+   int                  lineno;
    struct Mountables	*next;
    };
 
@@ -1548,7 +1563,8 @@ struct Tidy
          struct Item        *filters;
 	 char               *classes;
 	 char               *defines;
-         char               returnstatus;
+         struct             Audit *audit;
+         int                lineno;
          char               tidied;
 	 char		    *elsedef;
          char               compress;
@@ -1571,7 +1587,8 @@ struct Mounted
    char *on;
    char *options;
    char *type;
-   char returnstatus;
+   struct Audit *audit;
+   int lineno;
    };
 
 /*******************************************************************/
@@ -1587,7 +1604,8 @@ struct MiscMount
    char *classes;
    int ifelapsed;
    int expireafter;
-   char returnstatus;
+   struct Audit *audit;
+   int lineno;
    struct MiscMount *next;
    };
 
@@ -1604,7 +1622,8 @@ struct UnMount
    char force;
    int  ifelapsed;
    int  expireafter;
-   char returnstatus;
+   struct Audit *audit;
+   int lineno;
    struct UnMount *next;
    };
 
@@ -1629,7 +1648,6 @@ struct File
    char   *classes;
    struct UidList *uid;
    struct GidList *gid;
-   struct File *next;
    struct Item *acl_aliases;
    char   log;
    char   compress;
@@ -1637,31 +1655,34 @@ struct File
    char   xdev;
    int    ifelapsed;
    int    expireafter;
-   char   returnstatus;
+   struct Audit *audit;
+   int    lineno;
    char   checksum;   /* m=md5 n=none */
    u_long plus_flags;    /* for *BSD chflags */
    u_long minus_flags;    /* for *BSD chflags */
+   struct File *next;
    };
 
 /*******************************************************************/
 
 struct Disk
    {
-   char  done;
-   char *scope;
-   char  *name;
-   char  *classes;
-   char  *define;
-   char  *elsedef;
+   char   done;
+   char   *scope;
+   char   *name;
+   char   *classes;
+   char   *define;
+   char   *elsedef;
    char   force;	/* HvB: Bas van der Vlies */
    int    freespace;
-   struct Disk *next;
    int    ifelapsed;
    int    expireafter;
    char   log;
    char   inform;
    char   scanarrivals;
-   char   returnstatus;
+   struct Audit *audit;
+   int    lineno;
+   struct Disk *next;
    };
 
 /*******************************************************************/
@@ -1685,9 +1706,10 @@ struct Disable
    struct Disable *next;
    char   log;
    char   inform;
-   int ifelapsed;
-   int expireafter;
-   char returnstatus;
+   int    ifelapsed;
+   int    expireafter;
+   struct Audit *audit;
+   int    lineno;
    };
 
 /*******************************************************************/
@@ -1725,9 +1747,10 @@ struct Image
    char   comp;
    char   purge;
 
-   int  ifelapsed;
-   int  expireafter;
-   char returnstatus;
+   int    ifelapsed;
+   int    expireafter;
+   struct Audit *audit;
+   int    lineno;
       
    struct Item *exclusions;
    struct Item *inclusions;
@@ -1843,8 +1866,8 @@ struct Link
    char   type;
    char   copytype;
    int    recurse;
-   int ifelapsed;
-   int expireafter;
+   int    ifelapsed;
+   int    expireafter;
    struct Item *exclusions;
    struct Item *inclusions;
    struct Item *ignores;            
@@ -1853,7 +1876,8 @@ struct Link
    struct Link *next;
    char   log;
    char   inform;
-   char returnstatus;
+   struct Audit *audit;
+   int lineno;
    };
 
 /*******************************************************************/
@@ -1889,7 +1913,8 @@ struct Edit
          enum editnames code;
          char *data;
          struct Edlist *next;
-         char returnstatus;
+         struct Audit *audit;
+         int lineno;
          char *classes;
          };
 
@@ -1940,7 +1965,7 @@ struct Filter
    char *defines;
    char *elsedef;
    char *classes;
-   char context;  /* f=file, p=process */
+   char  context;  /* f=file, p=process */
 
    char *criteria[NoFilter];  /* array of strings */
       
@@ -1970,7 +1995,8 @@ struct ShellComm
    char              *elsedef;
    char              preview;
    char              noabspath;
-   char              returnstatus;
+   struct Audit      *audit;
+   int               lineno;
    int               ifelapsed;
    int               expireafter;
    };
@@ -2032,12 +2058,13 @@ struct Package      /* For packages: */
    char              inform;
    char              *defines;
    char              *elsedef;
-   char              returnstatus;
    char              *ver;
    enum cmpsense     cmp;
    enum pkgmgrs      pkgmgr;
    enum pkgactions   action;
    struct Package    *next;
+   struct Audit      *audit;
+   int lineno;
    int ifelapsed;
    int expireafter;
    };

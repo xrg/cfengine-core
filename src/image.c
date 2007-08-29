@@ -133,7 +133,7 @@ if (found == -1)
    CfLog(cferror,OUTPUT,"");
    FlushClientCache(ip);
    AddMultipleClasses(ip->elsedef);
-   ip->returnstatus = CF_FAIL;
+   //ip->returnstatus = CF_FAIL;
    return;
    }
 
@@ -416,7 +416,7 @@ if (ip->linktype != 'n')
       Verbose("cfengine: copy item %s marked for linking instead\n",sourcefile);
       enforcelinks = ENFORCELINKS;
       ENFORCELINKS = true;
-      ip->returnstatus = CF_CHG;
+      //ip->returnstatus = CF_CHG;
       
       switch (ip->linktype)
          {
@@ -485,7 +485,7 @@ if (found != -1)
             return;
             }
          Verbose("Removing old symbolic link %s to make way for copy\n",destfile);
-         ip->returnstatus = CF_CHG;
+         //ip->returnstatus = CF_CHG;
          found = -1;
          }
       } 
@@ -560,7 +560,7 @@ if (found == -1)
             CheckCopiedFile(ip->cf_findertype,destfile,&deststatbuf,&sourcestatbuf,ip);
             }
 
-         ip->returnstatus = CF_CHG;
+         //ip->returnstatus = CF_CHG;
          AddMultipleClasses(ip->defines);
          
          if (ALL_SINGLECOPY || IsWildItemIn(VSINGLECOPY,destfile))
@@ -584,7 +584,7 @@ if (found == -1)
          }
       else
          {
-         ip->returnstatus = CF_FAIL;
+         //ip->returnstatus = CF_FAIL;
          AddMultipleClasses(ip->failover);
          }
       
@@ -603,11 +603,11 @@ if (found == -1)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot create fifo `%s'", destfile);
          CfLog(cferror,OUTPUT,"mkfifo");
-         ip->returnstatus = CF_FAIL;
+         //ip->returnstatus = CF_FAIL;
          return;
          }
 
-      ip->returnstatus = CF_CHG;
+      //ip->returnstatus = CF_CHG;
       AddMultipleClasses(ip->defines);
 #endif
       }
@@ -626,7 +626,7 @@ if (found == -1)
             return;
             }
 
-         ip->returnstatus = CF_CHG;
+         //ip->returnstatus = CF_CHG;
          AddMultipleClasses(ip->defines);
          }
       }
@@ -692,7 +692,7 @@ if (found == -1)
             CheckCopiedFile(ip->cf_findertype,destfile,&deststatbuf,&sourcestatbuf,ip);
             }
 
-         ip->returnstatus = CF_CHG;
+         //ip->returnstatus = CF_CHG;
          AddMultipleClasses(ip->defines);
          }
       }
@@ -797,7 +797,7 @@ else
          {
          printf("%s: image exists but destination type is silly (file/dir/link doesn't match)\n",VPREFIX);
          printf("%s: source=%s, dest=%s\n",VPREFIX,sourcefile,destfile);
-         ip->returnstatus = CF_FAIL;
+         //ip->returnstatus = CF_FAIL;
          return;
          }
       }
@@ -816,7 +816,7 @@ else
          
          CfLog(cfinform,OUTPUT,"");
 
-         ip->returnstatus = CF_CHG;
+         //ip->returnstatus = CF_CHG;
          AddMultipleClasses(ip->defines);
          
          for (ptr = VAUTODEFINE; ptr != NULL; ptr=ptr->next)

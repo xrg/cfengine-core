@@ -472,6 +472,9 @@ else
    ip->classes = NULL;
    }
 
+ip->audit = AUDITPTR;
+ip->lineno = LINENUMBER;
+
 NUMBEROFEDITS++;
 }
 

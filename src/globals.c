@@ -719,7 +719,7 @@ char *OBS[CF_OBSERVABLES] =
       };
 
   /*********************************************************************/
-  /* The names of the possible package-related actions */
+
   PRIVATE char *PKGACTIONTEXT[] =
       {
       "install",
@@ -736,6 +736,8 @@ char *OBS[CF_OBSERVABLES] =
 
   PUBLIC short ISCFENGINE;  /* for re-using parser code in cfd */
 
+  PUBLIC  struct Audit *AUDITPTR;
+  PUBLIC  struct Audit *VAUDIT = NULL; 
   PUBLIC  short SHOWDB = false;
   PUBLIC  short PARSING = false;
   PRIVATE short TRAVLINKS = false;
