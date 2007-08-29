@@ -5657,6 +5657,26 @@ but you may specify bytes or megabytes), e.g.
 @cindex Warning about full disks
 @cindex Full disk warnings
 
+
+@w{}
+@smallexample
+
+required:
+
+  /site/host/home1 freespace=50mb define=dotidy
+  /site/host/home2 freespace=10% define=dotidy
+
+@end smallexample
+@cindex Percentage disk space
+
+@noindent
+then cfengine will warn when the filesystem concerned has less than this
+amount of free space. By adding a @code{define} tag, you can switch on
+any number of classes if this happens. This allows you to activate special
+measures for dealing with a filesystem which is in danger of becoming
+full.
+
+
 If the option @code{force=true} is used, cfengine will parse filesystems
 even on NFS mounted filesystems. Normally it does not make sense to
 check filesystems that are not native to the local host, but occasionally
@@ -9822,81 +9842,6 @@ As of version 2.1.0 rename is a synonym for disable, @xref{disable}.
 @section required
 
 This is a synonym for disks, @xref{disks}.
-This action tests for the existence of a file or filesystem.  It should
-be called after all NFS filesystems have been mounted.  You may use the
-special variable @code{$(binserver)} here.
-
-@cartouche
-
-@w{}
-@smallexample
-
-  required:
-
-    /@var{filesystem} freespace=@var{size-limit} define=@var{class-list}(,:.) 
-
-     ifelapsed=@var{mins} expireafter=@var{mins}
-
-@end smallexample
-@end cartouche
-
-Files or filesystems which you consider to be essential to the operation
-of the system can be declared as `required'.  Cfengine will warn
-if such files are not found, or if they look funny.
-
-Suppose you mount your filesystem @code{/usr/local} via NFS from some
-binary server.  You might want to check that this filesystem is not
-empty! This might occur if the filesystem was actually @emph{not}
-mounted as expected, but failed for some reason.  It is therefore not
-enough to check whether the directory @code{/usr/local} exists, one must
-also check whether it contains anything sensible.
-
-Cfengine uses two variables: @code{sensiblesize} and
-@code{sensiblecount} to figure out whether a file or filesystem is
-sensible or not.  You can change the default values of these variables
-(which are 1000 and 2 respectively) in the @code{control} section.
-@xref{control}.
-
-If a file is smaller than @code{sensiblesize} or does not exist, it
-fails the `required' test.  If a directory does not exist, or contains
-fewer than @code{sensiblecount} files, then it also fails the test and a
-warning is issued.
-
-@w{}
-@smallexample
-
-required:
-
-   any::
-      
-      /$(site)/$(binserver)/local
-
-@end smallexample
-
-If you set the @code{freespace} variable to a value (the default units are kilobytes,
-but you may specify bytes or megabytes), e.g.
-@vindex freespace=
-@cindex freespace=
-@cindex Warning about full disks
-@cindex Full disk warnings
-
-@w{}
-@smallexample
-
-required:
-
-  /site/host/home1 freespace=50mb define=dotidy
-  /site/host/home2 freespace=10% define=dotidy
-
-@end smallexample
-@cindex Percentage disk space
-
-@noindent
-then cfengine will warn when the filesystem concerned has less than this
-amount of free space. By adding a @code{define} tag, you can switch on
-any number of classes if this happens. This allows you to activate special
-measures for dealing with a filesystem which is in danger of becoming
-full.
 
 @page
 
