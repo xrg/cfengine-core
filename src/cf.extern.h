@@ -113,6 +113,8 @@ extern char VLOGFILE[];
 extern char *CHDIR;
 extern char *VSETUIDLOG;
 extern FILE *VLOGFP;
+extern DB *AUDITDBP;
+extern short AUDIT;
 extern char VEDITABORT[];
 extern char LISTSEPARATOR;
 extern char REPOSCHAR;

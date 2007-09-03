@@ -116,6 +116,7 @@ pthread_mutex_t MUTEX_LOCK = PTHREAD_MUTEX_INITIALIZER;
   PUBLIC char CHROOT[CF_BUFSIZE];
   PUBLIC char EDITBUFF[CF_BUFSIZE];
 
+  PUBLIC short AUDIT = false;
   PUBLIC short DEBUG = false;
   PUBLIC short D1 = false;
   PUBLIC short D2 = false;
@@ -1229,7 +1230,8 @@ char *OBS[CF_OBSERVABLES] =
 
   PUBLIC char *VCANONICALFILE = NULL;
 
-  PUBLIC FILE *VLOGFP = NULL;
+  PUBLIC FILE *VLOGFP = NULL; 
+  PUBLIC DB  *AUDITDBP = NULL;
 
   PUBLIC char CFLOCK[CF_BUFSIZE];
   PUBLIC char SAVELOCK[CF_BUFSIZE]; 
@@ -1296,7 +1298,6 @@ PRIVATE char *CF_SCLICODES[CF_MAX_SCLICODES][2] =
    "501","Snmp name lookup error",
    NULL,NULL
    };
-
 
 
 /* EOF */

@@ -457,7 +457,8 @@ for (lp = VCHLINK; lp != NULL; lp = lp->next)
          snprintf(OUTPUT,CF_BUFSIZE*2,"Error while trying to childlink %s -> %s\n",from,path);
          CfLog(cferror,OUTPUT,"");
          snprintf(OUTPUT,CF_BUFSIZE*2,"The directory %s does not exist. Can't link.\n",path);
-         CfLog(cferror,OUTPUT,"");  
+         CfLog(cferror,OUTPUT,"");
+         AuditLog(lp->audit,lp->lineno,OUTPUT,CF_FAIL);
          }
 
       if (! varstring)                       /* don't iterate over binservers if not var */
@@ -475,6 +476,7 @@ for (lp = VCHLINK; lp != NULL; lp = lp->next)
       {
       snprintf(OUTPUT,CF_BUFSIZE*2,"ChildLink didn't find any server to match %s -> %s\n",from,to);
       CfLog(cferror,OUTPUT,"");
+      AuditLog(lp->audit,lp->lineno,OUTPUT,CF_FAIL);
       }
 
    ReleaseCurrentLock();
@@ -571,6 +573,7 @@ for (lp = VLINK; lp != NULL; lp = lp->next)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Error while trying to link %s -> %s\n",from,path);
          CfLog(cfinform,OUTPUT,"");
+         AuditLog(lp->audit,lp->lineno,OUTPUT,CF_FAIL);
          }
 
       if (! varstring)                       /* don't iterate over binservers if not var */
@@ -588,6 +591,7 @@ for (lp = VLINK; lp != NULL; lp = lp->next)
       {
       snprintf(OUTPUT,CF_BUFSIZE*2,"Links didn't find any file to match %s -> %s\n",from,to);
       CfLog(cferror,OUTPUT,"");
+      AuditLog(lp->audit,lp->lineno,OUTPUT,CF_FAIL);
       }
    
    ReleaseCurrentLock();
@@ -785,7 +789,9 @@ if (always || (strncmp(VMAILSERVER,VFQNAME,strlen(VMAILSERVER)) != 0))
          }
       }
    closedir(dirh);
-   Verbose("%s: Done checking spool directory %s\n",VPREFIX,spooldir);
+   snprintf(OUTPUT,CF_BUFSIZE,"Done checking spool directory %s\n",spooldir);
+   Verbose("%s",OUTPUT);
+   AuditLog(NULL,0,OUTPUT,CF_NOP);
    } 
 }
 
@@ -836,22 +842,23 @@ if (VSYSTEMHARDCLASS == cfnt)
       }
    }
  
- signal(SIGALRM,(void *)TimeOut);
- alarm(RPCTIMEOUT);
+signal(SIGALRM,(void *)TimeOut);
+alarm(RPCTIMEOUT);
  
- if ((pp = cfpopen(VMOUNTCOMM[VSYSTEMHARDCLASS],"r")) == NULL)
-    {
-    snprintf(OUTPUT,CF_BUFSIZE*2,"Failed to open pipe from %s\n",VMOUNTCOMM[VSYSTEMHARDCLASS]);
-    CfLog(cferror,OUTPUT,"popen");
-    ReleaseCurrentLock();
-    return;
-    }
+if ((pp = cfpopen(VMOUNTCOMM[VSYSTEMHARDCLASS],"r")) == NULL)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Failed to open pipe from %s\n",VMOUNTCOMM[VSYSTEMHARDCLASS]);
+   CfLog(cferror,OUTPUT,"popen");
+   ReleaseCurrentLock();
+   return;
+   }
  
 while (!feof(pp))
    {
    if (ferror(pp))  /* abortable */
       {
       CfLog(cfinform,"Error mounting filesystems\n","ferror");
+      AuditLog(NULL,0,"Error mounting filesystems",CF_FAIL);
       break;
       }
    
@@ -860,6 +867,7 @@ while (!feof(pp))
    if (ferror(pp))  /* abortable */
       {
       CfLog(cfinform,"Error mounting filesystems\n","ferror");
+      AuditLog(NULL,0,"Error mounting filesystems",CF_FAIL);
       break;
       }
 
@@ -879,6 +887,7 @@ while (!feof(pp))
       snprintf(OUTPUT,CF_BUFSIZE*2,"%s\n",VBUFF);
       CfLog(cfinform,OUTPUT,"");
       GOTMOUNTINFO = false;
+      AuditLog(NULL,0,"Error mounting filesystems",CF_FAIL);
       break;
       }
 
@@ -886,6 +895,7 @@ while (!feof(pp))
       {
       CfLog(cferror,"Aborted because MountFileSystems() went into a retry loop.\n","");
       GOTMOUNTINFO = false;
+      AuditLog(NULL,0,"Error mounting filesystems - retry loop",CF_FAIL);
       break;
       }
    }
@@ -984,7 +994,9 @@ for (rp = VREQUIRED; rp != NULL; rp = rp->next)
    
    if (matched == false && ip == NULL)
       {
-      printf(" didn't find any file to match the required filesystem %s\n",rp->name);
+      snprintf(OUTPUT,CF_BUFSIZE,"Didn't find any file to match the required filesystem %s\n",rp->name);
+      CfLog(cferror,OUTPUT,"");
+      AuditLog(rp->audit,rp->lineno,"OUTPUT",CF_WARN);
       missing++;
       }
 
@@ -1333,8 +1345,8 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
             snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open pipe to command %s\n",execstr);
             CfLog(cferror,OUTPUT,"popen");
             ResetOutputRoute('d','d');
+            AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_FAIL);
             ReleaseCurrentLock();
-            //ptr->returnstatus = CF_FAIL;
             continue;
             } 
          
@@ -1344,7 +1356,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
                {
                snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
                CfLog(cferror,OUTPUT,"ferror");
-               //ptr->returnstatus = CF_TIMEX;
+               AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_TIMEX);
                break;
                }
             
@@ -1359,7 +1371,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
                {
                snprintf(OUTPUT,CF_BUFSIZE*2,"Shell command pipe %s\n",execstr);
                CfLog(cferror,OUTPUT,"ferror");
-               //ptr->returnstatus = CF_TIMEX;
+               AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_TIMEX);
                break;
                }
             
@@ -1396,7 +1408,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
                    * Line begins with colon - see if it matches a log prefix.
                    */
                   
-                  for (i=0; i < precount; i++)
+                  for (i = 0; i < precount; i++)
                      {
                      int prelen = 0;
                      prelen = strlen(prefixes[i]);
@@ -1454,8 +1466,8 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
       snprintf(OUTPUT,CF_BUFSIZE*2,"Finished script %s\n",execstr);
       CfLog(cfinform,OUTPUT,"");
 
-      //ptr->returnstatus = CF_CHG;
-      
+      AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
+     
       ResetOutputRoute('d','d');
       ReleaseCurrentLock();
       
@@ -1688,6 +1700,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
       Verbose("Filetype %s, %s is not there - ok\n",dp->type,workname);
       AddMultipleClasses(dp->elsedef);
       ReleaseCurrentLock();
+      AuditLog(dp->audit,dp->lineno,OUTPUT,CF_NOP);
       continue;
       }
 
@@ -1699,6 +1712,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
          Verbose("Filetype %s, %s is not there - ok\n",dp->type,workname);
          ResetOutputRoute('d','d');
          ReleaseCurrentLock();
+         AuditLog(dp->audit,dp->lineno,OUTPUT,CF_NOP);
          continue;
          }      
       }
@@ -1712,6 +1726,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
          Verbose("%s: %s is a link, not disabling\n",VPREFIX,workname);
          ResetOutputRoute('d','d');
          ReleaseCurrentLock();
+         AuditLog(dp->audit,dp->lineno,OUTPUT,CF_NOP);
          continue;
          }
       
@@ -1721,6 +1736,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"DisableFiles() can't read link %s\n",workname);
          CfLog(cferror,OUTPUT,"readlink");
+         AuditLog(dp->audit,dp->lineno,OUTPUT,CF_FAIL);
          ResetOutputRoute('d','d');
          ReleaseCurrentLock();
          continue;
@@ -1728,17 +1744,19 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
       
       if (dp->action == 'd')
          {
-         printf("%s: Deleting link %s -> %s\n",VPREFIX,workname,VBUFF);
-         
+         snprintf(OUTPUT,CF_BUFSIZE,"Deleting link %s -> %s\n",workname,VBUFF);
+         CfLog(cfinform,OUTPUT,"");
+         AuditLog(dp->audit,dp->lineno,OUTPUT,CF_CHG);
+               
          if (! DONTDO)
             {
             if (unlink(workname) == -1)
                {
                snprintf(OUTPUT,CF_BUFSIZE*2,"Error while unlinking %s\n",workname);
                CfLog(cferror,OUTPUT,"unlink");
+               AuditLog(dp->audit,dp->lineno,OUTPUT,CF_FAIL);
                ResetOutputRoute('d','d');
                ReleaseCurrentLock();
-               //dp->returnstatus = CF_CHG;
                continue;
                }
             
@@ -1749,13 +1767,16 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
          {
          snprintf(OUTPUT,CF_BUFSIZE,"Warning - file %s exists\n",workname);
          CfLog(cferror,OUTPUT,"");
+         AuditLog(dp->audit,dp->lineno,OUTPUT,CF_WARN);
          }
       }
    else
       {
       if (!S_ISREG(statbuf.st_mode) && (strlen(dp->destination) == 0))
          {
-         Verbose("%s: %s is not a plain file - won't rename/disable without specific destination\n",VPREFIX,workname);
+         snprintf(OUTPUT,CF_BUFSIZE,"%s: %s is not a plain file - won't rename/disable without specific destination\n",VPREFIX,workname);
+         CfLog(cfverbose,OUTPUT,"");
+         AuditLog(dp->audit,dp->lineno,OUTPUT,CF_FAIL);
          ResetOutputRoute('d','d');
          ReleaseCurrentLock();
          continue;
@@ -1763,7 +1784,9 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
       
       if (strcmp(dp->type,"link") == 0)
          {
-         Verbose("%s: %s is a file, not disabling\n",VPREFIX,workname);
+         snprintf(OUTPUT,CF_BUFSIZE,"%s: %s is a file, not disabling\n",VPREFIX,workname);
+         CfLog(cfverbose,OUTPUT,"");
+         AuditLog(dp->audit,dp->lineno,OUTPUT,CF_FAIL);
          ResetOutputRoute('d','d');
          ReleaseCurrentLock();
          continue;
@@ -1772,6 +1795,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
       if (stat(workname,&statbuf) == -1)
          {
          CfLog(cferror,"Internal; error in Disable\n","");
+         AuditLog(dp->audit,dp->lineno,"Internal error",CF_FAIL);
          ResetOutputRoute('d','d');
          ReleaseCurrentLock();
          return;
@@ -1849,6 +1873,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
 
          snprintf(OUTPUT,CF_BUFSIZE*2,"Disabling/renaming file %s to %s (pending repository move)\n",workname,path);
          CfLog(cfinform,OUTPUT,"");
+         AuditLog(dp->audit,dp->lineno,OUTPUT,CF_CHG);
          
          if (! DONTDO)
             {
@@ -1862,13 +1887,15 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
                      {
                      snprintf(OUTPUT,CF_BUFSIZE*2,"Error occurred while renaming %s\n",workname);
                      CfLog(cferror,OUTPUT,"rename");
+                     AuditLog(dp->audit,dp->lineno,OUTPUT,CF_FAIL);
                      ResetOutputRoute('d','d');
                      ReleaseCurrentLock();
-                     //dp->returnstatus = CF_FAIL;
                      continue;
                      }
 
-                  //dp->returnstatus = CF_CHG;
+                  snprintf(OUTPUT,CF_BUFSIZE*2,"Renaming %s to %s\n",workname,path);
+                  CfLog(cfinform,OUTPUT,"");
+                  AuditLog(dp->audit,dp->lineno,OUTPUT,CF_CHG);
                   
                   if (Repository(path,dp->repository))
                      {
@@ -1881,6 +1908,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
                   {
                   snprintf(OUTPUT,CF_BUFSIZE,"Warning - file %s exists (need to disable)",workname);
                   CfLog(cferror,OUTPUT,"");
+                  AuditLog(dp->audit,dp->lineno,OUTPUT,CF_WARN);
                   }        
                }
             }
@@ -1895,7 +1923,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
             if (! DONTDO)
                {
                TruncateFile(workname);
-               //dp->returnstatus = CF_CHG;
+               AuditLog(dp->audit,dp->lineno,OUTPUT,CF_CHG);
                AddMultipleClasses(dp->defines);
                }
             }
@@ -1903,6 +1931,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
             {
             snprintf(OUTPUT,CF_BUFSIZE,"File %s needs emptying",workname);
             CfLog(cferror,OUTPUT,"");
+            AuditLog(dp->audit,dp->lineno,OUTPUT,CF_WARN);
             }
          }
       else
@@ -1915,13 +1944,14 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
             if (!DONTDO)
                {
                RotateFiles(workname,dp->rotate);
-               //dp->returnstatus = CF_CHG;
+               AuditLog(dp->audit,dp->lineno,OUTPUT,CF_CHG);
                AddMultipleClasses(dp->defines);
                }
             else        
                {
                snprintf(OUTPUT,CF_BUFSIZE,"File %s needs rotating/emptying",workname);
                CfLog(cferror,OUTPUT,"");
+               AuditLog(dp->audit,dp->lineno,OUTPUT,CF_WARN);
                }
             }
          }
@@ -2027,12 +2057,12 @@ for (mp = VMOUNTABLES; mp != NULL; mp=mp->next)
          {
          MakeDirectoriesFor(maketo,'n');
          AddToFstab(host,mountdir,mountdir,mountmode,mp->mountopts,false);
-         //mp->returnstatus = CF_CHG;
+         AuditLog(mp->audit,mp->lineno,"Adding mountpoint, editing filesystem table",CF_CHG);
          }
       else if (IsClassedItemIn(VBINSERVERS,host))
          {
          AddToFstab(host,mountdir,mountdir,mountmode,mp->mountopts,true);
-         //mp->returnstatus = CF_CHG;
+         AuditLog(mp->audit,mp->lineno,"Editing filesystem table",CF_CHG);
          }
       }
    }
@@ -2091,6 +2121,7 @@ for (mp = VMISCMOUNT; mp != NULL; mp=mp->next)
 
    if (strcmp(host,VDEFAULTBINSERVER.name) == 0) /* A host never mounts itself nfs */
       {
+      AuditLog(mp->audit,mp->lineno,"MiscMount - no self-mounting",CF_NOP);
       continue;
       }
 
@@ -2100,12 +2131,12 @@ for (mp = VMISCMOUNT; mp != NULL; mp=mp->next)
       {
       MakeDirectoriesFor(maketo,'n');
       AddToFstab(host,mountdir,mp->onto,mp->mode,mp->options,false);
-      //mp->returnstatus = CF_CHG;
+      AuditLog(mp->audit,mp->lineno,"Create mount point, edit fstab",CF_CHG);
       }
    else
       {
       AddToFstab(host,mountdir,mp->onto,mp->mode,mp->options,true);
-      //mp->returnstatus = CF_CHG;
+      AuditLog(mp->audit,mp->lineno,"Editing fstab",CF_CHG);
       }
    }
 }
@@ -2133,6 +2164,7 @@ if (! LoadItemList(&filelist,VFSTAB[VSYSTEMHARDCLASS]))
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open %s!\n",VFSTAB[VSYSTEMHARDCLASS]);
    CfLog(cferror,OUTPUT,"");
+   AuditLog(NULL,0,OUTPUT,CF_FAIL);
    return;
    }
 
@@ -2167,6 +2199,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
    if (strlen(fs) == 0)
       {
       ReleaseCurrentLock();
+      AuditLog(ptr->audit,ptr->lineno,"Umount check",CF_NOP);
       continue;
       }
    
@@ -2176,7 +2209,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
    if (strcmp(fs,"/") == 0 || strcmp(fs,"/usr") == 0)
       {
       CfLog(cfinform,"Request to unmount / or /usr is refused!\n","");
-      //ptr->returnstatus = CF_FAIL;
+      AuditLog(ptr->audit,ptr->lineno,"Will not unmount / or /usr",CF_DENIED);
       ReleaseCurrentLock();     
       continue;
       }
@@ -2189,6 +2222,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Failed to open pipe from %s\n",VUNMOUNTCOMM[VSYSTEMHARDCLASS]);
          CfLog(cferror,OUTPUT,"");
+         AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_FAIL);
          ReleaseCurrentLock();     
          return;
          }
@@ -2208,7 +2242,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
          snprintf(OUTPUT,CF_BUFSIZE*2,"Unmounting %s\n",ptr->name);
          CfLog(cfinform,OUTPUT,"");
          DeleteItemStarting(&VMOUNTED,ptr->name);  /* update mount record */
-         //ptr->returnstatus = CF_CHG;
+         AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
          }
       
       cfpclose(pp);
@@ -2231,12 +2265,12 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
                {
                snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to remove the directory %s\n",fs);
                CfLog(cferror,OUTPUT,"rmdir");
-               //ptr->returnstatus = CF_CHG;
                } 
             else
                {
                snprintf(OUTPUT,CF_BUFSIZE*2,"Removing directory %s\n",ptr->name);
                CfLog(cfinform,OUTPUT,"");
+               AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
                }
             }
          }
@@ -2303,7 +2337,7 @@ for (ptr=VUNMOUNT; ptr != NULL; ptr=ptr->next)
  if ((! DONTDO) && (NUMBEROFEDITS > 0))
     {
     SaveItemList(filelist,VFSTAB[VSYSTEMHARDCLASS],VREPOSITORY);
-    //ptr->returnstatus = CF_CHG;
+    AuditLog(ptr->audit,ptr->lineno,"Saving filesystem table",CF_CHG);
     }
  
 DeleteItemList(filelist);
@@ -2366,6 +2400,7 @@ Verbose("Checking config in %s\n",VRESOLVCONF[VSYSTEMHARDCLASS]);
 if (strcmp(VDOMAIN,"") == 0)
    {
    CfLog(cferror,"Domain name not specified. Can't configure resolver\n","");
+   AuditLog(NULL,0,"No domain",CF_FAIL);
    return;
    }
 
@@ -2385,6 +2420,7 @@ if (! LoadItemList(&referencefile,VRESOLVCONF[VSYSTEMHARDCLASS]))
       {
       snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to create file %s\n",VRESOLVCONF[VSYSTEMHARDCLASS]);
       CfLog(cferror,OUTPUT,"creat");
+      AuditLog(NULL,0,OUTPUT,CF_FAIL);
       return;
       }
    else
@@ -2397,33 +2433,6 @@ if (existed)
    {
    LoadItemList(&filebase,VRESOLVCONF[VSYSTEMHARDCLASS]);
    }
-
-/* This code seems to solve an ancient problem that should no longer exist
-for (ip = filebase; ip != NULL; ip=ip->next)
-   {
-   if (strlen(ip->name) == 0)
-      {
-      continue;
-      }
-
-   ch = *(ip->name+strlen(ip->name)-2);
-
-   if (isspace((int)ch))
-      {
-      snprintf(OUTPUT,CF_BUFSIZE*2,"Deleted line %s ended with a space in %s.\n",ip->name,VRESOLVCONF[VSYSTEMHARDCLASS]);
-      CfLog(cfinform,OUTPUT,"");
-      CfLog(cfinform,"The resolver doesn't understand this.\n","");
-      DeleteItem(&filebase,ip);
-      }
-   else if (isspace((int)*(ip->name)))
-      {
-      snprintf(OUTPUT,CF_BUFSIZE*2,"Deleted line %s started with a space in %s.\n",ip->name,VRESOLVCONF[VSYSTEMHARDCLASS]);
-      CfLog(cfinform,OUTPUT,"");
-      CfLog(cfinform,"The resolver doesn't understand this.\n","");
-      DeleteItem(&filebase,ip);
-      }
-   }
-*/
 
 DeleteItemStarting(&filebase,"domain");
 
@@ -2449,14 +2458,13 @@ if (DONTDO)
 else if (!ItemListsEqual(filebase,referencefile))
    {
    SaveItemList(filebase,VRESOLVCONF[VSYSTEMHARDCLASS],VREPOSITORY);
-
-   /* Register change here  ptr->returnstatus = CF_CHG; */
-   
+   AuditLog(NULL,0,"Resolver config",CF_CHG);
    chmod(VRESOLVCONF[VSYSTEMHARDCLASS],DEFAULTSYSTEMMODE);
    }
 else
    {
    Verbose("cfengine: %s is okay\n",VRESOLVCONF[VSYSTEMHARDCLASS]);
+   AuditLog(NULL,0,"Resolver config",CF_NOP);
    }
 
 DeleteItemList(filebase);
@@ -2537,7 +2545,7 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Unable to establish connection with %s (failover)\n",listserver);
          CfLog(cfinform,OUTPUT,"");
-         //ip->returnstatus = CF_FAIL;
+         AuditLog(ip->audit,ip->lineno,OUTPUT,CF_FAIL);
          AddMultipleClasses(ip->failover);
          continue;
          }
@@ -2671,7 +2679,7 @@ for (ifp = VIFLIST; ifp != NULL; ifp=ifp->next)
       ifp->done = 'y';
       }
 
-   /* Need ptr->returnstatus = CF_CHG; - can't check this */
+   AuditLog(ifp->audit,ifp->lineno,OUTPUT,CF_UNKNOWN);
    IfConf(ifp->ifdev,ifp->ipaddress,ifp->netmask,ifp->broadcast);
    SetDefaultRoute();
    ReleaseCurrentLock();
@@ -2739,6 +2747,7 @@ void CheckProcesses()
 if (!LoadProcessTable(&procdata,psopts))
    {
    CfLog(cferror,"Unable to read the process table\n","");
+   AuditLog(NULL,0,"Processes inaccessible",CF_FAIL);   
    return;
    }
 
@@ -2871,7 +2880,7 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
             pending_pkgs = NULL;
             }
 
-         //ptr->returnstatus = CF_CHG;
+         AuditLog(ptr->audit,ptr->lineno,"Package update",CF_CHG);
          }
       }
    
@@ -3030,7 +3039,7 @@ if (S_ISDIR(statbuf.st_mode))
             }
 
          snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s in required/disk\n",buff);
-  CfLog(cferror,OUTPUT,"lstat");
+         CfLog(cferror,OUTPUT,"lstat");
          continue;
          }
 

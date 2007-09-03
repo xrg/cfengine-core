@@ -353,6 +353,11 @@ if (OptionIs(CONTEXTID,"LogEncryptedTransfers", true))
    LOGENCRYPT = true;
    }
 
+if (OptionIs(CONTEXTID,"Auditing",true))
+   {
+   AUDIT = true;
+   } 
+
 if (GetMacroValue(CONTEXTID,"ChecksumDatabase"))
    {
    snprintf(ebuff,CF_BUFSIZE,"%s/%s",CFWORKDIR,CF_CHKDB);
@@ -901,8 +906,8 @@ for (i=0; CFDOPTIONS[i].name != NULL; i++)
    printf("--%-20s    (-%c)\n",CFDOPTIONS[i].name,(char)CFDOPTIONS[i].val);
    }
 
-printf("\nBug reports to bug-cfengine@cfengine.org (News: gnu.cfengine.bug)\n");
-printf("General help to help-cfengine@cfengine.org (News: gnu.cfengine.help)\n");
+printf("\nBug reports to bug-cfengine@cfengine.org\n");
+printf("General help to help-cfengine@cfengine.org\n");
 printf("Info & fixes at http://www.cfengine.org\n");
 }
 
@@ -1965,7 +1970,7 @@ if ((hp = gethostbyname(dns_assert)) == NULL)
    {
    Verbose("cfservd Couldn't look up name %s\n",fqname);
    Verbose("     Make sure that fully qualified names can be looked up at your site!\n");
-   Verbose("     i.e. www.gnu.org, not just www. If you use NIS or /etc/hosts\n");
+   Verbose("     i.e. www.cfengine.org, not just www. If you use NIS or /etc/hosts\n");
    Verbose("     make sure that the full form is registered too as an alias!\n");
 
    snprintf(OUTPUT,CF_BUFSIZE,"DNS lookup of %s failed",dns_assert);

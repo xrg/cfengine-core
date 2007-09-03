@@ -1,5 +1,6 @@
 
 2.2.2
+	
 	The build procedure for cfengine changes in this version to
 	incorporate an intermediate library. The default behaviour is now
 	to build a static library which will be used by cfengine 3 and
@@ -10,7 +11,27 @@
 	NOTE to developers: if running from the compiled code you now need
 	to delete the files cfagent cfservd etc and recompile to see changes
 	appear in the code. This is due to the libtool build process.
+	
+	libtoolizing compilation process for migration to cfengine shared library
+	(this is to support mulitple interfaces in future, and cf 3)
 
+	--
+
+	XML and HTML output options added to equip the internal instrumentation 
+	with readable output in cfshow e.g.
+
+	   cfshow --performance --html > output.html
+	   firefox output.html
+
+	provides an easier summary and searchability in browser function
+
+	Instrumentation changed to use realtime functions where possible. Standard
+	unix timer is too insensitive to measure performance.
+
+	The beginning of an integrated auditing system has been added. See references
+	to AuditLog() in the code. This logs to a compressed database and can be extracted
+	in ascii, html, xml using cfshow, e.g. cfshow  --audit --html > output.html
+	
 	--
 	
 	SCLI interface modifications.
@@ -20,12 +41,6 @@
 
 	--
 	
-	Instrumentation changed to use realtime functions where possible. Standard
-	unix timer is too insensitive to measure performance.
-	
-	libtoolizing compilation process for migration to cfengine shared library
-	(this is to support mulitple interfaces in future, and cf 3)
-
 	UserExists("name") and GroupExists("name") functions added to builtin functions.
 	
 	Additional octet variables added on default IPv4 address, for convenience:

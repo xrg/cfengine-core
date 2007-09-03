@@ -18,7 +18,7 @@
 /* GLOBAL VARIABLES                                                */
 /*******************************************************************/
 
-struct option CFDOPTIONS[] =
+struct option CFSHOPTIONS[] =
    {
    { "help",no_argument,0,'h' },
    { "debug",optional_argument,0,'d' }, 
@@ -29,6 +29,10 @@ struct option CFDOPTIONS[] =
    { "checksum",no_argument,0,'c'},
    { "active",no_argument,0,'a'},
    { "version",no_argument,0,'V'},
+   { "html",no_argument,0,'H'},
+   { "xml",no_argument,0,'X'},
+   { "purge",no_argument,0,'P'},
+   { "audit",no_argument,0,'A'},
    { NULL,0,0,0 }
    };
 
@@ -38,13 +42,80 @@ enum databases
    cf_db_locks,
    cf_db_active,
    cf_db_checksum,
-   cf_db_performance
+   cf_db_performance,
+   cf_db_audit
    };
 
 enum databases TODO = -1;
 
 #define CF_ACTIVE 1
 #define CF_INACTIVE 0
+
+/*******************************************************************/
+
+enum cf_formatindex
+   {
+   cfb,
+   cfe,
+   };
+
+enum cf_format
+   {
+   cfx_entry,
+   cfx_event,
+   cfx_host,
+   cfx_pm,
+   cfx_ip,
+   cfx_date,
+   cfx_q,
+   cfx_av,
+   cfx_dev,
+   cfx_version,
+   cfx_ref,
+   cfx_filename,
+   cfx_index
+   };
+
+
+short XML = false;
+
+char *CFX[][2] =
+   {
+    "<entry>\n","\n</entry>\n",
+    "<event>\n","\n</event>\n",
+    "<hostname>\n","\n</hostname>\n",
+    "<pm>\n","\n</pm>\n",
+    "<ip>\n","\n</ip>\n",
+    "<date>\n","\n</date>\n",
+    "<q>\n","\n</q>\n",
+    "<expect>\n","\n</expect>\n",
+    "<sigma>\n","\n</sigma>\n",
+    "<version>\n","\n</version>\n",
+    "<ref>\n","\n</ref>\n",
+    "<filename>\n","\n</filename>\n",
+    "<index>\n","\n</index>\n",
+    NULL,NULL
+   };
+
+short HTML = false;
+
+char *CFH[][2] =
+   {
+    "<tr>","</tr>\n\n",
+    "<td>","</td>\n",
+    "<td>","</td>\n",
+    "<td bgcolor=#add8e6>","</td>\n",
+    "<td bgcolor=#e0ffff>","</td>\n",
+    "<td bgcolor=#f0f8ff>","</td>\n",
+    "<td bgcolor=#fafafa>","</td>\n",
+    "<td bgcolor=#ededed>","</td>\n",
+    "<td bgcolor=#e0e0e0>","</td>\n",
+    "<td bgcolor=#add8e6>","</td>\n",
+    "<td bgcolor=#e0ffff>","</td>\n",
+    "<td bgcolor=#fafafa><small>","</small></td>\n",
+    "<td bgcolor=#fafafa><small>","</small></td>\n",
+    NULL,NULL
+   };
 
 /*******************************************************************/
 /* Functions internal to cfservd.c                                 */
@@ -57,6 +128,7 @@ void ShowLastSeen(void);
 void ShowChecksums(void);
 void ShowLocks(int active);
 void ShowPerformance(void);
+void ShowCurrentAudit(void);
 char *ChecksumDump(unsigned char digest[EVP_MAX_MD_SIZE+1]);
 
 /*******************************************************************/
@@ -82,7 +154,10 @@ void CheckOptsAndInit(int argc,char **argv)
   int optindex = 0;
   int c;
 
-while ((c=getopt_long(argc,argv,"hdvaVlscp",CFDOPTIONS,&optindex)) != EOF)
+PURGE = 'n';
+AUDIT = false;
+
+while ((c=getopt_long(argc,argv,"AhdvaVlscpPXH",CFSHOPTIONS,&optindex)) != EOF)
   {
   switch ((char) c)
       {
@@ -115,6 +190,11 @@ while ((c=getopt_long(argc,argv,"hdvaVlscp",CFDOPTIONS,&optindex)) != EOF)
           TODO = cf_db_active;
           break;
 
+      case 'A':
+          AUDIT = true;
+          TODO = cf_db_audit;
+          break;
+
       case 'l':
           TODO = cf_db_locks;
           break;
@@ -130,13 +210,24 @@ while ((c=getopt_long(argc,argv,"hdvaVlscp",CFDOPTIONS,&optindex)) != EOF)
       case 'p':
           TODO = cf_db_performance;
           break;
+
+      case 'X':
+          XML = true;
+          break;
+
+      case 'H':
+          HTML = true;
+          break;
+
+      case 'P':
+          PURGE = 'y';
+          break;
           
       default:  Syntax();
           exit(1);
           
       }
   }
-
 
 strcpy(CFWORKDIR,WORKDIR);
 
@@ -150,6 +241,9 @@ if (getuid() > 0)
       strcat(CFWORKDIR,"/.cfagent");
       }
    }
+
+GetNameInfo();
+strcpy(VFQNAME,VSYSNAME.nodename);
 }
 
 /********************************************************************/
@@ -174,6 +268,9 @@ switch (TODO)
    case cf_db_performance:
        ShowPerformance();
        break;
+   case cf_db_audit:
+       ShowCurrentAudit();
+       break;
    }
 }
 
@@ -189,13 +286,13 @@ printf("GNU cfengine db tool\n%s-%s\n%s\n",PACKAGE,VERSION,COPYRIGHT);
 printf("\n");
 printf("Options:\n\n");
 
-for (i=0; CFDOPTIONS[i].name != NULL; i++)
+for (i=0; CFSHOPTIONS[i].name != NULL; i++)
    {
-   printf("--%-20s    (-%c)\n",CFDOPTIONS[i].name,(char)CFDOPTIONS[i].val);
+   printf("--%-20s    (-%c)\n",CFSHOPTIONS[i].name,(char)CFSHOPTIONS[i].val);
    }
 
-printf("\nBug reports to bug-cfengine@gnu.org (News: gnu.cfengine.bug)\n");
-printf("General help to help-cfengine@gnu.org (News: gnu.cfengine.help)\n");
+printf("\nBug reports to bug-cfengine@cfengine.org\n");
+printf("General help to help-cfengine@cfengine.org\n");
 printf("Info & fixes at http://www.cfengine.org\n");
 }
 
@@ -234,6 +331,16 @@ if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
    return;
    }
 
+if (HTML)
+   {
+   printf("<html><head><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/menus.css\" /><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/cf_blue.css\"/></head><body><h1>Peers recently seen by %s</h1><p><table class=border cellpadding=5>",VFQNAME);
+   }
+
+if (XML)
+   {
+   printf("<?xml version=\"1.0\"?>\n");
+   }
+
 /* Acquire a cursor for the database. */
 
 if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
@@ -245,7 +352,6 @@ if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
 
  /* Initialize the key/data return pair. */
 
- 
 memset(&key, 0, sizeof(key));
 memset(&value, 0, sizeof(value));
 memset(&entry, 0, sizeof(entry)); 
@@ -273,6 +379,20 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       continue;
       }
 
+   if (PURGE == 'y')
+      {
+      if (now - then > CF_WEEK)
+         {
+         if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
+            {
+            CfLog(cferror,"","db_store");
+            }
+         }
+
+      fprintf(stderr,"Deleting expired entry for %s\n",hostname);
+      continue;
+      }
+   
    fthen = (time_t)then;                            /* format date */
    snprintf(tbuf,CF_BUFSIZE-1,"%s",ctime(&fthen));
    tbuf[strlen(tbuf)-9] = '\0';                     /* Chop off second and year */
@@ -285,17 +405,49 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       {
       snprintf(addr,15,"%s",hostname+1);
       }
-   
-   printf("IP %c %25.25s %15.15s  @ [%s] not seen for (%.2f) hrs, Av %.2f +/- %.2f hrs\n",
-          *hostname,
-          IPString2Hostname(hostname+1),
-          addr,
-          tbuf,
-          ((double)(now-then))/ticksperhr,
-          average/ticksperhr,
-          sqrt(var)/ticksperhr);
+
+   if (XML)
+      {
+      printf("%s",CFX[cfx_entry][cfb]);
+      printf("%s%c%s",CFX[cfx_pm][cfb],*hostname,CFX[cfx_pm][cfe]);
+      printf("%s%s%s",CFX[cfx_host][cfb],IPString2Hostname(hostname+1),CFX[cfx_host][cfe]);
+      printf("%s%s%s",CFX[cfx_ip][cfb],hostname+1,CFX[cfx_ip][cfe]);
+      printf("%s%s%s",CFX[cfx_date][cfb],tbuf,CFX[cfx_date][cfe]);
+      printf("%s%.2f%s",CFX[cfx_q][cfb],((double)(now-then))/ticksperhr,CFX[cfx_q][cfe]);
+      printf("%s%.2f%s",CFX[cfx_av][cfb],average/ticksperhr,CFX[cfx_av][cfe]);
+      printf("%s%.2f%s",CFX[cfx_dev][cfb],sqrt(var)/ticksperhr,CFX[cfx_dev][cfe]);
+      printf("%s",CFX[cfx_entry][cfe]);
+      }
+   else if (HTML)
+      {
+      printf("%s",CFH[cfx_entry][cfb]);
+      printf("%s%c%s",CFH[cfx_pm][cfb],*hostname,CFH[cfx_pm][cfe]);
+      printf("%s%s%s",CFH[cfx_host][cfb],IPString2Hostname(hostname+1),CFH[cfx_host][cfe]);
+      printf("%s%s%s",CFH[cfx_ip][cfb],hostname+1,CFH[cfx_ip][cfe]);
+      printf("%s Last seen at %s%s",CFH[cfx_date][cfb],tbuf,CFH[cfx_date][cfe]);
+      printf("%s %.2f hrs ago %s",CFH[cfx_q][cfb],((double)(now-then))/ticksperhr,CFH[cfx_q][cfe]);
+      printf("%s Av %.2f hrs %s",CFH[cfx_av][cfb],average/ticksperhr,CFH[cfx_av][cfe]);
+      printf("%s &plusmn; %.2f hrs %s",CFH[cfx_dev][cfb],sqrt(var)/ticksperhr,CFH[cfx_dev][cfe]);
+      printf("%s",CFH[cfx_entry][cfe]);
+      }
+   else
+      {
+      printf("IP %c %25.25s %15.15s  @ [%s] not seen for (%.2f) hrs, Av %.2f +/- %.2f hrs\n",
+             *hostname,
+             IPString2Hostname(hostname+1),
+             addr,
+             tbuf,
+             ((double)(now-then))/ticksperhr,
+             average/ticksperhr,
+             sqrt(var)/ticksperhr);
+      }
    }
- 
+
+if (HTML)
+   {
+   printf("</table>");
+   }
+
 dbcp->c_close(dbcp);
 dbp->close(dbp,0);
 }
@@ -345,12 +497,21 @@ if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
    }
 
  /* Initialize the key/data return pair. */
-
  
 memset(&key, 0, sizeof(key));
 memset(&value, 0, sizeof(value));
 memset(&entry, 0, sizeof(entry)); 
- 
+
+if (HTML)
+   {
+   printf("<html><head><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/menus.css\" /><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/cf_blue.css\"/></head><body><h1>Peformance recently measured on %s</h1><p><table class=border cellpadding=5>",VFQNAME);
+   }
+
+if (XML)
+   {
+   printf("<?xml version=\"1.0\"?>\n");
+   }
+
  /* Walk through the database and print out the key/data pairs. */
 
 while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
@@ -374,14 +535,56 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       snprintf(tbuf,CF_BUFSIZE-1,"%s",ctime(&then));
       tbuf[strlen(tbuf)-9] = '\0';                     /* Chop off second and year */
 
-      printf("(%7.4f mins @ %s) Av %7.4f +/- %7.4f for %s \n",measure,tbuf,average,sqrt(var)/ticksperminute,eventname);
+      if (PURGE == 'y')
+         {
+         if (now - then > CF_WEEK)
+            {
+            if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
+               {
+               CfLog(cferror,"","db_store");
+               }
+            }
+         
+         fprintf(stderr,"Deleting expired entry for %s\n",eventname);
+         continue;
+         }
+      
+      if (XML)
+         {
+         printf("%s",CFX[cfx_entry][cfb]);
+         printf("%s%s%s",CFX[cfx_event][cfb],eventname,CFX[cfx_event][cfe]);
+         printf("%s%s%s",CFX[cfx_date][cfb],tbuf,CFX[cfx_date][cfe]);
+         printf("%s%.4f%s",CFX[cfx_q][cfb],measure,CFX[cfx_q][cfe]);
+         printf("%s%.4f%s",CFX[cfx_av][cfb],average,CFX[cfx_av][cfe]);
+         printf("%s%.4f%s",CFX[cfx_dev][cfb],sqrt(var)/ticksperminute,CFX[cfx_dev][cfe]);
+         printf("%s",CFX[cfx_entry][cfe]);         
+         }
+      else if (HTML)
+         {
+         printf("%s",CFH[cfx_entry][cfb]);
+         printf("%s%s%s",CFH[cfx_event][cfb],eventname,CFH[cfx_event][cfe]);
+         printf("%s last performed at %s%s",CFH[cfx_date][cfb],tbuf,CFH[cfx_date][cfe]);
+         printf("%s completed in %.4f mins %s",CFH[cfx_q][cfb],measure,CFH[cfx_q][cfe]);
+         printf("%s Av %.4f mins %s",CFH[cfx_av][cfb],average,CFH[cfx_av][cfe]);
+         printf("%s &plusmn; %.4f mins %s",CFH[cfx_dev][cfb],sqrt(var)/ticksperminute,CFH[cfx_dev][cfe]);
+         printf("%s",CFH[cfx_entry][cfe]);
+         }
+      else
+         {
+         printf("(%7.4f mins @ %s) Av %7.4f +/- %7.4f for %s \n",measure,tbuf,average,sqrt(var)/ticksperminute,eventname);
+         }
       }
    else
       {
       continue;
       }
    }
- 
+
+if (HTML)
+   {
+   printf("</table>");
+   }
+
 dbcp->c_close(dbcp);
 dbp->close(dbp,0);
 }
@@ -420,6 +623,16 @@ if ((errno = (dbp->open)(dbp,NULL,checksumdb,NULL,DB_BTREE,DB_CREATE,0644)) != 0
    return;
    }
 
+if (HTML)
+   {
+   printf("<html><head><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/menus.css\" /><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/cf_blue.css\"/></head><body><h1>Message Digests sampled on %s</h1><p><table class=border cellpadding=5 width=800>",VFQNAME);
+   }
+
+if (XML)
+   {
+   printf("<?xml version=\"1.0\"?>\n");
+   }
+
 /* Acquire a cursor for the database. */
 
  if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
@@ -455,14 +668,35 @@ if ((errno = (dbp->open)(dbp,NULL,checksumdb,NULL,DB_BTREE,DB_CREATE,0644)) != 0
 
     type = ChecksumType(strtype);
 
-    printf("%c %s ",type,strtype);
-    printf("%s = ",name);
-    printf("%s\n",ChecksumPrint(type,digest));
-    /* attr_digest too here*/
-
-    memset(&key,0,sizeof(key));
-    memset(&value,0,sizeof(value));
+    if (XML)
+       {
+       printf("%s",CFX[cfx_entry][cfb]);
+       printf("%s%s%s",CFX[cfx_event][cfb],name,CFX[cfx_event][cfe]);
+       printf("%s%s%s",CFX[cfx_q][cfb],ChecksumPrint(type,digest),CFX[cfx_q][cfe]);
+       printf("%s",CFX[cfx_entry][cfe]);
+       }
+    else if (HTML)
+       {
+       printf("%s",CFH[cfx_entry][cfb]);
+       printf("%s%s%s",CFH[cfx_filename][cfb],name,CFH[cfx_filename][cfe]);
+       printf("%s%s%s",CFH[cfx_q][cfb],ChecksumPrint(type,digest),CFH[cfx_q][cfe]);
+       printf("%s",CFH[cfx_entry][cfe]);         
+       }
+    else
+       {
+       printf("%s = ",name);
+       printf("%s\n",ChecksumPrint(type,digest));
+       /* attr_digest too here*/
+       
+       memset(&key,0,sizeof(key));
+       memset(&value,0,sizeof(value));       
+       }
     }
+
+if (HTML)
+   {
+   printf("</table>");
+   }
  
 dbcp->c_close(dbcp);
 dbp->close(dbp,0);
@@ -502,6 +736,16 @@ if ((errno = (dbp->open)(dbp,NULL,lockdb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
    return;
    }
 
+if (HTML)
+   {
+   printf("<html><head><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/menus.css\" /><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/cf_blue.css\"/></head><body><h1>Current lock database on %s</h1><p><table class=border cellpadding=5 width=800>",VFQNAME);
+   }
+
+if (XML)
+   {
+   printf("<?xml version=\"1.0\"?>\n");
+   }
+
 /* Acquire a cursor for the database. */
 
  if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
@@ -524,30 +768,220 @@ if ((errno = (dbp->open)(dbp,NULL,lockdb,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
        {
        if (strncmp("lock",(char *)key.data,4) == 0)
           {
-          printf("%s = ",(char *)key.data);
-          
-          if (value.data != NULL)
+          if (XML)
              {
-             memcpy(&entry,value.data,sizeof(entry));
-             printf("%s\n",ctime(&entry.time));
-             }          
+             printf("%s",CFX[cfx_entry][cfb]);
+             printf("%s%s%s",CFX[cfx_filename][cfb],(char *)key.data,CFX[cfx_filename][cfe]);
+             printf("%s%s%s",CFX[cfx_date][cfb],ctime(&entry.time),CFX[cfx_date][cfe]);
+             printf("%s",CFX[cfx_entry][cfe]);         
+             }
+          else if (HTML)
+             {
+             printf("%s",CFH[cfx_entry][cfb]);
+             printf("%s%s%s",CFH[cfx_filename][cfb],(char *)key.data,CFH[cfx_filename][cfe]);
+             printf("%s%s%s",CFH[cfx_date][cfb],ctime(&entry.time),CFH[cfx_date][cfe]);
+             printf("%s",CFH[cfx_entry][cfe]);         
+             }
+          else
+             {
+             printf("%s = ",(char *)key.data);
+             
+             if (value.data != NULL)
+                {
+                memcpy(&entry,value.data,sizeof(entry));
+                printf("%s\n",ctime(&entry.time));
+                }
+             }
           }
        }
     else
        {
        if (strncmp("last",(char *)key.data,4) == 0)
           {
-          printf("%s = ",(char *)key.data);
-          
-          if (value.data != NULL)
+          if (XML)
              {
-             memcpy(&entry,value.data,sizeof(entry));
-             printf("%s\n",ctime(&entry.time));
+             printf("%s",CFX[cfx_entry][cfb]);
+             printf("%s%s%s",CFX[cfx_filename][cfb],(char *)key.data,CFX[cfx_filename][cfe]);
+             printf("%s%s%s",CFX[cfx_date][cfb],ctime(&entry.time),CFX[cfx_date][cfe]);
+             printf("%s",CFX[cfx_entry][cfe]);         
+             }
+          else if (HTML)
+             {
+             printf("%s",CFH[cfx_entry][cfb]);
+             printf("%s%s%s",CFH[cfx_filename][cfb],(char *)key.data,CFH[cfx_filename][cfe]);
+             printf("%s%s%s",CFH[cfx_date][cfb],ctime(&entry.time),CFH[cfx_date][cfe]);
+             printf("%s",CFH[cfx_entry][cfe]);         
+             }
+          else
+             {
+             printf("%s = ",(char *)key.data);
+             
+             if (value.data != NULL)
+                {
+                memcpy(&entry,value.data,sizeof(entry));
+                printf("%s\n",ctime(&entry.time));
+                }
              }
           }
        }
     }
+
+if (HTML)
+   {
+   printf("</table>");
+   }
  
+dbcp->c_close(dbcp);
+dbp->close(dbp,0);
+}
+
+/*******************************************************************/
+
+void ShowCurrentAudit()
+
+{ char operation[CF_BUFSIZE],name[CF_BUFSIZE];
+  struct AuditLog entry;
+  DB_ENV *dbenv = NULL;
+  DBT key,value;
+  DB *dbp;
+  DBC *dbcp;
+  int ret;
+
+  
+snprintf(name,CF_BUFSIZE-1,"%s/%s",CFWORKDIR,CF_AUDITDB_FILE);
+
+if ((errno = db_create(&dbp,dbenv,0)) != 0)
+   {
+   printf("Couldn't open last-seen database %s\n",name);
+   perror("db_open");
+   return;
+   }
+
+#ifdef CF_OLD_DB
+if ((errno = (dbp->open)(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#endif
+   {
+   printf("Couldn't open audit database %s\n",name);
+   perror("db_open");
+   dbp->close(dbp,0);
+   return;
+   }
+
+/* Acquire a cursor for the database. */
+
+if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
+   {
+   printf("Error reading from last-seen database: ");
+   dbp->err(dbp, ret, "DB->cursor");
+   return;
+   }
+
+ /* Initialize the key/data return pair. */
+ 
+memset(&key, 0, sizeof(key));
+memset(&value, 0, sizeof(value));
+memset(&entry, 0, sizeof(entry)); 
+
+if (HTML)
+   {
+   printf("<html><head><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/menus.css\" /><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/cf_blue.css\"/></head><body><h1>Audit log %s</h1><p><table class=border cellpadding=2 cellspacing=2>",VFQNAME);
+   printf("<th> t-index </th>");
+   printf("<th> Scan convergence </th>");
+   printf("<th> Observed </th>");
+   printf("<th> Promise made </th>");
+   printf("<th> Promise originates in </th>");
+   printf("<th> Promise version </th>");
+   printf("<th> line </th>");
+   }
+
+if (XML)
+   {
+   printf("<?xml version=\"1.0\"?>\n");
+   }
+
+ /* Walk through the database and print out the key/data pairs. */
+
+while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
+   {
+   strncpy(operation,(char *)key.data,CF_BUFSIZE-1);
+
+   if (value.data != NULL)
+      {
+      memcpy(&entry,value.data,sizeof(entry));
+      
+      if (XML)
+         {
+         }
+      else if (HTML)
+         {
+         printf("%s",CFH[cfx_entry][cfb]);
+         printf("%s %s %s",CFH[cfx_index][cfb],operation,CFH[cfx_index][cfe]);
+         printf("%s %s, ",CFH[cfx_event][cfb],entry.operator);
+         AuditStatusMessage(entry.status);
+         printf("%s",CFH[cfx_event][cfe]);
+         printf("%s %s %s",CFH[cfx_q][cfb],entry.comment,CFH[cfx_q][cfe]);
+         printf("%s %s %s",CFH[cfx_date][cfb],entry.date,CFH[cfx_date][cfe]);
+         printf("%s %s %s",CFH[cfx_av][cfb],entry.filename,CFH[cfx_av][cfe]);
+         printf("%s %s %s",CFH[cfx_version][cfb],entry.version,CFH[cfx_version][cfe]);
+         printf("%s %d %s",CFH[cfx_ref][cfb],entry.lineno,CFH[cfx_ref][cfe]);
+         printf("%s",CFH[cfx_entry][cfe]);
+
+         if (strstr(entry.comment,"closing"))
+            {
+            printf("<th></th>");
+            printf("<th></th>");
+            printf("<th></th>");
+            printf("<th></th>");
+            printf("<th></th>");
+            printf("<th></th>");
+            printf("<th></th>");
+            }
+         }
+      else
+         {
+         printf(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .\n");
+         printf("Converge \'%s\' ",entry.operator);
+         
+         AuditStatusMessage(entry.status); /* Reminder */
+
+         if (strlen(entry.comment) > 0)
+            {
+            printf("Comment: %s\n",entry.comment);
+            }
+
+         if (strcmp(entry.filename,"Terminal") == 0)
+            {
+            if (strstr(entry.comment,"closing"))
+               {
+               printf("\n===============================================================================================\n\n");
+               }
+            }
+         else
+            {
+            if (strlen(entry.version) == 0)
+               {
+               printf("Promised in %s (unamed version last edited at %s) at/before line %d\n",entry.filename,entry.date,entry.lineno);
+               }
+            else
+               {
+               printf("Promised in %s (version %s last edited at %s) at/before line %d\n",entry.filename,entry.version,entry.date,entry.lineno);
+               }
+            }
+         }
+      }
+   else
+      {
+      continue;
+      }
+   }
+
+if (HTML)
+   {
+   printf("</table>");
+   }
+
 dbcp->c_close(dbcp);
 dbp->close(dbp,0);
 }
@@ -592,32 +1026,3 @@ return buffer;
 }    
 
 
-/*********************************************************************/
-
-int RecursiveTidySpecialArea(char *name,struct Tidy *tp,int maxrecurse,struct stat *sb)
-
-{
- return 1;
-}
-
-
-void ReleaseCurrentLock()
-{
- return;
-}
-
-char *GetMacroValue(char *scope,char *name)
-
-{
- return NULL;
-}
-
-
-int CompareMD5Net (char *file1, char *file2, struct Image *ip)
-{
- return 0;
-}
-
-void yyerror(char *s)
-{
-}

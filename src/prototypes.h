@@ -689,14 +689,20 @@ int PutLock (char *name);
 int DeleteLock (char *name);
 time_t GetLockTime (char *name);
 pid_t GetLockPid (char *name);
+void ExtractOpLock(char *op);
 
 /* log.c */
 
+void AuditLog(struct Audit *ap,int lineno,char *str,char status);
 void CfLog (enum cfoutputlevel level, char *string, char *errstr);
 void ResetOutputRoute  (char log, char inform);
 void ShowAction (void);
 void CfOpenLog (void);
+void CfCheckAudit(void);
+void CloseAuditLog(void);
+void AuditStatusMessage(char status);
 
+    
 /* macro.c */
 
 void SetContext (char *id);

@@ -357,13 +357,14 @@ typedef int clockid_t;
 
 /*******************************************************************/
 
-#define CF_PERFORMANCE   "performance.db"
-#define CF_CHKDB         "checksum_digests.db"
-#define CF_AVDB_FILE     "cf_observations.db"
-#define CF_OLDAVDB_FILE  "cf_learning.db"
-#define CF_STATEDB_FILE  "cf_state.db"
+#define CF_PERFORMANCE    "performance.db"
+#define CF_CHKDB          "checksum_digests.db"
+#define CF_AVDB_FILE      "cf_observations.db"
+#define CF_OLDAVDB_FILE   "cf_learning.db"
+#define CF_STATEDB_FILE   "cf_state.db"
 #define CF_OLDLASTDB_FILE "cf_lastseen.db"
-#define CF_LASTDB_FILE   "cf_LastSeen.db"
+#define CF_LASTDB_FILE    "cf_LastSeen.db"
+#define CF_AUDITDB_FILE   "cf_Audit.db"
 
 #define CF_STATELOG_FILE "state_log"
 #define CF_ENVNEW_FILE   "env_data.new"
@@ -438,14 +439,16 @@ typedef int clockid_t;
 
 /*****************************************************************************/
 
-/* Auditing */
+/* Auditing key */
 
 #define CF_NOP      'n'
 #define CF_CHG      'c'
+#define CF_WARN     'w'  /* something wrong but nothing done */
 #define CF_FAIL     'f'
 #define CF_DENIED   'd'
 #define CF_TIMEX    't'
 #define CF_INTERPT  'i'
+#define CF_UNKNOWN  'u'
 
 /*****************************************************************************/
 
@@ -508,6 +511,23 @@ struct LockData
    {
    pid_t pid;
    time_t time;
+   };
+
+/*****************************************************************************/
+
+#define CF_AUDIT_COMMENT 128
+#define CF_AUDIT_VERSION 64
+#define CF_AUDIT_DATE    32
+
+struct AuditLog        /* key includes operation and date */
+   {
+   char  operator[CF_AUDIT_COMMENT];
+   char  comment[CF_AUDIT_COMMENT];     
+   char  filename[CF_AUDIT_COMMENT];
+   char  version[CF_AUDIT_VERSION];
+   char  date[CF_AUDIT_DATE];
+   short lineno;
+   char  status;
    };
 
 /*******************************************************************/

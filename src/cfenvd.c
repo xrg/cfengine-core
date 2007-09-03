@@ -350,8 +350,8 @@ for (i=0; CFDENVOPTIONS[i].name != NULL; i++)
    printf("--%-20s    (-%c)\n",CFDENVOPTIONS[i].name,(char)CFDENVOPTIONS[i].val);
    }
 
-printf("\nBug reports to bug-cfengine@cfengine.org (News: gnu.cfengine.bug)\n");
-printf("General help to help-cfengine@cfengine.org (News: gnu.cfengine.help)\n");
+printf("\nBug reports to bug-cfengine@cfengine.org\n");
+printf("General help to help-cfengine@cfengine.org\n");
 printf("Info & fixes at http://www.cfengine.org\n");
 }
 

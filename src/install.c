@@ -3091,7 +3091,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
          new->next = NULL;
          new->audit = AUDITPTR;
          new->lineno = LINENUMBER;
-         printf("adding info %d - %d\n",AUDITPTR,LINENUMBER);         
+
          if ((new->classes = strdup(CLASSBUFF)) == NULL)
             {
             FatalError("Memory Allocation failed for InstallEditFile() #3");
@@ -3493,7 +3493,6 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
       {
       VSCRIPTTOP->next = ptr;
       }
-
 
    if (*uidname == '*')
       {

@@ -150,23 +150,24 @@ if (signum != SIGCHLD)
       {
       unlink(PIDFILE);
       ReleaseCurrentLock();
+      CloseAuditLog();
       closelog();
       exit(0);
       }
    else if (signum == SIGUSR1)
-	  {
-	  DEBUG= true;
-	  D2= true;
-	  }
+      {
+      DEBUG= true;
+      D2= true;
+      }
    else if (signum == SIGUSR2)
-	  {
-	  DEBUG= false;
-	  D2= false;
-	  }
+      {
+      DEBUG= false;
+      D2= false;
+      }
    else /* zombie cleanup - how hard does it have to be? */
-	  {
-	  }
-
+      {
+      }
+   
    /* Reset the signal handler */
    signal(signum,HandleSignal);
    }
@@ -228,12 +229,7 @@ int GetLock(char *operator,char *operand,int ifelapsed,int expireafter,char *hos
   int i, err, sum=0;
   time_t lastcompleted = 0, elapsedtime;
   char c_operator[CF_BUFSIZE],c_operand[CF_BUFSIZE],cc_operator[CF_BUFSIZE],cc_operand[CF_BUFSIZE];
-  
-if (IGNORELOCK)
-   {
-   return true;
-   }
-
+    
 if (now == 0)
    {
    if ((now = time((time_t *)NULL)) == -1)
@@ -268,7 +264,12 @@ for (i = 0; operand[i] != '\0'; i++)
 snprintf(CFLOG,CF_BUFSIZE,"%s/cfengine.%.40s.runlog",VLOGDIR,host);
 snprintf(CFLOCK,CF_BUFSIZE,"lock.%.100s.%.40s.%s.%.100s_%d",VCANONICALFILE,host,cc_operator,cc_operand,sum);
 snprintf(CFLAST,CF_BUFSIZE,"last.%.100s.%.40s.%s.%.100s_%d",VCANONICALFILE,host,cc_operator,cc_operand,sum);
- 
+
+if (IGNORELOCK)
+   {
+   return true;
+   }
+
 if (strlen(CFLOCK) > MAX_FILENAME)
    {
    CFLOCK[MAX_FILENAME] = '\0';  /* most nodenames are 255 chars or less */
@@ -395,7 +396,6 @@ if (PutLock(CFLAST) == -1)
    CfLog(cferror,OUTPUT,"creat");
    return;
    }
-
  
 LockLog(getpid(),"Lock removed normally ",CFLOCK,"");
 strcpy(CFLOCK,"no_active_lock");
@@ -771,4 +771,63 @@ if (stat(CFLOG,&statbuf) != -1)
       RotateFiles(CFLOG,2);
       }
    }
+}
+
+
+/************************************************************************/
+
+void ExtractOpLock(char *op)
+
+{ char *sp, lastch = 'x'; 
+  int i = 0, dots = 0;
+  int offset = strlen("lock...")+strlen(VCANONICALFILE)+strlen(VUQNAME);
+
+for (sp = CFLOCK+offset; *sp != '\0'; sp++)
+   {
+   switch (*sp)
+      {
+      case '_':
+          if (lastch == '_')
+             {
+             break;
+             }
+          else
+             {
+             op[i] = '/';
+             }
+          break;
+
+      case '.':
+          dots++;
+          op[i] = *sp;
+          break;
+
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+          dots = 9;
+          break;
+          
+      default:
+          op[i] = *sp;
+          break;
+      }
+
+   lastch = *sp;
+   i++;
+   
+   if (dots > 1)
+      {
+      break;
+      }
+   }
+
+op[i] = '\0';
 }

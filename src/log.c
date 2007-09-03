@@ -31,6 +31,8 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
+/*****************************************************************************/
+
 extern char CFLOCK[CF_BUFSIZE];
 
 /*****************************************************************************/
@@ -40,7 +42,7 @@ void CfOpenLog()
 { char value[CF_BUFSIZE];
   int facility = LOG_USER; 
   static int lastsyslog = 0;
- 
+  
 if (GetMacroValue(CONTEXTID,"SyslogFacility"))
    {
    strncpy(value,GetMacroValue(CONTEXTID,"SyslogFacility"),32);
@@ -100,7 +102,7 @@ else if (ISCFENGINE)
    {
    if (lastsyslog != 2)
       {
-      if( lastsyslog )
+      if (lastsyslog)
          {
          closelog();
          }
@@ -112,7 +114,7 @@ else
    {
    if (lastsyslog != 3)
       {
-      if( lastsyslog )
+      if (lastsyslog)
          {
          closelog();
          }
@@ -120,6 +122,133 @@ else
    lastsyslog=3;
    openlog(VPREFIX,LOG_PID|LOG_NOWAIT|LOG_ODELAY,LOG_DAEMON);
    }
+
+}
+
+
+/*****************************************************************************/
+
+void CfCheckAudit()
+
+{ DB_ENV *dbenv = NULL;
+  char name[CF_BUFSIZE];
+ 
+snprintf(name,CF_BUFSIZE-1,"%s/%s",CFWORKDIR,CF_AUDITDB_FILE);
+
+if (AUDIT)
+   {
+   if ((errno = db_create(&AUDITDBP,dbenv,0)) != 0)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open performance database %s\n",name);
+      CfLog(cferror,OUTPUT,"db_open");
+      return;
+      }
+   
+#ifdef CF_OLD_DB
+   if ((errno = (AUDITDBP->open)(AUDITDBP,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+   if ((errno = (AUDITDBP->open)(AUDITDBP,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#endif
+      {
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open auditing database %s\n",name);
+      CfLog(cferror,OUTPUT,"db_open");
+      return;
+      }
+
+   AuditLog(NULL,0,"Cfagent starting",CF_NOP);
+   }
+}
+
+/*****************************************************************************/
+
+void CloseAuditLog()
+
+{
+if (AUDIT && AUDITDBP)
+   {
+   AuditLog(NULL,0,"Cfagent closing",CF_NOP);
+   AUDITDBP->close(AUDITDBP,0);
+   }
+}
+
+/*****************************************************************************/
+
+void AuditLog(struct Audit *ap,int lineno,char *str,char status)
+
+{ time_t now = time(NULL);
+  char date[CF_BUFSIZE],lock[CF_BUFSIZE],key[CF_BUFSIZE],operator[CF_BUFSIZE];
+  struct AuditLog newaudit;
+  struct timespec t;
+  double keyval;
+
+Debug("AuditLog(%s)\n",str);
+  
+if (AUDIT == false || AUDITDBP == NULL)
+   {
+   return;
+   }
+
+snprintf(date,CF_BUFSIZE,"%s",ctime(&now));
+Chop(date);
+
+if (ap == NULL)
+   {
+   snprintf(operator,CF_BUFSIZE,"Cycle complete %s, lock acquired",date);
+   strncpy(newaudit.operator,operator,CF_AUDIT_COMMENT-1);
+   }
+else
+   {
+   ExtractOpLock(lock);
+   snprintf(operator,CF_BUFSIZE-1,"[%s] op %s",date,lock);
+   strncpy(newaudit.operator,operator,CF_AUDIT_COMMENT-1);
+   }
+
+if (clock_gettime(CLOCK_REALTIME,&t) == -1)
+   {
+   CfLog(cfverbose,"Clock gettime failure during audit transaction","clock_gettime");
+   return;
+   }
+
+keyval = (double)(t.tv_sec)+(double)(t.tv_nsec)/(double)CF_BILLION;
+      
+snprintf(key,CF_BUFSIZE-1,"%lf",keyval);
+
+if (DEBUG)
+   {
+   AuditStatusMessage(status);
+   }
+
+if (ap != NULL)
+   {
+   strncpy(newaudit.comment,str,CF_AUDIT_COMMENT-1);
+   strncpy(newaudit.filename,ap->filename,CF_AUDIT_COMMENT-1);
+   
+   if (ap->version == NULL || strlen(ap->version) == 0)
+      {
+      Debug("Promised in %s (unamed version last edited at %s) at/before line %d\n",ap->filename,ap->date,lineno);
+      newaudit.version[0] = '\0';
+      }
+   else
+      {
+      Debug("Promised in %s (version %s last edited at %s) at/before line %d\n",ap->filename,ap->version,ap->date,lineno);
+      strncpy(newaudit.version,ap->version,CF_AUDIT_VERSION-1);
+      }
+   
+   strncpy(newaudit.date,ap->date,CF_AUDIT_DATE);
+   newaudit.lineno = lineno;
+   }
+else
+   {
+   strcpy(newaudit.date,date);
+   strcpy(newaudit.comment,str);
+   strcpy(newaudit.filename,"schedule");
+   strcpy(newaudit.version,"");
+   newaudit.lineno = 0;
+   }
+
+newaudit.status = status;
+
+WriteDB(AUDITDBP,key,&newaudit,sizeof(newaudit));
 }
 
 /*****************************************************************************/
@@ -295,7 +424,6 @@ switch(level)
 void ResetOutputRoute (char log,char inform)
 
 {
-
 if ((log == 'y') || (log == 'n') || (inform == 'y') || (inform == 'n'))
    {
    INFORM_save = INFORM;
@@ -333,4 +461,46 @@ if (SHOWACTIONS)
    {
    printf("%s:",CFLOCK);
    }
+}
+
+/*****************************************************************************/
+
+void AuditStatusMessage(char status)
+
+{
+switch (status) /* Reminder */
+   {
+   case CF_CHG:
+       printf("made a system correction\n");
+       break;
+       
+   case CF_WARN:
+       printf("promise not kept, no action taken");
+       break;
+       
+   case CF_TIMEX:
+       printf("timed out\n");
+       break;
+
+   case CF_FAIL:
+       printf("failed to make a correction\n");
+       break;
+       
+   case CF_DENIED:
+       printf("was denied access to an essential resource\n");
+       break;
+       
+   case CF_INTERPT:
+       printf("was interrupted\n");
+       break;
+       
+   case CF_NOP:
+       printf("was applied but performed no required actions\n");
+       break;
+
+   case CF_UNKNOWN:
+       printf("was applied but status unknown\n");
+       break;
+   }
+
 }

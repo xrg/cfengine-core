@@ -130,7 +130,7 @@ int main(int argc,char *argv[])
  
 SetContext("global");
 SetSignals(); 
- 
+
 signal (SIGTERM,HandleSignal);                   /* Signal Handler */
 signal (SIGHUP,HandleSignal);
 signal (SIGINT,HandleSignal);
@@ -231,6 +231,7 @@ if (PARSEONLY)                            /* Establish lock for root */
 
 CfOpenLog();
 CheckSystemVariables();
+CfCheckAudit();
 
 SetReferenceTime(false); /* Reset */
 
@@ -247,6 +248,7 @@ if (OptionIs(CONTEXTID,"ChecksumPurge", true))
    }
 
 SummarizeObjects();
+CloseAuditLog();
 closelog();
 return 0;
 }
@@ -1009,6 +1011,11 @@ if (OptionIs(CONTEXTID,"Exclamation",false))
    {
    EXCLAIM = false;
    } 
+
+if (OptionIs(CONTEXTID,"Auditing",true))
+   {
+   AUDIT = true;
+   }
 
 INFORM_save = INFORM;
 
@@ -1988,8 +1995,8 @@ for (i=0; OPTIONS[i].name != NULL; i++)
 
 printf("\nDebug levels: 1=parsing, 2=running, 3=summary, 4=expression eval\n");
 
-printf("\nBug reports to bug-cfengine@cfengine.org (News: gnu.cfengine.bug)\n");
-printf("General help to help-cfengine@cfengine.org (News: gnu.cfengine.help)\n");
+printf("\nBug reports to bug-cfengine@cfengine.org\n");
+printf("General help to help-cfengine@cfengine.org\n");
 printf("Info & fixes at http://www.cfengine.org\n");
 }
 /* EOF */
