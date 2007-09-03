@@ -420,13 +420,22 @@ everyhost# cfshow -p
 The command line options are
 
 @table @samp
+
 @item -a @code{--active}
 This prints a list of any currently active locks, i.e. tasks that cfengine believes
 it is currently enagaged in.
 
+@item -A @code{--audit}
+This prints a history of cfengine's behaviour collected if the
+Auditing, @xref{Auditing} variable is true. The audit data are best viewed
+in html or parsed with xml, using the @code{--html} and @code{--xml} options.
+
 @item -c @code{--checksum}
 This lists all of the files and their current checksum values in the
 current checksum database.
+
+@item -H @code{--html}
+Generate output in web browser-friendly html.
 
 @item -l @code{--locks}
 This prints a list of the locks and the last times an active lock was secured for each
@@ -457,7 +466,8 @@ Shows the time in seconds required to complete copies and shell executions.
 (0.00 mins @ Tue Feb 13 19:05) Av 0.00 +/- 0.00 for Exec(/usr/sbin/ntpdate 128.39.74.16 > /dev/null)
 @end smallexample
 
-
+@item -X @code{--xml}
+Generate output in xml for parsing by scripts etc.
 
 @end table
 
@@ -2603,6 +2613,7 @@ The meaning of each of these lines is described below.
 * addclasses::                  
 * addinstallable::              
 * AllowRedefinitionOf::         
+* Auditing::                    
 * AutoDefine::                  
 * BinaryPaddingChar::           
 * BindToInterface(cfagent)::    
@@ -2628,8 +2639,8 @@ The meaning of each of these lines is described below.
 * excludecopy::                 
 * excludelinks::                
 * ExpireAfter::                 
-* FreeBSDInstallCommand::
-* FreeBSDRemoveCommand::
+* FreeBSDInstallCommand::       
+* FreeBSDRemoveCommand::        
 * FullEncryption::              
 * homepattern::                 
 * HostnameKeys::                
@@ -3111,7 +3122,7 @@ made in imported files always come later than things in the main program.
 @c SUBSECTION
 @c .....................................................
 
-@node AllowRedefinitionOf, AutoDefine, addinstallable, control
+@node AllowRedefinitionOf, Auditing, addinstallable, control
 @subsection AllowRedefinitionOf
 
 Normally cfagent warns about redefinitions of variables during parsing.
@@ -3136,7 +3147,31 @@ cfrep = ( blo )
 @c SUBSECTION
 @c .....................................................
 
-@node AutoDefine, BinaryPaddingChar, AllowRedefinitionOf, control
+@node Auditing, AutoDefine, AllowRedefinitionOf, control
+@subsection Auditing
+@cindex Audit log
+@vindex Auditing
+
+If this variable is set to true then cfengine conducts extensive auditing
+of its actions to a database in the work directory. When rules are
+applied, their locations and policy version are recorded also so that it
+is possible to see exactly which rule was applied and when. It is
+assumed that the version is recorded as below:
+@smallexample
+
+control:
+
+  cfinputs_version = ( 1.2.1 ) 
+  Auditing = true
+
+@end smallexample
+
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node AutoDefine, BinaryPaddingChar, Auditing, control
 @subsection AutoDefine
 
 @w{}

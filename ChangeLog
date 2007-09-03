@@ -31,6 +31,11 @@
 	The beginning of an integrated auditing system has been added. See references
 	to AuditLog() in the code. This logs to a compressed database and can be extracted
 	in ascii, html, xml using cfshow, e.g. cfshow  --audit --html > output.html
+	Auditing is switched on by
+
+	control:
+	 cfinputs_version = ( 1.2.1 ) # record this version in log, e.g. cvs revision
+	 Auditing = true
 	
 	--
 	
