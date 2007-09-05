@@ -913,6 +913,17 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       
       if (XML)
          {
+         printf("%s",CFX[cfx_entry][cfb]);
+         printf("%s %s %s",CFX[cfx_index][cfb],operation,CFX[cfx_index][cfe]);
+         printf("%s %s, ",CFX[cfx_event][cfb],entry.operator);
+         AuditStatusMessage(entry.status);
+         printf("%s",CFX[cfx_event][cfe]);
+         printf("%s %s %s",CFX[cfx_q][cfb],entry.comment,CFX[cfx_q][cfe]);
+         printf("%s %s %s",CFX[cfx_date][cfb],entry.date,CFX[cfx_date][cfe]);
+         printf("%s %s %s",CFX[cfx_av][cfb],entry.filename,CFX[cfx_av][cfe]);
+         printf("%s %s %s",CFX[cfx_version][cfb],entry.version,CFX[cfx_version][cfe]);
+         printf("%s %d %s",CFX[cfx_ref][cfb],entry.lineno,CFX[cfx_ref][cfe]);
+         printf("%s",CFX[cfx_entry][cfe]);
          }
       else if (HTML)
          {

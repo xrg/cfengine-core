@@ -975,11 +975,11 @@ conn = NewConn(sd_reply);
 
 strncpy(conn->ipaddr,ipaddr,CF_MAX_IP_LEN-1);
 
-Debug("New connection...(from %s/%d)\n",conn->ipaddr,sd_reply);
+Verbose("New connection...(from %s/%d)\n",conn->ipaddr,sd_reply);
  
 #if defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD
 
-Debug("Spawning new thread...\n");
+Verbose("Spawning new thread...\n");
 
 pthread_attr_init(&PTHREADDEFAULTS);
 pthread_attr_setdetachstate(&PTHREADDEFAULTS,PTHREAD_CREATE_DETACHED);
@@ -1000,7 +1000,7 @@ pthread_attr_destroy(&PTHREADDEFAULTS);
 
 /* Can't fork here without getting a zombie unless we do some complex waiting? */
 
-Debug("Single threaded...\n");
+Verbose("Single threaded...\n");
 
 HandleConnection(conn);
  
@@ -1342,7 +1342,7 @@ switch (GetCommand(recvbuffer))
        sscanf(recvbuffer,"SGET %d %d",&len,&(get_args.buf_size));
        if (received != len+CF_PROTO_OFFSET)
           {
-          Debug("Protocol error\n");
+          Verbose("Protocol error SGET\n");
           RefuseAccess(conn,sendbuffer,0,recvbuffer);
           return false;
           }
@@ -1400,7 +1400,7 @@ switch (GetCommand(recvbuffer))
 
        if (received != len+CF_PROTO_OFFSET)
           {
-          Debug("Protocol error: %d\n",len);
+          Verbose("Protocol error OPENDIR: %d\n",len);
           RefuseAccess(conn,sendbuffer,0,recvbuffer);
           return false;
           }
@@ -1467,7 +1467,7 @@ switch (GetCommand(recvbuffer))
 
        if (received != len+CF_PROTO_OFFSET)
           {
-          Debug("Protocol error: %d\n",len);
+          Verbose("Protocol error SSYNCH: %d\n",len);
           RefuseAccess(conn,sendbuffer,0,recvbuffer);
           return false;
           }
@@ -1651,7 +1651,7 @@ while (true && (count < 10))  /* arbitrary check to avoid infinite loop, DoS att
       
       if (strncmp(ip->name,CFD_TERMINATOR,strlen(CFD_TERMINATOR)) == 0)
          {
-         Debug("No classes matched, rejecting....\n");
+         Verbose("No classes matched, rejecting....\n");
          ReplyNothing(conn);
          DeleteItemList(classlist);
          return false;
@@ -1660,7 +1660,7 @@ while (true && (count < 10))  /* arbitrary check to avoid infinite loop, DoS att
    }
  
  ReplyNothing(conn);
- Debug("No classes matched, rejecting....\n");
+ Verbose("No classes matched, rejecting....\n");
  DeleteItemList(classlist);
  return false;
 }
@@ -2018,6 +2018,7 @@ else
          {
          snprintf(conn->output,CF_BUFSIZE,"Reverse hostname lookup failed, host claiming to be %s was %s\n",buf,sockaddr_ntop((struct sockaddr *)&raddr));
          CfLog(cflogonly,conn->output,"");
+         Verbose("%s",conn->output);
          matched = false;
          }
       else
@@ -2029,6 +2030,7 @@ else
       {
       snprintf(conn->output,CF_BUFSIZE,"No name was registered in DNS for %s - reverse lookup failed\n",dns_assert);
       CfLog(cflogonly,conn->output,"");
+      Verbose("%s",conn->output);
       matched = false;
       }   
    }
@@ -2060,6 +2062,7 @@ if (!matched)
    {
    snprintf(conn->output,CF_BUFSIZE,"Failed on DNS reverse lookup of %s\n",dns_assert);
    CfLog(cflogonly,conn->output,"gethostbyname");
+   Verbose("%s",conn->output);
    snprintf(conn->output,CF_BUFSIZE,"Client sent: %s",buf);
    CfLog(cflogonly,conn->output,"");
    return false;
@@ -2083,11 +2086,11 @@ int AllowedUser(char *user)
 {
 if (IsItemIn(ALLOWUSERLIST,user))
    {
-   Debug("User %s granted connection privileges\n",user);
+   Verbose("User %s granted connection privileges\n",user);
    return true;
    }
 
-Debug("User %s is not allowed on this server\n",user); 
+Verbose("User %s is not allowed on this server\n",user); 
 return false;
 }
 
@@ -2194,11 +2197,11 @@ for (ap = VADMIT; ap != NULL; ap=ap->next)
              IsFuzzyItemIn(ap->maproot,MapAddress(conn->ipaddr)))
             {
             conn->maproot = true;
-            Debug("Mapping root privileges\n");
+            Verbose("Mapping root privileges\n");
             }
          else
             {
-            Debug("No root privileges granted\n");
+            Verbose("No root privileges granted\n");
             }
          
          if (IsWildItemIn(ap->accesslist,conn->hostname) ||
