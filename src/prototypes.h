@@ -894,12 +894,12 @@ int IsPrivileged (void);
 void DoAlerts (void);
 
 /* package.c */
-int PackageCheck (char *package, enum pkgmgrs pkgmgr, char *version, enum cmpsense cmp);
-int PackageList (char *package, enum pkgmgrs pkgmgr, char *version, enum cmpsense cmp, struct Item **pkglist);
-int UpgradePackage (char *package, enum pkgmgrs pkgmgr, char *version, enum cmpsense cmp);
-int InstallPackage (enum pkgmgrs pkgmgr, struct Item **pkglist);
-int RemovePackage (enum pkgmgrs pkgmgr, struct Item **pkglist);
-void ProcessPendingPackages (enum pkgmgrs pkgmgr, enum pkgactions action, struct Item **pkglist);
+int PackageCheck (struct Package *ptr,char *package, enum pkgmgrs pkgmgr, char *version, enum cmpsense cmp);
+int PackageList (struct Package *ptr,char *package, enum pkgmgrs pkgmgr, char *version, enum cmpsense cmp, struct Item **pkglist);
+int UpgradePackage (struct Package *ptr,char *package, enum pkgmgrs pkgmgr, char *version, enum cmpsense cmp);
+int InstallPackage (struct Package *ptr,enum pkgmgrs pkgmgr, struct Item **pkglist);
+int RemovePackage (struct Package *ptr,enum pkgmgrs pkgmgr, struct Item **pkglist);
+void ProcessPendingPackages (struct Package *ptr,enum pkgmgrs pkgmgr, enum pkgactions action, struct Item **pkglist);
 
 /* popen.c */
 

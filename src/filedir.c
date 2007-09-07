@@ -181,6 +181,7 @@ if (ptr != NULL)
       {
       snprintf(OUTPUT,CF_BUFSIZE*2,"Alert specified on file %s (m=%o,o=%d,g=%d)",file,(dstat->st_mode & 07777),dstat->st_uid,dstat->st_gid);
       CfLog(cferror,OUTPUT,"");
+      AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_WARN);
       return;
       }
    }
@@ -239,6 +240,7 @@ if (dstat->st_uid == 0 && (dstat->st_mode & S_ISUID))
             {
             snprintf(OUTPUT,CF_BUFSIZE*2,"NEW SETUID root PROGRAM %s\n",file);
             CfLog(cfinform,OUTPUT,"");
+            AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_WARN);
             }
          PrependItem(&VSETUIDLIST,file,NULL);
          }
@@ -252,6 +254,7 @@ if (dstat->st_uid == 0 && (dstat->st_mode & S_ISUID))
          case fixplain:
              snprintf(OUTPUT,CF_BUFSIZE*2,"Removing setuid (root) flag from %s...\n\n",file);
              CfLog(cfinform,OUTPUT,"");
+             AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
              
              if (ptr != NULL)
                 {
@@ -265,6 +268,7 @@ if (dstat->st_uid == 0 && (dstat->st_mode & S_ISUID))
                 {
                 snprintf(OUTPUT,CF_BUFSIZE*2,"WARNING setuid (root) flag on %s...\n\n",file);
                 CfLog(cferror,OUTPUT,"");
+                AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_WARN);
                 }
              break;             
          }
@@ -287,6 +291,7 @@ if (dstat->st_uid == 0 && (dstat->st_mode & S_ISGID))
                {
                snprintf(OUTPUT,CF_BUFSIZE*2,"NEW SETGID root PROGRAM %s\n",file);
                CfLog(cferror,OUTPUT,"");
+               AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_WARN);
                }
 
             PrependItem(&VSETUIDLIST,file,NULL);
@@ -302,6 +307,7 @@ if (dstat->st_uid == 0 && (dstat->st_mode & S_ISGID))
          case fixplain:
              snprintf(OUTPUT,CF_BUFSIZE*2,"Removing setgid (root) flag from %s...\n\n",file);
              CfLog(cfinform,OUTPUT,"");
+             AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
 
              if (ptr != NULL)
                 {
@@ -312,6 +318,7 @@ if (dstat->st_uid == 0 && (dstat->st_mode & S_ISGID))
          case warndirs:
          case warnplain:
              snprintf(OUTPUT,CF_BUFSIZE*2,"WARNING setgid (root) flag on %s...\n\n",file);
+             AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_WARN);
              CfLog(cferror,OUTPUT,"");
              break;
              
@@ -424,6 +431,7 @@ if (fixmode)
              {
              snprintf(OUTPUT,CF_BUFSIZE*2,"%s has permission %o\n",file,dstat->st_mode & 07777);
              CfLog(cferror,OUTPUT,"");
+             AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_WARN);
              snprintf(OUTPUT,CF_BUFSIZE*2,"[should be %o]\n",newperm & 07777);
              CfLog(cferror,OUTPUT,"");
              }
@@ -433,6 +441,7 @@ if (fixmode)
              {
              snprintf(OUTPUT,CF_BUFSIZE*2,"%s has permission %o\n",file,dstat->st_mode & 07777);
              CfLog(cferror,OUTPUT,"");
+             AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_WARN);
              snprintf(OUTPUT,CF_BUFSIZE*2,"[should be %o]\n",newperm & 07777);
              CfLog(cferror,OUTPUT,"");
              }
@@ -440,6 +449,7 @@ if (fixmode)
       case warnall:   
           snprintf(OUTPUT,CF_BUFSIZE*2,"%s has permission %o\n",file,dstat->st_mode & 07777);
           CfLog(cferror,OUTPUT,"");
+          AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_WARN);
           snprintf(OUTPUT,CF_BUFSIZE*2,"[should be %o]\n",newperm & 07777);
           CfLog(cferror,OUTPUT,"");
           break;
@@ -460,6 +470,7 @@ if (fixmode)
              snprintf(OUTPUT,CF_BUFSIZE*2,"Plain file %s had permission %o, changed it to %o\n",
                       file,dstat->st_mode & 07777,newperm & 07777);
              CfLog(cfinform,OUTPUT,"");
+             AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
              
              if (ptr != NULL)
                 {
@@ -484,6 +495,7 @@ if (fixmode)
              snprintf(OUTPUT,CF_BUFSIZE*2,"Directory %s had permission %o, changed it to %o\n",
                       file,dstat->st_mode & 07777,newperm & 07777);
              CfLog(cfinform,OUTPUT,"");
+             AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
              
              if (ptr != NULL)
                 {
@@ -506,6 +518,7 @@ if (fixmode)
           snprintf(OUTPUT,CF_BUFSIZE*2,"Object %s had permission %o, changed it to %o\n",
                    file,dstat->st_mode & 07777,newperm & 07777);
           CfLog(cfinform,OUTPUT,"");
+          AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
           
           if (ptr != NULL)
              {
@@ -560,6 +573,7 @@ if (ptr != NULL)
                 {
                 snprintf(OUTPUT,CF_BUFSIZE*2,"%s has flags %o\n",file,dstat->st_flags & CHFLAGS_MASK);
                 CfLog(cferror,OUTPUT,"");
+                AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_WARN);
                 snprintf(OUTPUT,CF_BUFSIZE*2,"[should be %o]\n",newflags & CHFLAGS_MASK);
                 CfLog(cferror,OUTPUT,"");
                 }
@@ -569,6 +583,7 @@ if (ptr != NULL)
                 {
                 snprintf(OUTPUT,CF_BUFSIZE*2,"%s has flags %o\n",file,dstat->st_mode & CHFLAGS_MASK);
                 CfLog(cferror,OUTPUT,"");
+                AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_WARN);
                 snprintf(OUTPUT,CF_BUFSIZE*2,"[should be %o]\n",newflags & CHFLAGS_MASK);
                 CfLog(cferror,OUTPUT,"");
                 }
@@ -576,6 +591,7 @@ if (ptr != NULL)
          case warnall:
              snprintf(OUTPUT,CF_BUFSIZE*2,"%s has flags %o\n",file,dstat->st_mode & CHFLAGS_MASK);
              CfLog(cferror,OUTPUT,"");
+             AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_WARN);
              snprintf(OUTPUT,CF_BUFSIZE*2,"[should be %o]\n",newflags & CHFLAGS_MASK);
              CfLog(cferror,OUTPUT,"");
              break;
@@ -597,6 +613,7 @@ if (ptr != NULL)
                 snprintf(OUTPUT,CF_BUFSIZE*2,"%s had flags %o, changed it to %o\n",
                          file,dstat->st_flags & CHFLAGS_MASK,newflags & CHFLAGS_MASK);
                 CfLog(cfinform,OUTPUT,"");
+                AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
                 
                 if (ptr != NULL)
                    {
@@ -621,6 +638,7 @@ if (ptr != NULL)
                 snprintf(OUTPUT,CF_BUFSIZE*2,"%s had flags %o, changed it to %o\n",
                          file,dstat->st_flags & CHFLAGS_MASK,newflags & CHFLAGS_MASK);
                 CfLog(cfinform,OUTPUT,"");
+                AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
                 
                 if (ptr != NULL)
                    {
@@ -643,6 +661,7 @@ if (ptr != NULL)
              snprintf(OUTPUT,CF_BUFSIZE*2,"%s had flags %o, changed it to %o\n",
                       file,dstat->st_flags & CHFLAGS_MASK,newflags & CHFLAGS_MASK);
              CfLog(cfinform,OUTPUT,"");
+             AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
              
              if (ptr != NULL)
                 {
@@ -673,15 +692,18 @@ if (ptr != NULL)
    }
 #endif
  
- if (docompress)
-    {
-    CompressFile(file);
-    if (ptr != NULL)
-       {
-       AddMultipleClasses(ptr->defines);
-       }
-    }
- 
+if (docompress)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"Compressing %s",file);
+   AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
+   
+   CompressFile(file);
+   if (ptr != NULL)
+      {
+      AddMultipleClasses(ptr->defines);
+      }
+   }
+
 umask(maskvalue);  
 Debug("CheckExistingFile(Done)\n"); 
 }
@@ -732,11 +754,9 @@ CheckExistingFile(cf_findertype,file,dstat,&tmp);
 
 int CheckFinderType(char *file,enum fileactions action,char *cf_findertype, struct stat *statbuf)
 
-{
-     
-     /* Code modeled after hfstar's extract.c */
+{ /* Code modeled after hfstar's extract.c */
  typedef struct t_fndrinfo
- {
+    {
     long fdType;
     long fdCreator;
     short fdFlags;
@@ -749,18 +769,20 @@ int CheckFinderType(char *file,enum fileactions action,char *cf_findertype, stru
     char fdXFlags;
     short fdComment;
     long fdPutAway;
- } FInfo;
+    }
+ FInfo;
  
  struct attrlist attrs;
  struct
- {
+    {
     long ssize;
     struct timespec created;
     struct timespec modified;
     struct timespec changed;
     struct timespec backup;
     FInfo fi;
- } fndrInfo;
+    }
+ fndrInfo;
  
  int retval;
  
@@ -855,6 +877,8 @@ int CheckFinderType(char *file,enum fileactions action,char *cf_findertype, stru
 }
 
 #endif
+
+
 /*********************************************************************/
 
 int CheckOwner(char *file,struct File *ptr,struct stat *statbuf)
@@ -912,7 +936,6 @@ for (glp = ptr->gid; glp != NULL; glp=glp->next)
       break;
       }
    }
-
  
 if (uidmatch && gidmatch)
    {
@@ -1003,12 +1026,14 @@ else
                 {
                 snprintf(OUTPUT,CF_BUFSIZE,"Owner of %s was %d, setting to %d",file,statbuf->st_uid,uid);
                 CfLog(cfinform,OUTPUT,"");
+                AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
                 }
              
              if (!gidmatch)
                 {
                 snprintf(OUTPUT,CF_BUFSIZE,"Group of %s was %d, setting to %d",file,statbuf->st_gid,gid);
                 CfLog(cfinform,OUTPUT,"");
+                AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
                 }
              
              if (!S_ISLNK(statbuf->st_mode))
@@ -1043,11 +1068,13 @@ else
              {
              snprintf(OUTPUT,CF_BUFSIZE*2,"File %s is not owned by any group in group database\n",file);
              CfLog(cferror,OUTPUT,"");
+             AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_WARN);
              break;
              }
           
           snprintf(OUTPUT,CF_BUFSIZE*2,"File %s is owned by [%s], group [%s]\n",file,pw->pw_name,gp->gr_name);
           CfLog(cferror,OUTPUT,"");
+          AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_WARN);
           break;
       }
    }

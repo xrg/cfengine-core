@@ -1134,6 +1134,7 @@ for (ip1 = SPOOLDIRLIST; ip1 != NULL; ip1=ip1->next)
    }
   
 Banner("Tidying by directory");
+AuditLog(NULL,0,"Commence tidy by directory",CF_NOP);
 
 for (tp = VTIDY; tp != NULL; tp=tp->next)
    {
@@ -1185,14 +1186,15 @@ for (tp = VTIDY; tp != NULL; tp=tp->next)
  
 Debug2("End PATHTIDY:\n");
 
-
-Banner("Tidying home directories");
- 
 if (!homesearch)                           /* If there are "home" wildcards */
    {                                 /* Don't go rummaging around the disks */
    Verbose("No home patterns to search\n");
+   AuditLog(NULL,0,"Finished tidy by directory, no home patterns to search",CF_NOP);
    return;
    }
+
+Banner("Tidying home directories");
+AuditLog(NULL,0,"Commence tidy home directories",CF_NOP);
 
 if (!IsPrivileged())                            
    {
@@ -1224,6 +1226,7 @@ if (!IsPrivileged())
     }
 
 Verbose("Done with home directories\n");
+AuditLog(NULL,0,"Finished tidy home patterns",CF_NOP);
 }
 
 /*******************************************************************/
@@ -1610,8 +1613,10 @@ for (ptr = VFILE; ptr != NULL; ptr=ptr->next)
       continue;
       }
 
-   Verbose("Checking file(s) in %s\n",ptr->path);
-
+   snprintf(OUTPUT,CF_BUFSIZE,"Commence checking file(s) in %s\n",ptr->path);
+   CfLog(cfverbose,OUTPUT,"");
+   AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_NOP);
+         
    ebuff[0] = '\0';
 
    ExpandWildCardsAndDo(ptr->path,ebuff,CheckFileWrapper,ptr);
@@ -2830,7 +2835,7 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       continue;
       }
    
-   match = PackageCheck(name, ptr->pkgmgr, ptr->ver, ptr->cmp);
+   match = PackageCheck(ptr,name,ptr->pkgmgr, ptr->ver, ptr->cmp);
    
    /* Check for a problem executing the command */
    
@@ -2846,7 +2851,7 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
 
    if ((pending_pkgs != NULL) && ((ptr->action != prev_action) || (ptr->pkgmgr != prev_pkgmgr)))
       {
-      ProcessPendingPackages(prev_pkgmgr, prev_action, &pending_pkgs);
+      ProcessPendingPackages(ptr,prev_pkgmgr,prev_action,&pending_pkgs);
       DeleteItemList( pending_pkgs );
       pending_pkgs = NULL; 
       }
@@ -2858,11 +2863,11 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
 
       if (ptr->action == pkgaction_remove) 
          {
-         PackageList(name, ptr->pkgmgr, ptr->ver, ptr->cmp, &pending_pkgs);
+         PackageList(ptr,name,ptr->pkgmgr,ptr->ver,ptr->cmp,&pending_pkgs);
          }
       else if (ptr->action == pkgaction_upgrade)
          {
-         UpgradePackage(name, ptr->pkgmgr, ptr->ver, ptr->cmp);
+         UpgradePackage(ptr,name,ptr->pkgmgr,ptr->ver,ptr->cmp);
          }
       }
    else
@@ -2877,8 +2882,8 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
          
          if ((ptr->pkgmgr == pkgmgr_freebsd) || (ptr->pkgmgr == pkgmgr_sun))
             {
-            InstallPackage( ptr->pkgmgr, &pending_pkgs );
-            DeleteItemList( pending_pkgs );
+            InstallPackage(ptr,ptr->pkgmgr,&pending_pkgs);
+            DeleteItemList(pending_pkgs);
             pending_pkgs = NULL;
             }
 
@@ -2898,7 +2903,7 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
 
 if (pending_pkgs != NULL)
    {
-   ProcessPendingPackages(prev_pkgmgr, prev_action, &pending_pkgs);
+   ProcessPendingPackages(ptr,prev_pkgmgr, prev_action, &pending_pkgs);
    DeleteItemList( pending_pkgs );
    pending_pkgs = NULL; 
    }
@@ -3763,15 +3768,15 @@ ReleaseCurrentLock();
 
 /*******************************************************************/
 
-void ProcessPendingPackages (enum pkgmgrs pkgmgr, enum pkgactions action, struct Item **pending_pkgs)
+void ProcessPendingPackages (struct Package *ptr,enum pkgmgrs pkgmgr, enum pkgactions action, struct Item **pending_pkgs)
 {
 switch(action)
    {
    case pkgaction_remove:
-       RemovePackage(pkgmgr, pending_pkgs);
+       RemovePackage(ptr,pkgmgr,pending_pkgs);
        break;
    case pkgaction_install:
-       InstallPackage(pkgmgr, pending_pkgs);
+       InstallPackage(ptr,pkgmgr,pending_pkgs);
        break;
    default:
        snprintf(OUTPUT,CF_BUFSIZE,"Internal error!  Tried to process package with an unknown action: %d.  This should never happen!\n", action);

@@ -2967,23 +2967,25 @@ else
    {
    ptr->expireafter = VEXPIREAFTER;
    }
- 
- ptr->done = 'n';
- ptr->split = CF_UNUSED_CHAR;
- ptr->scope = strdup(CONTEXTID);
- ptr->recurse = 0;
- ptr->useshell = 'y';
- ptr->binary = 'n';
- ptr->next = NULL;
- ptr->actions = NULL;
- ptr->filters = NULL;
- ptr->ignores = NULL;
- ptr->umask = UMASK;
- ptr->exclusions = NULL;
- ptr->inclusions = NULL;
- ptr->warn = 'n';
- VEDITLISTTOP = ptr;
- AddEditAction(file,edit,data);
+
+ptr->audit = AUDITPTR;
+ptr->lineno = LINENUMBER; /* This might not be true if several stanzas */
+ptr->done = 'n';
+ptr->split = CF_UNUSED_CHAR;
+ptr->scope = strdup(CONTEXTID);
+ptr->recurse = 0;
+ptr->useshell = 'y';
+ptr->binary = 'n';
+ptr->next = NULL;
+ptr->actions = NULL;
+ptr->filters = NULL;
+ptr->ignores = NULL;
+ptr->umask = UMASK;
+ptr->exclusions = NULL;
+ptr->inclusions = NULL;
+ptr->warn = 'n';
+VEDITLISTTOP = ptr;
+AddEditAction(file,edit,data);
 }
 
 /********************************************************************/
@@ -3089,8 +3091,6 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
             }
          
          new->next = NULL;
-         new->audit = AUDITPTR;
-         new->lineno = LINENUMBER;
 
          if ((new->classes = strdup(CLASSBUFF)) == NULL)
             {

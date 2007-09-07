@@ -87,8 +87,12 @@ int xisalnum(int c)
  return (xisalpha(c) || xisdigit(c));
 }
 
+
+/***********************************************************************************/
+
 /* This is moved here to allow do.c to be ignorant of the various package managers */
-int PackageCheck(char* package, enum pkgmgrs pkgmgr, char *version,enum cmpsense cmp)
+
+int PackageCheck(struct Package *ptr,char* package, enum pkgmgrs pkgmgr, char *version,enum cmpsense cmp)
 { int match=0;
 
 switch(pkgmgr)
@@ -123,7 +127,9 @@ switch(pkgmgr)
 return match;
 }
 
-int PackageList(char* package, enum pkgmgrs pkgmgr, char *version,enum cmpsense cmp, struct Item **pkglist)
+/************************************************************************/
+
+int PackageList(struct Package *ptr,char* package, enum pkgmgrs pkgmgr, char *version,enum cmpsense cmp, struct Item **pkglist)
 { int match=0;
 
 switch(pkgmgr)
@@ -160,7 +166,7 @@ return match;
 
 /*********************************************************************************/
 
-int InstallPackage(enum pkgmgrs pkgmgr, struct Item **pkglist)
+int InstallPackage(struct Package *ptr,enum pkgmgrs pkgmgr, struct Item **pkglist)
 
 { char rawinstcmd[CF_BUFSIZE];
  /* Make the instcmd twice the normal buffer size since the package list
@@ -253,8 +259,9 @@ if (BuildCommandLine(instcmd,rawinstcmd,*pkglist))
       {
       if ((pp = cfpopen(instcmd, "r")) == NULL)
          {
-         CfLog(cfinform,"Could not execute package install command.\n\n","popen");
-         /* Return that the package is still not installed */
+         snprintf(OUTPUT,CF_BUFSIZE,"Couldn't exec package installer %s",instcmd);
+         CfLog(cfinform,OUTPUT,"popen");
+         AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_FAIL);
          return 0;
          }
       
@@ -268,18 +275,22 @@ if (BuildCommandLine(instcmd,rawinstcmd,*pkglist))
       if (cfpclose(pp) != 0)
          {
          CfLog(cfinform,"Package install command was not successful.\n\n","popen");
+         AuditLog(ptr->audit,ptr->lineno,"Package installer did not exit properly",CF_FAIL);
          result = 0;
          }
       else
          {
-         CfLog(cfinform,"Successfully installed package(s).\n",""); 
+         snprintf(OUTPUT,CF_BUFSIZE,"Packages installed: %s",instcmd);
+         CfLog(cfinform,OUTPUT,"");
+         AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
          result = 1;
          }
       }
    }
 else 
    {
-   CfLog(cferror,"Unable to evaluate package manager command.\n",""); 
+   CfLog(cferror,"Unable to evaluate package manager command.\n","");
+   AuditLog(ptr->audit,ptr->lineno,"Unable to evaluate package manager",CF_NOP);
    result = 0;
    }
 
@@ -289,7 +300,7 @@ return result;
 
 /************************************************************************************/
 
-int UpgradePackage(char *name, enum pkgmgrs pkgmgr, char* version, enum cmpsense cmp)
+int UpgradePackage(struct Package *ptr,char *name, enum pkgmgrs pkgmgr, char* version, enum cmpsense cmp)
 
 { struct Item *removelist = NULL;
   struct Item *addlist = NULL;
@@ -297,18 +308,20 @@ int UpgradePackage(char *name, enum pkgmgrs pkgmgr, char* version, enum cmpsense
  
 Verbose("Package upgrade for %s: %s\n", PKGMGRTEXT[pkgmgr], name );
 
-PackageList(name, pkgmgr, version, cmp, &removelist);
+PackageList(ptr,name,pkgmgr,version,cmp,&removelist);
    
-if (RemovePackage( pkgmgr, &removelist))
+if (RemovePackage(ptr,pkgmgr,&removelist))
    {
    AppendItem(&addlist, name, NULL);
-   result = InstallPackage( pkgmgr, &addlist );
+   result = InstallPackage(ptr,pkgmgr,&addlist);
    }
 else
    {
    CfLog(cfinform,"Package cannot be upgraded because the old version was not removed.\n\n","");
+   AuditLog(ptr->audit,ptr->lineno,"Package not upgraded - another version in the way",CF_FAIL);
    result = 0;
    }
+
 DeleteItemList(removelist);
 DeleteItemList(addlist);
 return result;
@@ -316,7 +329,7 @@ return result;
 
 /************************************************************************************/
 
-int RemovePackage(enum pkgmgrs pkgmgr, struct Item **pkglist)
+int RemovePackage(struct Package *ptr,enum pkgmgrs pkgmgr, struct Item **pkglist)
     
 { char rawdelcmd[CF_BUFSIZE];
   char delcmd[CF_BUFSIZE*2];
@@ -345,7 +358,8 @@ switch(pkgmgr)
        break;
        
       default:
-          CfLog(cferror,"RemovePackage: Package removal not yet implemented for this package manager.\n","p"); 
+          CfLog(cferror,"RemovePackage: Package removal not yet implemented for this package manager.\n","p");
+          AuditLog(ptr->audit,ptr->lineno,"No support for package removal",CF_NOP);
           break;
    }
 
@@ -355,14 +369,16 @@ if (BuildCommandLine( delcmd, rawdelcmd, *pkglist))
    Verbose("RemovePackage(): using '%s'\n", delcmd);
    if (DONTDO)
       {
-      Verbose("--skipping because DONTDO is enabled.\n");
+      Verbose("--skipping because \"-n\" (dryrun) option is enabled.\n");
       result = 1;
       }
    else 
       {
       if ((pp = cfpopen(delcmd, "r")) == NULL)
          {
-         CfLog(cferror,"RemovePackage: Could not execute package removal command.\n","popen");
+         snprintf(OUTPUT,CF_BUFSIZE,"Could not execute package removal command %s\n",delcmd);
+         CfLog(cferror,OUTPUT,"popen");
+         AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_FAIL);
          return 0;
          }
       
@@ -375,19 +391,24 @@ if (BuildCommandLine( delcmd, rawdelcmd, *pkglist))
       
       if (cfpclose(pp) != 0)
          {
-         CfLog(cfinform,"Package removal command was not successful.\n",""); 
+         snprintf(OUTPUT,CF_BUFSIZE,"Could not execute package removal command %s\n",delcmd);
+         CfLog(cferror,OUTPUT,"popen");
+         AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_FAIL);
          result = 0;
          }
       else
          {
-         CfLog(cfinform,"Successfully removed package(s).\n",""); 
+         snprintf(OUTPUT,CF_BUFSIZE,"Package removal succeeded (%s)\n",delcmd);
+         CfLog(cferror,OUTPUT,"popen");
+         AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
          result = 1;
          }
       }
    }
 else 
    {
-   CfLog(cferror,"Unable to evaluate package manager command.\n",""); 
+   CfLog(cferror,"Unable to evaluate package manager command.\n","");
+   AuditLog(ptr->audit,ptr->lineno,"Could not evaluate package manager",CF_FAIL);
    result = 0;
    }
 

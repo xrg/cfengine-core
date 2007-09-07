@@ -1371,13 +1371,12 @@ for (ep = ptr->actions; ep != NULL; ep=ep->next)
       {
       printf("   [%s] \t with body \"%s\" if context is [%s]\n",VEDITNAMES[ep->code],ep->data,ep->classes);
       }
-   printf("   in %s at/before line %d\n",ep->audit->filename,ep->lineno);
    }
 
 printf(" Behaviour constraint body:\n");
 printf("   IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
 printf("   File search recursion limit: %d\n",ptr->recurse);
-
+   
 if (ptr->repository)
    {
    printf("   Using local repository = %s\n",ptr->repository);
@@ -1387,6 +1386,10 @@ for (ip = ptr->filters; ip != NULL; ip=ip->next)
    {
    printf ("   Using filter %s\n",ip->name);
    }
+
+/* This could be wrong if several stanzas are used...*/
+
+printf("   in %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 }
 
 /*******************************************************************/

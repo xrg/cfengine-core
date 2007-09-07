@@ -1918,6 +1918,8 @@ struct Edit
    char  binary;   /* y/n */
    int   ifelapsed;
    int    expireafter;
+   struct Audit *audit;
+   int lineno;
    struct Item *ignores;
    struct Item *exclusions;
    struct Item *inclusions;      
@@ -1933,8 +1935,6 @@ struct Edit
          enum editnames code;
          char *data;
          struct Edlist *next;
-         struct Audit *audit;
-         int lineno;
          char *classes;
          };
 

@@ -1095,6 +1095,7 @@ if ((! DONTDO) && (NUMBEROFEDITS > 0))
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Saving edit changes to file %s",filename);
    CfLog(cfinform,OUTPUT,"");
+   AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
    SaveItemList(filestart,filename,ptr->repository);
    AddEditfileClasses(ptr,true);
    }
@@ -1306,6 +1307,8 @@ if (DONTDO)
 if (NUMBEROFEDITS > 0)
    {
    SaveItemList(*filestart,fname,ptr->repository);
+   snprintf(OUTPUT,CF_BUFSIZE,"Saved file changes to %s",fname);
+   AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
    AddEditfileClasses(ptr,true);
    }
 else
@@ -1318,7 +1321,6 @@ DeleteItemList(*filestart);
 snprintf(buffer,CF_BUFSIZE,"%s %s %s  2>&1",script,fname,CLASSTEXT[VSYSTEMHARDCLASS]);
 
 EditVerbose("Running command: %s\n",buffer);
-
       
 switch (ptr->useshell)
    {
@@ -1330,7 +1332,9 @@ switch (ptr->useshell)
   
 if (pp == NULL)
    {
-   printf("Edit script %s failed to open.\n",fname);
+   printf("Edit script %s failed to open.\n",buffer);
+   snprintf(OUTPUT,CF_BUFSIZE,"Failed edit script %s",buffer);
+   AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_FAIL);
    return false;
    }
 
