@@ -1,6 +1,6 @@
 .TH cfengine 8 "Maintenance Commands" HiOslo
 .SH NAME
-cfshow \- Execute remote cfagents
+cfshow \- Dump cfengine databases
 .SH SYNOPSIS
 
 /usr/local/sbin/cfshow [options] 
@@ -24,9 +24,28 @@ cfshow --locks
 cfshow --last-seen
 cfshow --checksum
 cfshow --active
+cfshow --audit
 
 .PP
-These show the names databases. 
+These show the named databases.
+
+.SH OPTIONS
+
+Here are all of the options supported:
+
+--help                    (-h)
+--debug                   (-d)
+--verbose                 (-v)
+--locks                   (-l)
+--last-seen               (-s)
+--performance             (-p)
+--checksum                (-c)
+--active                  (-a)
+--version                 (-V)
+--html                    (-H)
+--xml                     (-X)
+--purge                   (-P)
+--audit                   (-A)
 
 .SH FILES
 cfshow reads private database files that are normally stored in the Work Directory /var/cfengine.

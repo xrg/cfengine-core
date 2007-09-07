@@ -77,11 +77,11 @@ SaveItemList(*procdata,VBUFF,"none");
 CopyList(&rootprocs,*procdata);
 CopyList(&otherprocs,*procdata);
 
-while (DeleteItemNotMatching(&rootprocs,".*root.*"))
+while (DeleteItemNotContaining(&rootprocs,"root"))
    {
    }
 
-while (DeleteItemMatching(&otherprocs,".*root.*"))
+while (DeleteItemContaining(&otherprocs,"root"))
    {
    }
 

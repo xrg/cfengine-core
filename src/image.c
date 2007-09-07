@@ -1514,8 +1514,15 @@ if (!FixCompressedArrayValue(i,value,&(ip->inode_cache)))
       }
    else
       {
-      Verbose("Removing old hard link %s to preserve structure..\n",value);
-      unlink(value);
+      if (strcmp(ip->action,"warn") == 0)
+          {
+          Verbose("Need to remove old hard link %s to preserve structure..\n",value);
+          }
+      else
+          {
+          Verbose("Removing old hard link %s to preserve structure..\n",value);
+          unlink(value);
+          }
       }
    }
 }

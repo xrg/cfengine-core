@@ -61,6 +61,11 @@
 	variables in the control part of a program in methods has also been added.
 
 	Bug fix and code simplication of variable expansion.
+
+	-----
+
+	Major changes to package manager code by Jo Rhett. Variable expansion
+	fixed by Mark.
 	
 2.2.1
 	scli: type section added. This is a special case of shellcommands, which

@@ -2803,7 +2803,7 @@ void CheckPackages()
 
 { struct Package *ptr;
   int match = 0;
-  char lock[CF_BUFSIZE];
+  char lock[CF_BUFSIZE],name[CF_EXPANDSIZE];
   struct Item *pending_pkgs = NULL;
   enum pkgmgrs prev_pkgmgr = pkgmgr_none;
   enum pkgactions prev_action = pkgaction_none;
@@ -2819,8 +2819,10 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       {
       continue;
       }
+
+   ExpandVarstring(ptr->name,name,"");
    
-   snprintf(lock,CF_BUFSIZE-1,"%s_%d_%d",ptr->name,ptr->cmp,ptr->action);
+   snprintf(lock,CF_BUFSIZE-1,"%s_%d_%d",name,ptr->cmp,ptr->action);
    
    if (!GetLock(ASUniqueName("packages"),CanonifyName(lock),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
       {
@@ -2828,13 +2830,13 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       continue;
       }
    
-   match = PackageCheck(ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp);
+   match = PackageCheck(name, ptr->pkgmgr, ptr->ver, ptr->cmp);
    
    /* Check for a problem executing the command */
    
    if ((match != 1) && (match != 0))
       {
-      snprintf(OUTPUT,CF_BUFSIZE,"Error: Package manager query failed, skipping %s\n", ptr->name);
+      snprintf(OUTPUT,CF_BUFSIZE,"Error: Package manager query failed, skipping %s\n", name);
       CfLog(cferror,OUTPUT,"");
       ptr->done = 'y';
       continue;
@@ -2856,11 +2858,11 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
 
       if (ptr->action == pkgaction_remove) 
          {
-         PackageList(ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp, &pending_pkgs);
+         PackageList(name, ptr->pkgmgr, ptr->ver, ptr->cmp, &pending_pkgs);
          }
       else if (ptr->action == pkgaction_upgrade)
          {
-         UpgradePackage( ptr->name, ptr->pkgmgr, ptr->ver, ptr->cmp );
+         UpgradePackage(name, ptr->pkgmgr, ptr->ver, ptr->cmp);
          }
       }
    else
@@ -2869,7 +2871,7 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
 
       if (ptr->action == pkgaction_install)
          {
-         AppendItem(&pending_pkgs, ptr->name, NULL);
+         AppendItem(&pending_pkgs,name, NULL);
          
          /* Some package managers operate best doing things one at a time. */
          
