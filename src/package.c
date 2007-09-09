@@ -345,6 +345,16 @@ if (pkglist == NULL)
 
 switch(pkgmgr)
    {
+   case pkgmgr_dpkg:
+
+       if (!GetMacroValue(CONTEXTID,"DPKGRemoveCommand"))
+          {
+          CfLog(cferror,"DPKGRemoveCommand NOT Set.  Package Removal Not Possible!\n","");
+          return 0;
+          }
+       strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"DPKGRemoveCommand"),CF_BUFSIZE);
+       break;
+       
    case pkgmgr_freebsd:
 
        if (!GetMacroValue(CONTEXTID,"FreeBSDRemoveCommand"))
@@ -399,7 +409,7 @@ if (BuildCommandLine( delcmd, rawdelcmd, *pkglist))
       else
          {
          snprintf(OUTPUT,CF_BUFSIZE,"Package removal succeeded (%s)\n",delcmd);
-         CfLog(cferror,OUTPUT,"popen");
+         CfLog(cfinform,OUTPUT,"popen");
          AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
          result = 1;
          }

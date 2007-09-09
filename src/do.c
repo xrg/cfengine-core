@@ -2863,6 +2863,7 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
 
       if (ptr->action == pkgaction_remove) 
          {
+         AppendItem(&pending_pkgs,name,NULL);
          PackageList(ptr,name,ptr->pkgmgr,ptr->ver,ptr->cmp,&pending_pkgs);
          }
       else if (ptr->action == pkgaction_upgrade)
@@ -2903,7 +2904,8 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
 
 if (pending_pkgs != NULL)
    {
-   ProcessPendingPackages(ptr,prev_pkgmgr, prev_action, &pending_pkgs);
+   /* Use VPKG since ptr is NULL and make AuditLog to SEGV */
+   ProcessPendingPackages(VPKG,prev_pkgmgr, prev_action, &pending_pkgs);
    DeleteItemList( pending_pkgs );
    pending_pkgs = NULL; 
    }
