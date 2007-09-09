@@ -133,7 +133,7 @@ if (found == -1)
    CfLog(cferror,OUTPUT,"");
    FlushClientCache(ip);
    AddMultipleClasses(ip->elsedef);
-   //ip->returnstatus = CF_FAIL;
+   AuditLog(ip->audit,ip->lineno,OUTPUT,CF_FAIL);
    return;
    }
 
@@ -560,7 +560,8 @@ if (found == -1)
             CheckCopiedFile(ip->cf_findertype,destfile,&deststatbuf,&sourcestatbuf,ip);
             }
 
-         //ip->returnstatus = CF_CHG;
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Copied from %s:%s\n",server,sourcefile);
+         AuditLog(ip->audit,ip->lineno,OUTPUT,CF_CHG);
          AddMultipleClasses(ip->defines);
          
          if (ALL_SINGLECOPY || IsWildItemIn(VSINGLECOPY,destfile))
@@ -584,7 +585,8 @@ if (found == -1)
          }
       else
          {
-         //ip->returnstatus = CF_FAIL;
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Copy from %s:%s\n",server,sourcefile);
+         AuditLog(ip->audit,ip->lineno,OUTPUT,CF_FAIL);
          AddMultipleClasses(ip->failover);
          }
       
@@ -603,11 +605,12 @@ if (found == -1)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot create fifo `%s'", destfile);
          CfLog(cferror,OUTPUT,"mkfifo");
-         //ip->returnstatus = CF_FAIL;
+         AuditLog(ip->audit,ip->lineno,OUTPUT,CF_FAIL);
          return;
          }
 
-      //ip->returnstatus = CF_CHG;
+      snprintf(OUTPUT,CF_BUFSIZE*2,"Created fifo %s", destfile);
+      AuditLog(ip->audit,ip->lineno,OUTPUT,CF_CHG);
       AddMultipleClasses(ip->defines);
 #endif
       }
@@ -626,7 +629,8 @@ if (found == -1)
             return;
             }
 
-         //ip->returnstatus = CF_CHG;
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Created socket/device %s", destfile);
+         AuditLog(ip->audit,ip->lineno,OUTPUT,CF_CHG);
          AddMultipleClasses(ip->defines);
          }
       }
@@ -692,7 +696,8 @@ if (found == -1)
             CheckCopiedFile(ip->cf_findertype,destfile,&deststatbuf,&sourcestatbuf,ip);
             }
 
-         //ip->returnstatus = CF_CHG;
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Created link %s", destfile);
+         AuditLog(ip->audit,ip->lineno,OUTPUT,CF_CHG);
          AddMultipleClasses(ip->defines);
          }
       }
@@ -795,9 +800,9 @@ else
           (S_ISLNK(deststatbuf.st_mode)  && ! S_ISLNK(sourcestatbuf.st_mode)))
           
          {
-         printf("%s: image exists but destination type is silly (file/dir/link doesn't match)\n",VPREFIX);
-         printf("%s: source=%s, dest=%s\n",VPREFIX,sourcefile,destfile);
-         //ip->returnstatus = CF_FAIL;
+         snprintf(OUTPUT,CF_BUFSIZE,"Image exists but src/dest type mismatch source=%s, dest=%s\n",sourcefile,destfile);
+         CfLog(cfinform,OUTPUT,"");
+         AuditLog(ip->audit,ip->lineno,OUTPUT,CF_FAIL);
          return;
          }
       }
@@ -806,7 +811,7 @@ else
       {
       if (S_ISREG(srcmode) || ip->linktype == 'n')
          {
-         snprintf(OUTPUT,CF_BUFSIZE*2,"Update of image %s from master %s on %s",destfile,sourcefile,server);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"Updated image %s from master %s on %s",destfile,sourcefile,server);
          
          if (DONTDO)
             {
@@ -815,8 +820,7 @@ else
             }
          
          CfLog(cfinform,OUTPUT,"");
-
-         //ip->returnstatus = CF_CHG;
+         AuditLog(ip->audit,ip->lineno,OUTPUT,CF_CHG);
          AddMultipleClasses(ip->defines);
          
          for (ptr = VAUTODEFINE; ptr != NULL; ptr=ptr->next)
@@ -835,6 +839,7 @@ else
                {
                snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",destfile);
                CfLog(cferror,OUTPUT,"stat");
+               AuditLog(ip->audit,ip->lineno,OUTPUT,CF_FAIL);
                }
             else
                {
@@ -892,7 +897,8 @@ else
                 succeed = AbsoluteLink(destfile,linkbuf,&empty);
                 break;
             default:
-                printf("cfengine: internal error, link type was [%c] in ImageCopy\n",ip->linktype);
+                snprintf(OUTPUT,CF_BUFSIZE,"Internal error, link type was [%c] in ImageCopy\n",ip->linktype);
+                CfLog(cferror,OUTPUT,"");
                 return;
             }
          

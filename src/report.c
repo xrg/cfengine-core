@@ -1447,8 +1447,11 @@ void ListDefinedPackages()
 
 void PromisePackages(struct Package *ptr)
 
-{
-printf("Package \"%s\" promises\n", ptr->name);
+{ char name[CF_EXPANDSIZE];
+
+ExpandVarstring(ptr->name,name,"");
+
+printf("Package \"%s\" promises\n",name);
 
 printf(" Search constraint body:\n");
 
