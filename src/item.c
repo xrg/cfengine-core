@@ -55,6 +55,17 @@ return count;
 
 /*********************************************************************/
 
+struct Item *String2List(char *string)
+    
+{ struct Item *liststart = NULL;
+
+AppendItem(&liststart,string,"");
+
+return liststart;
+}
+
+/*********************************************************************/
+
 int ByteSizeList(struct Item *list)
 
 { int count = 0;

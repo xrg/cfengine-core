@@ -51,11 +51,11 @@ void DeleteChecksumValue(DBT *value);
 
 void Set2DList (struct TwoDimList *list);
 char *Get2DListEnt (struct TwoDimList *list);
-void Build2DListFromVarstring (struct TwoDimList **TwoDimlist, char *varstring, char sep);
-int IncrementTwoDimList (struct TwoDimList *from, struct TwoDimList *list);
-int EndOfTwoDimList (struct TwoDimList *list);
-struct TwoDimList *list;void AppendTwoDimItem (struct TwoDimList **liststart, struct Item *itemlist, char sep);
+void Build2DListFromVarstring (struct TwoDimList **TwoDimlist,char *varstring,char sep,short tied);
+int IncrementTwoDimList (struct TwoDimList *from);
+struct TwoDimList *list;void AppendTwoDimItem (struct TwoDimList **liststart,struct Item *itemlist);
 void Delete2DList (struct TwoDimList *item);
+int EndOfTwoDimList (struct TwoDimList *list);
 
 /* acl.c */
 
@@ -625,6 +625,7 @@ int CompareToFile (struct Item *liststart, char *file);
 
 /* item.c */
 
+struct Item *String2List(char *string);
 int ListLen (struct Item *list);
 int ByteSizeList (struct Item *list);
 void AppendItems  (struct Item **liststart, char *itemstring, char *classes);
@@ -1018,7 +1019,9 @@ void DeleteTidyList (struct TidyPattern *list);
 
 /* varstring.c */
 
+void GetSepElement(char *from,char *to,int index,char sep);
 int IsListVar(char *name,char sep);
+int VarListLen(char *name, char sep);
 int TrueVar (char *var);
 int CheckVarID (char *var);
 int IsVarString (char *str);

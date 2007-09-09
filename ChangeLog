@@ -64,6 +64,14 @@
 
 	-----
 
+	tied variable expansion added. Allows method workaround for file dissemination
+	by name, e.g. copy from
+
+	host1.conf -> /dir/host1/file.conf
+        host2.conf -> /dir/host2/file.conf  e.g. for virtual or diskless machines
+	
+	-----
+
 	Major changes to package manager code by Jo Rhett. Variable expansion
 	fixed by Mark.
 	

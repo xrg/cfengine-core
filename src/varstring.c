@@ -1034,3 +1034,73 @@ for (sp = test; *sp != '\0'; sp++)
 
 return false;
 }
+
+/*********************************************************************/
+
+int VarListLen(char *name, char sep)
+
+{ int count = 0;
+ char *sp;
+ 
+for (sp = name; *sp != '\0'; sp++)
+   {
+   if (*sp == sep)
+      {
+      count++;
+      }
+   }
+
+return count+1;
+}
+
+/*********************************************************************/
+
+void GetSepElement(char *from,char *to,int index,char sep)
+
+{ char *sps,*spe;
+  char buf[CF_BUFSIZE];
+  int i;
+
+strcpy(buf,from);  
+
+sps = buf;
+
+for (i = 0; i < index; i++)
+   {
+   while ((*sps != sep) && (*sps != '\0'))
+      {
+      sps++;
+      }
+   
+   if (*sps == ':')
+      {
+      sps++;
+      }
+   }
+
+if (*sps == '\0')
+   {
+   strncpy(to,from,CF_BUFSIZE-1);
+   return;
+   }
+
+if (*sps == ':')
+   {
+   strncpy(to,sps+1,CF_BUFSIZE-1);
+   }
+else
+   {
+   strncpy(to,sps,CF_BUFSIZE-1);
+   }
+
+spe = to;
+
+while ((*spe != sep) && (*spe != '\0'))
+   {
+   spe++;
+   }
+
+*spe = '\0';
+Debug("Extracted [%s] from [%s]\n",to,from);
+}
+

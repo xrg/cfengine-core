@@ -43,6 +43,14 @@
 /* TOOLKIT : 2D list                                                 */
 /*********************************************************************/
 
+/* The 2D structure is a list of varstring fragments each of which
+   contains one variable. Each variable could be a list, and the
+   list variables are expanded into the ilist members of the 2D list.
+
+   The trick in extracting data is how the increment function works..*/
+
+/*********************************************************************/
+
 void Set2DList(struct TwoDimList *list)
 
 { struct TwoDimList *tp;
@@ -65,39 +73,40 @@ char *Get2DListEnt(struct TwoDimList *list)
   struct TwoDimList *tp;
   char seps[2];
 
-Debug1("Get2DListEnt()\n");
-
 if (EndOfTwoDimList(list))
    {
    return NULL;
    }
 
+Debug1("Get2DListEnt()\n");
+
 memset(entry,0,CF_BUFSIZE);
 
 for (tp = list; tp != NULL; tp=tp->next)
    {
-   sprintf(seps,"%c",tp->sep);
-
    if (tp->current != NULL)
       {
       strcat(entry,(tp->current)->name);
       }
    }
 
-Debug("Get2DLIstEnt returns %s\n",entry);
+Debug("Get2DListEnt returns %s\n",entry);
 
-IncrementTwoDimList(list,list);
+if (list->tied)
+   {
+   TieIncrementTwoDimList(list);
+   }
+else
+   {
+   IncrementTwoDimList(list);
+   }
 
 return entry;
 }
 
 /*********************************************************************/
 
-void Build2DListFromVarstring(struct TwoDimList **TwoDimlist, char *varstring, char sep)
-
- /* Build a database list with all expansions of a 2D list a */
- /* sep is a separator which is used to split a many-variable */
- /* string into many strings with only one variable           */
+void Build2DListFromVarstring(struct TwoDimList **TwoDimlist, char *varstring, char sep, short tied)
 
 { struct Item *ip, *basis;
 
@@ -105,7 +114,7 @@ Debug1("Build2DListFromVarstring([%s],sep=[%c])\n",varstring,sep);
 
 if (varstring == NULL)
    {
-   AppendTwoDimItem(TwoDimlist,NULL,sep);
+   AppendTwoDimItem(TwoDimlist,NULL);
    return;
    }
 
@@ -113,14 +122,18 @@ basis = SplitVarstring(varstring);
 
 for (ip = basis; ip != NULL; ip=ip->next)
    {
-   AppendTwoDimItem(TwoDimlist,SplitString(ip->name,sep),sep);
+   AppendTwoDimItem(TwoDimlist,SplitString(ip->name,sep));
    }
+
+(*TwoDimlist)->tied = tied; /* Policy for expansion of lists */
 }
 
 /*********************************************************************/
 
-int IncrementTwoDimList (struct TwoDimList *from,struct TwoDimList *list)
+int IncrementTwoDimList (struct TwoDimList *from)
 
+/* This works be recursive descent from left to right, like a mileometer */
+    
 { struct TwoDimList *tp;
 
 Debug1("IncrementTwoDimList()\n");
@@ -129,23 +142,26 @@ for (tp = from; tp != NULL; tp=tp->next)
    {
    if (tp->is2d)
       {
-      break;
+      break;  /* first fragment with more than one value in list */
       }
    }
 
 if (tp == NULL)
    {
-   return TD_wrapped;
+   return TD_wrapped;  /* End of cycle */
    }
 
-if (IncrementTwoDimList(tp->next,list) == TD_wrapped)
-   {
-   tp->current = (tp->current)->next;
+/* Current points to our position in the sublist of each fragment */
 
-   if (tp->current == NULL)
+if (IncrementTwoDimList(tp->next) == TD_wrapped)
+   {
+   tp->current = (tp->current)->next; 
+
+   if (tp->current == NULL)     
       {
+      /* Wrap to beginning again, count round robins to check eolist */
       tp->current = tp->ilist;
-      tp->rounds++;             /* count iterations to ident eolist*/
+      tp->rounds++;            
       return TD_wrapped;
       }
    else
@@ -159,22 +175,57 @@ return TD_nowrap; /* Shouldn't get here */
 
 /*********************************************************************/
 
+int TieIncrementTwoDimList (struct TwoDimList *from)
+
+{ struct TwoDimList *tp;
+
+ /* March all pointers in time */
+
+for (tp = from; tp != NULL; tp=tp->next)
+   {
+   if (tp->is2d)
+      {
+      tp->current = tp->current->next;
+
+      if (tp->current == NULL)
+         {
+         /* Signal the round robin cycle ends */
+         tp->rounds = 1;  
+         }
+      }
+   else
+      {
+      tp->rounds = 1;
+      }
+   }
+
+return TD_wrapped; /* Means nothing here */
+}
+
+/*********************************************************************/
+
 int EndOfTwoDimList(struct TwoDimList *list)       /* bool */
 
    /* returns true if the leftmost list variable has cycled */
    /* i.e. rounds is > 0 for the first is-2d list item      */
 
-{ struct TwoDimList *tp;
+{ struct TwoDimList *lp, *tp = NULL;
+ int i = 0, done = true;
 
-for (tp = list; tp != NULL; tp=tp->next)
+for (lp = list; lp != NULL; lp=lp->next)
    {
-   if (tp->is2d)
+   if (lp->is2d)
       {
-      break;
+      tp = lp;
+      }
+
+   if (lp->rounds == 0)
+      {
+      done = false;
       }
    }
 
-if (list == NULL)
+if (done || (list == NULL))
    {
    return true;
    }
@@ -193,22 +244,22 @@ if (tp == NULL)             /* Need a case when there are no lists! */
    }
 
 if (tp->rounds > 0)
-    {
-    return true;
-    }
+   {
+   return true;
+   }
 else
-    {
-    return false;
-    }
+   {
+   return false;
+   }
 }
 
 /*********************************************************************/
 
-void AppendTwoDimItem(struct TwoDimList **liststart,struct Item *itemlist,char sep)
+void AppendTwoDimItem(struct TwoDimList **liststart,struct Item *itemlist)
 
 { struct TwoDimList *ip, *lp;
 
-Debug1("AppendTwoDimItem(itemlist, sep=[%c])\n",sep);
+Debug("\nAppendTwoDimItem()\n\n");
 
 if (liststart == NULL)
    {
@@ -236,10 +287,10 @@ else
    }
 
 ip->ilist = itemlist;
-ip->current = itemlist; /* init to start of list */
+ip->current = itemlist; /* init to start of list - steps through these */
 ip->next = NULL;
 ip->rounds = 0;
-ip->sep = sep;
+ip->tied = 0;
 
 if (itemlist == NULL || itemlist->next == NULL)
    {
@@ -247,7 +298,7 @@ if (itemlist == NULL || itemlist->next == NULL)
    }
 else
    {
-   ip->is2d = true;
+   ip->is2d = true; /* List has more than one element */
    }
 }
 

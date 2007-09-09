@@ -2069,8 +2069,7 @@ if (!IsInstallable(CLASSBUFF))
 ExpandVarstring(from,ebuff,"");
 ExpandVarstring(ALLCLASSBUFFER,buffer,""); 
 
-Build2DListFromVarstring(&tp,to,LISTSEPARATOR);
-    
+Build2DListFromVarstring(&tp,to,LISTSEPARATOR,false);
 Set2DList(tp);
 
 for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
@@ -2178,8 +2177,7 @@ void InstallRequiredPath(char *path,int freespace)
   char buffer[CF_EXPANDSIZE],ebuff[CF_EXPANDSIZE],*sp;
   struct TwoDimList *tp = NULL;
 
-Build2DListFromVarstring(&tp,path,LISTSEPARATOR);
-    
+Build2DListFromVarstring(&tp,path,LISTSEPARATOR,false);    
 Set2DList(tp);
 
 for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
@@ -2523,8 +2521,7 @@ if (!IsInstallable(CLASSBUFF))
    }
 
 
-Build2DListFromVarstring(&tp,path,LISTSEPARATOR);
-    
+Build2DListFromVarstring(&tp,path,LISTSEPARATOR,false);
 Set2DList(tp);
 
 for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
@@ -3049,7 +3046,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
       {
       /* 2D list wrapper start - variable is data */
       
-      Build2DListFromVarstring(&tp,data,editlistseparator);
+      Build2DListFromVarstring(&tp,data,editlistseparator,false);
       Set2DList(tp);
       
       for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
@@ -3442,7 +3439,7 @@ if (!IsInstallable(CLASSBUFF))
    return;
    }
 
-Build2DListFromVarstring(&tp,item,LISTSEPARATOR); /* Must be at least one space between each var */
+Build2DListFromVarstring(&tp,item,LISTSEPARATOR,false); /* Must be at least one space between each var */
 
 Set2DList(tp);
 
@@ -3623,7 +3620,7 @@ if (!IsInstallable(CLASSBUFF))
    return;
    }
 
-Build2DListFromVarstring(&tp,item,LISTSEPARATOR); /* Must be at least one space between each var */
+Build2DListFromVarstring(&tp,item,LISTSEPARATOR,false);
 
 Set2DList(tp);
 
@@ -3794,8 +3791,7 @@ if (!IsInstallable(CLASSBUFF))
    return;
    }
 
-Build2DListFromVarstring(&tp,path,LISTSEPARATOR); /* Must be at least one space between each var */
-
+Build2DListFromVarstring(&tp,path,LISTSEPARATOR,false);
 Set2DList(tp);
 
 for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
@@ -3983,8 +3979,7 @@ if (strlen(sp) == 0)
 
 strcpy(work,function);
 
-Build2DListFromVarstring(&tp,work,LISTSEPARATOR); /* Must be at least one space between each var */
-
+Build2DListFromVarstring(&tp,work,LISTSEPARATOR,true); /* step in time for lists here */
 Set2DList(tp);
 
 for (vp = Get2DListEnt(tp); vp != NULL; vp = Get2DListEnt(tp))
@@ -4019,7 +4014,7 @@ for (vp = Get2DListEnt(tp); vp != NULL; vp = Get2DListEnt(tp))
       yyerror("Empty method");
       return;
       }
-   
+
    for (sp = vp; sp != NULL; sp++) /* Pick out the args*/
       {
       if (*sp == '(')
@@ -4034,6 +4029,8 @@ for (vp = Get2DListEnt(tp); vp != NULL; vp = Get2DListEnt(tp))
       {
       yyerror("Missing argument (void?) to method");
       }
+
+   Debug("Found args [%s]\n\n",sp);
    
    ptr->send_args = ListFromArgs(sp);
    ptr->send_classes = SplitStringAsItemList(METHODREPLYTO,','); 
@@ -4218,8 +4215,7 @@ if (strcmp(path,"/") != 0)
    DeleteSlash(path);
    }
 
-Build2DListFromVarstring(&tp,path,LISTSEPARATOR); /* Must not be / */
-
+Build2DListFromVarstring(&tp,path,LISTSEPARATOR,false);
 Set2DList(tp);
 
 for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
@@ -4258,7 +4254,7 @@ if (!IsInstallable(CLASSBUFF))
    return;
    }
 
-Build2DListFromVarstring(&tp,path,LISTSEPARATOR);
+Build2DListFromVarstring(&tp,path,LISTSEPARATOR,false);
 
 Set2DList(tp);
 
@@ -4757,9 +4753,7 @@ if (!IsInstallable(CLASSBUFF))
    return;
    }
 
- 
-Build2DListFromVarstring(&tp,path,LISTSEPARATOR);
-    
+Build2DListFromVarstring(&tp,path,LISTSEPARATOR,false);
 Set2DList(tp);
 
 for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
@@ -5243,11 +5237,9 @@ if (strlen(buf1) > 1)
 
 expserver = SplitStringAsItemList(buf3,LISTSEPARATOR);
    
-Build2DListFromVarstring(&tp,path,LISTSEPARATOR);  /* Must split on space in comm string */
-    
+Build2DListFromVarstring(&tp,path,LISTSEPARATOR,false);  /* Must split on space in comm string */
 Set2DList(tp);
 
- 
 for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
    {
    for (ep = expserver; ep != NULL; ep=ep->next)
@@ -5512,8 +5504,7 @@ Debug1("InstallAuthItem(%s,%s)\n",path,attribute);
   
 vlist = SplitStringAsItemList(attribute,LISTSEPARATOR);
  
-Build2DListFromVarstring(&tp,path,LISTSEPARATOR);
-   
+Build2DListFromVarstring(&tp,path,LISTSEPARATOR,false);
 Set2DList(tp);
 
 for (sp1 = Get2DListEnt(tp); sp1 != NULL; sp1 = Get2DListEnt(tp))
