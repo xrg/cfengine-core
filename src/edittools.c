@@ -1640,7 +1640,7 @@ if (editsdone)
             
             sscanf(sp,"%[^,:.]",currentitem);
             
-            sp += strlen(currentitem) - 1;
+            sp += strlen(currentitem);
             
             AddClassToHeap(currentitem);
             }
