@@ -3741,7 +3741,6 @@ else
 
 void RecFileCheck(char *startpath,void *vp)
 
-
 { struct File *ptr;
   struct stat sb; 
 

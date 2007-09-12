@@ -1451,7 +1451,15 @@ arguments in chronological order.
 
      <br><dt><code>ChangedBefore(</code><var>f1</var><code>,</code><var>f2</var><code>)</code><dd>True if file 1's attributes were changed in any way more recently than file 2's (UNIX ctime)
 
-     <br><dt><code>FileExists(</code><var>file</var><code>)</code><dd>True if the named file object exists.
+     <br><dt><code>ClassMatch(</code><var>regexp</var><code>)</code><dd>True if the quoted regular expression matches one of the currently defined classes. 
+It is wise to place ClassMatch at the end of your parsing in order to capture
+as many of the user-defined classes as possible.
+
+     <pre class="smallexample">          classes:
+          
+             userdef = ( ClassMatch(.*linux.*) )
+     </pre>
+     <br><dt><code>FileExists(</code><var>file</var><code>)</code><dd>True if the named file object (file/directory or link) exists.
 
      <br><dt><code>GroupExists(</code><var>groupname</var><code>|</code><var>gid</var><code>)</code><dd>True if the groupname or group id is registered on the system.
 
@@ -1472,7 +1480,8 @@ between start and stop.  Note well: matching is case insensitive (both hostname 
 follow the standard programming interface for modules (see Writing plugin modules in tutorial). 
 Unlike actionsequence modules, these modules are evaluated immediately on parsing. 
 Note that the module should be specified relative to the authorized module directory. 
-<a name="index-Module-directory-86"></a><a name="index-PrepModule-87"></a><a name="index-Modules-executed-immediately-88"></a><br><dt><code>Regcmp(</code><var>regexp</var><code>,</code><var>string or list separated string</var><code>)</code><dd>True if the string matched the regular expression regexp.
+<a name="index-Module-directory-86"></a><a name="index-PrepModule-87"></a><a name="index-Modules-executed-immediately-88"></a>
+<br><dt><code>Regcmp(</code><var>regexp</var><code>,</code><var>string or list separated string</var><code>)</code><dd>True if the string matched the regular expression regexp.
 
      <br><dt><code>ReturnsZero(</code><var>command</var><code>)</code><dd>True if the named shell command returns with exit code zero (success). 
 The command is executed without a shell wrapper.

@@ -163,9 +163,12 @@ switch (fn = FunctionStringToCode(name))
        break;
    case fn_lessthan:
        HandleGreaterThan(args,value,'-');
-       break;       
+       break;
    case fn_regcmp:
        HandleRegCmp(args,value);
+       break;
+   case fn_classregex:
+       HandleClassRegex(args,value);
        break;
    case fn_showstate:
        HandleShowState(args,value);
@@ -802,6 +805,41 @@ else
 DeleteItemList(list); 
 }
 
+/*********************************************************************/
+
+void HandleClassRegex(char *args,char *value)
+
+{ char argv[CF_MAXFARGS][CF_EXPANDSIZE];
+  struct Item *list = NULL, *ret; 
+
+FunctionArgs(args,argv,1);
+
+if (ACTION != groups)
+   {
+   yyerror("Function ClassMatch() used outside of classes/groups");
+   return;
+   }
+
+/* Exclude classes that might become define, only those at start */
+
+if (ret = LocateNextItemMatching(VHEAP,argv[0]))
+   {
+   }
+else if (ret = LocateNextItemMatching(VADDCLASSES,argv[0]))
+   {
+   }
+
+if (ret != NULL)
+   {
+   strcpy(value,CF_ANYCLASS); 
+   }
+else
+   {
+   strcpy(value,CF_NOCLASS);
+   }
+ 
+DeleteItemList(list); 
+}
 
 /*********************************************************************/
 

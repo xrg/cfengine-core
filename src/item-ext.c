@@ -329,7 +329,7 @@ for (ip = list; ip != NULL; ip=ip->next)
       {
       continue;
       }
-   
+
    if (EDABORTMODE && ItemMatchesRegEx(ip->name,VEDITABORT))
       {
       Verbose("Aborting search, regex %s matches line\n",VEDITABORT);

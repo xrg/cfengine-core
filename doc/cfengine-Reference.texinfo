@@ -1726,8 +1726,19 @@ True if file 1 was accessed more recently than file 2 (UNIX atime)
 @item ChangedBefore(@var{f1},@var{f2})
 True if file 1's attributes were changed in any way more recently than file 2's (UNIX ctime)
 
+@item ClassMatch(@var{regexp})
+True if the quoted regular expression matches one of the currently defined classes.
+It is wise to place ClassMatch at the end of your parsing in order to capture
+as many of the user-defined classes as possible.
+
+@smallexample
+classes:
+
+   userdef = ( ClassMatch(.*linux.*) )
+@end smallexample
+
 @item FileExists(@var{file})
-True if the named file object exists.
+True if the named file object (file/directory or link) exists.
 
 @item GroupExists(@var{groupname}|@var{gid})
 True if the groupname or group id is registered on the system.
@@ -1761,6 +1772,7 @@ Note that the module should be specified relative to the authorized module direc
 @cindex Module directory
 @cindex PrepModule
 @cindex Modules executed immediately
+
 @item Regcmp(@var{regexp},@var{string or list separated string})
 True if the string matched the regular expression regexp.
 

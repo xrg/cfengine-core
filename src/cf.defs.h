@@ -712,6 +712,7 @@ enum builtin
    fn_isdefined,
    fn_strcmp,
    fn_regcmp,
+   fn_classregex,
    fn_showstate,
    fn_friendstat,
    fn_readfile,

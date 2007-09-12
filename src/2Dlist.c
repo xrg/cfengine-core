@@ -125,7 +125,10 @@ for (ip = basis; ip != NULL; ip=ip->next)
    AppendTwoDimItem(TwoDimlist,SplitString(ip->name,sep));
    }
 
-(*TwoDimlist)->tied = tied; /* Policy for expansion of lists */
+if (TwoDimlist && *TwoDimlist)
+   {
+   (*TwoDimlist)->tied = tied; /* Policy for expansion of lists */
+   }
 }
 
 /*********************************************************************/

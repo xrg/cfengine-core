@@ -600,6 +600,7 @@ char *OBS[CF_OBSERVABLES] =
       "isdefined",
       "strcmp",
       "regcmp",
+      "classmatch",
       "showstate",
       "friendstatus",
       "readfile",
