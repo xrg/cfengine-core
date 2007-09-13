@@ -2860,6 +2860,12 @@ if (uid != 0 && !args->connect->maproot) /* should remote root be local root */
          {
          Debug("Caller %s is not the owner of the file\n",(args->connect)->username);
          RefuseAccess(args->connect,sendbuffer,args->buf_size,"");
+
+         snprintf(sendbuffer,CF_BUFSIZE,"Open error of file [%s]\n",filename);
+         CfLog(cferror,sendbuffer,"open");
+         
+         snprintf(sendbuffer,CF_BUFSIZE,"%s",CF_FAILEDSTR);
+         SendSocketStream(sd,sendbuffer,args->buf_size,0);
          return;
          }
       }
