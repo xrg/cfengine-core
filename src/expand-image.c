@@ -76,6 +76,8 @@ if (strcmp(ip->action,"warn") != 0)
       CfLog(cferror,OUTPUT,"");
       return;
       }
+   
+   CheckCopiedFile(ip->cf_findertype,newto,&deststatbuf,&statbuf,ip);
    }
 
 if ((dirh = cfopendir(from,ip)) == NULL)

@@ -2483,7 +2483,7 @@ void MakeImages()
 
 { struct Image *ip;
   struct Item *svp;
-  struct stat statbuf;
+  struct stat statbuf,deststatbuf;
   struct servent *serverent;
   int savesilent;
   char path[CF_EXPANDSIZE],destination[CF_EXPANDSIZE],vbuff[CF_BUFSIZE];
@@ -2608,6 +2608,10 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
                }
             RegisterRecursionRootDevice(statbuf.st_dev);
             RecursiveImage(ip,path,destination,ip->recurse);
+            if (stat(destination,&deststatbuf) != -1)
+               {
+               CheckCopiedFile(ip->cf_findertype,destination,&deststatbuf,&statbuf,ip);
+               }
             }
          else
             {
