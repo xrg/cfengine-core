@@ -423,6 +423,7 @@ char *OBS[CF_OBSERVABLES] =
   PROTECTED  struct Item *VACCESSLIST=NULL;
   PROTECTED  struct Item *VADDCLASSES=NULL;           /* Action sequence defs  */
   PROTECTED  struct Item *VALLADDCLASSES=NULL;        /* All classes */
+  PUBLIC     struct Item *CLASSHISTORY=NULL;
   PROTECTED  struct Item *VJUSTACTIONS=NULL;
   PROTECTED  struct Item *VAVOIDACTIONS=NULL;
   PROTECTED  struct Item *VDEFAULTROUTE=NULL;

@@ -161,21 +161,14 @@ for (ip = list; ip != NULL; ip=ip->next)
       newe.Q.expect = GAverage(value,e.Q.expect,0.5,0.5);
       delta2 = (value - e.Q.expect)*(value - e.Q.expect);
       newe.Q.var = GAverage(delta2,e.Q.var,0.5,0.5);
-      
-      /* Have to kickstart variance computation, assume 1% to start  */
-      
-      if (newe.Q.var <= 0.0009)
-         {
-         newe.Q.var =  newe.Q.expect / 100.0;
-         }
       }
    else
       {
       lastseen = 0.0;
       newe.t = now;
-      newe.Q.q = value;
-      newe.Q.expect = value;
-      newe.Q.var = 0.001;
+      newe.Q.q = 0.5*value;
+      newe.Q.expect = 0.5*value;  /* With no data it's 50/50 what we can say */
+      newe.Q.var = 0.000;
       }
    
    if (lastseen > (double)lsea)

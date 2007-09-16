@@ -247,6 +247,7 @@ if (OptionIs(CONTEXTID,"ChecksumPurge", true))
    ChecksumPurge();
    }
 
+RecordClassUsage(CLASSHISTORY);
 SummarizeObjects();
 CloseAuditLog();
 closelog();

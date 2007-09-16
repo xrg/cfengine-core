@@ -703,7 +703,7 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
          printf("%s%s%s",CFX[cfx_event][cfb],eventname,CFX[cfx_event][cfe]);
          printf("%s%s%s",CFX[cfx_date][cfb],tbuf,CFX[cfx_date][cfe]);
          printf("%s%.4f%s",CFX[cfx_av][cfb],average,CFX[cfx_av][cfe]);
-         printf("%s%.4f%s",CFX[cfx_dev][cfb],sqrt(var)/ticksperminute,CFX[cfx_dev][cfe]);
+         printf("%s%.4f%s",CFX[cfx_dev][cfb],sqrt(var),CFX[cfx_dev][cfe]);
          printf("%s",CFX[cfx_entry][cfe]);         
          }
       else if (HTML)
@@ -712,12 +712,12 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
          printf("%s%s%s",CFH[cfx_event][cfb],eventname,CFH[cfx_event][cfe]);
          printf("%s last occured at %s%s",CFH[cfx_date][cfb],tbuf,CFH[cfx_date][cfe]);
          printf("%s Probability %.4f %s",CFH[cfx_av][cfb],average,CFH[cfx_av][cfe]);
-         printf("%s &plusmn; %.4f %s",CFH[cfx_dev][cfb],sqrt(var)/ticksperminute,CFH[cfx_dev][cfe]);
+         printf("%s &plusmn; %.4f %s",CFH[cfx_dev][cfb],sqrt(var),CFH[cfx_dev][cfe]);
          printf("%s",CFH[cfx_entry][cfe]);
          }
       else
          {
-         printf("Probability %7.4f +/- %7.4f for %s (last oberved @ %s)\n",average,sqrt(var)/ticksperminute,eventname,tbuf);
+         printf("Probability %7.4f +/- %7.4f for %s (last oberved @ %s)\n",average,sqrt(var),eventname,tbuf);
          }
       }
    else
