@@ -3300,7 +3300,7 @@ return (NoEdit);
 void PrependAuditFile(char *file)
 
 { struct stat statbuf;;
- 
+
 if ((AUDITPTR = (struct Audit *)malloc(sizeof(struct Audit))) == NULL)
    {
    CfLog(cferror,"","malloc audit");
@@ -3313,7 +3313,7 @@ if (stat(file,&statbuf) == -1)
    return;
    }
 
-ChecksumFile(file,AUDITPTR->digest,'m');
+ChecksumFile(file,AUDITPTR->digest,'m');   
 
 AUDITPTR->next = VAUDIT;
 AUDITPTR->filename = strdup(file);

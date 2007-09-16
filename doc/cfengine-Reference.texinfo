@@ -414,6 +414,7 @@ everyhost# cfshow -l
 everyhost# cfshow -c
 everyhost# cfshow -s
 everyhost# cfshow -p
+everyhost# cfshow -f cfagent.conf -r linux.*
 @end smallexample
 @noindent
 
@@ -434,6 +435,11 @@ in html or parsed with xml, using the @code{--html} and @code{--xml} options.
 This lists all of the files and their current checksum values in the
 current checksum database.
 
+@item -C @code{--classes}
+This lists all of the classes that have been used on the system over the past
+year, with frequency probabilities to show their relative occurrance rates and
+last observed times.
+
 @item -H @code{--html}
 Generate output in web browser-friendly html.
 
@@ -453,6 +459,14 @@ IP - 192.168.1.101 192.168.1.101  @ [Tue Jan 23 16:13] not seen for (6.42) hrs, 
 
 Lines marked with a + are attempts to connect by cfagent, lines with a - are connections
 into cfservd.
+
+@item -r @code{--regex} @var{regex}
+Search the cfengine policy file (e.g. @file{cfagent.conf}) for rules
+that belong to classes matching the named regular expression.  Note
+that the class "any" is not automatically matched and the search is
+based on the class text from the file. The output is not related to
+which classes are currently defined.
+	
 
 @item -s @code{--performance}
 Shows the time in seconds required to complete copies and shell executions.
@@ -5455,7 +5469,7 @@ can be excluded from copies without them being destroyed.
 @cindex Copy, exact filetree images
 @cindex File tree images
 @cindex Tree copying, exact
-Note that purging is disallowed if contant with a remote server fails.
+Note that purging is disallowed if contact with a remote server fails.
 This means that local files will not be destroyed by a denial of service
 attack. @emph{You should not use this option to synchronize NFS mounted
 file systems. If the NFS server goes down, cfengine cannot then tell the

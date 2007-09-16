@@ -160,15 +160,19 @@ if (VCOPYLINKS != NULL)
 
 /*********************************************************************/
 
-void ListDefinedHomePatterns()
+void ListDefinedHomePatterns(char *classes)
 
 { struct Item *ptr;
-
 
 printf ("\nDefined wildcards to match home directories = ( ");
 
 for (ptr = VHOMEPATLIST; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+   
    printf("%s ",ptr->name);
    }
 
@@ -177,7 +181,7 @@ printf (")\n");
 
 /*********************************************************************/
 
-void ListDefinedBinservers()
+void ListDefinedBinservers(char *classes)
 
 { struct Item *ptr;
 
@@ -185,6 +189,11 @@ printf ("\nDefined Binservers = ( ");
 
 for (ptr = VBINSERVERS; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    printf("%s ",ptr->name);
    
    if (ptr->classes)
@@ -199,7 +208,7 @@ printf (")\n");
 
 /*******************************************************************/
 
-void ListDefinedStrategies()
+void ListDefinedStrategies(char *classes)
 
 { struct Strategy *ptr;
   struct Item *ip;
@@ -208,6 +217,11 @@ printf("\nDEFINED STRATEGIES\n\n");
 
  for (ptr = VSTRATEGYLIST; ptr != NULL; ptr=ptr->next)
     {
+    if (!ShowClass(classes,ptr->classes))
+       {
+       continue;
+       }
+
     printf("Strategy %s (type=%c)\n",ptr->name,ptr->type);
     if (ptr->strategies)
        {
@@ -265,14 +279,19 @@ for (ptr = VACLLIST; ptr != NULL; ptr=ptr->next)
 /* Promises                                                          */
 /*********************************************************************/
 
-void ListDefinedInterfaces()
+void ListDefinedInterfaces(char *classes)
 
 { struct Interface *ifp;
 
- printf ("\nDEFINED INTERFACE PROMISES\n\n");
+printf ("\nDEFINED INTERFACE PROMISES\n\n");
  
 for (ifp = VIFLIST; ifp !=NULL; ifp=ifp->next)
    {
+   if (!ShowClass(classes,ifp->classes))
+      {
+      continue;
+      }
+
    InterfacePromise(ifp);
    CF_SPACER;
    }
@@ -291,7 +310,7 @@ printf("     netmask=%s and broadcast=%s\n",ifp->netmask,ifp->broadcast);
 
 /*********************************************************************/
 
-void ListDefinedLinks()
+void ListDefinedLinks(char *classes)
 
 { struct Link *ptr;
   
@@ -299,15 +318,19 @@ printf ("\nDEFINED LINK PROMISES\n\n");
 
 for (ptr = VLINK; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    LinkPromise(ptr,"be a link");
    CF_SPACER;
    }
-
 }
 
 /*********************************************************************/
 
-void ListDefinedLinkchs()
+void ListDefinedLinkchs(char *classes)
 
 { struct Link *ptr;
   struct Item *ip;
@@ -316,6 +339,11 @@ printf ("\nDEFINED CHILD LINK PROMISES\n\n");
 
 for (ptr = VCHLINK; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    LinkPromise(ptr,"link its children");
    CF_SPACER;
    }
@@ -327,7 +355,7 @@ void LinkPromise(struct Link *ptr, char *type)
 
 { struct Item *ip;
  
- printf("%s will %s to %s if context matches %s\n",ptr->from,type,ptr->to,ptr->classes);
+printf("%s will %s to %s if context matches %s\n",ptr->from,type,ptr->to,ptr->classes);
 
 printf(" Behaviour constraint body:\n");
 
@@ -369,6 +397,7 @@ if (ptr->elsedef)
    }
 
 printf("   IfElapsed=%d, ExpireAfter=%d\n",ptr->ifelapsed,ptr->expireafter);
+printf("   Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 }
 
 /*********************************************************************/
@@ -383,7 +412,7 @@ printf("   ifelapsed %d, expireafter %d\n",ptr->ifelapsed,ptr->expireafter);
 
 /*********************************************************************/
 
-void ListDefinedResolvers()
+void ListDefinedResolvers(char *classes)
 
 { struct Item *ptr;
 
@@ -391,6 +420,11 @@ printf ("\nDEFINED RESOLVER CONFIGURATION PROMISES\n\n");
 
 for (ptr = VRESOLVE; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    PromiseItem(ptr);
    CF_SPACER;
    }
@@ -398,7 +432,7 @@ for (ptr = VRESOLVE; ptr != NULL; ptr=ptr->next)
 
 /*********************************************************************/
 
-void ListDefinedAlerts()
+void ListDefinedAlerts(char *classes)
 
 { struct Item *ptr;
 
@@ -406,6 +440,11 @@ printf ("\nDEFINED ALERT PROMISES\n\n");
 
 for (ptr = VALERTS; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    PromiseItem(ptr);
    CF_SPACER;
    }
@@ -413,7 +452,7 @@ for (ptr = VALERTS; ptr != NULL; ptr=ptr->next)
 
 /*********************************************************************/
 
-void ListDefinedHomeservers()
+void ListDefinedHomeservers(char *classes)
 
 { struct Item *ptr;
 
@@ -421,6 +460,11 @@ printf ("\nUse home servers = ( ");
 
 for (ptr = VHOMESERVERS; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    PromiseItem(ptr);
    CF_SPACER;
    }
@@ -460,7 +504,7 @@ for (ap = VAUDIT; ap != NULL; ap=ap->next)
 
 /*********************************************************************/
 
-void ListDefinedIgnore()
+void ListDefinedIgnore(char *classes)
 
 { struct Item *ptr;
 
@@ -468,6 +512,11 @@ printf ("\nFILE SEARCH IGNORE\n\n");
 
 for (ptr = VIGNORE; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    PromiseItem(ptr);
    CF_SPACER;
    }
@@ -475,7 +524,7 @@ for (ptr = VIGNORE; ptr != NULL; ptr=ptr->next)
 
 /*********************************************************************/
 
-void ListDefinedMethods()
+void ListDefinedMethods(char *classes)
 
 { struct Method *ptr;
 
@@ -483,6 +532,11 @@ printf ("\nMETHOD AGREEMENTS\n\n");
 
 for (ptr = VMETHODS; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    PromiseMethod(ptr);
    CF_SPACER;
    }
@@ -573,7 +627,7 @@ printf("   Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 
 /*********************************************************************/
 
-void ListDefinedScripts()
+void ListDefinedScripts(char *classes)
 
 { struct ShellComm *ptr;
 
@@ -581,6 +635,11 @@ printf ("\nPROMISED SHELLCOMMANDS\n\n");
 
 for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    PromiseShellCommand(ptr);
    CF_SPACER;
    }
@@ -588,7 +647,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
 
 /*********************************************************************/
 
-void ListDefinedSCLI()
+void ListDefinedSCLI(char *classes)
 
 { struct ShellComm *ptr;
 
@@ -596,6 +655,11 @@ printf ("\nPROMISED SCLI (snmp) COMMANDS\n\n");
 
 for (ptr = VSCLI; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    PromiseShellCommand(ptr);
    CF_SPACER;
    }
@@ -630,7 +694,7 @@ if (ptr->elsedef)
 
 /*********************************************************************/
 
-void ListDefinedImages()
+void ListDefinedImages(char *classes)
 
 { struct Image *ptr;
   struct Item *svp;
@@ -641,6 +705,11 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
    {
    for (ptr = VIMAGE; ptr != NULL; ptr=ptr->next)
       {
+      if (!ShowClass(classes,ptr->classes))
+         {
+         continue;
+         }
+
       if (strcmp(svp->name,ptr->server) != 0)  /* group together similar hosts so */
          {                                     /* can can do multiple transactions */
          continue;                             /* on one connection */
@@ -792,22 +861,38 @@ printf("Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 
 /*********************************************************************/
 
-void ListDefinedTidy()
+void ListDefinedTidy(char *classes)
 
 { struct Tidy *ptr;
+  struct TidyPattern *tp;
 
 printf ("\nDEFINED TIDY PROMISES\n\n");
 
 for (ptr = VTIDY; ptr != NULL; ptr=ptr->next)
    {
-   PromiseTidy(ptr);
+   int something = false;
+   for (tp = ptr->tidylist; tp != NULL; tp=tp->next)
+      {
+      if (ShowClass(classes,tp->classes))
+         {
+         something = true;
+         break;
+         }
+      }
+   
+   if (!something)
+      {
+      continue;
+      }
+
+   PromiseTidy(ptr,classes);
    CF_SPACER;
    }
 }
 
 /*********************************************************************/
 
-void PromiseTidy(struct Tidy *ptr)
+void PromiseTidy(struct Tidy *ptr, char *classes)
 
 { struct TidyPattern *tp;
   struct Item *ip;
@@ -828,6 +913,11 @@ printf(" Search constraint body:\n");
 
 for(tp = ptr->tidylist; tp != NULL; tp=tp->next)
    {
+   if (!ShowClass(classes,tp->classes))
+      {
+      continue;
+      }
+
    printf("    Use file pattern \"%s\" if context matches [%s]\n",tp->pattern,tp->classes);
    printf("       Use age policy %c-age=%d\n",tp->searchtype,tp->age);
    printf("       If size = %d\n",tp->size);
@@ -879,7 +969,7 @@ for (ip = ptr->ignores; ip != NULL; ip = ip->next)
 
 /*********************************************************************/
 
-void ListDefinedMountables()
+void ListDefinedMountables(char *classes)
 
 { struct Mountables *ptr;
 
@@ -887,6 +977,11 @@ printf ("\nPROMISED MOUNTABLES\n\n");
 
 for (ptr = VMOUNTABLES; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    PromiseMountable(ptr);
    CF_SPACER;
    }
@@ -930,7 +1025,7 @@ printf("Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 
 /*********************************************************************/
 
-void ListMiscMounts()
+void ListMiscMounts(char *classes)
 
 { struct MiscMount *ptr;
 
@@ -938,6 +1033,11 @@ printf ("\nPROMISED MISC MOUNTABLES\n\n");
 
 for (ptr = VMISCMOUNT; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    PromiseMiscMount(ptr);
    CF_SPACER;
    }
@@ -956,7 +1056,7 @@ printf("   Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 
 /*********************************************************************/
 
-void ListDefinedRequired()
+void ListDefinedRequired(char *classes)
 
 { struct Disk *ptr;
 
@@ -964,6 +1064,11 @@ printf ("\nDEFINED REQUIRE PROMISES\n\n");
 
 for (ptr = VREQUIRED; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    DiskPromises(ptr);
    CF_SPACER;
    }
@@ -983,7 +1088,7 @@ printf("   Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 
 /*********************************************************************/
 
-void ListDefinedDisable()
+void ListDefinedDisable(char *classes)
 
 { struct Disable *ptr;
 
@@ -991,6 +1096,11 @@ printf ("\nDEFINED DISABLE PROMISES\n\n");
 
 for (ptr = VDISABLELIST; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    PromiseDisable(ptr);
    CF_SPACER;
    }
@@ -1030,12 +1140,15 @@ if (ptr->elsedef)
    printf("   ElseDefine: %s if no changes made\n",ptr->elsedef);
    }
 
-printf("   Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
+if (ptr->audit)
+   {
+   printf("   Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
+   }
 }
 
 /*********************************************************************/
 
-void ListDefinedMakePaths()
+void ListDefinedMakePaths(char *classes)
 
 { struct File *ptr;
   
@@ -1043,6 +1156,11 @@ printf ("\nPROMISED DIRECTORIES\n\n");
 
 for (ptr = VMAKEPATH; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    PromiseDirectories(ptr);
    CF_SPACER;
    }
@@ -1110,7 +1228,7 @@ printf(" Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 
 /*********************************************************************/
 
-void ListFiles()
+void ListFiles(char *classes)
 
 { struct File *ptr;
 
@@ -1118,6 +1236,11 @@ printf ("\nDEFINED FILE PROMISES\n\n");
 
 for (ptr = VFILE; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    PromiseFiles(ptr);
    CF_SPACER;
    }
@@ -1214,7 +1337,7 @@ printf("     Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno)
 
 /*******************************************************************/
 
-void ListUnmounts()
+void ListUnmounts(char *classes)
 
 { struct UnMount *ptr;
 
@@ -1222,6 +1345,11 @@ printf("\nDEFINED UNMOUNT PROMISES\n\n");
 
 for (ptr=VUNMOUNT; ptr!=NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    PromiseUnmount(ptr);
    CF_SPACER;
    }
@@ -1241,7 +1369,7 @@ printf("   Rule from %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 
 /*******************************************************************/
 
-void ListProcesses()
+void ListProcesses(char *classes)
 
 { struct Process *ptr;
 
@@ -1249,6 +1377,11 @@ printf("\nPROCESSES PROMISES\n\n");
 
 for (ptr = VPROCLIST; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    PromiseProcess(ptr);
    CF_SPACER;
    }
@@ -1337,22 +1470,38 @@ else
 
 /*******************************************************************/
 
-void ListFileEdits()
+void ListFileEdits(char *classes)
 
 { struct Edit *ptr;
-
+  struct Edlist *ep;
+  
 printf("\nDEFINED FILE EDIT PROMISES\n\n");
 
 for (ptr=VEDITLIST; ptr != NULL; ptr=ptr->next)
    {
-   PromiseFileEdits(ptr);
+   int something = false;
+   for (ep = ptr->actions; ep != NULL; ep=ep->next)
+      {
+      if (ShowClass(classes,ep->classes))
+         {
+         something = true;
+         break;
+         }
+      }
+
+   if (!something)
+      {
+      continue;
+      }
+   
+   PromiseFileEdits(ptr,classes);
    CF_SPACER;
    }
 }
 
 /*******************************************************************/
 
-void PromiseFileEdits(struct Edit *ptr)
+void PromiseFileEdits(struct Edit *ptr,char *classes)
 
 { struct Edlist *ep;
   struct Item *ip;
@@ -1363,6 +1512,11 @@ printf(" Constraint Body of convergent operations: [promise type] with \"body\":
 
 for (ep = ptr->actions; ep != NULL; ep=ep->next)
    {
+   if (!ShowClass(classes,ep->classes))
+      {
+      continue;
+      }
+
    if (ep->data == NULL)
       {
       printf("   [%s] \t with no body if context is [%s]\n",VEDITNAMES[ep->code],ep->classes);
@@ -1394,7 +1548,7 @@ printf("   in %s at/before line %d\n",ptr->audit->filename,ptr->lineno);
 
 /*******************************************************************/
 
-void ListFilters()
+void ListFilters(char *classes)
 
 { struct Filter *ptr;
   int i;
@@ -1403,6 +1557,11 @@ printf("\nDEFINED FILTERS\n");
 
 for (ptr=VFILTERLIST; ptr != NULL; ptr=ptr->next)
    {
+   if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
    printf("Filter name %s :\n",ptr->alias);
 
    if (ptr->defines)
@@ -1430,7 +1589,7 @@ for (ptr=VFILTERLIST; ptr != NULL; ptr=ptr->next)
 
 /*******************************************************************/
 
-void ListDefinedPackages()
+void ListDefinedPackages(char *classes)
 
 { struct Package *ptr = NULL;
 
@@ -1438,6 +1597,11 @@ void ListDefinedPackages()
 
  for (ptr = VPKG; ptr != NULL; ptr = ptr->next)
     {
+    if (!ShowClass(classes,ptr->classes))
+      {
+      continue;
+      }
+
     PromisePackages(ptr);
     CF_SPACER;
     }

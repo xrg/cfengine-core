@@ -38,6 +38,22 @@
 	 Auditing = true
 	
 	--
+
+	cfshow --classes 
+
+	also shows the relative frequencies of classes
+	that have occurred on the system and the last time these were
+	observed.
+
+	cfshow -f cfagent.conf --regex "lin.*"
+
+	displays all rules in the named file whose classes match the named
+	regular expression. Note that the class "any" is not automatically matched
+	and the search is based on the class text from the file. The output is not
+	related to which classes are currently defined, and it will not recognise
+	the history of classes implicit through class-restricted imported files.
+	
+	--
 	
 	SCLI interface modifications.
 
@@ -47,6 +63,10 @@
 	--
 	
 	UserExists("name") and GroupExists("name") functions added to builtin functions.
+
+	ClassMatch function added in classes/groups to match regular expressions of other classes
+
+	-- 
 	
 	Additional octet variables added on default IPv4 address, for convenience:
 	e.g.
@@ -83,6 +103,8 @@
 	Code refactoring for package management.
 
 	Bug fixes for problems introduced in 2.2.0.
+
+	Copy directory would not set owner correctly on root
 	
 2.2.0
 	Apart from minor changes, this version is about structural internal

@@ -36,6 +36,7 @@ extern pthread_mutex_t MUTEX_SYSCALL;
 extern pthread_mutex_t MUTEX_LOCK;
 #endif
 
+extern short INSTALLALL;
 extern short ALL_SINGLECOPY;
 extern int PASS;
 extern RSA *PRIVKEY, *PUBKEY;

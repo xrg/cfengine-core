@@ -46,14 +46,15 @@ extern FILE *yyin;
 
 /*******************************************************************/
 
-int ParseInputFile(char *file)
+int ParseInputFile(char *file,int audit)
 
 { char filename[CF_BUFSIZE], *sp;
   struct Item *ptr;
   struct stat s;
   struct Item *done = NULL;
    
-
+Debug("Parse(%s)\n",file);
+  
 NewParser();
 PARSING = true;
 
@@ -79,7 +80,7 @@ else
       return false;
       }
    
-   ParseFile(filename,sp);
+   ParseFile(filename,sp,audit);
    }
 
 for (ptr = VIMPORT; ptr != NULL; ptr=ptr->next)
@@ -96,7 +97,7 @@ for (ptr = VIMPORT; ptr != NULL; ptr=ptr->next)
 
    if (!IsItemIn(done,filename))
       {
-      ParseFile(filename,sp);
+      ParseFile(filename,sp,audit);
       PrependItem(&done,filename,NULL);
       }
    }
@@ -457,8 +458,8 @@ void HandleClass (char *id)
       {
       case '-':
       case '*':
-   snprintf(OUTPUT,CF_BUFSIZE,"Illegal character (%c) in class %s",*sp,id);
-   yyerror(OUTPUT);
+          snprintf(OUTPUT,CF_BUFSIZE,"Illegal character (%c) in class %s",*sp,id);
+          yyerror(OUTPUT);
       }
    }
  
@@ -1021,7 +1022,7 @@ switch (ACTION)
 /* Level 2                                                         */
 /*******************************************************************/
 
-void ParseFile(char *filename,char *env)
+void ParseFile(char *filename,char *env,int audit)
 
 { FILE *save_yyin = yyin;
  
@@ -1056,7 +1057,11 @@ Debug("# BEGIN PARSING %s\n",VCURRENTFILE);
 Debug("##########################################################################\n\n"); 
  
 LINENUMBER = 1;
-PrependAuditFile(filename);
+
+if (audit)
+   {
+   PrependAuditFile(filename);
+   }
 
 while (!feof(yyin))
    { 
@@ -1070,7 +1075,10 @@ while (!feof(yyin))
       }
    }
 
-VersionAuditFile();
+if (audit)
+   {
+   VersionAuditFile();
+   }
 
 fclose (yyin);
 yyin = save_yyin;
@@ -1150,7 +1158,6 @@ char *FindInputFile(char *result,char *filename)
 { char *sp;
  
 result[0] = '\0';
-
  
 if (MINUSF && (*filename == '.' || *filename == '/'))
    {

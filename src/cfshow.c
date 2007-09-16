@@ -34,6 +34,8 @@ struct option CFSHOPTIONS[] =
    { "xml",no_argument,0,'X'},
    { "purge",no_argument,0,'P'},
    { "audit",no_argument,0,'A'},
+   { "regex",required_argument,0,'r'},
+   { "filename",required_argument,0,'f'},
    { NULL,0,0,0 }
    };
 
@@ -45,7 +47,8 @@ enum databases
    cf_db_checksum,
    cf_db_performance,
    cf_db_audit,
-   cf_db_classes
+   cf_db_classes,
+   cf_db_regex
    };
 
 enum databases TODO = -1;
@@ -129,6 +132,7 @@ void PrintDB(void);
 void ShowLastSeen(void);
 void ShowChecksums(void);
 void ShowClasses(void);
+void ShowRegex(char *regex);
 void ShowLocks(int active);
 void ShowPerformance(void);
 void ShowCurrentAudit(void);
@@ -160,7 +164,7 @@ void CheckOptsAndInit(int argc,char **argv)
 PURGE = 'n';
 AUDIT = false;
 
-while ((c=getopt_long(argc,argv,"AhdvaVlscpPXH",CFSHOPTIONS,&optindex)) != EOF)
+while ((c=getopt_long(argc,argv,"AhdvaVlr:f:scpPXH",CFSHOPTIONS,&optindex)) != EOF)
   {
   switch ((char) c)
       {
@@ -177,7 +181,7 @@ while ((c=getopt_long(argc,argv,"AhdvaVlscpPXH",CFSHOPTIONS,&optindex)) != EOF)
              }
           
           VERBOSE = true;
-          printf("cfexecd Debug mode: running in foreground\n");
+          printf("cfshow Debug mode: running in foreground\n");
           break;
           
       case 'v': VERBOSE = true;
@@ -229,7 +233,19 @@ while ((c=getopt_long(argc,argv,"AhdvaVlscpPXH",CFSHOPTIONS,&optindex)) != EOF)
       case 'P':
           PURGE = 'y';
           break;
+
+      case'f':
+          strncpy(VINPUTFILE,optarg, CF_BUFSIZE-1);
+          VINPUTFILE[CF_BUFSIZE-1] = '\0';
+          MINUSF = true;
+          printf("Looking for %s\n",VINPUTFILE);
+          break;
           
+      case 'r':
+          ShowRegex(optarg);
+          TODO = cf_db_regex;
+          break;
+
       default:  Syntax();
           exit(1);
           
@@ -280,6 +296,8 @@ switch (TODO)
        break;
    case cf_db_classes:
        ShowClasses();
+       break;
+   default:
        break;
    }
 }
@@ -1182,4 +1200,79 @@ for (i = 0; i < len; i++)
 return buffer; 
 }    
 
+/*********************************************************************/
 
+void ShowRegex(char *regex)
+
+{
+SetSignals();
+SetReferenceTime(false);
+SetStartTime(true);
+OpenSSL_add_all_algorithms();
+ERR_load_crypto_strings();
+VREPOSITORY = strdup("\0");
+VCANONICALFILE = strdup(VINPUTFILE);
+VDEFAULTBINSERVER.name = "";
+AddClassToHeap("any");
+PARSEONLY = INSTALLALL = true;
+
+strcpy(CFWORKDIR,WORKDIR);
+SetContext("cfshow");
+ISCFENGINE = true;
+ParseInputFile(VINPUTFILE,true);
+ISCFENGINE = false;
+
+ListDefinedInterfaces(regex);
+printf("------------------------------------------------------------\n");
+ListDefinedBinservers(regex);
+printf("------------------------------------------------------------\n");
+ListDefinedHomeservers(regex);
+printf("------------------------------------------------------------\n");
+ListDefinedHomePatterns(regex);
+printf("------------------------------------------------------------\n");
+ListDefinedStrategies(regex);
+printf("------------------------------------------------------------\n");
+ListACLs();
+printf("------------------------------------------------------------\n");
+ListFilters(regex);
+printf("------------------------------------------------------------\n");   
+ListDefinedIgnore(regex);
+printf("------------------------------------------------------------\n");
+ListDefinedAlerts(regex);
+printf("------------------------------------------------------------\n");
+ListDefinedDisable(regex);
+printf("------------------------------------------------------------\n");
+ListFiles(regex);
+ListDefinedMakePaths(regex);
+printf("------------------------------------------------------------\n");
+ListFileEdits(regex);
+printf("------------------------------------------------------------\n");
+ListDefinedImages(regex);
+printf("------------------------------------------------------------\n");
+ListDefinedLinks(regex);
+printf("------------------------------------------------------------\n");
+ListDefinedLinkchs(regex);
+printf("------------------------------------------------------------\n");
+ListDefinedMethods(regex);
+printf("------------------------------------------------------------\n");
+ListDefinedMountables(regex);
+printf("------------------------------------------------------------\n");
+ListMiscMounts(regex);
+printf("------------------------------------------------------------\n");
+ListUnmounts(regex);
+printf("------------------------------------------------------------\n");
+ListDefinedPackages(regex);
+printf("------------------------------------------------------------\n");
+ListProcesses(regex);
+printf("------------------------------------------------------------\n");
+ListDefinedRequired(regex);
+printf("------------------------------------------------------------\n");
+ListDefinedResolvers(regex);
+printf("------------------------------------------------------------\n");
+ListDefinedSCLI(regex);
+printf("------------------------------------------------------------\n");
+ListDefinedScripts(regex);
+printf("------------------------------------------------------------\n");
+ListDefinedTidy(regex);
+printf("------------------------------------------------------------\n");
+}

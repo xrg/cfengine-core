@@ -157,7 +157,7 @@ if (IsPrivileged() && !MINUSF && !PRSCHEDULE)
    {
    SetContext("update");
    
-   if (ParseInputFile("update.conf"))
+   if (ParseInputFile("update.conf",true))
       {
       CheckSystemVariables();
       
@@ -196,7 +196,7 @@ if (!PARSEONLY)
    GetEnvironment();
    }
 
-ParseInputFile(VINPUTFILE);
+ParseInputFile(VINPUTFILE,true);
 CheckFilters();
 EchoValues();
 
@@ -734,13 +734,13 @@ if (DEBUG || D2 || D3)
    printf("Edit File (Max) Size = %d\n\n",EDITFILESIZE);
    printf("Edit Binary File (Max) Size = %d\n\n",EDITBINFILESIZE);
    printf("------------------------------------------------------------\n");
-   ListDefinedInterfaces();
+   ListDefinedInterfaces(NULL);
    printf("------------------------------------------------------------\n");
-   ListDefinedBinservers();
+   ListDefinedBinservers(NULL);
    printf("------------------------------------------------------------\n");
-   ListDefinedHomeservers();
+   ListDefinedHomeservers(NULL);
    printf("------------------------------------------------------------\n");
-   ListDefinedHomePatterns();
+   ListDefinedHomePatterns(NULL);
    printf("------------------------------------------------------------\n");
    ListActionSequence();
 
@@ -772,52 +772,52 @@ if (DEBUG || D2 || D3)
    printf("------------------------------------------------------------\n");
    ListDefinedVariables();
    printf("------------------------------------------------------------\n");
-   ListDefinedStrategies();
+   ListDefinedStrategies(NULL);
    printf("------------------------------------------------------------\n");
    ListACLs();
    printf("------------------------------------------------------------\n");
-   ListFilters();
+   ListFilters(NULL);
    printf("------------------------------------------------------------\n");   
-   ListDefinedIgnore();
+   ListDefinedIgnore(NULL);
 
    printf("------------------------------------------------------------\n");
    printf("------------------------------------------------------------\n");
-   ListDefinedAlerts();
+   ListDefinedAlerts(NULL);
    printf("------------------------------------------------------------\n");
-   ListDefinedDisable();
+   ListDefinedDisable(NULL);
    printf("------------------------------------------------------------\n");
-   ListFiles();
-   ListDefinedMakePaths();
+   ListFiles(NULL);
+   ListDefinedMakePaths(NULL);
    printf("------------------------------------------------------------\n");
-   ListFileEdits();
+   ListFileEdits(NULL);
    printf("------------------------------------------------------------\n");
-   ListDefinedImages();
+   ListDefinedImages(NULL);
    printf("------------------------------------------------------------\n");
-   ListDefinedLinks();
+   ListDefinedLinks(NULL);
    printf("------------------------------------------------------------\n");
-   ListDefinedLinkchs();
+   ListDefinedLinkchs(NULL);
    printf("------------------------------------------------------------\n");
-   ListDefinedMethods();
+   ListDefinedMethods(NULL);
    printf("------------------------------------------------------------\n");
-   ListDefinedMountables();
+   ListDefinedMountables(NULL);
    printf("------------------------------------------------------------\n");
-   ListMiscMounts();
+   ListMiscMounts(NULL);
    printf("------------------------------------------------------------\n");
-   ListUnmounts();
+   ListUnmounts(NULL);
    printf("------------------------------------------------------------\n");
-   ListDefinedPackages();
+   ListDefinedPackages(NULL);
    printf("------------------------------------------------------------\n");
-   ListProcesses();
+   ListProcesses(NULL);
    printf("------------------------------------------------------------\n");
-   ListDefinedRequired();
+   ListDefinedRequired(NULL);
    printf("------------------------------------------------------------\n");
-   ListDefinedResolvers();
+   ListDefinedResolvers(NULL);
    printf("------------------------------------------------------------\n");
-   ListDefinedSCLI();
+   ListDefinedSCLI(NULL);
    printf("------------------------------------------------------------\n");
-   ListDefinedScripts();
+   ListDefinedScripts(NULL);
    printf("------------------------------------------------------------\n");
-   ListDefinedTidy();
+   ListDefinedTidy(NULL);
    printf("------------------------------------------------------------\n");
 
 

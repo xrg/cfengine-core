@@ -303,6 +303,7 @@ void ResetLine (char *s);
 
 /* eval.c */
 
+int ShowClass(char *c1,char *c2);
 int CountParentheses(char *str);
 int NestedParentheses(char *str);
 int Day2Number (char *s);
@@ -818,8 +819,8 @@ void GetNonMarkov (void);
 
 /* parse.c */
 
-int ParseInputFile (char *file);
-void ParseFile (char *f,char *env);
+int ParseInputFile (char *file,int audit);
+void ParseFile (char *f,char *env,int audit);
 void ParseStdin (void);
 void NewParser (void);
 int RemoveEscapeSequences (char *from,char *to);
@@ -938,35 +939,35 @@ int ReadLine (char *buff, int size, FILE *fp);
 
 void ListDefinedVariables (void);
 void ListDefinedClasses (void);
-void ListDefinedMethods (void);
-void ListDefinedAlerts (void);
-void ListDefinedStrategies (void);
-void ListDefinedInterfaces (void);
-void ListDefinedHomePatterns (void);
-void ListDefinedBinservers (void);
-void ListDefinedLinks (void);
-void ListDefinedLinkchs (void);
-void ListDefinedResolvers (void);
-void ListDefinedScripts (void);
-void ListDefinedSCLI (void);
-void ListDefinedImages (void);
-void ListDefinedTidy (void);
-void ListDefinedMountables (void);
-void ListMiscMounts (void);
-void ListDefinedRequired (void);
-void ListDefinedHomeservers (void);
-void ListDefinedDisable (void);
-void ListDefinedMakePaths (void);
+void ListDefinedMethods (char *classes);
+void ListDefinedAlerts (char *classes);
+void ListDefinedStrategies (char *classes);
+void ListDefinedInterfaces (char *classes);
+void ListDefinedHomePatterns (char *classes);
+void ListDefinedBinservers (char *classes);
+void ListDefinedLinks (char *classes);
+void ListDefinedLinkchs (char *classes);
+void ListDefinedResolvers (char *classes);
+void ListDefinedScripts (char *classes);
+void ListDefinedSCLI (char *classes);
+void ListDefinedImages (char *classes);
+void ListDefinedTidy (char *classes);
+void ListDefinedMountables (char *classes);
+void ListMiscMounts (char *classes);
+void ListDefinedRequired (char *classes);
+void ListDefinedHomeservers (char *classes);
+void ListDefinedDisable (char *classes);
+void ListDefinedMakePaths (char *classes);
 void ListDefinedImports (void);
-void ListDefinedIgnore (void);
-void ListDefinedPackages (void);
-void ListFiles (void);
+void ListDefinedIgnore (char *classes);
+void ListDefinedPackages (char *classes);
+void ListFiles (char *classes);
 void ListActionSequence (void);
-void ListUnmounts (void);
-void ListProcesses (void);
+void ListUnmounts (char *classes);
+void ListProcesses (char *classes);
 void ListACLs (void);
-void ListFileEdits (void);
-void ListFilters (void);
+void ListFileEdits (char *classes);
+void ListFilters (char *classes);
 
 void InterfacePromise(struct Interface *ifp);
 void LinkPromise(struct Link *ptr, char *type);
@@ -974,7 +975,7 @@ void PromiseItem(struct Item *ptr);
 void PromiseMethod(struct Method *ptr);
 void PromiseShellCommand(struct ShellComm *ptr);
 void PromiseFileCopy(struct Image *ptr);
-void PromiseTidy(struct Tidy *ptr);
+void PromiseTidy(struct Tidy *ptr,char *classes);
 void PromiseMountable(struct Mountables *ptr);
 void PromiseMiscMount(struct MiscMount *ptr);
 void DiskPromises(struct Disk *ptr);
@@ -982,7 +983,7 @@ void PromiseDisable(struct Disable *ptr);
 void PromiseDirectories(struct File *ptr);
 void PromiseFiles(struct File *ptr);
 void PromiseUnmount(struct UnMount *ptr);
-void PromiseFileEdits(struct Edit *ptr);
+void PromiseFileEdits(struct Edit *ptr,char *classes);
 void PromiseProcess(struct Process *ptr);
 void PromisePackages(struct Package *ptr);
 

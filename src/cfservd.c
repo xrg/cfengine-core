@@ -143,7 +143,7 @@ int main (int argc,char **argv)
 
 {
 CheckOptsAndInit(argc,argv);
-ParseInputFile(VINPUTFILE);
+ParseInputFile(VINPUTFILE,true);
 
 /* We call CfOpenLog again so, if we configure SyslogFacility, 
    we open syslog again */
@@ -1085,7 +1085,7 @@ if (CFDSTARTTIME < newstat.st_mtime)
    GetNameInfo();
    GetInterfaceInfo();
    GetV6InterfaceInfo();
-   ParseInputFile(VINPUTFILE);
+   ParseInputFile(VINPUTFILE,true);
    CheckVariables();
    SummarizeParsing();
    }

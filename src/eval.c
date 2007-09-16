@@ -68,6 +68,38 @@ char *MONTHTEXT[] =
    "December"
    };
 
+/*********************************************************************/
+
+int ShowClass(char *c1,char *c2)
+    
+{ regex_t rx,rxcache;
+  regmatch_t pmatch;
+  char buf[CF_BUFSIZE];
+  int code;
+
+if (c1 == NULL || c2 == NULL)
+   {
+   return true;
+   }
+
+code = regcomp(&rx,c1,REG_EXTENDED);
+ 
+if (code != 0)
+   {
+   regerror(code,&rx,buf,CF_BUFSIZE-1);
+   printf("Regular expression error %d for %s: %s\n", code,c1,buf);
+   FatalError("Cannot use this for matching");
+   }
+else
+   {
+   if (regexec(&rx,c2,1,&pmatch,0) != 0)
+      {
+      return false;
+      }
+   }
+
+return true;
+}
 
 /*********************************************************************/
 /* Level 1                                                           */
@@ -519,6 +551,11 @@ int IsDefinedClass(char *class)
 { int ret;
 Debug4("IsDefinedClass(%s,VADDCLASSES)\n",class);
 
+if (CfShow())
+   {
+   return true;
+   }
+
 if (class == NULL)
    {
    return true;
@@ -541,7 +578,12 @@ int IsInstallable(char *class)
  int i = 0, val;
 
 Debug1("IsInstallable(%s) -",class);
-  
+
+if (CfShow())
+   {
+   return true;
+   }
+
 for (sp = class; *sp != '\0'; sp++)
    {
    if (*sp == '!')
@@ -986,4 +1028,27 @@ for (i = 0; i < strlen(s)-1; i++)
    }
 
 return true;
+}
+
+/****************************************************************/
+
+int CfShow() /* is the this cfshow -r parser ? */
+
+{
+switch (ACTION)
+   {
+   case control:
+   case defaultroute:
+   case import:
+       return false;
+   }
+
+if (INSTALLALL)
+   {
+   return true;
+    }
+else
+    {
+    return false;
+    }
 }

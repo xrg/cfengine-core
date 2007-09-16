@@ -367,6 +367,7 @@ operational purposes.
      everyhost# cfshow -c
      everyhost# cfshow -s
      everyhost# cfshow -p
+     everyhost# cfshow -f cfagent.conf -r linux.*
 </pre>
    <p class="noindent">The command line options are
 
@@ -380,6 +381,10 @@ in html or parsed with xml, using the <code>--html</code> and <code>--xml</code>
 
      <br><dt>`<samp><span class="samp">-c </span><code>--checksum</code></samp>'<dd>This lists all of the files and their current checksum values in the
 current checksum database.
+
+     <br><dt>`<samp><span class="samp">-C </span><code>--classes</code></samp>'<dd>This lists all of the classes that have been used on the system over the past
+year, with frequency probabilities to show their relative occurrance rates and
+last observed times.
 
      <br><dt>`<samp><span class="samp">-H </span><code>--html</code></samp>'<dd>Generate output in web browser-friendly html.
 
@@ -395,6 +400,12 @@ user scripts. e.g.
      </pre>
      <p>Lines marked with a + are attempts to connect by cfagent, lines with a - are connections
 into cfservd.
+
+     <br><dt>`<samp><span class="samp">-r </span><code>--regex</code> <var>regex</var></samp>'<dd>Search the cfengine policy file (e.g. <samp><span class="file">cfagent.conf</span></samp>) for rules
+that belong to classes matching the named regular expression.  Note
+that the class "any" is not automatically matched and the search is
+based on the class text from the file. The output is not related to
+which classes are currently defined.
 
      <br><dt>`<samp><span class="samp">-s </span><code>--performance</code></samp>'<dd>Shows the time in seconds required to complete copies and shell executions.
 
@@ -5218,7 +5229,7 @@ purge only those files on the client machine which are also on the
 server. Included files are not purged. 
 This means that some files (such as system specific work files)
 can be excluded from copies without them being destroyed. 
-<a name="index-purge_003d-310"></a><a name="index-Copy_002c-exact-filetree-images-311"></a><a name="index-File-tree-images-312"></a><a name="index-Tree-copying_002c-exact-313"></a>Note that purging is disallowed if contant with a remote server fails. 
+<a name="index-purge_003d-310"></a><a name="index-Copy_002c-exact-filetree-images-311"></a><a name="index-File-tree-images-312"></a><a name="index-Tree-copying_002c-exact-313"></a>Note that purging is disallowed if contact with a remote server fails. 
 This means that local files will not be destroyed by a denial of service
 attack. <em>You should not use this option to synchronize NFS mounted
 file systems. If the NFS server goes down, cfengine cannot then tell the

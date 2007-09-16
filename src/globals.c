@@ -743,6 +743,7 @@ char *OBS[CF_OBSERVABLES] =
   PUBLIC  struct Audit *VAUDIT = NULL; 
   PUBLIC  short SHOWDB = false;
   PUBLIC  short PARSING = false;
+  PUBLIC  short INSTALLALL = false;
   PRIVATE short TRAVLINKS = false;
   PRIVATE short PTRAVLINKS = false;
   PRIVATE short DEADLINKS = true;
