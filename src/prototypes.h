@@ -566,6 +566,7 @@ char *IPString2UQHostname (char *name);
 /* instrument.c */
 
 void RecordPerformance(char *name, time_t t, double value);
+void RecordClassUsage(struct Item *list);
 void LastSeen (char *host,enum roles role);
 void CheckFriendConnections(int hours);
 void CheckFriendReliability(void);
@@ -577,7 +578,8 @@ int ReadDB(DB *dbp,char *name,void *ptr,int size);
 int WriteDB(DB *dbp,char *name,void *ptr,int size);
 void DeleteDB(DB *dbp,char *name);
 double SWAverage(double anew,double aold);
-    
+double GAverage(double anew,double aold,double wnew, double wold);
+
 /* item-ext.c */
 
 int OrderedListsMatch (struct Item *list1, struct Item *list2);

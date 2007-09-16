@@ -28,6 +28,7 @@ struct option CFSHOPTIONS[] =
    { "performance",no_argument,0,'p'},
    { "checksum",no_argument,0,'c'},
    { "active",no_argument,0,'a'},
+   { "classes",no_argument,0,'C'},
    { "version",no_argument,0,'V'},
    { "html",no_argument,0,'H'},
    { "xml",no_argument,0,'X'},
@@ -43,7 +44,8 @@ enum databases
    cf_db_active,
    cf_db_checksum,
    cf_db_performance,
-   cf_db_audit
+   cf_db_audit,
+   cf_db_classes
    };
 
 enum databases TODO = -1;
@@ -126,6 +128,7 @@ void Syntax (void);
 void PrintDB(void);
 void ShowLastSeen(void);
 void ShowChecksums(void);
+void ShowClasses(void);
 void ShowLocks(int active);
 void ShowPerformance(void);
 void ShowCurrentAudit(void);
@@ -207,6 +210,10 @@ while ((c=getopt_long(argc,argv,"AhdvaVlscpPXH",CFSHOPTIONS,&optindex)) != EOF)
           TODO = cf_db_checksum;
           break;
 
+      case 'C':
+          TODO = cf_db_classes;
+          break;
+
       case 'p':
           TODO = cf_db_performance;
           break;
@@ -270,6 +277,9 @@ switch (TODO)
        break;
    case cf_db_audit:
        ShowCurrentAudit();
+       break;
+   case cf_db_classes:
+       ShowClasses();
        break;
    }
 }
@@ -470,7 +480,7 @@ snprintf(name,CF_BUFSIZE-1,"%s/%s",CFWORKDIR,CF_PERFORMANCE);
 
 if ((errno = db_create(&dbp,dbenv,0)) != 0)
    {
-   printf("Couldn't open last-seen database %s\n",name);
+   printf("Couldn't open performance database %s\n",name);
    perror("db_open");
    return;
    }
@@ -481,7 +491,7 @@ if ((errno = (dbp->open)(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
    {
-   printf("Couldn't open last-seen database %s\n",name);
+   printf("Couldn't open performance database %s\n",name);
    perror("db_open");
    dbp->close(dbp,0);
    return;
@@ -491,7 +501,7 @@ if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 
 if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
    {
-   printf("Error reading from last-seen database: ");
+   printf("Error reading from performance database: ");
    dbp->err(dbp, ret, "DB->cursor");
    return;
    }
@@ -572,6 +582,142 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       else
          {
          printf("(%7.4f mins @ %s) Av %7.4f +/- %7.4f for %s \n",measure,tbuf,average,sqrt(var)/ticksperminute,eventname);
+         }
+      }
+   else
+      {
+      continue;
+      }
+   }
+
+if (HTML)
+   {
+   printf("</table>");
+   }
+
+dbcp->c_close(dbcp);
+dbp->close(dbp,0);
+}
+
+
+/*******************************************************************/
+
+void ShowClasses()
+
+{ DBT key,value;
+  DB *dbp;
+  DBC *dbcp;
+  DB_ENV *dbenv = NULL;
+  double now = (double)time(NULL),average = 0, var = 0;
+  double ticksperminute = 60.0;
+  char name[CF_BUFSIZE],eventname[CF_BUFSIZE];
+  struct Event entry;
+  int ret;
+  
+snprintf(name,CF_BUFSIZE-1,"%s/%s",CFWORKDIR,CF_CLASSUSAGE);
+
+if ((errno = db_create(&dbp,dbenv,0)) != 0)
+   {
+   printf("Couldn't open class database %s\n",name);
+   perror("db_open");
+   return;
+   }
+
+#ifdef CF_OLD_DB
+if ((errno = (dbp->open)(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#endif
+   {
+   printf("Couldn't open class database %s\n",name);
+   perror("db_open");
+   dbp->close(dbp,0);
+   return;
+   }
+
+/* Acquire a cursor for the database. */
+
+if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
+   {
+   printf("Error reading from class database: ");
+   dbp->err(dbp, ret, "DB->cursor");
+   return;
+   }
+
+ /* Initialize the key/data return pair. */
+ 
+memset(&key, 0, sizeof(key));
+memset(&value, 0, sizeof(value));
+memset(&entry, 0, sizeof(entry)); 
+
+if (HTML)
+   {
+   printf("<html><head><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/menus.css\" /><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/cf_blue.css\"/></head><body><h1>Class probabilities observed on %s</h1><p><table class=border cellpadding=5>",VFQNAME);
+   }
+
+if (XML)
+   {
+   printf("<?xml version=\"1.0\"?>\n");
+   }
+
+ /* Walk through the database and print out the key/data pairs. */
+
+while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
+   {
+   double measure;
+   time_t then;
+   char tbuf[CF_BUFSIZE],addr[CF_BUFSIZE];
+
+   memcpy(&then,value.data,sizeof(then));
+   strcpy(eventname,(char *)key.data);
+
+   if (value.data != NULL)
+      {
+      memcpy(&entry,value.data,sizeof(entry));
+
+      then    = entry.t;
+      measure = entry.Q.q;
+      average = entry.Q.expect;
+      var     = entry.Q.var;
+
+      snprintf(tbuf,CF_BUFSIZE-1,"%s",ctime(&then));
+      tbuf[strlen(tbuf)-9] = '\0';                     /* Chop off second and year */
+
+      if (PURGE == 'y')
+         {
+         if (now - then > CF_WEEK*52)
+            {
+            if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
+               {
+               CfLog(cferror,"","db_store");
+               }
+            }
+         
+         fprintf(stderr,"Deleting expired entry for %s\n",eventname);
+         continue;
+         }
+      
+      if (XML)
+         {
+         printf("%s",CFX[cfx_entry][cfb]);
+         printf("%s%s%s",CFX[cfx_event][cfb],eventname,CFX[cfx_event][cfe]);
+         printf("%s%s%s",CFX[cfx_date][cfb],tbuf,CFX[cfx_date][cfe]);
+         printf("%s%.4f%s",CFX[cfx_av][cfb],average,CFX[cfx_av][cfe]);
+         printf("%s%.4f%s",CFX[cfx_dev][cfb],sqrt(var)/ticksperminute,CFX[cfx_dev][cfe]);
+         printf("%s",CFX[cfx_entry][cfe]);         
+         }
+      else if (HTML)
+         {
+         printf("%s",CFH[cfx_entry][cfb]);
+         printf("%s%s%s",CFH[cfx_event][cfb],eventname,CFH[cfx_event][cfe]);
+         printf("%s last occured at %s%s",CFH[cfx_date][cfb],tbuf,CFH[cfx_date][cfe]);
+         printf("%s Probability %.4f %s",CFH[cfx_av][cfb],average,CFH[cfx_av][cfe]);
+         printf("%s &plusmn; %.4f %s",CFH[cfx_dev][cfb],sqrt(var)/ticksperminute,CFH[cfx_dev][cfe]);
+         printf("%s",CFH[cfx_entry][cfe]);
+         }
+      else
+         {
+         printf("Probability %7.4f +/- %7.4f for %s (last oberved @ %s)\n",average,sqrt(var)/ticksperminute,eventname,tbuf);
          }
       }
    else

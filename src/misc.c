@@ -1223,11 +1223,11 @@ if ((fp = fopen("/etc/issue","r")) == NULL)
 
 do
    {
-   fgets(buffer,sizeof(buffer), fp);
+   sp = fgets(buffer,sizeof(buffer), fp);
    Chop(buffer);
    len = strlen(buffer);
    }
-while (len == 0);
+while (sp != NULL);
 
 AddClassToHeap(CanonifyName(buffer));
 

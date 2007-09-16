@@ -357,6 +357,7 @@ typedef int clockid_t;
 
 /*******************************************************************/
 
+#define CF_CLASSUSAGE     "cf_classes.db"
 #define CF_PERFORMANCE    "performance.db"
 #define CF_CHKDB          "checksum_digests.db"
 #define CF_AVDB_FILE      "cf_observations.db"

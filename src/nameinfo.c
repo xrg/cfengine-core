@@ -707,9 +707,11 @@ Debug("Job start time set to %s\n",ctime(&tloc));
 void BuildClassEnvironment()
 
 { struct Item *ip;
- int size = 0;
- char file[CF_BUFSIZE], *sp;
- FILE *fp;
+  int size = 0;
+  char file[CF_BUFSIZE], *sp;
+  FILE *fp;
+  DB *dbp;
+  DB_ENV *dbenv = NULL;
  
 Debug("(BuildClassEnvironment)\n");
 
@@ -758,9 +760,9 @@ for (ip = VHEAP; ip != NULL; ip=ip->next)
       }
    }
  
- for (ip = VALLADDCLASSES; ip != NULL; ip=ip->next)
-    {
-    if (IsDefinedClass(ip->name))
+for (ip = VALLADDCLASSES; ip != NULL; ip=ip->next)
+   {
+   if (IsDefinedClass(ip->name))
       {
       if ((size += strlen(ip->name)) > 4*CF_BUFSIZE - CF_BUFFERMARGIN)
          {
@@ -776,17 +778,20 @@ for (ip = VHEAP; ip != NULL; ip=ip->next)
       
       fprintf(fp,"%s\n",ip->name);
       }
-    }
- 
- Debug2("---\nENVIRONMENT: %s\n---\n",ALLCLASSBUFFER);
- 
- if (USEENVIRON)
-    {
-    if (putenv(ALLCLASSBUFFER) == -1)
-       {
-       perror("putenv");
-       }
-    }
+   }
 
- fclose(fp);
+Debug2("---\nENVIRONMENT: %s\n---\n",ALLCLASSBUFFER);
+
+RecordClassUsage(VHEAP);
+RecordClassUsage(VALLADDCLASSES);
+
+if (USEENVIRON)
+   {
+   if (putenv(ALLCLASSBUFFER) == -1)
+      {
+      perror("putenv");
+      }
+   }
+
+fclose(fp);
 }

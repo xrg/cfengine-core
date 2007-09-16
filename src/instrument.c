@@ -46,7 +46,7 @@ void RecordPerformance(char *eventname,time_t t,double value)
 
 { DB *dbp;
   DB_ENV *dbenv = NULL;
-  char name[CF_BUFSIZE],databuf[CF_BUFSIZE];
+  char name[CF_BUFSIZE];
   struct Event e,newe;
   double lastseen,delta2;
   int lsea = CF_WEEK;
@@ -75,7 +75,7 @@ if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
    return;
    }
 
-if (ReadDB(dbp,databuf,&e,sizeof(e)))
+if (ReadDB(dbp,eventname,&e,sizeof(e)))
    {
    lastseen = now - e.t;
    newe.t = t;
@@ -109,6 +109,84 @@ else
    {
    Verbose("Performance(%s): time=%.4f secs, av=%.4f +/- %.4f\n",eventname,value,newe.Q.expect,sqrt(newe.Q.var));
    WriteDB(dbp,eventname,&newe,sizeof(newe));
+   }
+
+dbp->close(dbp,0);
+}
+
+/***************************************************************/
+
+void RecordClassUsage(struct Item *list)
+
+{ DB *dbp;
+  DB_ENV *dbenv = NULL;
+  char name[CF_BUFSIZE];
+  struct Event e,newe;
+  int lsea = CF_WEEK * 52; /* expire after a year */
+  time_t now = time(NULL);
+  struct Item *ip;
+  double lastseen,delta2;
+  double value = 1.0;      /* end with a rough probability */
+
+Debug("RecordClassUsage\n");
+
+snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_CLASSUSAGE);
+
+if ((errno = db_create(&dbp,dbenv,0)) != 0)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open performance database %s\n",name);
+   CfLog(cferror,OUTPUT,"db_open");
+   return;
+   }
+
+#ifdef CF_OLD_DB
+if ((errno = (dbp->open)(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#endif
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open performance database %s\n",name);
+   CfLog(cferror,OUTPUT,"db_open");
+   dbp->close(dbp,0);
+   return;
+   }
+
+for (ip = list; ip != NULL; ip=ip->next)
+   {
+   if (ReadDB(dbp,ip->name,&e,sizeof(e)))
+      {
+      lastseen = now - e.t;
+      newe.t = now;
+      newe.Q.q = value;
+      newe.Q.expect = GAverage(value,e.Q.expect,0.5,0.5);
+      delta2 = (value - e.Q.expect)*(value - e.Q.expect);
+      newe.Q.var = GAverage(delta2,e.Q.var,0.5,0.5);
+      
+      /* Have to kickstart variance computation, assume 1% to start  */
+      
+      if (newe.Q.var <= 0.0009)
+         {
+         newe.Q.var =  newe.Q.expect / 100.0;
+         }
+      }
+   else
+      {
+      lastseen = 0.0;
+      newe.t = now;
+      newe.Q.q = value;
+      newe.Q.expect = value;
+      newe.Q.var = 0.001;
+      }
+   
+   if (lastseen > (double)lsea)
+      {
+      Verbose("Class usage record %s expired\n",ip->name);
+      DeleteDB(dbp,ip->name);   
+      }
+   else
+      {
+      WriteDB(dbp,ip->name,&newe,sizeof(newe));
+      }
    }
 
 dbp->close(dbp,0);
@@ -783,6 +861,17 @@ double SWAverage(double anew,double aold)
 
 wnew = 0.3;
 wold = 0.7;
+
+av = (wnew*anew + wold*aold)/(wnew+wold); 
+
+return av;
+}
+
+/*****************************************************************************/
+
+double GAverage(double anew,double aold,double wnew, double wold)
+
+{ double av;
 
 av = (wnew*anew + wold*aold)/(wnew+wold); 
 
