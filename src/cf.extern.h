@@ -52,6 +52,10 @@ extern struct Item *METHODRETURNCLASSES;
 extern struct Audit *AUDITPTR;
 extern struct Audit *VAUDIT; 
 
+extern int PR_KEPT;
+extern int PR_REPAIRED;
+extern int PR_NOTKEPT;
+
 extern struct Item *CLASSHISTORY;
 extern char METHODFILENAME[CF_BUFSIZE];
 extern char *VMETHODPROTO[];

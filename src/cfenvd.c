@@ -118,6 +118,9 @@ struct option CFDENVOPTIONS[] =
 
 short NO_FORK = false;
 
+int LASTQ[CF_OBSERVABLES];
+
+
 
 /*******************************************************************/
 /* Prototypes                                                      */
@@ -161,6 +164,8 @@ void CfenvTimeOut (void);
 void IncrementCounter (struct Item **list,char *name);
 void SaveTCPEntropyData (struct Item *list,int i, char *inout);
 void ConvertDatabase(void);
+int GetFileGrowth(char *filename,enum observables index);
+
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -321,6 +326,7 @@ for (i = 0; i < CF_OBSERVABLES; i++)
    CHI_LIMIT[i] = 0.1;
    LDT_AVG[i] = 0;
    LDT_SUM[i] = 0;
+   LASTQ[i] = 0;
    
    for (j = 0; j < LDT_BUFSIZE; j++)
       {
@@ -1313,8 +1319,16 @@ void GatherDiskData()
 {
 THIS[ob_diskfree] = GetDiskUsage("/",cfpercent);
 Verbose("Disk free = %d %%\n",THIS[ob_diskfree]);
-}
 
+THIS[ob_webaccess] = GetFileGrowth("/var/log/apache2/access_log",ob_webaccess);
+Verbose("Webaccess = %d %%\n",THIS[ob_webaccess]);
+THIS[ob_weberrors] = GetFileGrowth("/var/log/apache2/error_log",ob_weberrors);
+Verbose("Web error = %d %%\n",THIS[ob_weberrors]);
+THIS[ob_syslog] = GetFileGrowth("/var/log/syslog",ob_syslog);
+Verbose("Syslog = %d %%\n",THIS[ob_syslog]);
+THIS[ob_messages] = GetFileGrowth("/var/log/messages",ob_messages);
+Verbose("Messages = %d %%\n",THIS[ob_messages]);
+}
 
 /*****************************************************************************/
 
@@ -2207,3 +2221,28 @@ else
    } 
 }
 
+/***************************************************************/
+
+int GetFileGrowth(char *filename,enum observables index)
+
+{ struct stat statbuf;
+ size_t q, dq;
+
+if (stat(filename,&statbuf) == -1)
+   {
+   return 0;
+   }
+
+q = statbuf.st_size;
+
+dq = q - LASTQ[index];
+
+if (LASTQ[index] == 0)
+   {
+   return 0;
+   }
+
+LASTQ[index] = q;
+
+return q;
+}

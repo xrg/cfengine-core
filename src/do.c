@@ -1469,7 +1469,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
       snprintf(OUTPUT,CF_BUFSIZE*2,"Finished script %s\n",execstr);
       CfLog(cfinform,OUTPUT,"");
 
-      AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
+      AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_REGULAR);
      
       ResetOutputRoute('d','d');
       ReleaseCurrentLock();

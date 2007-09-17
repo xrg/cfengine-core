@@ -491,8 +491,8 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       DeleteDB(dbp,hostname);
       }
 
-   memset(&value, 0, sizeof(value));
-   memset(&key, 0, sizeof(key)); 
+   memset(&value,0,sizeof(value));
+   memset(&key,0,sizeof(key)); 
    }
  
 dbcp->c_close(dbcp);

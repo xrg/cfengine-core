@@ -163,7 +163,28 @@ if (AUDIT)
 
 void CloseAuditLog()
 
-{
+{ double total;
+  char *sp;
+ 
+total = (double)(PR_KEPT+PR_NOTKEPT+PR_REPAIRED)/100.0;
+
+if (sp = GetMacroValue(CONTEXTID,"cfinputs_version"))
+   {
+   }
+else
+   {
+   sp = strdup("(not specified)");
+   }
+
+snprintf(OUTPUT,CF_BUFSIZE,"Outcome of version %s: Promises still kept %.0f%%, Promises repaired %.0f%%, Promises not kept %.0f\%\n",
+         sp,
+         (double)PR_KEPT/total,
+         (double)PR_REPAIRED/total,
+         (double)PR_NOTKEPT/total);
+
+CfLog(cfinform,OUTPUT,"");
+AuditLog(NULL,0,OUTPUT,CF_REPORT);
+
 if (AUDIT && AUDITDBP)
    {
    AuditLog(NULL,0,"Cfagent closing",CF_NOP);
@@ -183,6 +204,45 @@ void AuditLog(struct Audit *ap,int lineno,char *str,char status)
 
 Debug("AuditLog(%s)\n",str);
   
+switch(status)
+   {
+   case CF_CHG:
+       PR_REPAIRED++;
+       break;
+       
+   case CF_WARN:
+       PR_NOTKEPT++;
+       break;
+       
+   case CF_TIMEX:
+       PR_NOTKEPT++;
+       break;
+
+   case CF_FAIL:
+       PR_NOTKEPT++;
+       break;
+       
+   case CF_DENIED:
+       PR_NOTKEPT++;
+       break;
+       
+   case CF_INTERPT:
+       PR_NOTKEPT++;
+       break;
+
+   case CF_REGULAR:
+       PR_REPAIRED++;
+       break;
+       
+   case CF_NOP:
+       PR_KEPT++;
+       break;
+
+   case CF_UNKNOWN:
+       PR_KEPT++;
+       break;
+   }
+
 if (AUDIT == false || AUDITDBP == NULL)
    {
    return;
@@ -493,6 +553,10 @@ switch (status) /* Reminder */
    case CF_INTERPT:
        printf("was interrupted\n");
        break;
+
+   case CF_REGULAR:
+       printf("was a regular (repeatable) maintenance task");
+       break;
        
    case CF_NOP:
        printf("was applied but performed no required actions\n");
@@ -500,6 +564,10 @@ switch (status) /* Reminder */
 
    case CF_UNKNOWN:
        printf("was applied but status unknown\n");
+       break;
+
+   case CF_REPORT:
+       printf("report\n");
        break;
    }
 

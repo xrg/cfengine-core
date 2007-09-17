@@ -449,6 +449,8 @@ typedef int clockid_t;
 #define CF_DENIED   'd'
 #define CF_TIMEX    't'
 #define CF_INTERPT  'i'
+#define CF_REGULAR  'r'
+#define CF_REPORT   'R'
 #define CF_UNKNOWN  'u'
 
 /*****************************************************************************/
@@ -1363,7 +1365,10 @@ enum observables
     ob_tcpfin_out,
     ob_tcpmisc_in,
     ob_tcpmisc_out,
-    ob_spares
+    ob_webaccess,
+    ob_weberrors,
+    ob_syslog,
+    ob_messages
     };
 
 

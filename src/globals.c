@@ -258,10 +258,10 @@ char *OBS[CF_OBSERVABLES] =
     "tcpfin_out",
     "tcpmisc_in",
     "tcpmisc_out",
-    "spare",
-    "spare",
-    "spare",
-    "spare",
+    "webaccess",
+    "weberrors",
+    "syslog",
+    "messages",
     "spare",
     "spare",
     "spare",
@@ -1242,6 +1242,9 @@ char *OBS[CF_OBSERVABLES] =
   PUBLIC char CFLAST[CF_BUFSIZE]; 
   PUBLIC char LOCKDB[CF_BUFSIZE];
 
+  PUBLIC int PR_KEPT = 0;
+  PUBLIC int PR_REPAIRED = 0;
+  PUBLIC int PR_NOTKEPT = 0;
 
 /*******************************************************************/
 /*                                                                 */
