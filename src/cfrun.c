@@ -427,8 +427,9 @@ if (!gotkey)
  
 if (!RemoteConnect(parsed_host,forceipv4,port,strport))
    {
-   CfLog(cferror,"Couldn't open a socket","socket");
-   FileOutput(fp, fopl_error, "Couldn't open a socket\n");
+   snprintf(OUTPUT,CF_BUFSIZE,"No reponse hailing %s\n",parsed_host);
+   CfLog(cferror,OUTPUT,"socket");
+   FileOutput(fp, fopl_error,OUTPUT);
    if (CONN->sd != CF_NOT_CONNECTED)
       {
       close(CONN->sd);
@@ -440,8 +441,9 @@ if (!RemoteConnect(parsed_host,forceipv4,port,strport))
  
 if (!IdentifyForVerification(CONN->sd,CONN->localip,CONN->family))
    {
-   printf("Unable to open a channel\n");
-   FileOutput(fp, fopl_error, "Unable to open a channel\n");
+   snprintf(OUTPUT,CF_BUFSIZE,"Hail succeeded, but unable to open channel to %s\n",parsed_host);
+   CfLog(cferror,OUTPUT,"socket");
+   FileOutput(fp, fopl_error,OUTPUT);
    close(CONN->sd);
    errno = EPERM;
    free(addresses.server);
