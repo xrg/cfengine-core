@@ -1762,14 +1762,14 @@ switch (type)
                       if (strcmp(machine,VUQNAME) == 0)
                          {
                          Debug1("Matched delete item %s in netgroup %s\n",machine,ebuff);
-                         DeleteItemStarting(&VHEAP,GROUPBUFF);
+                         DeleteItemLiteral(&VHEAP,GROUPBUFF);
                          break;
                          }
         
                       if (strcmp(machine,VFQNAME) == 0)
                          {
                          Debug1("Matched delete item %s in netgroup %s\n",machine,ebuff);
-                         DeleteItemStarting(&VHEAP,GROUPBUFF);
+                         DeleteItemLiteral(&VHEAP,GROUPBUFF);
                          break;
                          }
         
