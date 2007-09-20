@@ -1791,7 +1791,7 @@ switch (type)
 
    case deletion:  if (IsDefinedClass(ebuff))
                       {
-                      DeleteItemStarting(&VHEAP,GROUPBUFF);
+                      DeleteItemLiteral(&VHEAP,GROUPBUFF);
                       }
                    break;
 
