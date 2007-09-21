@@ -38,7 +38,7 @@
 pthread_mutex_t MUTEX_GETADDR = PTHREAD_MUTEX_INITIALIZER;
 # endif
 
-/* Alter this code at your peril. Berkeley DB is *very* sensitive to errors. */
+/* Alter this code at your peril. Berkeley DB is very sensitive to errors. */
 
 /***************************************************************/
 

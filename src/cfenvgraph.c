@@ -731,15 +731,14 @@ void PeerIntermittency()
   double entropy,average,var,sum,sum_av;
   time_t now = time(NULL), then, lastseen = CF_WEEK;
 
-printf("Peer Intermittency\n");
-snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
+snprintf(name,CF_BUFSIZE-1,"%s/%s",CFWORKDIR,CF_LASTDB_FILE);
 
 average = (double) CF_HOUR;  /* It will take a week for a host to be deemed reliable */
 var = 0;
 
 if ((errno = db_create(&dbp,dbenv,0)) != 0)
    {
-   Verbose("Couldn't open last-seen database %s\n",name);
+   printf("Couldn't open last-seen database %s\n",name);
    return;
    }
 
@@ -764,6 +763,8 @@ if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
 memset(&key, 0, sizeof(key));
 memset(&value, 0, sizeof(value));
 
+printf("Examining known peers...\n");
+
 while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
    {
    strcpy(hostname,IPString2Hostname((char *)key.data+1));
@@ -772,8 +773,11 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       {
       /* Check hostname not recorded twice with +/- */
       AppendItem(&hostlist,hostname,NULL);
+      printf("Examining intermittent host %s\n",hostname);
       }
    }
+
+printf("Finished\n");
 
 dbcp->c_close(dbcp);
 dbp->close(dbp,0);
@@ -783,7 +787,9 @@ dbp->close(dbp,0);
 
 for (ip = hostlist; ip != NULL; ip=ip->next)
    {
-   snprintf(out1,CF_BUFSIZE,"lastseen-%s.q",hostname);
+   snprintf(out1,CF_BUFSIZE,"lastseen-%s.q",ip->name);
+
+   printf("Opening %s\n",out1);
    
    if ((fp1 = fopen(out1,"w")) == NULL)
       {
@@ -798,7 +804,7 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
       continue;
       }
    
-   snprintf(name,CF_BUFSIZE-1,"%s/%s.%s",VLOCKDIR,CF_LASTDB_FILE,ip->name);
+   snprintf(name,CF_BUFSIZE-1,"%s/%s.%s",CFWORKDIR,CF_LASTDB_FILE,ip->name);
    printf("Consulting profile %s\n",name);
 
    if ((errno = db_create(&dbpent,dbenv2,0)) != 0)
@@ -827,11 +833,11 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
       key.data = timekey;
       key.size = strlen(timekey)+1;
 
-      if ((errno = dbp->get(dbp,NULL,&key,&value,0)) != 0)
+      if ((errno = dbpent->get(dbpent,NULL,&key,&value,0)) != 0)
          {
          if (errno != DB_NOTFOUND)
             {
-            dbp->err(dbp,errno,NULL);
+            dbpent->err(dbp,errno,NULL);
             exit(1);
             }
          }

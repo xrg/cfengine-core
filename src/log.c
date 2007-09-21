@@ -176,11 +176,19 @@ else
    sp = strdup("(not specified)");
    }
 
-snprintf(OUTPUT,CF_BUFSIZE,"Outcome of version %s: Promises still kept %.0f%%, Promises repaired %.0f%%, Promises not kept %.0f\%\n",
-         sp,
-         (double)PR_KEPT/total,
-         (double)PR_REPAIRED/total,
-         (double)PR_NOTKEPT/total);
+if (total == 0)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"Outcome of version %s: No checks were scheduled\n",sp);
+   return;
+   }
+else
+   {   
+   snprintf(OUTPUT,CF_BUFSIZE,"Outcome of version %s: Promises still kept %.0f%%, Promises repaired %.0f%%, Promises not kept %.0f\%\n",
+            sp,
+            (double)PR_KEPT/total,
+            (double)PR_REPAIRED/total,
+            (double)PR_NOTKEPT/total);
+   }
 
 CfLog(cfinform,OUTPUT,"");
 AuditLog(NULL,0,OUTPUT,CF_REPORT);

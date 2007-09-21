@@ -1317,6 +1317,7 @@ Verbose("(Users,root,other) = (%d,%d,%d)\n",THIS[ob_users],THIS[ob_rootprocs],TH
 void GatherDiskData()
 
 {
+Verbose("Gathering disk data\n");
 THIS[ob_diskfree] = GetDiskUsage("/",cfpercent);
 Verbose("Disk free = %d %%\n",THIS[ob_diskfree]);
 
@@ -2226,7 +2227,7 @@ else
 int GetFileGrowth(char *filename,enum observables index)
 
 { struct stat statbuf;
- size_t q, dq;
+  size_t q, dq;
 
 if (stat(filename,&statbuf) == -1)
    {
@@ -2235,14 +2236,16 @@ if (stat(filename,&statbuf) == -1)
 
 q = statbuf.st_size;
 
+Verbose("GetFileGrowth(%s) = %d\n",filename,q);
+
 dq = q - LASTQ[index];
 
 if (LASTQ[index] == 0)
    {
-   return 0;
+   LASTQ[index] = q;
+   return q/10;       /* arbitrary spike mitigation */
    }
 
 LASTQ[index] = q;
-
 return q;
 }
