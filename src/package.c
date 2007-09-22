@@ -176,7 +176,7 @@ int InstallPackage(struct Package *ptr,enum pkgmgrs pkgmgr, struct Item **pkglis
  FILE *pp;
  int result = 0;
 
-Verbose("Entering InstallPackage.\n");
+Debug("Entering InstallPackage.\n");
 
 switch(pkgmgr)
    {
@@ -248,7 +248,8 @@ switch(pkgmgr)
 
 if (BuildCommandLine(instcmd,rawinstcmd,*pkglist))
    {
-   Verbose("InstallPackage(): using '%s'\n", instcmd);
+   snprintf(OUTPUT,CF_BUFSIZE,"Installing package(s) using '%s'\n", instcmd);
+   CfLog(cfinform,OUTPUT,"");
    
    if (DONTDO)
       {
@@ -268,7 +269,7 @@ if (BuildCommandLine(instcmd,rawinstcmd,*pkglist))
       while (!feof(pp))
          {
          ReadLine(line,CF_BUFSIZE-1,pp);
-         snprintf(OUTPUT,CF_BUFSIZE,"Package install: %s\n",line);
+         snprintf(OUTPUT,CF_BUFSIZE,"%s\n",line);
          CfLog(cfinform,OUTPUT,""); 
          }
       
@@ -376,7 +377,9 @@ switch(pkgmgr)
 
 if (BuildCommandLine( delcmd, rawdelcmd, *pkglist))
    {
-   Verbose("RemovePackage(): using '%s'\n", delcmd);
+   snprintf(OUTPUT,CF_BUFSIZE,"Removing package(s) using '%s'\n", delcmd);
+   CfLog(cfinform,OUTPUT,"");
+
    if (DONTDO)
       {
       Verbose("--skipping because \"-n\" (dryrun) option is enabled.\n");
@@ -395,7 +398,7 @@ if (BuildCommandLine( delcmd, rawdelcmd, *pkglist))
       while (!feof(pp))
          {
          ReadLine(line,CF_BUFSIZE-1,pp);
-         snprintf(OUTPUT,CF_BUFSIZE,"Package removal: %s\n",line);
+         snprintf(OUTPUT,CF_BUFSIZE,"%s\n",line);
          CfLog(cfinform,OUTPUT,""); 
          }
       
@@ -464,7 +467,7 @@ cmd_ptr = &resolvedcmd[original_len];
 
 for (package = pkglist; package != NULL; package = package->next)
    {
-   Verbose("BuildCommandLine(): Processing package %s at location %u.\n", package->name, &package );
+   Debug("BuildCommandLine(): Processing package %s at location %d.\n", package->name, &package );
 
    if (cmd_args == CF_MAXSHELLARGS)
       {
@@ -505,7 +508,6 @@ else
       strncpy(cmd_ptr, cmd_tail, &resolvedcmd[CF_BUFSIZE*2] - cmd_ptr);
       }
    result = 1;
-   Verbose("Resolved command is '%s'\n", resolvedcmd );
    }
 return result;
 }
@@ -1563,7 +1565,7 @@ pkgversion = strrchr(pkgname, '-');
 *pkgversion = '\0';
 pkgversion += 1;
 
-Verbose("FreeBSDPackageCheck(): Requested version %s %s of %s\n", CMPSENSETEXT[cmp],(version[0] ? version : "ANY"), pkgname);
+Debug("FreeBSDPackageCheck(): Requested version %s %s of %s\n", CMPSENSETEXT[cmp],(version[0] ? version : "ANY"), pkgname);
 
 if (!*version)
    {
@@ -1586,7 +1588,7 @@ while (!feof (pp))
    {
    *VBUFF = '\0';
    ReadLine (line, CF_BUFSIZE - 1, pp);
-   snprintf(OUTPUT,CF_BUFSIZE,"Package install: %s\n",line);
+   snprintf(OUTPUT,CF_BUFSIZE,"%s\n",line);
    }
 
 int result =  cfpclose( pp );
@@ -1632,7 +1634,7 @@ pkgversion = strrchr(pkgname, '-');
 *pkgversion = '\0';
 pkgversion += 1;
 
-Verbose("FreeBSDPackageList(): Requested version %s %s of %s\n", CMPSENSETEXT[cmp],(version[0] ? version : "ANY"), pkgname);
+Debug("FreeBSDPackageCheck(): Requested version %s %s of %s\n", CMPSENSETEXT[cmp],(version[0] ? version : "ANY"), pkgname);
 
 /* If no version was specified, we're just checking if the package
  * is present, not for a particular number, so >0 will match.
@@ -1657,7 +1659,7 @@ while (!feof (pp))
    {
    *VBUFF = '\0';
    ReadLine (line, CF_BUFSIZE - 1, pp);
-   Verbose ("PackageList: read line %s\n",line);
+   Debug("PackageList: read line %s\n",line);
    
    if( strlen(line) > 1 )
       {

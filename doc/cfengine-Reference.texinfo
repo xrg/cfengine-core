@@ -1175,12 +1175,18 @@ information from @emph{uname}. @emph{A constant}.
 The default server for binary data. @emph{A constant}.
 @vindex $(binserver) 
 
+@item cfinputs_version
+The version string of the current configuration, used for version control and auditing.
+@cindex Auditing
+@cindex Version control
+@vindex cfinputs_version
+
 @item ChecksumDatabase
 If set to the name of a file, cfagent will use this to store checksums of important
 files, and give `tripwire functionality', @xref{ChecksumDatabase}.
 
 @item ChecksumUpdates
-If set to `on', security information is automatically updated, @xref{ChecksumUpdates}.
+If set to `on', security information is automatically updated.
 
 @item class
 The currently defined system hard-class (e.g. @code{sun4}, @code{hpux}). @emph{A constant}.
@@ -1296,7 +1302,7 @@ an underscore to avoid name collisions. See also the section Runtime Options.
 @vindex underscoreclasses
 
 @item version
-The current version string as defined in the code.
+The current cfengine version string as defined in the code.
 @vindex $(version)
 
 @item year
@@ -1757,7 +1763,7 @@ True if the named file object (file/directory or link) exists.
 @item GroupExists(@var{groupname}|@var{gid})
 True if the groupname or group id is registered on the system.
 
-@item HostRange(@var{basename,start-stop})
+@item HostRange(@var{basename},@var{start-stop})
 True if the current relative domain name begins with basename and ends with an integer
 between start and stop.  Note well: matching is case insensitive (both hostname and basename are converted to all lower case for comparison.) 
 
@@ -7192,7 +7198,8 @@ checksum.  If you use the same file for both purposes you risk losing
 warnings.  Security warning messages are issued only once and the value
 in the database is then changed to the new value of the file
 automatically i.e. the behaviour is similar to that of setuid root
-program detection, @xref{ChecksumDatabase}.
+program detection, @xref{ChecksumDatabase}. Also, @xref{ChecksumPurge}
+and, @xref{ChecksumUpdates}.
 @cindex Message digests
 @cindex Hashes of files
 @cindex Tripwire functionality
@@ -9509,15 +9516,32 @@ packages:
    @var{class}::
 
       @var{package-name}
-                        pkgmgr=@b{none}/@var{rpm/dpkg/sun}
+                        pkgmgr=@b{none}/@var{rpm/dpkg/sun/aix/portage/freebsd}
                         cmp=@b{eq}/@var{lt/gt/ge/le/ne}
                         version=@var{version-string}
                         define=@var{class-list}(,:.)
                         elsedefine=@var{class-list}(,:.)
-                        action=@b{none}/@var{install/remove}
+                        action=@b{none}/@var{install/remove/upgrade}
 
                         ifelapsed=@var{mins} 
                         expireafter=@var{mins}
+
+EXAMPLES:
+packages:
+  # install newpackage 1.10 if newpackage 1.0 or greater isn't installed
+  newpackage-1.10 action=install
+                cmp=ge
+                version=1.0
+
+  # upgrade any installed versions of compromised to at least 1.2
+  compromised-1.2 action=upgrade
+                version=1.2
+                cmp=le
+
+  # remove any version of useless
+  useless action=remove
+                version=0.1
+                cmp=ge
 
 @end smallexample
 @end cartouche
@@ -9551,6 +9575,9 @@ The version installed must not be equal to @code{version}
 
 The default value for this attribute is @code{eq}.
 
+Note that @code{cmp} is used differently for install versus upgrade and remove. 
+The action is performed when false for install, but when true for upgrade or remove.
+
 @item version
 @vindex version=
 Specifies the package manager specific version string to match.  If
@@ -9569,11 +9596,12 @@ value '@samp{none}' listed is merely a pseudo-value, and cannot actually
 be used, since it would make no sense anyway.
 
 Each package manager will interpret the @code{version} and @code{cmp}
-attributes in its own way.  So, for example, when you use
+attributes in its own way.  For example, when you use
 @code{pkgmgr=rpm}, the comparison will be done with the same rules that
-RPM use if it were not being run through cfengine.
+RPM use if it were not being run through cfengine.  Freebsd actually
+invokes the standard system utility to do the comparisons for it, etc.
 
-Currently, the following values are accepted:
+Currently, the following package managers are supported:
 
 @table @code
 @item rpm
@@ -9628,22 +9656,13 @@ only way to have a specific version emerged.
 
   any::
 
-   # Using cmp, if the version of tar is less than
-   # 1.16-r2, then the *latest* version of tar will be
-   # installed:
-
+   # if the version of tar is less than 1.16-r2,
+   # then the *latest* version of tar will be installed:
    app-arch/tar cmp=ge version=1.16-r2 action=install
 
    # This is equivalent, but uses the package atom to
    # define the version comparison:
-
    >=app-arch/tar-1.16-r2 action=install
-
-   # Use a Portage package atom that includes the
-   # version.  If version 4.1.22-r1 is not installed,
-   # that *exact* version will be installed:
-
-   =dev-db/mysql-4.1.22-r1 action=install 
 
 @end smallexample
 
@@ -9659,33 +9678,30 @@ Please document me!
 @cindex FreeBSD Package Database Queries
 
 FreeBSD has fully working install/upgrade/delete management for
-packages.
+packages.  You can either get the latest version from a package repository,
+or define the explicit version to install.
+
 @smallexample
 
+# install new package from FreeBSD ports tree
 control:
   DefaultPkgMgr = ( freebsd )
   FreeBSDInstallCommand = ( "/usr/sbin/pkg_add -r %s" )
-  FreeBSDRemoveCommand = ( "/usr/sbin/pkg_delete %s" )
 
 packages:
-  # install new package version 1.10_2
-  newpackage-1.10_2 action=install
-                version=1.10_2
-                cmp=ge
+  bsdsar action=install
 
-  # upgrade any installed versions of compromised to at least 1.2
-  compromised-1.2 action=upgrade
-                version=1.2
-                cmp=le
+# install a specific version from a local repository
+control:
+  DefaultPkgMgr = ( freebsd )
+  FreeBSDInstallCommand = ( "/usr/sbin/pkg_add http://server/path/%s" )
 
-  # remove any version of useless
-  useless action=remove
-                version=0.1
-                cmp=ge
-
+packages:
+  bsdsar-1.10_2 action=install
 @end smallexample
 
-Note that specifying the version of the package that is part of the freebsd package filename is required.  However, it does not use this for comparison, just for the package filename to install.  For instance, the example above install 1.10 only if nothing larger than 1.10 was installed.
+Note that specifying the version of the package that is part of the freebsd package filename is required if not using "-r" mode.
+However, it does not use this for comparison, just for the package filename to install.
 
 You can also backgrade if you know that 1.2 is bad for instance.
 
@@ -9704,13 +9720,14 @@ the source repository, you have a few options.
 Get it from the main FreeBSD binary package home:
 
 @smallexample
-  FreeBSDInstallCommand = ( "pkg_add -r %s" )
+  FreeBSDInstallCommand = ( "/usr/sbin/pkg_add -r %s" )
 @end smallexample
 
-Get it from a mounted directory
+Get it from a mounted directory or http server
 
 @smallexample
-  FreeBSDInstallCommand = ( "pkg_add /nfs/packages/%s" )
+  FreeBSDInstallCommand = ( "/usr/sbin/pkg_add /nfs/packages/%s" )
+  FreeBSDInstallCommand = ( "/usr/sbin/pkg_add http://server/path/%s" )
 
 @end smallexample
 
@@ -9727,22 +9744,25 @@ PACKAGESITE=http://my.local.repository/packages/
 export PACKAGESITE
 /usr/sbin/pkg_add -r $*
 @end smallexample
-
-
 @end table
 
 @item define
-Specifies the list of classes to define if the specified package was
+Specifies the list of classes to define if the specified package/version was
 installed (prior to actions taken if any)
 
 @item elsedefine
-Specifies the list of classes to define if the specified package was not
+Specifies the list of classes to define if the specified package/version was not
 installed (prior to actions taken if any)
 
 @item action
 Specifies whether the packages should actually do anything about the
-situation it finds.  The default for this is to do nothing.  Of course,
-the classes in @code{define} and @code{elsedefine} will always be defined,
+situation it finds.  The default for this is to do nothing.
+
+For @code{install}, the action will be taken if the comparison returns false.
+
+For @code{upgrade} and @code{remove}, the action will be taken if the comparison returns false.
+
+The classes in @code{define} and @code{elsedefine} will always be defined,
 as applicable, regardless of the action specified.
 
 @table @code
@@ -9775,32 +9795,27 @@ Each variable is of the format:
 FOOInstallCommand = ( "/usr/bin/foo --args %s --more-args" )
 @end smallexample
 
-The ---args are of course optional.  The %s is replaced with the package name
-that was checked, and found to not be installed.
+The ---args are of course optional.  For FreeBSD and Sun, the %s is replaced with the package name
+that was checked, and found to not be installed.  For all other package managers the %s can have
+a space separated list of package names.
 
 @item upgrade
 Upgrades the package using the commands associated with the selected
-package manager, if a matching package is found on the system at the requested
-version, as follows:
+package manager, first removal of the old package then installation of the new package.
+Note that on some package managers this action is unnecessary because the package manager
+will "do the right thing" when told to install a newer version.
 
 @itemize @bullet
 @item
 FreeBSD - 
 FreeBSDRemoveCommand followed by FreeBSDInstallCommand
+Portage - 
+Upgrade is generally not necessary since emerge will do the upgrade for you.
 @end itemize
 
 @item remove
-Removes the package using the command associated with the selected
-package manager, if a matching package is found on the system at the requested
-version, as follows:
-
-@itemize @bullet
-@item
-FreeBSD - 
-FreeBSDRemoveCommand
-@end itemize
-
-Each variable is of the format:
+Removes the package(s) using the command associated with the selected
+package manager, if a matching package is found on the system, as follows:
 
 @smallexample
 FOORemoveCommand = ( "/usr/bin/foo --args %s --more-args" )
