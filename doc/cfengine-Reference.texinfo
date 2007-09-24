@@ -6996,7 +6996,7 @@ the form of the statement in pseudo-code:
                           define=@var{classlist}
                           elsedefine=@var{classlist}
 
-                          checksum=@var{md5}
+                          checksum=@var{md5/sha/best}
                           syslog=@var{true/on}/@b{false/off}
                           inform=@var{true/on}/@b{false/off}
                           ifelapsed=@var{mins} 
@@ -7187,18 +7187,22 @@ If a file operation results in action being taken to fix a file,
 the colon, comma or dot separated list of classes becomes defined.
 Warnings do not activate the classes.
 
-@item checksum=@var{md5/sha/sha1}
+@item checksum=@var{md5/sha/best}
 If set this option causes cfengine to add a checksum for the named file
 to a database. Changes in the value of this checksum are then warned as
 a security issue. This should normally only be used to monitor binary
 files which one would not expect to change often. Note also that the use
-of this option can mean a significant performance penalty. Note that it
-is also possible to use the same database file for cfservd's remote copying by
-checksum.  If you use the same file for both purposes you risk losing
-warnings.  Security warning messages are issued only once and the value
+of this option can mean a significant performance penalty. If the value 
+@code{best} is used for this option then the best known pair of 
+checksum methods are cross-checked for each file. (The best value are
+determined by the algorithms supported in the OpenSSL interfaces used
+to compile the program).
+
+If @code{ChecksumUpdates} is set, then 
+security warning messages are issued only once and the value
 in the database is then changed to the new value of the file
 automatically i.e. the behaviour is similar to that of setuid root
-program detection, @xref{ChecksumDatabase}. Also, @xref{ChecksumPurge}
+program detection, @xref{ChecksumPurge}
 and, @xref{ChecksumUpdates}.
 @cindex Message digests
 @cindex Hashes of files

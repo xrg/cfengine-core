@@ -120,6 +120,8 @@ void RecordClassUsage(struct Item *list)
 
 { DB *dbp;
   DB_ENV *dbenv = NULL;
+  DBC *dbcp;
+  DBT key,stored;
   char name[CF_BUFSIZE];
   struct Event e,newe;
   int lsea = CF_WEEK * 52; /* expire after a year */
@@ -127,6 +129,7 @@ void RecordClassUsage(struct Item *list)
   struct Item *ip;
   double lastseen,delta2;
   double value = 1.0;      /* end with a rough probability */
+  struct Event entry;
 
 Debug("RecordClassUsage\n");
 
@@ -150,6 +153,8 @@ if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
    dbp->close(dbp,0);
    return;
    }
+
+/* First record the classes that are in use */
 
 for (ip = list; ip != NULL; ip=ip->next)
    {
@@ -182,6 +187,54 @@ for (ip = list; ip != NULL; ip=ip->next)
       }
    }
 
+/* Then update with zero the ones we know about that are not active */
+
+/* Acquire a cursor for the database. */
+
+if ((errno = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
+   {
+   printf("Error reading from class database: ");
+   dbp->err(dbp, errno, "DB->cursor");
+   return;
+   }
+
+ /* Initialize the key/data return pair. */
+ 
+memset(&key, 0, sizeof(key));
+memset(&stored, 0, sizeof(stored));
+memset(&entry, 0, sizeof(entry)); 
+
+while (dbcp->c_get(dbcp, &key, &stored, DB_NEXT) == 0)
+   {
+   double measure;
+   time_t then;
+   char tbuf[CF_BUFSIZE],eventname[CF_BUFSIZE];
+
+   memcpy(&then,stored.data,sizeof(then));
+   strcpy(eventname,(char *)key.data);
+
+   if (stored.data != NULL)
+      {
+      memcpy(&entry,stored.data,sizeof(entry));
+      
+      then    = entry.t;
+      measure = entry.Q.q;
+      
+      snprintf(tbuf,CF_BUFSIZE-1,"%s",ctime(&then));
+      tbuf[strlen(tbuf)-9] = '\0';                     /* Chop off second and year */
+
+      if (!IsItemIn(list,eventname))
+         {
+         newe.t = then;
+         newe.Q.q = 0;
+         newe.Q.expect = GAverage(0.0,e.Q.expect,0.5,0.5);
+         delta2 = (e.Q.expect)*(e.Q.expect);
+         newe.Q.var = GAverage(delta2,e.Q.var,0.5,0.5);
+         WriteDB(dbp,eventname,&newe,sizeof(newe));         
+         }
+      }
+   }
+
 dbp->close(dbp,0);
 }
 
@@ -190,7 +243,7 @@ dbp->close(dbp,0);
 void LastSeen(char *hostname,enum roles role)
 
 { DB *dbp,*dbpent;
- DB_ENV *dbenv = NULL, *dbenv2 = NULL;
+  DB_ENV *dbenv = NULL, *dbenv2 = NULL;
   char name[CF_BUFSIZE],databuf[CF_BUFSIZE];
   time_t now = time(NULL);
   struct QPoint q,newq;

@@ -124,7 +124,8 @@ void CheckExistingFile(char *cf_findertype,char *file,struct stat *dstat,struct 
 
 { mode_t newperm = dstat->st_mode, maskvalue;
   int amroot = true, fixmode = true, docompress=false;
-  unsigned char digest[EVP_MAX_MD_SIZE+1];
+  unsigned char digest1[EVP_MAX_MD_SIZE+1];
+  unsigned char digest2[EVP_MAX_MD_SIZE+1];
 
 #if defined HAVE_CHFLAGS
   u_long newflags;
@@ -347,20 +348,35 @@ if (CheckOwner(file,ptr,dstat))
    }
 
 if ((ptr != NULL) && S_ISREG(dstat->st_mode) && (ptr->checksum != 'n'))
-    {
-    Debug("Checking checksum integrity of %s\n",file);
+   {
+   Debug("Checking checksum integrity of %s\n",file);
+   
+   memset(digest1,0,EVP_MAX_MD_SIZE+1);
+   memset(digest2,0,EVP_MAX_MD_SIZE+1);
 
-    memset(digest,0,EVP_MAX_MD_SIZE+1);
-    
-    ChecksumFile(file,digest,ptr->checksum);
-
-    if (!DONTDO)
-       {
-       if (ChecksumChanged(file,digest,cferror,false,ptr->checksum))
-          {
-          }
-       }
-    }
+   if (ptr->checksum == 'b')
+      {
+      ChecksumFile(file,digest1,'m');
+      ChecksumFile(file,digest2,'s');
+   
+      if (!DONTDO)
+         {
+         ChecksumChanged(file,digest1,cferror,false,'m');
+         ChecksumChanged(file,digest2,cferror,false,'s');
+         }
+      }
+   else
+      {
+      ChecksumFile(file,digest1,ptr->checksum);
+   
+      if (!DONTDO)
+         {
+         if (ChecksumChanged(file,digest1,cferror,false,ptr->checksum))
+            {
+            }
+         }
+      }
+   }
 
 if (S_ISLNK(dstat->st_mode))             /* No point in checking permission on a link */
    {

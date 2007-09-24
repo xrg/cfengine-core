@@ -151,7 +151,7 @@ if (ReadChecksum(dbp,type,filename,dbdigest,dbattr))
             CfLog(warnlevel,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!","");
             }
          
-         snprintf(OUTPUT,CF_BUFSIZE*2,"SECURITY ALERT: Checksum for %s changed!",filename);
+         snprintf(OUTPUT,CF_BUFSIZE*2,"SECURITY ALERT: Checksum (%s) for %s changed!",ChecksumName(type),filename);
          CfLog(warnlevel,OUTPUT,"");
          
          if (EXCLAIM)
@@ -182,7 +182,7 @@ else
    
    if (ISCFENGINE)
       {
-      snprintf(OUTPUT,CF_BUFSIZE,"File %s was not in database - new file found",filename);
+      snprintf(OUTPUT,CF_BUFSIZE,"File %s was not in %s database - new file found",filename,ChecksumName(type));
       CfLog(cfsilent,OUTPUT,"");
       }
    
@@ -373,7 +373,7 @@ memset(chk_key,0,strlen(name)+CF_MAXDIGESTNAMELEN+2);
 
 strcpy(chk_key,ChecksumName(type)); /* safe */
 
-/*Berkeley DB needs this packed */
+/* Berkeley DB needs this packed */
 
 strncpy(chk_key+CF_CHKSUMKEYOFFSET,name,strlen(name));
 
