@@ -1052,7 +1052,7 @@ memset(&entry, 0, sizeof(entry));
 if (HTML)
    {
    printf("<html><head><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/menus.css\" /><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/cf_blue.css\"/></head><body><h1>Audit log %s</h1><p><table class=border cellpadding=2 cellspacing=2>",VFQNAME);
-   printf("<th> t-index </th>");
+   /* printf("<th> t-index </th>");*/
    printf("<th> Scan convergence </th>");
    printf("<th> Observed </th>");
    printf("<th> Promise made </th>");
@@ -1093,7 +1093,7 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       else if (HTML)
          {
          printf("%s",CFH[cfx_entry][cfb]);
-         printf("%s %s %s",CFH[cfx_index][cfb],operation,CFH[cfx_index][cfe]);
+         /* printf("%s %s %s",CFH[cfx_index][cfb],operation,CFH[cfx_index][cfe]);*/
          printf("%s %s, ",CFH[cfx_event][cfb],Format(entry.operator,40));
          AuditStatusMessage(entry.status);
          printf("%s",CFH[cfx_event][cfe]);
