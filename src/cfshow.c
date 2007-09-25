@@ -4,7 +4,7 @@
 /*                                                                           */
 /* Created: Wed Sep 22 16:47:23 2004                                         */
 /*                                                                           */
-/* Author: Mark                                      >                       */
+/* Author: Mark                                                              */
 /*                                                                           */
 /* Description: Print data from the Berkeeley databases in reable form       */
 /*                                                                           */
@@ -137,6 +137,7 @@ void ShowLocks(int active);
 void ShowPerformance(void);
 void ShowCurrentAudit(void);
 char *ChecksumDump(unsigned char digest[EVP_MAX_MD_SIZE+1]);
+char *Format(char *s,int width);
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -1093,10 +1094,10 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
          {
          printf("%s",CFH[cfx_entry][cfb]);
          printf("%s %s %s",CFH[cfx_index][cfb],operation,CFH[cfx_index][cfe]);
-         printf("%s %s, ",CFH[cfx_event][cfb],entry.operator);
+         printf("%s %s, ",CFH[cfx_event][cfb],Format(entry.operator,40));
          AuditStatusMessage(entry.status);
          printf("%s",CFH[cfx_event][cfe]);
-         printf("%s %s %s",CFH[cfx_q][cfb],entry.comment,CFH[cfx_q][cfe]);
+         printf("%s %s %s",CFH[cfx_q][cfb],Format(entry.comment,40),CFH[cfx_q][cfe]);
          printf("%s %s %s",CFH[cfx_date][cfb],entry.date,CFH[cfx_date][cfe]);
          printf("%s %s %s",CFH[cfx_av][cfb],entry.filename,CFH[cfx_av][cfe]);
          printf("%s %s %s",CFH[cfx_version][cfb],entry.version,CFH[cfx_version][cfe]);
@@ -1275,4 +1276,29 @@ ListDefinedScripts(regex);
 printf("------------------------------------------------------------\n");
 ListDefinedTidy(regex);
 printf("------------------------------------------------------------\n");
+}
+
+/*********************************************************************/
+
+char *Format(char *s,int width)
+
+{ static char buffer[CF_BUFSIZE];
+  char *sp;
+  int i = 0, count = 0;
+  
+for (sp = s; *sp != '\0'; sp++)
+   {
+   buffer[i++] = *sp;
+   buffer[i] = '\0';
+   count++;
+
+   if ((count > width - 5) && ispunct(*sp))
+      {
+      strcat(buffer,"<br>");
+      i += strlen("<br>");
+      count = 0;
+      }
+   }
+
+return buffer;
 }
