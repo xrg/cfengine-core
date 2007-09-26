@@ -428,7 +428,7 @@ it is currently enagaged in.
 
 @item -A @code{--audit}
 This prints a history of cfengine's behaviour collected if the
-Auditing, @xref{Auditing} variable is true. The audit data are best viewed
+Auditing variable is true, @xref{Auditing}. The audit data are best viewed
 in html or parsed with xml, using the @code{--html} and @code{--xml} options.
 
 @item -c @code{--checksum}
@@ -2677,6 +2677,7 @@ The meaning of each of these lines is described below.
 * homepattern::                 
 * HostnameKeys::                
 * IfElapsed::                   
+* IgnoreFriendRegex::           
 * Inform::                      
 * interfacename::               
 * fileextension::               
@@ -3819,6 +3820,7 @@ By default, this variable is set to /usr/sbin/pkg_delete, meaning that any
 packages with action=remove will be removed.  Note the quotes around the 
 string, and the @code{%s} is replaced with the name of the package to be installed.
 
+
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
@@ -3934,7 +3936,7 @@ which must be set for consistency.
 @c SUBSECTION
 @c .....................................................
 
-@node IfElapsed, Inform, HostnameKeys, control
+@node IfElapsed, IgnoreFriendRegex, HostnameKeys, control
 @subsection IfElapsed
 
 If you change the value of this parameter, it should be one of the
@@ -3973,13 +3975,26 @@ This method should be considered old and deprecated however.
 As of version 2.1.0, you can define the expiry time on a per-command basis,
 as options of the form @code{ifelapsed=15}.
 
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
 
+@node IgnoreFriendRegex, Inform, IfElapsed, control
+@subsection FriendIgnoreRegex
+
+Use this regular expression to suppress FriendStatus warnings
+for matching hosts. e.g.
+@smallexample
+
+     IgnoreFriendRegex = ( "2001:700:.*|host1|host2" )
+
+@end smallexample
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 
-@node Inform, interfacename, IfElapsed, control
+@node Inform, interfacename, IgnoreFriendRegex, control
 @subsection Inform
 
 @w{}
@@ -7202,8 +7217,8 @@ If @code{ChecksumUpdates} is set, then
 security warning messages are issued only once and the value
 in the database is then changed to the new value of the file
 automatically i.e. the behaviour is similar to that of setuid root
-program detection, @xref{ChecksumPurge}
-and, @xref{ChecksumUpdates}.
+program detection, @xref{ChecksumPurge}.
+Also, @xref{ChecksumUpdates}.
 @cindex Message digests
 @cindex Hashes of files
 @cindex Tripwire functionality

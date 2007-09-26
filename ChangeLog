@@ -57,9 +57,17 @@
 	
 	SCLI interface modifications.
 
+	--
+	
 	Intermittency entropy code added to the copy instrumentation for
 	automatic host reliability measurements.
 
+	Special variable
+
+	   IgnoreFriendRegex = ( regex )
+
+	prevents last-seen warnings about hosts matching the named regex
+	
 	--
 	
 	UserExists("name") and GroupExists("name") functions added to builtin functions.

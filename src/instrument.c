@@ -403,14 +403,33 @@ void CheckFriendConnections(int hours)
   DB *dbp;
   DBC *dbcp;
   DB_ENV *dbenv = NULL;
-  int ret, secs = CF_TICKS_PER_HOUR*hours, criterion, overdue;
+  int ret, secs = CF_TICKS_PER_HOUR*hours, criterion, overdue, regex=false;
   time_t now = time(NULL),lsea = -1, tthen, then;
   char name[CF_BUFSIZE],hostname[CF_BUFSIZE],datebuf[CF_MAXVARSIZE];
-  char addr[CF_BUFSIZE],type[CF_BUFSIZE];
+  char addr[CF_BUFSIZE],type[CF_BUFSIZE], *regexp;
   struct QPoint entry;
   double average = 0.0, var = 0.0, ticksperminute = 60.0;
   double ticksperhour = (double)CF_TICKS_PER_HOUR,ticksperday = (double)CF_TICKS_PER_DAY;
+  regex_t rx,rxcache;
+  regmatch_t pmatch;
 
+if (regexp = GetMacroValue(CONTEXTID,"IgnoreFriendRegex"))
+   {
+   Verbose("IgnoreFriendRegex %s\n",regexp);
+   if ((ret = regcomp(&rx,regexp,REG_EXTENDED)) != 0)
+      {
+      regerror(ret,&rx,name,1023);
+      snprintf(OUTPUT,CF_BUFSIZE,"Regular expression error %d for %s: %s\n",ret,regexp,name);
+      CfLog(cfinform,OUTPUT,"");
+      regex = false;
+      }
+   else
+      {
+      Verbose("Ignore expression compiled");
+      regex = true;
+      }
+   }
+ 
 Verbose("CheckFriendConnections(%d)\n",hours);
 snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
 
@@ -489,6 +508,17 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       {
       lsea = (time_t)CF_WEEK/7;
       }
+
+   if (regex && (ret = regexec(&rx,hostname,1,&pmatch,0)) == 0)
+      {
+      if ((pmatch.rm_so == 0) && (pmatch.rm_eo == strlen(hostname)))
+         {
+         Verbose("Ignoring Friend %s\n",hostname);
+         criterion = false;
+         lsea = CF_INFINITY;
+         }
+      }
+   
    
    tthen = (time_t)then;
 

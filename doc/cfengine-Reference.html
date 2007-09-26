@@ -376,7 +376,7 @@ operational purposes.
 it is currently enagaged in.
 
      <br><dt>`<samp><span class="samp">-A </span><code>--audit</code></samp>'<dd>This prints a history of cfengine's behaviour collected if the
-Auditing, See <a href="#Auditing">Auditing</a> variable is true. The audit data are best viewed
+Auditing variable is true, See <a href="#Auditing">Auditing</a>. The audit data are best viewed
 in html or parsed with xml, using the <code>--html</code> and <code>--xml</code> options.
 
      <br><dt>`<samp><span class="samp">-c </span><code>--checksum</code></samp>'<dd>This lists all of the files and their current checksum values in the
@@ -2316,6 +2316,7 @@ The meaning of each of these lines is described below.
 <li><a href="#homepattern">homepattern</a>
 <li><a href="#HostnameKeys">HostnameKeys</a>
 <li><a href="#IfElapsed">IfElapsed</a>
+<li><a href="#IgnoreFriendRegex">IgnoreFriendRegex</a>
 <li><a href="#Inform">Inform</a>
 <li><a href="#interfacename">interfacename</a>
 <li><a href="#fileextension">fileextension</a>
@@ -3620,7 +3621,7 @@ which must be set for consistency.
 <div class="node">
 <p><hr>
 <a name="IfElapsed"></a>
-Next:&nbsp;<a rel="next" accesskey="n" href="#Inform">Inform</a>,
+Next:&nbsp;<a rel="next" accesskey="n" href="#IgnoreFriendRegex">IgnoreFriendRegex</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="#HostnameKeys">HostnameKeys</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
@@ -3662,14 +3663,34 @@ as options of the form <code>ifelapsed=15</code>.
 <!-- ..................................................... -->
 <div class="node">
 <p><hr>
-<a name="Inform"></a>
-Next:&nbsp;<a rel="next" accesskey="n" href="#interfacename">interfacename</a>,
+<a name="IgnoreFriendRegex"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#Inform">Inform</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="#IfElapsed">IfElapsed</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.39 Inform</h4>
+<h4 class="subsection">4.9.39 FriendIgnoreRegex</h4>
+
+<p>Use this regular expression to suppress FriendStatus warnings
+for matching hosts. e.g.
+<pre class="smallexample">     
+          IgnoreFriendRegex = ( "2001:700:.*|host1|host2" )
+     
+</pre>
+   <!-- ..................................................... -->
+<!-- SUBSECTION -->
+<!-- ..................................................... -->
+<div class="node">
+<p><hr>
+<a name="Inform"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#interfacename">interfacename</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#IgnoreFriendRegex">IgnoreFriendRegex</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
+
+</div>
+
+<h4 class="subsection">4.9.40 Inform</h4>
 
 <!-- /@w --><pre class="smallexample">     
        Inform = ( <var>on/</var><b>off</b> )
@@ -3700,7 +3721,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.40 InterfaceName</h4>
+<h4 class="subsection">4.9.41 InterfaceName</h4>
 
 <p><a name="index-InterfaceName-231"></a><a name="index-InterfaceName-232"></a><a name="index-Interface-name_002c-redefining-by-class-233"></a>
 If you have an operating system which is installed on some
@@ -3737,7 +3758,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.41 FileExtensions</h4>
+<h4 class="subsection">4.9.42 FileExtensions</h4>
 
 <p>This list may be used to define a number of extensions
 which are regarded as being plain files by the system. 
@@ -3763,7 +3784,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.42 LastSeen</h4>
+<h4 class="subsection">4.9.43 LastSeen</h4>
 
 <p>This option is true by default. If set to off or false it prevents cfengine
 and/or cfservd from learning about last times hosts were observed
@@ -3791,7 +3812,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.43 LastSeenExpireAfter</h4>
+<h4 class="subsection">4.9.44 LastSeenExpireAfter</h4>
 
 <p>This value (in days) sets the time after which unseen friend hosts
 are purged from the `last seen' database, as viewed by the <code>FriendStatus</code>
@@ -3815,7 +3836,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.44 LinkCopies</h4>
+<h4 class="subsection">4.9.45 LinkCopies</h4>
 
 <p>This list is used to define a global list of names or patterns
 which are to be linked symbolically rather than copied. For example
@@ -3847,7 +3868,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.45 LogDirectory</h4>
+<h4 class="subsection">4.9.46 LogDirectory</h4>
 
 <p>This is now deprecated.
 
@@ -3871,7 +3892,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.46 LogTidyHomeFiles</h4>
+<h4 class="subsection">4.9.47 LogTidyHomeFiles</h4>
 
 <!-- /@w --><pre class="smallexample">     
        LogTidyHomeFiles = ( off )
@@ -3894,7 +3915,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.47 moduledirectory</h4>
+<h4 class="subsection">4.9.48 moduledirectory</h4>
 
 <p><a name="index-Module-directory-243"></a><a name="index-Directory-for-cfengine-modules-244"></a><a name="index-moduledirectory-245"></a>
 
@@ -3919,7 +3940,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.48 mountpattern</h4>
+<h4 class="subsection">4.9.49 mountpattern</h4>
 
 <p><a name="index-Mount-paths-246"></a><a name="index-Path-to-mounted-filesystems-247"></a><a name="index-mountpattern-248"></a>
 <pre class="example">        mountpattern  = ( <var>mount-point</var> )
@@ -3959,7 +3980,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.49 netmask</h4>
+<h4 class="subsection">4.9.50 netmask</h4>
 
 <p><a name="index-netmask-249"></a><a name="index-netmask-250"></a>
 <pre class="example">        netmask = ( <var>aaa.bbb.ccc.ddd</var> )
@@ -4040,7 +4061,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.50 NonAlphaNumFiles</h4>
+<h4 class="subsection">4.9.51 NonAlphaNumFiles</h4>
 
 <p>If enabled, this option causes cfengine to detect and
 disable files which have purely non-alphanumeric
@@ -4069,7 +4090,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.51 nfstype</h4>
+<h4 class="subsection">4.9.52 nfstype</h4>
 
 <p><a name="index-nfs-256"></a><a name="index-nfstype-257"></a><a name="index-nfstype-258"></a>
 <pre class="example">        nfstype = ( <var>nfs-type</var> )
@@ -4104,7 +4125,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.52 PortageInstallCommand</h4>
+<h4 class="subsection">4.9.53 PortageInstallCommand</h4>
 
 <p>Sets the path to `emerge' which is used to install packages that need
 to be installed under Gentoo Portage.
@@ -4130,7 +4151,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.53 RepChar</h4>
+<h4 class="subsection">4.9.54 RepChar</h4>
 
 <pre class="example">        RepChar = ( <var>character</var> )
 </pre>
@@ -4155,7 +4176,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.54 Repository</h4>
+<h4 class="subsection">4.9.55 Repository</h4>
 
 <pre class="example">        Repository  = ( <var>directory</var> )
 </pre>
@@ -4177,7 +4198,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.55 RPMcommand</h4>
+<h4 class="subsection">4.9.56 RPMcommand</h4>
 
 <p>The default value of the Red Hat Package manager command <samp><span class="file">/bin/rpm</span></samp> can be altered
 for non-standard systems with this variable.
@@ -4195,7 +4216,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.56 RPMInstallCommand</h4>
+<h4 class="subsection">4.9.57 RPMInstallCommand</h4>
 
 <p>Sets the command used to install packages that need to be installed
 under the RPM package manager.
@@ -4219,7 +4240,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.57 Schedule</h4>
+<h4 class="subsection">4.9.58 Schedule</h4>
 
 <p><a name="index-scheduling-265"></a><a name="index-scheduling-266"></a>
 
@@ -4255,7 +4276,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.58 SecureInput</h4>
+<h4 class="subsection">4.9.59 SecureInput</h4>
 
 <p><a name="index-Secure-input-267"></a><a name="index-SecureInput-268"></a>
 
@@ -4277,7 +4298,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.59 SensibleCount</h4>
+<h4 class="subsection">4.9.60 SensibleCount</h4>
 
 <p><a name="index-Sensible-limits-on-files-in-a-directory-269"></a><a name="index-SensibleCount-270"></a>
 <pre class="example">        SensibleCount  = ( <var>count</var> )
@@ -4301,7 +4322,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.60 SensibleSize</h4>
+<h4 class="subsection">4.9.61 SensibleSize</h4>
 
 <p><a name="index-Sensible-file-sizes-271"></a><a name="index-SensibleSize-272"></a>
 <pre class="example">        SensibleSize  = ( <var>size</var> )
@@ -4326,7 +4347,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.61 ShowActions</h4>
+<h4 class="subsection">4.9.62 ShowActions</h4>
 
 <p><a name="index-ShowActions-273"></a>
 <pre class="example">        ShowActions  = ( <var>on</var> )
@@ -4348,7 +4369,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.62 SingleCopy</h4>
+<h4 class="subsection">4.9.63 SingleCopy</h4>
 
 <pre class="smallexample">     
      	singlecopy = ( path_and_filename_wildcard )
@@ -4418,7 +4439,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.63 site/faculty</h4>
+<h4 class="subsection">4.9.64 site/faculty</h4>
 
 <p><a name="index-site-274"></a><a name="index-site-275"></a>
 <pre class="example">       site    = ( <var>sitename</var> )
@@ -4449,7 +4470,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.64 SkipIdentify</h4>
+<h4 class="subsection">4.9.65 SkipIdentify</h4>
 
 <pre class="example">       SkipIdentify = ( true )
 </pre>
@@ -4473,7 +4494,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.65 smtpserver</h4>
+<h4 class="subsection">4.9.66 smtpserver</h4>
 
 <pre class="example">       smtpserver = ( <var>mailhost</var> )
 </pre>
@@ -4492,7 +4513,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.66 SplayTime</h4>
+<h4 class="subsection">4.9.67 SplayTime</h4>
 
 <pre class="example">       SplayTime = ( <var>time-in-minutes</var> )
 </pre>
@@ -4512,7 +4533,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.67 Split</h4>
+<h4 class="subsection">4.9.68 Split</h4>
 
 <pre class="example">        Split  = ( <var>character</var> )
 </pre>
@@ -4538,7 +4559,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.68 SpoolDirectories</h4>
+<h4 class="subsection">4.9.69 SpoolDirectories</h4>
 
 <p><a name="index-SpoolDirectories-284"></a><a name="index-SpoolDirectories-285"></a>
 A list of additional spool directories for cfengine to police. In these
@@ -4561,7 +4582,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.69 SUNInstallCommand</h4>
+<h4 class="subsection">4.9.70 SUNInstallCommand</h4>
 
 <p>Sets the command used to install packages that need to be installed
 under the SUN package manager.
@@ -4585,7 +4606,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.70 suspiciousnames</h4>
+<h4 class="subsection">4.9.71 suspiciousnames</h4>
 
 <p><a name="index-suspiciousnames-286"></a><a name="index-SuspiciousNames-287"></a>
 <pre class="example">       SuspiciousNames = ( .mo lrk3 )
@@ -4607,7 +4628,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.71 sysadm</h4>
+<h4 class="subsection">4.9.72 sysadm</h4>
 
 <p><a name="index-sysadm-288"></a><a name="index-sysadm-289"></a>
 <pre class="example">        sysadm = ( <var>mail address</var> )
@@ -4633,7 +4654,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.72 Syslog</h4>
+<h4 class="subsection">4.9.73 Syslog</h4>
 
 <!-- /@w --><pre class="smallexample">     
        Syslog = ( <var>on/</var><b>off</b> )
@@ -4662,7 +4683,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.73 SyslogFacility</h4>
+<h4 class="subsection">4.9.74 SyslogFacility</h4>
 
 <!-- /@w --><pre class="smallexample">     
        SyslogFacility = ( <var>facility</var> )
@@ -4697,7 +4718,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.74 timezone</h4>
+<h4 class="subsection">4.9.75 timezone</h4>
 
 <pre class="example">        timezone = ( <var>3-character timezone</var> )
 </pre>
@@ -4733,7 +4754,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.75 TimeOut</h4>
+<h4 class="subsection">4.9.76 TimeOut</h4>
 
 <!-- /@w --><pre class="smallexample">     
        TimeOut = ( 10 )
@@ -4758,7 +4779,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.76 Verbose</h4>
+<h4 class="subsection">4.9.77 Verbose</h4>
 
 <!-- /@w --><pre class="smallexample">     
        Verbose = ( <var>on/</var><b>off</b> )
@@ -4792,7 +4813,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.77 Warnings</h4>
+<h4 class="subsection">4.9.78 Warnings</h4>
 
 <!-- /@w --><pre class="smallexample">     
        Warnings = ( <var>on/</var><b>off</b> )
@@ -4821,7 +4842,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.78 WarnNonUserFiles</h4>
+<h4 class="subsection">4.9.79 WarnNonUserFiles</h4>
 
 <p>If this parameter is set to true, cfengine will warn about files in
 spool directories which do not have a name belonging to a known user id.
@@ -4840,7 +4861,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.79 WarnNonOwnerFiles</h4>
+<h4 class="subsection">4.9.80 WarnNonOwnerFiles</h4>
 
 <p>If this parameter is set to true, cfengine will warn about files on
 mailservers whose names do not correspond to a known user name, but
@@ -4866,7 +4887,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.80 WarnNonUserMail</h4>
+<h4 class="subsection">4.9.81 WarnNonUserMail</h4>
 
 <p>If this parameter is set to true, cfengine will warn about mail files on
 mailservers which do not have a name belonging to a known user id. This
@@ -4883,7 +4904,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.9.81 WarnNonOwnerMail</h4>
+<h4 class="subsection">4.9.82 WarnNonOwnerMail</h4>
 
 <p>If this parameter is set to true, cfengine will warn about files on
 mailservers whose names do not correspond to a known user name, but
@@ -6522,7 +6543,7 @@ the form of the statement in pseudo-code:
                                define=<var>classlist</var>
                                elsedefine=<var>classlist</var>
      
-                               checksum=<var>md5</var>
+                               checksum=<var>md5/sha/best</var>
                                syslog=<var>true/on</var>/<b>false/off</b>
                                inform=<var>true/on</var>/<b>false/off</b>
                                ifelapsed=<var>mins</var>
@@ -6663,18 +6684,22 @@ achieved with the <code>directories</code> directive, See <a href="#directories"
 the colon, comma or dot separated list of classes becomes defined. 
 Warnings do not activate the classes.
 
-     <br><dt><code>checksum=</code><var>md5/sha/sha1</var><dd>If set this option causes cfengine to add a checksum for the named file
+     <br><dt><code>checksum=</code><var>md5/sha/best</var><dd>If set this option causes cfengine to add a checksum for the named file
 to a database. Changes in the value of this checksum are then warned as
 a security issue. This should normally only be used to monitor binary
 files which one would not expect to change often. Note also that the use
-of this option can mean a significant performance penalty. Note that it
-is also possible to use the same database file for cfservd's remote copying by
-checksum.  If you use the same file for both purposes you risk losing
-warnings.  Security warning messages are issued only once and the value
+of this option can mean a significant performance penalty. If the value
+<code>best</code> is used for this option then the best known pair of
+checksum methods are cross-checked for each file. (The best value are
+determined by the algorithms supported in the OpenSSL interfaces used
+to compile the program).
+
+     <p>If <code>ChecksumUpdates</code> is set, then
+security warning messages are issued only once and the value
 in the database is then changed to the new value of the file
 automatically i.e. the behaviour is similar to that of setuid root
-program detection, See <a href="#ChecksumDatabase">ChecksumDatabase</a>. Also, See <a href="#ChecksumPurge">ChecksumPurge</a>
-and, See <a href="#ChecksumUpdates">ChecksumUpdates</a>. 
+program detection, See <a href="#ChecksumPurge">ChecksumPurge</a>. 
+Also, See <a href="#ChecksumUpdates">ChecksumUpdates</a>. 
 <a name="index-Message-digests-417"></a><a name="index-Hashes-of-files-418"></a><a name="index-Tripwire-functionality-419"></a>
 <br><dt><code>xdev</code><dd>Prevents cfengine from descending into file systems that are not on the
 same device as the root of the rescurion path. 
@@ -10220,8 +10245,12 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#cfservd-control">cfservd control</a>
 <h4 class="subsection">5.1.9 cfrunCommand</h4>
 
 <p>This string is the command which you would like to be executed
-remotely by the <code>cfrun</code> command. 
-<a name="index-g_t_0040code_007bcfrunCommand_007d-variable-625"></a>
+remotely by the <code>cfrun</code> command. Note that you must, in addition,
+authorize access to this file in the <code>admit</code> section. The access
+rule should (as usual) be to the actual file object path, not
+including any symbolic links.
+
+   <p><a name="index-g_t_0040code_007bcfrunCommand_007d-variable-625"></a>
 <!-- ........................................... -->
 <!-- SUBSECTION -->
 <!-- ........................................... -->
@@ -13310,49 +13339,50 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#homepattern">4.9.36 HomePattern</a>
 <li><a href="#HostnameKeys">4.9.37 HostnameKeys</a>
 <li><a href="#IfElapsed">4.9.38 IfElapsed</a>
-<li><a href="#Inform">4.9.39 Inform</a>
-<li><a href="#interfacename">4.9.40 InterfaceName</a>
-<li><a href="#fileextension">4.9.41 FileExtensions</a>
-<li><a href="#lastseen">4.9.42 LastSeen</a>
-<li><a href="#lastseenexpireafter">4.9.43 LastSeenExpireAfter</a>
-<li><a href="#linkcopies">4.9.44 LinkCopies</a>
-<li><a href="#LogDirectory">4.9.45 LogDirectory</a>
-<li><a href="#LogTidyHomeFiles">4.9.46 LogTidyHomeFiles</a>
-<li><a href="#moduledirectory">4.9.47 moduledirectory</a>
-<li><a href="#mountpattern">4.9.48 mountpattern</a>
-<li><a href="#netmask">4.9.49 netmask</a>
-<li><a href="#nonalphanumfiles">4.9.50 NonAlphaNumFiles</a>
-<li><a href="#nfstype">4.9.51 nfstype</a>
-<li><a href="#PortageInstallCommand">4.9.52 PortageInstallCommand</a>
-<li><a href="#repchar">4.9.53 RepChar</a>
-<li><a href="#repository">4.9.54 Repository</a>
-<li><a href="#RPMcommand">4.9.55 RPMcommand</a>
-<li><a href="#rpminstallcommand">4.9.56 RPMInstallCommand</a>
-<li><a href="#schedule">4.9.57 Schedule</a>
-<li><a href="#secureinput">4.9.58 SecureInput</a>
-<li><a href="#sensiblecount">4.9.59 SensibleCount</a>
-<li><a href="#sensiblesize">4.9.60 SensibleSize</a>
-<li><a href="#showactions">4.9.61 ShowActions</a>
-<li><a href="#singlecopy">4.9.62 SingleCopy</a>
-<li><a href="#site">4.9.63 site/faculty</a>
-<li><a href="#SkipIdentify">4.9.64 SkipIdentify</a>
-<li><a href="#Smtpserver">4.9.65 smtpserver</a>
-<li><a href="#SplayTime">4.9.66 SplayTime</a>
-<li><a href="#split">4.9.67 Split</a>
-<li><a href="#spooldirectories">4.9.68 SpoolDirectories</a>
-<li><a href="#suninstallcommand">4.9.69 SUNInstallCommand</a>
-<li><a href="#suspiciousnames">4.9.70 suspiciousnames</a>
-<li><a href="#sysadm">4.9.71 sysadm</a>
-<li><a href="#Syslog">4.9.72 Syslog</a>
-<li><a href="#SyslogFacility">4.9.73 SyslogFacility</a>
-<li><a href="#timezone">4.9.74 timezone</a>
-<li><a href="#TimeOut">4.9.75 TimeOut</a>
-<li><a href="#Verbose">4.9.76 Verbose</a>
-<li><a href="#Warnings">4.9.77 Warnings</a>
-<li><a href="#warnnonuserfiles">4.9.78 WarnNonUserFiles</a>
-<li><a href="#warnnonownerfiles">4.9.79 WarnNonOwnerFiles</a>
-<li><a href="#warnnonusermail">4.9.80 WarnNonUserMail</a>
-<li><a href="#warnnonownermail">4.9.81 WarnNonOwnerMail</a>
+<li><a href="#IgnoreFriendRegex">4.9.39 FriendIgnoreRegex</a>
+<li><a href="#Inform">4.9.40 Inform</a>
+<li><a href="#interfacename">4.9.41 InterfaceName</a>
+<li><a href="#fileextension">4.9.42 FileExtensions</a>
+<li><a href="#lastseen">4.9.43 LastSeen</a>
+<li><a href="#lastseenexpireafter">4.9.44 LastSeenExpireAfter</a>
+<li><a href="#linkcopies">4.9.45 LinkCopies</a>
+<li><a href="#LogDirectory">4.9.46 LogDirectory</a>
+<li><a href="#LogTidyHomeFiles">4.9.47 LogTidyHomeFiles</a>
+<li><a href="#moduledirectory">4.9.48 moduledirectory</a>
+<li><a href="#mountpattern">4.9.49 mountpattern</a>
+<li><a href="#netmask">4.9.50 netmask</a>
+<li><a href="#nonalphanumfiles">4.9.51 NonAlphaNumFiles</a>
+<li><a href="#nfstype">4.9.52 nfstype</a>
+<li><a href="#PortageInstallCommand">4.9.53 PortageInstallCommand</a>
+<li><a href="#repchar">4.9.54 RepChar</a>
+<li><a href="#repository">4.9.55 Repository</a>
+<li><a href="#RPMcommand">4.9.56 RPMcommand</a>
+<li><a href="#rpminstallcommand">4.9.57 RPMInstallCommand</a>
+<li><a href="#schedule">4.9.58 Schedule</a>
+<li><a href="#secureinput">4.9.59 SecureInput</a>
+<li><a href="#sensiblecount">4.9.60 SensibleCount</a>
+<li><a href="#sensiblesize">4.9.61 SensibleSize</a>
+<li><a href="#showactions">4.9.62 ShowActions</a>
+<li><a href="#singlecopy">4.9.63 SingleCopy</a>
+<li><a href="#site">4.9.64 site/faculty</a>
+<li><a href="#SkipIdentify">4.9.65 SkipIdentify</a>
+<li><a href="#Smtpserver">4.9.66 smtpserver</a>
+<li><a href="#SplayTime">4.9.67 SplayTime</a>
+<li><a href="#split">4.9.68 Split</a>
+<li><a href="#spooldirectories">4.9.69 SpoolDirectories</a>
+<li><a href="#suninstallcommand">4.9.70 SUNInstallCommand</a>
+<li><a href="#suspiciousnames">4.9.71 suspiciousnames</a>
+<li><a href="#sysadm">4.9.72 sysadm</a>
+<li><a href="#Syslog">4.9.73 Syslog</a>
+<li><a href="#SyslogFacility">4.9.74 SyslogFacility</a>
+<li><a href="#timezone">4.9.75 timezone</a>
+<li><a href="#TimeOut">4.9.76 TimeOut</a>
+<li><a href="#Verbose">4.9.77 Verbose</a>
+<li><a href="#Warnings">4.9.78 Warnings</a>
+<li><a href="#warnnonuserfiles">4.9.79 WarnNonUserFiles</a>
+<li><a href="#warnnonownerfiles">4.9.80 WarnNonOwnerFiles</a>
+<li><a href="#warnnonusermail">4.9.81 WarnNonUserMail</a>
+<li><a href="#warnnonownermail">4.9.82 WarnNonOwnerMail</a>
 </li></ul>
 <li><a href="#classes">4.10 classes</a>
 <li><a href="#copy">4.11 copy</a>
