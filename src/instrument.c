@@ -415,7 +415,7 @@ void CheckFriendConnections(int hours)
 
 if (regexp = GetMacroValue(CONTEXTID,"IgnoreFriendRegex"))
    {
-   Verbose("IgnoreFriendRegex %s\n",regexp);
+   Verbose("IgnoreFriendRegex %s\n\n",regexp);
    if ((ret = regcomp(&rx,regexp,REG_EXTENDED)) != 0)
       {
       regerror(ret,&rx,name,1023);
@@ -425,7 +425,6 @@ if (regexp = GetMacroValue(CONTEXTID,"IgnoreFriendRegex"))
       }
    else
       {
-      Verbose("Ignore expression compiled");
       regex = true;
       }
    }
@@ -509,16 +508,18 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       lsea = (time_t)CF_WEEK/7;
       }
 
-   if (regex && (ret = regexec(&rx,hostname,1,&pmatch,0)) == 0)
+   if (regex)
       {
-      if ((pmatch.rm_so == 0) && (pmatch.rm_eo == strlen(hostname)))
+      if (regexec(&rx,IPString2Hostname(hostname+1),1,&pmatch,0) == 0)
          {
-         Verbose("Ignoring Friend %s\n",hostname);
-         criterion = false;
-         lsea = CF_INFINITY;
+         if ((pmatch.rm_so == 0) && (pmatch.rm_eo == strlen(hostname+1)))
+            {
+            Verbose("Not judging friend %s\n",hostname);
+            criterion = false;
+            lsea = CF_INFINITY;
+            }
          }
       }
-   
    
    tthen = (time_t)then;
 
@@ -597,7 +598,7 @@ void CheckFriendReliability()
   char name[CF_BUFSIZE],hostname[CF_BUFSIZE],timekey[CF_MAXVARSIZE];
   struct QPoint entry;
   struct Item *ip, *hostlist = NULL;
-  double entropy,average,var,sum,sum_av;
+  double entropy,average,var,sum,sum_av,expect,actual;
   time_t now = time(NULL), then, lastseen = CF_WEEK;
 
 Verbose("CheckFriendReliability()\n");
@@ -655,7 +656,6 @@ dbp->close(dbp,0);
 for (ip = hostlist; ip != NULL; ip=ip->next)
    {
    snprintf(name,CF_BUFSIZE-1,"%s/%s.%s",VLOCKDIR,CF_LASTDB_FILE,ip->name);
-   Verbose("Consulting profile %s\n",name);
 
    if ((errno = db_create(&dbpent,dbenv2,0)) != 0)
       {
@@ -749,7 +749,7 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
       sum_av += p_av[i];
       }
 
-   Debug("Reliabilities sum to %.2f and %.2f\n",sum,sum_av);
+   Debug("Reliabilities sum to %.2f av %.2f\n\n",sum,sum_av);
 
    sum = sum_av = 0.0;
    
@@ -771,8 +771,29 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
       sum_av -= p_av[i] * log(p_av[i]);
       }
 
-   Verbose("Scaled entropy for %s = %.1f %%\n",ip->name,sum/log((double)CF_RELIABLE_CLASSES)*100.0);
-   Verbose("Expected entropy for %s = %.1f %%\n",ip->name,sum_av/log((double)CF_RELIABLE_CLASSES)*100.0);
+   actual = sum/log((double)CF_RELIABLE_CLASSES)*100.0;
+   expect = sum_av/log((double)CF_RELIABLE_CLASSES)*100.0;
+   
+   Verbose("Scaled entropy for %s = %.1f %%\n",ip->name,actual);
+   Verbose("Expected entropy for %s = %.1f %%\n\n",ip->name,expect);
+
+   if (actual > expect)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"The reliability of %s has decreased!\n",ip->name);
+      CfLog(cfinform,OUTPUT,"");
+      }
+
+   if (actual > 50.0)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"The intermittency of %s has passed 50%% entropy\n",ip->name);
+      CfLog(cferror,OUTPUT,"");
+      }
+
+   if (expect > actual)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"The reliability of %s is improving!\n",ip->name);
+      CfLog(cfinform,OUTPUT,"");
+      }
    
    dbpent->close(dbpent,0);
    }
