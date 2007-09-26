@@ -10996,7 +10996,11 @@ for a disk-based lookup.
 @subsection cfrunCommand
 
 This string is the command which you would like to be executed
-remotely by the @code{cfrun} command.
+remotely by the @code{cfrun} command. Note that you must, in addition,
+authorize access to this file in the @code{admit} section. The access
+rule should (as usual) be to the actual file object path, not
+including any symbolic links.
+
 @cindex @code{cfrunCommand} variable
 
 @c ...........................................
