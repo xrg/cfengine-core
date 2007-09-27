@@ -6861,6 +6861,10 @@ and also
     3 */
 @end smallexample
 
+@item UnCommentToLineMatching @var{quoted-string}
+Uncomments from the current position up to and including the first
+line matching the named regular expression.
+
 @item UnsetAbort  @var{quoted-string}
 Switches off the feature @code{AbortAtLineMatching}.
 

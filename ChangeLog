@@ -108,6 +108,8 @@
 	Option "best" added to checksum= in files action, this allows cross checking
 	of the two best known hash algorithms for each file. Currently this is md5 and sha
 	due to limitations in OpenSSL libcrypto.
+
+	UnCommentToLineMatching regex added
 	
 2.2.1
 	scli: type section added. This is a special case of shellcommands, which
