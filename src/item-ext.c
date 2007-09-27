@@ -1219,6 +1219,110 @@ return true;
 
 /********************************************************************/
 
+int UnCommentToRegExp(struct Item **filestart,char *string,char *comm,char *end)
+
+  /* Comment up to and including a line matching the regex */
+
+{ struct Item *ip, *ip_end = NULL;
+  int linefound = false, done;
+  char *sp, *sp2;
+  regex_t rx,rxcache;
+  regmatch_t pmatch;
+
+Debug2("CommentToRegExp(list,%s %s)\n",comm,string);
+
+if (CURRENTLINEPTR == NULL)  /* Shouldn't happen */
+   {
+   CfLog(cferror,"File line-pointer undefined during editfile action\n","");
+   return true;
+   }
+
+if (CfRegcomp(&rxcache,string, REG_EXTENDED) != 0)
+   {
+   return false;
+   }
+
+for (ip = CURRENTLINEPTR; (ip != NULL); ip=ip->next)
+   {
+   if (ip->name == NULL)
+      {
+      continue;
+      }
+
+   if (EDABORTMODE && ItemMatchesRegEx(ip->name,VEDITABORT))
+      {
+      Verbose("Aborting search, regex %s matches line\n",VEDITABORT);
+      regfree(&rx);
+      return false;
+      }
+
+   memcpy(&rx,&rxcache,sizeof(rx)); /* To fix a bug on some implementations where rx gets emptied */   
+   if (regexec(&rx,ip->name,1,&pmatch,0) == 0)
+      {
+      if ((pmatch.rm_so == 0) && (pmatch.rm_eo == strlen(ip->name)))
+         {
+         linefound = true;
+         ip_end = ip;
+         break;
+         }
+      }
+   }
+ 
+if (!linefound)
+   {
+   return false;
+   }
+ 
+for (ip = CURRENTLINEPTR; ip != NULL; ip = CURRENTLINEPTR)
+   {
+   if (ip == ip_end)
+      {
+      EditVerbose("Terminating line: %s (Done)\n",ip->name);
+      done = true;
+      }
+
+   if (strncmp(ip->name,comm,strlen(comm)) != 0)
+      {
+      CURRENTLINEPTR = ip->next;
+      continue;
+      }
+         
+   EditVerbose("Uncomment line %s\n",ip->name);
+   CURRENTLINEPTR = ip->next;
+   
+   if ((sp = malloc(strlen(ip->name))) == NULL)
+      {
+      CfLog(cferror,"No Memory in UnCommentToRegexp\n","malloc");
+      regfree(&rx);
+      return false;
+      }
+   
+   strcpy(sp,ip->name+strlen(comm));
+   
+   if ((strlen(end) != 0) && (strstr(sp,end) != NULL))
+      {
+      for (sp2 = sp+strlen(sp); strncmp(sp2,end,strlen(end)) != 0; sp2--)
+         {
+         }
+      
+      *sp2 = '\0';
+      }
+   
+   if (strcmp(sp,ip->name) != 0)
+      {
+      NUMBEROFEDITS++;
+      }
+   
+   free(ip->name);
+   ip->name = sp;
+   }
+
+/* regfree(&rx); */
+return true;
+}
+
+/********************************************************************/
+
 int DeleteSeveralLines (struct Item **filestart,char *string)
 
   /* Deletes up to N lines from current position */

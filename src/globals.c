@@ -1124,6 +1124,7 @@ char *OBS[CF_OBSERVABLES] =
      "CommentLinesMatching",
      "CommentLinesStarting",
      "CommentToLineMatching",
+     "UnCommentToLineMatching",
      "CommentNLines",
      "UnCommentNLines",
      "ReplaceAll",

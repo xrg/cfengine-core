@@ -80,9 +80,9 @@ if (ReadDB(dbp,eventname,&e,sizeof(e)))
    lastseen = now - e.t;
    newe.t = t;
    newe.Q.q = value;
-   newe.Q.expect = SWAverage(value,e.Q.expect);
+   newe.Q.expect = GAverage(value,e.Q.expect,0.3);
    delta2 = (value - e.Q.expect)*(value - e.Q.expect);
-   newe.Q.var = SWAverage(delta2,e.Q.var);
+   newe.Q.var = GAverage(delta2,e.Q.var,0.3);
 
    /* Have to kickstart variance computation, assume 1% to start  */
    
@@ -163,9 +163,9 @@ for (ip = list; ip != NULL; ip=ip->next)
       lastseen = now - e.t;
       newe.t = now;
       newe.Q.q = value;
-      newe.Q.expect = GAverage(value,e.Q.expect,0.5,0.5);
+      newe.Q.expect = GAverage(value,e.Q.expect,0.5);
       delta2 = (value - e.Q.expect)*(value - e.Q.expect);
-      newe.Q.var = GAverage(delta2,e.Q.var,0.5,0.5);
+      newe.Q.var = GAverage(delta2,e.Q.var,0.5);
       }
    else
       {
@@ -227,9 +227,9 @@ while (dbcp->c_get(dbcp, &key, &stored, DB_NEXT) == 0)
          {
          newe.t = then;
          newe.Q.q = 0;
-         newe.Q.expect = GAverage(0.0,e.Q.expect,0.5,0.5);
+         newe.Q.expect = GAverage(0.0,e.Q.expect,0.5);
          delta2 = (e.Q.expect)*(e.Q.expect);
-         newe.Q.var = GAverage(delta2,e.Q.var,0.5,0.5);
+         newe.Q.var = GAverage(delta2,e.Q.var,0.5);
          WriteDB(dbp,eventname,&newe,sizeof(newe));         
          }
       }
@@ -349,9 +349,9 @@ if (ReadDB(dbp,databuf,&q,sizeof(q)))
    {
    lastseen = (double)now - q.q;
    newq.q = (double)now;                   /* Last seen is now-then */
-   newq.expect = SWAverage(lastseen,q.expect);
+   newq.expect = GAverage(lastseen,q.expect,0.3);
    delta2 = (lastseen - q.expect)*(lastseen - q.expect);
-   newq.var = SWAverage(delta2,q.var);
+   newq.var = GAverage(delta2,q.var,0.3);
    }
 else
    {
@@ -785,7 +785,7 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
 
    if (actual > 50.0)
       {
-      snprintf(OUTPUT,CF_BUFSIZE,"The intermittency of %s has passed 50%% entropy\n",ip->name);
+      snprintf(OUTPUT,CF_BUFSIZE,"The intermittency of %s is above 50%% entropy\n",ip->name);
       CfLog(cferror,OUTPUT,"");
       }
 
@@ -951,26 +951,10 @@ free((char *)value);
 /* Toolkit                                                                   */
 /*****************************************************************************/
 
-double SWAverage(double anew,double aold)
+double GAverage(double anew,double aold,double p)
 
-{ double av;
-  double wnew,wold;
-
-wnew = 0.3;
-wold = 0.7;
-
-av = (wnew*anew + wold*aold)/(wnew+wold); 
-
-return av;
-}
-
-/*****************************************************************************/
-
-double GAverage(double anew,double aold,double wnew, double wold)
-
-{ double av;
-
-av = (wnew*anew + wold*aold)/(wnew+wold); 
-
-return av;
+/* return convex mixture - p is the trust in the new value */
+    
+{
+return (p*anew + (1-p)*aold);
 }

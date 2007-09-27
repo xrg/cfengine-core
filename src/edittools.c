@@ -667,7 +667,16 @@ while (ep != NULL)
              ep = ThrowAbort(ep);
              }
           break;
-          
+
+      case UnCommentToLineMatching:
+          if (! UnCommentToRegExp(&filestart,expdata,COMMENTSTART,COMMENTEND))
+             {
+             EditVerbose("Nothing matched UnCommentToLineMatching regular expression\n");
+             EditVerbose("Aborting file editing of %s.\n",filename);
+             ep = ThrowAbort(ep);
+             }
+          break;
+
       case CommentNLines:
           if (! CommentSeveralLines(&filestart,expdata,COMMENTSTART,COMMENTEND))
              {

@@ -1145,6 +1145,7 @@ enum editnames
    CommentLinesMatching,
    CommentLinesStarting,
    CommentToLineMatching,
+   UnCommentToLineMatching,
    CommentNLines,
    UnCommentNLines,
    ReplaceAll,

@@ -578,8 +578,7 @@ void DeleteDBValue(DBT *value);
 int ReadDB(DB *dbp,char *name,void *ptr,int size);
 int WriteDB(DB *dbp,char *name,void *ptr,int size);
 void DeleteDB(DB *dbp,char *name);
-double SWAverage(double anew,double aold);
-double GAverage(double anew,double aold,double wnew, double wold);
+double GAverage(double anew,double aold,double trust);
 
 /* item-ext.c */
 
@@ -610,6 +609,7 @@ int CommentItemMatching (struct Item **list, char *string, char *comm, char *end
 int UnCommentItemMatching (struct Item **list, char *string, char *comm, char *end);
 int UnCommentItemContaining (struct Item **list, char *string, char *comm, char *end);
 int CommentToRegExp (struct Item **filestart, char *string, char *comm, char *end);
+int UnCommentToRegExp(struct Item **filestart,char *string,char *comm,char *end);
 int DeleteSeveralLines  (struct Item **filestart, char *string);
 struct Item *GotoLastItem (struct Item *list);
 int LineMatches  (char *line, char *regexp);
