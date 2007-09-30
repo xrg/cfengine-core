@@ -10033,11 +10033,12 @@ SCLI is an SNMP command line interpreter written by J@"urgen
 Sch@"onwaelder of the Jacobs University of Bremen. It is a command
 interpreter used to simplify the interaction with SNMP enabled
 devices. SNMP is a stateless, UDP based network protocol for
-communicating with supporting hardware. The SNMP model does not fit very well with
-the cfengine responsibility for self paradigm, but it can be viewed as
-simply another form of shell script. SCLI attempts to add a level of
-user friendliness and stateful behaviour to SNMP through its shell-like
-interface. This is both a help and a hindrance to cfagent.
+communicating with supporting hardware. The SNMP model does not fit
+very comfortably with the cfengine ``responsibility for self''
+paradigm, but at some level SCLI can be viewed as just another form of
+interpreted script. SCLI adds a level of user friendliness and
+stateful behaviour to SNMP through its shell-like interface. This
+turns out to be both a help and a hindrance to cfagent.
 
 The intermingling of stateful and stateless processes in the dialogue
 between cfengine and scli makes their integration non-trivial. Several
