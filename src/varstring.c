@@ -1003,9 +1003,25 @@ for (sp = string; (*sp != '\0') ; sp++,i++)
    
    if (*sp == sep)
       {
-      before[i] = '\0';
-      AppendItem(&liststart,before,NULL);
-      i = -1;
+      /* Check the listsep is not escaped*/
+      
+      if ((sp > string) && (*(sp-1) != '\\'))
+         {
+         before[i] = '\0';
+         AppendItem(&liststart,before,NULL);
+         i = -1;
+         }
+      else if ((sp > string) && (*(sp-1) == '\\'))
+         {
+         i--;
+         before[i] = sep;
+         }
+      else
+         {
+         before[i] = '\0';
+         AppendItem(&liststart,before,NULL);
+         i = -1;
+         }
       }
    }
 

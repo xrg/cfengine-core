@@ -53,7 +53,10 @@ void PeerIntermittency(void);
 void GetFQHN(void);
 void OpenFiles(void);
 void CloseFiles(void);
-
+void MagnifyNow(void);
+void OpenMagnifyFiles(void);
+void CloseMagnifyFiles(void);
+    
 /*****************************************************************************/
 
 struct option GRAPHOPTIONS[] =
@@ -66,6 +69,7 @@ struct option GRAPHOPTIONS[] =
    { "separate",no_argument,0,'s'},
    { "no-error-bars",no_argument,0,'e'},
    { "no-scaling",no_argument,0,'n'},
+   { "now",no_argument,0,'N'},
    { NULL,0,0,0 }
    };
 
@@ -75,6 +79,8 @@ int HIRES = false;
 int SEPARATE = false;
 int ERRORBARS = true;
 int NOSCALING = true;
+int NOWOPT = false;
+
 char FILENAME[CF_BUFSIZE];
 unsigned int HISTOGRAM[CF_OBSERVABLES][7][CF_GRAINS];
 int SMOOTHHISTOGRAM[CF_OBSERVABLES][7][CF_GRAINS];
@@ -88,6 +94,7 @@ char TIMEKEY[CF_SMALLBUF],FLNAME[CF_BUFSIZE],*sp;
 double AGE;
 FILE *FPAV=NULL,*FPVAR=NULL, *FPNOW=NULL;
 FILE *FPE[CF_OBSERVABLES],*FPQ[CF_OBSERVABLES];
+FILE *FPM[CF_OBSERVABLES];
 
 /*****************************************************************************/
 
@@ -98,10 +105,18 @@ CheckOpts(argc,argv);
 GetFQHN();
 ReadAverages(); 
 SummarizeAverages();
-WriteGraphFiles();
-WriteHistograms();
-DiskArrivals();
-PeerIntermittency();
+
+if (NOWOPT)
+   {
+   MagnifyNow();
+   }
+else
+   {
+   WriteGraphFiles();
+   WriteHistograms();
+   DiskArrivals();
+   PeerIntermittency();
+   }
 
 return 0;
 }
@@ -446,6 +461,110 @@ while (NOW < CF_MONDAY_MORNING+CF_WEEK)
 DBP->close(DBP,0);
 
 CloseFiles();
+}
+
+/*****************************************************************************/
+
+void MagnifyNow()
+
+{ int its,i,j,k, count = 0;
+  DBT key,value;
+  time_t now;
+
+if (TIMESTAMPS)
+   {
+   if ((NOW = time((time_t *)NULL)) == -1)
+      {
+      printf("Couldn't read system clock\n");
+      }
+     
+   sprintf(FLNAME,"cfenvgraphs-%s-%s",CanonifyName(VFQNAME),ctime(&NOW));
+   }
+else
+   {
+   sprintf(FLNAME,"cfenvgraphs-snapshot-%s",CanonifyName(VFQNAME));
+   }
+
+printf("Creating sub-directory %s\n",FLNAME);
+
+if (mkdir(FLNAME,0755) == -1)
+   {
+   printf("Writing in existing directory\n");
+   }
+ 
+if (chdir(FLNAME))
+   {
+   perror("chdir");
+   exit(0);
+   }
+
+OpenMagnifyFiles();
+
+its = 1; /* detailed view */
+
+now = time(NULL);
+NOW = now - (time_t)(4 * CF_TICKS_PER_HOUR);
+ 
+while (NOW < now)
+   {
+   memset(&ENTRY,0,sizeof(ENTRY)); 
+
+   for (j = 0; j < its; j++)
+      {
+      memset(&key,0,sizeof(key));       
+      memset(&value,0,sizeof(value));
+      
+      strcpy(TIMEKEY,GenTimeKey(NOW));
+      
+      key.data = TIMEKEY;
+      key.size = strlen(TIMEKEY)+1;
+
+      if ((ERRNO = DBP->get(DBP,NULL,&key,&value,0)) != 0)
+         {
+         if (ERRNO != DB_NOTFOUND)
+            {
+            DBP->err(DBP,ERRNO,NULL);
+            exit(1);
+            }
+         }
+
+      /* Work out local average over grain size "its" */
+      
+      if (value.data != NULL)
+         {
+         memcpy(&DET,value.data,sizeof(DET));
+         
+         for (i = 0; i < CF_OBSERVABLES; i++)
+            {
+            ENTRY.Q[i].expect += DET.Q[i].expect/(double)its;
+            ENTRY.Q[i].var += DET.Q[i].var/(double)its;
+            ENTRY.Q[i].q += DET.Q[i].q/(double)its;
+            }         
+         
+         if (NOSCALING)
+            {            
+            for (i = 1; i < CF_OBSERVABLES; i++)
+               {
+               MAX.Q[i].expect = 1;
+               MAX.Q[i].q = 1;
+               }
+            }
+         }
+      
+      NOW += CF_MEASURE_INTERVAL;
+      count++;
+      }
+
+   /* Output q and E/sig data in a plethora of files */
+
+   for (i = 0; i < CF_OBSERVABLES; i++)
+      {
+      fprintf(FPM[i],"%d %f %f %f\n",count, ENTRY.Q[i].expect/MAX.Q[i].expect, sqrt(ENTRY.Q[i].var)/MAX.Q[i].expect,ENTRY.Q[i].q/MAX.Q[i].expect);
+      }               
+   }
+
+DBP->close(DBP,0);
+CloseMagnifyFiles();
 }
 
 /*****************************************************************************/
@@ -904,12 +1023,12 @@ void CheckOpts(int argc,char **argv)
  
 snprintf(FILENAME,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_AVDB_FILE);
 
-while ((c=getopt_long(argc,argv,"Thtf:rsen",GRAPHOPTIONS,&optindex)) != EOF)
+while ((c=getopt_long(argc,argv,"Thtf:rsenN",GRAPHOPTIONS,&optindex)) != EOF)
   {
   switch ((char) c)
       {
       case 't': TITLES = true;
-                break;
+          break;
 
       case 'f': strcpy(FILENAME,optarg);
          break;
@@ -921,13 +1040,16 @@ while ((c=getopt_long(argc,argv,"Thtf:rsen",GRAPHOPTIONS,&optindex)) != EOF)
          break;
 
       case 's': SEPARATE = true;
-                break;
+          break;
 
       case 'e': ERRORBARS = false;
-                break;
+          break;
 
       case 'n': NOSCALING = true;
-         break;
+          break;
+          
+      case 'N': NOWOPT = true;
+          break;
 
       default:  Syntax();
                 exit(1);
@@ -1032,4 +1154,35 @@ if (SEPARATE)
       }
    }
 }
+
+/*********************************************************************/
+
+void OpenMagnifyFiles()
+
+{ int i;
+ 
+for (i = 0; i < CF_OBSERVABLES; i++)
+   {
+   sprintf(FLNAME,"%s.mag",OBS[i]);
+   
+   if ((FPM[i] = fopen(FLNAME,"w")) == NULL)
+      {
+      perror("fopen");
+      exit(1);
+      }
+   }
+}
+
+/*********************************************************************/
+
+void CloseMagnifyFiles()
+
+{ int i;
+
+for (i = 0; i < CF_OBSERVABLES; i++)
+   {
+   fclose(FPM[i]);
+   }
+}
+
 

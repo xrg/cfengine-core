@@ -2243,9 +2243,9 @@ dq = q - LASTQ[index];
 if (LASTQ[index] == 0)
    {
    LASTQ[index] = q;
-   return q/10;       /* arbitrary spike mitigation */
+   return dq/10;       /* arbitrary spike mitigation */
    }
 
 LASTQ[index] = q;
-return q;
+return dq;
 }

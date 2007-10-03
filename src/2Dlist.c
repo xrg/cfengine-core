@@ -109,6 +109,7 @@ return entry;
 void Build2DListFromVarstring(struct TwoDimList **TwoDimlist, char *varstring, char sep, short tied)
 
 { struct Item *ip, *basis;
+  char *sp;
 
 Debug1("Build2DListFromVarstring([%s],sep=[%c])\n",varstring,sep);
 
@@ -118,16 +119,27 @@ if (varstring == NULL)
    return;
    }
 
+if (sp = strchr(varstring,sep))
+   {
+   if (sp == varstring || (sp > varstring && *(sp-1) != '\\'))
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Warning: varstring \"%s\" contains the list iterator \'%c\' - you should escape this!",varstring,sep);
+      CfLog(cferror,OUTPUT,"");
+      }
+   }
+
 basis = SplitVarstring(varstring);
 
 for (ip = basis; ip != NULL; ip=ip->next)
    {
+   /* Expand the list variables in each slot */
    AppendTwoDimItem(TwoDimlist,SplitString(ip->name,sep));
    }
 
 if (TwoDimlist && *TwoDimlist)
    {
-   (*TwoDimlist)->tied = tied; /* Policy for expansion of lists */
+   /* Policy for expansion of lists */
+   (*TwoDimlist)->tied = tied; 
    }
 }
 

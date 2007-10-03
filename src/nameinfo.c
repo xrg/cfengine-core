@@ -802,3 +802,79 @@ if (USEENVIRON)
 
 fclose(fp);
 }
+
+/*******************************************************************/
+
+void GetEnvironment()
+
+{ char env[CF_BUFSIZE],class[CF_BUFSIZE],name[CF_MAXVARSIZE],value[CF_MAXVARSIZE];
+  FILE *fp;
+  struct stat statbuf;
+  time_t now = time(NULL);
+  
+Verbose("Looking for environment from cfenvd...\n");
+snprintf(env,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_ENV_FILE);
+
+if (stat(env,&statbuf) == -1)
+   {
+   Verbose("\nUnable to detect environment from cfenvd\n\n");
+   return;
+   }
+
+ if (statbuf.st_mtime < (now - 60*60))
+    {
+    Verbose("Environment data are too old - discarding\n");
+    unlink(env);
+    return;
+    }
+ 
+ if (!GetMacroValue(CONTEXTID,"env_time"))
+    {
+    snprintf(value,CF_MAXVARSIZE-1,"%s",ctime(&statbuf.st_mtime));
+    Chop(value);
+    AddMacroValue(CONTEXTID,"env_time",value);
+    }
+ else
+    {
+    CfLog(cferror,"Reserved variable $(env_time) in use","");
+    }
+
+Verbose("Loading environment...\n");
+ 
+if ((fp = fopen(env,"r")) == NULL)
+   {
+   Verbose("\nUnable to detect environment from cfenvd\n\n");
+   return;
+   }
+
+while (!feof(fp))
+   {
+   class[0] = '\0';
+   name[0] = '\0';
+   value[0] = '\0';
+
+   fgets(class,CF_BUFSIZE-1,fp);
+
+   if (feof(fp))
+      {
+      break;
+      }
+
+   if (strstr(class,"="))
+      {
+      sscanf(class,"%255[^=]=%255[^\n]",name,value);
+
+      if (!GetMacroValue(CONTEXTID,name))
+         {
+         AddMacroValue(CONTEXTID,name,value);
+         }
+      }
+   else
+      {
+      AddClassToHeap(class);
+      }
+   }
+ 
+fclose(fp);
+Verbose("Environment data loaded\n\n"); 
+}
