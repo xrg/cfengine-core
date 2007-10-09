@@ -190,7 +190,7 @@ else
             (double)PR_NOTKEPT/total);
    }
 
-CfLog(cfinform,OUTPUT,"");
+CfLog(cfverbose,OUTPUT,"");
 AuditLog(NULL,0,OUTPUT,CF_REPORT);
 
 if (AUDIT && AUDITDBP)
