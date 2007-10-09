@@ -269,7 +269,7 @@ if (BuildCommandLine(instcmd,rawinstcmd,*pkglist))
       while (!feof(pp))
          {
          ReadLine(line,CF_BUFSIZE-1,pp);
-         snprintf(OUTPUT,CF_BUFSIZE,"%s\n",line);
+         snprintf(OUTPUT,CF_BUFSIZE,"%s",line);
          CfLog(cfinform,OUTPUT,""); 
          }
       
@@ -457,8 +457,7 @@ if (cmd_tail = strstr(rawcmd, "%s"))
    
 strncpy(resolvedcmd, rawcmd, CF_BUFSIZE*2);
 
-snprintf(OUTPUT,CF_BUFSIZE,"Package manager will be invoked as %s\n", resolvedcmd);
-CfLog(cfinform,OUTPUT,"");
+Verbose("Package manager will be invoked as %s\n", resolvedcmd);
 
 /* Iterator through package list until we reach the maximum number that cfpopen can take */
 
