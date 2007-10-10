@@ -250,6 +250,7 @@ extern char *CMPSENSETEXT[];
 extern char *CMPSENSEOPERAND[];
 
 extern char NOABSPATH;
+extern char CHKROOT;
 
 extern struct Item *VEXCLUDECACHE;
 extern struct Item *VSINGLECOPY;

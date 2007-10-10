@@ -922,6 +922,7 @@ enum commattr  /* See COMMATTRIBUTES[] in globals.c  for matching entry */
    cfexpaft,
    cfscan,
    cfnoabspath,
+   cfcheckroot,
    cfbad                        /* HvB must be as last */		
    };
 
@@ -1769,6 +1770,7 @@ struct Image
    char   linktype;         /* if file is linked instead of copied */
    char   stealth;               /* preserve times on source files */
    char   preservetimes;                 /* preserve times in copy */
+   char   checkroot;              /* check perms on root directory */
    char   backup;
    char   xdev;
    int    recurse;

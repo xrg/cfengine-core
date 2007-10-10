@@ -849,6 +849,15 @@ if (ptr->preservetimes == 'y')
    printf("         Promise file times preserved\n");
    }
 
+if (ptr->checkroot == 'y')
+   {
+   printf("         Root directory attributes will be copied from source if applicable\n");
+   }
+else
+   {
+   printf("         Root directory attributes will NOT be copied from source\n");
+   }
+
 if (ptr->forcedirs == 'y')
    {
    printf("         Promise forcible movement of obstructing files\n");

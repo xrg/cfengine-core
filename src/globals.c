@@ -792,6 +792,7 @@ char *OBS[CF_OBSERVABLES] =
   PROTECTED  struct Item *VSTRATEGYBUILD = NULL;
 
   PRIVATE char NOABSPATH = 'n';
+  PRIVATE char CHKROOT = 'n';
   PRIVATE char TIDYDIRS = 'n';
   PRIVATE char XDEV = false;
   PRIVATE char IMAGEBACKUP='y';
@@ -985,6 +986,7 @@ char *OBS[CF_OBSERVABLES] =
      "expireafter",
      "scanarrivals",
      "noabspath",
+     "checkroot",
      NULL
      };
 

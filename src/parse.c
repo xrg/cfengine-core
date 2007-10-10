@@ -1258,6 +1258,7 @@ void InitializeAction()                                   /* Set defaults */
  PURGE = 'n';
  TRUSTKEY = 'n';
  NOABSPATH = 'n';
+ CHKROOT = 'y';
  SCAN = 'n';
  CHECKSUM = 'n';
  TIDYDIRS = 'n';

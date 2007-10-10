@@ -678,6 +678,8 @@ switch(GetCommAttribute(item))
    case cfaction:  strcpy(IMAGEACTION,value);
                    break;
    case cfcompat:  HandleCharSwitch("oldserver",value,&COMPATIBILITY);
+                   break;            
+   case cfcheckroot: HandleCharSwitch("checkroot",value,&CHKROOT);
                    break;
    case cfforce:   HandleCharSwitch("force",value,&FORCE);
                    break;
@@ -5423,6 +5425,7 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
       ptr->recurse = rec;
       ptr->type = type;
       ptr->stealth = STEALTH;
+      ptr->checkroot = CHKROOT;
       ptr->preservetimes = PRESERVETIMES;
       ptr->encrypt = ENCRYPT;
       ptr->verify = VERIFY;

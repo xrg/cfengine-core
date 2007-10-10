@@ -748,7 +748,7 @@ for (sp = string; /* No exit */ ; sp++)       /* check for varitems */
           
           
       case cfdollar:
-          
+
           if (!PARSING)
              {
              if (ExpandOverflow(buffer," "))

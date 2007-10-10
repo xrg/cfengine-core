@@ -2610,7 +2610,11 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
             RecursiveImage(ip,path,destination,ip->recurse);
             if (stat(destination,&deststatbuf) != -1)
                {
-               CheckCopiedFile(ip->cf_findertype,destination,&deststatbuf,&statbuf,ip);
+               if (ip->checkroot != 'n')
+                  {
+                  /* Default is to set perms from server on rootdir from 2.2.2 */
+                  CheckCopiedFile(ip->cf_findertype,destination,&deststatbuf,&statbuf,ip);
+                  }
                }
             }
          else
