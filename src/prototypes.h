@@ -764,6 +764,7 @@ int DirPush (char *name,struct stat *sb);
 void DirPop (int goback,char *name,struct stat *sb);
 void CheckLinkSecurity (struct stat *sb, char *name);
 void GetNameInfo (void);
+void GetEnvironment(void);
 void AddNetworkClass (char *netmask);
 void TruncateFile (char *name);
 int FileSecure  (char *name);
@@ -778,6 +779,7 @@ int IgnoredOrExcluded (enum actions action, char *file, struct Item *inclusions,
 void Banner (char *string);
 void SetDomainName (char *sp);
 void GetInterfaceInfo (void);
+void DeleteInterfaceInfo (char *regex);
 void GetV6InterfaceInfo (void);
 void DebugBinOut (char *string, int len);
 int ShellCommandReturnsZero (char *comm, int useshell);

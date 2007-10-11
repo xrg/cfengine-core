@@ -1014,6 +1014,7 @@ enum vnames
    cfredef,
    cfdefpkgmgr,
    cfabortclasses,
+   cfignoreinterfaceregex,
    nonexistentvar
    };
 

@@ -105,6 +105,7 @@ char *VVNAMES[] =
    "allowredefinitionof",
    "defaultpkgmgr",     /* For packages */
    "abortclasses",
+   "ignoreinterfaceregex",
    NULL
    };
 

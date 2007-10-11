@@ -311,10 +311,10 @@ void GetInterfaceInfo(void)
   struct hostent *hp;
   char *sp;
   char ip[CF_MAXVARSIZE];
-  char name[CF_MAXVARSIZE];
-            
+  char name[CF_BUFSIZE];
 
 Debug("GetInterfaceInfo()\n");
+
 
 if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
    {
@@ -338,13 +338,13 @@ if (ioctl(fd, OSIOCGIFCONF, &list) == -1 || (list.ifc_len < (sizeof(struct ifreq
 for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*ifp),j++,ifp=(struct ifreq *)((char *)ifp+SIZEOF_IFREQ(*ifp)))
    {
    if (ifp->ifr_addr.sa_family == 0)
-       {
-       continue;
-       }
-
-   Verbose("Interface %d: %s\n", j+1, ifp->ifr_name);
-
-   if(UNDERSCORE_CLASSES)
+      {
+      continue;
+      }
+   
+   Verbose("Interface %d: %s\n", j+1, ifp->ifr_name);   
+   
+   if (UNDERSCORE_CLASSES)
       {
       snprintf(VBUFF, CF_BUFSIZE, "_net_iface_%s", CanonifyName(ifp->ifr_name));
       }
@@ -442,6 +442,159 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
                AddMacroValue(CONTEXTID,name,ip);
                }
             }         
+         }
+      }
+   }
+ 
+close(fd);
+}
+
+
+/*********************************************************************/
+
+void DeleteInterfaceInfo(char *regexp)
+
+{ int fd,len,i,j,ret;
+  struct ifreq ifbuf[CF_IFREQ],ifr, *ifp;
+  struct ifconf list;
+  struct sockaddr_in *sin;
+  struct hostent *hp;
+  char *sp;
+  char ip[CF_MAXVARSIZE];
+  char name[CF_BUFSIZE];
+  regex_t rx;
+  regmatch_t pmatch;
+
+Verbose("IgnoreInterfaceRegex %s\n\n",regexp);
+
+if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+   {
+   CfLog(cferror,"Couldn't open socket","socket");
+   exit(1);
+   }
+
+if ((ret = regcomp(&rx,regexp,REG_EXTENDED)) != 0)
+   {
+   regerror(ret,&rx,name,1023);
+   snprintf(OUTPUT,CF_BUFSIZE,"Regular expression error %d for %s: %s\n",ret,regexp,name);
+   yyerror(OUTPUT);
+   return;
+   }
+
+list.ifc_len = sizeof(ifbuf);
+list.ifc_req = ifbuf;
+
+#ifdef SIOCGIFCONF
+if (ioctl(fd, SIOCGIFCONF, &list) == -1 || (list.ifc_len < (sizeof(struct ifreq))))
+#else
+if (ioctl(fd, OSIOCGIFCONF, &list) == -1 || (list.ifc_len < (sizeof(struct ifreq))))
+#endif
+   {
+   CfLog(cferror,"Couldn't get interfaces - old kernel? Try setting CF_IFREQ to 1024","ioctl");
+   exit(1);
+   }
+
+for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*ifp),j++,ifp=(struct ifreq *)((char *)ifp+SIZEOF_IFREQ(*ifp)))
+   {
+   if (ifp->ifr_addr.sa_family == 0)
+      {
+      continue;
+      }
+   
+   if (regexec(&rx,ifp->ifr_name,1,&pmatch,0) == 0)
+      {
+      if ((pmatch.rm_so == 0) && (pmatch.rm_eo == strlen(ifp->ifr_name)))
+         {
+         Verbose("Deleting interface info for %s\n",ifp->ifr_name);
+         }
+      else
+         {
+         continue;
+         }
+      }
+   
+   Debug("Interface %d: %s\n", j+1, ifp->ifr_name);   
+   
+   if (UNDERSCORE_CLASSES)
+      {
+      snprintf(VBUFF, CF_BUFSIZE, "_net_iface_%s", CanonifyName(ifp->ifr_name));
+      }
+   else
+      {
+      snprintf(VBUFF, CF_BUFSIZE, "net_iface_%s", CanonifyName(ifp->ifr_name));
+      }
+
+   DeleteClassFromHeap(VBUFF);
+   
+   if (ifp->ifr_addr.sa_family == AF_INET)
+      {
+      strncpy(ifr.ifr_name,ifp->ifr_name,sizeof(ifp->ifr_name));
+      
+      if (ioctl(fd,SIOCGIFFLAGS,&ifr) == -1)
+         {
+         CfLog(cferror,"No such network device","ioctl");
+         close(fd);
+         return;
+         }
+
+      /* Used to check if interface was "up"
+  if ((ifr.ifr_flags & IFF_UP) && !(ifr.ifr_flags & IFF_LOOPBACK))
+         Now check whether it is configured ...
+      */
+      
+      if ((ifr.ifr_flags & IFF_BROADCAST) && !(ifr.ifr_flags & IFF_LOOPBACK))
+         {
+         sin=(struct sockaddr_in *)&ifp->ifr_addr;
+   
+         if ((hp = gethostbyaddr((char *)&(sin->sin_addr.s_addr),sizeof(sin->sin_addr.s_addr),AF_INET)) == NULL)
+            {
+            Debug("Host information for %s not found\n", inet_ntoa(sin->sin_addr));
+            }
+         else
+            {
+            if (hp->h_name != NULL)
+               {
+               Debug("Deleting hostip %s..\n",inet_ntoa(sin->sin_addr));
+               DeleteClassFromHeap(CanonifyName(inet_ntoa(sin->sin_addr)));
+               Debug("Deleting hostname %s..\n",hp->h_name);
+               DeleteClassFromHeap(CanonifyName(hp->h_name));
+
+               if (hp->h_aliases != NULL)
+                  {
+                  for (i=0; hp->h_aliases[i] != NULL; i++)
+                     {
+                     Debug("Deleting alias %s..\n",hp->h_aliases[i]);
+                     DeleteClassFromHeap(CanonifyName(hp->h_aliases[i]));
+                     }
+                  }
+               }               
+
+            }
+         
+         /* Old style compat */
+         strcpy(ip,inet_ntoa(sin->sin_addr));
+         DeleteItemLiteral(&IPADDRESSES,ip);
+         
+         for (sp = ip+strlen(ip)-1; *sp != '.'; sp--)
+            {
+            }
+         *sp = '\0';
+         DeleteClassFromHeap(CanonifyName(ip));
+         
+            
+         /* New style classes */
+         strcpy(ip,"ipv4_");
+         strcat(ip,inet_ntoa(sin->sin_addr));
+         DeleteClassFromHeap(CanonifyName(ip));
+
+         for (sp = ip+strlen(ip)-1; (sp > ip); sp--)
+            {
+            if (*sp == '.')
+               {
+               *sp = '\0';
+               DeleteClassFromHeap(CanonifyName(ip));
+               }
+            }
          }
       }
    }

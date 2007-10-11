@@ -253,6 +253,10 @@ else
     case cfabortclasses:
         AppendItem(&ABORTHEAP,value,CLASSBUFF);
         break;
+
+    case cfignoreinterfaceregex:
+        DeleteInterfaceInfo(value);
+        break;
         
     case cfdynamic:
         AppendItems(&DHCPLIST,value,CLASSBUFF);
