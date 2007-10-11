@@ -162,6 +162,7 @@ while (!feof(pp))
           NegateCompoundClass(line+1,&VNEGHEAP);
           break;
       case '=':
+          content[0] = '\0';
           sscanf(line+1,"%[^=]=%[^\n]",name,content);
           Verbose("Defined Macro: %s, Value: %s\n",name,content);
           AddMacroValue(CONTEXTID,name,content);
