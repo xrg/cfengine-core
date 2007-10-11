@@ -1,4 +1,8 @@
 
+2.2.3
+	IgnoreInterfaceRegex( "vm.*" ) 
+	function added for removing data from special interfaces from class data
+	
 2.2.2
 	
 	The build procedure for cfengine changes in this version to
