@@ -524,7 +524,7 @@ extern int FOREACHLEVEL;
 
 extern char COMMENTSTART[], COMMENTEND[];
 
-extern char *OBS[CF_OBSERVABLES];
+extern char *OBS[CF_OBSERVABLES][2];
 
 extern char *CF_SCLICODES[CF_MAX_SCLICODES][2];
 

@@ -843,11 +843,11 @@ for (i = 0; i < CF_OBSERVABLES; i++)
    This[i] = RejectAnomaly(THIS[i],currentvals->Q[i].expect,currentvals->Q[i].var,LOCALAV.Q[i].expect,LOCALAV.Q[i].var);
 
 
-   Debug("Current %s.q %lf\n",OBS[i],currentvals->Q[i].q);
-   Debug("Current %s.var %lf\n",OBS[i],currentvals->Q[i].var);
-   Debug("Current %s.ex %lf\n",OBS[i],currentvals->Q[i].expect);
-   Debug("THIS[%s] = %lf\n",OBS[i],THIS[i]);
-   Debug("This[%s] = %lf\n",OBS[i],This[i]);
+   Debug("Current %s.q %lf\n",OBS[i][0],currentvals->Q[i].q);
+   Debug("Current %s.var %lf\n",OBS[i][0],currentvals->Q[i].var);
+   Debug("Current %s.ex %lf\n",OBS[i][0],currentvals->Q[i].expect);
+   Debug("THIS[%s] = %lf\n",OBS[i][0],THIS[i]);
+   Debug("This[%s] = %lf\n",OBS[i][0],This[i]);
 
    newvals.Q[i].expect = WAverage(This[i],currentvals->Q[i].expect,WAGE);
    LOCALAV.Q[i].expect = WAverage(newvals.Q[i].expect,LOCALAV.Q[i].expect,ITER);
@@ -857,13 +857,13 @@ for (i = 0; i < CF_OBSERVABLES; i++)
    newvals.Q[i].var = WAverage(delta2,currentvals->Q[i].var,WAGE);
    LOCALAV.Q[i].var = WAverage(newvals.Q[i].var,LOCALAV.Q[i].var,ITER);
 
-   Debug("New %s.q %lf\n",OBS[i],newvals.Q[i].q);
-   Debug("New %s.var %lf\n",OBS[i],newvals.Q[i].var);
-   Debug("New %s.ex %lf\n",OBS[i],newvals.Q[i].expect);
+   Debug("New %s.q %lf\n",OBS[i][0],newvals.Q[i].q);
+   Debug("New %s.var %lf\n",OBS[i][0],newvals.Q[i].var);
+   Debug("New %s.ex %lf\n",OBS[i][0],newvals.Q[i].expect);
 
    
 
-   Verbose("%s = %lf -> (%f#%f) local [%f#%f]\n",OBS[i],This[i],newvals.Q[i].expect,sqrt(newvals.Q[i].var),LOCALAV.Q[i].expect,sqrt(LOCALAV.Q[i].var));
+   Verbose("%s = %lf -> (%f#%f) local [%f#%f]\n",OBS[i][0],This[i],newvals.Q[i].expect,sqrt(newvals.Q[i].var),LOCALAV.Q[i].expect,sqrt(LOCALAV.Q[i].var));
    }
    
 UpdateAverages(t,newvals);
@@ -905,7 +905,7 @@ for (i = 0; i < CF_OBSERVABLES; i++)
 
    if (THIS[i] > 0)
       {
-      Verbose("Storing %.2f in %s\n",THIS[i],OBS[i]);
+      Verbose("Storing %.2f in %s\n",THIS[i],OBS[i][0]);
       }
 
    d = (double)(LDT_BUFSIZE * (LDT_BUFSIZE + 1)) * LDT_AVG[i];
@@ -965,8 +965,8 @@ Debug("Arm classes for %s\n",timekey);
  
 for (i = 0; i < CF_OBSERVABLES; i++)
    {
-   sigma = SetClasses(OBS[i],THIS[i],av.Q[i].expect,av.Q[i].var,LOCALAV.Q[i].expect,LOCALAV.Q[i].var,&classlist,timekey);
-   SetVariable(OBS[i],THIS[i],av.Q[i].expect,sigma,&classlist);
+   sigma = SetClasses(OBS[i][0],THIS[i],av.Q[i].expect,av.Q[i].var,LOCALAV.Q[i].expect,LOCALAV.Q[i].var,&classlist,timekey);
+   SetVariable(OBS[i][0],THIS[i],av.Q[i].expect,sigma,&classlist);
 
    /* LDT */
 
@@ -987,7 +987,7 @@ for (i = 0; i < CF_OBSERVABLES; i++)
       anomaly_chi[i] = CHI[i];
       anomaly_chi_limit[i] = CHI_LIMIT[i];
       
-      snprintf(OUTPUT,CF_BUFSIZE,"LDT(%d) in %s chi = %.2f thresh %.2f \n",LDT_POS,OBS[i],CHI[i],CHI_LIMIT[i]);
+      snprintf(OUTPUT,CF_BUFSIZE,"LDT(%d) in %s chi = %.2f thresh %.2f \n",LDT_POS,OBS[i][0],CHI[i],CHI_LIMIT[i]);
 
       if (VERBOSE)
          {
@@ -995,7 +995,7 @@ for (i = 0; i < CF_OBSERVABLES; i++)
          }
       Verbose(OUTPUT);
       
-      snprintf(OUTPUT,CF_BUFSIZE,"LDT_BUF (%s): Rot ",OBS[i]);
+      snprintf(OUTPUT,CF_BUFSIZE,"LDT_BUF (%s): Rot ",OBS[i][0]);
 
       /* Last printed element is now */
       
@@ -1029,11 +1029,11 @@ for (i = 0; i < CF_OBSERVABLES; i++)
 
       if (THIS[i] > av.Q[i].expect)
          {
-         snprintf(OUTPUT,CF_BUFSIZE,"%s_high_ldt",OBS[i]);
+         snprintf(OUTPUT,CF_BUFSIZE,"%s_high_ldt",OBS[i][0]);
          }
       else
          {
-         snprintf(OUTPUT,CF_BUFSIZE,"%s_high_ldt",OBS[i]);
+         snprintf(OUTPUT,CF_BUFSIZE,"%s_high_ldt",OBS[i][0]);
          }
 
       AppendItem(&classlist,OUTPUT,"2");
@@ -1060,13 +1060,13 @@ for (i = 0; i < CF_OBSERVABLES; i++)
          }
       }
 
-   snprintf(buff,CF_MAXVARSIZE,"ldtbuf_%s=%s",OBS[i],ldt_buff);
+   snprintf(buff,CF_MAXVARSIZE,"ldtbuf_%s=%s",OBS[i][0],ldt_buff);
    AppendItem(&classlist,buff,"");
 
-   snprintf(buff,CF_MAXVARSIZE,"ldtchi_%s=%.2f",OBS[i],anomaly_chi[i]);
+   snprintf(buff,CF_MAXVARSIZE,"ldtchi_%s=%.2f",OBS[i][0],anomaly_chi[i]);
    AppendItem(&classlist,buff,"");
    
-   snprintf(buff,CF_MAXVARSIZE,"ldtlimit_%s=%.2f",OBS[i],anomaly_chi_limit[i]);
+   snprintf(buff,CF_MAXVARSIZE,"ldtlimit_%s=%.2f",OBS[i][0],anomaly_chi_limit[i]);
    AppendItem(&classlist,buff,"");
    }
 

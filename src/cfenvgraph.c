@@ -63,6 +63,7 @@ struct option GRAPHOPTIONS[] =
    {
    { "help",no_argument,0,'h' },
    { "file",required_argument,0,'f' },
+   { "outputdir",required_argument,0,'o' },
    { "titles",no_argument,0,'t'},
    { "timestamps",no_argument,0,'T'},
    { "resolution",no_argument,0,'r'},
@@ -70,6 +71,7 @@ struct option GRAPHOPTIONS[] =
    { "no-error-bars",no_argument,0,'e'},
    { "no-scaling",no_argument,0,'n'},
    { "now",no_argument,0,'N'},
+   { "verbose",no_argument,0,'v'},
    { NULL,0,0,0 }
    };
 
@@ -106,6 +108,38 @@ GetFQHN();
 ReadAverages(); 
 SummarizeAverages();
 
+
+if (strlen(FLNAME) == 0)
+   {
+   if (TIMESTAMPS)
+      {
+      if ((NOW = time((time_t *)NULL)) == -1)
+         {
+         Verbose("Couldn't read system clock\n");
+         }
+      sprintf(FLNAME,"cfenvgraphs-%s-%s",CanonifyName(VFQNAME),ctime(&NOW));
+      }
+   else
+      {
+      sprintf(FLNAME,"cfenvgraphs-snapshot-%s",CanonifyName(VFQNAME));
+      }
+   }
+
+Verbose("Creating sub-directory %s\n",FLNAME);
+
+if (mkdir(FLNAME,0755) == -1)
+   {
+   Verbose("Writing to existing directory\n");
+   }
+ 
+if (chdir(FLNAME))
+   {
+   perror("chdir");
+   exit(0);
+   }
+
+Verbose("Writing data to sub-directory %s: \n   x,y1,y2,y3...\n ",FLNAME);
+
 if (NOWOPT)
    {
    MagnifyNow();
@@ -135,7 +169,7 @@ snprintf(cfcom,CF_BUFSIZE-1,"%s/bin/cfagent -Q fqhost",CFWORKDIR);
  
 if ((pp=popen(cfcom,"r")) ==  NULL)
    {
-   printf("Couldn't open cfengine data ");
+   Verbose("Couldn't open cfengine data ");
    perror("popen");
    exit(0);
    }
@@ -166,7 +200,7 @@ if (strlen(VFQNAME) == 0)
 else
    {
    VFQNAME[strlen(VFQNAME)-1] = '\0';
-   printf("Got fully qualified name (%s)\n",VFQNAME);
+   Verbose("Got fully qualified name (%s)\n",VFQNAME);
    }
  
 pclose(pp);
@@ -179,13 +213,13 @@ void ReadAverages()
 { int i;
   DBT key,value;
 
-printf("\nLooking for database %s\n",FILENAME);
-printf("\nFinding MAXimum values...\n\n");
-printf("N.B. socket values are numbers in CLOSE_WAIT. See documentation.\n"); 
+Verbose("\nLooking for database %s\n",FILENAME);
+Verbose("\nFinding MAXimum values...\n\n");
+Verbose("N.B. socket values are numbers in CLOSE_WAIT. See documentation.\n"); 
   
 if ((ERRNO = db_create(&DBP,NULL,0)) != 0)
    {
-   printf("Couldn't create average database %s\n",FILENAME);
+   Verbose("Couldn't create average database %s\n",FILENAME);
    exit(1);
    }
 
@@ -195,7 +229,7 @@ if ((ERRNO = (DBP->open)(DBP,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
 if ((ERRNO = (DBP->open)(DBP,NULL,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)    
 #endif
    {
-   printf("Couldn't open average database %s\n",FILENAME);
+   Verbose("Couldn't open average database %s\n",FILENAME);
    DBP->err(DBP,ERRNO,NULL);
    exit(1);
    }
@@ -269,16 +303,16 @@ void SummarizeAverages()
 { int i;
   DBT key,value;
 
-printf(" x  yN (Variable content)\n---------------------------------------------------------\n");
+Verbose(" x  yN (Variable content)\n---------------------------------------------------------\n");
 
  for (i = 0; i < CF_OBSERVABLES; i++)
    {
-   printf("%2d. MAX <%-10s-in>   = %10f - %10f u %10f\n",i,OBS[i],MIN.Q[i].expect,MAX.Q[i].expect,sqrt(MAX.Q[i].var));
+   Verbose("%2d. MAX <%-10s-in>   = %10f - %10f u %10f\n",i,OBS[i][0],MIN.Q[i].expect,MAX.Q[i].expect,sqrt(MAX.Q[i].var));
    }
  
 if ((ERRNO = db_create(&DBP,NULL,0)) != 0)
    {
-   printf("Couldn't open average database %s\n",FILENAME);
+   Verbose("Couldn't open average database %s\n",FILENAME);
    exit(1);
    }
 
@@ -288,7 +322,7 @@ if ((ERRNO = (DBP->open)(DBP,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
 if ((ERRNO = (DBP->open)(DBP,NULL,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
 #endif
    {
-   printf("Couldn't open average database %s\n",FILENAME);
+   Verbose("Couldn't open average database %s\n",FILENAME);
    exit(1);
    }
 
@@ -310,7 +344,7 @@ if ((ERRNO = DBP->get(DBP,NULL,&key,&value,0)) != 0)
 if (value.data != NULL)
    {
    AGE = *(double *)(value.data);
-   printf("\n\nDATABASE_AGE %.1f (weeks)\n\n",AGE/CF_WEEK*CF_MEASURE_INTERVAL);
+   Verbose("\n\nDATABASE_AGE %.1f (weeks)\n\n",AGE/CF_WEEK*CF_MEASURE_INTERVAL);
    }
 }
 
@@ -320,37 +354,7 @@ void WriteGraphFiles()
 
 { int its,i,j,k, count = 0;
   DBT key,value;
-
-if (TIMESTAMPS)
-   {
-   if ((NOW = time((time_t *)NULL)) == -1)
-      {
-      printf("Couldn't read system clock\n");
-      }
-     
-   sprintf(FLNAME,"cfenvgraphs-%s-%s",CanonifyName(VFQNAME),ctime(&NOW));
-   }
-else
-   {
-   sprintf(FLNAME,"cfenvgraphs-snapshot-%s",CanonifyName(VFQNAME));
-   }
-
-printf("Creating sub-directory %s\n",FLNAME);
-
-if (mkdir(FLNAME,0755) == -1)
-   {
-   perror("mkdir");
-   printf("Aborting\n");
-   exit(0);
-   }
- 
-if (chdir(FLNAME))
-   {
-   perror("chdir");
-   exit(0);
-   }
-
-printf("Writing data to sub-directory %s: \n   x,y1,y2,y3...\n ",FLNAME);
+  struct stat statbuf;
 
 OpenFiles();
 
@@ -358,9 +362,9 @@ if (TITLES)
    {
    for (i = 0; i < CF_OBSERVABLES; i+=2)
       {
-      fprintf(FPAV,"# Column %d: %s\n",i,OBS[i]);
-      fprintf(FPVAR,"# Column %d: %s\n",i,OBS[i]);
-      fprintf(FPNOW,"# Column %d: %s\n",i,OBS[i]);
+      fprintf(FPAV,"# Column %d: %s\n",i,OBS[i][0]);
+      fprintf(FPVAR,"# Column %d: %s\n",i,OBS[i][0]);
+      fprintf(FPNOW,"# Column %d: %s\n",i,OBS[i][0]);
       }
 
    fprintf(FPAV,"##############################################\n");
@@ -471,33 +475,6 @@ void MagnifyNow()
   DBT key,value;
   time_t now;
 
-if (TIMESTAMPS)
-   {
-   if ((NOW = time((time_t *)NULL)) == -1)
-      {
-      printf("Couldn't read system clock\n");
-      }
-     
-   sprintf(FLNAME,"cfenvgraphs-%s-%s",CanonifyName(VFQNAME),ctime(&NOW));
-   }
-else
-   {
-   sprintf(FLNAME,"cfenvgraphs-snapshot-%s",CanonifyName(VFQNAME));
-   }
-
-printf("Creating sub-directory %s\n",FLNAME);
-
-if (mkdir(FLNAME,0755) == -1)
-   {
-   printf("Writing in existing directory\n");
-   }
- 
-if (chdir(FLNAME))
-   {
-   perror("chdir");
-   exit(0);
-   }
-
 OpenMagnifyFiles();
 
 its = 1; /* detailed view */
@@ -596,7 +573,7 @@ void WriteHistograms()
     
     if ((fp = fopen(FLNAME,"r")) == NULL)
        {
-       printf("Unable to load histogram data\n");
+       Verbose("Unable to load histogram data\n");
        exit(1);
        }
     
@@ -648,7 +625,7 @@ void WriteHistograms()
     
     for (i = 0; i < CF_OBSERVABLES; i++)
        {
-       sprintf(FLNAME,"%s.distr",OBS[i]); 
+       sprintf(FLNAME,"%s.distr",OBS[i][0]); 
        if ((FPQ[i] = fopen(FLNAME,"w")) == NULL)
           {
           perror("fopen");
@@ -701,31 +678,31 @@ void DiskArrivals(void)
 
 if ((array = (double *)malloc((int)CF_WEEK)) == NULL)
    {
-   printf("Memory error");
+   Verbose("Memory error");
    perror("malloc");
    return;
    }
   
 if ((dirh = opendir(CFWORKDIR)) == NULL)
    {
-   printf("Can't open directory %s\n",CFWORKDIR);
+   Verbose("Can't open directory %s\n",CFWORKDIR);
    perror("opendir");
    return;
    }
 
-printf("\n\nLooking for filesystem arrival process data in %s\n",CFWORKDIR); 
+Verbose("\n\nLooking for filesystem arrival process data in %s\n",CFWORKDIR); 
 
 for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    {
    if (strncmp(dirp->d_name,"scan:",5) == 0)
       {
-      printf("Found %s - generating X,Y plot\n",dirp->d_name);
+      Verbose("Found %s - generating X,Y plot\n",dirp->d_name);
 
       snprintf(database,CF_BUFSIZE-1,"%s/%s",CFWORKDIR,dirp->d_name);
       
       if ((ERRNO = db_create(&dbp,dbenv,0)) != 0)
          {
-         printf("Couldn't open arrivals database %s\n",database);
+         Verbose("Couldn't open arrivals database %s\n",database);
          return;
          }
       
@@ -735,7 +712,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       if ((ERRNO = (dbp->open)(dbp,NULL,database,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
          {
-         printf("Couldn't open database %s\n",database);
+         Verbose("Couldn't open database %s\n",database);
          dbp->close(dbp,0);
          continue;
          }
@@ -806,12 +783,12 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
       
       if ((fp = fopen(filename,"w")) == NULL)
          {
-         printf("Unable to open %s for writing\n",filename);
+         Verbose("Unable to open %s for writing\n",filename);
          perror("fopen");
          return;
          }
       
-      printf("Data points = %d\n",index);
+      Verbose("Data points = %d\n",index);
       
       for (i = 0; i < index; i++)
          {
@@ -857,7 +834,7 @@ var = 0;
 
 if ((errno = db_create(&dbp,dbenv,0)) != 0)
    {
-   printf("Couldn't open last-seen database %s\n",name);
+   Verbose("Couldn't open last-seen database %s\n",name);
    return;
    }
 
@@ -867,14 +844,14 @@ if ((errno = (dbp->open)(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
 #endif
    {
-   printf("Couldn't open last-seen database %s\n",name);
+   Verbose("Couldn't open last-seen database %s\n",name);
    dbp->close(dbp,0);
    return;
    }
 
 if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
    {
-   printf("Error reading from last-seen database\n");
+   Verbose("Error reading from last-seen database\n");
    dbp->err(dbp, ret, "DB->cursor");
    return;
    }
@@ -882,7 +859,7 @@ if ((ret = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
 memset(&key, 0, sizeof(key));
 memset(&value, 0, sizeof(value));
 
-printf("Examining known peers...\n");
+Verbose("Examining known peers...\n");
 
 while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
    {
@@ -892,11 +869,9 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
       {
       /* Check hostname not recorded twice with +/- */
       AppendItem(&hostlist,hostname,NULL);
-      printf("Examining intermittent host %s\n",hostname);
+      Verbose("Examining intermittent host %s\n",hostname);
       }
    }
-
-printf("Finished\n");
 
 dbcp->c_close(dbcp);
 dbp->close(dbp,0);
@@ -908,7 +883,7 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
    {
    snprintf(out1,CF_BUFSIZE,"lastseen-%s.q",ip->name);
 
-   printf("Opening %s\n",out1);
+   Verbose("Opening %s\n",out1);
    
    if ((fp1 = fopen(out1,"w")) == NULL)
       {
@@ -924,7 +899,7 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
       }
    
    snprintf(name,CF_BUFSIZE-1,"%s/%s.%s",CFWORKDIR,CF_LASTDB_FILE,ip->name);
-   printf("Consulting profile %s\n",name);
+   Verbose("Consulting profile %s\n",name);
 
    if ((errno = db_create(&dbpent,dbenv2,0)) != 0)
       {
@@ -1010,6 +985,8 @@ void CheckOpts(int argc,char **argv)
  /* XXX Initialize workdir for non privileged users */
 
  strcpy(CFWORKDIR,WORKDIR);
+ FLNAME[0] = '\0';
+ VERBOSE = false;
 
  if (geteuid() > 0)
     {
@@ -1023,7 +1000,7 @@ void CheckOpts(int argc,char **argv)
  
 snprintf(FILENAME,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_AVDB_FILE);
 
-while ((c=getopt_long(argc,argv,"Thtf:rsenN",GRAPHOPTIONS,&optindex)) != EOF)
+while ((c=getopt_long(argc,argv,"Thtf:o:rsenN",GRAPHOPTIONS,&optindex)) != EOF)
   {
   switch ((char) c)
       {
@@ -1033,7 +1010,14 @@ while ((c=getopt_long(argc,argv,"Thtf:rsenN",GRAPHOPTIONS,&optindex)) != EOF)
       case 'f': strcpy(FILENAME,optarg);
          break;
 
+      case 'o': strcpy(FLNAME,optarg);
+          Verbose("Setting output directory to s\n",FLNAME);
+          break;
+
       case 'T': TIMESTAMPS = true;
+          break;
+
+      case 'v': VERBOSE = true;
          break;
 
       case 'r': HIRES = true;
@@ -1115,7 +1099,7 @@ if (SEPARATE)
    {
    for (i = 0; i < CF_OBSERVABLES; i++)
       {
-      sprintf(FLNAME,"%s.E-sigma",OBS[i]);
+      sprintf(FLNAME,"%s.E-sigma",OBS[i][0]);
       
       if ((FPE[i] = fopen(FLNAME,"w")) == NULL)
          {
@@ -1123,7 +1107,7 @@ if (SEPARATE)
          exit(1);
          }
       
-      sprintf(FLNAME,"%s.q",OBS[i]);
+      sprintf(FLNAME,"%s.q",OBS[i][0]);
       
       if ((FPQ[i] = fopen(FLNAME,"w")) == NULL)
          {
@@ -1163,7 +1147,7 @@ void OpenMagnifyFiles()
  
 for (i = 0; i < CF_OBSERVABLES; i++)
    {
-   sprintf(FLNAME,"%s.mag",OBS[i]);
+   sprintf(FLNAME,"%s.mag",OBS[i][0]);
    
    if ((FPM[i] = fopen(FLNAME,"w")) == NULL)
       {
