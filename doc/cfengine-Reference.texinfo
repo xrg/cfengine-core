@@ -13,7 +13,7 @@
 @c ***********************************************************************
 @c %** start of header
 @setfilename cfengine-Reference.info
-@settitle GNU cfengine
+@settitle Cfengine v2 reference
 @setchapternewpage odd
 @c %** end of header
 @defindex mb
@@ -21,7 +21,7 @@
 @include version1.texi
 
 @titlepage
-@title cfengine reference
+@title cfengine v2 reference
 @subtitle Edition @value{EDITION} for version @value{VERSION}
 @author Mark Burgess
 @author Faculty of Engineering, Oslo University College, Norway
@@ -30,7 +30,7 @@
 
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 2004 Mark Burgess
+Copyright @copyright{} 2007 Mark Burgess
 
    Permission is granted to make and distribute verbatim copies of this
 manual provided the copyright notice and this permission notice are
@@ -2678,6 +2678,7 @@ The meaning of each of these lines is described below.
 * HostnameKeys::                
 * IfElapsed::                   
 * IgnoreFriendRegex::           
+* IgnoreInterfaceRegex::        
 * Inform::                      
 * interfacename::               
 * fileextension::               
@@ -3979,7 +3980,7 @@ as options of the form @code{ifelapsed=15}.
 @c SUBSECTION
 @c .....................................................
 
-@node IgnoreFriendRegex, Inform, IfElapsed, control
+@node IgnoreFriendRegex, IgnoreInterfaceRegex, IfElapsed, control
 @subsection FriendIgnoreRegex
 
 Use this regular expression to suppress FriendStatus warnings
@@ -3990,11 +3991,32 @@ for matching hosts. e.g.
 
 @end smallexample
 
+
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 
-@node Inform, interfacename, IgnoreFriendRegex, control
+@node IgnoreInterfaceRegex, Inform, IgnoreFriendRegex, control
+@subsection IgnoreInterfaceRegex
+
+Use this regular expression to delete class information
+about interfaces that you do not want to see on a host.
+This is useful for tamig virtual machines and their multitudinous interfaces.
+
+@smallexample
+
+     IgnoreInterfaceRegex = ( "vm.*" )
+
+@end smallexample
+@cindex Virtual interfaces
+@cindex Interface classes
+@vindex IgnoreInterfaceRegex
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node Inform, interfacename, IgnoreInterfaceRegex, control
 @subsection Inform
 
 @w{}
@@ -5151,6 +5173,7 @@ copy:
                         backup=@b{true}@var{/false/timestamp}
                         repository=@var{backup directory}
                         stealth=@var{true/on/@b{false/off}}
+                        checkroot=@var{true/on/@b{false/off}}
                         timestamps=@b{preserve/keep}
                         symlink=@var{pattern}
 
@@ -5287,11 +5310,18 @@ made this option active on many file copies.
 @mbindex ctime copy doesn't always copy files
 @mbindex copy doesn't always copy files
 
+@item checkroot
+Default value @code{true}, this option causes cfengine to check the
+permissions of the root directory during recursive directory
+copies. If not true, cfengine sets its own permissions on the root.
+
+
 @item timestamps
 If this is set to `preserve' or `keep', the times of the source
 files are kept by the destination files during copying. This is
 like the `p' option of the @code{tar} command.
 @cindex Preserving file times in copy
+
 
 @item recurse
 Specifies the depth of recursion when copying whole file-trees

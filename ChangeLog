@@ -1,7 +1,11 @@
 
 2.2.3
-	IgnoreInterfaceRegex( "vm.*" ) 
+	IgnoreInterfaceRegex( "vm.*" ) added to control
 	function added for removing data from special interfaces from class data
+
+	Option checkroot=true/false added to copy directive. This switches on/off the change
+	in 2.2.2 about setting permissions on the destination root when recursively copying
+	files.
 	
 2.2.2
 	

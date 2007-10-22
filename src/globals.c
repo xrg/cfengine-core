@@ -221,7 +221,7 @@ char *OBS[CF_OBSERVABLES][2] =
     "rootprocs","Privileged system processes",
     "otherprocs","Non-privileged process",
     "diskfree","Free disk on / partition",
-    "loadavg","System load average",
+    "loadavg","% cpu utilization",
     "netbiosns_in","netbios name lookups (in)",
     "netbiosns_out","netbios name lookups (out)",
     "netbiosdgm_in","netbios name datagrams (in)",

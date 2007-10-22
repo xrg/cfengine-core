@@ -1,7 +1,7 @@
 #! /bin/sh
 
 # libtoolT - Provide generalized library-building support services.
-# Generated automatically by  (GNU cfengine 2.2.2)
+# Generated automatically by  (GNU cfengine 2.2.3a1)
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 #
 # Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001
@@ -328,7 +328,7 @@ link_all_deplibs=unknown
 sys_lib_search_path_spec=" /usr/lib/gcc/i586-suse-linux/4.1.2/ /usr/lib/gcc/i586-suse-linux/4.1.2/ /usr/lib/gcc/i586-suse-linux/4.1.2/../../../../i586-suse-linux/lib/i586-suse-linux/4.1.2/ /usr/lib/gcc/i586-suse-linux/4.1.2/../../../../i586-suse-linux/lib/ /usr/lib/gcc/i586-suse-linux/4.1.2/../../../i586-suse-linux/4.1.2/ /usr/lib/gcc/i586-suse-linux/4.1.2/../../../ /lib/i586-suse-linux/4.1.2/ /lib/ /usr/lib/i586-suse-linux/4.1.2/ /usr/lib/"
 
 # Run-time system search path for libraries
-sys_lib_dlsearch_path_spec="/lib /usr/lib /usr/X11R6/lib/Xaw3d /usr/X11R6/lib /usr/lib/Xaw3d /usr/i386-suse-linux/lib /usr/local/lib /usr/local/lib/graphviz /opt/kde3/lib /opt/gnome/lib "
+sys_lib_dlsearch_path_spec="/lib /usr/lib /usr/local/BerkeleyDB.4.6/lib /usr/X11R6/lib/Xaw3d /usr/X11R6/lib /usr/lib/Xaw3d /usr/i386-suse-linux/lib /usr/local/lib /usr/local/lib/graphviz /opt/kde3/lib /opt/gnome/lib "
 
 # Fix the shell variable $srcfile for the compiler.
 fix_srcfile_path=""
@@ -7496,7 +7496,7 @@ link_all_deplibs=unknown
 sys_lib_search_path_spec=" /usr/lib/gcc/i586-suse-linux/4.1.2/ /usr/lib/gcc/i586-suse-linux/4.1.2/ /usr/lib/gcc/i586-suse-linux/4.1.2/../../../../i586-suse-linux/lib/i586-suse-linux/4.1.2/ /usr/lib/gcc/i586-suse-linux/4.1.2/../../../../i586-suse-linux/lib/ /usr/lib/gcc/i586-suse-linux/4.1.2/../../../i586-suse-linux/4.1.2/ /usr/lib/gcc/i586-suse-linux/4.1.2/../../../ /lib/i586-suse-linux/4.1.2/ /lib/ /usr/lib/i586-suse-linux/4.1.2/ /usr/lib/"
 
 # Run-time system search path for libraries
-sys_lib_dlsearch_path_spec="/lib /usr/lib /usr/X11R6/lib/Xaw3d /usr/X11R6/lib /usr/lib/Xaw3d /usr/i386-suse-linux/lib /usr/local/lib /usr/local/lib/graphviz /opt/kde3/lib /opt/gnome/lib "
+sys_lib_dlsearch_path_spec="/lib /usr/lib /usr/local/BerkeleyDB.4.6/lib /usr/X11R6/lib/Xaw3d /usr/X11R6/lib /usr/lib/Xaw3d /usr/i386-suse-linux/lib /usr/local/lib /usr/local/lib/graphviz /opt/kde3/lib /opt/gnome/lib "
 
 # Fix the shell variable $srcfile for the compiler.
 fix_srcfile_path=""
@@ -7804,7 +7804,7 @@ link_all_deplibs=unknown
 sys_lib_search_path_spec=" /usr/lib/gcc-lib/i586-suse-linux/3.3.5/ /usr/lib/gcc/i586-suse-linux/3.3.5/ /usr/lib/gcc-lib/i586-suse-linux/3.3.5/../../../../i586-suse-linux/lib/i586-suse-linux/3.3.5/ /usr/lib/gcc-lib/i586-suse-linux/3.3.5/../../../../i586-suse-linux/lib/ /usr/lib/gcc-lib/i586-suse-linux/3.3.5/../../../i586-suse-linux/3.3.5/ /usr/lib/gcc-lib/i586-suse-linux/3.3.5/../../../ /lib/i586-suse-linux/3.3.5/ /lib/ /usr/lib/i586-suse-linux/3.3.5/ /usr/lib/"
 
 # Run-time system search path for libraries
-sys_lib_dlsearch_path_spec="/lib /usr/lib /usr/X11R6/lib/Xaw3d /usr/X11R6/lib /usr/lib/Xaw3d /usr/i386-suse-linux/lib /usr/local/lib /usr/local/lib/graphviz /opt/kde3/lib /opt/gnome/lib "
+sys_lib_dlsearch_path_spec="/lib /usr/lib /usr/local/BerkeleyDB.4.6/lib /usr/X11R6/lib/Xaw3d /usr/X11R6/lib /usr/lib/Xaw3d /usr/i386-suse-linux/lib /usr/local/lib /usr/local/lib/graphviz /opt/kde3/lib /opt/gnome/lib "
 
 # Fix the shell variable $srcfile for the compiler.
 fix_srcfile_path=""

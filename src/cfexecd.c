@@ -868,7 +868,7 @@ if (stat(file,&statbuf) == -1)
 
 /* HvB: Bas van der Vlies */
 snprintf(prev_file,CF_BUFSIZE-1,"%s/outputs/previous",CFWORKDIR);
- 
+
 if (statbuf.st_size == 0)
    {
    unlink(file);

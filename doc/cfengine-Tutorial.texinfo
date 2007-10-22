@@ -13,7 +13,7 @@
 @c ***********************************************************************
 @c %** start of header
 @setfilename cfengine-Tutorial.info
-@settitle GNU cfengine
+@settitle Cfengine v2 Tutorial
 @setchapternewpage odd
 @c %** end of header
 @defindex mb
@@ -21,7 +21,7 @@
 @include version2.texi
 
 @titlepage
-@title cfengine concepts
+@title Cfengine v2 concepts
 @subtitle Edition @value{EDITION} for version @value{VERSION}
 @author Mark Burgess
 @author Faculty of Engineering, Oslo University College, Norway
