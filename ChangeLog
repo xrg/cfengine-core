@@ -5,7 +5,7 @@
 
 	Option checkroot=true/false added to copy directive. This switches on/off the change
 	in 2.2.2 about setting permissions on the destination root when recursively copying
-	files.
+	files. Default is now false.
 	
 2.2.2
 	

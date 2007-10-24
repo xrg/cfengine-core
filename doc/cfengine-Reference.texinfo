@@ -5311,7 +5311,7 @@ made this option active on many file copies.
 @mbindex copy doesn't always copy files
 
 @item checkroot
-Default value @code{true}, this option causes cfengine to check the
+Default value @code{false}, this option causes cfengine to check the
 permissions of the root directory during recursive directory
 copies. If not true, cfengine sets its own permissions on the root.
 
