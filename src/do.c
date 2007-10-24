@@ -2608,10 +2608,21 @@ for (svp = VSERVERLIST; svp != NULL; svp=svp->next) /* order servers */
                }
             RegisterRecursionRootDevice(statbuf.st_dev);
             RecursiveImage(ip,path,destination,ip->recurse);
+
             if (stat(destination,&deststatbuf) != -1)
                {
                if (ip->checkroot != 'n')
                   {
+                  if ((ip->uid)->uid == (uid_t)-1)          /* Preserve uid and gid  */
+                     {
+                     (ip->uid)->uid = statbuf.st_uid;
+                     }
+                  
+                  if ((ip->gid)->gid == (gid_t)-1)
+                     {
+                     (ip->gid)->gid = statbuf.st_gid;
+                     }
+                  
                   /* Default is to set perms from server on rootdir from 2.2.2 */
                   CheckCopiedFile(ip->cf_findertype,destination,&deststatbuf,&statbuf,ip);
                   }
