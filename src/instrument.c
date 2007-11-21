@@ -785,7 +785,7 @@ for (ip = hostlist; ip != NULL; ip=ip->next)
 
    if (actual > 50.0)
       {
-      snprintf(OUTPUT,CF_BUFSIZE,"The intermittency of %s is above 50%% (scaled entropy units)\n",ip->name);
+      snprintf(OUTPUT,CF_BUFSIZE,"FriendStatus reports the intermittency of %s above 50%% (scaled entropy units)\n",ip->name);
       CfLog(cferror,OUTPUT,"");
       }
 

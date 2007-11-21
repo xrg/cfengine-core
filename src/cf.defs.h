@@ -923,6 +923,7 @@ enum commattr  /* See COMMATTRIBUTES[] in globals.c  for matching entry */
    cfscan,
    cfnoabspath,
    cfcheckroot,
+   cfsetaudit,
    cfbad                        /* HvB must be as last */		
    };
 
@@ -1484,6 +1485,7 @@ struct Method
    int            expireafter;
    char           log;
    char           inform;
+   char           logaudit;
    int lineno;
    struct Audit *audit;
    struct Method *next;
@@ -1541,6 +1543,7 @@ struct Process
    char           useshell;
    char           log;
    char           inform;
+   char           logaudit;
    struct Item    *exclusions;
    struct Item    *inclusions;
    struct Item    *filters;
@@ -1606,6 +1609,7 @@ struct Tidy
          char               searchtype;        /* a, m, c time */
 	 char               log;
 	 char               inform;
+         char               logaudit;
          struct TidyPattern *next;
          };
 
@@ -1684,6 +1688,7 @@ struct File
    char   log;
    char   compress;
    char   inform;
+   char   logaudit;
    char   xdev;
    int    ifelapsed;
    int    expireafter;
@@ -1711,6 +1716,7 @@ struct Disk
    int    expireafter;
    char   log;
    char   inform;
+   char   logaudit;
    char   scanarrivals;
    struct Audit *audit;
    int    lineno;
@@ -1738,6 +1744,7 @@ struct Disable
    struct Disable *next;
    char   log;
    char   inform;
+   char   logaudit;
    int    ifelapsed;
    int    expireafter;
    struct Audit *audit;
@@ -1800,6 +1807,7 @@ struct Image
    struct Item *acl_aliases;
    char   log;
    char   inform;
+   char   logaudit;
    char   typecheck;
    char   trustkey;
    char   encrypt;
@@ -1909,6 +1917,7 @@ struct Link
    struct Link *next;
    char   log;
    char   inform;
+   char   logaudit;
    struct Audit *audit;
    int lineno;
    };
@@ -1917,20 +1926,21 @@ struct Link
 
 struct Edit
    {
-   char done;     /* Have this here, too dangerous in Edlist */
-   char warn;
+   char  done;     /* Have this here, too dangerous in Edlist */
+   char  warn;
    char *scope;
    char *fname;
    char *defines;
    char *elsedef;
    mode_t umask;
-   char useshell;
-   char split;
+   char  useshell;
+   char  split;
    char *repository;
    int   recurse;
    char  binary;   /* y/n */
    int   ifelapsed;
-   int    expireafter;
+   int   expireafter;
+   char  logaudit;
    struct Audit *audit;
    int lineno;
    struct Item *ignores;
@@ -2023,6 +2033,7 @@ struct ShellComm
    struct ShellComm  *next;
    char              log;
    char              inform;
+   char              logaudit;
    char              fork;
    char              *defines;
    char              *elsedef;
@@ -2089,6 +2100,7 @@ struct Package      /* For packages: */
    char              *classes;
    char              log;
    char              inform;
+   char              logaudit;
    char              *defines;
    char              *elsedef;
    char              *ver;

@@ -813,6 +813,7 @@ char *OBS[CF_OBSERVABLES][2] =
   PRIVATE char PURGE = 'n';
   PRIVATE char LOGP = 'd';  /* y,n,d=default*/
   PRIVATE char INFORMP = 'd';
+  PRIVATE char AUDITP = 'd';
   PRIVATE char MOUNTMODE = 'w';   /* o or w for rw/ro*/
   PRIVATE char DELETEDIR = 'y';   /* t=true */
   PRIVATE char DELETEFSTAB = 'y';
@@ -987,6 +988,7 @@ char *OBS[CF_OBSERVABLES][2] =
      "scanarrivals",
      "noabspath",
      "checkroot",
+     "audit",
      NULL
      };
 

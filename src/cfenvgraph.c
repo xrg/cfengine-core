@@ -22,7 +22,6 @@
 
 */
 
-
 /*****************************************************************************/
 /*                                                                           */
 /* File: cfenvgraph.c                                                        */
@@ -56,13 +55,15 @@ void CloseFiles(void);
 void MagnifyNow(void);
 void OpenMagnifyFiles(void);
 void CloseMagnifyFiles(void);
-    
+void EraseAverages(void);
+
 /*****************************************************************************/
 
 struct option GRAPHOPTIONS[] =
    {
    { "help",no_argument,0,'h' },
    { "file",required_argument,0,'f' },
+   { "erasehistory",required_argument,0,'E' },
    { "outputdir",required_argument,0,'o' },
    { "titles",no_argument,0,'t'},
    { "timestamps",no_argument,0,'T'},
@@ -87,6 +88,7 @@ char FILENAME[CF_BUFSIZE];
 unsigned int HISTOGRAM[CF_OBSERVABLES][7][CF_GRAINS];
 int SMOOTHHISTOGRAM[CF_OBSERVABLES][7][CF_GRAINS];
 char VFQNAME[CF_MAXVARSIZE];
+char ERASE[CF_BUFSIZE];
 int ERRNO;
 time_t NOW;
 
@@ -105,9 +107,16 @@ int main (int argc,char **argv)
 {
 CheckOpts(argc,argv);
 GetFQHN();
+
+if (strlen(ERASE) > 0)
+   {
+   EraseAverages();
+   exit(0);
+   }
+
+
 ReadAverages(); 
 SummarizeAverages();
-
 
 if (strlen(FLNAME) == 0)
    {
@@ -234,10 +243,7 @@ if ((ERRNO = (DBP->open)(DBP,NULL,FILENAME,NULL,DB_BTREE,DB_RDONLY,0644)) != 0)
    exit(1);
    }
 
-memset(&key,0,sizeof(key));       
-memset(&value,0,sizeof(value));
-
- for (i = 0; i < CF_OBSERVABLES; i++)
+for (i = 0; i < CF_OBSERVABLES; i++)
    {
    MAX.Q[i].var = MAX.Q[i].expect = MAX.Q[i].q = 0.01;
    MIN.Q[i].var = MIN.Q[i].expect = MIN.Q[i].q = 9999.0;
@@ -294,6 +300,90 @@ for (NOW = CF_MONDAY_MORNING; NOW < CF_MONDAY_MORNING+CF_WEEK; NOW += CF_MEASURE
    }
  
  DBP->close(DBP,0);
+}
+
+/****************************************************************************/
+
+void EraseAverages()
+
+{ int i;
+  DBT key,value;
+  struct Item *list = NULL;
+      
+Verbose("\nLooking through current database %s\n",FILENAME);
+
+list = SplitStringAsItemList(ERASE,',');
+
+if ((ERRNO = db_create(&DBP,NULL,0)) != 0)
+   {
+   Verbose("Couldn't create average database %s\n",FILENAME);
+   exit(1);
+   }
+
+#ifdef CF_OLD_DB 
+if ((ERRNO = (DBP->open)(DBP,FILENAME,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+#else
+if ((ERRNO = (DBP->open)(DBP,NULL,FILENAME,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
+#endif
+   {
+   Verbose("Couldn't open average database %s\n",FILENAME);
+   DBP->err(DBP,ERRNO,NULL);
+   exit(1);
+   }
+
+memset(&key,0,sizeof(key));       
+memset(&value,0,sizeof(value));
+
+for (i = 0; i < CF_OBSERVABLES; i++)
+   {
+   FPE[i] = FPQ[i] = NULL;
+   }
+ 
+for (NOW = CF_MONDAY_MORNING; NOW < CF_MONDAY_MORNING+CF_WEEK; NOW += CF_MEASURE_INTERVAL)
+   {
+   memset(&key,0,sizeof(key));       
+   memset(&value,0,sizeof(value));
+   memset(&ENTRY,0,sizeof(ENTRY));
+
+   strcpy(TIMEKEY,GenTimeKey(NOW));
+
+   key.data = TIMEKEY;
+   key.size = strlen(TIMEKEY)+1;
+   
+   if ((ERRNO = DBP->get(DBP,NULL,&key,&value,0)) != 0)
+      {
+      if (ERRNO != DB_NOTFOUND)
+         {
+         DBP->err(DBP,ERRNO,NULL);
+         exit(1);
+         }
+      }
+   
+   if (value.data != NULL)
+      {
+      memcpy(&ENTRY,value.data,sizeof(ENTRY));
+      
+      for (i = 0; i < CF_OBSERVABLES; i++)
+         {
+         if (IsItemIn(list,OBS[i][0]))
+            {
+            /* Set history but not most recent to zero */
+            ENTRY.Q[i].expect = 0;
+            ENTRY.Q[i].var = 0;
+            }
+         }
+
+      value.data = &ENTRY;
+      
+      if ((ERRNO = DBP->put(DBP,NULL,&key,&value,0)) != 0)
+         {
+         DBP->err(DBP,ERRNO,NULL);
+         exit(1);
+         }
+      }
+   }
+ 
+DBP->close(DBP,0);
 }
 
 /*****************************************************************************/
@@ -984,31 +1074,38 @@ void CheckOpts(int argc,char **argv)
 
  /* XXX Initialize workdir for non privileged users */
 
- strcpy(CFWORKDIR,WORKDIR);
- FLNAME[0] = '\0';
- VERBOSE = false;
+strcpy(CFWORKDIR,WORKDIR);
+FLNAME[0] = '\0';
+ERASE[0] = '\0';
+VERBOSE = false;
 
- if (geteuid() > 0)
-    {
-    char *homedir;
-    if ((homedir = getenv("HOME")) != NULL)
-       {
-       strcpy(CFWORKDIR,homedir);
-       strcat(CFWORKDIR,"/.cfagent");
-       }
-    }
- 
+if (geteuid() > 0)
+   {
+   char *homedir;
+   if ((homedir = getenv("HOME")) != NULL)
+      {
+      strcpy(CFWORKDIR,homedir);
+      strcat(CFWORKDIR,"/.cfagent");
+      }
+   }
+
 snprintf(FILENAME,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_AVDB_FILE);
 
-while ((c=getopt_long(argc,argv,"Thtf:o:rsenN",GRAPHOPTIONS,&optindex)) != EOF)
+while ((c=getopt_long(argc,argv,"Thtf:o:rsenNE:",GRAPHOPTIONS,&optindex)) != EOF)
   {
   switch ((char) c)
       {
-      case 't': TITLES = true;
+      case 'E':
+          strncpy(ERASE,optarg,CF_BUFSIZE-1);
+          break;
+          
+      case 't':
+          TITLES = true;
           break;
 
-      case 'f': strcpy(FILENAME,optarg);
-         break;
+      case 'f':
+          strcpy(FILENAME,optarg);
+          break;
 
       case 'o': strcpy(FLNAME,optarg);
           Verbose("Setting output directory to s\n",FLNAME);

@@ -699,7 +699,7 @@ void ExtractOpLock(char *op);
 
 /* log.c */
 
-void AuditLog(struct Audit *ap,int lineno,char *str,char status);
+void AuditLog(char doaudit,struct Audit *ap,int lineno,char *str,char status);
 void CfLog (enum cfoutputlevel level, char *string, char *errstr);
 void ResetOutputRoute  (char log, char inform);
 void ShowAction (void);

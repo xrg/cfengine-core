@@ -133,7 +133,7 @@ if (found == -1)
    CfLog(cferror,OUTPUT,"");
    FlushClientCache(ip);
    AddMultipleClasses(ip->elsedef);
-   AuditLog(ip->audit,ip->lineno,OUTPUT,CF_FAIL);
+   AuditLog(ip->logaudit,ip->audit,ip->lineno,OUTPUT,CF_FAIL);
    return;
    }
 
@@ -561,7 +561,7 @@ if (found == -1)
             }
 
          snprintf(OUTPUT,CF_BUFSIZE*2,"Copied from %s:%s\n",server,sourcefile);
-         AuditLog(ip->audit,ip->lineno,OUTPUT,CF_CHG);
+         AuditLog(ip->logaudit,ip->audit,ip->lineno,OUTPUT,CF_CHG);
          AddMultipleClasses(ip->defines);
          
          if (ALL_SINGLECOPY || IsWildItemIn(VSINGLECOPY,destfile))
@@ -586,7 +586,7 @@ if (found == -1)
       else
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Copy from %s:%s\n",server,sourcefile);
-         AuditLog(ip->audit,ip->lineno,OUTPUT,CF_FAIL);
+         AuditLog(ip->logaudit,ip->audit,ip->lineno,OUTPUT,CF_FAIL);
          AddMultipleClasses(ip->failover);
          }
       
@@ -605,12 +605,12 @@ if (found == -1)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot create fifo `%s'", destfile);
          CfLog(cferror,OUTPUT,"mkfifo");
-         AuditLog(ip->audit,ip->lineno,OUTPUT,CF_FAIL);
+         AuditLog(ip->logaudit,ip->audit,ip->lineno,OUTPUT,CF_FAIL);
          return;
          }
 
       snprintf(OUTPUT,CF_BUFSIZE*2,"Created fifo %s", destfile);
-      AuditLog(ip->audit,ip->lineno,OUTPUT,CF_CHG);
+      AuditLog(ip->logaudit,ip->audit,ip->lineno,OUTPUT,CF_CHG);
       AddMultipleClasses(ip->defines);
 #endif
       }
@@ -630,7 +630,7 @@ if (found == -1)
             }
 
          snprintf(OUTPUT,CF_BUFSIZE*2,"Created socket/device %s", destfile);
-         AuditLog(ip->audit,ip->lineno,OUTPUT,CF_CHG);
+         AuditLog(ip->logaudit,ip->audit,ip->lineno,OUTPUT,CF_CHG);
          AddMultipleClasses(ip->defines);
          }
       }
@@ -697,7 +697,7 @@ if (found == -1)
             }
 
          snprintf(OUTPUT,CF_BUFSIZE*2,"Created link %s", destfile);
-         AuditLog(ip->audit,ip->lineno,OUTPUT,CF_CHG);
+         AuditLog(ip->logaudit,ip->audit,ip->lineno,OUTPUT,CF_CHG);
          AddMultipleClasses(ip->defines);
          }
       }
@@ -802,7 +802,7 @@ else
          {
          snprintf(OUTPUT,CF_BUFSIZE,"Image exists but src/dest type mismatch source=%s, dest=%s\n",sourcefile,destfile);
          CfLog(cfinform,OUTPUT,"");
-         AuditLog(ip->audit,ip->lineno,OUTPUT,CF_FAIL);
+         AuditLog(ip->logaudit,ip->audit,ip->lineno,OUTPUT,CF_FAIL);
          return;
          }
       }
@@ -820,7 +820,7 @@ else
             }
          
          CfLog(cfinform,OUTPUT,"");
-         AuditLog(ip->audit,ip->lineno,OUTPUT,CF_CHG);
+         AuditLog(ip->logaudit,ip->audit,ip->lineno,OUTPUT,CF_CHG);
          AddMultipleClasses(ip->defines);
          
          for (ptr = VAUTODEFINE; ptr != NULL; ptr=ptr->next)
@@ -839,7 +839,7 @@ else
                {
                snprintf(OUTPUT,CF_BUFSIZE*2,"Can't stat %s\n",destfile);
                CfLog(cferror,OUTPUT,"stat");
-               AuditLog(ip->audit,ip->lineno,OUTPUT,CF_FAIL);
+               AuditLog(ip->logaudit,ip->audit,ip->lineno,OUTPUT,CF_FAIL);
                }
             else
                {

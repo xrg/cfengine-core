@@ -552,11 +552,18 @@ lsb_version();
 
 #endif
 
-if (stat("/etc/vmware",&statbuf) != -1)
+if (stat("/proc/vmware/version",&statbuf) != -1 ||
+    stat("/etc/vmware-release",&statbuf) != -1)
+   {
+   Verbose("\nThis appears to be a VMware Server ESX system.\n");
+   AddClassToHeap("VMware");
+   VM_version();
+   }
+else if (stat("/etc/vmware",&statbuf) != -1)
    {
    if (S_ISDIR(statbuf.st_mode))
       {
-      Verbose("\nThis appears to be a VMWare xSX system.\n");
+      Verbose("\nThis appears to be a VMware xSX system.\n");
       AddClassToHeap("VMware");
       VM_version();
       }
@@ -1212,34 +1219,54 @@ else
 int VM_version(void)
 
 { FILE *fp;
-  char *sp,buffer[CF_BUFSIZE];
+  char *sp,buffer[CF_BUFSIZE],classbuf[CF_BUFSIZE],version[CF_BUFSIZE];
   struct stat statbuf;
+  int major,minor,bug;
   int len = 0;
+  int sufficient = 0;
 
-if ((fp = fopen("/etc/issue","r")) == NULL)
+/* VMware Server ESX >= 3 has version info in /proc */
+if ((fp = fopen("/proc/vmware/version","r")) != NULL)
    {
-   return 1;   
+        ReadLine(buffer,CF_BUFSIZE,fp);
+        Chop(buffer);
+        if (sscanf(buffer,"VMware ESX Server %d.%d.%d",&major,&minor,&bug) > 0)
+           {
+           snprintf(classbuf,CF_BUFSIZE,"VMware ESX Server %d",major);
+           AddClassToHeap(CanonifyName(classbuf));
+           snprintf(classbuf,CF_BUFSIZE,"VMware ESX Server %d.%d",major,minor);
+           AddClassToHeap(CanonifyName(classbuf));
+           snprintf(classbuf,CF_BUFSIZE,"VMware ESX Server %d.%d.%d",major,minor,bug);
+           AddClassToHeap(CanonifyName(classbuf));
+           sufficient = 1;
+           }
+        else if (sscanf(buffer,"VMware ESX Server %s",version) > 0)
+           {
+           snprintf(classbuf,CF_BUFSIZE,"VMware ESX Server %s",version);
+           AddClassToHeap(CanonifyName(classbuf));
+           sufficient = 1;
+           }
+        fclose(fp);
    }
 
-do
+/* Fall back to checking for other files */
+if (sufficient < 1 && ((fp = fopen("/etc/vmware-release","r")) != NULL) ||
+                       (fp = fopen("/etc/issue","r")) != NULL)
    {
-   sp = fgets(buffer,sizeof(buffer), fp);
-   Chop(buffer);
-   len = strlen(buffer);
-   }
-while (sp != NULL);
+        ReadLine(buffer,CF_BUFSIZE,fp);
+        Chop(buffer);
+        AddClassToHeap(CanonifyName(buffer));
 
-AddClassToHeap(CanonifyName(buffer));
-
-for (sp = buffer+strlen(buffer)-1; sp > buffer; sp--)
-   {
-   if (*sp == ' ')
-      {
-      *sp = '\0';
-      AddClassToHeap(CanonifyName(buffer));
-      }
+        /* Strip off the release code name e.g. "(Dali)" */
+        if ((sp = strchr(buffer,'(')) != NULL)
+           {
+           *sp = 0;
+           Chop(buffer);
+           AddClassToHeap(CanonifyName(buffer));
+           }
+        sufficient = 1;
+        fclose(fp);
    }
 
-fclose(fp);
-return 0;
+return sufficient < 1 ? 1 : 0;
 }

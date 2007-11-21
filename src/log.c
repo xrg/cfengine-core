@@ -155,7 +155,7 @@ if (AUDIT)
       return;
       }
 
-   AuditLog(NULL,0,"Cfagent starting",CF_NOP);
+   AuditLog('y',NULL,0,"Cfagent starting",CF_NOP);
    }
 }
 
@@ -191,18 +191,18 @@ else
    }
 
 CfLog(cfverbose,OUTPUT,"");
-AuditLog(NULL,0,OUTPUT,CF_REPORT);
+AuditLog('y',NULL,0,OUTPUT,CF_REPORT);
 
 if (AUDIT && AUDITDBP)
    {
-   AuditLog(NULL,0,"Cfagent closing",CF_NOP);
+   AuditLog('y',NULL,0,"Cfagent closing",CF_NOP);
    AUDITDBP->close(AUDITDBP,0);
    }
 }
 
 /*****************************************************************************/
 
-void AuditLog(struct Audit *ap,int lineno,char *str,char status)
+void AuditLog(char yesno,struct Audit *ap,int lineno,char *str,char status)
 
 { time_t now = time(NULL);
   char date[CF_BUFSIZE],lock[CF_BUFSIZE],key[CF_BUFSIZE],operator[CF_BUFSIZE];
@@ -211,7 +211,12 @@ void AuditLog(struct Audit *ap,int lineno,char *str,char status)
   double keyval;
 
 Debug("AuditLog(%s)\n",str);
-  
+
+if (yesno = 'n')
+   {
+   return;
+   }
+
 switch(status)
    {
    case CF_CHG:

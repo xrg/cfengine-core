@@ -184,6 +184,7 @@ extern char  DEFAULTCOPYTYPE;
 extern char  LINKDIRS;
 extern char  LOGP;
 extern char  INFORMP;
+extern char  AUDITP;
 
 extern char *FILTERNAME;
 extern char *STRATEGYNAME;

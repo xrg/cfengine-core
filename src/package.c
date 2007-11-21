@@ -262,7 +262,7 @@ if (BuildCommandLine(instcmd,rawinstcmd,*pkglist))
          {
          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't exec package installer %s",instcmd);
          CfLog(cfinform,OUTPUT,"popen");
-         AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_FAIL);
+         AuditLog(ptr->logaudit,ptr->audit,ptr->lineno,OUTPUT,CF_FAIL);
          return 0;
          }
       
@@ -276,14 +276,14 @@ if (BuildCommandLine(instcmd,rawinstcmd,*pkglist))
       if (cfpclose(pp) != 0)
          {
          CfLog(cfinform,"Package install command was not successful.\n\n","popen");
-         AuditLog(ptr->audit,ptr->lineno,"Package installer did not exit properly",CF_FAIL);
+         AuditLog(ptr->logaudit,ptr->audit,ptr->lineno,"Package installer did not exit properly",CF_FAIL);
          result = 0;
          }
       else
          {
          snprintf(OUTPUT,CF_BUFSIZE,"Packages installed: %s",instcmd);
          CfLog(cfinform,OUTPUT,"");
-         AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
+         AuditLog(ptr->logaudit,ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
          result = 1;
          }
       }
@@ -291,7 +291,7 @@ if (BuildCommandLine(instcmd,rawinstcmd,*pkglist))
 else 
    {
    CfLog(cferror,"Unable to evaluate package manager command.\n","");
-   AuditLog(ptr->audit,ptr->lineno,"Unable to evaluate package manager",CF_NOP);
+   AuditLog(ptr->logaudit,ptr->audit,ptr->lineno,"Unable to evaluate package manager",CF_NOP);
    result = 0;
    }
 
@@ -319,7 +319,7 @@ if (RemovePackage(ptr,pkgmgr,&removelist))
 else
    {
    CfLog(cfinform,"Package cannot be upgraded because the old version was not removed.\n\n","");
-   AuditLog(ptr->audit,ptr->lineno,"Package not upgraded - another version in the way",CF_FAIL);
+   AuditLog(ptr->logaudit,ptr->audit,ptr->lineno,"Package not upgraded - another version in the way",CF_FAIL);
    result = 0;
    }
 
@@ -370,7 +370,7 @@ switch(pkgmgr)
        
       default:
           CfLog(cferror,"RemovePackage: Package removal not yet implemented for this package manager.\n","p");
-          AuditLog(ptr->audit,ptr->lineno,"No support for package removal",CF_NOP);
+          AuditLog(ptr->logaudit,ptr->audit,ptr->lineno,"No support for package removal",CF_NOP);
           break;
    }
 
@@ -391,7 +391,7 @@ if (BuildCommandLine( delcmd, rawdelcmd, *pkglist))
          {
          snprintf(OUTPUT,CF_BUFSIZE,"Could not execute package removal command %s\n",delcmd);
          CfLog(cferror,OUTPUT,"popen");
-         AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_FAIL);
+         AuditLog(ptr->logaudit,ptr->audit,ptr->lineno,OUTPUT,CF_FAIL);
          return 0;
          }
       
@@ -406,14 +406,14 @@ if (BuildCommandLine( delcmd, rawdelcmd, *pkglist))
          {
          snprintf(OUTPUT,CF_BUFSIZE,"Could not execute package removal command %s\n",delcmd);
          CfLog(cferror,OUTPUT,"popen");
-         AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_FAIL);
+         AuditLog(ptr->logaudit,ptr->audit,ptr->lineno,OUTPUT,CF_FAIL);
          result = 0;
          }
       else
          {
          snprintf(OUTPUT,CF_BUFSIZE,"Package removal succeeded (%s)\n",delcmd);
          CfLog(cfinform,OUTPUT,"popen");
-         AuditLog(ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
+         AuditLog(ptr->logaudit,ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
          result = 1;
          }
       }
@@ -421,7 +421,7 @@ if (BuildCommandLine( delcmd, rawdelcmd, *pkglist))
 else 
    {
    CfLog(cferror,"Unable to evaluate package manager command.\n","");
-   AuditLog(ptr->audit,ptr->lineno,"Could not evaluate package manager",CF_FAIL);
+   AuditLog(ptr->logaudit,ptr->audit,ptr->lineno,"Could not evaluate package manager",CF_FAIL);
    result = 0;
    }
 

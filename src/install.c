@@ -625,6 +625,8 @@ switch(GetCommAttribute(item))
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
                    break;
+   case cfsetaudit: HandleCharSwitch("audit",value,&AUDITP);
+                   break;
    case cfchksum:  HandleChecksum(value);
                    break;
    case cfxdev:    HandleCharSwitch("xdev",value,&XDEV);
@@ -729,6 +731,8 @@ switch(GetCommAttribute(item))
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
                    break;
+   case cfsetaudit: HandleCharSwitch("audit",value,&AUDITP);
+                   break;                   
    case cfstealth: HandleCharSwitch("stealth",value,&STEALTH);
                    break;
    case cftypecheck: HandleCharSwitch("typecheck",value,&TYPECHECK);
@@ -786,6 +790,8 @@ switch(GetCommAttribute(ebuff))
    case cfsetlog:  HandleCharSwitch("log",value,&LOGP);
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
+                   break;
+   case cfsetaudit: HandleCharSwitch("audit",value,&AUDITP);
                    break;
    case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
                    break;
@@ -1080,6 +1086,8 @@ switch(GetCommAttribute(item))
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
                    break;
+   case cfsetaudit: HandleCharSwitch("audit",value,&AUDITP);
+                   break;
    case cfcompress: HandleCharSwitch("compress",value,&COMPRESS);
                    break;
    case cffilter:  PrependItem(&VFILTERBUILD,value,CF_ANYCLASS);
@@ -1127,6 +1135,8 @@ switch(GetCommAttribute(item))
    case cfsetlog:  HandleCharSwitch("log",value,&LOGP);
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
+                   break;
+   case cfsetaudit: HandleCharSwitch("audit",value,&AUDITP);
                    break;
    case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
                    break;
@@ -1190,6 +1200,8 @@ switch(GetCommAttribute(item))
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
                    break;
+   case cfsetaudit: HandleCharSwitch("audit",value,&AUDITP);
+                   break;
    case cfrepository: strncpy(LOCALREPOS,value,CF_BUFSIZE-CF_BUFFERMARGIN);
                    break;
    case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
@@ -1252,6 +1264,8 @@ switch(GetCommAttribute(item))
    case cfsetlog:  HandleCharSwitch("log",value,&LOGP);
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
+                   break;
+   case cfsetaudit: HandleCharSwitch("audit",value,&AUDITP);
                    break;
    case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
                    break;
@@ -1319,6 +1333,8 @@ switch(GetCommAttribute(item))
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
                    break;
+   case cfsetaudit: HandleCharSwitch("audit",value,&AUDITP);
+                   break;
    case cfexclude: PrependItem(&VEXCLUDEPARSE,value,CF_ANYCLASS);
                    break;
    case cfinclude: PrependItem(&VINCLUDEPARSE,value,CF_ANYCLASS);
@@ -1380,6 +1396,8 @@ switch(GetCommAttribute(item))
    case cfsetlog:  HandleCharSwitch("log",value,&LOGP);
                    break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
+                   break;
+   case cfsetaudit: HandleCharSwitch("audit",value,&AUDITP);
                    break;
    case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
                    break;
@@ -1501,8 +1519,10 @@ switch(GetCommAttribute(item))
                      break;
    case cfsetinform: HandleCharSwitch("inform",value,&INFORMP);
                      break;
+   case cfsetaudit:  HandleCharSwitch("audit",value,&AUDITP);
+                     break;
    case cfowner:     strcpy(VUIDNAME,value);
-       break;
+                     break;
    case cfgroup:     strcpy(VGIDNAME,value);
                      break;
    case cfdefine:    HandleDefine(value);
@@ -2042,6 +2062,7 @@ ptr->recurse = VRECURSE;
 ptr->nofile = DEADLINKS;
 ptr->log = LOGP;
 ptr->inform = INFORMP;
+ptr->logaudit = AUDITP;
 ptr->done = 'n';
 ptr->scope = strdup(CONTEXTID);
  
@@ -2158,6 +2179,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    ptr->recurse = VRECURSE;
    ptr->log = LOGP;
    ptr->inform = INFORMP;
+   ptr->logaudit = AUDITP;
    ptr->done = 'n';
    ptr->scope = strdup(CONTEXTID);
  
@@ -2264,6 +2286,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    ptr->next = NULL;
    ptr->log = LOGP;
    ptr->inform = INFORMP;
+   ptr->logaudit = AUDITP;
    ptr->done = 'n';
    ptr->scanarrivals = SCAN;
    ptr->scope = strdup(CONTEXTID);
@@ -2972,6 +2995,7 @@ else
    }
 
 ptr->audit = AUDITPTR;
+ptr->logaudit = AUDITP;
 ptr->lineno = LINENUMBER; /* This might not be true if several stanzas */
 ptr->done = 'n';
 ptr->split = CF_UNUSED_CHAR;
@@ -3573,6 +3597,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    ptr->lineno = LINENUMBER;
    ptr->log = LOGP;
    ptr->inform = INFORMP;
+   ptr->logaudit = AUDITP;
    ptr->timeout = timeout;
    ptr->useshell = useshell;
    ptr->umask = UMASK;
@@ -3747,6 +3772,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    ptr->lineno = LINENUMBER;
    ptr->log = LOGP;
    ptr->inform = INFORMP;
+   ptr->logaudit = AUDITP;
    ptr->timeout = timeout;
    ptr->useshell = useshell;
    ptr->umask = UMASK;
@@ -3903,6 +3929,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    ptr->next = NULL;
    ptr->log = LOGP;
    ptr->inform = INFORMP;
+   ptr->logaudit = AUDITP;
    ptr->done = 'n';
    ptr->scope = strdup(CONTEXTID);
    ptr->action = PROACTION;
@@ -4107,6 +4134,7 @@ for (vp = Get2DListEnt(tp); vp != NULL; vp = Get2DListEnt(tp))
    ptr->useshell = USESHELL;
    ptr->log = LOGP;
    ptr->inform = INFORMP;
+   ptr->logaudit = AUDITP;
    
    if (*VUIDNAME == '*')
       {
@@ -4350,6 +4378,7 @@ for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
    ptr->log = LOGP;
    ptr->filters = NULL;
    ptr->inform = INFORMP;
+   ptr->logaudit = AUDITP;
    ptr->plus_flags = PLUSFLAG;
    ptr->minus_flags = MINUSFLAG;
    ptr->done = 'n';
@@ -4842,6 +4871,7 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
    ptr->log = LOGP;
    ptr->xdev = XDEV;
    ptr->inform = INFORMP;
+   ptr->logaudit = AUDITP;
    ptr->checksum = chksum;
    ptr->plus_flags = PLUSFLAG;
    ptr->minus_flags = MINUSFLAG;
@@ -4977,6 +5007,7 @@ ptr->useshell = useshell;
 ptr->next = NULL;
 ptr->log = LOGP;
 ptr->inform = INFORMP;
+ptr->logaudit = AUDITP;
 ptr->exclusions = VEXCLUDEPARSE;
 ptr->inclusions = VINCLUDEPARSE;
 ptr->filters = ptr->filters = VFILTERBUILD;
@@ -5137,6 +5168,7 @@ ptr->audit = AUDITPTR;
 ptr->lineno = LINENUMBER;
 ptr->log = LOGP;
 ptr->inform = INFORMP;
+ptr->logaudit = AUDITP;
 ptr->cmp = sense;
 ptr->pkgmgr = mgr;
 ptr->action = action;
@@ -5465,6 +5497,7 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
 
       ptr->log = LOGP;
       ptr->inform = INFORMP;
+      ptr->logaudit = AUDITP;
       ptr->plus_flags = PLUSFLAG;
       ptr->minus_flags = MINUSFLAG;
       ptr->trustkey = TRUSTKEY;
@@ -6786,6 +6819,7 @@ tp->next = *list;
 tp->dirlinks = ldirs;
 tp->log = LOGP;
 tp->inform = INFORMP;
+tp->logaudit = AUDITP;
 tp->compress = COMPRESS;
 tp->rmdirs = tidydirs;
 tp->tidied = false;

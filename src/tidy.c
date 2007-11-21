@@ -223,7 +223,7 @@ if (age_match && size_match)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"Deleting directory %s\n",path);
          CfLog(cfinform,OUTPUT,"");
-         AuditLog(tlp->audit,tlp->lineno,OUTPUT,CF_CHG);
+         AuditLog(tlp->logaudit,tlp->audit,tlp->lineno,OUTPUT,CF_CHG);
    
          if (usepath)
             {
@@ -245,7 +245,7 @@ if (age_match && size_match)
                {
                snprintf(OUTPUT,CF_BUFSIZE,"Delete directory %s failed\n",path);
                CfLog(cfinform,OUTPUT,"unlink");
-               AuditLog(tlp->audit,tlp->lineno,OUTPUT,CF_FAIL);
+               AuditLog(tlp->logaudit,tlp->audit,tlp->lineno,OUTPUT,CF_FAIL);
                }            
             else
                {
@@ -266,12 +266,12 @@ if (age_match && size_match)
             {
             snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't unlink %s tidying\n",path);
             CfLog(cfverbose,OUTPUT,"unlink");
-            AuditLog(tlp->audit,tlp->lineno,OUTPUT,CF_FAIL);
+            AuditLog(tlp->logaudit,tlp->audit,tlp->lineno,OUTPUT,CF_FAIL);
             }
          
          snprintf(OUTPUT,CF_BUFSIZE,"Deleting file %s\n",path);
          CfLog(cfinform,OUTPUT,"");
-         AuditLog(tlp->audit,tlp->lineno,OUTPUT,CF_CHG);
+         AuditLog(tlp->logaudit,tlp->audit,tlp->lineno,OUTPUT,CF_CHG);
          snprintf(OUTPUT,CF_BUFSIZE,"Size=%d bytes, %c-age=%d days\n",
                   statbuf->st_size,tlp->searchtype,(nowticks-fileticks)/CF_TICKS_PER_DAY);
          CfLog(cfverbose,OUTPUT,"");
