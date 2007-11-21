@@ -212,11 +212,6 @@ void AuditLog(char yesno,struct Audit *ap,int lineno,char *str,char status)
 
 Debug("AuditLog(%s)\n",str);
 
-if (yesno = 'n')
-   {
-   return;
-   }
-
 switch(status)
    {
    case CF_CHG:
@@ -320,6 +315,11 @@ else
    }
 
 newaudit.status = status;
+
+if (yesno == 'n')
+   {
+   return;
+   }
 
 WriteDB(AUDITDBP,key,&newaudit,sizeof(newaudit));
 }
