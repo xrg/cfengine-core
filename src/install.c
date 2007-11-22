@@ -1575,7 +1575,8 @@ switch(GetCommAttribute(item))
                    break;
    case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
                    break;
-
+   case cfsetaudit:  HandleCharSwitch("audit",value,&AUDITP);
+                     break;
    default:         yyerror("Illegal alerts attribute");
    }
 }

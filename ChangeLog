@@ -1,11 +1,23 @@
 
 2.2.3
+	Feedback release after 2.2.2 and LISA 07
+	
 	IgnoreInterfaceRegex( "vm.*" ) added to control
 	function added for removing data from special interfaces from class data
 
-	Option checkroot=true/false added to copy directive. This switches on/off the change
-	in 2.2.2 about setting permissions on the destination root when recursively copying
-	files. Default is now false.
+	Option checkroot=true/false added to copy directive. This switches
+	on/off the change in 2.2.2 about setting permissions on the
+	destination root when recursively copying files. Default is now
+	false.
+
+	Can escape colons in the strings now to avoid confusion with
+	expansion separator.
+
+	cfenvgraph --erasehistory users,www_in etc will now set the
+	average and variance of learned cfenvd data to zero. The current
+	week's trace is not affected.
+
+	audit=true/false flag added to most actions
 	
 2.2.2
 	

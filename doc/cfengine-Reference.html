@@ -1993,7 +1993,11 @@ the affected hosts.
      
         class::
      
-           <var>quoted message</var> ifelapsed=<var>time</var>
+           <var>quoted message</var>
+     
+             ifelapsed=<var>time</var>
+             audit=<var>true/false</var>
+     
            ShowState(<var>parameter</var>)
            SysLog(<var>priority</var>,<var>message</var>)
            SetState(<var>name</var>,<var>ttl</var>,<var>policy</var>)
@@ -4993,6 +4997,7 @@ attempts to prevent this during remote copies.</em>
      
            <var>master-file</var>
                              dest=<var>destination-file</var>
+     
                              mode=<var>mode</var>
                              owner=<var>owner</var>
                              group=<var>group</var>
@@ -5034,6 +5039,7 @@ attempts to prevent this during remote copies.</em>
      
                              syslog=<var>true/on</var>/<var>false/off</var>
                              inform=<var>true/on</var>/<var>false/off</var>
+                             audit=<var>true/false</var>
      
                              findertype=<var>MacOSX finder type</var>
      
@@ -5119,7 +5125,7 @@ This is a weakness in the Unix file system. Ctime cannot be
 preserved. Before version 1.5.0, there was a typo which
 made this option active on many file copies. 
 <a name="index-ctime-copy-doesn_0027t-always-copy-files-303"></a><a name="index-copy-doesn_0027t-always-copy-files-304"></a>
-<br><dt><code>checkroot</code><dd>Default value <code>true</code>, this option causes cfengine to check the
+<br><dt><code>checkroot</code><dd>Default value <code>false</code>, this option causes cfengine to check the
 permissions of the root directory during recursive directory
 copies. If not true, cfengine sets its own permissions on the root.
 
@@ -5485,6 +5491,7 @@ special variable <code>$(binserver)</code> here.
      
           inform=<var>true</var>
           log=<var>true</var>
+          audit=<var>true/false</var>
      
           scanarrivals=<var>true</var>
           force=<var>true</var>
@@ -5594,6 +5601,7 @@ the <code>touch</code> option in the <code>files</code> actions.  See <a href="#
                               elsedefine=<var>classlist</var>
                               syslog=<var>true/on</var>/<var>false/off</var>
                               inform=<var>true/on</var>/<var>false/off</var>
+                              audit=<var>true/on</var>/<var>false/off</var>
      
                               ifelapsed=<var>mins</var>
                               expireafter=<var>mins</var>
@@ -5673,6 +5681,8 @@ be examined later.  The syntax is
                            define=<var>classlist</var>
                            syslog=<var>true/on</var>/<b>false/off</b>
                            inform=<var>true/on</var>/<b>false/off</b>
+                           audit=<var>true/on</var>/<var>false/off</var>
+     
                            repository=<var>destination directory</var>
                            action=<b>disable</b>/<var>warn</var>
      
@@ -6580,6 +6590,9 @@ the form of the statement in pseudo-code:
                                checksum=<var>md5/sha/best</var>
                                syslog=<var>true/on</var>/<b>false/off</b>
                                inform=<var>true/on</var>/<b>false/off</b>
+     
+                               audit=<var>true/on</var>/<var>false/off</var>
+     
                                ifelapsed=<var>mins</var>
                                expireafter=<var>mins</var>
      
@@ -7623,7 +7636,10 @@ children.  The <code>linkchildren</code> feature is also available from the
                  define=<var>classlist</var>
                  nofile=<b>kill</b>/<var>force</var>
                  syslog=<var>true/on</var>/<var>false/off</var>
+     
                  inform=<var>true/on</var>/<var>false/off</var>
+                 audit=<var>true/on</var>/<var>false/off</var>
+     
                  ifelapsed=<var>mins</var>
                  expireafter=<var>mins</var>
 </pre>
@@ -8660,6 +8676,8 @@ form of a process command is
      
                              syslog=<var>true/on</var>/<var>false/off</var>
                              inform=<var>true/on</var>/<var>false/off</var>
+                             audit=<var>true/on</var>/<var>false/off</var>
+     
                              ifelapsed=<var>mins</var>
                              expireafter=<var>mins</var>
      
@@ -8920,6 +8938,9 @@ RPM on a Solaris box.
      
                              ifelapsed=<var>mins</var>
                              expireafter=<var>mins</var>
+     
+                             audit=<var>true/on</var>/<var>false/off</var>
+                             inform=<var>true/on</var>/<var>false/off</var>
      
      EXAMPLES:
      packages:
@@ -9434,6 +9455,7 @@ commands from this section.
                chroot=<var>directory</var>
                preview=<var>true</var>/<b>false</b>
                inform=<b>false</b><var>/true</var>
+               audit=<var>true/on</var>/<var>false/off</var>
      
                noabspath=<b>false</b><var>/true</var>
      
@@ -9671,6 +9693,8 @@ entry is:
      
                             syslog=<var>true/on</var>/<var>false/off</var>
                             inform=<var>true/on</var>/<var>false/off</var>
+                            audit=<var>true/on</var>/<var>false/off</var>
+     
                             ifelapsed=<var>mins</var>
                             expireafter=<var>mins</var>
      

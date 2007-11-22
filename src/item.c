@@ -483,6 +483,7 @@ else
    ip->classes = NULL;
    }
 
+ip->logaudit = AUDITP;
 ip->audit = AUDITPTR;
 ip->lineno = LINENUMBER;
 

@@ -2315,7 +2315,11 @@ alerts:
 
    class::
 
-      @var{quoted message} ifelapsed=@var{time}
+      @var{quoted message} 
+
+        ifelapsed=@var{time}
+        audit=@var{true/false}
+
       ShowState(@var{parameter})
       SysLog(@var{priority},@var{message})
       SetState(@var{name},@var{ttl},@var{policy})
@@ -3200,6 +3204,8 @@ control:
 
 @end smallexample
 
+This variable acts as the global default behaviour and may be
+overriden locally by @code{audit=true/false} attributes, where applicable.
 
 @c .....................................................
 @c SUBSECTION
@@ -5166,6 +5172,7 @@ copy:
 
       @var{master-file} 
                         dest=@var{destination-file} 
+
                         mode=@var{mode}
                         owner=@var{owner} 
                         group=@var{group} 
@@ -5207,6 +5214,7 @@ copy:
 
                         syslog=@var{true/on}/@var{false/off}
                         inform=@var{true/on}/@var{false/off}
+                        audit=@var{true/false}
 
                         findertype=@var{MacOSX finder type}
 
@@ -5717,6 +5725,7 @@ special variable @code{$(binserver)} here.
 
      inform=@var{true} 
      log=@var{true} 
+     audit=@var{true/false}
 
      scanarrivals=@var{true} 
      force=@var{true}
@@ -5841,6 +5850,7 @@ The form of a declaration is:
                          elsedefine=@var{classlist}
                          syslog=@var{true/on}/@var{false/off}
                          inform=@var{true/on}/@var{false/off}
+                         audit=@var{true/on}/@var{false/off}
 
                          ifelapsed=@var{mins} 
                          expireafter=@var{mins}
@@ -5926,6 +5936,8 @@ be examined later.  The syntax is
                       define=@var{classlist}
                       syslog=@var{true/on}/@b{false/off}
                       inform=@var{true/on}/@b{false/off}
+                      audit=@var{true/on}/@var{false/off}
+
                       repository=@var{destination directory}
                       action=@b{disable}/@var{warn}
 
@@ -6356,6 +6368,11 @@ This commands looks for an exact match of the quoted string
 in the current line. If the quoted string is not contained
 in the line, it is appended. This may be used for adding
 entries to a list.
+
+
+@item Audit @var{true/false}
+Local decision about whether this edit stanza will be audited. Requires
+auditing to be on globally for this to have an effect.
 
 @item AutoCreate
 If this command is listed anywhere in the file action list, cfengine
@@ -6997,8 +7014,6 @@ The @code{files} facility allows you to touch (create), check for the
 existence, owner and permissions of files, change the permissions and
 test for setuid root programs.
 
-
-
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
@@ -7048,6 +7063,9 @@ the form of the statement in pseudo-code:
                           checksum=@var{md5/sha/best}
                           syslog=@var{true/on}/@b{false/off}
                           inform=@var{true/on}/@b{false/off}
+
+                          audit=@var{true/on}/@var{false/off}
+
                           ifelapsed=@var{mins} 
                           expireafter=@var{mins}
 
@@ -7324,6 +7342,7 @@ everyone on directories.
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
+
 @node home directive, Owner and group wildcards, Directory permissions, files
 @subsection @code{home} directive
 @cindex home directive
@@ -8197,7 +8216,10 @@ children.  The @code{linkchildren} feature is also available from the
             define=@var{classlist}
             nofile=@b{kill}/@var{force}
             syslog=@var{true/on}/@var{false/off}
+
             inform=@var{true/on}/@var{false/off} 
+            audit=@var{true/on}/@var{false/off}
+
             ifelapsed=@var{mins} 
             expireafter=@var{mins}
 @end smallexample
@@ -9282,6 +9304,8 @@ processes:
 
                         syslog=@var{true/on}/@var{false/off}
                         inform=@var{true/on}/@var{false/off}
+                        audit=@var{true/on}/@var{false/off}
+
                         ifelapsed=@var{mins} 
                         expireafter=@var{mins}
 
@@ -9578,6 +9602,9 @@ packages:
 
                         ifelapsed=@var{mins} 
                         expireafter=@var{mins}
+
+                        audit=@var{true/on}/@var{false/off}
+                        inform=@var{true/on}/@var{false/off}
 
 EXAMPLES:
 packages:
@@ -10148,6 +10175,7 @@ shellcommands:
           chroot=@var{directory}
           preview=@var{true}/@b{false}
           inform=@b{false}@var{/true}
+          audit=@var{true/on}/@var{false/off}
 
           noabspath=@b{false}@var{/true}
 
@@ -10426,6 +10454,8 @@ tidy:
 
                        syslog=@var{true/on}/@var{false/off}
                        inform=@var{true/on}/@var{false/off}
+                       audit=@var{true/on}/@var{false/off}
+
                        ifelapsed=@var{mins} 
                        expireafter=@var{mins}
 

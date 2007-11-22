@@ -251,7 +251,7 @@ switch(status)
        break;
    }
 
-if (AUDIT == false || AUDITDBP == NULL)
+if (AUDITDBP == NULL)
    {
    return;
    }

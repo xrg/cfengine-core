@@ -1197,7 +1197,8 @@ enum editnames
    DefineInGroup,
    EditIfElapsed,
    EditExpireAfter,
-   EditSplit
+   EditSplit,
+   LogAudit,
    };
 
 enum RegExpTypes
@@ -1495,16 +1496,17 @@ struct Method
 
 struct Item
    {
-   char done;
-   char *name;
-   char *classes;
-   int counter;
-   int ifelapsed;
-   int expireafter;
+   char   done;
+   char  *name;
+   char  *classes;
+   int    counter;
+   int    ifelapsed;
+   int    expireafter;
    struct Item *next;
    struct Audit *audit;
+   char   logaudit;
    int    lineno;
-   char *scope;
+   char  *scope;
    };
 
 /*******************************************************************/

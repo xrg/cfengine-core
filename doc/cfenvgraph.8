@@ -1,9 +1,33 @@
-.TH cfengine 8 "Maintenance Commands" HiOslo
+.TH cfengine 8 "Maintenance Commands" 
 .SH NAME
 cfengine \- network configuration engine
 .SH SYNOPSIS
 
 /usr/local/sbin/cfenvgraph [options]
+
+.SH COMMAND LINE OPTIONS
+.IP --help
+.IP --file
+.B Override default input database
+.IP --erasehistory
+.B Erase machine-learned history of named traces. Comma separated list (no spaces)
+.IP --outputdir
+.B override name of output directory
+.IP --titles
+.B Generate titles in output data files for traces
+.IP --timestamps
+.B Add time stamps to output directory
+.IP --resolution
+.B Maximum output resolution (default is smoothed over each hour).
+.IP --separate
+.B Plot separate output files for each trace.
+.IP --no-error-bars
+.B Do not add uncertainty margins to output.
+.IP --no-scaling
+.B Do not renormalize graphs for convenient representation
+.IP --now
+.B Show data for last four hours only in high resolution.
+.IP --verbose
 
 
 .SH DESCRIPTION

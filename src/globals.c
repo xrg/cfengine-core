@@ -1178,6 +1178,7 @@ char *OBS[CF_OBSERVABLES][2] =
      "IfElapsed",
      "ExpireAfter",
      "EditSplit",
+     "Audit",
      NULL
      };
 

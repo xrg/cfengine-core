@@ -240,6 +240,7 @@ while (ep != NULL)
       {
       case NoEdit:
       case EditInform:
+      case LogAudit:
       case EditBackup:
       case EditLog:
       case EditUmask:
@@ -1609,6 +1610,20 @@ for (ep = actions; ep != NULL; ep=ep->next)
           if (strcmp(ToLowerStr(expdata),"false") == 0 || strcmp(ToLowerStr(expdata),"off") == 0)
              {
              inform = 'n';
+             break;
+             }
+
+      case LogAudit:
+          
+          if (strcmp(ToLowerStr(expdata),"true") == 0 || strcmp(ToLowerStr(expdata),"on") == 0)
+             {
+             ptr->logaudit = 'y';
+             break;
+             }
+          
+          if (strcmp(ToLowerStr(expdata),"false") == 0 || strcmp(ToLowerStr(expdata),"off") == 0)
+             {
+             ptr->logaudit = 'n';
              break;
              }
 

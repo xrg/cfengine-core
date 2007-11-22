@@ -504,6 +504,10 @@ No error bars are plotted.
 @item --no-scaling (-n)
 The graphs are not scaled, so that (min,max) is mapped onto the interval
 (0,1).
+
+@item --erasehistory (-E)
+Wipes out the average and variance of the named observation categories from the
+learning database.
 @end table
 
 
