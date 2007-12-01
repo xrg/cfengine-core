@@ -260,8 +260,8 @@ return 0;
  
 void Initialize(int argc,char *argv[])
 
-{ char *sp, *cfargv[CF_MAXARGS];
-  int i, cfargc, seed;
+{ char *sp, **cfargv;
+  int i, j, cfargc, seed;
   struct stat statbuf;
   unsigned char s[16];
   char ebuff[CF_EXPANDSIZE];
@@ -297,9 +297,42 @@ IDClasses();
 /* Everything ends up inside a single argument! Here's the fix      */
 
 cfargc = 1;
-cfargv[0]="cfagent";
 
-for (i = 1; i < argc; i++)
+/* Pass 1: Find how many arguments there are. */
+for (i = 1, j = 1; i < argc; i++)
+   {
+   sp = argv[i];
+   
+   while (*sp != '\0')
+      {
+      while (*sp == ' ' && *sp != '\0') /* Skip to arg */
+         {
+         sp++;
+         }
+      
+      cfargc++;
+      
+      while (*sp != ' ' && *sp != '\0') /* Skip to white space */
+         {
+         sp++;
+         }
+      }
+   }
+
+/* Allocate memory for cfargv. */
+
+cfargv = (char **) malloc(sizeof(char *) * cfargc + 1);
+
+if (!cfargv)
+   {
+   FatalError("cfagent: Out of memory parsing arguments\n");
+   }
+
+/* Pass 2: Parse the arguments. */
+
+cfargv[0] = "cfagent";
+
+for (i = 1, j = 1; i < argc; i++)
    {
    sp = argv[i];
    
@@ -314,7 +347,7 @@ for (i = 1; i < argc; i++)
          sp++;
          }
       
-      cfargv[cfargc++] = sp;
+      cfargv[j++] = sp;
       
       while (*sp != ' ' && *sp != '\0') /* Skip to white space */
          {
@@ -322,65 +355,68 @@ for (i = 1; i < argc; i++)
          }
       }
    }
- 
- VDEFAULTBINSERVER.name = "";
- 
- VEXPIREAFTER = VDEFAULTEXPIREAFTER;
- VIFELAPSED = VDEFAULTIFELAPSED;
- TRAVLINKS = false;
 
- /* XXX Initialize workdir for non privileged users */
+cfargv[j] = NULL;
+ 
+VDEFAULTBINSERVER.name = "";
+ 
+VEXPIREAFTER = VDEFAULTEXPIREAFTER;
+VIFELAPSED = VDEFAULTIFELAPSED;
+TRAVLINKS = false;
 
- strcpy(CFWORKDIR,WORKDIR);
+/* XXX Initialize workdir for non privileged users */
 
- if (getuid() > 0)
-    {
-    char *homedir;
-    if ((homedir = getenv("HOME")) != NULL)
-       {
-       strcpy(CFWORKDIR,homedir);
-       strcat(CFWORKDIR,"/.cfagent");
-       }
-    }
- 
- sprintf(ebuff,"%s/state/cf_procs",CFWORKDIR);
- 
- if (stat(ebuff,&statbuf) == -1)
-    {
-    CreateEmptyFile(ebuff);
-    }
+strcpy(CFWORKDIR,WORKDIR);
 
- sprintf(ebuff,"%s/state/cf_rootprocs",CFWORKDIR);
- 
- if (stat(ebuff,&statbuf) == -1)
-    {
-    CreateEmptyFile(ebuff);
-    }
- 
- sprintf(ebuff,"%s/state/cf_otherprocs",CFWORKDIR);
- 
- if (stat(ebuff,&statbuf) == -1)
-    {
-    CreateEmptyFile(ebuff);
-    }
+if (getuid() > 0)
+   {
+   char *homedir;
+   if ((homedir = getenv("HOME")) != NULL)
+      {
+      strcpy(CFWORKDIR,homedir);
+      strcat(CFWORKDIR,"/.cfagent");
+      }
+   }
 
- strcpy(VLOGDIR,CFWORKDIR); 
- strcpy(VLOCKDIR,VLOGDIR);  /* Same since 2.0.a8 */
- 
- OpenSSL_add_all_algorithms();
- ERR_load_crypto_strings();
- CheckWorkDirectories();
- RandomSeed();
- 
- RAND_bytes(s,16);
- s[15] = '\0';
- seed = ElfHash(s);
- srand48((long)seed);  
- CheckOpts(cfargc,cfargv);
+sprintf(ebuff,"%s/state/cf_procs",CFWORKDIR);
 
- AddInstallable("no_default_route");
- CfenginePort();
- StrCfenginePort();
+if (stat(ebuff,&statbuf) == -1)
+   {
+   CreateEmptyFile(ebuff);
+   }
+
+sprintf(ebuff,"%s/state/cf_rootprocs",CFWORKDIR);
+
+if (stat(ebuff,&statbuf) == -1)
+   {
+   CreateEmptyFile(ebuff);
+   }
+
+sprintf(ebuff,"%s/state/cf_otherprocs",CFWORKDIR);
+
+if (stat(ebuff,&statbuf) == -1)
+   {
+   CreateEmptyFile(ebuff);
+   }
+
+strcpy(VLOGDIR,CFWORKDIR); 
+strcpy(VLOCKDIR,VLOGDIR);  /* Same since 2.0.a8 */
+
+OpenSSL_add_all_algorithms();
+ERR_load_crypto_strings();
+CheckWorkDirectories();
+RandomSeed();
+
+RAND_bytes(s,16);
+s[15] = '\0';
+seed = ElfHash(s);
+srand48((long)seed);  
+CheckOpts(cfargc,cfargv);
+free(cfargv);
+
+AddInstallable("no_default_route");
+CfenginePort();
+StrCfenginePort();
 }
 
 /*******************************************************************/

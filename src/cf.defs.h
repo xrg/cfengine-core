@@ -295,13 +295,12 @@ typedef int clockid_t;
 #define CF_NONCELEN (CF_BUFSIZE/16)
 #define CF_MAXLINKSIZE 256
 #define CF_MAXLINKLEVEL 4
-#define CF_MAXARGS 31
 #define CF_MAXFARGS 8
 #define CF_MAX_IP_LEN 64       /* numerical ip length */
 #define CF_PROCCOLS 16
 #define CF_HASHTABLESIZE 4969 /* prime number */
 #define CF_MACROALPHABET 61    /* a-z, A-Z plus a bit */
-#define CF_MAXSHELLARGS 30
+#define CF_MAXSHELLARGS 64
 #define CF_MAX_SCLICODES 16
 #define CF_SAMEMODE 0
 #define CF_SAME_OWNER ((uid_t)-1)

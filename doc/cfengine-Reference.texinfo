@@ -11437,6 +11437,7 @@ is as follows
  outputdir=@var{directory}
  maxchild=@var{number limit}
  hostnamekeys=@var{true/false}
+ bindtointerface=@var{IP address}
 
  @var{hostname1}            @var{options}
  @var{hostname2}:@var{port} @var{options}

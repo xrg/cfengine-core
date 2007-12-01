@@ -2790,7 +2790,10 @@ assumed that the version is recorded as below:
        Auditing = true
      
 </pre>
-   <!-- ..................................................... -->
+   <p>This variable acts as the global default behaviour and may be
+overriden locally by <code>audit=true/false</code> attributes, where applicable.
+
+<!-- ..................................................... -->
 <!-- SUBSECTION -->
 <!-- ..................................................... -->
 <div class="node">
@@ -6039,6 +6042,9 @@ current file if the file doesn't contain the exact line already.
 in the current line. If the quoted string is not contained
 in the line, it is appended. This may be used for adding
 entries to a list.
+
+     <br><dt><code>Audit </code><var>true/false</var><dd>Local decision about whether this edit stanza will be audited. Requires
+auditing to be on globally for this to have an effect.
 
      <br><dt><code>AutoCreate</code><dd>If this command is listed anywhere in the file action list, cfengine
 will create the named file if it doesn't exist. Normally cfengine issues
@@ -10728,6 +10734,7 @@ is as follows
       outputdir=<var>directory</var>
       maxchild=<var>number limit</var>
       hostnamekeys=<var>true/false</var>
+      bindtointerface=<var>IP address</var>
      
       <var>hostname1</var>            <var>options</var>
       <var>hostname2</var>:<var>port</var> <var>options</var>
