@@ -891,7 +891,7 @@ while (!feof(pp))
       break;
       }
 
-   if (strstr(VBUFF,"trying") && !strstr(VBUFF,"NFS version 2"))
+   if (strstr(VBUFF,"trying") && !strstr(VBUFF,"NFS version 2")&& !strstr(VBUFF, "vers 3"))
       {
       CfLog(cferror,"Aborted because MountFileSystems() went into a retry loop.\n","");
       GOTMOUNTINFO = false;

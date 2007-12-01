@@ -693,6 +693,13 @@ while (!feof(fp))
       CheckAccess(sp);
       continue;
       }
+
+   if (strncmp(line,"bindtointerface",strlen("bindtointerface")) == 0)
+      {
+      sscanf(line,"bindtointerface = %295[^# \n]",BINDINTERFACE);
+      Verbose("Bind interface = %s\n",BINDINTERFACE);
+      continue;
+      }
    
    sscanf(line,"%295s %[^#\n]",buffer,options);
    
