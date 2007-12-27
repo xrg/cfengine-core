@@ -478,7 +478,7 @@ void AppendMiscMount (char *from, char *onto, char * mode,char *opts);
 void AppendIgnore (char *path);
 void InstallPending (enum actions action);
 int EditFileExists (char *file);
-void GetExecOutput (char *command, char *buffer,int useshell);
+int GetExecOutput (char *command, char *buffer,int useshell);
 void InstallEditFile (char *file, char *edit, char *data);
 void AddEditAction (char *file, char *edit, char *data);
 enum editnames EditActionsToCode (char *edit);

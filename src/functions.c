@@ -431,7 +431,6 @@ if (!FuzzyMatchParse(argv[0]))
    return;
    }
 
-
 for (ip = IPADDRESSES; ip != NULL; ip = ip->next)
    {
    Debug("Checking IP Range against iface %s\n",VIPADDRESS);
@@ -443,7 +442,6 @@ for (ip = IPADDRESSES; ip != NULL; ip = ip->next)
       return;
       }
    }
-
 
 Debug("Checking IP Range against RDNS %s\n",VIPADDRESS);
 
@@ -471,9 +469,6 @@ if (!FuzzyHostParse(argv[0],argv[1]))
    strcpy(value,CF_NOCLASS);
    return;
    }
-
-/* VDEFAULTBINSERVER.name is relative domain name */
-/* (see nameinfo.c ~line 145)                     */
 
 Debug("SRDEBUG FuzzyHostParse(%s,%s) succeeded for %s\n",argv[0],argv[1],VUQNAME);
 
@@ -1192,8 +1187,6 @@ void HandleReadTCP(char *args,char *value)
   char *sendstring=argv[2],buffer[CF_BUFSIZE];
   int val = 0, n_read = 0;
   short portnum;
-  struct Item *list = NULL,*ip;
-  FILE *fp;
 
 FunctionArgs(args,argv,4);
  
@@ -2001,7 +1994,7 @@ snprintf(value,CF_BUFSIZE-1,"CF_ASSOCIATIVE_ARRAY%s",args);
 void HandleUserExists(char *args,char *value)
 
 { struct passwd *pw;
-  uid_t uid;
+  uid_t uid = -1;
   char argv[CF_MAXFARGS][CF_EXPANDSIZE];
 
 FunctionArgs(args,argv,1);

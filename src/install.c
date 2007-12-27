@@ -2845,7 +2845,7 @@ return false;
 
 /********************************************************************/
 
-void GetExecOutput(char *command,char *buffer,int useshell)
+int GetExecOutput(char *command,char *buffer,int useshell)
 
 /* Buffer initially contains whole exec string */
 
@@ -2868,7 +2868,7 @@ if (pp == NULL)
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open pipe to command %s\n",command);
    CfLog(cfinform,OUTPUT,"pipe");
-   return;
+   return false;
    }
 
 memset(buffer,0,CF_BUFSIZE);
@@ -2916,6 +2916,7 @@ if (offset > 0)
 Debug("GetExecOutput got: [%s]\n",buffer);
  
 cfpclose(pp);
+return true;
 }
 
 /********************************************************************/
