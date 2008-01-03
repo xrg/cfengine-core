@@ -128,10 +128,7 @@ int IsWildKnownHost (RSA *oldkey,RSA *newkey,char *addr,char *user);
 void AddToKeyDB (RSA *key,char *addr);
 int SafeOpen (char *filename);
 void SafeClose (int fd);
-
-/*
- * HvB
-*/
+int WordHere(char *args, char *pos, char *word);
 
 unsigned find_inet_addr (char *host);
 
@@ -1665,8 +1662,7 @@ while (true && (count < 10))  /* arbitrary check to avoid infinite loop, DoS att
  return false;
 }
 
-
-/**************************************************************/
+/******************************************************************/
 
 void DoExec(struct cfd_connection *conn,char *sendbuffer,char *args)
 
@@ -1689,19 +1685,19 @@ if (GetMacroValue(CONTEXTID,"cfrunCommand") == NULL)
 
 for (sp = args; *sp != '\0'; sp++) /* Blank out -K -f */
    {
-   if ((strncmp(sp,"-K",2) == 0) || (strncmp(sp,"-f",2) == 0))
+   if ((WordHere(args,sp,"-K") == true) || (WordHere(args,sp,"-f") == true))
       {
       *sp = ' ';
       *(sp+1) = ' ';
       }
-   else if (strncmp(sp,"--no-lock",9) == 0)
+   else if (WordHere(args,sp,"--no-lock") == true)
       {
       for (i = 0; i < 9; i++)
          {
          *(sp+i) = ' ';
          }
       }
-   else if (strncmp(sp,"--file",7) == 0)
+   else if (WordHere(args,sp,"--file") == true)
       {
       for (i = 0; i < 7; i++)
          {
@@ -1710,36 +1706,6 @@ for (sp = args; *sp != '\0'; sp++) /* Blank out -K -f */
       }
    }
 
-for (sp = args; *sp != '\0'; sp++) /* Blank out -f */
-   { 
-
-   if (strncmp(sp,"-D",2) == 0)
-      {
-      opt = false;
-      sp+=2;
-      }
-
-   if (strncmp(sp,"--define",8) == 0)
-      {
-      opt = false;
-      sp+=8;
-      }
-
-   switch (*sp)
-      {
-      case '-': opt = true;
-          break;
-      case ' ': opt = false;
-          break;
-      case 'f': if (opt)
-                   {
-                   *sp = 'q'; /* Replace with non-empty char which is defined anyway */
-                   }
-          break;
-      }
-   
-   }
-    
 ExpandVarstring("$(cfrunCommand) --no-splay --inform",ebuff,"");
  
 if (strlen(ebuff)+strlen(args)+6 > CF_BUFSIZE)
@@ -3179,6 +3145,46 @@ if (ap != NULL)
 /***************************************************************/
 /* Level 5                                                     */
 /***************************************************************/
+
+int WordHere(char *args, char *pos, char *word)
+
+    
+/*
+ * Returns true if the current position 'pos' in buffer
+ * 'args' corresponds to the word 'word'.  Words are
+ * separated by spaces.
+ */
+
+{ size_t len;
+
+if (pos < args)
+   {
+   return false;
+   }
+
+len = strlen(word);
+if (strncmp(pos, word, len) != 0)
+   {
+   return false;
+   }
+
+if (pos == args)
+   {
+   return true;
+   }
+else if (*(pos-1) == ' ' &&
+    (pos[len] == ' ' || pos[len] == '\0'))
+   {
+   return true;
+   }
+else
+   {
+   return false;
+   }
+}
+
+
+/**************************************************************/
 
 void RefuseAccess(struct cfd_connection *conn,char *sendbuffer,int size,char *errmesg)
 

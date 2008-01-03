@@ -6,7 +6,7 @@ endif
 
 SUBDIRS = pub src contrib inputs $(DOC_DIR)
 
-EXTRA_DIST = acconfig.h doc/cfengine.8 COPYING ChangeLog INSTALL NEWS README
+EXTRA_DIST = acconfig.h doc/cfengine.8 COPYING ChangeLog INSTALL NEWS README LICENSE
 
 docdir = $(pkgdatadir)
 doc_DATA = README ChangeLog INSTALL NEWS
