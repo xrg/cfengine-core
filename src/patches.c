@@ -247,7 +247,7 @@ return sp;
 char *strsep(char **stringp, const char *delim)
 
 {
-return strtok(stringp,delim);
+return strtok(*stringp,delim);
 }
 
 #endif

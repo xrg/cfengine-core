@@ -2881,7 +2881,6 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
 
       if (ptr->action == pkgaction_remove) 
          {
-         AppendItem(&pending_pkgs,name,NULL);
          PackageList(ptr,name,ptr->pkgmgr,ptr->ver,ptr->cmp,&pending_pkgs);
          }
       else if (ptr->action == pkgaction_upgrade)

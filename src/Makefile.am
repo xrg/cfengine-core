@@ -1,12 +1,11 @@
 AM_CFLAGS = $(GCC_CFLAG) @CFLAGS@  
 AM_YFLAGS = -d
 LEXLIB = @LEXLIB@
-LDADD = libcfengine.la  $(BERKELEY_DB_LDFLAGSD) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LDFLAGS) $(OPENSSL_LIB_LIB)
+LDADD = libcfengine.la $(BERKELEY_DB_LDFLAGSD) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LDFLAGS) $(OPENSSL_LIB_LIB)
 INCLUDES = $(BERKELEY_DB_CFLAGS) $(OPENSSL_LIB_CPPFLAGS)
 AM_LDFLAGS = $(BERKELEY_DB_LDFLAGS) $(OPENSSL_LIB_LDFLAGS) @LDFLAGS@
 
 sbin_PROGRAMS = cfagent cfservd cfrun cfkey cfenvd cfenvgraph cfexecd cfshow cfetool cfetoolgraph
-
 
 #
 # Fix this generically
@@ -89,7 +88,7 @@ libcfengine_la_SOURCES =							\
 	package.c							\
 	scli.c
 
-libcfengine_la_LIBADD = -L../pub -lpub
+#libcfengine_la_LIBADD = -L../pub -lcfpub
 
 cfshow_SOURCES =							\
 	cfshow.c

@@ -60,7 +60,7 @@ am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(sbindir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libcfengine_la_DEPENDENCIES =
+libcfengine_la_LIBADD =
 am_libcfengine_la_OBJECTS = init.lo modules.lo alerts.lo report.lo \
 	client.lo ip.lo ipname.lo instrument.lo process.lo ifconf.lo \
 	image.lo item.lo item-ext.lo item-file.lo 2Dlist.lo globals.lo \
@@ -302,7 +302,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CFLAGS = $(GCC_CFLAG) @CFLAGS@  
 AM_YFLAGS = -d
-LDADD = libcfengine.la  $(BERKELEY_DB_LDFLAGSD) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LDFLAGS) $(OPENSSL_LIB_LIB)
+LDADD = libcfengine.la $(BERKELEY_DB_LDFLAGSD) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LDFLAGS) $(OPENSSL_LIB_LIB)
 INCLUDES = $(BERKELEY_DB_CFLAGS) $(OPENSSL_LIB_CPPFLAGS)
 AM_LDFLAGS = $(BERKELEY_DB_LDFLAGS) $(OPENSSL_LIB_LDFLAGS) @LDFLAGS@
 
@@ -384,7 +384,8 @@ libcfengine_la_SOURCES = \
 	package.c							\
 	scli.c
 
-libcfengine_la_LIBADD = -L../pub -lpub
+
+#libcfengine_la_LIBADD = -L../pub -lcfpub
 cfshow_SOURCES = \
 	cfshow.c
 

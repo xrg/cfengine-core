@@ -309,18 +309,30 @@ int UpgradePackage(struct Package *ptr,char *name, enum pkgmgrs pkgmgr, char* ve
  
 Verbose("Package upgrade for %s: %s\n", PKGMGRTEXT[pkgmgr], name );
 
-PackageList(ptr,name,pkgmgr,version,cmp,&removelist);
-   
-if (RemovePackage(ptr,pkgmgr,&removelist))
+if ((ptr->pkgmgr == pkgmgr_freebsd) || (ptr->pkgmgr == pkgmgr_sun))
    {
-   AppendItem(&addlist, name, NULL);
-   result = InstallPackage(ptr,pkgmgr,&addlist);
+   /* Handle package managers with independant removes/installs */
+
+   PackageList(ptr,name,pkgmgr,version,cmp,&removelist);
+
+   if (RemovePackage(ptr,pkgmgr,&removelist))
+      {
+      AppendItem(&addlist, name, NULL);
+      result = InstallPackage(ptr,pkgmgr,&addlist);
+      }
+   else
+      {
+      CfLog(cfinform,"Package cannot be upgraded because the old version was not removed.\n\n","");
+      AuditLog(ptr->logaudit,ptr->audit,ptr->lineno,"Package not upgraded - another version in the way",CF_FAIL);
+      result = 0;
+      }
    }
 else
    {
-   CfLog(cfinform,"Package cannot be upgraded because the old version was not removed.\n\n","");
-   AuditLog(ptr->logaudit,ptr->audit,ptr->lineno,"Package not upgraded - another version in the way",CF_FAIL);
-   result = 0;
+   /* Handle package managers that do atomic upgrades */
+
+   AppendItem(&addlist, name, NULL);
+   result = InstallPackage(ptr,pkgmgr,&addlist);
    }
 
 DeleteItemList(removelist);
@@ -346,6 +358,16 @@ if (pkglist == NULL)
 
 switch(pkgmgr)
    {
+   case pkgmgr_rpm:
+
+       if (!GetMacroValue(CONTEXTID,"RPMRemoveCommand"))
+          {
+          CfLog(cferror,"RPMRemoveCommand NOT set, using default!\n","");
+          strncpy(rawdelcmd, "/bin/rpm %s", strlen("/bin/rpm --erase ") + 2 );
+          }
+       strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"RPMRemoveCommand"),CF_BUFSIZE);
+       break;
+
    case pkgmgr_dpkg:
 
        if (!GetMacroValue(CONTEXTID,"DPKGRemoveCommand"))
@@ -473,7 +495,7 @@ for (package = pkglist; package != NULL; package = package->next)
       snprintf(OUTPUT,CF_BUFSIZE,"Skipping package %s (reached CF_MAXSHELLARGS)\n", package->name);
       CfLog(cfinform,OUTPUT,"");
       }
-   else if ((int) cmd_ptr - (int) resolvedcmd + strlen(package->name) + 2 > CF_BUFSIZE*2)
+   else if (cmd_ptr - resolvedcmd + strlen(package->name) + 2 > CF_BUFSIZE*2)
       {
       snprintf(OUTPUT,CF_BUFSIZE,"Skipping package %s (max buffer size)\n", package->name);
       CfLog(cfinform,OUTPUT,"");
@@ -534,6 +556,9 @@ int RPMPackageCheck(char *package,char *version,enum cmpsense cmp)
   enum cmpsense result;
   int match = 0;
 
+   char tver1[CF_BUFSIZE];
+   char tver2[CF_BUFSIZE];
+
 if (GetMacroValue(CONTEXTID,"RPMcommand"))
    {
    snprintf(VBUFF,CF_BUFSIZE,"%s -q --queryformat \"%%{EPOCH}:%%{VERSION}-%%{RELEASE}\\n\" %s",GetMacroValue(CONTEXTID,"RPMcommand"),package);
@@ -588,8 +613,9 @@ if (!version[0])
    }
 
 /* Parse the EVR we are looking for once at the start */
-
-ParseEVR(version, &eB, &vB, &rB);
+memset( tver1, 0, CF_BUFSIZE );
+strncpy( tver1, version, CF_BUFSIZE - 1 );
+ParseEVR( tver1, &eB, &vB, &rB);
 
 /* The rule here will be: if any package in the list matches, then the
  * first one to match wins, and we bail out. */
@@ -615,7 +641,10 @@ for (evr = evrlist; evr != NULL; evr=evr->next)
       }
    
    Verbose("RPMCheckPackage(): Trying installed version %s\n", evrstart);
-   ParseEVR(evrstart, &eA, &vA, &rA);
+   memset( tver2, 0, CF_BUFSIZE );
+   strncpy( tver2, evrstart, CF_BUFSIZE - 1 );
+   ParseEVR( tver2, &eA, &vA, &rA);
+
    
    epochA = atol(eA);   /* The above code makes sure we always have this. */
    
@@ -710,9 +739,235 @@ return 0;
 
 int RPMPackageList (char *package, char *version, enum cmpsense cmp, struct Item **pkglist)
 
-{
-return 0; /* not implemented yet */
-}
+ { FILE *pp;
+   struct Item *evrlist = NULL;
+   struct Item *evr;
+   int epochA = 0; /* What is installed.  Assume 0 if we don't get one. */
+   int epochB = 0; /* What we are looking for.  Assume 0 if we don't get one. */
+   const char *eA = NULL; /* What is installed */
+   const char *eB = NULL; /* What we are looking for */
+   const char *vA = NULL; /* What is installed */
+   const char *vB = NULL; /* What we are looking for */
+   const char *rA = NULL; /* What is installed */
+   const char *rB = NULL; /* What we are looking for */
+   enum cmpsense result;
+   int match = 0;
+   int matchcnt = 0;
+   int cmdresult = 0;
+
+   char *tmpp;
+   char line[CF_BUFSIZE];
+   char tver1[CF_BUFSIZE];
+   char tver2[CF_BUFSIZE];
+   char tpack[CF_BUFSIZE];
+
+  Verbose ("RPMPackageList(): Requested version %s %s of %s \n",
+           CMPSENSETEXT[cmp],(version[0] ? version : "ANY"), package );
+
+/* find out whats installed */
+ if (GetMacroValue(CONTEXTID,"RPMcommand"))
+    {
+    snprintf(VBUFF,CF_BUFSIZE,"%s -q --queryformat \"%%{EPOCH}:%%{VERSION}-%%{RELEASE}\\n\" %s",GetMacroValue(CONTEXTID,"RPMcommand"),package);
+    }
+ else
+    {
+    snprintf(VBUFF,CF_BUFSIZE,"/bin/rpm -q --queryformat \"%%{EPOCH}:%%{VERSION}-%%{RELEASE}\\n\" %s", package);
+    }
+
+ if ((pp = cfpopen(VBUFF, "r")) == NULL)
+    {
+    Verbose("Could not execute the RPM command.  Assuming package not installed.\n");
+    return -1;
+    }
+
+ while(!feof(pp))
+    {
+    *line = '\0';
+
+    ReadLine( line, CF_BUFSIZE, pp );
+    Debug("PackageList: read line %s\n", line);
+
+    if (*line != '\0')
+       {
+       AppendItem( &evrlist, line, "" );
+       }
+    }
+
+
+ cmdresult = cfpclose(pp);
+
+ /* Non-zero exit status means that we could not find the package, so
+  * Zero the list and bail. */
+
+ if ( cmdresult != 0 )
+    {
+    DeleteItemList(evrlist);
+    evrlist = NULL;
+    }
+
+ if (evrlist == NULL)
+    {
+/*  this return is okay, we would returned 0 if we had parsed the whole list
+ *  and found no matches
+ */
+    Verbose("RPM Package %s not installed.\n", package);
+    return 0;
+    }
+
+ /* Parse the EVR we are looking for once at the start */
+ memset( tver1, 0, CF_BUFSIZE );
+ strncpy( tver1, version, CF_BUFSIZE - 1 );
+ ParseEVR( tver1, &eB, &vB, &rB);
+
+ /*
+  * The evrlist list contains the lines of output from the
+  * rpm -q --queryformat "%{EPOCH}:%%{VERSION}-%%{RELEASE}\n"
+  * command.  These will be version of requested package installed on
+  * on the system.  In the loop, use the value of result and the ParseEVR
+  * function to determine if the installed package fits the selection
+  * criteria specified in the cfengine config file
+  */
+
+ for (evr = evrlist; evr != NULL; evr=evr->next)
+    {
+    char *evrstart;
+    evrstart = evr->name;
+    result = cmpsense_eq;
+
+    /*
+     * RPM returns the string "(none)" for the epoch if there is none
+     * instead of the number 0.  This will cause ParseEVR() to misinterpret
+     * it as part of the version component, since epochs must be numeric.
+     * If we get "(none)" at the start of the EVR string, we must be careful
+     * to replace it with a 0 and reset evrstart to where the 0 is.  Ugh.
+     */
+
+    if (!strncmp(evrstart, "(none)", strlen("(none)")))
+       {
+       /* We have no Epoch in the installed package, force it to "0". */
+       evrstart = strchr(evrstart, ':') - 1;
+       *evrstart = '0';
+       }
+
+   Verbose("RPMPackageList():  "
+           "Checking installed version %s against requested version %s\n",
+           evrstart, version );
+    memset( tver2, 0, CF_BUFSIZE );
+    strncpy( tver2, evrstart, CF_BUFSIZE - 1 );
+    ParseEVR( tver2, &eA, &vA, &rA);
+
+    epochA = atol(eA);   /* The above code makes sure we always have this. */
+
+    if (eB && *eB) /* the B side is what the user entered.  Better check. */
+       {
+       epochB = atol(eB);
+       }
+
+    /* First try the epoch. */
+
+    if (epochA > epochB)
+       {
+       result = cmpsense_gt;
+       }
+
+    if (epochA < epochB)
+       {
+       result = cmpsense_lt;
+       }
+
+    /* If that did not decide it, try version.  We must *always* have
+     * a version string.  That's just the way it is.*/
+
+    if (result == cmpsense_eq)
+       {
+       switch (rpmvercmp(vA, vB))
+          {
+          case 1:    result = cmpsense_gt;
+              break;
+          case -1:   result = cmpsense_lt;
+              break;
+          }
+       }
+
+    /* if we wind up here, everything rides on the release if both have it.
+     * RPM always stores a release internally in the database, so the A side
+     * will have it.  It's just a matter of whether or not the user cares
+     * about it at this point. */
+
+    if ((result == cmpsense_eq) && (rB && *rB))
+       {
+       switch (rpmvercmp(rA, rB))
+          {
+          case 1:  result = cmpsense_gt;
+              break;
+          case -1: result = cmpsense_lt;
+              break;
+          }
+       }
+
+    Verbose("Comparison result: %s\n",CMPSENSETEXT[result]);
+
+    switch(cmp)
+       {
+       case cmpsense_gt:
+           match = (result == cmpsense_gt);
+           break;
+       case cmpsense_ge:
+           match = (result == cmpsense_gt || result == cmpsense_eq);
+           break;
+       case cmpsense_lt:
+           match = (result == cmpsense_lt);
+           break;
+       case cmpsense_le:
+           match = (result == cmpsense_lt || result == cmpsense_eq);
+           break;
+       case cmpsense_eq:
+           match = (result == cmpsense_eq);
+           break;
+       case cmpsense_ne:
+           match = (result != cmpsense_eq);
+           break;
+       }
+
+    /*
+     * If we find a match, build a string with the package name, version and
+     * release using the approprieate delimiters and put it on the list
+     */
+    if (match)
+       {
+       matchcnt++;
+
+ /*    point to the colon after the epoch and make it a dash for
+       creating the pacakge name with the version and revsion */
+       tmpp = strchr( evrstart, ':' );
+       tmpp[0] = '-';
+
+ /*    concatenate the package name and version-revision */
+       memset( tpack, 0, CF_BUFSIZE );
+       strncpy( tpack, package, CF_BUFSIZE - 1 );
+       strncat( tpack, tmpp, CF_BUFSIZE - 1 - strlen(tpack) );
+
+ /*    append the string with pkgname, version and revision to pkglist */
+       AppendItem( pkglist, tpack, NULL );
+       }
+    }
+
+  Debug("RPMPackageList():  "
+        "Found %d installed version(s) of %s that met match criteria\n",
+         matchcnt, package);
+
+ /* Once we manage to make it out of the loop,
+  * if pkglist is NULL, we did not find a match.
+  */
+ if ( *pkglist == NULL )
+    {
+     return 0;
+    }
+ else
+    {
+     return 1;
+    }
+ }
 
 /*********************************************************************/
 /* Debian                                                            */
@@ -1393,7 +1648,7 @@ int PortagePackageCheck(char *package,char *version,enum cmpsense cmp)
   char *nameptr = NULL;
 
 /* Create a working copy of the name */
-strncpy(pkgname, package, CF_BUFSIZE);
+strncpy(pkgname, package, CF_BUFSIZE - 1);
 
 /* Test if complete package atom was given */
 if (pkgname[0] == '=' || pkgname[0] == '<' || pkgname[0] == '>')
@@ -1454,11 +1709,11 @@ cfpclose(pp);
 
 if (ebuildlist == NULL)
    {
-   Verbose("PortageCheckPackage(): Package %s not installed.\n", nameptr);
+   Verbose("PortagePackageCheck(): Package %s not installed.\n", nameptr);
    return 0;
    }
 
-Verbose("PortageCheckPackage(): Requested %s %s %s\n", nameptr, CMPSENSETEXT[cmp],(version[0] ? version : "ANY"));
+Verbose("PortagePackageCheck(): Requested %s %s %s\n", nameptr, CMPSENSETEXT[cmp],(version[0] ? version : "ANY"));
 
 /* If no version was specified, return successful (found something) */
 if (!version[0])
@@ -1470,7 +1725,7 @@ if (!version[0])
 /* Iterate through all installed versions until match is found */
 for (ebuild = ebuildlist; ebuild != NULL; ebuild=ebuild->next)
    {
-   Verbose("PortageCheckPackage(): Trying installed version %s\n", ebuild->name);
+   Verbose("PortagePackageCheck(): Trying installed version %s\n", ebuild->name);
 
    /* Run comparison tool to do the grunt work */
    snprintf(VBUFF,CF_BUFSIZE,"/usr/bin/qatom -cC %s %s-%s", ebuild->name, nameptr, version);
@@ -1539,8 +1794,168 @@ return 0;
 /*********************************************************************/
 
 int PortagePackageList(char *package, char *version, enum cmpsense cmp, struct Item **pkglist)
-{
-return 0; /* not implemented yet */
+{ FILE *pp;
+  struct Item *ebuildlist = NULL;
+  struct Item *ebuild = NULL;
+  int match = 0;
+  int nummatches = 0;
+  char *result = NULL;
+  char pkgname[CF_BUFSIZE] = {0};
+  char pkgatom[CF_BUFSIZE] = {0};
+  char *nameptr = NULL;
+
+/* Create a working copy of the name */
+strncpy(pkgname, package, CF_BUFSIZE - 1);
+
+/* Test if complete package atom was given */
+if (pkgname[0] == '=' || pkgname[0] == '<' || pkgname[0] == '>')
+   {
+   /* Strip version */
+   nameptr = strchr(pkgname, '/');
+   if (nameptr == NULL)
+      {
+      /* Package does not include category, which is fine */
+      nameptr = pkgname;
+      }
+   while (!xisdigit(nameptr[1]))
+      {
+      nameptr = strchr(++nameptr, '-');
+      if (nameptr == NULL)
+         {
+         snprintf(OUTPUT,CF_BUFSIZE,"Unable to parse version from %s!\n",pkgname);
+         CfLog(cferror,OUTPUT,"");
+         return -1;
+         }
+      }
+   nameptr[0] = '\0';
+
+   /* Strip comparison operator (or rather, seek past) */
+   nameptr = pkgname;
+   while (!xisalpha(nameptr[0]))
+      {
+      ++nameptr;
+      }
+   }
+else
+   {
+   nameptr = pkgname;
+   }
+
+/* Search for installed versions of package */
+snprintf(VBUFF,CF_BUFSIZE,"/usr/bin/qlist -IevC %s",nameptr);
+
+if ((pp = cfpopen(VBUFF, "r")) == NULL)
+   {
+   CfLog(cferror,"Could not execute the qlist command. Is portage-utils installed?\n","");
+   return -1;
+   }
+
+while(!feof(pp))
+   {
+   *VBUFF = '\0';
+
+   ReadLine(VBUFF,CF_BUFSIZE,pp);
+
+   if (*VBUFF != '\0')
+      {
+      AppendItem(&ebuildlist,VBUFF,"");
+      }
+   }
+
+cfpclose(pp);
+
+if (ebuildlist == NULL)
+   {
+   Verbose("PortagePackageList(): Package %s not installed.\n", nameptr);
+   return 0;
+   }
+
+Verbose("PortagePackageList(): Requested %s %s %s\n", nameptr, CMPSENSETEXT[cmp],(version[0] ? version : "ANY"));
+
+/* Iterate through all installed versions and register matches */
+for (ebuild = ebuildlist; ebuild != NULL; ebuild=ebuild->next)
+   {
+   Verbose("PortagePackageList(): Trying installed version %s\n", ebuild->name);
+
+   /* If no version was specified, register ebuild */
+   if (!version[0])
+      {
+      strncpy(pkgatom, "=", CF_BUFSIZE - 1);
+      strncat(pkgatom, ebuild->name, CF_BUFSIZE - 2);
+      snprintf(OUTPUT,CF_BUFSIZE,"Package atom matches: %s\n",pkgatom);
+      AppendItem(pkglist,pkgatom,"");
+      ++nummatches;
+      continue;
+      }
+
+   /* Run comparison tool to do the grunt work */
+   snprintf(VBUFF,CF_BUFSIZE,"/usr/bin/qatom -cC %s %s-%s", ebuild->name, nameptr, version);
+
+   if ((pp = cfpopen(VBUFF, "r")) == NULL)
+      {
+      CfLog(cferror,"Could not execute the qatom command. Is portage-utils installed?\n","");
+      continue;
+      }
+
+   if (feof(pp))
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Internal error!  No output from %s.",VBUFF);
+      CfLog(cferror,OUTPUT,"");
+      continue;
+      }
+
+   /* Format of output is `package < package' */
+   *VBUFF = '\0';
+   ReadLine(VBUFF,CF_BUFSIZE,pp);
+   Verbose("PortagePackageList(): Result %s\n",VBUFF);
+   cfpclose(pp);
+
+   /* Find first space, give up otherwise */
+   result = strchr(VBUFF, ' ');
+   if (result == NULL) continue;
+
+   /* Relocate to right of space (the comparison symbol) */
+   ++result;
+
+   switch(cmp)
+      {
+      case cmpsense_gt:
+         match = (*result == *CMPSENSEOPERAND[cmpsense_gt]);
+         break;
+      case cmpsense_ge:
+         match = (*result == *CMPSENSEOPERAND[cmpsense_gt] || *result == *CMPSENSEOPERAND[cmpsense_eq]);
+         break;
+      case cmpsense_lt:
+         match = (*result == *CMPSENSEOPERAND[cmpsense_lt]);
+         break;
+      case cmpsense_le:
+         match = (*result == *CMPSENSEOPERAND[cmpsense_lt] || *result == *CMPSENSEOPERAND[cmpsense_eq]);
+         break;
+      case cmpsense_eq:
+         match = (*result == *CMPSENSEOPERAND[cmpsense_eq]);
+         break;
+      case cmpsense_ne:
+         match = (*result != *CMPSENSEOPERAND[cmpsense_eq]);
+         break;
+      }
+
+   /* Register ebuild on finding a match */
+   if (match)
+      {
+      strncpy(pkgatom, "=", CF_BUFSIZE - 1);
+      strncat(pkgatom, ebuild->name, CF_BUFSIZE - 2);
+      snprintf(OUTPUT,CF_BUFSIZE,"Package atom matches: %s\n",pkgatom);
+      AppendItem(pkglist,pkgatom,"");
+      ++nummatches;
+      continue;
+      }
+   }
+
+DeleteItemList(ebuildlist);
+
+/* Return whether matches found */
+return nummatches > 0 ? 1 : 0;
+
 }
 
 /*********************************************************************/
@@ -1622,7 +2037,7 @@ return match;
 int FreeBSDPackageList(char *package, char *version, enum cmpsense cmp, struct Item **pkglist)
     
 { FILE *pp;
- int match = 0, result;
+  int match = 0, result;
   char line[CF_BUFSIZE];
   char pkgname[CF_BUFSIZE];
   char *pkgversion;

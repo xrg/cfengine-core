@@ -183,7 +183,7 @@ if (total == 0)
    }
 else
    {   
-   snprintf(OUTPUT,CF_BUFSIZE,"Outcome of version %s: Promises still kept %.0f%%, Promises repaired %.0f%%, Promises not kept %.0f\%\n",
+   snprintf(OUTPUT,CF_BUFSIZE,"Outcome of version %s: Promises observed to be kept %.0f%%, Promises repaired %.0f%%, Promises not repaired %.0f\%\n",
             sp,
             (double)PR_KEPT/total,
             (double)PR_REPAIRED/total,
