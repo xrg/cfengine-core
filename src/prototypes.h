@@ -757,6 +757,7 @@ int linux_fedora_version (void);
 int linux_redhat_version (void);
 int linux_mandrake_version (void);
 int linux_suse_version (void);
+int linux_slackware_version (char *filename);
 int debian_version (void);
 int lsb_version (void);
 char * UnQuote (char *name);

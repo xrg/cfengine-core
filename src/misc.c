@@ -523,11 +523,21 @@ if (stat("/etc/SuSE-release",&statbuf) != -1)
    linux_suse_version();
    }
 
-if (stat("/etc/slackware-release",&statbuf) != -1)
+#define SLACKWARE_ANCIENT_VERSION_FILENAME "/etc/slackware-release"
+#define SLACKWARE_VERSION_FILENAME "/etc/slackware-version"
+if (stat(SLACKWARE_VERSION_FILENAME,&statbuf) != -1)
    {
    Verbose("\nThis appears to be a slackware system.\n");
    AddClassToHeap("slackware");
+   linux_slackware_version(SLACKWARE_VERSION_FILENAME);
    }
+else if (stat(SLACKWARE_ANCIENT_VERSION_FILENAME,&statbuf) != -1)
+   {
+   Verbose("\nThis appears to be an ancient slackware system.\n");
+   AddClassToHeap("slackware");
+   linux_slackware_version(SLACKWARE_ANCIENT_VERSION_FILENAME);
+   }
+
 
 if (stat("/etc/generic-release",&statbuf) != -1)
    {
@@ -956,6 +966,46 @@ if(major != -1 && minor != -1)
    AddClassToHeap(classbuf);
    }
 
+return 0;
+}
+
+int linux_slackware_version(char *filename)
+{
+int major = -1; 
+int minor = -1; 
+int release = -1;
+char classname[CF_MAXVARSIZE] = "";
+FILE *fp;
+
+if ((fp = fopen(filename,"r")) == NULL)
+   {
+   return 1;
+   }
+
+Verbose("Looking for Slackware version...\n");
+switch (fscanf(fp, "Slackware %d.%d.%d", &major, &minor, &release))
+    {
+    case 3:
+        Verbose("This appears to be a Slackware %u.%u.%u system.", major, minor, release);
+        snprintf(classname, CF_MAXVARSIZE, "slackware_%u_%u_%u", major, minor, release);
+        AddClassToHeap(classname);
+        /* Fall-through */
+    case 2:
+        Verbose("This appears to be a Slackware %u.%u system.", major, minor);
+        snprintf(classname, CF_MAXVARSIZE, "slackware_%u_%u", major, minor);
+        AddClassToHeap(classname);
+        /* Fall-through */
+    case 1:
+        Verbose("This appears to be a Slackware %u system.", major);
+        snprintf(classname, CF_MAXVARSIZE, "slackware_%u", major);
+        AddClassToHeap(classname);
+        break;
+    case 0:
+        Verbose("No Slackware version number found.\n");
+        fclose(fp);
+        return 2;
+    }
+fclose(fp);
 return 0;
 }
 
