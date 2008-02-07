@@ -558,6 +558,12 @@ if (stat("/etc/UnitedLinux-release",&statbuf) != -1)
    AddClassToHeap("UnitedLinux");
    }
 
+if (stat("/etc/gentoo-release",&statbuf) != -1)
+   {
+   Verbose("\nThis appears to be a gentoo system.\n");
+   AddClassToHeap("gentoo");
+   }
+
 lsb_version();
 
 #endif
