@@ -3024,7 +3024,7 @@ void AddEditAction(char *file,char *edit,char *data)
 { struct Edit *ptr;
   struct Edlist *top,*new, *ep;
   struct TwoDimList *tp = NULL;
-  char varbuff[CF_EXPANDSIZE], editlistseparator = CF_UNUSED_CHAR;
+  char varbuff[CF_EXPANDSIZE];
   mode_t saved_umask;
   char *sp;
 
@@ -3043,33 +3043,6 @@ if (!IsInstallable(CLASSBUFF))
    return;
    }
 
-/* Search first for the list separator */
-
-for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
-   {
-   ExpandVarstring(file,varbuff,"");
-
-   if (strcmp(ptr->fname,varbuff) == 0)
-      {
-      for (ep = ptr->actions; ep != NULL; ep=ep->next)
-         {
-         if (ep->code == EditSplit)
-            {
-            if (ep->data != NULL)
-               {
-               ptr->split = editlistseparator = *(ep->data);
-               Verbose("Found new editfiles list separator \"%c\"",ptr->split);
-               }
-            else
-               {
-               yyerror("Bad list separator for editfiles entry");
-               }
-            }
-         }
-      }
-   }
-
-
 for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
    {
    ExpandVarstring(file,varbuff,"");
@@ -3077,8 +3050,23 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
    if (strcmp(ptr->fname,varbuff) == 0)
       {
       /* 2D list wrapper start - variable is data */
-      
-      Build2DListFromVarstring(&tp,data,editlistseparator,false);
+
+      if (EditActionsToCode(edit) == EditSplit)
+         {
+         if (data != NULL)
+            {
+            ptr->split = *(data);
+            Verbose("Found new editfiles list separator \"%c\"",ptr->split);
+            return;
+            }
+         else
+            {
+            yyerror("Bad list separator for editfiles entry");
+            return;
+            }
+         }
+               
+      Build2DListFromVarstring(&tp,data,ptr->split,false);
       Set2DList(tp);
       
       for (sp = Get2DListEnt(tp); sp != NULL; sp = Get2DListEnt(tp))
