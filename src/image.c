@@ -337,6 +337,7 @@ for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
             tpat.travlinks = 'n';
             tpat.rmdirs = 'y';
             tpat.searchtype = 'a';
+            tpat.compress = 'n';
             tpat.log = 'd';
             tpat.inform = 'd';
             tpat.next = NULL;

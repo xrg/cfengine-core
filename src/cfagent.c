@@ -322,7 +322,7 @@ for (i = 1, j = 1; i < argc; i++)
 
 /* Allocate memory for cfargv. */
 
-cfargv = (char **) malloc(sizeof(char *) * cfargc + 1);
+cfargv = (char **) malloc(sizeof(char *) * (cfargc + 1));
 
 if (!cfargv)
    {
