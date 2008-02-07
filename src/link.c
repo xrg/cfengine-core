@@ -397,6 +397,7 @@ int LinkFiles(char *from,char *to_tmp,struct Link *lp)
   char stamp[CF_BUFSIZE];
   time_t STAMPNOW;
   STAMPNOW = time((time_t *)NULL);
+  int nofile = false;
       
 memset(to,0,CF_BUFSIZE);
 memset(&ip,0,sizeof(ip));
@@ -469,18 +470,36 @@ else
    strcpy(absto,to);
    }
 
-if (!lp->nofile)
-  {
-  if (stat(absto,&buf) == -1)
-     {
-     return(false);  /* no error warning, since the higher level routine uses this */
-     }
-  }
- 
+Debug("Check for source (kill old=%d)\n",lp->nofile);
+
+if (stat(absto,&buf) == -1)
+   {
+   Debug("The file's destination does not seem to exist.\n");
+   nofile = true;
+   }
+
+if (!ENFORCELINKS && !KILLOLDLINKS && nofile)
+   {
+   Debug("Returning since the destination is absent\n");
+   AddMultipleClasses(lp->elsedef);
+   return false;  /* no error warning, since the higher level routine uses this */   
+   }
+
+if (KILLOLDLINKS && nofile)
+   {
+   KillOldLink(from,lp->defines);      /* Check whether link points somewhere */
+   return true;
+   }
+    
 Debug2("Trying to link %s -> %s (%s)\n",from,to,absto);
+
+/* Move existing object out of way? */
 
 if (lstat(from,&buf) == 0)
    {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Link (%s->%s) exists.\n",from,to_tmp);
+   CfLog(cfverbose,OUTPUT,"");
+       
    if (! S_ISLNK(buf.st_mode) && ! ENFORCELINKS)
       {
       snprintf(OUTPUT,CF_BUFSIZE*2,"Error linking %s -> %s\n",from,to);
@@ -558,6 +577,8 @@ if (lstat(from,&buf) == 0)
       }
    }
 
+/* Finished moving object out of the way */
+
 memset(linkbuf,0,CF_BUFSIZE);
 
 if (readlink(from,linkbuf,CF_BUFSIZE-1) == -1)
@@ -571,8 +592,10 @@ if (readlink(from,linkbuf,CF_BUFSIZE-1) == -1)
       return(true);
       }
    }
- else
+else
    { int off1 = 0, off2 = 0;
+
+   /* Link exists */
    
    DeleteSlash(linkbuf);
    
@@ -612,20 +635,6 @@ if (readlink(from,linkbuf,CF_BUFSIZE-1) == -1)
          CfLog(cfsilent,OUTPUT,"");  
          return(true);
          }
-      }
-   else
-      {
-      snprintf(OUTPUT,CF_BUFSIZE*2,"Link (%s->%s) exists.\n",from,to_tmp);
-      CfLog(cfverbose,OUTPUT,"");
-      
-      if (!lp->nofile)
-         {
-         KillOldLink(from,lp->defines);      /* Check whether link points somewhere */
-         return true;
-         }
-      
-      AddMultipleClasses(lp->elsedef);
-      return(true);
       }
    }
  

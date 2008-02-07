@@ -5956,13 +5956,13 @@ void HandleDeadLinks(char *value)
 {
 if (strcmp(value,"kill") == 0)
    {
-   DEADLINKS = false;
+   DEADLINKS = true;
    return;
    }
 
 if (strcmp(value,"force") == 0)
    {
-   DEADLINKS = true;
+   FORCELINK = 'y';
    return;
    }
  

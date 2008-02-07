@@ -491,7 +491,7 @@ void MakeLinks()     /* <binserver> should expand to a best fit filesys */
   char from[CF_EXPANDSIZE],to[CF_EXPANDSIZE],path[CF_EXPANDSIZE];
   struct Item *ip;
   int matched,varstring;
-  short saveenforce;
+  short saveenforce, savekilloldlinks;
   short savesilent;
   int (*linkfiles)(char *from, char *to,struct Link *ptr);
 
@@ -554,6 +554,9 @@ for (lp = VLINK; lp != NULL; lp = lp->next)
    saveenforce = ENFORCELINKS;
    ENFORCELINKS = ENFORCELINKS || (lp->force == 'y');
    
+   savekilloldlinks = KILLOLDLINKS;
+   KILLOLDLINKS = KILLOLDLINKS || lp->nofile;
+
    savesilent = SILENT;
    SILENT = SILENT || lp->silent;
 
@@ -583,6 +586,7 @@ for (lp = VLINK; lp != NULL; lp = lp->next)
       }
 
    ENFORCELINKS = saveenforce;
+   KILLOLDLINKS = savekilloldlinks;
    SILENT = savesilent;
 
    ResetOutputRoute('d','d');
