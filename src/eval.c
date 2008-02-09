@@ -786,6 +786,8 @@ while(*sp != '\0')
 
    Debug4("Checking OR atom (%s)?\n",atom);
 
+   CheckCommonErrors(atom);
+
    if (IsItemIn(VNEGHEAP,atom))
       {
       if (negation)
@@ -1046,9 +1048,16 @@ switch (ACTION)
 if (INSTALLALL)
    {
    return true;
-    }
+   }
 else
-    {
-    return false;
-    }
+   {
+   return false;
+   }
+}
+
+/****************************************************************/
+
+void CheckCommonErrors(char *atom)
+
+{
 }

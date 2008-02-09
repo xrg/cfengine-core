@@ -360,40 +360,52 @@ switch(pkgmgr)
    {
    case pkgmgr_rpm:
 
-       if (!GetMacroValue(CONTEXTID,"RPMRemoveCommand"))
-          {
-          CfLog(cferror,"RPMRemoveCommand NOT set, using default!\n","");
-          strncpy(rawdelcmd, "/bin/rpm %s", strlen("/bin/rpm --erase ") + 2 );
-          }
-       strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"RPMRemoveCommand"),CF_BUFSIZE);
-       break;
+      if (!GetMacroValue(CONTEXTID,"RPMRemoveCommand"))
+         {
+         CfLog(cferror,"RPMRemoveCommand NOT set, using default!\n","");
+         strncpy(rawdelcmd, "/bin/rpm %s", CF_BUFSIZE - 1);
+         }
+      strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"RPMRemoveCommand"), CF_BUFSIZE - 1);
+      break;
 
    case pkgmgr_dpkg:
 
-       if (!GetMacroValue(CONTEXTID,"DPKGRemoveCommand"))
-          {
-          CfLog(cferror,"DPKGRemoveCommand NOT Set.  Package Removal Not Possible!\n","");
-          return 0;
-          }
-       strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"DPKGRemoveCommand"),CF_BUFSIZE);
-       break;
-       
+      if (!GetMacroValue(CONTEXTID,"DPKGRemoveCommand"))
+         {
+         CfLog(cferror,"DPKGRemoveCommand NOT Set.  Package Removal Not Possible!\n","");
+         return 0;
+         }
+      strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"DPKGRemoveCommand"), CF_BUFSIZE - 1);
+      break;
+
    case pkgmgr_freebsd:
 
-       if (!GetMacroValue(CONTEXTID,"FreeBSDRemoveCommand"))
-          {
-          strncpy(rawdelcmd, "/usr/sbin/pkg_delete %s", 23 );
-          }
-       else
-          {
-          strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"FreeBSDRemoveCommand"),CF_BUFSIZE);
-          }
-       break;
-       
-      default:
-          CfLog(cferror,"RemovePackage: Package removal not yet implemented for this package manager.\n","p");
-          AuditLog(ptr->logaudit,ptr->audit,ptr->lineno,"No support for package removal",CF_NOP);
-          break;
+      if (!GetMacroValue(CONTEXTID,"FreeBSDRemoveCommand"))
+         {
+         strncpy(rawdelcmd, "/usr/sbin/pkg_delete %s", CF_BUFSIZE - 1);
+         }
+      else
+         {
+         strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"FreeBSDRemoveCommand"), CF_BUFSIZE - 1);
+         }
+      break;
+
+   case pkgmgr_portage:
+
+      if (!GetMacroValue(CONTEXTID,"PortageRemoveCommand"))
+         {
+         strncpy(rawdelcmd, "/usr/bin/emerge -C %s", CF_BUFSIZE - 1);
+         }
+      else
+         {
+         strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"PortageRemoveCommand"), CF_BUFSIZE - 1);
+         }
+      break;
+
+   default:
+      CfLog(cferror,"RemovePackage: Package removal not yet implemented for this package manager.\n","p");
+      AuditLog(ptr->logaudit,ptr->audit,ptr->lineno,"No support for package removal",CF_NOP);
+      break;
    }
 
 

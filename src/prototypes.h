@@ -328,6 +328,7 @@ int CountEvalAtoms (char *class);
 enum actions ActionStringToCode  (char *str);
 int IsBracketed (char *s);
 void DeleteClassesFromContext  (char *s);
+void CheckCommonErrors(char *s);
 
 /* filedir.c */
 
