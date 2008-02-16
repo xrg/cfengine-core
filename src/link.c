@@ -636,6 +636,8 @@ else
          return(true);
          }
       }
+
+   return true;
    }
  
 return DoLink(from,to,lp->defines);
