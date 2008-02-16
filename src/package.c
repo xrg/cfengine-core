@@ -1022,7 +1022,11 @@ if (cfpclose (pp) != 0)
 /* check what version is installed on the system (if any) */
 snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/apt-cache policy %s", package);
 
-if ((pp = cfpopen (VBUFF, "r")) == NULL)
+/*
+ * HvB: cfopen to cfopen_sh, fix bug for packages without version number
+*/
+
+if ((pp = cfpopen_sh(VBUFF, "r")) == NULL)
    {
    Verbose ("Could not execute APT-command (apt-cache policy).\n");
    return 0;

@@ -187,7 +187,7 @@ if (stat(VBUFF,&statbuf) == -1)
    snprintf(VBUFF,CF_BUFSIZE,"%s/ppkeys/test",VLOCKDIR);
    MakeDirectoriesFor(VBUFF,'n');
    snprintf(VBUFF,CF_BUFSIZE,"%s/ppkeys",VLOCKDIR); 
-   chmod(VBUFF,(mode_t)0700); /* Locks must be immutable to others */    
+   chmod(VBUFF,(mode_t)0700); /* Keys must be immutable to others */
    }
 else
    {
@@ -204,10 +204,14 @@ if (chown(VLOCKDIR,getuid(),getgid()) == -1)
    snprintf(OUTPUT,CF_BUFSIZE,"Unable to set owner on %s to %d.%d",VLOCKDIR,getuid(),getgid());
    CfLog(cferror,OUTPUT,"chown");
    }
-
-chmod(VLOCKDIR,(mode_t)0755); /* Locks must be immutable to others */
+ 
+/* Locks must be immutable to others */
+ if (stat(VLOCKDIR,&statbuf) != -1)
+   {
+     /* change permissions go-w */
+     chmod(VLOCKDIR,(mode_t)(statbuf.st_mode & ~022));
+   }
 }
-
 
 /**********************************************************************/
 
