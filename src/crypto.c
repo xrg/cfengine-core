@@ -82,7 +82,7 @@ void LoadSecretKeys()
 if ((fp = fopen(CFPRIVKEYFILE,"r")) == NULL)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Couldn't find a private key (%s) - use cfkey to get one",CFPRIVKEYFILE);
-   CfLog(cferror,OUTPUT,"open");
+   CfLog(cfinform,OUTPUT,"open");
    return;
    }
  
