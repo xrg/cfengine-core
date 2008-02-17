@@ -3065,7 +3065,7 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
             return;
             }
          }
-               
+
       Build2DListFromVarstring(&tp,data,ptr->split,false);
       Set2DList(tp);
       
@@ -3087,7 +3087,6 @@ for (ptr = VEDITLIST; ptr != NULL; ptr=ptr->next)
                }
             top->next = new;
             }
-
                   
          if ((new->code = EditActionsToCode(edit)) == NoEdit)
             {

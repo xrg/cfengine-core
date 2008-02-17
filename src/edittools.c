@@ -1985,7 +1985,7 @@ while (ep != NULL)
           if (strcmp(expdata,search) == 0)
              {
              Verbose("Search and replace patterns are identical in binary edit %s\n",filename);
-             continue;
+             break;
              }
           
           if (BinaryReplaceRegex(memseg,statbuf.st_size,search,expdata,filename))

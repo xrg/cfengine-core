@@ -940,6 +940,12 @@ struct Item *SplitVarstring(char *string)
   
 Debug("SplitVarstring([%s])\n",string);
 
+if (strlen(string) == 0)
+   {
+   AppendItem(&liststart,string,NULL);
+   return liststart;
+   }
+
 for (sp = string; (*sp != '\0') ; sp++,i++)
    {
    var[0] = '\0';
