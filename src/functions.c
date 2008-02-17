@@ -1201,6 +1201,12 @@ if (val > CF_BUFSIZE-1)
 
 Debug("Want to read %d bytes from port %d at %s\n",val,portnum,hostnameip);
 
+if (PARSEONLY || QUERYVARS)
+   {
+   Verbose("Not attempting TCP connection for parse-only or query-vars\n");
+   return;
+   }
+
 CONN = NewAgentConn();
 
 if (!RemoteConnect(hostnameip,'n',portnum,port))
