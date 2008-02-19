@@ -69,7 +69,7 @@ char *Get2DListEnt(struct TwoDimList *list)
 
    /* return a path string in static data, like getent in NIS */
 
-{ static char entry[CF_BUFSIZE];
+{ static char entry[CF_EXPANDSIZE];
   struct TwoDimList *tp;
   char seps[2];
 
@@ -86,7 +86,14 @@ for (tp = list; tp != NULL; tp=tp->next)
    {
    if (tp->current != NULL)
       {
-      strcat(entry,(tp->current)->name);
+      if (strlen(entry)+strlen((tp->current)->name) < CF_EXPANDSIZE - CF_BUFFERMARGIN)
+         {
+         strcat(entry,(tp->current)->name);
+         }
+      else
+         {
+         FatalError("Buffer overflow during variable expansion");
+         }
       }
    }
 

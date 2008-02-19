@@ -1109,7 +1109,6 @@ void AnalyzeArrival(char *arrival)
 { char src[CF_BUFSIZE],dest[CF_BUFSIZE], flag = '.';
   
 src[0] = dest[0] = '\0';
-    
  
 if (strstr(arrival,"listening"))
    {
