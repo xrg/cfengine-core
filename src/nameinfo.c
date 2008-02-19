@@ -304,7 +304,7 @@ else
 
 void GetInterfaceInfo(void)
 
-{ int fd,len,i,j;
+{ int fd,len,i,j,first_address = true;
   struct ifreq ifbuf[CF_IFREQ],ifr, *ifp;
   struct ifconf list;
   struct sockaddr_in *sin;
@@ -314,7 +314,6 @@ void GetInterfaceInfo(void)
   char name[CF_BUFSIZE];
 
 Debug("GetInterfaceInfo()\n");
-
 
 if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
    {
@@ -366,8 +365,7 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
          return;
          }
 
-      /* Used to check if interface was "up"
-  if ((ifr.ifr_flags & IFF_UP) && !(ifr.ifr_flags & IFF_LOOPBACK))
+      /* Used to check if interface was "up" if ((ifr.ifr_flags & IFF_UP) && !(ifr.ifr_flags & IFF_LOOPBACK))
          Now check whether it is configured ...
       */
       
@@ -397,7 +395,6 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
                      }
                   }
                }               
-
             }
          
          /* Old style compat */
@@ -409,7 +406,6 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
             }
          *sp = '\0';
          AddClassToHeap(CanonifyName(ip));
-         
             
          /* New style classes */
          strcpy(ip,"ipv4_");
@@ -427,19 +423,23 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
 
          /* Matching variables */
 
-         strcpy(ip,inet_ntoa(sin->sin_addr));
-         snprintf(name,CF_MAXVARSIZE-1,"ipv4[%s]",CanonifyName(ifp->ifr_name));
-         AddMacroValue(CONTEXTID,name,ip);
-
-         i = 3;
-         
-         for (sp = ip+strlen(ip)-1; (sp > ip); sp--)
+         if (first_address)
             {
-            if (*sp == '.')
+            first_address = false;
+            strcpy(ip,inet_ntoa(sin->sin_addr));
+            snprintf(name,CF_MAXVARSIZE-1,"ipv4[%s]",CanonifyName(ifp->ifr_name));
+            AddMacroValue(CONTEXTID,name,ip);
+            
+            i = 3;
+            
+            for (sp = ip+strlen(ip)-1; (sp > ip); sp--)
                {
-               *sp = '\0';
-               snprintf(name,CF_MAXVARSIZE-1,"ipv4_%d[%s]",i--,CanonifyName(ifp->ifr_name));
-               AddMacroValue(CONTEXTID,name,ip);
+               if (*sp == '.')
+                  {
+                  *sp = '\0';
+                  snprintf(name,CF_MAXVARSIZE-1,"ipv4_%d[%s]",i--,CanonifyName(ifp->ifr_name));
+                  AddMacroValue(CONTEXTID,name,ip);
+                  }
                }
             }         
          }
@@ -537,8 +537,7 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
          return;
          }
 
-      /* Used to check if interface was "up"
-  if ((ifr.ifr_flags & IFF_UP) && !(ifr.ifr_flags & IFF_LOOPBACK))
+      /* Used to check if interface was "up" if ((ifr.ifr_flags & IFF_UP) && !(ifr.ifr_flags & IFF_LOOPBACK))
          Now check whether it is configured ...
       */
       
