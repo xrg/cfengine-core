@@ -123,7 +123,7 @@ if (sp = strchr(varstring,sep))
    {
    if (sp == varstring || (sp > varstring && *(sp-1) != '\\'))
       {
-      snprintf(OUTPUT,CF_BUFSIZE,"Warning: varstring \"%s\" contains the list iterator \'%c\' - you should escape this!",varstring,sep);
+      snprintf(OUTPUT,CF_BUFSIZE,"Warning: varstring \"%s\" contains the list iterator \'%c\' - you should escape these close to non-separator characters so they don't get lost! (e.g. /bin/echo\\%c )",varstring,sep,sep);
       CfLog(cferror,OUTPUT,"");
       }
    }
@@ -133,6 +133,7 @@ basis = SplitVarstring(varstring);
 for (ip = basis; ip != NULL; ip=ip->next)
    {
    /* Expand the list variables in each slot */
+   
    AppendTwoDimItem(TwoDimlist,SplitString(ip->name,sep));
    }
 
@@ -274,7 +275,7 @@ void AppendTwoDimItem(struct TwoDimList **liststart,struct Item *itemlist)
 
 { struct TwoDimList *ip, *lp;
 
-Debug("\nAppendTwoDimItem()\n\n");
+ Debug("\nAppendTwoDimItem()\n");
 
 if (liststart == NULL)
    {
