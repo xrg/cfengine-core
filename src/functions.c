@@ -550,7 +550,13 @@ if (ACTION != control)
    {
    yyerror("Use of Exec[Shell]Result(s) outside of variable assignment");
    }
- 
+
+if (PARSEONLY || QUERYVARS)
+   {
+   Verbose("Not executing Exec[Shell]Result for parse-only or query-vars\n");
+   return;
+   }
+
 if (*argv[0] == '/')
    {
    strncpy(command,argv[0],CF_MAXVARSIZE);
