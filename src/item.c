@@ -934,7 +934,7 @@ if (isv4)
       }
    }
 
-#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+#if defined(HAVE_GETADDRINFO)
 if (isv6)
    {
    struct sockaddr_in6 addr1,addr2;

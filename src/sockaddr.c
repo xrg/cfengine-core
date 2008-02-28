@@ -52,7 +52,7 @@
 char *sockaddr_ntop(struct sockaddr *sa)
 
 { 
-#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+#if defined(HAVE_GETADDRINFO)
  static char addrbuf[INET6_ADDRSTRLEN];
  void *addr;
 #else
@@ -74,7 +74,7 @@ switch (sa->sa_family)
        break;
 #endif
 
-#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+#if defined(HAVE_GETADDRINFO)
    case AF_INET6:
        Debug("IPV6 address\n");
        addr = &((struct sockaddr_in6 *)sa)->sin6_addr;
@@ -109,7 +109,7 @@ return addrbuf;
 void *sockaddr_pton(int af,void *src)
 
 { int err;
-#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+#if defined(HAVE_GETADDRINFO)
   static struct sockaddr_in6 adr6;
 #endif
   static struct sockaddr_in adr; 
@@ -123,7 +123,7 @@ switch (af)
        Debug("Coded ipv4 %s\n",sockaddr_ntop((struct sockaddr *)&adr));
        return (void *)&adr;
        
-#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+#if defined(HAVE_GETADDRINFO)
    case AF_INET6:
        memset(&adr6,0,sizeof(adr6)); 
        adr6.sin6_family = AF_INET6;

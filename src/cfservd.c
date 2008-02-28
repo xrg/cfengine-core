@@ -552,7 +552,7 @@ void StartServer(int argc,char **argv)
   struct timeval timeout;
   int ret_val;
 
-#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+#if defined(HAVE_GETADDRINFO)
   int addrlen=sizeof(struct sockaddr_in6);
   struct sockaddr_in6 cin;
 #else
@@ -757,7 +757,7 @@ int OpenReceiverChannel()
   char *ptr = NULL;
 
   struct linger cflinger;
-#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+#if defined(HAVE_GETADDRINFO)
     struct addrinfo query,*response,*ap;
 #else
     struct sockaddr_in sin;
@@ -766,7 +766,7 @@ int OpenReceiverChannel()
 cflinger.l_onoff = 1;
 cflinger.l_linger = 60;
 
-#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+#if defined(HAVE_GETADDRINFO)
   
 memset(&query,0,sizeof(struct addrinfo));
 
@@ -1810,7 +1810,7 @@ int VerifyConnection(struct cfd_connection *conn,char buf[CF_BUFSIZE])
   char dns_assert[CF_MAXVARSIZE],ip_assert[CF_MAXVARSIZE];
   int matched = false;
   struct passwd *pw;
-#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+#if defined(HAVE_GETADDRINFO)
   struct addrinfo query, *response=NULL, *ap;
   int err;
 #else
@@ -1888,7 +1888,7 @@ Debug("Attempting to verify honesty by looking up hostname (%s)\n",dns_assert);
 
 /* Do a reverse DNS lookup, like tcp wrappers to see if hostname matches IP */
  
-#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+#if defined(HAVE_GETADDRINFO)
 
  Debug("Using v6 compatible lookup...\n"); 
 

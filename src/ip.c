@@ -40,7 +40,7 @@ int RemoteConnect(char *host,char forceipv4,short oldport, char *newport)
 
 { int err;
 
-#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+#if defined(HAVE_GETADDRINFO)
  
 if (forceipv4 == 'n')
    {

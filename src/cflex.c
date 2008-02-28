@@ -345,6 +345,9 @@ FILE *yyin = (FILE *) 0, *yyout = (FILE *) 0;
 typedef int yy_state_type;
 
 extern int yylineno;
+
+int yylineno = 1;
+
 extern char *yytext;
 #define yytext_ptr yytext
 
@@ -3229,7 +3232,7 @@ char *yytext;
   /* Note the %o %a declarations to allow more internal workspace */
 
 
-#line 3233 "lex.yy.c"
+#line 3236 "lex.yy.c"
 
 #define INITIAL 0
 #define INCONTROL 1
@@ -3390,7 +3393,7 @@ YY_DECL
 
 
 
-#line 3394 "lex.yy.c"
+#line 3397 "lex.yy.c"
 
 	if ( !(yy_init) )
 		{
@@ -4019,7 +4022,7 @@ YY_RULE_SETUP
 #line 520 "cflex.l"
 ECHO;
 	YY_BREAK
-#line 4023 "lex.yy.c"
+#line 4026 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(INCONTROL):
 case YY_STATE_EOF(BRACELIST):
@@ -4429,7 +4432,7 @@ static int yy_get_next_buffer (void)
 				case EOB_ACT_END_OF_FILE:
 					{
 					if ( yywrap( ) )
-						return EOF;
+						return 0;
 
 					if ( ! (yy_did_buffer_switch_on_eof) )
 						YY_NEW_FILE;
@@ -4833,6 +4836,15 @@ static void yy_fatal_error (yyconst char* msg )
 
 /* Accessor  methods (get/set functions) to struct members. */
 
+/** Get the current line number.
+ * 
+ */
+int yyget_lineno  (void)
+{
+        
+    return yylineno;
+}
+
 /** Get the input stream.
  * 
  */
@@ -4864,6 +4876,16 @@ int yyget_leng  (void)
 char *yyget_text  (void)
 {
         return yytext;
+}
+
+/** Set the current line number.
+ * @param line_number
+ * 
+ */
+void yyset_lineno (int  line_number )
+{
+    
+    yylineno = line_number;
 }
 
 /** Set the input stream. This does not discard the current

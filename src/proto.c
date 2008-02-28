@@ -69,7 +69,7 @@ int IdentifyForVerification(int sd,char *localip,int family)
   int len,err;
   struct passwd *user_ptr;
   char *uname;
-#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+#if defined(HAVE_GETADDRINFO)
   char myaddr[256]; /* Compilation trick for systems that don't know ipv6 */
 #else
   struct sockaddr_in myaddr;
@@ -96,7 +96,7 @@ if (!SKIPIDENTIFY)
       {
       case AF_INET: len = sizeof(struct sockaddr_in);
           break;
-#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+#if defined(HAVE_GETADDRINFO)
       case AF_INET6: len = sizeof(struct sockaddr_in6);
           break;
 #endif
@@ -114,7 +114,7 @@ if (!SKIPIDENTIFY)
    
    Debug("Identifying this agent as %s i.e. %s, with signature %d\n",localip,VFQNAME,CFSIGNATURE);
    
-#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+#if defined(HAVE_GETADDRINFO)
    
    if ((err=getnameinfo((struct sockaddr *)&myaddr,len,dnsname,CF_MAXVARSIZE,NULL,0,0)) != 0)
       {

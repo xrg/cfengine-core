@@ -58,7 +58,7 @@ char *Hostname2IPString(char *hostname)
 { static char ipbuffer[CF_SMALLBUF];
   int err;
 
-#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+#if defined(HAVE_GETADDRINFO)
 
  struct addrinfo query, *response, *ap;
 
@@ -115,7 +115,7 @@ char *IPString2Hostname(char *ipaddress)
 { static char hostbuffer[MAXHOSTNAMELEN];
   int err;
 
-#if defined(HAVE_GETADDRINFO) && !defined(DARWIN)
+#if defined(HAVE_GETADDRINFO)
 
   struct addrinfo query, *response, *ap;
 
