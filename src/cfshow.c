@@ -367,7 +367,7 @@ if (HTML)
 
 if (XML)
    {
-   printf("<?xml version=\"1.0\"?>\n");
+   printf("<?xml version=\"1.0\"?>\n<output>\n");
    }
 
 /* Acquire a cursor for the database. */
@@ -477,6 +477,11 @@ if (HTML)
    printf("</table>");
    }
 
+if (XML)
+   {
+   printf("</output>");
+   }
+
 dbcp->c_close(dbcp);
 dbp->close(dbp,0);
 }
@@ -538,7 +543,7 @@ if (HTML)
 
 if (XML)
    {
-   printf("<?xml version=\"1.0\"?>\n");
+   printf("<?xml version=\"1.0\"?>\n<output>\n");
    }
 
  /* Walk through the database and print out the key/data pairs. */
@@ -614,6 +619,11 @@ if (HTML)
    printf("</table>");
    }
 
+if (XML)
+   {
+   printf("</output>");
+   }
+
 dbcp->c_close(dbcp);
 dbp->close(dbp,0);
 }
@@ -676,7 +686,7 @@ if (HTML)
 
 if (XML)
    {
-   printf("<?xml version=\"1.0\"?>\n");
+   printf("<?xml version=\"1.0\"?>\n<output>\n");
    }
 
  /* Walk through the database and print out the key/data pairs. */
@@ -750,6 +760,11 @@ if (HTML)
    printf("</table>");
    }
 
+if (XML)
+   {
+   printf("</output>");
+   }
+
 dbcp->c_close(dbcp);
 dbp->close(dbp,0);
 }
@@ -795,7 +810,7 @@ if (HTML)
 
 if (XML)
    {
-   printf("<?xml version=\"1.0\"?>\n");
+   printf("<?xml version=\"1.0\"?>\n<output>\n");
    }
 
 /* Acquire a cursor for the database. */
@@ -862,7 +877,12 @@ if (HTML)
    {
    printf("</table>");
    }
- 
+
+if (XML)
+   {
+   printf("</output>");
+   }
+
 dbcp->c_close(dbcp);
 dbp->close(dbp,0);
 }
@@ -908,7 +928,7 @@ if (HTML)
 
 if (XML)
    {
-   printf("<?xml version=\"1.0\"?>\n");
+   printf("<?xml version=\"1.0\"?>\n<output>\n");
    }
 
 /* Acquire a cursor for the database. */
@@ -995,7 +1015,12 @@ if (HTML)
    {
    printf("</table>");
    }
- 
+
+if (XML)
+   {
+   printf("</output>");
+   } 
+
 dbcp->c_close(dbcp);
 dbp->close(dbp,0);
 }
@@ -1063,7 +1088,7 @@ if (HTML)
 
 if (XML)
    {
-   printf("<?xml version=\"1.0\"?>\n");
+   printf("<?xml version=\"1.0\"?>\n<output>\n");
    }
 
  /* Walk through the database and print out the key/data pairs. */
@@ -1156,6 +1181,11 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
 if (HTML)
    {
    printf("</table>");
+   }
+
+if (XML)
+   {
+   printf("</output>");
    }
 
 dbcp->c_close(dbcp);
