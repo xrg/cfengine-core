@@ -479,7 +479,7 @@ if (HTML)
 
 if (XML)
    {
-   printf("</output>");
+   printf("</output>\n");
    }
 
 dbcp->c_close(dbcp);
@@ -621,7 +621,7 @@ if (HTML)
 
 if (XML)
    {
-   printf("</output>");
+   printf("</output>\n");
    }
 
 dbcp->c_close(dbcp);
@@ -762,7 +762,7 @@ if (HTML)
 
 if (XML)
    {
-   printf("</output>");
+   printf("</output>\n");
    }
 
 dbcp->c_close(dbcp);
@@ -880,7 +880,7 @@ if (HTML)
 
 if (XML)
    {
-   printf("</output>");
+   printf("</output>\n");
    }
 
 dbcp->c_close(dbcp);
@@ -1018,7 +1018,7 @@ if (HTML)
 
 if (XML)
    {
-   printf("</output>");
+   printf("</output>\n");
    } 
 
 dbcp->c_close(dbcp);
@@ -1185,7 +1185,7 @@ if (HTML)
 
 if (XML)
    {
-   printf("</output>");
+   printf("</output>\n");
    }
 
 dbcp->c_close(dbcp);
