@@ -1307,7 +1307,9 @@ cfpclose(pp);
 
 snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_users",CFWORKDIR);
 SaveItemList(list,VBUFF,"none");
- 
+
+DeleteItemList(list);
+
 Verbose("(Users,root,other) = (%d,%d,%d)\n",THIS[ob_users],THIS[ob_rootprocs],THIS[ob_otherprocs]);
 }
 
