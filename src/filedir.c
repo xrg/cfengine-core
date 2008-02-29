@@ -213,21 +213,28 @@ if (S_ISDIR(dstat->st_mode))
       return;
       }
 
-   Debug("Directory...fixing x bits\n");
-
-   if (newperm & S_IRUSR)
+   if (ptr->rxdirs != 'n')
       {
-      newperm  |= S_IXUSR;
+      Debug("Directory...fixing x bits\n");
+      
+      if (newperm & S_IRUSR)
+         {
+         newperm  |= S_IXUSR;
+         }
+      
+      if (newperm & S_IRGRP)
+         {
+         newperm |= S_IXGRP;
+         }
+      
+      if (newperm & S_IROTH)
+         {
+         newperm |= S_IXOTH;
+         }
       }
-
-   if (newperm & S_IRGRP)
+   else
       {
-      newperm |= S_IXGRP;
-      }
-
-   if (newperm & S_IROTH)
-      {
-      newperm |= S_IXOTH;
+      Verbose("NB: rxdirs is set to false - x for r bits not checked\n");
       }
    }
 

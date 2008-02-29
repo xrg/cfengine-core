@@ -444,6 +444,7 @@ extern short NOHARDCLASSES;
 extern short NOSPLAY;
 extern short DONESPLAY;
 extern char XDEV;
+extern char RXDIRS;
 extern char TYPECHECK;
 extern char SCAN;
 

@@ -794,7 +794,8 @@ char *OBS[CF_OBSERVABLES][2] =
   PRIVATE char NOABSPATH = 'n';
   PRIVATE char CHKROOT = 'n';
   PRIVATE char TIDYDIRS = 'n';
-  PRIVATE char XDEV = false;
+  PRIVATE char XDEV = 'n';
+  PRIVATE char RXDIRS = 'y';
   PRIVATE char IMAGEBACKUP='y';
   PRIVATE char TRUSTKEY = 'n';
   PRIVATE char PRESERVETIMES = 'n';
@@ -980,6 +981,7 @@ char *OBS[CF_OBSERVABLES][2] =
      "cmp",
      "pkgmgr",
      "xdev",
+     "rxdirs",
      "returnvars",
      "returnclasses",
      "sendclasses",

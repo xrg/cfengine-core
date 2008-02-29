@@ -631,6 +631,8 @@ switch(GetCommAttribute(item))
                    break;
    case cfxdev:    HandleCharSwitch("xdev",value,&XDEV);
                    break;
+   case cfrxdirs:  HandleCharSwitch("rxdirs",value,&RXDIRS);
+                   break;
    case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
                    break;
    case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
@@ -1141,6 +1143,8 @@ switch(GetCommAttribute(item))
    case cfifelap:  HandleIntSwitch("ifelapsed",value,&PIFELAPSED,0,999999);
                    break;
    case cfexpaft:  HandleIntSwitch("expireafter",value,&PEXPIREAFTER,0,999999);
+                   break;
+   case cfrxdirs:  HandleCharSwitch("rxdirs",value,&RXDIRS);
                    break;
 
    default:        yyerror("Illegal directory attribute");
@@ -4859,6 +4863,7 @@ for (spl = Get2DListEnt(tp); spl != NULL; spl = Get2DListEnt(tp))
    ptr->next = NULL;
    ptr->log = LOGP;
    ptr->xdev = XDEV;
+   ptr->rxdirs = RXDIRS;
    ptr->inform = INFORMP;
    ptr->logaudit = AUDITP;
    ptr->checksum = chksum;

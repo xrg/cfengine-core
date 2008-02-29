@@ -914,6 +914,7 @@ enum commattr  /* See COMMATTRIBUTES[] in globals.c  for matching entry */
    cfcmp,
    cfpkgmgr,
    cfxdev,
+   cfrxdirs,
    cfretvars,
    cfretclasses,
    cfsendclasses,
@@ -1691,6 +1692,7 @@ struct File
    char   inform;
    char   logaudit;
    char   xdev;
+   char   rxdirs;
    int    ifelapsed;
    int    expireafter;
    struct Audit *audit;
