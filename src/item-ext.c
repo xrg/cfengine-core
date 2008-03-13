@@ -963,6 +963,8 @@ int UnCommentItemMatching(struct Item **list,char *string,char *comm,char *end)
   regex_t rx,rxcache;
   regmatch_t pmatch;
 
+Debug("UnCommentItemMatching %s/%s\n",string,comm);
+  
 if (CfRegcomp(&rxcache,string, REG_EXTENDED) != 0)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Failed to compile expression %s",string);
@@ -978,24 +980,28 @@ for (ip = *list; ip != NULL; ip=ip->next)
       }
 
    memcpy(&rx,&rxcache,sizeof(rx)); /* To fix a bug on some implementations where rx gets emptied */
-   
+
+   Debug("Compare %s/%s\n",string,ip->name);
+
    if (regexec(&rx,ip->name,1,&pmatch,0) == 0)
       {
       if ((pmatch.rm_so == 0) && (pmatch.rm_eo == strlen(ip->name)))
          {
+         Debug("Compare %s/%s - ok FOUND\n",string,ip->name);
+         
          if (strlen(ip->name)+strlen(comm)+strlen(end)+2 > CF_BUFSIZE)
             {
             CfLog(cferror,"Bufsize overflow while commenting line - abort\n","");
             regfree(&rx);
             return false;
             }
-         
+
          if (strstr(ip->name,comm) == NULL)
             {
             CURRENTLINEPTR = ip->next;
             continue;
             }
-         
+
          EditVerbose("Uncomment line %s\n",ip->name);
          CURRENTLINEPTR = ip->next;
          
