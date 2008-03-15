@@ -27,6 +27,7 @@ libcfengine_la_SOURCES =							\
 	ipname.c							\
 	instrument.c							\
 	process.c							\
+	timeout.c							\
 	ifconf.c							\
 	image.c								\
 	item.c								\

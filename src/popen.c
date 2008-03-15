@@ -77,6 +77,8 @@ FILE *cfpopen(char *command,char *type)
     }
 
  signal(SIGCHLD,SIG_DFL);
+
+ ALARM_PID = pid;
  
  if (pid == 0)
     {
@@ -213,6 +215,8 @@ FILE *cfpopensetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,ch
     return NULL;
     }
 
+ ALARM_PID = pid;
+  
  if (pid == 0)
     {
     switch (*type)
@@ -305,7 +309,7 @@ FILE *cfpopensetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,ch
        
        if (setuid(uid) == -1)
           {
-          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't effective uid to %d\n",uid);
+          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't set uid to %d\n",uid);
           CfLog(cferror,OUTPUT,"setuid");
           free((char *)argv);
           return NULL;
@@ -395,6 +399,8 @@ FILE *cfpopen_sh(char *command,char *type)
     {
     return NULL;
     }
+
+ ALARM_PID = pid;
  
  if (pid == 0)
     {
@@ -508,7 +514,8 @@ FILE *cfpopen_shsetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv
     return NULL;
     }
  
- 
+ ALARM_PID = pid;
+  
  if (pid == 0)
     {
     switch (*type)

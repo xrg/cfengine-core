@@ -132,8 +132,7 @@ for (i=0; VMOUNTCOMM[VSYSTEMHARDCLASS][i] != ' '; i++)
 
 buf1[i] = '\0';
 
-signal(SIGALRM,(void *)TimeOut);
-alarm(RPCTIMEOUT);
+SetTimeOut(RPCTIMEOUT);
 
 if ((pp = cfpopen(buf1,"r")) == NULL)
    {
@@ -845,9 +844,8 @@ if (VSYSTEMHARDCLASS == cfnt)
          }
       }
    }
- 
-signal(SIGALRM,(void *)TimeOut);
-alarm(RPCTIMEOUT);
+
+SetTimeOut(RPCTIMEOUT);
  
 if ((pp = cfpopen(VMOUNTCOMM[VSYSTEMHARDCLASS],"r")) == NULL)
    {
@@ -1323,8 +1321,7 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
          {
          if (ptr->timeout != 0)
             {
-            signal(SIGALRM,(void *)TimeOut);
-            alarm(ptr->timeout);
+            SetTimeOut(ptr->timeout);
             }
          
          Verbose("(Setting umask to %o)\n",ptr->umask);

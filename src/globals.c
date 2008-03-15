@@ -91,7 +91,6 @@ pthread_mutex_t MUTEX_LOCK = PTHREAD_MUTEX_INITIALIZER;
 /*                                                                 */
 /* cfengine.main object : the root application object              */
 /*                                                                 */
-/*                                                                 */
 /*******************************************************************/
 
   PUBLIC char *COPYRIGHT = "Free Software Foundation 1994-\nDonated by Mark Burgess, Faculty of Engineering,\nOslo University College, Norway";
@@ -142,6 +141,7 @@ pthread_mutex_t MUTEX_LOCK = PTHREAD_MUTEX_INITIALIZER;
   PUBLIC char FORK = 'n';
 
   PRIVATE   int RPCTIMEOUT = 60;          /* seconds */
+  PUBLIC    pid_t ALARM_PID;
   PROTECTED int SENSIBLEFILECOUNT = 2;
   PROTECTED int SENSIBLEFSSIZE = 1000;
 

@@ -34,15 +34,6 @@
 #include "cf.extern.h"
 
 /*************************************************************************/
-  
-void TimeOut()
- 
-{
-alarm(0);
-Verbose("%s: Time out\n",VPREFIX);
-}
-
-/*************************************************************************/
 
 int SendTransaction(int sd,char *buffer,int len,char status)
 

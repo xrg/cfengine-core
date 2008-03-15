@@ -807,7 +807,6 @@ int IsMountedFileSystem  (struct stat *childstat, char *dir, int rlevel);
 
 /* net.c */
 
-void TimeOut (void);
 int SendTransaction (int sd, char *buffer,int len, char status);
 int ReceiveTransaction (int sd, char *buffer,int *more);
 int RecvSocketStream (int sd, char *buffer, int toget, int nothing);
@@ -1025,6 +1024,13 @@ int RecursiveTidySpecialArea (char *name, struct Tidy *tp, int maxrecurse, struc
 void TidyParticularFile (char *path, char *name, struct Tidy *tp, struct stat *statbuf, int is_dir, int level,int usepath);
 void DoTidyFile (char *path, char *name, struct TidyPattern *tlp, struct stat *statbuf, short int logging_this, int isdir,int usepath);
 void DeleteTidyList (struct TidyPattern *list);
+
+/* timeout.c */
+
+void SetTimeOut (int timeout);
+void TimeOut (void);
+void DeleteTimeOut (void);
+
 
 /* varstring.c */
 
