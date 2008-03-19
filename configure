@@ -2585,7 +2585,7 @@ ac_config_headers="$ac_config_headers src/conf.h"
 # Add to the default list of places in LDFLAGS to compensate for
 # ... the configure default value of LIBS on some systems
 #
-for x in /usr/local/gnu/lib /usr/local/gnulib /opt/dce/lib /sw/lib
+for x in /usr/lib64 /usr/local/gnu/lib /usr/local/gnulib /opt/dce/lib /sw/lib
 do
   if test -d "$x"; then
     y=`expr " $LDFLAGS " : ".* -L$x "`
@@ -24090,7 +24090,7 @@ echo "${ECHO_T}$d" >&6; }
 	    test "x$BERKELEY_DB_LIB" != "x" && break
             if test -f "$d/include/db.h"; then
                 if test "x$d" != "x/usr"; then
-                    BERKELEY_DB_LDFLAGS="-L$d/lib"
+                    BERKELEY_DB_LDFLAGS="-L$d/lib64 -L$d/lib"
                     BERKELEY_DB_CFLAGS="-I$d/include"
                 fi
                 BERKELEY_DB_LIB="-ldb"
@@ -24138,6 +24138,10 @@ echo "${ECHO_T}$BERKELEY_DB_DIR" >&6; }
         BERKELEY_DB_LIB="-ldb"
         for v in db-4.6 db4.6 db46 db-4.5 db4.5 db45 db-4.4 db4.4 db44; do
             if test -f "$BERKELEY_DB_DIR/lib/lib$v.so"; then
+                BERKELEY_DB_LIB="-l$v"
+		break
+            fi
+            if test -f "$BERKELEY_DB_DIR/lib64/lib$v.so"; then
                 BERKELEY_DB_LIB="-l$v"
 		break
             fi
@@ -24417,7 +24421,7 @@ else
     if test x"$OPENSSL_LIB_DIR" = xdefault ; then
         for d in $prefix /opt/ssl /usr/local/ssl /usr/local /usr; do
             if test -f "$d/include/openssl/opensslv.h"; then
-                OPENSSL_LIB_LDFLAGS="-L$d/lib"
+                OPENSSL_LIB_LDFLAGS="-L$d/lib64 -L$d/lib"
                 OPENSSL_LIB_CPPFLAGS="-I$d/include"
                 OPENSSL_LIB_LIB="-lcrypto"
                 { echo "$as_me:$LINENO: result: $d" >&5
@@ -31298,7 +31302,7 @@ fi
 
 
 
-LIBS="-L../pub -lpub $LIBS"
+LIBS="-L../pub -lcfpub $LIBS"
 
 
 { echo "$as_me:$LINENO: checking Checking for GCC Specific compile flags" >&5
@@ -32849,16 +32853,10 @@ echo "$as_me: WARNING: " >&2;}
 echo "$as_me: WARNING: DFS users should use --enable-DCE" >&2;}
 { echo "$as_me:$LINENO: WARNING: " >&5
 echo "$as_me: WARNING: " >&2;}
-{ echo "$as_me:$LINENO: WARNING: This version requires Berkeley db version 4.4 or" >&5
-echo "$as_me: WARNING: This version requires Berkeley db version 4.4 or" >&2;}
-{ echo "$as_me:$LINENO: WARNING: later from www.sleepycat.com - now owned by Oracle" >&5
-echo "$as_me: WARNING: later from www.sleepycat.com - now owned by Oracle" >&2;}
-{ echo "$as_me:$LINENO: WARNING: This version requires OpenSSL 0.9.7 or later" >&5
-echo "$as_me: WARNING: This version requires OpenSSL 0.9.7 or later" >&2;}
-{ echo "$as_me:$LINENO: WARNING: from www.openssl.org" >&5
-echo "$as_me: WARNING: from www.openssl.org" >&2;}
-{ echo "$as_me:$LINENO: WARNING: " >&5
-echo "$as_me: WARNING: " >&2;}
+{ echo "$as_me:$LINENO: WARNING: Cfengine depends on the Berkeley db and OpenSSL " >&5
+echo "$as_me: WARNING: Cfengine depends on the Berkeley db and OpenSSL " >&2;}
+{ echo "$as_me:$LINENO: WARNING: Most recent versions are always recommended " >&5
+echo "$as_me: WARNING: Most recent versions are always recommended " >&2;}
 { echo "$as_me:$LINENO: WARNING: =====================================================" >&5
 echo "$as_me: WARNING: =====================================================" >&2;}
 

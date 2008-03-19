@@ -22,7 +22,7 @@ AM_CONFIG_HEADER(src/conf.h)
 # Add to the default list of places in LDFLAGS to compensate for
 # ... the configure default value of LIBS on some systems
 #
-for x in /usr/local/gnu/lib /usr/local/gnulib /opt/dce/lib /sw/lib
+for x in /usr/lib64 /usr/local/gnu/lib /usr/local/gnulib /opt/dce/lib /sw/lib
 do
   if test -d "$x"; then
     y=`expr " $LDFLAGS " : ".* -L$x "`
@@ -149,7 +149,7 @@ else
 	    test "x$BERKELEY_DB_LIB" != "x" && break
             if test -f "$d/include/db.h"; then
                 if test "x$d" != "x/usr"; then
-                    BERKELEY_DB_LDFLAGS="-L$d/lib"
+                    BERKELEY_DB_LDFLAGS="-L$d/lib64 -L$d/lib"
                     BERKELEY_DB_CFLAGS="-I$d/include"
                 fi
                 BERKELEY_DB_LIB="-ldb"
@@ -193,6 +193,10 @@ else
         BERKELEY_DB_LIB="-ldb"
         for v in db-4.6 db4.6 db46 db-4.5 db4.5 db45 db-4.4 db4.4 db44; do
             if test -f "$BERKELEY_DB_DIR/lib/lib$v.so"; then
+                BERKELEY_DB_LIB="-l$v"
+		break
+            fi
+            if test -f "$BERKELEY_DB_DIR/lib64/lib$v.so"; then
                 BERKELEY_DB_LIB="-l$v"
 		break
             fi
@@ -289,7 +293,7 @@ else
     if test x"$OPENSSL_LIB_DIR" = xdefault ; then
         for d in $prefix /opt/ssl /usr/local/ssl /usr/local /usr; do
             if test -f "$d/include/openssl/opensslv.h"; then
-                OPENSSL_LIB_LDFLAGS="-L$d/lib"
+                OPENSSL_LIB_LDFLAGS="-L$d/lib64 -L$d/lib"
                 OPENSSL_LIB_CPPFLAGS="-I$d/include"
                 OPENSSL_LIB_LIB="-lcrypto"
                 AC_MSG_RESULT($d)
@@ -753,7 +757,7 @@ fi
 
 AC_SUBST(NOWRAP)
 
-LIBS="-L../pub -lpub $LIBS"
+LIBS="-L../pub -lcfpub $LIBS"
 
 dnl ####################################################################
 dnl Set GCC CFLAGS only if using GCC.
@@ -802,11 +806,8 @@ AC_MSG_WARN(=====================================================)
 AC_MSG_WARN( )
 AC_MSG_WARN( DFS users should use --enable-DCE)
 AC_MSG_WARN( )
-AC_MSG_WARN( This version requires Berkeley db version 4.4 or)
-AC_MSG_WARN(   later from www.sleepycat.com - now owned by Oracle)
-AC_MSG_WARN( This version requires OpenSSL 0.9.7 or later)
-AC_MSG_WARN(   from www.openssl.org)
-AC_MSG_WARN( )
+AC_MSG_WARN( Cfengine depends on the Berkeley db and OpenSSL )
+AC_MSG_WARN( Most recent versions are always recommended )
 AC_MSG_WARN(=====================================================)
 
 rm -f src/cfparse.c src/cfparse.h
