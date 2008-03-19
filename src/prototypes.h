@@ -918,6 +918,7 @@ FILE *cfpopen_sh (char *command, char *type);
 FILE *cfpopen_shsetuid (char *command, char *type, uid_t uid, gid_t gid, char *chdirv, char *chrootv);
 int cfpclose (FILE *pp);
 int cfpclose_def (FILE *pp, char *defines, char *elsedef);
+int CfSetUid(uid_t uid,gid_t gid);
 int SplitCommand (char *comm, char (*arg)[CF_BUFSIZE]);
 
 /* process.c */

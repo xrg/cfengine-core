@@ -290,32 +290,12 @@ FILE *cfpopensetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,ch
           }
        }
     
-    if (gid != (gid_t) -1)
+    if (!CfSetUid(uid,gid))
        {
-       Verbose("Changing gid to %d\n",gid);      
-       
-       if (setgid(gid) == -1)
-          {
-          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't set gid to %d\n",gid);
-          CfLog(cferror,OUTPUT,"setgid");
-          free((char *)argv);
-          return NULL;
-          }
+       free((char *)argv);
+       return NULL;
        }
-    
-    if (uid != (uid_t) -1)
-       {
-       Verbose("Changing uid to %d\n",uid);
-       
-       if (setuid(uid) == -1)
-          {
-          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't set uid to %d\n",uid);
-          CfLog(cferror,OUTPUT,"setuid");
-          free((char *)argv);
-          return NULL;
-          }
-       }
-    
+
     if (execv(arg[0],argv) == -1)
        {
        snprintf(OUTPUT,CF_BUFSIZE,"Couldn't run %s",arg[0]);
@@ -572,28 +552,9 @@ FILE *cfpopen_shsetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv
           }
        }
     
-    if (gid != (gid_t) -1)
+    if (!CfSetUid(uid,gid))
        {
-       Verbose("Changing gid to %d\n",gid);      
-       
-       if (setgid(gid) == -1)
-          {
-          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't set gid to %d\n",gid);
-          CfLog(cferror,OUTPUT,"setgid");
-          return NULL;
-          }
-       }
-    
-    if (uid != (uid_t) -1)
-       {
-       Verbose("Changing uid to %d\n",uid);
-       
-       if (setuid(uid) == -1)
-          {
-          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't set uid to %d\n",uid);
-          CfLog(cferror,OUTPUT,"setuid");
-          return NULL;
-          }
+       return NULL;
        }
     
     execl("/bin/sh","sh","-c",command,NULL);
@@ -718,6 +679,54 @@ return (WEXITSTATUS(status));
 #endif
 }
 
+/*******************************************************************/
+
+int CfSetUid(uid_t uid,gid_t gid)
+
+{ struct passwd *pw;
+ 
+if (gid != (gid_t) -1)
+   {
+   Verbose("Changing gid to %d\n",gid);      
+   
+   if (setgid(gid) == -1)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Couldn't set gid to %d\n",gid);
+      CfLog(cferror,OUTPUT,"setgid");
+      return false;
+      }
+   }
+
+/* Now eliminate any residual privileged groups */
+
+if ((pw = getpwuid(uid)) == NULL)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"Unable to get login groups when dropping privilege to %s=%d",pw->pw_name,uid);
+   CfLog(cferror,OUTPUT,"initgroups");
+   return false;
+   }
+
+if (initgroups(pw->pw_name, pw->pw_gid) == -1)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"Unable to set login groups when dropping privilege to %s=%d",pw->pw_name,uid);
+   CfLog(cferror,OUTPUT,"initgroups");
+   return false;
+   }
+
+if (uid != (uid_t) -1)
+   {
+   Verbose("Changing uid to %d\n",uid);
+   
+   if (setuid(uid) == -1)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Couldn't set uid to %d\n",uid);
+      CfLog(cferror,OUTPUT,"setuid");
+      return false;
+      }
+   }
+
+return true;
+}
 
 /*******************************************************************/
 /* Command exec aids                                               */
