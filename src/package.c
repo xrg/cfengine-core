@@ -1986,14 +1986,17 @@ int FreeBSDPackageCheck(char *package,char *version,enum cmpsense cmp)
   char pkgname[CF_BUFSIZE];
   char *pkgversion;
 
-/* The package to install must contain a version number
+/* The package to compare must contain a version number
  * The version starts after the last '-' in the pkgname
  */
 
 strncpy(pkgname, package, CF_BUFSIZE - 1);
 pkgversion = strrchr(pkgname, '-');
-*pkgversion = '\0';
-pkgversion += 1;
+if (pkgversion) 
+   {
+   /* insert a null to remove version for comparison */
+   *pkgversion = '\0';
+   }
 
 Debug("FreeBSDPackageCheck(): Requested version %s %s of %s\n", CMPSENSETEXT[cmp],(version[0] ? version : "ANY"), pkgname);
 
@@ -2011,7 +2014,7 @@ snprintf (VBUFF, CF_BUFSIZE, "/usr/sbin/pkg_info -qE '%s%s%s'", pkgname, CMPSENS
 if ((pp = cfpopen (VBUFF, "r")) == NULL)
    {
    CfLog(cferror,"FATAL: Could not execute pkg_info.\n","popen");
-   return 0;
+   return -1;
    }
 
 while (!feof (pp))
@@ -2061,8 +2064,10 @@ int FreeBSDPackageList(char *package, char *version, enum cmpsense cmp, struct I
 /* The package name is derived by stripping off the version number */
 strncpy(pkgname, package, CF_BUFSIZE - 1);
 pkgversion = strrchr(pkgname, '-');
-*pkgversion = '\0';
-pkgversion += 1;
+if( pkgversion )
+   {
+   *pkgversion = '\0';
+   }
 
 Debug("FreeBSDPackageCheck(): Requested version %s %s of %s\n", CMPSENSETEXT[cmp],(version[0] ? version : "ANY"), pkgname);
 
@@ -2082,7 +2087,7 @@ snprintf (VBUFF, CF_BUFSIZE, "/usr/sbin/pkg_info -E '%s%s%s'", pkgname, CMPSENSE
 if ((pp = cfpopen (VBUFF, "r")) == NULL)
    {
    Verbose ("Could not execute pkg_info.\n");
-   return 0;
+   return -1;
    }
 
 while (!feof (pp))
