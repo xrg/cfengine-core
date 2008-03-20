@@ -171,7 +171,7 @@ int InstallPackage(struct Package *ptr,enum pkgmgrs pkgmgr, struct Item **pkglis
 { char rawinstcmd[CF_BUFSIZE];
  /* Make the instcmd twice the normal buffer size since the package list
     limit is CF_BUFSIZE so this can obviously get larger! */
- char instcmd[CF_BUFSIZE*2];
+ char instcmd[CF_BUFSIZE*2],rawdelcmd[CF_BUFSIZE*2];
  char line[CF_BUFSIZE];
  FILE *pp;
  int result = 0;
@@ -180,16 +180,6 @@ Debug("Entering InstallPackage.\n");
 
 switch(pkgmgr)
    {
-   case pkgmgr_rpm:
-
-       if (!GetMacroValue(CONTEXTID,"RPMInstallCommand"))
-          {
-          CfLog(cferror,"RPMInstallCommand NOT Set.  Package Installation Not Possible!\n","");
-          return 0;
-          }
-       strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"RPMInstallCommand"),CF_BUFSIZE);
-       break;
-       
    case pkgmgr_dpkg:
 
        if (!GetMacroValue(CONTEXTID,"DPKGInstallCommand"))
@@ -229,7 +219,26 @@ switch(pkgmgr)
           }
        strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"PortageInstallCommand"),CF_BUFSIZE);
        break;
+
+	/* HvB & RB */
+   case pkgmgr_rpm:
+       if (!GetMacroValue(CONTEXTID,"RPMRemoveCommand"))
+          {
+          CfLog(cferror,"RPMRemoveCommand NOT Set.  Package Removal Not Possible!\n","");
+          return 0;
+	  }
+        strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"RPMRemoveCommand"),CF_BUFSIZE);
+
+        if (!GetMacroValue(CONTEXTID,"RPMInstallCommand"))
+          {
+          CfLog(cferror,"RPMInstallCommand NOT Set.  Package Installation Not Possible!\n","");
+          return 0;
+          }
+       strncpy(rawinstcmd, GetMacroValue(CONTEXTID,"RPMInstallCommand"),CF_BUFSIZE);
+       break;
        
+
+        
    case pkgmgr_freebsd:
        
       if (!GetMacroValue(CONTEXTID,"FreeBSDInstallCommand"))
