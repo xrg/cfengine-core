@@ -30794,7 +30794,7 @@ _ACEOF
 fi
 
         ;;
-   freebsd*)
+   freebsd*|dragonfly*)
 	cat >>confdefs.h <<\_ACEOF
 #define FREEBSD 1
 _ACEOF

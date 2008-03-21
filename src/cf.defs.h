@@ -817,7 +817,7 @@ enum classes
    darwin,
    ux4800,
    qnx,
-   unused1,
+   dragonfly,
    unused2,
    unused3
    };

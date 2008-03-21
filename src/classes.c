@@ -72,7 +72,7 @@ char *CLASSTEXT[] =   /* If you change here change enum classes too! */
    "darwin",
    "ux4800",
    "qnx",
-   "unused1",
+   "dragonfly",
    "unused2",
    "unused3",
    NULL
@@ -115,7 +115,7 @@ char *CLASSATTRIBUTES[CF_CLASSATTR][CF_ATTRDIM] =
    {"darwin","*","*"},           /* Darwin, aka MacOS X */
    {"ux4800","*","*"},           /* UX/4800 */
    {"qnx","*","*"},              /* qnx  */
-   {"unused1","blah","blah"},
+   {"dragonfly","*","*"},        /* dragonfly */
    {"unused2","blah","blah"},
    {"unused3","blah","blah"},
    {NULL,NULL,NULL}
@@ -156,7 +156,7 @@ char *VPSCOMM[CF_CLASSATTR] =
    "/bin/ps",       /* darwin */
    "/bin/ps",       /* ux4800 */
    "/bin/ps",       /* qnx  */
-   "/bin/ps",
+   "/bin/ps",       /* dragonfly */
    "/bin/ps",
    "/bin/ps",
    NULL
@@ -197,7 +197,7 @@ char *VPSOPTS[CF_CLASSATTR] =
    "auxw",   /* darwin */
    "-ef",    /* ux4800 */
    "-ef",    /* qnx */
-   "-",
+   "auxw",   /* dragonfly */
    "-",
    "-",
    NULL
@@ -239,7 +239,7 @@ char *VMOUNTCOMM[CF_CLASSATTR] =
    "/sbin/mount -va",     /* darwin */
    "/sbin/mount -v",     /* ux4800 */
    "/bin/mount -v",      /* qnx */
-   "unused-blah",
+   "/sbin/mount -va",     /* dragonfly */
    "unused-blah",
    "unused-blah",
    NULL
@@ -280,7 +280,7 @@ char *VUNMOUNTCOMM[CF_CLASSATTR] =
    "/sbin/umount",     /* darwin */
    "/sbin/umount",     /* ux4800 */
    "/bin/umount",      /* qnx */
-   "unused-blah",
+   "/sbin/umount",     /* dragonfly */
    "unused-blah",
    "unused-blah",
    NULL
@@ -323,7 +323,7 @@ char *VMOUNTOPTS[CF_CLASSATTR] =
    "-i,-b",           /* darwin */
    "bg,hard,intr",    /* ux4800 */
    "bg,hard,intr",    /* qnx */
-   "unused-blah",
+   "bg,intr",         /* dragonfly */
    "unused-blah",
    "unused-blah",
    NULL
@@ -364,7 +364,7 @@ char *VIFDEV[CF_CLASSATTR] =
    "en0",    /* darwin */
    "ec0",    /* ux4800 */
    "en0",    /* qnx */
-   "unused-blah",
+   "ep0",    /* dragonfly */
    "unused-blah",
    "unused-blah",
    NULL
@@ -406,7 +406,7 @@ char *VRESOLVCONF[CF_CLASSATTR] =
    "/etc/resolv.conf",     /* darwin */
    "/etc/resolv.conf",     /* ux4800 */
    "/etc/resolv.conf",     /* qnx */
-   "unused-blah",
+   "/etc/resolv.conf",     /* dragonfly */
    "unused-blah",
    "unused-blah",
    NULL
@@ -449,7 +449,7 @@ char *VFSTAB[CF_CLASSATTR] =
    "/etc/fstab",       /* darwin */
    "/etc/vfstab",      /* ux4800 */
    "/etc/fstab",       /* qnx */
-   "unused-blah",
+   "/etc/fstab",       /* dragonfly */
    "unused-blah",
    "unused-blah",
    NULL
@@ -490,7 +490,7 @@ char *VMAILDIR[CF_CLASSATTR] =
    "/var/mail",          /* darwin */
    "/var/mail",          /* ux4800 */
    "/var/spool/mail",    /* qnx */
-   "unused-blah",
+   "/var/mail",          /* dragonfly */
    "unused-blah",
    "unused-blah",
    NULL
@@ -531,7 +531,7 @@ char *VNETSTAT[CF_CLASSATTR] =
    "/usr/sbin/netstat -rn",  /* darwin */
    "/usr/bin/netstat -rn",   /* ux4800 */
    "/usr/bin/netstat -rn",   /* qnx */
-   "unused-blah",
+   "/usr/bin/netstat -rn",   /* dragonfly */
    "unused-blah",
    "unused-blah",
    NULL
@@ -573,7 +573,7 @@ char *VROUTE[CF_CLASSATTR] =
    "/sbin/route",  /* darwin */
    "-",   /* ux4800 */
    "-",   /* qnx */
-   "unused-blah",
+   "/sbin/route",  /* dragonfly */
    "unused-blah",
    "unused-blah",
    NULL
@@ -614,7 +614,7 @@ char *VROUTEADDFMT[CF_CLASSATTR] =
    "add %s %s",  /* darwin */
    "-",   /* ux4800 */
    "-",   /* qnx */
-   "unused-blah",
+   "add %s %s",  /* dragonfly */
    "unused-blah",
    "unused-blah",
    NULL
@@ -655,7 +655,7 @@ char *VROUTEDELFMT[CF_CLASSATTR] =
    "delete %s",  /* darwin */
    "-",   /* ux4800 */
    "-",   /* qnx */
-   "unused-blah",
+   "delete %s",  /* dragonfly */
    "unused-blah",
    "unused-blah",
    NULL
@@ -696,7 +696,7 @@ char *VFILECOMM[CF_CLASSATTR] =
    "/usr/bin/file",   /* darwin */
    "/usr/bin/file",   /* ux4800 */
    "/usr/bin/file",   /* qnx */
-   "unused-blah",
+   "/usr/bin/file",   /* dragonfly */
    "unused-blah",
    "unused-blah",
    NULL

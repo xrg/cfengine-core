@@ -813,7 +813,7 @@ for (ap = response ; ap != NULL; ap=ap->ai_next)
       {
       Debug("Bound to address %s on %s=%d\n",sockaddr_ntop(ap->ai_addr),CLASSTEXT[VSYSTEMHARDCLASS],VSYSTEMHARDCLASS);
 
-      if (VSYSTEMHARDCLASS == openbsd || VSYSTEMHARDCLASS == freebsd || VSYSTEMHARDCLASS == netbsd)
+      if (VSYSTEMHARDCLASS == openbsd || VSYSTEMHARDCLASS == freebsd || VSYSTEMHARDCLASS == netbsd || VSYSTEMHARDCLASS == dragonfly)
          {
          continue;  /* *bsd doesn't map ipv6 addresses */
          }

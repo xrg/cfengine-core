@@ -646,7 +646,7 @@ case "$target_os" in
 	AC_DEFINE(LINUX)
 	AC_CHECK_LIB(nss_nis, yp_get_default_domain)
         ;;
-   freebsd*)
+   freebsd*|dragonfly*)
 	AC_DEFINE(FREEBSD)
         CFLAGS="$CFLAGS -pthread -D_THREAD_SAFE -DBUILDTIN_GCC_THREAD"
         AC_CHECK_HEADERS(pthread.h)

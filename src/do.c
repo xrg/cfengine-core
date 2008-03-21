@@ -228,6 +228,7 @@ do
       case osf:
       case qnx:
       case crayos:
+      case dragonfly:
                     if (buf1[0] == '/')
                        {
                        strcpy(host,VDEFAULTBINSERVER.name);
@@ -274,7 +275,6 @@ do
       case cfnt:    strcpy(mounton,buf2);
                     strcpy(host,buf1);
                     break;
-      case unused1:
       case unused2:
       case unused3:
                     break;
@@ -3271,6 +3271,7 @@ switch (VSYSTEMHARDCLASS)
    case netbsd:
    case openbsd:
    case bsd_i:
+   case dragonfly:
    case freebsd: snprintf(fstab,CF_BUFSIZE,"%s:%s \t %s \t %s \t %s,%s 0 0",host,rmountpt,mountpt,VNFSTYPE,mode,opts);
                  break;
 
@@ -3283,7 +3284,6 @@ switch (VSYSTEMHARDCLASS)
                  break;
    case cfsco:   CfLog(cferror,"Don't understand filesystem format on SCO, no data","");
                  break;
-   case unused1:
    case unused2:
    case unused3:
    default:      FatalError("AddToFstab(): unknown hard class detected!\n");
