@@ -2551,6 +2551,10 @@ Modules can define macros in cfagent by outputting strings of the form
 
 @end smallexample
 
+When the @code{$(allclasses)} variable becomes too large to manipulate conveniently,
+you can access the complete list of currently defined classes in the file
+@file{/var/cfengine/state/allclasses}.
+
 @c -------------------------------------------------------------------------------
 @c SECTION
 @c -------------------------------------------------------------------------------
@@ -7341,6 +7345,20 @@ hosts *converge* to a desired, correct state.
 @end ifhtml
 
 @contents
+
+@ifhtml
+@html
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-2576171-2");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+@end html
+@end ifhtml
 
 @bye
 

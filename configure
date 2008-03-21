@@ -2432,7 +2432,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=cfengine
- VERSION=2.2.4a
+ VERSION=2.2.4
 
 
 cat >>confdefs.h <<_ACEOF
@@ -31254,7 +31254,6 @@ echo "$as_me: error: Unknown system type $target_os" >&2;}
    { (exit 1); exit 1; }; }
         ;;
 esac
-
 
 
 

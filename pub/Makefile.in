@@ -45,12 +45,12 @@ CONFIG_HEADER = $(top_builddir)/src/conf.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
-libpub_a_AR = $(AR) $(ARFLAGS)
-libpub_a_LIBADD =
-am_libpub_a_OBJECTS = getopt.$(OBJEXT) getopt1.$(OBJEXT) \
+libcfpub_a_AR = $(AR) $(ARFLAGS)
+libcfpub_a_LIBADD =
+am_libcfpub_a_OBJECTS = getopt.$(OBJEXT) getopt1.$(OBJEXT) \
 	full-write.$(OBJEXT) regex.$(OBJEXT) getloadavg.$(OBJEXT) \
 	snprintf.$(OBJEXT)
-libpub_a_OBJECTS = $(am_libpub_a_OBJECTS)
+libcfpub_a_OBJECTS = $(am_libcfpub_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -63,8 +63,8 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(libpub_a_SOURCES)
-DIST_SOURCES = $(libpub_a_SOURCES)
+SOURCES = $(libcfpub_a_SOURCES)
+DIST_SOURCES = $(libcfpub_a_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -208,8 +208,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CFLAGS = @CFLAGS@ @GCC_CFLAG@
 INCLUDES = @BERKELEY_DB_CFLAGS@ @OPENSSL_LIB_CPPFLAGS@
-noinst_LIBRARIES = libpub.a
-libpub_a_SOURCES = \
+noinst_LIBRARIES = libcfpub.a
+libcfpub_a_SOURCES = \
 	getopt.c							\
 	getopt1.c							\
 	full-write.c							\
@@ -284,10 +284,10 @@ $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libpub.a: $(libpub_a_OBJECTS) $(libpub_a_DEPENDENCIES) 
-	-rm -f libpub.a
-	$(libpub_a_AR) libpub.a $(libpub_a_OBJECTS) $(libpub_a_LIBADD)
-	$(RANLIB) libpub.a
+libcfpub.a: $(libcfpub_a_OBJECTS) $(libcfpub_a_DEPENDENCIES) 
+	-rm -f libcfpub.a
+	$(libcfpub_a_AR) libcfpub.a $(libcfpub_a_OBJECTS) $(libcfpub_a_LIBADD)
+	$(RANLIB) libcfpub.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

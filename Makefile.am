@@ -4,7 +4,7 @@ else
 DOC_DIR =
 endif
 
-SUBDIRS = pub src contrib inputs $(DOC_DIR)
+SUBDIRS = src contrib inputs # $(DOC_DIR)
 
 EXTRA_DIST = acconfig.h doc/cfengine.8 COPYING ChangeLog INSTALL NEWS README LICENSE
 

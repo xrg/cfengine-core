@@ -222,7 +222,7 @@ man_MANS = cfengine.8 cfagent.8  cfenvd.8  cfenvgraph.8  cfexecd.8  cfkey.8  cfr
 # Info used in building the Info files
 info_TEXINFOS = cfengine-Reference.texinfo cfengine-Tutorial.texinfo cfengine-Anomalies.texinfo
 infofiles = $(info_TEXINFOS:.texinfo=.info)
-MAKEINFOHTML = $(MAKEINFO) --html --no-split
+MAKEINFOHTML = $(MAKEINFO) --html --css-include=cfcomdoc.css --no-split
 
 # Info used in building and installing HTML files
 htmlfiles = $(info_TEXINFOS:.texinfo=.html)

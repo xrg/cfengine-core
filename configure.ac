@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.2.4a)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.2.4)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -715,8 +715,6 @@ case "$target_os" in
 	AC_MSG_ERROR(Unknown system type $target_os)
         ;;
 esac
-
-dnl LIBS="-L../pub -lpub $LIBS"
 
 dnl #####################################################################
 dnl Configure LOCKDIR and LOGDIR

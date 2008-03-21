@@ -104,7 +104,7 @@ as last updated @value{UPDATED}.
 
 @ifhtml
 @html
-<a href="#Contents">COMPLETE TABLE OF CONTENTS</a>
+<a href="#Contents"><h1>COMPLETE TABLE OF CONTENTS</h1></a>
 @end html
 @end ifhtml
 
@@ -153,6 +153,8 @@ implement configurations in practice.
 @node Installation, Work directory, Reference introduction, Reference introduction
 @section Installation
 
+@c chew begin Dependencies
+
 In order to install cfengine, you should first ensure that the following
 packages are installed.
 
@@ -160,9 +162,10 @@ packages are installed.
 @item @b{OpenSSL}
 Open source Secure Sockets Layer for encryption.@*URL: @url{http://www.openssl.org}
 @item @b{BerkeleyDB} (version 3.2 or later)
-Light-weight flat-file database system.@*URL: @url{http://www.sleepycat.com}
+Light-weight flat-file database system.@*URL: @url{http://www.oracle.com/technology/products/berkeley-db/index.html}
 @end table
 
+@c chew end Dependencies
 
 @noindent
 The preferred method of installation is then
@@ -185,11 +188,12 @@ the cfengine trusted work directory.
 @section Work directory
 
 In order to achieve the desired simplifications, it was decided to
-reserve a private work area for the cfengine tool-set. In cfengine 1.x,
-the administrator could choose the locations of configuration files, locks,
-and logging data independently. In cfengine 2.x, this diversity has been simplified
-to a single directory which defaults to @file{/var/cfengine} (similar to
-@file{/var/cron}):
+reserve a private work area for the cfengine tool-set. 
+@c chew begin Work directory
+In cfengine 1.x, the administrator could choose the locations of
+configuration files, locks, and logging data independently. In
+cfengine 2.x, this diversity has been simplified to a single directory
+which defaults to @file{/var/cfengine} (similar to @file{/var/cron}):
 
 @w{}
 @smallexample
@@ -198,6 +202,7 @@ to a single directory which defaults to @file{/var/cfengine} (similar to
 /var/cfengine/inputs
 /var/cfengine/outputs
 @end smallexample
+@c chew end Work directory
 
 The installation location
 @file{/usr/local/sbin} is not necessarily a local file system, and cannot
@@ -236,6 +241,8 @@ to another central location and viewed in an alternative browser..
 
 A single class can be one of several things:
 
+@c chew start Hard classes
+
 @itemize @bullet
 
 @item The name of an operating system architecture e.g.  @code{ultrix}, @code{sun4}, etc.
@@ -254,7 +261,7 @@ qualified domain name for your host, cfagent truncates it at the first dot.
 
 @item A five minute interval in the hour (in the form @code{Min00_05, Min05_10 ... Min55_00})
 
-@item A day of the month (in the form @code{Day1 ... Day31}).
+@item A day of the month (in the form @code{Day1, Day2, ... Day31}).
 
 @item A month (in the form @code{January, February, ... December}).
 
@@ -267,6 +274,8 @@ qualified domain name for your host, cfagent truncates it at the first dot.
 
 @end itemize
 
+@c chew end Hard classes
+
 To see all of the classes define on a particular host, run
 
 @smallexample
@@ -274,8 +283,9 @@ host# cfagent -p -v
 @end smallexample
 as a privileged user. Note that some of the classes are set only
 if a trusted link can be established with cfenvd, i.e. if both
-are running with privilege, and the @file{/var/cfengine/env_data}
-file is secure.
+are running with privilege, and the @file{/var/cfengine/state/env_data}
+file is secure. More information about classes can be found in connection with
+@code{allclasses}.
 
 @c -------------------------------------------------------------------------------
 @c SECTION
@@ -284,11 +294,13 @@ file is secure.
 @node Filenames and paths, Debugging with signals, Hard classes, Reference introduction
 @section Filenames and paths
 
-Filenames in Unix-like operating systems
+@c chew start Unix filenames
 
-The directory separator is the forward slash '/' character. All references
-to file locations must be absolute pathnames in cfengine, i.e. they must begin
-with a complete specification of which directory they are in. For example:
+Filenames in Unix-like operating systems use for their directory
+separator the forward slash '/' character. All references to file
+locations must be absolute pathnames in cfengine, i.e. they must begin
+with a complete specification of which directory they are in. For
+example:
 
 @smallexample
 /etc/passwd
@@ -309,11 +321,12 @@ tidy:
 @noindent 
 Here, one can write @file{core} without a path, because one is looking for any
 file of that name in a number of directories.
+@c chew end Unix filenames
 
-Cfengine was implemented primarily on Unix-like operating systems, but
-has since been ported to Windows operating systems and MacOS X. The Windows
-operating systems traditionally use a different filename convention.
-The following are all valid absolute file names under Windows:
+@c chew start Windows filenames
+The Windows operating systems traditionally use a different filename
+convention.  The following are all valid absolute file names under
+Windows:
 
 @smallexample
  c:\winnt
@@ -330,6 +343,7 @@ This is not a valid absolute filename:
 @end smallexample
 Paths beginning with a backslash are assumed to be win32 paths.  They
 must begin with a drive letter or double-slash server name.
+@c chew end Windows filenames
 
 @c -------------------------------------------------------------------------------
 @c SECTION
@@ -366,6 +380,8 @@ Note that this output is often quite verbose.
 @node Cfkey, Cfshow, Reference introduction, Top
 @chapter Cfkey reference
 
+@c chew start Key generation
+
 The very first thing you should do on every host is to establish a
 public-private key pair. To do this, you need to run the program
 
@@ -385,6 +401,8 @@ If you get the error message ``PRNG not seeded'', it means that insufficient
 data were found in order to make a random key. In that case, run @file{cfenvd}
 for a few days more and try again.
 @cindex PRNG not seeded
+
+@c chew end Key generation
 
 @c **********************************************************************
 @c CHAPTER
@@ -443,6 +461,7 @@ last observed times.
 @item -H @code{--html}
 Generate output in web browser-friendly html.
 
+
 @item -l @code{--locks}
 This prints a list of the locks and the last times an active lock was secured for each
 cfengine acivity. This list is potentially very long.
@@ -457,8 +476,10 @@ IP + 192.168.1.101 192.168.1.101  @ [Tue Jan 23 16:13] not seen for (6.42) hrs, 
 IP - 192.168.1.101 192.168.1.101  @ [Tue Jan 23 16:13] not seen for (6.42) hrs, Av 0.02 +/- 0.01 hrs
 @end smallexample
 
-Lines marked with a + are attempts to connect by cfagent, lines with a - are connections
-into cfservd.
+Lines marked with a + represent successful attempts made by cfagent on
+the current host to connect to another host. Lines with a - are
+connections attempted (but not necessarily succeeded) into cfservd from another
+host's cfagent or cfrun.
 
 @item -r @code{--regex} @var{regex}
 Search the cfengine policy file (e.g. @file{cfagent.conf}) for rules
@@ -503,9 +524,10 @@ Generate output in xml for parsing by scripts etc.
 @node Cfagent reference, Cfservd.conf and cfrun reference, Cfshow, Top
 @chapter Cfagent reference
 
-
 @menu
 * Cfagent intro::               
+* The file cfagent.conf::       
+* Cfagent Runtime Options::     
 * Variable expansion and contexts::  
 * Cfengine classes::            
 * acl::                         
@@ -520,6 +542,7 @@ Generate output in xml for parsing by scripts etc.
 * directories::                 
 * disable::                     
 * editfiles::                   
+* Editfiles on Binary Files::   
 * files::                       
 * filters::                     
 * groups::                      
@@ -548,7 +571,7 @@ Generate output in xml for parsing by scripts etc.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node Cfagent intro, Variable expansion and contexts, Cfagent reference, Cfagent reference
+@node Cfagent intro, The file cfagent.conf, Cfagent reference, Cfagent reference
 @section Cfagent intro
 
 Cfagent is the workhorse of cfengine. It interprets and computes the necessary strategies
@@ -573,8 +596,8 @@ performed to avoid unnecessary duplication.
 * Cfagent Runtime Options::     
 @end menu
 
-@node The file cfagent.conf, Cfagent Runtime Options, Cfagent intro, Cfagent intro
-@subsection The file cfagent.conf
+@node The file cfagent.conf, Cfagent Runtime Options, Cfagent intro, Cfagent reference
+@section The file cfagent.conf
 
 @cartouche
 
@@ -601,10 +624,13 @@ performed to avoid unnecessary duplication.
 
 @end cartouche
 
+@c -------------------------------------------------------------------------------
+@c SECTION
+@c -------------------------------------------------------------------------------
 
 
-@node Cfagent Runtime Options,  , The file cfagent.conf, Cfagent intro
-@subsection Cfagent runtime options
+@node Cfagent Runtime Options, Variable expansion and contexts, The file cfagent.conf, Cfagent reference
+@section Cfagent runtime options
 
 
 @noindent Note that GNU long options are available with the syntax
@@ -749,7 +775,11 @@ Error or segmentation fault. The same information is available from the
 cfengine built-in variable @code{$(allclasses)} and can be passed as a
 parameter to scripts.
 @cindex Environment variable CFALLCLASSES
+@cindex CFALLCLASSES in a file
+@cindex @file{allclasses} file
 @vindex CFALLCLASSES
+When this variable grows too large for embedding one can also access a complete
+list of current classes in @file{/var/cfengine/state/allclasses}.
 
 @item -U
 (@code{--underscore-classes}). When this option is set, cfengine adds
@@ -796,7 +826,7 @@ $ cfagent --just tidy --just shellcommands
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node Variable expansion and contexts, Cfengine classes, Cfagent intro, Cfagent reference
+@node Variable expansion and contexts, Cfengine classes, Cfagent Runtime Options, Cfagent reference
 @section Variable expansion and contexts
 
 Variables in cfengine 2 are defined in contexts. Variables in a given context
@@ -1254,10 +1284,9 @@ cfengines are started independently. The default value is unlimited.
 A short for of @code{$(arch)}.
 
 @item OutputPrefix
-This quoted string can be used to change the default `cfengine:'
+This quoted string can be used to change the default `cfengine:${hostname}'
 prefix on output lines to something else. You might wish to shorten
-the string, or have a different prefix for different hosts. The value
-in this variable is appended with the name of the host. The default is
+the string, or have a different prefix for different hosts. The default is
 equivalent to,
 
 @smallexample
@@ -1293,7 +1322,7 @@ The current timezone as defined in @code{control}.
 
 @item UnderscoreClasses
 If this is set to `on' cfengine uses hard classes which begin with
-an underscore to avoid name collisions. See also the section Runtime Options.
+an underscore to avoid name collisions, @xref{Cfagent Runtime Options}.
 @vindex underscoreclasses
 @cindex underscoreclasses
 @cindex Name collision
@@ -5228,6 +5257,7 @@ multiple sources (see below).
 
 @table @code
 
+@anchor{dest}
 @item dest
 The destination file is the only obligatory item. This must be the name
 of an object which matches the type of the master object i.e. if the
@@ -5242,7 +5272,7 @@ If the destination file name is of the form
 copying the resource fork of a file to an HFS+ file system on OS X
 Jaguar. In the absence of the destination file being in this form (just
 dest=filename), cfengine will assume that you are working with the data
-fork of the file.
+fork of the file. See @ref{dest}.
 
 For a resource fork copy to properly work, the data fork must
 have already been copied. Ie the OS will not allow you to copy the
@@ -5265,6 +5295,8 @@ The file mode, owner
 and group of the images are specified as in the @code{files} function
 @xref{files}. 
 
+
+@anchor{copyaction}
 @item action
 The action may take the values @code{warn}, @code{silent} or
 @code{fix}. The default action is @code{fix}, i.e.  copy files. If
@@ -5272,21 +5304,25 @@ The action may take the values @code{warn}, @code{silent} or
 require updating. If @code{silent} is given, then cfengine will copy
 the files but not report the fact.
 
+@anchor{force}
 @item force
 If set to `true', this option causes cfengine to copy files regardless
 of whether it is up to date.
 
+@anchor{forceipv4}
 @item forceipv4
 If you are working on an ipv6 enabled pair of hosts, cfengine will
 normally select ipv6 for communication between them. If you wish
 to force the use of ipv4 for some reason, set this option to true.
 
+@anchor{forcedirs}
 @item forcedirs
 If set to `true', this option causes files or links which block the
 creation of directories, during recursive copying, to be moved
 aside forcably. A single non-supressable warning is given when this
 occurs; the file is moved to filename@file{.cf-moved}.
 
+@anchor{copybackup}
 @item backup
 If the @code{backup} option is set to ``false'', cfengine
 will not make a backup copy of the file before copying. The default value is ``true''.
@@ -5296,6 +5332,7 @@ to the saved filename.
 @vindex backup=
 @cindex Switching off backup in copy
 
+@anchor{copyrepository}
 @item repository
 This allows a local override of the @code{Repository} variable, on an item
 by item basis. If set to ``off'' or ``none'' it cancels the value of a global repository.
@@ -5305,6 +5342,7 @@ checking whether the master is newer than the image. If the image needs
 updating it is copied. Existing files are saved by appending
 @code{.cfsaved} to the filename.
 
+@anchor{stealth}
 @item stealth
 If set to `on' causes cfengine to preserve atime and mtime
 on source files during @emph{local} 
@@ -5318,19 +5356,20 @@ made this option active on many file copies.
 @mbindex ctime copy doesn't always copy files
 @mbindex copy doesn't always copy files
 
+@anchor{checkroot}
 @item checkroot
 Default value @code{false}, this option causes cfengine to check the
 permissions of the root directory during recursive directory
 copies. If not true, cfengine sets its own permissions on the root.
 
-
+@anchor{timestamps}
 @item timestamps
 If this is set to `preserve' or `keep', the times of the source
 files are kept by the destination files during copying. This is
 like the `p' option of the @code{tar} command.
 @cindex Preserving file times in copy
 
-
+@anchor{recurse}
 @item recurse
 Specifies the depth of recursion when copying whole file-trees
 recursively. The value may be a number or the keyword @code{inf}.
@@ -5340,6 +5379,7 @@ this it is simplest to specify a maximum level of recursion.
 @cindex Device boundaries
 @cindex Mounted filesystems
 
+@anchor{symlink}
 @item symlink
 This option may be repeated a number of times to specify the
 names of files, or wildcards which match files which are to
@@ -5347,12 +5387,14 @@ be symbolically linked instead of copied. A global list of
 patterns can also be defined in the control section of the program
 @xref{linkcopies}.
 
+@anchor{copyignore}
 @item ignore
 This works like the global ignore directive but here you may
 provide a private list of ignorable directories and files.
 Unlike include, exclude this affects the way cfengine parses
 directory trees.
 
+@anchor{copyinclude}
 @item include
 This option may be repeated a number of times to specify the names of
 files, or wildcards which match files which are to be included in a copy
@@ -5365,7 +5407,7 @@ If the @code{purge} option is used in copying, then the @code{ignore} option
 has the effect of the excluding files from the purge, i.e. @code{ignore} means
 `keep' the named files.
 
-
+@anchor{copyexclude}
 @item exclude
 This option may be repeated a number of times to specify the
 names of files, or wildcards which match files which are to
@@ -5374,12 +5416,13 @@ patterns can also be defined in the control section of the program
 `excludes' override `includes'.
 @xref{excludelinks}.
 
+@anchor{copyxdev}
 @item xdev
 Prevents cfengine from descending into file systems that are not on the
 same device as the root of the rescurion path.
 @cindex xdev
 
-
+@anchor{copytype}
 @item type
 Normally cfengine uses the ctime date-stamps on files to determine
 whether a file needs to be copied: a file is only copied if the master
@@ -5391,7 +5434,7 @@ initiated.  An @samp{mtime} comparison does not take into account
 changes of file permissions, only modifications to the contents of the
 files.
 
-
+@anchor{findertype}
 @item findertype
 	Sets the four letter file type code in an HFS+ file system on Mac OS X
 	Jaguar. For example, the four letter code APPL indicates the file is an
@@ -5409,7 +5452,7 @@ type code does not conflict with the file extension.
 	Also note that finder type codes should not be applied to the resource
 	forks of files.
 
-
+@anchor{server}
 @item server
 If you want to copy a file remotely from a server, you specify the
 name of the server here. This must be the name of a host which is
@@ -5423,15 +5466,18 @@ copy, without using a connection to cfservd.
 @mbindex Remote copy problems, can't stat
 @mbindex locahost in copy
 
+@anchor{failover}
 @item failover
 If a file copy fails due to an error, the classes in this assignment
 will become active, allowing failover rules to become active.
 @cindex failover
 
+@anchor{oldserver}
 @item oldserver
 If this is true, cfengine uses the old protocol specification for
 temporary compatibility with early version 2 alphas.
 
+@anchor{trustkey}
 @item trustkey
 This option defaults to 'no' or 'false'. If set to true, cfagent will
 accept a public key from a server whose public key is presently unknown
@@ -5442,6 +5488,7 @@ by hand.
 @cindex Public keys
 @cindex Trusted hosts
 
+@anchor{encrypt}
 @item encrypt
 Has an effect only when used in conjuction with copy from a remote file
 server.  This causes cfengine to use encryption and one-time keys on
@@ -5454,11 +5501,13 @@ transfer of system binaries makes little sense. Note: the
 encryption keys required to get files from cfservd are those for the
 user under which cfservd is running (normally root).
 
+@anchor{verify}
 @item verify
 If verify is true, cfagent attempts to verify the integrity of a remote
 file transfer before the new file is installed. This takes time, since
 an MD5 computation and transaction must take place.
 
+@anchor{size}
 @item size
 With this option you can specify that a file is only to be copied if the
 source file meets a size critereon. This could be used to avoid
@@ -5488,6 +5537,7 @@ be written however is convenient: e.g. @kbd{14kB}, @kbd{14k},
 @end smallexample
 @noindent
 
+@anchor{linktype}
 @item linktype
 This option determines the type of link used to make links. This only
 applies if the file is linked rather than copied because it matches
@@ -5500,13 +5550,14 @@ is set to @code{copy} or @code{none}, symbolic links will be replaced
 by actual copies of the files they point to. Note that for directories,
 this option is ignored.
 
+@anchor{typecheck}
 @item typecheck
 Controls whether cfengine allows files of one type to overwrite files of
 another type, i.e. switches on/off errors if source and existing
 destination files do not match in type, e.g. if a file would overwrite a
 directory or link. The default is on for safety reasons.
 
-
+@anchor{copydefine}
 @item define
 This option is followed by a list of classes which are to be `switched on'
 if and only if the named file was copied.  In multiple (recursive) copy
@@ -5515,6 +5566,7 @@ tree were copied. This feature is useful for switching on other actions
 which are to be performed after the installation of key files (e.g.
 package installation scripts etc).
 
+@anchor{purge}
 @item purge
 If this option is set to true, cfengine will remove files in the
 destination directory which are not also in the source directory.  This
@@ -5539,6 +5591,15 @@ cannot be altered: @code{forcedirs=true}, @code{typecheck=false}, since
 other defaults could be very destructive.
 
 @end table
+
+@menu
+* copy example::                
+* hard links in copy::          
+* Too many open files::         
+@end menu
+
+@node copy example, hard links in copy, copy, copy
+@subsection copy example
 
 Example:
 
@@ -5590,7 +5651,7 @@ is @code{force=false} or @code{force=off}.
 * Too many open files::         
 @end menu
 
-@node hard links in copy, Too many open files, copy, copy
+@node hard links in copy, Too many open files, copy example, copy
 @subsection Hard links in copying
 
 Hard links are not like symbolic links, they are not merely pointers to
@@ -5846,6 +5907,8 @@ The form of a declaration is:
                          mode=@var{mode} 
                          owner=@var{uid}
                          group=@var{gid}
+                         rxdirs=@var{true/on}/@var{false/off}
+
                          define=@var{classlist}
                          elsedefine=@var{classlist}
                          syslog=@var{true/on}/@var{false/off}
@@ -5873,7 +5936,7 @@ directories:
 @noindent
 The form of the command is similar to that of @code{files} but this
 command is only used to create new directories.  Valid options are
-@code{mode}, @code{owner}, @code{group} and are described under
+@code{mode}, @code{owner}, @code{group} and @code{rxdirs}; these are described under
 @code{files} @xref{files}. This interface is only for convenience.
 It is strictly a part of the `files' functionality and is performed
 together with other `files' actions at run time.
@@ -6116,7 +6179,7 @@ file in the same directory.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node editfiles, files, disable, Cfagent reference
+@node editfiles, Editfiles on Binary Files, disable, Cfagent reference
 @section editfiles
 
 Performs ascii (line-based) editing on text-files or limited binary
@@ -6308,9 +6371,127 @@ POSIX extended regular expressions.
 @xref{Regular expressions,Regular expressions,Regular
 expressions,cfengine-Tutorial}. 
 
-@table @code
 
-@item AbortAtLineMatching @var{quoted-regex}
+@cartouche
+@b{Editfile caution.}
+It is suggested that you use these editing functions with
+caution. Although all possible safeguards have been incorporated into
+them, it is still possible through carelessness to do damage to
+important files on your system. Always test editing programs carefully
+before committing them to your global site configuration.
+@end cartouche
+
+
+
+
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@menu
+* AbortAtLineMatching::         
+* Append::                      
+* AppendIfNoLineMatching::      
+* AppendIfNoSuchLine::          
+* AppendIfNoSuchLinesFromFile::  
+* AppendToLineIfNotContains::   
+* Audit::                       
+* AutoCreate::                  
+* AutomountDirectResources::    
+* Backup in editfiles::         
+* BeginGroupIfDefined::         
+* BeginGroupIfNotDefined::      
+* BeginGroupIfFileExists::      
+* BeginGroupIfFileIsNewer::     
+* BeginGroupIfLineContaining::  
+* BeginGroupIfLineMatching::    
+* BeginGroupIfMatch::           
+* BeginGroupIfNoLineContaining::  
+* BeginGroupIfNoLineMatching::  
+* BeginGroupIfNoMatch::         
+* BeginGroupIfNoSuchLine::      
+* BreakIfLineMatches::          
+* CatchAbort::                  
+* CommentLinesMatching::        
+* CommentLinesStarting::        
+* CommentNLines::               
+* CommentToLineMatching::       
+* DefineClasses::               
+* DefineInGroup::               
+* DeleteLinesAfterThisMatching::  
+* DeleteLinesContaining::       
+* DeleteLinesMatching::         
+* DeleteLinesStarting::         
+* DeleteLinesNotContaining::    
+* DeleteLinesNotMatchingFileItems::  
+* DeleteLinesNotStartingFileItems::  
+* DeleteNLines::                
+* DeleteToLineMatching::        
+* EditMode (binary)::           
+* EditSplit::                   
+* EmptyEntireFilePlease::       
+* ElseDefineClasses::           
+* EndGroup::                    
+* EndLoop::                     
+* ExpandVariables::             
+* ExpireAfter (editing)::       
+* Filter::                      
+* FixEndOfLine::                
+* ForEachLineIn::               
+* GotoLastLine::                
+* HashCommentLinesContaining::  
+* HashCommentLinesMatching::    
+* HashCommentLinesStarting::    
+* IfElapsed (editing)::         
+* IncrementPointer::            
+* Inform (editing)::            
+* InsertFile::                  
+* InsertLine::                  
+* LocateLineMatching::          
+* PercentCommentLinesContaining::  
+* PercentCommentLinesMatching::  
+* PercentCommentLinesStarting::  
+* Prepend (editing)::           
+* PrependIfNoLineMatching::     
+* PrependIfNoSuchLine::         
+* Recurse (editing)::           
+* ReplaceLineWith::             
+* ReplaceAll With::             
+* ReplaceFirst::                
+* ReplaceLinesMatchingField::   
+* Repository::                  
+* ResetSearch::                 
+* RunScript::                   
+* RunScriptIfLineMatching::     
+* RunScriptIfNoLineMatching::   
+* SetCommentStart::             
+* SetCommentEnd::               
+* SetLine::                     
+* SetScript::                   
+* SlashCommentLinesContaining::  
+* SlashCommentLinesMatching::   
+* SlashCommentLinesStarting::   
+* SplitOn::                     
+* SysLog::                      
+* Umask::                       
+* UnCommentLinesContaining::    
+* UnCommentLinesMatching::      
+* UnCommentsNLines::            
+* UnCommentToLineMatching::     
+* UnsetAbort::                  
+* UseShell::                    
+* WarnIfFileMissing::           
+* WarnIfLineContaining::        
+* WarnIfLineMatching::          
+* WarnIfLineStarting::          
+* WarnIfNoLineContaining::      
+* WarnIfNoLineMatching::        
+* WarnIfNoLineStarting::        
+* WarnIfNoSuchLine::            
+@end menu
+
+@node AbortAtLineMatching, Append, editfiles, editfiles
+@subsection AbortAtLineMatching @var{quoted-regex}
 This command sets the value of a regular expression. In all editing
 operations (except @code{FixEndOfLine} and @code{GotoLastLine}) which involve multiple
 replacements and searches, this expression marks a boundary
@@ -6323,14 +6504,22 @@ with other search parameters. Editing actions are always aborted
 as soon as the abort expression is matched.
 Use @code{UnsetAbort} to unset the feature.
 
-@item Append @var{quoted-string}
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node Append, AppendIfNoLineMatching, AbortAtLineMatching, editfiles
+@subsection Append @var{quoted-string}
 Add a line containing the quoted string to the end of the file.
 This should be used in conjunction with the
 decision structures @code{BeginGroupIfNoLineMatching} and
 @code{BreakIfLineMatches}.
 
-
-@item AppendIfNoLineMatching  @var{quoted-regex}/ ``ThisLine''
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node AppendIfNoLineMatching, AppendIfNoSuchLine, Append, editfiles
+@subsection AppendIfNoLineMatching  @var{quoted-regex}/ ``ThisLine''
 A new version of the older @code{AppendIfNoSuchLine}
 which uses a regular expression instead of a literal
 string. The line which gets appended must be set
@@ -6353,28 +6542,47 @@ editfiles:
 @end smallexample
 @cindex Merging files.
 
-@item   AppendIfNoSuchLine @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node AppendIfNoSuchLine, AppendIfNoSuchLinesFromFile, AppendIfNoLineMatching, editfiles
+@subsection   AppendIfNoSuchLine @var{quoted-string}
 Add a line containing the quoted string to the end of the file
 if the file doesn't contain the exact line already.
 
-@item   AppendIfNoSuchLinesFromFile @var{filename}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node AppendIfNoSuchLinesFromFile, AppendToLineIfNotContains, AppendIfNoSuchLine, editfiles
+@subsection   AppendIfNoSuchLinesFromFile @var{filename}
 For each line in the named file, call AppendIfNoSuchLine.  This adds
 lines containing the strings listed in the named file to the end of the
 current file if the file doesn't contain the exact line already.
 @cindex @code{AppendIfNoSuchLinesFromFile}
 
-@item AppendToLineIfNotContains @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node AppendToLineIfNotContains, Audit, AppendIfNoSuchLinesFromFile, editfiles
+@subsection AppendToLineIfNotContains @var{quoted-string}
 This commands looks for an exact match of the quoted string
 in the current line. If the quoted string is not contained
 in the line, it is appended. This may be used for adding
 entries to a list.
 
-
-@item Audit @var{true/false}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node Audit, AutoCreate, AppendToLineIfNotContains, editfiles
+@subsection Audit @var{true/false}
 Local decision about whether this edit stanza will be audited. Requires
 auditing to be on globally for this to have an effect.
 
-@item AutoCreate
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node AutoCreate, AutomountDirectResources, Audit, editfiles
+@subsection AutoCreate
 If this command is listed anywhere in the file action list, cfengine
 will create the named file if it doesn't exist. Normally cfengine issues
 an error if the named file does not exist, but if this is set,
@@ -6385,7 +6593,11 @@ BeginGroupIfFileIsNewer will always be true.
 @cindex @code{AutoCreate}
 @mbindex How to create files while editing
 
-@item AutomountDirectResources @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node AutomountDirectResources, Backup in editfiles, AutoCreate, editfiles
+@subsection AutomountDirectResources @var{quoted-string}
 This command is designed to assist with automounter configuration for
 users wishing to use the automounter for NFS filesystems, but still use
 the cfengine mount model.
@@ -6399,84 +6611,142 @@ e.g. @code{``-nosuid''} for non setuid mounting (of all the
 mountables). Note that this is added to the current file and not to a
 file named @file{/etc/auto_direct}.
 
-@item Backup @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node Backup in editfiles, BeginGroupIfDefined, AutomountDirectResources, editfiles
+@subsection Backup @var{quoted-string}
+
 Set to true or false, on or off to set backup policy for this file.
-Default is on.
-The default is to produce time-stamped backups of files; this may be
-coded explicitly by setting to ``timestamp'' or ``stamp''. If set to ``false''
-or ``off'', no backup is kept of the edited file. If the value is set to
-``single'' or ``one'' then only the last version of the file is kept, overwriting
-any previously saved versions.
+Default is on.  The default is to produce time-stamped backups of
+files; this may be coded explicitly by setting to ``timestamp'' or
+``stamp''. If set to ``false'' or ``off'', no backup is kept of the
+edited file. If the value is set to ``single'' or ``one'' then only
+the last version of the file is kept, overwriting any previously saved
+versions.
+
+See @ref{copybackup}.
 
 @smallexample
    Backup "single"
 @end smallexample 
 @cindex Backup
 
-
-@item BeginGroupIfDefined @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node BeginGroupIfDefined, BeginGroupIfNotDefined, Backup in editfiles, editfiles
+@subsection BeginGroupIfDefined @var{quoted-string}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted class is defined. Edit groups may be nested.
 @cindex @code{BeginGroupIfDefined}
 
-@item BeginGroupIfNotDefined @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node BeginGroupIfNotDefined, BeginGroupIfFileExists, BeginGroupIfDefined, editfiles
+@subsection BeginGroupIfNotDefined @var{quoted-string}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted class is not defined. Edit groups may be nested.
 @cindex @code{BeginGroupIfNotDefined}
 
-@item BeginGroupIfFileExists @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node BeginGroupIfFileExists, BeginGroupIfFileIsNewer, BeginGroupIfNotDefined, editfiles
+@subsection BeginGroupIfFileExists @var{quoted-string}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted filename exists (can be statted).
 Files which are not readable by the running process are
 for all intents and purposes non-existent. Edit groups may be nested.
 @cindex @code{BeginGroupIfFileExists}
 
-@item BeginGroupIfFileIsNewer @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node BeginGroupIfFileIsNewer, BeginGroupIfLineContaining, BeginGroupIfFileExists, editfiles
+@subsection BeginGroupIfFileIsNewer @var{quoted-string}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted filename is newer than the file being
 edited. Edit groups may be nested.
 @cindex @code{BeginGroupIfFileIsNewer}
 
-@item BeginGroupIfLineContaining @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node BeginGroupIfLineContaining, BeginGroupIfLineMatching, BeginGroupIfFileIsNewer, editfiles
+@subsection BeginGroupIfLineContaining @var{quoted-string}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted string appears in
 any line in the file. Edit groups may be nested.
 
-@item BeginGroupIfLineMatching @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node BeginGroupIfLineMatching, BeginGroupIfMatch, BeginGroupIfLineContaining, editfiles
+@subsection BeginGroupIfLineMatching @var{quoted-regex}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted regular expression
 matches any line in the file. Edit groups may be nested.
 
-@item BeginGroupIfMatch @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node BeginGroupIfMatch, BeginGroupIfNoLineContaining, BeginGroupIfLineMatching, editfiles
+@subsection BeginGroupIfMatch @var{quoted-regex}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted regular expression matches the current line. Edit groups may be nested.
 
-@item BeginGroupIfNoLineContaining @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node BeginGroupIfNoLineContaining, BeginGroupIfNoLineMatching, BeginGroupIfMatch, editfiles
+@subsection BeginGroupIfNoLineContaining @var{quoted-string}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted string does not appear in
 any line in the file. Edit groups may be nested.
 
-@item BeginGroupIfNoLineMatching @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node BeginGroupIfNoLineMatching, BeginGroupIfNoMatch, BeginGroupIfNoLineContaining, editfiles
+@subsection BeginGroupIfNoLineMatching @var{quoted-regex}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted regular expression
 does not match any line in the file. Edit groups may be nested.
 
-@item BeginGroupIfNoMatch @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node BeginGroupIfNoMatch, BeginGroupIfNoSuchLine, BeginGroupIfNoLineMatching, editfiles
+@subsection BeginGroupIfNoMatch @var{quoted-regex}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted regular expression does
 not match the current line. Edit groups may be nested.
 
-@item BeginGroupIfNoSuchLine @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node BeginGroupIfNoSuchLine, BreakIfLineMatches, BeginGroupIfNoMatch, editfiles
+@subsection BeginGroupIfNoSuchLine @var{quoted-string}
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted literal string
 does not match any line in the file. Edit groups may be nested.
 
-@item BreakIfLineMatches  @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node BreakIfLineMatches, CatchAbort, BeginGroupIfNoSuchLine, editfiles
+@subsection BreakIfLineMatches  @var{quoted-regex}
 Terminates further editing of the current
 file if the current line matches the quoted
 regular expression.
 
-@item CatchAbort
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node CatchAbort, CommentLinesMatching, BreakIfLineMatches, editfiles
+@subsection CatchAbort
 @cindex CatchAbort
 Edit actions which abort on failure (such as @code{LocateLineMatching})
 will jump to the first instance of this marker instead of completely
@@ -6487,17 +6757,29 @@ You can catch the exceptions thrown by the following commands:
 @code{LocateLineMatching},@code{PercentCommentToLineMatching},
 @code{RunScriptIf(No)LineMatching},@code{UnCommentNLines}.
 
-@item CommentLinesMatching  @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node CommentLinesMatching, CommentLinesStarting, CatchAbort, editfiles
+@subsection CommentLinesMatching  @var{quoted-regex}
 Use the current value of the comment delimiters
 set using @code{SetCommentStart} and @code{SetCommentEnd} to comment
 out lines matching the given regular expression in quotes.
 
-@item CommentLinesStarting  @var{quoted-string} 
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node CommentLinesStarting, CommentNLines, CommentLinesMatching, editfiles
+@subsection CommentLinesStarting  @var{quoted-string} 
 Use the current value of the comment delimiters
 set using @code{SetCommentStart} and @code{SetCommentEnd} to comment
 out lines starting with the quoted literal string.
 
-@item CommentNLines @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node CommentNLines, CommentToLineMatching, CommentLinesStarting, editfiles
+@subsection CommentNLines @var{quoted-string}
 Comments up to @math{N} lines from the current file, starting from the
 location of the current line pointer. If the end of the file is reached
 and less than @math{N} lines are deleted, a warning is issued, but
@@ -6506,17 +6788,29 @@ used to determine the method of commenting, (see @code{SetCommentStart}).
 After the operation the pointer points to the line after the
 commented lines.
 
-@item CommentToLineMatching  @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node CommentToLineMatching, DefineClasses, CommentNLines, editfiles
+@subsection CommentToLineMatching  @var{quoted-regex}
 Use the current value of the comment delimiters set using
 @code{SetCommentStart} and @code{SetCommentEnd} to comment out lines
 from the current position in a file to a line matching the given regular
 expression in quotes.
 
-@item DefineClasses "@var{class1}:@var{class2}:..."
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node DefineClasses, DefineInGroup, CommentToLineMatching, editfiles
+@subsection DefineClasses "@var{class1}:@var{class2}:..."
 Activate the following colon, comma or dot-separated list of classes if
 and only if the file is edited. 
 
-@item DefineInGroup "@var{class1}:@var{class2}:..."
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node DefineInGroup, DeleteLinesAfterThisMatching, DefineClasses, editfiles
+@subsection DefineInGroup "@var{class1}:@var{class2}:..."
 Activate the following colon, comma or dot-separated list of classes if
 the edit group is entered. This can be combined with other classes
 to identify what particular edits took place.
@@ -6542,39 +6836,76 @@ This will define service_added and service_added_another_way if
 either line is added, but additionally myservice1_added if myservice1
 was added and likewise for myservice2_added.
 
-@item DefineInGroup "@var{class1}:@var{class2}:..."
 Activate the following colon, comma or dot-separated list of classes
 if execution reaches the @code{BeginGroup} ... @code{EndGroup}
 section(s) containing this command. If you think you want to put
 DefineClasses within a @code{BeginGroup} ... @code{EndGroup} section,
 you actually want this.
 
-@item DeleteLinesAfterThisMatching @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node DeleteLinesAfterThisMatching, DeleteLinesContaining, DefineInGroup, editfiles
+@subsection DeleteLinesAfterThisMatching @var{quoted-regex}
 Delete lines after the current position which match the quoted expression.
 
-@item   DeleteLinesContaining @var{quoted-string}/DeleteLinesNotContaining @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node DeleteLinesContaining, DeleteLinesMatching, DeleteLinesAfterThisMatching, editfiles
+@subsection   DeleteLinesContaining @var{quoted-string}/DeleteLinesNotContaining @var{quoted-string}
 Delete all lines (not) containing the exact string quoted.
 
-@item   DeleteLinesMatching @var{quoted-regex}/DeleteLinesNotMatching @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node DeleteLinesMatching, DeleteLinesStarting, DeleteLinesContaining, editfiles
+@subsection   DeleteLinesMatching @var{quoted-regex}/DeleteLinesNotMatching @var{quoted-regex}
 Delete all lines (not) fully matching the tied quoted regular expression.
 
-@item   DeleteLinesStarting @var{quoted-string}/DeleteLinesNotStarting @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node DeleteLinesStarting, DeleteLinesNotContaining, DeleteLinesMatching, editfiles
+@subsection   DeleteLinesStarting @var{quoted-string}/DeleteLinesNotStarting @var{quoted-string}
 Delete all lines (not) beginning with the exact string quoted.
 
-@item DeleteLinesNotContainingFileItems @var{filename}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node DeleteLinesNotContaining, DeleteLinesNotMatchingFileItems, DeleteLinesStarting, editfiles
+@subsection DeleteLinesNotContainingFileItems @var{filename}
 Delete lines in the file that do not contain the any of the substrings in the file.
-@item DeleteLinesNotMatchingFileItems @var{filename}
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node DeleteLinesNotMatchingFileItems, DeleteLinesNotStartingFileItems, DeleteLinesNotContaining, editfiles
+@subsection DeleteLinesNotMatchingFileItems @var{filename}
 Delete lines in the file that do not match the any of the regular expressions in the file.
-@item DeleteLinesNotStartingFileItems @var{filename}
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node DeleteLinesNotStartingFileItems, DeleteNLines, DeleteLinesNotMatchingFileItems, editfiles
+@subsection DeleteLinesNotStartingFileItems @var{filename}
 Delete lines in the file that do not start with any of the substrings in the file.
 
-@item DeleteNLines @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node DeleteNLines, DeleteToLineMatching, DeleteLinesNotStartingFileItems, editfiles
+@subsection DeleteNLines @var{quoted-string}
 Deletes up to @math{N} lines from the current file, starting from the
 location of the current line pointer. If the end of the file is reached
 and less than @math{N} lines are deleted, a warning is issued, but
 editing continues.
 
-@item DeleteToLineMatching @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node DeleteToLineMatching, EditMode (binary), DeleteNLines, editfiles
+@subsection DeleteToLineMatching @var{quoted-regex}
 Delete lines from the current position, up to
 but not including a line matching the regular expression
 in the quoted string. If no line matches the
@@ -6582,8 +6913,11 @@ given expression, a warning is only printed in
 verbose mode, but all edits are immediately
 abandoned.
 
-
-@item EditMode "Binary"
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node EditMode (binary), EditSplit, DeleteToLineMatching, editfiles
+@subsection EditMode "Binary"
 If set to binary, the file will be edited as if it were a non-ASCII file.
 See discussion below.
 
@@ -6591,8 +6925,11 @@ See discussion below.
    EditMode "Binary"
 @end smallexample
 
-
-@item EditSplit @var{char}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node EditSplit, EmptyEntireFilePlease, EditMode (binary), editfiles
+@subsection EditSplit @var{char}
 Editfiles treats lists as private interpretations, since iteration over
 lists could lead to unpredictable behaviour if text variables accidentally
 contain the list separator. The control option @code{Split} therefore has
@@ -6606,19 +6943,62 @@ no effect on editfiles. This definition makes list expansion work in editfiles.
 @cindex Split in editfiles
 @cindex Iteration over lists (editfiles)
 
-@item EmptyEntireFilePlease
+Be careful not to confuse this with the @code{SplitOn} character.
+
+@smallexample
+
+editfiles:
+
+ @{ /tmp/bla1
+
+ EditSplit "!"
+ AppendIfNoSuchLine "alpha1!beta1"
+ EditSplit ":"
+ AppendIfNoSuchLine "alpha2!beta2"
+ EditSplit "@@"
+ AppendIfNoSuchLine "alpha3@@beta3"
+ @} 
+
+ @{ /tmp/bla2
+
+ AppendIfNoSuchLine "new1@@new2"
+ @}
+
+@end smallexample
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node EmptyEntireFilePlease, ElseDefineClasses, EditSplit, editfiles
+@subsection EmptyEntireFilePlease
 Deletes all lines from the current file.
 
-@item ElseDefineClasses
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node ElseDefineClasses, EndGroup, EmptyEntireFilePlease, editfiles
+@subsection ElseDefineClasses
 See @code{DefineClasses}
 
-@item EndGroup
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node EndGroup, EndLoop, ElseDefineClasses, editfiles
+@subsection EndGroup
 Terminates a begin-end conditional structure.
 
-@item EndLoop
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node EndLoop, ExpandVariables, EndGroup, editfiles
+@subsection EndLoop
 Terminates a loop. See @code{ForEachLineIn}
 
-@item ExpandVariables
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node ExpandVariables, ExpireAfter (editing), EndLoop, editfiles
+@subsection ExpandVariables
 This causes cfengine to run through the contents of the file
 and expand any recognisable editfile strings in the file, if they
 are defined within the scope of the cfagent script. This gives
@@ -6627,40 +7007,80 @@ cfengine an m4 like capacity.
 @cindex Templates
 @cindex m4 functionality
 
-@item ExpireAfter @var{mins}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node ExpireAfter (editing), Filter, ExpandVariables, editfiles
+@subsection ExpireAfter @var{mins}
 
-@item Filter @var{filteralias}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node Filter, FixEndOfLine, ExpireAfter (editing), editfiles
+@subsection Filter @var{filteralias}
 Name a fiter for pruning file searches.
 
-@item FixEndOfLine
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node FixEndOfLine, ForEachLineIn, Filter, editfiles
+@subsection FixEndOfLine
 The quoted string which follows may be either @samp{dos}
 or @samp{Unix} to fix the end of line character conventions
 to match these systems. This command should be executed
 last of all, since cfengine appends new lines with the conventions
 of the system on which is was complied during edit operations.
 
-@item ForEachLineIn @var{quoted-filename}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node ForEachLineIn, GotoLastLine, FixEndOfLine, editfiles
+@subsection ForEachLineIn @var{quoted-filename}
 This marks the beginning of a for-loop which reads successive
 lines from a named file. The result is like using @code{SetLine}
 for each line in the file. Nested loops are not permitted.
 
-@item GotoLastLine
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node GotoLastLine, HashCommentLinesContaining, ForEachLineIn, editfiles
+@subsection GotoLastLine
 Moves the file pointer to the last line in
 the current file.
 
-@item   HashCommentLinesContaining @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node HashCommentLinesContaining, HashCommentLinesMatching, GotoLastLine, editfiles
+@subsection   HashCommentLinesContaining @var{quoted-string}
 Add a @samp{#} to the start of any line containing the quoted string.
 
-@item   HashCommentLinesMatching @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node HashCommentLinesMatching, HashCommentLinesStarting, HashCommentLinesContaining, editfiles
+@subsection   HashCommentLinesMatching @var{quoted-regex}
 Add a @samp{#} to the start of any line exactly matching the quoted regular expression.
 
-@item   HashCommentLinesStarting @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node HashCommentLinesStarting, IfElapsed (editing), HashCommentLinesMatching, editfiles
+@subsection   HashCommentLinesStarting @var{quoted-string}
 Add a @samp{#} to the start of any line starting with the quoted string.
 
-@item IfElapsed @var{mins}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node IfElapsed (editing), IncrementPointer, HashCommentLinesStarting, editfiles
+@subsection IfElapsed @var{mins}
 As usual.
 
-@item IncrementPointer @var{quoted-number}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node IncrementPointer, Inform (editing), IfElapsed (editing), editfiles
+@subsection IncrementPointer @var{quoted-number}
 Increments the value (in lines) of the file pointer
 by the number of lines specified in the quoted
 string (as a denary number). e.g. @samp{``4''}.
@@ -6672,13 +7092,21 @@ start of file or end of file.
 @cindex Incrementing line pointer in editfiles
 @cindex Decrementing line pointer in editfiles
 
-@item Inform @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node Inform (editing), InsertFile, IncrementPointer, editfiles
+@subsection Inform @var{quoted-string}
 Set to true or false, on or off to set the inform level for this file.
 Default is off. Note that, owing to the way that cfengine re-uses code,
 this feature does not work very well. Detailed messages are not
 available, only a summary of whether or not the file changed.
 
-@item InsertFile @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node InsertFile, InsertLine, Inform (editing), editfiles
+@subsection InsertFile @var{quoted-string}
 Inserts the named file after the current line position
 in the file. This should be used in conjunction
 with a begin-end construction in order to avoid
@@ -6689,7 +7117,11 @@ Note if the file is empty, or if the current line
 pointer is not set, the file is inserted at the start
 of the file.
 
-@item InsertLine @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node InsertLine, LocateLineMatching, InsertFile, editfiles
+@subsection InsertLine @var{quoted-string}
 
 Inserts the quoted string as a line after the current
 line pointer in the file. After the insert, the line
@@ -6699,8 +7131,11 @@ This should probably be used in conjunction with the
 conditional begin-end tests to avoid lines being
 inserted on every run.
 
-
-@item LocateLineMatching @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node LocateLineMatching, PercentCommentLinesContaining, InsertLine, editfiles
+@subsection LocateLineMatching @var{quoted-regex}
 
 Moves the current line pointer to the line matching the
 quoted regular expression. If there is no match, a
@@ -6710,41 +7145,75 @@ editing is immediately aborted. See also
 explicit warning, even out of verbose mode.
 
 
-
-@item   PercentCommentLinesContaining @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node PercentCommentLinesContaining, PercentCommentLinesMatching, LocateLineMatching, editfiles
+@subsection   PercentCommentLinesContaining @var{quoted-string}
 Add a @samp{%} to the start of any line containing the quoted string.
 
-@item   PercentCommentLinesMatching @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node PercentCommentLinesMatching, PercentCommentLinesStarting, PercentCommentLinesContaining, editfiles
+@subsection   PercentCommentLinesMatching @var{quoted-regex}
 Add a @samp{%} to the start of any line exactly matching the quoted regular.
 
-@item   PercentCommentLinesStarting @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node PercentCommentLinesStarting, Prepend (editing), PercentCommentLinesMatching, editfiles
+@subsection   PercentCommentLinesStarting @var{quoted-string}
 Add a @samp{%} to the start of any line starting with the quoted string.
 
-
-@item Prepend @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node Prepend (editing), PrependIfNoLineMatching, PercentCommentLinesStarting, editfiles
+@subsection Prepend @var{quoted-string}
 Add a line containing the quoted string to the start of the file.
 This should be used in conjunction with the
 decision structures @code{BeginGroupIfNoLineMatching} and
 @code{BreakIfLineMatches}.
 
-@item PrependIfNoLineMatching @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node PrependIfNoLineMatching, PrependIfNoSuchLine, Prepend (editing), editfiles
+@subsection PrependIfNoLineMatching @var{quoted-regex}
 A new version of the older @code{PrependIfNoSuchLine}
 with uses a regular expression instead of a literal string.
 The string prepended is the one set using @code{SetLine}.
 
-@item   PrependIfNoSuchLine @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node PrependIfNoSuchLine, Recurse (editing), PrependIfNoLineMatching, editfiles
+@subsection   PrependIfNoSuchLine @var{quoted-string}
 Add a line containing the quoted string to the start of the file
 if the file doesn't contain the exact line already.
 
-@item  Recurse @var{digit/inf}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node Recurse (editing), ReplaceLineWith, PrependIfNoSuchLine, editfiles
+@subsection  Recurse @var{digit/inf}
 For recursive descents when editing whole file trees. 
 
-@item ReplaceLineWith @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node ReplaceLineWith, ReplaceAll With, Recurse (editing), editfiles
+@subsection ReplaceLineWith @var{quoted-string}
 Replace the line at the current position with the
 text in the quoted string. The file pointer remains
 pointing to this line after the change.
 
-@item ReplaceAll @var{quoted-regex} With @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node ReplaceAll With, ReplaceFirst, ReplaceLineWith, editfiles
+@subsection ReplaceAll @var{quoted-regex} With @var{quoted-string}
 Replace all instances of strings matching the regular expression in the
 first quotes with the exact string in the second set of quotes,
 throughout the current file. Note that cfengine matches on a left to
@@ -6757,7 +7226,11 @@ strings match the regular expression. On the other hand if the
 expression is not ambiguous, say replacing @samp{cfengine} with
 @samp{CFENGINE}, then the result would be @samp{hello CFENGINE CFENGINE}.
 
-@item ReplaceFirst @var{quoted-regex} With @var{quoted-string} 
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node ReplaceFirst, ReplaceLinesMatchingField, ReplaceAll With, editfiles
+@subsection ReplaceFirst @var{quoted-regex} With @var{quoted-string} 
 For each line of the current file, replace the first string matching the
 regular expression in the first quotes (@var{quoted-regex}) with the
 string given in the second set of quotes (@var{quoted-string}).
@@ -6766,7 +7239,11 @@ Matching is done left to right.  For example, if you replace
 cfengine encounters @samp{``YY = 03 but old YY = 70''} then it will
 be replaced with @samp{``YY = 04 but old YY = 70''}
 
-@item ReplaceLinesMatchingField @var{quoted-number}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node ReplaceLinesMatchingField, Repository, ReplaceFirst, editfiles
+@subsection ReplaceLinesMatchingField @var{quoted-number}
 This command replaces any lines in the current file with the current line
 set by @code{SetLine} or @code{ForEachLineIn}, if the lines
 are split into fields (e.g. the password file) separated by the
@@ -6778,18 +7255,32 @@ passwords (from a file which gets distributed) by new passwords
 in a local file. Rather than maintaining the files separately,
 this simply overrides the entries with the new ones.
 
-@item Repository @var{quoted string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node Repository, ResetSearch, ReplaceLinesMatchingField, editfiles
+@subsection Repository @var{quoted string}
 This allows a local override of the @code{Repository} variable, on an item
 by item basis. If set to ``off'' or ``none'' it cancels the value of a global repository.
 
+See @ref{copybackup}.
+See @ref{Backup in editfiles}.
 
-@item ResetSearch @var{quoted-string}
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node ResetSearch, RunScript, Repository, editfiles
+@subsection ResetSearch @var{quoted-string}
 Sets the current-position pointer to the line number
 in the quoted string. @samp{EOF} indicates the end of
 the file.
 
-
-@item RunScript @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node RunScript, RunScriptIfLineMatching, ResetSearch, editfiles
+@subsection RunScript @var{quoted-string}
 Executes the named script command. Before executing the script any edits
 are saved to disk. After the script has executed,
 cfengine reloads the file for any further editing
@@ -6804,7 +7295,11 @@ the success or failure of anything that is done during the
 execution of user scripts. This feature is to be
 used at the users own peril!
 
-@item RunScriptIfLineMatching @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node RunScriptIfLineMatching, RunScriptIfNoLineMatching, RunScript, editfiles
+@subsection RunScriptIfLineMatching @var{quoted-string}
 Executes the script named with the @code{SetScript}
 command only if the current file contains a line matching
 the quoted regular expression.
@@ -6814,7 +7309,11 @@ the success or failure of anything that is done during the
 execution of user scripts. This feature is to be
 used at the users own peril!
 
-@item RunScriptIfNoLineMatching @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node RunScriptIfNoLineMatching, SetCommentStart, RunScriptIfLineMatching, editfiles
+@subsection RunScriptIfNoLineMatching @var{quoted-regex}
 Executes the script named with the @code{SetScript}
 command if the current file contains no line matching
 the quoted regular expression.
@@ -6824,13 +7323,21 @@ the success or failure of anything that is done during the
 execution of user scripts. This feature is to be
 used at the users own peril!
 
-@item SetCommentStart @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node SetCommentStart, SetCommentEnd, RunScriptIfNoLineMatching, editfiles
+@subsection SetCommentStart @var{quoted-string}
 Specify which string should be used for starting
 a comment using the commands @code{CommentLineMatching}
 and @code{CommentLineStarting}. The default is the hash
 symbol @samp{#} followed by a single space.
 
-@item SetCommentEnd  @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node SetCommentEnd, SetLine, SetCommentStart, editfiles
+@subsection SetCommentEnd  @var{quoted-string}
 Specify which string should be used for ending
 a comment using the commands @code{CommentLineMatching}
 and @code{CommentLineStarting}. The default is the empty
@@ -6838,54 +7345,98 @@ string. For example, you could make C style comments
 by setting CommentStart to @samp{/*} and comment
 end to @samp{*/}.
 
-@item SetLine @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node SetLine, SetScript, SetCommentEnd, editfiles
+@subsection SetLine @var{quoted-string}
 
 Sets a current line value which can be appended using
 @code{AppendIfNoLineMatching} using a regular expression.
 
-@item SetScript @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node SetScript, SlashCommentLinesContaining, SetLine, editfiles
+@subsection SetScript @var{quoted-string}
 Sets the name of a user-supplied script
 for editing the current file.
 
-@item   SlashCommentLinesContaining @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node SlashCommentLinesContaining, SlashCommentLinesMatching, SetScript, editfiles
+@subsection   SlashCommentLinesContaining @var{quoted-string}
 Add a @samp{//} to the start of any line containing the quoted string.
 
-@item   SlashCommentLinesMatching @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node SlashCommentLinesMatching, SlashCommentLinesStarting, SlashCommentLinesContaining, editfiles
+@subsection   SlashCommentLinesMatching @var{quoted-regex}
 Add a @samp{//} to the start of any line exactly matching the quoted regular expression.
 
-@item   SlashCommentLinesStarting @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node SlashCommentLinesStarting, SplitOn, SlashCommentLinesMatching, editfiles
+@subsection   SlashCommentLinesStarting @var{quoted-string}
 Add a @samp{//} to the start of any line starting with the quoted string.
 
-@item SplitOn @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node SplitOn, SysLog, SlashCommentLinesStarting, editfiles
+@subsection SplitOn @var{quoted-string}
 This defines a single character which is to be interpreted as a
 field separator for editing files with columns. The default value
 for this is @samp{:}, as is used in the password and group files.
 It is used in conjunction with @code{ReplaceLinesMatchingField}.
+Note, be careful not to confuse this with the @code{EditSplit} character.
 @cindex SplitOn
 @cindex Password file, editing
 @cindex Group field, editing
 @cindex Field separator in editfiles
 
-@item Syslog @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node SysLog, Umask, SplitOn, editfiles
+@subsection Syslog @var{quoted-string}
 Set to true or false, on or off to set inform level for this file.
 Default is off.
 
-@item Umask @var{quote mode}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node Umask, UnCommentLinesContaining, SysLog, editfiles
+@subsection Umask @var{quote mode}
 Set local umask for file creation and script execution.
 @cindex umask
 
-@item UnCommentLinesContaining  @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node UnCommentLinesContaining, UnCommentLinesMatching, Umask, editfiles
+@subsection UnCommentLinesContaining  @var{quoted-string}
 Uncomment all lines in file containing the quoted string as a
 substring. The comment delimiters are assumed to be those
 set using SetCommentStart and SetCommentEnd.
 
-@item UnCommentLinesMatching  @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node UnCommentLinesMatching, UnCommentsNLines, UnCommentLinesContaining, editfiles
+@subsection UnCommentLinesMatching  @var{quoted-regex}
 Uncomment all lines in file matching the quoted regular expression.  The
 comment delimiters are assumed to be those set using SetCommentStart and
 SetCommentEnd.
 
-
-@item UnCommentNLines @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node UnCommentsNLines, UnCommentToLineMatching, UnCommentLinesMatching, editfiles
+@subsection UnCommentNLines @var{quoted-string}
 Uncomments N lines starting from the current position, using
 the currently defined method for commenting. Note that the
 comment start and end symbols are removed independently, i.e.
@@ -6908,64 +7459,114 @@ and also
     3 */
 @end smallexample
 
-@item UnCommentToLineMatching @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node UnCommentToLineMatching, UnsetAbort, UnCommentsNLines, editfiles
+@subsection UnCommentToLineMatching @var{quoted-string}
 Uncomments from the current position up to and including the first
 line matching the named regular expression.
 
-@item UnsetAbort  @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node UnsetAbort, UseShell, UnCommentToLineMatching, editfiles
+@subsection UnsetAbort  @var{quoted-string}
 Switches off the feature @code{AbortAtLineMatching}.
 
-@item UseShell "false"
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node UseShell, WarnIfFileMissing, UnsetAbort, editfiles
+@subsection UseShell "false"
 Normally cfengine uses a shell based exec function to run
 scripts during editing. This involves the inheritance of
 environment variables and path, which carries with it an
 inherent security risk. Setting this value to false
 causes execution to execute without an encapsulating shell.
 
-@item   WarnIfFileMissing @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node WarnIfFileMissing, WarnIfLineContaining, UseShell, editfiles
+@subsection   WarnIfFileMissing @var{quoted-string}
 If the file to be edited does not exist, a visible alert
 is issued.
 
-@item   WarnIfLineContaining @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node WarnIfLineContaining, WarnIfLineMatching, WarnIfFileMissing, editfiles
+@subsection   WarnIfLineContaining @var{quoted-string}
 Issue a warning if the quoted string is found as a
 substring of one or more lines in the file.
 
-@item   WarnIfLineMatching @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node WarnIfLineMatching, WarnIfLineStarting, WarnIfLineContaining, editfiles
+@subsection   WarnIfLineMatching @var{quoted-regex}
 Issue a warning if the quoted regular expression
 matches one or more lines in the file.
 
-
-@item   WarnIfLineStarting @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node WarnIfLineStarting, WarnIfNoLineContaining, WarnIfLineMatching, editfiles
+@subsection   WarnIfLineStarting @var{quoted-string}
 Issue a warning if the quoted string matches the start
 of one or more lines in the file.
 
-
-@item   WarnIfNoLineContaining @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node WarnIfNoLineContaining, WarnIfNoLineMatching, WarnIfLineStarting, editfiles
+@subsection   WarnIfNoLineContaining @var{quoted-string}
 Issue a warning if the quoted string is not contained
 in one or more lines in the file.
 
-@item   WarnIfNoLineMatching @var{reg-ex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node WarnIfNoLineMatching, WarnIfNoLineStarting, WarnIfNoLineContaining, editfiles
+@subsection   WarnIfNoLineMatching @var{reg-ex}
 Issue a warning if the quoted regular expression does not match
 one or more lines in the file.
 
-@item   WarnIfNoLineStarting @var{quoted-string}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node WarnIfNoLineStarting, WarnIfNoSuchLine, WarnIfNoLineMatching, editfiles
+@subsection WarnIfNoLineStarting @var{quoted-string}
 Issue a warning if the quoted string is not found
 at the start of one or more lines in the file.
 
-@item   WarnIfNoSuchLine @var{quoted-regex}
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+@node WarnIfNoSuchLine,  , WarnIfNoLineStarting, editfiles
+@subsection WarnIfNoSuchLine @var{quoted-regex}
 Issue a warning if the quoted regular expression does not
 match one or more lines in the file.
 
 
-@end table
+@c %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+@c SECTION
+@c %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@node Editfiles on Binary Files, files, editfiles, Cfagent reference
+@section Editfiles on Binary Files
 
 @noindent
-A limited number of operations can also be performed on purely binary files, e.g.
-compiled programs, in order to search for strings or viral code, or to modify
-strings within a program. Binary mode is a mutually exclusive, separate mode to normal
-editing. The limit on the size of binary files is set by @code{editbinaryfilesize}
-in @code{control}.
-@table @code
+A limited number of operations can also be performed on purely binary
+files, e.g.  compiled programs, in order to search for strings or
+viral code, or to modify strings within a program. Binary mode is a
+mutually exclusive, separate mode to normal editing. The limit on the
+size of binary files is set by @code{editbinaryfilesize} in
+@code{control}.
+
+
+@itemize @bullet
 
 @item  ReplaceAll @var{regex} With @var{literal}
 
@@ -6987,14 +7588,7 @@ part of the file which is being edited. This can be used to search for
 binary data which cannot be typed directly into the cfengine program,
 e.g. virus signatures.
 
-@end table
-
-@noindent
-It is suggested that you use these editing functions with
-caution. Although all possible safeguards have been incorporated into
-them, it is still possible through carelessness to do damage to
-important files on your system. Always test editing programs carefully
-before committing them to your global site configuration.
+@end itemize
 
 
 @page
@@ -7003,7 +7597,7 @@ before committing them to your global site configuration.
 @c SECTION
 @c -------------------------------------------------------------------------------
 
-@node files, filters, editfiles, Cfagent reference
+@node files, filters, Editfiles on Binary Files, Cfagent reference
 @section files
 @cindex File management
 @cindex Files, checking permissions
@@ -7050,6 +7644,7 @@ the form of the statement in pseudo-code:
                           group=@var{gid-list}
                           action=@var{fixall/other-options}/@b{warnall} 
                           links=@b{false/stop}@var{/traverse/follow/tidy}
+                          rxdirs=@b{true/on}/@var{false/off}
 
                           ignore=@var{pattern}
                           include=@var{pattern}
@@ -7103,6 +7698,7 @@ unique abbreviation.
 @vindex owner
 @vindex g=
 @vindex group
+@vindex rxdirs
 
 @table @code
 
@@ -7281,6 +7877,12 @@ same device as the root of the rescurion path.
 @cindex xdev
 
 
+@item rxdirs
+If true (the default) cfengine assumes that a directory that is readable should also
+have its execute flag set, allowing users to enter it and perform directory browsing.
+If false, cfengine will not make this assumption. Note that if set to false, it will
+affect recursive file checks. Thus setting to false with @code{mode=644 recurse=true}
+could lead to unintended permissions on directories.
 @end table
 
 The default values are @code{mode=+000}, @code{recurse=0},
@@ -10448,6 +11050,7 @@ tidy:
                        dirlinks=@var{keep/tidy/delete}
                        rmdirs=@var{[true/all]/[@b{false/none}]/sub}
                        links=@b{stop/keep}@var{/traverse/tidy}
+                       compress=@var{true/on}/@b{false/off}
 
                        define=@var{classlist}
                        elsedefine=@var{classlist}
@@ -10477,6 +11080,8 @@ unique abbreviation.
 @vindex age
 @vindex r=
 @vindex recurse
+@cindex compress
+@cindex Compression during tidy
 
 @table @code
 
@@ -13294,6 +13899,20 @@ deny:
 @end ifhtml
 
 @contents
+
+@ifhtml
+@html
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-2576171-2");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+@end html
+@end ifhtml
 
 @bye
 

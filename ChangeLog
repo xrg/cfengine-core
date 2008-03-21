@@ -1,4 +1,27 @@
+2.2.4	
+	Build changes. libpub is now an installed library libcfpub.so/a
+	so that cfengine 3 can find it.
 
+	Documentation is no longer distributed in the tarball, since most
+	people will use the online version. Also, enhanced documentation is
+	now available for any user who registers (free) at cfengine.com.
+
+	compress=true option in tidy was missing from documentation, and
+	left uninitialized during purging leading to attempts to compress
+	files instead of deleting. 
+
+	Bugfix for empty strings in editfiles.
+
+	Links did not get removed with nolink=kill. Code changes apparently broken earlier.
+	Fixed.
+
+	rxdirs= added to files. Default is false. If set to true, cfengine will not
+	assume that x-bits should be set when r is set on directory permissions.
+
+	Group initialization to popen, so shellcommands groups are consistent with uid login id
+
+	Rpm fix for package removal.
+	
 2.2.3
 	Feedback release after 2.2.2 and LISA 07, minor tweaks and bug fixes
 
