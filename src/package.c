@@ -363,7 +363,7 @@ switch(pkgmgr)
       if (!GetMacroValue(CONTEXTID,"RPMRemoveCommand"))
          {
          CfLog(cferror,"RPMRemoveCommand NOT set, using default!\n","");
-         strncpy(rawdelcmd, "/bin/rpm %s", CF_BUFSIZE - 1);
+         strncpy(rawdelcmd, "/bin/rpm -e %s", CF_BUFSIZE - 1);
          }
       strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"RPMRemoveCommand"), CF_BUFSIZE - 1);
       break;
