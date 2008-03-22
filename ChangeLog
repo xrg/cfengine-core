@@ -1,3 +1,7 @@
+
+2.2.4p
+	Blunder in makefile change. Compilation error fixed.
+	
 2.2.4	
 	Build changes. libpub is now an installed library libcfpub.so/a
 	so that cfengine 3 can find it.

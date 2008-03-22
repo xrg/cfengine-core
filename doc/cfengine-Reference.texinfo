@@ -105,6 +105,13 @@ as last updated @value{UPDATED}.
 @ifhtml
 @html
 <a href="#Contents"><h1>COMPLETE TABLE OF CONTENTS</h1></a>
+
+<p>
+This manual is for version @value{VERSION} of cfengine and
+was last updated on the  @value{UPDATED}.
+</p>
+
+<h2>Summary of contents</h2>
 @end html
 @end ifhtml
 
@@ -1284,7 +1291,7 @@ cfengines are started independently. The default value is unlimited.
 A short for of @code{$(arch)}.
 
 @item OutputPrefix
-This quoted string can be used to change the default `cfengine:${hostname}'
+This quoted string can be used to change the default `cfengine:$@{hostname@}'
 prefix on output lines to something else. You might wish to shorten
 the string, or have a different prefix for different hosts. The default is
 equivalent to,

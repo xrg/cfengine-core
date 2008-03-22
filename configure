@@ -2432,7 +2432,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=cfengine
- VERSION=2.2.4
+ VERSION=2.2.4p
 
 
 cat >>confdefs.h <<_ACEOF
@@ -31392,7 +31392,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files pub/Makefile src/Makefile contrib/Makefile inputs/Makefile Makefile doc/Makefile src/cflex.l"
+ac_config_files="$ac_config_files pub/Makefile src/Makefile contrib/Makefile inputs/Makefile Makefile src/cflex.l"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -31999,7 +31999,6 @@ do
     "contrib/Makefile") CONFIG_FILES="$CONFIG_FILES contrib/Makefile" ;;
     "inputs/Makefile") CONFIG_FILES="$CONFIG_FILES inputs/Makefile" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-    "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
     "src/cflex.l") CONFIG_FILES="$CONFIG_FILES src/cflex.l" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

@@ -137,6 +137,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#dir">(dir)</a>
 
    <p><a href="#Contents"><h1>COMPLETE TABLE OF CONTENTS</h1></a>
 
+   <p><p>
+This manual is for version 2.2.4 of cfengine and
+was last updated on the  22 March 2008. 
+</p>
+
+   <p><h2>Summary of contents</h2>
+
 <!-- ********************************************************************** -->
 <!-- CHAPTER -->
 <!-- ********************************************************************** -->
@@ -1198,10 +1205,9 @@ cfengines are started independently. The default value is unlimited.
 <a name="index-MaxCfengines-47"></a>
 <br><dt><code>ostype</code><dd>A short for of <code>$(arch)</code>.
 
-     <br><dt><code>OutputPrefix</code><dd>This quoted string can be used to change the default `cfengine:'
+     <br><dt><code>OutputPrefix</code><dd>This quoted string can be used to change the default `cfengine:${hostname}'
 prefix on output lines to something else. You might wish to shorten
-the string, or have a different prefix for different hosts. The value
-in this variable is appended with the name of the host. The default is
+the string, or have a different prefix for different hosts. The default is
 equivalent to,
 
      <pre class="smallexample">            OutputPrefix = ( "cfengine:$(host):")

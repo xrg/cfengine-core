@@ -89,6 +89,13 @@ as last updated @value{UPDATED}.
 @ifhtml
 @html
 <a href="#Contents"><h1>COMPLETE TABLE OF CONTENTS</h1></a>
+<p>
+This manual is for version @value{VERSION} of cfengine and
+was last updated on the  @value{UPDATED}.
+</p>
+
+<h2>Summary of contents</h2>
+
 @end html
 @end ifhtml
 
