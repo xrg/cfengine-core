@@ -998,8 +998,8 @@ int DPKGPackageCheck(char *package,char *version,enum cmpsense cmp)
 Verbose ("Package: %s\n",package);
 
 /* check that the package exists in the package database */
-snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/apt-cache policy %s 2>&1 | grep -v " \
-          "\"W: Unable to locate package \"", package);
+snprintf (VBUFF, CF_BUFSIZE, "LANG=C /usr/bin/apt-cache policy %s 2>&1 | " \
+          "grep -v \"W: Unable to locate package \"", package);
 
 if ((pp = cfpopen_sh(VBUFF, "r")) == NULL)
    {
@@ -1020,7 +1020,7 @@ if (cfpclose (pp) != 0)
    }
 
 /* check what version is installed on the system (if any) */
-snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/apt-cache policy %s", package);
+snprintf (VBUFF, CF_BUFSIZE, "LANG=C /usr/bin/apt-cache policy %s", package);
 
 /*
  * HvB: cfopen to cfopen_sh, fix bug for packages without version number
