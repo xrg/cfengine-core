@@ -126,16 +126,17 @@ void CheckExistingFile(char *cf_findertype,char *file,struct stat *dstat,struct 
   int amroot = true, fixmode = true, docompress=false;
   unsigned char digest1[EVP_MAX_MD_SIZE+1];
   unsigned char digest2[EVP_MAX_MD_SIZE+1];
+  enum fileactions action = ptr->action;
 
 #if defined HAVE_CHFLAGS
   u_long newflags;
 #endif
 
-Debug("CheckExistingFile(%s)\n",file);
+Debug("CheckExistingFile(%s,%s)\n",file,FILEACTIONTEXT[ptr->action]);
   
 maskvalue = umask(0);                 /* This makes the DEFAULT modes absolute */
  
-if (ptr->action == compress)
+if (action == compress)
    {
    docompress = true;
    
@@ -144,11 +145,11 @@ if (ptr->action == compress)
       AddMultipleClasses(ptr->defines);
       }
    
-   ptr->action = fixall;    /* Fix any permissions which are set */
+   action = fixall;    /* Fix any permissions which are set */
    }
   
 Debug("%s: Checking fs-object %s\n",VPREFIX,file);
-
+   
 #if defined HAVE_CHFLAGS
 if (ptr != NULL)
    {
@@ -178,7 +179,7 @@ if (ptr != NULL)
       return;
       }
 
-   if (ptr->action == alert)
+   if (action == alert)
       {
       snprintf(OUTPUT,CF_BUFSIZE*2,"Alert specified on file %s (m=%o,o=%d,g=%d)",file,(dstat->st_mode & 07777),dstat->st_uid,dstat->st_gid);
       CfLog(cferror,OUTPUT,"");
@@ -198,7 +199,7 @@ newperm = (dstat->st_mode & 07777);
 newperm |= ptr->plus;
 newperm &= ~(ptr->minus);
 
-if (S_ISREG(dstat->st_mode) && (ptr->action == fixdirs ||ptr->action == warndirs)) 
+if (S_ISREG(dstat->st_mode) && (action == fixdirs || action == warndirs)) 
    {
    Debug("Regular file, returning...\n");
    umask(maskvalue);
@@ -207,7 +208,7 @@ if (S_ISREG(dstat->st_mode) && (ptr->action == fixdirs ||ptr->action == warndirs
 
 if (S_ISDIR(dstat->st_mode))  
    {
-   if (ptr->action == fixplain || ptr->action == warnplain)
+   if (action == fixplain || action == warnplain)
       {
       umask(maskvalue);
       return;
@@ -255,7 +256,7 @@ if (dstat->st_uid == 0 && (dstat->st_mode & S_ISUID))
       }
    else
       {
-      switch (ptr->action)
+      switch (action)
          {
          case fixall:
          case fixdirs:
@@ -308,7 +309,7 @@ if (dstat->st_uid == 0 && (dstat->st_mode & S_ISGID))
       }
    else
       {
-      switch (ptr->action)
+      switch (action)
          {
          case fixall:
          case fixdirs:
@@ -337,7 +338,7 @@ if (dstat->st_uid == 0 && (dstat->st_mode & S_ISGID))
    }
 
 #ifdef DARWIN
-if (CheckFinderType(file, ptr->action, cf_findertype, dstat))
+if (CheckFinderType(file,action, cf_findertype, dstat))
    {
    if (ptr != NULL)
       {
@@ -408,7 +409,7 @@ if (stat(file,dstat) == -1)
    return;
    }
 
-if (CheckACLs(file,ptr->action,ptr->acl_aliases))
+if (CheckACLs(file,action,ptr->acl_aliases))
    {
    if (ptr != NULL)
       {
@@ -417,7 +418,7 @@ if (CheckACLs(file,ptr->action,ptr->acl_aliases))
    }
 
 #ifndef HAVE_CHFLAGS
-if (((newperm & 07777) == (dstat->st_mode & 07777)) && (ptr->action != touch))    /* file okay */
+if (((newperm & 07777) == (dstat->st_mode & 07777)) && (action != touch))    /* file okay */
    {
    Debug("File okay, newperm = %o, stat = %o\n",(newperm & 07777),(dstat->st_mode & 07777));
    if (docompress)
@@ -434,7 +435,7 @@ if (((newperm & 07777) == (dstat->st_mode & 07777)) && (ptr->action != touch))  
    return;
    }
 #else
-if (((newperm & 07777) == (dstat->st_mode & 07777)) && (ptr->action != touch))    /* file okay */
+if (((newperm & 07777) == (dstat->st_mode & 07777)) && (action != touch))    /* file okay */
    {
    Debug("File okay, newperm = %o, stat = %o\n",(newperm & 07777),(dstat->st_mode & 07777));
    fixmode = false;
@@ -445,7 +446,7 @@ if (fixmode)
    {
    Debug("Trying to fix mode...\n"); 
    
-   switch (ptr->action)
+   switch (action)
       {
       case linkchildren:
 
@@ -587,7 +588,7 @@ if (ptr != NULL)
       {
       Debug("Fixing %s, newflags = %o, flags = %o\n",file,(newflags & CHFLAGS_MASK),(dstat->st_flags & CHFLAGS_MASK));
       
-      switch (ptr->action)
+      switch (action)
          {
          case linkchildren:
              
@@ -719,7 +720,8 @@ if (docompress)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Compressing %s",file);
    AuditLog(ptr->logaudit,ptr->audit,ptr->lineno,OUTPUT,CF_CHG);
-   
+
+   printf("COMPRESS %s\n",file);
    CompressFile(file);
    if (ptr != NULL)
       {
