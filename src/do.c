@@ -2883,6 +2883,14 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
       if (ptr->action == pkgaction_remove) 
          {
          PackageList(ptr,name,ptr->pkgmgr,ptr->ver,ptr->cmp,&pending_pkgs);
+
+         /* Some package managers operate best doing things one at a time. */
+         if ((ptr->pkgmgr == pkgmgr_freebsd) || (ptr->pkgmgr == pkgmgr_sun))
+            {
+            RemovePackage(ptr,ptr->pkgmgr,&pending_pkgs);
+            DeleteItemList(pending_pkgs);
+            pending_pkgs = NULL;
+            }
          }
       else if (ptr->action == pkgaction_upgrade)
          {
@@ -2898,7 +2906,6 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
          AppendItem(&pending_pkgs,name, NULL);
          
          /* Some package managers operate best doing things one at a time. */
-         
          if ((ptr->pkgmgr == pkgmgr_freebsd) || (ptr->pkgmgr == pkgmgr_sun))
             {
             InstallPackage(ptr,ptr->pkgmgr,&pending_pkgs);
