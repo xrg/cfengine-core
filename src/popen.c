@@ -468,134 +468,134 @@ FILE *cfpopen_shsetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv
    pid_t pid;
    FILE *pp = NULL;
 
- Debug("cfpopen(%s)\n",command);
+   printf("cfpopen_shsetuid(%s,%s,%d,%d)\n",command,type,uid,gid);
 
- if ((*type != 'r' && *type != 'w') || (type[1] != '\0'))
-    {
-    errno = EINVAL;
-    return NULL;
-    }
- 
- if (CHILD == NULL)   /* first time */
-    {
-    if ((CHILD = calloc(MAXFD,sizeof(pid_t))) == NULL)
-       {
-       return NULL;
-       }
-    }
+if ((*type != 'r' && *type != 'w') || (type[1] != '\0'))
+   {
+   errno = EINVAL;
+   return NULL;
+   }
 
- if (pipe(pd) < 0)        /* Create a pair of descriptors to this process */
-    {
-    return NULL;
-    }
+if (CHILD == NULL)   /* first time */
+   {
+   if ((CHILD = calloc(MAXFD,sizeof(pid_t))) == NULL)
+      {
+      return NULL;
+      }
+   }
 
- if ((pid = fork()) == -1)
-    {
-    return NULL;
-    }
- 
- ALARM_PID = pid;
-  
- if (pid == 0)
-    {
-    switch (*type)
-       {
-       case 'r':
-           
-           close(pd[0]);        /* Don't need output from parent */
-           
-           if (pd[1] != 1)
-              {
-              dup2(pd[1],1);    /* Attach pp=pd[1] to our stdout */
-              dup2(pd[1],2);    /* Merge stdout/stderr */
-              close(pd[1]);
-              }
-           
-           break;
-           
-       case 'w':
-           
-           close(pd[1]);
-           
-           if (pd[0] != 0)
-              {
-              dup2(pd[0],0);
-              close(pd[0]);
-              }
-       }
-    
-    for (i = 0; i < MAXFD; i++)
-       {
-       if (CHILD[i] > 0)
-          {
-          close(i);
-          }
-       }
-    
-    if (strlen(chrootv) != 0)
-       {
-       if (chroot(chrootv) == -1)
-          {
-          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't chroot to %s\n",chrootv);
-          CfLog(cferror,OUTPUT,"chroot");
-          return NULL;
-          }
-       }
-    
-    if (strlen(chdirv) != 0)
-       {
-       if (chdir(chdirv) == -1)
-          {
-          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't chdir to %s\n",chdirv);
-          CfLog(cferror,OUTPUT,"chroot");
-          return NULL;
-          }
-       }
-    
-    if (!CfSetUid(uid,gid))
-       {
-       return NULL;
-       }
-    
-    execl("/bin/sh","sh","-c",command,NULL);
-    _exit(1);
-    }
- else
-    {
-    switch (*type)
-       {
-       case 'r':
-           
-           close(pd[1]);
-           
-           if ((pp = fdopen(pd[0],type)) == NULL)
-              {
-              return NULL;
-              }
-           break;
-           
-       case 'w':
-           
-           close(pd[0]);
-           
-           if ((pp = fdopen(pd[1],type)) == NULL)
-              {
-              return NULL;
-              }
-       }
-    
-    if (fileno(pp) >= MAXFD)
-       {
-       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
-       CfLog(cferror,OUTPUT,"");
-       }
-    else
-       {
-       CHILD[fileno(pp)] = pid;
-       }
-    return pp;
-    }
- 
+if (pipe(pd) < 0)        /* Create a pair of descriptors to this process */
+   {
+   return NULL;
+   }
+
+if ((pid = fork()) == -1)
+   {
+   return NULL;
+   }
+
+ALARM_PID = pid;
+
+if (pid == 0)
+   {
+   switch (*type)
+      {
+      case 'r':
+          
+          close(pd[0]);        /* Don't need output from parent */
+          
+          if (pd[1] != 1)
+             {
+             dup2(pd[1],1);    /* Attach pp=pd[1] to our stdout */
+             dup2(pd[1],2);    /* Merge stdout/stderr */
+             close(pd[1]);
+             }
+          
+          break;
+          
+      case 'w':
+          
+          close(pd[1]);
+          
+          if (pd[0] != 0)
+             {
+             dup2(pd[0],0);
+             close(pd[0]);
+             }
+      }
+   
+   for (i = 0; i < MAXFD; i++)
+      {
+      if (CHILD[i] > 0)
+         {
+         close(i);
+         }
+      }
+   
+   if (strlen(chrootv) != 0)
+      {
+      if (chroot(chrootv) == -1)
+         {
+         snprintf(OUTPUT,CF_BUFSIZE,"Couldn't chroot to %s\n",chrootv);
+         CfLog(cferror,OUTPUT,"chroot");
+         return NULL;
+         }
+      }
+   
+   if (strlen(chdirv) != 0)
+      {
+      if (chdir(chdirv) == -1)
+         {
+         snprintf(OUTPUT,CF_BUFSIZE,"Couldn't chdir to %s\n",chdirv);
+         CfLog(cferror,OUTPUT,"chroot");
+         return NULL;
+         }
+      }
+   
+   if (!CfSetUid(uid,gid))
+      {
+      return NULL;
+      }
+   
+   execl("/bin/sh","sh","-c",command,NULL);
+   _exit(1);
+   }
+else
+   {
+   switch (*type)
+      {
+      case 'r':
+          
+          close(pd[1]);
+          
+          if ((pp = fdopen(pd[0],type)) == NULL)
+             {
+             return NULL;
+             }
+          break;
+          
+      case 'w':
+          
+          close(pd[0]);
+          
+          if ((pp = fdopen(pd[1],type)) == NULL)
+             {
+             return NULL;
+             }
+      }
+   
+   if (fileno(pp) >= MAXFD)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
+      CfLog(cferror,OUTPUT,"");
+      }
+   else
+      {
+      CHILD[fileno(pp)] = pid;
+      }
+   return pp;
+   }
+
 return NULL;
 }
 
@@ -616,6 +616,7 @@ if (CHILD == NULL)  /* popen hasn't been called */
    return -1;
    }
 
+ALARM_PID = -1;
 fd = fileno(pp);
 
 if (fd >= MAXFD)
@@ -695,22 +696,22 @@ if (gid != (gid_t) -1)
       CfLog(cferror,OUTPUT,"setgid");
       return false;
       }
-   }
 
-/* Now eliminate any residual privileged groups */
-
-if ((pw = getpwuid(uid)) == NULL)
-   {
-   snprintf(OUTPUT,CF_BUFSIZE,"Unable to get login groups when dropping privilege to %s=%d",pw->pw_name,uid);
-   CfLog(cferror,OUTPUT,"initgroups");
-   return false;
-   }
-
-if (initgroups(pw->pw_name, pw->pw_gid) == -1)
-   {
-   snprintf(OUTPUT,CF_BUFSIZE,"Unable to set login groups when dropping privilege to %s=%d",pw->pw_name,uid);
-   CfLog(cferror,OUTPUT,"initgroups");
-   return false;
+   /* Now eliminate any residual privileged groups */
+   
+   if ((pw = getpwuid(uid)) == NULL)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Unable to get login groups when dropping privilege to %s=%d",pw->pw_name,uid);
+      CfLog(cferror,OUTPUT,"initgroups");
+      return false;
+      }
+   
+   if (initgroups(pw->pw_name, pw->pw_gid) == -1)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Unable to set login groups when dropping privilege to %s=%d",pw->pw_name,uid);
+      CfLog(cferror,OUTPUT,"initgroups");
+      return false;
+      }
    }
 
 if (uid != (uid_t) -1)
