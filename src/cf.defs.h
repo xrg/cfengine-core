@@ -818,6 +818,7 @@ enum classes
    ux4800,
    qnx,
    dragonfly,
+   unused1,
    unused2,
    unused3
    };
@@ -1295,6 +1296,7 @@ enum pkgactions /* What to do with a package if it is found/not found */
     pkgaction_install,
     pkgaction_remove,
     pkgaction_upgrade,
+    pkgaction_fix,
     pkgaction_none
     };
 
@@ -1374,7 +1376,11 @@ enum observables
     ob_webaccess,
     ob_weberrors,
     ob_syslog,
-    ob_messages
+    ob_messages,
+    ob_temp0,
+    ob_temp1,
+    ob_temp2,
+    ob_temp3
     };
 
 

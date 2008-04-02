@@ -36,7 +36,7 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 #ifdef HAVE_SYS_LOADAVG_H
-# include <sys/loadavg.h>
+v# include <sys/loadavg.h>
 #else
 # define LOADAVG_5MIN    1
 #endif
@@ -72,6 +72,8 @@ char STATELOG[CF_BUFSIZE];
 char ENV_NEW[CF_BUFSIZE];
 char ENV[CF_BUFSIZE];
 
+short ACPI = false;
+short LMSENSORS = false;
 short SCLI = false;
 short TCPDUMP = false;
 short TCPPAUSE = false;
@@ -120,8 +122,6 @@ short NO_FORK = false;
 
 int LASTQ[CF_OBSERVABLES];
 
-
-
 /*******************************************************************/
 /* Prototypes                                                      */
 /*******************************************************************/
@@ -147,7 +147,8 @@ void GatherDiskData (void);
 void GatherLoadData (void);
 void GatherSocketData (void);
 void GatherSNMPData(void);
-
+void GatherSensorData(void);
+    
 void LeapDetection (void);
 struct Averages *GetCurrentAverages (char *timekey);
 void UpdateAverages (char *timekey, struct Averages newvals);
@@ -165,6 +166,9 @@ void IncrementCounter (struct Item **list,char *name);
 void SaveTCPEntropyData (struct Item *list,int i, char *inout);
 void ConvertDatabase(void);
 int GetFileGrowth(char *filename,enum observables index);
+
+int GetAcpi(void);
+int GetLMSensors(void);
 
 
 /*******************************************************************/
@@ -191,6 +195,7 @@ void CheckOptsAndInit(int argc,char **argv)
 { extern char *optarg;
  int optindex = 0;
  int c, i,j,k;
+ struct stat statbuf;
 
 umask(077);
 sprintf(VPREFIX,"cfenvd"); 
@@ -229,8 +234,8 @@ while ((c=getopt_long(argc,argv,"d:vhHFVT",CFDENVOPTIONS,&optindex)) != EOF)
 
       case 'V': printf("GNU %s-%s daemon\n%s\n",PACKAGE,VERSION,COPYRIGHT);
          printf("This program is covered by the GNU Public License and may be\n");
-  printf("copied free of charge. No warrenty is implied.\n\n");
-                exit(0);
+         printf("copied free of charge. No warrenty is implied.\n\n");
+         exit(0);
          break;
 
       case 'F': NO_FORK = true;
@@ -335,8 +340,27 @@ for (i = 0; i < CF_OBSERVABLES; i++)
    }
 
 srand((unsigned int)time(NULL)); 
-LoadHistogram(); 
+LoadHistogram();
 ConvertDatabase();
+
+/* Look for local sensors */
+
+if (stat("/proc/acpi/thermal_zone",&statbuf) != -1)
+   {
+   Debug("Found an acpi service\n");
+   ACPI = true;
+   }
+
+if (stat("/usr/bin/sensors",&statbuf) != -1)
+   {
+   if (statbuf.st_mode & 0111)
+      {
+      Debug("Found an lmsensor system\n");
+      LMSENSORS = true;
+      }
+   }
+
+Debug("Finished with initialization.\n");
 }
 
 /*********************************************************************/
@@ -794,6 +818,7 @@ GatherLoadData();
 GatherDiskData();
 GatherSocketData();
 GatherSNMPData();
+GatherSensorData();
 }
 
 
@@ -1317,18 +1342,35 @@ Verbose("(Users,root,other) = (%d,%d,%d)\n",THIS[ob_users],THIS[ob_rootprocs],TH
 
 void GatherDiskData()
 
-{
+{ char accesslog[CF_BUFSIZE];
+  char errorlog[CF_BUFSIZE];
+  char syslog[CF_BUFSIZE];
+  char messages[CF_BUFSIZE];
+ 
 Verbose("Gathering disk data\n");
 THIS[ob_diskfree] = GetDiskUsage("/",cfpercent);
 Verbose("Disk free = %d %%\n",THIS[ob_diskfree]);
 
-THIS[ob_webaccess] = GetFileGrowth("/var/log/apache2/access_log",ob_webaccess);
+/* Here would should have some detection based on OS type VSYSTEMHARDCLASS */
+
+switch(VSYSTEMHARDCLASS)
+   {
+   linuxx:
+
+   default:
+       strcpy(accesslog,"/var/log/apache2/access_log");
+       strcpy(errorlog,"/var/log/apache2/error_log");
+       strcpy(syslog,"/var/log/syslog");
+       strcpy(messages,"/var/log/messages");
+   }
+
+THIS[ob_webaccess] = GetFileGrowth(accesslog,ob_webaccess);
 Verbose("Webaccess = %d %%\n",THIS[ob_webaccess]);
-THIS[ob_weberrors] = GetFileGrowth("/var/log/apache2/error_log",ob_weberrors);
+THIS[ob_weberrors] = GetFileGrowth(errorlog,ob_weberrors);
 Verbose("Web error = %d %%\n",THIS[ob_weberrors]);
-THIS[ob_syslog] = GetFileGrowth("/var/log/syslog",ob_syslog);
+THIS[ob_syslog] = GetFileGrowth(syslog,ob_syslog);
 Verbose("Syslog = %d %%\n",THIS[ob_syslog]);
-THIS[ob_messages] = GetFileGrowth("/var/log/messages",ob_messages);
+THIS[ob_messages] = GetFileGrowth(messages,ob_messages);
 Verbose("Messages = %d %%\n",THIS[ob_messages]);
 }
 
@@ -1618,6 +1660,7 @@ if (SCLI)
       }
    }
 }
+
 
 /*****************************************************************************/
 
@@ -2249,4 +2292,291 @@ if (LASTQ[index] == 0)
 
 LASTQ[index] = q;
 return dq;
+}
+
+/******************************************************************************/
+/* Motherboard sensors - how to standardize this somehow                      *
+/* We're mainly interested in temperature and power consumption, but only the */
+/* temperature is generally available. Several temperatures exist too ...     */
+/******************************************************************************/
+
+void GatherSensorData()
+
+{ char buffer[CF_BUFSIZE];
+
+ Debug("GatherSensorData()\n");
+ 
+ switch(VSYSTEMHARDCLASS)
+    {
+    case linuxx:
+
+        /* Search for acpi first, then lmsensors */
+         
+        if (ACPI && GetAcpi())
+           {
+           return;
+           }
+
+        if (LMSENSORS && GetLMSensors())
+           {
+           return;
+           }
+
+        break;
+
+    case solaris:
+        break;
+    }
+}
+
+/******************************************************************************/
+
+int GetAcpi()
+
+{ DIR *dirh;
+  FILE *fp;
+  struct dirent *dirp;
+  int count = 0;
+  char path[CF_BUFSIZE],buf[CF_BUFSIZE],index[4];
+  double temp = 0;
+  
+Debug("ACPI temperature\n");
+
+if ((dirh = opendir("/proc/acpi/thermal_zone")) == NULL)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE*2,"Can't open directory %s\n",path);
+   CfLog(cfverbose,OUTPUT,"opendir");
+   return false;
+   }
+
+for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
+   {
+   snprintf(path,CF_BUFSIZE,"/proc/acpi/thermal_zone/%s/temperature",dirp->d_name);
+   
+   if ((fp = fopen(path,"r")) == NULL)
+      {
+      printf("Couldn't open %s\n",path);
+      continue;
+      }
+
+   fgets(buf,CF_BUFSIZE-1,fp);
+
+   sscanf(buf,"%*s %lf",&temp);
+
+   for (count = 0; count < 4; count++)
+      {
+      snprintf(index,2,"%d",count);
+
+      if (strstr(dirp->d_name,index))
+         {
+         switch (count)
+            {
+            case 0: THIS[ob_temp0] = temp;
+                break;
+            case 1: THIS[ob_temp1] = temp;
+                break;
+            case 2: THIS[ob_temp2] = temp;
+                break;
+            case 3: THIS[ob_temp3] = temp;
+                break;
+            }
+
+         Debug("Set temp%d to %f\n",count,temp);
+         }
+      }
+   
+   fclose(fp);
+   }
+
+closedir(dirh);
+
+return true;
+}
+
+/******************************************************************************/
+
+int GetLMSensors()
+
+{ FILE *pp;
+  struct Item *ip,*list = NULL;
+  double temp = 0;
+  char name[CF_BUFSIZE];
+  int count;
+
+THIS[ob_temp0] = 0.0;
+THIS[ob_temp1] = 0.0;
+THIS[ob_temp2] = 0.0;
+THIS[ob_temp3] = 0.0;
+  
+if ((pp = cfpopen("/usr/bin/sensors","r")) == NULL)
+   {
+   LMSENSORS = false; /* Broken */
+   return false;
+   }
+
+ReadLine(VBUFF,CF_BUFSIZE,pp); 
+
+while (!feof(pp))
+   {
+   ReadLine(VBUFF,CF_BUFSIZE,pp);
+
+   if (strstr(VBUFF,"Temp")||strstr(VBUFF,"temp"))
+      {
+      PrependItem(&list,VBUFF,NULL);
+      }
+   }
+
+cfpclose(pp);
+
+if (ListLen(list) > 0)
+   {
+   Debug("LM Sensors seemed to return ok data\n");
+   }
+else
+   {
+   return false;
+   }
+
+/* lmsensor names are hopelessly inconsistent - so try a few things */
+
+for (ip = list; ip != NULL; ip=ip->next)
+   {
+   for (count = 0; count < 4; count++)
+      {
+      snprintf(name,16,"CPU%d Temp:",count);
+
+      if (strncmp(ip->name,name,strlen(name)) == 0)
+         {
+         sscanf(ip->name,"%*[^:]: %lf",&temp);
+         
+         switch (count)
+            {
+            case 0: THIS[ob_temp0] = temp;
+                break;
+            case 1: THIS[ob_temp1] = temp;
+                break;
+            case 2: THIS[ob_temp2] = temp;
+                break;
+            case 3: THIS[ob_temp3] = temp;
+                break;
+            }
+
+         Debug("Set temp%d to %f from what looks like cpu temperature\n",count,temp);
+         }
+      }
+   }
+
+if (THIS[ob_temp0] != 0)
+   {
+   /* We got something plausible */
+   return true;
+   }
+
+/* Alternative name Core x: */
+
+for (ip = list; ip != NULL; ip=ip->next)
+   {
+   for (count = 0; count < 4; count++)
+      {
+      snprintf(name,16,"Core %d:",count);
+
+      if (strncmp(ip->name,name,strlen(name)) == 0)
+         {
+         sscanf(ip->name,"%*[^:]: %lf",&temp);
+         
+         switch (count)
+            {
+            case 0: THIS[ob_temp0] = temp;
+                break;
+            case 1: THIS[ob_temp1] = temp;
+                break;
+            case 2: THIS[ob_temp2] = temp;
+                break;
+            case 3: THIS[ob_temp3] = temp;
+                break;
+            }
+
+         Debug("Set temp%d to %f from what looks like core temperatures\n",count,temp);
+         }
+      }
+   }
+
+if (THIS[ob_temp0] != 0)
+   {
+   /* We got something plausible */
+   return true;
+   }
+
+for (ip = list; ip != NULL; ip=ip->next)
+   {
+   if (strncmp(ip->name,"CPU Temp:",strlen("CPU Temp:")) == 0  )
+      {
+      sscanf(ip->name,"%*[^:]: %lf",&temp);
+      Debug("Setting temp0 to CPU Temp\n");
+      THIS[ob_temp0] = temp;
+      }
+
+   if (strncmp(ip->name,"M/B Temp:",strlen("M/B Temp:")) == 0  )
+      {
+      sscanf(ip->name,"%*[^:]: %lf",&temp);
+      Debug("Setting temp0 to M/B Temp\n");
+      THIS[ob_temp1] = temp;
+      }
+
+   if (strncmp(ip->name,"Sys Temp:",strlen("Sys Temp:")) == 0  )
+      {
+      sscanf(ip->name,"%*[^:]: %lf",&temp);
+      Debug("Setting temp0 to Sys Temp\n");
+      THIS[ob_temp2] = temp;
+      }
+
+   if (strncmp(ip->name,"AUX Temp:",strlen("AUX Temp:")) == 0  )
+      {
+      sscanf(ip->name,"%*[^:]: %lf",&temp);
+      Debug("Setting temp0 to AUX Temp\n");
+      THIS[ob_temp3] = temp;
+      }
+   }
+
+if (THIS[ob_temp0] != 0)
+   {
+   /* We got something plausible */
+   return true;
+   }
+
+
+/* Alternative name Core x: */
+
+for (ip = list; ip != NULL; ip=ip->next)
+   {
+   for (count = 0; count < 4; count++)
+      {
+      snprintf(name,16,"temp%d:",count);
+
+      if (strncmp(ip->name,name,strlen(name)) == 0)
+         {
+         sscanf(ip->name,"%*[^:]: %lf",&temp);
+         
+         switch (count)
+            {
+            case 0: THIS[ob_temp0] = temp;
+                break;
+            case 1: THIS[ob_temp1] = temp;
+                break;
+            case 2: THIS[ob_temp2] = temp;
+                break;
+            case 3: THIS[ob_temp3] = temp;
+                break;
+            }
+
+         Debug("Set temp%d to %f\n",count,temp);
+         }
+      }
+   }
+
+/* Give up? */
+
+DeleteItemList(list);
+
+return true;
 }

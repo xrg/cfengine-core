@@ -468,7 +468,7 @@ FILE *cfpopen_shsetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv
    pid_t pid;
    FILE *pp = NULL;
 
-   printf("cfpopen_shsetuid(%s,%s,%d,%d)\n",command,type,uid,gid);
+Debug("cfpopen_shsetuid(%s,%s,%d,%d)\n",command,type,uid,gid);
 
 if ((*type != 'r' && *type != 'w') || (type[1] != '\0'))
    {

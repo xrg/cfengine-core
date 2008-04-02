@@ -262,10 +262,10 @@ char *OBS[CF_OBSERVABLES][2] =
     "weberrors","Webserver errors",
     "syslog","New log entries (Syslog)",
     "messages","New log entries (messages)",
-    "spare","unused",
-    "spare","unused",
-    "spare","unused",
-    "spare","unused",
+    "temp0","CPU Temperature 1",
+    "temp1","CPU Temperature 2",
+    "temp2","CPU Temperature 3",
+    "temp3","CPU Temperature 4",
     "spare","unused",
     "spare","unused",
     "spare","unused",
@@ -728,6 +728,7 @@ char *OBS[CF_OBSERVABLES][2] =
       "install",
       "remove",
       "upgrade",
+      "fix",
       NULL
       };
 

@@ -2892,7 +2892,7 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
             pending_pkgs = NULL;
             }
          }
-      else if (ptr->action == pkgaction_upgrade)
+      else if (ptr->action == pkgaction_upgrade || (ptr->action == pkgaction_fix))
          {
          UpgradePackage(ptr,name,ptr->pkgmgr,ptr->ver,ptr->cmp);
          }

@@ -73,6 +73,7 @@ char *CLASSTEXT[] =   /* If you change here change enum classes too! */
    "ux4800",
    "qnx",
    "dragonfly",
+   "unused1",
    "unused2",
    "unused3",
    NULL
@@ -116,6 +117,7 @@ char *CLASSATTRIBUTES[CF_CLASSATTR][CF_ATTRDIM] =
    {"ux4800","*","*"},           /* UX/4800 */
    {"qnx","*","*"},              /* qnx  */
    {"dragonfly","*","*"},        /* dragonfly */
+   {"unused1","blah","blah"},
    {"unused2","blah","blah"},
    {"unused3","blah","blah"},
    {NULL,NULL,NULL}
@@ -159,6 +161,7 @@ char *VPSCOMM[CF_CLASSATTR] =
    "/bin/ps",       /* dragonfly */
    "/bin/ps",
    "/bin/ps",
+   "/bin/ps",
    NULL
    };
 
@@ -198,6 +201,7 @@ char *VPSOPTS[CF_CLASSATTR] =
    "-ef",    /* ux4800 */
    "-ef",    /* qnx */
    "auxw",   /* dragonfly */
+   "-",
    "-",
    "-",
    NULL
@@ -242,6 +246,7 @@ char *VMOUNTCOMM[CF_CLASSATTR] =
    "/sbin/mount -va",     /* dragonfly */
    "unused-blah",
    "unused-blah",
+   "unused-blah",
    NULL
    };
 
@@ -281,6 +286,7 @@ char *VUNMOUNTCOMM[CF_CLASSATTR] =
    "/sbin/umount",     /* ux4800 */
    "/bin/umount",      /* qnx */
    "/sbin/umount",     /* dragonfly */
+   "unused-blah",
    "unused-blah",
    "unused-blah",
    NULL
@@ -326,6 +332,7 @@ char *VMOUNTOPTS[CF_CLASSATTR] =
    "bg,intr",         /* dragonfly */
    "unused-blah",
    "unused-blah",
+   "unused-blah",
    NULL
    };
 
@@ -365,6 +372,7 @@ char *VIFDEV[CF_CLASSATTR] =
    "ec0",    /* ux4800 */
    "en0",    /* qnx */
    "ep0",    /* dragonfly */
+   "unused-blah",
    "unused-blah",
    "unused-blah",
    NULL
@@ -407,6 +415,7 @@ char *VRESOLVCONF[CF_CLASSATTR] =
    "/etc/resolv.conf",     /* ux4800 */
    "/etc/resolv.conf",     /* qnx */
    "/etc/resolv.conf",     /* dragonfly */
+   "unused-blah",
    "unused-blah",
    "unused-blah",
    NULL
@@ -452,6 +461,7 @@ char *VFSTAB[CF_CLASSATTR] =
    "/etc/fstab",       /* dragonfly */
    "unused-blah",
    "unused-blah",
+   "unused-blah",
    NULL
    };
 
@@ -493,6 +503,7 @@ char *VMAILDIR[CF_CLASSATTR] =
    "/var/mail",          /* dragonfly */
    "unused-blah",
    "unused-blah",
+   "unused-blah",
    NULL
    };
 
@@ -532,6 +543,7 @@ char *VNETSTAT[CF_CLASSATTR] =
    "/usr/bin/netstat -rn",   /* ux4800 */
    "/usr/bin/netstat -rn",   /* qnx */
    "/usr/bin/netstat -rn",   /* dragonfly */
+   "unused-blah",
    "unused-blah",
    "unused-blah",
    NULL
@@ -576,6 +588,7 @@ char *VROUTE[CF_CLASSATTR] =
    "/sbin/route",  /* dragonfly */
    "unused-blah",
    "unused-blah",
+   "unused-blah",
    NULL
    };
 
@@ -615,6 +628,7 @@ char *VROUTEADDFMT[CF_CLASSATTR] =
    "-",   /* ux4800 */
    "-",   /* qnx */
    "add %s %s",  /* dragonfly */
+   "unused-blah",
    "unused-blah",
    "unused-blah",
    NULL
@@ -658,6 +672,7 @@ char *VROUTEDELFMT[CF_CLASSATTR] =
    "delete %s",  /* dragonfly */
    "unused-blah",
    "unused-blah",
+   "unused-blah",
    NULL
    };
 
@@ -697,6 +712,7 @@ char *VFILECOMM[CF_CLASSATTR] =
    "/usr/bin/file",   /* ux4800 */
    "/usr/bin/file",   /* qnx */
    "/usr/bin/file",   /* dragonfly */
+   "unused-blah",
    "unused-blah",
    "unused-blah",
    NULL
