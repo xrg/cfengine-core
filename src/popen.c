@@ -701,7 +701,7 @@ if (gid != (gid_t) -1)
    
    if ((pw = getpwuid(uid)) == NULL)
       {
-      snprintf(OUTPUT,CF_BUFSIZE,"Unable to get login groups when dropping privilege to %s=%d",pw->pw_name,uid);
+      snprintf(OUTPUT,CF_BUFSIZE,"Unable to get login groups when dropping privilege to %d",uid);
       CfLog(cferror,OUTPUT,"initgroups");
       return false;
       }
