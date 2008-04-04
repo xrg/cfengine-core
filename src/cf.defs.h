@@ -412,7 +412,7 @@ typedef int clockid_t;
 # define ERESTARTSYS EINTR
 #endif
 
-#define CF_FAILEDSTR "BAD: Host authentication failed. Did you forget the domain name or IP/DNS address registration (for ipv4 or ipv6)?"
+#define CF_FAILEDSTR "BAD: Unspecified server refusal (see verbose server output)"
 #define CF_CHANGEDSTR1 "BAD: File changed "   /* Split this so it cannot be recognized */
 #define CF_CHANGEDSTR2 "while copying"
 

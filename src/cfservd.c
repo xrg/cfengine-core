@@ -3219,7 +3219,6 @@ else
    }
  
 snprintf(sendbuffer,CF_BUFSIZE,"%s",CF_FAILEDSTR);
-CfLog(cfinform,"Unspecified refusal by server\n","");
 SendTransaction(conn->sd_reply,sendbuffer,size,CF_DONE);
 snprintf(sendbuffer,CF_BUFSIZE,"From (host=%s,user=%s,ip=%s)",hostname,username,ipaddr);
 CfLog(cfinform,sendbuffer,"");
