@@ -57,7 +57,11 @@ unsigned int HISTOGRAM[CF_OBSERVABLES][7][CF_GRAINS];
 
 int HISTO = false;
 
+/* persistent observations */
+
 double THIS[CF_OBSERVABLES]; /* New from 2.1.21 replacing above - current observation */
+
+/* Work */
 
 int SLEEPTIME = 2.5 * 60;    /* Should be a fraction of 5 minutes */
 int BATCH_MODE = false;
@@ -143,6 +147,7 @@ void OpenSniffer(void);
 void Sniff(void);
 
 void GatherProcessData (void);
+void GatherCPUData (void);
 void GatherDiskData (void);
 void GatherLoadData (void);
 void GatherSocketData (void);
@@ -814,6 +819,7 @@ ENTROPIES = NULL;
 
 ZeroArrivals();
 GatherProcessData();
+GatherCPUData();
 GatherLoadData(); 
 GatherDiskData();
 GatherSocketData();
@@ -1325,7 +1331,6 @@ while (!feof(pp))
       {
       THIS[ob_otherprocs]++;
       }
-
    }
 
 cfpclose(pp);
@@ -1334,8 +1339,81 @@ snprintf(VBUFF,CF_MAXVARSIZE,"%s/state/cf_users",CFWORKDIR);
 SaveItemList(list,VBUFF,"none");
 
 DeleteItemList(list);
-
 Verbose("(Users,root,other) = (%d,%d,%d)\n",THIS[ob_users],THIS[ob_rootprocs],THIS[ob_otherprocs]);
+}
+
+/*****************************************************************************/
+
+void GatherCPUData()
+
+{ double q,dq,total_time = 1;
+  char name[CF_MAXVARSIZE],cpuname[CF_MAXVARSIZE],buf[CF_BUFSIZE];
+  int count,userticks=0,niceticks=0,systemticks=0,idle=0,iowait=0,irq=0,softirq=0;
+  FILE *fp;
+  enum observables index = ob_spare;
+  
+if ((fp=fopen("/proc/stat","r")) == NULL)
+   {
+   Verbose("Didn't find proc data\n");
+   return;
+   }
+
+Verbose("Reading /proc/stat utilization data -------\n");
+
+count = 0;
+
+while (!feof(fp))
+   {
+   fgets(buf,CF_BUFSIZE,fp);
+
+   sscanf(buf,"%s%d%d%d%d%d%d%d",&cpuname,&userticks,&niceticks,&systemticks,&idle,&iowait,&irq,&softirq);
+   snprintf(name,16,"cpu%d",count);
+   
+   total_time = (double)(userticks+niceticks+systemticks+idle); 
+
+   q = 100.0 * (total_time - idle)/total_time; /* % Utilization */
+
+   if (strncmp(cpuname,name,strlen(name)) == 0)
+      {
+      Verbose("Found CPU %d\n",count);
+
+      switch (count++)
+         {
+         case 0: index = ob_cpu0;
+             break;
+         case 1: index = ob_cpu1;
+             break;
+         case 2: index = ob_cpu2;
+             break;
+         case 3: index = ob_cpu3;
+             break;
+         default:
+             index = ob_spare;
+             Verbose("Error reading proc/stat\n");
+             continue;
+         }
+      }
+   else if (strncmp(cpuname,"cpu",3) == 0)
+      {
+      Verbose("Found aggregate CPU\n",count);
+      index = ob_cpuall;
+      }
+   else 
+      {
+      Verbose("Found nothing (%s)\n",cpuname);
+      index = ob_spare;
+      return;
+      }
+
+   dq = q - LASTQ[index];
+   
+   THIS[index] = dq;
+   LASTQ[index] = q;
+
+   Verbose("Set %s=%d to %.1f after %d 100ths of a second \n",OBS[index][1],index,q,total_time);         
+   }
+
+fclose(fp);
 }
 
 /*****************************************************************************/
@@ -2351,6 +2429,11 @@ if ((dirh = opendir("/proc/acpi/thermal_zone")) == NULL)
 
 for (dirp = readdir(dirh); dirp != NULL; dirp = readdir(dirh))
    {
+   if (!SensibleFile(dirp->d_name,path,NULL))
+      {
+      continue;
+      }
+   
    snprintf(path,CF_BUFSIZE,"/proc/acpi/thermal_zone/%s/temperature",dirp->d_name);
    
    if ((fp = fopen(path,"r")) == NULL)
