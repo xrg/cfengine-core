@@ -1380,7 +1380,13 @@ enum observables
     ob_temp0,
     ob_temp1,
     ob_temp2,
-    ob_temp3
+    ob_temp3,
+    ob_cpuall,
+    ob_cpu0,
+    ob_cpu1,
+    ob_cpu2,
+    ob_cpu3,
+    ob_spare
     };
 
 

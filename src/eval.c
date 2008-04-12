@@ -561,7 +561,7 @@ if (class == NULL)
    return true;
    }
 
-ret = EvaluateORString(class,VADDCLASSES);
+ret = EvaluateORString(class,VADDCLASSES,0);
 
 return ret;
 }
@@ -597,7 +597,7 @@ buffer[i] = '\0';
  
 /* return (EvaluateORString(buffer,VALLADDCLASSES)||EvaluateORString(class,VADDCLASSES));*/
 
-val = (EvaluateORString(buffer,VALLADDCLASSES)||EvaluateORString(class,VALLADDCLASSES)||EvaluateORString(class,VADDCLASSES));
+val = (EvaluateORString(buffer,VALLADDCLASSES,0)||EvaluateORString(class,VALLADDCLASSES,1)||EvaluateORString(class,VADDCLASSES,0));
 
 if (val)
    {
@@ -650,7 +650,7 @@ while(*sp != '\0')
 /* Level 2                                                           */
 /*********************************************************************/
 
-int EvaluateORString(char *class,struct Item *list)
+int EvaluateORString(char *class,struct Item *list,int fromIsInstallable)
 
 { char *sp, cbuff[CF_BUFSIZE];
   int result = false;
@@ -683,12 +683,12 @@ for (sp = class; *sp != '\0'; sp++)
       {
       cbuff[strlen(cbuff)-1] = '\0';
 
-      result |= EvaluateORString(cbuff+1,list);
+      result |= EvaluateORString(cbuff+1,list,fromIsInstallable);
       Debug4("EvalORString-temp-result-y=%d (%s)\n",result,cbuff+1);
       }
    else
       {
-      result |= EvaluateANDString(cbuff,list);
+      result |= EvaluateANDString(cbuff,list,fromIsInstallable);
       Debug4("EvalORString-temp-result-n=%d (%s)\n",result,cbuff);
       }
 
@@ -706,7 +706,7 @@ return result;
 /* Level 3                                                           */
 /*********************************************************************/
 
-int EvaluateANDString(char *class,struct Item *list)
+int EvaluateANDString(char *class,struct Item *list,int fromIsInstallable)
 
 { char *sp, *atom;
   char cbuff[CF_BUFSIZE];
@@ -744,7 +744,7 @@ while(*sp != '\0')
       
       cbuff[strlen(cbuff)-1] = '\0';
       
-      if (EvaluateORString(atom,list))
+      if (EvaluateORString(atom,list,fromIsInstallable))
          {
          if (negation)
             {
@@ -815,7 +815,7 @@ while(*sp != '\0')
       } 
    else if (IsItemIn(list,atom))
       {
-      if (negation)
+      if (negation && !fromIsInstallable)
          {
          Debug4("EvaluateANDString(%s) returns false by negation 2\n",class);
          return false;

@@ -597,7 +597,7 @@ for (fp = VFILTERLIST; fp != NULL; fp=fp->next)
       
       DoProc(&tests,fp->criteria,names,line);
       
-      if (tmpres = EvaluateORString(fp->criteria[filterresult],tests))
+      if (tmpres = EvaluateORString(fp->criteria[filterresult],tests,0))
          {
          AddMultipleClasses(fp->defines);
          }
@@ -649,7 +649,7 @@ for (fp = VFILTERLIST; fp != NULL; fp=fp->next)
       
       DoFilter(&tests,fp->criteria,lstatptr,file);
       
-      if (tmpres = EvaluateORString(fp->criteria[filterresult],tests))
+      if (tmpres = EvaluateORString(fp->criteria[filterresult],tests,0))
          {
          AddMultipleClasses(fp->defines);
          }
@@ -972,7 +972,7 @@ if (S_ISDOOR(lstatptr->st_mode))
    }
 #endif
  
-if (EvaluateORString(crit,attrib))
+if (EvaluateORString(crit,attrib,0))
    {
    DeleteItemList(attrib);
    return true;
@@ -1173,7 +1173,7 @@ else
    PrependItem(&attrib,"none",""); 
    }
  
-if (EvaluateORString(crit,attrib))
+if (EvaluateORString(crit,attrib,0))
    {
    DeleteItemList(attrib);
    return true;
@@ -1205,7 +1205,7 @@ else
    PrependItem(&attrib,"none",""); 
    }
  
-if (EvaluateORString(crit,attrib))
+if (EvaluateORString(crit,attrib,0))
    {
    DeleteItemList(attrib);
    return true;
