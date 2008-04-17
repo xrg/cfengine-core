@@ -1,4 +1,18 @@
 
+2.2.6
+
+	Bug in popen - incorrect placement of conditional in setting groups added in 2.2.4.
+
+	Sensor code added for linux cfenvd. Ready for patches for other systems.
+	Cpu utilization and temperature measurement added for linux where available
+
+	Bug reported in installable-negated classes. Patch by jack/SiliconSlick
+
+	Bugfix for class defined by directories
+	
+2.2.5
+	No content changes since 2.2.4, just fixes a packaging error.
+	(Mark's Easter turkey)
 2.2.4p
 	Blunder in makefile change. Compilation error fixed.
 	

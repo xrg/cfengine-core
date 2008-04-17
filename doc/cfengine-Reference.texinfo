@@ -10207,7 +10207,7 @@ packages:
                         version=@var{version-string}
                         define=@var{class-list}(,:.)
                         elsedefine=@var{class-list}(,:.)
-                        action=@b{none}/@var{install/remove/upgrade}
+                        action=@b{none}/@var{install/remove/upgrade/fix}
 
                         ifelapsed=@var{mins} 
                         expireafter=@var{mins}
@@ -10227,6 +10227,11 @@ packages:
                 version=1.2
                 cmp=le
 
+  # Make sure that version 1.2 is installed
+  compromised-1.2 action=fix
+                version=1.2
+                cmp=le
+
   # remove any version of useless
   useless action=remove
                 version=0.1
@@ -10235,6 +10240,28 @@ packages:
 @end smallexample
 @end cartouche
 @table @code
+
+@item action
+@vindex action=
+Determines the action taken if the comparison matches.
+
+@itemize @bullet
+@item
+@code{install}
+Install this package if the version comparison does not match.
+
+@item
+@code{upgrade}
+Upgrade this package if the version comparison does match.
+
+@item
+@code{fix}
+Install or Upgrade this package if the version comparison does match.
+
+@item
+@code{remove}
+Uninstall this package if the version comparison does match.
+@end itemize
 
 @item cmp
 @vindex cmp=
@@ -10264,8 +10291,8 @@ The version installed must not be equal to @code{version}
 
 The default value for this attribute is @code{eq}.
 
-Note that @code{cmp} is used differently for install versus upgrade and remove. 
-The action is performed when false for install, but when true for upgrade or remove.
+Note that @code{cmp} is used differently for install versus upgrade, fix and remove. 
+The action is performed when false for install, but when true for upgrade, fix or remove.
 
 @item version
 @vindex version=
@@ -10390,7 +10417,7 @@ packages:
 @end smallexample
 
 Note that specifying the version of the package that is part of the freebsd package filename is required if not using "-r" mode.
-However, it does not use this for comparison, just for the package filename to install.
+It does not use this version for comparison, just for the package filename to install.
 
 You can also backgrade if you know that 1.2 is bad for instance.
 

@@ -302,7 +302,7 @@ void DirectoriesWrapper(char *dir,void *vp)
   char directory[CF_EXPANDSIZE];
   struct File *ptr;
 
-ptr=(struct File *)vp;
+ptr = (struct File *)vp;
  
 ExpandVarstring(dir,directory,"");
 
@@ -321,7 +321,20 @@ if (stat(directory,&statbuf) == -1)
       {
       snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot stat %s after creating it",directory);
       CfLog(cfinform,OUTPUT,"stat");
+
+      if (ptr != NULL)
+         {
+         AddMultipleClasses(ptr->elsedef);
+         }
+      
       return;
+      }
+   else
+      {
+      if (ptr != NULL)
+         {
+         AddMultipleClasses(ptr->defines);
+         }
       }
    } 
 

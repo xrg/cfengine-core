@@ -12,6 +12,8 @@ libcfpub_a_SOURCES =							\
 	getloadavg.c							\
 	snprintf.c
 
+libcfpub_a_CFLAGS = $(AM_CFLAGS) -fPIC
+
 EXTRA_DIST =								\
 	getopt.h							\
 	global.h							\

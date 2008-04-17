@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.2.4p)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.2.6)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -796,8 +796,9 @@ AC_ARG_WITH(docs,
 [ want_doc=false ])
 AM_CONDITIONAL(BUILD_DOC, test x$want_doc = xtrue)
 
-AC_OUTPUT(pub/Makefile src/Makefile contrib/Makefile inputs/Makefile \
+AC_OUTPUT(pub/Makefile src/Makefile doc/Makefile contrib/Makefile inputs/Makefile \
 Makefile src/cflex.l  )
+
 
 
 AC_MSG_WARN(=====================================================)

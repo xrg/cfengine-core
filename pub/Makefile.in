@@ -47,9 +47,10 @@ LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 libcfpub_a_AR = $(AR) $(ARFLAGS)
 libcfpub_a_LIBADD =
-am_libcfpub_a_OBJECTS = getopt.$(OBJEXT) getopt1.$(OBJEXT) \
-	full-write.$(OBJEXT) regex.$(OBJEXT) getloadavg.$(OBJEXT) \
-	snprintf.$(OBJEXT)
+am_libcfpub_a_OBJECTS = libcfpub_a-getopt.$(OBJEXT) \
+	libcfpub_a-getopt1.$(OBJEXT) libcfpub_a-full-write.$(OBJEXT) \
+	libcfpub_a-regex.$(OBJEXT) libcfpub_a-getloadavg.$(OBJEXT) \
+	libcfpub_a-snprintf.$(OBJEXT)
 libcfpub_a_OBJECTS = $(am_libcfpub_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -217,6 +218,7 @@ libcfpub_a_SOURCES = \
 	getloadavg.c							\
 	snprintf.c
 
+libcfpub_a_CFLAGS = $(AM_CFLAGS) -fPIC
 EXTRA_DIST = \
 	getopt.h							\
 	global.h							\
@@ -295,12 +297,12 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/full-write.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getloadavg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getopt.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getopt1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/regex.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/snprintf.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfpub_a-full-write.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfpub_a-getloadavg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfpub_a-getopt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfpub_a-getopt1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfpub_a-regex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfpub_a-snprintf.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -322,6 +324,90 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+libcfpub_a-getopt.o: getopt.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -MT libcfpub_a-getopt.o -MD -MP -MF $(DEPDIR)/libcfpub_a-getopt.Tpo -c -o libcfpub_a-getopt.o `test -f 'getopt.c' || echo '$(srcdir)/'`getopt.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfpub_a-getopt.Tpo $(DEPDIR)/libcfpub_a-getopt.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='getopt.c' object='libcfpub_a-getopt.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -c -o libcfpub_a-getopt.o `test -f 'getopt.c' || echo '$(srcdir)/'`getopt.c
+
+libcfpub_a-getopt.obj: getopt.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -MT libcfpub_a-getopt.obj -MD -MP -MF $(DEPDIR)/libcfpub_a-getopt.Tpo -c -o libcfpub_a-getopt.obj `if test -f 'getopt.c'; then $(CYGPATH_W) 'getopt.c'; else $(CYGPATH_W) '$(srcdir)/getopt.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfpub_a-getopt.Tpo $(DEPDIR)/libcfpub_a-getopt.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='getopt.c' object='libcfpub_a-getopt.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -c -o libcfpub_a-getopt.obj `if test -f 'getopt.c'; then $(CYGPATH_W) 'getopt.c'; else $(CYGPATH_W) '$(srcdir)/getopt.c'; fi`
+
+libcfpub_a-getopt1.o: getopt1.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -MT libcfpub_a-getopt1.o -MD -MP -MF $(DEPDIR)/libcfpub_a-getopt1.Tpo -c -o libcfpub_a-getopt1.o `test -f 'getopt1.c' || echo '$(srcdir)/'`getopt1.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfpub_a-getopt1.Tpo $(DEPDIR)/libcfpub_a-getopt1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='getopt1.c' object='libcfpub_a-getopt1.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -c -o libcfpub_a-getopt1.o `test -f 'getopt1.c' || echo '$(srcdir)/'`getopt1.c
+
+libcfpub_a-getopt1.obj: getopt1.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -MT libcfpub_a-getopt1.obj -MD -MP -MF $(DEPDIR)/libcfpub_a-getopt1.Tpo -c -o libcfpub_a-getopt1.obj `if test -f 'getopt1.c'; then $(CYGPATH_W) 'getopt1.c'; else $(CYGPATH_W) '$(srcdir)/getopt1.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfpub_a-getopt1.Tpo $(DEPDIR)/libcfpub_a-getopt1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='getopt1.c' object='libcfpub_a-getopt1.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -c -o libcfpub_a-getopt1.obj `if test -f 'getopt1.c'; then $(CYGPATH_W) 'getopt1.c'; else $(CYGPATH_W) '$(srcdir)/getopt1.c'; fi`
+
+libcfpub_a-full-write.o: full-write.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -MT libcfpub_a-full-write.o -MD -MP -MF $(DEPDIR)/libcfpub_a-full-write.Tpo -c -o libcfpub_a-full-write.o `test -f 'full-write.c' || echo '$(srcdir)/'`full-write.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfpub_a-full-write.Tpo $(DEPDIR)/libcfpub_a-full-write.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='full-write.c' object='libcfpub_a-full-write.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -c -o libcfpub_a-full-write.o `test -f 'full-write.c' || echo '$(srcdir)/'`full-write.c
+
+libcfpub_a-full-write.obj: full-write.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -MT libcfpub_a-full-write.obj -MD -MP -MF $(DEPDIR)/libcfpub_a-full-write.Tpo -c -o libcfpub_a-full-write.obj `if test -f 'full-write.c'; then $(CYGPATH_W) 'full-write.c'; else $(CYGPATH_W) '$(srcdir)/full-write.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfpub_a-full-write.Tpo $(DEPDIR)/libcfpub_a-full-write.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='full-write.c' object='libcfpub_a-full-write.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -c -o libcfpub_a-full-write.obj `if test -f 'full-write.c'; then $(CYGPATH_W) 'full-write.c'; else $(CYGPATH_W) '$(srcdir)/full-write.c'; fi`
+
+libcfpub_a-regex.o: regex.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -MT libcfpub_a-regex.o -MD -MP -MF $(DEPDIR)/libcfpub_a-regex.Tpo -c -o libcfpub_a-regex.o `test -f 'regex.c' || echo '$(srcdir)/'`regex.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfpub_a-regex.Tpo $(DEPDIR)/libcfpub_a-regex.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='regex.c' object='libcfpub_a-regex.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -c -o libcfpub_a-regex.o `test -f 'regex.c' || echo '$(srcdir)/'`regex.c
+
+libcfpub_a-regex.obj: regex.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -MT libcfpub_a-regex.obj -MD -MP -MF $(DEPDIR)/libcfpub_a-regex.Tpo -c -o libcfpub_a-regex.obj `if test -f 'regex.c'; then $(CYGPATH_W) 'regex.c'; else $(CYGPATH_W) '$(srcdir)/regex.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfpub_a-regex.Tpo $(DEPDIR)/libcfpub_a-regex.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='regex.c' object='libcfpub_a-regex.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -c -o libcfpub_a-regex.obj `if test -f 'regex.c'; then $(CYGPATH_W) 'regex.c'; else $(CYGPATH_W) '$(srcdir)/regex.c'; fi`
+
+libcfpub_a-getloadavg.o: getloadavg.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -MT libcfpub_a-getloadavg.o -MD -MP -MF $(DEPDIR)/libcfpub_a-getloadavg.Tpo -c -o libcfpub_a-getloadavg.o `test -f 'getloadavg.c' || echo '$(srcdir)/'`getloadavg.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfpub_a-getloadavg.Tpo $(DEPDIR)/libcfpub_a-getloadavg.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='getloadavg.c' object='libcfpub_a-getloadavg.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -c -o libcfpub_a-getloadavg.o `test -f 'getloadavg.c' || echo '$(srcdir)/'`getloadavg.c
+
+libcfpub_a-getloadavg.obj: getloadavg.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -MT libcfpub_a-getloadavg.obj -MD -MP -MF $(DEPDIR)/libcfpub_a-getloadavg.Tpo -c -o libcfpub_a-getloadavg.obj `if test -f 'getloadavg.c'; then $(CYGPATH_W) 'getloadavg.c'; else $(CYGPATH_W) '$(srcdir)/getloadavg.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfpub_a-getloadavg.Tpo $(DEPDIR)/libcfpub_a-getloadavg.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='getloadavg.c' object='libcfpub_a-getloadavg.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -c -o libcfpub_a-getloadavg.obj `if test -f 'getloadavg.c'; then $(CYGPATH_W) 'getloadavg.c'; else $(CYGPATH_W) '$(srcdir)/getloadavg.c'; fi`
+
+libcfpub_a-snprintf.o: snprintf.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -MT libcfpub_a-snprintf.o -MD -MP -MF $(DEPDIR)/libcfpub_a-snprintf.Tpo -c -o libcfpub_a-snprintf.o `test -f 'snprintf.c' || echo '$(srcdir)/'`snprintf.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfpub_a-snprintf.Tpo $(DEPDIR)/libcfpub_a-snprintf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='snprintf.c' object='libcfpub_a-snprintf.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -c -o libcfpub_a-snprintf.o `test -f 'snprintf.c' || echo '$(srcdir)/'`snprintf.c
+
+libcfpub_a-snprintf.obj: snprintf.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -MT libcfpub_a-snprintf.obj -MD -MP -MF $(DEPDIR)/libcfpub_a-snprintf.Tpo -c -o libcfpub_a-snprintf.obj `if test -f 'snprintf.c'; then $(CYGPATH_W) 'snprintf.c'; else $(CYGPATH_W) '$(srcdir)/snprintf.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfpub_a-snprintf.Tpo $(DEPDIR)/libcfpub_a-snprintf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='snprintf.c' object='libcfpub_a-snprintf.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfpub_a_CFLAGS) $(CFLAGS) -c -o libcfpub_a-snprintf.obj `if test -f 'snprintf.c'; then $(CYGPATH_W) 'snprintf.c'; else $(CYGPATH_W) '$(srcdir)/snprintf.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

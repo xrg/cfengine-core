@@ -61,23 +61,46 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(sbindir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libcfengine_la_LIBADD =
-am_libcfengine_la_OBJECTS = init.lo modules.lo alerts.lo report.lo \
-	client.lo ip.lo ipname.lo instrument.lo process.lo timeout.lo \
-	ifconf.lo image.lo item.lo item-ext.lo item-file.lo 2Dlist.lo \
-	globals.lo classes.lo misc.lo parse.lo functions.lo \
-	edittools.lo patches.lo install.lo link.lo tidy.lo filedir.lo \
-	eval.lo modes.lo sockaddr.lo chflags.lo locks.lo mount.lo \
-	macro.lo filenames.lo varstring.lo wildcard.lo cfparse.lo \
-	comparray.lo read.lo checksums.lo proto.lo filters.lo copy.lo \
-	repository.lo rotate.lo errors.lo cflex.lo net.lo df.lo log.lo \
-	crypto.lo popen.lo popen_def.lo sensible.lo acl.lo dce_acl.lo \
-	nameinfo.lo strategies.lo granules.lo methods.lo dtypes.lo \
-	state.lo checksum_db.lo expand-files.lo expand-tidy.lo \
-	expand-image.lo expand-editfiles.lo package.lo scli.lo
+am_libcfengine_la_OBJECTS = libcfengine_la-init.lo \
+	libcfengine_la-modules.lo libcfengine_la-alerts.lo \
+	libcfengine_la-report.lo libcfengine_la-client.lo \
+	libcfengine_la-ip.lo libcfengine_la-ipname.lo \
+	libcfengine_la-instrument.lo libcfengine_la-process.lo \
+	libcfengine_la-timeout.lo libcfengine_la-ifconf.lo \
+	libcfengine_la-image.lo libcfengine_la-item.lo \
+	libcfengine_la-item-ext.lo libcfengine_la-item-file.lo \
+	libcfengine_la-2Dlist.lo libcfengine_la-globals.lo \
+	libcfengine_la-classes.lo libcfengine_la-misc.lo \
+	libcfengine_la-parse.lo libcfengine_la-functions.lo \
+	libcfengine_la-edittools.lo libcfengine_la-patches.lo \
+	libcfengine_la-install.lo libcfengine_la-link.lo \
+	libcfengine_la-tidy.lo libcfengine_la-filedir.lo \
+	libcfengine_la-eval.lo libcfengine_la-modes.lo \
+	libcfengine_la-sockaddr.lo libcfengine_la-chflags.lo \
+	libcfengine_la-locks.lo libcfengine_la-mount.lo \
+	libcfengine_la-macro.lo libcfengine_la-filenames.lo \
+	libcfengine_la-varstring.lo libcfengine_la-wildcard.lo \
+	libcfengine_la-cfparse.lo libcfengine_la-comparray.lo \
+	libcfengine_la-read.lo libcfengine_la-checksums.lo \
+	libcfengine_la-proto.lo libcfengine_la-filters.lo \
+	libcfengine_la-copy.lo libcfengine_la-repository.lo \
+	libcfengine_la-rotate.lo libcfengine_la-errors.lo \
+	libcfengine_la-cflex.lo libcfengine_la-net.lo \
+	libcfengine_la-df.lo libcfengine_la-log.lo \
+	libcfengine_la-crypto.lo libcfengine_la-popen.lo \
+	libcfengine_la-popen_def.lo libcfengine_la-sensible.lo \
+	libcfengine_la-acl.lo libcfengine_la-dce_acl.lo \
+	libcfengine_la-nameinfo.lo libcfengine_la-strategies.lo \
+	libcfengine_la-granules.lo libcfengine_la-methods.lo \
+	libcfengine_la-dtypes.lo libcfengine_la-state.lo \
+	libcfengine_la-checksum_db.lo libcfengine_la-expand-files.lo \
+	libcfengine_la-expand-tidy.lo libcfengine_la-expand-image.lo \
+	libcfengine_la-expand-editfiles.lo libcfengine_la-package.lo \
+	libcfengine_la-scli.lo
 libcfengine_la_OBJECTS = $(am_libcfengine_la_OBJECTS)
 libcfengine_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(libcfengine_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libcfengine_la_CFLAGS) \
+	$(CFLAGS) $(libcfengine_la_LDFLAGS) $(LDFLAGS) -o $@
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(sbin_PROGRAMS)
 am_cfagent_OBJECTS = cfagent.$(OBJEXT) wrapper.$(OBJEXT) do.$(OBJEXT)
@@ -300,7 +323,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CFLAGS = $(GCC_CFLAG) @CFLAGS@  
+AM_CFLAGS = $(GCC_CFLAG) @CFLAGS@
 AM_YFLAGS = -d
 LDADD = libcfengine.la $(BERKELEY_DB_LDFLAGSD) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LDFLAGS) $(OPENSSL_LIB_LIB)
 INCLUDES = $(BERKELEY_DB_CFLAGS) $(OPENSSL_LIB_CPPFLAGS)
@@ -311,6 +334,7 @@ AM_LDFLAGS = $(BERKELEY_DB_LDFLAGS) $(OPENSSL_LIB_LDFLAGS) @LDFLAGS@
 #
 lib_LTLIBRARIES = libcfengine.la
 libcfengine_la_LDFLAGS = -version-info 1:0:0 -no-undefined
+libcfengine_la_CFLAGS = $(AM_CFLAGS) -fPIC
 
 # Separate out a library
 libcfengine_la_SOURCES = \
@@ -609,9 +633,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/2Dlist.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/acl.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alerts.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfagent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfenvd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfenvgraph.Po@am__quote@
@@ -619,77 +640,80 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfetoolgraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfexecd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfkey.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cflex.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfparse.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfrun.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfservd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfshow.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/checksum_db.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/checksums.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chflags.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/classes.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/client.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comparray.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/copy.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crypto.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dce_acl.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/df.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/do.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dtypes.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/edittools.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/errors.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eval.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/expand-editfiles.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/expand-files.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/expand-image.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/expand-tidy.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filedir.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filenames.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filters.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/functions.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/globals.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/granules.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ifconf.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/image.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/init.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/install.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/instrument.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ip.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ipname.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/item-ext.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/item-file.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/item.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/link.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locks.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/macro.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/methods.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/misc.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/modes.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/modules.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mount.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nameinfo.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/net.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/package.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/patches.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/popen.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/popen_def.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/process.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/proto.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/read.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/report.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/repository.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rotate.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scli.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sensible.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sockaddr.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/state.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strategies.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tidy.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timeout.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/varstring.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wildcard.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-2Dlist.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-acl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-alerts.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-cflex.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-cfparse.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-checksum_db.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-checksums.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-chflags.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-classes.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-client.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-comparray.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-copy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-crypto.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-dce_acl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-df.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-dtypes.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-edittools.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-errors.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-eval.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-expand-editfiles.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-expand-files.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-expand-image.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-expand-tidy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-filedir.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-filenames.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-filters.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-functions.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-globals.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-granules.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-ifconf.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-image.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-init.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-install.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-instrument.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-ip.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-ipname.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-item-ext.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-item-file.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-item.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-link.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-locks.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-log.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-macro.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-methods.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-misc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-modes.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-modules.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-mount.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-nameinfo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-net.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-package.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-parse.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-patches.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-popen.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-popen_def.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-process.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-proto.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-read.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-report.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-repository.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-rotate.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-scli.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-sensible.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-sockaddr.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-state.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-strategies.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-tidy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-timeout.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-varstring.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-wildcard.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wrapper.Po@am__quote@
 
 .c.o:
@@ -712,6 +736,496 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+libcfengine_la-init.lo: init.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-init.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-init.Tpo -c -o libcfengine_la-init.lo `test -f 'init.c' || echo '$(srcdir)/'`init.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-init.Tpo $(DEPDIR)/libcfengine_la-init.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='init.c' object='libcfengine_la-init.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-init.lo `test -f 'init.c' || echo '$(srcdir)/'`init.c
+
+libcfengine_la-modules.lo: modules.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-modules.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-modules.Tpo -c -o libcfengine_la-modules.lo `test -f 'modules.c' || echo '$(srcdir)/'`modules.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-modules.Tpo $(DEPDIR)/libcfengine_la-modules.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='modules.c' object='libcfengine_la-modules.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-modules.lo `test -f 'modules.c' || echo '$(srcdir)/'`modules.c
+
+libcfengine_la-alerts.lo: alerts.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-alerts.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-alerts.Tpo -c -o libcfengine_la-alerts.lo `test -f 'alerts.c' || echo '$(srcdir)/'`alerts.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-alerts.Tpo $(DEPDIR)/libcfengine_la-alerts.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='alerts.c' object='libcfengine_la-alerts.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-alerts.lo `test -f 'alerts.c' || echo '$(srcdir)/'`alerts.c
+
+libcfengine_la-report.lo: report.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-report.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-report.Tpo -c -o libcfengine_la-report.lo `test -f 'report.c' || echo '$(srcdir)/'`report.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-report.Tpo $(DEPDIR)/libcfengine_la-report.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='report.c' object='libcfengine_la-report.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-report.lo `test -f 'report.c' || echo '$(srcdir)/'`report.c
+
+libcfengine_la-client.lo: client.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-client.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-client.Tpo -c -o libcfengine_la-client.lo `test -f 'client.c' || echo '$(srcdir)/'`client.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-client.Tpo $(DEPDIR)/libcfengine_la-client.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='client.c' object='libcfengine_la-client.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-client.lo `test -f 'client.c' || echo '$(srcdir)/'`client.c
+
+libcfengine_la-ip.lo: ip.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-ip.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-ip.Tpo -c -o libcfengine_la-ip.lo `test -f 'ip.c' || echo '$(srcdir)/'`ip.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-ip.Tpo $(DEPDIR)/libcfengine_la-ip.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ip.c' object='libcfengine_la-ip.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-ip.lo `test -f 'ip.c' || echo '$(srcdir)/'`ip.c
+
+libcfengine_la-ipname.lo: ipname.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-ipname.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-ipname.Tpo -c -o libcfengine_la-ipname.lo `test -f 'ipname.c' || echo '$(srcdir)/'`ipname.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-ipname.Tpo $(DEPDIR)/libcfengine_la-ipname.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ipname.c' object='libcfengine_la-ipname.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-ipname.lo `test -f 'ipname.c' || echo '$(srcdir)/'`ipname.c
+
+libcfengine_la-instrument.lo: instrument.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-instrument.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-instrument.Tpo -c -o libcfengine_la-instrument.lo `test -f 'instrument.c' || echo '$(srcdir)/'`instrument.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-instrument.Tpo $(DEPDIR)/libcfengine_la-instrument.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='instrument.c' object='libcfengine_la-instrument.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-instrument.lo `test -f 'instrument.c' || echo '$(srcdir)/'`instrument.c
+
+libcfengine_la-process.lo: process.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-process.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-process.Tpo -c -o libcfengine_la-process.lo `test -f 'process.c' || echo '$(srcdir)/'`process.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-process.Tpo $(DEPDIR)/libcfengine_la-process.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='process.c' object='libcfengine_la-process.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-process.lo `test -f 'process.c' || echo '$(srcdir)/'`process.c
+
+libcfengine_la-timeout.lo: timeout.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-timeout.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-timeout.Tpo -c -o libcfengine_la-timeout.lo `test -f 'timeout.c' || echo '$(srcdir)/'`timeout.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-timeout.Tpo $(DEPDIR)/libcfengine_la-timeout.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='timeout.c' object='libcfengine_la-timeout.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-timeout.lo `test -f 'timeout.c' || echo '$(srcdir)/'`timeout.c
+
+libcfengine_la-ifconf.lo: ifconf.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-ifconf.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-ifconf.Tpo -c -o libcfengine_la-ifconf.lo `test -f 'ifconf.c' || echo '$(srcdir)/'`ifconf.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-ifconf.Tpo $(DEPDIR)/libcfengine_la-ifconf.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ifconf.c' object='libcfengine_la-ifconf.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-ifconf.lo `test -f 'ifconf.c' || echo '$(srcdir)/'`ifconf.c
+
+libcfengine_la-image.lo: image.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-image.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-image.Tpo -c -o libcfengine_la-image.lo `test -f 'image.c' || echo '$(srcdir)/'`image.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-image.Tpo $(DEPDIR)/libcfengine_la-image.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='image.c' object='libcfengine_la-image.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-image.lo `test -f 'image.c' || echo '$(srcdir)/'`image.c
+
+libcfengine_la-item.lo: item.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-item.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-item.Tpo -c -o libcfengine_la-item.lo `test -f 'item.c' || echo '$(srcdir)/'`item.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-item.Tpo $(DEPDIR)/libcfengine_la-item.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='item.c' object='libcfengine_la-item.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-item.lo `test -f 'item.c' || echo '$(srcdir)/'`item.c
+
+libcfengine_la-item-ext.lo: item-ext.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-item-ext.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-item-ext.Tpo -c -o libcfengine_la-item-ext.lo `test -f 'item-ext.c' || echo '$(srcdir)/'`item-ext.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-item-ext.Tpo $(DEPDIR)/libcfengine_la-item-ext.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='item-ext.c' object='libcfengine_la-item-ext.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-item-ext.lo `test -f 'item-ext.c' || echo '$(srcdir)/'`item-ext.c
+
+libcfengine_la-item-file.lo: item-file.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-item-file.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-item-file.Tpo -c -o libcfengine_la-item-file.lo `test -f 'item-file.c' || echo '$(srcdir)/'`item-file.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-item-file.Tpo $(DEPDIR)/libcfengine_la-item-file.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='item-file.c' object='libcfengine_la-item-file.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-item-file.lo `test -f 'item-file.c' || echo '$(srcdir)/'`item-file.c
+
+libcfengine_la-2Dlist.lo: 2Dlist.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-2Dlist.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-2Dlist.Tpo -c -o libcfengine_la-2Dlist.lo `test -f '2Dlist.c' || echo '$(srcdir)/'`2Dlist.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-2Dlist.Tpo $(DEPDIR)/libcfengine_la-2Dlist.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='2Dlist.c' object='libcfengine_la-2Dlist.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-2Dlist.lo `test -f '2Dlist.c' || echo '$(srcdir)/'`2Dlist.c
+
+libcfengine_la-globals.lo: globals.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-globals.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-globals.Tpo -c -o libcfengine_la-globals.lo `test -f 'globals.c' || echo '$(srcdir)/'`globals.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-globals.Tpo $(DEPDIR)/libcfengine_la-globals.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='globals.c' object='libcfengine_la-globals.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-globals.lo `test -f 'globals.c' || echo '$(srcdir)/'`globals.c
+
+libcfengine_la-classes.lo: classes.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-classes.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-classes.Tpo -c -o libcfengine_la-classes.lo `test -f 'classes.c' || echo '$(srcdir)/'`classes.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-classes.Tpo $(DEPDIR)/libcfengine_la-classes.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='classes.c' object='libcfengine_la-classes.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-classes.lo `test -f 'classes.c' || echo '$(srcdir)/'`classes.c
+
+libcfengine_la-misc.lo: misc.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-misc.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-misc.Tpo -c -o libcfengine_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-misc.Tpo $(DEPDIR)/libcfengine_la-misc.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='misc.c' object='libcfengine_la-misc.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
+
+libcfengine_la-parse.lo: parse.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-parse.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-parse.Tpo -c -o libcfengine_la-parse.lo `test -f 'parse.c' || echo '$(srcdir)/'`parse.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-parse.Tpo $(DEPDIR)/libcfengine_la-parse.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='parse.c' object='libcfengine_la-parse.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-parse.lo `test -f 'parse.c' || echo '$(srcdir)/'`parse.c
+
+libcfengine_la-functions.lo: functions.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-functions.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-functions.Tpo -c -o libcfengine_la-functions.lo `test -f 'functions.c' || echo '$(srcdir)/'`functions.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-functions.Tpo $(DEPDIR)/libcfengine_la-functions.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='functions.c' object='libcfengine_la-functions.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-functions.lo `test -f 'functions.c' || echo '$(srcdir)/'`functions.c
+
+libcfengine_la-edittools.lo: edittools.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-edittools.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-edittools.Tpo -c -o libcfengine_la-edittools.lo `test -f 'edittools.c' || echo '$(srcdir)/'`edittools.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-edittools.Tpo $(DEPDIR)/libcfengine_la-edittools.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='edittools.c' object='libcfengine_la-edittools.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-edittools.lo `test -f 'edittools.c' || echo '$(srcdir)/'`edittools.c
+
+libcfengine_la-patches.lo: patches.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-patches.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-patches.Tpo -c -o libcfengine_la-patches.lo `test -f 'patches.c' || echo '$(srcdir)/'`patches.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-patches.Tpo $(DEPDIR)/libcfengine_la-patches.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='patches.c' object='libcfengine_la-patches.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-patches.lo `test -f 'patches.c' || echo '$(srcdir)/'`patches.c
+
+libcfengine_la-install.lo: install.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-install.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-install.Tpo -c -o libcfengine_la-install.lo `test -f 'install.c' || echo '$(srcdir)/'`install.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-install.Tpo $(DEPDIR)/libcfengine_la-install.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='install.c' object='libcfengine_la-install.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-install.lo `test -f 'install.c' || echo '$(srcdir)/'`install.c
+
+libcfengine_la-link.lo: link.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-link.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-link.Tpo -c -o libcfengine_la-link.lo `test -f 'link.c' || echo '$(srcdir)/'`link.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-link.Tpo $(DEPDIR)/libcfengine_la-link.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='link.c' object='libcfengine_la-link.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-link.lo `test -f 'link.c' || echo '$(srcdir)/'`link.c
+
+libcfengine_la-tidy.lo: tidy.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-tidy.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-tidy.Tpo -c -o libcfengine_la-tidy.lo `test -f 'tidy.c' || echo '$(srcdir)/'`tidy.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-tidy.Tpo $(DEPDIR)/libcfengine_la-tidy.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tidy.c' object='libcfengine_la-tidy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-tidy.lo `test -f 'tidy.c' || echo '$(srcdir)/'`tidy.c
+
+libcfengine_la-filedir.lo: filedir.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-filedir.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-filedir.Tpo -c -o libcfengine_la-filedir.lo `test -f 'filedir.c' || echo '$(srcdir)/'`filedir.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-filedir.Tpo $(DEPDIR)/libcfengine_la-filedir.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='filedir.c' object='libcfengine_la-filedir.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-filedir.lo `test -f 'filedir.c' || echo '$(srcdir)/'`filedir.c
+
+libcfengine_la-eval.lo: eval.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-eval.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-eval.Tpo -c -o libcfengine_la-eval.lo `test -f 'eval.c' || echo '$(srcdir)/'`eval.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-eval.Tpo $(DEPDIR)/libcfengine_la-eval.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='eval.c' object='libcfengine_la-eval.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-eval.lo `test -f 'eval.c' || echo '$(srcdir)/'`eval.c
+
+libcfengine_la-modes.lo: modes.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-modes.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-modes.Tpo -c -o libcfengine_la-modes.lo `test -f 'modes.c' || echo '$(srcdir)/'`modes.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-modes.Tpo $(DEPDIR)/libcfengine_la-modes.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='modes.c' object='libcfengine_la-modes.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-modes.lo `test -f 'modes.c' || echo '$(srcdir)/'`modes.c
+
+libcfengine_la-sockaddr.lo: sockaddr.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-sockaddr.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-sockaddr.Tpo -c -o libcfengine_la-sockaddr.lo `test -f 'sockaddr.c' || echo '$(srcdir)/'`sockaddr.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-sockaddr.Tpo $(DEPDIR)/libcfengine_la-sockaddr.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sockaddr.c' object='libcfengine_la-sockaddr.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-sockaddr.lo `test -f 'sockaddr.c' || echo '$(srcdir)/'`sockaddr.c
+
+libcfengine_la-chflags.lo: chflags.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-chflags.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-chflags.Tpo -c -o libcfengine_la-chflags.lo `test -f 'chflags.c' || echo '$(srcdir)/'`chflags.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-chflags.Tpo $(DEPDIR)/libcfengine_la-chflags.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='chflags.c' object='libcfengine_la-chflags.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-chflags.lo `test -f 'chflags.c' || echo '$(srcdir)/'`chflags.c
+
+libcfengine_la-locks.lo: locks.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-locks.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-locks.Tpo -c -o libcfengine_la-locks.lo `test -f 'locks.c' || echo '$(srcdir)/'`locks.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-locks.Tpo $(DEPDIR)/libcfengine_la-locks.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='locks.c' object='libcfengine_la-locks.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-locks.lo `test -f 'locks.c' || echo '$(srcdir)/'`locks.c
+
+libcfengine_la-mount.lo: mount.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-mount.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-mount.Tpo -c -o libcfengine_la-mount.lo `test -f 'mount.c' || echo '$(srcdir)/'`mount.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-mount.Tpo $(DEPDIR)/libcfengine_la-mount.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mount.c' object='libcfengine_la-mount.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-mount.lo `test -f 'mount.c' || echo '$(srcdir)/'`mount.c
+
+libcfengine_la-macro.lo: macro.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-macro.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-macro.Tpo -c -o libcfengine_la-macro.lo `test -f 'macro.c' || echo '$(srcdir)/'`macro.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-macro.Tpo $(DEPDIR)/libcfengine_la-macro.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='macro.c' object='libcfengine_la-macro.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-macro.lo `test -f 'macro.c' || echo '$(srcdir)/'`macro.c
+
+libcfengine_la-filenames.lo: filenames.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-filenames.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-filenames.Tpo -c -o libcfengine_la-filenames.lo `test -f 'filenames.c' || echo '$(srcdir)/'`filenames.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-filenames.Tpo $(DEPDIR)/libcfengine_la-filenames.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='filenames.c' object='libcfengine_la-filenames.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-filenames.lo `test -f 'filenames.c' || echo '$(srcdir)/'`filenames.c
+
+libcfengine_la-varstring.lo: varstring.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-varstring.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-varstring.Tpo -c -o libcfengine_la-varstring.lo `test -f 'varstring.c' || echo '$(srcdir)/'`varstring.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-varstring.Tpo $(DEPDIR)/libcfengine_la-varstring.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='varstring.c' object='libcfengine_la-varstring.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-varstring.lo `test -f 'varstring.c' || echo '$(srcdir)/'`varstring.c
+
+libcfengine_la-wildcard.lo: wildcard.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-wildcard.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-wildcard.Tpo -c -o libcfengine_la-wildcard.lo `test -f 'wildcard.c' || echo '$(srcdir)/'`wildcard.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-wildcard.Tpo $(DEPDIR)/libcfengine_la-wildcard.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='wildcard.c' object='libcfengine_la-wildcard.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-wildcard.lo `test -f 'wildcard.c' || echo '$(srcdir)/'`wildcard.c
+
+libcfengine_la-cfparse.lo: cfparse.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-cfparse.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-cfparse.Tpo -c -o libcfengine_la-cfparse.lo `test -f 'cfparse.c' || echo '$(srcdir)/'`cfparse.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-cfparse.Tpo $(DEPDIR)/libcfengine_la-cfparse.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cfparse.c' object='libcfengine_la-cfparse.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-cfparse.lo `test -f 'cfparse.c' || echo '$(srcdir)/'`cfparse.c
+
+libcfengine_la-comparray.lo: comparray.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-comparray.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-comparray.Tpo -c -o libcfengine_la-comparray.lo `test -f 'comparray.c' || echo '$(srcdir)/'`comparray.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-comparray.Tpo $(DEPDIR)/libcfengine_la-comparray.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='comparray.c' object='libcfengine_la-comparray.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-comparray.lo `test -f 'comparray.c' || echo '$(srcdir)/'`comparray.c
+
+libcfengine_la-read.lo: read.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-read.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-read.Tpo -c -o libcfengine_la-read.lo `test -f 'read.c' || echo '$(srcdir)/'`read.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-read.Tpo $(DEPDIR)/libcfengine_la-read.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='read.c' object='libcfengine_la-read.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-read.lo `test -f 'read.c' || echo '$(srcdir)/'`read.c
+
+libcfengine_la-checksums.lo: checksums.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-checksums.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-checksums.Tpo -c -o libcfengine_la-checksums.lo `test -f 'checksums.c' || echo '$(srcdir)/'`checksums.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-checksums.Tpo $(DEPDIR)/libcfengine_la-checksums.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='checksums.c' object='libcfengine_la-checksums.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-checksums.lo `test -f 'checksums.c' || echo '$(srcdir)/'`checksums.c
+
+libcfengine_la-proto.lo: proto.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-proto.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-proto.Tpo -c -o libcfengine_la-proto.lo `test -f 'proto.c' || echo '$(srcdir)/'`proto.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-proto.Tpo $(DEPDIR)/libcfengine_la-proto.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='proto.c' object='libcfengine_la-proto.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-proto.lo `test -f 'proto.c' || echo '$(srcdir)/'`proto.c
+
+libcfengine_la-filters.lo: filters.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-filters.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-filters.Tpo -c -o libcfengine_la-filters.lo `test -f 'filters.c' || echo '$(srcdir)/'`filters.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-filters.Tpo $(DEPDIR)/libcfengine_la-filters.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='filters.c' object='libcfengine_la-filters.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-filters.lo `test -f 'filters.c' || echo '$(srcdir)/'`filters.c
+
+libcfengine_la-copy.lo: copy.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-copy.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-copy.Tpo -c -o libcfengine_la-copy.lo `test -f 'copy.c' || echo '$(srcdir)/'`copy.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-copy.Tpo $(DEPDIR)/libcfengine_la-copy.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='copy.c' object='libcfengine_la-copy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-copy.lo `test -f 'copy.c' || echo '$(srcdir)/'`copy.c
+
+libcfengine_la-repository.lo: repository.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-repository.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-repository.Tpo -c -o libcfengine_la-repository.lo `test -f 'repository.c' || echo '$(srcdir)/'`repository.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-repository.Tpo $(DEPDIR)/libcfengine_la-repository.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='repository.c' object='libcfengine_la-repository.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-repository.lo `test -f 'repository.c' || echo '$(srcdir)/'`repository.c
+
+libcfengine_la-rotate.lo: rotate.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-rotate.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-rotate.Tpo -c -o libcfengine_la-rotate.lo `test -f 'rotate.c' || echo '$(srcdir)/'`rotate.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-rotate.Tpo $(DEPDIR)/libcfengine_la-rotate.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='rotate.c' object='libcfengine_la-rotate.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-rotate.lo `test -f 'rotate.c' || echo '$(srcdir)/'`rotate.c
+
+libcfengine_la-errors.lo: errors.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-errors.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-errors.Tpo -c -o libcfengine_la-errors.lo `test -f 'errors.c' || echo '$(srcdir)/'`errors.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-errors.Tpo $(DEPDIR)/libcfengine_la-errors.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='errors.c' object='libcfengine_la-errors.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-errors.lo `test -f 'errors.c' || echo '$(srcdir)/'`errors.c
+
+libcfengine_la-cflex.lo: cflex.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-cflex.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-cflex.Tpo -c -o libcfengine_la-cflex.lo `test -f 'cflex.c' || echo '$(srcdir)/'`cflex.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-cflex.Tpo $(DEPDIR)/libcfengine_la-cflex.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cflex.c' object='libcfengine_la-cflex.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-cflex.lo `test -f 'cflex.c' || echo '$(srcdir)/'`cflex.c
+
+libcfengine_la-net.lo: net.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-net.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-net.Tpo -c -o libcfengine_la-net.lo `test -f 'net.c' || echo '$(srcdir)/'`net.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-net.Tpo $(DEPDIR)/libcfengine_la-net.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='net.c' object='libcfengine_la-net.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-net.lo `test -f 'net.c' || echo '$(srcdir)/'`net.c
+
+libcfengine_la-df.lo: df.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-df.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-df.Tpo -c -o libcfengine_la-df.lo `test -f 'df.c' || echo '$(srcdir)/'`df.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-df.Tpo $(DEPDIR)/libcfengine_la-df.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='df.c' object='libcfengine_la-df.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-df.lo `test -f 'df.c' || echo '$(srcdir)/'`df.c
+
+libcfengine_la-log.lo: log.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-log.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-log.Tpo -c -o libcfengine_la-log.lo `test -f 'log.c' || echo '$(srcdir)/'`log.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-log.Tpo $(DEPDIR)/libcfengine_la-log.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='log.c' object='libcfengine_la-log.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-log.lo `test -f 'log.c' || echo '$(srcdir)/'`log.c
+
+libcfengine_la-crypto.lo: crypto.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-crypto.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-crypto.Tpo -c -o libcfengine_la-crypto.lo `test -f 'crypto.c' || echo '$(srcdir)/'`crypto.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-crypto.Tpo $(DEPDIR)/libcfengine_la-crypto.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='crypto.c' object='libcfengine_la-crypto.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-crypto.lo `test -f 'crypto.c' || echo '$(srcdir)/'`crypto.c
+
+libcfengine_la-popen.lo: popen.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-popen.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-popen.Tpo -c -o libcfengine_la-popen.lo `test -f 'popen.c' || echo '$(srcdir)/'`popen.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-popen.Tpo $(DEPDIR)/libcfengine_la-popen.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='popen.c' object='libcfengine_la-popen.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-popen.lo `test -f 'popen.c' || echo '$(srcdir)/'`popen.c
+
+libcfengine_la-popen_def.lo: popen_def.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-popen_def.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-popen_def.Tpo -c -o libcfengine_la-popen_def.lo `test -f 'popen_def.c' || echo '$(srcdir)/'`popen_def.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-popen_def.Tpo $(DEPDIR)/libcfengine_la-popen_def.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='popen_def.c' object='libcfengine_la-popen_def.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-popen_def.lo `test -f 'popen_def.c' || echo '$(srcdir)/'`popen_def.c
+
+libcfengine_la-sensible.lo: sensible.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-sensible.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-sensible.Tpo -c -o libcfengine_la-sensible.lo `test -f 'sensible.c' || echo '$(srcdir)/'`sensible.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-sensible.Tpo $(DEPDIR)/libcfengine_la-sensible.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sensible.c' object='libcfengine_la-sensible.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-sensible.lo `test -f 'sensible.c' || echo '$(srcdir)/'`sensible.c
+
+libcfengine_la-acl.lo: acl.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-acl.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-acl.Tpo -c -o libcfengine_la-acl.lo `test -f 'acl.c' || echo '$(srcdir)/'`acl.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-acl.Tpo $(DEPDIR)/libcfengine_la-acl.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='acl.c' object='libcfengine_la-acl.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-acl.lo `test -f 'acl.c' || echo '$(srcdir)/'`acl.c
+
+libcfengine_la-dce_acl.lo: dce_acl.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-dce_acl.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-dce_acl.Tpo -c -o libcfengine_la-dce_acl.lo `test -f 'dce_acl.c' || echo '$(srcdir)/'`dce_acl.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-dce_acl.Tpo $(DEPDIR)/libcfengine_la-dce_acl.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='dce_acl.c' object='libcfengine_la-dce_acl.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-dce_acl.lo `test -f 'dce_acl.c' || echo '$(srcdir)/'`dce_acl.c
+
+libcfengine_la-nameinfo.lo: nameinfo.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-nameinfo.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-nameinfo.Tpo -c -o libcfengine_la-nameinfo.lo `test -f 'nameinfo.c' || echo '$(srcdir)/'`nameinfo.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-nameinfo.Tpo $(DEPDIR)/libcfengine_la-nameinfo.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='nameinfo.c' object='libcfengine_la-nameinfo.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-nameinfo.lo `test -f 'nameinfo.c' || echo '$(srcdir)/'`nameinfo.c
+
+libcfengine_la-strategies.lo: strategies.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-strategies.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-strategies.Tpo -c -o libcfengine_la-strategies.lo `test -f 'strategies.c' || echo '$(srcdir)/'`strategies.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-strategies.Tpo $(DEPDIR)/libcfengine_la-strategies.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='strategies.c' object='libcfengine_la-strategies.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-strategies.lo `test -f 'strategies.c' || echo '$(srcdir)/'`strategies.c
+
+libcfengine_la-granules.lo: granules.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-granules.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-granules.Tpo -c -o libcfengine_la-granules.lo `test -f 'granules.c' || echo '$(srcdir)/'`granules.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-granules.Tpo $(DEPDIR)/libcfengine_la-granules.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='granules.c' object='libcfengine_la-granules.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-granules.lo `test -f 'granules.c' || echo '$(srcdir)/'`granules.c
+
+libcfengine_la-methods.lo: methods.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-methods.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-methods.Tpo -c -o libcfengine_la-methods.lo `test -f 'methods.c' || echo '$(srcdir)/'`methods.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-methods.Tpo $(DEPDIR)/libcfengine_la-methods.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='methods.c' object='libcfengine_la-methods.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-methods.lo `test -f 'methods.c' || echo '$(srcdir)/'`methods.c
+
+libcfengine_la-dtypes.lo: dtypes.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-dtypes.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-dtypes.Tpo -c -o libcfengine_la-dtypes.lo `test -f 'dtypes.c' || echo '$(srcdir)/'`dtypes.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-dtypes.Tpo $(DEPDIR)/libcfengine_la-dtypes.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='dtypes.c' object='libcfengine_la-dtypes.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-dtypes.lo `test -f 'dtypes.c' || echo '$(srcdir)/'`dtypes.c
+
+libcfengine_la-state.lo: state.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-state.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-state.Tpo -c -o libcfengine_la-state.lo `test -f 'state.c' || echo '$(srcdir)/'`state.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-state.Tpo $(DEPDIR)/libcfengine_la-state.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='state.c' object='libcfengine_la-state.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-state.lo `test -f 'state.c' || echo '$(srcdir)/'`state.c
+
+libcfengine_la-checksum_db.lo: checksum_db.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-checksum_db.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-checksum_db.Tpo -c -o libcfengine_la-checksum_db.lo `test -f 'checksum_db.c' || echo '$(srcdir)/'`checksum_db.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-checksum_db.Tpo $(DEPDIR)/libcfengine_la-checksum_db.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='checksum_db.c' object='libcfengine_la-checksum_db.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-checksum_db.lo `test -f 'checksum_db.c' || echo '$(srcdir)/'`checksum_db.c
+
+libcfengine_la-expand-files.lo: expand-files.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-expand-files.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-expand-files.Tpo -c -o libcfengine_la-expand-files.lo `test -f 'expand-files.c' || echo '$(srcdir)/'`expand-files.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-expand-files.Tpo $(DEPDIR)/libcfengine_la-expand-files.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='expand-files.c' object='libcfengine_la-expand-files.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-expand-files.lo `test -f 'expand-files.c' || echo '$(srcdir)/'`expand-files.c
+
+libcfengine_la-expand-tidy.lo: expand-tidy.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-expand-tidy.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-expand-tidy.Tpo -c -o libcfengine_la-expand-tidy.lo `test -f 'expand-tidy.c' || echo '$(srcdir)/'`expand-tidy.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-expand-tidy.Tpo $(DEPDIR)/libcfengine_la-expand-tidy.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='expand-tidy.c' object='libcfengine_la-expand-tidy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-expand-tidy.lo `test -f 'expand-tidy.c' || echo '$(srcdir)/'`expand-tidy.c
+
+libcfengine_la-expand-image.lo: expand-image.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-expand-image.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-expand-image.Tpo -c -o libcfengine_la-expand-image.lo `test -f 'expand-image.c' || echo '$(srcdir)/'`expand-image.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-expand-image.Tpo $(DEPDIR)/libcfengine_la-expand-image.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='expand-image.c' object='libcfengine_la-expand-image.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-expand-image.lo `test -f 'expand-image.c' || echo '$(srcdir)/'`expand-image.c
+
+libcfengine_la-expand-editfiles.lo: expand-editfiles.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-expand-editfiles.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-expand-editfiles.Tpo -c -o libcfengine_la-expand-editfiles.lo `test -f 'expand-editfiles.c' || echo '$(srcdir)/'`expand-editfiles.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-expand-editfiles.Tpo $(DEPDIR)/libcfengine_la-expand-editfiles.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='expand-editfiles.c' object='libcfengine_la-expand-editfiles.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-expand-editfiles.lo `test -f 'expand-editfiles.c' || echo '$(srcdir)/'`expand-editfiles.c
+
+libcfengine_la-package.lo: package.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-package.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-package.Tpo -c -o libcfengine_la-package.lo `test -f 'package.c' || echo '$(srcdir)/'`package.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-package.Tpo $(DEPDIR)/libcfengine_la-package.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='package.c' object='libcfengine_la-package.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-package.lo `test -f 'package.c' || echo '$(srcdir)/'`package.c
+
+libcfengine_la-scli.lo: scli.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -MT libcfengine_la-scli.lo -MD -MP -MF $(DEPDIR)/libcfengine_la-scli.Tpo -c -o libcfengine_la-scli.lo `test -f 'scli.c' || echo '$(srcdir)/'`scli.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcfengine_la-scli.Tpo $(DEPDIR)/libcfengine_la-scli.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='scli.c' object='libcfengine_la-scli.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcfengine_la_CFLAGS) $(CFLAGS) -c -o libcfengine_la-scli.lo `test -f 'scli.c' || echo '$(srcdir)/'`scli.c
 
 .l.c:
 	$(am__skiplex) $(SHELL) $(YLWRAP) $< $(LEX_OUTPUT_ROOT).c $@ -- $(LEXCOMPILE)

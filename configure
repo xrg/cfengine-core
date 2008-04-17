@@ -2432,7 +2432,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=cfengine
- VERSION=2.2.4p
+ VERSION=2.2.6
 
 
 cat >>confdefs.h <<_ACEOF
@@ -31392,7 +31392,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files pub/Makefile src/Makefile contrib/Makefile inputs/Makefile Makefile src/cflex.l"
+ac_config_files="$ac_config_files pub/Makefile src/Makefile doc/Makefile contrib/Makefile inputs/Makefile Makefile src/cflex.l"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -31996,6 +31996,7 @@ do
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "pub/Makefile") CONFIG_FILES="$CONFIG_FILES pub/Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
+    "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
     "contrib/Makefile") CONFIG_FILES="$CONFIG_FILES contrib/Makefile" ;;
     "inputs/Makefile") CONFIG_FILES="$CONFIG_FILES inputs/Makefile" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
@@ -32840,6 +32841,7 @@ if test "$no_create" != yes; then
   # would make configure fail if this is the last instruction.
   $ac_cs_success || { (exit 1); exit 1; }
 fi
+
 
 
 
