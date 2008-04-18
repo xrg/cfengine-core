@@ -337,6 +337,15 @@ if (stat(directory,&statbuf) == -1)
          }
       }
    } 
+else
+   {
+   if (ptr != NULL)
+      {
+      AddMultipleClasses(ptr->elsedef);
+      }
+
+   return;
+   }
 
 if (!GetLock(ASUniqueName("directories"),CanonifyName(directory),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
    {
