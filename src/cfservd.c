@@ -129,8 +129,7 @@ void AddToKeyDB (RSA *key,char *addr);
 int SafeOpen (char *filename);
 void SafeClose (int fd);
 int WordHere(char *args, char *pos, char *word);
-
-unsigned find_inet_addr (char *host);
+in_addr_t GetInetAddr (char *host);
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -218,26 +217,26 @@ while ((c=getopt_long(argc,argv,"L:d:f:vmhpFV",CFDOPTIONS,&optindex)) != EOF)
                    default:  DEBUG = true;
                              break;
                    }
-  
-  NO_FORK = true;
-  printf("cfservd: Debug mode: running in foreground\n");
+                
+                NO_FORK = true;
+                printf("cfservd: Debug mode: running in foreground\n");
                 break;
-
+                
       case 'v': VERBOSE = true;
          break;
 
       case 'V': printf("GNU %s-%s daemon\n%s\n",PACKAGE,VERSION,COPYRIGHT);
-         printf("This program is covered by the GNU Public License and may be\n");
-  printf("copied free of charge. No warrenty is implied.\n\n");
-                exit(0);
-         break;
-
+          printf("This program is covered by the GNU Public License and may be\n");
+          printf("copied free of charge. No warrenty is implied.\n\n");
+          exit(0);
+          break;
+          
       case 'p': PARSEONLY = true;
-         break;
-
+          break;
+          
       case 'F': NO_FORK = true;
-         break;
-
+          break;
+          
       case 'L': Verbose("Setting LD_LIBRARY_PATH=%s\n",optarg);
           snprintf(ld_library_path,CF_BUFSIZE-1,"LD_LIBRARY_PATH=%s",optarg);
           putenv(ld_library_path);
@@ -254,13 +253,10 @@ while ((c=getopt_long(argc,argv,"L:d:f:vmhpFV",CFDOPTIONS,&optindex)) != EOF)
 
 
 LOGGING = true;                    /* Do output to syslog */
- 
-
 IDClasses();
 GetNameInfo();
 GetInterfaceInfo();
 GetV6InterfaceInfo();
-
  
 if ((CFINITSTARTTIME = time((time_t *)NULL)) == -1)
    {
@@ -274,17 +270,17 @@ if ((CFSTARTTIME = time((time_t *)NULL)) == -1)
 
  /* XXX Initialize workdir for non privileged users */
 
- strcpy(CFWORKDIR,WORKDIR);
+strcpy(CFWORKDIR,WORKDIR);
 
- if (getuid() > 0)
-    {
-    char *homedir;
-    if ((homedir = getenv("HOME")) != NULL)
-       {
-       strcpy(CFWORKDIR,homedir);
-       strcat(CFWORKDIR,"/.cfagent");
-       }
-    }
+if (getuid() > 0)
+   {
+   char *homedir;
+   if ((homedir = getenv("HOME")) != NULL)
+      {
+      strcpy(CFWORKDIR,homedir);
+      strcat(CFWORKDIR,"/.cfagent");
+      }
+   }
 
 snprintf(vbuff,CF_BUFSIZE,"%s/test",CFWORKDIR);
 
@@ -707,20 +703,13 @@ while (true)
 
 /*******************************************************************************/
 
-/*
- * HvB: Bas van der Vlies
- * find_inet_addr - translate numerical or symbolic host name, from the
- *                  postfix sources and adjusted to cfengine style/syntax
-*/
-
-/* Is this redundant? Should probably not have this function - mark */
-
-unsigned find_inet_addr(char *host)
+in_addr_t GetInetAddr(char *host)
 
 { struct in_addr addr;
   struct hostent *hp;
 
 addr.s_addr = inet_addr(host);
+
 if ((addr.s_addr == INADDR_NONE) || (addr.s_addr == 0)) 
    {
    if ((hp = gethostbyname(host)) == 0)
@@ -728,11 +717,13 @@ if ((addr.s_addr == INADDR_NONE) || (addr.s_addr == 0))
       snprintf(OUTPUT,CF_BUFSIZE,"\nhost not found: %s\n",host);
       FatalError(OUTPUT);
       }
+   
    if (hp->h_addrtype != AF_INET)
       {
       snprintf(OUTPUT,CF_BUFSIZE,"unexpected address family: %d\n",hp->h_addrtype);
       FatalError(OUTPUT);
       }
+   
    if (hp->h_length != sizeof(addr))
       {
       snprintf(OUTPUT,CF_BUFSIZE,"unexpected address length %d\n",hp->h_length);
@@ -847,7 +838,7 @@ memset(&sin,0,sizeof(sin));
 */
 if (BINDINTERFACE[0] != '\0' )
    {
-   sin.sin_addr.s_addr = find_inet_addr(BINDINTERFACE);
+   sin.sin_addr.s_addr = GetInetAddr(BINDINTERFACE);
    }
  else
    {
