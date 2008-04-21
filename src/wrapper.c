@@ -301,42 +301,48 @@ void DirectoriesWrapper(char *dir,void *vp)
 { struct stat statbuf;
   char directory[CF_EXPANDSIZE];
   struct File *ptr;
+  int succeeded = false;
+  int ok = false;
 
-ptr = (struct File *)vp;
- 
+memset(directory,0,CF_BUFSIZE);
 ExpandVarstring(dir,directory,"");
+ptr = (struct File *)vp;
 
-AddSlash(directory);
-strcat(directory,".");
- 
-MakeDirectoriesFor(directory,'n');
-
-if (stat(directory,&statbuf) == -1)
+if (stat(directory,&statbuf) == 0)
    {
-   memset(directory,0,CF_BUFSIZE);
+   if (S_ISDIR(statbuf.st_mode))
+      {
+      Verbose("Directory %s okay\n",directory);
+      ok = true;
+      }
+   else
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"A non-directory object prevents directory %s from being created\n");
+      CfLog(cferror,OUTPUT,"");
+      AuditLog(ptr->logaudit,ptr->audit,ptr->lineno,OUTPUT,CF_FAIL);
+      succeeded = false;
+      AddMultipleClasses(ptr->elsedef);
+      return;
+      }
+   }
+
+if (!ok)
+   {
    ExpandVarstring(dir,directory,"");
-   chmod(directory,0500); /* Shouldn't happen - mode 000 ??*/
- 
+   AddSlash(directory);
+   strcat(directory,".");
+   MakeDirectoriesFor(directory,'n');
+
    if (stat(directory,&statbuf) == -1)
       {
       snprintf(OUTPUT,CF_BUFSIZE*2,"Cannot stat %s after creating it",directory);
       CfLog(cfinform,OUTPUT,"stat");
-
-      if (ptr != NULL)
-         {
-         AddMultipleClasses(ptr->elsedef);
-         }
-      
-      return;
       }
    else
       {
-      if (ptr != NULL)
-         {
-         AddMultipleClasses(ptr->defines);
-         }
+      succeeded = true;
       }
-   } 
+   }
 
 if (!GetLock(ASUniqueName("directories"),CanonifyName(directory),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
    {
@@ -344,6 +350,19 @@ if (!GetLock(ASUniqueName("directories"),CanonifyName(directory),ptr->ifelapsed,
    }
 
 CheckExistingFile("*",dir,&statbuf,ptr);
+
+if (ptr != NULL)
+   {
+   if (succeeded)
+      {
+      AddMultipleClasses(ptr->defines);
+      }
+   else
+      {
+      AddMultipleClasses(ptr->elsedef);
+      }
+   }
+
 ReleaseCurrentLock(); 
 }
 
