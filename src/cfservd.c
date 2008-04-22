@@ -91,10 +91,10 @@ struct Item *CONNECTIONLIST = NULL;
 
 void CheckOptsAndInit (int argc,char **argv);
 void CheckVariables (void);
+void Syntax (void);
 void SummarizeParsing (void);
 void StartServer (int argc, char **argv);
 int OpenReceiverChannel (void);
-void Syntax (void);
 void PurgeOldConnections (struct Item **list,time_t now);
 void SpawnConnection (int sd_reply, char *ipaddr);
 void CheckFileChanges (int argc, char **argv, int sd);
@@ -833,9 +833,6 @@ if (response != NULL)
  
 memset(&sin,0,sizeof(sin));
 
-/*
- * HvB : Bas van der Vlies
-*/
 if (BINDINTERFACE[0] != '\0' )
    {
    sin.sin_addr.s_addr = GetInetAddr(BINDINTERFACE);

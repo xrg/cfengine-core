@@ -43,141 +43,141 @@ int    MAXFD = 20; /* Max number of simultaneous pipes */
 /*****************************************************************************/
 
 FILE *cfpopen(char *command,char *type)
-    
+
  { static char arg[CF_MAXSHELLARGS][CF_BUFSIZE];
    int i, argc, pd[2];
    char **argv;
    pid_t pid;
    FILE *pp = NULL;
 
- Debug("cfpopen(%s)\n",command);
+Debug("cfpopen(%s)\n",command);
 
- if ((*type != 'r' && *type != 'w') || (type[1] != '\0'))
-    {
-    errno = EINVAL;
-    return NULL;
-    }
- 
- if (CHILD == NULL)   /* first time */
-    {
-    if ((CHILD = calloc(MAXFD,sizeof(pid_t))) == NULL)
-       {
-       return NULL;
-       }
-    }
+if ((*type != 'r' && *type != 'w') || (type[1] != '\0'))
+   {
+   errno = EINVAL;
+   return NULL;
+   }
 
- if (pipe(pd) < 0)        /* Create a pair of descriptors to this process */
-    {
-    return NULL;
-    }
+if (CHILD == NULL)   /* first time */
+   {
+   if ((CHILD = calloc(MAXFD,sizeof(pid_t))) == NULL)
+      {
+      return NULL;
+      }
+   }
 
- if ((pid = fork()) == -1)
-    {
-    return NULL;
-    }
+if (pipe(pd) < 0)        /* Create a pair of descriptors to this process */
+   {
+   return NULL;
+   }
 
- signal(SIGCHLD,SIG_DFL);
+if ((pid = fork()) == -1)
+   {
+   return NULL;
+   }
 
- ALARM_PID = pid;
- 
- if (pid == 0)
-    {
-    switch (*type)
-       {
-       case 'r':
-           
-           close(pd[0]);        /* Don't need output from parent */
-           
-           if (pd[1] != 1)
-              {
-              dup2(pd[1],1);    /* Attach pp=pd[1] to our stdout */
-              dup2(pd[1],2);    /* Merge stdout/stderr */
-              close(pd[1]);
-              }
-           
-           break;
-           
-       case 'w':
-           
-           close(pd[1]);
-           
-           if (pd[0] != 0)
-              {
-              dup2(pd[0],0);
-              close(pd[0]);
-              }
+signal(SIGCHLD,SIG_DFL);
+
+ALARM_PID = pid;
+
+if (pid == 0)
+   {
+   switch (*type)
+      {
+      case 'r':
+          
+          close(pd[0]);        /* Don't need output from parent */
+          
+          if (pd[1] != 1)
+             {
+             dup2(pd[1],1);    /* Attach pp=pd[1] to our stdout */
+             dup2(pd[1],2);    /* Merge stdout/stderr */
+             close(pd[1]);
+             }
+          
+          break;
+          
+      case 'w':
+          
+          close(pd[1]);
+          
+          if (pd[0] != 0)
+             {
+             dup2(pd[0],0);
+             close(pd[0]);
+             }
        }
-    
-    for (i = 0; i < MAXFD; i++)
-       {
-       if (CHILD[i] > 0)
-          {
-          close(i);
-          }
-       }
-    
-    argc = SplitCommand(command,arg);
-    argv = (char **) malloc((argc+1)*sizeof(char *));
-    
-    if (argv == NULL)
-       {
-       FatalError("Out of memory");
-       }
-    
-    for (i = 0; i < argc; i++)
-       {
-       argv[i] = arg[i];
-       }
-    
-    argv[i] = (char *) NULL;
-    
-    if (execv(arg[0],argv) == -1)
-       {
-       snprintf(OUTPUT,CF_BUFSIZE,"Couldn't run %s",arg[0]);
-       CfLog(cferror,OUTPUT,"execv");
-       }
-    
-    free((char *)argv);
-    _exit(1);
-    }
- else
-    {
-    switch (*type)
-       {
-       case 'r':
-           
-           close(pd[1]);
-           
-           if ((pp = fdopen(pd[0],type)) == NULL)
-              {
-              return NULL;
-              }
-           break;
-           
-       case 'w':
-           
-           close(pd[0]);
-           
-           if ((pp = fdopen(pd[1],type)) == NULL)
-              {
-              return NULL;
-              }
-       }
-    
-    if (fileno(pp) >= MAXFD)
-       {
-       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
-       CfLog(cferror,OUTPUT,"");
-       }
-    else
-       {
-       CHILD[fileno(pp)] = pid;
-       }
-    return pp;
-    }
- 
- return NULL; /* Cannot reach here */
- }
+   
+   for (i = 0; i < MAXFD; i++)
+      {
+      if (CHILD[i] > 0)
+         {
+         close(i);
+         }
+      }
+   
+   argc = SplitCommand(command,arg);
+   argv = (char **) malloc((argc+1)*sizeof(char *));
+   
+   if (argv == NULL)
+      {
+      FatalError("Out of memory");
+      }
+   
+   for (i = 0; i < argc; i++)
+      {
+      argv[i] = arg[i];
+      }
+   
+   argv[i] = (char *) NULL;
+   
+   if (execv(arg[0],argv) == -1)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Couldn't run %s",arg[0]);
+      CfLog(cferror,OUTPUT,"execv");
+      }
+   
+   free((char *)argv);
+   _exit(1);
+   }
+else
+   {
+   switch (*type)
+      {
+      case 'r':
+          
+          close(pd[1]);
+          
+          if ((pp = fdopen(pd[0],type)) == NULL)
+             {
+             return NULL;
+             }
+          break;
+          
+      case 'w':
+          
+          close(pd[0]);
+          
+          if ((pp = fdopen(pd[1],type)) == NULL)
+             {
+             return NULL;
+             }
+      }
+   
+   if (fileno(pp) >= MAXFD)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
+      CfLog(cferror,OUTPUT,"");
+      }
+   else
+      {
+      CHILD[fileno(pp)] = pid;
+      }
+   return pp;
+   }
+
+return NULL; /* Cannot reach here */
+}
 
 /*****************************************************************************/
 
@@ -189,160 +189,159 @@ FILE *cfpopensetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,ch
    pid_t pid;
    FILE *pp = NULL;
 
- Debug("cfpopen(%s)\n",command);
+Debug("cfpopen(%s)\n",command);
 
- if ((*type != 'r' && *type != 'w') || (type[1] != '\0'))
-    {
-    errno = EINVAL;
-    return NULL;
-    }
- 
- if (CHILD == NULL)   /* first time */
-    {
-    if ((CHILD = calloc(MAXFD,sizeof(pid_t))) == NULL)
-       {
-       return NULL;
-       }
-    }
+if ((*type != 'r' && *type != 'w') || (type[1] != '\0'))
+   {
+   errno = EINVAL;
+   return NULL;
+   }
 
- if (pipe(pd) < 0)        /* Create a pair of descriptors to this process */
-    {
-    return NULL;
-    }
+if (CHILD == NULL)   /* first time */
+   {
+   if ((CHILD = calloc(MAXFD,sizeof(pid_t))) == NULL)
+      {
+      return NULL;
+      }
+   }
 
- if ((pid = fork()) == -1)
-    {
-    return NULL;
-    }
+if (pipe(pd) < 0)        /* Create a pair of descriptors to this process */
+   {
+   return NULL;
+   }
 
- ALARM_PID = pid;
-  
- if (pid == 0)
-    {
-    switch (*type)
-       {
-       case 'r':
-           
-           close(pd[0]);        /* Don't need output from parent */
-           
-           if (pd[1] != 1)
-              {
-              dup2(pd[1],1);    /* Attach pp=pd[1] to our stdout */
-              dup2(pd[1],2);    /* Merge stdout/stderr */
-              close(pd[1]);
-              }
-           
-           break;
-           
-       case 'w':
-           
-           close(pd[1]);
-           
-           if (pd[0] != 0)
-              {
-              dup2(pd[0],0);
-              close(pd[0]);
-              }
-       }
-    
-    for (i = 0; i < MAXFD; i++)
-       {
-       if (CHILD[i] > 0)
-          {
-          close(i);
-          }
-       }
-    
-    argc = SplitCommand(command,arg);
-    argv = (char **) malloc((argc+1)*sizeof(char *));
-    
-    if (argv == NULL)
-       {
-       FatalError("Out of memory");
-       }
-    
-    for (i = 0; i < argc; i++)
-       {
-       argv[i] = arg[i];
-       }
-    
-    argv[i] = (char *) NULL;
-    
-    if (strlen(chrootv) != 0)
-       {
-       if (chroot(chrootv) == -1)
-          {
-          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't chroot to %s\n",chrootv);
-          CfLog(cferror,OUTPUT,"chroot");
-          free((char *)argv);
-          return NULL;
-          }
-       }
-    
-    if (strlen(chdirv) != 0)
-       {
-       if (chdir(chdirv) == -1)
-          {
-          snprintf(OUTPUT,CF_BUFSIZE,"Couldn't chdir to %s\n",chdirv);
-          CfLog(cferror,OUTPUT,"chdir");
-          free((char *)argv);
-          return NULL;
-          }
-       }
-    
-    if (!CfSetUid(uid,gid))
-       {
-       free((char *)argv);
-       return NULL;
-       }
+if ((pid = fork()) == -1)
+   {
+   return NULL;
+   }
 
-    if (execv(arg[0],argv) == -1)
-       {
-       snprintf(OUTPUT,CF_BUFSIZE,"Couldn't run %s",arg[0]);
-       CfLog(cferror,OUTPUT,"execv");
-       }
-    
-    free((char *)argv);
-    _exit(1);
-    }
- else
-    {
-    switch (*type)
-       {
-       case 'r':
-           
-           close(pd[1]);
-           
-           if ((pp = fdopen(pd[0],type)) == NULL)
-              {
-              return NULL;
-              }
-           break;
-           
-       case 'w':
-           
-           close(pd[0]);
-           
-           if ((pp = fdopen(pd[1],type)) == NULL)
-              {
-              return NULL;
-              }
-       }
-    
-    if (fileno(pp) >= MAXFD)
-       {
-       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
-       CfLog(cferror,OUTPUT,"");
-       }
-    else
-       {
-       CHILD[fileno(pp)] = pid;
-       }
-    return pp;
-    }
- return NULL; /* cannot reach here */
- }
+ALARM_PID = pid;
 
+if (pid == 0)
+   {
+   switch (*type)
+      {
+      case 'r':
+          
+          close(pd[0]);        /* Don't need output from parent */
+          
+          if (pd[1] != 1)
+             {
+             dup2(pd[1],1);    /* Attach pp=pd[1] to our stdout */
+             dup2(pd[1],2);    /* Merge stdout/stderr */
+             close(pd[1]);
+             }
+          
+          break;
+          
+      case 'w':
+          
+          close(pd[1]);
+          
+          if (pd[0] != 0)
+             {
+             dup2(pd[0],0);
+             close(pd[0]);
+             }
+      }
+   
+   for (i = 0; i < MAXFD; i++)
+      {
+      if (CHILD[i] > 0)
+         {
+         close(i);
+         }
+      }
+   
+   argc = SplitCommand(command,arg);
+   argv = (char **) malloc((argc+1)*sizeof(char *));
+   
+   if (argv == NULL)
+      {
+      FatalError("Out of memory");
+      }
+   
+   for (i = 0; i < argc; i++)
+      {
+      argv[i] = arg[i];
+      }
+   
+   argv[i] = (char *) NULL;
+   
+   if (strlen(chrootv) != 0)
+      {
+      if (chroot(chrootv) == -1)
+         {
+         snprintf(OUTPUT,CF_BUFSIZE,"Couldn't chroot to %s\n",chrootv);
+         CfLog(cferror,OUTPUT,"chroot");
+         free((char *)argv);
+         return NULL;
+         }
+      }
+   
+   if (strlen(chdirv) != 0)
+      {
+      if (chdir(chdirv) == -1)
+         {
+         snprintf(OUTPUT,CF_BUFSIZE,"Couldn't chdir to %s\n",chdirv);
+         CfLog(cferror,OUTPUT,"chdir");
+         free((char *)argv);
+         return NULL;
+         }
+      }
+   
+   if (!CfSetUid(uid,gid))
+      {
+      free((char *)argv);
+      return NULL;
+      }
+   
+   if (execv(arg[0],argv) == -1)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"Couldn't run %s",arg[0]);
+      CfLog(cferror,OUTPUT,"execv");
+      }
+   
+   free((char *)argv);
+   _exit(1);
+   }
+else
+   {
+   switch (*type)
+      {
+      case 'r':
+          
+          close(pd[1]);
+          
+          if ((pp = fdopen(pd[0],type)) == NULL)
+             {
+             return NULL;
+             }
+          break;
+          
+      case 'w':
+          
+          close(pd[0]);
+          
+          if ((pp = fdopen(pd[1],type)) == NULL)
+             {
+             return NULL;
+             }
+      }
+   
+   if (fileno(pp) >= MAXFD)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
+      CfLog(cferror,OUTPUT,"");
+      }
+   else
+      {
+      CHILD[fileno(pp)] = pid;
+      }
+   return pp;
+   }
+return NULL; /* cannot reach here */
+}
 
 /*****************************************************************************/
 /* Shell versions of commands - not recommended for security reasons         */
@@ -354,110 +353,110 @@ FILE *cfpopen_sh(char *command,char *type)
    pid_t pid;
    FILE *pp = NULL;
 
- Debug("cfpopen(%s)\n",command);
+Debug("cfpopen(%s)\n",command);
 
- if ((*type != 'r' && *type != 'w') || (type[1] != '\0'))
-    {
-    errno = EINVAL;
-    return NULL;
-    }
- 
- if (CHILD == NULL)   /* first time */
-    {
-    if ((CHILD = calloc(MAXFD,sizeof(pid_t))) == NULL)
-       {
-       return NULL;
-       }
-    }
+if ((*type != 'r' && *type != 'w') || (type[1] != '\0'))
+   {
+   errno = EINVAL;
+   return NULL;
+   }
 
- if (pipe(pd) < 0)        /* Create a pair of descriptors to this process */
-    {
-    return NULL;
-    }
+if (CHILD == NULL)   /* first time */
+   {
+   if ((CHILD = calloc(MAXFD,sizeof(pid_t))) == NULL)
+      {
+      return NULL;
+      }
+   }
 
- if ((pid = fork()) == -1)
-    {
-    return NULL;
-    }
+if (pipe(pd) < 0)        /* Create a pair of descriptors to this process */
+   {
+   return NULL;
+   }
 
- ALARM_PID = pid;
- 
- if (pid == 0)
-    {
-    switch (*type)
-       {
-       case 'r':
+if ((pid = fork()) == -1)
+   {
+   return NULL;
+   }
 
-    close(pd[0]);        /* Don't need output from parent */
+ALARM_PID = pid;
 
-    if (pd[1] != 1)
-       {
-       dup2(pd[1],1);    /* Attach pp=pd[1] to our stdout */
-       dup2(pd[1],2);    /* Merge stdout/stderr */
-       close(pd[1]);
-       }
+if (pid == 0)
+   {
+   switch (*type)
+      {
+      case 'r':
+          
+          close(pd[0]);        /* Don't need output from parent */
+          
+          if (pd[1] != 1)
+             {
+             dup2(pd[1],1);    /* Attach pp=pd[1] to our stdout */
+             dup2(pd[1],2);    /* Merge stdout/stderr */
+             close(pd[1]);
+             }
+          
+          break;
+          
+      case 'w':
+          
+          close(pd[1]);
+          
+          if (pd[0] != 0)
+             {
+             dup2(pd[0],0);
+             close(pd[0]);
+             }
+      }
+   
+   for (i = 0; i < MAXFD; i++)
+      {
+      if (CHILD[i] > 0)
+         {
+         close(i);
+         }
+      }
+   
+   execl("/bin/sh","sh","-c",command,NULL);
+   _exit(1);
+   }
+else
+   {
+   switch (*type)
+      {
+      case 'r':
+          
+          close(pd[1]);
+          
+          if ((pp = fdopen(pd[0],type)) == NULL)
+             {
+             return NULL;
+             }
+          break;
+          
+      case 'w':
+          
+          close(pd[0]);
+          
+          if ((pp = fdopen(pd[1],type)) == NULL)
+             {
+             return NULL;
+             }
+      }
+   
+   if (fileno(pp) >= MAXFD)
+      {
+      snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
+      CfLog(cferror,OUTPUT,"");
+      }
+   else
+      {
+      CHILD[fileno(pp)] = pid;
+      }
+   return pp;
+   }
 
-    break;
-
-       case 'w':
-
-    close(pd[1]);
-
-    if (pd[0] != 0)
-       {
-       dup2(pd[0],0);
-       close(pd[0]);
-       }
-       }
-    
-    for (i = 0; i < MAXFD; i++)
-       {
-       if (CHILD[i] > 0)
-          {
-          close(i);
-          }
-       }
-    
-    execl("/bin/sh","sh","-c",command,NULL);
-    _exit(1);
-    }
- else
-    {
-    switch (*type)
-       {
-       case 'r':
-           
-           close(pd[1]);
-           
-           if ((pp = fdopen(pd[0],type)) == NULL)
-              {
-              return NULL;
-              }
-           break;
-           
-       case 'w':
-           
-           close(pd[0]);
-           
-           if ((pp = fdopen(pd[1],type)) == NULL)
-              {
-              return NULL;
-              }
-       }
-    
-    if (fileno(pp) >= MAXFD)
-       {
-       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
-       CfLog(cferror,OUTPUT,"");
-       }
-    else
-       {
-       CHILD[fileno(pp)] = pid;
-       }
-    return pp;
-    }
- 
- return NULL;
+return NULL;
 }
 
 /******************************************************************************/

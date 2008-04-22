@@ -253,8 +253,6 @@ for (fd=STDERR_FILENO+1; fd < maxfd; ++fd)
    }
 }
 
-
-
 /*******************************************************************/
 
 int IsIPV6Address(char *name)

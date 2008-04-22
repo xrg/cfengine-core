@@ -1402,6 +1402,7 @@ while (!feof(fp))
       {
       Verbose("Found nothing (%s)\n",cpuname);
       index = ob_spare;
+      fclose(fp);
       return;
       }
 

@@ -64,9 +64,6 @@ pthread_mutex_t MUTEX_HOSTNAME = PTHREAD_MUTEX_INITIALIZER;
 /* GLOBAL VARIABLES                                                */
 /*******************************************************************/
 
-int NO_FORK = false;
-int ONCE = false;
-
 struct option CFDOPTIONS[] =
    {
    { "help",no_argument,0,'h' },
@@ -81,9 +78,12 @@ struct option CFDOPTIONS[] =
    { NULL,0,0,0 }
    };
 
+
+int NO_FORK = false;
+int ONCE = false;
+int MAXLINES = -1;
 char MAILTO[CF_BUFSIZE];
 char MAILFROM[CF_BUFSIZE];
-int MAXLINES = -1;
 const int INF_LINES = -2;
 
 /*******************************************************************/
@@ -103,10 +103,6 @@ int Dialogue  (int sd,char *class);
 int OpeningCeremony(int sd);
 void GetCfStuff (void);
 void Banner (char * s);
-
-/* 
- * HvB: Bas van der Vlies
-*/
 int CompareResult (char *filename, char *prev_file);
 int FileChecksum (char *filename, unsigned char *digest, char type);
 
@@ -720,14 +716,7 @@ return NULL;
 /* Level 4                                                        */
 /******************************************************************/
 
-/*
- * HvB: Bas van der Vlies
- * This function is "stolen" from the checksum.c. Else we have to link so
- * many more files with cfexecd. There also some small changes.
-*/
-
 int FileChecksum(char *filename,unsigned char digest[EVP_MAX_MD_SIZE+1],char type)
-
 
 { FILE *file;
   EVP_MD_CTX context;
@@ -735,8 +724,7 @@ int FileChecksum(char *filename,unsigned char digest[EVP_MAX_MD_SIZE+1],char typ
   unsigned char buffer[1024];
   const EVP_MD *md = NULL;
 
-Debug2("ChecksumFile(%c,%s)\n",type,filename);
-OpenSSL_add_all_digests();
+Debug2("FileChecksum(%c,%s)\n",type,filename);
 
 if ((file = fopen (filename, "rb")) == NULL)
    {
@@ -766,10 +754,7 @@ else
       }
 
    EVP_DigestFinal(&context,digest,&md_len);
-
-   /* Digest length stored in md_len */
    fclose (file);
-
    return(md_len);
    }
 
@@ -778,15 +763,6 @@ return 0;
 
 /*******************************************************************/
 
-/*
- * HvB: Bas van der Vlies
- *  This function compare the current result with the previous run
- *  and returns:
- *    0 : if the files are the same
- *    1 : if the files differ
- *
- *  Changes made by: Jeff Wasilko always update the symlink
-*/
 int CompareResult(char *filename,char *prev_file)
 
 { int i;
@@ -825,8 +801,8 @@ else
    rtn = 1;
    }
 
-/* always update the symlink. */   
 unlink(prev_file);
+
 if (symlink(filename, prev_file) == -1 )
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Could not link %s and %s",filename,prev_file);
@@ -837,14 +813,12 @@ if (symlink(filename, prev_file) == -1 )
 return(rtn);
 }
 
-
-
 /***********************************************************************/
 
 void MailResult(char *file,char *to)
 
 { int sd, sent, count = 0, anomaly = false;
-  char domain[256];
+  char domain[256], prev_file[CF_BUFSIZE];
   struct hostent *hp;
   struct sockaddr_in raddr;
   struct servent *server;
@@ -852,12 +826,9 @@ void MailResult(char *file,char *to)
   time_t now = time(NULL);
   FILE *fp;
 
-  /* HvB: Bas van der Vlies */
-  char prev_file[CF_BUFSIZE];
-
 if ((strlen(VMAILSERVER) == 0) || (strlen(to) == 0))
    {
-   /* Syslog should have done this*/
+   /* Syslog should have done this */
    return;
    }
   
@@ -866,17 +837,13 @@ if (stat(file,&statbuf) == -1)
    exit(0);
    }
 
-/* HvB: Bas van der Vlies */
 snprintf(prev_file,CF_BUFSIZE-1,"%s/outputs/previous",CFWORKDIR);
 
 if (statbuf.st_size == 0)
    {
    unlink(file);
 
-   /* HvB: Bas van der Vlies 
-    * also remove previous file 
-   */
-   if ((fp=fopen(prev_file, "r")) != NULL )
+   if ((fp = fopen(prev_file, "r")) != NULL )
       {
       fclose(fp);
       unlink(prev_file);
@@ -886,10 +853,6 @@ if (statbuf.st_size == 0)
    return;
    }
 
-/*
- * HvB: Check if the result is the same as the previous run.
- *
-*/
 if ( CompareResult(file,prev_file) == 0 ) 
    {
    Verbose("Previous output is the same as current so do not mail it\n");
@@ -1037,9 +1000,6 @@ else
    }
  
 sent=send(sd,VBUFF,strlen(VBUFF),0);
-
- 
-/* -- Added by Michael Rice <mrice@digitalmotorworks.com>*/
 
 #if defined LINUX || defined NETBSD || defined FREEBSD || defined OPENBSD
 strftime(VBUFF,CF_BUFSIZE,"Date: %a, %d %b %Y %H:%M:%S %z\r\n",localtime(&now));
