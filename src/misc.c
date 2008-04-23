@@ -584,7 +584,14 @@ else if (stat("/etc/vmware",&statbuf) != -1)
       VM_version();
       }
    }
- 
+
+if (stat("/proc/xen/capabilities",&statbuf) != -1)
+   {
+   Verbose("\nThis appears to be a xen system.\n");
+   AddClassToHeap("xen");
+   Xen_domain();
+   }
+
 }
 
 /*********************************************************************************/
@@ -1322,6 +1329,36 @@ if (sufficient < 1 && ((fp = fopen("/etc/vmware-release","r")) != NULL) ||
            }
         sufficient = 1;
         fclose(fp);
+   }
+
+return sufficient < 1 ? 1 : 0;
+}
+
+/******************************************************************/
+
+int Xen_domain(void)
+
+{ FILE *fp;
+  char buffer[CF_BUFSIZE];
+  int sufficient = 0;
+
+/* xen host will have "control_d" in /proc/xen/capabilities, xen guest will not */
+if ((fp = fopen("/proc/xen/capabilities","r")) != NULL)
+   {
+   while (!feof(fp))
+      {
+      ReadLine(buffer,CF_BUFSIZE,fp);
+      if (strstr(buffer,"control_d"))
+         {
+         AddClassToHeap("xen_dom0");
+         sufficient = 1;
+         }
+      }
+   if (sufficient < 1)
+      {
+      AddClassToHeap("xen_domu");
+      sufficient = 1;
+      }
    }
 
 return sufficient < 1 ? 1 : 0;

@@ -527,6 +527,7 @@ struct AuditLog        /* key includes operation and date */
    char  operator[CF_AUDIT_COMMENT];
    char  comment[CF_AUDIT_COMMENT];     
    char  filename[CF_AUDIT_COMMENT];
+   char  bundle[CF_AUDIT_VERSION]; /* not used in cf2 */
    char  version[CF_AUDIT_VERSION];
    char  date[CF_AUDIT_DATE];
    short lineno;

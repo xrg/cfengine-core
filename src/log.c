@@ -173,7 +173,7 @@ if (sp = GetMacroValue(CONTEXTID,"cfinputs_version"))
    }
 else
    {
-   sp = strdup("(not specified)");
+   sp = "(not specified)";
    }
 
 if (total == 0)
