@@ -1,6 +1,8 @@
 
 2.2.6
 
+	Xen detection
+	
 	Bug in popen - incorrect placement of conditional in setting groups added in 2.2.4.
 
 	Sensor code added for linux cfenvd. Ready for patches for other systems.

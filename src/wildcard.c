@@ -54,7 +54,6 @@ return (strchr(str,'?') || strchr(str,'*'));
 
 /*************************************************************************/
 
-
 int WildMatch (char *wildptr,char *cmpptr)
 
 { char buffer[CF_BUFSIZE];
