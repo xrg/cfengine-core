@@ -694,7 +694,9 @@ memset(&entry, 0, sizeof(entry));
 
 if (HTML)
    {
-   printf("<html><head><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/menus.css\" /><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/cf_blue.css\"/></head><body><h1>Class probabilities observed on %s</h1><p><table class=border cellpadding=5>",VFQNAME);
+   time_t now = time(NULL);
+   
+   printf("<html><head><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/menus.css\" /><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/cf_blue.css\"/></head><body><h1>Class probabilities observed on %s at %s</h1><p><table class=border cellpadding=5>",VFQNAME,ctime(&now));
    }
 
 if (XML)

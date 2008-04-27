@@ -124,7 +124,7 @@ void RecordClassUsage()
   DBT key,stored;
   char name[CF_BUFSIZE];
   struct Event e,entry,newe;
-  int lsea = CF_WEEK * 52; /* expire after a year */
+  double lsea = CF_WEEK * 52; /* expire after a year */
   time_t now = time(NULL);
   struct Item *ip,*list = NULL;
   double lastseen,delta2;
@@ -175,7 +175,7 @@ for (ip = list; ip != NULL; ip=ip->next)
    {
    if (ReadDB(dbp,ip->name,&e,sizeof(e)))
       {
-      lastseen = now;
+      lastseen = now - e.t;
       newe.t = now;
       newe.Q.q = vtrue;
       newe.Q.expect = GAverage(vtrue,e.Q.expect,0.5);
@@ -191,7 +191,7 @@ for (ip = list; ip != NULL; ip=ip->next)
       newe.Q.var = 0.000;
       }
    
-   if (lastseen > (double)lsea)
+   if (lastseen > lsea)
       {
       Verbose("Class usage record %s expired\n",ip->name);
       DeleteDB(dbp,ip->name);   
@@ -226,7 +226,6 @@ while (dbcp->c_get(dbcp, &key, &stored, DB_NEXT) == 0)
    time_t then;
    char tbuf[CF_BUFSIZE],eventname[CF_BUFSIZE];
 
-   memcpy(&then,stored.data,sizeof(then));
    strcpy(eventname,(char *)key.data);
 
    if (stored.data != NULL)
@@ -237,12 +236,12 @@ while (dbcp->c_get(dbcp, &key, &stored, DB_NEXT) == 0)
       measure = entry.Q.q;
       av = entry.Q.expect;
       var = entry.Q.var;
-      lastseen = now - entry.t;
+      lastseen = now - then;
             
       snprintf(tbuf,CF_BUFSIZE-1,"%s",ctime(&then));
       tbuf[strlen(tbuf)-9] = '\0';                     /* Chop off second and year */
 
-      if (lastseen > (double)lsea)
+      if (lastseen > lsea)
          {
          Verbose("Class usage record %s expired\n",eventname);
          DeleteDB(dbp,eventname);   
@@ -254,7 +253,7 @@ while (dbcp->c_get(dbcp, &key, &stored, DB_NEXT) == 0)
          newe.Q.expect = GAverage(0.0,av,0.5);
          delta2 = av*av;
          newe.Q.var = GAverage(delta2,var,0.5);
-         Debug("Downgrading class %s to %f\n",eventname,newe.Q.expect);
+         Debug("Downgrading class %s from %lf to %lf\n",eventname,entry.Q.expect,newe.Q.expect);
          WriteDB(dbp,eventname,&newe,sizeof(newe));         
          }
       }
