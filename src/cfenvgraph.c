@@ -543,9 +543,9 @@ while (NOW < CF_MONDAY_MORNING+CF_WEEK)
       {
       for (i = 0; i < CF_OBSERVABLES; i++)
          {
-         fprintf(FPE[i],"%d %f %f\n",count, ENTRY.Q[i].expect/MAX.Q[i].expect, sqrt(ENTRY.Q[i].var)/MAX.Q[i].expect);
+         fprintf(FPE[i],"%d %f %f\n",count, ENTRY.Q[i].expect, sqrt(ENTRY.Q[i].var));
          /* Use same scaling for Q so graphs can be merged */
-         fprintf(FPQ[i],"%d %f 0.0\n",count, ENTRY.Q[i].q/MAX.Q[i].expect);
+         fprintf(FPQ[i],"%d %f 0.0\n",count, ENTRY.Q[i].q);
          }               
       }
    
@@ -626,7 +626,7 @@ while (NOW < now)
 
    for (i = 0; i < CF_OBSERVABLES; i++)
       {
-      fprintf(FPM[i],"%d %f %f %f\n",count, ENTRY.Q[i].expect/MAX.Q[i].expect, sqrt(ENTRY.Q[i].var)/MAX.Q[i].expect,ENTRY.Q[i].q/MAX.Q[i].expect);
+      fprintf(FPM[i],"%d %f %f %f\n",count, ENTRY.Q[i].expect, sqrt(ENTRY.Q[i].var),ENTRY.Q[i].q);
       }               
    }
 
@@ -1091,7 +1091,7 @@ if (geteuid() > 0)
 
 snprintf(FILENAME,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_AVDB_FILE);
 
-while ((c=getopt_long(argc,argv,"Thtf:o:rsenNE:",GRAPHOPTIONS,&optindex)) != EOF)
+while ((c=getopt_long(argc,argv,"Thtf:o:rsenNEv:",GRAPHOPTIONS,&optindex)) != EOF)
   {
   switch ((char) c)
       {

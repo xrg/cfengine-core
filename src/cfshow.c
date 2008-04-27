@@ -539,6 +539,7 @@ memset(&entry, 0, sizeof(entry));
 if (HTML)
    {
    printf("<html><head><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/menus.css\" /><link rel=\"stylesheet\" type=\"text/css\" href=\"http://www.cfengine.org/cf_blue.css\"/></head><body><h1>Peformance recently measured on %s</h1><p><table class=border cellpadding=5>",VFQNAME);
+   printf("<div id=\"performance\">");
    }
 
 if (XML)
@@ -580,6 +581,17 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
             }
          
          fprintf(stderr,"Deleting expired entry for %s\n",eventname);
+
+         if (measure < 0 || average < 0 || measure > 4*CF_WEEK)
+            {
+            if ((errno = dbp->del(dbp,NULL,&key,0)) != 0)
+               {
+               CfLog(cferror,"","db_store");
+               }
+            }
+         
+         fprintf(stderr,"Deleting entry for %s because it seems to take longer than 4 weeks to complete\n",eventname);
+
          continue;
          }
       
@@ -588,9 +600,9 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
          printf("%s",CFX[cfx_entry][cfb]);
          printf("%s%s%s",CFX[cfx_event][cfb],eventname,CFX[cfx_event][cfe]);
          printf("%s%s%s",CFX[cfx_date][cfb],tbuf,CFX[cfx_date][cfe]);
-         printf("%s%.4f%s",CFX[cfx_q][cfb],measure,CFX[cfx_q][cfe]);
-         printf("%s%.4f%s",CFX[cfx_av][cfb],average,CFX[cfx_av][cfe]);
-         printf("%s%.4f%s",CFX[cfx_dev][cfb],sqrt(var)/ticksperminute,CFX[cfx_dev][cfe]);
+         printf("%s%.4lf%s",CFX[cfx_q][cfb],measure,CFX[cfx_q][cfe]);
+         printf("%s%.4lf%s",CFX[cfx_av][cfb],average,CFX[cfx_av][cfe]);
+         printf("%s%.4lf%s",CFX[cfx_dev][cfb],sqrt(var)/ticksperminute,CFX[cfx_dev][cfe]);
          printf("%s",CFX[cfx_entry][cfe]);         
          }
       else if (HTML)
@@ -598,14 +610,14 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
          printf("%s",CFH[cfx_entry][cfb]);
          printf("%s%s%s",CFH[cfx_event][cfb],eventname,CFH[cfx_event][cfe]);
          printf("%s last performed at %s%s",CFH[cfx_date][cfb],tbuf,CFH[cfx_date][cfe]);
-         printf("%s completed in %.4f mins %s",CFH[cfx_q][cfb],measure,CFH[cfx_q][cfe]);
-         printf("%s Av %.4f mins %s",CFH[cfx_av][cfb],average,CFH[cfx_av][cfe]);
-         printf("%s &plusmn; %.4f mins %s",CFH[cfx_dev][cfb],sqrt(var)/ticksperminute,CFH[cfx_dev][cfe]);
+         printf("%s completed in %.4lf mins %s",CFH[cfx_q][cfb],measure,CFH[cfx_q][cfe]);
+         printf("%s Av %.4lf mins %s",CFH[cfx_av][cfb],average,CFH[cfx_av][cfe]);
+         printf("%s &plusmn; %.4lf mins %s",CFH[cfx_dev][cfb],sqrt(var)/ticksperminute,CFH[cfx_dev][cfe]);
          printf("%s",CFH[cfx_entry][cfe]);
          }
       else
          {
-         printf("(%7.4f mins @ %s) Av %7.4f +/- %7.4f for %s \n",measure,tbuf,average,sqrt(var)/ticksperminute,eventname);
+         printf("(%7.4lf mins @ %s) Av %7.4lf +/- %7.4lf for %s \n",measure,tbuf,average,sqrt(var)/ticksperminute,eventname);
          }
       }
    else
@@ -617,6 +629,7 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
 if (HTML)
    {
    printf("</table>");
+   printf("</div>\n</body></html>\n");
    }
 
 if (XML)

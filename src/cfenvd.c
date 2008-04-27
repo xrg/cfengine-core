@@ -1346,9 +1346,10 @@ Verbose("(Users,root,other) = (%d,%d,%d)\n",THIS[ob_users],THIS[ob_rootprocs],TH
 
 void GatherCPUData()
 
-{ double q,dq,total_time = 1;
+{ double q,dq;
   char name[CF_MAXVARSIZE],cpuname[CF_MAXVARSIZE],buf[CF_BUFSIZE];
   int count,userticks=0,niceticks=0,systemticks=0,idle=0,iowait=0,irq=0,softirq=0;
+  int total_time = 1;
   FILE *fp;
   enum observables index = ob_spare;
   
@@ -1369,9 +1370,9 @@ while (!feof(fp))
    sscanf(buf,"%s%d%d%d%d%d%d%d",&cpuname,&userticks,&niceticks,&systemticks,&idle,&iowait,&irq,&softirq);
    snprintf(name,16,"cpu%d",count);
    
-   total_time = (double)(userticks+niceticks+systemticks+idle); 
+   total_time = (userticks+niceticks+systemticks+idle); 
 
-   q = 100.0 * (total_time - idle)/total_time; /* % Utilization */
+   q = 100.0 * (double)(total_time - idle);
 
    if (strncmp(cpuname,name,strlen(name)) == 0)
       {
@@ -1406,7 +1407,7 @@ while (!feof(fp))
       return;
       }
 
-   dq = q - LASTQ[index];
+   dq = (q - LASTQ[index])/(double)total_time; /* % Utilization */
    
    THIS[index] = dq;
    LASTQ[index] = q;
