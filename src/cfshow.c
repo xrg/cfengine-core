@@ -165,7 +165,7 @@ void CheckOptsAndInit(int argc,char **argv)
 PURGE = 'n';
 AUDIT = false;
 
-while ((c=getopt_long(argc,argv,"AhdvaVlr:f:scpPXH",CFSHOPTIONS,&optindex)) != EOF)
+while ((c=getopt_long(argc,argv,"AChdvaVlr:f:scpPXH",CFSHOPTIONS,&optindex)) != EOF)
   {
   switch ((char) c)
       {

@@ -909,11 +909,6 @@ for (ip = VHEAP; ip != NULL; ip=ip->next)
          }
 
       fprintf(fp,"%s\n",ip->name);
-
-      if (!IsItemIn(CLASSHISTORY,ip->name))
-         {
-         PrependItem(&CLASSHISTORY,ip->name,NULL);
-         }
       }
    }
  
@@ -934,11 +929,6 @@ for (ip = VALLADDCLASSES; ip != NULL; ip=ip->next)
          }
       
       fprintf(fp,"%s\n",ip->name);
-      
-      if (!IsItemIn(CLASSHISTORY,ip->name))
-         {
-         PrependItem(&CLASSHISTORY,ip->name,NULL);
-         }
       }
    }
 

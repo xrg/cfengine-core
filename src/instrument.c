@@ -116,23 +116,38 @@ dbp->close(dbp,0);
 
 /***************************************************************/
 
-void RecordClassUsage(struct Item *list)
+void RecordClassUsage()
 
 { DB *dbp;
   DB_ENV *dbenv = NULL;
   DBC *dbcp;
   DBT key,stored;
   char name[CF_BUFSIZE];
-  struct Event e,newe;
+  struct Event e,entry,newe;
   int lsea = CF_WEEK * 52; /* expire after a year */
   time_t now = time(NULL);
-  struct Item *ip;
+  struct Item *ip,*list = NULL;
   double lastseen,delta2;
-  double value = 1.0;      /* end with a rough probability */
-  struct Event entry;
+  double vtrue = 1.0;      /* end with a rough probability */
 
 Debug("RecordClassUsage\n");
 
+for (ip = VHEAP; ip != NULL; ip=ip->next)
+   {
+   if (!IsItemIn(list,ip->name))
+      {
+      PrependItem(&list,ip->name,NULL);
+      }
+   }
+
+for (ip = VALLADDCLASSES; ip != NULL; ip=ip->next)
+   {
+   if (!IsItemIn(list,ip->name))
+      {
+      PrependItem(&list,ip->name,NULL);
+      }
+   }
+   
 snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_CLASSUSAGE);
 
 if ((errno = db_create(&dbp,dbenv,0)) != 0)
@@ -160,19 +175,19 @@ for (ip = list; ip != NULL; ip=ip->next)
    {
    if (ReadDB(dbp,ip->name,&e,sizeof(e)))
       {
-      lastseen = now - e.t;
+      lastseen = now;
       newe.t = now;
-      newe.Q.q = value;
-      newe.Q.expect = GAverage(value,e.Q.expect,0.5);
-      delta2 = (value - e.Q.expect)*(value - e.Q.expect);
+      newe.Q.q = vtrue;
+      newe.Q.expect = GAverage(vtrue,e.Q.expect,0.5);
+      delta2 = (vtrue - e.Q.expect)*(vtrue - e.Q.expect);
       newe.Q.var = GAverage(delta2,e.Q.var,0.5);
       }
    else
       {
       lastseen = 0.0;
       newe.t = now;
-      newe.Q.q = 0.5*value;
-      newe.Q.expect = 0.5*value;  /* With no data it's 50/50 what we can say */
+      newe.Q.q = 0.5*vtrue;
+      newe.Q.expect = 0.5*vtrue;  /* With no data it's 50/50 what we can say */
       newe.Q.var = 0.000;
       }
    
@@ -183,6 +198,7 @@ for (ip = list; ip != NULL; ip=ip->next)
       }
    else
       {
+      Debug("Upgrading %s %f\n",ip->name,newe.Q.expect);
       WriteDB(dbp,ip->name,&newe,sizeof(newe));
       }
    }
@@ -206,7 +222,7 @@ memset(&entry, 0, sizeof(entry));
 
 while (dbcp->c_get(dbcp, &key, &stored, DB_NEXT) == 0)
    {
-   double measure;
+   double measure,av,var;
    time_t then;
    char tbuf[CF_BUFSIZE],eventname[CF_BUFSIZE];
 
@@ -219,17 +235,26 @@ while (dbcp->c_get(dbcp, &key, &stored, DB_NEXT) == 0)
       
       then    = entry.t;
       measure = entry.Q.q;
-      
+      av = entry.Q.expect;
+      var = entry.Q.var;
+      lastseen = now - entry.t;
+            
       snprintf(tbuf,CF_BUFSIZE-1,"%s",ctime(&then));
       tbuf[strlen(tbuf)-9] = '\0';                     /* Chop off second and year */
 
-      if (!IsItemIn(list,eventname))
+      if (lastseen > (double)lsea)
+         {
+         Verbose("Class usage record %s expired\n",eventname);
+         DeleteDB(dbp,eventname);   
+         }
+      else if (!IsItemIn(list,eventname))
          {
          newe.t = then;
          newe.Q.q = 0;
-         newe.Q.expect = GAverage(0.0,e.Q.expect,0.5);
-         delta2 = (e.Q.expect)*(e.Q.expect);
-         newe.Q.var = GAverage(delta2,e.Q.var,0.5);
+         newe.Q.expect = GAverage(0.0,av,0.5);
+         delta2 = av*av;
+         newe.Q.var = GAverage(delta2,var,0.5);
+         Debug("Downgrading class %s to %f\n",eventname,newe.Q.expect);
          WriteDB(dbp,eventname,&newe,sizeof(newe));         
          }
       }
@@ -847,6 +872,8 @@ if ((errno = dbp->put(dbp,NULL,key,value,0)) != 0)
    }
 else
    {
+   Debug("WriteDB => %s\n",name);
+
    DeleteDBKey(key);
    DeleteDBValue(value);
    return true;
@@ -893,8 +920,6 @@ memset(key,0,sizeof(DBT));
 memset(dbkey,0,strlen(name)+1);
 
 strncpy(dbkey,name,strlen(name));
-
-Debug("StringKEY => %s\n",dbkey);
 
 key->data = (void *)dbkey;
 key->size = strlen(name)+1;
