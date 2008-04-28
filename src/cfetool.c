@@ -41,11 +41,6 @@
 #include "cf.extern.h"
 #include "cfetooldefs.h"
 
-#define CFGRACEPERIOD 4.0	/* training period in units of counters
-				 * (weeks,iterations) */
-#define cf_noise_threshold 10	/* number that does not warrent large anomaly 
-				 * status */
-#define big_number 1000000
 
 struct option CREATEOPTIONS[] = {
   {"step", required_argument, 0, 's'},

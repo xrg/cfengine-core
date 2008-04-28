@@ -761,6 +761,7 @@ int linux_suse_version (void);
 int linux_slackware_version (char *filename);
 int debian_version (void);
 int lsb_version (void);
+int Xen_domain(void);
 char * UnQuote (char *name);
 int DirPush (char *name,struct stat *sb);
 void DirPop (int goback,char *name,struct stat *sb);

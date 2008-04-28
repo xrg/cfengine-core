@@ -44,12 +44,6 @@
 /* Globals                                                                   */
 /*****************************************************************************/
 
-#define CFGRACEPERIOD 4.0     /* training period in units of counters (weeks,iterations)*/
-#define cf_noise_threshold 6  /* number that does not warrent large anomaly status */
-#define big_number 100000
-#define CF_PERSISTENCE 30
-#define LDT_BUFSIZE 10
-
 unsigned int HISTOGRAM[CF_OBSERVABLES][7][CF_GRAINS];
 
 int HISTO = false;
@@ -116,7 +110,7 @@ int LASTQ[CF_OBSERVABLES];
 /* Prototypes                                                      */
 /*******************************************************************/
 
-void Initialize(void);
+void MonInitialize(void);
 void StartServer (int argc, char **argv);
 void *ExitCleanly (void);
 void yyerror (char *s);
@@ -162,7 +156,7 @@ int GetLMSensors(void);
 
 /****************************************************************/
 
-void Initialize()
+void MonInitialize()
    
 { int i,j,k;
   struct stat statbuf;

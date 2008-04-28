@@ -469,7 +469,7 @@ dnl ######################################################################
 AC_CHECK_FUNCS(getcwd getnetgrent waitpid seteuid setegid setreuid setregid)
 AC_CHECK_FUNCS(uname gethostname realpath regcomp chflags)
 AC_CHECK_FUNCS(strstr strsep putenv drand48 srand48 getaddrinfo)
-AC_CHECK_FUNCS(bcopy mkfifo statfs statvfs door)
+AC_CHECK_FUNCS(bcopy mkfifo statfs statvfs door qsort)
 AC_CHECK_FUNCS(sysinfo setsid strdup strrchr strerror snprintf sysconf)
 
 dnl ######################################################################

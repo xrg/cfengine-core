@@ -28,12 +28,12 @@
 /*                                                                 */
 /*******************************************************************/
 
+/* Hard link this file between cf2/cf3 for consistent update */
+
 #include "conf.h"
 
 #include <stdio.h>
 #include <math.h>
-
-
 
 #ifndef _GETOPT_H
 #include "../pub/getopt.h"
@@ -455,6 +455,11 @@ typedef int clockid_t;
 
 /*****************************************************************************/
 
+#define CFGRACEPERIOD 4.0     /* training period in units of counters (weeks,iterations)*/
+#define cf_noise_threshold 6  /* number that does not warrent large anomaly status */
+#define big_number 100000
+#define CF_PERSISTENCE 30
+#define LDT_BUFSIZE 10
 #define CF_GRAINS   64
 #define ATTR     11
 #define CF_NETATTR   7 /* icmp udp dns tcpsyn tcpfin tcpack */

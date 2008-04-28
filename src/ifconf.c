@@ -304,7 +304,7 @@ if (ioctl(sk,SIOCSIFBRDADDR, (caddr_t) &IFR) == -1)
    return;
    } 
 
-if ((char *) sin->sin_addr.s_addr == NULL)
+if ((void *)(sin->sin_addr.s_addr) == (void *)NULL)
    {
    CfLog(cferror,"No broadcast address on socket after configuration!!\n","");
    }

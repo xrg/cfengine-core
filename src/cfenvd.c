@@ -67,7 +67,7 @@ int main (int argc,char **argv)
 
 {
 CheckOpts(argc,argv);
-Initialize();
+MonInitialize();
 GetNameInfo();
 GetInterfaceInfo();
 GetV6InterfaceInfo();  
