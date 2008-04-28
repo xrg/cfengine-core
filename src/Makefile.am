@@ -115,7 +115,8 @@ cfkey_SOURCES =								\
 	cfkey.c
 
 cfenvd_SOURCES =							\
-	cfenvd.c
+	cfenvd.c							\
+	env_monitor.c
 
 cfenvgraph_SOURCES =							\
 	cfenvgraph.c

@@ -58,6 +58,16 @@ enum databases TODO = -1;
 
 /*******************************************************************/
 
+struct CEnt /* For sorting */
+   {
+   char name[256];
+   char date[32];
+   double q;
+   double d;
+   };
+
+/*******************************************************************/
+
 enum cf_formatindex
    {
    cfb,
@@ -80,7 +90,6 @@ enum cf_format
    cfx_filename,
    cfx_index
    };
-
 
 short XML = false;
 
@@ -123,7 +132,7 @@ char *CFH[][2] =
    };
 
 /*******************************************************************/
-/* Functions internal to cfservd.c                                 */
+/* Functions internal to cfshow.c                                  */
 /*******************************************************************/
 
 void CheckOptsAndInit (int argc,char **argv);
@@ -138,6 +147,7 @@ void ShowPerformance(void);
 void ShowCurrentAudit(void);
 char *ChecksumDump(unsigned char digest[EVP_MAX_MD_SIZE+1]);
 char *Format(char *s,int width);
+int CompareClasses(const void *a, const void *b);
 
 /*******************************************************************/
 /* Level 0 : Main                                                  */
@@ -654,7 +664,8 @@ void ShowClasses()
   double ticksperminute = 60.0;
   char name[CF_BUFSIZE],eventname[CF_BUFSIZE];
   struct Event entry;
-  int ret;
+  struct CEnt array[1024];
+  int ret, i;
   
 snprintf(name,CF_BUFSIZE-1,"%s/%s",CFWORKDIR,CF_CLASSUSAGE);
 
@@ -706,6 +717,13 @@ if (XML)
 
  /* Walk through the database and print out the key/data pairs. */
 
+for (i = 0; i < 1024; i++)
+   {
+   array[i].q = -1;
+   }
+
+i = 0;
+
 while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
    {
    double measure;
@@ -741,32 +759,47 @@ while (dbcp->c_get(dbcp, &key, &value, DB_NEXT) == 0)
          continue;
          }
       
-      if (XML)
+      if (i++ < 1024)
          {
-         printf("%s",CFX[cfx_entry][cfb]);
-         printf("%s%s%s",CFX[cfx_event][cfb],eventname,CFX[cfx_event][cfe]);
-         printf("%s%s%s",CFX[cfx_date][cfb],tbuf,CFX[cfx_date][cfe]);
-         printf("%s%.4f%s",CFX[cfx_av][cfb],average,CFX[cfx_av][cfe]);
-         printf("%s%.4f%s",CFX[cfx_dev][cfb],sqrt(var),CFX[cfx_dev][cfe]);
-         printf("%s",CFX[cfx_entry][cfe]);         
-         }
-      else if (HTML)
-         {
-         printf("%s",CFH[cfx_entry][cfb]);
-         printf("%s%s%s",CFH[cfx_event][cfb],eventname,CFH[cfx_event][cfe]);
-         printf("%s last occured at %s%s",CFH[cfx_date][cfb],tbuf,CFH[cfx_date][cfe]);
-         printf("%s Probability %.4f %s",CFH[cfx_av][cfb],average,CFH[cfx_av][cfe]);
-         printf("%s &plusmn; %.4f %s",CFH[cfx_dev][cfb],sqrt(var),CFH[cfx_dev][cfe]);
-         printf("%s",CFH[cfx_entry][cfe]);
+         strncpy(array[i].date,tbuf,31);
+         strncpy(array[i].name,eventname,255);
+         array[i].q = average;
+         array[i].d = var;
          }
       else
          {
-         printf("Probability %7.4f +/- %7.4f for %s (last oberved @ %s)\n",average,sqrt(var),eventname,tbuf);
+         break;
          }
+      }
+   }
+
+#ifdef HAVE_QSORT
+qsort(array,1024,sizeof(struct CEnt),CompareClasses);
+#endif
+
+for (i = 0; array[i].q > 0; i++)
+   {
+   if (XML)
+      {
+      printf("%s",CFX[cfx_entry][cfb]);
+      printf("%s%s%s",CFX[cfx_event][cfb],array[i].name,CFX[cfx_event][cfe]);
+      printf("%s%s%s",CFX[cfx_date][cfb],array[i].date,CFX[cfx_date][cfe]);
+      printf("%s%.4f%s",CFX[cfx_av][cfb],array[i].q,CFX[cfx_av][cfe]);
+      printf("%s%.4f%s",CFX[cfx_dev][cfb],sqrt(array[i].d),CFX[cfx_dev][cfe]);
+      printf("%s",CFX[cfx_entry][cfe]);         
+      }
+   else if (HTML)
+      {
+      printf("%s",CFH[cfx_entry][cfb]);
+      printf("%s%s%s",CFH[cfx_event][cfb],array[i].name,CFH[cfx_event][cfe]);
+      printf("%s last occured at %s%s",CFH[cfx_date][cfb],array[i].date,CFH[cfx_date][cfe]);
+      printf("%s Probability %.4f %s",CFH[cfx_av][cfb],array[i].q,CFH[cfx_av][cfe]);
+      printf("%s &plusmn; %.4f %s",CFH[cfx_dev][cfb],sqrt(array[i].d),CFH[cfx_dev][cfe]);
+      printf("%s",CFH[cfx_entry][cfe]);
       }
    else
       {
-      continue;
+      printf("Probability %7.4f +/- %7.4f for %s (last oberved @ %s)\n",array[i].q,sqrt(array[i].d),array[i].name,array[i].date);
       }
    }
 
@@ -1346,4 +1379,15 @@ for (sp = s; *sp != '\0'; sp++)
    }
 
 return buffer;
+}
+
+/*************************************************************/
+
+int CompareClasses(const void *a, const void *b)
+
+{
+struct CEnt *da = (struct CEnt *) a;
+struct CEnt *db = (struct CEnt *) b;
+
+return (da->q < db->q) - (da->q > db->q);
 }

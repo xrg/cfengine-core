@@ -109,7 +109,7 @@ cfagent_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 cfagent_DEPENDENCIES = libcfengine.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_cfenvd_OBJECTS = cfenvd.$(OBJEXT)
+am_cfenvd_OBJECTS = cfenvd.$(OBJEXT) env_monitor.$(OBJEXT)
 cfenvd_OBJECTS = $(am_cfenvd_OBJECTS)
 cfenvd_LDADD = $(LDADD)
 cfenvd_DEPENDENCIES = libcfengine.la $(am__DEPENDENCIES_1) \
@@ -434,7 +434,8 @@ cfkey_SOURCES = \
 	cfkey.c
 
 cfenvd_SOURCES = \
-	cfenvd.c
+	cfenvd.c							\
+	env_monitor.c
 
 cfenvgraph_SOURCES = \
 	cfenvgraph.c
@@ -644,6 +645,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfservd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfshow.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/do.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/env_monitor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-2Dlist.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-acl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcfengine_la-alerts.Plo@am__quote@
