@@ -304,7 +304,7 @@ else
 
 void GetInterfaceInfo(void)
 
-{ int fd,len,i,j,first_address = true;
+{ int fd,len,i,j,first_address;
   struct ifreq ifbuf[CF_IFREQ],ifr, *ifp;
   struct ifconf list;
   struct sockaddr_in *sin;
@@ -312,6 +312,7 @@ void GetInterfaceInfo(void)
   char *sp;
   char ip[CF_MAXVARSIZE];
   char name[CF_BUFSIZE];
+  char last_name[CF_BUFSIZE];
 
 Debug("GetInterfaceInfo()\n");
 
@@ -336,12 +337,26 @@ if (ioctl(fd, OSIOCGIFCONF, &list) == -1 || (list.ifc_len < (sizeof(struct ifreq
 
 for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*ifp),j++,ifp=(struct ifreq *)((char *)ifp+SIZEOF_IFREQ(*ifp)))
    {
+
    if (ifp->ifr_addr.sa_family == 0)
       {
       continue;
       }
    
    Verbose("Interface %d: %s\n", j+1, ifp->ifr_name);   
+
+   /* Chun Tian (binghe) <binghe.lisp@gmail.com>:
+      use a last_name to detect whether current address is a interface's first address:
+      if current ifr_name = last_name, it's not the first address of current interface. */
+   if (strncmp(last_name,ifp->ifr_name,sizeof(ifp->ifr_name)) == 0)
+      {
+      first_address = false;
+      }
+   else
+      {
+      first_address = true;
+      }
+   strncpy(last_name,ifp->ifr_name,sizeof(ifp->ifr_name));
    
    if (UNDERSCORE_CLASSES)
       {
@@ -425,7 +440,6 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
 
          if (first_address)
             {
-            first_address = false;
             strcpy(ip,inet_ntoa(sin->sin_addr));
             snprintf(name,CF_MAXVARSIZE-1,"ipv4[%s]",CanonifyName(ifp->ifr_name));
             AddMacroValue(CONTEXTID,name,ip);

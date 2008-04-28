@@ -61,7 +61,6 @@ double ITER = 0.0;           /* Iteration since start */
 double AGE,WAGE;             /* Age and weekly age of database */
 
 char OUTPUT[CF_BUFSIZE*2];
-
 char BATCHFILE[CF_BUFSIZE];
 char STATELOG[CF_BUFSIZE];
 char ENV_NEW[CF_BUFSIZE];
@@ -102,9 +101,9 @@ struct Item *PREVIOUS_STATE = NULL;
 struct Item *ENTROPIES = NULL;
 
 short NO_FORK = false;
+double FORGETRATE = 0.7;
 
 int LASTQ[CF_OBSERVABLES];
-
 
 /*******************************************************************/
 /* Prototypes                                                      */
@@ -273,8 +272,6 @@ Debug("Finished with initialization.\n");
 
 /*********************************************************************/
 /* Level 2                                                           */
-/*********************************************************************/
-
 /*********************************************************************/
 
 void GetDatabaseAge()
@@ -1825,15 +1822,20 @@ double WAverage(double anew,double aold,double age)
 { double av;
   double wnew,wold;
 
+if (FORGETRATE > 0.9 || FORGETRATE < 0.1)
+   {
+   FORGETRATE = 0.7;
+   }
+  
 if (age < 2.0)  /* More aggressive learning for young database */
    {
-   wnew = 0.7;
-   wold = 0.3;
+   wnew = FORGETRATE;
+   wold = (1.0-FORGETRATE);
    }
 else
    {
-   wnew = 0.3;
-   wold = 0.7;
+   wnew = (1.0-FORGETRATE);
+   wold = FORGETRATE;
    }
 
 av = (wnew*anew + wold*aold)/(wnew+wold); 
