@@ -113,8 +113,8 @@ while ((c=getopt_long(argc,argv,"d:vhHFVT",CFDENVOPTIONS,&optindex)) != EOF)
                              break;
                    }
   
-  NO_FORK = true;
-  printf("cfenvd: Debug mode: running in foreground\n");
+                NO_FORK = true;
+                printf("cfenvd: Debug mode: running in foreground\n");
                 break;
 
       case 'v': VERBOSE = true;
@@ -140,8 +140,22 @@ while ((c=getopt_long(argc,argv,"d:vhHFVT",CFDENVOPTIONS,&optindex)) != EOF)
 
       }
    }
+
+LOGGING = true;                    /* Do output to syslog */
+
+SetReferenceTime(false);
+SetStartTime(false);
+SetSignals();
+signal (SIGTERM,HandleSignal);                   /* Signal Handler */
+signal (SIGHUP,HandleSignal);
+signal (SIGINT,HandleSignal);
+signal (SIGPIPE,HandleSignal);
+signal (SIGSEGV,HandleSignal);
+signal (SIGUSR1,HandleSignal);
+signal (SIGUSR2,HandleSignal);
 }
 
+/*******************************************************************************/
 
 void Syntax()
 

@@ -121,6 +121,7 @@ if (!ONCE)
    {
    RestoreExecLock(); 
    ReleaseCurrentLock();
+   closelog();
    }
 
  return 0;
@@ -655,7 +656,15 @@ if ((fp = fopen(filename,"w")) == NULL)
    CfLog(cfinform,OUTPUT,"fopen");
    return NULL;
    }
- 
+
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+      if (pthread_mutex_lock(&MUTEX_COUNT) != 0)
+         {
+         CfLog(cferror,"pthread_mutex_lock failed","pthread_mutex_lock");
+         return NULL;
+         }
+#endif
+
 if ((pp = cfpopen(cmd,"r")) == NULL)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Couldn't open pipe to command %s\n",cmd);
@@ -663,7 +672,15 @@ if ((pp = cfpopen(cmd,"r")) == NULL)
    fclose(fp);
    return NULL;
    }
- 
+
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+   if (pthread_mutex_unlock(&MUTEX_COUNT) != 0)
+      {
+      CfLog(cferror,"pthread_mutex_unlock failed","pthread_mutex_unlock");
+      return NULL;
+      }
+#endif
+
 while (!feof(pp) && ReadLine(line,CF_BUFSIZE,pp))
    {
    if (ferror(pp))
@@ -702,11 +719,27 @@ while (!feof(pp) && ReadLine(line,CF_BUFSIZE,pp))
       line[0] = '\0';
       }
    }
- 
+
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+      if (pthread_mutex_lock(&MUTEX_COUNT) != 0)
+         {
+         CfLog(cferror,"pthread_mutex_lock failed","pthread_mutex_lock");
+         return NULL;
+         }
+#endif
+
 cfpclose(pp);
+
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+   if (pthread_mutex_unlock(&MUTEX_COUNT) != 0)
+      {
+      CfLog(cferror,"pthread_mutex_unlock failed","pthread_mutex_unlock");
+      return NULL;
+      }
+#endif
+
 Debug("Closing fp\n");
 fclose(fp);
-closelog();
   
 MailResult(filename,MAILTO);
 return NULL; 

@@ -1037,7 +1037,7 @@ if (OptionIs(CONTEXTID,"ShowActions",true))
    SHOWACTIONS = true;
    }
 
- if (GetMacroValue(CONTEXTID,"Umask"))
+if (GetMacroValue(CONTEXTID,"Umask"))
    {
    mode_t val;
    val = (mode_t)atoi(GetMacroValue(CONTEXTID,"Umask"));

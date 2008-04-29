@@ -168,12 +168,13 @@ else
       {
       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
       CfLog(cferror,OUTPUT,"");
+      return NULL;
       }
    else
       {
       CHILD[fileno(pp)] = pid;
+      return pp;
       }
-   return pp;
    }
 
 return NULL; /* Cannot reach here */
@@ -293,7 +294,7 @@ if (pid == 0)
    if (!CfSetUid(uid,gid))
       {
       free((char *)argv);
-      return NULL;
+      _exit(1);
       }
    
    if (execv(arg[0],argv) == -1)
@@ -333,6 +334,7 @@ else
       {
       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
       CfLog(cferror,OUTPUT,"");
+      return NULL;
       }
    else
       {
@@ -448,6 +450,7 @@ else
       {
       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
       CfLog(cferror,OUTPUT,"");
+      return NULL;
       }
    else
       {
@@ -553,7 +556,7 @@ if (pid == 0)
    
    if (!CfSetUid(uid,gid))
       {
-      return NULL;
+      _exit(1);
       }
    
    execl("/bin/sh","sh","-c",command,NULL);
@@ -587,6 +590,7 @@ else
       {
       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
       CfLog(cferror,OUTPUT,"");
+      return NULL;
       }
    else
       {
