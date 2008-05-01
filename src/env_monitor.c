@@ -755,9 +755,9 @@ for (i = 0; i < CF_OBSERVABLES; i++)
    newvals.Q[i].var = WAverage(delta2,currentvals->Q[i].var,WAGE);
    LOCALAV.Q[i].var = WAverage(newvals.Q[i].var,LOCALAV.Q[i].var,ITER);
 
-   Debug("New %s.q %lf\n",OBS[i][0],newvals.Q[i].q);
-   Debug("New %s.var %lf\n",OBS[i][0],newvals.Q[i].var);
-   Debug("New %s.ex %lf\n",OBS[i][0],newvals.Q[i].expect);
+   Verbose("New %s.q %lf\n",OBS[i][0],newvals.Q[i].q);
+   Verbose("New %s.var %lf\n",OBS[i][0],newvals.Q[i].var);
+   Verbose("New %s.ex %lf\n",OBS[i][0],newvals.Q[i].expect);
 
    
 
@@ -1004,8 +1004,9 @@ void AnalyzeArrival(char *arrival)
 
 /* This coarsely classifies TCP dump data */
     
-{ char src[CF_BUFSIZE],dest[CF_BUFSIZE], flag = '.';
-  
+{ char src[CF_BUFSIZE],dest[CF_BUFSIZE], flag = '.', *arr;
+
+ printf("*********************************************************\n");
 src[0] = dest[0] = '\0';
  
 if (strstr(arrival,"listening"))
@@ -1017,11 +1018,35 @@ Chop(arrival);
 
  /* Most hosts have only a few dominant services, so anomalies will
     show up even in the traffic without looking too closely. This
-    will apply only to the main interface .. not multifaces */
- 
-if (strstr(arrival,"tcp") || strstr(arrival,"ack"))
+    will apply only to the main interface .. not multifaces 
+
+    New format in tcpdump
+    
+    IP (tos 0x10, ttl 64, id 14587, offset 0, flags [DF], proto TCP (6), length 692) 128.39.89.232.22 > 84.215.40.125.48022: P 1546432:1547072(640) ack 1969 win 1593 <nop,nop,timestamp 25662737 1631360>
+    IP (tos 0x0, ttl 251, id 14109, offset 0, flags [DF], proto UDP (17), length 115) 84.208.20.110.53 > 192.168.1.103.32769: 45266 NXDomain 0/1/0 (87)
+arp who-has 192.168.1.1 tell 192.168.1.103
+arp reply 192.168.1.1 is-at 00:1d:7e:28:22:c6
+IP (tos 0x0, ttl 64, id 0, offset 0, flags [DF], proto ICMP (1), length 84) 192.168.1.103 > 128.39.89.10: ICMP echo request, id 48474, seq 1, length 64
+IP (tos 0x0, ttl 64, id 0, offset 0, flags [DF], proto ICMP (1), length 84) 192.168.1.103 > 128.39.89.10: ICMP echo request, id 48474, seq 2, length 64
+
+ */
+
+for (arr = strstr(arrival,"length"); arr != NULL && *arr != ')'; arr++)
+   {
+   }
+
+if (arr == NULL)
+   {
+   arr = arrival;
+   }
+else
+   {
+   arr++;
+   }
+
+if (strstr(arrival,"proto TCP") || strstr(arrival,"ack"))
    {              
-   sscanf(arrival,"%s %*c %s %c ",src,dest,&flag);
+   sscanf(arr,"%s %*c %s %c ",src,dest,&flag);
    DePort(src);
    DePort(dest);
    Debug("FROM %s, TO %s, Flag(%c)\n",src,dest,flag);
@@ -1072,7 +1097,7 @@ if (strstr(arrival,"tcp") || strstr(arrival,"ack"))
    }
 else if (strstr(arrival,".53"))
    {
-   sscanf(arrival,"%s %*c %s %c ",src,dest,&flag);
+   sscanf(arr,"%s %*c %s %c ",src,dest,&flag);
    DePort(src);
    DePort(dest);
    
@@ -1088,9 +1113,9 @@ else if (strstr(arrival,".53"))
       IncrementCounter(&(NETOUT_DIST[tcpack]),dest);
       }       
    }
-else if (strstr(arrival,"udp"))
+else if (strstr(arrival,"proto UDP"))
    {
-   sscanf(arrival,"%s %*c %s %c ",src,dest,&flag);
+   sscanf(arr,"%s %*c %s %c ",src,dest,&flag);
    DePort(src);
    DePort(dest);
    
@@ -1106,9 +1131,9 @@ else if (strstr(arrival,"udp"))
       IncrementCounter(&(NETOUT_DIST[udp]),dest);
       }       
    }
-else if (strstr(arrival,"icmp"))
+else if (strstr(arrival,"proto ICMP"))
    {
-   sscanf(arrival,"%s %*c %s %c ",src,dest,&flag);
+   sscanf(arr,"%s %*c %s %c ",src,dest,&flag);
    DePort(src);
    DePort(dest);
    
@@ -2037,6 +2062,7 @@ if (delta > 4.0*dev)  /* IR */
    }
 else
    {
+   Verbose("Value accepted\n");
    return new;
    }
 }
