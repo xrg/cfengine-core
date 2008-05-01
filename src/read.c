@@ -42,7 +42,8 @@
 
 int ReadLine(char *buff,int size,FILE *fp)
 
-{
+{ char ch;
+ 
 buff[0] = '\0';
 buff[size - 1] = '\0';                        /* mark end of buffer */
 
@@ -55,11 +56,29 @@ else
    {
    char *tmp;
 
-   /* remove newline */
-
    if ((tmp = strrchr(buff, '\n')) != NULL)
       {
+      /* remove newline */
       *tmp = '\0';
+      }
+   else
+      {
+      /* The line was too long and truncated so, discard probable remainder */
+      while (true)
+         {
+         if (feof(fp))
+            {
+            break;
+            }
+         
+         ch = fgetc(fp);
+
+         if (ch == '\n')
+            {
+            break;
+            }
+         }
+
       }
    }
  
