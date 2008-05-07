@@ -41,7 +41,7 @@ int DPKGPackageCheck (char *package, char *version, enum cmpsense cmp);
 int DPKGPackageList (char *package, char *version, enum cmpsense cmp, struct Item **pkglist);
 int SUNPackageCheck (char *package, char *version, enum cmpsense cmp);
 int SUNPackageList (char *package, char *version, enum cmpsense cmp, struct Item **pkglist);
-void ParseSUNVR(char * vr, int *major, int *minor, int *micro);
+void ParseSUNVR(char * vr, int *major, int *minor, int *micro, char **revis);
 int PortagePackageCheck (char *package, char *version, enum cmpsense cmp);
 int PortagePackageList (char *package, char *version, enum cmpsense cmp, struct Item **pkglist);
 int AIXPackageCheck (char *package, char *version, enum cmpsense cmp);
@@ -366,6 +366,18 @@ switch(pkgmgr)
          strncpy(rawdelcmd, "/bin/rpm -e %s", CF_BUFSIZE - 1);
          }
       strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"RPMRemoveCommand"), CF_BUFSIZE - 1);
+      break;
+
+   case pkgmgr_sun:
+      if (!GetMacroValue(CONTEXTID,"SunRemoveCommand"))
+         {
+         CfLog(cferror,"SunRemoveCommand NOT set, using default!\n","");
+         strncpy(rawdelcmd, "/usr/sbin/pkgrm -n %s", CF_BUFSIZE - 1);
+         }
+      else
+         {
+         strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"SunRemoveCommand"), CF_BUFSIZE - 1);
+         }
       break;
 
    case pkgmgr_dpkg:
@@ -1189,27 +1201,59 @@ int DPKGPackageList (char *package, char *version, enum cmpsense cmp, struct Ite
 /* Sun - pkginfo/pkgadd/pkgrm                                        */
 /*********************************************************************/
 
+/* 
+ * On solaris a package that can be installed is a file or a
+ * directory on disk. An installed package isn't, it's just a name.
+ * So in these functions below, the dirname of the package argument is
+ * stripped so that we can handle requests about installed packages.
+ * The last '-' is the delimiter between the package name and the version.
+ */
+
 int SUNPackageCheck(char *package,char *version,enum cmpsense cmp)
 
 { FILE *pp;
+  char tmpBUFF[CF_BUFSIZE];
   struct Item *evrlist = NULL;
   struct Item *evr;
   char *evrstart;
   enum cmpsense result;
   int match = 0;
-  char tmpBUFF[CF_BUFSIZE];
+  char tmppkg[CF_BUFSIZE];
+  char *pkgname;
+  char *pkgversion;
   int majorA = 0;
   int majorB = 0;
   int minorA = 0;
   int minorB = 0;
   int microA = 0;
   int microB = 0;
+  char *revisA = NULL;
+  char *revisB = NULL;
 
-Verbose ("Package: %s\n",package);
+/* The parsing below modifies one of our arguments, so copy it first */
+strncpy(tmppkg, package, CF_BUFSIZE-1);
+tmppkg[CF_BUFSIZE-1] = 0;
+
+if ((pkgname = strrchr(tmppkg, '/')) != NULL)
+   {
+   *pkgname = '\0';
+   pkgname++;
+   }
+else
+   {
+   pkgname = tmppkg;
+   }
+
+if ((pkgversion = strrchr(pkgname, '-')) != NULL)
+   {
+   *pkgversion = '\0';
+   }
+
+Verbose ("Package: %s\n",pkgname);
 
 /* check that the package exists in the package database */
 
-snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/pkginfo -i -q %s", package);
+snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/pkginfo -i -q %s", pkgname);
 
 if ((pp = cfpopen (VBUFF, "r")) == NULL)
    {
@@ -1225,7 +1269,7 @@ while (!feof (pp))
 
 if (cfpclose (pp) != 0)
    {
-   Verbose ("The package %s did not exist in the package database.\n",package);
+   Verbose ("The package %s did not exist in the package database.\n",pkgname);
    return 0;
    }
 
@@ -1241,7 +1285,7 @@ if (!*version)
 
 /* check what version is installed on the system (if any) */
 
-snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/pkginfo -i -l %s", package);
+snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/pkginfo -i -l %s", pkgname);
 
 if ((pp = cfpopen (VBUFF, "r")) == NULL)
    {
@@ -1271,7 +1315,7 @@ if (cfpclose (pp) != 0)
 
 /* Parse the Sun Version we are looking for once at the start */
 
-ParseSUNVR(version, &majorB, &minorB, &microB);
+ParseSUNVR(version, &majorB, &minorB, &microB, &revisB);
 
 /* The rule here will be: if any package in the list matches, then the
  * first one to match wins, and we bail out. */
@@ -1284,7 +1328,7 @@ for (evr = evrlist; evr != NULL; evr=evr->next)
    /* Start out assuming the comparison will be equal. */
    result = cmpsense_eq;
    
-   ParseSUNVR(evrstart, &majorA, &minorA, &microA);
+   ParseSUNVR(evrstart, &majorA, &minorA, &microA, &revisA);
    
    /* Compare the major versions. */
    if (majorA > majorB)
@@ -1318,6 +1362,20 @@ for (evr = evrlist; evr != NULL; evr=evr->next)
             result = cmpsense_gt;
             }
          if (microA < microB)
+            {
+            result = cmpsense_lt;
+            }
+         }
+
+      /* If the micro versions match, compare the revisions. */
+
+      if (result == cmpsense_eq)
+         {
+         if (strncasecmp(revisA ? revisA : "", revisB ? revisB : "", CF_BUFSIZE) > 0)
+            {
+            result = cmpsense_gt;
+            }
+         if (strncasecmp(revisA ? revisA : "", revisB ? revisB : "", CF_BUFSIZE) < 0)
             {
             result = cmpsense_lt;
             }
@@ -1362,8 +1420,188 @@ return 0;
 
 int SUNPackageList (char *package, char *version, enum cmpsense cmp, struct Item **pkglist)
 
+{ FILE *pp;
+  struct Item *evrlist = NULL;
+  struct Item *evr;
+  int match = 0, result;
+  char line[CF_BUFSIZE];
+  char tmppkg[CF_BUFSIZE];
+  char *pkgname;
+  char *pkgversion;
+  char tmpBUFF[CF_BUFSIZE];
+  int majorA = 0;
+  int majorB = 0;
+  int minorA = 0;
+  int minorB = 0;
+  int microA = 0;
+  int microB = 0;
+  char *revisA = NULL;
+  char *revisB = NULL;
+
+/* The parsing below modifies one of our arguments, so copy it first */
+strncpy(tmppkg, package, CF_BUFSIZE-1);
+tmppkg[CF_BUFSIZE-1] = 0;
+
+if ((pkgname = strrchr(tmppkg, '/')) != NULL)
 {
-return 0; /* not implemented yet */
+   *pkgname = '\0';
+   pkgname++;
+   }
+else
+   {
+   pkgname = tmppkg;
+   }
+
+if ((pkgversion = strrchr(pkgname, '-')) != NULL)
+   {
+   *pkgversion = '\0';
+   }
+
+Debug("SUNPackageList(): Requested version %s %s of %s\n", CMPSENSETEXT[cmp],(version[0] ? version : "ANY"), pkgname);
+
+/* If no version was specified, we're just checking if the package
+ * is present, not for a particular number, so >0 will match.
+ */
+if (!*version)
+   {
+   cmp = cmpsense_gt;
+   version[0] = '0';
+   version[1] = 0;
+   }
+
+/* check what version is installed on the system (if any) */
+
+snprintf (VBUFF, CF_BUFSIZE, "/usr/bin/pkginfo -i -l %s", pkgname);
+Verbose("SUNPackageList(): Running /usr/bin/pkginfo -i -l %s\n", pkgname);
+
+if ((pp = cfpopen (VBUFF, "r")) == NULL)
+   {
+   Verbose ("Could not execute pkginfo -i -l.\n");
+   return 0;
+   }
+
+while (!feof (pp))
+   {
+   *VBUFF = '\0';
+   ReadLine (VBUFF, CF_BUFSIZE, pp);
+   if (*VBUFF != '\0')
+      {
+      if (sscanf (VBUFF, "   VERSION:  %s", tmpBUFF) > 0)
+         {
+         Debug("SUNPackageList: found package version %s\n", tmpBUFF);
+         AppendItem(&evrlist,tmpBUFF,"");
+         }
+      }
+   }
+if (cfpclose (pp) != 0)
+   {
+   Verbose ("pkginfo -i -l exited abnormally.\n");
+   DeleteItemList (evrlist);
+   return 0;
+   }
+
+/* Parse the Sun Version we are looking for once at the start */
+
+ParseSUNVR(version, &majorB, &minorB, &microB, &revisB);
+
+/* The rule here will be: if any package in the list matches, then the
+ * first one to match wins, and we bail out. */
+
+for (evr = evrlist; evr != NULL; evr=evr->next)
+   {
+   char *evrstart;
+   evrstart = evr->name;
+
+   /* Start out assuming the comparison will be equal. */
+   result = cmpsense_eq;
+
+   ParseSUNVR(evrstart, &majorA, &minorA, &microA, &revisA);
+
+   /* Compare the major versions. */
+   if (majorA > majorB)
+      {
+      result = cmpsense_gt;
+      }
+   if (majorA < majorB)
+      {
+      result = cmpsense_lt;
+      }
+
+   /* If the major versions are the same, check the minor versions. */
+   if (result == cmpsense_eq)
+      {
+      if(minorA > minorB)
+         {
+         result = cmpsense_gt;
+         }
+
+      if(minorA < minorB)
+         {
+         result = cmpsense_lt;
+         }
+
+      /* If the minor versions match, compare the micro versions. */
+
+      if (result == cmpsense_eq)
+         {
+         if (microA > microB)
+            {
+            result = cmpsense_gt;
+            }
+         if (microA < microB)
+            {
+            result = cmpsense_lt;
+            }
+         }
+      }
+
+      /* If the micro versions match, compare the revisions. */
+
+      if (result == cmpsense_eq)
+         {
+         if (strncasecmp(revisA ? revisA : "", revisB ? revisB : "", CF_BUFSIZE) > 0)
+            {
+            result = cmpsense_gt;
+            }
+         if (strncasecmp(revisA ? revisA : "", revisB ? revisB : "", CF_BUFSIZE) < 0)
+            {
+            result = cmpsense_lt;
+            }
+         }
+
+   switch(cmp)
+      {
+      case cmpsense_gt:
+          match = (result == cmpsense_gt);
+          break;
+      case cmpsense_ge:
+          match = (result == cmpsense_gt || result == cmpsense_eq);
+          break;
+      case cmpsense_lt:
+          match = (result == cmpsense_lt);
+          break;
+      case cmpsense_le:
+          match = (result == cmpsense_lt || result == cmpsense_eq);
+          break;
+      case cmpsense_eq:
+          match = (result == cmpsense_eq);
+          break;
+      case cmpsense_ne:
+          match = (result != cmpsense_eq);
+          break;
+      }
+
+   if (match)
+      {
+      AppendItem(pkglist, pkgname, NULL);
+      DeleteItemList(evrlist);
+      return 1;
+      }
+   }
+
+/* If we made it out of the loop, there were no matches. */
+DeleteItemList(evrlist);
+return 0;
 }
 
 /*********************************************************************/
@@ -1371,18 +1609,22 @@ return 0; /* not implemented yet */
  * and optional micro version number.  This code checks for that.
  * It will not handle other arbitrary and strange values people might
  * put in like "2.6d.12a" or "1.11 beta" or "pre-release 7"
-/*********************************************************************/
+ * Note that Sun uses REV=<timestamp> revision numbers appended to the
+ * version string. These are handled correctly.
+ *********************************************************************/
 
-void ParseSUNVR (char * vr, int *major, int *minor, int *micro)
+void ParseSUNVR (char *vr, int *major, int *minor, int *micro, char **revis)
 
 { char *tmpcpy = strdup(vr);
   char *startMinor = NULL;
   char *startMicro = NULL;
+  char *startRev   = NULL;
   char *p = NULL;
 
 *major = 0;
 *minor = 0;
 *micro = 0;
+*revis = NULL;
 
 /* Break the copy in to major, minor, and micro. */
 for(p = tmpcpy; *p; p++)
@@ -1398,6 +1640,11 @@ for(p = tmpcpy; *p; p++)
          {
          startMicro = p+1;
          }
+      else if (startRev == NULL)
+         {
+         startRev = p+1;
+         break; /* stop parsing, because the revision contains '.' chars */
+         }
       }
    }
   
@@ -1411,6 +1658,11 @@ if (startMinor)
 if (startMicro)
    {
    *micro = atoi(startMicro);
+   }
+
+if (startRev)
+   {
+   *revis = startRev;
    }
 
 free(tmpcpy);  
