@@ -303,6 +303,7 @@ void ResetLine (char *s);
 
 /* eval.c */
 
+int CfShow(void);
 int ShowClass(char *c1,char *c2);
 int CountParentheses(char *str);
 int NestedParentheses(char *str);

@@ -36,22 +36,6 @@
 #include <sys/time.h>
 
 /*******************************************************************/
-/* Pthreads                                                        */
-/*******************************************************************/
-
-#ifdef PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
-pthread_attr_t PTHREADDEFAULTS;
-pthread_mutex_t MUTEX_COUNT = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP;
-pthread_mutex_t MUTEX_HOSTNAME = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP;
-#else
-# if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-pthread_attr_t PTHREADDEFAULTS;
-pthread_mutex_t MUTEX_COUNT = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t MUTEX_HOSTNAME = PTHREAD_MUTEX_INITIALIZER;
-# endif
-#endif
-
-/*******************************************************************/
 /* GLOBAL VARIABLES                                                */
 /*******************************************************************/
 

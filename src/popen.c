@@ -37,6 +37,12 @@
 #include "cf.defs.h"
 #include "cf.extern.h" 
 
+# if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+extern pthread_attr_t PTHREADDEFAULTS;
+extern pthread_mutex_t MUTEX_COUNT;
+extern pthread_mutex_t MUTEX_HOSTNAME;
+# endif
+
 pid_t *CHILD;
 int    MAXFD = 20; /* Max number of simultaneous pipes */
 
@@ -58,13 +64,31 @@ if ((*type != 'r' && *type != 'w') || (type[1] != '\0'))
    return NULL;
    }
 
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+if (pthread_mutex_lock(&MUTEX_COUNT) != 0)
+   {
+   CfLog(cferror,"pthread_mutex_unlock failed","pthread_mutex_unlock");
+   return NULL;
+   }
+#endif
+
 if (CHILD == NULL)   /* first time */
    {
    if ((CHILD = calloc(MAXFD,sizeof(pid_t))) == NULL)
       {
+      pthread_mutex_unlock(&MUTEX_COUNT);
       return NULL;
       }
    }
+
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+if (pthread_mutex_unlock(&MUTEX_COUNT) != 0)
+   {
+   CfLog(cferror,"pthread_mutex_unlock failed","pthread_mutex_unlock");
+   return NULL;
+   }
+#endif
+
 
 if (pipe(pd) < 0)        /* Create a pair of descriptors to this process */
    {

@@ -219,7 +219,7 @@ for (sp = str; *sp != '\0' ; sp++)       /* check for varitems */
  
  if (bracks != 0)
     {
-    yyerror("Incomplete variable syntax or bracket mismatch");
+    yyerror("Incomplete variable syntax or bracket mismatch (varstring)");
     return false;
     }
  
@@ -275,7 +275,7 @@ for (sp = str+2; *sp != '\0' ; sp++)       /* check for varitems */
 
 if (bracks != 0)
    {
-   yyerror("Incomplete variable syntax or bracket mismatch");
+   yyerror("Incomplete variable syntax or bracket mismatch (InnerVarstring)");
    return false;
    }
 
@@ -341,7 +341,7 @@ if (dollar == false)
 
 if (bracks != 0)
    {
-   yyerror("Incomplete variable syntax or bracket mismatch");
+   yyerror("Incomplete variable syntax or bracket mismatch (OuterVarstring)");
    return NULL;
    }
 

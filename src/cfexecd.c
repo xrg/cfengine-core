@@ -31,34 +31,6 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
-#ifdef NT
-#include <process.h>
-#endif
-
-/*******************************************************************/
-/* Pthreads                                                        */
-/*******************************************************************/
-
-
-#ifdef HAVE_PTHREAD_H
-# include <pthread.h>
-#endif
-
-#ifdef HAVE_SCHED_H
-# include <sched.h>
-#endif
-
-#ifdef PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
-pthread_attr_t PTHREADDEFAULTS;
-pthread_mutex_t MUTEX_COUNT = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP;
-pthread_mutex_t MUTEX_HOSTNAME = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP;
-#else
-# if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-pthread_attr_t PTHREADDEFAULTS;
-pthread_mutex_t MUTEX_COUNT = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t MUTEX_HOSTNAME = PTHREAD_MUTEX_INITIALIZER;
-# endif
-#endif
 
 /*******************************************************************/
 /* GLOBAL VARIABLES                                                */
@@ -256,6 +228,11 @@ void StartServer(int argc,char **argv)
 
 { int pid,time_to_run = false;
   time_t now = time(NULL); 
+#ifdef HAVE_PTHREAD_H
+  pthread_t tid = 1;
+#else
+  int tid = -1
+#endif
 
 Banner("Starting server");
   
@@ -301,9 +278,6 @@ if (ONCE)
 else
    { char **nargv;
      int i;
-#ifdef HAVE_PTHREAD_H
-     pthread_t tid;
-#endif
 
    /*
     * Append --once option to our arguments for spawned monitor process.
@@ -561,7 +535,7 @@ int ScheduleRun()
   struct Item *ip;
 
 Verbose("Sleeping...\n");
-sleep(60);          /* 1 Minute resolution is enough */ 
+sleep(60);                  /* 1 Minute resolution is enough */ 
 
 now = time(NULL);
 
@@ -632,6 +606,12 @@ sigemptyset(&sigmask);
 pthread_sigmask(SIG_BLOCK,&sigmask,NULL); 
 #endif
 
+#ifdef HAVE_PTHREAD
+pthread_t tid = pthread_self();
+#else
+int tid = 1;
+#endif
+
  
 Verbose("------------------------------------------------------------------\n\n");
 Verbose("  LocalExec(%sscheduled) at %s\n", scheduled_run ? "" : "not ", ctime(&starttime));
@@ -646,7 +626,7 @@ snprintf(cmd,CF_BUFSIZE-1,"%s/bin/cfagent%s -Dfrom_cfexecd%s",
  
 timestamp(starttime, line, CF_BUFSIZE);
 
-snprintf(filename,CF_BUFSIZE-1,"%s/outputs/cf_%s_%s",CFWORKDIR,CanonifyName(VFQNAME),line);
+snprintf(filename,CF_BUFSIZE-1,"%s/outputs/cf_%s_%s_%d",CFWORKDIR,CanonifyName(VFQNAME),line,tid);
  
 /* What if no more processes? Could sacrifice and exec() - but we need a sentinel */
 
@@ -657,14 +637,6 @@ if ((fp = fopen(filename,"w")) == NULL)
    return NULL;
    }
 
-#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-      if (pthread_mutex_lock(&MUTEX_COUNT) != 0)
-         {
-         CfLog(cferror,"pthread_mutex_lock failed","pthread_mutex_lock");
-         return NULL;
-         }
-#endif
-
 if ((pp = cfpopen(cmd,"r")) == NULL)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Couldn't open pipe to command %s\n",cmd);
@@ -672,14 +644,6 @@ if ((pp = cfpopen(cmd,"r")) == NULL)
    fclose(fp);
    return NULL;
    }
-
-#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-   if (pthread_mutex_unlock(&MUTEX_COUNT) != 0)
-      {
-      CfLog(cferror,"pthread_mutex_unlock failed","pthread_mutex_unlock");
-      return NULL;
-      }
-#endif
 
 while (!feof(pp) && ReadLine(line,CF_BUFSIZE,pp))
    {
@@ -720,23 +684,7 @@ while (!feof(pp) && ReadLine(line,CF_BUFSIZE,pp))
       }
    }
 
-#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-      if (pthread_mutex_lock(&MUTEX_COUNT) != 0)
-         {
-         CfLog(cferror,"pthread_mutex_lock failed","pthread_mutex_lock");
-         return NULL;
-         }
-#endif
-
 cfpclose(pp);
-
-#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
-   if (pthread_mutex_unlock(&MUTEX_COUNT) != 0)
-      {
-      CfLog(cferror,"pthread_mutex_unlock failed","pthread_mutex_unlock");
-      return NULL;
-      }
-#endif
 
 Debug("Closing fp\n");
 fclose(fp);

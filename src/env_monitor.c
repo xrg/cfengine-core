@@ -1006,7 +1006,6 @@ void AnalyzeArrival(char *arrival)
     
 { char src[CF_BUFSIZE],dest[CF_BUFSIZE], flag = '.', *arr;
 
- printf("*********************************************************\n");
 src[0] = dest[0] = '\0';
  
 if (strstr(arrival,"listening"))

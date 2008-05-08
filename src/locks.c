@@ -195,9 +195,9 @@ if ((errno = db_create(&DBP,NULL,0)) != 0)
    }
 
 #ifdef CF_OLD_DB
-if ((errno = (DBP->open)(DBP,LOCKDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
+if ((errno = (DBP->open)(DBP,LOCKDB,NULL,DB_BTREE,DB_CREATE|DB_THREAD,0644)) != 0)
 #else
-if ((errno = (DBP->open)(DBP,NULL,LOCKDB,NULL,DB_BTREE,DB_CREATE,0644)) != 0)    
+if ((errno = (DBP->open)(DBP,NULL,LOCKDB,NULL,DB_BTREE,DB_CREATE|DB_THREAD,0644)) != 0)    
 #endif
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open lock database %s\n",LOCKDB);

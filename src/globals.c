@@ -42,6 +42,23 @@
 #define PROTECTED
 
 /*******************************************************************/
+/* Pthreads                                                        */
+/*******************************************************************/
+
+#ifdef PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
+pthread_attr_t PTHREADDEFAULTS;
+pthread_mutex_t MUTEX_COUNT = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP;
+pthread_mutex_t MUTEX_HOSTNAME = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP;
+#else
+# if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+pthread_attr_t PTHREADDEFAULTS;
+pthread_mutex_t MUTEX_COUNT = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t MUTEX_HOSTNAME = PTHREAD_MUTEX_INITIALIZER;
+# endif
+#endif
+
+
+/*******************************************************************/
 /*                                                                 */
 /* Global : Truly global variables here                            */
 /*                                                                 */
@@ -93,7 +110,7 @@ pthread_mutex_t MUTEX_LOCK = PTHREAD_MUTEX_INITIALIZER;
 /*                                                                 */
 /*******************************************************************/
 
-  PUBLIC char *COPYRIGHT = "Free Software Foundation 1994-\nDonated by Mark Burgess, Faculty of Engineering,\nOslo University College, Norway";
+  PUBLIC char *COPYRIGHT = "Free Software Foundation 1994-\nDonated by Mark Burgess, Oslo University College, Norway";
 
   PRIVATE char *VPRECONFIG = "cf.preconf";
   PRIVATE char *VRCFILE = "cfrc";
