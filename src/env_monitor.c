@@ -401,6 +401,11 @@ OpenSniffer();
    LeapDetection();
    ArmClasses(averages,timekey);
 
+   for (i = 0; i < CF_OBSERVABLES; i++)
+      {
+      THIS[i] = 0.0;
+      }
+
    if (TCPDUMP)
       {
       Sniff();
@@ -675,11 +680,6 @@ void GetQ()
 
 { int i;
 
-for (i = 0; i < CF_OBSERVABLES; i++)
-   {
-   THIS[i] = 0.0;
-   }
- 
 Debug("========================= GET Q ==============================\n");
 
 ENTROPIES = NULL;
@@ -693,7 +693,6 @@ GatherSocketData();
 GatherSNMPData();
 GatherSensorData();
 }
-
 
 /*********************************************************************/
 
@@ -1005,6 +1004,7 @@ void AnalyzeArrival(char *arrival)
 /* This coarsely classifies TCP dump data */
     
 { char src[CF_BUFSIZE],dest[CF_BUFSIZE], flag = '.', *arr;
+  int isme_dest, isme_src;
 
 src[0] = dest[0] = '\0';
  
@@ -1046,19 +1046,22 @@ else
 if (strstr(arrival,"proto TCP") || strstr(arrival,"ack"))
    {              
    sscanf(arr,"%s %*c %s %c ",src,dest,&flag);
+   Debug("FROM (%s) TO (%s), Flag(%c)\n",src,dest,flag);
    DePort(src);
    DePort(dest);
-   Debug("FROM %s, TO %s, Flag(%c)\n",src,dest,flag);
-    
+   Debug("FROM (%s) TO (%s), Flag(%c)\n",src,dest,flag);
+   isme_dest = IsInterfaceAddress(dest);
+   isme_src = IsInterfaceAddress(src);
+   
     switch (flag)
        {
        case 'S': Debug("%1.1f: TCP new connection from %s to %s - i am %s\n",ITER,src,dest,VIPADDRESS);
-           if (IsInterfaceAddress(dest))
+           if (isme_dest)
               {
               THIS[ob_tcpsyn_in]++;
               IncrementCounter(&(NETIN_DIST[tcpsyn]),src);
               }
-           else if (IsInterfaceAddress(src))
+           else if (isme_src)
               {
               THIS[ob_tcpsyn_out]++;
               IncrementCounter(&(NETOUT_DIST[tcpsyn]),dest);
@@ -1066,12 +1069,12 @@ if (strstr(arrival,"proto TCP") || strstr(arrival,"ack"))
            break;
            
        case 'F': Debug("%1.1f: TCP end connection from %s to %s\n",ITER,src,dest);
-           if (IsInterfaceAddress(dest))
+           if (isme_dest)
               {
               THIS[ob_tcpfin_in]++;
               IncrementCounter(&(NETIN_DIST[tcpfin]),src);
               }
-           else if (IsInterfaceAddress(src))
+           else if (isme_src)
               {
               THIS[ob_tcpfin_out]++;
               IncrementCounter(&(NETOUT_DIST[tcpfin]),dest);
@@ -1080,12 +1083,12 @@ if (strstr(arrival,"proto TCP") || strstr(arrival,"ack"))
            
        default: Debug("%1.1f: TCP established from %s to %s\n",ITER,src,dest);
            
-           if (IsInterfaceAddress(dest))
+           if (isme_dest)
               {
               THIS[ob_tcpack_in]++;
               IncrementCounter(&(NETIN_DIST[tcpack]),src);
               }
-           else if (IsInterfaceAddress(src))
+           else if (isme_src)
               {
               THIS[ob_tcpack_out]++;
               IncrementCounter(&(NETOUT_DIST[tcpack]),dest);
@@ -1099,14 +1102,16 @@ else if (strstr(arrival,".53"))
    sscanf(arr,"%s %*c %s %c ",src,dest,&flag);
    DePort(src);
    DePort(dest);
+   isme_dest = IsInterfaceAddress(dest);
+   isme_src = IsInterfaceAddress(src);
    
    Debug("%1.1f: DNS packet from %s to %s\n",ITER,src,dest);
-   if (IsInterfaceAddress(dest))
+   if (isme_dest)
       {
       THIS[ob_dns_in]++;
       IncrementCounter(&(NETIN_DIST[dns]),src);
       }
-   else if (IsInterfaceAddress(src))
+   else if (isme_src)
       {
       THIS[ob_dns_out]++;
       IncrementCounter(&(NETOUT_DIST[tcpack]),dest);
@@ -1117,14 +1122,16 @@ else if (strstr(arrival,"proto UDP"))
    sscanf(arr,"%s %*c %s %c ",src,dest,&flag);
    DePort(src);
    DePort(dest);
+   isme_dest = IsInterfaceAddress(dest);
+   isme_src = IsInterfaceAddress(src);
    
    Debug("%1.1f: UDP packet from %s to %s\n",ITER,src,dest);
-   if (IsInterfaceAddress(dest))
+   if (isme_dest)
       {
       THIS[ob_udp_in]++;
       IncrementCounter(&(NETIN_DIST[udp]),src);
       }
-   else if (IsInterfaceAddress(src))
+   else if (isme_src)
       {
       THIS[ob_udp_out]++;
       IncrementCounter(&(NETOUT_DIST[udp]),dest);
@@ -1135,15 +1142,17 @@ else if (strstr(arrival,"proto ICMP"))
    sscanf(arr,"%s %*c %s %c ",src,dest,&flag);
    DePort(src);
    DePort(dest);
+   isme_dest = IsInterfaceAddress(dest);
+   isme_src = IsInterfaceAddress(src);
    
    Debug("%1.1f: ICMP packet from %s to %s\n",ITER,src,dest);
    
-   if (IsInterfaceAddress(dest))
+   if (isme_dest)
       {
       THIS[ob_icmp_in]++;
       IncrementCounter(&(NETIN_DIST[icmp]),src);
       }
-   else if (IsInterfaceAddress(src))
+   else if (isme_src)
       {
       THIS[ob_icmp_out]++;
       IncrementCounter(&(NETOUT_DIST[icmp]),src);

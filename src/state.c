@@ -272,40 +272,38 @@ Banner("Loaded persistent memory");
 
 void DePort(char *address)
 
-{ char *sp;
- int dot = 0, colon = 0;
- 
- for (sp = address; *sp != '\0'; sp++)
-    {
-    if (*sp == ':')
-       {
-       colon++;
-       }
-    
-    if (*sp == '.')
-       {
-       dot++;
-       }
-    }
+{ char *sp,*chop;
+ int i = 0,count = 0;
 
- if (colon && dot)
-    {
-    }
- else if (dot > 3)
-    {
-    }
- else
-    {
-    return;
-    }
- 
- for (sp = address+strlen(address); (*sp != '.') && (*sp != ':'); sp--)
-    {
-    if (sp < address+strlen(address)-12)
-       {
-       return;
-       }
-    }
+for (sp = address; *sp != '\0'; sp++)
+   {
+   if (*sp == ':')
+      {
+      count++;
+      }
 
- *sp = '\0';
+   if (count > 1)
+      {
+      chop = strchr(sp,'.');
+      *chop = '\0';
+      return;
+      }
+   }
+  
+
+sp = address;
+
+for (i = 0; i < 4; i++)
+   {
+   if (chop = strchr(sp,'.'))
+      {
+      sp = chop+1;
+      }
+   }
+
+if (chop > address && chop < address+strlen(address))
+   {
+   *chop = '\0';
+   }
+return;
 }

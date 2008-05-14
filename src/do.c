@@ -462,7 +462,7 @@ for (lp = VCHLINK; lp != NULL; lp = lp->next)
 
       if (! varstring)                       /* don't iterate over binservers if not var */
          {
-  ReleaseCurrentLock();
+         ReleaseCurrentLock();
          break;
          }
       }
