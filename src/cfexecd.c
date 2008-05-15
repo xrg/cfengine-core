@@ -624,7 +624,7 @@ snprintf(cmd,CF_BUFSIZE-1,"%s/bin/cfagent%s -Dfrom_cfexecd%s",
  
 timestamp(starttime, line, CF_BUFSIZE);
 
-snprintf(filename,CF_BUFSIZE-1,"%s/outputs/cf_%s_%s_%d",CFWORKDIR,CanonifyName(VFQNAME),line,tid);
+snprintf(filename,CF_BUFSIZE-1,"%s/outputs/cf_%s_%s_%u",CFWORKDIR,CanonifyName(VFQNAME),line,time(NULL));
  
 /* What if no more processes? Could sacrifice and exec() - but we need a sentinel */
 
