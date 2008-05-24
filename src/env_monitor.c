@@ -401,10 +401,7 @@ OpenSniffer();
    LeapDetection();
    ArmClasses(averages,timekey);
 
-   for (i = 0; i < CF_OBSERVABLES; i++)
-      {
-      THIS[i] = 0.0;
-      }
+   ZeroArrivals();
 
    if (TCPDUMP)
       {
@@ -684,7 +681,6 @@ Debug("========================= GET Q ==============================\n");
 
 ENTROPIES = NULL;
 
-ZeroArrivals();
 GatherProcessData();
 GatherCPUData();
 GatherLoadData(); 
@@ -739,7 +735,6 @@ for (i = 0; i < CF_OBSERVABLES; i++)
        
    This[i] = RejectAnomaly(THIS[i],currentvals->Q[i].expect,currentvals->Q[i].var,LOCALAV.Q[i].expect,LOCALAV.Q[i].var);
 
-
    Debug("Current %s.q %lf\n",OBS[i][0],currentvals->Q[i].q);
    Debug("Current %s.var %lf\n",OBS[i][0],currentvals->Q[i].var);
    Debug("Current %s.ex %lf\n",OBS[i][0],currentvals->Q[i].expect);
@@ -758,9 +753,12 @@ for (i = 0; i < CF_OBSERVABLES; i++)
    Verbose("New %s.var %lf\n",OBS[i][0],newvals.Q[i].var);
    Verbose("New %s.ex %lf\n",OBS[i][0],newvals.Q[i].expect);
 
-   
-
    Verbose("%s = %lf -> (%f#%f) local [%f#%f]\n",OBS[i][0],This[i],newvals.Q[i].expect,sqrt(newvals.Q[i].var),LOCALAV.Q[i].expect,sqrt(LOCALAV.Q[i].var));
+
+   if (This[i] > 0)
+      {
+      Verbose("Storing %.2f in %s\n",This[i],OBS[i][0]);
+      }
    }
    
 UpdateAverages(t,newvals);
@@ -799,11 +797,6 @@ for (i = 0; i < CF_OBSERVABLES; i++)
    /* Note AVG should contain n+1 but not SUM, hence funny increments */
    
    LDT_AVG[i] = LDT_AVG[i] + THIS[i]/((double)LDT_BUFSIZE + 1.0);
-
-   if (THIS[i] > 0)
-      {
-      Verbose("Storing %.2f in %s\n",THIS[i],OBS[i][0]);
-      }
 
    d = (double)(LDT_BUFSIZE * (LDT_BUFSIZE + 1)) * LDT_AVG[i];
 
@@ -1046,10 +1039,8 @@ else
 if (strstr(arrival,"proto TCP") || strstr(arrival,"ack"))
    {              
    sscanf(arr,"%s %*c %s %c ",src,dest,&flag);
-   Debug("FROM (%s) TO (%s), Flag(%c)\n",src,dest,flag);
    DePort(src);
    DePort(dest);
-   Debug("FROM (%s) TO (%s), Flag(%c)\n",src,dest,flag);
    isme_dest = IsInterfaceAddress(dest);
    isme_src = IsInterfaceAddress(src);
    
@@ -1162,6 +1153,8 @@ else
    {
    Debug("%1.1f: Miscellaneous undirected packet (%.100s)\n",ITER,arrival);
    
+   THIS[ob_tcpmisc_in]++;
+   
    /* Here we don't know what source will be, but .... */
    
    sscanf(arrival,"%s",src);
@@ -1173,8 +1166,6 @@ else
       }
    
    DePort(src);
-   
-   THIS[ob_tcpmisc_in]++;
    
    if (strstr(arrival,".138"))
       {

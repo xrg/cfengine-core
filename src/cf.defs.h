@@ -314,6 +314,7 @@ typedef int clockid_t;
 #define CF_TICKS_PER_HOUR 3600 /* 60 * 60 */
 #define CF_HALF_HOUR 1800      /* 60 * 30 */ 
 #define CF_NOT_CONNECTED -1
+#define CF_COULD_NOT_CONNECT -2
 #define CF_RECURSION_LIMIT 100
 #define CF_MONDAY_MORNING 342000
 #define CF_NOVAL -0.7259285297502359

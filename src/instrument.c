@@ -54,7 +54,7 @@ void RecordPerformance(char *eventname,time_t t,double value)
 
 Debug("PerformanceEvent(%s,%.1f s)\n",eventname,value);
 
-snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_PERFORMANCE);
+snprintf(name,CF_BUFSIZE-1,"%s/%s",CFWORKDIR,CF_PERFORMANCE);
 
 if ((errno = db_create(&dbp,dbenv,0)) != 0)
    {
@@ -148,7 +148,7 @@ for (ip = VALLADDCLASSES; ip != NULL; ip=ip->next)
       }
    }
    
-snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_CLASSUSAGE);
+snprintf(name,CF_BUFSIZE-1,"%s/%s",CFWORKDIR,CF_CLASSUSAGE);
 
 if ((errno = db_create(&dbp,dbenv,0)) != 0)
    {
@@ -284,7 +284,7 @@ if (strlen(hostname) == 0)
 Debug("LastSeen(%s) reg\n",hostname);
 
 /* Tidy old versions - temporary */
-snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_OLDLASTDB_FILE);
+snprintf(name,CF_BUFSIZE-1,"%s/%s",CFWORKDIR,CF_OLDLASTDB_FILE);
 unlink(name);
 
 if ((errno = db_create(&dbp,dbenv,0)) != 0)
@@ -294,7 +294,7 @@ if ((errno = db_create(&dbp,dbenv,0)) != 0)
    return;
    }
 
-snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
+snprintf(name,CF_BUFSIZE-1,"%s/%s",CFWORKDIR,CF_LASTDB_FILE);
 
 #ifdef CF_OLD_DB
 if ((errno = (dbp->open)(dbp,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
@@ -309,7 +309,7 @@ if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
    }
 
 /* Now open special file for peer entropy record - INRIA intermittency */
-snprintf(name,CF_BUFSIZE-1,"%s/%s.%s",VLOCKDIR,CF_LASTDB_FILE,hostname);
+snprintf(name,CF_BUFSIZE-1,"%s/%s.%s",CFWORKDIR,CF_LASTDB_FILE,hostname);
 
 if ((errno = db_create(&dbpent,dbenv2,0)) != 0)
    {
@@ -454,7 +454,7 @@ if (regexp = GetMacroValue(CONTEXTID,"IgnoreFriendRegex"))
    }
  
 Verbose("CheckFriendConnections(%d)\n",hours);
-snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
+snprintf(name,CF_BUFSIZE-1,"%s/%s",CFWORKDIR,CF_LASTDB_FILE);
 
 if ((errno = db_create(&dbp,dbenv,0)) != 0)
    {
@@ -626,7 +626,7 @@ void CheckFriendReliability()
   time_t now = time(NULL), then, lastseen = CF_WEEK;
 
 Verbose("CheckFriendReliability()\n");
-snprintf(name,CF_BUFSIZE-1,"%s/%s",VLOCKDIR,CF_LASTDB_FILE);
+snprintf(name,CF_BUFSIZE-1,"%s/%s",CFWORKDIR,CF_LASTDB_FILE);
 
 average = (double) CF_HOUR;  /* It will take a week for a host to be deemed reliable */
 var = 0;
@@ -679,7 +679,7 @@ dbp->close(dbp,0);
 
 for (ip = hostlist; ip != NULL; ip=ip->next)
    {
-   snprintf(name,CF_BUFSIZE-1,"%s/%s.%s",VLOCKDIR,CF_LASTDB_FILE,ip->name);
+   snprintf(name,CF_BUFSIZE-1,"%s/%s.%s",CFWORKDIR,CF_LASTDB_FILE,ip->name);
 
    if ((errno = db_create(&dbpent,dbenv2,0)) != 0)
       {
@@ -847,6 +847,7 @@ if ((errno = dbp->get(dbp,NULL,key,&value,0)) == 0)
    }
 else
    {
+   Debug("Database read failed: %s",db_strerror(errno));
    return false;
    }
 }
@@ -862,9 +863,7 @@ value = NewDBValue(ptr,size);
 
 if ((errno = dbp->put(dbp,NULL,key,value,0)) != 0)
    {
-   snprintf(OUTPUT,CF_BUFSIZE,"Checksum write failed: %s",db_strerror(errno));
-   CfLog(cferror,OUTPUT,"db->put");
-   
+   Debug("Database write failed: %s",db_strerror(errno));
    DeleteDBKey(key);
    DeleteDBValue(value);
    return false;
@@ -889,9 +888,10 @@ key = NewDBKey(name);
 
 if ((errno = dbp->del(dbp,NULL,key,0)) != 0)
    {
-   CfLog(cferror,"","db_store");
+   Debug("Database deletion failed: %s",db_strerror(errno));
    }
 
+DeleteDBKey(key);
 Debug("DELETED DB %s\n",name);
 }
 

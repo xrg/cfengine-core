@@ -30,14 +30,6 @@
 /*                                                                           */
 /* File: state.c                                                             */
 /*                                                                           */
-/* Created: Fri Sep 26 14:35:31 2003                                         */
-/*                                                                           */
-/* Author:                                           >                       */
-/*                                                                           */
-/* Revision: $Id$                                                            */
-/*                                                                           */
-/* Description:                                                              */
-/*                                                                           */
 /*****************************************************************************/
 
 #include "cf.defs.h"
@@ -272,38 +264,65 @@ Banner("Loaded persistent memory");
 
 void DePort(char *address)
 
-{ char *sp,*chop;
- int i = 0,count = 0;
+{ char *sp,*chop,*fc = NULL,*fd = NULL,*ld =  NULL;
+  int i = 0,ccount = 0, dcount = 0;
 
+/* Start looking for ethernet/ipv6 addresses */
+ 
 for (sp = address; *sp != '\0'; sp++)
    {
    if (*sp == ':')
       {
-      count++;
+      if (!fc)
+         {
+         fc = sp;
+         }
+      ccount++;
       }
 
-   if (count > 1)
+   if (*sp == '.')
       {
-      chop = strchr(sp,'.');
-      *chop = '\0';
-      return;
+      if (!fd)
+         {
+         fd = sp;
+         }
+
+      ld = sp;
+      
+      dcount++;
       }
    }
-  
 
-sp = address;
-
-for (i = 0; i < 4; i++)
+if (!fd)
    {
-   if (chop = strchr(sp,'.'))
-      {
-      sp = chop+1;
-      }
+   /* This does not look like an IP address+port, maybe ethernet */
+   return;
    }
 
-if (chop > address && chop < address+strlen(address))
+if (dcount == 4)
+   {
+   chop = ld;
+   }
+else if (dcount > 1 && fc != NULL)
+   {
+   chop = fc;
+   }
+else if (ccount > 1 && fd != NULL)
+   {
+   chop = fd;
+   }
+else
+   {
+   /* Don't recognize address */
+   return;
+   }
+
+if (chop < address+strlen(address))
    {
    *chop = '\0';
    }
+
+Verbose("Deport => %s\n",address);
+
 return;
 }

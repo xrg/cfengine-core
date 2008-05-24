@@ -211,7 +211,7 @@ else
    SHORT_CFENGINEPORT = server->s_port;
    }
 
-Debug("Setting cfengine new port to %u\n",SHORT_CFENGINEPORT);
+Debug("Setting cfengine new port to %u\n",ntohs(SHORT_CFENGINEPORT));
 }
 
 /*********************************************************************/
