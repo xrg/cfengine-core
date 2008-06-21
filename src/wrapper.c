@@ -317,7 +317,7 @@ if (stat(directory,&statbuf) == 0)
       }
    else
       {
-      snprintf(OUTPUT,CF_BUFSIZE,"A non-directory object prevents directory %s from being created\n");
+      snprintf(OUTPUT,CF_BUFSIZE,"A non-directory object prevents directory %s from being created\n",directory);
       CfLog(cferror,OUTPUT,"");
       AuditLog(ptr->logaudit,ptr->audit,ptr->lineno,OUTPUT,CF_FAIL);
       succeeded = false;
