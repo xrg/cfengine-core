@@ -101,7 +101,7 @@ struct Item *PREVIOUS_STATE = NULL;
 struct Item *ENTROPIES = NULL;
 
 short NO_FORK = false;
-double FORGETRATE = 0.7;
+double FORGETRATE = 0.6;
 
 int LASTQ[CF_OBSERVABLES];
 

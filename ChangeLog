@@ -1,4 +1,7 @@
 
+2.2.7
+	Memory leak in database access, affecting cfenvd
+	
 2.2.6
 
 	Xen detection

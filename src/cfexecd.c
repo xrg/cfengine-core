@@ -780,14 +780,30 @@ else
    rtn = 1;
    }
 
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+if (pthread_mutex_lock(&MUTEX_COUNT) != 0)
+   {
+   CfLog(cferror,"pthread_mutex_lock failed","pthread_mutex_lock");
+   exit(1);
+   }
+#endif
+
 unlink(prev_file);
 
-if (symlink(filename, prev_file) == -1 )
+if (symlink(filename, prev_file) == -1)
    {
    snprintf(OUTPUT,CF_BUFSIZE,"Could not link %s and %s",filename,prev_file);
    CfLog(cfinform,OUTPUT,"symlink");
    rtn = 1;
    }
+
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
+if (pthread_mutex_unlock(&MUTEX_COUNT) != 0)
+   {
+   CfLog(cferror,"pthread_mutex_unlock failed","pthread_mutex_unlock");
+   exit(1);
+   }
+#endif
 
 return(rtn);
 }

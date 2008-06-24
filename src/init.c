@@ -280,6 +280,11 @@ for (sp = name; *sp != '\0'; sp++)
       return false;
       }
 
+   if (*sp == 'r')
+      {
+      return false;
+      }
+   
    if (count > max)
       {
       max = count;

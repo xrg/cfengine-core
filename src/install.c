@@ -6478,22 +6478,22 @@ if ((ulp = (struct UidList *)malloc(sizeof(struct UidList))) == NULL)
 
 ulp->uid = uid;
  
- if (uid == CF_UNKNOWN_OWNER)   /* unknown user */
-    {
-    if ((copyuser = strdup(uidname)) == NULL)
-       {
-       FatalError("cfengine: malloc() failed #2 in AddSimpleUidItem()");
-       }
+if (uid == CF_UNKNOWN_OWNER)   /* unknown user */
+   {
+   if ((copyuser = strdup(uidname)) == NULL)
+      {
+      FatalError("cfengine: malloc() failed #2 in AddSimpleUidItem()");
+      }
+   
+   ulp->uidname = copyuser;
+   }
+else
+   {
+   ulp->uidname = NULL;
+   }
 
-    ulp->uidname = copyuser;
-    }
- else
-    {
-    ulp->uidname = NULL;
-    }
- 
 ulp->next = NULL;
- 
+
 if (*uidlist == NULL)
    {
    *uidlist = ulp;

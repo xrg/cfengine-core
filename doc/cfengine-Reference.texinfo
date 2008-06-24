@@ -5318,7 +5318,7 @@ updating it is copied. Existing files are saved by appending
 @anchor{stealth}
 @item stealth
 If set to `on' causes cfengine to preserve atime and mtime
-on source files during @emph{local} 
+on the source files during @emph{local} 
 file copies. File times cannot be preserved on
 remote copies. This option should normally only be used
 together with a checksum copy, since preserving atime and mtime
@@ -5338,7 +5338,7 @@ copies. If not true, cfengine sets its own permissions on the root.
 @anchor{timestamps}
 @item timestamps
 If this is set to `preserve' or `keep', the times of the source
-files are kept by the destination files during copying. This is
+files are inherited by the destination files during copying. This is
 like the `p' option of the @code{tar} command.
 @cindex Preserving file times in copy
 
@@ -10012,9 +10012,9 @@ The @samp{<}, @samp{>} symbols are used  to specify upper and lower
 limits. For example,
 
 @smallexample
-  matches=<6  # warn number of matches is greater than or equal to 6
+  matches=>6  # warn number of matches is greater than or equal to 6
   matches=1   # warn if not exactly 1 matching process
-  matches=>2  # warn if there are less than or equal to 2 matching processes
+  matches=<2  # warn if there are less than or equal to 2 matching processes
 @end smallexample
 @cindex Processes, counting
 

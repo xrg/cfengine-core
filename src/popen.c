@@ -214,7 +214,7 @@ FILE *cfpopensetuid(char *command,char *type,uid_t uid,gid_t gid,char *chdirv,ch
    pid_t pid;
    FILE *pp = NULL;
 
-Debug("cfpopen(%s)\n",command);
+Debug("cfpopensetuid(%s,%s,%d,%d)\n",command,type,uid,gid);
 
 if ((*type != 'r' && *type != 'w') || (type[1] != '\0'))
    {
@@ -293,7 +293,7 @@ if (pid == 0)
    
    argv[i] = (char *) NULL;
    
-   if (strlen(chrootv) != 0)
+   if (chrootv && strlen(chrootv) != 0)
       {
       if (chroot(chrootv) == -1)
          {
@@ -304,7 +304,7 @@ if (pid == 0)
          }
       }
    
-   if (strlen(chdirv) != 0)
+   if (chdirv && strlen(chdirv) != 0)
       {
       if (chdir(chdirv) == -1)
          {
@@ -558,7 +558,7 @@ if (pid == 0)
          }
       }
    
-   if (strlen(chrootv) != 0)
+   if (chrootv && strlen(chrootv) != 0)
       {
       if (chroot(chrootv) == -1)
          {
@@ -568,7 +568,7 @@ if (pid == 0)
          }
       }
    
-   if (strlen(chdirv) != 0)
+   if (chdirv && strlen(chdirv) != 0)
       {
       if (chdir(chdirv) == -1)
          {

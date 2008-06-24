@@ -80,6 +80,7 @@ while(waitpid(pid,&status,0) < 0)
    {
    if (errno != EINTR)
       {
+      Verbose("Waitpid failed - %d\n",errno);
       return -1;
       }
    }

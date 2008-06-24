@@ -209,7 +209,7 @@ for (ip = list; ip != NULL; ip=ip->next)
 
 if ((errno = dbp->cursor(dbp, NULL, &dbcp, 0)) != 0)
    {
-   printf("Error reading from class database: ");
+   Debug("Error reading from class database: ");
    dbp->err(dbp, errno, "DB->cursor");
    return;
    }

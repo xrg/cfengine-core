@@ -14,6 +14,7 @@ sbin_PROGRAMS = cfagent cfservd cfrun cfkey cfenvd cfenvgraph cfexecd cfshow cfe
 lib_LTLIBRARIES = libcfengine.la
 
 libcfengine_la_LDFLAGS = -version-info 1:0:0 -no-undefined
+libcfengine_la_LIBADD = $(BERKELEY_DB_LDFLAGSD) $(BERKELEY_DB_LIB) $(OPENSSL_LIB_LDFLAGS) $(OPENSSL_LIB_LIB)
 libcfengine_la_CFLAGS = $(AM_CFLAGS) -fPIC
 
 # Separate out a library
