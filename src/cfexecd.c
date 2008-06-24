@@ -108,7 +108,8 @@ void CheckOptsAndInit(int argc,char **argv)
 { extern char *optarg;
   int optindex = 0;
   char ld_library_path[CF_BUFSIZE];
-  int c;
+  int c,seed;
+  unsigned char s[16];
 
 ld_library_path[0] = '\0';
 
@@ -220,6 +221,16 @@ MAILTO[0] = '\0';
 MAILFROM[0] = '\0';
 VIPADDRESS[0] = '\0';
 VMAILSERVER[0] = '\0';
+
+OpenSSL_add_all_algorithms();
+ERR_load_crypto_strings();
+CheckWorkDirectories();
+RandomSeed();
+
+RAND_bytes(s,16);
+s[15] = '\0';
+seed = ElfHash(s);
+srand48((long)seed);  
 }
 
 /*******************************************************************/
