@@ -848,18 +848,11 @@ snprintf(prev_file,CF_BUFSIZE-1,"%s/outputs/previous",CFWORKDIR);
 if (statbuf.st_size == 0)
    {
    unlink(file);
-
-   if ((fp = fopen(prev_file, "r")) != NULL )
-      {
-      fclose(fp);
-      unlink(prev_file);
-      }
-
    Debug("Nothing to report in %s\n",file);
    return;
    }
 
-if ( CompareResult(file,prev_file) == 0 ) 
+if (CompareResult(file,prev_file) == 0 ) 
    {
    Verbose("Previous output is the same as current so do not mail it\n");
    return;
