@@ -2662,6 +2662,11 @@ Debug("Getting size of link deref %s\n",linkbuf);
 if (islink && (stat(filename,&statlinkbuf) != -1)) /* linktype=copy used by agent */
    {
    statbuf.st_size = statlinkbuf.st_size;
+   statbuf.st_mode = statlinkbuf.st_mode;
+   statbuf.st_uid = statlinkbuf.st_uid;
+   statbuf.st_gid = statlinkbuf.st_gid;
+   statbuf.st_mtime = statlinkbuf.st_mtime;
+   statbuf.st_ctime = statlinkbuf.st_ctime;
    }
 
 if (S_ISDIR(statbuf.st_mode))
