@@ -1,4 +1,9 @@
 
+        Patch for cfservd serving wrong data when link->copy
+
+	Checksum changes now trigger persistent class "checksum_alerts"
+	and log to WORKDIR/state/file_hash_event_history
+	
 2.2.7
 	Memory leak in database access, affecting cfenvd
 	

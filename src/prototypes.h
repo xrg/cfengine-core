@@ -346,6 +346,7 @@ int CheckHomeSubDir (char *testpath, char *tidypath, int recurse);
 int FileIsNewer (char *file1, char *file2);
 int IgnoreFile  (char *pathto, char *name, struct Item *ignores);
 void CompressFile (char *file);
+void LogChecksumChange(char *file);
 
 /* filenames.c */
 

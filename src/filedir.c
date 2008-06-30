@@ -123,7 +123,7 @@ return (!count);
 void CheckExistingFile(char *cf_findertype,char *file,struct stat *dstat,struct File *ptr)
 
 { mode_t newperm = dstat->st_mode, maskvalue;
-  int amroot = true, fixmode = true, docompress=false;
+ int amroot = true, fixmode = true, docompress=false, changed = false;
   unsigned char digest1[EVP_MAX_MD_SIZE+1];
   unsigned char digest2[EVP_MAX_MD_SIZE+1];
   enum fileactions action = ptr->action;
@@ -369,8 +369,10 @@ if ((ptr != NULL) && S_ISREG(dstat->st_mode) && (ptr->checksum != 'n'))
    
       if (!DONTDO)
          {
-         ChecksumChanged(file,digest1,cferror,false,'m');
-         ChecksumChanged(file,digest2,cferror,false,'s');
+         if (ChecksumChanged(file,digest1,cferror,false,'m') || ChecksumChanged(file,digest2,cferror,false,'s'))
+            {
+            changed = true;
+            }
          }
       }
    else
@@ -381,9 +383,16 @@ if ((ptr != NULL) && S_ISREG(dstat->st_mode) && (ptr->checksum != 'n'))
          {
          if (ChecksumChanged(file,digest1,cferror,false,ptr->checksum))
             {
+            changed = true;
             }
          }
       }
+   }
+
+if (changed)
+   {
+   AddPersistentClass("checksum_alerts",60,cfpreserve);
+   LogChecksumChange(file);
    }
 
 if (S_ISLNK(dstat->st_mode))             /* No point in checking permission on a link */
@@ -1193,6 +1202,30 @@ else
    }
 }
 
+/*********************************************************************/
+
+void LogChecksumChange(char *file)
+
+{ FILE *fp;
+ char fname[CF_BUFSIZE],timebuf[CF_MAXVARSIZE];
+  time_t now = time(NULL);
+
+/* This is inefficient but we don't want to lose any data */
+  
+snprintf(fname,CF_BUFSIZE,"%s/state/file_hash_event_history",CFWORKDIR);
+
+if ((fp = fopen(fname,"a")) == NULL)
+   {
+   CfLog(cferror,"Could not write to the change log","");
+   return;
+   }
+
+snprintf(timebuf,CF_MAXVARSIZE-1,"%s",ctime(&now));
+Chop(timebuf);
+fprintf(fp,"%s,%s\n",timebuf,file);
+
+fclose(fp);
+}
 
 /*********************************************************************/
 /* Used by files and tidy modules                                    */
