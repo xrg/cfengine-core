@@ -2234,6 +2234,7 @@ int FreeBSDPackageCheck(char *package,char *version,enum cmpsense cmp)
 
 { FILE *pp;
   int match = 0;
+  int result;
   char line[CF_BUFSIZE];
   char pkgname[CF_BUFSIZE];
   char *pkgversion;
@@ -2276,7 +2277,7 @@ while (!feof (pp))
    snprintf(OUTPUT,CF_BUFSIZE,"%s\n",line);
    }
 
-int result =  cfpclose( pp );
+result =  cfpclose( pp );
 switch( result )
    {
    case 0: 

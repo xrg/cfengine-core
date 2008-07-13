@@ -396,8 +396,8 @@ int LinkFiles(char *from,char *to_tmp,struct Link *lp)
   struct Image ip;
   char stamp[CF_BUFSIZE];
   time_t STAMPNOW;
-  STAMPNOW = time((time_t *)NULL);
   int nofile = false;
+  STAMPNOW = time((time_t *)NULL);
       
 memset(to,0,CF_BUFSIZE);
 memset(&ip,0,sizeof(ip));
