@@ -392,6 +392,7 @@ if ((ptr != NULL) && S_ISREG(dstat->st_mode) && (ptr->checksum != 'n'))
 if (changed)
    {
    AddPersistentClass("checksum_alerts",30,cfpreserve);
+   AddClassToHeap("checksum_alerts");
    LogChecksumChange(file);
    }
 
