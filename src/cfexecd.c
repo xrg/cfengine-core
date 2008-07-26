@@ -188,6 +188,7 @@ LOGGING = true;                    /* Do output to syslog */
 
 strcpy(CFWORKDIR,WORKDIR);
 
+#ifndef NT
 if (getuid() > 0)
    {
    char *homedir;
@@ -197,6 +198,7 @@ if (getuid() > 0)
       strcat(CFWORKDIR,"/.cfagent");
       }
    }
+#endif
 
 snprintf(VBUFF,CF_BUFSIZE,"%s/inputs/update.conf",CFWORKDIR);
 MakeDirectoriesFor(VBUFF,'y');
