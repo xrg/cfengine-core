@@ -1,8 +1,13 @@
-
+2.2.8
+	
         Patch for cfservd serving wrong data when link->copy
 
 	Checksum changes now trigger persistent class "checksum_alerts"
 	and log to WORKDIR/state/file_hash_event_history
+
+	Threading error fix for cfexecd
+
+	Windows compilation fixes
 	
 2.2.7
 	Memory leak in database access, affecting cfenvd

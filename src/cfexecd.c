@@ -31,6 +31,9 @@
 #include "cf.defs.h"
 #include "cf.extern.h"
 
+#ifdef NT
+# include <process.h>
+#endif
 
 /*******************************************************************/
 /* GLOBAL VARIABLES                                                */
@@ -330,7 +333,7 @@ else
          
          Debug("Spawning %s\n", nargv[0]);
 
-         pid = spawnvp((int)_P_NOWAIT, nargv[0], nargv);
+         pid = _spawnvp((int)_P_NOWAIT,nargv[0],nargv);
 
          if (pid < 1)
             {

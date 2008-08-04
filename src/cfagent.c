@@ -369,6 +369,7 @@ TRAVLINKS = false;
 
 strcpy(CFWORKDIR,WORKDIR);
 
+#ifndef NT
 if (getuid() > 0)
    {
    char *homedir;
@@ -378,6 +379,7 @@ if (getuid() > 0)
       strcat(CFWORKDIR,"/.cfagent");
       }
    }
+#endif
 
 sprintf(ebuff,"%s/state/cf_procs",CFWORKDIR);
 

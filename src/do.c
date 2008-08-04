@@ -2726,11 +2726,9 @@ if (VTIMEZONE == NULL)
 
 for (ip = VTIMEZONE; ip != NULL; ip=ip->next)
    {
-#ifdef NT
-   
-   tzset();
-   strcpy(tz,timezone());
-   
+#ifdef OLDNT
+      tzset();
+      strcpy(tz,timezone());
 #else
 #ifndef AOS
 #ifndef SUN4

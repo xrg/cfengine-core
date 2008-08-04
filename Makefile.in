@@ -36,9 +36,9 @@ target_triplet = @target@
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(top_srcdir)/configure AUTHORS COPYING \
-	ChangeLog INSTALL NEWS TODO acconfig.h config.guess config.sub \
-	depcomp install-sh ltmain.sh mdate-sh missing mkinstalldirs \
-	ylwrap
+	ChangeLog INSTALL NEWS TODO acconfig.h compile config.guess \
+	config.sub depcomp install-sh ltmain.sh mdate-sh missing \
+	mkinstalldirs ylwrap
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
 	$(top_srcdir)/configure.ac
