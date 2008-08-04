@@ -40,6 +40,9 @@
 # include <sys/acl.h>
 #endif
 
+#ifdef NT
+void LogWinError(void);
+#endif
 
 #ifndef HAVE_DCE_DACLIF_H
 
@@ -1173,7 +1176,7 @@ ACL_SIZE_INFORMATION *oldACLSize; /*Pointer to a struct with info about ACL*/
     {
     snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to get size of old SD\n", VPREFIX);
     CfLog(cferror,OUTPUT,"");
-    return;
+    return NULL;
     }
  
  /* Allocate memory for the old security descriptor */
@@ -1181,7 +1184,7 @@ ACL_SIZE_INFORMATION *oldACLSize; /*Pointer to a struct with info about ACL*/
     {
     snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to allocate memory for the old SD\n", VPREFIX);
     CfLog(cferror,OUTPUT,"");
-    return;
+    return NULL;
     }
  
  /* Retrieve the old security descriptor */
@@ -1190,7 +1193,7 @@ ACL_SIZE_INFORMATION *oldACLSize; /*Pointer to a struct with info about ACL*/
     {
     snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to get the old SD\n", VPREFIX);
     CfLog(cferror,OUTPUT,"");
-    return;
+    return NULL;
     }
  
  /* Retrieve information about the old security descriptor */
@@ -1198,7 +1201,7 @@ ACL_SIZE_INFORMATION *oldACLSize; /*Pointer to a struct with info about ACL*/
     {
     snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to get information about the old SD\n", VPREFIX);
     CfLog(cferror,OUTPUT,"");
-    return;
+    return NULL;
     }
  
  /* File did have an ACL */
@@ -1209,14 +1212,14 @@ ACL_SIZE_INFORMATION *oldACLSize; /*Pointer to a struct with info about ACL*/
        {
        snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: Unable to get information about the old ACL\n", VPREFIX);
        CfLog(cferror,OUTPUT,"");
-       return;
+       return NULL;
        }
     }
  else
     {
     snprintf(OUTPUT,CF_BUFSIZE*2,"%s: acl: The old security descriptor does not contain an ACL\n", VPREFIX);
     CfLog(cferror,OUTPUT,"");
-    return;
+    return NULL;
     }
  
  return old_sd;
