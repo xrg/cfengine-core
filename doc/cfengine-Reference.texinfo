@@ -1186,7 +1186,7 @@ The version string of the current configuration, used for version control and au
 
 @item ChecksumDatabase
 If set to the name of a file, cfagent will use this to store checksums of important
-files, and give `tripwire functionality', @xref{ChecksumDatabase}.
+files, and give `tripwire functionality', @xref{ChecksumDatabase}. This option was deprecated in 2.1.22.
 
 @item ChecksumUpdates
 If set to `on', security information is automatically updated.
@@ -1478,10 +1478,17 @@ In a resolve item.
 @item
 In the directory field of a tidy action,
 
-
+@item 
+In the arguments, replyto and server attributes of methods.
 
 @item
 Names in the ignore action.
+
+@item
+Ïn shellcommands body.
+
+@item
+In admit/deny path and attributes of cfserver.
 
 @end itemize
 @cindex split
@@ -3291,6 +3298,7 @@ If this filename is defined, cfengine will use it to store
 message digests (i.e. cryptographic checksums) of files
 for security purposes, @xref{files}, @code{checksum=}.
 
+This option was deprecated in 2.1.22.
 
 @c .....................................................
 @c SUBSECTION
@@ -4444,7 +4452,14 @@ to be installed under Gentoo Portage.
 
 @smallexample
 
+ gentoo.some::
+     DefaultPkgMgr = ( portage )
      PortageInstallCommand = ( "/usr/bin/emerge --nocolor %s" )
+
+ gentoo.other::
+
+    DefaultPkgMgr = ( portage )
+    PortageInstallCommand = ( "/usr/lib/portage/bin/emerge --color=n %s"
 
 @end smallexample
 
@@ -4504,6 +4519,8 @@ The default value of the Red Hat Package manager command @file{/bin/rpm} can be 
 for non-standard systems with this variable.
 @example
 RPMcommand = ( /usr/bin/rpm )
+
+
 @end example
 
 @c .....................................................
@@ -4524,6 +4541,28 @@ By default, this variable is not set, meaning that any packages with
 action=install will NOT be installed if installation is required.  Note
 the quotes around the string, and the @code{%s} is replaced with the name
 of the package to be installed.
+
+@smallexample
+control:
+  DefaultPkgMgr = ( rpm )
+  RPMInstallCommand = ( "/usr/bin/yum -d 0 -e 0 -y install %s" )
+  
+  # This would remove all dependencies (!)
+  #
+  # RPMRemoveCommand = ( "/usr/bin/yum -d 0 -e 0 -y remove %s" )
+
+  # This might be less drastic
+
+   RPMRemoveCommand = ( "/bin/rpm -e --nodeps %s" )
+
+packages:
+
+# this will remove this package regardless of version.
+
+  some_rpm_name version=0:0.0 cmp=ge action=remove   
+  
+
+@end smallexample
 
 @c .....................................................
 @c SUBSECTION
@@ -5224,9 +5263,10 @@ copy:
 @end cartouche
 
 @noindent
-Note that the @code{$(this)} variable may be used in the source and
-destination strings in order to tailor the filename when downloading from
-multiple sources (see below).
+Note that the @code{$(this)} contains the name of the server
+used. This variable may be used in the source and destination strings
+in order to tailor the filename when downloading from multiple sources
+(see below).
 
 @table @code
 
@@ -7589,6 +7629,7 @@ test for setuid root programs.
 * Syntax::                      
 * Recursion::                   
 * Directory permissions::       
+* Checksums and change management::  
 * home directive::              
 * Owner and group wildcards::   
 * Files linkchildren::          
@@ -7888,7 +7929,7 @@ search also bottoms out on device boundaries and symbolic links
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
-@node Directory permissions, home directive, Recursion, files
+@node Directory permissions, Checksums and change management, Recursion, files
 @subsection Directory permissions
 @cindex Directory permissions
 @cindex Permissions, directories
@@ -7917,8 +7958,49 @@ everyone on directories.
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
+@node Checksums and change management, home directive, Directory permissions, files
+@subsection Checksums and change management
+@cindex Checksums
+@cindex Hashes
 
-@node home directive, Owner and group wildcards, Directory permissions, files
+Integrity checks are a good way of detecting tampering
+with a system, or simply for monitoring upgrades that happen
+as a result of software unrelated to cfengine. The @code{checksum}
+option asks cfengine to compute and cache the value of the
+cryptographic checksum of the named file. 
+
+@smallexample
+files:
+
+  /my/file
+
+   checksum=best
+   action=warnall
+
+@end smallexample
+The checksum type can be @code{md5}, @code{sha} or @code{best}.
+The option best cross checks the best two available algorithms.
+At present cfengine is waiting for improvements to the OpenSSL
+library supporting sha2 algorithms.
+
+Once a value has been
+computed and placed in the database each new computation will be
+checked against the old one. Any change will lead to a mismatch
+and the following will happen:
+
+@itemize @bullet
+@item A warning is printed about the change
+@item As of 2.2.8 a class called @code{checksum_alerts} will be defined, indicating
+that a change has occurred. This can be used to trigger followup actions. The class
+is a persistant class that lasts for 60 minutes.
+@item If ChecksumUpdates is set to true, the new value will replace the old in the database
+@end itemize
+
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node home directive, Owner and group wildcards, Checksums and change management, files
 @subsection @code{home} directive
 @cindex home directive
 @cindex Files, home wildcard
@@ -10340,10 +10422,12 @@ only way to have a specific version emerged.
 
    # if the version of tar is less than 1.16-r2,
    # then the *latest* version of tar will be installed:
+
    app-arch/tar cmp=ge version=1.16-r2 action=install
 
    # This is equivalent, but uses the package atom to
    # define the version comparison:
+
    >=app-arch/tar-1.16-r2 action=install
 
 @end smallexample
@@ -10539,6 +10623,9 @@ m4 specified is not installed.
 control:
     redhat:;
         DefaultPkgMgr = ( rpm )
+
+    gentoo::
+        DefaultPkgMgr = ( portage )
 
 packages:
     redhat_8_0::
@@ -10953,7 +11040,7 @@ shellcommands:
 
 @end smallexample
 @noindent
-This iterates over all values of the list variables. @xref{Iterating over lists,Iterating over lists,Iterating over lists,cfengine-Tutorial}.
+This iterates over all values of the list variables. @xref{Iteration over lists}.
 @cindex Iterating over lists in shellcommands
 If you are iterating over a list, the time limit (in seconds) which is
 specified in the @var{timeout} parameter applies to each separate
@@ -12170,7 +12257,6 @@ following options:
 -h (--help)
 -d (--debug)
 -v (--verbose)
--f (--file)
 -q (--no-splay)
 -F (--no-fork)
 -1 (--once)

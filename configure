@@ -2432,7 +2432,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=cfengine
- VERSION=2.2.8a1
+ VERSION=2.2.8
 
 
 cat >>confdefs.h <<_ACEOF

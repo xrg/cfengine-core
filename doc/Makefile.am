@@ -2,7 +2,7 @@
 man_MANS = cfengine.8 cfagent.8  cfenvd.8  cfenvgraph.8  cfexecd.8  cfkey.8  cfrun.8  cfservd.8 cfshow.8 cfetoolcheck.8   cfetooldump.8   cfetoolimport.8  cfetoolupdate.8 cfetoolcreate.8  cfetoolgraph.8  cfetoolinfo.8 
 
 # Info used in building the Info files
-#info_TEXINFOS = cfengine-Reference.texinfo cfengine-Tutorial.texinfo cfengine-Anomalies.texinfo
+info_TEXINFOS = cfengine-Reference.texinfo cfengine-Tutorial.texinfo # cfengine-Anomalies.texinfo
 infofiles = $(info_TEXINFOS:.texinfo=.info)
 MAKEINFOHTML = $(MAKEINFO) --html --css-include=cfcomdoc.css --no-split
 
@@ -22,7 +22,7 @@ doc_DATA = $(psfiles) $(pdffiles)
 
 # Make sure these get distributed with everything else.
 
-EXTRA_DIST = cfagent.8 cfenvd.8 cfenvgraph.8 cfexecd.8 cfkey.8 cfrun.8 cfservd.8 cfengine.8 cfshow.8 cfetoolcheck.8   cfetooldump.8   cfetoolimport.8  cfetoolupdate.8 cfetoolcreate.8  cfetoolgraph.8  cfetoolinfo.8 cfetoolcheck.8   cfetooldump.8   cfetoolimport.8  cfetoolupdate.8 cfetoolcreate.8  cfetoolgraph.8  cfetoolinfo.8 texinfo.tex $(infofiles)
+EXTRA_DIST = cfagent.8 cfenvd.8 cfenvgraph.8 cfexecd.8 cfkey.8 cfrun.8 cfservd.8 cfengine.8 cfshow.8 cfetoolcheck.8   cfetooldump.8   cfetoolimport.8  cfetoolupdate.8 cfetoolcreate.8  cfetoolgraph.8  cfetoolinfo.8 cfetoolcheck.8   cfetooldump.8   cfetoolimport.8  cfetoolupdate.8 cfetoolcreate.8  cfetoolgraph.8  cfetoolinfo.8 texinfo.tex $(htmlfiles) $(infofiles) $(pdffiles)
 
 SUFFIXES = html latex pdf ps dvi
 

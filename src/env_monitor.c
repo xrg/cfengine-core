@@ -63,8 +63,8 @@ double AGE,WAGE;             /* Age and weekly age of database */
 char OUTPUT[CF_BUFSIZE*2];
 char BATCHFILE[CF_BUFSIZE];
 char STATELOG[CF_BUFSIZE];
-char ENV_NEW[CF_BUFSIZE];
-char ENV[CF_BUFSIZE];
+char ENVCF_NEW[CF_BUFSIZE];
+char ENVCF[CF_BUFSIZE];
 
 short ACPI = false;
 short LMSENSORS = false;
@@ -200,8 +200,8 @@ CreateEmptyFile(VBUFF);
  
 snprintf(AVDB,CF_MAXVARSIZE,"%s/state/%s",CFWORKDIR,CF_AVDB_FILE);
 snprintf(STATELOG,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_STATELOG_FILE);
-snprintf(ENV_NEW,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_ENVNEW_FILE);
-snprintf(ENV,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_ENV_FILE);
+snprintf(ENVCF_NEW,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_ENVNEW_FILE);
+snprintf(ENVCF,CF_BUFSIZE,"%s/state/%s",CFWORKDIR,CF_ENV_FILE);
 
 if (!BATCH_MODE)
    {
@@ -962,9 +962,9 @@ for (i = 0; i < CF_OBSERVABLES; i++)
 
 /* Publish class list */
 
-unlink(ENV_NEW);
+unlink(ENVCF_NEW);
  
-if ((fp = fopen(ENV_NEW,"a")) == NULL)
+if ((fp = fopen(ENVCF_NEW,"a")) == NULL)
    {
    DeleteItemList(PREVIOUS_STATE);
    PREVIOUS_STATE = classlist;
@@ -987,7 +987,7 @@ for (ip = ENTROPIES; ip != NULL; ip=ip->next)
 DeleteItemList(ENTROPIES); 
 fclose(fp);
 
-rename(ENV_NEW,ENV);
+rename(ENVCF_NEW,ENVCF);
 }
 
 /*********************************************************************/

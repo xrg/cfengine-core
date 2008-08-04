@@ -137,8 +137,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#dir">(dir)</a>
 
    <p><a href="#Contents">COMPLETE TABLE OF CONTENTS</a>
 <p>
-This manual is for version 2.2.6 of cfengine and
-was last updated on the  24 April 2008. 
+This manual is for version 2.2.8 of cfengine and
+was last updated on the  22 July 2008. 
 </p>
 
    <p><h2>Summary of contents</h2>
@@ -5507,8 +5507,6 @@ file is as follows:
      
             MaxConnections = ( <var>maximum number of forked daemons</var> )
      
-            ChecksumDatabase = ( <var>filename</var> )
-     
             IfElapsed = ( <var>time-in-minutes</var> )
      
             DenyBadClocks = ( <var>false</var> )
@@ -6496,8 +6494,6 @@ as exacting as an MD5 checksum/digest can detect. If you specify a
 checksum database and activate checksum verification,
 <pre class="smallexample">     
      control:
-     
-       ChecksumDatabase = ( /var/cfengine/cache.db )
      
        ChecksumUpdates = ( false )
      

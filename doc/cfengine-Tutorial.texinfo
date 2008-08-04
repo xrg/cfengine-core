@@ -5705,8 +5705,6 @@ file is as follows:
 
        MaxConnections = ( @var{maximum number of forked daemons} )
 
-       ChecksumDatabase = ( @var{filename} )
-
        IfElapsed = ( @var{time-in-minutes} )
 
        DenyBadClocks = ( @var{false} )
@@ -6633,8 +6631,6 @@ checksum database and activate checksum verification,
 @smallexample
 
 control:
-
-  ChecksumDatabase = ( /var/cfengine/cache.db )
 
   ChecksumUpdates = ( false )
 

@@ -159,8 +159,8 @@ DB *dbp;
 int time_to_update = false;
 int DEBUGGING = false;
 int DEBUGGING2 = false;
-char ENV_NEW[CF_BUFSIZE];
-char ENV[CF_BUFSIZE];
+char ENVCF_NEW[CF_BUFSIZE];
+char ENVCF[CF_BUFSIZE];
 
 /*************************************************************************/
 
@@ -283,8 +283,8 @@ if(strcmp(NAME, "stddev") == 0)
 
 strncpy(VLOCKDIR,WORKDIR,CF_BUFSIZE-1);
 strncpy(VLOGDIR,WORKDIR,CF_BUFSIZE-1);
-snprintf(ENV_NEW,CF_BUFSIZE,"%s/state/%s",WORKDIR,CF_ENVNEW_FILE);
-snprintf(ENV,CF_BUFSIZE,"%s/state/%s",WORKDIR,CF_ENV_FILE);
+snprintf(ENVCF_NEW,CF_BUFSIZE,"%s/state/%s",WORKDIR,CF_ENVNEW_FILE);
+snprintf(ENVCF,CF_BUFSIZE,"%s/state/%s",WORKDIR,CF_ENV_FILE);
 argv += 2;
 argc -= 2;
 
@@ -2623,7 +2623,7 @@ SetVariable(NAME,VALUE,av.expect,sig,&classlist);
 
 if(cfenvd_compatible)
    {
-   unlink(ENV_NEW);
+   unlink(ENVCF_NEW);
    strcpy(temp1, NAME);
    strcat(temp1, "_");
    temp2[0] = '_';
@@ -2638,12 +2638,12 @@ if(cfenvd_compatible)
       lock.l_whence = SEEK_SET;
       lock.l_len = 0;
       
-      if ((newfp = fopen(ENV_NEW,"a")) == NULL)
+      if ((newfp = fopen(ENVCF_NEW,"a")) == NULL)
          {
          DeleteItemList(classlist);
          return code; 
          }
-      if ((oldfp = fopen(ENV, "r")) != NULL)
+      if ((oldfp = fopen(ENVCF, "r")) != NULL)
          {
          if (fcntl(fileno(oldfp), F_SETLK, &lock) == -1)
             {
@@ -2669,7 +2669,7 @@ if(cfenvd_compatible)
       
       fclose(newfp);
       
-      rename(ENV_NEW,ENV);
+      rename(ENVCF_NEW,ENVCF);
       break;
       }
    }
