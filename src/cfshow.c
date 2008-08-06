@@ -265,6 +265,7 @@ while ((c=getopt_long(argc,argv,"AChdvaVlr:f:scpPXH",CFSHOPTIONS,&optindex)) != 
 
 strcpy(CFWORKDIR,WORKDIR);
 
+#ifndef NT
 if (getuid() > 0)
    {
    char *homedir;
@@ -275,6 +276,7 @@ if (getuid() > 0)
       strcat(CFWORKDIR,"/.cfagent");
       }
    }
+#endif
 
 GetNameInfo();
 strcpy(VFQNAME,VSYSNAME.nodename);

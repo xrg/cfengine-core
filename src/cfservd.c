@@ -256,6 +256,7 @@ if ((CFSTARTTIME = time((time_t *)NULL)) == -1)
 
 strcpy(CFWORKDIR,WORKDIR);
 
+#ifndef NT
 if (getuid() > 0)
    {
    char *homedir;
@@ -265,6 +266,7 @@ if (getuid() > 0)
       strcat(CFWORKDIR,"/.cfagent");
       }
    }
+#endif
 
 snprintf(vbuff,CF_BUFSIZE,"%s/test",CFWORKDIR);
 

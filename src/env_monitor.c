@@ -164,6 +164,7 @@ void MonInitialize()
 
 strcpy(CFWORKDIR,WORKDIR);
 
+#ifndef NT
 if (getuid() > 0)
    {
    char *homedir;
@@ -173,6 +174,7 @@ if (getuid() > 0)
       strcat(CFWORKDIR,"/.cfagent");
       }
    }
+#endif
  
 sprintf(VBUFF,"%s/test",CFWORKDIR);
 MakeDirectoriesFor(VBUFF,'y');

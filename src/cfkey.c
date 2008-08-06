@@ -149,17 +149,19 @@ void Initialize()
 umask(077);
  /* XXX Initialize workdir for non privileged users */
 
- strcpy(CFWORKDIR,WORKDIR);
+strcpy(CFWORKDIR,WORKDIR);
 
- if (geteuid() > 0)
-    {
-    char *homedir;
-    if ((homedir = getenv("HOME")) != NULL)
-       {
-       strcpy(CFWORKDIR,homedir);
-       strcat(CFWORKDIR,"/.cfagent");
-       }
-    }
+#ifndef NT
+if (geteuid() != 0)
+   {
+   char *homedir;
+   if ((homedir = getenv("HOME")) != NULL)
+      {
+      strcpy(CFWORKDIR,homedir);
+      strcat(CFWORKDIR,"/.cfagent");
+      }
+   }
+#endif
  
 strcpy(VLOCKDIR,CFWORKDIR);
 strcpy(VLOGDIR,CFWORKDIR); 

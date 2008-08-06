@@ -50,7 +50,7 @@
 
 actiont   copy:|resolve:|files:|tidy:|homeservers:|binservers:|mailserver:|disks:|mountables:|links:|shellcommands:|disable:|directories:|ignore:|interfaces:|defaultroute:|miscmounts:|unmount:|processes:|required:|broadcast:|alerts:|packages:|methods:|rename:|scli:
 
-space     [ \t]+
+space     [ \t\xa\xd]+
 
 comment   #.*
 
@@ -70,9 +70,9 @@ classt    [.|&!,;a-zA-Z0-9_()@EIGHTBIT@]+::
 
 option    [a-z0-9]+=[^ \t\n]+
 
-varobj    [^ \t\n]+
+varobj    [^ \t\n\xa\xd]+
 
-newline   [\n]
+newline   ([\n]|[\xd][\xa])
 lbrack    \(
 rbrack    \)
 lbrace    \{

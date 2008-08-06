@@ -1,3 +1,5 @@
+
+
 2.2.8
 	
         Patch for cfservd serving wrong data when link->copy
@@ -7,7 +9,9 @@
 
 	Threading error fix for cfexecd
 
-	Windows compilation fixes
+	Windows compilation fixes. Note that windows users might have to move keys and files
+	from /home/user/.cfagent to /var/cfengine after the standardization of administrator
+	paths for windows where getuid != 0.
 	
 2.2.7
 	Memory leak in database access, affecting cfenvd

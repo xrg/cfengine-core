@@ -225,50 +225,52 @@ for (i = 1; i < argc; i++)
       }
    }
  
- Debug("CFRUNOPTIONS string: %s\n",CFRUNOPTIONS);
- 
- for (ip = VCFRUNCLASSES; ip != NULL; ip=ip->next)
-    {
-    Debug("Class item: %s\n",ip->name);
-    }
+Debug("CFRUNOPTIONS string: %s\n",CFRUNOPTIONS);
 
-  /* XXX Initialize workdir for non privileged users */
+for (ip = VCFRUNCLASSES; ip != NULL; ip=ip->next)
+   {
+   Debug("Class item: %s\n",ip->name);
+   }
 
- strcpy(CFWORKDIR,WORKDIR);
+/* XXX Initialize workdir for non privileged users */
 
- if (getuid() > 0)
-    {
-    char *homedir;
-    if ((homedir = getenv("HOME")) != NULL)
-       {
-       strncpy(CFWORKDIR,homedir,CF_BUFSIZE-16);
-       strcat(CFWORKDIR,"/.cfagent");
-       }
-    }
+strcpy(CFWORKDIR,WORKDIR);
 
- ReadCfrunConf(VCFRUNHOSTS); 
- 
- GetNameInfo();
+#ifndef NT
+if (getuid() > 0)
+   {
+   char *homedir;
+   if ((homedir = getenv("HOME")) != NULL)
+      {
+      strncpy(CFWORKDIR,homedir,CF_BUFSIZE-16);
+      strcat(CFWORKDIR,"/.cfagent");
+      }
+   }
+#endif
 
- CfenginePort();
- StrCfenginePort();
- 
- Debug("FQNAME = %s, WORKDIR = %s\n",VFQNAME,WORKDIR);
- 
- sprintf(VPREFIX,"cfrun:%s",VFQNAME);
- 
- 
+ReadCfrunConf(VCFRUNHOSTS); 
+
+GetNameInfo();
+
+CfenginePort();
+StrCfenginePort();
+
+Debug("FQNAME = %s, WORKDIR = %s\n",VFQNAME,WORKDIR);
+
+sprintf(VPREFIX,"cfrun:%s",VFQNAME);
+
+
 /* Read hosts file */
- 
- umask(077);
- strcpy(VLOCKDIR,CFWORKDIR);
- strcpy(VLOGDIR,CFWORKDIR); 
- 
- OpenSSL_add_all_algorithms();
- ERR_load_crypto_strings();
- CheckWorkDirectories();
- LoadSecretKeys();
- RandomSeed();
+
+umask(077);
+strcpy(VLOCKDIR,CFWORKDIR);
+strcpy(VLOGDIR,CFWORKDIR); 
+
+OpenSSL_add_all_algorithms();
+ERR_load_crypto_strings();
+CheckWorkDirectories();
+LoadSecretKeys();
+RandomSeed();
 }
 
 
