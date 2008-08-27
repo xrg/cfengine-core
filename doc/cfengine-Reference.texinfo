@@ -1186,7 +1186,7 @@ The version string of the current configuration, used for version control and au
 
 @item ChecksumDatabase
 If set to the name of a file, cfagent will use this to store checksums of important
-files, and give `tripwire functionality', @xref{ChecksumDatabase}. This option was deprecated in 2.1.22.
+files, and give `tripwire functionality', @xref{ChecksumDatabase in cfagent}. This option was deprecated in 2.1.22.
 
 @item ChecksumUpdates
 If set to `on', security information is automatically updated.
@@ -1971,7 +1971,8 @@ override the ACLs.
 * Solaris ACLs::                
 * DFS ACLs::                    
 * NT ACLs::                     
-* ACL Example::                 
+* Windows ACL Example::         
+* Posix ACL Example::           
 @end menu
 
 @node ACEs, Solaris ACLs, acl, acl
@@ -2142,7 +2143,7 @@ because you must have a valid security ticket.
 @c SUBSECTION
 @c .....................................................
 
-@node NT ACLs, ACL Example, DFS ACLs, acl
+@node NT ACLs, Windows ACL Example, DFS ACLs, acl
 @subsection NT ACLs
 
 @cindex NT, ACL
@@ -2209,7 +2210,13 @@ without any changes to the configuration file. If the permissions
 @code{noaccess} or @code{default} is used, the access type will be
 irrelevant.
 
-@section ACL Example
+@c .....................................................
+@c SUBSECTION
+@c .....................................................
+
+@node Windows ACL Example, Posix ACL Example, NT ACLs, acl
+@subsection Windows ACL Example
+
 Here is an example of a configuration file for an NT ACL:
 
 @smallexample
@@ -2243,8 +2250,8 @@ acl:
 @c SUBSECTION
 @c .....................................................
 
-@node ACL Example,  , NT ACLs, acl
-@subsection ACL Example
+@node Posix ACL Example,  , Windows ACL Example, acl
+@subsection Posix ACL Example
 
 Here is an example of a configuration file for one Solaris ACL and one DCE/DFS ACL:
 
@@ -2661,8 +2668,8 @@ The meaning of each of these lines is described below.
 * Auditing::                    
 * AutoDefine::                  
 * BinaryPaddingChar::           
-* BindToInterface(cfagent)::    
-* ChecksumDatabase::            
+* BindToInterface in cfagent::  
+* ChecksumDatabase in cfagent::  
 * ChecksumPurge::               
 * ChecksumUpdates::             
 * CompressCommand::             
@@ -2688,8 +2695,8 @@ The meaning of each of these lines is described below.
 * FreeBSDRemoveCommand::        
 * FullEncryption::              
 * homepattern::                 
-* HostnameKeys::                
-* IfElapsed::                   
+* HostnameKeys in cfagent::     
+* IfElapsed in cfagent::        
 * IgnoreFriendRegex::           
 * IgnoreInterfaceRegex::        
 * Inform::                      
@@ -2913,7 +2920,7 @@ edited so as to include the mail directory.
 
 @item module
 @cindex Modules, user defined
-Normally cfengine's ability to detect the systems condition is limited
+Normally cfengine's ability to detect the system's condition is limited
 to what it is able to determine while excuting predefined
 actions. Classes may be switched on as a result of actions cfengine
 takes to correct a problem. To increase the flexibility of cfengine, a
@@ -3245,7 +3252,7 @@ is copied at any time.
 @c SUBSECTION
 @c .....................................................
 
-@node BinaryPaddingChar, BindToInterface(cfagent), AutoDefine, control
+@node BinaryPaddingChar, BindToInterface in cfagent, AutoDefine, control
 @subsection BinaryPaddingChar
 
 @w{}
@@ -3263,8 +3270,8 @@ or text messages within program code.
 @c SUBSECTION
 @c ...........................................
 
-@node BindToInterface(cfagent), ChecksumDatabase, BinaryPaddingChar, control
-@subsection BindToInterface
+@node BindToInterface in cfagent, ChecksumDatabase in cfagent, BinaryPaddingChar, control
+@subsection BindToInterface in cfagent
 If this is set to a specific IP address of an IP configured interface,
 cfagent will use that address for outgoing connections.  On Multi-homed
 hosts this allows one to restrict the traffic to a known interface. An interface must
@@ -3280,8 +3287,8 @@ This feature is not available for old operating systems.
 @c SUBSECTION
 @c .....................................................
 
-@node ChecksumDatabase, ChecksumPurge, BindToInterface(cfagent), control
-@subsection ChecksumDatabase
+@node ChecksumDatabase in cfagent, ChecksumPurge, BindToInterface in cfagent, control
+@subsection ChecksumDatabase in cfagent
 
 @w{}
 @smallexample
@@ -3304,7 +3311,7 @@ This option was deprecated in 2.1.22.
 @c SUBSECTION
 @c .....................................................
 
-@node ChecksumPurge, ChecksumUpdates, ChecksumDatabase, control
+@node ChecksumPurge, ChecksumUpdates, ChecksumDatabase in cfagent, control
 @subsection ChecksumPurge
 
 @w{}
@@ -3868,7 +3875,7 @@ security environments it provides full privacy of data transmission.
 @c SUBSECTION
 @c .....................................................
 
-@node homepattern, HostnameKeys, FullEncryption, control
+@node homepattern, HostnameKeys in cfagent, FullEncryption, control
 @subsection HomePattern
 @cindex Home path
 @cindex Path to home directories
@@ -3928,8 +3935,8 @@ to achieve the same this as follows:
 @c SUBSECTION
 @c .....................................................
 
-@node HostnameKeys, IfElapsed, homepattern, control
-@subsection HostnameKeys
+@node HostnameKeys in cfagent, IfElapsed in cfagent, homepattern, control
+@subsection HostnameKeys in cfagent
 
 If this variable is set to true/on, it causes cfagent to
 lookup and store trusted public keys according to their
@@ -3953,8 +3960,8 @@ which must be set for consistency.
 @c SUBSECTION
 @c .....................................................
 
-@node IfElapsed, IgnoreFriendRegex, HostnameKeys, control
-@subsection IfElapsed
+@node IfElapsed in cfagent, IgnoreFriendRegex, HostnameKeys in cfagent, control
+@subsection IfElapsed in cfagent
 
 If you change the value of this parameter, it should be one of the
 first things you do in your configuration script.
@@ -3996,7 +4003,7 @@ as options of the form @code{ifelapsed=15}.
 @c SUBSECTION
 @c .....................................................
 
-@node IgnoreFriendRegex, IgnoreInterfaceRegex, IfElapsed, control
+@node IgnoreFriendRegex, IgnoreInterfaceRegex, IfElapsed in cfagent, control
 @subsection FriendIgnoreRegex
 
 Use this regular expression to suppress FriendStatus warnings
@@ -6447,7 +6454,7 @@ before committing them to your global site configuration.
 * EndGroup::                    
 * EndLoop::                     
 * ExpandVariables::             
-* ExpireAfter (editing)::       
+* ExpireAfter editfiles::       
 * Filter::                      
 * FixEndOfLine::                
 * ForEachLineIn::               
@@ -6504,7 +6511,14 @@ before committing them to your global site configuration.
 @end menu
 
 @node AbortAtLineMatching, Append, editfiles, editfiles
-@subsection AbortAtLineMatching @var{quoted-regex}
+@subsection AbortAtLineMatching
+
+@smallexample
+
+ AbortAtLineMatching @var{quoted-regex}
+
+@end smallexample
+
 This command sets the value of a regular expression. In all editing
 operations (except @code{FixEndOfLine} and @code{GotoLastLine}) which involve multiple
 replacements and searches, this expression marks a boundary
@@ -6521,8 +6535,17 @@ Use @code{UnsetAbort} to unset the feature.
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
+
 @node Append, AppendIfNoLineMatching, AbortAtLineMatching, editfiles
-@subsection Append @var{quoted-string}
+@subsection Append
+
+@smallexample
+
+ Append @var{quoted-regex}
+
+@end smallexample
+
+
 Add a line containing the quoted string to the end of the file.
 This should be used in conjunction with the
 decision structures @code{BeginGroupIfNoLineMatching} and
@@ -6531,8 +6554,18 @@ decision structures @code{BeginGroupIfNoLineMatching} and
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
+
 @node AppendIfNoLineMatching, AppendIfNoSuchLine, Append, editfiles
-@subsection AppendIfNoLineMatching  @var{quoted-regex}/ ``ThisLine''
+@subsection AppendIfNoLineMatching
+
+
+@smallexample
+
+  AppendIfNoLineMatching  @var{quoted-regex}/ ``ThisLine''
+
+@end smallexample
+
+
 A new version of the older @code{AppendIfNoSuchLine}
 which uses a regular expression instead of a literal
 string. The line which gets appended must be set
@@ -6558,16 +6591,32 @@ editfiles:
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
+
 @node AppendIfNoSuchLine, AppendIfNoSuchLinesFromFile, AppendIfNoLineMatching, editfiles
-@subsection   AppendIfNoSuchLine @var{quoted-string}
+@subsection AppendIfNoSuchLine
+
+@smallexample
+
+  AppendIfNoSuchLine @var{quoted-string}
+
+@end smallexample
+
 Add a line containing the quoted string to the end of the file
 if the file doesn't contain the exact line already.
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
+
 @node AppendIfNoSuchLinesFromFile, AppendToLineIfNotContains, AppendIfNoSuchLine, editfiles
-@subsection   AppendIfNoSuchLinesFromFile @var{filename}
+@subsection   AppendIfNoSuchLinesFromFile
+
+@smallexample
+
+  AppendIfNoSuchLinesFromFile @var{filename}
+
+@end smallexample
+
 For each line in the named file, call AppendIfNoSuchLine.  This adds
 lines containing the strings listed in the named file to the end of the
 current file if the file doesn't contain the exact line already.
@@ -6576,8 +6625,16 @@ current file if the file doesn't contain the exact line already.
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
+
 @node AppendToLineIfNotContains, Audit, AppendIfNoSuchLinesFromFile, editfiles
-@subsection AppendToLineIfNotContains @var{quoted-string}
+@subsection AppendToLineIfNotContains
+
+@smallexample
+
+ AppendToLineIfNotContains @var{quoted-string}
+
+@end smallexample
+
 This commands looks for an exact match of the quoted string
 in the current line. If the quoted string is not contained
 in the line, it is appended. This may be used for adding
@@ -6587,7 +6644,15 @@ entries to a list.
 @c SUBSECTION
 @c .....................................................
 @node Audit, AutoCreate, AppendToLineIfNotContains, editfiles
-@subsection Audit @var{true/false}
+@subsection Audit in editfiles
+
+@smallexample
+
+ Audit @var{true/false}
+
+@end smallexample
+
+
 Local decision about whether this edit stanza will be audited. Requires
 auditing to be on globally for this to have an effect.
 
@@ -6596,6 +6661,7 @@ auditing to be on globally for this to have an effect.
 @c .....................................................
 @node AutoCreate, AutomountDirectResources, Audit, editfiles
 @subsection AutoCreate
+
 If this command is listed anywhere in the file action list, cfengine
 will create the named file if it doesn't exist. Normally cfengine issues
 an error if the named file does not exist, but if this is set,
@@ -6610,7 +6676,14 @@ BeginGroupIfFileIsNewer will always be true.
 @c SUBSECTION
 @c .....................................................
 @node AutomountDirectResources, Backup in editfiles, AutoCreate, editfiles
-@subsection AutomountDirectResources @var{quoted-string}
+@subsection AutomountDirectResources
+
+@smallexample
+
+AutomountDirectResources @var{quoted-string}
+
+@end smallexample
+
 This command is designed to assist with automounter configuration for
 users wishing to use the automounter for NFS filesystems, but still use
 the cfengine mount model.
@@ -6628,7 +6701,13 @@ file named @file{/etc/auto_direct}.
 @c SUBSECTION
 @c .....................................................
 @node Backup in editfiles, BeginGroupIfDefined, AutomountDirectResources, editfiles
-@subsection Backup @var{quoted-string}
+@subsection Backup in editfiles
+
+@smallexample
+
+ Backup @var{quoted-string}
+
+@end smallexample
 
 Set to true or false, on or off to set backup policy for this file.
 Default is on.  The default is to produce time-stamped backups of
@@ -6649,7 +6728,14 @@ See @ref{copybackup}.
 @c SUBSECTION
 @c .....................................................
 @node BeginGroupIfDefined, BeginGroupIfNotDefined, Backup in editfiles, editfiles
-@subsection BeginGroupIfDefined @var{quoted-string}
+@subsection BeginGroupIfDefined
+
+@smallexample
+
+BeginGroupIfDefined @var{quoted-string}
+
+@end smallexample
+
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted class is defined. Edit groups may be nested.
 @cindex @code{BeginGroupIfDefined}
@@ -6658,7 +6744,14 @@ are executed if the quoted class is defined. Edit groups may be nested.
 @c SUBSECTION
 @c .....................................................
 @node BeginGroupIfNotDefined, BeginGroupIfFileExists, BeginGroupIfDefined, editfiles
-@subsection BeginGroupIfNotDefined @var{quoted-string}
+@subsection BeginGroupIfNotDefined
+
+@smallexample
+
+BeginGroupIfNotDefined @var{quoted-string}
+
+@end smallexample
+
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted class is not defined. Edit groups may be nested.
 @cindex @code{BeginGroupIfNotDefined}
@@ -6667,7 +6760,14 @@ are executed if the quoted class is not defined. Edit groups may be nested.
 @c SUBSECTION
 @c .....................................................
 @node BeginGroupIfFileExists, BeginGroupIfFileIsNewer, BeginGroupIfNotDefined, editfiles
-@subsection BeginGroupIfFileExists @var{quoted-string}
+@subsection BeginGroupIfFileExists
+
+@smallexample
+
+ BeginGroupIfFileExists @var{quoted-string}
+
+@end smallexample
+
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted filename exists (can be statted).
 Files which are not readable by the running process are
@@ -6678,7 +6778,14 @@ for all intents and purposes non-existent. Edit groups may be nested.
 @c SUBSECTION
 @c .....................................................
 @node BeginGroupIfFileIsNewer, BeginGroupIfLineContaining, BeginGroupIfFileExists, editfiles
-@subsection BeginGroupIfFileIsNewer @var{quoted-string}
+@subsection BeginGroupIfFileIsNewer
+
+@smallexample
+
+ BeginGroupIfFileIsNewer @var{quoted-string}
+
+@end smallexample
+
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted filename is newer than the file being
 edited. Edit groups may be nested.
@@ -6688,7 +6795,14 @@ edited. Edit groups may be nested.
 @c SUBSECTION
 @c .....................................................
 @node BeginGroupIfLineContaining, BeginGroupIfLineMatching, BeginGroupIfFileIsNewer, editfiles
-@subsection BeginGroupIfLineContaining @var{quoted-string}
+@subsection BeginGroupIfLineContaining
+
+@smallexample
+
+BeginGroupIfLineContaining @var{quoted-string}
+
+@end smallexample
+
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted string appears in
 any line in the file. Edit groups may be nested.
@@ -6697,7 +6811,14 @@ any line in the file. Edit groups may be nested.
 @c SUBSECTION
 @c .....................................................
 @node BeginGroupIfLineMatching, BeginGroupIfMatch, BeginGroupIfLineContaining, editfiles
-@subsection BeginGroupIfLineMatching @var{quoted-regex}
+@subsection BeginGroupIfLineMatching
+
+@smallexample
+
+BeginGroupIfLineMatching @var{quoted-regex}
+
+@end smallexample
+
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted regular expression
 matches any line in the file. Edit groups may be nested.
@@ -6706,7 +6827,14 @@ matches any line in the file. Edit groups may be nested.
 @c SUBSECTION
 @c .....................................................
 @node BeginGroupIfMatch, BeginGroupIfNoLineContaining, BeginGroupIfLineMatching, editfiles
-@subsection BeginGroupIfMatch @var{quoted-regex}
+@subsection BeginGroupIfMatch
+
+@smallexample
+
+ BeginGroupIfMatch @var{quoted-regex}
+
+@end smallexample
+
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted regular expression matches the current line. Edit groups may be nested.
 
@@ -6714,7 +6842,14 @@ are executed if the quoted regular expression matches the current line. Edit gro
 @c SUBSECTION
 @c .....................................................
 @node BeginGroupIfNoLineContaining, BeginGroupIfNoLineMatching, BeginGroupIfMatch, editfiles
-@subsection BeginGroupIfNoLineContaining @var{quoted-string}
+@subsection BeginGroupIfNoLineContaining
+
+@smallexample
+
+BeginGroupIfNoLineContaining @var{quoted-string}
+
+@end smallexample
+
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted string does not appear in
 any line in the file. Edit groups may be nested.
@@ -6723,7 +6858,14 @@ any line in the file. Edit groups may be nested.
 @c SUBSECTION
 @c .....................................................
 @node BeginGroupIfNoLineMatching, BeginGroupIfNoMatch, BeginGroupIfNoLineContaining, editfiles
-@subsection BeginGroupIfNoLineMatching @var{quoted-regex}
+@subsection BeginGroupIfNoLineMatching
+
+@smallexample
+
+BeginGroupIfNoLineMatching @var{quoted-regex}
+
+@end smallexample
+
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted regular expression
 does not match any line in the file. Edit groups may be nested.
@@ -6732,7 +6874,14 @@ does not match any line in the file. Edit groups may be nested.
 @c SUBSECTION
 @c .....................................................
 @node BeginGroupIfNoMatch, BeginGroupIfNoSuchLine, BeginGroupIfNoLineMatching, editfiles
-@subsection BeginGroupIfNoMatch @var{quoted-regex}
+@subsection BeginGroupIfNoMatch
+
+@smallexample
+
+BeginGroupIfNoMatch @var{quoted-regex}
+
+@end smallexample
+
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted regular expression does
 not match the current line. Edit groups may be nested.
@@ -6741,7 +6890,14 @@ not match the current line. Edit groups may be nested.
 @c SUBSECTION
 @c .....................................................
 @node BeginGroupIfNoSuchLine, BreakIfLineMatches, BeginGroupIfNoMatch, editfiles
-@subsection BeginGroupIfNoSuchLine @var{quoted-string}
+@subsection BeginGroupIfNoSuchLine
+
+@smallexample
+
+ BeginGroupIfNoSuchLine @var{quoted-string}
+
+@end smallexample
+
 The lines following, up to the first @code{EndGroup}
 are executed if the quoted literal string
 does not match any line in the file. Edit groups may be nested.
@@ -6750,7 +6906,14 @@ does not match any line in the file. Edit groups may be nested.
 @c SUBSECTION
 @c .....................................................
 @node BreakIfLineMatches, CatchAbort, BeginGroupIfNoSuchLine, editfiles
-@subsection BreakIfLineMatches  @var{quoted-regex}
+@subsection BreakIfLineMatches 
+
+@smallexample
+
+BreakIfLineMatches  @var{quoted-regex}
+
+@end smallexample
+
 Terminates further editing of the current
 file if the current line matches the quoted
 regular expression.
@@ -6774,7 +6937,14 @@ You can catch the exceptions thrown by the following commands:
 @c SUBSECTION
 @c .....................................................
 @node CommentLinesMatching, CommentLinesStarting, CatchAbort, editfiles
-@subsection CommentLinesMatching  @var{quoted-regex}
+@subsection CommentLinesMatching
+
+@smallexample
+
+CommentLinesMatching  @var{quoted-regex}
+
+@end smallexample
+
 Use the current value of the comment delimiters
 set using @code{SetCommentStart} and @code{SetCommentEnd} to comment
 out lines matching the given regular expression in quotes.
@@ -6783,7 +6953,14 @@ out lines matching the given regular expression in quotes.
 @c SUBSECTION
 @c .....................................................
 @node CommentLinesStarting, CommentNLines, CommentLinesMatching, editfiles
-@subsection CommentLinesStarting  @var{quoted-string} 
+@subsection CommentLinesStarting
+
+@smallexample
+
+CommentLinesStarting  @var{quoted-string} 
+
+@end smallexample
+
 Use the current value of the comment delimiters
 set using @code{SetCommentStart} and @code{SetCommentEnd} to comment
 out lines starting with the quoted literal string.
@@ -6792,7 +6969,14 @@ out lines starting with the quoted literal string.
 @c SUBSECTION
 @c .....................................................
 @node CommentNLines, CommentToLineMatching, CommentLinesStarting, editfiles
-@subsection CommentNLines @var{quoted-string}
+@subsection CommentNLines
+
+@smallexample
+
+CommentNLines @var{quoted-string}
+
+@end smallexample
+
 Comments up to @math{N} lines from the current file, starting from the
 location of the current line pointer. If the end of the file is reached
 and less than @math{N} lines are deleted, a warning is issued, but
@@ -6805,7 +6989,14 @@ commented lines.
 @c SUBSECTION
 @c .....................................................
 @node CommentToLineMatching, DefineClasses, CommentNLines, editfiles
-@subsection CommentToLineMatching  @var{quoted-regex}
+@subsection CommentToLineMatching
+
+@smallexample
+
+CommentToLineMatching  @var{quoted-regex}
+
+@end smallexample
+
 Use the current value of the comment delimiters set using
 @code{SetCommentStart} and @code{SetCommentEnd} to comment out lines
 from the current position in a file to a line matching the given regular
@@ -6815,7 +7006,14 @@ expression in quotes.
 @c SUBSECTION
 @c .....................................................
 @node DefineClasses, DefineInGroup, CommentToLineMatching, editfiles
-@subsection DefineClasses "@var{class1}:@var{class2}:..."
+@subsection DefineClasses
+
+@smallexample
+
+DefineClasses "@var{class1}:@var{class2}:..."
+
+@end smallexample
+
 Activate the following colon, comma or dot-separated list of classes if
 and only if the file is edited. 
 
@@ -6823,7 +7021,14 @@ and only if the file is edited.
 @c SUBSECTION
 @c .....................................................
 @node DefineInGroup, DeleteLinesAfterThisMatching, DefineClasses, editfiles
-@subsection DefineInGroup "@var{class1}:@var{class2}:..."
+@subsection DefineInGroup
+
+@smallexample
+
+DefineInGroup "@var{class1}:@var{class2}:..."
+
+@end smallexample 
+
 Activate the following colon, comma or dot-separated list of classes if
 the edit group is entered. This can be combined with other classes
 to identify what particular edits took place.
@@ -6859,56 +7064,113 @@ you actually want this.
 @c SUBSECTION
 @c .....................................................
 @node DeleteLinesAfterThisMatching, DeleteLinesContaining, DefineInGroup, editfiles
-@subsection DeleteLinesAfterThisMatching @var{quoted-regex}
+@subsection DeleteLinesAfterThisMatching
+
+@smallexample
+
+ DeleteLinesAfterThisMatching @var{quoted-regex}
+
+@end smallexample
+
 Delete lines after the current position which match the quoted expression.
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node DeleteLinesContaining, DeleteLinesMatching, DeleteLinesAfterThisMatching, editfiles
-@subsection   DeleteLinesContaining @var{quoted-string}/DeleteLinesNotContaining @var{quoted-string}
+@subsection   DeleteLinesContaining/DeleteLinesNotContaining
+
+@smallexample
+
+ DeleteLinesContaining @var{quoted-string}
+ DeleteLinesNotContaining @var{quoted-string}
+
+@end smallexample
 Delete all lines (not) containing the exact string quoted.
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node DeleteLinesMatching, DeleteLinesStarting, DeleteLinesContaining, editfiles
-@subsection   DeleteLinesMatching @var{quoted-regex}/DeleteLinesNotMatching @var{quoted-regex}
+@subsection   DeleteLinesMatching/DeleteLinesNotMatching
+
+@smallexample
+
+   DeleteLinesMatching @var{quoted-regex}
+   DeleteLinesNotMatching @var{quoted-regex}
+
+@end smallexample
+
 Delete all lines (not) fully matching the tied quoted regular expression.
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node DeleteLinesStarting, DeleteLinesNotContaining, DeleteLinesMatching, editfiles
-@subsection   DeleteLinesStarting @var{quoted-string}/DeleteLinesNotStarting @var{quoted-string}
+@subsection  DeleteLinesStarting/DeleteLinesNotStarting
+
+@smallexample
+
+   DeleteLinesStarting @var{quoted-string}
+   DeleteLinesNotStarting @var{quoted-string}
+
+@end smallexample
+
 Delete all lines (not) beginning with the exact string quoted.
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node DeleteLinesNotContaining, DeleteLinesNotMatchingFileItems, DeleteLinesStarting, editfiles
-@subsection DeleteLinesNotContainingFileItems @var{filename}
+@subsection DeleteLinesNotContainingFileItems
+
+@smallexample
+
+DeleteLinesNotContainingFileItems @var{filename}
+
+@end smallexample
 Delete lines in the file that do not contain the any of the substrings in the file.
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node DeleteLinesNotMatchingFileItems, DeleteLinesNotStartingFileItems, DeleteLinesNotContaining, editfiles
-@subsection DeleteLinesNotMatchingFileItems @var{filename}
+@subsection DeleteLinesNotMatchingFileItems
+
+@smallexample
+
+ DeleteLinesNotMatchingFileItems @var{filename}
+
+@end smallexample
+
 Delete lines in the file that do not match the any of the regular expressions in the file.
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node DeleteLinesNotStartingFileItems, DeleteNLines, DeleteLinesNotMatchingFileItems, editfiles
-@subsection DeleteLinesNotStartingFileItems @var{filename}
+@subsection DeleteLinesNotStartingFileItems
+
+@smallexample
+
+DeleteLinesNotStartingFileItems @var{filename}
+
+@end smallexample
+
 Delete lines in the file that do not start with any of the substrings in the file.
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node DeleteNLines, DeleteToLineMatching, DeleteLinesNotStartingFileItems, editfiles
-@subsection DeleteNLines @var{quoted-string}
+@subsection DeleteNLines
+
+@smallexample
+
+DeleteNLines @var{quoted-string}
+
+@end smallexample
+
 Deletes up to @math{N} lines from the current file, starting from the
 location of the current line pointer. If the end of the file is reached
 and less than @math{N} lines are deleted, a warning is issued, but
@@ -6918,7 +7180,14 @@ editing continues.
 @c SUBSECTION
 @c .....................................................
 @node DeleteToLineMatching, EditMode (binary), DeleteNLines, editfiles
-@subsection DeleteToLineMatching @var{quoted-regex}
+@subsection DeleteToLineMatching
+
+@smallexample
+
+DeleteToLineMatching @var{quoted-regex}
+
+@end smallexample
+
 Delete lines from the current position, up to
 but not including a line matching the regular expression
 in the quoted string. If no line matches the
@@ -6930,26 +7199,31 @@ abandoned.
 @c SUBSECTION
 @c .....................................................
 @node EditMode (binary), EditSplit, DeleteToLineMatching, editfiles
-@subsection EditMode "Binary"
+@subsection EditMode and binary editing
+
 If set to binary, the file will be edited as if it were a non-ASCII file.
 See discussion below.
 
 @smallexample
+
    EditMode "Binary"
+
 @end smallexample
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node EditSplit, EmptyEntireFilePlease, EditMode (binary), editfiles
-@subsection EditSplit @var{char}
+@subsection EditSplit
 Editfiles treats lists as private interpretations, since iteration over
 lists could lead to unpredictable behaviour if text variables accidentally
 contain the list separator. The control option @code{Split} therefore has
 no effect on editfiles. This definition makes list expansion work in editfiles.
 
 @smallexample
+
    EditSplit ","
+
 @end smallexample
 @vindex EditSplit
 @vindex Split
@@ -7010,7 +7284,7 @@ Terminates a loop. See @code{ForEachLineIn}
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
-@node ExpandVariables, ExpireAfter (editing), EndLoop, editfiles
+@node ExpandVariables, ExpireAfter editfiles, EndLoop, editfiles
 @subsection ExpandVariables
 This causes cfengine to run through the contents of the file
 and expand any recognisable editfile strings in the file, if they
@@ -7023,21 +7297,36 @@ cfengine an m4 like capacity.
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
-@node ExpireAfter (editing), Filter, ExpandVariables, editfiles
-@subsection ExpireAfter @var{mins}
+@node ExpireAfter editfiles, Filter, ExpandVariables, editfiles
+@subsection ExpireAfter editfiles
+ 
+@smallexample
+
+ExpireAfter @var{mins}
+
+@end smallexample
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
-@node Filter, FixEndOfLine, ExpireAfter (editing), editfiles
-@subsection Filter @var{filteralias}
+@node Filter, FixEndOfLine, ExpireAfter editfiles, editfiles
+@subsection Filter
 Name a fiter for pruning file searches.
+
+
+@smallexample
+
+Filter @var{filteralias}
+
+@end smallexample
+
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node FixEndOfLine, ForEachLineIn, Filter, editfiles
 @subsection FixEndOfLine
+
 The quoted string which follows may be either @samp{dos}
 or @samp{Unix} to fix the end of line character conventions
 to match these systems. This command should be executed
@@ -7049,6 +7338,13 @@ of the system on which is was complied during edit operations.
 @c .....................................................
 @node ForEachLineIn, GotoLastLine, FixEndOfLine, editfiles
 @subsection ForEachLineIn @var{quoted-filename}
+
+@smallexample
+
+ForEachLineIn @var{quoted-filename}
+
+@end smallexample
+
 This marks the beginning of a for-loop which reads successive
 lines from a named file. The result is like using @code{SetLine}
 for each line in the file. Nested loops are not permitted.
@@ -7065,35 +7361,66 @@ the current file.
 @c SUBSECTION
 @c .....................................................
 @node HashCommentLinesContaining, HashCommentLinesMatching, GotoLastLine, editfiles
-@subsection   HashCommentLinesContaining @var{quoted-string}
+@subsection   HashCommentLinesContaining
 Add a @samp{#} to the start of any line containing the quoted string.
+
+@smallexample
+
+  HashCommentLinesContaining @var{quoted-string}
+
+@end smallexample
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node HashCommentLinesMatching, HashCommentLinesStarting, HashCommentLinesContaining, editfiles
-@subsection   HashCommentLinesMatching @var{quoted-regex}
+@subsection   HashCommentLinesMatching
 Add a @samp{#} to the start of any line exactly matching the quoted regular expression.
+
+@smallexample
+
+ HashCommentLinesMatching @var{quoted-regex}
+
+@end smallexample
+
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node HashCommentLinesStarting, IfElapsed (editing), HashCommentLinesMatching, editfiles
-@subsection   HashCommentLinesStarting @var{quoted-string}
+@subsection   HashCommentLinesStarting
 Add a @samp{#} to the start of any line starting with the quoted string.
+
+@smallexample
+
+ HashCommentLinesStarting @var{quoted-string}
+
+@end smallexample
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node IfElapsed (editing), IncrementPointer, HashCommentLinesStarting, editfiles
-@subsection IfElapsed @var{mins}
-As usual.
+@subsection IfElapsed
+
+@smallexample
+
+ExpireAfter @var{mins}
+
+@end smallexample
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node IncrementPointer, Inform (editing), IfElapsed (editing), editfiles
 @subsection IncrementPointer @var{quoted-number}
+
+@smallexample
+
+ IncrementPointer @var{quoted-number}
+
+@end smallexample
+
 Increments the value (in lines) of the file pointer
 by the number of lines specified in the quoted
 string (as a denary number). e.g. @samp{``4''}.
@@ -7109,17 +7436,32 @@ start of file or end of file.
 @c SUBSECTION
 @c .....................................................
 @node Inform (editing), InsertFile, IncrementPointer, editfiles
-@subsection Inform @var{quoted-string}
-Set to true or false, on or off to set the inform level for this file.
-Default is off. Note that, owing to the way that cfengine re-uses code,
-this feature does not work very well. Detailed messages are not
-available, only a summary of whether or not the file changed.
+@subsection Inform editfiles
+
+@smallexample
+
+ Inform @var{quoted-string}
+
+@end smallexample
+
+Set to @code{true} or @code{false}, @code{on} or @code{off} to set the
+inform level for this file.  Default is @code{off}. Note that, owing to the
+way that cfengine re-uses code, this feature does not work very
+well. Detailed messages are not available, only a summary of whether
+or not the file changed.
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node InsertFile, InsertLine, Inform (editing), editfiles
-@subsection InsertFile @var{quoted-string}
+@subsection InsertFile
+
+@smallexample
+
+ InsertFile @var{quoted-string}
+
+@end smallexample
+
 Inserts the named file after the current line position
 in the file. This should be used in conjunction
 with a begin-end construction in order to avoid
@@ -7134,7 +7476,13 @@ of the file.
 @c SUBSECTION
 @c .....................................................
 @node InsertLine, LocateLineMatching, InsertFile, editfiles
-@subsection InsertLine @var{quoted-string}
+@subsection InsertLine 
+
+@smallexample
+
+ InsertFile @var{quoted-string}
+
+@end smallexample
 
 Inserts the quoted string as a line after the current
 line pointer in the file. After the insert, the line
@@ -7148,7 +7496,13 @@ inserted on every run.
 @c SUBSECTION
 @c .....................................................
 @node LocateLineMatching, PercentCommentLinesContaining, InsertLine, editfiles
-@subsection LocateLineMatching @var{quoted-regex}
+@subsection LocateLineMatching
+
+@smallexample
+
+LocateLineMatching @var{quoted-regex}
+
+@end smallexample
 
 Moves the current line pointer to the line matching the
 quoted regular expression. If there is no match, a
@@ -7162,28 +7516,56 @@ explicit warning, even out of verbose mode.
 @c SUBSECTION
 @c .....................................................
 @node PercentCommentLinesContaining, PercentCommentLinesMatching, LocateLineMatching, editfiles
-@subsection   PercentCommentLinesContaining @var{quoted-string}
+@subsection   PercentCommentLinesContaining
+
+@smallexample
+
+  PercentCommentLinesContaining @var{quoted-string}
+
+@end smallexample
+
 Add a @samp{%} to the start of any line containing the quoted string.
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node PercentCommentLinesMatching, PercentCommentLinesStarting, PercentCommentLinesContaining, editfiles
-@subsection   PercentCommentLinesMatching @var{quoted-regex}
+@subsection   PercentCommentLinesMatching
+
+@smallexample
+
+  PercentCommentLinesMatching @var{quoted-regex}
+
+@end smallexample
+
 Add a @samp{%} to the start of any line exactly matching the quoted regular.
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node PercentCommentLinesStarting, Prepend (editing), PercentCommentLinesMatching, editfiles
-@subsection   PercentCommentLinesStarting @var{quoted-string}
+@subsection   PercentCommentLinesStarting
+
+@smallexample
+
+   PercentCommentLinesStarting @var{quoted-string}
+
+@end smallexample
+
 Add a @samp{%} to the start of any line starting with the quoted string.
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node Prepend (editing), PrependIfNoLineMatching, PercentCommentLinesStarting, editfiles
-@subsection Prepend @var{quoted-string}
+@subsection Prepend
+
+@smallexample
+
+ Prepend @var{quoted-string}
+
+@end smallexample
+
 Add a line containing the quoted string to the start of the file.
 This should be used in conjunction with the
 decision structures @code{BeginGroupIfNoLineMatching} and
@@ -7193,7 +7575,14 @@ decision structures @code{BeginGroupIfNoLineMatching} and
 @c SUBSECTION
 @c .....................................................
 @node PrependIfNoLineMatching, PrependIfNoSuchLine, Prepend (editing), editfiles
-@subsection PrependIfNoLineMatching @var{quoted-regex}
+@subsection PrependIfNoLineMatching
+
+@smallexample
+
+PrependIfNoLineMatching @var{quoted-regex}
+
+@end smallexample
+
 A new version of the older @code{PrependIfNoSuchLine}
 with uses a regular expression instead of a literal string.
 The string prepended is the one set using @code{SetLine}.
@@ -7202,7 +7591,14 @@ The string prepended is the one set using @code{SetLine}.
 @c SUBSECTION
 @c .....................................................
 @node PrependIfNoSuchLine, Recurse (editing), PrependIfNoLineMatching, editfiles
-@subsection   PrependIfNoSuchLine @var{quoted-string}
+@subsection   PrependIfNoSuchLine
+
+@smallexample
+
+  PrependIfNoSuchLine @var{quoted-string}
+
+@end smallexample
+
 Add a line containing the quoted string to the start of the file
 if the file doesn't contain the exact line already.
 
@@ -7210,14 +7606,28 @@ if the file doesn't contain the exact line already.
 @c SUBSECTION
 @c .....................................................
 @node Recurse (editing), ReplaceLineWith, PrependIfNoSuchLine, editfiles
-@subsection  Recurse @var{digit/inf}
+@subsection  Recurse
+
+@smallexample
+
+ Recurse @var{digit/inf}
+
+@end smallexample
+
 For recursive descents when editing whole file trees. 
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node ReplaceLineWith, ReplaceAll With, Recurse (editing), editfiles
-@subsection ReplaceLineWith @var{quoted-string}
+@subsection ReplaceLineWith
+
+@smallexample
+
+ ReplaceLineWith @var{quoted-string}
+
+@end smallexample
+
 Replace the line at the current position with the
 text in the quoted string. The file pointer remains
 pointing to this line after the change.
@@ -7226,7 +7636,14 @@ pointing to this line after the change.
 @c SUBSECTION
 @c .....................................................
 @node ReplaceAll With, ReplaceFirst, ReplaceLineWith, editfiles
-@subsection ReplaceAll @var{quoted-regex} With @var{quoted-string}
+@subsection ReplaceAll/With
+
+@smallexample
+
+ ReplaceAll @var{quoted-regex} With @var{quoted-string}
+
+@end smallexample
+
 Replace all instances of strings matching the regular expression in the
 first quotes with the exact string in the second set of quotes,
 throughout the current file. Note that cfengine matches on a left to
@@ -7243,7 +7660,14 @@ expression is not ambiguous, say replacing @samp{cfengine} with
 @c SUBSECTION
 @c .....................................................
 @node ReplaceFirst, ReplaceLinesMatchingField, ReplaceAll With, editfiles
-@subsection ReplaceFirst @var{quoted-regex} With @var{quoted-string} 
+@subsection ReplaceFirst/With
+
+@smallexample
+
+ ReplaceFirst @var{quoted-regex} With @var{quoted-string}
+
+@end smallexample
+
 For each line of the current file, replace the first string matching the
 regular expression in the first quotes (@var{quoted-regex}) with the
 string given in the second set of quotes (@var{quoted-string}).
@@ -7256,7 +7680,14 @@ be replaced with @samp{``YY = 04 but old YY = 70''}
 @c SUBSECTION
 @c .....................................................
 @node ReplaceLinesMatchingField, Repository, ReplaceFirst, editfiles
-@subsection ReplaceLinesMatchingField @var{quoted-number}
+@subsection ReplaceLinesMatchingField
+
+@smallexample
+
+ReplaceLinesMatchingField @var{quoted-number}
+
+@end smallexample
+
 This command replaces any lines in the current file with the current line
 set by @code{SetLine} or @code{ForEachLineIn}, if the lines
 are split into fields (e.g. the password file) separated by the
@@ -7272,7 +7703,14 @@ this simply overrides the entries with the new ones.
 @c SUBSECTION
 @c .....................................................
 @node Repository, ResetSearch, ReplaceLinesMatchingField, editfiles
-@subsection Repository @var{quoted string}
+@subsection Repository editfiles
+
+@smallexample
+
+Repository @var{quoted string}
+
+@end smallexample
+
 This allows a local override of the @code{Repository} variable, on an item
 by item basis. If set to ``off'' or ``none'' it cancels the value of a global repository.
 
@@ -7284,7 +7722,14 @@ See @ref{Backup in editfiles}.
 @c SUBSECTION
 @c .....................................................
 @node ResetSearch, RunScript, Repository, editfiles
-@subsection ResetSearch @var{quoted-string}
+@subsection ResetSearch
+
+@smallexample
+
+ ResetSearch @var{quoted-string}
+
+@end smallexample
+
 Sets the current-position pointer to the line number
 in the quoted string. @samp{EOF} indicates the end of
 the file.
@@ -7293,7 +7738,15 @@ the file.
 @c SUBSECTION
 @c .....................................................
 @node RunScript, RunScriptIfLineMatching, ResetSearch, editfiles
-@subsection RunScript @var{quoted-string}
+@subsection RunScript
+
+@smallexample
+
+RunScript @var{quoted-string}
+
+@end smallexample
+
+
 Executes the named script command. Before executing the script any edits
 are saved to disk. After the script has executed,
 cfengine reloads the file for any further editing
@@ -7312,7 +7765,14 @@ used at the users own peril!
 @c SUBSECTION
 @c .....................................................
 @node RunScriptIfLineMatching, RunScriptIfNoLineMatching, RunScript, editfiles
-@subsection RunScriptIfLineMatching @var{quoted-string}
+@subsection RunScriptIfLineMatching
+
+@smallexample
+
+RunScriptIfLineMatching @var{quoted-string}
+
+@end smallexample
+
 Executes the script named with the @code{SetScript}
 command only if the current file contains a line matching
 the quoted regular expression.
@@ -7326,7 +7786,14 @@ used at the users own peril!
 @c SUBSECTION
 @c .....................................................
 @node RunScriptIfNoLineMatching, SetCommentStart, RunScriptIfLineMatching, editfiles
-@subsection RunScriptIfNoLineMatching @var{quoted-regex}
+@subsection RunScriptIfNoLineMatching
+
+@smallexample
+
+RunScriptIfNoLineMatching @var{quoted-regex}
+
+@end smallexample
+
 Executes the script named with the @code{SetScript}
 command if the current file contains no line matching
 the quoted regular expression.
@@ -7339,8 +7806,16 @@ used at the users own peril!
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
+
 @node SetCommentStart, SetCommentEnd, RunScriptIfNoLineMatching, editfiles
-@subsection SetCommentStart @var{quoted-string}
+@subsection SetCommentStart
+
+@smallexample
+
+ SetCommentStart @var{quoted-string}
+
+@end smallexample
+
 Specify which string should be used for starting
 a comment using the commands @code{CommentLineMatching}
 and @code{CommentLineStarting}. The default is the hash
@@ -7350,7 +7825,14 @@ symbol @samp{#} followed by a single space.
 @c SUBSECTION
 @c .....................................................
 @node SetCommentEnd, SetLine, SetCommentStart, editfiles
-@subsection SetCommentEnd  @var{quoted-string}
+@subsection SetCommentEnd
+
+@smallexample
+
+ SetCommentEnd  @var{quoted-string}
+
+@end smallexample
+
 Specify which string should be used for ending
 a comment using the commands @code{CommentLineMatching}
 and @code{CommentLineStarting}. The default is the empty
@@ -7362,7 +7844,13 @@ end to @samp{*/}.
 @c SUBSECTION
 @c .....................................................
 @node SetLine, SetScript, SetCommentEnd, editfiles
-@subsection SetLine @var{quoted-string}
+@subsection SetLine
+
+@smallexample
+
+ SetLine @var{quoted-string}
+
+@end smallexample
 
 Sets a current line value which can be appended using
 @code{AppendIfNoLineMatching} using a regular expression.
@@ -7371,7 +7859,14 @@ Sets a current line value which can be appended using
 @c SUBSECTION
 @c .....................................................
 @node SetScript, SlashCommentLinesContaining, SetLine, editfiles
-@subsection SetScript @var{quoted-string}
+@subsection SetScript
+
+@smallexample
+
+ SetScript @var{quoted-string}
+
+@end smallexample
+
 Sets the name of a user-supplied script
 for editing the current file.
 
@@ -7379,28 +7874,56 @@ for editing the current file.
 @c SUBSECTION
 @c .....................................................
 @node SlashCommentLinesContaining, SlashCommentLinesMatching, SetScript, editfiles
-@subsection   SlashCommentLinesContaining @var{quoted-string}
+@subsection   SlashCommentLinesContaining
+
+@smallexample
+
+  SlashCommentLinesContaining @var{quoted-string}
+
+@end smallexample
+
 Add a @samp{//} to the start of any line containing the quoted string.
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node SlashCommentLinesMatching, SlashCommentLinesStarting, SlashCommentLinesContaining, editfiles
-@subsection   SlashCommentLinesMatching @var{quoted-regex}
+@subsection   SlashCommentLinesMatching
+
+@smallexample
+
+  SlashCommentLinesMatching @var{quoted-regex}
+
+@end smallexample
+
 Add a @samp{//} to the start of any line exactly matching the quoted regular expression.
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node SlashCommentLinesStarting, SplitOn, SlashCommentLinesMatching, editfiles
-@subsection   SlashCommentLinesStarting @var{quoted-string}
+@subsection   SlashCommentLinesStarting
+
+@smallexample
+
+  SlashCommentLinesStarting @var{quoted-string}
+
+@end smallexample
+
 Add a @samp{//} to the start of any line starting with the quoted string.
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node SplitOn, SysLog, SlashCommentLinesStarting, editfiles
-@subsection SplitOn @var{quoted-string}
+@subsection SplitOn
+
+@smallexample
+
+ SplitOn @var{quoted-string}
+
+@end smallexample
+
 This defines a single character which is to be interpreted as a
 field separator for editing files with columns. The default value
 for this is @samp{:}, as is used in the password and group files.
@@ -7415,15 +7938,28 @@ Note, be careful not to confuse this with the @code{EditSplit} character.
 @c SUBSECTION
 @c .....................................................
 @node SysLog, Umask, SplitOn, editfiles
-@subsection Syslog @var{quoted-string}
+@subsection Syslog editfiles
 Set to true or false, on or off to set inform level for this file.
 Default is off.
+
+@smallexample
+
+Syslog @var{quoted-string}
+
+@end smallexample
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node Umask, UnCommentLinesContaining, SysLog, editfiles
-@subsection Umask @var{quote mode}
+@subsection Umask
+
+@smallexample
+
+ @var{quote mode}
+
+@end smallexample
+
 Set local umask for file creation and script execution.
 @cindex umask
 
@@ -7431,7 +7967,13 @@ Set local umask for file creation and script execution.
 @c SUBSECTION
 @c .....................................................
 @node UnCommentLinesContaining, UnCommentLinesMatching, Umask, editfiles
-@subsection UnCommentLinesContaining  @var{quoted-string}
+@subsection UnCommentLinesContaining
+
+@smallexample
+ UnCommentLinesContaining  @var{quoted-string}
+
+@end smallexample
+
 Uncomment all lines in file containing the quoted string as a
 substring. The comment delimiters are assumed to be those
 set using SetCommentStart and SetCommentEnd.
@@ -7440,7 +7982,14 @@ set using SetCommentStart and SetCommentEnd.
 @c SUBSECTION
 @c .....................................................
 @node UnCommentLinesMatching, UnCommentsNLines, UnCommentLinesContaining, editfiles
-@subsection UnCommentLinesMatching  @var{quoted-regex}
+@subsection UnCommentLinesMatching
+
+@smallexample
+
+UnCommentLinesMatching  @var{quoted-regex}
+
+@end smallexample
+
 Uncomment all lines in file matching the quoted regular expression.  The
 comment delimiters are assumed to be those set using SetCommentStart and
 SetCommentEnd.
@@ -7449,7 +7998,14 @@ SetCommentEnd.
 @c SUBSECTION
 @c .....................................................
 @node UnCommentsNLines, UnCommentToLineMatching, UnCommentLinesMatching, editfiles
-@subsection UnCommentNLines @var{quoted-string}
+@subsection UnCommentNLines
+
+@smallexample
+
+ UnCommentNLines @var{quoted-string}
+
+@end smallexample
+
 Uncomments N lines starting from the current position, using
 the currently defined method for commenting. Note that the
 comment start and end symbols are removed independently, i.e.
@@ -7476,7 +8032,14 @@ and also
 @c SUBSECTION
 @c .....................................................
 @node UnCommentToLineMatching, UnsetAbort, UnCommentsNLines, editfiles
-@subsection UnCommentToLineMatching @var{quoted-string}
+@subsection UnCommentToLineMatching
+
+@smallexample
+
+UnCommentToLineMatching @var{quoted-string}
+
+@end smallexample
+
 Uncomments from the current position up to and including the first
 line matching the named regular expression.
 
@@ -7484,14 +8047,22 @@ line matching the named regular expression.
 @c SUBSECTION
 @c .....................................................
 @node UnsetAbort, UseShell, UnCommentToLineMatching, editfiles
-@subsection UnsetAbort  @var{quoted-string}
+@subsection UnsetAbort
 Switches off the feature @code{AbortAtLineMatching}.
+
+@smallexample
+
+ UnsetAbort  @var{quoted-string}
+
+@end smallexample
+
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node UseShell, WarnIfFileMissing, UnsetAbort, editfiles
-@subsection UseShell "false"
+@subsection UseShell
+
 Normally cfengine uses a shell based exec function to run
 scripts during editing. This involves the inheritance of
 environment variables and path, which carries with it an
@@ -7502,23 +8073,42 @@ causes execution to execute without an encapsulating shell.
 @c SUBSECTION
 @c .....................................................
 @node WarnIfFileMissing, WarnIfLineContaining, UseShell, editfiles
-@subsection   WarnIfFileMissing @var{quoted-string}
+@subsection   WarnIfFileMissing
 If the file to be edited does not exist, a visible alert
 is issued.
+
+@smallexample
+
+  WarnIfFileMissing @var{quoted-string}
+
+@end smallexample
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node WarnIfLineContaining, WarnIfLineMatching, WarnIfFileMissing, editfiles
-@subsection   WarnIfLineContaining @var{quoted-string}
+@subsection   WarnIfLineContaining
 Issue a warning if the quoted string is found as a
 substring of one or more lines in the file.
+
+@smallexample
+
+   WarnIfLineContaining @var{quoted-string}
+
+@end smallexample
 
 @c .....................................................
 @c SUBSECTION
 @c .....................................................
 @node WarnIfLineMatching, WarnIfLineStarting, WarnIfLineContaining, editfiles
-@subsection   WarnIfLineMatching @var{quoted-regex}
+@subsection   WarnIfLineMatching
+
+@smallexample
+
+  WarnIfLineMatching @var{quoted-regex}
+
+@end smallexample
+
 Issue a warning if the quoted regular expression
 matches one or more lines in the file.
 
@@ -7526,7 +8116,14 @@ matches one or more lines in the file.
 @c SUBSECTION
 @c .....................................................
 @node WarnIfLineStarting, WarnIfNoLineContaining, WarnIfLineMatching, editfiles
-@subsection   WarnIfLineStarting @var{quoted-string}
+@subsection   WarnIfLineStarting
+
+@smallexample
+
+  WarnIfLineStarting @var{quoted-string}
+
+@end smallexample
+
 Issue a warning if the quoted string matches the start
 of one or more lines in the file.
 
@@ -7534,7 +8131,14 @@ of one or more lines in the file.
 @c SUBSECTION
 @c .....................................................
 @node WarnIfNoLineContaining, WarnIfNoLineMatching, WarnIfLineStarting, editfiles
-@subsection   WarnIfNoLineContaining @var{quoted-string}
+@subsection   WarnIfNoLineContaining
+
+@smallexample
+
+  WarnIfNoLineContaining @var{quoted-string}
+
+@end smallexample
+
 Issue a warning if the quoted string is not contained
 in one or more lines in the file.
 
@@ -7542,7 +8146,14 @@ in one or more lines in the file.
 @c SUBSECTION
 @c .....................................................
 @node WarnIfNoLineMatching, WarnIfNoLineStarting, WarnIfNoLineContaining, editfiles
-@subsection   WarnIfNoLineMatching @var{reg-ex}
+@subsection   WarnIfNoLineMatching
+
+@smallexample
+
+  WarnIfNoLineMatching @var{reg-ex}
+
+@end smallexample
+
 Issue a warning if the quoted regular expression does not match
 one or more lines in the file.
 
@@ -7550,7 +8161,14 @@ one or more lines in the file.
 @c SUBSECTION
 @c .....................................................
 @node WarnIfNoLineStarting, WarnIfNoSuchLine, WarnIfNoLineMatching, editfiles
-@subsection WarnIfNoLineStarting @var{quoted-string}
+@subsection WarnIfNoLineStarting
+
+@smallexample
+
+WarnIfNoLineStarting @var{quoted-string}
+
+@end smallexample
+
 Issue a warning if the quoted string is not found
 at the start of one or more lines in the file.
 
@@ -7558,7 +8176,14 @@ at the start of one or more lines in the file.
 @c SUBSECTION
 @c .....................................................
 @node WarnIfNoSuchLine,  , WarnIfNoLineStarting, editfiles
-@subsection WarnIfNoSuchLine @var{quoted-regex}
+@subsection WarnIfNoSuchLine
+
+@smallexample
+
+WarnIfNoSuchLine @var{quoted-regex}
+
+@end smallexample
+
 Issue a warning if the quoted regular expression does not
 match one or more lines in the file.
 
@@ -11559,7 +12184,7 @@ The file consists of a control section and access information.
 @c -------------------------------------------------------------------------------
 
 @node cfservd control, admit grant and deny, Cfservd.conf and cfrun reference, Cfservd.conf and cfrun reference
-@section control
+@section control cfservd
 
 
 @c ...........................................
@@ -11573,7 +12198,7 @@ The file consists of a control section and access information.
 * AllowUsers::                  
 * AutoExecCommand::             
 * AutoExecInterval::            
-* BindToInterface::             
+* BindToInterface in cfservd::  
 * ChecksumDatabase in cfservd::  
 * cfrunCommand::                
 * DenyBadClocks::               
@@ -11713,7 +12338,7 @@ This variable no longer exists in cfengine version 2.
 @c SUBSECTION
 @c ...........................................
 
-@node AutoExecInterval, BindToInterface, AutoExecCommand, cfservd control
+@node AutoExecInterval, BindToInterface in cfservd, AutoExecCommand, cfservd control
 @subsection AutoExecInterval
 This variable no longer exists in version 2 of cfengine.
 @cindex @code{AutoExecInterval} variable
@@ -11724,8 +12349,9 @@ This variable no longer exists in version 2 of cfengine.
 @c SUBSECTION
 @c ...........................................
 
-@node BindToInterface, ChecksumDatabase in cfservd, AutoExecInterval, cfservd control
-@subsection BindToInterface
+@node BindToInterface in cfservd, ChecksumDatabase in cfservd, AutoExecInterval, cfservd control
+@subsection BindToInterface in cfservd
+
 If this is set to a specific IP address of an IP configured interface,
 cfservd will listen for connections only on that interface. On Multi-homed
 hosts this allows one to restrict the traffic to one interface. Note, Unix
@@ -11739,8 +12365,8 @@ configured with an IP address in order to be bound.
 @c SUBSECTION
 @c ...........................................
 
-@node ChecksumDatabase in cfservd, cfrunCommand, BindToInterface, cfservd control
-@subsection ChecksumDatabase
+@node ChecksumDatabase in cfservd, cfrunCommand, BindToInterface in cfservd, cfservd control
+@subsection ChecksumDatabase in cfservd
 
 (This variable is deprecated as of version 2.1.21. The location of the
 database will be fixed internally.)
@@ -11812,7 +12438,7 @@ denied access using this list.
 @c .....................................................
 
 @node cfservd HostnameKeys, cfservd IfElapsed, DenyConnectionsFrom, cfservd control
-@subsection HostnameKeys
+@subsection HostnameKeys in cfservd
 
 If this variable is set to true/on, it causes cfservd to
 lookup and store trusted public keys according to their
@@ -11834,7 +12460,8 @@ from a potential attacker by potentially allowing DNS spoofing.
 @c ...........................................
 
 @node cfservd IfElapsed, LogAllConnections, cfservd HostnameKeys, cfservd control
-@subsection IfElapsed
+@subsection IfElapsed in cfservd
+
 The @code{IfElapsed} anti-spamming filter is also built into
 @code{cfservd} so that a remote user cannot even get as far as
 causing cfengine to parse its input files (which could
@@ -12363,7 +12990,7 @@ from cfengine should not contain the time or date, except in the E-mail header.
 @end menu
 
 @node cf.preconf bootstrap file, cfrc resource file, Problem solving, Problem solving
-@section @file{cf.preconf} bootstrap file
+@section cf.preconf bootstrap file
 @cindex cf.preconf bootstrap file
 @vindex cf.preconf
 @cindex Bootstrap file
@@ -12459,7 +13086,7 @@ immediately after this.
 @c -------------------------------------------------------------------------------
 
 @node cfrc resource file,  , cf.preconf bootstrap file, Problem solving
-@section @file{cfrc} resource file
+@section cfrc resource file
 @cindex cfrc resource file
 @cindex Resource file
 @vindex cfrc
@@ -13906,7 +14533,7 @@ shellcommands:
 @c .....................................................
 
 @node cfservd.conf,  , cf.freebsd, Example configuration file
-@section cfservd.conf
+@section cfservd.conf tutorial
 @cindex @file{cf.site}
 
 @w{}

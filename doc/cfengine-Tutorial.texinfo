@@ -4820,7 +4820,7 @@ be in one entry.
 @c **********************************************************************
 
 @node Using cfengine as a front-end for cron, Cfengine network services, Global configurations, Top
-@chapter Using cfengine as a front end for @code{cron}
+@chapter Using cfengine as a front end for cron
 
 One of cfengine's strengths is its use of classes to identify systems
 from a single file or set of files. Many administrators think that it
@@ -4883,7 +4883,7 @@ file onto every host on your network:
 @end menu
 
 @node Structuring cfagent.conf, Splaying host times, Using cfengine as a front-end for cron, Using cfengine as a front-end for cron
-@section Structuring @file{cfagent.conf}
+@section Structuring cfagent.conf
 
 The structure of @file{cfagent.conf} needs to reflect your policy
 for running jobs on the system. You need to switch on relevant tasks
@@ -5591,7 +5591,7 @@ is avoided.
 @c -------------------------------------------------------------------------------
 
 @node Configuring cfservd,  , How it works, Cfengine network services
-@section Configuring @code{cfservd}
+@section Configuring cfservd
 
 @c ...........................................
 @c SUBSECTION
@@ -5603,7 +5603,7 @@ is avoided.
 @end menu
 
 @node Installation of cfservd, Configuration file cfservd.conf, Configuring cfservd, Configuring cfservd
-@subsection Installation of @code{cfservd}
+@subsection Installation of cfservd
 
 To install the cfservd daemon component, you will need to register a
 port for cfengine by adding the following line to the system file
@@ -5650,7 +5650,7 @@ the daemon, not send it the HUP signal as with other daemons.
 @c ...........................................
 
 @node Configuration file cfservd.conf,  , Installation of cfservd, Configuring cfservd
-@subsection Configuration file @file{cfservd.conf}
+@subsection Configuration file cfservd.conf
 
 
 The server daemon is controlled by a file called

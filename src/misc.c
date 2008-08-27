@@ -587,10 +587,18 @@ else if (stat("/etc/vmware",&statbuf) != -1)
 
 if (stat("/proc/xen/capabilities",&statbuf) != -1)
    {
-   Verbose("\nThis appears to be a xen system.\n");
+   Verbose("\nThis appears to be a xen pv system.\n");
    AddClassToHeap("xen");
    Xen_domain();
    }
+#ifdef XEN_CPUID_SUPPORT
+else if (Xen_hv_check())
+   {
+   Verbose("\nThis appears to be a xen hv system.\n");
+   AddClassToHeap("xen");
+   AddClassToHeap("xen_domu_hv");
+   }
+#endif
 
 }
 
@@ -1356,10 +1364,48 @@ if ((fp = fopen("/proc/xen/capabilities","r")) != NULL)
       }
    if (sufficient < 1)
       {
-      AddClassToHeap("xen_domu");
+      AddClassToHeap("xen_domu_pv");
       sufficient = 1;
       }
    }
 
 return sufficient < 1 ? 1 : 0;
 }
+
+#ifdef XEN_CPUID_SUPPORT
+/* borrowed from Xen source/tools/libxc/xc_cpuid_x86.c */
+void Xen_cpuid(uint32_t idx, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx)
+
+{
+     asm (
+        /* %ebx register need to be saved before usage and restored thereafter
+         * for PIC-compliant code on i386 */
+#ifdef __i386__
+        "push %%ebx; cpuid; mov %%ebx,%1; pop %%ebx"
+#else
+        "push %%rbx; cpuid; mov %%ebx,%1; pop %%rbx"
+#endif
+        : "=a" (*eax), "=r" (*ebx), "=c" (*ecx), "=d" (*edx)
+        : "0" (idx), "2" (0)
+    );
+}
+
+int Xen_hv_check(void)
+
+{
+    uint32_t eax, ebx, ecx, edx;
+    char signature[13];
+
+    Xen_cpuid(0x40000000, &eax, &ebx, &ecx, &edx);
+    *(uint32_t *)(signature + 0) = ebx;
+    *(uint32_t *)(signature + 4) = ecx;
+    *(uint32_t *)(signature + 8) = edx;
+    signature[12] = '\0';
+
+    if ( strcmp("XenVMMXenVMM", signature) || (eax < 0x40000002) )
+        return 0;
+
+    Xen_cpuid(0x40000001, &eax, &ebx, &ecx, &edx);
+    return 1;
+}
+#endif

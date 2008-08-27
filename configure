@@ -31501,6 +31501,31 @@ _ACEOF
 
 
 
+{ echo "$as_me:$LINENO: checking Checking for Xen cpuid-based HVM detection" >&5
+echo $ECHO_N "checking Checking for Xen cpuid-based HVM detection... $ECHO_C" >&6; }
+if test x"$GCC" = "xyes"; then
+	case $host_cpu in
+		i[3456]86*|x86_64*)
+
+cat >>confdefs.h <<\_ACEOF
+#define XEN_CPUID_SUPPORT 1
+_ACEOF
+
+
+			{ echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+			;;
+		*)
+			{ echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+			;;
+	esac
+else
+	{ echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
 
 
 # Check whether --with-docs was given.
