@@ -365,7 +365,10 @@ switch(pkgmgr)
          CfLog(cferror,"RPMRemoveCommand NOT set, using default!\n","");
          strncpy(rawdelcmd, "/bin/rpm -e %s", CF_BUFSIZE - 1);
          }
-      strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"RPMRemoveCommand"), CF_BUFSIZE - 1);
+      else
+         {
+         strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"RPMRemoveCommand"), CF_BUFSIZE - 1);
+         }
       break;
 
    case pkgmgr_sun:
@@ -385,9 +388,11 @@ switch(pkgmgr)
       if (!GetMacroValue(CONTEXTID,"DPKGRemoveCommand"))
          {
          CfLog(cferror,"DPKGRemoveCommand NOT Set.  Package Removal Not Possible!\n","");
-         return 0;
          }
-      strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"DPKGRemoveCommand"), CF_BUFSIZE - 1);
+      else
+         {
+         strncpy(rawdelcmd, GetMacroValue(CONTEXTID,"DPKGRemoveCommand"), CF_BUFSIZE - 1);
+         }
       break;
 
    case pkgmgr_freebsd:
