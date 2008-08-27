@@ -738,6 +738,8 @@ else
 
    if (!md)
       {
+      /* Don't leak file descriptors. */
+      fclose(file);
       return 0;
       }
    

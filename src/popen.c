@@ -174,6 +174,8 @@ else
           
           if ((pp = fdopen(pd[0],type)) == NULL)
              {
+             /* Don't leave zombies. */
+             cfpwait(pid);
              return NULL;
              }
           break;
@@ -184,6 +186,8 @@ else
           
           if ((pp = fdopen(pd[1],type)) == NULL)
              {
+             /* Don't leave zombies. */
+             cfpwait(pid);
              return NULL;
              }
       }
@@ -192,6 +196,8 @@ else
       {
       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
       CfLog(cferror,OUTPUT,"");
+      /* Don't leave zombies. */
+      cfpwait(pid);
       return NULL;
       }
    else
@@ -340,6 +346,8 @@ else
           
           if ((pp = fdopen(pd[0],type)) == NULL)
              {
+             /* Don't leave zombies. */
+             cfpwait(pid);
              return NULL;
              }
           break;
@@ -350,6 +358,8 @@ else
           
           if ((pp = fdopen(pd[1],type)) == NULL)
              {
+             /* Don't leave zombies. */
+             cfpwait(pid);
              return NULL;
              }
       }
@@ -358,6 +368,8 @@ else
       {
       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
       CfLog(cferror,OUTPUT,"");
+      /* Don't leave zombies. */
+      cfpwait(pid);
       return NULL;
       }
    else
@@ -456,6 +468,8 @@ else
           
           if ((pp = fdopen(pd[0],type)) == NULL)
              {
+             /* Don't leave zombies. */
+             cfpwait(pid);
              return NULL;
              }
           break;
@@ -466,6 +480,8 @@ else
           
           if ((pp = fdopen(pd[1],type)) == NULL)
              {
+             /* Don't leave zombies. */
+             cfpwait(pid);
              return NULL;
              }
       }
@@ -474,6 +490,8 @@ else
       {
       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
       CfLog(cferror,OUTPUT,"");
+      /* Don't leave zombies. */
+      cfpwait(pid);
       return NULL;
       }
    else
@@ -596,6 +614,8 @@ else
           
           if ((pp = fdopen(pd[0],type)) == NULL)
              {
+             /* Don't leave zombies. */
+             cfpwait(pid);
              return NULL;
              }
           break;
@@ -606,6 +626,8 @@ else
           
           if ((pp = fdopen(pd[1],type)) == NULL)
              {
+             /* Don't leave zombies. */
+             cfpwait(pid);
              return NULL;
              }
       }
@@ -614,6 +636,8 @@ else
       {
       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
       CfLog(cferror,OUTPUT,"");
+      /* Don't leave zombies. */
+      cfpwait(pid);
       return NULL;
       }
    else
@@ -631,43 +655,11 @@ return NULL;
 /* Close commands                                                             */
 /******************************************************************************/
 
-int cfpclose(FILE *pp)
+int cfpwait(pid_t pid)
 
-{ int fd, status, wait_result;
-  pid_t pid;
+{ int status, wait_result;
 
-Debug("cfpclose(pp)\n");
-
-if (CHILD == NULL)  /* popen hasn't been called */
-   {
-   return -1;
-   }
-
-ALARM_PID = -1;
-fd = fileno(pp);
-
-if (fd >= MAXFD)
-   {
-   snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child higher than "
-      "MAXFD, check for defunct children", fd);
-   CfLog(cferror,OUTPUT,"");
-   fclose(pp);
-   return -1;
-   }
-
-if ((pid = CHILD[fd]) == 0)
-   {
-   return -1;
-   }
-
-CHILD[fd] = 0;
-
-if (fclose(pp) == EOF)
-   {
-   return -1;
-   }
-
-Debug("cfpopen - Waiting for process %d\n",pid); 
+Debug("cfpwait - Waiting for process %d\n",pid); 
 
 #ifdef HAVE_WAITPID
 
@@ -705,6 +697,50 @@ if (! WIFEXITED(status))
  
 return (WEXITSTATUS(status));
 #endif
+}
+
+/*******************************************************************/
+
+int cfpclose(FILE *pp)
+
+{ int fd;
+  pid_t pid;
+
+Debug("cfpclose(pp)\n");
+
+if (CHILD == NULL)  /* popen hasn't been called */
+   {
+   return -1;
+   }
+
+ALARM_PID = -1;
+fd = fileno(pp);
+
+if (fd >= MAXFD)
+   {
+   snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child higher than "
+      "MAXFD, check for defunct children", fd);
+   CfLog(cferror,OUTPUT,"");
+   /* We can't wait for the specific pid as it isn't stored in CHILD. */
+   cfpwait(-1);
+   return -1;
+   }
+else
+   {
+   if ((pid = CHILD[fd]) == 0)
+      {
+      return -1;
+      }
+
+   CHILD[fd] = 0;
+   }
+
+if (fclose(pp) == EOF)
+   {
+   return -1;
+   }
+
+return cfpwait(pid);
 }
 
 /*******************************************************************/

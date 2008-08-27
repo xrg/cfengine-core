@@ -749,7 +749,7 @@ fclose(fp);
  
 int ParseHostname(char *hostname,char *new_hostname)
 
-{ int port=0;
+{ int port=5308;
 
 sscanf(hostname,"%[^:]:%d", new_hostname, &port);
 

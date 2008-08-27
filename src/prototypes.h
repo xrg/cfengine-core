@@ -919,6 +919,7 @@ FILE *cfpopensetuid (char *command, char *type, uid_t uid, gid_t gid, char *chdi
 FILE *cfpopen (char *command, char *type);
 FILE *cfpopen_sh (char *command, char *type);
 FILE *cfpopen_shsetuid (char *command, char *type, uid_t uid, gid_t gid, char *chdirv, char *chrootv);
+int cfpwait (pid_t pid);
 int cfpclose (FILE *pp);
 int cfpclose_def (FILE *pp, char *defines, char *elsedef);
 int CfSetUid(uid_t uid,gid_t gid);

@@ -356,7 +356,7 @@ while (ep != NULL)
           break;
           
       case AppendIfNoSuchLine:
-          if (! IsItemIn(filestart,expdata))
+          if (!IsItemIn(filestart,expdata))
              {
              AppendItem(&filestart,expdata,NULL);
              }
