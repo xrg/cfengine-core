@@ -137,7 +137,7 @@ if (pp->matches >= 0)
       case '=': if (matches != (int)pp->matches)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"%d processes matched %s (should be %d)\n",matches,pp->expr,pp->matches);
-         CfLog(cferror,OUTPUT,"");
+         CfLog(cfinform,OUTPUT,"");
          if (pp->action == 'm')
             {
             dosignals = true;
@@ -148,7 +148,7 @@ if (pp->matches >= 0)
       case '>': if (matches < (int)pp->matches)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"%d processes matched %s (should be >=%d)\n",matches,pp->expr,pp->matches);
-         CfLog(cferror,OUTPUT,"");
+         CfLog(cfinform,OUTPUT,"");
          if (pp->action == 'm')
             {
             dosignals = true;
@@ -159,7 +159,7 @@ if (pp->matches >= 0)
       case '<': if (matches > (int)pp->matches)
          {
          snprintf(OUTPUT,CF_BUFSIZE*2,"%d processes matched %s (should be <=%d)\n",matches,pp->expr,pp->matches);
-         CfLog(cferror,OUTPUT,"");
+         CfLog(cfinform,OUTPUT,"");
          if (pp->action == 'm')
             {
             dosignals = true;
