@@ -998,7 +998,7 @@ if ((sp=getenv(CF_INPUTSVAR)) != NULL)
    }
 else
    {
-   if (!IsAbsoluteFileName(VINPUTFILE)) /* Don't prepend to absolute names */
+   if ((*VINPUTFILE != '.') && !IsAbsoluteFileName(VINPUTFILE)) /* Don't prepend to absolute names */
       {
       strncpy(filename,CFWORKDIR,CF_BUFSIZE-1);
       AddSlash(filename);
