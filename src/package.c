@@ -1199,7 +1199,13 @@ return 0;
 
 int DPKGPackageList (char *package, char *version, enum cmpsense cmp, struct Item **pkglist)
 {
-   return 0; /* not implemented yet */
+ /* Rather than re-checking packages, assume the package name is
+  * installed since the DPKGPackageCheck was positive.  This is
+  * possible since Cfengine+dpkg doesn't support granular version
+  * install/removes */
+
+AppendItem(pkglist,package,"");
+return 1;
 }
 
 /*********************************************************************/
