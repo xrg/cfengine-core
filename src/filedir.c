@@ -562,6 +562,7 @@ if (fixmode)
           break;
           
       case touch:
+      case create:
           if (! DONTDO)
              {
              if (chmod (file,newperm & 07777) == -1)
