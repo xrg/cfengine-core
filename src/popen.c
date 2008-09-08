@@ -67,7 +67,7 @@ if ((*type != 'r' && *type != 'w') || (type[1] != '\0'))
 #if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
 if (pthread_mutex_lock(&MUTEX_COUNT) != 0)
    {
-   CfLog(cferror,"pthread_mutex_unlock failed","pthread_mutex_unlock");
+   CfLog(cferror,"pthread_mutex_lock failed","pthread_mutex_unlock");
    return NULL;
    }
 #endif
@@ -76,7 +76,9 @@ if (CHILD == NULL)   /* first time */
    {
    if ((CHILD = calloc(MAXFD,sizeof(pid_t))) == NULL)
       {
+#if defined HAVE_PTHREAD_H && (defined HAVE_LIBPTHREAD || defined BUILDTIN_GCC_THREAD)
       pthread_mutex_unlock(&MUTEX_COUNT);
+#endif
       return NULL;
       }
    }
@@ -196,15 +198,13 @@ else
       {
       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
       CfLog(cferror,OUTPUT,"");
-      /* Don't leave zombies. */
-      cfpwait(pid);
-      return NULL;
       }
    else
       {
       CHILD[fileno(pp)] = pid;
-      return pp;
       }
+   
+   return pp;
    }
 
 return NULL; /* Cannot reach here */
@@ -368,9 +368,6 @@ else
       {
       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
       CfLog(cferror,OUTPUT,"");
-      /* Don't leave zombies. */
-      cfpwait(pid);
-      return NULL;
       }
    else
       {
@@ -490,14 +487,12 @@ else
       {
       snprintf(OUTPUT,CF_BUFSIZE,"File descriptor %d of child %d higher than MAXFD, check for defunct children", fileno(pp), pid);
       CfLog(cferror,OUTPUT,"");
-      /* Don't leave zombies. */
-      cfpwait(pid);
-      return NULL;
       }
    else
       {
       CHILD[fileno(pp)] = pid;
       }
+
    return pp;
    }
 
@@ -722,8 +717,7 @@ if (fd >= MAXFD)
       "MAXFD, check for defunct children", fd);
    CfLog(cferror,OUTPUT,"");
    /* We can't wait for the specific pid as it isn't stored in CHILD. */
-   cfpwait(-1);
-   return -1;
+   pid = -1;
    }
 else
    {
