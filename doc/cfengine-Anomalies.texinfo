@@ -235,6 +235,7 @@ for yourself.
 * Cryptographic checksums::     
 * Hashes or Digests::           
 * Computing hashes::            
+* file_hash_event_history::     
 * Tamperproof data::            
 @end menu
 
@@ -277,7 +278,7 @@ interface to the new algorithm.
 
 
 
-@node Computing hashes, Tamperproof data, Hashes or Digests, Change Detection
+@node Computing hashes, file_hash_event_history, Hashes or Digests, Change Detection
 @subsection Computing hashes
 
 Cfengine has adopted part of the Tripwire model, but with a few
@@ -362,8 +363,27 @@ control:
 @end smallexample
 
 
+@node file_hash_event_history, Tamperproof data, Computing hashes, Change Detection
+@subsection file_hash_event_history
 
-@node Tamperproof data,  , Computing hashes, Change Detection
+
+The file @file{file_hash_event_history} contains a separate text log of file changes.
+
+@smallexample
+Sun Sep  7 09:42:49 2008,/usr/local/sbin/cfMonitord
+Sun Sep  7 09:42:49 2008,/usr/local/sbin/cfexecd
+Sun Sep  7 09:42:49 2008,/usr/local/sbin/cfkey_1220624104_Fri_Sep__5_16_15_15_2008_.cfsaved
+Sun Sep  7 09:42:49 2008,/usr/local/lib/libgd.so.2.0.0
+Sun Sep  7 09:42:49 2008,/usr/local/lib/libpromises.la
+Sun Sep  7 09:42:49 2008,/usr/local/lib/libcfengine.a
+Sun Sep  7 09:42:49 2008,/usr/local/lib/libgd.la
+Sun Sep  7 09:42:49 2008,/usr/local/lib/libgd.a
+Sun Sep  7 09:42:49 2008,/usr/local/lib/libcfengine.la
+Sun Sep  7 09:42:49 2008,/usr/local/lib/libpromises.a
+@end smallexample
+
+
+@node Tamperproof data,  , file_hash_event_history, Change Detection
 @subsection Tamperproof data
 
 Message digests are supposed to be unbreakable, tamperproof

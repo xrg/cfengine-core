@@ -138,8 +138,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#dir">(dir)</a>
    <p><a href="#Contents"><h1>COMPLETE TABLE OF CONTENTS</h1></a>
 
    <p><p>
-This manual is for version 2.2.8-pwin of cfengine and
-was last updated on the  30 July 2008. 
+This manual is for version 2.2.9b1 of cfengine and
+was last updated on the  30 August 2008. 
 </p>
 
    <p><h2>Summary of contents</h2>
@@ -1160,7 +1160,7 @@ information from <em>uname</em>. <em>A constant</em>.
 <br><dt><code>cfinputs_version</code><dd>The version string of the current configuration, used for version control and auditing. 
 <a name="index-Auditing-36"></a><a name="index-Version-control-37"></a><a name="index-cfinputs_005fversion-38"></a>
 <br><dt><code>ChecksumDatabase</code><dd>If set to the name of a file, cfagent will use this to store checksums of important
-files, and give `tripwire functionality', See <a href="#ChecksumDatabase">ChecksumDatabase</a>. This option was deprecated in 2.1.22.
+files, and give `tripwire functionality', See <a href="#ChecksumDatabase-in-cfagent">ChecksumDatabase in cfagent</a>. This option was deprecated in 2.1.22.
 
      <br><dt><code>ChecksumUpdates</code><dd>If set to `on', security information is automatically updated.
 
@@ -1373,7 +1373,7 @@ as separate actions, one for each case:
 
      <li>Names in the ignore action.
 
-     <li>Ïn shellcommands body.
+     <li>A shellcommands body.
 
      <li>In admit/deny path and attributes of cfserver.
 
@@ -1772,7 +1772,8 @@ override the ACLs.
 <li><a accesskey="2" href="#Solaris-ACLs">Solaris ACLs</a>
 <li><a accesskey="3" href="#DFS-ACLs">DFS ACLs</a>
 <li><a accesskey="4" href="#NT-ACLs">NT ACLs</a>
-<li><a accesskey="5" href="#ACL-Example">ACL Example</a>
+<li><a accesskey="5" href="#Windows-ACL-Example">Windows ACL Example</a>
+<li><a accesskey="6" href="#Posix-ACL-Example">Posix ACL Example</a>
 </ul>
 
 <div class="node">
@@ -1943,7 +1944,7 @@ because you must have a valid security ticket.
 <div class="node">
 <p><hr>
 <a name="NT-ACLs"></a>
-Next:&nbsp;<a rel="next" accesskey="n" href="#ACL-Example">ACL Example</a>,
+Next:&nbsp;<a rel="next" accesskey="n" href="#Windows-ACL-Example">Windows ACL Example</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="#DFS-ACLs">DFS ACLs</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#acl">acl</a>
 
@@ -2008,7 +2009,19 @@ without any changes to the configuration file. If the permissions
 <code>noaccess</code> or <code>default</code> is used, the access type will be
 irrelevant.
 
-<h3 class="section">4.7 ACL Example</h3>
+<!-- ..................................................... -->
+<!-- SUBSECTION -->
+<!-- ..................................................... -->
+<div class="node">
+<p><hr>
+<a name="Windows-ACL-Example"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#Posix-ACL-Example">Posix ACL Example</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#NT-ACLs">NT ACLs</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#acl">acl</a>
+
+</div>
+
+<h4 class="subsection">4.6.5 Windows ACL Example</h4>
 
 <p>Here is an example of a configuration file for an NT ACL:
 
@@ -2042,13 +2055,13 @@ irrelevant.
 <!-- ..................................................... -->
 <div class="node">
 <p><hr>
-<a name="ACL-Example"></a>
-Previous:&nbsp;<a rel="previous" accesskey="p" href="#NT-ACLs">NT ACLs</a>,
+<a name="Posix-ACL-Example"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#Windows-ACL-Example">Windows ACL Example</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#acl">acl</a>
 
 </div>
 
-<h4 class="subsection">4.7.1 ACL Example</h4>
+<h4 class="subsection">4.6.6 Posix ACL Example</h4>
 
 <p>Here is an example of a configuration file for one Solaris ACL and one DCE/DFS ACL:
 
@@ -2113,7 +2126,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.8 alerts</h3>
+<h3 class="section">4.7 alerts</h3>
 
 <p><a name="index-Alerts-115"></a><a name="index-alerts-116"></a>
 Alerts are normally just messages that are printed when classes become activated
@@ -2252,7 +2265,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.9 binservers</h3>
+<h3 class="section">4.8 binservers</h3>
 
 <p><a name="index-Binary-servers_002c-defining-126"></a><a name="index-Defining-a-binary-server-127"></a><a name="index-binservers-128"></a>
 The <code>binservers</code> declaration need only be used if you are using
@@ -2304,7 +2317,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.10 broadcast</h3>
+<h3 class="section">4.9 broadcast</h3>
 
 <p><a name="index-Broadcast-address-130"></a><a name="index-broadcast-131"></a>
 This information is used to configure the network interface for each host.
@@ -2345,7 +2358,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.11 control</h3>
+<h3 class="section">4.10 control</h3>
 
 <p><a name="index-control-section-137"></a><a name="index-control-138"></a>
 The fundamental piece of any cfengine script or configuration file is
@@ -2429,8 +2442,8 @@ The meaning of each of these lines is described below.
 <li><a accesskey="7" href="#Auditing">Auditing</a>
 <li><a accesskey="8" href="#AutoDefine">AutoDefine</a>
 <li><a accesskey="9" href="#BinaryPaddingChar">BinaryPaddingChar</a>
-<li><a href="#BindToInterface_0028cfagent_0029">BindToInterface(cfagent)</a>
-<li><a href="#ChecksumDatabase">ChecksumDatabase</a>
+<li><a href="#BindToInterface-in-cfagent">BindToInterface in cfagent</a>
+<li><a href="#ChecksumDatabase-in-cfagent">ChecksumDatabase in cfagent</a>
 <li><a href="#ChecksumPurge">ChecksumPurge</a>
 <li><a href="#ChecksumUpdates">ChecksumUpdates</a>
 <li><a href="#CompressCommand">CompressCommand</a>
@@ -2456,8 +2469,8 @@ The meaning of each of these lines is described below.
 <li><a href="#FreeBSDRemoveCommand">FreeBSDRemoveCommand</a>
 <li><a href="#FullEncryption">FullEncryption</a>
 <li><a href="#homepattern">homepattern</a>
-<li><a href="#HostnameKeys">HostnameKeys</a>
-<li><a href="#IfElapsed">IfElapsed</a>
+<li><a href="#HostnameKeys-in-cfagent">HostnameKeys in cfagent</a>
+<li><a href="#IfElapsed-in-cfagent">IfElapsed in cfagent</a>
 <li><a href="#IgnoreFriendRegex">IgnoreFriendRegex</a>
 <li><a href="#IgnoreInterfaceRegex">IgnoreInterfaceRegex</a>
 <li><a href="#Inform">Inform</a>
@@ -2517,7 +2530,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.1 AbortClasses</h4>
+<h4 class="subsection">4.10.1 AbortClasses</h4>
 
 <p>The <code>AbortClasses</code> list is a list of class identifiers that will
 result in the abortion of the current cfagent instanitation with an error message
@@ -2553,7 +2566,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.2 access</h4>
+<h4 class="subsection">4.10.2 access</h4>
 
 <p><a name="index-Access-control-155"></a><a name="index-Restricting-access-156"></a>
 The <code>access</code> list is a list of users who are to be allowed to
@@ -2582,7 +2595,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.3 actionsequence</h4>
+<h4 class="subsection">4.10.3 actionsequence</h4>
 
 <p><a name="index-action-sequence-157"></a><a name="index-actionsequence-158"></a>
 The action sequence determines the order in which collective actions are
@@ -2652,7 +2665,7 @@ is the same as the mailserver (the host which has the physical spool
 directory disk) nothing is done. Otherwise the filesystem table is
 edited so as to include the mail directory.
 
-     <br><dt><code>module</code><dd><a name="index-Modules_002c-user-defined-180"></a>Normally cfengine's ability to detect the systems condition is limited
+     <br><dt><code>module</code><dd><a name="index-Modules_002c-user-defined-180"></a>Normally cfengine's ability to detect the system's condition is limited
 to what it is able to determine while excuting predefined
 actions. Classes may be switched on as a result of actions cfengine
 takes to correct a problem. To increase the flexibility of cfengine, a
@@ -2770,7 +2783,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.4 AddClasses</h4>
+<h4 class="subsection">4.10.4 AddClasses</h4>
 
 <p><a name="index-Defining-classes-183"></a><a name="index-Adding-defined-classes-184"></a><a name="index-Classes_002c-adding-and-defining-185"></a><a name="index-AddClasses-186"></a>
 <pre class="example">        AddClasses  = ( <var>list of identifiers</var> )
@@ -2830,7 +2843,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.5 AddInstallable</h4>
+<h4 class="subsection">4.10.5 AddInstallable</h4>
 
 <p><a name="index-Declaring-classes-192"></a><a name="index-Defining-before-use-193"></a><a name="index-AddInstallable-194"></a>
 <pre class="example">        AddInstallable  = ( <var>list of identifiers</var> )
@@ -2882,7 +2895,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.6 AllowRedefinitionOf</h4>
+<h4 class="subsection">4.10.6 AllowRedefinitionOf</h4>
 
 <p>Normally cfagent warns about redefinitions of variables during parsing. 
 This is presumed to be a mistake. To avoid this behaviour, add the name
@@ -2913,7 +2926,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.7 Auditing</h4>
+<h4 class="subsection">4.10.7 Auditing</h4>
 
 <p><a name="index-Audit-log-196"></a><a name="index-Auditing-197"></a>
 If this variable is set to true then cfengine conducts extensive auditing
@@ -2943,7 +2956,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.8 AutoDefine</h4>
+<h4 class="subsection">4.10.8 AutoDefine</h4>
 
 <!-- /@w --><pre class="smallexample">     
      control:
@@ -2966,13 +2979,13 @@ is copied at any time.
 <div class="node">
 <p><hr>
 <a name="BinaryPaddingChar"></a>
-Next:&nbsp;<a rel="next" accesskey="n" href="#BindToInterface_0028cfagent_0029">BindToInterface(cfagent)</a>,
+Next:&nbsp;<a rel="next" accesskey="n" href="#BindToInterface-in-cfagent">BindToInterface in cfagent</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="#AutoDefine">AutoDefine</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.9 BinaryPaddingChar</h4>
+<h4 class="subsection">4.10.9 BinaryPaddingChar</h4>
 
 <!-- /@w --><pre class="smallexample">     BinaryPaddingChar = ( \0 )
 </pre>
@@ -2986,15 +2999,14 @@ or text messages within program code.
 <!-- ........................................... -->
 <div class="node">
 <p><hr>
-<a name="BindToInterface(cfagent)"></a>
-<a name="BindToInterface_0028cfagent_0029"></a>
-Next:&nbsp;<a rel="next" accesskey="n" href="#ChecksumDatabase">ChecksumDatabase</a>,
+<a name="BindToInterface-in-cfagent"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#ChecksumDatabase-in-cfagent">ChecksumDatabase in cfagent</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="#BinaryPaddingChar">BinaryPaddingChar</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.10 BindToInterface</h4>
+<h4 class="subsection">4.10.10 BindToInterface in cfagent</h4>
 
 <p>If this is set to a specific IP address of an IP configured interface,
 cfagent will use that address for outgoing connections.  On Multi-homed
@@ -3009,14 +3021,14 @@ be configured with an IP address in order to be bound.
 <!-- ..................................................... -->
 <div class="node">
 <p><hr>
-<a name="ChecksumDatabase"></a>
+<a name="ChecksumDatabase-in-cfagent"></a>
 Next:&nbsp;<a rel="next" accesskey="n" href="#ChecksumPurge">ChecksumPurge</a>,
-Previous:&nbsp;<a rel="previous" accesskey="p" href="#BindToInterface_0028cfagent_0029">BindToInterface(cfagent)</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#BindToInterface-in-cfagent">BindToInterface in cfagent</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.11 ChecksumDatabase</h4>
+<h4 class="subsection">4.10.11 ChecksumDatabase in cfagent</h4>
 
 <!-- /@w --><pre class="smallexample">     ChecksumDatabase = ( /var/cfengine/cfdb )
      
@@ -3034,12 +3046,12 @@ for security purposes, See <a href="#files">files</a>, <code>checksum=</code>.
 <p><hr>
 <a name="ChecksumPurge"></a>
 Next:&nbsp;<a rel="next" accesskey="n" href="#ChecksumUpdates">ChecksumUpdates</a>,
-Previous:&nbsp;<a rel="previous" accesskey="p" href="#ChecksumDatabase">ChecksumDatabase</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#ChecksumDatabase-in-cfagent">ChecksumDatabase in cfagent</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.12 ChecksumPurge</h4>
+<h4 class="subsection">4.10.12 ChecksumPurge</h4>
 
 <!-- /@w --><pre class="smallexample">     ChecksumPurge = ( on )
      
@@ -3081,7 +3093,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.13 ChecksumUpdates</h4>
+<h4 class="subsection">4.10.13 ChecksumUpdates</h4>
 
 <!-- /@w --><pre class="smallexample">     ChecksumUpdates = ( on )
      
@@ -3109,7 +3121,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.14 CompressCommand</h4>
+<h4 class="subsection">4.10.14 CompressCommand</h4>
 
 <p>Specified the name of a program that is used in the files <code>action=compress</code>
 attribute.
@@ -3131,7 +3143,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.15 ChildLibPath</h4>
+<h4 class="subsection">4.10.15 ChildLibPath</h4>
 
 <p>Sets a value for LD_LIBRARY_PATH in child processes:
 <pre class="example">     
@@ -3158,7 +3170,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.16 CopyLinks</h4>
+<h4 class="subsection">4.10.16 CopyLinks</h4>
 
 <p>This list is used to define a global list of names or patterns
 which are to be copied rather than linked symbolically. For example
@@ -3191,7 +3203,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.17 DefaultCopyType</h4>
+<h4 class="subsection">4.10.17 DefaultCopyType</h4>
 
 <p>This parameter determines the default form of copying for all copy operations
 parsed after this variable. The legal values are
@@ -3214,7 +3226,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.18 DefaultPkgMgr</h4>
+<h4 class="subsection">4.10.18 DefaultPkgMgr</h4>
 
 <p>Sets the default value of the <code>pkgmgr</code> attribute for
 <code>packages</code> items.
@@ -3238,7 +3250,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.19 DeleteNonUserFiles</h4>
+<h4 class="subsection">4.10.19 DeleteNonUserFiles</h4>
 
 <p>If this parameter is set to true, cfengine will delete files
 which do not have a name belonging to a known user id.
@@ -3262,7 +3274,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.20 DeleteNonOwnerFiles</h4>
+<h4 class="subsection">4.10.20 DeleteNonOwnerFiles</h4>
 
 <p>If this parameter is set to true, cfengine will delete files on mailservers
 whose names do not correspond to a known user name, but might be owned by a
@@ -3287,7 +3299,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.21 DeleteNonUserMail</h4>
+<h4 class="subsection">4.10.21 DeleteNonUserMail</h4>
 
 <p>If this parameter is set to true, cfengine will delete mail files on mailservers
 which do not have a name belonging to a known user id. This does not
@@ -3305,7 +3317,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.22 DeleteNonOwnerMail</h4>
+<h4 class="subsection">4.10.22 DeleteNonOwnerMail</h4>
 
 <p>If this parameter is set to true, cfengine will delete files on mailservers
 whose names do not correspond to a known user name, but might be owned by a
@@ -3323,7 +3335,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.23 domain</h4>
+<h4 class="subsection">4.10.23 domain</h4>
 
 <p><a name="index-domain-215"></a><a name="index-domain-216"></a>
 <pre class="example">       domain = ( <var>domain name</var> )
@@ -3351,7 +3363,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.24 DPKGInstallCommand</h4>
+<h4 class="subsection">4.10.24 DPKGInstallCommand</h4>
 
 <p>Sets the command used to install packages that need to be installed
 under the DPKG package manager.
@@ -3375,7 +3387,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.25 DryRun</h4>
+<h4 class="subsection">4.10.25 DryRun</h4>
 
 <p><a name="index-DryRun-217"></a><a name="index-DryRun-218"></a>
 <!-- /@w -->
@@ -3406,7 +3418,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.26 editbinaryfilesize</h4>
+<h4 class="subsection">4.10.26 editbinaryfilesize</h4>
 
 <p><a name="index-Restricting-the-size-of-binary-files-to-be-edited-219"></a><a name="index-editbinaryfilesize-220"></a>
 <pre class="example">        EditBinaryFileSize  = ( <var>size</var> )
@@ -3430,7 +3442,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.27 editfilesize</h4>
+<h4 class="subsection">4.10.27 editfilesize</h4>
 
 <p><a name="index-Restricting-the-size-of-files-to-be-edited-221"></a><a name="index-editfilesize-222"></a>
 <pre class="example">        EditfileSize  = ( <var>size</var> )
@@ -3460,7 +3472,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.28 EmptyResolvConf</h4>
+<h4 class="subsection">4.10.28 EmptyResolvConf</h4>
 
 <p><a name="index-Emptying-old-nameservers-from-_0040file_007b_002fetc_002fresolv_002econf_007d-223"></a><a name="index-EmptyResolvConf-224"></a>
 <pre class="example">        EmptyResolvConf  = ( true )
@@ -3481,7 +3493,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.29 Exclamation</h4>
+<h4 class="subsection">4.10.29 Exclamation</h4>
 
 <p>This variable defaults to &ldquo;on&rdquo;. If set to &ldquo;off&rdquo;, no exclamation marks
 (Br. pling, Am: shriek) are printed during security alerts, e.g. for
@@ -3503,7 +3515,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.30 ExcludeCopy</h4>
+<h4 class="subsection">4.10.30 ExcludeCopy</h4>
 
 <p>This list is used to define a global list of names or patterns
 which are to be excluded from copy operations. For example
@@ -3535,7 +3547,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.31 ExcludeLink</h4>
+<h4 class="subsection">4.10.31 ExcludeLink</h4>
 
 <p>This list is used to define a global list of names or patterns
 which are to be excluded from linking operations. For example
@@ -3567,7 +3579,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.32 ExpireAfter</h4>
+<h4 class="subsection">4.10.32 ExpireAfter</h4>
 
 <p>If you change the value of this parameter, it should be one of the
 first things you do in your configuration script.
@@ -3612,7 +3624,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.33 FreeBSDInstallCommand</h4>
+<h4 class="subsection">4.10.33 FreeBSDInstallCommand</h4>
 
 <p>Sets the path to `pkg_add' which is used to install packages that need
 to be installed under FreeBSD.
@@ -3637,7 +3649,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.34 FreeBSDRemoveCommand</h4>
+<h4 class="subsection">4.10.34 FreeBSDRemoveCommand</h4>
 
 <p>Sets the path to `pkg_delete' which is used to remove packages that need
 to be uninstalled under FreeBSD.
@@ -3662,7 +3674,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.35 FullEncryption</h4>
+<h4 class="subsection">4.10.35 FullEncryption</h4>
 
 <p>From version 2.1.22. This is false for protocol compatability with older
 servers.
@@ -3686,13 +3698,13 @@ security environments it provides full privacy of data transmission.
 <div class="node">
 <p><hr>
 <a name="homepattern"></a>
-Next:&nbsp;<a rel="next" accesskey="n" href="#HostnameKeys">HostnameKeys</a>,
+Next:&nbsp;<a rel="next" accesskey="n" href="#HostnameKeys-in-cfagent">HostnameKeys in cfagent</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="#FullEncryption">FullEncryption</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.36 HomePattern</h4>
+<h4 class="subsection">4.10.36 HomePattern</h4>
 
 <p><a name="index-Home-path-228"></a><a name="index-Path-to-home-directories-229"></a><a name="index-HomePattern-230"></a>
 <pre class="example">        HomePattern  = ( <var>list of patterns</var> )
@@ -3737,14 +3749,14 @@ to achieve the same this as follows:
 <!-- ..................................................... -->
 <div class="node">
 <p><hr>
-<a name="HostnameKeys"></a>
-Next:&nbsp;<a rel="next" accesskey="n" href="#IfElapsed">IfElapsed</a>,
+<a name="HostnameKeys-in-cfagent"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#IfElapsed-in-cfagent">IfElapsed in cfagent</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="#homepattern">homepattern</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.37 HostnameKeys</h4>
+<h4 class="subsection">4.10.37 HostnameKeys in cfagent</h4>
 
 <p>If this variable is set to true/on, it causes cfagent to
 lookup and store trusted public keys according to their
@@ -3768,14 +3780,14 @@ which must be set for consistency.
 <!-- ..................................................... -->
 <div class="node">
 <p><hr>
-<a name="IfElapsed"></a>
+<a name="IfElapsed-in-cfagent"></a>
 Next:&nbsp;<a rel="next" accesskey="n" href="#IgnoreFriendRegex">IgnoreFriendRegex</a>,
-Previous:&nbsp;<a rel="previous" accesskey="p" href="#HostnameKeys">HostnameKeys</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#HostnameKeys-in-cfagent">HostnameKeys in cfagent</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.38 IfElapsed</h4>
+<h4 class="subsection">4.10.38 IfElapsed in cfagent</h4>
 
 <p>If you change the value of this parameter, it should be one of the
 first things you do in your configuration script.
@@ -3813,12 +3825,12 @@ as options of the form <code>ifelapsed=15</code>.
 <p><hr>
 <a name="IgnoreFriendRegex"></a>
 Next:&nbsp;<a rel="next" accesskey="n" href="#IgnoreInterfaceRegex">IgnoreInterfaceRegex</a>,
-Previous:&nbsp;<a rel="previous" accesskey="p" href="#IfElapsed">IfElapsed</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#IfElapsed-in-cfagent">IfElapsed in cfagent</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.39 FriendIgnoreRegex</h4>
+<h4 class="subsection">4.10.39 FriendIgnoreRegex</h4>
 
 <p>Use this regular expression to suppress FriendStatus warnings
 for matching hosts. e.g.
@@ -3838,7 +3850,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.40 IgnoreInterfaceRegex</h4>
+<h4 class="subsection">4.10.40 IgnoreInterfaceRegex</h4>
 
 <p>Use this regular expression to delete class information
 about interfaces that you do not want to see on a host. 
@@ -3862,7 +3874,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.41 Inform</h4>
+<h4 class="subsection">4.10.41 Inform</h4>
 
 <!-- /@w --><pre class="smallexample">     
        Inform = ( <var>on/</var><b>off</b> )
@@ -3893,7 +3905,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.42 InterfaceName</h4>
+<h4 class="subsection">4.10.42 InterfaceName</h4>
 
 <p><a name="index-InterfaceName-236"></a><a name="index-InterfaceName-237"></a><a name="index-Interface-name_002c-redefining-by-class-238"></a>
 If you have an operating system which is installed on some
@@ -3930,7 +3942,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.43 FileExtensions</h4>
+<h4 class="subsection">4.10.43 FileExtensions</h4>
 
 <p>This list may be used to define a number of extensions
 which are regarded as being plain files by the system. 
@@ -3956,7 +3968,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.44 LastSeen</h4>
+<h4 class="subsection">4.10.44 LastSeen</h4>
 
 <p>This option is true by default. If set to off or false it prevents cfengine
 and/or cfservd from learning about last times hosts were observed
@@ -3984,7 +3996,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.45 LastSeenExpireAfter</h4>
+<h4 class="subsection">4.10.45 LastSeenExpireAfter</h4>
 
 <p>This value (in days) sets the time after which unseen friend hosts
 are purged from the `last seen' database, as viewed by the <code>FriendStatus</code>
@@ -4008,7 +4020,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.46 LinkCopies</h4>
+<h4 class="subsection">4.10.46 LinkCopies</h4>
 
 <p>This list is used to define a global list of names or patterns
 which are to be linked symbolically rather than copied. For example
@@ -4040,7 +4052,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.47 LogDirectory</h4>
+<h4 class="subsection">4.10.47 LogDirectory</h4>
 
 <p>This is now deprecated.
 
@@ -4064,7 +4076,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.48 LogTidyHomeFiles</h4>
+<h4 class="subsection">4.10.48 LogTidyHomeFiles</h4>
 
 <!-- /@w --><pre class="smallexample">     
        LogTidyHomeFiles = ( off )
@@ -4087,7 +4099,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.49 moduledirectory</h4>
+<h4 class="subsection">4.10.49 moduledirectory</h4>
 
 <p><a name="index-Module-directory-248"></a><a name="index-Directory-for-cfengine-modules-249"></a><a name="index-moduledirectory-250"></a>
 
@@ -4112,7 +4124,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.50 mountpattern</h4>
+<h4 class="subsection">4.10.50 mountpattern</h4>
 
 <p><a name="index-Mount-paths-251"></a><a name="index-Path-to-mounted-filesystems-252"></a><a name="index-mountpattern-253"></a>
 <pre class="example">        mountpattern  = ( <var>mount-point</var> )
@@ -4152,7 +4164,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.51 netmask</h4>
+<h4 class="subsection">4.10.51 netmask</h4>
 
 <p><a name="index-netmask-254"></a><a name="index-netmask-255"></a>
 <pre class="example">        netmask = ( <var>aaa.bbb.ccc.ddd</var> )
@@ -4233,7 +4245,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.52 NonAlphaNumFiles</h4>
+<h4 class="subsection">4.10.52 NonAlphaNumFiles</h4>
 
 <p>If enabled, this option causes cfengine to detect and
 disable files which have purely non-alphanumeric
@@ -4262,7 +4274,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.53 nfstype</h4>
+<h4 class="subsection">4.10.53 nfstype</h4>
 
 <p><a name="index-nfs-261"></a><a name="index-nfstype-262"></a><a name="index-nfstype-263"></a>
 <pre class="example">        nfstype = ( <var>nfs-type</var> )
@@ -4297,7 +4309,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.54 PortageInstallCommand</h4>
+<h4 class="subsection">4.10.54 PortageInstallCommand</h4>
 
 <p>Sets the path to `emerge' which is used to install packages that need
 to be installed under Gentoo Portage.
@@ -4330,7 +4342,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.55 RepChar</h4>
+<h4 class="subsection">4.10.55 RepChar</h4>
 
 <pre class="example">        RepChar = ( <var>character</var> )
 </pre>
@@ -4355,7 +4367,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.56 Repository</h4>
+<h4 class="subsection">4.10.56 Repository</h4>
 
 <pre class="example">        Repository  = ( <var>directory</var> )
 </pre>
@@ -4377,7 +4389,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.57 RPMcommand</h4>
+<h4 class="subsection">4.10.57 RPMcommand</h4>
 
 <p>The default value of the Red Hat Package manager command <samp><span class="file">/bin/rpm</span></samp> can be altered
 for non-standard systems with this variable.
@@ -4397,7 +4409,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.58 RPMInstallCommand</h4>
+<h4 class="subsection">4.10.58 RPMInstallCommand</h4>
 
 <p>Sets the command used to install packages that need to be installed
 under the RPM package manager.
@@ -4441,7 +4453,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.59 Schedule</h4>
+<h4 class="subsection">4.10.59 Schedule</h4>
 
 <p><a name="index-scheduling-270"></a><a name="index-scheduling-271"></a>
 
@@ -4477,7 +4489,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.60 SecureInput</h4>
+<h4 class="subsection">4.10.60 SecureInput</h4>
 
 <p><a name="index-Secure-input-272"></a><a name="index-SecureInput-273"></a>
 
@@ -4499,7 +4511,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.61 SensibleCount</h4>
+<h4 class="subsection">4.10.61 SensibleCount</h4>
 
 <p><a name="index-Sensible-limits-on-files-in-a-directory-274"></a><a name="index-SensibleCount-275"></a>
 <pre class="example">        SensibleCount  = ( <var>count</var> )
@@ -4523,7 +4535,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.62 SensibleSize</h4>
+<h4 class="subsection">4.10.62 SensibleSize</h4>
 
 <p><a name="index-Sensible-file-sizes-276"></a><a name="index-SensibleSize-277"></a>
 <pre class="example">        SensibleSize  = ( <var>size</var> )
@@ -4548,7 +4560,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.63 ShowActions</h4>
+<h4 class="subsection">4.10.63 ShowActions</h4>
 
 <p><a name="index-ShowActions-278"></a>
 <pre class="example">        ShowActions  = ( <var>on</var> )
@@ -4570,7 +4582,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.64 SingleCopy</h4>
+<h4 class="subsection">4.10.64 SingleCopy</h4>
 
 <pre class="smallexample">     
      	singlecopy = ( path_and_filename_wildcard )
@@ -4640,7 +4652,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.65 site/faculty</h4>
+<h4 class="subsection">4.10.65 site/faculty</h4>
 
 <p><a name="index-site-279"></a><a name="index-site-280"></a>
 <pre class="example">       site    = ( <var>sitename</var> )
@@ -4671,7 +4683,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.66 SkipIdentify</h4>
+<h4 class="subsection">4.10.66 SkipIdentify</h4>
 
 <pre class="example">       SkipIdentify = ( true )
 </pre>
@@ -4695,7 +4707,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.67 smtpserver</h4>
+<h4 class="subsection">4.10.67 smtpserver</h4>
 
 <pre class="example">       smtpserver = ( <var>mailhost</var> )
 </pre>
@@ -4714,7 +4726,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.68 SplayTime</h4>
+<h4 class="subsection">4.10.68 SplayTime</h4>
 
 <pre class="example">       SplayTime = ( <var>time-in-minutes</var> )
 </pre>
@@ -4734,7 +4746,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.69 Split</h4>
+<h4 class="subsection">4.10.69 Split</h4>
 
 <pre class="example">        Split  = ( <var>character</var> )
 </pre>
@@ -4760,7 +4772,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.70 SpoolDirectories</h4>
+<h4 class="subsection">4.10.70 SpoolDirectories</h4>
 
 <p><a name="index-SpoolDirectories-289"></a><a name="index-SpoolDirectories-290"></a>
 A list of additional spool directories for cfengine to police. In these
@@ -4783,7 +4795,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.71 SUNInstallCommand</h4>
+<h4 class="subsection">4.10.71 SUNInstallCommand</h4>
 
 <p>Sets the command used to install packages that need to be installed
 under the SUN package manager.
@@ -4807,7 +4819,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.72 suspiciousnames</h4>
+<h4 class="subsection">4.10.72 suspiciousnames</h4>
 
 <p><a name="index-suspiciousnames-291"></a><a name="index-SuspiciousNames-292"></a>
 <pre class="example">       SuspiciousNames = ( .mo lrk3 )
@@ -4829,7 +4841,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.73 sysadm</h4>
+<h4 class="subsection">4.10.73 sysadm</h4>
 
 <p><a name="index-sysadm-293"></a><a name="index-sysadm-294"></a>
 <pre class="example">        sysadm = ( <var>mail address</var> )
@@ -4855,7 +4867,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.74 Syslog</h4>
+<h4 class="subsection">4.10.74 Syslog</h4>
 
 <!-- /@w --><pre class="smallexample">     
        Syslog = ( <var>on/</var><b>off</b> )
@@ -4884,7 +4896,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.75 SyslogFacility</h4>
+<h4 class="subsection">4.10.75 SyslogFacility</h4>
 
 <!-- /@w --><pre class="smallexample">     
        SyslogFacility = ( <var>facility</var> )
@@ -4919,7 +4931,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.76 timezone</h4>
+<h4 class="subsection">4.10.76 timezone</h4>
 
 <pre class="example">        timezone = ( <var>3-character timezone</var> )
 </pre>
@@ -4955,7 +4967,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.77 TimeOut</h4>
+<h4 class="subsection">4.10.77 TimeOut</h4>
 
 <!-- /@w --><pre class="smallexample">     
        TimeOut = ( 10 )
@@ -4980,7 +4992,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.78 Verbose</h4>
+<h4 class="subsection">4.10.78 Verbose</h4>
 
 <!-- /@w --><pre class="smallexample">     
        Verbose = ( <var>on/</var><b>off</b> )
@@ -5014,7 +5026,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.79 Warnings</h4>
+<h4 class="subsection">4.10.79 Warnings</h4>
 
 <!-- /@w --><pre class="smallexample">     
        Warnings = ( <var>on/</var><b>off</b> )
@@ -5043,7 +5055,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.80 WarnNonUserFiles</h4>
+<h4 class="subsection">4.10.80 WarnNonUserFiles</h4>
 
 <p>If this parameter is set to true, cfengine will warn about files in
 spool directories which do not have a name belonging to a known user id.
@@ -5062,7 +5074,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.81 WarnNonOwnerFiles</h4>
+<h4 class="subsection">4.10.81 WarnNonOwnerFiles</h4>
 
 <p>If this parameter is set to true, cfengine will warn about files on
 mailservers whose names do not correspond to a known user name, but
@@ -5088,7 +5100,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.82 WarnNonUserMail</h4>
+<h4 class="subsection">4.10.82 WarnNonUserMail</h4>
 
 <p>If this parameter is set to true, cfengine will warn about mail files on
 mailservers which do not have a name belonging to a known user id. This
@@ -5105,7 +5117,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#control">control</a>
 
 </div>
 
-<h4 class="subsection">4.11.83 WarnNonOwnerMail</h4>
+<h4 class="subsection">4.10.83 WarnNonOwnerMail</h4>
 
 <p>If this parameter is set to true, cfengine will warn about files on
 mailservers whose names do not correspond to a known user name, but
@@ -5123,7 +5135,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.12 classes</h3>
+<h3 class="section">4.11 classes</h3>
 
 <p><a name="index-g_t_0040code_007bclasses_007d-295"></a><a name="index-Defining-classes-296"></a><a name="index-groups-297"></a>
 The <code>classes</code> keyword is an alias for <code>groups</code> as of
@@ -5141,7 +5153,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.13 copy</h3>
+<h3 class="section">4.12 copy</h3>
 
 <p><a name="index-copy-298"></a><a name="index-Copying-files-299"></a><a name="index-File-images-_0028copy_0029-300"></a>
 Cfengine copies files between locally mounted filesystems and via the
@@ -5516,7 +5528,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#copy">copy</a>
 
 </div>
 
-<h4 class="subsection">4.13.1 copy example</h4>
+<h4 class="subsection">4.12.1 copy example</h4>
 
 <p>Example:
 
@@ -5570,7 +5582,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#copy">copy</a>
 
 </div>
 
-<h4 class="subsection">4.13.2 Hard links in copying</h4>
+<h4 class="subsection">4.12.2 Hard links in copying</h4>
 
 <p>Hard links are not like symbolic links, they are not merely pointers to
 other files, but alternative names for the same file. The name of every
@@ -5611,7 +5623,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#copy">copy</a>
 
 </div>
 
-<h4 class="subsection">4.13.3 Too many open files</h4>
+<h4 class="subsection">4.12.3 Too many open files</h4>
 
 <p><a name="index-Too-many-open-files-error-324"></a><a name="index-Too-many-open-files-error-325"></a>In long recursive copies, where you descend into many levels of diretories,
 you can quickly run out of file descriptors. The number of file descriptors
@@ -5639,7 +5651,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.14 defaultroute</h3>
+<h3 class="section">4.13 defaultroute</h3>
 
 <p>Dynamical routing is not configurable in cfengine, but for machines with
 static routing tables it is useful to check that a default route is
@@ -5692,7 +5704,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.15 disks</h3>
+<h3 class="section">4.14 disks</h3>
 
 <p>This is a synonyn for <code>required</code>, See <a href="#required">required</a>. 
 <a name="index-disks-actions-327"></a>This action tests for the existence of a file or filesystem.  It should
@@ -5794,7 +5806,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.16 directories</h3>
+<h3 class="section">4.15 directories</h3>
 
 <p><a name="index-Directories_002c-making-338"></a><a name="index-Paths_002c-making-339"></a><a name="index-Making-directories-340"></a><a name="index-Making-paths-341"></a>
 Directories declarations consist of a number of directories to be
@@ -5876,7 +5888,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.17 disable</h3>
+<h3 class="section">4.16 disable</h3>
 
 <p><a name="index-Disabling-files-344"></a><a name="index-Renaming-files-345"></a><a name="index-disable-346"></a>
 Disabling a file means renaming it so that it becomes harmless.  This
@@ -6051,7 +6063,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.18 editfiles</h3>
+<h3 class="section">4.17 editfiles</h3>
 
 <p>Performs ascii (line-based) editing on text-files or limited binary
 editing of files.  If editing a file which has hard links to it, be
@@ -6267,7 +6279,7 @@ before committing them to your global site configuration.
 <li><a href="#EndGroup">EndGroup</a>
 <li><a href="#EndLoop">EndLoop</a>
 <li><a href="#ExpandVariables">ExpandVariables</a>
-<li><a href="#ExpireAfter-_0028editing_0029">ExpireAfter (editing)</a>
+<li><a href="#ExpireAfter-editfiles">ExpireAfter editfiles</a>
 <li><a href="#Filter">Filter</a>
 <li><a href="#FixEndOfLine">FixEndOfLine</a>
 <li><a href="#ForEachLineIn">ForEachLineIn</a>
@@ -6332,9 +6344,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.1 AbortAtLineMatching <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.1 AbortAtLineMatching</h4>
 
-<p>This command sets the value of a regular expression. In all editing
+<pre class="smallexample">     
+      AbortAtLineMatching <var>quoted-regex</var>
+     
+</pre>
+   <p>This command sets the value of a regular expression. In all editing
 operations (except <code>FixEndOfLine</code> and <code>GotoLastLine</code>) which involve multiple
 replacements and searches, this expression marks a boundary
 beyond which cfengine will cease to look any further. In other
@@ -6358,9 +6374,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.2 Append <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.2 Append</h4>
 
-<p>Add a line containing the quoted string to the end of the file. 
+<pre class="smallexample">     
+      Append <var>quoted-regex</var>
+     
+</pre>
+   <p>Add a line containing the quoted string to the end of the file. 
 This should be used in conjunction with the
 decision structures <code>BeginGroupIfNoLineMatching</code> and
 <code>BreakIfLineMatches</code>.
@@ -6377,9 +6397,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.3 AppendIfNoLineMatching  <var>quoted-regex</var>/ &ldquo;ThisLine&rdquo;</h4>
+<h4 class="subsection">4.17.3 AppendIfNoLineMatching</h4>
 
-<p>A new version of the older <code>AppendIfNoSuchLine</code>
+<pre class="smallexample">     
+       AppendIfNoLineMatching  <var>quoted-regex</var>/ ``ThisLine''
+     
+</pre>
+   <p>A new version of the older <code>AppendIfNoSuchLine</code>
 which uses a regular expression instead of a literal
 string. The line which gets appended must be set
 previously using <code>SetLine</code>. If <code>``ThisLine''</code> is
@@ -6402,6 +6426,7 @@ on a convergent line-by-line basis:
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
 <!-- ..................................................... -->
+
 <div class="node">
 <p><hr>
 <a name="AppendIfNoSuchLine"></a>
@@ -6411,9 +6436,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.4 AppendIfNoSuchLine <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.4 AppendIfNoSuchLine</h4>
 
-<p>Add a line containing the quoted string to the end of the file
+<pre class="smallexample">     
+       AppendIfNoSuchLine <var>quoted-string</var>
+     
+</pre>
+   <p>Add a line containing the quoted string to the end of the file
 if the file doesn't contain the exact line already.
 
 <!-- ..................................................... -->
@@ -6428,15 +6457,20 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.5 AppendIfNoSuchLinesFromFile <var>filename</var></h4>
+<h4 class="subsection">4.17.5 AppendIfNoSuchLinesFromFile</h4>
 
-<p>For each line in the named file, call AppendIfNoSuchLine.  This adds
+<pre class="smallexample">     
+       AppendIfNoSuchLinesFromFile <var>filename</var>
+     
+</pre>
+   <p>For each line in the named file, call AppendIfNoSuchLine.  This adds
 lines containing the strings listed in the named file to the end of the
 current file if the file doesn't contain the exact line already. 
 <a name="index-g_t_0040code_007bAppendIfNoSuchLinesFromFile_007d-367"></a>
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
 <!-- ..................................................... -->
+
 <div class="node">
 <p><hr>
 <a name="AppendToLineIfNotContains"></a>
@@ -6446,9 +6480,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.6 AppendToLineIfNotContains <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.6 AppendToLineIfNotContains</h4>
 
-<p>This commands looks for an exact match of the quoted string
+<pre class="smallexample">     
+      AppendToLineIfNotContains <var>quoted-string</var>
+     
+</pre>
+   <p>This commands looks for an exact match of the quoted string
 in the current line. If the quoted string is not contained
 in the line, it is appended. This may be used for adding
 entries to a list.
@@ -6465,9 +6503,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.7 Audit <var>true/false</var></h4>
+<h4 class="subsection">4.17.7 Audit in editfiles</h4>
 
-<p>Local decision about whether this edit stanza will be audited. Requires
+<pre class="smallexample">     
+      Audit <var>true/false</var>
+     
+</pre>
+   <p>Local decision about whether this edit stanza will be audited. Requires
 auditing to be on globally for this to have an effect.
 
 <!-- ..................................................... -->
@@ -6482,7 +6524,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.8 AutoCreate</h4>
+<h4 class="subsection">4.17.8 AutoCreate</h4>
 
 <p>If this command is listed anywhere in the file action list, cfengine
 will create the named file if it doesn't exist. Normally cfengine issues
@@ -6504,9 +6546,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.9 AutomountDirectResources <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.9 AutomountDirectResources</h4>
 
-<p>This command is designed to assist with automounter configuration for
+<pre class="smallexample">     
+     AutomountDirectResources <var>quoted-string</var>
+     
+</pre>
+   <p>This command is designed to assist with automounter configuration for
 users wishing to use the automounter for NFS filesystems, but still use
 the cfengine mount model. 
 <a name="index-NFS-mount-model-and-automounter-370"></a><a name="index-automounter-371"></a>Applied to the current file, it is equivalent to saying: for each of the
@@ -6529,9 +6575,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.10 Backup <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.10 Backup in editfiles</h4>
 
-<p>Set to true or false, on or off to set backup policy for this file. 
+<pre class="smallexample">     
+      Backup <var>quoted-string</var>
+     
+</pre>
+   <p>Set to true or false, on or off to set backup policy for this file. 
 Default is on.  The default is to produce time-stamped backups of
 files; this may be coded explicitly by setting to &ldquo;timestamp&rdquo; or
 &ldquo;stamp&rdquo;. If set to &ldquo;false&rdquo; or &ldquo;off&rdquo;, no backup is kept of the
@@ -6556,9 +6606,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.11 BeginGroupIfDefined <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.11 BeginGroupIfDefined</h4>
 
-<p>The lines following, up to the first <code>EndGroup</code>
+<pre class="smallexample">     
+     BeginGroupIfDefined <var>quoted-string</var>
+     
+</pre>
+   <p>The lines following, up to the first <code>EndGroup</code>
 are executed if the quoted class is defined. Edit groups may be nested. 
 <a name="index-g_t_0040code_007bBeginGroupIfDefined_007d-373"></a>
 <!-- ..................................................... -->
@@ -6573,9 +6627,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.12 BeginGroupIfNotDefined <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.12 BeginGroupIfNotDefined</h4>
 
-<p>The lines following, up to the first <code>EndGroup</code>
+<pre class="smallexample">     
+     BeginGroupIfNotDefined <var>quoted-string</var>
+     
+</pre>
+   <p>The lines following, up to the first <code>EndGroup</code>
 are executed if the quoted class is not defined. Edit groups may be nested. 
 <a name="index-g_t_0040code_007bBeginGroupIfNotDefined_007d-374"></a>
 <!-- ..................................................... -->
@@ -6590,9 +6648,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.13 BeginGroupIfFileExists <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.13 BeginGroupIfFileExists</h4>
 
-<p>The lines following, up to the first <code>EndGroup</code>
+<pre class="smallexample">     
+      BeginGroupIfFileExists <var>quoted-string</var>
+     
+</pre>
+   <p>The lines following, up to the first <code>EndGroup</code>
 are executed if the quoted filename exists (can be statted). 
 Files which are not readable by the running process are
 for all intents and purposes non-existent. Edit groups may be nested. 
@@ -6609,9 +6671,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.14 BeginGroupIfFileIsNewer <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.14 BeginGroupIfFileIsNewer</h4>
 
-<p>The lines following, up to the first <code>EndGroup</code>
+<pre class="smallexample">     
+      BeginGroupIfFileIsNewer <var>quoted-string</var>
+     
+</pre>
+   <p>The lines following, up to the first <code>EndGroup</code>
 are executed if the quoted filename is newer than the file being
 edited. Edit groups may be nested. 
 <a name="index-g_t_0040code_007bBeginGroupIfFileIsNewer_007d-376"></a>
@@ -6627,9 +6693,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.15 BeginGroupIfLineContaining <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.15 BeginGroupIfLineContaining</h4>
 
-<p>The lines following, up to the first <code>EndGroup</code>
+<pre class="smallexample">     
+     BeginGroupIfLineContaining <var>quoted-string</var>
+     
+</pre>
+   <p>The lines following, up to the first <code>EndGroup</code>
 are executed if the quoted string appears in
 any line in the file. Edit groups may be nested.
 
@@ -6645,9 +6715,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.16 BeginGroupIfLineMatching <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.16 BeginGroupIfLineMatching</h4>
 
-<p>The lines following, up to the first <code>EndGroup</code>
+<pre class="smallexample">     
+     BeginGroupIfLineMatching <var>quoted-regex</var>
+     
+</pre>
+   <p>The lines following, up to the first <code>EndGroup</code>
 are executed if the quoted regular expression
 matches any line in the file. Edit groups may be nested.
 
@@ -6663,9 +6737,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.17 BeginGroupIfMatch <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.17 BeginGroupIfMatch</h4>
 
-<p>The lines following, up to the first <code>EndGroup</code>
+<pre class="smallexample">     
+      BeginGroupIfMatch <var>quoted-regex</var>
+     
+</pre>
+   <p>The lines following, up to the first <code>EndGroup</code>
 are executed if the quoted regular expression matches the current line. Edit groups may be nested.
 
 <!-- ..................................................... -->
@@ -6680,9 +6758,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.18 BeginGroupIfNoLineContaining <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.18 BeginGroupIfNoLineContaining</h4>
 
-<p>The lines following, up to the first <code>EndGroup</code>
+<pre class="smallexample">     
+     BeginGroupIfNoLineContaining <var>quoted-string</var>
+     
+</pre>
+   <p>The lines following, up to the first <code>EndGroup</code>
 are executed if the quoted string does not appear in
 any line in the file. Edit groups may be nested.
 
@@ -6698,9 +6780,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.19 BeginGroupIfNoLineMatching <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.19 BeginGroupIfNoLineMatching</h4>
 
-<p>The lines following, up to the first <code>EndGroup</code>
+<pre class="smallexample">     
+     BeginGroupIfNoLineMatching <var>quoted-regex</var>
+     
+</pre>
+   <p>The lines following, up to the first <code>EndGroup</code>
 are executed if the quoted regular expression
 does not match any line in the file. Edit groups may be nested.
 
@@ -6716,9 +6802,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.20 BeginGroupIfNoMatch <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.20 BeginGroupIfNoMatch</h4>
 
-<p>The lines following, up to the first <code>EndGroup</code>
+<pre class="smallexample">     
+     BeginGroupIfNoMatch <var>quoted-regex</var>
+     
+</pre>
+   <p>The lines following, up to the first <code>EndGroup</code>
 are executed if the quoted regular expression does
 not match the current line. Edit groups may be nested.
 
@@ -6734,9 +6824,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.21 BeginGroupIfNoSuchLine <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.21 BeginGroupIfNoSuchLine</h4>
 
-<p>The lines following, up to the first <code>EndGroup</code>
+<pre class="smallexample">     
+      BeginGroupIfNoSuchLine <var>quoted-string</var>
+     
+</pre>
+   <p>The lines following, up to the first <code>EndGroup</code>
 are executed if the quoted literal string
 does not match any line in the file. Edit groups may be nested.
 
@@ -6752,9 +6846,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.22 BreakIfLineMatches  <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.22 BreakIfLineMatches</h4>
 
-<p>Terminates further editing of the current
+<pre class="smallexample">     
+     BreakIfLineMatches  <var>quoted-regex</var>
+     
+</pre>
+   <p>Terminates further editing of the current
 file if the current line matches the quoted
 regular expression.
 
@@ -6770,7 +6868,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.23 CatchAbort</h4>
+<h4 class="subsection">4.17.23 CatchAbort</h4>
 
 <p><a name="index-CatchAbort-377"></a>Edit actions which abort on failure (such as <code>LocateLineMatching</code>)
 will jump to the first instance of this marker instead of completely
@@ -6793,9 +6891,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.24 CommentLinesMatching  <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.24 CommentLinesMatching</h4>
 
-<p>Use the current value of the comment delimiters
+<pre class="smallexample">     
+     CommentLinesMatching  <var>quoted-regex</var>
+     
+</pre>
+   <p>Use the current value of the comment delimiters
 set using <code>SetCommentStart</code> and <code>SetCommentEnd</code> to comment
 out lines matching the given regular expression in quotes.
 
@@ -6811,9 +6913,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.25 CommentLinesStarting  <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.25 CommentLinesStarting</h4>
 
-<p>Use the current value of the comment delimiters
+<pre class="smallexample">     
+     CommentLinesStarting  <var>quoted-string</var>
+     
+</pre>
+   <p>Use the current value of the comment delimiters
 set using <code>SetCommentStart</code> and <code>SetCommentEnd</code> to comment
 out lines starting with the quoted literal string.
 
@@ -6829,9 +6935,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.26 CommentNLines <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.26 CommentNLines</h4>
 
-<p>Comments up to N lines from the current file, starting from the
+<pre class="smallexample">     
+     CommentNLines <var>quoted-string</var>
+     
+</pre>
+   <p>Comments up to N lines from the current file, starting from the
 location of the current line pointer. If the end of the file is reached
 and less than N lines are deleted, a warning is issued, but
 editing continues. The current value of the comment delimiters is
@@ -6851,9 +6961,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.27 CommentToLineMatching  <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.27 CommentToLineMatching</h4>
 
-<p>Use the current value of the comment delimiters set using
+<pre class="smallexample">     
+     CommentToLineMatching  <var>quoted-regex</var>
+     
+</pre>
+   <p>Use the current value of the comment delimiters set using
 <code>SetCommentStart</code> and <code>SetCommentEnd</code> to comment out lines
 from the current position in a file to a line matching the given regular
 expression in quotes.
@@ -6870,9 +6984,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.28 DefineClasses "<var>class1</var>:<var>class2</var>:..."</h4>
+<h4 class="subsection">4.17.28 DefineClasses</h4>
 
-<p>Activate the following colon, comma or dot-separated list of classes if
+<pre class="smallexample">     
+     DefineClasses "<var>class1</var>:<var>class2</var>:..."
+     
+</pre>
+   <p>Activate the following colon, comma or dot-separated list of classes if
 and only if the file is edited.
 
 <!-- ..................................................... -->
@@ -6887,9 +7005,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.29 DefineInGroup "<var>class1</var>:<var>class2</var>:..."</h4>
+<h4 class="subsection">4.17.29 DefineInGroup</h4>
 
-<p>Activate the following colon, comma or dot-separated list of classes if
+<pre class="smallexample">     
+     DefineInGroup "<var>class1</var>:<var>class2</var>:..."
+     
+</pre>
+   <p>Activate the following colon, comma or dot-separated list of classes if
 the edit group is entered. This can be combined with other classes
 to identify what particular edits took place. 
 Use DefineInGroup if you want to define a class or list of classes
@@ -6930,9 +7052,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.30 DeleteLinesAfterThisMatching <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.30 DeleteLinesAfterThisMatching</h4>
 
-<p>Delete lines after the current position which match the quoted expression.
+<pre class="smallexample">     
+      DeleteLinesAfterThisMatching <var>quoted-regex</var>
+     
+</pre>
+   <p>Delete lines after the current position which match the quoted expression.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -6946,9 +7072,14 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.31 DeleteLinesContaining <var>quoted-string</var>/DeleteLinesNotContaining <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.31 DeleteLinesContaining/DeleteLinesNotContaining</h4>
 
-<p>Delete all lines (not) containing the exact string quoted.
+<pre class="smallexample">     
+      DeleteLinesContaining <var>quoted-string</var>
+      DeleteLinesNotContaining <var>quoted-string</var>
+     
+</pre>
+   <p>Delete all lines (not) containing the exact string quoted.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -6962,9 +7093,14 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.32 DeleteLinesMatching <var>quoted-regex</var>/DeleteLinesNotMatching <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.32 DeleteLinesMatching/DeleteLinesNotMatching</h4>
 
-<p>Delete all lines (not) fully matching the tied quoted regular expression.
+<pre class="smallexample">     
+        DeleteLinesMatching <var>quoted-regex</var>
+        DeleteLinesNotMatching <var>quoted-regex</var>
+     
+</pre>
+   <p>Delete all lines (not) fully matching the tied quoted regular expression.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -6978,9 +7114,14 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.33 DeleteLinesStarting <var>quoted-string</var>/DeleteLinesNotStarting <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.33 DeleteLinesStarting/DeleteLinesNotStarting</h4>
 
-<p>Delete all lines (not) beginning with the exact string quoted.
+<pre class="smallexample">     
+        DeleteLinesStarting <var>quoted-string</var>
+        DeleteLinesNotStarting <var>quoted-string</var>
+     
+</pre>
+   <p>Delete all lines (not) beginning with the exact string quoted.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -6994,9 +7135,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.34 DeleteLinesNotContainingFileItems <var>filename</var></h4>
+<h4 class="subsection">4.17.34 DeleteLinesNotContainingFileItems</h4>
 
-<p>Delete lines in the file that do not contain the any of the substrings in the file.
+<pre class="smallexample">     
+     DeleteLinesNotContainingFileItems <var>filename</var>
+     
+</pre>
+   <p>Delete lines in the file that do not contain the any of the substrings in the file.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -7010,9 +7155,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.35 DeleteLinesNotMatchingFileItems <var>filename</var></h4>
+<h4 class="subsection">4.17.35 DeleteLinesNotMatchingFileItems</h4>
 
-<p>Delete lines in the file that do not match the any of the regular expressions in the file.
+<pre class="smallexample">     
+      DeleteLinesNotMatchingFileItems <var>filename</var>
+     
+</pre>
+   <p>Delete lines in the file that do not match the any of the regular expressions in the file.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -7026,9 +7175,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.36 DeleteLinesNotStartingFileItems <var>filename</var></h4>
+<h4 class="subsection">4.17.36 DeleteLinesNotStartingFileItems</h4>
 
-<p>Delete lines in the file that do not start with any of the substrings in the file.
+<pre class="smallexample">     
+     DeleteLinesNotStartingFileItems <var>filename</var>
+     
+</pre>
+   <p>Delete lines in the file that do not start with any of the substrings in the file.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -7042,9 +7195,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.37 DeleteNLines <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.37 DeleteNLines</h4>
 
-<p>Deletes up to N lines from the current file, starting from the
+<pre class="smallexample">     
+     DeleteNLines <var>quoted-string</var>
+     
+</pre>
+   <p>Deletes up to N lines from the current file, starting from the
 location of the current line pointer. If the end of the file is reached
 and less than N lines are deleted, a warning is issued, but
 editing continues.
@@ -7061,9 +7218,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.38 DeleteToLineMatching <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.38 DeleteToLineMatching</h4>
 
-<p>Delete lines from the current position, up to
+<pre class="smallexample">     
+     DeleteToLineMatching <var>quoted-regex</var>
+     
+</pre>
+   <p>Delete lines from the current position, up to
 but not including a line matching the regular expression
 in the quoted string. If no line matches the
 given expression, a warning is only printed in
@@ -7083,12 +7244,14 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.39 EditMode "Binary"</h4>
+<h4 class="subsection">4.17.39 EditMode and binary editing</h4>
 
 <p>If set to binary, the file will be edited as if it were a non-ASCII file. 
 See discussion below.
 
-<pre class="smallexample">        EditMode "Binary"
+<pre class="smallexample">     
+        EditMode "Binary"
+     
 </pre>
    <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -7102,14 +7265,16 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.40 EditSplit <var>char</var></h4>
+<h4 class="subsection">4.17.40 EditSplit</h4>
 
 <p>Editfiles treats lists as private interpretations, since iteration over
 lists could lead to unpredictable behaviour if text variables accidentally
 contain the list separator. The control option <code>Split</code> therefore has
 no effect on editfiles. This definition makes list expansion work in editfiles.
 
-<pre class="smallexample">        EditSplit ","
+<pre class="smallexample">     
+        EditSplit ","
+     
 </pre>
    <p><a name="index-EditSplit-378"></a><a name="index-Split-379"></a><a name="index-Split-in-editfiles-380"></a><a name="index-Iteration-over-lists-_0028editfiles_0029-381"></a>
 Be careful not to confuse this with the <code>SplitOn</code> character.
@@ -7145,7 +7310,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.41 EmptyEntireFilePlease</h4>
+<h4 class="subsection">4.17.41 EmptyEntireFilePlease</h4>
 
 <p>Deletes all lines from the current file.
 
@@ -7161,7 +7326,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.42 ElseDefineClasses</h4>
+<h4 class="subsection">4.17.42 ElseDefineClasses</h4>
 
 <p>See <code>DefineClasses</code>
 
@@ -7177,7 +7342,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.43 EndGroup</h4>
+<h4 class="subsection">4.17.43 EndGroup</h4>
 
 <p>Terminates a begin-end conditional structure.
 
@@ -7193,7 +7358,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.44 EndLoop</h4>
+<h4 class="subsection">4.17.44 EndLoop</h4>
 
 <p>Terminates a loop. See <code>ForEachLineIn</code>
 
@@ -7203,13 +7368,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 <div class="node">
 <p><hr>
 <a name="ExpandVariables"></a>
-Next:&nbsp;<a rel="next" accesskey="n" href="#ExpireAfter-_0028editing_0029">ExpireAfter (editing)</a>,
+Next:&nbsp;<a rel="next" accesskey="n" href="#ExpireAfter-editfiles">ExpireAfter editfiles</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="#EndLoop">EndLoop</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.45 ExpandVariables</h4>
+<h4 class="subsection">4.17.45 ExpandVariables</h4>
 
 <p>This causes cfengine to run through the contents of the file
 and expand any recognisable editfile strings in the file, if they
@@ -7221,16 +7386,19 @@ cfengine an m4 like capacity.
 <!-- ..................................................... -->
 <div class="node">
 <p><hr>
-<a name="ExpireAfter-(editing)"></a>
-<a name="ExpireAfter-_0028editing_0029"></a>
+<a name="ExpireAfter-editfiles"></a>
 Next:&nbsp;<a rel="next" accesskey="n" href="#Filter">Filter</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="#ExpandVariables">ExpandVariables</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.46 ExpireAfter <var>mins</var></h4>
+<h4 class="subsection">4.17.46 ExpireAfter editfiles</h4>
 
+<pre class="smallexample">     
+     ExpireAfter <var>mins</var>
+     
+</pre>
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
 <!-- ..................................................... -->
@@ -7238,16 +7406,20 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 <p><hr>
 <a name="Filter"></a>
 Next:&nbsp;<a rel="next" accesskey="n" href="#FixEndOfLine">FixEndOfLine</a>,
-Previous:&nbsp;<a rel="previous" accesskey="p" href="#ExpireAfter-_0028editing_0029">ExpireAfter (editing)</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#ExpireAfter-editfiles">ExpireAfter editfiles</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.47 Filter <var>filteralias</var></h4>
+<h4 class="subsection">4.17.47 Filter</h4>
 
 <p>Name a fiter for pruning file searches.
 
-<!-- ..................................................... -->
+<pre class="smallexample">     
+     Filter <var>filteralias</var>
+     
+</pre>
+   <!-- ..................................................... -->
 <!-- SUBSECTION -->
 <!-- ..................................................... -->
 <div class="node">
@@ -7259,7 +7431,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.48 FixEndOfLine</h4>
+<h4 class="subsection">4.17.48 FixEndOfLine</h4>
 
 <p>The quoted string which follows may be either `<samp><span class="samp">dos</span></samp>'
 or `<samp><span class="samp">Unix</span></samp>' to fix the end of line character conventions
@@ -7279,9 +7451,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.49 ForEachLineIn <var>quoted-filename</var></h4>
+<h4 class="subsection">4.17.49 ForEachLineIn <var>quoted-filename</var></h4>
 
-<p>This marks the beginning of a for-loop which reads successive
+<pre class="smallexample">     
+     ForEachLineIn <var>quoted-filename</var>
+     
+</pre>
+   <p>This marks the beginning of a for-loop which reads successive
 lines from a named file. The result is like using <code>SetLine</code>
 for each line in the file. Nested loops are not permitted.
 
@@ -7297,7 +7473,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.50 GotoLastLine</h4>
+<h4 class="subsection">4.17.50 GotoLastLine</h4>
 
 <p>Moves the file pointer to the last line in
 the current file.
@@ -7314,11 +7490,15 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.51 HashCommentLinesContaining <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.51 HashCommentLinesContaining</h4>
 
 <p>Add a `<samp><span class="samp">#</span></samp>' to the start of any line containing the quoted string.
 
-<!-- ..................................................... -->
+<pre class="smallexample">     
+       HashCommentLinesContaining <var>quoted-string</var>
+     
+</pre>
+   <!-- ..................................................... -->
 <!-- SUBSECTION -->
 <!-- ..................................................... -->
 <div class="node">
@@ -7330,11 +7510,15 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.52 HashCommentLinesMatching <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.52 HashCommentLinesMatching</h4>
 
 <p>Add a `<samp><span class="samp">#</span></samp>' to the start of any line exactly matching the quoted regular expression.
 
-<!-- ..................................................... -->
+<pre class="smallexample">     
+      HashCommentLinesMatching <var>quoted-regex</var>
+     
+</pre>
+   <!-- ..................................................... -->
 <!-- SUBSECTION -->
 <!-- ..................................................... -->
 <div class="node">
@@ -7346,11 +7530,15 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.53 HashCommentLinesStarting <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.53 HashCommentLinesStarting</h4>
 
 <p>Add a `<samp><span class="samp">#</span></samp>' to the start of any line starting with the quoted string.
 
-<!-- ..................................................... -->
+<pre class="smallexample">     
+      HashCommentLinesStarting <var>quoted-string</var>
+     
+</pre>
+   <!-- ..................................................... -->
 <!-- SUBSECTION -->
 <!-- ..................................................... -->
 <div class="node">
@@ -7363,10 +7551,12 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.54 IfElapsed <var>mins</var></h4>
+<h4 class="subsection">4.17.54 IfElapsed</h4>
 
-<p>As usual.
-
+<pre class="smallexample">     
+     ExpireAfter <var>mins</var>
+     
+</pre>
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
 <!-- ..................................................... -->
@@ -7379,9 +7569,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.55 IncrementPointer <var>quoted-number</var></h4>
+<h4 class="subsection">4.17.55 IncrementPointer <var>quoted-number</var></h4>
 
-<p>Increments the value (in lines) of the file pointer
+<pre class="smallexample">     
+      IncrementPointer <var>quoted-number</var>
+     
+</pre>
+   <p>Increments the value (in lines) of the file pointer
 by the number of lines specified in the quoted
 string (as a denary number). e.g. `<samp><span class="samp">``4''</span></samp>'. 
 Negative values are equivalent to decrementing the
@@ -7403,12 +7597,17 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.56 Inform <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.56 Inform editfiles</h4>
 
-<p>Set to true or false, on or off to set the inform level for this file. 
-Default is off. Note that, owing to the way that cfengine re-uses code,
-this feature does not work very well. Detailed messages are not
-available, only a summary of whether or not the file changed.
+<pre class="smallexample">     
+      Inform <var>quoted-string</var>
+     
+</pre>
+   <p>Set to <code>true</code> or <code>false</code>, <code>on</code> or <code>off</code> to set the
+inform level for this file.  Default is <code>off</code>. Note that, owing to the
+way that cfengine re-uses code, this feature does not work very
+well. Detailed messages are not available, only a summary of whether
+or not the file changed.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -7422,9 +7621,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.57 InsertFile <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.57 InsertFile</h4>
 
-<p>Inserts the named file after the current line position
+<pre class="smallexample">     
+      InsertFile <var>quoted-string</var>
+     
+</pre>
+   <p>Inserts the named file after the current line position
 in the file. This should be used in conjunction
 with a begin-end construction in order to avoid
 including the file every time cfengine is run. 
@@ -7446,9 +7649,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.58 InsertLine <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.58 InsertLine</h4>
 
-<p>Inserts the quoted string as a line after the current
+<pre class="smallexample">     
+      InsertFile <var>quoted-string</var>
+     
+</pre>
+   <p>Inserts the quoted string as a line after the current
 line pointer in the file. After the insert, the line
 pointer is incremented by one so that subsequent
 inserted lines are placed after the first. 
@@ -7468,9 +7675,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.59 LocateLineMatching <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.59 LocateLineMatching</h4>
 
-<p>Moves the current line pointer to the line matching the
+<pre class="smallexample">     
+     LocateLineMatching <var>quoted-regex</var>
+     
+</pre>
+   <p>Moves the current line pointer to the line matching the
 quoted regular expression. If there is no match, a
 warning is only issued in verbose mode, but all
 editing is immediately aborted. See also
@@ -7489,9 +7700,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.60 PercentCommentLinesContaining <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.60 PercentCommentLinesContaining</h4>
 
-<p>Add a `<samp><span class="samp">%</span></samp>' to the start of any line containing the quoted string.
+<pre class="smallexample">     
+       PercentCommentLinesContaining <var>quoted-string</var>
+     
+</pre>
+   <p>Add a `<samp><span class="samp">%</span></samp>' to the start of any line containing the quoted string.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -7505,9 +7720,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.61 PercentCommentLinesMatching <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.61 PercentCommentLinesMatching</h4>
 
-<p>Add a `<samp><span class="samp">%</span></samp>' to the start of any line exactly matching the quoted regular.
+<pre class="smallexample">     
+       PercentCommentLinesMatching <var>quoted-regex</var>
+     
+</pre>
+   <p>Add a `<samp><span class="samp">%</span></samp>' to the start of any line exactly matching the quoted regular.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -7521,9 +7740,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.62 PercentCommentLinesStarting <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.62 PercentCommentLinesStarting</h4>
 
-<p>Add a `<samp><span class="samp">%</span></samp>' to the start of any line starting with the quoted string.
+<pre class="smallexample">     
+        PercentCommentLinesStarting <var>quoted-string</var>
+     
+</pre>
+   <p>Add a `<samp><span class="samp">%</span></samp>' to the start of any line starting with the quoted string.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -7538,9 +7761,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.63 Prepend <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.63 Prepend</h4>
 
-<p>Add a line containing the quoted string to the start of the file. 
+<pre class="smallexample">     
+      Prepend <var>quoted-string</var>
+     
+</pre>
+   <p>Add a line containing the quoted string to the start of the file. 
 This should be used in conjunction with the
 decision structures <code>BeginGroupIfNoLineMatching</code> and
 <code>BreakIfLineMatches</code>.
@@ -7557,9 +7784,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.64 PrependIfNoLineMatching <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.64 PrependIfNoLineMatching</h4>
 
-<p>A new version of the older <code>PrependIfNoSuchLine</code>
+<pre class="smallexample">     
+     PrependIfNoLineMatching <var>quoted-regex</var>
+     
+</pre>
+   <p>A new version of the older <code>PrependIfNoSuchLine</code>
 with uses a regular expression instead of a literal string. 
 The string prepended is the one set using <code>SetLine</code>.
 
@@ -7575,9 +7806,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.65 PrependIfNoSuchLine <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.65 PrependIfNoSuchLine</h4>
 
-<p>Add a line containing the quoted string to the start of the file
+<pre class="smallexample">     
+       PrependIfNoSuchLine <var>quoted-string</var>
+     
+</pre>
+   <p>Add a line containing the quoted string to the start of the file
 if the file doesn't contain the exact line already.
 
 <!-- ..................................................... -->
@@ -7593,9 +7828,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.66 Recurse <var>digit/inf</var></h4>
+<h4 class="subsection">4.17.66 Recurse</h4>
 
-<p>For recursive descents when editing whole file trees.
+<pre class="smallexample">     
+      Recurse <var>digit/inf</var>
+     
+</pre>
+   <p>For recursive descents when editing whole file trees.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -7609,9 +7848,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.67 ReplaceLineWith <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.67 ReplaceLineWith</h4>
 
-<p>Replace the line at the current position with the
+<pre class="smallexample">     
+      ReplaceLineWith <var>quoted-string</var>
+     
+</pre>
+   <p>Replace the line at the current position with the
 text in the quoted string. The file pointer remains
 pointing to this line after the change.
 
@@ -7627,9 +7870,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.68 ReplaceAll <var>quoted-regex</var> With <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.68 ReplaceAll/With</h4>
 
-<p>Replace all instances of strings matching the regular expression in the
+<pre class="smallexample">     
+      ReplaceAll <var>quoted-regex</var> With <var>quoted-string</var>
+     
+</pre>
+   <p>Replace all instances of strings matching the regular expression in the
 first quotes with the exact string in the second set of quotes,
 throughout the current file. Note that cfengine matches on a left to
 right basis, with the first match taking precedence, so if your regular
@@ -7653,9 +7900,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.69 ReplaceFirst <var>quoted-regex</var> With <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.69 ReplaceFirst/With</h4>
 
-<p>For each line of the current file, replace the first string matching the
+<pre class="smallexample">     
+      ReplaceFirst <var>quoted-regex</var> With <var>quoted-string</var>
+     
+</pre>
+   <p>For each line of the current file, replace the first string matching the
 regular expression in the first quotes (<var>quoted-regex</var>) with the
 string given in the second set of quotes (<var>quoted-string</var>). 
 Matching is done left to right.  For example, if you replace
@@ -7675,9 +7926,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.70 ReplaceLinesMatchingField <var>quoted-number</var></h4>
+<h4 class="subsection">4.17.70 ReplaceLinesMatchingField</h4>
 
-<p>This command replaces any lines in the current file with the current line
+<pre class="smallexample">     
+     ReplaceLinesMatchingField <var>quoted-number</var>
+     
+</pre>
+   <p>This command replaces any lines in the current file with the current line
 set by <code>SetLine</code> or <code>ForEachLineIn</code>, if the lines
 are split into fields (e.g. the password file) separated by the
 <code>SplitOn</code> character (':' by default), and the corresponding
@@ -7700,9 +7955,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.71 Repository <var>quoted string</var></h4>
+<h4 class="subsection">4.17.71 Repository editfiles</h4>
 
-<p>This allows a local override of the <code>Repository</code> variable, on an item
+<pre class="smallexample">     
+     Repository <var>quoted string</var>
+     
+</pre>
+   <p>This allows a local override of the <code>Repository</code> variable, on an item
 by item basis. If set to &ldquo;off&rdquo; or &ldquo;none&rdquo; it cancels the value of a global repository.
 
    <p>See <a href="#copybackup">copybackup</a>. 
@@ -7720,9 +7979,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.72 ResetSearch <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.72 ResetSearch</h4>
 
-<p>Sets the current-position pointer to the line number
+<pre class="smallexample">     
+      ResetSearch <var>quoted-string</var>
+     
+</pre>
+   <p>Sets the current-position pointer to the line number
 in the quoted string. `<samp><span class="samp">EOF</span></samp>' indicates the end of
 the file.
 
@@ -7738,9 +8001,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.73 RunScript <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.73 RunScript</h4>
 
-<p>Executes the named script command. Before executing the script any edits
+<pre class="smallexample">     
+     RunScript <var>quoted-string</var>
+     
+</pre>
+   <p>Executes the named script command. Before executing the script any edits
 are saved to disk. After the script has executed,
 cfengine reloads the file for any further editing
 operations. The script (which may be any executable
@@ -7766,9 +8033,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.74 RunScriptIfLineMatching <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.74 RunScriptIfLineMatching</h4>
 
-<p>Executes the script named with the <code>SetScript</code>
+<pre class="smallexample">     
+     RunScriptIfLineMatching <var>quoted-string</var>
+     
+</pre>
+   <p>Executes the script named with the <code>SetScript</code>
 command only if the current file contains a line matching
 the quoted regular expression.
 
@@ -7789,9 +8060,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.75 RunScriptIfNoLineMatching <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.75 RunScriptIfNoLineMatching</h4>
 
-<p>Executes the script named with the <code>SetScript</code>
+<pre class="smallexample">     
+     RunScriptIfNoLineMatching <var>quoted-regex</var>
+     
+</pre>
+   <p>Executes the script named with the <code>SetScript</code>
 command if the current file contains no line matching
 the quoted regular expression.
 
@@ -7812,9 +8087,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.76 SetCommentStart <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.76 SetCommentStart</h4>
 
-<p>Specify which string should be used for starting
+<pre class="smallexample">     
+      SetCommentStart <var>quoted-string</var>
+     
+</pre>
+   <p>Specify which string should be used for starting
 a comment using the commands <code>CommentLineMatching</code>
 and <code>CommentLineStarting</code>. The default is the hash
 symbol `<samp><span class="samp">#</span></samp>' followed by a single space.
@@ -7831,9 +8110,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.77 SetCommentEnd  <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.77 SetCommentEnd</h4>
 
-<p>Specify which string should be used for ending
+<pre class="smallexample">     
+      SetCommentEnd  <var>quoted-string</var>
+     
+</pre>
+   <p>Specify which string should be used for ending
 a comment using the commands <code>CommentLineMatching</code>
 and <code>CommentLineStarting</code>. The default is the empty
 string. For example, you could make C style comments
@@ -7852,9 +8135,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.78 SetLine <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.78 SetLine</h4>
 
-<p>Sets a current line value which can be appended using
+<pre class="smallexample">     
+      SetLine <var>quoted-string</var>
+     
+</pre>
+   <p>Sets a current line value which can be appended using
 <code>AppendIfNoLineMatching</code> using a regular expression.
 
 <!-- ..................................................... -->
@@ -7869,9 +8156,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.79 SetScript <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.79 SetScript</h4>
 
-<p>Sets the name of a user-supplied script
+<pre class="smallexample">     
+      SetScript <var>quoted-string</var>
+     
+</pre>
+   <p>Sets the name of a user-supplied script
 for editing the current file.
 
 <!-- ..................................................... -->
@@ -7886,9 +8177,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.80 SlashCommentLinesContaining <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.80 SlashCommentLinesContaining</h4>
 
-<p>Add a `<samp><span class="samp">//</span></samp>' to the start of any line containing the quoted string.
+<pre class="smallexample">     
+       SlashCommentLinesContaining <var>quoted-string</var>
+     
+</pre>
+   <p>Add a `<samp><span class="samp">//</span></samp>' to the start of any line containing the quoted string.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -7902,9 +8197,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.81 SlashCommentLinesMatching <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.81 SlashCommentLinesMatching</h4>
 
-<p>Add a `<samp><span class="samp">//</span></samp>' to the start of any line exactly matching the quoted regular expression.
+<pre class="smallexample">     
+       SlashCommentLinesMatching <var>quoted-regex</var>
+     
+</pre>
+   <p>Add a `<samp><span class="samp">//</span></samp>' to the start of any line exactly matching the quoted regular expression.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -7918,9 +8217,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.82 SlashCommentLinesStarting <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.82 SlashCommentLinesStarting</h4>
 
-<p>Add a `<samp><span class="samp">//</span></samp>' to the start of any line starting with the quoted string.
+<pre class="smallexample">     
+       SlashCommentLinesStarting <var>quoted-string</var>
+     
+</pre>
+   <p>Add a `<samp><span class="samp">//</span></samp>' to the start of any line starting with the quoted string.
 
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -7934,9 +8237,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.83 SplitOn <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.83 SplitOn</h4>
 
-<p>This defines a single character which is to be interpreted as a
+<pre class="smallexample">     
+      SplitOn <var>quoted-string</var>
+     
+</pre>
+   <p>This defines a single character which is to be interpreted as a
 field separator for editing files with columns. The default value
 for this is `<samp><span class="samp">:</span></samp>', as is used in the password and group files. 
 It is used in conjunction with <code>ReplaceLinesMatchingField</code>. 
@@ -7954,12 +8261,16 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.84 Syslog <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.84 Syslog editfiles</h4>
 
 <p>Set to true or false, on or off to set inform level for this file. 
 Default is off.
 
-<!-- ..................................................... -->
+<pre class="smallexample">     
+     Syslog <var>quoted-string</var>
+     
+</pre>
+   <!-- ..................................................... -->
 <!-- SUBSECTION -->
 <!-- ..................................................... -->
 <div class="node">
@@ -7971,9 +8282,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.85 Umask <var>quote mode</var></h4>
+<h4 class="subsection">4.17.85 Umask</h4>
 
-<p>Set local umask for file creation and script execution. 
+<pre class="smallexample">     
+      <var>quote mode</var>
+     
+</pre>
+   <p>Set local umask for file creation and script execution. 
 <a name="index-umask-391"></a>
 <!-- ..................................................... -->
 <!-- SUBSECTION -->
@@ -7987,9 +8302,12 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.86 UnCommentLinesContaining  <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.86 UnCommentLinesContaining</h4>
 
-<p>Uncomment all lines in file containing the quoted string as a
+<pre class="smallexample">      UnCommentLinesContaining  <var>quoted-string</var>
+     
+</pre>
+   <p>Uncomment all lines in file containing the quoted string as a
 substring. The comment delimiters are assumed to be those
 set using SetCommentStart and SetCommentEnd.
 
@@ -8005,9 +8323,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.87 UnCommentLinesMatching  <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.87 UnCommentLinesMatching</h4>
 
-<p>Uncomment all lines in file matching the quoted regular expression.  The
+<pre class="smallexample">     
+     UnCommentLinesMatching  <var>quoted-regex</var>
+     
+</pre>
+   <p>Uncomment all lines in file matching the quoted regular expression.  The
 comment delimiters are assumed to be those set using SetCommentStart and
 SetCommentEnd.
 
@@ -8023,9 +8345,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.88 UnCommentNLines <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.88 UnCommentNLines</h4>
 
-<p>Uncomments N lines starting from the current position, using
+<pre class="smallexample">     
+      UnCommentNLines <var>quoted-string</var>
+     
+</pre>
+   <p>Uncomments N lines starting from the current position, using
 the currently defined method for commenting. Note that the
 comment start and end symbols are removed independently, i.e. 
 they are not matched, so that a comment may be spread over
@@ -8055,9 +8381,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.89 UnCommentToLineMatching <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.89 UnCommentToLineMatching</h4>
 
-<p>Uncomments from the current position up to and including the first
+<pre class="smallexample">     
+     UnCommentToLineMatching <var>quoted-string</var>
+     
+</pre>
+   <p>Uncomments from the current position up to and including the first
 line matching the named regular expression.
 
 <!-- ..................................................... -->
@@ -8072,11 +8402,15 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.90 UnsetAbort  <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.90 UnsetAbort</h4>
 
 <p>Switches off the feature <code>AbortAtLineMatching</code>.
 
-<!-- ..................................................... -->
+<pre class="smallexample">     
+      UnsetAbort  <var>quoted-string</var>
+     
+</pre>
+   <!-- ..................................................... -->
 <!-- SUBSECTION -->
 <!-- ..................................................... -->
 <div class="node">
@@ -8088,7 +8422,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.91 UseShell "false"</h4>
+<h4 class="subsection">4.17.91 UseShell</h4>
 
 <p>Normally cfengine uses a shell based exec function to run
 scripts during editing. This involves the inheritance of
@@ -8108,12 +8442,16 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.92 WarnIfFileMissing <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.92 WarnIfFileMissing</h4>
 
 <p>If the file to be edited does not exist, a visible alert
 is issued.
 
-<!-- ..................................................... -->
+<pre class="smallexample">     
+       WarnIfFileMissing <var>quoted-string</var>
+     
+</pre>
+   <!-- ..................................................... -->
 <!-- SUBSECTION -->
 <!-- ..................................................... -->
 <div class="node">
@@ -8125,12 +8463,16 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.93 WarnIfLineContaining <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.93 WarnIfLineContaining</h4>
 
 <p>Issue a warning if the quoted string is found as a
 substring of one or more lines in the file.
 
-<!-- ..................................................... -->
+<pre class="smallexample">     
+        WarnIfLineContaining <var>quoted-string</var>
+     
+</pre>
+   <!-- ..................................................... -->
 <!-- SUBSECTION -->
 <!-- ..................................................... -->
 <div class="node">
@@ -8142,9 +8484,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.94 WarnIfLineMatching <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.94 WarnIfLineMatching</h4>
 
-<p>Issue a warning if the quoted regular expression
+<pre class="smallexample">     
+       WarnIfLineMatching <var>quoted-regex</var>
+     
+</pre>
+   <p>Issue a warning if the quoted regular expression
 matches one or more lines in the file.
 
 <!-- ..................................................... -->
@@ -8159,9 +8505,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.95 WarnIfLineStarting <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.95 WarnIfLineStarting</h4>
 
-<p>Issue a warning if the quoted string matches the start
+<pre class="smallexample">     
+       WarnIfLineStarting <var>quoted-string</var>
+     
+</pre>
+   <p>Issue a warning if the quoted string matches the start
 of one or more lines in the file.
 
 <!-- ..................................................... -->
@@ -8176,9 +8526,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.96 WarnIfNoLineContaining <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.96 WarnIfNoLineContaining</h4>
 
-<p>Issue a warning if the quoted string is not contained
+<pre class="smallexample">     
+       WarnIfNoLineContaining <var>quoted-string</var>
+     
+</pre>
+   <p>Issue a warning if the quoted string is not contained
 in one or more lines in the file.
 
 <!-- ..................................................... -->
@@ -8193,9 +8547,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.97 WarnIfNoLineMatching <var>reg-ex</var></h4>
+<h4 class="subsection">4.17.97 WarnIfNoLineMatching</h4>
 
-<p>Issue a warning if the quoted regular expression does not match
+<pre class="smallexample">     
+       WarnIfNoLineMatching <var>reg-ex</var>
+     
+</pre>
+   <p>Issue a warning if the quoted regular expression does not match
 one or more lines in the file.
 
 <!-- ..................................................... -->
@@ -8210,9 +8568,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.98 WarnIfNoLineStarting <var>quoted-string</var></h4>
+<h4 class="subsection">4.17.98 WarnIfNoLineStarting</h4>
 
-<p>Issue a warning if the quoted string is not found
+<pre class="smallexample">     
+     WarnIfNoLineStarting <var>quoted-string</var>
+     
+</pre>
+   <p>Issue a warning if the quoted string is not found
 at the start of one or more lines in the file.
 
 <!-- ..................................................... -->
@@ -8226,9 +8588,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#editfiles">editfiles</a>
 
 </div>
 
-<h4 class="subsection">4.18.99 WarnIfNoSuchLine <var>quoted-regex</var></h4>
+<h4 class="subsection">4.17.99 WarnIfNoSuchLine</h4>
 
-<p>Issue a warning if the quoted regular expression does not
+<pre class="smallexample">     
+     WarnIfNoSuchLine <var>quoted-regex</var>
+     
+</pre>
+   <p>Issue a warning if the quoted regular expression does not
 match one or more lines in the file.
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
@@ -8243,7 +8609,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.19 Editfiles on Binary Files</h3>
+<h3 class="section">4.18 Editfiles on Binary Files</h3>
 
 <p class="noindent">A limited number of operations can also be performed on purely binary
 files, e.g.  compiled programs, in order to search for strings or
@@ -8287,7 +8653,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.20 files</h3>
+<h3 class="section">4.19 files</h3>
 
 <p><a name="index-File-management-392"></a><a name="index-Files_002c-checking-permissions-393"></a><a name="index-Files_002c-setting-owner-394"></a><a name="index-files-395"></a>
 The <code>files</code> facility allows you to touch (create), check for the
@@ -8318,7 +8684,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#files">files</a>
 
 </div>
 
-<h4 class="subsection">4.20.1 Syntax</h4>
+<h4 class="subsection">4.19.1 Syntax</h4>
 
 <p><a name="index-Files_002c-syntax-396"></a>
 A files-statement can have several options.  We can begin by examining
@@ -8536,7 +8902,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#files">files</a>
 
 </div>
 
-<h4 class="subsection">4.20.2 Recursion</h4>
+<h4 class="subsection">4.19.2 Recursion</h4>
 
 <p><a name="index-Recursion-in-files-427"></a><a name="index-Files_002c-recursion-428"></a>
 The recursion specifier tells cfengine what to do, starting from
@@ -8562,7 +8928,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#files">files</a>
 
 </div>
 
-<h4 class="subsection">4.20.3 Directory permissions</h4>
+<h4 class="subsection">4.19.3 Directory permissions</h4>
 
 <p><a name="index-Directory-permissions-431"></a><a name="index-Permissions_002c-directories-432"></a>
 When you specify the permissions for a whole file tree, using the
@@ -8595,7 +8961,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#files">files</a>
 
 </div>
 
-<h4 class="subsection">4.20.4 Checksums and change management</h4>
+<h4 class="subsection">4.19.4 Checksums and change management</h4>
 
 <p><a name="index-Checksums-433"></a><a name="index-Hashes-434"></a>
 Integrity checks are a good way of detecting tampering
@@ -8642,7 +9008,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#files">files</a>
 
 </div>
 
-<h4 class="subsection">4.20.5 <code>home</code> directive</h4>
+<h4 class="subsection">4.19.5 <code>home</code> directive</h4>
 
 <p><a name="index-home-directive-435"></a><a name="index-Files_002c-home-wildcard-436"></a>
 If you want to check the files of all the users who have their login
@@ -8691,7 +9057,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#files">files</a>
 
 </div>
 
-<h4 class="subsection">4.20.6 Owner and group wildcards</h4>
+<h4 class="subsection">4.19.6 Owner and group wildcards</h4>
 
 <p><a name="index-Ownership-of-files-437"></a><a name="index-Files_002c-ownership-438"></a>
 If you do not want to explicitly state the owner or group of a file you
@@ -8716,7 +9082,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#files">files</a>
 
 </div>
 
-<h4 class="subsection">4.20.7 Files linkchildren</h4>
+<h4 class="subsection">4.19.7 Files linkchildren</h4>
 
 <p><a name="index-linkchildren-439"></a><a name="index-Linkchildren-440"></a>
 The <code>linkchildren</code> facility is almost identical to that already
@@ -8741,7 +9107,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#files">files</a>
 
 </div>
 
-<h4 class="subsection">4.20.8 touch</h4>
+<h4 class="subsection">4.19.8 touch</h4>
 
 <p><a name="index-touch-441"></a><a name="index-Touching-files-442"></a>
 The <code>touch</code> facility creates a new file with the
@@ -8765,7 +9131,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#files">files</a>
 
 </div>
 
-<h4 class="subsection">4.20.9 create</h4>
+<h4 class="subsection">4.19.9 create</h4>
 
 <p><a name="index-create-443"></a><a name="index-Creating-files-444"></a>
 This is like <code>touch</code> except that an existing
@@ -8786,7 +9152,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.21 filters</h3>
+<h3 class="section">4.20 filters</h3>
 
 <p><a name="index-filter-445"></a><a name="index-Selecting-files-in-searches-446"></a><a name="index-Searching_002c-advanced-447"></a>
 A filter is a way of selecting or pruning during a search over
@@ -8965,7 +9331,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#filters">filters</a>
 
 </div>
 
-<h4 class="subsection">4.21.1 Complete filter examples</h4>
+<h4 class="subsection">4.20.1 Complete filter examples</h4>
 
 <p>Here is an example filter to search for all files which are either directories or links,
 or any kind of file owned by mark, in group cfengine.
@@ -9047,7 +9413,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.22 groups/classes</h3>
+<h3 class="section">4.21 groups/classes</h3>
 
 <p><a name="index-groups-448"></a><a name="index-Defining-groups-449"></a><a name="index-Groups_002c-defining-450"></a>
 The <code>groups</code> action (equivalently referred to as <code>classes</code> as
@@ -9189,7 +9555,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.23 homeservers</h3>
+<h3 class="section">4.22 homeservers</h3>
 
 <p><a name="index-Home-servers_002c-defining-466"></a><a name="index-Defining-a-home-server-467"></a><a name="index-homeservers-468"></a>
 The <code>homeservers</code> declaration need only be used if you are using
@@ -9256,7 +9622,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.24 ignore</h3>
+<h3 class="section">4.23 ignore</h3>
 
 <p>When you specify a recursive search as part of a <code>files</code>,
 <code>tidy</code> or <code>copy</code> action, you would sometimes like to exclude
@@ -9330,7 +9696,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.25 import</h3>
+<h3 class="section">4.24 import</h3>
 
 <p><a name="index-Importing-files-473"></a><a name="index-Several-files-474"></a><a name="index-Files_002c-importing-475"></a><a name="index-Files_002c-breaking-up-into-several-476"></a><a name="index-import-477"></a>
 To break up a large configuration file into smaller files you can use
@@ -9375,7 +9741,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.26 interfaces</h3>
+<h3 class="section">4.25 interfaces</h3>
 
 <p><a name="index-Network-interfaces_002c-several-480"></a><a name="index-Dual-homed-hosts-481"></a><a name="index-interface-configuration-482"></a>
 
@@ -9417,7 +9783,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.27 links</h3>
+<h3 class="section">4.26 links</h3>
 
 <p><a name="index-Making-links-483"></a><a name="index-Links_002c-making-484"></a><a name="index-links-485"></a>
 
@@ -9479,7 +9845,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#links">links</a>
 
 </div>
 
-<h4 class="subsection">4.27.1 Single links</h4>
+<h4 class="subsection">4.26.1 Single links</h4>
 
 <p><a name="index-Single-links-486"></a><a name="index-Links_002c-single-487"></a>
 To define a single link, you create an entry of the following
@@ -9625,7 +9991,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#links">links</a>
 
 </div>
 
-<h4 class="subsection">4.27.2 Multiple Links</h4>
+<h4 class="subsection">4.26.2 Multiple Links</h4>
 
 <p><a name="index-Multiple-links-502"></a><a name="index-Links_002c-multiple-503"></a>
 With the link symbol <code>+&gt;</code>, you opt to link all of the files in a
@@ -9665,7 +10031,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#links">links</a>
 
 </div>
 
-<h4 class="subsection">4.27.3 Link Children</h4>
+<h4 class="subsection">4.26.3 Link Children</h4>
 
 <p><a name="index-Linkchildren-505"></a><a name="index-linkchildren-506"></a>
 The linkchildren directive is a closely related to the cfengine model
@@ -9747,7 +10113,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#links">links</a>
 
 </div>
 
-<h4 class="subsection">4.27.4 Relative and absolute links</h4>
+<h4 class="subsection">4.26.4 Relative and absolute links</h4>
 
 <p>When specifying symbolic linking, you can ask cfengine
 to change the link type to be either relative to the
@@ -9787,7 +10153,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#links">links</a>
 
 </div>
 
-<h4 class="subsection">4.27.5 Hard Links</h4>
+<h4 class="subsection">4.26.5 Hard Links</h4>
 
 <p><a name="index-Hardlinks-512"></a><a name="index-type_003d-513"></a>
 Cfengine will also allow you to create hard links to regular files.  A
@@ -9826,7 +10192,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.28 mailserver</h3>
+<h3 class="section">4.27 mailserver</h3>
 
 <p><a name="index-Mail-server_002c-defining-514"></a><a name="index-Defining-a-mail-server-515"></a><a name="index-mailserver-516"></a>
 The <code>mailserver</code> declaration need only be used if you are using
@@ -9865,7 +10231,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.29 methods</h3>
+<h3 class="section">4.28 methods</h3>
 
 <p><a name="index-Methods-518"></a><a name="index-Private-modules-519"></a><a name="index-methods-520"></a>
 From version 2.1.0, cfagent provides for the execution of closed
@@ -10036,7 +10402,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#methods">methods</a>
 
 </div>
 
-<h4 class="subsection">4.29.1 Localhost examples</h4>
+<h4 class="subsection">4.28.1 Localhost examples</h4>
 
 <p>The following example
 collects the tar file, unpacks it,
@@ -10265,7 +10631,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#methods">methods</a>
 
 </div>
 
-<h4 class="subsection">4.29.2 Remote host examples</h4>
+<h4 class="subsection">4.28.2 Remote host examples</h4>
 
 <p>Methods can also be scheduled for execution on remote hosts.
      <ul>
@@ -10328,7 +10694,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.30 miscmounts</h3>
+<h3 class="section">4.29 miscmounts</h3>
 
 <p><a name="index-Mounting-filesystems_002e-525"></a><a name="index-Miscellaneous-mount-operations-526"></a><a name="index-miscmounts-527"></a>
 If you do not use the cfengine model for statically mounting NFS
@@ -10389,7 +10755,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.31 mountables</h3>
+<h3 class="section">4.30 mountables</h3>
 
 <p><a name="index-Mountable-resources_002c-defining-528"></a><a name="index-Defining-a-mountable-529"></a><a name="index-mountables-530"></a>
 The <code>mountables</code> declaration need only be used if you are using
@@ -10450,7 +10816,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.32 processes</h3>
+<h3 class="section">4.31 processes</h3>
 
 <p>Using the processes facility, you can test for the existence of
 processes, signal (kill) processes and optionally restart them
@@ -10719,7 +11085,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.33 packages</h3>
+<h3 class="section">4.32 packages</h3>
 
 <p><a name="index-packages-543"></a><a name="index-Checking-for-installed-packages-544"></a>
 The packages action allows you to check for the existance of packages
@@ -11101,7 +11467,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.34 rename</h3>
+<h3 class="section">4.33 rename</h3>
 
 <p>As of version 2.1.0 rename is a synonym for disable, See <a href="#disable">disable</a>.
 
@@ -11117,7 +11483,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.35 required</h3>
+<h3 class="section">4.34 required</h3>
 
 <p>This is a synonym for disks, See <a href="#disks">disks</a>.
 
@@ -11133,7 +11499,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.36 resolve</h3>
+<h3 class="section">4.35 resolve</h3>
 
 <p><a name="index-DNS-554"></a><a name="index-Resolver-configuration-555"></a><a name="index-resolv_002econf-556"></a><a name="index-resolve-557"></a>
 The file <code>/etc/resolv.conf</code> specifies the default nameserver for
@@ -11203,7 +11569,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.37 scli</h3>
+<h3 class="section">4.36 scli</h3>
 
 <p>SCLI is an SNMP command line interpreter written by J&uuml;rgen
 Sch&ouml;nwaelder of the Jacobs University of Bremen. It is a command
@@ -11264,7 +11630,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.38 shellcommands</h3>
+<h3 class="section">4.37 shellcommands</h3>
 
 <p>Cfengine focuses on fairly simple-minded tasks in order to be as general
 as possible.  In many cases, you will therefore want to write a script to
@@ -11445,7 +11811,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.39 strategies</h3>
+<h3 class="section">4.38 strategies</h3>
 
 <p><a name="index-Gaming-stratgies-577"></a><a name="index-Strategy_002c-random-578"></a><a name="index-Randomizing-strategy-579"></a>
 Strategies (introduced in cfengine version 2.0)
@@ -11501,7 +11867,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.40 tidy</h3>
+<h3 class="section">4.39 tidy</h3>
 
 <p><a name="index-Tidying-files-580"></a><a name="index-Deleting-files-581"></a><a name="index-tidy-582"></a>
 The tidy function is used to delete (remove permanently) unwanted files
@@ -11698,7 +12064,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.41 unmount</h3>
+<h3 class="section">4.40 unmount</h3>
 
 <p><a name="index-Unmounting-filesystems-617"></a><a name="index-unmount-618"></a>
 The unmount function unmounts non-required filesystems and removes the
@@ -11893,7 +12259,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfservd_002econf-and-cfrun-reference">
 
 </div>
 
-<h3 class="section">5.1 control</h3>
+<h3 class="section">5.1 control cfservd</h3>
 
 <!-- ........................................... -->
 <!-- SUBSECTION -->
@@ -11905,7 +12271,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfservd_002econf-and-cfrun-reference">
 <li><a accesskey="4" href="#AllowUsers">AllowUsers</a>
 <li><a accesskey="5" href="#AutoExecCommand">AutoExecCommand</a>
 <li><a accesskey="6" href="#AutoExecInterval">AutoExecInterval</a>
-<li><a accesskey="7" href="#BindToInterface">BindToInterface</a>
+<li><a accesskey="7" href="#BindToInterface-in-cfservd">BindToInterface in cfservd</a>
 <li><a accesskey="8" href="#ChecksumDatabase-in-cfservd">ChecksumDatabase in cfservd</a>
 <li><a accesskey="9" href="#cfrunCommand">cfrunCommand</a>
 <li><a href="#DenyBadClocks">DenyBadClocks</a>
@@ -12069,7 +12435,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#cfservd-control">cfservd control</a>
 <div class="node">
 <p><hr>
 <a name="AutoExecInterval"></a>
-Next:&nbsp;<a rel="next" accesskey="n" href="#BindToInterface">BindToInterface</a>,
+Next:&nbsp;<a rel="next" accesskey="n" href="#BindToInterface-in-cfservd">BindToInterface in cfservd</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="#AutoExecCommand">AutoExecCommand</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#cfservd-control">cfservd control</a>
 
@@ -12085,14 +12451,14 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#cfservd-control">cfservd control</a>
 <!-- ........................................... -->
 <div class="node">
 <p><hr>
-<a name="BindToInterface"></a>
+<a name="BindToInterface-in-cfservd"></a>
 Next:&nbsp;<a rel="next" accesskey="n" href="#ChecksumDatabase-in-cfservd">ChecksumDatabase in cfservd</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="#AutoExecInterval">AutoExecInterval</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#cfservd-control">cfservd control</a>
 
 </div>
 
-<h4 class="subsection">5.1.7 BindToInterface</h4>
+<h4 class="subsection">5.1.7 BindToInterface in cfservd</h4>
 
 <p>If this is set to a specific IP address of an IP configured interface,
 cfservd will listen for connections only on that interface. On Multi-homed
@@ -12108,12 +12474,12 @@ configured with an IP address in order to be bound.
 <p><hr>
 <a name="ChecksumDatabase-in-cfservd"></a>
 Next:&nbsp;<a rel="next" accesskey="n" href="#cfrunCommand">cfrunCommand</a>,
-Previous:&nbsp;<a rel="previous" accesskey="p" href="#BindToInterface">BindToInterface</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#BindToInterface-in-cfservd">BindToInterface in cfservd</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#cfservd-control">cfservd control</a>
 
 </div>
 
-<h4 class="subsection">5.1.8 ChecksumDatabase</h4>
+<h4 class="subsection">5.1.8 ChecksumDatabase in cfservd</h4>
 
 <p>(This variable is deprecated as of version 2.1.21. The location of the
 database will be fixed internally.)
@@ -12206,7 +12572,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#cfservd-control">cfservd control</a>
 
 </div>
 
-<h4 class="subsection">5.1.12 HostnameKeys</h4>
+<h4 class="subsection">5.1.12 HostnameKeys in cfservd</h4>
 
 <p>If this variable is set to true/on, it causes cfservd to
 lookup and store trusted public keys according to their
@@ -12234,7 +12600,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#cfservd-control">cfservd control</a>
 
 </div>
 
-<h4 class="subsection">5.1.13 IfElapsed</h4>
+<h4 class="subsection">5.1.13 IfElapsed in cfservd</h4>
 
 <p>The <code>IfElapsed</code> anti-spamming filter is also built into
 <code>cfservd</code> so that a remote user cannot even get as far as
@@ -12787,7 +13153,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Problem-solving">Problem solving</a>
 
 </div>
 
-<h3 class="section">7.1 <samp><span class="file">cf.preconf</span></samp> bootstrap file</h3>
+<h3 class="section">7.1 cf.preconf bootstrap file</h3>
 
 <p><a name="index-cf_002epreconf-bootstrap-file-686"></a><a name="index-cf_002epreconf-687"></a><a name="index-Bootstrap-file-688"></a><a name="index-Deadlock-689"></a><a name="index-Hung-machine-690"></a>
 In some cases you will want to run cfengine on a system to configure it
@@ -12878,7 +13244,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Problem-solving">Problem solving</a>
 
 </div>
 
-<h3 class="section">7.2 <samp><span class="file">cfrc</span></samp> resource file</h3>
+<h3 class="section">7.2 cfrc resource file</h3>
 
 <p><a name="index-cfrc-resource-file-697"></a><a name="index-Resource-file-698"></a><a name="index-cfrc-699"></a>
 If, for some reason you are not satisfied with the defaults which
@@ -14370,7 +14736,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Example-configuration-file">Example co
 
 </div>
 
-<h3 class="section">8.10 cfservd.conf</h3>
+<h3 class="section">8.10 cfservd.conf tutorial</h3>
 
 <p><a name="index-g_t_0040file_007bcf_002esite_007d-709"></a>
 <!-- /@w -->
@@ -14488,8 +14854,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-AllowUsers-627"><code>AllowUsers</code></a>: <a href="#AllowUsers">AllowUsers</a></li>
 <li><a href="#index-Auditing-197"><code>Auditing</code></a>: <a href="#Auditing">Auditing</a></li>
 <li><a href="#index-backup_003d-303"><code>backup=</code></a>: <a href="#copy">copy</a></li>
-<li><a href="#index-BindToInterface-631"><code>BindToInterface</code></a>: <a href="#BindToInterface">BindToInterface</a></li>
-<li><a href="#index-BindToInterface-199"><code>BindToInterface</code></a>: <a href="#BindToInterface_0028cfagent_0029">BindToInterface(cfagent)</a></li>
+<li><a href="#index-BindToInterface-631"><code>BindToInterface</code></a>: <a href="#BindToInterface-in-cfservd">BindToInterface in cfservd</a></li>
+<li><a href="#index-BindToInterface-199"><code>BindToInterface</code></a>: <a href="#BindToInterface-in-cfagent">BindToInterface in cfagent</a></li>
 <li><a href="#index-binserver-509"><code>binserver</code></a>: <a href="#Link-Children">Link Children</a></li>
 <li><a href="#index-binserver-500"><code>binserver</code></a>: <a href="#Single-links">Single links</a></li>
 <li><a href="#index-binservers-128"><code>binservers</code></a>: <a href="#binservers">binservers</a></li>
@@ -14501,7 +14867,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-cfinputs_005fversion-38"><code>cfinputs_version</code></a>: <a href="#Special-variables">Special variables</a></li>
 <li><a href="#index-cfrc-699"><code>cfrc</code></a>: <a href="#cfrc-resource-file">cfrc resource file</a></li>
 <li><a href="#index-ChangedBefore_0028_0029-103"><code>ChangedBefore()</code></a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
-<li><a href="#index-ChecksumDatabase-205"><code>ChecksumDatabase</code></a>: <a href="#ChecksumDatabase">ChecksumDatabase</a></li>
+<li><a href="#index-ChecksumDatabase-205"><code>ChecksumDatabase</code></a>: <a href="#ChecksumDatabase-in-cfagent">ChecksumDatabase in cfagent</a></li>
 <li><a href="#index-ChecksumPurge-207"><code>ChecksumPurge</code></a>: <a href="#ChecksumPurge">ChecksumPurge</a></li>
 <li><a href="#index-ChecksumUpdates-209"><code>ChecksumUpdates</code></a>: <a href="#ChecksumUpdates">ChecksumUpdates</a></li>
 <li><a href="#index-checktimezone-161"><code>checktimezone</code></a>: <a href="#actionsequence">actionsequence</a></li>
@@ -14719,8 +15085,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Binary-servers_002c-defining-126">Binary servers, defining</a>: <a href="#binservers">binservers</a></li>
 <li><a href="#index-Binary-servers_002c-priority-501">Binary servers, priority</a>: <a href="#Single-links">Single links</a></li>
 <li><a href="#index-Binary-servers_002c-priority-129">Binary servers, priority</a>: <a href="#binservers">binservers</a></li>
-<li><a href="#index-Binding-to-one-interface-only-632">Binding to one interface only</a>: <a href="#BindToInterface">BindToInterface</a></li>
-<li><a href="#index-Binding-to-one-interface-only-200">Binding to one interface only</a>: <a href="#BindToInterface_0028cfagent_0029">BindToInterface(cfagent)</a></li>
+<li><a href="#index-Binding-to-one-interface-only-632">Binding to one interface only</a>: <a href="#BindToInterface-in-cfservd">BindToInterface in cfservd</a></li>
+<li><a href="#index-Binding-to-one-interface-only-200">Binding to one interface only</a>: <a href="#BindToInterface-in-cfagent">BindToInterface in cfagent</a></li>
 <li><a href="#index-Bootstrap-file-688">Bootstrap file</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
 <li><a href="#index-Broadcast-address-130">Broadcast address</a>: <a href="#broadcast">broadcast</a></li>
 <li><a href="#index-Broadcasts-to-the-cfengine-service_002e-661">Broadcasts to the cfengine service.</a>: <a href="#cfrun">cfrun</a></li>
@@ -14748,7 +15114,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Changing-cfengine-port-670">Changing cfengine port</a>: <a href="#Firewalls-and-NATs">Firewalls and NATs</a></li>
 <li><a href="#index-Checking-for-installed-packages-544">Checking for installed packages</a>: <a href="#packages">packages</a></li>
 <li><a href="#index-Checksum-warning_002c-turning-off-exclamation-226">Checksum warning, turning off exclamation</a>: <a href="#exclamation">exclamation</a></li>
-<li><a href="#index-ChecksumDatabase-201">ChecksumDatabase</a>: <a href="#ChecksumDatabase">ChecksumDatabase</a></li>
+<li><a href="#index-ChecksumDatabase-201">ChecksumDatabase</a>: <a href="#ChecksumDatabase-in-cfagent">ChecksumDatabase in cfagent</a></li>
 <li><a href="#index-g_t_0040code_007bChecksumDatabase_007d-variable-633"><code>ChecksumDatabase</code> variable</a>: <a href="#ChecksumDatabase-in-cfservd">ChecksumDatabase in cfservd</a></li>
 <li><a href="#index-ChecksumPurge-206">ChecksumPurge</a>: <a href="#ChecksumPurge">ChecksumPurge</a></li>
 <li><a href="#index-Checksums-433">Checksums</a>: <a href="#Checksums-and-change-management">Checksums and change management</a></li>
@@ -14869,7 +15235,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Hardlinks-512">Hardlinks</a>: <a href="#Hard-links">Hard links</a></li>
 <li><a href="#index-Hashes-434">Hashes</a>: <a href="#Checksums-and-change-management">Checksums and change management</a></li>
 <li><a href="#index-Hashes-of-files-424">Hashes of files</a>: <a href="#Syntax">Syntax</a></li>
-<li><a href="#index-Hashes-of-files-203">Hashes of files</a>: <a href="#ChecksumDatabase">ChecksumDatabase</a></li>
+<li><a href="#index-Hashes-of-files-203">Hashes of files</a>: <a href="#ChecksumDatabase-in-cfagent">ChecksumDatabase in cfagent</a></li>
 <li><a href="#index-home-directive-435">home directive</a>: <a href="#home-directive">home directive</a></li>
 <li><a href="#index-Home-directories_002c-creating-342">Home directories, creating</a>: <a href="#directories">directories</a></li>
 <li><a href="#index-Home-path-228">Home path</a>: <a href="#homepattern">homepattern</a></li>
@@ -14939,7 +15305,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Megabytes_002c-filesize-unit-600">Megabytes, filesize unit</a>: <a href="#tidy">tidy</a></li>
 <li><a href="#index-Merging-files_002e-366">Merging files.</a>: <a href="#AppendIfNoLineMatching">AppendIfNoLineMatching</a></li>
 <li><a href="#index-Message-digests-423">Message digests</a>: <a href="#Syntax">Syntax</a></li>
-<li><a href="#index-Message-digests-202">Message digests</a>: <a href="#ChecksumDatabase">ChecksumDatabase</a></li>
+<li><a href="#index-Message-digests-202">Message digests</a>: <a href="#ChecksumDatabase-in-cfagent">ChecksumDatabase in cfagent</a></li>
 <li><a href="#index-Methods-518">Methods</a>: <a href="#methods">methods</a></li>
 <li><a href="#index-Methods_002c-remote-caution-522">Methods, remote caution</a>: <a href="#methods">methods</a></li>
 <li><a href="#index-Miscellaneous-mount-operations-526">Miscellaneous mount operations</a>: <a href="#miscmounts">miscmounts</a></li>
@@ -14954,8 +15320,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Mounted-filesystems-309">Mounted filesystems</a>: <a href="#copy">copy</a></li>
 <li><a href="#index-Mounting-filesystems_002e-525">Mounting filesystems.</a>: <a href="#miscmounts">miscmounts</a></li>
 <li><a href="#index-mtime-tidies-608">mtime tidies</a>: <a href="#tidy">tidy</a></li>
-<li><a href="#index-Multihomed-hosts-630">Multihomed hosts</a>: <a href="#BindToInterface">BindToInterface</a></li>
-<li><a href="#index-Multihomed-hosts-198">Multihomed hosts</a>: <a href="#BindToInterface_0028cfagent_0029">BindToInterface(cfagent)</a></li>
+<li><a href="#index-Multihomed-hosts-630">Multihomed hosts</a>: <a href="#BindToInterface-in-cfservd">BindToInterface in cfservd</a></li>
+<li><a href="#index-Multihomed-hosts-198">Multihomed hosts</a>: <a href="#BindToInterface-in-cfagent">BindToInterface in cfagent</a></li>
 <li><a href="#index-Multiple-links-502">Multiple links</a>: <a href="#Multiple-Links">Multiple Links</a></li>
 <li><a href="#index-Name-collision-56">Name collision</a>: <a href="#Special-variables">Special variables</a></li>
 <li><a href="#index-NAT-668">NAT</a>: <a href="#Firewalls-and-NATs">Firewalls and NATs</a></li>
@@ -15099,7 +15465,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-travlinks-605">travlinks</a>: <a href="#tidy">tidy</a></li>
 <li><a href="#index-Tree-copying_002c-exact-321">Tree copying, exact</a>: <a href="#copy">copy</a></li>
 <li><a href="#index-Tripwire-functionality-425">Tripwire functionality</a>: <a href="#Syntax">Syntax</a></li>
-<li><a href="#index-Tripwire-functionality-204">Tripwire functionality</a>: <a href="#ChecksumDatabase">ChecksumDatabase</a></li>
+<li><a href="#index-Tripwire-functionality-204">Tripwire functionality</a>: <a href="#ChecksumDatabase-in-cfagent">ChecksumDatabase in cfagent</a></li>
 <li><a href="#index-Truncating-log-files-352">Truncating log files</a>: <a href="#disable">disable</a></li>
 <li><a href="#index-Trust_002c-key-exchange-with-cfrun-659">Trust, key exchange with cfrun</a>: <a href="#cfrun">cfrun</a></li>
 <li><a href="#index-Trusted-hosts-317">Trusted hosts</a>: <a href="#copy">copy</a></li>
@@ -15198,265 +15564,263 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#Solaris-ACLs">4.6.2 Solaris ACLs</a>
 <li><a href="#DFS-ACLs">4.6.3 DFS ACLs</a>
 <li><a href="#NT-ACLs">4.6.4 NT ACLs</a>
+<li><a href="#Windows-ACL-Example">4.6.5 Windows ACL Example</a>
+<li><a href="#Posix-ACL-Example">4.6.6 Posix ACL Example</a>
 </li></ul>
-<li><a href="#NT-ACLs">4.7 ACL Example</a>
+<li><a href="#alerts">4.7 alerts</a>
+<li><a href="#binservers">4.8 binservers</a>
+<li><a href="#broadcast">4.9 broadcast</a>
+<li><a href="#control">4.10 control</a>
 <ul>
-<li><a href="#ACL-Example">4.7.1 ACL Example</a>
+<li><a href="#AbortClasses">4.10.1 AbortClasses</a>
+<li><a href="#access">4.10.2 access</a>
+<li><a href="#actionsequence">4.10.3 actionsequence</a>
+<li><a href="#addclasses">4.10.4 AddClasses</a>
+<li><a href="#addinstallable">4.10.5 AddInstallable</a>
+<li><a href="#AllowRedefinitionOf">4.10.6 AllowRedefinitionOf</a>
+<li><a href="#Auditing">4.10.7 Auditing</a>
+<li><a href="#AutoDefine">4.10.8 AutoDefine</a>
+<li><a href="#BinaryPaddingChar">4.10.9 BinaryPaddingChar</a>
+<li><a href="#BindToInterface-in-cfagent">4.10.10 BindToInterface in cfagent</a>
+<li><a href="#ChecksumDatabase-in-cfagent">4.10.11 ChecksumDatabase in cfagent</a>
+<li><a href="#ChecksumPurge">4.10.12 ChecksumPurge</a>
+<li><a href="#ChecksumUpdates">4.10.13 ChecksumUpdates</a>
+<li><a href="#CompressCommand">4.10.14 CompressCommand</a>
+<li><a href="#childlibpath">4.10.15 ChildLibPath</a>
+<li><a href="#copylinks">4.10.16 CopyLinks</a>
+<li><a href="#defaultcopytype">4.10.17 DefaultCopyType</a>
+<li><a href="#defaultpkgmgr">4.10.18 DefaultPkgMgr</a>
+<li><a href="#deletenonuserfiles">4.10.19 DeleteNonUserFiles</a>
+<li><a href="#deletenonownerfiles">4.10.20 DeleteNonOwnerFiles</a>
+<li><a href="#deletenonusermail">4.10.21 DeleteNonUserMail</a>
+<li><a href="#deletenonownermail">4.10.22 DeleteNonOwnerMail</a>
+<li><a href="#domain">4.10.23 domain</a>
+<li><a href="#dpkginstallcommand">4.10.24 DPKGInstallCommand</a>
+<li><a href="#dryrun">4.10.25 DryRun</a>
+<li><a href="#editbinaryfilesize">4.10.26 editbinaryfilesize</a>
+<li><a href="#editfilesize">4.10.27 editfilesize</a>
+<li><a href="#emptyresolvconf">4.10.28 EmptyResolvConf</a>
+<li><a href="#exclamation">4.10.29 Exclamation</a>
+<li><a href="#excludecopy">4.10.30 ExcludeCopy</a>
+<li><a href="#excludelinks">4.10.31 ExcludeLink</a>
+<li><a href="#ExpireAfter">4.10.32 ExpireAfter</a>
+<li><a href="#FreeBSDInstallCommand">4.10.33 FreeBSDInstallCommand</a>
+<li><a href="#FreeBSDRemoveCommand">4.10.34 FreeBSDRemoveCommand</a>
+<li><a href="#FullEncryption">4.10.35 FullEncryption</a>
+<li><a href="#homepattern">4.10.36 HomePattern</a>
+<li><a href="#HostnameKeys-in-cfagent">4.10.37 HostnameKeys in cfagent</a>
+<li><a href="#IfElapsed-in-cfagent">4.10.38 IfElapsed in cfagent</a>
+<li><a href="#IgnoreFriendRegex">4.10.39 FriendIgnoreRegex</a>
+<li><a href="#IgnoreInterfaceRegex">4.10.40 IgnoreInterfaceRegex</a>
+<li><a href="#Inform">4.10.41 Inform</a>
+<li><a href="#interfacename">4.10.42 InterfaceName</a>
+<li><a href="#fileextension">4.10.43 FileExtensions</a>
+<li><a href="#lastseen">4.10.44 LastSeen</a>
+<li><a href="#lastseenexpireafter">4.10.45 LastSeenExpireAfter</a>
+<li><a href="#linkcopies">4.10.46 LinkCopies</a>
+<li><a href="#LogDirectory">4.10.47 LogDirectory</a>
+<li><a href="#LogTidyHomeFiles">4.10.48 LogTidyHomeFiles</a>
+<li><a href="#moduledirectory">4.10.49 moduledirectory</a>
+<li><a href="#mountpattern">4.10.50 mountpattern</a>
+<li><a href="#netmask">4.10.51 netmask</a>
+<li><a href="#nonalphanumfiles">4.10.52 NonAlphaNumFiles</a>
+<li><a href="#nfstype">4.10.53 nfstype</a>
+<li><a href="#PortageInstallCommand">4.10.54 PortageInstallCommand</a>
+<li><a href="#repchar">4.10.55 RepChar</a>
+<li><a href="#repository">4.10.56 Repository</a>
+<li><a href="#RPMcommand">4.10.57 RPMcommand</a>
+<li><a href="#rpminstallcommand">4.10.58 RPMInstallCommand</a>
+<li><a href="#schedule">4.10.59 Schedule</a>
+<li><a href="#secureinput">4.10.60 SecureInput</a>
+<li><a href="#sensiblecount">4.10.61 SensibleCount</a>
+<li><a href="#sensiblesize">4.10.62 SensibleSize</a>
+<li><a href="#showactions">4.10.63 ShowActions</a>
+<li><a href="#singlecopy">4.10.64 SingleCopy</a>
+<li><a href="#site">4.10.65 site/faculty</a>
+<li><a href="#SkipIdentify">4.10.66 SkipIdentify</a>
+<li><a href="#Smtpserver">4.10.67 smtpserver</a>
+<li><a href="#SplayTime">4.10.68 SplayTime</a>
+<li><a href="#split">4.10.69 Split</a>
+<li><a href="#spooldirectories">4.10.70 SpoolDirectories</a>
+<li><a href="#suninstallcommand">4.10.71 SUNInstallCommand</a>
+<li><a href="#suspiciousnames">4.10.72 suspiciousnames</a>
+<li><a href="#sysadm">4.10.73 sysadm</a>
+<li><a href="#Syslog">4.10.74 Syslog</a>
+<li><a href="#SyslogFacility">4.10.75 SyslogFacility</a>
+<li><a href="#timezone">4.10.76 timezone</a>
+<li><a href="#TimeOut">4.10.77 TimeOut</a>
+<li><a href="#Verbose">4.10.78 Verbose</a>
+<li><a href="#Warnings">4.10.79 Warnings</a>
+<li><a href="#warnnonuserfiles">4.10.80 WarnNonUserFiles</a>
+<li><a href="#warnnonownerfiles">4.10.81 WarnNonOwnerFiles</a>
+<li><a href="#warnnonusermail">4.10.82 WarnNonUserMail</a>
+<li><a href="#warnnonownermail">4.10.83 WarnNonOwnerMail</a>
 </li></ul>
-<li><a href="#alerts">4.8 alerts</a>
-<li><a href="#binservers">4.9 binservers</a>
-<li><a href="#broadcast">4.10 broadcast</a>
-<li><a href="#control">4.11 control</a>
+<li><a href="#classes">4.11 classes</a>
+<li><a href="#copy">4.12 copy</a>
 <ul>
-<li><a href="#AbortClasses">4.11.1 AbortClasses</a>
-<li><a href="#access">4.11.2 access</a>
-<li><a href="#actionsequence">4.11.3 actionsequence</a>
-<li><a href="#addclasses">4.11.4 AddClasses</a>
-<li><a href="#addinstallable">4.11.5 AddInstallable</a>
-<li><a href="#AllowRedefinitionOf">4.11.6 AllowRedefinitionOf</a>
-<li><a href="#Auditing">4.11.7 Auditing</a>
-<li><a href="#AutoDefine">4.11.8 AutoDefine</a>
-<li><a href="#BinaryPaddingChar">4.11.9 BinaryPaddingChar</a>
-<li><a href="#BindToInterface_0028cfagent_0029">4.11.10 BindToInterface</a>
-<li><a href="#ChecksumDatabase">4.11.11 ChecksumDatabase</a>
-<li><a href="#ChecksumPurge">4.11.12 ChecksumPurge</a>
-<li><a href="#ChecksumUpdates">4.11.13 ChecksumUpdates</a>
-<li><a href="#CompressCommand">4.11.14 CompressCommand</a>
-<li><a href="#childlibpath">4.11.15 ChildLibPath</a>
-<li><a href="#copylinks">4.11.16 CopyLinks</a>
-<li><a href="#defaultcopytype">4.11.17 DefaultCopyType</a>
-<li><a href="#defaultpkgmgr">4.11.18 DefaultPkgMgr</a>
-<li><a href="#deletenonuserfiles">4.11.19 DeleteNonUserFiles</a>
-<li><a href="#deletenonownerfiles">4.11.20 DeleteNonOwnerFiles</a>
-<li><a href="#deletenonusermail">4.11.21 DeleteNonUserMail</a>
-<li><a href="#deletenonownermail">4.11.22 DeleteNonOwnerMail</a>
-<li><a href="#domain">4.11.23 domain</a>
-<li><a href="#dpkginstallcommand">4.11.24 DPKGInstallCommand</a>
-<li><a href="#dryrun">4.11.25 DryRun</a>
-<li><a href="#editbinaryfilesize">4.11.26 editbinaryfilesize</a>
-<li><a href="#editfilesize">4.11.27 editfilesize</a>
-<li><a href="#emptyresolvconf">4.11.28 EmptyResolvConf</a>
-<li><a href="#exclamation">4.11.29 Exclamation</a>
-<li><a href="#excludecopy">4.11.30 ExcludeCopy</a>
-<li><a href="#excludelinks">4.11.31 ExcludeLink</a>
-<li><a href="#ExpireAfter">4.11.32 ExpireAfter</a>
-<li><a href="#FreeBSDInstallCommand">4.11.33 FreeBSDInstallCommand</a>
-<li><a href="#FreeBSDRemoveCommand">4.11.34 FreeBSDRemoveCommand</a>
-<li><a href="#FullEncryption">4.11.35 FullEncryption</a>
-<li><a href="#homepattern">4.11.36 HomePattern</a>
-<li><a href="#HostnameKeys">4.11.37 HostnameKeys</a>
-<li><a href="#IfElapsed">4.11.38 IfElapsed</a>
-<li><a href="#IgnoreFriendRegex">4.11.39 FriendIgnoreRegex</a>
-<li><a href="#IgnoreInterfaceRegex">4.11.40 IgnoreInterfaceRegex</a>
-<li><a href="#Inform">4.11.41 Inform</a>
-<li><a href="#interfacename">4.11.42 InterfaceName</a>
-<li><a href="#fileextension">4.11.43 FileExtensions</a>
-<li><a href="#lastseen">4.11.44 LastSeen</a>
-<li><a href="#lastseenexpireafter">4.11.45 LastSeenExpireAfter</a>
-<li><a href="#linkcopies">4.11.46 LinkCopies</a>
-<li><a href="#LogDirectory">4.11.47 LogDirectory</a>
-<li><a href="#LogTidyHomeFiles">4.11.48 LogTidyHomeFiles</a>
-<li><a href="#moduledirectory">4.11.49 moduledirectory</a>
-<li><a href="#mountpattern">4.11.50 mountpattern</a>
-<li><a href="#netmask">4.11.51 netmask</a>
-<li><a href="#nonalphanumfiles">4.11.52 NonAlphaNumFiles</a>
-<li><a href="#nfstype">4.11.53 nfstype</a>
-<li><a href="#PortageInstallCommand">4.11.54 PortageInstallCommand</a>
-<li><a href="#repchar">4.11.55 RepChar</a>
-<li><a href="#repository">4.11.56 Repository</a>
-<li><a href="#RPMcommand">4.11.57 RPMcommand</a>
-<li><a href="#rpminstallcommand">4.11.58 RPMInstallCommand</a>
-<li><a href="#schedule">4.11.59 Schedule</a>
-<li><a href="#secureinput">4.11.60 SecureInput</a>
-<li><a href="#sensiblecount">4.11.61 SensibleCount</a>
-<li><a href="#sensiblesize">4.11.62 SensibleSize</a>
-<li><a href="#showactions">4.11.63 ShowActions</a>
-<li><a href="#singlecopy">4.11.64 SingleCopy</a>
-<li><a href="#site">4.11.65 site/faculty</a>
-<li><a href="#SkipIdentify">4.11.66 SkipIdentify</a>
-<li><a href="#Smtpserver">4.11.67 smtpserver</a>
-<li><a href="#SplayTime">4.11.68 SplayTime</a>
-<li><a href="#split">4.11.69 Split</a>
-<li><a href="#spooldirectories">4.11.70 SpoolDirectories</a>
-<li><a href="#suninstallcommand">4.11.71 SUNInstallCommand</a>
-<li><a href="#suspiciousnames">4.11.72 suspiciousnames</a>
-<li><a href="#sysadm">4.11.73 sysadm</a>
-<li><a href="#Syslog">4.11.74 Syslog</a>
-<li><a href="#SyslogFacility">4.11.75 SyslogFacility</a>
-<li><a href="#timezone">4.11.76 timezone</a>
-<li><a href="#TimeOut">4.11.77 TimeOut</a>
-<li><a href="#Verbose">4.11.78 Verbose</a>
-<li><a href="#Warnings">4.11.79 Warnings</a>
-<li><a href="#warnnonuserfiles">4.11.80 WarnNonUserFiles</a>
-<li><a href="#warnnonownerfiles">4.11.81 WarnNonOwnerFiles</a>
-<li><a href="#warnnonusermail">4.11.82 WarnNonUserMail</a>
-<li><a href="#warnnonownermail">4.11.83 WarnNonOwnerMail</a>
+<li><a href="#copy-example">4.12.1 copy example</a>
+<li><a href="#hard-links-in-copy">4.12.2 Hard links in copying</a>
+<li><a href="#Too-many-open-files">4.12.3 Too many open files</a>
 </li></ul>
-<li><a href="#classes">4.12 classes</a>
-<li><a href="#copy">4.13 copy</a>
+<li><a href="#defaultroute">4.13 defaultroute</a>
+<li><a href="#disks">4.14 disks</a>
+<li><a href="#directories">4.15 directories</a>
+<li><a href="#disable">4.16 disable</a>
+<li><a href="#editfiles">4.17 editfiles</a>
 <ul>
-<li><a href="#copy-example">4.13.1 copy example</a>
-<li><a href="#hard-links-in-copy">4.13.2 Hard links in copying</a>
-<li><a href="#Too-many-open-files">4.13.3 Too many open files</a>
+<li><a href="#AbortAtLineMatching">4.17.1 AbortAtLineMatching</a>
+<li><a href="#Append">4.17.2 Append</a>
+<li><a href="#AppendIfNoLineMatching">4.17.3 AppendIfNoLineMatching</a>
+<li><a href="#AppendIfNoSuchLine">4.17.4 AppendIfNoSuchLine</a>
+<li><a href="#AppendIfNoSuchLinesFromFile">4.17.5 AppendIfNoSuchLinesFromFile</a>
+<li><a href="#AppendToLineIfNotContains">4.17.6 AppendToLineIfNotContains</a>
+<li><a href="#Audit">4.17.7 Audit in editfiles</a>
+<li><a href="#AutoCreate">4.17.8 AutoCreate</a>
+<li><a href="#AutomountDirectResources">4.17.9 AutomountDirectResources</a>
+<li><a href="#Backup-in-editfiles">4.17.10 Backup in editfiles</a>
+<li><a href="#BeginGroupIfDefined">4.17.11 BeginGroupIfDefined</a>
+<li><a href="#BeginGroupIfNotDefined">4.17.12 BeginGroupIfNotDefined</a>
+<li><a href="#BeginGroupIfFileExists">4.17.13 BeginGroupIfFileExists</a>
+<li><a href="#BeginGroupIfFileIsNewer">4.17.14 BeginGroupIfFileIsNewer</a>
+<li><a href="#BeginGroupIfLineContaining">4.17.15 BeginGroupIfLineContaining</a>
+<li><a href="#BeginGroupIfLineMatching">4.17.16 BeginGroupIfLineMatching</a>
+<li><a href="#BeginGroupIfMatch">4.17.17 BeginGroupIfMatch</a>
+<li><a href="#BeginGroupIfNoLineContaining">4.17.18 BeginGroupIfNoLineContaining</a>
+<li><a href="#BeginGroupIfNoLineMatching">4.17.19 BeginGroupIfNoLineMatching</a>
+<li><a href="#BeginGroupIfNoMatch">4.17.20 BeginGroupIfNoMatch</a>
+<li><a href="#BeginGroupIfNoSuchLine">4.17.21 BeginGroupIfNoSuchLine</a>
+<li><a href="#BreakIfLineMatches">4.17.22 BreakIfLineMatches</a>
+<li><a href="#CatchAbort">4.17.23 CatchAbort</a>
+<li><a href="#CommentLinesMatching">4.17.24 CommentLinesMatching</a>
+<li><a href="#CommentLinesStarting">4.17.25 CommentLinesStarting</a>
+<li><a href="#CommentNLines">4.17.26 CommentNLines</a>
+<li><a href="#CommentToLineMatching">4.17.27 CommentToLineMatching</a>
+<li><a href="#DefineClasses">4.17.28 DefineClasses</a>
+<li><a href="#DefineInGroup">4.17.29 DefineInGroup</a>
+<li><a href="#DeleteLinesAfterThisMatching">4.17.30 DeleteLinesAfterThisMatching</a>
+<li><a href="#DeleteLinesContaining">4.17.31 DeleteLinesContaining/DeleteLinesNotContaining</a>
+<li><a href="#DeleteLinesMatching">4.17.32 DeleteLinesMatching/DeleteLinesNotMatching</a>
+<li><a href="#DeleteLinesStarting">4.17.33 DeleteLinesStarting/DeleteLinesNotStarting</a>
+<li><a href="#DeleteLinesNotContaining">4.17.34 DeleteLinesNotContainingFileItems</a>
+<li><a href="#DeleteLinesNotMatchingFileItems">4.17.35 DeleteLinesNotMatchingFileItems</a>
+<li><a href="#DeleteLinesNotStartingFileItems">4.17.36 DeleteLinesNotStartingFileItems</a>
+<li><a href="#DeleteNLines">4.17.37 DeleteNLines</a>
+<li><a href="#DeleteToLineMatching">4.17.38 DeleteToLineMatching</a>
+<li><a href="#EditMode-_0028binary_0029">4.17.39 EditMode and binary editing</a>
+<li><a href="#EditSplit">4.17.40 EditSplit</a>
+<li><a href="#EmptyEntireFilePlease">4.17.41 EmptyEntireFilePlease</a>
+<li><a href="#ElseDefineClasses">4.17.42 ElseDefineClasses</a>
+<li><a href="#EndGroup">4.17.43 EndGroup</a>
+<li><a href="#EndLoop">4.17.44 EndLoop</a>
+<li><a href="#ExpandVariables">4.17.45 ExpandVariables</a>
+<li><a href="#ExpireAfter-editfiles">4.17.46 ExpireAfter editfiles</a>
+<li><a href="#Filter">4.17.47 Filter</a>
+<li><a href="#FixEndOfLine">4.17.48 FixEndOfLine</a>
+<li><a href="#ForEachLineIn">4.17.49 ForEachLineIn <var>quoted-filename</var></a>
+<li><a href="#GotoLastLine">4.17.50 GotoLastLine</a>
+<li><a href="#HashCommentLinesContaining">4.17.51 HashCommentLinesContaining</a>
+<li><a href="#HashCommentLinesMatching">4.17.52 HashCommentLinesMatching</a>
+<li><a href="#HashCommentLinesStarting">4.17.53 HashCommentLinesStarting</a>
+<li><a href="#IfElapsed-_0028editing_0029">4.17.54 IfElapsed</a>
+<li><a href="#IncrementPointer">4.17.55 IncrementPointer <var>quoted-number</var></a>
+<li><a href="#Inform-_0028editing_0029">4.17.56 Inform editfiles</a>
+<li><a href="#InsertFile">4.17.57 InsertFile</a>
+<li><a href="#InsertLine">4.17.58 InsertLine</a>
+<li><a href="#LocateLineMatching">4.17.59 LocateLineMatching</a>
+<li><a href="#PercentCommentLinesContaining">4.17.60 PercentCommentLinesContaining</a>
+<li><a href="#PercentCommentLinesMatching">4.17.61 PercentCommentLinesMatching</a>
+<li><a href="#PercentCommentLinesStarting">4.17.62 PercentCommentLinesStarting</a>
+<li><a href="#Prepend-_0028editing_0029">4.17.63 Prepend</a>
+<li><a href="#PrependIfNoLineMatching">4.17.64 PrependIfNoLineMatching</a>
+<li><a href="#PrependIfNoSuchLine">4.17.65 PrependIfNoSuchLine</a>
+<li><a href="#Recurse-_0028editing_0029">4.17.66 Recurse</a>
+<li><a href="#ReplaceLineWith">4.17.67 ReplaceLineWith</a>
+<li><a href="#ReplaceAll-With">4.17.68 ReplaceAll/With</a>
+<li><a href="#ReplaceFirst">4.17.69 ReplaceFirst/With</a>
+<li><a href="#ReplaceLinesMatchingField">4.17.70 ReplaceLinesMatchingField</a>
+<li><a href="#Repository">4.17.71 Repository editfiles</a>
+<li><a href="#ResetSearch">4.17.72 ResetSearch</a>
+<li><a href="#RunScript">4.17.73 RunScript</a>
+<li><a href="#RunScriptIfLineMatching">4.17.74 RunScriptIfLineMatching</a>
+<li><a href="#RunScriptIfNoLineMatching">4.17.75 RunScriptIfNoLineMatching</a>
+<li><a href="#SetCommentStart">4.17.76 SetCommentStart</a>
+<li><a href="#SetCommentEnd">4.17.77 SetCommentEnd</a>
+<li><a href="#SetLine">4.17.78 SetLine</a>
+<li><a href="#SetScript">4.17.79 SetScript</a>
+<li><a href="#SlashCommentLinesContaining">4.17.80 SlashCommentLinesContaining</a>
+<li><a href="#SlashCommentLinesMatching">4.17.81 SlashCommentLinesMatching</a>
+<li><a href="#SlashCommentLinesStarting">4.17.82 SlashCommentLinesStarting</a>
+<li><a href="#SplitOn">4.17.83 SplitOn</a>
+<li><a href="#SysLog">4.17.84 Syslog editfiles</a>
+<li><a href="#Umask">4.17.85 Umask</a>
+<li><a href="#UnCommentLinesContaining">4.17.86 UnCommentLinesContaining</a>
+<li><a href="#UnCommentLinesMatching">4.17.87 UnCommentLinesMatching</a>
+<li><a href="#UnCommentsNLines">4.17.88 UnCommentNLines</a>
+<li><a href="#UnCommentToLineMatching">4.17.89 UnCommentToLineMatching</a>
+<li><a href="#UnsetAbort">4.17.90 UnsetAbort</a>
+<li><a href="#UseShell">4.17.91 UseShell</a>
+<li><a href="#WarnIfFileMissing">4.17.92 WarnIfFileMissing</a>
+<li><a href="#WarnIfLineContaining">4.17.93 WarnIfLineContaining</a>
+<li><a href="#WarnIfLineMatching">4.17.94 WarnIfLineMatching</a>
+<li><a href="#WarnIfLineStarting">4.17.95 WarnIfLineStarting</a>
+<li><a href="#WarnIfNoLineContaining">4.17.96 WarnIfNoLineContaining</a>
+<li><a href="#WarnIfNoLineMatching">4.17.97 WarnIfNoLineMatching</a>
+<li><a href="#WarnIfNoLineStarting">4.17.98 WarnIfNoLineStarting</a>
+<li><a href="#WarnIfNoSuchLine">4.17.99 WarnIfNoSuchLine</a>
 </li></ul>
-<li><a href="#defaultroute">4.14 defaultroute</a>
-<li><a href="#disks">4.15 disks</a>
-<li><a href="#directories">4.16 directories</a>
-<li><a href="#disable">4.17 disable</a>
-<li><a href="#editfiles">4.18 editfiles</a>
+<li><a href="#Editfiles-on-Binary-Files">4.18 Editfiles on Binary Files</a>
+<li><a href="#files">4.19 files</a>
 <ul>
-<li><a href="#AbortAtLineMatching">4.18.1 AbortAtLineMatching <var>quoted-regex</var></a>
-<li><a href="#Append">4.18.2 Append <var>quoted-string</var></a>
-<li><a href="#AppendIfNoLineMatching">4.18.3 AppendIfNoLineMatching  <var>quoted-regex</var>/ &ldquo;ThisLine&rdquo;</a>
-<li><a href="#AppendIfNoSuchLine">4.18.4 AppendIfNoSuchLine <var>quoted-string</var></a>
-<li><a href="#AppendIfNoSuchLinesFromFile">4.18.5 AppendIfNoSuchLinesFromFile <var>filename</var></a>
-<li><a href="#AppendToLineIfNotContains">4.18.6 AppendToLineIfNotContains <var>quoted-string</var></a>
-<li><a href="#Audit">4.18.7 Audit <var>true/false</var></a>
-<li><a href="#AutoCreate">4.18.8 AutoCreate</a>
-<li><a href="#AutomountDirectResources">4.18.9 AutomountDirectResources <var>quoted-string</var></a>
-<li><a href="#Backup-in-editfiles">4.18.10 Backup <var>quoted-string</var></a>
-<li><a href="#BeginGroupIfDefined">4.18.11 BeginGroupIfDefined <var>quoted-string</var></a>
-<li><a href="#BeginGroupIfNotDefined">4.18.12 BeginGroupIfNotDefined <var>quoted-string</var></a>
-<li><a href="#BeginGroupIfFileExists">4.18.13 BeginGroupIfFileExists <var>quoted-string</var></a>
-<li><a href="#BeginGroupIfFileIsNewer">4.18.14 BeginGroupIfFileIsNewer <var>quoted-string</var></a>
-<li><a href="#BeginGroupIfLineContaining">4.18.15 BeginGroupIfLineContaining <var>quoted-string</var></a>
-<li><a href="#BeginGroupIfLineMatching">4.18.16 BeginGroupIfLineMatching <var>quoted-regex</var></a>
-<li><a href="#BeginGroupIfMatch">4.18.17 BeginGroupIfMatch <var>quoted-regex</var></a>
-<li><a href="#BeginGroupIfNoLineContaining">4.18.18 BeginGroupIfNoLineContaining <var>quoted-string</var></a>
-<li><a href="#BeginGroupIfNoLineMatching">4.18.19 BeginGroupIfNoLineMatching <var>quoted-regex</var></a>
-<li><a href="#BeginGroupIfNoMatch">4.18.20 BeginGroupIfNoMatch <var>quoted-regex</var></a>
-<li><a href="#BeginGroupIfNoSuchLine">4.18.21 BeginGroupIfNoSuchLine <var>quoted-string</var></a>
-<li><a href="#BreakIfLineMatches">4.18.22 BreakIfLineMatches  <var>quoted-regex</var></a>
-<li><a href="#CatchAbort">4.18.23 CatchAbort</a>
-<li><a href="#CommentLinesMatching">4.18.24 CommentLinesMatching  <var>quoted-regex</var></a>
-<li><a href="#CommentLinesStarting">4.18.25 CommentLinesStarting  <var>quoted-string</var></a>
-<li><a href="#CommentNLines">4.18.26 CommentNLines <var>quoted-string</var></a>
-<li><a href="#CommentToLineMatching">4.18.27 CommentToLineMatching  <var>quoted-regex</var></a>
-<li><a href="#DefineClasses">4.18.28 DefineClasses "<var>class1</var>:<var>class2</var>:..."</a>
-<li><a href="#DefineInGroup">4.18.29 DefineInGroup "<var>class1</var>:<var>class2</var>:..."</a>
-<li><a href="#DeleteLinesAfterThisMatching">4.18.30 DeleteLinesAfterThisMatching <var>quoted-regex</var></a>
-<li><a href="#DeleteLinesContaining">4.18.31 DeleteLinesContaining <var>quoted-string</var>/DeleteLinesNotContaining <var>quoted-string</var></a>
-<li><a href="#DeleteLinesMatching">4.18.32 DeleteLinesMatching <var>quoted-regex</var>/DeleteLinesNotMatching <var>quoted-regex</var></a>
-<li><a href="#DeleteLinesStarting">4.18.33 DeleteLinesStarting <var>quoted-string</var>/DeleteLinesNotStarting <var>quoted-string</var></a>
-<li><a href="#DeleteLinesNotContaining">4.18.34 DeleteLinesNotContainingFileItems <var>filename</var></a>
-<li><a href="#DeleteLinesNotMatchingFileItems">4.18.35 DeleteLinesNotMatchingFileItems <var>filename</var></a>
-<li><a href="#DeleteLinesNotStartingFileItems">4.18.36 DeleteLinesNotStartingFileItems <var>filename</var></a>
-<li><a href="#DeleteNLines">4.18.37 DeleteNLines <var>quoted-string</var></a>
-<li><a href="#DeleteToLineMatching">4.18.38 DeleteToLineMatching <var>quoted-regex</var></a>
-<li><a href="#EditMode-_0028binary_0029">4.18.39 EditMode "Binary"</a>
-<li><a href="#EditSplit">4.18.40 EditSplit <var>char</var></a>
-<li><a href="#EmptyEntireFilePlease">4.18.41 EmptyEntireFilePlease</a>
-<li><a href="#ElseDefineClasses">4.18.42 ElseDefineClasses</a>
-<li><a href="#EndGroup">4.18.43 EndGroup</a>
-<li><a href="#EndLoop">4.18.44 EndLoop</a>
-<li><a href="#ExpandVariables">4.18.45 ExpandVariables</a>
-<li><a href="#ExpireAfter-_0028editing_0029">4.18.46 ExpireAfter <var>mins</var></a>
-<li><a href="#Filter">4.18.47 Filter <var>filteralias</var></a>
-<li><a href="#FixEndOfLine">4.18.48 FixEndOfLine</a>
-<li><a href="#ForEachLineIn">4.18.49 ForEachLineIn <var>quoted-filename</var></a>
-<li><a href="#GotoLastLine">4.18.50 GotoLastLine</a>
-<li><a href="#HashCommentLinesContaining">4.18.51 HashCommentLinesContaining <var>quoted-string</var></a>
-<li><a href="#HashCommentLinesMatching">4.18.52 HashCommentLinesMatching <var>quoted-regex</var></a>
-<li><a href="#HashCommentLinesStarting">4.18.53 HashCommentLinesStarting <var>quoted-string</var></a>
-<li><a href="#IfElapsed-_0028editing_0029">4.18.54 IfElapsed <var>mins</var></a>
-<li><a href="#IncrementPointer">4.18.55 IncrementPointer <var>quoted-number</var></a>
-<li><a href="#Inform-_0028editing_0029">4.18.56 Inform <var>quoted-string</var></a>
-<li><a href="#InsertFile">4.18.57 InsertFile <var>quoted-string</var></a>
-<li><a href="#InsertLine">4.18.58 InsertLine <var>quoted-string</var></a>
-<li><a href="#LocateLineMatching">4.18.59 LocateLineMatching <var>quoted-regex</var></a>
-<li><a href="#PercentCommentLinesContaining">4.18.60 PercentCommentLinesContaining <var>quoted-string</var></a>
-<li><a href="#PercentCommentLinesMatching">4.18.61 PercentCommentLinesMatching <var>quoted-regex</var></a>
-<li><a href="#PercentCommentLinesStarting">4.18.62 PercentCommentLinesStarting <var>quoted-string</var></a>
-<li><a href="#Prepend-_0028editing_0029">4.18.63 Prepend <var>quoted-string</var></a>
-<li><a href="#PrependIfNoLineMatching">4.18.64 PrependIfNoLineMatching <var>quoted-regex</var></a>
-<li><a href="#PrependIfNoSuchLine">4.18.65 PrependIfNoSuchLine <var>quoted-string</var></a>
-<li><a href="#Recurse-_0028editing_0029">4.18.66 Recurse <var>digit/inf</var></a>
-<li><a href="#ReplaceLineWith">4.18.67 ReplaceLineWith <var>quoted-string</var></a>
-<li><a href="#ReplaceAll-With">4.18.68 ReplaceAll <var>quoted-regex</var> With <var>quoted-string</var></a>
-<li><a href="#ReplaceFirst">4.18.69 ReplaceFirst <var>quoted-regex</var> With <var>quoted-string</var></a>
-<li><a href="#ReplaceLinesMatchingField">4.18.70 ReplaceLinesMatchingField <var>quoted-number</var></a>
-<li><a href="#Repository">4.18.71 Repository <var>quoted string</var></a>
-<li><a href="#ResetSearch">4.18.72 ResetSearch <var>quoted-string</var></a>
-<li><a href="#RunScript">4.18.73 RunScript <var>quoted-string</var></a>
-<li><a href="#RunScriptIfLineMatching">4.18.74 RunScriptIfLineMatching <var>quoted-string</var></a>
-<li><a href="#RunScriptIfNoLineMatching">4.18.75 RunScriptIfNoLineMatching <var>quoted-regex</var></a>
-<li><a href="#SetCommentStart">4.18.76 SetCommentStart <var>quoted-string</var></a>
-<li><a href="#SetCommentEnd">4.18.77 SetCommentEnd  <var>quoted-string</var></a>
-<li><a href="#SetLine">4.18.78 SetLine <var>quoted-string</var></a>
-<li><a href="#SetScript">4.18.79 SetScript <var>quoted-string</var></a>
-<li><a href="#SlashCommentLinesContaining">4.18.80 SlashCommentLinesContaining <var>quoted-string</var></a>
-<li><a href="#SlashCommentLinesMatching">4.18.81 SlashCommentLinesMatching <var>quoted-regex</var></a>
-<li><a href="#SlashCommentLinesStarting">4.18.82 SlashCommentLinesStarting <var>quoted-string</var></a>
-<li><a href="#SplitOn">4.18.83 SplitOn <var>quoted-string</var></a>
-<li><a href="#SysLog">4.18.84 Syslog <var>quoted-string</var></a>
-<li><a href="#Umask">4.18.85 Umask <var>quote mode</var></a>
-<li><a href="#UnCommentLinesContaining">4.18.86 UnCommentLinesContaining  <var>quoted-string</var></a>
-<li><a href="#UnCommentLinesMatching">4.18.87 UnCommentLinesMatching  <var>quoted-regex</var></a>
-<li><a href="#UnCommentsNLines">4.18.88 UnCommentNLines <var>quoted-string</var></a>
-<li><a href="#UnCommentToLineMatching">4.18.89 UnCommentToLineMatching <var>quoted-string</var></a>
-<li><a href="#UnsetAbort">4.18.90 UnsetAbort  <var>quoted-string</var></a>
-<li><a href="#UseShell">4.18.91 UseShell "false"</a>
-<li><a href="#WarnIfFileMissing">4.18.92 WarnIfFileMissing <var>quoted-string</var></a>
-<li><a href="#WarnIfLineContaining">4.18.93 WarnIfLineContaining <var>quoted-string</var></a>
-<li><a href="#WarnIfLineMatching">4.18.94 WarnIfLineMatching <var>quoted-regex</var></a>
-<li><a href="#WarnIfLineStarting">4.18.95 WarnIfLineStarting <var>quoted-string</var></a>
-<li><a href="#WarnIfNoLineContaining">4.18.96 WarnIfNoLineContaining <var>quoted-string</var></a>
-<li><a href="#WarnIfNoLineMatching">4.18.97 WarnIfNoLineMatching <var>reg-ex</var></a>
-<li><a href="#WarnIfNoLineStarting">4.18.98 WarnIfNoLineStarting <var>quoted-string</var></a>
-<li><a href="#WarnIfNoSuchLine">4.18.99 WarnIfNoSuchLine <var>quoted-regex</var></a>
+<li><a href="#Syntax">4.19.1 Syntax</a>
+<li><a href="#Recursion">4.19.2 Recursion</a>
+<li><a href="#Directory-permissions">4.19.3 Directory permissions</a>
+<li><a href="#Checksums-and-change-management">4.19.4 Checksums and change management</a>
+<li><a href="#home-directive">4.19.5 <code>home</code> directive</a>
+<li><a href="#Owner-and-group-wildcards">4.19.6 Owner and group wildcards</a>
+<li><a href="#Files-linkchildren">4.19.7 Files linkchildren</a>
+<li><a href="#touch">4.19.8 touch</a>
+<li><a href="#create">4.19.9 create</a>
 </li></ul>
-<li><a href="#Editfiles-on-Binary-Files">4.19 Editfiles on Binary Files</a>
-<li><a href="#files">4.20 files</a>
+<li><a href="#filters">4.20 filters</a>
 <ul>
-<li><a href="#Syntax">4.20.1 Syntax</a>
-<li><a href="#Recursion">4.20.2 Recursion</a>
-<li><a href="#Directory-permissions">4.20.3 Directory permissions</a>
-<li><a href="#Checksums-and-change-management">4.20.4 Checksums and change management</a>
-<li><a href="#home-directive">4.20.5 <code>home</code> directive</a>
-<li><a href="#Owner-and-group-wildcards">4.20.6 Owner and group wildcards</a>
-<li><a href="#Files-linkchildren">4.20.7 Files linkchildren</a>
-<li><a href="#touch">4.20.8 touch</a>
-<li><a href="#create">4.20.9 create</a>
+<li><a href="#Complete-filter-examples">4.20.1 Complete filter examples</a>
 </li></ul>
-<li><a href="#filters">4.21 filters</a>
+<li><a href="#groups">4.21 groups/classes</a>
+<li><a href="#homeservers">4.22 homeservers</a>
+<li><a href="#ignore">4.23 ignore</a>
+<li><a href="#import">4.24 import</a>
+<li><a href="#interfaces">4.25 interfaces</a>
+<li><a href="#links">4.26 links</a>
 <ul>
-<li><a href="#Complete-filter-examples">4.21.1 Complete filter examples</a>
+<li><a href="#Single-links">4.26.1 Single links</a>
+<li><a href="#Multiple-Links">4.26.2 Multiple Links</a>
+<li><a href="#Link-Children">4.26.3 Link Children</a>
+<li><a href="#Relative-and-absolute-links">4.26.4 Relative and absolute links</a>
+<li><a href="#Hard-links">4.26.5 Hard Links</a>
 </li></ul>
-<li><a href="#groups">4.22 groups/classes</a>
-<li><a href="#homeservers">4.23 homeservers</a>
-<li><a href="#ignore">4.24 ignore</a>
-<li><a href="#import">4.25 import</a>
-<li><a href="#interfaces">4.26 interfaces</a>
-<li><a href="#links">4.27 links</a>
+<li><a href="#mailserver">4.27 mailserver</a>
+<li><a href="#methods">4.28 methods</a>
 <ul>
-<li><a href="#Single-links">4.27.1 Single links</a>
-<li><a href="#Multiple-Links">4.27.2 Multiple Links</a>
-<li><a href="#Link-Children">4.27.3 Link Children</a>
-<li><a href="#Relative-and-absolute-links">4.27.4 Relative and absolute links</a>
-<li><a href="#Hard-links">4.27.5 Hard Links</a>
+<li><a href="#localhost-examples">4.28.1 Localhost examples</a>
+<li><a href="#remotehost-examples">4.28.2 Remote host examples</a>
 </li></ul>
-<li><a href="#mailserver">4.28 mailserver</a>
-<li><a href="#methods">4.29 methods</a>
-<ul>
-<li><a href="#localhost-examples">4.29.1 Localhost examples</a>
-<li><a href="#remotehost-examples">4.29.2 Remote host examples</a>
-</li></ul>
-<li><a href="#miscmounts">4.30 miscmounts</a>
-<li><a href="#mountables">4.31 mountables</a>
-<li><a href="#processes">4.32 processes</a>
-<li><a href="#packages">4.33 packages</a>
-<li><a href="#rename">4.34 rename</a>
-<li><a href="#required">4.35 required</a>
-<li><a href="#resolve">4.36 resolve</a>
-<li><a href="#scli">4.37 scli</a>
-<li><a href="#shellcommands">4.38 shellcommands</a>
-<li><a href="#strategies">4.39 strategies</a>
-<li><a href="#tidy">4.40 tidy</a>
-<li><a href="#unmount">4.41 unmount</a>
+<li><a href="#miscmounts">4.29 miscmounts</a>
+<li><a href="#mountables">4.30 mountables</a>
+<li><a href="#processes">4.31 processes</a>
+<li><a href="#packages">4.32 packages</a>
+<li><a href="#rename">4.33 rename</a>
+<li><a href="#required">4.34 required</a>
+<li><a href="#resolve">4.35 resolve</a>
+<li><a href="#scli">4.36 scli</a>
+<li><a href="#shellcommands">4.37 shellcommands</a>
+<li><a href="#strategies">4.38 strategies</a>
+<li><a href="#tidy">4.39 tidy</a>
+<li><a href="#unmount">4.40 unmount</a>
 </li></ul>
 <li><a name="toc_Cfservd_002econf-and-cfrun-reference" href="#Cfservd_002econf-and-cfrun-reference">5 Cfservd and cfrun reference</a>
 <ul>
-<li><a href="#cfservd-control">5.1 control</a>
+<li><a href="#cfservd-control">5.1 control cfservd</a>
 <ul>
 <li><a href="#IP-address-ranges">5.1.1 IP address ranges</a>
 <li><a href="#AllowConnectionsFrom">5.1.2 AllowConnectionsFrom</a>
@@ -15464,13 +15828,13 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#AllowUsers">5.1.4 AllowUsers</a>
 <li><a href="#AutoExecCommand">5.1.5 AutoExecCommand</a>
 <li><a href="#AutoExecInterval">5.1.6 AutoExecInterval</a>
-<li><a href="#BindToInterface">5.1.7 BindToInterface</a>
-<li><a href="#ChecksumDatabase-in-cfservd">5.1.8 ChecksumDatabase</a>
+<li><a href="#BindToInterface-in-cfservd">5.1.7 BindToInterface in cfservd</a>
+<li><a href="#ChecksumDatabase-in-cfservd">5.1.8 ChecksumDatabase in cfservd</a>
 <li><a href="#cfrunCommand">5.1.9 cfrunCommand</a>
 <li><a href="#DenyBadClocks">5.1.10 DenyBadClocks</a>
 <li><a href="#DenyConnectionsFrom">5.1.11 DenyConnectionsFrom</a>
-<li><a href="#cfservd-HostnameKeys">5.1.12 HostnameKeys</a>
-<li><a href="#cfservd-IfElapsed">5.1.13 IfElapsed</a>
+<li><a href="#cfservd-HostnameKeys">5.1.12 HostnameKeys in cfservd</a>
+<li><a href="#cfservd-IfElapsed">5.1.13 IfElapsed in cfservd</a>
 <li><a href="#LogAllConnections">5.1.14 LogAllConnections</a>
 <li><a href="#LogEncryptedTransfers">5.1.15 LogEncryptedTransfers</a>
 <li><a href="#MaxConnections">5.1.16 MaxConnections</a>
@@ -15489,8 +15853,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a name="toc_Cfexecd-reference" href="#Cfexecd-reference">6 Cfexecd reference</a>
 <li><a name="toc_Problem-solving" href="#Problem-solving">7 Problem solving</a>
 <ul>
-<li><a href="#cf_002epreconf-bootstrap-file">7.1 <samp><span class="file">cf.preconf</span></samp> bootstrap file</a>
-<li><a href="#cfrc-resource-file">7.2 <samp><span class="file">cfrc</span></samp> resource file</a>
+<li><a href="#cf_002epreconf-bootstrap-file">7.1 cf.preconf bootstrap file</a>
+<li><a href="#cfrc-resource-file">7.2 cfrc resource file</a>
 </li></ul>
 <li><a name="toc_Example-configuration-file" href="#Example-configuration-file">8 Example configuration files</a>
 <ul>
@@ -15503,7 +15867,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#cf_002esolaris">8.7 cf.solaris</a>
 <li><a href="#cf_002elinux">8.8 cf.linux</a>
 <li><a href="#cf_002efreebsd">8.9 cf.freebsd / cf.netbsd</a>
-<li><a href="#cfservd_002econf">8.10 cfservd.conf</a>
+<li><a href="#cfservd_002econf">8.10 cfservd.conf tutorial</a>
 </li></ul>
 <li><a name="toc_Variable-Index" href="#Variable-Index">Variable Index</a>
 <li><a name="toc_Concept-Index" href="#Concept-Index">Concept Index</a>

@@ -1485,7 +1485,7 @@ In the arguments, replyto and server attributes of methods.
 Names in the ignore action.
 
 @item
-Ïn shellcommands body.
+A shellcommands body.
 
 @item
 In admit/deny path and attributes of cfserver.

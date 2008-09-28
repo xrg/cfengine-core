@@ -1,4 +1,4 @@
-@set UPDATED 24 April 2008
-@set UPDATED-MONTH April 2008
-@set EDITION 2.2.8-pwin
-@set VERSION 2.2.8-pwin
+@set UPDATED 11 September 2008
+@set UPDATED-MONTH September 2008
+@set EDITION 2.2.9b1
+@set VERSION 2.2.9b1

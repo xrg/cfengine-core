@@ -2432,7 +2432,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=cfengine
- VERSION=2.2.8-pwin
+ VERSION=2.2.9b1
 
 
 cat >>confdefs.h <<_ACEOF
@@ -24093,7 +24093,7 @@ echo "$as_me: error: This release of cfengine requires a version of BerkeleyDB 4
    { (exit 1); exit 1; }; }
 else
     if test "x$BERKELEY_DB_DIR" = "xdefault" ; then
-        for v in BerkeleyDB.4.2 BerkeleyDB.4.3 BerkeleyDB.4.4 BerkeleyDB.4.5 BerkeleyDB.4.6; do
+        for v in BerkeleyDB.4.2 BerkeleyDB.4.3 BerkeleyDB.4.4 BerkeleyDB.4.5 BerkeleyDB.4.6 BerkeleyDB.4.7; do
             for d in $prefix /opt /usr/local /usr; do
                 test -d "$d/$v" && BERKELEY_DB_DIR="$d/$v"
             done
@@ -24146,7 +24146,7 @@ return db_create ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' db-4 db4 db-4.6 db-4.5 db-4.4 db-4.3 db-4.2 db-4.1 db-4.0; do
+for ac_lib in '' db-4 db4 db-4.7 db-4.6 db-4.5 db-4.4 db-4.3 db-4.2 db-4.1 db-4.0; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -24254,7 +24254,7 @@ echo "${ECHO_T}$BERKELEY_DB_DIR" >&6; }
     elif test -d "$BERKELEY_DB_DIR"; then
 
         BERKELEY_DB_CFLAGS="-I$BERKELEY_DB_DIR/include"
-        for v in . db46 db45 db44 db43 db42 db41 db40 db4 db33 db32 db3 db; do
+        for v in . db47 db46 db45 db44 db43 db42 db41 db40 db4 db33 db32 db3 db; do
             if test -f "$BERKELEY_DB_DIR/include/$v/db.h"; then
                 BERKELEY_DB_CFLAGS="-I$BERKELEY_DB_DIR/include/$v"
 		break
@@ -24262,7 +24262,7 @@ echo "${ECHO_T}$BERKELEY_DB_DIR" >&6; }
         done
 
         BERKELEY_DB_LIB="-ldb"
-        for v in db-4.6 db4.6 db46 db-4.5 db4.5 db45 db-4.4 db4.4 db44; do
+        for v in db-4.7 db4.7 db47 db-4.6 db4.6 db46 db-4.5 db4.5 db45 db-4.4 db4.4 db44; do
             if test -f "$BERKELEY_DB_DIR/lib/lib$v.so"; then
                 BERKELEY_DB_LIB="-l$v"
 		break

@@ -6185,7 +6185,7 @@ One of the simplest things which we are asked to do constantly
 is to disable dangerous programs as bugs are discovered. CERT
 security warnings frequently warn about programs with flaws
 which can compromise a system. In cfengine, disabling a file
-means renaming it to *.cf-disabled and setting its permission to 400.
+means renaming it to *.cfdisabled and setting its permission to 600.
 @smallexample
  disable:
 
