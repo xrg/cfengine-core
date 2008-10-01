@@ -100,7 +100,7 @@ double LAST_DAY_ENTROPY = 0.0;
 struct Item *PREVIOUS_STATE = NULL;
 struct Item *ENTROPIES = NULL;
 
-short NO_FORK = false;
+int NO_FORK = false;
 double FORGETRATE = 0.6;
 
 int LASTQ[CF_OBSERVABLES];
