@@ -316,6 +316,8 @@ void GetInterfaceInfo(void)
 
 Debug("GetInterfaceInfo()\n");
 
+last_name[0] = '\0';
+
 if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
    {
    CfLog(cferror,"Couldn't open socket","socket");
@@ -348,6 +350,7 @@ for (j = 0,len = 0,ifp = list.ifc_req; len < list.ifc_len; len+=SIZEOF_IFREQ(*if
    /* Chun Tian (binghe) <binghe.lisp@gmail.com>:
       use a last_name to detect whether current address is a interface's first address:
       if current ifr_name = last_name, it's not the first address of current interface. */
+
    if (strncmp(last_name,ifp->ifr_name,sizeof(ifp->ifr_name)) == 0)
       {
       first_address = false;
