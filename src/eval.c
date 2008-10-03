@@ -442,15 +442,17 @@ DeleteItemLiteral(&VHEAP,class);
 
 void DeleteClassesFromContext(char *context)
 
-{ struct Item *ip;
+{ struct Item *ip,*np;
 
 Verbose("Purging private classes from context %s\n",context);
  
-for (ip = VHEAP; ip != NULL; ip=ip->next)
+for (ip = VHEAP; ip != NULL; ip = np)
    {
+   np = ip->next;
+   
    if (strcmp(ip->classes,context) == 0)
       {
-      Debug("Deleting context private class %s from heap\n",ip->name);
+      Verbose(" - Deleting %s \n",ip->name);
       DeleteItem(&VHEAP,ip);
       }
    }
