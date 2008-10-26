@@ -44,7 +44,6 @@ struct option CFDENVOPTIONS[] =
    {"no-fork",no_argument,0,'F'},
    {"histograms",no_argument,0,'H'},
    {"tcpdump",no_argument,0,'T'},
-   {"file",optional_argument,0,'f'},
    {NULL,0,0,0}
    };
 

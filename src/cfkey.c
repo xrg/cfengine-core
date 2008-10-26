@@ -33,13 +33,30 @@
 #include "cf.extern.h"
 
 char CFLOCK[CF_BUFSIZE];
+char USERKEYFILE[CF_BUFSIZE];
 
 void Initialize(void);
 int RecursiveTidySpecialArea(char *name, struct Tidy *tp, int maxrecurse, struct stat *sb);
+void Syntax(void);
+void CheckOpts(int argc, char **argv);
 
-/*****************************************************************************/
+/*******************************************************************/
+/* Command line options                                            */
+/*******************************************************************/
 
-int main()
+  /* GNU STUFF FOR LATER #include "getopt.h" */
+ 
+ struct option OPTIONS[5] =
+      {
+      { "help",no_argument,0,'h' },
+      { "file",required_argument,0,'f' },
+      { "version",no_argument,0,'V' },
+      { "quiet",no_argument,0,'w' },
+      { NULL,0,0,0 }
+      };
+
+
+int main(int argc, char** argv)
 
 { unsigned long err;
   RSA *pair;
@@ -49,9 +66,10 @@ int main()
   static char *passphrase = "Cfengine passphrase";
   EVP_CIPHER *cipher = EVP_des_ede3_cbc();
 
+CheckOpts(argc, argv);
 
 Initialize();
- 
+           
 if (stat(CFPRIVKEYFILE,&statbuf) != -1)
    {
    printf("A key file already exists at %s.\n",CFPRIVKEYFILE);
@@ -64,7 +82,10 @@ if (stat(CFPUBKEYFILE,&statbuf) != -1)
    return 1;
    }
 
-printf("Making a key pair for cfengine, please wait, this could take a minute...\n"); 
+ if(VERBOSE) 
+   {
+   printf("Making a key pair for cfengine, please wait, this could take a minute...\n"); 
+   }
 
 pair = RSA_generate_key(2048,35,NULL,NULL);
 
@@ -95,7 +116,10 @@ if ((fp = fdopen(fd, "w")) == NULL )
    return 1;
    }
 
+if (VERBOSE)
+   {
 printf("Writing private key to %s\n",CFPRIVKEYFILE);
+   }
  
 if (!PEM_write_RSAPrivateKey(fp,pair,cipher,passphrase,strlen(passphrase),NULL,NULL))
     {
@@ -121,7 +145,10 @@ if ((fp = fdopen(fd, "w")) == NULL )
    return 1;
    }
 
-printf("Writing public key to %s\n",CFPUBKEYFILE);
+if (VERBOSE)
+   {
+   printf("Writing public key to %s\n",CFPUBKEYFILE);
+   }
  
 if(!PEM_write_RSAPublicKey(fp,pair))
    {
@@ -170,6 +197,75 @@ OpenSSL_add_all_algorithms();
 ERR_load_crypto_strings();
 
 CheckWorkDirectories();
+if (USERKEYFILE[0] != '\0')
+  {
+    strncpy(CFPRIVKEYFILE, USERKEYFILE, CF_BUFSIZE-6);
+    strcat(CFPRIVKEYFILE, ".priv");
+    strncpy(CFPUBKEYFILE, USERKEYFILE, CF_BUFSIZE-5);
+    strcat(CFPUBKEYFILE, ".pub");
+  }
 RandomSeed();
+}
+
+/*******************************************************************/
+
+void Syntax()
+
+{ int i;
+
+printf("GNU cfengine: A system configuration engine (cfkey)\n%s\n%s\n",VERSION,COPYRIGHT);
+printf("\n");
+printf("Options:\n\n");
+
+for (i=0; OPTIONS[i].name != NULL; i++)
+   {
+   printf("--%-20s    (-%c)\n",OPTIONS[i].name,(char)OPTIONS[i].val);
+   }
+
+printf("\nBug reports to bug-cfengine@cfengine.org\n");
+printf("General help to help-cfengine@cfengine.org\n");
+printf("Info & fixes at http://www.cfengine.org\n");
+}
+
+/*****************************************************************************/
+
+void CheckOpts(int argc,char **argv)
+
+{ extern char *optarg;
+  struct Item *actionList;
+  char *tmp, *suffix;
+  int optindex = 0;
+  int c;
+
+  while ((c=getopt_long(argc,argv,"f:hvVw",OPTIONS,&optindex)) != EOF)
+  {
+  switch ((char) c)
+      {
+      case 'f':
+          strncpy(USERKEYFILE, optarg, CF_BUFSIZE-1);
+          /* search for .priv or .pub suffix and wipe it out */
+          suffix = strrchr(USERKEYFILE, '.');
+          if (NULL != suffix 
+              && ((0 == strcmp(suffix, ".priv")) 
+                  || (0 == strcmp(suffix, ".pub"))))
+            *suffix = '\0';
+          break;
+          
+      case 'V': printf("GNU cfengine %s\n%s\n",VERSION,COPYRIGHT);
+          printf("This program is covered by the GNU Public License and may be\n");
+          printf("copied free of charge.  No warranty is implied.\n\n");
+          exit(0);
+          
+      case 'h': Syntax();
+          exit(0);
+
+      case 'w': VERBOSE = false;
+           break;
+          
+      default:  Syntax();
+          exit(1);
+         
+      }
+  }
 }
 

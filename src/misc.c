@@ -917,6 +917,7 @@ if ((fp = fopen(SUSE_REL_FILENAME,"r")) == NULL)
    }
 
 fgets(relstring, sizeof(relstring), fp);
+Chop(relstring);
 fclose(fp);
   
    /* Check if it's a SuSE Enterprise version  */

@@ -534,7 +534,7 @@ return false;
 int IsExcluded(char *exception)
 
 {
-if (! IsDefinedClass(exception))
+if (!IsDefinedClass(exception))
    {
    Debug2("%s is excluded!\n",exception);
    return true;
