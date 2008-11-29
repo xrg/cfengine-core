@@ -718,9 +718,9 @@ else
                 }      
              else
                 {
-                CfLog(cfinform,"Checksum comparison replaced by ctime: files not regular\n","");
+                CfLog(cfverbose,"Checksum comparison replaced by ctime: files not regular\n","");
                 snprintf(OUTPUT,CF_BUFSIZE*2,"%s -> %s\n",sourcefile,destfile);
-                CfLog(cfinform,OUTPUT,"");
+                CfLog(cfverbose,OUTPUT,"");
                 ok_to_copy = (deststatbuf.st_ctime < sourcestatbuf.st_ctime)||(deststatbuf.st_mtime < sourcestatbuf.st_mtime);
                 }
              
@@ -739,9 +739,9 @@ else
                 }      
              else
                 {
-                CfLog(cfinform,"Byte comparison replaced by ctime: files not regular\n","");
+                CfLog(cfverbose,"Byte comparison replaced by ctime: files not regular\n","");
                 snprintf(OUTPUT,CF_BUFSIZE*2,"%s -> %s\n",sourcefile,destfile);
-                CfLog(cfinform,OUTPUT,"");
+                CfLog(cfverbose,OUTPUT,"");
                 ok_to_copy = (deststatbuf.st_ctime < sourcestatbuf.st_ctime)||(deststatbuf.st_mtime < sourcestatbuf.st_mtime);
                 }
              
@@ -1163,17 +1163,17 @@ if (DONTDO)
 if(selinux_enabled)
     {
     dest_exists = stat(dest,&cur_dest);
-    if(dest_exists == 0)
-        {
-        /* get current security context of destination file */
-        getfilecon(dest,&scontext);
-        }
+    if (dest_exists == 0)
+       {
+       /* get current security context of destination file */
+       getfilecon(dest,&scontext);
+       }
     else
-        {
-        /* use default security context when creating destination file */
-        matchpathcon(dest,0,&scontext);
-        setfscreatecon(scontext);
-        }
+       {
+       /* use default security context when creating destination file */
+       matchpathcon(dest,0,&scontext);
+       setfscreatecon(scontext);
+       }
     }
 #endif
 

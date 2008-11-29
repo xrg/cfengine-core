@@ -706,6 +706,7 @@ if (ptr != NULL)
              break;
              
          case touch:
+         case create:
              if (! DONTDO)
                 {
                 if (chflags (file,newflags & CHFLAGS_MASK) == -1)

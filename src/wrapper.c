@@ -193,9 +193,16 @@ if (stat(startpath,&statbuf) == -1)
       return;
       }
 
-   filemode = DEFAULTMODE;      /* Decide the mode for filecreation */
-   filemode |=   ptr->plus;
-   filemode &= ~(ptr->minus);
+   if (ptr->plus == 0 && ptr->minus == 0)
+      {
+      filemode = 0600;
+      }
+   else
+      {
+      filemode = DEFAULTMODE;      /* Decide the mode for filecreation */
+      filemode |=   ptr->plus;
+      filemode &= ~(ptr->minus);
+      }
 
    switch (ptr->action)
       {
@@ -255,6 +262,11 @@ else
       struct File tmp;
       memcpy(&tmp,ptr,sizeof(struct File));
       tmp.action = fixall;
+
+      if (tmp.plus == 0 && tmp.minus == 0)
+         {
+         tmp.plus = 0600;
+         }
       
       CheckExistingFile("*",startpath,&statbuf,&tmp);
       ReleaseCurrentLock();
