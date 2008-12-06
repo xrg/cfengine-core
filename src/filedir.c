@@ -583,7 +583,15 @@ if (fixmode)
       }
    }
  
- 
+
+if (CheckOwner(file,ptr,dstat)) /* Again */
+   {
+   if (ptr != NULL)
+      {
+      AddMultipleClasses(ptr->defines);
+      }
+   }             
+
 #if defined HAVE_CHFLAGS  /* BSD special flags */
 
 if (ptr != NULL)
@@ -987,6 +995,7 @@ else
          {
          if (ptr->uid->uid != CF_UNKNOWN_OWNER)
             {
+            Verbose("Setting owner to %s\n",ptr->uid->uid);
             uid = ptr->uid->uid;    /* default is first (not unknown) item in list */
             break;
             }
@@ -1021,7 +1030,8 @@ else
       {
       case fixplain:
       case fixdirs:
-      case fixall: 
+      case fixall:
+      case create:
       case touch:
           if (VERBOSE || DEBUG || D2)
              {
