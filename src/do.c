@@ -2844,7 +2844,7 @@ for (ptr = VPKG; ptr != NULL; ptr=ptr->next)
 
    ExpandVarstring(ptr->name,name,"");
    
-   snprintf(lock,CF_BUFSIZE-1,"%s_%d_%d",name,ptr->cmp,ptr->action);
+   snprintf(lock,CF_BUFSIZE-1,"%s_%d_%s_%d_%s_%s", name, ptr->cmp, ptr->ver ?: "" ,ptr->action, ptr->defines ?: "", ptr->elsedef ?: "");
    
    if (!GetLock(ASUniqueName("packages"),CanonifyName(lock),ptr->ifelapsed,ptr->expireafter,VUQNAME,CFSTARTTIME))
       {
