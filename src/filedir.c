@@ -995,7 +995,7 @@ else
          {
          if (ptr->uid->uid != CF_UNKNOWN_OWNER)
             {
-            Verbose("Setting owner to %s\n",ptr->uid->uid);
+            Verbose("Setting owner to %d\n",ptr->uid->uid);
             uid = ptr->uid->uid;    /* default is first (not unknown) item in list */
             break;
             }

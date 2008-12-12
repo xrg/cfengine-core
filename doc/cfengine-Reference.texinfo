@@ -1737,9 +1737,30 @@ OR is the weakest operator.
 
 @menu
 * Setting classes with special functions::  
+* AccessedBefore::              
+* ChangedBefore::               
+* ClassMatch::                  
+* FileExists::                  
+* GroupExists::                 
+* HostRange::                   
+* IsDefined::                   
+* IsDir::                       
+* IsLink::                      
+* IsPlain::                     
+* IsNewerThan::                 
+* IPRange::                     
+* PrepModule::                  
+* Regcmp::                      
+* ReturnsZero::                 
+* ReturnsZeroShell::            
+* Strcmp::                      
+* UserExists::                  
+* IsGreaterThan::               
+* IsLessThan::                  
+* Examples setting classes::    
 @end menu
 
-@node Setting classes with special functions,  , Cfengine classes, Cfengine classes
+@node Setting classes with special functions, AccessedBefore, Cfengine classes, Cfengine classes
 @subsection Setting classes with special functions
 
 Cfengine provides a number of built-in functions for evaluating classes,
@@ -1747,15 +1768,31 @@ based on file tests. Using these built-in functions is quicker than
 calling the shell @code{test} function. The time functions place their
 arguments in chronological order.
 
-@table @code
 
-@item AccessedBefore(@var{f1},@var{f2})
+@node AccessedBefore, ChangedBefore, Setting classes with special functions, Cfengine classes
+@subsection AccessedBefore
+
+@smallexample 
+AccessedBefore(@var{f1},@var{f2})
+@end smallexample 
+
 True if file 1 was accessed more recently than file 2 (UNIX atime)
 
-@item ChangedBefore(@var{f1},@var{f2})
+@node ChangedBefore, ClassMatch, AccessedBefore, Cfengine classes
+@subsection ChangedBefore
+
+@smallexample 
+ChangedBefore(@var{f1},@var{f2})
+@end smallexample 
 True if file 1's attributes were changed in any way more recently than file 2's (UNIX ctime)
 
-@item ClassMatch(@var{regexp})
+@node ClassMatch, FileExists, ChangedBefore, Cfengine classes
+@subsection ClassMatch
+
+@smallexample 
+ClassMatch(@var{regexp})
+@end smallexample 
+
 True if the quoted regular expression matches one of the currently defined classes.
 It is wise to place ClassMatch at the end of your parsing in order to capture
 as many of the user-defined classes as possible.
@@ -1766,34 +1803,86 @@ classes:
    userdef = ( ClassMatch(.*linux.*) )
 @end smallexample
 
-@item FileExists(@var{file})
+@node FileExists, GroupExists, ClassMatch, Cfengine classes
+@subsection FileExists
+
+@smallexample 
+FileExists(@var{file})
+@end smallexample 
 True if the named file object (file/directory or link) exists.
 
-@item GroupExists(@var{groupname}|@var{gid})
+@node GroupExists, HostRange, FileExists, Cfengine classes
+@subsection GroupExists
+
+@smallexample 
+GroupExists(@var{groupname}|@var{gid})
+@end smallexample 
 True if the groupname or group id is registered on the system.
 
-@item HostRange(@var{basename},@var{start-stop})
+@node HostRange, IsDefined, GroupExists, Cfengine classes
+@subsection HostRange
+
+@smallexample 
+HostRange(@var{basename},@var{start-stop})
+@end smallexample 
 True if the current relative domain name begins with basename and ends with an integer
 between start and stop.  Note well: matching is case insensitive (both hostname and basename are converted to all lower case for comparison.) 
 
-@item IsDefined(@var{variable-id})
+@node IsDefined, IsDir, HostRange, Cfengine classes
+@subsection IsDefined
+
+@smallexample 
+IsDefined(@var{variable-id})
+@end smallexample 
 True if the named variable is defined. Note well: use the variable name, not its contents (that is,
 @code{IsDefined(var)}, and not @code{IsDefined($@{var@})})
-@item IsDir(@var{f})
+
+@node IsDir, IsLink, IsDefined, Cfengine classes
+@subsection IsDir
+
+@smallexample 
+IsDir(@var{f})
+@end smallexample 
 True if the file f is a directory
-@item IsLink(@var{f})
+
+@node IsLink, IsPlain, IsDir, Cfengine classes
+@subsection IsLink
+
+@smallexample 
+IsLink(@var{f})
+@end smallexample 
 True if the file f is a symbolic link
-@item IsPlain(@var{f})
+
+@node IsPlain, IsNewerThan, IsLink, Cfengine classes
+@subsection IsPlain
+
+@smallexample 
+IsPlain(@var{f})
+@end smallexample 
 True if the file f is a plain file
 
-@item IsNewerThan(@var{f1},@var{f2})
+@node IsNewerThan, IPRange, IsPlain, Cfengine classes
+@subsection IsNewerThan
+
+@smallexample 
+IsNewerThan(@var{f1},@var{f2})
+@end smallexample 
 True if file 2 was modified more recently than file 1 (UNIX mtime)
 
-@item IPRange(@var{address-range})
+@node IPRange, PrepModule, IsNewerThan, Cfengine classes
+@subsection IPRange
+
+@smallexample 
+IPRange(@var{address-range})
+@end smallexample 
 True if the current host lies within the specified IP range
 
+@node PrepModule, Regcmp, IPRange, Cfengine classes
+@subsection PrepModule
 
-@item PrepModule(@var{module},@var{arg1 arg2...})
+@smallexample 
+PrepModule(@var{module},@var{arg1 arg2...})
+@end smallexample 
 True if the named module exists and can be executed. The module is assumed to
 follow the standard programming interface for modules (see Writing plugin modules in tutorial).
 Unlike actionsequence modules, these modules are evaluated immediately on parsing.
@@ -1802,33 +1891,71 @@ Note that the module should be specified relative to the authorized module direc
 @cindex PrepModule
 @cindex Modules executed immediately
 
-@item Regcmp(@var{regexp},@var{string or list separated string})
+@node Regcmp, ReturnsZero, PrepModule, Cfengine classes
+@subsection Regcmp
+
+@smallexample 
+Regcmp(@var{regexp},@var{string or list separated string})
+@end smallexample 
 True if the string matched the regular expression regexp.
 
-@item ReturnsZero(@var{command})
+@node ReturnsZero, ReturnsZeroShell, Regcmp, Cfengine classes
+@subsection ReturnsZero
+
+@smallexample 
+ReturnsZero(@var{command})
+@end smallexample 
 True if the named shell command returns with exit code zero (success).
 The command is executed without a shell wrapper.
 
-@item ReturnsZeroShell(@var{command})
+@node ReturnsZeroShell, Strcmp, ReturnsZero, Cfengine classes
+@subsection ReturnsZeroShell
+
+@smallexample 
+ReturnsZeroShell(@var{command})
+@end smallexample 
 True if the named shell command returns with exit code zero (success) when executed
 in the environment of a shell wrapper.
 
-@item Strcmp(@var{s1},@var{s2})
+@node Strcmp, UserExists, ReturnsZeroShell, Cfengine classes
+@subsection Strcmp
+
+@smallexample 
+Strcmp(@var{s1},@var{s2})
+@end smallexample 
 True if the string s1 exactly matches s2
 
-@item UserExists(@var{username}|@var{uid})
+@node UserExists, IsGreaterThan, Strcmp, Cfengine classes
+@subsection UserExists
+
+@smallexample 
+UserExists(@var{username}|@var{uid})
+@end smallexample 
 True if the username or user id is registered on the system (this does not imply that
 the user can log in or has a home directory).
+
 
 @cindex IsGreatThan
 @cindex IsLessThan
 @cindex >
 @cindex <
-@item IsGreaterThan(@var{s1},@var{s2})
+
+@node IsGreaterThan, IsLessThan, UserExists, Cfengine classes
+@subsection IsGreaterThan
+
+@smallexample 
+IsGreaterThan(@var{s1},@var{s2})
+@end smallexample 
 Returns true if the value of s1 is greater than the value of s2. Note
 that, if the strings have numerical values, a numerical comparison is
 performed, otherwise a string comparison is used.
-@item IsLessThan(@var{s1},@var{s2})
+
+@node IsLessThan, Examples setting classes, IsGreaterThan, Cfengine classes
+@subsection IsLessThan
+
+@smallexample 
+IsLessThan(@var{s1},@var{s2})
+@end smallexample 
 Returns true if the value of s1 is less than the value of s2. Note
 that, if the strings have numerical values, a numerical comparison is
 performed, otherwise a string comparison is used.
@@ -1851,8 +1978,10 @@ performed, otherwise a string comparison is used.
 	  lt:: "$(a) LESS THAN $(b)"
 	  gt:: "$(a) GREATER THAN $(b)"
 @end smallexample
-@end table
 
+
+@node Examples setting classes,  , IsLessThan, Cfengine classes
+@subsection Examples setting classes
 
 @noindent
 For example:
@@ -10850,7 +10979,7 @@ See also filters @xref{filters}, for more complex searches.
 @c -------------------------------------------------------------------------------
 
 @node packages, rename, processes, Cfagent reference
-@section packages
+@section Packages
 @cindex packages
 @cindex Checking for installed packages
 

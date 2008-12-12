@@ -138,8 +138,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#dir">(dir)</a>
    <p><a href="#Contents"><h1>COMPLETE TABLE OF CONTENTS</h1></a>
 
    <p><p>
-This manual is for version 2.2.9b1 of cfengine and
-was last updated on the  30 August 2008. 
+This manual is for version 2.2.9 of cfengine and
+was last updated on the  2 October 2008. 
 </p>
 
    <p><h2>Summary of contents</h2>
@@ -1580,11 +1580,33 @@ In summary, the operator ordering in cfengine classes is as follows:
 <!--  -->
 <ul class="menu">
 <li><a accesskey="1" href="#Setting-classes-with-special-functions">Setting classes with special functions</a>
+<li><a accesskey="2" href="#AccessedBefore">AccessedBefore</a>
+<li><a accesskey="3" href="#ChangedBefore">ChangedBefore</a>
+<li><a accesskey="4" href="#ClassMatch">ClassMatch</a>
+<li><a accesskey="5" href="#FileExists">FileExists</a>
+<li><a accesskey="6" href="#GroupExists">GroupExists</a>
+<li><a accesskey="7" href="#HostRange">HostRange</a>
+<li><a accesskey="8" href="#IsDefined">IsDefined</a>
+<li><a accesskey="9" href="#IsDir">IsDir</a>
+<li><a href="#IsLink">IsLink</a>
+<li><a href="#IsPlain">IsPlain</a>
+<li><a href="#IsNewerThan">IsNewerThan</a>
+<li><a href="#IPRange">IPRange</a>
+<li><a href="#PrepModule">PrepModule</a>
+<li><a href="#Regcmp">Regcmp</a>
+<li><a href="#ReturnsZero">ReturnsZero</a>
+<li><a href="#ReturnsZeroShell">ReturnsZeroShell</a>
+<li><a href="#Strcmp">Strcmp</a>
+<li><a href="#UserExists">UserExists</a>
+<li><a href="#IsGreaterThan">IsGreaterThan</a>
+<li><a href="#IsLessThan">IsLessThan</a>
+<li><a href="#Examples-setting-classes">Examples setting classes</a>
 </ul>
 
 <div class="node">
 <p><hr>
 <a name="Setting-classes-with-special-functions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#AccessedBefore">AccessedBefore</a>,
 Previous:&nbsp;<a rel="previous" accesskey="p" href="#Cfengine-classes">Cfengine classes</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
 
@@ -1597,79 +1619,351 @@ based on file tests. Using these built-in functions is quicker than
 calling the shell <code>test</code> function. The time functions place their
 arguments in chronological order.
 
-     <dl>
-<dt><code>AccessedBefore(</code><var>f1</var><code>,</code><var>f2</var><code>)</code><dd>True if file 1 was accessed more recently than file 2 (UNIX atime)
+<div class="node">
+<p><hr>
+<a name="AccessedBefore"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#ChangedBefore">ChangedBefore</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#Setting-classes-with-special-functions">Setting classes with special functions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
 
-     <br><dt><code>ChangedBefore(</code><var>f1</var><code>,</code><var>f2</var><code>)</code><dd>True if file 1's attributes were changed in any way more recently than file 2's (UNIX ctime)
+</div>
 
-     <br><dt><code>ClassMatch(</code><var>regexp</var><code>)</code><dd>True if the quoted regular expression matches one of the currently defined classes. 
+<h4 class="subsection">4.5.2 AccessedBefore</h4>
+
+<pre class="smallexample">     AccessedBefore(<var>f1</var>,<var>f2</var>)
+</pre>
+   <p>True if file 1 was accessed more recently than file 2 (UNIX atime)
+
+<div class="node">
+<p><hr>
+<a name="ChangedBefore"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#ClassMatch">ClassMatch</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#AccessedBefore">AccessedBefore</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
+
+</div>
+
+<h4 class="subsection">4.5.3 ChangedBefore</h4>
+
+<pre class="smallexample">     ChangedBefore(<var>f1</var>,<var>f2</var>)
+</pre>
+   <p>True if file 1's attributes were changed in any way more recently than file 2's (UNIX ctime)
+
+<div class="node">
+<p><hr>
+<a name="ClassMatch"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#FileExists">FileExists</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#ChangedBefore">ChangedBefore</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
+
+</div>
+
+<h4 class="subsection">4.5.4 ClassMatch</h4>
+
+<pre class="smallexample">     ClassMatch(<var>regexp</var>)
+</pre>
+   <p>True if the quoted regular expression matches one of the currently defined classes. 
 It is wise to place ClassMatch at the end of your parsing in order to capture
 as many of the user-defined classes as possible.
 
-     <pre class="smallexample">          classes:
-          
-             userdef = ( ClassMatch(.*linux.*) )
-     </pre>
-     <br><dt><code>FileExists(</code><var>file</var><code>)</code><dd>True if the named file object (file/directory or link) exists.
+<pre class="smallexample">     classes:
+     
+        userdef = ( ClassMatch(.*linux.*) )
+</pre>
+   <div class="node">
+<p><hr>
+<a name="FileExists"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#GroupExists">GroupExists</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#ClassMatch">ClassMatch</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
 
-     <br><dt><code>GroupExists(</code><var>groupname</var><code>|</code><var>gid</var><code>)</code><dd>True if the groupname or group id is registered on the system.
+</div>
 
-     <br><dt><code>HostRange(</code><var>basename</var><code>,</code><var>start-stop</var><code>)</code><dd>True if the current relative domain name begins with basename and ends with an integer
+<h4 class="subsection">4.5.5 FileExists</h4>
+
+<pre class="smallexample">     FileExists(<var>file</var>)
+</pre>
+   <p>True if the named file object (file/directory or link) exists.
+
+<div class="node">
+<p><hr>
+<a name="GroupExists"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#HostRange">HostRange</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#FileExists">FileExists</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
+
+</div>
+
+<h4 class="subsection">4.5.6 GroupExists</h4>
+
+<pre class="smallexample">     GroupExists(<var>groupname</var>|<var>gid</var>)
+</pre>
+   <p>True if the groupname or group id is registered on the system.
+
+<div class="node">
+<p><hr>
+<a name="HostRange"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#IsDefined">IsDefined</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#GroupExists">GroupExists</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
+
+</div>
+
+<h4 class="subsection">4.5.7 HostRange</h4>
+
+<pre class="smallexample">     HostRange(<var>basename</var>,<var>start-stop</var>)
+</pre>
+   <p>True if the current relative domain name begins with basename and ends with an integer
 between start and stop.  Note well: matching is case insensitive (both hostname and basename are converted to all lower case for comparison.)
 
-     <br><dt><code>IsDefined(</code><var>variable-id</var><code>)</code><dd>True if the named variable is defined. Note well: use the variable name, not its contents (that is,
+<div class="node">
+<p><hr>
+<a name="IsDefined"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#IsDir">IsDir</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#HostRange">HostRange</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
+
+</div>
+
+<h4 class="subsection">4.5.8 IsDefined</h4>
+
+<pre class="smallexample">     IsDefined(<var>variable-id</var>)
+</pre>
+   <p>True if the named variable is defined. Note well: use the variable name, not its contents (that is,
 <code>IsDefined(var)</code>, and not <code>IsDefined(${var})</code>)
-<br><dt><code>IsDir(</code><var>f</var><code>)</code><dd>True if the file f is a directory
-<br><dt><code>IsLink(</code><var>f</var><code>)</code><dd>True if the file f is a symbolic link
-<br><dt><code>IsPlain(</code><var>f</var><code>)</code><dd>True if the file f is a plain file
 
-     <br><dt><code>IsNewerThan(</code><var>f1</var><code>,</code><var>f2</var><code>)</code><dd>True if file 2 was modified more recently than file 1 (UNIX mtime)
+<div class="node">
+<p><hr>
+<a name="IsDir"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#IsLink">IsLink</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#IsDefined">IsDefined</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
 
-     <br><dt><code>IPRange(</code><var>address-range</var><code>)</code><dd>True if the current host lies within the specified IP range
+</div>
 
-     <br><dt><code>PrepModule(</code><var>module</var><code>,</code><var>arg1 arg2...</var><code>)</code><dd>True if the named module exists and can be executed. The module is assumed to
+<h4 class="subsection">4.5.9 IsDir</h4>
+
+<pre class="smallexample">     IsDir(<var>f</var>)
+</pre>
+   <p>True if the file f is a directory
+
+<div class="node">
+<p><hr>
+<a name="IsLink"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#IsPlain">IsPlain</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#IsDir">IsDir</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
+
+</div>
+
+<h4 class="subsection">4.5.10 IsLink</h4>
+
+<pre class="smallexample">     IsLink(<var>f</var>)
+</pre>
+   <p>True if the file f is a symbolic link
+
+<div class="node">
+<p><hr>
+<a name="IsPlain"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#IsNewerThan">IsNewerThan</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#IsLink">IsLink</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
+
+</div>
+
+<h4 class="subsection">4.5.11 IsPlain</h4>
+
+<pre class="smallexample">     IsPlain(<var>f</var>)
+</pre>
+   <p>True if the file f is a plain file
+
+<div class="node">
+<p><hr>
+<a name="IsNewerThan"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#IPRange">IPRange</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#IsPlain">IsPlain</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
+
+</div>
+
+<h4 class="subsection">4.5.12 IsNewerThan</h4>
+
+<pre class="smallexample">     IsNewerThan(<var>f1</var>,<var>f2</var>)
+</pre>
+   <p>True if file 2 was modified more recently than file 1 (UNIX mtime)
+
+<div class="node">
+<p><hr>
+<a name="IPRange"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#PrepModule">PrepModule</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#IsNewerThan">IsNewerThan</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
+
+</div>
+
+<h4 class="subsection">4.5.13 IPRange</h4>
+
+<pre class="smallexample">     IPRange(<var>address-range</var>)
+</pre>
+   <p>True if the current host lies within the specified IP range
+
+<div class="node">
+<p><hr>
+<a name="PrepModule"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#Regcmp">Regcmp</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#IPRange">IPRange</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
+
+</div>
+
+<h4 class="subsection">4.5.14 PrepModule</h4>
+
+<pre class="smallexample">     PrepModule(<var>module</var>,<var>arg1 arg2...</var>)
+</pre>
+   <p>True if the named module exists and can be executed. The module is assumed to
 follow the standard programming interface for modules (see Writing plugin modules in tutorial). 
 Unlike actionsequence modules, these modules are evaluated immediately on parsing. 
 Note that the module should be specified relative to the authorized module directory. 
 <a name="index-Module-directory-91"></a><a name="index-PrepModule-92"></a><a name="index-Modules-executed-immediately-93"></a>
-<br><dt><code>Regcmp(</code><var>regexp</var><code>,</code><var>string or list separated string</var><code>)</code><dd>True if the string matched the regular expression regexp.
+<div class="node">
+<p><hr>
+<a name="Regcmp"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#ReturnsZero">ReturnsZero</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#PrepModule">PrepModule</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
 
-     <br><dt><code>ReturnsZero(</code><var>command</var><code>)</code><dd>True if the named shell command returns with exit code zero (success). 
+</div>
+
+<h4 class="subsection">4.5.15 Regcmp</h4>
+
+<pre class="smallexample">     Regcmp(<var>regexp</var>,<var>string or list separated string</var>)
+</pre>
+   <p>True if the string matched the regular expression regexp.
+
+<div class="node">
+<p><hr>
+<a name="ReturnsZero"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#ReturnsZeroShell">ReturnsZeroShell</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#Regcmp">Regcmp</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
+
+</div>
+
+<h4 class="subsection">4.5.16 ReturnsZero</h4>
+
+<pre class="smallexample">     ReturnsZero(<var>command</var>)
+</pre>
+   <p>True if the named shell command returns with exit code zero (success). 
 The command is executed without a shell wrapper.
 
-     <br><dt><code>ReturnsZeroShell(</code><var>command</var><code>)</code><dd>True if the named shell command returns with exit code zero (success) when executed
+<div class="node">
+<p><hr>
+<a name="ReturnsZeroShell"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#Strcmp">Strcmp</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#ReturnsZero">ReturnsZero</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
+
+</div>
+
+<h4 class="subsection">4.5.17 ReturnsZeroShell</h4>
+
+<pre class="smallexample">     ReturnsZeroShell(<var>command</var>)
+</pre>
+   <p>True if the named shell command returns with exit code zero (success) when executed
 in the environment of a shell wrapper.
 
-     <br><dt><code>Strcmp(</code><var>s1</var><code>,</code><var>s2</var><code>)</code><dd>True if the string s1 exactly matches s2
+<div class="node">
+<p><hr>
+<a name="Strcmp"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#UserExists">UserExists</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#ReturnsZeroShell">ReturnsZeroShell</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
 
-     <br><dt><code>UserExists(</code><var>username</var><code>|</code><var>uid</var><code>)</code><dd>True if the username or user id is registered on the system (this does not imply that
+</div>
+
+<h4 class="subsection">4.5.18 Strcmp</h4>
+
+<pre class="smallexample">     Strcmp(<var>s1</var>,<var>s2</var>)
+</pre>
+   <p>True if the string s1 exactly matches s2
+
+<div class="node">
+<p><hr>
+<a name="UserExists"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#IsGreaterThan">IsGreaterThan</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#Strcmp">Strcmp</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
+
+</div>
+
+<h4 class="subsection">4.5.19 UserExists</h4>
+
+<pre class="smallexample">     UserExists(<var>username</var>|<var>uid</var>)
+</pre>
+   <p>True if the username or user id is registered on the system (this does not imply that
 the user can log in or has a home directory).
 
-     <p><a name="index-IsGreatThan-94"></a><a name="index-IsLessThan-95"></a><a name="index-g_t_003e-96"></a><a name="index-g_t_003c-97"></a><br><dt><code>IsGreaterThan(</code><var>s1</var><code>,</code><var>s2</var><code>)</code><dd>Returns true if the value of s1 is greater than the value of s2. Note
-that, if the strings have numerical values, a numerical comparison is
-performed, otherwise a string comparison is used. 
-<br><dt><code>IsLessThan(</code><var>s1</var><code>,</code><var>s2</var><code>)</code><dd>Returns true if the value of s1 is less than the value of s2. Note
+   <p><a name="index-IsGreatThan-94"></a><a name="index-IsLessThan-95"></a><a name="index-g_t_003e-96"></a><a name="index-g_t_003c-97"></a>
+<div class="node">
+<p><hr>
+<a name="IsGreaterThan"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#IsLessThan">IsLessThan</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#UserExists">UserExists</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
+
+</div>
+
+<h4 class="subsection">4.5.20 IsGreaterThan</h4>
+
+<pre class="smallexample">     IsGreaterThan(<var>s1</var>,<var>s2</var>)
+</pre>
+   <p>Returns true if the value of s1 is greater than the value of s2. Note
 that, if the strings have numerical values, a numerical comparison is
 performed, otherwise a string comparison is used.
-     <pre class="smallexample">          
-          	control:
-          
-            	 actionsequence = ( files )
-          
-          	 a = ( 2.12 )
-           	 b = ( 2.11 )
-          
-          	classes:
-          
-          	lt = ( IsLessThan(${a},${b}) )
-             	gt = ( IsGreaterThan(${a},${b}) )
-          
-          	alerts:
-          
-          	  lt:: "$(a) LESS THAN $(b)"
-          	  gt:: "$(a) GREATER THAN $(b)"
-     </pre>
-     </dl>
+
+<div class="node">
+<p><hr>
+<a name="IsLessThan"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="#Examples-setting-classes">Examples setting classes</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#IsGreaterThan">IsGreaterThan</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
+
+</div>
+
+<h4 class="subsection">4.5.21 IsLessThan</h4>
+
+<pre class="smallexample">     IsLessThan(<var>s1</var>,<var>s2</var>)
+</pre>
+   <p>Returns true if the value of s1 is less than the value of s2. Note
+that, if the strings have numerical values, a numerical comparison is
+performed, otherwise a string comparison is used.
+<pre class="smallexample">     
+     	control:
+     
+       	 actionsequence = ( files )
+     
+     	 a = ( 2.12 )
+      	 b = ( 2.11 )
+     
+     	classes:
+     
+     	lt = ( IsLessThan(${a},${b}) )
+        	gt = ( IsGreaterThan(${a},${b}) )
+     
+     	alerts:
+     
+     	  lt:: "$(a) LESS THAN $(b)"
+     	  gt:: "$(a) GREATER THAN $(b)"
+</pre>
+   <div class="node">
+<p><hr>
+<a name="Examples-setting-classes"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="#IsLessThan">IsLessThan</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="#Cfengine-classes">Cfengine classes</a>
+
+</div>
+
+<h4 class="subsection">4.5.22 Examples setting classes</h4>
 
 <p class="noindent">For example:
 
@@ -11085,7 +11379,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Cfagent-reference">Cfagent reference</
 
 </div>
 
-<h3 class="section">4.32 packages</h3>
+<h3 class="section">4.32 Packages</h3>
 
 <p><a name="index-packages-543"></a><a name="index-Checking-for-installed-packages-544"></a>
 The packages action allows you to check for the existance of packages
@@ -14841,7 +15135,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-a_003d-585"><code>a=</code></a>: <a href="#tidy">tidy</a></li>
 <li><a href="#index-a_003d-403"><code>a=</code></a>: <a href="#Syntax">Syntax</a></li>
 <li><a href="#index-AbortClasses-152"><code>AbortClasses</code></a>: <a href="#control">control</a></li>
-<li><a href="#index-AccessedBefore_0028_0029-108"><code>AccessedBefore()</code></a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
+<li><a href="#index-AccessedBefore_0028_0029-108"><code>AccessedBefore()</code></a>: <a href="#Examples-setting-classes">Examples setting classes</a></li>
 <li><a href="#index-action-404"><code>action</code></a>: <a href="#Syntax">Syntax</a></li>
 <li><a href="#index-action_003d-545"><code>action=</code></a>: <a href="#packages">packages</a></li>
 <li><a href="#index-actionsequence-158"><code>actionsequence</code></a>: <a href="#actionsequence">actionsequence</a></li>
@@ -14866,7 +15160,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-CFALLCLASSES-10"><code>CFALLCLASSES</code></a>: <a href="#Cfagent-Runtime-Options">Cfagent Runtime Options</a></li>
 <li><a href="#index-cfinputs_005fversion-38"><code>cfinputs_version</code></a>: <a href="#Special-variables">Special variables</a></li>
 <li><a href="#index-cfrc-699"><code>cfrc</code></a>: <a href="#cfrc-resource-file">cfrc resource file</a></li>
-<li><a href="#index-ChangedBefore_0028_0029-103"><code>ChangedBefore()</code></a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
+<li><a href="#index-ChangedBefore_0028_0029-103"><code>ChangedBefore()</code></a>: <a href="#Examples-setting-classes">Examples setting classes</a></li>
 <li><a href="#index-ChecksumDatabase-205"><code>ChecksumDatabase</code></a>: <a href="#ChecksumDatabase-in-cfagent">ChecksumDatabase in cfagent</a></li>
 <li><a href="#index-ChecksumPurge-207"><code>ChecksumPurge</code></a>: <a href="#ChecksumPurge">ChecksumPurge</a></li>
 <li><a href="#index-ChecksumUpdates-209"><code>ChecksumUpdates</code></a>: <a href="#ChecksumUpdates">ChecksumUpdates</a></li>
@@ -14912,10 +15206,10 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-include_003d-414"><code>include=</code></a>: <a href="#Syntax">Syntax</a></li>
 <li><a href="#index-interface-configuration-482"><code>interface configuration</code></a>: <a href="#interfaces">interfaces</a></li>
 <li><a href="#index-InterfaceName-237"><code>InterfaceName</code></a>: <a href="#interfacename">interfacename</a></li>
-<li><a href="#index-IsDir_0028_0029-105"><code>IsDir()</code></a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
-<li><a href="#index-IsLink_0028_0029-106"><code>IsLink()</code></a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
-<li><a href="#index-IsNewerThan_0028_0029-107"><code>IsNewerThan()</code></a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
-<li><a href="#index-IsPlain_0028_0029-104"><code>IsPlain()</code></a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
+<li><a href="#index-IsDir_0028_0029-105"><code>IsDir()</code></a>: <a href="#Examples-setting-classes">Examples setting classes</a></li>
+<li><a href="#index-IsLink_0028_0029-106"><code>IsLink()</code></a>: <a href="#Examples-setting-classes">Examples setting classes</a></li>
+<li><a href="#index-IsNewerThan_0028_0029-107"><code>IsNewerThan()</code></a>: <a href="#Examples-setting-classes">Examples setting classes</a></li>
+<li><a href="#index-IsPlain_0028_0029-104"><code>IsPlain()</code></a>: <a href="#Examples-setting-classes">Examples setting classes</a></li>
 <li><a href="#index-l_003d-399"><code>l=</code></a>: <a href="#Syntax">Syntax</a></li>
 <li><a href="#index-LastSeen-244"><code>LastSeen</code></a>: <a href="#lastseen">lastseen</a></li>
 <li><a href="#index-LastSeenExpireAfter-245"><code>LastSeenExpireAfter</code></a>: <a href="#lastseenexpireafter">lastseenexpireafter</a></li>
@@ -14968,7 +15262,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-resolve-557"><code>resolve</code></a>: <a href="#resolve">resolve</a></li>
 <li><a href="#index-resolve-165"><code>resolve</code></a>: <a href="#actionsequence">actionsequence</a></li>
 <li><a href="#index-Restricting-access-156"><code>Restricting access</code></a>: <a href="#access">access</a></li>
-<li><a href="#index-ReturnsZero_0028_0029-102"><code>ReturnsZero()</code></a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
+<li><a href="#index-ReturnsZero_0028_0029-102"><code>ReturnsZero()</code></a>: <a href="#Examples-setting-classes">Examples setting classes</a></li>
 <li><a href="#index-rotate_003d-356"><code>rotate=</code></a>: <a href="#disable">disable</a></li>
 <li><a href="#index-rxdirs-409"><code>rxdirs</code></a>: <a href="#Syntax">Syntax</a></li>
 <li><a href="#index-scanarrivals_003d-336"><code>scanarrivals=</code></a>: <a href="#disks">disks</a></li>
@@ -15041,8 +15335,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-g_t_002fetc_002fhost_002econf-691">/etc/host.conf</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
 <li><a href="#index-g_t_0040file_007b_002fetc_002fhosts_002eequiv_007d-347"><samp><span class="file">/etc/hosts.equiv</span></samp></a>: <a href="#disable">disable</a></li>
 <li><a href="#index-g_t_002fvar_002fcfengine_002foutput-672">/var/cfengine/output</a>: <a href="#Cfexecd-reference">Cfexecd reference</a></li>
-<li><a href="#index-g_t_003c-97">&lt;</a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
-<li><a href="#index-g_t_003e-96">&gt;</a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
+<li><a href="#index-g_t_003c-97">&lt;</a>: <a href="#UserExists">UserExists</a></li>
+<li><a href="#index-g_t_003e-96">&gt;</a>: <a href="#UserExists">UserExists</a></li>
 <li><a href="#index-Abort-cfengine-after-cf_002epreconf-696">Abort cfengine after cf.preconf</a>: <a href="#cf_002epreconf-bootstrap-file">cf.preconf bootstrap file</a></li>
 <li><a href="#index-AbortClasses-154">AbortClasses</a>: <a href="#AbortClasses">AbortClasses</a></li>
 <li><a href="#index-Aborting-cfagent-153">Aborting cfagent</a>: <a href="#AbortClasses">AbortClasses</a></li>
@@ -15128,11 +15422,11 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-g_t_0040code_007bclasses_007d-295"><code>classes</code></a>: <a href="#classes">classes</a></li>
 <li><a href="#index-classes-75">classes</a>: <a href="#Cfengine-classes">Cfengine classes</a></li>
 <li><a href="#index-Classes_002c-adding-and-defining-185">Classes, adding and defining</a>: <a href="#addclasses">addclasses</a></li>
-<li><a href="#index-Classes_002c-built_002din-functions-98">Classes, built-in functions</a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
+<li><a href="#index-Classes_002c-built_002din-functions-98">Classes, built-in functions</a>: <a href="#Examples-setting-classes">Examples setting classes</a></li>
 <li><a href="#index-Classes_002c-compound-77">Classes, compound</a>: <a href="#Cfengine-classes">Cfengine classes</a></li>
 <li><a href="#index-Classes_002c-defining-and-undefining-80">Classes, defining and undefining</a>: <a href="#Cfengine-classes">Cfengine classes</a></li>
 <li><a href="#index-Classless-IP-addresses-454">Classless IP addresses</a>: <a href="#groups">groups</a></li>
-<li><a href="#index-Comparing-file-objects-101">Comparing file objects</a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
+<li><a href="#index-Comparing-file-objects-101">Comparing file objects</a>: <a href="#Examples-setting-classes">Examples setting classes</a></li>
 <li><a href="#index-Compound-classes-76">Compound classes</a>: <a href="#Cfengine-classes">Cfengine classes</a></li>
 <li><a href="#index-compress-589">compress</a>: <a href="#tidy">tidy</a></li>
 <li><a href="#index-CompressCommand-210">CompressCommand</a>: <a href="#CompressCommand">CompressCommand</a></li>
@@ -15207,7 +15501,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-File-management-392">File management</a>: <a href="#files">files</a></li>
 <li><a href="#index-File-sizes_002c-specifying-599">File sizes, specifying</a>: <a href="#tidy">tidy</a></li>
 <li><a href="#index-File-tree-images-320">File tree images</a>: <a href="#copy">copy</a></li>
-<li><a href="#index-File-types-100">File types</a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
+<li><a href="#index-File-types-100">File types</a>: <a href="#Examples-setting-classes">Examples setting classes</a></li>
 <li><a href="#index-Files_002c-breaking-up-into-several-476">Files, breaking up into several</a>: <a href="#import">import</a></li>
 <li><a href="#index-Files_002c-checking-permissions-393">Files, checking permissions</a>: <a href="#files">files</a></li>
 <li><a href="#index-Files_002c-home-wildcard-436">Files, home wildcard</a>: <a href="#home-directive">home directive</a></li>
@@ -15259,8 +15553,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Internet-address-258">Internet address</a>: <a href="#netmask">netmask</a></li>
 <li><a href="#index-IP-address-257">IP address</a>: <a href="#netmask">netmask</a></li>
 <li><a href="#index-IPV6-and-DHCP-646">IPV6 and DHCP</a>: <a href="#DynamicAddresses">DynamicAddresses</a></li>
-<li><a href="#index-IsGreatThan-94">IsGreatThan</a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
-<li><a href="#index-IsLessThan-95">IsLessThan</a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
+<li><a href="#index-IsGreatThan-94">IsGreatThan</a>: <a href="#UserExists">UserExists</a></li>
+<li><a href="#index-IsLessThan-95">IsLessThan</a>: <a href="#UserExists">UserExists</a></li>
 <li><a href="#index-Iterating-over-lists-in-shellcommands-575">Iterating over lists in shellcommands</a>: <a href="#shellcommands">shellcommands</a></li>
 <li><a href="#index-Iteration-in-server-rules-620">Iteration in server rules</a>: <a href="#Cfservd_002econf-and-cfrun-reference">Cfservd.conf and cfrun reference</a></li>
 <li><a href="#index-Iteration-over-lists-286">Iteration over lists</a>: <a href="#split">split</a></li>
@@ -15310,8 +15604,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Methods_002c-remote-caution-522">Methods, remote caution</a>: <a href="#methods">methods</a></li>
 <li><a href="#index-Miscellaneous-mount-operations-526">Miscellaneous mount operations</a>: <a href="#miscmounts">miscmounts</a></li>
 <li><a href="#index-Module-directory-248">Module directory</a>: <a href="#moduledirectory">moduledirectory</a></li>
-<li><a href="#index-Module-directory-91">Module directory</a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
-<li><a href="#index-Modules-executed-immediately-93">Modules executed immediately</a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
+<li><a href="#index-Module-directory-91">Module directory</a>: <a href="#PrepModule">PrepModule</a></li>
+<li><a href="#index-Modules-executed-immediately-93">Modules executed immediately</a>: <a href="#PrepModule">PrepModule</a></li>
 <li><a href="#index-Modules_002c-user-defined-180">Modules, user defined</a>: <a href="#actionsequence">actionsequence</a></li>
 <li><a href="#index-Monitoring-other-hosts-124">Monitoring other hosts</a>: <a href="#alerts">alerts</a></li>
 <li><a href="#index-Mount-paths-251">Mount paths</a>: <a href="#mountpattern">mountpattern</a></li>
@@ -15362,7 +15656,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-Percentage-disk-space-332">Percentage disk space</a>: <a href="#disks">disks</a></li>
 <li><a href="#index-Permissions_002c-directories-432">Permissions, directories</a>: <a href="#Directory-permissions">Directory permissions</a></li>
 <li><a href="#index-Port_002c-connecting-to-different-671">Port, connecting to different</a>: <a href="#Firewalls-and-NATs">Firewalls and NATs</a></li>
-<li><a href="#index-PrepModule-92">PrepModule</a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
+<li><a href="#index-PrepModule-92">PrepModule</a>: <a href="#PrepModule">PrepModule</a></li>
 <li><a href="#index-Preserving-file-times-in-copy-307">Preserving file times in copy</a>: <a href="#copy">copy</a></li>
 <li><a href="#index-Previewing-shellcommands-565">Previewing shellcommands</a>: <a href="#shellcommands">shellcommands</a></li>
 <li><a href="#index-PrintFile-125">PrintFile</a>: <a href="#alerts">alerts</a></li>
@@ -15453,7 +15747,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#index-sysadm-293">sysadm</a>: <a href="#sysadm">sysadm</a></li>
 <li><a href="#index-SysLog_0028_0029-118">SysLog()</a>: <a href="#alerts">alerts</a></li>
 <li><a href="#index-Templates-383">Templates</a>: <a href="#ExpandVariables">ExpandVariables</a></li>
-<li><a href="#index-Testing-files-99">Testing files</a>: <a href="#Setting-classes-with-special-functions">Setting classes with special functions</a></li>
+<li><a href="#index-Testing-files-99">Testing files</a>: <a href="#Examples-setting-classes">Examples setting classes</a></li>
 <li><a href="#index-Tidy-by-ctime_002c-mtime_002c-atime-606">Tidy by ctime, mtime, atime</a>: <a href="#tidy">tidy</a></li>
 <li><a href="#index-Tidy-log-files-for-users-247">Tidy log files for users</a>: <a href="#LogTidyHomeFiles">LogTidyHomeFiles</a></li>
 <li><a href="#index-Tidying-empty-files-603">Tidying empty files</a>: <a href="#tidy">tidy</a></li>
@@ -15557,6 +15851,27 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#Cfengine-classes">4.5 Cfengine classes</a>
 <ul>
 <li><a href="#Setting-classes-with-special-functions">4.5.1 Setting classes with special functions</a>
+<li><a href="#AccessedBefore">4.5.2 AccessedBefore</a>
+<li><a href="#ChangedBefore">4.5.3 ChangedBefore</a>
+<li><a href="#ClassMatch">4.5.4 ClassMatch</a>
+<li><a href="#FileExists">4.5.5 FileExists</a>
+<li><a href="#GroupExists">4.5.6 GroupExists</a>
+<li><a href="#HostRange">4.5.7 HostRange</a>
+<li><a href="#IsDefined">4.5.8 IsDefined</a>
+<li><a href="#IsDir">4.5.9 IsDir</a>
+<li><a href="#IsLink">4.5.10 IsLink</a>
+<li><a href="#IsPlain">4.5.11 IsPlain</a>
+<li><a href="#IsNewerThan">4.5.12 IsNewerThan</a>
+<li><a href="#IPRange">4.5.13 IPRange</a>
+<li><a href="#PrepModule">4.5.14 PrepModule</a>
+<li><a href="#Regcmp">4.5.15 Regcmp</a>
+<li><a href="#ReturnsZero">4.5.16 ReturnsZero</a>
+<li><a href="#ReturnsZeroShell">4.5.17 ReturnsZeroShell</a>
+<li><a href="#Strcmp">4.5.18 Strcmp</a>
+<li><a href="#UserExists">4.5.19 UserExists</a>
+<li><a href="#IsGreaterThan">4.5.20 IsGreaterThan</a>
+<li><a href="#IsLessThan">4.5.21 IsLessThan</a>
+<li><a href="#Examples-setting-classes">4.5.22 Examples setting classes</a>
 </li></ul>
 <li><a href="#acl">4.6 acl</a>
 <ul>
@@ -15808,7 +16123,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Top">Top</a>
 <li><a href="#miscmounts">4.29 miscmounts</a>
 <li><a href="#mountables">4.30 mountables</a>
 <li><a href="#processes">4.31 processes</a>
-<li><a href="#packages">4.32 packages</a>
+<li><a href="#packages">4.32 Packages</a>
 <li><a href="#rename">4.33 rename</a>
 <li><a href="#required">4.34 required</a>
 <li><a href="#resolve">4.35 resolve</a>
