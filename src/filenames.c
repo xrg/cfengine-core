@@ -140,7 +140,7 @@ if (str == NULL)
 /* Try to see what convention is being used for filenames
    in case this is a cross-system copy from Win/Unix */
 
-for (sp = str; *sp!= '\0'; sp++)
+for (sp = str; *sp != '\0'; sp++)
    {
    switch (*sp)
       {

@@ -393,6 +393,10 @@
 /* Define to 1 if you have the `waitpid' function. */
 #undef HAVE_WAITPID
 
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
+
 /* Define to 1 if your `struct nlist' has an `n_un' member. Obsolete, depend
    on `HAVE_STRUCT_NLIST_N_UN_N_NAME */
 #undef NLIST_NAME_UNION

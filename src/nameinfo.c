@@ -1036,4 +1036,24 @@ while (!feof(fp))
  
 fclose(fp);
 Verbose("Environment data loaded\n\n"); 
+
+if (IsDefinedClass("nt"))
+   {
+   AddClassToHeap("windows");
+   }
+
+if (VERBOSE)
+   {
+   AddClassToHeap("verbose_mode");
+   }
+
+if (INFORM)
+   {
+   AddClassToHeap("inform_mode");
+   }
+
+if (DEBUG)
+   {
+   AddClassToHeap("debug_mode");
+   }
 }

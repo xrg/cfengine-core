@@ -883,12 +883,6 @@ if ( MOUNTCHECK && (VERBOSE || DEBUG || D2))
    printf("cfagent -C : check mount points\n");
    }
 
-
- if (IsDefinedClass("nt"))
-    {
-    AddClassToHeap("windows");
-    }
- 
 if (ERRORCOUNT > 0)
    {
    FatalError("Execution terminated after parsing due to errors in program");

@@ -390,7 +390,7 @@ void DebugBinOut(char *buffer,int len)
 { char *sp;
   int check = 0;
 
- Debug("BinaryBuffer(%d)[",len);
+Debug("BinaryBuffer(%d)[",len);
  
 for (sp = buffer; (sp < buffer+len); sp++)
    {
