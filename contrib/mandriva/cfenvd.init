@@ -1,0 +1,85 @@
+#!/bin/sh
+#
+# chkconfig: 345 55 45
+# description: Starts the cfenvd daemon
+
+### BEGIN INIT INFO
+# Provides: cfenvd
+# Required-Start: $network
+# Required-Stop: $network
+# Default-Start: 345
+# Short-Description: Starts the cfenvd daemon
+# Description: This startup script launches the cfenvd daemon
+### END INIT INFO
+
+# Local variables
+NAME=cfenvd
+BINARY=/usr/sbin/$NAME
+PROCESS=$NAME
+LOCKFILE=/var/lock/subsys/$NAME
+CFINPUTS=/etc/cfengine
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+# Check that networking is up.
+[ ${NETWORKING} = "no" ] && exit 0
+
+# load service configuration
+[ -f /etc/sysconfig/cfengine ] && . /etc/sysconfig/cfengine
+
+start() {
+    # Check if it is already running
+    if [ ! -f $LOCKFILE ]; then
+	echo -n "Starting $NAME:"
+	export CFINPUTS
+	daemon $BINARY
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && touch $LOCKFILE
+	echo
+    fi
+}
+
+stop() {
+    echo -n "Stopping $NAME:"
+    killproc $PROCESS
+    RETVAL=$?
+    [ $RETVAL -eq 0 ] && rm -f $LOCKFILE
+    echo
+}
+
+restart() {
+    stop
+    start
+}
+
+RETVAL=0
+
+case "$1" in
+    start)
+	start
+	;;
+    stop)
+	stop
+	;;
+    restart|reload)
+	restart
+	;;
+    condrestart|condreload)
+	if [ -f $LOCKFILE ]; then
+	    restart
+	fi
+	;;
+    status)
+	status $PROCESS
+	;;
+    *)
+	echo "Usage: $0 {start|stop|restart|reload|condrestart|condreload|status}"
+	RETVAL=1
+	;;
+esac
+
+exit $RETVAL
