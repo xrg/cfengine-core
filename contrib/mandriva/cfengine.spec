@@ -1,6 +1,11 @@
+%define git_repo cfengine
+%define git_head mandriva
+
+#define distsuffix xrg
+
 %define	name	cfengine
-%define version 2.2.9
-%define release %mkrel 1
+%define version %git_get_ver
+%define release %mkrel %git_get_rel
 
 %define major 1
 %define libname %mklibname %{name} %{major}
@@ -13,11 +18,10 @@ Summary:	Cfengine helps administer remote BSD and System-5-like systems
 License:	GPL
 Group:		Monitoring
 URL:		http://www.cfengine.org
-Source0:	http://www.cfengine.org/downloads/%{name}-%{version}.tar.gz
-Source4:	cfservd.init
-Source5:	cfexecd.init
-Source6:	cfenvd.init
-Patch:      cfengine-2.2.9-fix-format-errors.patch
+Source0:	%{name}-%{version}.tar.gz
+#Source4:	cfservd.init
+#Source5:	cfexecd.init
+#Source6:	cfenvd.init
 BuildRequires:	flex
 BuildRequires:	bison
 BuildRequires:	openssl-devel
@@ -97,8 +101,8 @@ This package contains the header files and libraries needed for
 developing programs using the %{name} library.
 
 %prep
+%git_get_source
 %setup -q
-%patch -p 1
 
 chmod 644 inputs/*
 
@@ -120,9 +124,9 @@ install -d -m 755 %{buildroot}%{_sysconfdir}/cron.daily
 install -d -m 755 %{buildroot}%{_sysconfdir}/sysconfig
 install -d -m 755 %{buildroot}%{_initrddir}
 install -d -m 755 %{buildroot}%{_localstatedir}/lib/%{name}
-install -m 755 %{SOURCE4} %{buildroot}%{_initrddir}/cfservd
-install -m 755 %{SOURCE5} %{buildroot}%{_initrddir}/cfexecd
-install -m 755 %{SOURCE6} %{buildroot}%{_initrddir}/cfenvd
+install -m 755 contrib/mandriva/cfservd.init %{buildroot}%{_initrddir}/cfservd
+install -m 755 contrib/mandriva/cfexecd.init %{buildroot}%{_initrddir}/cfexecd
+install -m 755 contrib/mandriva/cfenvd.init %{buildroot}%{_initrddir}/cfenvd
 
 # everything installed there is doc, actually
 rm -rf %{buildroot}%{_datadir}/%{name}
