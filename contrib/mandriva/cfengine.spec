@@ -7,6 +7,9 @@
 %define version %git_get_ver
 %define release %mkrel %git_get_rel
 
+# _localstatedir is inconsistent..
+%define varlibdir /var/lib
+
 %define major 1
 %define libname %mklibname %{name} %{major}
 %define develname %mklibname -d %{name}
@@ -108,7 +111,7 @@ chmod 644 inputs/*
 
 %build
 %serverbuild
-%configure2_5x --with-workdir=%{_localstatedir}/lib/%{name} --enable-shared
+%configure2_5x --with-workdir=%{varlibdir}/%{name} --enable-shared
 %make
 
 %install
@@ -123,7 +126,7 @@ install -d -m 755 %{buildroot}%{_sysconfdir}/%{name}
 install -d -m 755 %{buildroot}%{_sysconfdir}/cron.daily
 install -d -m 755 %{buildroot}%{_sysconfdir}/sysconfig
 install -d -m 755 %{buildroot}%{_initrddir}
-install -d -m 755 %{buildroot}%{_localstatedir}/lib/%{name}
+install -d -m 755 %{buildroot}%{varlibdir}/%{name}
 install -m 755 contrib/mandriva/cfservd.init %{buildroot}%{_initrddir}/cfservd
 install -m 755 contrib/mandriva/cfexecd.init %{buildroot}%{_initrddir}/cfexecd
 install -m 755 contrib/mandriva/cfenvd.init %{buildroot}%{_initrddir}/cfenvd
@@ -133,7 +136,7 @@ rm -rf %{buildroot}%{_datadir}/%{name}
 
 %post base
 if [ $1 = 1 ]; then
-    [ -f "%{_localstatedir}/lib/%{name}/ppkeys/localhost.priv" ] || cfkey >/dev/null 2>&1
+    [ -f "%{varlibdir}/%{name}/ppkeys/localhost.priv" ] || cfkey >/dev/null 2>&1
 fi
 
 %post cfexecd
@@ -164,7 +167,7 @@ rm -rf %{buildroot}
 %{_sbindir}/cfkey
 %{_sbindir}/cfshow
 %{_sbindir}/cfdoc
-%{_localstatedir}/lib/%{name}
+%{varlibdir}/%{name}
 %{_mandir}/man8/cfengine.*
 
 
