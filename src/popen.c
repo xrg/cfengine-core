@@ -104,7 +104,7 @@ if ((pid = fork()) == -1)
 
 signal(SIGCHLD,SIG_DFL);
 
-ALARM_PID = pid;
+ALARM_PID = (pid != 0 ? pid : -1);
 
 if (pid == 0)
    {
@@ -246,7 +246,7 @@ if ((pid = fork()) == -1)
    return NULL;
    }
 
-ALARM_PID = pid;
+ALARM_PID = (pid != 0 ? pid : -1);
 
 if (pid == 0)
    {
@@ -414,7 +414,7 @@ if ((pid = fork()) == -1)
    return NULL;
    }
 
-ALARM_PID = pid;
+ALARM_PID = (pid != 0 ? pid : -1);
 
 if (pid == 0)
    {
@@ -533,7 +533,7 @@ if ((pid = fork()) == -1)
    return NULL;
    }
 
-ALARM_PID = pid;
+ALARM_PID = (pid != 0 ? pid : -1);
 
 if (pid == 0)
    {

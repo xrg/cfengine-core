@@ -98,6 +98,7 @@ while (ip != NULL)
       {
       if (fork() == 0) /* child */
          {
+         ALARM_PID = -1;
          printf("cfrun(%d):         .......... [ Hailing %s ] ..........\n",i,ip->name);
          Debug("pid = %d i = %d\n", getpid(), i);
          
@@ -429,7 +430,7 @@ if (!gotkey)
  
 if (!RemoteConnect(parsed_host,forceipv4,port,strport))
    {
-   snprintf(OUTPUT,CF_BUFSIZE,"No reponse hailing %s\n",parsed_host);
+   snprintf(OUTPUT,CF_BUFSIZE,"No response hailing %s\n",parsed_host);
    CfLog(cferror,OUTPUT,"socket");
    FileOutput(fp, fopl_error,OUTPUT);
    if (CONN->sd != CF_NOT_CONNECTED)

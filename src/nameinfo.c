@@ -36,6 +36,9 @@
 #ifdef IRIX
 #include <sys/syssgi.h>
 #endif
+#ifdef _AIX
+#include <sys/systemcfg.h>
+#endif
 
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
 # ifdef _SIZEOF_ADDR_IFREQ
@@ -96,6 +99,21 @@ for (sp = VSYSNAME.machine; *sp != '\0'; sp++)
    {
    *sp = ToLower(*sp);
    }
+
+#ifdef _AIX
+switch (_system_configuration.architecture)
+   {
+   case POWER_RS:
+      strncpy(VSYSNAME.machine, "power", _SYS_NMLN);
+      break;
+   case POWER_PC:
+      strncpy(VSYSNAME.machine, "powerpc", _SYS_NMLN);
+      break;
+   case IA64:
+      strncpy(VSYSNAME.machine, "ia64", _SYS_NMLN);
+      break;
+   }
+#endif
 
 for (i = 0; CLASSATTRIBUTES[i][0] != '\0'; i++)
    {

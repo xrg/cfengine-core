@@ -1311,6 +1311,8 @@ for (ptr = VSCRIPT; ptr != NULL; ptr=ptr->next)
          {
          Verbose("Backgrounding job %s\n",execstr);
          outsourced = fork();
+         if (outsourced == 0)
+            ALARM_PID = -1;
          }
       else
          {

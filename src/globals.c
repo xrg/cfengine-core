@@ -158,7 +158,7 @@ pthread_mutex_t MUTEX_LOCK = PTHREAD_MUTEX_INITIALIZER;
   PUBLIC char FORK = 'n';
 
   PRIVATE   int RPCTIMEOUT = 60;          /* seconds */
-  PUBLIC    pid_t ALARM_PID;
+  PUBLIC    pid_t ALARM_PID = -1;
   PROTECTED int SENSIBLEFILECOUNT = 2;
   PROTECTED int SENSIBLEFSSIZE = 1000;
 
