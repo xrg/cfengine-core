@@ -14,7 +14,7 @@ dnl
 dnl The version in the next line is the only one to set
 dnl
 
-AM_INIT_AUTOMAKE(cfengine, 2.2.9)   dnl remember to set version
+AM_INIT_AUTOMAKE(cfengine, 2.2.10b1)   dnl remember to set version
 
 AM_CONFIG_HEADER(src/conf.h)
 
@@ -67,8 +67,6 @@ dnl AC_DISABLE_STATIC - maybe use shared libs later
 AC_PROG_LIBTOOL
 AC_CONFIG_LIBOBJ_DIR(pub)
 AC_FUNC_GETLOADAVG 
-
-
 AC_PATH_PROG(LATEX, latex, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin:/sw/bin)
 AC_PATH_PROG(TEXI2DVI, texi2dvi, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin:/sw/bin)
 AC_PATH_PROG(DVIPS, dvips, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin:/sw/bin)

@@ -245,6 +245,8 @@ qualified domain name for your host, cfagent truncates it at the first dot.
 @item The IP address octets of any active interface (in the form @code{@w{ipv4_192_0_0_1}},
 @code{@w{ipv4_192_0_0}}, @code{@w{ipv4_192_0}}, @code{@w{ipv4_192}}).
 
+@item The name of all interfaces Cfengine can find, in the form @code{net_iface_eth0}.
+
 @end itemize
 
 @c chew end Hard classes
@@ -816,10 +818,12 @@ the current one may be referred to as
 @smallexample
 $(@var{context}.variable)  or  $@{@var{context}.variable@}
 @end smallexample
-There is no difference between these forms as far as cfengine is concered.
-Some authors like to use the () form for cfengine variables, to distinguish them with shell
-variables in command strings. When using the () form in function arguments, they should be
-quoted to avoid parsing errors.
+Note carefully that cfengine requires parentheses or braces around variable
+names. Unlike in the shell, they cannot be omitted.  There is no difference
+between these forms as far as cfengine is concerned.  Some authors like to use
+the @code{()} form for cfengine variables, to distinguish them with shell
+variables in command strings. The @code{()} form does not work in function
+arguments, except inside quoted strings.
 
 Consider the example:
 
@@ -835,9 +839,6 @@ $(array[key])  $(array[$(key)])
 
 @end smallexample
 @noindent
-and so on. Note carefully that cfengine requires parentheses or braces
-around variable names. Unlike in the shell, they cannot be omitted.
-
 
 
 @c -------------------------------------------------------------------------------

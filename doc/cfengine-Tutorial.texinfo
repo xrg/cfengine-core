@@ -161,18 +161,18 @@ a netwide front-end for @code{cron}.  Once you have set up cfengine,
 you'll be free to use your time doing other things instead of manual
 configuration.
 
-The main purpose of cfengine is to allow you to create a single, central
-system configuration which will define how every host on your network
-should be configured, and to do so in an intuitive way.
-An interpreter runs on every host on your network and parses
-the master file (or file set). The
+The main purpose of cfengine is to allow you to create a single system
+configuration which will allow you to define how every host on your
+network should be configured, and to do so in an intuitive way --
+either centralized or decentralized as you prefer.  An interpreter runs on every
+host on your network and parses the master file (or file set). The
 configuration of each host is checked against this file; then, if you
 request it, any deviations from the defined configuration are fixed
 automatically.  You do not have to mention every host specifically by
 name in order to configure them: instead you can refer to the
 properties which distinguish hosts from one another.  Cfengine uses a
-flexible system of ``classes'' which helps you to single out a specific
-group of hosts with a single statement.
+flexible system of ``classes'' which helps you to single out a
+specific group of hosts with a single statement.
 
 Cfengine grew out of the need to control the accumulation of complex
 shell scripts used in the automation of key system maintenance at

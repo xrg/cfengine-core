@@ -3,7 +3,7 @@
 <title>Cfengine v2 Tutorial</title>
 <meta http-equiv="Content-Type" content="text/html">
 <meta name="description" content="Cfengine v2 Tutorial">
-<meta name="generator" content="makeinfo 4.9">
+<meta name="generator" content="makeinfo 4.12">
 <link title="Top" rel="top" href="#Top">
 <link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
 <meta http-equiv="Content-Style-Type" content="text/css">
@@ -137,8 +137,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#dir">(dir)</a>
 
    <p><a href="#Contents">COMPLETE TABLE OF CONTENTS</a>
 <p>
-This manual is for version 2.2.9 of cfengine and
-was last updated on the  19 September 2008. 
+This manual is for version 2.2.10b1 of cfengine and
+was last updated on the  24 December 2008. 
 </p>
 
    <p><h2>Summary of contents</h2>
@@ -231,18 +231,18 @@ a netwide front-end for <code>cron</code>.  Once you have set up cfengine,
 you'll be free to use your time doing other things instead of manual
 configuration.
 
-   <p>The main purpose of cfengine is to allow you to create a single, central
-system configuration which will define how every host on your network
-should be configured, and to do so in an intuitive way. 
-An interpreter runs on every host on your network and parses
-the master file (or file set). The
+   <p>The main purpose of cfengine is to allow you to create a single system
+configuration which will allow you to define how every host on your
+network should be configured, and to do so in an intuitive way &ndash;
+either centralized or decentralized as you prefer.  An interpreter runs on every
+host on your network and parses the master file (or file set). The
 configuration of each host is checked against this file; then, if you
 request it, any deviations from the defined configuration are fixed
 automatically.  You do not have to mention every host specifically by
 name in order to configure them: instead you can refer to the
 properties which distinguish hosts from one another.  Cfengine uses a
-flexible system of &ldquo;classes&rdquo; which helps you to single out a specific
-group of hosts with a single statement.
+flexible system of &ldquo;classes&rdquo; which helps you to single out a
+specific group of hosts with a single statement.
 
    <p>Cfengine grew out of the need to control the accumulation of complex
 shell scripts used in the automation of key system maintenance at
@@ -313,7 +313,7 @@ as BSD or System V is not as standard as you thought and that none of
 your simple scripts that worked on one system work on the others without
 a considerable amount of hacking and testing.  You try writing a script
 to help you automate the task, but end up with an enormous number of
-`<samp><span class="samp">if..then..else..</span></samp>' tests which make it hard to see what is really
+&lsquo;<samp><span class="samp">if..then..else..</span></samp>&rsquo; tests which make it hard to see what is really
 going on.
 
    <p>To manage a network with many different flavours of operating system in
@@ -456,7 +456,7 @@ D <small class="dots">...</small>, etc.  NFS (the Network FileSystem) makes this
    <p>The process works by `filesystems'.  A filesystem is one
 partition of a disk drive &ndash; or one unit of disk
 space which can be accessed by a single `logical device'
-`<samp><span class="samp">/dev/something</span></samp>'.
+&lsquo;<samp><span class="samp">/dev/something</span></samp>&rsquo;.
 
    <p>To make a filesystem available to other hosts
 you have to do three things.
@@ -507,8 +507,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Key-concepts">Key concepts</a>
 
 <p><a name="index-Name-server-9"></a><a name="index-DNS-10"></a>
 There are two ways to specify addresses on the internet (called IP
-addresses).  One is to use the text address like `<samp><span class="samp">ftp.uu.net</span></samp>'
-and the other is to use the numerical form `<samp><span class="samp">192.48.96.9</span></samp>'.  Alas,
+addresses).  One is to use the text address like &lsquo;<samp><span class="samp">ftp.uu.net</span></samp>&rsquo;
+and the other is to use the numerical form &lsquo;<samp><span class="samp">192.48.96.9</span></samp>&rsquo;.  Alas,
 there is no direct one-to-one correspondence between the numerical addresses
 and the textual ones, thus a service (called DNS) is required to
 map one to the other.
@@ -726,7 +726,7 @@ Let's examine this example more closely.  In a cfengine program:
 You should generally have a space before and after parentheses to avoid
 confusing the parser.
 
-     <li>A comment is some text which is ignored by cfengine.  The `<samp><span class="samp">#</span></samp>' symbol
+     <li>A comment is some text which is ignored by cfengine.  The &lsquo;<samp><span class="samp">#</span></samp>&rsquo; symbol
 designates a comment and means: ignore the remaining text on this line. 
 A comment symbol must have a space in front of it, or start a new line
 so that cfengine knows you don't mean the symbol as part of another
@@ -837,7 +837,7 @@ chapter.
 </pre>
    <p class="noindent">We have now added a new kind of declaration called <code>tidy:</code> which
 deletes files.  In the example above, we are looking at files in the
-directory <samp><span class="file">/tmp</span></samp> which match the pattern `<samp><span class="samp">*</span></samp>' and have not been
+directory <samp><span class="file">/tmp</span></samp> which match the pattern &lsquo;<samp><span class="samp">*</span></samp>&rsquo; and have not been
 accessed for more than seven days.  The search for these files descends
 recursively down any number of subdirectories.
 
@@ -1305,7 +1305,7 @@ declared in the action sequence.
 
    <p>If you like, though, you can make cfagent positively chatty.  Cfagent can be
 run with a number of command line options (see the reference manual).  If
-you run the program with the `<samp><span class="samp">-v</span></samp>' or `<samp><span class="samp">--verbose</span></samp>' options, it
+you run the program with the &lsquo;<samp><span class="samp">-v</span></samp>&rsquo; or &lsquo;<samp><span class="samp">--verbose</span></samp>&rsquo; options, it
 will supply you cheerily with a resume of what it is doing.  Certain
 warning messages also get printed in verbose mode, so it is a useful debugging tool.
 
@@ -1336,7 +1336,7 @@ short example:
      
 </pre>
    <p class="noindent">To get verbose output you must run cfagent with the appropriate command
-line option `<samp><span class="samp">--verbose</span></samp>' or `<samp><span class="samp">-v</span></samp>'.
+line option &lsquo;<samp><span class="samp">--verbose</span></samp>&rsquo; or &lsquo;<samp><span class="samp">-v</span></samp>&rsquo;.
 
    <p>Notice that setting values has a special kind of syntax: a variable
 name, an equals sign and a value in parentheses.  This tells you that
@@ -1453,7 +1453,7 @@ the system administrator will be emailed a summary of any output:
 </pre>
    <p class="noindent">Fill in suitable values for these variables. 
 <a name="index-Mailing-output-45"></a><a name="index-smtpserver-46"></a><a name="index-sysadm-47"></a><a name="index-cfexecd-48"></a>An alternative, or additional way to run cfengine, is to run the <samp><span class="file">cfexecd</span></samp>
-program is daemon mode (without the `<samp><span class="samp">-F</span></samp>') option. In this mode, the daemon
+program is daemon mode (without the &lsquo;<samp><span class="samp">-F</span></samp>&rsquo;) option. In this mode, the daemon
 lives in the background and sleeps, activating only in accordance with
 a scheduling policy. The default policy is to run once every hour (equivalent
 to <code>Min00_05</code>). Here is how you would modify <samp><span class="file">cfagent.conf</span></samp> in
@@ -1518,7 +1518,7 @@ If you use an absolute filename either on the command line using
 <code>-f</code> or in the <code>import</code> section of your program (a name which
 begins with a slash '/'), then cfengine trusts the name of the file you
 have given and treats it literally. If you specify the name of the
-file as simple `<samp><span class="samp">.</span></samp>' or `<samp><span class="samp">-</span></samp>' then cfengine reads its input from the
+file as simple &lsquo;<samp><span class="samp">.</span></samp>&rsquo; or &lsquo;<samp><span class="samp">-</span></samp>&rsquo; then cfengine reads its input from the
 standard input. 
 <a name="index-STDIN_002c-reading-from-57"></a><a name="index-Piping-input-into-cfengine-58"></a>
 <a name="index-g_t_0040file_007bcfagent_002econf_007d-59"></a>If you run cfengine without arguments (so that the default filename is
@@ -1743,8 +1743,8 @@ are separately true, thus in the above example the actions which follow
 In the second example, the host parsing the file must be either of
 type <code>sun4</code> <em>or</em> <code>ultrix</code> <em>or</em> <code>osf</code>. 
 In other words, compound classes support two operators: AND and OR,
-written `<samp><span class="samp">.</span></samp>' and `<samp><span class="samp">|</span></samp>' respectively. From cfengine version 2.1.1,
-I bit the bullet and added `<samp><span class="samp">&amp;</span></samp>' as a synonym for the AND operator. 
+written &lsquo;<samp><span class="samp">.</span></samp>&rsquo; and &lsquo;<samp><span class="samp">|</span></samp>&rsquo; respectively. From cfengine version 2.1.1,
+I bit the bullet and added &lsquo;<samp><span class="samp">&amp;</span></samp>&rsquo; as a synonym for the AND operator. 
 Cfengine doesn't
 care how many of these operators you use (since it skips over blank
 class names), so you could write either
@@ -1761,7 +1761,7 @@ class names), so you could write either
 </pre>
    <p class="noindent">depending on your taste. On the other hand, the order in which cfengine
 evaluates AND and OR operations <em>does</em> matter, and the rule
-is that AND takes priority over OR, so that `<samp><span class="samp">.</span></samp>' binds classes
+is that AND takes priority over OR, so that &lsquo;<samp><span class="samp">.</span></samp>&rsquo; binds classes
 together tightly and all AND operations are evaluated before ORing
 the final results together. This is the usual behaviour in programming
 languages. You can use round parentheses in cfengine classes to
@@ -1777,7 +1777,7 @@ purpose.  See also <code>addclasses</code> in the Reference manual.
 <a name="index-g_t_002dN-option-63"></a><a name="index-g_t_002dD-option-64"></a><a name="index-Classes_002c-defining-and-undefining-65"></a>
 <a name="index-NOT-operator-66"></a><a name="index-Logical-NOT-67"></a><a name="index-g_t_0021-68"></a><a name="index-g_t_0021-69"></a>A logical NOT operator has been added to allow you to exclude
 certain specific hosts in a more flexible way. The logical NOT
-operator is (as in C and C++) `<samp><span class="samp">!</span></samp>'. For instance, the
+operator is (as in C and C++) &lsquo;<samp><span class="samp">!</span></samp>&rsquo;. For instance, the
 following example would allow all hosts except for <code>myhost</code>:
 
 <pre class="smallexample">        <var>action</var>:
@@ -1843,13 +1843,13 @@ domain variable.</em> The dots in this string will be replaced by underscores.
 In summary, the operator ordering in cfengine classes is as follows:
 <a name="index-Operator-ordering-73"></a><a name="index-Brackets-_0028parentheses_0029-in-classes_002e-74"></a><a name="index-Parentheses-in-classes_002e-75"></a>
      <dl>
-<dt>`<samp><span class="samp">()</span></samp>'<dd>Parentheses override everything.
+<dt>&lsquo;<samp><span class="samp">()</span></samp>&rsquo;<dd>Parentheses override everything.
 
-     <br><dt>`<samp><span class="samp">!</span></samp>'<dd>The NOT operator binds tightest.
+     <br><dt>&lsquo;<samp><span class="samp">!</span></samp>&rsquo;<dd>The NOT operator binds tightest.
 
-     <br><dt>`<samp><span class="samp">. &amp;</span></samp>'<dd>The AND operator binds more tightly than OR.
+     <br><dt>&lsquo;<samp><span class="samp">. &amp;</span></samp>&rsquo;<dd>The AND operator binds more tightly than OR.
 
-     <br><dt>`<samp><span class="samp">|</span></samp>'<dd>OR is the weakest operator.
+     <br><dt>&lsquo;<samp><span class="samp">|</span></samp>&rsquo;<dd>OR is the weakest operator.
 
    </dl>
 
@@ -1979,7 +1979,7 @@ name of any user defined macro, environment variable or one of the
 following special internal variables.
 
      <dl>
-<dt><code>AllClasses</code><dd>A long string in the form `<samp><span class="samp">CFALLCLASSES=class1:class2...</span></samp>'.  This
+<dt><code>AllClasses</code><dd>A long string in the form &lsquo;<samp><span class="samp">CFALLCLASSES=class1:class2...</span></samp>&rsquo;.  This
 variable is a summary of all the defined classes at any given time. It
 is always kept up to date so that scripts can make use of cfengine's
 class data. 
@@ -1995,7 +1995,7 @@ Non-definable.
 <a name="index-g_t_0024_0028class_0029-103"></a>
 <br><dt><code>date</code><dd>The current date string. Note that if you use this in a shell command it might
 be interpreted as a list variable, since it contains the default separator
-`<samp><span class="samp">:</span></samp>'. 
+&lsquo;<samp><span class="samp">:</span></samp>&rsquo;. 
 <a name="index-g_t_0024_0028date_0029-104"></a>
 <br><dt><code>domain</code><dd>The currently defined domain. 
 <a name="index-g_t_0024_0028domain_0029-105"></a>
@@ -2023,11 +2023,11 @@ in this variable is appended with the name of the host. The default is
 equivalent to,
 
      <pre class="smallexample">            OutputPrefix = ( "cfengine:$(host):")
-     </pre>
+</pre>
      <p><a name="index-OutputPrefix-111"></a>
 <br><dt><code>RepChar</code><dd>The character value of the string used by the file repository in
 constructing unique filenames from path names. This is the character which
-replaces `<samp><span class="samp">/</span></samp>' (see the reference manual). 
+replaces &lsquo;<samp><span class="samp">/</span></samp>&rsquo; (see the reference manual). 
 <a name="index-repchar-112"></a>
 <br><dt><code>site</code><dd>This variable is identical to <code>$(faculty)</code> and may be used interchangeably. 
 <a name="index-g_t_0024_0028site_0029-113"></a>
@@ -2066,7 +2066,7 @@ troublesome special characters in strings.
 <a name="index-g_t_0024_0028cr_0029-124"></a>
 <br><dt><code>dblquote</code><dd>Expands to a double quote <code>"</code>
 <a name="index-g_t_0024_0028dblquote_0029-125"></a>
-<br><dt><code>dollar</code><dd>Expands to `<samp><span class="samp">$</span></samp>'. 
+<br><dt><code>dollar</code><dd>Expands to &lsquo;<samp><span class="samp">$</span></samp>&rsquo;. 
 <a name="index-g_t_0024_0028dollar_0029-126"></a>
 <br><dt><code>lf</code><dd>Expands to a line-feed character (Unix end of line). 
 <a name="index-g_t_0024_0028lf_0029-127"></a>
@@ -2138,7 +2138,7 @@ groups of host.
      
 </pre>
    <p><a name="index-g_t_002da-option-133"></a><a name="index-System-administrator_002c-name-134"></a>
-Note, incidentally, that the `<samp><span class="samp">-a</span></samp>' option
+Note, incidentally, that the &lsquo;<samp><span class="samp">-a</span></samp>&rsquo; option
 can be used to print out the mail address of the system administrator
 for any wrapper scripts.
 
@@ -2293,7 +2293,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Defining-classes">Defining classes</a>
 <p>Another way to specify actions is to use a class to select only a subset
 of all the actions defined in the actionsequence.  You do this by adding
 a class name to one on the actions in action sequence by using a dot
-`<samp><span class="samp">.</span></samp>' to separate the words.  In this case the symbol only evaluates
+&lsquo;<samp><span class="samp">.</span></samp>&rsquo; to separate the words.  In this case the symbol only evaluates
 to `true' for the duration of the action to which it attached.  Here
 is an example:
 
@@ -2344,11 +2344,11 @@ an object in a class list or variable, which is surrounded by either
 single, double quotes or reversed quotes, it attempts to execute the
 string as a command passed to the Bourne shell. If the resulting command
 has return code zero (proper exit) then the class on the left hand side
-of the assignment (in this case `<samp><span class="samp">have_cc</span></samp>') will be true. If the
+of the assignment (in this case &lsquo;<samp><span class="samp">have_cc</span></samp>&rsquo;) will be true. If the
 command returns any other value (an error number) the result is
 false. Since groups are the logical OR of their members (it is
 sufficient that one of the members matches the current system), the
-class `<samp><span class="samp">have_cc</span></samp>' will be defined above if either <samp><span class="file">/usr/ucb/cc</span></samp>
+class &lsquo;<samp><span class="samp">have_cc</span></samp>&rsquo; will be defined above if either <samp><span class="file">/usr/ucb/cc</span></samp>
 or <samp><span class="file">/local/gnu/cc</span></samp> exist, or both. 
 <a name="index-Classes-based-on-shell-commands-139"></a><a name="index-Shell-commands-which-define-classes-140"></a><a name="index-User-programs-which-define-classes-141"></a><a name="index-Define-classes-based-on-result-of-user-program-142"></a>
 <!-- ..................................................... -->
@@ -2411,10 +2411,10 @@ must follow a simple protocol. Cfagent will only execute a module which
 is owned either by root or the user who is running cfagent, if it lies
 in the special directory and has the special name.  A plug-in module may
 be written in any language, it can return any output you like, but lines
-which begin with a `<samp><span class="samp">+</span></samp>' sign are treated as classes to be defined
-(like <samp><span class="option">-D</span></samp>), while lines which begin with a `<samp><span class="samp">-</span></samp>' sign are
+which begin with a &lsquo;<samp><span class="samp">+</span></samp>&rsquo; sign are treated as classes to be defined
+(like <samp><span class="option">-D</span></samp>), while lines which begin with a &lsquo;<samp><span class="samp">-</span></samp>&rsquo; sign are
 treated as classes to be undefined (like <samp><span class="option">-N</span></samp>).  Lines starting
-with `<samp><span class="samp">=</span></samp>' are variables/macros to be defined.  Any other lines of
+with &lsquo;<samp><span class="samp">=</span></samp>&rsquo; are variables/macros to be defined.  Any other lines of
 output are cited by cfagent, so you should normally make your module
 completely silent.  Here is an example module written in perl. First we
 define the module in the cfagent program:
@@ -2611,7 +2611,7 @@ of <em>wildcards</em>.  For example, the directory names
 match the above wildcard strings.  Cfagent opens each matching
 directory and iterates the action over all directories which match.
 
-   <p>The symbol `<samp><span class="samp">?</span></samp>' matches any single character, whereas `<samp><span class="samp">*</span></samp>'
+   <p>The symbol &lsquo;<samp><span class="samp">?</span></samp>&rsquo; matches any single character, whereas &lsquo;<samp><span class="samp">*</span></samp>&rsquo;
 matches any number of characters, in accordance with shell
 file-substitution wildcards. 
 <a name="index-Wildcards-159"></a><a name="index-Patterns-160"></a>
@@ -2881,73 +2881,73 @@ cfagent wildcards, you can use the characters '*' and '?' to match any
 character or number of characters.  Regular expressions are more
 complicated than wildcards, but have far more flexibility.
 
-   <p><em>NOTE: the special characters `<samp></em><span class="samp">*</span><em></samp>' and `<samp></em><span class="samp">?</span><em></samp>'
+   <p><em>NOTE: the special characters &lsquo;</em><samp><span class="samp">*</span></samp><em>&rsquo; and &lsquo;</em><samp><span class="samp">?</span></samp><em>&rsquo;
 used in wildcards do not have the
 same meanings as regular expressions!</em>.
 
    <p>Some regular expressions match only a single string. For example, every
 string which contains no special characters is a regular expression
 which matches only a string identical to itself. Thus the regular
-expression `<samp><span class="samp">cfengine</span></samp>' would match only the string "cfengine", not
+expression &lsquo;<samp><span class="samp">cfengine</span></samp>&rsquo; would match only the string "cfengine", not
 "Cfengine" or "cfengin" etc.  Other regular expressions could match more
-general strings. For instance, the regular expression `<samp><span class="samp">c*</span></samp>' matches
+general strings. For instance, the regular expression &lsquo;<samp><span class="samp">c*</span></samp>&rsquo; matches
 any number of c's (including none). Thus this expression would match the
 empty string, "c", "cccc", "ccccccccc", but not "cccx".
 
    <p>Here is a list of regular expression special characters and operators.
 
      <dl>
-<dt>`<samp><span class="samp">\</span></samp>'<dd>The backslash character normally has a special purpose: either to
+<dt>&lsquo;<samp><span class="samp">\</span></samp>&rsquo;<dd>The backslash character normally has a special purpose: either to
 introduce a special command, or to tell the expression interpreter that
 the next character is not to be treated as a special character. 
 The backslash character stands for itself only when protected by square
-brackets <code>[\]</code> or quoted with a backslash itself `<samp><span class="samp">\\</span></samp>'.
+brackets <code>[\]</code> or quoted with a backslash itself &lsquo;<samp><span class="samp">\\</span></samp>&rsquo;.
 
-     <br><dt>`<samp><span class="samp">\b</span></samp>'<dd>Matches word boundary operator.
+     <br><dt>&lsquo;<samp><span class="samp">\b</span></samp>&rsquo;<dd>Matches word boundary operator.
 
-     <br><dt>`<samp><span class="samp">\B</span></samp>'<dd>Match within a word (operator).
+     <br><dt>&lsquo;<samp><span class="samp">\B</span></samp>&rsquo;<dd>Match within a word (operator).
 
-     <br><dt>`<samp><span class="samp">\&lt;</span></samp>'<dd>Match beginning of word.
+     <br><dt>&lsquo;<samp><span class="samp">\&lt;</span></samp>&rsquo;<dd>Match beginning of word.
 
-     <br><dt>`<samp><span class="samp">\&gt;</span></samp>'<dd>Match end of word.
+     <br><dt>&lsquo;<samp><span class="samp">\&gt;</span></samp>&rsquo;<dd>Match end of word.
 
-     <br><dt>`<samp><span class="samp">\w</span></samp>'<dd>Match a character which can be part of a word.
+     <br><dt>&lsquo;<samp><span class="samp">\w</span></samp>&rsquo;<dd>Match a character which can be part of a word.
 
-     <br><dt>`<samp><span class="samp">\W</span></samp>'<dd>Match a character which cannot be part of a word.
+     <br><dt>&lsquo;<samp><span class="samp">\W</span></samp>&rsquo;<dd>Match a character which cannot be part of a word.
 
-     <br><dt>`<samp><var>any character</var></samp>'<dd>Matches itself.
+     <br><dt>&lsquo;<samp><var>any character</var></samp>&rsquo;<dd>Matches itself.
 
-     <br><dt>`<samp><span class="samp">.</span></samp>'<dd>Matches any character
+     <br><dt>&lsquo;<samp><span class="samp">.</span></samp>&rsquo;<dd>Matches any character
 
-     <br><dt>`<samp><span class="samp">*</span></samp>'<dd>Match zero or more instances of the previous object. e.g. `<samp><span class="samp">c*</span></samp>'. 
+     <br><dt>&lsquo;<samp><span class="samp">*</span></samp>&rsquo;<dd>Match zero or more instances of the previous object. e.g. &lsquo;<samp><span class="samp">c*</span></samp>&rsquo;. 
 If no object precedes it, it represents a literal asterisk.
 
-     <br><dt>`<samp><span class="samp">+</span></samp>'<dd>Match one or more instances of the preceding object.
+     <br><dt>&lsquo;<samp><span class="samp">+</span></samp>&rsquo;<dd>Match one or more instances of the preceding object.
 
-     <br><dt>`<samp><span class="samp">?</span></samp>'<dd>Match zero or one instance of the preceding object.
+     <br><dt>&lsquo;<samp><span class="samp">?</span></samp>&rsquo;<dd>Match zero or one instance of the preceding object.
 
-     <br><dt>`<samp><span class="samp">{ }</span></samp>'<dd>Number of matches operator. `<samp><span class="samp">{5}</span></samp>' would  match exactly 5
-instances of the previous object. `<samp><span class="samp">{6,}</span></samp>' would match at least
-6 instances of the previous object. `<samp><span class="samp">{7,12}</span></samp>' would match at least
+     <br><dt>&lsquo;<samp><span class="samp">{ }</span></samp>&rsquo;<dd>Number of matches operator. &lsquo;<samp><span class="samp">{5}</span></samp>&rsquo; would  match exactly 5
+instances of the previous object. &lsquo;<samp><span class="samp">{6,}</span></samp>&rsquo; would match at least
+6 instances of the previous object. &lsquo;<samp><span class="samp">{7,12}</span></samp>&rsquo; would match at least
 7 instances of, but no more than 12 instances of the preceding object. 
 Clearly the first number must be less than the second to make a valid
 search expression.
 
-     <br><dt>`<samp><span class="samp">|</span></samp>'<dd>The logical OR operator, OR's any two regular expressions.
+     <br><dt>&lsquo;<samp><span class="samp">|</span></samp>&rsquo;<dd>The logical OR operator, OR's any two regular expressions.
 
-     <br><dt>`<samp><span class="samp">[</span><var>list</var><span class="samp">]</span></samp>'<dd>Defines a list of characters which are to be considered as a single
-object (ORed). e.g. `<samp><span class="samp">[a-z]</span></samp>' matches any character in the range a to
-z, `<samp><span class="samp">abcd</span></samp>' matches either a, b, c or d.  Most characters are
-ordinary inside a list, but there are some exceptions: `<samp><span class="samp">]</span></samp>' ends the
-list unless it is the first item, `<samp><span class="samp">\</span></samp>' quotes the next character,
-`<samp><span class="samp">[:</span></samp>' and `<samp><span class="samp">:]</span></samp>' define a character class operator (see below),
-and `<samp><span class="samp">-</span></samp>' represents a range of characters unless it is the first
+     <br><dt>&lsquo;<samp><span class="samp">[</span><var>list</var><span class="samp">]</span></samp>&rsquo;<dd>Defines a list of characters which are to be considered as a single
+object (ORed). e.g. &lsquo;<samp><span class="samp">[a-z]</span></samp>&rsquo; matches any character in the range a to
+z, &lsquo;<samp><span class="samp">abcd</span></samp>&rsquo; matches either a, b, c or d.  Most characters are
+ordinary inside a list, but there are some exceptions: &lsquo;<samp><span class="samp">]</span></samp>&rsquo; ends the
+list unless it is the first item, &lsquo;<samp><span class="samp">\</span></samp>&rsquo; quotes the next character,
+&lsquo;<samp><span class="samp">[:</span></samp>&rsquo; and &lsquo;<samp><span class="samp">:]</span></samp>&rsquo; define a character class operator (see below),
+and &lsquo;<samp><span class="samp">-</span></samp>&rsquo; represents a range of characters unless it is the first
 or last character in the list.
 
-     <br><dt>`<samp><span class="samp">[^</span><var>list</var><span class="samp">]</span></samp>'<dd>Defines a list of characters which are NOT to be matched. i.e. 
+     <br><dt>&lsquo;<samp><span class="samp">[^</span><var>list</var><span class="samp">]</span></samp>&rsquo;<dd>Defines a list of characters which are NOT to be matched. i.e. 
 match any character except those in the list.
 
-     <br><dt>`<samp><span class="samp">`<samp></span><span class="samp">[:</span><var>class</var><span class="samp">:]</span><span class="samp"></samp>'</span></samp>'<dd>Defines a class of characters, using the ctype-library.
+     <br><dt>&lsquo;<samp><span class="samp">&lsquo;</span><samp><span class="samp">[:</span><var>class</var><span class="samp">:]</span></samp><span class="samp">&rsquo;</span></samp>&rsquo;<dd>Defines a class of characters, using the ctype-library.
           <dl>
   <dt><code>alnum</code><dd>  Alpha numeric character
 
@@ -2975,13 +2975,13 @@ match any character except those in the list.
 
      </dl>
 
-     <br><dt>`<samp><span class="samp">`<samp></span><span class="samp">( )</span><span class="samp"></samp>'</span></samp>'<dd>Groups together any number of operators.
+     <br><dt>&lsquo;<samp><span class="samp">&lsquo;</span><samp><span class="samp">( )</span></samp><span class="samp">&rsquo;</span></samp>&rsquo;<dd>Groups together any number of operators.
 
-     <br><dt>`<samp><span class="samp">\</span><var>digit</var></samp>'<dd>Back-reference operator (refer to the GNU regex documentation).
+     <br><dt>&lsquo;<samp><span class="samp">\</span><var>digit</var></samp>&rsquo;<dd>Back-reference operator (refer to the GNU regex documentation).
 
-     <br><dt>`<samp><span class="samp">^</span></samp>'<dd>Match start of a line.
+     <br><dt>&lsquo;<samp><span class="samp">^</span></samp>&rsquo;<dd>Match start of a line.
 
-     <br><dt>`<samp><span class="samp">$</span></samp>'<dd>Match the end of a line.
+     <br><dt>&lsquo;<samp><span class="samp">$</span></samp>&rsquo;<dd>Match the end of a line.
 
    </dl>
 
@@ -3010,7 +3010,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#More-advanced-concepts">More advanced 
 <h3 class="section">3.14 Iterating over lists</h3>
 
 <p>Shell list variables are normally defined by joining together a list of
-directories using a concatenation character such as `<samp><span class="samp">:</span></samp>'. A typical
+directories using a concatenation character such as &lsquo;<samp><span class="samp">:</span></samp>&rsquo;. A typical
 example of this is the PATH variable:
 
 <pre class="example">     
@@ -3264,7 +3264,7 @@ begins looking for files. From this point the search for files
 proceeds recursively into subdirectories with a maximum limit set by
 the <code>recurse</code> directive, and various options for dealing with
 symbolic links and device boundaries. The mode-string defines the
-allowed file-mode (by analogy with `<samp><span class="samp">chmod</span></samp>') and the owner and group
+allowed file-mode (by analogy with &lsquo;<samp><span class="samp">chmod</span></samp>&rsquo;) and the owner and group
 may specify lists of acceptable user-ids and group-ids. The action
 taken in response to a file which does not meet acceptable criteria is
 specified in the action directive. It includes warning about or
@@ -3322,7 +3322,7 @@ another example, just in the last few months the arrival of
 netscape World Wide Web client, with its caching
 facilities, has flooded hard-disks at Oslo with hundreds of megabytes of
 WWW files. In addition the regular appearance of <samp><span class="file">core</span></samp> files<a rel="footnote" href="#fn-1" name="fnd-1"><sup>1</sup></a>
-and compilation by-products (`<samp><span class="samp">.o</span></samp>' files and `<samp><span class="samp">.log</span></samp>' files
+and compilation by-products (&lsquo;<samp><span class="samp">.o</span></samp>&rsquo; files and &lsquo;<samp><span class="samp">.log</span></samp>&rsquo; files
 etc.) fills disks with large files which many users do not understand. 
 The problem is easily remedied by a few lines in the cfagent
 configuration. Files can be deleted if they have not been accessed for
@@ -3340,7 +3340,7 @@ here. In following example:
            home/.netscape       pattern=cache????*  r=inf age=2
      
 </pre>
-   <p class="noindent">all hosts in the group `<samp><span class="samp">AllHomeServers</span></samp>' are instructed to
+   <p class="noindent">all hosts in the group &lsquo;<samp><span class="samp">AllHomeServers</span></samp>&rsquo; are instructed to
 iterate over all users' home directories (using the wildcard
 <code>home</code>) and look for files matching special patterns. 
 Cfagent tests the <em>access time</em> of files and deletes
@@ -4107,13 +4107,13 @@ as follows.
    <p>Commands containing the word `Comment' are used to `comment out' certain
 lines from a text-file&mdash;i.e. render a line impotent without actually
 deleting it. Three types of comment were supported originally: shell
-style (hash) `<samp><span class="samp">#</span></samp>', `<samp><span class="samp">%</span></samp>' as used in TeX and on AIX systems, and
-C++-style `<samp><span class="samp">//</span></samp>'.
+style (hash) &lsquo;<samp><span class="samp">#</span></samp>&rsquo;, &lsquo;<samp><span class="samp">%</span></samp>&rsquo; as used in TeX and on AIX systems, and
+C++-style &lsquo;<samp><span class="samp">//</span></samp>&rsquo;.
 
    <p>A more flexible way of commenting is also possible, using directives
 which first define strings which signify the start of a comment and the
 end of a comment. A single command can then be used to render a comment. 
-The default values of the comment-start string is `<samp><span class="samp"># </span></samp>' and the
+The default values of the comment-start string is &lsquo;<samp><span class="samp"># </span></samp>&rsquo; and the
 default comment-end string is the empty string.  For instance, to define
 C style comments you could write:
 
@@ -4198,7 +4198,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Global-configurations">Global configur
 
 <p>The existence of certain files can compromise the integrity of your
 system and you may wish to ensure that they do not exist. For example,
-some manufacturers sell their workstations with a `<samp><span class="samp">+</span></samp>' symbol in
+some manufacturers sell their workstations with a &lsquo;<samp><span class="samp">+</span></samp>&rsquo; symbol in
 the file <samp><span class="file">/etc/hosts.equiv</span></samp>. 
 <a name="index-g_t_0040file_007b_002fetc_002fhosts_002eequiv_007d-235"></a>This means that anyone in your NIS domain has password free access
 to the system!! Since this is probably not a good idea, you will
@@ -4236,7 +4236,7 @@ back-logs, then you may write <code>rotate=empty</code> and cfagent
 will simply empty the log file. 
 <a name="index-Rotating-files-238"></a><a name="index-Log-files_002c-rotating-239"></a>
 When ever cfagent disables a file (<code>disable</code> or <code>links</code> with
-the `<samp><span class="samp">!</span></samp>'  operator), or saves a new file on top of an old one
+the &lsquo;<samp><span class="samp">!</span></samp>&rsquo;  operator), or saves a new file on top of an old one
 (<code>copy</code> or <code>editfiles</code>), it makes a backup of the
 original. Usually disabled files are renamed by appending the string
 <samp><span class="file">.cfdisabled</span></samp> the filename; copied files are saved by appending
@@ -4320,13 +4320,13 @@ list of all classes in the form of a string
      <pre class="smallexample">          
                 CFALLCLASSES=<var>class1</var>:<var>class2</var>:...
           
-     </pre>
+</pre>
      <p class="noindent">This variable always contains an up to date list of the defined
 classes.
 
-     <li>Use the command line option `<samp><span class="samp">-u</span></samp>' or `<samp><span class="samp">--use-env</span></samp>'. When this
+     <li>Use the command line option &lsquo;<samp><span class="samp">-u</span></samp>&rsquo; or &lsquo;<samp><span class="samp">--use-env</span></samp>&rsquo;. When this
 is defined, cfagent defines an internal environment variable
-called `<samp><span class="samp">CFALLCLASSES</span></samp>' which contains the same list as above. 
+called &lsquo;<samp><span class="samp">CFALLCLASSES</span></samp>&rsquo; which contains the same list as above. 
 Unfortunately, System V boxes don't seem to like having to update
 an environment variable continuously and tend to dump core, so
 this is not the default behaviour!
@@ -4399,7 +4399,7 @@ how they can open a file just for the one or two persons they wish to
 collaborate with. They have grown used to Novell/PC networks which
 embraced the technology from Apollo/NCS much earlier. Previously the
 Unix answer to users has always been: go ask the system administrator
-to make a special group for you.  Then do the `<samp><span class="samp">chmod</span></samp>' thing. And
+to make a special group for you.  Then do the &lsquo;<samp><span class="samp">chmod</span></samp>&rsquo; thing. And
 then they would say: so what's so great about this Unix then?
 
    <p>Addressing this lack of standardization has been the job of a POSIX
@@ -4501,7 +4501,7 @@ program. Let's look at a complete example:
         }
      
 </pre>
-   <p class="noindent">ACLs are viewed in Solaris with the command `<samp><span class="samp">getfacl</span></samp>'. 
+   <p class="noindent">ACLs are viewed in Solaris with the command &lsquo;<samp><span class="samp">getfacl</span></samp>&rsquo;. 
 Suppose that, before running this program, our test-file had permissions
 
 <pre class="smallexample">        user:*:rwx
@@ -4527,7 +4527,7 @@ Suppose that, before running this program, our test-file had permissions
         default_mask:-w-
         default_other:rwx
 </pre>
-   <p class="noindent">Suppose we wanted to to remove 'w' bit for user `<samp><span class="samp">jacobs</span></samp>', or make sure
+   <p class="noindent">Suppose we wanted to to remove 'w' bit for user &lsquo;<samp><span class="samp">jacobs</span></samp>&rsquo;, or make sure
 that it was never there.
 
 <pre class="smallexample">     	{ acl_alias1
@@ -4538,11 +4538,11 @@ that it was never there.
      	}
 </pre>
    <p class="noindent">Note that the method used here is append. That means that, whatever other
-access permissions we might have granted on this file, the user `<samp><span class="samp">jacobs</span></samp>'
+access permissions we might have granted on this file, the user &lsquo;<samp><span class="samp">jacobs</span></samp>&rsquo;
 (a known cracker) will have no write permissions on the file. Had we
 used the method <code>overwrite</code> above, we would have eliminated all
 other access permissions for every user and added the above. 
-If we really wanted to burn `<samp><span class="samp">jacobs</span></samp>', we could remove all rights to
+If we really wanted to burn &lsquo;<samp><span class="samp">jacobs</span></samp>&rsquo;, we could remove all rights to
 the file like this
 
 <pre class="smallexample">     
@@ -4561,12 +4561,12 @@ lie in; these are modified by the umask setting to generate
 their own default mask. 
 <a name="index-ACLs_002c-Solaris-248"></a>
 DFS ACLs look a little different. They are examined with the
-`<samp><span class="samp">acl_edit</span></samp>' command or with
+&lsquo;<samp><span class="samp">acl_edit</span></samp>&rsquo; command or with
 <a name="index-ACLs_002c-DFS-249"></a>
 <pre class="smallexample">     dcecp -c acl show &lt;filename&gt;
 </pre>
    <p class="noindent">In order to effect changes to the DFS, you have to perform a DCE login
-to obtain authentication cookies. The user `<samp><span class="samp">cell_admin</span></samp>' is a
+to obtain authentication cookies. The user &lsquo;<samp><span class="samp">cell_admin</span></samp>&rsquo; is a
 special user account for administrating a local DFS cell.  Suppose we
 have a file with the following DCE ACL:
 
@@ -4576,9 +4576,9 @@ have a file with the following DCE ACL:
        group_obj:r-x--d       #effective:r-x---
        other_obj:r-x---
 </pre>
-   <p class="noindent">Now we want to add `<samp><span class="samp">wx</span></samp>' permissions for user
-`<samp><span class="samp">cell_admin</span></samp>', and add new entries with `<samp><span class="samp">rx</span></samp>' permissons
-for group <code>acct-admin</code> and user `<samp><span class="samp">root</span></samp>'.  This is done with the
+   <p class="noindent">Now we want to add &lsquo;<samp><span class="samp">wx</span></samp>&rsquo; permissions for user
+&lsquo;<samp><span class="samp">cell_admin</span></samp>&rsquo;, and add new entries with &lsquo;<samp><span class="samp">rx</span></samp>&rsquo; permissons
+for group <code>acct-admin</code> and user &lsquo;<samp><span class="samp">root</span></samp>&rsquo;.  This is done with the
 following ACL alias:
 
 <pre class="smallexample">     
@@ -4610,7 +4610,7 @@ cfagent, with the above program snippet, the ACL then becomes:
        other_bj:r-x---
 </pre>
    <p class="noindent">For the sake of simplicity we have only used standard Unix
-bits `<samp><span class="samp">rwx</span></samp>' here, but more complicated examples may be found
+bits &lsquo;<samp><span class="samp">rwx</span></samp>&rsquo; here, but more complicated examples may be found
 in DFS. For example,
 
 <pre class="smallexample">     
@@ -4627,7 +4627,7 @@ and so forth refer to the owner of a file. i.e. they are equivalent
 to the same commands acting on the user who owns the file concerned. 
 To make the cfengine user-interface less cryptic and more in tune
 with the POSIX form, we have dropped
-the `<samp><span class="samp">_obj</span></samp>' suffices. A user field of `<samp><span class="samp">*</span></samp>' is a simple
+the &lsquo;<samp><span class="samp">_obj</span></samp>&rsquo; suffices. A user field of &lsquo;<samp><span class="samp">*</span></samp>&rsquo; is a simple
 abbreviation for the owner of the file.
 
    <p>A problem with any system of lists is that one can generate a sequence
@@ -4732,7 +4732,7 @@ which they are executed,
           
                      <var>Command</var>
           
-     </pre>
+</pre>
      <li>By choosing a different <code>actionsequence</code> depending on the
 time of day.
 
@@ -4747,7 +4747,7 @@ time of day.
           
                       actionsequence = ( <var>sequence</var> )
           
-     </pre>
+</pre>
      <li>By importing modules based on time classes.
 
      <pre class="smallexample">          
@@ -4757,7 +4757,7 @@ time of day.
           
                   any::  cf.hourlyjobs
           
-     </pre>
+</pre>
      </ul>
 
 <p class="noindent">The last of these is the most efficient of the three, since cfengine
@@ -4805,7 +4805,7 @@ the interval, the lighter the load on your servers.  This `splaying' of
 the run times will lighten the load on servers, even if they come
 from domains not under your control but have a similar cron policy. 
 <a name="index-Splaying-host-times-252"></a><a name="index-Contention-during-copying-under-load-253"></a><a name="index-Load-balancing-254"></a>
-Splaying can be switched off temporarily with the `<samp><span class="samp">-q</span></samp>' or `<samp><span class="samp">--no-splay</span></samp>'
+Splaying can be switched off temporarily with the &lsquo;<samp><span class="samp">-q</span></samp>&rsquo; or &lsquo;<samp><span class="samp">--no-splay</span></samp>&rsquo;
 options.
 
 <!--  -->
@@ -4826,29 +4826,29 @@ Up:&nbsp;<a rel="up" accesskey="u" href="#Using-cfengine-as-a-front_002dend-for-
 following classes based on the time and date:
 
      <dl>
-<dt><code>Yr</code><var>xx</var><code>::</code><dd>The current year, e.g. `<samp><span class="samp">Yr1997</span></samp>', `<samp><span class="samp">Yr2001</span></samp>'. This class is probably
+<dt><code>Yr</code><var>xx</var><code>::</code><dd>The current year, e.g. &lsquo;<samp><span class="samp">Yr1997</span></samp>&rsquo;, &lsquo;<samp><span class="samp">Yr2001</span></samp>&rsquo;. This class is probably
 not useful very often, but it might help you to turn on the new-year lights,
 or shine up your systems for the new millenium! 
 <a name="index-Years-258"></a>
 <br><dt><var>Month</var><code>::</code><dd>The current month can be used for defining very long term variations in
-the system configuration, e.g. `<samp><span class="samp">January</span></samp>', `<samp><span class="samp">February</span></samp>'. These
+the system configuration, e.g. &lsquo;<samp><span class="samp">January</span></samp>&rsquo;, &lsquo;<samp><span class="samp">February</span></samp>&rsquo;. These
 classes could be used to determine when students have their summer vacation,
 for instance, in order to perform extra tidying, or to specially maintain some
 administrative policy for the duration of a conference. 
 <a name="index-Months-259"></a>
-<br><dt><var>Day</var><code>::</code><dd>The day of the week may be used as a class, e.g. `<samp><span class="samp">Monday</span></samp>', `<samp><span class="samp">Sunday</span></samp>'. 
+<br><dt><var>Day</var><code>::</code><dd>The day of the week may be used as a class, e.g. &lsquo;<samp><span class="samp">Monday</span></samp>&rsquo;, &lsquo;<samp><span class="samp">Sunday</span></samp>&rsquo;. 
 <a name="index-Day-of-the-week-260"></a>
 <br><dt><code>Day</code><var>xx</var><code>::</code><dd>A day in the month (date) may be used to single out by date, e.g. the first
-day of each month defines `<samp><span class="samp">Day1</span></samp>', the 21st `<samp><span class="samp">Day21</span></samp>' etc.
+day of each month defines &lsquo;<samp><span class="samp">Day1</span></samp>&rsquo;, the 21st &lsquo;<samp><span class="samp">Day21</span></samp>&rsquo; etc.
 
-     <br><dt><code>Hr</code><var>xx</var><code>::</code><dd>An hour of the day, in 24-hour clock notation: `<samp><span class="samp">Hr00</span></samp>'...`<samp><span class="samp">Hr23</span></samp>'.
+     <br><dt><code>Hr</code><var>xx</var><code>::</code><dd>An hour of the day, in 24-hour clock notation: &lsquo;<samp><span class="samp">Hr00</span></samp>&rsquo;...&lsquo;<samp><span class="samp">Hr23</span></samp>&rsquo;.
 
-     <br><dt><code>Min</code><var>xx</var><code>::</code><dd>The precise minute at which cfagent was started: `<samp><span class="samp">Min0</span></samp>' ... `<samp><span class="samp">Min59</span></samp>'. 
+     <br><dt><code>Min</code><var>xx</var><code>::</code><dd>The precise minute at which cfagent was started: &lsquo;<samp><span class="samp">Min0</span></samp>&rsquo; ... &lsquo;<samp><span class="samp">Min59</span></samp>&rsquo;. 
 This is probably not useful alone, but these values may be combined
 to define arbitrary intervals of time.
 
      <br><dt><code>Min</code><var>xx</var><code>_</code><var>xx</var><code>::</code><dd>The five-minute interval in the hour at which cfagent was executed, in the form
-`<samp><span class="samp">Min0_5</span></samp>', `<samp><span class="samp">Min5_10</span></samp>' .. `<samp><span class="samp">Min55_0</span></samp>'.
+&lsquo;<samp><span class="samp">Min0_5</span></samp>&rsquo;, &lsquo;<samp><span class="samp">Min5_10</span></samp>&rsquo; .. &lsquo;<samp><span class="samp">Min55_0</span></samp>&rsquo;.
 
    </dl>
 
@@ -4882,7 +4882,7 @@ effectively the ORed result of the right hand side. This if any
 classes in the parentheses are defined, the left hand side class
 will become defined. This provides a flexible and readable way of
 specifying intervals of time within a program, without having to
-use `<samp><span class="samp">|</span></samp>' and `<samp><span class="samp">.</span></samp>' operators everywhere.
+use &lsquo;<samp><span class="samp">|</span></samp>&rsquo; and &lsquo;<samp><span class="samp">.</span></samp>&rsquo; operators everywhere.
 
 <!--  -->
 <!-- SECTION -->
@@ -5306,7 +5306,7 @@ since they can lead to contention.
    <p><a name="index-Lock-files-for-ordinary-users-282"></a><a name="index-Ordinary-users_002c-lock-files-283"></a>Cfagent creates a directory <samp><span class="file">~/.cfengine</span></samp> for writing lock files
 for ordinary users.
 
-   <p>The option `<samp><span class="samp">-K</span></samp>' or `<samp><span class="samp">--no-lock</span></samp>' can be used to switch off the
+   <p>The option &lsquo;<samp><span class="samp">-K</span></samp>&rsquo; or &lsquo;<samp><span class="samp">--no-lock</span></samp>&rsquo; can be used to switch off the
 locking checks, but note that when running cfagent remotely via <code>cfservd</code>,
 this is not possible.
 
@@ -7764,7 +7764,7 @@ song from Monty Python's flying circus?</p>
 
    <p class="footnote"><small>[<a name="fn-7" href="#fnd-7">7</a>]</small> Recall the `spam' song ... get the idea?</p>
 
-   <p><hr></div>
+   <hr></div>
 
 </body></html>
 
