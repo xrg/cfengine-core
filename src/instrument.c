@@ -71,7 +71,6 @@ if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open performance database %s\n",name);
    CfLog(cferror,OUTPUT,"db_open");
-   dbp->close(dbp,0);
    return;
    }
 
@@ -428,7 +427,7 @@ void CheckFriendConnections(int hours)
   DBC *dbcp;
   DB_ENV *dbenv = NULL;
   int ret, secs = CF_TICKS_PER_HOUR*hours, criterion, overdue, regex=false;
-  time_t now = time(NULL),lsea = -1, tthen, then;
+  time_t now = time(NULL),lsea = -1, tthen, then = 0;
   char name[CF_BUFSIZE],hostname[CF_BUFSIZE],datebuf[CF_MAXVARSIZE];
   char addr[CF_BUFSIZE],type[CF_BUFSIZE], *regexp;
   struct QPoint entry;
