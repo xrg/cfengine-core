@@ -164,7 +164,6 @@ if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open performance database %s\n",name);
    CfLog(cferror,OUTPUT,"db_open");
-   dbp->close(dbp,0);
    return;
    }
 
@@ -303,7 +302,6 @@ if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
    CfLog(cferror,OUTPUT,"db_open");
-   dbp->close(dbp,0);
    return;
    }
 
@@ -325,7 +323,6 @@ if ((errno = (dbpent->open)(dbpent,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
    CfLog(cferror,OUTPUT,"db_open");
-   dbp->close(dbp,0);
    return;
    }
 
@@ -470,7 +467,6 @@ if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
    CfLog(cferror,OUTPUT,"db_open");
-   dbp->close(dbp,0);
    return;
    }
 
@@ -645,7 +641,6 @@ if ((errno = (dbp->open)(dbp,NULL,name,NULL,DB_BTREE,DB_CREATE,0644)) != 0)
    {
    snprintf(OUTPUT,CF_BUFSIZE*2,"Couldn't open last-seen database %s\n",name);
    CfLog(cferror,OUTPUT,"db_open");
-   dbp->close(dbp,0);
    return;
    }
 
