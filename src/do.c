@@ -1901,7 +1901,7 @@ for (dp = VDISABLELIST; dp != NULL; dp=dp->next)
                      continue;
                      }
 
-                  snprintf(OUTPUT,CF_BUFSIZE*2,"Renaming %s to %s\n",workname,path);
+                  snprintf(OUTPUT,CF_BUFSIZE*2,"Renamed %s to %s\n",workname,path);
                   CfLog(cfinform,OUTPUT,"");
                   AuditLog(dp->logaudit,dp->audit,dp->lineno,OUTPUT,CF_CHG);
                   

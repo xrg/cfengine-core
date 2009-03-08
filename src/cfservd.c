@@ -238,6 +238,7 @@ while ((c=getopt_long(argc,argv,"L:d:f:vmhpFV",CFDOPTIONS,&optindex)) != EOF)
 
 LOGGING = true;                    /* Do output to syslog */
 IDClasses();
+SetReferenceTime(true);
 GetNameInfo();
 GetInterfaceInfo();
 GetV6InterfaceInfo();
