@@ -417,8 +417,7 @@ if (ip->linktype != 'n')
       Verbose("cfengine: copy item %s marked for linking instead\n",sourcefile);
       enforcelinks = ENFORCELINKS;
       ENFORCELINKS = true;
-      //ip->returnstatus = CF_CHG;
-      
+     
       switch (ip->linktype)
          {
          case 's':
@@ -434,11 +433,11 @@ if (ip->linktype != 'n')
              printf("%s: internal error, link type was [%c] in ImageCopy\n",VPREFIX,ip->linktype);
              return;
          }
+
+      ENFORCELINKS = enforcelinks;
       
       if (succeed)
          {
-         ENFORCELINKS = enforcelinks;
-         
          if (lstat(destfile,&deststatbuf) == -1)
             {
             snprintf(OUTPUT,CF_BUFSIZE*2,"Can't lstat %s\n",destfile);
@@ -657,7 +656,10 @@ if (found == -1)
          strncat(VBUFF,linkbuf,CF_BUFSIZE-1);
          strncpy(linkbuf,VBUFF,CF_BUFSIZE-1);
          }
-      
+
+      enforcelinks = ENFORCELINKS;
+      ENFORCELINKS = true;
+
       switch (ip->linktype)
          {
          case 's':
@@ -684,7 +686,9 @@ if (found == -1)
              printf("cfengine: internal error, link type was [%c] in ImageCopy 2\n",ip->linktype);
              return;
          }
-      
+
+      ENFORCELINKS = enforcelinks;
+            
       if (succeed)
          {
          if (lstat(destfile,&deststatbuf) == -1)
@@ -902,6 +906,8 @@ else
                 CfLog(cferror,OUTPUT,"");
                 return;
             }
+
+         ENFORCELINKS = enforcelinks;
          
          if (succeed)
             {
