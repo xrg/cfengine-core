@@ -270,7 +270,12 @@ void AddTimeClass(char *str)
 
 { int i;
   char buf2[10], buf3[10], buf4[10], buf5[10], buf[10], out[10];
+  time_t now = time(NULL);
+  struct tm *tmv = gmtime(&now);
   
+snprintf(buf,9,"GMT_Hr%d\n",tmv->tm_hour);
+AddClassToHeap(buf);
+
 for (i = 0; i < 7; i++)
    {
    if (strncmp(DAYTEXT[i],str,3)==0)
