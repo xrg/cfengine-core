@@ -1172,7 +1172,8 @@ int BusyWithConnection(struct cfd_connection *conn)
   char recvbuffer[CF_BUFSIZE+CF_BUFEXT], sendbuffer[CF_BUFSIZE],check[CF_BUFSIZE];  
   char filename[CF_BUFSIZE],buffer[CF_BUFSIZE],args[CF_BUFSIZE],out[CF_BUFSIZE];
   long time_no_see = 0;
-  int len=0, drift, plainlen, received;
+  unsigned int len=0;
+  int drift, plainlen, received;
   struct cfd_get_arg get_args;
 
 memset(recvbuffer,0,CF_BUFSIZE+CF_BUFEXT);
@@ -1311,7 +1312,7 @@ switch (GetCommand(recvbuffer))
        
    case cfd_sget:
        memset(buffer,0,CF_BUFSIZE);
-       sscanf(recvbuffer,"SGET %d %d",&len,&(get_args.buf_size));
+       sscanf(recvbuffer,"SGET %u %d",&len,&(get_args.buf_size));
        if (received != len+CF_PROTO_OFFSET)
           {
           Verbose("Protocol error SGET\n");
@@ -1368,7 +1369,7 @@ switch (GetCommand(recvbuffer))
    case cfd_sopendir:
 
        memset(buffer,0,CF_BUFSIZE);
-       sscanf(recvbuffer,"SOPENDIR %d",&len);
+       sscanf(recvbuffer,"SOPENDIR %u",&len);
 
        if (received != len+CF_PROTO_OFFSET)
           {
@@ -1435,7 +1436,7 @@ switch (GetCommand(recvbuffer))
    case cfd_ssynch:
        
        memset(buffer,0,CF_BUFSIZE);
-       sscanf(recvbuffer,"SSYNCH %d",&len);
+       sscanf(recvbuffer,"SSYNCH %u",&len);
 
        if (received != len+CF_PROTO_OFFSET)
           {
@@ -1511,7 +1512,7 @@ switch (GetCommand(recvbuffer))
 
    case cfd_smd5:
        memset(buffer,0,CF_BUFSIZE);
-       sscanf(recvbuffer,"SMD5 %d",&len);
+       sscanf(recvbuffer,"SMD5 %u",&len);
        
        if (received != len+CF_PROTO_OFFSET)
           {
