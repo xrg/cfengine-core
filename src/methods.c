@@ -420,7 +420,7 @@ if (!GetLock(ASUniqueName("method-exec"),CanonifyName(methodname),ptr->ifelapsed
    }
  
 snprintf(OUTPUT,CF_BUFSIZE*2,"Executing method %s...(uid=%d,gid=%d)\n",execstr,ptr->uid,ptr->gid);
-CfLog(cfinform,OUTPUT,"");
+CfLog(cfverbose,OUTPUT,"");
  
 if (DONTDO)
    {
@@ -490,7 +490,7 @@ else
    }
   
 snprintf(OUTPUT,CF_BUFSIZE*2,"Finished local method %s processing\n",execstr);
-CfLog(cfinform,OUTPUT,"");
+CfLog(cfverbose,OUTPUT,"");
  
 ResetOutputRoute('d','d');
 ReleaseCurrentLock();

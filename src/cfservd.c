@@ -1313,7 +1313,7 @@ switch (GetCommand(recvbuffer))
    case cfd_sget:
        memset(buffer,0,CF_BUFSIZE);
        sscanf(recvbuffer,"SGET %u %d",&len,&(get_args.buf_size));
-       if (received != len+CF_PROTO_OFFSET)
+       if (len >= sizeof(out) || received != len+CF_PROTO_OFFSET)
           {
           Verbose("Protocol error SGET\n");
           RefuseAccess(conn,sendbuffer,0,recvbuffer);
@@ -1371,7 +1371,7 @@ switch (GetCommand(recvbuffer))
        memset(buffer,0,CF_BUFSIZE);
        sscanf(recvbuffer,"SOPENDIR %u",&len);
 
-       if (received != len+CF_PROTO_OFFSET)
+       if (len >= sizeof(out) || received != len+CF_PROTO_OFFSET)
           {
           Verbose("Protocol error OPENDIR: %d\n",len);
           RefuseAccess(conn,sendbuffer,0,recvbuffer);
@@ -1438,7 +1438,7 @@ switch (GetCommand(recvbuffer))
        memset(buffer,0,CF_BUFSIZE);
        sscanf(recvbuffer,"SSYNCH %u",&len);
 
-       if (received != len+CF_PROTO_OFFSET)
+       if (len >= sizeof(out) || received != len+CF_PROTO_OFFSET)
           {
           Verbose("Protocol error SSYNCH: %d\n",len);
           RefuseAccess(conn,sendbuffer,0,recvbuffer);
@@ -1514,7 +1514,7 @@ switch (GetCommand(recvbuffer))
        memset(buffer,0,CF_BUFSIZE);
        sscanf(recvbuffer,"SMD5 %u",&len);
        
-       if (received != len+CF_PROTO_OFFSET)
+       if (len >= sizeof(out) || received != len+CF_PROTO_OFFSET)
           {
           Debug("Decryption error: %d\n",len);
           RefuseAccess(conn,sendbuffer,0,recvbuffer);
