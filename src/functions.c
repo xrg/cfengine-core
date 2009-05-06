@@ -509,7 +509,7 @@ if (stat(argv[1],&tobuf) == -1)
 switch(fn)
    {
    case fn_newerthan:
-       if (frombuf.st_mtime < tobuf.st_mtime)
+       if (frombuf.st_mtime > tobuf.st_mtime)
           {
           strcpy(value,CF_ANYCLASS);
           return;
