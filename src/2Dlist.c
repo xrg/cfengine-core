@@ -233,8 +233,18 @@ int EndOfTwoDimList(struct TwoDimList *list)       /* bool */
    /* i.e. rounds is > 0 for the first is-2d list item      */
 
 { struct TwoDimList *lp, *tp = NULL;
- int i = 0, done = true;
+  int i = 0, done;
 
+switch (ACTION)
+   {
+   case shellcommands:
+       done = false;
+       break;
+
+   default:
+       done = true;
+   }
+ 
 for (lp = list; lp != NULL; lp=lp->next)
    {
    if (lp->is2d)
@@ -244,7 +254,14 @@ for (lp = list; lp != NULL; lp=lp->next)
 
    if (lp->rounds == 0)
       {
-      done = false;
+      if (!done)
+         {
+         break;
+         }
+      else
+         {
+         done = false;
+         }
       }
    }
 
