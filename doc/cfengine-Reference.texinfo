@@ -1777,7 +1777,8 @@ arguments in chronological order.
 AccessedBefore(@var{f1},@var{f2})
 @end smallexample 
 
-True if file 1 was accessed more recently than file 2 (UNIX atime)
+True if file 2 was accessed more recently than file 1 (UNIX atime), ie file 1 
+was Accessed Before file 2.
 
 @node ChangedBefore, ClassMatch, AccessedBefore, Cfengine classes
 @subsection ChangedBefore
@@ -1785,7 +1786,7 @@ True if file 1 was accessed more recently than file 2 (UNIX atime)
 @smallexample 
 ChangedBefore(@var{f1},@var{f2})
 @end smallexample 
-True if file 1's attributes were changed in any way more recently than file 2's (UNIX ctime)
+True if file 2's attributes were changed in any way more recently than file 1's (UNIX ctime), ie file 1 was Changed Before file 2.
 
 @node ClassMatch, FileExists, ChangedBefore, Cfengine classes
 @subsection ClassMatch
@@ -1868,7 +1869,8 @@ True if the file f is a plain file
 @smallexample 
 IsNewerThan(@var{f1},@var{f2})
 @end smallexample 
-True if file 2 was modified more recently than file 1 (UNIX mtime)
+True if file 1 was modified more recently than file 2 (UNIX mtime), ie file 1 
+Is Newer Than file2.
 
 @node IPRange, PrepModule, IsNewerThan, Cfengine classes
 @subsection IPRange

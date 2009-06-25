@@ -1,5 +1,9 @@
+2.2.10
 
+	Protocol fix, potential integer error in server decoding.
 
+2.2.9
+	
 2.2.8
 	
         Patch for cfservd serving wrong data when link->copy
