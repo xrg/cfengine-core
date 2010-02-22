@@ -5,7 +5,6 @@
 
 %define	name	cfengine
 %define version %git_get_ver
-%define release %mkrel %git_get_rel
 
 # _localstatedir is inconsistent..
 %define varlibdir /var/lib
@@ -16,12 +15,12 @@
 
 Name:		%{name}
 Version:	%{version}
-Release:	%{release}
+Release:	%mkrel %git_get_rel
 Summary:	Cfengine helps administer remote BSD and System-5-like systems
 License:	GPL
 Group:		Monitoring
 URL:		http://www.cfengine.org
-Source0:	%{name}-%{version}.tar.gz
+Source0:	%git_bs_source %{name}-%{version}.tar.gz
 #Source4:	cfservd.init
 #Source5:	cfexecd.init
 #Source6:	cfenvd.init
