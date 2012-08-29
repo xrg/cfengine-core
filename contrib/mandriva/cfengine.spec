@@ -32,6 +32,8 @@ BuildRequires: postgresql-devel
 Requires(pre):	rpm-helper
 Requires(preun):rpm-helper
 # BuildRequires: texinfo
+Provides:	cfengine-base
+Obsoletes:	cfengine-base
 
 %description
 CFEngine, the configuration engine, is a very high level language for
@@ -40,42 +42,58 @@ of workstations. CFEngine uses the idea of classes and a primitive
 form of intelligence to define and automate the configuration of large
 systems in the most economical way possible.
 
-%package base
-Summary:	CFEngine base files
-Group:		Monitoring
-Provides:	cfengine-base
-Obsoletes:	cfengine-base
-
-%description base
 This package contain the cfengine base files needed by all subpackages.
 
 %package cfagent
-Summary:	CFEngine agent
+Summary:	Configuration Client daemon
 Group:		Monitoring
-Requires:	%{name}-base = %{version}-%{release}
+Requires:	%{name} = %{version}-%{release}
 Provides:	cfengine-cfagent
 Obsoletes:	cfengine-cfagent
 
 %description cfagent
 This package contain the cfengine agent.
+
 It should be installed on all computers to be monitored/configured by
 CFEngine.
 
 
 %package cfserver
-Summary:	CFEngine Hub server
+Summary:	Policy Distribution Server
 Group:		Monitoring
-Requires:	%{name}-base = %{version}-%{release}
+Requires:	%{name} = %{version}-%{release}
 Provides:	cfengine-cfserver
 Obsoletes:	cfengine-cfserver
 Requires(post):rpm-helper
 Requires(preun):rpm-helper
 
 %description cfserver
-This package contain the cfengine server daemon.
+This package contain the files for CFEngine policy distribution. Such a
+node "serves" the clients (cf-agents) with CFEngine configuration files.
 
 Install it on the box you want to act as the policy hub, controlling
 the other monitored boxes.
+
+%package pds
+Summary:	Policy Definition Server
+Group:		Monitoring
+BuildArch:	noarch
+Requires:	%{name}-cfserver = %{version}-%{release}
+Suggests:	git-core
+
+%description pds
+Install this on a single, master node, which will be the main definition
+point for CFEngine policies. The machine you will be writting/keeping the
+policies at.
+
+Even in a full deployment, you should prefer to have a single ever point
+of keeping/authoring the policies. From this one you may push the policies
+to the Policy Distribution machines (ones with %{name}-cfserver), so that
+clients can then pick them up and be configured.
+
+This package also contains the documentation and examples, for the policy
+authors.
+
 
 %package -n	%{libname}
 Summary:	Dynamic libraries for %{name}
@@ -125,9 +143,8 @@ developing programs using the %{name} library.
 	--infodir=%{_infodir} \
 	--with-workdir=%{workdir} \
 	--enable-shared --enable-fhs  \
-	--without-mysql
+	--without-mysql --enable-docs=html
     $CONFIGURE_XPATH
-#	 --enable-docs=all
 
 %make
 
@@ -144,14 +161,36 @@ install -d -m 755 %{buildroot}%{_sysconfdir}/cron.daily
 install -d -m 755 %{buildroot}%{_sysconfdir}/sysconfig
 install -d -m 755 %{buildroot}%{_initrddir}
 install -d -m 755 %{buildroot}%{workdir}
+install -d -m 755 %{buildroot}%{workdir}/lib
+install -d -m 755 %{buildroot}%{workdir}/reports
 install -m 755 contrib/mandriva/cfservd.init %{buildroot}%{_initrddir}/cf-serverd
 install -m 755 contrib/mandriva/cfexecd.init %{buildroot}%{_initrddir}/cf-execd
 # install -m 755 contrib/mandriva/cfenvd.init %{buildroot}%{_initrddir}/cfenvd
 
-%post base
-if [ $1 = 1 ]; then
-    [ -f "%{workdir}/ppkeys/localhost.priv" ] || cfkey >/dev/null 2>&1
-fi
+pushd %{buildroot}%{workdir}
+install -d -m 755 ./bin
+for BPROG in %{buildroot}%{_sbindir}/*  ; do
+	BINP="$(basename $BPROG)"
+	ln -s %{_sbindir}/$BINP ./bin/
+done
+
+popd
+
+cat '-' << EOF > %{buildroot}%{workdir}/masterfiles/README.first
+In this directory you should keep your original version of the policy
+files.
+For a start, you could copy files from %{_datadir}/cfengine/CoreBase/
+into this folder, and start tweaking them.
+
+It is also recommended that you put this folder under version control.
+
+EOF
+
+# mv %{buildroot}%{_datadir}/cfengine/CoreBase/* %{buildroot}%{workdir}/masterfiles/
+
+
+#%post base
+# bootstrap?
 
 %post cfagent
 %_post_service cf-execd
@@ -168,32 +207,55 @@ fi
 %clean
 rm -rf %{buildroot}
 
-%files base
+# All binaries have 3 files:
+#  1. the bin at /usr/sbin/xxx
+#  2. the symlink at /var/lib/cfengine/bin/xxx
+#  3. a manpage at /usr/share/man/man8/xxx.8.xz
+# so, write a macro for them
+
+%define cfprog(:)  %{_sbindir}/%1 \
+	%{workdir}/bin/%1 \
+	%{_mandir}/man8/%1.* \
+	%()
+
+%files
 %defattr(-,root,root)
 %doc %{_defaultdocdir}/cfengine/ChangeLog
 %doc %{_defaultdocdir}/cfengine/README
-# {_sysconfdir}/cfengine
-%{_sbindir}/cf-key
-%{workdir}
-%{_mandir}/man8/*
-%{_datadir}/cfengine/CoreBase/*
+%dir %{workdir}
+%dir %{workdir}/bin
+%dir %{workdir}/ppkeys
+%dir %{workdir}/modules
+%dir %{workdir}/lib
+%cfprog cf-key
+%cfprog cf-promises
+%cfprog cf-serverd
+%{_initrddir}/cf-serverd
 
 
 %files cfagent
 %defattr(-,root,root)
-%{_sbindir}/cf-agent
-%{_sbindir}/cf-runagent
-%{_sbindir}/cf-monitord
-%{_sbindir}/cf-execd
+%cfprog cf-agent
+%cfprog cf-monitord
+%cfprog cf-execd
 %{_initrddir}/cf-execd
+%dir %{workdir}/inputs
+%dir %{workdir}/outputs
+
 
 %files cfserver
 %defattr(-,root,root)
-%{_initrddir}/cf-serverd
-%{_sbindir}/cf-serverd
-%{_sbindir}/cf-report
-%{_sbindir}/cf-promises
+%cfprog cf-runagent
+%cfprog cf-report
+%dir %{workdir}/masterfiles
+%dir %{workdir}/reports
+
+%files pds
+%doc %{_defaultdocdir}/cfengine/guides/
+%doc %{_defaultdocdir}/cfengine/reference/
 %{_defaultdocdir}/cfengine/examples/*
+%{_datadir}/cfengine/CoreBase/*
+%{workdir}/masterfiles/README.first
 
 
 %files -n %{libname}
