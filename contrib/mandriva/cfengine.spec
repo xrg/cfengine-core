@@ -128,7 +128,7 @@ developing programs using the %{name} library.
   CONFIGURE_XPATH="--x-includes=%{_prefix}/include --x-libraries=%{_prefix}/%{_lib}" \
   ./autogen.sh --target=%{_target_platform} \
 	--program-prefix=%{?_program_prefix} \
- 	--prefix=%{_prefix} \
+	--prefix=%{_prefix} \
 	--exec-prefix=%{_exec_prefix} \
 	--bindir=%{_bindir} \
 	--sbindir=%{_sbindir} \
@@ -142,6 +142,8 @@ developing programs using the %{name} library.
 	--mandir=%{_mandir} \
 	--infodir=%{_infodir} \
 	--with-workdir=%{workdir} \
+	--disable-dependency-tracking \
+	--disable-maintainer-mode \
 	--enable-shared --enable-fhs  \
 	--without-mysql --enable-docs=html
     $CONFIGURE_XPATH
@@ -165,7 +167,7 @@ install -d -m 755 %{buildroot}%{workdir}/lib
 install -d -m 755 %{buildroot}%{workdir}/reports
 install -m 755 contrib/mandriva/cfservd.init %{buildroot}%{_initrddir}/cf-serverd
 install -m 755 contrib/mandriva/cfexecd.init %{buildroot}%{_initrddir}/cf-execd
-# install -m 755 contrib/mandriva/cfenvd.init %{buildroot}%{_initrddir}/cfenvd
+install -m 755 contrib/mandriva/cf-monitord.init %{buildroot}%{_initrddir}/cf-monitord
 
 pushd %{buildroot}%{workdir}
 install -d -m 755 ./bin
@@ -231,6 +233,7 @@ rm -rf %{buildroot}
 %cfprog cf-promises
 %cfprog cf-serverd
 %{_initrddir}/cf-serverd
+%{_initrddir}/cf-monitord
 
 
 %files cfagent
