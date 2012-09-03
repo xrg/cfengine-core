@@ -17,7 +17,7 @@
 # pidfile: /var/run/cfengine
 
 # Local values
-NAME=cf-servd
+NAME=cf-serverd
 BINARY=/usr/sbin/$NAME
 PROCESS=$NAME
 LOCKFILE=/var/lock/subsys/$NAME
