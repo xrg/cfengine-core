@@ -1,8 +1,5 @@
 %define git_repo cfengine
 %define git_head HEAD
-%define release_class experimental
-
-#define distsuffix xrg
 
 %define	name	cfengine3
 %define version %git_get_ver
@@ -117,8 +114,6 @@ developing programs using the %{name} library.
 %git_get_source
 %setup -q
 
-# chmod 644 inputs/*
-
 %build
 %serverbuild
 
@@ -188,11 +183,8 @@ It is also recommended that you put this folder under version control.
 
 EOF
 
-# mv %{buildroot}%{_datadir}/cfengine/CoreBase/* %{buildroot}%{workdir}/masterfiles/
-
-
 #%post base
-# bootstrap?
+# bootstrap? Not yet, since our "failsafe.cf" is too generic
 
 %post cfagent
 %_post_service cf-execd
