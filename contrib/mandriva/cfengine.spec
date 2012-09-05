@@ -22,6 +22,7 @@ URL:		http://www.cfengine.org
 Source0:	%git_bs_source %{name}-%{version}.tar.gz
 BuildRequires:	flex
 BuildRequires:	bison
+BuildRequires:  texinfo
 BuildRequires:	openssl-devel
 BuildRequires:	db4-devel
 BuildRequires: tokyocabinet-devel
