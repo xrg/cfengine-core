@@ -204,6 +204,7 @@ body copy_from u_rcp(from,server)
 !am_policy_hub::
 
  servers => { "$(server)" };
+ encrypt => "true";
 }
 
 #########################################################
