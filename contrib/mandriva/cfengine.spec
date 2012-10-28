@@ -14,7 +14,7 @@
 
 Name:		%{name}
 Version:	%{version}
-Release:	%mkrel %git_get_rel
+Release:	%mkrel %git_get_rel2
 Summary:	CFEngine helps administer remote BSD and System-5-like systems
 License:	GPL
 Group:		Monitoring
@@ -225,6 +225,9 @@ rm -rf %{buildroot}
 %cfprog cf-key
 %cfprog cf-promises
 %cfprog cf-serverd
+%{_sbindir}/rpmvercmp
+%{workdir}/bin/rpmvercmp
+# TODO: write a manpage and make rpmvercmp a "cfprog"
 %{_initrddir}/cf-serverd
 %{_initrddir}/cf-monitord
 
