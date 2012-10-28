@@ -24,6 +24,8 @@
 
 #include "cf-serverd-functions.h"
 
+#include "scope.h"
+
 static const size_t QUEUESIZE = 50;
 int NO_FORK = false;
 
@@ -71,6 +73,37 @@ static const char *HINTS[15] =
 };
 
 /*******************************************************************/
+
+static void KeepHardClasses()
+{
+    char name[CF_BUFSIZE];
+    if (name != NULL)
+    {
+        snprintf(name, sizeof(name), "%s%cpolicy_server.dat", CFWORKDIR, FILE_SEPARATOR);
+
+        FILE *fp = fopen(name, "r");
+
+        if (fp != NULL)
+        {
+            snprintf(name, sizeof(name), "%s/state/am_policy_hub", CFWORKDIR);
+            MapName(name);
+
+            struct stat sb;
+
+            if (stat(name, &sb) != -1)
+            {
+                HardClass("am_policy_hub");
+            }
+        }
+    }
+
+#if defined HAVE_NOVA
+    HardClass("nova_edition");
+    HardClass("enterprise_edition");
+#else
+    HardClass("community_edition");
+#endif
+}
 
 GenericAgentConfig CheckOpts(int argc, char **argv)
 {
@@ -496,9 +529,13 @@ void CheckFileChanges(Policy **policy, GenericAgentConfig config, const ReportCo
 
             /* Free & reload -- lock this to avoid access errors during reload */
 
-            DeleteAlphaList(&VHEAP);
             DeleteItemList(VNEGHEAP);
+            
+            DeleteAlphaList(&VHEAP);
             InitAlphaList(&VHEAP);
+            DeleteAlphaList(&VHARDHEAP);
+            InitAlphaList(&VHARDHEAP);
+            
             DeleteAlphaList(&VADDCLASSES);
             InitAlphaList(&VADDCLASSES);
 
@@ -513,6 +550,12 @@ void CheckFileChanges(Policy **policy, GenericAgentConfig config, const ReportCo
 
             DeleteAuthList(VADMIT);
             DeleteAuthList(VDENY);
+
+            DeleteAuthList(VARADMIT);
+            DeleteAuthList(VARDENY);
+
+            DeleteAuthList(ROLES);
+
             //DeleteRlist(VINPUTLIST); This is just a pointer, cannot free it
 
             DeleteAllScope();
@@ -522,6 +565,11 @@ void CheckFileChanges(Policy **policy, GenericAgentConfig config, const ReportCo
 
             VADMIT = VADMITTOP = NULL;
             VDENY = VDENYTOP = NULL;
+
+            VARADMIT = VARADMITTOP = NULL;
+            VARDENY = VARDENYTOP = NULL;
+
+            ROLES = ROLESTOP = NULL;
 
             VNEGHEAP = NULL;
             SV.trustkeylist = NULL;
@@ -559,8 +607,9 @@ void CheckFileChanges(Policy **policy, GenericAgentConfig config, const ReportCo
             Get3Environment();
             BuiltinClasses();
             OSClasses();
+            KeepHardClasses();
 
-            NewClass(CF_AGENTTYPES[THIS_AGENT_TYPE]);
+            HardClass(CF_AGENTTYPES[THIS_AGENT_TYPE]);
 
             SetReferenceTime(true);
             *policy = ReadPromises(cf_server, CF_SERVERC, config, report_context);
