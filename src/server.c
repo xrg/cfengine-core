@@ -91,7 +91,7 @@ static void DoExec(ServerConnectionState *conn, char *sendbuffer, char *args);
 static int GetCommand(char *str);
 static int VerifyConnection(ServerConnectionState *conn, char buf[CF_BUFSIZE]);
 static void RefuseAccess(ServerConnectionState *conn, char *sendbuffer, int size, char *errmesg);
-static int AccessControl(const char *req_path, ServerConnectionState *conn, int encrypt, Auth *vadmit, Auth *vdeny);
+static int AccessControl(const char *req_path, ServerConnectionState *conn, int encrypt, char perm_type, Auth *vadmit, Auth *vdeny);
 static int LiteralAccessControl(char *in, ServerConnectionState *conn, int encrypt, Auth *vadmit, Auth *vdeny);
 static Item *ContextAccessControl(char *in, ServerConnectionState *conn, int encrypt, Auth *vadmit, Auth *vdeny);
 static void ReplyServerContext(ServerConnectionState *conn, char *sendbuffer, char *recvbuffer, int encrypted, Item *classes);
@@ -457,7 +457,7 @@ static int BusyWithConnection(ServerConnectionState *conn)
             return false;
         }
 
-        if (!AccessControl(GetArg0(CFRUNCOMMAND), conn, false, VADMIT, VDENY))
+        if (!AccessControl(GetArg0(CFRUNCOMMAND), conn, false,'x', VADMIT, VDENY))
         {
             CfOut(cf_inform, "", "Server refusal due to denied access to requested object\n");
             RefuseAccess(conn, sendbuffer, 0, recvbuffer);
@@ -536,7 +536,7 @@ static int BusyWithConnection(ServerConnectionState *conn)
             return false;
         }
 
-        if (!AccessControl(filename, conn, false, VADMIT, VDENY))
+        if (!AccessControl(filename, conn, false, 'r', VADMIT, VDENY))
         {
             CfOut(cf_inform, "", "Access denied to get object\n");
             RefuseAccess(conn, sendbuffer, 0, recvbuffer);
@@ -604,7 +604,7 @@ static int BusyWithConnection(ServerConnectionState *conn)
             return false;
         }
 
-        if (!AccessControl(filename, conn, true, VADMIT, VDENY))
+        if (!AccessControl(filename, conn, true, 'r', VADMIT, VDENY))
         {
             CfOut(cf_inform, "", "Access control error\n");
             RefuseAccess(conn, sendbuffer, 0, recvbuffer);
@@ -661,7 +661,7 @@ static int BusyWithConnection(ServerConnectionState *conn)
             return false;
         }
 
-        if (!AccessControl(filename, conn, true, VADMIT, VDENY))        /* opendir don't care about privacy */
+        if (!AccessControl(filename, conn, true, 'r', VADMIT, VDENY))        /* opendir don't care about privacy */
         {
             CfOut(cf_inform, "", "Access error\n");
             RefuseAccess(conn, sendbuffer, 0, recvbuffer);
@@ -683,7 +683,7 @@ static int BusyWithConnection(ServerConnectionState *conn)
             return false;
         }
 
-        if (!AccessControl(filename, conn, true, VADMIT, VDENY))        /* opendir don't care about privacy */
+        if (!AccessControl(filename, conn, true, 'r', VADMIT, VDENY))        /* opendir don't care about privacy */
         {
             CfOut(cf_inform, "", "DIR access error\n");
             RefuseAccess(conn, sendbuffer, 0, recvbuffer);
@@ -760,7 +760,7 @@ static int BusyWithConnection(ServerConnectionState *conn)
 
         drift = (int) (tloc - trem);
 
-        if (!AccessControl(filename, conn, true, VADMIT, VDENY))
+        if (!AccessControl(filename, conn, true, 'w', VADMIT, VDENY))
         {
             CfOut(cf_inform, "", "Access control in sync\n");
             RefuseAccess(conn, sendbuffer, 0, recvbuffer);
@@ -1528,7 +1528,7 @@ bool ResolveFilename(const char *req_path, char *res_path)
 
 /**************************************************************/
 
-static int AccessControl(const char *req_path, ServerConnectionState *conn, int encrypt, Auth *vadmit, Auth *vdeny)
+static int AccessControl(const char *req_path, ServerConnectionState *conn, int encrypt, char perm_type, Auth *vadmit, Auth *vdeny)
 {
     Auth *ap;
     int access = false;
@@ -1559,7 +1559,7 @@ static int AccessControl(const char *req_path, ServerConnectionState *conn, int 
         return false;
     }
 
-    CfDebug("AccessControl, match(%s,%s) encrypt request=%d\n", transrequest, conn->hostname, encrypt);
+    CfDebug("AccessControl, match(%s,%s) encrypt request=%d %c\n", transrequest, conn->hostname, encrypt, perm_type);
 
     if (vadmit == NULL)
     {
@@ -1574,6 +1574,17 @@ static int AccessControl(const char *req_path, ServerConnectionState *conn, int 
         int res = false;
 
         CfDebug("Examining rule in access list (%s,%s)?\n", transrequest, ap->path);
+
+        if ((perm_type == 'r') && !(ap->read)){
+            CfDebug("Rule does not grant read permission to %s\n", ap->path);
+            continue;
+        }else if ((perm_type == 'w') && !(ap->write)){
+            CfDebug("Rule does not grant write permission to %s\n", ap->path);
+            continue;
+        }else if((perm_type == 'x') && !(ap->execute)){
+            CfDebug("Rule does not grant execute permission to %s\n", ap->path);
+            continue;
+        }
 
         strncpy(transpath, ap->path, CF_BUFSIZE - 1);
         MapName(transpath);

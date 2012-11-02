@@ -543,10 +543,13 @@ struct Auth_
     char *path;
     Item *accesslist;
     Item *maproot;              /* which hosts should have root read access */
-    int encrypt;                /* which files HAVE to be transmitted securely */
     int literal;
     int classpattern;
     int variable;
+    int encrypt:1;                /* which files HAVE to be transmitted securely */
+    int read:1;
+    int write:1;
+    int execute:1;
     Auth *next;
 };
 
@@ -940,7 +943,10 @@ enum cfspromises
     cfs_deny,
     cfs_maproot,
     cfs_encrypted,
-    cfs_noptype
+    cfs_noptype,
+    cfs_permit_read,
+    cfs_permit_write,
+    cfs_permit_execute
 };
 
 enum cfreport

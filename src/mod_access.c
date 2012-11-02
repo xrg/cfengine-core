@@ -56,6 +56,12 @@ const BodySyntax CF_REMACCESS_BODIES[] =
      "false"},
     {"resource_type", cf_opts, "path,literal,context,query,variable",
      "The type of object being granted access (the default grants access to files)"},
+    {"permit_read", cf_opts, CF_BOOL,
+        "allow read of file", "true"},
+    {"permit_write", cf_opts, CF_BOOL,
+        "allow writting to file", "true"},
+    {"permit_execute", cf_opts, CF_BOOL,
+        "allow execute of binary", "true"},
     {NULL, cf_notype, NULL, NULL}
 };
 

@@ -94,7 +94,9 @@ void Summarize()
 
     for (ptr = VADMIT; ptr != NULL; ptr = ptr->next)
     {
-        CfOut(cf_verbose, "", "Path: %s (encrypt=%d)\n", ptr->path, ptr->encrypt);
+        CfOut(cf_verbose, "", "Path: %s (encrypt=%c,%c%c%c)\n",
+              ptr->path, (ptr->encrypt)?'1':'0',
+              (ptr->read)?'r':'-', (ptr->write)?'w':'-', (ptr->execute)?'x':'-');
 
         for (ip = ptr->accesslist; ip != NULL; ip = ip->next)
         {
@@ -629,7 +631,18 @@ void KeepFileAccessPromise(Promise *pp)
             {
                 ap->encrypt = true;
             }
-
+            if (strcmp(cp->lval, CF_REMACCESS_BODIES[cfs_permit_read].lval) == 0)
+            {
+                ap->read = GetBoolean(cp->rval.item);
+            }
+            if (strcmp(cp->lval, CF_REMACCESS_BODIES[cfs_permit_write].lval) == 0)
+            {
+                ap->write = GetBoolean(cp->rval.item);
+            }
+            if (strcmp(cp->lval, CF_REMACCESS_BODIES[cfs_permit_execute].lval) == 0)
+            {
+                ap->execute = GetBoolean(cp->rval.item);
+            }
             break;
 
         case CF_LIST:
@@ -819,7 +832,6 @@ void KeepQueryAccessPromise(Promise *pp, char *type)
             {
                 ap->encrypt = true;
             }
-
             break;
 
         case CF_LIST:
@@ -936,6 +948,7 @@ static void InstallServerAuthPath(char *path, Auth **list, Auth **listtop)
     }
 
     ptr->path = xstrdup(path);
+    ptr->read = ptr->write = ptr->execute = 1;
     *listtop = ptr;
 }
 
