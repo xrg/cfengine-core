@@ -76,7 +76,7 @@ the other monitored boxes.
 Summary:	Policy Definition Server
 Group:		Monitoring
 BuildArch:	noarch
-Requires:	%{name}-cfserver = %{version}-%{release}
+Suggests:	%{name}-cfserver = %{version}
 Suggests:	git-core
 
 %description pds
