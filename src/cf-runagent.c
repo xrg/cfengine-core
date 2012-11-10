@@ -43,6 +43,7 @@ static int ParseHostname(char *hostname, char *new_hostname);
 static void SendClassData(AgentConnection *conn);
 static Promise *MakeDefaultRunAgentPromise(void);
 static void HailExec(AgentConnection *conn, char *peer, char *recvbuffer, char *sendbuffer);
+static void HostPing(AgentConnection *conn, char *peer, char *recvbuffer, char *sendbuffer);
 static FILE *NewStream(char *name);
 static void DeleteStream(FILE *fp);
 
@@ -60,7 +61,7 @@ static const char *ID = "The run agent connects to a list of running instances o
     "the user requests the agent should define on execution.\n"
     "The latter type is regulated by cf-serverd's role based\n" "access control.";
 
-static const struct option OPTIONS[17] =
+static const struct option OPTIONS[18] =
 {
     {"help", no_argument, 0, 'h'},
     {"background", optional_argument, 0, 'b'},
@@ -78,10 +79,11 @@ static const struct option OPTIONS[17] =
     {"interactive", no_argument, 0, 'i'},
     {"query", optional_argument, 0, 'q'},
     {"timeout", required_argument, 0, 't'},
+    {"ping-only", no_argument, 0, 'N'},
     {NULL, 0, 0, '\0'}
 };
 
-static const char *HINTS[17] =
+static const char *HINTS[18] =
 {
     "Print the help message",
     "Parallelize connections (50 by default)",
@@ -99,6 +101,7 @@ static const char *HINTS[17] =
     "Enable interactive mode for key trust",
     "Query a server for a knowledge menu",
     "Connection timeout, seconds",
+    "Ping-only mode (implies --dry-run), just connect and confirm authentication with remote",
     NULL
 };
 
@@ -106,6 +109,7 @@ extern const BodySyntax CFR_CONTROLBODY[];
 
 int INTERACTIVE = false;
 int OUTPUT_TO_FILE = false;
+int PING_ONLY = false;
 char OUTPUT_DIRECTORY[CF_BUFSIZE];
 int BACKGROUND = false;
 int MAXCHILD = 50;
@@ -222,7 +226,7 @@ static GenericAgentConfig CheckOpts(int argc, char **argv)
     DEFINECLASSES[0] = '\0';
     SENDCLASSES[0] = '\0';
 
-    while ((c = getopt_long(argc, argv, "t:q:db:vnKhIif:D:VSxo:s:MH:", OPTIONS, &optindex)) != EOF)
+    while ((c = getopt_long(argc, argv, "t:q:db:vnKhIif:D:VSxo:s:MH:N", OPTIONS, &optindex)) != EOF)
     {
         switch ((char) c)
         {
@@ -299,6 +303,9 @@ static GenericAgentConfig CheckOpts(int argc, char **argv)
             VERBOSE = true;
             break;
 
+        case 'N':
+            PING_ONLY = true;
+
         case 'n':
             DONTDO = true;
             IGNORELOCK = true;
@@ -364,8 +371,15 @@ static int HailServer(char *host, Attributes a, Promise *pp)
     a.copy.portnumber = (short) ParseHostname(host, peer);
 
     snprintf(ipv4, CF_MAXVARSIZE, "%s", Hostname2IPString(peer));
+    if (PING_ONLY)
+        CfOut(cf_inform, "", " -> Host: %s aka. %s is %s , port: %d\n", 
+                    host, peer, ipv4, a.copy.portnumber);
+    
     Address2Hostkey(ipv4, digest);
     GetCurrentUserName(user, CF_SMALLBUF);
+    
+    if (PING_ONLY)
+        CfOut(cf_verbose, "", " -> local user: %s , digest: %s\n", user, digest);
 
     if (INTERACTIVE)
     {
@@ -459,6 +473,12 @@ static int HailServer(char *host, Attributes a, Promise *pp)
 
 /* Check trust interaction*/
 
+    if (PING_ONLY){
+        HostPing(conn, peer, recvbuffer, sendbuffer);
+        CfOut(cf_verbose, "", " -> ping with %s finished\n", peer);
+        DeleteRlist(a.copy.servers);
+        return true;
+    }
     pp->cache = NULL;
 
     if (strlen(MENU) > 0)
@@ -731,6 +751,75 @@ static void HailExec(AgentConnection *conn, char *peer, char *recvbuffer, char *
         }
 
         CfFile(fp, " -> %s", recvbuffer);
+    }
+
+    DeleteStream(fp);
+    DisconnectServer(conn);
+}
+
+/********************************************************************/
+
+static void HostPing(AgentConnection *conn, char *peer, char *recvbuffer, char *sendbuffer)
+{
+    FILE *fp = stdout;
+    char *sp;
+    int n_read;
+
+    snprintf(sendbuffer, CF_BUFSIZE, "VERSION ");
+
+    if (SendTransaction(conn->sd, sendbuffer, 0, CF_DONE) == -1)
+    {
+        CfOut(cf_error, "send", "Transmission rejected");
+        DisconnectServer(conn);
+        return;
+    }
+
+    fp = NewStream(peer);
+
+    while (true)
+    {
+        memset(recvbuffer, 0, CF_BUFSIZE);
+
+        if ((n_read = ReceiveTransaction(conn->sd, recvbuffer, NULL)) == -1)
+        {
+            return;
+        }
+
+        if (n_read == 0)
+        {
+            break;
+        }
+
+        if (strlen(recvbuffer) == 0)
+        {
+            continue;
+        }
+
+        if ((sp = strstr(recvbuffer, CFD_TERMINATOR)) != NULL)
+        {
+            CfFile(fp, " !!\n\n");
+            break;
+        }
+
+        if ((sp = strstr(recvbuffer, "BAD:")) != NULL)
+        {
+            CfFile(fp, " !! %s\n", recvbuffer + 4);
+            continue;
+        }
+
+        if (strstr(recvbuffer, "too soon"))
+        {
+            CfFile(fp, " !! %s", recvbuffer);
+            continue;
+        }
+
+        if ((strncmp(recvbuffer, "OK: ", 4)) == 0)
+        {
+            CfOut(cf_inform, "", " * Got %s version: %s\n", peer, recvbuffer +4);
+            break;
+        }
+
+        CfFile(fp, " -> %s\n", recvbuffer);
     }
 
     DeleteStream(fp);
