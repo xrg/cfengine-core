@@ -421,20 +421,22 @@ static void MakeLog(Item *mess, enum cfreport level)
 
     for (ip = mess; ip != NULL; ip = ip->next)
     {
+        if (!ip->name)
+            continue;
         switch (level)
         {
         case cf_inform:
         case cf_reporting:
         case cf_cmdout:
-            syslog(LOG_NOTICE, " %s", ip->name);
+            syslog(LOG_NOTICE, " %80s", ip->name);
             break;
 
         case cf_verbose:
-            syslog(LOG_INFO, " %s", ip->name);
+            syslog(LOG_INFO, " %80s", ip->name);
             break;
 
         case cf_error:
-            syslog(LOG_ERR, " %s", ip->name);
+            syslog(LOG_ERR, " %80s", ip->name);
             break;
 
         default:
