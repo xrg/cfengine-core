@@ -104,11 +104,55 @@ int VerifyCommandRetcode(int retcode, int fallback, Attributes a, Promise *pp)
 pid_t *CHILDREN;
 int MAX_FD = 128;               /* Max number of simultaneous pipes */
 
+static int init_children()
+{
+    if (!ThreadLock(cft_count))
+        return false;
+
+    if (CHILDREN == NULL)       /* first time */
+    {
+        CHILDREN = xcalloc(MAX_FD, sizeof(pid_t));
+    }
+
+    ThreadUnlock(cft_count);
+    return true;
+}
+
+static void close_children_fds()
+{
+    int i;
+    for (i = 0; i < MAX_FD; i++)
+        if (CHILDREN[i] > 0)
+            close(i);
+}
+
+static void set_child(int fd, pid_t pid)
+{
+    int new_fd = 0;
+    if (fd >= MAX_FD)
+    {
+        CfOut(cf_error, "",
+                "File descriptor %d of child %jd higher than MAX_FD, check for defunct children",
+                fd, (intmax_t)pid);
+        new_fd = fd + 32;
+    }
+
+    ThreadLock(cft_count);
+    if (new_fd)
+    {
+        CHILDREN = xrealloc(CHILDREN, new_fd * sizeof(pid_t));
+        MAX_FD = new_fd;
+    }
+
+    CHILDREN[fd] = pid;
+    ThreadUnlock(cft_count);
+}
+
 /*****************************************************************************/
 
 FILE *cf_popen(const char *command, char *type)
 {
-    int i, pd[2];
+    int pd[2];
     char **argv;
     pid_t pid;
     FILE *pp = NULL;
@@ -121,17 +165,10 @@ FILE *cf_popen(const char *command, char *type)
         return NULL;
     }
 
-    if (!ThreadLock(cft_count))
+    if (!init_children())
     {
         return NULL;
     }
-
-    if (CHILDREN == NULL)       /* first time */
-    {
-        CHILDREN = xcalloc(MAX_FD, sizeof(pid_t));
-    }
-
-    ThreadUnlock(cft_count);
 
     if (pipe(pd) < 0)           /* Create a pair of descriptors to this process */
     {
@@ -177,13 +214,7 @@ FILE *cf_popen(const char *command, char *type)
             }
         }
 
-        for (i = 0; i < MAX_FD; i++)
-        {
-            if (CHILDREN[i] > 0)
-            {
-                close(i);
-            }
-        }
+        close_children_fds();
 
         argv = ArgSplitCommand(command);
 
@@ -220,19 +251,7 @@ FILE *cf_popen(const char *command, char *type)
             }
         }
 
-        if (fileno(pp) >= MAX_FD)
-        {
-            CfOut(cf_error, "",
-                  "File descriptor %d of child %jd higher than MAX_FD in cf_popen, check for defunct children",
-                  fileno(pp), (intmax_t)pid);
-        }
-        else
-        {
-            ThreadLock(cft_count);
-            CHILDREN[fileno(pp)] = pid;
-            ThreadUnlock(cft_count);
-        }
-
+        set_child(fileno(pp), pid);
         return pp;
     }
 
@@ -243,7 +262,7 @@ FILE *cf_popen(const char *command, char *type)
 
 FILE *cf_popensetuid(const char *command, char *type, uid_t uid, gid_t gid, char *chdirv, char *chrootv, int background)
 {
-    int i, pd[2];
+    int pd[2];
     char **argv;
     pid_t pid;
     FILE *pp = NULL;
@@ -256,17 +275,8 @@ FILE *cf_popensetuid(const char *command, char *type, uid_t uid, gid_t gid, char
         return NULL;
     }
 
-    if (!ThreadLock(cft_count))
-    {
+    if (! init_children())
         return NULL;
-    }
-
-    if (CHILDREN == NULL)       /* first time */
-    {
-        CHILDREN = xcalloc(MAX_FD, sizeof(pid_t));
-    }
-
-    ThreadUnlock(cft_count);
 
     if (pipe(pd) < 0)           /* Create a pair of descriptors to this process */
     {
@@ -311,13 +321,7 @@ FILE *cf_popensetuid(const char *command, char *type, uid_t uid, gid_t gid, char
             }
         }
 
-        for (i = 0; i < MAX_FD; i++)
-        {
-            if (CHILDREN[i] > 0)
-            {
-                close(i);
-            }
-        }
+        close_children_fds();
 
         argv = ArgSplitCommand(command);
 
@@ -379,19 +383,7 @@ FILE *cf_popensetuid(const char *command, char *type, uid_t uid, gid_t gid, char
             }
         }
 
-        if (fileno(pp) >= MAX_FD)
-        {
-            CfOut(cf_error, "",
-                  "File descriptor %d of child %jd higher than MAX_FD in cf_popensetuid, check for defunct children",
-                  fileno(pp), (intmax_t)pid);
-        }
-        else
-        {
-            ThreadLock(cft_count);
-            CHILDREN[fileno(pp)] = pid;
-            ThreadUnlock(cft_count);
-        }
-
+        set_child(fileno(pp), pid);
         return pp;
     }
 
@@ -404,7 +396,7 @@ FILE *cf_popensetuid(const char *command, char *type, uid_t uid, gid_t gid, char
 
 FILE *cf_popen_sh(const char *command, char *type)
 {
-    int i, pd[2];
+    int pd[2];
     pid_t pid;
     FILE *pp = NULL;
 
@@ -416,17 +408,10 @@ FILE *cf_popen_sh(const char *command, char *type)
         return NULL;
     }
 
-    if (!ThreadLock(cft_count))
+    if (!init_children())
     {
         return NULL;
     }
-
-    if (CHILDREN == NULL)       /* first time */
-    {
-        CHILDREN = xcalloc(MAX_FD, sizeof(pid_t));
-    }
-
-    ThreadUnlock(cft_count);
 
     if (pipe(pd) < 0)           /* Create a pair of descriptors to this process */
     {
@@ -471,13 +456,7 @@ FILE *cf_popen_sh(const char *command, char *type)
             }
         }
 
-        for (i = 0; i < MAX_FD; i++)
-        {
-            if (CHILDREN[i] > 0)
-            {
-                close(i);
-            }
-        }
+        close_children_fds();
 
         execl(SHELL_PATH, "sh", "-c", command, NULL);
         _exit(1);
@@ -508,19 +487,7 @@ FILE *cf_popen_sh(const char *command, char *type)
             }
         }
 
-        if (fileno(pp) >= MAX_FD)
-        {
-            CfOut(cf_error, "",
-                  "File descriptor %d of child %jd higher than MAX_FD in cf_popen_sh, check for defunct children",
-                  fileno(pp), (intmax_t)pid);
-        }
-        else
-        {
-            ThreadLock(cft_count);
-            CHILDREN[fileno(pp)] = pid;
-            ThreadUnlock(cft_count);
-        }
-
+        set_child(fileno(pp), pid);
         return pp;
     }
 
@@ -531,7 +498,7 @@ FILE *cf_popen_sh(const char *command, char *type)
 
 FILE *cf_popen_shsetuid(const char *command, char *type, uid_t uid, gid_t gid, char *chdirv, char *chrootv, int background)
 {
-    int i, pd[2];
+    int pd[2];
     pid_t pid;
     FILE *pp = NULL;
 
@@ -543,17 +510,10 @@ FILE *cf_popen_shsetuid(const char *command, char *type, uid_t uid, gid_t gid, c
         return NULL;
     }
 
-    if (!ThreadLock(cft_count))
+    if (!init_children())
     {
         return NULL;
     }
-
-    if (CHILDREN == NULL)       /* first time */
-    {
-        CHILDREN = xcalloc(MAX_FD, sizeof(pid_t));
-    }
-
-    ThreadUnlock(cft_count);
 
     if (pipe(pd) < 0)           /* Create a pair of descriptors to this process */
     {
@@ -598,13 +558,7 @@ FILE *cf_popen_shsetuid(const char *command, char *type, uid_t uid, gid_t gid, c
             }
         }
 
-        for (i = 0; i < MAX_FD; i++)
-        {
-            if (CHILDREN[i] > 0)
-            {
-                close(i);
-            }
-        }
+        close_children_fds();
 
         if (chrootv && (strlen(chrootv) != 0))
         {
@@ -658,20 +612,7 @@ FILE *cf_popen_shsetuid(const char *command, char *type, uid_t uid, gid_t gid, c
             }
         }
 
-        if (fileno(pp) >= MAX_FD)
-        {
-            CfOut(cf_error, "",
-                  "File descriptor %d of child %jd higher than MAX_FD in cf_popen_shsetuid, check for defunct children",
-                  fileno(pp), (intmax_t)pid);
-            cf_pwait(pid);
-            return NULL;
-        }
-        else
-        {
-            ThreadLock(cft_count);
-            CHILDREN[fileno(pp)] = pid;
-            ThreadUnlock(cft_count);
-        }
+        set_child(fileno(pp), pid);
         return pp;
     }
 
