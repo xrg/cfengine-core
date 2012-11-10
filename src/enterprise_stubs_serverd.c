@@ -1,3 +1,4 @@
+
 /*
    Copyright (C) Cfengine AS
 
@@ -20,37 +21,21 @@
   versions of Cfengine, the applicable Commerical Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
+
 */
 
-#ifndef CFSERVERDFUNCTIONS_H
-#define CFSERVERDFUNCTIONS_H
+#include "cf-serverd-functions.h"
 
-#include "generic_agent.h"
-#include "server.h"
+#if !defined(HAVE_NOVA)
 
-#include "sysinfo.h"
-#include "env_context.h"
-#include "dir.h"
-#include "dbm_api.h"
-#include "lastseen.h"
-#include "crypto.h"
-#include "files_names.h"
-#include "vars.h"
-#include "promises.h"
-#include "item_lib.h"
-#include "conversion.h"
-#include "reporting.h"
+int SetServerListenState(size_t queue_size)
+{
+    if (!SERVER_LISTEN)
+    {
+        CfOut(cf_verbose, "", " !! Disable listening on port is only supported in CFEngine Enterprise");
+    }
 
-void ThisAgentInit(void);
-GenericAgentConfig CheckOpts(int argc, char **argv);
-int OpenReceiverChannel(void);
-void CheckFileChanges(Policy **policy, GenericAgentConfig config, const ReportContext *report_context);
-int InitServer(size_t queue_size);
+    return InitServer(queue_size);
+}
 
-#if !defined(HAVE_GETADDRINFO)
-in_addr_t GetInetAddr(char *host);
 #endif
-
-void StartServer(Policy *policy, GenericAgentConfig config, const ReportContext *report_context);
-
-#endif // CFSERVERDFUNCTIONS_H
