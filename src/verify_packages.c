@@ -1804,7 +1804,7 @@ static void SchedulePackageOp(const char *name, const char *version, const char 
     if (strchr(id, '*'))
     {
         CfOut(cf_verbose, "",
-              "!! Package name contians '*' -- perhaps a missing attribute (name/version/arch) should be specified");
+              "!! Package name contains '*' -- perhaps a missing attribute (name/version/arch) should be specified");
     }
 
     if (a.packages.package_select == cfa_eq || a.packages.package_select == cfa_ge ||
