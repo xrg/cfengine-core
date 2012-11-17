@@ -189,15 +189,14 @@ EOF
 
 %post cfagent
 %_post_service cf-execd
+%_post_service cf-serverd
+# We are not going to start cf-monitord, because this can be done inside
+# some cf-execd->cf-agent check.
 
 %preun cfagent
 %_preun_service cf-execd
-
-%post cfserver
-%_post_service cf-serverd
-
-%preun cfserver
-%_preun_service cfserver
+%_preun_service cf-serverd
+%_preun_service cf-monitord
 
 %clean
 rm -rf %{buildroot}
