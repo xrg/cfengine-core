@@ -1115,6 +1115,7 @@ Packages GetPackageConstraints(const Promise *pp)
     p.package_list_name_regex = (char *) GetConstraintValue("package_list_name_regex", pp, CF_SCALAR);
     p.package_list_arch_regex = (char *) GetConstraintValue("package_list_arch_regex", pp, CF_SCALAR);
 
+    p.package_new_versions_command = (char *) GetConstraintValue("package_new_versions_command", pp, CF_SCALAR);
     p.package_installed_regex = (char *) GetConstraintValue("package_installed_regex", pp, CF_SCALAR);
 
     p.package_version_regex = (char *) GetConstraintValue("package_version_regex", pp, CF_SCALAR);

@@ -73,6 +73,8 @@ static PackageManager *NewPackageManager(PackageManager **lists, char *mgr, enum
                                          enum action_policy x);
 static PackageItem *GetCachedPackageList(PackageManager *manager, const char *default_arch, Attributes a, Promise *pp);
 static int PrependListPackageItem(PackageItem ** list, char *item, const char *default_arch, Attributes a, Promise *pp);
+static bool FindAvailableUpdates(Attributes a,char *version, Promise *pp);
+static bool PackageListAvailableUpdatesCommand(PackageItem **updates_list, const char *default_arch, Attributes a, Promise *pp);
 
 /*****************************************************************************/
 
@@ -481,7 +483,7 @@ static int VerifyInstalledPackages(PackageManager **all_mgrs, const char *defaul
     if (manager->pack_list != NULL)
     {
         CfOut(cf_verbose, "", " ?? Already have a (cached) package list for this manager ");
-        return true;
+        goto check_available_updates;
     }
 
 #ifdef MINGW
@@ -513,7 +515,7 @@ static int VerifyInstalledPackages(PackageManager **all_mgrs, const char *defaul
             return false;
         }
     }
-    
+
 #endif /* NOT MINGW */
 
     ReportSoftware(INSTALLED_PACKAGE_LISTS);
@@ -579,6 +581,12 @@ static int VerifyInstalledPackages(PackageManager **all_mgrs, const char *defaul
     CfOut(cf_verbose, "", "  Done checking packages and patches \n");
     CfOut(cf_verbose, "", " ???????????????????????????????????????????????????????????????\n");
 
+    check_available_updates:
+
+    if (! manager->updates_list ) {
+        PackageListAvailableUpdatesCommand(&(manager->updates_list), default_arch, a, pp);
+    }
+
     return true;
 }
 
@@ -615,7 +623,7 @@ static bool PackageListInstalledFromCommand(PackageItem **installed_list, const 
 
     const int reset = true, update = false;
     char buf[CF_BUFSIZE];
-    
+
     while (!feof(fin))
     {
         memset(buf, 0, CF_BUFSIZE);
@@ -639,7 +647,7 @@ static bool PackageListInstalledFromCommand(PackageItem **installed_list, const 
             {
                 continue;
             }
-            
+
             if (!PrependListPackageItem(installed_list, buf, default_arch, a, pp))
             {
                 CfOut(cf_verbose, "", "Package line %s did not match one of the package_list_(name|version|arch)_regex patterns", buf);
@@ -648,12 +656,65 @@ static bool PackageListInstalledFromCommand(PackageItem **installed_list, const 
 
         }
     }
-    
+
     if (a.packages.package_multiline_start)
     {
         PrependMultiLinePackageItem(installed_list, buf, reset, default_arch, a, pp);
     }
-    
+
+    return cf_pclose(fin) == 0;
+}
+
+static bool PackageListAvailableUpdatesCommand(PackageItem **updates_list, const char *default_arch, Attributes a, Promise *pp)
+{
+    if (a.packages.package_new_versions_command == NULL)
+    {
+        CfDebug("No list updates command, trust package versions\n");
+        return true;
+    }
+
+    CfOut(cf_verbose, "", " ---------------------------------------------------------------\n");
+    CfOut(cf_verbose, "", "   Reading available updates list from %s\n", GetArg0(a.packages.package_new_versions_command));
+    CfOut(cf_verbose, "", " ---------------------------------------------------------------\n");
+
+    FILE *fin;
+
+    if (a.packages.package_commands_useshell)
+    {
+        if ((fin = cf_popen_sh(a.packages.package_new_versions_command, "r")) == NULL)
+        {
+            CfOut(cf_error, "cf_popen_sh", "Couldn't open the package list with command %s",
+                  a.packages.package_new_versions_command);
+            return false;
+        }
+    }
+    else if ((fin = cf_popen(a.packages.package_new_versions_command, "r")) == NULL)
+    {
+        CfOut(cf_error, "cf_popen", "Couldn't open the package list with command %s",
+              a.packages.package_new_versions_command);
+        return false;
+    }
+
+    char buf[CF_BUFSIZE];
+
+    while (!feof(fin))
+    {
+        memset(buf, 0, CF_BUFSIZE);
+        CfReadLine(buf, CF_BUFSIZE, fin);
+        CF_OCCUR++;
+
+        if (!FullTextMatch(a.packages.package_installed_regex, buf))
+        {
+            continue;
+        }
+
+        if (!PrependListPackageItem(updates_list, buf, default_arch, a, pp))
+        {
+            CfOut(cf_verbose, "", "Package line %s did not match any of the known packages", buf);
+            continue;
+        }
+    }
+
     return cf_pclose(fin) == 0;
 }
 
@@ -712,15 +773,20 @@ static void VerifyPromisedPackage(Attributes a, Promise *pp)
     int matches = 0, installed = 0, no_version = false;
     Rlist *rp;
 
-    if (a.packages.package_version)
+    version[0] = '\0'; /* reset the string */
+    FindAvailableUpdates(a, version, pp);
+
+    if (a.packages.package_version || version[0])
     {
         /* The version is specified separately */
-        CfOut(cf_verbose, "", " -> Package version specified explicitly in promise body");
+        if (a.packages.package_version)
+            CfOut(cf_verbose, "", " -> Package version specified explicitly in promise body");
 
         if (a.packages.package_architectures == NULL)
         {
             strncpy(name, pp->promiser, CF_MAXVARSIZE - 1);
-            strncpy(version, a.packages.package_version, CF_MAXVARSIZE - 1);
+            if (version[0] == '\0')
+                strncpy(version, a.packages.package_version, CF_MAXVARSIZE - 1);
             strncpy(arch, "*", CF_MAXVARSIZE - 1);
             installed = PackageMatch(name, "*", arch, a, pp);
             matches = PackageMatch(name, version, arch, a, pp);
@@ -742,7 +808,8 @@ static void VerifyPromisedPackage(Attributes a, Promise *pp)
             {
                 CfOut(cf_verbose, "", " ... trying listed arch %s\n", ScalarValue(rp));
                 strncpy(name, pp->promiser, CF_MAXVARSIZE - 1);
-                strncpy(version, a.packages.package_version, CF_MAXVARSIZE - 1);
+                if (version[0] == '\0')
+                    strncpy(version, a.packages.package_version, CF_MAXVARSIZE - 1);
                 strncpy(arch, rp->item, CF_MAXVARSIZE - 1);
 
                 installed = PackageMatch(name, "*", arch, a, pp);
@@ -836,6 +903,54 @@ static void VerifyPromisedPackage(Attributes a, Promise *pp)
             }
         }
     }
+}
+
+/** Search package among updates_list and fill the version if match
+ *   @param version a pre-allocated buffer to receive the updated version
+ *
+ *   @note The name will be taken from pp->promiser. We don't yet support
+ *         @b package_version_regex in that name. So, if the promise is like
+ *         "name-version", the updates will never match.
+ */
+
+static bool FindAvailableUpdates(Attributes a,char *version, Promise *pp)
+{
+
+    PackageItem *it;
+    Rlist *rp;
+    bool found;
+
+    for (it = INSTALLED_PACKAGE_LISTS->updates_list; it ; it = it->next)
+        if (!strncmp(pp->promiser, it->name, CF_MAXVARSIZE -1))
+        {
+            if (a.packages.package_architectures && it->arch){
+                found = false;
+                for (rp = a.packages.package_architectures; rp != NULL; rp = rp->next)
+                    if (!strncmp(it->arch, rp->item, CF_MAXVARSIZE-1)){
+                        found = true;
+                        break;
+                    }
+                if (! found){
+                    CfOut(cf_verbose, "", " ... updates for %s are available, but %s is not in its desired architectures\n", 
+                                it->name, it->arch);
+                    continue;
+                }
+            }
+            if (a.packages.package_version){
+                if (strncmp(a.packages.package_version, it->version, strlen(a.packages.package_version))){
+                    CfOut(cf_inform, "", " Updates for package %s:'%s' found, but we want version '%s'. Skipping.\n",
+                            it->name, it->version, a.packages.package_version);
+                    break;
+                }
+            }
+            /* we have a match. Copy available version to (allocated) *version buffer */
+            strncpy(version, it->version, CF_MAXVARSIZE-1);
+            CfOut(cf_verbose, "", " An update for %s are available, version: %s\n", 
+                                it->name, version);
+            return true;
+        }
+
+    return false;
 }
 
 /*****************************************************************************/
@@ -1411,6 +1526,7 @@ static void DeletePackageManagers(PackageManager *newlist)
     {
         next = np->next;
         DeletePackageItems(np->pack_list);
+        DeletePackageItems(np->updates_list);
         free((char *) np);
     }
 }
@@ -1831,7 +1947,6 @@ static void SchedulePackageOp(const char *name, const char *version, const char 
     switch (policy)
     {
     case cfa_addpack:
-
         if (installed == 0)
         {
             if ((a.packages.package_file_repositories != NULL) &&
@@ -2240,6 +2355,10 @@ static int IsNewerThanInstalled(const char *n, const char *v, const char *a, cha
 {
     PackageManager *mp = NULL;
     PackageItem *pi;
+
+    if (!strcmp(v, "*")){
+        return false;
+    }
 
     for (mp = INSTALLED_PACKAGE_LISTS; mp != NULL; mp = mp->next)
     {

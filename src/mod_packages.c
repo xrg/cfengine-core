@@ -47,6 +47,7 @@ static const BodySyntax CF_PKGMETHOD_BODY[] =
      "The ifelapsed locking time in between updates of the package list"},
     {"package_list_version_regex", cf_str, "",
      "Regular expression with one backreference to extract package version string"},
+    {"package_new_versions_command", cf_str, "", "Command to print the list of available package updates"},
     {"package_name_convention", cf_str, "",
      "This is how the package manager expects the package to be referred to, e.g. $(name).$(arch)"},
     {"package_name_regex", cf_str, "", "Regular expression with one backreference to extract package name string"},
