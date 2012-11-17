@@ -68,6 +68,8 @@ static int ExecPackageCommand(EvalContext *ctx, char *command, int verify, int s
 static int PrependPatchItem(EvalContext *ctx, PackageItem ** list, char *item, PackageItem * chklist, const char *default_arch, Attributes a, Promise *pp);
 static int PrependMultiLinePackageItem(EvalContext *ctx, PackageItem ** list, char *item, int reset, const char *default_arch, Attributes a, Promise *pp);
 static int PrependListPackageItem(EvalContext *ctx, PackageItem ** list, char *item, const char *default_arch, Attributes a, Promise *pp);
+static bool FindAvailableUpdates(Attributes a,char *version, Promise *pp);
+static bool PackageListAvailableUpdatesCommand(EvalContext *ctx, PackageItem **updates_list, const char *default_arch, Attributes a, Promise *pp);
 
 static PackageManager *NewPackageManager(PackageManager **lists, char *mgr, PackageAction pa, PackageActionPolicy x);
 static void DeletePackageManagers(PackageManager *newlist);
@@ -464,6 +466,69 @@ static bool PackageListInstalledFromCommand(EvalContext *ctx, PackageItem **inst
     return cf_pclose(fin) == 0;
 }
 
+static bool PackageListAvailableUpdatesCommand(EvalContext *ctx, PackageItem **updates_list, const char *default_arch, Attributes a, Promise *pp)
+{
+    if (a.packages.package_new_versions_command == NULL)
+    {
+        Log(LOG_LEVEL_DEBUG, "No list updates command, trust package versions");
+        return true;
+    }
+
+    Log(LOG_LEVEL_VERBOSE, "Reading available updates list from %s", CommandArg0(a.packages.package_new_versions_command));
+
+    FILE *fin;
+
+    if (a.packages.package_commands_useshell)
+    {
+        if ((fin = cf_popen_sh(a.packages.package_new_versions_command, "r")) == NULL)
+        {
+            Log(LOG_LEVEL_ERR, "Couldn't open the package list with command %s (cf_popen: %s)",
+                  a.packages.package_new_versions_command, GetErrorStr());
+            return false;
+        }
+    }
+    else if ((fin = cf_popen(a.packages.package_new_versions_command, "r", true)) == NULL)
+    {
+        Log(LOG_LEVEL_ERR,  "Couldn't open the package list with command %s (cf_popen: %s)",
+              a.packages.package_new_versions_command, GetErrorStr());
+        return false;
+    }
+
+    char buf[CF_BUFSIZE];
+
+    while (!feof(fin))
+    {
+        memset(buf, 0, CF_BUFSIZE);
+        ssize_t res = CfReadLine(buf, CF_BUFSIZE, fin);
+
+        if (res == 0)
+        {
+            break;
+        }
+
+        if (res == -1)
+        {
+            Log(LOG_LEVEL_ERR, "Unable to read list of available updates from command '%s'. (fread: %s)",
+                    a.packages.package_new_versions_command, GetErrorStr());
+            cf_pclose(fin);
+            return false;
+        }
+
+        if (!FullTextMatch(a.packages.package_installed_regex, buf))
+        {
+            continue;
+        }
+
+        if (!PrependListPackageItem(ctx, updates_list, buf, default_arch, a, pp))
+        {
+            Log(LOG_LEVEL_VERBOSE, "Package line %s did not match any of the known packages", buf);
+            continue;
+        }
+    }
+
+    return cf_pclose(fin) == 0;
+}
+
 static void ReportSoftware(PackageManager *list)
 {
     FILE *fout;
@@ -603,7 +668,7 @@ static int VerifyInstalledPackages(EvalContext *ctx, PackageManager **all_mgrs, 
     if (manager->pack_list != NULL)
     {
         Log(LOG_LEVEL_VERBOSE, "Already have a (cached) package list for this manager ");
-        return true;
+        goto check_available_updates;
     }
 
 #ifdef __MINGW32__
@@ -727,6 +792,13 @@ static int VerifyInstalledPackages(EvalContext *ctx, PackageManager **all_mgrs, 
         Log(LOG_LEVEL_VERBOSE, "Done checking packages and patches");
     }
 
+    check_available_updates:
+
+    if (! manager->updates_list )
+    {
+        PackageListAvailableUpdatesCommand(ctx, &(manager->updates_list), default_arch, a, pp);
+    }
+
     return true;
 }
 
@@ -814,6 +886,11 @@ static int IsNewerThanInstalled(EvalContext *ctx, const char *n, const char *v, 
 {
     PackageManager *mp = NULL;
     PackageItem *pi;
+
+    if (!strcmp(v, "*"))
+    {
+        return false;
+    }
 
     for (mp = INSTALLED_PACKAGE_LISTS; mp != NULL; mp = mp->next)
     {
@@ -1538,22 +1615,37 @@ static void VerifyPromisedPatch(EvalContext *ctx, Attributes a, Promise *pp)
 static void VerifyPromisedPackage(EvalContext *ctx, Attributes a, Promise *pp)
 {
     const char *package = pp->promiser;
+    const char *match_version = NULL;
+    char version[CF_MAXVARSIZE];
+    version[0] = '\0'; /* reset the string */
+    FindAvailableUpdates(a, version, pp);
 
-    if (a.packages.package_version)
+    if (a.packages.package_version || version[0])
     {
         /* The version is specified separately */
-        Log(LOG_LEVEL_VERBOSE, "Package version specified explicitly in promise body");
+        if (a.packages.package_version) {
+            Log(LOG_LEVEL_VERBOSE, "Package version specified explicitly in promise body");
+        }
+
+        if (version[0] == '\0')
+        {
+            match_version = a.packages.package_version;
+        }
+        else
+        {
+            match_version = version;
+        }
 
         if (a.packages.package_architectures == NULL)
         {
-            CheckPackageState(ctx, a, pp, package, a.packages.package_version, "*", false);
+            CheckPackageState(ctx, a, pp, package, match_version, "*", false);
         }
         else
         {
             for (Rlist *rp = a.packages.package_architectures; rp != NULL; rp = rp->next)
             {
                 Log(LOG_LEVEL_VERBOSE, " ... trying listed arch '%s'", RlistScalarValue(rp));
-                CheckPackageState(ctx, a, pp, package, a.packages.package_version, RlistScalarValue(rp), false);
+                CheckPackageState(ctx, a, pp, package, match_version, RlistScalarValue(rp), false);
             }
         }
     }
@@ -1598,6 +1690,54 @@ static void VerifyPromisedPackage(EvalContext *ctx, Attributes a, Promise *pp)
             }
         }
     }
+}
+
+/** Search package among updates_list and fill the version if match
+ *   @param version a pre-allocated buffer to receive the updated version
+ *
+ *   @note The name will be taken from pp->promiser. We don't yet support
+ *         @b package_version_regex in that name. So, if the promise is like
+ *         "name-version", the updates will never match.
+ */
+
+static bool FindAvailableUpdates(Attributes a,char *version, Promise *pp)
+{
+
+    PackageItem *it;
+    Rlist *rp;
+    bool found;
+
+    for (it = INSTALLED_PACKAGE_LISTS->updates_list; it ; it = it->next)
+        if (!strncmp(pp->promiser, it->name, CF_MAXVARSIZE -1))
+        {
+            if (a.packages.package_architectures && it->arch){
+                found = false;
+                for (rp = a.packages.package_architectures; rp != NULL; rp = rp->next)
+                    if (!strncmp(it->arch, rp->item, CF_MAXVARSIZE-1)){
+                        found = true;
+                        break;
+                    }
+                if (! found){
+                    Log(LOG_LEVEL_VERBOSE, "Updates for %s are available, but %s is not in its desired architectures", 
+                                it->name, it->arch);
+                    continue;
+                }
+            }
+            if (a.packages.package_version){
+                if (strncmp(a.packages.package_version, it->version, strlen(a.packages.package_version))){
+                    Log(LOG_LEVEL_INFO, "Updates for package %s:'%s' found, but we want version '%s'. Skipping.",
+                            it->name, it->version, a.packages.package_version);
+                    break;
+                }
+            }
+            /* we have a match. Copy available version to (allocated) *version buffer */
+            strncpy(version, it->version, CF_MAXVARSIZE-1);
+            Log(LOG_LEVEL_VERBOSE, "An update for %s are available, version: %s",
+                                it->name, version);
+            return true;
+        }
+
+    return false;
 }
 
 /** Execute scheduled operations **/
@@ -2164,6 +2304,7 @@ static void DeletePackageManagers(PackageManager *newlist)
     {
         next = np->next;
         DeletePackageItems(np->pack_list);
+        DeletePackageItems(np->updates_list);
         free((char *) np);
     }
 }

@@ -1114,6 +1114,7 @@ struct PackageManager_
     PackageItem *pack_list;
     PackageItem *patch_list;
     PackageItem *patch_avail;
+    PackageItem *updates_list;
     PackageManager *next;
 };
 
@@ -1449,6 +1450,7 @@ typedef struct
 
     char *package_list_update_command;
     int package_list_update_ifelapsed;
+    char *package_new_versions_command;
 
     char *package_version_regex;
     char *package_name_regex;
