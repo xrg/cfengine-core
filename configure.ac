@@ -25,7 +25,7 @@ dnl The version in the next line is the only one to set
 dnl
 
 _AM_SET_OPTION([tar-ustar])
-AM_INIT_AUTOMAKE(cfengine, 3.4.0b3.revision)
+AM_INIT_AUTOMAKE(cfengine, 3.4.0.revision)
 AM_MAINTAINER_MODE([enable])
 
 AC_DEFINE(BUILD_YEAR, esyscmd([date +%Y | tr -d '\n']), "Software build year")
@@ -561,6 +561,18 @@ AC_CHECK_FUNCS(mkfifo statfs statvfs door)
 AC_CHECK_FUNCS(sysinfo setsid sysconf)
 AC_CHECK_FUNCS(getzoneid getzonenamebyid)
 AC_CHECK_FUNCS(fpathconf)
+
+AC_MSG_CHECKING([for PRIuMAX/PRIdMAX macros])
+AC_EGREP_CPP([primacros_found],
+  AC_INCLUDES_DEFAULT
+  [#include <inttypes.h>
+  #if defined(PRIuMAX) && defined(PRIdMAX)
+    primacros_found
+  #endif
+  ],
+  [AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)
+   AC_MSG_RESULT(Unable to find out how to print intmax_t/uintmax_t types)])
 
 HW_FUNC_VSNPRINTF
 HW_FUNC_SNPRINTF

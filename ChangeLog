@@ -1,4 +1,26 @@
-3.4.0 (in development)
+3.4.0
+
+	New features:
+
+	- Added rpmvercmp utility to compare versions of RPM packages for
+	  accurate sorting of RPM packages for packages promises.
+
+	- Implement network timeout on server side to avoid keeping stale
+	  connections for hours.
+
+	Bugfixes:
+
+	- cfruncommand for cf-execd is an arbitrary shell command now (Mantis #1268).
+	- Fixed broken "daily" splayclasses (Mantis #1307).
+	- Allow filenames up to 4096 bytes in network transfers (Redmine #1199).
+	- Fix stale state preserved during cf-serverd reload (Redmine #1487).
+	- Free disk space calculation is fixed (Mantis #1120).
+	- Numerous portability bugfixes (especially OpenBSD, Solaris, AIX-related).
+
+	Full list of issues fixed is available on
+	https://cfengine.com/dev/projects/core/versions/34
+
+	In alpha 2:
 
 	New features:
 
@@ -9,7 +31,7 @@
 	  "usebundle". By default classes are not inherited. See the
 	  examples/unit_inherit.cf for an example.
 
-	- Moved from Nova/Enterirpse:
+	- Moved from Nova/Enterprise:
 	  - POSIX ACL support,
 	  - "outputs" promise type,
 	  - remote syslog support.
@@ -160,7 +182,8 @@
 	- Detect BSD Make and automatically switch to GNU Make during build.
 
 	Full list of issues fixed is available on
-	https://cfengine.com/bugtracker/changelog_page.php
+	https://cfengine.com/bugtracker/changelog_page.php (old bug tracker)
+        and https://cfengine.com/dev/projects/core/versions/34 (new bug tracker)
 
 3.3.4   (Bugfix and Stability release)
 
