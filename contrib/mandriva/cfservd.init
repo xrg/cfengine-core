@@ -6,7 +6,7 @@
 ### BEGIN INIT INFO
 # Provides: cfservd
 # Required-Start:  $local_fs $remote_fs $network $time
-# Required-Stop: $local_fs $remote_fs$network
+# Required-Stop: $local_fs $remote_fs $network
 # Default-Start: 345
 # Short-Description: Starts the cfservd daemon
 # Description: This startup script launches the cfservd daemon
