@@ -27,6 +27,7 @@ BuildRequires:	openssl-devel
 BuildRequires:	db4-devel
 BuildRequires: tokyocabinet-devel
 BuildRequires: postgresql-devel
+Requires:       %{libname} = %{version}-%{release}
 Requires(pre):	rpm-helper
 Requires(preun):rpm-helper
 # BuildRequires: texinfo
