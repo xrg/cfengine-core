@@ -134,6 +134,7 @@ int main(int argc, char *argv[])
         .mail_max_lines = 30,
         .fq_name = VFQNAME,
         .ip_address = VIPADDRESS,
+        .agent_expireafter = 10080,
     };
 
     KeepPromises(policy, &exec_config);
@@ -342,6 +343,12 @@ void KeepPromises(Policy *policy, ExecConfig *config)
             free(config->exec_command);
             config->exec_command = SafeStringDuplicate(retval.item);
             CfDebug("exec_command = %s\n", config->exec_command);
+        }
+
+        if (strcmp(cp->lval, CFEX_CONTROLBODY[cfex_agent_expireafter].lval) == 0)
+        {
+            config->agent_expireafter = Str2Int(retval.item);
+            CfDebug("agent_expireafter = %d\n", config->agent_expireafter);
         }
 
         if (strcmp(cp->lval, CFEX_CONTROLBODY[cfex_executorfacility].lval) == 0)
@@ -730,6 +737,8 @@ static bool ScheduleRun(Policy **policy, ExecConfig *exec_config, const ReportCo
         InitAlphaList(&VHEAP);
         DeleteAlphaList(&VADDCLASSES);
         InitAlphaList(&VADDCLASSES);
+        DeleteAlphaList(&VHARDHEAP);
+        InitAlphaList(&VHARDHEAP);
 
         DeleteItemList(IPADDRESSES);
         IPADDRESSES = NULL;
@@ -760,6 +769,7 @@ static bool ScheduleRun(Policy **policy, ExecConfig *exec_config, const ReportCo
         }
     }
 
+    CfOut(cf_verbose, "", "Nothing to do at %s\n", cf_ctime(&CFSTARTTIME));
     return false;
 }
 
@@ -776,6 +786,7 @@ ExecConfig *CopyExecConfig(const ExecConfig *config)
     copy->fq_name = xstrdup(config->fq_name);
     copy->ip_address = xstrdup(config->ip_address);
     copy->mail_max_lines = config->mail_max_lines;
+    copy->agent_expireafter = config->agent_expireafter;
 
     return copy;
 }

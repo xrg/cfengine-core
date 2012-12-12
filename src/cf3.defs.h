@@ -809,6 +809,7 @@ enum cfexcontrol
     cfex_schedule,
     cfex_executorfacility,
     cfex_execcommand,
+    cfex_agent_expireafter,
     cfex_notype,
 };
 
@@ -1963,9 +1964,9 @@ typedef struct
 
 typedef struct
 {
-    char *select_xpath_region;
+    char *select_xpath;
     char *attribute_value;
-    int haveselectxpathregion;
+    int haveselectxpath;
     int haveattributevalue;
 } EditXml;
 

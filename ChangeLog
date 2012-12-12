@@ -1,3 +1,45 @@
+3.4.2   (Bugfix and Stability release)
+
+       Bugfixes:
+
+       - fix potential segmentation fault when trimming network socket data
+
+       - fix potential segmentation fault when address-lookups in lastseen db failed
+
+       - execute background promise serially when max_children was reached, rather
+         than skipping them
+
+3.4.1   (Bugfix and Stability release)
+
+        New feature/behavior:
+
+        - cf-execd terminates agent processes that are not responsive
+          for a configurable amount of time (see agent_expireafter in body
+          executor control), defaulting to 1 week
+
+        Bugfixes:
+
+        - fix regression of classmatch() failing with hard classes (Redmine #1834)
+
+        - create promise-defined and persistent classes in correct
+          namespace (Redmine #1836)
+
+        - several fixes to namespace support
+
+        - fix several crash bugs caused by buffer overflow and race
+          conditions in cf-serverd
+
+        - regenerate time classes in cf-execd for each run (Redmine #1838)
+
+        - edit_xml: fix select_xpath implementation and update documentation
+          NOTE: code that uses select_xpath_region needs to be changed to
+          select_xpath
+
+        - edit_xml: make sure that text-modification functions don't overwrite
+          child nodes
+
+        - edit_xml: improve error logging
+
 3.4.0
 
 	New features:
@@ -26,6 +68,10 @@
 	- packages_version_less_command / packages_version_equal_command hooks
 	  in packages promises, to specify external command for native package
 	  manager versions comparison
+
+	- agent_expireafter in body executor control allows you to set a
+	  timeout on all cf-agent runs, to enforce a threshold on the
+	  number of concurrent agents
 
 	- Running in Solaris zone is now detected and classes "zone" and
 	  "zone_<name>" are created in this case.
@@ -169,6 +215,40 @@
 	Full list of issues fixed is available on
 	https://cfengine.com/bugtracker/changelog_page.php (old bug tracker)
 	and https://cfengine.com/dev/projects/core/versions/34 (new bug tracker)
+
+3.3.9   (Bugfix and Stability release)
+
+	Bugfixes:
+
+	- Do not lose hard classes in cf-serverd during policy reload
+	  (Mantis #1218).
+	- Implement recieve network timeout in cf-serverd. Prevents
+	  overloading cf-serverd with stale connections.
+
+3.3.8   (Bugfix and Stability release)
+
+	Versions 3.3.6, 3.3.7 were internal and weren't released.
+
+	Bugfixes:
+
+	- Propery set sys.domain variable if hostname is fully-qualified.
+	- Fixed several small memory leaks.
+	- Make network timeout for network reads configurable. Previously
+	  it was hardcoded to be 30 seconds, which was not enough for
+	  cf-runagent invoking cf-agent on big policies (Mantis #1028).
+
+3.3.5   (Bugfix and Stability release)
+
+	Bugfixes:
+
+	- Fixed cf-execd memory leak on hosts with cf-monitord running.
+	- Robustify against wrongly-sized entires in embedded databases.
+
+	Standard library:
+
+	- Bugfixes from upstream COPBL repository.
+	- standard_services bundle from upstream COPBL repository.
+
 
 3.3.4   (Bugfix and Stability release)
 

@@ -53,9 +53,9 @@ int IdentifyAgent(int sd, char *localip, int family)
 
 #if defined(HAVE_GETADDRINFO)
     int err;
-    char myaddr[256];           /* Compilation trick for systems that don't know ipv6 */
-#else
-    struct sockaddr_in myaddr;
+    char myaddr[256] = {0};           /* Compilation trick for systems that don't know ipv6 */
+#else    
+    struct sockaddr_in myaddr = {0};
     struct in_addr *iaddr;
     struct hostent *hp;
 #endif
@@ -89,6 +89,7 @@ int IdentifyAgent(int sd, char *localip, int family)
 #endif
         default:
             CfOut(cf_error, "", "Software error in IdentifyForVerification, family = %d", family);
+            return false;
         }
 
         if (getsockname(sd, (struct sockaddr *) &myaddr, &len) == -1)
