@@ -2194,7 +2194,7 @@ static void SchedulePackageOp(const char *name, const char *version, const char 
         }
         else
         {
-            cfPS(cf_error, CF_FAIL, "", pp, a, "!! Package \"%s\" cannot be updated -- no match or not installed",
+            cfPS(cf_verbose, CF_NOP, "", pp, a, " -> Package \"%s\" cannot be updated -- no match or not installed",
                  pp->promiser);
         }
         break;
