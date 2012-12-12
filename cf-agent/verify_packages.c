@@ -1314,7 +1314,7 @@ static void SchedulePackageOp(EvalContext *ctx, const char *name, const char *ve
         }
         else
         {
-            cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Package '%s' cannot be updated -- no match or not installed",
+            cfPS(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_NOOP, pp, a, "Package '%s' cannot be updated -- no match or not installed",
                  pp->promiser);
         }
         break;
