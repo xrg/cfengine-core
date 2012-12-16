@@ -107,7 +107,9 @@ int MAX_FD = 128;               /* Max number of simultaneous pipes */
 static int init_children()
 {
     if (!ThreadLock(cft_count))
+    {
         return false;
+    }
 
     if (CHILDREN == NULL)       /* first time */
     {
@@ -122,8 +124,12 @@ static void close_children_fds()
 {
     int i;
     for (i = 0; i < MAX_FD; i++)
+    {
         if (CHILDREN[i] > 0)
+        {
             close(i);
+        }
+    }
 }
 
 static void set_child(int fd, pid_t pid)
@@ -276,7 +282,9 @@ FILE *cf_popensetuid(const char *command, char *type, uid_t uid, gid_t gid, char
     }
 
     if (! init_children())
+    {
         return NULL;
+    }
 
     if (pipe(pd) < 0)           /* Create a pair of descriptors to this process */
     {
