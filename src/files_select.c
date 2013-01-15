@@ -28,6 +28,8 @@
 #include "env_context.h"
 #include "files_names.h"
 #include "files_interfaces.h"
+#include "string_lib.h"
+#include "promises.h"
 
 static int SelectTypeMatch(struct stat *lstatptr, Rlist *crit);
 static int SelectOwnerMatch(char *path, struct stat *lstatptr, Rlist *crit);
@@ -366,9 +368,7 @@ static int SelectModeMatch(struct stat *lstatptr, Rlist *list)
 #if defined HAVE_CHFLAGS
 static int SelectBSDMatch(struct stat *lstatptr, Rlist *bsdflags, Promise *pp)
 {
-# if defined HAVE_CHFLAGS
     u_long newflags, plus, minus;
-    Rlist *rp;
 
     if (!ParseFlagString(bsdflags, &plus, &minus))
     {
@@ -384,7 +384,6 @@ static int SelectBSDMatch(struct stat *lstatptr, Rlist *bsdflags, Promise *pp)
     {
         return true;
     }
-# endif
 
     return false;
 }
