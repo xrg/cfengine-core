@@ -25,7 +25,7 @@ dnl The version in the next line is the only one to set
 dnl
 
 _AM_SET_OPTION([tar-ustar])
-AM_INIT_AUTOMAKE(cfengine, 3.4.2)
+AM_INIT_AUTOMAKE(cfengine, 3.4.4.revision)
 AM_MAINTAINER_MODE([enable])
 
 AC_DEFINE(BUILD_YEAR, esyscmd([date +%Y | tr -d '\n']), "Software build year")
@@ -361,7 +361,7 @@ if test "x$with_libxml2" != xno; then
    fi
 
     CF3_WITH_LIBRARY(libxml2, [
-      AC_CHECK_LIB(xml2, xmlXPathNewContext, [], [if test "x$with_libxml2" != xcheck; then AC_MSG_ERROR(Cannot find libxml2); fi])
+      AC_CHECK_LIB(xml2, xmlFirstElementChild, [], [if test "x$with_libxml2" != xcheck; then AC_MSG_ERROR(Cannot find libxml2); fi])
       AC_CHECK_HEADERS([libxml/xmlwriter.h], [break], [if test "x$with_libxml2" != xcheck; then AC_MSG_ERROR(Cannot find libxml2); fi])
     ])
 fi
@@ -997,7 +997,7 @@ else
   AC_MSG_RESULT([-> libacl: disabled])
 fi
 
-if test "x$ac_cv_lib_xml2_xmlXPathNewContext" = xyes; then
+if test "x$ac_cv_lib_xml2_xmlFirstElementChild" = xyes; then
   AC_MSG_RESULT([-> libxml2: $LIBXML2_PATH])
 else
   AC_MSG_RESULT([-> libxml2: disabled])
