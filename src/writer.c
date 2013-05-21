@@ -256,13 +256,3 @@ FILE *FileWriterDetach(Writer *writer)
     free(writer);
     return file;
 }
-
-int WriterFD(Writer *writer)
-{
-    if (writer->type != WT_FILE)
-    {
-        return 0;
-    }
-    FILE *file = writer->file;
-    return fileno(file);
-}

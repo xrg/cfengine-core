@@ -459,7 +459,7 @@ void StartServer(Policy *policy, ExecConfig *config, const ReportContext *report
 
     if (!NO_FORK)
     {
-        ActAsDaemon(0, report_context);
+        ActAsDaemon(0);
     }
 
 #endif /* NOT MINGW */
