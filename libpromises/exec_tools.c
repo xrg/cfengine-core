@@ -157,18 +157,6 @@ void ActAsDaemon(int preserve)
 # endif
 #endif
 
-    if (!report_context)
-    {
-        for (fd = STDERR_FILENO + 1; fd < maxfd; ++fd)
-        {
-            if (fd != preserve)
-            {
-                close(fd);
-            }
-        }
-        return;
-    }
-
     for (fd = STDERR_FILENO + 1; fd < maxfd; ++fd)
     {
         if (fd != preserve)
