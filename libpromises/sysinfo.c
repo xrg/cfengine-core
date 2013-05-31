@@ -1886,6 +1886,7 @@ static int Linux_Mandriva_Version(EvalContext *ctx)
 {
 /* We are looking for the following strings... */
 #define MANDRIVA_ID "Mandriva Linux"
+#define MAGEIA_ID "Mageia"
 
 #define MANDRIVA_REL_FILENAME "/etc/mandriva-release"
 
@@ -1903,7 +1904,12 @@ static int Linux_Mandriva_Version(EvalContext *ctx)
 
     Log(LOG_LEVEL_VERBOSE, "Looking for Mandriva linux info in '%s'", relstring);
 
-    if (!strncmp(relstring, MANDRIVA_ID, strlen(MANDRIVA_ID)))
+    if (!strncmp(relstring, MAGEIA_ID, strlen(MAGEIA_ID)))
+    {
+        vendor = "mageia";
+        EvalContextHeapAddHard(ctx, "Mageia");
+    }
+    else if (!strncmp(relstring, MANDRIVA_ID, strlen(MANDRIVA_ID)))
     {
         vendor = "mandriva";
     }
@@ -1938,7 +1944,11 @@ static int Linux_Mandriva_Version_Real(EvalContext *ctx, char *filename, char *r
     else
     {
         release += strlen(RELEASE_FLAG);
-        if (sscanf(release, "%d.%d", &major, &minor) == 2)
+        if (!strcmp(vendor, "mageia") && (sscanf(release, "%d", &major) == 1)){
+                sprintf(strmajor, "%d", major);
+                minor = -2;
+        }
+        else if (sscanf(release, "%d.%d", &major, &minor) == 2)
         {
             sprintf(strmajor, "%d", major);
             sprintf(strminor, "%d", minor);

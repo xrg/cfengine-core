@@ -88,6 +88,7 @@ static void SetChildFD(int fd, pid_t pid)
     if (new_fd)
     {
         CHILDREN = xrealloc(CHILDREN, new_fd * sizeof(pid_t));
+        memset(CHILDREN + MAX_FD, 0, (new_fd - MAX_FD) * sizeof(pid_t));
         MAX_FD = new_fd;
     }
 
