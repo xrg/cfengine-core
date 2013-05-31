@@ -1907,7 +1907,7 @@ static int Linux_Mandriva_Version(EvalContext *ctx)
     if (!strncmp(relstring, MAGEIA_ID, strlen(MAGEIA_ID)))
     {
         vendor = "mageia";
-        NewClass("Mageia");
+        EvalContextHeapAddHard(ctx, "Mageia");
     }
     else if (!strncmp(relstring, MANDRIVA_ID, strlen(MANDRIVA_ID)))
     {
