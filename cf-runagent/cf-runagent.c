@@ -411,8 +411,8 @@ static int HailServer(EvalContext *ctx, char *host)
 
     if (PING_ONLY)
     {
-        CfOut(cf_inform, "", " -> Host: %s aka. %s is %s , port: %d\n", 
-                    host, peer, ipv4, a.copy.portnumber);
+        Log(LOG_LEVEL_INFO, "Host: %s aka. %s is %s , port: %d", 
+                    host, peer, ipaddr, fc.portnumber);
     }
 
     Address2Hostkey(ipaddr, digest);
@@ -420,7 +420,7 @@ static int HailServer(EvalContext *ctx, char *host)
     
     if (PING_ONLY)
     {
-        CfOut(cf_verbose, "", " -> local user: %s , digest: %s\n", user, digest);
+        Log(LOG_LEVEL_VERBOSE, "Local user: %s , digest: %s\n", user, digest);
     }
 
     if (INTERACTIVE)
@@ -540,8 +540,8 @@ static int HailServer(EvalContext *ctx, char *host)
     if (PING_ONLY)
     {
         HostPing(conn, peer, recvbuffer, sendbuffer);
-        CfOut(cf_verbose, "", " -> ping with %s finished\n", peer);
-        DeleteRlist(a.copy.servers);
+        Log(LOG_LEVEL_VERBOSE,"HailServer: ping with %s finished", peer);
+        RlistDestroy(fc.servers);
         return true;
     }
     HailExec(conn, peer, recvbuffer, sendbuffer);
@@ -804,7 +804,7 @@ static void HostPing(AgentConnection *conn, char *peer, char *recvbuffer, char *
 
     if (SendTransaction(conn->sd, sendbuffer, 0, CF_DONE) == -1)
     {
-        CfOut(cf_error, "send", "Transmission rejected");
+        Log(LOG_LEVEL_ERR, "Transmission rejected");
         DisconnectServer(conn);
         return;
     }
@@ -832,29 +832,25 @@ static void HostPing(AgentConnection *conn, char *peer, char *recvbuffer, char *
 
         if ((sp = strstr(recvbuffer, CFD_TERMINATOR)) != NULL)
         {
-            CfFile(fp, " !!\n\n");
             break;
         }
 
         if ((sp = strstr(recvbuffer, "BAD:")) != NULL)
         {
-            CfFile(fp, " !! %s\n", recvbuffer + 4);
             continue;
         }
 
         if (strstr(recvbuffer, "too soon"))
         {
-            CfFile(fp, " !! %s", recvbuffer);
             continue;
         }
 
         if ((strncmp(recvbuffer, "OK: ", 4)) == 0)
         {
-            CfOut(cf_inform, "", " * Got %s version: %s\n", peer, recvbuffer +4);
+            Log(LOG_LEVEL_INFO, "Got %s version: %s", peer, recvbuffer +4);
             break;
         }
 
-        CfFile(fp, " -> %s\n", recvbuffer);
     }
 
     DeleteStream(fp);
