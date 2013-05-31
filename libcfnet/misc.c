@@ -34,7 +34,7 @@
 const char *sockaddr_ntop(const void *src, char *dst, socklen_t size)
 {
     int family = ((struct sockaddr *) src)->sa_family;
-    void *addr;
+    void *addr = NULL;
 
     switch (family)
     {
