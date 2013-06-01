@@ -87,7 +87,7 @@ void ScopePutMatch(int index, const char *value)
     char lval[4] = { 0 };
     snprintf(lval, 3, "%d", index);
 
-    Rval rval = (Rval) { value, RVAL_TYPE_SCALAR };
+    Rval rval = (Rval) { (void*) value, RVAL_TYPE_SCALAR };
 
     CfAssoc *assoc = HashLookupElement(ptr->hashtable, lval);
 
@@ -474,7 +474,7 @@ void ScopeNewSpecial(EvalContext *ctx, const char *scope, const char *lval, cons
         ScopeDeleteSpecial(scope, lval);
     }
 
-    EvalContextVariablePut(ctx, (VarRef) { NULL, scope, lval }, (Rval) { rval, DataTypeToRvalType(dt) }, dt);
+    EvalContextVariablePut(ctx, (VarRef) { NULL, scope, lval }, (Rval) { (void *) rval, DataTypeToRvalType(dt) }, dt);
 }
 
 /*******************************************************************/
