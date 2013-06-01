@@ -1861,7 +1861,10 @@ static int AutomaticBootstrap(GenericAgentConfig *config)
         ret = -1;
     };
 
-    dlclose(avahi_handle);
+    if (avahi_handle)
+    {
+        dlclose(avahi_handle);
+    }
     ListDestroy(&foundhubs);
 
     return ret;
