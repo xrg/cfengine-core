@@ -289,19 +289,21 @@ static void ScopeDelete(Scope *scope)
 
     for (Scope *ptr = VSCOPE; ptr != NULL; ptr = ptr->next)
     {
-        if (ptr == scope)
+        if (ptr == scope && ptr == VSCOPE)
         {
             VSCOPE = scope->next;
+            break;
         }
         else if (ptr->next == scope)
         {
             ptr->next = scope->next;
+            break;
         }
-        free(scope->scope);
-        HashFree(scope->hashtable);
-        free(scope);
-        break;
     }
+
+    free(scope->scope);
+    HashFree(scope->hashtable);
+    free(scope);
 
     ThreadUnlock(cft_vscope);
 }
