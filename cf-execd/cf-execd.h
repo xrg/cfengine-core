@@ -22,31 +22,9 @@
   included file COSL.txt.
 */
 
-/*
- * NB! Does not calculate "remaining time"
- */
+#ifndef CF_EXECD_H
+#define CF_EXECD_H
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
-
-#ifdef __MINGW32__
-
-# include <time.h>
-# include <windows.h>
-
-int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
-{
-    if (rmtp)
-    {
-        rmtp->tv_sec = 0;
-        rmtp->tv_nsec = 0;
-    }
-
-    DWORD timeout = rqtp->tv_sec * 1000L + (rqtp->tv_nsec + 999999) / 1000000;
-
-    Sleep(timeout);
-    return 0;
-}
+void StartServer(EvalContext *ctx, Policy *policy, GenericAgentConfig *config, ExecConfig *exec_config);
 
 #endif

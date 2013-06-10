@@ -933,6 +933,11 @@ int NewPromiseProposals(EvalContext *ctx, const GenericAgentConfig *config, cons
 
                 for (sl = (Rlist *) returnval.item; sl != NULL; sl = sl->next)
                 {
+                    if (strcmp((char *) sl->item, CF_NULL_VALUE) == 0)
+                    {
+                        continue;
+                    }
+
                     if (stat(GenericAgentResolveInputPath(config, (char *) sl->item), &sb) == -1)
                     {
                         Log(LOG_LEVEL_ERR, "Unreadable promise proposals at '%s'. (stat: %s)", (char *) sl->item, GetErrorStr());
@@ -1542,7 +1547,7 @@ void WritePID(char *filename)
 
 void BundleHashVariables(EvalContext *ctx, Bundle *bundle)
 {
-    Log(LOG_LEVEL_VERBOSE, "Resolving varibales in bundle '%s'", bundle->name);
+    Log(LOG_LEVEL_VERBOSE, "Resolving variables in bundle '%s'", bundle->name);
 
     for (size_t j = 0; j < SeqLength(bundle->promise_types); j++)
     {

@@ -422,6 +422,7 @@ void ScopePopThis()
         Scope *current_this = ScopeGet("this");
         if (current_this)
         {
+
             ScopeDelete(current_this);
         }
 

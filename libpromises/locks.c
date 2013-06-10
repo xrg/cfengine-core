@@ -481,6 +481,41 @@ static void PromiseHash(const Promise *pp, const char *salt, unsigned char diges
         EVP_DigestUpdate(&context, pp->comment, strlen(pp->comment));
     }
 
+    if (pp->parent_promise_type && pp->parent_promise_type->parent_bundle)
+    {
+        if (pp->parent_promise_type->parent_bundle->ns)
+        {
+            EVP_DigestUpdate(&context, pp->parent_promise_type->parent_bundle->ns, strlen(pp->parent_promise_type->parent_bundle->ns));
+        }
+
+        if (pp->parent_promise_type->parent_bundle->name)
+        {
+            EVP_DigestUpdate(&context, pp->parent_promise_type->parent_bundle->name, strlen(pp->parent_promise_type->parent_bundle->name));
+        }
+    }
+
+    char *str = NULL;
+    if (pp->offset.start)
+    {
+        xasprintf(&str, "%u", (unsigned int)pp->offset.start);
+        EVP_DigestUpdate(&context, str, strlen(str));
+        free(str);
+    }
+
+    if (pp->offset.end)
+    {
+        xasprintf(&str, "%u", (unsigned int)pp->offset.end);
+        EVP_DigestUpdate(&context, str, strlen(str));
+        free(str);
+    }
+
+    if (pp->offset.line)
+    {
+        xasprintf(&str, "%u", (unsigned int)pp->offset.line);
+        EVP_DigestUpdate(&context, str, strlen(str));
+        free(str);
+    }
+
     if (salt)
     {
         EVP_DigestUpdate(&context, salt, strlen(salt));
@@ -555,9 +590,6 @@ CfLock AcquireLock(EvalContext *ctx, char *operand, char *host, time_t now, Tran
     char str_digest[CF_BUFSIZE];
     CfLock this;
     unsigned char digest[EVP_MAX_MD_SIZE + 1];
-
-    /* Register a cleanup handler */
-    pthread_once(&lock_cleanup_once, &RegisterLockCleanup);
 
     this.last = (char *) CF_UNDEFINED;
     this.lock = (char *) CF_UNDEFINED;
@@ -701,6 +733,14 @@ CfLock AcquireLock(EvalContext *ctx, char *operand, char *host, time_t now, Tran
         }
 
         WriteLock(cflock);
+
+        /* Register a cleanup handler *after* having opened the DB, so that
+         * CloseAllDB() atexit() handler is registered in advance, and it is
+         * called after removing this lock.
+
+         * There is a small race condition here that we'll leave a stale lock
+         * if we exit before the following line. */
+        pthread_once(&lock_cleanup_once, &RegisterLockCleanup);
     }
 
     ReleaseCriticalSection();
