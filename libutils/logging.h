@@ -30,6 +30,7 @@
 
 typedef enum
 {
+    LOG_LEVEL_NOTHING = -1,
     LOG_LEVEL_CRIT,
     LOG_LEVEL_ERR,
     LOG_LEVEL_WARNING,
@@ -46,6 +47,8 @@ void VLog(LogLevel level, const char *fmt, va_list ap);
 
 void LogSetGlobalLevel(LogLevel level);
 LogLevel LogGetGlobalLevel(void);
+
+void LoggingSetColor(bool enabled);
 
 /*
  * Portable strerror(errno)

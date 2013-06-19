@@ -85,7 +85,7 @@ static const char *CF_RUNAGENT_MANPAGE_LONG_DESCRIPTION =
     "the user requests cf-agent should define on execution. "
     "The latter type is regulated by cf-serverd's role based access control.";
 
-static const struct option OPTIONS[18] =
+static const struct option OPTIONS[] =
 {
     {"help", no_argument, 0, 'h'},
     {"background", optional_argument, 0, 'b'},
@@ -104,10 +104,11 @@ static const struct option OPTIONS[18] =
     {"timeout", required_argument, 0, 't'},
     {"legacy-output", no_argument, 0, 'l'},
     {"ping-only", no_argument, 0, 'N'},
+    {"color", optional_argument, 0, 'C'},
     {NULL, 0, 0, '\0'}
 };
 
-static const char *HINTS[19] =
+static const char *HINTS[] =
 {
     "Print the help message",
     "Parallelize connections (50 by default)",
@@ -126,6 +127,7 @@ static const char *HINTS[19] =
     "Connection timeout, seconds",
     "Use legacy output format",
     "Ping-only mode (implies --dry-run), just connect and confirm authentication with remote",
+    "Enable colorized output. Possible values: 'always', 'auto', 'never'. If option is used, the default value is 'auto'",
     NULL
 };
 
@@ -251,7 +253,7 @@ static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
     DEFINECLASSES[0] = '\0';
     SENDCLASSES[0] = '\0';
 
-    while ((c = getopt_long(argc, argv, "t:q:db:vnKhIif:D:VSxo:s:MH:lN", OPTIONS, &optindex)) != EOF)
+    while ((c = getopt_long(argc, argv, "t:q:db:vnKhIif:D:VSxo:s:MH:lNC::", OPTIONS, &optindex)) != EOF)
     {
         switch ((char) c)
         {
@@ -356,6 +358,13 @@ static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
         case 'x':
             Log(LOG_LEVEL_ERR, "Self-diagnostic functionality is retired.");
             exit(0);
+
+        case 'C':
+            if (!GenericAgentConfigParseColor(config, optarg))
+            {
+                exit(EXIT_FAILURE);
+            }
+            break;
 
         default:
             PrintHelp("cf-runagent", OPTIONS, HINTS, true);

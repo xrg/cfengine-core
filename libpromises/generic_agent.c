@@ -105,8 +105,10 @@ void CheckForPolicyHub(EvalContext *ctx)
 
     if (stat(name, &sb) != -1)
     {
-        EvalContextHeapAddHard(ctx, "am_policy_hub");
+        EvalContextHeapAddHard(ctx, "am_policy_hub");  // DEPRECATED: use policy_server instead
         Log(LOG_LEVEL_VERBOSE, "Additional class defined: am_policy_hub");
+        EvalContextHeapAddHard(ctx, "policy_server");
+        Log(LOG_LEVEL_VERBOSE, "Additional class defined: policy_server");
     }
 }
 
@@ -193,11 +195,11 @@ void GenericAgentDiscoverContext(EvalContext *ctx, GenericAgentConfig *config)
         char *existing_policy_server = ReadPolicyServerFile(GetWorkDir());
         if (existing_policy_server)
         {
-            Log(LOG_LEVEL_INFO, "This agent is bootstrapped to '%s'", existing_policy_server);
+            Log(LOG_LEVEL_VERBOSE, "This agent is bootstrapped to '%s'", existing_policy_server);
         }
         else
         {
-            Log(LOG_LEVEL_INFO, "This agent is not bootstrapped");
+            Log(LOG_LEVEL_VERBOSE, "This agent is not bootstrapped");
         }
         SetPolicyServer(ctx, existing_policy_server);
     }
@@ -543,7 +545,7 @@ Policy *GenericAgentLoadPolicy(EvalContext *ctx, GenericAgentConfig *config)
         {
             if (!config->bundlesequence && (PolicyIsRunnable(main_policy) || config->check_runnable))
             {
-                Log(LOG_LEVEL_INFO, "Running full policy integrity checks");
+                Log(LOG_LEVEL_VERBOSE, "Running full policy integrity checks");
                 PolicyCheckRunnable(ctx, main_policy, errors, config->ignore_missing_bundles);
             }
         }
@@ -1743,6 +1745,30 @@ bool GenericAgentConfigParseWarningOptions(GenericAgentConfig *config, const cha
     return true;
 }
 
+bool GenericAgentConfigParseColor(GenericAgentConfig *config, const char *mode)
+{
+    if (!mode || strcmp("auto", mode) == 0)
+    {
+        config->color = config->tty_interactive;
+        return true;
+    }
+    else if (strcmp("always", mode) == 0)
+    {
+        config->color = true;
+        return true;
+    }
+    else if (strcmp("never", mode) == 0)
+    {
+        config->color = false;
+        return true;
+    }
+    else
+    {
+        Log(LOG_LEVEL_ERR, "Unrecognized color mode '%s'", mode);
+        return false;
+    }
+}
+
 GenericAgentConfig *GenericAgentConfigNewDefault(AgentType agent_type)
 {
     GenericAgentConfig *config = xmalloc(sizeof(GenericAgentConfig));
@@ -1751,6 +1777,8 @@ GenericAgentConfig *GenericAgentConfigNewDefault(AgentType agent_type)
 
     // TODO: system state, perhaps pull out as param
     config->tty_interactive = isatty(0) && isatty(1);
+
+    config->color = false;
 
     config->bundlesequence = NULL;
 
@@ -1843,6 +1871,11 @@ void GenericAgentConfigApply(EvalContext *ctx, const GenericAgentConfig *config)
     if (config->agent_specific.agent.bootstrap_policy_server)
     {
         EvalContextHeapAddHard(ctx, "bootstrap_mode");
+    }
+
+    if (config->color)
+    {
+        LoggingSetColor(config->color);
     }
 }
 
