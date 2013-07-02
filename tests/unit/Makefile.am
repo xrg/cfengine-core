@@ -46,6 +46,7 @@ check_PROGRAMS = \
 	lastseen_migration_test \
 	dbm_migration_bundles_test \
 	misc_lib_test \
+	item_lib_test \
 	crypto_symmetric_test \
 	persistent_lock_test  \
 	thread_test \
@@ -57,6 +58,7 @@ check_PROGRAMS = \
 	sort_test \
 	file_name_test \
 	logging_test \
+	logging_timestamp_test \
 	granules_test \
 	scope_test \
 	conversion_test \
@@ -64,6 +66,7 @@ check_PROGRAMS = \
 	refcount_test \
 	list_test \
 	buffer_test \
+	bufferlist_test \
 	cf_key_functions_test \
 	connection_management_test \
 	expand_test \
@@ -114,6 +117,8 @@ list_test_SOURCES = list_test.c
 refcount_test_SOURCES = refcount_test.c ../../libutils/refcount.c
 
 buffer_test_SOURCES = buffer_test.c ../../libutils/buffer.c
+
+bufferlist_test_SOURCES = bufferlist_test.c ../../libutils/buffer.c ../../libutils/list.c
 
 cf_key_functions_test_SOURCES = cf_key_functions_test.c ../../cf-key/cf-key-functions.c
 
@@ -172,6 +177,9 @@ sort_test_LDADD = libtest.la
 
 logging_test_SOURCES = logging_test.c ../../libpromises/syslog_client.c mock_logging.c
 logging_test_LDADD = libtest.la
+
+logging_timestamp_test_SOURCES = logging_timestamp_test.c ../../libutils/logging.h
+logging_timestamp_test_LDADD = libtest.la ../../libutils/libutils.la
 
 connection_management_test_SOURCES = connection_management_test.c ../../cf-serverd/server.c
 connection_management_test_LDADD = ../../libpromises/libpromises.la libtest.la

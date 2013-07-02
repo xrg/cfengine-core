@@ -60,7 +60,7 @@
 #include "buffer.h"
 
 #include <libgen.h>
-#include <assert.h>
+
 
 /*
  * This module contains numeruous functions which don't use all their parameters
@@ -936,7 +936,7 @@ static FnCallResult FnCallUseModule(EvalContext *ctx, FnCall *fp, Rlist *finalar
     char *command = RlistScalarValue(finalargs);
     char *args = RlistScalarValue(finalargs->next);
 
-    snprintf(modulecmd, CF_BUFSIZE, "%s%cmodules%c%s", CFWORKDIR, FILE_SEPARATOR, FILE_SEPARATOR, command);
+    snprintf(modulecmd, CF_BUFSIZE, "\"%s%cmodules%c%s\"", CFWORKDIR, FILE_SEPARATOR, FILE_SEPARATOR, command);
 
     if (stat(CommandArg0(modulecmd), &statbuf) == -1)
     {
@@ -956,7 +956,7 @@ static FnCallResult FnCallUseModule(EvalContext *ctx, FnCall *fp, Rlist *finalar
         return (FnCallResult) { FNCALL_FAILURE };
     }
 
-    snprintf(modulecmd, CF_BUFSIZE, "%s%cmodules%c%s %s", CFWORKDIR, FILE_SEPARATOR, FILE_SEPARATOR, command, args);
+    snprintf(modulecmd, CF_BUFSIZE, "\"%s%cmodules%c%s\" %s", CFWORKDIR, FILE_SEPARATOR, FILE_SEPARATOR, command, args);
     Log(LOG_LEVEL_VERBOSE, "Executing and using module [%s]", modulecmd);
 
     if (!ExecModule(ctx, modulecmd, PromiseGetNamespace(fp->caller)))
@@ -1236,7 +1236,7 @@ static FnCallResult FnCallGetIndices(EvalContext *ctx, FnCall *fp, Rlist *finala
             char *sp;
 
             index[0] = '\0';
-            sscanf(assoc->lval + strlen(match), "%127[^\n]", index);
+            StringNotMatchingSetCapped(assoc->lval + strlen(match), CF_MAXVARSIZE, "\n", index);
             if ((sp = strchr(index, ']')))
             {
                 *sp = '\0';
@@ -1686,7 +1686,7 @@ static FnCallResult FnCallCountLinesMatching(EvalContext *ctx, FnCall *fp, Rlist
 
 static FnCallResult FnCallLsDir(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 {
-    char line[CF_BUFSIZE], retval[CF_SMALLBUF];
+    char line[CF_BUFSIZE];
     Dir *dirh = NULL;
     const struct dirent *dirp;
     Rlist *newlist = NULL;
@@ -1702,8 +1702,8 @@ static FnCallResult FnCallLsDir(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
     if (dirh == NULL)
     {
         Log(LOG_LEVEL_ERR, "Directory '%s' could not be accessed in lsdir(), (opendir: %s)", dirname, GetErrorStr());
-        snprintf(retval, CF_SMALLBUF - 1, "0");
-        return (FnCallResult) { FNCALL_SUCCESS, { xstrdup(retval), RVAL_TYPE_SCALAR } };
+        RlistPrependScalar(&newlist, CF_NULL_VALUE);
+        return (FnCallResult) { FNCALL_SUCCESS, { newlist, RVAL_TYPE_LIST } };
     }
 
     for (dirp = DirRead(dirh); dirp != NULL; dirp = DirRead(dirh))
@@ -1727,7 +1727,7 @@ static FnCallResult FnCallLsDir(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 
     if (newlist == NULL)
     {
-        RlistPrependScalar(&newlist, "cf_null");
+        RlistPrependScalar(&newlist, CF_NULL_VALUE);
     }
 
     return (FnCallResult) { FNCALL_SUCCESS, { newlist, RVAL_TYPE_LIST } };
@@ -4918,7 +4918,7 @@ static int ExecModule(EvalContext *ctx, char *command, const char *ns)
     char *sp, line[CF_BUFSIZE];
     int print = false;
 
-    if ((pp = cf_popen(command, "r", true)) == NULL)
+    if ((pp = cf_popen(command, "rt", true)) == NULL)
     {
         Log(LOG_LEVEL_ERR, "Couldn't open pipe from '%s'. (cf_popen: %s)", command, GetErrorStr());
         return false;

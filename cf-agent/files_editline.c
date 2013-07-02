@@ -43,7 +43,6 @@
 #include "ornaments.h"
 #include "verify_classes.h"
 
-#include <assert.h>
 
 /*****************************************************************************/
 
@@ -125,7 +124,6 @@ int ScheduleEditLineOperations(EvalContext *ctx, Bundle *bp, Attributes a, const
             }
 
             BannerSubPromiseType(ctx, bp->name, sp->name);
-            ScopeSetCurrent(bp->name);
 
             for (size_t ppi = 0; ppi < SeqLength(sp->promises); ppi++)
             {
@@ -144,7 +142,6 @@ int ScheduleEditLineOperations(EvalContext *ctx, Bundle *bp, Attributes a, const
     }
 
     ScopeClear("edit");
-    ScopeSetCurrent(PromiseGetBundle(parentp)->name);
     YieldCurrentLock(thislock);
     return true;
 }
@@ -1326,7 +1323,7 @@ static int InsertCompoundLineAtLocation(EvalContext *ctx, char *chunk, Item **st
     for (sp = chunk; sp <= chunk + strlen(chunk); sp++)
     {
         memset(buf, 0, CF_BUFSIZE);
-        sscanf(sp, "%2048[^\n]", buf);
+        StringNotMatchingSetCapped(sp, CF_BUFSIZE, "\n", buf);
         sp += strlen(buf);
 
         if (!SelectLine(buf, a))

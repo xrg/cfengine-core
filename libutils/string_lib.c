@@ -22,13 +22,13 @@
   included file COSL.txt.
 */
 
+
 #include "platform.h"
 
 #include "alloc.h"
 #include "writer.h"
 #include "misc_lib.h"
 
-#include <assert.h>
 
 #define STRING_MATCH_OVECCOUNT 30
 #define NULL_OR_EMPTY(str) ((str == NULL) || (str[0] == '\0'))
@@ -859,4 +859,32 @@ bool CompareStringOrRegex(const char *value, const char *compareTo, bool regex)
     }
     return true;
 }
+/* 
+ * @brief extract info from input string given two types of constraints:
+ *        - length of the extracted string is bounded
+ *        - extracted string should stop at first element of an exclude list
+ *
+ * @param[in] isp     : the string to scan
+ * @param[in] limit   : size limit on the output string (including '\0')
+ * @param[in] exclude : characters to be excluded from output buffer
+ * @param[out] obuf   : the output buffer
+ * @retval    true if string was capped, false if not
+ */
+bool StringNotMatchingSetCapped(const char *isp, int limit, 
+                      const char *exclude, char *obuf)
+{
+    size_t l = strcspn(isp, exclude);
 
+    if (l < limit-1)
+    {
+        strncpy(obuf, isp, l);
+        obuf[l]='\0';
+        return false;
+    }
+    else
+    {
+        strncpy(obuf, isp, limit-1);
+        obuf[limit-1]='\0';
+        return true;
+    }
+}

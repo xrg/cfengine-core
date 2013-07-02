@@ -34,13 +34,14 @@ bool LEGACY_OUTPUT = false;
 
 typedef struct
 {
-    LogLevel global_level;
     LogLevel log_level;
     LogLevel report_level;
     bool color;
 
     LoggingPrivContext *pctx;
 } LoggingContext;
+
+static LogLevel global_level = LOG_LEVEL_NOTICE;
 
 void LogToSystemLog(const char *msg, LogLevel level);
 
@@ -67,9 +68,8 @@ static LoggingContext *GetCurrentThreadContext(void)
     if (lctx == NULL)
     {
         lctx = xcalloc(1, sizeof(LoggingContext));
-        lctx->global_level = LOG_LEVEL_NOTICE;
-        lctx->log_level = lctx->global_level;
-        lctx->report_level =lctx->global_level;
+        lctx->log_level = global_level;
+        lctx->report_level = global_level;
         pthread_setspecific(log_context_key, lctx);
     }
     return lctx;
@@ -113,7 +113,7 @@ const char *LogLevelToString(LogLevel level)
     case LOG_LEVEL_DEBUG:
         return "debug";
     default:
-        ProgrammingError("Unknown log level passed to LogLevelToString: %d", level);
+        ProgrammingError("LogLevelToString: Unexpected log level %d", level);
     }
 }
 
@@ -138,7 +138,7 @@ static const char *LogLevelToColor(LogLevel level)
         return "\x1b[34m"; // blue
 
     default:
-        ProgrammingError("Unknown log level passed to LogLevelToColor %d", level);
+        ProgrammingError("LogLevelToColor: Unexpected log level %d", level);
     }
 }
 
@@ -161,8 +161,9 @@ void LogToStdout(const char *msg, LogLevel level, bool color)
         time_t now_seconds = time(NULL);
         localtime_r(&now_seconds, &now);
 
-        char formatted_timestamp[25];
-        if (strftime(formatted_timestamp, 25, "%Y-%m-%dT%H:%M:%S%z", &now) == 0)
+        char formatted_timestamp[64];
+        if (strftime(formatted_timestamp, sizeof(formatted_timestamp),
+                     "%Y-%m-%dT%H:%M:%S%z", &now) == 0)
         {
             // There was some massacre formating the timestamp. Wow
             strlcpy(formatted_timestamp, "<unknown>", sizeof(formatted_timestamp));
@@ -172,11 +173,12 @@ void LogToStdout(const char *msg, LogLevel level, bool color)
 
         if (color)
         {
-            printf("%s%-24s %8s: %s\x1b[0m\n", LogLevelToColor(level), formatted_timestamp, string_level, msg);
+            printf("%s%s %8s: %s\x1b[0m\n", LogLevelToColor(level),
+                   formatted_timestamp, string_level, msg);
         }
         else
         {
-            printf("%-24s %8s: %s\n", formatted_timestamp, string_level, msg);
+            printf("%s %8s: %s\n", formatted_timestamp, string_level, msg);
         }
     }
 }
@@ -193,9 +195,11 @@ static int LogLevelToSyslogPriority(LogLevel level)
     case LOG_LEVEL_INFO: return LOG_INFO;
     case LOG_LEVEL_VERBOSE: return LOG_DEBUG; /* FIXME: Do we really want to conflate those levels? */
     case LOG_LEVEL_DEBUG: return LOG_DEBUG;
+    default:
+        ProgrammingError("LogLevelToSyslogPriority: Unexpected log level %d",
+                         level);
     }
 
-    ProgrammingError("Unknown log level passed to LogLevelToSyslogPriority: %d", level);
 }
 
 void LogToSystemLog(const char *msg, LogLevel level)
@@ -247,15 +251,13 @@ void Log(LogLevel level, const char *fmt, ...)
 
 void LogSetGlobalLevel(LogLevel level)
 {
-    LoggingContext *lctx = GetCurrentThreadContext();
-    lctx->global_level = level;
+    global_level = level;
     LoggingPrivSetLevels(level, level);
 }
 
 LogLevel LogGetGlobalLevel(void)
 {
-    const LoggingContext *lctx = GetCurrentThreadContext();
-    return lctx->global_level;
+    return global_level;
 }
 
 void LoggingSetColor(bool enabled)

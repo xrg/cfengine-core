@@ -438,6 +438,36 @@ static void test_stringformat(void)
     free(s);
 }
 
+static void test_stringscanfcapped(void)
+{
+    char buf[20];
+    char sp[30];
+
+    strcpy(sp,"");
+    StringNotMatchingSetCapped(sp,20,"\n",buf);
+    assert_string_equal(buf, "");
+
+    strcpy(sp,"\n");
+    StringNotMatchingSetCapped(sp,20,"\n",buf);
+    assert_string_equal(buf, "");
+
+    strcpy(sp,"\n2345678901234567890abcdefghi");
+    StringNotMatchingSetCapped(sp,20,"\n",buf);
+    assert_string_equal(buf, "");
+
+    strcpy(sp,"12345678901234567890abcdefghi");
+    StringNotMatchingSetCapped(sp,20,"\n",buf);
+    assert_string_equal(buf, "1234567890123456789");
+
+    strcpy(sp,"12345678901234567890abcde\nghi");
+    StringNotMatchingSetCapped(sp,20,"\n",buf);
+    assert_string_equal(buf, "1234567890123456789");
+
+    strcpy(sp,"123456789012345\n7890abcdefghi");
+    StringNotMatchingSetCapped(sp,20,"\n",buf);
+    assert_string_equal(buf, "123456789012345");
+}
+
 int main()
 {
     PRINT_TEST_BANNER();
@@ -498,6 +528,8 @@ int main()
 
         unit_test(test_stringformat),
         unit_test(test_stringvformat),
+
+        unit_test(test_stringscanfcapped),
     };
 
     return run_tests(tests);
