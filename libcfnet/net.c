@@ -53,30 +53,51 @@ int SendTransaction(int sd, char *buffer, int len, char status)
     char work[CF_BUFSIZE];
     int wlen;
 
-    memset(work, 0, sizeof(work));
 
     if (len == 0)
     {
-        wlen = strlen(buffer);
+        /* For large buffers, len MUST be supplied */
+        wlen = strnlen(buffer, CF_BUFSIZE);
     }
     else
     {
         wlen = len;
     }
 
-    if (wlen > CF_BUFSIZE - CF_INBAND_OFFSET)
+    if (wlen > CF_MAX_BUFSIZE)
     {
-        Log(LOG_LEVEL_ERR, "SendTransaction: wlen (%d) > %d - %d", wlen, CF_BUFSIZE, CF_INBAND_OFFSET);
+        Log(LOG_LEVEL_ERR, "SendTransaction: wlen (%d) > %d - %d", wlen, CF_MAX_BUFSIZE, CF_INBAND_OFFSET);
         ProgrammingError("SendTransaction software failure");
     }
-
-    snprintf(work, CF_INBAND_OFFSET, "%c %d", status, wlen);
-
-    memcpy(work + CF_INBAND_OFFSET, buffer, wlen);
-
-    if (SendSocketStream(sd, work, wlen + CF_INBAND_OFFSET, 0) == -1)
+    else if (wlen > CF_BUFSIZE)
     {
-        return -1;
+        /* large buffer mode, avoid copying 
+           A small write() followed by a large one is not likely to hit
+           the Nagle algorithm.
+         */
+        memset(work, 0, CF_INBAND_OFFSET+1);
+        snprintf(work, CF_INBAND_OFFSET, "%c %d", status, wlen);
+
+        if (SendSocketStream(sd, work, CF_INBAND_OFFSET, 0) == -1)
+        {
+            return -1;
+        }
+        if (SendSocketStream(sd, buffer, wlen, 0) == -1)
+        {
+            return -1;
+        }
+    }
+    else
+    {
+        memset(work, 0, sizeof(work));
+        snprintf(work, CF_INBAND_OFFSET, "%c %d", status, wlen);
+
+        memcpy(work + CF_INBAND_OFFSET, buffer, wlen);
+
+        if (SendSocketStream(sd, work, wlen + CF_INBAND_OFFSET, 0) == -1)
+        {
+            return -1;
+        }
     }
 
     return 0;
@@ -84,7 +105,7 @@ int SendTransaction(int sd, char *buffer, int len, char status)
 
 /*************************************************************************/
 
-int ReceiveTransaction(int sd, char *buffer, int *more)
+int ReceiveTransaction(int sd, char *buffer, int *more, int bufsize)
 {
     char proto[CF_INBAND_OFFSET + 1];
     char status = 'x';
@@ -92,14 +113,25 @@ int ReceiveTransaction(int sd, char *buffer, int *more)
 
     memset(proto, 0, CF_INBAND_OFFSET + 1);
 
-    if (RecvSocketStream(sd, proto, CF_INBAND_OFFSET) == -1) /* Get control channel */
+    if (bufsize < 0)
+    {
+        bufsize = CF_BUFSIZE - CF_INBAND_OFFSET;
+    }
+    else if (bufsize > CF_MAX_BUFSIZE)
+    {
+        Log(LOG_LEVEL_ERR, "ReceiveTransaction: bufsize %d > %d ", bufsize, CF_MAX_BUFSIZE);
+        ProgrammingError("ReceiveTransaction software failure");
+        return -1;
+    }
+
+    if (RecvSocketStream(sd, proto, CF_INBAND_OFFSET, CF_INBAND_OFFSET+1) == -1) /* Get control channel */
     {
         return -1;
     }
 
     sscanf(proto, "%c %u", &status, &len);
 
-    if (len > CF_BUFSIZE - CF_INBAND_OFFSET)
+    if (len > bufsize)
     {
         Log(LOG_LEVEL_ERR, "Bad transaction packet -- too long (%c %d). proto '%s'", status, len, proto);
         return -1;
@@ -122,16 +154,16 @@ int ReceiveTransaction(int sd, char *buffer, int *more)
         }
     }
 
-    return RecvSocketStream(sd, buffer, len);
+    return RecvSocketStream(sd, buffer, len, bufsize);
 }
 
 /*************************************************************************/
 
-int RecvSocketStream(int sd, char buffer[CF_BUFSIZE], int toget)
+int RecvSocketStream(int sd, char *buffer, int toget, int bufsize)
 {
     int already, got;
 
-    if (toget > CF_BUFSIZE - 1)
+    if (toget > bufsize - 1)
     {
         Log(LOG_LEVEL_ERR, "Bad software request for overfull buffer");
         return -1;
@@ -171,7 +203,7 @@ int RecvSocketStream(int sd, char buffer[CF_BUFSIZE], int toget)
 
 /*************************************************************************/
 
-int SendSocketStream(int sd, char buffer[CF_BUFSIZE], int tosend, int flags)
+int SendSocketStream(int sd, char *buffer, int tosend, int flags)
 {
     int sent, already = 0;
 

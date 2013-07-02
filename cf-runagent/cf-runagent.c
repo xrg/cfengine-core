@@ -762,7 +762,7 @@ static void HailExec(AgentConnection *conn, char *peer, char *recvbuffer, char *
     {
         memset(recvbuffer, 0, CF_BUFSIZE);
 
-        if ((n_read = ReceiveTransaction(conn->sd, recvbuffer, NULL)) == -1)
+        if ((n_read = ReceiveTransaction(conn->sd, recvbuffer, NULL, -1)) == -1)
         {
             return;
         }
@@ -824,7 +824,7 @@ static void HostPing(AgentConnection *conn, char *peer, char *recvbuffer, char *
     {
         memset(recvbuffer, 0, CF_BUFSIZE);
 
-        if ((n_read = ReceiveTransaction(conn->sd, recvbuffer, NULL)) == -1)
+        if ((n_read = ReceiveTransaction(conn->sd, recvbuffer, NULL, -1)) == -1)
         {
             return;
         }

@@ -430,7 +430,7 @@ static int BusyWithConnection(EvalContext *ctx, ServerConnectionState *conn)
     memset(recvbuffer, 0, CF_BUFSIZE + CF_BUFEXT);
     memset(&get_args, 0, sizeof(get_args));
 
-    if ((received = ReceiveTransaction(conn->sd_reply, recvbuffer, NULL)) == -1)
+    if ((received = ReceiveTransaction(conn->sd_reply, recvbuffer, NULL, -1)) == -1)
     {
         return false;
     }
@@ -541,7 +541,7 @@ static int BusyWithConnection(EvalContext *ctx, ServerConnectionState *conn)
         memset(filename, 0, CF_BUFSIZE);
         sscanf(recvbuffer, "GET %d %[^\n]", &(get_args.buf_size), filename);
 
-        if ((get_args.buf_size < 0) || (get_args.buf_size > CF_BUFSIZE))
+        if ((get_args.buf_size < 0) || (get_args.buf_size > CF_MAX_BUFSIZE))
         {
             Log(LOG_LEVEL_INFO, "GET buffer out of bounds");
             RefuseAccess(conn, 0, recvbuffer);
@@ -564,9 +564,9 @@ static int BusyWithConnection(EvalContext *ctx, ServerConnectionState *conn)
 
         memset(sendbuffer, 0, CF_BUFSIZE);
 
-        if (get_args.buf_size >= CF_BUFSIZE)
+        if (get_args.buf_size >= CF_MAX_BUFSIZE)
         {
-            get_args.buf_size = 2048;
+            get_args.buf_size = CF_MAX_BUFSIZE;
         }
 
         get_args.connect = conn;
@@ -1030,7 +1030,7 @@ static int MatchClasses(EvalContext *ctx, ServerConnectionState *conn)
     {
         count++;
 
-        if (ReceiveTransaction(conn->sd_reply, recvbuffer, NULL) == -1)
+        if (ReceiveTransaction(conn->sd_reply, recvbuffer, NULL, -1) == -1)
         {
             Log(LOG_LEVEL_VERBOSE, "Unable to read data from network. (ReceiveTransaction: %s)", GetErrorStr());
             return false;
@@ -2077,7 +2077,7 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
     newkey = RSA_new();
 
 /* proposition C2 */
-    if ((len_n = ReceiveTransaction(conn->sd_reply, recvbuffer, NULL)) == -1)
+    if ((len_n = ReceiveTransaction(conn->sd_reply, recvbuffer, NULL, -1)) == -1)
     {
         Log(LOG_LEVEL_INFO, "Protocol error 1 in RSA authentation from IP %s", conn->hostname);
         RSA_free(newkey);
@@ -2101,7 +2101,7 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
 
 /* proposition C3 */
 
-    if ((len_e = ReceiveTransaction(conn->sd_reply, recvbuffer, NULL)) == -1)
+    if ((len_e = ReceiveTransaction(conn->sd_reply, recvbuffer, NULL, -1)) == -1)
     {
         Log(LOG_LEVEL_INFO, "Protocol error 3 in RSA authentation from IP %s", conn->hostname);
         RSA_free(newkey);
@@ -2201,7 +2201,7 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
 /* proposition C4 */
     memset(in, 0, CF_BUFSIZE);
 
-    if (ReceiveTransaction(conn->sd_reply, in, NULL) == -1)
+    if (ReceiveTransaction(conn->sd_reply, in, NULL, -1) == -1)
     {
         BN_free(counter_challenge);
         free(out);
@@ -2236,7 +2236,7 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
 
     memset(in, 0, CF_BUFSIZE);
 
-    if ((keylen = ReceiveTransaction(conn->sd_reply, in, NULL)) == -1)
+    if ((keylen = ReceiveTransaction(conn->sd_reply, in, NULL, -1)) == -1)
     {
         BN_free(counter_challenge);
         free(out);
@@ -2467,9 +2467,9 @@ static void CfGetFile(ServerFileGetState *args)
 {
     int sd, fd;
     off_t n_read, total = 0, sendlen = 0, count = 0;
-    char sendbuffer[CF_BUFSIZE + 256], filename[CF_BUFSIZE];
+    char sendbuffer[CF_MAX_BUFSIZE + 256], filename[CF_BUFSIZE];
     struct stat sb;
-    int blocksize = 2048;
+    int blocksize = args->buf_size;
 
     sd = (args->connect)->sd_reply;
 
@@ -2495,8 +2495,8 @@ static void CfGetFile(ServerFileGetState *args)
     {
         Log(LOG_LEVEL_ERR, "Open error of file '%s'. (open: %s)",
             filename, GetErrorStr());
-        snprintf(sendbuffer, CF_BUFSIZE, "%s", CF_FAILEDSTR);
-        SendSocketStream(sd, sendbuffer, args->buf_size, 0);
+        sendlen = snprintf(sendbuffer, CF_BUFSIZE, "%s", CF_FAILEDSTR);
+        SendSocketStream(sd, sendbuffer, sendlen, 0);
     }
     else
     {
@@ -2509,7 +2509,7 @@ static void CfGetFile(ServerFileGetState *args)
 
         while (true)
         {
-            memset(sendbuffer, 0, CF_BUFSIZE);
+            memset(sendbuffer, 0, blocksize+256);
 
             Log(LOG_LEVEL_DEBUG, "Now reading from disk...");
 
@@ -2541,12 +2541,13 @@ static void CfGetFile(ServerFileGetState *args)
 
                 if (sb.st_size != savedlen)
                 {
-                    snprintf(sendbuffer, CF_BUFSIZE, "%s%s: %s", CF_CHANGEDSTR1, CF_CHANGEDSTR2, filename);
+                    sendlen = snprintf(sendbuffer, CF_BUFSIZE, "%s%s: %s", CF_CHANGEDSTR1, CF_CHANGEDSTR2, filename);
 
-                    if (SendSocketStream(sd, sendbuffer, blocksize, 0) == -1)
+                    if (SendSocketStream(sd, sendbuffer, sendlen+1, 0) == -1)
                     {
                         Log(LOG_LEVEL_VERBOSE, "Send failed in GetFile. (send: %s)", GetErrorStr());
                     }
+                    sendlen = 0; /* reused variable, before failure. Now reset it. */
 
                     Log(LOG_LEVEL_DEBUG, "Aborting transfer after %" PRIdMAX ": file is changing rapidly at source.", (intmax_t)total);
                     break;

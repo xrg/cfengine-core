@@ -360,7 +360,7 @@ int cf_remote_stat(char *file, struct stat *buf, char *stattype, bool encrypt, A
         return -1;
     }
 
-    if (ReceiveTransaction(conn->sd, recvbuffer, NULL) == -1)
+    if (ReceiveTransaction(conn->sd, recvbuffer, NULL, -1) == -1)
     {
         return -1;
     }
@@ -424,7 +424,7 @@ int cf_remote_stat(char *file, struct stat *buf, char *stattype, bool encrypt, A
 
         memset(recvbuffer, 0, CF_BUFSIZE);
 
-        if (ReceiveTransaction(conn->sd, recvbuffer, NULL) == -1)
+        if (ReceiveTransaction(conn->sd, recvbuffer, NULL, -1) == -1)
         {
             return -1;
         }
@@ -506,7 +506,7 @@ int cf_remote_stat(char *file, struct stat *buf, char *stattype, bool encrypt, A
 Item *RemoteDirList(const char *dirname, bool encrypt, AgentConnection *conn)
 {
     char sendbuffer[CF_BUFSIZE];
-    char recvbuffer[CF_BUFSIZE];
+    char recvbuffer[CF_MAX_BUFSIZE+3];
     char in[CF_BUFSIZE];
     char out[CF_BUFSIZE];
     int n, cipherlen = 0, tosend;
@@ -547,7 +547,7 @@ Item *RemoteDirList(const char *dirname, bool encrypt, AgentConnection *conn)
 
     while (true)
     {
-        if ((n = ReceiveTransaction(conn->sd, recvbuffer, NULL)) == -1)
+        if ((n = ReceiveTransaction(conn->sd, recvbuffer, NULL, CF_MAX_BUFSIZE+1)) == -1)
         {
             return NULL;
         }
@@ -677,7 +677,7 @@ int CompareHashNet(char *file1, char *file2, bool encrypt, AgentConnection *conn
         return false;
     }
 
-    if (ReceiveTransaction(conn->sd, recvbuffer, NULL) == -1)
+    if (ReceiveTransaction(conn->sd, recvbuffer, NULL, -1) == -1)
     {
         Log(LOG_LEVEL_ERR, "Failed receive. (ReceiveTransaction: %s)", GetErrorStr());
         Log(LOG_LEVEL_VERBOSE,  "No answer from host, assuming checksum ok to avoid remote copy for now...");
@@ -728,12 +728,11 @@ int CopyRegularFileNet(char *source, char *new, off_t size, AgentConnection *con
 
     workbuf[0] = '\0';
 
-    buf_size = 2048;
+    buf_size = CF_MAX_BUFSIZE;
 
 /* Send proposition C0 */
 
-    snprintf(workbuf, CF_BUFSIZE, "GET %d %s", buf_size, source);
-    tosend = strlen(workbuf);
+    tosend = snprintf(workbuf, CF_BUFSIZE, "GET %d %s", buf_size, source);
 
     if (SendTransaction(conn->sd, workbuf, tosend, CF_DONE) == -1)
     {
@@ -742,7 +741,7 @@ int CopyRegularFileNet(char *source, char *new, off_t size, AgentConnection *con
         return false;
     }
 
-    buf = xmalloc(CF_BUFSIZE + sizeof(int));    /* Note CF_BUFSIZE not buf_size !! */
+    buf = xmalloc(buf_size + sizeof(int));
     n_read_total = 0;
 
     Log(LOG_LEVEL_VERBOSE, "Copying remote file '%s:%s', expecting %jd bytes",
@@ -766,7 +765,7 @@ int CopyRegularFileNet(char *source, char *new, off_t size, AgentConnection *con
 
         /* Stage C1 - receive */
 
-        if ((n_read = RecvSocketStream(conn->sd, buf, toget)) == -1)
+        if ((n_read = RecvSocketStream(conn->sd, buf, toget, buf_size+1 )) == -1)
         {
             /* This may happen on race conditions,
              * where the file has shrunk since we asked for its size in SYNCH ... STAT source */
@@ -859,7 +858,8 @@ int CopyRegularFileNet(char *source, char *new, off_t size, AgentConnection *con
 
 int EncryptCopyRegularFileNet(char *source, char *new, off_t size, AgentConnection *conn)
 {
-    int dd, blocksize = 2048, n_read = 0, towrite, plainlen, more = true, finlen, cnt = 0;
+    int dd, n_read = 0, towrite, plainlen, more = true, finlen, cnt = 0;
+    int blocksize = 2048;
     int tosend, cipherlen = 0;
     char *buf, in[CF_BUFSIZE], out[CF_BUFSIZE], workbuf[CF_BUFSIZE], cfchangedstr[265];
     unsigned char iv[32] =
@@ -917,7 +917,7 @@ int EncryptCopyRegularFileNet(char *source, char *new, off_t size, AgentConnecti
 
     while (more)
     {
-        if ((cipherlen = ReceiveTransaction(conn->sd, buf, &more)) == -1)
+        if ((cipherlen = ReceiveTransaction(conn->sd, buf, &more, -1)) == -1)
         {
             free(buf);
             return false;
