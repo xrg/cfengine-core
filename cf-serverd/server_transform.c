@@ -496,6 +496,17 @@ static void KeepControlPromises(EvalContext *ctx, Policy *policy, GenericAgentCo
     {
         LASTSEENEXPIREAFTER = IntFromString(retval.item) * 60;
     }
+
+    if (EvalContextVariableControlCommonGet(ctx, COMMON_CONTROL_BWLIMIT, &retval))
+    {
+        double bval;
+        if (DoubleFromString(retval.item, &bval))
+        {
+            bwlimit_byte_nsec = ((double) CF_BILLION) * 8.0 / bval;
+            Log(LOG_LEVEL_VERBOSE, "Setting rate limit to %g nsec per byte", bwlimit_byte_nsec);
+        }
+    }
+
 }
 
 /*********************************************************************/

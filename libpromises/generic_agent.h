@@ -118,4 +118,5 @@ void GenericAgentConfigApply(EvalContext *ctx, const GenericAgentConfig *config)
 void GenericAgentConfigSetInputFile(GenericAgentConfig *config, const char *workdir, const char *input_file);
 void GenericAgentConfigSetBundleSequence(GenericAgentConfig *config, const Rlist *bundlesequence);
 
+extern double bwlimit_byte_nsec; /* from libcfnet/net.c */
 #endif

@@ -1019,6 +1019,15 @@ void KeepControlPromises(EvalContext *ctx, Policy *policy)
         }
     }
 
+    if (EvalContextVariableControlCommonGet(ctx, COMMON_CONTROL_BWLIMIT, &retval))
+    {
+        double bval;
+        if (DoubleFromString(retval.item, &bval))
+        {
+            bwlimit_byte_nsec = ((double) CF_BILLION) * 8.0 / bval;
+            Log(LOG_LEVEL_VERBOSE, "Setting rate limit to %g nsec per byte", bwlimit_byte_nsec);
+        }
+    }
 #ifdef HAVE_NOVA
     Nova_Initialize(ctx);
 #endif
