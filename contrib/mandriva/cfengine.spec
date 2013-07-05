@@ -3,6 +3,7 @@
 
 %define	name	cfengine3
 %define version %git_get_ver
+%global release_class experimental
 
 # We call ourselves "cfengine3" but still use "/var/lib/cfengine"
 %define workdir %{_localstatedir}/lib/cfengine
@@ -202,21 +203,19 @@ EOF
 %clean
 rm -rf %{buildroot}
 
-# All binaries have 3 files:
+# All binaries have 2 files:
 #  1. the bin at /usr/sbin/xxx
 #  2. the symlink at /var/lib/cfengine/bin/xxx
-#  3. a manpage at /usr/share/man/man8/xxx.8.xz
 # so, write a macro for them
 
 %define cfprog(:)  %{_sbindir}/%1 \
 	%{workdir}/bin/%1 \
-	%{_mandir}/man8/%1.* \
 	%()
 
 %files
 %defattr(-,root,root)
 %doc %{_defaultdocdir}/cfengine/ChangeLog
-%doc %{_defaultdocdir}/cfengine/README
+%doc %{_defaultdocdir}/cfengine/README.md
 %dir %{workdir}
 %dir %{workdir}/bin
 %dir %{workdir}/ppkeys
@@ -245,13 +244,12 @@ rm -rf %{buildroot}
 %files cfserver
 %defattr(-,root,root)
 %cfprog cf-runagent
-%cfprog cf-report
 %dir %{workdir}/masterfiles
 %dir %{workdir}/reports
 
 %files pds
-%doc %{_defaultdocdir}/cfengine/guides/
-%doc %{_defaultdocdir}/cfengine/reference/
+# doc %{_defaultdocdir}/cfengine/guides/
+# doc %{_defaultdocdir}/cfengine/reference/
 %{_defaultdocdir}/cfengine/examples/*
 %{_datadir}/cfengine/CoreBase/*
 %{workdir}/masterfiles/README.first
