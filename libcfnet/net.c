@@ -116,7 +116,7 @@ int ReceiveTransaction(int sd, char *buffer, int *more, int bufsize)
     {
         bufsize = CF_BUFSIZE - CF_INBAND_OFFSET;
     }
-    else if (bufsize > CF_MAX_BUFSIZE)
+    else if (bufsize > CF_MAX_BUFSIZE + 1)
     {
         Log(LOG_LEVEL_ERR, "ReceiveTransaction: bufsize %d > %d ", bufsize, CF_MAX_BUFSIZE);
         ProgrammingError("ReceiveTransaction software failure");
@@ -130,7 +130,7 @@ int ReceiveTransaction(int sd, char *buffer, int *more, int bufsize)
 
     sscanf(proto, "%c %u", &status, &len);
 
-    if (len > bufsize)
+    if ((len > bufsize) || (len > CF_MAX_BUFSIZE))
     {
         Log(LOG_LEVEL_ERR, "Bad transaction packet -- too long (%c %d). proto '%s'", status, len, proto);
         return -1;
