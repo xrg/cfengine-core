@@ -195,7 +195,7 @@ static void VerifyFilePromise(EvalContext *ctx, char *path, Promise *pp)
         return;
     }
 
-    ScopeNewSpecial(ctx, "this", "promiser", path, DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", path, DATA_TYPE_STRING);
 
     thislock = AcquireLock(ctx, path, VUQNAME, CFSTARTTIME, a.transaction, pp, false);
 
@@ -382,9 +382,16 @@ static void VerifyFilePromise(EvalContext *ctx, char *path, Promise *pp)
 
 // Once more in case a file has been created as a result of editing or copying
 
-    if ((stat(path, &osb) != -1) && (S_ISREG(osb.st_mode)))
+    exists = (stat(path, &osb) != -1);
+
+    if (exists && (S_ISREG(osb.st_mode)))
     {
         VerifyFileLeaf(ctx, path, &osb, a, pp);
+    }
+
+    if (!exists && a.havechange)
+    {
+        cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Promised to monitor '%s' for changes, but file does not exist", path);
     }
 
 exit:
@@ -398,8 +405,8 @@ int ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes a, Promis
 {
     void *vp;
     FnCall *fp;
+    Rlist *args = NULL;
     char edit_bundle_name[CF_BUFSIZE], lockname[CF_BUFSIZE], qualified_edit[CF_BUFSIZE], *method_deref;
-    Rlist *params = { 0 };
     int retval = false;
     CfLock thislock;
 
@@ -428,12 +435,12 @@ int ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes a, Promis
         {
             fp = (FnCall *) vp;
             strcpy(edit_bundle_name, fp->name);
-            params = fp->args;
+            args = fp->args;
         }
         else if ((vp = ConstraintGetRvalValue(ctx, "edit_line", pp, RVAL_TYPE_SCALAR)))
         {
             strcpy(edit_bundle_name, (char *) vp);
-            params = NULL;
+            args = NULL;
         }             
         else
         {
@@ -460,18 +467,15 @@ int ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes a, Promis
         Bundle *bp = NULL;
         if ((bp = PolicyGetBundle(policy, NULL, "edit_line", method_deref)))
         {
-            BannerSubBundle(bp, params);
+            BannerSubBundle(bp, args);
 
-            EvalContextStackPushBundleFrame(ctx, bp, a.edits.inherit);
-            ScopeClear(bp->name);
+            EvalContextStackPushBundleFrame(ctx, bp, args, a.edits.inherit);
+
             BundleHashVariables(ctx, bp);
-            ScopeAugment(ctx, bp, pp, params);
 
             retval = ScheduleEditLineOperations(ctx, bp, a, pp, edcontext);
 
             EvalContextStackPopFrame(ctx);
-
-            ScopeClear(bp->name);
         }
         else
         {
@@ -486,12 +490,12 @@ int ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes a, Promis
         {
             fp = (FnCall *) vp;
             strcpy(edit_bundle_name, fp->name);
-            params = fp->args;
+            args = fp->args;
         }
         else if ((vp = ConstraintGetRvalValue(ctx, "edit_xml", pp, RVAL_TYPE_SCALAR)))
         {
             strcpy(edit_bundle_name, (char *) vp);
-            params = NULL;
+            args = NULL;
         }
         else
         {
@@ -513,18 +517,14 @@ int ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes a, Promis
         Bundle *bp = NULL;
         if ((bp = PolicyGetBundle(policy, NULL, "edit_xml", method_deref)))
         {
-            BannerSubBundle(bp, params);
+            BannerSubBundle(bp, args);
 
-            EvalContextStackPushBundleFrame(ctx, bp, a.edits.inherit);
-            ScopeClear(bp->name);
+            EvalContextStackPushBundleFrame(ctx, bp, args, a.edits.inherit);
             BundleHashVariables(ctx, bp);
-            ScopeAugment(ctx, bp, pp, params);
 
             retval = ScheduleEditXmlOperations(ctx, bp, a, pp, edcontext);
 
             EvalContextStackPopFrame(ctx);
-
-            ScopeClear(bp->name);
         }
     }
 
@@ -536,18 +536,15 @@ int ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes a, Promis
         Bundle *bp = NULL;
         if ((bp = MakeTemporaryBundleFromTemplate(ctx, tmp_policy, a, pp)))
         {
-            BannerSubBundle(bp,params);
+            BannerSubBundle(bp, args);
             a.haveeditline = true;
 
-            EvalContextStackPushBundleFrame(ctx, bp, a.edits.inherit);
-            ScopeClear(bp->name);
+            EvalContextStackPushBundleFrame(ctx, bp, args, a.edits.inherit);
             BundleHashVariables(ctx, bp);
 
             retval = ScheduleEditLineOperations(ctx, bp, a, pp, edcontext);
 
             EvalContextStackPopFrame(ctx);
-
-            ScopeClear(bp->name);
         }
 
         PolicyDestroy(tmp_policy);
@@ -580,7 +577,7 @@ static void FindFilePromiserObjects(EvalContext *ctx, Promise *pp)
     if (literal)
     {
         // Prime the promiser temporarily, may override later
-        ScopeNewSpecial(ctx, "this", "promiser", pp->promiser, DATA_TYPE_STRING);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", pp->promiser, DATA_TYPE_STRING);
         VerifyFilePromise(ctx, pp->promiser, pp);
     }
     else                        // Default is to expand regex paths

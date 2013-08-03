@@ -22,9 +22,21 @@
   included file COSL.txt.
 */
 
-#ifndef CFENGINE_EXPORT_XML_H
-#define CFENGINE_EXPORT_XML_H
+#ifndef VERIFY_ACL_H
+#define VERIFY_ACL_H
 
-void XmlManual(const char *mandir, FILE *fout);
+#include "cf3.defs.h"
+
+// Valid generic permissions
+#define CF_VALID_GPERMS "rwx"
+
+// Native perms separators in mode
+#define CF_NATIVE_PERMS_SEP_START '('
+#define CF_NATIVE_PERMS_SEP_END ')'
+
+#define CF_VALID_NPERMS_POSIX "rwx"
+#define CF_VALID_NPERMS_NTFS "drtxTwabBpcoD"
+
+void VerifyACL(EvalContext *ctx, char *file, Attributes a, Promise *pp);
 
 #endif

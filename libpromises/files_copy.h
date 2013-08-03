@@ -28,5 +28,7 @@
 #include "cf3.defs.h"
 
 bool CopyRegularFileDisk(const char *source, const char *destination);
+bool CopyFilePermissionsDisk(const char *source, const char *destination);
+bool CopyFileExtendedAttributesDisk(const char *source, const char *destination);
 
 #endif

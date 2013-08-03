@@ -38,6 +38,13 @@
 #include "misc_lib.h"
 #include "rlist.h"
 #include "audit.h"
+#include "pipes.h"
+
+#ifdef HAVE_NOVA
+# include "cf.nova.h"
+#endif
+
+#include <inttypes.h>
 
 #ifdef HAVE_ZONE_H
 # include <zone.h>
@@ -48,16 +55,57 @@
 # include <sys/mpctl.h>
 #endif
 
+/*****************************************************/
+// Uptime calculation settings for GetUptimeMinutes() - Mantis #1134
+// HP-UX: pstat_getproc(2) on init (pid 1)
+#ifdef HPuUX
+#define _PSTAT64
+#include <sys/param.h>
+#include <sys/pstat.h>
+#define BOOT_TIME_WITH_PSTAT_GETPROC
+#endif
+
+// Solaris: kstat() for kernel statistics
+// See http://dsc.sun.com/solaris/articles/kstatc.html
+// BSD also has a kstat.h (albeit in sys), so check SOLARIS just to be paranoid
+#if defined(SOLARIS) && defined(HAVE_KSTAT_H)
+#include <kstat.h>
+#define BOOT_TIME_WITH_KSTAT
+#endif
+
 // BSD: sysctl(3) to get kern.boottime, CPU count, etc.
 // See http://www.unix.com/man-page/FreeBSD/3/sysctl/
+// Linux also has sys/sysctl.h, so we check KERN_BOOTTIME to make sure it's BSD
 #ifdef HAVE_SYS_SYSCTL_H
 #include <sys/param.h>
 #include <sys/sysctl.h>
+#ifdef KERN_BOOTTIME 
+#define BOOT_TIME_WITH_SYSCTL
+#endif
 #endif
 
-#ifdef HAVE_NOVA
-# include "cf.nova.h"
+// GNU/Linux: struct sysinfo.uptime
+#ifdef HAVE_STRUCT_SYSINFO_UPTIME
+#include <sys/sysinfo.h>
+#define BOOT_TIME_WITH_SYSINFO
 #endif
+
+// For anything else except Windows, try {stat("/proc/1")}.st_ctime
+#if !defined(__MINGW32__) && !defined(NT)
+#define BOOT_TIME_WITH_PROCFS
+#endif
+
+#if defined(BOOT_TIME_WITH_SYSINFO) || defined(BOOT_TIME_WITH_SYSCTL) || \
+    defined(BOOT_TIME_WITH_KSTAT) || defined(BOOT_TIME_WITH_PSTAT_GETPROC) || \
+    defined(BOOT_TIME_WITH_PROCFS)
+#define CF_SYS_UPTIME_IMPLEMENTED
+static time_t GetBootTimeFromUptimeCommand(time_t); // Last resort
+#ifdef HAVE_PCRE_H
+# include <pcre.h>
+#endif
+#endif
+
+/*****************************************************/
 
 void CalculateDomainName(const char *nodename, const char *dnsname, char *fqname, char *uqname, char *domain);
 
@@ -258,13 +306,37 @@ void DetectDomainName(EvalContext *ctx, const char *orig_nodename)
     EvalContextHeapAddHard(ctx, VUQNAME);
     EvalContextHeapAddHard(ctx, VDOMAIN);
 
-    ScopeNewSpecial(ctx, "sys", "host", nodename, DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, "sys", "uqhost", VUQNAME, DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, "sys", "fqhost", VFQNAME, DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, "sys", "domain", VDOMAIN, DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "host", nodename, DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "uqhost", VUQNAME, DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "fqhost", VFQNAME, DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "domain", VDOMAIN, DATA_TYPE_STRING);
 }
 
 /*******************************************************************/
+
+void DiscoverVersion(EvalContext *ctx)
+{
+    int major = 0;
+    int minor = 0;
+    int patch = 0;
+    if (3 == sscanf(Version(), "%d.%d.%d", &major, &minor, &patch))
+    {
+        char workbuf[CF_BUFSIZE];
+
+        snprintf(workbuf, CF_MAXVARSIZE, "%d", major);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "cf_version_major", workbuf, DATA_TYPE_STRING);
+        snprintf(workbuf, CF_MAXVARSIZE, "%d", minor);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "cf_version_minor", workbuf, DATA_TYPE_STRING);
+        snprintf(workbuf, CF_MAXVARSIZE, "%d", patch);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "cf_version_patch", workbuf, DATA_TYPE_STRING);
+    }
+    else
+    {
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "cf_version_major", "BAD VERSION " VERSION, DATA_TYPE_STRING);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "cf_version_minor", "BAD VERSION " VERSION, DATA_TYPE_STRING);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "cf_version_patch", "BAD VERSION " VERSION, DATA_TYPE_STRING);
+    }
+}
 
 void GetNameInfo3(EvalContext *ctx, AgentType agent_type)
 {
@@ -318,6 +390,37 @@ void GetNameInfo3(EvalContext *ctx, AgentType agent_type)
     }
 #endif
 
+/*
+ * solarisx86 is a historically defined class for Solaris on x86. We have to
+ * define it manually now.
+ */
+#ifdef __sun
+    if (strcmp(VSYSNAME.machine, "i86pc") == 0)
+    {
+        EvalContextHeapAddHard(ctx, "solarisx86");
+    }
+#endif
+
+    DetectDomainName(ctx, VSYSNAME.nodename);
+
+    if ((tloc = time((time_t *) NULL)) == -1)
+    {
+        Log(LOG_LEVEL_ERR, "Couldn't read system clock");
+    }
+    else
+    {
+        snprintf(workbuf, CF_BUFSIZE, "%jd", (intmax_t) tloc);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "systime", workbuf, DATA_TYPE_INT);
+        snprintf(workbuf, CF_BUFSIZE, "%jd", (intmax_t) tloc / SECONDS_PER_DAY);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "sysday", workbuf, DATA_TYPE_INT);
+        i = GetUptimeMinutes(tloc);
+        if (i != -1)
+        {
+            snprintf(workbuf, CF_BUFSIZE, "%d", i);
+            ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "uptime", workbuf, DATA_TYPE_INT);
+        }
+    }
+
     for (i = 0; i < PLATFORM_CONTEXT_MAX; i++)
     {
         char sysname[CF_BUFSIZE];
@@ -335,7 +438,7 @@ void GetNameInfo3(EvalContext *ctx, AgentType agent_type)
                     found = true;
 
                     VSYSTEMHARDCLASS = (PlatformContext) i;
-                    ScopeNewSpecial(ctx, "sys", "class", CLASSTEXT[i], DATA_TYPE_STRING);
+                    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "class", CLASSTEXT[i], DATA_TYPE_STRING);
                     break;
                 }
             }
@@ -350,24 +453,6 @@ void GetNameInfo3(EvalContext *ctx, AgentType agent_type)
     if (!found)
     {
         i = 0;
-    }
-
-/*
- * solarisx86 is a historically defined class for Solaris on x86. We have to
- * define it manually now.
- */
-#ifdef __sun
-    if (strcmp(VSYSNAME.machine, "i86pc") == 0)
-    {
-        EvalContextHeapAddHard(ctx, "solarisx86");
-    }
-#endif
-
-    DetectDomainName(ctx, VSYSNAME.nodename);
-
-    if ((tloc = time((time_t *) NULL)) == -1)
-    {
-        Log(LOG_LEVEL_ERR, "Couldn't read system clock");
     }
 
     snprintf(workbuf, CF_BUFSIZE, "%s", CLASSTEXT[i]);
@@ -395,19 +480,21 @@ void GetNameInfo3(EvalContext *ctx, AgentType agent_type)
         Log(LOG_LEVEL_ERR, "Chop was called on a string that seemed to have no terminator");
     }
 
-    ScopeNewSpecial(ctx, "sys", "date", workbuf, DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, "sys", "cdate", CanonifyName(workbuf), DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, "sys", "os", VSYSNAME.sysname, DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, "sys", "release", VSYSNAME.release, DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, "sys", "version", VSYSNAME.version, DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, "sys", "arch", VSYSNAME.machine, DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, "sys", "workdir", CFWORKDIR, DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, "sys", "fstab", VFSTAB[VSYSTEMHARDCLASS], DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, "sys", "resolv", VRESOLVCONF[VSYSTEMHARDCLASS], DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, "sys", "maildir", VMAILDIR[VSYSTEMHARDCLASS], DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, "sys", "exports", VEXPORTS[VSYSTEMHARDCLASS], DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "date", workbuf, DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "cdate", CanonifyName(workbuf), DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "os", VSYSNAME.sysname, DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "release", VSYSNAME.release, DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "version", VSYSNAME.version, DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "arch", VSYSNAME.machine, DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "workdir", CFWORKDIR, DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "fstab", VFSTAB[VSYSTEMHARDCLASS], DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "resolv", VRESOLVCONF[VSYSTEMHARDCLASS], DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "maildir", VMAILDIR[VSYSTEMHARDCLASS], DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "exports", VEXPORTS[VSYSTEMHARDCLASS], DATA_TYPE_STRING);
 /* FIXME: type conversion */
-    ScopeNewSpecial(ctx, "sys", "cf_version", (char *) Version(), DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "cf_version", (char *) Version(), DATA_TYPE_STRING);
+
+    DiscoverVersion(ctx);
 
     if (PUBKEY)
     {
@@ -416,7 +503,7 @@ void GetNameInfo3(EvalContext *ctx, AgentType agent_type)
         HashPubKey(PUBKEY, digest, CF_DEFAULT_DIGEST);
         HashPrintSafe(CF_DEFAULT_DIGEST, digest, pubkey_digest);
 
-        ScopeNewSpecial(ctx, "sys", "key_digest", pubkey_digest, DATA_TYPE_STRING);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "key_digest", pubkey_digest, DATA_TYPE_STRING);
 
         snprintf(workbuf, CF_MAXVARSIZE - 1, "PK_%s", pubkey_digest);
         CanonifyNameInPlace(workbuf);
@@ -448,7 +535,7 @@ void GetNameInfo3(EvalContext *ctx, AgentType agent_type)
         if (stat(name, &sb) != -1)
         {
             snprintf(quoteName, sizeof(quoteName), "\"%s\"", name);
-            ScopeNewSpecial(ctx, "sys", shortname, quoteName, DATA_TYPE_STRING);
+            ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, shortname, quoteName, DATA_TYPE_STRING);
             have_component[i] = true;
         }
     }
@@ -469,7 +556,7 @@ void GetNameInfo3(EvalContext *ctx, AgentType agent_type)
         if (stat(name, &sb) != -1)
         {
             snprintf(quoteName, sizeof(quoteName), "\"%s\"", name);
-            ScopeNewSpecial(ctx, "sys", shortname, quoteName, DATA_TYPE_STRING);
+            ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, shortname, quoteName, DATA_TYPE_STRING);
         }
     }
 
@@ -478,12 +565,12 @@ void GetNameInfo3(EvalContext *ctx, AgentType agent_type)
 #ifdef __MINGW32__
     if (NovaWin_GetWinDir(workbuf, sizeof(workbuf)))
     {
-        ScopeNewSpecial(ctx, "sys", "windir", workbuf, DATA_TYPE_STRING);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "windir", workbuf, DATA_TYPE_STRING);
     }
 
     if (NovaWin_GetSysDir(workbuf, sizeof(workbuf)))
     {
-        ScopeNewSpecial(ctx, "sys", "winsysdir", workbuf, DATA_TYPE_STRING);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "winsysdir", workbuf, DATA_TYPE_STRING);
 
         char filename[CF_BUFSIZE];
         if (snprintf(filename, sizeof(filename), "%s%s", workbuf, "\\WindowsPowerShell\\v1.0\\powershell.exe") < sizeof(filename))
@@ -498,19 +585,19 @@ void GetNameInfo3(EvalContext *ctx, AgentType agent_type)
 
     if (NovaWin_GetProgDir(workbuf, sizeof(workbuf)))
     {
-        ScopeNewSpecial(ctx, "sys", "winprogdir", workbuf, DATA_TYPE_STRING);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "winprogdir", workbuf, DATA_TYPE_STRING);
     }
 
 # ifdef _WIN64
 // only available on 64 bit windows systems
     if (NovaWin_GetEnv("PROGRAMFILES(x86)", workbuf, sizeof(workbuf)))
     {
-        ScopeNewSpecial(ctx, "sys", "winprogdir86", workbuf, DATA_TYPE_STRING);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "winprogdir86", workbuf, DATA_TYPE_STRING);
     }
 
 # else/* NOT _WIN64 */
 
-    ScopeNewSpecial(ctx, "sys", "winprogdir86", "", DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "winprogdir86", "", DATA_TYPE_STRING);
 
 # endif
 
@@ -518,10 +605,10 @@ void GetNameInfo3(EvalContext *ctx, AgentType agent_type)
 
 // defs on Unix for manual-building purposes
 
-    ScopeNewSpecial(ctx, "sys", "windir", "/dev/null", DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, "sys", "winsysdir", "/dev/null", DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, "sys", "winprogdir", "/dev/null", DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, "sys", "winprogdir86", "/dev/null", DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "windir", "/dev/null", DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "winsysdir", "/dev/null", DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "winprogdir", "/dev/null", DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "winprogdir86", "/dev/null", DATA_TYPE_STRING);
 
 #endif /* !__MINGW32__ */
 
@@ -586,13 +673,13 @@ void GetNameInfo3(EvalContext *ctx, AgentType agent_type)
     }
 
     sp = xstrdup(CanonifyName(workbuf));
-    ScopeNewSpecial(ctx, "sys", "long_arch", sp, DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "long_arch", sp, DATA_TYPE_STRING);
     EvalContextHeapAddHard(ctx, sp);
     free(sp);
 
     snprintf(workbuf, CF_BUFSIZE, "%s_%s", VSYSNAME.sysname, VSYSNAME.machine);
     sp = xstrdup(CanonifyName(workbuf));
-    ScopeNewSpecial(ctx, "sys", "ostype", sp, DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "ostype", sp, DATA_TYPE_STRING);
     EvalContextHeapAddHard(ctx, sp);
     free(sp);
 
@@ -635,7 +722,7 @@ void GetNameInfo3(EvalContext *ctx, AgentType agent_type)
     zid = getzoneid();
     getzonenamebyid(zid, zone, ZONENAME_MAX);
 
-    ScopeNewSpecial(ctx, "sys", "zone", zone, DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "zone", zone, DATA_TYPE_STRING);
     snprintf(vbuff, CF_BUFSIZE - 1, "zone_%s", zone);
     EvalContextHeapAddHard(ctx, vbuff);
 
@@ -683,7 +770,7 @@ void Get3Environment(EvalContext *ctx, AgentType agent_type)
         Log(LOG_LEVEL_ERR, "Chop was called on a string that seemed to have no terminator");
     }
 
-    ScopeNewSpecial(ctx, "mon", "env_time", value, DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_MON, "env_time", value, DATA_TYPE_STRING);
 
     Log(LOG_LEVEL_VERBOSE, "Loading environment...");
 
@@ -719,7 +806,7 @@ void Get3Environment(EvalContext *ctx, AgentType agent_type)
            
             Log(LOG_LEVEL_DEBUG, "Setting new monitoring list '%s' => '%s'", name, value);
             list = RlistParseShown(value);
-            ScopeNewSpecial(ctx, "mon", name, list, DATA_TYPE_STRING_LIST);
+            ScopeNewSpecial(ctx, SPECIAL_SCOPE_MON, name, list, DATA_TYPE_STRING_LIST);
 
             RlistDestroy(list);
         }
@@ -732,7 +819,7 @@ void Get3Environment(EvalContext *ctx, AgentType agent_type)
 
             if (agent_type != AGENT_TYPE_EXECUTOR)
             {
-                ScopeNewSpecial(ctx, "mon", name, value, DATA_TYPE_STRING);
+                ScopeNewSpecial(ctx, SPECIAL_SCOPE_MON, name, value, DATA_TYPE_STRING);
                 Log(LOG_LEVEL_DEBUG, "Setting new monitoring scalar '%s' => '%s'", name, value);
             }
         }
@@ -801,8 +888,8 @@ void CreateHardClassesFromCanonification(EvalContext *ctx, const char *canonifie
 static void SetFlavour(EvalContext *ctx, const char *flavour)
 {
     EvalContextHeapAddHard(ctx, flavour);
-    ScopeNewSpecial(ctx, "sys", "flavour", flavour, DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, "sys", "flavor", flavour, DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "flavour", flavour, DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "flavor", flavour, DATA_TYPE_STRING);
 }
 
 void OSClasses(EvalContext *ctx)
@@ -994,7 +1081,7 @@ void OSClasses(EvalContext *ctx)
         }
     }
 
-    ScopeNewSpecial(ctx, "sys", "crontab", "", DATA_TYPE_STRING);
+    ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "crontab", "", DATA_TYPE_STRING);
 
 #endif /* __CYGWIN__ */
 
@@ -1038,12 +1125,16 @@ void OSClasses(EvalContext *ctx)
         {
             snprintf(vbuff, CF_BUFSIZE, "/var/spool/cron/tabs/%s", pw->pw_name);
         }
+        else if (IsDefinedClass(ctx, "redhat", NULL))
+        {
+            snprintf(vbuff, CF_BUFSIZE, "/var/spool/cron/%s", pw->pw_name);
+        }
         else
         {
             snprintf(vbuff, CF_BUFSIZE, "/var/spool/cron/crontabs/%s", pw->pw_name);
         }
 
-        ScopeNewSpecial(ctx, "sys", "crontab", vbuff, DATA_TYPE_STRING);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "crontab", vbuff, DATA_TYPE_STRING);
     }
 
 #endif
@@ -1065,17 +1156,17 @@ void OSClasses(EvalContext *ctx)
 
     if (IsDefinedClass(ctx, "redhat", NULL))
     {
-        ScopeNewSpecial(ctx, "sys", "doc_root", "/var/www/html", DATA_TYPE_STRING);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "doc_root", "/var/www/html", DATA_TYPE_STRING);
     }
 
     if (IsDefinedClass(ctx, "SuSE", NULL))
     {
-        ScopeNewSpecial(ctx, "sys", "doc_root", "/srv/www/htdocs", DATA_TYPE_STRING);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "doc_root", "/srv/www/htdocs", DATA_TYPE_STRING);
     }
 
     if (IsDefinedClass(ctx, "debian", NULL))
     {
-        ScopeNewSpecial(ctx, "sys", "doc_root", "/var/www", DATA_TYPE_STRING);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "doc_root", "/var/www", DATA_TYPE_STRING);
     }
 }
 
@@ -2381,11 +2472,186 @@ static void GetCPUInfo(EvalContext *ctx)
 
     if (count == 1) {
         EvalContextHeapAddHard(ctx, buf);  // "1_cpu" from init - change if buf is ever used above
-        ScopeNewSpecial(ctx, "sys", "cpus", "1", DATA_TYPE_STRING);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "cpus", "1", DATA_TYPE_STRING);
     } else {
         snprintf(buf, CF_SMALLBUF, "%d_cpus", count);
         EvalContextHeapAddHard(ctx, buf);
         snprintf(buf, CF_SMALLBUF, "%d", count);
-        ScopeNewSpecial(ctx, "sys", "cpus", buf, DATA_TYPE_STRING);
+        ScopeNewSpecial(ctx, SPECIAL_SCOPE_SYS, "cpus", buf, DATA_TYPE_STRING);
     }
 }
+
+/******************************************************************/
+
+int GetUptimeMinutes(time_t now)
+// Return the number of minutes the system has been online given the current
+// time() as an argument, or return -1 if unavailable or unimplemented.
+{
+#ifdef CF_SYS_UPTIME_IMPLEMENTED
+    time_t boot_time = 0;
+    errno = 0;
+#endif
+
+#if defined(BOOT_TIME_WITH_SYSINFO)         // Most GNU, Linux platforms
+    struct sysinfo s;
+
+    if (sysinfo(&s) == 0) 
+    {
+       // Don't return yet, sanity checking below
+       boot_time = now - s.uptime;
+    }
+
+#elif defined(BOOT_TIME_WITH_KSTAT)         // Solaris platform
+#define NANOSECONDS_PER_SECOND 1000000000
+    kstat_ctl_t *kc;
+    kstat_t *kp;
+
+    if(kc = kstat_open())
+    {
+        if(kp = kstat_lookup(kc, "unix", 0, "system_misc"))
+        {
+            boot_time = (time_t)(kp->ks_crtime / NANOSECONDS_PER_SECOND);
+        }
+        kstat_close(kc);
+    }
+
+#elif defined(BOOT_TIME_WITH_PSTAT_GETPROC) // HP-UX platform only
+    struct pst_status p;
+
+    if (pstat_getproc(&p, sizeof(p), 0, 1) == 1)
+    {
+        boot_time = (time_t)p.pst_start;
+    }
+
+#elif defined(BOOT_TIME_WITH_SYSCTL)        // BSD-derived platforms
+    int mib[2] = { CTL_KERN, KERN_BOOTTIME };
+    struct timeval boot;
+    size_t len;
+
+    len = sizeof(boot);
+    if (sysctl(mib, 2, &boot, &len, NULL, 0) == 0)
+    {
+        boot_time = boot.tv_sec;
+    }
+
+#elif defined(BOOT_TIME_WITH_PROCFS)        // Second-to-last resort: procfs
+    struct stat p;
+
+    if (stat("/proc/1", &p) == 0)
+    {
+        boot_time = p.st_ctime;
+    }
+
+#endif
+
+#ifdef CF_SYS_UPTIME_IMPLEMENTED
+    if(errno)
+    {
+        Log(LOG_LEVEL_ERR, "boot time discovery error: %s", GetErrorStr());
+    }
+
+    if(boot_time > now || boot_time <= 0)
+    {
+        Log(LOG_LEVEL_DEBUG, "invalid boot time found; trying uptime command");
+        boot_time = GetBootTimeFromUptimeCommand(now);
+    }
+
+    return(boot_time > 0 ? ((now - boot_time) / SECONDS_PER_MINUTE) : -1);
+#else
+// Native NT build: MINGW; NT build: NT
+// Maybe use "ULONGLONG WINAPI GetTickCount()" on Windows?
+    Log(LOG_LEVEL_VERBOSE, "$(sys.uptime) is not implemented on this platform");
+    return(-1);
+#endif
+}
+
+/******************************************************************/
+
+#ifdef CF_SYS_UPTIME_IMPLEMENTED
+// Last resort: parse the output of the uptime command with a PCRE regexp
+// and convert the uptime to boot time using "now" argument.
+//
+// The regexp needs to match all variants of the uptime command's output.
+// Solaris 8:     10:45am up 109 day(s), 19:56, 1 user, load average: 
+// HP-UX 11.11:   9:24am  up 1 min,  1 user,  load average:
+//                8:23am  up 23 hrs,  0 users,  load average:
+//                9:33am  up 2 days, 10 mins,  0 users,  load average:
+//                11:23am  up 2 days, 2 hrs,  0 users,  load average:
+// Red Hat Linux: 10:51:23 up 5 days, 19:54, 1 user, load average: 
+//
+// UPTIME_BACKREFS must be set to this regexp's maximum backreference
+// index number (i.e., the count of left-parentheses):
+#define UPTIME_REGEXP " up (\\d+ day[^,]*,|) *(\\d+( ho?u?r|:(\\d+))|(\\d+) min)"
+#define UPTIME_BACKREFS 5
+#define UPTIME_OVECTOR ((UPTIME_BACKREFS + 1) * 3)
+
+static time_t GetBootTimeFromUptimeCommand(time_t now)
+{
+    FILE *uptimecmd;
+    pcre *rx;
+    int ovector[UPTIME_OVECTOR], i, seconds;
+    char uptime_output[CF_SMALLBUF] = { '\0' }, *backref;
+    const char *uptimepath = "/usr/bin/uptime";
+    time_t uptime = 0;
+    const char *errptr;
+    int erroffset;
+    
+    rx = pcre_compile(UPTIME_REGEXP, 0, &errptr, &erroffset, NULL);
+    if (rx == NULL)
+    {
+        Log(LOG_LEVEL_DEBUG, "failed to compile regexp to parse uptime command"); 
+        return(-1);
+    }
+
+    // Try "/usr/bin/uptime" first, then "/bin/uptime"
+    uptimecmd = cf_popen(uptimepath, "r", false);
+    uptimecmd = uptimecmd ? uptimecmd : cf_popen((uptimepath + 4), "r", false);
+    if (!uptimecmd)
+    {
+        Log(LOG_LEVEL_ERR, "uptime failed: (cf_popen: %s)", GetErrorStr());
+        return -1;
+    }
+    i = CfReadLine(uptime_output, CF_SMALLBUF, uptimecmd);
+    cf_pclose(uptimecmd);
+    if (i < 0)
+    {
+        Log(LOG_LEVEL_ERR, "Reading uptime output failed. (CfReadLine: '%s')", GetErrorStr());
+        return -1;
+    }
+
+    if ((i != 0) && (pcre_exec(rx, NULL, (const char *)uptime_output, i, 0, 0, ovector, UPTIME_OVECTOR) > 1))
+    {
+        for (i = 1; i <= UPTIME_BACKREFS ; i++)
+        {
+            if (ovector[i * 2 + 1] - ovector[i * 2] == 0) // strlen(backref)
+            {
+                continue;
+            }
+            backref = uptime_output + ovector[i * 2];
+            // atoi() ignores non-digits, so no need to null-terminate backref
+            switch(i)
+            {
+                case 1: // Day
+                    seconds = SECONDS_PER_DAY;
+                    break;
+                case 2: // Hour
+                    seconds = SECONDS_PER_HOUR;
+                    break;
+                case 4: // Minute
+                case 5:
+                    seconds = SECONDS_PER_MINUTE;
+                    break;
+                default:
+                    seconds = 0;
+             }
+             uptime += atoi(backref) * seconds;
+        }
+    }
+    else
+    {
+        Log(LOG_LEVEL_ERR, "uptime PCRE match failed: regexp: '%s', uptime: '%s'", UPTIME_REGEXP, uptime_output);
+    }
+    pcre_free(rx);
+    return(uptime ? (now - uptime) : -1);
+}
+#endif

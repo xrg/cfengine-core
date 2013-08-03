@@ -41,6 +41,7 @@
 #include "files_hashes.h"
 #include "audit.h"
 #include "logging.h"
+#include "expand.h"
 
 
 static const char *POLICY_ERROR_POLICY_NOT_RUNNABLE = "Policy is not runnable (does not contain a body common control)";
@@ -995,8 +996,12 @@ void PolicyErrorWrite(Writer *writer, const PolicyError *error)
     SourceOffset offset = PolicyElementSourceOffset(error->type, error->subject);
     const char *path = PolicyElementSourceFile(error->type, error->subject);
 
+#ifdef HAVE_SNPRINTF
     // FIX: need to track columns in SourceOffset
     WriterWriteF(writer, "%s:%zu:%zu: error: %s\n", path, offset.line, (size_t)0, error->message);
+#else
+   WriterWriteF(writer, "%s:%ul:%ul: error: %s\n", path, (unsigned long)offset.line, (unsigned long)0, error->message);
+#endif
 }
 
 static char *PolicyErrorToString(const PolicyError *error)
@@ -1029,17 +1034,7 @@ Bundle *PolicyAppendBundle(Policy *policy, const char *ns, const char *name, con
 
     SeqAppend(policy->bundles, bundle);
 
-    if (strcmp(ns, "default") == 0)
-    {
-        bundle->name = xstrdup(name);
-    }
-    else
-    {
-        char fqname[CF_BUFSIZE];
-        snprintf(fqname,CF_BUFSIZE-1, "%s:%s", ns, name);
-        bundle->name = xstrdup(fqname);
-    }
-
+    bundle->name = xstrdup(name);
     bundle->type = xstrdup(type);
     bundle->ns = xstrdup(ns);
     bundle->args = RlistCopy(args);
@@ -1058,17 +1053,7 @@ Body *PolicyAppendBody(Policy *policy, const char *ns, const char *name, const c
 
     SeqAppend(policy->bodies, body);
 
-    if (strcmp(ns, "default") == 0)
-    {
-        body->name = xstrdup(name);
-    }
-    else
-    {
-        char fqname[CF_BUFSIZE];
-        snprintf(fqname, CF_BUFSIZE-1, "%s:%s", ns, name);
-        body->name = xstrdup(fqname);
-    }
-
+    body->name = xstrdup(name);
     body->type = xstrdup(type);
     body->ns = xstrdup(ns);
     body->args = RlistCopy(args);
@@ -1358,14 +1343,11 @@ static JsonElement *AttributeValueToJson(Rval rval, bool symbolic_reference)
     }
 }
 
-static JsonElement *CreateContextAsJson(const char *name, size_t offset,
-                                        size_t offset_end, const char *children_name, JsonElement *children)
+static JsonElement *CreateContextAsJson(const char *name, const char *children_name, JsonElement *children)
 {
     JsonElement *json = JsonObjectCreate(10);
 
     JsonObjectAppendString(json, "name", name);
-    JsonObjectAppendInteger(json, "offset", offset);
-    JsonObjectAppendInteger(json, "offsetEnd", offset_end);
     JsonObjectAppendArray(json, children_name, children);
 
     return json;
@@ -1376,8 +1358,6 @@ static JsonElement *BodyContextsToJson(const Seq *constraints)
     JsonElement *json_contexts = JsonArrayCreate(10);
     JsonElement *json_attributes = JsonArrayCreate(10);
     char *current_context = "any";
-    size_t context_offset_start = -1;
-    size_t context_offset_end = -1;
 
     for (size_t i = 0; i < SeqLength(constraints); i++)
     {
@@ -1389,17 +1369,12 @@ static JsonElement *BodyContextsToJson(const Seq *constraints)
         {
             JsonArrayAppendObject(json_contexts,
                                   CreateContextAsJson(current_context,
-                                                      context_offset_start,
-                                                      context_offset_end, "attributes", json_attributes));
+                                                      "attributes", json_attributes));
             json_attributes = JsonArrayCreate(10);
             current_context = cp->classes;
         }
 
-        JsonObjectAppendInteger(json_attribute, "offset", cp->offset.start);
-        JsonObjectAppendInteger(json_attribute, "offsetEnd", cp->offset.end);
-
-        context_offset_start = cp->offset.context;
-        context_offset_end = cp->offset.end;
+        JsonObjectAppendInteger(json_attribute, "line", cp->offset.line);
 
         JsonObjectAppendString(json_attribute, "lval", cp->lval);
         JsonObjectAppendObject(json_attribute, "rval", AttributeValueToJson(cp->rval, false));
@@ -1408,8 +1383,7 @@ static JsonElement *BodyContextsToJson(const Seq *constraints)
 
     JsonArrayAppendObject(json_contexts,
                           CreateContextAsJson(current_context,
-                                              context_offset_start,
-                                              context_offset_end, "attributes", json_attributes));
+                                              "attributes", json_attributes));
 
     return json_contexts;
 }
@@ -1419,8 +1393,6 @@ static JsonElement *BundleContextsToJson(const Seq *promises)
     JsonElement *json_contexts = JsonArrayCreate(10);
     JsonElement *json_promises = JsonArrayCreate(10);
     char *current_context = NULL;
-    size_t context_offset_start = -1;
-    size_t context_offset_end = -1;
 
     for (size_t ppi = 0; ppi < SeqLength(promises); ppi++)
     {
@@ -1437,13 +1409,12 @@ static JsonElement *BundleContextsToJson(const Seq *promises)
         {
             JsonArrayAppendObject(json_contexts,
                                   CreateContextAsJson(current_context,
-                                                      context_offset_start,
-                                                      context_offset_end, "promises", json_promises));
+                                                      "promises", json_promises));
             json_promises = JsonArrayCreate(10);
             current_context = pp->classes;
         }
 
-        JsonObjectAppendInteger(json_promise, "offset", pp->offset.start);
+        JsonObjectAppendInteger(json_promise, "line", pp->offset.line);
 
         {
             JsonElement *json_promise_attributes = JsonArrayCreate(10);
@@ -1454,17 +1425,12 @@ static JsonElement *BundleContextsToJson(const Seq *promises)
 
                 JsonElement *json_attribute = JsonObjectCreate(10);
 
-                JsonObjectAppendInteger(json_attribute, "offset", cp->offset.start);
-                JsonObjectAppendInteger(json_attribute, "offsetEnd", cp->offset.end);
-
-                context_offset_end = cp->offset.end;
+                JsonObjectAppendInteger(json_attribute, "line", cp->offset.line);
 
                 JsonObjectAppendString(json_attribute, "lval", cp->lval);
                 JsonObjectAppendObject(json_attribute, "rval", AttributeValueToJson(cp->rval, cp->references_body));
                 JsonArrayAppendObject(json_promise_attributes, json_attribute);
             }
-
-            JsonObjectAppendInteger(json_promise, "offsetEnd", context_offset_end);
 
             JsonObjectAppendString(json_promise, "promiser", pp->promiser);
 
@@ -1496,8 +1462,7 @@ static JsonElement *BundleContextsToJson(const Seq *promises)
 
     JsonArrayAppendObject(json_contexts,
                           CreateContextAsJson(current_context,
-                                              context_offset_start,
-                                              context_offset_end, "promises", json_promises));
+                                              "promises", json_promises));
 
     return json_contexts;
 }
@@ -1510,8 +1475,7 @@ static JsonElement *BundleToJson(const Bundle *bundle)
     {
         JsonObjectAppendString(json_bundle, "sourcePath", bundle->source_path);
     }
-    JsonObjectAppendInteger(json_bundle, "offset", bundle->offset.start);
-    JsonObjectAppendInteger(json_bundle, "offsetEnd", bundle->offset.end);
+    JsonObjectAppendInteger(json_bundle, "line", bundle->offset.line);
 
     JsonObjectAppendString(json_bundle, "namespace", bundle->ns);
     JsonObjectAppendString(json_bundle, "name", bundle->name);
@@ -1538,8 +1502,7 @@ static JsonElement *BundleToJson(const Bundle *bundle)
 
             JsonElement *json_promise_type = JsonObjectCreate(10);
 
-            JsonObjectAppendInteger(json_promise_type, "offset", sp->offset.start);
-            JsonObjectAppendInteger(json_promise_type, "offsetEnd", sp->offset.end);
+            JsonObjectAppendInteger(json_promise_type, "line", sp->offset.line);
             JsonObjectAppendString(json_promise_type, "name", sp->name);
             JsonObjectAppendArray(json_promise_type, "contexts", BundleContextsToJson(sp->promises));
 
@@ -1557,8 +1520,11 @@ static JsonElement *BodyToJson(const Body *body)
 {
     JsonElement *json_body = JsonObjectCreate(10);
 
-    JsonObjectAppendInteger(json_body, "offset", body->offset.start);
-    JsonObjectAppendInteger(json_body, "offsetEnd", body->offset.end);
+    if (body->source_path)
+    {
+        JsonObjectAppendString(json_body, "sourcePath", body->source_path);
+    }
+    JsonObjectAppendInteger(json_body, "line", body->offset.line);
 
     JsonObjectAppendString(json_body, "namespace", body->ns);
     JsonObjectAppendString(json_body, "name", body->name);
@@ -2686,20 +2652,23 @@ void PromiseRecheckAllConstraints(EvalContext *ctx, Promise *pp)
 
         if ((sp = ConstraintGetRvalValue(ctx, "select_line_matching", pp, RVAL_TYPE_SCALAR)))
         {
-            const Item *ptr = NULL;
-            if ((ptr = ReturnItemIn(EDIT_ANCHORS, sp)))
+            if (!IsExpandable(sp))
             {
-                if (strcmp(ptr->classes, PromiseGetBundle(pp)->name) == 0)
+                const Item *ptr = NULL;
+                if ((ptr = ReturnItemIn(EDIT_ANCHORS, sp)))
                 {
-                    Log(LOG_LEVEL_INFO,
-                        "insert_lines promise uses the same select_line_matching anchor '%s' as another promise. This will lead to non-convergent behaviour unless 'empty_file_before_editing' is set",
-                          sp);
-                    PromiseRef(LOG_LEVEL_INFO, pp);
+                    if (strcmp(ptr->classes, PromiseGetBundle(pp)->name) == 0)
+                    {
+                        Log(LOG_LEVEL_INFO,
+                            "insert_lines promise uses the same select_line_matching anchor '%s' as another promise. This will lead to non-convergent behaviour unless 'empty_file_before_editing' is set",
+                              sp);
+                        PromiseRef(LOG_LEVEL_INFO, pp);
+                    }
                 }
-            }
-            else
-            {
-                PrependItem(&EDIT_ANCHORS, sp, PromiseGetBundle(pp)->name);
+                else
+                {
+                    PrependItem(&EDIT_ANCHORS, sp, PromiseGetBundle(pp)->name);
+                }
             }
         }
     }
