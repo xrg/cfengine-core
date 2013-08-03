@@ -186,7 +186,7 @@ int RecvSocketStream(int sd, char *buffer, int toget, int bufsize)
 
         if (got == -1)
         {
-            Log(LOG_LEVEL_ERR, "Couldn't receceive. (recv: %s)", GetErrorStr());
+            Log(LOG_LEVEL_ERR, "Couldn't receive. (recv: %s)", GetErrorStr());
             return -1;
         }
 
