@@ -17,21 +17,22 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "matching.h"
+#include <matching.h>
 
-#include "env_context.h"
-#include "vars.h"
-#include "promises.h"
-#include "item_lib.h"
-#include "conversion.h"
-#include "scope.h"
-#include "misc_lib.h"
-#include "rlist.h"
+#include <env_context.h>
+#include <vars.h>
+#include <promises.h>
+#include <item_lib.h>
+#include <conversion.h>
+#include <scope.h>
+#include <misc_lib.h>
+#include <rlist.h>
+#include <string_lib.h>
 
 /* Pure */
 static pcre *CompileRegExp(const char *regexp)
@@ -52,18 +53,19 @@ static pcre *CompileRegExp(const char *regexp)
 }
 
 /* Sets variables */
-static int RegExMatchSubString(pcre *rx, const char *teststring, int *start, int *end)
+static int RegExMatchSubString(EvalContext *ctx, pcre *rx, const char *teststring, int *start, int *end)
 {
-    int ovector[OVECCOUNT], i, rc;
+    int ovector[OVECCOUNT];
+    int rc = 0;
 
     if ((rc = pcre_exec(rx, NULL, teststring, strlen(teststring), 0, 0, ovector, OVECCOUNT)) >= 0)
     {
         *start = ovector[0];
         *end = ovector[1];
 
-        ScopeClearSpecial(SPECIAL_SCOPE_MATCH);
+        EvalContextVariableClearMatch(ctx);
 
-        for (i = 0; i < rc; i++)        /* make backref vars $(1),$(2) etc */
+        for (int i = 0; i < rc; i++)        /* make backref vars $(1),$(2) etc */
         {
             const char *backref_start = teststring + ovector[i * 2];
             int backref_len = ovector[i * 2 + 1] - ovector[i * 2];
@@ -75,7 +77,9 @@ static int RegExMatchSubString(pcre *rx, const char *teststring, int *start, int
                 strlcpy(substring, backref_start, MIN(CF_MAXVARSIZE, backref_len + 1));
                 if (THIS_AGENT_TYPE == AGENT_TYPE_AGENT)
                 {
-                    ScopePutMatch(i, substring);
+                    char *index = StringFromLong(i);
+                    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_MATCH, index, substring, DATA_TYPE_STRING);
+                    free(index);
                 }
             }
         }
@@ -91,12 +95,12 @@ static int RegExMatchSubString(pcre *rx, const char *teststring, int *start, int
 }
 
 /* Sets variables */
-static int RegExMatchFullString(pcre *rx, const char *teststring)
+static int RegExMatchFullString(EvalContext *ctx, pcre *rx, const char *teststring)
 {
     int match_start;
     int match_len;
 
-    if (RegExMatchSubString(rx, teststring, &match_start, &match_len))
+    if (RegExMatchSubString(ctx, rx, teststring, &match_start, &match_len))
     {
         return (match_start == 0) && (match_len == strlen(teststring));
     }
@@ -145,7 +149,7 @@ bool ValidateRegEx(const char *regex)
     return regex_valid;
 }
 
-int FullTextMatch(const char *regexp, const char *teststring)
+int FullTextMatch(EvalContext *ctx, const char *regexp, const char *teststring)
 {
     pcre *rx;
 
@@ -161,7 +165,7 @@ int FullTextMatch(const char *regexp, const char *teststring)
         return false;
     }
 
-    if (RegExMatchFullString(rx, teststring))
+    if (RegExMatchFullString(ctx, rx, teststring))
     {
         return true;
     }
@@ -200,7 +204,7 @@ char *ExtractFirstReference(const char *regexp, const char *teststring)
     return backreference;
 }
 
-int BlockTextMatch(const char *regexp, const char *teststring, int *start, int *end)
+int BlockTextMatch(EvalContext *ctx, const char *regexp, const char *teststring, int *start, int *end)
 {
     pcre *rx = CompileRegExp(regexp);
 
@@ -209,7 +213,7 @@ int BlockTextMatch(const char *regexp, const char *teststring, int *start, int *
         return 0;
     }
 
-    if (RegExMatchSubString(rx, teststring, start, end))
+    if (RegExMatchSubString(ctx, rx, teststring, start, end))
     {
         return true;
     }
@@ -367,7 +371,7 @@ int IsPathRegex(char *str)
 
 /* Checks whether item matches a list of wildcards */
 
-int IsRegexItemIn(const EvalContext *ctx, Item *list, char *regex)
+int IsRegexItemIn(EvalContext *ctx, Item *list, char *regex)
 {
     Item *ptr;
 
@@ -387,7 +391,7 @@ int IsRegexItemIn(const EvalContext *ctx, Item *list, char *regex)
 
         /* Make it commutative */
 
-        if ((FullTextMatch(regex, ptr->name)) || (FullTextMatch(ptr->name, regex)))
+        if ((FullTextMatch(ctx, regex, ptr->name)) || (FullTextMatch(ctx, ptr->name, regex)))
         {
             return true;
         }
@@ -396,7 +400,7 @@ int IsRegexItemIn(const EvalContext *ctx, Item *list, char *regex)
     return false;
 }
 
-int MatchPolicy(const char *camel, const char *haystack, Rlist *insert_match, const Promise *pp)
+int MatchPolicy(EvalContext *ctx, const char *camel, const char *haystack, Rlist *insert_match, const Promise *pp)
 {
     Rlist *rp;
     char *sp, *spto, *firstchar, *lastchar;
@@ -424,7 +428,7 @@ int MatchPolicy(const char *camel, const char *haystack, Rlist *insert_match, co
 
         for (rp = insert_match; rp != NULL; rp = rp->next)
         {
-            opt = InsertMatchTypeFromString(rp->item);
+            opt = InsertMatchTypeFromString(RlistScalarValue(rp));
 
             /* Exact match can be done immediately */
 
@@ -510,7 +514,7 @@ int MatchPolicy(const char *camel, const char *haystack, Rlist *insert_match, co
                 }
             }
 
-            ok = ok || (FullTextMatch(final, haystack));
+            ok = ok || (FullTextMatch(ctx, final, haystack));
         }
 
         if (!ok)                // All lines in region need to match to avoid insertions
@@ -525,7 +529,7 @@ int MatchPolicy(const char *camel, const char *haystack, Rlist *insert_match, co
 
 
 /* Checks whether item matches a list of wildcards */
-int MatchRlistItem(Rlist *listofregex, const char *teststring)
+int MatchRlistItem(EvalContext *ctx, Rlist *listofregex, const char *teststring)
 {
     Rlist *rp;
 
@@ -533,14 +537,14 @@ int MatchRlistItem(Rlist *listofregex, const char *teststring)
     {
         /* Avoid using regex if possible, due to memory leak */
 
-        if (strcmp(teststring, rp->item) == 0)
+        if (strcmp(teststring, RlistScalarValue(rp)) == 0)
         {
             return (true);
         }
 
         /* Make it commutative */
 
-        if (FullTextMatch(rp->item, teststring))
+        if (FullTextMatch(ctx, RlistScalarValue(rp), teststring))
         {
             return true;
         }

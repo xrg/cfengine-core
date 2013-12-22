@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -25,13 +25,14 @@
 #ifndef CFENGINE_CLIENT_CODE_H
 #define CFENGINE_CLIENT_CODE_H
 
-#include "platform.h"
-#include "communication.h"
+#include <platform.h>
+#include <communication.h>
 
 /* TODO: Remove dependency on libpromises */
-#include "attributes.h"
-#include "item_lib.h"
+#include <attributes.h>
+#include <item_lib.h>
 
+bool cfnet_init(void);
 void DetermineCfenginePort(void);
 /**
   @param err Set to 0 on success, -1 no server responce, -2 authentication failure.
@@ -39,9 +40,8 @@ void DetermineCfenginePort(void);
 AgentConnection *NewServerConnection(FileCopy fc, bool background, int *err);
 void DisconnectServer(AgentConnection *conn);
 int cf_remote_stat(char *file, struct stat *buf, char *stattype, bool encrypt, AgentConnection *conn);
-int CompareHashNet(char *file1, char *file2, bool encrypt, AgentConnection *conn);
-int CopyRegularFileNet(char *source, char *new, off_t size, AgentConnection *conn);
-int EncryptCopyRegularFileNet(char *source, char *new, off_t size, AgentConnection *conn);
+int CompareHashNet(const char *file1, const char *file2, bool encrypt, AgentConnection *conn);
+int CopyRegularFileNet(const char *source, const char *dest, off_t size, bool encrypt, AgentConnection *conn);
 int ServerConnect(AgentConnection *conn, const char *host, FileCopy fc);
 
 Item *RemoteDirList(const char *dirname, bool encrypt, AgentConnection *conn);

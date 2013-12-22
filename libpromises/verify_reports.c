@@ -17,33 +17,33 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "cf3.defs.h"
+#include <cf3.defs.h>
 
-#include "dbm_api.h"
-#include "files_names.h"
-#include "files_interfaces.h"
-#include "item_lib.h"
-#include "vars.h"
-#include "sort.h"
-#include "attributes.h"
-#include "communication.h"
-#include "locks.h"
-#include "string_lib.h"
-#include "misc_lib.h"
-#include "policy.h"
-#include "scope.h"
-#include "ornaments.h"
-#include "env_context.h"
+#include <dbm_api.h>
+#include <files_names.h>
+#include <files_interfaces.h>
+#include <item_lib.h>
+#include <vars.h>
+#include <sort.h>
+#include <attributes.h>
+#include <communication.h>
+#include <locks.h>
+#include <string_lib.h>
+#include <misc_lib.h>
+#include <policy.h>
+#include <scope.h>
+#include <ornaments.h>
+#include <env_context.h>
 
 static void PrintFile(EvalContext *ctx, Attributes a, Promise *pp);
 static void ReportToFile(const char *logfile, const char *message);
 
-void VerifyReportPromise(EvalContext *ctx, Promise *pp)
+PromiseResult VerifyReportPromise(EvalContext *ctx, Promise *pp)
 {
     Attributes a = { {0} };
     CfLock thislock;
@@ -51,7 +51,8 @@ void VerifyReportPromise(EvalContext *ctx, Promise *pp)
 
     a = GetReportsAttributes(ctx, pp);
 
-    snprintf(unique_name, CF_EXPANDSIZE - 1, "%s_%zu", pp->promiser, pp->offset.line);
+    // We let AcquireLock worry about making a unique name
+    snprintf(unique_name, CF_EXPANDSIZE - 1, "%s", pp->promiser);
     thislock = AcquireLock(ctx, unique_name, VUQNAME, CFSTARTTIME, a.transaction, pp, false);
 
     // Handle return values before locks, as we always do this
@@ -69,16 +70,16 @@ void VerifyReportPromise(EvalContext *ctx, Promise *pp)
         }
 
         VarRef *ref = VarRefParseFromBundle(unique_name, PromiseGetBundle(pp));
-        EvalContextVariablePut(ctx, ref, (Rval) { pp->promiser, RVAL_TYPE_SCALAR }, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, ref, pp->promiser, DATA_TYPE_STRING);
         VarRefDestroy(ref);
-        return;
+        return PROMISE_RESULT_NOOP;
     }
        
     // Now do regular human reports
     
     if (thislock.lock == NULL)
     {
-        return;
+        return PROMISE_RESULT_NOOP;
     }
 
     PromiseBanner(pp);
@@ -87,7 +88,7 @@ void VerifyReportPromise(EvalContext *ctx, Promise *pp)
     {
         cfPS(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_WARN, pp, a, "Need to repair reports promise: %s", pp->promiser);
         YieldCurrentLock(thislock);
-        return;
+        return PROMISE_RESULT_WARN;
     }
 
     cfPS(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_CHANGE, pp, a, "Report: %s", pp->promiser);
@@ -117,6 +118,8 @@ void VerifyReportPromise(EvalContext *ctx, Promise *pp)
     }
 
     YieldCurrentLock(thislock);
+
+    return PROMISE_RESULT_CHANGE;
 }
 
 static void ReportToFile(const char *logfile, const char *message)

@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -25,7 +25,7 @@
 #ifndef CFENGINE_FNCALL_H
 #define CFENGINE_FNCALL_H
 
-#include "cf3.defs.h"
+#include <cf3.defs.h>
 
 struct FnCall_
 {
@@ -40,6 +40,8 @@ bool FnCallIsBuiltIn(Rval rval);
 FnCall *FnCallNew(const char *name, Rlist *args);
 FnCall *FnCallCopy(const FnCall *f);
 void FnCallDestroy(FnCall *fp);
+unsigned FnCallHash(const FnCall *fp, unsigned seed, unsigned max);
+
 FnCallResult FnCallEvaluate(EvalContext *ctx, FnCall *fp, const Promise *caller);
 
 const FnCallType *FnCallTypeGet(const char *name);
@@ -47,6 +49,6 @@ const FnCallType *FnCallTypeGet(const char *name);
 FnCall *ExpandFnCall(EvalContext *ctx, const char *ns, const char *scope, FnCall *f);
 
 // TODO: should probably demolish this eventually
-void FnCallShow(FILE *fout, const FnCall *fp);
+void FnCallShow(FILE *fout, const char *prefix, const FnCall *fp, const Rlist *args);
 
 #endif

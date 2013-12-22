@@ -17,21 +17,22 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "files_edit.h"
+#include <files_edit.h>
 
-#include "env_context.h"
-#include "files_names.h"
-#include "files_interfaces.h"
-#include "files_operators.h"
-#include "files_lib.h"
-#include "files_editxml.h"
-#include "item_lib.h"
-#include "policy.h"
+#include <actuator.h>
+#include <env_context.h>
+#include <files_names.h>
+#include <files_interfaces.h>
+#include <files_operators.h>
+#include <files_lib.h>
+#include <files_editxml.h>
+#include <item_lib.h>
+#include <policy.h>
 
 /*****************************************************************************/
 
@@ -85,21 +86,26 @@ EditContext *NewEditContext(char *filename, Attributes a)
 
 /*****************************************************************************/
 
-void FinishEditContext(EvalContext *ctx, EditContext *ec, Attributes a, const Promise *pp)
+PromiseResult FinishEditContext(EvalContext *ctx, EditContext *ec, Attributes a, const Promise *pp)
 {
+    PromiseResult result = PROMISE_RESULT_NOOP;
     if (DONTDO || (a.transaction.action == cfa_warn))
     {
-        if (ec && (!CompareToFile(ctx, ec->file_start, ec->filename, a, pp)) && (ec->num_edits > 0))
+        if (ec && (!CompareToFile(ctx, ec->file_start, ec->filename, a, pp, &result)) && (ec->num_edits > 0))
         {
             cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_WARN, pp, a, "Should edit file '%s' but only a warning promised", ec->filename);
+            return PROMISE_RESULT_WARN;
         }
-        return;
+        else
+        {
+            return PROMISE_RESULT_NOOP;
+        }
     }
     else if (ec && (ec->num_edits > 0))
     {
         if (a.haveeditline)
         {
-            if (CompareToFile(ctx, ec->file_start, ec->filename, a, pp))
+            if (CompareToFile(ctx, ec->file_start, ec->filename, a, pp, &result))
             {
                 if (ec)
                 {
@@ -111,10 +117,12 @@ void FinishEditContext(EvalContext *ctx, EditContext *ec, Attributes a, const Pr
                 if (SaveItemListAsFile(ec->file_start, ec->filename, a))
                 {
                     cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_CHANGE, pp, a, "Edit file '%s'", ec->filename);
+                    result = PromiseResultUpdate(result, PROMISE_RESULT_CHANGE);
                 }
                 else
                 {
                     cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Unable to save file '%s' after editing", ec->filename);
+                    result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
                 }
             }
         }
@@ -134,15 +142,18 @@ void FinishEditContext(EvalContext *ctx, EditContext *ec, Attributes a, const Pr
                 if (SaveXmlDocAsFile(ec->xmldoc, ec->filename, a))
                 {
                     cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_CHANGE, pp, a, "Edited xml file '%s'", ec->filename);
+                    result = PromiseResultUpdate(result, PROMISE_RESULT_CHANGE);
                 }
                 else
                 {
                     cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Failed to edit XML file '%s'", ec->filename);
+                    result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
                 }
             }
             xmlFreeDoc(ec->xmldoc);
 #else
             cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Cannot edit XML files without LIBXML2");
+            result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
 #endif
         }
     }
@@ -158,6 +169,8 @@ void FinishEditContext(EvalContext *ctx, EditContext *ec, Attributes a, const Pr
     {
         DeleteItemList(ec->file_start);
     }
+
+    return result;
 }
 
 /*********************************************************************/

@@ -16,7 +16,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
 # To the extent this program is licensed as part of the Enterprise
-# versions of CFEngine, the applicable Commerical Open Source License
+# versions of CFEngine, the applicable Commercial Open Source License
 # (COSL) may apply to this file if you as a licensee so wish it. See
 # included file COSL.txt.
 
@@ -40,15 +40,20 @@ bundle agent example
   files:
 
       "/home/mark/tmp/test_plain" 
-
+#@ The promiser specifies the path and name of the file.
       perms => system,
       create => "true";
+
+#@ The `perms` attribute sets the file permissions as defined in the `system`
+#@ body below. The `create` attribute makes sure that the files exists. If it
+#@ doesn't, CFEngine will create it.
 
       "/home/mark/tmp/test_dir/." 
 
       perms => system,
       create => "true";
-
+#@ The trailing `/.` in the filename tells CFEngine that the promiser is a
+#@ directory.
 }
 
 #########################################################
@@ -58,6 +63,8 @@ body perms system
 {
       mode  => "0640";
 }
+#@ This body sets permissions to "0640"
+
 
 #########################################################
 

@@ -17,16 +17,16 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "files_properties.h"
+#include <files_properties.h>
 
-#include "files_names.h"
-#include "files_interfaces.h"
-#include "item_lib.h"
+#include <files_names.h>
+#include <files_interfaces.h>
+#include <item_lib.h>
 
 static Item *SUSPICIOUSLIST = NULL;
 

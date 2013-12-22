@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -25,17 +25,21 @@
 #ifndef CFENGINE_PARSER_STATE_H
 #define CFENGINE_PARSER_STATE_H
 
-#include "cf3.defs.h"
-#include "rlist.h"
+#include <cf3.defs.h>
+#include <rlist.h>
 
+#define CFE_PARSER_PATH_MAX PATH_MAX
 
 typedef struct
 {
+    AgentType agent_type;
+
     char *block;                // body/bundle
     char blocktype[CF_MAXVARSIZE];
     char blockid[CF_MAXVARSIZE];
 
-    char filename[CF_MAXVARSIZE];
+    char filename[CFE_PARSER_PATH_MAX];
+    char include_filename[CFE_PARSER_PATH_MAX];
     char *current_line;
     int line_pos;
     int line_no;

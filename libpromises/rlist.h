@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -25,15 +25,13 @@
 #ifndef CFENGINE_RLIST_H
 #define CFENGINE_RLIST_H
 
-#include "cf3.defs.h"
-#include "writer.h"
-#include "json.h"
+#include <cf3.defs.h>
+#include <writer.h>
+#include <json.h>
 
 struct Rlist_
 {
-    void *item;
-    RvalType type;
-    Rlist *state_ptr;           /* Points to "current" state/element of sub-list */
+    Rval val;
     Rlist *next;
 };
 
@@ -42,42 +40,40 @@ RvalType DataTypeToRvalType(DataType datatype);
 char *RvalScalarValue(Rval rval);
 FnCall *RvalFnCallValue(Rval rval);
 Rlist *RvalRlistValue(Rval rval);
+JsonElement *RvalContainerValue(Rval rval);
+
+Rval RvalNew(const void *item, RvalType type);
 Rval RvalCopy(Rval rval);
 void RvalDestroy(Rval rval);
 JsonElement *RvalToJson(Rval rval);
 void RvalShow(FILE *fp, Rval rval);
 void RvalWrite(Writer *writer, Rval rval);
+unsigned RvalHash(Rval rval, unsigned seed, unsigned max);
 
 void RlistPrintToWriter(const Rlist *list, Writer *w);
 void RvalPrintToWriter(Rval rval, Writer *w);
 
 Rlist *RlistCopy(const Rlist *list);
+unsigned RlistHash(const Rlist *list, unsigned seed, unsigned max);
 void RlistDestroy(Rlist *list);
 void RlistDestroyEntry(Rlist **liststart, Rlist *entry);
 char *RlistScalarValue(const Rlist *rlist);
 FnCall *RlistFnCallValue(const Rlist *rlist);
 Rlist *RlistRlistValue(const Rlist *rlist);
-Rlist *RlistParseShown(char *string);
-Rlist *RlistParseString(char *string);
-bool RlistIsStringIn(const Rlist *list, const char *s);
-bool RlistIsIntIn(const Rlist *list, int i);
+Rlist *RlistParseShown(const char *string);
+Rlist *RlistParseString(const char *string);
 Rlist *RlistKeyIn(Rlist *list, const char *key);
 int RlistLen(const Rlist *start);
-bool RlistIsInListOfRegex(const Rlist *list, const char *str);
+bool RlistIsInListOfRegex(EvalContext *ctx, const Rlist *list, const char *str);
 
-Rlist *RlistAppendAlien(Rlist **start, void *item);
-Rlist *RlistPrependAlien(Rlist **start, void *item);
+Rlist *RlistAppendRval(Rlist **start, Rval rval);
 
 Rlist *RlistPrependScalarIdemp(Rlist **start, const char *scalar);
-Rlist *RlistPrependScalar(Rlist **start, const char *scalar);
 Rlist *RlistAppendScalarIdemp(Rlist **start, const char *scalar);
 Rlist *RlistAppendScalar(Rlist **start, const char *scalar);
 
-Rlist *RlistAppendIdemp(Rlist **start, void *item, RvalType type);
 Rlist *RlistPrepend(Rlist **start, const void *item, RvalType type);
 Rlist *RlistAppend(Rlist **start, const void *item, RvalType type);
-
-Rlist *RlistAppendFnCall(Rlist **start, const FnCall *fn);
 
 Rlist *RlistFromSplitString(const char *string, char sep);
 Rlist *RlistFromSplitRegex(const char *string, const char *regex, int max, int purge);

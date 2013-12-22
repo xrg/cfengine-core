@@ -17,18 +17,17 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "set.h"
+#include <set.h>
 
-#include "alloc.h"
-#include "string_lib.h"
-#include "hashes.h"
+#include <alloc.h>
+#include <string_lib.h>
 
-TYPED_SET_DEFINE(String, char *, (MapHashFn)&OatHash, (MapKeyEqualFn)&StringSafeEqual, &free)
+TYPED_SET_DEFINE(String, char *, (MapHashFn)&StringHash, (MapKeyEqualFn)&StringSafeEqual, &free)
 
 Set *SetNew(MapHashFn element_hash_fn,
             MapKeyEqualFn element_equal_fn,
@@ -65,6 +64,11 @@ void SetClear(Set *set)
 size_t SetSize(const Set *set)
 {
     return MapSize(set);
+}
+
+bool SetIsEqual(const Set *set1, const Set *set2)
+{
+    return MapContainsSameKeys(set1, set2);
 }
 
 SetIterator SetIteratorInit(Set *set)

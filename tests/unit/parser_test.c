@@ -1,14 +1,14 @@
-#include "test.h"
+#include <test.h>
 
-#include "policy.h"
-#include "parser.h"
+#include <policy.h>
+#include <parser.h>
 
 static Policy *LoadPolicy(const char *filename)
 {
     char path[1024];
     sprintf(path, "%s/%s", TESTDATADIR, filename);
 
-    return ParserParseFile(path, PARSER_WARNING_ALL, PARSER_WARNING_ALL);
+    return ParserParseFile(AGENT_TYPE_COMMON, path, PARSER_WARNING_ALL, PARSER_WARNING_ALL);
 }
 
 void test_benchmark(void)
@@ -16,6 +16,11 @@ void test_benchmark(void)
     Policy *p = LoadPolicy("benchmark.cf");
     assert_true(p);
     PolicyDestroy(p);
+}
+
+void test_no_bundle_or_body_keyword(void)
+{
+    assert_false(LoadPolicy("no_bundle_or_body_keyword.cf"));
 }
 
 void test_bundle_invalid_type(void)
@@ -257,7 +262,9 @@ int main()
         unit_test(test_rval_function_wrong_input_type),
         unit_test(test_rval_function_forgot_cp_semicolon),
         unit_test(test_rval_function_forgot_cp_colon),
-        unit_test(test_rval_wrong_input_type)
+        unit_test(test_rval_wrong_input_type),
+
+        unit_test(test_no_bundle_or_body_keyword)
 
     };
 

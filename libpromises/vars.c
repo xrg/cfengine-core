@@ -17,35 +17,25 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "vars.h"
+#include <vars.h>
 
-#include "conversion.h"
-#include "expand.h"
-#include "scope.h"
-#include "matching.h"
-#include "hashes.h"
-#include "unix.h"
-#include "misc_lib.h"
-#include "rlist.h"
-#include "policy.h"
+#include <conversion.h>
+#include <expand.h>
+#include <scope.h>
+#include <matching.h>
+#include <hashes.h>
+#include <unix.h>
+#include <misc_lib.h>
+#include <rlist.h>
+#include <policy.h>
+#include <env_context.h>
 
 static int IsCf3Scalar(char *str);
-
-void LoadSystemConstants(EvalContext *ctx)
-{
-    ScopeNewSpecial(ctx, SPECIAL_SCOPE_CONST, "dollar", "$", DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, SPECIAL_SCOPE_CONST, "n", "\n", DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, SPECIAL_SCOPE_CONST, "r", "\r", DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, SPECIAL_SCOPE_CONST, "t", "\t", DATA_TYPE_STRING);
-    ScopeNewSpecial(ctx, SPECIAL_SCOPE_CONST, "endl", "\n", DATA_TYPE_STRING);
-/* NewScalar("const","0","\0",cf_str);  - this cannot work */
-
-}
 
 /*******************************************************************/
 
@@ -55,16 +45,16 @@ int UnresolvedArgs(Rlist *args)
 
     for (rp = args; rp != NULL; rp = rp->next)
     {
-        if (rp->type != RVAL_TYPE_SCALAR)
+        if (rp->val.type != RVAL_TYPE_SCALAR)
         {
             return true;
         }
 
-        if (IsCf3Scalar(rp->item))
+        if (IsCf3Scalar(RlistScalarValue(rp)))
         {
-            if (strstr(rp->item, "$(this)") || strstr(rp->item, "${this}") ||
-                strstr(rp->item, "$(this.k)") || strstr(rp->item, "${this.k}") ||
-                strstr(rp->item, "$(this.v)") || strstr(rp->item, "${this.v}"))
+            if (strstr(RlistScalarValue(rp), "$(this)") || strstr(RlistScalarValue(rp), "${this}") ||
+                strstr(RlistScalarValue(rp), "$(this.k)") || strstr(RlistScalarValue(rp), "${this.k}") ||
+                strstr(RlistScalarValue(rp), "$(this.v)") || strstr(RlistScalarValue(rp), "${this.v}"))
             {
                 // We should allow this in function args for substitution in maplist() etc
                 // We should allow this.k and this.v in function args for substitution in maparray() etc

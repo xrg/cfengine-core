@@ -17,17 +17,60 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
+#include <string_lib.h>
 
-#include "platform.h"
+#include <platform.h>
+#include <alloc.h>
+#include <writer.h>
+#include <misc_lib.h>
 
-#include "alloc.h"
-#include "writer.h"
-#include "misc_lib.h"
+char *StringVFormat(const char *fmt, va_list ap)
+{
+    char *value;
+    int ret = xvasprintf(&value, fmt, ap);
+    if (ret < 0)
+    {
+        return NULL;
+    }
+    else
+    {
+        return value;
+    }
+}
+
+char *StringFormat(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    char *res = StringVFormat(fmt, ap);
+    va_end(ap);
+    return res;
+}
+
+unsigned int StringHash(const char *str, unsigned int seed, unsigned int max)
+{
+    unsigned const char *p = str;
+    unsigned int h = seed;
+    size_t len = strlen(str);
+
+    for (size_t i = 0; i < len; i++)
+    {
+        h += p[i];
+        h += (h << 10);
+        h ^= (h >> 6);
+    }
+
+    h += (h << 3);
+    h ^= (h >> 11);
+    h += (h << 15);
+
+    return (h & (max - 1));
+}
 
 
 #define STRING_MATCH_OVECCOUNT 30
@@ -255,7 +298,7 @@ char *StringSubstring(const char *source, size_t source_len, int start, int len)
 
 /*********************************************************************/
 
-bool IsNumber(const char *s)
+bool StringIsNumeric(const char *s)
 {
     for (; *s; s++)
     {
@@ -318,6 +361,11 @@ double StringToDouble(const char *str)
     return result;
 }
 
+char *StringFromDouble(double number)
+{
+    return StringFormat("%.2f", number);
+}
+
 /*********************************************************************/
 
 char *NULLStringToEmpty(char *str)
@@ -330,24 +378,10 @@ char *NULLStringToEmpty(char *str)
     return str;
 }
 
-static bool StringMatchInternal(const char *regex, const char *str, int *start, int *end)
+bool StringMatch(const char *regex, const char *str, int *start, int *end)
 {
     assert(regex);
     assert(str);
-
-    if (strcmp(regex, str) == 0)
-    {
-        if (start)
-        {
-            *start = 0;
-        }
-        if (end)
-        {
-            *end = strlen(str);
-        }
-
-        return true;
-    }
 
     pcre *pattern = NULL;
     {
@@ -393,16 +427,11 @@ static bool StringMatchInternal(const char *regex, const char *str, int *start, 
     return result >= 0;
 }
 
-bool StringMatch(const char *regex, const char *str)
-{
-    return StringMatchInternal(regex, str, NULL, NULL);
-}
-
 bool StringMatchFull(const char *regex, const char *str)
 {
     int start = 0, end = 0;
 
-    if (StringMatchInternal(regex, str, &start, &end))
+    if (StringMatch(regex, str, &start, &end))
     {
         return (start == 0) && (end == strlen(str));
     }
@@ -586,6 +615,88 @@ void ReplaceTrailingChar(char *str, char from, char to)
     {
         str[strLen - 1] = to;
     }
+}
+
+static StringRef StringRefNull(void)
+{
+    return (StringRef) { .data = NULL, .len = 0 };
+}
+
+size_t StringCountTokens(const char *str, size_t len, const char *seps)
+{
+    size_t num_tokens = 0;
+    bool in_token = false;
+
+    for (size_t i = 0; i < len; i++)
+    {
+        if (strchr(seps, str[i]))
+        {
+            in_token = false;
+        }
+        else
+        {
+            if (!in_token)
+            {
+                num_tokens++;
+            }
+            in_token = true;
+        }
+    }
+
+    return num_tokens;
+}
+
+static StringRef StringNextToken(const char *str, size_t len, const char *seps)
+{
+    size_t start = 0;
+    bool found = false;
+    for (size_t i = 0; i < len; i++)
+    {
+        if (strchr(seps, str[i]))
+        {
+            if (found)
+            {
+                assert(i > 0);
+                return (StringRef) { .data = str + start, .len = i - start };
+            }
+        }
+        else
+        {
+            if (!found)
+            {
+                found = true;
+                start = i;
+            }
+        }
+    }
+
+    if (found)
+    {
+        return (StringRef) { .data = str + start, .len = len - start };
+    }
+    else
+    {
+        return StringRefNull();
+    }
+}
+
+StringRef StringGetToken(const char *str, size_t len, size_t index, const char *seps)
+{
+    StringRef ref = StringNextToken(str, len, seps);
+    for (size_t i = 0; i < index; i++)
+    {
+        if (!ref.data)
+        {
+            return ref;
+        }
+
+        len = len - (ref.data - str + ref.len);
+        str = ref.data + ref.len;
+
+        ref = StringNextToken(str, len, seps);
+    }
+
+    return ref;
 }
 
 char **String2StringArray(char *str, char separator)
@@ -790,35 +901,12 @@ bool StringStartsWith(const char *str, const char *prefix)
     return true;
 }
 
-char *StringVFormat(const char *fmt, va_list ap)
-{
-    char *value;
-    int ret = xvasprintf(&value, fmt, ap);
-    if (ret < 0)
-    {
-        return NULL;
-    }
-    else
-    {
-        return value;
-    }
-}
-
-char *StringFormat(const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    char *res = StringVFormat(fmt, ap);
-    va_end(ap);
-    return res;
-}
-
-char *MemSpan(const char *mem, char c, size_t n)
+void *MemSpan(const void *mem, char c, size_t n)
 {
     const char *end = mem + n;
-    for (; mem < end; ++mem)
+    for (; (char*)mem < end; ++mem)
     {
-        if (*mem != c)
+        if (*((char *)mem) != c)
         {
             return (char *)mem;
         }
@@ -827,12 +915,12 @@ char *MemSpan(const char *mem, char c, size_t n)
     return (char *)mem;
 }
 
-char *MemSpanInverse(const char *mem, char c, size_t n)
+void *MemSpanInverse(const void *mem, char c, size_t n)
 {
     const char *end = mem + n;
-    for (; mem < end; ++mem)
+    for (; (char*)mem < end; ++mem)
     {
-        if (*mem == c)
+        if (*((char*)mem) == c)
         {
             return (char *)mem;
         }
@@ -887,4 +975,19 @@ bool StringNotMatchingSetCapped(const char *isp, int limit,
         obuf[limit-1]='\0';
         return true;
     }
+}
+
+bool StringAppend(char *dst, const char *src, size_t n)
+{
+    int i, j;
+    n--;
+    for (i = 0; i < n && dst[i]; i++)
+    {
+    }
+    for (j = 0; i < n && src[j]; i++, j++)
+    {
+        dst[i] = src[j];
+    }
+    dst[i] = '\0';
+    return (i < n || !src[j]);
 }

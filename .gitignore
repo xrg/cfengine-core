@@ -26,6 +26,8 @@ stamp-h1
 ylwrap
 test-driver
 
+configure_flags.env
+
 # docs
 
 *.aux
@@ -77,6 +79,7 @@ cf-runagent/cf-runagent.exe
 cf-serverd/cf-serverd
 cf-serverd/cf-serverd.exe
 ext/rpmvercmp
+ext/rpmvercmp.exe
 
 # autogen
 
@@ -107,6 +110,7 @@ tests/*/*.trs
 
 tests/unit/*_test
 tests/unit/exec-config-test
+tests/unit/rb-tree-test
 
 # load tests
 
@@ -133,7 +137,13 @@ galaxy
 # tags
 
 TAGS
+tags
 cscope.*
+
+# vim
+*~
+.*.swp
+.*.swo
 
 # emacs
 

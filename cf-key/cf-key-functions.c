@@ -17,34 +17,26 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "generic_agent.h"
+#include <generic_agent.h>
 
-#include "dbm_api.h"
-#include "lastseen.h"
-#include "dir.h"
-#include "scope.h"
-#include "files_copy.h"
-#include "files_interfaces.h"
-#include "files_hashes.h"
-#include "keyring.h"
-#include "communication.h"
-#include "env_context.h"
-#include "crypto.h"
+#include <dbm_api.h>
+#include <lastseen.h>
+#include <dir.h>
+#include <scope.h>
+#include <files_copy.h>
+#include <files_interfaces.h>
+#include <files_hashes.h>
+#include <keyring.h>
+#include <communication.h>
+#include <env_context.h>
+#include <crypto.h>
 
-#include "cf-key-functions.h"
-
-#ifdef HAVE_NOVA
-#include "license.h"
-#endif
-
-#ifdef HAVE_NOVA
-static bool LicensePublicKeyPath(char path_public_key[MAX_FILENAME], char *path_license);
-#endif
+#include <cf-key-functions.h>
 
 RSA* LoadPublicKey(const char* filename)
 {
@@ -145,7 +137,7 @@ bool ShowHost(const char *hostkey, const char *address, bool incoming,
     int ret = IPString2Hostname(hostname, address, sizeof(hostname));
 
     (*count)++;
-    printf("%-10.10s %-17.17s %-25.25s %-26.26s %-s\n",
+    printf("%-10.10s %-40.40s %-25.25s %-26.26s %-s\n",
            incoming ? "Incoming" : "Outgoing",
            address, (ret != -1) ? hostname : "-",
            cf_strtimestamp_local(quality->lastseen, timebuf), hostkey);
@@ -157,7 +149,7 @@ void ShowLastSeenHosts()
 {
     int count = 0;
 
-    printf("%-10.10s %-17.17s %-25.25s %-26.26s %-s\n", "Direction", "IP", "Name", "Last connection", "Key");
+    printf("%-10.10s %-40.40s %-25.25s %-26.26s %-s\n", "Direction", "IP", "Name", "Last connection", "Key");
 
     if (!ScanLastSeenQuality(ShowHost, &count))
     {
@@ -319,75 +311,9 @@ void KeepKeyPromises(const char *public_key_file, const char *private_key_file)
 }
 
 
-#ifndef HAVE_NOVA
-bool LicenseInstall(ARG_UNUSED char *path_source)
+ENTERPRISE_FUNC_1ARG_DEFINE_STUB(bool, LicenseInstall, ARG_UNUSED char *, path_source)
 {
     Log(LOG_LEVEL_ERR, "License installation only applies to CFEngine Enterprise");
 
     return false;
 }
-
-#else  /* HAVE_NOVA */
-bool LicenseInstall(char *path_source)
-{
-    struct stat sb;
-
-    if(stat(path_source, &sb) == -1)
-    {
-        Log(LOG_LEVEL_ERR, "Can not stat input license file '%s'. (stat: %s)", path_source, GetErrorStr());
-        return false;
-    }
-
-    char path_destination[MAX_FILENAME];
-    snprintf(path_destination, sizeof(path_destination), "%s/inputs/license.dat", CFWORKDIR);
-    MapName(path_destination);
-
-    if(stat(path_destination, &sb) == 0)
-    {
-        Log(LOG_LEVEL_ERR, "A license file is already installed in '%s' -- please move it out of the way and try again", path_destination);
-        return false;
-    }
-
-    char path_public_key[MAX_FILENAME];
-
-    if(!LicensePublicKeyPath(path_public_key, path_source))
-    {
-        Log(LOG_LEVEL_ERR, "Could not find path to public key -- license parse error?");
-    }
-
-    if(stat(path_public_key, &sb) != 0)
-    {
-        Log(LOG_LEVEL_ERR, "The licensed public key is not installed -- please copy it to '%s' and try again", path_public_key);
-        return false;
-    }
-
-
-    bool success = CopyRegularFileDisk(path_source, path_destination);
-
-    if(success)
-    {
-        Log(LOG_LEVEL_INFO, "Installed license at '%s'", path_destination);
-    }
-    else
-    {
-        Log(LOG_LEVEL_ERR, "Failed copying license from '%s' to '%s'", path_source, path_destination);
-    }
-
-    return success;
-}
-
-static bool LicensePublicKeyPath(char path_public_key[MAX_FILENAME], char *path_license)
-{
-    EnterpriseLicense license;
-
-    if(!LicenseFileParse(&license, path_license))
-    {
-        return false;
-    }
-
-    snprintf(path_public_key, MAX_FILENAME, "%s/ppkeys/root-SHA=%s.pub", CFWORKDIR, license.public_key_digest);
-    MapName(path_public_key);
-
-    return true;
-}
-#endif  /* HAVE_NOVA */

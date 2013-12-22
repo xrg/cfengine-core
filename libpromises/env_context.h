@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -25,12 +25,17 @@
 #ifndef CFENGINE_ENV_CONTEXT_H
 #define CFENGINE_ENV_CONTEXT_H
 
-#include "cf3.defs.h"
+#include <cf3.defs.h>
 
-#include "writer.h"
-#include "set.h"
-#include "sequence.h"
-#include "var_expressions.h"
+#include <writer.h>
+#include <set.h>
+#include <sequence.h>
+#include <var_expressions.h>
+#include <scope.h>
+#include <variable.h>
+#include <class.h>
+#include <iteration.h>
+#include <rb-tree.h>
 
 typedef enum
 {
@@ -44,25 +49,29 @@ typedef struct
 {
     const Bundle *owner;
 
-    StringSet *contexts;
-    StringSet *contexts_negated;
+    ClassTable *classes;
+    VariableTable *vars;
 } StackFrameBundle;
 
 typedef struct
 {
     const Body *owner;
+
+    VariableTable *vars;
 } StackFrameBody;
 
 typedef struct
 {
     const Promise *owner;
 
-    AssocHashTable *variables; // TODO: change to map
+    VariableTable *vars;
 } StackFramePromise;
 
 typedef struct
 {
-    const Promise *owner;
+    Promise *owner;
+    const PromiseIterator *iter_ctx;
+    size_t index;
 } StackFramePromiseIteration;
 
 typedef struct
@@ -81,17 +90,34 @@ typedef struct
 
 TYPED_SET_DECLARE(Promise, const Promise *)
 
+typedef enum
+{
+    EVAL_OPTION_NONE = 0,
+
+    EVAL_OPTION_EVAL_FUNCTIONS = 1 << 0,
+    EVAL_OPTION_CACHE_SYSTEM_FUNCTIONS = 1 << 1,
+
+    EVAL_OPTION_FULL = 0xFFFFFFFF
+} EvalContextOption;
+
 struct EvalContext_
 {
-    StringSet *heap_soft;
-    StringSet *heap_hard;
-    StringSet *heap_negated;
+    int eval_options;
+    bool bundle_aborted;
+    bool checksum_updates_default;
+
     Item *heap_abort;
     Item *heap_abort_current_bundle;
 
     Seq *stack;
 
+    ClassTable *global_classes;
+    VariableTable *global_variables;
+
+    VariableTable *match_variables;
+
     StringSet *dependency_handles;
+    RBTree *function_cache;
 
     PromiseSet *promises_done;
 };
@@ -99,58 +125,48 @@ struct EvalContext_
 EvalContext *EvalContextNew(void);
 void EvalContextDestroy(EvalContext *ctx);
 
-void EvalContextHeapAddSoft(EvalContext *ctx, const char *context, const char *ns);
-void EvalContextHeapAddHard(EvalContext *ctx, const char *context);
-void EvalContextHeapAddNegated(EvalContext *ctx, const char *context);
 void EvalContextHeapAddAbort(EvalContext *ctx, const char *context, const char *activated_on_context);
 void EvalContextHeapAddAbortCurrentBundle(EvalContext *ctx, const char *context, const char *activated_on_context);
-void EvalContextStackFrameAddSoft(EvalContext *ctx, const char *context);
-void EvalContextStackFrameAddNegated(EvalContext *ctx, const char *context);
 
 void EvalContextHeapPersistentSave(const char *context, const char *ns, unsigned int ttl_minutes, ContextStatePolicy policy);
 void EvalContextHeapPersistentRemove(const char *context);
 void EvalContextHeapPersistentLoadAll(EvalContext *ctx);
 
-bool EvalContextHeapContainsSoft(const EvalContext *ctx, const char *context);
-bool EvalContextHeapContainsHard(const EvalContext *ctx, const char *context);
-bool EvalContextHeapContainsNegated(const EvalContext *ctx, const char *context);
-bool EvalContextStackFrameContainsSoft(const EvalContext *ctx, const char *context);
+bool EvalContextClassPut(EvalContext *ctx, const char *ns, const char *name, bool is_soft, ContextScope scope);
+void EvalContextClassPutHard(EvalContext *ctx, const char *name);
+Class *EvalContextClassGet(const EvalContext *ctx, const char *ns, const char *name);
+bool EvalContextClassRemove(EvalContext *ctx, const char *ns, const char *name);
+StringSet *EvalContextClassTags(const EvalContext *ctx, const char *ns, const char *name);
 
-bool EvalContextHeapRemoveSoft(EvalContext *ctx, const char *context);
-bool EvalContextHeapRemoveHard(EvalContext *ctx, const char *context);
-void EvalContextStackFrameRemoveSoft(EvalContext *ctx, const char *context);
+ClassTableIterator *EvalContextClassTableIteratorNewGlobal(const EvalContext *ctx, const char *ns, bool is_hard, bool is_soft);
+ClassTableIterator *EvalContextClassTableIteratorNewLocal(const EvalContext *ctx);
 
-void EvalContextHeapClear(EvalContext *ctx);
-
-size_t EvalContextHeapMatchCountSoft(const EvalContext *ctx, const char *context_regex);
-size_t EvalContextHeapMatchCountHard(const EvalContext *ctx, const char *context_regex);
-size_t EvalContextStackFrameMatchCountSoft(const EvalContext *ctx, const char *context_regex);
-
-StringSet* EvalContextHeapAddMatchingSoft(const EvalContext *ctx, StringSet* base, const char *context_regex);
-StringSet* EvalContextHeapAddMatchingHard(const EvalContext *ctx, StringSet* base, const char *context_regex);
-StringSet* EvalContextStackFrameAddMatchingSoft(const EvalContext *ctx, StringSet* base, const char *context_regex);
-
-StringSetIterator EvalContextHeapIteratorSoft(const EvalContext *ctx);
-StringSetIterator EvalContextHeapIteratorHard(const EvalContext *ctx);
-StringSetIterator EvalContextHeapIteratorNegated(const EvalContext *ctx);
-StringSetIterator EvalContextStackFrameIteratorSoft(const EvalContext *ctx);
+void EvalContextClear(EvalContext *ctx);
 
 void EvalContextStackPushBundleFrame(EvalContext *ctx, const Bundle *owner, const Rlist *args, bool inherits_previous);
 void EvalContextStackPushBodyFrame(EvalContext *ctx, const Body *owner, Rlist *args);
-void EvalContextStackPushPromiseFrame(EvalContext *ctx, const Promise *owner);
-void EvalContextStackPushPromiseIterationFrame(EvalContext *ctx, const Promise *owner);
+void EvalContextStackPushPromiseFrame(EvalContext *ctx, const Promise *owner, bool copy_bundle_context);
+Promise *EvalContextStackPushPromiseIterationFrame(EvalContext *ctx, size_t iteration_index, const PromiseIterator *iter_ctx);
 void EvalContextStackPopFrame(EvalContext *ctx);
 char *EvalContextStackPath(const EvalContext *ctx);
 
-/**
- * @brief Returns the topmost promise from the stack, or NULL if no promises are pushed
- */
-const Promise *EvalContextStackGetTopPromise(const EvalContext *ctx);
+const Promise *EvalContextStackCurrentPromise(const EvalContext *ctx);
+const Bundle *EvalContextStackCurrentBundle(const EvalContext *ctx);
 
-bool EvalContextVariablePut(EvalContext *ctx, const VarRef *ref, Rval rval, DataType type);
+bool EvalContextVariablePut(EvalContext *ctx, const VarRef *ref, const void *value, DataType type);
+bool EvalContextVariablePutSpecial(EvalContext *ctx, SpecialScope scope, const char *lval, const void *value, DataType type);
 bool EvalContextVariableGet(const EvalContext *ctx, const VarRef *ref, Rval *rval_out, DataType *type_out);
+bool EvalContextVariableRemoveSpecial(const EvalContext *ctx, SpecialScope scope, const char *lval);
+bool EvalContextVariableRemove(const EvalContext *ctx, const VarRef *ref);
+StringSet *EvalContextVariableTags(const EvalContext *ctx, const VarRef *ref);
+bool EvalContextVariableClearMatch(EvalContext *ctx);
+VariableTableIterator *EvalContextVariableTableIteratorNew(const EvalContext *ctx, const char *ns, const char *scope, const char *lval);
+
+bool EvalContextFunctionCacheGet(const EvalContext *ctx, const FnCall *fp, const Rlist *args, Rval *rval_out);
+void EvalContextFunctionCachePut(EvalContext *ctx, const FnCall *fp, const Rlist *args, const Rval *rval);
 
 bool EvalContextVariableControlCommonGet(const EvalContext *ctx, CommonControl lval, Rval *rval_out);
+
 
 /* - Parsing/evaluating expressions - */
 void ValidateClassSyntax(const char *str);
@@ -170,9 +186,15 @@ bool EvalContextPromiseIsDone(const EvalContext *ctx, const Promise *pp);
 void EvalContextMarkPromiseDone(EvalContext *ctx, const Promise *pp);
 void EvalContextMarkPromiseNotDone(EvalContext *ctx, const Promise *pp);
 
+/* Various global options */
+void SetChecksumUpdatesDefault(EvalContext *ctx, bool enabled);
+bool GetChecksumUpdatesDefault(const EvalContext *ctx);
+
 /* - Rest - */
-int Abort(void);
-int VarClassExcluded(EvalContext *ctx, Promise *pp, char **classes);
+bool EvalContextPromiseIsActive(const EvalContext *ctx, const Promise *pp);
+
+bool Abort(EvalContext *ctx);
+int VarClassExcluded(const EvalContext *ctx, const Promise *pp, char **classes);
 void MarkPromiseHandleDone(EvalContext *ctx, const Promise *pp);
 int MissingDependencies(EvalContext *ctx, const Promise *pp);
 void cfPS(EvalContext *ctx, LogLevel level, PromiseResult status, const Promise *pp, Attributes attr, const char *fmt, ...) FUNC_ATTR_PRINTF(6, 7);
@@ -181,5 +203,6 @@ void cfPS(EvalContext *ctx, LogLevel level, PromiseResult status, const Promise 
  * evaluator again, once variables promises are no longer specially handled */
 void ClassAuditLog(EvalContext *ctx, const Promise *pp, Attributes attr, PromiseResult status);
 
+ENTERPRISE_VOID_FUNC_2ARG_DECLARE(void, TrackTotalCompliance, ARG_UNUSED PromiseResult, status, ARG_UNUSED const Promise *, pp);
 
 #endif

@@ -17,30 +17,19 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "attributes.h"
+#include <attributes.h>
 
-#include "promises.h"
-#include "policy.h"
-#include "conversion.h"
-#include "logging.h"
-#include "chflags.h"
-#include "audit.h"
-
-static int CHECKSUMUPDATES;
-
-/*******************************************************************/
-
-void SetChecksumUpdates(bool enabled)
-{
-    CHECKSUMUPDATES = enabled;
-}
-
-/*******************************************************************/
+#include <promises.h>
+#include <policy.h>
+#include <conversion.h>
+#include <logging.h>
+#include <chflags.h>
+#include <audit.h>
 
 Attributes GetFilesAttributes(const EvalContext *ctx, const Promise *pp)
 {
@@ -59,10 +48,13 @@ Attributes GetFilesAttributes(const EvalContext *ctx, const Promise *pp)
     attr.havecopy = PromiseGetConstraintAsBoolean(ctx, "copy_from", pp);
     attr.havelink = PromiseGetConstraintAsBoolean(ctx, "link_from", pp);
 
-    attr.template = (char *)ConstraintGetRvalValue(ctx, "edit_template", pp, RVAL_TYPE_SCALAR);
+    attr.edit_template = ConstraintGetRvalValue(ctx, "edit_template", pp, RVAL_TYPE_SCALAR);
+    attr.template_method = ConstraintGetRvalValue(ctx, "template_method", pp, RVAL_TYPE_SCALAR);
+    attr.template_data = ConstraintGetRvalValue(ctx, "template_data", pp, RVAL_TYPE_CONTAINER);
+
     attr.haveeditline = PromiseBundleConstraintExists(ctx, "edit_line", pp);
     attr.haveeditxml = PromiseBundleConstraintExists(ctx, "edit_xml", pp);
-    attr.haveedit = (attr.haveeditline) || (attr.haveeditxml) || (attr.template);
+    attr.haveedit = (attr.haveeditline) || (attr.haveeditxml) || (attr.edit_template);
 
 /* Files, specialist */
 
@@ -83,11 +75,11 @@ Attributes GetFilesAttributes(const EvalContext *ctx, const Promise *pp)
     attr.link = GetLinkConstraints(ctx, pp);
     attr.edits = GetEditDefaults(ctx, pp);
 
-    if (attr.template)
-       {
-       attr.edits.empty_before_use = true;
-       attr.edits.inherit = true;
-       }
+    if (attr.edit_template)
+    {
+        attr.edits.empty_before_use = true;
+        attr.edits.inherit = true;
+    }
 
 /* Files, multiple use */
 
@@ -166,6 +158,22 @@ Attributes GetPackageAttributes(const EvalContext *ctx, const Promise *pp)
     attr.transaction = GetTransactionConstraints(ctx, pp);
     attr.classes = GetClassDefinitionConstraints(ctx, pp);
     attr.packages = GetPackageConstraints(ctx, pp);
+    return attr;
+}
+
+/*******************************************************************/
+
+Attributes GetUserAttributes(const EvalContext *ctx, const Promise *pp)
+{
+    Attributes attr = { {0} };
+
+    attr.havebundle = PromiseBundleConstraintExists(ctx, "home_bundle", pp);
+
+    attr.inherit = PromiseGetConstraintAsBoolean(ctx, "home_bundle_inherit", pp);
+
+    attr.transaction = GetTransactionConstraints(ctx, pp);
+    attr.classes = GetClassDefinitionConstraints(ctx, pp);
+    attr.users = GetUserConstraints(ctx, pp);
     return attr;
 }
 
@@ -481,7 +489,7 @@ FileSelect GetSelectConstraints(const EvalContext *ctx, const Promise *pp)
     {
         plus = 0;
         minus = 0;
-        value = (char *) rp->item;
+        value = RlistScalarValue(rp);
 
         if (!ParseModeString(value, &plus, &minus))
         {
@@ -757,6 +765,11 @@ FileRename GetRenameConstraints(const EvalContext *ctx, const Promise *pp)
 
 /*******************************************************************/
 
+ENTERPRISE_FUNC_0ARG_DEFINE_STUB(HashMethod, GetBestFileChangeHashMethod)
+{
+    return HASH_METHOD_BEST;
+}
+
 FileChange GetChangeMgtConstraints(const EvalContext *ctx, const Promise *pp)
 {
     FileChange c;
@@ -766,11 +779,7 @@ FileChange GetChangeMgtConstraints(const EvalContext *ctx, const Promise *pp)
 
     if (value && (strcmp(value, "best") == 0))
     {
-#ifdef HAVE_NOVA
-        c.hash = HASH_METHOD_SHA512;
-#else
-        c.hash = HASH_METHOD_BEST;
-#endif
+        c.hash = GetBestFileChangeHashMethod();
     }
     else if (value && (strcmp(value, "md5") == 0))
     {
@@ -828,7 +837,7 @@ FileChange GetChangeMgtConstraints(const EvalContext *ctx, const Promise *pp)
     }
     else
     {
-        c.update = CHECKSUMUPDATES;
+        c.update = GetChecksumUpdatesDefault(ctx);
     }
 
     c.report_diffs = PromiseGetConstraintAsBoolean(ctx, "report_diffs", pp);
@@ -1660,4 +1669,34 @@ Database GetDatabaseConstraints(const EvalContext *ctx, const Promise *pp)
     }
 
     return d;
+}
+/*******************************************************************/
+
+User GetUserConstraints(const EvalContext *ctx, const Promise *pp)
+{
+    User u;
+    char *value;
+
+    value = ConstraintGetRvalValue(ctx, "policy", pp, RVAL_TYPE_SCALAR);
+    u.policy = UserStateFromString(value);
+
+    u.uid = ConstraintGetRvalValue(ctx, "uid", pp, RVAL_TYPE_SCALAR);
+
+    value = ConstraintGetRvalValue(ctx, "format", pp, RVAL_TYPE_SCALAR);
+    u.password_format = PasswordFormatFromString(value);
+    u.password = ConstraintGetRvalValue(ctx, "data", pp, RVAL_TYPE_SCALAR);
+    u.description = ConstraintGetRvalValue(ctx, "description", pp, RVAL_TYPE_SCALAR);
+
+    u.group_primary = ConstraintGetRvalValue(ctx, "group_primary", pp, RVAL_TYPE_SCALAR);
+    u.groups_secondary = PromiseGetConstraintAsList(ctx, "groups_secondary", pp);
+    u.home_dir = ConstraintGetRvalValue(ctx, "home_dir", pp, RVAL_TYPE_SCALAR);
+    u.shell = ConstraintGetRvalValue(ctx, "shell", pp, RVAL_TYPE_SCALAR);
+
+    if (value && ((u.policy) == USER_STATE_NONE))
+    {
+        Log(LOG_LEVEL_ERR, "Unsupported user policy '%s' in users promise", value);
+        PromiseRef(LOG_LEVEL_ERR, pp);
+    }
+
+    return u;
 }

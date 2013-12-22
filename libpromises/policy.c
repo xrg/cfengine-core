@@ -17,31 +17,31 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "policy.h"
+#include <policy.h>
 
-#include "syntax.h"
-#include "string_lib.h"
-#include "conversion.h"
-#include "mutex.h"
-#include "misc_lib.h"
-#include "mod_files.h"
-#include "vars.h"
-#include "fncall.h"
-#include "rlist.h"
-#include "set.h"
-#include "hashes.h"
-#include "env_context.h"
-#include "promises.h"
-#include "item_lib.h"
-#include "files_hashes.h"
-#include "audit.h"
-#include "logging.h"
-#include "expand.h"
+#include <syntax.h>
+#include <string_lib.h>
+#include <conversion.h>
+#include <mutex.h>
+#include <misc_lib.h>
+#include <mod_files.h>
+#include <vars.h>
+#include <fncall.h>
+#include <rlist.h>
+#include <set.h>
+#include <hashes.h>
+#include <env_context.h>
+#include <promises.h>
+#include <item_lib.h>
+#include <files_hashes.h>
+#include <audit.h>
+#include <logging.h>
+#include <expand.h>
 
 
 static const char *POLICY_ERROR_POLICY_NOT_RUNNABLE = "Policy is not runnable (does not contain a body common control)";
@@ -98,6 +98,122 @@ void PolicyDestroy(Policy *policy)
 
         free(policy);
     }
+}
+
+static unsigned ConstraintHash(const Constraint *cp, unsigned seed, unsigned max)
+{
+    unsigned hash = seed;
+
+    hash = StringHash(cp->lval, hash, max);
+    hash = StringHash(cp->classes, hash, max);
+    hash = RvalHash(cp->rval, hash, max);
+
+    return hash;
+}
+
+static unsigned BodyHash(const Body *body, unsigned seed, unsigned max)
+{
+    unsigned hash = seed;
+    for (size_t i = 0; i < SeqLength(body->conlist); i++)
+    {
+        const Constraint *cp = SeqAt(body->conlist, i);
+        hash = ConstraintHash(cp, hash, max);
+    }
+
+    return hash;
+}
+
+static unsigned PromiseHash(const Promise *pp, unsigned seed, unsigned max)
+{
+    unsigned hash = seed;
+
+    hash = StringHash(pp->promiser, seed, max);
+    hash = RvalHash(pp->promisee, seed, max);
+
+    for (size_t i = 0; i < SeqLength(pp->conlist); i++)
+    {
+        const Constraint *cp = SeqAt(pp->conlist, i);
+        hash = ConstraintHash(cp, hash, max);
+    }
+
+    return hash;
+}
+
+static unsigned PromiseTypeHash(const PromiseType *pt, unsigned seed, unsigned max)
+{
+    unsigned hash = seed;
+
+    hash = StringHash(pt->name, hash, max);
+    for (size_t i = 0; i < SeqLength(pt->promises); i++)
+    {
+        const Promise *pp = SeqAt(pt->promises, i);
+        hash = PromiseHash(pp, hash, max);
+    }
+
+    return hash;
+}
+
+static unsigned BundleHash(const Bundle *bundle, unsigned seed, unsigned max)
+{
+    unsigned hash = seed;
+
+    hash = StringHash(bundle->type, hash, max);
+    hash = StringHash(bundle->ns, hash, max);
+    hash = StringHash(bundle->name, hash, max);
+    hash = RlistHash(bundle->args, hash, max);
+
+    for (size_t i = 0; i < SeqLength(bundle->promise_types); i++)
+    {
+        const PromiseType *pt = SeqAt(bundle->promise_types, i);
+        hash = PromiseTypeHash(pt, hash, max);
+    }
+
+    return hash;
+}
+
+unsigned PolicyHash(const Policy *policy)
+{
+    static const unsigned max = UINT_MAX;
+    unsigned hash = 0;
+
+    for (size_t i = 0; i < SeqLength(policy->bodies); i++)
+    {
+        const Body *body = SeqAt(policy->bodies, i);
+        hash = BodyHash(body, hash, max);
+    }
+
+    for (size_t i = 0; i < SeqLength(policy->bundles); i++)
+    {
+        const Bundle *bundle = SeqAt(policy->bundles, i);
+        hash = BundleHash(bundle, hash, max);
+    }
+
+    return hash;
+}
+
+StringSet *PolicySourceFiles(const Policy *policy)
+{
+    StringSet *files = StringSetNew();
+
+    for (size_t i = 0; i < SeqLength(policy->bundles); i++)
+    {
+        const Bundle *bp = SeqAt(policy->bundles, i);
+        if (bp->source_path)
+        {
+            StringSetAdd(files, xstrdup(bp->source_path));
+        }
+    }
+
+    for (size_t i = 0; i < SeqLength(policy->bodies); i++)
+    {
+        const Bundle *bp = SeqAt(policy->bodies, i);
+        if (bp->source_path)
+        {
+            StringSetAdd(files, xstrdup(bp->source_path));
+        }
+    }
+
+    return files;
 }
 
 static char *StripNamespace(const char *full_symbol)
@@ -280,6 +396,9 @@ static bool RvalTypeCheckDataType(RvalType rval_type, DataType expected_datatype
     case DATA_TYPE_REAL_LIST:
     case DATA_TYPE_STRING_LIST:
         return (rval_type == RVAL_TYPE_SCALAR) || (rval_type == RVAL_TYPE_LIST);
+
+    case DATA_TYPE_CONTAINER:
+        return (rval_type == RVAL_TYPE_CONTAINER);
 
     default:
         ProgrammingError("Unhandled expected datatype in switch: %d", expected_datatype);
@@ -633,7 +752,7 @@ static bool PolicyCheckUndefinedBundles(const Policy *policy, Seq *errors)
                         char *symbol = QualifiedNameScopeComponent(RvalFullSymbol(&constraint->rval));
 
                         const Bundle *referenced_bundle = NULL;
-                        if (strcmp(constraint->lval, "usebundle") == 0)
+                        if (strcmp(constraint->lval, "usebundle") == 0 || strcmp(constraint->lval, "home_bundle") == 0)
                         {
                             referenced_bundle = PolicyGetBundle(policy, ns, "agent", symbol);
                             if (!referenced_bundle)
@@ -723,7 +842,7 @@ bool PolicyCheckDuplicateHandles(const Policy *policy, Seq *errors)
 {
     bool success = true;
 
-    Set *used_handles = SetNew((unsigned int (*)(const void*, unsigned int))OatHash, (bool (*)(const void *, const void *))StringSafeEqual, NULL);
+    Set *used_handles = SetNew((MapHashFn)StringHash, (MapKeyEqualFn)StringSafeEqual, NULL);
 
     for (size_t bpi = 0; bpi < SeqLength(policy->bundles); bpi++)
     {
@@ -802,13 +921,14 @@ bool PolicyCheckPartial(const Policy *policy, Seq *errors)
         {
             Bundle *bp2 = SeqAt(policy->bundles, j);
 
-            if (bp != bp2 &&
-                StringSafeEqual(bp->name, bp2->name) &&
-                StringSafeEqual(bp->type, bp2->type))
+            if (bp != bp2
+                && strcmp(bp->type, bp2->type) == 0
+                && strcmp(bp->ns, bp2->ns) == 0
+                && strcmp(bp->name, bp2->name) == 0)
             {
                 SeqAppend(errors, PolicyErrorNew(POLICY_ELEMENT_TYPE_BUNDLE, bp,
-                                                      POLICY_ERROR_BUNDLE_REDEFINITION,
-                                                      bp->name, bp->type));
+                                                 POLICY_ERROR_BUNDLE_REDEFINITION,
+                                                 bp->name, bp->type));
                 success = false;
             }
         }
@@ -830,9 +950,10 @@ bool PolicyCheckPartial(const Policy *policy, Seq *errors)
         {
             const Body *bp2 = SeqAt(policy->bodies, j);
 
-            if (bp != bp2 &&
-                StringSafeEqual(bp->name, bp2->name) &&
-                StringSafeEqual(bp->type, bp2->type))
+            if (bp != bp2
+                && strcmp(bp->type, bp2->type) == 0
+                && strcmp(bp->ns, bp2->ns) == 0
+                && strcmp(bp->name, bp2->name) == 0)
             {
                 if (strcmp(bp->type,"file") != 0)
                 {
@@ -1308,7 +1429,7 @@ static JsonElement *AttributeValueToJson(Rval rval, bool symbolic_reference)
 
             for (rp = (Rlist *) rval.item; rp != NULL; rp = rp->next)
             {
-                JsonArrayAppendObject(list, AttributeValueToJson((Rval) {rp->item, rp->type}, false));
+                JsonArrayAppendObject(list, AttributeValueToJson(rp->val, false));
             }
 
             JsonObjectAppendArray(json_attribute, "value", list);
@@ -1328,7 +1449,7 @@ static JsonElement *AttributeValueToJson(Rval rval, bool symbolic_reference)
 
                 for (argp = call->args; argp != NULL; argp = argp->next)
                 {
-                    JsonArrayAppendObject(arguments, AttributeValueToJson((Rval) {argp->item, argp->type}, false));
+                    JsonArrayAppendObject(arguments, AttributeValueToJson(argp->val, false));
                 }
 
                 JsonObjectAppendArray(json_attribute, "arguments", arguments);
@@ -1337,10 +1458,14 @@ static JsonElement *AttributeValueToJson(Rval rval, bool symbolic_reference)
             return json_attribute;
         }
 
-    default:
+    case RVAL_TYPE_CONTAINER:
+    case RVAL_TYPE_NOPROMISEE:
         ProgrammingError("Attempted to export attribute of type: %c", rval.type);
         return NULL;
     }
+
+    assert(false);
+    return NULL;
 }
 
 static JsonElement *CreateContextAsJson(const char *name, const char *children_name, JsonElement *children)
@@ -1487,7 +1612,7 @@ static JsonElement *BundleToJson(const Bundle *bundle)
 
         for (argp = bundle->args; argp != NULL; argp = argp->next)
         {
-            JsonArrayAppendString(json_args, argp->item);
+            JsonArrayAppendString(json_args, RlistScalarValue(argp));
         }
 
         JsonObjectAppendArray(json_bundle, "arguments", json_args);
@@ -1536,7 +1661,7 @@ static JsonElement *BodyToJson(const Body *body)
 
         for (argp = body->args; argp != NULL; argp = argp->next)
         {
-            JsonArrayAppendString(json_args, argp->item);
+            JsonArrayAppendString(json_args, RlistScalarValue(argp));
         }
 
         JsonObjectAppendArray(json_body, "arguments", json_args);
@@ -1624,7 +1749,7 @@ static void ArgumentsToString(Writer *writer, Rlist *args)
     WriterWriteChar(writer, '(');
     for (argp = args; argp != NULL; argp = argp->next)
     {
-        WriterWriteF(writer, "%s", (char *) argp->item);
+        WriterWriteF(writer, "%s", RlistScalarValue(argp));
 
         if (argp->next != NULL)
         {
@@ -1762,7 +1887,7 @@ static Rval RvalFromJson(JsonElement *json_rval)
         JsonElement *json_list = JsonObjectGetAsArray(json_rval, "value");
         Rlist *rlist = NULL;
 
-        for (size_t i = 0; i < JsonElementLength(json_list); i++)
+        for (size_t i = 0; i < JsonLength(json_list); i++)
         {
             Rval list_value = RvalFromJson(JsonArrayGetAsObject(json_list, i));
             RlistAppend(&rlist, list_value.item, list_value.type);
@@ -1776,7 +1901,7 @@ static Rval RvalFromJson(JsonElement *json_rval)
         JsonElement *json_args = JsonObjectGetAsArray(json_rval, "arguments");
         Rlist *args = NULL;
 
-        for (size_t i = 0; i < JsonElementLength(json_args); i++)
+        for (size_t i = 0; i < JsonLength(json_args); i++)
         {
             JsonElement *json_arg = JsonArrayGetAsObject(json_args, i);
             Rval arg = RvalFromJson(json_arg);
@@ -1815,7 +1940,7 @@ static Promise *PromiseTypeAppendPromiseJson(PromiseType *promise_type, JsonElem
     Promise *promise = PromiseTypeAppendPromise(promise_type, promiser, (Rval) { NULL, RVAL_TYPE_NOPROMISEE }, context);
 
     JsonElement *json_attributes = JsonObjectGetAsArray(json_promise, "attributes");
-    for (size_t i = 0; i < JsonElementLength(json_attributes); i++)
+    for (size_t i = 0; i < JsonLength(json_attributes); i++)
     {
         JsonElement *json_attribute = JsonArrayGetAsObject(json_attributes, i);
         PromiseAppendConstraintJson(promise, json_attribute, context);
@@ -1831,14 +1956,14 @@ static PromiseType *BundleAppendPromiseTypeJson(Bundle *bundle, JsonElement *jso
     PromiseType *promise_type = BundleAppendPromiseType(bundle, name);
 
     JsonElement *json_contexts = JsonObjectGetAsArray(json_promise_type, "contexts");
-    for (size_t i = 0; i < JsonElementLength(json_contexts); i++)
+    for (size_t i = 0; i < JsonLength(json_contexts); i++)
     {
         JsonElement *json_context = JsonArrayGetAsObject(json_contexts, i);
 
         const char *context = JsonObjectGetAsString(json_context, "name");
 
         JsonElement *json_context_promises = JsonObjectGetAsArray(json_context, "promises");
-        for (size_t j = 0; j < JsonElementLength(json_context_promises); j++)
+        for (size_t j = 0; j < JsonLength(json_context_promises); j++)
         {
             JsonElement *json_promise = JsonArrayGetAsObject(json_context_promises, j);
             PromiseTypeAppendPromiseJson(promise_type, json_promise, context);
@@ -1858,7 +1983,7 @@ static Bundle *PolicyAppendBundleJson(Policy *policy, JsonElement *json_bundle)
     Rlist *args = NULL;
     {
         JsonElement *json_args = JsonObjectGetAsArray(json_bundle, "arguments");
-        for (size_t i = 0; i < JsonElementLength(json_args); i++)
+        for (size_t i = 0; i < JsonLength(json_args); i++)
         {
             RlistAppendScalar(&args, JsonArrayGetAsString(json_args, i));
         }
@@ -1868,7 +1993,7 @@ static Bundle *PolicyAppendBundleJson(Policy *policy, JsonElement *json_bundle)
 
     {
         JsonElement *json_promise_types = JsonObjectGetAsArray(json_bundle, "promiseTypes");
-        for (size_t i = 0; i < JsonElementLength(json_promise_types); i++)
+        for (size_t i = 0; i < JsonLength(json_promise_types); i++)
         {
             JsonElement *json_promise_type = JsonArrayGetAsObject(json_promise_types, i);
             BundleAppendPromiseTypeJson(bundle, json_promise_type);
@@ -1902,7 +2027,7 @@ static Body *PolicyAppendBodyJson(Policy *policy, JsonElement *json_body)
     Rlist *args = NULL;
     {
         JsonElement *json_args = JsonObjectGetAsArray(json_body, "arguments");
-        for (size_t i = 0; i < JsonElementLength(json_args); i++)
+        for (size_t i = 0; i < JsonLength(json_args); i++)
         {
             RlistAppendScalar(&args, JsonArrayGetAsString(json_args, i));
         }
@@ -1912,14 +2037,14 @@ static Body *PolicyAppendBodyJson(Policy *policy, JsonElement *json_body)
 
     {
         JsonElement *json_contexts = JsonObjectGetAsArray(json_body, "contexts");
-        for (size_t i = 0; i < JsonElementLength(json_contexts); i++)
+        for (size_t i = 0; i < JsonLength(json_contexts); i++)
         {
             JsonElement *json_context = JsonArrayGetAsObject(json_contexts, i);
             const char *context = JsonObjectGetAsString(json_context, "name");
 
             {
                 JsonElement *json_attributes = JsonObjectGetAsArray(json_context, "attributes");
-                for (size_t j = 0; j < JsonElementLength(json_attributes); j++)
+                for (size_t j = 0; j < JsonLength(json_attributes); j++)
                 {
                     JsonElement *json_attribute = JsonArrayGetAsObject(json_attributes, j);
                     BodyAppendConstraintJson(body, json_attribute, context);
@@ -1938,7 +2063,7 @@ Policy *PolicyFromJson(JsonElement *json_policy)
 
     {
         JsonElement *json_bundles = JsonObjectGetAsArray(json_policy, "bundles");
-        for (size_t i = 0; i < JsonElementLength(json_bundles); i++)
+        for (size_t i = 0; i < JsonLength(json_bundles); i++)
         {
             JsonElement *json_bundle = JsonArrayGetAsObject(json_bundles, i);
             PolicyAppendBundleJson(policy, json_bundle);
@@ -1947,7 +2072,7 @@ Policy *PolicyFromJson(JsonElement *json_policy)
 
     {
         JsonElement *json_bodies = JsonObjectGetAsArray(json_policy, "bodies");
-        for (size_t i = 0; i < JsonElementLength(json_bodies); i++)
+        for (size_t i = 0; i < JsonLength(json_bodies); i++)
         {
             JsonElement *json_body = JsonArrayGetAsObject(json_bodies, i);
             PolicyAppendBodyJson(policy, json_body);
@@ -2484,6 +2609,7 @@ gid_t PromiseGetConstraintAsGid(const EvalContext *ctx, char *lval, const Promis
 
 /*****************************************************************************/
 
+// FIX: promise constrained classed?
 Rlist *PromiseGetConstraintAsList(const EvalContext *ctx, const char *lval, const Promise *pp)
 {
     Rlist *retval = NULL;

@@ -17,22 +17,22 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "platform.h"
+#include <platform.h>
 
-#include "files_copy.h"
+#include <files_copy.h>
 
-#include "files_names.h"
-#include "files_interfaces.h"
-#include "instrumentation.h"
-#include "policy.h"
-#include "files_lib.h"
-#include "string_lib.h"
-#include "acl_tools.h"
+#include <files_names.h>
+#include <files_interfaces.h>
+#include <instrumentation.h>
+#include <policy.h>
+#include <files_lib.h>
+#include <string_lib.h>
+#include <acl_tools.h>
 
 /*
  * Copy data jumping over areas filled by '\0', so files automatically become sparse if possible.
@@ -196,6 +196,15 @@ bool CopyFilePermissionsDisk(const char *source, const char *destination)
 
     return true;
 }
+
+#ifdef WITH_XATTR_EXTRA_ARGS
+#define listxattr(__arg1, __arg2, __arg3) \
+    listxattr((__arg1), (__arg2), (__arg3), 0)
+#define getxattr(__arg1, __arg2, __arg3, __arg4) \
+    getxattr((__arg1), (__arg2), (__arg3), (__arg4), 0, 0)
+#define setxattr(__arg1, __arg2, __arg3, __arg4, __arg5) \
+    setxattr((__arg1), (__arg2), (__arg3), (__arg4), 0, (__arg5))
+#endif
 
 bool CopyFileExtendedAttributesDisk(const char *source, const char *destination)
 {

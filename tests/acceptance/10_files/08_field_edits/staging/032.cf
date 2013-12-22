@@ -1,6 +1,7 @@
 #######################################################
 #
 # Delete fields, simple case
+# Bug, tracked on https://cfengine.com/dev/issues/3506
 #
 #######################################################
 
@@ -85,3 +86,5 @@ bundle agent check
 					    "$(G.testfile).expected",
 					    "$(this.promise_filename)");
 }
+### PROJECT_ID: core
+### CATEGORY_ID: 27

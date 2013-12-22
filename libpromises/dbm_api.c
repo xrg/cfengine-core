@@ -17,19 +17,19 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "cf3.defs.h"
+#include <cf3.defs.h>
 
-#include "dbm_api.h"
-#include "dbm_priv.h"
-#include "dbm_migration.h"
-#include "atexit.h"
-#include "logging.h"
-#include "misc_lib.h"
+#include <dbm_api.h>
+#include <dbm_priv.h>
+#include <dbm_migration.h>
+#include <atexit.h>
+#include <logging.h>
+#include <misc_lib.h>
 
 
 static int DBPathLock(const char *filename);
@@ -127,41 +127,6 @@ static DBHandle *DBHandleGet(int id)
     pthread_mutex_unlock(&db_handles_lock);
 
     return &db_handles[id];
-}
-
-/* Closes all open DB handles */
-static void CloseAllDB(void)
-{
-    pthread_mutex_lock(&db_handles_lock);
-
-    for (int i = 0; i < dbid_max; ++i)
-    {
-        if (db_handles[i].refcount != 0)
-        {
-            DBPrivCloseDB(db_handles[i].priv);
-        }
-
-        /*
-         * CloseAllDB is called just before exit(3), but clean up
-         * nevertheless.
-         */
-        db_handles[i].refcount = 0;
-
-        if (db_handles[i].filename)
-        {
-            free(db_handles[i].filename);
-            db_handles[i].filename = NULL;
-
-            int ret = pthread_mutex_destroy(&db_handles[i].lock);
-            if (ret != 0)
-            {
-                errno = ret;
-                Log(LOG_LEVEL_ERR, "Unable to close database '%s'. (pthread_mutex_destroy: %s)", DB_PATHS[i], GetErrorStr());
-            }
-        }
-    }
-
-    pthread_mutex_unlock(&db_handles_lock);
 }
 
 /**

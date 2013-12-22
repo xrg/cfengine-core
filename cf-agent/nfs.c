@@ -17,26 +17,28 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "cf3.defs.h"
+#include <cf3.defs.h>
 
-#include "files_names.h"
-#include "files_interfaces.h"
-#include "files_operators.h"
-#include "files_lib.h"
-#include "item_lib.h"
-#include "conversion.h"
-#include "matching.h"
-#include "string_lib.h"
-#include "pipes.h"
-#include "nfs.h"
-#include "misc_lib.h"
-#include "rlist.h"
-#include "env_context.h"
+#include <actuator.h>
+#include <files_names.h>
+#include <files_interfaces.h>
+#include <files_operators.h>
+#include <files_lib.h>
+#include <item_lib.h>
+#include <conversion.h>
+#include <matching.h>
+#include <string_lib.h>
+#include <pipes.h>
+#include <nfs.h>
+#include <misc_lib.h>
+#include <rlist.h>
+#include <env_context.h>
+#include <timeout.h>
 
 /* seconds */
 #define RPCTIMEOUT 60
@@ -44,74 +46,77 @@
 static int FSTAB_EDITS;
 static Item *FSTABLIST = NULL;
 
-static void AugmentMountInfo(Rlist **list, char *host, char *source, char *mounton, char *options);
+static void AugmentMountInfo(Seq *list, char *host, char *source, char *mounton, char *options);
 static int MatchFSInFstab(char *match);
 static void DeleteThisItem(Item **liststart, Item *entry);
 
-static const char *VMOUNTCOMM[PLATFORM_CONTEXT_MAX] =
+static const char *VMOUNTCOMM[] =
 {
-    "",
-    "/sbin/mount -ea",          /* hpux */
-    "/usr/sbin/mount -t nfs",   /* aix */
-    "/bin/mount -va",           /* linux */
-    "/usr/sbin/mount -a",       /* solaris */
-    "/sbin/mount -va",          /* freebsd */
-    "/sbin/mount -a",           /* netbsd */
-    "/etc/mount -va",           /* cray */
-    "/bin/sh /etc/fstab",       /* NT - possible security issue */
-    "/sbin/mountall",           /* Unixware */
-    "/sbin/mount",              /* openbsd */
-    "/etc/mountall",            /* sco */
-    "/sbin/mount -va",          /* darwin */
-    "/bin/mount -v",            /* qnx */
-    "/sbin/mount -va",          /* dragonfly */
-    "mingw-invalid",            /* mingw */
-    "/bin/mount -a",            /* vmware */
+    [PLATFORM_CONTEXT_UNKNOWN] = "",
+    [PLATFORM_CONTEXT_OPENVZ] = "/bin/mount -va",           /* virt_host_vz_vzps */
+    [PLATFORM_CONTEXT_HP] = "/sbin/mount -ea",          /* hpux */
+    [PLATFORM_CONTEXT_AIX] = "/usr/sbin/mount -t nfs",   /* aix */
+    [PLATFORM_CONTEXT_LINUX] = "/bin/mount -va",           /* linux */
+    [PLATFORM_CONTEXT_SOLARIS] = "/usr/sbin/mount -a",       /* solaris */
+    [PLATFORM_CONTEXT_FREEBSD] = "/sbin/mount -va",          /* freebsd */
+    [PLATFORM_CONTEXT_NETBSD] = "/sbin/mount -a",           /* netbsd */
+    [PLATFORM_CONTEXT_CRAYOS] = "/etc/mount -va",           /* cray */
+    [PLATFORM_CONTEXT_WINDOWS_NT] = "/bin/sh /etc/fstab",       /* NT - possible security issue */
+    [PLATFORM_CONTEXT_SYSTEMV] = "/sbin/mountall",           /* Unixware */
+    [PLATFORM_CONTEXT_OPENBSD] = "/sbin/mount",              /* openbsd */
+    [PLATFORM_CONTEXT_CFSCO] = "/etc/mountall",            /* sco */
+    [PLATFORM_CONTEXT_DARWIN] = "/sbin/mount -va",          /* darwin */
+    [PLATFORM_CONTEXT_QNX] = "/bin/mount -v",            /* qnx */
+    [PLATFORM_CONTEXT_DRAGONFLY] = "/sbin/mount -va",          /* dragonfly */
+    [PLATFORM_CONTEXT_MINGW] = "mingw-invalid",            /* mingw */
+    [PLATFORM_CONTEXT_VMWARE] = "/bin/mount -a",            /* vmware */
 };
 
-static const char *VUNMOUNTCOMM[PLATFORM_CONTEXT_MAX] =
+static const char *VUNMOUNTCOMM[] =
 {
-    "",
-    "/sbin/umount",             /* hpux */
-    "/usr/sbin/umount",         /* aix */
-    "/bin/umount",              /* linux */
-    "/etc/umount",              /* solaris */
-    "/sbin/umount",             /* freebsd */
-    "/sbin/umount",             /* netbsd */
-    "/etc/umount",              /* cray */
-    "/bin/umount",              /* NT */
-    "/sbin/umount",             /* Unixware */
-    "/sbin/umount",             /* openbsd */
-    "/etc/umount",              /* sco */
-    "/sbin/umount",             /* darwin */
-    "/bin/umount",              /* qnx */
-    "/sbin/umount",             /* dragonfly */
-    "mingw-invalid",            /* mingw */
-    "/bin/umount",              /* vmware */
+    [PLATFORM_CONTEXT_UNKNOWN] = "",
+    [PLATFORM_CONTEXT_OPENVZ] = "/bin/umount",              /* virt_host_vz_vzps */
+    [PLATFORM_CONTEXT_HP] = "/sbin/umount",             /* hpux */
+    [PLATFORM_CONTEXT_AIX] = "/usr/sbin/umount",         /* aix */
+    [PLATFORM_CONTEXT_LINUX] = "/bin/umount",              /* linux */
+    [PLATFORM_CONTEXT_SOLARIS] = "/etc/umount",              /* solaris */
+    [PLATFORM_CONTEXT_FREEBSD] = "/sbin/umount",             /* freebsd */
+    [PLATFORM_CONTEXT_NETBSD] = "/sbin/umount",             /* netbsd */
+    [PLATFORM_CONTEXT_CRAYOS] = "/etc/umount",              /* cray */
+    [PLATFORM_CONTEXT_WINDOWS_NT] = "/bin/umount",              /* NT */
+    [PLATFORM_CONTEXT_SYSTEMV] = "/sbin/umount",             /* Unixware */
+    [PLATFORM_CONTEXT_OPENBSD] = "/sbin/umount",             /* openbsd */
+    [PLATFORM_CONTEXT_CFSCO] = "/etc/umount",              /* sco */
+    [PLATFORM_CONTEXT_DARWIN] = "/sbin/umount",             /* darwin */
+    [PLATFORM_CONTEXT_QNX] = "/bin/umount",              /* qnx */
+    [PLATFORM_CONTEXT_DRAGONFLY] = "/sbin/umount",             /* dragonfly */
+    [PLATFORM_CONTEXT_MINGW] = "mingw-invalid",            /* mingw */
+    [PLATFORM_CONTEXT_VMWARE] = "/bin/umount",              /* vmware */
 };
 
-static const char *VMOUNTOPTS[PLATFORM_CONTEXT_MAX] =
+static const char *VMOUNTOPTS[] =
 {
-    "",
-    "bg,hard,intr",             /* hpux */
-    "bg,hard,intr",             /* aix */
-    "defaults",                 /* linux */
-    "bg,hard,intr",             /* solaris */
-    "bg,intr",                  /* freebsd */
-    "-i,-b",                    /* netbsd */
-    "bg,hard,intr",             /* cray */
-    "",                         /* NT */
-    "bg,hard,intr",             /* Unixware */
-    "-i,-b",                    /* openbsd */
-    "bg,hard,intr",             /* sco */
-    "-i,-b",                    /* darwin */
-    "bg,hard,intr",             /* qnx */
-    "bg,intr",                  /* dragonfly */
-    "mingw-invalid",            /* mingw */
-    "defaults",                 /* vmstate */
+    [PLATFORM_CONTEXT_UNKNOWN] = "",
+    [PLATFORM_CONTEXT_OPENVZ] = "defaults",                 /* virt_host_vz_vzps */
+    [PLATFORM_CONTEXT_HP] = "bg,hard,intr",             /* hpux */
+    [PLATFORM_CONTEXT_AIX] = "bg,hard,intr",             /* aix */
+    [PLATFORM_CONTEXT_LINUX] = "defaults",                 /* linux */
+    [PLATFORM_CONTEXT_SOLARIS] = "bg,hard,intr",             /* solaris */
+    [PLATFORM_CONTEXT_FREEBSD] = "bg,intr",                  /* freebsd */
+    [PLATFORM_CONTEXT_NETBSD] = "-i,-b",                    /* netbsd */
+    [PLATFORM_CONTEXT_CRAYOS] = "bg,hard,intr",             /* cray */
+    [PLATFORM_CONTEXT_WINDOWS_NT] = "",                         /* NT */
+    [PLATFORM_CONTEXT_SYSTEMV] = "bg,hard,intr",             /* Unixware */
+    [PLATFORM_CONTEXT_OPENBSD] = "-i,-b",                    /* openbsd */
+    [PLATFORM_CONTEXT_CFSCO] = "bg,hard,intr",             /* sco */
+    [PLATFORM_CONTEXT_DARWIN] = "-i,-b",                    /* darwin */
+    [PLATFORM_CONTEXT_QNX] = "bg,hard,intr",             /* qnx */
+    [PLATFORM_CONTEXT_DRAGONFLY] = "bg,intr",                  /* dragonfly */
+    [PLATFORM_CONTEXT_MINGW] = "mingw-invalid",            /* mingw */
+    [PLATFORM_CONTEXT_VMWARE] = "defaults",                 /* vmstate */
 };
 
-bool LoadMountInfo(Rlist **list)
+bool LoadMountInfo(Seq *list)
 /* This is, in fact, the most portable way to read the mount info! */
 /* Depressing, isn't it? */
 {
@@ -258,7 +263,7 @@ bool LoadMountInfo(Rlist **list)
 
 /*******************************************************************/
 
-static void AugmentMountInfo(Rlist **list, char *host, char *source, char *mounton, char *options)
+static void AugmentMountInfo(Seq *list, char *host, char *source, char *mounton, char *options)
 {
     Mount *entry = xcalloc(1, sizeof(Mount));
 
@@ -282,20 +287,16 @@ static void AugmentMountInfo(Rlist **list, char *host, char *source, char *mount
         entry->options = xstrdup(options);
     }
 
-    RlistAppendAlien(list, (void *) entry);
+    SeqAppend(list, entry);
 }
 
 /*******************************************************************/
 
-void DeleteMountInfo(Rlist *list)
+void DeleteMountInfo(Seq *list)
 {
-    Rlist *rp, *sp;
-    Mount *entry;
-
-    for (rp = list; rp != NULL; rp = sp)
+    for (size_t i = 0; i < SeqLength(list); i++)
     {
-        sp = rp->next;
-        entry = (Mount *) rp->item;
+        Mount *entry = SeqAt(list, i);
 
         if (entry->host)
         {
@@ -316,14 +317,14 @@ void DeleteMountInfo(Rlist *list)
         {
             free(entry->options);
         }
-
-        free((char *) entry);
     }
+
+    SeqClear(list);
 }
 
 /*******************************************************************/
 
-int VerifyInFstab(EvalContext *ctx, char *name, Attributes a, Promise *pp)
+int VerifyInFstab(EvalContext *ctx, char *name, Attributes a, Promise *pp, PromiseResult *result)
 /* Ensure filesystem IS in fstab, and return no of changes */
 {
     char fstab[CF_BUFSIZE];
@@ -389,6 +390,7 @@ int VerifyInFstab(EvalContext *ctx, char *name, Attributes a, Promise *pp)
         FSTAB_EDITS++;
         cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_CHANGE, pp, a, "Adding file system '%s:%s' to '%s'", host, rmountpt,
              VFSTAB[VSYSTEMHARDCLASS]);
+        *result = PromiseResultUpdate(*result, PROMISE_RESULT_CHANGE);
     }
 
     free(opts);
@@ -397,7 +399,7 @@ int VerifyInFstab(EvalContext *ctx, char *name, Attributes a, Promise *pp)
 
 /*******************************************************************/
 
-int VerifyNotInFstab(EvalContext *ctx, char *name, Attributes a, Promise *pp)
+int VerifyNotInFstab(EvalContext *ctx, char *name, Attributes a, Promise *pp, PromiseResult *result)
 /* Ensure filesystem is NOT in fstab, and return no of changes */
 {
     char regex[CF_BUFSIZE];
@@ -442,6 +444,7 @@ int VerifyNotInFstab(EvalContext *ctx, char *name, Attributes a, Promise *pp)
             if ((pfp = cf_popen(aixcomm, "r", true)) == NULL)
             {
                 cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Failed to invoke /usr/sbin/rmnfsmnt to edit fstab");
+                *result = PromiseResultUpdate(*result, PROMISE_RESULT_FAIL);
                 return 0;
             }
 
@@ -452,6 +455,7 @@ int VerifyNotInFstab(EvalContext *ctx, char *name, Attributes a, Promise *pp)
                 if (res == -1)
                 {
                     cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Unable to read output of /bin/rmnfsmnt");
+                    *result = PromiseResultUpdate(*result, PROMISE_RESULT_FAIL);
                     cf_pclose(pfp);
                     return 0;
                 }
@@ -470,6 +474,7 @@ int VerifyNotInFstab(EvalContext *ctx, char *name, Attributes a, Promise *pp)
                 {
                     cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_INTERRUPTED, pp, a, "The device under '%s' cannot be removed from '%s'",
                          mountpt, VFSTAB[VSYSTEMHARDCLASS]);
+                    *result = PromiseResultUpdate(*result, PROMISE_RESULT_INTERRUPTED);
                     return 0;
                 }
             }
@@ -482,9 +487,10 @@ int VerifyNotInFstab(EvalContext *ctx, char *name, Attributes a, Promise *pp)
 
             for (ip = FSTABLIST; ip != NULL; ip = ip->next)
             {
-                if (FullTextMatch(regex, ip->name))
+                if (FullTextMatch(ctx, regex, ip->name))
                 {
                     cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_CHANGE, pp, a, "Deleting file system mounted on '%s'", host);
+                    *result = PromiseResultUpdate(*result, PROMISE_RESULT_CHANGE);
                     // Check host name matches too?
                     DeleteThisItem(&FSTABLIST, ip);
                     FSTAB_EDITS++;
@@ -504,7 +510,7 @@ int VerifyNotInFstab(EvalContext *ctx, char *name, Attributes a, Promise *pp)
 
 /*******************************************************************/
 
-int VerifyMount(EvalContext *ctx, char *name, Attributes a, Promise *pp)
+PromiseResult VerifyMount(EvalContext *ctx, char *name, Attributes a, Promise *pp)
 {
     char comm[CF_BUFSIZE], line[CF_BUFSIZE];
     FILE *pfp;
@@ -524,6 +530,7 @@ int VerifyMount(EvalContext *ctx, char *name, Attributes a, Promise *pp)
         opts = xstrdup(VMOUNTOPTS[VSYSTEMHARDCLASS]);
     }
 
+    PromiseResult result = PROMISE_RESULT_NOOP;
     if (!DONTDO)
     {
         snprintf(comm, CF_BUFSIZE, "%s -o %s %s:%s %s", CommandArg0(VMOUNTCOMM[VSYSTEMHARDCLASS]), opts, host, rmountpt, mountpt);
@@ -546,6 +553,7 @@ int VerifyMount(EvalContext *ctx, char *name, Attributes a, Promise *pp)
         if (res != 0 && ((strstr(line, "busy")) || (strstr(line, "Busy"))))
         {
             cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_INTERRUPTED, pp, a, "The device under '%s' cannot be mounted", mountpt);
+            result = PromiseResultUpdate(result, PROMISE_RESULT_INTERRUPTED);
             cf_pclose(pfp);
             return 1;
         }
@@ -557,12 +565,14 @@ int VerifyMount(EvalContext *ctx, char *name, Attributes a, Promise *pp)
     free(opts);
 
     cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_CHANGE, pp, a, "Mounting '%s' to keep promise", mountpt);
-    return 0;
+    result = PromiseResultUpdate(result, PROMISE_RESULT_CHANGE);
+
+    return result;
 }
 
 /*******************************************************************/
 
-int VerifyUnmount(EvalContext *ctx, char *name, Attributes a, Promise *pp)
+PromiseResult VerifyUnmount(EvalContext *ctx, char *name, Attributes a, Promise *pp)
 {
     char comm[CF_BUFSIZE], line[CF_BUFSIZE];
     FILE *pfp;
@@ -570,6 +580,7 @@ int VerifyUnmount(EvalContext *ctx, char *name, Attributes a, Promise *pp)
 
     mountpt = name;
 
+    PromiseResult result = PROMISE_RESULT_NOOP;
     if (!DONTDO)
     {
         snprintf(comm, CF_BUFSIZE, "%s %s", VUNMOUNTCOMM[VSYSTEMHARDCLASS], mountpt);
@@ -577,7 +588,7 @@ int VerifyUnmount(EvalContext *ctx, char *name, Attributes a, Promise *pp)
         if ((pfp = cf_popen(comm, "r", true)) == NULL)
         {
             Log(LOG_LEVEL_ERR, "Failed to open pipe from %s", VUNMOUNTCOMM[VSYSTEMHARDCLASS]);
-            return 0;
+            return result;
         }
 
         ssize_t res = CfReadLine(line, CF_BUFSIZE, pfp);
@@ -586,21 +597,23 @@ int VerifyUnmount(EvalContext *ctx, char *name, Attributes a, Promise *pp)
         {
             Log(LOG_LEVEL_ERR, "Unable to read output of unmount command. (fread: %s)", GetErrorStr());
             cf_pclose(pfp);
-            return 0;
+            return result;
         }
 
         if (res != 0 && ((strstr(line, "busy")) || (strstr(line, "Busy"))))
         {
             cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_INTERRUPTED, pp, a, "The device under '%s' cannot be unmounted", mountpt);
+            result = PromiseResultUpdate(result, PROMISE_RESULT_INTERRUPTED);
             cf_pclose(pfp);
-            return 1;
+            return result;
         }
 
         cf_pclose(pfp);
     }
 
     cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_CHANGE, pp, a, "Unmounting '%s' to keep promise", mountpt);
-    return 0;
+    result = PromiseResultUpdate(result, PROMISE_RESULT_CHANGE);
+    return result;
 }
 
 /*******************************************************************/

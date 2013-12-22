@@ -1,9 +1,9 @@
-#include "test.h"
+#include <test.h>
 
-#include "expand.h"
-#include "rlist.h"
-#include "scope.h"
-#include "env_context.h"
+#include <expand.h>
+#include <rlist.h>
+#include <scope.h>
+#include <env_context.h>
 
 static void test_map_iterators_from_rval_empty(void)
 {
@@ -11,10 +11,12 @@ static void test_map_iterators_from_rval_empty(void)
 
     Rlist *lists = NULL;
     Rlist *scalars = NULL;
-    MapIteratorsFromRval(ctx, "none", &lists, &scalars, (Rval) { "", RVAL_TYPE_SCALAR });
+    Rlist *containers =  NULL;
+    MapIteratorsFromRval(ctx, "none", (Rval) { "", RVAL_TYPE_SCALAR }, &scalars, &lists, &containers);
 
     assert_int_equal(0, RlistLen(lists));
     assert_int_equal(0, RlistLen(scalars));
+    assert_int_equal(0, RlistLen(containers));
 
     EvalContextDestroy(ctx);
 }
@@ -25,10 +27,12 @@ static void test_map_iterators_from_rval_literal(void)
 
     Rlist *lists = NULL;
     Rlist *scalars = NULL;
-    MapIteratorsFromRval(ctx, "none", &lists, &scalars, (Rval) { "snookie", RVAL_TYPE_SCALAR });
+    Rlist *containers = NULL;
+    MapIteratorsFromRval(ctx, "none", (Rval) { "snookie", RVAL_TYPE_SCALAR }, &scalars, &lists, &containers);
 
     assert_int_equal(0, RlistLen(lists));
     assert_int_equal(0, RlistLen(scalars));
+    assert_int_equal(0, RlistLen(containers));
 
     EvalContextDestroy(ctx);
 }
@@ -36,22 +40,23 @@ static void test_map_iterators_from_rval_literal(void)
 static void test_map_iterators_from_rval_naked_list_var(void)
 {
     EvalContext *ctx = EvalContextNew();
-    ScopeDeleteAll();
 
     Rlist *list = NULL;
     RlistAppend(&list, "jersey", RVAL_TYPE_SCALAR);
 
     VarRef *lval = VarRefParse("scope.jwow");
 
-    EvalContextVariablePut(ctx, lval, (Rval) { list, RVAL_TYPE_LIST }, DATA_TYPE_STRING_LIST);
+    EvalContextVariablePut(ctx, lval, list, DATA_TYPE_STRING_LIST);
 
     Rlist *lists = NULL;
     Rlist *scalars = NULL;
-    MapIteratorsFromRval(ctx, "scope", &lists, &scalars, (Rval) { "${jwow}", RVAL_TYPE_SCALAR });
+    Rlist *containers = NULL;
+    MapIteratorsFromRval(ctx, "scope", (Rval) { "${jwow}", RVAL_TYPE_SCALAR }, &scalars, &lists, &containers);
 
     assert_int_equal(1, RlistLen(lists));
-    assert_string_equal("jwow", lists->item);
+    assert_string_equal("jwow", RlistScalarValue(lists));
     assert_int_equal(0, RlistLen(scalars));
+    assert_int_equal(0, RlistLen(containers));
 
     VarRefDestroy(lval);
     EvalContextDestroy(ctx);
@@ -62,12 +67,12 @@ static void test_expand_scalar_two_scalars_concat(void)
     EvalContext *ctx = EvalContextNew();
     {
         VarRef *lval = VarRefParse("default:bundle.one");
-        EvalContextVariablePut(ctx, lval, (Rval) { "first", RVAL_TYPE_SCALAR }, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, lval, "first", DATA_TYPE_STRING);
         VarRefDestroy(lval);
     }
     {
         VarRef *lval = VarRefParse("default:bundle.two");
-        EvalContextVariablePut(ctx, lval, (Rval) { "second", RVAL_TYPE_SCALAR }, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, lval, "second", DATA_TYPE_STRING);
         VarRefDestroy(lval);
     }
 
@@ -84,12 +89,12 @@ static void test_expand_scalar_two_scalars_nested(void)
     EvalContext *ctx = EvalContextNew();
     {
         VarRef *lval = VarRefParse("default:bundle.one");
-        EvalContextVariablePut(ctx, lval, (Rval) { "first", RVAL_TYPE_SCALAR }, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, lval, "first", DATA_TYPE_STRING);
         VarRefDestroy(lval);
     }
     {
         VarRef *lval = VarRefParse("default:bundle.two");
-        EvalContextVariablePut(ctx, lval, (Rval) { "one", RVAL_TYPE_SCALAR }, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, lval, "one", DATA_TYPE_STRING);
         VarRefDestroy(lval);
     }
 
@@ -106,12 +111,12 @@ static void test_expand_scalar_array_concat(void)
     EvalContext *ctx = EvalContextNew();
     {
         VarRef *lval = VarRefParse("default:bundle.foo[one]");
-        EvalContextVariablePut(ctx, lval, (Rval) { "first", RVAL_TYPE_SCALAR }, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, lval, "first", DATA_TYPE_STRING);
         VarRefDestroy(lval);
     }
     {
         VarRef *lval = VarRefParse("default:bundle.foo[two]");
-        EvalContextVariablePut(ctx, lval, (Rval) { "second", RVAL_TYPE_SCALAR }, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, lval, "second", DATA_TYPE_STRING);
         VarRefDestroy(lval);
     }
 
@@ -128,12 +133,12 @@ static void test_expand_scalar_array_with_scalar_arg(void)
     EvalContext *ctx = EvalContextNew();
     {
         VarRef *lval = VarRefParse("default:bundle.foo[one]");
-        EvalContextVariablePut(ctx, lval, (Rval) { "first", RVAL_TYPE_SCALAR }, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, lval, "first", DATA_TYPE_STRING);
         VarRefDestroy(lval);
     }
     {
         VarRef *lval = VarRefParse("default:bundle.bar");
-        EvalContextVariablePut(ctx, lval, (Rval) { "one", RVAL_TYPE_SCALAR }, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, lval, "one", DATA_TYPE_STRING);
         VarRefDestroy(lval);
     }
 
@@ -145,9 +150,10 @@ static void test_expand_scalar_array_with_scalar_arg(void)
     EvalContextDestroy(ctx);
 }
 
-static void actuator_expand_promise_array_with_scalar_arg(EvalContext *ctx, Promise *pp, ARG_UNUSED void *param)
+static PromiseResult actuator_expand_promise_array_with_scalar_arg(EvalContext *ctx, Promise *pp, ARG_UNUSED void *param)
 {
     assert_string_equal("first", pp->promiser);
+    return PROMISE_RESULT_NOOP;
 }
 
 static void test_expand_promise_array_with_scalar_arg(void)
@@ -155,12 +161,12 @@ static void test_expand_promise_array_with_scalar_arg(void)
     EvalContext *ctx = EvalContextNew();
     {
         VarRef *lval = VarRefParse("default:bundle.foo[one]");
-        EvalContextVariablePut(ctx, lval, (Rval) { "first", RVAL_TYPE_SCALAR }, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, lval, "first", DATA_TYPE_STRING);
         VarRefDestroy(lval);
     }
     {
         VarRef *lval = VarRefParse("default:bundle.bar");
-        EvalContextVariablePut(ctx, lval, (Rval) { "one", RVAL_TYPE_SCALAR }, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, lval, "one", DATA_TYPE_STRING);
         VarRefDestroy(lval);
     }
 
@@ -180,7 +186,7 @@ static void test_expand_promise_array_with_scalar_arg(void)
 
 static int actuator_state = 0;
 
-static void actuator_expand_promise_slist(EvalContext *ctx, Promise *pp, ARG_UNUSED void *param)
+static PromiseResult actuator_expand_promise_slist(EvalContext *ctx, Promise *pp, ARG_UNUSED void *param)
 {
     if (strcmp("a", pp->promiser) == 0)
     {
@@ -196,6 +202,7 @@ static void actuator_expand_promise_slist(EvalContext *ctx, Promise *pp, ARG_UNU
     {
         fail();
     }
+    return PROMISE_RESULT_NOOP;
 }
 
 static void test_expand_promise_slist(void)
@@ -209,7 +216,7 @@ static void test_expand_promise_slist(void)
         RlistAppendScalar(&list, "a");
         RlistAppendScalar(&list, "b");
 
-        EvalContextVariablePut(ctx, lval, (Rval) { list, RVAL_TYPE_LIST }, DATA_TYPE_STRING_LIST);
+        EvalContextVariablePut(ctx, lval, list, DATA_TYPE_STRING_LIST);
 
         RlistDestroy(list);
         VarRefDestroy(lval);
@@ -232,7 +239,7 @@ static void test_expand_promise_slist(void)
 }
 
 
-static void actuator_expand_promise_array_with_slist_arg(EvalContext *ctx, Promise *pp, ARG_UNUSED void *param)
+static PromiseResult actuator_expand_promise_array_with_slist_arg(EvalContext *ctx, Promise *pp, ARG_UNUSED void *param)
 {
     if (strcmp("first", pp->promiser) == 0)
     {
@@ -249,6 +256,7 @@ static void actuator_expand_promise_array_with_slist_arg(EvalContext *ctx, Promi
         fprintf(stderr, "Got promiser: '%s'\n", pp->promiser);
         fail();
     }
+    return PROMISE_RESULT_NOOP;
 }
 
 static void test_expand_promise_array_with_slist_arg(void)
@@ -262,7 +270,7 @@ static void test_expand_promise_array_with_slist_arg(void)
         RlistAppendScalar(&list, "one");
         RlistAppendScalar(&list, "two");
 
-        EvalContextVariablePut(ctx, lval, (Rval) { list, RVAL_TYPE_LIST }, DATA_TYPE_STRING_LIST);
+        EvalContextVariablePut(ctx, lval, list, DATA_TYPE_STRING_LIST);
 
         RlistDestroy(list);
         VarRefDestroy(lval);
@@ -270,13 +278,13 @@ static void test_expand_promise_array_with_slist_arg(void)
 
     {
         VarRef *lval = VarRefParse("default:bundle.arr[one]");
-        EvalContextVariablePut(ctx, lval, (Rval) { "first", RVAL_TYPE_SCALAR }, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, lval, "first", DATA_TYPE_STRING);
         VarRefDestroy(lval);
     }
 
     {
         VarRef *lval = VarRefParse("default:bundle.arr[two]");
-        EvalContextVariablePut(ctx, lval, (Rval) { "second", RVAL_TYPE_SCALAR }, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, lval, "second", DATA_TYPE_STRING);
         VarRefDestroy(lval);
     }
 

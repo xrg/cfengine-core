@@ -17,16 +17,16 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
 #include <stdint.h>
 #include <ctype.h>
-#include "platform.h"
-#include "ip_address.h"
-#include "alloc.h"
+#include <platform.h>
+#include <ip_address.h>
+#include <alloc.h>
 
 struct IPV4Address {
     uint8_t octets[4];
@@ -1055,7 +1055,85 @@ int IPAddressIsEqual(IPAddress *a, IPAddress *b)
      return -1;
 }
 
-bool IPAddress_IsIPAddress(Buffer *source, IPAddress **address)
+/*
+ * Sorting comparison for IPV4 addresses
+ */
+static int IPV4CompareLess(struct IPV4Address *a, struct IPV4Address *b)
+{
+    int i = 0;
+    for (i = 0; i < 4; ++i)
+    {
+        if (a->octets[i] > b->octets[i])
+        {
+            return 0;
+        }
+        else if (a->octets[i] < b->octets[i])
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+/*
+ * Sorting comparison for IPV6 addresses
+ */
+static int IPV6CompareLess(struct IPV6Address *a, struct IPV6Address *b)
+{
+    int i = 0;
+    for (i = 0; i < 8; ++i)
+    {
+        if (a->sixteen[i] > b->sixteen[i])
+        {
+            return 0;
+        }
+        else if (a->sixteen[i] < b->sixteen[i])
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+int IPAddressCompareLess(IPAddress *a, IPAddress *b)
+{
+    /*
+     * We do not support IPV4 versus IPV6 comparisons.
+     * This is trickier than what it seems, since even the IPV6 representation of an IPV6 address is not
+     * clear yet.
+     */
+     if (!a || !b)
+     {
+         return 1;
+     }
+
+     // Sort IPv4 BEFORE any other types
+     if (a->type == IP_ADDRESS_TYPE_IPV4 && a->type != b->type)
+     {
+         return 1;
+     }
+
+     if (b->type == IP_ADDRESS_TYPE_IPV4 && a->type != b->type)
+     {
+         return 0;
+     }
+
+     if (a->type == IP_ADDRESS_TYPE_IPV4 && b->type == IP_ADDRESS_TYPE_IPV4)
+     {
+         return IPV4CompareLess((struct IPV4Address *)a->address, (struct IPV4Address *)b->address);
+     }
+
+     if (a->type == IP_ADDRESS_TYPE_IPV6 && b->type == IP_ADDRESS_TYPE_IPV6)
+     {
+         return IPV6CompareLess((struct IPV6Address *)a->address, (struct IPV6Address *)b->address);
+     }
+
+     return -1;
+}
+
+bool IPAddressIsIPAddress(Buffer *source, IPAddress **address)
 {
     if (!source || !BufferData(source))
     {
@@ -1118,3 +1196,4 @@ bool IPAddress_IsIPAddress(Buffer *source, IPAddress **address)
     }
     return true;
 }
+

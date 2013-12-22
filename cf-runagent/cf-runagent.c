@@ -17,30 +17,31 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "generic_agent.h"
+#include <generic_agent.h>
 
-#include "sysinfo.h"
-#include "env_context.h"
-#include "lastseen.h"
-#include "crypto.h"
-#include "files_names.h"
-#include "promises.h"
-#include "conversion.h"
-#include "vars.h"
-#include "client_code.h"
-#include "communication.h"
-#include "net.h"
-#include "string_lib.h"
-#include "rlist.h"
-#include "scope.h"
-#include "policy.h"
-#include "audit.h"
-#include "man.h"
+#include <known_dirs.h>
+#include <unix.h>
+#include <env_context.h>
+#include <lastseen.h>
+#include <crypto.h>
+#include <files_names.h>
+#include <promises.h>
+#include <conversion.h>
+#include <vars.h>
+#include <client_code.h>
+#include <communication.h>
+#include <net.h>
+#include <string_lib.h>
+#include <rlist.h>
+#include <scope.h>
+#include <policy.h>
+#include <audit.h>
+#include <man.h>
 
 typedef enum
 {
@@ -64,7 +65,7 @@ static void KeepControlPromises(EvalContext *ctx, Policy *policy);
 static int HailServer(EvalContext *ctx, char *host);
 static int ParseHostname(char *hostname, char *new_hostname);
 static void SendClassData(AgentConnection *conn);
-static void HailExec(AgentConnection *conn, char *peer, char *recvbuffer, char *sendbuffer);
+static void HailExec(EvalContext *ctx, AgentConnection *conn, char *peer, char *recvbuffer, char *sendbuffer);
 static void HostPing(AgentConnection *conn, char *peer, char *recvbuffer, char *sendbuffer);
 static FILE *NewStream(char *name);
 static void DeleteStream(FILE *fp);
@@ -165,8 +166,6 @@ int main(int argc, char *argv[])
     GenericAgentDiscoverContext(ctx, config);
     Policy *policy = GenericAgentLoadPolicy(ctx, config);
 
-    CheckForPolicyHub(ctx);
-
     ThisAgentInit();
     KeepControlPromises(ctx, policy);      // Set RUNATTR using copy
 
@@ -198,7 +197,7 @@ int main(int argc, char *argv[])
                 {
                     if (fork() == 0)    /* child process */
                     {
-                        HailServer(ctx, rp->item);
+                        HailServer(ctx, RlistScalarValue(rp));
                         exit(0);
                     }
                     else        /* parent process */
@@ -217,7 +216,7 @@ int main(int argc, char *argv[])
             else                /* serial */
 #endif /* __MINGW32__ */
             {
-                HailServer(ctx, rp->item);
+                HailServer(ctx, RlistScalarValue(rp));
                 rp = rp->next;
             }
         }                       /* end while */
@@ -328,7 +327,7 @@ static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
         case 'n':
             DONTDO = true;
             IGNORELOCK = true;
-            EvalContextHeapAddHard(ctx, "opt_dry_run");
+            EvalContextClassPutHard(ctx, "opt_dry_run");
             break;
 
         case 't':
@@ -336,11 +335,19 @@ static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
             break;
 
         case 'V':
-            PrintVersion();
+            {
+                Writer *w = FileWriter(stdout);
+                GenericAgentWriteVersion(w);
+                FileWriterDetach(w);
+            }
             exit(0);
 
         case 'h':
-            PrintHelp("cf-runagent", OPTIONS, HINTS, true);
+            {
+                Writer *w = FileWriter(stdout);
+                GenericAgentWriteHelp(w, "cf-runagent", OPTIONS, HINTS, true);
+                FileWriterDetach(w);
+            }
             exit(0);
 
         case 'M':
@@ -367,7 +374,11 @@ static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
             break;
 
         default:
-            PrintHelp("cf-runagent", OPTIONS, HINTS, true);
+            {
+                Writer *w = FileWriter(stdout);
+                GenericAgentWriteHelp(w, "cf-runagent", OPTIONS, HINTS, true);
+                FileWriterDetach(w);
+            }
             exit(1);
 
         }
@@ -526,7 +537,7 @@ static int HailServer(EvalContext *ctx, char *host)
 
     fc.servers = RlistFromSplitString(peer, '*');
 
-    if (fc.servers == NULL || strcmp(fc.servers->item, "localhost") == 0)
+    if (fc.servers == NULL || strcmp(RlistScalarValue(fc.servers), "localhost") == 0)
     {
         Log(LOG_LEVEL_INFO, "No hosts are registered to connect to");
         return false;
@@ -553,7 +564,7 @@ static int HailServer(EvalContext *ctx, char *host)
         RlistDestroy(fc.servers);
         return true;
     }
-    HailExec(conn, peer, recvbuffer, sendbuffer);
+    HailExec(ctx, conn, peer, recvbuffer, sendbuffer);
 
     RlistDestroy(fc.servers);
 
@@ -635,7 +646,7 @@ static void KeepControlPromises(EvalContext *ctx, Policy *policy)
                 if (BACKGROUND || INTERACTIVE)
                 {
                     Log(LOG_LEVEL_WARNING,
-                          "'background_children' setting from 'body runagent control' is overriden by command-line option.");
+                          "'background_children' setting from 'body runagent control' is overridden by command-line option.");
                 }
                 else
                 {
@@ -720,7 +731,7 @@ static void SendClassData(AgentConnection *conn)
 
     for (rp = classes; rp != NULL; rp = rp->next)
     {
-        if (SendTransaction(conn->sd, rp->item, 0, CF_DONE) == -1)
+        if (SendTransaction(&conn->conn_info, RlistScalarValue(rp), 0, CF_DONE) == -1)
         {
             Log(LOG_LEVEL_ERR, "Transaction failed. (send: %s)", GetErrorStr());
             return;
@@ -729,7 +740,7 @@ static void SendClassData(AgentConnection *conn)
 
     snprintf(sendbuffer, CF_MAXVARSIZE, "%s", CFD_TERMINATOR);
 
-    if (SendTransaction(conn->sd, sendbuffer, 0, CF_DONE) == -1)
+    if (SendTransaction(&conn->conn_info, sendbuffer, 0, CF_DONE) == -1)
     {
         Log(LOG_LEVEL_ERR, "Transaction failed. (send: %s)", GetErrorStr());
         return;
@@ -738,7 +749,7 @@ static void SendClassData(AgentConnection *conn)
 
 /********************************************************************/
 
-static void HailExec(AgentConnection *conn, char *peer, char *recvbuffer, char *sendbuffer)
+static void HailExec(EvalContext *ctx, AgentConnection *conn, char *peer, char *recvbuffer, char *sendbuffer)
 {
     FILE *fp = stdout;
     char *sp;
@@ -753,7 +764,7 @@ static void HailExec(AgentConnection *conn, char *peer, char *recvbuffer, char *
         snprintf(sendbuffer, CF_BUFSIZE, "EXEC %s", REMOTE_AGENT_OPTIONS);
     }
 
-    if (SendTransaction(conn->sd, sendbuffer, 0, CF_DONE) == -1)
+    if (SendTransaction(&conn->conn_info, sendbuffer, 0, CF_DONE) == -1)
     {
         Log(LOG_LEVEL_ERR, "Transmission rejected. (send: %s)", GetErrorStr());
         DisconnectServer(conn);
@@ -767,7 +778,7 @@ static void HailExec(AgentConnection *conn, char *peer, char *recvbuffer, char *
     {
         memset(recvbuffer, 0, CF_BUFSIZE);
 
-        if ((n_read = ReceiveTransaction(conn->sd, recvbuffer, NULL, -1)) == -1)
+        if ((n_read = ReceiveTransaction(&conn->conn_info, recvbuffer, NULL, -1)) == -1)
         {
             return;
         }
@@ -816,7 +827,7 @@ static void HostPing(AgentConnection *conn, char *peer, char *recvbuffer, char *
 
     snprintf(sendbuffer, CF_BUFSIZE, "VERSION ");
 
-    if (SendTransaction(conn->sd, sendbuffer, 0, CF_DONE) == -1)
+    if (SendTransaction(&conn->conn_info, sendbuffer, 0, CF_DONE) == -1)
     {
         Log(LOG_LEVEL_ERR, "Transmission rejected");
         DisconnectServer(conn);
@@ -829,7 +840,7 @@ static void HostPing(AgentConnection *conn, char *peer, char *recvbuffer, char *
     {
         memset(recvbuffer, 0, CF_BUFSIZE);
 
-        if ((n_read = ReceiveTransaction(conn->sd, recvbuffer, NULL, -1)) == -1)
+        if ((n_read = ReceiveTransaction(&conn->conn_info, recvbuffer, NULL, -1)) == -1)
         {
             return;
         }

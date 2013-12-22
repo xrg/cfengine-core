@@ -17,25 +17,24 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "promises.h"
+#include <promises.h>
 
-#include "policy.h"
-#include "syntax.h"
-#include "expand.h"
-#include "files_names.h"
-#include "scope.h"
-#include "vars.h"
-#include "args.h"
-#include "locks.h"
-#include "misc_lib.h"
-#include "fncall.h"
-#include "env_context.h"
-#include "string_lib.h"
+#include <policy.h>
+#include <syntax.h>
+#include <expand.h>
+#include <files_names.h>
+#include <scope.h>
+#include <vars.h>
+#include <locks.h>
+#include <misc_lib.h>
+#include <fncall.h>
+#include <env_context.h>
+#include <string_lib.h>
 
 static void DereferenceComment(Promise *pp);
 
@@ -208,8 +207,6 @@ Promise *DeRefCopyPromise(EvalContext *ctx, const Promise *pp)
                         scp_copy->offset = scp->offset;
                     }
                 }
-
-                ScopeClear(NULL, "body");
             }
             else
             {
@@ -276,7 +273,7 @@ Promise *DeRefCopyPromise(EvalContext *ctx, const Promise *pp)
 
 /*****************************************************************************/
 
-Promise *ExpandDeRefPromise(EvalContext *ctx, const char *ns, const char *scope, const Promise *pp)
+Promise *ExpandDeRefPromise(EvalContext *ctx, const Promise *pp)
 {
     Promise *pcopy;
     Rval returnval, final;
@@ -288,7 +285,7 @@ Promise *ExpandDeRefPromise(EvalContext *ctx, const char *ns, const char *scope,
 
     if (pp->promisee.item)
     {
-        pcopy->promisee = EvaluateFinalRval(ctx, ns, scope, pp->promisee, true, pp);
+        pcopy->promisee = EvaluateFinalRval(ctx, NULL, "this", pp->promisee, true, pp);
     }
     else
     {
@@ -325,12 +322,12 @@ Promise *ExpandDeRefPromise(EvalContext *ctx, const char *ns, const char *scope,
 
         if (ExpectedDataType(cp->lval) == DATA_TYPE_BUNDLE)
         {
-            final = ExpandBundleReference(ctx, ns, scope, cp->rval);
+            final = ExpandBundleReference(ctx, NULL, "this", cp->rval);
         }
         else
         {
-            returnval = EvaluateFinalRval(ctx, ns, scope, cp->rval, false, pp);
-            final = ExpandDanglers(ctx, ns, scope, returnval, pp);
+            returnval = EvaluateFinalRval(ctx, NULL, "this", cp->rval, false, pp);
+            final = ExpandDanglers(ctx, NULL, "this", returnval, pp);
             RvalDestroy(returnval);
         }
 

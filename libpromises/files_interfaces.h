@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -25,8 +25,8 @@
 #ifndef CFENGINE_FILES_INTERFACES_H
 #define CFENGINE_FILES_INTERFACES_H
 
-#include "cf3.defs.h"
-#include "cfnet.h"                                       /* AgentConnection */
+#include <cf3.defs.h>
+#include <cfnet.h>                                       /* AgentConnection */
 
 int cf_lstat(char *file, struct stat *buf, FileCopy fc, AgentConnection *conn);
 

@@ -1,19 +1,19 @@
-#include "test.h"
+#include <test.h>
 
-#include "policy.h"
-#include "parser.h"
-#include "rlist.h"
-#include "fncall.h"
-#include "env_context.h"
-#include "item_lib.h"
-#include "bootstrap.h"
+#include <policy.h>
+#include <parser.h>
+#include <rlist.h>
+#include <fncall.h>
+#include <env_context.h>
+#include <item_lib.h>
+#include <bootstrap.h>
 
 static Policy *LoadPolicy(const char *filename)
 {
     char path[1024];
     sprintf(path, "%s/%s", TESTDATADIR, filename);
 
-    return ParserParseFile(path, PARSER_WARNING_ALL, PARSER_WARNING_ALL);
+    return ParserParseFile(AGENT_TYPE_COMMON, path, PARSER_WARNING_ALL, PARSER_WARNING_ALL);
 }
 
 static void DumpErrors(Seq *errs)
@@ -53,7 +53,7 @@ static Seq *LoadAndCheckString(const char *policy_code)
         WriterClose(w);
     }
 
-    Policy *p = ParserParseFile(tmp, PARSER_WARNING_ALL, PARSER_WARNING_ALL);
+    Policy *p = ParserParseFile(AGENT_TYPE_COMMON, tmp, PARSER_WARNING_ALL, PARSER_WARNING_ALL);
     assert_true(p);
 
     Seq *errs = SeqNew(10, PolicyErrorDestroy);
@@ -68,7 +68,7 @@ static void test_failsafe(void)
     char *tmp = tempnam(NULL, "cfengine_test");
     WriteBuiltinFailsafePolicyToPath(tmp);
 
-    Policy *failsafe = ParserParseFile(tmp, PARSER_WARNING_ALL, PARSER_WARNING_ALL);
+    Policy *failsafe = ParserParseFile(AGENT_TYPE_COMMON, tmp, PARSER_WARNING_ALL, PARSER_WARNING_ALL);
 
     unlink(tmp);
     free(tmp);
@@ -156,7 +156,7 @@ static void test_policy_json_to_from(void)
         JsonElement *json = PolicyToJson(original);
         PolicyDestroy(original);
         policy = PolicyFromJson(json);
-        JsonElementDestroy(json);
+        JsonDestroy(json);
     }
     assert_true(policy);
 
@@ -318,7 +318,7 @@ static void test_policy_json_offsets(void)
         }
     }
 
-    JsonElementDestroy(json);
+    JsonDestroy(json);
 }
 
 

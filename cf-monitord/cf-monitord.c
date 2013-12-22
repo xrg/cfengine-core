@@ -17,22 +17,24 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "generic_agent.h"
-#include "mon.h"
+#include <generic_agent.h>
+#include <mon.h>
 
-#include "env_context.h"
-#include "env_monitor.h"
-#include "conversion.h"
-#include "vars.h"
-#include "signals.h"
-#include "scope.h"
-#include "sysinfo.h"
-#include "man.h"
+#include <env_context.h>
+#include <env_monitor.h>
+#include <conversion.h>
+#include <vars.h>
+#include <signals.h>
+#include <scope.h>
+#include <known_dirs.h>
+#include <man.h>
+#include <bootstrap.h>
+#include <timeout.h>
 
 typedef enum
 {
@@ -43,7 +45,7 @@ typedef enum
     MONITOR_CONTROL_NONE
 } MonitorControl;
 
-static void ThisAgentInit(EvalContext *ctx);
+static void ThisAgentInit(void);
 static GenericAgentConfig *CheckOpts(int argc, char **argv);
 static void KeepPromises(EvalContext *ctx, Policy *policy);
 
@@ -116,9 +118,7 @@ int main(int argc, char *argv[])
     GenericAgentDiscoverContext(ctx, config);
     Policy *policy = GenericAgentLoadPolicy(ctx, config);
 
-    CheckForPolicyHub(ctx);
-
-    ThisAgentInit(ctx);
+    ThisAgentInit();
     KeepPromises(ctx, policy);
 
     MonitorStartServer(ctx, policy);
@@ -180,11 +180,19 @@ static GenericAgentConfig *CheckOpts(int argc, char **argv)
             break;
 
         case 'V':
-            PrintVersion();
+            {
+                Writer *w = FileWriter(stdout);
+                GenericAgentWriteVersion(w);
+                FileWriterDetach(w);
+            }
             exit(0);
 
         case 'h':
-            PrintHelp("cf-monitord", OPTIONS, HINTS, true);
+            {
+                Writer *w = FileWriter(stdout);
+                GenericAgentWriteHelp(w, "cf-monitord", OPTIONS, HINTS, true);
+                FileWriterDetach(w);
+            }
             exit(0);
 
         case 'M':
@@ -211,7 +219,11 @@ static GenericAgentConfig *CheckOpts(int argc, char **argv)
             break;
 
         default:
-            PrintHelp("cf-monitord", OPTIONS, HINTS, true);
+            {
+                Writer *w = FileWriter(stdout);
+                GenericAgentWriteHelp(w, "cf-monitord", OPTIONS, HINTS, true);
+                FileWriterDetach(w);
+            }
             exit(1);
         }
     }
@@ -277,12 +289,12 @@ static void KeepPromises(EvalContext *ctx, Policy *policy)
 /* Level 1                                                                   */
 /*****************************************************************************/
 
-static void ThisAgentInit(EvalContext *ctx)
+static void ThisAgentInit(void)
 {
     umask(077);
     sprintf(VPREFIX, "cf-monitord");
 
-    SetReferenceTime(ctx, false);
+    SetReferenceTime();
     SetStartTime();
 
     signal(SIGINT, HandleSignalsForDaemon);

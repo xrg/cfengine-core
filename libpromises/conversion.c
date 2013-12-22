@@ -17,20 +17,20 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "conversion.h"
+#include <conversion.h>
 
-#include "promises.h"
-#include "files_names.h"
-#include "dbm_api.h"
-#include "mod_access.h"
-#include "item_lib.h"
-#include "logging.h"
-#include "rlist.h"
+#include <promises.h>
+#include <files_names.h>
+#include <dbm_api.h>
+#include <mod_access.h>
+#include <item_lib.h>
+#include <logging.h>
+#include <rlist.h>
 
 
 static int IsSpace(char *remainder);
@@ -150,6 +150,20 @@ DatabaseType DatabaseTypeFromString(const char *s)
     return FindTypeInArray(DB_TYPES, s, DATABASE_TYPE_NONE, DATABASE_TYPE_NONE);
 }
 
+UserState UserStateFromString(const char *s)
+{
+    static const char *U_TYPES[] = { "present", "absent", "locked", NULL };
+
+    return FindTypeInArray(U_TYPES, s, USER_STATE_NONE, USER_STATE_NONE);
+}
+
+PasswordFormat PasswordFormatFromString(const char *s)
+{
+    static const char *U_TYPES[] = { "plaintext", "hash", NULL };
+
+    return FindTypeInArray(U_TYPES, s, PASSWORD_FORMAT_NONE, PASSWORD_FORMAT_NONE);
+}
+
 PackageAction PackageActionFromString(const char *s)
 {
     static const char *PACKAGE_ACTION_TYPES[] =
@@ -183,7 +197,7 @@ char *Rlist2String(Rlist *list, char *sep)
 
     for (rp = list; rp != NULL; rp = rp->next)
     {
-        strcat(line, (char *) rp->item);
+        strcat(line, RlistScalarValue(rp));
 
         if (rp->next)
         {
@@ -288,6 +302,7 @@ static const char *datatype_strings[] =
     [DATA_TYPE_INT_RANGE] = "irange",
     [DATA_TYPE_REAL_RANGE] = "rrange",
     [DATA_TYPE_COUNTER] = "counter",
+    [DATA_TYPE_CONTAINER] = "data",
     [DATA_TYPE_NONE] = "none"
 };
 
@@ -385,14 +400,11 @@ long IntFromString(const char *s)
 
     if ((a == CF_NOINT) || (!IsSpace(remainder)))
     {
-        if (THIS_AGENT_TYPE == AGENT_TYPE_COMMON)
+        Log(LOG_LEVEL_INFO, "Error reading assumed integer value '%s' => 'non-value', found remainder '%s'",
+              s, remainder);
+        if (strchr(s, '$'))
         {
-            Log(LOG_LEVEL_INFO, "Error reading assumed integer value '%s' => 'non-value', found remainder '%s'",
-                  s, remainder);
-            if (strchr(s, '$'))
-            {
-                Log(LOG_LEVEL_INFO, "The variable might not yet be expandable - not necessarily an error");
-            }
+            Log(LOG_LEVEL_INFO, "The variable might not yet be expandable - not necessarily an error");
         }
     }
     else
@@ -805,6 +817,36 @@ const char *DataTypeShortToType(char *short_type)
     return "unknown type";
 }
 
+int CoarseLaterThan(const char *bigger, const char *smaller)
+{
+    char month_small[CF_SMALLBUF];
+    char month_big[CF_SMALLBUF];
+    int m_small, day_small, year_small, m_big, year_big, day_big;
+
+    sscanf(smaller, "%d %s %d", &day_small, month_small, &year_small);
+    sscanf(bigger, "%d %s %d", &day_big, month_big, &year_big);
+
+    if (year_big < year_small)
+    {
+        return false;
+    }
+
+    m_small = Month2Int(month_small);
+    m_big = Month2Int(month_big);
+
+    if (m_big < m_small)
+    {
+        return false;
+    }
+
+    if (day_big < day_small && m_big == m_small && year_big == year_small)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 int Month2Int(const char *string)
 {
     int i;
@@ -977,7 +1019,7 @@ UidList *Rlist2UidList(Rlist *uidnames, const Promise *pp)
     for (rp = uidnames; rp != NULL; rp = rp->next)
     {
         username[0] = '\0';
-        uid = Str2Uid(rp->item, username, pp);
+        uid = Str2Uid(RlistScalarValue(rp), username, pp);
         AddSimpleUidItem(&uidlist, uid, username);
     }
 
@@ -1027,7 +1069,7 @@ GidList *Rlist2GidList(Rlist *gidnames, const Promise *pp)
     for (rp = gidnames; rp != NULL; rp = rp->next)
     {
         groupname[0] = '\0';
-        gid = Str2Gid(rp->item, groupname, pp);
+        gid = Str2Gid(RlistScalarValue(rp), groupname, pp);
         AddSimpleGidItem(&gidlist, gid, groupname);
     }
 
@@ -1041,7 +1083,7 @@ GidList *Rlist2GidList(Rlist *gidnames, const Promise *pp)
 
 /*********************************************************************/
 
-uid_t Str2Uid(char *uidbuff, char *usercopy, const Promise *pp)
+uid_t Str2Uid(const char *uidbuff, char *usercopy, const Promise *pp)
 {
     Item *ip, *tmplist;
     struct passwd *pw;
@@ -1129,7 +1171,7 @@ uid_t Str2Uid(char *uidbuff, char *usercopy, const Promise *pp)
 
 /*********************************************************************/
 
-gid_t Str2Gid(char *gidbuff, char *groupcopy, const Promise *pp)
+gid_t Str2Gid(const char *gidbuff, char *groupcopy, const Promise *pp)
 {
     struct group *gr;
     int gid = -2, tmp = -2;

@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -31,11 +31,11 @@
   and its array dimension, in mod_common, in the manner shown here.
 */
 
-#include "mod_access.h"
+#include <mod_access.h>
 
-#include "syntax.h"
-#include "string_lib.h"
-#include "policy.h"
+#include <syntax.h>
+#include <string_lib.h>
+#include <policy.h>
 
 /*
   Read this module file backwards, as dependencies have to be defined first -

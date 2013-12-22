@@ -17,17 +17,17 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "logging.h"
-#include "logging_priv.h"
+#include <logging.h>
+#include <logging_priv.h>
 
-#include "alloc.h"
-#include "string_lib.h"
-#include "misc_lib.h"
+#include <alloc.h>
+#include <string_lib.h>
+#include <misc_lib.h>
 
 char VPREFIX[1024];
 bool LEGACY_OUTPUT = false;
@@ -43,7 +43,7 @@ typedef struct
 
 static LogLevel global_level = LOG_LEVEL_NOTICE;
 
-void LogToSystemLog(const char *msg, LogLevel level);
+static void LogToSystemLog(const char *msg, LogLevel level);
 
 static pthread_once_t log_context_init_once = PTHREAD_ONCE_INIT;
 static pthread_key_t log_context_key;
@@ -142,17 +142,19 @@ static const char *LogLevelToColor(LogLevel level)
     }
 }
 
-void LogToStdout(const char *msg, LogLevel level, bool color)
+static void LogToConsole(const char *msg, LogLevel level, bool color)
 {
+    FILE *output_file = (level <= LOG_LEVEL_WARNING) ? stderr : stdout;
+
     if (LEGACY_OUTPUT)
     {
         if (level >= LOG_LEVEL_VERBOSE)
         {
-            printf("%s> %s\n", VPREFIX, msg);
+            fprintf(stdout, "%s> %s\n", VPREFIX, msg);
         }
         else
         {
-            printf("%s\n", msg);
+            fprintf(stdout, "%s\n", msg);
         }
     }
     else
@@ -173,12 +175,12 @@ void LogToStdout(const char *msg, LogLevel level, bool color)
 
         if (color)
         {
-            printf("%s%s %8s: %s\x1b[0m\n", LogLevelToColor(level),
-                   formatted_timestamp, string_level, msg);
+            fprintf(output_file, "%s%s %8s: %s\x1b[0m\n", LogLevelToColor(level),
+                    formatted_timestamp, string_level, msg);
         }
         else
         {
-            printf("%s %8s: %s\n", formatted_timestamp, string_level, msg);
+            fprintf(output_file, "%s %8s: %s\n", formatted_timestamp, string_level, msg);
         }
     }
 }
@@ -202,9 +204,14 @@ static int LogLevelToSyslogPriority(LogLevel level)
 
 }
 
-void LogToSystemLog(const char *msg, LogLevel level)
+static void LogToSystemLog(const char *msg, LogLevel level)
 {
     syslog(LogLevelToSyslogPriority(level), "%s", msg);
+}
+
+const char *GetErrorStrFromCode(int error_code)
+{
+    return strerror(error_code);
 }
 
 const char *GetErrorStr(void)
@@ -231,7 +238,7 @@ void VLog(LogLevel level, const char *fmt, va_list ap)
 
     if (level <= lctx->report_level)
     {
-        LogToStdout(hooked_msg, level, lctx->color);
+        LogToConsole(hooked_msg, level, lctx->color);
     }
 
     if (level <= lctx->log_level)
@@ -239,6 +246,30 @@ void VLog(LogLevel level, const char *fmt, va_list ap)
         LogToSystemLog(hooked_msg, level);
     }
     free(msg);
+}
+
+/**
+ * @brief Logs binary data in #buf, with each byte translated to '.' if not
+ *        printable. Message is prefixed with #prefix.
+ */
+void LogRaw(LogLevel level, const char *prefix, void *buf, size_t buflen)
+{
+    /* Translate non printable characters to printable ones. */
+    char *src = (char *) buf;
+    char dst[buflen+1];
+    size_t i;
+
+    for (i = 0; i < buflen; i++)
+    {
+        if (isprint(src[i]))
+            dst[i] = src[i];
+        else
+            dst[i] = '.';
+    }
+    dst[i] = '\0';
+
+    /* And Log the translated buffer, which is now a valid string. */
+    Log(level, "%s%s", prefix, dst);
 }
 
 void Log(LogLevel level, const char *fmt, ...)

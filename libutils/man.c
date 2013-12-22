@@ -17,14 +17,14 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "man.h"
+#include <man.h>
 
-#include "string_lib.h"
+#include <string_lib.h>
 
 #include <time.h>
 
@@ -49,7 +49,7 @@ static void WriteCopyright(Writer *out)
         ".\\\"Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA\n"
         ".\\\"\n"
         ".\\\"To the extent this program is licensed as part of the Enterprise\n"
-        ".\\\"versions of CFEngine, the applicable Commerical Open Source License\n"
+        ".\\\"versions of CFEngine, the applicable Commercial Open Source License\n"
         ".\\\"(COSL) may apply to this file if you as a licensee so wish it. See\n"
         ".\\\"included file COSL.txt.\n";
 
@@ -80,7 +80,7 @@ static void WriteAvailability(Writer *out, const char *program)
         ".br\n"
         "Binary packages may be downloaded from http://cfengine.com/downloads/.\n"
         ".br\n"
-        "The source code is avaiable at http://github.com/cfengine/\n";
+        "The source code is available at http://github.com/cfengine/\n";
 
     WriterWriteF(out, availability, program);
 }

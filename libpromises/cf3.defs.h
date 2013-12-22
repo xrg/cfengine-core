@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -25,16 +25,16 @@
 #ifndef CFENGINE_CF3_DEFS_H
 #define CFENGINE_CF3_DEFS_H
 
-#include "platform.h"
-#include "compiler.h"
+#include <platform.h>
+#include <compiler.h>
 
 #ifdef HAVE_LIBXML2
 #include <libxml/parser.h>
 #include <libxml/xpathInternals.h>
 #endif
 
-#include "sequence.h"
-#include "logging.h"
+#include <sequence.h>
+#include <logging.h>
 
 /*******************************************************************/
 /* Preprocessor tricks                                             */
@@ -147,7 +147,7 @@ typedef enum
     PROMISE_RESULT_FAIL = 'f',
     PROMISE_RESULT_DENIED = 'd',
     PROMISE_RESULT_TIMEOUT = 't',
-    PROMISE_RESULT_INTERRUPTED = 'i',
+    PROMISE_RESULT_INTERRUPTED = 'i'
 } PromiseResult;
 
 /*****************************************************************************/
@@ -167,7 +167,7 @@ typedef enum
 #define CF_OBSERVABLES 100
 
 
-#include "statistics.h"
+#include <statistics.h>
 
 typedef struct
 {
@@ -233,6 +233,7 @@ typedef enum
 typedef enum
 {
     PLATFORM_CONTEXT_UNKNOWN,
+    PLATFORM_CONTEXT_OPENVZ,
     PLATFORM_CONTEXT_HP,
     PLATFORM_CONTEXT_AIX,
     PLATFORM_CONTEXT_LINUX,
@@ -443,6 +444,7 @@ typedef enum
     DATA_TYPE_INT_RANGE,
     DATA_TYPE_REAL_RANGE,
     DATA_TYPE_COUNTER,
+    DATA_TYPE_CONTAINER,
     DATA_TYPE_NONE
 } DataType;
 
@@ -489,6 +491,7 @@ typedef enum
     COMMON_CONTROL_SYSLOG_HOST,
     COMMON_CONTROL_SYSLOG_PORT,
     COMMON_CONTROL_FIPS_MODE,
+    COMMON_CONTROL_CACHE_SYSTEM_FUNCTIONS,
     COMMON_CONTROL_BWLIMIT,
     COMMON_CONTROL_NONE
 } CommonControl;
@@ -550,6 +553,7 @@ typedef enum
     EXEC_CONTROL_SPLAYTIME,
     EXEC_CONTROL_MAILFROM,
     EXEC_CONTROL_MAILTO,
+    EXEC_CONTROL_MAILSUBJECT,
     EXEC_CONTROL_SMTPSERVER,
     EXEC_CONTROL_MAILMAXLINES,
     EXEC_CONTROL_SCHEDULE,
@@ -622,6 +626,7 @@ typedef enum
     RVAL_TYPE_SCALAR = 's',
     RVAL_TYPE_LIST = 'l',
     RVAL_TYPE_FNCALL = 'f',
+    RVAL_TYPE_CONTAINER = 'c',
     RVAL_TYPE_NOPROMISEE = 'X' // TODO: must be another hack
 } RvalType;
 
@@ -714,6 +719,13 @@ typedef struct
     const char *description;
 } FnCallArg;
 
+typedef enum
+{
+    FNCALL_OPTION_NONE = 0,
+    FNCALL_OPTION_VARARG = 1 << 0,
+    FNCALL_OPTION_CACHED = 1 << 1
+} FnCallOption;
+
 typedef struct
 {
     const char *name;
@@ -721,7 +733,7 @@ typedef struct
     const FnCallArg *args;
     FnCallResult (*impl)(EvalContext *ctx, FnCall *, Rlist *);
     const char *description;
-    bool varargs;
+    FnCallOption options;
     FnCallCategory category;
     SyntaxStatus status;
 } FnCallType;
@@ -742,21 +754,6 @@ typedef struct
 #endif
 
 } EditContext;
-
-/*******************************************************************/
-/* Variable processing                                             */
-/*******************************************************************/
-
-typedef struct AssocHashTable_ AssocHashTable;
-
-/* $(bundlevar) $(scope.name) */
-typedef struct Scope_
-{
-    char *ns;
-    char *scope;
-    AssocHashTable *hashtable;
-    struct Scope_ *next;
-} Scope;
 
 typedef enum
 {
@@ -1516,6 +1513,35 @@ typedef struct
 } Database;
 
 /*************************************************************************/
+typedef enum
+{
+    USER_STATE_PRESENT,
+    USER_STATE_ABSENT,
+    USER_STATE_LOCKED,
+    USER_STATE_NONE
+} UserState;
+
+typedef enum
+{
+    PASSWORD_FORMAT_PLAINTEXT,
+    PASSWORD_FORMAT_HASH,
+    PASSWORD_FORMAT_NONE
+} PasswordFormat;
+
+typedef struct
+{
+    UserState policy;
+    char *uid;
+    PasswordFormat password_format;
+    char *password;
+    char *description;
+    char *group_primary;
+    Rlist *groups_secondary;
+    char *home_dir;
+    char *shell;
+} User;
+
+/*************************************************************************/
 
 typedef enum
 {
@@ -1575,6 +1601,8 @@ typedef struct
 /* This is huge, but the simplification of logic is huge too
     so we leave it to the compiler to optimize */
 
+#include <json.h>
+
 typedef struct
 {
     Outputs output;
@@ -1592,11 +1620,14 @@ typedef struct
     Acl acl;
     Database database;
     Services service;
+    User users;
     Environments env;
     char *transformer;
     char *pathtype;
     char *repository;
-    char *template;
+    char *edit_template;
+    char *template_method;
+    JsonElement *template_data;
     int touch;
     int create;
     int move_obstructions;
@@ -1667,11 +1698,11 @@ typedef struct
 #define NULL_OR_EMPTY(str) ((str == NULL) || (str[0] == '\0'))
 #define BEGINSWITH(str,start) (strncmp(str,start,strlen(start)) == 0)
 
-#include "dbm_api.h"
-#include "sequence.h"
-#include "prototypes3.h"
-#include "alloc.h"
-#include "cf3.extern.h"
+#include <dbm_api.h>
+#include <sequence.h>
+#include <prototypes3.h>
+#include <alloc.h>
+#include <cf3.extern.h>
 
 extern const ConstraintSyntax CF_COMMON_BODIES[];
 extern const ConstraintSyntax CF_VARBODY[];
@@ -1684,6 +1715,8 @@ extern const PromiseTypeSyntax CF_COMMON_PROMISE_TYPES[];
 extern const ConstraintSyntax CF_CLASSBODY[];
 extern const ConstraintSyntax CFA_CONTROLBODY[];
 extern const ConstraintSyntax CFEX_CONTROLBODY[];
+
+typedef struct ServerConnectionState_ ServerConnectionState;
 
 #endif
 

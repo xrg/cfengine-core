@@ -1,17 +1,17 @@
-#include "test.h"
+#include <test.h>
 
-#include "exec-config.h"
+#include <exec-config.h>
 
-#include "parser.h"
-#include "env_context.h"
-#include "generic_agent.h"
+#include <parser.h>
+#include <env_context.h>
+#include <expand.h>
 
 static Policy *LoadPolicy(const char *filename)
 {
     char path[1024];
     sprintf(path, "%s/%s", TESTDATADIR, filename);
 
-    return ParserParseFile(path, PARSER_WARNING_ALL, PARSER_WARNING_ALL);
+    return ParserParseFile(AGENT_TYPE_COMMON, path, PARSER_WARNING_ALL, PARSER_WARNING_ALL);
 }
 
 static void TestCheckConfigIsDefault(ExecConfig *c)
@@ -23,6 +23,7 @@ static void TestCheckConfigIsDefault(ExecConfig *c)
     assert_int_equal(30, c->mail_max_lines);
     assert_string_equal("", c->mail_server);
     assert_string_equal("",c->mail_to_address);
+    assert_string_equal("",c->mail_subject);
     assert_int_equal(0, c->splay_time);
 
     assert_int_equal(12, StringSetSize(c->schedule));
@@ -49,14 +50,14 @@ static void test_load(void)
     EvalContext *ctx = EvalContextNew();
     {
         VarRef *lval = VarRefParse("g.host");
-        EvalContextVariablePut(ctx, lval, (Rval) { "snookie", RVAL_TYPE_SCALAR }, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, lval, "snookie", DATA_TYPE_STRING);
         VarRefDestroy(lval);
     }
 
     // provide a full body executor control and check that all options are collected
     {
         Policy *p = LoadPolicy("body_executor_control_full.cf");
-        HashControls(ctx, p, agent_config);
+        PolicyResolve(ctx, p, agent_config);
 
         ExecConfigUpdate(ctx, p, c);
 
@@ -71,6 +72,7 @@ static void test_load(void)
         assert_int_equal(50, c->mail_max_lines);
         assert_string_equal("localhost", c->mail_server);
         assert_string_equal("cfengine_mail@example.org",c->mail_to_address);
+        assert_string_equal("Test [localhost/127.0.0.1]",c->mail_subject);
 
         // splay time hard to test (pseudo random)
 
@@ -85,7 +87,7 @@ static void test_load(void)
     {
         {
             Policy *p = LoadPolicy("body_executor_control_agent_expireafter_only.cf");
-            HashControls(ctx, p, agent_config);
+            PolicyResolve(ctx, p, agent_config);
 
             ExecConfigUpdate(ctx, p, c);
 
@@ -102,6 +104,7 @@ static void test_load(void)
             assert_int_equal(30, c->mail_max_lines);
             assert_string_equal("", c->mail_server);
             assert_string_equal("",c->mail_to_address);
+            assert_string_equal("",c->mail_subject);
             assert_int_equal(0, c->splay_time);
 
             assert_int_equal(12, StringSetSize(c->schedule));

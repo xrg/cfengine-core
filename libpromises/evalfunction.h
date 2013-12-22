@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -25,15 +25,14 @@
 #ifndef CFENGINE_EVALFUNCTION_H
 #define CFENGINE_EVALFUNCTION_H
 
-#include "cf3.defs.h"
-#include "rlist.h"
+#include <cf3.defs.h>
+#include <rlist.h>
 
 FnCallResult FnCallHostInNetgroup(EvalContext *ctx, FnCall *fp, Rlist *finalargs);
 
-FnCallResult CallFunction(EvalContext *ctx, const FnCallType *function, FnCall *fp, Rlist *finalargs);
 int FnNumArgs(const FnCallType *call_type);
 
-void ModuleProtocol(EvalContext *ctx, char *command, char *line, int print, const char *ns);
+void ModuleProtocol(EvalContext *ctx, char *command, char *line, int print, const char *ns, char* context);
 
 /* Implemented in Nova for Win32 */
 FnCallResult FnCallGroupExists(EvalContext *ctx, FnCall *fp, Rlist *finalargs);

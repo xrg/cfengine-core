@@ -17,15 +17,15 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "parser.h"
-#include "parser_state.h"
+#include <parser.h>
+#include <parser_state.h>
 
-#include "misc_lib.h"
+#include <misc_lib.h>
 
 #include <errno.h>
 
@@ -37,6 +37,8 @@ extern FILE *yyin;
 
 static void ParserStateReset(ParserState *p)
 {
+    p->agent_type = AGENT_TYPE_COMMON;
+
     p->policy = NULL;
 
     p->warnings = PARSER_WARNING_ALL;
@@ -75,17 +77,22 @@ static void ParserStateReset(ParserState *p)
     p->promiser = NULL;
     p->blockid[0] = '\0';
     p->blocktype[0] = '\0';
+    p->rval = RvalNew(NULL, RVAL_TYPE_NOPROMISEE);
 }
 
-Policy *ParserParseFile(const char *path, unsigned int warnings, unsigned int warnings_error)
+Policy *ParserParseFile(AgentType agent_type, const char *path, unsigned int warnings, unsigned int warnings_error)
 {
     ParserStateReset(&P);
+
+    P.agent_type = agent_type;
     P.policy = PolicyNew();
 
     P.warnings = warnings;
     P.warnings_error = warnings_error;
 
     strncpy(P.filename, path, CF_MAXVARSIZE);
+    // no include is active by default
+    P.include_filename[0] = '\0';
 
     yyin = fopen(path, "r");
     if (yyin == NULL)

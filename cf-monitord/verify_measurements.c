@@ -17,30 +17,26 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "verify_measurements.h"
+#include <verify_measurements.h>
 
-#include "promises.h"
-#include "files_names.h"
-#include "attributes.h"
-#include "policy.h"
-#include "cf-monitord-enterprise-stubs.h"
-#include "env_context.h"
-#include "ornaments.h"
-
-#ifdef HAVE_NOVA
-#include "history.h"
-#endif
+#include <promises.h>
+#include <files_names.h>
+#include <attributes.h>
+#include <policy.h>
+#include <cf-monitord-enterprise-stubs.h>
+#include <env_context.h>
+#include <ornaments.h>
 
 static bool CheckMeasureSanity(Measurement m, Promise *pp);
 
 /*****************************************************************************/
 
-void VerifyMeasurementPromise(EvalContext *ctx, double *this, Promise *pp)
+PromiseResult VerifyMeasurementPromise(EvalContext *ctx, double *measurement, Promise *pp)
 {
     Attributes a = { {0} };
 
@@ -55,7 +51,7 @@ void VerifyMeasurementPromise(EvalContext *ctx, double *this, Promise *pp)
             Log(LOG_LEVEL_VERBOSE, "Skipping static observation '%s', already done", pp->promiser);
         }
 
-        return;
+        return PROMISE_RESULT_NOOP;
     }
 
     PromiseBanner(pp);
@@ -65,10 +61,10 @@ void VerifyMeasurementPromise(EvalContext *ctx, double *this, Promise *pp)
     if (!CheckMeasureSanity(a.measure, pp))
     {
         cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_INTERRUPTED, pp, a, "Measurement promise is not valid");
-        return;
+        return PROMISE_RESULT_INTERRUPTED;
     }
 
-    VerifyMeasurement(ctx, this, a, pp);
+    return VerifyMeasurement(ctx, measurement, a, pp);
 }
 
 /*****************************************************************************/

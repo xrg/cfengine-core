@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -26,7 +26,7 @@
 #define CFENGINE_LIST_H
 
 #include <stdlib.h>
-#include "refcount.h"
+#include <refcount.h>
 
 /**
   @brief Double linked list implementation.
@@ -148,7 +148,7 @@ int ListRemove(List *list, void *payload);
   @param list Linked list.
   @return The number of elements on the list.
   */
-int ListCount(List *list);
+int ListCount(const List *list);
 
 /**
   @brief Gets an iterator for a given linked list.
@@ -160,7 +160,7 @@ int ListCount(List *list);
   @param iterator Iterator.
   @return A fully initialized iterator or NULL in case of error.
   */
-ListIterator *ListIteratorGet(List *list);
+ListIterator *ListIteratorGet(const List *list);
 /**
   @brief Releases the memory associated with an iterator.
 

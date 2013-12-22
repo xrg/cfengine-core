@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -81,9 +81,6 @@ extern char POLICY_SERVER[CF_MAX_IP_LEN];
 extern HashMethod CF_DEFAULT_DIGEST;
 extern int CF_DEFAULT_DIGEST_LEN;
 
-extern Scope *VSCOPE;
-extern Rlist *CF_STCK;
-
 extern int CF_PERSISTENCE;
 extern int LOOKUP;
 
@@ -92,7 +89,6 @@ extern const char *CF_AGENTTYPES[];
 extern int CFA_MAXTHREADS;
 extern AgentType THIS_AGENT_TYPE;
 extern int SHOWREPORTS;
-extern time_t PROMISETIME;
 #define CF_LOCKHORIZON ((time_t)(SECONDS_PER_WEEK * 4))
 extern int LASTSEENEXPIREAFTER;
 extern char *DEFAULT_COPYTYPE;

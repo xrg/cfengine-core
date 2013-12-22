@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -25,10 +25,10 @@
 #ifndef CFENGINE_SYNTAX_H
 #define CFENGINE_SYNTAX_H
 
-#include "cf3.defs.h"
+#include <cf3.defs.h>
 
-#include "sequence.h"
-#include "json.h"
+#include <sequence.h>
+#include <json.h>
 
 #include <stdio.h>
 
@@ -74,7 +74,6 @@ SyntaxTypeMatch CheckConstraintTypeMatch(const char *lval, Rval rval, DataType d
 SyntaxTypeMatch CheckParseContext(const char *context, const char *range);
 DataType StringDataType(EvalContext *ctx, const char *string);
 DataType ExpectedDataType(const char *lvalname);
-bool IsDataType(const char *s);
 
 const PromiseTypeSyntax *PromiseTypeSyntaxGet(const char *bundle_type, const char *promise_type);
 const ConstraintSyntax *PromiseTypeSyntaxGetConstraintSyntax(const PromiseTypeSyntax *promise_type_syntax, const char *lval);
@@ -105,6 +104,8 @@ JsonElement *SyntaxToJson(void);
 #define ConstraintSyntaxNewContext(lval, description, status) { lval, DATA_TYPE_CONTEXT, .range.validation_string = CF_CLASSRANGE, description, status }
 #define ConstraintSyntaxNewContextList(lval, description, status) { lval, DATA_TYPE_CONTEXT_LIST, .range.validation_string = CF_CLASSRANGE, description, status }
 
+#define ConstraintSyntaxNewContainer(lval, description, status) { lval, DATA_TYPE_CONTAINER, .range.validation_string = "", description, status }
+
 #define ConstraintSyntaxNewBody(lval, body_syntax, description, status) { lval, DATA_TYPE_BODY, .range.body_type_syntax = body_syntax, description, status }
 #define ConstraintSyntaxNewBundle(lval, description, status) { lval, DATA_TYPE_BUNDLE, .range.validation_string = CF_BUNDLE, description, status }
 
@@ -114,7 +115,7 @@ JsonElement *SyntaxToJson(void);
 #define PromiseTypeSyntaxNew(agent_type, promise_type, constraints, check_fn, status) { agent_type, promise_type, constraints, check_fn, status }
 #define PromiseTypeSyntaxNewNull() PromiseTypeSyntaxNew(NULL, NULL, NULL, NULL, SYNTAX_STATUS_NORMAL)
 
-#define FnCallTypeNew(name, return_type, arguments, implementation, description, is_varargs, category, status) { name, return_type, arguments, implementation, description, is_varargs, category, status }
+#define FnCallTypeNew(name, return_type, arguments, implementation, description, opts, category, status) { name, return_type, arguments, implementation, description, .options = opts, category, status }
 #define FnCallTypeNewNull() FnCallTypeNew(NULL, DATA_TYPE_NONE, NULL, NULL, NULL, false, FNCALL_CATEGORY_UTILS, SYNTAX_STATUS_NORMAL)
 
 #endif

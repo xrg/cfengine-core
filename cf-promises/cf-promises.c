@@ -17,20 +17,21 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "generic_agent.h"
+#include <generic_agent.h>
 
-#include "env_context.h"
-#include "conversion.h"
-#include "syntax.h"
-#include "rlist.h"
-#include "parser.h"
-#include "sysinfo.h"
-#include "man.h"
+#include <env_context.h>
+#include <conversion.h>
+#include <syntax.h>
+#include <rlist.h>
+#include <parser.h>
+#include <known_dirs.h>
+#include <man.h>
+#include <bootstrap.h>
 
 #include <time.h>
 
@@ -48,8 +49,14 @@ static const char *CF_PROMISES_MANPAGE_LONG_DESCRIPTION = "cf-promises is a tool
         "Finally, cf-promises attempts to expose errors by partially evaluating the policy, resolving as many variable and "
         "classes promise statements as possible. At no point does cf-promises make any changes to the system.";
 
+typedef enum
+{
+    PROMISES_OPTION_EVAL_FUNCTIONS
+} PromisesOptions;
+
 static const struct option OPTIONS[] =
 {
+    [PROMISES_OPTION_EVAL_FUNCTIONS] = {"eval-functions", optional_argument, 0, 0 },
     {"help", no_argument, 0, 'h'},
     {"bundlesequence", required_argument, 0, 'b'},
     {"debug", no_argument, 0, 'd'},
@@ -73,6 +80,7 @@ static const struct option OPTIONS[] =
 
 static const char *HINTS[] =
 {
+    [PROMISES_OPTION_EVAL_FUNCTIONS] = "Evaluate functions during syntax checking (may catch more run-time errors). Possible values: 'yes', 'no'. Default is 'no'",
     "Print the help message",
     "Use the specified bundlesequence for verification",
     "Enable debugging output",
@@ -117,13 +125,12 @@ int main(int argc, char *argv[])
         ShowPromises(policy->bundles, policy->bodies);
     }
 
-    CheckForPolicyHub(ctx);
-
     switch (config->agent_specific.common.policy_output_format)
     {
     case GENERIC_AGENT_CONFIG_COMMON_POLICY_OUTPUT_FORMAT_CF:
         {
-            Policy *output_policy = ParserParseFile(config->input_file, config->agent_specific.common.parser_warnings,
+            Policy *output_policy = ParserParseFile(config->agent_type, config->input_file,
+                                                    config->agent_specific.common.parser_warnings,
                                                     config->agent_specific.common.parser_warnings_error);
             Writer *writer = FileWriter(stdout);
             PolicyToString(policy, writer);
@@ -134,13 +141,14 @@ int main(int argc, char *argv[])
 
     case GENERIC_AGENT_CONFIG_COMMON_POLICY_OUTPUT_FORMAT_JSON:
         {
-            Policy *output_policy = ParserParseFile(config->input_file, config->agent_specific.common.parser_warnings,
+            Policy *output_policy = ParserParseFile(config->agent_type, config->input_file,
+                                                    config->agent_specific.common.parser_warnings,
                                                     config->agent_specific.common.parser_warnings_error);
             JsonElement *json_policy = PolicyToJson(output_policy);
             Writer *writer = FileWriter(stdout);
-            JsonElementPrint(writer, json_policy, 2);
+            JsonWrite(writer, json_policy, 2);
             WriterClose(writer);
-            JsonElementDestroy(json_policy);
+            JsonDestroy(json_policy);
             PolicyDestroy(output_policy);
         }
         break;
@@ -168,6 +176,20 @@ GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
     {
         switch ((char) c)
         {
+        case 0:
+            switch (optindex)
+            {
+            case PROMISES_OPTION_EVAL_FUNCTIONS:
+                if (!optarg)
+                {
+                    optarg = "yes";
+                }
+                config->agent_specific.common.eval_functions = strcmp("yes", optarg) == 0;
+                break;
+            default:
+                break;
+            }
+
         case 'l':
             LEGACY_OUTPUT = true;
             break;
@@ -230,9 +252,9 @@ GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
             {
                 JsonElement *json_syntax = SyntaxToJson();
                 Writer *out = FileWriter(stdout);
-                JsonElementPrint(out, json_syntax, 0);
+                JsonWrite(out, json_syntax, 0);
                 FileWriterDetach(out);
-                JsonElementDestroy(json_syntax);
+                JsonDestroy(json_syntax);
                 exit(EXIT_SUCCESS);
             }
             else
@@ -266,15 +288,23 @@ GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
             DONTDO = true;
             IGNORELOCK = true;
             LOOKUP = true;
-            EvalContextHeapAddHard(ctx, "opt_dry_run");
+            EvalContextClassPutHard(ctx, "opt_dry_run");
             break;
 
         case 'V':
-            PrintVersion();
+            {
+                Writer *w = FileWriter(stdout);
+                GenericAgentWriteVersion(w);
+                FileWriterDetach(w);
+            }
             exit(0);
 
         case 'h':
-            PrintHelp("cf-promises", OPTIONS, HINTS, true);
+            {
+                Writer *w = FileWriter(stdout);
+                GenericAgentWriteHelp(w, "cf-promises", OPTIONS, HINTS, true);
+                FileWriterDetach(w);
+            }
             exit(0);
 
         case 'M':
@@ -313,7 +343,11 @@ GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
             break;
 
         default:
-            PrintHelp("cf-promises", OPTIONS, HINTS, true);
+            {
+                Writer *w = FileWriter(stdout);
+                GenericAgentWriteHelp(w, "cf-promises", OPTIONS, HINTS, true);
+                FileWriterDetach(w);
+            }
             exit(1);
 
         }

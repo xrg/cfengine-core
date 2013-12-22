@@ -18,7 +18,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -64,9 +64,13 @@ P.offsets.current += yyleng;
 
 #define YY_USER_ACTION yyuseraction();
 
-// Do not use lex - flex only
+#define MAX_INCLUDE_DEPTH 1
+YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH];
+int include_stack_ptr = 0;
 
 %}
+
+%x incl_state
 
 space      [ \t]+
 
@@ -76,6 +80,8 @@ line       ^.*$
 
 comment    #[^\n]*
 
+include    ^@include
+
 promises   bundle
 
 body       body
@@ -84,7 +90,7 @@ nakedvar   [$@][(][a-zA-Z0-9_\[\]\200-\377.:]+[)]|[$@][{][a-zA-Z0-9_\[\]\200-\37
 
 id         [a-zA-Z0-9_\200-\377]+
 
-blockid    [a-zA-Z0-9_\200-\377]+[:][a-zA-Z0-9_\200-\377]+
+symbol     [a-zA-Z0-9_\200-\377]+[:][a-zA-Z0-9_\200-\377]+
 
 assign     =>
 
@@ -166,6 +172,106 @@ promise_type   [a-zA-Z_]+:
                           return BODY;
                       }
 
+{include}             {
+                      ParserDebug("\tL:include %d\n", P.line_pos);
+                      if ( include_stack_ptr >= MAX_INCLUDE_DEPTH )
+                      {
+                          ParserDebug("\tI: Includes nested too deeply\n" );
+                          exit( 1 );
+                      }
+                      BEGIN(incl_state);
+                      }
+
+<incl_state>[ \t]*         
+<incl_state>{qstring}  {
+                          ParserDebug("\tL:include state:qstring:%s\n", yytext);
+                          include_stack[include_stack_ptr++] = YY_CURRENT_BUFFER;
+
+                          char *fname = NULL;
+                          fname = xstrdup(yytext+1); // skip up to the opening quote
+                          fname[strlen(fname)-1] = '\0'; // clear the ending quote
+
+                          // check for leading path components, attempting to catch Windows paths
+                          if (fname == strchr(fname, '/') || (strlen(fname) > 3 && fname[2] == ':'))
+                          {
+                               ParserDebug("\tL:include_state:%s (absolute path, included in %s)\n", fname, P.filename);
+                          }
+                          else
+                          {
+                               ParserDebug("\tL:include_state:%s (relative path, included in %s)\n", fname, P.filename);
+                               char current[CFE_PARSER_PATH_MAX];
+                               char dirname[CFE_PARSER_PATH_MAX];
+
+                               if (NULL == realpath(P.filename, dirname))
+                               {
+                                   char error_str[CF_MAXVARSIZE];
+
+                                   snprintf(error_str, CF_MAXVARSIZE, "\tI: Could not resolve realpath of file '%s': %s\n", P.filename, strerror(errno));
+                                   yyerror(error_str);
+                                   exit(1);
+                               }
+
+                               char *chop = strrchr(dirname, '/');
+
+                               if (NULL == chop)
+                               {
+                                    chop = strrchr(dirname, '\\');
+                               }
+
+                               if (NULL != chop)
+                               {
+                                    *chop = '\0';
+                               }
+
+                               // this should work on Windows too
+                               snprintf(current, CFE_PARSER_PATH_MAX-1, "%s/%s", dirname, fname);
+                               free(fname);
+                               fname = xstrdup(current);
+                          }
+
+                          yyin = fopen(fname, "r" );
+
+                          if ( ! yyin )
+                          {
+                              char error_str[CF_MAXVARSIZE];
+
+                              snprintf(error_str, CF_MAXVARSIZE, "\tI: Could not open file '%s' for reading: %s\n", fname, strerror(errno));
+                              yyerror(error_str);
+                              exit(1);
+                          }
+                          else
+                          {
+                              ParserDebug("\tI: @Including file '%s'\n", fname);
+                          }
+
+                          strncpy(P.include_filename, fname, CFE_PARSER_PATH_MAX);
+                          free(fname);
+
+                          yy_switch_to_buffer( yy_create_buffer( yyin, YY_BUF_SIZE ) );
+
+                          BEGIN(INITIAL);
+                      }
+
+<incl_state>.[^'"]*   {
+                          yyerror("Not a valid include statement");
+                          exit(1);
+                      }
+
+
+<<EOF>>               {
+                          P.include_filename[0] = '\0';
+
+                          if ( --include_stack_ptr < 0 || !YY_CURRENT_BUFFER)
+                          {
+                              yyterminate();
+                          }
+                          else
+                          {
+                              yy_delete_buffer( YY_CURRENT_BUFFER );
+                              yy_switch_to_buffer(include_stack[include_stack_ptr] );
+                          }
+                      }
+
 {id}                  {
                           P.offsets.last_id = P.offsets.current - yyleng;
                           P.line_pos += yyleng;
@@ -179,10 +285,10 @@ promise_type   [a-zA-Z_]+:
                       }
 
 
-{blockid}             {
+{symbol}              {
                           P.offsets.last_id = P.offsets.current - yyleng;
                           P.line_pos += yyleng;
-                          ParserDebug("\tL:blockid %s %d\n", yytext, P.line_pos);
+                          ParserDebug("\tL:symbol %s %d\n", yytext, P.line_pos);
                           if (yyleng > CF_MAXVARSIZE-1)
                           {
                               yyerror("qualified identifier too long");

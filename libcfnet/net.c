@@ -17,100 +17,99 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "net.h"
+#include <net.h>
+#include <classic.h>
+#include <tls_generic.h>
 
-#include "logging.h"
-#include "misc_lib.h"
+#include <logging.h>
+#include <misc_lib.h>
 
 /*************************************************************************/
 
-static bool LastRecvTimedOut(void)
+/**
+ * @param len is the number of bytes to send, or 0 if buffer is a
+ *        '\0'-terminated string so strlen(buffer) can used.
+ */
+int SendTransaction(const ConnectionInfo *conn_info, const char *buffer, int len, char status)
 {
-#ifndef __MINGW32__
-	if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
-	{
-		return true;
-	}
-#else
-	int lasterror = GetLastError();
-
-	if (lasterror == EAGAIN || lasterror == WSAEWOULDBLOCK)
-	{
-		return true;
-	}
-#endif
-
-	return false;
-}
-
-int SendTransaction(int sd, char *buffer, int len, char status)
-{
-    char work[CF_BUFSIZE];
-    int wlen;
+    char work[CF_BUFSIZE] = { 0 };
+    int ret, wlen;
 
     if (len == 0)
     {
         /* For large buffers, len MUST be supplied */
-        wlen = strnlen(buffer, CF_BUFSIZE);
-    }
-    else
-    {
-        wlen = len;
+        len = strnlen(buffer, CF_BUFSIZE);
     }
 
-    if (wlen > CF_MAX_BUFSIZE)
+    if (len > CF_MAX_BUFSIZE)
     {
-        Log(LOG_LEVEL_ERR, "SendTransaction: wlen (%d) > %d - %d", wlen, CF_MAX_BUFSIZE, CF_INBAND_OFFSET);
-        ProgrammingError("SendTransaction software failure");
+        Log(LOG_LEVEL_ERR, "SendTransaction: len (%d) > %d - %d",
+            len, CF_BUFSIZE, CF_INBAND_OFFSET);
+        return -1;
     }
-    else if (wlen > CF_BUFSIZE)
+    else if (len > CF_BUFSIZE)
     {
         /* large buffer mode, avoid copying 
            A small write() followed by a large one is not likely to hit
            the Nagle algorithm.
          */
         memset(work, 0, CF_INBAND_OFFSET+1);
-        snprintf(work, CF_INBAND_OFFSET, "%c %d", status, wlen);
-
-        if (SendSocketStream(sd, work, CF_INBAND_OFFSET, 0) == -1)
-        {
-            return -1;
-        }
-        if (SendSocketStream(sd, buffer, wlen, 0) == -1)
-        {
-            return -1;
-        }
+        snprintf(work, CF_INBAND_OFFSET, "%c %d", status, len);
+        wlen = 0;
     }
     else
     {
-        memset(work, 0, sizeof(work));
-        snprintf(work, CF_INBAND_OFFSET, "%c %d", status, wlen);
-
-        memcpy(work + CF_INBAND_OFFSET, buffer, wlen);
-
-        if (SendSocketStream(sd, work, wlen + CF_INBAND_OFFSET, 0) == -1)
-        {
-            return -1;
-        }
+        snprintf(work, CF_INBAND_OFFSET, "%c %d", status, len);
+        memcpy(work + CF_INBAND_OFFSET, buffer, len);
+        wlen = len;
     }
 
-    return 0;
+    Log(LOG_LEVEL_DEBUG, "SendTransaction header:'%s'", work);
+    LogRaw(LOG_LEVEL_DEBUG, "SendTransaction data: ",
+           work + CF_INBAND_OFFSET, len);
+
+    switch(conn_info->type)
+    {
+    case CF_PROTOCOL_CLASSIC:
+        ret = SendSocketStream(conn_info->sd, work,
+                               wlen + CF_INBAND_OFFSET);
+        if ((ret != -1) && (wlen == 0) && (len))
+        {
+            ret = SendSocketStream(conn_info->sd, buffer, len);
+        }
+        break;
+    case CF_PROTOCOL_TLS:
+        ret = TLSSend(conn_info->ssl, work, wlen + CF_INBAND_OFFSET);
+        if ((ret != -1) && (wlen == 0) && (len))
+        {
+            ret = TLSSend(conn_info->ssl, buffer, len);
+        }
+        break;
+    default:
+        UnexpectedError("SendTransaction: ProtocolVersion %d!",
+                        conn_info->type);
+        ret = -1;
+    }
+
+    if (ret == -1)
+        return -1;
+    else
+        return 0;
 }
 
 /*************************************************************************/
 
-int ReceiveTransaction(int sd, char *buffer, int *more, int bufsize)
+int ReceiveTransaction(const ConnectionInfo *conn_info, char *buffer, int *more, int bufsize)
 {
-    char proto[CF_INBAND_OFFSET + 1];
+    char proto[CF_INBAND_OFFSET + 1] = { 0 };
     char status = 'x';
     unsigned int len = 0;
-
-    memset(proto, 0, CF_INBAND_OFFSET + 1);
+    int ret;
 
     if (bufsize < 0)
     {
@@ -123,148 +122,70 @@ int ReceiveTransaction(int sd, char *buffer, int *more, int bufsize)
         return -1;
     }
 
-    if (RecvSocketStream(sd, proto, CF_INBAND_OFFSET, CF_INBAND_OFFSET+1) == -1) /* Get control channel */
+    /* Get control channel. */
+    switch(conn_info->type)
     {
+    case CF_PROTOCOL_CLASSIC:
+        ret = RecvSocketStream(conn_info->sd, proto, CF_INBAND_OFFSET);
+        break;
+    case CF_PROTOCOL_TLS:
+        ret = TLSRecv(conn_info->ssl, proto, CF_INBAND_OFFSET);
+        break;
+    default:
+        UnexpectedError("ReceiveTransaction: ProtocolVersion %d!",
+                        conn_info->type);
+        ret = -1;
+    }
+    if (ret == -1 || ret == 0)
+        return ret;
+
+    LogRaw(LOG_LEVEL_DEBUG, "ReceiveTransaction header: ",
+           proto, CF_INBAND_OFFSET);
+
+    ret = sscanf(proto, "%c %u", &status, &len);
+    if (ret != 2)
+    {
+        Log(LOG_LEVEL_ERR,
+            "ReceiveTransaction: Bad packet -- bogus header '%s'", proto);
         return -1;
     }
 
-    sscanf(proto, "%c %u", &status, &len);
-
-    if ((len > bufsize) || (len > CF_MAX_BUFSIZE))
+    if (len > CF_BUFSIZE - CF_INBAND_OFFSET)
     {
-        Log(LOG_LEVEL_ERR, "Bad transaction packet -- too long (%c %d). proto '%s'", status, len, proto);
-        return -1;
-    }
-
-    if (strncmp(proto, "CAUTH", 5) == 0)
-    {
+        Log(LOG_LEVEL_ERR,
+            "ReceiveTransaction: Bad packet -- too long (len=%d)", len);
         return -1;
     }
 
     if (more != NULL)
     {
-        switch (status)
-        {
-        case 'm':
+        if (status == 'm')
             *more = true;
-            break;
-        default:
+        else
             *more = false;
-        }
     }
 
-    return RecvSocketStream(sd, buffer, len, bufsize);
+    /* Get data. */
+    switch(conn_info->type)
+    {
+    case CF_PROTOCOL_CLASSIC:
+        ret = RecvSocketStream(conn_info->sd, buffer, len);
+        break;
+    case CF_PROTOCOL_TLS:
+        ret = TLSRecv(conn_info->ssl, buffer, len);
+        break;
+    default:
+        UnexpectedError("ReceiveTransaction: ProtocolVersion %d!",
+                        conn_info->type);
+        ret = -1;
+    }
+
+    LogRaw(LOG_LEVEL_DEBUG, "ReceiveTransaction data: ", buffer, ret);
+
+    return ret;
 }
 
 /*************************************************************************/
-
-int RecvSocketStream(int sd, char *buffer, int toget, int bufsize)
-{
-    int already, got;
-
-    if (toget > bufsize - 1)
-    {
-        Log(LOG_LEVEL_ERR, "Bad software request for overfull buffer");
-        return -1;
-    }
-
-    for (already = 0; already != toget; already += got)
-    {
-        got = recv(sd, buffer + already, toget - already, 0);
-
-        if ((got == -1) && (errno == EINTR))
-        {
-            continue;
-        }
-
-        if ((got == -1) && (LastRecvTimedOut()))
-        {
-            Log(LOG_LEVEL_ERR, "Timeout - remote end did not respond with the expected amount of data (received=%d, expecting=%d). (recv: %s)",
-                already, toget, GetErrorStr());
-            return -1;
-        }
-
-        if (got == -1)
-        {
-            Log(LOG_LEVEL_ERR, "Couldn't receive. (recv: %s)", GetErrorStr());
-            return -1;
-        }
-
-        if (got == 0)           /* doesn't happen unless sock is closed */
-        {
-            break;
-        }
-    }
-
-    buffer[already] = '\0';
-    return already;
-}
-
-/*************************************************************************/
-
-pthread_mutex_t bwlimit_lock = PTHREAD_MUTEX_INITIALIZER;
-struct timespec bwlimit_next = {0L, 0L};
-double bwlimit_byte_nsec = 0.0;
-
-
-int SendSocketStream(int sd, char *buffer, int tosend, int flags)
-{
-    int sent, already = 0;
-    struct timespec clock_now;
-    double nsleep = 0.0;
-
-    if (pthread_mutex_lock(&bwlimit_lock) == 0)
-    {
-        clock_gettime(CLOCK_MONOTONIC, &clock_now);
-
-        nsleep = (double) (bwlimit_next.tv_sec - clock_now.tv_sec) * 1000000000.0 + (double) (bwlimit_next.tv_nsec - clock_now.tv_nsec);
-
-        if (nsleep < 0)
-        {
-            /* penalty has expired, we can immediately send data. But reset the timestamp */
-            bwlimit_next = clock_now;
-        }
-
-        if (bwlimit_byte_nsec > 0.0)
-        {
-            bwlimit_next.tv_nsec += (long) tosend * bwlimit_byte_nsec ;
-            if (bwlimit_next.tv_nsec >= 1000000000L)
-            {
-                bwlimit_next.tv_sec++;
-                bwlimit_next.tv_nsec -= 1000000000L ;
-            }
-        }
-        pthread_mutex_unlock(&bwlimit_lock);
-    }
-
-    if (nsleep > 0.0)
-    {
-        clock_now.tv_sec = (time_t) nsleep / 1000000000.0;
-        clock_now.tv_nsec = (long) nsleep % 1000000000L;
-        nanosleep(&clock_now, NULL);
-    }
-
-    do
-    {
-        sent = send(sd, buffer + already, tosend - already, flags);
-
-        if ((sent == -1) && (errno == EINTR))
-        {
-            continue;
-        }
-
-        if (sent == -1)
-        {
-            Log(LOG_LEVEL_VERBOSE, "Couldn't send. (send: %s)", GetErrorStr());
-            return -1;
-        }
-
-        already += sent;
-    }
-    while (already < tosend);
-
-    return already;
-}
 
 /*
   NB: recv() timeout interpretation differs under Windows: setting tv_sec to

@@ -17,27 +17,27 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "generic_agent.h"
+#include <generic_agent.h>
 
-#include "dbm_api.h"
-#include "lastseen.h"
-#include "dir.h"
-#include "scope.h"
-#include "files_copy.h"
-#include "files_interfaces.h"
-#include "files_hashes.h"
-#include "keyring.h"
-#include "env_context.h"
-#include "crypto.h"
-#include "sysinfo.h"
-#include "man.h"
+#include <dbm_api.h>
+#include <lastseen.h>
+#include <dir.h>
+#include <scope.h>
+#include <files_copy.h>
+#include <files_interfaces.h>
+#include <files_hashes.h>
+#include <keyring.h>
+#include <env_context.h>
+#include <crypto.h>
+#include <known_dirs.h>
+#include <man.h>
 
-#include "cf-key-functions.h"
+#include <cf-key-functions.h>
 
 int SHOWHOSTS = false;
 bool REMOVEKEYS = false;
@@ -175,7 +175,11 @@ static GenericAgentConfig *CheckOpts(int argc, char **argv)
             break;
 
         case 'V':
-            PrintVersion();
+            {
+                Writer *w = FileWriter(stdout);
+                GenericAgentWriteVersion(w);
+                FileWriterDetach(w);
+            }
             exit(0);
 
         case 'v':
@@ -205,7 +209,11 @@ static GenericAgentConfig *CheckOpts(int argc, char **argv)
             break;
 
         case 'h':
-            PrintHelp("cf-key", OPTIONS, HINTS, false);
+            {
+                Writer *w = FileWriter(stdout);
+                GenericAgentWriteHelp(w, "cf-key", OPTIONS, HINTS, false);
+                FileWriterDetach(w);
+            }
             exit(0);
 
         case 'M':
@@ -228,7 +236,11 @@ static GenericAgentConfig *CheckOpts(int argc, char **argv)
             break;
 
         default:
-            PrintHelp("cf-key", OPTIONS, HINTS, false);
+            {
+                Writer *w = FileWriter(stdout);
+                GenericAgentWriteHelp(w, "cf-key", OPTIONS, HINTS, false);
+                FileWriterDetach(w);
+            }
             exit(1);
 
         }

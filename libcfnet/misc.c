@@ -17,14 +17,14 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "cfnet.h"
+#include <cfnet.h>
 
-#include "misc_lib.h"
+#include <misc_lib.h>
 
 
 /* Convert IP address in src (which can be struct sockaddr_storage (best
@@ -51,7 +51,7 @@ const char *sockaddr_ntop(const void *src, char *dst, socklen_t size)
 #ifdef AF_LOCAL
     case AF_LOCAL:
         strlcpy(dst, "127.0.0.1", sizeof("127.0.0.1"));
-        break;
+        return dst;
 #endif
 
     default:

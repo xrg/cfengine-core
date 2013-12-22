@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -80,7 +80,7 @@
 #include <pthread.h>
 
 #ifndef _GETOPT_H
-# include "../libcompat/getopt.h"
+# include <../libcompat/getopt.h>
 #endif
 
 #ifdef HAVE_STDLIB_H
@@ -139,7 +139,7 @@ struct utsname
 # define WTERMSIG(s) ((s) & 0)
 #endif
 
-#include "bool.h"
+#include <bool.h>
 
 #include <openssl/err.h>
 #include <openssl/pem.h>
@@ -170,6 +170,10 @@ struct utsname
 # if HAVE_NDIR_H
 #  include <ndir.h>
 # endif
+#endif
+
+#ifndef PATH_MAX
+# define PATH_MAX 4096
 #endif
 
 #include <signal.h>
@@ -251,6 +255,10 @@ size_t strlcat(char *destination, const char *source, size_t size);
 char *strsep(char **stringp, const char *delim);
 #endif
 
+#if !HAVE_DECL_SOCKETPAIR
+int socketpair(int domain, int type, int protocol, int sv[2]);
+#endif
+
 #ifdef __APPLE__
 # include <sys/malloc.h>
 # include <sys/paths.h>
@@ -329,7 +337,7 @@ char *strsep(char **stringp, const char *delim);
 #endif
 
 #ifdef __linux__
-# ifdef __GLIBC__
+# if defined(__GLIBC__) || defined(__BIONIC__)
 #  include <net/route.h>
 #  include <netinet/in.h>
 #  include <netinet/ip.h>
@@ -430,11 +438,21 @@ int getnetgrent(char **host, char **user, char **domain);
 #endif
 
 #if !HAVE_DECL_SETNETGRENT
-int setnetgrent(const char *netgroup);
+#if SETNETGRENT_RETURNS_INT
+int
+#else
+void
+#endif
+setnetgrent(const char *netgroup);
 #endif
 
 #if !HAVE_DECL_ENDNETGRENT
-int endnetgrent(void);
+#if ENDNETGRENT_RETURNS_INT
+int
+#else
+void
+#endif
+endnetgrent(void);
 #endif
 
 #if !HAVE_DECL_STRSTR
@@ -793,6 +811,6 @@ struct timespec
 #endif
 
 /* Must be always the last one! */
-#include "config.post.h"
+#include <config.post.h>
 
 #endif

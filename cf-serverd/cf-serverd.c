@@ -17,14 +17,15 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "cf-serverd-functions.h"
+#include <cf-serverd-functions.h>
+#include <known_dirs.h>
 
-#include "server_transform.h"
+#include <server_transform.h>
 
 int main(int argc, char *argv[])
 {
@@ -35,7 +36,7 @@ int main(int argc, char *argv[])
     GenericAgentDiscoverContext(ctx, config);
 
     Policy *policy = NULL;
-    if (GenericAgentCheckPolicy(ctx, config, false))
+    if (GenericAgentCheckPolicy(config, false))
     {
         policy = GenericAgentLoadPolicy(ctx, config);
     }
@@ -46,12 +47,10 @@ int main(int argc, char *argv[])
     else
     {
         Log(LOG_LEVEL_ERR, "CFEngine was not able to get confirmation of promises from cf-promises, so going to failsafe");
-        EvalContextHeapAddHard(ctx, "failsafe_fallback");
+        EvalContextClassPutHard(ctx, "failsafe_fallback");
         GenericAgentConfigSetInputFile(config, GetWorkDir(), "failsafe.cf");
         policy = GenericAgentLoadPolicy(ctx, config);
     }
-
-    CheckForPolicyHub(ctx);
 
     ThisAgentInit();
     KeepPromises(ctx, policy, config);

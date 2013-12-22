@@ -17,13 +17,13 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "load_avahi.h"
-#include "files_interfaces.h"
+#include <load_avahi.h>
+#include <files_interfaces.h>
 
 #include <stdlib.h>
 
@@ -31,6 +31,8 @@ static const char *paths[3] = {
     "/usr/lib/x86_64-linux-gnu/libavahi-client.so.3",
     "/usr/lib64/libavahi-client.so.3",
     "/usr/lib/libavahi-client.so.3"
+	/* 32 bits variants */
+	"/usr/lib/i386-linux-gnu/libavahi-client.so.3"
 };
 
 static void *getavahi_handle();

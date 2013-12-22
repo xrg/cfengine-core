@@ -17,32 +17,34 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "verify_exec.h"
+#include <verify_exec.h>
 
-#include "promises.h"
-#include "files_names.h"
-#include "files_interfaces.h"
-#include "vars.h"
-#include "conversion.h"
-#include "instrumentation.h"
-#include "attributes.h"
-#include "pipes.h"
-#include "locks.h"
-#include "evalfunction.h"
-#include "exec_tools.h"
-#include "misc_lib.h"
-#include "writer.h"
-#include "policy.h"
-#include "string_lib.h"
-#include "scope.h"
-#include "ornaments.h"
-#include "env_context.h"
-#include "retcode.h"
+#include <actuator.h>
+#include <promises.h>
+#include <files_names.h>
+#include <files_interfaces.h>
+#include <vars.h>
+#include <conversion.h>
+#include <instrumentation.h>
+#include <attributes.h>
+#include <pipes.h>
+#include <locks.h>
+#include <evalfunction.h>
+#include <exec_tools.h>
+#include <misc_lib.h>
+#include <writer.h>
+#include <policy.h>
+#include <string_lib.h>
+#include <scope.h>
+#include <ornaments.h>
+#include <env_context.h>
+#include <retcode.h>
+#include <timeout.h>
 
 typedef enum
 {
@@ -54,30 +56,28 @@ typedef enum
 static bool SyntaxCheckExec(Attributes a, Promise *pp);
 static bool PromiseKeptExec(Attributes a, Promise *pp);
 static char *GetLockNameExec(Attributes a, Promise *pp);
-static ActionResult RepairExec(EvalContext *ctx, Attributes a, Promise *pp);
+static ActionResult RepairExec(EvalContext *ctx, Attributes a, Promise *pp, PromiseResult *result);
 
 static void PreviewProtocolLine(char *line, char *comm);
 
-void VerifyExecPromise(EvalContext *ctx, Promise *pp)
+PromiseResult VerifyExecPromise(EvalContext *ctx, Promise *pp)
 {
     Attributes a = { {0} };
 
     a = GetExecAttributes(ctx, pp);
 
-    ScopeNewSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", pp->promiser, DATA_TYPE_STRING);
+    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", pp->promiser, DATA_TYPE_STRING);
 
     if (!SyntaxCheckExec(a, pp))
     {
-        // cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "");
-        ScopeDeleteSpecial(SPECIAL_SCOPE_THIS, "promiser");
-        return;
+        EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser");
+        return PROMISE_RESULT_FAIL;
     }
 
     if (PromiseKeptExec(a, pp))
     {
-        // cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_NOOP, pp, a, "");
-        ScopeDeleteSpecial(SPECIAL_SCOPE_THIS, "promiser");
-        return;
+        EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser");
+        return PROMISE_RESULT_NOOP;
     }
 
     char *lock_name = GetLockNameExec(a, pp);
@@ -86,25 +86,25 @@ void VerifyExecPromise(EvalContext *ctx, Promise *pp)
 
     if (thislock.lock == NULL)
     {
-        // cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_FAIL, pp, a, "");
-        ScopeDeleteSpecial(SPECIAL_SCOPE_THIS, "promiser");
-        return;
+        EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser");
+        return PROMISE_RESULT_NOOP;
     }
 
     PromiseBanner(pp);
 
-    switch (RepairExec(ctx, a, pp))
+    PromiseResult result = PROMISE_RESULT_NOOP;
+    switch (RepairExec(ctx, a, pp, &result))
     {
     case ACTION_RESULT_OK:
-        // cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_CHANGE, pp, a, "");
+        result = PromiseResultUpdate(result, PROMISE_RESULT_CHANGE);
         break;
 
     case ACTION_RESULT_TIMEOUT:
-        // cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_TIMEOUT, pp, a, "");
+        result = PromiseResultUpdate(result, PROMISE_RESULT_TIMEOUT);
         break;
 
     case ACTION_RESULT_FAILED:
-        // cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_FAIL, pp, a, "");
+        result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
         break;
 
     default:
@@ -112,7 +112,9 @@ void VerifyExecPromise(EvalContext *ctx, Promise *pp)
     }
 
     YieldCurrentLock(thislock);
-    ScopeDeleteSpecial(SPECIAL_SCOPE_THIS, "promiser");
+    EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser");
+
+    return result;
 }
 
 /*****************************************************************************/
@@ -181,7 +183,7 @@ static char *GetLockNameExec(Attributes a, Promise *pp)
 
 /*****************************************************************************/
 
-static ActionResult RepairExec(EvalContext *ctx, Attributes a, Promise *pp)
+static ActionResult RepairExec(EvalContext *ctx, Attributes a, Promise *pp, PromiseResult *result)
 {
     char line[CF_BUFSIZE], eventname[CF_BUFSIZE];
     char cmdline[CF_BUFSIZE];
@@ -194,6 +196,9 @@ static ActionResult RepairExec(EvalContext *ctx, Attributes a, Promise *pp)
     char cmdOutBuf[CF_BUFSIZE];
     int cmdOutBufPos = 0;
     int lineOutLen;
+    char module_context[CF_BUFSIZE];
+
+    module_context[0] = '\0';
 
     if (IsAbsoluteFileName(CommandArg0(pp->promiser)) || a.contain.shelltype == SHELL_TYPE_NONE)
     {
@@ -345,7 +350,7 @@ static ActionResult RepairExec(EvalContext *ctx, Attributes a, Promise *pp)
 
             if (a.module)
             {
-                ModuleProtocol(ctx, cmdline, line, !a.contain.nooutput, PromiseGetNamespace(pp));
+                ModuleProtocol(ctx, cmdline, line, !a.contain.nooutput, PromiseGetNamespace(pp), module_context);
             }
             else if ((!a.contain.nooutput) && (!EmptyString(line)))
             {
@@ -382,10 +387,11 @@ static ActionResult RepairExec(EvalContext *ctx, Attributes a, Promise *pp)
             if (ret == -1)
             {
                 cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_FAIL, pp, a, "Finished script '%s' - failed (abnormal termination)", pp->promiser);
+                *result = PromiseResultUpdate(*result, PROMISE_RESULT_FAIL);
             }
             else
             {
-                VerifyCommandRetcode(ctx, ret, true, a, pp);
+                VerifyCommandRetcode(ctx, ret, true, a, pp, result);
             }
         }
     }

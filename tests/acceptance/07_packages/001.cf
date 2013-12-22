@@ -9,6 +9,7 @@ body common control
       inputs => { "../default.cf.sub" };
       bundlesequence  => { "G", "g", default("$(this.promise_filename)") };
       version => "1.0";
+      cache_system_functions => "false";
 }
 
 bundle common g
@@ -98,3 +99,5 @@ body classes succesfully_executed(class)
       promise_kept => { "$(class)" };
 }
 
+### PROJECT_ID: core
+### CATEGORY_ID: 29

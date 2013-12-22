@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -25,7 +25,12 @@
 #ifndef CFENGINE_FILE_LIB_H
 #define CFENGINE_FILE_LIB_H
 
-#include "platform.h"
+#include <platform.h>
+#include <writer.h>
+
+Writer *FileRead(const char *filename, size_t size_max, bool *truncated);
+
+bool FileCanOpen(const char *path, const char *modes);
 
 /* Write LEN bytes at PTR to descriptor DESC, retrying if interrupted.
    Return LEN upon success, write's (negative) error code otherwise.  */

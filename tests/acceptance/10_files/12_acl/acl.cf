@@ -42,7 +42,7 @@ bundle agent test
 {
   vars:
     linux::
-      "sanity_perms" string => execresult("$(init.cmd) $(G.testdir)$(G.DS)file", "noshell");
+      "sanity_perms" string => execresult("$(init.cmd) $(G.testdir)$(G.DS)file 2>&1 | $(G.grep) -v 'Removing leading'", "noshell");
   classes:
     linux::
       # Some filesystems don't have ACL capability, so we do this sanity check.
@@ -84,3 +84,5 @@ body acl acl_sanity_check_reset
       acl_method => "append";
       aces => { "all:-rwx:allow" };
 }
+### PROJECT_ID: core
+### CATEGORY_ID: 27

@@ -17,33 +17,34 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "server_transform.h"
+#include <server_transform.h>
 
-#include "server.h"
+#include <server.h>
 
-#include "env_context.h"
-#include "files_names.h"
-#include "mod_access.h"
-#include "item_lib.h"
-#include "conversion.h"
-#include "ornaments.h"
-#include "expand.h"
-#include "scope.h"
-#include "vars.h"
-#include "attributes.h"
-#include "communication.h"
-#include "string_lib.h"
-#include "rlist.h"
-#include "cf-serverd-enterprise-stubs.h"
-#include "syslog_client.h"
-#include "verify_classes.h"
+#include <misc_lib.h>
+#include <env_context.h>
+#include <files_names.h>
+#include <mod_access.h>
+#include <item_lib.h>
+#include <conversion.h>
+#include <ornaments.h>
+#include <expand.h>
+#include <scope.h>
+#include <vars.h>
+#include <attributes.h>
+#include <communication.h>
+#include <string_lib.h>
+#include <rlist.h>
+#include <cf-serverd-enterprise-stubs.h>
+#include <syslog_client.h>
+#include <verify_classes.h>
 
-#include "generic_agent.h" // HashControls
+#include <generic_agent.h> // HashControls
 
 
 typedef enum
@@ -84,11 +85,12 @@ typedef enum
     SERVER_CONTROL_SKIP_VERIFY,
     SERVER_CONTROL_TRUST_KEYS_FROM,
     SERVER_CONTROL_LISTEN,
+    SERVER_CONTROL_ALLOWCIPHERS,
     SERVER_CONTROL_NONE
 } ServerControl;
 
 static void KeepContextBundles(EvalContext *ctx, Policy *policy);
-static void KeepServerPromise(EvalContext *ctx, Promise *pp, void *param);
+static PromiseResult KeepServerPromise(EvalContext *ctx, Promise *pp, void *param);
 static void InstallServerAuthPath(const char *path, Auth **list, Auth **listtop);
 static void KeepServerRolePromise(EvalContext *ctx, Promise *pp);
 static void KeepPromiseBundles(EvalContext *ctx, Policy *policy);
@@ -252,13 +254,13 @@ static void KeepControlPromises(EvalContext *ctx, Policy *policy, GenericAgentCo
     MAXTRIES = 5;
     DENYBADCLOCKS = true;
     CFRUNCOMMAND[0] = '\0';
-    SetChecksumUpdates(true);
+    SetChecksumUpdatesDefault(ctx, true);
 
 /* Keep promised agent behaviour - control bodies */
 
     Banner("Server control promises..");
 
-    HashControls(ctx, policy, config);
+    PolicyResolve(ctx, policy, config);
 
 /* Now expand */
 
@@ -357,9 +359,9 @@ static void KeepControlPromises(EvalContext *ctx, Policy *policy, GenericAgentCo
 
                 for (rp = (Rlist *) retval.item; rp != NULL; rp = rp->next)
                 {
-                    if (!IsItemIn(SV.nonattackerlist, rp->item))
+                    if (!IsItemIn(SV.nonattackerlist, RlistScalarValue(rp)))
                     {
-                        AppendItem(&SV.nonattackerlist, rp->item, cp->classes);
+                        AppendItem(&SV.nonattackerlist, RlistScalarValue(rp), cp->classes);
                     }
                 }
 
@@ -374,9 +376,9 @@ static void KeepControlPromises(EvalContext *ctx, Policy *policy, GenericAgentCo
 
                 for (rp = (Rlist *) retval.item; rp != NULL; rp = rp->next)
                 {
-                    if (!IsItemIn(SV.attackerlist, rp->item))
+                    if (!IsItemIn(SV.attackerlist, RlistScalarValue(rp)))
                     {
-                        AppendItem(&SV.attackerlist, rp->item, cp->classes);
+                        AppendItem(&SV.attackerlist, RlistScalarValue(rp), cp->classes);
                     }
                 }
 
@@ -391,9 +393,9 @@ static void KeepControlPromises(EvalContext *ctx, Policy *policy, GenericAgentCo
 
                 for (rp = (Rlist *) retval.item; rp != NULL; rp = rp->next)
                 {
-                    if (!IsItemIn(SV.skipverify, rp->item))
+                    if (!IsItemIn(SV.skipverify, RlistScalarValue(rp)))
                     {
-                        AppendItem(&SV.skipverify, rp->item, cp->classes);
+                        AppendItem(&SV.skipverify, RlistScalarValue(rp), cp->classes);
                     }
                 }
 
@@ -409,9 +411,9 @@ static void KeepControlPromises(EvalContext *ctx, Policy *policy, GenericAgentCo
 
                 for (rp = (Rlist *) retval.item; rp != NULL; rp = rp->next)
                 {
-                    if (!IsItemIn(SV.multiconnlist, rp->item))
+                    if (!IsItemIn(SV.multiconnlist, RlistScalarValue(rp)))
                     {
-                        AppendItem(&SV.multiconnlist, rp->item, cp->classes);
+                        AppendItem(&SV.multiconnlist, RlistScalarValue(rp), cp->classes);
                     }
                 }
 
@@ -426,9 +428,9 @@ static void KeepControlPromises(EvalContext *ctx, Policy *policy, GenericAgentCo
 
                 for (rp = (Rlist *) retval.item; rp != NULL; rp = rp->next)
                 {
-                    if (!IsItemIn(SV.allowuserlist, rp->item))
+                    if (!IsItemIn(SV.allowuserlist, RlistScalarValue(rp)))
                     {
-                        AppendItem(&SV.allowuserlist, rp->item, cp->classes);
+                        AppendItem(&SV.allowuserlist, RlistScalarValue(rp), cp->classes);
                     }
                 }
 
@@ -443,9 +445,9 @@ static void KeepControlPromises(EvalContext *ctx, Policy *policy, GenericAgentCo
 
                 for (rp = (Rlist *) retval.item; rp != NULL; rp = rp->next)
                 {
-                    if (!IsItemIn(SV.trustkeylist, rp->item))
+                    if (!IsItemIn(SV.trustkeylist, RlistScalarValue(rp)))
                     {
-                        AppendItem(&SV.trustkeylist, rp->item, cp->classes);
+                        AppendItem(&SV.trustkeylist, RlistScalarValue(rp), cp->classes);
                     }
                 }
 
@@ -466,6 +468,14 @@ static void KeepControlPromises(EvalContext *ctx, Policy *policy, GenericAgentCo
             {
                 strncpy(BINDINTERFACE, retval.item, CF_BUFSIZE - 1);
                 Log(LOG_LEVEL_VERBOSE, "Setting bindtointerface to '%s'", BINDINTERFACE);
+                continue;
+            }
+
+            if (strcmp(cp->lval, CFS_CONTROLBODY[SERVER_CONTROL_ALLOWCIPHERS].lval) == 0)
+            {
+
+                SV.allowciphers = xstrdup(retval.item);
+                Log(LOG_LEVEL_VERBOSE, "Setting allowciphers to '%s'", SV.allowciphers);
                 continue;
             }
         }
@@ -610,81 +620,78 @@ static void KeepPromiseBundles(EvalContext *ctx, Policy *policy)
 /* Level                                                             */
 /*********************************************************************/
 
-static void KeepServerPromise(EvalContext *ctx, Promise *pp, ARG_UNUSED void *param)
+static PromiseResult KeepServerPromise(EvalContext *ctx, Promise *pp, ARG_UNUSED void *param)
 {
-    char *sp = NULL;
-
-    assert(param == NULL);
+    assert(!param);
 
     if (!IsDefinedClass(ctx, pp->classes, PromiseGetNamespace(pp)))
     {
         Log(LOG_LEVEL_VERBOSE, "Skipping whole promise, as context is %s", pp->classes);
-        return;
+        return PROMISE_RESULT_NOOP;
     }
 
-    if (VarClassExcluded(ctx, pp, &sp))
     {
-        if (LEGACY_OUTPUT)
+        char *cls = NULL;
+        if (VarClassExcluded(ctx, pp, &cls))
         {
-            Log(LOG_LEVEL_VERBOSE, "\n");
-            Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
-            Log(LOG_LEVEL_VERBOSE, "Skipping whole next promise (%s), as var-context %s is not relevant", pp->promiser,
-                  sp);
-            Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
+            if (LEGACY_OUTPUT)
+            {
+                Log(LOG_LEVEL_VERBOSE, "\n");
+                Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
+                Log(LOG_LEVEL_VERBOSE, "Skipping whole next promise (%s), as var-context %s is not relevant", pp->promiser, cls);
+                Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
+            }
+            else
+            {
+                Log(LOG_LEVEL_VERBOSE, "Skipping next promise '%s', as var-context '%s' is not relevant", pp->promiser, cls);
+            }
+            return PROMISE_RESULT_NOOP;
         }
-        else
-        {
-            Log(LOG_LEVEL_VERBOSE, "Skipping next promise '%s', as var-context '%s' is not relevant", pp->promiser, sp);
-        }
-        return;
     }
 
     if (strcmp(pp->parent_promise_type->name, "classes") == 0)
     {
-        VerifyClassPromise(ctx, pp, NULL);
-        return;
+        return VerifyClassPromise(ctx, pp, NULL);
     }
 
-    sp = (char *) ConstraintGetRvalValue(ctx, "resource_type", pp, RVAL_TYPE_SCALAR);
-
-    if ((strcmp(pp->parent_promise_type->name, "access") == 0) && sp && (strcmp(sp, "literal") == 0))
+    const char *resource_type = ConstraintGetRvalValue(ctx, "resource_type", pp, RVAL_TYPE_SCALAR);
+    if (resource_type && strcmp(pp->parent_promise_type->name, "access") == 0)
     {
-        KeepLiteralAccessPromise(ctx, pp, "literal");
-        return;
+        if (strcmp(resource_type, "literal") == 0)
+        {
+            KeepLiteralAccessPromise(ctx, pp, "literal");
+            return PROMISE_RESULT_NOOP;
+        }
+        else if (strcmp(resource_type, "variable") == 0)
+        {
+            KeepLiteralAccessPromise(ctx, pp, "variable");
+            return PROMISE_RESULT_NOOP;
+        }
+        else if (strcmp(resource_type, "query") == 0)
+        {
+            KeepQueryAccessPromise(ctx, pp, "query");
+            KeepReportDataSelectAccessPromise(pp);
+            return PROMISE_RESULT_NOOP;
+        }
+        else if (strcmp(resource_type, "context") == 0)
+        {
+            KeepLiteralAccessPromise(ctx, pp, "context");
+            return PROMISE_RESULT_NOOP;
+        }
     }
-
-    if ((strcmp(pp->parent_promise_type->name, "access") == 0) && sp && (strcmp(sp, "variable") == 0))
-    {
-        KeepLiteralAccessPromise(ctx, pp, "variable");
-        return;
-    }
-    
-    if ((strcmp(pp->parent_promise_type->name, "access") == 0) && sp && (strcmp(sp, "query") == 0))
-    {
-        KeepQueryAccessPromise(ctx, pp, "query");
-        KeepReportDataSelectAccessPromise(pp);
-        return;
-    }
-
-    if ((strcmp(pp->parent_promise_type->name, "access") == 0) && sp && (strcmp(sp, "context") == 0))
-    {
-        KeepLiteralAccessPromise(ctx, pp, "context");
-        return;
-    }
-
-/* Default behaviour is file access */
 
     if (strcmp(pp->parent_promise_type->name, "access") == 0)
     {
         KeepFileAccessPromise(ctx, pp);
-        return;
+        return PROMISE_RESULT_NOOP;
     }
-
-    if (strcmp(pp->parent_promise_type->name, "roles") == 0)
+    else if (strcmp(pp->parent_promise_type->name, "roles") == 0)
     {
         KeepServerRolePromise(ctx, pp);
-        return;
+        return PROMISE_RESULT_NOOP;
     }
+
+    return PROMISE_RESULT_NOOP;
 }
 
 /*********************************************************************/
@@ -738,26 +745,26 @@ void KeepFileAccessPromise(EvalContext *ctx, Promise *pp)
             {
                 if (strcmp(cp->lval, CF_REMACCESS_BODIES[REMOTE_ACCESS_ADMIT].lval) == 0)
                 {
-                    PrependItem(&(ap->accesslist), rp->item, NULL);
+                    PrependItem(&(ap->accesslist), RlistScalarValue(rp), NULL);
                     continue;
                 }
 
                 if (strcmp(cp->lval, CF_REMACCESS_BODIES[REMOTE_ACCESS_DENY].lval) == 0)
                 {
-                    PrependItem(&(dp->accesslist), rp->item, NULL);
+                    PrependItem(&(dp->accesslist), RlistScalarValue(rp), NULL);
                     continue;
                 }
 
                 if (strcmp(cp->lval, CF_REMACCESS_BODIES[REMOTE_ACCESS_MAPROOT].lval) == 0)
                 {
-                    PrependItem(&(ap->maproot), rp->item, NULL);
+                    PrependItem(&(ap->maproot), RlistScalarValue(rp), NULL);
                     continue;
                 }
             }
             break;
 
         default:
-            /* Shouldn't happen */
+            UnexpectedError("Unknown constraint type!");
             break;
         }
     }
@@ -802,7 +809,7 @@ void KeepLiteralAccessPromise(EvalContext *ctx, Promise *pp, char *type)
 
         if (!GetAuthPath(pp->promiser, SV.varadmit))
         {
-            InstallServerAuthPath(pp->promiser, &SV.varadmittop, &SV.varadmittop);
+            InstallServerAuthPath(pp->promiser, &SV.varadmit, &SV.varadmittop);
         }
 
         if (!GetAuthPath(pp->promiser, SV.vardeny))
@@ -852,26 +859,26 @@ void KeepLiteralAccessPromise(EvalContext *ctx, Promise *pp, char *type)
             {
                 if (strcmp(cp->lval, CF_REMACCESS_BODIES[REMOTE_ACCESS_ADMIT].lval) == 0)
                 {
-                    PrependItem(&(ap->accesslist), rp->item, NULL);
+                    PrependItem(&(ap->accesslist), RlistScalarValue(rp), NULL);
                     continue;
                 }
 
                 if (strcmp(cp->lval, CF_REMACCESS_BODIES[REMOTE_ACCESS_DENY].lval) == 0)
                 {
-                    PrependItem(&(dp->accesslist), rp->item, NULL);
+                    PrependItem(&(dp->accesslist), RlistScalarValue(rp), NULL);
                     continue;
                 }
 
                 if (strcmp(cp->lval, CF_REMACCESS_BODIES[REMOTE_ACCESS_MAPROOT].lval) == 0)
                 {
-                    PrependItem(&(ap->maproot), rp->item, NULL);
+                    PrependItem(&(ap->maproot), RlistScalarValue(rp), NULL);
                     continue;
                 }
             }
             break;
 
         default:
-            /* Shouldn't happen */
+            UnexpectedError("Unknown constraint type!");
             break;
         }
     }
@@ -930,26 +937,26 @@ void KeepQueryAccessPromise(EvalContext *ctx, Promise *pp, char *type)
             {
                 if (strcmp(cp->lval, CF_REMACCESS_BODIES[REMOTE_ACCESS_ADMIT].lval) == 0)
                 {
-                    PrependItem(&(ap->accesslist), rp->item, NULL);
+                    PrependItem(&(ap->accesslist), RlistScalarValue(rp), NULL);
                     continue;
                 }
 
                 if (strcmp(cp->lval, CF_REMACCESS_BODIES[REMOTE_ACCESS_DENY].lval) == 0)
                 {
-                    PrependItem(&(dp->accesslist), rp->item, NULL);
+                    PrependItem(&(dp->accesslist), RlistScalarValue(rp), NULL);
                     continue;
                 }
 
                 if (strcmp(cp->lval, CF_REMACCESS_BODIES[REMOTE_ACCESS_MAPROOT].lval) == 0)
                 {
-                    PrependItem(&(ap->maproot), rp->item, NULL);
+                    PrependItem(&(ap->maproot), RlistScalarValue(rp), NULL);
                     continue;
                 }
             }
             break;
 
         default:
-            /* Shouldn't happen */
+            UnexpectedError("Unknown constraint type!");
             break;
         }
     }
@@ -986,14 +993,14 @@ static void KeepServerRolePromise(EvalContext *ctx, Promise *pp)
             {
                 if (strcmp(cp->lval, CF_REMROLE_BODIES[REMOTE_ROLE_AUTHORIZE].lval) == 0)
                 {
-                    PrependItem(&(ap->accesslist), rp->item, NULL);
+                    PrependItem(&(ap->accesslist), RlistScalarValue(rp), NULL);
                     continue;
                 }
             }
             break;
 
         case RVAL_TYPE_FNCALL:
-            /* Shouldn't happen */
+            UnexpectedError("Constraint of type FNCALL is invalid in this context!");
             break;
 
         default:

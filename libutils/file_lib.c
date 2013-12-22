@@ -17,12 +17,71 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "file_lib.h"
+#include <file_lib.h>
+
+#include <alloc.h>
+#include <logging.h>
+
+bool FileCanOpen(const char *path, const char *modes)
+{
+    FILE *test = NULL;
+
+    if ((test = fopen(path, modes)) != NULL)
+    {
+        fclose(test);
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+#define READ_BUFSIZE 4096
+
+Writer *FileRead(const char *filename, size_t max_size, bool *truncated)
+{
+    int fd = open(filename, O_RDONLY);
+    if (fd == -1)
+        return NULL;
+
+    Writer *w = StringWriter();
+    for (;;)
+    {
+        char buf[READ_BUFSIZE];
+        /* Reading more data than needed is deliberate. It is a truncation detection. */
+        ssize_t read_ = read(fd, buf, READ_BUFSIZE);
+        if (read_ == 0)
+        {
+            if (truncated)
+                *truncated = false;
+            close(fd);
+            return w;
+        }
+        if (read_ < 0)
+        {
+            if (errno == EINTR)
+                continue;
+            WriterClose(w);
+            close(fd);
+            return NULL;
+        }
+        if (read_ + StringWriterLength(w) > max_size)
+        {
+            WriterWriteLen(w, buf, max_size - StringWriterLength(w));
+            if (truncated)
+                *truncated = true;
+            close(fd);
+            return w;
+        }
+        WriterWriteLen(w, buf, read_);
+    }
+}
 
 int FullWrite(int desc, const char *ptr, size_t len)
 {

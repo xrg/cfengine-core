@@ -17,18 +17,18 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "pipes.h"
+#include <pipes.h>
 
-#include "mutex.h"
-#include "exec_tools.h"
-#include "rlist.h"
-#include "policy.h"
-#include "env_context.h"
+#include <mutex.h>
+#include <exec_tools.h>
+#include <rlist.h>
+#include <policy.h>
+#include <env_context.h>
 
 static int CfSetuid(uid_t uid, gid_t gid);
 

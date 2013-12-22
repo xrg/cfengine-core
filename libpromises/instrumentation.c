@@ -17,18 +17,18 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "instrumentation.h"
+#include <instrumentation.h>
 
-#include "dbm_api.h"
-#include "files_names.h"
-#include "item_lib.h"
-#include "string_lib.h"
-#include "policy.h"
+#include <dbm_api.h>
+#include <files_names.h>
+#include <item_lib.h>
+#include <string_lib.h>
+#include <policy.h>
 
 #include <math.h>
 
@@ -171,17 +171,24 @@ static void NotePerformance(char *eventname, time_t t, double value)
 
 static bool IsContextIgnorableForReporting(const char *context_name)
 {
-    return (strncmp(context_name,"Min",3) == 0 || strncmp(context_name,"Hr",2) == 0 || strcmp(context_name,"Q1") == 0
-     || strcmp(context_name,"Q2") == 0 || strcmp(context_name,"Q3") == 0 || strcmp(context_name,"Q4") == 0
-     || strncmp(context_name,"GMT_Hr",6) == 0  || strncmp(context_name,"Yr",2) == 0
-     || strncmp(context_name,"Day",3) == 0 || strcmp(context_name,"license_expired") == 0
-     || strcmp(context_name,"any") == 0 || strcmp(context_name,"from_cfexecd") == 0
-     || IsStrIn(context_name,MONTH_TEXT) || IsStrIn(context_name,DAY_TEXT)
-     || IsStrIn(context_name,SHIFT_TEXT)) || strncmp(context_name,"Lcycle",6) == 0;
+    const char *ptr = context_name;
+    // contexts beginning with "GMT_" will have that prefix stripped
+    if (strncmp(ptr,"GMT_", 4) == 0 && strlen(ptr) > 4)
+    {
+        ptr += 4;
+    }
+
+    return (strncmp(ptr,"Min",3) == 0 || strncmp(ptr,"Hr",2) == 0 || strcmp(ptr,"Q1") == 0
+     || strcmp(ptr,"Q2") == 0 || strcmp(ptr,"Q3") == 0 || strcmp(ptr,"Q4") == 0
+     || strncmp(ptr,"Yr",2) == 0
+     || strncmp(ptr,"Day",3) == 0 || strcmp(ptr,"license_expired") == 0
+     || strcmp(ptr,"any") == 0 || strcmp(ptr,"from_cfexecd") == 0
+     || IsStrIn(ptr,MONTH_TEXT) || IsStrIn(ptr,DAY_TEXT)
+     || IsStrIn(ptr,SHIFT_TEXT)) || strncmp(ptr,"Lcycle",6) == 0;
 }
 
 
-void NoteClassUsage(StringSetIterator context_iterator, int purge)
+void NoteClassUsage(ClassTableIterator *iter, int purge)
 {
     CF_DB *dbp;
     CF_DBC *dbcp;
@@ -204,16 +211,18 @@ void NoteClassUsage(StringSetIterator context_iterator, int purge)
 
     // TODO: stupid, please simplify
     {
-        char *context = NULL;
-        while ((context = StringSetIteratorNext(&context_iterator)))
+        Class *cls = NULL;
+        while ((cls = ClassTableIteratorNext(iter)))
         {
-            if ((IsContextIgnorableForReporting(context)))
+            if ((IsContextIgnorableForReporting(cls->name)))
             {
-                Log(LOG_LEVEL_DEBUG, "Ignoring class '%s' (not packing)", context);
+                Log(LOG_LEVEL_DEBUG, "Ignoring class '%s' (not packing)", cls->name);
                 continue;
             }
 
-            IdempPrependItem(&list, context, NULL);
+            char *expr = ClassRefToString(cls->ns, cls->name);
+            IdempPrependItem(&list, expr, NULL);
+            free(expr);
         }
     }
 

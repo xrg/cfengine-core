@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -26,9 +26,9 @@
 #define CFENGINE_BUFFERLIST_H
 
 #include <stdlib.h>
-#include "refcount.h"
-#include "buffer.h"
-#include "list.h"
+#include <refcount.h>
+#include <buffer.h>
+#include <list.h>
 
 /**
   @brief Buffer list implementation.
@@ -103,7 +103,7 @@ int BufferListRemove(BufferList *list, Buffer *payload);
   @param list Buffer list.
   @return The number of elements on the list.
   */
-int BufferListCount(BufferList *list);
+int BufferListCount(const BufferList *list);
 
 /**
   @brief Gets an iterator for a given buffer list.
@@ -115,7 +115,7 @@ int BufferListCount(BufferList *list);
   @param iterator Iterator.
   @return A fully initialized iterator or NULL in case of error.
   */
-BufferListIterator *BufferListIteratorGet(BufferList *list);
+BufferListIterator *BufferListIteratorGet(const BufferList *list);
 /**
   @brief Releases the memory associated with an iterator.
 

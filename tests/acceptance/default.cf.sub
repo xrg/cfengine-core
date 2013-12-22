@@ -1,39 +1,48 @@
 bundle common G
 {
-classes:
-  "bin_$(cmds)" expression => fileexists("/bin/$(cmds)");
-  "usr_bin_$(cmds)" expression => fileexists("/usr/bin/$(cmds)");
-  "usr_local_bin_$(cmds)" expression => fileexists("/usr/local/bin/$(cmds)");
-  "usr_contrib_bin_$(cmds)" expression => fileexists("/usr/contrib/bin/$(cmds)");
-  "has_$(cmds)" or => { "bin_$(cmds)", "usr_bin_$(cmds)" };
-
-  "temp_declared" not => strcmp(getenv("TEMP", "65536"), "");
-
 vars:
   windows::
     "cwd" string => execresult("C:\windows\system32\cmd.exe /C cd", "noshell");
     # Dir separator
     "DS" string => "\\";
+    "exeext" string => ".exe";
   !windows::
     "cwd" string => execresult("/bin/pwd 2>/dev/null || /usr/bin/pwd", "useshell");
     # Dir separator
     "DS" string => "/";
+    "exeext" string => "";
 
   any::
   "cmds" slist => { "date", "diff", "echo", "egrep", "false", "grep", "gzip", "hexdump",
                     "ln", "mkdir", "od", "perl", "printf", "pwd", "rm", "sort", "touch",
-                    "true", "wc" };
+                    "true", "wc", "cat", "sed", "psexec", "seq" };
 
+  !windows::
+    "paths[bin]" string                    => "/bin";
+    "paths[usr_bin]" string                => "/usr/bin";
+    "paths[usr_local_bin]" string          => "/usr/local/bin";
+    "paths[usr_contrib_bin]" string        => "/usr/contrib/bin";
+  windows::
+    "paths[mingw_msys_1_0_bin]" string     => "c:\\mingw\\msys\\1.0\\bin";
+    "paths[msys_bin]" string               => "c:\\msys\\bin";
+    "paths[pstools]" string               => "c:\\PSTools";
 
-  "$(cmds)"  string => "/bin/$(cmds)",
-      ifvarclass => "bin_$(cmds)";
-  "$(cmds)"  string => "/usr/bin/$(cmds)",
-      ifvarclass => "!bin_$(cmds).usr_bin_$(cmds)";
-  "$(cmds)"  string => "/usr/local/bin/$(cmds)",
-      ifvarclass => "!bin_$(cmds).!usr_bin_$(cmds).usr_local_bin_$(cmds)";
-  "$(cmds)"  string => "/usr/contrib/bin/$(cmds)",
-      ifvarclass => "!bin_$(cmds).!usr_bin_$(cmds).!usr_local_bin_$(cmds).usr_contrib_bin_$(cmds)";
+  any::
+  "paths_indices" slist => getindices("paths");
 
+classes:
+  "$(paths_indices)_$(cmds)" expression => fileexists("$(paths[$(paths_indices)])$(DS)$(cmds)$(exeext)");
+  "has_$(cmds)" expression => "$(paths_indices)_$(cmds)",
+    scope => "namespace";
+
+vars:
+  "$(cmds)" string => "$(paths[$(paths_indices)])$(DS)$(cmds)$(exeext)",
+    ifvarclass => "$(paths_indices)_$(cmds)";
+
+classes:
+  "temp_declared" not => strcmp(getenv("TEMP", "65536"), "");
+
+vars:
   temp_declared::
     "testroot" string => getenv("TEMP", "65535");
     "testdir" string => concat(getenv("TEMP", "65535"), "$(DS)TEST.cfengine");
@@ -175,28 +184,39 @@ useshell => "true";
 
 body classes default_cf_sub_if_ok(x)
 {
-promise_repaired => { "$(x)" };
-promise_kept => { "$(x)" };
+  promise_repaired => { "$(x)" };
+  promise_kept => { "$(x)" };
+}
+
+# To set classes unconditionally. Useful when you need to set a class after a promise,
+# regardless of outcome.
+body classes default_cf_sub_set_class(x)
+{
+  promise_repaired => { "$(x)" };
+  promise_kept => { "$(x)" };
+  repair_failed => { "$(x)" };
+  repair_denied => { "$(x)" };
+  repair_timeout => { "$(x)" };
 }
 
 bundle agent check_diff(file1, file2, test, expected_difference)
 {
 vars:
-    DEBUG.!no_difference::
+    DEBUG.check_ready.!no_difference::
         "file1r" string => readfile("$(file1)", "99999999");
         "file2r" string => readfile("$(file2)", "99999999");
 
-    DEBUG.!no_difference.has_hexdump::
+    DEBUG.check_ready.!no_difference.has_hexdump::
         "file1h" string => execresult("$(G.hexdump) -C $(file1)", "useshell");
         "file2h" string => execresult("$(G.hexdump) -C $(file2)", "useshell");
 
-    DEBUG.!no_difference.!has_hexdump::
+    DEBUG.check_ready.!no_difference.!has_hexdump::
         "file1h" string => execresult("$(G.od) -c $(file1)", "useshell");
         "file2h" string => execresult("$(G.od) -c $(file2)", "useshell");
 
-    DEBUG.!no_difference.has_unified_diff::
+    DEBUG.check_ready.!no_difference.has_unified_diff::
         "diffu" string => execresult("$(G.diff) -u $(file2) $(file1) 2>/dev/null", "useshell");
-    DEBUG.!no_difference.!has_unified_diff::
+    DEBUG.check_ready.!no_difference.!has_unified_diff::
         "diffu" string => execresult("$(G.diff) -c $(file2) $(file1) 2>/dev/null", "useshell");
 
 classes:
@@ -207,29 +227,33 @@ classes:
         "$(G.diff) $(file1) $(file2) >/dev/null 2>/dev/null",
         "useshell");
 
-        "expected_difference" expression => strcmp("$(expected_difference)", "yes");
+    "expected_difference" expression => strcmp("$(expected_difference)", "yes");
+    "check_ready" expression => "any";
 
 reports:
-    no_difference.!expected_difference::
+    check_ready.no_difference.!expected_difference::
     "$(test) Pass";
-    !no_difference.expected_difference::
+    check_ready.!no_difference.expected_difference::
     "$(test) Pass";
-    !no_difference.!expected_difference::
+    check_ready.!no_difference.!expected_difference::
     "$(test) FAIL";
-    no_difference.expected_difference::
+    check_ready.no_difference.expected_difference::
     "$(test) FAIL";
 
-    DEBUG.!no_difference.!expected_difference::
-        "$(file1) and $(file2) differ:";
-        "$(file1): <$(file1r)>";
-        "$(file2): <$(file2r)>";
-        "dump $(file1):
-$(file1h)";
-        "dump $(file2):
-$(file2h)";
-        "$(diffu)";
-    DEBUG.no_difference.expected_difference::
-        "Contents of $(file1) and $(file) is the same.";
+    DEBUG.check_ready.!no_difference.!expected_difference::
+        "FILES DIFFER BUT SHOULD BE THE SAME";
+        "CONTENTS OF $(file1):
+$(file1r)";
+        "CONTENTS OF $(file2):
+$(file2r)";
+### Comment out hexdump to avoid cluttering output file
+#         "hexdump $(file1):
+# $(file1h)";
+#         "hexdump $(file2):
+# $(file2h)";
+#         "$(G.diffu)";
+    DEBUG.check_ready.no_difference.expected_difference::
+        "Contents of $(file1) and $(file) are the same but should differ.";
 }
 
 body contain default_shell_command

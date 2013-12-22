@@ -20,7 +20,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -69,6 +69,7 @@ static size_t CURRENT_PROMISER_LINE = 0;
 
 %token IDSYNTAX BLOCKID QSTRING CLASS PROMISE_TYPE BUNDLE BODY ASSIGN ARROW NAKEDVAR
 %token OP CP OB CB
+%expect 1
 
 %%
 
@@ -84,6 +85,11 @@ blocks:                block
 
 block:                 bundle
                      | body
+                     | error
+                       {
+                           ParseError("Expected 'bundle' or 'body' keyword, wrong input '%s'", yytext);
+                           YYABORT;
+                       }
 
 bundle:                BUNDLE bundletype bundleid arglist bundlebody
 
@@ -96,7 +102,7 @@ bundletype:            bundletype_values
                            ParserDebug("P:bundle:%s\n", P.blocktype);
                            P.block = "bundle";
                            RvalDestroy(P.rval);
-                           P.rval = (Rval) { NULL, '\0' };
+                           P.rval = RvalNew(NULL, RVAL_TYPE_NOPROMISEE);
                            RlistDestroy(P.currentRlist);
                            P.currentRlist = NULL;
                            if (P.currentstring)
@@ -133,7 +139,7 @@ bundleid:              bundleid_values
                           CURRENT_BLOCKID_LINE = P.line_no;
                        }
 
-bundleid_values:       blockid
+bundleid_values:       symbol
                      | error 
                        {
                            yyclearin;
@@ -176,7 +182,7 @@ bodyid:                bodyid_values
                           CURRENT_BLOCKID_LINE = P.line_no;
                        }
 
-bodyid_values:         blockid
+bodyid_values:         symbol
                      | error
                        {
                            yyclearin;
@@ -196,7 +202,7 @@ typeid:                IDSYNTAX
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-blockid:               IDSYNTAX
+symbol:                IDSYNTAX
                        {
                            strncpy(P.blockid,P.currentid,CF_MAXVARSIZE);
                            P.offsets.last_block_id = P.offsets.last_id;
@@ -245,11 +251,11 @@ aitem:                 IDSYNTAX  /* recipient of argument is never a literal */
 
 bundlebody:            body_begin
                        {
-                           if (RelevantBundle(CF_AGENTTYPES[THIS_AGENT_TYPE], P.blocktype))
+                           if (RelevantBundle(CF_AGENTTYPES[P.agent_type], P.blocktype))
                            {
                                INSTALL_SKIP = false;
                            }
-                           else if (strcmp(CF_AGENTTYPES[THIS_AGENT_TYPE], P.blocktype) != 0)
+                           else if (strcmp(CF_AGENTTYPES[P.agent_type], P.blocktype) != 0)
                            {
                                INSTALL_SKIP = true;
                            }
@@ -587,7 +593,7 @@ constraint:            constraint_id                        /* BUNDLE ONLY */
                                            // Cache whether there are subbundles for later $(this.promiser) logic
 
                                            if (strcmp(P.lval,"usebundle") == 0 || strcmp(P.lval,"edit_line") == 0
-                                               || strcmp(P.lval,"edit_xml") == 0)
+                                               || strcmp(P.lval,"edit_xml") == 0 || strcmp(P.lval,"home_bundle") == 0)
                                            {
                                                P.currentpromise->has_subbundles = true;
                                            }
@@ -604,7 +610,7 @@ constraint:            constraint_id                        /* BUNDLE ONLY */
                                }
 
                                RvalDestroy(P.rval);
-                               P.rval = (Rval) { NULL, '\0' };
+                               P.rval = RvalNew(NULL, RVAL_TYPE_NOPROMISEE);
                                strcpy(P.lval,"no lval");
                                RlistDestroy(P.currentRlist);
                                P.currentRlist = NULL;
@@ -612,7 +618,7 @@ constraint:            constraint_id                        /* BUNDLE ONLY */
                            else
                            {
                                RvalDestroy(P.rval);
-                               P.rval = (Rval) { NULL, '\0' };
+                               P.rval = RvalNew(NULL, RVAL_TYPE_NOPROMISEE);
                            }
                        }
 
@@ -770,7 +776,7 @@ selection:             selection_id                         /* BODY ONLY */
                            else
                            {
                                RvalDestroy(P.rval);
-                               P.rval = (Rval) { NULL, '\0' };
+                               P.rval = RvalNew(NULL, RVAL_TYPE_NOPROMISEE);
                            }
 
                            if (strcmp(P.blockid,"control") == 0 && strcmp(P.blocktype,"file") == 0)
@@ -790,7 +796,7 @@ selection:             selection_id                         /* BODY ONLY */
                            }
                            
                            RvalDestroy(P.rval);
-                           P.rval = (Rval) { NULL, '\0' };
+                           P.rval = RvalNew(NULL, RVAL_TYPE_NOPROMISEE);
                        }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -867,7 +873,8 @@ class:                 CLASS
                            ParserDebug("\tP:%s:%s:%s:%s class = %s\n", P.block, P.blocktype, P.blockid, P.currenttype, yytext);
 
                            /* class literal includes terminating :: */
-                           char *literal = xstrndup(yytext, yylen - 2);
+                           /* Warning : AIX does not like yylen     */
+                           char *literal = xstrndup(yytext, strlen(yytext) - 2);
 
                            ValidateClassLiteral(literal);
 
@@ -999,7 +1006,7 @@ litem:                 IDSYNTAX
 
                      | usefunction
                        {
-                           RlistAppendFnCall((Rlist **)&P.currentRlist,(void *)P.currentfncall[P.arg_nesting+1]);
+                           RlistAppend(&P.currentRlist, P.currentfncall[P.arg_nesting+1], RVAL_TYPE_FNCALL);
                            FnCallDestroy(P.currentfncall[P.arg_nesting+1]);
                        }
 
@@ -1105,7 +1112,7 @@ gaitem:                IDSYNTAX
                        {
                            /* Careful about recursion */
                            ParserDebug("\tP:%s:%s:%s:%s function %s, nakedvar arg = %s\n", P.block, P.blocktype, P.blockid, P.currentclasses ? P.currentclasses : "any", P.currentfnid[P.arg_nesting], P.currentstring);
-                           RlistAppendFnCall(&P.giveargs[P.arg_nesting],(void *)P.currentfncall[P.arg_nesting+1]);
+                           RlistAppend(&P.giveargs[P.arg_nesting], P.currentfncall[P.arg_nesting+1], RVAL_TYPE_FNCALL);
                            RvalDestroy((Rval) { P.currentfncall[P.arg_nesting+1], RVAL_TYPE_FNCALL });
                        }
 
@@ -1134,7 +1141,15 @@ gaitem:                IDSYNTAX
 static void ParseErrorVColumnOffset(int column_offset, const char *s, va_list ap)
 {
     char *errmsg = StringVFormat(s, ap);
-    fprintf(stderr, "%s:%d:%d: error: %s\n", P.filename, P.line_no, P.line_pos + column_offset, errmsg);
+
+    if (strlen(P.include_filename) > 0)
+    {
+        fprintf(stderr, "%s:%d:%d: error: (included file %s) %s\n", P.filename, P.line_no, P.line_pos + column_offset, P.include_filename, errmsg);
+    }
+    else
+    {
+        fprintf(stderr, "%s:%d:%d: error: %s\n", P.filename, P.line_no, P.line_pos + column_offset, errmsg);
+    }
     free(errmsg);
 
     /* FIXME: why this might be NULL? */
@@ -1185,7 +1200,15 @@ static void ParseWarningV(unsigned int warning, const char *s, va_list ap)
     char *errmsg = StringVFormat(s, ap);
     const char *warning_str = ParserWarningToString(warning);
 
-    fprintf(stderr, "%s:%d:%d: warning: %s [-W%s]\n", P.filename, P.line_no, P.line_pos, errmsg, warning_str);
+    if (strlen(P.include_filename) > 0)
+    {
+        fprintf(stderr, "%s:%d:%d: warning: (included file %s) %s [-W%s]\n", P.filename, P.line_no, P.line_pos, P.include_filename, errmsg, warning_str);
+    }
+    else
+    {
+        fprintf(stderr, "%s:%d:%d: warning: %s [-W%s]\n", P.filename, P.line_no, P.line_pos, errmsg, warning_str);
+    }
+
     fprintf(stderr, "%s\n", P.current_line);
     fprintf(stderr, "%*s\n", P.line_pos, "^");
 
@@ -1227,7 +1250,15 @@ static void fatal_yyerror(const char *s)
         sp++;
     }
 
-    fprintf(stderr, "%s: %d,%d: Fatal error during parsing: %s, near token \'%.20s\'\n", P.filename, P.line_no, P.line_pos, s, sp ? sp : "NULL");
+    if (strlen(P.include_filename) > 0)
+    {
+        fprintf(stderr, "%s: %d,%d: Fatal error during parsing: (included file %s) %s, near token \'%.20s\'\n", P.filename, P.line_no, P.line_pos, P.include_filename, s, sp ? sp : "NULL");
+    }
+    else
+    {
+        fprintf(stderr, "%s: %d,%d: Fatal error during parsing: %s, near token \'%.20s\'\n", P.filename, P.line_no, P.line_pos, s, sp ? sp : "NULL");
+    }
+
     exit(1);
 }
 

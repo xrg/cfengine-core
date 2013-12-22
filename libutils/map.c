@@ -17,18 +17,18 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "platform.h"
-#include "map.h"
-#include "alloc.h"
-#include "array_map_priv.h"
-#include "hash_map_priv.h"
-#include "string_lib.h"
-#include "hashes.h"
+#include <platform.h>
+#include <map.h>
+#include <alloc.h>
+#include <array_map_priv.h>
+#include <hash_map_priv.h>
+#include <string_lib.h>
+#include <hashes.h>
 
 /*
  * This associative array implementation uses array with linear search up to
@@ -51,7 +51,7 @@ struct Map_
     };
 };
 
-static unsigned IdentityHashFn(const void *ptr, ARG_UNUSED unsigned int max)
+static unsigned IdentityHashFn(const void *ptr, ARG_UNUSED unsigned int seed, ARG_UNUSED unsigned int max)
 {
     return (unsigned)(uintptr_t)ptr;
 }
@@ -234,6 +234,22 @@ void MapDestroy(Map *map)
     }
 }
 
+bool MapContainsSameKeys(const Map *map1, const Map *map2)
+{
+    MapIterator i = MapIteratorInit((Map *)map1);
+    MapKeyValue *item;
+    size_t count = 0;
+    while ((item = MapIteratorNext(&i)))
+    {
+        count++;
+        if (!MapHasKey(map2, item->key))
+        {
+            return false;
+        }
+    }
+    return (count == MapSize(map2));
+}
+
 /******************************************************************************/
 
 MapIterator MapIteratorInit(Map *map)
@@ -265,7 +281,7 @@ MapKeyValue *MapIteratorNext(MapIterator *i)
 }
 
 TYPED_MAP_DEFINE(String, char *, char *,
-                 (MapHashFn)&OatHash,
+                 (MapHashFn)&StringHash,
                  (MapKeyEqualFn)&StringSafeEqual,
                  &free,
                  &free)

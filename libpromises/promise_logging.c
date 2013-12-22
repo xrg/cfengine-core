@@ -17,18 +17,18 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "promise_logging.h"
+#include <promise_logging.h>
 
-#include "logging.h"
-#include "logging_priv.h"
-#include "misc_lib.h"
-#include "string_lib.h"
-#include "env_context.h"
+#include <logging.h>
+#include <logging_priv.h>
+#include <misc_lib.h>
+#include <string_lib.h>
+#include <env_context.h>
 
 
 typedef struct
@@ -166,7 +166,7 @@ void PromiseLoggingPromiseEnter(const EvalContext *eval_context, const Promise *
         ProgrammingError("Promise logging: Unable to enter promise, bound to EvalContext different from passed one");
     }
 
-    if (EvalContextStackGetTopPromise(eval_context) != pp)
+    if (EvalContextStackCurrentPromise(eval_context) != pp)
     {
         /*
          * FIXME: There are still cases where promise passed here is not on top of stack
@@ -175,12 +175,13 @@ void PromiseLoggingPromiseEnter(const EvalContext *eval_context, const Promise *
     }
 
     plctx->promise_level++;
+    assert(plctx->promise_level == 1);
     plctx->stack_path = EvalContextStackPath(eval_context);
 
     LoggingPrivSetLevels(CalculateLogLevel(eval_context, pp), CalculateReportLevel(eval_context, pp));
 }
 
-char *PromiseLoggingPromiseFinish(const EvalContext *eval_context, const Promise *pp)
+void PromiseLoggingPromiseFinish(const EvalContext *eval_context, const Promise *pp)
 {
     LoggingPrivContext *pctx = LoggingPrivGetContext();
 
@@ -196,7 +197,7 @@ char *PromiseLoggingPromiseFinish(const EvalContext *eval_context, const Promise
         ProgrammingError("Promise logging: Unable to finish promise, bound to EvalContext different from passed one");
     }
 
-    if (EvalContextStackGetTopPromise(eval_context) != pp)
+    if (EvalContextStackCurrentPromise(eval_context) != pp)
     {
         /*
          * FIXME: There are still cases where promise passed here is not on top of stack
@@ -204,15 +205,33 @@ char *PromiseLoggingPromiseFinish(const EvalContext *eval_context, const Promise
         /* ProgrammingError("Logging: Attempt to finish promise not on top of stack"); */
     }
 
-    char *last_message = plctx->last_message;
-
     plctx->promise_level--;
+    assert(plctx->promise_level == 0);
+    free(plctx->last_message);
     plctx->last_message = NULL;
     free(plctx->stack_path);
+    plctx->stack_path = NULL;
 
     LoggingPrivSetLevels(LogGetGlobalLevel(), LogGetGlobalLevel());
+}
 
-    return last_message;
+const char *PromiseLoggingLastMessage(const EvalContext *ctx)
+{
+    LoggingPrivContext *pctx = LoggingPrivGetContext();
+
+    if (pctx == NULL)
+    {
+        ProgrammingError("Promise logging: Unable to finish promise, not bound to EvalContext");
+    }
+
+    PromiseLoggingContext *plctx = pctx->param;
+
+    if (plctx->eval_context != ctx)
+    {
+        ProgrammingError("Promise logging: Unable to finish promise, bound to EvalContext different from passed one");
+    }
+
+    return plctx->last_message;
 }
 
 void PromiseLoggingFinish(const EvalContext *eval_context)

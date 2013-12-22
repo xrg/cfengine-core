@@ -17,30 +17,27 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "processes_select.h"
+#include <processes_select.h>
 
-#include "env_context.h"
-#include "files_names.h"
-#include "conversion.h"
-#include "matching.h"
-#include "string_lib.h"
-#include "item_lib.h"
-#include "pipes.h"
-#include "files_interfaces.h"
-#include "rlist.h"
-#include "policy.h"
-
-#ifdef HAVE_ZONE_H
-# include <zone.h>
-#endif
+#include <env_context.h>
+#include <files_names.h>
+#include <conversion.h>
+#include <matching.h>
+#include <string_lib.h>
+#include <item_lib.h>
+#include <pipes.h>
+#include <files_interfaces.h>
+#include <rlist.h>
+#include <policy.h>
+#include <zones.h>
 
 static int SelectProcRangeMatch(char *name1, char *name2, int min, int max, char **names, char **line);
-static int SelectProcRegexMatch(char *name1, char *name2, char *regex, char **colNames, char **line);
+static int SelectProcRegexMatch(EvalContext *ctx, char *name1, char *name2, char *regex, char **colNames, char **line);
 static int SplitProcLine(char *proc, char **names, int *start, int *end, char **line);
 static int SelectProcTimeCounterRangeMatch(char *name1, char *name2, time_t min, time_t max, char **names, char **line);
 static int SelectProcTimeAbsRangeMatch(char *name1, char *name2, time_t min, time_t max, char **names, char **line);
@@ -50,13 +47,13 @@ static int ExtractPid(char *psentry, char **names, int *end);
 
 /***************************************************************************/
 
-static int SelectProcess(char *procentry, char **names, int *start, int *end, ProcessSelect a)
+static int SelectProcess(EvalContext *ctx, char *procentry, char **names, int *start, int *end, ProcessSelect a)
 {
     int result = true, i;
     char *column[CF_PROCCOLS];
     Rlist *rp;
 
-    StringSet *proc_attr = StringSetNew();
+    StringSet *process_select_attributes = StringSetNew();
 
     if (!SplitProcLine(procentry, names, start, end, column))
     {
@@ -70,77 +67,103 @@ static int SelectProcess(char *procentry, char **names, int *start, int *end, Pr
 
     for (rp = a.owner; rp != NULL; rp = rp->next)
     {
-        if (SelectProcRegexMatch("USER", "UID", (char *) rp->item, names, column))
+        if (SelectProcRegexMatch(ctx, "USER", "UID", RlistScalarValue(rp), names, column))
         {
-            StringSetAdd(proc_attr, xstrdup("process_owner"));
+            StringSetAdd(process_select_attributes, xstrdup("process_owner"));
             break;
         }
     }
 
     if (SelectProcRangeMatch("PID", "PID", a.min_pid, a.max_pid, names, column))
     {
-        StringSetAdd(proc_attr, xstrdup("pid"));
+        StringSetAdd(process_select_attributes, xstrdup("pid"));
     }
 
     if (SelectProcRangeMatch("PPID", "PPID", a.min_ppid, a.max_ppid, names, column))
     {
-        StringSetAdd(proc_attr, xstrdup("ppid"));
+        StringSetAdd(process_select_attributes, xstrdup("ppid"));
     }
 
     if (SelectProcRangeMatch("PGID", "PGID", a.min_pgid, a.max_pgid, names, column))
     {
-        StringSetAdd(proc_attr, xstrdup("pgid"));
+        StringSetAdd(process_select_attributes, xstrdup("pgid"));
     }
 
     if (SelectProcRangeMatch("VSZ", "SZ", a.min_vsize, a.max_vsize, names, column))
     {
-        StringSetAdd(proc_attr, xstrdup("vsize"));
+        StringSetAdd(process_select_attributes, xstrdup("vsize"));
     }
 
     if (SelectProcRangeMatch("RSS", "RSS", a.min_rsize, a.max_rsize, names, column))
     {
-        StringSetAdd(proc_attr, xstrdup("rsize"));
+        StringSetAdd(process_select_attributes, xstrdup("rsize"));
     }
 
     if (SelectProcTimeCounterRangeMatch("TIME", "TIME", a.min_ttime, a.max_ttime, names, column))
     {
-        StringSetAdd(proc_attr, xstrdup("ttime"));
+        StringSetAdd(process_select_attributes, xstrdup("ttime"));
     }
 
     if (SelectProcTimeAbsRangeMatch
         ("STIME", "START", a.min_stime, a.max_stime, names, column))
     {
-        StringSetAdd(proc_attr, xstrdup("stime"));
+        StringSetAdd(process_select_attributes, xstrdup("stime"));
     }
 
     if (SelectProcRangeMatch("NI", "PRI", a.min_pri, a.max_pri, names, column))
     {
-        StringSetAdd(proc_attr, xstrdup("priority"));
+        StringSetAdd(process_select_attributes, xstrdup("priority"));
     }
 
     if (SelectProcRangeMatch("NLWP", "NLWP", a.min_thread, a.max_thread, names, column))
     {
-        StringSetAdd(proc_attr, xstrdup("threads"));
+        StringSetAdd(process_select_attributes, xstrdup("threads"));
     }
 
-    if (SelectProcRegexMatch("S", "STAT", a.status, names, column))
+    if (SelectProcRegexMatch(ctx, "S", "STAT", a.status, names, column))
     {
-        StringSetAdd(proc_attr, xstrdup("status"));
+        StringSetAdd(process_select_attributes, xstrdup("status"));
     }
 
-    if (SelectProcRegexMatch("CMD", "COMMAND", a.command, names, column))
+    if (SelectProcRegexMatch(ctx, "CMD", "COMMAND", a.command, names, column))
     {
-        StringSetAdd(proc_attr, xstrdup("command"));
+        StringSetAdd(process_select_attributes, xstrdup("command"));
     }
 
-    if (SelectProcRegexMatch("TTY", "TTY", a.tty, names, column))
+    if (SelectProcRegexMatch(ctx, "TTY", "TTY", a.tty, names, column))
     {
-        StringSetAdd(proc_attr, xstrdup("tty"));
+        StringSetAdd(process_select_attributes, xstrdup("tty"));
     }
 
-    result = EvalProcessResult(a.process_result, proc_attr);
+    if (!a.process_result)
+    {
+        if (StringSetSize(process_select_attributes) == 0)
+        {
+            result = EvalProcessResult("", process_select_attributes);
+        }
+        else
+        {
+            Writer *w = StringWriter();
+            StringSetIterator iter = StringSetIteratorInit(process_select_attributes);
+            char *attr = StringSetIteratorNext(&iter);
+            WriterWrite(w, attr);
 
-    StringSetDestroy(proc_attr);
+            while ((attr = StringSetIteratorNext(&iter)))
+            {
+                WriterWriteChar(w, '.');
+                WriterWrite(w, attr);
+            }
+
+            result = EvalProcessResult(StringWriterData(w), process_select_attributes);
+            WriterClose(w);
+        }
+    }
+    else
+    {
+        result = EvalProcessResult(a.process_result, process_select_attributes);
+    }
+
+    StringSetDestroy(process_select_attributes);
 
     for (i = 0; column[i] != NULL; i++)
     {
@@ -150,7 +173,7 @@ static int SelectProcess(char *procentry, char **names, int *start, int *end, Pr
     return result;
 }
 
-Item *SelectProcesses(const Item *processes, const char *process_name, ProcessSelect a, bool attrselect)
+Item *SelectProcesses(EvalContext *ctx, const Item *processes, const char *process_name, ProcessSelect a, bool attrselect)
 {
     Item *result = NULL;
 
@@ -169,14 +192,14 @@ Item *SelectProcesses(const Item *processes, const char *process_name, ProcessSe
     {
         int s, e;
 
-        if (BlockTextMatch(process_name, ip->name, &s, &e))
+        if (BlockTextMatch(ctx, process_name, ip->name, &s, &e))
         {
             if (NULL_OR_EMPTY(ip->name))
             {
                 continue;
             }
 
-            if (attrselect && !SelectProcess(ip->name, names, start, end, a))
+            if (attrselect && !SelectProcess(ctx, ip->name, names, start, end, a))
             {
                 continue;
             }
@@ -346,7 +369,7 @@ static int SelectProcTimeAbsRangeMatch(char *name1, char *name2, time_t min, tim
 
 /***************************************************************************/
 
-static int SelectProcRegexMatch(char *name1, char *name2, char *regex, char **colNames, char **line)
+static int SelectProcRegexMatch(EvalContext *ctx, char *name1, char *name2, char *regex, char **colNames, char **line)
 {
     int i;
 
@@ -358,7 +381,7 @@ static int SelectProcRegexMatch(char *name1, char *name2, char *regex, char **co
     if ((i = GetProcColumnIndex(name1, name2, colNames)) != -1)
     {
 
-        if (FullTextMatch(regex, line[i]))
+        if (FullTextMatch(ctx, regex, line[i]))
         {
             return true;
         }
@@ -510,7 +533,7 @@ static int GetProcColumnIndex(char *name1, char *name2, char **names)
 
 /**********************************************************************************/
 
-bool IsProcessNameRunning(char *procNameRegex)
+bool IsProcessNameRunning(EvalContext *ctx, char *procNameRegex)
 {
     char *colHeaders[CF_PROCCOLS];
     Item *ip;
@@ -542,7 +565,7 @@ bool IsProcessNameRunning(char *procNameRegex)
             continue;
         }
 
-        if (SelectProcRegexMatch("CMD", "COMMAND", procNameRegex, colHeaders, lineSplit))
+        if (SelectProcRegexMatch(ctx, "CMD", "COMMAND", procNameRegex, colHeaders, lineSplit))
         {
             matched = true;
             break;
@@ -619,20 +642,13 @@ static void GetProcessColumnNames(char *proc, char **names, int *start, int *end
 #ifndef __MINGW32__
 static const char *GetProcessOptions(void)
 {
-# ifdef HAVE_GETZONEID
-    zoneid_t zid;
-    char zone[ZONENAME_MAX];
     static char psopts[CF_BUFSIZE];
 
-    zid = getzoneid();
-    getzonenamebyid(zid, zone, ZONENAME_MAX);
-
-    if (strcmp(zone, "global") == 0)
+    if (IsGlobalZone())
     {
         snprintf(psopts, CF_BUFSIZE, "%s,zone", VPSOPTS[VSYSTEMHARDCLASS]);
         return psopts;
     }
-# endif
 
 # ifdef __linux__
     if (strncmp(VSYSNAME.release, "2.4", 3) == 0)
@@ -693,47 +709,7 @@ static int ExtractPid(char *psentry, char **names, int *end)
 }
 
 #ifndef __MINGW32__
-static int ForeignZone(char *s)
-{
-// We want to keep the banner
-
-    if (strstr(s, "%CPU"))
-    {
-        return false;
-    }
-
-# ifdef HAVE_GETZONEID
-    zoneid_t zid;
-    char *sp, zone[ZONENAME_MAX];
-
-    zid = getzoneid();
-    getzonenamebyid(zid, zone, ZONENAME_MAX);
-
-    if (strcmp(zone, "global") == 0)
-    {
-        if (strcmp(s + strlen(s) - 6, "global") == 0)
-        {
-            *(s + strlen(s) - 6) = '\0';
-
-            for (sp = s + strlen(s) - 1; isspace(*sp); sp--)
-            {
-                *sp = '\0';
-            }
-
-            return false;
-        }
-        else
-        {
-            return true;
-        }
-    }
-# endif
-    return false;
-}
-#endif
-
-#ifndef __MINGW32__
-int LoadProcessTable(Item **procdata)
+int LoadProcessTable(EvalContext *ctx, Item **procdata)
 {
     FILE *prp;
     char pscomm[CF_MAXLINKSIZE], vbuff[CF_BUFSIZE], *sp;
@@ -742,7 +718,7 @@ int LoadProcessTable(Item **procdata)
 
     if (PROCESSTABLE)
     {
-        Log(LOG_LEVEL_VERBOSE, "Reusing cached process state");
+        Log(LOG_LEVEL_VERBOSE, "Reusing cached process table");
         return true;
     }
 
@@ -796,11 +772,11 @@ int LoadProcessTable(Item **procdata)
     CopyList(&rootprocs, *procdata);
     CopyList(&otherprocs, *procdata);
 
-    while (DeleteItemNotContaining(&rootprocs, "root"))
+    while (DeleteItemNotContaining(ctx, &rootprocs, "root"))
     {
     }
 
-    while (DeleteItemContaining(&otherprocs, "root"))
+    while (DeleteItemContaining(ctx, &otherprocs, "root"))
     {
     }
 

@@ -17,15 +17,15 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "mod_files.h"
+#include <mod_files.h>
 
-#include "policy.h"
-#include "syntax.h"
+#include <policy.h>
+#include <syntax.h>
 
 static const ConstraintSyntax location_constraints[] =
 {
@@ -334,6 +334,9 @@ static const ConstraintSyntax CF_FILES_BODIES[] =
     ConstraintSyntaxNewString("repository", CF_ABSPATHRANGE, "Name of a repository for versioning", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewBool("touch", "true/false whether to touch time stamps on file", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewString("transformer", CF_ABSPATHRANGE, "Command (with full path) used to transform current file (no shell wrapper used)", SYNTAX_STATUS_NORMAL),
+    ConstraintSyntaxNewOption("template_method", "cfengine,mustache", "", SYNTAX_STATUS_NORMAL),
+    ConstraintSyntaxNewContainer("template_data", "", SYNTAX_STATUS_NORMAL),
+
     ConstraintSyntaxNewNull()
 };
 

@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -25,7 +25,16 @@
 #ifndef CFENGINE_STRING_LIB_H
 #define CFENGINE_STRING_LIB_H
 
-#include "compiler.h"
+#include <platform.h>
+#include <compiler.h>
+
+typedef struct
+{
+    const char *data;
+    size_t len;
+} StringRef;
+
+unsigned int StringHash(const char *str, unsigned int seed, unsigned int max);
 
 char ToLower(char ch);
 char ToUpper(char ch);
@@ -35,9 +44,10 @@ void ToLowerStrInplace(char *str);
 long StringToLong(const char *str);
 char *StringFromLong(long number);
 double StringToDouble(const char *str);
+char *StringFromDouble(double number);
 char *NULLStringToEmpty(char *str);
 
-bool IsNumber(const char *name);
+bool StringIsNumeric(const char *name);
 bool EmptyString(const char *s);
 
 char *StringEncodeBase64(const char *str, size_t len);
@@ -53,13 +63,16 @@ char *StringSubstring(const char *source, size_t source_len, int start, int len)
 /* Allocates the result */
 char *SearchAndReplace(const char *source, const char *search, const char *replace);
 
-bool StringMatch(const char *regex, const char *str);
+bool StringMatch(const char *regex, const char *str, int *start, int *end);
 bool StringMatchFull(const char *regex, const char *str);
 
 int ReplaceStr(char *in, char *out, int outSz, char *from, char *to);
 
 bool IsStrIn(const char *str, const char **strs);
 bool IsStrCaseIn(const char *str, const char **strs);
+
+size_t StringCountTokens(const char *str, size_t len, const char *seps);
+StringRef StringGetToken(const char *str, size_t len, size_t index, const char *seps);
 
 char **String2StringArray(char *str, char separator);
 void FreeStringArray(char **strs);
@@ -138,5 +151,14 @@ void *MemSpanInverse(const void *mem, char c, size_t n);
 bool CompareStringOrRegex(const char *value, const char *compareTo, bool regex);
 bool StringNotMatchingSetCapped(const char *isp, int limit, 
                       const char *exclude, char *obuf);
+
+/**
+ * @brief Appends src to dst, but will not exceed n bytes in dst, including the terminating null.
+ * @param dst Destination string.
+ * @param src Source string.
+ * @param n Total size of dst buffer. The string will be truncated if this is exceeded.
+ * @return True if append was successful, false if the operation caused an overflow.
+ */
+bool StringAppend(char *dst, const char *src, size_t n);
 
 #endif

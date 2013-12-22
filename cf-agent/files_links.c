@@ -17,22 +17,23 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "files_links.h"
+#include <files_links.h>
 
-#include "promises.h"
-#include "files_names.h"
-#include "files_interfaces.h"
-#include "files_operators.h"
-#include "files_lib.h"
-#include "locks.h"
-#include "string_lib.h"
-#include "misc_lib.h"
-#include "env_context.h"
+#include <actuator.h>
+#include <promises.h>
+#include <files_names.h>
+#include <files_interfaces.h>
+#include <files_operators.h>
+#include <files_lib.h>
+#include <locks.h>
+#include <string_lib.h>
+#include <misc_lib.h>
+#include <env_context.h>
 
 #define CF_MAXLINKLEVEL 4
 
@@ -119,13 +120,24 @@ PromiseResult VerifyLink(EvalContext *ctx, char *destination, const char *source
         }
         else
         {
-            if (!MoveObstruction(ctx, destination, attr, pp))
+            PromiseResult result = PROMISE_RESULT_NOOP;
+            if (!MoveObstruction(ctx, destination, attr, pp, &result))
             {
                 cfPS(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_FAIL, pp, attr, "Unable to create link '%s' -> '%s'", destination, to);
-                return PROMISE_RESULT_FAIL;
+                result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
+                return result;
             }
 
-            return MakeLink(ctx, destination, source, attr, pp) ? PROMISE_RESULT_CHANGE : PROMISE_RESULT_FAIL;
+            if (MakeLink(ctx, destination, source, attr, pp))
+            {
+                result = PromiseResultUpdate(result, PROMISE_RESULT_CHANGE);
+            }
+            else
+            {
+                result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
+            }
+
+            return result;
         }
     }
     else
@@ -375,12 +387,23 @@ PromiseResult VerifyHardLink(EvalContext *ctx, char *destination, const char *so
 
     Log(LOG_LEVEL_INFO, "'%s' does not appear to be a hard link to '%s'", destination, to);
 
-    if (!MoveObstruction(ctx, destination, attr, pp))
+    PromiseResult result = PROMISE_RESULT_NOOP;
+    if (!MoveObstruction(ctx, destination, attr, pp, &result))
     {
-        return PROMISE_RESULT_FAIL;
+        result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
+        return result;
     }
 
-    return MakeHardLink(ctx, destination, to, attr, pp) ? PROMISE_RESULT_CHANGE : PROMISE_RESULT_FAIL;
+    if (MakeHardLink(ctx, destination, to, attr, pp))
+    {
+        result = PromiseResultUpdate(result, PROMISE_RESULT_CHANGE);
+    }
+    else
+    {
+        result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
+    }
+
+    return result;
 }
 
 /*****************************************************************************/

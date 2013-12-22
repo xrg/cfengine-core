@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -25,8 +25,8 @@
 #ifndef CFENGINE_MAP_H
 #define CFENGINE_MAP_H
 
-#include "hash_map_priv.h"
-#include "array_map_priv.h"
+#include <hash_map_priv.h>
+#include <array_map_priv.h>
 
 /*
  * Map structure. Details are encapsulated.
@@ -97,6 +97,11 @@ void MapClear(Map *map);
  */
 void MapDestroy(Map *map);
 
+/**
+ * Returns whether the two maps contain the same keys.
+ * The values DO NOT have to be equal, just the keys.
+ */
+bool MapContainsSameKeys(const Map *map1, const Map *map2);
 
 #define TYPED_MAP_DECLARE(Prefix, KeyType, ValueType)                   \
     typedef struct                                                      \
@@ -112,6 +117,7 @@ void MapDestroy(Map *map);
     void Prefix##MapClear(Prefix##Map *map);                            \
     size_t Prefix##MapSize(const Prefix##Map *map);                            \
     void Prefix##MapDestroy(Prefix##Map *map);                          \
+    bool Prefix##MapContainsSameKeys(const Prefix##Map *map1, const Prefix##Map *map2); \
 
 #define TYPED_MAP_DEFINE(Prefix, KeyType, ValueType, hash_fn, equal_fn, \
                          destroy_key_fn, destroy_value_fn)              \
@@ -158,7 +164,12 @@ void MapDestroy(Map *map);
     {                                                                   \
         MapDestroy(map->impl);                                          \
         free(map);                                                      \
-    }
+    }                                                                   \
+                                                                        \
+    bool Prefix##MapContainsSameKeys(const Prefix##Map *map1, const Prefix##Map *map2) \
+    {                                                                   \
+        return MapContainsSameKeys(map1->impl, map2->impl);             \
+    }                                                                   \
 
 TYPED_MAP_DECLARE(String, char *, char *)
 

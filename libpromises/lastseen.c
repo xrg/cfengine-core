@@ -17,18 +17,18 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
-#include "cf3.defs.h"
+#include <cf3.defs.h>
 
-#include "lastseen.h"
-#include "conversion.h"
-#include "files_hashes.h"
-#include "locks.h"
-#include "item_lib.h"
+#include <lastseen.h>
+#include <conversion.h>
+#include <files_hashes.h>
+#include <locks.h>
+#include <item_lib.h>
 
 void UpdateLastSawHost(const char *hostkey, const char *address,
                        bool incoming, time_t timestamp);
@@ -69,6 +69,17 @@ void UpdateLastSawHost(const char *hostkey, const char *address,
  */
 
 /*****************************************************************************/
+
+/**
+ * @brief Same as LastSaw() but the digest parameter is the hash as a
+ *        "SHA=..." string, to avoid converting twice.
+ */
+void LastSaw1(const char *ipaddress, unsigned char hashstr[EVP_MAX_MD_SIZE * 4],
+              LastSeenRole role)
+{
+    const char *mapip = MapAddress(ipaddress);
+    UpdateLastSawHost(hashstr, mapip, role == LAST_SEEN_ROLE_ACCEPT, time(NULL));
+}
 
 void LastSaw(const char *ipaddress, unsigned char digest[EVP_MAX_MD_SIZE + 1], LastSeenRole role)
 {

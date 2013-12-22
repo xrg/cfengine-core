@@ -17,7 +17,7 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
@@ -25,15 +25,15 @@
 #ifndef CFENGINE_CRYPTO_H
 #define CFENGINE_CRYPTO_H
 
-#include "platform.h"
+#include <platform.h>
 
 void CryptoInitialize(void);
 void CryptoDeInitialize(void);
 
 void DebugBinOut(char *buffer, int len, char *com);
 bool LoadSecretKeys(const char *policy_server);
-int EncryptString(char type, char *in, char *out, unsigned char *key, int len);
-int DecryptString(char type, char *in, char *out, unsigned char *key, int len);
+int EncryptString(char type, const char *in, char *out, unsigned char *key, int len);
+int DecryptString(char type, const char *in, char *out, unsigned char *key, int len);
 RSA *HavePublicKey(const char *username, const char *ipaddress, const char *digest);
 RSA *HavePublicKeyByIP(const char *username, const char *ipaddress);
 void SavePublicKey(const char *username, const char *digest, const RSA *key);

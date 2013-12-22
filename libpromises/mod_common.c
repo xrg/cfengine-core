@@ -17,33 +17,34 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
 /* This is a root node in the syntax tree */
 
-#include "mod_common.h"
+#include <mod_common.h>
 
-#include "mod_environ.h"
-#include "mod_outputs.h"
-#include "mod_access.h"
-#include "mod_storage.h"
-#include "mod_databases.h"
-#include "mod_packages.h"
-#include "mod_report.h"
-#include "mod_files.h"
-#include "mod_exec.h"
-#include "mod_methods.h"
-#include "mod_process.h"
-#include "mod_services.h"
-#include "mod_measurement.h"
-#include "mod_knowledge.h"
+#include <mod_environ.h>
+#include <mod_outputs.h>
+#include <mod_access.h>
+#include <mod_storage.h>
+#include <mod_databases.h>
+#include <mod_packages.h>
+#include <mod_report.h>
+#include <mod_files.h>
+#include <mod_exec.h>
+#include <mod_methods.h>
+#include <mod_process.h>
+#include <mod_services.h>
+#include <mod_measurement.h>
+#include <mod_knowledge.h>
+#include <mod_users.h>
 
-#include "conversion.h"
-#include "policy.h"
-#include "syntax.h"
+#include <conversion.h>
+#include <policy.h>
+#include <syntax.h>
 
 static const char *POLICY_ERROR_VARS_CONSTRAINT_DUPLICATE_TYPE = "Variable contains existing data type contstraint %s, tried to redefine with %s";
 static const char *POLICY_ERROR_VARS_PROMISER_NUMERICAL = "Variable promises cannot have a purely numerical promiser (name)";
@@ -120,6 +121,7 @@ const ConstraintSyntax CF_VARBODY[] =
     ConstraintSyntaxNewStringList("slist", "", "A list of scalar strings", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewIntList("ilist", "A list of integers", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewRealList("rlist", "A list of real numbers", SYNTAX_STATUS_NORMAL),
+    ConstraintSyntaxNewContainer("data", "A data container", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewOption("policy", "free,overridable,constant,ifdefined", "The policy for (dis)allowing (re)definition of variables", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewNull()
 };
@@ -168,7 +170,7 @@ static bool VarsParseTreeCheck(const Promise *pp, Seq *errors)
         {
             Constraint *cp = SeqAt(pp->conlist, i);
 
-            if (IsDataType(cp->lval))
+            if (DataTypeFromString(cp->lval) != DATA_TYPE_NONE)
             {
                 if (data_type != NULL)
                 {
@@ -246,6 +248,7 @@ const ConstraintSyntax CFG_CONTROLBODY[] =
     ConstraintSyntaxNewString("syslog_host", CF_IPRANGE, "The name or address of a host to which syslog messages should be sent directly by UDP. Default value: 514", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewInt("syslog_port", CF_VALRANGE, "The port number of a UDP syslog service", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewBool("fips_mode", "Activate full FIPS mode restrictions. Default value: false", SYNTAX_STATUS_NORMAL),
+    ConstraintSyntaxNewBool("cache_system_functions", "Cache the result of system functions. Default value: true", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewReal("bwlimit", "0.0,9.99999E12", "Limit outgoing protocol bandwidth in bits per second", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewNull()
 };
@@ -320,7 +323,8 @@ const ConstraintSyntax CFS_CONTROLBODY[] =
     ConstraintSyntaxNewOption("serverfacility", CF_FACILITY, "Menu option for syslog facility level. Default value: LOG_USER", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewStringList("skipverify", "", "List of IPs or hostnames for which we expect no DNS binding and cannot verify", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewStringList("trustkeysfrom", "", "List of IPs from whom we accept public keys on trust", SYNTAX_STATUS_NORMAL),
-    ConstraintSyntaxNewBool("listen", "true/false enable server deamon to listen on defined port. Default value: true", SYNTAX_STATUS_NORMAL),
+    ConstraintSyntaxNewBool("listen", "true/false enable server daemon to listen on defined port. Default value: true", SYNTAX_STATUS_NORMAL),
+    ConstraintSyntaxNewString("allowciphers", "", "List of ciphers the server accepts. For Syntax help see man page for \"openssl ciphers\". Default is \"AES256-GCM-SHA384:AES256-SHA\"", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewNull()
 };
 
@@ -354,6 +358,7 @@ const ConstraintSyntax CFEX_CONTROLBODY[] = /* enum cfexcontrol */
     ConstraintSyntaxNewInt("splaytime", CF_VALRANGE, "Time in minutes to splay this host based on its name hash. Default value: 0", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewString("mailfrom", ".*@.*", "Email-address cfengine mail appears to come from", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewString("mailto", ".*@.*", "Email-address cfengine mail is sent to", SYNTAX_STATUS_NORMAL),
+    ConstraintSyntaxNewString("mailsubject", "", "Define a custom mailsubject for the email message", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewString("smtpserver", ".*", "Name or IP of a willing smtp server for sending email", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewInt("mailmaxlines", "0,1000", "Maximum number of lines of output to send by email. Default value: 30", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewStringList("schedule", "", "The class schedule used by cf-execd for activating cf-agent", SYNTAX_STATUS_NORMAL),
@@ -372,9 +377,10 @@ const ConstraintSyntax CFH_CONTROLBODY[] =  /* enum cfh_control */
     ConstraintSyntaxNewNull()
 };
 
-const ConstraintSyntax CFFILE_CONTROLBODY[] =  /* enum cfh_control */
+const ConstraintSyntax file_control_constraints[] =  /* enum cfh_control */
 {
     ConstraintSyntaxNewString("namespace", CF_IDRANGE, "Switch to a private namespace to protect current file from duplicate definitions", SYNTAX_STATUS_NORMAL),
+    ConstraintSyntaxNewStringList("inputs", ".*", "List of additional filenames to parse for promises", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewNull()
 };
 
@@ -433,7 +439,7 @@ const BodySyntax CONTROL_BODIES[] =
     BodySyntaxNew(CF_RUNC, CFR_CONTROLBODY, NULL, SYNTAX_STATUS_NORMAL),
     BodySyntaxNew(CF_EXECC, CFEX_CONTROLBODY, NULL, SYNTAX_STATUS_NORMAL),
     BodySyntaxNew(CF_HUBC, CFH_CONTROLBODY, NULL, SYNTAX_STATUS_NORMAL),
-    BodySyntaxNew("file", CFFILE_CONTROLBODY, NULL, SYNTAX_STATUS_NORMAL),
+    BodySyntaxNew("file", file_control_constraints, NULL, SYNTAX_STATUS_NORMAL),
 
     BodySyntaxNew("reporter", CFRE_CONTROLBODY, NULL, SYNTAX_STATUS_REMOVED),
     BodySyntaxNew("knowledge", CFK_CONTROLBODY, NULL, SYNTAX_STATUS_REMOVED),
@@ -503,6 +509,7 @@ const PromiseTypeSyntax *CF_ALL_PROMISE_TYPES[] =
     CF_REMACCESS_PROMISE_TYPES,      /* mod_access.c */
     CF_MEASUREMENT_PROMISE_TYPES,    /* mod_measurement.c */
     CF_KNOWLEDGE_PROMISE_TYPES,      /* mod_knowledge.c */
+    CF_USERS_PROMISE_TYPES,          /* mod_users.c */
 };
 
 const int CF3_MODULES = (sizeof(CF_ALL_PROMISE_TYPES) / sizeof(CF_ALL_PROMISE_TYPES[0]));

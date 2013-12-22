@@ -17,14 +17,14 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
 
   To the extent this program is licensed as part of the Enterprise
-  versions of CFEngine, the applicable Commerical Open Source License
+  versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
 */
 
 #include <assert.h>
-#include "alloc.h"
-#include "list.h"
+#include <alloc.h>
+#include <list.h>
 
 struct ListNode {
     void *payload;
@@ -449,7 +449,7 @@ int ListRemove(List *list, void *payload)
 }
 
 // Number of elements on the list
-int ListCount(List *list)
+int ListCount(const List *list)
 {
     if (!list)
     {
@@ -461,7 +461,7 @@ int ListCount(List *list)
 /*
  * Functions for iterators
  */
-ListIterator *ListIteratorGet(List *list)
+ListIterator *ListIteratorGet(const List *list)
 {
     if (!list)
     {
@@ -476,7 +476,7 @@ ListIterator *ListIteratorGet(List *list)
     iterator = (ListIterator *)xmalloc(sizeof(ListIterator));
     iterator->current = list->list;
     // Remaining only works in one direction, we need two variables for this.
-    iterator->origin = list;
+    iterator->origin = (List *)list;
     iterator->state = list->state;
     return iterator;
 }
