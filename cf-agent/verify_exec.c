@@ -42,7 +42,7 @@
 #include <string_lib.h>
 #include <scope.h>
 #include <ornaments.h>
-#include <env_context.h>
+#include <eval_context.h>
 #include <retcode.h>
 #include <timeout.h>
 
@@ -53,20 +53,18 @@ typedef enum
     ACTION_RESULT_FAILED
 } ActionResult;
 
-static bool SyntaxCheckExec(Attributes a, Promise *pp);
-static bool PromiseKeptExec(Attributes a, Promise *pp);
-static char *GetLockNameExec(Attributes a, Promise *pp);
-static ActionResult RepairExec(EvalContext *ctx, Attributes a, Promise *pp, PromiseResult *result);
+static bool SyntaxCheckExec(Attributes a, const Promise *pp);
+static bool PromiseKeptExec(Attributes a, const Promise *pp);
+static char *GetLockNameExec(Attributes a, const Promise *pp);
+static ActionResult RepairExec(EvalContext *ctx, Attributes a, const Promise *pp, PromiseResult *result);
 
 static void PreviewProtocolLine(char *line, char *comm);
 
-PromiseResult VerifyExecPromise(EvalContext *ctx, Promise *pp)
+PromiseResult VerifyExecPromise(EvalContext *ctx, const Promise *pp)
 {
-    Attributes a = { {0} };
+    Attributes a = GetExecAttributes(ctx, pp);
 
-    a = GetExecAttributes(ctx, pp);
-
-    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", pp->promiser, DATA_TYPE_STRING);
+    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", pp->promiser, DATA_TYPE_STRING, "source=promise");
 
     if (!SyntaxCheckExec(a, pp))
     {
@@ -83,11 +81,10 @@ PromiseResult VerifyExecPromise(EvalContext *ctx, Promise *pp)
     char *lock_name = GetLockNameExec(a, pp);
     CfLock thislock = AcquireLock(ctx, lock_name, VUQNAME, CFSTARTTIME, a.transaction, pp, false);
     free(lock_name);
-
     if (thislock.lock == NULL)
     {
         EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser");
-        return PROMISE_RESULT_NOOP;
+        return PROMISE_RESULT_SKIPPED;
     }
 
     PromiseBanner(pp);
@@ -121,7 +118,7 @@ PromiseResult VerifyExecPromise(EvalContext *ctx, Promise *pp)
 /* Level                                                                     */
 /*****************************************************************************/
 
-static bool SyntaxCheckExec(Attributes a, Promise *pp)
+static bool SyntaxCheckExec(Attributes a, const Promise *pp)
 {
     if ((a.contain.nooutput) && (a.contain.preview))
     {
@@ -161,12 +158,12 @@ static bool SyntaxCheckExec(Attributes a, Promise *pp)
     return true;
 }
 
-static bool PromiseKeptExec(ARG_UNUSED Attributes a, ARG_UNUSED Promise *pp)
+static bool PromiseKeptExec(ARG_UNUSED Attributes a, ARG_UNUSED const Promise *pp)
 {
     return false;
 }
 
-static char *GetLockNameExec(Attributes a, Promise *pp)
+static char *GetLockNameExec(Attributes a, const Promise *pp)
 {
     Writer *w = StringWriter();
     if (a.args)
@@ -183,7 +180,8 @@ static char *GetLockNameExec(Attributes a, Promise *pp)
 
 /*****************************************************************************/
 
-static ActionResult RepairExec(EvalContext *ctx, Attributes a, Promise *pp, PromiseResult *result)
+static ActionResult RepairExec(EvalContext *ctx, Attributes a,
+                               const Promise *pp, PromiseResult *result)
 {
     char line[CF_BUFSIZE], eventname[CF_BUFSIZE];
     char cmdline[CF_BUFSIZE];

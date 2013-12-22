@@ -26,7 +26,7 @@
 
 #include <known_dirs.h>
 #include <unix.h>
-#include <env_context.h>
+#include <eval_context.h>
 #include <lastseen.h>
 #include <crypto.h>
 #include <files_names.h>
@@ -42,6 +42,8 @@
 #include <policy.h>
 #include <audit.h>
 #include <man.h>
+#include <connection_info.h>
+#include <addr_lib.h>
 
 typedef enum
 {
@@ -61,11 +63,10 @@ typedef enum
 static void ThisAgentInit(void);
 static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv);
 
-static void KeepControlPromises(EvalContext *ctx, Policy *policy);
+static void KeepControlPromises(EvalContext *ctx, const Policy *policy);
 static int HailServer(EvalContext *ctx, char *host);
-static int ParseHostname(char *hostname, char *new_hostname);
 static void SendClassData(AgentConnection *conn);
-static void HailExec(EvalContext *ctx, AgentConnection *conn, char *peer, char *recvbuffer, char *sendbuffer);
+static void HailExec(AgentConnection *conn, char *peer, char *recvbuffer, char *sendbuffer);
 static void HostPing(AgentConnection *conn, char *peer, char *recvbuffer, char *sendbuffer);
 static FILE *NewStream(char *name);
 static void DeleteStream(FILE *fp);
@@ -141,7 +142,6 @@ char OUTPUT_DIRECTORY[CF_BUFSIZE];
 int BACKGROUND = false;
 int MAXCHILD = 50;
 char REMOTE_AGENT_OPTIONS[CF_MAXVARSIZE];
-Attributes RUNATTR = { {0} };
 
 Rlist *HOSTLIST = NULL;
 char SENDCLASSES[CF_MAXVARSIZE];
@@ -327,7 +327,7 @@ static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
         case 'n':
             DONTDO = true;
             IGNORELOCK = true;
-            EvalContextClassPutHard(ctx, "opt_dry_run");
+            EvalContextClassPutHard(ctx, "opt_dry_run", "cfe_internal,source=environment");
             break;
 
         case 't':
@@ -545,7 +545,7 @@ static int HailServer(EvalContext *ctx, char *host)
     else
     {
         int err = 0;
-        conn = NewServerConnection(fc, false, &err);
+        conn = NewServerConnection(fc, false, &err, -1);
 
         if (conn == NULL)
         {
@@ -564,7 +564,8 @@ static int HailServer(EvalContext *ctx, char *host)
         RlistDestroy(fc.servers);
         return true;
     }
-    HailExec(ctx, conn, peer, recvbuffer, sendbuffer);
+    HailExec(conn, peer, recvbuffer, sendbuffer);
+
 
     RlistDestroy(fc.servers);
 
@@ -575,14 +576,10 @@ static int HailServer(EvalContext *ctx, char *host)
 /* Level 2                                                          */
 /********************************************************************/
 
-static void KeepControlPromises(EvalContext *ctx, Policy *policy)
+static void KeepControlPromises(EvalContext *ctx, const Policy *policy)
 {
     Rval retval;
 
-    RUNATTR.copy.trustkey = false;
-    RUNATTR.copy.encrypt = true;
-    RUNATTR.copy.force_ipv4 = false;
-    RUNATTR.copy.portnumber = SHORT_CFENGINEPORT;
 
 /* Keep promised agent behaviour - control bodies */
 
@@ -611,29 +608,21 @@ static void KeepControlPromises(EvalContext *ctx, Policy *policy)
 
             if (strcmp(cp->lval, CFR_CONTROLBODY[RUNAGENT_CONTROL_FORCE_IPV4].lval) == 0)
             {
-                RUNATTR.copy.force_ipv4 = BooleanFromString(retval.item);
-                Log(LOG_LEVEL_VERBOSE, "SET force_ipv4 = %d", RUNATTR.copy.force_ipv4);
                 continue;
             }
 
             if (strcmp(cp->lval, CFR_CONTROLBODY[RUNAGENT_CONTROL_TRUSTKEY].lval) == 0)
             {
-                RUNATTR.copy.trustkey = BooleanFromString(retval.item);
-                Log(LOG_LEVEL_VERBOSE, "SET trustkey = %d", RUNATTR.copy.trustkey);
                 continue;
             }
 
             if (strcmp(cp->lval, CFR_CONTROLBODY[RUNAGENT_CONTROL_ENCRYPT].lval) == 0)
             {
-                RUNATTR.copy.encrypt = BooleanFromString(retval.item);
-                Log(LOG_LEVEL_VERBOSE, "SET encrypt = %d", RUNATTR.copy.encrypt);
                 continue;
             }
 
             if (strcmp(cp->lval, CFR_CONTROLBODY[RUNAGENT_CONTROL_PORT_NUMBER].lval) == 0)
             {
-                RUNATTR.copy.portnumber = (unsigned short) IntFromString(retval.item);
-                Log(LOG_LEVEL_VERBOSE, "SET default portnumber = %u", RUNATTR.copy.portnumber);
                 continue;
             }
 
@@ -679,7 +668,6 @@ static void KeepControlPromises(EvalContext *ctx, Policy *policy)
 
             if (strcmp(cp->lval, CFR_CONTROLBODY[RUNAGENT_CONTROL_TIMEOUT].lval) == 0)
             {
-                RUNATTR.copy.timeout = (short) IntFromString(retval.item);
                 continue;
             }
 
@@ -702,26 +690,6 @@ static void KeepControlPromises(EvalContext *ctx, Policy *policy)
 
 }
 
-/********************************************************************/
-
-static int ParseHostname(char *name, char *hostname)
-{
-    int port = ntohs(SHORT_CFENGINEPORT);
-
-    if (strchr(name, ':'))
-    {
-        sscanf(name, "%250[^:]:%d", hostname, &port);
-    }
-    else
-    {
-        strncpy(hostname, name, CF_MAXVARSIZE);
-    }
-
-    return (port);
-}
-
-/********************************************************************/
-
 static void SendClassData(AgentConnection *conn)
 {
     Rlist *classes, *rp;
@@ -731,7 +699,7 @@ static void SendClassData(AgentConnection *conn)
 
     for (rp = classes; rp != NULL; rp = rp->next)
     {
-        if (SendTransaction(&conn->conn_info, RlistScalarValue(rp), 0, CF_DONE) == -1)
+        if (SendTransaction(conn->conn_info, RlistScalarValue(rp), 0, CF_DONE) == -1)
         {
             Log(LOG_LEVEL_ERR, "Transaction failed. (send: %s)", GetErrorStr());
             return;
@@ -740,7 +708,7 @@ static void SendClassData(AgentConnection *conn)
 
     snprintf(sendbuffer, CF_MAXVARSIZE, "%s", CFD_TERMINATOR);
 
-    if (SendTransaction(&conn->conn_info, sendbuffer, 0, CF_DONE) == -1)
+    if (SendTransaction(conn->conn_info, sendbuffer, 0, CF_DONE) == -1)
     {
         Log(LOG_LEVEL_ERR, "Transaction failed. (send: %s)", GetErrorStr());
         return;
@@ -749,7 +717,7 @@ static void SendClassData(AgentConnection *conn)
 
 /********************************************************************/
 
-static void HailExec(EvalContext *ctx, AgentConnection *conn, char *peer, char *recvbuffer, char *sendbuffer)
+static void HailExec(AgentConnection *conn, char *peer, char *recvbuffer, char *sendbuffer)
 {
     FILE *fp = stdout;
     char *sp;
@@ -764,10 +732,10 @@ static void HailExec(EvalContext *ctx, AgentConnection *conn, char *peer, char *
         snprintf(sendbuffer, CF_BUFSIZE, "EXEC %s", REMOTE_AGENT_OPTIONS);
     }
 
-    if (SendTransaction(&conn->conn_info, sendbuffer, 0, CF_DONE) == -1)
+    if (SendTransaction(conn->conn_info, sendbuffer, 0, CF_DONE) == -1)
     {
         Log(LOG_LEVEL_ERR, "Transmission rejected. (send: %s)", GetErrorStr());
-        DisconnectServer(conn);
+        DisconnectServer(conn, false);
         return;
     }
 
@@ -778,7 +746,7 @@ static void HailExec(EvalContext *ctx, AgentConnection *conn, char *peer, char *
     {
         memset(recvbuffer, 0, CF_BUFSIZE);
 
-        if ((n_read = ReceiveTransaction(&conn->conn_info, recvbuffer, NULL, -1)) == -1)
+        if ((n_read = ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1)) == -1)
         {
             return;
         }
@@ -814,7 +782,7 @@ static void HailExec(EvalContext *ctx, AgentConnection *conn, char *peer, char *
     }
 
     DeleteStream(fp);
-    DisconnectServer(conn);
+    DisconnectServer(conn, false);
 }
 
 /********************************************************************/
@@ -827,10 +795,10 @@ static void HostPing(AgentConnection *conn, char *peer, char *recvbuffer, char *
 
     snprintf(sendbuffer, CF_BUFSIZE, "VERSION ");
 
-    if (SendTransaction(&conn->conn_info, sendbuffer, 0, CF_DONE) == -1)
+    if (SendTransaction(conn->conn_info, sendbuffer, 0, CF_DONE) == -1)
     {
         Log(LOG_LEVEL_ERR, "Transmission rejected");
-        DisconnectServer(conn);
+        DisconnectServer(conn, false);
         return;
     }
 
@@ -840,7 +808,7 @@ static void HostPing(AgentConnection *conn, char *peer, char *recvbuffer, char *
     {
         memset(recvbuffer, 0, CF_BUFSIZE);
 
-        if ((n_read = ReceiveTransaction(&conn->conn_info, recvbuffer, NULL, -1)) == -1)
+        if ((n_read = ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1)) == -1)
         {
             return;
         }
@@ -879,7 +847,7 @@ static void HostPing(AgentConnection *conn, char *peer, char *recvbuffer, char *
     }
 
     DeleteStream(fp);
-    DisconnectServer(conn);
+    DisconnectServer(conn, false);
 }
 
 /********************************************************************/

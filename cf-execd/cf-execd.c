@@ -28,7 +28,7 @@
 #include <bootstrap.h>
 #include <known_dirs.h>
 #include <sysinfo.h>
-#include <env_context.h>
+#include <eval_context.h>
 #include <promises.h>
 #include <vars.h>
 #include <item_lib.h>
@@ -65,7 +65,8 @@ static pthread_attr_t threads_attrs;
 
 static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv);
 void ThisAgentInit(void);
-static bool ScheduleRun(EvalContext *ctx, Policy **policy, GenericAgentConfig *config, ExecConfig *exec_config);
+static bool ScheduleRun(EvalContext *ctx, Policy **policy, GenericAgentConfig *config, ExecConfig *exec_config,
+                        time_t *last_policy_reload);
 #ifndef __MINGW32__
 static void Apoptosis(EvalContext *ctx);
 #endif
@@ -140,7 +141,7 @@ int main(int argc, char *argv[])
     GenericAgentDiscoverContext(ctx, config);
 
     Policy *policy = NULL;
-    if (GenericAgentCheckPolicy(config, false))
+    if (GenericAgentCheckPolicy(config, false, false))
     {
         policy = GenericAgentLoadPolicy(ctx, config);
     }
@@ -151,7 +152,7 @@ int main(int argc, char *argv[])
     else
     {
         Log(LOG_LEVEL_ERR, "CFEngine was not able to get confirmation of promises from cf-promises, so going to failsafe");
-        EvalContextClassPut(ctx, NULL, "failsafe_fallback", false, CONTEXT_SCOPE_NAMESPACE);
+        EvalContextClassPut(ctx, NULL, "failsafe_fallback", false, CONTEXT_SCOPE_NAMESPACE, "source=agent");
         GenericAgentConfigSetInputFile(config, GetWorkDir(), "failsafe.cf");
         policy = GenericAgentLoadPolicy(ctx, config);
     }
@@ -239,7 +240,7 @@ static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
         case 'n':
             DONTDO = true;
             IGNORELOCK = true;
-            EvalContextClassPut(ctx, NULL, "opt_dry_run", false, CONTEXT_SCOPE_NAMESPACE);
+            EvalContextClassPut(ctx, NULL, "opt_dry_run", false, CONTEXT_SCOPE_NAMESPACE, "cfe_internal,source=environment");
             break;
 
         case 'L':
@@ -337,6 +338,8 @@ void StartServer(EvalContext *ctx, Policy *policy, GenericAgentConfig *config, E
     time_t now = time(NULL);
 #endif
 
+    time_t last_policy_reload = 0;
+
     pthread_attr_init(&threads_attrs);
     pthread_attr_setdetachstate(&threads_attrs, PTHREAD_CREATE_DETACHED);
     pthread_attr_setstacksize(&threads_attrs, (size_t)2048*1024);
@@ -392,7 +395,7 @@ void StartServer(EvalContext *ctx, Policy *policy, GenericAgentConfig *config, E
     {
         while (!IsPendingTermination())
         {
-            if (ScheduleRun(ctx, &policy, config, exec_config))
+            if (ScheduleRun(ctx, &policy, config, exec_config, &last_policy_reload))
             {
                 Log(LOG_LEVEL_VERBOSE, "Sleeping for splaytime %d seconds", exec_config->splay_time);
                 sleep(exec_config->splay_time);
@@ -490,13 +493,21 @@ typedef enum
     RELOAD_FULL
 } Reload;
 
-static Reload CheckNewPromises(GenericAgentConfig *config, const Policy *existing_policy)
+static Reload CheckNewPromises(const GenericAgentConfig *config, time_t *last_policy_reload)
 {
-    if (GenericAgentIsPolicyReloadNeeded(config, existing_policy))
+    time_t validated_at;
+
+    Log(LOG_LEVEL_DEBUG, "Checking file updates for input file '%s'", config->input_file);
+
+    validated_at = ReadTimestampFromPolicyValidatedMasterfiles(config);
+
+    if (*last_policy_reload < validated_at)
     {
+        *last_policy_reload = validated_at;
+
         Log(LOG_LEVEL_VERBOSE, "New promises detected...");
 
-        if (GenericAgentCheckPromises(config))
+        if (GenericAgentArePromisesValid(config))
         {
             return RELOAD_FULL;
         }
@@ -513,7 +524,8 @@ static Reload CheckNewPromises(GenericAgentConfig *config, const Policy *existin
     return RELOAD_ENVIRONMENT;
 }
 
-static bool ScheduleRun(EvalContext *ctx, Policy **policy, GenericAgentConfig *config, ExecConfig *exec_config)
+static bool ScheduleRun(EvalContext *ctx, Policy **policy, GenericAgentConfig *config, ExecConfig *exec_config,
+                        time_t *last_policy_reload)
 {
     Log(LOG_LEVEL_VERBOSE, "Sleeping for pulse time %d seconds...", CFPULSETIME);
     sleep(CFPULSETIME);         /* 1 Minute resolution is enough */
@@ -522,16 +534,13 @@ static bool ScheduleRun(EvalContext *ctx, Policy **policy, GenericAgentConfig *c
      * FIXME: this logic duplicates the one from cf-serverd.c. Unify ASAP.
      */
 
-    if (CheckNewPromises(config, *policy) == RELOAD_FULL)
+    if (CheckNewPromises(config, last_policy_reload) == RELOAD_FULL)
     {
         /* Full reload */
 
         Log(LOG_LEVEL_INFO, "Re-reading promise file '%s'", config->input_file);
 
         EvalContextClear(ctx);
-
-        DeleteItemList(IPADDRESSES);
-        IPADDRESSES = NULL;
 
         strcpy(VDOMAIN, "undefined.domain");
 
@@ -543,16 +552,11 @@ static bool ScheduleRun(EvalContext *ctx, Policy **policy, GenericAgentConfig *c
             SetPolicyServer(ctx, existing_policy_server);
             free(existing_policy_server);
         }
+        UpdateLastPolicyUpdateTime(ctx);
 
-        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_SYS, "policy_hub", POLICY_SERVER, DATA_TYPE_STRING);
+        DetectEnvironment(ctx);
 
-        GetNameInfo3(ctx, AGENT_TYPE_EXECUTOR);
-        GetInterfacesInfo(ctx);
-        Get3Environment(ctx, AGENT_TYPE_EXECUTOR);
-        BuiltinClasses(ctx);
-        OSClasses(ctx);
-
-        EvalContextClassPutHard(ctx, CF_AGENTTYPES[AGENT_TYPE_EXECUTOR]);
+        EvalContextClassPutHard(ctx, CF_AGENTTYPES[AGENT_TYPE_EXECUTOR], "cfe_internal,source=agent");
 
         time_t t = SetReferenceTime();
         UpdateTimeClasses(ctx, t);
@@ -570,13 +574,7 @@ static bool ScheduleRun(EvalContext *ctx, Policy **policy, GenericAgentConfig *c
 
         EvalContextClear(ctx);
 
-        DeleteItemList(IPADDRESSES);
-        IPADDRESSES = NULL;
-
-        GetInterfacesInfo(ctx);
-        Get3Environment(ctx, AGENT_TYPE_EXECUTOR);
-        BuiltinClasses(ctx);
-        OSClasses(ctx);
+        DetectEnvironment(ctx);
 
         time_t t = SetReferenceTime();
         UpdateTimeClasses(ctx, t);

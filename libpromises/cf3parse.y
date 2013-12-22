@@ -396,9 +396,13 @@ promise_decl:          promise_line ';'
                            {
                               ParseError("Expected '->', got '%s'", yytext);
                            }
-                           else if (yychar == IDSYNTAX || yychar == ',')
+                           else if (yychar == IDSYNTAX)
                            {
                               ParseError("Expected attribute, got '%s'", yytext);
+                           }
+                           else if (yychar == ',')
+                           {
+                              ParseError("Expected attribute, got '%s' (comma after promiser is not allowed since 3.5.0)", yytext);
                            }
                            else
                            {
@@ -583,7 +587,7 @@ constraint:            constraint_id                        /* BUNDLE ONLY */
                                                ValidateClassLiteral(P.rval.item);
                                            }
 
-                                           Constraint *cp = PromiseAppendConstraint(P.currentpromise, P.lval, RvalCopy(P.rval), "any", P.references_body);
+                                           Constraint *cp = PromiseAppendConstraint(P.currentpromise, P.lval, RvalCopy(P.rval), P.references_body);
                                            cp->offset.line = P.line_no;
                                            cp->offset.start = P.offsets.last_id;
                                            cp->offset.end = P.offsets.current;
@@ -1399,7 +1403,7 @@ static SyntaxTypeMatch CheckSelection(const char *type, const char *name, const 
                         if (strcmp(promise_type_syntax[j].promise_type, type) == 0 && strcmp(promise_type_syntax[j].promise_type, "*") != 0)
                         {
                             char output[CF_BUFSIZE];
-                            snprintf(output, CF_BUFSIZE, "lval %s belongs to promise type \'%s:\' but this is '\%s\'\n",
+                            snprintf(output, CF_BUFSIZE, "lval %s belongs to promise type '%s': but this is '%s'\n",
                                      lval, promise_type_syntax[j].promise_type, type);
                             yyerror(output);
                             return SYNTAX_TYPE_MATCH_OK;

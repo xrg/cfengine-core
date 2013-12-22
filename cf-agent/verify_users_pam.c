@@ -32,7 +32,7 @@
 #include <pipes.h>
 #include <files_copy.h>
 #include <files_interfaces.h>
-#include <env_context.h>
+#include <eval_context.h>
 
 #include <cf3.defs.h>
 #include <bufferlist.h>
@@ -778,8 +778,8 @@ static bool VerifyIfUserNeedsModifs (const char *puser, User u, const struct pas
     }
 }
 
-static bool DoCreateUser (const char *puser, User u, enum cfopaction action,
-                   EvalContext *ctx, const Attributes *a, Promise *pp)
+static bool DoCreateUser(const char *puser, User u, enum cfopaction action,
+                         EvalContext *ctx, const Attributes *a, const Promise *pp)
 {
     char cmd[CF_BUFSIZE];
     if (puser == NULL || !strcmp (puser, ""))
@@ -1065,7 +1065,7 @@ static bool DoModifyUser (const char *puser, User u, const struct passwd *passwd
 }
 
 void VerifyOneUsersPromise (const char *puser, User u, PromiseResult *result, enum cfopaction action,
-                            EvalContext *ctx, const Attributes *a, Promise *pp)
+                            EvalContext *ctx, const Attributes *a, const Promise *pp)
 {
     bool res;
 

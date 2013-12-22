@@ -22,23 +22,23 @@
   included file COSL.txt.
 */
 
-#ifndef CFENGINE_REFCOUNT_P_H
-#define CFENGINE_REFCOUNT_P_H
+#ifndef UPDATE_H
+#define UPDATE_H
 
-/*
- * This file exists as an implementation detail, none of the structs or
- * methods defined here represent any kind of stable API and can be changed
- * at any moment, without warning. Do not include this file in your projects.
- *
- * I mean it, if you include this file your code will break. That is not a
- * threat, just a statement of facts.
- */
+#include <configuration.h>
 
-struct RefCountNode {
-    struct RefCountNode *next;
-    struct RefCountNode *previous;
-    void *user;
-};
-typedef struct RefCountNode RefCountNode;
+/**
+  @brief Update logic
 
-#endif // CFENGINE_REFCOUNT_P_H
+  Although cf-update is a lightweight tool, there is some logic that makes sure
+  that the update process goes according to plan.
+  */
+
+/**
+  @brief Run update process with the corresponding parameters
+  @param configuration Update configuration
+  @return 0 if successful, -1 if not.
+  */
+int RunUpdate(const Configuration *configuration);
+
+#endif // UPDATE_H

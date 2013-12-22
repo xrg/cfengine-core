@@ -34,7 +34,6 @@ int SHOWREPORTS = false;
 /* operational state                                                         */
 /*****************************************************************************/
 
-int LOOKUP = false;
 bool FIPS_MODE = false;
 
 struct utsname VSYSNAME;
@@ -76,12 +75,8 @@ char CFWORKDIR[CF_BUFSIZE] = { 0 };
 char *DEFAULT_COPYTYPE = NULL;
 
 RSA *PRIVKEY = NULL, *PUBKEY = NULL;
-char PUBKEY_DIGEST[CF_MAXVARSIZE] = { 0 };
-
 
 char VIPADDRESS[CF_MAX_IP_LEN] = { 0 };
-
-Item *IPADDRESSES = NULL;
 
 /*******************************************************************/
 /*                                                                 */
@@ -92,15 +87,10 @@ Item *IPADDRESSES = NULL;
 HashMethod CF_DEFAULT_DIGEST;
 int CF_DEFAULT_DIGEST_LEN;
 
-/***********************************************************/
-
-char CFLOCK[CF_BUFSIZE] = { 0 };
-
 time_t CFSTARTTIME;
-time_t CFINITSTARTTIME;
-char STR_CFENGINEPORT[16] = { 0 };
 
-unsigned short SHORT_CFENGINEPORT;
+int CFENGINE_PORT;
+
 time_t CONNTIMEOUT = 30;        /* seconds */
 pid_t ALARM_PID = -1;
 int EDITFILESIZE = 10000;

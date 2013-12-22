@@ -24,7 +24,7 @@
 
 #include <matching.h>
 
-#include <env_context.h>
+#include <eval_context.h>
 #include <vars.h>
 #include <promises.h>
 #include <item_lib.h>
@@ -78,7 +78,7 @@ static int RegExMatchSubString(EvalContext *ctx, pcre *rx, const char *teststrin
                 if (THIS_AGENT_TYPE == AGENT_TYPE_AGENT)
                 {
                     char *index = StringFromLong(i);
-                    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_MATCH, index, substring, DATA_TYPE_STRING);
+                    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_MATCH, index, substring, DATA_TYPE_STRING, "source=regex");
                     free(index);
                 }
             }
@@ -660,4 +660,17 @@ void AnchorRegex(const char *regex, char *out, int outSz)
     {
         snprintf(out, outSz, "^(%s)$", regex);
     }
+}
+
+char *AnchorRegexNew(const char *regex)
+{
+    if (NULL_OR_EMPTY(regex))
+    {
+        return xstrdup("^$");
+    }
+
+    char *ret = NULL;
+    xasprintf(&ret, "^(%s)$", regex);
+
+    return ret;
 }

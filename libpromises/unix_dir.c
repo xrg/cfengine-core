@@ -24,6 +24,7 @@
 
 #include <dir.h>
 #include <dir_priv.h>
+#include <file_lib.h>
 
 
 struct Dir_
@@ -38,11 +39,39 @@ static size_t GetDirentBufferSize(size_t path_len);
 Dir *DirOpen(const char *dirname)
 {
     Dir *ret = xcalloc(1, sizeof(Dir));
+    int safe_fd;
+
+    safe_fd = safe_open(dirname, O_RDONLY);
+    if (safe_fd < 0)
+    {
+        free(ret);
+        return NULL;
+    }
 
     ret->dirh = opendir(dirname);
     if (ret->dirh == NULL)
     {
+        close(safe_fd);
         free(ret);
+        return NULL;
+    }
+
+    struct stat safe_stat, dir_stat;
+    bool stat_failed = fstat(safe_fd, &safe_stat) < 0 || fstat(dirfd(ret->dirh), &dir_stat) < 0;
+    close(safe_fd);
+    if (stat_failed)
+    {
+        closedir(ret->dirh);
+        free(ret);
+        return NULL;
+    }
+
+    // Make sure we opened the same file descriptor as safe_open did.
+    if (safe_stat.st_dev != dir_stat.st_dev || safe_stat.st_ino != dir_stat.st_ino)
+    {
+        closedir(ret->dirh);
+        free(ret);
+        errno = EACCES;
         return NULL;
     }
 

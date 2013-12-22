@@ -24,7 +24,7 @@
 
 #include <generic_agent.h>
 
-#include <env_context.h>
+#include <eval_context.h>
 #include <conversion.h>
 #include <syntax.h>
 #include <rlist.h>
@@ -287,8 +287,7 @@ GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
         case 'n':
             DONTDO = true;
             IGNORELOCK = true;
-            LOOKUP = true;
-            EvalContextClassPutHard(ctx, "opt_dry_run");
+            EvalContextClassPutHard(ctx, "opt_dry_run", "cfe_internal,source=environment");
             break;
 
         case 'V':

@@ -29,7 +29,7 @@
 #include <vars.h>
 #include <dir.h>
 #include <scope.h>
-#include <env_context.h>
+#include <eval_context.h>
 #include <files_names.h>
 #include <files_interfaces.h>
 #include <files_lib.h>
@@ -56,13 +56,13 @@
 #include <known_dirs.h>
 
 static void LoadSetuid(Attributes a);
-static PromiseResult SaveSetuid(EvalContext *ctx, Attributes a, Promise *pp);
-static PromiseResult FindFilePromiserObjects(EvalContext *ctx, Promise *pp);
-static PromiseResult VerifyFilePromise(EvalContext *ctx, char *path, Promise *pp);
+static PromiseResult SaveSetuid(EvalContext *ctx, Attributes a, const Promise *pp);
+static PromiseResult FindFilePromiserObjects(EvalContext *ctx, const Promise *pp);
+static PromiseResult VerifyFilePromise(EvalContext *ctx, char *path, const Promise *pp);
 
 /*****************************************************************************/
 
-static int FileSanityChecks(EvalContext *ctx, char *path, Attributes a, Promise *pp)
+static int FileSanityChecks(EvalContext *ctx, char *path, Attributes a, const Promise *pp)
 {
     if ((a.havelink) && (a.havecopy))
     {
@@ -184,27 +184,42 @@ static int FileSanityChecks(EvalContext *ctx, char *path, Attributes a, Promise 
     return true;
 }
 
-static PromiseResult VerifyFilePromise(EvalContext *ctx, char *path, Promise *pp)
+static bool AttrHasNoAction(Attributes attr)
+{
+    /* Hopefully this includes all "actions" for a files promise. See struct
+     * Attributes for reference. */
+    if (!(attr.transformer || attr.haverename || attr.havedelete ||
+          attr.havecopy || attr.create || attr.touch || attr.havelink ||
+          attr.haveperms || attr.havechange || attr.acl.acl_entries ||
+          attr.haveedit || attr.haveeditline || attr.haveeditxml))
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+static PromiseResult VerifyFilePromise(EvalContext *ctx, char *path, const Promise *pp)
 {
     struct stat osb, oslb, dsb;
-    Attributes a = { {0} };
     CfLock thislock;
     int exists;
 
-    a = GetFilesAttributes(ctx, pp);
+    Attributes a = GetFilesAttributes(ctx, pp);
 
     if (!FileSanityChecks(ctx, path, a, pp))
     {
         return PROMISE_RESULT_NOOP;
     }
 
-    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", path, DATA_TYPE_STRING);
+    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", path, DATA_TYPE_STRING, "source=promise");
 
     thislock = AcquireLock(ctx, path, VUQNAME, CFSTARTTIME, a.transaction, pp, false);
-
     if (thislock.lock == NULL)
     {
-        return PROMISE_RESULT_NOOP;
+        return PROMISE_RESULT_SKIPPED;
     }
 
     LoadSetuid(a);
@@ -256,18 +271,19 @@ static PromiseResult VerifyFilePromise(EvalContext *ctx, char *path, Promise *pp
         }
 
         ChopLastNode(basedir);
-        if (chdir(basedir))
+        if (safe_chdir(basedir))
         {
             Log(LOG_LEVEL_ERR, "Failed to chdir into '%s'", basedir);
         }
     }
 
-    if (exists && (!VerifyFileLeaf(ctx, path, &oslb, a, pp, &result)))
+    /* If file or directory exists but it is not selected by body file_select
+     * (if we have one) then just exit. But continue if it's a directory and
+     * depth_search is on, so that we can file_select into it. */
+    if (exists && (!VerifyFileLeaf(ctx, path, &oslb, a, pp, &result)) &&
+        !(a.havedepthsearch && S_ISDIR(oslb.st_mode)))
     {
-        if (!S_ISDIR(oslb.st_mode))
-        {
-            goto exit;
-        }
+        goto exit;
     }
 
     if (stat(path, &osb) == -1)
@@ -400,6 +416,13 @@ static PromiseResult VerifyFilePromise(EvalContext *ctx, char *path, Promise *pp
     }
 
 exit:
+
+    if (AttrHasNoAction(a))
+    {
+        Log(LOG_LEVEL_INFO,
+            "No action was requested for file '%s'. Maybe a typo in the policy?", path);
+    }
+
     result = PromiseResultUpdate(result, SaveSetuid(ctx, a, pp));
     YieldCurrentLock(thislock);
 
@@ -461,7 +484,7 @@ static JsonElement *DefaultTemplateData(const EvalContext *ctx)
     return hash;
 }
 
-PromiseResult ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes a, Promise *pp)
+PromiseResult ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes a, const Promise *pp)
 {
     void *vp;
     FnCall *fp;
@@ -474,7 +497,7 @@ PromiseResult ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes
 
     if (thislock.lock == NULL)
     {
-        return PROMISE_RESULT_NOOP;
+        return PROMISE_RESULT_SKIPPED;
     }
 
     EditContext *edcontext = NewEditContext(filename, a);
@@ -487,17 +510,17 @@ PromiseResult ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes
         goto exit;
     }
 
-    Policy *policy = PolicyFromPromise(pp);
+    const Policy *policy = PolicyFromPromise(pp);
 
     if (a.haveeditline)
     {
-        if ((vp = ConstraintGetRvalValue(ctx, "edit_line", pp, RVAL_TYPE_FNCALL)))
+        if ((vp = PromiseGetConstraintAsRval(pp, "edit_line", RVAL_TYPE_FNCALL)))
         {
             fp = (FnCall *) vp;
             strcpy(edit_bundle_name, fp->name);
             args = fp->args;
         }
-        else if ((vp = ConstraintGetRvalValue(ctx, "edit_line", pp, RVAL_TYPE_SCALAR)))
+        else if ((vp = PromiseGetConstraintAsRval(pp, "edit_line", RVAL_TYPE_SCALAR)))
         {
             strcpy(edit_bundle_name, (char *) vp);
             args = NULL;
@@ -545,13 +568,13 @@ PromiseResult ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes
 
     if (a.haveeditxml)
     {
-        if ((vp = ConstraintGetRvalValue(ctx, "edit_xml", pp, RVAL_TYPE_FNCALL)))
+        if ((vp = PromiseGetConstraintAsRval(pp, "edit_xml", RVAL_TYPE_FNCALL)))
         {
             fp = (FnCall *) vp;
             strcpy(edit_bundle_name, fp->name);
             args = fp->args;
         }
-        else if ((vp = ConstraintGetRvalValue(ctx, "edit_xml", pp, RVAL_TYPE_SCALAR)))
+        else if ((vp = PromiseGetConstraintAsRval(pp, "edit_xml", RVAL_TYPE_SCALAR)))
         {
             strcpy(edit_bundle_name, (char *) vp);
             args = NULL;
@@ -619,7 +642,7 @@ PromiseResult ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes
 
             Writer *ouput_writer = NULL;
             {
-                FILE *output_file = fopen(pp->promiser, "w");
+                FILE *output_file = safe_fopen(pp->promiser, "w");
                 if (!output_file)
                 {
                     cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Output file '%s' could not be opened for writing", pp->promiser);
@@ -668,7 +691,7 @@ exit:
 
 /*****************************************************************************/
 
-PromiseResult FindAndVerifyFilesPromises(EvalContext *ctx, Promise *pp)
+PromiseResult FindAndVerifyFilesPromises(EvalContext *ctx, const Promise *pp)
 {
     PromiseBanner(pp);
     return FindFilePromiserObjects(ctx, pp);
@@ -676,9 +699,9 @@ PromiseResult FindAndVerifyFilesPromises(EvalContext *ctx, Promise *pp)
 
 /*****************************************************************************/
 
-static PromiseResult FindFilePromiserObjects(EvalContext *ctx, Promise *pp)
+static PromiseResult FindFilePromiserObjects(EvalContext *ctx, const Promise *pp)
 {
-    char *val = ConstraintGetRvalValue(ctx, "pathtype", pp, RVAL_TYPE_SCALAR);
+    char *val = PromiseGetConstraintAsRval(pp, "pathtype", RVAL_TYPE_SCALAR);
     int literal = (PromiseGetConstraintAsBoolean(ctx, "copy_from", pp)) || ((val != NULL) && (strcmp(val, "literal") == 0));
 
 /* Check if we are searching over a regular expression */
@@ -687,7 +710,7 @@ static PromiseResult FindFilePromiserObjects(EvalContext *ctx, Promise *pp)
     if (literal)
     {
         // Prime the promiser temporarily, may override later
-        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", pp->promiser, DATA_TYPE_STRING);
+        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", pp->promiser, DATA_TYPE_STRING, "source=promise");
         result = PromiseResultUpdate(result, VerifyFilePromise(ctx, pp->promiser, pp));
     }
     else                        // Default is to expand regex paths
@@ -717,7 +740,7 @@ static void LoadSetuid(Attributes a)
 
 /*********************************************************************/
 
-static PromiseResult SaveSetuid(EvalContext *ctx, Attributes a, Promise *pp)
+static PromiseResult SaveSetuid(EvalContext *ctx, Attributes a, const Promise *pp)
 {
     Attributes b = a;
 

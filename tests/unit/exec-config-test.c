@@ -3,7 +3,7 @@
 #include <exec-config.h>
 
 #include <parser.h>
-#include <env_context.h>
+#include <eval_context.h>
 #include <expand.h>
 
 static Policy *LoadPolicy(const char *filename)
@@ -50,7 +50,7 @@ static void test_load(void)
     EvalContext *ctx = EvalContextNew();
     {
         VarRef *lval = VarRefParse("g.host");
-        EvalContextVariablePut(ctx, lval, "snookie", DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, lval, "snookie", DATA_TYPE_STRING, NULL);
         VarRefDestroy(lval);
     }
 

@@ -66,7 +66,8 @@ void ClassDestroy(Class *cls)
     {
         free(cls->ns);
         free(cls->name);
-        free(cls->tags);
+        StringSetDestroy(cls->tags);
+        free(cls);
     }
 }
 
@@ -84,10 +85,11 @@ void ClassTableDestroy(ClassTable *table)
     if (table)
     {
         RBTreeDestroy(table->classes);
+        free(table);
     }
 }
 
-bool ClassTablePut(ClassTable *table, const char *ns, const char *name, bool is_soft, ContextScope scope)
+bool ClassTablePut(ClassTable *table, const char *ns, const char *name, bool is_soft, ContextScope scope, const char *tags)
 {
     assert(name);
     assert(is_soft || (!ns || strcmp("default", ns) == 0)); // hard classes should have default namespace
@@ -109,6 +111,8 @@ bool ClassTablePut(ClassTable *table, const char *ns, const char *name, bool is_
     {
         cls = xmalloc(sizeof(Class));
         ClassInit(cls, ns, name, is_soft, scope);
+        // NULL tags are OK (but you want to give good tags, don't you?)
+        cls->tags = StringSetFromString(tags, ',');
         return RBTreePut(table->classes, (void *)cls->hash, cls);
     }
 }

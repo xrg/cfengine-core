@@ -22,6 +22,7 @@ ltmain.sh
 m4/libtool.m4
 m4/lt*.m4
 missing
+revision
 stamp-h1
 ylwrap
 test-driver
@@ -78,6 +79,8 @@ cf-runagent/cf-runagent
 cf-runagent/cf-runagent.exe
 cf-serverd/cf-serverd
 cf-serverd/cf-serverd.exe
+cf-upgrade/cf-upgrade
+cf-upgrade/cf-upgrade.exe
 ext/rpmvercmp
 ext/rpmvercmp.exe
 

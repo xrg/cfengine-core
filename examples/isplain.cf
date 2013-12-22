@@ -20,27 +20,31 @@
 # (COSL) may apply to this file if you as a licensee so wish it. See
 # included file COSL.txt.
 
-
+#+begin_src cfengine3
 body common control
-
 {
-      bundlesequence  => { "example" };
+      bundlesequence => { "example" };
 }
 
-###########################################################
-
 bundle agent example
-
-{     
+{
   classes:
 
-      "isplain" expression => isplain("/etc/passwd");
+      "fileisplain" expression => isplain("/etc/passwd");
+      "dirisnotplain" not => isplain("/");
 
   reports:
 
-    isplain::
+    fileisplain::
+      "/etc/passwd is plain..";
 
-      "File exists..";
+    dirisnotplain::
+      "/ is not plain..";
 
 }
-
+#+end_src
+###############################################################################
+#+begin_src example_output
+#@ 2013-12-20T13:44:31-0500   notice: /default/example: R: /etc/passwd is plain..
+#@ 2013-12-20T13:44:31-0500   notice: /default/example: R: / is not plain..
+#+end_src

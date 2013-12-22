@@ -34,6 +34,7 @@
 #include <mutex.h>
 #include <exec_tools.h>
 #include <misc_lib.h>
+#include <file_lib.h>
 #include <assert.h>
 #include <crypto.h>
 #include <known_dirs.h>
@@ -354,8 +355,8 @@ static int CompareResult(const char *filename, const char *prev_file)
 
     int rtn = 0;
 
-    FILE *old_fp = fopen(prev_file, "r");
-    FILE *new_fp = fopen(filename, "r");
+    FILE *old_fp = safe_fopen(prev_file, "r");
+    FILE *new_fp = safe_fopen(filename, "r");
     if (old_fp && new_fp)
     {
         const char *errptr;
@@ -636,7 +637,7 @@ static void MailResult(const ExecConfig *config, const char *file)
     char mailsubject_anomaly_prefix[8];
     if (anomaly)
     {
-        sprintf(mailsubject_anomaly_prefix,"**!! ");
+        strcpy(mailsubject_anomaly_prefix, "**!! ");
     }
     else
     {
@@ -666,24 +667,9 @@ static void MailResult(const ExecConfig *config, const char *file)
 
         HashPubKey(PUBKEY, digest, CF_DEFAULT_DIGEST);
 
-        char ipbuf[CF_MAXVARSIZE];
-        memset(ipbuf, '\0', sizeof(CF_MAXVARSIZE));
-
-        for (Item *iptr = IPADDRESSES; iptr != NULL; iptr = iptr->next)
-        {
-            if ((SafeStringLength(ipbuf) + SafeStringLength(iptr->name)) < sizeof(ipbuf))
-            {
-                strcat(ipbuf, iptr->name);
-                strcat(ipbuf, " ");
-            }
-            else
-            {
-                break;
-            }
-        }
-        Chop(ipbuf, sizeof(ipbuf));
-
-        snprintf(vbuff, sizeof(vbuff), "X-CFEngine: vfqhost=\"%s\";ip-addresses=\"%s\";policyhub=\"%s\";pkhash=\"%s\"\r\n", VFQNAME, ipbuf, existing_policy_server, HashPrintSafe(CF_DEFAULT_DIGEST, digest, buffer));
+        snprintf(vbuff, sizeof(vbuff), "X-CFEngine: vfqhost=\"%s\";ip-addresses=\"%s\";policyhub=\"%s\";pkhash=\"%s\"\r\n",
+                 VFQNAME, config->ip_addresses, existing_policy_server,
+                 HashPrintSafe(CF_DEFAULT_DIGEST, true, digest, buffer));
 
         send(sd, vbuff, strlen(vbuff), 0);
         free(existing_policy_server);

@@ -33,7 +33,7 @@
 #include <locks.h>
 #include <misc_lib.h>
 #include <fncall.h>
-#include <env_context.h>
+#include <eval_context.h>
 #include <string_lib.h>
 
 static void DereferenceComment(Promise *pp);
@@ -132,7 +132,7 @@ Promise *DeRefCopyPromise(EvalContext *ctx, const Promise *pp)
         FnCall *fp = NULL;
 
         /* A body template reference could look like a scalar or fn to the parser w/w () */
-        Policy *policy = PolicyFromPromise(pp);
+        const Policy *policy = PolicyFromPromise(pp);
         Seq *bodies = policy ? policy->bodies : NULL;
 
         char body_ns[CF_MAXVARSIZE] = "";
@@ -171,7 +171,7 @@ Promise *DeRefCopyPromise(EvalContext *ctx, const Promise *pp)
 
         if (bp)
         {
-            EvalContextStackPushBodyFrame(ctx, bp, fp ? fp->args : NULL);
+            EvalContextStackPushBodyFrame(ctx, pcopy, bp, fp ? fp->args : NULL);
 
             if (strcmp(bp->type, cp->lval) != 0)
             {
@@ -182,8 +182,9 @@ Promise *DeRefCopyPromise(EvalContext *ctx, const Promise *pp)
 
             /* Keep the referent body type as a boolean for convenience when checking later */
 
+            if (IsDefinedClass(ctx, cp->classes, PromiseGetNamespace(pcopy)))
             {
-                Constraint *cp_copy = PromiseAppendConstraint(pcopy, cp->lval, (Rval) {xstrdup("true"), RVAL_TYPE_SCALAR }, cp->classes, false);
+                Constraint *cp_copy = PromiseAppendConstraint(pcopy, cp->lval, (Rval) {xstrdup("true"), RVAL_TYPE_SCALAR }, false);
                 cp_copy->offset = cp->offset;
             }
 
@@ -202,8 +203,9 @@ Promise *DeRefCopyPromise(EvalContext *ctx, const Promise *pp)
                     Constraint *scp = SeqAt(bp->conlist, k);
 
                     returnval = ExpandPrivateRval(ctx, NULL, "body", scp->rval);
+                    if (IsDefinedClass(ctx, scp->classes, PromiseGetNamespace(pcopy)))
                     {
-                        Constraint *scp_copy = PromiseAppendConstraint(pcopy, scp->lval, returnval, scp->classes, false);
+                        Constraint *scp_copy = PromiseAppendConstraint(pcopy, scp->lval, returnval, false);
                         scp_copy->offset = scp->offset;
                     }
                 }
@@ -232,8 +234,9 @@ Promise *DeRefCopyPromise(EvalContext *ctx, const Promise *pp)
                             newrv.item = new_list;
                         }
 
+                        if (IsDefinedClass(ctx, scp->classes, PromiseGetNamespace(pcopy)))
                         {
-                            Constraint *scp_copy = PromiseAppendConstraint(pcopy, scp->lval, newrv, scp->classes, false);
+                            Constraint *scp_copy = PromiseAppendConstraint(pcopy, scp->lval, newrv, false);
                             scp_copy->offset = scp->offset;
                         }
                     }
@@ -244,7 +247,7 @@ Promise *DeRefCopyPromise(EvalContext *ctx, const Promise *pp)
         }
         else
         {
-            Policy *policy = PolicyFromPromise(pp);
+            const Policy *policy = PolicyFromPromise(pp);
 
             if (cp->references_body && !IsBundle(policy->bundles, EmptyString(body_ns) ? NULL : body_ns, body_name))
             {
@@ -261,8 +264,9 @@ Promise *DeRefCopyPromise(EvalContext *ctx, const Promise *pp)
                 newrv.item = new_list;
             }
 
+            if (IsDefinedClass(ctx, cp->classes, PromiseGetNamespace(pcopy)))
             {
-                Constraint *cp_copy = PromiseAppendConstraint(pcopy, cp->lval, newrv, cp->classes, false);
+                Constraint *cp_copy = PromiseAppendConstraint(pcopy, cp->lval, newrv, false);
                 cp_copy->offset = cp->offset;
             }
         }
@@ -281,7 +285,7 @@ Promise *ExpandDeRefPromise(EvalContext *ctx, const Promise *pp)
     pcopy = xcalloc(1, sizeof(Promise));
 
     returnval = ExpandPrivateRval(ctx, NULL, "this", (Rval) {pp->promiser, RVAL_TYPE_SCALAR });
-    pcopy->promiser = (char *) returnval.item;
+    pcopy->promiser = RvalScalarValue(returnval);
 
     if (pp->promisee.item)
     {
@@ -331,8 +335,9 @@ Promise *ExpandDeRefPromise(EvalContext *ctx, const Promise *pp)
             RvalDestroy(returnval);
         }
 
+        if (IsDefinedClass(ctx, cp->classes, PromiseGetNamespace(pcopy)))
         {
-            Constraint *cp_copy = PromiseAppendConstraint(pcopy, cp->lval, final, cp->classes, false);
+            Constraint *cp_copy = PromiseAppendConstraint(pcopy, cp->lval, final, false);
             cp_copy->offset = cp->offset;
         }
 

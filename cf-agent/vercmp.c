@@ -33,7 +33,7 @@
 #include <vars.h>
 #include <pipes.h>
 #include <misc_lib.h>
-#include <env_context.h>
+#include <eval_context.h>
 
 static VersionCmpResult InvertResult(VersionCmpResult result)
 {
@@ -60,16 +60,16 @@ static VersionCmpResult AndResults(VersionCmpResult lhs, VersionCmpResult rhs)
 }
 
 static VersionCmpResult RunCmpCommand(EvalContext *ctx, const char *command, const char *v1, const char *v2, Attributes a,
-                                      Promise *pp, PromiseResult *result)
+                                      const Promise *pp, PromiseResult *result)
 {
     char expanded_command[CF_EXPANDSIZE];
 
     {
         VarRef *ref_v1 = VarRefParseFromScope("v1", "cf_pack_context");
-        EvalContextVariablePut(ctx, ref_v1, v1, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, ref_v1, v1, DATA_TYPE_STRING, "source=promise");
 
         VarRef *ref_v2 = VarRefParseFromScope("v2", "cf_pack_context");
-        EvalContextVariablePut(ctx, ref_v2, v2, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, ref_v2, v2, DATA_TYPE_STRING, "source=promise");
 
         ExpandScalar(ctx, NULL, "cf_pack_context", command, expanded_command);
 
@@ -105,7 +105,8 @@ static VersionCmpResult RunCmpCommand(EvalContext *ctx, const char *command, con
     return retcode == 0;
 }
 
-static VersionCmpResult CompareVersionsLess(EvalContext *ctx, const char *v1, const char *v2, Attributes a, Promise *pp, PromiseResult *result)
+static VersionCmpResult CompareVersionsLess(EvalContext *ctx, const char *v1, const char *v2, Attributes a,
+                                            const Promise *pp, PromiseResult *result)
 {
     if (a.packages.package_version_less_command)
     {
@@ -117,7 +118,8 @@ static VersionCmpResult CompareVersionsLess(EvalContext *ctx, const char *v1, co
     }
 }
 
-static VersionCmpResult CompareVersionsEqual(EvalContext *ctx, const char *v1, const char *v2, Attributes a, Promise *pp, PromiseResult *result)
+static VersionCmpResult CompareVersionsEqual(EvalContext *ctx, const char *v1, const char *v2, Attributes a,
+                                             const Promise *pp, PromiseResult *result)
 {
     if (a.packages.package_version_equal_command)
     {
@@ -136,7 +138,8 @@ static VersionCmpResult CompareVersionsEqual(EvalContext *ctx, const char *v1, c
     }
 }
 
-VersionCmpResult CompareVersions(EvalContext *ctx, const char *v1, const char *v2, Attributes a, Promise *pp, PromiseResult *result)
+VersionCmpResult CompareVersions(EvalContext *ctx, const char *v1, const char *v2, Attributes a,
+                                 const Promise *pp, PromiseResult *result)
 {
     VersionCmpResult cmp_result;
     const char *cmp_operator = "";

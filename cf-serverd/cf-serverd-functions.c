@@ -41,6 +41,8 @@
 #include <known_dirs.h>
 #include <sysinfo.h>
 #include <time_classes.h>
+#include <connection_info.h>
+#include <file_lib.h>
 
 static const size_t QUEUESIZE = 50;
 int NO_FORK = false;
@@ -109,7 +111,7 @@ static void KeepHardClasses(EvalContext *ctx)
         {
             if (GetAmPolicyHub(CFWORKDIR))
             {
-                EvalContextClassPutHard(ctx, "am_policy_hub");
+                EvalContextClassPutHard(ctx, "am_policy_hub", "source=bootstrap");
             }
             free(existing_policy_server);
         }
@@ -278,7 +280,7 @@ void StartServer(EvalContext *ctx, Policy **policy, GenericAgentConfig *config)
     struct timeval timeout;
     int ret_val;
     CfLock thislock;
-    time_t last_collect = 0;
+    time_t last_collect = 0, last_policy_reload = 0;
     extern int COLLECT_WINDOW;
 
     struct sockaddr_storage cin;
@@ -364,7 +366,7 @@ void StartServer(EvalContext *ctx, Policy **policy, GenericAgentConfig *config)
         {
             if (ACTIVE_THREADS == 0)
             {
-                CheckFileChanges(ctx, policy, config);
+                CheckFileChanges(ctx, policy, config, &last_policy_reload);
             }
             ThreadUnlock(cft_server_children);
         }
@@ -388,8 +390,6 @@ void StartServer(EvalContext *ctx, Policy **policy, GenericAgentConfig *config)
             FD_SET(sd, &rset);
             FD_SET(signal_pipe, &rset);
 
-            /* Set 1 second timeout for select, so that signals are handled in
-             * a timely manner */
             timeout.tv_sec = 60;
             timeout.tv_usec = 0;
 
@@ -421,18 +421,21 @@ void StartServer(EvalContext *ctx, Policy **policy, GenericAgentConfig *config)
 
             if (FD_ISSET(sd, &rset))
             {
-                Log(LOG_LEVEL_VERBOSE, "Accepting a connection");
-
-                int sd_accepted = accept(sd, (struct sockaddr *) &cin, &addrlen);
-                if (sd_accepted != -1)
+                int new_client = accept(sd, (struct sockaddr *)&cin, &addrlen);
+                if (new_client == -1)
                 {
-                    /* Just convert IP address to string, no DNS lookup. */
-                    char ipaddr[CF_MAX_IP_LEN] = "";
-                    getnameinfo((struct sockaddr *) &cin, addrlen,
-                                ipaddr, sizeof(ipaddr),
-                                NULL, 0, NI_NUMERICHOST);
-
-                    ServerEntryPoint(ctx, sd_accepted, ipaddr);
+                    continue;
+                }
+                /* Just convert IP address to string, no DNS lookup. */
+                char ipaddr[CF_MAX_IP_LEN] = "";
+                getnameinfo((struct sockaddr *) &cin, addrlen,
+                            ipaddr, sizeof(ipaddr),
+                            NULL, 0, NI_NUMERICHOST);
+                ConnectionInfo *info = ConnectionInfoNew();
+                if (info)
+                {
+                    ConnectionInfoSetSocket(info, new_client);
+                    ServerEntryPoint(ctx, ipaddr, info);
                 }
             }
         }
@@ -480,8 +483,11 @@ int OpenReceiverChannel(void)
         ptr = BINDINTERFACE;
     }
 
+    char servname[10];
+    snprintf(servname, 10, "%d", CFENGINE_PORT);
+
     /* Resolve listening interface. */
-    if (getaddrinfo(ptr, STR_CFENGINEPORT, &query, &response) != 0)
+    if (getaddrinfo(ptr, servname, &query, &response) != 0)
     {
         Log(LOG_LEVEL_ERR, "DNS/service lookup failure. (getaddrinfo: %s)", GetErrorStr());
         return -1;
@@ -549,15 +555,21 @@ int OpenReceiverChannel(void)
 /* Level 3                                                           */
 /*********************************************************************/
 
-void CheckFileChanges(EvalContext *ctx, Policy **policy, GenericAgentConfig *config)
+void CheckFileChanges(EvalContext *ctx, Policy **policy, GenericAgentConfig *config, time_t *last_policy_reload)
 {
+    time_t validated_at;
+
     Log(LOG_LEVEL_DEBUG, "Checking file updates for input file '%s'", config->input_file);
 
-    if (GenericAgentIsPolicyReloadNeeded(config, *policy))
+    validated_at = ReadTimestampFromPolicyValidatedMasterfiles(config);
+
+    if (*last_policy_reload < validated_at)
     {
+        *last_policy_reload = validated_at;
+
         Log(LOG_LEVEL_VERBOSE, "New promises detected...");
 
-        if (GenericAgentCheckPromises(config))
+        if (GenericAgentArePromisesValid(config))
         {
             Log(LOG_LEVEL_INFO, "Rereading policy file '%s'", config->input_file);
 
@@ -565,14 +577,10 @@ void CheckFileChanges(EvalContext *ctx, Policy **policy, GenericAgentConfig *con
             
             EvalContextClear(ctx);
 
-            DeleteItemList(IPADDRESSES);
-            IPADDRESSES = NULL;
-
             free(SV.allowciphers);
             SV.allowciphers = NULL;
 
             DeleteItemList(SV.trustkeylist);
-            DeleteItemList(SV.skipverify);
             DeleteItemList(SV.attackerlist);
             DeleteItemList(SV.nonattackerlist);
             DeleteItemList(SV.multiconnlist);
@@ -586,7 +594,6 @@ void CheckFileChanges(EvalContext *ctx, Policy **policy, GenericAgentConfig *con
             DeleteAuthList(SV.roles);
 
             strcpy(VDOMAIN, "undefined.domain");
-            POLICY_SERVER[0] = '\0';
 
             SV.admit = NULL;
             SV.admittop = NULL;
@@ -604,7 +611,6 @@ void CheckFileChanges(EvalContext *ctx, Policy **policy, GenericAgentConfig *con
             SV.rolestop = NULL;
 
             SV.trustkeylist = NULL;
-            SV.skipverify = NULL;
             SV.attackerlist = NULL;
             SV.nonattackerlist = NULL;
             SV.multiconnlist = NULL;
@@ -617,15 +623,12 @@ void CheckFileChanges(EvalContext *ctx, Policy **policy, GenericAgentConfig *con
                 SetPolicyServer(ctx, existing_policy_server);
                 free(existing_policy_server);
             }
+            UpdateLastPolicyUpdateTime(ctx);
 
-            GetNameInfo3(ctx, AGENT_TYPE_SERVER);
-            GetInterfacesInfo(ctx);
-            Get3Environment(ctx, AGENT_TYPE_SERVER);
-            BuiltinClasses(ctx);
-            OSClasses(ctx);
+            DetectEnvironment(ctx);
             KeepHardClasses(ctx);
 
-            EvalContextClassPutHard(ctx, CF_AGENTTYPES[config->agent_type]);
+            EvalContextClassPutHard(ctx, CF_AGENTTYPES[config->agent_type], "cfe_internal,source=agent");
 
             time_t t = SetReferenceTime();
             UpdateTimeClasses(ctx, t);
@@ -655,7 +658,7 @@ static int GenerateAvahiConfig(const char *path)
 {
     FILE *fout;
     Writer *writer = NULL;
-    fout = fopen(path, "w+");
+    fout = safe_fopen(path, "w+");
     if (fout == NULL)
     {
         Log(LOG_LEVEL_ERR, "Unable to open '%s'", path);
@@ -670,7 +673,9 @@ static int GenerateAvahiConfig(const char *path)
     XmlStartTag(writer, "service", 0);
     XmlTag(writer, "type", "_cfenginehub._tcp",0);
     DetermineCfenginePort();
-    XmlTag(writer, "port", STR_CFENGINEPORT, 0);
+    XmlStartTag(writer, "port", 0);
+    WriterWriteF(writer, "%d", CFENGINE_PORT);
+    XmlEndTag(writer, "port");
     XmlEndTag(writer, "service");
     XmlEndTag(writer, "service-group");
     fclose(fout);

@@ -29,6 +29,7 @@
 #include <dir.h>
 #include <files_names.h>
 #include <files_interfaces.h>
+#include <file_lib.h>
 #include <vars.h>
 #include <conversion.h>
 #include <expand.h>
@@ -44,29 +45,29 @@
 #include <misc_lib.h>
 #include <rlist.h>
 #include <ornaments.h>
-#include <env_context.h>
+#include <eval_context.h>
 #include <retcode.h>
 #include <cf-agent-enterprise-stubs.h>
 #include <cf-windows-functions.h>
 
 /** Entry points from VerifyPackagesPromise **/
 
-static int PackageSanityCheck(EvalContext *ctx, Attributes a, Promise *pp);
+static int PackageSanityCheck(EvalContext *ctx, Attributes a, const Promise *pp);
 
-static int VerifyInstalledPackages(EvalContext *ctx, PackageManager **alllists, const char *default_arch, Attributes a, Promise *pp, PromiseResult *result);
+static int VerifyInstalledPackages(EvalContext *ctx, PackageManager **alllists, const char *default_arch, Attributes a, const Promise *pp, PromiseResult *result);
 
-static PromiseResult VerifyPromisedPackage(EvalContext *ctx, Attributes a, Promise *pp);
-static PromiseResult VerifyPromisedPatch(EvalContext *ctx, Attributes a, Promise *pp);
+static PromiseResult VerifyPromisedPackage(EvalContext *ctx, Attributes a, const Promise *pp);
+static PromiseResult VerifyPromisedPatch(EvalContext *ctx, Attributes a, const Promise *pp);
 
 /** Utils **/
 
 static char *GetDefaultArch(const char *command);
 
-static int ExecPackageCommand(EvalContext *ctx, char *command, int verify, int setCmdClasses, Attributes a, Promise *pp, PromiseResult *result);
+static int ExecPackageCommand(EvalContext *ctx, char *command, int verify, int setCmdClasses, Attributes a, const Promise *pp, PromiseResult *result);
 
-static int PrependPatchItem(EvalContext *ctx, PackageItem ** list, char *item, PackageItem * chklist, const char *default_arch, Attributes a, Promise *pp);
-static int PrependMultiLinePackageItem(EvalContext *ctx, PackageItem ** list, char *item, int reset, const char *default_arch, Attributes a, Promise *pp);
-static int PrependListPackageItem(EvalContext *ctx, PackageItem ** list, char *item, const char *default_arch, Attributes a, Promise *pp);
+static int PrependPatchItem(EvalContext *ctx, PackageItem ** list, char *item, PackageItem * chklist, const char *default_arch, Attributes a, const Promise *pp);
+static int PrependMultiLinePackageItem(EvalContext *ctx, PackageItem ** list, char *item, int reset, const char *default_arch, Attributes a, const Promise *pp);
+static int PrependListPackageItem(EvalContext *ctx, PackageItem ** list, char *item, const char *default_arch, Attributes a, const Promise *pp);
 static bool FindAvailableUpdates(Attributes a,char *version, Promise *pp);
 static bool PackageListAvailableUpdatesCommand(EvalContext *ctx, PackageItem **updates_list, const char *default_arch, Attributes a, Promise *pp);
 
@@ -89,13 +90,12 @@ PackageManager *INSTALLED_PACKAGE_LISTS = NULL;
 
 /*****************************************************************************/
 
-PromiseResult VerifyPackagesPromise(EvalContext *ctx, Promise *pp)
+PromiseResult VerifyPackagesPromise(EvalContext *ctx, const Promise *pp)
 {
-    Attributes a = { {0} };
     CfLock thislock;
     char lockname[CF_BUFSIZE];
 
-    a = GetPackageAttributes(ctx, pp);
+    Attributes a = GetPackageAttributes(ctx, pp);
 
 #ifdef __MINGW32__
 
@@ -119,15 +119,14 @@ PromiseResult VerifyPackagesPromise(EvalContext *ctx, Promise *pp)
     snprintf(lockname, CF_BUFSIZE - 1, "package-%s-%s", pp->promiser, a.packages.package_list_command);
 
     thislock = AcquireLock(ctx, lockname, VUQNAME, CFSTARTTIME, a.transaction, pp, false);
-
     if (thislock.lock == NULL)
     {
-        return PROMISE_RESULT_NOOP;
+        return PROMISE_RESULT_SKIPPED;
     }
 
 // Start by reseting the root directory in case yum tries to glob regexs(!)
 
-    if (chdir("/") != 0)
+    if (safe_chdir("/") != 0)
     {
         Log(LOG_LEVEL_ERR, "Failed to chdir into '/'");
     }
@@ -171,7 +170,7 @@ PromiseResult VerifyPackagesPromise(EvalContext *ctx, Promise *pp)
 
 /** Pre-check of promise contents **/
 
-static int PackageSanityCheck(EvalContext *ctx, Attributes a, Promise *pp)
+static int PackageSanityCheck(EvalContext *ctx, Attributes a, const Promise *pp)
 {
 #ifndef __MINGW32__  // Windows may use Win32 API for listing and parsing
 
@@ -380,7 +379,7 @@ static int PackageSanityCheck(EvalContext *ctx, Attributes a, Promise *pp)
 /** Get the list of installed packages **/
 
 static bool PackageListInstalledFromCommand(EvalContext *ctx, PackageItem **installed_list, const char *default_arch,
-                                            Attributes a, Promise *pp, PromiseResult *result)
+                                            Attributes a, const Promise *pp, PromiseResult *result)
 {
     if (a.packages.package_list_update_command != NULL)
     {
@@ -563,7 +562,8 @@ static void ReportSoftware(PackageManager *list)
     fclose(fout);
 }
 
-static PackageItem *GetCachedPackageList(EvalContext *ctx, PackageManager *manager, const char *default_arch, Attributes a, Promise *pp)
+static PackageItem *GetCachedPackageList(EvalContext *ctx, PackageManager *manager, const char *default_arch, Attributes a,
+                                         const Promise *pp)
 {
     PackageItem *list = NULL;
     char name[CF_MAXVARSIZE], version[CF_MAXVARSIZE], arch[CF_MAXVARSIZE], mgr[CF_MAXVARSIZE], line[CF_BUFSIZE];
@@ -652,7 +652,7 @@ static PackageItem *GetCachedPackageList(EvalContext *ctx, PackageManager *manag
 }
 
 static int VerifyInstalledPackages(EvalContext *ctx, PackageManager **all_mgrs, const char *default_arch,
-                                   Attributes a, Promise *pp, PromiseResult *result)
+                                   Attributes a, const Promise *pp, PromiseResult *result)
 {
     PackageManager *manager = NewPackageManager(all_mgrs, a.packages.package_list_command, PACKAGE_ACTION_NONE, PACKAGE_ACTION_POLICY_NONE);
     char vbuff[CF_BUFSIZE];
@@ -812,7 +812,7 @@ static int VerifyInstalledPackages(EvalContext *ctx, PackageManager **all_mgrs, 
 /** Evaluate what needs to be done **/
 
 int FindLargestVersionAvail(EvalContext *ctx, char *matchName, char *matchVers, const char *refAnyVer, const char *ver,
-                            Rlist *repositories, Attributes a, Promise *pp, PromiseResult *result)
+                            Rlist *repositories, Attributes a, const Promise *pp, PromiseResult *result)
 /* Returns true if a version gt/ge ver is found in local repos, false otherwise */
 {
     Rlist *rp;
@@ -878,7 +878,7 @@ int FindLargestVersionAvail(EvalContext *ctx, char *matchName, char *matchVers, 
 }
 
 static int IsNewerThanInstalled(EvalContext *ctx, const char *n, const char *v, const char *a, char *instV, char *instA, Attributes attr,
-                                Promise *pp, PromiseResult *result)
+                                const Promise *pp, PromiseResult *result)
 /* Returns true if a package (n, a) is installed and v is larger than
  * the installed version. instV and instA are the version and arch installed. */
 {
@@ -952,7 +952,8 @@ static const char *PackageAction2String(PackageAction pa)
 }
 
 static PromiseResult AddPackageToSchedule(EvalContext *ctx, const Attributes *a, char *mgr, PackageAction pa,
-                                          const char *name, const char *version, const char *arch, Promise *pp)
+                                          const char *name, const char *version, const char *arch,
+                                          const Promise *pp)
 {
     PackageManager *manager;
 
@@ -975,7 +976,8 @@ static PromiseResult AddPackageToSchedule(EvalContext *ctx, const Attributes *a,
 }
 
 static PromiseResult AddPatchToSchedule(EvalContext *ctx, const Attributes *a, char *mgr, PackageAction pa,
-                                 const char *name, const char *version, const char *arch, Promise *pp)
+                                        const char *name, const char *version, const char *arch,
+                                        const Promise *pp)
 {
     PackageManager *manager;
 
@@ -999,7 +1001,7 @@ static PromiseResult AddPatchToSchedule(EvalContext *ctx, const Attributes *a, c
 }
 
 static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const char *version, const char *arch, int installed, int matched,
-                                       int no_version_specified, Attributes a, Promise *pp)
+                                       int no_version_specified, Attributes a, const Promise *pp)
 {
     char reference[CF_EXPANDSIZE], reference2[CF_EXPANDSIZE];
     char refAnyVer[CF_EXPANDSIZE];
@@ -1023,13 +1025,13 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
     if ((a.packages.package_name_convention) || (a.packages.package_delete_convention))
     {
         VarRef *ref_name = VarRefParseFromScope("name", "cf_pack_context");
-        EvalContextVariablePut(ctx, ref_name, name, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, ref_name, name, DATA_TYPE_STRING, "source=promise");
 
         VarRef *ref_version = VarRefParseFromScope("version", "cf_pack_context");
-        EvalContextVariablePut(ctx, ref_version, version, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, ref_version, version, DATA_TYPE_STRING, "source=promise");
 
         VarRef *ref_arch = VarRefParseFromScope("arch", "cf_pack_context");
-        EvalContextVariablePut(ctx, ref_arch, arch, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, ref_arch, arch, DATA_TYPE_STRING, "source=promise");
 
         if ((a.packages.package_delete_convention) && (a.packages.package_policy == PACKAGE_ACTION_DELETE))
         {
@@ -1100,13 +1102,13 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
             {
                 {
                     VarRef *ref_name = VarRefParseFromScope("name", "cf_pack_context_anyver");
-                    EvalContextVariablePut(ctx, ref_name, name, DATA_TYPE_STRING);
+                    EvalContextVariablePut(ctx, ref_name, name, DATA_TYPE_STRING, "source=promise");
 
                     VarRef *ref_version = VarRefParseFromScope("version", "cf_pack_context_anyver");
-                    EvalContextVariablePut(ctx, ref_version, "(.*)", DATA_TYPE_STRING);
+                    EvalContextVariablePut(ctx, ref_version, "(.*)", DATA_TYPE_STRING, "source=promise");
 
                     VarRef *ref_arch = VarRefParseFromScope("arch", "cf_pack_context_anyver");
-                    EvalContextVariablePut(ctx, ref_arch, arch, DATA_TYPE_STRING);
+                    EvalContextVariablePut(ctx, ref_arch, arch, DATA_TYPE_STRING, "source=promise");
 
                     ExpandScalar(ctx, NULL, "cf_pack_context_anyver", a.packages.package_name_convention, refAnyVer);
 
@@ -1242,13 +1244,13 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
         {
             {
                 VarRef *ref_name = VarRefParseFromScope("name", "cf_pack_context_anyver");
-                EvalContextVariablePut(ctx, ref_name, name, DATA_TYPE_STRING);
+                EvalContextVariablePut(ctx, ref_name, name, DATA_TYPE_STRING, "source=promise");
 
                 VarRef *ref_version = VarRefParseFromScope("version", "cf_pack_context_anyver");
-                EvalContextVariablePut(ctx, ref_version, "(.*)", DATA_TYPE_STRING);
+                EvalContextVariablePut(ctx, ref_version, "(.*)", DATA_TYPE_STRING, "source=promise");
 
                 VarRef *ref_arch = VarRefParseFromScope("arch", "cf_pack_context_anyver");
-                EvalContextVariablePut(ctx, ref_arch, arch, DATA_TYPE_STRING);
+                EvalContextVariablePut(ctx, ref_arch, arch, DATA_TYPE_STRING, "source=promise");
 
                 ExpandScalar(ctx, NULL, "cf_pack_context_anyver", a.packages.package_name_convention, refAnyVer);
 
@@ -1320,13 +1322,13 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
                     }
 
                     VarRef *ref_name = VarRefParseFromScope("name", "cf_pack_context");
-                    EvalContextVariablePut(ctx, ref_name, name, DATA_TYPE_STRING);
+                    EvalContextVariablePut(ctx, ref_name, name, DATA_TYPE_STRING, "source=promise");
 
                     VarRef *ref_version = VarRefParseFromScope("version", "cf_pack_context");
-                    EvalContextVariablePut(ctx, ref_version, inst_ver, DATA_TYPE_STRING);
+                    EvalContextVariablePut(ctx, ref_version, inst_ver, DATA_TYPE_STRING, "source=promise");
 
                     VarRef *ref_arch = VarRefParseFromScope("arch", "cf_pack_context");
-                    EvalContextVariablePut(ctx, ref_arch, inst_arch, DATA_TYPE_STRING);
+                    EvalContextVariablePut(ctx, ref_arch, inst_arch, DATA_TYPE_STRING, "source=promise");
 
                     ExpandScalar(ctx, NULL, "cf_pack_context", a.packages.package_delete_convention, reference2);
                     id_del = reference2;
@@ -1424,7 +1426,7 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
 VersionCmpResult ComparePackages(EvalContext *ctx,
                                  const char *n, const char *v, const char *arch,
                                  PackageItem *pi, Attributes a,
-                                 Promise *pp,
+                                 const Promise *pp,
                                  const char *mode,
                                  PromiseResult *result)
 {
@@ -1471,7 +1473,7 @@ VersionCmpResult ComparePackages(EvalContext *ctx,
 
 static VersionCmpResult PatchMatch(EvalContext *ctx,
                                    const char *n, const char *v, const char *a,
-                                   Attributes attr, Promise *pp,
+                                   Attributes attr, const Promise *pp,
                                    const char* mode,
                                    PromiseResult *result)
 {
@@ -1513,7 +1515,8 @@ static VersionCmpResult PatchMatch(EvalContext *ctx,
 
 static VersionCmpResult PackageMatch(EvalContext *ctx,
                                      const char *n, const char *v, const char *a,
-                                     Attributes attr, Promise *pp,
+                                     Attributes attr,
+                                     const Promise *pp,
                                      const char* mode,
                                      PromiseResult *result)
 /*
@@ -1550,7 +1553,7 @@ static VersionCmpResult PackageMatch(EvalContext *ctx,
     return VERCMP_NO_MATCH;
 }
 
-static int VersionCheckSchedulePackage(EvalContext *ctx, Attributes a, Promise *pp, int matches, int installed)
+static int VersionCheckSchedulePackage(EvalContext *ctx, Attributes a, const Promise *pp, int matches, int installed)
 {
 /* The meaning of matches and installed depends on the package policy */
     PackageAction policy = a.packages.package_policy;
@@ -1604,7 +1607,8 @@ static int VersionCheckSchedulePackage(EvalContext *ctx, Attributes a, Promise *
     return false;
 }
 
-static PromiseResult CheckPackageState(EvalContext *ctx, Attributes a, Promise *pp, const char *name, const char *version, const char *arch, bool no_version)
+static PromiseResult CheckPackageState(EvalContext *ctx, Attributes a, const Promise *pp, const char *name, const char *version,
+                                       const char *arch, bool no_version)
 {
     PromiseResult result = PROMISE_RESULT_NOOP;
 
@@ -1636,7 +1640,7 @@ static PromiseResult CheckPackageState(EvalContext *ctx, Attributes a, Promise *
     return result;
 }
 
-static PromiseResult VerifyPromisedPatch(EvalContext *ctx, Attributes a, Promise *pp)
+static PromiseResult VerifyPromisedPatch(EvalContext *ctx, Attributes a, const Promise *pp)
 {
     char version[CF_MAXVARSIZE];
     char name[CF_MAXVARSIZE];
@@ -1753,7 +1757,7 @@ static PromiseResult VerifyPromisedPatch(EvalContext *ctx, Attributes a, Promise
     return PROMISE_RESULT_NOOP;
 }
 
-static PromiseResult VerifyPromisedPackage(EvalContext *ctx, Attributes a, Promise *pp)
+static PromiseResult VerifyPromisedPackage(EvalContext *ctx, Attributes a, const Promise *pp)
 {
     const char *package = pp->promiser;
     const char *match_version = NULL;
@@ -1913,7 +1917,6 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
     PackageManager *pm;
     int size, estimated_size, retval = true, verify = false;
     char *command_string = NULL;
-    Attributes a = { {0} };
     Promise *pp;
     int ok;
 
@@ -1956,7 +1959,7 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
         }
 
         pp = pm->pack_list->pp;
-        a = GetPackageAttributes(ctx, pp);
+        Attributes a = GetPackageAttributes(ctx, pp);
 
         switch (action)
         {
@@ -2058,7 +2061,7 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
                 for (pi = pm->pack_list; pi != NULL; pi = pi->next)
                 {
                     pp = pi->pp;
-                    a = GetPackageAttributes(ctx, pp);
+                    Attributes a = GetPackageAttributes(ctx, pp);
 
                     char *sp, *offset = command_string + strlen(command_string);
 
@@ -2167,7 +2170,6 @@ static int ExecutePatch(EvalContext *ctx, PackageManager *schedule, PackageActio
     PackageManager *pm;
     int size, estimated_size, retval = true, verify = false;
     char *command_string = NULL;
-    Attributes a = { {0} };
     Promise *pp;
 
     for (pm = schedule; pm != NULL; pm = pm->next)
@@ -2209,7 +2211,7 @@ static int ExecutePatch(EvalContext *ctx, PackageManager *schedule, PackageActio
         }
 
         pp = pm->patch_list->pp;
-        a = GetPackageAttributes(ctx, pp);
+        Attributes a = GetPackageAttributes(ctx, pp);
 
         switch (action)
         {
@@ -2489,7 +2491,7 @@ char *PrefixLocalRepository(Rlist *repositories, char *package)
 }
 
 int ExecPackageCommand(EvalContext *ctx, char *command, int verify, int setCmdClasses, Attributes a,
-                       Promise *pp, PromiseResult *result)
+                       const Promise *pp, PromiseResult *result)
 {
     int retval = true;
     char line[CF_BUFSIZE], lineSafe[CF_BUFSIZE], *cmd;
@@ -2612,7 +2614,8 @@ int ExecPackageCommand(EvalContext *ctx, char *command, int verify, int setCmdCl
     return retval;
 }
 
-int PrependPackageItem(EvalContext *ctx, PackageItem ** list, const char *name, const char *version, const char *arch, Promise *pp)
+int PrependPackageItem(EvalContext *ctx, PackageItem ** list, const char *name, const char *version, const char *arch,
+                       const Promise *pp)
 {
     PackageItem *pi;
 
@@ -2666,26 +2669,26 @@ static int PackageInItemList(PackageItem * list, char *name, char *version, char
 }
 
 static int PrependPatchItem(EvalContext *ctx, PackageItem ** list, char *item, PackageItem * chklist, const char *default_arch,
-                            Attributes a, Promise *pp)
+                            Attributes a, const Promise *pp)
 {
     char name[CF_MAXVARSIZE];
     char arch[CF_MAXVARSIZE];
     char version[CF_MAXVARSIZE];
     char vbuff[CF_MAXVARSIZE];
 
-    strncpy(vbuff, ExtractFirstReference(a.packages.package_patch_name_regex, item), CF_MAXVARSIZE - 1);
+    strlcpy(vbuff, ExtractFirstReference(a.packages.package_patch_name_regex, item), CF_MAXVARSIZE);
     sscanf(vbuff, "%s", name);  /* trim */
-    strncpy(vbuff, ExtractFirstReference(a.packages.package_patch_version_regex, item), CF_MAXVARSIZE - 1);
+    strlcpy(vbuff, ExtractFirstReference(a.packages.package_patch_version_regex, item), CF_MAXVARSIZE);
     sscanf(vbuff, "%s", version);       /* trim */
 
     if (a.packages.package_patch_arch_regex)
     {
-        strncpy(vbuff, ExtractFirstReference(a.packages.package_patch_arch_regex, item), CF_MAXVARSIZE - 1);
+        strlcpy(vbuff, ExtractFirstReference(a.packages.package_patch_arch_regex, item), CF_MAXVARSIZE );
         sscanf(vbuff, "%s", arch);      /* trim */
     }
     else
     {
-        strncpy(arch, default_arch, CF_MAXVARSIZE - 1);
+        strlcpy(arch, default_arch, CF_MAXVARSIZE );
     }
 
     if ((strcmp(name, "CF_NOMATCH") == 0) || (strcmp(version, "CF_NOMATCH") == 0) || (strcmp(arch, "CF_NOMATCH") == 0))
@@ -2706,7 +2709,7 @@ static int PrependPatchItem(EvalContext *ctx, PackageItem ** list, char *item, P
 }
 
 static int PrependMultiLinePackageItem(EvalContext *ctx, PackageItem ** list, char *item, int reset, const char *default_arch,
-                                       Attributes a, Promise *pp)
+                                       Attributes a, const Promise *pp)
 {
     static char name[CF_MAXVARSIZE];
     static char arch[CF_MAXVARSIZE];
@@ -2739,7 +2742,7 @@ static int PrependMultiLinePackageItem(EvalContext *ctx, PackageItem ** list, ch
 
     if (FullTextMatch(ctx, a.packages.package_list_version_regex, item))
     {
-        strncpy(vbuff, ExtractFirstReference(a.packages.package_list_version_regex, item), CF_MAXVARSIZE - 1);
+        strlcpy(vbuff, ExtractFirstReference(a.packages.package_list_version_regex, item), CF_MAXVARSIZE );
         sscanf(vbuff, "%s", version);   /* trim */
     }
 
@@ -2747,7 +2750,7 @@ static int PrependMultiLinePackageItem(EvalContext *ctx, PackageItem ** list, ch
     {
         if (a.packages.package_list_arch_regex)
         {
-            strncpy(vbuff, ExtractFirstReference(a.packages.package_list_arch_regex, item), CF_MAXVARSIZE - 1);
+            strlcpy(vbuff, ExtractFirstReference(a.packages.package_list_arch_regex, item), CF_MAXVARSIZE);
             sscanf(vbuff, "%s", arch);  /* trim */
         }
     }
@@ -2755,22 +2758,23 @@ static int PrependMultiLinePackageItem(EvalContext *ctx, PackageItem ** list, ch
     return false;
 }
 
-static int PrependListPackageItem(EvalContext *ctx, PackageItem ** list, char *item, const char *default_arch, Attributes a, Promise *pp)
+static int PrependListPackageItem(EvalContext *ctx, PackageItem ** list, char *item, const char *default_arch, Attributes a,
+                                  const Promise *pp)
 {
     char name[CF_MAXVARSIZE];
     char arch[CF_MAXVARSIZE];
     char version[CF_MAXVARSIZE];
     char vbuff[CF_MAXVARSIZE];
 
-    strncpy(vbuff, ExtractFirstReference(a.packages.package_list_name_regex, item), CF_MAXVARSIZE - 1);
+    strlcpy(vbuff, ExtractFirstReference(a.packages.package_list_name_regex, item), CF_MAXVARSIZE);
     sscanf(vbuff, "%s", name);  /* trim */
 
-    strncpy(vbuff, ExtractFirstReference(a.packages.package_list_version_regex, item), CF_MAXVARSIZE - 1);
+    strlcpy(vbuff, ExtractFirstReference(a.packages.package_list_version_regex, item), CF_MAXVARSIZE);
     sscanf(vbuff, "%s", version);       /* trim */
 
     if (a.packages.package_list_arch_regex)
     {
-        strncpy(vbuff, ExtractFirstReference(a.packages.package_list_arch_regex, item), CF_MAXVARSIZE - 1);
+        strlcpy(vbuff, ExtractFirstReference(a.packages.package_list_arch_regex, item), CF_MAXVARSIZE);
         sscanf(vbuff, "%s", arch);      /* trim */
     }
     else

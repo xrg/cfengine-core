@@ -20,23 +20,29 @@
 # (COSL) may apply to this file if you as a licensee so wish it. See
 # included file COSL.txt.
 
-body common control 
-{ 
-      bundlesequence => { "main" }; 
+#+begin_src cfengine3
+body common control
+{
+      bundlesequence => { "example" };
 }
 
-
-bundle agent main 
+bundle agent example
 {
   classes:
 
-      "testclass1" expression => returnszero("$(G.true)","noshell");
-      "testclass2" expression => returnszero("$(G.false)","noshell");
+      "my_result" expression => returnszero("/usr/local/bin/mycommand","noshell");
 
   reports:
-    testclass1::
-      "true is defined";
 
-    testclass2::
-      "false is defined";
+    !my_result::
+
+      "Command failed";
+
 }
+#+end_src
+###############################################################################
+#+begin_src example_output
+#@ 2013-12-20T13:44:34-0500    error: Proposed executable file '/usr/local/bin/mycommand' doesn't exist
+#@ 2013-12-20T13:44:34-0500    error: returnszero '/usr/local/bin/mycommand' is assumed to be executable but isn't
+#@ 2013-12-20T13:44:34-0500   notice: /default/example: R: Command failed
+#+end_src

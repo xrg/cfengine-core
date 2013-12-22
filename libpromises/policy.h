@@ -51,6 +51,8 @@ typedef struct
 
 struct Policy_
 {
+    char *release_id;
+
     Seq *bundles;
     Seq *bodies;
 };
@@ -130,7 +132,7 @@ struct Constraint_
     char *lval;
     Rval rval;
 
-    char *classes;              /* only used within bodies */
+    char *classes;
     bool references_body;
 
     SourceOffset offset;
@@ -185,7 +187,7 @@ bool PolicyIsRunnable(const Policy *policy);
  * @param promise
  * @return Policy object
  */
-Policy *PolicyFromPromise(const Promise *promise);
+const Policy *PolicyFromPromise(const Promise *promise);
 char *BundleQualifiedName(const Bundle *bundle);
 
 PolicyError *PolicyErrorNew(PolicyElementType type, const void *subject, const char *error_msg, ...);
@@ -255,10 +257,15 @@ void PromiseTypeDestroy(PromiseType *promise_type);
 
 void PromiseDestroy(Promise *pp);
 
-Constraint *PromiseAppendConstraint(Promise *promise, const char *lval, Rval rval, const char *classes, bool references_body);
+Constraint *PromiseAppendConstraint(Promise *promise, const char *lval, Rval rval, bool references_body);
 
 const char *PromiseGetNamespace(const Promise *pp);
 const Bundle *PromiseGetBundle(const Promise *pp);
+
+/**
+ * @brief Write a string describing the promise location in policy, e.g. /default/foo/packages/'emacs'
+ */
+void PromisePath(Writer *w, const Promise *pp);
 
 /**
  * @brief Return handle of the promise.
@@ -315,7 +322,7 @@ Rlist *PromiseGetConstraintAsList(const EvalContext *ctx, const char *lval, cons
 
 bool PromiseBundleConstraintExists(const EvalContext *ctx, const char *lval, const Promise *pp);
 
-void PromiseRecheckAllConstraints(EvalContext *ctx, Promise *pp);
+void PromiseRecheckAllConstraints(const EvalContext *ctx, const Promise *pp);
 
 /**
  * @brief Get the trinary boolean value of the first effective constraint found matching, from a promise
@@ -331,7 +338,7 @@ int PromiseGetConstraintAsBoolean(const EvalContext *ctx, const char *lval, cons
  * @param lval
  * @return Effective constraint if found, otherwise NULL
  */
-Constraint *PromiseGetConstraint(const EvalContext *ctx, const Promise *promise, const char *lval);
+Constraint *PromiseGetConstraint(const Promise *promise, const char *lval);
 
 /**
  * @brief Get the first constraint from the promise. Checks that constraint does
@@ -371,7 +378,7 @@ Constraint *EffectiveConstraint(const EvalContext *ctx, Seq *constraints);
  * @param type
  * @return Rval value if found, NULL otherwise
  */
-void *ConstraintGetRvalValue(const EvalContext *ctx, const char *lval, const Promise *promise, RvalType type);
+void *PromiseGetConstraintAsRval(const Promise *promise, const char *lval, RvalType type);
 
 /**
  * @brief Get the Rval value of the first constraint that matches the given

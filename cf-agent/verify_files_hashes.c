@@ -32,7 +32,7 @@
 #include <files_lib.h>
 #include <files_hashes.h>
 #include <misc_lib.h>
-#include <env_context.h>
+#include <eval_context.h>
 
 /*
  * Key format:
@@ -133,7 +133,7 @@ static void DeleteHash(CF_DB *dbp, HashMethod type, const char *name)
    updates database to the new value */
 
 int FileHashChanged(EvalContext *ctx, const char *filename, unsigned char digest[EVP_MAX_MD_SIZE + 1], HashMethod type,
-                    Attributes attr, Promise *pp, PromiseResult *result)
+                    Attributes attr, const Promise *pp, PromiseResult *result)
 {
     int i, size = 21;
     unsigned char dbdigest[EVP_MAX_MD_SIZE + 1];
@@ -165,7 +165,7 @@ int FileHashChanged(EvalContext *ctx, const char *filename, unsigned char digest
                 if (attr.change.update)
                 {
                     cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_CHANGE, pp, attr, "Updating hash for '%s' to '%s'", filename,
-                         HashPrintSafe(type, digest, buffer));
+                         HashPrintSafe(type, true, digest, buffer));
                     *result = PromiseResultUpdate(*result, PROMISE_RESULT_CHANGE);
 
                     DeleteHash(dbp, type, filename);
@@ -193,7 +193,8 @@ int FileHashChanged(EvalContext *ctx, const char *filename, unsigned char digest
         cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_CHANGE, pp, attr, "File '%s' was not in '%s' database - new file found", filename,
              FileHashName(type));
         *result = PromiseResultUpdate(*result, PROMISE_RESULT_CHANGE);
-        Log(LOG_LEVEL_DEBUG, "Storing checksum for '%s' in database '%s'", filename, HashPrintSafe(type, digest, buffer));
+        Log(LOG_LEVEL_DEBUG, "Storing checksum for '%s' in database '%s'", filename,
+            HashPrintSafe(type, true, digest, buffer));
         WriteHash(dbp, type, filename, digest);
 
         LogHashChange(filename, FILE_STATE_NEW, "New file found", pp);
@@ -249,8 +250,8 @@ int CompareBinaryFiles(const char *file1, const char *file2, struct stat *sstat,
 
     if ((fc.servers == NULL) || (strcmp(RlistScalarValue(fc.servers), "localhost") == 0))
     {
-        fd1 = open(file1, O_RDONLY | O_BINARY, 0400);
-        fd2 = open(file2, O_RDONLY | O_BINARY, 0400);
+        fd1 = safe_open(file1, O_RDONLY | O_BINARY, 0400);
+        fd2 = safe_open(file2, O_RDONLY | O_BINARY, 0400);
 
         do
         {
@@ -279,7 +280,7 @@ int CompareBinaryFiles(const char *file1, const char *file2, struct stat *sstat,
     }
 }
 
-void PurgeHashes(EvalContext *ctx, char *path, Attributes attr, Promise *pp)
+void PurgeHashes(EvalContext *ctx, char *path, Attributes attr, const Promise *pp)
 /* Go through the database and purge records about non-existent files */
 {
     CF_DB *dbp;
@@ -332,9 +333,6 @@ void PurgeHashes(EvalContext *ctx, char *path, Attributes attr, Promise *pp)
 
             LogHashChange(obj, FILE_STATE_REMOVED, "File removed", pp);
         }
-
-        memset(&key, 0, sizeof(key));
-        memset(&value, 0, sizeof(value));
     }
 
     DeleteDBCursor(dbcp);
@@ -363,7 +361,7 @@ static char FileStateToChar(FileState status)
     }
 }
 
-void LogHashChange(const char *file, FileState status, char *msg, Promise *pp)
+void LogHashChange(const char *file, FileState status, char *msg, const Promise *pp)
 {
     FILE *fp;
     char fname[CF_BUFSIZE];
@@ -395,7 +393,7 @@ void LogHashChange(const char *file, FileState status, char *msg, Promise *pp)
     }
 #endif /* !__MINGW32__ */
 
-    if ((fp = fopen(fname, "a")) == NULL)
+    if ((fp = safe_fopen(fname, "a")) == NULL)
     {
         Log(LOG_LEVEL_ERR, "Could not write to the hash change log. (fopen: %s)", GetErrorStr());
         return;
@@ -406,5 +404,5 @@ void LogHashChange(const char *file, FileState status, char *msg, Promise *pp)
     fprintf(fp, "%ld,%s,%s,%c,%s\n", (long) now, handle, file, FileStateToChar(status), msg);
     fclose(fp);
 
-    chmod(fname, perm);
+    safe_chmod(fname, perm);
 }

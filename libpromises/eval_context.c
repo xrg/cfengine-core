@@ -22,7 +22,7 @@
   included file COSL.txt.
 */
 
-#include <env_context.h>
+#include <eval_context.h>
 
 #include <files_names.h>
 #include <logic_expressions.h>
@@ -33,6 +33,7 @@
 #include <matching.h>
 #include <string_lib.h>
 #include <misc_lib.h>
+#include <file_lib.h>
 #include <assoc.h>
 #include <scope.h>
 #include <vars.h>
@@ -51,6 +52,32 @@ static bool EvalContextStackFrameContainsSoft(const EvalContext *ctx, const char
 static bool EvalContextHeapContainsSoft(const EvalContext *ctx, const char *ns, const char *name);
 static bool EvalContextHeapContainsHard(const EvalContext *ctx, const char *name);
 
+struct EvalContext_
+{
+    int eval_options;
+    bool bundle_aborted;
+    bool checksum_updates_default;
+    Item *ip_addresses;
+
+    Item *heap_abort;
+    Item *heap_abort_current_bundle;
+
+    Seq *stack;
+
+    ClassTable *global_classes;
+    VariableTable *global_variables;
+
+    VariableTable *match_variables;
+
+    StringSet *dependency_handles;
+    RBTree *function_cache;
+    PromiseSet *promises_done;
+
+    void *enterprise_state;
+
+    // Full path to directory that the binary was launched from.
+    char *launch_directory;
+};
 
 static StackFrame *LastStackFrame(const EvalContext *ctx, size_t offset)
 {
@@ -87,7 +114,7 @@ static const char *GetAgentAbortingContext(const EvalContext *ctx)
     return NULL;
 }
 
-void EvalContextHeapAddSoft(EvalContext *ctx, const char *context, const char *ns)
+void EvalContextHeapAddSoft(EvalContext *ctx, const char *context, const char *ns, const char *tags)
 {
     char context_copy[CF_MAXVARSIZE];
     char canonified_context[CF_MAXVARSIZE];
@@ -129,7 +156,7 @@ void EvalContextHeapAddSoft(EvalContext *ctx, const char *context, const char *n
         return;
     }
 
-    ClassTablePut(ctx->global_classes, ns, canonified_context, true, CONTEXT_SCOPE_NAMESPACE);
+    ClassTablePut(ctx->global_classes, ns, canonified_context, true, CONTEXT_SCOPE_NAMESPACE, tags);
 
     if (!BundleAborted(ctx))
     {
@@ -147,12 +174,12 @@ void EvalContextHeapAddSoft(EvalContext *ctx, const char *context, const char *n
 
 /*******************************************************************/
 
-void EvalContextClassPutHard(EvalContext *ctx, const char *name)
+void EvalContextClassPutHard(EvalContext *ctx, const char *name, const char *tags)
 {
-    EvalContextClassPut(ctx, NULL, name, false, CONTEXT_SCOPE_NAMESPACE);
+    EvalContextClassPut(ctx, NULL, name, false, CONTEXT_SCOPE_NAMESPACE, tags);
 }
 
-static void EvalContextStackFrameAddSoft(EvalContext *ctx, const char *context)
+static void EvalContextStackFrameAddSoft(EvalContext *ctx, const char *context, const char *tags)
 {
     assert(SeqLength(ctx->stack) > 0);
 
@@ -208,7 +235,7 @@ static void EvalContextStackFrameAddSoft(EvalContext *ctx, const char *context)
         return;
     }
 
-    ClassTablePut(frame.classes, frame.owner->ns, context, true, CONTEXT_SCOPE_BUNDLE);
+    ClassTablePut(frame.classes, frame.owner->ns, context, true, CONTEXT_SCOPE_BUNDLE, tags);
 
     if (!BundleAborted(ctx))
     {
@@ -427,11 +454,6 @@ void EvalContextHeapPersistentLoadAll(EvalContext *ctx)
     time_t now = time(NULL);
     CfState q;
 
-    if (LOOKUP)
-    {
-        return;
-    }
-
     Banner("Loading persistent classes");
 
     if (!OpenDB(&dbp, dbid_state))
@@ -463,17 +485,17 @@ void EvalContextHeapPersistentLoadAll(EvalContext *ctx)
             Log(LOG_LEVEL_VERBOSE, "Persistent class '%s' for %jd more minutes", key, (intmax_t)((q.expires - now) / 60));
             Log(LOG_LEVEL_VERBOSE, "Adding persistent class '%s' to heap", key);
             if (strchr(key, CF_NS))
-               {
-               char ns[CF_MAXVARSIZE], name[CF_MAXVARSIZE];
-               ns[0] = '\0';
-               name[0] = '\0';
-               sscanf(key, "%[^:]:%[^\n]", ns, name);
-               EvalContextHeapAddSoft(ctx, name, ns);
-               }
+            {
+                char ns[CF_MAXVARSIZE], name[CF_MAXVARSIZE];
+                ns[0] = '\0';
+                name[0] = '\0';
+                sscanf(key, "%[^:]:%[^\n]", ns, name);
+                EvalContextHeapAddSoft(ctx, name, ns, "source=persistent");
+            }
             else
-               {
-               EvalContextHeapAddSoft(ctx, key, NULL);
-               }
+            {
+                EvalContextHeapAddSoft(ctx, key, NULL, "source=persistent");
+            }
         }
     }
 
@@ -506,7 +528,7 @@ void SetBundleAborted(EvalContext *ctx)
 
 int VarClassExcluded(const EvalContext *ctx, const Promise *pp, char **classes)
 {
-    Constraint *cp = PromiseGetConstraint(ctx, pp, "ifvarclass");
+    Constraint *cp = PromiseGetConstraint(pp, "ifvarclass");
     if (!cp)
     {
         return false;
@@ -517,7 +539,7 @@ int VarClassExcluded(const EvalContext *ctx, const Promise *pp, char **classes)
         return false;
     }
 
-    *classes = (char *) ConstraintGetRvalValue(ctx, "ifvarclass", pp, RVAL_TYPE_SCALAR);
+    *classes = PromiseGetConstraintAsRval(pp, "ifvarclass", RVAL_TYPE_SCALAR);
 
     if (*classes == NULL)
     {
@@ -651,9 +673,9 @@ static void StackFramePromiseDestroy(StackFramePromise frame)
     VariableTableDestroy(frame.vars);
 }
 
-static void StackFramePromiseIterationDestroy(ARG_UNUSED StackFramePromiseIteration frame)
+static void StackFramePromiseIterationDestroy(StackFramePromiseIteration frame)
 {
-    return;
+    PromiseDestroy(frame.owner);
 }
 
 static void StackFrameDestroy(StackFrame *frame)
@@ -705,6 +727,7 @@ EvalContext *EvalContextNew(void)
     ctx->eval_options = EVAL_OPTION_FULL;
     ctx->bundle_aborted = false;
     ctx->checksum_updates_default = false;
+    ctx->ip_addresses = NULL;
 
     ctx->heap_abort = NULL;
     ctx->heap_abort_current_bundle = NULL;
@@ -721,8 +744,11 @@ EvalContext *EvalContextNew(void)
     ctx->promises_done = PromiseSetNew();
     ctx->function_cache = RBTreeNew(NULL, NULL, NULL,
                                     NULL, NULL, NULL);
+    PromiseLoggingInit(ctx, 5);
 
-    PromiseLoggingInit(ctx);
+    ctx->enterprise_state = EvalContextEnterpriseStateNew();
+
+    ctx->launch_directory = NULL;
 
     return ctx;
 }
@@ -731,7 +757,12 @@ void EvalContextDestroy(EvalContext *ctx)
 {
     if (ctx)
     {
+        free(ctx->launch_directory);
+        EvalContextEnterpriseStateDestroy(ctx->enterprise_state);
+
         PromiseLoggingFinish(ctx);
+
+        EvalContextDeleteIpAddresses(ctx);
 
         DeleteItemList(ctx->heap_abort);
         DeleteItemList(ctx->heap_abort_current_bundle);
@@ -754,6 +785,8 @@ void EvalContextDestroy(EvalContext *ctx)
                 RvalDestroy(*rval);
                 free(rval);
             }
+            RBTreeIteratorDestroy(it);
+            RBTreeDestroy(ctx->function_cache);
         }
 
         free(ctx);
@@ -813,7 +846,7 @@ bool EvalContextHeapRemoveHard(EvalContext *ctx, const char *name)
 void EvalContextClear(EvalContext *ctx)
 {
     ClassTableClear(ctx->global_classes);
-
+    EvalContextDeleteIpAddresses(ctx);
     VariableTableClear(ctx->global_variables, NULL, NULL, NULL);
     VariableTableClear(ctx->match_variables, NULL, NULL, NULL);
     SeqClear(ctx->stack);
@@ -875,7 +908,6 @@ static StackFrame *StackFrameNewPromise(const Promise *owner)
     StackFrame *frame = StackFrameNew(STACK_FRAME_TYPE_PROMISE, true);
 
     frame->data.promise.owner = owner;
-    frame->data.promise.vars = VariableTableNew();
 
     return frame;
 }
@@ -931,27 +963,33 @@ void EvalContextStackPushBundleFrame(EvalContext *ctx, const Bundle *owner, cons
             RvalDestroy(var->rval);
             var->rval = retval;
         }
+        VariableTableIteratorDestroy(iter);
     }
 }
 
-void EvalContextStackPushBodyFrame(EvalContext *ctx, const Body *owner, Rlist *args)
+void EvalContextStackPushBodyFrame(EvalContext *ctx, const Promise *caller, const Body *body, Rlist *args)
 {
-    assert((!LastStackFrame(ctx, 0) && strcmp("control", owner->name) == 0) || LastStackFrame(ctx, 0)->type == STACK_FRAME_TYPE_BUNDLE);
+    assert((!LastStackFrame(ctx, 0) && strcmp("control", body->name) == 0) || LastStackFrame(ctx, 0)->type == STACK_FRAME_TYPE_BUNDLE);
 
-    EvalContextStackPushFrame(ctx, StackFrameNewBody(owner));
+    EvalContextStackPushFrame(ctx, StackFrameNewBody(body));
 
-    if (RlistLen(owner->args) != RlistLen(args))
+    if (RlistLen(body->args) != RlistLen(args))
     {
-        const Promise *caller = EvalContextStackCurrentPromise(ctx);
-        assert(caller);
-
-        Log(LOG_LEVEL_ERR, "Argument arity mismatch in body '%s' at line %zu in file '%s', expected %d, got %d",
-            owner->name, caller->offset.line, PromiseGetBundle(caller)->source_path, RlistLen(owner->args), RlistLen(args));
+        if (caller)
+        {
+            Log(LOG_LEVEL_ERR, "Argument arity mismatch in body '%s' at line %zu in file '%s', expected %d, got %d",
+                body->name, caller->offset.line, PromiseGetBundle(caller)->source_path, RlistLen(body->args), RlistLen(args));
+        }
+        else
+        {
+            assert(strcmp("control", body->name) == 0);
+            ProgrammingError("Control body stack frame was pushed with arguments. This should have been caught before");
+        }
         return;
     }
     else
     {
-        ScopeMapBodyArgs(ctx, owner, args);
+        ScopeMapBodyArgs(ctx, body, args);
     }
 }
 
@@ -979,32 +1017,39 @@ void EvalContextStackPushPromiseFrame(EvalContext *ctx, const Promise *owner, bo
     if (PromiseGetBundle(owner)->source_path)
     {
         char path[CF_BUFSIZE];
-        snprintf(path, CF_BUFSIZE, "%s", PromiseGetBundle(owner)->source_path);
+        if (!IsAbsoluteFileName(PromiseGetBundle(owner)->source_path) && ctx->launch_directory)
+        {
+            snprintf(path, CF_BUFSIZE, "%s%c%s", ctx->launch_directory, FILE_SEPARATOR, PromiseGetBundle(owner)->source_path);
+        }
+        else
+        {
+            strlcpy(path, PromiseGetBundle(owner)->source_path, CF_BUFSIZE);
+        }
 
-        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promise_filename", path, DATA_TYPE_STRING);
+        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promise_filename", path, DATA_TYPE_STRING, "source=promise");
 
         // We now make path just the directory name!
         DeleteSlash(path);
         ChopLastNode(path);
 
-        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promise_dirname", path, DATA_TYPE_STRING);
+        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promise_dirname", path, DATA_TYPE_STRING, "source=promise");
         char number[CF_SMALLBUF];
         snprintf(number, CF_SMALLBUF, "%zu", owner->offset.line);
-        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promise_linenumber", number, DATA_TYPE_STRING);
+        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promise_linenumber", number, DATA_TYPE_STRING, "source=promise");
     }
 
     char v[CF_MAXVARSIZE];
     snprintf(v, CF_MAXVARSIZE, "%d", (int) getuid());
-    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser_uid", v, DATA_TYPE_INT);
+    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser_uid", v, DATA_TYPE_INT, "source=agent");
     snprintf(v, CF_MAXVARSIZE, "%d", (int) getgid());
-    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser_gid", v, DATA_TYPE_INT);
+    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser_gid", v, DATA_TYPE_INT, "source=agent");
 
-    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "bundle", PromiseGetBundle(owner)->name, DATA_TYPE_STRING);
-    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "namespace", PromiseGetNamespace(owner), DATA_TYPE_STRING);
+    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "bundle", PromiseGetBundle(owner)->name, DATA_TYPE_STRING, "source=promise");
+    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "namespace", PromiseGetNamespace(owner), DATA_TYPE_STRING, "source=promise");
 
     if (owner->has_subbundles)
     {
-        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", owner->promiser, DATA_TYPE_STRING);
+        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", owner->promiser, DATA_TYPE_STRING, "source=promise");
     }
 }
 
@@ -1052,7 +1097,6 @@ void EvalContextStackPopFrame(EvalContext *ctx)
 
     case STACK_FRAME_TYPE_PROMISE_ITERATION:
         PromiseLoggingPromiseFinish(ctx, last_frame->data.promise_iteration.owner);
-        PromiseDestroy(last_frame->data.promise_iteration.owner);
         break;
 
     default:
@@ -1103,7 +1147,7 @@ Class *EvalContextClassGet(const EvalContext *ctx, const char *ns, const char *n
     return ClassTableGet(ctx->global_classes, ns, name);
 }
 
-bool EvalContextClassPut(EvalContext *ctx, const char *ns, const char *name, bool is_soft, ContextScope scope)
+bool EvalContextClassPut(EvalContext *ctx, const char *ns, const char *name, bool is_soft, ContextScope scope, const char *tags)
 {
     {
         char context_copy[CF_MAXVARSIZE];
@@ -1157,12 +1201,12 @@ bool EvalContextClassPut(EvalContext *ctx, const char *ns, const char *name, boo
             {
                 ProgrammingError("Attempted to add bundle class '%s' while not evaluating a bundle", name);
             }
-            ClassTablePut(frame->data.bundle.classes, ns, name, is_soft, scope);
+            ClassTablePut(frame->data.bundle.classes, ns, name, is_soft, scope, tags);
         }
         break;
 
     case CONTEXT_SCOPE_NAMESPACE:
-        ClassTablePut(ctx->global_classes, ns, name, is_soft, scope);
+        ClassTablePut(ctx->global_classes, ns, name, is_soft, scope, tags);
         break;
 
     case CONTEXT_SCOPE_NONE:
@@ -1230,7 +1274,7 @@ char *EvalContextStackPath(const EvalContext *ctx)
             break;
 
         case STACK_FRAME_TYPE_BUNDLE:
-            WriterWriteF(path, "/%s", frame->data.bundle.owner->name);
+            WriterWriteF(path, "/%s/%s", frame->data.bundle.owner->ns, frame->data.bundle.owner->name);
             break;
 
         case STACK_FRAME_TYPE_PROMISE:
@@ -1241,7 +1285,7 @@ char *EvalContextStackPath(const EvalContext *ctx)
             WriterWriteF(path, "/'%s'", frame->data.promise_iteration.owner->promiser);
             if (i == SeqLength(ctx->stack) - 1)
             {
-                WriterWriteF(path, " [%zd]", frame->data.promise_iteration.index);
+                WriterWriteF(path, "[%zd]", frame->data.promise_iteration.index);
             }
             break;
         }
@@ -1250,7 +1294,54 @@ char *EvalContextStackPath(const EvalContext *ctx)
     return StringWriterClose(path);
 }
 
-bool EvalContextVariablePutSpecial(EvalContext *ctx, SpecialScope scope, const char *lval, const void *value, DataType type)
+StringSet *EvalContextStackPromisees(const EvalContext *ctx)
+{
+    StringSet *promisees = StringSetNew();
+
+    for (size_t i = 0; i < SeqLength(ctx->stack); i++)
+    {
+        StackFrame *frame = SeqAt(ctx->stack, i);
+        if (frame->type != STACK_FRAME_TYPE_PROMISE_ITERATION)
+        {
+            continue;
+        }
+
+        Rval promisee = frame->data.promise_iteration.owner->promisee;
+
+        switch (promisee.type)
+        {
+        case RVAL_TYPE_SCALAR:
+            StringSetAdd(promisees, xstrdup(RvalScalarValue(promisee)));
+            break;
+
+        case RVAL_TYPE_LIST:
+            {
+                for (const Rlist *rp = RvalRlistValue(promisee); rp; rp = rp->next)
+                {
+                    if (rp->val.type == RVAL_TYPE_SCALAR)
+                    {
+                        StringSetAdd(promisees, xstrdup(RvalScalarValue(rp->val)));
+                    }
+                    else
+                    {
+                        assert(false && "Canary: promisee list contained non-scalar value");
+                    }
+                }
+            }
+            break;
+
+        case RVAL_TYPE_NOPROMISEE:
+            break;
+
+        default:
+            assert(false && "Canary: promisee not scalar or list");
+        }
+    }
+
+    return promisees;
+}
+
+bool EvalContextVariablePutSpecial(EvalContext *ctx, SpecialScope scope, const char *lval, const void *value, DataType type, const char *tags)
 {
     switch (scope)
     {
@@ -1263,7 +1354,7 @@ bool EvalContextVariablePutSpecial(EvalContext *ctx, SpecialScope scope, const c
     case SPECIAL_SCOPE_MATCH:
         {
             VarRef *ref = VarRefParseFromScope(lval, SpecialScopeToString(scope));
-            bool ret = EvalContextVariablePut(ctx, ref, value, type);
+            bool ret = EvalContextVariablePut(ctx, ref, value, type, tags);
             VarRefDestroy(ref);
             return ret;
         }
@@ -1331,7 +1422,6 @@ static VariableTable *GetVariableTableForScope(const EvalContext *ctx, const cha
         }
 
     case SPECIAL_SCOPE_THIS:
-        assert(!ns || strcmp("default", ns) == 0);
         {
             StackFrame *frame = LastStackFrameByType(ctx, STACK_FRAME_TYPE_PROMISE);
             return frame ? frame->data.promise.vars : NULL;
@@ -1415,7 +1505,7 @@ static void VarRefStackQualify(const EvalContext *ctx, VarRef *ref)
     }
 }
 
-bool EvalContextVariablePut(EvalContext *ctx, const VarRef *ref, const void *value, DataType type)
+bool EvalContextVariablePut(EvalContext *ctx, const VarRef *ref, const void *value, DataType type, const char *tags)
 {
     assert(type != DATA_TYPE_NONE);
     assert(ref);
@@ -1450,9 +1540,9 @@ bool EvalContextVariablePut(EvalContext *ctx, const VarRef *ref, const void *val
 
         StackFrame *last_frame = LastStackFrame(ctx, 0);
 
-        if (last_frame && (last_frame->type != STACK_FRAME_TYPE_PROMISE && last_frame->type != STACK_FRAME_TYPE_PROMISE_ITERATION))
+        if (last_frame && (last_frame->type == STACK_FRAME_TYPE_BUNDLE))
         {
-            MapIteratorsFromRval(ctx, NULL, rval, &scalars, &listvars, &containers);
+            MapIteratorsFromRval(ctx, EvalContextStackCurrentBundle(ctx), rval, &scalars, &listvars, &containers);
 
             if (listvars != NULL)
             {
@@ -1466,7 +1556,7 @@ bool EvalContextVariablePut(EvalContext *ctx, const VarRef *ref, const void *val
     }
 
     VariableTable *table = GetVariableTableForScope(ctx, ref->ns, ref->scope);
-    VariableTablePut(table, ref, &rval, type);
+    VariableTablePut(table, ref, &rval, type, tags);
     return true;
 }
 
@@ -1722,7 +1812,7 @@ static void AddAllClasses(EvalContext *ctx, const char *ns, const Rlist *list, u
 
             Log(LOG_LEVEL_VERBOSE, "Defining persistent promise result class '%s'", classname);
             EvalContextHeapPersistentSave(CanonifyName(RlistScalarValue(rp)), ns, persistence_ttl, policy);
-            EvalContextHeapAddSoft(ctx, classname, ns);
+            EvalContextHeapAddSoft(ctx, classname, ns, "");
         }
         else
         {
@@ -1731,15 +1821,20 @@ static void AddAllClasses(EvalContext *ctx, const char *ns, const Rlist *list, u
             switch (context_scope)
             {
             case CONTEXT_SCOPE_BUNDLE:
-                EvalContextStackFrameAddSoft(ctx, classname);
+                EvalContextStackFrameAddSoft(ctx, classname, "");
+                break;
+
+            case CONTEXT_SCOPE_NONE:
+            case CONTEXT_SCOPE_NAMESPACE:
+                EvalContextHeapAddSoft(ctx, classname, ns, "");
                 break;
 
             default:
-            case CONTEXT_SCOPE_NAMESPACE:
-                EvalContextHeapAddSoft(ctx, classname, ns);
-                break;
+                ProgrammingError("AddAllClasses: Unexpected context_scope %d!",
+                                 context_scope);
             }
         }
+        free(classname);
     }
 }
 
@@ -1889,7 +1984,7 @@ static void SummarizeTransaction(EvalContext *ctx, TransactionContext tc, const 
                 }
             }
 
-            FILE *fout = fopen(logname, "a");
+            FILE *fout = safe_fopen(logname, "a");
 
             if (fout == NULL)
             {
@@ -1914,7 +2009,7 @@ static void DoSummarizeTransaction(EvalContext *ctx, PromiseResult status, const
         return;
     }
 
-    char *log_name;
+    char *log_name = NULL;
 
     switch (status)
     {
@@ -1936,6 +2031,9 @@ static void DoSummarizeTransaction(EvalContext *ctx, PromiseResult status, const
     case PROMISE_RESULT_NOOP:
         log_name = tc.log_kept;
         break;
+
+    default:
+        ProgrammingError("Unexpected promise result status: %d", status);
     }
 
     SummarizeTransaction(ctx, tc, log_name);
@@ -2046,7 +2144,9 @@ void cfPS(EvalContext *ctx, LogLevel level, PromiseResult status, const Promise 
     VLog(level, fmt, ap);
     va_end(ap);
 
-    const char *last_msg = PromiseLoggingLastMessage(ctx);
+    // TODO: the rest of this should go away soon
+    const RingBuffer *msgs = PromiseLoggingMessages(ctx);
+    const char *last_msg = RingBufferHead(msgs);
 
     /* Now complete the exits status classes and auditing */
 
@@ -2062,4 +2162,48 @@ void SetChecksumUpdatesDefault(EvalContext *ctx, bool enabled)
 bool GetChecksumUpdatesDefault(const EvalContext *ctx)
 {
     return ctx->checksum_updates_default;
+}
+
+void EvalContextAddIpAddress(EvalContext *ctx, const char *ip_address)
+{
+    AppendItem(&ctx->ip_addresses, ip_address, "");
+}
+
+void EvalContextDeleteIpAddresses(EvalContext *ctx)
+{
+    DeleteItemList(ctx->ip_addresses);
+    ctx->ip_addresses = NULL;
+}
+
+Item *EvalContextGetIpAddresses(const EvalContext *ctx)
+{
+    return ctx->ip_addresses;
+}
+
+void EvalContextSetEvalOption(EvalContext *ctx, EvalContextOption option, bool value)
+{
+    if (value)
+    {
+        ctx->eval_options |= option;
+    }
+    else
+    {
+        ctx->eval_options &= ~option;
+    }
+}
+
+bool EvalContextGetEvalOption(EvalContext *ctx, EvalContextOption option)
+{
+    return !!(ctx->eval_options & option);
+}
+
+EvalContextEnterpriseState *EvalContextGetEnterpriseState(const EvalContext *ctx)
+{
+    return ctx->enterprise_state;
+}
+
+void EvalContextSetLaunchDirectory(EvalContext *ctx, const char *path)
+{
+    free(ctx->launch_directory);
+    ctx->launch_directory = xstrdup(path);
 }

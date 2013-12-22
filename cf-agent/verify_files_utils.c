@@ -45,7 +45,7 @@
 #include <conversion.h>
 #include <pipes.h>
 #include <verify_acl.h>
-#include <env_context.h>
+#include <eval_context.h>
 #include <vars.h>
 #include <exec_tools.h>
 #include <comparray.h>
@@ -72,12 +72,13 @@ Item *VSETUIDLIST;
 Rlist *SINGLE_COPY_LIST = NULL;
 static Rlist *SINGLE_COPY_CACHE = NULL;
 
-static bool TransformFile(EvalContext *ctx, char *file, Attributes attr, Promise *pp, PromiseResult *result);
-static PromiseResult VerifyName(EvalContext *ctx, char *path, struct stat *sb, Attributes attr, Promise *pp);
-static PromiseResult VerifyDelete(EvalContext *ctx, char *path, struct stat *sb, Attributes attr, Promise *pp);
-static PromiseResult VerifyCopy(EvalContext *ctx, char *source, char *destination, Attributes attr, Promise *pp, CompressedArray **inode_cache, AgentConnection *conn);
-static PromiseResult TouchFile(EvalContext *ctx, char *path, Attributes attr, Promise *pp);
-static PromiseResult VerifyFileAttributes(EvalContext *ctx, const char *file, struct stat *dstat, Attributes attr, Promise *pp);
+static bool TransformFile(EvalContext *ctx, char *file, Attributes attr, const Promise *pp, PromiseResult *result);
+static PromiseResult VerifyName(EvalContext *ctx, char *path, struct stat *sb, Attributes attr, const Promise *pp);
+static PromiseResult VerifyDelete(EvalContext *ctx, char *path, struct stat *sb, Attributes attr, const Promise *pp);
+static PromiseResult VerifyCopy(EvalContext *ctx, char *source, char *destination, Attributes attr, const Promise *pp,
+                                CompressedArray **inode_cache, AgentConnection *conn);
+static PromiseResult TouchFile(EvalContext *ctx, char *path, Attributes attr, const Promise *pp);
+static PromiseResult VerifyFileAttributes(EvalContext *ctx, const char *file, struct stat *dstat, Attributes attr, const Promise *pp);
 static int PushDirState(EvalContext *ctx, char *name, struct stat *sb);
 static bool PopDirState(int goback, char *name, struct stat *sb, Recursion r);
 static bool CheckLinkSecurity(struct stat *sb, char *name);
@@ -85,30 +86,31 @@ static int CompareForFileCopy(char *sourcefile, char *destfile, struct stat *ssb
 static void FileAutoDefine(EvalContext *ctx, char *destfile, const char *ns);
 static void TruncateFile(char *name);
 static void RegisterAHardLink(int i, char *value, Attributes attr, CompressedArray **inode_cache);
-static PromiseResult VerifyCopiedFileAttributes(EvalContext *ctx, const char *src, const char *dest, struct stat *sstat, struct stat *dstat, Attributes attr, Promise *pp);
+static PromiseResult VerifyCopiedFileAttributes(EvalContext *ctx, const char *src, const char *dest, struct stat *sstat, struct stat *dstat, Attributes attr, const Promise *pp);
 static int cf_stat(char *file, struct stat *buf, FileCopy fc, AgentConnection *conn);
 #ifndef __MINGW32__
-static int cf_readlink(EvalContext *ctx, char *sourcefile, char *linkbuf, int buffsize, Attributes attr, Promise *pp, AgentConnection *conn, PromiseResult *result);
+static int cf_readlink(EvalContext *ctx, char *sourcefile, char *linkbuf, int buffsize, Attributes attr, const Promise *pp, AgentConnection *conn, PromiseResult *result);
 #endif
 static int SkipDirLinks(EvalContext *ctx, char *path, const char *lastnode, Recursion r);
 static int DeviceBoundary(struct stat *sb, dev_t rootdevice);
-static PromiseResult LinkCopy(EvalContext *ctx, char *sourcefile, char *destfile, struct stat *sb, Attributes attr, Promise *pp, CompressedArray **inode_cache, AgentConnection *conn);
+static PromiseResult LinkCopy(EvalContext *ctx, char *sourcefile, char *destfile, struct stat *sb, Attributes attr,
+                              const Promise *pp, CompressedArray **inode_cache, AgentConnection *conn);
 
 #ifndef __MINGW32__
-static PromiseResult VerifySetUidGid(EvalContext *ctx, const char *file, struct stat *dstat, mode_t newperm, Promise *pp, Attributes attr);
+static PromiseResult VerifySetUidGid(EvalContext *ctx, const char *file, struct stat *dstat, mode_t newperm, const Promise *pp, Attributes attr);
 #endif
 #ifdef __APPLE__
-static int VerifyFinderType(EvalContext *ctx, char *file, Attributes a, Promise *pp, PromiseResult *result);
+static int VerifyFinderType(EvalContext *ctx, const char *file, Attributes a, const Promise *pp, PromiseResult *result);
 #endif
-static void VerifyFileChanges(const char *file, struct stat *sb, Attributes attr, Promise *pp);
-static PromiseResult VerifyFileIntegrity(EvalContext *ctx, const char *file, Attributes attr, Promise *pp);
+static void VerifyFileChanges(const char *file, struct stat *sb, Attributes attr, const Promise *pp);
+static PromiseResult VerifyFileIntegrity(EvalContext *ctx, const char *file, Attributes attr, const Promise *pp);
 
 void SetFileAutoDefineList(Rlist *auto_define_list)
 {
     AUTO_DEFINE_LIST = auto_define_list;
 }
 
-bool VerifyFileLeaf(EvalContext *ctx, char *path, struct stat *sb, Attributes attr, Promise *pp, PromiseResult *result)
+bool VerifyFileLeaf(EvalContext *ctx, char *path, struct stat *sb, Attributes attr, const Promise *pp, PromiseResult *result)
 {
 /* Here we can assume that we are in the parent directory of the leaf */
 
@@ -122,7 +124,7 @@ bool VerifyFileLeaf(EvalContext *ctx, char *path, struct stat *sb, Attributes at
 
 /* We still need to augment the scope of context "this" for commands */
 
-    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", path, DATA_TYPE_STRING);        // Parameters may only be scalars
+    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", path, DATA_TYPE_STRING, "source=promise");        // Parameters may only be scalars
 
     if (attr.transformer != NULL)
     {
@@ -167,7 +169,7 @@ bool VerifyFileLeaf(EvalContext *ctx, char *path, struct stat *sb, Attributes at
 }
 
 static PromiseResult CfCopyFile(EvalContext *ctx, char *sourcefile, char *destfile, struct stat ssb, Attributes attr,
-                                Promise *pp, CompressedArray **inode_cache, AgentConnection *conn)
+                                const Promise *pp, CompressedArray **inode_cache, AgentConnection *conn)
 {
     char *server;
     const char *lastnode;
@@ -535,7 +537,7 @@ static PromiseResult CfCopyFile(EvalContext *ctx, char *sourcefile, char *destfi
 }
 
 static PromiseResult PurgeLocalFiles(EvalContext *ctx, Item *filelist, const char *localdir, Attributes attr,
-                                     Promise *pp, AgentConnection *conn)
+                                     const Promise *pp, AgentConnection *conn)
 {
     Dir *dirh;
     struct stat sb;
@@ -564,7 +566,7 @@ static PromiseResult PurgeLocalFiles(EvalContext *ctx, Item *filelist, const cha
 
 /* chdir to minimize the risk of race exploits during copy (which is inherently dangerous) */
 
-    if (chdir(localdir) == -1)
+    if (safe_chdir(localdir) == -1)
     {
         Log(LOG_LEVEL_VERBOSE, "Can't chdir to local directory '%s'. (chdir: %s)", localdir, GetErrorStr());
         return PROMISE_RESULT_NOOP;
@@ -639,7 +641,8 @@ static PromiseResult PurgeLocalFiles(EvalContext *ctx, Item *filelist, const cha
     return result;
 }
 
-static PromiseResult SourceSearchAndCopy(EvalContext *ctx, char *from, char *to, int maxrecurse, Attributes attr, Promise *pp, dev_t rootdevice, CompressedArray **inode_cache, AgentConnection *conn)
+static PromiseResult SourceSearchAndCopy(EvalContext *ctx, char *from, char *to, int maxrecurse, Attributes attr,
+                                         const Promise *pp, dev_t rootdevice, CompressedArray **inode_cache, AgentConnection *conn)
 {
     struct stat sb, dsb;
     char newfrom[CF_BUFSIZE];
@@ -856,7 +859,7 @@ static PromiseResult SourceSearchAndCopy(EvalContext *ctx, char *from, char *to,
     return result;
 }
 
-static PromiseResult VerifyCopy(EvalContext *ctx, char *source, char *destination, Attributes attr, Promise *pp,
+static PromiseResult VerifyCopy(EvalContext *ctx, char *source, char *destination, Attributes attr, const Promise *pp,
                                 CompressedArray **inode_cache, AgentConnection *conn)
 {
     AbstractDir *dirh;
@@ -973,7 +976,7 @@ static PromiseResult VerifyCopy(EvalContext *ctx, char *source, char *destinatio
     }
 }
 
-static PromiseResult LinkCopy(EvalContext *ctx, char *sourcefile, char *destfile, struct stat *sb, Attributes attr, Promise *pp,
+static PromiseResult LinkCopy(EvalContext *ctx, char *sourcefile, char *destfile, struct stat *sb, Attributes attr, const Promise *pp,
                               CompressedArray **inode_cache, AgentConnection *conn)
 /* Link the file to the source, instead of copying */
 #ifdef __MINGW32__
@@ -1092,7 +1095,7 @@ static PromiseResult LinkCopy(EvalContext *ctx, char *sourcefile, char *destfile
 #endif /* !__MINGW32__ */
 
 bool CopyRegularFile(EvalContext *ctx, const char *source, const char *dest, struct stat sstat, struct stat dstat,
-                     Attributes attr, Promise *pp, CompressedArray **inode_cache,
+                     Attributes attr, const Promise *pp, CompressedArray **inode_cache,
                      AgentConnection *conn, PromiseResult *result)
 {
     char backup[CF_BUFSIZE];
@@ -1319,8 +1322,8 @@ bool CopyRegularFile(EvalContext *ctx, const char *source, const char *dest, str
 #ifdef __APPLE__
     if (rsrcfork)
     {                           /* Can't just "mv" the resource fork, unfortunately */
-        rsrcrd = open(new, O_RDONLY | O_BINARY);
-        rsrcwd = open(dest, O_WRONLY | O_BINARY | O_CREAT | O_TRUNC, 0600);
+        rsrcrd = safe_open(new, O_RDONLY | O_BINARY);
+        rsrcwd = safe_open(dest, O_WRONLY | O_BINARY | O_CREAT | O_TRUNC, 0600);
 
         if (rsrcrd == -1 || rsrcwd == -1)
         {
@@ -1435,7 +1438,7 @@ bool CopyRegularFile(EvalContext *ctx, const char *source, const char *dest, str
     return true;
 }
 
-static bool TransformFile(EvalContext *ctx, char *file, Attributes attr, Promise *pp, PromiseResult *result)
+static bool TransformFile(EvalContext *ctx, char *file, Attributes attr, const Promise *pp, PromiseResult *result)
 {
     char comm[CF_EXPANDSIZE], line[CF_BUFSIZE];
     FILE *pop = NULL;
@@ -1515,7 +1518,7 @@ static bool TransformFile(EvalContext *ctx, char *file, Attributes attr, Promise
     return true;
 }
 
-static PromiseResult VerifyName(EvalContext *ctx, char *path, struct stat *sb, Attributes attr, Promise *pp)
+static PromiseResult VerifyName(EvalContext *ctx, char *path, struct stat *sb, Attributes attr, const Promise *pp)
 {
     mode_t newperm;
     struct stat dsb;
@@ -1665,7 +1668,7 @@ static PromiseResult VerifyName(EvalContext *ctx, char *path, struct stat *sb, A
         }
         else
         {
-            chmod(path, newperm);
+            safe_chmod(path, newperm);
 
             if (!FileInRepository(newname))
             {
@@ -1743,7 +1746,7 @@ static PromiseResult VerifyName(EvalContext *ctx, char *path, struct stat *sb, A
     return result;
 }
 
-static PromiseResult VerifyDelete(EvalContext *ctx, char *path, struct stat *sb, Attributes attr, Promise *pp)
+static PromiseResult VerifyDelete(EvalContext *ctx, char *path, struct stat *sb, Attributes attr, const Promise *pp)
 {
     const char *lastnode = ReadLastNode(path);
     char buf[CF_MAXVARSIZE];
@@ -1832,7 +1835,7 @@ static PromiseResult VerifyDelete(EvalContext *ctx, char *path, struct stat *sb,
     return result;
 }
 
-static PromiseResult TouchFile(EvalContext *ctx, char *path, Attributes attr, Promise *pp)
+static PromiseResult TouchFile(EvalContext *ctx, char *path, Attributes attr, const Promise *pp)
 {
     PromiseResult result = PROMISE_RESULT_NOOP;
     if (!DONTDO)
@@ -1857,7 +1860,7 @@ static PromiseResult TouchFile(EvalContext *ctx, char *path, Attributes attr, Pr
     return result;
 }
 
-PromiseResult VerifyFileAttributes(EvalContext *ctx, const char *file, struct stat *dstat, Attributes attr, Promise *pp)
+PromiseResult VerifyFileAttributes(EvalContext *ctx, const char *file, struct stat *dstat, Attributes attr, const Promise *pp)
 {
     PromiseResult result = PROMISE_RESULT_NOOP;
 
@@ -1976,7 +1979,7 @@ PromiseResult VerifyFileAttributes(EvalContext *ctx, const char *file, struct st
 
             if (!DONTDO)
             {
-                if (chmod(file, newperm & 07777) == -1)
+                if (safe_chmod(file, newperm & 07777) == -1)
                 {
                     Log(LOG_LEVEL_ERR, "chmod failed on '%s'. (chmod: %s)", file, GetErrorStr());
                     break;
@@ -2074,7 +2077,7 @@ PromiseResult VerifyFileAttributes(EvalContext *ctx, const char *file, struct st
 }
 
 int DepthSearch(EvalContext *ctx, char *name, struct stat *sb, int rlevel, Attributes attr,
-                Promise *pp, dev_t rootdevice, PromiseResult *result)
+                const Promise *pp, dev_t rootdevice, PromiseResult *result)
 {
     Dir *dirh;
     int goback;
@@ -2089,7 +2092,7 @@ int DepthSearch(EvalContext *ctx, char *name, struct stat *sb, int rlevel, Attri
         Log(LOG_LEVEL_DEBUG, "Direct file reference '%s', no search implied", name);
         snprintf(basedir, sizeof(basedir), "%s", name);
         ChopLastNode(basedir);
-        if (chdir(basedir))
+        if (safe_chdir(basedir))
         {
             Log(LOG_LEVEL_ERR, "Failed to chdir into '%s'", basedir);
             return false;
@@ -2203,7 +2206,7 @@ int DepthSearch(EvalContext *ctx, char *name, struct stat *sb, int rlevel, Attri
 
 static int PushDirState(EvalContext *ctx, char *name, struct stat *sb)
 {
-    if (chdir(name) == -1)
+    if (safe_chdir(name) == -1)
     {
         Log(LOG_LEVEL_INFO, "Could not change to directory '%s', mode '%04jo' in tidy. (chdir: %s)",
             name, (uintmax_t)(sb->st_mode & 07777), GetErrorStr());
@@ -2224,7 +2227,7 @@ static bool PopDirState(int goback, char *name, struct stat *sb, Recursion r)
 {
     if (goback && (r.travlinks))
     {
-        if (chdir(name) == -1)
+        if (safe_chdir(name) == -1)
         {
             Log(LOG_LEVEL_ERR, "Error in backing out of recursive travlink descent securely to '%s'. (chdir: %s)",
                 name, GetErrorStr());
@@ -2238,7 +2241,7 @@ static bool PopDirState(int goback, char *name, struct stat *sb, Recursion r)
     }
     else if (goback)
     {
-        if (chdir("..") == -1)
+        if (safe_chdir("..") == -1)
         {
             Log(LOG_LEVEL_ERR, "Error in backing out of recursive descent securely to '%s'. (chdir: %s)",
                 name, GetErrorStr());
@@ -2277,7 +2280,7 @@ static bool CheckLinkSecurity(struct stat *sb, char *name)
 }
 
 static PromiseResult VerifyCopiedFileAttributes(EvalContext *ctx, const char *src, const char *dest, struct stat *sstat,
-                                                struct stat *dstat, Attributes attr, Promise *pp)
+                                                struct stat *dstat, Attributes attr, const Promise *pp)
 {
 #ifndef __MINGW32__
     mode_t newplus, newminus;
@@ -2352,7 +2355,7 @@ static PromiseResult VerifyCopiedFileAttributes(EvalContext *ctx, const char *sr
     return result;
 }
 
-static PromiseResult CopyFileSources(EvalContext *ctx, char *destination, Attributes attr, Promise *pp, AgentConnection *conn)
+static PromiseResult CopyFileSources(EvalContext *ctx, char *destination, Attributes attr, const Promise *pp, AgentConnection *conn)
 {
     char *source = attr.copy.source;
     char vbuff[CF_BUFSIZE];
@@ -2424,7 +2427,7 @@ static PromiseResult CopyFileSources(EvalContext *ctx, char *destination, Attrib
     return result;
 }
 
-PromiseResult ScheduleCopyOperation(EvalContext *ctx, char *destination, Attributes attr, Promise *pp)
+PromiseResult ScheduleCopyOperation(EvalContext *ctx, char *destination, Attributes attr, const Promise *pp)
 {
     AgentConnection *conn = NULL;
 
@@ -2443,7 +2446,7 @@ PromiseResult ScheduleCopyOperation(EvalContext *ctx, char *destination, Attribu
     else
     {
         int err = 0;
-        conn = NewServerConnection(attr.copy, attr.transaction.background, &err);
+        conn = NewServerConnection(attr.copy, attr.transaction.background, &err, -1);
 
         if (conn == NULL)
         {
@@ -2462,7 +2465,7 @@ PromiseResult ScheduleCopyOperation(EvalContext *ctx, char *destination, Attribu
          * client_code.c:SERVERLIST, so just close it right after transaction. */
         if (attr.transaction.background)
         {
-            DisconnectServer(conn);
+            DisconnectServer(conn, false);
         }
         else
         {
@@ -2473,7 +2476,7 @@ PromiseResult ScheduleCopyOperation(EvalContext *ctx, char *destination, Attribu
     return result;
 }
 
-PromiseResult ScheduleLinkOperation(EvalContext *ctx, char *destination, char *source, Attributes attr, Promise *pp)
+PromiseResult ScheduleLinkOperation(EvalContext *ctx, char *destination, char *source, Attributes attr, const Promise *pp)
 {
     const char *lastnode;
 
@@ -2511,7 +2514,8 @@ PromiseResult ScheduleLinkOperation(EvalContext *ctx, char *destination, char *s
     return result;
 }
 
-PromiseResult ScheduleLinkChildrenOperation(EvalContext *ctx, char *destination, char *source, int recurse, Attributes attr, Promise *pp)
+PromiseResult ScheduleLinkChildrenOperation(EvalContext *ctx, char *destination, char *source, int recurse, Attributes attr,
+                                            const Promise *pp)
 {
     Dir *dirh;
     const struct dirent *dirp;
@@ -2609,7 +2613,7 @@ PromiseResult ScheduleLinkChildrenOperation(EvalContext *ctx, char *destination,
     return result;
 }
 
-static PromiseResult VerifyFileIntegrity(EvalContext *ctx, const char *file, Attributes attr, Promise *pp)
+static PromiseResult VerifyFileIntegrity(EvalContext *ctx, const char *file, Attributes attr, const Promise *pp)
 {
     unsigned char digest1[EVP_MAX_MD_SIZE + 1];
     unsigned char digest2[EVP_MAX_MD_SIZE + 1];
@@ -2761,12 +2765,13 @@ static void FileAutoDefine(EvalContext *ctx, char *destfile, const char *ns)
     char context[CF_MAXVARSIZE];
 
     snprintf(context, CF_MAXVARSIZE, "auto_%s", CanonifyName(destfile));
-    EvalContextClassPut(ctx, ns, context, true, CONTEXT_SCOPE_NAMESPACE);
+    EvalContextClassPut(ctx, ns, context, true, CONTEXT_SCOPE_NAMESPACE, "source=promise");
     Log(LOG_LEVEL_INFO, "Auto defining class '%s'", context);
 }
 
 #ifndef __MINGW32__
-static PromiseResult VerifySetUidGid(EvalContext *ctx, const char *file, struct stat *dstat, mode_t newperm, Promise *pp, Attributes attr)
+static PromiseResult VerifySetUidGid(EvalContext *ctx, const char *file, struct stat *dstat, mode_t newperm,
+                                     const Promise *pp, Attributes attr)
 {
     int amroot = true;
     PromiseResult result = PROMISE_RESULT_NOOP;
@@ -2863,7 +2868,7 @@ static PromiseResult VerifySetUidGid(EvalContext *ctx, const char *file, struct 
 
 #ifdef __APPLE__
 
-static int VerifyFinderType(EvalContext *ctx, char *file, Attributes a, Promise *pp, PromiseResult *result)
+static int VerifyFinderType(EvalContext *ctx, const char *file, Attributes a, const Promise *pp, PromiseResult *result)
 {                               /* Code modeled after hfstar's extract.c */
     typedef struct
     {
@@ -2941,13 +2946,13 @@ static int VerifyFinderType(EvalContext *ctx, char *file, Attributes a, Promise 
             if (retval >= 0)
             {
                 cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_CHANGE, pp, a, "Setting Finder Type code of '%s' to '%s'", file, a.perms.findertype);
-                result = PromiseResultUpdate(result, PROMISE_RESULT_CHANGE);
+                *result = PromiseResultUpdate(*result, PROMISE_RESULT_CHANGE);
             }
             else
             {
                 cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Setting Finder Type code of '%s' to '%s' failed", file,
                      a.perms.findertype);
-                result = PromiseResultUpdate(result, PROMISE_RESULT_CHANGE);
+                *result = PromiseResultUpdate(*result, PROMISE_RESULT_CHANGE);
             }
 
             return retval;
@@ -2963,7 +2968,7 @@ static int VerifyFinderType(EvalContext *ctx, char *file, Attributes a, Promise 
     else
     {
         cfPS(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_NOOP, pp, a, "Finder Type code of '%s' to '%s' is as promised", file, a.perms.findertype);
-        result = PromiseResultUpdate(result, PROMISE_RESULT_CHANGE);
+        *result = PromiseResultUpdate(*result, PROMISE_RESULT_CHANGE);
         return 0;
     }
 }
@@ -2981,7 +2986,7 @@ static void TruncateFile(char *name)
     }
     else
     {
-        if ((fd = creat(name, 000)) == -1)      /* dummy mode ignored */
+        if ((fd = safe_creat(name, 000)) == -1)      /* dummy mode ignored */
         {
             Log(LOG_LEVEL_ERR, "Failed to create or truncate file '%s'. (creat: %s)", name, GetErrorStr());
         }
@@ -3031,7 +3036,7 @@ static int cf_stat(char *file, struct stat *buf, FileCopy fc, AgentConnection *c
 #ifndef __MINGW32__
 
 static int cf_readlink(EvalContext *ctx, char *sourcefile, char *linkbuf, int buffsize,
-                       Attributes attr, Promise *pp, AgentConnection *conn, PromiseResult *result)
+                       Attributes attr, const Promise *pp, AgentConnection *conn, PromiseResult *result)
  /* wrapper for network access */
 {
     memset(linkbuf, 0, buffsize);
@@ -3093,7 +3098,7 @@ static int SkipDirLinks(EvalContext *ctx, char *path, const char *lastnode, Recu
 
 #ifndef __MINGW32__
 
-bool VerifyOwner(EvalContext *ctx, const char *file, Promise *pp, Attributes attr, struct stat *sb, PromiseResult *result)
+bool VerifyOwner(EvalContext *ctx, const char *file, const Promise *pp, Attributes attr, struct stat *sb, PromiseResult *result)
 {
     struct passwd *pw;
     struct group *gp;
@@ -3190,7 +3195,7 @@ bool VerifyOwner(EvalContext *ctx, const char *file, Promise *pp, Attributes att
             {
 # ifdef HAVE_LCHOWN
                 Log(LOG_LEVEL_DEBUG, "Using lchown function");
-                if (lchown(file, uid, gid) == -1)
+                if (safe_lchown(file, uid, gid) == -1)
                 {
                     Log(LOG_LEVEL_INFO, "Cannot set ownership on link '%s'. (lchown: %s)", file, GetErrorStr());
                 }
@@ -3218,7 +3223,7 @@ bool VerifyOwner(EvalContext *ctx, const char *file, Promise *pp, Attributes att
 
                 if (!S_ISLNK(sb->st_mode))
                 {
-                    if (chown(file, uid, gid) == -1)
+                    if (safe_chown(file, uid, gid) == -1)
                     {
                         cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_DENIED, pp, attr, "Cannot set ownership on file '%s'. (chown: %s)",
                              file, GetErrorStr());
@@ -3261,7 +3266,7 @@ bool VerifyOwner(EvalContext *ctx, const char *file, Promise *pp, Attributes att
 
 #endif /* !__MINGW32__ */
 
-static void VerifyFileChanges(const char *file, struct stat *sb, Attributes attr, Promise *pp)
+static void VerifyFileChanges(const char *file, struct stat *sb, Attributes attr, const Promise *pp)
 {
     struct stat cmpsb;
     CF_DB *dbp;
@@ -3401,7 +3406,7 @@ static void VerifyFileChanges(const char *file, struct stat *sb, Attributes attr
     CloseDB(dbp);
 }
 
-bool CfCreateFile(EvalContext *ctx, char *file, Promise *pp, Attributes attr, PromiseResult *result)
+bool CfCreateFile(EvalContext *ctx, char *file, const Promise *pp, Attributes attr, PromiseResult *result)
 {
     int fd;
 
@@ -3448,7 +3453,7 @@ bool CfCreateFile(EvalContext *ctx, char *file, Promise *pp, Attributes attr, Pr
             mode_t saveumask = umask(0);
             mode_t filemode = 0600;     /* Decide the mode for filecreation */
 
-            if (ConstraintGetRvalValue(ctx, "mode", pp, RVAL_TYPE_SCALAR) == NULL)
+            if (PromiseGetConstraintAsRval(pp, "mode", RVAL_TYPE_SCALAR) == NULL)
             {
                 /* Relying on umask is risky */
                 filemode = 0600;
@@ -3461,7 +3466,7 @@ bool CfCreateFile(EvalContext *ctx, char *file, Promise *pp, Attributes attr, Pr
 
             MakeParentDirectory(file, attr.move_obstructions);
 
-            if ((fd = creat(file, filemode)) == -1)
+            if ((fd = safe_creat(file, filemode)) == -1)
             {
                 cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_FAIL, pp, attr, "Error creating file '%s', mode '%04jo'. (creat: %s)",
                      file, (uintmax_t)filemode, GetErrorStr());

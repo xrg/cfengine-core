@@ -35,12 +35,14 @@
 #include <rlist.h>
 #include <process_lib.h>
 #include <fncall.h>
-#include <env_context.h>
+#include <eval_context.h>
 #include <misc_lib.h>
 #include <known_dirs.h>
 
 #define CFLOGSIZE 1048576       /* Size of lock-log before rotation */
+#define CF_LOCKHORIZON ((time_t)(SECONDS_PER_WEEK * 4))
 
+static char CFLOCK[CF_BUFSIZE] = { 0 };
 static char CFLAST[CF_BUFSIZE] = { 0 };
 static char CFLOG[CF_BUFSIZE] = { 0 };
 
@@ -519,9 +521,9 @@ static bool KillLockHolder(const char *lock)
 
 #endif
 
-static void PromiseRuntimeHash(const Promise *pp, const char *salt, unsigned char digest[EVP_MAX_MD_SIZE + 1], HashMethod type)
+void PromiseRuntimeHash(const Promise *pp, const char *salt, unsigned char digest[EVP_MAX_MD_SIZE + 1], HashMethod type)
 {
-    static const char *PACK_UPIFELAPSED_SALT = "packageuplist";
+    static const char PACK_UPIFELAPSED_SALT[] = "packageuplist";
 
     EVP_MD_CTX context;
     int md_len;
@@ -537,7 +539,7 @@ static void PromiseRuntimeHash(const Promise *pp, const char *salt, unsigned cha
     EVP_DigestInit(&context, md);
 
 // multiple packages (promisers) may share same package_list_update_ifelapsed lock
-    if (!(salt && (strncmp(salt, PACK_UPIFELAPSED_SALT, sizeof(PACK_UPIFELAPSED_SALT) - 1) == 0)))
+    if ( (!salt) || strcmp(salt, PACK_UPIFELAPSED_SALT) )
     {
         EVP_DigestUpdate(&context, pp->promiser, strlen(pp->promiser));
     }
@@ -689,7 +691,7 @@ CfLock AcquireLock(EvalContext *ctx, const char *operand, const char *host, time
     }
 
     PromiseRuntimeHash(pp, operand, digest, CF_DEFAULT_DIGEST);
-    HashPrintSafe(CF_DEFAULT_DIGEST, digest, str_digest);
+    HashPrintSafe(CF_DEFAULT_DIGEST, true, digest, str_digest);
 
 /* As a backup to "done" we need something immune to re-use */
 
@@ -746,8 +748,6 @@ CfLock AcquireLock(EvalContext *ctx, const char *operand, const char *host, time
     Log(LOG_LEVEL_DEBUG, "Log for bundle '%s', '%s'", PromiseGetBundle(pp)->name, cflock);
 
 // Now see if we can get exclusivity to edit the locks
-
-    CFINITSTARTTIME = time(NULL);
 
     WaitForCriticalSection();
 

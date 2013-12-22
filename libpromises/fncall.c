@@ -24,7 +24,7 @@
 
 #include <fncall.h>
 
-#include <env_context.h>
+#include <eval_context.h>
 #include <files_names.h>
 #include <expand.h>
 #include <vars.h>
@@ -174,32 +174,35 @@ FnCall *ExpandFnCall(EvalContext *ctx, const char *ns, const char *scope, FnCall
     return FnCallNew(f->name, ExpandList(ctx, ns, scope, f->args, false));
 }
 
-
-/*******************************************************************/
-
-void FnCallShow(FILE *fout, const char *prefix, const FnCall *fp, const Rlist *args)
+void FnCallWrite(Writer *writer, const FnCall *call)
 {
-    fprintf(fout, "%s %s(", prefix, fp->name);
+    WriterWrite(writer, call->name);
+    WriterWriteChar(writer, '(');
 
-    for (const Rlist *rp = args; rp != NULL; rp = rp->next)
+    for (const Rlist *rp = call->args; rp != NULL; rp = rp->next)
     {
         switch (rp->val.type)
         {
         case RVAL_TYPE_SCALAR:
-            fprintf(fout, "%s,", RlistScalarValue(rp));
+            WriterWrite(writer, RlistScalarValue(rp));
             break;
 
         case RVAL_TYPE_FNCALL:
-            FnCallShow(fout, prefix, RlistFnCallValue(rp), NULL);
+            FnCallWrite(writer, RlistFnCallValue(rp));
             break;
 
         default:
-            fprintf(fout, "(** Unknown argument **)\n");
+            WriterWrite(writer, "(** Unknown argument **)\n");
             break;
+        }
+
+        if (rp->next != NULL)
+        {
+            WriterWriteChar(writer, ',');
         }
     }
 
-    fprintf(fout, ") from %s\n", fp->caller->promiser);
+    WriterWriteChar(writer, ')');
 }
 
 /*******************************************************************/
@@ -261,7 +264,7 @@ FnCallResult FnCallEvaluate(EvalContext *ctx, FnCall *fp, const Promise *caller)
 {
     fp->caller = caller;
 
-    if (!(ctx->eval_options & EVAL_OPTION_EVAL_FUNCTIONS))
+    if (!EvalContextGetEvalOption(ctx, EVAL_OPTION_EVAL_FUNCTIONS))
     {
         Log(LOG_LEVEL_VERBOSE, "Skipping function '%s', because evaluation was turned off in the evaluator",
             fp->name);
@@ -301,6 +304,11 @@ FnCallResult FnCallEvaluate(EvalContext *ctx, FnCall *fp, const Promise *caller)
     Rval cached_rval;
     if ((fp_type->options & FNCALL_OPTION_CACHED) && EvalContextFunctionCacheGet(ctx, fp, expargs, &cached_rval))
     {
+        Writer *w = StringWriter();
+        FnCallWrite(w, fp);
+        Log(LOG_LEVEL_DEBUG, "Using previously cached result for function '%s'", StringWriterData(w));
+        StringWriterClose(w);
+
         return (FnCallResult) { FNCALL_SUCCESS, RvalCopy(cached_rval) };
     }
 
@@ -314,6 +322,11 @@ FnCallResult FnCallEvaluate(EvalContext *ctx, FnCall *fp, const Promise *caller)
 
     if (fp_type->options & FNCALL_OPTION_CACHED)
     {
+        Writer *w = StringWriter();
+        FnCallWrite(w, fp);
+        Log(LOG_LEVEL_VERBOSE, "Caching result for function '%s'", StringWriterData(w));
+        StringWriterClose(w);
+
         EvalContextFunctionCachePut(ctx, fp, expargs, &result.rval);
     }
     DeleteExpArgs(expargs);

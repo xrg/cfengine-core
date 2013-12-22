@@ -27,7 +27,7 @@
 #include <item_lib.h>
 #include <crypto.h>
 #include <files_hashes.h>
-#include <env_context.h>
+#include <eval_context.h>
 #include <lastseen.h>
 #include <conversion.h>
 #include <string_lib.h>
@@ -39,8 +39,10 @@
 #include <misc_lib.h>
 #include <cf-serverd-enterprise-stubs.h>
 #include <audit.h>
+#include <cfnet.h>
 #include <tls_server.h>
 #include <server_common.h>
+#include <connection_info.h>
 
 #include <cf-windows-functions.h>
 
@@ -69,12 +71,12 @@ char CFRUNCOMMAND[CF_BUFSIZE] = { 0 };
 //******************************************************************/
 
 
-static void SpawnConnection(EvalContext *ctx, int sd_reply, char *ipaddr);
+static void SpawnConnection(EvalContext *ctx, char *ipaddr, ConnectionInfo *info);
 static void *HandleConnection(ServerConnectionState *conn);
 static int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn);
 static int VerifyConnection(ServerConnectionState *conn, char buf[CF_BUFSIZE]);
 static int CheckStoreKey(ServerConnectionState *conn, RSA *key);
-static ServerConnectionState *NewConn(EvalContext *ctx, int sd);
+static ServerConnectionState *NewConn(EvalContext *ctx, ConnectionInfo *info);
 static void DeleteConn(ServerConnectionState *conn);
 static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer, int recvlen);
 
@@ -160,26 +162,28 @@ ProtocolCommandClassic GetCommandClassic(char *str)
 
 /****************************************************************************/
 
-void ServerEntryPoint(EvalContext *ctx, int sd_accepted, char *ipaddr)
+void ServerEntryPoint(EvalContext *ctx, char *ipaddr, ConnectionInfo *info)
 {
     char intime[64];
     time_t now;
 
     Log(LOG_LEVEL_VERBOSE,
         "Obtained IP address of '%s' on socket %d from accept",
-        ipaddr, sd_accepted);
+        ipaddr, ConnectionInfoSocket(info));
 
     if ((SV.nonattackerlist) && (!IsMatchItemIn(ctx, SV.nonattackerlist, MapAddress(ipaddr))))
     {
         Log(LOG_LEVEL_ERR, "Not allowing connection from non-authorized IP '%s'", ipaddr);
-        cf_closesocket(sd_accepted);
+        cf_closesocket(ConnectionInfoSocket(info));
+        ConnectionInfoDestroy(&info);
         return;
     }
 
     if (IsMatchItemIn(ctx, SV.attackerlist, MapAddress(ipaddr)))
     {
         Log(LOG_LEVEL_ERR, "Denying connection from non-authorized IP '%s'", ipaddr);
-        cf_closesocket(sd_accepted);
+        cf_closesocket(ConnectionInfoSocket(info));
+        ConnectionInfoDestroy(&info);
         return;
     }
 
@@ -201,7 +205,8 @@ void ServerEntryPoint(EvalContext *ctx, int sd_accepted, char *ipaddr)
         {
             ThreadUnlock(cft_count);
             Log(LOG_LEVEL_ERR, "Denying repeated connection from '%s'", ipaddr);
-            cf_closesocket(sd_accepted);
+            cf_closesocket(ConnectionInfoSocket(info));
+            ConnectionInfoDestroy(&info);
             return;
         }
 
@@ -221,6 +226,7 @@ void ServerEntryPoint(EvalContext *ctx, int sd_accepted, char *ipaddr)
 
     if (!ThreadLock(cft_count))
     {
+        ConnectionInfoDestroy(&info);
         return;
     }
 
@@ -228,10 +234,11 @@ void ServerEntryPoint(EvalContext *ctx, int sd_accepted, char *ipaddr)
 
     if (!ThreadUnlock(cft_count))
     {
-       return;
+        ConnectionInfoDestroy(&info);
+        return;
     }
 
-    SpawnConnection(ctx, sd_accepted, ipaddr);
+    SpawnConnection(ctx, ipaddr, info);
 
 }
 
@@ -282,19 +289,16 @@ void PurgeOldConnections(Item **list, time_t now)
 
 /*********************************************************************/
 
-static void SpawnConnection(EvalContext *ctx, int sd_accepted, char *ipaddr)
+static void SpawnConnection(EvalContext *ctx, char *ipaddr, ConnectionInfo *info)
 {
-    ServerConnectionState *conn;
+    ServerConnectionState *conn = NULL;
     int ret;
     pthread_t tid;
     pthread_attr_t threadattrs;
 
-    if ((conn = NewConn(ctx, sd_accepted)) == NULL)
-    {
-        return;
-    }
-
-    strncpy(conn->ipaddr, ipaddr, CF_MAX_IP_LEN - 1);
+    conn = NewConn(ctx, info);
+    int sd_accepted = ConnectionInfoSocket(info);
+    strlcpy(conn->ipaddr, ipaddr, CF_MAX_IP_LEN );
 
     Log(LOG_LEVEL_VERBOSE, "New connection...(from %s, sd %d)",
         conn->ipaddr, sd_accepted);
@@ -389,7 +393,7 @@ static void *HandleConnection(ServerConnectionState *conn)
 
         Log(LOG_LEVEL_ERR, "Too many threads (>=%d) -- increase server maxconnections?", CFD_MAXPROCESSES);
         snprintf(output, CF_BUFSIZE, "BAD: Server is currently too busy -- increase maxconnections or splaytime?");
-        SendTransaction(&conn->conn_info, output, 0, CF_DONE);
+        SendTransaction(conn->conn_info, output, 0, CF_DONE);
         DeleteConn(conn);
         return NULL;
     }
@@ -400,22 +404,25 @@ static void *HandleConnection(ServerConnectionState *conn)
 
     TRIES = 0;                  /* As long as there is activity, we're not stuck */
 
-    DisableSendDelays(conn->conn_info.sd);
+    DisableSendDelays(ConnectionInfoSocket(conn->conn_info));
 
     struct timeval tv = {
         .tv_sec = CONNTIMEOUT * 20,
     };
-    SetReceiveTimeout(conn->conn_info.sd, &tv);
+    SetReceiveTimeout(ConnectionInfoSocket(conn->conn_info), &tv);
 
-    /* Decide the protocol used. */
-    ret = ServerTLSPeek(&conn->conn_info);
-    if (ret == -1)
+    if (ConnectionInfoConnectionStatus(conn->conn_info) != CF_CONNECTION_ESTABLISHED)
     {
-        DeleteConn(conn);
-        return NULL;
+        /* Decide the protocol used. */
+        ret = ServerTLSPeek(conn->conn_info);
+        if (ret == -1)
+        {
+            DeleteConn(conn);
+            return NULL;
+        }
     }
 
-    switch (conn->conn_info.type)
+    switch (ConnectionInfoProtocolVersion(conn->conn_info))
     {
 
     case CF_PROTOCOL_CLASSIC:
@@ -428,11 +435,28 @@ static void *HandleConnection(ServerConnectionState *conn)
 
     case CF_PROTOCOL_TLS:
     {
-        ret = ServerTLSSessionEstablish(conn);
-        if (ret == -1)
+        if (ConnectionInfoConnectionStatus(conn->conn_info) != CF_CONNECTION_ESTABLISHED)
         {
-            DeleteConn(conn);
-            return NULL;
+            /* New connection */
+            ret = ServerTLSSessionEstablish(conn);
+            if (ret == -1)
+            {
+                DeleteConn(conn);
+                return NULL;
+            }
+        }
+        else
+        {
+            /*
+             * Call collect mode.
+             * Run the session negotiation again since we need to trust the other side.
+             */
+            ret = ServerTLSSessionEstablishCallCollectMode(conn);
+            if (ret == -1)
+            {
+                DeleteConn(conn);
+                return NULL;
+            }
         }
 
         while (BusyWithNewProtocol(conn->ctx, conn))
@@ -443,7 +467,7 @@ static void *HandleConnection(ServerConnectionState *conn)
 
     default:
         UnexpectedError("HandleConnection: ProtocolVersion %d!",
-                        conn->conn_info.type);
+                        ConnectionInfoProtocolVersion(conn->conn_info));
     }
 
     Log(LOG_LEVEL_INFO, "Connection from %s is closed, terminating thread",
@@ -481,7 +505,7 @@ static int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *co
     memset(recvbuffer, 0, CF_BUFSIZE + CF_BUFEXT);
     memset(&get_args, 0, sizeof(get_args));
 
-    received = ReceiveTransaction(&conn->conn_info, recvbuffer, NULL, -1);
+    received = ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1);
     if (received == -1 || received == 0)
     {
         return false;
@@ -536,12 +560,12 @@ static int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *co
         if (!MatchClasses(ctx, conn))
         {
             Log(LOG_LEVEL_INFO, "Server refusal due to failed class/context match");
-            Terminate(&conn->conn_info);
+            Terminate(conn->conn_info);
             return false;
         }
 
         DoExec(ctx, conn, args);
-        Terminate(&conn->conn_info);
+        Terminate(conn->conn_info);
         return false;
 
     case PROTOCOL_COMMAND_VERSION:
@@ -553,7 +577,7 @@ static int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *co
         }
 
         snprintf(conn->output, CF_BUFSIZE, "OK: %s", Version());
-        SendTransaction(&conn->conn_info, conn->output, 0, CF_DONE);
+        SendTransaction(conn->conn_info, conn->output, 0, CF_DONE);
         return conn->id_verified;
 
     case PROTOCOL_COMMAND_AUTH_CLEAR:
@@ -821,9 +845,9 @@ static int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *co
 
         if ((tloc = time((time_t *) NULL)) == -1)
         {
-            sprintf(conn->output, "Couldn't read system clock\n");
+            strcpy(conn->output, "Couldn't read system clock\n");
             Log(LOG_LEVEL_INFO, "Couldn't read system clock. (time: %s)", GetErrorStr());
-            SendTransaction(&conn->conn_info, "BAD: clocks out of synch", 0, CF_DONE);
+            SendTransaction(conn->conn_info, "BAD: clocks out of synch", 0, CF_DONE);
             return true;
         }
 
@@ -840,7 +864,7 @@ static int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *co
         {
             snprintf(conn->output, CF_BUFSIZE - 1, "BAD: Clocks are too far unsynchronized %ld/%ld\n", (long) tloc,
                      (long) trem);
-            SendTransaction(&conn->conn_info, conn->output, 0, CF_DONE);
+            SendTransaction(conn->conn_info, conn->output, 0, CF_DONE);
             return true;
         }
         else
@@ -1060,20 +1084,11 @@ static int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *co
         ProgrammingError("Unexpected protocol command");
     }
 
-    sprintf(sendbuffer, "BAD: Request denied\n");
-    SendTransaction(&conn->conn_info, sendbuffer, 0, CF_DONE);
+    strcpy(sendbuffer, "BAD: Request denied\n");
+    SendTransaction(conn->conn_info, sendbuffer, 0, CF_DONE);
     Log(LOG_LEVEL_INFO, "Closing connection, due to request: '%s'", recvbuffer);
     return false;
 }
-
-/**************************************************************/
-/* Level 4                                                    */
-/**************************************************************/
-
-/******************************************************************/
-
-/**************************************************************/
-/*********************************************************************/
 
 static int VerifyConnection(ServerConnectionState *conn, char buf[CF_BUFSIZE])
  /* Try reverse DNS lookup
@@ -1081,7 +1096,6 @@ static int VerifyConnection(ServerConnectionState *conn, char buf[CF_BUFSIZE])
 {
     char ipstring[CF_MAXVARSIZE], fqname[CF_MAXVARSIZE], username[CF_MAXVARSIZE];
     char dns_assert[CF_MAXVARSIZE], ip_assert[CF_MAXVARSIZE];
-    int matched = false;
 
     Log(LOG_LEVEL_DEBUG, "Connecting host identifies itself as '%s'", buf);
 
@@ -1097,128 +1111,35 @@ static int VerifyConnection(ServerConnectionState *conn, char buf[CF_BUFSIZE])
     strlcpy(dns_assert, fqname, CF_MAXVARSIZE);
     ToLowerStrInplace(dns_assert);
 
-    strncpy(ip_assert, ipstring, CF_MAXVARSIZE - 1);
+    strlcpy(ip_assert, ipstring, CF_MAXVARSIZE );
 
 /* It only makes sense to check DNS by reverse lookup if the key had to be
    accepted on trust. Once we have a positive key ID, the IP address is
    irrelevant fr authentication...
    We can save a lot of time by not looking this up ... */
 
-    if ((conn->trust == false) ||
-        (IsMatchItemIn(conn->ctx, SV.skipverify, MapAddress(conn->ipaddr))))
-    {
-        Log(LOG_LEVEL_VERBOSE,
-              "Allowing %s to connect without (re)checking ID\n", ip_assert);
-        Log(LOG_LEVEL_VERBOSE,
-              "Non-verified Host ID is %s (Using skipverify)\n", dns_assert);
-        strncpy(conn->hostname, dns_assert, CF_MAXVARSIZE);
-        Log(LOG_LEVEL_VERBOSE,
-              "Non-verified User ID seems to be %s (Using skipverify)\n",
-              username);
-        strncpy(conn->username, username, CF_MAXVARSIZE);
+    Log(LOG_LEVEL_VERBOSE,
+        "Allowing %s to connect without (re)checking ID\n", ip_assert);
+    Log(LOG_LEVEL_VERBOSE,
+        "Non-verified Host ID is %s\n", dns_assert);
+    strlcpy(conn->hostname, dns_assert, CF_MAXVARSIZE);
+    Log(LOG_LEVEL_VERBOSE,
+        "Non-verified User ID seems to be %s\n",
+        username);
+    strlcpy(conn->username, username, CF_MAXVARSIZE);
 
 #ifdef __MINGW32__            /* NT uses security identifier instead of uid */
 
-        if (!NovaWin_UserNameToSid(username, (SID *) conn->sid,
-                                   CF_MAXSIDSIZE, false))
-        {
-            memset(conn->sid, 0, CF_MAXSIDSIZE); /* is invalid sid - discarded */
-        }
+    if (!NovaWin_UserNameToSid(username, (SID *) conn->sid,
+                               CF_MAXSIDSIZE, false))
+    {
+        memset(conn->sid, 0, CF_MAXSIDSIZE); /* is invalid sid - discarded */
+    }
 
 #else /* !__MINGW32__ */
 
-        struct passwd *pw;
-        if ((pw = getpwnam(username)) == NULL)    /* Keep this inside mutex */
-        {
-            conn->uid = -2;
-        }
-        else
-        {
-            conn->uid = pw->pw_uid;
-        }
-
-#endif /* !__MINGW32__ */
-        return true;
-    }
-
-    if (strcmp(ip_assert, MapAddress(conn->ipaddr)) != 0)
-    {
-        Log(LOG_LEVEL_VERBOSE,
-              "IP address mismatch between client's assertion (%s) "
-              "and socket (%s) - untrustworthy connection\n",
-              ip_assert, conn->ipaddr);
-        return false;
-    }
-
-    if (strlen(dns_assert) == 0)
-    {
-        Log(LOG_LEVEL_VERBOSE,
-              "DNS asserted name was empty - untrustworthy connection\n");
-        return false;
-    }
-
-    if (strcmp(dns_assert, "skipident") == 0)
-    {
-        Log(LOG_LEVEL_VERBOSE,
-              "DNS asserted name was withheld before key exchange"
-              " - untrustworthy connection\n");
-        return false;
-    }
-
-    Log(LOG_LEVEL_VERBOSE,
-          "Socket caller address appears honest (%s matches %s)\n",
-          ip_assert, MapAddress(conn->ipaddr));
-
-    Log(LOG_LEVEL_VERBOSE, "Socket originates from %s=%s",
-          ip_assert, dns_assert);
-
-    Log(LOG_LEVEL_DEBUG, "Attempting to verify honesty by looking up hostname '%s'",
-            dns_assert);
-
-/* Do a reverse DNS lookup, like tcp wrappers to see if hostname matches IP */
-    struct addrinfo *response, *ap;
-    struct addrinfo query = {
-        .ai_family = AF_UNSPEC,
-        .ai_socktype = SOCK_STREAM
-    };
-    int err;
-
-    err = getaddrinfo(dns_assert, NULL, &query, &response);
-    if (err != 0)
-    {
-        Log(LOG_LEVEL_ERR,
-              "VerifyConnection: Unable to lookup (%s): %s",
-              dns_assert, gai_strerror(err));
-    }
-    else
-    {
-        for (ap = response; ap != NULL; ap = ap->ai_next)
-        {
-            /* No lookup, just convert ai_addr to string. */
-            char txtaddr[CF_MAX_IP_LEN] = "";
-            getnameinfo(ap->ai_addr, ap->ai_addrlen,
-                        txtaddr, sizeof(txtaddr),
-                        NULL, 0, NI_NUMERICHOST);
-
-            if (strcmp(MapAddress(conn->ipaddr), txtaddr) == 0)
-            {
-                Log(LOG_LEVEL_DEBUG, "Found match");
-                matched = true;
-            }
-        }
-        freeaddrinfo(response);
-    }
-
-
-# ifdef __MINGW32__                   /* NT uses security identifier instead of uid */
-    if (!NovaWin_UserNameToSid(username, (SID *) conn->sid, CF_MAXSIDSIZE, false))
-    {
-        memset(conn->sid, 0, CF_MAXSIDSIZE);    /* is invalid sid - discarded */
-    }
-
-# else/* !__MINGW32__ */
     struct passwd *pw;
-    if ((pw = getpwnam(username)) == NULL)      /* Keep this inside mutex */
+    if ((pw = getpwnam(username)) == NULL)    /* Keep this inside mutex */
     {
         conn->uid = -2;
     }
@@ -1226,40 +1147,10 @@ static int VerifyConnection(ServerConnectionState *conn, char buf[CF_BUFSIZE])
     {
         conn->uid = pw->pw_uid;
     }
-# endif/* !__MINGW32__ */
 
-    if (!matched)
-    {
-        Log(LOG_LEVEL_INFO, "Failed on DNS reverse lookup of '%s'. (gethostbyname: %s)",
-            dns_assert, GetErrorStr());
-        Log(LOG_LEVEL_INFO, "Client sent: %s", buf);
-        return false;
-    }
-
-    Log(LOG_LEVEL_VERBOSE, "Host ID is %s", dns_assert);
-    strncpy(conn->hostname, dns_assert, CF_MAXVARSIZE - 1);
-
-    Log(LOG_LEVEL_VERBOSE, "User ID seems to be %s", username);
-    strncpy(conn->username, username, CF_MAXVARSIZE - 1);
-
+#endif /* !__MINGW32__ */
     return true;
 }
-
-/**************************************************************/
-
-/**************************************************************/
-
-/**************************************************************/
-
-/**************************************************************/
-
-
-/**************************************************************/
-
-
-/**************************************************************/
-
-/**************************************************************/
 
 static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer, int recvlen)
 {
@@ -1371,7 +1262,7 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
     newkey = RSA_new();
 
 /* proposition C2 */
-    if ((len_n = ReceiveTransaction(&conn->conn_info, recvbuffer, NULL, -1)) == -1)
+    if ((len_n = ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1)) == -1)
     {
         Log(LOG_LEVEL_INFO, "Protocol error 1 in RSA authentation from IP %s", conn->hostname);
         RSA_free(newkey);
@@ -1395,7 +1286,7 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
 
 /* proposition C3 */
 
-    if ((len_e = ReceiveTransaction(&conn->conn_info, recvbuffer, NULL, -1)) == -1)
+    if ((len_e = ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1)) == -1)
     {
         Log(LOG_LEVEL_INFO, "Protocol error 3 in RSA authentation from IP %s", conn->hostname);
         RSA_free(newkey);
@@ -1418,30 +1309,25 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
     }
 
     /* Compute and store hash of the client's public key. */
-    HashPubKey(newkey, conn->conn_info.remote_keyhash, CF_DEFAULT_DIGEST);
-    HashPrintSafe(CF_DEFAULT_DIGEST, conn->conn_info.remote_keyhash,
-                  conn->conn_info.remote_keyhash_str);
-
+    Key *key = KeyNew(newkey, CF_DEFAULT_DIGEST);
+    ConnectionInfoSetKey(conn->conn_info, key);
     Log(LOG_LEVEL_VERBOSE, "Public key identity of host '%s' is '%s'",
-        conn->ipaddr, conn->conn_info.remote_keyhash_str);
+        conn->ipaddr, KeyPrintableHash(ConnectionInfoKey(conn->conn_info)));
 
-    LastSaw1(conn->ipaddr, conn->conn_info.remote_keyhash_str,
+    LastSaw1(conn->ipaddr, KeyPrintableHash(ConnectionInfoKey(conn->conn_info)),
              LAST_SEEN_ROLE_ACCEPT);
 
-    if (!CheckStoreKey(conn, newkey))   /* conceals proposition S1 */
+    if (!CheckStoreKey(conn, newkey))
     {
-        if (!conn->trust)
-        {
-            RSA_free(newkey);
-            return false;
-        }
+        KeyDestroy(&key);
+        return false;
     }
 
 /* Reply with digest of original challenge */
 
 /* proposition S2 */
 
-    SendTransaction(&conn->conn_info, digest, digestLen, CF_DONE);
+    SendTransaction(conn->conn_info, digest, digestLen, CF_DONE);
 
 /* Send counter challenge to be sure this is a live session */
 
@@ -1449,7 +1335,7 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
     if (counter_challenge == NULL)
     {
         Log(LOG_LEVEL_ERR, "Cannot allocate BIGNUM structure for counter challenge");
-        RSA_free(newkey);
+        KeyDestroy(&key);
         return false;
     }
 
@@ -1468,13 +1354,13 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
     {
         err = ERR_get_error();
         Log(LOG_LEVEL_ERR, "Public encryption failed = %s", ERR_reason_error_string(err));
-        RSA_free(newkey);
+        KeyDestroy(&key);
         free(out);
         return false;
     }
 
 /* proposition S3 */
-    SendTransaction(&conn->conn_info, out, encrypted_len, CF_DONE);
+    SendTransaction(conn->conn_info, out, encrypted_len, CF_DONE);
 
 /* if the client doesn't have our public key, send it */
 
@@ -1483,12 +1369,12 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
         /* proposition S4  - conditional */
         memset(in, 0, CF_BUFSIZE);
         len_n = BN_bn2mpi(PUBKEY->n, in);
-        SendTransaction(&conn->conn_info, in, len_n, CF_DONE);
+        SendTransaction(conn->conn_info, in, len_n, CF_DONE);
 
         /* proposition S5  - conditional */
         memset(in, 0, CF_BUFSIZE);
         len_e = BN_bn2mpi(PUBKEY->e, in);
-        SendTransaction(&conn->conn_info, in, len_e, CF_DONE);
+        SendTransaction(conn->conn_info, in, len_e, CF_DONE);
     }
 
 /* Receive reply to counter_challenge */
@@ -1496,31 +1382,23 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
 /* proposition C4 */
     memset(in, 0, CF_BUFSIZE);
 
-    if (ReceiveTransaction(&conn->conn_info, in, NULL, -1) == -1)
+    if (ReceiveTransaction(conn->conn_info, in, NULL, -1) == -1)
     {
         BN_free(counter_challenge);
         free(out);
-        RSA_free(newkey);
+        KeyDestroy(&key);
         return false;
     }
 
     if (HashesMatch(digest, in, digestType))    /* replay / piggy in the middle attack ? */
     {
-        if (!conn->trust)
-        {
-            Log(LOG_LEVEL_VERBOSE, "Strong authentication of client %s/%s achieved", conn->hostname, conn->ipaddr);
-        }
-        else
-        {
-            Log(LOG_LEVEL_VERBOSE, "Weak authentication of trusted client %s/%s (key accepted on trust).",
-                  conn->hostname, conn->ipaddr);
-        }
+        Log(LOG_LEVEL_VERBOSE, "Authentication of client %s/%s achieved", conn->hostname, conn->ipaddr);
     }
     else
     {
         BN_free(counter_challenge);
         free(out);
-        RSA_free(newkey);
+        KeyDestroy(&key);
         Log(LOG_LEVEL_INFO, "Challenge response from client %s was incorrect - ID false?", conn->ipaddr);
         return false;
     }
@@ -1531,11 +1409,11 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
 
     memset(in, 0, CF_BUFSIZE);
 
-    if ((keylen = ReceiveTransaction(&conn->conn_info, in, NULL, -1)) == -1)
+    if ((keylen = ReceiveTransaction(conn->conn_info, in, NULL, -1)) == -1)
     {
         BN_free(counter_challenge);
         free(out);
-        RSA_free(newkey);
+        KeyDestroy(&key);
         return false;
     }
 
@@ -1543,7 +1421,7 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
     {
         BN_free(counter_challenge);
         free(out);
-        RSA_free(newkey);
+        KeyDestroy(&key);
         Log(LOG_LEVEL_INFO, "Session key length received from %s is too long", conn->ipaddr);
         return false;
     }
@@ -1576,7 +1454,6 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
 
     BN_free(counter_challenge);
     free(out);
-    RSA_free(newkey);
     conn->rsa_auth = true;
     return true;
 }
@@ -1595,36 +1472,23 @@ void DeleteAuthList(Auth *ap)
     }
 }
 
-/***************************************************************/
-/* Level 5                                                     */
-/***************************************************************/
-
-/***************************************************************/
-
-/***************************************************************/
-
-/***************************************************************/
-
 static int CheckStoreKey(ServerConnectionState *conn, RSA *key)
 {
     RSA *savedkey;
     char udigest[CF_MAXVARSIZE];
 
     snprintf(udigest, CF_MAXVARSIZE - 1, "%s",
-             conn->conn_info.remote_keyhash_str);
+             KeyPrintableHash(ConnectionInfoKey(conn->conn_info)));
 
     if ((savedkey = HavePublicKey(conn->username, MapAddress(conn->ipaddr), udigest)))
     {
         Log(LOG_LEVEL_VERBOSE, "A public key was already known from %s/%s - no trust required", conn->hostname,
               conn->ipaddr);
 
-        Log(LOG_LEVEL_VERBOSE, "Adding IP %s to SkipVerify - no need to check this if we have a key", conn->ipaddr);
-        IdempPrependItem(&SV.skipverify, MapAddress(conn->ipaddr), NULL);
-
         if ((BN_cmp(savedkey->e, key->e) == 0) && (BN_cmp(savedkey->n, key->n) == 0))
         {
             Log(LOG_LEVEL_VERBOSE, "The public key identity was confirmed as %s@%s", conn->username, conn->hostname);
-            SendTransaction(&conn->conn_info, "OK: key accepted", 0, CF_DONE);
+            SendTransaction(conn->conn_info, "OK: key accepted", 0, CF_DONE);
             RSA_free(savedkey);
             return true;
         }
@@ -1637,15 +1501,14 @@ static int CheckStoreKey(ServerConnectionState *conn, RSA *key)
     if ((SV.trustkeylist != NULL) && (IsMatchItemIn(conn->ctx, SV.trustkeylist, MapAddress(conn->ipaddr))))
     {
         Log(LOG_LEVEL_VERBOSE, "Host %s/%s was found in the list of hosts to trust", conn->hostname, conn->ipaddr);
-        conn->trust = true;
-        SendTransaction(&conn->conn_info, "OK: unknown key was accepted on trust", 0, CF_DONE);
+        SendTransaction(conn->conn_info, "OK: unknown key was accepted on trust", 0, CF_DONE);
         SavePublicKey(conn->username, udigest, key);
         return true;
     }
     else
     {
         Log(LOG_LEVEL_VERBOSE, "No previous key found, and unable to accept this one on trust");
-        SendTransaction(&conn->conn_info, "BAD: key could not be accepted on trust", 0, CF_DONE);
+        SendTransaction(conn->conn_info, "BAD: key could not be accepted on trust", 0, CF_DONE);
         return false;
     }
 }
@@ -1654,31 +1517,22 @@ static int CheckStoreKey(ServerConnectionState *conn, RSA *key)
 /* Toolkit/Class: conn                                         */
 /***************************************************************/
 
-static ServerConnectionState *NewConn(EvalContext *ctx, int sd)
+static ServerConnectionState *NewConn(EvalContext *ctx, ConnectionInfo *info)
 {
-    ServerConnectionState *conn;
+    ServerConnectionState *conn = NULL;
     struct sockaddr addr;
     socklen_t size = sizeof(addr);
 
-    if (getsockname(sd, &addr, &size) == -1)
+    if (getsockname(ConnectionInfoSocket(info), &addr, &size) == -1)
     {
        return NULL;
     }
 
     conn = xcalloc(1, sizeof(*conn));
-
-    /* Always start with UNDEFINED protocol. Its type will be determined by
-     * peeking the TCP stream in ServerTLSTry(). If we forget to peek, there
-     * are multiple asserts in the code that will catch it. */
-    conn->conn_info.type = CF_PROTOCOL_UNDEFINED;
-
     conn->ctx = ctx;
-    conn->conn_info.sd = sd;
-    conn->conn_info.ssl = NULL;
-    conn->conn_info.remote_key = NULL;
+    conn->conn_info = info;
     conn->id_verified = false;
     conn->rsa_auth = false;
-    conn->trust = false;
     conn->hostname[0] = '\0';
     conn->ipaddr[0] = '\0';
     conn->username[0] = '\0';
@@ -1686,7 +1540,7 @@ static ServerConnectionState *NewConn(EvalContext *ctx, int sd)
     conn->encryption_type = 'c';
     conn->maproot = false;      /* Only public files (chmod o+r) accessible */
 
-    Log(LOG_LEVEL_DEBUG, "New socket %d", sd);
+    Log(LOG_LEVEL_DEBUG, "New socket %d", ConnectionInfoSocket(info));
 
     return conn;
 }
@@ -1697,24 +1551,8 @@ static void DeleteConn(ServerConnectionState *conn)
 {
     /* Sockets should have already been closed by the client, so we are just
      * making sure here in case an error occured. */
-    if (conn->conn_info.type == CF_PROTOCOL_TLS)
-    {
-        if (conn->conn_info.ssl != NULL)
-        {
-            SSL_shutdown(conn->conn_info.ssl);
-            SSL_free(conn->conn_info.ssl);
-        }
-    }
-
-    cf_closesocket(conn->conn_info.sd);
-
+    ConnectionInfoDestroy(&conn->conn_info);
     free(conn->session_key);
-
-    if (conn->conn_info.remote_key != NULL)
-    {
-        RSA_free(conn->conn_info.remote_key);
-    }
-
     if (conn->ipaddr != NULL)
     {
         if (!ThreadLock(cft_count))

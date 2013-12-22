@@ -163,7 +163,7 @@ double JsonPrimitiveGetAsReal(const JsonElement *primitive);
 const char *JsonGetPropertyAsString(const JsonElement *element);
 
 /**
-  @brief Pretty-print a JsonElement recurively into a Writer.
+  @brief Pretty-print a JsonElement recursively into a Writer.
   @see Writer
   @param writer [in] The Writer object to use as a buffer.
   @param element [in] The JSON element to print.
@@ -171,6 +171,8 @@ const char *JsonGetPropertyAsString(const JsonElement *element);
   function to be called recursively. Clients will normally want to set this to 0.
   */
 void JsonWrite(Writer *writer, JsonElement *element, size_t indent_level);
+
+void JsonWriteCompact(Writer *w, JsonElement *element);
 
 /**
   @brief Append a string field to an object.
@@ -347,6 +349,15 @@ JsonElement *JsonArrayGet(JsonElement *array, size_t index);
   @returns See JsonParseError and JsonParseErrorToString
   */
 JsonParseError JsonParse(const char **data, JsonElement **json_out);
+
+/**
+ * @brief Convenience function to parse JSON from a file
+ * @param path Path to the file
+ * @param size_max Maximum size to read in memory
+ * @param json_out Resulting JSON object
+ * @return See JsonParseError and JsonParseErrorToString
+ */
+JsonParseError JsonParseFile(const char *path, size_t size_max, JsonElement **json_out);
 
 const char* JsonParseErrorToString(JsonParseError error);
 

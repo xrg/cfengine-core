@@ -215,15 +215,8 @@ int ListCopy(List *origin, List **destination)
      * We do not copy iterators.
      */
     (*destination)->iterator = NULL;
-    /*
-     * We have a copy function, we can perform a shallow copy.
-     */
-    int result = RefCountAttach(origin->ref_count, (*destination));
-    if (result < 0)
-    {
-        free (*destination);
-        return -1;
-    }
+    /* We have a copy function, we can perform a shallow copy. */
+    RefCountAttach(origin->ref_count, (*destination));
     (*destination)->ref_count = origin->ref_count;
     return 0;
 }
@@ -375,6 +368,7 @@ int ListRemove(List *list, void *payload)
     /*
      * This is nearly impossible, so we will only assert it.
      */
+    assert(node);
     assert(found == 1);
     /*
      * Before deleting the node we have to update the mutable iterator.
@@ -451,11 +445,7 @@ int ListRemove(List *list, void *payload)
 // Number of elements on the list
 int ListCount(const List *list)
 {
-    if (!list)
-    {
-        return -1;
-    }
-    return list->node_count;
+    return list ? list->node_count : -1;
 }
 
 /*
@@ -833,26 +823,10 @@ int ListMutableIteratorAppend(ListMutableIterator *iterator, void *payload)
 
 bool ListMutableIteratorHasNext(const ListMutableIterator *iterator)
 {
-    if (!iterator)
-    {
-        return false;
-    }
-    if (iterator->current->next)
-    {
-        return true;
-    }
-    return false;
+    return iterator && iterator->current->next;
 }
 
 bool ListMutableIteratorHasPrevious(const ListMutableIterator *iterator)
 {
-    if (!iterator)
-    {
-        return false;
-    }
-    if (iterator->current->previous)
-    {
-        return true;
-    }
-    return false;
+    return iterator && iterator->current->previous;
 }

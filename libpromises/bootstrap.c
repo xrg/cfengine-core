@@ -24,7 +24,7 @@
 
 #include <bootstrap.h>
 
-#include <env_context.h>
+#include <eval_context.h>
 #include <files_names.h>
 #include <scope.h>
 #include <files_interfaces.h>
@@ -110,16 +110,27 @@ bool WriteAmPolicyHubFile(const char *workdir, bool am_policy_hub)
     return true;
 }
 
+/* NULL is an acceptable value for new_policy_server. Could happen when an
+ * already bootstrapped server re-parses its policies, and the
+ * policy_server.dat file has been removed. Then this function will be called
+ * with NULL as new_policy_server, and cf-serverd will keep running even
+ * without a policy server set." */
 void SetPolicyServer(EvalContext *ctx, const char *new_policy_server)
 {
-    assert(new_policy_server != NULL);
-
     if (new_policy_server)
     {
         snprintf(POLICY_SERVER, CF_MAX_IP_LEN, "%s", new_policy_server);
-        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_SYS, "policy_hub", new_policy_server, DATA_TYPE_STRING);
+        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_SYS, "policy_hub", new_policy_server, DATA_TYPE_STRING, "source=bootstrap");
     }
+    else
+    {
+        strcpy(POLICY_SERVER, "");
+        EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_SYS, "policy_hub");
+    }
+}
 
+void UpdateLastPolicyUpdateTime(EvalContext *ctx)
+{
     // Get the timestamp on policy update
     struct stat sb;
     {
@@ -136,7 +147,7 @@ void SetPolicyServer(EvalContext *ctx, const char *new_policy_server)
     char timebuf[26];
     cf_strtimestamp_local(sb.st_mtime, timebuf);
     
-    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_SYS, "last_policy_update", timebuf, DATA_TYPE_STRING);
+    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_SYS, "last_policy_update", timebuf, DATA_TYPE_STRING, "source=agent");
 }
 
 static char *PolicyServerFilename(const char *workdir)
@@ -391,7 +402,7 @@ bool WriteBuiltinFailsafePolicyToPath(const char *filename)
             "       Please check\n"
             "       * cf-serverd is running on $(sys.policy_hub)\n"
             "       * network connectivity to $(sys.policy_hub) on port 5308\n"
-            "       * masterfiles 'body server control' - in particular allowconnects, trustkeysfrom and skipverify\n"
+            "       * masterfiles 'body server control' - in particular allowconnects, trustkeysfrom\n"
             "       * masterfiles 'bundle server' -> access: -> masterfiles -> admit/deny\n"
             "       It is often useful to restart cf-serverd in verbose mode (cf-serverd -v) on $(sys.policy_hub) to diagnose connection issues.\n"
             "       When updating masterfiles, wait (usually 5 minutes) for files to propagate to inputs on $(sys.policy_hub) before retrying.\"\n"

@@ -37,7 +37,7 @@
 #include <nfs.h>
 #include <misc_lib.h>
 #include <rlist.h>
-#include <env_context.h>
+#include <eval_context.h>
 #include <timeout.h>
 
 /* seconds */
@@ -324,7 +324,7 @@ void DeleteMountInfo(Seq *list)
 
 /*******************************************************************/
 
-int VerifyInFstab(EvalContext *ctx, char *name, Attributes a, Promise *pp, PromiseResult *result)
+int VerifyInFstab(EvalContext *ctx, char *name, Attributes a, const Promise *pp, PromiseResult *result)
 /* Ensure filesystem IS in fstab, and return no of changes */
 {
     char fstab[CF_BUFSIZE];
@@ -399,7 +399,7 @@ int VerifyInFstab(EvalContext *ctx, char *name, Attributes a, Promise *pp, Promi
 
 /*******************************************************************/
 
-int VerifyNotInFstab(EvalContext *ctx, char *name, Attributes a, Promise *pp, PromiseResult *result)
+int VerifyNotInFstab(EvalContext *ctx, char *name, Attributes a, const Promise *pp, PromiseResult *result)
 /* Ensure filesystem is NOT in fstab, and return no of changes */
 {
     char regex[CF_BUFSIZE];
@@ -483,10 +483,12 @@ int VerifyNotInFstab(EvalContext *ctx, char *name, Attributes a, Promise *pp, Pr
 
             return 0;       /* ignore internal editing for aix , always returns 0 changes */
 #else
+            Item* next;
             snprintf(regex, CF_BUFSIZE, ".*[\\s]+%s[\\s]+.*", mountpt);
 
-            for (ip = FSTABLIST; ip != NULL; ip = ip->next)
+            for (ip = FSTABLIST; ip != NULL; ip = next)
             {
+                next = ip->next;
                 if (FullTextMatch(ctx, regex, ip->name))
                 {
                     cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_CHANGE, pp, a, "Deleting file system mounted on '%s'", host);
@@ -510,7 +512,7 @@ int VerifyNotInFstab(EvalContext *ctx, char *name, Attributes a, Promise *pp, Pr
 
 /*******************************************************************/
 
-PromiseResult VerifyMount(EvalContext *ctx, char *name, Attributes a, Promise *pp)
+PromiseResult VerifyMount(EvalContext *ctx, char *name, Attributes a, const Promise *pp)
 {
     char comm[CF_BUFSIZE], line[CF_BUFSIZE];
     FILE *pfp;
@@ -572,7 +574,7 @@ PromiseResult VerifyMount(EvalContext *ctx, char *name, Attributes a, Promise *p
 
 /*******************************************************************/
 
-PromiseResult VerifyUnmount(EvalContext *ctx, char *name, Attributes a, Promise *pp)
+PromiseResult VerifyUnmount(EvalContext *ctx, char *name, Attributes a, const Promise *pp)
 {
     char comm[CF_BUFSIZE], line[CF_BUFSIZE];
     FILE *pfp;

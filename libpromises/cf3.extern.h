@@ -33,13 +33,8 @@ extern pid_t ALARM_PID;
 extern RSA *PRIVKEY, *PUBKEY;
 extern char BINDINTERFACE[CF_BUFSIZE];
 
-extern Item *IPADDRESSES;
-
-extern char STR_CFENGINEPORT[16];
-extern unsigned short SHORT_CFENGINEPORT;
+extern int CFENGINE_PORT;
 extern time_t CONNTIMEOUT;
-
-extern char CFLOCK[CF_BUFSIZE];
 
 extern char CFWORKDIR[CF_BUFSIZE];
 
@@ -51,7 +46,6 @@ extern char VSHIFT[];
 extern const char *CLASSTEXT[];
 
 extern time_t CFSTARTTIME;
-extern time_t CFINITSTARTTIME;
 
 extern struct utsname VSYSNAME;
 extern char VIPADDRESS[CF_MAX_IP_LEN];
@@ -82,14 +76,12 @@ extern HashMethod CF_DEFAULT_DIGEST;
 extern int CF_DEFAULT_DIGEST_LEN;
 
 extern int CF_PERSISTENCE;
-extern int LOOKUP;
 
 extern const char *CF_AGENTTYPES[];
 
 extern int CFA_MAXTHREADS;
 extern AgentType THIS_AGENT_TYPE;
 extern int SHOWREPORTS;
-#define CF_LOCKHORIZON ((time_t)(SECONDS_PER_WEEK * 4))
 extern int LASTSEENEXPIREAFTER;
 extern char *DEFAULT_COPYTYPE;
 extern Item *PROCESSTABLE;

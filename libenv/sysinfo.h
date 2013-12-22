@@ -27,16 +27,8 @@
 
 #include <cf3.defs.h>
 
-void DiscoverVersion(EvalContext *ctx);
+void DetectEnvironment(EvalContext *ctx);
 
-void GetNameInfo3(EvalContext *ctx, AgentType agent_type);
-void Get3Environment(EvalContext *ctx, AgentType agent_type);
-void BuiltinClasses(EvalContext *ctx);
-void OSClasses(EvalContext *ctx);
-void DetectDomainName(EvalContext *ctx, const char *orig_nodename);
-
-void CreateHardClassesFromCanonification(EvalContext *ctx, const char *canonified);
-
-int GetUptimeMinutes(time_t now);
+void CreateHardClassesFromCanonification(EvalContext *ctx, const char *canonified, char *tags);
 
 #endif

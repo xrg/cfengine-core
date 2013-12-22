@@ -26,7 +26,7 @@
 
 #include <actuator.h>
 #include <processes_select.h>
-#include <env_context.h>
+#include <eval_context.h>
 #include <promises.h>
 #include <class.h>
 #include <vars.h>
@@ -42,16 +42,14 @@
 #include <scope.h>
 #include <ornaments.h>
 
-static PromiseResult VerifyProcesses(EvalContext *ctx, Attributes a, Promise *pp);
-static bool ProcessSanityChecks(Attributes a, Promise *pp);
-static PromiseResult VerifyProcessOp(EvalContext *ctx, Item *procdata, Attributes a, Promise *pp);
+static PromiseResult VerifyProcesses(EvalContext *ctx, Attributes a, const Promise *pp);
+static bool ProcessSanityChecks(Attributes a, const Promise *pp);
+static PromiseResult VerifyProcessOp(EvalContext *ctx, Item *procdata, Attributes a, const Promise *pp);
 static int FindPidMatches(EvalContext *ctx, Item *procdata, Item **killlist, Attributes a, const char *promiser);
 
-PromiseResult VerifyProcessesPromise(EvalContext *ctx, Promise *pp)
+PromiseResult VerifyProcessesPromise(EvalContext *ctx, const Promise *pp)
 {
-    Attributes a = { {0} };
-
-    a = GetProcessAttributes(ctx, pp);
+    Attributes a = GetProcessAttributes(ctx, pp);
     ProcessSanityChecks(a, pp);
 
     return VerifyProcesses(ctx, a, pp);
@@ -61,7 +59,7 @@ PromiseResult VerifyProcessesPromise(EvalContext *ctx, Promise *pp)
 /* Level                                                                     */
 /*****************************************************************************/
 
-static bool ProcessSanityChecks(Attributes a, Promise *pp)
+static bool ProcessSanityChecks(Attributes a, const Promise *pp)
 {
     int promised_zero, ret = true;
 
@@ -105,7 +103,7 @@ static bool ProcessSanityChecks(Attributes a, Promise *pp)
 
 /*****************************************************************************/
 
-static PromiseResult VerifyProcesses(EvalContext *ctx, Attributes a, Promise *pp)
+static PromiseResult VerifyProcesses(EvalContext *ctx, Attributes a, const Promise *pp)
 {
     CfLock thislock;
     char lockname[CF_BUFSIZE];
@@ -120,13 +118,12 @@ static PromiseResult VerifyProcesses(EvalContext *ctx, Attributes a, Promise *pp
     }
 
     thislock = AcquireLock(ctx, lockname, VUQNAME, CFSTARTTIME, a.transaction, pp, false);
-
     if (thislock.lock == NULL)
     {
-        return PROMISE_RESULT_NOOP;
+        return PROMISE_RESULT_SKIPPED;
     }
 
-    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", pp->promiser, DATA_TYPE_STRING);
+    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", pp->promiser, DATA_TYPE_STRING, "source=promise");
     PromiseBanner(pp);
     PromiseResult result = VerifyProcessOp(ctx, PROCESSTABLE, a, pp);
     EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser");
@@ -136,7 +133,7 @@ static PromiseResult VerifyProcesses(EvalContext *ctx, Attributes a, Promise *pp
     return result;
 }
 
-static PromiseResult VerifyProcessOp(EvalContext *ctx, Item *procdata, Attributes a, Promise *pp)
+static PromiseResult VerifyProcessOp(EvalContext *ctx, Item *procdata, Attributes a, const Promise *pp)
 {
     bool do_signals = true;
     int out_of_range;
@@ -160,7 +157,7 @@ static PromiseResult VerifyProcessOp(EvalContext *ctx, Item *procdata, Attribute
                 ClassRef ref = ClassRefParse(RlistScalarValue(rp));
                 if (!IsDefinedClass(ctx, ref.name, ref.ns))
                 {
-                    EvalContextClassPut(ctx, PromiseGetNamespace(pp), RlistScalarValue(rp), true, CONTEXT_SCOPE_NAMESPACE);
+                    EvalContextClassPut(ctx, PromiseGetNamespace(pp), RlistScalarValue(rp), true, CONTEXT_SCOPE_NAMESPACE, "source=promise");
                 }
                 ClassRefDestroy(ref);
             }
@@ -173,7 +170,7 @@ static PromiseResult VerifyProcessOp(EvalContext *ctx, Item *procdata, Attribute
                 ClassRef ref = ClassRefParse(RlistScalarValue(rp));
                 if (!IsDefinedClass(ctx, ref.name, ref.ns))
                 {
-                    EvalContextClassPut(ctx, PromiseGetNamespace(pp), RlistScalarValue(rp), true, CONTEXT_SCOPE_NAMESPACE);
+                    EvalContextClassPut(ctx, PromiseGetNamespace(pp), RlistScalarValue(rp), true, CONTEXT_SCOPE_NAMESPACE, "source=promise");
                 }
                 ClassRefDestroy(ref);
             }
@@ -256,7 +253,7 @@ static PromiseResult VerifyProcessOp(EvalContext *ctx, Item *procdata, Attribute
         {
             cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_CHANGE, pp, a, "Making a one-time restart promise for '%s'", pp->promiser);
             result = PromiseResultUpdate(result, PROMISE_RESULT_CHANGE);
-            EvalContextClassPut(ctx, PromiseGetNamespace(pp), a.restart_class, true, CONTEXT_SCOPE_NAMESPACE);
+            EvalContextClassPut(ctx, PromiseGetNamespace(pp), a.restart_class, true, CONTEXT_SCOPE_NAMESPACE, "source=promise");
         }
     }
 
@@ -264,7 +261,7 @@ static PromiseResult VerifyProcessOp(EvalContext *ctx, Item *procdata, Attribute
 }
 
 #ifndef __MINGW32__
-int DoAllSignals(EvalContext *ctx, Item *siglist, Attributes a, Promise *pp)
+int DoAllSignals(EvalContext *ctx, Item *siglist, Attributes a, const Promise *pp)
 {
     Item *ip;
     Rlist *rp;

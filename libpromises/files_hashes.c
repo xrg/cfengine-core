@@ -67,7 +67,7 @@ void HashFile(const char *filename, unsigned char digest[EVP_MAX_MD_SIZE + 1], H
     unsigned char buffer[1024];
     const EVP_MD *md = NULL;
 
-    if ((file = fopen(filename, "rb")) == NULL)
+    if ((file = safe_fopen(filename, "rb")) == NULL)
     {
         Log(LOG_LEVEL_INFO, "Cannot open file for hashing '%s'. (fopen: %s)", filename, GetErrorStr());
     }
@@ -194,29 +194,31 @@ int HashesMatch(unsigned char digest1[EVP_MAX_MD_SIZE + 1], unsigned char digest
     return true;
 }
 
-char *HashPrintSafe(HashMethod type, unsigned char digest[EVP_MAX_MD_SIZE + 1], char buffer[EVP_MAX_MD_SIZE * 4])
-/**
- * Thread safe. Note the buffer size.
- */
+char *HashPrintSafe(HashMethod type, bool use_prefix, const unsigned char digest[EVP_MAX_MD_SIZE + 1], char buffer[EVP_MAX_MD_SIZE * 4])
 {
     unsigned int i;
 
-    switch (type)
+    if (use_prefix)
     {
-    case HASH_METHOD_MD5:
-        strcpy(buffer, "MD5=");
-        break;
-    default:
-        strcpy(buffer, "SHA=");
-        break;
+        switch (type)
+        {
+        case HASH_METHOD_MD5:
+            strcpy(buffer, "MD5=");
+            break;
+        default:
+            strcpy(buffer, "SHA=");
+            break;
+        }
     }
+
+    const size_t prefix_offset = use_prefix ? 4 : 0;
 
     for (i = 0; i < CF_DIGEST_SIZES[type]; i++)
     {
-        sprintf((char *) (buffer + 4 + 2 * i), "%02x", digest[i]);
+        sprintf((char *) (buffer + prefix_offset + 2 * i), "%02x", digest[i]);
     }
 
-    buffer[4 + 2*CF_DIGEST_SIZES[type]] = '\0';
+    buffer[prefix_offset + 2*CF_DIGEST_SIZES[type]] = '\0';
 
     return buffer;
 }

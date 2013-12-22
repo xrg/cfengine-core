@@ -25,7 +25,7 @@
 #include <verify_methods.h>
 
 #include <actuator.h>
-#include <env_context.h>
+#include <eval_context.h>
 #include <vars.h>
 #include <expand.h>
 #include <files_names.h>
@@ -40,15 +40,13 @@
 #include <ornaments.h>
 #include <string_lib.h>
 
-static void GetReturnValue(EvalContext *ctx, const Bundle *callee, Promise *caller);
+static void GetReturnValue(EvalContext *ctx, const Bundle *callee, const Promise *caller);
 
 /*****************************************************************************/
 
-PromiseResult VerifyMethodsPromise(EvalContext *ctx, Promise *pp)
+PromiseResult VerifyMethodsPromise(EvalContext *ctx, const Promise *pp)
 {
-    Attributes a = { {0} };
-
-    a = GetMethodAttributes(ctx, pp);
+    Attributes a = GetMethodAttributes(ctx, pp);
 
     PromiseResult result = VerifyMethod(ctx, "usebundle", a, pp);
     EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser");
@@ -58,7 +56,7 @@ PromiseResult VerifyMethodsPromise(EvalContext *ctx, Promise *pp)
 
 /*****************************************************************************/
 
-PromiseResult VerifyMethod(EvalContext *ctx, char *attrname, Attributes a, Promise *pp)
+PromiseResult VerifyMethod(EvalContext *ctx, char *attrname, Attributes a, const Promise *pp)
 {
     Bundle *bp;
     void *vp;
@@ -70,13 +68,13 @@ PromiseResult VerifyMethod(EvalContext *ctx, char *attrname, Attributes a, Promi
 
     if (a.havebundle)
     {
-        if ((vp = ConstraintGetRvalValue(ctx, attrname, pp, RVAL_TYPE_FNCALL)))
+        if ((vp = PromiseGetConstraintAsRval(pp, attrname, RVAL_TYPE_FNCALL)))
         {
             fp = (FnCall *) vp;
             ExpandScalar(ctx, PromiseGetBundle(pp)->ns, PromiseGetBundle(pp)->name, fp->name, method_name);
             args = fp->args;
         }
-        else if ((vp = ConstraintGetRvalValue(ctx, attrname, pp, RVAL_TYPE_SCALAR)))
+        else if ((vp = PromiseGetConstraintAsRval(pp, attrname, RVAL_TYPE_SCALAR)))
         {
             ExpandScalar(ctx, PromiseGetBundle(pp)->ns, PromiseGetBundle(pp)->name, (char *) vp, method_name);
             args = NULL;
@@ -90,10 +88,9 @@ PromiseResult VerifyMethod(EvalContext *ctx, char *attrname, Attributes a, Promi
     GetLockName(lockname, "method", pp->promiser, args);
 
     thislock = AcquireLock(ctx, lockname, VUQNAME, CFSTARTTIME, a.transaction, pp, false);
-
     if (thislock.lock == NULL)
     {
-        return PROMISE_RESULT_NOOP;
+        return PROMISE_RESULT_SKIPPED;
     }
 
     PromiseBanner(pp);
@@ -173,9 +170,9 @@ PromiseResult VerifyMethod(EvalContext *ctx, char *attrname, Attributes a, Promi
 
 /***********************************************************************/
 
-static void GetReturnValue(EvalContext *ctx, const Bundle *callee, Promise *caller)
+static void GetReturnValue(EvalContext *ctx, const Bundle *callee, const Promise *caller)
 {
-    char *result = ConstraintGetRvalValue(ctx, "useresult", caller, RVAL_TYPE_SCALAR);
+    char *result = PromiseGetConstraintAsRval(caller, "useresult", RVAL_TYPE_SCALAR);
 
     if (result)
     {
@@ -193,7 +190,7 @@ static void GetReturnValue(EvalContext *ctx, const Bundle *callee, Promise *call
             VarRef *new_ref = VarRefParseFromBundle(result, PromiseGetBundle(caller));
             VarRefAddIndex(new_ref, result_var->ref->indices[0]);
 
-            EvalContextVariablePut(ctx, new_ref, result_var->rval.item, result_var->type);
+            EvalContextVariablePut(ctx, new_ref, result_var->rval.item, result_var->type, "source=bundle");
 
             VarRefDestroy(new_ref);
         }

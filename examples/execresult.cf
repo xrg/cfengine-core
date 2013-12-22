@@ -20,24 +20,37 @@
 # (COSL) may apply to this file if you as a licensee so wish it. See
 # included file COSL.txt.
 
-
+#+begin_src prep
+#@ mkdir -p /tmp/testhere
+#@ touch /tmp/testhere/{a,b,c,d,e}
+#+end_src
+###############################################################################
+#+begin_src cfengine3
 body common control
-
 {
       bundlesequence  => { "example" };
 }
 
-###########################################################
-
 bundle agent example
 
-{     
+{
   vars:
 
-      "my_result" string => execresult("/bin/ls /tmp","noshell");
+      "my_result" string => execresult("/bin/ls /tmp/testhere","noshell");
 
   reports:
-      "Variable is $(my_result)";
+
+    linux::
+
+      "/bin/ls /tmp/testhere returned '$(my_result)'";
 
 }
-
+#+end_src
+###############################################################################
+#+begin_src example_output
+#@ 2013-12-20T13:48:35-0500   notice: /default/example: R: /bin/ls /tmp/testhere returned 'a
+#@ b
+#@ c
+#@ d
+#@ e'
+#+end_src

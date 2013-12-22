@@ -22,8 +22,8 @@
   included file COSL.txt.
 */
 
-#ifndef CFENGINE_ENV_CONTEXT_H
-#define CFENGINE_ENV_CONTEXT_H
+#ifndef CFENGINE_EVAL_CONTEXT_H
+#define CFENGINE_EVAL_CONTEXT_H
 
 #include <cf3.defs.h>
 
@@ -100,28 +100,6 @@ typedef enum
     EVAL_OPTION_FULL = 0xFFFFFFFF
 } EvalContextOption;
 
-struct EvalContext_
-{
-    int eval_options;
-    bool bundle_aborted;
-    bool checksum_updates_default;
-
-    Item *heap_abort;
-    Item *heap_abort_current_bundle;
-
-    Seq *stack;
-
-    ClassTable *global_classes;
-    VariableTable *global_variables;
-
-    VariableTable *match_variables;
-
-    StringSet *dependency_handles;
-    RBTree *function_cache;
-
-    PromiseSet *promises_done;
-};
-
 EvalContext *EvalContextNew(void);
 void EvalContextDestroy(EvalContext *ctx);
 
@@ -132,8 +110,8 @@ void EvalContextHeapPersistentSave(const char *context, const char *ns, unsigned
 void EvalContextHeapPersistentRemove(const char *context);
 void EvalContextHeapPersistentLoadAll(EvalContext *ctx);
 
-bool EvalContextClassPut(EvalContext *ctx, const char *ns, const char *name, bool is_soft, ContextScope scope);
-void EvalContextClassPutHard(EvalContext *ctx, const char *name);
+bool EvalContextClassPut(EvalContext *ctx, const char *ns, const char *name, bool is_soft, ContextScope scope, const char *tags);
+void EvalContextClassPutHard(EvalContext *ctx, const char *name, const char *tags);
 Class *EvalContextClassGet(const EvalContext *ctx, const char *ns, const char *name);
 bool EvalContextClassRemove(EvalContext *ctx, const char *ns, const char *name);
 StringSet *EvalContextClassTags(const EvalContext *ctx, const char *ns, const char *name);
@@ -144,17 +122,18 @@ ClassTableIterator *EvalContextClassTableIteratorNewLocal(const EvalContext *ctx
 void EvalContextClear(EvalContext *ctx);
 
 void EvalContextStackPushBundleFrame(EvalContext *ctx, const Bundle *owner, const Rlist *args, bool inherits_previous);
-void EvalContextStackPushBodyFrame(EvalContext *ctx, const Body *owner, Rlist *args);
+void EvalContextStackPushBodyFrame(EvalContext *ctx, const Promise *caller, const Body *body, Rlist *args);
 void EvalContextStackPushPromiseFrame(EvalContext *ctx, const Promise *owner, bool copy_bundle_context);
 Promise *EvalContextStackPushPromiseIterationFrame(EvalContext *ctx, size_t iteration_index, const PromiseIterator *iter_ctx);
 void EvalContextStackPopFrame(EvalContext *ctx);
-char *EvalContextStackPath(const EvalContext *ctx);
 
+char *EvalContextStackPath(const EvalContext *ctx);
+StringSet *EvalContextStackPromisees(const EvalContext *ctx);
 const Promise *EvalContextStackCurrentPromise(const EvalContext *ctx);
 const Bundle *EvalContextStackCurrentBundle(const EvalContext *ctx);
 
-bool EvalContextVariablePut(EvalContext *ctx, const VarRef *ref, const void *value, DataType type);
-bool EvalContextVariablePutSpecial(EvalContext *ctx, SpecialScope scope, const char *lval, const void *value, DataType type);
+bool EvalContextVariablePut(EvalContext *ctx, const VarRef *ref, const void *value, DataType type, const char *tags);
+bool EvalContextVariablePutSpecial(EvalContext *ctx, SpecialScope scope, const char *lval, const void *value, DataType type, const char *tags);
 bool EvalContextVariableGet(const EvalContext *ctx, const VarRef *ref, Rval *rval_out, DataType *type_out);
 bool EvalContextVariableRemoveSpecial(const EvalContext *ctx, SpecialScope scope, const char *lval);
 bool EvalContextVariableRemove(const EvalContext *ctx, const VarRef *ref);
@@ -190,8 +169,17 @@ void EvalContextMarkPromiseNotDone(EvalContext *ctx, const Promise *pp);
 void SetChecksumUpdatesDefault(EvalContext *ctx, bool enabled);
 bool GetChecksumUpdatesDefault(const EvalContext *ctx);
 
+/* IP addresses */
+Item *EvalContextGetIpAddresses(const EvalContext *ctx);
+void EvalContextAddIpAddress(EvalContext *ctx, const char *address);
+void EvalContextDeleteIpAddresses(EvalContext *ctx);
+
 /* - Rest - */
 bool EvalContextPromiseIsActive(const EvalContext *ctx, const Promise *pp);
+void EvalContextSetEvalOption(EvalContext *ctx, EvalContextOption option, bool value);
+bool EvalContextGetEvalOption(EvalContext *ctx, EvalContextOption option);
+
+void EvalContextSetLaunchDirectory(EvalContext *ctx, const char *path);
 
 bool Abort(EvalContext *ctx);
 int VarClassExcluded(const EvalContext *ctx, const Promise *pp, char **classes);
@@ -203,6 +191,19 @@ void cfPS(EvalContext *ctx, LogLevel level, PromiseResult status, const Promise 
  * evaluator again, once variables promises are no longer specially handled */
 void ClassAuditLog(EvalContext *ctx, const Promise *pp, Attributes attr, PromiseResult status);
 
+typedef struct EvalContextEnterpriseState_ EvalContextEnterpriseState;
+
+EvalContextEnterpriseState *EvalContextGetEnterpriseState(const EvalContext *ctx);
+
 ENTERPRISE_VOID_FUNC_2ARG_DECLARE(void, TrackTotalCompliance, ARG_UNUSED PromiseResult, status, ARG_UNUSED const Promise *, pp);
+
+ENTERPRISE_FUNC_0ARG_DECLARE(EvalContextEnterpriseState *, EvalContextEnterpriseStateNew);
+ENTERPRISE_VOID_FUNC_1ARG_DECLARE(void, EvalContextEnterpriseStateDestroy,
+                                  EvalContextEnterpriseState *, estate);
+
+ENTERPRISE_VOID_FUNC_3ARG_DECLARE(void, EvalContextLogPromiseIterationOutcome,
+                                  EvalContext *, ctx,
+                                  const Promise *, pp,
+                                  PromiseResult, result);
 
 #endif

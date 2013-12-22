@@ -27,7 +27,7 @@
 #include <server.h>
 
 #include <misc_lib.h>
-#include <env_context.h>
+#include <eval_context.h>
 #include <files_names.h>
 #include <mod_access.h>
 #include <item_lib.h>
@@ -89,12 +89,12 @@ typedef enum
     SERVER_CONTROL_NONE
 } ServerControl;
 
-static void KeepContextBundles(EvalContext *ctx, Policy *policy);
-static PromiseResult KeepServerPromise(EvalContext *ctx, Promise *pp, void *param);
+static void KeepContextBundles(EvalContext *ctx, const Policy *policy);
+static PromiseResult KeepServerPromise(EvalContext *ctx, const Promise *pp, void *param);
 static void InstallServerAuthPath(const char *path, Auth **list, Auth **listtop);
-static void KeepServerRolePromise(EvalContext *ctx, Promise *pp);
-static void KeepPromiseBundles(EvalContext *ctx, Policy *policy);
-static void KeepControlPromises(EvalContext *ctx, Policy *policy, GenericAgentConfig *config);
+static void KeepServerRolePromise(EvalContext *ctx, const Promise *pp);
+static void KeepPromiseBundles(EvalContext *ctx, const Policy *policy);
+static void KeepControlPromises(EvalContext *ctx, const Policy *policy, GenericAgentConfig *config);
 static Auth *GetAuthPath(const char *path, Auth *list);
 
 extern const ConstraintSyntax CFS_CONTROLBODY[];
@@ -116,16 +116,16 @@ extern Item *CONNECTIONLIST;
 
 /*******************************************************************/
 
-void KeepFileAccessPromise(EvalContext *ctx, Promise *pp);
-void KeepLiteralAccessPromise(EvalContext *ctx, Promise *pp, char *type);
-void KeepQueryAccessPromise(EvalContext *ctx, Promise *pp, char *type);
+void KeepFileAccessPromise(EvalContext *ctx, const Promise *pp);
+void KeepLiteralAccessPromise(EvalContext *ctx, const Promise *pp, char *type);
+void KeepQueryAccessPromise(EvalContext *ctx, const Promise *pp, char *type);
 
 /*******************************************************************/
 /* Level                                                           */
 /*******************************************************************/
 
 
-void KeepPromises(EvalContext *ctx, Policy *policy, GenericAgentConfig *config)
+void KeepPromises(EvalContext *ctx, const Policy *policy, GenericAgentConfig *config)
 {
     KeepContextBundles(ctx, policy);
     KeepControlPromises(ctx, policy, config);
@@ -232,21 +232,13 @@ void Summarize()
     {
         Log(LOG_LEVEL_VERBOSE, "USERS '%s'", ip->name);
     }
-
-    Log(LOG_LEVEL_VERBOSE, "Host IPs from NAT which we don't verify:");
-
-    for (ip = SV.skipverify; ip != NULL; ip = ip->next)
-    {
-        Log(LOG_LEVEL_VERBOSE, "IP '%s'", ip->name);
-    }
-
 }
 
 /*******************************************************************/
 /* Level                                                           */
 /*******************************************************************/
 
-static void KeepControlPromises(EvalContext *ctx, Policy *policy, GenericAgentConfig *config)
+static void KeepControlPromises(EvalContext *ctx, const Policy *policy, GenericAgentConfig *config)
 {
     Rval retval;
 
@@ -387,18 +379,6 @@ static void KeepControlPromises(EvalContext *ctx, Policy *policy, GenericAgentCo
 
             if (strcmp(cp->lval, CFS_CONTROLBODY[SERVER_CONTROL_SKIP_VERIFY].lval) == 0)
             {
-                Rlist *rp;
-
-                Log(LOG_LEVEL_VERBOSE, "Setting skip verify connections from ...");
-
-                for (rp = (Rlist *) retval.item; rp != NULL; rp = rp->next)
-                {
-                    if (!IsItemIn(SV.skipverify, RlistScalarValue(rp)))
-                    {
-                        AppendItem(&SV.skipverify, RlistScalarValue(rp), cp->classes);
-                    }
-                }
-
                 continue;
             }
 
@@ -456,11 +436,8 @@ static void KeepControlPromises(EvalContext *ctx, Policy *policy, GenericAgentCo
 
             if (strcmp(cp->lval, CFS_CONTROLBODY[SERVER_CONTROL_PORT_NUMBER].lval) == 0)
             {
-                SHORT_CFENGINEPORT = (short) IntFromString(retval.item);
-                strncpy(STR_CFENGINEPORT, retval.item, 15);
-                Log(LOG_LEVEL_VERBOSE, "Setting default portnumber to %u = %s = %s", (int) SHORT_CFENGINEPORT, STR_CFENGINEPORT,
-                      RvalScalarValue(retval));
-                SHORT_CFENGINEPORT = htons((short) IntFromString(retval.item));
+                CFENGINE_PORT = (short) IntFromString(retval.item);
+                Log(LOG_LEVEL_VERBOSE, "Setting default port number to %d", CFENGINE_PORT);
                 continue;
             }
 
@@ -526,7 +503,7 @@ static void KeepControlPromises(EvalContext *ctx, Policy *policy, GenericAgentCo
 
 /*********************************************************************/
 
-static void KeepContextBundles(EvalContext *ctx, Policy *policy)
+static void KeepContextBundles(EvalContext *ctx, const Policy *policy)
 {
 /* Dial up the generic promise expansion with a callback */
 
@@ -571,7 +548,7 @@ static void KeepContextBundles(EvalContext *ctx, Policy *policy)
 
 /*********************************************************************/
 
-static void KeepPromiseBundles(EvalContext *ctx, Policy *policy)
+static void KeepPromiseBundles(EvalContext *ctx, const Policy *policy)
 {
 /* Dial up the generic promise expansion with a callback */
 
@@ -620,7 +597,7 @@ static void KeepPromiseBundles(EvalContext *ctx, Policy *policy)
 /* Level                                                             */
 /*********************************************************************/
 
-static PromiseResult KeepServerPromise(EvalContext *ctx, Promise *pp, ARG_UNUSED void *param)
+static PromiseResult KeepServerPromise(EvalContext *ctx, const Promise *pp, ARG_UNUSED void *param)
 {
     assert(!param);
 
@@ -654,7 +631,7 @@ static PromiseResult KeepServerPromise(EvalContext *ctx, Promise *pp, ARG_UNUSED
         return VerifyClassPromise(ctx, pp, NULL);
     }
 
-    const char *resource_type = ConstraintGetRvalValue(ctx, "resource_type", pp, RVAL_TYPE_SCALAR);
+    const char *resource_type = PromiseGetConstraintAsRval(pp, "resource_type", RVAL_TYPE_SCALAR);
     if (resource_type && strcmp(pp->parent_promise_type->name, "access") == 0)
     {
         if (strcmp(resource_type, "literal") == 0)
@@ -696,7 +673,7 @@ static PromiseResult KeepServerPromise(EvalContext *ctx, Promise *pp, ARG_UNUSED
 
 /*********************************************************************/
 
-void KeepFileAccessPromise(EvalContext *ctx, Promise *pp)
+void KeepFileAccessPromise(EvalContext *ctx, const Promise *pp)
 {
     Rlist *rp;
     Auth *ap, *dp;
@@ -772,7 +749,7 @@ void KeepFileAccessPromise(EvalContext *ctx, Promise *pp)
 
 /*********************************************************************/
 
-void KeepLiteralAccessPromise(EvalContext *ctx, Promise *pp, char *type)
+void KeepLiteralAccessPromise(EvalContext *ctx, const Promise *pp, char *type)
 {
     Rlist *rp;
     Auth *ap = NULL, *dp = NULL;
@@ -886,7 +863,7 @@ void KeepLiteralAccessPromise(EvalContext *ctx, Promise *pp, char *type)
 
 /*********************************************************************/
 
-void KeepQueryAccessPromise(EvalContext *ctx, Promise *pp, char *type)
+void KeepQueryAccessPromise(EvalContext *ctx, const Promise *pp, char *type)
 {
     Rlist *rp;
     Auth *ap, *dp;
@@ -964,7 +941,7 @@ void KeepQueryAccessPromise(EvalContext *ctx, Promise *pp, char *type)
 
 /*********************************************************************/
 
-static void KeepServerRolePromise(EvalContext *ctx, Promise *pp)
+static void KeepServerRolePromise(EvalContext *ctx, const Promise *pp)
 {
     Rlist *rp;
     Auth *ap;

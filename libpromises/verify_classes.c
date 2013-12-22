@@ -36,11 +36,11 @@
 #include <string_lib.h>
 
 
-static int EvalClassExpression(EvalContext *ctx, Constraint *cp, Promise *pp);
+static int EvalClassExpression(EvalContext *ctx, Constraint *cp, const Promise *pp);
 static bool ValidClassName(const char *str);
 
 
-PromiseResult VerifyClassPromise(EvalContext *ctx, Promise *pp, ARG_UNUSED void *param)
+PromiseResult VerifyClassPromise(EvalContext *ctx, const Promise *pp, ARG_UNUSED void *param)
 {
     assert(param == NULL);
 
@@ -105,12 +105,12 @@ PromiseResult VerifyClassPromise(EvalContext *ctx, Promise *pp, ARG_UNUSED void 
             if (global_class)
             {
                 Log(LOG_LEVEL_VERBOSE, "Adding global class '%s'", pp->promiser);
-                EvalContextClassPut(ctx, PromiseGetNamespace(pp), pp->promiser, true, CONTEXT_SCOPE_NAMESPACE);
+                EvalContextClassPut(ctx, PromiseGetNamespace(pp), pp->promiser, true, CONTEXT_SCOPE_NAMESPACE, "source=promise");
             }
             else
             {
                 Log(LOG_LEVEL_VERBOSE, "Adding local bundle class '%s'", pp->promiser);
-                EvalContextClassPut(ctx, PromiseGetNamespace(pp), pp->promiser, true, CONTEXT_SCOPE_BUNDLE);
+                EvalContextClassPut(ctx, PromiseGetNamespace(pp), pp->promiser, true, CONTEXT_SCOPE_BUNDLE, "source=promise");
             }
 
             if (a.context.persistent > 0)
@@ -137,7 +137,7 @@ PromiseResult VerifyClassPromise(EvalContext *ctx, Promise *pp, ARG_UNUSED void 
     return PROMISE_RESULT_NOOP;
 }
 
-static int EvalClassExpression(EvalContext *ctx, Constraint *cp, Promise *pp)
+static int EvalClassExpression(EvalContext *ctx, Constraint *cp, const Promise *pp)
 {
     int result_and = true;
     int result_or = false;
@@ -265,7 +265,7 @@ static int EvalClassExpression(EvalContext *ctx, Constraint *cp, Promise *pp)
         {
             if (i == n)
             {
-                EvalContextClassPut(ctx, PromiseGetNamespace(pp), RlistScalarValue(rp), true, CONTEXT_SCOPE_NAMESPACE);
+                EvalContextClassPut(ctx, PromiseGetNamespace(pp), RlistScalarValue(rp), true, CONTEXT_SCOPE_NAMESPACE, "source=promise");
                 return true;
             }
         }
@@ -325,11 +325,11 @@ static int EvalClassExpression(EvalContext *ctx, Constraint *cp, Promise *pp)
 
         if (strcmp(PromiseGetBundle(pp)->type, "common") == 0)
         {
-            EvalContextClassPut(ctx, PromiseGetNamespace(pp), buffer, true, CONTEXT_SCOPE_NAMESPACE);
+            EvalContextClassPut(ctx, PromiseGetNamespace(pp), buffer, true, CONTEXT_SCOPE_NAMESPACE, "source=promise");
         }
         else
         {
-            EvalContextClassPut(ctx, PromiseGetNamespace(pp), buffer, true, CONTEXT_SCOPE_BUNDLE);
+            EvalContextClassPut(ctx, PromiseGetNamespace(pp), buffer, true, CONTEXT_SCOPE_BUNDLE, "source=promise");
         }
 
         return true;

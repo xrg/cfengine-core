@@ -27,12 +27,12 @@
 
 #include <stdlib.h>
 
-static const char *paths[3] = {
+static const char *paths[] = {
     "/usr/lib/x86_64-linux-gnu/libavahi-client.so.3",
     "/usr/lib64/libavahi-client.so.3",
     "/usr/lib/libavahi-client.so.3"
-	/* 32 bits variants */
-	"/usr/lib/i386-linux-gnu/libavahi-client.so.3"
+    /* 32-bit variants */
+    "/usr/lib/i386-linux-gnu/libavahi-client.so.3"
 };
 
 static void *getavahi_handle();
@@ -78,7 +78,7 @@ static void *getavahi_handle()
         ret = dlopen(env, RTLD_LAZY);
     }
 
-    for (int i = 0; (!ret) && i < sizeof(paths); i++)
+    for (int i = 0; (!ret) && i < sizeof(paths)/sizeof(paths[0]); i++)
     {
         if (stat(paths[i], &sb) == 0)
         {

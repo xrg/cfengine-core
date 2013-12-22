@@ -7,7 +7,7 @@
 #include <string_lib.h>
 
 #include <assoc.h>
-#include <env_context.h>
+#include <eval_context.h>
 
 /* Stubs */
 
@@ -527,11 +527,6 @@ int ThreadLock(pthread_mutex_t *name)
 int ThreadUnlock(pthread_mutex_t *name)
 {
     return true;
-}
-
-void FnCallShow(FILE *fout, const FnCall *fp)
-{
-    fail();
 }
 
 int IsNakedVar(const char *str, char vtype)

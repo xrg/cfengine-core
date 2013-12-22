@@ -28,7 +28,8 @@
 #include <exec_tools.h>
 #include <rlist.h>
 #include <policy.h>
-#include <env_context.h>
+#include <eval_context.h>
+#include <file_lib.h>
 
 static int CfSetuid(uid_t uid, gid_t gid);
 
@@ -287,7 +288,7 @@ FILE *cf_popensetuid(const char *command, const char *type, uid_t uid, gid_t gid
 
         if (chdirv && (strlen(chdirv) != 0))
         {
-            if (chdir(chdirv) == -1)
+            if (safe_chdir(chdirv) == -1)
             {
                 Log(LOG_LEVEL_ERR, "Couldn't chdir to '%s'. (chdir: %s)", chdirv, GetErrorStr());
                 ArgFree(argv);
@@ -475,7 +476,7 @@ FILE *cf_popen_shsetuid(const char *command, const char *type, uid_t uid, gid_t 
 
         if (chdirv && (strlen(chdirv) != 0))
         {
-            if (chdir(chdirv) == -1)
+            if (safe_chdir(chdirv) == -1)
             {
                 Log(LOG_LEVEL_ERR, "Couldn't chdir to '%s'. (chdir: %s)", chdirv, GetErrorStr());
                 return NULL;

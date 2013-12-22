@@ -35,21 +35,21 @@
 #include <locks.h>
 #include <string_lib.h>
 #include <misc_lib.h>
+#include <file_lib.h>
 #include <policy.h>
 #include <scope.h>
 #include <ornaments.h>
-#include <env_context.h>
+#include <eval_context.h>
 
-static void PrintFile(EvalContext *ctx, Attributes a, Promise *pp);
+static void PrintFile(EvalContext *ctx, Attributes a, const Promise *pp);
 static void ReportToFile(const char *logfile, const char *message);
 
-PromiseResult VerifyReportPromise(EvalContext *ctx, Promise *pp)
+PromiseResult VerifyReportPromise(EvalContext *ctx, const Promise *pp)
 {
-    Attributes a = { {0} };
     CfLock thislock;
     char unique_name[CF_EXPANDSIZE];
 
-    a = GetReportsAttributes(ctx, pp);
+    Attributes a = GetReportsAttributes(ctx, pp);
 
     // We let AcquireLock worry about making a unique name
     snprintf(unique_name, CF_EXPANDSIZE - 1, "%s", pp->promiser);
@@ -70,16 +70,14 @@ PromiseResult VerifyReportPromise(EvalContext *ctx, Promise *pp)
         }
 
         VarRef *ref = VarRefParseFromBundle(unique_name, PromiseGetBundle(pp));
-        EvalContextVariablePut(ctx, ref, pp->promiser, DATA_TYPE_STRING);
+        EvalContextVariablePut(ctx, ref, pp->promiser, DATA_TYPE_STRING, "source=bundle");
         VarRefDestroy(ref);
         return PROMISE_RESULT_NOOP;
     }
-       
-    // Now do regular human reports
     
     if (thislock.lock == NULL)
     {
-        return PROMISE_RESULT_NOOP;
+        return PROMISE_RESULT_SKIPPED;
     }
 
     PromiseBanner(pp);
@@ -124,7 +122,7 @@ PromiseResult VerifyReportPromise(EvalContext *ctx, Promise *pp)
 
 static void ReportToFile(const char *logfile, const char *message)
 {
-    FILE *fp = fopen(logfile, "a");
+    FILE *fp = safe_fopen(logfile, "a");
     if (fp == NULL)
     {
         Log(LOG_LEVEL_ERR, "Could not open log file '%s', message '%s'. (fopen: %s)", logfile, message, GetErrorStr());
@@ -136,7 +134,7 @@ static void ReportToFile(const char *logfile, const char *message)
     }
 }
 
-static void PrintFile(EvalContext *ctx, Attributes a, Promise *pp)
+static void PrintFile(EvalContext *ctx, Attributes a, const Promise *pp)
 {
     FILE *fp;
     char buffer[CF_BUFSIZE];
@@ -148,7 +146,7 @@ static void PrintFile(EvalContext *ctx, Attributes a, Promise *pp)
         return;
     }
 
-    if ((fp = fopen(a.report.filename, "r")) == NULL)
+    if ((fp = safe_fopen(a.report.filename, "r")) == NULL)
     {
         cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_INTERRUPTED, pp, a, "Printing of file '%s' was not possible. (fopen: %s)", a.report.filename, GetErrorStr());
         return;

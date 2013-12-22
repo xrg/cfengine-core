@@ -43,6 +43,7 @@ check_PROGRAMS = \
 	xml_writer_test \
 	sequence_test \
 	db_test \
+	db_concurrent_test \
 	lastseen_test \
 	lastseen_migration_test \
 	dbm_migration_bundles_test \
@@ -53,6 +54,7 @@ check_PROGRAMS = \
 	thread_test \
 	package_versions_compare_test \
 	files_lib_test \
+	file_lib_test \
 	map_test \
 	parser_test \
 	policy_test \
@@ -88,7 +90,12 @@ check_PROGRAMS = \
 	mon_processes_test \
 	mustache_test \
 	class_test \
-	version_test
+	version_test \
+	hash_test \
+	key_test \
+	cf_upgrade_test \
+	queue_test \
+	ring_buffer_test
 
 if HAVE_AVAHI_CLIENT
 if HAVE_AVAHI_COMMON
@@ -177,6 +184,9 @@ file_writer_test_LDFLAGS =
 db_test_SOURCES = db_test.c
 db_test_LDADD = libdb.la
 
+db_concurrent_test_SOURCES = db_test.c
+db_concurrent_test_LDADD = libdb.la
+
 lastseen_test_SOURCES = lastseen_test.c ../../libpromises/item_lib.c  ../../libpromises/lastseen.c ../../libutils/statistics.c
 lastseen_test_LDADD = libdb.la ../../libpromises/libpromises.la
 
@@ -193,6 +203,15 @@ package_versions_compare_test_SOURCES = package_versions_compare_test.c ../../cf
 
 package_versions_compare_test_CPPFLAGS = $(AM_CPPFLAGS)
 package_versions_compare_test_LDADD = ../../libpromises/libpromises.la libtest.la
+
+file_lib_test_SOURCES = file_lib_test.c \
+	../../libutils/file_lib.c \
+	../../libutils/logging.c \
+	../../libutils/misc_lib.c \
+	../../libutils/string_lib.c \
+	../../libutils/writer.c
+file_lib_test_LDADD = libtest.la
+file_lib_test_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_SYMLINK_ATOMICITY
 
 sort_test_SOURCES = sort_test.c
 sort_test_LDADD = libtest.la ../../libpromises/libpromises.la
@@ -275,3 +294,14 @@ endif
 
 version_test_SOURCES = version_test.c
 
+hash_test_SOURCES = hash_test.c ../../libutils/libutils.la
+
+key_test_SOURCES = key_test.c ../../libutils/libutils.la
+
+CFUPGRADE=../../cf-upgrade
+cf_upgrade_test_SOURCES = cf_upgrade_test.c $(CFUPGRADE)/alloc-mini.c $(CFUPGRADE)/alloc-mini.h $(CFUPGRADE)/command_line.c \
+$(CFUPGRADE)/command_line.h $(CFUPGRADE)/configuration.c $(CFUPGRADE)/configuration.h $(CFUPGRADE)/log.c $(CFUPGRADE)/log.h \
+$(CFUPGRADE)/process.c $(CFUPGRADE)/process.h $(CFUPGRADE)/update.c $(CFUPGRADE)/update.h
+cf_upgrade_test_CFLAGS = -I$(CFUPGRADE)
+
+queue_test_SOURCES = queue_test.c

@@ -4,7 +4,7 @@
 #include <parser.h>
 #include <rlist.h>
 #include <fncall.h>
-#include <env_context.h>
+#include <eval_context.h>
 #include <item_lib.h>
 #include <bootstrap.h>
 
@@ -43,7 +43,8 @@ static Seq *LoadAndCheck(const char *filename)
 
 static Seq *LoadAndCheckString(const char *policy_code)
 {
-    const char *tmp = tempnam(NULL, "cfengine_test");
+    char tmp[] = TESTDATADIR "/cfengine_test.XXXXXX";
+    mkstemp(tmp);
 
     {
         FILE *out = fopen(tmp, "w");
@@ -65,13 +66,14 @@ static Seq *LoadAndCheckString(const char *policy_code)
 
 static void test_failsafe(void)
 {
-    char *tmp = tempnam(NULL, "cfengine_test");
+    char tmp[] = TESTDATADIR "/cfengine_test.XXXXXX";
+    mkstemp(tmp);
+
     WriteBuiltinFailsafePolicyToPath(tmp);
 
     Policy *failsafe = ParserParseFile(AGENT_TYPE_COMMON, tmp, PARSER_WARNING_ALL, PARSER_WARNING_ALL);
 
     unlink(tmp);
-    free(tmp);
 
     assert_true(failsafe);
 
@@ -119,6 +121,14 @@ static void test_body_redefinition(void)
 {
     Seq *errs = LoadAndCheck("body_redefinition.cf");
     assert_int_equal(2, errs->length);
+
+    SeqDestroy(errs);
+}
+
+static void test_body_control_no_arguments(void)
+{
+    Seq *errs = LoadAndCheck("body_control_no_arguments.cf");
+    assert_int_equal(1, errs->length);
 
     SeqDestroy(errs);
 }
@@ -183,14 +193,14 @@ static void test_policy_json_to_from(void)
                         assert_int_equal(2, SeqLength(promise->conlist));
 
                         {
-                            Constraint *create = PromiseGetConstraint(ctx, promise, "create");
+                            Constraint *create = PromiseGetConstraint(promise, "create");
                             assert_true(create);
                             assert_string_equal("create", create->lval);
                             assert_string_equal("true", RvalScalarValue(create->rval));
                         }
 
                         {
-                            Constraint *create = PromiseGetConstraint(ctx, promise, "perms");
+                            Constraint *create = PromiseGetConstraint(promise, "perms");
                             assert_true(create);
                             assert_string_equal("perms", create->lval);
                             assert_string_equal("myperms", RvalScalarValue(create->rval));
@@ -451,6 +461,7 @@ int main()
         unit_test(test_bundle_redefinition),
         unit_test(test_bundle_reserved_name),
         unit_test(test_body_redefinition),
+        unit_test(test_body_control_no_arguments),
         unit_test(test_vars_multiple_types),
         unit_test(test_methods_invalid_arity),
         unit_test(test_promise_duplicate_handle),

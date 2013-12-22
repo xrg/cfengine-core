@@ -26,7 +26,7 @@
 
 #include <actuator.h>
 #include <audit.h>
-#include <env_context.h>
+#include <eval_context.h>
 #include <verify_classes.h>
 #include <verify_databases.h>
 #include <verify_environments.h>
@@ -151,15 +151,15 @@ static char **TranslateOldBootstrapOptionsSeparate(int *argc_new, char **argv);
 static char **TranslateOldBootstrapOptionsConcatenated(int argc, char **argv);
 static void FreeStringArray(int size, char **array);
 static void CheckAgentAccess(Rlist *list, const Policy *policy);
-static void KeepControlPromises(EvalContext *ctx, Policy *policy);
-static PromiseResult KeepAgentPromise(EvalContext *ctx, Promise *pp, void *param);
+static void KeepControlPromises(EvalContext *ctx, const Policy *policy);
+static PromiseResult KeepAgentPromise(EvalContext *ctx, const Promise *pp, void *param);
 static int NewTypeContext(EvalContext *ctx, TypeSequence type);
 static void DeleteTypeContext(EvalContext *ctx, Bundle *bp, TypeSequence type);
 static void ClassBanner(EvalContext *ctx, TypeSequence type);
-static PromiseResult ParallelFindAndVerifyFilesPromises(EvalContext *ctx, Promise *pp);
+static PromiseResult ParallelFindAndVerifyFilesPromises(EvalContext *ctx, const Promise *pp);
 static bool VerifyBootstrap(EvalContext *ctx);
-static void KeepPromiseBundles(EvalContext *ctx, Policy *policy, GenericAgentConfig *config);
-static void KeepPromises(EvalContext *ctx, Policy *policy, GenericAgentConfig *config);
+static void KeepPromiseBundles(EvalContext *ctx, const Policy *policy, GenericAgentConfig *config);
+static void KeepPromises(EvalContext *ctx, const Policy *policy, GenericAgentConfig *config);
 static int NoteBundleCompliance(const Bundle *bundle, int save_pr_kept, int save_pr_repaired, int save_pr_notkept);
 static void AllClassesReport(const EvalContext *ctx);
 static bool HasAvahiSupport(void);
@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
     GenericAgentDiscoverContext(ctx, config);
 
     Policy *policy = NULL;
-    if (GenericAgentCheckPolicy(config, ALWAYS_VALIDATE))
+    if (GenericAgentCheckPolicy(config, ALWAYS_VALIDATE, true))
     {
         policy = GenericAgentLoadPolicy(ctx, config);
     }
@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
     else
     {
         Log(LOG_LEVEL_ERR, "CFEngine was not able to get confirmation of promises from cf-promises, so going to failsafe");
-        EvalContextClassPut(ctx, NULL, "failsafe_fallback", false, CONTEXT_SCOPE_NAMESPACE);
+        EvalContextClassPut(ctx, NULL, "failsafe_fallback", false, CONTEXT_SCOPE_NAMESPACE, "source=agent");
         GenericAgentConfigSetInputFile(config, GetWorkDir(), "failsafe.cf");
         policy = GenericAgentLoadPolicy(ctx, config);
     }
@@ -259,12 +259,7 @@ int main(int argc, char *argv[])
     }
 
     // only note class usage when default policy is run
-    if (!MINUSF)
-    {
-        ClassTableIterator *iter = EvalContextClassTableIteratorNewGlobal(ctx, NULL, true, true);
-        NoteClassUsage(iter, true);
-        ClassTableIteratorDestroy(iter);
-    }
+    Nova_NoteClassUsage(ctx);
     Nova_NoteVarUsageDB(ctx);
     Nova_TrackExecution(config->input_file);
     PurgeLocks();
@@ -278,6 +273,8 @@ int main(int argc, char *argv[])
 
     EndAudit(ctx, CFA_BACKGROUND);
     EvalContextDestroy(ctx);
+
+    GenerateDiffReports(config->input_file);
     GenericAgentConfigDestroy(config);
 
     return ret;
@@ -292,11 +289,6 @@ static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
     extern char *optarg;
     int c;
     GenericAgentConfig *config = GenericAgentConfigNewDefault(AGENT_TYPE_AGENT);
-
-/* Because of the MacOS linker we have to call this from each agent
-   individually before Generic Initialize */
-
-    POLICY_SERVER[0] = '\0';
 
 /* DEPRECATED:
    --policy-server (-s) is deprecated in community version 3.5.0.
@@ -418,7 +410,7 @@ static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
         case 'n':
             DONTDO = true;
             IGNORELOCK = true;
-            EvalContextClassPut(ctx, NULL, "opt_dry_run", false, CONTEXT_SCOPE_NAMESPACE);
+            EvalContextClassPut(ctx, NULL, "opt_dry_run", false, CONTEXT_SCOPE_NAMESPACE, "cfe_internal,source=environment");
             break;
 
         case 'V':
@@ -645,7 +637,7 @@ static void ThisAgentInit(void)
 
 /*******************************************************************/
 
-static void KeepPromises(EvalContext *ctx, Policy *policy, GenericAgentConfig *config)
+static void KeepPromises(EvalContext *ctx, const Policy *policy, GenericAgentConfig *config)
 {
     KeepControlPromises(ctx, policy);
     KeepPromiseBundles(ctx, policy, config);
@@ -655,7 +647,7 @@ static void KeepPromises(EvalContext *ctx, Policy *policy, GenericAgentConfig *c
 /* Level 2                                                         */
 /*******************************************************************/
 
-void KeepControlPromises(EvalContext *ctx, Policy *policy)
+static void KeepControlPromises(EvalContext *ctx, const Policy *policy)
 {
     Rval retval;
     Rlist *rp;
@@ -777,7 +769,7 @@ void KeepControlPromises(EvalContext *ctx, Policy *policy)
                 for (rp = (Rlist *) retval.item; rp != NULL; rp = rp->next)
                 {
                     Log(LOG_LEVEL_VERBOSE, "... %s", RlistScalarValue(rp));
-                    EvalContextClassPut(ctx, NULL, RlistScalarValue(rp), true, CONTEXT_SCOPE_NAMESPACE);
+                    EvalContextClassPut(ctx, NULL, RlistScalarValue(rp), true, CONTEXT_SCOPE_NAMESPACE, "source=environment");
                 }
 
                 continue;
@@ -1049,7 +1041,7 @@ void KeepControlPromises(EvalContext *ctx, Policy *policy)
 
 /*********************************************************************/
 
-static void KeepPromiseBundles(EvalContext *ctx, Policy *policy, GenericAgentConfig *config)
+static void KeepPromiseBundles(EvalContext *ctx, const Policy *policy, GenericAgentConfig *config)
 {
     Bundle *bp;
     Rlist *rp, *args;
@@ -1231,7 +1223,6 @@ int ScheduleAgentOperations(EvalContext *ctx, Bundle *bp)
 
                 if (Abort(ctx))
                 {
-                    //NoteClassUsage(EvalContextStackFrameIteratorSoft(ctx) , false);
                     DeleteTypeContext(ctx, bp, type);
                     NoteBundleCompliance(bp, save_pr_kept, save_pr_repaired, save_pr_notkept);
                     return false;
@@ -1241,9 +1232,6 @@ int ScheduleAgentOperations(EvalContext *ctx, Bundle *bp)
             DeleteTypeContext(ctx, bp, type);
         }
     }
-
-
-    //NoteClassUsage(EvalContextStackFrameIteratorSoft(ctx) , false);
 
     return NoteBundleCompliance(bp, save_pr_kept, save_pr_repaired, save_pr_notkept);
 }
@@ -1322,7 +1310,7 @@ static void CheckAgentAccess(Rlist *list, const Policy *policy)
 
 static PromiseResult DefaultVarPromise(EvalContext *ctx, const Promise *pp)
 {
-    char *regex = ConstraintGetRvalValue(ctx, "if_match_regex", pp, RVAL_TYPE_SCALAR);
+    char *regex = PromiseGetConstraintAsRval(pp, "if_match_regex", RVAL_TYPE_SCALAR);
     Rval rval;
     DataType dt;
     Rlist *rp;
@@ -1384,7 +1372,7 @@ static PromiseResult DefaultVarPromise(EvalContext *ctx, const Promise *pp)
     return VerifyVarPromise(ctx, pp, true);
 }
 
-static PromiseResult KeepAgentPromise(EvalContext *ctx, Promise *pp, ARG_UNUSED void *param)
+static PromiseResult KeepAgentPromise(EvalContext *ctx, const Promise *pp, ARG_UNUSED void *param)
 {
     assert(param == NULL);
 
@@ -1404,12 +1392,12 @@ static PromiseResult KeepAgentPromise(EvalContext *ctx, Promise *pp, ARG_UNUSED 
         {
             Log(LOG_LEVEL_VERBOSE, "Skipping next promise '%s', as context '%s' is not relevant", pp->promiser, pp->classes);
         }
-        return PROMISE_RESULT_NOOP;
+        return PROMISE_RESULT_SKIPPED;
     }
 
     if (EvalContextPromiseIsDone(ctx, pp))
     {
-        return PROMISE_RESULT_NOOP;
+        return PROMISE_RESULT_SKIPPED;
     }
 
     if (VarClassExcluded(ctx, pp, &sp))
@@ -1425,94 +1413,91 @@ static PromiseResult KeepAgentPromise(EvalContext *ctx, Promise *pp, ARG_UNUSED 
         {
             Log(LOG_LEVEL_VERBOSE, "Skipping next promise '%s', as var-context '%s' is not relevant", pp->promiser, sp);
         }
-        return PROMISE_RESULT_NOOP;
+        return PROMISE_RESULT_SKIPPED;
     }
 
 
     if (MissingDependencies(ctx, pp))
     {
-        return PROMISE_RESULT_NOOP;
+        return PROMISE_RESULT_SKIPPED;
     }
-    
-// Record promises examined for efficiency calc
+
+    PromiseResult result = PROMISE_RESULT_NOOP;
 
     if (strcmp("meta", pp->parent_promise_type->name) == 0 || strcmp("vars", pp->parent_promise_type->name) == 0)
     {
-        return VerifyVarPromise(ctx, pp, true);
+        result = VerifyVarPromise(ctx, pp, true);
     }
     else if (strcmp("defaults", pp->parent_promise_type->name) == 0)
     {
-        return DefaultVarPromise(ctx, pp);
+        result = DefaultVarPromise(ctx, pp);
     }
     else if (strcmp("classes", pp->parent_promise_type->name) == 0)
     {
-        return VerifyClassPromise(ctx, pp, NULL);
+        result = VerifyClassPromise(ctx, pp, NULL);
     }
     else if (strcmp("processes", pp->parent_promise_type->name) == 0)
     {
-        return VerifyProcessesPromise(ctx, pp);
+        result = VerifyProcessesPromise(ctx, pp);
     }
     else if (strcmp("storage", pp->parent_promise_type->name) == 0)
     {
-        PromiseResult result = FindAndVerifyStoragePromises(ctx, pp);
-        EndMeasurePromise(ctx, start, pp);
-        return result;
+        result = FindAndVerifyStoragePromises(ctx, pp);
+        EndMeasurePromise(start, pp);
     }
     else if (strcmp("packages", pp->parent_promise_type->name) == 0)
     {
-        PromiseResult result = VerifyPackagesPromise(ctx, pp);
-        EndMeasurePromise(ctx, start, pp);
-        return result;
+        result = VerifyPackagesPromise(ctx, pp);
+        EndMeasurePromise(start, pp);
     }
     else if (strcmp("users", pp->parent_promise_type->name) == 0)
     {
-        PromiseResult result = VerifyUsersPromise(ctx, pp);
-        EndMeasurePromise(ctx, start, pp);
-        return result;
+        result = VerifyUsersPromise(ctx, pp);
+        EndMeasurePromise(start, pp);
     }
 
     else if (strcmp("files", pp->parent_promise_type->name) == 0)
     {
-        PromiseResult result = ParallelFindAndVerifyFilesPromises(ctx, pp);
-        EndMeasurePromise(ctx, start, pp);
-        return result;
+        result = ParallelFindAndVerifyFilesPromises(ctx, pp);
+        EndMeasurePromise(start, pp);
     }
     else if (strcmp("commands", pp->parent_promise_type->name) == 0)
     {
-        PromiseResult result = VerifyExecPromise(ctx, pp);
-        EndMeasurePromise(ctx, start, pp);
-        return result;
+        result = VerifyExecPromise(ctx, pp);
+        EndMeasurePromise(start, pp);
     }
     else if (strcmp("databases", pp->parent_promise_type->name) == 0)
     {
-        PromiseResult result = VerifyDatabasePromises(ctx, pp);
-        EndMeasurePromise(ctx, start, pp);
-        return result;
+        result = VerifyDatabasePromises(ctx, pp);
+        EndMeasurePromise(start, pp);
     }
     else if (strcmp("methods", pp->parent_promise_type->name) == 0)
     {
-        PromiseResult result = VerifyMethodsPromise(ctx, pp);
-        EndMeasurePromise(ctx, start, pp);
-        return result;
+        result = VerifyMethodsPromise(ctx, pp);
+        EndMeasurePromise(start, pp);
     }
     else if (strcmp("services", pp->parent_promise_type->name) == 0)
     {
-        PromiseResult result = VerifyServicesPromise(ctx, pp);
-        EndMeasurePromise(ctx, start, pp);
-        return result;
+        result = VerifyServicesPromise(ctx, pp);
+        EndMeasurePromise(start, pp);
     }
     else if (strcmp("guest_environments", pp->parent_promise_type->name) == 0)
     {
-        PromiseResult result = VerifyEnvironmentsPromise(ctx, pp);
-        EndMeasurePromise(ctx, start, pp);
-        return result;
+        result = VerifyEnvironmentsPromise(ctx, pp);
+        EndMeasurePromise(start, pp);
     }
     else if (strcmp("reports", pp->parent_promise_type->name) == 0)
     {
-        return VerifyReportPromise(ctx, pp);
+        result = VerifyReportPromise(ctx, pp);
+    }
+    else
+    {
+        result = PROMISE_RESULT_NOOP;
     }
 
-    return PROMISE_RESULT_NOOP;
+    EvalContextLogPromiseIterationOutcome(ctx, pp, result);
+
+    return result;
 }
 
 /*********************************************************************/
@@ -1656,7 +1641,7 @@ static void ClassBanner(EvalContext *ctx, TypeSequence type)
 
 #ifdef __MINGW32__
 
-static PromiseResult ParallelFindAndVerifyFilesPromises(EvalContext *ctx, Promise *pp)
+static PromiseResult ParallelFindAndVerifyFilesPromises(EvalContext *ctx, const Promise *pp)
 {
     int background = PromiseGetConstraintAsBoolean(ctx, "background", pp);
 
@@ -1670,7 +1655,7 @@ static PromiseResult ParallelFindAndVerifyFilesPromises(EvalContext *ctx, Promis
 
 #else /* !__MINGW32__ */
 
-static PromiseResult ParallelFindAndVerifyFilesPromises(EvalContext *ctx, Promise *pp)
+static PromiseResult ParallelFindAndVerifyFilesPromises(EvalContext *ctx, const Promise *pp)
 {
     int background = PromiseGetConstraintAsBoolean(ctx, "background", pp);
     pid_t child = 1;

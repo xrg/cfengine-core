@@ -110,8 +110,11 @@ if test "x$cross_compiling" = "xno"; then
 fi
 
 dnl ######################################################################
-dnl How to build extension binaries. Can be built as plugins (default)
-dnl or complete binaries (Windows and general debugging).
+dnl Whether to build extensions as builtin extensions or a separate
+dnl plugin. The default is plugin.
+dnl --enable-builtin-extensions is the default on Windows, and can be
+dnl used on other platforms for debugging purposes, but isn't otherwise
+dnl supported.
 dnl ######################################################################
 
 AC_ARG_ENABLE([builtin-extensions], [AS_HELP_STRING([Build binaries with builtin extensions])],
@@ -829,6 +832,11 @@ AC_REPLACE_FUNCS(pthread_attr_setstacksize)
 AC_CHECK_DECLS(pthread_sigmask, [], [], [[#include <signal.h>]])
 AC_REPLACE_FUNCS(pthread_sigmask)
 
+AC_CHECK_DECLS([openat], [], [], [[#include <fcntl.h>]])
+AC_CHECK_DECLS([fstatat], [], [], [[#include <sys/stat.h>]])
+AC_CHECK_DECLS([fchownat], [], [], [[#include <unistd.h>]])
+AC_REPLACE_FUNCS(openat fstatat fchownat)
+
 dnl ######################################################################
 dnl Required by cf-upgrade. It cannot be implemented in libcompat because
 dnl cf-upgrade does not link to any libraries except libutils and only
@@ -1218,6 +1226,12 @@ else
   AC_MSG_RESULT([-> User promises: disabled])
 fi
 
+if test "x$enable_builtin_extensions" = "xyes"; then
+  AC_MSG_RESULT([-> Enterprise extensions: Built in])
+else
+  AC_MSG_RESULT([-> Enterprise extensions: Plugin or not included])
+fi
+
 m4_indir(incstart[]incend, [nova/config.m4])
 
 AC_MSG_RESULT([-> Workdir: $WORKDIR])
@@ -1244,6 +1258,7 @@ AC_CONFIG_FILES([Makefile
     cf-execd/Makefile
     cf-key/Makefile
     cf-monitord/Makefile
+    cf-upgrade/Makefile
     cf-runagent/Makefile
     cf-serverd/Makefile
     ext/Makefile

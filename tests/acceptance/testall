@@ -71,7 +71,9 @@ QUIET=
 STAGING_TESTS=${STAGING_TESTS:-0}
 NETWORK_TESTS=${NETWORK_TESTS:-1}
 UNSAFE_TESTS=${UNSAFE_TESTS:-0}
+LIBXML2_TESTS=${LIBXML2_TESTS:-1}
 GAINROOT=${GAINROOT:-fakeroot}
+NO_CLEAN=0
 
 PASSED_TESTS=0
 FAILED_TESTS=0
@@ -159,9 +161,14 @@ usage() {
   echo "           otherwise you will get incorrect results."
   echo
   echo " --no-network disable tests in network directories."
+  echo
+  echo " --no-libxml2 disable tests involving xml file editing."
+  echo
   echo " --printlog   print the full test.log output immediately."
   echo
   echo " --gdb   Run test under GDB"
+  echo " --no-clean does not clean workdir after test finishes"
+  echo "            (by default it gets cleaned only if test passed)."
 }
 
 runtest() {
@@ -186,6 +193,9 @@ runtest() {
   elif [ "x$NETWORK_TESTS" = "x0" ] && echo "$TEST" | grep -q -e '/network/'; then
     SKIP=1
     SKIPREASON="Network-dependent tests are disabled"
+  elif [ "x$LIBXML2_TESTS" = "x0" ] && echo "$TEST" | grep -q -e '/11_xml_edits/'; then
+    SKIP=1
+    SKIPREASON="XML file editing tests are disabled"
   else
     SKIP=
     SKIPREASON=
@@ -249,7 +259,8 @@ export CFENGINE_TEST_OVERRIDE_WORKDIR TEMP
     echo "              "time=\"$(($TEST_END_TIME - $TEST_START_TIME)) seconds\"\> >> "$XMLTMP"
 
     if [ -z "$EXPECTED_CRASH" ]; then
-      if [ $RETVAL -eq 0 ] && echo "$OUT" | grep -q -F -e "R: $TEST Pass"; then
+      ESCAPED_TEST="$(echo "$TEST" | sed -e 's/\./\\./g')"
+      if [ $RETVAL -eq 0 ] && echo "$OUT" | grep -q -e "R: .*$ESCAPED_TEST Pass"; then
         RESULT=Pass
       else
         RESULT=FAIL
@@ -262,7 +273,7 @@ export CFENGINE_TEST_OVERRIDE_WORKDIR TEMP
       fi
     fi
 
-    if [ "$RESULT" = "Pass" ]; then
+    if [ "$RESULT" = "Pass" -a "$NO_CLEAN" = "0" ]; then
       $GAINROOT rm -rf "$WORKDIR"
     fi
 
@@ -367,6 +378,8 @@ while true; do
       UNSAFE_TESTS=1;;
     --no-network)
       NETWORK_TESTS=0;;
+    --no-libxml2)
+      LIBXML2_TESTS=0;;
     --agent=*)
       AGENT=${1#--agent=};;
     --cfpromises=*)
@@ -381,6 +394,8 @@ while true; do
       PRINTLOG=1;;
     --gdb)
       GDB=1;;
+    --no-clean)
+      NO_CLEAN=1;;
     -*)
       echo "Unknown option: $1"
       exit 1;;

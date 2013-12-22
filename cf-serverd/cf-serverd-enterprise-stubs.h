@@ -30,19 +30,20 @@
 
 struct ServerConnectionState;
 
-ENTERPRISE_VOID_FUNC_3ARG_DECLARE(void, RegisterLiteralServerData, EvalContext *, ctx, const char *, handle, Promise *, pp);
+ENTERPRISE_VOID_FUNC_3ARG_DECLARE(void, RegisterLiteralServerData, EvalContext *, ctx, const char *, handle, const Promise *, pp);
 ENTERPRISE_FUNC_3ARG_DECLARE(int, ReturnLiteralData, EvalContext *, ctx, char *, handle, char *, ret);
 
 ENTERPRISE_FUNC_4ARG_DECLARE(int, SetServerListenState, EvalContext *, ctx, size_t, queue_size, bool, server_listen,
                              InitServerFunction, InitServerPtr);
 
-typedef void (*ServerEntryPointFunction)(EvalContext *ctx, int sd_reply, char *ipaddr);
+typedef void (*ServerEntryPointFunction)(EvalContext *ctx, char *ipaddr, ConnectionInfo *info);
 ENTERPRISE_VOID_FUNC_2ARG_DECLARE(void, TryCollectCall, int, collect_window, ServerEntryPointFunction, server_entry_point);
 ENTERPRISE_FUNC_1ARG_DECLARE(int, ReceiveCollectCall, ServerConnectionState *, conn);
 
 ENTERPRISE_FUNC_3ARG_DECLARE(bool, ReturnQueryData, ServerConnectionState *, conn, char *, menu, int, encrypt);
 
-ENTERPRISE_VOID_FUNC_1ARG_DECLARE(void, KeepReportDataSelectAccessPromise, Promise *, pp);
+ENTERPRISE_VOID_FUNC_1ARG_DECLARE(void, KeepReportDataSelectAccessPromise,
+                                  const Promise *, pp);
 ENTERPRISE_VOID_FUNC_0ARG_DECLARE(void, CleanReportBookFilterSet);
 
 ENTERPRISE_VOID_FUNC_1ARG_DECLARE(void, FprintAvahiCfengineTag, FILE *, fp);

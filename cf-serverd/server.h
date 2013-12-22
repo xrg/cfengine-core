@@ -60,7 +60,6 @@ typedef struct
     Item *allowuserlist;                              /* "allowusers" */
     Item *multiconnlist;                              /* "allowallconnects" */
     Item *trustkeylist;                               /* "trustkeysfrom" */
-    Item *skipverify;
     char *allowciphers;
 
     Auth *admit;
@@ -89,9 +88,8 @@ typedef struct
 struct ServerConnectionState_
 {
     EvalContext *ctx;
-    ConnectionInfo conn_info;
+    ConnectionInfo *conn_info;
     int synchronized;
-    int trust;
     char hostname[CF_MAXVARSIZE];
     char username[CF_MAXVARSIZE];
 #ifdef __MINGW32__
@@ -119,8 +117,7 @@ typedef struct
 } ServerFileGetState;
 
 
-void KeepPromises(EvalContext *ctx, Policy *policy, GenericAgentConfig *config);
-void ServerEntryPoint(EvalContext *ctx, int sd_reply, char *ipaddr);
+void ServerEntryPoint(EvalContext *ctx, char *ipaddr, ConnectionInfo *info);
 void DeleteAuthList(Auth *ap);
 void PurgeOldConnections(Item **list, time_t now);
 

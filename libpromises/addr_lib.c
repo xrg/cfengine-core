@@ -24,6 +24,7 @@
 
 #include <addr_lib.h>
 
+#include <item_lib.h>
 #include <logging.h>
 #include <string_lib.h>
 
@@ -284,7 +285,7 @@ int FuzzySetMatch(const char *s1, const char *s2)
     return -1;
 }
 
-int FuzzyHostParse(char *arg2)
+bool FuzzyHostParse(const char *arg2)
 {
     long start = -1, end = -1;
     int n;
@@ -301,7 +302,7 @@ int FuzzyHostParse(char *arg2)
     return true;
 }
 
-int FuzzyHostMatch(char *arg0, char *arg1, char *refhost)
+int FuzzyHostMatch(const char *arg0, const char *arg1, const char *refhost)
 {
     char *sp, refbase[CF_MAXVARSIZE];
     long cmp = -1, start = -1, end = -1;
@@ -350,14 +351,13 @@ int FuzzyHostMatch(char *arg0, char *arg1, char *refhost)
     return 0;
 }
 
-int FuzzyMatchParse(char *s)
+bool FuzzyMatchParse(const char *s)
 {
-    char *sp;
     short isCIDR = false, isrange = false, isv6 = false, isv4 = false, isADDR = false;
     char address[CF_ADDRSIZE];
     int mask, count = 0;
 
-    for (sp = s; *sp != '\0'; sp++)     /* Is this an address or hostname */
+    for (const char *sp = s; *sp != '\0'; sp++)     /* Is this an address or hostname */
     {
         if (!isxdigit((int) *sp))
         {
@@ -451,9 +451,9 @@ int FuzzyMatchParse(char *s)
     if (isv4 && isrange)
     {
         long i, from = -1, to = -1;
-        char *sp1, buffer1[CF_MAX_IP_LEN];
+        char buffer1[CF_MAX_IP_LEN];
 
-        sp1 = s;
+        const char *sp1 = s;
 
         for (i = 0; i < 4; i++)
         {
@@ -536,4 +536,32 @@ bool IsLoopbackAddress(const char *address)
     }
 
     return false;
+}
+
+bool IsInterfaceAddress(const Item *ip_addresses, const char *adr)
+ /* Does this address belong to a local interface */
+{
+    for (const Item *ip = ip_addresses; ip != NULL; ip = ip->next)
+    {
+        if (strncasecmp(adr, ip->name, strlen(adr)) == 0)
+        {
+            Log(LOG_LEVEL_DEBUG, "Identifying '%s' as one of my interfaces", adr);
+            return true;
+        }
+    }
+
+    Log(LOG_LEVEL_DEBUG, "'%s' is not one of my interfaces", adr);
+    return false;
+}
+
+int ParseHostname(const char *name, char *hostname)
+{
+    int port;
+    if (sscanf(name, "%250[^:]:%d", hostname, &port) != 2)
+    {
+        strlcpy(hostname, name, CF_MAXVARSIZE);
+        port = CFENGINE_PORT;
+    }
+
+    return port;
 }

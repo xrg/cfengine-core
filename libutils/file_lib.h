@@ -40,4 +40,15 @@ int FullWrite(int desc, const char *ptr, size_t len);
    Return amount of bytes read upon success, -1 otherwise */
 int FullRead(int desc, char *ptr, size_t len);
 
+int safe_open(const char *pathname, int flags, ...);
+FILE *safe_fopen(const char *path, const char *mode);
+
+int safe_chdir(const char *path);
+int safe_chown(const char *path, uid_t owner, gid_t group);
+int safe_chmod(const char *path, mode_t mode);
+#ifndef __MINGW32__
+int safe_lchown(const char *path, uid_t owner, gid_t group);
+#endif
+int safe_creat(const char *pathname, mode_t mode);
+
 #endif

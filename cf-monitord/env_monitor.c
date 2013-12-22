@@ -24,7 +24,7 @@
 
 #include <env_monitor.h>
 
-#include <env_context.h>
+#include <eval_context.h>
 #include <mon.h>
 #include <granules.h>
 #include <dbm_api.h>
@@ -108,7 +108,7 @@ static double SetClasses(EvalContext *ctx, char *name, double variable, double a
 static void SetVariable(char *name, double now, double average, double stddev, Item **list);
 static double RejectAnomaly(double new, double av, double var, double av2, double var2);
 static void ZeroArrivals(void);
-static PromiseResult KeepMonitorPromise(EvalContext *ctx, Promise *pp, void *param);
+static PromiseResult KeepMonitorPromise(EvalContext *ctx, const Promise *pp, void *param);
 
 /****************************************************************/
 
@@ -300,7 +300,6 @@ void MonitorStartServer(EvalContext *ctx, const Policy *policy)
     };
 
     thislock = AcquireLock(ctx, pp->promiser, VUQNAME, CFSTARTTIME, tc, pp, false);
-
     if (thislock.lock == NULL)
     {
         PolicyDestroy(monitor_cfengine_policy);
@@ -321,7 +320,7 @@ void MonitorStartServer(EvalContext *ctx, const Policy *policy)
 
         ZeroArrivals();
 
-        MonNetworkSnifferSniff(ITER, CF_THIS);
+        MonNetworkSnifferSniff(EvalContextGetIpAddresses(ctx), ITER, CF_THIS);
 
         ITER++;
     }
@@ -356,10 +355,14 @@ static Averages EvalAvQ(EvalContext *ctx, char *t)
 {
     Averages *lastweek_vals, newvals;
     double last5_vals[CF_OBSERVABLES];
-    double This[CF_OBSERVABLES];
     char name[CF_MAXVARSIZE];
     time_t now = time(NULL);
     int i;
+
+    for (i = 0; i < CF_OBSERVABLES; i++)
+    {
+        last5_vals[i] = 0.0;
+    }
 
     Banner("Evaluating and storing new weekly averages");
 
@@ -375,7 +378,7 @@ static Averages EvalAvQ(EvalContext *ctx, char *t)
     {
         double delta2;
         char desc[CF_BUFSIZE];
-
+        double This;
         name[0] = '\0';
         GetObservable(i, name, desc);
 
@@ -398,23 +401,23 @@ static Averages EvalAvQ(EvalContext *ctx, char *t)
 
         // lastweek_vals is last week's stored data
         
-        This[i] =
+        This =
             RejectAnomaly(CF_THIS[i], lastweek_vals->Q[i].expect, lastweek_vals->Q[i].var, LOCALAV.Q[i].expect,
                           LOCALAV.Q[i].var);
 
-        newvals.Q[i].q = This[i];
+        newvals.Q[i].q = This;
         newvals.last_seen = now;  // Record the freshness of this slot
         
-        LOCALAV.Q[i].q = This[i];
+        LOCALAV.Q[i].q = This;
 
         Log(LOG_LEVEL_DEBUG, "Previous week's '%s.q' %lf", name, lastweek_vals->Q[i].q);
         Log(LOG_LEVEL_DEBUG, "Previous week's '%s.var' %lf", name, lastweek_vals->Q[i].var);
         Log(LOG_LEVEL_DEBUG, "Previous week's '%s.ex' %lf", name, lastweek_vals->Q[i].expect);
 
         Log(LOG_LEVEL_DEBUG, "Just measured: CF_THIS[%s] = %lf", name, CF_THIS[i]);
-        Log(LOG_LEVEL_DEBUG, "Just sanitized: This[%s] = %lf", name, This[i]);
+        Log(LOG_LEVEL_DEBUG, "Just sanitized: This[%s] = %lf", name, This);
 
-        newvals.Q[i].expect = WAverage(This[i], lastweek_vals->Q[i].expect, WAGE);
+        newvals.Q[i].expect = WAverage(This, lastweek_vals->Q[i].expect, WAGE);
         LOCALAV.Q[i].expect = WAverage(newvals.Q[i].expect, LOCALAV.Q[i].expect, ITER);
 
         if (last5_vals[i] > 0)
@@ -431,7 +434,7 @@ static Averages EvalAvQ(EvalContext *ctx, char *t)
         // Save the last measured value as the value "from five minutes ago" to get the gradient
         last5_vals[i] = newvals.Q[i].q;
 
-        delta2 = (This[i] - lastweek_vals->Q[i].expect) * (This[i] - lastweek_vals->Q[i].expect);
+        delta2 = (This - lastweek_vals->Q[i].expect) * (This - lastweek_vals->Q[i].expect);
 
         if (lastweek_vals->Q[i].var > delta2 * 2.0)
         {
@@ -448,12 +451,12 @@ static Averages EvalAvQ(EvalContext *ctx, char *t)
         Log(LOG_LEVEL_VERBOSE, "[%d] %s q=%lf, var=%lf, ex=%lf", i, name,
               newvals.Q[i].q, newvals.Q[i].var, newvals.Q[i].expect);
 
-        Log(LOG_LEVEL_VERBOSE, "[%d] = %lf -> (%lf#%lf) local [%lf#%lf]", i, This[i], newvals.Q[i].expect,
+        Log(LOG_LEVEL_VERBOSE, "[%d] = %lf -> (%lf#%lf) local [%lf#%lf]", i, This, newvals.Q[i].expect,
               sqrt(newvals.Q[i].var), LOCALAV.Q[i].expect, sqrt(LOCALAV.Q[i].var));
 
-        if (This[i] > 0)
+        if (This > 0)
         {
-            Log(LOG_LEVEL_VERBOSE, "Storing %.2lf in %s", This[i], name);
+            Log(LOG_LEVEL_VERBOSE, "Storing %.2lf in %s", This, name);
         }
     }
 
@@ -563,14 +566,14 @@ static void PublishEnvironment(Item *classes)
 
 /*********************************************************************/
 
-static void AddOpenPortsClasses(const char *name, const Item *value, Item **classlist)
+static void AddOpenPorts(const char *name, const Item *value, Item **mon_data)
 {
     Writer *w = StringWriter();
     WriterWriteF(w, "@%s=", name);
     PrintItemList(value, w);
     if (StringWriterLength(w) <= 1500)
     {
-        AppendItem(classlist, StringWriterClose(w), NULL);
+        AppendItem(mon_data, StringWriterClose(w), NULL);
     }
     else
     {
@@ -581,7 +584,7 @@ static void AddOpenPortsClasses(const char *name, const Item *value, Item **clas
 static void ArmClasses(EvalContext *ctx, Averages av)
 {
     double sigma;
-    Item *ip,*classlist = NULL;
+    Item *ip, *mon_data = NULL;
     int i, j, k;
     char buff[CF_BUFSIZE], ldt_buff[CF_BUFSIZE], name[CF_MAXVARSIZE];
     static int anomaly[CF_OBSERVABLES][LDT_BUFSIZE];
@@ -593,8 +596,8 @@ static void ArmClasses(EvalContext *ctx, Averages av)
         char desc[CF_BUFSIZE];
 
         GetObservable(i, name, desc);
-        sigma = SetClasses(ctx, name, CF_THIS[i], av.Q[i].expect, av.Q[i].var, LOCALAV.Q[i].expect, LOCALAV.Q[i].var, &classlist);
-        SetVariable(name, CF_THIS[i], av.Q[i].expect, sigma, &classlist);
+        sigma = SetClasses(ctx, name, CF_THIS[i], av.Q[i].expect, av.Q[i].var, LOCALAV.Q[i].expect, LOCALAV.Q[i].var, &mon_data);
+        SetVariable(name, CF_THIS[i], av.Q[i].expect, sigma, &mon_data);
 
         /* LDT */
 
@@ -643,7 +646,7 @@ static void ArmClasses(EvalContext *ctx, Averages av)
                 snprintf(buff, CF_BUFSIZE, "%s_high_ldt", name);
             }
 
-            AppendItem(&classlist, buff, "2");
+            AppendItem(&mon_data, buff, "2");
             EvalContextHeapPersistentSave(buff, "measurements", CF_PERSISTENCE, CONTEXT_STATE_POLICY_PRESERVE);
         }
         else
@@ -668,15 +671,15 @@ static void ArmClasses(EvalContext *ctx, Averages av)
         }
     }
 
-    SetMeasurementPromises(&classlist);
+    SetMeasurementPromises(&mon_data);
 
     // Report on the open ports, in various ways
 
-    AddOpenPortsClasses("listening_ports", ALL_INCOMING, &classlist);
-    AddOpenPortsClasses("listening_udp6_ports", MON_UDP6, &classlist);
-    AddOpenPortsClasses("listening_udp4_ports", MON_UDP4, &classlist);
-    AddOpenPortsClasses("listening_tcp6_ports", MON_TCP6, &classlist);
-    AddOpenPortsClasses("listening_tcp4_ports", MON_TCP4, &classlist);
+    AddOpenPorts("listening_ports", ALL_INCOMING, &mon_data);
+    AddOpenPorts("listening_udp6_ports", MON_UDP6, &mon_data);
+    AddOpenPorts("listening_udp4_ports", MON_UDP4, &mon_data);
+    AddOpenPorts("listening_tcp6_ports", MON_TCP6, &mon_data);
+    AddOpenPorts("listening_tcp4_ports", MON_TCP4, &mon_data);
 
     // Port addresses
 
@@ -689,31 +692,31 @@ static void ArmClasses(EvalContext *ctx, Averages av)
         for (ip = MON_TCP6; ip != NULL; ip=ip->next)
         {
             snprintf(buff,CF_BUFSIZE,"tcp6_port_addr[%s]=%s",ip->name,ip->classes);
-            AppendItem(&classlist,buff,NULL);       
+            AppendItem(&mon_data, buff, NULL);
         }
 
         for (ip = MON_TCP4; ip != NULL; ip=ip->next)
         {
             snprintf(buff,CF_BUFSIZE,"tcp4_port_addr[%s]=%s",ip->name,ip->classes);
-            AppendItem(&classlist,buff,NULL);       
+            AppendItem(&mon_data, buff, NULL);
         }
     }
 
     for (ip = MON_UDP6; ip != NULL; ip=ip->next)
     {
         snprintf(buff,CF_BUFSIZE,"udp6_port_addr[%s]=%s",ip->name,ip->classes);
-        AppendItem(&classlist,buff,NULL);       
+        AppendItem(&mon_data, buff, NULL);
     }
     
     for (ip = MON_UDP4; ip != NULL; ip=ip->next)
     {
         snprintf(buff,CF_BUFSIZE,"udp4_port_addr[%s]=%s",ip->name,ip->classes);
-        AppendItem(&classlist,buff,NULL);       
+        AppendItem(&mon_data, buff, NULL);
     }
     
-    PublishEnvironment(classlist);
+    PublishEnvironment(mon_data);
 
-    DeleteItemList(classlist);
+    DeleteItemList(mon_data);
 }
 
 /*****************************************************************************/
@@ -771,7 +774,20 @@ static void UpdateAverages(EvalContext *ctx, char *timekey, Averages newvals)
     HistoryUpdate(ctx, newvals);
 }
 
-/*****************************************************************************/
+static int Day2Number(const char *datestring)
+{
+    int i = 0;
+
+    for (i = 0; i < 7; i++)
+    {
+        if (strncmp(datestring, DAY_TEXT[i], 3) == 0)
+        {
+            return i;
+        }
+    }
+
+    return -1;
+}
 
 static void UpdateDistributions(EvalContext *ctx, char *timekey, Averages *av)
 {
@@ -1134,18 +1150,14 @@ static void GatherPromisedMeasures(EvalContext *ctx, const Policy *policy)
     }
 
     EvalContextClear(ctx);
-    GetNameInfo3(ctx, AGENT_TYPE_MONITOR);
-    GetInterfacesInfo(ctx);
-    Get3Environment(ctx, AGENT_TYPE_MONITOR);
-    OSClasses(ctx);
-    BuiltinClasses(ctx);
+    DetectEnvironment(ctx);
 }
 
 /*********************************************************************/
 /* Level                                                             */
 /*********************************************************************/
 
-static PromiseResult KeepMonitorPromise(EvalContext *ctx, Promise *pp, ARG_UNUSED void *param)
+static PromiseResult KeepMonitorPromise(EvalContext *ctx, const Promise *pp, ARG_UNUSED void *param)
 {
     assert(param == NULL);
 
@@ -1186,7 +1198,11 @@ static PromiseResult KeepMonitorPromise(EvalContext *ctx, Promise *pp, ARG_UNUSE
         return PROMISE_RESULT_NOOP;
     }
 
-    if (strcmp("classes", pp->parent_promise_type->name) == 0)
+    if (strcmp("vars", pp->parent_promise_type->name) == 0)
+    {
+        return PROMISE_RESULT_NOOP;
+    }
+    else if (strcmp("classes", pp->parent_promise_type->name) == 0)
     {
         return VerifyClassPromise(ctx, pp, NULL);
     }
@@ -1196,6 +1212,10 @@ static PromiseResult KeepMonitorPromise(EvalContext *ctx, Promise *pp, ARG_UNUSE
         /* FIXME: Verify why this explicit promise status change is done */
         EvalContextMarkPromiseNotDone(ctx, pp);
         return result;
+    }
+    else if (strcmp("reports", pp->parent_promise_type->name) == 0)
+    {
+        return PROMISE_RESULT_NOOP;
     }
 
     assert(false && "Unknown promise type");

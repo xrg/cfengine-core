@@ -31,6 +31,7 @@
 #include <instrumentation.h>
 #include <policy.h>
 #include <files_lib.h>
+#include <file_lib.h>
 #include <string_lib.h>
 #include <acl_tools.h>
 
@@ -117,7 +118,7 @@ bool CopyRegularFileDisk(const char *source, const char *destination)
     char *buf = 0;
     bool result = false;
 
-    if ((sd = open(source, O_RDONLY | O_BINARY)) == -1)
+    if ((sd = safe_open(source, O_RDONLY | O_BINARY)) == -1)
     {
         Log(LOG_LEVEL_INFO, "Can't copy '%s'. (open: %s)", source, GetErrorStr());
         goto end;
@@ -135,7 +136,7 @@ bool CopyRegularFileDisk(const char *source, const char *destination)
 
     unlink(destination);                /* To avoid link attacks */
 
-    if ((dd = open(destination, O_WRONLY | O_CREAT | O_TRUNC | O_EXCL | O_BINARY, statbuf.st_mode)) == -1)
+    if ((dd = safe_open(destination, O_WRONLY | O_CREAT | O_TRUNC | O_EXCL | O_BINARY, statbuf.st_mode)) == -1)
     {
         Log(LOG_LEVEL_INFO, "Unable to open destination file while copying '%s' to '%s'. (open: %s)", source, destination, GetErrorStr());
         goto end;
@@ -177,13 +178,13 @@ bool CopyFilePermissionsDisk(const char *source, const char *destination)
         return false;
     }
 
-    if (chmod(destination, statbuf.st_mode) != 0)
+    if (safe_chmod(destination, statbuf.st_mode) != 0)
     {
         Log(LOG_LEVEL_INFO, "Can't copy permissions '%s'. (chmod: %s)", source, GetErrorStr());
         return false;
     }
 
-    if (chown(destination, statbuf.st_uid, statbuf.st_gid) != 0)
+    if (safe_chown(destination, statbuf.st_uid, statbuf.st_gid) != 0)
     {
         Log(LOG_LEVEL_INFO, "Can't copy permissions '%s'. (chown: %s)", source, GetErrorStr());
         return false;

@@ -74,14 +74,14 @@ void UpdateLastSawHost(const char *hostkey, const char *address,
  * @brief Same as LastSaw() but the digest parameter is the hash as a
  *        "SHA=..." string, to avoid converting twice.
  */
-void LastSaw1(const char *ipaddress, unsigned char hashstr[EVP_MAX_MD_SIZE * 4],
+void LastSaw1(const char *ipaddress, const char *hashstr,
               LastSeenRole role)
 {
     const char *mapip = MapAddress(ipaddress);
     UpdateLastSawHost(hashstr, mapip, role == LAST_SEEN_ROLE_ACCEPT, time(NULL));
 }
 
-void LastSaw(const char *ipaddress, unsigned char digest[EVP_MAX_MD_SIZE + 1], LastSeenRole role)
+void LastSaw(const char *ipaddress, const char *digest, LastSeenRole role)
 {
     char databuf[EVP_MAX_MD_SIZE * 4];
 
@@ -91,7 +91,7 @@ void LastSaw(const char *ipaddress, unsigned char digest[EVP_MAX_MD_SIZE + 1], L
         return;
     }
 
-    HashPrintSafe(CF_DEFAULT_DIGEST, digest, databuf);
+    HashPrintSafe(CF_DEFAULT_DIGEST, true, digest, databuf);
 
     const char *mapip = MapAddress(ipaddress);
 
@@ -195,7 +195,7 @@ bool Address2Hostkey(const char *address, char *result)
         {
             unsigned char digest[EVP_MAX_MD_SIZE + 1];
             HashPubKey(PUBKEY, digest, CF_DEFAULT_DIGEST);
-            HashPrintSafe(CF_DEFAULT_DIGEST, digest, result);
+            HashPrintSafe(CF_DEFAULT_DIGEST, true, digest, result);
             return true;
         }
         else

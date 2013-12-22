@@ -34,7 +34,8 @@
 #include <mutex.h>
 #include <misc_lib.h>
 #include <assoc.h>
-#include <env_context.h>
+#include <eval_context.h>
+#include <json.h>
 
 
 static Rlist *RlistPrependRval(Rlist **start, Rval rval);
@@ -142,6 +143,8 @@ Rlist *RvalRlistValue(Rval rval)
     return rval.item;
 }
 
+/*******************************************************************/
+
 JsonElement *RvalContainerValue(Rval rval)
 {
     if (rval.type != RVAL_TYPE_CONTAINER)
@@ -150,6 +153,29 @@ JsonElement *RvalContainerValue(Rval rval)
     }
 
     return rval.item;
+}
+
+/*******************************************************************/
+
+const char *RvalContainerPrimitiveAsString(const Rval rval, const size_t index)
+{
+    const char *jstring = NULL;
+
+    if (JsonGetElementType(RvalContainerValue(rval)) == JSON_ELEMENT_TYPE_CONTAINER)
+    {
+        if (index < JsonLength(RvalContainerValue(rval)))
+        {
+
+            const JsonElement *jelement = JsonAt(RvalContainerValue(rval), index);
+
+            if (JsonGetElementType(jelement) == JSON_ELEMENT_TYPE_PRIMITIVE)
+            {
+                jstring = JsonPrimitiveGetAsString(jelement);
+            }
+        }
+    }
+
+    return jstring;
 }
 
 /*******************************************************************/
@@ -990,39 +1016,6 @@ void RlistReverse(Rlist **list)
         prev = tmp;
     }
     *list = prev;
-}
-
-/* Human-readable serialization */
-
-static void FnCallWrite(Writer *writer, const FnCall *call)
-{
-    WriterWrite(writer, call->name);
-    WriterWriteChar(writer, '(');
-
-    for (const Rlist *rp = call->args; rp != NULL; rp = rp->next)
-    {
-        switch (rp->val.type)
-        {
-        case RVAL_TYPE_SCALAR:
-            WriterWrite(writer, RlistScalarValue(rp));
-            break;
-
-        case RVAL_TYPE_FNCALL:
-            FnCallWrite(writer, RlistFnCallValue(rp));
-            break;
-
-        default:
-            WriterWrite(writer, "(** Unknown argument **)\n");
-            break;
-        }
-
-        if (rp->next != NULL)
-        {
-            WriterWriteChar(writer, ',');
-        }
-    }
-
-    WriterWriteChar(writer, ')');
 }
 
 void RlistWrite(Writer *writer, const Rlist *list)

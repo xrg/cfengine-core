@@ -24,22 +24,21 @@
 
 #include <verify_users.h>
 #include <attributes.h>
-#include <env_context.h>
+#include <eval_context.h>
 #include <ornaments.h>
 #include <locks.h>
 #include <promises.h>
 #include <string_lib.h>
 #include <misc_lib.h>
 
-static int UserSanityCheck(Attributes a, Promise *pp);
+static int UserSanityCheck(Attributes a,  const Promise *pp);
 
-PromiseResult VerifyUsersPromise(EvalContext *ctx, Promise *pp)
+PromiseResult VerifyUsersPromise(EvalContext *ctx, const Promise *pp)
 {
-    Attributes a = { {0} };
     CfLock thislock;
     char lockname[CF_BUFSIZE];
 
-    a = GetUserAttributes(ctx, pp);
+    Attributes a = GetUserAttributes(ctx, pp);
 
     if (!UserSanityCheck(a, pp))
     {
@@ -51,10 +50,9 @@ PromiseResult VerifyUsersPromise(EvalContext *ctx, Promise *pp)
     snprintf(lockname, CF_BUFSIZE - 1, "user-%s-%d", pp->promiser, a.users.policy);
 
     thislock = AcquireLock(ctx, lockname, VUQNAME, CFSTARTTIME, a.transaction, pp, false);
-
     if (thislock.lock == NULL)
     {
-        return PROMISE_RESULT_FAIL;
+        return PROMISE_RESULT_SKIPPED;
     }
 
     PromiseResult result = PROMISE_RESULT_NOOP;
@@ -86,7 +84,7 @@ PromiseResult VerifyUsersPromise(EvalContext *ctx, Promise *pp)
 
 /** Pre-check of promise contents **/
 
-static int UserSanityCheck(Attributes a, Promise *pp)
+static int UserSanityCheck(Attributes a,  const Promise *pp)
 {
     User *u = &a.users;
     switch (u->policy)
