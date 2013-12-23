@@ -176,6 +176,7 @@ done
 
 popd
 
+install -d %{buildroot}%{workdir}/masterfiles
 cat '-' << EOF > %{buildroot}%{workdir}/masterfiles/README.first
 In this directory you should keep your original version of the policy
 files.
@@ -236,6 +237,7 @@ rm -rf %{buildroot}
 %cfprog cf-agent
 %cfprog cf-monitord
 %cfprog cf-execd
+%cfprog cf-upgrade
 %{_initrddir}/cf-execd
 %dir %{workdir}/inputs
 %dir %{workdir}/outputs
@@ -251,7 +253,6 @@ rm -rf %{buildroot}
 # doc %{_defaultdocdir}/cfengine/guides/
 # doc %{_defaultdocdir}/cfengine/reference/
 %{_defaultdocdir}/cfengine/examples/*
-%{_datadir}/cfengine/CoreBase/*
 %{workdir}/masterfiles/README.first
 
 
