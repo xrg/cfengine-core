@@ -4,28 +4,42 @@ use warnings;
 use strict;
 use Data::Dumper;
 use Getopt::Long;
+use File::Basename;
 
 $|=1;                                   # autoflush
 
 my %options = (
                check => 0,
+               verbose => 0,
                help => 0,
+               cfagent => "../cf-agent/cf-agent",
+               workdir => "/tmp",
               );
 
 GetOptions(\%options,
            "help|h!",
-           "check!",
+           "check|c!",
+           "cfagent=s",
+           "workdir=s",
+           "verbose!",
     );
 
 if ($options{help})
 {
  print <<EOHIPPUS;
-Syntax: $0 [-c|--check] FILE1.cf FILE2.cf ...
+Syntax: $0 [-c|--check] [-v|--verbose] [--cfagent=PATH] [--workdir=WORKDIR] FILE1.cf FILE2.cf ...
 
 Generate the output section of CFEngine code example.
 
 With -c or --check, the script reports if the output is different but doesn't
 write it.
+
+With -v or --verbose, the script shows the full output of each test.
+
+The --workdir path, defaulting to /tmp, is used for storing the example to be
+run.
+
+The --cfagent path, defaulting to ../cf-agent/cf-agent, is the cf-agent path.
 
 Each input .cf file is scanned for three markers:
 
@@ -144,21 +158,29 @@ sub run_example
     my $prep = shift @_ || [];
     my $example = shift @_;
 
-    foreach (@$prep)
-    {
-        s/^#@ //;
-        warn "processing $file: Running prep '$_'";
-        system($_);
-    }
-
-    my $tempfile = '/tmp/example.cf';
+    my $base = basename($file);
+    my $tempfile = "$options{workdir}/$base";
+    mkdir $options{workdir};
     open my $fh, '>', $tempfile or die "Could not write to $tempfile: $!";
     print $fh $example;
     close $fh;
 
-    $ENV{EXAMPLE} = $tempfile;
-    open my $ofh, '-|', "../cf-agent/cf-agent -nKf $tempfile 2>&1";
+    foreach (@$prep)
+    {
+        s/^#@ //;
+        s/FILE/$tempfile/g;
+        print "processing $file: Running prep '$_'"
+         if $options{verbose};
+        system($_);
+    }
+
+    my $cmd = "$options{cfagent} -nKf $tempfile 2>&1";
+    $ENV{EXAMPLE} = $base;
+    open my $ofh, '-|', $cmd;
     my $output = join '', <$ofh>;
     close $ofh;
+
+    print "Test file: $file\nCommand: $cmd\nOutput: $output\n\n\n"
+     if $options{verbose};
     return $output;
 }
