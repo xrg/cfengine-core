@@ -28,17 +28,15 @@
 #include <logging.h>
 #include <string_lib.h>
 
-int PR_KEPT;
-int PR_REPAIRED;
-int PR_NOTKEPT;
+int PR_KEPT; /* GLOBAL_X */
+int PR_REPAIRED; /* GLOBAL_X */
+int PR_NOTKEPT; /* GLOBAL_X */
 
-static double VAL_KEPT;
-static double VAL_REPAIRED;
-static double VAL_NOTKEPT;
+static double VAL_KEPT; /* GLOBAL_X */
+static double VAL_REPAIRED; /* GLOBAL_X */
+static double VAL_NOTKEPT; /* GLOBAL_X */
 
-static bool END_AUDIT_REQUIRED = false;
-
-#define CF_VALUE_LOG      "cf_value.log"
+static bool END_AUDIT_REQUIRED = false; /* GLOBAL_X */
 
 void BeginAudit()
 {
@@ -83,45 +81,6 @@ void EndAudit(const EvalContext *ctx, int background_tasks)
     char *sp, string[CF_BUFSIZE];
     Rval retval = { 0 };
 
-    {
-        Rval track_value_rval = { 0 };
-        bool track_value = false;
-
-        VarRef *ref = VarRefParseFromScope(CFA_CONTROLBODY[AGENT_CONTROL_TRACK_VALUE].lval, "control_agent");
-        if (EvalContextVariableGet(ctx, ref, &track_value_rval, NULL))
-        {
-            track_value = BooleanFromString(track_value_rval.item);
-        }
-
-        VarRefDestroy(ref);
-
-        if (track_value)
-        {
-            FILE *fout;
-            char name[CF_MAXVARSIZE], datestr[CF_MAXVARSIZE];
-            time_t now = time(NULL);
-
-            Log(LOG_LEVEL_INFO, "Recording promise valuations");
-
-            snprintf(name, CF_MAXVARSIZE, "%s/state/%s", CFWORKDIR, CF_VALUE_LOG);
-            snprintf(datestr, CF_MAXVARSIZE, "%s", ctime(&now));
-
-            if ((fout = fopen(name, "a")) == NULL)
-            {
-                Log(LOG_LEVEL_INFO, "Unable to write to the value log '%s'", name);
-                return;
-            }
-
-            if (Chop(datestr, CF_EXPANDSIZE) == -1)
-            {
-                Log(LOG_LEVEL_ERR, "Chop was called on a string that seemed to have no terminator");
-            }
-            fprintf(fout, "%s,%.4lf,%.4lf,%.4lf\n", datestr, VAL_KEPT, VAL_REPAIRED, VAL_NOTKEPT);
-            TrackValue(datestr, VAL_KEPT, VAL_REPAIRED, VAL_NOTKEPT);
-            fclose(fout);
-        }
-    }
-
     double total = (double) (PR_KEPT + PR_NOTKEPT + PR_REPAIRED) / 100.0;
 
     if (EvalContextVariableControlCommonGet(ctx, COMMON_CONTROL_VERSION, &retval))
@@ -160,7 +119,7 @@ void FatalError(const EvalContext *ctx, char *s, ...)
 
     EndAudit(ctx, 0);
 #ifdef NDEBUG
-    exit(1);
+    exit(EXIT_FAILURE);
 #else
     abort();
 #endif

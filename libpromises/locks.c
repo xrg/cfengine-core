@@ -42,18 +42,17 @@
 #define CFLOGSIZE 1048576       /* Size of lock-log before rotation */
 #define CF_LOCKHORIZON ((time_t)(SECONDS_PER_WEEK * 4))
 
-static char CFLOCK[CF_BUFSIZE] = { 0 };
-static char CFLAST[CF_BUFSIZE] = { 0 };
-static char CFLOG[CF_BUFSIZE] = { 0 };
+static char CFLOCK[CF_BUFSIZE] = { 0 }; /* GLOBAL_X */
+static char CFLAST[CF_BUFSIZE] = { 0 }; /* GLOBAL_X */
+static char CFLOG[CF_BUFSIZE] = { 0 }; /* GLOBAL_X */
 
-static pthread_once_t lock_cleanup_once = PTHREAD_ONCE_INIT;
+static pthread_once_t lock_cleanup_once = PTHREAD_ONCE_INIT; /* GLOBAL_X */
 
 
 #ifdef LMDB
 static void GenerateMd5Hash(const char *istring, char *ohash)
 {
-    if (!strcmp(istring, "CF_CRITICAL_SECTION") ||
-        !strncmp(istring, "lock.track_license_bundle.track_license", 39))
+    if (!strcmp(istring, "CF_CRITICAL_SECTION"))
     { 
         strcpy(ohash, istring);
         return;
@@ -69,6 +68,11 @@ static void GenerateMd5Hash(const char *istring, char *ohash)
         ohash[i*2+1] = lookup[digest[i] & 0xf];
     }
     ohash[16*2] = '\0';
+
+    if (!strncmp(istring, "lock.track_license_bundle.track_license", 39))
+    {
+        ohash[0] = 'X';
+    }
 }
 #endif
 
@@ -77,8 +81,7 @@ static bool WriteLockData(CF_DB *dbp, const char *lock_id, LockData *lock_data)
 #ifdef LMDB
     unsigned char digest2[EVP_MAX_MD_SIZE*2 + 1];
 
-    if (!strcmp(lock_id, "CF_CRITICAL_SECTION") ||
-        !strncmp(lock_id, "lock.track_license_bundle.track_license", 39))
+    if (!strcmp(lock_id, "CF_CRITICAL_SECTION"))
     {
         strcpy(digest2, lock_id);
     }
@@ -401,7 +404,7 @@ static void LogLockCompletion(char *cflog, int pid, char *str, char *op, char *o
     if ((fp = fopen(cflog, "a")) == NULL)
     {
         Log(LOG_LEVEL_ERR, "Can't open lock-log file '%s'. (fopen: %s)", cflog, GetErrorStr());
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     if ((tim = time((time_t *) NULL)) == -1)
@@ -425,10 +428,11 @@ static void LocksCleanup(void)
 {
     if (strlen(CFLOCK) > 0)
     {
-        CfLock best_guess;
-        best_guess.lock = xstrdup(CFLOCK);
-        best_guess.last = xstrdup(CFLAST);
-        best_guess.log = xstrdup(CFLOG);
+        CfLock best_guess = {
+            .lock = xstrdup(CFLOCK),
+            .last = xstrdup(CFLAST),
+            .log = xstrdup(CFLOG)
+        };
         YieldCurrentLock(best_guess);
     }
 }
@@ -651,22 +655,17 @@ CfLock AcquireLock(EvalContext *ctx, const char *operand, const char *host, time
     char cflock[CF_BUFSIZE], cflast[CF_BUFSIZE], cflog[CF_BUFSIZE];
     char str_digest[CF_BUFSIZE];
     char *rbt_key = NULL;
-    static RBTree *rbt = NULL;
-    CfLock this;
+    static RBTree *rbt = NULL; /* GLOBAL_X */
     unsigned char digest[EVP_MAX_MD_SIZE + 1];
-
-    this.last = (char *) CF_UNDEFINED;
-    this.lock = (char *) CF_UNDEFINED;
-    this.log = (char *) CF_UNDEFINED;
 
     if (now == 0)
     {
-        return this;
+        return (CfLock) {
+            .last = (char *) CF_UNDEFINED,
+            .lock = (char *) CF_UNDEFINED,
+            .log = (char *) CF_UNDEFINED
+        };
     }
-
-    this.last = NULL;
-    this.lock = NULL;
-    this.log = NULL;
 
     // rbt is static, allocate it the first time
     if (rbt == NULL)
@@ -681,7 +680,7 @@ CfLock AcquireLock(EvalContext *ctx, const char *operand, const char *host, time
 
     if (EvalContextPromiseIsDone(ctx, pp))
     {
-        return this;
+        return (CfLock) { NULL, NULL, NULL, false };
     }
 
     if (EvalContextStackCurrentPromise(ctx))
@@ -705,7 +704,7 @@ CfLock AcquireLock(EvalContext *ctx, const char *operand, const char *host, time
         {
             Log(LOG_LEVEL_DEBUG, "This promise has already been verified");
             free(rbt_key);
-            return this;
+            return (CfLock) { NULL, NULL, NULL, false };
         }
 
         /* Using &sum to avoid the declaration of a dedicated dummy variable */
@@ -714,10 +713,9 @@ CfLock AcquireLock(EvalContext *ctx, const char *operand, const char *host, time
 
 /* Finally if we're supposed to ignore locks ... do the remaining stuff */
 
-    if (IGNORELOCK)
+    if (EvalContextIsIgnoringLocks(ctx))
     {
-        this.lock = xstrdup("dummy");
-        return this;
+        return (CfLock) { .lock = xstrdup("dummy"), .dummy = true };
     }
 
     promise = BodyName(pp);
@@ -761,7 +759,7 @@ CfLock AcquireLock(EvalContext *ctx, const char *operand, const char *host, time
         Log(LOG_LEVEL_VERBOSE, " XX Another cf-agent seems to have done this since I started (elapsed=%jd)",
               (intmax_t) elapsedtime);
         ReleaseCriticalSection();
-        return this;
+        return (CfLock) { NULL, NULL, NULL, false };
     }
 
     if (elapsedtime < tc.ifelapsed)
@@ -769,7 +767,7 @@ CfLock AcquireLock(EvalContext *ctx, const char *operand, const char *host, time
         Log(LOG_LEVEL_VERBOSE, " XX Nothing promised here [%.40s] (%jd/%u minutes elapsed)", cflast,
               (intmax_t) elapsedtime, tc.ifelapsed);
         ReleaseCriticalSection();
-        return this;
+        return (CfLock) { NULL, NULL, NULL, false };
     }
 
 /* Look for existing (current) processes */
@@ -802,7 +800,7 @@ CfLock AcquireLock(EvalContext *ctx, const char *operand, const char *host, time
             {
                 ReleaseCriticalSection();
                 Log(LOG_LEVEL_VERBOSE, "Couldn't obtain lock for %s (already running!)", cflock);
-                return this;
+                return (CfLock) { NULL, NULL, NULL, false };
             }
         }
 
@@ -821,21 +819,22 @@ CfLock AcquireLock(EvalContext *ctx, const char *operand, const char *host, time
 
     ReleaseCriticalSection();
 
-    this.lock = xstrdup(cflock);
-    this.last = xstrdup(cflast);
-    this.log = xstrdup(cflog);
-
 /* Keep this as a global for signal handling */
     strcpy(CFLOCK, cflock);
     strcpy(CFLAST, cflast);
     strcpy(CFLOG, cflog);
 
-    return this;
+    return (CfLock) {
+        .lock = xstrdup(cflock),
+        .last = xstrdup(cflast),
+        .log = xstrdup(cflog),
+        .dummy = false
+    };
 }
 
 void YieldCurrentLock(CfLock lock)
 {
-    if (IGNORELOCK)
+    if (lock.dummy)
     {
         free(lock.lock);        /* allocated in AquireLock as a special case */
         return;
@@ -966,11 +965,18 @@ void PurgeLocks(void)
 
     while (NextDB(dbcp, &key, &ksize, (void *) &entry, &vsize))
     {
+#ifdef LMDB
+        if (key[0] == 'X')
+        {
+            continue;
+        }
+#else
         if (strncmp(key, "last.internal_bundle.track_license.handle",
                     strlen("last.internal_bundle.track_license.handle")) == 0)
         {
             continue;
         }
+#endif
 
         if (now - entry.time > (time_t) CF_LOCKHORIZON)
         {

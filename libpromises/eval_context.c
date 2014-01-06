@@ -58,6 +58,7 @@ struct EvalContext_
     bool bundle_aborted;
     bool checksum_updates_default;
     Item *ip_addresses;
+    bool ignore_locks;
 
     Item *heap_abort;
     Item *heap_abort_current_bundle;
@@ -106,9 +107,15 @@ static const char *GetAgentAbortingContext(const EvalContext *ctx)
 {
     for (const Item *ip = ctx->heap_abort; ip != NULL; ip = ip->next)
     {
-        if (IsDefinedClass(ctx, ip->name, NULL))
+        if (IsDefinedClass(ctx, ip->classes, NULL))
         {
-            return ip->name;
+            const char *regex = ip->name;
+            Class *cls = EvalContextClassMatch(ctx, regex);
+
+            if (cls)
+            {
+                return regex;
+            }
         }
     }
     return NULL;
@@ -728,6 +735,7 @@ EvalContext *EvalContextNew(void)
     ctx->bundle_aborted = false;
     ctx->checksum_updates_default = false;
     ctx->ip_addresses = NULL;
+    ctx->ignore_locks = false;
 
     ctx->heap_abort = NULL;
     ctx->heap_abort_current_bundle = NULL;
@@ -1145,6 +1153,21 @@ Class *EvalContextClassGet(const EvalContext *ctx, const char *ns, const char *n
     }
 
     return ClassTableGet(ctx->global_classes, ns, name);
+}
+
+Class *EvalContextClassMatch(const EvalContext *ctx, const char *regex)
+{
+    StackFrame *frame = LastStackFrameByType(ctx, STACK_FRAME_TYPE_BUNDLE);
+    if (frame)
+    {
+        Class *cls = ClassTableMatch(frame->data.bundle.classes, regex);
+        if (cls)
+        {
+            return cls;
+        }
+    }
+
+    return ClassTableMatch(ctx->global_classes, regex);
 }
 
 bool EvalContextClassPut(EvalContext *ctx, const char *ns, const char *name, bool is_soft, ContextScope scope, const char *tags)
@@ -1759,9 +1782,9 @@ void EvalContextFunctionCachePut(EvalContext *ctx, const FnCall *fp, const Rlist
  * Internal functions temporarily used from logging implementation
  */
 
-static const char *NO_STATUS_TYPES[] =
+static const char *const NO_STATUS_TYPES[] =
     { "vars", "classes", "insert_lines", "delete_lines", "replace_patterns", "field_edits", NULL };
-static const char *NO_LOG_TYPES[] =
+static const char *const NO_LOG_TYPES[] =
     { "vars", "classes", "insert_lines", "delete_lines", "replace_patterns", "field_edits", NULL };
 
 /*
@@ -2206,4 +2229,14 @@ void EvalContextSetLaunchDirectory(EvalContext *ctx, const char *path)
 {
     free(ctx->launch_directory);
     ctx->launch_directory = xstrdup(path);
+}
+
+void EvalContextSetIgnoreLocks(EvalContext *ctx, bool ignore)
+{
+    ctx->ignore_locks = ignore;
+}
+
+bool EvalContextIsIgnoringLocks(const EvalContext *ctx)
+{
+    return ctx->ignore_locks;
 }

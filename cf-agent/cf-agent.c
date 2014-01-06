@@ -109,18 +109,18 @@ extern int PR_KEPT;
 extern int PR_REPAIRED;
 extern int PR_NOTKEPT;
 
-static bool ALLCLASSESREPORT;
-static bool ALWAYS_VALIDATE;
-static bool CFPARANOID = false;
+static bool ALLCLASSESREPORT; /* GLOBAL_P */
+static bool ALWAYS_VALIDATE; /* GLOBAL_P */
+static bool CFPARANOID = false; /* GLOBAL_P */
 
-static Rlist *ACCESSLIST;
+static Rlist *ACCESSLIST; /* GLOBAL_P */
 
-static int CFA_BACKGROUND = 0;
-static int CFA_BACKGROUND_LIMIT = 1;
+static int CFA_BACKGROUND = 0; /* GLOBAL_X */
+static int CFA_BACKGROUND_LIMIT = 1; /* GLOBAL_P */
 
-static Item *PROCESSREFRESH;
+static Item *PROCESSREFRESH; /* GLOBAL_P */
 
-static const char *AGENT_TYPESEQUENCE[] =
+static const char *const AGENT_TYPESEQUENCE[] =
 {
     "meta",
     "vars",
@@ -146,7 +146,7 @@ static const char *AGENT_TYPESEQUENCE[] =
 /*******************************************************************/
 
 static void ThisAgentInit(void);
-static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv);
+static GenericAgentConfig *CheckOpts(int argc, char **argv);
 static char **TranslateOldBootstrapOptionsSeparate(int *argc_new, char **argv);
 static char **TranslateOldBootstrapOptionsConcatenated(int argc, char **argv);
 static void FreeStringArray(int size, char **array);
@@ -169,9 +169,10 @@ static int AutomaticBootstrap(GenericAgentConfig *config);
 /* Command line options                                            */
 /*******************************************************************/
 
-static const char *CF_AGENT_SHORT_DESCRIPTION = "evaluate CFEngine policy code and actuate change to the system.";
+static const char *const CF_AGENT_SHORT_DESCRIPTION =
+    "evaluate CFEngine policy code and actuate change to the system.";
 
-static const char *CF_AGENT_MANPAGE_LONG_DESCRIPTION =
+static const char *const CF_AGENT_MANPAGE_LONG_DESCRIPTION =
         "cf-agent evaluates policy code and makes changes to the system. Policy bundles are evaluated in the order of the "
         "provided bundlesequence (this is normally specified in the common control body). "
         "For each bundle, cf-agent groups promise statements according to their type. Promise types are then evaluated in a preset "
@@ -198,7 +199,7 @@ static const struct option OPTIONS[] =
     {NULL, 0, 0, '\0'}
 };
 
-static const char *HINTS[] =
+static const char *const HINTS[] =
 {
     "Bootstrap CFEngine to the given policy server IP, hostname or :avahi (automatic detection)",
     "Set or override bundlesequence from command line",
@@ -227,7 +228,7 @@ int main(int argc, char *argv[])
 
     EvalContext *ctx = EvalContextNew();
 
-    GenericAgentConfig *config = CheckOpts(ctx, argc, argv);
+    GenericAgentConfig *config = CheckOpts(argc, argv);
     GenericAgentConfigApply(ctx, config);
 
     GenericAgentDiscoverContext(ctx, config);
@@ -284,7 +285,7 @@ int main(int argc, char *argv[])
 /* Level 1                                                         */
 /*******************************************************************/
 
-static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
+static GenericAgentConfig *CheckOpts(int argc, char **argv)
 {
     extern char *optarg;
     int c;
@@ -379,7 +380,7 @@ static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
                 CloseNetwork();
 
                 MINUSF = true;
-                IGNORELOCK = true;
+                config->ignore_locks = true;
                 GenericAgentConfigSetInputFile(config, GetWorkDir(),
                                                "promises.cf");
                 config->agent_specific.agent.bootstrap_policy_server =
@@ -388,7 +389,7 @@ static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
             break;
 
         case 'K':
-            IGNORELOCK = true;
+            config->ignore_locks = true;
             break;
 
         case 'D':
@@ -409,8 +410,7 @@ static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
 
         case 'n':
             DONTDO = true;
-            IGNORELOCK = true;
-            EvalContextClassPut(ctx, NULL, "opt_dry_run", false, CONTEXT_SCOPE_NAMESPACE, "cfe_internal,source=environment");
+            config->ignore_locks = true;
             break;
 
         case 'V':
@@ -419,7 +419,7 @@ static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
                 GenericAgentWriteVersion(w);
                 FileWriterDetach(w);
             }
-            exit(0);
+            exit(EXIT_SUCCESS);
 
         case 'h':
             {
@@ -427,7 +427,7 @@ static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
                 GenericAgentWriteHelp(w, "cf-agent", OPTIONS, HINTS, true);
                 FileWriterDetach(w);
             }
-            exit(0);
+            exit(EXIT_SUCCESS);
 
         case 'M':
             {
@@ -454,7 +454,7 @@ static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
                 AgentDiagnosticsRunAllChecksNova(workdir, out, &AgentDiagnosticsRun, &AgentDiagnosticsResultNew);
                 FileWriterDetach(out);
             }
-            exit(0);
+            exit(EXIT_SUCCESS);
 
         case 'C':
             if (!GenericAgentConfigParseColor(config, optarg))
@@ -473,7 +473,7 @@ static GenericAgentConfig *CheckOpts(EvalContext *ctx, int argc, char **argv)
                 GenericAgentWriteHelp(w, "cf-agent", OPTIONS, HINTS, true);
                 FileWriterDetach(w);
             }
-            exit(1);
+            exit(EXIT_FAILURE);
         }
     }
 
@@ -1058,7 +1058,7 @@ static void KeepPromiseBundles(EvalContext *ctx, const Policy *policy, GenericAg
     else if (!EvalContextVariableControlCommonGet(ctx, COMMON_CONTROL_BUNDLESEQUENCE, &retval))
     {
         Log(LOG_LEVEL_ERR, "No bundlesequence in the common control body");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     for (rp = (Rlist *) retval.item; rp != NULL; rp = rp->next)
@@ -1282,7 +1282,7 @@ static void CheckAgentAccess(Rlist *list, const Policy *policy)
                 if (!access)
                 {
                     Log(LOG_LEVEL_ERR, "File '%s' is not owned by an authorized user (security exception)", input_file);
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
             }
             else if (CFPARANOID && IsPrivileged())
@@ -1291,7 +1291,7 @@ static void CheckAgentAccess(Rlist *list, const Policy *policy)
                 {
                     Log(LOG_LEVEL_ERR, "File '%s' is not owned by uid %ju (security exception)", input_file,
                           (uintmax_t)getuid());
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
             }
         }
@@ -1300,7 +1300,7 @@ static void CheckAgentAccess(Rlist *list, const Policy *policy)
     }
 
     Log(LOG_LEVEL_ERR, "You are denied access to run this policy");
-    exit(1);
+    exit(EXIT_FAILURE);
 }
 #endif /* !__MINGW32__ */
 
@@ -1677,7 +1677,7 @@ static PromiseResult ParallelFindAndVerifyFilesPromises(EvalContext *ctx, const 
 
                 Log(LOG_LEVEL_VERBOSE, "Exiting backgrounded promise");
                 PromiseRef(LOG_LEVEL_VERBOSE, pp);
-                _exit(0);
+                _exit(EXIT_SUCCESS);
                 // TODO: need to solve this
             }
         }

@@ -26,8 +26,9 @@
 #define CFENGINE_EXEC_CONFIG_H
 
 #include <cf3.defs.h>
-#include <set.h>
 
+/* This struct is supposed to be immutable: don't update it,
+   just destroy and create anew */
 typedef struct
 {
     bool scheduled_run;
@@ -40,10 +41,6 @@ typedef struct
     char *mail_subject;
     int mail_max_lines;
 
-    StringSet *schedule;
-    int splay_time;
-    char *log_facility;
-
     /*
      * Host information.
      * Might change during policy reload, so copy is retained in each worker.
@@ -53,10 +50,8 @@ typedef struct
     char *ip_addresses;
 } ExecConfig;
 
-ExecConfig *ExecConfigNewDefault(bool scheduled_run, const char *fq_name, const char *ip_address);
+ExecConfig *ExecConfigNew(bool scheduled_run, const EvalContext *ctx, const Policy *policy);
 ExecConfig *ExecConfigCopy(const ExecConfig *exec_config);
 void ExecConfigDestroy(ExecConfig *exec_config);
-
-void ExecConfigUpdate(const EvalContext *ctx, const Policy *policy, ExecConfig *exec_config);
 
 #endif

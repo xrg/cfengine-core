@@ -35,8 +35,8 @@ static int CfSetuid(uid_t uid, gid_t gid);
 
 static int cf_pwait(pid_t pid);
 
-static pid_t *CHILDREN;
-static int MAX_FD = 128;               /* Max number of simultaneous pipes */
+static pid_t *CHILDREN; /* GLOBAL_X */
+static int MAX_FD = 128; /* GLOBAL_X */ /* Max number of simultaneous pipes */
 
 static int InitChildrenFD()
 {
@@ -195,7 +195,7 @@ FILE *cf_popen(const char *command, const char *type, bool capture_stderr)
             Log(LOG_LEVEL_ERR, "Couldn't run '%s'. (execv: %s)", argv[0], GetErrorStr());
         }
 
-        _exit(1);
+        _exit(EXIT_FAILURE);
     }
     else
     {
@@ -298,7 +298,7 @@ FILE *cf_popensetuid(const char *command, const char *type, uid_t uid, gid_t gid
 
         if (!CfSetuid(uid, gid))
         {
-            _exit(1);
+            _exit(EXIT_FAILURE);
         }
 
         if (execv(argv[0], argv) == -1)
@@ -306,7 +306,7 @@ FILE *cf_popensetuid(const char *command, const char *type, uid_t uid, gid_t gid
             Log(LOG_LEVEL_ERR, "Couldn't run '%s'. (execv: %s)", argv[0], GetErrorStr());
         }
 
-        _exit(1);
+        _exit(EXIT_FAILURE);
     }
     else
     {
@@ -387,7 +387,7 @@ FILE *cf_popen_sh(const char *command, const char *type)
         CloseChildrenFD();
 
         execl(SHELL_PATH, "sh", "-c", command, NULL);
-        _exit(1);
+        _exit(EXIT_FAILURE);
     }
     else
     {
@@ -485,11 +485,11 @@ FILE *cf_popen_shsetuid(const char *command, const char *type, uid_t uid, gid_t 
 
         if (!CfSetuid(uid, gid))
         {
-            _exit(1);
+            _exit(EXIT_FAILURE);
         }
 
         execl(SHELL_PATH, "sh", "-c", command, NULL);
-        _exit(1);
+        _exit(EXIT_FAILURE);
     }
     else
     {

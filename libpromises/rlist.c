@@ -166,7 +166,7 @@ const char *RvalContainerPrimitiveAsString(const Rval rval, const size_t index)
         if (index < JsonLength(RvalContainerValue(rval)))
         {
 
-            const JsonElement *jelement = JsonAt(RvalContainerValue(rval), index);
+            const JsonElement* const jelement = JsonAt(RvalContainerValue(rval), index);
 
             if (JsonGetElementType(jelement) == JSON_ELEMENT_TYPE_PRIMITIVE)
             {
@@ -200,7 +200,7 @@ Rlist *RlistKeyIn(Rlist *list, const char *key)
 
 /*******************************************************************/
 
-bool RlistIsInListOfRegex(EvalContext *ctx, const Rlist *list, const char *str)
+bool RlistIsInListOfRegex(const Rlist *list, const char *str)
 {
     if (str == NULL || list == NULL)
     {
@@ -214,7 +214,7 @@ bool RlistIsInListOfRegex(EvalContext *ctx, const Rlist *list, const char *str)
             continue;
         }
 
-        if (FullTextMatch(ctx, RlistScalarValue(rp), str))
+        if (StringMatchFull(RlistScalarValue(rp), str))
         {
             return true;
         }

@@ -46,10 +46,15 @@
 #include <policy.h>
 #include <syntax.h>
 
-static const char *POLICY_ERROR_VARS_CONSTRAINT_DUPLICATE_TYPE = "Variable contains existing data type contstraint %s, tried to redefine with %s";
-static const char *POLICY_ERROR_VARS_PROMISER_NUMERICAL = "Variable promises cannot have a purely numerical promiser (name)";
-static const char *POLICY_ERROR_VARS_PROMISER_RESERVED = "Variable promise is using a reserved name";
-static const char *POLICY_ERROR_CLASSES_PROMISER_NUMERICAL = "Classes promises cannot have a purely numerical promiser (name)";
+static const char *const POLICY_ERROR_VARS_CONSTRAINT_DUPLICATE_TYPE =
+    "Variable contains existing data type contstraint %s, tried to "
+    "redefine with %s";
+static const char *const POLICY_ERROR_VARS_PROMISER_NUMERICAL =
+    "Variable promises cannot have a purely numerical promiser (name)";
+static const char *const POLICY_ERROR_VARS_PROMISER_RESERVED =
+    "Variable promise is using a reserved name";
+static const char *const POLICY_ERROR_CLASSES_PROMISER_NUMERICAL =
+    "Classes promises cannot have a purely numerical promiser (name)";
 
 static bool ActionCheck(const Body *body, Seq *errors)
 {
@@ -294,7 +299,7 @@ const ConstraintSyntax CFA_CONTROLBODY[] =
     ConstraintSyntaxNewBool("skipidentify", "Do not send IP/name during server connection because address resolution is broken. Default value: false", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewStringList("suspiciousnames", "", "List of names to warn about if found during any file search", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewBool("syslog", "true/false switches on output to syslog at the inform level. Default value: false", SYNTAX_STATUS_REMOVED),
-    ConstraintSyntaxNewBool("track_value", "true/false switches on tracking of promise valuation. Default value: false", SYNTAX_STATUS_NORMAL),
+    ConstraintSyntaxNewBool("track_value", "true/false switches on tracking of promise valuation. Default value: false", SYNTAX_STATUS_DEPRECATED),
     ConstraintSyntaxNewStringList("timezone", "", "List of allowed timezones this machine must comply with", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewInt("default_timeout", CF_VALRANGE, "Maximum time a network connection should attempt to connect. Default value: 10 seconds", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewBool("verbose", "true/false switches on verbose standard output. Default value: false", SYNTAX_STATUS_NORMAL),
@@ -319,7 +324,7 @@ const ConstraintSyntax CFS_CONTROLBODY[] =
     ConstraintSyntaxNewBool("logallconnections", "true/false causes the server to log all new connections to syslog. Default value: false", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewBool("logencryptedtransfers", "true/false log all successful transfers required to be encrypted. Default value: false", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewInt("maxconnections", CF_VALRANGE, "Maximum number of connections that will be accepted by cf-serverd. Default value: 30 remote queries", SYNTAX_STATUS_NORMAL),
-    ConstraintSyntaxNewInt("port", "1024,99999", "Default port for cfengine server. Default value: 5308", SYNTAX_STATUS_NORMAL),
+    ConstraintSyntaxNewInt("port", "1,65535", "Default port for cfengine server. Default value: 5308", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewOption("serverfacility", CF_FACILITY, "Menu option for syslog facility level. Default value: LOG_USER", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewStringList("skipverify", "", "This option is deprecated, does nothing and is kept for backward compatibility.", SYNTAX_STATUS_DEPRECATED),
     ConstraintSyntaxNewStringList("trustkeysfrom", "", "List of IPs from whom we accept public keys on trust", SYNTAX_STATUS_NORMAL),
@@ -341,7 +346,7 @@ const ConstraintSyntax CFM_CONTROLBODY[] =
 const ConstraintSyntax CFR_CONTROLBODY[] =
 {
     ConstraintSyntaxNewStringList("hosts", "", "List of host or IP addresses to attempt connection with", SYNTAX_STATUS_NORMAL),
-    ConstraintSyntaxNewInt("port", "1024,99999", "Default port for cfengine server. Default value: 5308", SYNTAX_STATUS_NORMAL),
+    ConstraintSyntaxNewInt("port", "1,65535", "Default port for cfengine server. Default value: 5308", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewBool("force_ipv4", "true/false force use of ipv4 in connection. Default value: false", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewBool("trustkey", "true/false automatically accept all keys on trust from servers. Default value: false", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewBool("encrypt", "true/false encrypt connections with servers. Default value: false", SYNTAX_STATUS_NORMAL),
@@ -373,7 +378,7 @@ const ConstraintSyntax CFH_CONTROLBODY[] =  /* enum cfh_control */
     ConstraintSyntaxNewString("export_zenoss", CF_PATHRANGE, "Generate report for Zenoss integration", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewStringList("exclude_hosts", "", "A list of IP addresses of hosts to exclude from report collection", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewStringList("hub_schedule", "", "The class schedule used by cf-hub for report collation", SYNTAX_STATUS_NORMAL),
-    ConstraintSyntaxNewInt("port", "1024,99999", "Default port for contacting hub nodes. Default value: 5308", SYNTAX_STATUS_NORMAL),
+    ConstraintSyntaxNewInt("port", "1,65535", "Default port for contacting hub nodes. Default value: 5308", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewNull()
 };
 
@@ -493,7 +498,7 @@ const PromiseTypeSyntax CF_COMMON_PROMISE_TYPES[] =
 /* Read in all parsable Bundle definitions */
 /* REMEMBER TO REGISTER THESE IN cf3.extern.h */
 
-const PromiseTypeSyntax *CF_ALL_PROMISE_TYPES[] =
+const PromiseTypeSyntax *const CF_ALL_PROMISE_TYPES[] =
 {
     CF_COMMON_PROMISE_TYPES,         /* Add modules after this, mod_report.c is here */
     CF_EXEC_PROMISE_TYPES,           /* mod_exec.c */

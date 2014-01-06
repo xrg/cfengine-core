@@ -63,9 +63,9 @@
 
 #include <cf-windows-functions.h>
 
-static pthread_once_t pid_cleanup_once = PTHREAD_ONCE_INIT;
+static pthread_once_t pid_cleanup_once = PTHREAD_ONCE_INIT; /* GLOBAL_T */
 
-static char PIDFILE[CF_BUFSIZE];
+static char PIDFILE[CF_BUFSIZE]; /* GLOBAL_C */
 
 static void VerifyPromises(EvalContext *ctx, const Policy *policy, GenericAgentConfig *config);
 static void CheckWorkingDirectories(EvalContext *ctx);
@@ -1111,14 +1111,14 @@ static Policy *Cf3ParseFile(const GenericAgentConfig *config, const char *input_
         }
 
         Log(LOG_LEVEL_ERR, "Can't stat file '%s' for parsing. (stat: %s)", input_path, GetErrorStr());
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
 #ifndef _WIN32
     if (config->check_not_writable_by_others && (statbuf.st_mode & (S_IWGRP | S_IWOTH)))
     {
         Log(LOG_LEVEL_ERR, "File %s (owner %ju) is writable by others (security exception)", input_path, (uintmax_t)statbuf.st_uid);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 #endif
 
@@ -1127,7 +1127,7 @@ static Policy *Cf3ParseFile(const GenericAgentConfig *config, const char *input_
     if (!FileCanOpen(input_path, "r"))
     {
         Log(LOG_LEVEL_ERR, "Can't open file '%s' for parsing", input_path);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     Policy *policy = NULL;
@@ -1357,7 +1357,7 @@ static void CheckWorkingDirectories(EvalContext *ctx)
 
 const char *GenericAgentResolveInputPath(const GenericAgentConfig *config, const char *input_file)
 {
-    static char input_path[CF_BUFSIZE];
+    static char input_path[CF_BUFSIZE]; /* GLOBAL_R */
 
     switch (FilePathGetType(input_file))
     {
@@ -1415,7 +1415,7 @@ static void VerifyPromises(EvalContext *ctx, const Policy *policy, GenericAgentC
     }
 }
 
-void GenericAgentWriteHelp(Writer *w, const char *component, const struct option options[], const char *hints[], bool accepts_file_argument)
+void GenericAgentWriteHelp(Writer *w, const char *component, const struct option options[], const char *const hints[], bool accepts_file_argument)
 {
     WriterWriteF(w, "Usage: %s [OPTION]...%s\n", component, accepts_file_argument ? " [FILE]" : "");
 
@@ -1672,6 +1672,7 @@ GenericAgentConfig *GenericAgentConfigNewDefault(AgentType agent_type)
 
     config->heap_soft = NULL;
     config->heap_negated = NULL;
+    config->ignore_locks = false;
 
     config->agent_specific.agent.bootstrap_policy_server = NULL;
 
@@ -1757,6 +1758,14 @@ void GenericAgentConfigApply(EvalContext *ctx, const GenericAgentConfig *config)
 
     default:
         break;
+    }
+
+    EvalContextSetIgnoreLocks(ctx, config->ignore_locks);
+
+    if (DONTDO)
+    {
+        EvalContextClassPut(ctx, NULL, "opt_dry_run", false, CONTEXT_SCOPE_NAMESPACE,
+                            "cfe_internal,source=environment");
     }
 }
 

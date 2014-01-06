@@ -45,8 +45,8 @@ static pcre *CompileRegExp(const char *regexp)
 
     if (rx == NULL)
     {
-        Log(LOG_LEVEL_ERR, "Regular expression error '%s' in expression '%s' at %d", errorstr, regexp,
-              erroffset);
+        Log(LOG_LEVEL_ERR, "Regular expression error: pcre_compile() '%s' in expression '%s' (offset: %d)", 
+              errorstr, regexp, erroffset);
     }
 
     return rx;
@@ -113,7 +113,7 @@ static int RegExMatchFullString(EvalContext *ctx, pcre *rx, const char *teststri
 /* Pure, non-thread-safe */
 static char *FirstBackReference(pcre *rx, const char *teststring)
 {
-    static char backreference[CF_BUFSIZE];
+    static char backreference[CF_BUFSIZE]; /* GLOBAL_R */
 
     int ovector[OVECCOUNT], i, rc;
 
@@ -177,21 +177,20 @@ int FullTextMatch(EvalContext *ctx, const char *regexp, const char *teststring)
 
 char *ExtractFirstReference(const char *regexp, const char *teststring)
 {
-    static char *nothing = "";
     char *backreference;
 
     pcre *rx;
 
     if ((regexp == NULL) || (teststring == NULL))
     {
-        return nothing;
+        return "";
     }
 
     rx = CompileRegExp(regexp);
 
     if (rx == NULL)
     {
-        return nothing;
+        return "";
     }
 
     backreference = FirstBackReference(rx, teststring);
@@ -673,4 +672,19 @@ char *AnchorRegexNew(const char *regex)
     xasprintf(&ret, "^(%s)$", regex);
 
     return ret;
+}
+
+bool HasRegexMetaChars(const char *string)
+{
+    if (!string)
+    {
+        return false;
+    }
+
+    if (string[strcspn(string, "\\^${}[]().*+?|<>-&")] == '\0') /* i.e. no metachars appear in string */
+    {
+        return false;
+    }
+
+    return true;
 }
