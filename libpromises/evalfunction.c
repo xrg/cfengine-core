@@ -78,7 +78,7 @@ static void CloseStringHole(char *s, int start, int end);
 static int BuildLineArray(EvalContext *ctx, const Bundle *bundle, char *array_lval, char *file_buffer, char *split, int maxent, DataType type, int intIndex);
 static int ExecModule(EvalContext *ctx, char *command, const char *ns);
 static int CheckID(char *id);
-static bool GetListReferenceArgument(const EvalContext *ctx, const FnCall *fp, const char *lval_str, Rval *rval_out, DataType *datatype_out);
+static const Rlist *GetListReferenceArgument(const EvalContext *ctx, const FnCall *fp, const char *lval_str, DataType *datatype_out);
 static void *CfReadFile(char *filename, int maxsize);
 
 /*******************************************************************/
@@ -1530,31 +1530,31 @@ static FnCallResult FnCallRegList(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist
 
     VarRef *ref = VarRefParse(naked);
 
-    Rval retval;
-    if (!EvalContextVariableGet(ctx, ref, &retval, NULL))
+    DataType value_type = DATA_TYPE_NONE;
+    const Rlist *value = EvalContextVariableGet(ctx, ref, &value_type);
+    VarRefDestroy(ref);
+
+    if (!value)
     {
         Log(LOG_LEVEL_VERBOSE, "Function REGLIST was promised a list called '%s' but this was not found", listvar);
-        VarRefDestroy(ref);
         return FnFailure();
     }
 
-    if (retval.type != RVAL_TYPE_LIST)
+    if (DataTypeToRvalType(value_type) != RVAL_TYPE_LIST)
     {
         Log(LOG_LEVEL_VERBOSE, "Function reglist was promised a list called '%s' but this variable is not a list",
-              listvar);
+            listvar);
         return FnFailure();
     }
 
-    const Rlist *list = retval.item;
-
-    for (const Rlist *rp = list; rp != NULL; rp = rp->next)
+    for (const Rlist *rp = value; rp != NULL; rp = rp->next)
     {
         if (strcmp(RlistScalarValue(rp), CF_NULL_VALUE) == 0)
         {
             continue;
         }
 
-        if (FullTextMatch(ctx, regex, RlistScalarValue(rp)))
+        if (StringMatchFull(regex, RlistScalarValue(rp)))
         {
             return FnReturnContext(true);
         }
@@ -1577,7 +1577,7 @@ static FnCallResult FnCallRegArray(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlis
     Variable *var = NULL;
     while ((var = VariableTableIteratorNext(iter)))
     {
-        if (FullTextMatch(ctx, regex, RvalScalarValue(var->rval)))
+        if (StringMatchFull(regex, RvalScalarValue(var->rval)))
         {
             found = true;
             break;
@@ -1594,17 +1594,16 @@ static FnCallResult FnCallGetIndices(EvalContext *ctx, FnCall *fp, Rlist *finala
     VarRef *ref = VarRefParseFromBundle(RlistScalarValue(finalargs), PromiseGetBundle(fp->caller));
 
     DataType type = DATA_TYPE_NONE;
-    Rval rval;
-    EvalContextVariableGet(ctx, ref, &rval, &type);
+    const void *value = EvalContextVariableGet(ctx, ref, &type);
 
     Rlist *keys = NULL;
     if (type == DATA_TYPE_CONTAINER)
     {
-        if (JsonGetElementType(RvalContainerValue(rval)) == JSON_ELEMENT_TYPE_CONTAINER)
+        if (JsonGetElementType(value) == JSON_ELEMENT_TYPE_CONTAINER)
         {
-            if (JsonGetContrainerType(RvalContainerValue(rval)) == JSON_CONTAINER_TYPE_OBJECT)
+            if (JsonGetContrainerType(value) == JSON_CONTAINER_TYPE_OBJECT)
             {
-                JsonIterator iter = JsonIteratorInit(RvalContainerValue(rval));
+                JsonIterator iter = JsonIteratorInit(value);
                 const char *key = NULL;
                 while ((key = JsonIteratorNextKey(&iter)))
                 {
@@ -1613,7 +1612,7 @@ static FnCallResult FnCallGetIndices(EvalContext *ctx, FnCall *fp, Rlist *finala
             }
             else
             {
-                for (size_t i = 0; i < JsonLength(RvalContainerValue(rval)); i++)
+                for (size_t i = 0; i < JsonLength(value); i++)
                 {
                     Rval key = (Rval) { StringFromLong(i), RVAL_TYPE_SCALAR };
                     RlistAppendRval(&keys, key);
@@ -1652,15 +1651,14 @@ static FnCallResult FnCallGetValues(EvalContext *ctx, FnCall *fp, Rlist *finalar
     VarRef *ref = VarRefParseFromBundle(RlistScalarValue(finalargs), PromiseGetBundle(fp->caller));
 
     DataType type = DATA_TYPE_NONE;
-    Rval rval;
-    EvalContextVariableGet(ctx, ref, &rval, &type);
+    const void *value = EvalContextVariableGet(ctx, ref, &type);
 
     Rlist *values = NULL;
     if (type == DATA_TYPE_CONTAINER)
     {
-        if (JsonGetElementType(RvalContainerValue(rval)) == JSON_ELEMENT_TYPE_CONTAINER)
+        if (JsonGetElementType(value) == JSON_ELEMENT_TYPE_CONTAINER)
         {
-            JsonIterator iter = JsonIteratorInit(RvalContainerValue(rval));
+            JsonIterator iter = JsonIteratorInit(value);
             const JsonElement *el = NULL;
             while ((el = JsonIteratorNextValue(&iter)))
             {
@@ -1755,28 +1753,15 @@ static FnCallResult FnCallGrep(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 
 static FnCallResult FnCallSum(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
 {
-    Rval rval2;
     double sum = 0;
 
-    VarRef *ref = VarRefParse(RlistScalarValue(finalargs));
-
-    if (!EvalContextVariableGet(ctx, ref, &rval2, NULL))
+    const Rlist *input_list = GetListReferenceArgument(ctx, fp, RlistScalarValue(finalargs), NULL);
+    if (!input_list)
     {
-        Log(LOG_LEVEL_VERBOSE, "Function sum was promised a list called '%s' but this was not found", ref->lval);
-        VarRefDestroy(ref);
         return FnFailure();
     }
 
-    if (rval2.type != RVAL_TYPE_LIST)
-    {
-        Log(LOG_LEVEL_VERBOSE, "Function sum was promised a list called '%s' but this was not found", ref->lval);
-        VarRefDestroy(ref);
-        return FnFailure();
-    }
-
-    VarRefDestroy(ref);
-
-    for (const Rlist *rp = (const Rlist *) rval2.item; rp != NULL; rp = rp->next)
+    for (const Rlist *rp = input_list; rp; rp = rp->next)
     {
         double x;
 
@@ -1797,28 +1782,15 @@ static FnCallResult FnCallSum(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *fi
 
 static FnCallResult FnCallProduct(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
 {
-    Rval rval2;
     double product = 1.0;
 
-    VarRef *ref = VarRefParse(RlistScalarValue(finalargs));
-
-    if (!EvalContextVariableGet(ctx, ref, &rval2, NULL))
+    const Rlist *input_list = GetListReferenceArgument(ctx, fp, RlistScalarValue(finalargs), NULL);
+    if (!input_list)
     {
-        Log(LOG_LEVEL_VERBOSE, "Function 'product' was promised a list called '%s' but this was not found", ref->lval);
-        VarRefDestroy(ref);
         return FnFailure();
     }
 
-    if (rval2.type != RVAL_TYPE_LIST)
-    {
-        Log(LOG_LEVEL_VERBOSE, "Function 'product' was promised a list called '%s' but this was not found", ref->lval);
-        VarRefDestroy(ref);
-        return FnFailure();
-    }
-
-    VarRefDestroy(ref);
-
-    for (const Rlist *rp = (const Rlist *) rval2.item; rp != NULL; rp = rp->next)
+    for (const Rlist *rp = input_list; rp; rp = rp->next)
     {
         double x;
         if (!DoubleFromString(RlistScalarValue(rp), &x))
@@ -1839,29 +1811,16 @@ static FnCallResult FnCallProduct(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist
 static FnCallResult FnCallJoin(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
 {
     char *joined = NULL;
-    Rval rval2;
     int size = 0;
 
     const char *join = RlistScalarValue(finalargs);
-    VarRef *ref = VarRefParse(RlistScalarValue(finalargs->next));
-
-    if (!EvalContextVariableGet(ctx, ref, &rval2, NULL))
+    const Rlist *input_list = GetListReferenceArgument(ctx, fp, RlistScalarValue(finalargs->next), NULL);
+    if (!input_list)
     {
-        Log(LOG_LEVEL_VERBOSE, "Function 'join' was promised a list called '%s.%s' but this was not (yet) found", ref->scope, ref->lval);
-        VarRefDestroy(ref);
         return FnFailure();
     }
 
-    if (rval2.type != RVAL_TYPE_LIST)
-    {
-        Log(LOG_LEVEL_VERBOSE, "Function 'join' was promised a list called '%s' but this was not (yet) found", ref->lval);
-        VarRefDestroy(ref);
-        return FnFailure();
-    }
-
-    VarRefDestroy(ref);
-
-    for (const Rlist *rp = RvalRlistValue(rval2); rp != NULL; rp = rp->next)
+    for (const Rlist *rp = input_list; rp != NULL; rp = rp->next)
     {
         if (strcmp(RlistScalarValue(rp), CF_NULL_VALUE) == 0)
         {
@@ -1874,7 +1833,7 @@ static FnCallResult FnCallJoin(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *f
     joined = xcalloc(1, size + 1);
     size = 0;
 
-    for (const Rlist *rp = (const Rlist *) rval2.item; rp != NULL; rp = rp->next)
+    for (const Rlist *rp = input_list; rp != NULL; rp = rp->next)
     {
         if (strcmp(RlistScalarValue(rp), CF_NULL_VALUE) == 0)
         {
@@ -1938,7 +1897,7 @@ static FnCallResult FnCallGetFields(EvalContext *ctx, FnCall *fp, Rlist *finalar
             Log(LOG_LEVEL_ERR, "Chop was called on a string that seemed to have no terminator");
         }
 
-        if (!FullTextMatch(ctx, regex, line))
+        if (!StringMatchFull(regex, line))
         {
             continue;
         }
@@ -1970,7 +1929,7 @@ static FnCallResult FnCallGetFields(EvalContext *ctx, FnCall *fp, Rlist *finalar
 
 /*********************************************************************/
 
-static FnCallResult FnCallCountLinesMatching(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallCountLinesMatching(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
 {
     int lcount = 0;
     FILE *fin;
@@ -2007,7 +1966,7 @@ static FnCallResult FnCallCountLinesMatching(EvalContext *ctx, ARG_UNUSED FnCall
             Log(LOG_LEVEL_ERR, "Chop was called on a string that seemed to have no terminator");
         }
 
-        if (FullTextMatch(ctx, regex, line))
+        if (StringMatchFull(regex, line))
         {
             lcount++;
             Log(LOG_LEVEL_VERBOSE, "countlinesmatching: matched '%s'", line);
@@ -2022,7 +1981,7 @@ static FnCallResult FnCallCountLinesMatching(EvalContext *ctx, ARG_UNUSED FnCall
 
 /*********************************************************************/
 
-static FnCallResult FnCallLsDir(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallLsDir(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
 {
     char line[CF_BUFSIZE];
     Dir *dirh = NULL;
@@ -2046,7 +2005,7 @@ static FnCallResult FnCallLsDir(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *
 
     for (dirp = DirRead(dirh); dirp != NULL; dirp = DirRead(dirh))
     {
-        if (strlen(regex) == 0 || FullTextMatch(ctx, regex, dirp->d_name))
+        if (strlen(regex) == 0 || StringMatchFull(regex, dirp->d_name))
         {
             if (includepath)
             {
@@ -2154,7 +2113,6 @@ static FnCallResult FnCallMapList(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist
 {
     char expbuf[CF_EXPANDSIZE];
     Rlist *newlist = NULL;
-    Rval rval;
     DataType retype;
 
     const char *map = RlistScalarValue(finalargs);
@@ -2173,7 +2131,8 @@ static FnCallResult FnCallMapList(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist
     VarRef *ref = VarRefParse(naked);
 
     retype = DATA_TYPE_NONE;
-    if (!EvalContextVariableGet(ctx, ref, &rval, &retype))
+    const Rlist *list = EvalContextVariableGet(ctx, ref, &retype);
+    if (!list)
     {
         VarRefDestroy(ref);
         return FnFailure();
@@ -2186,7 +2145,7 @@ static FnCallResult FnCallMapList(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist
         return FnFailure();
     }
 
-    for (const Rlist *rp = RvalRlistValue(rval); rp != NULL; rp = rp->next)
+    for (const Rlist *rp = list; rp != NULL; rp = rp->next)
     {
         EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "this", RlistScalarValue(rp), DATA_TYPE_STRING, "source=function,function=maplist");
 
@@ -2228,8 +2187,9 @@ static FnCallResult FnCallMergeData(EvalContext *ctx, FnCall *fp, Rlist *args)
     {
         VarRef *ref = VarRefParseFromBundle(RlistScalarValue(arg), PromiseGetBundle(fp->caller));
 
-        Rval rval;
-        if (!EvalContextVariableGet(ctx, ref, &rval, NULL))
+        DataType value_type = DATA_TYPE_NONE;
+        const JsonElement *value = EvalContextVariableGet(ctx, ref, &value_type);
+        if (value_type != DATA_TYPE_CONTAINER)
         {
             Log(LOG_LEVEL_ERR, "Function mergedata, argument '%s' does not resolve to a container", RlistScalarValue(arg));
             SeqDestroy(containers);
@@ -2237,7 +2197,7 @@ static FnCallResult FnCallMergeData(EvalContext *ctx, FnCall *fp, Rlist *args)
             return FnFailure();
         }
 
-        SeqAppend(containers, RvalContainerValue(rval));
+        SeqAppend(containers, (void *)value);
 
         VarRefDestroy(ref);
     }
@@ -2274,11 +2234,9 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, FnCall *fp, Rlist *fin
  /* ReadTCP(localhost,80,'GET index.html',1000) */
 {
     AgentConnection *conn = NULL;
-    Rlist *hostnameip;
     char buffer[CF_BUFSIZE], naked[CF_MAXVARSIZE];
     int val = 0, n_read = 0, count = 0;
     short portnum;
-    Rval retval;
     buffer[0] = '\0';
 
     char *listvar = RlistScalarValue(finalargs);
@@ -2299,8 +2257,9 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, FnCall *fp, Rlist *fin
     }
 
     VarRef *ref = VarRefParse(naked);
-
-    if (!EvalContextVariableGet(ctx, ref, &retval, NULL))
+    DataType value_type;
+    const Rlist *hostnameip = EvalContextVariableGet(ctx, ref, &value_type);
+    if (!hostnameip)
     {
         Log(LOG_LEVEL_VERBOSE,
             "Function selectservers was promised a list called '%s' but this was not found from context '%s.%s'",
@@ -2311,14 +2270,13 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, FnCall *fp, Rlist *fin
 
     VarRefDestroy(ref);
 
-    if (retval.type != RVAL_TYPE_LIST)
+    if (DataTypeToRvalType(value_type) != RVAL_TYPE_LIST)
     {
         Log(LOG_LEVEL_VERBOSE,
             "Function selectservers was promised a list called '%s' but this variable is not a list", listvar);
         return FnFailure();
     }
 
-    hostnameip = RvalRlistValue(retval);
     val = IntFromString(maxbytes);
     portnum = (short) IntFromString(port);
 
@@ -2346,7 +2304,7 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, FnCall *fp, Rlist *fin
         PromiseTypeAppendPromise(tp, "function", (Rval) { NULL, RVAL_TYPE_NOPROMISEE }, NULL);
     }
 
-    for (Rlist *rp = hostnameip; rp != NULL; rp = rp->next)
+    for (const Rlist *rp = hostnameip; rp != NULL; rp = rp->next)
     {
         Log(LOG_LEVEL_DEBUG, "Want to read %d bytes from port %d at '%s'", val, portnum, RlistScalarValue(rp));
 
@@ -2386,7 +2344,7 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, FnCall *fp, Rlist *fin
                 continue;
             }
 
-            if (strlen(regex) == 0 || FullTextMatch(ctx, regex, buffer))
+            if (strlen(regex) == 0 || StringMatchFull(regex, buffer))
             {
                 Log(LOG_LEVEL_VERBOSE, "Host '%s' is alive and responding correctly", RlistScalarValue(rp));
                 snprintf(buffer, CF_MAXVARSIZE - 1, "%s[%d]", array_lval, count);
@@ -2432,10 +2390,9 @@ static FnCallResult FnCallShuffle(EvalContext *ctx, FnCall *fp, Rlist *finalargs
 {
     const char *seed_str = RlistScalarValue(finalargs->next);
 
-    Rval list_rval;
     DataType list_dtype = DATA_TYPE_NONE;
-
-    if (!GetListReferenceArgument(ctx, fp, RlistScalarValue(finalargs), &list_rval, &list_dtype))
+    const Rlist *list = GetListReferenceArgument(ctx, fp, RlistScalarValue(finalargs), &list_dtype);
+    if (!list)
     {
         return FnFailure();
     }
@@ -2447,7 +2404,7 @@ static FnCallResult FnCallShuffle(EvalContext *ctx, FnCall *fp, Rlist *finalargs
     }
 
     Seq *seq = SeqNew(1000, NULL);
-    for (const Rlist *rp = list_rval.item; rp; rp = rp->next)
+    for (const Rlist *rp = list; rp; rp = rp->next)
     {
         SeqAppend(seq, RlistScalarValue(rp));
     }
@@ -2847,51 +2804,62 @@ static FnCallResult FnCallFilter(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 
 /*********************************************************************/
 
-static bool GetListReferenceArgument(const EvalContext *ctx, const FnCall *fp, const char *lval_str, Rval *rval_out, DataType *datatype_out)
+static const Rlist *GetListReferenceArgument(const EvalContext *ctx, const FnCall *fp, const char *lval_str, DataType *datatype_out)
 {
     VarRef *ref = VarRefParse(lval_str);
 
-    if (!EvalContextVariableGet(ctx, ref, rval_out, datatype_out))
+    DataType value_type = DATA_TYPE_NONE;
+    const Rlist *value = EvalContextVariableGet(ctx, ref, &value_type);
+    if (!value)
     {
         Log(LOG_LEVEL_INFO,
             "Could not resolve expected list variable '%s' in function '%s'",
             lval_str,
             fp->name);
         VarRefDestroy(ref);
-        return false;
+        if (datatype_out)
+        {
+            *datatype_out = DATA_TYPE_NONE;
+        }
+        return NULL;
     }
 
     VarRefDestroy(ref);
 
-    if (rval_out->type != RVAL_TYPE_LIST)
+    if (DataTypeToRvalType(value_type) != RVAL_TYPE_LIST)
     {
-        if (datatype_out)
+        if (value_type)
         {
-            Log(LOG_LEVEL_VERBOSE,
-                "Function '%s' expected a list variable reference, got variable of type '%s'",
-                fp->name,
-                DataTypeToString(*datatype_out));
+            Log(LOG_LEVEL_VERBOSE, "Function '%s' expected a list variable reference, got variable of type '%s'",
+                fp->name, DataTypeToString(value_type));
         }
         else
         {
             Log(LOG_LEVEL_VERBOSE,
-                "Function '%s' expected a list variable reference, got variable of a different type",
-                fp->name);
+                "Function '%s' expected a list variable reference, got variable of a different type", fp->name);
         }
-        return false;
+        if (datatype_out)
+        {
+            *datatype_out = DATA_TYPE_NONE;
+        }
+        return NULL;
     }
 
-    return true;
+    if (datatype_out)
+    {
+        *datatype_out = value_type;
+    }
+    return value;
 }
 
 /*********************************************************************/
 
 static FnCallResult FilterInternal(EvalContext *ctx, FnCall *fp, char *regex, char *name, int do_regex, int invert, long max)
 {
-    Rval rval2;
     Rlist *returnlist = NULL;
 
-    if (!GetListReferenceArgument(ctx, fp, name, &rval2, NULL))
+    const Rlist *input_list = GetListReferenceArgument(ctx, fp, name, NULL);
+    if (!input_list)
     {
         return FnFailure();
     }
@@ -2900,9 +2868,9 @@ static FnCallResult FilterInternal(EvalContext *ctx, FnCall *fp, char *regex, ch
 
     long match_count = 0;
     long total = 0;
-    for (const Rlist *rp = (const Rlist *) rval2.item; rp != NULL && match_count < max; rp = rp->next)
+    for (const Rlist *rp = input_list; rp != NULL && match_count < max; rp = rp->next)
     {
-        bool found = do_regex ? FullTextMatch(ctx, regex, RlistScalarValue(rp)) : (0==strcmp(regex, RlistScalarValue(rp)));
+        bool found = do_regex ? StringMatchFull(regex, RlistScalarValue(rp)) : (0==strcmp(regex, RlistScalarValue(rp)));
 
         if (invert ? !found : found)
         {
@@ -2964,10 +2932,10 @@ static FnCallResult FnCallSublist(EvalContext *ctx, FnCall *fp, Rlist *finalargs
     bool head = 0 == strcmp(RlistScalarValue(finalargs->next), "head"); // heads or tails
     long max = IntFromString(RlistScalarValue(finalargs->next->next)); // max results
 
-    Rval rval2;
     Rlist *returnlist = NULL;
 
-    if (!GetListReferenceArgument(ctx, fp, name, &rval2, NULL))
+    const Rlist *input_list = GetListReferenceArgument(ctx, fp, name, NULL);
+    if (!input_list)
     {
         return FnFailure();
     }
@@ -2977,7 +2945,7 @@ static FnCallResult FnCallSublist(EvalContext *ctx, FnCall *fp, Rlist *finalargs
     if (head)
     {
         long count = 0;
-        for (const Rlist *rp = (const Rlist *) rval2.item; rp != NULL && count < max; rp = rp->next)
+        for (const Rlist *rp = input_list; rp != NULL && count < max; rp = rp->next)
         {
             RlistAppendScalar(&returnlist, RlistScalarValue(rp));
             count++;
@@ -2985,7 +2953,7 @@ static FnCallResult FnCallSublist(EvalContext *ctx, FnCall *fp, Rlist *finalargs
     }
     else if (max > 0) // tail mode
     {
-        const Rlist *rp = (const Rlist *) rval2.item;
+        const Rlist *rp = input_list;
         int length = RlistLen((const Rlist *) rp);
 
         int offset = max >= length ? 0 : length-max;
@@ -3014,14 +2982,14 @@ static FnCallResult FnCallSetop(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
     const char *name_a = RlistScalarValue(finalargs);
     const char *name_b = RlistScalarValue(finalargs->next);
 
-    Rval rval_a;
-    if (!GetListReferenceArgument(ctx, fp, name_a, &rval_a, NULL))
+    const Rlist *input_list_a = GetListReferenceArgument(ctx, fp, name_a, NULL);
+    if (!input_list_a)
     {
         return FnFailure();
     }
 
-    Rval rval_b;
-    if (!GetListReferenceArgument(ctx, fp, name_b, &rval_b, NULL))
+    const Rlist *input_list_b = GetListReferenceArgument(ctx, fp, name_b, NULL);
+    if (!input_list_b)
     {
         return FnFailure();
     }
@@ -3030,12 +2998,12 @@ static FnCallResult FnCallSetop(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
     RlistAppendScalar(&returnlist, CF_NULL_VALUE);
 
     StringSet *set_b = StringSetNew();
-    for (const Rlist *rp_b = rval_b.item; rp_b != NULL; rp_b = rp_b->next)
+    for (const Rlist *rp_b = input_list_b; rp_b != NULL; rp_b = rp_b->next)
     {
         StringSetAdd(set_b, xstrdup(RlistScalarValue(rp_b)));
     }
 
-    for (const Rlist *rp_a = rval_a.item; rp_a != NULL; rp_a = rp_a->next)
+    for (const Rlist *rp_a = input_list_a; rp_a != NULL; rp_a = rp_a->next)
     {
         if (strcmp(RlistScalarValue(rp_a), CF_NULL_VALUE) == 0)
         {
@@ -3062,27 +3030,71 @@ static FnCallResult FnCallSetop(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 }
 
 /*********************************************************************/
-
-static FnCallResult FnCallLength(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallFold(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 {
     const char *name = RlistScalarValue(finalargs);
+    const char *sort_type = finalargs->next ? RlistScalarValue(finalargs->next) : NULL;
 
-    Rval rval2;
     int count = 0;
+    double mean = 0;
+    double M2 = 0;
+    const Rlist *max = NULL;
+    const Rlist *min = NULL;
+    bool variance_mode = strcmp(fp->name, "variance") == 0;
+    bool mean_mode = strcmp(fp->name, "mean") == 0;
 
-    if (!GetListReferenceArgument(ctx, fp, name, &rval2, NULL))
+    const Rlist *input_list = GetListReferenceArgument(ctx, fp, name, NULL);
+    if (!input_list)
     {
         return FnFailure();
     }
 
     bool null_seen = false;
-    for (const Rlist *rp = RvalRlistValue(rval2); rp != NULL; rp = rp->next)
+    for (const Rlist *rp = input_list; rp != NULL; rp = rp->next)
     {
-        if (strcmp(RlistScalarValue(rp), CF_NULL_VALUE) == 0)
+        const char *cur = RlistScalarValue(rp);
+        if (strcmp(cur, CF_NULL_VALUE) == 0)
         {
             null_seen = true;
         }
+        else if (sort_type)
+        {
+            if (NULL == min || NULL == max)
+            {
+                min = max = rp;
+            }
+            else
+            {
+                if (!GenericItemLess(sort_type, (void*) min, (void*) rp))
+                {
+                    min = rp;
+                }
+
+                if (GenericItemLess(sort_type, (void*) max, (void*) rp))
+                {
+                    max = rp;
+                }
+            }
+        }
+
         count++;
+
+        // none of the following apply if CF_NULL_VALUE has been seen
+        if (null_seen) continue;
+        
+        double x;
+        if (mean_mode || variance_mode)
+        {
+            if (1 != sscanf(cur, "%lf", &x))
+            {
+                x = 0; /* treat non-numeric entries as zero */
+            }
+
+            // Welford's algorithm
+            double delta = x - mean;
+            mean += delta/count;
+            M2 += delta * (x - mean);
+        }
     }
 
     if (count == 1 && null_seen)
@@ -3090,7 +3102,40 @@ static FnCallResult FnCallLength(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
         count = 0;
     }
 
-    return FnReturnF("%d", count);
+    if (mean_mode)
+    {
+        return count == 0 ? FnFailure() : FnReturnF("%lf", mean);
+    }
+    else if (variance_mode)
+    {
+        double variance = 0;
+
+        if (count == 0) return FnFailure();
+
+        // if count is 1, variance is 0
+
+        if (count > 1)
+        {
+            variance = M2/(count - 1);
+        }
+
+        return FnReturnF("%lf", variance);
+    }
+    else if (strcmp(fp->name, "length") == 0)
+    {
+        return FnReturnF("%d", count);
+    }
+    else if (strcmp(fp->name, "max") == 0)
+    {
+        return count == 0 ? FnFailure() : FnReturn(RlistScalarValue(max));
+    }
+    else if (strcmp(fp->name, "min") == 0)
+    {
+        return count == 0 ? FnFailure() : FnReturn(RlistScalarValue(min));
+    }
+
+    ProgrammingError("Unknown function call %s to FnCallFold", fp->name);
+    return FnFailure();
 }
 
 /*********************************************************************/
@@ -3099,22 +3144,91 @@ static FnCallResult FnCallUnique(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 {
     const char *name = RlistScalarValue(finalargs);
 
-    Rval rval2;
     Rlist *returnlist = NULL;
-
-    if (!GetListReferenceArgument(ctx, fp, name, &rval2, NULL))
+    const Rlist *input_list = GetListReferenceArgument(ctx, fp, name, NULL);
+    if (!input_list)
     {
         return FnFailure();
     }
 
     RlistAppendScalar(&returnlist, CF_NULL_VALUE);
 
-    for (const Rlist *rp = (const Rlist *) rval2.item; rp != NULL; rp = rp->next)
+    for (const Rlist *rp = input_list; rp != NULL; rp = rp->next)
     {
         RlistAppendScalarIdemp(&returnlist, RlistScalarValue(rp));
     }
 
     return (FnCallResult) { FNCALL_SUCCESS, { returnlist, RVAL_TYPE_LIST } };
+}
+
+/*********************************************************************/
+
+static FnCallResult FnCallDatatype(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+{
+    const char* const varname = RlistScalarValue(finalargs);
+
+    VarRef* const ref = VarRefParseFromBundle(varname, PromiseGetBundle(fp->caller));
+    DataType type = DATA_TYPE_NONE;
+    const void *rval = EvalContextVariableGet(ctx, ref, &type);
+
+    Writer* const typestring = StringWriter();
+
+    if (type == DATA_TYPE_CONTAINER)
+    {
+
+        const JsonElement* const jelement = rval;
+
+        if (JsonGetElementType(jelement) == JSON_ELEMENT_TYPE_CONTAINER)
+        {
+            switch (JsonGetContrainerType(jelement))
+            {
+            case JSON_CONTAINER_TYPE_OBJECT:
+                WriterWrite(typestring, "json_object");
+                break;
+            case JSON_CONTAINER_TYPE_ARRAY:
+                WriterWrite(typestring, "json_array");
+                break;
+            }
+        }
+        else if (JsonGetElementType(jelement) == JSON_ELEMENT_TYPE_PRIMITIVE)
+        {
+            switch (JsonGetPrimitiveType(jelement))
+            {
+            case JSON_PRIMITIVE_TYPE_STRING:
+                WriterWrite(typestring, "json_string");
+                break;
+            case JSON_PRIMITIVE_TYPE_INTEGER:
+                WriterWrite(typestring, "json_integer");
+                break;
+            case JSON_PRIMITIVE_TYPE_REAL:
+                WriterWrite(typestring, "json_real");
+                break;
+            case JSON_PRIMITIVE_TYPE_BOOL:
+                WriterWrite(typestring, "json_bool");
+                break;
+            case JSON_PRIMITIVE_TYPE_NULL:
+                WriterWrite(typestring, "json_null");
+                break;
+            }
+        }
+
+    }
+    else
+    {
+        Log(LOG_LEVEL_ERR, "%s: variable '%s' is not a data container", fp->name, varname);
+
+        VarRefDestroy(ref);
+
+        return FnFailure();
+    }
+
+    Log(LOG_LEVEL_DEBUG,
+        "%s: from data container '%s', got top-level type '%s'",
+        fp->name, varname, StringWriterData(typestring));
+
+    VarRefDestroy(ref);
+
+    return (FnCallResult) { FNCALL_SUCCESS, { StringWriterClose(typestring), RVAL_TYPE_SCALAR } };
 }
 
 /*********************************************************************/
@@ -3126,44 +3240,59 @@ static FnCallResult FnCallNth(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 
     VarRef *ref = VarRefParseFromBundle(varname, PromiseGetBundle(fp->caller));
     DataType type = DATA_TYPE_NONE;
-    Rval rval;
-    EvalContextVariableGet(ctx, ref, &rval, &type);
-
-    Rlist *rp = NULL;
+    const void *value = EvalContextVariableGet(ctx, ref, &type);
+    VarRefDestroy(ref);
 
     if (type == DATA_TYPE_CONTAINER)
     {
+        Rlist *return_list = NULL;
 
-        const char* const jstring = RvalContainerPrimitiveAsString(rval, index);
+        const char *jstring = NULL;
+        if (JsonGetElementType(value) == JSON_ELEMENT_TYPE_CONTAINER)
+        {
+            if (index < JsonLength(value))
+            {
+
+                const JsonElement* const jelement = JsonAt(value, index);
+
+                if (JsonGetElementType(jelement) == JSON_ELEMENT_TYPE_PRIMITIVE)
+                {
+                    jstring = JsonPrimitiveGetAsString(jelement);
+                }
+            }
+        }
 
         if (jstring != NULL)
         {
-          Log(LOG_LEVEL_DEBUG, "%s: from data container %s, got JSON data '%s'", fp->name, varname, jstring);
-
-          RlistAppendScalar(&rp, jstring);
+            Log(LOG_LEVEL_DEBUG, "%s: from data container %s, got JSON data '%s'", fp->name, varname, jstring);
+            RlistAppendScalar(&return_list, jstring);
         }
-    }
-    else
-    {
-        Rval rval2;
 
-        if (!GetListReferenceArgument(ctx, fp, varname, &rval2, NULL))
+        if (!return_list)
         {
-            VarRefDestroy(ref);
             return FnFailure();
         }
 
-        for (rp = (Rlist *) rval2.item; rp != NULL && index--; rp = rp->next)
-        {
-            /* skip to offset */
-        }
+        return FnReturn(RlistScalarValue(return_list));
     }
+    else
+    {
+        const Rlist *input_list = GetListReferenceArgument(ctx, fp, varname, NULL);
+        if (!input_list)
+        {
+            return FnFailure();
+        }
 
-    VarRefDestroy(ref);
+        const Rlist *return_list = NULL;
+        for (return_list = input_list; return_list && index--; return_list = return_list->next);
 
-    if (NULL == rp) return FnFailure();
+        if (!return_list)
+        {
+            return FnFailure();
+        }
 
-    return FnReturn(RlistScalarValue(rp));
+        return FnReturn(RlistScalarValue(return_list));
+    }
 }
 
 /*********************************************************************/
@@ -3181,18 +3310,14 @@ static FnCallResult FnCallEverySomeNone(EvalContext *ctx, FnCall *fp, Rlist *fin
 
 static FnCallResult FnCallSort(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
 {
-    VarRef *ref = VarRefParse(RlistScalarValue(finalargs));
     const char *sort_type = RlistScalarValue(finalargs->next); // list identifier
-    Rval list_var_rval;
-    DataType list_var_dtype = DATA_TYPE_NONE;
 
-    if (!EvalContextVariableGet(ctx, ref, &list_var_rval, &list_var_dtype))
+    DataType list_var_dtype = DATA_TYPE_NONE;
+    const Rlist *input_list = GetListReferenceArgument(ctx, fp, RlistScalarValue(finalargs), &list_var_dtype);
+    if (!input_list)
     {
-        VarRefDestroy(ref);
         return FnFailure();
     }
-
-    VarRefDestroy(ref);
 
     if (list_var_dtype != DATA_TYPE_STRING_LIST)
     {
@@ -3203,23 +3328,23 @@ static FnCallResult FnCallSort(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *f
 
     if (strcmp(sort_type, "int") == 0)
     {
-        sorted = IntSortRListNames(RlistCopy(RvalRlistValue(list_var_rval)));
+        sorted = IntSortRListNames(RlistCopy(input_list));
     }
     else if (strcmp(sort_type, "real") == 0)
     {
-        sorted = RealSortRListNames(RlistCopy(RvalRlistValue(list_var_rval)));
+        sorted = RealSortRListNames(RlistCopy(input_list));
     }
     else if (strcmp(sort_type, "IP") == 0 || strcmp(sort_type, "ip") == 0)
     {
-        sorted = IPSortRListNames(RlistCopy(RvalRlistValue(list_var_rval)));
+        sorted = IPSortRListNames(RlistCopy(input_list));
     }
     else if (strcmp(sort_type, "MAC") == 0 || strcmp(sort_type, "mac") == 0)
     {
-        sorted = MACSortRListNames(RlistCopy(RvalRlistValue(list_var_rval)));
+        sorted = MACSortRListNames(RlistCopy(input_list));
     }
     else // "lex"
     {
-        sorted = AlphaSortRListNames(RlistCopy(RvalRlistValue(list_var_rval)));
+        sorted = AlphaSortRListNames(RlistCopy(input_list));
     }
 
     return (FnCallResult) { FNCALL_SUCCESS, (Rval) { sorted, RVAL_TYPE_LIST } };
@@ -3265,16 +3390,14 @@ static FnCallResult FnCallFormat(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
     if (check)
     {
         BufferAppend(buf, format, (check - format));
+        Seq *s = NULL;
 
-        while (check && FullTextMatch(ctx, "(%%|%[^diouxXeEfFgGaAcsCSpnm%]*?[diouxXeEfFgGaAcsCSpnm])([^%]*)(.*)", check))
+        while (check && (s = StringMatchCaptures("^(%%|%[^diouxXeEfFgGaAcsCSpnm%]*?[diouxXeEfFgGaAcsCSpnm])([^%]*)(.*)$", check)))
         {
             {
-                VarRef *ref_1 = VarRefParseFromScope("1", "match");
-                Rval rval_1;
-                DataType type_1 = DATA_TYPE_NONE;
-                if (EvalContextVariableGet(ctx, ref_1, &rval_1, &type_1))
+                if (SeqLength(s) >= 2)
                 {
-                    const char* format_piece = RvalScalarValue(rval_1);
+                    const char *format_piece = SeqAt(s, 1);
                     bool percent = (0 == strncmp(format_piece, "%%", 2));
                     char *data = NULL;
 
@@ -3349,17 +3472,12 @@ static FnCallResult FnCallFormat(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
                 {
                     check = NULL;
                 }
-
-                VarRefDestroy(ref_1);
             }
 
             {
-                VarRef *ref_2 = VarRefParseFromScope("2", "match");
-                Rval rval_2;
-                DataType type_2 = DATA_TYPE_NONE;
-                if (EvalContextVariableGet(ctx, ref_2, &rval_2, &type_2))
+                if (SeqLength(s) >= 3)
                 {
-                    const char* static_piece = RvalScalarValue(rval_2);
+                    const char* static_piece = SeqAt(s, 2);
                     BufferAppend(buf, static_piece, strlen(static_piece));
                     // CfOut(OUTPUT_LEVEL_INFORM, "", "format: appending static piece = '%s'", static_piece);
                 }
@@ -3367,26 +3485,21 @@ static FnCallResult FnCallFormat(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
                 {
                     check = NULL;
                 }
-
-                VarRefDestroy(ref_2);
             }
 
             {
-                VarRef *ref_3 = VarRefParseFromScope("3", "match");
-                Rval rval_3;
-                DataType type_3 = DATA_TYPE_NONE;
-                if (EvalContextVariableGet(ctx, ref_3, &rval_3, &type_3))
+                if (SeqLength(s) >= 4)
                 {
-                    strncpy(check_buffer, RvalScalarValue(rval_3), CF_BUFSIZE);
+                    strncpy(check_buffer, SeqAt(s, 3), CF_BUFSIZE);
                     check = check_buffer;
                 }
                 else
                 {
                     check = NULL;
                 }
-
-                VarRefDestroy(ref_3);
             }
+
+            SeqDestroy(s);
         }
     }
     else
@@ -3498,8 +3611,7 @@ static FnCallResult FnCallIsVariable(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rl
     else
     {
         VarRef *ref = VarRefParse(lval);
-        Rval rval = { 0 };
-        found = EvalContextVariableGet(ctx, ref, &rval, NULL);
+        found = EvalContextVariableGet(ctx, ref, NULL) != NULL;
         VarRefDestroy(ref);
     }
 
@@ -3936,7 +4048,7 @@ static FnCallResult FnCallPeerLeaders(ARG_UNUSED EvalContext *ctx, ARG_UNUSED Fn
 
 /*********************************************************************/
 
-static FnCallResult FnCallRegCmp(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallRegCmp(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
 {
     char buffer[CF_BUFSIZE];
 
@@ -3948,7 +4060,7 @@ static FnCallResult FnCallRegCmp(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist 
     char *argv0 = RlistScalarValue(finalargs);
     char *argv1 = RlistScalarValue(finalargs->next);
 
-    return FnReturnContext(FullTextMatch(ctx, argv0, argv1));
+    return FnReturnContext(StringMatchFull(argv0, argv1));
 }
 
 /*********************************************************************/
@@ -3966,53 +4078,30 @@ static FnCallResult FnCallRegExtract(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rl
     char *data = RlistScalarValue(finalargs->next);
     char *arrayname = RlistScalarValue(finalargs->next->next);
 
-    bool ret = FullTextMatch(ctx, regex, data);
+    Seq *s = StringMatchCaptures(regex, data);
 
-    long i = 0;
-
-    while (true)
+    if (!s || SeqLength(s) == 0)
     {
-        Rval rval;
-        DataType type;
-
-        char *index = StringFromLong(i);
-        VarRef *ref = VarRefParseFromScope(index, "match");
-        free(index);
-
-        if (!EvalContextVariableGet(ctx, ref, &rval, &type))
-        {
-            break;
-        }
-
-        if (rval.type != RVAL_TYPE_SCALAR)
-        {
-            Log(LOG_LEVEL_ERR,
-                  "Software error: pattern match was non-scalar in regextract (shouldn't happen)");
-            return FnFailure();
-        }
-        else
-        {
-            char var[CF_MAXVARSIZE] = "";
-            snprintf(var, CF_MAXVARSIZE - 1, "%s[%s]", arrayname, ref->lval);
-            VarRef *new_ref = VarRefParseFromBundle(var, PromiseGetBundle(fp->caller));
-            EvalContextVariablePut(ctx, new_ref, RvalScalarValue(rval), DATA_TYPE_STRING, "source=function,function=regextract");
-            VarRefDestroy(new_ref);
-        }
-
-        i++;
-    }
-
-    if (i == 0)
-    {
+        SeqDestroy(s);
         return FnReturnContext(false);
     }
 
-    return FnReturnContext(ret);
+    for (int i = 0; i < SeqLength(s); ++i)
+    {
+        char var[CF_MAXVARSIZE] = "";
+        snprintf(var, CF_MAXVARSIZE - 1, "%s[%d]", arrayname, i);
+        VarRef *new_ref = VarRefParseFromBundle(var, PromiseGetBundle(fp->caller));
+        EvalContextVariablePut(ctx, new_ref, SeqAt(s, i), DATA_TYPE_STRING, "source=function,function=regextract");
+        VarRefDestroy(new_ref);
+    }
+
+    SeqDestroy(s);
+    return FnReturnContext(true);
 }
 
 /*********************************************************************/
 
-static FnCallResult FnCallRegLine(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallRegLine(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
 {
     FILE *fin;
 
@@ -4048,7 +4137,7 @@ static FnCallResult FnCallRegLine(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist
             Log(LOG_LEVEL_ERR, "Chop was called on a string that seemed to have no terminator");
         }
 
-        if (FullTextMatch(ctx, argv0, line))
+        if (StringMatchFull(argv0, line))
         {
             fclose(fin);
             return FnReturnContext(true);
@@ -4156,10 +4245,9 @@ static FnCallResult FnCallRRange(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall 
 
 static FnCallResult FnCallReverse(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 {
-    Rval list_rval;
     DataType list_dtype = DATA_TYPE_NONE;
-
-    if (!GetListReferenceArgument(ctx, fp, RlistScalarValue(finalargs), &list_rval, &list_dtype))
+    const Rlist *input_list = GetListReferenceArgument(ctx, fp, RlistScalarValue(finalargs), &list_dtype);
+    if (!input_list)
     {
         return FnFailure();
     }
@@ -4170,7 +4258,7 @@ static FnCallResult FnCallReverse(EvalContext *ctx, FnCall *fp, Rlist *finalargs
         return FnFailure();
     }
 
-    Rlist *copy = RlistCopy(RvalRlistValue(list_rval));
+    Rlist *copy = RlistCopy(input_list);
     RlistReverse(&copy);
 
     return (FnCallResult) { FNCALL_SUCCESS, (Rval) { copy, RVAL_TYPE_LIST } };
@@ -4565,20 +4653,18 @@ static FnCallResult FnCallParseJson(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCa
 
 static FnCallResult FnCallStoreJson(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 {
-    char buf[CF_BUFSIZE];
-    char *varname = RlistScalarValue(finalargs);
+    const char *varname = RlistScalarValue(finalargs);
     VarRef *ref = VarRefParseFromBundle(varname, PromiseGetBundle(fp->caller));
 
     DataType type = DATA_TYPE_NONE;
-    Rval rval;
-    EvalContextVariableGet(ctx, ref, &rval, &type);
+    const JsonElement *value = EvalContextVariableGet(ctx, ref, &type);
 
     if (type == DATA_TYPE_CONTAINER)
     {
         Writer *w = StringWriter();
         int length;
 
-        JsonWrite(w, RvalContainerValue(rval), 0);
+        JsonWrite(w, value, 0);
         Log(LOG_LEVEL_DEBUG, "%s: from data container %s, got JSON data '%s'", fp->name, varname, StringWriterData(w));
 
         length = strlen(StringWriterData(w));
@@ -4587,16 +4673,17 @@ static FnCallResult FnCallStoreJson(EvalContext *ctx, FnCall *fp, Rlist *finalar
             Log(LOG_LEVEL_INFO, "%s: truncating data container %s JSON data from %d bytes to %d", fp->name, varname, length, CF_BUFSIZE);
         }
 
+        char buf[CF_BUFSIZE];
         snprintf(buf, CF_BUFSIZE, "%s", StringWriterData(w));
         WriterClose(w);
+
+        return FnReturn(buf);
     }
     else
     {
         Log(LOG_LEVEL_VERBOSE, "%s: data container %s could not be found or has an invalid type", fp->name, varname);
         return FnFailure();
     }
-
-    return FnReturn(buf);
 }
 
 
@@ -4797,13 +4884,7 @@ static FnCallResult FnCallSplitString(ARG_UNUSED EvalContext *ctx, ARG_UNUSED Fn
 
 static FnCallResult FnCallFileSexist(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
 {
-    Rlist *rp, *files;
     char naked[CF_MAXVARSIZE];
-    Rval retval;
-    struct stat sb;
-
-/* begin fn specific content */
-
     char *listvar = RlistScalarValue(finalargs);
 
     if (IsVarList(listvar))
@@ -4817,8 +4898,9 @@ static FnCallResult FnCallFileSexist(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rl
     }
 
     VarRef *ref = VarRefParse(naked);
-
-    if (!EvalContextVariableGet(ctx, ref, &retval, NULL))
+    DataType input_list_type = DATA_TYPE_NONE;
+    const Rlist *input_list = EvalContextVariableGet(ctx, ref, &input_list_type);
+    if (!input_list)
     {
         Log(LOG_LEVEL_VERBOSE, "Function filesexist was promised a list called '%s' but this was not found", listvar);
         VarRefDestroy(ref);
@@ -4827,17 +4909,15 @@ static FnCallResult FnCallFileSexist(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rl
 
     VarRefDestroy(ref);
 
-    if (retval.type != RVAL_TYPE_LIST)
+    if (DataTypeToRvalType(input_list_type) != RVAL_TYPE_LIST)
     {
-        Log(LOG_LEVEL_VERBOSE, "Function filesexist was promised a list called '%s' but this variable is not a list",
-              listvar);
+        Log(LOG_LEVEL_VERBOSE, "Function filesexist was promised a list called '%s' but this variable is not a list", listvar);
         return FnFailure();
     }
 
-    files = (Rlist *) retval.item;
-
-    for (rp = files; rp != NULL; rp = rp->next)
+    for (const Rlist *rp = input_list; rp != NULL; rp = rp->next)
     {
+        struct stat sb;
         if (stat(RlistScalarValue(rp), &sb) == -1)
         {
             return FnReturnContext(false);
@@ -5007,21 +5087,22 @@ static FnCallResult FnCallMakerule(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlis
 
         VarRef *ref = VarRefParse(naked);
 
-        Rval retval;
-        if (!EvalContextVariableGet(ctx, ref, &retval, NULL))
+        DataType input_list_type = DATA_TYPE_NONE;
+        const Rlist *input_list = EvalContextVariableGet(ctx, ref, &input_list_type);
+        if (!input_list)
         {
             Log(LOG_LEVEL_VERBOSE, "Function 'makerule' was promised a list called '%s' but this was not found", listvar);
             VarRefDestroy(ref);
             return FnFailure();
         }
 
-       if (retval.type != RVAL_TYPE_LIST)
+       if (DataTypeToRvalType(input_list_type) != RVAL_TYPE_LIST)
        {
            Log(LOG_LEVEL_WARNING, "Function 'makerule' was promised a list called '%s' but this variable is not a list", listvar);
            return FnFailure();
        }
 
-       list = retval.item;
+       list = (Rlist *)input_list;
     }
 
     struct stat statbuf;
@@ -6245,6 +6326,12 @@ static const FnCallArg UNIQUE_ARGS[] =
     {NULL, DATA_TYPE_NONE, NULL}
 };
 
+static const FnCallArg DATATYPE_ARGS[] =
+{
+    {CF_IDRANGE, DATA_TYPE_STRING, "CFEngine data container identifier"},
+    {NULL, DATA_TYPE_NONE, NULL}
+};
+
 static const FnCallArg NTH_ARGS[] =
 {
     {CF_IDRANGE, DATA_TYPE_STRING, "CFEngine list or data container identifier"},
@@ -6285,7 +6372,7 @@ static const FnCallArg SHUFFLE_ARGS[] =
     {NULL, DATA_TYPE_NONE, NULL}
 };
 
-static const FnCallArg LENGTH_ARGS[] =
+static const FnCallArg STAT_FOLD_ARGS[] =
 {
     {CF_IDRANGE, DATA_TYPE_STRING, "CFEngine list identifier"},
     {NULL, DATA_TYPE_NONE, NULL}
@@ -6467,8 +6554,6 @@ const FnCallType CF_FNCALL_TYPES[] =
                   FNCALL_OPTION_CACHED, FNCALL_CATEGORY_COMM, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("ldapvalue", DATA_TYPE_STRING, LDAPVALUE_ARGS, &FnCallLDAPValue, "Extract the first matching named value from ldap",
                   FNCALL_OPTION_CACHED, FNCALL_CATEGORY_COMM, SYNTAX_STATUS_NORMAL),
-    FnCallTypeNew("length", DATA_TYPE_INT, LENGTH_ARGS, &FnCallLength, "Return the length of a list",
-                  FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("lsdir", DATA_TYPE_STRING_LIST, LSDIRLIST_ARGS, &FnCallLsDir, "Return a list of files in a directory matching a regular expression",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_FILES, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("makerule", DATA_TYPE_CONTEXT, MAKERULE_ARGS, &FnCallMakerule, "True if the target file arg1 does not exist or a source file in arg2 is newer",
@@ -6485,6 +6570,8 @@ const FnCallType CF_FNCALL_TYPES[] =
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("now", DATA_TYPE_INT, NOW_ARGS, &FnCallNow, "Convert the current time into system representation",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_SYSTEM, SYNTAX_STATUS_NORMAL),
+    FnCallTypeNew("datatype", DATA_TYPE_STRING, DATATYPE_ARGS, &FnCallDatatype, "Return the top-level type of a data container",
+                  FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("nth", DATA_TYPE_STRING, NTH_ARGS, &FnCallNth, "Get the element at arg2 in list or data container arg1",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("on", DATA_TYPE_INT, DATE_ARGS, &FnCallOn, "Convert an exact date/time to an integer system representation",
@@ -6604,5 +6691,17 @@ const FnCallType CF_FNCALL_TYPES[] =
     FnCallTypeNew("upcase", DATA_TYPE_STRING, XFORM_ARGS, &FnCallTextXform, "Convert a string to UPPERCASE",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
 
+    // List folding functions
+    FnCallTypeNew("length", DATA_TYPE_INT, STAT_FOLD_ARGS, &FnCallFold, "Return the length of a list",
+                  FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
+    FnCallTypeNew("max", DATA_TYPE_STRING, SORT_ARGS, &FnCallFold, "Return the maximum of a list",
+                  FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
+    FnCallTypeNew("mean", DATA_TYPE_REAL, STAT_FOLD_ARGS, &FnCallFold, "Return the mean (average) of a list",
+                  FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
+    FnCallTypeNew("min", DATA_TYPE_STRING, SORT_ARGS, &FnCallFold, "Return the minimum of a list",
+                  FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
+    FnCallTypeNew("variance", DATA_TYPE_REAL, STAT_FOLD_ARGS, &FnCallFold, "Return the variance of a list",
+                  FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
+    
     FnCallTypeNewNull()
 };

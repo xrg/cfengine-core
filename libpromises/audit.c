@@ -28,13 +28,13 @@
 #include <logging.h>
 #include <string_lib.h>
 
-int PR_KEPT; /* GLOBAL_X */
-int PR_REPAIRED; /* GLOBAL_X */
-int PR_NOTKEPT; /* GLOBAL_X */
+int PR_KEPT = 0; /* GLOBAL_X */
+int PR_REPAIRED = 0; /* GLOBAL_X */
+int PR_NOTKEPT = 0; /* GLOBAL_X */
 
-static double VAL_KEPT; /* GLOBAL_X */
-static double VAL_REPAIRED; /* GLOBAL_X */
-static double VAL_NOTKEPT; /* GLOBAL_X */
+static double VAL_KEPT = 0.0; /* GLOBAL_X */
+static double VAL_REPAIRED = 0.0; /* GLOBAL_X */
+static double VAL_NOTKEPT = 0.0; /* GLOBAL_X */
 
 static bool END_AUDIT_REQUIRED = false; /* GLOBAL_X */
 
@@ -78,29 +78,22 @@ void EndAudit(const EvalContext *ctx, int background_tasks)
         return;
     }
 
-    char *sp, string[CF_BUFSIZE];
-    Rval retval = { 0 };
-
     double total = (double) (PR_KEPT + PR_NOTKEPT + PR_REPAIRED) / 100.0;
 
-    if (EvalContextVariableControlCommonGet(ctx, COMMON_CONTROL_VERSION, &retval))
+    const char *version = EvalContextVariableControlCommonGet(ctx, COMMON_CONTROL_VERSION);
+    if (!version)
     {
-        sp = (char *) retval.item;
-    }
-    else
-    {
-        sp = "(not specified)";
+        version = "(not specified)";
     }
 
     if (total == 0)
     {
-        *string = '\0';
-        Log(LOG_LEVEL_VERBOSE, "Outcome of version '%s', no checks were scheduled", sp);
+        Log(LOG_LEVEL_VERBOSE, "Outcome of version '%s', no checks were scheduled", version);
         return;
     }
     else
     {
-        LogTotalCompliance(sp, background_tasks);
+        LogTotalCompliance(version, background_tasks);
     }
 }
 

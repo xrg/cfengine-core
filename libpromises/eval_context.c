@@ -967,7 +967,7 @@ void EvalContextStackPushBundleFrame(EvalContext *ctx, const Bundle *owner, cons
         Variable *var = NULL;
         while ((var = VariableTableIteratorNext(iter)))
         {
-            Rval retval = ExpandPrivateRval(ctx, owner->ns, owner->name, var->rval);
+            Rval retval = ExpandPrivateRval(ctx, owner->ns, owner->name, var->rval.item, var->rval.type);
             RvalDestroy(var->rval);
             var->rval = retval;
         }
@@ -1528,7 +1528,9 @@ static void VarRefStackQualify(const EvalContext *ctx, VarRef *ref)
     }
 }
 
-bool EvalContextVariablePut(EvalContext *ctx, const VarRef *ref, const void *value, DataType type, const char *tags)
+bool EvalContextVariablePut(EvalContext *ctx,
+                            const VarRef *ref, const void *value,
+                            DataType type, const char *tags)
 {
     assert(type != DATA_TYPE_NONE);
     assert(ref);
@@ -1542,12 +1544,15 @@ bool EvalContextVariablePut(EvalContext *ctx, const VarRef *ref, const void *val
     if (strlen(ref->lval) > CF_MAXVARSIZE)
     {
         char *lval_str = VarRefToString(ref, true);
-        Log(LOG_LEVEL_ERR, "Variable '%s'' cannot be added because its length exceeds the maximum length allowed '%d' characters", lval_str, CF_MAXVARSIZE);
+        Log(LOG_LEVEL_ERR, "Variable '%s'' cannot be added because "
+            "its length exceeds the maximum length allowed ('%d' characters)",
+            lval_str, CF_MAXVARSIZE);
         free(lval_str);
         return false;
     }
 
-    if (strcmp(ref->scope, "body") != 0 && IsVariableSelfReferential(ref, value, DataTypeToRvalType(type)))
+    if (strcmp(ref->scope, "body") != 0 &&
+        IsVariableSelfReferential(ref, value, DataTypeToRvalType(type)))
     {
         return false;
     }
@@ -1557,19 +1562,22 @@ bool EvalContextVariablePut(EvalContext *ctx, const VarRef *ref, const void *val
     // Look for outstanding lists in variable rvals
     if (THIS_AGENT_TYPE == AGENT_TYPE_COMMON)
     {
-        Rlist *listvars = NULL;
-        Rlist *scalars = NULL;
-        Rlist *containers = NULL;
-
         StackFrame *last_frame = LastStackFrame(ctx, 0);
 
         if (last_frame && (last_frame->type == STACK_FRAME_TYPE_BUNDLE))
         {
-            MapIteratorsFromRval(ctx, EvalContextStackCurrentBundle(ctx), rval, &scalars, &listvars, &containers);
+            Rlist *listvars = NULL;
+            Rlist *scalars = NULL;
+            Rlist *containers = NULL;
+
+            MapIteratorsFromRval(ctx, EvalContextStackCurrentBundle(ctx),
+                                 rval, &scalars, &listvars, &containers);
 
             if (listvars != NULL)
             {
-                Log(LOG_LEVEL_ERR, "Redefinition of variable '%s' (embedded list in RHS)", ref->lval);
+                Log(LOG_LEVEL_ERR,
+                    "Redefinition of variable '%s' (embedded list in RHS)",
+                    ref->lval);
             }
 
             RlistDestroy(listvars);
@@ -1580,6 +1588,7 @@ bool EvalContextVariablePut(EvalContext *ctx, const VarRef *ref, const void *val
 
     VariableTable *table = GetVariableTableForScope(ctx, ref->ns, ref->scope);
     VariableTablePut(table, ref, &rval, type, tags);
+    /* FIXME: we really shouldn't be ignoring the return from that ... */
     return true;
 }
 
@@ -1620,7 +1629,7 @@ static Variable *VariableResolve(const EvalContext *ctx, const VarRef *ref)
     return NULL;
 }
 
-bool EvalContextVariableGet(const EvalContext *ctx, const VarRef *ref, Rval *rval_out, DataType *type_out)
+const void  *EvalContextVariableGet(const EvalContext *ctx, const VarRef *ref, DataType *type_out)
 {
     Variable *var = VariableResolve(ctx, ref);
     if (var)
@@ -1630,41 +1639,28 @@ bool EvalContextVariableGet(const EvalContext *ctx, const VarRef *ref, Rval *rva
             JsonElement *child = JsonSelect(RvalContainerValue(var->rval), ref->num_indices, ref->indices);
             if (child)
             {
-                if (rval_out)
-                {
-                    rval_out->item = child;
-                    rval_out->type = RVAL_TYPE_CONTAINER;
-                }
                 if (type_out)
                 {
                     *type_out = DATA_TYPE_CONTAINER;
                 }
-                return true;
+                return child;
             }
         }
         else
         {
-            if (rval_out)
-            {
-                *rval_out = var->rval;
-            }
             if (type_out)
             {
                 *type_out = var->type;
             }
-            return true;
+            return var->rval.item;
         }
     }
 
-    if (rval_out)
-    {
-        *rval_out = (Rval) {NULL, RVAL_TYPE_SCALAR };
-    }
     if (type_out)
     {
         *type_out = DATA_TYPE_NONE;
     }
-    return false;
+    return NULL;
 }
 
 StringSet *EvalContextClassTags(const EvalContext *ctx, const char *ns, const char *name)
@@ -1710,7 +1706,7 @@ VariableTableIterator *EvalContextVariableTableIteratorNew(const EvalContext *ct
     return table ? VariableTableIteratorNew(table, ns, scope, lval) : NULL;
 }
 
-bool EvalContextVariableControlCommonGet(const EvalContext *ctx, CommonControl lval, Rval *rval_out)
+const void *EvalContextVariableControlCommonGet(const EvalContext *ctx, CommonControl lval)
 {
     if (lval == COMMON_CONTROL_NONE)
     {
@@ -1718,7 +1714,7 @@ bool EvalContextVariableControlCommonGet(const EvalContext *ctx, CommonControl l
     }
 
     VarRef *ref = VarRefParseFromScope(CFG_CONTROLBODY[lval].lval, "control_common");
-    bool ret = EvalContextVariableGet(ctx, ref, rval_out, NULL);
+    const void *ret = EvalContextVariableGet(ctx, ref, NULL);
     VarRefDestroy(ref);
     return ret;
 }
@@ -2100,11 +2096,10 @@ static void LogPromiseContext(const EvalContext *ctx, const Promise *pp)
     }
 
     {
-
-        Rval retval;
-        if (EvalContextVariableControlCommonGet(ctx, COMMON_CONTROL_VERSION, &retval))
+        const char *version = EvalContextVariableControlCommonGet(ctx, COMMON_CONTROL_VERSION);
+        if (version)
         {
-            WriterWriteF(w, " version '%s'", RvalScalarValue(retval));
+            WriterWriteF(w, " version '%s'", version);
         }
     }
 

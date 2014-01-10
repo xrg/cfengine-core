@@ -38,11 +38,6 @@ extern time_t CONNTIMEOUT;
 
 extern char CFWORKDIR[CF_BUFSIZE];
 
-extern char VYEAR[];
-extern char VDAY[];
-extern char VMONTH[];
-extern char VSHIFT[];
-
 extern const char *const CLASSTEXT[];
 
 extern time_t CFSTARTTIME;
@@ -82,7 +77,7 @@ extern int CFA_MAXTHREADS;
 extern AgentType THIS_AGENT_TYPE;
 extern int SHOWREPORTS;
 extern int LASTSEENEXPIREAFTER;
-extern char *DEFAULT_COPYTYPE;
+extern const char *DEFAULT_COPYTYPE;
 extern Item *PROCESSTABLE;
 
 extern const char *const DAY_TEXT[];

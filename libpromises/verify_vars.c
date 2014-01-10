@@ -50,7 +50,7 @@ typedef struct
 
 static ConvergeVariableOptions CollectConvergeVariableOptions(EvalContext *ctx, const Promise *pp, bool allow_redefine);
 static bool Epimenides(EvalContext *ctx, const char *ns, const char *scope, const char *var, Rval rval, int level);
-static int CompareRval(Rval rval1, Rval rval2);
+static int CompareRval(const void *rval1_item, RvalType rval1_type, const void *rval2_item, RvalType rval2_type);
 
 
 PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_duplicates)
@@ -72,12 +72,12 @@ PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_d
         VarRefSetMeta(ref, true);
     }
 
-    Rval existing_var_rval;
-    DataType existing_var_type = DATA_TYPE_NONE;
+    DataType existing_value_type = DATA_TYPE_NONE;
+    const void *existing_value = NULL;
 
     if (!IsExpandable(pp->promiser))
     {
-        EvalContextVariableGet(ctx, ref, &existing_var_rval, &existing_var_type);
+        existing_value = EvalContextVariableGet(ctx, ref, &existing_value_type);
     }
 
     PromiseResult result = PROMISE_RESULT_NOOP;
@@ -92,7 +92,7 @@ PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_d
 
         if (opts.cp_save->rval.type == RVAL_TYPE_FNCALL)
         {
-            if (existing_var_type != DATA_TYPE_NONE)
+            if (existing_value_type != DATA_TYPE_NONE)
             {
                 // Already did this
                 VarRefDestroy(ref);
@@ -191,19 +191,21 @@ PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_d
             rval = returnval;
         }
 
-        if (existing_var_type != DATA_TYPE_NONE)
+        if (existing_value_type != DATA_TYPE_NONE)
         {
             if (opts.ok_redefine)    /* only on second iteration, else we ignore broken promises */
             {
                 EvalContextVariableRemove(ctx, ref);
             }
-            else if ((THIS_AGENT_TYPE == AGENT_TYPE_COMMON) && (CompareRval(existing_var_rval, rval) == false))
+            else if ((THIS_AGENT_TYPE == AGENT_TYPE_COMMON)
+                     && (CompareRval(existing_value, DataTypeToRvalType(existing_value_type),
+                                     rval.item, rval.type) == false))
             {
                 switch (rval.type)
                 {
                 case RVAL_TYPE_SCALAR:
                     Log(LOG_LEVEL_VERBOSE, "Redefinition of a constant scalar '%s', was '%s' now '%s'",
-                          pp->promiser, RvalScalarValue(existing_var_rval), RvalScalarValue(rval));
+                          pp->promiser, (const char *)existing_value, RvalScalarValue(rval));
                     PromiseRef(LOG_LEVEL_VERBOSE, pp);
                     break;
 
@@ -211,7 +213,7 @@ PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_d
                     {
                     Log(LOG_LEVEL_VERBOSE, "Redefinition of a constant list '%s'", pp->promiser);
                         Writer *w = StringWriter();
-                        RlistWrite(w, existing_var_rval.item);
+                        RlistWrite(w, existing_value);
                         char *oldstr = StringWriterClose(w);
                         Log(LOG_LEVEL_VERBOSE, "Old value '%s'", oldstr);
                         free(oldstr);
@@ -278,7 +280,7 @@ PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_d
             {
                 DataType existing_type = DATA_TYPE_NONE;
                 VarRef *base_ref = VarRefCopyIndexless(ref);
-                if (EvalContextVariableGet(ctx, ref, NULL, &existing_type) && existing_type == DATA_TYPE_CONTAINER)
+                if (EvalContextVariableGet(ctx, ref, &existing_type) && existing_type == DATA_TYPE_CONTAINER)
                 {
                     char *lval_str = VarRefToString(ref, true);
                     char *base_ref_str = VarRefToString(base_ref, true);
@@ -346,15 +348,15 @@ PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_d
 
 // FIX: this function is a mixture of Equal/Compare (boolean/diff).
 // somebody is bound to misuse this at some point
-static int CompareRlist(Rlist *list1, Rlist *list2)
+static int CompareRlist(const Rlist *list1, const Rlist *list2)
 {
-    Rlist *rp1, *rp2;
+    const Rlist *rp1, *rp2;
 
     for (rp1 = list1, rp2 = list2; rp1 != NULL && rp2 != NULL; rp1 = rp1->next, rp2 = rp2->next)
     {
         if (rp1->val.item && rp2->val.item)
         {
-            Rlist *rc1, *rc2;
+            const Rlist *rc1, *rc2;
 
             if (rp1->val.type == RVAL_TYPE_FNCALL || rp2->val.type == RVAL_TYPE_FNCALL)
             {
@@ -395,23 +397,24 @@ static int CompareRlist(Rlist *list1, Rlist *list2)
     return true;
 }
 
-static int CompareRval(Rval rval1, Rval rval2)
+static int CompareRval(const void *rval1_item, RvalType rval1_type,
+                       const void *rval2_item, RvalType rval2_type)
 {
-    if (rval1.type != rval2.type)
+    if (rval1_type != rval2_type)
     {
         return -1;
     }
 
-    switch (rval1.type)
+    switch (rval1_type)
     {
     case RVAL_TYPE_SCALAR:
 
-        if (IsCf3VarString((char *) rval1.item) || IsCf3VarString((char *) rval2.item))
+        if (IsCf3VarString(rval1_item) || IsCf3VarString(rval2_item))
         {
             return -1;          // inconclusive
         }
 
-        if (strcmp(rval1.item, rval2.item) != 0)
+        if (strcmp(rval1_item, rval2_item) != 0)
         {
             return false;
         }
@@ -419,7 +422,7 @@ static int CompareRval(Rval rval1, Rval rval2)
         break;
 
     case RVAL_TYPE_LIST:
-        return CompareRlist(rval1.item, rval2.item);
+        return CompareRlist(rval1_item, rval2_item);
 
     case RVAL_TYPE_FNCALL:
         return -1;

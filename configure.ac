@@ -600,6 +600,9 @@ AC_REPLACE_FUNCS(gmtime_r)
 AC_CHECK_DECLS(localtime_r, [], [], [[#include <time.h>]])
 AC_REPLACE_FUNCS(localtime_r)
 
+AC_CHECK_DECLS(timegm, [], [], [[#include <time.h>]])
+AC_REPLACE_FUNCS(timegm)
+
 AC_CHECK_FUNCS(getpwent setpwent endpwent)
 
 AC_CHECK_FUNCS(getspnam lckpwdf ulckpwdf)
@@ -837,6 +840,9 @@ AC_CHECK_DECLS([fstatat], [], [], [[#include <sys/stat.h>]])
 AC_CHECK_DECLS([fchownat], [], [], [[#include <unistd.h>]])
 AC_REPLACE_FUNCS(openat fstatat fchownat)
 
+AC_CHECK_DECLS([log2], [], [], [[#include <math.h>]])
+AC_REPLACE_FUNCS(log2)
+
 dnl ######################################################################
 dnl Required by cf-upgrade. It cannot be implemented in libcompat because
 dnl cf-upgrade does not link to any libraries except libutils and only
@@ -859,6 +865,7 @@ AC_CHECK_DECLS(getgid)
 AC_CHECK_DECLS(lstat)
 AC_CHECK_FUNCS(sleep)
 AC_CHECK_DECLS(socketpair, [], [], [[#include <sys/socket.h>]])
+AC_CHECK_DECLS(setenv)
 
 dnl ######################################################################
 dnl Check for sa_len in struct sockaddr

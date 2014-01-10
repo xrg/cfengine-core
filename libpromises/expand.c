@@ -331,7 +331,6 @@ static void ExpandAndMapIteratorsFromScalar(EvalContext *ctx, const Bundle *bund
                                             Rlist **containers, Rlist **full_expansion)
 {
     char *sp;
-    Rval rval;
     Rlist *tmp_list = NULL;
     char v[CF_BUFSIZE], buffer[CF_BUFSIZE];
 
@@ -374,7 +373,7 @@ static void ExpandAndMapIteratorsFromScalar(EvalContext *ctx, const Bundle *bund
             if (ExtractInnerCf3VarString(sp, v))
             {
                 Rlist *inner_expansion = NULL;
-                Rlist *exp, *tmp;
+                Rlist *exp = NULL;
                 int success = 0;
                 int increment;
 
@@ -403,13 +402,15 @@ static void ExpandAndMapIteratorsFromScalar(EvalContext *ctx, const Bundle *bund
                     // var is the expanded name of the variable in its native context
                     // finalname will be the mapped name in the local context "this."
 
-                    if (EvalContextVariableGet(ctx, inner_ref, &rval, NULL))
+                    DataType value_type = DATA_TYPE_NONE;
+                    const void *value = EvalContextVariableGet(ctx, inner_ref, &value_type);
+                    if (value)
                     {
                         char *mangled_inner_ref = xstrdup(inner_ref_str);
                         MangleVarRefString(mangled_inner_ref, strlen(mangled_inner_ref));
 
                         success++;
-                        switch (rval.type)
+                        switch (DataTypeToRvalType(value_type))
                         {
                         case RVAL_TYPE_LIST:
                             if (level > 0)
@@ -423,10 +424,10 @@ static void ExpandAndMapIteratorsFromScalar(EvalContext *ctx, const Bundle *bund
 
                             if (full_expansion)
                             {
-                                for (tmp = rval.item; tmp != NULL; tmp = tmp->next)
+                                for (const Rlist *rp = value; rp != NULL; rp = rp->next)
                                 {
                                     // append each slist item to each of full_expansion
-                                    RlistConcatInto(&tmp_list, *full_expansion, RlistScalarValue(tmp));
+                                    RlistConcatInto(&tmp_list, *full_expansion, RlistScalarValue(rp));
                                 }
                             }
                             break;
@@ -437,7 +438,7 @@ static void ExpandAndMapIteratorsFromScalar(EvalContext *ctx, const Bundle *bund
                             if (full_expansion)
                             {
                                 // append the scalar value to each of full_expansion
-                                RlistConcatInto(&tmp_list, *full_expansion, rval.item);
+                                RlistConcatInto(&tmp_list, *full_expansion, value);
                             }
                             break;
 
@@ -521,25 +522,27 @@ Rlist *ExpandList(EvalContext *ctx, const char *ns, const char *scope, const Rli
             {
                 VarRef *ref = VarRefParseFromScope(naked, scope);
 
-                if (EvalContextVariableGet(ctx, ref, &returnval, NULL))
+                DataType value_type = DATA_TYPE_NONE;
+                const void *value = EvalContextVariableGet(ctx, ref, &value_type);
+                if (value)
                 {
-                    returnval = ExpandPrivateRval(ctx, ns, scope, returnval);
+                    returnval = ExpandPrivateRval(ctx, ns, scope, value, DataTypeToRvalType(value_type));
                 }
                 else
                 {
-                    returnval = ExpandPrivateRval(ctx, ns, scope, rp->val);
+                    returnval = ExpandPrivateRval(ctx, ns, scope, rp->val.item, rp->val.type);
                 }
 
                 VarRefDestroy(ref);
             }
             else
             {
-                returnval = ExpandPrivateRval(ctx, ns, scope, rp->val);
+                returnval = ExpandPrivateRval(ctx, ns, scope, rp->val.item, rp->val.type);
             }
         }
         else
         {
-            returnval = ExpandPrivateRval(ctx, ns, scope, rp->val);
+            returnval = ExpandPrivateRval(ctx, ns, scope, rp->val.item, rp->val.type);
         }
 
         RlistAppend(&start, returnval.item, returnval.type);
@@ -551,42 +554,38 @@ Rlist *ExpandList(EvalContext *ctx, const char *ns, const char *scope, const Rli
 
 /*********************************************************************/
 
-Rval ExpandPrivateRval(EvalContext *ctx, const char *ns, const char *scope, Rval rval)
+Rval ExpandPrivateRval(EvalContext *ctx, const char *ns, const char *scope, const void *rval_item, RvalType rval_type)
 {
     char buffer[CF_EXPANDSIZE];
-    FnCall *fp, *fpe;
+    FnCall *fpe = NULL;
     Rval returnval;
 
     // Allocates new memory for the copy
     returnval.item = NULL;
     returnval.type = RVAL_TYPE_NOPROMISEE;
 
-    switch (rval.type)
+    switch (rval_type)
     {
     case RVAL_TYPE_SCALAR:
-
-        ExpandScalar(ctx, ns, scope, (char *) rval.item, buffer);
+         ExpandScalar(ctx, ns, scope, rval_item, buffer);
         returnval.item = xstrdup(buffer);
         returnval.type = RVAL_TYPE_SCALAR;
         break;
 
     case RVAL_TYPE_LIST:
-
-        returnval.item = ExpandList(ctx, ns, scope, rval.item, true);
+        returnval.item = ExpandList(ctx, ns, scope, rval_item, true);
         returnval.type = RVAL_TYPE_LIST;
         break;
 
     case RVAL_TYPE_FNCALL:
-
         /* Note expand function does not mean evaluate function, must preserve type */
-        fp = (FnCall *) rval.item;
-        fpe = ExpandFnCall(ctx, ns, scope, fp);
+        fpe = ExpandFnCall(ctx, ns, scope, rval_item);
         returnval.item = fpe;
         returnval.type = RVAL_TYPE_FNCALL;
         break;
 
     case RVAL_TYPE_CONTAINER:
-        returnval = RvalCopy(rval);
+        returnval = RvalNew(JsonCopy(rval_item), RVAL_TYPE_CONTAINER);
         break;
 
     case RVAL_TYPE_NOPROMISEE:
@@ -644,7 +643,6 @@ static bool ExpandOverflow(const char *str1, const char *str2)
 
 bool ExpandScalar(const EvalContext *ctx, const char *ns, const char *scope, const char *string, char buffer[CF_EXPANDSIZE])
 {
-    Rval rval;
     int varstring = false;
     char currentitem[CF_EXPANDSIZE], temp[CF_BUFSIZE], name[CF_MAXVARSIZE];
     int increment, returnval = true;
@@ -738,14 +736,14 @@ bool ExpandScalar(const EvalContext *ctx, const char *ns, const char *scope, con
         if (!IsExpandable(currentitem))
         {
             DataType type = DATA_TYPE_NONE;
-            bool variable_found = false;
+            const void *value = NULL;
             {
                 VarRef *ref = VarRefParseFromNamespaceAndScope(currentitem, ns, scope, CF_NS, '.');
-                variable_found = EvalContextVariableGet(ctx, ref, &rval, &type);
+                value = EvalContextVariableGet(ctx, ref, &type);
                 VarRefDestroy(ref);
             }
 
-            if (variable_found)
+            if (value)
             {
                 switch (type)
                 {
@@ -753,12 +751,12 @@ bool ExpandScalar(const EvalContext *ctx, const char *ns, const char *scope, con
                 case DATA_TYPE_INT:
                 case DATA_TYPE_REAL:
 
-                    if (ExpandOverflow(buffer, (char *) rval.item))
+                    if (ExpandOverflow(buffer, value))
                     {
                         FatalError(ctx, "Can't expand varstring");
                     }
 
-                    strlcat(buffer, (char *) rval.item, CF_EXPANDSIZE);
+                    strlcat(buffer, value, CF_EXPANDSIZE);
                     break;
 
                 case DATA_TYPE_STRING_LIST:
@@ -835,7 +833,7 @@ bool ExpandScalar(const EvalContext *ctx, const char *ns, const char *scope, con
 /*********************************************************************/
 
 
-Rval EvaluateFinalRval(EvalContext *ctx, const char *ns, const char *scope, Rval rval, int forcelist, const Promise *pp)
+Rval EvaluateFinalRval(EvalContext *ctx, const char *ns, const char *scope, Rval rval, bool forcelist, const Promise *pp)
 {
     Rlist *rp;
     Rval returnval, newret;
@@ -848,14 +846,16 @@ Rval EvaluateFinalRval(EvalContext *ctx, const char *ns, const char *scope, Rval
         if (!IsExpandable(naked))
         {
             VarRef *ref = VarRefParseFromScope(naked, scope);
+            DataType value_type = DATA_TYPE_NONE;
+            const void *value = EvalContextVariableGet(ctx, ref, &value_type);
 
-            if (!EvalContextVariableGet(ctx, ref, &returnval, NULL) || returnval.type != RVAL_TYPE_LIST)
+            if (!value || DataTypeToRvalType(value_type) != RVAL_TYPE_LIST)
             {
-                returnval = ExpandPrivateRval(ctx, NULL, "this", rval);
+                returnval = ExpandPrivateRval(ctx, NULL, "this", rval.item, rval.type);
             }
             else
             {
-                returnval.item = ExpandList(ctx, ns, scope, returnval.item, true);
+                returnval.item = ExpandList(ctx, ns, scope, value, true);
                 returnval.type = RVAL_TYPE_LIST;
             }
 
@@ -863,14 +863,14 @@ Rval EvaluateFinalRval(EvalContext *ctx, const char *ns, const char *scope, Rval
         }
         else
         {
-            returnval = ExpandPrivateRval(ctx, NULL, "this", rval);
+            returnval = ExpandPrivateRval(ctx, NULL, "this", rval.item, rval.type);
         }
     }
     else
     {
         if (forcelist)          /* We are replacing scalar @(name) with list */
         {
-            returnval = ExpandPrivateRval(ctx, ns, scope, rval);
+            returnval = ExpandPrivateRval(ctx, ns, scope, rval.item, rval.type);
         }
         else
         {
@@ -880,7 +880,7 @@ Rval EvaluateFinalRval(EvalContext *ctx, const char *ns, const char *scope, Rval
             }
             else
             {
-                returnval = ExpandPrivateRval(ctx, NULL, "this", rval);
+                returnval = ExpandPrivateRval(ctx, NULL, "this", rval.item, rval.type);
             }
         }
     }
@@ -908,7 +908,7 @@ Rval EvaluateFinalRval(EvalContext *ctx, const char *ns, const char *scope, Rval
                 {
                     if (IsCf3VarString(RlistScalarValue(rp)))
                     {
-                        newret = ExpandPrivateRval(ctx, NULL, "this", rp->val);
+                        newret = ExpandPrivateRval(ctx, NULL, "this", rp->val.item, rp->val.type);
                         free(rp->val.item);
                         rp->val.item = newret.item;
                     }
@@ -951,35 +951,34 @@ static void CopyLocalizedReferencesToBundleScope(EvalContext *ctx, const Bundle 
         {
             VarRef *demangled_ref = VarRefParseFromBundle(demangled, bundle);
 
-            Rval retval;
-            DataType type;
-            if (!EvalContextVariableGet(ctx, demangled_ref, &retval, &type))
+            DataType value_type;
+            const void *value = EvalContextVariableGet(ctx, demangled_ref, &value_type);
+            if (!value)
             {
                 ProgrammingError("Couldn't find extracted variable '%s'", mangled);
             }
 
             VarRef *mangled_ref = VarRefParseFromBundle(mangled, bundle);
 
-            switch (retval.type)
+            switch (DataTypeToRvalType(value_type))
             {
             case RVAL_TYPE_LIST:
                 {
-
-                    Rlist *list = RvalCopy((Rval) {retval.item, RVAL_TYPE_LIST}).item;
+                    Rlist *list = RlistCopy(value);
                     RlistFlatten(ctx, &list);
 
-                    EvalContextVariablePut(ctx, mangled_ref, list, type, "source=agent");
+                    EvalContextVariablePut(ctx, mangled_ref, list, value_type, "source=agent");
                 }
                 break;
 
             case RVAL_TYPE_CONTAINER:
             case RVAL_TYPE_SCALAR:
-                EvalContextVariablePut(ctx, mangled_ref, retval.item, type, "source=agent");
+                EvalContextVariablePut(ctx, mangled_ref, value, value_type, "source=agent");
                 break;
 
             case RVAL_TYPE_FNCALL:
             case RVAL_TYPE_NOPROMISEE:
-                ProgrammingError("Illegal rval type in switch %d", retval.type);
+                ProgrammingError("Illegal rval type in switch %d", DataTypeToRvalType(value_type));
             }
 
             VarRefDestroy(mangled_ref);
@@ -1035,9 +1034,9 @@ static void ResolveVariablesPromises(EvalContext *ctx, PromiseType *pt)
     }
 }
 
-void BundleResolve(EvalContext *ctx, Bundle *bundle)
+void BundleResolve(EvalContext *ctx, const Bundle *bundle)
 {
-    Log(LOG_LEVEL_VERBOSE, "Resolving variables in bundle '%s' '%s'", bundle->type, bundle->name);
+    Log(LOG_LEVEL_DEBUG, "Resolving variables in bundle '%s' '%s'", bundle->type, bundle->name);
 
     for (size_t j = 0; j < SeqLength(bundle->promise_types); j++)
     {
@@ -1100,7 +1099,7 @@ static void ResolveControlBody(EvalContext *ctx, GenericAgentConfig *config, con
 
         if (strcmp(cp->lval, CFG_CONTROLBODY[COMMON_CONTROL_BUNDLESEQUENCE].lval) == 0)
         {
-            returnval = ExpandPrivateRval(ctx, NULL, scope, cp->rval);
+            returnval = ExpandPrivateRval(ctx, NULL, scope, cp->rval.item, cp->rval.type);
         }
         else
         {

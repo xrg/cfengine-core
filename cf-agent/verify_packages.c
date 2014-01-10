@@ -36,6 +36,7 @@
 #include <scope.h>
 #include <vercmp.h>
 #include <matching.h>
+#include <match_scope.h>
 #include <attributes.h>
 #include <string_lib.h>
 #include <pipes.h>
@@ -94,6 +95,19 @@ PromiseResult VerifyPackagesPromise(EvalContext *ctx, const Promise *pp)
 {
     CfLock thislock;
     char lockname[CF_BUFSIZE];
+
+    const char *reserved_vars[] = { "name", "version", "arch", "firstrepo", NULL };
+    for (int c = 0; reserved_vars[c]; c++)
+    {
+        const char *reserved = reserved_vars[c];
+        VarRef *var_ref = VarRefParseFromScope(reserved, "this");
+        if (EvalContextVariableGet(ctx, var_ref, NULL))
+        {
+            Log(LOG_LEVEL_WARNING, "$(%s) variable has a special meaning in packages promises. "
+                "Things may not work as expected if it is already defined.", reserved);
+        }
+        VarRefDestroy(var_ref);
+    }
 
     Attributes a = GetPackageAttributes(ctx, pp);
 
@@ -2467,7 +2481,7 @@ static void DeletePackageManagers(PackageManager *newlist)
 
 char *PrefixLocalRepository(Rlist *repositories, char *package)
 {
-    static char quotedPath[CF_MAXVARSIZE]; /* GLOBAL_R */
+    static char quotedPath[CF_MAXVARSIZE]; /* GLOBAL_R, no need to initialize */
     Rlist *rp;
     struct stat sb;
     char path[CF_BUFSIZE];
@@ -2711,10 +2725,10 @@ static int PrependPatchItem(EvalContext *ctx, PackageItem ** list, char *item, P
 static int PrependMultiLinePackageItem(EvalContext *ctx, PackageItem ** list, char *item, int reset, const char *default_arch,
                                        Attributes a, const Promise *pp)
 {
-    static char name[CF_MAXVARSIZE]; /* GLOBAL_X */
-    static char arch[CF_MAXVARSIZE]; /* GLOBAL_X */
-    static char version[CF_MAXVARSIZE]; /* GLOBAL_X */
-    static char vbuff[CF_MAXVARSIZE]; /* GLOBAL_X */
+    static char name[CF_MAXVARSIZE] = ""; /* GLOBAL_X */
+    static char arch[CF_MAXVARSIZE] = ""; /* GLOBAL_X */
+    static char version[CF_MAXVARSIZE] = ""; /* GLOBAL_X */
+    static char vbuff[CF_MAXVARSIZE] = ""; /* GLOBAL_X */
 
     if (reset)
     {

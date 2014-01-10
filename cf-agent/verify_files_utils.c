@@ -32,7 +32,7 @@
 #include <files_properties.h>
 #include <locks.h>
 #include <instrumentation.h>
-#include <matching.h>
+#include <match_scope.h>
 #include <files_interfaces.h>
 #include <promises.h>
 #include <files_operators.h>
@@ -65,11 +65,11 @@
 
 #define CF_RECURSION_LIMIT 100
 
-static Rlist *AUTO_DEFINE_LIST; /* GLOBAL_P */
+static const Rlist *AUTO_DEFINE_LIST = NULL; /* GLOBAL_P */
 
-Item *VSETUIDLIST; /* GLOBAL_X */
+Item *VSETUIDLIST = NULL; /* GLOBAL_X */
 
-Rlist *SINGLE_COPY_LIST = NULL; /* GLOBAL_P */
+const Rlist *SINGLE_COPY_LIST = NULL; /* GLOBAL_P */
 static Rlist *SINGLE_COPY_CACHE = NULL; /* GLOBAL_X */
 
 static bool TransformFile(EvalContext *ctx, char *file, Attributes attr, const Promise *pp, PromiseResult *result);
@@ -105,7 +105,7 @@ static int VerifyFinderType(EvalContext *ctx, const char *file, Attributes a, co
 static void VerifyFileChanges(const char *file, struct stat *sb, Attributes attr, const Promise *pp);
 static PromiseResult VerifyFileIntegrity(EvalContext *ctx, const char *file, Attributes attr, const Promise *pp);
 
-void SetFileAutoDefineList(Rlist *auto_define_list)
+void SetFileAutoDefineList(const Rlist *auto_define_list)
 {
     AUTO_DEFINE_LIST = auto_define_list;
 }
@@ -166,6 +166,29 @@ bool VerifyFileLeaf(EvalContext *ctx, char *path, struct stat *sb, Attributes at
 
     EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser");
     return true;
+}
+
+/* Checks whether item matches a list of wildcards */
+static int MatchRlistItem(EvalContext *ctx, const Rlist *listofregex, const char *teststring)
+{
+    for (const Rlist *rp = listofregex; rp != NULL; rp = rp->next)
+    {
+        /* Avoid using regex if possible, due to memory leak */
+
+        if (strcmp(teststring, RlistScalarValue(rp)) == 0)
+        {
+            return (true);
+        }
+
+        /* Make it commutative */
+
+        if (FullTextMatch(ctx, RlistScalarValue(rp), teststring))
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 static PromiseResult CfCopyFile(EvalContext *ctx, char *sourcefile, char *destfile, struct stat ssb, Attributes attr,

@@ -259,6 +259,10 @@ char *strsep(char **stringp, const char *delim);
 int socketpair(int domain, int type, int protocol, int sv[2]);
 #endif
 
+#if !HAVE_DECL_SETENV
+int setenv(const char *name, const char *value, int overwrite);
+#endif
+
 #ifdef __APPLE__
 # include <sys/malloc.h>
 # include <sys/paths.h>
@@ -515,6 +519,9 @@ struct tm *gmtime_r(const time_t *timep, struct tm *result);
 #if !HAVE_DECL_LOCALTIME_R
 struct tm *localtime_r(const time_t *timep, struct tm *result);
 #endif
+#if !HAVE_DECL_TIMEGM
+time_t timegm(struct tm *tm);
+#endif
 #if !HAVE_DECL_CHMOD
 int chmod(const char *path, mode_t mode);
 #endif
@@ -587,6 +594,10 @@ int fchownat(int dirfd, const char *pathname, uid_t owner, gid_t group, int flag
 #ifndef AT_SYMLINK_NOFOLLOW
 #define AT_SYMLINK_NOFOLLOW 0x1000
 #endif
+#endif
+
+#if !HAVE_DECL_LOG2
+double log2(double x);
 #endif
 
 /*******************************************************************/

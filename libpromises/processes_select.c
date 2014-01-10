@@ -37,7 +37,7 @@
 #include <zones.h>
 
 static int SelectProcRangeMatch(char *name1, char *name2, int min, int max, char **names, char **line);
-static int SelectProcRegexMatch(EvalContext *ctx, char *name1, char *name2, char *regex, char **colNames, char **line);
+static int SelectProcRegexMatch(char *name1, char *name2, char *regex, char **colNames, char **line);
 static int SplitProcLine(char *proc, char **names, int *start, int *end, char **line);
 static int SelectProcTimeCounterRangeMatch(char *name1, char *name2, time_t min, time_t max, char **names, char **line);
 static int SelectProcTimeAbsRangeMatch(char *name1, char *name2, time_t min, time_t max, char **names, char **line);
@@ -47,7 +47,7 @@ static int ExtractPid(char *psentry, char **names, int *end);
 
 /***************************************************************************/
 
-static int SelectProcess(EvalContext *ctx, char *procentry, char **names, int *start, int *end, ProcessSelect a)
+static int SelectProcess(char *procentry, char **names, int *start, int *end, ProcessSelect a)
 {
     int result = true, i;
     char *column[CF_PROCCOLS];
@@ -67,7 +67,7 @@ static int SelectProcess(EvalContext *ctx, char *procentry, char **names, int *s
 
     for (rp = a.owner; rp != NULL; rp = rp->next)
     {
-        if (SelectProcRegexMatch(ctx, "USER", "UID", RlistScalarValue(rp), names, column))
+        if (SelectProcRegexMatch("USER", "UID", RlistScalarValue(rp), names, column))
         {
             StringSetAdd(process_select_attributes, xstrdup("process_owner"));
             break;
@@ -120,17 +120,17 @@ static int SelectProcess(EvalContext *ctx, char *procentry, char **names, int *s
         StringSetAdd(process_select_attributes, xstrdup("threads"));
     }
 
-    if (SelectProcRegexMatch(ctx, "S", "STAT", a.status, names, column))
+    if (SelectProcRegexMatch("S", "STAT", a.status, names, column))
     {
         StringSetAdd(process_select_attributes, xstrdup("status"));
     }
 
-    if (SelectProcRegexMatch(ctx, "CMD", "COMMAND", a.command, names, column))
+    if (SelectProcRegexMatch("CMD", "COMMAND", a.command, names, column))
     {
         StringSetAdd(process_select_attributes, xstrdup("command"));
     }
 
-    if (SelectProcRegexMatch(ctx, "TTY", "TTY", a.tty, names, column))
+    if (SelectProcRegexMatch("TTY", "TTY", a.tty, names, column))
     {
         StringSetAdd(process_select_attributes, xstrdup("tty"));
     }
@@ -173,7 +173,7 @@ static int SelectProcess(EvalContext *ctx, char *procentry, char **names, int *s
     return result;
 }
 
-Item *SelectProcesses(EvalContext *ctx, const Item *processes, const char *process_name, ProcessSelect a, bool attrselect)
+Item *SelectProcesses(const Item *processes, const char *process_name, ProcessSelect a, bool attrselect)
 {
     Item *result = NULL;
 
@@ -192,14 +192,14 @@ Item *SelectProcesses(EvalContext *ctx, const Item *processes, const char *proce
     {
         int s, e;
 
-        if (BlockTextMatch(ctx, process_name, ip->name, &s, &e))
+        if (StringMatch(process_name, ip->name, &s, &e))
         {
             if (NULL_OR_EMPTY(ip->name))
             {
                 continue;
             }
 
-            if (attrselect && !SelectProcess(ctx, ip->name, names, start, end, a))
+            if (attrselect && !SelectProcess(ip->name, names, start, end, a))
             {
                 continue;
             }
@@ -329,48 +329,43 @@ static int SelectProcTimeCounterRangeMatch(char *name1, char *name2, time_t min,
     return false;
 }
 
-static long TimeAbs2Int(const char *s)
+static time_t TimeAbs2Int(const char *s)
 {
-    char mon[4], h[3], m[3];
-    long month = 0, day = 0, hour = 0, min = 0, year = 0;
-    struct tm tm;
-
     if (s == NULL)
     {
         return CF_NOINT;
     }
 
-    year = IntFromString(VYEAR);
+    struct tm tm;
+    localtime_r(&CFSTARTTIME, &tm);
+    tm.tm_sec = 0;
+    tm.tm_isdst = -1;
 
     if (strstr(s, ":"))         /* Hr:Min */
     {
+        char h[3], m[3];
         sscanf(s, "%2[^:]:%2[^:]:", h, m);
-        month = Month2Int(VMONTH);
-        day = IntFromString(VDAY);
-        hour = IntFromString(h);
-        min = IntFromString(m);
+        tm.tm_hour = IntFromString(h);
+        tm.tm_min = IntFromString(m);
     }
     else                        /* Month day */
     {
+        char mon[4];
+        long day;
         sscanf(s, "%3[a-zA-Z] %ld", mon, &day);
-
-        month = Month2Int(mon);
-
-        if (Month2Int(VMONTH) < month)
+        int month = Month2Int(mon);
+        if (tm.tm_mon < month - 1)
         {
             /* Wrapped around */
-            year--;
+            tm.tm_year--;
         }
+        tm.tm_mon = month - 1;
+        tm.tm_mday = day;
+        tm.tm_hour = 0;
+        tm.tm_min = 0;
     }
 
-    tm.tm_year = year - 1900;
-    tm.tm_mon = month - 1;
-    tm.tm_mday = day;
-    tm.tm_hour = hour;
-    tm.tm_min = min;
-    tm.tm_sec = 0;
-    tm.tm_isdst = -1;
-    return (long) mktime(&tm);
+    return mktime(&tm);
 }
 
 static int SelectProcTimeAbsRangeMatch(char *name1, char *name2, time_t min, time_t max, char **names, char **line)
@@ -385,7 +380,7 @@ static int SelectProcTimeAbsRangeMatch(char *name1, char *name2, time_t min, tim
 
     if ((i = GetProcColumnIndex(name1, name2, names)) != -1)
     {
-        value = (time_t) TimeAbs2Int(line[i]);
+        value = TimeAbs2Int(line[i]);
 
         if (value == CF_NOINT)
         {
@@ -411,7 +406,7 @@ static int SelectProcTimeAbsRangeMatch(char *name1, char *name2, time_t min, tim
 
 /***************************************************************************/
 
-static int SelectProcRegexMatch(EvalContext *ctx, char *name1, char *name2, char *regex, char **colNames, char **line)
+static int SelectProcRegexMatch(char *name1, char *name2, char *regex, char **colNames, char **line)
 {
     int i;
 
@@ -423,7 +418,7 @@ static int SelectProcRegexMatch(EvalContext *ctx, char *name1, char *name2, char
     if ((i = GetProcColumnIndex(name1, name2, colNames)) != -1)
     {
 
-        if (FullTextMatch(ctx, regex, line[i]))
+        if (StringMatchFull(regex, line[i]))
         {
             return true;
         }
@@ -575,7 +570,7 @@ static int GetProcColumnIndex(char *name1, char *name2, char **names)
 
 /**********************************************************************************/
 
-bool IsProcessNameRunning(EvalContext *ctx, char *procNameRegex)
+bool IsProcessNameRunning(char *procNameRegex)
 {
     char *colHeaders[CF_PROCCOLS];
     Item *ip;
@@ -607,7 +602,7 @@ bool IsProcessNameRunning(EvalContext *ctx, char *procNameRegex)
             continue;
         }
 
-        if (SelectProcRegexMatch(ctx, "CMD", "COMMAND", procNameRegex, colHeaders, lineSplit))
+        if (SelectProcRegexMatch("CMD", "COMMAND", procNameRegex, colHeaders, lineSplit))
         {
             matched = true;
             break;
@@ -684,7 +679,7 @@ static void GetProcessColumnNames(char *proc, char **names, int *start, int *end
 #ifndef __MINGW32__
 static const char *GetProcessOptions(void)
 {
-    static char psopts[CF_BUFSIZE]; /* GLOBAL_R */
+    static char psopts[CF_BUFSIZE]; /* GLOBAL_R, no initialization needed */
 
     if (IsGlobalZone())
     {
@@ -751,7 +746,7 @@ static int ExtractPid(char *psentry, char **names, int *end)
 }
 
 #ifndef __MINGW32__
-int LoadProcessTable(EvalContext *ctx, Item **procdata)
+int LoadProcessTable(Item **procdata)
 {
     FILE *prp;
     char pscomm[CF_MAXLINKSIZE], vbuff[CF_BUFSIZE], *sp;
@@ -814,11 +809,11 @@ int LoadProcessTable(EvalContext *ctx, Item **procdata)
     CopyList(&rootprocs, *procdata);
     CopyList(&otherprocs, *procdata);
 
-    while (DeleteItemNotContaining(ctx, &rootprocs, "root"))
+    while (DeleteItemNotContaining(&rootprocs, "root"))
     {
     }
 
-    while (DeleteItemContaining(ctx, &otherprocs, "root"))
+    while (DeleteItemContaining(&otherprocs, "root"))
     {
     }
 

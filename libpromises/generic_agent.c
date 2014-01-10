@@ -65,7 +65,7 @@
 
 static pthread_once_t pid_cleanup_once = PTHREAD_ONCE_INIT; /* GLOBAL_T */
 
-static char PIDFILE[CF_BUFSIZE]; /* GLOBAL_C */
+static char PIDFILE[CF_BUFSIZE] = ""; /* GLOBAL_C */
 
 static void VerifyPromises(EvalContext *ctx, const Policy *policy, GenericAgentConfig *config);
 static void CheckWorkingDirectories(EvalContext *ctx);
@@ -385,12 +385,6 @@ bool GenericAgentArePromisesValid(const GenericAgentConfig *config)
             }
         }
         strlcat(cmd, "\"", CF_BUFSIZE);
-    }
-
-    if (config->agent_specific.agent.bootstrap_policy_server)
-    {
-        // avoids license complains from commercial cf-promises during bootstrap - see Nova_CheckLicensePromise
-        strlcat(cmd, " -D bootstrap_mode", CF_BUFSIZE);
     }
 
     Log(LOG_LEVEL_VERBOSE, "Checking policy with command '%s'", cmd);
@@ -1357,7 +1351,7 @@ static void CheckWorkingDirectories(EvalContext *ctx)
 
 const char *GenericAgentResolveInputPath(const GenericAgentConfig *config, const char *input_file)
 {
-    static char input_path[CF_BUFSIZE]; /* GLOBAL_R */
+    static char input_path[CF_BUFSIZE]; /* GLOBAL_R, no initialization needed */
 
     switch (FilePathGetType(input_file))
     {
@@ -1499,23 +1493,16 @@ void WritePID(char *filename)
 
 static bool VerifyBundleSequence(EvalContext *ctx, const Policy *policy, const GenericAgentConfig *config)
 {
-    char *name;
-    Rval retval;
-    int ok = true;
-    FnCall *fp;
-
-    if (!EvalContextVariableControlCommonGet(ctx, COMMON_CONTROL_BUNDLESEQUENCE, &retval))
+    const Rlist *bundlesequence = EvalContextVariableControlCommonGet(ctx, COMMON_CONTROL_BUNDLESEQUENCE);
+    if (!bundlesequence)
     {
         Log(LOG_LEVEL_ERR, " No bundlesequence in the common control body");
         return false;
     }
 
-    if (retval.type != RVAL_TYPE_LIST)
-    {
-        FatalError(ctx, "Promised bundlesequence was not a list");
-    }
-
-    for (Rlist *rp = RvalRlistValue(retval); rp != NULL; rp = rp->next)
+    const char *name;
+    int ok = true;
+    for (const Rlist *rp = bundlesequence; rp != NULL; rp = rp->next)
     {
         switch (rp->val.type)
         {
@@ -1524,8 +1511,7 @@ static bool VerifyBundleSequence(EvalContext *ctx, const Policy *policy, const G
             break;
 
         case RVAL_TYPE_FNCALL:
-            fp = RlistFnCallValue(rp);
-            name = fp->name;
+            name = RlistFnCallValue(rp)->name;
             break;
 
         default:
