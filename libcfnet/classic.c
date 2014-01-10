@@ -95,46 +95,11 @@ int RecvSocketStream(int sd, char *buffer, int toget)
 
 /*************************************************************************/
 
-pthread_mutex_t bwlimit_lock = PTHREAD_MUTEX_INITIALIZER;
-struct timespec bwlimit_next = {0L, 0L};
-double bwlimit_byte_nsec = 0.0;
-
 int SendSocketStream(int sd, const char *buffer, int tosend)
 {
     int sent, already = 0;
-    struct timespec clock_now;
-    double nsleep = 0.0;
 
-    if (pthread_mutex_lock(&bwlimit_lock) == 0)
-    {
-        clock_gettime(CLOCK_MONOTONIC, &clock_now);
-
-        nsleep = (double) (bwlimit_next.tv_sec - clock_now.tv_sec) * 1000000000.0 + (double) (bwlimit_next.tv_nsec - clock_now.tv_nsec);
-
-        if (nsleep < 0)
-        {
-            /* penalty has expired, we can immediately send data. But reset the timestamp */
-            bwlimit_next = clock_now;
-        }
-
-        if (bwlimit_byte_nsec > 0.0)
-        {
-            bwlimit_next.tv_nsec += (long) tosend * bwlimit_byte_nsec ;
-            if (bwlimit_next.tv_nsec >= 1000000000L)
-            {
-                bwlimit_next.tv_sec++;
-                bwlimit_next.tv_nsec -= 1000000000L ;
-            }
-        }
-        pthread_mutex_unlock(&bwlimit_lock);
-    }
-
-    if (nsleep > 0.0)
-    {
-        clock_now.tv_sec = (time_t) nsleep / 1000000000.0;
-        clock_now.tv_nsec = (long) nsleep % 1000000000L;
-        nanosleep(&clock_now, NULL);
-    }
+    EnforceBwLimit(tosend);
 
     do
     {

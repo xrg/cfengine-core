@@ -1032,8 +1032,8 @@ static void KeepControlPromises(EvalContext *ctx, const Policy *policy)
         double bval;
         if (DoubleFromString(retval.item, &bval))
         {
-            bwlimit_byte_nsec = ((double) CF_BILLION) * 8.0 / bval;
-            Log(LOG_LEVEL_VERBOSE, "Setting rate limit to %g nsec per byte", bwlimit_byte_nsec);
+            bwlimit_kbytes = (uint32_t) ( bval / 1000.0);
+            Log(LOG_LEVEL_VERBOSE, "Setting rate limit to %d kBytes/sec", bwlimit_kbytes);
         }
     }
     Nova_Initialize(ctx);
