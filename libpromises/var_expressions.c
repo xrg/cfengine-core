@@ -29,6 +29,7 @@
 #include <misc_lib.h>
 #include <string_lib.h>
 #include <hashes.h>
+#include <scope.h>
 
 static size_t VarRefHash(const VarRef *ref)
 {
@@ -275,7 +276,7 @@ VarRef *VarRefParseFromNamespaceAndScope(const char *qualified_name, const char 
 
                 BufferAppend(buf, c, sizeof(char));
             }
-            BufferDestroy(&buf);
+            BufferDestroy(buf);
         }
     }
     else
@@ -288,6 +289,21 @@ VarRef *VarRefParseFromNamespaceAndScope(const char *qualified_name, const char 
     if (!scope && !_scope)
     {
         assert(ns == NULL && "A variable missing a scope should not have a namespace");
+    }
+
+    if (scope)
+    {
+        if (SpecialScopeFromString(scope) != SPECIAL_SCOPE_NONE)
+        {
+            _ns = NULL;
+        }
+    }
+    else
+    {
+        if (!_scope)
+        {
+            assert(ns == NULL && "A variable missing a scope should not have a namespace");
+        }
     }
 
     VarRef *ref = xmalloc(sizeof(VarRef));
@@ -387,7 +403,7 @@ char *VarRefToString(const VarRef *ref, bool qualified)
     }
 
     char *var_string = xstrdup(BufferData(buf));
-    BufferDestroy(&buf);
+    BufferDestroy(buf);
     return var_string;
 }
 

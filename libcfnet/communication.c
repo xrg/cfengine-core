@@ -95,16 +95,16 @@ int IsIPV6Address(char *name)
     is_ip = IPAddressIsIPAddress(buffer, &ip_address);
     if (!is_ip)
     {
-        BufferDestroy(&buffer);
+        BufferDestroy(buffer);
         return false;
     }
     if (IPAddressType(ip_address) != IP_ADDRESS_TYPE_IPV6)
     {
-        BufferDestroy(&buffer);
+        BufferDestroy(buffer);
         IPAddressDestroy(&ip_address);
         return false;
     }
-    BufferDestroy(&buffer);
+    BufferDestroy(buffer);
     IPAddressDestroy(&ip_address);
     return true;
 }
@@ -127,16 +127,16 @@ int IsIPV4Address(char *name)
     is_ip = IPAddressIsIPAddress(buffer, &ip_address);
     if (!is_ip)
     {
-        BufferDestroy(&buffer);
+        BufferDestroy(buffer);
         return false;
     }
     if (IPAddressType(ip_address) != IP_ADDRESS_TYPE_IPV4)
     {
-        BufferDestroy(&buffer);
+        BufferDestroy(buffer);
         IPAddressDestroy(&ip_address);
         return false;
     }
-    BufferDestroy(&buffer);
+    BufferDestroy(buffer);
     IPAddressDestroy(&ip_address);
     return true;
 }
@@ -269,13 +269,13 @@ int GetMyHostInfo(char nameBuf[MAXHOSTNAMELEN], char ipBuf[MAXIP4CHARLEN])
 
 unsigned short SocketFamily(int sd)
 {
-   struct sockaddr sa = {0};
-   socklen_t len = sizeof(sa);
+   struct sockaddr_storage ss = {0};
+   socklen_t len = sizeof(ss);
 
-   if (getsockname(sd, &sa, &len) == -1)
+   if (getsockname(sd, (struct sockaddr *) &ss, &len) == -1)
    {
        Log(LOG_LEVEL_ERR, "Could not get socket family. (getsockname: %s)", GetErrorStr());
    }
 
-   return sa.sa_family;
+   return ss.ss_family;
 }

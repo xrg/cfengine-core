@@ -172,10 +172,6 @@ struct utsname
 # endif
 #endif
 
-#ifndef PATH_MAX
-# define PATH_MAX 4096
-#endif
-
 #include <signal.h>
 
 #ifdef __MINGW32__
@@ -189,6 +185,10 @@ struct utsname
 # define LOG_LOCAL7      (23<<3)
 # define LOG_USER        (1<<3)
 # define LOG_DAEMON      (3<<3)
+
+#ifndef IPV6_V6ONLY
+#define IPV6_V6ONLY 27
+#endif
 
 #else /* !__MINGW32__ */
 # include <syslog.h>
@@ -513,14 +513,14 @@ int rpl_asprintf(char **, const char *, ...);
 #if !defined(isfinite)
 # define isfinite(x) finite(x)
 #endif
+#if !HAVE_DECL_GETLINE
+ssize_t getline(char **lineptr, size_t *n, FILE *stream);
+#endif
 #if !HAVE_DECL_GMTIME_R
 struct tm *gmtime_r(const time_t *timep, struct tm *result);
 #endif
 #if !HAVE_DECL_LOCALTIME_R
 struct tm *localtime_r(const time_t *timep, struct tm *result);
-#endif
-#if !HAVE_DECL_TIMEGM
-time_t timegm(struct tm *tm);
 #endif
 #if !HAVE_DECL_CHMOD
 int chmod(const char *path, mode_t mode);

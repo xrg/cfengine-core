@@ -4,10 +4,68 @@
 #include <rlist.h>
 #include <scope.h>
 #include <eval_context.h>
+#include <vars.h>
 
-static void test_map_iterators_from_rval_empty(void)
+static void test_extract_scalar_prefix()
 {
-    EvalContext *ctx = EvalContextNew();
+    Buffer *b = BufferNew();
+    assert_int_equal(sizeof("hello ") - 1, ExtractScalarPrefix(b, "hello $(world) xy", sizeof("hello $(world) xy") -1));
+    assert_string_equal("hello ", BufferData(b));
+
+    BufferZero(b);
+    assert_int_equal(sizeof("hello (world) xy") -1, ExtractScalarPrefix(b, "hello (world) xy", sizeof("hello (world) xy") -1));
+    assert_string_equal("hello (world) xy", BufferData(b));
+
+    BufferZero(b);
+    assert_int_equal(sizeof("hello$)") -1, ExtractScalarPrefix(b, "hello$)$(world)xy", sizeof("hello$)$(world)xy") -1));
+    assert_string_equal("hello$)", BufferData(b));
+
+    BufferZero(b);
+    assert_int_equal(0, ExtractScalarPrefix(b, "", 0));
+    assert_string_equal("", BufferData(b));
+
+    BufferDestroy(b);
+}
+
+static void test_extract_reference_(const char *scalar, bool expect_success, const char *outer, const char *inner)
+{
+    Buffer *b = BufferNew();
+    size_t len = strlen(scalar);
+
+    bool success = ExtractScalarReference(b, scalar, len, false);
+    assert_true(success == expect_success);
+    assert_string_equal(outer, BufferData(b));
+
+    BufferZero(b);
+    success = ExtractScalarReference(b, scalar, len, true);
+    assert_true(success == expect_success);
+    assert_string_equal(inner, BufferData(b));
+
+    BufferDestroy(b);
+}
+
+static void test_extract_reference(void)
+{
+    test_extract_reference_("${stuff}", true, "${stuff}", "stuff");
+    test_extract_reference_("$(stuff)", true, "$(stuff)", "stuff");
+    test_extract_reference_("abc $def ${x} y", true, "${x}", "x");
+    test_extract_reference_("${stuff)", false, "", "");
+    test_extract_reference_("abc $def", false, "", "");
+    test_extract_reference_("stuff", false, "", "");
+    test_extract_reference_("", false, "", "");
+    test_extract_reference_("abc $xa ", false, "", "");
+    test_extract_reference_("${}", false, "", "");
+    test_extract_reference_("x$()a", false, "", "");
+
+    test_extract_reference_("$($(x))", true, "$($(x))", "$(x)");
+    test_extract_reference_("$(x${$(y)})", true, "$(x${$(y)})", "x${$(y)}");
+    test_extract_reference_("$(x${$(y)}) $(y) ${x${z}}", true, "$(x${$(y)})", "x${$(y)}");
+}
+
+
+static void test_map_iterators_from_rval_empty(void **state)
+{
+    EvalContext *ctx = *state;
 
     Policy *p = PolicyNew();
     Bundle *bp = PolicyAppendBundle(p, "default", "none", "agent", NULL, NULL);
@@ -22,12 +80,11 @@ static void test_map_iterators_from_rval_empty(void)
     assert_int_equal(0, RlistLen(containers));
 
     PolicyDestroy(p);
-    EvalContextDestroy(ctx);
 }
 
-static void test_map_iterators_from_rval_literal(void)
+static void test_map_iterators_from_rval_literal(void **state)
 {
-    EvalContext *ctx = EvalContextNew();
+    EvalContext *ctx = *state;
     Policy *p = PolicyNew();
     Bundle *bp = PolicyAppendBundle(p, "default", "none", "agent", NULL, NULL);
 
@@ -41,12 +98,11 @@ static void test_map_iterators_from_rval_literal(void)
     assert_int_equal(0, RlistLen(containers));
 
     PolicyDestroy(p);
-    EvalContextDestroy(ctx);
 }
 
-static void test_map_iterators_from_rval_naked_list_var(void)
+static void test_map_iterators_from_rval_naked_list_var(void **state)
 {
-    EvalContext *ctx = EvalContextNew();
+    EvalContext *ctx = *state;
     Policy *p = PolicyNew();
     Bundle *bp = PolicyAppendBundle(p, "default", "scope", "agent", NULL, NULL);
 
@@ -107,12 +163,11 @@ static void test_map_iterators_from_rval_naked_list_var(void)
 
     VarRefDestroy(lval);
     PolicyDestroy(p);
-    EvalContextDestroy(ctx);
 }
 
-static void test_map_iterators_from_rval_naked_list_var_namespace(void)
+static void test_map_iterators_from_rval_naked_list_var_namespace(void **state)
 {
-    EvalContext *ctx = EvalContextNew();
+    EvalContext *ctx = *state;
     Policy *p = PolicyNew();
     Bundle *bp = PolicyAppendBundle(p, "ns", "scope", "agent", NULL, NULL);
 
@@ -173,12 +228,11 @@ static void test_map_iterators_from_rval_naked_list_var_namespace(void)
 
     VarRefDestroy(lval);
     PolicyDestroy(p);
-    EvalContextDestroy(ctx);
 }
 
-static void test_expand_scalar_two_scalars_concat(void)
+static void test_expand_scalar_two_scalars_concat(void **state)
 {
-    EvalContext *ctx = EvalContextNew();
+    EvalContext *ctx = *state;
     {
         VarRef *lval = VarRefParse("default:bundle.one");
         EvalContextVariablePut(ctx, lval, "first", DATA_TYPE_STRING, NULL);
@@ -190,17 +244,16 @@ static void test_expand_scalar_two_scalars_concat(void)
         VarRefDestroy(lval);
     }
 
-    char res[CF_EXPANDSIZE] = { 0 };
+    Buffer *res = BufferNew();
     ExpandScalar(ctx, "default", "bundle", "a $(one) b $(two)c", res);
 
-    assert_string_equal("a first b secondc", res);
-
-    EvalContextDestroy(ctx);
+    assert_string_equal("a first b secondc", BufferData(res));
+    BufferDestroy(res);
 }
 
-static void test_expand_scalar_two_scalars_nested(void)
+static void test_expand_scalar_two_scalars_nested(void **state)
 {
-    EvalContext *ctx = EvalContextNew();
+    EvalContext *ctx = *state;
     {
         VarRef *lval = VarRefParse("default:bundle.one");
         EvalContextVariablePut(ctx, lval, "first", DATA_TYPE_STRING, NULL);
@@ -212,17 +265,16 @@ static void test_expand_scalar_two_scalars_nested(void)
         VarRefDestroy(lval);
     }
 
-    char res[CF_EXPANDSIZE] = { 0 };
+    Buffer *res = BufferNew();
     ExpandScalar(ctx, "default", "bundle", "a $($(two))b", res);
 
-    assert_string_equal("a firstb", res);
-
-    EvalContextDestroy(ctx);
+    assert_string_equal("a firstb", BufferData(res));
+    BufferDestroy(res);
 }
 
-static void test_expand_scalar_array_concat(void)
+static void test_expand_scalar_array_concat(void **state)
 {
-    EvalContext *ctx = EvalContextNew();
+    EvalContext *ctx = *state;
     {
         VarRef *lval = VarRefParse("default:bundle.foo[one]");
         EvalContextVariablePut(ctx, lval, "first", DATA_TYPE_STRING, NULL);
@@ -234,17 +286,16 @@ static void test_expand_scalar_array_concat(void)
         VarRefDestroy(lval);
     }
 
-    char res[CF_EXPANDSIZE] = { 0 };
+    Buffer *res = BufferNew();
     ExpandScalar(ctx, "default", "bundle", "a $(foo[one]) b $(foo[two])c", res);
 
-    assert_string_equal("a first b secondc", res);
-
-    EvalContextDestroy(ctx);
+    assert_string_equal("a first b secondc", BufferData(res));
+    BufferDestroy(res);
 }
 
-static void test_expand_scalar_array_with_scalar_arg(void)
+static void test_expand_scalar_array_with_scalar_arg(void **state)
 {
-    EvalContext *ctx = EvalContextNew();
+    EvalContext *ctx = *state;
     {
         VarRef *lval = VarRefParse("default:bundle.foo[one]");
         EvalContextVariablePut(ctx, lval, "first", DATA_TYPE_STRING, NULL);
@@ -256,12 +307,11 @@ static void test_expand_scalar_array_with_scalar_arg(void)
         VarRefDestroy(lval);
     }
 
-    char res[CF_EXPANDSIZE] = { 0 };
+    Buffer *res = BufferNew();
     ExpandScalar(ctx, "default", "bundle", "a$(foo[$(bar)])b", res);
 
-    assert_string_equal("afirstb", res);
-
-    EvalContextDestroy(ctx);
+    assert_string_equal("afirstb", BufferData(res));
+    BufferDestroy(res);
 }
 
 static PromiseResult actuator_expand_promise_array_with_scalar_arg(EvalContext *ctx, const Promise *pp, ARG_UNUSED void *param)
@@ -270,9 +320,9 @@ static PromiseResult actuator_expand_promise_array_with_scalar_arg(EvalContext *
     return PROMISE_RESULT_NOOP;
 }
 
-static void test_expand_promise_array_with_scalar_arg(void)
+static void test_expand_promise_array_with_scalar_arg(void **state)
 {
-    EvalContext *ctx = EvalContextNew();
+    EvalContext *ctx = *state;
     {
         VarRef *lval = VarRefParse("default:bundle.foo[one]");
         EvalContextVariablePut(ctx, lval, "first", DATA_TYPE_STRING, NULL);
@@ -294,7 +344,6 @@ static void test_expand_promise_array_with_scalar_arg(void)
     EvalContextStackPopFrame(ctx);
 
     PolicyDestroy(policy);
-    EvalContextDestroy(ctx);
 }
 
 
@@ -319,11 +368,11 @@ static PromiseResult actuator_expand_promise_slist(EvalContext *ctx, const Promi
     return PROMISE_RESULT_NOOP;
 }
 
-static void test_expand_promise_slist(void)
+static void test_expand_promise_slist(void **state)
 {
     actuator_state = 0;
 
-    EvalContext *ctx = EvalContextNew();
+    EvalContext *ctx = *state;
     {
         VarRef *lval = VarRefParse("default:bundle.foo");
         Rlist *list = NULL;
@@ -349,7 +398,6 @@ static void test_expand_promise_slist(void)
     assert_int_equal(2, actuator_state);
 
     PolicyDestroy(policy);
-    EvalContextDestroy(ctx);
 }
 
 
@@ -373,11 +421,11 @@ static PromiseResult actuator_expand_promise_array_with_slist_arg(EvalContext *c
     return PROMISE_RESULT_NOOP;
 }
 
-static void test_expand_promise_array_with_slist_arg(void)
+static void test_expand_promise_array_with_slist_arg(void **state)
 {
     actuator_state = 0;
 
-    EvalContext *ctx = EvalContextNew();
+    EvalContext *ctx = *state;
     {
         VarRef *lval = VarRefParse("default:bundle.keys");
         Rlist *list = NULL;
@@ -415,6 +463,16 @@ static void test_expand_promise_array_with_slist_arg(void)
     assert_int_equal(2, actuator_state);
 
     PolicyDestroy(policy);
+}
+
+static void test_setup(void **state)
+{
+    *state = EvalContextNew();
+}
+
+static void test_teardown(void **state)
+{
+    EvalContext *ctx = *state;
     EvalContextDestroy(ctx);
 }
 
@@ -423,17 +481,19 @@ int main()
     PRINT_TEST_BANNER();
     const UnitTest tests[] =
     {
-        unit_test(test_map_iterators_from_rval_empty),
-        unit_test(test_map_iterators_from_rval_literal),
-        unit_test(test_map_iterators_from_rval_naked_list_var),
-        unit_test(test_map_iterators_from_rval_naked_list_var_namespace),
-        unit_test(test_expand_scalar_two_scalars_concat),
-        unit_test(test_expand_scalar_two_scalars_nested),
-        unit_test(test_expand_scalar_array_concat),
-        unit_test(test_expand_scalar_array_with_scalar_arg),
-        unit_test(test_expand_promise_array_with_scalar_arg),
-        unit_test(test_expand_promise_slist),
-        unit_test(test_expand_promise_array_with_slist_arg)
+        unit_test(test_extract_scalar_prefix),
+        unit_test(test_extract_reference),
+        unit_test_setup_teardown(test_map_iterators_from_rval_empty, test_setup, test_teardown),
+        unit_test_setup_teardown(test_map_iterators_from_rval_literal, test_setup, test_teardown),
+        unit_test_setup_teardown(test_map_iterators_from_rval_naked_list_var, test_setup, test_teardown),
+        unit_test_setup_teardown(test_map_iterators_from_rval_naked_list_var_namespace, test_setup, test_teardown),
+        unit_test_setup_teardown(test_expand_scalar_two_scalars_concat, test_setup, test_teardown),
+        unit_test_setup_teardown(test_expand_scalar_two_scalars_nested, test_setup, test_teardown),
+        unit_test_setup_teardown(test_expand_scalar_array_concat, test_setup, test_teardown),
+        unit_test_setup_teardown(test_expand_scalar_array_with_scalar_arg, test_setup, test_teardown),
+        unit_test_setup_teardown(test_expand_promise_array_with_scalar_arg, test_setup, test_teardown),
+        unit_test_setup_teardown(test_expand_promise_slist, test_setup, test_teardown),
+        unit_test_setup_teardown(test_expand_promise_array_with_slist_arg, test_setup, test_teardown)
     };
 
     return run_tests(tests);

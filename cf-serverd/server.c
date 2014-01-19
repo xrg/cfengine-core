@@ -436,28 +436,11 @@ static void *HandleConnection(ServerConnectionState *conn)
 
     case CF_PROTOCOL_TLS:
     {
-        if (ConnectionInfoConnectionStatus(conn->conn_info) != CF_CONNECTION_ESTABLISHED)
+        ret = ServerTLSSessionEstablish(conn);
+        if (ret == -1)
         {
-            /* New connection */
-            ret = ServerTLSSessionEstablish(conn);
-            if (ret == -1)
-            {
-                DeleteConn(conn);
-                return NULL;
-            }
-        }
-        else
-        {
-            /*
-             * Call collect mode.
-             * Run the session negotiation again since we need to trust the other side.
-             */
-            ret = ServerTLSSessionEstablishCallCollectMode(conn);
-            if (ret == -1)
-            {
-                DeleteConn(conn);
-                return NULL;
-            }
+            DeleteConn(conn);
+            return NULL;
         }
 
         while (BusyWithNewProtocol(conn->ctx, conn))
@@ -1521,12 +1504,13 @@ static int CheckStoreKey(ServerConnectionState *conn, RSA *key)
 static ServerConnectionState *NewConn(EvalContext *ctx, ConnectionInfo *info)
 {
     ServerConnectionState *conn = NULL;
-    struct sockaddr addr;
+    struct sockaddr_storage addr;
     socklen_t size = sizeof(addr);
 
-    if (getsockname(ConnectionInfoSocket(info), &addr, &size) == -1)
+    if (getsockname(ConnectionInfoSocket(info), (struct sockaddr *)&addr, &size) == -1)
     {
-       return NULL;
+        Log(LOG_LEVEL_ERR, "Could not obtain socket address. (getsockname: '%s')", GetErrorStr());
+        return NULL;
     }
 
     conn = xcalloc(1, sizeof(*conn));

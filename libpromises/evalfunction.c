@@ -77,7 +77,7 @@ static char *StripPatterns(char *file_buffer, char *pattern, char *filename);
 static void CloseStringHole(char *s, int start, int end);
 static int BuildLineArray(EvalContext *ctx, const Bundle *bundle, char *array_lval, char *file_buffer, char *split, int maxent, DataType type, int intIndex);
 static int ExecModule(EvalContext *ctx, char *command, const char *ns);
-static int CheckID(char *id);
+static bool CheckID(const char *id);
 static const Rlist *GetListReferenceArgument(const EvalContext *ctx, const FnCall *fp, const char *lval_str, DataType *datatype_out);
 static void *CfReadFile(char *filename, int maxsize);
 
@@ -978,17 +978,20 @@ static FnCallResult FnCallVariablesMatching(EvalContext *ctx, FnCall *fp, Rlist 
 
 /*********************************************************************/
 
-static FnCallResult FnCallBundlesmatching(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallBundlesMatching(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 {
-    char buf[CF_BUFSIZE];
-    char *regex = RlistScalarValue(finalargs);
-    Rlist *matches = NULL;
+    if (!finalargs)
+    {
+        return FnFailure();
+    }
 
     if (!fp->caller)
     {
         FatalError(ctx, "Function '%s' had a null caller", fp->name);
     }
 
+    const char *regex = RlistScalarValue(finalargs);
+    const Rlist *tag_args = finalargs->next;
     const Policy *policy = PolicyFromPromise(fp->caller);
 
     if (!policy)
@@ -1001,6 +1004,7 @@ static FnCallResult FnCallBundlesmatching(EvalContext *ctx, FnCall *fp, Rlist *f
         FatalError(ctx, "Function '%s' had null policy bundles", fp->name);
     }
 
+    Rlist *matches = NULL;
     for (size_t i = 0; i < SeqLength(policy->bundles); i++)
     {
         const Bundle *bp = SeqAt(policy->bundles, i);
@@ -1009,11 +1013,54 @@ static FnCallResult FnCallBundlesmatching(EvalContext *ctx, FnCall *fp, Rlist *f
             FatalError(ctx, "Function '%s' found null bundle at %ld", fp->name, i);
         }
 
-        snprintf(buf, CF_BUFSIZE, "%s:%s", bp->ns, bp->name);
-        if (StringMatchFull(regex, buf))
+        char *bundle_name = BundleQualifiedName(bp);
+        if (StringMatchFull(regex, bundle_name))
         {
-            RlistPrepend(&matches, xstrdup(buf), RVAL_TYPE_SCALAR);
+            VarRef *ref = VarRefParseFromBundle("tags", bp);
+            VarRefSetMeta(ref, true);
+            DataType type = DATA_TYPE_NONE;
+            const void *bundle_tags = EvalContextVariableGet(ctx, ref, &type);
+            VarRefDestroy(ref);
+
+            bool found = false; // case where tag_args are given and the bundle has no tags
+
+            if (NULL == tag_args)
+            {
+                // we declare it found if no tags were requested
+                found = true;
+            }
+            else if (NULL != bundle_tags)
+            {
+                
+                switch (DataTypeToRvalType(type))
+                {
+                case RVAL_TYPE_SCALAR:
+                    {
+                        Rlist *searched = RlistFromSplitString(bundle_tags, ',');
+                        found = RlistMatchesRegexRlist(searched, tag_args);
+                        RlistDestroy(searched);
+                    }
+                    break;
+
+                case RVAL_TYPE_LIST:
+                    found = RlistMatchesRegexRlist(bundle_tags, tag_args);
+                    break;
+
+                default:
+                    Log(LOG_LEVEL_WARNING, "Function '%s' only matches tags defined as a scalar or a list.  "
+                        "Bundle '%s' had meta defined as '%s'", fp->name, bundle_name, DataTypeToString(type));
+                    found = false;
+                    break;
+                }
+            }
+
+            if (found)
+            {
+                RlistPrepend(&matches, bundle_name, RVAL_TYPE_SCALAR);
+            }
         }
+
+        free(bundle_name);
     }
 
     if (!matches)
@@ -1034,35 +1081,43 @@ static FnCallResult FnCallPackagesMatching(ARG_UNUSED EvalContext *ctx, FnCall *
     char *regex_method = RlistScalarValue(finalargs->next->next->next);
 
     JsonElement *json = JsonArrayCreate(50);
-    char filename[CF_MAXVARSIZE], line[CF_BUFSIZE], regex[CF_BUFSIZE];
+    char filename[CF_MAXVARSIZE], regex[CF_BUFSIZE];
     FILE *fin;
 
     GetSoftwareCacheFilename(filename);
 
     if ((fin = fopen(filename, "r")) == NULL)
     {
-        Log(LOG_LEVEL_ERR, "%s cannot open the package inventory '%s' - you need to run a package discovery promise to create it in cf-agent. (fopen: %s)",
+        Log(LOG_LEVEL_VERBOSE, "%s cannot open the package inventory '%s' - "
+            "This is not necessarily an error. Either the inventory policy has not been included, "
+            "or it has not had time to have an effect yet. A future call may still succeed. (fopen: %s)",
             fp->name, filename, GetErrorStr());
         JsonDestroy(json);
         return FnFailure();
     }
     
     int linenumber = 0;
+
+    size_t line_size = CF_BUFSIZE;
+    char *line = xmalloc(line_size);
+
     for(;;)
     {
-        ssize_t res = CfReadLine(line, sizeof(line), fin);
-
-        if (res == 0)
-        {
-            break;
-        }
-
+        ssize_t res = CfReadLine(&line, &line_size, fin);
         if (res == -1)
         {
-            Log(LOG_LEVEL_ERR, "Unable to read package inventory from '%s'. (fread: %s)", filename, GetErrorStr());
-            fclose(fin);
-            JsonDestroy(json);
-            return FnFailure();
+            if (!feof(fin))
+            {
+                Log(LOG_LEVEL_ERR, "Unable to read package inventory from '%s'. (fread: %s)", filename, GetErrorStr());
+                fclose(fin);
+                JsonDestroy(json);
+                free(line);
+                return FnFailure();
+            }
+            else
+            {
+                break;
+            }
         }
 
         if (strlen(line) > CF_BUFSIZE - 80)
@@ -1099,6 +1154,7 @@ static FnCallResult FnCallPackagesMatching(ARG_UNUSED EvalContext *ctx, FnCall *
     }
 
     fclose(fin);
+    free(line);
 
     return (FnCallResult) { FNCALL_SUCCESS, (Rval) { json, RVAL_TYPE_CONTAINER } };
 
@@ -1601,7 +1657,7 @@ static FnCallResult FnCallGetIndices(EvalContext *ctx, FnCall *fp, Rlist *finala
     {
         if (JsonGetElementType(value) == JSON_ELEMENT_TYPE_CONTAINER)
         {
-            if (JsonGetContrainerType(value) == JSON_CONTAINER_TYPE_OBJECT)
+            if (JsonGetContainerType(value) == JSON_CONTAINER_TYPE_OBJECT)
             {
                 JsonIterator iter = JsonIteratorInit(value);
                 const char *key = NULL;
@@ -1934,8 +1990,6 @@ static FnCallResult FnCallCountLinesMatching(ARG_UNUSED EvalContext *ctx, ARG_UN
     int lcount = 0;
     FILE *fin;
 
-/* begin fn specific content */
-
     char *regex = RlistScalarValue(finalargs);
     char *filename = RlistScalarValue(finalargs->next);
 
@@ -1945,33 +1999,28 @@ static FnCallResult FnCallCountLinesMatching(ARG_UNUSED EvalContext *ctx, ARG_UN
         return FnReturn("0");
     }
 
-    for (;;)
     {
-        char line[CF_BUFSIZE];
-        if (fgets(line, sizeof(line), fin) == NULL)
+        size_t line_size = CF_BUFSIZE;
+        char *line = xmalloc(line_size);
+
+        while (getline(&line, &line_size, fin) != -1)
         {
-            if (ferror(fin))
+            if (StringMatchFull(regex, line))
             {
-                Log(LOG_LEVEL_ERR, "Unable to read data from file '%s'. (fgets: %s)", filename, GetErrorStr());
-                fclose(fin);
-                return FnFailure();
+                lcount++;
+                Log(LOG_LEVEL_VERBOSE, "countlinesmatching: matched '%s'", line);
+                continue;
             }
-            else /* feof */
-            {
-                break;
-            }
-        }
-        if (Chop(line, CF_EXPANDSIZE) == -1)
-        {
-            Log(LOG_LEVEL_ERR, "Chop was called on a string that seemed to have no terminator");
         }
 
-        if (StringMatchFull(regex, line))
-        {
-            lcount++;
-            Log(LOG_LEVEL_VERBOSE, "countlinesmatching: matched '%s'", line);
-            continue;
-        }
+        free(line);
+    }
+
+    if (!feof(fin))
+    {
+        Log(LOG_LEVEL_ERR, "Unable to read data from file '%s'. (fgets: %s)", filename, GetErrorStr());
+        fclose(fin);
+        return FnFailure();
     }
 
     fclose(fin);
@@ -2034,7 +2083,6 @@ static FnCallResult FnCallLsDir(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *
 
 static FnCallResult FnCallMapArray(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 {
-    char expbuf[CF_EXPANDSIZE];
     Rlist *returnlist = NULL;
 
     char *map = RlistScalarValue(finalargs);
@@ -2044,6 +2092,7 @@ static FnCallResult FnCallMapArray(EvalContext *ctx, FnCall *fp, Rlist *finalarg
     VariableTableIterator *iter = EvalContextVariableTableIteratorNew(ctx, ref->ns, ref->scope, ref->lval);
     Variable *var = NULL;
 
+    Buffer *expbuf = BufferNew();
     while ((var = VariableTableIteratorNext(iter)))
     {
         if (var->ref->num_indices != 1)
@@ -2056,39 +2105,48 @@ static FnCallResult FnCallMapArray(EvalContext *ctx, FnCall *fp, Rlist *finalarg
         switch (var->rval.type)
         {
         case RVAL_TYPE_SCALAR:
-            EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "v", var->rval.item, DATA_TYPE_STRING, "source=function,function=maparray");
-            ExpandScalar(ctx, PromiseGetBundle(fp->caller)->ns, PromiseGetBundle(fp->caller)->name, map, expbuf);
-
-            if (strstr(expbuf, "$(this.k)") || strstr(expbuf, "${this.k}") ||
-                strstr(expbuf, "$(this.v)") || strstr(expbuf, "${this.v}"))
             {
-                RlistDestroy(returnlist);
-                EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "k");
-                EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "v");
-                return FnFailure();
-            }
-
-            RlistAppendScalar(&returnlist, expbuf);
-            EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "v");
-            break;
-
-        case RVAL_TYPE_LIST:
-            for (const Rlist *rp = var->rval.item; rp != NULL; rp = rp->next)
-            {
-                EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "v", RlistScalarValue(rp), DATA_TYPE_STRING, "source=function,function=maparray");
+                BufferZero(expbuf);
+                EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "v", var->rval.item, DATA_TYPE_STRING,
+                                              "source=function,function=maparray");
                 ExpandScalar(ctx, PromiseGetBundle(fp->caller)->ns, PromiseGetBundle(fp->caller)->name, map, expbuf);
 
-                if (strstr(expbuf, "$(this.k)") || strstr(expbuf, "${this.k}") ||
-                    strstr(expbuf, "$(this.v)") || strstr(expbuf, "${this.v}"))
+                if (strstr(BufferData(expbuf), "$(this.k)") || strstr(BufferData(expbuf), "${this.k}") ||
+                    strstr(BufferData(expbuf), "$(this.v)") || strstr(BufferData(expbuf), "${this.v}"))
                 {
                     RlistDestroy(returnlist);
                     EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "k");
                     EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "v");
+                    BufferDestroy(expbuf);
                     return FnFailure();
                 }
 
-                RlistAppendScalarIdemp(&returnlist, expbuf);
+                RlistAppendScalar(&returnlist, BufferData(expbuf));
                 EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "v");
+            }
+            break;
+
+        case RVAL_TYPE_LIST:
+            {
+                for (const Rlist *rp = var->rval.item; rp != NULL; rp = rp->next)
+                {
+                    BufferZero(expbuf);
+                    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "v", RlistScalarValue(rp), DATA_TYPE_STRING, "source=function,function=maparray");
+                    ExpandScalar(ctx, PromiseGetBundle(fp->caller)->ns, PromiseGetBundle(fp->caller)->name, map, expbuf);
+
+                    if (strstr(BufferData(expbuf), "$(this.k)") || strstr(BufferData(expbuf), "${this.k}") ||
+                        strstr(BufferData(expbuf), "$(this.v)") || strstr(BufferData(expbuf), "${this.v}"))
+                    {
+                        RlistDestroy(returnlist);
+                        EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "k");
+                        EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "v");
+                        BufferDestroy(expbuf);
+                        return FnFailure();
+                    }
+
+                    RlistAppendScalarIdemp(&returnlist, BufferData(expbuf));
+                    EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "v");
+                }
             }
             break;
 
@@ -2098,6 +2156,7 @@ static FnCallResult FnCallMapArray(EvalContext *ctx, FnCall *fp, Rlist *finalarg
         EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "k");
     }
 
+    BufferDestroy(expbuf);
     VariableTableIteratorDestroy(iter);
     VarRefDestroy(ref);
 
@@ -2111,7 +2170,6 @@ static FnCallResult FnCallMapArray(EvalContext *ctx, FnCall *fp, Rlist *finalarg
 
 static FnCallResult FnCallMapList(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
 {
-    char expbuf[CF_EXPANDSIZE];
     Rlist *newlist = NULL;
     DataType retype;
 
@@ -2145,22 +2203,26 @@ static FnCallResult FnCallMapList(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist
         return FnFailure();
     }
 
+    Buffer *expbuf = BufferNew();
     for (const Rlist *rp = list; rp != NULL; rp = rp->next)
     {
+        BufferZero(expbuf);
         EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "this", RlistScalarValue(rp), DATA_TYPE_STRING, "source=function,function=maplist");
 
         ExpandScalar(ctx, NULL, "this", map, expbuf);
 
-        if (strstr(expbuf, "$(this)") || strstr(expbuf, "${this}"))
+        if (strstr(BufferData(expbuf), "$(this)") || strstr(BufferData(expbuf), "${this}"))
         {
             RlistDestroy(newlist);
             EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "this");
+            BufferDestroy(expbuf);
             return FnFailure();
         }
 
-        RlistAppendScalar(&newlist, expbuf);
+        RlistAppendScalar(&newlist, BufferData(expbuf));
         EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "this");
     }
+    BufferDestroy(expbuf);
 
     return (FnCallResult) { FNCALL_SUCCESS, { newlist, RVAL_TYPE_LIST } };
 }
@@ -2812,7 +2874,7 @@ static const Rlist *GetListReferenceArgument(const EvalContext *ctx, const FnCal
     const Rlist *value = EvalContextVariableGet(ctx, ref, &value_type);
     if (!value)
     {
-        Log(LOG_LEVEL_INFO,
+        Log(LOG_LEVEL_VERBOSE,
             "Could not resolve expected list variable '%s' in function '%s'",
             lval_str,
             fp->name);
@@ -2828,16 +2890,8 @@ static const Rlist *GetListReferenceArgument(const EvalContext *ctx, const FnCal
 
     if (DataTypeToRvalType(value_type) != RVAL_TYPE_LIST)
     {
-        if (value_type)
-        {
-            Log(LOG_LEVEL_VERBOSE, "Function '%s' expected a list variable reference, got variable of type '%s'",
-                fp->name, DataTypeToString(value_type));
-        }
-        else
-        {
-            Log(LOG_LEVEL_VERBOSE,
-                "Function '%s' expected a list variable reference, got variable of a different type", fp->name);
-        }
+        Log(LOG_LEVEL_ERR, "Function '%s' expected a list variable reference, got variable of type '%s'",
+            fp->name, DataTypeToString(value_type));
         if (datatype_out)
         {
             *datatype_out = DATA_TYPE_NONE;
@@ -3029,7 +3083,46 @@ static FnCallResult FnCallSetop(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
     return (FnCallResult) { FNCALL_SUCCESS, (Rval) { returnlist, RVAL_TYPE_LIST } };
 }
 
-/*********************************************************************/
+static FnCallResult FnCallLength(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+{
+    const char *name = RlistScalarValue(finalargs);
+
+    DataType type = DATA_TYPE_NONE;
+    VarRef *ref = VarRefParse(name);
+    const void *value = EvalContextVariableGet(ctx, ref, &type);
+    VarRefDestroy(ref);
+    if (!value)
+    {
+        Log(LOG_LEVEL_VERBOSE, "Function '%s', argument '%s' did not resolve to a variable",
+            fp->name, name);
+        return FnFailure();
+    }
+
+    switch (DataTypeToRvalType(type))
+    {
+    case RVAL_TYPE_LIST:
+        {
+            int len = RlistLen(value);
+            if (len == 1
+                && ((Rlist *)value)->val.type == RVAL_TYPE_SCALAR
+                && strcmp(RlistScalarValue(value), CF_NULL_VALUE) == 0) // TODO: This... bullshit
+            {
+                return FnReturn("0");
+            }
+            else
+            {
+                return FnReturnF("%d", len);
+            }
+        }
+    case RVAL_TYPE_CONTAINER:
+        return FnReturnF("%zd", JsonLength(value));
+    default:
+        Log(LOG_LEVEL_ERR, "Function '%s', argument '%s' resolved to unsupported datatype '%s'",
+            fp->name, name, DataTypeToString(type));
+        return FnFailure();
+    }
+}
+
 static FnCallResult FnCallFold(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 {
     const char *name = RlistScalarValue(finalargs);
@@ -3080,7 +3173,10 @@ static FnCallResult FnCallFold(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
         count++;
 
         // none of the following apply if CF_NULL_VALUE has been seen
-        if (null_seen) continue;
+        if (null_seen)
+        {
+            continue;
+        }
         
         double x;
         if (mean_mode || variance_mode)
@@ -3120,10 +3216,6 @@ static FnCallResult FnCallFold(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
         }
 
         return FnReturnF("%lf", variance);
-    }
-    else if (strcmp(fp->name, "length") == 0)
-    {
-        return FnReturnF("%d", count);
     }
     else if (strcmp(fp->name, "max") == 0)
     {
@@ -3180,7 +3272,7 @@ static FnCallResult FnCallDatatype(EvalContext *ctx, FnCall *fp, Rlist *finalarg
 
         if (JsonGetElementType(jelement) == JSON_ELEMENT_TYPE_CONTAINER)
         {
-            switch (JsonGetContrainerType(jelement))
+            switch (JsonGetContainerType(jelement))
             {
             case JSON_CONTAINER_TYPE_OBJECT:
                 WriterWrite(typestring, "json_object");
@@ -3215,7 +3307,7 @@ static FnCallResult FnCallDatatype(EvalContext *ctx, FnCall *fp, Rlist *finalarg
     }
     else
     {
-        Log(LOG_LEVEL_ERR, "%s: variable '%s' is not a data container", fp->name, varname);
+        Log(LOG_LEVEL_VERBOSE, "%s: variable '%s' is not a data container", fp->name, varname);
 
         VarRefDestroy(ref);
 
@@ -3236,7 +3328,9 @@ static FnCallResult FnCallDatatype(EvalContext *ctx, FnCall *fp, Rlist *finalarg
 static FnCallResult FnCallNth(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 {
     const char* const varname = RlistScalarValue(finalargs);
-    long index = IntFromString(RlistScalarValue(finalargs->next));
+
+    const char* const key = RlistScalarValue(finalargs->next);
+    long index = IntFromString(key);
 
     VarRef *ref = VarRefParseFromBundle(varname, PromiseGetBundle(fp->caller));
     DataType type = DATA_TYPE_NONE;
@@ -3250,19 +3344,33 @@ static FnCallResult FnCallNth(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
         const char *jstring = NULL;
         if (JsonGetElementType(value) == JSON_ELEMENT_TYPE_CONTAINER)
         {
-            if (index < JsonLength(value))
+            JsonElement* jholder = (JsonElement*) value;
+            JsonContainerType ct = JsonGetContainerType(value);
+            JsonElement* jelement = NULL;
+
+            if (JSON_CONTAINER_TYPE_OBJECT == ct)
             {
-
-                const JsonElement* const jelement = JsonAt(value, index);
-
-                if (JsonGetElementType(jelement) == JSON_ELEMENT_TYPE_PRIMITIVE)
+                jelement = JsonObjectGet(jholder, key);
+            }
+            else if (JSON_CONTAINER_TYPE_ARRAY == ct)
+            {
+                if (index >= 0 && index < JsonLength(value))
                 {
-                    jstring = JsonPrimitiveGetAsString(jelement);
+                    jelement = JsonAt(jholder, index);
                 }
+            }
+            else
+            {
+                ProgrammingError("JSON Container is neither array nor object but type %d", (int) ct);
+            }
+
+            if (NULL != jelement && JsonGetElementType(jelement) == JSON_ELEMENT_TYPE_PRIMITIVE)
+            {
+                jstring = JsonPrimitiveGetAsString(jelement);
             }
         }
 
-        if (jstring != NULL)
+        if (NULL != jstring)
         {
             Log(LOG_LEVEL_DEBUG, "%s: from data container %s, got JSON data '%s'", fp->name, varname, jstring);
             RlistAppendScalar(&return_list, jstring);
@@ -3412,7 +3520,7 @@ static FnCallResult FnCallFormat(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
                     else // not %% and no data
                     {
                         Log(LOG_LEVEL_ERR, "format() didn't have enough parameters");
-                        BufferDestroy(&buf);
+                        BufferDestroy(buf);
                         return FnFailure();
                     }
 
@@ -3429,7 +3537,7 @@ static FnCallResult FnCallFormat(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
                             Log(LOG_LEVEL_ERR, "format() does not allow modifier character '%c' in format specifier '%s'.",
                                   bad_modifiers[b],
                                   format_piece);
-                            BufferDestroy(&buf);
+                            BufferDestroy(buf);
                             return FnFailure();
                         }
                     }
@@ -3460,6 +3568,77 @@ static FnCallResult FnCallFormat(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
                         snprintf(piece, CF_BUFSIZE, format_piece, data);
                         BufferAppend(buf, piece, strlen(piece));
                         // CfOut(OUTPUT_LEVEL_INFORM, "", "format: appending string format piece = '%s' with data '%s'", format_piece, data);
+                    }
+                    else if (strrchr(format_piece, 'S'))
+                    {
+                        char *found_format_spec = NULL;
+                        char format_rewrite[CF_BUFSIZE];
+
+                        strlcpy(format_rewrite, format_piece, CF_BUFSIZE);
+                        found_format_spec = strrchr(format_rewrite, 'S');
+
+                        if (found_format_spec)
+                        {
+                            *found_format_spec = 's';
+                        }
+                        else
+                        {
+                            ProgrammingError("Couldn't find the expected S format spec in %s", format_piece);
+                        }
+
+                        const char* const varname = data;
+                        VarRef *ref = VarRefParseFromBundle(varname, PromiseGetBundle(fp->caller));
+                        DataType type = DATA_TYPE_NONE;
+                        const void *value = EvalContextVariableGet(ctx, ref, &type);
+                        VarRefDestroy(ref);
+
+                        if (type == DATA_TYPE_CONTAINER)
+                        {
+                            Writer *w = StringWriter();
+                            JsonWriteCompact(w, value);
+                            snprintf(piece, CF_BUFSIZE, format_rewrite, StringWriterData(w));
+                            WriterClose(w);
+                            BufferAppend(buf, piece, strlen(piece));
+                        }
+                        else            // it might be a list reference
+                        {
+                            const Rlist *list = GetListReferenceArgument(ctx, fp, varname, NULL);
+                            if (NULL != list)
+                            {
+                                Writer *w = StringWriter();
+                                WriterWrite(w, "{ ");
+                                for (const Rlist *rp = list; rp; rp = rp->next)
+                                {
+                                    char *escaped = EscapeCharCopy(RlistScalarValue(rp), '"', '\\');
+                                    if (0 == strcmp(escaped, CF_NULL_VALUE))
+                                    {
+                                        WriterWrite(w, "--empty-list--");
+                                    }
+                                    else
+                                    {
+                                        WriterWriteF(w, "\"%s\"", escaped);
+                                    }
+                                    free(escaped);
+
+                                    if (NULL != rp && NULL != rp->next)
+                                    {
+                                        WriterWrite(w, ", ");
+                                    }
+                                }
+                                WriterWrite(w, " }");
+
+                                snprintf(piece, CF_BUFSIZE, format_rewrite, StringWriterData(w));
+                                WriterClose(w);
+                                BufferAppend(buf, piece, strlen(piece));
+                            }
+                            else        // whatever this is, it's not a list reference or a data container
+                            {
+                                Log(LOG_LEVEL_VERBOSE, "format() with %%S specifier needs a data container or a list instead of '%s'.",
+                                    varname);
+                                BufferDestroy(buf);
+                                return FnFailure();
+                            }
+                        }
                     }
                     else
                     {
@@ -3508,7 +3687,7 @@ static FnCallResult FnCallFormat(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
     }
 
     char *result = xstrdup(BufferData(buf));
-    BufferDestroy(&buf);
+    BufferDestroy(buf);
 
     return (FnCallResult) { FNCALL_SUCCESS, { result, RVAL_TYPE_SCALAR } };
 
@@ -4101,48 +4280,40 @@ static FnCallResult FnCallRegExtract(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rl
 
 /*********************************************************************/
 
-static FnCallResult FnCallRegLine(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallRegLine(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 {
-    FILE *fin;
+    const char *arg_regex = RlistScalarValue(finalargs);
+    const char *arg_filename = RlistScalarValue(finalargs->next);
 
-    char *argv0 = RlistScalarValue(finalargs);
-    char *argv1 = RlistScalarValue(finalargs->next);
-
-    if ((fin = safe_fopen(argv1, "r")) == NULL)
+    FILE *fin = safe_fopen(arg_filename, "r");
+    if (!fin)
     {
         return FnReturnContext(false);
     }
 
-    for (;;)
+    size_t line_size = CF_BUFSIZE;
+    char *line = xmalloc(line_size);
+
+    while (CfReadLine(&line, &line_size, fin) != -1)
     {
-        char line[CF_BUFSIZE];
-
-        if (fgets(line, sizeof(line), fin) == NULL)
+        if (StringMatchFull(arg_regex, line))
         {
-            if (ferror(fin))
-            {
-                Log(LOG_LEVEL_ERR, "Function regline, unable to read from the file '%s'", argv1);
-                fclose(fin);
-                return FnFailure();
-            }
-            else /* feof */
-            {
-                fclose(fin);
-                return FnReturnContext(false);
-            }
-        }
-
-        if (Chop(line, CF_EXPANDSIZE) == -1)
-        {
-            Log(LOG_LEVEL_ERR, "Chop was called on a string that seemed to have no terminator");
-        }
-
-        if (StringMatchFull(argv0, line))
-        {
+            free(line);
             fclose(fin);
             return FnReturnContext(true);
         }
     }
+
+    free(line);
+
+    if (!feof(fin))
+    {
+        Log(LOG_LEVEL_ERR, "In function '%s', error reading from file. (getline: %s)",
+            fp->name, GetErrorStr());
+    }
+
+    fclose(fin);
+    return FnReturnContext(false);
 }
 
 /*********************************************************************/
@@ -5422,7 +5593,7 @@ static int BuildLineArray(EvalContext *ctx, const Bundle *bundle, char *array_lv
 static int ExecModule(EvalContext *ctx, char *command, const char *ns)
 {
     FILE *pp;
-    char *sp, line[CF_BUFSIZE];
+    char *sp = NULL;
     char context[CF_BUFSIZE];
     int print = false;
 
@@ -5434,20 +5605,25 @@ static int ExecModule(EvalContext *ctx, char *command, const char *ns)
         return false;
     }
 
+    size_t line_size = CF_BUFSIZE;
+    char *line = xmalloc(line_size);
+
     for (;;)
     {
-        ssize_t res = CfReadLine(line, CF_BUFSIZE, pp);
-
-        if (res == 0)
-        {
-            break;
-        }
-
+        ssize_t res = CfReadLine(&line, &line_size, pp);
         if (res == -1)
         {
-            Log(LOG_LEVEL_ERR, "Unable to read output from '%s'. (fread: %s)", command, GetErrorStr());
-            cf_pclose(pp);
-            return false;
+            if (!feof(pp))
+            {
+                Log(LOG_LEVEL_ERR, "Unable to read output from '%s'. (fread: %s)", command, GetErrorStr());
+                cf_pclose(pp);
+                free(line);
+                return false;
+            }
+            else
+            {
+                break;
+            }
         }
 
         if (strlen(line) > CF_BUFSIZE - 80)
@@ -5471,6 +5647,7 @@ static int ExecModule(EvalContext *ctx, char *command, const char *ns)
     }
 
     cf_pclose(pp);
+    free(line);
     return true;
 }
 
@@ -5478,7 +5655,7 @@ static int ExecModule(EvalContext *ctx, char *command, const char *ns)
 /* Level                                                             */
 /*********************************************************************/
 
-void ModuleProtocol(EvalContext *ctx, char *command, char *line, int print, const char *ns, char* context)
+void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print, const char *ns, char* context)
 {
     char name[CF_BUFSIZE], content[CF_BUFSIZE];
     char arg0[CF_BUFSIZE];
@@ -5592,11 +5769,9 @@ void ModuleProtocol(EvalContext *ctx, char *command, char *line, int print, cons
 /* Level                                                             */
 /*********************************************************************/
 
-static int CheckID(char *id)
+static bool CheckID(const char *id)
 {
-    char *sp;
-
-    for (sp = id; *sp != '\0'; sp++)
+    for (const char *sp = id; *sp != '\0'; sp++)
     {
         if (!isalnum((int) *sp) && (*sp != '.') && (*sp != '-') && (*sp != '_') && (*sp != '[') && (*sp != ']'))
         {
@@ -6246,7 +6421,7 @@ static const FnCallArg REMOTECLASSESMATCHING_ARGS[] =
 
 static const FnCallArg RETURNSZERO_ARGS[] =
 {
-    {CF_ABSPATHRANGE, DATA_TYPE_STRING, "Fully qualified command path"},
+    {CF_PATHRANGE, DATA_TYPE_STRING, "Command path"},
     {"noshell,useshell,powershell", DATA_TYPE_OPTION, "Shell encapsulation option"},
     {NULL, DATA_TYPE_NONE, NULL}
 };
@@ -6335,7 +6510,7 @@ static const FnCallArg DATATYPE_ARGS[] =
 static const FnCallArg NTH_ARGS[] =
 {
     {CF_IDRANGE, DATA_TYPE_STRING, "CFEngine list or data container identifier"},
-    {CF_VALRANGE, DATA_TYPE_INT, "Offset of element to return"},
+    {CF_ANYSTRING, DATA_TYPE_STRING, "Offset or key of element to return"},
     {NULL, DATA_TYPE_NONE, NULL}
 };
 
@@ -6434,8 +6609,8 @@ const FnCallType CF_FNCALL_TYPES[] =
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("and", DATA_TYPE_STRING, AND_ARGS, &FnCallAnd, "Calculate whether all arguments evaluate to true",
                   FNCALL_OPTION_VARARG, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
-    FnCallTypeNew("bundlesmatching", DATA_TYPE_STRING_LIST, BUNDLESMATCHING_ARGS, &FnCallBundlesmatching, "Find all the bundles that match a regular expression",
-                  FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
+    FnCallTypeNew("bundlesmatching", DATA_TYPE_STRING_LIST, BUNDLESMATCHING_ARGS, &FnCallBundlesMatching, "Find all the bundles that match a regular expression and tags.",
+                  FNCALL_OPTION_VARARG, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("canonify", DATA_TYPE_STRING, CANONIFY_ARGS, &FnCallCanonify, "Convert an abitrary string into a legal class name",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("canonifyuniquely", DATA_TYPE_STRING, CANONIFY_ARGS, &FnCallCanonify, "Convert an abitrary string into a unique legal class name",
@@ -6692,7 +6867,7 @@ const FnCallType CF_FNCALL_TYPES[] =
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
 
     // List folding functions
-    FnCallTypeNew("length", DATA_TYPE_INT, STAT_FOLD_ARGS, &FnCallFold, "Return the length of a list",
+    FnCallTypeNew("length", DATA_TYPE_INT, STAT_FOLD_ARGS, &FnCallLength, "Return the length of a list",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("max", DATA_TYPE_STRING, SORT_ARGS, &FnCallFold, "Return the maximum of a list",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),

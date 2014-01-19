@@ -44,45 +44,36 @@
   as default, all the previous buffers will have the old cap. This can be changed on a per instance basis.
   */
 
-typedef enum {
+typedef enum
+{
     BUFFER_BEHAVIOR_CSTRING //<! CString compatibility mode. A '\0' would be interpreted as end of the string, regardless of the size.
     , BUFFER_BEHAVIOR_BYTEARRAY //<! Byte array mode. A '\0' has no meaning, only the size of the buffer is taken into consideration.
 } BufferBehavior ;
 
-#define DEFAULT_BUFFER_SIZE     4096
-#define DEFAULT_MEMORY_CAP      65535
+#define DEFAULT_BUFFER_CAPACITY     4096
 
-struct Buffer {
+typedef struct
+{
     char *buffer;
-    int mode;
+    BufferBehavior mode;
     unsigned int capacity;
     unsigned int used;
-    unsigned int memory_cap;
-    unsigned int beginning; /*!< This is to be used in the future to trim characters in the front. */
-    unsigned int end; /*!< This is to be used in the future to trim characters in the back. */
+    bool unsafe;
     RefCount *ref_count;
-};
-typedef struct Buffer Buffer;
-
-/**
-  @brief Returns the amount of memory that is used as a general memory cap.
-  @return Amount of memory in bytes used as a general memory cap.
-  */
-unsigned int BufferGeneralMemoryCap();
-/**
-  @brief Sets the new general memory cap.
-  */
-void BufferSetGeneralMemoryCap(unsigned int cap);
+} Buffer;
 
 /**
   @brief Buffer initialization routine.
 
   Initializes the internals of a buffer. By default it is initialized to emulate a C string, but that can be
-  changed at run time if needed. The default size of the buffer is set to DEFAULT_BUFFER_SIZE (4096).
+  changed at run time if needed. The default size of the buffer is set to DEFAULT_BUFFER_CAPACITY (4096).
   @return Pointer to initialized Buffer if the initialization was successful,
           otherwise terminate with message to stderr.
   */
 Buffer* BufferNew(void);
+
+Buffer *BufferNewWithCapacity(unsigned int initial_capacity);
+
 /**
   @brief Initializes a buffer based on a const char pointer.
   @param data Data
@@ -93,19 +84,21 @@ Buffer* BufferNew(void);
   @remarks Only C_STRING behavior is accepted if this constructor is used.
   */
 Buffer* BufferNewFrom(const char *data, unsigned int length);
+
 /**
   @brief Destroys a buffer and frees the memory associated with it.
   @param buffer Buffer to be destroyed.
-  @return 0 if the destruction was successful, -1 otherwise.
   */
-int BufferDestroy(Buffer **buffer);
+void BufferDestroy(Buffer *buffer);
+
+char *BufferClose(Buffer *buffer);
+
 /**
   @brief Creates a shallow copy of the source buffer.
   @param source Source buffer.
-  @param destination Destination buffer.
-  @return 0 if the copy was successful, -1 otherwise.
   */
-int BufferCopy(Buffer *source, Buffer **destination);
+Buffer *BufferCopy(const Buffer *source);
+
 /**
   @brief Compares two buffers. Uses the same semantic as strcmp.
   @note If this is called with NULL pointers, it will crash. There is no way around it.
@@ -113,7 +106,8 @@ int BufferCopy(Buffer *source, Buffer **destination);
   @param buffer2
   @return -1 if buffer1 < buffer2, 0 if buffer1 == buffer2, +1 if buffer1 > buffer2
   */
-int BufferCompare(Buffer *buffer1, Buffer *buffer2);
+int BufferCompare(const Buffer *buffer1, const Buffer *buffer2);
+
 /**
   @brief Replaces the current content of the buffer with the given string.
 
@@ -125,9 +119,12 @@ int BufferCompare(Buffer *buffer1, Buffer *buffer2);
   @param buffer Buffer to be used.
   @param bytes Collection of bytes to be copied into the buffer.
   @param length Length of the collection of bytes.
-  @return The number of bytes copied or -1 if there was an error.
   */
-int BufferSet(Buffer *buffer, char *bytes, unsigned int length);
+void BufferSet(Buffer *buffer, char *bytes, unsigned int length);
+
+char *BufferGet(Buffer *buffer);
+
+
 /**
   @brief Appends the collection of bytes at the end of the current buffer.
 
@@ -142,7 +139,9 @@ int BufferSet(Buffer *buffer, char *bytes, unsigned int length);
   @param length The length of the data.
   @return The number of bytes used or -1 in case of error.
   */
-int BufferAppend(Buffer *buffer, const char *bytes, unsigned int length);
+void BufferAppend(Buffer *buffer, const char *bytes, unsigned int length);
+void BufferAppendChar(Buffer *buffer, char byte);
+
 /**
   @brief Stores complex data on the buffer.
 
@@ -188,12 +187,16 @@ void BufferZero(Buffer *buffer);
   @return The size of the buffer, that is the number of bytes contained on it.
   */
 unsigned int BufferSize(Buffer *buffer);
+
+void BufferSetCapacity(Buffer *buffer, unsigned int capacity);
+unsigned BufferCapacity(const Buffer *buffer);
+
 /**
   @brief Returns the current mode of operation of the buffer.
   @param buffer The buffer to operate on.
   @return The current mode of operation.
   */
-int BufferMode(Buffer *buffer);
+BufferBehavior BufferMode(Buffer *buffer);
 /**
   @brief Sets the operational mode of the buffer.
 
@@ -213,14 +216,5 @@ void BufferSetMode(Buffer *buffer, BufferBehavior mode);
   @return A const char pointer to the data contained on the buffer.
   */
 const char *BufferData(Buffer *buffer);
-/**
-  @brief Returns the amount of memory that is used as a memory cap for this particular buffer instance.
-  @return Amount of memory in bytes used as a memory cap.
-  */
-unsigned int BufferMemoryCap(Buffer *buffer);
-/**
-  @brief Sets the new memory cap for this particular buffer instance.
-  */
-void BufferSetMemoryCap(Buffer *buffer, unsigned int cap);
 
-#endif // CFENGINE_BUFFER_H
+#endif

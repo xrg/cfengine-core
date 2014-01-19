@@ -44,9 +44,9 @@
 #include <verify_classes.h>
 
 
-static void ExpandPromiseAndDo(EvalContext *ctx, const Promise *pp, Rlist *lists, Rlist *containers,
+static PromiseResult ExpandPromiseAndDo(EvalContext *ctx, const Promise *pp, Rlist *lists, Rlist *containers,
                                PromiseActuator *ActOnPromise, void *param);
-static void ExpandAndMapIteratorsFromScalar(EvalContext *ctx, const Bundle *bundle, const char *string, size_t length, int level,
+static void ExpandAndMapIteratorsFromScalar(EvalContext *ctx, const Bundle *bundle, char *string, size_t length, int level,
                                             Rlist **scalars, Rlist **lists, Rlist **containers, Rlist **full_expansion);
 static void CopyLocalizedReferencesToBundleScope(EvalContext *ctx, const Bundle *bundle, const Rlist *ref_names);
 
@@ -108,7 +108,7 @@ since these cannot be mapped into "this" without some magic.
    
 **********************************************************************/
 
-void ExpandPromise(EvalContext *ctx, const Promise *pp, PromiseActuator *ActOnPromise, void *param)
+PromiseResult ExpandPromise(EvalContext *ctx, const Promise *pp, PromiseActuator *ActOnPromise, void *param)
 {
     Rlist *lists = NULL;
     Rlist *scalars = NULL;
@@ -133,16 +133,18 @@ void ExpandPromise(EvalContext *ctx, const Promise *pp, PromiseActuator *ActOnPr
     CopyLocalizedReferencesToBundleScope(ctx, PromiseGetBundle(pp), scalars);
     CopyLocalizedReferencesToBundleScope(ctx, PromiseGetBundle(pp), containers);
 
-    ExpandPromiseAndDo(ctx, pcopy, lists, containers, ActOnPromise, param);
+    PromiseResult result = ExpandPromiseAndDo(ctx, pcopy, lists, containers, ActOnPromise, param);
 
     PromiseDestroy(pcopy);
 
     RlistDestroy(lists);
     RlistDestroy(scalars);
     RlistDestroy(containers);
+
+    return result;
 }
 
-static void ExpandPromiseAndDo(EvalContext *ctx, const Promise *pp, Rlist *lists, Rlist *containers, PromiseActuator *ActOnPromise, void *param)
+static PromiseResult ExpandPromiseAndDo(EvalContext *ctx, const Promise *pp, Rlist *lists, Rlist *containers, PromiseActuator *ActOnPromise, void *param)
 {
     const char *handle = PromiseGetHandle(pp);
 
@@ -150,16 +152,17 @@ static void ExpandPromiseAndDo(EvalContext *ctx, const Promise *pp, Rlist *lists
 
     PromiseIterator *iter_ctx = NULL;
     size_t i = 0;
+    PromiseResult result = PROMISE_RESULT_NOOP;
+    Buffer *expbuf = BufferNew();
     for (iter_ctx = PromiseIteratorNew(ctx, pp, lists, containers); PromiseIteratorHasMore(iter_ctx); i++, PromiseIteratorNext(iter_ctx))
     {
         if (handle)
         {
-            char tmp[CF_EXPANDSIZE];
             // This ordering is necessary to get automated canonification
-            ExpandScalar(ctx, NULL, "this", handle, tmp);
-            CanonifyNameInPlace(tmp);
-            Log(LOG_LEVEL_DEBUG, "Expanded handle to '%s'", tmp);
-            EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "handle", tmp, DATA_TYPE_STRING, "source=promise");
+            BufferZero(expbuf);
+            ExpandScalar(ctx, NULL, "this", handle, expbuf);
+            CanonifyNameInPlace(BufferGet(expbuf));
+            EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "handle", BufferData(expbuf), DATA_TYPE_STRING, "source=promise");
         }
         else
         {
@@ -167,7 +170,8 @@ static void ExpandPromiseAndDo(EvalContext *ctx, const Promise *pp, Rlist *lists
         }
 
         const Promise *pexp = EvalContextStackPushPromiseIterationFrame(ctx, i, iter_ctx);
-        ActOnPromise(ctx, pexp, param);
+        PromiseResult iteration_result = ActOnPromise(ctx, pexp, param);
+        result = PromiseResultUpdate(result, iteration_result);
 
         if (strcmp(pp->parent_promise_type->name, "vars") == 0 || strcmp(pp->parent_promise_type->name, "meta") == 0)
         {
@@ -177,57 +181,51 @@ static void ExpandPromiseAndDo(EvalContext *ctx, const Promise *pp, Rlist *lists
         EvalContextStackPopFrame(ctx);
     }
 
+    BufferDestroy(expbuf);
     PromiseIteratorDestroy(iter_ctx);
     EvalContextStackPopFrame(ctx);
+
+    return result;
 }
 
 
 Rval ExpandDanglers(EvalContext *ctx, const char *ns, const char *scope, Rval rval, const Promise *pp)
 {
-    Rval final;
-
-    /* If there is still work left to do, expand and replace alloc */
-
     switch (rval.type)
     {
     case RVAL_TYPE_SCALAR:
-
-        if (IsCf3VarString(rval.item))
+        if (IsCf3VarString(RvalScalarValue(rval)))
         {
-            final = EvaluateFinalRval(ctx, ns, scope, rval, false, pp);
+            return EvaluateFinalRval(ctx, ns, scope, rval, false, pp);
         }
         else
         {
-            final = RvalCopy(rval);
+            return RvalCopy(rval);
         }
         break;
 
     case RVAL_TYPE_LIST:
-        final = RvalCopy(rval);
         {
-            Rlist *final_list = RvalRlistValue(final);
-            RlistFlatten(ctx, &final_list);
-            final.item = final_list;
+            Rlist *result_list = RlistCopy(RvalRlistValue(rval));
+            RlistFlatten(ctx, &result_list);
+            return RvalNew(result_list, RVAL_TYPE_LIST);
         }
         break;
 
     case RVAL_TYPE_CONTAINER:
     case RVAL_TYPE_FNCALL:
     case RVAL_TYPE_NOPROMISEE:
-        final = RvalCopy(rval);
-        break;
+        return RvalCopy(rval);
     }
 
-    return final;
+    ProgrammingError("Unhandled Rval type");
 }
 
 /*********************************************************************/
 
 void MapIteratorsFromRval(EvalContext *ctx, const Bundle *bundle, Rval rval, Rlist **scalars, Rlist **lists, Rlist **containers)
 {
-    Rlist *rp;
-    FnCall *fp;
-
+    assert(rval.item);
     if (rval.item == NULL)
     {
         return;
@@ -244,18 +242,16 @@ void MapIteratorsFromRval(EvalContext *ctx, const Bundle *bundle, Rval rval, Rli
         break;
 
     case RVAL_TYPE_LIST:
-        for (rp = (Rlist *) rval.item; rp != NULL; rp = rp->next)
+        for (const Rlist *rp = RvalRlistValue(rval); rp; rp = rp->next)
         {
             MapIteratorsFromRval(ctx, bundle, rp->val, scalars, lists, containers);
         }
         break;
 
     case RVAL_TYPE_FNCALL:
-        fp = (FnCall *) rval.item;
-
-        for (rp = (Rlist *) fp->args; rp != NULL; rp = rp->next)
+        for (const Rlist *rp = RvalFnCallValue(rval)->args; rp; rp = rp->next)
         {
-            Log(LOG_LEVEL_DEBUG, "Looking at arg for function-like object '%s'", fp->name);
+            Log(LOG_LEVEL_DEBUG, "Looking at arg for function-like object '%s'", RvalFnCallValue(rval)->name);
             MapIteratorsFromRval(ctx, bundle, rp->val, scalars, lists, containers);
         }
         break;
@@ -271,17 +267,13 @@ void MapIteratorsFromRval(EvalContext *ctx, const Bundle *bundle, Rval rval, Rli
 
 static void RlistConcatInto(Rlist **dest, const Rlist *src, const char *extension)
 {
-    char temp[CF_EXPANDSIZE];
-    int count = 0;
+    assert(dest);
 
-    if (!dest)
-    {
-        return;
-    }
-
+    size_t count = 0;
     for (const Rlist *rp = src; rp != NULL; rp = rp->next)
     {
         count++;
+        char temp[CF_EXPANDSIZE] = "";
         snprintf(temp, CF_EXPANDSIZE, "%s%s", RlistScalarValue(rp), extension);
         RlistAppendScalarIdemp(dest, temp);
     }
@@ -326,64 +318,62 @@ static void DeMangleVarRefString(char *ref_str, size_t len)
     }
 }
 
-static void ExpandAndMapIteratorsFromScalar(EvalContext *ctx, const Bundle *bundle, const char *string, size_t length,
+static void ExpandAndMapIteratorsFromScalar(EvalContext *ctx, const Bundle *bundle, char *string, size_t length,
                                             int level, Rlist **scalars, Rlist **lists,
                                             Rlist **containers, Rlist **full_expansion)
 {
-    char *sp;
-    Rlist *tmp_list = NULL;
-    char v[CF_BUFSIZE], buffer[CF_BUFSIZE];
-
-    if (string == NULL)
+    assert(string);
+    if (!string)
     {
         return;
     }
 
-    if (length >= CF_BUFSIZE)
+    Buffer *value = BufferNew();
+
+    for (size_t i = 0; i < length; i++)
     {
-        ProgrammingError("ExpandAndMapIteratorsFromScalar called with invalid strlen");
-    }
+        const char *sp = string + i;
 
-    strncpy(buffer, string, length);
-    buffer[length] = '\0';
-
-    for (sp = buffer; (*sp != '\0'); sp++)
-    {
-        v[0] = '\0';
-
-        sscanf(sp, "%[^$]", v);
-
-        if (full_expansion)
+        Rlist *tmp_list = NULL;
+        BufferZero(value);
+        if (ExtractScalarPrefix(value, sp, length - i))
         {
-            RlistConcatInto(&tmp_list, *full_expansion, v);
-            RlistDestroy(*full_expansion);
-            *full_expansion = tmp_list;
-            tmp_list = NULL;
-        }
+            if (full_expansion)
+            {
+                RlistConcatInto(&tmp_list, *full_expansion, BufferData(value));
+                RlistDestroy(*full_expansion);
+                *full_expansion = tmp_list;
+                tmp_list = NULL;
+            }
 
-        sp += strlen(v);
+            sp += BufferSize(value);
+            i += BufferSize(value);
 
-        if (*sp == '\0')
-        {
-            break;
+            BufferZero(value);
+
+            if (i >= length)
+            {
+                break;
+            }
         }
 
         if (*sp == '$')
         {
-            if (ExtractInnerCf3VarString(sp, v))
+            BufferZero(value);
+            ExtractScalarReference(value, sp, length - i, true);
+            if (BufferSize(value) > 0)
             {
                 Rlist *inner_expansion = NULL;
                 Rlist *exp = NULL;
                 int success = 0;
-                int increment;
 
-                VarRef *ref = VarRefParse(v);
+                VarRef *ref = VarRefParse(BufferData(value));
 
-                increment = strlen(v) - 1 + 3;
+                int increment = BufferSize(value) - 1 + 3;
 
                 // Handle any embedded variables
-                const char *substring = string + (sp - buffer) + 2;
-                ExpandAndMapIteratorsFromScalar(ctx, bundle, substring, strlen(v), level+1, scalars, lists, containers, &inner_expansion);
+                char *substring = string + i + 2;
+                ExpandAndMapIteratorsFromScalar(ctx, bundle, substring, BufferSize(value), level+1, scalars, lists, containers, &inner_expansion);
 
                 for (exp = inner_expansion; exp != NULL; exp = exp->next)
                 {
@@ -473,7 +463,7 @@ static void ExpandAndMapIteratorsFromScalar(EvalContext *ctx, const Bundle *bund
                 }
 
                 // No need to map this.* even though it's technically qualified
-                if (success && IsQualifiedVariable(v) && strcmp(ref->scope, "this") != 0)
+                if (success && IsQualifiedVariable(BufferData(value)) && strcmp(ref->scope, "this") != 0)
                 {
                     char *dotpos = strchr(substring, '.');
                     if (dotpos)
@@ -481,7 +471,7 @@ static void ExpandAndMapIteratorsFromScalar(EvalContext *ctx, const Bundle *bund
                         *dotpos = CF_MAPPEDLIST;    // replace '.' with '#'
                     }
 
-                    if (strchr(v, ':'))
+                    if (strchr(BufferData(value), ':'))
                     {
                         char *colonpos = strchr(substring, ':');
                         if (colonpos)
@@ -494,9 +484,12 @@ static void ExpandAndMapIteratorsFromScalar(EvalContext *ctx, const Bundle *bund
                 VarRefDestroy(ref);
 
                 sp += increment;
+                i += increment;
             }
         }
     }
+
+    BufferDestroy(value);
 }
 
 /*********************************************************************/
@@ -505,17 +498,16 @@ Rlist *ExpandList(EvalContext *ctx, const char *ns, const char *scope, const Rli
 {
     Rlist *start = NULL;
     Rval returnval;
-    char naked[CF_MAXVARSIZE];
 
     for (const Rlist *rp = list; rp != NULL; rp = rp->next)
     {
         if (!expandnaked && (rp->val.type == RVAL_TYPE_SCALAR) && IsNakedVar(RlistScalarValue(rp), '@'))
         {
-            returnval.item = xstrdup(RlistScalarValue(rp));
-            returnval.type = RVAL_TYPE_SCALAR;
+            returnval = RvalNew(RlistScalarValue(rp), RVAL_TYPE_SCALAR);
         }
         else if ((rp->val.type == RVAL_TYPE_SCALAR) && IsNakedVar(RlistScalarValue(rp), '@'))
         {
+            char naked[CF_MAXVARSIZE];
             GetNaked(naked, RlistScalarValue(rp));
 
             if (!IsExpandable(naked))
@@ -556,20 +548,18 @@ Rlist *ExpandList(EvalContext *ctx, const char *ns, const char *scope, const Rli
 
 Rval ExpandPrivateRval(EvalContext *ctx, const char *ns, const char *scope, const void *rval_item, RvalType rval_type)
 {
-    char buffer[CF_EXPANDSIZE];
-    FnCall *fpe = NULL;
     Rval returnval;
-
-    // Allocates new memory for the copy
     returnval.item = NULL;
     returnval.type = RVAL_TYPE_NOPROMISEE;
 
     switch (rval_type)
     {
     case RVAL_TYPE_SCALAR:
-         ExpandScalar(ctx, ns, scope, rval_item, buffer);
-        returnval.item = xstrdup(buffer);
-        returnval.type = RVAL_TYPE_SCALAR;
+        {
+            Buffer *buffer = BufferNew();
+            ExpandScalar(ctx, ns, scope, rval_item, buffer);
+            returnval = (Rval) { BufferClose(buffer),  RVAL_TYPE_SCALAR };
+        }
         break;
 
     case RVAL_TYPE_LIST:
@@ -578,9 +568,7 @@ Rval ExpandPrivateRval(EvalContext *ctx, const char *ns, const char *scope, cons
         break;
 
     case RVAL_TYPE_FNCALL:
-        /* Note expand function does not mean evaluate function, must preserve type */
-        fpe = ExpandFnCall(ctx, ns, scope, rval_item);
-        returnval.item = fpe;
+        returnval.item = ExpandFnCall(ctx, ns, scope, rval_item);
         returnval.type = RVAL_TYPE_FNCALL;
         break;
 
@@ -604,9 +592,9 @@ Rval ExpandBundleReference(EvalContext *ctx, const char *ns, const char *scope, 
     {
     case RVAL_TYPE_SCALAR:
         {
-            char buffer[CF_EXPANDSIZE];
-            ExpandScalar(ctx, ns, scope, (char *) rval.item, buffer);
-            return RvalNew(buffer, RVAL_TYPE_SCALAR);
+            Buffer *buffer = BufferNew();
+            ExpandScalar(ctx, ns, scope, RvalScalarValue(rval), buffer);
+            return (Rval) { BufferClose(buffer), RVAL_TYPE_SCALAR };
         }
 
     case RVAL_TYPE_FNCALL:
@@ -622,123 +610,98 @@ Rval ExpandBundleReference(EvalContext *ctx, const char *ns, const char *scope, 
     return RvalNew(NULL, RVAL_TYPE_NOPROMISEE);
 }
 
-/*********************************************************************/
 
-static bool ExpandOverflow(const char *str1, const char *str2)
+bool ExpandScalar(const EvalContext *ctx, const char *ns, const char *scope, const char *string, Buffer *out)
 {
-    int len = strlen(str2);
+    assert(string);
 
-    if ((strlen(str1) + len) > (CF_EXPANDSIZE - CF_BUFFERMARGIN))
-    {
-        Log(LOG_LEVEL_ERR,
-            "Expansion overflow constructing string. Increase CF_EXPANDSIZE macro. Tried to add '%s' to '%s'", str2,
-              str1);
-        return true;
-    }
+    bool returnval = true;
 
-    return false;
-}
-
-/*********************************************************************/
-
-bool ExpandScalar(const EvalContext *ctx, const char *ns, const char *scope, const char *string, char buffer[CF_EXPANDSIZE])
-{
-    int varstring = false;
-    char currentitem[CF_EXPANDSIZE], temp[CF_BUFSIZE], name[CF_MAXVARSIZE];
-    int increment, returnval = true;
-
-    buffer[0] = '\0';
-
-    if (string == 0 || strlen(string) == 0)
+    if (strlen(string) == 0)
     {
         return false;
     }
 
+    // TODO: cleanup, optimize this mess
+    Buffer *var = BufferNew();
+    Buffer *current_item = BufferNew();
+    Buffer *temp = BufferNew();
     for (const char *sp = string; /* No exit */ ; sp++)     /* check for varitems */
     {
-        char var[CF_BUFSIZE];
-
-        var[0] = '\0';
-
-        increment = 0;
+        char varstring = false;
+        size_t increment = 0;
 
         if (*sp == '\0')
         {
             break;
         }
 
-        currentitem[0] = '\0';
-        StringNotMatchingSetCapped(sp,CF_EXPANDSIZE,"$",currentitem);
+        BufferZero(current_item);
+        ExtractScalarPrefix(current_item, sp, strlen(sp));
 
-        if (ExpandOverflow(buffer, currentitem))
-        {
-            FatalError(ctx, "Can't expand varstring");
-        }
-
-        strlcat(buffer, currentitem, CF_EXPANDSIZE);
-        sp += strlen(currentitem);
-
-        Log(LOG_LEVEL_DEBUG, "  Aggregate result '%s', scanning at '%s' (current delta '%s')", buffer, sp, currentitem);
+        BufferAppend(out, BufferData(current_item), BufferSize(current_item));
+        sp += BufferSize(current_item);
 
         if (*sp == '\0')
         {
             break;
         }
 
+        BufferZero(var);
         if (*sp == '$')
         {
             switch (*(sp + 1))
             {
             case '(':
-                ExtractOuterCf3VarString(sp, var);
                 varstring = ')';
-                if (strlen(var) == 0)
+                ExtractScalarReference(var, sp, strlen(sp), false);
+                if (BufferSize(var) == 0)
                 {
-                    strlcat(buffer, "$", CF_EXPANDSIZE);
+                    BufferAppendChar(out, '$');
                     continue;
                 }
                 break;
 
             case '{':
-                ExtractOuterCf3VarString(sp, var);
                 varstring = '}';
-                if (strlen(var) == 0)
+                ExtractScalarReference(var, sp, strlen(sp), false);
+                if (BufferSize(var) == 0)
                 {
-                    strlcat(buffer, "$", CF_EXPANDSIZE);
+                    BufferAppendChar(out, '$');
                     continue;
                 }
                 break;
 
             default:
-                strlcat(buffer, "$", CF_EXPANDSIZE);
+                BufferAppendChar(out, '$');
                 continue;
             }
         }
 
-        currentitem[0] = '\0';
-
-        temp[0] = '\0';
-        ExtractInnerCf3VarString(sp, temp);
-
-        if (IsCf3VarString(temp))
+        BufferZero(current_item);
         {
-            Log(LOG_LEVEL_DEBUG, "Nested variables '%s'", temp);
-            ExpandScalar(ctx, ns, scope, temp, currentitem);
-        }
-        else
-        {
-            Log(LOG_LEVEL_DEBUG, "Delta '%s'", temp);
-            strncpy(currentitem, temp, CF_BUFSIZE - 1);
+            BufferZero(temp);
+            ExtractScalarReference(temp, sp, strlen(sp), true);
+
+            if (IsCf3VarString(BufferData(temp)))
+            {
+                ExpandScalar(ctx, ns, scope, BufferData(temp), current_item);
+            }
+            else
+            {
+                BufferAppend(current_item, BufferData(temp), BufferSize(temp));
+            }
         }
 
-        increment = strlen(var) - 1;
+        increment = BufferSize(var) - 1;
 
-        if (!IsExpandable(currentitem))
+        char name[CF_MAXVARSIZE] = "";
+        if (!IsExpandable(BufferData(current_item)))
         {
             DataType type = DATA_TYPE_NONE;
             const void *value = NULL;
             {
-                VarRef *ref = VarRefParseFromNamespaceAndScope(currentitem, ns, scope, CF_NS, '.');
+                VarRef *ref = VarRefParseFromNamespaceAndScope(BufferData(current_item), ns, scope, CF_NS, '.');
                 value = EvalContextVariableGet(ctx, ref, &type);
                 VarRefDestroy(ref);
             }
@@ -750,82 +713,58 @@ bool ExpandScalar(const EvalContext *ctx, const char *ns, const char *scope, con
                 case DATA_TYPE_STRING:
                 case DATA_TYPE_INT:
                 case DATA_TYPE_REAL:
-
-                    if (ExpandOverflow(buffer, value))
-                    {
-                        FatalError(ctx, "Can't expand varstring");
-                    }
-
-                    strlcat(buffer, value, CF_EXPANDSIZE);
+                    BufferAppend(out, value, strlen(value));
                     break;
 
                 case DATA_TYPE_STRING_LIST:
                 case DATA_TYPE_INT_LIST:
                 case DATA_TYPE_REAL_LIST:
                 case DATA_TYPE_NONE:
-                    if (type == DATA_TYPE_NONE)
-                    {
-                        Log(LOG_LEVEL_DEBUG,
-                            "Can't expand inexistent variable '%s'", currentitem);
-                    }
-                    else
-                    {
-                        Log(LOG_LEVEL_DEBUG,
-                            "Expecting scalar, can't expand list variable '%s'",
-                            currentitem);
-                    }
-
                     if (varstring == '}')
                     {
-                        snprintf(name, CF_MAXVARSIZE, "${%s}", currentitem);
+                        snprintf(name, CF_MAXVARSIZE, "${%s}", BufferData(current_item));
                     }
                     else
                     {
-                        snprintf(name, CF_MAXVARSIZE, "$(%s)", currentitem);
+                        snprintf(name, CF_MAXVARSIZE, "$(%s)", BufferData(current_item));
                     }
 
-                    strlcat(buffer, name, CF_EXPANDSIZE);
+                    BufferAppend(out, name, strlen(name));
                     returnval = false;
                     break;
 
                 default:
-                    Log(LOG_LEVEL_DEBUG, "Returning Unknown Scalar ('%s' => '%s')", string, buffer);
+                    Log(LOG_LEVEL_DEBUG, "Returning Unknown Scalar ('%s' => '%s')", string, BufferData(out));
+                    BufferDestroy(var);
+                    BufferDestroy(current_item);
+                    BufferDestroy(temp);
                     return false;
 
                 }
             }
             else
             {
-                Log(LOG_LEVEL_DEBUG, "Currently non existent or list variable '%s'", currentitem);
-
                 if (varstring == '}')
                 {
-                    snprintf(name, CF_MAXVARSIZE, "${%s}", currentitem);
+                    snprintf(name, CF_MAXVARSIZE, "${%s}", BufferData(current_item));
                 }
                 else
                 {
-                    snprintf(name, CF_MAXVARSIZE, "$(%s)", currentitem);
+                    snprintf(name, CF_MAXVARSIZE, "$(%s)", BufferData(current_item));
                 }
 
-                strlcat(buffer, name, CF_EXPANDSIZE);
+                BufferAppend(out, name, strlen(name));
                 returnval = false;
             }
         }
 
         sp += increment;
-        currentitem[0] = '\0';
+        BufferZero(current_item);
     }
 
-    if (returnval)
-    {
-        Log(LOG_LEVEL_DEBUG, "Returning complete scalar expansion ('%s' => '%s')", string, buffer);
-
-        /* Can we be sure this is complete? What about recursion */
-    }
-    else
-    {
-        Log(LOG_LEVEL_DEBUG, "Returning partial / best effort scalar expansion ('%s' => '%s')", string, buffer);
-    }
+    BufferDestroy(var);
+    BufferDestroy(current_item);
+    BufferDestroy(temp);
 
     return returnval;
 }
@@ -835,12 +774,10 @@ bool ExpandScalar(const EvalContext *ctx, const char *ns, const char *scope, con
 
 Rval EvaluateFinalRval(EvalContext *ctx, const char *ns, const char *scope, Rval rval, bool forcelist, const Promise *pp)
 {
-    Rlist *rp;
     Rval returnval, newret;
-    char naked[CF_MAXVARSIZE];
-
     if ((rval.type == RVAL_TYPE_SCALAR) && IsNakedVar(rval.item, '@'))        /* Treat lists specially here */
     {
+        char naked[CF_MAXVARSIZE];
         GetNaked(naked, rval.item);
 
         if (!IsExpandable(naked))
@@ -892,7 +829,7 @@ Rval EvaluateFinalRval(EvalContext *ctx, const char *ns, const char *scope, Rval
         break;
 
     case RVAL_TYPE_LIST:
-        for (rp = (Rlist *) returnval.item; rp != NULL; rp = rp->next)
+        for (Rlist *rp = RvalRlistValue(returnval); rp; rp = rp->next)
         {
             if (rp->val.type == RVAL_TYPE_FNCALL)
             {
@@ -1263,7 +1200,7 @@ bool IsExpandable(const char *str)
 
 /*********************************************************************/
 
-int IsNakedVar(const char *str, char vtype)
+bool IsNakedVar(const char *str, char vtype)
 {
     int count = 0;
 

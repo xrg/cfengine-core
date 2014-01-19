@@ -26,10 +26,10 @@
 #define CFENGINE_VARS_H
 
 #include <cf3.defs.h>
-#include <assoc.h>
+#include <buffer.h>
 
-const char *ExtractInnerCf3VarString(const char *str, char *substr);
-const char *ExtractOuterCf3VarString(const char *str, char *substr);
+size_t ExtractScalarPrefix(Buffer *out, const char *str, size_t len);
+bool ExtractScalarReference(Buffer *out, const char *str, size_t len, bool extract_inner);
 int UnresolvedArgs(Rlist *args);
 bool IsQualifiedVariable(const char *var);
 

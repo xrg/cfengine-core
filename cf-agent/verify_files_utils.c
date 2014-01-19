@@ -1463,7 +1463,6 @@ bool CopyRegularFile(EvalContext *ctx, const char *source, const char *dest, str
 
 static bool TransformFile(EvalContext *ctx, char *file, Attributes attr, const Promise *pp, PromiseResult *result)
 {
-    char comm[CF_EXPANDSIZE], line[CF_BUFSIZE];
     FILE *pop = NULL;
     int transRetcode = 0;
 
@@ -1472,72 +1471,85 @@ static bool TransformFile(EvalContext *ctx, char *file, Attributes attr, const P
         return false;
     }
 
-    ExpandScalar(ctx, PromiseGetBundle(pp)->ns, PromiseGetBundle(pp)->name, attr.transformer, comm);
-    Log(LOG_LEVEL_INFO, "Transforming '%s' ", comm);
+    Buffer *command = BufferNew();
+    ExpandScalar(ctx, PromiseGetBundle(pp)->ns, PromiseGetBundle(pp)->name, attr.transformer, command);
+    Log(LOG_LEVEL_INFO, "Transforming '%s' ", BufferData(command));
 
-    if (!IsExecutable(CommandArg0(comm)))
+    if (!IsExecutable(CommandArg0(BufferData(command))))
     {
         cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_FAIL, pp, attr, "Transformer '%s' for file '%s' failed", attr.transformer, file);
         *result = PromiseResultUpdate(*result, PROMISE_RESULT_FAIL);
+        BufferDestroy(command);
         return false;
     }
 
     if (!DONTDO)
     {
-        CfLock thislock = AcquireLock(ctx, comm, VUQNAME, CFSTARTTIME, attr.transaction, pp, false);
+        CfLock thislock = AcquireLock(ctx, BufferData(command), VUQNAME, CFSTARTTIME, attr.transaction, pp, false);
 
         if (thislock.lock == NULL)
         {
+            BufferDestroy(command);
             return false;
         }
 
-        if ((pop = cf_popen(comm, "r", true)) == NULL)
+        if ((pop = cf_popen(BufferData(command), "r", true)) == NULL)
         {
             cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_FAIL, pp, attr, "Transformer '%s' for file '%s' failed", attr.transformer, file);
             *result = PromiseResultUpdate(*result, PROMISE_RESULT_FAIL);
             YieldCurrentLock(thislock);
+            BufferDestroy(command);
             return false;
         }
 
+        size_t line_size = CF_BUFSIZE;
+        char *line = xmalloc(line_size);
+
         for (;;)
         {
-            ssize_t res = CfReadLine(line, CF_BUFSIZE, pop);
-
-            if (res == 0)
-            {
-                break;
-            }
-
+            ssize_t res = CfReadLine(&line, &line_size, pop);
             if (res == -1)
             {
-                cf_pclose(pop);
-                cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, attr, "Transformer '%s' for file '%s' failed", attr.transformer, file);
-                *result = PromiseResultUpdate(*result, PROMISE_RESULT_FAIL);
-                YieldCurrentLock(thislock);
-                return false;
+                if (!feof(pop))
+                {
+                    cf_pclose(pop);
+                    cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, attr, "Transformer '%s' for file '%s' failed", attr.transformer, file);
+                    *result = PromiseResultUpdate(*result, PROMISE_RESULT_FAIL);
+                    YieldCurrentLock(thislock);
+                    free(line);
+                    BufferDestroy(command);
+                    return false;
+                }
+                else
+                {
+                    break;
+                }
             }
 
             Log(LOG_LEVEL_INFO, "%s", line);
         }
 
+        free(line);
+
         transRetcode = cf_pclose(pop);
 
         if (VerifyCommandRetcode(ctx, transRetcode, true, attr, pp, result))
         {
-            Log(LOG_LEVEL_INFO, "Transformer '%s' => '%s' seemed to work ok", file, comm);
+            Log(LOG_LEVEL_INFO, "Transformer '%s' => '%s' seemed to work ok", file, BufferData(command));
         }
         else
         {
-            Log(LOG_LEVEL_ERR, "Transformer '%s' => '%s' returned error", file, comm);
+            Log(LOG_LEVEL_ERR, "Transformer '%s' => '%s' returned error", file, BufferData(command));
         }
 
         YieldCurrentLock(thislock);
     }
     else
     {
-        Log(LOG_LEVEL_ERR, "Need to transform file '%s' with '%s'", file, comm);
+        Log(LOG_LEVEL_ERR, "Need to transform file '%s' with '%s'", file, BufferData(command));
     }
 
+    BufferDestroy(command);
     return true;
 }
 

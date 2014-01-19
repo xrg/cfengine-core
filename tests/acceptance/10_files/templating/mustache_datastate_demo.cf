@@ -1,13 +1,12 @@
 #######################################################
 #
-# Test instatiation of template blocks larger than 4096 characters.
-# Redmine #3852
+# Demo of Mustache templates with no external JSON data
 #
 #######################################################
 
 body common control
 {
-      inputs => { "../../../default.cf.sub" };
+      inputs => { "../../default.cf.sub" };
       bundlesequence  => { default("$(this.promise_filename)") };
       version => "1.0";
 
@@ -35,22 +34,29 @@ body delete init_delete
 
 bundle agent test
 {
-  vars:
-      "template_file" string => "$(this.promise_filename).template";
-
   classes:
-      
+      "empty" expression => "any";
+
+  vars:
+      "template_file" string => "$(init.origtestdir)/demo.datastate.mustache";
+      "header" string => "Colors";
+      "items" slist => { "red", "green", "blue" };
 
   files:
       "$(G.testfile)"
       create => "true",
-      edit_template => "$(template_file)";
+      edit_template => "$(template_file)",
+      template_method => "mustache";
 
   reports:
     DEBUG::
       "Rendering template file $(template_file) to $(G.testfile)";
 }
 
+body copy_from sync_cp(from)
+{
+      source => "$(from)";
+}
 
 
 #######################################################
@@ -58,15 +64,25 @@ bundle agent test
 bundle agent check
 {
   vars:
-      "expected"  int => "110";
-      "actual"    int => countlinesmatching("0123456789", "$(G.testfile)");
+      "expect" string => '<h1>Colors</h1>
+
+ red
+ green
+ blue
+
+  <p>The list is empty.</p>
+';
+
+      "actual" string => readfile("$(G.testfile)", 10000);
 
   classes:
-      "ok" expression => strcmp("$(expected)", "$(actual)");
+      "ok" expression => strcmp($(expect), $(actual));
 
   reports:
     DEBUG::
-      "expected: '$(expected)'";
+      "'$(expect)' != '$(actual)'" ifvarclass => "!ok";
+      "'$(expect)' == '$(actual)'" ifvarclass => "ok";
+      "expect: '$(expect)'";
       "actual: '$(actual)'";
     ok::
       "$(this.promise_filename) Pass";

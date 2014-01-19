@@ -49,6 +49,7 @@ void RvalDestroy(Rval rval);
 JsonElement *RvalToJson(Rval rval);
 void RvalShow(FILE *fp, Rval rval);
 void RvalWrite(Writer *writer, Rval rval);
+void RvalWriteParts(Writer *writer, const void* item, RvalType type);
 unsigned RvalHash(Rval rval, unsigned seed, unsigned max);
 
 Rlist *RlistCopy(const Rlist *list);
@@ -62,6 +63,8 @@ Rlist *RlistParseShown(const char *string);
 Rlist *RlistParseString(const char *string);
 Rlist *RlistKeyIn(Rlist *list, const char *key);
 int RlistLen(const Rlist *start);
+bool RlistMatchesRegexRlist(const Rlist *list, const Rlist *search);
+bool RlistMatchesRegex(const Rlist *list, const char *str);
 bool RlistIsInListOfRegex(const Rlist *list, const char *str);
 
 Rlist *RlistAppendRval(Rlist **start, Rval rval);

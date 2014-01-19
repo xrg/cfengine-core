@@ -30,16 +30,22 @@ bundle agent reverse_lookup
 {
   vars:
       "local4" string => ip2host("127.0.0.1");
+
+      # this will be localhost on some systems, ip6-localhost on others...
       "local6" string => ip2host("::1");
 
-
   reports:
+    _cfe_output_testing::
+      "we got local4" ifvarclass => isvariable("local4");
+
+    !_cfe_output_testing::
       "local4 is $(local4)";
       "local6 is $(local6)";
 }
 #+end_src
 ###############################################################################
 #+begin_src example_output
-#@ 2013-12-20T13:44:30-0500   notice: /default/reverse_lookup: R: local4 is localhost
-#@ 2013-12-20T13:44:30-0500   notice: /default/reverse_lookup: R: local6 is localhost
+#@ ```
+#@ 2014-01-11T10:14:41-0500   notice: /default/reverse_lookup: R: we got local4
+#@ ```
 #+end_src

@@ -31,14 +31,14 @@
 
 PromiseResult CommonEvalPromise(EvalContext *ctx, const Promise *pp, void *param);
 
-void ExpandPromise(EvalContext *ctx, const Promise *pp, PromiseActuator *ActOnPromise, void *param);
+PromiseResult ExpandPromise(EvalContext *ctx, const Promise *pp, PromiseActuator *ActOnPromise, void *param);
 
 Rval ExpandDanglers(EvalContext *ctx, const char *ns, const char *scope, Rval rval, const Promise *pp);
 void MapIteratorsFromRval(EvalContext *ctx, const Bundle *bundle, Rval rval, Rlist **scalars, Rlist **lists, Rlist **containers);
 
 bool IsExpandable(const char *str);
 
-bool ExpandScalar(const EvalContext *ctx, const char *ns, const char *scope, const char *string, char buffer[CF_EXPANDSIZE]);
+bool ExpandScalar(const EvalContext *ctx, const char *ns, const char *scope, const char *string, Buffer *out);
 Rval ExpandBundleReference(EvalContext *ctx, const char *ns, const char *scope, Rval rval);
 Rval ExpandPrivateRval(EvalContext *ctx, const char *ns, const char *scope, const void *rval_item, RvalType rval_type);
 Rlist *ExpandList(EvalContext *ctx, const char *ns, const char *scope, const Rlist *list, int expandnaked);
@@ -53,7 +53,7 @@ void BundleResolve(EvalContext *ctx, const Bundle *bundle);
 void PolicyResolve(EvalContext *ctx, const Policy *policy, GenericAgentConfig *config);
 
 
-int IsNakedVar(const char *str, char vtype);
+bool IsNakedVar(const char *str, char vtype);
 /**
   @brief Takes a variable and removes decorations.
 

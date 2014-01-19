@@ -1415,7 +1415,12 @@ bool EvalContextVariableRemoveSpecial(const EvalContext *ctx, SpecialScope scope
     }
 }
 
-static VariableTable *GetVariableTableForScope(const EvalContext *ctx, const char *ns, const char *scope)
+static VariableTable *GetVariableTableForScope(const EvalContext *ctx,
+#ifdef NDEBUG
+                                               ARG_UNUSED
+#endif /* ns is only used in assertions ... */
+                                               const char *ns,
+                                               const char *scope)
 {
     switch (SpecialScopeFromString(scope))
     {
@@ -1587,8 +1592,8 @@ bool EvalContextVariablePut(EvalContext *ctx,
     }
 
     VariableTable *table = GetVariableTableForScope(ctx, ref->ns, ref->scope);
-    VariableTablePut(table, ref, &rval, type, tags);
-    /* FIXME: we really shouldn't be ignoring the return from that ... */
+    const Promise *pp = EvalContextStackCurrentPromise(ctx);
+    VariableTablePut(table, ref, &rval, type, tags, pp ? pp->org_pp : pp);
     return true;
 }
 
@@ -1661,6 +1666,12 @@ const void  *EvalContextVariableGet(const EvalContext *ctx, const VarRef *ref, D
         *type_out = DATA_TYPE_NONE;
     }
     return NULL;
+}
+
+const Promise *EvalContextVariablePromiseGet(const EvalContext *ctx, const VarRef *ref)
+{
+    Variable *var = VariableResolve(ctx, ref);
+    return var ? var->promise : NULL;
 }
 
 StringSet *EvalContextClassTags(const EvalContext *ctx, const char *ns, const char *name)
@@ -1975,17 +1986,16 @@ static void SummarizeTransaction(EvalContext *ctx, TransactionContext tc, const 
 {
     if (logname && (tc.log_string))
     {
-        char buffer[CF_EXPANDSIZE];
-
+        Buffer *buffer = BufferNew();
         ExpandScalar(ctx, NULL, NULL, tc.log_string, buffer);
 
         if (strcmp(logname, "udp_syslog") == 0)
         {
-            RemoteSysLog(tc.log_priority, buffer);
+            RemoteSysLog(tc.log_priority, BufferData(buffer));
         }
         else if (strcmp(logname, "stdout") == 0)
         {
-            Log(LOG_LEVEL_INFO, "L: %s", buffer);
+            Log(LOG_LEVEL_INFO, "L: %s", BufferData(buffer));
         }
         else
         {
@@ -2011,12 +2021,13 @@ static void SummarizeTransaction(EvalContext *ctx, TransactionContext tc, const 
                 return;
             }
 
-            Log(LOG_LEVEL_VERBOSE, "Logging string '%s' to '%s'", buffer, logname);
-            fprintf(fout, "%s\n", buffer);
+            Log(LOG_LEVEL_VERBOSE, "Logging string '%s' to '%s'", BufferData(buffer), logname);
+            fprintf(fout, "%s\n", BufferData(buffer));
 
             fclose(fout);
         }
 
+        BufferDestroy(buffer);
         tc.log_string = NULL;     /* To avoid repetition */
     }
 }
@@ -2078,7 +2089,7 @@ void ClassAuditLog(EvalContext *ctx, const Promise *pp, Attributes attr, Promise
     if (IsPromiseValuableForStatus(pp))
     {
         TrackTotalCompliance(status, pp);
-        UpdatePromiseCounters(status, attr.transaction);
+        UpdatePromiseCounters(status);
     }
 
     SetPromiseOutcomeClasses(status, ctx, pp, attr.classes);
