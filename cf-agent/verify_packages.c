@@ -95,8 +95,8 @@ static int ExecPackageCommand(EvalContext *ctx, char *command, int verify, int s
 static int PrependPatchItem(EvalContext *ctx, PackageItem ** list, char *item, PackageItem * chklist, const char *default_arch, Attributes a, const Promise *pp);
 static int PrependMultiLinePackageItem(EvalContext *ctx, PackageItem ** list, char *item, int reset, const char *default_arch, Attributes a, const Promise *pp);
 static int PrependListPackageItem(EvalContext *ctx, PackageItem ** list, char *item, const char *default_arch, Attributes a, const Promise *pp);
-static bool FindAvailableUpdates(Attributes a,char *version, Promise *pp);
-static bool PackageListAvailableUpdatesCommand(EvalContext *ctx, PackageItem **updates_list, const char *default_arch, Attributes a, Promise *pp);
+static bool FindAvailableUpdates(Attributes a,char *version, const Promise *pp);
+static bool PackageListAvailableUpdatesCommand(EvalContext *ctx, PackageItem **updates_list, const char *default_arch, Attributes a, const Promise *pp);
 
 static PackageManager *NewPackageManager(PackageManager **lists, char *mgr, PackageAction pa, PackageActionPolicy x);
 static void DeletePackageManagers(PackageManager *newlist);
@@ -515,7 +515,7 @@ static bool PackageListInstalledFromCommand(EvalContext *ctx, PackageItem **inst
     return cf_pclose(fin) == 0;
 }
 
-static bool PackageListAvailableUpdatesCommand(EvalContext *ctx, PackageItem **updates_list, const char *default_arch, Attributes a, Promise *pp)
+static bool PackageListAvailableUpdatesCommand(EvalContext *ctx, PackageItem **updates_list, const char *default_arch, Attributes a, const Promise *pp)
 {
     if (a.packages.package_new_versions_command == NULL)
     {
@@ -543,12 +543,13 @@ static bool PackageListAvailableUpdatesCommand(EvalContext *ctx, PackageItem **u
         return false;
     }
 
-    char buf[CF_BUFSIZE];
+    size_t buf_size = CF_BUFSIZE;
+    char *buf = xmalloc(buf_size);
 
     while (!feof(fin))
     {
         memset(buf, 0, CF_BUFSIZE);
-        ssize_t res = CfReadLine(buf, CF_BUFSIZE, fin);
+        ssize_t res = CfReadLine(&buf, &buf_size, fin);
 
         if (res == 0)
         {
@@ -560,6 +561,7 @@ static bool PackageListAvailableUpdatesCommand(EvalContext *ctx, PackageItem **u
             Log(LOG_LEVEL_ERR, "Unable to read list of available updates from command '%s'. (fread: %s)",
                     a.packages.package_new_versions_command, GetErrorStr());
             cf_pclose(fin);
+            free(buf);
             return false;
         }
 
@@ -575,6 +577,7 @@ static bool PackageListAvailableUpdatesCommand(EvalContext *ctx, PackageItem **u
         }
     }
 
+    free(buf);
     return cf_pclose(fin) == 0;
 }
 
@@ -1910,7 +1913,7 @@ static PromiseResult VerifyPromisedPackage(EvalContext *ctx, Attributes a, const
  *         "name-version", the updates will never match.
  */
 
-static bool FindAvailableUpdates(Attributes a,char *version, Promise *pp)
+static bool FindAvailableUpdates(Attributes a,char *version, const Promise *pp)
 {
 
     PackageItem *it;
