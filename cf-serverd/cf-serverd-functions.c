@@ -151,7 +151,7 @@ GenericAgentConfig *CheckOpts(int argc, char **argv)
                 exit(EXIT_FAILURE);
             }
 
-            GenericAgentConfigSetInputFile(config, GetWorkDir(), optarg);
+            GenericAgentConfigSetInputFile(config, GetInputDir(), optarg);
             MINUSF = true;
             break;
 
@@ -527,8 +527,8 @@ int OpenReceiverChannel(void)
             if (setsockopt(sd, IPPROTO_IPV6, IPV6_V6ONLY,
                            &no, sizeof(no)) == -1)
             {
-                Log(LOG_LEVEL_WARNING,
-                    "Listening socket is IPv6-only. setsockopt: %s",
+                Log(LOG_LEVEL_VERBOSE,
+                    "Couldn't set the IPPROTO_IPV6:IPV6_V6ONLY socket option to 0 (setsockopt: %s)",
                     GetErrorStr());
             }
         }
