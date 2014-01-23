@@ -23,20 +23,43 @@
 #+begin_src cfengine3
 body common control
 {
-      bundlesequence => { "example" };
+      bundlesequence => { holder, test };
 }
 
-bundle agent example
+bundle common holder
+{
+  classes:
+      "holderclass" expression => "any"; # will be global
+
+  vars:
+      "s" string => "Hello!";
+      "d" data => parsejson('[4,5,6]');
+      "list" slist => { "element1", "element2" };
+}
+
+bundle agent test
 {
   vars:
-      "length" int =>  strlen("abc"); # will contain "3"
+      "state" data => datastate();
+
+      # all the variables in bundle "holder" defined as of the execution of datastate() will be here
+      "holderstate" string => format("%S", "state[vars][holder]");
+      # all the classes defined as of the execution of datastate() will be here
+      "allclasses" slist => getindices("state[classes]");
+
+  classes:
+      "have_holderclass" expression => some("holderclass", allclasses);
+
   reports:
-      "length of string abc = $(length)";
+      "holder vars = $(holderstate)";
+    have_holderclass::
+      "I have the holder class";
 }
 #+end_src
 ###############################################################################
 #+begin_src example_output
 #@ ```
-#@ 2013-12-20T13:44:35-0500   notice: /default/example: R: length of string abc = 3
+#@ 2014-01-22T12:02:23-0500   notice: /default/test: R: holder vars = {"list":["element1","element2"],"s":"Hello!","d":[4,5,6]}
+#@ 2014-01-22T12:02:23-0500   notice: /default/test: R: I have the holder class
 #@ ```
 #+end_src

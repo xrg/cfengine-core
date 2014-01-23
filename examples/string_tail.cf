@@ -29,17 +29,15 @@ body common control
 bundle agent example
 {
   vars:
-
-      "reversed"
-
-      string =>  reversestring("abc"); # will contain "cba"
+      "end" string => string_tail("abc", "1"); # will contain "c"
   reports:
-      "reversed abs = $(reversed)";
+      "end of abc = $(end)";
+
 }
 #+end_src
 ###############################################################################
 #+begin_src example_output
 #@ ```
-#@ 2013-12-20T13:44:34-0500   notice: /default/example: R: reversed abs = cba
+#@ 2013-12-20T13:44:35-0500   notice: /default/example: R: end of abc = c
 #@ ```
 #+end_src

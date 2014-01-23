@@ -225,7 +225,7 @@ static Rlist *GetHostsFromLastseenDB(Item *addresses, time_t horizon, bool retur
 
 /*********************************************************************/
 
-static FnCallResult FnCallAnd(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallAnd(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
 {
     Rlist *arg;
     char id[CF_BUFSIZE];
@@ -244,7 +244,7 @@ static FnCallResult FnCallAnd(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 
     for (arg = finalargs; arg; arg = arg->next)
     {
-        if (!IsDefinedClass(ctx, RlistScalarValue(arg), PromiseGetNamespace(fp->caller)))
+        if (!IsDefinedClass(ctx, RlistScalarValue(arg)))
         {
             return FnReturnContext(false);
         }
@@ -711,7 +711,7 @@ static FnCallResult FnCallIfElse(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
     {
         /* Similar to classmatch(), we evaluate the first of the two
          * arguments as a class. */
-        if (IsDefinedClass(ctx, RlistScalarValue(arg), PromiseGetNamespace(fp->caller)))
+        if (IsDefinedClass(ctx, RlistScalarValue(arg)))
         {
             /* If the evaluation returned true in the current context,
              * return the second of the two arguments. */
@@ -1200,7 +1200,7 @@ static FnCallResult FnCallTextXform(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rli
     strncpy(buf, string, sizeof(buf) - 1);
     len = strlen(buf);
 
-    if (!strcmp(fp->name, "downcase"))
+    if (!strcmp(fp->name, "string_downcase"))
     {
         int pos = 0;
         for (pos = 0; pos < len; pos++)
@@ -1208,7 +1208,7 @@ static FnCallResult FnCallTextXform(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rli
             buf[pos] = tolower(buf[pos]);
         }
     }
-    else if (!strcmp(fp->name, "upcase"))
+    else if (!strcmp(fp->name, "string_upcase"))
     {
         int pos = 0;
         for (pos = 0; pos < len; pos++)
@@ -1216,7 +1216,7 @@ static FnCallResult FnCallTextXform(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rli
             buf[pos] = toupper(buf[pos]);
         }
     }
-    else if (!strcmp(fp->name, "reversestring"))
+    else if (!strcmp(fp->name, "string_reverse"))
     {
         int c, i, j;
         for (i = 0, j = len - 1; i < j; i++, j--)
@@ -1226,11 +1226,11 @@ static FnCallResult FnCallTextXform(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rli
             buf[j] = c;
         }
     }
-    else if (!strcmp(fp->name, "strlen"))
+    else if (!strcmp(fp->name, "string_length"))
     {
         sprintf(buf, "%d", len);
     }
-    else if (!strcmp(fp->name, "head"))
+    else if (!strcmp(fp->name, "string_head"))
     {
         long max = IntFromString(RlistScalarValue(finalargs->next));
         if (max < sizeof(buf))
@@ -1238,7 +1238,7 @@ static FnCallResult FnCallTextXform(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rli
             buf[max] = '\0';
         }
     }
-    else if (!strcmp(fp->name, "tail"))
+    else if (!strcmp(fp->name, "string_tail"))
     {
         long max = IntFromString(RlistScalarValue(finalargs->next));
         if (max < len)
@@ -1305,7 +1305,7 @@ static FnCallResult FnCallDirname(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall
 
 static FnCallResult FnCallClassify(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 {
-    bool is_defined = IsDefinedClass(ctx, CanonifyName(RlistScalarValue(finalargs)), PromiseGetNamespace(fp->caller));
+    bool is_defined = IsDefinedClass(ctx, CanonifyName(RlistScalarValue(finalargs)));
 
     return FnReturnContext(is_defined);
 }
@@ -1457,7 +1457,7 @@ static FnCallResult FnCallUseModule(EvalContext *ctx, FnCall *fp, Rlist *finalar
 
 static FnCallResult FnCallSplayClass(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 {
-    char class[CF_MAXVARSIZE];
+    char class_name[CF_MAXVARSIZE];
 
     Interval policy = IntervalFromString(RlistScalarValue(finalargs->next));
 
@@ -1465,7 +1465,7 @@ static FnCallResult FnCallSplayClass(EvalContext *ctx, FnCall *fp, Rlist *finala
     {
         /* 12 5-minute slots in hour */
         int slot = StringHash(RlistScalarValue(finalargs), 0, CF_HASHTABLESIZE) * 12 / CF_HASHTABLESIZE;
-        snprintf(class, CF_MAXVARSIZE, "Min%02d_%02d", slot * 5, ((slot + 1) * 5) % 60);
+        snprintf(class_name, CF_MAXVARSIZE, "Min%02d_%02d", slot * 5, ((slot + 1) * 5) % 60);
     }
     else
     {
@@ -1474,10 +1474,10 @@ static FnCallResult FnCallSplayClass(EvalContext *ctx, FnCall *fp, Rlist *finala
         int hour = dayslot / 12;
         int slot = dayslot % 12;
 
-        snprintf(class, CF_MAXVARSIZE, "Min%02d_%02d.Hr%02d", slot * 5, ((slot + 1) * 5) % 60, hour);
+        snprintf(class_name, CF_MAXVARSIZE, "Min%02d_%02d.Hr%02d", slot * 5, ((slot + 1) * 5) % 60, hour);
     }
 
-    return FnReturnContext(IsDefinedClass(ctx, class, PromiseGetNamespace(fp->caller)));
+    return FnReturnContext(IsDefinedClass(ctx, class_name));
 }
 
 /*********************************************************************/
@@ -2231,7 +2231,7 @@ static FnCallResult FnCallMergeData(EvalContext *ctx, FnCall *fp, Rlist *args)
 {
     if (RlistLen(args) == 0)
     {
-        Log(LOG_LEVEL_ERR, "Function mergedata needs at least one argument, a reference to a container variable");
+        Log(LOG_LEVEL_ERR, "%s needs at least one argument, a reference to a container variable", fp->name);
         return FnFailure();
     }
 
@@ -2239,27 +2239,49 @@ static FnCallResult FnCallMergeData(EvalContext *ctx, FnCall *fp, Rlist *args)
     {
         if (args->val.type != RVAL_TYPE_SCALAR)
         {
-            Log(LOG_LEVEL_ERR, "Function mergedata, argument '%s' is not a variable reference", RlistScalarValue(arg));
+            Log(LOG_LEVEL_ERR, "%s: argument '%s' is not a variable reference", fp->name, RlistScalarValue(arg));
             return FnFailure();
         }
     }
 
     Seq *containers = SeqNew(10, NULL);
+    Seq *toremove = SeqNew(10, NULL);
+    // segfaults: Seq *toremove = SeqNew(10, JsonDestroy);
     for (const Rlist *arg = args; arg; arg = arg->next)
     {
         VarRef *ref = VarRefParseFromBundle(RlistScalarValue(arg), PromiseGetBundle(fp->caller));
 
         DataType value_type = DATA_TYPE_NONE;
-        const JsonElement *value = EvalContextVariableGet(ctx, ref, &value_type);
-        if (value_type != DATA_TYPE_CONTAINER)
+        const void *value = EvalContextVariableGet(ctx, ref, &value_type);
+
+        switch (DataTypeToRvalType(value_type))
         {
-            Log(LOG_LEVEL_ERR, "Function mergedata, argument '%s' does not resolve to a container", RlistScalarValue(arg));
+        case RVAL_TYPE_LIST:
+            {
+                JsonElement *convert = JsonArrayCreate(10);
+                for (const Rlist *rp = value; rp != NULL; rp = rp->next)
+                {
+                    if (rp->val.type == RVAL_TYPE_SCALAR &&
+                        strcmp(RlistScalarValue(value), CF_NULL_VALUE) != 0)
+                    {
+                        JsonArrayAppendString(convert, RlistScalarValue(rp));
+                    }
+                }
+                SeqAppend(containers, convert);
+                SeqAppend(toremove, convert);
+            }
+        break;
+
+        case RVAL_TYPE_CONTAINER:
+            SeqAppend(containers, (void *)value);
+            break;
+        default:
+            Log(LOG_LEVEL_ERR, "%s: argument '%s' does not resolve to a container or a list", fp->name, RlistScalarValue(arg));
             SeqDestroy(containers);
             VarRefDestroy(ref);
+            SeqDestroy(toremove);
             return FnFailure();
         }
-
-        SeqAppend(containers, (void *)value);
 
         VarRefDestroy(ref);
     }
@@ -2268,6 +2290,7 @@ static FnCallResult FnCallMergeData(EvalContext *ctx, FnCall *fp, Rlist *args)
     {
         JsonElement *first = SeqAt(containers, 0);
         SeqDestroy(containers);
+        SeqDestroy(toremove);
         return  (FnCallResult) { FNCALL_SUCCESS, (Rval) { JsonCopy(first), RVAL_TYPE_CONTAINER } };
     }
     else
@@ -2285,10 +2308,79 @@ static FnCallResult FnCallMergeData(EvalContext *ctx, FnCall *fp, Rlist *args)
         }
 
         SeqDestroy(containers);
+        SeqDestroy(toremove);
         return (FnCallResult) { FNCALL_SUCCESS, (Rval) { result, RVAL_TYPE_CONTAINER } };
     }
 
     assert(false);
+}
+
+JsonElement *DefaultTemplateData(const EvalContext *ctx)
+{
+    JsonElement *hash = JsonObjectCreate(30);
+    JsonElement *classes = JsonObjectCreate(50);
+    JsonElement *bundles = JsonObjectCreate(50);
+    JsonObjectAppendObject(hash, "classes", classes);
+    JsonObjectAppendObject(hash, "vars", bundles);
+
+    {
+        ClassTableIterator *it = EvalContextClassTableIteratorNewGlobal(ctx, NULL, true, true);
+        Class *cls = NULL;
+        while ((cls = ClassTableIteratorNext(it)))
+        {
+            char *key = ClassRefToString(cls->ns, cls->name);
+            JsonObjectAppendBool(classes, key, true);
+            free(key);
+        }
+        ClassTableIteratorDestroy(it);
+    }
+
+    {
+        ClassTableIterator *it = EvalContextClassTableIteratorNewLocal(ctx);
+        Class *cls = NULL;
+        while ((cls = ClassTableIteratorNext(it)))
+        {
+            char *key = ClassRefToString(cls->ns, cls->name);
+            JsonObjectAppendBool(classes, key, true);
+            free(key);
+        }
+        ClassTableIteratorDestroy(it);
+    }
+
+    {
+        VariableTableIterator *it = EvalContextVariableTableIteratorNew(ctx, NULL, NULL, NULL);
+        Variable *var = NULL;
+        while ((var = VariableTableIteratorNext(it)))
+        {
+            // TODO: need to get a CallRef, this is bad
+            char *scope_key = ClassRefToString(var->ref->ns, var->ref->scope);
+            JsonElement *scope_obj = JsonObjectGetAsObject(bundles, scope_key);
+            if (!scope_obj)
+            {
+                scope_obj = JsonObjectCreate(50);
+                JsonObjectAppendObject(bundles, scope_key, scope_obj);
+            }
+            free(scope_key);
+
+            char *lval_key = VarRefToString(var->ref, false);
+            JsonObjectAppendElement(scope_obj, lval_key, RvalToJson(var->rval));
+            free(lval_key);
+        }
+        VariableTableIteratorDestroy(it);
+    }
+
+    Writer *w = StringWriter();
+    JsonWrite(w, hash, 0);
+    Log(LOG_LEVEL_DEBUG, "Generated DefaultTemplateData '%s'", StringWriterData(w));
+    WriterClose(w);
+
+    return hash;
+}
+
+static FnCallResult FnCallDatastate(EvalContext *ctx, FnCall *fp, Rlist *args)
+{
+    JsonElement *state = DefaultTemplateData(ctx);
+    return  (FnCallResult) { FNCALL_SUCCESS, (Rval) { state, RVAL_TYPE_CONTAINER } };
 }
 
 
@@ -2424,7 +2516,7 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, FnCall *fp, Rlist *fin
             EvalContextVariablePut(ctx, ref, RvalScalarValue(rp->val), DATA_TYPE_STRING, "source=function,function=selectservers");
             VarRefDestroy(ref);
 
-            if (IsDefinedClass(ctx, CanonifyName(RlistScalarValue(rp)), PromiseGetNamespace(fp->caller)))
+            if (IsDefinedClass(ctx, CanonifyName(RlistScalarValue(rp))))
             {
                 Log(LOG_LEVEL_VERBOSE, "This host is in the list and has promised to join the class '%s' - joined",
                       array_lval);
@@ -4491,7 +4583,7 @@ static FnCallResult FnCallOr(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 
     for (arg = finalargs; arg; arg = arg->next)
     {
-        if (IsDefinedClass(ctx, RlistScalarValue(arg), PromiseGetNamespace(fp->caller)))
+        if (IsDefinedClass(ctx, RlistScalarValue(arg)))
         {
             return FnReturnContext(true);
         }
@@ -4578,7 +4670,7 @@ static FnCallResult FnCallAccumulatedDate(ARG_UNUSED EvalContext *ctx, ARG_UNUSE
 
 static FnCallResult FnCallNot(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 {
-    return FnReturnContext(!IsDefinedClass(ctx, RlistScalarValue(finalargs), PromiseGetNamespace(fp->caller)));
+    return FnReturnContext(!IsDefinedClass(ctx, RlistScalarValue(finalargs)));
 }
 
 /*********************************************************************/
@@ -6593,6 +6685,11 @@ static const FnCallArg XFORM_SUBSTR_ARGS[] =
     {NULL, DATA_TYPE_NONE, NULL}
 };
 
+FnCallArg DATASTATE_ARGS[] =
+{
+    {NULL, DATA_TYPE_NONE, NULL}
+};
+
 /*********************************************************/
 /* FnCalls are rvalues in certain promise constraints    */
 /*********************************************************/
@@ -6853,17 +6950,17 @@ const FnCallType CF_FNCALL_TYPES[] =
                   FNCALL_OPTION_VARARG, FNCALL_CATEGORY_UTILS, SYNTAX_STATUS_NORMAL),
 
     // Text xform functions
-    FnCallTypeNew("downcase", DATA_TYPE_STRING, XFORM_ARGS, &FnCallTextXform, "Convert a string to lowercase",
+    FnCallTypeNew("string_downcase", DATA_TYPE_STRING, XFORM_ARGS, &FnCallTextXform, "Convert a string to lowercase",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
-    FnCallTypeNew("head", DATA_TYPE_STRING, XFORM_SUBSTR_ARGS, &FnCallTextXform, "Extract characters from the head of the string",
+    FnCallTypeNew("string_head", DATA_TYPE_STRING, XFORM_SUBSTR_ARGS, &FnCallTextXform, "Extract characters from the head of the string",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
-    FnCallTypeNew("reversestring", DATA_TYPE_STRING, XFORM_ARGS, &FnCallTextXform, "Reverse a string",
+    FnCallTypeNew("string_reverse", DATA_TYPE_STRING, XFORM_ARGS, &FnCallTextXform, "Reverse a string",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
-    FnCallTypeNew("strlen", DATA_TYPE_INT, XFORM_ARGS, &FnCallTextXform, "Return the length of a string",
+    FnCallTypeNew("string_length", DATA_TYPE_INT, XFORM_ARGS, &FnCallTextXform, "Return the length of a string",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
-    FnCallTypeNew("tail", DATA_TYPE_STRING, XFORM_SUBSTR_ARGS, &FnCallTextXform, "Extract characters from the tail of the string",
+    FnCallTypeNew("string_tail", DATA_TYPE_STRING, XFORM_SUBSTR_ARGS, &FnCallTextXform, "Extract characters from the tail of the string",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
-    FnCallTypeNew("upcase", DATA_TYPE_STRING, XFORM_ARGS, &FnCallTextXform, "Convert a string to UPPERCASE",
+    FnCallTypeNew("string_upcase", DATA_TYPE_STRING, XFORM_ARGS, &FnCallTextXform, "Convert a string to UPPERCASE",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
 
     // List folding functions
@@ -6878,5 +6975,6 @@ const FnCallType CF_FNCALL_TYPES[] =
     FnCallTypeNew("variance", DATA_TYPE_REAL, STAT_FOLD_ARGS, &FnCallFold, "Return the variance of a list",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     
+    FnCallTypeNew("datastate", DATA_TYPE_CONTAINER, DATASTATE_ARGS, &FnCallDatastate, "Construct a container of the variable and class state", false, FNCALL_CATEGORY_UTILS, SYNTAX_STATUS_NORMAL),
     FnCallTypeNewNull()
 };

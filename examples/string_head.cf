@@ -28,25 +28,16 @@ body common control
 
 bundle agent example
 {
-  classes:
-
-      "my_result" expression => returnszero("/usr/local/bin/mycommand","noshell");
-
+  vars:
+      "start" string => string_head("abc", "1"); # will contain "a"
   reports:
-
-    !my_result::
-
-      "Command failed";
+      "start of abc = $(start)";
 
 }
 #+end_src
 ###############################################################################
 #+begin_src example_output
 #@ ```
-#@ 2014-01-21T17:40:18-0500    error: Proposed executable file '/usr/local/bin/mycommand' doesn't exist
-#@ 2014-01-21T17:40:18-0500    error: returnszero '/usr/local/bin/mycommand' is assumed to be executable but isn't
-#@ 2014-01-21T17:40:18-0500    error: Proposed executable file '/usr/local/bin/mycommand' doesn't exist
-#@ 2014-01-21T17:40:18-0500    error: returnszero '/usr/local/bin/mycommand' is assumed to be executable but isn't
-#@ 2014-01-21T17:40:18-0500   notice: /default/example: R: Command failed
+#@ 2013-12-20T13:44:30-0500   notice: /default/example: R: start of abc = a
 #@ ```
 #+end_src

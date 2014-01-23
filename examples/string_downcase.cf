@@ -29,16 +29,14 @@ body common control
 bundle agent example
 {
   vars:
-
-      "end" string =>  tail("abc", "1"); # will contain "c"
+      "downcase" string => string_downcase("ABC"); # will contain "abc"
   reports:
-      "end of abc = $(end)";
-
+      "downcased ABC = $(downcase)";
 }
 #+end_src
 ###############################################################################
 #+begin_src example_output
 #@ ```
-#@ 2013-12-20T13:44:35-0500   notice: /default/example: R: end of abc = c
+#@ 2013-12-20T13:44:29-0500   notice: /default/example: R: downcased ABC = abc
 #@ ```
 #+end_src

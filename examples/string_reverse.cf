@@ -29,15 +29,15 @@ body common control
 bundle agent example
 {
   vars:
-
-      "upcase" string =>  upcase("abc"); # will contain "ABC"
+      "reversed"
+      string =>  string_reverse("abc"); # will contain "cba"
   reports:
-      "upcased abc: $(upcase)";
+      "reversed abs = $(reversed)";
 }
 #+end_src
 ###############################################################################
 #+begin_src example_output
 #@ ```
-#@ 2013-12-20T13:44:35-0500   notice: /default/example: R: upcased abc: ABC
+#@ 2013-12-20T13:44:34-0500   notice: /default/example: R: reversed abs = cba
 #@ ```
 #+end_src

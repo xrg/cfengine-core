@@ -261,7 +261,7 @@ static void KeepControlPromises(EvalContext *ctx, const Policy *policy, GenericA
         {
             Constraint *cp = SeqAt(constraints, i);
 
-            if (!IsDefinedClass(ctx, cp->classes, NULL))
+            if (!IsDefinedClass(ctx, cp->classes))
             {
                 continue;
             }
@@ -590,7 +590,7 @@ static PromiseResult KeepServerPromise(EvalContext *ctx, const Promise *pp, ARG_
 {
     assert(!param);
 
-    if (!IsDefinedClass(ctx, pp->classes, PromiseGetNamespace(pp)))
+    if (!IsDefinedClass(ctx, pp->classes))
     {
         Log(LOG_LEVEL_VERBOSE, "Skipping whole promise, as context is %s", pp->classes);
         return PROMISE_RESULT_NOOP;
@@ -689,7 +689,7 @@ void KeepFileAccessPromise(EvalContext *ctx, const Promise *pp)
     {
         Constraint *cp = SeqAt(pp->conlist, i);
 
-        if (!IsDefinedClass(ctx, cp->classes, PromiseGetNamespace(pp)))
+        if (!IsDefinedClass(ctx, cp->classes))
         {
             continue;
         }
@@ -803,7 +803,7 @@ void KeepLiteralAccessPromise(EvalContext *ctx, const Promise *pp, char *type)
     {
         Constraint *cp = SeqAt(pp->conlist, i);
 
-        if (!IsDefinedClass(ctx, cp->classes, PromiseGetNamespace(pp)))
+        if (!IsDefinedClass(ctx, cp->classes))
         {
             continue;
         }
@@ -881,7 +881,7 @@ void KeepQueryAccessPromise(EvalContext *ctx, const Promise *pp, char *type)
     {
         Constraint *cp = SeqAt(pp->conlist, i);
 
-        if (!IsDefinedClass(ctx, cp->classes, PromiseGetNamespace(pp)))
+        if (!IsDefinedClass(ctx, cp->classes))
         {
             continue;
         }
@@ -946,7 +946,7 @@ static void KeepServerRolePromise(EvalContext *ctx, const Promise *pp)
     {
         Constraint *cp = SeqAt(pp->conlist, i);
 
-        if (!IsDefinedClass(ctx, cp->classes, PromiseGetNamespace(pp)))
+        if (!IsDefinedClass(ctx, cp->classes))
         {
             continue;
         }
