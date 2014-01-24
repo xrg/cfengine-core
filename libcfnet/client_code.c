@@ -102,6 +102,10 @@ static Seq *GetGlobalServerList(void)
 {
     /* Only ip address strings are stored in this list, so don't put any
      * hostnames. TODO convert to list of (sockaddr_storage *) to enforce this. */
+    /* TODO replace Seq or lock properly. Someone changed this SERVERLIST from
+     * RList to Seq, but didn't think of the implications. As a result this
+     * list now is in great danger of corruption when written from multiple
+     * threads. Luckily multi-threaded access is not the common case. */
     static Seq *server_list = NULL; /* GLOBAL_X */
     if (!server_list)
     {
@@ -192,7 +196,6 @@ AgentConnection *NewServerConnection(FileCopy fc, bool background, int *err, int
             ThreadUnlock(&cft_serverlist);
 
             /* TODO not return NULL if >= CFA_MAXTREADS ? */
-            /* TODO RlistLen is O(n) operation. */
             if (SeqLength(srvlist_tmp) < CFA_MAXTHREADS)
             {
                 /* If background connection was requested, then don't cache it
@@ -326,7 +329,7 @@ static AgentConnection *ServerConnection(const char *server, FileCopy fc, int *e
     pthread_sigmask(SIG_BLOCK, &signal_mask, NULL);
 #endif
 
-    conn = NewAgentConn(server, false);
+    conn = NewAgentConn(server);
 
 /* username of the client - say root from Windows */
 
@@ -346,7 +349,7 @@ static AgentConnection *ServerConnection(const char *server, FileCopy fc, int *e
             if (!ServerConnect(conn, server, fc))
             {
                 Log(LOG_LEVEL_INFO, "No server is responding on this port");
-                DisconnectServer(conn, false);
+                DisconnectServer(conn);
                 *err = -1;
                 return NULL;
             }
@@ -378,16 +381,16 @@ static AgentConnection *ServerConnection(const char *server, FileCopy fc, int *e
 
             if (ret == -1)                                      /* Error */
             {
-                DisconnectServer(conn, false);
+                DisconnectServer(conn);
                 *err = -1;
                 return NULL;
             }
             else if (ret == 0)                             /* Auth/ID error */
             {
-                    DisconnectServer(conn, false);
-                    errno = EPERM;
-                    *err = -2;
-                    return NULL;
+                DisconnectServer(conn);
+                errno = EPERM;
+                *err = -2;
+                return NULL;
             }
             assert(ret == 1);
             ConnectionInfoSetProtocolVersion(conn->conn_info, CF_PROTOCOL_TLS);
@@ -405,7 +408,7 @@ static AgentConnection *ServerConnection(const char *server, FileCopy fc, int *e
             {
                 Log(LOG_LEVEL_ERR, "Id-authentication for '%s' failed", VFQNAME);
                 errno = EPERM;
-                DisconnectServer(conn, false);
+                DisconnectServer(conn);
                 *err = -2; // auth err
                 return NULL;
             }
@@ -414,7 +417,7 @@ static AgentConnection *ServerConnection(const char *server, FileCopy fc, int *e
             {
                 Log(LOG_LEVEL_ERR, "Authentication dialogue with '%s' failed", server);
                 errno = EPERM;
-                DisconnectServer(conn, false);
+                DisconnectServer(conn);
                 *err = -2; // auth err
                 return NULL;
             }
@@ -433,25 +436,22 @@ static AgentConnection *ServerConnection(const char *server, FileCopy fc, int *e
 
 /*********************************************************************/
 
-void DisconnectServer(AgentConnection *conn, int partial)
+void DisconnectServer(AgentConnection *conn)
 {
-    if (!partial)
+    /* Socket needs to be closed even after SSL_shutdown. */
+    if (ConnectionInfoSocket(conn->conn_info) >= 0)                  /* Not INVALID or OFFLINE */
     {
-        /* Socket needs to be closed even after SSL_shutdown. */
-        if (ConnectionInfoSocket(conn->conn_info) >= 0)                  /* Not INVALID or OFFLINE */
-        {
-            if (ConnectionInfoProtocolVersion(conn->conn_info) == CF_PROTOCOL_TLS &&
+        if (ConnectionInfoProtocolVersion(conn->conn_info) == CF_PROTOCOL_TLS &&
                 ConnectionInfoSSL(conn->conn_info) != NULL)
-            {
-                SSL_shutdown(ConnectionInfoSSL(conn->conn_info));
-            }
-
-            cf_closesocket(ConnectionInfoSocket(conn->conn_info));
-            ConnectionInfoSetSocket(conn->conn_info, SOCKET_INVALID);
-            Log(LOG_LEVEL_INFO, "Connection to %s is closed", conn->remoteip);
+        {
+            SSL_shutdown(ConnectionInfoSSL(conn->conn_info));
         }
+
+        cf_closesocket(ConnectionInfoSocket(conn->conn_info));
+        ConnectionInfoSetSocket(conn->conn_info, SOCKET_INVALID);
+        Log(LOG_LEVEL_INFO, "Connection to %s is closed", conn->remoteip);
     }
-    DeleteAgentConn(conn, partial);
+    DeleteAgentConn(conn);
 }
 
 /*********************************************************************/
@@ -521,18 +521,22 @@ int cf_remote_stat(char *file, struct stat *buf, char *stattype, bool encrypt, A
 
     if (ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1) == -1)
     {
+        /* TODO mark connection as closed, or better remove from cache */
         return -1;
     }
 
     if (strstr(recvbuffer, "unsynchronized"))
     {
-        Log(LOG_LEVEL_ERR, "Clocks differ too much to do copy by date (security) '%s'", recvbuffer + 4);
+        Log(LOG_LEVEL_ERR,
+            "Clocks differ too much to do copy by date (security), server reported: %s",
+            recvbuffer + strlen("BAD: "));
         return -1;
     }
 
     if (BadProtoReply(recvbuffer))
     {
-        Log(LOG_LEVEL_VERBOSE, "Server returned error '%s'", recvbuffer + 4);
+        Log(LOG_LEVEL_VERBOSE, "Server returned error '%s'",
+            recvbuffer + strlen("BAD: "));
         errno = EPERM;
         return -1;
     }
@@ -585,6 +589,7 @@ int cf_remote_stat(char *file, struct stat *buf, char *stattype, bool encrypt, A
 
         if (ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1) == -1)
         {
+            /* TODO mark connection as closed, or better remove from cache */
             return -1;
         }
 
@@ -712,6 +717,7 @@ Item *RemoteDirList(const char *dirname, bool encrypt, AgentConnection *conn)
     {
         if ((n = ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1)) == -1)
         {
+            /* TODO mark connection as closed, or better remove from cache */
             return NULL;
         }
 
@@ -734,7 +740,7 @@ Item *RemoteDirList(const char *dirname, bool encrypt, AgentConnection *conn)
 
         if (BadProtoReply(recvbuffer))
         {
-            Log(LOG_LEVEL_INFO, "%s", recvbuffer + 4);
+            Log(LOG_LEVEL_INFO, "%s", recvbuffer + strlen("BAD: "));
             return NULL;
         }
 
@@ -846,6 +852,7 @@ int CompareHashNet(const char *file1, const char *file2, bool encrypt, AgentConn
 
     if (ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1) == -1)
     {
+        /* TODO mark connection as closed, or better remove from cache */
         Log(LOG_LEVEL_ERR, "Failed receive. (ReceiveTransaction: %s)", GetErrorStr());
         Log(LOG_LEVEL_VERBOSE,  "No answer from host, assuming checksum ok to avoid remote copy for now...");
         return false;
@@ -1368,7 +1375,6 @@ static AgentConnection *GetIdleConnectionToServer(const char *server)
         return NULL;
     }
 
-    // TODO: How does this locking help anything? This is not a copy
     ThreadLock(&cft_serverlist);
     Seq *srvlist_tmp = GetGlobalServerList();
     ThreadUnlock(&cft_serverlist);
@@ -1394,19 +1400,19 @@ static AgentConnection *GetIdleConnectionToServer(const char *server)
             if (svp->busy)
             {
                 Log(LOG_LEVEL_VERBOSE, "GetIdleConnectionToServer:"
-                    " connection to '%s' seems to be active...",
+                    " connection to '%s' seems to be busy.",
                     ipaddr);
             }
             else if (ConnectionInfoSocket(svp->conn->conn_info) == CF_COULD_NOT_CONNECT)
             {
                 Log(LOG_LEVEL_VERBOSE, "GetIdleConnectionToServer:"
-                    " connection to '%s' is marked as offline...",
+                    " connection to '%s' is marked as offline.",
                     ipaddr);
             }
             else if (ConnectionInfoSocket(svp->conn->conn_info) > 0)
             {
                 Log(LOG_LEVEL_VERBOSE, "GetIdleConnectionToServer:"
-                    " found connection to %s already open and ready.",
+                    " found connection to '%s' already open and ready.",
                     ipaddr);
                 svp->busy = true;
                 return svp->conn;
@@ -1414,14 +1420,14 @@ static AgentConnection *GetIdleConnectionToServer(const char *server)
             else
             {
                 Log(LOG_LEVEL_VERBOSE,
-                    " connection to '%s' is in unknown state %d...",
+                    " connection to '%s' is in unknown state %d!",
                     ipaddr, ConnectionInfoSocket(svp->conn->conn_info));
             }
         }
     }
 
     Log(LOG_LEVEL_VERBOSE, "GetIdleConnectionToServer:"
-        " no existing connection to '%s' is established...", ipaddr);
+        " no existing connection to '%s' is established.", ipaddr);
     return NULL;
 }
 
@@ -1463,6 +1469,7 @@ static void MarkServerOffline(const char *server)
         return;
     }
 
+    ThreadLock(&cft_serverlist);
     Seq *srvlist_tmp = GetGlobalServerList();
 
     for (size_t i = 0; i < SeqLength(srvlist_tmp); i++)
@@ -1479,6 +1486,7 @@ static void MarkServerOffline(const char *server)
         {
             /* Found it, mark offline */
             ConnectionInfoSetSocket(conn->conn_info, CF_COULD_NOT_CONNECT);
+            ThreadUnlock(&cft_serverlist);
             return;
         }
     }
@@ -1487,12 +1495,11 @@ static void MarkServerOffline(const char *server)
     ServerItem *svp = xmalloc(sizeof(*svp));
     svp->server = xstrdup(ipaddr);
     svp->busy = false;
-    svp->conn = NewAgentConn(ipaddr, false);
+    svp->conn = NewAgentConn(ipaddr);
     ConnectionInfoSetProtocolVersion(svp->conn->conn_info, CF_PROTOCOL_CLASSIC);
     ConnectionInfoSetConnectionStatus(svp->conn->conn_info, CF_CONNECTION_NOT_ESTABLISHED);
     ConnectionInfoSetSocket(svp->conn->conn_info, CF_COULD_NOT_CONNECT);
 
-    ThreadLock(&cft_serverlist);
     SeqAppend(srvlist_tmp, svp);
     ThreadUnlock(&cft_serverlist);
 }
@@ -1606,7 +1613,7 @@ void ConnectionsCleanup(void)
                              "NULL connection in SERVERLIST!");
         }
 
-        DisconnectServer(svp->conn, false);
+        DisconnectServer(svp->conn);
     }
 
     SeqClear(srvlist_tmp);

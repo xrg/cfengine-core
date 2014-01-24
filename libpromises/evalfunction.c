@@ -71,14 +71,14 @@
 #include <ctype.h>
 
 
-static FnCallResult FilterInternal(EvalContext *ctx, FnCall *fp, char *regex, char *name, int do_regex, int invert, long max);
+static FnCallResult FilterInternal(EvalContext *ctx, const FnCall *fp, char *regex, char *name, int do_regex, int invert, long max);
 
 static char *StripPatterns(char *file_buffer, char *pattern, char *filename);
 static void CloseStringHole(char *s, int start, int end);
 static int BuildLineArray(EvalContext *ctx, const Bundle *bundle, char *array_lval, char *file_buffer, char *split, int maxent, DataType type, int intIndex);
-static int ExecModule(EvalContext *ctx, char *command, const char *ns);
+static int ExecModule(EvalContext *ctx, char *command);
 static bool CheckID(const char *id);
-static const Rlist *GetListReferenceArgument(const EvalContext *ctx, const FnCall *fp, const char *lval_str, DataType *datatype_out);
+static const Rlist *GetListReferenceArgument(const EvalContext *ctx, const const FnCall *fp, const char *lval_str, DataType *datatype_out);
 static void *CfReadFile(char *filename, int maxsize);
 
 /*******************************************************************/
@@ -225,15 +225,14 @@ static Rlist *GetHostsFromLastseenDB(Item *addresses, time_t horizon, bool retur
 
 /*********************************************************************/
 
-static FnCallResult FnCallAnd(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallAnd(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
-    Rlist *arg;
     char id[CF_BUFSIZE];
 
     snprintf(id, CF_BUFSIZE, "built-in FnCall and-arg");
 
 /* We need to check all the arguments, ArgTemplate does not check varadic functions */
-    for (arg = finalargs; arg; arg = arg->next)
+    for (const Rlist *arg = finalargs; arg; arg = arg->next)
     {
         SyntaxTypeMatch err = CheckConstraintTypeMatch(id, arg->val, DATA_TYPE_STRING, "", 1);
         if (err != SYNTAX_TYPE_MATCH_OK && err != SYNTAX_TYPE_MATCH_ERROR_UNEXPANDED)
@@ -242,7 +241,7 @@ static FnCallResult FnCallAnd(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *fi
         }
     }
 
-    for (arg = finalargs; arg; arg = arg->next)
+    for (const Rlist *arg = finalargs; arg; arg = arg->next)
     {
         if (!IsDefinedClass(ctx, RlistScalarValue(arg)))
         {
@@ -276,15 +275,15 @@ static bool CallHostsSeenCallback(const char *hostkey, const char *address,
 
 /*******************************************************************/
 
-static FnCallResult FnCallHostsSeen(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallHostsSeen(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     Item *addresses = NULL;
 
     int horizon = IntFromString(RlistScalarValue(finalargs)) * 3600;
-    char *policy = RlistScalarValue(finalargs->next);
+    char *hostseen_policy = RlistScalarValue(finalargs->next);
     char *format = RlistScalarValue(finalargs->next->next);
 
-    Log(LOG_LEVEL_DEBUG, "Calling hostsseen(%d,%s,%s)", horizon, policy, format);
+    Log(LOG_LEVEL_DEBUG, "Calling hostsseen(%d,%s,%s)", horizon, hostseen_policy, format);
 
     if (!ScanLastSeenQuality(&CallHostsSeenCallback, &addresses))
     {
@@ -293,7 +292,7 @@ static FnCallResult FnCallHostsSeen(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCa
 
     Rlist *returnlist = GetHostsFromLastseenDB(addresses, horizon,
                                                strcmp(format, "address") == 0,
-                                               strcmp(policy, "lastseen") == 0);
+                                               strcmp(hostseen_policy, "lastseen") == 0);
 
     DeleteItemList(addresses);
 
@@ -320,7 +319,7 @@ static FnCallResult FnCallHostsSeen(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCa
 
 /*********************************************************************/
 
-static FnCallResult FnCallHostsWithClass(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallHostsWithClass(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     Rlist *returnlist = NULL;
 
@@ -337,7 +336,7 @@ static FnCallResult FnCallHostsWithClass(EvalContext *ctx, ARG_UNUSED FnCall *fp
 
 /*********************************************************************/
 
-static FnCallResult FnCallRandomInt(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallRandomInt(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     int tmp, range, result;
 
@@ -364,7 +363,7 @@ static FnCallResult FnCallRandomInt(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCa
 
 /*********************************************************************/
 
-static FnCallResult FnCallGetEnv(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallGetEnv(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char buffer[CF_BUFSIZE] = "", ctrlstr[CF_SMALLBUF];
 
@@ -385,7 +384,7 @@ static FnCallResult FnCallGetEnv(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall 
 
 #if defined(HAVE_GETPWENT)
 
-static FnCallResult FnCallGetUsers(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallGetUsers(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     Rlist *newlist = NULL, *except_names, *except_uids;
     struct passwd *pw;
@@ -419,7 +418,7 @@ static FnCallResult FnCallGetUsers(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCal
 
 #else
 
-static FnCallResult FnCallGetUsers(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallGetUsers(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     Log(LOG_LEVEL_ERR, "getusers is not implemented");
     return FnFailure();
@@ -429,7 +428,7 @@ static FnCallResult FnCallGetUsers(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCal
 
 /*********************************************************************/
 
-static FnCallResult FnCallEscape(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallEscape(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char buffer[CF_BUFSIZE];
 
@@ -444,7 +443,7 @@ static FnCallResult FnCallEscape(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall 
 
 /*********************************************************************/
 
-static FnCallResult FnCallHost2IP(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallHost2IP(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char *name = RlistScalarValue(finalargs);
     char ipaddr[CF_MAX_IP_LEN];
@@ -464,7 +463,10 @@ static FnCallResult FnCallHost2IP(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall
 
 /*********************************************************************/
 
-static FnCallResult FnCallIP2Host(ARG_UNUSED EvalContext *ctx, ARG_UNUSED  FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallIP2Host(ARG_UNUSED EvalContext *ctx,
+                                  ARG_UNUSED ARG_UNUSED const Policy *policy,
+                                  ARG_UNUSED const FnCall *fp,
+                                  const Rlist *finalargs)
 {
     char hostname[MAXHOSTNAMELEN];
     char *ip = RlistScalarValue(finalargs);
@@ -485,14 +487,14 @@ static FnCallResult FnCallIP2Host(ARG_UNUSED EvalContext *ctx, ARG_UNUSED  FnCal
 
 #ifdef __MINGW32__
 
-static FnCallResult FnCallGetUid(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, ARG_UNUSED Rlist *finalargs)
+static FnCallResult FnCallGetUid(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, ARG_UNUSED const Rlist *finalargs)
 {
     return FnFailure();
 }
 
 #else /* !__MINGW32__ */
 
-static FnCallResult FnCallGetUid(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallGetUid(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     struct passwd *pw;
 
@@ -514,14 +516,14 @@ static FnCallResult FnCallGetUid(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall 
 
 #ifdef __MINGW32__
 
-static FnCallResult FnCallGetGid(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, ARG_UNUSED Rlist *finalargs)
+static FnCallResult FnCallGetGid(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, ARG_UNUSED const Rlist *finalargs)
 {
     return FnFailure();
 }
 
 #else /* !__MINGW32__ */
 
-static FnCallResult FnCallGetGid(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallGetGid(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     struct group *gr;
 
@@ -541,7 +543,7 @@ static FnCallResult FnCallGetGid(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall 
 
 /*********************************************************************/
 
-static FnCallResult FnCallHandlerHash(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallHandlerHash(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 /* Hash(string,md5|sha1|crypt) */
 {
     char buffer[CF_BUFSIZE];
@@ -573,7 +575,7 @@ static FnCallResult FnCallHandlerHash(ARG_UNUSED EvalContext *ctx, ARG_UNUSED Fn
 
 /*********************************************************************/
 
-static FnCallResult FnCallHashMatch(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallHashMatch(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 /* HashMatch(string,md5|sha1|crypt,"abdxy98edj") */
 {
     char buffer[CF_BUFSIZE];
@@ -601,16 +603,15 @@ static FnCallResult FnCallHashMatch(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCa
 
 /*********************************************************************/
 
-static FnCallResult FnCallConcat(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallConcat(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
-    Rlist *arg = NULL;
     char id[CF_BUFSIZE];
     char result[CF_BUFSIZE] = "";
 
     snprintf(id, CF_BUFSIZE, "built-in FnCall concat-arg");
 
 /* We need to check all the arguments, ArgTemplate does not check varadic functions */
-    for (arg = finalargs; arg; arg = arg->next)
+    for (const Rlist *arg = finalargs; arg; arg = arg->next)
     {
         SyntaxTypeMatch err = CheckConstraintTypeMatch(id, arg->val, DATA_TYPE_STRING, "", 1);
         if (err != SYNTAX_TYPE_MATCH_OK && err != SYNTAX_TYPE_MATCH_ERROR_UNEXPANDED)
@@ -619,7 +620,7 @@ static FnCallResult FnCallConcat(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist 
         }
     }
 
-    for (arg = finalargs; arg; arg = arg->next)
+    for (const Rlist *arg = finalargs; arg; arg = arg->next)
     {
         if (strlcat(result, RlistScalarValue(arg), CF_BUFSIZE) >= CF_BUFSIZE)
         {
@@ -634,7 +635,7 @@ static FnCallResult FnCallConcat(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist 
 
 /*********************************************************************/
 
-static FnCallResult FnCallClassMatch(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallClassMatch(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     const char *regex = RlistScalarValue(finalargs);
     {
@@ -680,16 +681,18 @@ static FnCallResult FnCallClassMatch(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rl
 
 /*********************************************************************/
 
-static FnCallResult FnCallIfElse(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallIfElse(EvalContext *ctx,
+                                 ARG_UNUSED const Policy *policy,
+                                 ARG_UNUSED const FnCall *fp,
+                                 const Rlist *finalargs)
 {
-    Rlist *arg = NULL;
     int argcount = 0;
     char id[CF_BUFSIZE];
 
     snprintf(id, CF_BUFSIZE, "built-in FnCall ifelse-arg");
 
     /* We need to check all the arguments, ArgTemplate does not check varadic functions */
-    for (arg = finalargs; arg; arg = arg->next)
+    for (const Rlist *arg = finalargs; arg; arg = arg->next)
     {
         SyntaxTypeMatch err = CheckConstraintTypeMatch(id, arg->val, DATA_TYPE_STRING, "", 1);
         if (err != SYNTAX_TYPE_MATCH_OK && err != SYNTAX_TYPE_MATCH_ERROR_UNEXPANDED)
@@ -705,6 +708,7 @@ static FnCallResult FnCallIfElse(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
         FatalError(ctx, "in built-in FnCall ifelse: even number of arguments");
     }
 
+    const Rlist *arg;
     for (arg = finalargs;        /* Start with arg set to finalargs. */
          arg && arg->next;       /* We must have arg and arg->next to proceed. */
          arg = arg->next->next)  /* arg steps forward *twice* every time. */
@@ -725,7 +729,7 @@ static FnCallResult FnCallIfElse(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 
 /*********************************************************************/
 
-static FnCallResult FnCallCountClassesMatching(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallCountClassesMatching(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     unsigned count = 0;
     const char *regex = RlistScalarValue(finalargs);
@@ -824,7 +828,7 @@ static StringSet *ClassesMatching(const EvalContext *ctx, ClassTableIterator *it
     return matching;
 }
 
-static FnCallResult FnCallClassesMatching(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallClassesMatching(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     if (!finalargs)
     {
@@ -843,7 +847,7 @@ static FnCallResult FnCallClassesMatching(EvalContext *ctx, FnCall *fp, Rlist *f
     Rlist *matches = NULL;
 
     {
-        ClassTableIterator *iter = EvalContextClassTableIteratorNewGlobal(ctx, PromiseGetNamespace(fp->caller), true, true);
+        ClassTableIterator *iter = EvalContextClassTableIteratorNewGlobal(ctx, NULL, true, true);
         StringSet *global_matches = ClassesMatching(ctx, iter, finalargs);
 
         StringSetIterator it = StringSetIteratorInit(global_matches);
@@ -935,7 +939,7 @@ static StringSet *VariablesMatching(const EvalContext *ctx, VariableTableIterato
     return matching;
 }
 
-static FnCallResult FnCallVariablesMatching(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallVariablesMatching(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     if (!finalargs)
     {
@@ -978,7 +982,55 @@ static FnCallResult FnCallVariablesMatching(EvalContext *ctx, FnCall *fp, Rlist 
 
 /*********************************************************************/
 
-static FnCallResult FnCallBundlesMatching(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallGetMetaTags(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
+{
+    Rlist *tags = NULL;
+    StringSet *tagset = NULL;
+
+    if (0 == strcmp(fp->name, "getvariablemetatags"))
+    {
+        VarRef *ref = VarRefParse(RlistScalarValue(finalargs));
+        if (NULL == ref)
+        {
+            Log(LOG_LEVEL_ERR, "%s called on unknown variable %s", fp->name, RlistScalarValue(finalargs));
+            return (FnCallResult) { FNCALL_FAILURE };
+        }
+        tagset = EvalContextVariableTags(ctx, ref);
+    }
+    else if (0 == strcmp(fp->name, "getclassmetatags"))
+    {
+        ClassRef ref = ClassRefParse(RlistScalarValue(finalargs));
+        tagset = EvalContextClassTags(ctx, ref.ns, ref.name);
+    }
+    else
+    {
+        FatalError(ctx, "FnCallGetMetaTags: got unknown function name '%s', aborting", fp->name);
+    }
+
+    if (NULL == tagset)
+    {
+        Log(LOG_LEVEL_VERBOSE, "%s found variable or class %s without a tagset", fp->name, RlistScalarValue(finalargs));
+        return (FnCallResult) { FNCALL_FAILURE };
+    }
+
+    char* element;
+    StringSetIterator it = StringSetIteratorInit(tagset);
+    while ((element = SetIteratorNext(&it)))
+    {
+        RlistAppendScalar(&tags, element);
+    }
+
+    if (!tags)
+    {
+        RlistAppendScalar(&tags, CF_NULL_VALUE);
+    }
+
+    return (FnCallResult) { FNCALL_SUCCESS, { tags, RVAL_TYPE_LIST } };
+}
+
+/*********************************************************************/
+
+static FnCallResult FnCallBundlesMatching(EvalContext *ctx, const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     if (!finalargs)
     {
@@ -992,7 +1044,6 @@ static FnCallResult FnCallBundlesMatching(EvalContext *ctx, FnCall *fp, Rlist *f
 
     const char *regex = RlistScalarValue(finalargs);
     const Rlist *tag_args = finalargs->next;
-    const Policy *policy = PolicyFromPromise(fp->caller);
 
     if (!policy)
     {
@@ -1073,7 +1124,7 @@ static FnCallResult FnCallBundlesMatching(EvalContext *ctx, FnCall *fp, Rlist *f
 
 /*********************************************************************/
 
-static FnCallResult FnCallPackagesMatching(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallPackagesMatching(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     char *regex_package = RlistScalarValue(finalargs);
     char *regex_version = RlistScalarValue(finalargs->next);
@@ -1162,7 +1213,7 @@ static FnCallResult FnCallPackagesMatching(ARG_UNUSED EvalContext *ctx, FnCall *
 
 /*********************************************************************/
 
-static FnCallResult FnCallCanonify(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallCanonify(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     char buf[CF_BUFSIZE];
     char *string = RlistScalarValue(finalargs);
@@ -1190,7 +1241,7 @@ static FnCallResult FnCallCanonify(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rlis
 
 /*********************************************************************/
 
-static FnCallResult FnCallTextXform(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallTextXform(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     char buf[CF_BUFSIZE];
     char *string = RlistScalarValue(finalargs);
@@ -1257,7 +1308,7 @@ static FnCallResult FnCallTextXform(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rli
 
 /*********************************************************************/
 
-static FnCallResult FnCallLastNode(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallLastNode(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     Rlist *rp, *newlist;
 
@@ -1291,7 +1342,7 @@ static FnCallResult FnCallLastNode(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCal
 
 /*******************************************************************/
 
-static FnCallResult FnCallDirname(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallDirname(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char *dir = xstrdup(RlistScalarValue(finalargs));
 
@@ -1303,7 +1354,10 @@ static FnCallResult FnCallDirname(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall
 
 /*********************************************************************/
 
-static FnCallResult FnCallClassify(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallClassify(EvalContext *ctx,
+                                   ARG_UNUSED const Policy *policy,
+                                   ARG_UNUSED const FnCall *fp,
+                                   const Rlist *finalargs)
 {
     bool is_defined = IsDefinedClass(ctx, CanonifyName(RlistScalarValue(finalargs)));
 
@@ -1314,7 +1368,7 @@ static FnCallResult FnCallClassify(EvalContext *ctx, FnCall *fp, Rlist *finalarg
 /* Executions                                                        */
 /*********************************************************************/
 
-static FnCallResult FnCallReturnsZero(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallReturnsZero(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     char comm[CF_BUFSIZE];
     const char *shell_option = RlistScalarValue(finalargs->next);
@@ -1362,7 +1416,7 @@ static FnCallResult FnCallReturnsZero(ARG_UNUSED EvalContext *ctx, FnCall *fp, R
 
 /*********************************************************************/
 
-static FnCallResult FnCallExecResult(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallExecResult(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     const char *shell_option = RlistScalarValue(finalargs->next);
     ShellType shelltype = SHELL_TYPE_NONE;
@@ -1409,7 +1463,10 @@ static FnCallResult FnCallExecResult(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rl
 
 /*********************************************************************/
 
-static FnCallResult FnCallUseModule(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallUseModule(EvalContext *ctx,
+                                    ARG_UNUSED const Policy *policy,
+                                    ARG_UNUSED const FnCall *fp,
+                                    const Rlist *finalargs)
   /* usemodule("/programpath",varargs) */
 {
     char modulecmd[CF_BUFSIZE];
@@ -1443,7 +1500,7 @@ static FnCallResult FnCallUseModule(EvalContext *ctx, FnCall *fp, Rlist *finalar
     snprintf(modulecmd, CF_BUFSIZE, "\"%s%cmodules%c%s\" %s", CFWORKDIR, FILE_SEPARATOR, FILE_SEPARATOR, command, args);
     Log(LOG_LEVEL_VERBOSE, "Executing and using module [%s]", modulecmd);
 
-    if (!ExecModule(ctx, modulecmd, PromiseGetNamespace(fp->caller)))
+    if (!ExecModule(ctx, modulecmd))
     {
         return FnFailure();
     }
@@ -1455,13 +1512,16 @@ static FnCallResult FnCallUseModule(EvalContext *ctx, FnCall *fp, Rlist *finalar
 /* Misc                                                              */
 /*********************************************************************/
 
-static FnCallResult FnCallSplayClass(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallSplayClass(EvalContext *ctx,
+                                     ARG_UNUSED const Policy *policy,
+                                     ARG_UNUSED const FnCall *fp,
+                                     const Rlist *finalargs)
 {
     char class_name[CF_MAXVARSIZE];
 
-    Interval policy = IntervalFromString(RlistScalarValue(finalargs->next));
+    Interval splay_policy = IntervalFromString(RlistScalarValue(finalargs->next));
 
-    if (policy == INTERVAL_HOURLY)
+    if (splay_policy == INTERVAL_HOURLY)
     {
         /* 12 5-minute slots in hour */
         int slot = StringHash(RlistScalarValue(finalargs), 0, CF_HASHTABLESIZE) * 12 / CF_HASHTABLESIZE;
@@ -1482,7 +1542,7 @@ static FnCallResult FnCallSplayClass(EvalContext *ctx, FnCall *fp, Rlist *finala
 
 /*********************************************************************/
 
-static FnCallResult FnCallReadTcp(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallReadTcp(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
  /* ReadTCP(localhost,80,'GET index.html',1000) */
 {
     AgentConnection *conn = NULL;
@@ -1515,7 +1575,7 @@ static FnCallResult FnCallReadTcp(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall
 
     Log(LOG_LEVEL_DEBUG, "Want to read %d bytes from port %d at '%s'", val, portnum, hostnameip);
 
-    conn = NewAgentConn(hostnameip, false);
+    conn = NewAgentConn(hostnameip);
 
     FileCopy fc = {
         .force_ipv4 = false,
@@ -1527,7 +1587,7 @@ static FnCallResult FnCallReadTcp(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall
     if (!ServerConnect(conn, hostnameip, fc))
     {
         Log(LOG_LEVEL_INFO, "Couldn't open a tcp socket. (socket: %s)", GetErrorStr());
-        DeleteAgentConn(conn, false);
+        DeleteAgentConn(conn);
         return FnFailure();
     }
 
@@ -1541,7 +1601,7 @@ static FnCallResult FnCallReadTcp(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall
             if (result < 0)
             {
                 cf_closesocket(ConnectionInfoSocket(conn->conn_info));
-                DeleteAgentConn(conn, false);
+                DeleteAgentConn(conn);
                 return FnFailure();
             }
             else
@@ -1558,19 +1618,19 @@ static FnCallResult FnCallReadTcp(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall
     if (n_read == -1)
     {
         cf_closesocket(ConnectionInfoSocket(conn->conn_info));
-        DeleteAgentConn(conn, false);
+        DeleteAgentConn(conn);
         return FnFailure();
     }
 
     cf_closesocket(ConnectionInfoSocket(conn->conn_info));
-    DeleteAgentConn(conn, false);
+    DeleteAgentConn(conn);
 
     return FnReturn(buffer);
 }
 
 /*********************************************************************/
 
-static FnCallResult FnCallRegList(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallRegList(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     const char *listvar = RlistScalarValue(finalargs);
     const char *regex = RlistScalarValue(finalargs->next);
@@ -1621,7 +1681,7 @@ static FnCallResult FnCallRegList(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist
 
 /*********************************************************************/
 
-static FnCallResult FnCallRegArray(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallRegArray(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char *arrayname = RlistScalarValue(finalargs);
     char *regex = RlistScalarValue(finalargs->next);
@@ -1645,9 +1705,25 @@ static FnCallResult FnCallRegArray(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlis
 }
 
 
-static FnCallResult FnCallGetIndices(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallGetIndices(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
-    VarRef *ref = VarRefParseFromBundle(RlistScalarValue(finalargs), PromiseGetBundle(fp->caller));
+    VarRef *ref = VarRefParse(RlistScalarValue(finalargs));
+    if (!VarRefIsQualified(ref))
+    {
+        if (fp->caller)
+        {
+            const Bundle *caller_bundle = PromiseGetBundle(fp->caller);
+            VarRefQualify(ref, caller_bundle->ns, caller_bundle->name);
+        }
+        else
+        {
+            Log(LOG_LEVEL_WARNING, "Function '%s'' was given an unqualified variable reference, "
+                "and it was not called from a promise. No way to automatically qualify the reference '%s'.",
+                fp->name, RlistScalarValue(finalargs));
+            VarRefDestroy(ref);
+            return FnFailure();
+        }
+    }
 
     DataType type = DATA_TYPE_NONE;
     const void *value = EvalContextVariableGet(ctx, ref, &type);
@@ -1702,7 +1778,7 @@ static FnCallResult FnCallGetIndices(EvalContext *ctx, FnCall *fp, Rlist *finala
 
 /*********************************************************************/
 
-static FnCallResult FnCallGetValues(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallGetValues(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     VarRef *ref = VarRefParseFromBundle(RlistScalarValue(finalargs), PromiseGetBundle(fp->caller));
 
@@ -1794,7 +1870,7 @@ static FnCallResult FnCallGetValues(EvalContext *ctx, FnCall *fp, Rlist *finalar
 
 /*********************************************************************/
 
-static FnCallResult FnCallGrep(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallGrep(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     return FilterInternal(ctx,
                           fp,
@@ -1807,7 +1883,7 @@ static FnCallResult FnCallGrep(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 
 /*********************************************************************/
 
-static FnCallResult FnCallSum(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallSum(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     double sum = 0;
 
@@ -1836,7 +1912,7 @@ static FnCallResult FnCallSum(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *fi
 
 /*********************************************************************/
 
-static FnCallResult FnCallProduct(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallProduct(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     double product = 1.0;
 
@@ -1864,7 +1940,7 @@ static FnCallResult FnCallProduct(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist
 
 /*********************************************************************/
 
-static FnCallResult FnCallJoin(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallJoin(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char *joined = NULL;
     int size = 0;
@@ -1910,7 +1986,7 @@ static FnCallResult FnCallJoin(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *f
 
 /*********************************************************************/
 
-static FnCallResult FnCallGetFields(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallGetFields(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     Rlist *rp, *newlist;
     char name[CF_MAXVARSIZE];
@@ -1985,7 +2061,7 @@ static FnCallResult FnCallGetFields(EvalContext *ctx, FnCall *fp, Rlist *finalar
 
 /*********************************************************************/
 
-static FnCallResult FnCallCountLinesMatching(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallCountLinesMatching(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     int lcount = 0;
     FILE *fin;
@@ -2030,7 +2106,7 @@ static FnCallResult FnCallCountLinesMatching(ARG_UNUSED EvalContext *ctx, ARG_UN
 
 /*********************************************************************/
 
-static FnCallResult FnCallLsDir(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallLsDir(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char line[CF_BUFSIZE];
     Dir *dirh = NULL;
@@ -2081,7 +2157,7 @@ static FnCallResult FnCallLsDir(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *
 
 /*********************************************************************/
 
-static FnCallResult FnCallMapArray(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallMapArray(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     Rlist *returnlist = NULL;
 
@@ -2168,7 +2244,7 @@ static FnCallResult FnCallMapArray(EvalContext *ctx, FnCall *fp, Rlist *finalarg
     return (FnCallResult) { FNCALL_SUCCESS, { returnlist, RVAL_TYPE_LIST } };
 }
 
-static FnCallResult FnCallMapList(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallMapList(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     Rlist *newlist = NULL;
     DataType retype;
@@ -2227,7 +2303,7 @@ static FnCallResult FnCallMapList(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist
     return (FnCallResult) { FNCALL_SUCCESS, { newlist, RVAL_TYPE_LIST } };
 }
 
-static FnCallResult FnCallMergeData(EvalContext *ctx, FnCall *fp, Rlist *args)
+static FnCallResult FnCallMergeData(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *args)
 {
     if (RlistLen(args) == 0)
     {
@@ -2377,14 +2453,17 @@ JsonElement *DefaultTemplateData(const EvalContext *ctx)
     return hash;
 }
 
-static FnCallResult FnCallDatastate(EvalContext *ctx, FnCall *fp, Rlist *args)
+static FnCallResult FnCallDatastate(EvalContext *ctx,
+                                    ARG_UNUSED const Policy *policy,
+                                    ARG_UNUSED const FnCall *fp,
+                                    ARG_UNUSED const Rlist *args)
 {
     JsonElement *state = DefaultTemplateData(ctx);
     return  (FnCallResult) { FNCALL_SUCCESS, (Rval) { state, RVAL_TYPE_CONTAINER } };
 }
 
 
-static FnCallResult FnCallSelectServers(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallSelectServers(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
  /* ReadTCP(localhost,80,'GET index.html',1000) */
 {
     AgentConnection *conn = NULL;
@@ -2462,7 +2541,7 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, FnCall *fp, Rlist *fin
     {
         Log(LOG_LEVEL_DEBUG, "Want to read %d bytes from port %d at '%s'", val, portnum, RlistScalarValue(rp));
 
-        conn = NewAgentConn(RlistScalarValue(rp), false);
+        conn = NewAgentConn(RlistScalarValue(rp));
 
         FileCopy fc = {
             .force_ipv4 = false,
@@ -2474,7 +2553,7 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, FnCall *fp, Rlist *fin
         if (!ServerConnect(conn, RlistScalarValue(rp), fc))
         {
             Log(LOG_LEVEL_INFO, "Couldn't open a tcp socket. (socket %s)", GetErrorStr());
-            DeleteAgentConn(conn, false);
+            DeleteAgentConn(conn);
             continue;
         }
 
@@ -2483,7 +2562,7 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, FnCall *fp, Rlist *fin
             if (SendSocketStream(ConnectionInfoSocket(conn->conn_info), sendstring, strlen(sendstring)) == -1)
             {
                 cf_closesocket(ConnectionInfoSocket(conn->conn_info));
-                DeleteAgentConn(conn, false);
+                DeleteAgentConn(conn);
                 continue;
             }
 
@@ -2494,7 +2573,7 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, FnCall *fp, Rlist *fin
             if (n_read == -1)
             {
                 cf_closesocket(ConnectionInfoSocket(conn->conn_info));
-                DeleteAgentConn(conn, false);
+                DeleteAgentConn(conn);
                 continue;
             }
 
@@ -2520,14 +2599,14 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, FnCall *fp, Rlist *fin
             {
                 Log(LOG_LEVEL_VERBOSE, "This host is in the list and has promised to join the class '%s' - joined",
                       array_lval);
-                EvalContextClassPut(ctx, PromiseGetNamespace(fp->caller), array_lval, true, CONTEXT_SCOPE_NAMESPACE, "source=function,function=selectservers");
+                EvalContextClassPutSoft(ctx, array_lval, CONTEXT_SCOPE_NAMESPACE, "source=function,function=selectservers");
             }
 
             count++;
         }
 
         cf_closesocket(ConnectionInfoSocket(conn->conn_info));
-        DeleteAgentConn(conn, false);
+        DeleteAgentConn(conn);
     }
 
     PolicyDestroy(select_server_policy);
@@ -2540,7 +2619,7 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, FnCall *fp, Rlist *fin
 }
 
 
-static FnCallResult FnCallShuffle(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallShuffle(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     const char *seed_str = RlistScalarValue(finalargs->next);
 
@@ -2576,7 +2655,7 @@ static FnCallResult FnCallShuffle(EvalContext *ctx, FnCall *fp, Rlist *finalargs
 }
 
 
-static FnCallResult FnCallIsNewerThan(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallIsNewerThan(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     struct stat frombuf, tobuf;
 
@@ -2597,7 +2676,7 @@ static FnCallResult FnCallIsNewerThan(ARG_UNUSED EvalContext *ctx, ARG_UNUSED Fn
 
 /*********************************************************************/
 
-static FnCallResult FnCallIsAccessedBefore(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallIsAccessedBefore(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     struct stat frombuf, tobuf;
 
@@ -2618,7 +2697,7 @@ static FnCallResult FnCallIsAccessedBefore(ARG_UNUSED EvalContext *ctx, ARG_UNUS
 
 /*********************************************************************/
 
-static FnCallResult FnCallIsChangedBefore(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallIsChangedBefore(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     struct stat frombuf, tobuf;
 
@@ -2638,7 +2717,7 @@ static FnCallResult FnCallIsChangedBefore(ARG_UNUSED EvalContext *ctx, ARG_UNUSE
 
 /*********************************************************************/
 
-static FnCallResult FnCallFileStat(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallFileStat(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     char *path = RlistScalarValue(finalargs);
     struct stat statbuf;
@@ -2684,7 +2763,7 @@ static FnCallResult FnCallFileStat(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rlis
 
 /*********************************************************************/
 
-static FnCallResult FnCallFileStatDetails(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallFileStatDetails(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     char buffer[CF_BUFSIZE], *path = RlistScalarValue(finalargs);
     char *detail = RlistScalarValue(finalargs->next);
@@ -2889,17 +2968,16 @@ static FnCallResult FnCallFileStatDetails(ARG_UNUSED EvalContext *ctx, FnCall *f
 
 /*********************************************************************/
 
-static FnCallResult FnCallFindfiles(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallFindfiles(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     Rlist *returnlist = NULL;
-    Rlist *arg = NULL;
     int argcount = 0;
     char id[CF_BUFSIZE];
 
     snprintf(id, CF_BUFSIZE, "built-in FnCall findfiles-arg");
 
     /* We need to check all the arguments, ArgTemplate does not check varadic functions */
-    for (arg = finalargs; arg; arg = arg->next)
+    for (const Rlist *arg = finalargs; arg; arg = arg->next)
     {
         SyntaxTypeMatch err = CheckConstraintTypeMatch(id, arg->val, DATA_TYPE_STRING, "", 1);
         if (err != SYNTAX_TYPE_MATCH_OK && err != SYNTAX_TYPE_MATCH_ERROR_UNEXPANDED)
@@ -2909,7 +2987,7 @@ static FnCallResult FnCallFindfiles(EvalContext *ctx, FnCall *fp, Rlist *finalar
         argcount++;
     }
 
-    for (arg = finalargs;  /* Start with arg set to finalargs. */
+    for (const Rlist *arg = finalargs;  /* Start with arg set to finalargs. */
          arg;              /* We must have arg to proceed. */
          arg = arg->next)  /* arg steps forward every time. */
     {
@@ -2945,7 +3023,7 @@ static FnCallResult FnCallFindfiles(EvalContext *ctx, FnCall *fp, Rlist *finalar
 
 /*********************************************************************/
 
-static FnCallResult FnCallFilter(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallFilter(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     return FilterInternal(ctx,
                           fp,
@@ -2958,7 +3036,7 @@ static FnCallResult FnCallFilter(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 
 /*********************************************************************/
 
-static const Rlist *GetListReferenceArgument(const EvalContext *ctx, const FnCall *fp, const char *lval_str, DataType *datatype_out)
+static const Rlist *GetListReferenceArgument(const EvalContext *ctx, const const FnCall *fp, const char *lval_str, DataType *datatype_out)
 {
     VarRef *ref = VarRefParse(lval_str);
 
@@ -3000,7 +3078,7 @@ static const Rlist *GetListReferenceArgument(const EvalContext *ctx, const FnCal
 
 /*********************************************************************/
 
-static FnCallResult FilterInternal(EvalContext *ctx, FnCall *fp, char *regex, char *name, int do_regex, int invert, long max)
+static FnCallResult FilterInternal(EvalContext *ctx, const FnCall *fp, char *regex, char *name, int do_regex, int invert, long max)
 {
     Rlist *returnlist = NULL;
 
@@ -3016,7 +3094,19 @@ static FnCallResult FilterInternal(EvalContext *ctx, FnCall *fp, char *regex, ch
     long total = 0;
     for (const Rlist *rp = input_list; rp != NULL && match_count < max; rp = rp->next)
     {
-        bool found = do_regex ? StringMatchFull(regex, RlistScalarValue(rp)) : (0==strcmp(regex, RlistScalarValue(rp)));
+        bool found;
+        if (strcmp(RlistScalarValue(rp), CF_NULL_VALUE) == 0)
+        {
+            found = false;
+        }
+        else if (do_regex)
+        {
+            found = StringMatchFull(regex, RlistScalarValue(rp));
+        }
+        else
+        {
+            found = (0==strcmp(regex, RlistScalarValue(rp)));
+        }
 
         if (invert ? !found : found)
         {
@@ -3072,7 +3162,7 @@ static FnCallResult FilterInternal(EvalContext *ctx, FnCall *fp, char *regex, ch
 
 /*********************************************************************/
 
-static FnCallResult FnCallSublist(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallSublist(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     const char *name = RlistScalarValue(finalargs); // list identifier
     bool head = 0 == strcmp(RlistScalarValue(finalargs->next), "head"); // heads or tails
@@ -3121,7 +3211,7 @@ static FnCallResult FnCallSublist(EvalContext *ctx, FnCall *fp, Rlist *finalargs
 
 /*********************************************************************/
 
-static FnCallResult FnCallSetop(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallSetop(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     bool difference = (0 == strcmp(fp->name, "difference"));
 
@@ -3175,7 +3265,7 @@ static FnCallResult FnCallSetop(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
     return (FnCallResult) { FNCALL_SUCCESS, (Rval) { returnlist, RVAL_TYPE_LIST } };
 }
 
-static FnCallResult FnCallLength(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallLength(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     const char *name = RlistScalarValue(finalargs);
 
@@ -3215,7 +3305,7 @@ static FnCallResult FnCallLength(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
     }
 }
 
-static FnCallResult FnCallFold(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallFold(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     const char *name = RlistScalarValue(finalargs);
     const char *sort_type = finalargs->next ? RlistScalarValue(finalargs->next) : NULL;
@@ -3324,7 +3414,7 @@ static FnCallResult FnCallFold(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 
 /*********************************************************************/
 
-static FnCallResult FnCallUnique(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallUnique(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     const char *name = RlistScalarValue(finalargs);
 
@@ -3347,7 +3437,7 @@ static FnCallResult FnCallUnique(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 
 /*********************************************************************/
 
-static FnCallResult FnCallDatatype(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallDatatype(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     const char* const varname = RlistScalarValue(finalargs);
 
@@ -3417,7 +3507,7 @@ static FnCallResult FnCallDatatype(EvalContext *ctx, FnCall *fp, Rlist *finalarg
 
 /*********************************************************************/
 
-static FnCallResult FnCallNth(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallNth(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     const char* const varname = RlistScalarValue(finalargs);
 
@@ -3497,7 +3587,7 @@ static FnCallResult FnCallNth(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 
 /*********************************************************************/
 
-static FnCallResult FnCallEverySomeNone(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallEverySomeNone(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     return FilterInternal(ctx,
                           fp,
@@ -3508,7 +3598,7 @@ static FnCallResult FnCallEverySomeNone(EvalContext *ctx, FnCall *fp, Rlist *fin
                           99999999999);
 }
 
-static FnCallResult FnCallSort(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallSort(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     const char *sort_type = RlistScalarValue(finalargs->next); // list identifier
 
@@ -3552,7 +3642,7 @@ static FnCallResult FnCallSort(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *f
 
 /*********************************************************************/
 
-static FnCallResult FnCallFormat(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallFormat(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     char id[CF_BUFSIZE];
 
@@ -3787,7 +3877,7 @@ static FnCallResult FnCallFormat(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 
 /*********************************************************************/
 
-static FnCallResult FnCallIPRange(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallIPRange(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char *range = RlistScalarValue(finalargs);
     Item *ip;
@@ -3817,7 +3907,7 @@ static FnCallResult FnCallIPRange(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist
 
 /*********************************************************************/
 
-static FnCallResult FnCallHostRange(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallHostRange(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char buffer[CF_BUFSIZE];
 
@@ -3840,7 +3930,7 @@ static FnCallResult FnCallHostRange(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCa
 
 /*********************************************************************/
 
-FnCallResult FnCallHostInNetgroup(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+FnCallResult FnCallHostInNetgroup(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char *host, *user, *domain;
 
@@ -3870,7 +3960,7 @@ FnCallResult FnCallHostInNetgroup(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall
 
 /*********************************************************************/
 
-static FnCallResult FnCallIsVariable(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallIsVariable(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     const char *lval = RlistScalarValue(finalargs);
     bool found = false;
@@ -3891,14 +3981,14 @@ static FnCallResult FnCallIsVariable(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rl
 
 /*********************************************************************/
 
-static FnCallResult FnCallStrCmp(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallStrCmp(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     return FnReturnContext(strcmp(RlistScalarValue(finalargs), RlistScalarValue(finalargs->next)) == 0);
 }
 
 /*********************************************************************/
 
-static FnCallResult FnCallTranslatePath(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallTranslatePath(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char buffer[MAX_FILENAME];
 
@@ -3912,7 +4002,7 @@ static FnCallResult FnCallTranslatePath(ARG_UNUSED EvalContext *ctx, ARG_UNUSED 
 
 #if defined(__MINGW32__)
 
-static FnCallResult FnCallRegistryValue(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallRegistryValue(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char buffer[CF_BUFSIZE] = "";
 
@@ -3929,7 +4019,7 @@ static FnCallResult FnCallRegistryValue(ARG_UNUSED EvalContext *ctx, ARG_UNUSED 
 
 #else /* !__MINGW32__ */
 
-static FnCallResult FnCallRegistryValue(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, ARG_UNUSED Rlist *finalargs)
+static FnCallResult FnCallRegistryValue(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, ARG_UNUSED const Rlist *finalargs)
 {
     return FnFailure();
 }
@@ -3938,7 +4028,7 @@ static FnCallResult FnCallRegistryValue(ARG_UNUSED EvalContext *ctx, ARG_UNUSED 
 
 /*********************************************************************/
 
-static FnCallResult FnCallRemoteScalar(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallRemoteScalar(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char buffer[CF_BUFSIZE];
 
@@ -3983,7 +4073,7 @@ static FnCallResult FnCallRemoteScalar(EvalContext *ctx, ARG_UNUSED FnCall *fp, 
 
 /*********************************************************************/
 
-static FnCallResult FnCallHubKnowledge(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallHubKnowledge(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char buffer[CF_BUFSIZE];
 
@@ -4013,10 +4103,10 @@ static FnCallResult FnCallHubKnowledge(EvalContext *ctx, ARG_UNUSED FnCall *fp, 
 
 /*********************************************************************/
 
-static FnCallResult FnCallRemoteClassesMatching(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallRemoteClassesMatching(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     Rlist *rp, *classlist;
-    char buffer[CF_BUFSIZE], class[CF_MAXVARSIZE];
+    char buffer[CF_BUFSIZE], class_name[CF_MAXVARSIZE];
 
     buffer[0] = '\0';
 
@@ -4050,8 +4140,8 @@ static FnCallResult FnCallRemoteClassesMatching(EvalContext *ctx, ARG_UNUSED FnC
         {
             for (rp = classlist; rp != NULL; rp = rp->next)
             {
-                snprintf(class, CF_MAXVARSIZE - 1, "%s_%s", prefix, RlistScalarValue(rp));
-                EvalContextClassPut(ctx, NULL, class, true, CONTEXT_SCOPE_BUNDLE, "source=function,function=remoteclassesmatching");
+                snprintf(class_name, CF_MAXVARSIZE - 1, "%s_%s", prefix, RlistScalarValue(rp));
+                EvalContextClassPutSoft(ctx, class_name, CONTEXT_SCOPE_BUNDLE, "source=function,function=remoteclassesmatching");
             }
             RlistDestroy(classlist);
         }
@@ -4062,7 +4152,7 @@ static FnCallResult FnCallRemoteClassesMatching(EvalContext *ctx, ARG_UNUSED FnC
 
 /*********************************************************************/
 
-static FnCallResult FnCallPeers(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallPeers(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     Rlist *rp, *newlist, *pruned;
     char *split = "\n";
@@ -4149,7 +4239,7 @@ static FnCallResult FnCallPeers(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *
 
 /*********************************************************************/
 
-static FnCallResult FnCallPeerLeader(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallPeerLeader(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     Rlist *rp, *newlist;
     char *split = "\n";
@@ -4242,7 +4332,7 @@ static FnCallResult FnCallPeerLeader(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnC
 
 /*********************************************************************/
 
-static FnCallResult FnCallPeerLeaders(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallPeerLeaders(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     Rlist *rp, *newlist, *pruned;
     char *split = "\n";
@@ -4319,7 +4409,7 @@ static FnCallResult FnCallPeerLeaders(ARG_UNUSED EvalContext *ctx, ARG_UNUSED Fn
 
 /*********************************************************************/
 
-static FnCallResult FnCallRegCmp(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallRegCmp(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char buffer[CF_BUFSIZE];
 
@@ -4336,7 +4426,7 @@ static FnCallResult FnCallRegCmp(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall 
 
 /*********************************************************************/
 
-static FnCallResult FnCallRegExtract(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallRegExtract(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char buffer[CF_BUFSIZE];
 
@@ -4372,7 +4462,7 @@ static FnCallResult FnCallRegExtract(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rl
 
 /*********************************************************************/
 
-static FnCallResult FnCallRegLine(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallRegLine(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     const char *arg_regex = RlistScalarValue(finalargs);
     const char *arg_filename = RlistScalarValue(finalargs->next);
@@ -4410,7 +4500,7 @@ static FnCallResult FnCallRegLine(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rlist
 
 /*********************************************************************/
 
-static FnCallResult FnCallIsLessGreaterThan(ARG_UNUSED EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallIsLessGreaterThan(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     char *argv0 = RlistScalarValue(finalargs);
     char *argv1 = RlistScalarValue(finalargs->next);
@@ -4450,7 +4540,7 @@ static FnCallResult FnCallIsLessGreaterThan(ARG_UNUSED EvalContext *ctx, FnCall 
 
 /*********************************************************************/
 
-static FnCallResult FnCallIRange(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallIRange(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     long tmp;
 
@@ -4476,7 +4566,7 @@ static FnCallResult FnCallIRange(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall 
 
 /*********************************************************************/
 
-static FnCallResult FnCallRRange(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallRRange(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     int tmp;
 
@@ -4506,7 +4596,7 @@ static FnCallResult FnCallRRange(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall 
     return FnReturnF("%lf,%lf", from, to);
 }
 
-static FnCallResult FnCallReverse(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallReverse(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     DataType list_dtype = DATA_TYPE_NONE;
     const Rlist *input_list = GetListReferenceArgument(ctx, fp, RlistScalarValue(finalargs), &list_dtype);
@@ -4546,7 +4636,7 @@ static struct tm FnArgsToTm(const Rlist *rp)
     return ret;
 }
 
-static FnCallResult FnCallOn(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallOn(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char buffer[CF_BUFSIZE];
     struct tm tmv = FnArgsToTm(finalargs);
@@ -4564,15 +4654,17 @@ static FnCallResult FnCallOn(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp,
 
 /*********************************************************************/
 
-static FnCallResult FnCallOr(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallOr(EvalContext *ctx,
+                             ARG_UNUSED const Policy *policy,
+                             ARG_UNUSED const FnCall *fp,
+                             const Rlist *finalargs)
 {
-    Rlist *arg;
     char id[CF_BUFSIZE];
 
     snprintf(id, CF_BUFSIZE, "built-in FnCall or-arg");
 
 /* We need to check all the arguments, ArgTemplate does not check varadic functions */
-    for (arg = finalargs; arg; arg = arg->next)
+    for (const Rlist *arg = finalargs; arg; arg = arg->next)
     {
         SyntaxTypeMatch err = CheckConstraintTypeMatch(id, arg->val, DATA_TYPE_STRING, "", 1);
         if (err != SYNTAX_TYPE_MATCH_OK && err != SYNTAX_TYPE_MATCH_ERROR_UNEXPANDED)
@@ -4581,7 +4673,7 @@ static FnCallResult FnCallOr(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
         }
     }
 
-    for (arg = finalargs; arg; arg = arg->next)
+    for (const Rlist *arg = finalargs; arg; arg = arg->next)
     {
         if (IsDefinedClass(ctx, RlistScalarValue(arg)))
         {
@@ -4594,7 +4686,7 @@ static FnCallResult FnCallOr(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 
 /*********************************************************************/
 
-static FnCallResult FnCallLaterThan(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallLaterThan(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char buffer[CF_BUFSIZE];
     time_t now = time(NULL);
@@ -4618,7 +4710,7 @@ static FnCallResult FnCallLaterThan(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCa
     return (FnCallResult) { FNCALL_SUCCESS, { xstrdup(buffer), RVAL_TYPE_SCALAR } };
 }
 
-static FnCallResult FnCallAgoDate(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallAgoDate(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char buffer[CF_BUFSIZE];
     struct tm ago = FnArgsToTm(finalargs);
@@ -4647,7 +4739,7 @@ static FnCallResult FnCallAgoDate(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall
 
 /*********************************************************************/
 
-static FnCallResult FnCallAccumulatedDate(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallAccumulatedDate(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char buffer[CF_BUFSIZE];
     struct tm tmv = FnArgsToTm(finalargs);
@@ -4668,21 +4760,24 @@ static FnCallResult FnCallAccumulatedDate(ARG_UNUSED EvalContext *ctx, ARG_UNUSE
 
 /*********************************************************************/
 
-static FnCallResult FnCallNot(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallNot(EvalContext *ctx,
+                              ARG_UNUSED const Policy *policy,
+                              ARG_UNUSED const FnCall *fp,
+                              const Rlist *finalargs)
 {
     return FnReturnContext(!IsDefinedClass(ctx, RlistScalarValue(finalargs)));
 }
 
 /*********************************************************************/
 
-static FnCallResult FnCallNow(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, ARG_UNUSED Rlist *finalargs)
+static FnCallResult FnCallNow(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, ARG_UNUSED const Rlist *finalargs)
 {
     return FnReturnF("%ld", (long)CFSTARTTIME);
 }
 
 /*********************************************************************/
 
-static FnCallResult FnCallStrftime(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallStrftime(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     /* begin fn specific content */
 
@@ -4719,7 +4814,7 @@ static FnCallResult FnCallStrftime(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCal
 
 /*********************************************************************/
 
-static FnCallResult FnCallEval(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallEval(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     char *input = RlistScalarValue(finalargs);
     char *type = RlistScalarValue(finalargs->next);
@@ -4749,7 +4844,7 @@ static FnCallResult FnCallEval(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
 /* Read functions                                                    */
 /*********************************************************************/
 
-static FnCallResult FnCallReadFile(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallReadFile(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char *contents;
 
@@ -4777,7 +4872,7 @@ static FnCallResult FnCallReadFile(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCal
 
 /*********************************************************************/
 
-static FnCallResult ReadList(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs, DataType type)
+static FnCallResult ReadList(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const FnCall *fp, const Rlist *finalargs, DataType type)
 {
     Rlist *rp, *newlist = NULL;
     char fnname[CF_MAXVARSIZE], *file_buffer = NULL;
@@ -4859,22 +4954,22 @@ static FnCallResult ReadList(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp,
 
 }
 
-static FnCallResult FnCallReadStringList(EvalContext *ctx, FnCall *fp, Rlist *args)
+static FnCallResult FnCallReadStringList(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *args)
 {
     return ReadList(ctx, fp, args, DATA_TYPE_STRING);
 }
 
-static FnCallResult FnCallReadIntList(EvalContext *ctx, FnCall *fp, Rlist *args)
+static FnCallResult FnCallReadIntList(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *args)
 {
     return ReadList(ctx, fp, args, DATA_TYPE_INT);
 }
 
-static FnCallResult FnCallReadRealList(EvalContext *ctx, FnCall *fp, Rlist *args)
+static FnCallResult FnCallReadRealList(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *args)
 {
     return ReadList(ctx, fp, args, DATA_TYPE_REAL);
 }
 
-static FnCallResult FnCallReadJson(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *args)
+static FnCallResult FnCallReadJson(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *args)
 {
     const char *input_path = RlistScalarValue(args);
     size_t size_max = IntFromString(RlistScalarValue(args->next));
@@ -4899,7 +4994,7 @@ static FnCallResult FnCallReadJson(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCal
     return (FnCallResult) { FNCALL_SUCCESS, (Rval) { json, RVAL_TYPE_CONTAINER } };
 }
 
-static FnCallResult FnCallParseJson(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *args)
+static FnCallResult FnCallParseJson(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *args)
 {
     const char *data = RlistScalarValue(args);
     JsonElement *json = NULL;
@@ -4914,7 +5009,7 @@ static FnCallResult FnCallParseJson(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCa
 
 /*********************************************************************/
 
-static FnCallResult FnCallStoreJson(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallStoreJson(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     const char *varname = RlistScalarValue(finalargs);
     VarRef *ref = VarRefParseFromBundle(varname, PromiseGetBundle(fp->caller));
@@ -4952,7 +5047,7 @@ static FnCallResult FnCallStoreJson(EvalContext *ctx, FnCall *fp, Rlist *finalar
 
 /*********************************************************************/
 
-static FnCallResult ReadArray(EvalContext *ctx, FnCall *fp, Rlist *finalargs, DataType type, int intIndex)
+static FnCallResult ReadArray(EvalContext *ctx, const FnCall *fp, const Rlist *finalargs, DataType type, int intIndex)
 /* lval,filename,separator,comment,Max number of bytes  */
 {
     char *file_buffer = NULL;
@@ -5007,35 +5102,35 @@ static FnCallResult ReadArray(EvalContext *ctx, FnCall *fp, Rlist *finalargs, Da
 
 /*********************************************************************/
 
-static FnCallResult FnCallReadStringArray(EvalContext *ctx, FnCall *fp, Rlist *args)
+static FnCallResult FnCallReadStringArray(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *args)
 {
     return ReadArray(ctx, fp, args, DATA_TYPE_STRING, false);
 }
 
 /*********************************************************************/
 
-static FnCallResult FnCallReadStringArrayIndex(EvalContext *ctx, FnCall *fp, Rlist *args)
+static FnCallResult FnCallReadStringArrayIndex(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *args)
 {
     return ReadArray(ctx, fp, args, DATA_TYPE_STRING, true);
 }
 
 /*********************************************************************/
 
-static FnCallResult FnCallReadIntArray(EvalContext *ctx, FnCall *fp, Rlist *args)
+static FnCallResult FnCallReadIntArray(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *args)
 {
     return ReadArray(ctx, fp, args, DATA_TYPE_INT, false);
 }
 
 /*********************************************************************/
 
-static FnCallResult FnCallReadRealArray(EvalContext *ctx, FnCall *fp, Rlist *args)
+static FnCallResult FnCallReadRealArray(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *args)
 {
     return ReadArray(ctx, fp, args, DATA_TYPE_REAL, false);
 }
 
 /*********************************************************************/
 
-static FnCallResult ParseArray(EvalContext *ctx, FnCall *fp, Rlist *finalargs, DataType type, int intIndex)
+static FnCallResult ParseArray(EvalContext *ctx, const FnCall *fp, const Rlist *finalargs, DataType type, int intIndex)
 /* lval,filename,separator,comment,Max number of bytes  */
 {
     int entries = 0;
@@ -5091,35 +5186,35 @@ static FnCallResult ParseArray(EvalContext *ctx, FnCall *fp, Rlist *finalargs, D
 
 /*********************************************************************/
 
-static FnCallResult FnCallParseStringArray(EvalContext *ctx, FnCall *fp, Rlist *args)
+static FnCallResult FnCallParseStringArray(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *args)
 {
     return ParseArray(ctx, fp, args, DATA_TYPE_STRING, false);
 }
 
 /*********************************************************************/
 
-static FnCallResult FnCallParseStringArrayIndex(EvalContext *ctx, FnCall *fp, Rlist *args)
+static FnCallResult FnCallParseStringArrayIndex(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *args)
 {
     return ParseArray(ctx, fp, args, DATA_TYPE_STRING, true);
 }
 
 /*********************************************************************/
 
-static FnCallResult FnCallParseIntArray(EvalContext *ctx, FnCall *fp, Rlist *args)
+static FnCallResult FnCallParseIntArray(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *args)
 {
     return ParseArray(ctx, fp, args, DATA_TYPE_INT, false);
 }
 
 /*********************************************************************/
 
-static FnCallResult FnCallParseRealArray(EvalContext *ctx, FnCall *fp, Rlist *args)
+static FnCallResult FnCallParseRealArray(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *args)
 {
     return ParseArray(ctx, fp, args, DATA_TYPE_REAL, false);
 }
 
 /*********************************************************************/
 
-static FnCallResult FnCallSplitString(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallSplitString(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     Rlist *newlist = NULL;
 
@@ -5145,7 +5240,7 @@ static FnCallResult FnCallSplitString(ARG_UNUSED EvalContext *ctx, ARG_UNUSED Fn
 
 /*********************************************************************/
 
-static FnCallResult FnCallFileSexist(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallFileSexist(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char naked[CF_MAXVARSIZE];
     char *listvar = RlistScalarValue(finalargs);
@@ -5194,7 +5289,7 @@ static FnCallResult FnCallFileSexist(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rl
 /* LDAP Nova features                                                */
 /*********************************************************************/
 
-static FnCallResult FnCallLDAPValue(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallLDAPValue(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     char buffer[CF_BUFSIZE], handle[CF_BUFSIZE];
     void *newval = NULL;
@@ -5234,7 +5329,7 @@ static FnCallResult FnCallLDAPValue(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCa
 
 /*********************************************************************/
 
-static FnCallResult FnCallLDAPArray(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallLDAPArray(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     void *newval;
 
@@ -5260,7 +5355,7 @@ static FnCallResult FnCallLDAPArray(EvalContext *ctx, FnCall *fp, Rlist *finalar
 
 /*********************************************************************/
 
-static FnCallResult FnCallLDAPList(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallLDAPList(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     void *newval;
 
@@ -5286,7 +5381,7 @@ static FnCallResult FnCallLDAPList(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCal
 
 /*********************************************************************/
 
-static FnCallResult FnCallRegLDAP(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallRegLDAP(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     void *newval;
 
@@ -5315,7 +5410,7 @@ static FnCallResult FnCallRegLDAP(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist
 
 #define KILOBYTE 1024
 
-static FnCallResult FnCallDiskFree(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallDiskFree(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     off_t df;
 
@@ -5330,7 +5425,7 @@ static FnCallResult FnCallDiskFree(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCal
 }
 
 
-static FnCallResult FnCallMakerule(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+static FnCallResult FnCallMakerule(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     const char *target = RlistScalarValue(finalargs);
     const char *listvar = RlistScalarValue(finalargs->next);
@@ -5408,7 +5503,7 @@ static FnCallResult FnCallMakerule(EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlis
 
 #if !defined(__MINGW32__)
 
-FnCallResult FnCallUserExists(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+FnCallResult FnCallUserExists(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     struct passwd *pw;
     uid_t uid = CF_SAME_OWNER;
@@ -5438,7 +5533,7 @@ FnCallResult FnCallUserExists(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp
 
 /*********************************************************************/
 
-FnCallResult FnCallGroupExists(ARG_UNUSED EvalContext *ctx, ARG_UNUSED FnCall *fp, Rlist *finalargs)
+FnCallResult FnCallGroupExists(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
     struct group *gr;
     gid_t gid = CF_SAME_GROUP;
@@ -5682,11 +5777,12 @@ static int BuildLineArray(EvalContext *ctx, const Bundle *bundle, char *array_lv
 
 /*********************************************************************/
 
-static int ExecModule(EvalContext *ctx, char *command, const char *ns)
+static int ExecModule(EvalContext *ctx, char *command)
 {
     FILE *pp;
     char *sp = NULL;
     char context[CF_BUFSIZE];
+    StringSet *tags = NULL;
     int print = false;
 
     context[0] = '\0';
@@ -5735,23 +5831,30 @@ static int ExecModule(EvalContext *ctx, char *command, const char *ns)
             }
         }
 
-        ModuleProtocol(ctx, command, line, print, ns, context);
+        ModuleProtocol(ctx, command, line, print, context, &tags);
     }
 
+    if (NULL != tags)
+    {
+        StringSetDestroy(tags);
+    }
+    
     cf_pclose(pp);
     free(line);
     return true;
 }
 
-/*********************************************************************/
-/* Level                                                             */
-/*********************************************************************/
 
-void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print, const char *ns, char* context)
+void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print, char* context, StringSet **tags)
 {
     char name[CF_BUFSIZE], content[CF_BUFSIZE];
     char arg0[CF_BUFSIZE];
     char *filename;
+
+    if (NULL == *tags)
+    {
+        *tags = StringSetNew();
+    }
 
     if (*context == '\0')
     {
@@ -5781,13 +5884,31 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
             Log(LOG_LEVEL_VERBOSE, "Module changed variable context from '%s' to '%s'", context, content);
             strcpy(context, content);
         }
+        else if (1 == sscanf(line + 1, "meta=%[^\n]", content) && strlen(content) > 0)
+        {
+            Log(LOG_LEVEL_VERBOSE, "Module set meta tags to '%s'", content);
+            if (NULL != *tags)
+            {
+                StringSetDestroy(*tags);
+                *tags = NULL;
+            }
+
+            *tags = StringSetFromString(content, ',');
+            StringSetAdd(*tags, xstrdup("source=module"));
+        }
+        else
+        {
+            Log(LOG_LEVEL_INFO, "Unknown extended module command '%s'", line);
+        }
         break;
 
     case '+':
         Log(LOG_LEVEL_VERBOSE, "Activated classes '%s'", line + 1);
         if (CheckID(line + 1))
         {
-             EvalContextClassPut(ctx, ns, line + 1, true, CONTEXT_SCOPE_NAMESPACE, "source=module");
+            Buffer *tagbuf = StringSetToBuffer(*tags, ',');
+            EvalContextClassPutSoft(ctx, line + 1, CONTEXT_SCOPE_NAMESPACE, BufferData(tagbuf));
+            BufferDestroy(tagbuf);
         }
         break;
     case '-':
@@ -5823,7 +5944,11 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
         {
             Log(LOG_LEVEL_VERBOSE, "Defined variable '%s' in context '%s' with value '%s'", name, context, content);
             VarRef *ref = VarRefParseFromScope(name, context);
-            EvalContextVariablePut(ctx, ref, content, DATA_TYPE_STRING, "source=module");
+
+            Buffer *tagbuf = StringSetToBuffer(*tags, ',');
+            EvalContextVariablePut(ctx, ref, content, DATA_TYPE_STRING, BufferData(tagbuf));
+            BufferDestroy(tagbuf);
+
             VarRefDestroy(ref);
         }
         break;
@@ -5840,7 +5965,11 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
             Log(LOG_LEVEL_VERBOSE, "Defined variable '%s' in context '%s' with value '%s'", name, context, content);
 
             VarRef *ref = VarRefParseFromScope(name, context);
-            EvalContextVariablePut(ctx, ref, list, DATA_TYPE_STRING_LIST, "source=module");
+
+            Buffer *tagbuf = StringSetToBuffer(*tags, ',');
+            EvalContextVariablePut(ctx, ref, list, DATA_TYPE_STRING_LIST, BufferData(tagbuf));
+            BufferDestroy(tagbuf);
+
             VarRefDestroy(ref);
         }
         break;
@@ -6685,8 +6814,20 @@ static const FnCallArg XFORM_SUBSTR_ARGS[] =
     {NULL, DATA_TYPE_NONE, NULL}
 };
 
-FnCallArg DATASTATE_ARGS[] =
+static const FnCallArg DATASTATE_ARGS[] =
 {
+    {NULL, DATA_TYPE_NONE, NULL}
+};
+
+static const FnCallArg GETCLASSMETATAGS_ARGS[] =
+{
+    {CF_IDRANGE, DATA_TYPE_STRING, "Class identifier"},
+    {NULL, DATA_TYPE_NONE, NULL}
+};
+
+static const FnCallArg GETVARIABLEMETATAGS_ARGS[] =
+{
+    {CF_IDRANGE, DATA_TYPE_STRING, "Variable identifier"},
     {NULL, DATA_TYPE_NONE, NULL}
 };
 
@@ -6754,6 +6895,8 @@ const FnCallType CF_FNCALL_TYPES[] =
                   FNCALL_OPTION_VARARG, FNCALL_CATEGORY_FILES, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("format", DATA_TYPE_STRING, FORMAT_ARGS, &FnCallFormat, "Applies a list of string values in arg2,arg3... to a string format in arg1 with sprintf() rules",
                   FNCALL_OPTION_VARARG, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
+    FnCallTypeNew("getclassmetatags", DATA_TYPE_STRING_LIST, GETCLASSMETATAGS_ARGS, &FnCallGetMetaTags, "Collect a class's meta tags into an slist",
+                  FNCALL_OPTION_NONE, FNCALL_CATEGORY_UTILS, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("getenv", DATA_TYPE_STRING, GETENV_ARGS, &FnCallGetEnv, "Return the environment variable named arg1, truncated at arg2 characters",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_SYSTEM, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("getfields", DATA_TYPE_INT, GETFIELDS_ARGS, &FnCallGetFields, "Get an array of fields in the lines matching regex arg1 in file arg2, split on regex arg3 as array name arg4",
@@ -6768,6 +6911,8 @@ const FnCallType CF_FNCALL_TYPES[] =
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_SYSTEM, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("getvalues", DATA_TYPE_STRING_LIST, GETINDICES_ARGS, &FnCallGetValues, "Get a list of values corresponding to the right hand sides in an array whose id is the argument and assign to variable",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
+    FnCallTypeNew("getvariablemetatags", DATA_TYPE_STRING_LIST, GETVARIABLEMETATAGS_ARGS, &FnCallGetMetaTags, "Collect a variable's meta tags into an slist",
+                  FNCALL_OPTION_NONE, FNCALL_CATEGORY_UTILS, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("grep", DATA_TYPE_STRING_LIST, GREP_ARGS, &FnCallGrep, "Extract the sub-list if items matching the regular expression in arg1 of the list named in arg2",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("groupexists", DATA_TYPE_CONTEXT, GROUPEXISTS_ARGS, &FnCallGroupExists, "True if group or numerical id exists on this host",

@@ -140,6 +140,23 @@ int FullRead(int fd, char *ptr, size_t len)
     return total_read;
 }
 
+/**
+ * @return 1 if dir, 0 if not, -1 in case of error.
+ * @note difference with files_names.h:IsDir() is that this doesn't
+ *       follow symlinks, so a symlink is never a directory...
+ */
+int IsDirReal(const char *path)
+{
+    struct stat s;
+
+    if (lstat(path, &s) == -1)
+    {
+        return -1;
+    }
+
+    return (S_ISDIR(s.st_mode) != 0);
+}
+
 #ifdef TEST_SYMLINK_ATOMICITY
 void test_switch_symlink();
 #define TEST_SYMLINK_SWITCH_POINT test_switch_symlink();
@@ -236,14 +253,21 @@ int safe_open(const char *pathname, int flags, ...)
     {
         char *component = next_component;
         next_component = strchr(component + 1, '/');
+        // Used to restore the slashes in the final path component.
+        char *restore_slash = NULL;
         if (next_component)
         {
+            restore_slash = next_component;
             *next_component = '\0';
             // Eliminate double slashes.
             while (*(++next_component) == '/') { /*noop*/ }
             if (!*next_component)
             {
                 next_component = NULL;
+            }
+            else
+            {
+                restore_slash = NULL;
             }
         }
 
@@ -272,6 +296,10 @@ int safe_open(const char *pathname, int flags, ...)
             {
                 // Already exists. Make sure we *don't* create it.
                 flags &= ~O_CREAT;
+            }
+            if (restore_slash)
+            {
+                *restore_slash = '/';
             }
             int filefd = openat(currentfd, component, flags, mode);
             close(currentfd);

@@ -729,7 +729,7 @@ static void HailExec(AgentConnection *conn, char *peer, char *recvbuffer, char *
     if (SendTransaction(conn->conn_info, sendbuffer, 0, CF_DONE) == -1)
     {
         Log(LOG_LEVEL_ERR, "Transmission rejected. (send: %s)", GetErrorStr());
-        DisconnectServer(conn, false);
+        DisconnectServer(conn);
         return;
     }
 
@@ -776,7 +776,7 @@ static void HailExec(AgentConnection *conn, char *peer, char *recvbuffer, char *
     }
 
     DeleteStream(fp);
-    DisconnectServer(conn, false);
+    DisconnectServer(conn);
 }
 
 /********************************************************************/
@@ -792,7 +792,7 @@ static void HostPing(AgentConnection *conn, char *peer, char *recvbuffer, char *
     if (SendTransaction(conn->conn_info, sendbuffer, 0, CF_DONE) == -1)
     {
         Log(LOG_LEVEL_ERR, "Transmission rejected");
-        DisconnectServer(conn, false);
+        DisconnectServer(conn);
         return;
     }
 
@@ -841,7 +841,6 @@ static void HostPing(AgentConnection *conn, char *peer, char *recvbuffer, char *
     }
 
     DeleteStream(fp);
-    DisconnectServer(conn, false);
 }
 
 /********************************************************************/

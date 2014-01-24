@@ -83,7 +83,7 @@ static int PushDirState(EvalContext *ctx, char *name, struct stat *sb);
 static bool PopDirState(int goback, char *name, struct stat *sb, Recursion r);
 static bool CheckLinkSecurity(struct stat *sb, char *name);
 static int CompareForFileCopy(char *sourcefile, char *destfile, struct stat *ssb, struct stat *dsb, FileCopy fc, AgentConnection *conn);
-static void FileAutoDefine(EvalContext *ctx, char *destfile, const char *ns);
+static void FileAutoDefine(EvalContext *ctx, char *destfile);
 static void TruncateFile(char *name);
 static void RegisterAHardLink(int i, char *value, Attributes attr, CompressedArray **inode_cache);
 static PromiseResult VerifyCopiedFileAttributes(EvalContext *ctx, const char *src, const char *dest, struct stat *sstat, struct stat *dstat, Attributes attr, const Promise *pp);
@@ -375,7 +375,7 @@ static PromiseResult CfCopyFile(EvalContext *ctx, char *sourcefile, char *destfi
 
                 if (MatchRlistItem(ctx, AUTO_DEFINE_LIST, destfile))
                 {
-                    FileAutoDefine(ctx, destfile, PromiseGetNamespace(pp));
+                    FileAutoDefine(ctx, destfile);
                 }
             }
             else
@@ -499,7 +499,7 @@ static PromiseResult CfCopyFile(EvalContext *ctx, char *sourcefile, char *destfi
 
                 if (MatchRlistItem(ctx, AUTO_DEFINE_LIST, destfile))
                 {
-                    FileAutoDefine(ctx, destfile, PromiseGetNamespace(pp));
+                    FileAutoDefine(ctx, destfile);
                 }
 
                 if (CopyRegularFile(ctx, sourcefile, destfile, ssb, dsb, attr, pp, inode_cache, conn, &result))
@@ -2400,13 +2400,16 @@ static PromiseResult CopyFileSources(EvalContext *ctx, char *destination, Attrib
 
     if (conn != NULL && (!conn->authenticated))
     {
-        cfPS(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_FAIL, pp, attr, "No authenticated source '%s' in files.copyfrom promise", source);
+        cfPS(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_FAIL, pp, attr,
+             "No authenticated source '%s' in files.copy_from promise",
+             source);
         return PROMISE_RESULT_FAIL;
     }
 
     if (cf_stat(attr.copy.source, &ssb, attr.copy, conn) == -1)
     {
-        cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_FAIL, pp, attr, "Can't stat '%s' in files.copyfrom promise", source);
+        cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_FAIL, pp, attr,
+             "Can't stat file '%s' in files.copy_from promise", source);
         return PROMISE_RESULT_FAIL;
     }
 
@@ -2422,7 +2425,9 @@ static PromiseResult CopyFileSources(EvalContext *ctx, char *destination, Attrib
 
     if (!MakeParentDirectory(vbuff, attr.move_obstructions))
     {
-        cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_FAIL, pp, attr, "Can't make directories for '%s' in files.copyfrom promise", vbuff);
+        cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_FAIL, pp, attr,
+             "Can't make directories for '%s' in files.copy_from promise",
+             vbuff);
         return PROMISE_RESULT_FAIL;
     }
 
@@ -2500,7 +2505,7 @@ PromiseResult ScheduleCopyOperation(EvalContext *ctx, char *destination, Attribu
          * client_code.c:SERVERLIST, so just close it right after transaction. */
         if (attr.transaction.background)
         {
-            DisconnectServer(conn, false);
+            DisconnectServer(conn);
         }
         else
         {
@@ -2795,12 +2800,12 @@ static int CompareForFileCopy(char *sourcefile, char *destfile, struct stat *ssb
     return false;
 }
 
-static void FileAutoDefine(EvalContext *ctx, char *destfile, const char *ns)
+static void FileAutoDefine(EvalContext *ctx, char *destfile)
 {
     char context[CF_MAXVARSIZE];
 
     snprintf(context, CF_MAXVARSIZE, "auto_%s", CanonifyName(destfile));
-    EvalContextClassPut(ctx, ns, context, true, CONTEXT_SCOPE_NAMESPACE, "source=promise");
+    EvalContextClassPutSoft(ctx, context, CONTEXT_SCOPE_NAMESPACE, "source=promise");
     Log(LOG_LEVEL_INFO, "Auto defining class '%s'", context);
 }
 
