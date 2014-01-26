@@ -73,13 +73,15 @@
 
 static FnCallResult FilterInternal(EvalContext *ctx, const FnCall *fp, char *regex, char *name, int do_regex, int invert, long max);
 
-static char *StripPatterns(char *file_buffer, char *pattern, char *filename);
+static char *StripPatterns(char *file_buffer, const char *pattern, const char *filename);
 static void CloseStringHole(char *s, int start, int end);
-static int BuildLineArray(EvalContext *ctx, const Bundle *bundle, char *array_lval, char *file_buffer, char *split, int maxent, DataType type, int intIndex);
+static int BuildLineArray(EvalContext *ctx, const Bundle *bundle, const char *array_lval, const char *file_buffer,
+                          const char *split, int maxent, DataType type, bool int_index);
 static int ExecModule(EvalContext *ctx, char *command);
+
 static bool CheckID(const char *id);
 static const Rlist *GetListReferenceArgument(const EvalContext *ctx, const const FnCall *fp, const char *lval_str, DataType *datatype_out);
-static void *CfReadFile(char *filename, int maxsize);
+static void *CfReadFile(const char *filename, int maxsize);
 
 /*******************************************************************/
 
@@ -1037,23 +1039,8 @@ static FnCallResult FnCallBundlesMatching(EvalContext *ctx, const Policy *policy
         return FnFailure();
     }
 
-    if (!fp->caller)
-    {
-        FatalError(ctx, "Function '%s' had a null caller", fp->name);
-    }
-
     const char *regex = RlistScalarValue(finalargs);
     const Rlist *tag_args = finalargs->next;
-
-    if (!policy)
-    {
-        FatalError(ctx, "Function '%s' had a null policy", fp->name);
-    }
-
-    if (!policy->bundles)
-    {
-        FatalError(ctx, "Function '%s' had null policy bundles", fp->name);
-    }
 
     Rlist *matches = NULL;
     for (size_t i = 0; i < SeqLength(policy->bundles); i++)
@@ -1780,7 +1767,23 @@ static FnCallResult FnCallGetIndices(EvalContext *ctx, ARG_UNUSED const Policy *
 
 static FnCallResult FnCallGetValues(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
-    VarRef *ref = VarRefParseFromBundle(RlistScalarValue(finalargs), PromiseGetBundle(fp->caller));
+    VarRef *ref = VarRefParse(RlistScalarValue(finalargs));
+    if (!VarRefIsQualified(ref))
+    {
+        if (fp->caller)
+        {
+            const Bundle *caller_bundle = PromiseGetBundle(fp->caller);
+            VarRefQualify(ref, caller_bundle->ns, caller_bundle->name);
+        }
+        else
+        {
+            Log(LOG_LEVEL_WARNING, "Function '%s'' was given an unqualified variable reference, "
+                "and it was not called from a promise. No way to automatically qualify the reference '%s'.",
+                fp->name, RlistScalarValue(finalargs));
+            VarRefDestroy(ref);
+            return FnFailure();
+        }
+    }
 
     DataType type = DATA_TYPE_NONE;
     const void *value = EvalContextVariableGet(ctx, ref, &type);
@@ -1986,77 +1989,88 @@ static FnCallResult FnCallJoin(EvalContext *ctx, ARG_UNUSED const Policy *policy
 
 /*********************************************************************/
 
-static FnCallResult FnCallGetFields(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
+static FnCallResult FnCallGetFields(EvalContext *ctx,
+                                    ARG_UNUSED const Policy *policy,
+                                    const FnCall *fp,
+                                    const Rlist *finalargs)
 {
-    Rlist *rp, *newlist;
-    char name[CF_MAXVARSIZE];
-    int lcount = 0, vcount = 0, nopurge = true;
-    FILE *fin;
+    const char *regex = RlistScalarValue(finalargs);
+    const char *filename = RlistScalarValue(finalargs->next);
+    const char *split = RlistScalarValue(finalargs->next->next);
+    const char *array_lval = RlistScalarValue(finalargs->next->next->next);
 
-/* begin fn specific content */
-
-    char *regex = RlistScalarValue(finalargs);
-    char *filename = RlistScalarValue(finalargs->next);
-    char *split = RlistScalarValue(finalargs->next->next);
-    char *array_lval = RlistScalarValue(finalargs->next->next->next);
-
-    if ((fin = safe_fopen(filename, "r")) == NULL)
+    FILE *fin = safe_fopen(filename, "r");
+    if (!fin)
     {
         Log(LOG_LEVEL_ERR, "File '%s' could not be read in getfields(). (fopen: %s)", filename, GetErrorStr());
         return FnFailure();
     }
 
-    for (;;)
+    size_t line_size = CF_BUFSIZE;
+    char *line = xmalloc(CF_BUFSIZE);
+
+    int line_count = 0;
+
+    while (CfReadLine(&line, &line_size, fin) != -1)
     {
-        char line[CF_BUFSIZE];
-
-        if (fgets(line, sizeof(line), fin) == NULL)
-        {
-            if (ferror(fin))
-            {
-                Log(LOG_LEVEL_ERR, "Unable to read data from file '%s'. (fgets: %s)", filename, GetErrorStr());
-                fclose(fin);
-                return FnFailure();
-            }
-            else /* feof */
-            {
-                break;
-            }
-        }
-
-        if (Chop(line, CF_EXPANDSIZE) == -1)
-        {
-            Log(LOG_LEVEL_ERR, "Chop was called on a string that seemed to have no terminator");
-        }
-
         if (!StringMatchFull(regex, line))
         {
             continue;
         }
 
-        if (lcount == 0)
+        if (line_count == 0)
         {
-            newlist = RlistFromSplitRegex(line, split, 31, nopurge);
+            Rlist *newlist = RlistFromSplitRegex(line, split, 31, true);
+            int vcount = 1;
 
-            vcount = 1;
-
-            for (rp = newlist; rp != NULL; rp = rp->next)
+            for (const Rlist *rp = newlist; rp != NULL; rp = rp->next)
             {
+                char name[CF_MAXVARSIZE];
                 snprintf(name, CF_MAXVARSIZE - 1, "%s[%d]", array_lval, vcount);
-                VarRef *ref = VarRefParseFromBundle(name, PromiseGetBundle(fp->caller));
+                VarRef *ref = VarRefParse(name);
+                if (!VarRefIsQualified(ref))
+                {
+                    if (fp->caller)
+                    {
+                        const Bundle *caller_bundle = PromiseGetBundle(fp->caller);
+                        VarRefQualify(ref, caller_bundle->ns, caller_bundle->name);
+                    }
+                    else
+                    {
+                        Log(LOG_LEVEL_WARNING, "Function '%s'' was given an unqualified variable reference, "
+                            "and it was not called from a promise. No way to automatically qualify the reference '%s'.",
+                            fp->name, RlistScalarValue(finalargs));
+                        VarRefDestroy(ref);
+                        free(line);
+                        RlistDestroy(newlist);
+                        return FnFailure();
+                    }
+                }
+
                 EvalContextVariablePut(ctx, ref, RlistScalarValue(rp), DATA_TYPE_STRING, "source=function,function=getfields");
                 VarRefDestroy(ref);
                 Log(LOG_LEVEL_VERBOSE, "getfields: defining '%s' => '%s'", name, RlistScalarValue(rp));
                 vcount++;
             }
+
+            RlistDestroy(newlist);
         }
 
-        lcount++;
+        line_count++;
+    }
+
+    free(line);
+
+    if (!feof(fin))
+    {
+        Log(LOG_LEVEL_ERR, "Unable to read data from file '%s'. (fgets: %s)", filename, GetErrorStr());
+        fclose(fin);
+        return FnFailure();
     }
 
     fclose(fin);
 
-    return FnReturnF("%d", lcount);
+    return FnReturnF("%d", line_count);
 }
 
 /*********************************************************************/
@@ -2159,15 +2173,30 @@ static FnCallResult FnCallLsDir(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Po
 
 static FnCallResult FnCallMapArray(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
+    if (!fp->caller)
+    {
+        Log(LOG_LEVEL_ERR, "Function '%s' must be called from a promise", fp->name);
+        return FnFailure();
+    }
+
+    const char *arg_map = RlistScalarValue(finalargs);
+    const char *arg_array = RlistScalarValue(finalargs->next);
+
+    VariableTableIterator *iter;
+    {
+        VarRef *ref = VarRefParse(arg_array);
+        if (!VarRefIsQualified(ref))
+        {
+            const Bundle *caller_bundle = PromiseGetBundle(fp->caller);
+            VarRefQualify(ref, caller_bundle->ns, caller_bundle->name);
+        }
+
+        iter = EvalContextVariableTableIteratorNew(ctx, ref->ns, ref->scope, ref->lval);
+        VarRefDestroy(ref);
+    }
+
     Rlist *returnlist = NULL;
-
-    char *map = RlistScalarValue(finalargs);
-
-    VarRef *ref = VarRefParseFromBundle(RlistScalarValue(finalargs->next), PromiseGetBundle(fp->caller));
-
-    VariableTableIterator *iter = EvalContextVariableTableIteratorNew(ctx, ref->ns, ref->scope, ref->lval);
-    Variable *var = NULL;
-
+    Variable *var;
     Buffer *expbuf = BufferNew();
     while ((var = VariableTableIteratorNext(iter)))
     {
@@ -2185,7 +2214,7 @@ static FnCallResult FnCallMapArray(EvalContext *ctx, ARG_UNUSED const Policy *po
                 BufferZero(expbuf);
                 EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "v", var->rval.item, DATA_TYPE_STRING,
                                               "source=function,function=maparray");
-                ExpandScalar(ctx, PromiseGetBundle(fp->caller)->ns, PromiseGetBundle(fp->caller)->name, map, expbuf);
+                ExpandScalar(ctx, PromiseGetBundle(fp->caller)->ns, PromiseGetBundle(fp->caller)->name, arg_map, expbuf);
 
                 if (strstr(BufferData(expbuf), "$(this.k)") || strstr(BufferData(expbuf), "${this.k}") ||
                     strstr(BufferData(expbuf), "$(this.v)") || strstr(BufferData(expbuf), "${this.v}"))
@@ -2194,6 +2223,7 @@ static FnCallResult FnCallMapArray(EvalContext *ctx, ARG_UNUSED const Policy *po
                     EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "k");
                     EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "v");
                     BufferDestroy(expbuf);
+                    VariableTableIteratorDestroy(iter);
                     return FnFailure();
                 }
 
@@ -2204,11 +2234,11 @@ static FnCallResult FnCallMapArray(EvalContext *ctx, ARG_UNUSED const Policy *po
 
         case RVAL_TYPE_LIST:
             {
-                for (const Rlist *rp = var->rval.item; rp != NULL; rp = rp->next)
+                for (const Rlist *rp = RvalRlistValue(var->rval); rp != NULL; rp = rp->next)
                 {
                     BufferZero(expbuf);
                     EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "v", RlistScalarValue(rp), DATA_TYPE_STRING, "source=function,function=maparray");
-                    ExpandScalar(ctx, PromiseGetBundle(fp->caller)->ns, PromiseGetBundle(fp->caller)->name, map, expbuf);
+                    ExpandScalar(ctx, PromiseGetBundle(fp->caller)->ns, PromiseGetBundle(fp->caller)->name, arg_map, expbuf);
 
                     if (strstr(BufferData(expbuf), "$(this.k)") || strstr(BufferData(expbuf), "${this.k}") ||
                         strstr(BufferData(expbuf), "$(this.v)") || strstr(BufferData(expbuf), "${this.v}"))
@@ -2217,6 +2247,7 @@ static FnCallResult FnCallMapArray(EvalContext *ctx, ARG_UNUSED const Policy *po
                         EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "k");
                         EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "v");
                         BufferDestroy(expbuf);
+                        VariableTableIteratorDestroy(iter);
                         return FnFailure();
                     }
 
@@ -2234,7 +2265,6 @@ static FnCallResult FnCallMapArray(EvalContext *ctx, ARG_UNUSED const Policy *po
 
     BufferDestroy(expbuf);
     VariableTableIteratorDestroy(iter);
-    VarRefDestroy(ref);
 
     if (returnlist == NULL)
     {
@@ -2249,7 +2279,7 @@ static FnCallResult FnCallMapList(EvalContext *ctx, ARG_UNUSED const Policy *pol
     Rlist *newlist = NULL;
     DataType retype;
 
-    const char *map = RlistScalarValue(finalargs);
+    const char *arg_map = RlistScalarValue(finalargs);
     char *listvar = RlistScalarValue(finalargs->next);
 
     char naked[CF_MAXVARSIZE] = "";
@@ -2285,7 +2315,7 @@ static FnCallResult FnCallMapList(EvalContext *ctx, ARG_UNUSED const Policy *pol
         BufferZero(expbuf);
         EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "this", RlistScalarValue(rp), DATA_TYPE_STRING, "source=function,function=maplist");
 
-        ExpandScalar(ctx, NULL, "this", map, expbuf);
+        ExpandScalar(ctx, NULL, "this", arg_map, expbuf);
 
         if (strstr(BufferData(expbuf), "$(this)") || strstr(BufferData(expbuf), "${this}"))
         {
@@ -2322,10 +2352,28 @@ static FnCallResult FnCallMergeData(EvalContext *ctx, ARG_UNUSED const Policy *p
 
     Seq *containers = SeqNew(10, NULL);
     Seq *toremove = SeqNew(10, NULL);
-    // segfaults: Seq *toremove = SeqNew(10, JsonDestroy);
+
     for (const Rlist *arg = args; arg; arg = arg->next)
     {
-        VarRef *ref = VarRefParseFromBundle(RlistScalarValue(arg), PromiseGetBundle(fp->caller));
+        VarRef *ref = VarRefParse(RlistScalarValue(arg));
+        if (!VarRefIsQualified(ref))
+        {
+            if (fp->caller)
+            {
+                const Bundle *caller_bundle = PromiseGetBundle(fp->caller);
+                VarRefQualify(ref, caller_bundle->ns, caller_bundle->name);
+            }
+            else
+            {
+                Log(LOG_LEVEL_WARNING, "Function '%s'' was given an unqualified variable reference, "
+                    "and it was not called from a promise. No way to automatically qualify the reference '%s'.",
+                    fp->name, RlistScalarValue(arg));
+                VarRefDestroy(ref);
+                SeqDestroy(containers);
+                SeqDestroy(toremove);
+                return FnFailure();
+            }
+        }
 
         DataType value_type = DATA_TYPE_NONE;
         const void *value = EvalContextVariableGet(ctx, ref, &value_type);
@@ -2463,7 +2511,10 @@ static FnCallResult FnCallDatastate(EvalContext *ctx,
 }
 
 
-static FnCallResult FnCallSelectServers(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
+static FnCallResult FnCallSelectServers(EvalContext *ctx,
+                                        ARG_UNUSED const Policy *policy,
+                                        const FnCall *fp,
+                                        const Rlist *finalargs)
  /* ReadTCP(localhost,80,'GET index.html',1000) */
 {
     AgentConnection *conn = NULL;
@@ -2472,12 +2523,31 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, ARG_UNUSED const Polic
     short portnum;
     buffer[0] = '\0';
 
-    char *listvar = RlistScalarValue(finalargs);
-    char *port = RlistScalarValue(finalargs->next);
-    char *sendstring = RlistScalarValue(finalargs->next->next);
-    char *regex = RlistScalarValue(finalargs->next->next->next);
-    char *maxbytes = RlistScalarValue(finalargs->next->next->next->next);
-    char *array_lval = RlistScalarValue(finalargs->next->next->next->next->next);
+    const char *listvar = RlistScalarValue(finalargs);
+    const char *port = RlistScalarValue(finalargs->next);
+    const char *sendstring = RlistScalarValue(finalargs->next->next);
+    const char *regex = RlistScalarValue(finalargs->next->next->next);
+    const char *maxbytes = RlistScalarValue(finalargs->next->next->next->next);
+    char *array_lval = xstrdup(RlistScalarValue(finalargs->next->next->next->next->next));
+
+    if (!IsQualifiedVariable(array_lval))
+    {
+        if (fp->caller)
+        {
+            VarRef *ref = VarRefParseFromBundle(array_lval, PromiseGetBundle(fp->caller));
+            free(array_lval);
+            array_lval = VarRefToString(ref, true);
+            VarRefDestroy(ref);
+        }
+        else
+        {
+            Log(LOG_LEVEL_ERR, "Function '%s' called with an unqualifed array reference '%s', "
+                "and the reference could not be automatically qualified as the function was not called from a promise.",
+                fp->name, array_lval);
+            free(array_lval);
+            return FnFailure();
+        }
+    }
 
     if (IsVarList(listvar))
     {
@@ -2498,6 +2568,7 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, ARG_UNUSED const Polic
             "Function selectservers was promised a list called '%s' but this was not found from context '%s.%s'",
               listvar, ref->scope, naked);
         VarRefDestroy(ref);
+        free(array_lval);
         return FnFailure();
     }
 
@@ -2507,6 +2578,7 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, ARG_UNUSED const Polic
     {
         Log(LOG_LEVEL_VERBOSE,
             "Function selectservers was promised a list called '%s' but this variable is not a list", listvar);
+        free(array_lval);
         return FnFailure();
     }
 
@@ -2515,6 +2587,7 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, ARG_UNUSED const Polic
 
     if (val < 0 || portnum < 0)
     {
+        free(array_lval);
         return FnFailure();
     }
 
@@ -2526,6 +2599,7 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, ARG_UNUSED const Polic
 
     if (THIS_AGENT_TYPE != AGENT_TYPE_AGENT)
     {
+        free(array_lval);
         return FnReturnF("%d", count);
     }
 
@@ -2581,7 +2655,7 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, ARG_UNUSED const Polic
             {
                 Log(LOG_LEVEL_VERBOSE, "Host '%s' is alive and responding correctly", RlistScalarValue(rp));
                 snprintf(buffer, CF_MAXVARSIZE - 1, "%s[%d]", array_lval, count);
-                VarRef *ref = VarRefParseFromBundle(buffer, PromiseGetBundle(fp->caller));
+                VarRef *ref = VarRefParse(buffer);
                 EvalContextVariablePut(ctx, ref, RvalScalarValue(rp->val), DATA_TYPE_STRING, "source=function,function=selectservers");
                 VarRefDestroy(ref);
                 count++;
@@ -2591,7 +2665,7 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, ARG_UNUSED const Polic
         {
             Log(LOG_LEVEL_VERBOSE, "Host '%s' is alive", RlistScalarValue(rp));
             snprintf(buffer, CF_MAXVARSIZE - 1, "%s[%d]", array_lval, count);
-            VarRef *ref = VarRefParseFromBundle(buffer, PromiseGetBundle(fp->caller));
+            VarRef *ref = VarRefParse(buffer);
             EvalContextVariablePut(ctx, ref, RvalScalarValue(rp->val), DATA_TYPE_STRING, "source=function,function=selectservers");
             VarRefDestroy(ref);
 
@@ -2610,6 +2684,7 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx, ARG_UNUSED const Polic
     }
 
     PolicyDestroy(select_server_policy);
+    free(array_lval);
 
 /* Return the subset that is alive and responding correctly */
 
@@ -3441,16 +3516,17 @@ static FnCallResult FnCallDatatype(EvalContext *ctx, ARG_UNUSED const Policy *po
 {
     const char* const varname = RlistScalarValue(finalargs);
 
-    VarRef* const ref = VarRefParseFromBundle(varname, PromiseGetBundle(fp->caller));
+    VarRef* const ref = VarRefParse(varname);
     DataType type = DATA_TYPE_NONE;
-    const void *rval = EvalContextVariableGet(ctx, ref, &type);
+    const void *value = EvalContextVariableGet(ctx, ref, &type);
+    VarRefDestroy(ref);
 
     Writer* const typestring = StringWriter();
 
     if (type == DATA_TYPE_CONTAINER)
     {
 
-        const JsonElement* const jelement = rval;
+        const JsonElement* const jelement = value;
 
         if (JsonGetElementType(jelement) == JSON_ELEMENT_TYPE_CONTAINER)
         {
@@ -3490,17 +3566,8 @@ static FnCallResult FnCallDatatype(EvalContext *ctx, ARG_UNUSED const Policy *po
     else
     {
         Log(LOG_LEVEL_VERBOSE, "%s: variable '%s' is not a data container", fp->name, varname);
-
-        VarRefDestroy(ref);
-
         return FnFailure();
     }
-
-    Log(LOG_LEVEL_DEBUG,
-        "%s: from data container '%s', got top-level type '%s'",
-        fp->name, varname, StringWriterData(typestring));
-
-    VarRefDestroy(ref);
 
     return (FnCallResult) { FNCALL_SUCCESS, { StringWriterClose(typestring), RVAL_TYPE_SCALAR } };
 }
@@ -3514,7 +3581,7 @@ static FnCallResult FnCallNth(EvalContext *ctx, ARG_UNUSED const Policy *policy,
     const char* const key = RlistScalarValue(finalargs->next);
     long index = IntFromString(key);
 
-    VarRef *ref = VarRefParseFromBundle(varname, PromiseGetBundle(fp->caller));
+    VarRef *ref = VarRefParse(varname);
     DataType type = DATA_TYPE_NONE;
     const void *value = EvalContextVariableGet(ctx, ref, &type);
     VarRefDestroy(ref);
@@ -3769,7 +3836,7 @@ static FnCallResult FnCallFormat(EvalContext *ctx, ARG_UNUSED const Policy *poli
                         }
 
                         const char* const varname = data;
-                        VarRef *ref = VarRefParseFromBundle(varname, PromiseGetBundle(fp->caller));
+                        VarRef *ref = VarRefParse(varname);
                         DataType type = DATA_TYPE_NONE;
                         const void *value = EvalContextVariableGet(ctx, ref, &type);
                         VarRefDestroy(ref);
@@ -4435,9 +4502,27 @@ static FnCallResult FnCallRegExtract(EvalContext *ctx, ARG_UNUSED const Policy *
 /* begin fn specific content */
 
     strcpy(buffer, CF_ANYCLASS);
-    char *regex = RlistScalarValue(finalargs);
-    char *data = RlistScalarValue(finalargs->next);
-    char *arrayname = RlistScalarValue(finalargs->next->next);
+    const char *regex = RlistScalarValue(finalargs);
+    const char *data = RlistScalarValue(finalargs->next);
+    char *arrayname = xstrdup(RlistScalarValue(finalargs->next->next));
+    if (!IsQualifiedVariable(arrayname))
+    {
+        if (fp->caller)
+        {
+            VarRef *ref = VarRefParseFromBundle(arrayname, PromiseGetBundle(fp->caller));
+            free(arrayname);
+            arrayname = VarRefToString(ref, true);
+            VarRefDestroy(ref);
+        }
+        else
+        {
+            Log(LOG_LEVEL_ERR, "Function '%s' called with an unqualifed array reference '%s', "
+                "and the reference could not be automatically qualified as the function was not called from a promise.",
+                fp->name, arrayname);
+            free(arrayname);
+            return FnFailure();
+        }
+    }
 
     Seq *s = StringMatchCaptures(regex, data);
 
@@ -4451,11 +4536,12 @@ static FnCallResult FnCallRegExtract(EvalContext *ctx, ARG_UNUSED const Policy *
     {
         char var[CF_MAXVARSIZE] = "";
         snprintf(var, CF_MAXVARSIZE - 1, "%s[%d]", arrayname, i);
-        VarRef *new_ref = VarRefParseFromBundle(var, PromiseGetBundle(fp->caller));
+        VarRef *new_ref = VarRefParse(var);
         EvalContextVariablePut(ctx, new_ref, SeqAt(s, i), DATA_TYPE_STRING, "source=function,function=regextract");
         VarRefDestroy(new_ref);
     }
 
+    free(arrayname);
     SeqDestroy(s);
     return FnReturnContext(true);
 }
@@ -5012,10 +5098,11 @@ static FnCallResult FnCallParseJson(ARG_UNUSED EvalContext *ctx, ARG_UNUSED cons
 static FnCallResult FnCallStoreJson(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     const char *varname = RlistScalarValue(finalargs);
-    VarRef *ref = VarRefParseFromBundle(varname, PromiseGetBundle(fp->caller));
 
+    VarRef *ref = VarRefParse(varname);
     DataType type = DATA_TYPE_NONE;
     const JsonElement *value = EvalContextVariableGet(ctx, ref, &type);
+    VarRefDestroy(ref);
 
     if (type == DATA_TYPE_CONTAINER)
     {
@@ -5047,9 +5134,15 @@ static FnCallResult FnCallStoreJson(EvalContext *ctx, ARG_UNUSED const Policy *p
 
 /*********************************************************************/
 
-static FnCallResult ReadArray(EvalContext *ctx, const FnCall *fp, const Rlist *finalargs, DataType type, int intIndex)
+static FnCallResult ReadArray(EvalContext *ctx, const FnCall *fp, const Rlist *finalargs, DataType type, bool int_index)
 /* lval,filename,separator,comment,Max number of bytes  */
 {
+    if (!fp->caller)
+    {
+        Log(LOG_LEVEL_ERR, "Function '%s' can only be called from a promise", fp->name);
+        return FnFailure();
+    }
+
     char *file_buffer = NULL;
     int entries = 0;
 
@@ -5057,10 +5150,10 @@ static FnCallResult ReadArray(EvalContext *ctx, const FnCall *fp, const Rlist *f
 
     /* 6 args: array_lval,filename,comment_regex,split_regex,max number of entries,maxfilesize  */
 
-    char *array_lval = RlistScalarValue(finalargs);
-    char *filename = RlistScalarValue(finalargs->next);
-    char *comment = RlistScalarValue(finalargs->next->next);
-    char *split = RlistScalarValue(finalargs->next->next->next);
+    const char *array_lval = RlistScalarValue(finalargs);
+    const char *filename = RlistScalarValue(finalargs->next);
+    const char *comment = RlistScalarValue(finalargs->next->next);
+    const char *split = RlistScalarValue(finalargs->next->next->next);
     int maxent = IntFromString(RlistScalarValue(finalargs->next->next->next->next));
     int maxsize = IntFromString(RlistScalarValue(finalargs->next->next->next->next->next));
 
@@ -5080,7 +5173,7 @@ static FnCallResult ReadArray(EvalContext *ctx, const FnCall *fp, const Rlist *f
         }
         else
         {
-            entries = BuildLineArray(ctx, PromiseGetBundle(fp->caller), array_lval, file_buffer, split, maxent, type, intIndex);
+            entries = BuildLineArray(ctx, PromiseGetBundle(fp->caller), array_lval, file_buffer, split, maxent, type, int_index);
         }
     }
 
@@ -5133,6 +5226,12 @@ static FnCallResult FnCallReadRealArray(EvalContext *ctx, ARG_UNUSED const Polic
 static FnCallResult ParseArray(EvalContext *ctx, const FnCall *fp, const Rlist *finalargs, DataType type, int intIndex)
 /* lval,filename,separator,comment,Max number of bytes  */
 {
+    if (!fp->caller)
+    {
+        Log(LOG_LEVEL_ERR, "Function '%s' can only be called from a promise", fp->name);
+        return FnFailure();
+    }
+
     int entries = 0;
 
 /* begin fn specific content */
@@ -5331,9 +5430,13 @@ static FnCallResult FnCallLDAPValue(ARG_UNUSED EvalContext *ctx, ARG_UNUSED cons
 
 static FnCallResult FnCallLDAPArray(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
-    void *newval;
+    if (!fp->caller)
+    {
+        Log(LOG_LEVEL_ERR, "Function '%s' can only be called from a promise", fp->name);
+        return FnFailure();
+    }
 
-/* begin fn specific content */
+    void *newval;
 
     char *array = RlistScalarValue(finalargs);
     char *uri = RlistScalarValue(finalargs->next);
@@ -5570,7 +5673,7 @@ static bool SingleLine(const char *s)
     return s[length] && !s[length+1];
 }
 
-static void *CfReadFile(char *filename, int maxsize)
+static void *CfReadFile(const char *filename, int maxsize)
 {
     struct stat sb;
     if (stat(filename, &sb) == -1)
@@ -5625,7 +5728,7 @@ static void *CfReadFile(char *filename, int maxsize)
 
 /*********************************************************************/
 
-static char *StripPatterns(char *file_buffer, char *pattern, char *filename)
+static char *StripPatterns(char *file_buffer, const char *pattern, const char *filename)
 {
     int start, end;
     int count = 0;
@@ -5669,108 +5772,107 @@ static void CloseStringHole(char *s, int start, int end)
     *sp = '\0';
 }
 
-/*********************************************************************/
 
-static int BuildLineArray(EvalContext *ctx, const Bundle *bundle, char *array_lval, char *file_buffer, char *split, int maxent, DataType type,
-                          int intIndex)
+static int BuildLineArray(EvalContext *ctx, const Bundle *bundle,
+                          const char *array_lval, const char *file_buffer,
+                          const char *split, int maxent, DataType type,
+                          bool int_index)
 {
-    char *sp, linebuf[CF_BUFSIZE], name[CF_MAXVARSIZE], first_one[CF_MAXVARSIZE];
-    Rlist *rp, *newlist = NULL;
-    int allowblanks = true, vcount, hcount;
-    int lineLen;
+    StringSet *lines = StringSetFromString(file_buffer, '\n');
 
-    memset(linebuf, 0, CF_BUFSIZE);
-    hcount = 0;
+    StringSetIterator iter = StringSetIteratorInit(lines);
+    char *line;
+    int hcount = 0;
 
-    for (sp = file_buffer; hcount < maxent && *sp != '\0'; sp++)
+    while ((line = StringSetIteratorNext(&iter)) && hcount < maxent)
     {
-        linebuf[0] = '\0';
-        sscanf(sp, "%1023[^\n]", linebuf);
+        size_t line_len = strlen(line);
 
-        lineLen = strlen(linebuf);
-
-        if (lineLen == 0)
-        {
-            continue;
-        }
-        else if (lineLen == 1 && linebuf[0] == '\r')
+        if (line_len == 0 || (line_len == 1 && line[0] == '\r'))
         {
             continue;
         }
 
-        if (linebuf[lineLen - 1] == '\r')
+        if ((line)[line_len - 1] ==  '\r')
         {
-            linebuf[lineLen - 1] = '\0';
+            (line)[line_len - 1] = '\0';
         }
 
-        newlist = RlistFromSplitRegex(linebuf, split, maxent, allowblanks);
+        char* first_index = NULL;
+        int vcount = 0;
 
-        vcount = 0;
-        first_one[0] = '\0';
+        Rlist *tokens = RlistFromSplitRegex(line, split, 99999, true);
 
-        for (rp = newlist; rp != NULL; rp = rp->next)
+        for (const Rlist *rp = tokens; rp; rp = rp->next)
         {
-            char this_rval[CF_MAXVARSIZE];
-            long ival;
+            const char *token = RlistScalarValue(rp);
+            char *converted = NULL;
 
             switch (type)
             {
             case DATA_TYPE_STRING:
-                strncpy(this_rval, RlistScalarValue(rp), CF_MAXVARSIZE - 1);
+                converted = xstrdup(token);
                 break;
 
             case DATA_TYPE_INT:
-                ival = IntFromString(RlistScalarValue(rp));
-                snprintf(this_rval, CF_MAXVARSIZE, "%d", (int) ival);
+                {
+                    long value = IntFromString(token);
+                    if (value == CF_NOINT)
+                    {
+                        FatalError(ctx, "Could not convert token to int");
+                    }
+                    converted = StringFormat("%ld", value);
+                }
                 break;
 
             case DATA_TYPE_REAL:
                 {
                     double real_value = 0;
-                    if (!DoubleFromString(RlistScalarValue(rp), &real_value))
+                    if (!DoubleFromString(token, &real_value))
                     {
-                        FatalError(ctx, "Could not convert rval to double");
+                        FatalError(ctx, "Could not convert token to double");
                     }
+                    converted = xstrdup(token);
                 }
-                sscanf(RlistScalarValue(rp), "%255s", this_rval);
                 break;
 
             default:
                 ProgrammingError("Unhandled type in switch: %d", type);
             }
 
-            if (strlen(first_one) == 0)
+            if (NULL == first_index)
             {
-                strncpy(first_one, this_rval, CF_MAXVARSIZE - 1);
+                first_index = xstrdup(converted);
             }
 
-            if (intIndex)
+            char *name;
+            if (int_index)
             {
-                snprintf(name, CF_MAXVARSIZE, "%s[%d][%d]", array_lval, hcount, vcount);
+                xasprintf(&name, "%s[%d][%d]", array_lval, hcount, vcount);
             }
             else
             {
-                snprintf(name, CF_MAXVARSIZE, "%s[%s][%d]", array_lval, first_one, vcount);
+                xasprintf(&name, "%s[%s][%d]", array_lval, first_index, vcount);
             }
 
             VarRef *ref = VarRefParseFromBundle(name, bundle);
-            EvalContextVariablePut(ctx, ref, this_rval, type, "source=function,function=buildlinearray");
+            EvalContextVariablePut(ctx, ref, converted, type, "source=function,function=buildlinearray");
             VarRefDestroy(ref);
+
+            free(name);
+            free(converted);
+
             vcount++;
         }
 
-        RlistDestroy(newlist);
+        free(first_index);
+        RlistDestroy(tokens);
 
         hcount++;
-        sp += lineLen;
-
-        if (*sp == '\0')        // either \n or \0
-        {
-            break;
-        }
+        line++;
     }
 
-/* Don't free data - goes into vars */
+    StringSetDestroy(lines);
 
     return hcount;
 }
@@ -5950,6 +6052,37 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
             BufferDestroy(tagbuf);
 
             VarRefDestroy(ref);
+        }
+        break;
+
+    case '%':
+        content[0] = '\0';
+        sscanf(line + 1, "%[^=]=%[^\n]", name, content);
+
+        if (CheckID(name))
+        {
+            JsonElement *json = NULL;
+            Buffer *holder = BufferNewFrom(content, strlen(content));
+            const char *hold = BufferData(holder);
+            Log(LOG_LEVEL_DEBUG, "Module protocol parsing JSON %s", content);
+
+            if (JsonParse(&hold, &json) != JSON_PARSE_OK)
+            {
+                Log(LOG_LEVEL_INFO, "Module protocol passed an invalid or too-long JSON structure, must be object or array");
+            }
+            else
+            {
+                Log(LOG_LEVEL_VERBOSE, "Defined data container variable '%s' in context '%s' with value '%s'", name, context, content);
+                VarRef *ref = VarRefParseFromScope(name, context);
+
+                Buffer *tagbuf = StringSetToBuffer(*tags, ',');
+                EvalContextVariablePut(ctx, ref, json, DATA_TYPE_CONTAINER, BufferData(tagbuf));
+                BufferDestroy(tagbuf);
+
+                VarRefDestroy(ref);
+            }
+
+            BufferDestroy(holder);
         }
         break;
 
@@ -6487,7 +6620,7 @@ static const FnCallArg READSTRINGARRAY_ARGS[] =
 static const FnCallArg PARSESTRINGARRAY_ARGS[] =
 {
     {CF_IDRANGE, DATA_TYPE_STRING, "Array identifier to populate"},
-    {CF_ABSPATHRANGE, DATA_TYPE_STRING, "A string to parse for input data"},
+    {CF_ANYSTRING, DATA_TYPE_STRING, "A string to parse for input data"},
     {CF_ANYSTRING, DATA_TYPE_STRING, "Regex matching comments"},
     {CF_ANYSTRING, DATA_TYPE_STRING, "Regex to split data"},
     {CF_VALRANGE, DATA_TYPE_INT, "Maximum number of entries to read"},
@@ -6509,7 +6642,7 @@ static const FnCallArg READSTRINGARRAYIDX_ARGS[] =
 static const FnCallArg PARSESTRINGARRAYIDX_ARGS[] =
 {
     {CF_IDRANGE, DATA_TYPE_STRING, "Array identifier to populate"},
-    {CF_ABSPATHRANGE, DATA_TYPE_STRING, "A string to parse for input data"},
+    {CF_ANYSTRING, DATA_TYPE_STRING, "A string to parse for input data"},
     {CF_ANYSTRING, DATA_TYPE_STRING, "Regex matching comments"},
     {CF_ANYSTRING, DATA_TYPE_STRING, "Regex to split data"},
     {CF_VALRANGE, DATA_TYPE_INT, "Maximum number of entries to read"},
@@ -6867,6 +7000,8 @@ const FnCallType CF_FNCALL_TYPES[] =
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_UTILS, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("countlinesmatching", DATA_TYPE_INT, COUNTLINESMATCHING_ARGS, &FnCallCountLinesMatching, "Count the number of lines matching regex arg1 in file arg2",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_IO, SYNTAX_STATUS_NORMAL),
+    FnCallTypeNew("datastate", DATA_TYPE_CONTAINER, DATASTATE_ARGS, &FnCallDatastate, "Construct a container of the variable and class state",
+                  FNCALL_OPTION_NONE, FNCALL_CATEGORY_UTILS, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("difference", DATA_TYPE_STRING_LIST, SETOP_ARGS, &FnCallSetop, "Returns all the unique elements of list arg1 that are not in list arg2",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("dirname", DATA_TYPE_STRING, DIRNAME_ARGS, &FnCallDirname, "Return the parent directory name for given path",
@@ -6979,7 +7114,7 @@ const FnCallType CF_FNCALL_TYPES[] =
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("maplist", DATA_TYPE_STRING_LIST, MAPLIST_ARGS, &FnCallMapList, "Return a list with each element modified by a pattern based $(this)",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
-    FnCallTypeNew("mergedata", DATA_TYPE_CONTAINER, MERGEDATA_ARGS, &FnCallMergeData, "",
+    FnCallTypeNew("mergedata", DATA_TYPE_CONTAINER, MERGEDATA_ARGS, &FnCallMergeData, "Merge two or more data containers or lists",
                   FNCALL_OPTION_VARARG, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("none", DATA_TYPE_CONTEXT, EVERY_SOME_NONE_ARGS, &FnCallEverySomeNone, "True if no element in the named list matches the given regular expression",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
@@ -6997,15 +7132,15 @@ const FnCallType CF_FNCALL_TYPES[] =
                   FNCALL_OPTION_VARARG, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("packagesmatching", DATA_TYPE_CONTAINER, PACKAGESMATCHING_ARGS, &FnCallPackagesMatching, "List the defined packages (\"name,version,arch,manager\") matching regex arg1=name,arg2=version,arg3=arch,arg4=method",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_SYSTEM, SYNTAX_STATUS_NORMAL),
-    FnCallTypeNew("parseintarray", DATA_TYPE_INT, PARSESTRINGARRAY_ARGS, &FnCallParseIntArray, "Read an array of integers from a file and assign the dimension to a variable",
+    FnCallTypeNew("parseintarray", DATA_TYPE_INT, PARSESTRINGARRAY_ARGS, &FnCallParseIntArray, "Read an array of integers from a string and assign the dimension to a variable",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_IO, SYNTAX_STATUS_NORMAL),
-    FnCallTypeNew("parsejson", DATA_TYPE_CONTAINER, PARSEJSON_ARGS, &FnCallParseJson, "",
+    FnCallTypeNew("parsejson", DATA_TYPE_CONTAINER, PARSEJSON_ARGS, &FnCallParseJson, "Parse a JSON data container from a string",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_IO, SYNTAX_STATUS_NORMAL),
-    FnCallTypeNew("parserealarray", DATA_TYPE_INT, PARSESTRINGARRAY_ARGS, &FnCallParseRealArray, "Read an array of real numbers from a file and assign the dimension to a variable",
+    FnCallTypeNew("parserealarray", DATA_TYPE_INT, PARSESTRINGARRAY_ARGS, &FnCallParseRealArray, "Read an array of real numbers from a string and assign the dimension to a variable",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_IO, SYNTAX_STATUS_NORMAL),
-    FnCallTypeNew("parsestringarray", DATA_TYPE_INT, PARSESTRINGARRAY_ARGS, &FnCallParseStringArray, "Read an array of strings from a file and assign the dimension to a variable",
+    FnCallTypeNew("parsestringarray", DATA_TYPE_INT, PARSESTRINGARRAY_ARGS, &FnCallParseStringArray, "Read an array of strings from a string and assign the dimension to a variable",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_IO, SYNTAX_STATUS_NORMAL),
-    FnCallTypeNew("parsestringarrayidx", DATA_TYPE_INT, PARSESTRINGARRAYIDX_ARGS, &FnCallParseStringArrayIndex, "Read an array of strings from a file and assign the dimension to a variable with integer indeces",
+    FnCallTypeNew("parsestringarrayidx", DATA_TYPE_INT, PARSESTRINGARRAYIDX_ARGS, &FnCallParseStringArrayIndex, "Read an array of strings from a string and assign the dimension to a variable with integer indeces",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_IO, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("peers", DATA_TYPE_STRING_LIST, PEERS_ARGS, &FnCallPeers, "Get a list of peers (not including ourself) from the partition to which we belong",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_COMM, SYNTAX_STATUS_NORMAL),
@@ -7023,7 +7158,7 @@ const FnCallType CF_FNCALL_TYPES[] =
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_IO, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("readintlist", DATA_TYPE_INT_LIST, READSTRINGLIST_ARGS, &FnCallReadIntList, "Read and assign a list variable from a file of separated ints",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_IO, SYNTAX_STATUS_NORMAL),
-    FnCallTypeNew("readjson", DATA_TYPE_CONTAINER, READJSON_ARGS, &FnCallReadJson, "",
+    FnCallTypeNew("readjson", DATA_TYPE_CONTAINER, READJSON_ARGS, &FnCallReadJson, "Read a JSON data container from a file",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_IO, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("readrealarray", DATA_TYPE_INT, READSTRINGARRAY_ARGS, &FnCallReadRealArray, "Read an array of real numbers from a file and assign the dimension to a variable",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_IO, SYNTAX_STATUS_NORMAL),
@@ -7120,6 +7255,5 @@ const FnCallType CF_FNCALL_TYPES[] =
     FnCallTypeNew("variance", DATA_TYPE_REAL, STAT_FOLD_ARGS, &FnCallFold, "Return the variance of a list",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     
-    FnCallTypeNew("datastate", DATA_TYPE_CONTAINER, DATASTATE_ARGS, &FnCallDatastate, "Construct a container of the variable and class state", false, FNCALL_CATEGORY_UTILS, SYNTAX_STATUS_NORMAL),
     FnCallTypeNewNull()
 };
