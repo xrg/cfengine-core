@@ -40,9 +40,11 @@
 #include <scope.h>
 #include <ornaments.h>
 #include <eval_context.h>
+#include <actuator.h>
 
-static void PrintFile(EvalContext *ctx, Attributes a, const Promise *pp);
+static bool PrintFile(const char *filename, size_t max_lines);
 static void ReportToFile(const char *logfile, const char *message);
+static void ReportToLog(const char *message);
 
 PromiseResult VerifyReportPromise(EvalContext *ctx, const Promise *pp)
 {
@@ -89,41 +91,42 @@ PromiseResult VerifyReportPromise(EvalContext *ctx, const Promise *pp)
         return PROMISE_RESULT_WARN;
     }
 
-    cfPS(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_CHANGE, pp, a, "Report: %s", pp->promiser);
-
     if (a.report.to_file)
     {
         ReportToFile(a.report.to_file, pp->promiser);
     }
     else
     {
-        Log(LOG_LEVEL_NOTICE, "R: %s", pp->promiser);
+        ReportToLog(pp->promiser);
     }
 
+    PromiseResult result = PROMISE_RESULT_NOOP;
     if (a.report.haveprintfile)
     {
-        PrintFile(ctx, a, pp);
-    }
-
-    if (a.report.showstate)
-    {
-        /* Do nothing. Deprecated. */
-    }
-
-    if (a.report.havelastseen)
-    {
-        /* Do nothing. Deprecated. */
+        if (!PrintFile(a.report.filename, a.report.numlines))
+        {
+            result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
+        }
     }
 
     YieldCurrentLock(thislock);
 
-    return PROMISE_RESULT_CHANGE;
+    ClassAuditLog(ctx, pp, a, result);
+    return result;
+}
+
+static void ReportToLog(const char *message)
+{
+    fprintf(stdout, "R: %s\n", message);
+#ifndef __MINGW32__
+    syslog(LOG_NOTICE, "R: %s", message);
+#endif
 }
 
 static void ReportToFile(const char *logfile, const char *message)
 {
     FILE *fp = safe_fopen(logfile, "a");
-    if (fp == NULL)
+    if (!fp)
     {
         Log(LOG_LEVEL_ERR, "Could not open log file '%s', message '%s'. (fopen: %s)", logfile, message, GetErrorStr());
     }
@@ -134,41 +137,45 @@ static void ReportToFile(const char *logfile, const char *message)
     }
 }
 
-static void PrintFile(EvalContext *ctx, Attributes a, const Promise *pp)
+static bool PrintFile(const char *filename, size_t max_lines)
 {
-    FILE *fp;
-    char buffer[CF_BUFSIZE];
-    int lines = 0;
-
-    if (a.report.filename == NULL)
+    if (!filename)
     {
         Log(LOG_LEVEL_VERBOSE, "Printfile promise was incomplete, with no filename.");
-        return;
+        return false;
     }
 
-    if ((fp = safe_fopen(a.report.filename, "r")) == NULL)
+    FILE *fp = safe_fopen(filename, "r");
+    if (!fp)
     {
-        cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_INTERRUPTED, pp, a, "Printing of file '%s' was not possible. (fopen: %s)", a.report.filename, GetErrorStr());
-        return;
+        Log(LOG_LEVEL_ERR, "Printing of file '%s' was not possible. (fopen: %s)", filename, GetErrorStr());
+        return false;
     }
 
-    while ((lines < a.report.numlines))
+    size_t line_size = CF_BUFSIZE;
+    char *line = xmalloc(line_size);
+
+    for (size_t i = 0; i < max_lines; i++)
     {
-        if (fgets(buffer, sizeof(buffer), fp) == NULL)
+        if (CfReadLine(&line, &line_size, fp) == -1)
         {
             if (ferror(fp))
             {
-                UnexpectedError("Failed to read line from stream");
-                break;
+                Log(LOG_LEVEL_ERR, "Failed to read line from stream, (getline: %s)", GetErrorStr());
+                free(line);
+                return false;
             }
-            else /* feof */
+            else
             {
                 break;
             }
         }
-        Log(LOG_LEVEL_ERR, "R: %s", buffer);
-        lines++;
+
+        ReportToLog(line);
     }
 
     fclose(fp);
+    free(line);
+
+    return true;
 }

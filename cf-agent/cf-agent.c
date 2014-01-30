@@ -213,7 +213,7 @@ static const char *const HINTS[] =
     "Print basic information about changes made to the system, i.e. promises repaired",
     "Define a list of comma separated classes to be undefined at the start of execution",
     "Ignore locking constraints during execution (ifelapsed/expireafter) if \"too soon\" to run",
-    "Output verbose information about the behaviour of the agent. Implies --legacy-output",
+    "Output verbose information about the behaviour of the agent",
     "Output the version of the software",
     "Use legacy output format",
     "Enable colorized output. Possible values: 'always', 'auto', 'never'. If option is used, the default value is 'auto'",
@@ -406,7 +406,6 @@ static GenericAgentConfig *CheckOpts(int argc, char **argv)
             break;
 
         case 'v':
-            LEGACY_OUTPUT = true;
             LogSetGlobalLevel(LOG_LEVEL_VERBOSE);
             break;
 
@@ -1179,6 +1178,8 @@ PromiseResult ScheduleAgentOperations(EvalContext *ctx, const Bundle *bp)
     }
 
     PromiseResult result = PROMISE_RESULT_NOOP;
+    Log(LOG_LEVEL_VERBOSE, "/%s/%s: Evaluating bundle", bp->ns, bp->name);
+
     for (int pass = 1; pass < CF_DONEPASSES; pass++)
     {
         for (TypeSequence type = 0; AGENT_TYPESEQUENCE[type] != NULL; type++)
@@ -1192,6 +1193,7 @@ PromiseResult ScheduleAgentOperations(EvalContext *ctx, const Bundle *bp)
                 continue;
             }
 
+            Log(LOG_LEVEL_VERBOSE, "/%s/%s/%s: Evaluating pass %d", bp->ns, bp->name, sp->name, pass);
             BannerPromiseType(bp->name, sp->name, pass);
 
             if (!NewTypeContext(type))

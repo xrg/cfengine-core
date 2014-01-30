@@ -85,7 +85,7 @@ static const char *const HINTS[] =
 {
     "Print the help message",
     "Enable debugging output",
-    "Output verbose information about the behaviour of the agent. Also implies --no-fork and --legacy-output",
+    "Output verbose information about the behaviour of the agent",
     "Output the version of the software",
     "Specify an alternative input file than the default",
     "Define a list of comma separated classes to be defined at the start of execution",
@@ -178,7 +178,6 @@ GenericAgentConfig *CheckOpts(int argc, char **argv)
             break;
 
         case 'v':
-            LEGACY_OUTPUT = true;
             LogSetGlobalLevel(LOG_LEVEL_VERBOSE);
             NO_FORK = true;
             break;
@@ -280,7 +279,6 @@ void StartServer(EvalContext *ctx, Policy **policy, GenericAgentConfig *config)
 {
     int sd = -1;
     fd_set rset;
-    struct timeval timeout;
     int ret_val;
     CfLock thislock;
     time_t last_policy_reload = 0;
@@ -401,13 +399,11 @@ void StartServer(EvalContext *ctx, Policy **policy, GenericAgentConfig *config)
                 FD_SET(sd, &rset);
                 FD_SET(signal_pipe, &rset);
 
-                /* Set 1 second timeout for select, so that signals are handled in
-                 * a timely manner */
-                timeout.tv_sec = 60;
-                timeout.tv_usec = 0;
-
                 Log(LOG_LEVEL_DEBUG, "Waiting at incoming select...");
-
+                struct timeval timeout = {
+                    .tv_sec = 60,
+                    .tv_usec = 0
+                };
                 int max_fd = (sd > signal_pipe) ? (sd + 1) : (signal_pipe + 1);
                 ret_val = select(max_fd, &rset, NULL, NULL, &timeout);
 
@@ -444,6 +440,7 @@ void StartServer(EvalContext *ctx, Policy **policy, GenericAgentConfig *config)
                     getnameinfo((struct sockaddr *) &cin, addrlen,
                                 ipaddr, sizeof(ipaddr),
                                 NULL, 0, NI_NUMERICHOST);
+
                     ConnectionInfo *info = ConnectionInfoNew();
                     if (info)
                     {
