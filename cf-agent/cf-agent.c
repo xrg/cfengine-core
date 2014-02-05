@@ -311,12 +311,6 @@ static GenericAgentConfig *CheckOpts(int argc, char **argv)
             break;
 
         case 'f':
-            if (optarg && strlen(optarg) < 5)
-            {
-                Log(LOG_LEVEL_ERR, "-f used but argument '%s' incorrect", optarg);
-                exit(EXIT_FAILURE);
-            }
-
             GenericAgentConfigSetInputFile(config, GetInputDir(), optarg);
             MINUSF = true;
             break;
@@ -1076,7 +1070,13 @@ static void KeepPromiseBundles(EvalContext *ctx, const Policy *policy, GenericAg
 
         if (!config->ignore_missing_bundles)
         {
-            if (!(PolicyGetBundle(policy, NULL, "agent", name) || (PolicyGetBundle(policy, NULL, "common", name))))
+            const Bundle *bp = EvalContextResolveCallExpression(ctx, policy, name, "agent");
+            if (!bp)
+            {
+                bp = EvalContextResolveCallExpression(ctx, policy, name, "common");
+            }
+
+            if (!bp)
             {
                 Log(LOG_LEVEL_ERR, "Bundle '%s' listed in the bundlesequence was not found", name);
                 ok = false;
@@ -1124,16 +1124,29 @@ static void KeepPromiseBundles(EvalContext *ctx, const Policy *policy, GenericAg
             break;
         }
 
-        const Bundle *bp = NULL;
-        if ((bp = PolicyGetBundle(policy, NULL, "agent", name)) || (bp = PolicyGetBundle(policy, NULL, "common", name)))
+        const Bundle *bp = EvalContextResolveCallExpression(ctx, policy, name, "agent");
+        if (!bp)
+        {
+            bp = EvalContextResolveCallExpression(ctx, policy, name, "common");
+        }
+
+        if (bp)
         {
             BannerBundle(bp, args);
-
             EvalContextStackPushBundleFrame(ctx, bp, args, false);
-
             ScheduleAgentOperations(ctx, bp);
-
             EvalContextStackPopFrame(ctx);
+        }
+        else
+        {
+            if (config->ignore_missing_bundles)
+            {
+                Log(LOG_LEVEL_VERBOSE, "Ignoring missing bundle '%s'", name);
+            }
+            else
+            {
+                FatalError(ctx, "Bundlesequence contained unknown bundle reference '%s'", name);
+            }
         }
     }
 }
@@ -1302,7 +1315,7 @@ static PromiseResult DefaultVarPromise(EvalContext *ctx, const Promise *pp)
     bool okay = true;
 
 
-    DataType value_type = DATA_TYPE_NONE;
+    DataType value_type = CF_DATA_TYPE_NONE;
     const void *value = NULL;
     {
         VarRef *ref = VarRefParseFromScope(pp->promiser, "this");
@@ -1312,9 +1325,9 @@ static PromiseResult DefaultVarPromise(EvalContext *ctx, const Promise *pp)
 
     switch (value_type)
     {
-    case DATA_TYPE_STRING:
-    case DATA_TYPE_INT:
-    case DATA_TYPE_REAL:
+    case CF_DATA_TYPE_STRING:
+    case CF_DATA_TYPE_INT:
+    case CF_DATA_TYPE_REAL:
         if (regex && !FullTextMatch(ctx, regex, value))
         {
             return PROMISE_RESULT_NOOP;
@@ -1326,9 +1339,9 @@ static PromiseResult DefaultVarPromise(EvalContext *ctx, const Promise *pp)
         }
         break;
 
-    case DATA_TYPE_STRING_LIST:
-    case DATA_TYPE_INT_LIST:
-    case DATA_TYPE_REAL_LIST:
+    case CF_DATA_TYPE_STRING_LIST:
+    case CF_DATA_TYPE_INT_LIST:
+    case CF_DATA_TYPE_REAL_LIST:
         if (regex)
         {
             for (const Rlist *rp = value; rp != NULL; rp = rp->next)

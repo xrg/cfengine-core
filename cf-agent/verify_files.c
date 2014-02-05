@@ -56,14 +56,14 @@
 #include <known_dirs.h>
 #include <evalfunction.h>
 
-static void LoadSetuid(Attributes a);
-static PromiseResult SaveSetuid(EvalContext *ctx, Attributes a, const Promise *pp);
+static void LoadSetuid(void);
+static void SaveSetuid(void);
 static PromiseResult FindFilePromiserObjects(EvalContext *ctx, const Promise *pp);
 static PromiseResult VerifyFilePromise(EvalContext *ctx, char *path, const Promise *pp);
 
 /*****************************************************************************/
 
-static int FileSanityChecks(EvalContext *ctx, char *path, Attributes a, const Promise *pp)
+static int FileSanityChecks(char *path, Attributes a, const Promise *pp)
 {
     if ((a.havelink) && (a.havecopy))
     {
@@ -202,12 +202,12 @@ static PromiseResult VerifyFilePromise(EvalContext *ctx, char *path, const Promi
 
     Attributes a = GetFilesAttributes(ctx, pp);
 
-    if (!FileSanityChecks(ctx, path, a, pp))
+    if (!FileSanityChecks(path, a, pp))
     {
         return PROMISE_RESULT_NOOP;
     }
 
-    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", path, DATA_TYPE_STRING, "source=promise");
+    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", path, CF_DATA_TYPE_STRING, "source=promise");
 
     thislock = AcquireLock(ctx, path, VUQNAME, CFSTARTTIME, a.transaction, pp, false);
     if (thislock.lock == NULL)
@@ -215,7 +215,7 @@ static PromiseResult VerifyFilePromise(EvalContext *ctx, char *path, const Promi
         return PROMISE_RESULT_SKIPPED;
     }
 
-    LoadSetuid(a);
+    LoadSetuid();
 
     PromiseResult result = PROMISE_RESULT_NOOP;
     if (lstat(path, &oslb) == -1)       /* Careful if the object is a link */
@@ -424,7 +424,7 @@ exit:
             "No action was requested for file '%s'. Maybe a typo in the policy?", path);
     }
 
-    result = PromiseResultUpdate(result, SaveSetuid(ctx, a, pp));
+    SaveSetuid();
     YieldCurrentLock(thislock);
 
     return result;
@@ -437,7 +437,7 @@ PromiseResult ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes
     void *vp;
     FnCall *fp;
     Rlist *args = NULL;
-    char edit_bundle_name[CF_BUFSIZE], lockname[CF_BUFSIZE], qualified_edit[CF_BUFSIZE], *method_deref;
+    char edit_bundle_name[CF_BUFSIZE], lockname[CF_BUFSIZE];
     CfLock thislock;
 
     snprintf(lockname, CF_BUFSIZE - 1, "fileedit-%s", filename);
@@ -478,25 +478,10 @@ PromiseResult ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes
             goto exit;
         }
 
-        if (strncmp(edit_bundle_name,"default:",strlen("default:")) == 0) // CF_NS == ':'
-        {
-            method_deref = strchr(edit_bundle_name, CF_NS) + 1;
-        }
-        else if ((strchr(edit_bundle_name, CF_NS) == NULL) && (strcmp(PromiseGetNamespace(pp), "default") != 0))
-        {
-            snprintf(qualified_edit, CF_BUFSIZE, "%s%c%s", PromiseGetNamespace(pp), CF_NS, edit_bundle_name);
-            method_deref = qualified_edit;
-        }
-        else            
-        {
-            method_deref = edit_bundle_name;
-        }        
+        Log(LOG_LEVEL_VERBOSE, "Handling file edits in edit_line bundle '%s'", edit_bundle_name);
 
-        Log(LOG_LEVEL_VERBOSE, "Handling file edits in edit_line bundle '%s'", method_deref);
-
-        Bundle *bp = NULL;
-
-        if ((bp = PolicyGetBundle(policy, NULL, "edit_line", method_deref)))
+        const Bundle *bp = EvalContextResolveCallExpression(ctx, policy, edit_bundle_name, "edit_line");
+        if (bp)
         {
             BannerSubBundle(bp, args);
 
@@ -510,7 +495,7 @@ PromiseResult ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes
         }
         else
         {
-            Log(LOG_LEVEL_ERR, "Did not find method '%s' in bundle '%s' for edit operation", method_deref, edit_bundle_name);
+            Log(LOG_LEVEL_ERR, "Did not find bundle '%s' for edit operation", edit_bundle_name);
         }
     }
 
@@ -532,20 +517,11 @@ PromiseResult ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes
         {
             goto exit;
         }
-
-        if (strncmp(edit_bundle_name,"default:",strlen("default:")) == 0) // CF_NS == ':'
-        {
-            method_deref = strchr(edit_bundle_name, CF_NS) + 1;
-        }
-        else
-        {
-            method_deref = edit_bundle_name;
-        }
         
-        Log(LOG_LEVEL_VERBOSE, "Handling file edits in edit_xml bundle '%s'", method_deref);
+        Log(LOG_LEVEL_VERBOSE, "Handling file edits in edit_xml bundle '%s'", edit_bundle_name);
 
-        Bundle *bp = NULL;
-        if ((bp = PolicyGetBundle(policy, NULL, "edit_xml", method_deref)))
+        const Bundle *bp = EvalContextResolveCallExpression(ctx, policy, edit_bundle_name, "edit_xml");
+        if (bp)
         {
             BannerSubBundle(bp, args);
 
@@ -664,7 +640,7 @@ static PromiseResult FindFilePromiserObjects(EvalContext *ctx, const Promise *pp
     if (literal)
     {
         // Prime the promiser temporarily, may override later
-        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", pp->promiser, DATA_TYPE_STRING, "source=promise");
+        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", pp->promiser, CF_DATA_TYPE_STRING, "source=promise");
         result = PromiseResultUpdate(result, VerifyFilePromise(ctx, pp->promiser, pp));
     }
     else                        // Default is to expand regex paths
@@ -675,46 +651,31 @@ static PromiseResult FindFilePromiserObjects(EvalContext *ctx, const Promise *pp
     return result;
 }
 
-static void LoadSetuid(Attributes a)
+static void LoadSetuid(void)
 {
     char filename[CF_BUFSIZE];
-
-    EditDefaults edits = a.edits;
-    edits.backup = BACKUP_OPTION_NO_BACKUP;
-    edits.maxfilesize = 1000000;
-
     snprintf(filename, CF_BUFSIZE, "%s/cfagent.%s.log", GetLogDir(), VSYSNAME.nodename);
     MapName(filename);
 
-    if (!LoadFileAsItemList(&VSETUIDLIST, filename, edits))
-    {
-        Log(LOG_LEVEL_VERBOSE, "Did not find any previous setuid log '%s', creating a new one", filename);
-    }
+    VSETUIDLIST = RawLoadItemList(filename);
 }
 
 /*********************************************************************/
 
-static PromiseResult SaveSetuid(EvalContext *ctx, Attributes a, const Promise *pp)
+static void SaveSetuid(void)
 {
-    Attributes b = a;
-
-    b.edits.backup = BACKUP_OPTION_NO_BACKUP;
-    b.edits.maxfilesize = 1000000;
-
     char filename[CF_BUFSIZE];
     snprintf(filename, CF_BUFSIZE, "%s/cfagent.%s.log", GetLogDir(), VSYSNAME.nodename);
     MapName(filename);
 
     PurgeItemList(&VSETUIDLIST, "SETUID/SETGID");
 
-    PromiseResult result = PROMISE_RESULT_NOOP;
-    if (!CompareToFile(ctx, VSETUIDLIST, filename, a, pp, &result))
+    Item *current = RawLoadItemList(filename);
+    if (!ListsCompare(VSETUIDLIST, current))
     {
-        SaveItemListAsFile(VSETUIDLIST, filename, b);
+        RawSaveItemList(VSETUIDLIST, filename);
     }
 
     DeleteItemList(VSETUIDLIST);
     VSETUIDLIST = NULL;
-
-    return result;
 }

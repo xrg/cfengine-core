@@ -44,29 +44,29 @@ RvalType DataTypeToRvalType(DataType datatype)
 {
     switch (datatype)
     {
-    case DATA_TYPE_BODY:
-    case DATA_TYPE_BUNDLE:
-    case DATA_TYPE_CONTEXT:
-    case DATA_TYPE_COUNTER:
-    case DATA_TYPE_INT:
-    case DATA_TYPE_INT_RANGE:
-    case DATA_TYPE_OPTION:
-    case DATA_TYPE_REAL:
-    case DATA_TYPE_REAL_RANGE:
-    case DATA_TYPE_STRING:
+    case CF_DATA_TYPE_BODY:
+    case CF_DATA_TYPE_BUNDLE:
+    case CF_DATA_TYPE_CONTEXT:
+    case CF_DATA_TYPE_COUNTER:
+    case CF_DATA_TYPE_INT:
+    case CF_DATA_TYPE_INT_RANGE:
+    case CF_DATA_TYPE_OPTION:
+    case CF_DATA_TYPE_REAL:
+    case CF_DATA_TYPE_REAL_RANGE:
+    case CF_DATA_TYPE_STRING:
         return RVAL_TYPE_SCALAR;
 
-    case DATA_TYPE_CONTEXT_LIST:
-    case DATA_TYPE_INT_LIST:
-    case DATA_TYPE_OPTION_LIST:
-    case DATA_TYPE_REAL_LIST:
-    case DATA_TYPE_STRING_LIST:
+    case CF_DATA_TYPE_CONTEXT_LIST:
+    case CF_DATA_TYPE_INT_LIST:
+    case CF_DATA_TYPE_OPTION_LIST:
+    case CF_DATA_TYPE_REAL_LIST:
+    case CF_DATA_TYPE_STRING_LIST:
         return RVAL_TYPE_LIST;
 
-    case DATA_TYPE_CONTAINER:
+    case CF_DATA_TYPE_CONTAINER:
         return RVAL_TYPE_CONTAINER;
 
-    case DATA_TYPE_NONE:
+    case CF_DATA_TYPE_NONE:
         return RVAL_TYPE_NOPROMISEE;
     }
 
@@ -985,6 +985,54 @@ Rlist *RlistFromSplitRegex(const char *string, const char *regex, int max, bool 
     return liststart;
 }
 
+/*******************************************************************/
+/*
+ * Splits string on regex, returns a list of (at most max) fragments.
+ *
+ * NOTE: in contrast with RlistFromSplitRegex() this one will produce at most max number of elements;
+ *       last element will contain everything that lefts from original string (we use everything after
+ *       the (max-1)-th separator as the final list element, including any separators that may be embedded in it)
+ */
+Rlist *RlistFromRegexSplitNoOverflow(const char *string, const char *regex, int max)
+
+{
+    Rlist *liststart = NULL;
+    char node[CF_MAXVARSIZE];
+    int start, end;
+    int count = 0;
+
+    assert(max > 0); // ensured by FnCallStringSplit() before calling us
+    assert(string != NULL); // ensured by FnCallStringSplit() before calling us
+
+    const char *sp = string;
+    // We will avoid compiling regex multiple times.
+    pcre *pattern = CompileRegex(regex);
+
+    if (pattern == NULL)
+    {
+        Log(LOG_LEVEL_DEBUG, "Error compiling regex from '%s'", regex);
+        return NULL;
+    }
+
+    while ((count < max - 1) && StringMatchWithPrecompiledRegex(pattern, sp, &start, &end))
+    {
+        assert(start < CF_MAXVARSIZE);
+        memcpy(node, sp, start);
+        node[start] = '\0';
+        RlistAppendScalar(&liststart, node);
+        count++;
+
+        sp += end;
+    }
+
+    assert(count < max);
+    RlistAppendScalar(&liststart, sp);
+
+    pcre_free(pattern);
+
+    return liststart;
+}
+
 Rlist *RlistLast(Rlist *start)
 {
     if (start == NULL)
@@ -1266,7 +1314,7 @@ void RlistFlatten(EvalContext *ctx, Rlist **list)
             if (!IsExpandable(naked))
             {
                 VarRef *ref = VarRefParse(naked);
-                DataType value_type = DATA_TYPE_NONE;
+                DataType value_type = CF_DATA_TYPE_NONE;
                 const void *value = EvalContextVariableGet(ctx, ref, &value_type);
                 VarRefDestroy(ref);
 

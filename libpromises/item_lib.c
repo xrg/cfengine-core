@@ -29,6 +29,8 @@
 #include <matching.h>
 #include <misc_lib.h>
 #include <string_lib.h>
+#include <file_lib.h>
+#include <files_interfaces.h>
 
 /*******************************************************************/
 void PrintItemList(const Item *list, Writer *w)
@@ -857,4 +859,71 @@ int ByteSizeList(const Item *list)
     }
 
     return count;
+}
+
+bool RawSaveItemList(const Item *liststart, const char *filename)
+{
+    char new[CF_BUFSIZE], backup[CF_BUFSIZE];
+    FILE *fp;
+
+    strcpy(new, filename);
+    strcat(new, CF_EDITED);
+
+    strcpy(backup, filename);
+    strcat(backup, CF_SAVED);
+
+    unlink(new);                /* Just in case of races */
+
+    if ((fp = safe_fopen(new, "w")) == NULL)
+    {
+        Log(LOG_LEVEL_ERR, "Couldn't write file '%s'. (fopen: %s)", new, GetErrorStr());
+        return false;
+    }
+
+    for (const Item *ip = liststart; ip != NULL; ip = ip->next)
+    {
+        fprintf(fp, "%s\n", ip->name);
+    }
+
+    if (fclose(fp) == -1)
+    {
+        Log(LOG_LEVEL_ERR, "Unable to close file '%s' while writing. (fclose: %s)", new, GetErrorStr());
+        return false;
+    }
+
+    if (rename(new, filename) == -1)
+    {
+        Log(LOG_LEVEL_INFO, "Error while renaming file '%s' to '%s'. (rename: %s)", new, filename, GetErrorStr());
+        return false;
+    }
+
+    return true;
+}
+
+Item *RawLoadItemList(const char *filename)
+{
+    FILE *fp = safe_fopen(filename, "r");
+    if (fp)
+    {
+        return NULL;
+    }
+
+    size_t line_size = CF_BUFSIZE;
+    char *line = xmalloc(line_size);
+
+    Item *list = NULL;
+    while (CfReadLine(&line, &line_size, fp) != -1)
+    {
+        AppendItem(&list, line, NULL);
+    }
+
+    free(line);
+
+    if (!feof(fp))
+    {
+        DeleteItemList(list);
+        list = NULL;
+    }
+
+    return list;
 }

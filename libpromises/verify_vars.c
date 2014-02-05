@@ -38,6 +38,7 @@
 #include <vars.h>
 #include <matching.h>
 #include <syntax.h>
+#include <audit.h>
 
 typedef struct
 {
@@ -72,7 +73,7 @@ PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_d
         VarRefSetMeta(ref, true);
     }
 
-    DataType existing_value_type = DATA_TYPE_NONE;
+    DataType existing_value_type = CF_DATA_TYPE_NONE;
     const void *const existing_value =
         IsExpandable(pp->promiser) ? NULL : EvalContextVariableGet(ctx, ref, &existing_value_type);
 
@@ -83,11 +84,25 @@ PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_d
     {
         DataType data_type = DataTypeFromString(opts.cp_save->lval);
 
-        FnCall *fp = (FnCall *) rval.item;
-
         if (opts.cp_save->rval.type == RVAL_TYPE_FNCALL)
         {
-            if (existing_value_type != DATA_TYPE_NONE)
+            FnCall *fp = RvalFnCallValue(rval);
+            const FnCallType *fn = FnCallTypeGet(fp->name);
+            if (!fn)
+            {
+                assert(false && "Canary: should have been caught before this point");
+                FatalError(ctx, "While setting variable '%s' in bundle '%s', unknown function '%s'",
+                           pp->promiser, PromiseGetBundle(pp)->name, fp->name);
+            }
+
+            if (fn->dtype != DataTypeFromString(opts.cp_save->lval))
+            {
+                FatalError(ctx, "While setting variable '%s' in bundle '%s', variable declared type '%s' but function '%s' returns type '%s'",
+                           pp->promiser, PromiseGetBundle(pp)->name, opts.cp_save->lval,
+                           fp->name, DataTypeToString(fn->dtype));
+            }
+
+            if (existing_value_type != CF_DATA_TYPE_NONE)
             {
                 // Already did this
                 VarRefDestroy(ref);
@@ -186,7 +201,7 @@ PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_d
             rval = returnval;
         }
 
-        if (existing_value_type != DATA_TYPE_NONE)
+        if (existing_value_type != CF_DATA_TYPE_NONE)
         {
             if (opts.ok_redefine)    /* only on second iteration, else we ignore broken promises */
             {
@@ -247,21 +262,39 @@ PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_d
             return result;
         }
 
-        if (opts.drop_undefined && rval.type == RVAL_TYPE_LIST)
+        if (rval.type == RVAL_TYPE_LIST)
         {
-            for (Rlist *rp = rval.item; rp != NULL; rp = rp->next)
+            if (opts.drop_undefined)
             {
-                if (IsNakedVar(RlistScalarValue(rp), '@'))
+                for (Rlist *rp = RvalRlistValue(rval); rp; rp = rp->next)
                 {
-                    free(rp->val.item);
-                    rp->val.item = xstrdup(CF_NULL_VALUE);
+                    if (IsNakedVar(RlistScalarValue(rp), '@'))
+                    {
+                        free(rp->val.item);
+                        rp->val.item = xstrdup(CF_NULL_VALUE);
+                    }
+                }
+            }
+
+            for (const Rlist *rp = RvalRlistValue(rval); rp; rp = rp->next)
+            {
+                switch (rp->val.type)
+                {
+                case RVAL_TYPE_SCALAR:
+                    break;
+
+                default:
+                    // Cannot assign variable because value is a list containing a non-scalar item
+                    VarRefDestroy(ref);
+                    RvalDestroy(rval);
+                    return result;
                 }
             }
         }
 
         if (ref->num_indices > 0)
         {
-            if (data_type == DATA_TYPE_CONTAINER)
+            if (data_type == CF_DATA_TYPE_CONTAINER)
             {
                 char *lval_str = VarRefToString(ref, true);
                 Log(LOG_LEVEL_ERR, "Cannot assign a container to an indexed variable name '%s'. Should be assigned to '%s' instead",
@@ -273,9 +306,9 @@ PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_d
             }
             else
             {
-                DataType existing_type = DATA_TYPE_NONE;
+                DataType existing_type = CF_DATA_TYPE_NONE;
                 VarRef *base_ref = VarRefCopyIndexless(ref);
-                if (EvalContextVariableGet(ctx, ref, &existing_type) && existing_type == DATA_TYPE_CONTAINER)
+                if (EvalContextVariableGet(ctx, ref, &existing_type) && existing_type == CF_DATA_TYPE_CONTAINER)
                 {
                     char *lval_str = VarRefToString(ref, true);
                     char *base_ref_str = VarRefToString(base_ref, true);
@@ -590,7 +623,7 @@ static ConvergeVariableOptions CollectConvergeVariableOptions(EvalContext *ctx, 
                 opts.ok_redefine |= true;
             }
         }
-        else if (DataTypeFromString(cp->lval) != DATA_TYPE_NONE)
+        else if (DataTypeFromString(cp->lval) != CF_DATA_TYPE_NONE)
         {
             num_values++;
             opts.cp_save = cp;

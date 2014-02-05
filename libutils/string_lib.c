@@ -391,28 +391,22 @@ char *NULLStringToEmpty(char *str)
     return str;
 }
 
-bool StringMatch(const char *regex, const char *str, int *start, int *end)
+pcre *CompileRegex(const char *regex)
+{
+    assert(regex);
+    const char *errorstr;
+    int erroffset;
+
+    return pcre_compile(regex, PCRE_MULTILINE | PCRE_DOTALL, &errorstr, &erroffset, NULL);
+}
+
+bool StringMatchWithPrecompiledRegex(pcre *regex, const char *str, int *start, int *end)
 {
     assert(regex);
     assert(str);
 
-    pcre *pattern = NULL;
-    {
-        const char *errorstr;
-        int erroffset;
-        pattern = pcre_compile(regex, PCRE_MULTILINE | PCRE_DOTALL, &errorstr, &erroffset, NULL);
-    }
-
-    /* TODO remove bogus assert. */
-    assert(pattern);
-
-    if (pattern == NULL)
-    {
-        return false;
-    }
-
     int ovector[STRING_MATCH_OVECCOUNT] = { 0 };
-    int result = pcre_exec(pattern, NULL, str, strlen(str), 0, 0, ovector, STRING_MATCH_OVECCOUNT);
+    int result = pcre_exec(regex, NULL, str, strlen(str), 0, 0, ovector, STRING_MATCH_OVECCOUNT);
 
     if (result)
     {
@@ -437,9 +431,23 @@ bool StringMatch(const char *regex, const char *str, int *start, int *end)
         }
     }
 
-    free(pattern);
-
     return result >= 0;
+}
+
+bool StringMatch(const char *regex, const char *str, int *start, int *end)
+{
+    pcre *pattern = CompileRegex(regex);
+
+    if (pattern == NULL)
+    {
+        return false;
+    }
+
+    bool ret = StringMatchWithPrecompiledRegex(pattern, str, start, end);
+
+    pcre_free(pattern);
+    return ret;
+
 }
 
 bool StringMatchFull(const char *regex, const char *str)
@@ -478,7 +486,7 @@ Seq *StringMatchCaptures(const char *regex, const char *str)
     int res = pcre_fullinfo(pattern, NULL, PCRE_INFO_CAPTURECOUNT, &captures);
     if (res != 0)
     {
-        free(pattern);
+        pcre_free(pattern);
         return NULL;
     }
 
@@ -489,7 +497,7 @@ Seq *StringMatchCaptures(const char *regex, const char *str)
     if (result <= 0)
     {
         free(ovector);
-        free(pattern);
+        pcre_free(pattern);
         return NULL;
     }
 
@@ -628,7 +636,7 @@ void ReplaceChar(char *in, char *out, int outSz, char from, char to)
 
 /* TODO replace with StringReplace. This one is pretty slow, calls strncmp
  * O(n) times even if string matches nowhere. */
-int ReplaceStr(char *in, char *out, int outSz, char *from, char *to)
+bool ReplaceStr(const char *in, char *out, int outSz, const char *from, const char *to)
 /* Replaces all occurences of strings 'from' to 'to' in preallocated
  * string 'out'. Returns true on success, false otherwise. */
 {

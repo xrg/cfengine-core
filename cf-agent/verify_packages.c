@@ -117,6 +117,8 @@ PackageManager *INSTALLED_PACKAGE_LISTS = NULL; /* GLOBAL_X */
 
 /*****************************************************************************/
 
+#define PACKAGE_IGNORED_CFE_INTERNAL "cfe_internal_non_existing_package"
+
 PromiseResult VerifyPackagesPromise(EvalContext *ctx, const Promise *pp)
 {
     CfLock thislock;
@@ -1076,13 +1078,13 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
     if ((a.packages.package_name_convention) || (a.packages.package_delete_convention))
     {
         VarRef *ref_name = VarRefParseFromScope("name", "cf_pack_context");
-        EvalContextVariablePut(ctx, ref_name, name, DATA_TYPE_STRING, "source=promise");
+        EvalContextVariablePut(ctx, ref_name, name, CF_DATA_TYPE_STRING, "source=promise");
 
         VarRef *ref_version = VarRefParseFromScope("version", "cf_pack_context");
-        EvalContextVariablePut(ctx, ref_version, version, DATA_TYPE_STRING, "source=promise");
+        EvalContextVariablePut(ctx, ref_version, version, CF_DATA_TYPE_STRING, "source=promise");
 
         VarRef *ref_arch = VarRefParseFromScope("arch", "cf_pack_context");
-        EvalContextVariablePut(ctx, ref_arch, arch, DATA_TYPE_STRING, "source=promise");
+        EvalContextVariablePut(ctx, ref_arch, arch, CF_DATA_TYPE_STRING, "source=promise");
 
         if ((a.packages.package_delete_convention) && (a.packages.package_policy == PACKAGE_ACTION_DELETE))
         {
@@ -1153,13 +1155,13 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
             {
                 {
                     VarRef *ref_name = VarRefParseFromScope("name", "cf_pack_context_anyver");
-                    EvalContextVariablePut(ctx, ref_name, name, DATA_TYPE_STRING, "source=promise");
+                    EvalContextVariablePut(ctx, ref_name, name, CF_DATA_TYPE_STRING, "source=promise");
 
                     VarRef *ref_version = VarRefParseFromScope("version", "cf_pack_context_anyver");
-                    EvalContextVariablePut(ctx, ref_version, "(.*)", DATA_TYPE_STRING, "source=promise");
+                    EvalContextVariablePut(ctx, ref_version, "(.*)", CF_DATA_TYPE_STRING, "source=promise");
 
                     VarRef *ref_arch = VarRefParseFromScope("arch", "cf_pack_context_anyver");
-                    EvalContextVariablePut(ctx, ref_arch, arch, DATA_TYPE_STRING, "source=promise");
+                    EvalContextVariablePut(ctx, ref_arch, arch, CF_DATA_TYPE_STRING, "source=promise");
 
                     BufferZero(expanded);
                     ExpandScalar(ctx, NULL, "cf_pack_context_anyver", a.packages.package_name_convention, expanded);
@@ -1301,13 +1303,13 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
         {
             {
                 VarRef *ref_name = VarRefParseFromScope("name", "cf_pack_context_anyver");
-                EvalContextVariablePut(ctx, ref_name, name, DATA_TYPE_STRING, "source=promise");
+                EvalContextVariablePut(ctx, ref_name, name, CF_DATA_TYPE_STRING, "source=promise");
 
                 VarRef *ref_version = VarRefParseFromScope("version", "cf_pack_context_anyver");
-                EvalContextVariablePut(ctx, ref_version, "(.*)", DATA_TYPE_STRING, "source=promise");
+                EvalContextVariablePut(ctx, ref_version, "(.*)", CF_DATA_TYPE_STRING, "source=promise");
 
                 VarRef *ref_arch = VarRefParseFromScope("arch", "cf_pack_context_anyver");
-                EvalContextVariablePut(ctx, ref_arch, arch, DATA_TYPE_STRING, "source=promise");
+                EvalContextVariablePut(ctx, ref_arch, arch, CF_DATA_TYPE_STRING, "source=promise");
 
                 BufferZero(expanded);
                 ExpandScalar(ctx, NULL, "cf_pack_context_anyver", a.packages.package_name_convention, expanded);
@@ -1381,13 +1383,13 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
                     }
 
                     VarRef *ref_name = VarRefParseFromScope("name", "cf_pack_context");
-                    EvalContextVariablePut(ctx, ref_name, name, DATA_TYPE_STRING, "source=promise");
+                    EvalContextVariablePut(ctx, ref_name, name, CF_DATA_TYPE_STRING, "source=promise");
 
                     VarRef *ref_version = VarRefParseFromScope("version", "cf_pack_context");
-                    EvalContextVariablePut(ctx, ref_version, inst_ver, DATA_TYPE_STRING, "source=promise");
+                    EvalContextVariablePut(ctx, ref_version, inst_ver, CF_DATA_TYPE_STRING, "source=promise");
 
                     VarRef *ref_arch = VarRefParseFromScope("arch", "cf_pack_context");
-                    EvalContextVariablePut(ctx, ref_arch, inst_arch, DATA_TYPE_STRING, "source=promise");
+                    EvalContextVariablePut(ctx, ref_arch, inst_arch, CF_DATA_TYPE_STRING, "source=promise");
 
                     BufferZero(expanded);
                     ExpandScalar(ctx, NULL, "cf_pack_context", a.packages.package_delete_convention, expanded);
@@ -2147,6 +2149,10 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
                             "Package schedule execution ok for '%s' (outcome cannot be promised by cf-agent)",
                               pi->name);
                     }
+                    else if (0 == strncmp(pi->name, PACKAGE_IGNORED_CFE_INTERNAL, strlen(PACKAGE_IGNORED_CFE_INTERNAL)))
+                    {
+                        Log(LOG_LEVEL_DEBUG, "Ignoring outcome for special package '%s'", pi->name);
+                    }
                     else
                     {
                         Log(LOG_LEVEL_ERR, "Package schedule execution failed for '%s'", pi->name);
@@ -2194,6 +2200,10 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
                         Log(LOG_LEVEL_VERBOSE,
                             "Bulk package schedule execution ok for '%s' (outcome cannot be promised by cf-agent)",
                               pi->name);
+                    }
+                    else if (0 == strncmp(pi->name, PACKAGE_IGNORED_CFE_INTERNAL, strlen(PACKAGE_IGNORED_CFE_INTERNAL)))
+                    {
+                        Log(LOG_LEVEL_DEBUG, "Ignoring outcome for special package '%s'", pi->name);
                     }
                     else
                     {
@@ -2335,6 +2345,10 @@ static int ExecutePatch(EvalContext *ctx, PackageManager *schedule, PackageActio
                             "Package schedule execution ok for '%s' (outcome cannot be promised by cf-agent)",
                               pi->name);
                     }
+                    else if (0 == strncmp(pi->name, PACKAGE_IGNORED_CFE_INTERNAL, strlen(PACKAGE_IGNORED_CFE_INTERNAL)))
+                    {
+                        Log(LOG_LEVEL_DEBUG, "Ignoring outcome for special package '%s'", pi->name);
+                    }
                     else
                     {
                         Log(LOG_LEVEL_ERR, "Package schedule execution failed for '%s'", pi->name);
@@ -2365,6 +2379,10 @@ static int ExecutePatch(EvalContext *ctx, PackageManager *schedule, PackageActio
                         Log(LOG_LEVEL_VERBOSE,
                             "Bulk package schedule execution ok for '%s' (outcome cannot be promised by cf-agent)",
                               pi->name);
+                    }
+                    else if (0 == strncmp(pi->name, PACKAGE_IGNORED_CFE_INTERNAL, strlen(PACKAGE_IGNORED_CFE_INTERNAL)))
+                    {
+                        Log(LOG_LEVEL_DEBUG, "Ignoring outcome for special package '%s'", pi->name);
                     }
                     else
                     {

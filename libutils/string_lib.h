@@ -66,11 +66,14 @@ char *StringSubstring(const char *source, size_t source_len, int start, int len)
 /* Allocates the result */
 char *SearchAndReplace(const char *source, const char *search, const char *replace);
 
+/* Instead of using below in a loop use CompileRegex() and StringMatchWithPrecompiledRegex(). */
 bool StringMatch(const char *regex, const char *str, int *start, int *end);
+bool StringMatchWithPrecompiledRegex(pcre *regex, const char *str, int *start, int *end);
+pcre *CompileRegex(const char *regex);
 bool StringMatchFull(const char *regex, const char *str);
 Seq *StringMatchCaptures(const char *regex, const char *str);
 
-int ReplaceStr(char *in, char *out, int outSz, char *from, char *to);
+bool ReplaceStr(const char *in, char *out, int outSz, const char *from, const char *to);
 
 bool IsStrIn(const char *str, const char *const strs[]);
 bool IsStrCaseIn(const char *str, const char *const strs[]);
