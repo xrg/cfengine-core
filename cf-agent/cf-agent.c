@@ -246,10 +246,11 @@ int main(int argc, char *argv[])
     else
     {
         Log(LOG_LEVEL_ERR, "CFEngine was not able to get confirmation of promises from cf-promises, so going to failsafe");
-        EvalContextClassPutHard(ctx, "failsafe_fallback", "group=Errors,source=agent");
+        EvalContextClassPutHard(ctx, "failsafe_fallback", "attribute_name=Errors,source=agent");
         GenericAgentConfigSetInputFile(config, GetInputDir(), "failsafe.cf");
         policy = GenericAgentLoadPolicy(ctx, config);
     }
+    assert(policy);
 
     ThisAgentInit();
     BeginAudit();
@@ -266,6 +267,7 @@ int main(int argc, char *argv[])
     Nova_TrackExecution(config->input_file);
     PurgeLocks();
 
+    PolicyDestroy(policy); /* Can we safely do this earlier ? */
     if (config->agent_specific.agent.bootstrap_policy_server && !VerifyBootstrap())
     {
         RemovePolicyServerFile(GetWorkDir());
@@ -964,7 +966,8 @@ static void KeepControlPromises(EvalContext *ctx, const Policy *policy)
 
                 for (const Rlist *rp = value; rp != NULL; rp = rp->next)
                 {
-                    if (putenv(RlistScalarValue(rp)) != 0)
+                    assert(strchr(RlistScalarValue(rp), '=')); /* Valid for putenv() */
+                    if (putenv(xstrdup(RlistScalarValue(rp))) != 0)
                     {
                         Log(LOG_LEVEL_ERR, "Failed to set environment variable '%s'. (putenv: %s)",
                             RlistScalarValue(rp), GetErrorStr());

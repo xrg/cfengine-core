@@ -42,7 +42,7 @@ const char *MapAddress(const char *unspec_address)
 
     if (strncmp(unspec_address, "::ffff:", 7) == 0)
     {
-        return (char *) (unspec_address + 7);
+        return unspec_address + 7;
     }
     else
     {
@@ -898,15 +898,27 @@ bool IsRealNumber(const char *s)
     return true;
 }
 
+#ifndef __MINGW32__
+
 /*******************************************************************/
 /* Unix-only functions                                             */
 /*******************************************************************/
 
-#ifndef __MINGW32__
-
 /****************************************************************************/
 /* Rlist to Uid/Gid lists                                                   */
 /****************************************************************************/
+
+void UidListDestroy(UidList *uids)
+{
+
+    while (uids)
+    {
+        UidList *ulp = uids;
+        uids = uids->next;
+        free(ulp->uidname);
+        free(ulp);
+    }
+}
 
 static void AddSimpleUidItem(UidList ** uidlist, uid_t uid, char *uidname)
 {
@@ -923,12 +935,13 @@ static void AddSimpleUidItem(UidList ** uidlist, uid_t uid, char *uidname)
     {
         *uidlist = ulp;
     }
-    else
+    else /* Hang new element off end of list: */
     {
-        UidList *u;
+        UidList *u = *uidlist;
 
-        for (u = *uidlist; u->next != NULL; u = u->next)
+        while (u->next != NULL)
         {
+            u = u->next;
         }
         u->next = ulp;
     }
@@ -953,10 +966,21 @@ UidList *Rlist2UidList(Rlist *uidnames, const Promise *pp)
         AddSimpleUidItem(&uidlist, CF_SAME_OWNER, NULL);
     }
 
-    return (uidlist);
+    return uidlist;
 }
 
 /*********************************************************************/
+
+void GidListDestroy(GidList *gids)
+{
+    while (gids)
+    {
+        GidList *glp = gids;
+        gids = gids->next;
+        free(glp->gidname);
+        free(glp);
+    }
+}
 
 static void AddSimpleGidItem(GidList ** gidlist, gid_t gid, char *gidname)
 {
@@ -973,12 +997,12 @@ static void AddSimpleGidItem(GidList ** gidlist, gid_t gid, char *gidname)
     {
         *gidlist = glp;
     }
-    else
+    else /* Hang new element off end of list: */
     {
-        GidList *g;
-
-        for (g = *gidlist; g->next != NULL; g = g->next)
+        GidList *g = *gidlist;
+        while (g->next != NULL)
         {
+            g = g->next;
         }
         g->next = glp;
     }
@@ -1003,7 +1027,7 @@ GidList *Rlist2GidList(Rlist *gidnames, const Promise *pp)
         AddSimpleGidItem(&gidlist, CF_SAME_GROUP, NULL);
     }
 
-    return (gidlist);
+    return gidlist;
 }
 
 /*********************************************************************/
@@ -1133,4 +1157,22 @@ gid_t Str2Gid(const char *gidbuff, char *groupcopy, const Promise *pp)
     return gid;
 }
 
-#endif /* !__MINGW32__ */
+#else /* !__MINGW32__ */
+
+/* Release everything NovaWin_Rlist2SidList() allocates: */
+void UidListDestroy(UidList *uids)
+{
+    while (uids)
+    {
+        UidList *ulp = uids;
+        uids = uids->next;
+        free(ulp);
+    }
+}
+
+void GidListDestroy(ARG_UNUSED GidList *gids)
+{
+    assert(gids == NULL);
+}
+
+#endif

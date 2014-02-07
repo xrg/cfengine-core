@@ -235,6 +235,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
+    PolicyDestroy(policy);
     GenericAgentConfigDestroy(config);
 
     return 0;

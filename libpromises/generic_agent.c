@@ -193,7 +193,7 @@ void GenericAgentDiscoverContext(EvalContext *ctx, GenericAgentConfig *config)
         {
             EvalContextClassPutHard(ctx, "am_policy_hub", "source=bootstrap,deprecated,alias=policy_server");
             Log(LOG_LEVEL_VERBOSE, "Additional class defined: am_policy_hub");
-            EvalContextClassPutHard(ctx, "policy_server", "inventory,group=CFEngine roles,source=bootstrap");
+            EvalContextClassPutHard(ctx, "policy_server", "inventory,attribute_name=CFEngine roles,source=bootstrap");
             Log(LOG_LEVEL_VERBOSE, "Additional class defined: policy_server");
         }
     }
@@ -789,7 +789,7 @@ void CloseLog(void)
 
 ENTERPRISE_VOID_FUNC_1ARG_DEFINE_STUB(void, GenericAgentAddEditionClasses, EvalContext *, ctx)
 {
-    EvalContextClassPutHard(ctx, "community_edition", "inventory,group=none,source=agent");
+    EvalContextClassPutHard(ctx, "community_edition", "inventory,attribute_name=none,source=agent");
 }
 
 void GenericAgentInitialize(EvalContext *ctx, GenericAgentConfig *config)
@@ -1083,8 +1083,8 @@ bool GenericAgentIsPolicyReloadNeeded(const GenericAgentConfig *config, const Po
     if (validated_at > time(NULL))
     {
         Log(LOG_LEVEL_INFO,
-            "Clock seems to have jumped back in time - mtime of %zd is newer than current time - touching it",
-            validated_at);
+            "Clock seems to have jumped back in time - mtime of %lld is newer than current time - touching it",
+            (long long)validated_at);
 
         WritePolicyValidatedFileToMasterfiles(config);
         return true;
@@ -1762,6 +1762,7 @@ void GenericAgentConfigDestroy(GenericAgentConfig *config)
         StringSetDestroy(config->heap_soft);
         StringSetDestroy(config->heap_negated);
         free(config->input_file);
+        free(config);
     }
 }
 

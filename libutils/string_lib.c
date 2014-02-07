@@ -157,13 +157,16 @@ int StringSafeCompare(const char *a, const char *b)
     {
         return 0;
     }
-
-    if ((a == NULL) || (b == NULL))
+    if (a && b)
+    {
+        return strcmp(a, b);
+    }
+    if (a == NULL)
     {
         return -1;
     }
-
-    return strcmp(a, b);
+    assert(b == NULL);
+    return +1;
 }
 
 bool StringSafeEqual(const char *a, const char *b)
@@ -506,6 +509,8 @@ Seq *StringMatchCaptures(const char *regex, const char *str)
     {
         SeqAppend(ret, xstrndup(str + ovector[2*i], ovector[2*i + 1] - ovector[2 * i]));
     }
+    free(ovector);
+    pcre_free(pattern);
     return ret;
 }
 
@@ -780,7 +785,7 @@ StringRef StringGetToken(const char *str, size_t len, size_t index, const char *
     return ref;
 }
 
-char **String2StringArray(char *str, char separator)
+char **String2StringArray(const char *str, char separator)
 /**
  * Parse CSVs into char **.
  * MEMORY NOTE: Caller must free return value with FreeStringArray().

@@ -133,9 +133,7 @@ bool FnCallIsBuiltIn(Rval rval)
 
 FnCall *FnCallNew(const char *name, const Rlist *args)
 {
-    FnCall *fp;
-
-    fp = xmalloc(sizeof(FnCall));
+    FnCall *fp = xmalloc(sizeof(FnCall));
 
     fp->name = xstrdup(name);
     fp->args = RlistCopy(args);
@@ -147,7 +145,7 @@ FnCall *FnCallNew(const char *name, const Rlist *args)
 
 FnCall *FnCallCopy(const FnCall *f)
 {
-    return FnCallNew(f->name, RlistCopy(f->args));
+    return FnCallNew(f->name, f->args);
 }
 
 /*******************************************************************/
@@ -171,7 +169,22 @@ unsigned FnCallHash(const FnCall *fp, unsigned seed, unsigned max)
 
 FnCall *ExpandFnCall(EvalContext *ctx, const char *ns, const char *scope, const FnCall *f)
 {
-    return FnCallNew(f->name, ExpandList(ctx, ns, scope, f->args, false));
+    FnCall *result = NULL;
+    if (IsCf3VarString(f->name))
+    {
+        // e.g. usebundle => $(m)(arg0, arg1);
+        Buffer *buf = BufferNewWithCapacity(CF_MAXVARSIZE);
+        ExpandScalar(ctx, ns, scope, f->name, buf);
+
+        result = FnCallNew(BufferData(buf), ExpandList(ctx, ns, scope, f->args, false));
+        BufferDestroy(buf);
+    }
+    else
+    {
+        result = FnCallNew(f->name, ExpandList(ctx, ns, scope, f->args, false));
+    }
+
+    return result;
 }
 
 void FnCallWrite(Writer *writer, const FnCall *call)
@@ -285,8 +298,9 @@ FnCallResult FnCallEvaluate(EvalContext *ctx, const Policy *policy, FnCall *fp, 
     {
         if (caller)
         {
-            Log(LOG_LEVEL_ERR, "No such FnCall '%s' in promise '%s' near line %zd",
-                  fp->name, PromiseGetBundle(caller)->source_path, caller->offset.line);
+            Log(LOG_LEVEL_ERR, "No such FnCall '%s' in promise '%s' near line %llu",
+                fp->name, PromiseGetBundle(caller)->source_path,
+                (unsigned long long)caller->offset.line);
         }
         else
         {

@@ -329,12 +329,12 @@ static FnCallResult FnCallHostsWithClass(EvalContext *ctx, ARG_UNUSED const Poli
 
     char *class_name = RlistScalarValue(finalargs);
     char *return_format = RlistScalarValue(finalargs->next);
-    
+
     if(!ListHostsWithClass(ctx, &returnlist, class_name, return_format))
     {
         return FnFailure();
     }
-    
+
     return (FnCallResult) { FNCALL_SUCCESS, { returnlist, RVAL_TYPE_LIST } };
 }
 
@@ -1050,7 +1050,8 @@ static FnCallResult FnCallBundlesMatching(EvalContext *ctx, const Policy *policy
         const Bundle *bp = SeqAt(policy->bundles, i);
         if (!bp)
         {
-            FatalError(ctx, "Function '%s' found null bundle at %ld", fp->name, i);
+            FatalError(ctx, "Function '%s' found null bundle at %llu",
+                       fp->name, (unsigned long long)i);
         }
 
         char *bundle_name = BundleQualifiedName(bp);
@@ -1071,7 +1072,7 @@ static FnCallResult FnCallBundlesMatching(EvalContext *ctx, const Policy *policy
             }
             else if (NULL != bundle_tags)
             {
-                
+
                 switch (DataTypeToRvalType(type))
                 {
                 case RVAL_TYPE_SCALAR:
@@ -1135,7 +1136,7 @@ static FnCallResult FnCallPackagesMatching(ARG_UNUSED EvalContext *ctx, ARG_UNUS
         JsonDestroy(json);
         return FnFailure();
     }
-    
+
     int linenumber = 0;
 
     size_t line_size = CF_BUFSIZE;
@@ -1208,7 +1209,7 @@ static FnCallResult FnCallCanonify(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const
     char *string = RlistScalarValue(finalargs);
 
     buf[0] = '\0';
-    
+
     if (!strcmp(fp->name, "canonifyuniquely"))
     {
         char hashbuffer[EVP_MAX_MD_SIZE * 4];
@@ -1890,7 +1891,7 @@ static FnCallResult FnCallGrep(EvalContext *ctx, ARG_UNUSED const Policy *policy
                           RlistScalarValue(finalargs->next), // list identifier
                           1, // regex match = TRUE
                           0, // invert matches = FALSE
-                          99999999999); // max results = max int
+                          LONG_MAX); // max results = max int
 }
 
 /*********************************************************************/
@@ -3189,7 +3190,7 @@ static FnCallResult FnCallFindfiles(EvalContext *ctx, ARG_UNUSED const Policy *p
     {
         char *pattern = RlistScalarValue(arg);
 #ifdef __MINGW32__
-        RlistAppendScalarIdemp(&returnlist, xstrdup(pattern));
+        RlistAppendScalarIdemp(&returnlist, pattern);
 #else /* !__MINGW32__ */
         glob_t globbuf;
         if (0 == glob(pattern, 0, NULL, &globbuf))
@@ -3200,7 +3201,7 @@ static FnCallResult FnCallFindfiles(EvalContext *ctx, ARG_UNUSED const Policy *p
                 char fname[CF_BUFSIZE];
                 snprintf(fname, CF_BUFSIZE, "%s", found);
                 Log(LOG_LEVEL_VERBOSE, "%s pattern '%s' found match '%s'", fp->name, pattern, fname);
-                RlistAppendScalarIdemp(&returnlist, xstrdup(fname));
+                RlistAppendScalarIdemp(&returnlist, fname);
             }
 
             globfree(&globbuf);
@@ -3531,7 +3532,7 @@ static FnCallResult FnCallSetop(EvalContext *ctx, ARG_UNUSED const Policy *polic
         {
             continue;
         }
-                
+
         RlistAppendScalarIdemp(&returnlist, RlistScalarValue(rp_a));
     }
 
@@ -3572,7 +3573,7 @@ static FnCallResult FnCallLength(EvalContext *ctx, ARG_UNUSED const Policy *poli
             }
         }
     case RVAL_TYPE_CONTAINER:
-        return FnReturnF("%zd", JsonLength(value));
+        return FnReturnF("%llu", (unsigned long long)JsonLength(value));
     default:
         Log(LOG_LEVEL_ERR, "Function '%s', argument '%s' resolved to unsupported datatype '%s'",
             fp->name, name, DataTypeToString(type));
@@ -3664,7 +3665,7 @@ static FnCallResult FnCallFold(EvalContext *ctx, ARG_UNUSED const Policy *policy
             {
                 continue;
             }
-        
+
             double x;
             if (mean_mode || variance_mode)
             {
@@ -3679,7 +3680,7 @@ static FnCallResult FnCallFold(EvalContext *ctx, ARG_UNUSED const Policy *policy
                 M2 += delta * (x - mean);
             }
         }
-        
+
 
         if (count == 1 && null_seen)
         {
@@ -3821,6 +3822,8 @@ static FnCallResult FnCallUnique(EvalContext *ctx, ARG_UNUSED const Policy *poli
     return (FnCallResult) { FNCALL_SUCCESS, { returnlist, RVAL_TYPE_LIST } };
 }
 
+/*********************************************************************/
+/* This function has been removed from the function list for now     */
 /*********************************************************************/
 
 static FnCallResult FnCallDatatype(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
@@ -3973,7 +3976,7 @@ static FnCallResult FnCallEverySomeNone(EvalContext *ctx, ARG_UNUSED const Polic
                           RlistScalarValue(finalargs->next), // list identifier
                           1,
                           0,
-                          99999999999);
+                          LONG_MAX);
 }
 
 static FnCallResult FnCallSort(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
@@ -4060,7 +4063,8 @@ static FnCallResult FnCallFormat(EvalContext *ctx, ARG_UNUSED const Policy *poli
         BufferAppend(buf, format, (check - format));
         Seq *s = NULL;
 
-        while (check && (s = StringMatchCaptures("^(%%|%[^diouxXeEfFgGaAcsCSpnm%]*?[diouxXeEfFgGaAcsCSpnm])([^%]*)(.*)$", check)))
+        while (check &&
+               (s = StringMatchCaptures("^(%%|%[^diouxXeEfFgGaAcsCSpnm%]*?[diouxXeEfFgGaAcsCSpnm])([^%]*)(.*)$", check)))
         {
             {
                 if (SeqLength(s) >= 2)
@@ -4081,6 +4085,7 @@ static FnCallResult FnCallFormat(EvalContext *ctx, ARG_UNUSED const Policy *poli
                     {
                         Log(LOG_LEVEL_ERR, "format() didn't have enough parameters");
                         BufferDestroy(buf);
+                        SeqDestroy(s);
                         return FnFailure();
                     }
 
@@ -4098,6 +4103,7 @@ static FnCallResult FnCallFormat(EvalContext *ctx, ARG_UNUSED const Policy *poli
                                   bad_modifiers[b],
                                   format_piece);
                             BufferDestroy(buf);
+                            SeqDestroy(s);
                             return FnFailure();
                         }
                     }
@@ -4196,6 +4202,7 @@ static FnCallResult FnCallFormat(EvalContext *ctx, ARG_UNUSED const Policy *poli
                                 Log(LOG_LEVEL_VERBOSE, "format() with %%S specifier needs a data container or a list instead of '%s'.",
                                     varname);
                                 BufferDestroy(buf);
+                                SeqDestroy(s);
                                 return FnFailure();
                             }
                         }
@@ -6094,7 +6101,7 @@ static void *CfReadFile(const char *filename, int maxsize)
     }
 
     /* 0 means 'read until the end of file' */
-    size_t limit = maxsize ? maxsize : SIZE_MAX;
+    size_t limit = maxsize > 0 ? maxsize : SIZE_MAX;
     bool truncated = false;
     Writer *w = FileRead(filename, limit, &truncated);
 
@@ -6391,7 +6398,7 @@ static int ExecModule(EvalContext *ctx, char *command)
     {
         StringSetDestroy(tags);
     }
-    
+
     cf_pclose(pp);
     free(line);
     return true;
@@ -6459,7 +6466,7 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
     case '+':
         if (length > CF_MAXVARSIZE)
         {
-            Log(LOG_LEVEL_ERR, "Module protocol was given an overlong +class line (%ld bytes), skipping", length);
+            Log(LOG_LEVEL_ERR, "Module protocol was given an overlong +class line (%zd bytes), skipping", length);
             break;
         }
 
@@ -6477,7 +6484,7 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
     case '-':
         if (length > CF_MAXVARSIZE)
         {
-            Log(LOG_LEVEL_ERR, "Module protocol was given an overlong -class line (%ld bytes), skipping", length);
+            Log(LOG_LEVEL_ERR, "Module protocol was given an overlong -class line (%zd bytes), skipping", length);
             break;
         }
 
@@ -6511,7 +6518,7 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
     case '=':
         if (length > CF_BUFSIZE + 256)
         {
-            Log(LOG_LEVEL_ERR, "Module protocol was given an overlong variable =line (%ld bytes), skipping", length);
+            Log(LOG_LEVEL_ERR, "Module protocol was given an overlong variable =line (%zd bytes), skipping", length);
             break;
         }
 
@@ -6570,7 +6577,7 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
     case '@':
         if (length > CF_BUFSIZE + 256 - 1)
         {
-            Log(LOG_LEVEL_ERR, "Module protocol was given an overlong variable @line (%ld bytes), skipping", length);
+            Log(LOG_LEVEL_ERR, "Module protocol was given an overlong variable @line (%zd bytes), skipping", length);
             break;
         }
 
@@ -7609,8 +7616,6 @@ const FnCallType CF_FNCALL_TYPES[] =
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("now", CF_DATA_TYPE_INT, NOW_ARGS, &FnCallNow, "Convert the current time into system representation",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_SYSTEM, SYNTAX_STATUS_NORMAL),
-    FnCallTypeNew("datatype", CF_DATA_TYPE_STRING, DATATYPE_ARGS, &FnCallDatatype, "Return the top-level type of a data container",
-                  FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("nth", CF_DATA_TYPE_STRING, NTH_ARGS, &FnCallNth, "Get the element at arg2 in list or data container arg1",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("on", CF_DATA_TYPE_INT, DATE_ARGS, &FnCallOn, "Convert an exact date/time to an integer system representation",
@@ -7745,7 +7750,7 @@ const FnCallType CF_FNCALL_TYPES[] =
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
     FnCallTypeNew("variance", CF_DATA_TYPE_REAL, STAT_FOLD_ARGS, &FnCallFold, "Return the variance of a list",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_DATA, SYNTAX_STATUS_NORMAL),
-    
+
     // File parsing functions that output a data container
     FnCallTypeNew("data_readstringarray", CF_DATA_TYPE_CONTAINER, DATA_READSTRINGARRAY_ARGS, &FnCallDataRead, "Read an array of strings from a file into a data container map, using the first element as a key",
                   FNCALL_OPTION_NONE, FNCALL_CATEGORY_IO, SYNTAX_STATUS_NORMAL),
