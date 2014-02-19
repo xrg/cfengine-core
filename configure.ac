@@ -49,6 +49,13 @@ dnl
 m4_define(incstart,sinc)
 m4_define(incend,lude)
 
+dnl
+dnl Save environment CFLAGS before autoconf starts messing with it.
+dnl It is restored later.
+dnl
+ENV_CFLAGS="$CFLAGS"
+CFLAGS=
+
 dnl ######################################################################
 dnl Use pthreads if available
 dnl ######################################################################
@@ -190,9 +197,9 @@ AC_ARG_ENABLE(debug,
 AM_CONDITIONAL([NDEBUG], [test x"$debug" = x"no"])
 
 if test x"$debug" = x"yes"; then
-   CFLAGS="-g3 -O0 $CFLAGS"
+   CFLAGS="$CFLAGS -g3 -O0 $ENV_CFLAGS"
 else
-   CFLAGS="-O2 -DNDEBUG $CFLAGS"
+   CFLAGS="$CFLAGS -O2 -DNDEBUG $ENV_CFLAGS"
 fi
 
 dnl ######################################################################
@@ -875,6 +882,7 @@ AC_CHECK_DECLS(lstat)
 AC_CHECK_FUNCS(sleep)
 AC_CHECK_DECLS(socketpair, [], [], [[#include <sys/socket.h>]])
 AC_CHECK_DECLS(setenv)
+AC_CHECK_DECLS(fsync)
 
 dnl ######################################################################
 dnl Check for sa_len in struct sockaddr

@@ -539,6 +539,7 @@ static void KeepContextBundles(EvalContext *ctx, const Policy *policy)
 
             BannerBundle(bp, NULL);
 
+            EvalContextStackPushBundleFrame(ctx, bp, NULL, false);
             for (size_t j = 0; j < SeqLength(bp->promise_types); j++)
             {
                 PromiseType *sp = SeqAt(bp->promise_types, j);
@@ -550,16 +551,16 @@ static void KeepContextBundles(EvalContext *ctx, const Policy *policy)
 
                 BannerPromiseType(bp->name, sp->name, 0);
 
-                EvalContextStackPushBundleFrame(ctx, bp, NULL, false);
-
+                EvalContextStackPushPromiseTypeFrame(ctx, sp);
                 for (size_t ppi = 0; ppi < SeqLength(sp->promises); ppi++)
                 {
                     Promise *pp = SeqAt(sp->promises, ppi);
                     ExpandPromise(ctx, pp, KeepServerPromise, NULL);
                 }
-
                 EvalContextStackPopFrame(ctx);
+
             }
+            EvalContextStackPopFrame(ctx);
         }
     }
 }
@@ -586,6 +587,7 @@ static void KeepPromiseBundles(EvalContext *ctx, const Policy *policy)
 
             BannerBundle(bp, NULL);
 
+            EvalContextStackPushBundleFrame(ctx, bp, NULL, false);
             for (size_t j = 0; j < SeqLength(bp->promise_types); j++)
             {
                 PromiseType *sp = SeqAt(bp->promise_types, j);
@@ -597,16 +599,15 @@ static void KeepPromiseBundles(EvalContext *ctx, const Policy *policy)
 
                 BannerPromiseType(bp->name, sp->name, 0);
 
-                EvalContextStackPushBundleFrame(ctx, bp, NULL, false);
-
+                EvalContextStackPushPromiseTypeFrame(ctx, sp);
                 for (size_t ppi = 0; ppi < SeqLength(sp->promises); ppi++)
                 {
                     Promise *pp = SeqAt(sp->promises, ppi);
                     ExpandPromise(ctx, pp, KeepServerPromise, NULL);
                 }
-
                 EvalContextStackPopFrame(ctx);
             }
+            EvalContextStackPopFrame(ctx);
         }
     }
 }

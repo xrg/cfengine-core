@@ -59,33 +59,35 @@ leads to Hash Association (lval,rval) => (user,"$(person)")
 
 static Rlist *NewExpArgs(EvalContext *ctx, const Policy *policy, const FnCall *fp)
 {
-    int len;
-    Rval rval;
-    Rlist *newargs = NULL;
-    FnCall *subfp;
-    const FnCallType *fn = FnCallTypeGet(fp->name);
-
-    len = RlistLen(fp->args);
-
-    if (!(fn->options & FNCALL_OPTION_VARARG))
     {
-        if (len != FnNumArgs(fn))
+        const FnCallType *fn = FnCallTypeGet(fp->name);
+        int len = RlistLen(fp->args);
+
+        if (!(fn->options & FNCALL_OPTION_VARARG))
         {
-            Log(LOG_LEVEL_ERR, "Arguments to function '%s' do not tally. Expected %d not %d",
-                  fp->name, FnNumArgs(fn), len);
-            PromiseRef(LOG_LEVEL_ERR, fp->caller);
-            exit(EXIT_FAILURE);
+            if (len != FnNumArgs(fn))
+            {
+                Log(LOG_LEVEL_ERR, "Arguments to function '%s' do not tally. Expected %d not %d",
+                      fp->name, FnNumArgs(fn), len);
+                PromiseRef(LOG_LEVEL_ERR, fp->caller);
+                exit(EXIT_FAILURE);
+            }
         }
     }
 
+    Rlist *expanded_args = NULL;
     for (const Rlist *rp = fp->args; rp != NULL; rp = rp->next)
     {
+        Rval rval;
+
         switch (rp->val.type)
         {
         case RVAL_TYPE_FNCALL:
-            subfp = RlistFnCallValue(rp);
-            rval = FnCallEvaluate(ctx, policy, subfp, fp->caller).rval;
-            assert(rval.item);
+            {
+                FnCall *subfp = RlistFnCallValue(rp);
+                rval = FnCallEvaluate(ctx, policy, subfp, fp->caller).rval;
+                assert(rval.item);
+            }
             break;
         default:
             rval = ExpandPrivateRval(ctx, NULL, NULL, rp->val.item, rp->val.type);
@@ -93,17 +95,11 @@ static Rlist *NewExpArgs(EvalContext *ctx, const Policy *policy, const FnCall *f
             break;
         }
 
-        RlistAppendRval(&newargs, rval);
+        RlistAppend(&expanded_args, rval.item, rval.type);
+        RvalDestroy(rval);
     }
 
-    return newargs;
-}
-
-/******************************************************************/
-
-static void DeleteExpArgs(Rlist *args)
-{
-    RlistDestroy(args);
+    return expanded_args;
 }
 
 /*******************************************************************/
@@ -131,12 +127,12 @@ bool FnCallIsBuiltIn(Rval rval)
 
 /*******************************************************************/
 
-FnCall *FnCallNew(const char *name, const Rlist *args)
+FnCall *FnCallNew(const char *name, Rlist *args)
 {
     FnCall *fp = xmalloc(sizeof(FnCall));
 
     fp->name = xstrdup(name);
-    fp->args = RlistCopy(args);
+    fp->args = args;
 
     return fp;
 }
@@ -145,7 +141,7 @@ FnCall *FnCallNew(const char *name, const Rlist *args)
 
 FnCall *FnCallCopy(const FnCall *f)
 {
-    return FnCallNew(f->name, f->args);
+    return FnCallNew(f->name, RlistCopy(f->args));
 }
 
 /*******************************************************************/
@@ -314,7 +310,7 @@ FnCallResult FnCallEvaluate(EvalContext *ctx, const Policy *policy, FnCall *fp, 
 
     if (RlistIsUnresolved(expargs))
     {
-        DeleteExpArgs(expargs);
+        RlistDestroy(expargs);
         return (FnCallResult) { FNCALL_FAILURE, { FnCallCopy(fp), RVAL_TYPE_FNCALL } };
     }
 
@@ -325,6 +321,7 @@ FnCallResult FnCallEvaluate(EvalContext *ctx, const Policy *policy, FnCall *fp, 
         FnCallWrite(w, fp);
         Log(LOG_LEVEL_DEBUG, "Using previously cached result for function '%s'", StringWriterData(w));
         WriterClose(w);
+        RlistDestroy(expargs);
 
         return (FnCallResult) { FNCALL_SUCCESS, RvalCopy(cached_rval) };
     }
@@ -333,7 +330,7 @@ FnCallResult FnCallEvaluate(EvalContext *ctx, const Policy *policy, FnCall *fp, 
 
     if (result.status == FNCALL_FAILURE)
     {
-        DeleteExpArgs(expargs);
+        RlistDestroy(expargs);
         return (FnCallResult) { FNCALL_FAILURE, { FnCallCopy(fp), RVAL_TYPE_FNCALL } };
     }
 
@@ -346,7 +343,8 @@ FnCallResult FnCallEvaluate(EvalContext *ctx, const Policy *policy, FnCall *fp, 
 
         EvalContextFunctionCachePut(ctx, fp, expargs, &result.rval);
     }
-    DeleteExpArgs(expargs);
+
+    RlistDestroy(expargs);
 
     return result;
 }

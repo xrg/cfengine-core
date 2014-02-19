@@ -25,8 +25,7 @@
 #ifndef CFENGINE_BUFFER_H
 #define CFENGINE_BUFFER_H
 
-#include <stdarg.h>
-#include <refcount.h>
+#include <platform.h>
 #include <compiler.h>
 
 /**
@@ -59,7 +58,6 @@ typedef struct
     unsigned int capacity;
     unsigned int used;
     bool unsafe;
-    RefCount *ref_count;
 } Buffer;
 
 /**
@@ -120,7 +118,7 @@ int BufferCompare(const Buffer *buffer1, const Buffer *buffer2);
   @param bytes Collection of bytes to be copied into the buffer.
   @param length Length of the collection of bytes.
   */
-void BufferSet(Buffer *buffer, char *bytes, unsigned int length);
+void BufferSet(Buffer *buffer, const char *bytes, unsigned int length);
 
 char *BufferGet(Buffer *buffer);
 
@@ -141,6 +139,8 @@ char *BufferGet(Buffer *buffer);
   */
 void BufferAppend(Buffer *buffer, const char *bytes, unsigned int length);
 void BufferAppendChar(Buffer *buffer, char byte);
+void BufferAppendF(Buffer *buffer, const char *format, ...);
+
 
 /**
   @brief Stores complex data on the buffer.
@@ -180,7 +180,7 @@ int BufferVPrintf(Buffer *buffer, const char *format, va_list ap);
   @note This function might trigger a deep copy and a memory allocation if the buffer is shared.
   @param buffer Buffer to clear.
   */
-void BufferZero(Buffer *buffer);
+void BufferClear(Buffer *buffer);
 /**
   @brief Returns the size of the buffer.
   @param buffer

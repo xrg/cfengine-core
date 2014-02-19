@@ -369,7 +369,7 @@ Rlist *RlistAppendScalar(Rlist **start, const char *scalar)
 
 Rlist *RlistAppend(Rlist **start, const void *item, RvalType type)
 {
-    Rlist *rp, *lp = *start;
+    Rlist *lp = *start;
 
     switch (type)
     {
@@ -380,7 +380,7 @@ Rlist *RlistAppend(Rlist **start, const void *item, RvalType type)
         break;
 
     case RVAL_TYPE_LIST:
-        for (rp = (Rlist *) item; rp != NULL; rp = rp->next)
+        for (const Rlist *rp = item; rp; rp = rp->next)
         {
             lp = RlistAppendRval(start, RvalCopy(rp->val));
         }
@@ -392,7 +392,7 @@ Rlist *RlistAppend(Rlist **start, const void *item, RvalType type)
         return NULL;
     }
 
-    rp = xmalloc(sizeof(Rlist));
+    Rlist *rp = xmalloc(sizeof(Rlist));
 
     if (*start == NULL)
     {
@@ -533,7 +533,7 @@ typedef enum
  @param[in] str: is the string to parse
  @param[out] newlist: rlist of elements found
 
- @retval 0: successful >0: failed
+ @retval 0: successful > 0: failed
  */
 static int LaunchParsingMachine(const char *str, Rlist **newlist)
 {
@@ -541,15 +541,14 @@ static int LaunchParsingMachine(const char *str, Rlist **newlist)
     state current_state = ST_OPENED;
     int ret;
 
-    char snatched[CF_MAXVARSIZE];
-    snatched[0]='\0';
-    char *sn = NULL;
+    Buffer *buf = BufferNewWithCapacity(CF_MAXVARSIZE);
 
     assert(newlist);
 
     while (current_state != ST_CLOSED && *s)
     {
-        switch(current_state) {
+        switch(current_state)
+        {
             case ST_ERROR:
                 Log(LOG_LEVEL_ERR, "Parsing error : Malformed string");
                 ret = 1;
@@ -576,13 +575,13 @@ static int LaunchParsingMachine(const char *str, Rlist **newlist)
                 }
                 else if (CLASS_START1(*s))
                 {
-                    sn=snatched;
+                    BufferClear(buf);
                     current_state = ST_ELM1;
                 }
                 else if (CLASS_START2(*s))
                 {
-                      sn=snatched; 
-                      current_state = ST_ELM2;
+                    BufferClear(buf);
+                    current_state = ST_ELM2;
                 }
                 else if (CLASS_ANY1(*s))
                 {
@@ -593,23 +592,13 @@ static int LaunchParsingMachine(const char *str, Rlist **newlist)
             case ST_ELM1:
                 if (CLASS_END1(*s))
                 {
-                    if (sn==NULL)
-                    {
-                        sn=snatched;
-                    }
-                    *sn='\0'; 
-                    RlistAppendScalar(newlist, snatched);
-                    sn=NULL;
+                    RlistAppendScalar(newlist, BufferData(buf));
+                    BufferClear(buf);
                     current_state = ST_END1;
                 }
                 else if (CLASS_ANY2(*s))
                 {
-                    if (sn==NULL)
-                    {
-                        sn=snatched;
-                    }
-                    *sn=*s;
-                    sn++; 
+                    BufferAppendChar(buf, *s);
                     current_state = ST_ELM1;
                 }
                 s++;
@@ -617,23 +606,13 @@ static int LaunchParsingMachine(const char *str, Rlist **newlist)
             case ST_ELM2:
                 if (CLASS_END2(*s))
                 {
-                    if (sn==NULL)
-                    {
-                        sn=snatched;
-                    }
-                    *sn='\0'; 
-                    RlistAppendScalar(newlist, snatched);
-                    sn=NULL; 
+                    RlistAppendScalar(newlist, BufferData(buf));
+                    BufferClear(buf);
                     current_state = ST_END2;
                 }
                 else if (CLASS_ANY3(*s))
                 {
-                    if (sn==NULL) 
-                    {
-                        sn=snatched;
-                    }
-                    *sn=*s;
-                    sn++;
+                    BufferAppendChar(buf, *s);
                     current_state = ST_ELM2;
                 }
                 s++;
@@ -814,59 +793,50 @@ void RlistDestroyEntry(Rlist **liststart, Rlist *entry)
 /*******************************************************************/
 
 /*
- * Copies from <from> to <to>, reading up to <len> characters from <from>,
- * stopping at first <sep>.
+ * Copies from <from> to <to>, writing up to <len> bytes, stopping
+ * before the first <sep>.
  *
  * \<sep> is not counted as the separator, but copied to <to> as <sep>.
  * Any other escape sequences are not supported.
+ *
+ * Returns the number of bytes read out of from; this may be more than
+ * the number written into to (which is at most len, including the
+ * terminating '\0').
  */
 static int SubStrnCopyChr(char *to, const char *from, int len, char sep)
 {
     char *sto = to;
     int count = 0;
+    assert(from && from[0]);
 
-    memset(to, 0, len);
-
-    if (from == NULL)
+    for (const char *sp = from; sto - to < len - 1 && sp[0] != '\0'; sp++)
     {
-        return 0;
-    }
-
-    if (from && (strlen(from) == 0))
-    {
-        return 0;
-    }
-
-    for (const char *sp = from; *sp != '\0'; sp++)
-    {
-        if (count > len - 1)
-        {
-            break;
-        }
-
-        if ((*sp == '\\') && (*(sp + 1) == sep))
+        if (sp[0] == '\\' && sp[1] == sep)
         {
             *sto++ = *++sp;
+            count += 2;
         }
-        else if (*sp == sep)
+        else if (sp[0] == sep)
         {
             break;
         }
         else
         {
-            *sto++ = *sp;
+            *sto++ = sp[0];
+            count++;
         }
-
-        count++;
     }
+    assert(sto - to < len);
+    *sto = '\0';
 
+    assert(count <= strlen(from));
     return count;
 }
 
 Rlist *RlistFromSplitString(const char *string, char sep)
- /* Splits a string containing a separator like "," 
-    into a linked list of separate items, supports
-    escaping separators, e.g. \, */
+/* Splits a string on a separator - e.g. "," - into a linked list of
+ * separate items.  Supports escaping separators - e.g. "\," isn't a
+ * separator, it contributes a simple "," in a list entry. */
 {
     if (string == NULL)
     {
@@ -875,18 +845,16 @@ Rlist *RlistFromSplitString(const char *string, char sep)
 
     Rlist *liststart = NULL;
     char node[CF_MAXVARSIZE];
-    int maxlen = strlen(string);
 
-    for (const char *sp = string; *sp != '\0'; sp++)
+    for (const char *sp = string; *sp != '\0';)
     {
-        if (*sp == '\0' || sp > string + maxlen)
-        {
-            break;
-        }
-
-        memset(node, 0, CF_MAXVARSIZE);
-
         sp += SubStrnCopyChr(node, sp, CF_MAXVARSIZE, sep);
+        assert(sp - string <= strlen(string));
+        if (*sp)
+        {
+            assert(*sp == sep && (sp == string || sp[-1] != '\\'));
+            sp++;
+        }
 
         RlistAppendScalar(&liststart, node);
     }
@@ -896,57 +864,55 @@ Rlist *RlistFromSplitString(const char *string, char sep)
 
 /*******************************************************************/
 
-Rlist *RlistFromSplitRegex(const char *string, const char *regex, int max, bool blanks)
- /* Splits a string containing a separator like "," 
-    into a linked list of separate items, */
-// NOTE: this has a bad side-effect of creating scope match and variables,
-//       see RegExMatchSubString in matching.c - could leak memory
+Rlist *RlistFromSplitRegex(const char *string, const char *regex, size_t max_entries, bool allow_blanks)
 {
-    Rlist *liststart = NULL;
-    char node[CF_MAXVARSIZE];
-    int start, end;
-    int count = 0;
-
-    if (string == NULL)
+    assert(string);
+    if (!string)
     {
         return NULL;
     }
 
     const char *sp = string;
+    size_t entry_count = 0;
+    int start = 0;
+    int end = 0;
+    Rlist *result = NULL;
+    Buffer *buffer = BufferNewWithCapacity(CF_MAXVARSIZE);
 
-    while ((count < max) && StringMatch(regex, sp, &start, &end))
+    while ((entry_count < max_entries) && StringMatch(regex, sp, &start, &end))
     {
         if (end == 0)
         {
             break;
         }
 
-        memset(node, 0, CF_MAXVARSIZE);
-        /* silently drop tokens longer than CF_MAXVARSIZE,
-         * we don't want to propagate larger buffers down the Rlist */
-        strncpy(node, sp, MIN(start, CF_MAXVARSIZE-1));
+        BufferClear(buffer);
+        BufferAppend(buffer, sp, start);
 
-        if (blanks || strlen(node) > 0)
+        if (allow_blanks || BufferSize(buffer) > 0)
         {
-            RlistAppendScalar(&liststart, node);
-            count++;
+            RlistAppendScalar(&result, BufferData(buffer));
+            entry_count++;
         }
 
         sp += end;
     }
 
-    if (count < max)
+    if (entry_count < max_entries)
     {
-        memset(node, 0, CF_MAXVARSIZE);
-        strncpy(node, sp, CF_MAXVARSIZE - 1);
+        BufferClear(buffer);
+        size_t remaining = strlen(sp);
+        BufferAppend(buffer, sp, remaining);
 
-        if ((blanks && sp != string) || strlen(node) > 0)
+        if ((allow_blanks && sp != string) || BufferSize(buffer) > 0)
         {
-            RlistAppendScalar(&liststart, node);
+            RlistAppendScalar(&result, BufferData(buffer));
         }
     }
 
-    return liststart;
+    BufferDestroy(buffer);
+
+    return result;
 }
 
 /*******************************************************************/

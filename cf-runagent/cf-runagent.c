@@ -158,9 +158,8 @@ int main(int argc, char *argv[])
     int pid;
 #endif
 
-    EvalContext *ctx = EvalContextNew();
-
     GenericAgentConfig *config = CheckOpts(argc, argv);
+    EvalContext *ctx = EvalContextNew();
     GenericAgentConfigApply(ctx, config);
 
     GenericAgentDiscoverContext(ctx, config);

@@ -29,7 +29,6 @@
 #include <files_interfaces.h>
 #include <files_hashes.h>
 #include <hashes.h>
-#include <logging.h>
 #include <pipes.h>
 #include <mutex.h>
 #include <known_dirs.h>
@@ -49,10 +48,10 @@ void CRYPTO_set_id_callback(unsigned long (*func)(void));
 static void RandomSeed(void);
 static void SetupOpenSSLThreadLocks(void);
 static void CleanupOpenSSLThreadLocks(void);
+LogLevel CryptoGetMissingKeyLogLevel();
 
 /* TODO move crypto.[ch] to libutils. Will need to remove all manipulation of
  * lastseen db. */
-
 
 static bool crypto_initialized = false; /* GLOBAL_X */
 
@@ -122,7 +121,7 @@ bool LoadSecretKeys(void)
         FILE *fp = fopen(privkeyfile, "r");
         if (!fp)
         {
-            Log(LOG_LEVEL_ERR,
+            Log(CryptoGetMissingKeyLogLevel(),
                 "Couldn't find a private key at '%s', use cf-key to get one. (fopen: %s)",
                 privkeyfile, GetErrorStr());
             free(privkeyfile);
@@ -151,21 +150,20 @@ bool LoadSecretKeys(void)
         FILE *fp = fopen(pubkeyfile, "r");
         if (!fp)
         {
-            Log(LOG_LEVEL_ERR,
+            Log(CryptoGetMissingKeyLogLevel(),
                 "Couldn't find a public key at '%s', use cf-key to get one (fopen: %s)",
                 pubkeyfile, GetErrorStr());
             free(pubkeyfile);
             return false;
         }
 
-        if ((PUBKEY = PEM_read_RSAPublicKey(fp, NULL, NULL,
-                                            (void *)priv_passphrase)) == NULL)
+        PUBKEY = PEM_read_RSAPublicKey(fp, NULL, NULL, (void *)priv_passphrase);
+        if (NULL == PUBKEY)
         {
             unsigned long err = ERR_get_error();
             Log(LOG_LEVEL_ERR,
                 "Error reading public key at '%s'. (PEM_read_RSAPublicKey: %s)",
                 pubkeyfile, ERR_reason_error_string(err));
-            PUBKEY = NULL;
             fclose(fp);
             free(pubkeyfile);
             return false;
@@ -176,7 +174,8 @@ bool LoadSecretKeys(void)
         fclose(fp);
     }
 
-    if ((BN_num_bits(PUBKEY->e) < 2) || (!BN_is_odd(PUBKEY->e)))
+    if (NULL != PUBKEY
+        && ((BN_num_bits(PUBKEY->e) < 2) || (!BN_is_odd(PUBKEY->e))))
     {
         Log(LOG_LEVEL_ERR, "The public key RSA exponent is too small or not odd");
         return false;
@@ -187,7 +186,8 @@ bool LoadSecretKeys(void)
 
 void PolicyHubUpdateKeys(const char *policy_server)
 {
-    if (GetAmPolicyHub(CFWORKDIR))
+    if (GetAmPolicyHub(CFWORKDIR)
+        && NULL != PUBKEY)
     {
         unsigned char digest[EVP_MAX_MD_SIZE + 1];
 
@@ -195,7 +195,10 @@ void PolicyHubUpdateKeys(const char *policy_server)
         {
             char buffer[EVP_MAX_MD_SIZE * 4];
             HashPubKey(PUBKEY, digest, CF_DEFAULT_DIGEST);
-            snprintf(dst_public_key_filename, CF_MAXVARSIZE, "%s/ppkeys/%s-%s.pub", CFWORKDIR, "root",
+            snprintf(dst_public_key_filename, CF_MAXVARSIZE,
+                     "%s/ppkeys/%s-%s.pub",
+                     CFWORKDIR,
+                     "root",
                      HashPrintSafe(CF_DEFAULT_DIGEST, true, digest, buffer));
             MapName(dst_public_key_filename);
         }
@@ -303,7 +306,7 @@ RSA *HavePublicKey(const char *username, const char *ipaddress, const char *dige
 
     if ((fp = fopen(newname, "r")) == NULL)
     {
-        Log(LOG_LEVEL_ERR, "Couldn't find a public key '%s'. (fopen: %s)", newname, GetErrorStr());
+        Log(CryptoGetMissingKeyLogLevel(), "Couldn't find a public key '%s'. (fopen: %s)", newname, GetErrorStr());
         return NULL;
     }
 
@@ -540,4 +543,13 @@ static void CleanupOpenSSLThreadLocks(void)
         pthread_mutex_destroy(&(cf_openssl_locks[i]));
     }
     OPENSSL_free(cf_openssl_locks);
+}
+
+LogLevel CryptoGetMissingKeyLogLevel(void)
+{
+#ifdef __MINGW32__
+    return LOG_LEVEL_ERR;
+#else
+    return ((getuid() == 0 && NULL == getenv("FAKEROOTKEY")) ? LOG_LEVEL_ERR : LOG_LEVEL_VERBOSE);
+#endif
 }

@@ -326,6 +326,7 @@ void MonitorStartServer(EvalContext *ctx, const Policy *policy)
     }
 
     PolicyDestroy(monitor_cfengine_policy);
+    YieldCurrentLock(thislock);
 }
 
 /*********************************************************************/
@@ -573,12 +574,9 @@ static void AddOpenPorts(const char *name, const Item *value, Item **mon_data)
     PrintItemList(value, w);
     if (StringWriterLength(w) <= 1500)
     {
-        AppendItem(mon_data, StringWriterClose(w), NULL);
+        AppendItem(mon_data, StringWriterData(w), NULL);
     }
-    else
-    {
-        WriterClose(w);
-    }
+    WriterClose(w);
 }
 
 static void ArmClasses(Averages av)
@@ -1138,11 +1136,13 @@ static void GatherPromisedMeasures(EvalContext *ctx, const Policy *policy)
             {
                 PromiseType *sp = SeqAt(bp->promise_types, j);
 
+                EvalContextStackPushPromiseTypeFrame(ctx, sp);
                 for (size_t ppi = 0; ppi < SeqLength(sp->promises); ppi++)
                 {
                     Promise *pp = SeqAt(sp->promises, ppi);
                     ExpandPromise(ctx, pp, KeepMonitorPromise, NULL);
                 }
+                EvalContextStackPopFrame(ctx);
             }
         }
 

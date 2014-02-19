@@ -39,11 +39,12 @@
 #include <vars.h>
 #include <syslog_client.h>
 #include <audit.h>
-#include <promise_logging.h>
 #include <rlist.h>
 #include <buffer.h>
 #include <promises.h>
 #include <fncall.h>
+#include <ring_buffer.h>
+#include <logging_priv.h>
 
 static bool BundleAborted(const EvalContext *ctx);
 static void SetBundleAborted(EvalContext *ctx);
@@ -106,6 +107,93 @@ static StackFrame *LastStackFrameByType(const EvalContext *ctx, StackFrameType t
     }
 
     return NULL;
+}
+
+static LogLevel AdjustLogLevel(LogLevel base, LogLevel adjust)
+{
+    if (adjust == -1)
+    {
+        return base;
+    }
+    else
+    {
+        return MAX(base, adjust);
+    }
+}
+
+static LogLevel StringToLogLevel(const char *value)
+{
+    if (value)
+    {
+        if (!strcmp(value, "verbose"))
+        {
+            return LOG_LEVEL_VERBOSE;
+        }
+        if (!strcmp(value, "inform"))
+        {
+            return LOG_LEVEL_INFO;
+        }
+        if (!strcmp(value, "error"))
+        {
+            return LOG_LEVEL_NOTICE; /* Error level includes warnings and notices */
+        }
+    }
+    return -1;
+}
+
+static LogLevel GetLevelForPromise(const Promise *pp, const char *attr_name)
+{
+    return StringToLogLevel(PromiseGetConstraintAsRval(pp, attr_name, RVAL_TYPE_SCALAR));
+}
+
+static LogLevel CalculateLogLevel(const Promise *pp)
+{
+    LogLevel log_level = LogGetGlobalLevel();
+
+    if (pp)
+    {
+        log_level = AdjustLogLevel(log_level, GetLevelForPromise(pp, "log_level"));
+    }
+
+    /* Disable system log for dry-runs */
+    if (DONTDO)
+    {
+        log_level = LOG_LEVEL_NOTHING;
+    }
+
+    return log_level;
+}
+
+static LogLevel CalculateReportLevel(const Promise *pp)
+{
+    LogLevel report_level = LogGetGlobalLevel();
+
+    if (pp)
+    {
+        report_level = AdjustLogLevel(report_level, GetLevelForPromise(pp, "report_level"));
+    }
+
+    return report_level;
+}
+
+static char *LogHook(LoggingPrivContext *pctx, const char *message)
+{
+    const EvalContext *ctx = pctx->param;
+
+    StackFrame *last_frame = LastStackFrame(ctx, 0);
+    if (last_frame)
+    {
+        if (last_frame->type == STACK_FRAME_TYPE_PROMISE_ITERATION)
+        {
+            RingBufferAppend(last_frame->data.promise_iteration.log_messages, xstrdup(message));
+        }
+
+        return StringConcatenate(3, last_frame->path, ": ", message);
+    }
+    else
+    {
+        return xstrdup(message);
+    }
 }
 
 static const char *GetAgentAbortingContext(const EvalContext *ctx)
@@ -655,6 +743,7 @@ static void StackFramePromiseDestroy(StackFramePromise frame)
 static void StackFramePromiseIterationDestroy(StackFramePromiseIteration frame)
 {
     PromiseDestroy(frame.owner);
+    RingBufferDestroy(frame.log_messages);
 }
 
 static void StackFrameDestroy(StackFrame *frame)
@@ -671,6 +760,9 @@ static void StackFrameDestroy(StackFrame *frame)
             StackFrameBodyDestroy(frame->data.body);
             break;
 
+        case STACK_FRAME_TYPE_PROMISE_TYPE:
+            break;
+
         case STACK_FRAME_TYPE_PROMISE:
             StackFramePromiseDestroy(frame->data.promise);
             break;
@@ -683,6 +775,7 @@ static void StackFrameDestroy(StackFrame *frame)
             ProgrammingError("Unhandled stack frame type");
         }
 
+        free(frame->path);
         free(frame);
     }
 }
@@ -734,7 +827,17 @@ EvalContext *EvalContextNew(void)
     ctx->promises_done = PromiseSetNew();
     ctx->function_cache = RBTreeNew(NULL, NULL, NULL,
                                     NULL, NULL, NULL);
-    PromiseLoggingInit(ctx, 5);
+
+    {
+        LoggingPrivContext *pctx = LoggingPrivGetContext();
+        assert(!pctx && "Logging context bound to something else");
+
+        pctx = xcalloc(1, sizeof(LoggingPrivContext));
+        pctx->param = ctx;
+        pctx->log_hook = &LogHook;
+
+        LoggingPrivSetContext(pctx);
+    }
 
     ctx->enterprise_state = EvalContextEnterpriseStateNew();
 
@@ -750,7 +853,11 @@ void EvalContextDestroy(EvalContext *ctx)
         free(ctx->launch_directory);
         EvalContextEnterpriseStateDestroy(ctx->enterprise_state);
 
-        PromiseLoggingFinish(ctx);
+        {
+            LoggingPrivContext *pctx = LoggingPrivGetContext();
+            free(pctx);
+            LoggingPrivSetContext(NULL);
+        }
 
         EvalContextDeleteIpAddresses(ctx);
 
@@ -893,6 +1000,15 @@ static StackFrame *StackFrameNewBody(const Body *owner)
     return frame;
 }
 
+static StackFrame *StackFrameNewPromiseType(const PromiseType *owner)
+{
+    StackFrame *frame = StackFrameNew(STACK_FRAME_TYPE_PROMISE_TYPE, true);
+
+    frame->data.promise_type.owner = owner;
+
+    return frame;
+}
+
 static StackFrame *StackFrameNewPromise(const Promise *owner)
 {
     StackFrame *frame = StackFrameNew(STACK_FRAME_TYPE_PROMISE, true);
@@ -909,6 +1025,7 @@ static StackFrame *StackFrameNewPromiseIteration(Promise *owner, const PromiseIt
     frame->data.promise_iteration.owner = owner;
     frame->data.promise_iteration.iter_ctx = iter_ctx;
     frame->data.promise_iteration.index = index;
+    frame->data.promise_iteration.log_messages = RingBufferNew(5, NULL, free);
 
     return frame;
 }
@@ -923,7 +1040,18 @@ void EvalContextStackFrameRemoveSoft(EvalContext *ctx, const char *context)
 
 static void EvalContextStackPushFrame(EvalContext *ctx, StackFrame *frame)
 {
+    StackFrame *last_frame = LastStackFrame(ctx, 0);
+    if (last_frame)
+    {
+        if (last_frame->type == STACK_FRAME_TYPE_PROMISE_ITERATION)
+        {
+            LoggingPrivSetLevels(LogGetGlobalLevel(), LogGetGlobalLevel());
+        }
+    }
+
     SeqAppend(ctx->stack, frame);
+
+    frame->path = EvalContextStackPath(ctx);
 }
 
 void EvalContextStackPushBundleFrame(EvalContext *ctx, const Bundle *owner, const Rlist *args, bool inherits_previous)
@@ -959,7 +1087,18 @@ void EvalContextStackPushBundleFrame(EvalContext *ctx, const Bundle *owner, cons
 
 void EvalContextStackPushBodyFrame(EvalContext *ctx, const Promise *caller, const Body *body, Rlist *args)
 {
-    assert((!LastStackFrame(ctx, 0) && strcmp("control", body->name) == 0) || LastStackFrame(ctx, 0)->type == STACK_FRAME_TYPE_BUNDLE);
+#ifndef NDEBUG
+    StackFrame *last_frame = LastStackFrame(ctx, 0);
+    if (last_frame)
+    {
+        assert(last_frame->type == STACK_FRAME_TYPE_PROMISE_TYPE);
+    }
+    else
+    {
+        assert(strcmp("control", body->name) == 0);
+    }
+#endif
+
 
     EvalContextStackPushFrame(ctx, StackFrameNewBody(body));
 
@@ -987,9 +1126,17 @@ void EvalContextStackPushBodyFrame(EvalContext *ctx, const Promise *caller, cons
     }
 }
 
-void EvalContextStackPushPromiseFrame(EvalContext *ctx, const Promise *owner, bool copy_bundle_context)
+void EvalContextStackPushPromiseTypeFrame(EvalContext *ctx, const PromiseType *owner)
 {
     assert(LastStackFrame(ctx, 0) && LastStackFrame(ctx, 0)->type == STACK_FRAME_TYPE_BUNDLE);
+
+    StackFrame *frame = StackFrameNewPromiseType(owner);
+    EvalContextStackPushFrame(ctx, frame);
+}
+
+void EvalContextStackPushPromiseFrame(EvalContext *ctx, const Promise *owner, bool copy_bundle_context)
+{
+    assert(LastStackFrame(ctx, 0) && LastStackFrame(ctx, 0)->type == STACK_FRAME_TYPE_PROMISE_TYPE);
 
     EvalContextVariableClearMatch(ctx);
 
@@ -1062,14 +1209,9 @@ Promise *EvalContextStackPushPromiseIterationFrame(EvalContext *ctx, size_t iter
 
     Promise *pexp = ExpandDeRefPromise(ctx, LastStackFrame(ctx, 0)->data.promise.owner);
 
-    if (EvalContextStackCurrentPromise(ctx))
-    {
-        PromiseLoggingPromiseFinish(ctx, EvalContextStackCurrentPromise(ctx));
-    }
-
-    PromiseLoggingPromiseEnter(ctx, pexp);
-
     EvalContextStackPushFrame(ctx, StackFrameNewPromiseIteration(pexp, iter_ctx, iteration_index));
+
+    LoggingPrivSetLevels(CalculateLogLevel(pexp), CalculateReportLevel(pexp));
 
     return pexp;
 }
@@ -1094,7 +1236,7 @@ void EvalContextStackPopFrame(EvalContext *ctx)
         break;
 
     case STACK_FRAME_TYPE_PROMISE_ITERATION:
-        PromiseLoggingPromiseFinish(ctx, last_frame->data.promise_iteration.owner);
+        LoggingPrivSetLevels(LogGetGlobalLevel(), LogGetGlobalLevel());
         break;
 
     default:
@@ -1108,9 +1250,14 @@ void EvalContextStackPopFrame(EvalContext *ctx)
         FatalError(ctx, "cf-agent aborted on context '%s'", GetAgentAbortingContext(ctx));
     }
 
-    if (last_frame_type == STACK_FRAME_TYPE_PROMISE_ITERATION && EvalContextStackCurrentPromise(ctx))
+    last_frame = LastStackFrame(ctx, 0);
+    if (last_frame)
     {
-        PromiseLoggingPromiseEnter(ctx, EvalContextStackCurrentPromise(ctx));
+        if (last_frame->type == STACK_FRAME_TYPE_PROMISE_ITERATION)
+        {
+            const Promise *pp = EvalContextStackCurrentPromise(ctx);
+            LoggingPrivSetLevels(CalculateLogLevel(pp), CalculateReportLevel(pp));
+        }
     }
 }
 
@@ -1307,10 +1454,15 @@ const Bundle *EvalContextStackCurrentBundle(const EvalContext *ctx)
     return frame ? frame->data.bundle.owner : NULL;
 }
 
+const RingBuffer *EvalContextStackCurrentMessages(const EvalContext *ctx)
+{
+    StackFrame *frame = LastStackFrameByType(ctx, STACK_FRAME_TYPE_PROMISE_ITERATION);
+    return frame ? frame->data.promise_iteration.log_messages : NULL;
+}
 
 char *EvalContextStackPath(const EvalContext *ctx)
 {
-    Writer *path = StringWriter();
+    Buffer *path = BufferNew();
 
     for (size_t i = 0; i < SeqLength(ctx->stack); i++)
     {
@@ -1318,29 +1470,39 @@ char *EvalContextStackPath(const EvalContext *ctx)
         switch (frame->type)
         {
         case STACK_FRAME_TYPE_BODY:
-            WriterWriteF(path, "/%s", frame->data.body.owner->name);
+            BufferAppendChar(path, '/');
+            BufferAppend(path, frame->data.body.owner->name, CF_BUFSIZE);
             break;
 
         case STACK_FRAME_TYPE_BUNDLE:
-            WriterWriteF(path, "/%s/%s", frame->data.bundle.owner->ns, frame->data.bundle.owner->name);
+            BufferAppendChar(path, '/');
+            BufferAppend(path, frame->data.bundle.owner->ns, CF_BUFSIZE);
+            BufferAppendChar(path, '/');
+            BufferAppend(path, frame->data.bundle.owner->name, CF_BUFSIZE);
             break;
+
+        case STACK_FRAME_TYPE_PROMISE_TYPE:
+            BufferAppendChar(path, '/');
+            BufferAppend(path, frame->data.promise_type.owner->name, CF_BUFSIZE);
 
         case STACK_FRAME_TYPE_PROMISE:
             break;
 
         case STACK_FRAME_TYPE_PROMISE_ITERATION:
-            WriterWriteF(path, "/%s", frame->data.promise_iteration.owner->parent_promise_type->name);
-            WriterWriteF(path, "/'%s'", frame->data.promise_iteration.owner->promiser);
+            BufferAppendChar(path, '/');
+            BufferAppendChar(path, '\'');
+            BufferAppend(path, frame->data.promise_iteration.owner->promiser, CF_BUFSIZE);
+            BufferAppendChar(path, '\'');
             if (i == SeqLength(ctx->stack) - 1)
             {
-                WriterWriteF(path, "[%llu]",
+                BufferAppendF(path, "[%llu]",
                              (unsigned long long)frame->data.promise_iteration.index);
             }
             break;
         }
     }
 
-    return StringWriterClose(path);
+    return BufferClose(path);
 }
 
 StringSet *EvalContextStackPromisees(const EvalContext *ctx)
@@ -1392,25 +1554,19 @@ StringSet *EvalContextStackPromisees(const EvalContext *ctx)
 
 bool EvalContextVariablePutSpecial(EvalContext *ctx, SpecialScope scope, const char *lval, const void *value, DataType type, const char *tags)
 {
-    switch (scope)
+    if (strchr(lval, '['))
     {
-    case SPECIAL_SCOPE_SYS:
-    case SPECIAL_SCOPE_MON:
-    case SPECIAL_SCOPE_CONST:
-    case SPECIAL_SCOPE_EDIT:
-    case SPECIAL_SCOPE_BODY:
-    case SPECIAL_SCOPE_THIS:
-    case SPECIAL_SCOPE_MATCH:
-        {
-            VarRef *ref = VarRefParseFromScope(lval, SpecialScopeToString(scope));
-            bool ret = EvalContextVariablePut(ctx, ref, value, type, tags);
-            VarRefDestroy(ref);
-            return ret;
-        }
-
-    default:
-        assert(false);
-        return false;
+        // dealing with (legacy) array reference in lval, must parse
+        VarRef *ref = VarRefParseFromScope(lval, SpecialScopeToString(scope));
+        bool ret = EvalContextVariablePut(ctx, ref, value, type, tags);
+        VarRefDestroy(ref);
+        return ret;
+    }
+    else
+    {
+        // plain lval, skip parsing
+        const VarRef ref = VarRefConst(NULL, SpecialScopeToString(scope), lval);
+        return EvalContextVariablePut(ctx, &ref, value, type, tags);
     }
 }
 
@@ -1548,6 +1704,17 @@ static void VarRefStackQualify(const EvalContext *ctx, VarRef *ref)
         VarRefQualify(ref, NULL, SpecialScopeToString(SPECIAL_SCOPE_BODY));
         break;
 
+    case STACK_FRAME_TYPE_PROMISE_TYPE:
+        {
+            StackFrame *last_last_frame = LastStackFrame(ctx, 1);
+            assert(last_last_frame);
+            assert(last_last_frame->type == STACK_FRAME_TYPE_BUNDLE);
+            VarRefQualify(ref,
+                          last_last_frame->data.bundle.owner->ns,
+                          last_last_frame->data.bundle.owner->name);
+        }
+        break;
+
     case STACK_FRAME_TYPE_BUNDLE:
         VarRefQualify(ref, last_frame->data.bundle.owner->ns, last_frame->data.bundle.owner->name);
         break;
@@ -1589,33 +1756,6 @@ bool EvalContextVariablePut(EvalContext *ctx,
     }
 
     Rval rval = (Rval) { (void *)value, DataTypeToRvalType(type) };
-
-    // Look for outstanding lists in variable rvals
-    if (THIS_AGENT_TYPE == AGENT_TYPE_COMMON)
-    {
-        StackFrame *last_frame = LastStackFrame(ctx, 0);
-
-        if (last_frame && (last_frame->type == STACK_FRAME_TYPE_BUNDLE))
-        {
-            Rlist *listvars = NULL;
-            Rlist *scalars = NULL;
-            Rlist *containers = NULL;
-
-            MapIteratorsFromRval(ctx, EvalContextStackCurrentBundle(ctx),
-                                 rval, &scalars, &listvars, &containers);
-
-            if (listvars != NULL)
-            {
-                Log(LOG_LEVEL_ERR,
-                    "Redefinition of variable '%s' (embedded list in RHS)",
-                    ref->lval);
-            }
-
-            RlistDestroy(listvars);
-            RlistDestroy(scalars);
-            RlistDestroy(containers);
-        }
-    }
 
     VariableTable *table = GetVariableTableForScope(ctx, ref->ns, ref->scope);
     const Promise *pp = EvalContextStackCurrentPromise(ctx);
@@ -2235,17 +2375,16 @@ void cfPS(EvalContext *ctx, LogLevel level, PromiseResult status, const Promise 
 
     va_list ap;
     va_start(ap, fmt);
-    VLog(level, fmt, ap);
+    char *msg = NULL;
+    xvasprintf(&msg, fmt, ap);
+    Log(level, "%s", msg);
     va_end(ap);
-
-    // TODO: the rest of this should go away soon
-    const RingBuffer *msgs = PromiseLoggingMessages(ctx);
-    const char *last_msg = RingBufferHead(msgs);
 
     /* Now complete the exits status classes and auditing */
 
     ClassAuditLog(ctx, pp, attr, status);
-    UpdatePromiseComplianceStatus(status, pp, last_msg);
+    UpdatePromiseComplianceStatus(status, pp, msg);
+    free(msg);
 }
 
 void SetChecksumUpdatesDefault(EvalContext *ctx, bool enabled)

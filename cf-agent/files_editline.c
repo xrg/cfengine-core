@@ -130,6 +130,7 @@ int ScheduleEditLineOperations(EvalContext *ctx, const Bundle *bp, Attributes a,
 
             BannerSubPromiseType(ctx, bp->name, sp->name);
 
+            EvalContextStackPushPromiseTypeFrame(ctx, sp);
             for (size_t ppi = 0; ppi < SeqLength(sp->promises); ppi++)
             {
                 Promise *pp = SeqAt(sp->promises, ppi);
@@ -139,9 +140,11 @@ int ScheduleEditLineOperations(EvalContext *ctx, const Bundle *bp, Attributes a,
                 if (Abort(ctx))
                 {
                     YieldCurrentLock(thislock);
+                    EvalContextStackPopFrame(ctx);
                     return false;
                 }
             }
+            EvalContextStackPopFrame(ctx);
         }
     }
 
@@ -1163,7 +1166,7 @@ static int ReplacePatterns(EvalContext *ctx, Item *file_start, Item *file_end, A
             }
 
             match_len = end_off - start_off;
-            BufferZero(replace);
+            BufferClear(replace);
             ExpandScalar(ctx, PromiseGetBundle(pp)->ns, PromiseGetBundle(pp)->name, a.replace.replace_value, replace);
 
             Log(LOG_LEVEL_VERBOSE, "Verifying replacement of '%s' with '%s', cutoff %d", pp->promiser, BufferData(replace),
@@ -1610,7 +1613,7 @@ static int InsertFileAtLocation(EvalContext *ctx, Item **start, Item *begin_ptr,
             break;
         }
 
-        BufferZero(exp);
+        BufferClear(exp);
         if (a.expandvars)
         {
             ExpandScalar(ctx, PromiseGetBundle(pp)->ns, PromiseGetBundle(pp)->name, buf, exp);

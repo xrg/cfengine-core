@@ -225,11 +225,10 @@ static const char *const HINTS[] =
 
 int main(int argc, char *argv[])
 {
-    int ret = 0;
-
-    EvalContext *ctx = EvalContextNew();
+    struct timespec start = BeginMeasure();
 
     GenericAgentConfig *config = CheckOpts(argc, argv);
+    EvalContext *ctx = EvalContextNew();
     GenericAgentConfigApply(ctx, config);
 
     GenericAgentDiscoverContext(ctx, config);
@@ -266,8 +265,10 @@ int main(int argc, char *argv[])
     Nova_NoteVarUsageDB(ctx);
     Nova_TrackExecution(config->input_file);
     PurgeLocks();
+    BackupLockDatabase();
 
     PolicyDestroy(policy); /* Can we safely do this earlier ? */
+    int ret = 0;
     if (config->agent_specific.agent.bootstrap_policy_server && !VerifyBootstrap())
     {
         RemovePolicyServerFile(GetWorkDir());
@@ -279,6 +280,8 @@ int main(int argc, char *argv[])
     EvalContextDestroy(ctx);
 
     GenerateDiffReports(config->input_file);
+    Nova_NoteAgentExecutionPerformance(config->input_file, start);
+
     GenericAgentConfigDestroy(config);
 
     return ret;
@@ -1194,10 +1197,11 @@ PromiseResult ScheduleAgentOperations(EvalContext *ctx, const Bundle *bp)
     }
 
     PromiseResult result = PROMISE_RESULT_NOOP;
-    Log(LOG_LEVEL_VERBOSE, "/%s/%s: Evaluating bundle", bp->ns, bp->name);
 
     for (int pass = 1; pass < CF_DONEPASSES; pass++)
     {
+        Log(LOG_LEVEL_VERBOSE, "Evaluating bundle pass %d", pass);
+
         for (TypeSequence type = 0; AGENT_TYPESEQUENCE[type] != NULL; type++)
         {
             ClassBanner(ctx, type);
@@ -1209,7 +1213,6 @@ PromiseResult ScheduleAgentOperations(EvalContext *ctx, const Bundle *bp)
                 continue;
             }
 
-            Log(LOG_LEVEL_VERBOSE, "/%s/%s/%s: Evaluating pass %d", bp->ns, bp->name, sp->name, pass);
             BannerPromiseType(bp->name, sp->name, pass);
 
             if (!NewTypeContext(type))
@@ -1217,6 +1220,7 @@ PromiseResult ScheduleAgentOperations(EvalContext *ctx, const Bundle *bp)
                 continue;
             }
 
+            EvalContextStackPushPromiseTypeFrame(ctx, sp);
             for (size_t ppi = 0; ppi < SeqLength(sp->promises); ppi++)
             {
                 Promise *pp = SeqAt(sp->promises, ppi);
@@ -1226,12 +1230,14 @@ PromiseResult ScheduleAgentOperations(EvalContext *ctx, const Bundle *bp)
 
                 if (Abort(ctx))
                 {
+                    EvalContextStackPopFrame(ctx);
                     DeleteTypeContext(ctx, bp, type);
                     NoteBundleCompliance(bp, save_pr_kept, save_pr_repaired, save_pr_notkept);
                     return result;
                 }
             }
 
+            EvalContextStackPopFrame(ctx);
             DeleteTypeContext(ctx, bp, type);
         }
     }

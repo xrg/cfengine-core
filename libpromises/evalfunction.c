@@ -71,7 +71,7 @@
 #include <ctype.h>
 
 
-static FnCallResult FilterInternal(EvalContext *ctx, const FnCall *fp, char *regex, char *name, int do_regex, int invert, long max);
+static FnCallResult FilterInternal(EvalContext *ctx, const FnCall *fp, const char *regex, const char *name, bool do_regex, bool invert, long max);
 static char* JsonPrimitiveToString(const JsonElement *el);
 
 static char *StripPatterns(char *file_buffer, const char *pattern, const char *filename);
@@ -229,19 +229,18 @@ static Rlist *GetHostsFromLastseenDB(Item *addresses, time_t horizon, bool retur
 
 /*********************************************************************/
 
-static FnCallResult FnCallAnd(EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
+static FnCallResult FnCallAnd(EvalContext *ctx,
+                              ARG_UNUSED const Policy *policy,
+                              ARG_UNUSED const FnCall *fp,
+                              const Rlist *finalargs)
 {
-    char id[CF_BUFSIZE];
 
-    snprintf(id, CF_BUFSIZE, "built-in FnCall and-arg");
-
-/* We need to check all the arguments, ArgTemplate does not check varadic functions */
     for (const Rlist *arg = finalargs; arg; arg = arg->next)
     {
-        SyntaxTypeMatch err = CheckConstraintTypeMatch(id, arg->val, CF_DATA_TYPE_STRING, "", 1);
+        SyntaxTypeMatch err = CheckConstraintTypeMatch(fp->name, arg->val, CF_DATA_TYPE_STRING, "", 1);
         if (err != SYNTAX_TYPE_MATCH_OK && err != SYNTAX_TYPE_MATCH_ERROR_UNEXPANDED)
         {
-            FatalError(ctx, "in %s: %s", id, SyntaxTypeMatchToString(err));
+            FatalError(ctx, "Function '%s', %s", fp->name, SyntaxTypeMatchToString(err));
         }
     }
 
@@ -2283,7 +2282,7 @@ static FnCallResult FnCallMapArray(EvalContext *ctx, ARG_UNUSED const Policy *po
         {
         case RVAL_TYPE_SCALAR:
             {
-                BufferZero(expbuf);
+                BufferClear(expbuf);
                 EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "v", var->rval.item, CF_DATA_TYPE_STRING,
                                               "source=function,function=maparray");
                 ExpandScalar(ctx, PromiseGetBundle(fp->caller)->ns, PromiseGetBundle(fp->caller)->name, arg_map, expbuf);
@@ -2308,7 +2307,7 @@ static FnCallResult FnCallMapArray(EvalContext *ctx, ARG_UNUSED const Policy *po
             {
                 for (const Rlist *rp = RvalRlistValue(var->rval); rp != NULL; rp = rp->next)
                 {
-                    BufferZero(expbuf);
+                    BufferClear(expbuf);
                     EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "v", RlistScalarValue(rp), CF_DATA_TYPE_STRING, "source=function,function=maparray");
                     ExpandScalar(ctx, PromiseGetBundle(fp->caller)->ns, PromiseGetBundle(fp->caller)->name, arg_map, expbuf);
 
@@ -2384,7 +2383,7 @@ static FnCallResult FnCallMapList(EvalContext *ctx, ARG_UNUSED const Policy *pol
     Buffer *expbuf = BufferNew();
     for (const Rlist *rp = list; rp != NULL; rp = rp->next)
     {
-        BufferZero(expbuf);
+        BufferClear(expbuf);
         EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "this", RlistScalarValue(rp), CF_DATA_TYPE_STRING, "source=function,function=maplist");
 
         ExpandScalar(ctx, NULL, "this", arg_map, expbuf);
@@ -3275,9 +3274,14 @@ static const Rlist *GetListReferenceArgument(const EvalContext *ctx, const const
 
 /*********************************************************************/
 
-static FnCallResult FilterInternal(EvalContext *ctx, const FnCall *fp, char *regex, char *name, int do_regex, int invert, long max)
+static FnCallResult FilterInternal(EvalContext *ctx,
+                                   const FnCall *fp,
+                                   const char *regex,
+                                   const char *name,
+                                   bool do_regex,
+                                   bool invert,
+                                   long max)
 {
-    //Log(LOG_LEVEL_DEBUG, "%s: regex %s, name %s, do_regex %d, invert %d, max %ld", fp->name, regex, name, do_regex, invert, max);
     DataType type = CF_DATA_TYPE_NONE;
     VarRef *ref = VarRefParse(name);
     const void *value = EvalContextVariableGet(ctx, ref, &type);
@@ -3424,6 +3428,7 @@ static FnCallResult FilterInternal(EvalContext *ctx, const FnCall *fp, char *reg
 
     if (contextmode)
     {
+        RlistDestroy(returnlist);
         return FnReturnContext(ret);
     }
 
@@ -3825,7 +3830,7 @@ static FnCallResult FnCallUnique(EvalContext *ctx, ARG_UNUSED const Policy *poli
 /*********************************************************************/
 /* This function has been removed from the function list for now     */
 /*********************************************************************/
-
+#ifdef SUPPORT_FNCALL_DATATYPE
 static FnCallResult FnCallDatatype(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
 {
     const char* const varname = RlistScalarValue(finalargs);
@@ -3885,7 +3890,7 @@ static FnCallResult FnCallDatatype(EvalContext *ctx, ARG_UNUSED const Policy *po
 
     return (FnCallResult) { FNCALL_SUCCESS, { StringWriterClose(typestring), RVAL_TYPE_SCALAR } };
 }
-
+#endif /* unused code */
 /*********************************************************************/
 
 static FnCallResult FnCallNth(EvalContext *ctx, ARG_UNUSED const Policy *policy, const FnCall *fp, const Rlist *finalargs)
@@ -5284,38 +5289,31 @@ static FnCallResult FnCallReadFile(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const
 
 static FnCallResult ReadList(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const FnCall *fp, const Rlist *finalargs, DataType type)
 {
-    Rlist *rp, *newlist = NULL;
-    char fnname[CF_MAXVARSIZE], *file_buffer = NULL;
-    int noerrors = true, blanks = false;
+    const char *filename = RlistScalarValue(finalargs);
+    const char *comment = RlistScalarValue(finalargs->next);
+    const char *split = RlistScalarValue(finalargs->next->next);
+    const int maxent = IntFromString(RlistScalarValue(finalargs->next->next->next));
+    const int maxsize = IntFromString(RlistScalarValue(finalargs->next->next->next->next));
 
-    char *filename = RlistScalarValue(finalargs);
-    char *comment = RlistScalarValue(finalargs->next);
-    char *split = RlistScalarValue(finalargs->next->next);
-    int maxent = IntFromString(RlistScalarValue(finalargs->next->next->next));
-    int maxsize = IntFromString(RlistScalarValue(finalargs->next->next->next->next));
-
-    // Read once to validate structure of file in itemlist
-    snprintf(fnname, CF_MAXVARSIZE - 1, "read%slist", DataTypeToString(type));
-
-    file_buffer = (char *) CfReadFile(filename, maxsize);
-
-    if (file_buffer == NULL)
+    char *file_buffer = CfReadFile(filename, maxsize);
+    if (!file_buffer)
     {
         return FnFailure();
     }
+
+    bool blanks = false;
+    Rlist *newlist = NULL;
+    file_buffer = StripPatterns(file_buffer, comment, filename);
+    if (!file_buffer)
+    {
+        return (FnCallResult) { FNCALL_SUCCESS, { NULL, RVAL_TYPE_LIST } };
+    }
     else
     {
-        file_buffer = StripPatterns(file_buffer, comment, filename);
-
-        if (file_buffer == NULL)
-        {
-            return (FnCallResult) { FNCALL_SUCCESS, { NULL, RVAL_TYPE_LIST } };
-        }
-        else
-        {
-            newlist = RlistFromSplitRegex(file_buffer, split, maxent, blanks);
-        }
+        newlist = RlistFromSplitRegex(file_buffer, split, maxent, blanks);
     }
+
+    bool noerrors = true;
 
     switch (type)
     {
@@ -5323,7 +5321,7 @@ static FnCallResult ReadList(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const FnCal
         break;
 
     case CF_DATA_TYPE_INT:
-        for (rp = newlist; rp != NULL; rp = rp->next)
+        for (Rlist *rp = newlist; rp != NULL; rp = rp->next)
         {
             if (IntFromString(RlistScalarValue(rp)) == CF_NOINT)
             {
@@ -5335,7 +5333,7 @@ static FnCallResult ReadList(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const FnCal
         break;
 
     case CF_DATA_TYPE_REAL:
-        for (rp = newlist; rp != NULL; rp = rp->next)
+        for (Rlist *rp = newlist; rp != NULL; rp = rp->next)
         {
             double real_value = 0;
             if (!DoubleFromString(RlistScalarValue(rp), &real_value))
@@ -6575,6 +6573,7 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
         break;
 
     case '@':
+        // TODO: should not need to exist. entry size matters, not line size. bufferize module protocol
         if (length > CF_BUFSIZE + 256 - 1)
         {
             Log(LOG_LEVEL_ERR, "Module protocol was given an overlong variable @line (%zd bytes), skipping", length);
@@ -6582,24 +6581,35 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
         }
 
         content[0] = '\0';
-        // TODO: the variable name is limited to 256 to accomodate the
-        // context name once it's in the vartable.  Maybe this can be relaxed.
-
-        // TODO: the RlistParseString function can do at most CF_BUFSIZE-1
         sscanf(line + 1, "%256[^=]=%4095[^\n]", name, content);
 
         if (CheckID(name))
         {
-            Rlist *list = NULL;
-
-            list = RlistParseString(content);
-
-            if (NULL == list)
+            Rlist *list = RlistParseString(content);
+            if (!list)
             {
                 Log(LOG_LEVEL_ERR, "Module protocol could not parse variable %s's data content %s", name, content);
             }
             else
             {
+                bool has_oversize_entry = false;
+                for (const Rlist *rp = list; rp; rp = rp->next)
+                {
+                    size_t entry_size = strlen(RlistScalarValue(rp));
+                    if (entry_size > CF_MAXVARSIZE)
+                    {
+                        has_oversize_entry = true;
+                        break;
+                    }
+                }
+
+                if (has_oversize_entry)
+                {
+                    Log(LOG_LEVEL_ERR, "Module protocol was given a variable @ line with an oversize entry, skipping");
+                    RlistDestroy(list);
+                    break;
+                }
+
                 Log(LOG_LEVEL_VERBOSE, "Defined variable '%s' in context '%s' with value '%s'", name, context, content);
 
                 VarRef *ref = VarRefParseFromScope(name, context);
@@ -6779,7 +6789,7 @@ static const FnCallArg FILESTAT_DETAIL_ARGS[] =
 
 static const FnCallArg FILESEXIST_ARGS[] =
 {
-    {CF_NAKEDLRANGE, CF_DATA_TYPE_STRING, "Array identifier containing list"},
+    {CF_NAKEDLRANGE, CF_DATA_TYPE_STRING, "CFEngine list identifier"},
     {NULL, CF_DATA_TYPE_NONE, NULL}
 };
 
@@ -6855,14 +6865,14 @@ static const FnCallArg GROUPEXISTS_ARGS[] =
 static const FnCallArg HASH_ARGS[] =
 {
     {CF_ANYSTRING, CF_DATA_TYPE_STRING, "Input text"},
-    {"md5,sha1,sha256,sha512,sha384,crypt", CF_DATA_TYPE_OPTION, "Hash or digest algorithm"},
+    {"md5,sha1,sha256,sha384,sha512", CF_DATA_TYPE_OPTION, "Hash or digest algorithm"},
     {NULL, CF_DATA_TYPE_NONE, NULL}
 };
 
 static const FnCallArg HASHMATCH_ARGS[] =
 {
     {CF_ABSPATHRANGE, CF_DATA_TYPE_STRING, "Filename to hash"},
-    {"md5,sha1,crypt,cf_sha224,cf_sha256,cf_sha384,cf_sha512", CF_DATA_TYPE_OPTION, "Hash or digest algorithm"},
+    {"md5,sha1,sha256,sha384,sha512", CF_DATA_TYPE_OPTION, "Hash or digest algorithm"},
     {CF_IDRANGE, CF_DATA_TYPE_STRING, "ASCII representation of hash for comparison"},
     {NULL, CF_DATA_TYPE_NONE, NULL}
 };
@@ -6920,8 +6930,8 @@ static const FnCallArg IPRANGE_ARGS[] =
 
 static const FnCallArg IRANGE_ARGS[] =
 {
-    {CF_INTRANGE, CF_DATA_TYPE_INT, "Integer"},
-    {CF_INTRANGE, CF_DATA_TYPE_INT, "Integer"},
+    {CF_INTRANGE, CF_DATA_TYPE_INT, "Integer start of range"},
+    {CF_INTRANGE, CF_DATA_TYPE_INT, "Integer end of range"},
     {NULL, CF_DATA_TYPE_NONE, NULL}
 };
 
@@ -7010,14 +7020,14 @@ static const FnCallArg LSDIRLIST_ARGS[] =
 static const FnCallArg MAPLIST_ARGS[] =
 {
     {CF_ANYSTRING, CF_DATA_TYPE_STRING, "Pattern based on $(this) as original text"},
-    {CF_IDRANGE, CF_DATA_TYPE_STRING, "The name of the list variable to map"},
+    {CF_IDRANGE, CF_DATA_TYPE_STRING, "CFEngine list identifier, the list variable to map"},
     {NULL, CF_DATA_TYPE_NONE, NULL}
 };
 
 static const FnCallArg MAPARRAY_ARGS[] =
 {
     {CF_ANYSTRING, CF_DATA_TYPE_STRING, "Pattern based on $(this.k) and $(this.v) as original text"},
-    {CF_IDRANGE, CF_DATA_TYPE_STRING, "The name of the array variable to map"},
+    {CF_IDRANGE, CF_DATA_TYPE_STRING, "CFEngine array identifier, the array variable to map"},
     {NULL, CF_DATA_TYPE_NONE, NULL}
 };
 
@@ -7266,14 +7276,14 @@ static const FnCallArg RETURNSZERO_ARGS[] =
 
 static const FnCallArg RRANGE_ARGS[] =
 {
-    {CF_REALRANGE, CF_DATA_TYPE_REAL, "Real number"},
-    {CF_REALRANGE, CF_DATA_TYPE_REAL, "Real number"},
+    {CF_REALRANGE, CF_DATA_TYPE_REAL, "Real number, start of range"},
+    {CF_REALRANGE, CF_DATA_TYPE_REAL, "Real number, end of range"},
     {NULL, CF_DATA_TYPE_NONE, NULL}
 };
 
 static const FnCallArg SELECTSERVERS_ARGS[] =
 {
-    {CF_NAKEDLRANGE, CF_DATA_TYPE_STRING, "The identifier of a cfengine list of hosts or addresses to contact"},
+    {CF_NAKEDLRANGE, CF_DATA_TYPE_STRING, "CFEngine list identifier, the list of hosts or addresses to contact"},
     {CF_VALRANGE, CF_DATA_TYPE_INT, "The port number"},
     {CF_ANYSTRING, CF_DATA_TYPE_STRING, "A query string"},
     {CF_ANYSTRING, CF_DATA_TYPE_STRING, "A regular expression to match success"},

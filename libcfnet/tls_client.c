@@ -84,12 +84,12 @@ bool TLSClientInitialize()
 
     if (PRIVKEY == NULL || PUBKEY == NULL)
     {
-        Log(LOG_LEVEL_WARNING,
+        Log(CryptoGetMissingKeyLogLevel(),
             "No public/private key pair is loaded, trying to reload");
         LoadSecretKeys();
         if (PRIVKEY == NULL || PUBKEY == NULL)
         {
-            Log(LOG_LEVEL_ERR,
+            Log(CryptoGetMissingKeyLogLevel(),
                 "No public/private key pair found");
             goto err2;
         }
@@ -160,9 +160,9 @@ void TLSDeInitialize()
 }
 
 /**
- * @return >0: the version that was negotiated
- *          0: no agreement on version was reached
- *         -1: error
+ * @return > 0: a mutually acceptable version was negotiated
+ *           0: no agreement on version was reached
+ *          -1: error
  */
 int TLSClientNegotiateProtocol(const ConnectionInfo *conn_info)
 {
@@ -187,7 +187,7 @@ int TLSClientNegotiateProtocol(const ConnectionInfo *conn_info)
 
     /* Receive OK */
     ret = TLSRecvLine(ConnectionInfoSSL(conn_info), input, sizeof(input));
-    if (strncmp(input, "OK", strlen("OK")) == 0)
+    if (ret > 1 && strncmp(input, "OK", 2) == 0)
         return 1;
     return 0;
 }
