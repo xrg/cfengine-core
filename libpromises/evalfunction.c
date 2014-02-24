@@ -389,19 +389,16 @@ static FnCallResult FnCallGetEnv(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const P
 
 static FnCallResult FnCallGetUsers(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
 {
-    Rlist *newlist = NULL, *except_names, *except_uids;
-    struct passwd *pw;
+    const char *except_name = RlistScalarValue(finalargs);
+    const char *except_uid = RlistScalarValue(finalargs->next);
 
-/* begin fn specific content */
-
-    char *except_name = RlistScalarValue(finalargs);
-    char *except_uid = RlistScalarValue(finalargs->next);
-
-    except_names = RlistFromSplitString(except_name, ',');
-    except_uids = RlistFromSplitString(except_uid, ',');
+    Rlist *except_names = RlistFromSplitString(except_name, ',');
+    Rlist *except_uids = RlistFromSplitString(except_uid, ',');
 
     setpwent();
 
+    Rlist *newlist = NULL;
+    struct passwd *pw;
     while ((pw = getpwent()))
     {
         char *pw_uid_str = StringFromLong((int)pw->pw_uid);
@@ -415,6 +412,9 @@ static FnCallResult FnCallGetUsers(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const
     }
 
     endpwent();
+
+    RlistDestroy(except_names);
+    RlistDestroy(except_uids);
 
     return (FnCallResult) { FNCALL_SUCCESS, { newlist, RVAL_TYPE_LIST } };
 }
@@ -560,7 +560,7 @@ static FnCallResult FnCallHandlerHash(ARG_UNUSED EvalContext *ctx, ARG_UNUSED co
     char *string = RlistScalarValue(finalargs);
     char *typestring = RlistScalarValue(finalargs->next);
 
-    type = HashMethodFromString(typestring);
+    type = HashIdFromName(typestring);
 
     if (FIPS_MODE && type == HASH_METHOD_MD5)
     {
@@ -593,7 +593,7 @@ static FnCallResult FnCallHashMatch(ARG_UNUSED EvalContext *ctx, ARG_UNUSED cons
     char *typestring = RlistScalarValue(finalargs->next);
     char *compare = RlistScalarValue(finalargs->next->next);
 
-    type = HashMethodFromString(typestring);
+    type = HashIdFromName(typestring);
     HashFile(string, digest, type);
 
     char hashbuffer[EVP_MAX_MD_SIZE * 4];
@@ -652,6 +652,7 @@ static FnCallResult FnCallClassMatch(EvalContext *ctx, ARG_UNUSED const Policy *
             if (!strcmp(regex, expr) || StringMatchFull(regex, expr))
             {
                 free(expr);
+                ClassTableIteratorDestroy(iter);
                 return FnReturnContext(true);
             }
 
@@ -671,6 +672,7 @@ static FnCallResult FnCallClassMatch(EvalContext *ctx, ARG_UNUSED const Policy *
             if (!strcmp(regex,expr) || StringMatchFull(regex, expr))
             {
                 free(expr);
+                ClassTableIteratorDestroy(iter);
                 return FnReturnContext(true);
             }
 
@@ -821,6 +823,10 @@ static StringSet *ClassesMatching(const EvalContext *ctx, ClassTableIterator *it
             {
                 StringSetAdd(matching, expr);
             }
+            else
+            {
+                free(expr);
+            }
         }
         else
         {
@@ -932,6 +938,10 @@ static StringSet *VariablesMatching(const EvalContext *ctx, VariableTableIterato
             {
                 StringSetAdd(matching, expr);
             }
+            else
+            {
+                free(expr);
+            }
         }
         else
         {
@@ -993,17 +1003,14 @@ static FnCallResult FnCallGetMetaTags(EvalContext *ctx, ARG_UNUSED const Policy 
     if (0 == strcmp(fp->name, "getvariablemetatags"))
     {
         VarRef *ref = VarRefParse(RlistScalarValue(finalargs));
-        if (NULL == ref)
-        {
-            Log(LOG_LEVEL_ERR, "%s called on unknown variable %s", fp->name, RlistScalarValue(finalargs));
-            return (FnCallResult) { FNCALL_FAILURE };
-        }
         tagset = EvalContextVariableTags(ctx, ref);
+        VarRefDestroy(ref);
     }
     else if (0 == strcmp(fp->name, "getclassmetatags"))
     {
         ClassRef ref = ClassRefParse(RlistScalarValue(finalargs));
         tagset = EvalContextClassTags(ctx, ref.ns, ref.name);
+        ClassRefDestroy(ref);
     }
     else
     {
@@ -1215,7 +1222,7 @@ static FnCallResult FnCallCanonify(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const
         unsigned char digest[EVP_MAX_MD_SIZE + 1];
         HashMethod type;
 
-        type = HashMethodFromString("sha1");
+        type = HashIdFromName("sha1");
         HashString(string, strlen(string), digest, type);
         snprintf(buf, CF_BUFSIZE, "%s_%s", string,
                  SkipHashType(HashPrintSafe(type, true, digest, hashbuffer)));
@@ -1331,14 +1338,18 @@ static FnCallResult FnCallLastNode(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const
 
 /*******************************************************************/
 
-static FnCallResult FnCallDirname(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Policy *policy, ARG_UNUSED const FnCall *fp, const Rlist *finalargs)
+static FnCallResult FnCallDirname(ARG_UNUSED EvalContext *ctx,
+                                  ARG_UNUSED const Policy *policy,
+                                  ARG_UNUSED const FnCall *fp,
+                                  const Rlist *finalargs)
 {
-    char *dir = xstrdup(RlistScalarValue(finalargs));
+    char dir[PATH_MAX] = "";
+    strlcpy(dir, RlistScalarValue(finalargs), PATH_MAX);
 
     DeleteSlash(dir);
     ChopLastNode(dir);
 
-    return (FnCallResult) { FNCALL_SUCCESS, { dir, RVAL_TYPE_SCALAR } };
+    return FnReturn(dir);
 }
 
 /*********************************************************************/
@@ -1679,6 +1690,7 @@ static FnCallResult FnCallRegArray(EvalContext *ctx, ARG_UNUSED const Policy *po
     bool found = false;
 
     VariableTableIterator *iter = EvalContextVariableTableIteratorNew(ctx, ref->ns, ref->scope, ref->lval);
+    VarRefDestroy(ref);
     Variable *var = NULL;
     while ((var = VariableTableIteratorNext(iter)))
     {
@@ -1868,6 +1880,7 @@ static FnCallResult FnCallGetValues(EvalContext *ctx, ARG_UNUSED const Policy *p
                 break;
             }
         }
+        VariableTableIteratorDestroy(iter);
     }
 
     VarRefDestroy(ref);
@@ -2037,11 +2050,12 @@ static FnCallResult FnCallJoin(EvalContext *ctx, ARG_UNUSED const Policy *policy
             while ((el = JsonIteratorNextValue(&iter)))
             {
                 char *value = JsonPrimitiveToString(el);
-                if (NULL != value)
+                if (value)
                 {
                     BufferAppend(buf, value, strlen(value));
                     trimto = BufferSize(buf);
                     BufferAppend(buf, join, strlen(join));
+                    free(value);
                 }
             }
         }
@@ -2516,6 +2530,7 @@ static FnCallResult FnCallMergeData(EvalContext *ctx, ARG_UNUSED const Policy *p
                 SeqDestroy(containers);
                 VarRefDestroy(ref);
                 SeqDestroy(toremove);
+                JsonDestroy(convert);
                 return FnFailure();
             }
             else
@@ -2971,7 +2986,7 @@ static FnCallResult FnCallFileStatDetails(ARG_UNUSED EvalContext *ctx, ARG_UNUSE
 
     if (lstat(path, &statbuf) == -1)
     {
-        return (FnCallResult) { FNCALL_FAILURE, { xstrdup(buffer), RVAL_TYPE_SCALAR } };
+        return FnFailure();
     }
     else
     {
@@ -3949,7 +3964,9 @@ static FnCallResult FnCallNth(EvalContext *ctx, ARG_UNUSED const Policy *policy,
             return FnFailure();
         }
 
-        return FnReturn(RlistScalarValue(return_list));
+        FnCallResult result = FnReturn(RlistScalarValue(return_list));
+        RlistDestroy(return_list);
+        return result;
     }
     else
     {
@@ -5950,10 +5967,11 @@ static FnCallResult FnCallMakerule(EvalContext *ctx, ARG_UNUSED const Policy *po
 
         DataType input_list_type = CF_DATA_TYPE_NONE;
         const Rlist *input_list = EvalContextVariableGet(ctx, ref, &input_list_type);
+        VarRefDestroy(ref);
+
         if (!input_list)
         {
             Log(LOG_LEVEL_VERBOSE, "Function 'makerule' was promised a list called '%s' but this was not found", listvar);
-            VarRefDestroy(ref);
             return FnFailure();
         }
 
@@ -5963,7 +5981,7 @@ static FnCallResult FnCallMakerule(EvalContext *ctx, ARG_UNUSED const Policy *po
            return FnFailure();
        }
 
-       list = (Rlist *)input_list;
+       list = RlistCopy(input_list);
     }
 
     struct stat statbuf;
@@ -5989,6 +6007,7 @@ static FnCallResult FnCallMakerule(EvalContext *ctx, ARG_UNUSED const Policy *po
         if (lstat(RvalScalarValue(rp->val), &statbuf) == -1)
         {
             Log(LOG_LEVEL_INFO, "Function MAKERULE, source dependency %s was not readable",  RvalScalarValue(rp->val));
+            RlistDestroy(list);
             return FnFailure();
         }
         else
@@ -5999,6 +6018,8 @@ static FnCallResult FnCallMakerule(EvalContext *ctx, ARG_UNUSED const Policy *po
             }
         }
     }
+
+    RlistDestroy(list);
 
     return stale ? FnReturnContext(true) : FnFailure();
 }
@@ -6080,18 +6101,18 @@ static void *CfReadFile(const char *filename, int maxsize)
     {
         if (THIS_AGENT_TYPE == AGENT_TYPE_COMMON)
         {
-            Log(LOG_LEVEL_INFO, "readfile: Could not examine file '%s'", filename);
+            Log(LOG_LEVEL_INFO, "CfReadFile: Could not examine file '%s'", filename);
         }
         else
         {
             if (IsCf3VarString(filename))
             {
-                Log(LOG_LEVEL_VERBOSE, "readfile: Cannot converge/reduce variable '%s' yet .. assuming it will resolve later",
+                Log(LOG_LEVEL_VERBOSE, "CfReadFile: Cannot converge/reduce variable '%s' yet .. assuming it will resolve later",
                       filename);
             }
             else
             {
-                Log(LOG_LEVEL_INFO, "readfile: Could not examine file '%s' (stat: %s)",
+                Log(LOG_LEVEL_INFO, "CfReadFile: Could not examine file '%s' (stat: %s)",
                       filename, GetErrorStr());
             }
         }
@@ -6202,8 +6223,7 @@ static JsonElement* BuildData(ARG_UNUSED EvalContext *ctx, const char *file_buff
         for (const Rlist *rp = tokens; rp; rp = rp->next)
         {
             const char *token = RlistScalarValue(rp);
-
-            JsonArrayAppendString(linearray, xstrdup(token));
+            JsonArrayAppendString(linearray, token);
         }
 
         RlistDestroy(tokens);
@@ -6216,9 +6236,10 @@ static JsonElement* BuildData(ARG_UNUSED EvalContext *ctx, const char *file_buff
             }
             else
             {
-                char* key = xstrdup(JsonArrayGetAsString(linearray, 0));
+                char *key = xstrdup(JsonArrayGetAsString(linearray, 0));
                 JsonArrayRemoveRange(linearray, 0, 0);
                 JsonObjectAppendArray(ret, key, linearray);
+                free(key);
             }
 
             // only increase hcount if we actually got something
@@ -6343,19 +6364,16 @@ static int BuildLineArray(EvalContext *ctx, const Bundle *bundle,
 
 static int ExecModule(EvalContext *ctx, char *command)
 {
-    FILE *pp;
-    char *sp = NULL;
-    char context[CF_BUFSIZE];
-    StringSet *tags = NULL;
-    int print = false;
-
-    context[0] = '\0';
-
-    if ((pp = cf_popen(command, "rt", true)) == NULL)
+    FILE *pp = cf_popen(command, "rt", true);
+    if (!pp)
     {
         Log(LOG_LEVEL_ERR, "Couldn't open pipe from '%s'. (cf_popen: %s)", command, GetErrorStr());
         return false;
     }
+
+    bool print = false;
+    char context[CF_BUFSIZE] = "";
+    StringSet *tags = StringSetNew();
 
     size_t line_size = CF_BUFSIZE;
     char *line = xmalloc(line_size);
@@ -6380,7 +6398,7 @@ static int ExecModule(EvalContext *ctx, char *command)
 
         print = false;
 
-        for (sp = line; *sp != '\0'; sp++)
+        for (const char *sp = line; *sp != '\0'; sp++)
         {
             if (!isspace((int) *sp))
             {
@@ -6389,13 +6407,10 @@ static int ExecModule(EvalContext *ctx, char *command)
             }
         }
 
-        ModuleProtocol(ctx, command, line, print, context, &tags);
+        ModuleProtocol(ctx, command, line, print, context, tags);
     }
 
-    if (NULL != tags)
-    {
-        StringSetDestroy(tags);
-    }
+    StringSetDestroy(tags);
 
     cf_pclose(pp);
     free(line);
@@ -6403,17 +6418,14 @@ static int ExecModule(EvalContext *ctx, char *command)
 }
 
 
-void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print, char* context, StringSet **tags)
+void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print, char* context, StringSet *tags)
 {
+    assert(tags);
+
     char name[CF_BUFSIZE], content[CF_BUFSIZE];
     char arg0[CF_BUFSIZE];
     char *filename;
     size_t length = strlen(line);
-
-    if (NULL == *tags)
-    {
-        *tags = StringSetNew();
-    }
 
     if (*context == '\0')
     {
@@ -6446,14 +6458,10 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
         else if (1 == sscanf(line + 1, "meta=%1024[^\n]", content) && content[0] != '\0')
         {
             Log(LOG_LEVEL_VERBOSE, "Module set meta tags to '%s'", content);
-            if (NULL != *tags)
-            {
-                StringSetDestroy(*tags);
-                *tags = NULL;
-            }
+            StringSetClear(tags);
 
-            *tags = StringSetFromString(content, ',');
-            StringSetAdd(*tags, xstrdup("source=module"));
+            StringSetAddSplit(tags, content, ',');
+            StringSetAdd(tags, xstrdup("source=module"));
         }
         else
         {
@@ -6464,7 +6472,9 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
     case '+':
         if (length > CF_MAXVARSIZE)
         {
-            Log(LOG_LEVEL_ERR, "Module protocol was given an overlong +class line (%zd bytes), skipping", length);
+            Log(LOG_LEVEL_ERR,
+                "Module protocol was given an overlong +class line (%zu bytes), skipping",
+                length);
             break;
         }
 
@@ -6474,7 +6484,7 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
         Log(LOG_LEVEL_VERBOSE, "Activating classes from module protocol: '%s'", content);
         if (CheckID(content))
         {
-            Buffer *tagbuf = StringSetToBuffer(*tags, ',');
+            Buffer *tagbuf = StringSetToBuffer(tags, ',');
             EvalContextClassPutSoft(ctx, content, CONTEXT_SCOPE_NAMESPACE, BufferData(tagbuf));
             BufferDestroy(tagbuf);
         }
@@ -6482,7 +6492,9 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
     case '-':
         if (length > CF_MAXVARSIZE)
         {
-            Log(LOG_LEVEL_ERR, "Module protocol was given an overlong -class line (%zd bytes), skipping", length);
+            Log(LOG_LEVEL_ERR,
+                "Module protocol was given an overlong -class line (%zu bytes), skipping",
+                length);
             break;
         }
 
@@ -6516,7 +6528,9 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
     case '=':
         if (length > CF_BUFSIZE + 256)
         {
-            Log(LOG_LEVEL_ERR, "Module protocol was given an overlong variable =line (%zd bytes), skipping", length);
+            Log(LOG_LEVEL_ERR,
+                "Module protocol was given an overlong variable =line (%zu bytes), skipping",
+                length);
             break;
         }
 
@@ -6530,7 +6544,7 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
             Log(LOG_LEVEL_VERBOSE, "Defined variable '%s' in context '%s' with value '%s'", name, context, content);
             VarRef *ref = VarRefParseFromScope(name, context);
 
-            Buffer *tagbuf = StringSetToBuffer(*tags, ',');
+            Buffer *tagbuf = StringSetToBuffer(tags, ',');
             EvalContextVariablePut(ctx, ref, content, CF_DATA_TYPE_STRING, BufferData(tagbuf));
             BufferDestroy(tagbuf);
 
@@ -6558,14 +6572,17 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
             }
             else
             {
-                Log(LOG_LEVEL_VERBOSE, "Defined data container variable '%s' in context '%s' with value '%s'", name, context, BufferData(holder));
+                Log(LOG_LEVEL_VERBOSE, "Defined data container variable '%s' in context '%s' with value '%s'",
+                    name, context, BufferData(holder));
+
+                Buffer *tagbuf = StringSetToBuffer(tags, ',');
                 VarRef *ref = VarRefParseFromScope(name, context);
 
-                Buffer *tagbuf = StringSetToBuffer(*tags, ',');
                 EvalContextVariablePut(ctx, ref, json, CF_DATA_TYPE_CONTAINER, BufferData(tagbuf));
+                VarRefDestroy(ref);
                 BufferDestroy(tagbuf);
 
-                VarRefDestroy(ref);
+                JsonDestroy(json);
             }
 
             BufferDestroy(holder);
@@ -6576,7 +6593,9 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
         // TODO: should not need to exist. entry size matters, not line size. bufferize module protocol
         if (length > CF_BUFSIZE + 256 - 1)
         {
-            Log(LOG_LEVEL_ERR, "Module protocol was given an overlong variable @line (%zd bytes), skipping", length);
+            Log(LOG_LEVEL_ERR,
+                "Module protocol was given an overlong variable @line (%zu bytes), skipping",
+                length);
             break;
         }
 
@@ -6614,11 +6633,12 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
 
                 VarRef *ref = VarRefParseFromScope(name, context);
 
-                Buffer *tagbuf = StringSetToBuffer(*tags, ',');
+                Buffer *tagbuf = StringSetToBuffer(tags, ',');
                 EvalContextVariablePut(ctx, ref, list, CF_DATA_TYPE_STRING_LIST, BufferData(tagbuf));
                 BufferDestroy(tagbuf);
 
                 VarRefDestroy(ref);
+                RlistDestroy(list);
             }
         }
         break;

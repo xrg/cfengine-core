@@ -22,23 +22,15 @@
   included file COSL.txt.
 */
 
-#ifndef CFENGINE_EVALFUNCTION_H
-#define CFENGINE_EVALFUNCTION_H
+#ifndef CFAGENT_WINDOWS_FUNCTIONS_H
+#define CFAGENT_WINDOWS_FUNCTIONS_H
 
-#include <cf3.defs.h>
-#include <rlist.h>
-#include <set.h>
+#ifdef __MINGW32__
 
-FnCallResult FnCallHostInNetgroup(EvalContext *ctx, const Policy *policy, const FnCall *fp, const Rlist *finalargs);
+PromiseResult VerifyWindowsService(EvalContext *ctx, Attributes a, Promise *pp);
+PromiseResult Nova_CheckNtACL(EvalContext *ctx, const char *file_path, Acl acl,
+                              Attributes a, const Promise *pp);
 
-int FnNumArgs(const FnCallType *call_type);
+#endif // __MINGW32__
 
-void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print, char* context, StringSet *tags);
-
-/* Implemented in Nova for Win32 */
-FnCallResult FnCallGroupExists(EvalContext *ctx, const Policy *policy, const FnCall *fp, const Rlist *finalargs);
-FnCallResult FnCallUserExists(EvalContext *ctx, const Policy *policy, const FnCall *fp, const Rlist *finalargs);
-
-JsonElement *DefaultTemplateData(const EvalContext *ctx);
-
-#endif
+#endif // CFAGENT_WINDOWS_FUNCTIONS_H

@@ -93,7 +93,7 @@ void *SetIteratorNext(SetIterator *i);
                                                                         \
     void Prefix##SetClear(Prefix##Set *set)                             \
     {                                                                   \
-        return SetClear(set->impl);                                     \
+        SetClear(set->impl);                                            \
     }                                                                   \
                                                                         \
     size_t Prefix##SetSize(const Prefix##Set *set)                      \
@@ -128,6 +128,7 @@ void *SetIteratorNext(SetIterator *i);
 
 TYPED_SET_DECLARE(String, char *)
 
+void StringSetAddSplit(StringSet *set, const char *str, char delimiter);
 StringSet *StringSetFromString(const char *str, char delimiter);
 Buffer *StringSetToBuffer(StringSet *set, const char delimiter);
 JsonElement *StringSetToJson(const StringSet *set);

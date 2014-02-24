@@ -1,6 +1,10 @@
 3.6.0 Beta 1
 
         Changes:
+        - "-v" option for cf-execd and cf-serverd does not keep the agent
+          in the foreground, but lets it daemonize and verbose messages go
+          to syslog. Use '-F' explicitly to keep the processes in the
+          foreground.
         - TLS authentication and fully encrypted network protocol. Changes
           specific to the new type of connections:
             - The new networking protocol uses TLS for authentication, after
@@ -34,6 +38,8 @@
             - Logging contexts to local database (cf_classes.tcdb) has been deprecated.
             - 'usebundle' promisees are logged for all the bundle promises
             - output from 'reports' promises has nothing prefixed except 'R: '
+	    - file "changes" reporting now reports with log level "notice", instead of
+	      "error".
         - process_results default to AND'ing of set attributes if not specified (Redmine #3224)
         - interface is now canonified in sys.hardware_mac[interface] to align with sys.ipv4[interface] (Redmine #3418)
 

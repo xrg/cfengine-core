@@ -178,6 +178,7 @@ PromiseResult VerifyPackagesPromise(EvalContext *ctx, const Promise *pp)
     if (default_arch == NULL)
     {
         cfPS_HELPER_0ARG(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Unable to obtain default architecture for package manager - aborting");
+        YieldCurrentLock(thislock);
         return PROMISE_RESULT_FAIL;
     }
 
@@ -187,6 +188,7 @@ PromiseResult VerifyPackagesPromise(EvalContext *ctx, const Promise *pp)
     {
         cfPS_HELPER_0ARG(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Unable to obtain a list of installed packages - aborting");
         free(default_arch);
+        YieldCurrentLock(thislock);
         return PROMISE_RESULT_FAIL;
     }
 
@@ -2529,6 +2531,8 @@ static void DeletePackageManagers(PackageManager *np)
         PackageManager *next = np->next;
         DeletePackageItems(np->pack_list);
         DeletePackageItems(np->updates_list);
+        DeletePackageItems(np->patch_list);
+        DeletePackageItems(np->patch_avail);
         free(np->manager);
         free(np);
         np = next;
@@ -2890,5 +2894,5 @@ static char *GetDefaultArch(const char *command)
     Log(LOG_LEVEL_VERBOSE, "Default architecture for package manager is '%s'", arch);
 
     cf_pclose(fp);
-    return xstrdup(arch);
+    return arch;
 }

@@ -597,17 +597,15 @@ void SetItemListCounter(Item *list, const char *item, int value)
 
 /*********************************************************************/
 
-int IsMatchItemIn(Item *list, const char *item)
+int IsMatchItemIn(const Item *list, const char *item)
 /* Solve for possible regex/fuzzy models unified */
 {
-    Item *ptr;
-
     if ((item == NULL) || (strlen(item) == 0))
     {
         return true;
     }
 
-    for (ptr = list; ptr != NULL; ptr = ptr->next)
+    for (const Item *ptr = list; ptr != NULL; ptr = ptr->next)
     {
         if (FuzzySetMatch(ptr->name, item) == 0)
         {
@@ -893,7 +891,7 @@ bool RawSaveItemList(const Item *liststart, const char *filename)
 Item *RawLoadItemList(const char *filename)
 {
     FILE *fp = safe_fopen(filename, "r");
-    if (fp)
+    if (!fp)
     {
         return NULL;
     }
@@ -914,6 +912,8 @@ Item *RawLoadItemList(const char *filename)
         DeleteItemList(list);
         list = NULL;
     }
+
+    fclose(fp);
 
     return list;
 }
