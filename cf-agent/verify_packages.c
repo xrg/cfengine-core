@@ -553,23 +553,24 @@ static bool PackageListAvailableUpdatesCommand(EvalContext *ctx, PackageItem **u
     size_t buf_size = CF_BUFSIZE;
     char *buf = xmalloc(buf_size);
 
-    while (!feof(fin))
+    for (;;)
     {
-        memset(buf, 0, CF_BUFSIZE);
         ssize_t res = CfReadLine(&buf, &buf_size, fin);
-
-        if (res == 0)
-        {
-            break;
-        }
 
         if (res == -1)
         {
-            Log(LOG_LEVEL_ERR, "Unable to read list of available updates from command '%s'. (fread: %s)",
-                    a.packages.package_new_versions_command, GetErrorStr());
-            cf_pclose(fin);
-            free(buf);
-            return false;
+            if (!feof(fin))
+            {
+                Log(LOG_LEVEL_ERR, "Unable to read list of available updates from command '%s'. (fread: %s)",
+                        a.packages.package_new_versions_command, GetErrorStr());
+                cf_pclose(fin);
+                free(buf);
+                return false;
+            }
+            else
+            {
+                break;
+            }
         }
 
         if (!FullTextMatch(ctx, a.packages.package_installed_regex, buf))
