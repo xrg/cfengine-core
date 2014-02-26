@@ -317,7 +317,7 @@ static PromiseResult CfCopyFile(EvalContext *ctx, char *sourcefile, char *destfi
         {
             cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_WARN, pp, attr, "Image file '%s' is non-existent and should be a copy of '%s'",
                  destfile, sourcefile);
-            return PROMISE_RESULT_WARN;
+            return PromiseResultUpdate(result, PROMISE_RESULT_WARN);
         }
 
         if ((S_ISREG(srcmode)) || ((S_ISLNK(srcmode)) && (attr.copy.link_type == FILE_LINK_TYPE_NONE)))
@@ -623,6 +623,7 @@ static PromiseResult PurgeLocalFiles(EvalContext *ctx, Item *filelist, const cha
             if (DONTDO || attr.transaction.action == cfa_warn)
             {
                 Log(LOG_LEVEL_ERR, "Need to purge '%s' from copy dest directory", filename);
+                result = PromiseResultUpdate(result, PROMISE_RESULT_WARN);
             }
             else
             {
@@ -1006,6 +1007,7 @@ static PromiseResult LinkCopy(EvalContext *ctx, char *sourcefile, char *destfile
 {
     Log(LOG_LEVEL_VERBOSE, "Windows does not support symbolic links");
     cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, attr, "Windows can't link '%s' to '%s'", sourcefile, destfile);
+    return PROMISE_RESULT_FAIL;
 }
 #else                           /* !__MINGW32__ */
 {
@@ -1588,7 +1590,6 @@ static PromiseResult VerifyName(EvalContext *ctx, char *path, struct stat *sb, A
                     cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, attr, "Error occurred while renaming '%s'. (rename: %s)",
                          path, GetErrorStr());
                     result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
-                    return PROMISE_RESULT_FAIL;
                 }
                 else
                 {
@@ -2400,7 +2401,7 @@ static PromiseResult CopyFileSources(EvalContext *ctx, char *destination, Attrib
 
     if (conn != NULL && (!conn->authenticated))
     {
-        cfPS(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_FAIL, pp, attr,
+        cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_FAIL, pp, attr,
              "No authenticated source '%s' in files.copy_from promise",
              source);
         return PROMISE_RESULT_FAIL;
@@ -2592,6 +2593,7 @@ PromiseResult ScheduleLinkChildrenOperation(EvalContext *ctx, char *destination,
         cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, attr,
              "Can't open source of children to link '%s'. (opendir: %s)",
              attr.link.source, GetErrorStr());
+        result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
         return result;
     }
 
@@ -2975,6 +2977,7 @@ static int VerifyFinderType(EvalContext *ctx, const char *file, Attributes a, co
             if (DONTDO)
             {
                 Log(LOG_LEVEL_INFO, "Promised to set Finder Type code of '%s' to '%s'", file, a.perms.findertype);
+                *result = PromiseResultUpdate(*result, PROMISE_RESULT_WARN);
                 return 0;
             }
 
@@ -2992,13 +2995,14 @@ static int VerifyFinderType(EvalContext *ctx, const char *file, Attributes a, co
             {
                 cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Setting Finder Type code of '%s' to '%s' failed", file,
                      a.perms.findertype);
-                *result = PromiseResultUpdate(*result, PROMISE_RESULT_CHANGE);
+                *result = PromiseResultUpdate(*result, PROMISE_RESULT_FAIL);
             }
 
             return retval;
 
         case cfa_warn:
             Log(LOG_LEVEL_ERR, "Darwin FinderType does not match -- not fixing.");
+            *result = PromiseResultUpdate(*result, PROMISE_RESULT_WARN);
             return 0;
 
         default:
@@ -3008,7 +3012,7 @@ static int VerifyFinderType(EvalContext *ctx, const char *file, Attributes a, co
     else
     {
         cfPS(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_NOOP, pp, a, "Finder Type code of '%s' to '%s' is as promised", file, a.perms.findertype);
-        *result = PromiseResultUpdate(*result, PROMISE_RESULT_CHANGE);
+        *result = PromiseResultUpdate(*result, PROMISE_RESULT_NOOP);
         return 0;
     }
 }
@@ -3288,6 +3292,7 @@ bool VerifyOwner(EvalContext *ctx, const char *file, const Promise *pp, Attribut
             {
                 Log(LOG_LEVEL_ERR, "File '%s' is not owned by anybody in the passwd database", file);
                 Log(LOG_LEVEL_ERR, "(uid = %ju,gid = %ju)", (uintmax_t)sb->st_uid, (uintmax_t)sb->st_gid);
+                *result = PromiseResultUpdate(*result, PROMISE_RESULT_WARN);
                 break;
             }
 
@@ -3487,7 +3492,7 @@ bool CfCreateFile(EvalContext *ctx, char *file, const Promise *pp, Attributes at
         else
         {
             Log(LOG_LEVEL_ERR, "Warning promised, need to create directory '%s'", file);
-            *result = PromiseResultUpdate(*result, PROMISE_RESULT_NOOP);
+            *result = PromiseResultUpdate(*result, PROMISE_RESULT_WARN);
             return false;
         }
     }
@@ -3531,6 +3536,7 @@ bool CfCreateFile(EvalContext *ctx, char *file, const Promise *pp, Attributes at
         else
         {
             Log(LOG_LEVEL_ERR, "Warning promised, need to create file '%s'", file);
+            *result = PromiseResultUpdate(*result, PROMISE_RESULT_WARN);
             return false;
         }
     }

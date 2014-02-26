@@ -1,15 +1,74 @@
+########################################################################
+# Acceptance test framework.
+#
+# All tests should contain three bundles: init, test and check. In the
+# "body common control" this file should be included, and bundlesequence
+# should be set to default("$(this.promise_filename)").
+#
+# Output "$(this.promise_filename) Pass" for passing
+#    and "$(this.promise_filename) FAIL" for failing.
+#
+# If you want to use tools like grep, diff, touch, etc, please use the
+# $(G.grep) format so that the correct path to the tool is chosen by
+# this template. If a tool is missing you can add it to the list below.
+#
+# For tests that need to be skipped on certain platforms, you can add
+# special meta variables to one of the test bundles. These are the
+# possible variable names:
+#
+#   - test_skip_unsupported
+#       Skips a test because it makes no sense on that platform (e.g.
+#       symbolic links on Windows).
+#
+#   - test_skip_needs_work
+#       Skips a test because the test itself is not adapted to the
+#       platform (even if the functionality exists).
+#
+#   - test_suppress_fail
+#       Runs the test, but will accept failure. Use this when there is a
+#       real failure, but it is acceptable for the time being. This
+#       variable requires a meta tag on the the variable set to
+#       "redmine<number>", where <number> is a Redmine issue number.
+#
+# In all cases, the variable is expected to be set to a class expression
+# suitable for ifvarclass, where a positive match means that the test
+# will be skipped. So the expression '"test_skip_needs_work" string =>
+# "hpux|aix";' will skip the test on HP-UX and AIX, and nowhere else.
+#
+# Example:
+#   bundle agent test
+#   {
+#     meta:
+#       # Class expression giving platforms that should be skipped.
+#       "test_skip_unsupported" string => "hpux";
+#   }
+#
+#   bundle agent test
+#   {
+#     meta:
+#       # Class expression giving platforms that should be skipped.
+#       "test_skip_needs_work" string => "hpux";
+#   }
+#
+#   bundle agent test
+#   {
+#     meta:
+#       # Class expression giving platforms where we suppress a failure.
+#       "test_suppress_fail" string => "hpux",
+#         meta => { "redmine1234" };
+#   }
+########################################################################
+
 bundle common G
 {
 vars:
   windows::
     "cwd" string => execresult("C:\windows\system32\cmd.exe /C cd", "noshell");
     # Dir separator
-    "DS" string => "\\";
-    "exeext" string => ".exe";
+    "exeext" slist => { ".exe", ".bat" };
   !windows::
     "cwd" string => execresult("/bin/pwd 2>/dev/null || /usr/bin/pwd", "useshell");
     # Dir separator
-    "DS" string => "/";
     "exeext" string => "";
 
   any::
@@ -24,34 +83,44 @@ vars:
     "paths[usr_contrib_bin]" string        => "/usr/contrib/bin";
   windows::
     "paths[mingw_msys_1_0_bin]" string     => "c:\\mingw\\msys\\1.0\\bin";
+    "paths[msys_1_0_bin]" string           => "c:\\msys\\1.0\\bin";
     "paths[msys_bin]" string               => "c:\\msys\\bin";
-    "paths[pstools]" string               => "c:\\PSTools";
+    "paths[pstools]" string                => "c:\\PSTools";
+    "paths[strawberry_perl_bin]" string    => "c:\\strawberry\\perl\\bin";
+    "paths[local]" string                  => "$(this.promise_dirname)\\tool_wrappers";
 
   any::
   "paths_indices" slist => getindices("paths");
 
 classes:
-  "$(paths_indices)_$(cmds)" expression => fileexists("$(paths[$(paths_indices)])$(DS)$(cmds)$(exeext)");
-  "has_$(cmds)" expression => "$(paths_indices)_$(cmds)",
+  "$(paths_indices)_$(cmds)$(exeext)" expression => fileexists("$(paths[$(paths_indices)])$(const.dirsep)$(cmds)$(exeext)");
+  "has_$(cmds)"                       expression => fileexists("$(paths[$(paths_indices)])$(const.dirsep)$(cmds)$(exeext)"),
     scope => "namespace";
 
 vars:
-  "$(cmds)" string => "$(paths[$(paths_indices)])$(DS)$(cmds)$(exeext)",
-    ifvarclass => "$(paths_indices)_$(cmds)";
+  "$(cmds)" string => "$(paths[$(paths_indices)])$(const.dirsep)$(cmds)$(exeext)",
+    ifvarclass => canonify("$(paths_indices)_$(cmds)$(exeext)");
 
 classes:
   "temp_declared" not => strcmp(getenv("TEMP", "65536"), "");
 
 vars:
+    "etc" string => "$(this.promise_dirname)$(const.dirsep)dummy_etc";
+    "etc_motd" string => "$(this.promise_dirname)$(const.dirsep)dummy_etc$(const.dirsep)motd";
+    "etc_passwd" string => "$(this.promise_dirname)$(const.dirsep)dummy_etc$(const.dirsep)passwd";
+    "etc_shadow" string => "$(this.promise_dirname)$(const.dirsep)dummy_etc$(const.dirsep)shadow";
+    "etc_group" string => "$(this.promise_dirname)$(const.dirsep)dummy_etc$(const.dirsep)group";
+    "etc_null" string => "$(this.promise_dirname)$(const.dirsep)dummy_etc$(const.dirsep)null";
+
   temp_declared::
     "testroot" string => getenv("TEMP", "65535");
-    "testdir" string => concat(getenv("TEMP", "65535"), "$(DS)TEST.cfengine");
-    "testfile" string => concat(getenv("TEMP", "65535"), "$(DS)TEST.cfengine");
+    "testdir" string => concat(getenv("TEMP", "65535"), "$(const.dirsep)TEST.cfengine");
+    "testfile" string => concat(getenv("TEMP", "65535"), "$(const.dirsep)TEST.cfengine");
 
   !temp_declared::
-    "testroot" string => "$(DS)tmp";
-    "testdir" string => "$(DS)tmp$(DS)TEST.cfengine";
-    "testfile" string => "$(DS)tmp$(DS)TEST.cfengine";
+    "testroot" string => "$(const.dirsep)tmp";
+    "testdir" string => "$(const.dirsep)tmp$(const.dirsep)TEST.cfengine";
+    "testfile" string => "$(const.dirsep)tmp$(const.dirsep)TEST.cfengine";
 
 }
 
@@ -74,14 +143,57 @@ vars:
 
 bundle agent default(filename)
 {
+methods:
+    "any" usebundle => test_precheck;
+
+  proceed_with_test::
+    "any" usebundle => test_run("$(filename)");
+}
+
+bundle agent test_precheck
+{
+vars:
+    "test_skip_unsupported" slist => variablesmatching(".*_meta\.test_skip_unsupported");
+    "test_skip_needs_work" slist => variablesmatching(".*_meta\.test_skip_needs_work");
+    "test_suppress_fail" slist => variablesmatching(".*_meta\.test_suppress_fail");
+    "test_suppress_fail_metatags" slist => getvariablemetatags("$(test_suppress_fail)");
+    "test_suppress_fail_redmine" slist => filter("redmine.*", "test_suppress_fail_metatags", "true", "false", 1);
+
+classes:
+    "test_skip_unsupported_set" expression => some(".*", "test_skip_unsupported");
+    "test_skip_needs_work_set" expression => some(".*", "test_skip_needs_work");
+    "test_suppress_fail_set" expression => some(".*", "test_suppress_fail");
+    "test_suppress_fail_redmine_set" expression => some(".*", "test_suppress_fail_redmine");
+
+    "test_skip_unsupported_match" and => { "test_skip_unsupported_set", "$($(test_skip_unsupported))" };
+    "test_skip_needs_work_match" and => { "test_skip_needs_work_set", "$($(test_skip_needs_work))" };
+    "test_suppress_fail_match" and => { "test_suppress_fail_set", "$($(test_suppress_fail))" };
+
+    "proceed_with_test"
+      and => { "!test_skip_unsupported_match", "!test_skip_needs_work_match" },
+      scope => "namespace";
+
+reports:
+  test_skip_unsupported_match::
+    "$(this.promise_filename) Skip/unsupported";
+  test_skip_needs_work_match::
+    "$(this.promise_filename) Skip/needs_work";
+  test_suppress_fail_match.test_suppress_fail_redmine_set::
+    "$(this.promise_filename) XFAIL/$(test_suppress_fail_redmine)";
+  test_suppress_fail_match.!test_suppress_fail_redmine_set::
+    "$(this.promise_filename) FAIL/no_redmine_number";
+}
+
+bundle agent test_run(filename)
+{
 vars:
     "tests" slist => { "init", "test", "check" };
 
 methods:
-  "any"
-    usebundle => paths_init("$(filename)");
-  "any"
-    usebundle => paths_absolute("$(filename)");
+    "any"
+      usebundle => paths_init("$(filename)");
+    "any"
+      usebundle => paths_absolute("$(filename)");
 
   AUTO::
     "any" usebundle => "$(tests)";
@@ -89,7 +201,7 @@ methods:
 reports:
     !AUTO::
     "# You must either specify '-D AUTO' or run the following commands:";
-    "cf-agent -f .$(DS)$(filename) -b $(tests)";
+    "cf-agent -f .$(const.dirsep)$(filename) -b $(tests)";
 }
 
 #######################################################
@@ -369,4 +481,14 @@ bundle agent default_check_regcmp(regex, thestring, test, expected_mismatch)
       "$(test) FAIL";
     !matched.expected_mismatch::
       "$(test) Pass";
+}
+
+#######################################################
+# Pass the test if class
+
+bundle agent default_passif(classname, test)
+{
+  reports:
+      "$(test) Pass" ifvarclass => $(classname);
+      "$(test) FAIL" ifvarclass => "!$(classname)";
 }

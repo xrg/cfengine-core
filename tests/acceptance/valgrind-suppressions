@@ -175,3 +175,12 @@
    fun:PromiseRecheckAllConstraints
    ...
 }
+
+{
+   cfe-global-repository
+   Memcheck:Leak
+   ...
+   fun:xstrdup
+   fun:SetRepositoryLocation
+   ...
+}

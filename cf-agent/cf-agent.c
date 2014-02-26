@@ -1215,7 +1215,7 @@ PromiseResult ScheduleAgentOperations(EvalContext *ctx, const Bundle *bp)
 
             const PromiseType *sp = BundleGetPromiseType((Bundle *)bp, AGENT_TYPESEQUENCE[type]);
 
-            if (sp == NULL)
+            if (!sp || SeqLength(sp->promises) == 0)
             {
                 continue;
             }
