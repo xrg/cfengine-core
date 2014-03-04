@@ -177,7 +177,7 @@ static LogLevel CalculateReportLevel(const Promise *pp)
     return report_level;
 }
 
-static char *LogHook(LoggingPrivContext *pctx, const char *message)
+static char *LogHook(LoggingPrivContext *pctx, LogLevel level, const char *message)
 {
     const EvalContext *ctx = pctx->param;
 
@@ -186,7 +186,10 @@ static char *LogHook(LoggingPrivContext *pctx, const char *message)
     {
         if (last_frame->type == STACK_FRAME_TYPE_PROMISE_ITERATION)
         {
-            RingBufferAppend(last_frame->data.promise_iteration.log_messages, xstrdup(message));
+            if (level <= LOG_LEVEL_INFO)
+            {
+                RingBufferAppend(last_frame->data.promise_iteration.log_messages, xstrdup(message));
+            }
         }
 
         return StringConcatenate(3, last_frame->path, ": ", message);
@@ -1210,11 +1213,6 @@ void EvalContextStackPushPromiseFrame(EvalContext *ctx, const Promise *owner, bo
 
     EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "bundle", PromiseGetBundle(owner)->name, CF_DATA_TYPE_STRING, "source=promise");
     EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "namespace", PromiseGetNamespace(owner), CF_DATA_TYPE_STRING, "source=promise");
-
-    if (owner->has_subbundles)
-    {
-        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", owner->promiser, CF_DATA_TYPE_STRING, "source=promise");
-    }
 }
 
 Promise *EvalContextStackPushPromiseIterationFrame(EvalContext *ctx, size_t iteration_index, const PromiseIterator *iter_ctx)
@@ -1231,6 +1229,8 @@ Promise *EvalContextStackPushPromiseIterationFrame(EvalContext *ctx, size_t iter
     EvalContextStackPushFrame(ctx, StackFrameNewPromiseIteration(pexp, iter_ctx, iteration_index));
 
     LoggingPrivSetLevels(CalculateLogLevel(pexp), CalculateReportLevel(pexp));
+
+    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", pexp->promiser, CF_DATA_TYPE_STRING, "source=promise");
 
     return pexp;
 }
@@ -1510,7 +1510,23 @@ char *EvalContextStackPath(const EvalContext *ctx)
         case STACK_FRAME_TYPE_PROMISE_ITERATION:
             BufferAppendChar(path, '/');
             BufferAppendChar(path, '\'');
-            BufferAppend(path, frame->data.promise_iteration.owner->promiser, CF_BUFSIZE);
+            for (const char *ch = frame->data.promise_iteration.owner->promiser; *ch != '\0'; ch++)
+            {
+                switch (*ch)
+                {
+                case '*':
+                    BufferAppendChar(path, ':');
+                    break;
+
+                case '#':
+                    BufferAppendChar(path, '.');
+                    break;
+
+                default:
+                    BufferAppendChar(path, *ch);
+                    break;
+                }
+            }
             BufferAppendChar(path, '\'');
             if (i == SeqLength(ctx->stack) - 1)
             {

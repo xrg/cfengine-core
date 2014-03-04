@@ -57,8 +57,6 @@ PromiseResult VerifyMethodsPromise(EvalContext *ctx, const Promise *pp)
 
 
     PromiseResult result = VerifyMethod(ctx, cp->rval, a, pp);
-    EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser");
-
     return result;
 }
 
@@ -126,18 +124,29 @@ PromiseResult VerifyMethod(EvalContext *ctx, const Rval call, Attributes a, cons
 
         switch (result)
         {
-        case PROMISE_RESULT_FAIL:
-            cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_FAIL, pp, a, "Method '%s' failed in some repairs or aborted", bp->name);
-            break;
-
-        case PROMISE_RESULT_CHANGE:
-            cfPS(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_CHANGE, pp, a, "Method '%s' invoked repairs", bp->name);
-            break;
-
-        default:
+        case PROMISE_RESULT_NOOP:
             cfPS(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_NOOP, pp, a, "Method '%s' verified", bp->name);
             break;
 
+        case PROMISE_RESULT_WARN:
+            cfPS(ctx, LOG_LEVEL_WARNING, PROMISE_RESULT_WARN, pp, a, "Method '%s' invoked repairs, but only warnings promised", bp->name);
+            break;
+
+        case PROMISE_RESULT_CHANGE:
+            // the promises inside the invoked bundle have logged and reported REPAIRED compliance.
+            // No need to report the method as REPAIRED - make this message verbose, and over-ride compliance as KEPT.
+            cfPS(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_CHANGE, pp, a, "Method '%s' invoked repairs", bp->name);
+            result = PROMISE_RESULT_NOOP;
+            break;
+
+        case PROMISE_RESULT_FAIL:
+        case PROMISE_RESULT_DENIED:
+            cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Method '%s' failed in some repairs", bp->name);
+            break;
+
+        default: // PROMISE_RESULT_INTERRUPTED, TIMEOUT
+            cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_FAIL, pp, a, "Method '%s' aborted in some repairs", bp->name);
+            break;
         }
 
         for (const Rlist *rp = bp->args; rp; rp = rp->next)

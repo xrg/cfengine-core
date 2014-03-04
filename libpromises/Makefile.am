@@ -64,6 +64,7 @@ libpromises_la_SOURCES = \
         keyring.c keyring.h\
 	known_dirs.c known_dirs.h \
         lastseen.c lastseen.h \
+        loading.c loading.h \
         locks.c locks.h \
         logic_expressions.c logic_expressions.h \
         matching.c matching.h \
@@ -184,3 +185,7 @@ libpromises_la_DEPENDENCIES = ../libutils/libutils.la ../libcfnet/libcfnet.la \
 
 ../libutils/libutils.la:
 	$(MAKE) -C ../libutils $(AM_MAKEFLAGS) libutils.la
+
+# This should be run by hand to generate bootstrap.inc
+bootstrap-inc:
+	perl ./text2cstring.pl failsafe.cf > bootstrap.inc

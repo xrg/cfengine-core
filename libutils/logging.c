@@ -228,19 +228,13 @@ const char *GetErrorStr(void)
 void VLog(LogLevel level, const char *fmt, va_list ap)
 {
     LoggingContext *lctx = GetCurrentThreadContext();
-    if (LogGetGlobalLevel() > lctx->report_level &&
-        LogGetGlobalLevel() > lctx->log_level)
-    {
-        return;
-    }
-
 
     char *msg = StringVFormat(fmt, ap);
     char *hooked_msg = NULL;
 
     if (lctx->pctx && lctx->pctx->log_hook)
     {
-        hooked_msg = lctx->pctx->log_hook(lctx->pctx, msg);
+        hooked_msg = lctx->pctx->log_hook(lctx->pctx, level, msg);
     }
     else
     {

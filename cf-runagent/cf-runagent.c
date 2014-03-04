@@ -44,6 +44,7 @@
 #include <man.h>
 #include <connection_info.h>
 #include <addr_lib.h>
+#include <loading.h>
 
 typedef enum
 {
@@ -163,7 +164,7 @@ int main(int argc, char *argv[])
     GenericAgentConfigApply(ctx, config);
 
     GenericAgentDiscoverContext(ctx, config);
-    Policy *policy = GenericAgentLoadPolicy(ctx, config);
+    Policy *policy = LoadPolicy(ctx, config);
 
     ThisAgentInit();
     KeepControlPromises(ctx, policy);      // Set RUNATTR using copy

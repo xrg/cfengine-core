@@ -64,17 +64,13 @@ PromiseResult VerifyExecPromise(EvalContext *ctx, const Promise *pp)
 {
     Attributes a = GetExecAttributes(ctx, pp);
 
-    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", pp->promiser, CF_DATA_TYPE_STRING, "source=promise");
-
     if (!SyntaxCheckExec(a, pp))
     {
-        EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser");
         return PROMISE_RESULT_FAIL;
     }
 
     if (PromiseKeptExec(a, pp))
     {
-        EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser");
         return PROMISE_RESULT_NOOP;
     }
 
@@ -83,7 +79,6 @@ PromiseResult VerifyExecPromise(EvalContext *ctx, const Promise *pp)
     free(lock_name);
     if (thislock.lock == NULL)
     {
-        EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser");
         return PROMISE_RESULT_SKIPPED;
     }
 
@@ -109,7 +104,6 @@ PromiseResult VerifyExecPromise(EvalContext *ctx, const Promise *pp)
     }
 
     YieldCurrentLock(thislock);
-    EvalContextVariableRemoveSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser");
 
     return result;
 }
@@ -203,6 +197,7 @@ static ActionResult RepairExec(EvalContext *ctx, Attributes a,
         if (!IsExecutable(CommandArg0(pp->promiser)))
         {
             cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "'%s' promises to be executable but isn't", pp->promiser);
+            *result = PromiseResultUpdate(*result, PROMISE_RESULT_FAIL);
 
             if (strchr(pp->promiser, ' '))
             {
@@ -248,12 +243,14 @@ static ActionResult RepairExec(EvalContext *ctx, Attributes a,
     if (DONTDO && (!a.contain.preview))
     {
         Log(LOG_LEVEL_ERR, "Would execute script '%s'", cmdline);
+        *result = PromiseResultUpdate(*result, PROMISE_RESULT_WARN);
         return ACTION_RESULT_OK;
     }
 
     if (a.transaction.action != cfa_fix)
     {
         Log(LOG_LEVEL_ERR, "Command '%s' needs to be executed, but only warning was promised", cmdline);
+        *result = PromiseResultUpdate(*result, PROMISE_RESULT_WARN);
         return ACTION_RESULT_OK;
     }
 
@@ -395,7 +392,7 @@ static ActionResult RepairExec(EvalContext *ctx, Attributes a,
 
             if (ret == -1)
             {
-                cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_FAIL, pp, a, "Finished script '%s' - failed (abnormal termination)", pp->promiser);
+                cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Finished script '%s' - failed (abnormal termination)", pp->promiser);
                 *result = PromiseResultUpdate(*result, PROMISE_RESULT_FAIL);
             }
             else
