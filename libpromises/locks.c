@@ -43,6 +43,8 @@
 #define CFLOGSIZE 1048576       /* Size of lock-log before rotation */
 #define CF_LOCKHORIZON ((time_t)(SECONDS_PER_WEEK * 4))
 
+#define CF_CRITIAL_SECTION "CF_CRITICAL_SECTION"
+
 static char CFLOCK[CF_BUFSIZE] = ""; /* GLOBAL_X */
 static char CFLAST[CF_BUFSIZE] = ""; /* GLOBAL_X */
 static char CFLOG[CF_BUFSIZE] = ""; /* GLOBAL_X */
@@ -208,7 +210,7 @@ static void RemoveDates(char *s)
     }
 }
 
-static int RemoveLock(char *name)
+static int RemoveLock(const char *name)
 {
     CF_DB *dbp;
 
@@ -240,9 +242,9 @@ static int RemoveLock(char *name)
     return 0;
 }
 
-static void WaitForCriticalSection()
+void WaitForCriticalSection(const char *section_id)
 {
-    time_t now = time(NULL), then = FindLockTime("CF_CRITICAL_SECTION");
+    time_t now = time(NULL), then = FindLockTime(section_id);
 
 /* Another agent has been waiting more than a minute, it means there
    is likely crash detritus to clear up... After a minute we take our
@@ -252,15 +254,15 @@ static void WaitForCriticalSection()
     {
         sleep(1);
         now = time(NULL);
-        then = FindLockTime("CF_CRITICAL_SECTION");
+        then = FindLockTime(section_id);
     }
 
-    WriteLock("CF_CRITICAL_SECTION");
+    WriteLock(section_id);
 }
 
-static void ReleaseCriticalSection()
+void ReleaseCriticalSection(const char *section_id)
 {
-    RemoveLock("CF_CRITICAL_SECTION");
+    RemoveLock(section_id);
 }
 
 static time_t FindLock(char *last)
@@ -595,43 +597,23 @@ static CfLock CfLockNull(void)
 CfLock AcquireLock(EvalContext *ctx, const char *operand, const char *host, time_t now,
                    TransactionContext tc, const Promise *pp, bool ignoreProcesses)
 {
-    unsigned char digest[EVP_MAX_MD_SIZE + 1];
-
     if (now == 0)
     {
         return CfLockNull();
     }
 
-    /* Indicate as done if we tried ... as we have passed all class
-       constraints now but we should only do this for level 0
-       promises. Sub routine bundles cannot be marked as done or it will
-       disallow iteration over bundles */
-    if (EvalContextPromiseIsDone(ctx, pp))
-    {
-        return CfLockNull();
-    }
-
-    if (EvalContextStackCurrentPromise(ctx))
-    {
-        // Must not set promise to be done for editfiles etc
-        EvalContextMarkPromiseDone(ctx, pp);
-    }
-
+    unsigned char digest[EVP_MAX_MD_SIZE + 1];
     PromiseRuntimeHash(pp, operand, digest, CF_DEFAULT_DIGEST);
     char str_digest[CF_BUFSIZE];
     HashPrintSafe(CF_DEFAULT_DIGEST, true, digest, str_digest);
 
-    // As a backup to "done" we need something immune to re-use
-    if (THIS_AGENT_TYPE == AGENT_TYPE_AGENT)
+    if (EvalContextPromiseLockCacheContains(ctx, str_digest))
     {
-        if (EvalContextPromiseLockCacheContains(ctx, str_digest))
-        {
-            Log(LOG_LEVEL_DEBUG, "This promise has already been verified");
-            return CfLockNull();
-        }
-
-        EvalContextPromiseLockCachePut(ctx, str_digest);
+        Log(LOG_LEVEL_DEBUG, "This promise has already been verified");
+        return CfLockNull();
     }
+
+    EvalContextPromiseLockCachePut(ctx, str_digest);
 
     // Finally if we're supposed to ignore locks ... do the remaining stuff
     if (EvalContextIsIgnoringLocks(ctx))
@@ -674,7 +656,7 @@ CfLock AcquireLock(EvalContext *ctx, const char *operand, const char *host, time
     Log(LOG_LEVEL_DEBUG, "Log for bundle '%s', '%s'", PromiseGetBundle(pp)->name, cflock);
 
     // Now see if we can get exclusivity to edit the locks
-    WaitForCriticalSection();
+    WaitForCriticalSection(CF_CRITIAL_SECTION);
 
     // Look for non-existent (old) processes
     time_t lastcompleted = FindLock(cflast);
@@ -684,7 +666,7 @@ CfLock AcquireLock(EvalContext *ctx, const char *operand, const char *host, time
     {
         Log(LOG_LEVEL_VERBOSE, "XX Another cf-agent seems to have done this since I started (elapsed=%jd)",
               (intmax_t) elapsedtime);
-        ReleaseCriticalSection();
+        ReleaseCriticalSection(CF_CRITIAL_SECTION);
         return CfLockNull();
     }
 
@@ -692,7 +674,7 @@ CfLock AcquireLock(EvalContext *ctx, const char *operand, const char *host, time
     {
         Log(LOG_LEVEL_VERBOSE, "XX Nothing promised here [%.40s] (%jd/%u minutes elapsed)", cflast,
               (intmax_t) elapsedtime, tc.ifelapsed);
-        ReleaseCriticalSection();
+        ReleaseCriticalSection(CF_CRITIAL_SECTION);
         return CfLockNull();
     }
 
@@ -723,7 +705,7 @@ CfLock AcquireLock(EvalContext *ctx, const char *operand, const char *host, time
             }
             else
             {
-                ReleaseCriticalSection();
+                ReleaseCriticalSection(CF_CRITIAL_SECTION);
                 Log(LOG_LEVEL_VERBOSE, "Couldn't obtain lock for %s (already running!)", cflock);
                 return CfLockNull();
             }
@@ -742,7 +724,7 @@ CfLock AcquireLock(EvalContext *ctx, const char *operand, const char *host, time
         }
     }
 
-    ReleaseCriticalSection();
+    ReleaseCriticalSection(CF_CRITIAL_SECTION);
 
     // Keep this as a global for signal handling
     strcpy(CFLOCK, cflock);
@@ -917,7 +899,7 @@ cleanup_1:
 
 void BackupLockDatabase(void)
 {
-    WaitForCriticalSection();
+    WaitForCriticalSection(CF_CRITIAL_SECTION);
 
     char *db_path = DBIdToPath(GetWorkDir(), dbid_locks);
     char *db_path_backup;
@@ -928,7 +910,7 @@ void BackupLockDatabase(void)
     free(db_path);
     free(db_path_backup);
 
-    ReleaseCriticalSection();
+    ReleaseCriticalSection(CF_CRITIAL_SECTION);
 }
 
 static void RestoreLockDatabase(void)

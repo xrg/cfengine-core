@@ -102,10 +102,9 @@ Promise *DeRefCopyPromise(EvalContext *ctx, const Promise *pp)
         }
     }
 
-    if (pp->classes)
-    {
-        pcopy->classes = xstrdup(pp->classes);
-    }
+    assert(pp->classes);
+    pcopy->classes = xstrdup(pp->classes);
+
 
 /* FIXME: may it happen? */
     if ((pp->promisee.item != NULL && pcopy->promisee.item == NULL))
@@ -291,6 +290,9 @@ Promise *DeRefCopyPromise(EvalContext *ctx, const Promise *pp)
 
 Promise *ExpandDeRefPromise(EvalContext *ctx, const Promise *pp)
 {
+    assert(pp->promiser);
+    assert(pp->classes);
+
     Promise *pcopy = xcalloc(1, sizeof(Promise));
     Rval returnval = ExpandPrivateRval(ctx, NULL, "this", pp->promiser, RVAL_TYPE_SCALAR);
     pcopy->promiser = RvalScalarValue(returnval);
@@ -304,19 +306,7 @@ Promise *ExpandDeRefPromise(EvalContext *ctx, const Promise *pp)
         pcopy->promisee = (Rval) {NULL, RVAL_TYPE_NOPROMISEE };
     }
 
-    if (pp->classes)
-    {
-        pcopy->classes = xstrdup(pp->classes);
-    }
-    else
-    {
-        pcopy->classes = xstrdup("any");
-    }
-
-    if (pcopy->promiser == NULL)
-    {
-        ProgrammingError("ExpandPromise returned NULL");
-    }
+    pcopy->classes = xstrdup(pp->classes);
 
     pcopy->parent_promise_type = pp->parent_promise_type;
     pcopy->offset.line = pp->offset.line;
@@ -330,8 +320,12 @@ Promise *ExpandDeRefPromise(EvalContext *ctx, const Promise *pp)
     for (size_t i = 0; i < SeqLength(pp->conlist); i++)
     {
         Constraint *cp = SeqAt(pp->conlist, i);
-        Rval final;
+        if (!IsDefinedClass(ctx, cp->classes))
+        {
+            continue;
+        }
 
+        Rval final;
         if (ExpectedDataType(cp->lval) == CF_DATA_TYPE_BUNDLE)
         {
             final = ExpandBundleReference(ctx, NULL, "this", cp->rval);
@@ -343,24 +337,15 @@ Promise *ExpandDeRefPromise(EvalContext *ctx, const Promise *pp)
             RvalDestroy(returnval);
         }
 
-        bool kill_final = true;
-        if (IsDefinedClass(ctx, cp->classes))
-        {
-            Constraint *cp_copy = PromiseAppendConstraint(pcopy, cp->lval, final, false);
-            cp_copy->offset = cp->offset;
-            kill_final = false;
-        }
+        Constraint *cp_copy = PromiseAppendConstraint(pcopy, cp->lval, final, false);
+        cp_copy->offset = cp->offset;
 
         if (strcmp(cp->lval, "comment") == 0)
         {
             if (final.type != RVAL_TYPE_SCALAR)
             {
-                char err[CF_BUFSIZE];
-
-                snprintf(err, CF_BUFSIZE,
-                         "Comments can only be scalar objects, not %c in '%s'",
-                         final.type, pp->promiser);
-                yyerror(err);
+                Log(LOG_LEVEL_ERR, "Comments can only be scalar objects, not '%s' in '%s'",
+                    RvalTypeToString(final.type), pp->promiser);
             }
             else
             {
@@ -374,10 +359,6 @@ Promise *ExpandDeRefPromise(EvalContext *ctx, const Promise *pp)
                     DereferenceComment(pcopy);
                 }
             }
-        }
-        if (kill_final)
-        {
-            RvalDestroy(final);
         }
     }
 

@@ -99,8 +99,6 @@ typedef struct
     char *path;
 } StackFrame;
 
-TYPED_SET_DECLARE(Promise, const Promise *)
-
 typedef enum
 {
     EVAL_OPTION_NONE = 0,
@@ -117,7 +115,7 @@ void EvalContextDestroy(EvalContext *ctx);
 void EvalContextHeapAddAbort(EvalContext *ctx, const char *context, const char *activated_on_context);
 void EvalContextHeapAddAbortCurrentBundle(EvalContext *ctx, const char *context, const char *activated_on_context);
 
-void EvalContextHeapPersistentSave(const char *context, const char *ns, unsigned int ttl_minutes, ContextStatePolicy policy);
+void EvalContextHeapPersistentSave(const char *context, const char *ns, unsigned int ttl_minutes, PersistentClassPolicy policy);
 void EvalContextHeapPersistentRemove(const char *context);
 void EvalContextHeapPersistentLoadAll(EvalContext *ctx);
 
@@ -179,17 +177,6 @@ bool IsDefinedClass(const EvalContext *ctx, const char *context);
 bool EvalProcessResult(const char *process_result, StringSet *proc_attr);
 bool EvalFileResult(const char *file_result, StringSet *leaf_attr);
 
-/* - Promise status */
-bool EvalContextPromiseIsDone(const EvalContext *ctx, const Promise *pp);
-
-/* Those two functions are compromises: there are pieces of code which
- * manipulate promise 'doneness', and it's not simple to figure out how to
- * properly reimplement it. So for the time being, let particular pieces of code
- * continue to manipulate the state.
- */
-void EvalContextMarkPromiseDone(EvalContext *ctx, const Promise *pp);
-void EvalContextMarkPromiseNotDone(EvalContext *ctx, const Promise *pp);
-
 /* Various global options */
 void SetChecksumUpdatesDefault(EvalContext *ctx, bool enabled);
 bool GetChecksumUpdatesDefault(const EvalContext *ctx);
@@ -211,8 +198,8 @@ void EvalContextSetLaunchDirectory(EvalContext *ctx, const char *path);
 
 bool Abort(EvalContext *ctx);
 int VarClassExcluded(const EvalContext *ctx, const Promise *pp, char **classes);
-void MarkPromiseHandleDone(EvalContext *ctx, const Promise *pp);
-int MissingDependencies(EvalContext *ctx, const Promise *pp);
+void NotifyDependantPromises(EvalContext *ctx, const Promise *pp, PromiseResult result);
+bool MissingDependencies(EvalContext *ctx, const Promise *pp);
 void cfPS(EvalContext *ctx, LogLevel level, PromiseResult status, const Promise *pp, Attributes attr, const char *fmt, ...) FUNC_ATTR_PRINTF(6, 7);
 
 /* This function is temporarily exported. It needs to be made an detail of

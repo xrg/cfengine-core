@@ -871,7 +871,7 @@ bool PolicyCheckDuplicateHandles(const Policy *policy, Seq *errors)
 {
     bool success = true;
 
-    Set *used_handles = SetNew((MapHashFn)StringHash, (MapKeyEqualFn)StringSafeEqual, NULL);
+    Map *recorded = MapNew((MapHashFn)StringHash, (MapKeyEqualFn)StringSafeEqual, NULL, NULL);
 
     for (size_t bpi = 0; bpi < SeqLength(policy->bundles); bpi++)
     {
@@ -884,27 +884,37 @@ bool PolicyCheckDuplicateHandles(const Policy *policy, Seq *errors)
             for (size_t ppi = 0; ppi < SeqLength(promise_type->promises); ppi++)
             {
                 Promise *promise = SeqAt(promise_type->promises, ppi);
-
                 const char *handle = PromiseGetHandle(promise);
 
                 if (handle)
                 {
-                    if (SetContains(used_handles, handle))
+                    if (IsCf3VarString(handle))
                     {
-                        SeqAppend(errors, PolicyErrorNew(POLICY_ELEMENT_TYPE_PROMISE, promise,
-                                                         POLICY_ERROR_PROMISE_DUPLICATE_HANDLE, handle));
-                        success = false;
+                        // can't check dynamic handles
+                        continue;
+                    }
+
+                    const Promise *other_promise = MapGet(recorded, handle);
+                    if (other_promise)
+                    {
+                        // Need to make this smarter by comparing parsed expressions for equivalency.
+                        if (strcmp(promise->classes, other_promise->classes) == 0)
+                        {
+                            SeqAppend(errors, PolicyErrorNew(POLICY_ELEMENT_TYPE_PROMISE, promise,
+                                                             POLICY_ERROR_PROMISE_DUPLICATE_HANDLE, handle));
+                            success = false;
+                        }
                     }
                     else
                     {
-                        SetAdd(used_handles, (void *)handle); /* This Set does not free values */
+                        MapInsert(recorded, (void *)handle, (void *)promise);
                     }
                 }
             }
         }
     }
 
-    SetDestroy(used_handles);
+    MapDestroy(recorded);
 
     return success;
 }
@@ -1257,33 +1267,27 @@ PromiseType *BundleAppendPromiseType(Bundle *bundle, const char *name)
 
 Promise *PromiseTypeAppendPromise(PromiseType *type, const char *promiser, Rval promisee, const char *classes)
 {
-    char *sp = NULL, *spe = NULL;
-
-    if (!type)
-    {
-        ProgrammingError("Attempt to add a promise without a type");
-    }
+    assert(promiser && "Missing promiser");
+    assert(type && "Missing promise type");
 
     Promise *pp = xcalloc(1, sizeof(Promise));
 
-    sp = xstrdup(promiser);
+    pp->promiser = xstrdup(promiser);
 
     if (classes && strlen(classes) > 0)
     {
-        spe = xstrdup(classes);
+        pp->classes = xstrdup(classes);
     }
     else
     {
-        spe = xstrdup("any");
+        pp->classes = xstrdup("any");
     }
 
     SeqAppend(type->promises, pp);
 
     pp->parent_promise_type = type;
 
-    pp->promiser = sp;
     pp->promisee = promisee;
-    pp->classes = spe;
     pp->has_subbundles = false;
     pp->conlist = SeqNew(10, ConstraintDestroy);
     pp->org_pp = pp;
@@ -2721,17 +2725,6 @@ void PromiseRecheckAllConstraints(const EvalContext *ctx, const Promise *pp)
 {
     static Item *EDIT_ANCHORS = NULL; /* GLOBAL_X */
 
-    if (!IsDefinedClass(ctx, pp->classes))
-    {
-        return;
-    }
-
-    char *sp = NULL;
-    if (VarClassExcluded(ctx, pp, &sp))
-    {
-        return;
-    }
-
     for (size_t i = 0; i < SeqLength(pp->conlist); i++)
     {
         Constraint *cp = SeqAt(pp->conlist, i);
@@ -2753,7 +2746,8 @@ void PromiseRecheckAllConstraints(const EvalContext *ctx, const Promise *pp)
     {
         /* Multiple additions with same criterion will not be convergent -- but ignore for empty file baseline */
 
-        if ((sp = PromiseGetConstraintAsRval(pp, "select_line_matching", RVAL_TYPE_SCALAR)))
+        const char *sp = PromiseGetConstraintAsRval(pp, "select_line_matching", RVAL_TYPE_SCALAR);
+        if (sp)
         {
             if (!IsExpandable(sp))
             {

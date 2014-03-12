@@ -247,6 +247,8 @@ PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_d
                     }
                 }
 
+                RvalDestroy(rval);
+                VarRefDestroy(ref);
                 return result;
             }
         }
@@ -543,11 +545,6 @@ static ConvergeVariableOptions CollectConvergeVariableOptions(EvalContext *ctx, 
     opts.drop_undefined = false;
     opts.ok_redefine = allow_redefine;
     opts.cp_save = NULL;
-
-    if (EvalContextPromiseIsDone(ctx, pp))
-    {
-        return opts;
-    }
 
     if (!IsDefinedClass(ctx, pp->classes))
     {

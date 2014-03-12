@@ -90,7 +90,7 @@ static PromiseResult VerifyPromisedPatch(EvalContext *ctx, Attributes a, const P
 
 static char *GetDefaultArch(const char *command);
 
-static int ExecPackageCommand(EvalContext *ctx, char *command, int verify, int setCmdClasses, Attributes a, const Promise *pp, PromiseResult *result);
+static bool ExecPackageCommand(EvalContext *ctx, char *command, int verify, int setCmdClasses, Attributes a, const Promise *pp, PromiseResult *result);
 
 static int PrependPatchItem(EvalContext *ctx, PackageItem ** list, char *item, PackageItem * chklist, const char *default_arch, Attributes a, const Promise *pp);
 static int PrependMultiLinePackageItem(EvalContext *ctx, PackageItem ** list, char *item, int reset, const char *default_arch, Attributes a, const Promise *pp);
@@ -123,6 +123,7 @@ PromiseResult VerifyPackagesPromise(EvalContext *ctx, const Promise *pp)
 {
     CfLock thislock;
     char lockname[CF_BUFSIZE];
+    PromiseResult result = PROMISE_RESULT_NOOP;
 
     const char *reserved_vars[] = { "name", "version", "arch", "firstrepo", NULL };
     for (int c = 0; reserved_vars[c]; c++)
@@ -151,7 +152,8 @@ PromiseResult VerifyPackagesPromise(EvalContext *ctx, const Promise *pp)
     if (!PackageSanityCheck(ctx, a, pp))
     {
         Log(LOG_LEVEL_VERBOSE, "Package promise %s failed sanity check", pp->promiser);
-        return PROMISE_RESULT_FAIL;
+        result = PROMISE_RESULT_FAIL;
+        goto end;
     }
 
     PromiseBanner(pp);
@@ -163,7 +165,8 @@ PromiseResult VerifyPackagesPromise(EvalContext *ctx, const Promise *pp)
     thislock = AcquireLock(ctx, lockname, VUQNAME, CFSTARTTIME, a.transaction, pp, false);
     if (thislock.lock == NULL)
     {
-        return PROMISE_RESULT_SKIPPED;
+        result = PROMISE_RESULT_SKIPPED;
+        goto end;
     }
 
 // Start by reseting the root directory in case yum tries to glob regexs(!)
@@ -179,17 +182,18 @@ PromiseResult VerifyPackagesPromise(EvalContext *ctx, const Promise *pp)
     {
         cfPS_HELPER_0ARG(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Unable to obtain default architecture for package manager - aborting");
         YieldCurrentLock(thislock);
-        return PROMISE_RESULT_FAIL;
+        result = PROMISE_RESULT_FAIL;
+        goto end;
     }
 
     Log(LOG_LEVEL_VERBOSE, "Default package architecture for promise %s is '%s'", pp->promiser, default_arch);
-    PromiseResult result = PROMISE_RESULT_NOOP;
     if (!VerifyInstalledPackages(ctx, &INSTALLED_PACKAGE_LISTS, default_arch, a, pp, &result))
     {
         cfPS_HELPER_0ARG(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Unable to obtain a list of installed packages - aborting");
         free(default_arch);
         YieldCurrentLock(thislock);
-        return PROMISE_RESULT_FAIL;
+        result = PROMISE_RESULT_FAIL;
+        goto end;
     }
 
     free(default_arch);
@@ -209,10 +213,12 @@ PromiseResult VerifyPackagesPromise(EvalContext *ctx, const Promise *pp)
 
     YieldCurrentLock(thislock);
 
+end:
     if (!REPORT_THIS_PROMISE(pp))
     {
         // This will not be reported elsewhere, so give it kept outcome.
-        cfPS(ctx, LOG_LEVEL_DEBUG, PROMISE_RESULT_NOOP, pp, a, "Giving dummy package kept outcome");
+        result = PROMISE_RESULT_NOOP;
+        cfPS(ctx, LOG_LEVEL_DEBUG, result, pp, a, "Giving dummy package kept outcome");
     }
 
     return result;
@@ -1967,16 +1973,11 @@ static void InvalidateSoftwareCache(void)
     }
 }
 
-static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAction action, PromiseResult *result)
+static bool ExecuteSchedule(EvalContext *ctx, const PackageManager *schedule, PackageAction action)
 {
-    PackageItem *pi;
-    PackageManager *pm;
-    int size, estimated_size, retval = true, verify = false;
-    char *command_string = NULL;
-    Promise *pp;
-    int ok;
+    bool verify = false;
 
-    for (pm = schedule; pm != NULL; pm = pm->next)
+    for (const PackageManager *pm = schedule; pm != NULL; pm = pm->next)
     {
         if (pm->action != action)
         {
@@ -1988,11 +1989,11 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
             continue;
         }
 
-        estimated_size = 0;
+        size_t estimated_size = 0;
 
-        for (pi = pm->pack_list; pi != NULL; pi = pi->next)
+        for (const PackageItem *pi = pm->pack_list; pi != NULL; pi = pi->next)
         {
-            size = strlen(pi->name) + strlen("  ");
+            size_t size = strlen(pi->name) + strlen("  ");
 
             switch (pm->policy)
             {
@@ -2014,8 +2015,9 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
             }
         }
 
-        pp = pm->pack_list->pp;
+        const Promise *const pp = pm->pack_list->pp;
         Attributes a = GetPackageAttributes(ctx, pp);
+        char *command_string = NULL;
 
         switch (action)
         {
@@ -2025,7 +2027,7 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
 
             if (a.packages.package_add_command == NULL)
             {
-                cfPS_HELPER_0ARG(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Package add command undefined");
+                ProgrammingError("Package add command undefined");
                 return false;
             }
 
@@ -2041,7 +2043,7 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
 
             if (a.packages.package_delete_command == NULL)
             {
-                cfPS_HELPER_0ARG(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Package delete command undefined");
+                ProgrammingError("Package delete command undefined");
                 return false;
             }
 
@@ -2057,7 +2059,7 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
 
             if (a.packages.package_update_command == NULL)
             {
-                cfPS_HELPER_0ARG(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Package update command undefined");
+                ProgrammingError("Package update command undefined");
                 return false;
             }
 
@@ -2074,7 +2076,7 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
 
             if (a.packages.package_verify_command == NULL)
             {
-                cfPS_HELPER_0ARG(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Package verify command undefined");
+                ProgrammingError("Package verify command undefined");
                 return false;
             }
 
@@ -2085,7 +2087,7 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
             break;
 
         default:
-            cfPS_HELPER_0ARG(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Unknown action attempted");
+            ProgrammingError("Unknown action attempted");
             return false;
         }
 
@@ -2095,7 +2097,12 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
         {
             *(command_string + strlen(command_string) - 1) = '\0';
             Log(LOG_LEVEL_VERBOSE, "Command does not allow arguments");
-            if (ExecPackageCommand(ctx, command_string, verify, true, a, pp, result))
+            PromiseResult result = PROMISE_RESULT_NOOP;
+
+            EvalContextStackPushPromiseFrame(ctx, pp, false);
+            EvalContextStackPushPromiseIterationFrame(ctx, 0, NULL);
+
+            if (ExecPackageCommand(ctx, command_string, verify, true, a, pp, &result))
             {
                 Log(LOG_LEVEL_VERBOSE, "Package schedule execution ok (outcome cannot be promised by cf-agent)");
             }
@@ -2103,6 +2110,11 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
             {
                 Log(LOG_LEVEL_ERR, "Package schedule execution failed");
             }
+
+            EvalContextStackPopFrame(ctx);
+            EvalContextStackPopFrame(ctx);
+
+            EvalContextLogPromiseIterationOutcome(ctx, pp, result);
         }
         else
         {
@@ -2114,10 +2126,10 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
             {
             case PACKAGE_ACTION_POLICY_INDIVIDUAL:
 
-                for (pi = pm->pack_list; pi != NULL; pi = pi->next)
+                for (const PackageItem *pi = pm->pack_list; pi != NULL; pi = pi->next)
                 {
-                    pp = pi->pp;
-                    Attributes a = GetPackageAttributes(ctx, pp);
+                    const Promise *const ppi = pi->pp;
+                    Attributes a = GetPackageAttributes(ctx, ppi);
 
                     char *offset = command_string + strlen(command_string);
 
@@ -2138,7 +2150,11 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
                         strcat(offset, pi->name);
                     }
 
-                    if (ExecPackageCommand(ctx, command_string, verify, true, a, pp, result))
+                    PromiseResult result = PROMISE_RESULT_NOOP;
+                    EvalContextStackPushPromiseFrame(ctx, pp, false);
+                    EvalContextStackPushPromiseIterationFrame(ctx, 0, NULL);
+
+                    if (ExecPackageCommand(ctx, command_string, verify, true, a, ppi, &result))
                     {
                         Log(LOG_LEVEL_VERBOSE,
                             "Package schedule execution ok for '%s' (outcome cannot be promised by cf-agent)",
@@ -2153,61 +2169,75 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
                         Log(LOG_LEVEL_ERR, "Package schedule execution failed for '%s'", pi->name);
                     }
 
+                    EvalContextStackPopFrame(ctx);
+                    EvalContextStackPopFrame(ctx);
+
+                    EvalContextLogPromiseIterationOutcome(ctx, ppi, result);
+
                     *offset = '\0';
                 }
 
                 break;
 
             case PACKAGE_ACTION_POLICY_BULK:
-
-                for (pi = pm->pack_list; pi != NULL; pi = pi->next)
                 {
-                    if (pi->name)
+                    for (const PackageItem *pi = pm->pack_list; pi != NULL; pi = pi->next)
                     {
-                        char *offset = command_string + strlen(command_string);
-
-                        if (a.packages.package_file_repositories &&
-                            (action == PACKAGE_ACTION_ADD ||
-                             action == PACKAGE_ACTION_UPDATE))
+                        if (pi->name)
                         {
-                            const char *sp = PrefixLocalRepository(a.packages.package_file_repositories, pi->name);
-                            if (sp != NULL)
+                            char *offset = command_string + strlen(command_string);
+
+                            if (a.packages.package_file_repositories &&
+                                (action == PACKAGE_ACTION_ADD ||
+                                 action == PACKAGE_ACTION_UPDATE))
                             {
-                                strcpy(offset, sp);
+                                const char *sp = PrefixLocalRepository(a.packages.package_file_repositories, pi->name);
+                                if (sp != NULL)
+                                {
+                                    strcpy(offset, sp);
+                                }
+                                else
+                                {
+                                    break;
+                                }
                             }
                             else
                             {
-                                break;
+                                strcpy(offset, pi->name);
                             }
+
+                            strcat(command_string, " ");
+                        }
+                    }
+
+                    PromiseResult result = PROMISE_RESULT_NOOP;
+                    EvalContextStackPushPromiseFrame(ctx, pp, false);
+                    EvalContextStackPushPromiseIterationFrame(ctx, 0, NULL);
+
+                    bool ok = ExecPackageCommand(ctx, command_string, verify, true, a, pp, &result);
+
+                    for (const PackageItem *pi = pm->pack_list; pi != NULL; pi = pi->next)
+                    {
+                        if (ok)
+                        {
+                            Log(LOG_LEVEL_VERBOSE,
+                                "Bulk package schedule execution ok for '%s' (outcome cannot be promised by cf-agent)",
+                                  pi->name);
+                        }
+                        else if (0 == strncmp(pi->name, PACKAGE_IGNORED_CFE_INTERNAL, strlen(PACKAGE_IGNORED_CFE_INTERNAL)))
+                        {
+                            Log(LOG_LEVEL_DEBUG, "Ignoring outcome for special package '%s'", pi->name);
                         }
                         else
                         {
-                            strcpy(offset, pi->name);
+                            Log(LOG_LEVEL_ERR, "Bulk package schedule execution failed somewhere - unknown outcome for '%s'",
+                                  pi->name);
                         }
+                    }
 
-                        strcat(command_string, " ");
-                    }
-                }
-
-                ok = ExecPackageCommand(ctx, command_string, verify, true, a, pp, result);
-
-                for (pi = pm->pack_list; pi != NULL; pi = pi->next)
-                {
-                    if (ok)
-                    {
-                        Log(LOG_LEVEL_VERBOSE,
-                            "Bulk package schedule execution ok for '%s' (outcome cannot be promised by cf-agent)",
-                              pi->name);
-                    }
-                    else if (0 == strncmp(pi->name, PACKAGE_IGNORED_CFE_INTERNAL, strlen(PACKAGE_IGNORED_CFE_INTERNAL)))
-                    {
-                        Log(LOG_LEVEL_DEBUG, "Ignoring outcome for special package '%s'", pi->name);
-                    }
-                    else
-                    {
-                        Log(LOG_LEVEL_ERR, "Bulk package schedule execution failed somewhere - unknown outcome for '%s'",
-                              pi->name);
-                    }
+                    EvalContextStackPopFrame(ctx);
+                    EvalContextStackPopFrame(ctx);
+                    EvalContextLogPromiseIterationOutcome(ctx, pp, result);
                 }
 
                 break;
@@ -2216,11 +2246,11 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
                 break;
             }
         }
-    }
 
-    if (command_string)
-    {
-        free(command_string);
+        if (command_string)
+        {
+            free(command_string);
+        }
     }
 
 /* We have performed some modification operation on packages, our cache is invalid */
@@ -2229,18 +2259,12 @@ static int ExecuteSchedule(EvalContext *ctx, PackageManager *schedule, PackageAc
         InvalidateSoftwareCache();
     }
 
-    return retval;
+    return true;
 }
 
-static int ExecutePatch(EvalContext *ctx, PackageManager *schedule, PackageAction action, PromiseResult *result)
+static bool ExecutePatch(EvalContext *ctx, const PackageManager *schedule, PackageAction action)
 {
-    PackageItem *pi;
-    PackageManager *pm;
-    int size, estimated_size, retval = true, verify = false;
-    char *command_string = NULL;
-    Promise *pp;
-
-    for (pm = schedule; pm != NULL; pm = pm->next)
+    for (const PackageManager *pm = schedule; pm != NULL; pm = pm->next)
     {
         if (pm->action != action)
         {
@@ -2252,16 +2276,15 @@ static int ExecutePatch(EvalContext *ctx, PackageManager *schedule, PackageActio
             continue;
         }
 
-        estimated_size = 0;
+        size_t estimated_size = 0;
 
-        for (pi = pm->patch_list; pi != NULL; pi = pi->next)
+        for (const PackageItem *pi = pm->patch_list; pi != NULL; pi = pi->next)
         {
-            size = strlen(pi->name) + strlen("  ");
+            size_t size = strlen(pi->name) + strlen("  ");
 
             switch (pm->policy)
             {
             case PACKAGE_ACTION_POLICY_INDIVIDUAL:
-
                 if (size > estimated_size)
                 {
                     estimated_size = size;
@@ -2269,7 +2292,6 @@ static int ExecutePatch(EvalContext *ctx, PackageManager *schedule, PackageActio
                 break;
 
             case PACKAGE_ACTION_POLICY_BULK:
-
                 estimated_size += size;
                 break;
 
@@ -2278,7 +2300,8 @@ static int ExecutePatch(EvalContext *ctx, PackageManager *schedule, PackageActio
             }
         }
 
-        pp = pm->patch_list->pp;
+        char *command_string = NULL;
+        const Promise *const pp = pm->patch_list->pp;
         Attributes a = GetPackageAttributes(ctx, pp);
 
         switch (action)
@@ -2289,8 +2312,7 @@ static int ExecutePatch(EvalContext *ctx, PackageManager *schedule, PackageActio
 
             if (a.packages.package_patch_command == NULL)
             {
-                cfPS_HELPER_0ARG(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Package patch command undefined");
-                *result = PromiseResultUpdate_HELPER(pp, *result, PROMISE_RESULT_FAIL);
+                ProgrammingError("Package patch command undefined");
                 return false;
             }
 
@@ -2299,8 +2321,7 @@ static int ExecutePatch(EvalContext *ctx, PackageManager *schedule, PackageActio
             break;
 
         default:
-            cfPS_HELPER_0ARG(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Unknown action attempted");
-            *result = PromiseResultUpdate_HELPER(pp, *result, PROMISE_RESULT_FAIL);
+            ProgrammingError("Unknown action attempted");
             return false;
         }
 
@@ -2310,7 +2331,12 @@ static int ExecutePatch(EvalContext *ctx, PackageManager *schedule, PackageActio
         {
             command_string[strlen(command_string) - 1] = '\0';
             Log(LOG_LEVEL_VERBOSE, "Command does not allow arguments");
-            if (ExecPackageCommand(ctx, command_string, verify, true, a, pp, result))
+
+            PromiseResult result = PROMISE_RESULT_NOOP;
+            EvalContextStackPushPromiseFrame(ctx, pp, false);
+            EvalContextStackPushPromiseIterationFrame(ctx, 0, NULL);
+
+            if (ExecPackageCommand(ctx, command_string, false, true, a, pp, &result))
             {
                 Log(LOG_LEVEL_VERBOSE, "Package patching seemed to succeed (outcome cannot be promised by cf-agent)");
             }
@@ -2318,6 +2344,10 @@ static int ExecutePatch(EvalContext *ctx, PackageManager *schedule, PackageActio
             {
                 Log(LOG_LEVEL_ERR, "Package patching failed");
             }
+
+            EvalContextStackPopFrame(ctx);
+            EvalContextStackPopFrame(ctx);
+            EvalContextLogPromiseIterationOutcome(ctx, pp, result);
         }
         else
         {
@@ -2327,17 +2357,18 @@ static int ExecutePatch(EvalContext *ctx, PackageManager *schedule, PackageActio
 
             switch (pm->policy)
             {
-                int ok;
-
             case PACKAGE_ACTION_POLICY_INDIVIDUAL:
-
-                for (pi = pm->patch_list; pi != NULL; pi = pi->next)
+                for (const PackageItem *pi = pm->patch_list; pi != NULL; pi = pi->next)
                 {
                     char *offset = command_string + strlen(command_string);
 
                     strcat(offset, pi->name);
 
-                    if (ExecPackageCommand(ctx, command_string, verify, true, a, pp, result))
+                    PromiseResult result = PROMISE_RESULT_NOOP;
+                    EvalContextStackPushPromiseFrame(ctx, pp, false);
+                    EvalContextStackPushPromiseIterationFrame(ctx, 0, NULL);
+
+                    if (ExecPackageCommand(ctx, command_string, false, true, a, pp, &result))
                     {
                         Log(LOG_LEVEL_VERBOSE,
                             "Package schedule execution ok for '%s' (outcome cannot be promised by cf-agent)",
@@ -2352,14 +2383,17 @@ static int ExecutePatch(EvalContext *ctx, PackageManager *schedule, PackageActio
                         Log(LOG_LEVEL_ERR, "Package schedule execution failed for '%s'", pi->name);
                     }
 
+                    EvalContextStackPopFrame(ctx);
+                    EvalContextStackPopFrame(ctx);
+                    EvalContextLogPromiseIterationOutcome(ctx, pp, result);
+
                     *offset = '\0';
                 }
 
                 break;
 
             case PACKAGE_ACTION_POLICY_BULK:
-
-                for (pi = pm->patch_list; pi != NULL; pi = pi->next)
+                for (const PackageItem *pi = pm->patch_list; pi != NULL; pi = pi->next)
                 {
                     if (pi->name)
                     {
@@ -2368,9 +2402,13 @@ static int ExecutePatch(EvalContext *ctx, PackageManager *schedule, PackageActio
                     }
                 }
 
-                ok = ExecPackageCommand(ctx, command_string, verify, true, a, pp, result);
+                PromiseResult result = PROMISE_RESULT_NOOP;
+                EvalContextStackPushPromiseFrame(ctx, pp, false);
+                EvalContextStackPushPromiseIterationFrame(ctx, 0, NULL);
 
-                for (pi = pm->patch_list; pi != NULL; pi = pi->next)
+                bool ok = ExecPackageCommand(ctx, command_string, false, true, a, pp, &result);
+
+                for (const PackageItem *pi = pm->patch_list; pi != NULL; pi = pi->next)
                 {
                     if (ok)
                     {
@@ -2389,6 +2427,9 @@ static int ExecutePatch(EvalContext *ctx, PackageManager *schedule, PackageActio
                     }
                 }
 
+                EvalContextStackPopFrame(ctx);
+                EvalContextStackPopFrame(ctx);
+                EvalContextLogPromiseIterationOutcome(ctx, pp, result);
                 break;
 
             default:
@@ -2396,20 +2437,20 @@ static int ExecutePatch(EvalContext *ctx, PackageManager *schedule, PackageActio
             }
 
         }
-    }
 
-    if (command_string)
-    {
-        free(command_string);
+        if (command_string)
+        {
+            free(command_string);
+        }
     }
 
 /* We have performed some operation on packages, our cache is invalid */
     InvalidateSoftwareCache();
 
-    return retval;
+    return true;
 }
 
-static PromiseResult ExecutePackageSchedule(EvalContext *ctx, PackageManager *schedule)
+static void ExecutePackageSchedule(EvalContext *ctx, PackageManager *schedule)
 {
     if (LEGACY_OUTPUT)
     {
@@ -2425,44 +2466,36 @@ static PromiseResult ExecutePackageSchedule(EvalContext *ctx, PackageManager *sc
 
     /* Normal ordering */
 
-    PromiseResult result = PROMISE_RESULT_NOOP;
     Log(LOG_LEVEL_VERBOSE, "Deletion schedule...");
-
-    if (!ExecuteSchedule(ctx, schedule, PACKAGE_ACTION_DELETE, &result))
+    if (!ExecuteSchedule(ctx, schedule, PACKAGE_ACTION_DELETE))
     {
         Log(LOG_LEVEL_ERR, "Aborting package schedule");
-        return result;
+        return;
     }
 
     Log(LOG_LEVEL_VERBOSE, "Addition schedule...");
-
-    if (!ExecuteSchedule(ctx, schedule, PACKAGE_ACTION_ADD, &result))
+    if (!ExecuteSchedule(ctx, schedule, PACKAGE_ACTION_ADD))
     {
-        return result;
+        return;
     }
 
     Log(LOG_LEVEL_VERBOSE, "Update schedule...");
-
-    if (!ExecuteSchedule(ctx, schedule, PACKAGE_ACTION_UPDATE, &result))
+    if (!ExecuteSchedule(ctx, schedule, PACKAGE_ACTION_UPDATE))
     {
-        return result;
+        return;
     }
 
     Log(LOG_LEVEL_VERBOSE, "Patch schedule...");
-
-    if (!ExecutePatch(ctx, schedule, PACKAGE_ACTION_PATCH, &result))
+    if (!ExecutePatch(ctx, schedule, PACKAGE_ACTION_PATCH))
     {
-        return result;
+        return;
     }
 
     Log(LOG_LEVEL_VERBOSE, "Verify schedule...");
-
-    if (!ExecuteSchedule(ctx, schedule, PACKAGE_ACTION_VERIFY, &result))
+    if (!ExecuteSchedule(ctx, schedule, PACKAGE_ACTION_VERIFY))
     {
-        return result;
+        return;
     }
-
-    return result;
 }
 
 void ExecuteScheduledPackages(EvalContext *ctx)
@@ -2570,10 +2603,10 @@ const char *PrefixLocalRepository(const Rlist *repositories, const char *package
     return NULL;
 }
 
-int ExecPackageCommand(EvalContext *ctx, char *command, int verify, int setCmdClasses, Attributes a,
-                       const Promise *pp, PromiseResult *result)
+bool ExecPackageCommand(EvalContext *ctx, char *command, int verify, int setCmdClasses, Attributes a,
+                        const Promise *pp, PromiseResult *result)
 {
-    int retval = true;
+    bool retval = true;
     char lineSafe[CF_BUFSIZE], *cmd;
     FILE *pfp;
     int packmanRetval = 0;

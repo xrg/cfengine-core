@@ -121,6 +121,11 @@ bool ClassTablePut(ClassTable *table, const char *ns, const char *name, bool is_
         ClassInit(cls, ns, name, is_soft, scope);
         // NULL tags are OK (but you want to give good tags, don't you?)
         cls->tags = StringSetFromString(tags, ',');
+        if (!is_soft && !StringSetContains(cls->tags, "hardclass"))
+        {
+            StringSetAdd(cls->tags, xstrdup("hardclass"));
+        }
+
         return RBTreePut(table->classes, (void *)cls->hash, cls);
     }
 }
@@ -229,9 +234,14 @@ ClassRef ClassRefParse(const char *expr)
     else
     {
         char *ns = NULL;
-        if (strncmp("default", expr, name_start - expr) != 0)
+        if ((name_start - expr) > 0)
         {
             ns = xstrndup(expr, name_start - expr);
+        }
+        else
+        {
+            // this would be invalid syntax
+            ns = xstrdup("");
         }
         char *name = xstrdup(name_start + 1);
         return (ClassRef) { .ns = ns, .name = name };
@@ -248,6 +258,17 @@ char *ClassRefToString(const char *ns, const char *name)
     {
         return StringConcatenate(3, ns, ":", name);
     }
+}
+
+bool ClassRefIsQualified(ClassRef ref)
+{
+    return ref.ns != NULL;
+}
+
+void ClassRefQualify(ClassRef *ref, const char *ns)
+{
+    free(ref->ns);
+    ref->ns = xstrdup(ns);
 }
 
 void ClassRefDestroy(ClassRef ref)

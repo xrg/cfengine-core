@@ -78,6 +78,11 @@ typedef struct
         {
             char *bootstrap_policy_server;
         } agent;
+        struct
+        {
+            /* Time of the last validated_at timestamp seen. */
+            time_t last_validated_at;
+        } daemon;                                     /* execd, serverd etc */
     } agent_specific;
 
 } GenericAgentConfig;
@@ -92,10 +97,10 @@ void GenericAgentInitialize(EvalContext *ctx, GenericAgentConfig *config);
 ENTERPRISE_VOID_FUNC_1ARG_DECLARE(void, GenericAgentWriteVersion, Writer *, w);
 void GenericAgentWriteHelp(Writer *w, const char *comp, const struct option options[], const char *const hints[], bool accepts_file_argument);
 bool GenericAgentArePromisesValid(const GenericAgentConfig *config);
-time_t ReadTimestampFromPolicyValidatedMasterfiles(const GenericAgentConfig *config, const char *maybe_dirname);
+time_t ReadTimestampFromPolicyValidatedFile(const GenericAgentConfig *config, const char *maybe_dirname);
 
 bool GeneratePolicyReleaseID(char release_id_out[GENERIC_AGENT_CHECKSUM_SIZE], const char *dirname);
-bool GenericAgentIsPolicyReloadNeeded(const GenericAgentConfig *config, const Policy *policy);
+bool GenericAgentIsPolicyReloadNeeded(GenericAgentConfig *config);
 
 void CloseLog(void);
 Seq *ControlBodyConstraints(const Policy *policy, AgentType agent);
@@ -114,7 +119,7 @@ void GenericAgentConfigApply(EvalContext *ctx, const GenericAgentConfig *config)
 
 void GenericAgentConfigSetInputFile(GenericAgentConfig *config, const char *inputdir, const char *input_file);
 void GenericAgentConfigSetBundleSequence(GenericAgentConfig *config, const Rlist *bundlesequence);
-bool GenericAgentTagReleaseDirectory(const GenericAgentConfig *config, const char *dirname);
+bool GenericAgentTagReleaseDirectory(const GenericAgentConfig *config, const char *dirname, bool write_validated, bool write_release);
 
 void GetReleaseIdFile(const char *base_path, char *filename, size_t max_size);
 extern uint32_t bwlimit_kbytes; /* from libcfnet/net.c */

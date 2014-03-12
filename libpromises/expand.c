@@ -43,6 +43,7 @@
 #include <conversion.h>
 #include <verify_classes.h>
 
+#define CF_MAPPEDLIST '#'
 
 static PromiseResult ExpandPromiseAndDo(EvalContext *ctx, const Promise *pp,
                                         Rlist *lists, Rlist *containers,
@@ -118,6 +119,21 @@ PromiseResult ExpandPromise(EvalContext *ctx, const Promise *pp,
                             PromiseActuator *ActOnPromise, void *param)
 {
     Log(LOG_LEVEL_VERBOSE, "Evaluating promise '%s'", pp->promiser);
+    if (!IsDefinedClass(ctx, pp->classes))
+    {
+        if (LEGACY_OUTPUT)
+        {
+            Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
+            Log(LOG_LEVEL_VERBOSE, "Skipping whole next promise (%s), as context %s is not relevant", pp->promiser,
+                  pp->classes);
+            Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
+        }
+        else
+        {
+            Log(LOG_LEVEL_VERBOSE, "Skipping next promise '%s', as context '%s' is not relevant", pp->promiser, pp->classes);
+        }
+        return PROMISE_RESULT_SKIPPED;
+    }
 
     Rlist *lists = NULL;
     Rlist *scalars = NULL;
@@ -181,13 +197,41 @@ static PromiseResult ExpandPromiseAndDo(EvalContext *ctx, const Promise *pp,
         }
 
         const Promise *pexp = EvalContextStackPushPromiseIterationFrame(ctx, i, iter_ctx);
-        PromiseResult iteration_result = ActOnPromise(ctx, pexp, param);
-        result = PromiseResultUpdate(result, iteration_result);
 
-        if (strcmp(pp->parent_promise_type->name, "vars") == 0 || strcmp(pp->parent_promise_type->name, "meta") == 0)
+        PromiseResult iteration_result = PROMISE_RESULT_NOOP;
+        char *excluding_class_expr = NULL;
+        if (MissingDependencies(ctx, pexp))
         {
-            VerifyVarPromise(ctx, pexp, true);
+            iteration_result = PROMISE_RESULT_SKIPPED;
         }
+        else if (VarClassExcluded(ctx, pexp, &excluding_class_expr))
+        {
+            if (LEGACY_OUTPUT)
+            {
+                Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
+                Log(LOG_LEVEL_VERBOSE, "Skipping whole next promise (%s), as ifvarclass %s is not relevant", pp->promiser, excluding_class_expr ? excluding_class_expr : pp->classes);
+                Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
+            }
+            else
+            {
+                Log(LOG_LEVEL_VERBOSE, "Skipping next promise '%s', as ifvarclass '%s' is not relevant", pp->promiser, excluding_class_expr ? excluding_class_expr : pp->classes);
+            }
+
+            iteration_result = PROMISE_RESULT_SKIPPED;
+        }
+        else
+        {
+            iteration_result = ActOnPromise(ctx, pexp, param);
+
+            if (strcmp(pp->parent_promise_type->name, "vars") == 0 || strcmp(pp->parent_promise_type->name, "meta") == 0)
+            {
+                VerifyVarPromise(ctx, pexp, true);
+            }
+        }
+
+        NotifyDependantPromises(ctx, pexp, iteration_result);
+
+        result = PromiseResultUpdate(result, iteration_result);
 
         EvalContextStackPopFrame(ctx);
     }
@@ -640,94 +684,44 @@ Rval ExpandBundleReference(EvalContext *ctx,
     return RvalNew(NULL, RVAL_TYPE_NOPROMISEE);
 }
 
-
 bool ExpandScalar(const EvalContext *ctx,
                   const char *ns, const char *scope, const char *string,
                   Buffer *out)
 {
     assert(string);
-
-    bool returnval = true;
-
     if (strlen(string) == 0)
     {
-        return false;
+        return true;
     }
 
-    // TODO: cleanup, optimize this mess
-    Buffer *var = BufferNew();
+    bool fully_expanded = true;
+
     Buffer *current_item = BufferNew();
-    Buffer *temp = BufferNew();
-    for (const char *sp = string; /* No exit */ ; sp++)     /* check for varitems */
+    for (const char *sp = string; *sp != '\0'; sp++)
     {
-        char varstring = false;
-        size_t increment = 0;
-
-        if (*sp == '\0')
-        {
-            break;
-        }
-
         BufferClear(current_item);
         ExtractScalarPrefix(current_item, sp, strlen(sp));
 
         BufferAppend(out, BufferData(current_item), BufferSize(current_item));
         sp += BufferSize(current_item);
-
         if (*sp == '\0')
         {
             break;
         }
 
-        BufferClear(var);
-        if (*sp == '$')
-        {
-            switch (*(sp + 1))
-            {
-            case '(':
-                varstring = ')';
-                ExtractScalarReference(var, sp, strlen(sp), false);
-                if (BufferSize(var) == 0)
-                {
-                    BufferAppendChar(out, '$');
-                    continue;
-                }
-                break;
-
-            case '{':
-                varstring = '}';
-                ExtractScalarReference(var, sp, strlen(sp), false);
-                if (BufferSize(var) == 0)
-                {
-                    BufferAppendChar(out, '$');
-                    continue;
-                }
-                break;
-
-            default:
-                BufferAppendChar(out, '$');
-                continue;
-            }
-        }
-
         BufferClear(current_item);
-        {
-            BufferClear(temp);
-            ExtractScalarReference(temp, sp, strlen(sp), true);
+        char varstring = sp[1];
+        ExtractScalarReference(current_item,  sp, strlen(sp), true);
+        sp += BufferSize(current_item) + 2;
 
-            if (IsCf3VarString(BufferData(temp)))
-            {
-                ExpandScalar(ctx, ns, scope, BufferData(temp), current_item);
-            }
-            else
-            {
-                BufferAppend(current_item, BufferData(temp), BufferSize(temp));
-            }
+        if (IsCf3VarString(BufferData(current_item)))
+        {
+            Buffer *temp = BufferCopy(current_item);
+            BufferClear(current_item);
+            ExpandScalar(ctx, ns, scope, BufferData(temp), current_item);
+            BufferDestroy(temp);
         }
 
-        increment = BufferSize(var) - 1;
-
-        char name[CF_MAXVARSIZE] = "";
         if (!IsExpandable(BufferData(current_item)))
         {
             DataType type = CF_DATA_TYPE_NONE;
@@ -740,82 +734,39 @@ bool ExpandScalar(const EvalContext *ctx,
 
             if (value)
             {
-                switch (type)
+                switch (DataTypeToRvalType(type))
                 {
-                case CF_DATA_TYPE_STRING:
-                case CF_DATA_TYPE_INT:
-                case CF_DATA_TYPE_REAL:
+                case RVAL_TYPE_SCALAR:
                     BufferAppendString(out, value);
-                    break;
+                    continue;
 
-                case CF_DATA_TYPE_STRING_LIST:
-                case CF_DATA_TYPE_INT_LIST:
-                case CF_DATA_TYPE_REAL_LIST:
-                case CF_DATA_TYPE_NONE:
-                    if (varstring == '}')
-                    {
-                        BufferAppendF(out, "${%s}", BufferData(current_item));
-                    }
-                    else
-                    {
-                        BufferAppendF(out, "$(%s)", BufferData(current_item));
-                    }
-                    returnval = false;
-                    break;
-
-                case CF_DATA_TYPE_CONTAINER:
+                case RVAL_TYPE_CONTAINER:
                     if (JsonGetElementType((JsonElement*)value) == JSON_ELEMENT_TYPE_PRIMITIVE)
                     {
                         BufferAppendString(out, JsonPrimitiveGetAsString((JsonElement*)value));
-                    }
-                    else
-                    {
-                        if (varstring == '}')
-                        {
-                            BufferAppendF(out, "${%s}", BufferData(current_item));
-                        }
-                        else
-                        {
-                            BufferAppendF(out, "$(%s)", BufferData(current_item));
-                        }
-                        returnval = false;
+                        continue;
                     }
                     break;
 
                 default:
-                    Log(LOG_LEVEL_DEBUG, "Returning Unknown Scalar ('%s' => '%s')", string, BufferData(out));
-                    BufferDestroy(var);
-                    BufferDestroy(current_item);
-                    BufferDestroy(temp);
-                    return false;
-
+                    break;
                 }
-            }
-            else
-            {
-                if (varstring == '}')
-                {
-                    snprintf(name, CF_MAXVARSIZE, "${%s}", BufferData(current_item));
-                }
-                else
-                {
-                    snprintf(name, CF_MAXVARSIZE, "$(%s)", BufferData(current_item));
-                }
-
-                BufferAppend(out, name, strlen(name));
-                returnval = false;
             }
         }
 
-        sp += increment;
-        BufferClear(current_item);
+        if (varstring == '{')
+        {
+            BufferAppendF(out, "${%s}", BufferData(current_item));
+        }
+        else
+        {
+            BufferAppendF(out, "$(%s)", BufferData(current_item));
+        }
     }
 
-    BufferDestroy(var);
     BufferDestroy(current_item);
-    BufferDestroy(temp);
 
-    return returnval;
+    return fully_expanded;
 }
 
 /*********************************************************************/
@@ -990,24 +941,6 @@ static void ResolveCommonClassPromises(EvalContext *ctx, PromiseType *pt)
     for (size_t i = 0; i < SeqLength(pt->promises); i++)
     {
         Promise *pp = SeqAt(pt->promises, i);
-
-        char *sp = NULL;
-        if (VarClassExcluded(ctx, pp, &sp))
-        {
-            if (LEGACY_OUTPUT)
-            {
-                Log(LOG_LEVEL_VERBOSE, "\n");
-                Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
-                Log(LOG_LEVEL_VERBOSE, "Skipping whole next promise (%s), as var-context %s is not relevant", pp->promiser, sp);
-                Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
-            }
-            else
-            {
-                Log(LOG_LEVEL_VERBOSE, "Skipping next promise '%s', as var-context '%s' is not relevant", pp->promiser, sp);
-            }
-            continue;
-        }
-
         ExpandPromise(ctx, pp, VerifyClassPromise, NULL);
     }
     EvalContextStackPopFrame(ctx);

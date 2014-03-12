@@ -616,31 +616,6 @@ static PromiseResult KeepServerPromise(EvalContext *ctx, const Promise *pp, ARG_
 {
     assert(!param);
 
-    if (!IsDefinedClass(ctx, pp->classes))
-    {
-        Log(LOG_LEVEL_VERBOSE, "Skipping whole promise, as context is %s", pp->classes);
-        return PROMISE_RESULT_NOOP;
-    }
-
-    {
-        char *cls = NULL;
-        if (VarClassExcluded(ctx, pp, &cls))
-        {
-            if (LEGACY_OUTPUT)
-            {
-                Log(LOG_LEVEL_VERBOSE, "\n");
-                Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
-                Log(LOG_LEVEL_VERBOSE, "Skipping whole next promise (%s), as var-context %s is not relevant", pp->promiser, cls);
-                Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
-            }
-            else
-            {
-                Log(LOG_LEVEL_VERBOSE, "Skipping next promise '%s', as var-context '%s' is not relevant", pp->promiser, cls);
-            }
-            return PROMISE_RESULT_NOOP;
-        }
-    }
-
     if (strcmp(pp->parent_promise_type->name, "classes") == 0)
     {
         return VerifyClassPromise(ctx, pp, NULL);
@@ -947,7 +922,7 @@ static void KeepFileAccessPromise(const EvalContext *ctx, const Promise *pp)
                 "Path does not exist, it's added as-is in access rules: %s",
                 path);
             Log(LOG_LEVEL_INFO,
-                "WARNING: that means that (not) having a trailing slash defines if it's a directory!");
+                "WARNING: this means that (not) having a trailing slash defines if it's (not) a directory!");
         }
     }
     else                                 /* file exists, path canonicalised */

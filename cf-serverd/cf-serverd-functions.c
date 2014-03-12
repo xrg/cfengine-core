@@ -127,6 +127,7 @@ static void KeepHardClasses(EvalContext *ctx)
 #ifdef HAVE_AVAHI_CLIENT_CLIENT_H
 #ifdef HAVE_AVAHI_COMMON_ADDRESS_H
 static int GenerateAvahiConfig(const char *path);
+#define SUPPORT_AVAHI_CONFIG
 #endif
 #endif
 
@@ -153,6 +154,7 @@ GenericAgentConfig *CheckOpts(int argc, char **argv)
         case 'd':
             LogSetGlobalLevel(LOG_LEVEL_DEBUG);
             NO_FORK = true;
+            break;
 
         case 'K':
             config->ignore_locks = true;
@@ -219,9 +221,9 @@ GenericAgentConfig *CheckOpts(int argc, char **argv)
         case 'x':
             Log(LOG_LEVEL_ERR, "Self-diagnostic functionality is retired.");
             exit(EXIT_SUCCESS);
+
         case 'A':
-#ifdef HAVE_AVAHI_CLIENT_CLIENT_H
-#ifdef HAVE_AVAHI_COMMON_ADDRESS_H
+#ifdef SUPPORT_AVAHI_CONFIG
             Log(LOG_LEVEL_NOTICE, "Generating Avahi configuration file.");
             if (GenerateAvahiConfig("/etc/avahi/services/cfengine-hub.service") != 0)
             {
@@ -229,10 +231,9 @@ GenericAgentConfig *CheckOpts(int argc, char **argv)
             }
             cf_popen("/etc/init.d/avahi-daemon restart", "r", true);
             Log(LOG_LEVEL_NOTICE, "Avahi configuration file generated successfuly.");
-            exit(EXIT_SUCCESS);
-#endif
-#endif
+#else
             Log(LOG_LEVEL_ERR, "Generating avahi configuration can only be done when avahi-daemon and libavahi are installed on the machine.");
+#endif
             exit(EXIT_SUCCESS);
 
         case 'C':
@@ -249,7 +250,6 @@ GenericAgentConfig *CheckOpts(int argc, char **argv)
                 FileWriterDetach(w);
             }
             exit(EXIT_FAILURE);
-
         }
     }
 
@@ -277,7 +277,6 @@ void StartServer(EvalContext *ctx, Policy **policy, GenericAgentConfig *config)
     fd_set rset;
     int ret_val;
     CfLock thislock;
-    time_t last_policy_reload = 0;
     extern int COLLECT_WINDOW;
 
     struct sockaddr_storage cin;
@@ -324,49 +323,48 @@ void StartServer(EvalContext *ctx, Policy **policy, GenericAgentConfig *config)
         Log(LOG_LEVEL_VERBOSE, "Listening for connections ...");
     }
 
-#ifdef __MINGW32__
-
     if (!NO_FORK)
     {
-        Log(LOG_LEVEL_VERBOSE, "Windows does not support starting processes in the background - starting in foreground");
-    }
+#ifdef __MINGW32__
+
+        Log(LOG_LEVEL_VERBOSE,
+            "Windows does not support starting processes in the background - running in foreground");
 
 #else /* !__MINGW32__ */
 
-    if ((!NO_FORK) && (fork() != 0))
-    {
-        _exit(EXIT_SUCCESS);
-    }
+        if (fork() != 0)
+        {
+            _exit(EXIT_SUCCESS);
+        }
 
-    if (!NO_FORK)
-    {
         ActAsDaemon();
+#endif /* !__MINGW32__ */
     }
 
+#ifndef __MINGW32__
+    /* Close sd on exec, needed for not passing the socket to cf-runagent
+     * spawned commands. */
+    fcntl(sd, F_SETFD, FD_CLOEXEC);
 #endif /* !__MINGW32__ */
 
     WritePID("cf-serverd.pid");
-
-/* Andrew Stribblehill <ads@debian.org> -- close sd on exec */
-#ifndef __MINGW32__
-    fcntl(sd, F_SETFD, FD_CLOEXEC);
-#endif
     CollectCallStart(COLLECT_INTERVAL);
+
+
     while (!IsPendingTermination())
     {
-        /* Note that this loop logic is single threaded, but ACTIVE_THREADS
-           might still change in threads pertaining to service handling */
-
+        /* Note that this loop is executed from main thread only, but
+           ACTIVE_THREADS might still change from connection threads. */
         if (ThreadLock(cft_server_children))
         {
             if (ACTIVE_THREADS == 0)
             {
-                CheckFileChanges(ctx, policy, config, &last_policy_reload);
+                CheckFileChanges(ctx, policy, config);
             }
             ThreadUnlock(cft_server_children);
         }
 
-        // Check whether we have established peering with a hub
+        /* Check whether we have established peering with a hub */
         if (CollectCallHasPending())
         {
             int waiting_queue = 0;
@@ -610,17 +608,17 @@ static void DeleteAuthList(Auth **list, Auth **list_tail)
     *list_tail = NULL;
 }
 
-void CheckFileChanges(EvalContext *ctx, Policy **policy, GenericAgentConfig *config, time_t *last_policy_reload)
+void CheckFileChanges(EvalContext *ctx, Policy **policy, GenericAgentConfig *config)
 {
-    time_t validated_at;
+    Log(LOG_LEVEL_DEBUG, "Checking file updates for input file '%s'",
+        config->input_file);
 
-    Log(LOG_LEVEL_DEBUG, "Checking file updates for input file '%s'", config->input_file);
+    time_t validated_at = ReadTimestampFromPolicyValidatedFile(config, NULL);
 
-    validated_at = ReadTimestampFromPolicyValidatedMasterfiles(config, NULL);
-
-    if (*last_policy_reload < validated_at)
+    if (config->agent_specific.daemon.last_validated_at < validated_at)
     {
-        *last_policy_reload = validated_at;
+        /* Rereading policies now, so update timestamp. */
+        config->agent_specific.daemon.last_validated_at = validated_at;
 
         Log(LOG_LEVEL_VERBOSE, "New promises detected...");
 
@@ -628,50 +626,53 @@ void CheckFileChanges(EvalContext *ctx, Policy **policy, GenericAgentConfig *con
         {
             Log(LOG_LEVEL_INFO, "Rereading policy file '%s'", config->input_file);
 
-            /* Free & reload -- lock this to avoid access errors during reload */
+            /* STEP 1: Free everything */
 
             EvalContextClear(ctx);
 
-            free(SV.allowciphers);
-            SV.allowciphers = NULL;
-
-            DeleteItemList(SV.trustkeylist);
-            DeleteItemList(SV.attackerlist);
-            DeleteItemList(SV.nonattackerlist);
-            DeleteItemList(SV.multiconnlist);
-
-            DeleteAuthList(&SV.admit, &SV.admittail);
-            DeleteAuthList(&SV.deny, &SV.denytail);
-
-            DeleteAuthList(&SV.varadmit, &SV.varadmittail);
-            DeleteAuthList(&SV.vardeny, &SV.vardenytail);
-
-            DeleteAuthList(&SV.roles, &SV.rolestail);
-
             strcpy(VDOMAIN, "undefined.domain");
 
-            SV.trustkeylist = NULL;
-            SV.attackerlist = NULL;
-            SV.nonattackerlist = NULL;
-            SV.multiconnlist = NULL;
+            /* Old ACLs */
+            DeleteAuthList(&SV.admit, &SV.admittail);
+            DeleteAuthList(&SV.deny, &SV.denytail);
+            DeleteAuthList(&SV.varadmit, &SV.varadmittail);
+            DeleteAuthList(&SV.vardeny, &SV.vardenytail);
+            DeleteAuthList(&SV.roles, &SV.rolestail);
 
+            /* body server control ACLs */
+            DeleteItemList(SV.trustkeylist);    SV.trustkeylist = NULL;
+            DeleteItemList(SV.attackerlist);    SV.attackerlist = NULL;
+            DeleteItemList(SV.nonattackerlist); SV.nonattackerlist = NULL;
+            DeleteItemList(SV.multiconnlist);   SV.multiconnlist = NULL;
+
+            /* New ACLs */
             acl_Free(paths_acl);    paths_acl = NULL;
             acl_Free(classes_acl);  classes_acl = NULL;
             acl_Free(vars_acl);     vars_acl = NULL;
             acl_Free(literals_acl); literals_acl = NULL;
             acl_Free(query_acl);    query_acl = NULL;
 
-            StringMapDestroy(SV.path_shortcuts);
-            SV.path_shortcuts = NULL;
+            StringMapDestroy(SV.path_shortcuts);  SV.path_shortcuts = NULL;
+            free(SV.allowciphers);                SV.allowciphers = NULL;
+            PolicyDestroy(*policy);               *policy = NULL;
 
-            PolicyDestroy(*policy);
-            *policy = NULL;
+            /* STEP 2: Set Environment, Parse and Evaluate policy */
 
-            {
-                char *existing_policy_server = ReadPolicyServerFile(GetWorkDir());
-                SetPolicyServer(ctx, existing_policy_server);
-                free(existing_policy_server);
-            }
+            /*
+             * TODO why is this done separately here? What's the difference to
+             * calling the same steps as in cf-serverd.c:main()? Those are:
+             *   GenericAgentConfigApply();     // not here!
+             *   GenericAgentDiscoverContext(); // not here!
+             *   if (GenericAgentCheckPolicy()) // not here!
+             *     policy=GenericAgentLoadPolicy();
+             *   KeepPromises();
+             *   Summarize();
+             */
+
+            char *existing_policy_server = ReadPolicyServerFile(GetWorkDir());
+            SetPolicyServer(ctx, existing_policy_server);
+            free(existing_policy_server);
+
             UpdateLastPolicyUpdateTime(ctx);
 
             DetectEnvironment(ctx);
@@ -701,8 +702,7 @@ ENTERPRISE_VOID_FUNC_1ARG_DEFINE_STUB(void, FprintAvahiCfengineTag, FILE *, fp)
     fprintf(fp,"<name replace-wildcards=\"yes\" >CFEngine Community %s Policy Server on %s </name>\n", Version(), "%h");
 }
 
-#ifdef HAVE_AVAHI_CLIENT_CLIENT_H
-#ifdef HAVE_AVAHI_COMMON_ADDRESS_H
+#ifdef SUPPORT_AVAHI_CONFIG
 static int GenerateAvahiConfig(const char *path)
 {
     FILE *fout;
@@ -731,5 +731,4 @@ static int GenerateAvahiConfig(const char *path)
 
     return 0;
 }
-#endif
-#endif
+#endif /* SUPPORT_AVAHI_CONFIG */

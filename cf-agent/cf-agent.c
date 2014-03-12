@@ -156,7 +156,7 @@ static void CheckAgentAccess(const Rlist *list, const Policy *policy);
 static void KeepControlPromises(EvalContext *ctx, const Policy *policy);
 static PromiseResult KeepAgentPromise(EvalContext *ctx, const Promise *pp, void *param);
 static int NewTypeContext(TypeSequence type);
-static void DeleteTypeContext(EvalContext *ctx, const Bundle *bp, TypeSequence type);
+static void DeleteTypeContext(EvalContext *ctx, TypeSequence type);
 static void ClassBanner(EvalContext *ctx, TypeSequence type);
 static PromiseResult ParallelFindAndVerifyFilesPromises(EvalContext *ctx, const Promise *pp);
 static bool VerifyBootstrap(void);
@@ -1238,15 +1238,20 @@ PromiseResult ScheduleAgentOperations(EvalContext *ctx, const Bundle *bp)
 
                 if (Abort(ctx))
                 {
+                    DeleteTypeContext(ctx, type);
                     EvalContextStackPopFrame(ctx);
-                    DeleteTypeContext(ctx, bp, type);
                     NoteBundleCompliance(bp, save_pr_kept, save_pr_repaired, save_pr_notkept);
                     return result;
                 }
             }
 
+            DeleteTypeContext(ctx, type);
             EvalContextStackPopFrame(ctx);
-            DeleteTypeContext(ctx, bp, type);
+
+            if (type == TYPE_SEQUENCE_CONTEXTS)
+            {
+                BundleResolve(ctx, bp);
+            }
         }
     }
 
@@ -1393,51 +1398,7 @@ static PromiseResult DefaultVarPromise(EvalContext *ctx, const Promise *pp)
 static PromiseResult KeepAgentPromise(EvalContext *ctx, const Promise *pp, ARG_UNUSED void *param)
 {
     assert(param == NULL);
-
-    char *sp = NULL;
     struct timespec start = BeginMeasure();
-
-    if (!IsDefinedClass(ctx, pp->classes))
-    {
-        if (LEGACY_OUTPUT)
-        {
-            Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
-            Log(LOG_LEVEL_VERBOSE, "Skipping whole next promise (%s), as context %s is not relevant", pp->promiser,
-                  pp->classes);
-            Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
-        }
-        else
-        {
-            Log(LOG_LEVEL_VERBOSE, "Skipping next promise '%s', as context '%s' is not relevant", pp->promiser, pp->classes);
-        }
-        return PROMISE_RESULT_SKIPPED;
-    }
-
-    if (EvalContextPromiseIsDone(ctx, pp))
-    {
-        return PROMISE_RESULT_SKIPPED;
-    }
-
-    if (VarClassExcluded(ctx, pp, &sp))
-    {
-        if (LEGACY_OUTPUT)
-        {
-            Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
-            Log(LOG_LEVEL_VERBOSE, "Skipping whole next promise (%s), as var-context %s is not relevant", pp->promiser, sp ? sp : pp->classes);
-            Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
-        }
-        else
-        {
-            Log(LOG_LEVEL_VERBOSE, "Skipping next promise '%s', as var-context '%s' is not relevant", pp->promiser, sp ? sp : pp->classes);    
-        }
-        return PROMISE_RESULT_SKIPPED;
-    }
-
-
-    if (MissingDependencies(ctx, pp))
-    {
-        return PROMISE_RESULT_SKIPPED;
-    }
 
     PromiseResult result = PROMISE_RESULT_NOOP;
 
@@ -1532,12 +1493,10 @@ static int NewTypeContext(TypeSequence type)
         break;
 
     case TYPE_SEQUENCE_FILES:
-
         ConnectionsInit();
         break;
 
     case TYPE_SEQUENCE_PROCESSES:
-
         if (!LoadProcessTable(&PROCESSTABLE))
         {
             Log(LOG_LEVEL_ERR, "Unable to read the process table - cannot keep process promises");
@@ -1546,7 +1505,6 @@ static int NewTypeContext(TypeSequence type)
         break;
 
     case TYPE_SEQUENCE_STORAGE:
-
 #ifndef __MINGW32__                   // TODO: Run if implemented on Windows
         if (SeqLength(GetGlobalMountedFSList()))
         {
@@ -1557,9 +1515,7 @@ static int NewTypeContext(TypeSequence type)
         break;
 
     default:
-
-        /* Initialization is not required */
-        ;
+        break;
     }
 
     return true;
@@ -1567,20 +1523,15 @@ static int NewTypeContext(TypeSequence type)
 
 /*********************************************************************/
 
-static void DeleteTypeContext(EvalContext *ctx, const Bundle *bp, TypeSequence type)
+static void DeleteTypeContext(EvalContext *ctx, TypeSequence type)
 {
     switch (type)
     {
-    case TYPE_SEQUENCE_CONTEXTS:
-        BundleResolve(ctx, bp);
-        break;
-
     case TYPE_SEQUENCE_ENVIRONMENTS:
         DeleteEnvironmentsContext();
         break;
 
     case TYPE_SEQUENCE_FILES:
-
         ConnectionsCleanup();
         break;
 
@@ -1592,17 +1543,12 @@ static void DeleteTypeContext(EvalContext *ctx, const Bundle *bp, TypeSequence t
         break;
 
     case TYPE_SEQUENCE_PACKAGES:
-
         ExecuteScheduledPackages(ctx);
-
         CleanScheduledPackages();
         break;
 
     default:
-
-        /* Deinitialization is not required */
-        ;
-
+        break;
     }
 }
 

@@ -74,7 +74,6 @@ struct EvalContext_
     StringSet *promise_lock_cache;
     StringSet *dependency_handles;
     RBTree *function_cache;
-    PromiseSet *promises_done;
 
     void *enterprise_state;
 
@@ -458,10 +457,10 @@ bool EvalFileResult(const char *file_result, StringSet *leaf_attr)
 
 /*****************************************************************************/
 
-void EvalContextHeapPersistentSave(const char *context, const char *ns, unsigned int ttl_minutes, ContextStatePolicy policy)
+void EvalContextHeapPersistentSave(const char *context, const char *ns, unsigned int ttl_minutes, PersistentClassPolicy policy)
 {
     CF_DB *dbp;
-    CfState state;
+    PersistentClassInfo state;
     time_t now = time(NULL);
     char name[CF_BUFSIZE];
 
@@ -523,7 +522,7 @@ void EvalContextHeapPersistentLoadAll(EvalContext *ctx)
     char *key;
     void *value;
     time_t now = time(NULL);
-    CfState q;
+    PersistentClassInfo q;
 
     Banner("Loading persistent classes");
 
@@ -542,7 +541,7 @@ void EvalContextHeapPersistentLoadAll(EvalContext *ctx)
 
     while (NextDB(dbcp, &key, &ksize, &value, &vsize))
     {
-        memcpy((void *) &q, value, sizeof(CfState));
+        memcpy((void *) &q, value, sizeof(PersistentClassInfo));
 
         Log(LOG_LEVEL_DEBUG, "Found key persistent class key '%s'", key);
 
@@ -669,56 +668,35 @@ void EvalContextHeapAddAbortCurrentBundle(EvalContext *ctx, const char *context,
 
 /*****************************************************************************/
 
-void MarkPromiseHandleDone(EvalContext *ctx, const Promise *pp)
+bool MissingDependencies(EvalContext *ctx, const Promise *pp)
 {
-    char name[CF_BUFSIZE];
-    const char *handle = PromiseGetHandle(pp);
-
-    if (handle == NULL)
-    {
-       return;
-    }
-
-    snprintf(name, CF_BUFSIZE, "%s:%s", PromiseGetNamespace(pp), handle);
-    StringSetAdd(ctx->dependency_handles, xstrdup(name));
-}
-
-/*****************************************************************************/
-
-int MissingDependencies(EvalContext *ctx, const Promise *pp)
-{
-    if (pp == NULL)
+    const Rlist *dependenies = PromiseGetConstraintAsList(ctx, "depends_on", pp);
+    if (RlistIsNullList(dependenies))
     {
         return false;
     }
 
-    char name[CF_BUFSIZE], *d;
-    Rlist *rp, *deps = PromiseGetConstraintAsList(ctx, "depends_on", pp);
-    
-    for (rp = deps; rp != NULL; rp = rp->next)
+    for (const Rlist *rp = PromiseGetConstraintAsList(ctx, "depends_on", pp); rp; rp = rp->next)
     {
-        if (strchr(RlistScalarValue(rp), ':'))
+        if (rp->val.type != RVAL_TYPE_SCALAR)
         {
-            d = RlistScalarValue(rp);
-        }
-        else
-        {
-            snprintf(name, CF_BUFSIZE, "%s:%s", PromiseGetNamespace(pp), RlistScalarValue(rp));
-            d = name;
+            return true;
         }
 
-        if (!StringSetContains(ctx->dependency_handles, d))
+        if (!StringSetContains(ctx->dependency_handles, RlistScalarValue(rp)))
         {
             if (LEGACY_OUTPUT)
             {
                 Log(LOG_LEVEL_VERBOSE, "\n");
                 Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
-                Log(LOG_LEVEL_VERBOSE, "Skipping whole next promise (%s), as promise dependency %s has not yet been kept", pp->promiser, d);
+                Log(LOG_LEVEL_VERBOSE, "Skipping whole next promise (%s), as promise dependency %s has not yet been kept",
+                    pp->promiser, RlistScalarValue(rp));
                 Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
             }
             else
             {
-                Log(LOG_LEVEL_VERBOSE, "Skipping next promise '%s', as promise dependency '%s' has not yet been kept", pp->promiser, d);
+                Log(LOG_LEVEL_VERBOSE, "Skipping next promise '%s', as promise dependency '%s' has not yet been kept",
+                    pp->promiser, RlistScalarValue(rp));
             }
 
             return true;
@@ -784,18 +762,6 @@ static void StackFrameDestroy(StackFrame *frame)
     }
 }
 
-static unsigned PointerHashFn(const void *p, ARG_UNUSED unsigned int seed, unsigned int max)
-{
-    return ((unsigned)(uintptr_t)p) % max;
-}
-
-static bool PointerEqualFn(const void *key1, const void *key2)
-{
-    return key1 == key2;
-}
-
-TYPED_SET_DEFINE(Promise, const Promise *, &PointerHashFn, &PointerEqualFn, NULL)
-
 EvalContext *EvalContextNew(void)
 {
     EvalContext *ctx = xmalloc(sizeof(EvalContext));
@@ -829,7 +795,6 @@ EvalContext *EvalContextNew(void)
 #endif
 
     ctx->promise_lock_cache = StringSetNew();
-    ctx->promises_done = PromiseSetNew();
     ctx->function_cache = RBTreeNew(NULL, NULL, NULL,
                                     NULL, NULL, NULL);
 
@@ -876,8 +841,6 @@ void EvalContextDestroy(EvalContext *ctx)
         VariableTableDestroy(ctx->match_variables);
 
         StringSetDestroy(ctx->dependency_handles);
-
-        PromiseSetDestroy(ctx->promises_done);
         StringSetDestroy(ctx->promise_lock_cache);
 
         {
@@ -1158,7 +1121,8 @@ void EvalContextStackPushPromiseTypeFrame(EvalContext *ctx, const PromiseType *o
 
 void EvalContextStackPushPromiseFrame(EvalContext *ctx, const Promise *owner, bool copy_bundle_context)
 {
-    assert(LastStackFrame(ctx, 0) && LastStackFrame(ctx, 0)->type == STACK_FRAME_TYPE_PROMISE_TYPE);
+    assert(LastStackFrame(ctx, 0));
+    assert(LastStackFrame(ctx, 0)->type == STACK_FRAME_TYPE_PROMISE_TYPE);
 
     EvalContextVariableClearMatch(ctx);
 
@@ -1934,20 +1898,21 @@ const void *EvalContextVariableControlCommonGet(const EvalContext *ctx, CommonCo
 const Bundle *EvalContextResolveCallExpression(const EvalContext *ctx, const Policy *policy,
                                                const char *callee_reference, const char *callee_type)
 {
-    // HACK: Because callee reference names are equivalent to class names, we abuse ClassRef here
+    // HACK: Because call reference names are equivalent to class names, we abuse ClassRef here
     ClassRef ref = ClassRefParse(callee_reference);
-    if (!ref.ns)
+    if (!ClassRefIsQualified(ref))
     {
         const char *ns = EvalContextCurrentNamespace(ctx);
-        if (ns && !strncmp(callee_reference, "default:", sizeof("default:"))) // ugh, must unhack!!
+        if (ns)
         {
-            ref.ns = xstrdup(ns);
+            ClassRefQualify(&ref, ns);
         }
         else
         {
-            ref.ns = xstrdup(NamespaceDefault());
+            ClassRefQualify(&ref, NamespaceDefault());
         }
     }
+
     const Bundle *bp = NULL;
     for (size_t i = 0; i < SeqLength(policy->bundles); i++)
     {
@@ -1965,22 +1930,6 @@ const Bundle *EvalContextResolveCallExpression(const EvalContext *ctx, const Pol
 
     ClassRefDestroy(ref);
     return bp;
-}
-
-
-bool EvalContextPromiseIsDone(const EvalContext *ctx, const Promise *pp)
-{
-    return PromiseSetContains(ctx->promises_done, pp);
-}
-
-void EvalContextMarkPromiseDone(EvalContext *ctx, const Promise *pp)
-{
-    PromiseSetAdd(ctx->promises_done, pp->org_pp);
-}
-
-void EvalContextMarkPromiseNotDone(EvalContext *ctx, const Promise *pp)
-{
-    PromiseSetRemove(ctx->promises_done, pp->org_pp);
 }
 
 bool EvalContextPromiseLockCacheContains(const EvalContext *ctx, const char *key)
@@ -2063,7 +2012,7 @@ static bool IsPromiseValuableForLogging(const Promise *pp)
     return pp && (pp->parent_promise_type->name != NULL) && (!IsStrIn(pp->parent_promise_type->name, NO_LOG_TYPES));
 }
 
-static void AddAllClasses(EvalContext *ctx, const char *ns, const Rlist *list, unsigned int persistence_ttl, ContextStatePolicy policy, ContextScope context_scope)
+static void AddAllClasses(EvalContext *ctx, const char *ns, const Rlist *list, unsigned int persistence_ttl, PersistentClassPolicy policy, ContextScope context_scope)
 {
     for (const Rlist *rp = list; rp != NULL; rp = rp->next)
     {
@@ -2317,13 +2266,19 @@ static void DoSummarizeTransaction(EvalContext *ctx, PromiseResult status, const
     SummarizeTransaction(ctx, tc, log_name);
 }
 
-static void NotifyDependantPromises(PromiseResult status, EvalContext *ctx, const Promise *pp)
+void NotifyDependantPromises(EvalContext *ctx, const Promise *pp, PromiseResult result)
 {
-    switch (status)
+    switch (result)
     {
     case PROMISE_RESULT_CHANGE:
     case PROMISE_RESULT_NOOP:
-        MarkPromiseHandleDone(ctx, pp);
+        {
+            const char *handle = PromiseGetHandle(pp);
+            if (handle)
+            {
+                StringSetAdd(ctx->dependency_handles, xstrdup(handle));
+            }
+        }
         break;
 
     default:
@@ -2341,7 +2296,6 @@ void ClassAuditLog(EvalContext *ctx, const Promise *pp, Attributes attr, Promise
     }
 
     SetPromiseOutcomeClasses(status, ctx, pp, attr.classes);
-    NotifyDependantPromises(status, ctx, pp);
     DoSummarizeTransaction(ctx, status, pp, attr.transaction);
 }
 

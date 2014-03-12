@@ -46,6 +46,7 @@
 #include <ornaments.h>
 #include <verify_classes.h>
 
+#define CF_MAX_REPLACE 20
 
 /*****************************************************************************/
 
@@ -181,15 +182,18 @@ Bundle *MakeTemporaryBundleFromTemplate(EvalContext *ctx, Policy *policy, Attrib
         char context[CF_BUFSIZE] = "any";
         int lineno = 0;
         size_t level = 0;
-        char buffer[CF_BUFSIZE];
+
+        size_t buffer_size = CF_BUFSIZE;
+        char *buffer = xmalloc(buffer_size);
 
         for (;;)
         {
-            if (fgets(buffer, sizeof(buffer), fp) == NULL)
+            if (getline(&buffer, &buffer_size, fp) == -1)
             {
-                if (ferror(fp))
+                if (!feof(fp))
                 {
-                    UnexpectedError("Failed to read line from stream");
+                    Log(LOG_LEVEL_ERR, "While constructing template for '%s', error reading. (getline %s)",
+                        pp->promiser, GetErrorStr());
                     break;
                 }
                 else /* feof */
@@ -197,6 +201,7 @@ Bundle *MakeTemporaryBundleFromTemplate(EvalContext *ctx, Policy *policy, Attrib
                     break;
                 }
             }
+
             lineno++;
 
             // Check closing syntax
@@ -281,16 +286,15 @@ Bundle *MakeTemporaryBundleFromTemplate(EvalContext *ctx, Policy *policy, Attrib
                     else
                     {
                         //install independent promise line
-                        if (StripTrailingNewline(buffer, CF_EXPANDSIZE) == -1)
-                        {
-                            Log(LOG_LEVEL_ERR, "StripTrailingNewline was called on an overlong string");
-                        }
+                        StripTrailingNewline(buffer, buffer_size);
                         np = PromiseTypeAppendPromise(tp, buffer, (Rval) { NULL, RVAL_TYPE_NOPROMISEE }, context);
                         PromiseAppendConstraint(np, "insert_type", RvalNew("preserve_all_lines", RVAL_TYPE_SCALAR), false);
                     }
                 }
             }
         }
+
+        free(buffer);
     }
 
     fclose(fp);
@@ -305,42 +309,6 @@ Bundle *MakeTemporaryBundleFromTemplate(EvalContext *ctx, Policy *policy, Attrib
 static PromiseResult KeepEditLinePromise(EvalContext *ctx, const Promise *pp, void *param)
 {
     EditContext *edcontext = param;
-
-    char *sp = NULL;
-
-    if (!IsDefinedClass(ctx, pp->classes))
-    {
-        if (LEGACY_OUTPUT)
-        {
-            Log(LOG_LEVEL_VERBOSE, "\n");
-            Log(LOG_LEVEL_VERBOSE, "   .  .  .  .  .  .  .  .  .  .  .  .  .  .  . ");
-            Log(LOG_LEVEL_VERBOSE, "   Skipping whole next edit promise, as context %s is not relevant", pp->classes);
-            Log(LOG_LEVEL_VERBOSE, "   .  .  .  .  .  .  .  .  .  .  .  .  .  .  . ");
-        }
-        else
-        {
-            Log(LOG_LEVEL_VERBOSE, "Skipping next edit promise, as context '%s' is not relevant", pp->classes);
-        }
-        return PROMISE_RESULT_NOOP;
-    }
-
-    if (VarClassExcluded(ctx, pp, &sp))
-    {
-        if (LEGACY_OUTPUT)
-        {
-            Log(LOG_LEVEL_VERBOSE, "\n");
-            Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
-            Log(LOG_LEVEL_VERBOSE, "Skipping whole next edit promise (%s), as var-context %s is not relevant",
-                  pp->promiser, sp);
-            Log(LOG_LEVEL_VERBOSE, ". . . . . . . . . . . . . . . . . . . . . . . . . . . . ");
-        }
-        else
-        {
-            Log(LOG_LEVEL_VERBOSE, "Skipping whole next edit promise '%s', as var-context '%s' is not relevant",
-                  pp->promiser, sp);
-        }
-        return PROMISE_RESULT_NOOP;
-    }
 
     PromiseBanner(pp);
 

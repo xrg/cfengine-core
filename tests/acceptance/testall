@@ -70,6 +70,9 @@ NETWORK_TESTS=${NETWORK_TESTS:-1}
 UNSAFE_TESTS=${UNSAFE_TESTS:-0}
 LIBXML2_TESTS=${LIBXML2_TESTS:-1}
 NO_CLEAN=0
+BASECLASSES="AUTO"
+EXTRACLASSES="DEBUG"
+VALGRIND_OPTS="--leak-check=full --show-reachable=yes --suppressions=valgrind-suppressions"
 
 case "$OSTYPE" in
   msys)
@@ -100,6 +103,19 @@ if [ $? -ne 0 ] ; then
   HAVE_DATE_PCT_S=1
 fi
 PERL=`which perl 2>/dev/null`
+
+# color!
+if [ "${CFENGINE_COLOR}" = "1" ]; then
+    COLOR_SUCCESS="\\033[1;32m"
+    COLOR_FAILURE="\\033[1;31m"
+    COLOR_WARNING="\\033[1;33m"
+    COLOR_NORMAL="\\033[0;39m"
+else
+    COLOR_SUCCESS=
+    COLOR_FAILURE=
+    COLOR_WARNING=
+    COLOR_NORMAL=
+fi
 
 #
 # Obtain UNIX time(), using date +%s, Perl, or POSIX-compatible approach.
@@ -139,6 +155,7 @@ usage() {
   echo "If no test is given, all standard tests are run:"
   echo "  Tests with names of form <file>.cf are expected to run succesfully"
   echo "  Tests with names of form <file>.x.cf are expected to crash"
+  echo "Set ${COLOR_SUCCESS}CFENGINE_COLOR=1${COLOR_NORMAL} to get ANSI color markers where appropriate."
   echo
   echo "If arguments are given, those are executed as tests"
   echo
@@ -153,6 +170,12 @@ usage() {
   echo
   echo " --agent   provides a way to specify non-default cf-agent location,"
   echo "           and defaults to $DEFAGENT."
+  echo
+  echo " --baseclasses provides a way to override the default cf-agent classes,"
+  echo "           and defaults to ${BASECLASSES}.  Also can use --bc"
+  echo
+  echo " --extraclasses provides a way to append to the default cf-agent classes,"
+  echo "           and defaults to ${EXTRACLASSES}.  Also can use --ec"
   echo
   echo " --cfpromises  provides a way to specify non-default cf-promises location,"
   echo "               and defaults to $DEFCF_PROMISES."
@@ -185,7 +208,9 @@ usage() {
   echo
   echo " --printlog   print the full test.log output immediately."
   echo
-  echo " --gdb   Run test under GDB"
+  echo " --gdb         Run test under GDB"
+  echo " --valgrind    Run test under Valgrind"
+  echo " --callgrind   Run test under valgrind --tool=callgrind"
   echo " --no-clean does not clean workdir after test finishes"
   echo "            (by default it gets cleaned only if test passed)."
 }
@@ -205,16 +230,16 @@ runtest() {
 
   if [ "x$CRASHING_TESTS" = "x0" ] && [ "x$EXPECTED_CRASH" = "x1" ]; then
     SKIP=1
-    SKIPREASON="Crashing tests are disabled"
+    SKIPREASON="${COLOR_WARNING}Crashing tests are disabled${COLOR_NORMAL}"
   elif [ "x$STAGING_TESTS" = "x0" ] && echo "$TEST" | grep -q -e '/staging/'; then
     SKIP=1
-    SKIPREASON="Staging tests are disabled"
+    SKIPREASON="${COLOR_WARNING}Staging tests are disabled${COLOR_NORMAL}"
   elif [ "x$UNSAFE_TESTS" != "x1" ] && echo "$TEST" | grep -q -e '/unsafe/'; then
     SKIP=1
-    SKIPREASON="Unsafe tests are disabled"
+    SKIPREASON="${COLOR_WARNING}Unsafe tests are disabled${COLOR_NORMAL}"
   elif [ "x$NETWORK_TESTS" = "x0" ] && echo "$TEST" | grep -q -e '/network/'; then
     SKIP=1
-    SKIPREASON="Network-dependent tests are disabled"
+    SKIPREASON="${COLOR_WARNING}Network-dependent tests are disabled${COLOR_NORMAL}"
   elif [ "x$LIBXML2_TESTS" = "x0" ] && echo "$TEST" | grep -q -e '/11_xml_edits/'; then
     SKIP=1
     SKIPREASON="XML file editing tests are disabled"
@@ -231,7 +256,7 @@ runtest() {
   if [ -n "$SKIP" ]; then
     echo "              time=\"NULL\">" >> "$XMLTMP"
     RESULT=Skip
-    RESULT_MSG="Skipped ($SKIPREASON)"
+    RESULT_MSG="${COLOR_WARNING}Skipped ($SKIPREASON)${COLOR_NORMAL}"
   else
     TEST_START_TIME=$(unix_seconds)
 
@@ -239,6 +264,7 @@ runtest() {
 
     # Prepare workdir
     WORKDIR="$BASE_WORKDIR/$FLATNAME"
+    OUTFILE=$WORKDIR/test.log
     $GAINROOT rm -rf "$WORKDIR"
     mkdir -p "$WORKDIR/bin" "$WORKDIR/tmp"
     chmod ugo+rwxt "$WORKDIR/tmp"
@@ -278,9 +304,9 @@ export CFENGINE_TEST_OVERRIDE_WORKDIR TEMP CFENGINE_TEST_OVERRIDE_EXTENSION_LIBR
       if grep -q libtool < "$AGENT"; then
         printf "\"$LIBTOOL\" --mode=execute " >> "$WORKDIR/runtest"
       fi
-      printf "valgrind --leak-check=full --show-reachable=yes --suppressions=valgrind-suppressions \"$AGENT\" $VERBOSE -Kf \"$TEST\" -D AUTO,DEBUG 2>&1\n" >> "$WORKDIR/runtest"
+      printf "valgrind ${VALGRIND_OPTS} \"$AGENT\" $VERBOSE -Kf \"$TEST\" -D ${BASECLASSES},${EXTRACLASSES} 2>&1\n" >> "$WORKDIR/runtest"
     else
-      printf "\"$AGENT\" $VERBOSE -Kf \"$TEST\" -D AUTO,DEBUG 2>&1\n" >> "$WORKDIR/runtest"
+      printf "\"$AGENT\" $VERBOSE -Kf \"$TEST\" -D ${BASECLASSES},${EXTRACLASSES} 2>&1\n" >> "$WORKDIR/runtest"
     fi
 
     chmod +x "$WORKDIR/runtest"
@@ -288,10 +314,10 @@ export CFENGINE_TEST_OVERRIDE_WORKDIR TEMP CFENGINE_TEST_OVERRIDE_EXTENSION_LIBR
     if [ "$GDB" = 1 ]; then
       $GAINROOT "$WORKDIR/runtest"
     else
-      OUT=$($GAINROOT "$WORKDIR/runtest")
+      $GAINROOT "$WORKDIR/runtest" >$OUTFILE 2>&1
     fi
     RETVAL=$?
-    echo "$OUT" >> "$LOG"
+    cat $OUTFILE >> "$LOG"
     echo >> "$LOG"
     echo "Return code is $RETVAL." >> "$LOG"
 
@@ -311,36 +337,39 @@ export CFENGINE_TEST_OVERRIDE_WORKDIR TEMP CFENGINE_TEST_OVERRIDE_EXTENSION_LIBR
       # Some states are output by default.cf.sub, therefore check for both TEST
       # prefix and default.cf.sub prefix.
       ESCAPED_TEST="$(echo "\($TEST\|default.cf.sub\)" | sed -e 's/\./\\./g')"
-      if echo "$OUT" | grep -q -e "R: .*$ESCAPED_TEST XFAIL"; then
+      if  grep -q -e "R: .*$ESCAPED_TEST XFAIL" $OUTFILE; then
         # Check for other test case outcomes than fail. Should not happen.
-        if echo "$OUT" | grep -e "R: .*$ESCAPED_TEST " | grep -v -q -e "R: .*$ESCAPED_TEST X\?FAIL"; then
+        if  grep -e "R: .*$ESCAPED_TEST " $OUTFILE | grep -v -q -e "R: .*$ESCAPED_TEST X\?FAIL"; then
           RESULT=FAIL
-          RESULT_MSG="FAIL (Tried to suppress nonexistent failure)"
+          RESULT_MSG="${COLOR_FAILURE}FAIL (Tried to suppress nonexistent failure)${COLOR_NORMAL}"
         else
-          REDMINE="$(echo "$OUT" | grep -e "R: .*$ESCAPED_TEST XFAIL" | sed -e "s,.*XFAIL/redmine\([0-9][0-9]*\).*,\1,")"
+          REDMINE="$(grep -e "R: .*$ESCAPED_TEST XFAIL" $OUTFILE | sed -e "s,.*XFAIL/redmine\([0-9][0-9]*\).*,\1,")"
           RESULT=XFAIL
-          RESULT_MSG="FAIL (Suppressed, Redmine #$REDMINE)"
+          RESULT_MSG="${COLOR_WARNING}FAIL (Suppressed, Redmine #$REDMINE)${COLOR_NORMAL}"
         fi
-      elif echo "$OUT" | grep -q -e "R: .*$ESCAPED_TEST FAIL/no_redmine_number"; then
+      elif  grep -q -e "R: .*$ESCAPED_TEST FAIL/no_redmine_number" $OUTFILE; then
         RESULT=FAIL
-        RESULT_MSG="FAIL (Tried to suppress failure, but no Redmine issue number is provided)"
-      elif echo "$OUT" | grep -q -e "R: .*$ESCAPED_TEST Pass"; then
+        RESULT_MSG="${COLOR_FAILURE}FAIL (Tried to suppress failure, but no Redmine issue number is provided)${COLOR_NORMAL}"
+      elif  grep -q -e "R: .*$ESCAPED_TEST Pass" $OUTFILE; then
         RESULT=Pass
-      elif echo "$OUT" | grep -q -e "R: .*$ESCAPED_TEST Skip/unsupported"; then
+        RESULT_MSG="${COLOR_SUCCESS}Pass${COLOR_NORMAL}"
+      elif  grep -q -e "R: .*$ESCAPED_TEST Skip/unsupported" $OUTFILE; then
         RESULT=Skip
-        RESULT_MSG="Skipped (No platform support)"
-      elif echo "$OUT" | grep -q -e "R: .*$ESCAPED_TEST Skip/needs_work"; then
+        RESULT_MSG="${COLOR_WARNING}Skipped (No platform support)${COLOR_NORMAL}"
+      elif  grep -q -e "R: .*$ESCAPED_TEST Skip/needs_work" $OUTFILE; then
         RESULT=Skip
-        RESULT_MSG="Skipped (Test needs work)"
+        RESULT_MSG="${COLOR_WARNING}Skipped (Test needs work)${COLOR_NORMAL}"
       else
         RESULT=FAIL
+        RESULT_MSG="${COLOR_FAILURE}FAIL${COLOR_NORMAL}"
       fi
     else
       if [ $RETVAL -ne 0 ]; then
         RESULT=Pass
+        RESULT_MSG="${COLOR_SUCCESS}Pass${COLOR_NORMAL}"
       else
         RESULT=FAIL
-        RESULT_MSG="FAILed to crash"
+        RESULT_MSG="${COLOR_FAILURE}FAILed to crash${COLOR_NORMAL}"
       fi
     fi
 
@@ -353,7 +382,7 @@ export CFENGINE_TEST_OVERRIDE_WORKDIR TEMP CFENGINE_TEST_OVERRIDE_EXTENSION_LIBR
     fi
 
     if [ "$RESULT" = "FAIL" ] && [ -e .succeeded/"$FLATNAME" ]; then
-      RESULT_MSG="$RESULT_MSG (UNEXPECTED FAILURE)"
+      RESULT_MSG="${COLOR_FAILURE}$RESULT_MSG (UNEXPECTED FAILURE)${COLOR_NORMAL}"
     fi
   fi
 
@@ -371,7 +400,8 @@ export CFENGINE_TEST_OVERRIDE_WORKDIR TEMP CFENGINE_TEST_OVERRIDE_EXTENSION_LIBR
       echo $RESULT $TEST >> "$SUMMARY"
       ( echo "        <failure type=\"$RESULT\""
         echo "                 message=\"$RESULT_MSG $TEST\">"
-        echo "        $OUT</failure>"
+        cat $OUTFILE
+        echo "        </failure>"
       ) >> "$XMLTMP"
       FAILED_TESTS=$(($FAILED_TESTS + 1))
       if [ "$RESULT" = "XFAIL" ]; then
@@ -382,7 +412,8 @@ export CFENGINE_TEST_OVERRIDE_WORKDIR TEMP CFENGINE_TEST_OVERRIDE_EXTENSION_LIBR
     Skip)
       echo $RESULT $TEST >> "$SUMMARY"
       ( echo "        <skipped type=\"$RESULT_MSG\">"
-        echo "        $OUT</skipped>"
+        cat $OUTFILE
+        echo "        </skipped>"
       ) >> "$XMLTMP"
       SKIPPED_TESTS=$(($SKIPPED_TESTS + 1))
       ;;
@@ -422,6 +453,9 @@ while true; do
       GAINROOT=${1#--gainroot=};;
     --valgrind)
       USE_VALGRIND=1;;
+    --callgrind)
+      USE_VALGRIND=1;
+      VALGRIND_OPTS="--suppressions=valgrind-suppressions --tool=callgrind";;
     --staging)
       STAGING_TESTS=1;;
     --unsafe)
@@ -434,6 +468,14 @@ while true; do
       CRASHING_TESTS=0;;
     --agent=*)
       AGENT=${1#--agent=};;
+    --baseclasses=*)
+      BASECLASSES=${1#--baseclasses=};;
+    --bc=*)
+      BASECLASSES=${1#--bc=};;
+    --extraclasses=*)
+      EXTRACLASSES=${1#--extraclasses=};;
+    --ec=*)
+      EXTRACLASSES=${1#--ec=};;
     --cfpromises=*)
       CF_PROMISES=${1#--cfpromises=};;
     --cfserverd=*)
