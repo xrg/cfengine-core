@@ -143,7 +143,7 @@ developing programs using the %{name} library.
 	--disable-dependency-tracking \
 	--disable-maintainer-mode \
 	--enable-shared --enable-fhs  \
-	--without-mysql --enable-docs=html
+	--without-mysql
     $CONFIGURE_XPATH
 
 %make
@@ -151,10 +151,6 @@ developing programs using the %{name} library.
 %install
 rm -rf %{buildroot}
 %make DESTDIR=%{buildroot} install
-
-# install man page manually
-# install -d -m 755 %{buildroot}%{_mandir}/man8
-# install -m 644 doc/cfengine.8 %{buildroot}%{_mandir}/man8
 
 # install -d -m 755 %{buildroot}%{_sysconfdir}/%{name}
 install -d -m 755 %{buildroot}%{_sysconfdir}/cron.daily
