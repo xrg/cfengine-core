@@ -795,7 +795,7 @@ static void KeepControlPromises(EvalContext *ctx, const Policy *policy)
 
             if (strcmp(cp->lval, CFA_CONTROLBODY[AGENT_CONTROL_BINDTOINTERFACE].lval) == 0)
             {
-                strncpy(BINDINTERFACE, value, CF_BUFSIZE - 1);
+                strlcpy(BINDINTERFACE, value, sizeof(BINDINTERFACE));
                 Log(LOG_LEVEL_VERBOSE, "Setting bindtointerface to '%s'", BINDINTERFACE);
                 continue;
             }
@@ -1084,10 +1084,10 @@ static void KeepPromiseBundles(EvalContext *ctx, const Policy *policy, GenericAg
 
         if (!config->ignore_missing_bundles)
         {
-            const Bundle *bp = EvalContextResolveCallExpression(ctx, policy, name, "agent");
+            const Bundle *bp = EvalContextResolveBundleExpression(ctx, policy, name, "agent");
             if (!bp)
             {
-                bp = EvalContextResolveCallExpression(ctx, policy, name, "common");
+                bp = EvalContextResolveBundleExpression(ctx, policy, name, "common");
             }
 
             if (!bp)
@@ -1138,10 +1138,10 @@ static void KeepPromiseBundles(EvalContext *ctx, const Policy *policy, GenericAg
             break;
         }
 
-        const Bundle *bp = EvalContextResolveCallExpression(ctx, policy, name, "agent");
+        const Bundle *bp = EvalContextResolveBundleExpression(ctx, policy, name, "agent");
         if (!bp)
         {
-            bp = EvalContextResolveCallExpression(ctx, policy, name, "common");
+            bp = EvalContextResolveBundleExpression(ctx, policy, name, "common");
         }
 
         if (bp)

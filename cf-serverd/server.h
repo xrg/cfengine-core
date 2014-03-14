@@ -64,6 +64,7 @@ typedef struct
     Item *allowuserlist;                              /* "allowusers" */
     Item *multiconnlist;                              /* "allowallconnects" */
     Item *trustkeylist;                               /* "trustkeysfrom" */
+    Item *allowlegacyconnects;
     char *allowciphers;
 
     /* ACL for resource_type "path". */
@@ -91,6 +92,7 @@ typedef struct
 
 } ServerAccess;
 
+/* TODO rename to IncomingConnection */
 struct ServerConnectionState_
 {
     ConnectionInfo *conn_info;
@@ -108,7 +110,7 @@ struct ServerConnectionState_
 
     /* TODO the following are useless with the new protocol */
     char hostname[CF_MAXVARSIZE]; /* hostname is copied from client-supplied CAUTH command */
-    int id_verified;
+    int user_data_set;
     int rsa_auth;
     int maproot;
     unsigned char *session_key;

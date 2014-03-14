@@ -52,6 +52,7 @@ static void SetBundleAborted(EvalContext *ctx);
 static bool EvalContextStackFrameContainsSoft(const EvalContext *ctx, const char *context);
 static bool EvalContextHeapContainsSoft(const EvalContext *ctx, const char *ns, const char *name);
 static bool EvalContextHeapContainsHard(const EvalContext *ctx, const char *name);
+static const char *EvalContextCurrentNamespace(const EvalContext *ctx);
 
 struct EvalContext_
 {
@@ -351,9 +352,38 @@ static ExpressionValue EvalTokenAsClass(const char *classname, void *param)
 {
     const EvalContext *ctx = param;
     ClassRef ref = ClassRefParse(classname);
+    if (ClassRefIsQualified(ref))
+    {
+        if (strcmp(ref.ns, NamespaceDefault()) == 0)
+        {
+            if (EvalContextHeapContainsHard(ctx, ref.name))
+            {
+                ClassRefDestroy(ref);
+                return true;
+            }
+        }
+    }
+    else
+    {
+        if (EvalContextHeapContainsHard(ctx, ref.name))
+        {
+            ClassRefDestroy(ref);
+            return true;
+        }
 
+        const char *ns = EvalContextCurrentNamespace(ctx);
+        if (ns)
+        {
+            ClassRefQualify(&ref, ns);
+        }
+        else
+        {
+            ClassRefQualify(&ref, NamespaceDefault());
+        }
+    }
+
+    assert(ClassRefIsQualified(ref));
     bool classy = (strcmp("any", ref.name) == 0 ||
-                   (!ref.ns && EvalContextHeapContainsHard(ctx, ref.name)) ||
                    EvalContextHeapContainsSoft(ctx, ref.ns, ref.name) ||
                    EvalContextStackFrameContainsSoft(ctx, ref.name));
 
@@ -1070,7 +1100,7 @@ void EvalContextStackPushBundleFrame(EvalContext *ctx, const Bundle *owner, cons
     }
 }
 
-void EvalContextStackPushBodyFrame(EvalContext *ctx, const Promise *caller, const Body *body, Rlist *args)
+void EvalContextStackPushBodyFrame(EvalContext *ctx, const Promise *caller, const Body *body, const Rlist *args)
 {
 #ifndef NDEBUG
     StackFrame *last_frame = LastStackFrame(ctx, 0);
@@ -1884,9 +1914,9 @@ VariableTableIterator *EvalContextVariableTableIteratorNew(const EvalContext *ct
 
 const void *EvalContextVariableControlCommonGet(const EvalContext *ctx, CommonControl lval)
 {
-    if (lval == COMMON_CONTROL_NONE)
+    if (lval >= COMMON_CONTROL_MAX)
     {
-        return false;
+        return NULL;
     }
 
     VarRef *ref = VarRefParseFromScope(CFG_CONTROLBODY[lval].lval, "control_common");
@@ -1895,8 +1925,7 @@ const void *EvalContextVariableControlCommonGet(const EvalContext *ctx, CommonCo
     return ret;
 }
 
-const Bundle *EvalContextResolveCallExpression(const EvalContext *ctx, const Policy *policy,
-                                               const char *callee_reference, const char *callee_type)
+static ClassRef ResolveCallReference(const EvalContext *ctx, const char *callee_reference)
 {
     // HACK: Because call reference names are equivalent to class names, we abuse ClassRef here
     ClassRef ref = ClassRefParse(callee_reference);
@@ -1913,10 +1942,42 @@ const Bundle *EvalContextResolveCallExpression(const EvalContext *ctx, const Pol
         }
     }
 
+    return ref;
+}
+
+const Bundle *EvalContextResolveBundleExpression(const EvalContext *ctx, const Policy *policy,
+                                               const char *callee_reference, const char *callee_type)
+{
+    ClassRef ref = ResolveCallReference(ctx, callee_reference);
+
     const Bundle *bp = NULL;
     for (size_t i = 0; i < SeqLength(policy->bundles); i++)
     {
         const Bundle *curr_bp = SeqAt(policy->bundles, i);
+        if ((strcmp(curr_bp->type, callee_type) != 0) ||
+            (strcmp(curr_bp->name, ref.name) != 0) ||
+            !StringSafeEqual(curr_bp->ns, ref.ns))
+        {
+            continue;
+        }
+
+        bp = curr_bp;
+        break;
+    }
+
+    ClassRefDestroy(ref);
+    return bp;
+}
+
+const Body *EvalContextResolveBodyExpression(const EvalContext *ctx, const Policy *policy,
+                                             const char *callee_reference, const char *callee_type)
+{
+    ClassRef ref = ResolveCallReference(ctx, callee_reference);
+
+    const Body *bp = NULL;
+    for (size_t i = 0; i < SeqLength(policy->bodies); i++)
+    {
+        const Body *curr_bp = SeqAt(policy->bodies, i);
         if ((strcmp(curr_bp->type, callee_type) != 0) ||
             (strcmp(curr_bp->name, ref.name) != 0) ||
             !StringSafeEqual(curr_bp->ns, ref.ns))

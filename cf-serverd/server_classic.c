@@ -34,7 +34,7 @@ typedef enum
     PROTOCOL_COMMAND_CONTEXTS,
     PROTOCOL_COMMAND_MD5,
     PROTOCOL_COMMAND_MD5_SECURE,
-    PROTOCOL_COMMAND_AUTH_CLEAR,
+    PROTOCOL_COMMAND_AUTH_PLAIN,
     PROTOCOL_COMMAND_AUTH_SECURE,
     PROTOCOL_COMMAND_SYNC_SECURE,
     PROTOCOL_COMMAND_GET_SECURE,
@@ -189,10 +189,16 @@ static int AccessControl(EvalContext *ctx, const char *req_path, ServerConnectio
         strncpy(transpath, ap->path, CF_BUFSIZE - 1);
         MapName(transpath);
 
-        /* If transpath is a parent directory of transrequest. */
-        if ((strlen(transrequest) > strlen(transpath))
-            && (strncmp(transpath, transrequest, strlen(transpath)) == 0)
-            && (transrequest[strlen(transpath)] == FILE_SEPARATOR))
+        /* If everything is allowed */
+        if ((strcmp(transpath, FILE_SEPARATOR_STR) == 0)
+            ||
+            /* or if transpath is a parent directory of transrequest */
+            (strlen(transrequest) > strlen(transpath)
+            && strncmp(transpath, transrequest, strlen(transpath)) == 0
+            && transrequest[strlen(transpath)] == FILE_SEPARATOR)
+            ||
+            /* or if it's an exact match */
+            (strcmp(transpath, transrequest) == 0))
         {
             res = true;
         }
@@ -210,7 +216,7 @@ static int AccessControl(EvalContext *ctx, const char *req_path, ServerConnectio
             if (stat(transpath, &statbuf) == -1)
             {
                 Log(LOG_LEVEL_INFO,
-                      "Warning cannot stat file object %s in admit/grant, or access list refers to dangling link\n",
+                      "Warning cannot stat file object %s in admit/grant, or access list refers to dangling link",
                       transpath);
                 continue;
             }
@@ -247,12 +253,16 @@ static int AccessControl(EvalContext *ctx, const char *req_path, ServerConnectio
         strncpy(transpath, dp->path, CF_BUFSIZE - 1);
         MapName(transpath);
 
-        /* If entry is parent dir, or exact match. */
-        if ((strlen(transrequest) > strlen(transpath) &&
+        /* If everything is denied */
+        if ((strcmp(transpath, FILE_SEPARATOR_STR) == 0)
+            ||
+            /* or if transpath is a parent directory of transrequest */
+            (strlen(transrequest) > strlen(transpath) &&
              strncmp(transpath, transrequest, strlen(transpath)) == 0 &&
              transrequest[strlen(transpath)] == FILE_SEPARATOR)
             ||
-            strcmp(transpath, transrequest) == 0)
+            /* or if it's an exact match */
+            (strcmp(transpath, transrequest) == 0))
         {
             if ((IsMatchItemIn(dp->accesslist, MapAddress(conn->ipaddr))) ||
                 (IsRegexItemIn(ctx, dp->accesslist, conn->hostname)))
@@ -278,12 +288,6 @@ static int AccessControl(EvalContext *ctx, const char *req_path, ServerConnectio
     else
     {
         Log(LOG_LEVEL_INFO, "Host %s denied access to %s", conn->hostname, req_path);
-    }
-
-    if (!conn->rsa_auth)
-    {
-        Log(LOG_LEVEL_INFO, "Cannot map root access without RSA authentication");
-        conn->maproot = false;  /* only public files accessible */
     }
 
     return access;
@@ -355,7 +359,7 @@ static int LiteralAccessControl(EvalContext *ctx, char *in, ServerConnectionStat
                     || (IsRegexItemIn(ctx, ap->accesslist, conn->hostname)))
                 {
                     access = true;
-                    Log(LOG_LEVEL_DEBUG, "Access privileges - match found\n");
+                    Log(LOG_LEVEL_DEBUG, "Access privileges - match found");
                 }
             }
         }
@@ -388,12 +392,6 @@ static int LiteralAccessControl(EvalContext *ctx, char *in, ServerConnectionStat
     else
     {
         Log(LOG_LEVEL_VERBOSE, "Host %s denied access to literal '%s'", conn->hostname, name);
-    }
-
-    if (!conn->rsa_auth)
-    {
-        Log(LOG_LEVEL_VERBOSE, "Cannot map root access without RSA authentication");
-        conn->maproot = false;  /* only public files accessible */
     }
 
     return access;
@@ -522,13 +520,7 @@ static int cfscanf(char *in, int len1, int len2, char *out1, char *out2, char *o
     return (len1 + len2 + len3 + 2);
 }
 
-/* No DNS verification performed anymore. This function used to enforce (when
- * skipverify == true) that the fqname the peer sent us resolves to an address
- * equal to the connecting IP address. Today skipverify option is removed and
- * this function is dummy, since key verification is the norm and the
- * verification code here was /unreachable/ because of bug for about 5 years,
- * but nobody protested. */
-static int VerifyConnection(ServerConnectionState *conn, char buf[CF_BUFSIZE])
+static void SetConnectionData(ServerConnectionState *conn, char *buf)
 {
     char ipstring[CF_MAXVARSIZE], fqname[CF_MAXVARSIZE], username[CF_MAXVARSIZE];
 
@@ -544,14 +536,6 @@ static int VerifyConnection(ServerConnectionState *conn, char buf[CF_BUFSIZE])
             ipstring, fqname, username, conn->ipaddr);
 
     ToLowerStrInplace(fqname);
-
-    Log(LOG_LEVEL_VERBOSE,
-        "Allowing %s to connect without (re)checking ID\n", ipstring);
-    Log(LOG_LEVEL_VERBOSE,
-        "Non-verified Host ID is %s\n", fqname);
-    Log(LOG_LEVEL_VERBOSE,
-        "Non-verified User ID seems to be %s\n",
-        username);
 
     strlcpy(conn->hostname, fqname, CF_MAXVARSIZE);
     strlcpy(conn->username, username, CF_MAXVARSIZE);
@@ -574,8 +558,6 @@ static int VerifyConnection(ServerConnectionState *conn, char buf[CF_BUFSIZE])
         conn->uid = pw->pw_uid;
     }
 #endif  /* !__MINGW32__ */
-
-    return true;
 }
 
 static int CheckStoreKey(ServerConnectionState *conn, RSA *key)
@@ -912,6 +894,9 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
         {
             err = ERR_get_error();
             Log(LOG_LEVEL_ERR, "Private decrypt failed = %s", ERR_reason_error_string(err));
+            BN_free(counter_challenge);
+            free(out);
+            KeyDestroy(&key);
             return false;
         }
 
@@ -920,7 +905,6 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
 
     BN_free(counter_challenge);
     free(out);
-    conn->rsa_auth = true;
     return true;
 }
 
@@ -959,29 +943,67 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         return false;
     }
 
-    switch (GetCommandClassic(recvbuffer))
+    ProtocolCommandClassic command = GetCommandClassic(recvbuffer);
+
+    switch (command)
+    {
+    /* Plain text authentication; this MUST be the first command client
+       using classic protocol is sending. */
+    case PROTOCOL_COMMAND_AUTH_PLAIN:
+        SetConnectionData(conn, (char *) (recvbuffer + strlen("CAUTH ")));
+
+        /* This is used only for forcing correct state of state machine while
+           connecting and authenticating user using classic protocol. */
+        conn->user_data_set = true;
+
+        return true;
+
+    /* This MUST be exactly second command client using classic protocol is sending.
+       This is where key agreement takes place. */
+    case PROTOCOL_COMMAND_AUTH_SECURE:
+        /* First command was ommited by client; this is protocol violation. */
+        if (!conn->user_data_set)
+        {
+            Log(LOG_LEVEL_INFO, "Client is not verified; rejecting connection");
+            RefuseAccess(conn, recvbuffer);
+            return false;
+        }
+
+        conn->rsa_auth = AuthenticationDialogue(conn, recvbuffer, received);
+        if (!conn->rsa_auth)
+        {
+            Log(LOG_LEVEL_INFO, "Auth dialogue error");
+            RefuseAccess(conn, recvbuffer);
+            return false;
+        }
+
+        return true;
+    default:
+        break;
+    }
+
+    /* At this point we should have both user_data_set and rsa_auth set to perform any operation.
+       We can check only for second one as without first it won't be set up. */
+    if (!conn->rsa_auth)
+    {
+        Log(LOG_LEVEL_INFO, "Server refusal due to no RSA authentication [command: %d]", command);
+        RefuseAccess(conn, recvbuffer);
+        return false;
+    }
+
+    /* We have to have key at this point. */
+    assert(conn->session_key);
+
+    /* At this point we can safely do next switch and make sure user is authenticated. */
+    switch (command)
     {
     case PROTOCOL_COMMAND_EXEC:
         memset(args, 0, CF_BUFSIZE);
         sscanf(recvbuffer, "EXEC %255[^\n]", args);
 
-        if (!conn->id_verified)
-        {
-            Log(LOG_LEVEL_INFO, "Server refusal due to incorrect identity");
-            RefuseAccess(conn, recvbuffer);
-            return false;
-        }
-
         if (!AllowedUser(conn->username))
         {
             Log(LOG_LEVEL_INFO, "Server refusal due to non-allowed user");
-            RefuseAccess(conn, recvbuffer);
-            return false;
-        }
-
-        if (!conn->rsa_auth)
-        {
-            Log(LOG_LEVEL_INFO, "Server refusal due to no RSA authentication");
             RefuseAccess(conn, recvbuffer);
             return false;
         }
@@ -1005,62 +1027,17 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         return false;
 
     case PROTOCOL_COMMAND_VERSION:
-
-        if (!conn->id_verified)
-        {
-            Log(LOG_LEVEL_INFO, "ID not verified");
-            RefuseAccess(conn, recvbuffer);
-        }
-
         snprintf(sendbuffer, sizeof(sendbuffer), "OK: %s", Version());
         SendTransaction(conn->conn_info, sendbuffer, 0, CF_DONE);
-        return conn->id_verified;
-
-    case PROTOCOL_COMMAND_AUTH_CLEAR:
-
-        conn->id_verified = VerifyConnection(conn, (char *) (recvbuffer + strlen("CAUTH ")));
-
-        if (!conn->id_verified)
-        {
-            Log(LOG_LEVEL_INFO, "ID not verified");
-            RefuseAccess(conn, recvbuffer);
-        }
-
-        return conn->id_verified;       /* are we finished yet ? */
-
-    case PROTOCOL_COMMAND_AUTH_SECURE:            /* This is where key agreement takes place */
-
-        if (!conn->id_verified)
-        {
-            Log(LOG_LEVEL_INFO, "ID not verified");
-            RefuseAccess(conn, recvbuffer);
-            return false;
-        }
-
-        if (!AuthenticationDialogue(conn, recvbuffer, received))
-        {
-            Log(LOG_LEVEL_INFO, "Auth dialogue error");
-            RefuseAccess(conn, recvbuffer);
-            return false;
-        }
-
-        return true;
+        return conn->user_data_set;
 
     case PROTOCOL_COMMAND_GET:
-
         memset(filename, 0, CF_BUFSIZE);
         sscanf(recvbuffer, "GET %d %[^\n]", &(get_args.buf_size), filename);
 
         if ((get_args.buf_size < 0) || (get_args.buf_size > CF_BUFSIZE))
         {
             Log(LOG_LEVEL_INFO, "GET buffer out of bounds");
-            RefuseAccess(conn, recvbuffer);
-            return false;
-        }
-
-        if (!conn->id_verified)
-        {
-            Log(LOG_LEVEL_INFO, "ID not verified");
             RefuseAccess(conn, recvbuffer);
             return false;
         }
@@ -1089,7 +1066,6 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         return true;
 
     case PROTOCOL_COMMAND_GET_SECURE:
-
         memset(buffer, 0, CF_BUFSIZE);
         sscanf(recvbuffer, "SGET %u %d", &len, &(get_args.buf_size));
 
@@ -1126,13 +1102,6 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         Log(LOG_LEVEL_DEBUG, "Confirm decryption, and thus validity of caller");
         Log(LOG_LEVEL_DEBUG, "SGET '%s' with blocksize %d", filename, get_args.buf_size);
 
-        if (!conn->id_verified)
-        {
-            Log(LOG_LEVEL_INFO, "ID not verified");
-            RefuseAccess(conn, recvbuffer);
-            return false;
-        }
-
         if (!AccessControl(ctx, filename, conn, true))
         {
             Log(LOG_LEVEL_INFO, "Access control error");
@@ -1151,20 +1120,12 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         return true;
 
     case PROTOCOL_COMMAND_OPENDIR_SECURE:
-
         memset(buffer, 0, CF_BUFSIZE);
         sscanf(recvbuffer, "SOPENDIR %u", &len);
 
         if ((len >= sizeof(out)) || (received != (len + CF_PROTO_OFFSET)))
         {
             Log(LOG_LEVEL_VERBOSE, "Protocol error OPENDIR: %d", len);
-            RefuseAccess(conn, recvbuffer);
-            return false;
-        }
-
-        if (conn->session_key == NULL)
-        {
-            Log(LOG_LEVEL_INFO, "No session key");
             RefuseAccess(conn, recvbuffer);
             return false;
         }
@@ -1183,13 +1144,6 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         memset(filename, 0, CF_BUFSIZE);
         sscanf(recvbuffer, "OPENDIR %[^\n]", filename);
 
-        if (!conn->id_verified)
-        {
-            Log(LOG_LEVEL_INFO, "ID not verified");
-            RefuseAccess(conn, recvbuffer);
-            return false;
-        }
-
         if (!AccessControl(ctx, filename, conn, true))        /* opendir don't care about privacy */
         {
             Log(LOG_LEVEL_INFO, "Access error");
@@ -1201,16 +1155,8 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         return true;
 
     case PROTOCOL_COMMAND_OPENDIR:
-
         memset(filename, 0, CF_BUFSIZE);
         sscanf(recvbuffer, "OPENDIR %[^\n]", filename);
-
-        if (!conn->id_verified)
-        {
-            Log(LOG_LEVEL_INFO, "ID not verified");
-            RefuseAccess(conn, recvbuffer);
-            return false;
-        }
 
         if (!AccessControl(ctx, filename, conn, true))        /* opendir don't care about privacy */
         {
@@ -1223,20 +1169,12 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         return true;
 
     case PROTOCOL_COMMAND_SYNC_SECURE:
-
         memset(buffer, 0, CF_BUFSIZE);
         sscanf(recvbuffer, "SSYNCH %u", &len);
 
         if ((len >= sizeof(out)) || (received != (len + CF_PROTO_OFFSET)))
         {
             Log(LOG_LEVEL_VERBOSE, "Protocol error SSYNCH: %d", len);
-            RefuseAccess(conn, recvbuffer);
-            return false;
-        }
-
-        if (conn->session_key == NULL)
-        {
-            Log(LOG_LEVEL_INFO, "Bad session key");
             RefuseAccess(conn, recvbuffer);
             return false;
         }
@@ -1261,14 +1199,6 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         /* roll through, no break */
 
     case PROTOCOL_COMMAND_SYNC:
-
-        if (!conn->id_verified)
-        {
-            Log(LOG_LEVEL_INFO, "ID not verified");
-            RefuseAccess(conn, recvbuffer);
-            return false;
-        }
-
         memset(filename, 0, CF_BUFSIZE);
         sscanf(recvbuffer, "SYNCH %ld STAT %[^\n]", &time_no_see, filename);
 
@@ -1312,7 +1242,6 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         return true;
 
     case PROTOCOL_COMMAND_MD5_SECURE:
-
         sscanf(recvbuffer, "SMD5 %u", &len);
 
         if ((len >= sizeof(out)) || (received != (len + CF_PROTO_OFFSET)))
@@ -1335,19 +1264,10 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         /* roll through, no break */
 
     case PROTOCOL_COMMAND_MD5:
-
-        if (!conn->id_verified)
-        {
-            Log(LOG_LEVEL_INFO, "ID not verified");
-            RefuseAccess(conn, recvbuffer);
-            return true;
-        }
-
         CompareLocalHash(conn, sendbuffer, recvbuffer);
         return true;
 
     case PROTOCOL_COMMAND_VAR_SECURE:
-
         sscanf(recvbuffer, "SVAR %u", &len);
 
         if ((len >= sizeof(out)) || (received != (len + CF_PROTO_OFFSET)))
@@ -1371,14 +1291,6 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         /* roll through, no break */
 
     case PROTOCOL_COMMAND_VAR:
-
-        if (!conn->id_verified)
-        {
-            Log(LOG_LEVEL_INFO, "ID not verified");
-            RefuseAccess(conn, recvbuffer);
-            return true;
-        }
-
         if (!LiteralAccessControl(ctx, recvbuffer, conn, encrypted))
         {
             Log(LOG_LEVEL_INFO, "Literal access failure");
@@ -1390,7 +1302,6 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         return true;
 
     case PROTOCOL_COMMAND_CONTEXT_SECURE:
-
         sscanf(recvbuffer, "SCONTEXT %u", &len);
 
         if ((len >= sizeof(out)) || (received != (len + CF_PROTO_OFFSET)))
@@ -1414,14 +1325,6 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         /* roll through, no break */
 
     case PROTOCOL_COMMAND_CONTEXT:
-
-        if (!conn->id_verified)
-        {
-            Log(LOG_LEVEL_INFO, "ID not verified");
-            RefuseAccess(conn, "Context probe");
-            return true;
-        }
-
         if ((classes = ContextAccessControl(ctx, recvbuffer, conn, encrypted)) == NULL)
         {
             Log(LOG_LEVEL_INFO, "Context access failure on %s", recvbuffer);
@@ -1433,7 +1336,6 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         return true;
 
     case PROTOCOL_COMMAND_QUERY_SECURE:
-
         sscanf(recvbuffer, "SQUERY %u", &len);
 
         if ((len >= sizeof(out)) || (received != (len + CF_PROTO_OFFSET)))
@@ -1453,13 +1355,6 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
             return false;
         }
 
-        if (!conn->id_verified)
-        {
-            Log(LOG_LEVEL_INFO, "ID not verified");
-            RefuseAccess(conn, recvbuffer);
-            return true;
-        }
-
         if (!LiteralAccessControl(ctx, recvbuffer, conn, true))
         {
             Log(LOG_LEVEL_INFO, "Query access failure");
@@ -1475,7 +1370,6 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         break;
 
     case PROTOCOL_COMMAND_CALL_ME_BACK:
-
         sscanf(recvbuffer, "SCALLBACK %u", &len);
 
         if ((len >= sizeof(out)) || (received != (len + CF_PROTO_OFFSET)))
@@ -1493,13 +1387,6 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
             Log(LOG_LEVEL_INFO, "CALL_ME_BACK protocol defect");
             RefuseAccess(conn, "decryption failure");
             return false;
-        }
-
-        if (!conn->id_verified)
-        {
-            Log(LOG_LEVEL_INFO, "ID not verified");
-            RefuseAccess(conn, recvbuffer);
-            return true;
         }
 
         if (!LiteralAccessControl(ctx, recvbuffer, conn, true))
