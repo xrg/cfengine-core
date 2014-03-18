@@ -94,38 +94,21 @@ static ProtocolCommandClassic GetCommandClassic(char *str)
 /* 'resolved' argument needs to be at least CF_BUFSIZE long */
 static bool ResolveFilename(const char *req_path, char *res_path)
 {
-    char req_dir[CF_BUFSIZE];
-    char req_filename[CF_BUFSIZE];
 
-/*
- * Eliminate symlinks from path, but do not resolve the file itself if it is a
- * symlink.
- */
-
-    strlcpy(req_dir, req_path, CF_BUFSIZE);
-    ChopLastNode(req_dir);
-
-    strlcpy(req_filename, ReadLastNode(req_path), CF_BUFSIZE);
-
-#if defined HAVE_REALPATH && !defined _WIN32
-    if (realpath(req_dir, res_path) == NULL)
+#if !defined _WIN32
+    if (realpath(req_path, res_path) == NULL)
     {
         return false;
     }
 #else
     memset(res_path, 0, CF_BUFSIZE);
-    CompressPath(res_path, req_dir);
+    CompressPath(res_path, req_path);
 #endif
 
-    AddSlash(res_path);
-    strlcat(res_path, req_filename, CF_BUFSIZE);
-
-/* Adjust for forward slashes */
-
+    /* Adjust for forward slashes */
     MapName(res_path);
 
 /* NT has case-insensitive path names */
-
 #ifdef __MINGW32__
     int i;
 
@@ -951,6 +934,13 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
        using classic protocol is sending. */
     case PROTOCOL_COMMAND_AUTH_PLAIN:
         SetConnectionData(conn, (char *) (recvbuffer + strlen("CAUTH ")));
+
+        if (conn->username == NULL || IsUserNameValid(conn->username) == false)
+        {
+            Log(LOG_LEVEL_INFO, "Client is sending wrong username: '%s'", conn->username);
+            RefuseAccess(conn, recvbuffer);
+            return false;
+        }
 
         /* This is used only for forcing correct state of state machine while
            connecting and authenticating user using classic protocol. */

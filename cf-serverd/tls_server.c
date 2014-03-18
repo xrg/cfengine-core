@@ -304,13 +304,13 @@ int ServerIdentifyClient(const ConnectionInfo *conn_info,
         /* Found USERNAME identity setting */
         if (strcmp(word1, "USERNAME") == 0)
         {
-            if (strlen(word2) < username_size)
+            if ((strlen(word2) < username_size) && (IsUserNameValid(word2) == true))
             {
                 strcpy(username, word2);
             }
             else
             {
-                Log(LOG_LEVEL_NOTICE, "Received too long IDENTITY: %s=%s",
+                Log(LOG_LEVEL_NOTICE, "Received invalid IDENTITY: %s=%s",
                     word1, word2);
                 return -1;
             }
@@ -471,7 +471,7 @@ int ServerTLSSessionEstablish(ServerConnectionState *conn)
                     "%s: Explicitly trusting this key from now on.",
                     KeyPrintableHash(ConnectionInfoKey(conn->conn_info)));
 
-                SavePublicKey("root", KeyPrintableHash(ConnectionInfoKey(conn->conn_info)),
+                SavePublicKey(conn->username, KeyPrintableHash(ConnectionInfoKey(conn->conn_info)),
                               KeyRSA(ConnectionInfoKey(conn->conn_info)));
             }
             else
