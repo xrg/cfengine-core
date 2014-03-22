@@ -243,46 +243,6 @@ static PromiseResult ExpandPromiseAndDo(EvalContext *ctx, const Promise *pp,
     return result;
 }
 
-
-Rval ExpandDanglers(EvalContext *ctx,
-                    const char *ns, const char *scope,
-                    Rval rval, const Promise *pp)
-{
-    assert(ctx);
-    assert(pp);
-
-    switch (rval.type)
-    {
-    case RVAL_TYPE_SCALAR:
-        if (IsCf3VarString(RvalScalarValue(rval)))
-        {
-            return EvaluateFinalRval(ctx, PromiseGetPolicy(pp), ns, scope, rval, false, pp);
-        }
-        else
-        {
-            return RvalCopy(rval);
-        }
-        break;
-
-    case RVAL_TYPE_LIST:
-        {
-            Rlist *result_list = RlistCopy(RvalRlistValue(rval));
-            RlistFlatten(ctx, &result_list);
-            return (Rval) { result_list, RVAL_TYPE_LIST };
-        }
-        break;
-
-    case RVAL_TYPE_CONTAINER:
-    case RVAL_TYPE_FNCALL:
-    case RVAL_TYPE_NOPROMISEE:
-        return RvalCopy(rval);
-    }
-
-    ProgrammingError("Unhandled Rval type");
-}
-
-/*********************************************************************/
-
 void MapIteratorsFromRval(EvalContext *ctx, const Bundle *bundle, Rval rval,
                           Rlist **scalars, Rlist **lists, Rlist **containers)
 {
@@ -936,37 +896,6 @@ static void CopyLocalizedReferencesToBundleScope(EvalContext *ctx,
     }
 }
 
-static void ResolveCommonClassPromises(EvalContext *ctx, PromiseType *pt)
-{
-    assert(strcmp("classes", pt->name) == 0);
-    assert(strcmp(pt->parent_bundle->type, "common") == 0);
-
-    EvalContextStackPushPromiseTypeFrame(ctx, pt);
-    for (size_t i = 0; i < SeqLength(pt->promises); i++)
-    {
-        Promise *pp = SeqAt(pt->promises, i);
-        ExpandPromise(ctx, pp, VerifyClassPromise, NULL);
-    }
-    EvalContextStackPopFrame(ctx);
-}
-
-static void ResolveVariablesPromises(EvalContext *ctx, PromiseType *pt)
-{
-    assert(strcmp("vars", pt->name) == 0);
-
-    EvalContextStackPushPromiseTypeFrame(ctx, pt);
-    for (size_t i = 0; i < SeqLength(pt->promises); i++)
-    {
-        Promise *pp = SeqAt(pt->promises, i);
-        EvalContextStackPushPromiseFrame(ctx, pp, false);
-        EvalContextStackPushPromiseIterationFrame(ctx, 0, NULL);
-        VerifyVarPromise(ctx, pp, false);
-        EvalContextStackPopFrame(ctx);
-        EvalContextStackPopFrame(ctx);
-    }
-    EvalContextStackPopFrame(ctx);
-}
-
 void BundleResolve(EvalContext *ctx, const Bundle *bundle)
 {
     Log(LOG_LEVEL_DEBUG, "Resolving variables in bundle '%s' '%s'",
@@ -976,21 +905,33 @@ void BundleResolve(EvalContext *ctx, const Bundle *bundle)
     {
         for (size_t j = 0; j < SeqLength(bundle->promise_types); j++)
         {
-            PromiseType *sp = SeqAt(bundle->promise_types, j);
-            if (strcmp(sp->name, "classes") == 0)
+            PromiseType *pt = SeqAt(bundle->promise_types, j);
+            if (strcmp(pt->name, "classes") == 0)
             {
-                ResolveCommonClassPromises(ctx, sp);
+                EvalContextStackPushPromiseTypeFrame(ctx, pt);
+                for (size_t i = 0; i < SeqLength(pt->promises); i++)
+                {
+                    Promise *pp = SeqAt(pt->promises, i);
+                    ExpandPromise(ctx, pp, VerifyClassPromise, NULL);
+                }
+                EvalContextStackPopFrame(ctx);
             }
         }
     }
 
     for (size_t j = 0; j < SeqLength(bundle->promise_types); j++)
     {
-        PromiseType *sp = SeqAt(bundle->promise_types, j);
+        PromiseType *pt = SeqAt(bundle->promise_types, j);
 
-        if (strcmp(sp->name, "vars") == 0)
+        if (strcmp(pt->name, "vars") == 0)
         {
-            ResolveVariablesPromises(ctx, sp);
+            EvalContextStackPushPromiseTypeFrame(ctx, pt);
+            for (size_t i = 0; i < SeqLength(pt->promises); i++)
+            {
+                Promise *pp = SeqAt(pt->promises, i);
+                ExpandPromise(ctx, pp, (PromiseActuator*)VerifyVarPromise, NULL);
+            }
+            EvalContextStackPopFrame(ctx);
         }
     }
 }

@@ -268,7 +268,7 @@ static PromiseResult VerifyFilePromise(EvalContext *ctx, char *path, const Promi
         ChopLastNode(basedir);
         if (safe_chdir(basedir))
         {
-            Log(LOG_LEVEL_ERR, "Failed to chdir into '%s'", basedir);
+            Log(LOG_LEVEL_ERR, "Failed to chdir into '%s'. (chdir: '%s')", basedir, GetErrorStr());
         }
     }
 
@@ -573,9 +573,15 @@ PromiseResult ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes
                 goto exit;
             }
 
-            Writer *ouput_writer = NULL;
+            unsigned char existing_output_digest[EVP_MAX_MD_SIZE + 1] = { 0 };
+            if (access(pp->promiser, R_OK) == 0)
             {
-                FILE *output_file = safe_fopen(pp->promiser, "w");
+                HashFile(pp->promiser, existing_output_digest, CF_DEFAULT_DIGEST);
+            }
+
+            Writer *output_writer = NULL;
+            {
+                FILE *output_file = safe_fopen(pp->promiser, (edcontext->new_line_mode == NewLineMode_Native) ? "wt" : "w");
                 if (!output_file)
                 {
                     cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Output file '%s' could not be opened for writing", pp->promiser);
@@ -583,15 +589,21 @@ PromiseResult ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes
                     goto exit;
                 }
 
-                ouput_writer = FileWriter(output_file);
+                output_writer = FileWriter(output_file);
             }
 
-            Writer *template_writer = FileRead(a.edit_template, SIZE_MAX, NULL);
+            int template_fd = safe_open(a.edit_template, O_RDONLY | O_TEXT);
+            Writer *template_writer = NULL;
+            if (template_fd >= 0)
+            {
+                template_writer = FileReadFromFd(template_fd, SIZE_MAX, NULL);
+                close(template_fd);
+            }
             if (!template_writer)
             {
                 cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Could not read template file '%s'", a.edit_template);
                 result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
-                WriterClose(ouput_writer);
+                WriterClose(output_writer);
                 goto exit;
             }
 
@@ -601,19 +613,36 @@ PromiseResult ScheduleEditOperation(EvalContext *ctx, char *filename, Attributes
                 a.template_data = default_template_data = DefaultTemplateData(ctx);
             }
 
-            if (!MustacheRender(ouput_writer, StringWriterData(template_writer), a.template_data))
+            if (!MustacheRender(output_writer, StringWriterData(template_writer), a.template_data))
             {
                 cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Error rendering mustache template '%s'", a.edit_template);
                 result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
                 JsonDestroy(default_template_data);
                 WriterClose(template_writer);
-                WriterClose(ouput_writer);
+                WriterClose(output_writer);
                 goto exit;
             }
 
             JsonDestroy(default_template_data);
             WriterClose(template_writer);
-            WriterClose(ouput_writer);
+            WriterClose(output_writer);
+
+            unsigned char rendered_output_digest[EVP_MAX_MD_SIZE + 1] = { 0 };
+            if (access(pp->promiser, R_OK) == 0)
+            {
+                HashFile(pp->promiser, rendered_output_digest, CF_DEFAULT_DIGEST);
+                if (!HashesMatch(existing_output_digest, rendered_output_digest, CF_DEFAULT_DIGEST))
+                {
+                    cfPS(ctx, LOG_LEVEL_NOTICE, PROMISE_RESULT_CHANGE, pp, a, "Updated rendering of '%s' from template mustache template '%s'",
+                         pp->promiser, a.edit_template);
+                    result = PromiseResultUpdate(result, PROMISE_RESULT_CHANGE);
+                }
+            }
+            else
+            {
+                Log(LOG_LEVEL_ERR, "Cannot read rendered mustache template at '%s', in order to compare it to a previously rendered version",
+                    pp->promiser);
+            }
         }
     }
 
@@ -676,7 +705,7 @@ static void SaveSetuid(void)
     Item *current = RawLoadItemList(filename);
     if (!ListsCompare(VSETUIDLIST, current))
     {
-        RawSaveItemList(VSETUIDLIST, filename);
+        RawSaveItemList(VSETUIDLIST, filename, NewLineMode_Unix);
     }
 
     DeleteItemList(VSETUIDLIST);

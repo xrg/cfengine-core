@@ -54,7 +54,7 @@ bundle agent init
 body password init_password
 {
   format => "plaintext";
-  data => "InitPassword";
+  data => "Init0P4SSW0RD";
 }
 
 #######################################################
@@ -170,14 +170,14 @@ bundle agent test
 
     ok::
       "$(this.promise_filename) Pass";
-    failasdasd::
+    fail|!ok::
       "$(this.promise_filename) FAIL";
 }
 
 body password test_password
 {
   format => "plaintext";
-  data => "TestPassword";
+  data => "Test0P4SSW0RD";
 }
 
 body classes set_classes_kept_repaired(x, y)

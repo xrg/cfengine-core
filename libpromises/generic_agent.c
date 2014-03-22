@@ -224,11 +224,11 @@ bool GenericAgentCheckPolicy(GenericAgentConfig *config, bool force_validation, 
     if (!MissingInputFile(config->input_file))
     {
         {
-            time_t validated_at = ReadTimestampFromPolicyValidatedFile(config, NULL);
             if (config->agent_type == AGENT_TYPE_SERVER ||
                 config->agent_type == AGENT_TYPE_MONITOR ||
                 config->agent_type == AGENT_TYPE_EXECUTOR)
             {
+                time_t validated_at = ReadTimestampFromPolicyValidatedFile(config, NULL);
                 config->agent_specific.daemon.last_validated_at = validated_at;
             }
         }
@@ -357,10 +357,10 @@ static bool WritePolicyValidatedFile(ARG_UNUSED const GenericAgentConfig *config
  */
 bool GenericAgentTagReleaseDirectory(const GenericAgentConfig *config, const char *dirname, bool write_validated, bool write_release)
 {
-    char local_dirname[FILENAME_MAX + 1];
+    char local_dirname[PATH_MAX + 1];
     if (NULL == dirname)
     {
-        GetAutotagDir(local_dirname, FILENAME_MAX, NULL);
+        GetAutotagDir(local_dirname, PATH_MAX, NULL);
         dirname = local_dirname;
     }
 
@@ -562,6 +562,10 @@ void GenericAgentInitialize(EvalContext *ctx, GenericAgentConfig *config)
     char vbuff[CF_BUFSIZE];
     char ebuff[CF_EXPANDSIZE];
 
+#ifdef __MINGW32__
+    InitializeWindows();
+#endif
+
     DetermineCfenginePort();
 
     EvalContextClassPutHard(ctx, "any", "source=agent");
@@ -582,12 +586,6 @@ void GenericAgentInitialize(EvalContext *ctx, GenericAgentConfig *config)
         strcpy(CFWORKDIR, workdir);
         MapName(CFWORKDIR);
     }
-
-/* On windows, use 'binary mode' as default for files */
-
-#ifdef __MINGW32__
-    //_fmode = _O_BINARY;
-#endif
 
     OpenLog(LOG_USER);
     SetSyslogFacility(LOG_USER);
@@ -733,8 +731,8 @@ static bool MissingInputFile(const char *input_file)
 // Git only.
 bool GeneratePolicyReleaseIDFromGit(char release_id_out[GENERIC_AGENT_CHECKSUM_SIZE], const char *policy_dir)
 {
-    char git_filename[FILENAME_MAX + 1];
-    snprintf(git_filename, FILENAME_MAX, "%s/.git/HEAD", policy_dir);
+    char git_filename[PATH_MAX + 1];
+    snprintf(git_filename, PATH_MAX, "%s/.git/HEAD", policy_dir);
     MapName(git_filename);
 
     FILE *git_file = fopen(git_filename, "r");
@@ -744,7 +742,7 @@ bool GeneratePolicyReleaseIDFromGit(char release_id_out[GENERIC_AGENT_CHECKSUM_S
         fscanf(git_file, "ref: %127s", git_head);
         fclose(git_file);
 
-        snprintf(git_filename, FILENAME_MAX, "%s/.git/%s", policy_dir, git_head);
+        snprintf(git_filename, PATH_MAX, "%s/.git/%s", policy_dir, git_head);
         git_file = fopen(git_filename, "r");
         if (git_file)
         {
@@ -806,7 +804,7 @@ bool GeneratePolicyReleaseID(char release_id_out[GENERIC_AGENT_CHECKSUM_SIZE], c
  */
 static void GetPromisesValidatedFile(char *filename, size_t max_size, const GenericAgentConfig *config, const char *maybe_dirname)
 {
-    char dirname[FILENAME_MAX + 1];
+    char dirname[PATH_MAX + 1];
     GetAutotagDir(dirname, max_size, maybe_dirname);
 
     if (NULL == maybe_dirname && MINUSF)

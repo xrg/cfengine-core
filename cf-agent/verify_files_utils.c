@@ -2128,7 +2128,7 @@ int DepthSearch(EvalContext *ctx, char *name, struct stat *sb, int rlevel, Attri
         ChopLastNode(basedir);
         if (safe_chdir(basedir))
         {
-            Log(LOG_LEVEL_ERR, "Failed to chdir into '%s'", basedir);
+            Log(LOG_LEVEL_ERR, "Failed to chdir into '%s'. (chdir: '%s')", basedir, GetErrorStr());
             return false;
         }
         return VerifyFileLeaf(ctx, name, sb, attr, pp, result);
@@ -2800,7 +2800,8 @@ static PromiseResult VerifyFileIntegrity(EvalContext *ctx, const char *file, Att
 
     if (changed)
     {
-        EvalContextHeapPersistentSave(PromiseGetNamespace(pp), "checksum_alerts", CF_PERSISTENCE, CONTEXT_STATE_POLICY_PRESERVE);
+        EvalContextHeapPersistentSave(ctx, "checksum_alerts", CF_PERSISTENCE, CONTEXT_STATE_POLICY_PRESERVE);
+        EvalContextClassPutSoft(ctx, "checksum_alerts", CONTEXT_SCOPE_NAMESPACE, "");
         LogHashChange(file, FILE_STATE_CONTENT_CHANGED, "Content changed", pp);
     }
 

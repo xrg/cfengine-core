@@ -33,7 +33,7 @@ Syntax: $0 [-c|--check] [-v|--verbose] [--cfagent=PATH] [--workdir=WORKDIR] FILE
 
 Generate the output section of CFEngine code example.
 
-With -c or --check, the script reports if the output is different but doesn't
+With -c or --check, the script reports if the output is different but does not
 write it.
 
 With -v or --verbose, the script shows the full output of each test.  Use
@@ -57,8 +57,8 @@ Each input .cf file is scanned for three markers:
 
 #+begin_src prep
 #@ ```
-#@ touch -d '2001-02-03 12:34:56' /tmp/earlier
-#@ touch -d '2002-02-03 12:34:56' /tmp/later
+#@ touch -t '200102031234.56' /tmp/earlier
+#@ touch -t '200202031234.56' /tmp/later
 #@ ```
 #+end_src
 
@@ -74,6 +74,10 @@ This block is rewritten if it's different, otherwise it's left alone.
 
 The "#@ " part is optional but needed if you want the file to be valid CFEngine
 policy. The "#@ ```" parts make the prep and output steps render as code in markdown.
+
+If the output is unpredictable due to, for example, random input or network
+dependencies, make sure the unpredictable line has the string RANDOM in capital
+letters somewhere. That will skip the output check for that line.
 
 EOHIPPUS
 
@@ -99,8 +103,8 @@ foreach my $file (@todo)
             $prep = [split "\n", $1];
         }
 
-        $data =~ s/(#\+begin_src example_output\n)(.*?)(#\+end_src)/$1 . rewrite_output($file, $prep, $example, $2) . $3/es;
-        if ($data ne $copy)
+        $data =~ s/(#\+begin_src example_output( no_check)?\n)(.*?)(#\+end_src)/$1 . rewrite_output($file, $prep, $example, $3) . $4/es;
+        if (!defined($2) && $data ne $copy)
         {
             print "$file: output differs from original...";
             if ($options{check})
@@ -162,6 +166,9 @@ sub equal_outputs
     $x =~ s/^[-0-9T:+]+\s+//mg;
     $y =~ s/^(#@ )//mg;
     $y =~ s/^[-0-9T:+]+\s+//mg;
+
+    $x =~ s/.*RANDOM.*//mg;
+    $y =~ s/.*RANDOM.*//mg;
 
     if ($x ne $y)
     {
