@@ -1533,7 +1533,7 @@ static bool TransformFile(EvalContext *ctx, char *file, Attributes attr, const P
 
         transRetcode = cf_pclose(pop);
 
-        if (VerifyCommandRetcode(ctx, transRetcode, true, attr, pp, result))
+        if (VerifyCommandRetcode(ctx, transRetcode, attr, pp, result))
         {
             Log(LOG_LEVEL_INFO, "Transformer '%s' => '%s' seemed to work ok", file, BufferData(command));
         }
@@ -2800,7 +2800,7 @@ static PromiseResult VerifyFileIntegrity(EvalContext *ctx, const char *file, Att
 
     if (changed)
     {
-        EvalContextHeapPersistentSave(ctx, "checksum_alerts", CF_PERSISTENCE, CONTEXT_STATE_POLICY_PRESERVE);
+        EvalContextHeapPersistentSave(ctx, "checksum_alerts", CF_PERSISTENCE, CONTEXT_STATE_POLICY_PRESERVE, "");
         EvalContextClassPutSoft(ctx, "checksum_alerts", CONTEXT_SCOPE_NAMESPACE, "");
         LogHashChange(file, FILE_STATE_CONTENT_CHANGED, "Content changed", pp);
     }

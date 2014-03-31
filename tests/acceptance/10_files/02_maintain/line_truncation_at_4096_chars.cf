@@ -39,16 +39,6 @@ bundle agent init
         contain => in_shell;
 }
 
-body perms m(mode)
-{
-      mode => "${mode}";
-}
-
-body contain in_shell
-{
-      useshell => "true"; # canonical "useshell" but this is backwards-compatible
-}
-
 #######################################################
 
 bundle agent test
@@ -62,14 +52,6 @@ bundle agent test
         edit_line => insert_lines("${init.line_to_add}");
 }
 
-bundle edit_line insert_lines(lines)
-{
-insert_lines:
-
-  "${lines}"
-    comment => "Append lines if they don't exist";
-}
-
 #######################################################
 
 bundle agent check
@@ -78,7 +60,7 @@ bundle agent check
   classes:
       # ok is defined if the file still contains ENDMARK, meaning the end of the sample very
       # long line did not get truncated during file editing
-      "ok" expression => returnszero("${G.grep} -q ENDMARK ${G.testfile}", "noshell");
+      "ok" expression => returnszero("${G.grep} ENDMARK ${G.testfile}", "noshell");
 
   reports:
     DEBUG.!ok::
@@ -94,7 +76,7 @@ bundle agent check
 bundle agent fini
 {
   methods:
-      "any" usebundle => default_fini("${G.testfile}");
+      "any" usebundle => dcs_fini("${G.testfile}");
 }
 
 ### PROJECT_ID: core

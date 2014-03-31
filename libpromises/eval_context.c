@@ -45,6 +45,8 @@
 #include <fncall.h>
 #include <ring_buffer.h>
 #include <logging_priv.h>
+#include <known_dirs.h>
+#include <printsize.h>
 
 static bool BundleAborted(const EvalContext *ctx);
 static void SetBundleAborted(EvalContext *ctx);
@@ -52,6 +54,7 @@ static void SetBundleAborted(EvalContext *ctx);
 static bool EvalContextStackFrameContainsSoft(const EvalContext *ctx, const char *context);
 static bool EvalContextHeapContainsSoft(const EvalContext *ctx, const char *ns, const char *name);
 static bool EvalContextHeapContainsHard(const EvalContext *ctx, const char *name);
+static bool EvalContextClassPut(EvalContext *ctx, const char *ns, const char *name, bool is_soft, ContextScope scope, const char *tags);
 static const char *EvalContextCurrentNamespace(const EvalContext *ctx);
 static ClassRef IDRefQualify(const EvalContext *ctx, const char *id);
 
@@ -218,64 +221,6 @@ static const char *GetAgentAbortingContext(const EvalContext *ctx)
         }
     }
     return NULL;
-}
-
-void EvalContextHeapAddSoft(EvalContext *ctx, const char *context, const char *ns, const char *tags)
-{
-    char context_copy[CF_MAXVARSIZE];
-    char canonified_context[CF_MAXVARSIZE];
-
-    strcpy(canonified_context, context);
-    if (Chop(canonified_context, CF_EXPANDSIZE) == -1)
-    {
-        Log(LOG_LEVEL_ERR, "Chop was called on a string that seemed to have no terminator");
-    }
-    CanonifyNameInPlace(canonified_context);
-
-    if (ns && strcmp(ns, "default") != 0)
-    {
-        snprintf(context_copy, CF_MAXVARSIZE, "%s:%s", ns, canonified_context);
-    }
-    else
-    {
-        strncpy(context_copy, canonified_context, CF_MAXVARSIZE);
-    }
-
-    if (strlen(context_copy) == 0)
-    {
-        return;
-    }
-
-    if (IsRegexItemIn(ctx, ctx->heap_abort_current_bundle, context_copy))
-    {
-        Log(LOG_LEVEL_ERR, "Bundle aborted on defined class '%s'", context_copy);
-        SetBundleAborted(ctx);
-    }
-
-    if (IsRegexItemIn(ctx, ctx->heap_abort, context_copy))
-    {
-        FatalError(ctx, "cf-agent aborted on defined class '%s'", context_copy);
-    }
-
-    if (EvalContextHeapContainsSoft(ctx, ns, canonified_context))
-    {
-        return;
-    }
-
-    ClassTablePut(ctx->global_classes, ns, canonified_context, true, CONTEXT_SCOPE_NAMESPACE, tags);
-
-    if (!BundleAborted(ctx))
-    {
-        for (const Item *ip = ctx->heap_abort_current_bundle; ip != NULL; ip = ip->next)
-        {
-            if (IsDefinedClass(ctx, ip->name))
-            {
-                Log(LOG_LEVEL_ERR, "Setting abort for '%s' when setting '%s'", ip->name, context_copy);
-                SetBundleAborted(ctx);
-                break;
-            }
-        }
-    }
 }
 
 static void EvalContextStackFrameAddSoft(EvalContext *ctx, const char *context, const char *tags)
@@ -489,46 +434,75 @@ bool EvalFileResult(const char *file_result, StringSet *leaf_attr)
 
 /*****************************************************************************/
 
-void EvalContextHeapPersistentSave(EvalContext *ctx, const char *name, unsigned int ttl_minutes, PersistentClassPolicy policy)
+
+void EvalContextHeapPersistentSave(EvalContext *ctx, const char *name, unsigned int ttl_minutes,
+                                   PersistentClassPolicy policy, const char *tags)
 {
-    CF_DB *dbp;
-    PersistentClassInfo state;
+    assert(tags);
+
     time_t now = time(NULL);
 
+    CF_DB *dbp;
     if (!OpenDB(&dbp, dbid_state))
     {
+        char *db_path = DBIdToPath(GetWorkDir(), dbid_state);
+        Log(LOG_LEVEL_ERR, "While persisting class, unable to open database at '%s' (OpenDB: %s)",
+            db_path, GetErrorStr());
+        free(db_path);
         return;
     }
 
     ClassRef ref = IDRefQualify(ctx, name);
-    char *serialized_name = ClassRefToString(ref.ns, ref.name);
+    char *key = ClassRefToString(ref.ns, ref.name);
+    ClassRefDestroy(ref);
     
-    if (ReadDB(dbp, serialized_name, &state, sizeof(state)))
+    size_t tags_length = strlen(tags) + 1;
+    size_t new_info_size = sizeof(PersistentClassInfo) + tags_length;
+
+    PersistentClassInfo *new_info = xcalloc(1, new_info_size);
+
+    new_info->expires = now + ttl_minutes * 60;
+    new_info->policy = policy;
+    strlcpy(new_info->tags, tags, tags_length);
+
+    // first see if we have an existing record, and if we should bother to update
     {
-        if (state.policy == CONTEXT_STATE_POLICY_PRESERVE)
+        int existing_info_size = ValueSizeDB(dbp, key, strlen(key));
+        if (existing_info_size > 0)
         {
-            if (now < state.expires)
+            PersistentClassInfo *existing_info = xcalloc(existing_info_size, 1);
+            if (ReadDB(dbp, key, existing_info, existing_info_size))
             {
-                Log(LOG_LEVEL_VERBOSE, "Persisent class '%s' is already in a preserved state --  %jd minutes to go",
-                      serialized_name, (intmax_t)((state.expires - now) / 60));
+                if (existing_info->policy == CONTEXT_STATE_POLICY_PRESERVE &&
+                    now < existing_info->expires &&
+                    strcmp(existing_info->tags, new_info->tags) == 0)
+                {
+                    Log(LOG_LEVEL_VERBOSE, "Persisent class '%s' is already in a preserved state --  %jd minutes to go",
+                        key, (intmax_t)((existing_info->expires - now) / 60));
+                    CloseDB(dbp);
+                    free(key);
+                    free(new_info);
+                    return;
+                }
+            }
+            else
+            {
+                Log(LOG_LEVEL_ERR, "While persisting class '%s', error reading existing value", key);
                 CloseDB(dbp);
+                free(key);
+                free(new_info);
                 return;
             }
         }
     }
-    else
-    {
-        Log(LOG_LEVEL_VERBOSE, "New persistent class '%s'", serialized_name);
-    }
 
-    state.expires = now + ttl_minutes * 60;
-    state.policy = policy;
+    Log(LOG_LEVEL_VERBOSE, "Updating persistent class '%s'", key);
 
-    WriteDB(dbp, name, &state, sizeof(state));
+    WriteDB(dbp, key, new_info, new_info_size);
+
     CloseDB(dbp);
-
-    free(serialized_name);
-    ClassRefDestroy(ref);
+    free(key);
+    free(new_info);
 }
 
 /*****************************************************************************/
@@ -551,56 +525,57 @@ void EvalContextHeapPersistentRemove(const char *context)
 
 void EvalContextHeapPersistentLoadAll(EvalContext *ctx)
 {
-    CF_DB *dbp;
-    CF_DBC *dbcp;
-    int ksize, vsize;
-    char *key;
-    void *value;
     time_t now = time(NULL);
-    PersistentClassInfo q;
 
     Banner("Loading persistent classes");
 
+    CF_DB *dbp;
     if (!OpenDB(&dbp, dbid_state))
     {
         return;
     }
 
-/* Acquire a cursor for the database. */
-
+    CF_DBC *dbcp;
     if (!NewDBCursor(dbp, &dbcp))
     {
         Log(LOG_LEVEL_INFO, "Unable to scan persistence cache");
         return;
     }
 
-    while (NextDB(dbcp, &key, &ksize, &value, &vsize))
-    {
-        memcpy((void *) &q, value, sizeof(PersistentClassInfo));
+    const char *key;
+    int key_size = 0;
+    const PersistentClassInfo *info;
+    int info_size = 0;
 
+    while (NextDB(dbcp, (char **)&key, &key_size, (void **)&info, &info_size))
+    {
         Log(LOG_LEVEL_DEBUG, "Found key persistent class key '%s'", key);
 
-        if (now > q.expires)
+        const char *tags = NULL;
+        if (info_size > sizeof(PersistentClassInfo))
+        {
+            tags = info->tags;
+        }
+
+        if (now > info->expires)
         {
             Log(LOG_LEVEL_VERBOSE, "Persistent class '%s' expired", key);
             DBCursorDeleteEntry(dbcp);
         }
         else
         {
-            Log(LOG_LEVEL_VERBOSE, "Persistent class '%s' for %jd more minutes", key, (intmax_t)((q.expires - now) / 60));
+            Log(LOG_LEVEL_VERBOSE, "Persistent class '%s' for %jd more minutes", key, (intmax_t)((info->expires - now) / 60));
             Log(LOG_LEVEL_VERBOSE, "Adding persistent class '%s' to heap", key);
-            if (strchr(key, CF_NS))
-            {
-                char ns[CF_MAXVARSIZE], name[CF_MAXVARSIZE];
-                ns[0] = '\0';
-                name[0] = '\0';
-                sscanf(key, "%[^:]:%[^\n]", ns, name);
-                EvalContextHeapAddSoft(ctx, name, ns, "source=persistent");
-            }
-            else
-            {
-                EvalContextHeapAddSoft(ctx, key, NULL, "source=persistent");
-            }
+
+            ClassRef ref = ClassRefParse(key);
+            EvalContextClassPut(ctx, ref.ns, ref.name, true, CONTEXT_SCOPE_NAMESPACE, tags);
+
+            StringSet *tag_set = EvalContextClassTags(ctx, ref.ns, ref.name);
+            assert(tag_set);
+
+            StringSetAdd(tag_set, xstrdup("source=persistent"));
+
+            ClassRefDestroy(ref);
         }
     }
 
@@ -631,7 +606,7 @@ void SetBundleAborted(EvalContext *ctx)
     ctx->bundle_aborted = true;
 }
 
-int VarClassExcluded(const EvalContext *ctx, const Promise *pp, char **classes)
+bool VarClassExcluded(const EvalContext *ctx, const Promise *pp, char **classes)
 {
     Constraint *cp = PromiseGetConstraint(pp, "ifvarclass");
     if (!cp)
@@ -690,6 +665,11 @@ void EvalContextHeapAddAbort(EvalContext *ctx, const char *context, const char *
     if (!IsItemIn(ctx->heap_abort, context))
     {
         AppendItem(&ctx->heap_abort, context, activated_on_context);
+    }
+
+    if (GetAgentAbortingContext(ctx))
+    {
+        FatalError(ctx, "cf-agent aborted on context '%s'", GetAgentAbortingContext(ctx));
     }
 }
 
@@ -1200,14 +1180,14 @@ void EvalContextStackPushPromiseFrame(EvalContext *ctx, const Promise *owner, bo
         EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promise_linenumber", number, CF_DATA_TYPE_STRING, "source=promise");
     }
 
-    char v[CF_MAXVARSIZE];
-    snprintf(v, CF_MAXVARSIZE, "%d", (int) ctx->uid);
+    char v[PRINTSIZE(int)];
+    sprintf(v, "%d", (int) ctx->uid);
     EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser_uid", v, CF_DATA_TYPE_INT, "source=agent");
-    snprintf(v, CF_MAXVARSIZE, "%d", (int) ctx->gid);
+    sprintf(v, "%d", (int) ctx->gid);
     EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser_gid", v, CF_DATA_TYPE_INT, "source=agent");
-    snprintf(v, CF_MAXVARSIZE, "%d", (int) ctx->pid);
+    sprintf(v, "%d", (int) ctx->pid);
     EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser_pid", v, CF_DATA_TYPE_INT, "source=agent");
-    snprintf(v, CF_MAXVARSIZE, "%d", (int) ctx->ppid);
+    sprintf(v, "%d", (int) ctx->ppid);
     EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser_ppid", v, CF_DATA_TYPE_INT, "source=agent");
 
     EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "bundle", PromiseGetBundle(owner)->name, CF_DATA_TYPE_STRING, "source=promise");
@@ -1223,7 +1203,13 @@ Promise *EvalContextStackPushPromiseIterationFrame(EvalContext *ctx, size_t iter
         PromiseIteratorUpdateVariable(ctx, iter_ctx);
     }
 
-    Promise *pexp = ExpandDeRefPromise(ctx, LastStackFrame(ctx, 0)->data.promise.owner);
+    bool excluded = false;
+    Promise *pexp = ExpandDeRefPromise(ctx, LastStackFrame(ctx, 0)->data.promise.owner, &excluded);
+    if (excluded)
+    {
+        PromiseDestroy(pexp);
+        return NULL;
+    }
 
     EvalContextStackPushFrame(ctx, StackFrameNewPromiseIteration(pexp, iter_ctx, iteration_index));
 
@@ -1262,11 +1248,6 @@ void EvalContextStackPopFrame(EvalContext *ctx)
     }
 
     SeqRemove(ctx->stack, SeqLength(ctx->stack) - 1);
-
-    if (GetAgentAbortingContext(ctx))
-    {
-        FatalError(ctx, "cf-agent aborted on context '%s'", GetAgentAbortingContext(ctx));
-    }
 
     last_frame = LastStackFrame(ctx, 0);
     if (last_frame)
@@ -1411,12 +1392,7 @@ static bool EvalContextClassPut(EvalContext *ctx, const char *ns, const char *na
 
 static const char *EvalContextCurrentNamespace(const EvalContext *ctx)
 {
-    if (SeqLength(ctx->stack) == 0)
-    {
-        return NULL;
-    }
-
-    for (size_t i = SeqLength(ctx->stack) - 1; i >= 0; i--)
+    for (int i = SeqLength(ctx->stack) - 1; i >= 0; i--)
     {
         StackFrame *frame = SeqAt(ctx->stack, i);
         switch (frame->type)
@@ -2107,7 +2083,8 @@ static bool IsPromiseValuableForLogging(const Promise *pp)
     return pp && (pp->parent_promise_type->name != NULL) && (!IsStrIn(pp->parent_promise_type->name, NO_LOG_TYPES));
 }
 
-static void AddAllClasses(EvalContext *ctx, const char *ns, const Rlist *list, unsigned int persistence_ttl, PersistentClassPolicy policy, ContextScope context_scope)
+static void AddAllClasses(EvalContext *ctx, const Rlist *list, unsigned int persistence_ttl,
+                          PersistentClassPolicy policy, ContextScope context_scope)
 {
     for (const Rlist *rp = list; rp != NULL; rp = rp->next)
     {
@@ -2133,7 +2110,7 @@ static void AddAllClasses(EvalContext *ctx, const char *ns, const Rlist *list, u
             }
 
             Log(LOG_LEVEL_VERBOSE, "Defining persistent promise result class '%s'", classname);
-            EvalContextHeapPersistentSave(ctx, classname, persistence_ttl, policy);
+            EvalContextHeapPersistentSave(ctx, classname, persistence_ttl, policy, "");
             EvalContextClassPutSoft(ctx, classname, CONTEXT_SCOPE_NAMESPACE, "");
         }
         else
@@ -2148,7 +2125,7 @@ static void AddAllClasses(EvalContext *ctx, const char *ns, const Rlist *list, u
 
             case CONTEXT_SCOPE_NONE:
             case CONTEXT_SCOPE_NAMESPACE:
-                EvalContextHeapAddSoft(ctx, classname, ns, "");
+                EvalContextClassPutSoft(ctx, classname, CONTEXT_SCOPE_NAMESPACE, "");
                 break;
 
             default:
@@ -2194,7 +2171,7 @@ ENTERPRISE_VOID_FUNC_2ARG_DEFINE_STUB(void, TrackTotalCompliance, ARG_UNUSED Pro
 {
 }
 
-static void SetPromiseOutcomeClasses(PromiseResult status, EvalContext *ctx, const Promise *pp, DefineClasses dc)
+static void SetPromiseOutcomeClasses(EvalContext *ctx, PromiseResult status, DefineClasses dc)
 {
     Rlist *add_classes = NULL;
     Rlist *del_classes = NULL;
@@ -2236,7 +2213,7 @@ static void SetPromiseOutcomeClasses(PromiseResult status, EvalContext *ctx, con
         ProgrammingError("Unexpected status '%c' has been passed to SetPromiseOutcomeClasses", status);
     }
 
-    AddAllClasses(ctx, PromiseGetNamespace(pp), add_classes, dc.persist, dc.timer, dc.scope);
+    AddAllClasses(ctx, add_classes, dc.persist, dc.timer, dc.scope);
     DeleteAllClasses(ctx, del_classes);
 }
 
@@ -2390,7 +2367,7 @@ void ClassAuditLog(EvalContext *ctx, const Promise *pp, Attributes attr, Promise
         UpdatePromiseCounters(status);
     }
 
-    SetPromiseOutcomeClasses(status, ctx, pp, attr.classes);
+    SetPromiseOutcomeClasses(ctx, status, attr.classes);
     DoSummarizeTransaction(ctx, status, pp, attr.transaction);
 }
 

@@ -41,9 +41,9 @@
 #include <files_lib.h>                               /* FullWrite,safe_open */
 #include <string_lib.h>                           /* MemSpan,MemSpanInverse */
 #include <misc_lib.h>                                   /* ProgrammingError */
+#include <printsize.h>                                         /* PRINTSIZE */
 
-#include <lastseen.h>                                           /* LastSaw */
-
+#include <lastseen.h>                                            /* LastSaw */
 
 typedef struct
 {
@@ -137,6 +137,8 @@ char CFENGINE_PORT_STR[16] = "5308";
 void DetermineCfenginePort()
 {
     struct servent *server;
+    assert(sizeof(CFENGINE_PORT_STR) >= PRINTSIZE(CFENGINE_PORT));
+    /* ... but we leave more space, as service names can be longer */
 
     errno = 0;
     if ((server = getservbyname(CFENGINE_SERVICE, "tcp")) != NULL)
@@ -209,36 +211,11 @@ int TLSConnect(ConnectionInfo *conn_info, bool trust_server,
         }
     }
 
-    /* TLS CONNECTION IS ESTABLISHED, negotiate protocol version. */
-    ret = TLSClientNegotiateProtocol(conn_info);
-    if (ret <= 0)
-    {
-        return -1;
-    }
+    /* TLS CONNECTION IS ESTABLISHED, negotiate protocol version and send
+     * identification data. */
+    ret = TLSClientIdentificationDialog(conn_info, username);
 
-    /* This contained the value we requested from the server, and now we put
-     * in the value that was negotiated. */
-    conn_info->type = ret;
-
-    /* We continue by sending identification data. */
-    ret = TLSClientSendIdentity(conn_info, username);
-    if (ret == -1)
-    {
-        return -1;
-    }
-
-    /* Server might hang up here, after we sent identification! We
-     * must get the "OK WELCOME" message for everything to be OK. */
-    static const char OK[] = "OK WELCOME";
-    size_t const oklen = sizeof(OK) - 1; /* OK's size includes its '\0' */
-    char line[1024] = "";
-    ssize_t len = TLSRecvLine(ConnectionInfoSSL(conn_info), line, sizeof(line));
-    if (len < oklen || strncmp(line, OK, oklen) != 0)
-    {
-        return 0; /* Close, but no cigar :-( */
-    }
-
-    return 1; /* Success :-) */
+    return ret;
 }
 
 /**

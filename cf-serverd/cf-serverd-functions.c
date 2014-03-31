@@ -44,6 +44,7 @@
 #include <connection_info.h>
 #include <file_lib.h>
 #include <loading.h>
+#include <printsize.h>
 
 #include "server_access.h"
 
@@ -347,6 +348,7 @@ void StartServer(EvalContext *ctx, Policy **policy, GenericAgentConfig *config)
     fcntl(sd, F_SETFD, FD_CLOEXEC);
 #endif /* !__MINGW32__ */
 
+    Log(LOG_LEVEL_NOTICE, "Server is starting...");
     WritePID("cf-serverd.pid");
     CollectCallStart(COLLECT_INTERVAL);
 
@@ -492,8 +494,8 @@ int OpenReceiverChannel(void)
         ptr = BINDINTERFACE;
     }
 
-    char servname[10];
-    snprintf(servname, 10, "%d", CFENGINE_PORT);
+    char servname[PRINTSIZE(CFENGINE_PORT)];
+    sprintf(servname, "%d", CFENGINE_PORT);
 
     /* Resolve listening interface. */
     int gres;

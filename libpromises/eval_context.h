@@ -115,7 +115,7 @@ void EvalContextDestroy(EvalContext *ctx);
 void EvalContextHeapAddAbort(EvalContext *ctx, const char *context, const char *activated_on_context);
 void EvalContextHeapAddAbortCurrentBundle(EvalContext *ctx, const char *context, const char *activated_on_context);
 
-void EvalContextHeapPersistentSave(EvalContext *ctx, const char *name, unsigned int ttl_minutes, PersistentClassPolicy policy);
+void EvalContextHeapPersistentSave(EvalContext *ctx, const char *name, unsigned int ttl_minutes, PersistentClassPolicy policy, const char *tags);
 void EvalContextHeapPersistentRemove(const char *context);
 void EvalContextHeapPersistentLoadAll(EvalContext *ctx);
 
@@ -199,7 +199,7 @@ void EvalContextSetIgnoreLocks(EvalContext *ctx, bool ignore);
 void EvalContextSetLaunchDirectory(EvalContext *ctx, const char *path);
 
 bool Abort(EvalContext *ctx);
-int VarClassExcluded(const EvalContext *ctx, const Promise *pp, char **classes);
+bool VarClassExcluded(const EvalContext *ctx, const Promise *pp, char **classes);
 void NotifyDependantPromises(EvalContext *ctx, const Promise *pp, PromiseResult result);
 bool MissingDependencies(EvalContext *ctx, const Promise *pp);
 void cfPS(EvalContext *ctx, LogLevel level, PromiseResult status, const Promise *pp, Attributes attr, const char *fmt, ...) FUNC_ATTR_PRINTF(6, 7);

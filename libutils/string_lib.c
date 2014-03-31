@@ -28,6 +28,7 @@
 #include <alloc.h>
 #include <writer.h>
 #include <misc_lib.h>
+#include <logging.h>
 
 char *StringVFormat(const char *fmt, va_list ap)
 {
@@ -396,11 +397,18 @@ char *NULLStringToEmpty(char *str)
 
 pcre *CompileRegex(const char *regex)
 {
-    assert(regex);
     const char *errorstr;
     int erroffset;
 
-    return pcre_compile(regex, PCRE_MULTILINE | PCRE_DOTALL, &errorstr, &erroffset, NULL);
+    pcre *rx = pcre_compile(regex, PCRE_MULTILINE | PCRE_DOTALL, &errorstr, &erroffset, NULL);
+
+    if (!rx)
+    {
+        Log(LOG_LEVEL_ERR, "Regular expression error: pcre_compile() '%s' in expression '%s' (offset: %d)",
+            errorstr, regex, erroffset);
+    }
+
+    return rx;
 }
 
 bool StringMatchWithPrecompiledRegex(pcre *regex, const char *str, int *start, int *end)
@@ -455,9 +463,24 @@ bool StringMatch(const char *regex, const char *str, int *start, int *end)
 
 bool StringMatchFull(const char *regex, const char *str)
 {
+    pcre *pattern = CompileRegex(regex);
+
+    if (pattern == NULL)
+    {
+        return false;
+    }
+
+    bool ret = StringMatchFullWithPrecompiledRegex(pattern, str);
+
+    pcre_free(pattern);
+    return ret;
+}
+
+bool StringMatchFullWithPrecompiledRegex(pcre *pattern, const char *str)
+{
     int start = 0, end = 0;
 
-    if (StringMatch(regex, str, &start, &end))
+    if (StringMatchWithPrecompiledRegex(pattern, str, &start, &end))
     {
         return (start == 0) && (end == strlen(str));
     }

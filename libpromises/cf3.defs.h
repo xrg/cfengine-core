@@ -1008,6 +1008,7 @@ typedef struct
 {
     unsigned int expires;
     PersistentClassPolicy policy;
+    char tags[]; // variable length, must be zero terminated
 } PersistentClassInfo;
 
 /*************************************************************************/

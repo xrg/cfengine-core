@@ -513,6 +513,10 @@ void *memrchr(const void *s, int c, size_t n);
 #if !HAVE_DECL_MEMDUP
 void *memdup(const void *mem, size_t size);
 #endif
+#if !HAVE_DECL_MEMMEM
+void *memmem(const void *haystack, size_t haystacklen,
+             const void *needle, size_t needlelen);
+#endif
 #if !HAVE_DECL_STRERROR
 char *strerror(int err);
 #endif
@@ -797,12 +801,16 @@ struct timespec
 # define S_IRUSR 00400
 # define S_IWUSR 00200
 # define S_IXUSR 00100
+#endif
 
+#ifndef S_IRGRP
 # define S_IRWXG 00070
 # define S_IRGRP 00040
 # define S_IWGRP 00020
 # define S_IXGRP 00010
+#endif
 
+#ifndef S_IROTH
 # define S_IRWXO 00007
 # define S_IROTH 00004
 # define S_IWOTH 00002

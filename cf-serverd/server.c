@@ -45,6 +45,7 @@
 #include <connection_info.h>
 #include <cf-windows-functions.h>
 #include <logging_priv.h>                          /* LoggingPrivSetContext */
+#include <printsize.h>
 
 #include "server_classic.h"                    /* BusyWithClassicConnection */
 
@@ -89,7 +90,6 @@ static void DeleteConn(ServerConnectionState *conn);
 
 void ServerEntryPoint(EvalContext *ctx, char *ipaddr, ConnectionInfo *info)
 {
-    char intime[64];
     time_t now;
 
     Log(LOG_LEVEL_VERBOSE,
@@ -118,7 +118,7 @@ void ServerEntryPoint(EvalContext *ctx, char *ipaddr, ConnectionInfo *info)
         return;
     }
 
-    if ((now = time((time_t *) NULL)) == -1)
+    if ((now = time(NULL)) == -1)
     {
        now = 0;
     }
@@ -146,7 +146,8 @@ void ServerEntryPoint(EvalContext *ctx, char *ipaddr, ConnectionInfo *info)
         ThreadUnlock(cft_count);
     }
 
-    snprintf(intime, 63, "%d", (int) now);
+    char intime[PRINTSIZE(now)];
+    snprintf(intime, sizeof(intime), "%jd", (intmax_t) now);
 
     if (!ThreadLock(cft_count))
     {
@@ -331,8 +332,8 @@ static void *HandleConnection(void *c)
         if (TRIES > MAXTRIES)
         {
             /* This happens when no thread was freed while we had to drop 5
-             * consecutive connections, because none of the existing threads
-             * finished. */
+             * (or maxconnections/3) consecutive connections, because none of
+             * the existing threads finished. */
             Log(LOG_LEVEL_CRIT,
                 "Server seems to be paralyzed. DOS attack? Committing apoptosis...");
             FatalError(conn->ctx, "Terminating");
