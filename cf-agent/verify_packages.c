@@ -51,6 +51,18 @@
 #include <cf-agent-enterprise-stubs.h>
 #include <cf-windows-functions.h>
 
+/* Called structure:
+
+   Top-level: cf-agent calls...
+
+   * CleanScheduledPackages
+
+   * VerifyPackagesPromise -> all the Verify* functions that schedule operation
+
+   * ExecuteScheduledPackages -> all the Execute* functions to run operations
+
+ */
+
 /** Entry points from VerifyPackagesPromise **/
 
 #define REPORT_THIS_PROMISE(__pp) (strncmp(__pp->promiser, "cfe_internal_", 13) != 0)
@@ -119,6 +131,26 @@ PackageManager *INSTALLED_PACKAGE_LISTS = NULL; /* GLOBAL_X */
 
 #define PACKAGE_IGNORED_CFE_INTERNAL "cfe_internal_non_existing_package"
 
+/**
+   @brief Verifies a single packages promise
+
+   Called by cf-agent.
+
+   * checks "name", "version", "arch", "firstrepo" variables from the "this" context
+   * gets the package attributes into a
+   * on Windows, if the package_list_command is not defined, use the hard-coded PACKAGE_LIST_COMMAND_WINAPI
+   * do a package sanity check on the promise
+   * print promise banner
+   * reset to root directory (Yum bugfix)
+   * get the default architecture from a.packages.package_default_arch_command into default_arch
+   * call VerifyInstalledPackages with default_arch
+   * if the package action is "patch", call VerifyPromisedPatch and return its result through PromiseResultUpdate_HELPER
+   * for all other package actions, call VerifyPromisedPackage and return its result through PromiseResultUpdate_HELPER
+
+   @param ctx [in] The evaluation context
+   @param pp [in] the Promise for this operation
+   @returns the promise result
+*/
 PromiseResult VerifyPackagesPromise(EvalContext *ctx, const Promise *pp)
 {
     CfLock thislock;
@@ -224,7 +256,17 @@ end:
     return result;
 }
 
-/** Pre-check of promise contents **/
+/**
+   @brief Pre-check of promise contents
+
+   Called by VerifyPackagesPromise.  Does many sanity checks on the
+   promise attributes and semantics.
+
+   @param ctx [in] The evaluation context
+   @param a [in] the promise Attributes for this operation
+   @param pp [in] the Promise for this operation
+   @returns the promise result
+*/
 
 static int PackageSanityCheck(EvalContext *ctx, Attributes a, const Promise *pp)
 {
@@ -432,8 +474,24 @@ static int PackageSanityCheck(EvalContext *ctx, Attributes a, const Promise *pp)
     return true;
 }
 
-/** Get the list of installed packages **/
+/**
+   @brief Generates the list of installed packages
 
+   Called by VerifyInstalledPackages
+
+   * assembles the package list from a.packages.package_list_command
+   * respects a.packages.package_commands_useshell (boolean)
+   * parses with a.packages.package_multiline_start and if successful, calls PrependMultiLinePackageItem
+   * else, parses with a.packages.package_installed_regex and if successful, calls PrependListPackageItem
+
+   @param ctx [in] The evaluation context
+   @param installed_list [in] a list of PackageItems
+   @param default_arch [in] the default architecture
+   @param a [in] the promise Attributes for this operation
+   @param pp [in] the Promise for this operation
+   @param result [inout] the PromiseResult for this operation
+   @returns boolean pass/fail of command run
+*/
 static bool PackageListInstalledFromCommand(EvalContext *ctx,
                                             PackageItem **installed_list,
                                             const char *default_arch,
@@ -602,6 +660,19 @@ static bool PackageListAvailableUpdatesCommand(EvalContext *ctx, PackageItem **u
     return cf_pclose(fin) == 0;
 }
 
+/**
+   @brief Writes the software inventory
+
+   Called by VerifyInstalledPackages
+
+   * calls GetSoftwareCacheFilename to get the inventory CSV filename
+   * for each PackageManager in the list
+   *  * for each PackageItem in the PackageManager's list
+   *  * write name, version, architecture, manager name
+
+   @param ctx [in] The evaluation context
+   @param list [in] a list of PackageManagers
+*/
 static void ReportSoftware(PackageManager *list)
 {
     FILE *fout;
@@ -624,13 +695,56 @@ static void ReportSoftware(PackageManager *list)
         {
             fprintf(fout, "%s,", CanonifyChar(pi->name, ','));
             fprintf(fout, "%s,", CanonifyChar(pi->version, ','));
-            fprintf(fout, "%s,%s\n", pi->arch, ReadLastNode(CommandArg0(mp->manager)));
+            fprintf(fout, "%s,%s\n", pi->arch, ReadLastNode(RealPackageManager(mp->manager)));
         }
     }
 
     fclose(fout);
 }
 
+/**
+   @brief Invalidates the software inventory
+
+   Called by ExecuteSchedule and ExecutePatch
+
+   * calls GetSoftwareCacheFilename to get the inventory CSV filename
+   * sets atime and mtime on that file to 0
+*/
+static void InvalidateSoftwareCache(void)
+{
+    char name[CF_BUFSIZE];
+    struct utimbuf epoch = { 0, 0 };
+
+    GetSoftwareCacheFilename(name);
+
+    if (utime(name, &epoch) != 0)
+    {
+        if (errno != ENOENT)
+        {
+            Log(LOG_LEVEL_ERR, "Cannot mark software cache as invalid. (utimes: %s)", GetErrorStr());
+        }
+    }
+}
+
+/**
+   @brief Gets the cached list of installed packages from file
+
+   Called by VerifyInstalledPackages
+
+   * calls GetSoftwareCacheFilename to get the inventory CSV filename
+   * respects a.packages.package_list_update_ifelapsed, returns NULL if file is too old
+   * parses the CSV out of the file (name, version, arch, manager) with each limited to 250 chars
+   * for each line
+   * * if architecture is "default", replace it with default_arch
+   * * if the package manager name matches, call PrependPackageItem
+
+   @param ctx [in] The evaluation context
+   @param manager [in] the PackageManager we want
+   @param default_arch [in] the default architecture
+   @param a [in] the promise Attributes for this operation
+   @param pp [in] the Promise for this operation
+   @returns list of PackageItems
+*/
 static PackageItem *GetCachedPackageList(EvalContext *ctx, PackageManager *manager, const char *default_arch, Attributes a,
                                          const Promise *pp)
 {
@@ -720,6 +834,27 @@ static PackageItem *GetCachedPackageList(EvalContext *ctx, PackageManager *manag
     return list;
 }
 
+/**
+   @brief Verifies installed packages for a single Promise
+
+   Called by VerifyPackagesPromise
+
+   * from all_mgrs, gets the package manager matching a.packages.package_list_command
+   * populate manager->pack_list with GetCachedPackageList
+   * on Windows, use NovaWin_PackageListInstalledFromAPI if a.packages.package_list_command is set to PACKAGE_LIST_COMMAND_WINAPI
+   * on other platforms, use PackageListInstalledFromCommand
+   * call ReportSoftware to save the installed packages inventory
+   * if a.packages.package_patch_list_command is set, use it and parse each line with a.packages.package_patch_installed_regex; if it matches, call PrependPatchItem
+   * call ReportPatches to save the available updates inventory (Enterprise only)
+
+   @param ctx [in] The evaluation context
+   @param all_mgrs [in] a list of PackageManagers
+   @param default_arch [in] the default architecture
+   @param a [in] the promise Attributes for this operation
+   @param pp [in] the Promise for this operation
+   @param result [inout] the PromiseResult for this operation
+   @returns boolean pass/fail of verification
+*/
 static int VerifyInstalledPackages(EvalContext *ctx, PackageManager **all_mgrs, const char *default_arch,
                                    Attributes a, const Promise *pp, PromiseResult *result)
 {
@@ -850,7 +985,7 @@ static int VerifyInstalledPackages(EvalContext *ctx, PackageManager **all_mgrs, 
         free(vbuff);
     }
 
-    ReportPatches(INSTALLED_PACKAGE_LISTS);
+    ReportPatches(INSTALLED_PACKAGE_LISTS); // Enterprise only
 
     if (LEGACY_OUTPUT)
     {
@@ -876,6 +1011,28 @@ static int VerifyInstalledPackages(EvalContext *ctx, PackageManager **all_mgrs, 
 
 /** Evaluate what needs to be done **/
 
+/**
+   @brief Finds the largest version of a package available in a file repository
+
+   Called by SchedulePackageOp
+
+   * match = false
+   * for each directory in repositories
+   * * try to match refAnyVer against each file
+   * * if it matches and CompareVersions says it's the biggest found so far, copy the matched version and name into matchName and matchVers and set match to true
+   * return match
+
+   @param ctx [in] The evaluation context
+   @param matchName [inout] the matched package name (written on match)
+   @param matchVers [inout] the matched package version (written on match)
+   @param refAnyVer [in] the regex to match against the filename to extract a version
+   @param ver [in] the version sought
+   @param repositories [in] the list of directories (file repositories)
+   @param a [in] the promise Attributes for this operation
+   @param pp [in] the Promise for this operation
+   @param result [inout] the PromiseResult for this operation
+   @returns boolean pass/fail of search
+*/
 int FindLargestVersionAvail(EvalContext *ctx, char *matchName, char *matchVers, const char *refAnyVer, const char *ver,
                             Rlist *repositories, Attributes a, const Promise *pp, PromiseResult *result)
 /* Returns true if a version gt/ge ver is found in local repos, false otherwise */
@@ -922,17 +1079,39 @@ int FindLargestVersionAvail(EvalContext *ctx, char *matchName, char *matchVers, 
         DirClose(dirh);
     }
 
-    Log(LOG_LEVEL_DEBUG, "largest ver is '%s', name is '%s'",
-        matchVers, matchName);
-    Log(LOG_LEVEL_DEBUG, "match %d", match);
+    Log(LOG_LEVEL_DEBUG, "FindLargestVersionAvail: largest version of '%s' is '%s' (match=%d)",
+        matchName, matchVers, match);
 
     return match;
 }
 
+/**
+   @brief Returns true if a package (n,v,a) is installed and v is larger than the installed version
+
+   Called by SchedulePackageOp
+
+   * for each known PackageManager, compare to attr.packages.package_list_command
+   * bail out if no manager was found
+   * for each PackageItem pi in the manager's package list
+   * * if pi->name equals n and (a is "*" or a equals pi->arch)
+   * * * record instV and instA
+   * * * copy attr into attr2 and override the attr2.packages.package_select to PACKAGE_VERSION_COMPARATOR_LT
+   * * * return CompareVersions of the new monster
+   * return false if the above found no matches
+
+   @param ctx [in] The evaluation context
+   @param n [in] the specific name
+   @param v [in] the specific version
+   @param a [in] the specific architecture
+   @param instV [inout] the matched package version (written on match)
+   @param instA [inout] the matched package architecture (written on match)
+   @param attr [in] the promise Attributes for this operation
+   @param pp [in] the Promise for this operation
+   @param result [inout] the PromiseResult for this operation
+   @returns boolean if given (n,v,a) is newer than known packages
+*/
 static int IsNewerThanInstalled(EvalContext *ctx, const char *n, const char *v, const char *a, char *instV, char *instA, Attributes attr,
                                 const Promise *pp, PromiseResult *result)
-/* Returns true if a package (n, a) is installed and v is larger than
- * the installed version. instV and instA are the version and arch installed. */
 {
     PackageManager *mp = INSTALLED_PACKAGE_LISTS;
     if (!strcmp(v, "*"))
@@ -947,6 +1126,13 @@ static int IsNewerThanInstalled(EvalContext *ctx, const char *n, const char *v, 
             break;
         }
         mp = mp->next;
+    }
+
+    if (NULL == mp)
+    {
+        Log(LOG_LEVEL_VERBOSE, "Found no package manager matching attr.packages.package_list_command '%s'",
+            attr.packages.package_list_command == NULL ? "[empty]" : attr.packages.package_list_command);
+        return false;
     }
 
     Log(LOG_LEVEL_VERBOSE, "Looking for an installed package older than (%s,%s,%s) [name,version,arch]", n, v, a);
@@ -975,6 +1161,12 @@ static int IsNewerThanInstalled(EvalContext *ctx, const char *n, const char *v, 
     return false;
 }
 
+/**
+   @brief Returns string version of a PackageAction
+
+   @param pa [in] The PackageAction
+   @returns string representation of pa or a ProgrammingError
+*/
 static const char *PackageAction2String(PackageAction pa)
 {
     switch (pa)
@@ -998,6 +1190,25 @@ static const char *PackageAction2String(PackageAction pa)
     }
 }
 
+/**
+   @brief Adds a specific package (name,version,arch) as specified by Attributes a to the scheduled operations
+
+   Called by SchedulePackageOp.
+
+   Either warn or fix, based on a->transaction.action.
+
+   To fix, calls GetPackageManager and enqueues the desired operation and package with the returned manager
+
+   @param ctx [in] The evaluation context
+   @param a [in] the Attributes specifying how to compare
+   @param mgr [in] the specific manager name
+   @param pa [in] the PackageAction to enqueue
+   @param name [in] the specific name
+   @param version [in] the specific version
+   @param arch [in] the specific architecture
+   @param pp [in] the Promise for this operation
+   @returns the promise result
+*/
 static PromiseResult AddPackageToSchedule(EvalContext *ctx, const Attributes *a, char *mgr, PackageAction pa,
                                           const char *name, const char *version, const char *arch,
                                           const Promise *pp)
@@ -1013,6 +1224,12 @@ static PromiseResult AddPackageToSchedule(EvalContext *ctx, const Attributes *a,
     case cfa_fix:
     {
         PackageManager *manager = GetPackageManager(&PACKAGE_SCHEDULE, mgr, pa, a->packages.package_changes);
+
+        if (NULL == manager)
+        {
+            ProgrammingError("AddPackageToSchedule: Null package manager found!!!");
+        }
+
         PrependPackageItem(ctx, &(manager->pack_list), name, version, arch, pp);
         return PROMISE_RESULT_CHANGE;
     }
@@ -1021,6 +1238,25 @@ static PromiseResult AddPackageToSchedule(EvalContext *ctx, const Attributes *a,
     }
 }
 
+/**
+   @brief Adds a specific patch (name,version,arch) as specified by Attributes a to the scheduled operations
+
+   Called by SchedulePackageOp.
+
+   Either warn or fix, based on a->transaction.action.
+
+   To fix, calls GetPackageManager and enqueues the desired operation and package with the returned manager
+
+   @param ctx [in] The evaluation context
+   @param a [in] the Attributes specifying how to compare
+   @param mgr [in] the specific manager name
+   @param pa [in] the PackageAction to enqueue
+   @param name [in] the specific name
+   @param version [in] the specific version
+   @param arch [in] the specific architecture
+   @param pp [in] the Promise for this operation
+   @returns the promise result
+*/
 static PromiseResult AddPatchToSchedule(EvalContext *ctx, const Attributes *a, char *mgr, PackageAction pa,
                                         const char *name, const char *version, const char *arch,
                                         const Promise *pp)
@@ -1036,6 +1272,12 @@ static PromiseResult AddPatchToSchedule(EvalContext *ctx, const Attributes *a, c
     case cfa_fix:
     {
         PackageManager *manager = GetPackageManager(&PACKAGE_SCHEDULE, mgr, pa, a->packages.package_changes);
+
+        if (NULL == manager)
+        {
+            ProgrammingError("AddPatchToSchedule: Null package manager found!!!");
+        }
+
         PrependPackageItem(ctx, &(manager->patch_list), name, version, arch, pp);
         return PROMISE_RESULT_CHANGE;
     }
@@ -1044,6 +1286,70 @@ static PromiseResult AddPatchToSchedule(EvalContext *ctx, const Attributes *a, c
     }
 }
 
+/**
+   @brief Schedules a package operation based on the action, package state, and everything else.
+
+   Called by VerifyPromisedPatch and CheckPackageState.
+
+   This function has a complexity metric of 3 Googols.
+
+   * if package_delete_convention or package_name_convention are given and apply to the operation, construct the package name from them (from PACKAGES_CONTEXT)
+   * else, just use the given package name
+   * warn about "*" in the package name
+   * set package_select_in_range with magic
+   * create PackageAction policy from the package_policy and then split ADDUPDATE into ADD or UPDATE based on "installed"
+   * result starts as NOOP
+   * switch(policy)
+
+   * * case ADD and "installed":
+   * * * if we have package_file_repositories
+   * * * * use the package_name_convention to build the package name (from PACKAGES_CONTEXT_ANYVER, setting version to "*")
+   * * * * if FindLargestVersionAvail finds the latest package version in the file repos, use that as the package name
+   * * * AddPackageToSchedule package_add_command, ADD, package name, etc.
+
+   * * case DELETE and (matched AND package_select_in_range) OR (installed AND no_version_specified):
+   * * * fail promise unless package_delete_command
+   * * * if we have package_file_repositories
+   * * * * clean up the name string from any "repo" references and add the right file repo
+   * * * AddPackageToSchedule package_delete_command, DELETE, package name, etc.
+
+   * * case REINSTALL:
+   * * * fail promise unless package_delete_command
+   * * * fail promise if no_version_specified
+   * * * if (matched AND package_select_in_range) OR (installed AND no_version_specified) do AddPackageToSchedule package_delete_command, DELETE, package name, etc.
+   * * * AddPackageToSchedule package_add_command, ADD, package name, etc.
+
+   * * case UPDATE:
+   * * * if we have package_file_repositories
+   * * * * use the package_name_convention to build the package name (from PACKAGES_CONTEXT_ANYVER, setting version to "*")
+   * * * * if FindLargestVersionAvail finds the latest package version in the file repos, use that as the package name
+   * * * if installed, IsNewerThanInstalled is checked, and if it returns false we don't update an up-to-date package
+   * * * if installed or (matched AND package_select_in_range AND !no_version_specified) (this is the main update condition)
+   * * * * if package_update_command is not given
+   * * * * * if package_delete_convention is given, use it to build id_del (from PACKAGES_CONTEXT)
+   * * * * * fail promise if package_update_command and package_add_command are not given
+   * * * * * AddPackageToSchedule with package_delete_command, DELETE, id_del, etc
+   * * * * * AddPackageToSchedule with package_add_command, ADD, package name, etc
+   * * * * else we have package_update_command, so AddPackageToSchedule with package_update_command, UPDATE, package name, etc
+   * * * else the package is not updateable: no match or not installed, fail promise
+
+   * * case PATCH:
+   * * * if matched and not installed, AddPatchToSchedule with package_patch_command, PATCH, package name, etc.
+
+   * * case VERIFY:
+   * * * if (matched and package_select_in_range) OR (installed AND no_version_specified), AddPatchToSchedule with package_verify_command, VERIFY, package name, etc.
+
+   @param ctx [in] The evaluation context
+   @param name [in] the specific name
+   @param version [in] the specific version
+   @param arch [in] the specific architecture
+   @param installed [in] is the package installed?
+   @param matched [in] is the package matched in the available list?
+   @param no_version_specified [in] no version was specified in the promise
+   @param a [in] the Attributes specifying how to compare
+   @param pp [in] the Promise for this operation
+   @returns the promise result
+*/
 static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const char *version, const char *arch, int installed, int matched,
                                        int no_version_specified, Attributes a, const Promise *pp)
 {
@@ -1062,23 +1368,23 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
     Buffer *expanded = BufferNew();
     if ((a.packages.package_name_convention) || (a.packages.package_delete_convention))
     {
-        VarRef *ref_name = VarRefParseFromScope("name", "cf_pack_context");
+        VarRef *ref_name = VarRefParseFromScope("name", PACKAGES_CONTEXT);
         EvalContextVariablePut(ctx, ref_name, name, CF_DATA_TYPE_STRING, "source=promise");
 
-        VarRef *ref_version = VarRefParseFromScope("version", "cf_pack_context");
+        VarRef *ref_version = VarRefParseFromScope("version", PACKAGES_CONTEXT);
         EvalContextVariablePut(ctx, ref_version, version, CF_DATA_TYPE_STRING, "source=promise");
 
-        VarRef *ref_arch = VarRefParseFromScope("arch", "cf_pack_context");
+        VarRef *ref_arch = VarRefParseFromScope("arch", PACKAGES_CONTEXT);
         EvalContextVariablePut(ctx, ref_arch, arch, CF_DATA_TYPE_STRING, "source=promise");
 
         if ((a.packages.package_delete_convention) && (a.packages.package_policy == PACKAGE_ACTION_DELETE))
         {
-            ExpandScalar(ctx, NULL, "cf_pack_context", a.packages.package_delete_convention, expanded);
+            ExpandScalar(ctx, NULL, PACKAGES_CONTEXT, a.packages.package_delete_convention, expanded);
             strlcpy(id, BufferData(expanded), CF_EXPANDSIZE);
         }
         else if (a.packages.package_name_convention)
         {
-            ExpandScalar(ctx, NULL, "cf_pack_context", a.packages.package_name_convention, expanded);
+            ExpandScalar(ctx, NULL, PACKAGES_CONTEXT, a.packages.package_name_convention, expanded);
             strlcpy(id, BufferData(expanded), CF_EXPANDSIZE);
         }
         else
@@ -1108,6 +1414,7 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
             "a missing attribute (name/version/arch) should be specified");
     }
 
+    // This is very confusing
     int package_select_in_range;
     switch (a.packages.package_select)
     {
@@ -1146,18 +1453,20 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
         {
             if ((a.packages.package_file_repositories != NULL))
             {
+                Log(LOG_LEVEL_VERBOSE, "Package method specifies a file repository");
+
                 {
-                    VarRef *ref_name = VarRefParseFromScope("name", "cf_pack_context_anyver");
+                    VarRef *ref_name = VarRefParseFromScope("name", PACKAGES_CONTEXT_ANYVER);
                     EvalContextVariablePut(ctx, ref_name, name, CF_DATA_TYPE_STRING, "source=promise");
 
-                    VarRef *ref_version = VarRefParseFromScope("version", "cf_pack_context_anyver");
+                    VarRef *ref_version = VarRefParseFromScope("version", PACKAGES_CONTEXT_ANYVER);
                     EvalContextVariablePut(ctx, ref_version, "(.*)", CF_DATA_TYPE_STRING, "source=promise");
 
-                    VarRef *ref_arch = VarRefParseFromScope("arch", "cf_pack_context_anyver");
+                    VarRef *ref_arch = VarRefParseFromScope("arch", PACKAGES_CONTEXT_ANYVER);
                     EvalContextVariablePut(ctx, ref_arch, arch, CF_DATA_TYPE_STRING, "source=promise");
 
                     BufferClear(expanded);
-                    ExpandScalar(ctx, NULL, "cf_pack_context_anyver", a.packages.package_name_convention, expanded);
+                    ExpandScalar(ctx, NULL, PACKAGES_CONTEXT_ANYVER, a.packages.package_name_convention, expanded);
 
                     EvalContextVariableRemove(ctx, ref_name);
                     VarRefDestroy(ref_name);
@@ -1183,6 +1492,10 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
                     break;
                 }
             }
+            else
+            {
+                Log(LOG_LEVEL_VERBOSE, "Package method does NOT specify a file repository");
+            }
 
             Log(LOG_LEVEL_VERBOSE, "Schedule package for addition");
 
@@ -1205,6 +1518,7 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
 
     case PACKAGE_ACTION_DELETE:
 
+        // we're deleting a matched package found in a range OR an installed package with no version
         if ((matched && package_select_in_range) ||
             (installed && no_version_specified))
         {
@@ -1216,9 +1530,11 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
                 BufferDestroy(expanded);
                 return PROMISE_RESULT_FAIL;
             }
-            // expand local repository in the name convetion, if present
+            // expand local repository in the name convention, if present
             if (a.packages.package_file_repositories)
             {
+                Log(LOG_LEVEL_VERBOSE, "Package method specifies a file repository");
+
                 // remove any "$(repo)" from the name convention string
 
                 if (strncmp(id, "$(firstrepo)", 12) == 0)
@@ -1240,6 +1556,10 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
                             "in any of the listed repositories", idBuf);
                     }
                 }
+            }
+            else
+            {
+                Log(LOG_LEVEL_VERBOSE, "Package method does NOT specify a file repository");
             }
 
             result = PromiseResultUpdate_HELPER(pp, result,
@@ -1269,6 +1589,8 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
                 BufferDestroy(expanded);
                 return PROMISE_RESULT_FAIL;
             }
+
+            // we're deleting a matched package found in a range OR an installed package with no version
             if ((matched && package_select_in_range) ||
                 (installed && no_version_specified))
             {
@@ -1299,18 +1621,20 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
 
         if ((a.packages.package_file_repositories != NULL))
         {
+            Log(LOG_LEVEL_VERBOSE, "Package method specifies a file repository");
+
             {
-                VarRef *ref_name = VarRefParseFromScope("name", "cf_pack_context_anyver");
+                VarRef *ref_name = VarRefParseFromScope("name", PACKAGES_CONTEXT_ANYVER);
                 EvalContextVariablePut(ctx, ref_name, name, CF_DATA_TYPE_STRING, "source=promise");
 
-                VarRef *ref_version = VarRefParseFromScope("version", "cf_pack_context_anyver");
+                VarRef *ref_version = VarRefParseFromScope("version", PACKAGES_CONTEXT_ANYVER);
                 EvalContextVariablePut(ctx, ref_version, "(.*)", CF_DATA_TYPE_STRING, "source=promise");
 
-                VarRef *ref_arch = VarRefParseFromScope("arch", "cf_pack_context_anyver");
+                VarRef *ref_arch = VarRefParseFromScope("arch", PACKAGES_CONTEXT_ANYVER);
                 EvalContextVariablePut(ctx, ref_arch, arch, CF_DATA_TYPE_STRING, "source=promise");
 
                 BufferClear(expanded);
-                ExpandScalar(ctx, NULL, "cf_pack_context_anyver", a.packages.package_name_convention, expanded);
+                ExpandScalar(ctx, NULL, PACKAGES_CONTEXT_ANYVER, a.packages.package_name_convention, expanded);
 
                 EvalContextVariableRemove(ctx, ref_name);
                 VarRefDestroy(ref_name);
@@ -1339,6 +1663,7 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
         }
         else
         {
+            Log(LOG_LEVEL_VERBOSE, "Package method does NOT specify a file repository");
             strlcpy(largestVerAvail, version, sizeof(largestVerAvail));  // user-supplied version
         }
 
@@ -1381,17 +1706,17 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
                         inst_arch[1] = '\0';
                     }
 
-                    VarRef *ref_name = VarRefParseFromScope("name", "cf_pack_context");
+                    VarRef *ref_name = VarRefParseFromScope("name", PACKAGES_CONTEXT);
                     EvalContextVariablePut(ctx, ref_name, name, CF_DATA_TYPE_STRING, "source=promise");
 
-                    VarRef *ref_version = VarRefParseFromScope("version", "cf_pack_context");
+                    VarRef *ref_version = VarRefParseFromScope("version", PACKAGES_CONTEXT);
                     EvalContextVariablePut(ctx, ref_version, inst_ver, CF_DATA_TYPE_STRING, "source=promise");
 
-                    VarRef *ref_arch = VarRefParseFromScope("arch", "cf_pack_context");
+                    VarRef *ref_arch = VarRefParseFromScope("arch", PACKAGES_CONTEXT);
                     EvalContextVariablePut(ctx, ref_arch, inst_arch, CF_DATA_TYPE_STRING, "source=promise");
 
                     BufferClear(expanded);
-                    ExpandScalar(ctx, NULL, "cf_pack_context", a.packages.package_delete_convention, expanded);
+                    ExpandScalar(ctx, NULL, PACKAGES_CONTEXT, a.packages.package_delete_convention, expanded);
                     id_del = BufferData(expanded);
 
                     EvalContextVariableRemove(ctx, ref_name);
@@ -1485,6 +1810,25 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
     return result;
 }
 
+/**
+   @brief Compare a PackageItem to a specific package (n,v,arch) as specified by Attributes a
+
+   Called by PatchMatch and PackageMatch.
+
+   First, checks the package names are the same (according to CompareCSVName).
+   Second, checks the architectures are the same or arch is "*"
+   Third, checks the versions with CompareVersions or version is "*"
+
+   @param ctx [in] The evaluation context
+   @param n [in] the specific name
+   @param v [in] the specific version
+   @param arch [in] the specific architecture
+   @param pi [in] the PackageItem to check
+   @param a [in] the Attributes specifying how to compare
+   @param pp [in] the Promise for this operation
+   @param mode [in] the operating mode, informational for logging
+   @returns the version comparison result
+*/
 VersionCmpResult ComparePackages(EvalContext *ctx,
                                  const char *n, const char *v, const char *arch,
                                  PackageItem *pi, Attributes a,
@@ -1493,8 +1837,8 @@ VersionCmpResult ComparePackages(EvalContext *ctx,
                                  PromiseResult *result)
 {
     Log(LOG_LEVEL_VERBOSE, "Comparing %s package (%s,%s,%s) "
-        "with given (%s,%s,%s) [name,version,arch]",
-        mode, pi->name, pi->version, pi->arch, n, v, arch);
+        "to [%s] with given (%s,%s,%s) [name,version,arch]",
+        mode, pi->name, pi->version, pi->arch, PackageVersionComparatorToString(a.packages.package_select), n, v, arch);
 
     if (CompareCSVName(n, pi->name) != 0)
     {
@@ -1526,16 +1870,37 @@ VersionCmpResult ComparePackages(EvalContext *ctx,
     VersionCmpResult vc = CompareVersions(ctx, pi->version, v, a, pp, result);
     Log(LOG_LEVEL_VERBOSE,
         "Version comparison returned %s for %s package (%s,%s,%s) "
-        "against given (%s,%s,%s) [name,version,arch]",
+        "to [%s] with given (%s,%s,%s) [name,version,arch]",
         vc == VERCMP_MATCH ? "MATCH" : vc == VERCMP_NO_MATCH ? "NO_MATCH" : "ERROR",
         mode,
         pi->name, pi->version, pi->arch,
+        PackageVersionComparatorToString(a.packages.package_select),
         n, v, arch);
 
     return vc;
 
 }
 
+/**
+   @brief Finds a specific package (n,v,a) [name, version, architecture] as specified by Attributes attr
+
+   Called by VerifyPromisedPatch.
+
+   Goes through all the installed packages to find matches for the given attributes.
+
+   The package manager is checked against attr.packages.package_list_command.
+
+   The package name is checked as a regular expression. then (n,v,a) with ComparePackages.
+
+   @param ctx [in] The evaluation context
+   @param n [in] the specific name
+   @param v [in] the specific version
+   @param a [in] the specific architecture
+   @param attr [in] the Attributes specifying how to compare
+   @param pp [in] the Promise for this operation
+   @param mode [in] the operating mode, informational for logging
+   @returns the version comparison result
+*/
 static VersionCmpResult PatchMatch(EvalContext *ctx,
                                    const char *n, const char *v, const char *a,
                                    Attributes attr, const Promise *pp,
@@ -1553,13 +1918,14 @@ static VersionCmpResult PatchMatch(EvalContext *ctx,
         }
     }
 
-    Log(LOG_LEVEL_VERBOSE, "Looking for %s (%s,%s,%s) [name,version,arch] in package manager %s", mode, n, v, a, mp->manager);
+    Log(LOG_LEVEL_VERBOSE, "PatchMatch: looking for %s to [%s] with given (%s,%s,%s) [name,version,arch] in package manager %s",
+        mode, PackageVersionComparatorToString(attr.packages.package_select), n, v, a, mp->manager);
 
     for (PackageItem *pi = mp->patch_list; pi != NULL; pi = pi->next)
     {
         if (FullTextMatch(ctx, n, pi->name)) /* Check regexes */
         {
-            Log(LOG_LEVEL_VERBOSE, "Regular expression match succeeded for %s against %s", n, pi->name);
+            Log(LOG_LEVEL_VERBOSE, "PatchMatch: regular expression match succeeded for %s against %s", n, pi->name);
             return VERCMP_MATCH;
         }
         else
@@ -1567,7 +1933,7 @@ static VersionCmpResult PatchMatch(EvalContext *ctx,
             VersionCmpResult res = ComparePackages(ctx, n, v, a, pi, attr, pp, mode, result);
             if (res != VERCMP_NO_MATCH)
             {
-                Log(LOG_LEVEL_VERBOSE, "Patch comparison for %s was decisive: %s", pi->name, res == VERCMP_MATCH ? "MATCH" : "ERROR");
+                Log(LOG_LEVEL_VERBOSE, "PatchMatch: patch comparison for %s was decisive: %s", pi->name, res == VERCMP_MATCH ? "MATCH" : "ERROR");
                 return res;
             }
         }
@@ -1577,6 +1943,26 @@ static VersionCmpResult PatchMatch(EvalContext *ctx,
     return VERCMP_NO_MATCH;
 }
 
+/**
+   @brief Finds a specific package (n,v,a) [name, version, architecture] as specified by Attributes attr
+
+   Called by CheckPackageState.
+
+   Goes through all the installed packages to find matches for the given attributes.
+
+   The package manager is checked against attr.packages.package_list_command.
+
+   The (n,v,a) search is done with ComparePackages.
+
+   @param ctx [in] The evaluation context
+   @param n [in] the specific name
+   @param v [in] the specific version
+   @param a [in] the specific architecture
+   @param attr [in] the Attributes specifying how to compare
+   @param pp [in] the Promise for this operation
+   @param mode [in] the operating mode, informational for logging
+   @returns the version comparison result
+*/
 static VersionCmpResult PackageMatch(EvalContext *ctx,
                                      const char *n, const char *v, const char *a,
                                      Attributes attr,
@@ -1599,7 +1985,7 @@ static VersionCmpResult PackageMatch(EvalContext *ctx,
         }
     }
 
-    Log(LOG_LEVEL_VERBOSE, "Looking for %s (%s,%s,%s) [name,version,arch] in package manager %s", mode, n, v, a, mp->manager);
+    Log(LOG_LEVEL_VERBOSE, "PackageMatch: looking for %s (%s,%s,%s) [name,version,arch] in package manager %s", mode, n, v, a, mp->manager);
 
     for (PackageItem *pi = mp->pack_list; pi != NULL; pi = pi->next)
     {
@@ -1607,7 +1993,7 @@ static VersionCmpResult PackageMatch(EvalContext *ctx,
 
         if (res != VERCMP_NO_MATCH)
         {
-            Log(LOG_LEVEL_VERBOSE, "Package comparison for %s %s was decisive: %s", mode, pi->name, res == VERCMP_MATCH ? "MATCH" : "ERROR");
+            Log(LOG_LEVEL_VERBOSE, "PackageMatch: package comparison for %s %s was decisive: %s", mode, pi->name, res == VERCMP_MATCH ? "MATCH" : "ERROR");
             return res;
         }
     }
@@ -1616,21 +2002,43 @@ static VersionCmpResult PackageMatch(EvalContext *ctx,
     return VERCMP_NO_MATCH;
 }
 
-static int VersionCheckSchedulePackage(EvalContext *ctx, Attributes a, const Promise *pp, int matches, int installed)
+/**
+   @brief Check if the operation should be scheduled based on the package policy, if the package matches, and if it's installed
+
+   Called by CheckPackageState.
+
+   Uses a.packages.package_policy to determine operating mode.
+
+   The use of matches and installed depends on the package_policy:
+   * PACKAGE_ACTION_DELETE: schedule if (matches AND installed)
+   * PACKAGE_ACTION_REINSTALL: schedule if (matches AND installed)
+   * all other policies: schedule if (not matches OR not installed)
+
+   @param ctx [in] The evaluation context
+   @param a [in] the Attributes specifying the package policy
+   @param pp [in] the Promise for this operation
+   @param matches [in] whether the package matches
+   @param installed [in] whether the package is installed
+   @returns whether the package operation should be scheduled
+*/
+static int WillSchedulePackageOperation(EvalContext *ctx, Attributes a, const Promise *pp, int matches, int installed)
 {
-/* The meaning of matches and installed depends on the package policy */
     PackageAction policy = a.packages.package_policy;
+
+    Log(LOG_LEVEL_DEBUG, "WillSchedulePackageOperation: on entry, action %s: package %s matches = %s, installed = %s.",
+        PackageAction2String(policy), pp->promiser, matches ? "yes" : "no", installed ? "yes" : "no");
 
     switch (policy)
     {
     case PACKAGE_ACTION_DELETE:
         if (matches && installed)
         {
-            Log(LOG_LEVEL_VERBOSE, "VersionCheckSchedulePackage: Package %s to be deleted is installed.", pp->promiser);
+            Log(LOG_LEVEL_VERBOSE, "WillSchedulePackageOperation: Package %s to be deleted is installed.", pp->promiser);
             return true;
         }
         else
         {
+            Log(LOG_LEVEL_DEBUG, "WillSchedulePackageOperation: Package %s can't be deleted if it's not installed, NOOP.", pp->promiser);
             cfPS_HELPER_1ARG(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_NOOP, pp, a, "Package %s to be deleted does not exist anywhere",
                  pp->promiser);
         }
@@ -1639,28 +2047,29 @@ static int VersionCheckSchedulePackage(EvalContext *ctx, Attributes a, const Pro
     case PACKAGE_ACTION_REINSTALL:
         if (matches && installed)
         {
-            Log(LOG_LEVEL_VERBOSE, "VersionCheckSchedulePackage: Package %s to be reinstalled is already installed.", pp->promiser);
+            Log(LOG_LEVEL_VERBOSE, "WillSchedulePackageOperation: Package %s to be reinstalled is already installed.", pp->promiser);
             return true;
         }
         else
         {
+            Log(LOG_LEVEL_DEBUG, "WillSchedulePackageOperation: Package %s already installed, NOOP.", pp->promiser);
             cfPS_HELPER_1ARG(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_NOOP, pp, a, "Package '%s' already installed and matches criteria",
                  pp->promiser);
         }
         break;
 
     default:
-        if ((!installed) || (!matches))
+        if (!matches) // why do we schedule a 'not matched' operation?
         {
-            if (matches && !installed)
-            {
-                Log(LOG_LEVEL_VERBOSE, "VersionCheckSchedulePackage: Package %s is not installed.", pp->promiser);
-            }
-
             return true;
         }
-        else
+        else if (!installed) // matches and not installed
         {
+            return true;
+        }
+        else // matches and installed
+        {
+            Log(LOG_LEVEL_DEBUG, "WillSchedulePackageOperation: Package %s already installed, NOOP.", pp->promiser);
             cfPS_HELPER_1ARG(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_NOOP, pp, a, "Package '%s' already installed and matches criteria",
                  pp->promiser);
         }
@@ -1670,6 +2079,27 @@ static int VersionCheckSchedulePackage(EvalContext *ctx, Attributes a, const Pro
     return false;
 }
 
+/**
+   @brief Checks the state of a specific package (name,version,arch) as specified by Attributes a
+
+   Called by VerifyPromisedPackage.
+
+   * copies a into a2, overrides a2.packages.package_select to PACKAGE_VERSION_COMPARATOR_EQ
+   * VersionCmpResult installed = check if (name,*,arch) is installed with PackageMatch (note version override!)
+   * if PackageMatch returned an error, fail the promise
+   * VersionCmpResult matches = check if (name,version,arch) is installed with PackageMatch
+   * if PackageMatch returned an error, fail the promise
+   * if WillSchedulePackageOperation with "matches" and "installed" passes, call SchedulePackageOp on the package
+
+   @param ctx [in] The evaluation context
+   @param a [in] the Attributes specifying how to compare
+   @param pp [in] the Promise for this operation
+   @param name [in] the specific name
+   @param version [in] the specific version
+   @param arch [in] the specific architecture
+   @param no_version [in] ignore the version, be cool
+   @returns the promise result
+*/
 static PromiseResult CheckPackageState(EvalContext *ctx, Attributes a, const Promise *pp, const char *name, const char *version,
                                        const char *arch, bool no_version)
 {
@@ -1680,21 +2110,28 @@ static PromiseResult CheckPackageState(EvalContext *ctx, Attributes a, const Pro
     a2.packages.package_select = PACKAGE_VERSION_COMPARATOR_EQ;
 
     VersionCmpResult installed = PackageMatch(ctx, name, "*", arch, a2, pp, "[installed]", &result);
-    Log(LOG_LEVEL_VERBOSE, "Installed package match for (%s,%s,%s) [name,version,arch] was decisive: %s",
+    Log(LOG_LEVEL_VERBOSE, "CheckPackageState: Installed package match for (%s,%s,%s) [name,version,arch] was decisive: %s",
         name, "*", arch, installed == VERCMP_MATCH ? "MATCH" : "ERROR-OR-NOMATCH");
 
-    VersionCmpResult matches = PackageMatch(ctx, name, version, arch, a2, pp, "[available]", &result);
-    Log(LOG_LEVEL_VERBOSE, "Available package match for (%s,%s,%s) [name,version,arch] was decisive: %s",
-        name, version, arch, matches == VERCMP_MATCH ? "MATCH" : "ERROR-OR-NOMATCH");
-
-    if ((installed == VERCMP_ERROR) || (matches == VERCMP_ERROR))
+    if (installed == VERCMP_ERROR)
     {
-        cfPS_HELPER_0ARG(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a2, "Failure trying to compare package versions");
+        cfPS_HELPER_0ARG(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a2, "Failure trying to compare installed package versions");
         result = PromiseResultUpdate_HELPER(pp, result, PROMISE_RESULT_FAIL);
         return result;
     }
 
-    if (VersionCheckSchedulePackage(ctx, a2, pp, matches, installed))
+    VersionCmpResult matches = PackageMatch(ctx, name, version, arch, a2, pp, "[available]", &result);
+    Log(LOG_LEVEL_VERBOSE, "CheckPackageState: Available package match for (%s,%s,%s) [name,version,arch] was decisive: %s",
+        name, version, arch, matches == VERCMP_MATCH ? "MATCH" : "ERROR-OR-NOMATCH");
+
+    if (matches == VERCMP_ERROR)
+    {
+        cfPS_HELPER_0ARG(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a2, "Failure trying to compare available package versions");
+        result = PromiseResultUpdate_HELPER(pp, result, PROMISE_RESULT_FAIL);
+        return result;
+    }
+
+    if (WillSchedulePackageOperation(ctx, a2, pp, matches, installed))
     {
         Log(LOG_LEVEL_VERBOSE, "CheckPackageState: matched package (%s,%s,%s) [name,version,arch]; scheduling operation", name, version, arch);
         return SchedulePackageOp(ctx, name, version, arch, installed, matches, no_version, a, pp);
@@ -1703,6 +2140,41 @@ static PromiseResult CheckPackageState(EvalContext *ctx, Attributes a, const Pro
     return result;
 }
 
+/**
+   @brief Verifies a promised patch operation as defined by a and pp
+
+   Called by VerifyPackagesPromise for the patch operation.
+
+   * package name is pp->promiser
+   * installed and matches counts = 0
+   * copies a into a2 and overrides a2.packages.package_select to PACKAGE_VERSION_COMPARATOR_EQ
+   * promise result starts as NOOP
+   * if package version is given
+   * * for arch = each architecture requested in a2, or (if none given) any architecture "*"
+   * * * installed1 = PatchMatch(a2, name, any version "*", any architecture "*")
+   * * * matches1 = PatchMatch(a2, name, requested version, arch)
+   * * * if either installed1 or matches1 failed, return promise error
+   * * * else, installed += installed1; matches += matches1
+   * else if package_version_regex is given
+   * * assume that package_name_regex and package_arch_regex are also given and use the 3 regexes to extract name, version, arch
+   * * * installed = PatchMatch(a2, matched name, any version "*", any architecture "*")
+   * * * matches = PatchMatch(a2, matched name, matched version, matched architecture)
+   * * * if either installed or matches failed, return promise error
+   * else (no explicit version is given) (SAME LOOP AS EXPLICIT VERSION LOOP ABOVE)
+   * * no_version = true
+   * * for arch = each architecture requested in a2, or (if none given) any architecture "*"
+   * * * requested version = any version '*'
+   * * * installed1 = PatchMatch(a2, name, any version "*", any architecture "*")
+   * * * matches1 = PatchMatch(a2, name, requested version '*', arch)
+   * * * if either installed1 or matches1 failed, return promise error
+   * * * else, installed += installed1; matches += matches1
+   * finally, call SchedulePackageOp with the found name, version, arch, installed, matches, no_version
+
+   @param ctx [in] The evaluation context
+   @param a [in] the Attributes specifying how to compare
+   @param pp [in] the Promise for this operation
+   @returns the promise result (failure or NOOP)
+*/
 static PromiseResult VerifyPromisedPatch(EvalContext *ctx, Attributes a, const Promise *pp)
 {
     char version[CF_MAXVARSIZE];
@@ -1717,15 +2189,14 @@ static PromiseResult VerifyPromisedPatch(EvalContext *ctx, Attributes a, const P
     a2.packages.package_select = PACKAGE_VERSION_COMPARATOR_EQ;
 
     PromiseResult result = PROMISE_RESULT_NOOP;
-    if (a2.packages.package_version)
+    if (a2.packages.package_version) /* The version is specified explicitly */
     {
-        /* The version is specified separately */
-
-        for (rp = a2.packages.package_architectures; rp != NULL; rp = rp->next)
+        // Note this loop will run if rp is NULL
+        for (rp = a2.packages.package_architectures; ; rp = rp->next)
         {
             strncpy(name, pp->promiser, CF_MAXVARSIZE - 1);
             strncpy(version, a2.packages.package_version, CF_MAXVARSIZE - 1);
-            strncpy(arch, RlistScalarValue(rp), CF_MAXVARSIZE - 1);
+            strncpy(arch, NULL == rp ? "*" : RlistScalarValue(rp), CF_MAXVARSIZE - 1);
             VersionCmpResult installed1 = PatchMatch(ctx, name, "*", "*", a2, pp, "[installed1]", &result);
             VersionCmpResult matches1 = PatchMatch(ctx, name, version, arch, a2, pp, "[available1]", &result);
 
@@ -1738,25 +2209,11 @@ static PromiseResult VerifyPromisedPatch(EvalContext *ctx, Attributes a, const P
 
             installed += installed1;
             matches += matches1;
-        }
 
-        if (a2.packages.package_architectures == NULL)
-        {
-            strncpy(name, pp->promiser, CF_MAXVARSIZE - 1);
-            strncpy(version, a2.packages.package_version, CF_MAXVARSIZE - 1);
-            strncpy(arch, "*", CF_MAXVARSIZE - 1);
-            installed = PatchMatch(ctx, name, "*", "*", a2, pp, "[installed]", &result);
-            matches = PatchMatch(ctx, name, version, arch, a2, pp, "[available]", &result);
-
-            if ((installed == VERCMP_ERROR) || (matches == VERCMP_ERROR))
-            {
-                cfPS_HELPER_0ARG(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a2, "Failure trying to compare package versions");
-                result = PromiseResultUpdate_HELPER(pp, result, PROMISE_RESULT_FAIL);
-                return result;
-            }
+            if (NULL == rp) break; // Note we exit the loop explicitly here
         }
     }
-    else if (a2.packages.package_version_regex)
+    else if (a2.packages.package_version_regex) // version is not given, but a version regex is
     {
         /* The name, version and arch are to be extracted from the promiser */
         strncpy(version, ExtractFirstReference(a2.packages.package_version_regex, package), CF_MAXVARSIZE - 1);
@@ -1772,15 +2229,16 @@ static PromiseResult VerifyPromisedPatch(EvalContext *ctx, Attributes a, const P
             return result;
         }
     }
-    else
+    else // the desired package version was not specified
     {
         no_version = true;
 
-        for (rp = a2.packages.package_architectures; rp != NULL; rp = rp->next)
+        // Note this loop will run if rp is NULL
+        for (rp = a2.packages.package_architectures; ; rp = rp->next)
         {
             strncpy(name, pp->promiser, CF_MAXVARSIZE - 1);
             strncpy(version, "*", CF_MAXVARSIZE - 1);
-            strncpy(arch, RlistScalarValue(rp), CF_MAXVARSIZE - 1);
+            strncpy(arch, NULL == rp ? "*" : RlistScalarValue(rp), CF_MAXVARSIZE - 1);
             VersionCmpResult installed1 = PatchMatch(ctx, name, "*", "*", a2, pp, "[installed1]", &result);
             VersionCmpResult matches1 = PatchMatch(ctx, name, version, arch, a2, pp, "[available1]", &result);
 
@@ -1793,22 +2251,8 @@ static PromiseResult VerifyPromisedPatch(EvalContext *ctx, Attributes a, const P
 
             installed += installed1;
             matches += matches1;
-        }
 
-        if (a2.packages.package_architectures == NULL)
-        {
-            strncpy(name, pp->promiser, CF_MAXVARSIZE - 1);
-            strncpy(version, "*", CF_MAXVARSIZE - 1);
-            strncpy(arch, "*", CF_MAXVARSIZE - 1);
-            installed = PatchMatch(ctx, name, "*", "*", a2, pp, "[installed]", &result);
-            matches = PatchMatch(ctx, name, version, arch, a2, pp, "[available]", &result);
-
-            if ((installed == VERCMP_ERROR) || (matches == VERCMP_ERROR))
-            {
-                cfPS_HELPER_0ARG(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a2, "Failure trying to compare package versions");
-                result = PromiseResultUpdate_HELPER(pp, result, PROMISE_RESULT_FAIL);
-                return result;
-            }
+            if (NULL == rp) break; // Note we exit the loop explicitly here
         }
     }
 
@@ -1820,6 +2264,29 @@ static PromiseResult VerifyPromisedPatch(EvalContext *ctx, Attributes a, const P
     return PROMISE_RESULT_NOOP;
 }
 
+/**
+   @brief Verifies a promised package operation as defined by a and pp
+
+   Called by VerifyPackagesPromise for any non-patch operation.
+
+   * package name is pp->promiser
+   * promise result starts as NOOP
+   * if package version is given
+   * * if no architecture given, the promise result comes from CheckPackageState with name, version, any architecture '*', no_version=false
+   * * else if architectures were given, the promise result comes from CheckPackageState with name, version, arch, no_version=false FOR EACH ARCHITECTURE
+   * else if package_version_regex is given
+   * * assume that package_name_regex and package_arch_regex are also given and use the 3 regexes to extract name, version, arch
+   * * if the arch extraction failed, use any architecture '*'
+   * * the promise result comes from CheckPackageState with name, version, arch, no_version=false)
+   * else (no explicit version is given) (SAME LOOP AS EXPLICIT VERSION LOOP ABOVE)
+   * * if no architecture given, the promise result comes from CheckPackageState with name, any version "*", any architecture '*', no_version=true
+   * * else if architectures were given, the promise result comes from CheckPackageState with name, any version "*", arch, no_version=true FOR EACH ARCHITECTURE
+
+   @param ctx [in] The evaluation context
+   @param a [in] the Attributes specifying how to compare
+   @param pp [in] the Promise for this operation
+   @returns the promise result as set by CheckPackageState
+*/
 static PromiseResult VerifyPromisedPackage(EvalContext *ctx, Attributes a, const Promise *pp)
 {
     const char *package = pp->promiser;
@@ -1958,22 +2425,47 @@ static bool FindAvailableUpdates(Attributes a,char *version, const Promise *pp)
 
 /** Execute scheduled operations **/
 
-static void InvalidateSoftwareCache(void)
-{
-    char name[CF_BUFSIZE];
-    struct utimbuf epoch = { 0, 0 };
+/**
+   @brief Central dispatcher for scheduled operations
 
-    GetSoftwareCacheFilename(name);
+   Called by ExecutePackageSchedule.
 
-    if (utime(name, &epoch) != 0)
-    {
-        if (errno != ENOENT)
-        {
-            Log(LOG_LEVEL_ERR, "Cannot mark software cache as invalid. (utimes: %s)", GetErrorStr());
-        }
-    }
-}
+   Almost identical to ExecutePatch.
 
+   * verify = false
+   * for each PackageManager pm in the schedule
+   * * if pm->pack_list is empty or the scheduled pm->action doesn't match the given action, skip this pm
+   * * estimate the size of the command string from pm->pack_list and pm->policy (SHOULD USE Buffer)
+   * * from the first PackageItem in pm->pack_list, get the Promise pp and its Attributes a
+   * * switch(action)
+   * * * case ADD:
+   * * * * command_string = a.packages.package_add_command + estimated_size room for package names
+   * * * case DELETE:
+   * * * * command_string = a.packages.package_delete_command + estimated_size room for package names
+   * * * case UPDATE:
+   * * * * command_string = a.packages.package_update_command + estimated_size room for package names
+   * * * case VERIFY:
+   * * * * command_string = a.packages.package_verify_command + estimated_size room for package names
+   * * * * verify = true
+
+   * * if the command string ends with $, run it with ExecPackageCommand(command, verify) and magic the promise evaluation
+   * * else, switch(pm->policy)
+   * * * case INDIVIDUAL:
+   * * * * for each PackageItem in the pack_list, build the command and run it with ExecPackageCommand(command, verify) and magic the promise evaluation
+   * * * * NOTE with file repositories and ADD/UPDATE operations, the package name gets the repo path too
+   * * * * NOTE special treatment of PACKAGE_IGNORED_CFE_INTERNAL
+   * * * case BULK:
+   * * * * for all PackageItems in the pack_list, build the command and run it with ExecPackageCommand(command, verify) and magic the promise evaluation
+   * * * * NOTE with file repositories and ADD/UPDATE operations, the package name gets the repo path too
+   * * * * NOTE special treatment of PACKAGE_IGNORED_CFE_INTERNAL
+   * * clean up command_string
+   * if the operation was not a verification, InvalidateSoftwareCache
+
+   @param ctx [in] The evaluation context
+   @param schedule [in] the PackageManager list with the operations schedule
+   @param action [in] the PackageAction desired
+   @returns boolean success/fail (fail only on ProgrammingError, should never happen)
+*/
 static bool ExecuteSchedule(EvalContext *ctx, const PackageManager *schedule, PackageAction action)
 {
     bool verify = false;
@@ -2164,7 +2656,7 @@ static bool ExecuteSchedule(EvalContext *ctx, const PackageManager *schedule, Pa
                         }
                         else if (0 == strncmp(pi->name, PACKAGE_IGNORED_CFE_INTERNAL, strlen(PACKAGE_IGNORED_CFE_INTERNAL)))
                         {
-                            Log(LOG_LEVEL_DEBUG, "Ignoring outcome for special package '%s'", pi->name);
+                            Log(LOG_LEVEL_DEBUG, "ExecuteSchedule: Ignoring outcome for special package '%s'", pi->name);
                         }
                         else
                         {
@@ -2229,7 +2721,7 @@ static bool ExecuteSchedule(EvalContext *ctx, const PackageManager *schedule, Pa
                             }
                             else if (0 == strncmp(pi->name, PACKAGE_IGNORED_CFE_INTERNAL, strlen(PACKAGE_IGNORED_CFE_INTERNAL)))
                             {
-                                Log(LOG_LEVEL_DEBUG, "Ignoring outcome for special package '%s'", pi->name);
+                                Log(LOG_LEVEL_DEBUG, "ExecuteSchedule: Ignoring outcome for special package '%s'", pi->name);
                             }
                             else
                             {
@@ -2266,6 +2758,40 @@ static bool ExecuteSchedule(EvalContext *ctx, const PackageManager *schedule, Pa
     return true;
 }
 
+/**
+   @brief Central dispatcher for scheduled patch operations
+
+   Called by ExecutePackageSchedule.
+
+   Almost identical to ExecuteSchedule except it only accepts the
+   PATCH PackageAction and operates on the PackageManagers' patch_list.
+
+   * for each PackageManager pm in the schedule
+   * * if pm->patch_list is empty or the scheduled pm->action doesn't match the given action, skip this pm
+   * * estimate the size of the command string from pm->patch_list and pm->policy (SHOULD USE Buffer)
+   * * from the first PackageItem in pm->patch_list, get the Promise pp and its Attributes a
+   * * switch(action)
+   * * * case PATCH:
+   * * * * command_string = a.packages.package_patch_command + estimated_size room for package names
+
+   * * if the command string ends with $, run it with ExecPackageCommand(command, verify) and magic the promise evaluation
+   * * else, switch(pm->policy)
+   * * * case INDIVIDUAL:
+   * * * * for each PackageItem in the patch_list, build the command and run it with ExecPackageCommand(command, verify) and magic the promise evaluation
+   * * * * NOTE with file repositories and ADD/UPDATE operations, the package name gets the repo path too
+   * * * * NOTE special treatment of PACKAGE_IGNORED_CFE_INTERNAL
+   * * * case BULK:
+   * * * * for all PackageItems in the patch_list, build the command and run it with ExecPackageCommand(command, verify) and magic the promise evaluation
+   * * * * NOTE with file repositories and ADD/UPDATE operations, the package name gets the repo path too
+   * * * * NOTE special treatment of PACKAGE_IGNORED_CFE_INTERNAL
+   * * clean up command_string
+   * InvalidateSoftwareCache
+
+   @param ctx [in] The evaluation context
+   @param schedule [in] the PackageManager list with the operations schedule
+   @param action [in] the PackageAction desired
+   @returns boolean success/fail (fail only on ProgrammingError, should never happen)
+*/
 static bool ExecutePatch(EvalContext *ctx, const PackageManager *schedule, PackageAction action)
 {
     for (const PackageManager *pm = schedule; pm != NULL; pm = pm->next)
@@ -2381,7 +2907,7 @@ static bool ExecutePatch(EvalContext *ctx, const PackageManager *schedule, Packa
                         }
                         else if (0 == strncmp(pi->name, PACKAGE_IGNORED_CFE_INTERNAL, strlen(PACKAGE_IGNORED_CFE_INTERNAL)))
                         {
-                            Log(LOG_LEVEL_DEBUG, "Ignoring outcome for special package '%s'", pi->name);
+                            Log(LOG_LEVEL_DEBUG, "ExecutePatch: Ignoring outcome for special package '%s'", pi->name);
                         }
                         else
                         {
@@ -2424,7 +2950,7 @@ static bool ExecutePatch(EvalContext *ctx, const PackageManager *schedule, Packa
                         }
                         else if (0 == strncmp(pi->name, PACKAGE_IGNORED_CFE_INTERNAL, strlen(PACKAGE_IGNORED_CFE_INTERNAL)))
                         {
-                            Log(LOG_LEVEL_DEBUG, "Ignoring outcome for special package '%s'", pi->name);
+                            Log(LOG_LEVEL_DEBUG, "ExecutePatch: Ignoring outcome for special package '%s'", pi->name);
                         }
                         else
                         {
@@ -2457,6 +2983,20 @@ static bool ExecutePatch(EvalContext *ctx, const PackageManager *schedule, Packa
     return true;
 }
 
+/**
+   @brief Ordering manager for scheduled package operations
+
+   Called by ExecuteScheduledPackages.
+
+   * ExecuteSchedule(schedule, DELETE)
+   * ExecuteSchedule(schedule, ADD)
+   * ExecuteSchedule(schedule, UPDATE)
+   * ExecutePatch(schedule, PATCH)
+   * ExecuteSchedule(schedule, VERIFY)
+
+   @param ctx [in] The evaluation context
+   @param schedule [in] the PackageManager list with the operations schedule
+*/
 static void ExecutePackageSchedule(EvalContext *ctx, PackageManager *schedule)
 {
     if (LEGACY_OUTPUT)
@@ -2505,6 +3045,12 @@ static void ExecutePackageSchedule(EvalContext *ctx, PackageManager *schedule)
     }
 }
 
+/**
+ * @brief Execute the full package schedule.
+ *
+ * Called by cf-agent only.
+ *
+ */
 void ExecuteScheduledPackages(EvalContext *ctx)
 {
     if (PACKAGE_SCHEDULE)
@@ -2515,6 +3061,12 @@ void ExecuteScheduledPackages(EvalContext *ctx)
 
 /** Cleanup **/
 
+/**
+ * @brief Clean the package schedule and installed lists.
+ *
+ * Called by cf-agent only.  Cleans bookkeeping data.
+ *
+ */
 void CleanScheduledPackages(void)
 {
     DeletePackageManagers(PACKAGE_SCHEDULE);
@@ -2818,7 +3370,7 @@ static int PrependPatchItem(EvalContext *ctx, PackageItem ** list, char *item, P
         return false;
     }
 
-    Log(LOG_LEVEL_DEBUG, "Patch line '%s', with name '%s', version '%s', arch '%s'", item, name, version, arch);
+    Log(LOG_LEVEL_DEBUG, "PrependPatchItem: Patch line '%s', with name '%s', version '%s', arch '%s'", item, name, version, arch);
 
     if (PackageInItemList(chklist, name, version, arch))
     {
@@ -2847,7 +3399,7 @@ static int PrependMultiLinePackageItem(EvalContext *ctx, PackageItem ** list, ch
 
         if ((strcmp(name, "") != 0) || (strcmp(version, "") != 0))
         {
-            Log(LOG_LEVEL_DEBUG, "Extracted package name '%s', version '%s', arch '%s'", name, version, arch);
+            Log(LOG_LEVEL_DEBUG, "PrependMultiLinePackageItem: Extracted package name '%s', version '%s', arch '%s'", name, version, arch);
             PrependPackageItem(ctx, list, name, version, arch, pp);
         }
 
@@ -2910,7 +3462,7 @@ static int PrependListPackageItem(EvalContext *ctx, PackageItem ** list,
         return false;
     }
 
-    Log(LOG_LEVEL_DEBUG, "Package line '%s', name '%s', version '%s', arch '%s'", item, name, version, arch);
+    Log(LOG_LEVEL_DEBUG, "PrependListPackageItem: Package line '%s', name '%s', version '%s', arch '%s'", item, name, version, arch);
 
     return PrependPackageItem(ctx, list, name, version, arch, pp);
 }

@@ -53,6 +53,17 @@ static ConvergeVariableOptions CollectConvergeVariableOptions(EvalContext *ctx, 
 static bool Epimenides(EvalContext *ctx, const char *ns, const char *scope, const char *var, Rval rval, int level);
 static int CompareRval(const void *rval1_item, RvalType rval1_type, const void *rval2_item, RvalType rval2_type);
 
+static bool IsValidVariableName(const char *var_name)
+{
+    // must be removed at some point (global), but for now this offers an attractive speedup
+    static pcre *rx = NULL;
+    if (!rx)
+    {
+        rx = CompileRegex("[a-zA-Z0-9_\200-\377.]+(\\[.+\\])*");
+    }
+
+    return StringMatchFullWithPrecompiledRegex(rx, var_name);
+}
 
 PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_duplicates)
 {
@@ -261,7 +272,7 @@ PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_d
             return result;
         }
 
-        if (!StringMatchFull("[a-zA-Z0-9_\200-\377.]+(\\[.+\\])*", pp->promiser))
+        if (!IsValidVariableName(pp->promiser))
         {
             Log(LOG_LEVEL_ERR, "Variable identifier contains illegal characters");
             PromiseRef(LOG_LEVEL_ERR, pp);
@@ -333,7 +344,23 @@ PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_d
             }
         }
 
-        if (!EvalContextVariablePut(ctx, ref, rval.item, DataTypeFromString(opts.cp_save->lval), "source=promise"))
+
+        DataType required_datatype = DataTypeFromString(opts.cp_save->lval);
+        if (rval.type != DataTypeToRvalType(required_datatype))
+        {
+            char *ref_str = VarRefToString(ref, true);
+            char *value_str = RvalToString(rval);
+            Log(LOG_LEVEL_ERR, "Variable '%s' expected a variable of type '%s', but was given incompatible value '%s'",
+                ref_str, DataTypeToString(required_datatype), value_str);
+            PromiseRef(LOG_LEVEL_ERR, pp);
+            free(ref_str);
+            free(value_str);
+            VarRefDestroy(ref);
+            RvalDestroy(rval);
+            return PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
+        }
+
+        if (!EvalContextVariablePut(ctx, ref, rval.item, required_datatype, "source=promise"))
         {
             Log(LOG_LEVEL_VERBOSE,
                 "Unable to converge %s.%s value (possibly empty or infinite regression)",
@@ -358,8 +385,6 @@ PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_d
                     BufferDestroy(print);
                 }
             }
-
-            result = PromiseResultUpdate(result, PROMISE_RESULT_CHANGE);
         }
     }
     else

@@ -578,6 +578,10 @@ typedef enum
 // Put this here now for caching efficiency
 
 #define SOFTWARE_PACKAGES_CACHE "software_packages.csv"
+#define SOFTWARE_PATCHES_CACHE "software_patches_avail.csv"
+
+#define PACKAGES_CONTEXT "cf_pack_context"
+#define PACKAGES_CONTEXT_ANYVER "cf_pack_context_anyver"
 
 /*************************************************************************/
 

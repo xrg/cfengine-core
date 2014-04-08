@@ -58,4 +58,12 @@ int IsAbsoluteFileName(const char *f);
 bool IsFileOutsideDefaultRepository(const char *f);
 int RootDirLength(const char *f);
 const char *GetSoftwareCacheFilename(char *buffer);
+const char *GetSoftwarePatchesFilename(char *buffer);
+
+/**
+ * Detect whether package manager starts with an env command instead of package manager,
+ * and if so, return the real package manager.
+ */
+const char *RealPackageManager(const char *manager);
+
 #endif

@@ -222,15 +222,23 @@ bool RlistMatchesRegex(const Rlist *list, const char *regex)
         return false;
     }
 
+    pcre *rx = CompileRegex(regex);
+    if (!rx)
+    {
+        return false;
+    }
+
     for (const Rlist *rp = list; rp != NULL; rp = rp->next)
     {
         if (rp->val.type == RVAL_TYPE_SCALAR &&
-            StringMatchFull(regex, RlistScalarValue(rp)))
+            StringMatchFullWithPrecompiledRegex(rx, RlistScalarValue(rp)))
         {
+            pcre_free(rx);
             return true;
         }
     }
 
+    pcre_free(rx);
     return false;
 }
 
@@ -920,23 +928,30 @@ Rlist *RlistFromSplitRegex(const char *string, const char *regex, size_t max_ent
     Rlist *result = NULL;
     Buffer *buffer = BufferNewWithCapacity(CF_MAXVARSIZE);
 
-    while ((entry_count < max_entries) && StringMatch(regex, sp, &start, &end))
+    pcre *rx = CompileRegex(regex);
+    if (rx)
     {
-        if (end == 0)
+        while ((entry_count < max_entries) &&
+               StringMatchWithPrecompiledRegex(rx, sp, &start, &end))
         {
-            break;
+            if (end == 0)
+            {
+                break;
+            }
+
+            BufferClear(buffer);
+            BufferAppend(buffer, sp, start);
+
+            if (allow_blanks || BufferSize(buffer) > 0)
+            {
+                RlistAppendScalar(&result, BufferData(buffer));
+                entry_count++;
+            }
+
+            sp += end;
         }
 
-        BufferClear(buffer);
-        BufferAppend(buffer, sp, start);
-
-        if (allow_blanks || BufferSize(buffer) > 0)
-        {
-            RlistAppendScalar(&result, BufferData(buffer));
-            entry_count++;
-        }
-
-        sp += end;
+        pcre_free(rx);
     }
 
     if (entry_count < max_entries)
@@ -1109,6 +1124,13 @@ void RvalWrite(Writer *writer, Rval rval)
     RvalWriteParts(writer, rval.item, rval.type);
 }
 
+char *RvalToString(Rval rval)
+{
+    Writer *w = StringWriter();
+    RvalWrite(w, rval);
+    return StringWriterClose(w);
+}
+
 void RvalWriteParts(Writer *writer, const void* item, RvalType type)
 {
     if (item == NULL)
@@ -1138,20 +1160,6 @@ void RvalWriteParts(Writer *writer, const void* item, RvalType type)
         JsonWrite(writer, item, 0);
         break;
     }
-}
-
-void RlistShow(FILE *fp, const Rlist *list)
-{
-    Writer *w = FileWriter(fp);
-    RlistWrite(w, list);
-    FileWriterDetach(w);
-}
-
-void RvalShow(FILE *fp, Rval rval)
-{
-    Writer *w = FileWriter(fp);
-    RvalWrite(w, rval);
-    FileWriterDetach(w);
 }
 
 unsigned RvalHash(Rval rval, unsigned seed, unsigned max)
