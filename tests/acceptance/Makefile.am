@@ -5,15 +5,15 @@ AM_CFLAGS = $(ENTERPRISE_CFLAGS) \
 
 noinst_PROGRAMS =
 
-noinst_LTLIBRARIES = libmock-package-manager.la
-libmock_package_manager_la_SOURCES = mock-package-manager.c
+noinst_LTLIBRARIES = libmock_package_manager.la
+libmock_package_manager_la_SOURCES = mock_package_manager.c
 libmock_package_manager_la_LIBADD = ../../libpromises/libpromises.la
 
 if !BUILTIN_EXTENSIONS
-noinst_PROGRAMS += mock-package-manager
+noinst_PROGRAMS += mock_package_manager
 
 mock_package_manager_SOURCES =
-mock_package_manager_LDADD = libmock-package-manager.la
+mock_package_manager_LDADD = libmock_package_manager.la
 endif # !BUILTIN_EXTENSIONS
 
 if HAVE_LIBXML2
@@ -34,7 +34,7 @@ TESTS_ENVIRONMENT = env \
 	CF_PROMISES=`pwd`/../../cf-promises/cf-promises \
 	CF_SERVERD=`pwd`/../../cf-serverd/cf-serverd \
 	CF_KEY=`pwd`/../../cf-key/cf-key \
-	MOCK_PACKAGE_MANAGER=`pwd`/mock-package-manager
+	MOCK_PACKAGE_MANAGER=`pwd`/mock_package_manager
 if !HAVE_LIBXML2
 TESTS_ENVIRONMENT += LIBXML2_TESTS=0
 endif
@@ -47,4 +47,4 @@ CLEANFILES = *.gcno *.gcda
 
 pluck:
 	echo '### This is an auto-generated file, see Makefile.am and `make pluck` ###' > plucked.cf.sub
-	../../contrib/cf-locate/cf-locate -f -p '( if_|edit_line set_config|set_variable_values\(|edit_field|set_line_based|location|replace_with|local_cp|empty|shell|immediate|mog| m\b|recurse|tidy| all|classes_generic| start|always|^value|edit_field line|insert_lines| cfe_mustache| cfe_(copy|tidy|sync|make|empty|link|hardlink))' ../../../masterfiles/lib/3.6 >> plucked.cf.sub
+	../../contrib/cf-locate/cf-locate -f -p '( if_|edit_line set_config|set_variable_values\(|edit_field|set_line_based|location|replace_with|local_cp|empty|shell|immediate|mog| m\b|recurse|tidy| all|classes_generic| start|always|^value|edit_field line|insert_lines|(link|copy)from| file_mustache| (file|dir)_(copy|tidy|sync|make|empty|link|hardlink))' ../../../masterfiles/lib/3.6 >> plucked.cf.sub
