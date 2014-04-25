@@ -577,6 +577,7 @@ static int CheckStoreKey(ServerConnectionState *conn, RSA *key)
     }
     else
     {
+        Log(LOG_LEVEL_INFO, "Host %s/%s gave us unknown key %s, denying access", conn->hostname, conn->ipaddr, udigest);
         Log(LOG_LEVEL_VERBOSE, "No previous key found, and unable to accept this one on trust");
         SendTransaction(conn->conn_info, "BAD: key could not be accepted on trust", 0, CF_DONE);
         return false;
@@ -1388,7 +1389,7 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
     case PROTOCOL_COMMAND_AUTH:
     case PROTOCOL_COMMAND_CONTEXTS:
     case PROTOCOL_COMMAND_BAD:
-        Log(LOG_LEVEL_WARNING, "Unexpected protocol command");
+        Log(LOG_LEVEL_WARNING, "Unexpected protocol command (%d)", command);
     }
 
     strcpy(sendbuffer, "BAD: Request denied");
