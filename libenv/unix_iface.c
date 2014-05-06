@@ -327,7 +327,7 @@ void GetInterfacesInfo(EvalContext *ctx)
     if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
     {
         Log(LOG_LEVEL_ERR, "Couldn't open socket. (socket: %s)", GetErrorStr());
-        exit(EXIT_FAILURE);
+        goto fail;
     }
 
     list.ifc_len = sizeof(ifbuf);
@@ -340,7 +340,8 @@ void GetInterfacesInfo(EvalContext *ctx)
 # endif
     {
         Log(LOG_LEVEL_ERR, "Couldn't get interfaces - old kernel? Try setting CF_IFREQ to 1024. (ioctl: %s)", GetErrorStr());
-        exit(EXIT_FAILURE);
+        close(fd);
+        goto fail;
     }
 
     char last_name[sizeof(ifp->ifr_name)] = "";
@@ -548,6 +549,7 @@ void GetInterfacesInfo(EvalContext *ctx)
 
     close(fd);
 
+  fail:
     if (interfaces)
     {
         EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_SYS, "interfaces", interfaces, CF_DATA_TYPE_STRING_LIST,
