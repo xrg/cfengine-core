@@ -143,6 +143,9 @@ developing programs using the %{name} library.
 	--disable-dependency-tracking \
 	--disable-maintainer-mode \
 	--enable-shared --enable-fhs  \
+%if %{_target_cpu} == i586 && %{mgaver} == 1
+	--with-tokyocabinet --without-lmdb \
+%endif
 	--without-mysql
     $CONFIGURE_XPATH
 
