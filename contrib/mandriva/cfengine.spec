@@ -3,7 +3,6 @@
 
 %define	name	cfengine3
 %define version %git_get_ver
-%global release_class experimental
 
 # We call ourselves "cfengine3" but still use "/var/lib/cfengine"
 %define workdir %{_localstatedir}/lib/cfengine
