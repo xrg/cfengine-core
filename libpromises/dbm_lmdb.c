@@ -41,7 +41,6 @@ struct DBPriv_
     MDB_env *env;
     MDB_dbi dbi;
     MDB_txn *wtxn;
-    MDB_cursor *mc;
 };
 
 struct DBCursorPriv_
@@ -70,6 +69,7 @@ const char *DBPrivGetFileExtension(void)
 DBPriv *DBPrivOpenDB(const char *dbpath, dbid id)
 {
     DBPriv *db = xcalloc(1, sizeof(DBPriv));
+    db->wtxn = NULL;
     MDB_txn *txn = NULL;
     int rc;
 
@@ -124,6 +124,7 @@ DBPriv *DBPrivOpenDB(const char *dbpath, dbid id)
     {
         Log(LOG_LEVEL_ERR, "Could not open database dbi %s: %s",
               dbpath, mdb_strerror(rc));
+        mdb_txn_abort(txn);
         goto err;
     }
     rc = mdb_txn_commit(txn);
@@ -133,8 +134,6 @@ DBPriv *DBPrivOpenDB(const char *dbpath, dbid id)
               dbpath, mdb_strerror(rc));
         goto err;
     }
-    txn = NULL;
-    db->wtxn = NULL;
     return db;
 
 err:
@@ -269,18 +268,7 @@ bool DBPrivWrite(DBPriv *db, const void *key, int key_size, const void *value, i
 {
     MDB_val mkey, data;
     MDB_txn *txn;
-    int rc;
-
-    /* If there's an open cursor, use its txn */
-    if (db->mc)
-    {
-        txn = mdb_cursor_txn(db->mc);
-        rc = MDB_SUCCESS;
-    }
-    else
-    {
-        rc = mdb_txn_begin(db->env, NULL, 0, &txn);
-    }
+    int rc = mdb_txn_begin(db->env, NULL, 0, &txn);
     if (rc == MDB_SUCCESS)
     {
         mkey.mv_data = (void *)key;
@@ -288,22 +276,18 @@ bool DBPrivWrite(DBPriv *db, const void *key, int key_size, const void *value, i
         data.mv_data = (void *)value;
         data.mv_size = value_size;
         rc = mdb_put(txn, db->dbi, &mkey, &data, 0);
-        /* don't commit here if there's a cursor */
-        if (!db->mc)
+        if (rc == MDB_SUCCESS)
         {
-            if (rc == MDB_SUCCESS)
+            rc = mdb_txn_commit(txn);
+            if (rc)
             {
-                rc = mdb_txn_commit(txn);
-                if (rc)
-                {
-                    Log(LOG_LEVEL_ERR, "Could not commit: %s", mdb_strerror(rc));
-                }
+                Log(LOG_LEVEL_ERR, "Could not commit: %s", mdb_strerror(rc));
             }
-            else
-            {
-                Log(LOG_LEVEL_ERR, "Could not write: %s", mdb_strerror(rc));
-                mdb_txn_abort(txn);
-            }
+        }
+        else
+        {
+            Log(LOG_LEVEL_ERR, "Could not write: %s", mdb_strerror(rc));
+            mdb_txn_abort(txn);
         }
     }
     else
@@ -364,43 +348,29 @@ bool DBPrivDelete(DBPriv *db, const void *key, int key_size)
 {
     MDB_val mkey;
     MDB_txn *txn;
-    int rc;
-
-    /* If there's an open cursor, use its txn */
-    if (db->mc)
-    {
-        txn = mdb_cursor_txn(db->mc);
-        rc = MDB_SUCCESS;
-    } else
-    {
-        rc = mdb_txn_begin(db->env, NULL, 0, &txn);
-    }
+    int rc = mdb_txn_begin(db->env, NULL, 0, &txn);
     if (rc == MDB_SUCCESS)
     {
         mkey.mv_data = (void *)key;
         mkey.mv_size = key_size;
         rc = mdb_del(txn, db->dbi, &mkey, NULL);
-        /* don't commit here if there's a cursor */
-        if (!db->mc)
+        if (rc == MDB_SUCCESS)
         {
-            if (rc == MDB_SUCCESS)
+            rc = mdb_txn_commit(txn);
+            if (rc)
             {
-                rc = mdb_txn_commit(txn);
-                if (rc)
-                {
-                    Log(LOG_LEVEL_ERR, "Could not commit: %s", mdb_strerror(rc));
-                }
+                Log(LOG_LEVEL_ERR, "Could not commit: %s", mdb_strerror(rc));
             }
-            else if (rc == MDB_NOTFOUND)
-            {
-                Log(LOG_LEVEL_DEBUG, "Entry not found: %s", mdb_strerror(rc));
-                mdb_txn_abort(txn);
-            }
-            else
-            {
-                Log(LOG_LEVEL_ERR, "Could not delete: %s", mdb_strerror(rc));
-                mdb_txn_abort(txn);
-            }
+        }
+        else if (rc == MDB_NOTFOUND)
+        {
+            Log(LOG_LEVEL_DEBUG, "Entry not found: %s", mdb_strerror(rc));
+            mdb_txn_abort(txn);
+        }
+        else
+        {
+            Log(LOG_LEVEL_ERR, "Could not delete: %s", mdb_strerror(rc));
+            mdb_txn_abort(txn);
         }
     }
     else
@@ -415,16 +385,17 @@ DBCursorPriv *DBPrivOpenCursor(DBPriv *db)
     DBCursorPriv *cursor = NULL;
     MDB_txn *txn;
     int rc;
+    MDB_cursor *mc;
 
     rc = mdb_txn_begin(db->env, NULL, 0, &txn);
     if (rc == MDB_SUCCESS)
     {
-        rc = mdb_cursor_open(txn, db->dbi, &db->mc);
+        rc = mdb_cursor_open(txn, db->dbi, &mc);
         if (rc == MDB_SUCCESS)
         {
             cursor = xcalloc(1, sizeof(DBCursorPriv));
             cursor->db = db;
-            cursor->mc = db->mc;
+            cursor->mc = mc;
         }
         else
         {
@@ -529,7 +500,6 @@ void DBPrivCloseCursor(DBCursorPriv *cursor)
         mdb_cursor_del(cursor->mc, 0);
     }
 
-    cursor->db->mc = NULL;
     txn = mdb_cursor_txn(cursor->mc);
     mdb_cursor_close(cursor->mc);
     rc = mdb_txn_commit(txn);
