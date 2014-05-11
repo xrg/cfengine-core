@@ -2694,3 +2694,18 @@ void DetectEnvironment(EvalContext *ctx)
     BuiltinClasses(ctx);
     OSClasses(ctx);
 }
+
+/** Minimal environment, for cf-execd
+ * 
+ * cf-excecd should NOT depend on monitor classes, network interfaces or
+ * any other volatile data. It shall only call cf-agent, which, in turn
+ * will decide to run promises or not.
+ */
+void DetectExecdEnvironment(EvalContext *ctx)
+{
+    GetNameInfo3(ctx);
+    GetInterfacesInfo(ctx);
+    /* Get3Environment(ctx); */
+    BuiltinClasses(ctx);
+    OSClasses(ctx);
+}
