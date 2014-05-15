@@ -38,7 +38,7 @@ libdb_la_SOURCES = ../../libpromises/dbm_api.c \
 if HPUX
 libdb_la_SOURCES += ../../libpromises/cf3globals.c
 endif
-libdb_la_LIBADD = libstr.la
+libdb_la_LIBADD = libstr.la ../../libutils/libutils.la
 libdb_la_CPPFLAGS = $(AM_CPPFLAGS)
 
 check_PROGRAMS = \
@@ -64,6 +64,8 @@ check_PROGRAMS = \
 	sequence_test \
 	lastseen_test \
 	lastseen_migration_test \
+	db_test \
+	db_concurrent_test \
 	dbm_migration_bundles_test \
 	misc_lib_test \
 	item_lib_test \
@@ -214,6 +216,12 @@ file_writer_test_SOURCES = file_writer_test.c gcov-stub.c
 file_writer_test_CFLAGS = $(AM_CFLAGS) -fno-profile-arcs -fno-test-coverage
 file_writer_test_LDADD = libstr.la
 file_writer_test_LDFLAGS =
+
+db_test_SOURCES = db_test.c
+db_test_LDADD = libdb.la
+
+db_concurrent_test_SOURCES = db_concurrent_test.c
+db_concurrent_test_LDADD = libdb.la
 
 lastseen_test_SOURCES = lastseen_test.c ../../libpromises/item_lib.c  ../../libpromises/lastseen.c ../../libutils/statistics.c
 lastseen_test_LDADD = libdb.la ../../libpromises/libpromises.la
