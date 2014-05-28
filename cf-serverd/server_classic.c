@@ -576,6 +576,7 @@ static int CheckStoreKey(ServerConnectionState *conn, RSA *key)
     }
     else
     {
+        Log(LOG_LEVEL_INFO, "Host %s/%s gave us unknown key %s, denying access", conn->hostname, conn->ipaddr, udigest);
         Log(LOG_LEVEL_VERBOSE, "No previous key found, and unable to accept this one on trust");
         SendTransaction(conn->conn_info, "BAD: key could not be accepted on trust", 0, CF_DONE);
         return false;
@@ -692,7 +693,7 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
     newkey = RSA_new();
 
 /* proposition C2 */
-    if ((len_n = ReceiveTransaction(conn->conn_info, recvbuffer, NULL)) == -1)
+    if ((len_n = ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1)) == -1)
     {
         Log(LOG_LEVEL_INFO, "Protocol error 1 in RSA authentation from IP %s", conn->hostname);
         RSA_free(newkey);
@@ -716,7 +717,7 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
 
 /* proposition C3 */
 
-    if ((len_e = ReceiveTransaction(conn->conn_info, recvbuffer, NULL)) == -1)
+    if ((len_e = ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1)) == -1)
     {
         Log(LOG_LEVEL_INFO, "Protocol error 3 in RSA authentation from IP %s", conn->hostname);
         RSA_free(newkey);
@@ -809,7 +810,7 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
 /* proposition C4 */
     memset(in, 0, CF_BUFSIZE);
 
-    if (ReceiveTransaction(conn->conn_info, in, NULL) == -1)
+    if (ReceiveTransaction(conn->conn_info, in, NULL, -1) == -1)
     {
         BN_free(counter_challenge);
         free(out);
@@ -834,7 +835,7 @@ static int AuthenticationDialogue(ServerConnectionState *conn, char *recvbuffer,
 
     memset(in, 0, CF_BUFSIZE);
 
-    if ((keylen = ReceiveTransaction(conn->conn_info, in, NULL)) == -1)
+    if ((keylen = ReceiveTransaction(conn->conn_info, in, NULL, -1)) == -1)
     {
         BN_free(counter_challenge);
         free(out);
@@ -899,7 +900,7 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
     memset(recvbuffer, 0, CF_BUFSIZE + CF_BUFEXT);
     memset(&get_args, 0, sizeof(get_args));
 
-    received = ReceiveTransaction(conn->conn_info, recvbuffer, NULL);
+    received = ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1);
     if (received == -1 || received == 0)
     {
         return false;
@@ -1409,7 +1410,7 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
     case PROTOCOL_COMMAND_AUTH:
     case PROTOCOL_COMMAND_CONTEXTS:
     case PROTOCOL_COMMAND_BAD:
-        Log(LOG_LEVEL_WARNING, "Unexpected protocol command");
+        Log(LOG_LEVEL_WARNING, "Unexpected protocol command (%d)", command);
     }
 
     strcpy(sendbuffer, "BAD: Request denied");

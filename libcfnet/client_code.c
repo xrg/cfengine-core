@@ -417,7 +417,7 @@ int cf_remote_stat(const char *file, struct stat *buf, const char *stattype, boo
         return -1;
     }
 
-    if (ReceiveTransaction(conn->conn_info, recvbuffer, NULL) == -1)
+    if (ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1) == -1)
     {
         /* TODO mark connection in the cache as closed. */
         return -1;
@@ -485,7 +485,7 @@ int cf_remote_stat(const char *file, struct stat *buf, const char *stattype, boo
 
         memset(recvbuffer, 0, CF_BUFSIZE);
 
-        if (ReceiveTransaction(conn->conn_info, recvbuffer, NULL) == -1)
+        if (ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1) == -1)
         {
             /* TODO mark connection in the cache as closed. */
             return -1;
@@ -568,7 +568,7 @@ int cf_remote_stat(const char *file, struct stat *buf, const char *stattype, boo
 Item *RemoteDirList(const char *dirname, bool encrypt, AgentConnection *conn)
 {
     char sendbuffer[CF_BUFSIZE];
-    char recvbuffer[CF_BUFSIZE];
+    char recvbuffer[CF_MAX_BUFSIZE+3];
     char in[CF_BUFSIZE];
     char out[CF_BUFSIZE];
     int n, cipherlen = 0, tosend;
@@ -613,7 +613,7 @@ Item *RemoteDirList(const char *dirname, bool encrypt, AgentConnection *conn)
 
     while (true)
     {
-        if ((n = ReceiveTransaction(conn->conn_info, recvbuffer, NULL)) == -1)
+        if ((n = ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1)) == -1)
         {
             /* TODO mark connection in the cache as closed. */
             return NULL;
@@ -748,7 +748,7 @@ int CompareHashNet(const char *file1, const char *file2, bool encrypt, AgentConn
         return false;
     }
 
-    if (ReceiveTransaction(conn->conn_info, recvbuffer, NULL) == -1)
+    if (ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1) == -1)
     {
         /* TODO mark connection in the cache as closed. */
         Log(LOG_LEVEL_ERR, "Failed receive. (ReceiveTransaction: %s)", GetErrorStr());
@@ -830,7 +830,7 @@ int EncryptCopyRegularFileNet(const char *source, const char *dest, off_t size, 
 
     while (more)
     {
-        if ((cipherlen = ReceiveTransaction(conn->conn_info, buf, &more)) == -1)
+        if ((cipherlen = ReceiveTransaction(conn->conn_info, buf, &more, -1)) == -1)
         {
             free(buf);
             return false;

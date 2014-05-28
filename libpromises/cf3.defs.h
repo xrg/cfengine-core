@@ -453,6 +453,7 @@ typedef enum
     COMMON_CONTROL_SYSLOG_HOST,
     COMMON_CONTROL_SYSLOG_PORT,
     COMMON_CONTROL_FIPS_MODE,
+    COMMON_CONTROL_BWLIMIT,
     COMMON_CONTROL_CACHE_SYSTEM_FUNCTIONS,
     COMMON_CONTROL_PROTOCOL_VERSION,
     COMMON_CONTROL_MAX
@@ -990,6 +991,7 @@ struct PackageManager_
     PackageItem *pack_list;
     PackageItem *patch_list;
     PackageItem *patch_avail;
+    PackageItem *updates_list;
     PackageManager *next;
 };
 
@@ -1298,6 +1300,7 @@ typedef struct
 
     char *package_list_update_command;
     int package_list_update_ifelapsed;
+    char *package_new_versions_command;
 
     char *package_version_regex;
     char *package_name_regex;

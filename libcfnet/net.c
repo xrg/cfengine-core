@@ -42,24 +42,36 @@
 int SendTransaction(const ConnectionInfo *conn_info, const char *buffer, int len, char status)
 {
     char work[CF_BUFSIZE] = { 0 };
-    int ret;
+    int ret, wlen;
 
     if (len == 0)
     {
-        len = strlen(buffer);
+        /* For large buffers, len MUST be supplied */
+        len = strnlen(buffer, CF_BUFSIZE);
     }
 
-    if (len > CF_BUFSIZE - CF_INBAND_OFFSET)
+    if (len > CF_MAX_BUFSIZE)
     {
         Log(LOG_LEVEL_ERR, "SendTransaction: len (%d) > %d - %d",
             len, CF_BUFSIZE, CF_INBAND_OFFSET);
         return -1;
     }
-
-    snprintf(work, CF_INBAND_OFFSET, "%c %d", status, len);
-
-    memcpy(work + CF_INBAND_OFFSET, buffer, len);
-
+    else if (len > CF_BUFSIZE)
+    {
+        /* large buffer mode, avoid copying 
+           A small write() followed by a large one is not likely to hit
+           the Nagle algorithm.
+         */
+        memset(work, 0, CF_INBAND_OFFSET+1);
+        snprintf(work, CF_INBAND_OFFSET, "%c %d", status, len);
+        wlen = 0;
+    }
+    else
+    {
+        snprintf(work, CF_INBAND_OFFSET, "%c %d", status, len);
+        memcpy(work + CF_INBAND_OFFSET, buffer, len);
+        wlen = len;
+    }
     Log(LOG_LEVEL_DEBUG, "SendTransaction header: %s", work);
     LogRaw(LOG_LEVEL_DEBUG, "SendTransaction data: ",
            work + CF_INBAND_OFFSET, len);
@@ -68,10 +80,18 @@ int SendTransaction(const ConnectionInfo *conn_info, const char *buffer, int len
     {
     case CF_PROTOCOL_CLASSIC:
         ret = SendSocketStream(ConnectionInfoSocket(conn_info), work,
-                               len + CF_INBAND_OFFSET);
+                               wlen + CF_INBAND_OFFSET);
+        if ((ret != -1) && (wlen == 0) && (len))
+        {
+            ret = SendSocketStream(ConnectionInfoSocket(conn_info), buffer, len);
+        }
         break;
     case CF_PROTOCOL_TLS:
-        ret = TLSSend(ConnectionInfoSSL(conn_info), work, len + CF_INBAND_OFFSET);
+        ret = TLSSend(ConnectionInfoSSL(conn_info), work, wlen + CF_INBAND_OFFSET);
+        if ((ret != -1) && (wlen == 0) && (len))
+        {
+            ret = TLSSend(ConnectionInfoSSL(conn_info), buffer, len);
+        }
         break;
     default:
         UnexpectedError("SendTransaction: ProtocolVersion %d!",
@@ -91,12 +111,23 @@ int SendTransaction(const ConnectionInfo *conn_info, const char *buffer, int len
  *  @return 0 in case of socket closed, -1 in case of other error, or
  *          >0 the number of bytes read.
  */
-int ReceiveTransaction(const ConnectionInfo *conn_info, char *buffer, int *more)
+int ReceiveTransaction(const ConnectionInfo *conn_info, char *buffer, int *more, int bufsize)
 {
     char proto[CF_INBAND_OFFSET + 1] = { 0 };
     char status = 'x';
     unsigned int len = 0;
     int ret;
+
+    if (bufsize < 0)
+    {
+        bufsize = CF_BUFSIZE - CF_INBAND_OFFSET;
+    }
+    else if (bufsize > CF_MAX_BUFSIZE + 1)
+    {
+        Log(LOG_LEVEL_ERR, "ReceiveTransaction: bufsize %d > %d ", bufsize, CF_MAX_BUFSIZE);
+        ProgrammingError("ReceiveTransaction software failure");
+        return -1;
+    }
 
     /* Get control channel. */
     switch(ConnectionInfoProtocolVersion(conn_info))
@@ -159,6 +190,90 @@ int ReceiveTransaction(const ConnectionInfo *conn_info, char *buffer, int *more)
 
     return ret;
 }
+
+/* BWlimit global variables
+
+  Throttling happens for all network interfaces, all traffic being sent for
+  any connection of this process (cf-agent or cf-serverd).
+  We need a lock, to avoid concurrent writes to "bwlimit_next".
+  Then, "bwlimit_next" is the absolute time (as of clock_gettime() ) that we
+  are clear to send, after. It is incremented with the delay for every packet
+  scheduled for sending. Thus, integer arithmetic will make sure we wait for
+  the correct amount of time, in total.
+ */
+
+static pthread_mutex_t bwlimit_lock = PTHREAD_MUTEX_INITIALIZER;
+static struct timespec bwlimit_next = {0, 0L};
+uint32_t bwlimit_kbytes = 0; /* desired limit, in kB/s */ 
+
+
+/** Throttle traffic, if next packet happens too soon after the previous one
+ * 
+ *  This function is global, accross all network operations (and interfaces, perhaps)
+ *  @param tosend Length of current packet being sent out (in bytes)
+ */
+
+void EnforceBwLimit(int tosend)
+{
+    const uint32_t u_10e6 = 1000000L;
+    const uint32_t u_10e9 = 1000000000L;
+    struct timespec clock_now;
+
+    if (!bwlimit_kbytes)
+    {
+        /* early return, before any expensive syscalls */
+        return;
+    }
+
+    if (pthread_mutex_lock(&bwlimit_lock) == 0)
+    {
+        clock_gettime(CLOCK_MONOTONIC, &clock_now);
+
+        if ((bwlimit_next.tv_sec < clock_now.tv_sec) ||
+            ( (bwlimit_next.tv_sec == clock_now.tv_sec) &&
+              (bwlimit_next.tv_nsec < clock_now.tv_nsec) ) )
+        {
+            /* penalty has expired, we can immediately send data. But reset the timestamp */
+            bwlimit_next = clock_now;
+            clock_now.tv_sec = 0;
+            clock_now.tv_nsec = 0L;
+        }
+        else
+        {
+            clock_now.tv_sec = bwlimit_next.tv_sec - clock_now.tv_sec;
+            clock_now.tv_nsec = bwlimit_next.tv_nsec - clock_now.tv_nsec;
+            if (clock_now.tv_nsec < 0L)
+            {
+                clock_now.tv_sec --;
+                clock_now.tv_nsec += u_10e9;
+            }
+        }
+
+        uint64_t delay = ((uint64_t) tosend * u_10e6) / bwlimit_kbytes; /* in ns */
+
+        bwlimit_next.tv_sec += (delay / u_10e9);
+        bwlimit_next.tv_nsec += (long) (delay % u_10e9);
+        if (bwlimit_next.tv_nsec >= u_10e9)
+        {
+            bwlimit_next.tv_sec++;
+            bwlimit_next.tv_nsec -= u_10e9;
+        }
+        pthread_mutex_unlock(&bwlimit_lock);
+    }
+
+    /* Even if we push our data every few bytes to the network interface,
+      the software+hardware buffers will queue it and send it in bursts,
+      anyway. It is more likely that we will waste CPU sys-time calling
+      nanosleep() for such short delays.
+      So, sleep only if we have >1ms penalty
+    */
+    if (clock_now.tv_sec > 0 || ( (clock_now.tv_sec == 0) && (clock_now.tv_nsec >= u_10e6))  )
+    {
+        nanosleep(&clock_now, NULL);
+    }
+
+}
+
 
 /*************************************************************************/
 

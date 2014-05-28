@@ -1079,6 +1079,7 @@ Packages GetPackageConstraints(const EvalContext *ctx, const Promise *pp)
 
     p.package_installed_regex = PromiseGetConstraintAsRval(pp, "package_installed_regex", RVAL_TYPE_SCALAR);
 
+    p.package_new_versions_command = PromiseGetConstraintAsRval(pp, "package_new_versions_command", RVAL_TYPE_SCALAR);
     p.package_version_regex = PromiseGetConstraintAsRval(pp, "package_version_regex", RVAL_TYPE_SCALAR);
     p.package_name_regex = PromiseGetConstraintAsRval(pp, "package_name_regex", RVAL_TYPE_SCALAR);
     p.package_arch_regex = PromiseGetConstraintAsRval(pp, "package_arch_regex", RVAL_TYPE_SCALAR);

@@ -57,7 +57,7 @@ void UpdateLastSawHost(const char *hostkey, const char *address,
  *
  * "Address", or reverse, entries (auxiliary)
  *
- * key: a<address> (IPv6 or IPv6)
+ * key: a<address> (IPv4 or IPv6)
  * value: <hostkey>
  *
  *

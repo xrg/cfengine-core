@@ -28,6 +28,7 @@
 #include <cf3.defs.h>
 
 void DetectEnvironment(EvalContext *ctx);
+void DetectExecdEnvironment(EvalContext *ctx);
 
 void CreateHardClassesFromCanonification(EvalContext *ctx, const char *canonified, char *tags);
 int GetUptimeMinutes(time_t now);

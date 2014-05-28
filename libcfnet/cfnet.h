@@ -39,6 +39,7 @@ extern int CFENGINE_PORT;                              /* GLOBAL_P GLOBAL_E */
    net.c:SendTransaction(), leave space for encryption padding
    (assuming max 64*8 = 512-bit cipher block size). */
 #define CF_BUFSIZE 4096
+#define CF_MAX_BUFSIZE 65528
 #define CF_SMALLBUF 128
 #define CF_MAX_IP_LEN 64                    /* max IPv4/IPv6 address length */
 #define CF_DONE 't'
@@ -153,5 +154,6 @@ typedef struct
 
 const char *sockaddr_ntop(const void *src, char *dst, socklen_t size);
 
+void EnforceBwLimit(int tosend);
 
 #endif

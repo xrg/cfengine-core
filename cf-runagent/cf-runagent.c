@@ -69,7 +69,9 @@ static void KeepControlPromises(EvalContext *ctx, const Policy *policy);
 static int HailServer(EvalContext *ctx, char *host);
 static void SendClassData(AgentConnection *conn);
 static void HailExec(AgentConnection *conn, char *peer, char *recvbuffer, char *sendbuffer);
+static void HostPing(AgentConnection *conn, char *peer, char *recvbuffer, char *sendbuffer);
 static FILE *NewStream(char *name);
+static void DeleteStream(FILE *fp);
 
 /*******************************************************************/
 /* Command line options                                            */
@@ -106,6 +108,7 @@ static const struct option OPTIONS[] =
     {"interactive", no_argument, 0, 'i'},
     {"timeout", required_argument, 0, 't'},
     {"legacy-output", no_argument, 0, 'l'},
+    {"ping-only", no_argument, 0, 'N'},
     {"color", optional_argument, 0, 'C'},
     {NULL, 0, 0, '\0'}
 };
@@ -128,6 +131,7 @@ static const char *const HINTS[] =
     "Enable interactive mode for key trust",
     "Connection timeout, seconds",
     "Use legacy output format",
+    "Ping-only mode (implies --dry-run), just connect and confirm authentication with remote",
     "Enable colorized output. Possible values: 'always', 'auto', 'never'. If option is used, the default value is 'auto'",
     NULL
 };
@@ -136,6 +140,7 @@ extern const ConstraintSyntax CFR_CONTROLBODY[];
 
 int INTERACTIVE = false; /* GLOBAL_A */
 int OUTPUT_TO_FILE = false; /* GLOBAL_P */
+int PING_ONLY = false; /* GLOBAL_P */
 char OUTPUT_DIRECTORY[CF_BUFSIZE] = ""; /* GLOBAL_P */
 int BACKGROUND = false; /* GLOBAL_P GLOBAL_A */
 int MAXCHILD = 50; /* GLOBAL_P GLOBAL_A */
@@ -249,7 +254,7 @@ static GenericAgentConfig *CheckOpts(int argc, char **argv)
     DEFINECLASSES[0] = '\0';
     SENDCLASSES[0] = '\0';
 
-    while ((c = getopt_long(argc, argv, "t:q:db:vnKhIif:D:VSxo:s:MH:lC::", OPTIONS, &optindex)) != EOF)
+    while ((c = getopt_long(argc, argv, "t:q:db:vnKhIif:D:VSxo:s:MH:lNC::", OPTIONS, &optindex)) != EOF)
     {
         switch ((char) c)
         {
@@ -317,6 +322,9 @@ static GenericAgentConfig *CheckOpts(int argc, char **argv)
         case 'v':
             LogSetGlobalLevel(LOG_LEVEL_VERBOSE);
             break;
+
+        case 'N':
+            PING_ONLY = true;
 
         case 'n':
             DONTDO = true;
@@ -434,8 +442,19 @@ static int HailServer(EvalContext *ctx, char *host)
         return false;
     }
 
+    if (PING_ONLY)
+    {
+        Log(LOG_LEVEL_INFO, "Host: %s aka. %s is %s , port: %s",
+                    host, hostname, ipaddr, port);
+    }
+
     Address2Hostkey(ipaddr, digest);
     GetCurrentUserName(user, CF_SMALLBUF);
+
+    if (PING_ONLY)
+    {
+        Log(LOG_LEVEL_VERBOSE, "Local user: %s , digest: %s\n", user, digest);
+    }
 
     if (INTERACTIVE)
     {
@@ -518,6 +537,13 @@ static int HailServer(EvalContext *ctx, char *host)
     {
         Log(LOG_LEVEL_VERBOSE, "No suitable server responded to hail");
         return false;
+    }
+
+    if (PING_ONLY)
+    {
+        HostPing(conn, hostname, recvbuffer, sendbuffer);
+        Log(LOG_LEVEL_VERBOSE,"HailServer: ping with %s finished", hostname);
+        return true;
     }
 
     /* Send EXEC command. */
@@ -695,7 +721,7 @@ static void HailExec(AgentConnection *conn, char *peer, char *recvbuffer, char *
     {
         memset(recvbuffer, 0, CF_BUFSIZE);
 
-        if ((n_read = ReceiveTransaction(conn->conn_info, recvbuffer, NULL)) == -1)
+        if ((n_read = ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1)) == -1)
         {
             return;
         }
@@ -730,11 +756,72 @@ static void HailExec(AgentConnection *conn, char *peer, char *recvbuffer, char *
         fprintf(fp, "%s> -> %s", VPREFIX, recvbuffer);
     }
 
-    if (fp != stdout)
-    {
-        fclose(fp);
-    }
+    DeleteStream(fp);
     DisconnectServer(conn);
+}
+
+/********************************************************************/
+
+static void HostPing(AgentConnection *conn, char *peer, char *recvbuffer, char *sendbuffer)
+{
+    FILE *fp = stdout;
+    char *sp;
+    int n_read;
+
+    snprintf(sendbuffer, CF_BUFSIZE, "VERSION ");
+
+    if (SendTransaction(conn->conn_info, sendbuffer, 0, CF_DONE) == -1)
+    {
+        Log(LOG_LEVEL_ERR, "Transmission rejected");
+        DisconnectServer(conn);
+        return;
+    }
+
+    fp = NewStream(peer);
+
+    while (true)
+    {
+        memset(recvbuffer, 0, CF_BUFSIZE);
+
+        if ((n_read = ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1)) == -1)
+        {
+            return;
+        }
+
+        if (n_read == 0)
+        {
+            break;
+        }
+
+        if (strlen(recvbuffer) == 0)
+        {
+            continue;
+        }
+
+        if ((sp = strstr(recvbuffer, CFD_TERMINATOR)) != NULL)
+        {
+            break;
+        }
+
+        if ((sp = strstr(recvbuffer, "BAD:")) != NULL)
+        {
+            continue;
+        }
+
+        if (strstr(recvbuffer, "too soon"))
+        {
+            continue;
+        }
+
+        if ((strncmp(recvbuffer, "OK: ", 4)) == 0)
+        {
+            Log(LOG_LEVEL_INFO, "Got %s version: %s", peer, recvbuffer +4);
+            break;
+        }
+
+    }
+
+    DeleteStream(fp);
 }
 
 /********************************************************************/
@@ -771,4 +858,14 @@ static FILE *NewStream(char *name)
     }
 
     return fp;
+}
+
+/********************************************************************/
+
+static void DeleteStream(FILE *fp)
+{
+    if (fp != stdout)
+    {
+        fclose(fp);
+    }
 }

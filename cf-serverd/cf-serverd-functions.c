@@ -417,7 +417,7 @@ static int OpenReceiverChannel(void)
 {
     struct addrinfo *response = NULL, *ap;
     struct addrinfo query = {
-        .ai_flags = AI_PASSIVE,
+        .ai_flags = AI_PASSIVE | AI_NUMERICHOST,
         .ai_family = AF_UNSPEC,
         .ai_socktype = SOCK_STREAM
     };

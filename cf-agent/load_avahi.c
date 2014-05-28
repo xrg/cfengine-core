@@ -29,22 +29,21 @@
 
 static const char *paths[] = {
     "/usr/lib/x86_64-linux-gnu/libavahi-client.so.3",
-    "/usr/lib/libavahi-client.so.3",
     "/usr/lib64/libavahi-client.so.3",
+    "/usr/lib/libavahi-client.so.3"
     /* 32-bit variants */
     "/usr/lib/i386-linux-gnu/libavahi-client.so.3"
 };
 
-static const char *getavahipath();
+static void *getavahi_handle();
 
 int loadavahi()
 {
-    const char *path = getavahipath();
-
-    avahi_handle = dlopen(path, RTLD_LAZY);
+    avahi_handle = getavahi_handle();
 
     if (!avahi_handle)
     {
+        Log(LOG_LEVEL_VERBOSE, "Avahi could not be loaded: %s", dlerror());
         return -1;
     }
 
@@ -68,23 +67,24 @@ int loadavahi()
     return 0;
 }
 
-static const char *getavahipath()
+static void *getavahi_handle()
 {
     const char *env = getenv("AVAHI_PATH");
     struct stat sb;
+    void *ret = NULL;
 
-    if (stat(env, &sb) == 0)
+    if (env && stat(env, &sb) == 0)
     {
-        return env;
+        ret = dlopen(env, RTLD_LAZY);
     }
 
-    for (int i = 0; i < sizeof(paths)/sizeof(paths[0]); i++)
+    for (int i = 0; (!ret) && i < sizeof(paths)/sizeof(paths[0]); i++)
     {
         if (stat(paths[i], &sb) == 0)
         {
-            return paths[i];
+            ret = dlopen(paths[i], RTLD_LAZY);
         }
     }
 
-    return NULL;
+    return ret;
 }

@@ -529,7 +529,7 @@ static bool ScheduleRun(EvalContext *ctx, Policy **policy, GenericAgentConfig *c
         }
         UpdateLastPolicyUpdateTime(ctx);
 
-        DetectEnvironment(ctx);
+        DetectExecdEnvironment(ctx);
 
         EvalContextClassPutHard(ctx, CF_AGENTTYPES[AGENT_TYPE_EXECUTOR], "cfe_internal,source=agent");
 
@@ -550,11 +550,6 @@ static bool ScheduleRun(EvalContext *ctx, Policy **policy, GenericAgentConfig *c
     else
     {
         /* Environment reload */
-
-        EvalContextClear(ctx);
-
-        DetectEnvironment(ctx);
-
         time_t t = SetReferenceTime();
         UpdateTimeClasses(ctx, t);
     }

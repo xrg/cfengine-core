@@ -570,7 +570,7 @@ bool BusyWithNewProtocol(EvalContext *ctx, ServerConnectionState *conn)
     assert(conn->user_data_set == 1);
 
     /* Receive up to CF_BUFSIZE - 1 bytes. */
-    received = ReceiveTransaction(conn->conn_info, recvbuffer, NULL);
+    received = ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1);
     if (received == -1 || received == 0)
     {
         return false;

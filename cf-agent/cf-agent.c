@@ -351,8 +351,8 @@ static GenericAgentConfig *CheckOpts(int argc, char **argv)
             {
                 if (!BootstrapAllowed())
                 {
-                    Log(LOG_LEVEL_ERR, "Not enough privileges to bootstrap CFEngine");
-                    exit(EXIT_FAILURE);
+                    Log(LOG_LEVEL_WARNING, "Bootstrap CFEngine in user mode");
+                    /*exit(EXIT_FAILURE); */
                 }
 
                 if(strcmp(optarg, ":avahi") == 0)
@@ -1049,6 +1049,15 @@ static void KeepControlPromises(EvalContext *ctx, const Policy *policy)
         }
     }
 
+    if ((value = EvalContextVariableControlCommonGet(ctx, COMMON_CONTROL_BWLIMIT)))
+    {
+        double bval;
+        if (DoubleFromString(value, &bval))
+        {
+            bwlimit_kbytes = (uint32_t) ( bval / 1000.0);
+            Log(LOG_LEVEL_VERBOSE, "Setting rate limit to %d kBytes/sec", bwlimit_kbytes);
+        }
+    }
     Nova_Initialize(ctx);
 }
 

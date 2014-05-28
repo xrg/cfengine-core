@@ -55,7 +55,7 @@ static bool LastRecvTimedOut(void)
  *        the data; buffer must have space for that.
  * @return -1 on error; or actual length read.
  */
-int RecvSocketStream(int sd, char buffer[CF_BUFSIZE], int toget)
+int RecvSocketStream(int sd, char *buffer, int toget)
 {
     int already, got;
 
@@ -100,9 +100,11 @@ int RecvSocketStream(int sd, char buffer[CF_BUFSIZE], int toget)
 
 /*************************************************************************/
 
-int SendSocketStream(int sd, const char buffer[CF_BUFSIZE], int tosend)
+int SendSocketStream(int sd, const char *buffer, int tosend)
 {
     int sent, already = 0;
+
+    EnforceBwLimit(tosend);
 
     do
     {

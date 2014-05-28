@@ -76,7 +76,7 @@ void RefuseAccess(ServerConnectionState *conn, char *errmesg)
     snprintf(buf, sizeof(buf), "%s", CF_FAILEDSTR);
     SendTransaction(conn->conn_info, buf, 0, CF_DONE);
 
-    Log(LOG_LEVEL_VERBOSE, "REFUSAL to (user=%s,ip=%s) of request: %s",
+    Log(LOG_LEVEL_INFO, "REFUSAL to (user=%s,ip=%s) of request: %s",
         username, ipaddr, errmesg);
 }
 
@@ -184,7 +184,7 @@ int MatchClasses(EvalContext *ctx, ServerConnectionState *conn)
     {
         count++;
 
-        if (ReceiveTransaction(conn->conn_info, recvbuffer, NULL) == -1)
+        if (ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1) == -1)
         {
             Log(LOG_LEVEL_VERBOSE, "Unable to read data from network. (ReceiveTransaction: %s)", GetErrorStr());
             return false;
@@ -340,7 +340,7 @@ static int AuthorizeRoles(EvalContext *ctx, ServerConnectionState *conn, char *a
     }
     else
     {
-        Log(LOG_LEVEL_VERBOSE, "Role activation disallowed - abort execution");
+        Log(LOG_LEVEL_INFO, "Role activation disallowed - abort execution");
     }
 
     RlistDestroy(defines);

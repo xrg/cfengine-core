@@ -306,7 +306,7 @@ int AuthenticateAgent(AgentConnection *conn, bool trust_key)
 /* proposition S1 */
     memset(in, 0, CF_BUFSIZE);
 
-    if (ReceiveTransaction(conn->conn_info, in, NULL) == -1)
+    if (ReceiveTransaction(conn->conn_info, in, NULL, -1) == -1)
     {
         Log(LOG_LEVEL_ERR, "Protocol transaction broken off (1). (ReceiveTransaction: %s)", GetErrorStr());
         RSA_free(server_pubkey);
@@ -325,7 +325,7 @@ int AuthenticateAgent(AgentConnection *conn, bool trust_key)
 /* proposition S2 */
     memset(in, 0, CF_BUFSIZE);
 
-    if (ReceiveTransaction(conn->conn_info, in, NULL) == -1)
+    if (ReceiveTransaction(conn->conn_info, in, NULL, -1) == -1)
     {
         Log(LOG_LEVEL_ERR, "Protocol transaction broken off (2). (ReceiveTransaction: %s)", GetErrorStr());
         RSA_free(server_pubkey);
@@ -375,7 +375,7 @@ int AuthenticateAgent(AgentConnection *conn, bool trust_key)
 
 /* proposition S3 */
     memset(in, 0, CF_BUFSIZE);
-    encrypted_len = ReceiveTransaction(conn->conn_info, in, NULL);
+    encrypted_len = ReceiveTransaction(conn->conn_info, in, NULL, -1);
 
     if (encrypted_len <= 0)
     {
@@ -425,7 +425,7 @@ int AuthenticateAgent(AgentConnection *conn, bool trust_key)
         Log(LOG_LEVEL_VERBOSE, "Collecting public key from server!");
 
         /* proposition S4 - conditional */
-        if ((len = ReceiveTransaction(conn->conn_info, in, NULL)) <= 0)
+        if ((len = ReceiveTransaction(conn->conn_info, in, NULL, -1)) <= 0)
         {
             Log(LOG_LEVEL_ERR, "Protocol error in RSA authentation from IP '%s'", conn->this_server);
             return false;
@@ -441,7 +441,7 @@ int AuthenticateAgent(AgentConnection *conn, bool trust_key)
 
         /* proposition S5 - conditional */
 
-        if ((len = ReceiveTransaction(conn->conn_info, in, NULL)) <= 0)
+        if ((len = ReceiveTransaction(conn->conn_info, in, NULL, -1)) <= 0)
         {
             Log(LOG_LEVEL_INFO, "Protocol error in RSA authentation from IP '%s'",
                  conn->this_server);

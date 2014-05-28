@@ -42,6 +42,7 @@ static const ConstraintSyntax package_method_constraints[] =
     ConstraintSyntaxNewString("package_list_update_command", "", "Command to update the list of available packages (if any)", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewInt("package_list_update_ifelapsed", CF_INTRANGE, "The ifelapsed locking time in between updates of the package list", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewString("package_list_version_regex", "", "Regular expression with one backreference to extract package version string", SYNTAX_STATUS_NORMAL),
+    ConstraintSyntaxNewString("package_new_versions_command", CF_PATHRANGE, "Command to print the list of available package updates", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewString("package_name_convention", "", "This is how the package manager expects the package to be referred to, e.g. $(name).$(arch)", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewString("package_name_regex", "", "Regular expression with one backreference to extract package name string", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewString("package_noverify_regex", "", "Regular expression to match verification failure output", SYNTAX_STATUS_NORMAL),
