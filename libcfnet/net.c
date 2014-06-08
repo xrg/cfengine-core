@@ -445,7 +445,7 @@ bool TryConnect(int sd, unsigned long timeout_ms,
     if (ret == -1)
     {
         Log(LOG_LEVEL_ERR,
-            "Could not set socket to non-blocking mode. (fcntl: %s)",
+            "Failed to set socket to non-blocking mode (fcntl: %s)",
             GetErrorStr());
     }
 
@@ -454,7 +454,7 @@ bool TryConnect(int sd, unsigned long timeout_ms,
     {
         if (errno != EINPROGRESS)
         {
-            Log(LOG_LEVEL_INFO, "Error connecting to server. (connect: %s)",
+            Log(LOG_LEVEL_INFO, "Failed to connect to server (connect: %s)",
                 GetErrorStr());
             return false;
         }
@@ -487,9 +487,17 @@ bool TryConnect(int sd, unsigned long timeout_ms,
         }
         if (ret == -1)
         {
-            Log(LOG_LEVEL_ERR,
-                "Error while waiting for connection (select: %s)",
-                GetErrorStr());
+            if (errno == EINTR)
+            {
+                Log(LOG_LEVEL_ERR,
+                    "Socket connect was interrupted by signal");
+            }
+            else
+            {
+                Log(LOG_LEVEL_ERR,
+                    "Failure while connecting (select: %s)",
+                    GetErrorStr());
+            }
             return false;
         }
 
@@ -505,7 +513,7 @@ bool TryConnect(int sd, unsigned long timeout_ms,
 
         if (errcode != 0)
         {
-            Log(LOG_LEVEL_INFO, "Error connecting to server: %s",
+            Log(LOG_LEVEL_INFO, "Failed to connect to server: %s",
                 GetErrorStrFromCode(errcode));
             return false;
         }
@@ -516,7 +524,7 @@ bool TryConnect(int sd, unsigned long timeout_ms,
     if (ret == -1)
     {
         Log(LOG_LEVEL_ERR,
-            "Could not set socket back to blocking mode (fcntl: %s)",
+            "Failed to set socket back to blocking mode (fcntl: %s)",
             GetErrorStr());
     }
 
