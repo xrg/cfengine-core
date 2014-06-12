@@ -1,1 +1,8 @@
-usr/sbin var/lib/cfengine3/bin
+usr/sbin/cf-agent var/lib/cfengine3/bin/cf-agent
+usr/sbin/cf-execd var/lib/cfengine3/bin/cf-execd
+usr/sbin/cf-key var/lib/cfengine3/bin/cf-key
+usr/sbin/cf-monitord var/lib/cfengine3/bin/cf-monitord
+usr/sbin/cf-promises var/lib/cfengine3/bin/cf-promises
+usr/sbin/cf-runagent var/lib/cfengine3/bin/cf-runagent
+usr/sbin/cf-serverd var/lib/cfengine3/bin/cf-serverd
+usr/sbin/cf-upgrade var/lib/cfengine3/bin/cf-upgrade
