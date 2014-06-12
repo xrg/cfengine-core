@@ -56,7 +56,6 @@ override_dh_install:
 	/bin/rmdir $(CURDIR)/debian/cfengine3/usr/sbin
 	/bin/mv $(CURDIR)/debian/cfengine3/usr/bin $(CURDIR)/debian/cfengine3/usr/sbin
 
-	/bin/rmdir $(CURDIR)/debian/cfengine3/var/lib/cfengine3/inputs
 	/bin/rm $(CURDIR)/debian/cfengine3/usr/lib/*.la
 
 	## Man pages are created with an undocumented flag
