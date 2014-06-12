@@ -6,3 +6,5 @@ usr/sbin/cf-promises var/lib/cfengine/bin/cf-promises
 usr/sbin/cf-runagent var/lib/cfengine/bin/cf-runagent
 usr/sbin/cf-serverd var/lib/cfengine/bin/cf-serverd
 usr/sbin/cf-upgrade var/lib/cfengine/bin/cf-upgrade
+var/lib/cfengine /var/cfengine
+var/lib/cfengine /var/lib/cfengine3
