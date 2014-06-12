@@ -1,0 +1,31 @@
+#!/bin/sh -e
+
+case "$1" in
+	install)
+		;;
+
+	upgrade)
+		invoke-rc.d --quiet cfengine3 stop || true
+		;;
+
+	abort-upgrade)
+		;;
+
+	*)
+		echo "preinst called with unknown argument \`$1'" >&2
+		exit 1
+		;;
+esac
+
+if [ install = "$1" -o upgrade = "$1" ]; then
+	if [ ! -e "/var/lib/cfengine" ]; then
+		if [ -d "/var/cfengine" ]; then
+			mv /var/cfengine /var/lib/cfengine
+		else if [ -d "/var/lib/cfengine3" ]; then
+			mv /var/lib/cfengine3 /var/lib/cfengine
+		fi
+	else
+		mv -f /var/cfengine /var/cfengine.dpkg-bak 2>/dev/null || true
+		mv -f /var/lib/cfengine3 /var/lib/cfengine3.dpkg-bak 2>/dev/null || true
+fi
+
