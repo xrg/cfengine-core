@@ -21,8 +21,8 @@ anything that update your config files
 When everything is ready you can start the daemons:
 /etc/init.d/cfengine3 start
 
-*) By default we are not starting any daemon, in most of your installations you
-will only need the cfagent with a proper configuration file
+*) By default we are not starting any daemon, unless CFEngine has been
+bootstraped successfully
 
 *) For more info you should have a look at the reference manual and the relevant
 docs:
