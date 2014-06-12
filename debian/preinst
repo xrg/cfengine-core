@@ -21,7 +21,7 @@ if [ install = "$1" -o upgrade = "$1" ]; then
 	if [ ! -e "/var/lib/cfengine" ]; then
 		if [ -d "/var/cfengine" ]; then
 			mv /var/cfengine /var/lib/cfengine
-		else if [ -d "/var/lib/cfengine3" ]; then
+		elif [ -d "/var/lib/cfengine3" ]; then
 			mv /var/lib/cfengine3 /var/lib/cfengine
 		fi
 	else
