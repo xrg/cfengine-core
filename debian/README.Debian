@@ -5,7 +5,8 @@ and you should be aware of them:
 the binaries are located in /usr/sbin; for upstream compatibility we have the
 following symlinks:
 
-/usr/sbin      -> /var/lib/cfengine3/bin§
+/usr/sbin      -> /var/lib/cfengine/bin§
+/var/lib/cfengine -> /var/cfengine
 
 *) to enable the daemons you need to bootstrap CFEngine; the daemons won't be
 started unless there is a promises.cf file present; if you want to test that

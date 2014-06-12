@@ -1,2 +1,2 @@
 usr/sbin
-var/lib/cfengine3/bin
+var/lib/cfengine/bin

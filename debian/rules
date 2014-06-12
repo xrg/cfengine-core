@@ -14,7 +14,7 @@ override_dh_auto_configure:
 				--with-libvirt \
 				--with-tokyocabinet \
 				--with-libxml2 \
-				--with-workdir=/var/lib/cfengine3 \
+				--with-workdir=/var/lib/cfengine \
 				--with-piddir=/run/cfengine3 \
 				--docdir=\$${prefix}/share/doc/cfengine3 \
 				--datadir=\$${prefix}/share/cfengine3 \

@@ -17,7 +17,7 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
-WORKDIR=/var/lib/cfengine3
+WORKDIR=/var/lib/cfengine
 INPUTS=$WORKDIR/inputs
 
 set_permissions() {

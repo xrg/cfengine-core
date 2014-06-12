@@ -2,7 +2,7 @@
 
 set -e
 
-VDIR=/var/lib/cfengine3
+VDIR=/var/lib/cfengine
 
 if [ "$1" = "purge" ]; then
     if [ -d "$VDIR" ]; then
