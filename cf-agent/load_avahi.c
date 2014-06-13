@@ -30,7 +30,7 @@
 static const char *paths[] = {
     "/usr/lib/x86_64-linux-gnu/libavahi-client.so.3",
     "/usr/lib64/libavahi-client.so.3",
-    "/usr/lib/libavahi-client.so.3"
+    "/usr/lib/libavahi-client.so.3",
     /* 32-bit variants */
     "/usr/lib/i386-linux-gnu/libavahi-client.so.3"
 };
