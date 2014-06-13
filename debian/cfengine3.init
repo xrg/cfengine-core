@@ -25,6 +25,7 @@ SCRIPTNAME=/etc/init.d/$NAME
 CFEXECD_DAEMON=/usr/sbin/cf-execd
 CFSERVERD_DAEMON=/usr/sbin/cf-serverd
 CFMONITORD_DAEMON=/usr/sbin/cf-monitord
+CFENGINE_WORKDIR=/var/lib/cfengine
 
 #DAEMON_ARGS="--options args"
 #PIDFILE=/var/run/$NAME.pid
@@ -33,11 +34,6 @@ CFMONITORD_DAEMON=/usr/sbin/cf-monitord
 [ -x "$CFEXECD_DAEMON" ] || exit 0
 [ -x "$CFSERVERD_DAEMON" ] || exit 0
 [ -x "$CFMONITORD_DAEMON" ] || exit 0
-
-# defaults
-RUN_CFMONITORD=1
-RUN_CFEXECD=1
-RUN_CFSERVERD=1
 
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
@@ -136,15 +132,12 @@ do_reload() {
 # Function to start the cfengine daemons
 start_cfengine() {
         RETVAL=0
-        if [ "$RUN_CFMONITORD" = "1" ]; then
+	# Do not start if CFEngine has not been bootstraped
+        if [ -f "${CFENGINE_WORKDIR}/policy_server.dat" ]; then
             do_start $CFMONITORD_DAEMON 
             [ $? = "0" ] || RETVAL=$?
-        fi
-        if [ "$RUN_CFSERVERD" = "1" ]; then
             do_start $CFSERVERD_DAEMON
             [ $? = "0" ] || RETVAL=$?
-        fi
-        if [ "$RUN_CFEXECD" = "1" ]; then
             do_start $CFEXECD_DAEMON
             [ $? = "0" ] || RETVAL=$?
         fi
@@ -155,18 +148,12 @@ start_cfengine() {
 # Function to stop the cfengine daemons
 stop_cfengine() {
         RETVAL=0
-        if [ "$RUN_CFEXECD" = "1" ]; then
-            do_stop $CFEXECD_DAEMON
-            [ $? = "0" ] || RETVAL=$?
-        fi
-        if [ "$RUN_CFMONITORD" = "1" ]; then
-            do_stop $CFMONITORD_DAEMON 
-            [ $? = "0" ] || RETVAL=$?
-        fi
-        if [ "$RUN_CFSERVERD" = "1" ]; then
-            do_stop $CFSERVERD_DAEMON
-            [ $? = "0" ] || RETVAL=$?
-        fi
+	do_stop $CFEXECD_DAEMON
+        [ $? = "0" ] || RETVAL=$?
+        do_stop $CFMONITORD_DAEMON 
+        [ $? = "0" ] || RETVAL=$?
+        do_stop $CFSERVERD_DAEMON
+        [ $? = "0" ] || RETVAL=$?
 
         return $RETVAL
 }
@@ -174,18 +161,12 @@ stop_cfengine() {
 # Function to return the status of the cfengine daemons
 status_cfengine() {
         RETVAL=0
-        if [ "$RUN_CFMONITORD" = "1" ]; then
-                status_of_proc "$CFMONITORD_DAEMON" "cf-monitord"
-                [ $? = 0 ] || RETVAL=1 
-        fi
-        if [ "$RUN_CFSERVERD" = "1" ]; then
-                status_of_proc "$CFSERVERD_DAEMON" "cf-serverd"
-                [ $? = 0 ] || RETVAL=1 
-        fi
-        if [ "$RUN_CFEXECD" = "1" ]; then
-                status_of_proc "$CFEXECD_DAEMON" "cf-execd" 
-                [ $? = 0 ] || RETVAL=1 
-        fi
+        status_of_proc "$CFMONITORD_DAEMON" "cf-monitord"
+        [ $? = 0 ] || RETVAL=1 
+        status_of_proc "$CFSERVERD_DAEMON" "cf-serverd"
+        [ $? = 0 ] || RETVAL=1 
+        status_of_proc "$CFEXECD_DAEMON" "cf-execd" 
+        [ $? = 0 ] || RETVAL=1 
 
         return $RETVAL
 }

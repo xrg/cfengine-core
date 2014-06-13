@@ -1,0 +1,23 @@
+#!/bin/sh -e
+
+case "$1" in
+	upgrade)
+		invoke-rc.d --quiet cfengine3 stop || true
+		;;
+
+	deconfigure)
+		;;
+
+	remove)
+		invoke-rc.d --quiet cfengine3 stop || true
+		;;
+	failed-upgrade)
+		;;
+
+	*)
+		echo "prerm called with unknown argument \`$1'" >&2
+		exit 1
+		;;
+esac
+
+exit 0

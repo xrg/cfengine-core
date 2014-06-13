@@ -3,7 +3,7 @@ Section: admin
 Priority: optional
 Maintainer: Antonio Radici <antonio@debian.org>
 Build-Depends: debhelper (>= 7.0.50), autotools-dev, libssl-dev,
- flex, bison, libpcre3-dev, dh-autoreconf, libvirt-dev, libacl1-dev, liblmdb-dev,
+ flex, bison, libpcre3-dev, dh-autoreconf, libvirt-dev, libacl1-dev, libtokyocabinet-dev,
   libmysqlclient-dev, libpq-dev, libxml2-dev, quilt, libpam0g-dev
 Standards-Version: 3.9.4
 Homepage: http://www.cfengine.org/
@@ -13,6 +13,8 @@ Vcs-Git: git://git.debian.org/git/collab-maint/cfengine3.git
 Package: cfengine3
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Conflicts: cfengine-community
+Replaces: cfengine-community
 Description: tool for configuring and maintaining network machines
  Cfengine is a suite of programs for integrated autonomic management
  of either individual or networked computers.

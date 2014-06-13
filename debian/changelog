@@ -1,3 +1,82 @@
+cfengine3 (3.6.0~c0833e-1~soldecom) UNRELEASED; urgency=low
+
+  [ P. Christeas ]
+  * Add Mandriva scripts
+  * SPEC: modify for git-based build.
+  * SPEC: Don't use localstatedir, but "/var/lib" explicitly
+  * SPEC: a little better git macro use.
+  * mdv-spec: adapt to cfengine3, initial build
+  * sysinfo: detect Mageia Linux distro
+  * mandriva.spec: refactor, tune to deployment scenario
+  * mdv: update, move initrd files
+  * mdv: fix one more typo at init.d/cf-serverd
+  * mdv spec: remove "experimental" flag, we deploy in production now
+  * mdv/spec: texinfo is required to build the html documentation
+  * mageia spec: install "rpmvercmp", use better macro for beta release
+  * mageia.spec: PDS documentation should not require cfengine
+  * cf-runagent: ping mode, which will just auth to remote and get version
+  * verify_packages: support "list of updates" from packaging tool
+  * mdv spec: fix the service script for "cf-serverd"
+  * Revert "failsafe.cf: use encryption at the bootstrap phase"
+  * mageia: fix typo in cf-servd init script
+  * mdv spec: require the library, so that exact version is installed
+  * verify_package: "update" of a non-installed package should not err
+  * pipes.c: initialize "CHILDREN" array after realloc()ing it
+  * exec_tools: don't bork daemons when no verbosity level
+  * exec_tools: Revert "don't close file descriptors we use"
+  * sysinfo.c: fix new API for Mageia detection
+  * misc.c: initialise variable (compiler warning)
+  * cf-runagent: fix "ping" feature, against new API
+  * scope.c: fix compiler warnings for cast (const char*) to (void *)
+  * scope.c: fix segfault when ScopeDelete() calls the second item
+  * cf-agent: avoid crash if libavahi-client hasn't loaded
+  * cf-agent: probe 64-bit libavahi-client before 32-bit one
+  * cf-agent: better loading of libavahi-client, when first lib fails
+  * libpromises: initialize variable, avoid gcc warning
+  * libcfnet,promises: allow TCP port numbers from 32k-64k
+  * files_lib.c: cast a const, avoid a gcc warning
+  * server.c: after refusing transfer access, exit the function
+  * libcfnet: big (65k) buffer support for file transfers
+  * libcfnet: bandwidth limit on the network
+  * contrib/mdv.spec: adapt to 3.6 series, let it build as "experimental"
+  * libcfnet: allow bufsize == MAX_BUFSIZE + 1 on Receive
+  * cf-agent: allow bootstrapping in user mode (non-root)
+  * libcfnet: Fix typo in log message
+  * contrib/mdv.spec: adapt to 3.6 master changes
+  * cf-serverd: free getaddrinfo() result, on error of OpenReceiverChannel()
+  * cf-serverd: getaddrinfo() will use a numeric port, no lookup
+  * cf-serverd: getaddrinfo() will NOT set "errno" upon failure
+  * libcfnet: bandwidth limit on the network
+  * libcfnet/bwlimit: raise minimum sleep time to 1ms
+  * libcfnet/bwlimit: code style improvements, types, comments
+  * libcfnet/bwlimit: fix algo for sec=0 nsec > 0
+  * verify_packages: fix usage of CfReadLine, const Promise decorator
+  * mon_network.c: only free vbuff after we're done using it
+  * verify_services: bail out with error if some service cannot be resolved
+  * libpromises: limit readstringarrayidx() tokens to CF_MAXVARSIZE
+  * tests/acceptance: Mandriva/Mageia linux behaves like RedHat for uid/gid
+  * verify_packages: adapt to new CfReadLine API
+  * contrib/spec: docs are no longer built/distributed with CFEngine 3.6
+  * lastseen.c: fix typo in docstring
+  * cf-serverd: fix file-access path calculation, after symlink expansion
+  * cf-serverd: little more messages when refusing access
+  * cf-serverd: access "ifencrypted" shall respect "false" values, too
+  * cf-execd,libenv: only run cf-execd with minimal classes, don't reload
+  * contrib/mandriva: on Mageia 1-i586, build still with tokyo cabinet
+  * contrib/mandriva: remove "experimental" flag, build for production
+
+  [ Kristian Amlie ]
+  * Don't use "sudo -n" option, which is not supported by RHEL4.
+  * Fix leftover primary group causing trouble for later users tests.
+  * Remove leftover comments.
+
+  [ Vasilis Tsiligiannis ]
+  * debian: Fix dependency on 'tokyocabinet'
+  * debian: Remove 'spelling_mistakes' patch
+  * debian: Remove package symbols since we do not build shared libraries
+
+ -- Vasilis Tsiligiannis <b_tsiligiannis@soldecom.com>  Wed, 04 Jun 2014 23:54:13 +0300
+
 cfengine3 (3.6.0~rc1-1+nmu1) UNRELEASED; urgency=low
 
   * Non-maintainer upload.

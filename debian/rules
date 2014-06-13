@@ -14,8 +14,7 @@ override_dh_auto_configure:
 				--with-libvirt \
 				--with-tokyocabinet \
 				--with-libxml2 \
-				--with-workdir=/var/lib/cfengine3 \
-				--with-logdir=/var/log/cfengine3 \
+				--with-workdir=/var/lib/cfengine \
 				--with-piddir=/run/cfengine3 \
 				--docdir=\$${prefix}/share/doc/cfengine3 \
 				--datadir=\$${prefix}/share/cfengine3 \
@@ -57,7 +56,6 @@ override_dh_install:
 	/bin/rmdir $(CURDIR)/debian/cfengine3/usr/sbin
 	/bin/mv $(CURDIR)/debian/cfengine3/usr/bin $(CURDIR)/debian/cfengine3/usr/sbin
 
-	/bin/rmdir $(CURDIR)/debian/cfengine3/var/lib/cfengine3/inputs
 	/bin/rm $(CURDIR)/debian/cfengine3/usr/lib/*.la
 
 	## Man pages are created with an undocumented flag
