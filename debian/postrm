@@ -12,7 +12,7 @@ if [ "$1" = "purge" ]; then
 	cd /; rmdir "$VDIR"
     fi
     rm -f /etc/default/cfengine3
-    update-rc.d cfengine3 disable >/dev/null
+    update-rc.d cfengine3 remove >/dev/null
 fi
 
 #DEBHELPER#

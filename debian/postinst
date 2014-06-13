@@ -48,7 +48,7 @@ case "$1" in
     ;;
 esac
 
-update-rc.d cfengine3 enable >/dev/null
+update-rc.d cfengine3 defaults >/dev/null
 invoke-rc.d cfengine3 restart
 
 # dh_installdeb will replace this with shell code automatically
