@@ -10,7 +10,7 @@ case "$1" in
 
 	remove)
 		invoke-rc.d --quiet cfengine3 stop || true
-
+		;;
 	failed-upgrade)
 		;;
 
