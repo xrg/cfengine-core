@@ -86,19 +86,10 @@
 #define SHIFTS_PER_DAY 4
 #define SHIFTS_PER_WEEK (4*7)
 
-#define CF_INDEX_FIELD_LEN 7
-#define CF_INDEX_OFFSET  CF_INDEX_FIELD_LEN+1
-
 #define MAX_MONTH_NAME 9
 
 #define MAX_DIGEST_BYTES (512 / 8)  /* SHA-512 */
 #define MAX_DIGEST_HEX (MAX_DIGEST_BYTES * 2)
-
-#define CF_EDIT_IFELAPSED 3     /* NOTE: If doing copy template then edit working copy,
-                                   the edit ifelapsed must not be higher than
-                                   the copy ifelapsed. This will make the working
-                                   copy equal to the copied template file - not the
-                                   copied + edited file. */
 
 
 /*******************************************************************/
@@ -257,13 +248,9 @@ typedef struct
 #ifdef __MINGW32__
 # define NULLFILE "nul"
 # define EXEC_SUFFIX ".exe"
-# define FILE_SEPARATOR '\\'
-# define FILE_SEPARATOR_STR "\\"
 #else
 # define NULLFILE "/dev/null"
 # define EXEC_SUFFIX ""
-# define FILE_SEPARATOR '/'
-# define FILE_SEPARATOR_STR "/"
 #endif /* !__MINGW32__ */
 
 #define CF_WORDSIZE 8           /* Number of bytes in a word */
@@ -340,21 +327,6 @@ struct GidList_
     char *gidname;              /* when gid is -2 */
     GidList *next;
 };
-
-/*******************************************************************/
-/* File path manipulation primitives                               */
-/*******************************************************************/
-
-/* Defined maximum length of a filename. */
-
-/* File node separator (cygwin can use \ or / but prefer \ for communicating
- * with native windows commands). */
-
-#ifdef _WIN32
-# define IsFileSep(c) ((c) == '\\' || (c) == '/')
-#else
-# define IsFileSep(c) ((c) == '/')
-#endif
 
 /*************************************************************************/
 /* Fundamental (meta) types                                              */
@@ -798,16 +770,6 @@ typedef enum
     LAST_SEEN_DIRECTION_INCOMING = '-',
     LAST_SEEN_DIRECTION_OUTGOING = '+'
 } LastSeenDirection;
-
-/************************************************************************************/
-
-typedef enum
-{
-    FILE_STATE_NEW,
-    FILE_STATE_REMOVED,
-    FILE_STATE_CONTENT_CHANGED,
-    FILE_STATE_STATS_CHANGED
-} FileState;
 
 /************************************************************************************/
 

@@ -56,7 +56,7 @@
 
 #ifndef __MINGW32__
 /* Unix implementation */
-int private_run_process_finish(const char *command, char **args, char **envp)
+int private_run_process_replace(const char *command, char **args, char **envp)
 {
     /* Execute the command */
     execve(command, args, envp);
@@ -160,7 +160,7 @@ static void args_to_command_line(char **args, char *command_line)
     return 0;
 }
 
-int private_run_process_finish(const char *command, char **args, char **envp)
+int private_run_process_replace(const char *command, char **args, char **envp)
 {
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
@@ -252,13 +252,13 @@ int private_run_process_wait(const char *command, char **args, char **envp)
 }
 #endif
 
-int run_process_finish(const char *command, char **args, char **envp)
+int run_process_replace(const char *command, char **args, char **envp)
 {
     if (!command || !args || !envp)
     {
         return -1;
     }
-    return private_run_process_finish(command, args, envp);
+    return private_run_process_replace(command, args, envp);
 }
 
 int run_process_wait(const char *command, char **args, char **envp)

@@ -25,7 +25,7 @@ dnl The version in the next line is the only one to set
 dnl
 
 _AM_SET_OPTION([tar-ustar])
-AM_INIT_AUTOMAKE(cfengine, 3.6.0)
+AM_INIT_AUTOMAKE(cfengine, 3.6.1.revision)
 AM_MAINTAINER_MODE([enable])
 
 AC_DEFINE(BUILD_YEAR, esyscmd([date +%Y | tr -d '\n']), "Software build year")
@@ -57,26 +57,6 @@ ENV_CFLAGS="$CFLAGS"
 CFLAGS=
 
 dnl ######################################################################
-dnl Use pthreads if available
-dnl ######################################################################
-
-AC_ARG_WITH([pthreads],
-    [AS_HELP_STRING([--with-pthreads[[=PATH]]],
-                    [Specify path to pthreads, if not the part of operating system])])
-
-if test "x$with_pthreads" != x && test "x$with_pthreads" != "xyes" && test "x$with_pthreads" != "xno"; then
-   LIBS="$LIBS -L$with_pthreads/lib"
-   CFLAGS="$CFLAGS -I$with_pthreads/include"
-fi
-
-ACX_PTHREAD([],
-            [AC_MSG_ERROR(pthread-compatible library is required to build CFEngine)])
-
-CC="$PTHREAD_CC"
-CFLAGS="$PTHREAD_CFLAGS $CFLAGS"
-LIBS="$PTHREAD_LIBS $LIBS"
-
-dnl ######################################################################
 dnl Checks for programs.
 dnl ######################################################################
 
@@ -95,9 +75,7 @@ AM_PROG_LEX
 AC_PROG_YACC
 AC_PROG_INSTALL
 AC_CONFIG_LIBOBJ_DIR(libcompat)
-AC_FUNC_GETLOADAVG 
 AC_PATH_PROG(GETCONF, getconf, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin:/sw/bin)
-
 AM_CONDITIONAL(CROSS_COMPILING, test "x$cross_compiling" = "xyes")
 
 #
@@ -115,6 +93,31 @@ if test "x$cross_compiling" = "xno"; then
     fi
   done
 fi
+
+dnl ######################################################################
+dnl Use pthreads if available
+dnl ######################################################################
+
+AC_ARG_WITH([pthreads],
+    [AS_HELP_STRING([--with-pthreads[[=PATH]]],
+                    [Specify path to pthreads, if not the part of operating system])])
+
+if test "x$with_pthreads" != x && test "x$with_pthreads" != "xyes" && test "x$with_pthreads" != "xno"; then
+   LIBS="$LIBS -L$with_pthreads/lib"
+   CFLAGS="$CFLAGS -I$with_pthreads/include"
+fi
+
+ACX_PTHREAD([],
+            [AC_MSG_ERROR(pthread-compatible library is required to build CFEngine)])
+
+CC="$PTHREAD_CC"
+CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+LIBS="$PTHREAD_LIBS $LIBS"
+
+dnl ######################################################################
+dnl Check for getloadavg()
+dnl ######################################################################
+AC_FUNC_GETLOADAVG
 
 dnl ######################################################################
 dnl Whether to build extensions as builtin extensions or a separate
@@ -340,9 +343,9 @@ if test x"$with_openssl" = xno ; then
 fi
 
 CF3_WITH_LIBRARY(openssl, [
-   AC_CHECK_LIB(dl, dlopen, [], [])
    AC_CHECK_LIB(crypto, RSA_generate_key_ex, [], [])
    AC_CHECK_LIB(ssl, SSL_library_init, [], [])
+   AC_CHECK_DECLS([SSL_CTX_clear_options], [], [], [[#include <openssl/ssl.h>]])
    AC_CHECK_HEADERS([openssl/opensslv.h], [], [AC_MSG_ERROR(Cannot find OpenSSL)])
 
    AC_MSG_CHECKING(for OpenSSL version)
@@ -540,6 +543,7 @@ dnl ######################################################################
 
 AC_CHECK_LIB(m, sqrt)
 AC_CHECK_LIB(rt, clock_gettime)
+AC_CHECK_LIB(dl, dlopen)
 
 dnl ######################################################################
 dnl Check for special functions
@@ -666,27 +670,42 @@ AS_IF([test "x$USERADD" != x && \
 )
 
 
-CF3_WITH_LIBRARY(pam, [
-  AC_CHECK_LIB(pam, pam_start)
-  AC_CHECK_HEADERS([security/pam_appl.h])
+AC_ARG_WITH([pam], AS_HELP_STRING([--with-pam], [Compile with PAM support]))
+AS_IF([test x$with_pam != xno],
+[
+  CF3_WITH_LIBRARY(pam, [
+    AC_CHECK_LIB(pam, pam_start)
+    AC_CHECK_HEADERS([security/pam_appl.h])
+  ])
+  dnl These platforms must have pam, others can have it, but not required.
+  AS_CASE([$target_os],
+          [*gnu*|*solaris*|*aix*|*hpux*|*hp-ux*], [
+              AS_IF([test "x$ac_cv_lib_pam_pam_start" != "xyes"],
+                    [AC_MSG_ERROR(Cannot find PAM library)]
+              )
+              AS_IF([test "x$ac_cv_header_security_pam_appl_h" != "xyes"],
+                    [AC_MSG_ERROR(Cannot find PAM headers)]
+          )]
+  )
+  AS_IF([test "x$ac_cv_lib_pam_pam_start" = "xyes" && \
+         test "x$ac_cv_header_security_pam_appl_h" = "xyes"],
+        [have_pam=yes],
+        [have_pam=no]
+  )
+  AC_CHECK_FUNCS(fgetpwent fgetgrent)
+  AS_IF([test "x$have_pam" = "xyes" && \
+      test "x$have_userprogs" = "xyes" && \
+      test "x$ac_cv_func_fgetpwent" = "xyes" && \
+      test "x$ac_cv_func_fgetgrent" = "xyes"],
+  [
+      users_promises_ok=yes
+  ],[
+      users_promises_ok=no
+  ])
+], [
+  users_promises_ok=no
 ])
-dnl These platforms must have pam, others can have it, but not required.
-AS_CASE([$target_os],
-        [*gnu*|*solaris*|*aix*|*hpux*|*hp-ux*], [
-            AS_IF([test "x$ac_cv_lib_pam_pam_start" != "xyes"],
-                  [AC_MSG_ERROR(Cannot find PAM library)]
-            )
-            AS_IF([test "x$ac_cv_header_security_pam_appl_h" != "xyes"],
-                  [AC_MSG_ERROR(Cannot find PAM headers)]
-        )]
-)
-AS_IF([test "x$ac_cv_lib_pam_pam_start" = "xyes" && \
-       test "x$ac_cv_header_security_pam_appl_h" = "xyes"],
-      [have_pam=yes],
-      [have_pam=no]
-)
-AM_CONDITIONAL(HAVE_PAM_USERPROGS, [test "x$have_pam" = "xyes" && \
-    test "x$have_userprogs" = "xyes"])
+AM_CONDITIONAL(HAVE_USERS_PROMISE_DEPS, [test "x$users_promises_ok" = "xyes"])
 
 AC_CHECK_DECLS(getnetgrent, [], [], [[#include <netdb.h>]])
 AC_CHECK_FUNCS(getnetgrent)
@@ -889,6 +908,7 @@ AC_CHECK_DECLS(lstat)
 AC_CHECK_FUNCS(sleep)
 AC_CHECK_DECLS(socketpair, [], [], [[#include <sys/socket.h>]])
 AC_CHECK_DECLS(fsync)
+AC_CHECK_DECLS(glob, [], [], [[#include <glob.h>]])
 
 dnl ######################################################################
 dnl Check for sa_len in struct sockaddr
@@ -985,7 +1005,8 @@ AC_SUBST([CORE_LIBS])
 AC_CONFIG_FILES([configure_flags.env])
 
 dnl ######################################################################
-dnl And then use them.
+dnl TODO do not set all main flags here, but use them as needed in
+dnl subdirectories
 dnl ######################################################################
 
 CPPFLAGS="$CORE_CPPFLAGS"
@@ -1280,7 +1301,7 @@ else
   AC_MSG_RESULT([-> libxml2: disabled])
 fi
 
-if test "x$have_pam" = "xyes" && test "x$have_userprogs" = "xyes"; then
+if test "x$users_promises_ok" = "xyes"; then
   AC_MSG_RESULT([-> User promises: PAM/user* tools])
 else
   AC_MSG_RESULT([-> User promises: disabled])

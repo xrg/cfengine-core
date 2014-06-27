@@ -34,6 +34,7 @@
 #include <known_dirs.h>
 #include <bootstrap.h>
 #include <misc_lib.h>                   /* UnexpectedError,ProgrammingError */
+#include <file_lib.h>
 
 #ifdef DARWIN
 // On Mac OSX 10.7 and later, majority of functions in /usr/include/openssl/crypto.h
@@ -81,6 +82,8 @@ void CryptoDeInitialize()
     {
         EVP_cleanup();
         CleanupOpenSSLThreadLocks();
+        // TODO: Is there an ERR_unload_crypto_strings() ?
+        // TODO: Are there OpenSSL_clear_all_{digests,algorithms} ?
         crypto_initialized = false;
     }
 }

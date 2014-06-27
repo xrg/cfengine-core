@@ -1441,7 +1441,7 @@ static FnCallResult FnCallTextXform(ARG_UNUSED EvalContext *ctx, ARG_UNUSED cons
     int len = 0;
 
     memset(buf, 0, sizeof(buf));
-    strncpy(buf, string, sizeof(buf) - 1);
+    strlcpy(buf, string, sizeof(buf));
     len = strlen(buf);
 
     if (!strcmp(fp->name, "string_downcase"))
@@ -1476,7 +1476,7 @@ static FnCallResult FnCallTextXform(ARG_UNUSED EvalContext *ctx, ARG_UNUSED cons
     }
     else if (!strcmp(fp->name, "string_head"))
     {
-        long max = IntFromString(RlistScalarValue(finalargs->next));
+        const long max = IntFromString(RlistScalarValue(finalargs->next));
         if (max < sizeof(buf))
         {
             buf[max] = '\0';
@@ -1484,7 +1484,7 @@ static FnCallResult FnCallTextXform(ARG_UNUSED EvalContext *ctx, ARG_UNUSED cons
     }
     else if (!strcmp(fp->name, "string_tail"))
     {
-        long max = IntFromString(RlistScalarValue(finalargs->next));
+        const long max = IntFromString(RlistScalarValue(finalargs->next));
         if (max < len)
         {
             strncpy(buf, string + len - max, sizeof(buf) - 1);
@@ -2567,7 +2567,7 @@ static FnCallResult FnCallMapList(EvalContext *ctx, ARG_UNUSED const Policy *pol
     }
     else
     {
-        strncpy(naked, listvar, CF_MAXVARSIZE - 1);
+        strlcpy(naked, listvar, CF_MAXVARSIZE);
     }
 
     VarRef *ref = VarRefParse(naked);
@@ -3278,10 +3278,6 @@ static FnCallResult FnCallFindfiles(EvalContext *ctx, ARG_UNUSED const Policy *p
          arg = arg->next)  /* arg steps forward every time. */
     {
         const char *pattern = RlistScalarValue(arg);
-#ifdef __MINGW32__
-        RlistAppendScalarIdemp(&returnlist, pattern);
-#else /* !__MINGW32__ */
-
         glob_t globbuf;
         int globflags = 0; // TODO: maybe add GLOB_BRACE later
 
@@ -3293,6 +3289,14 @@ static FnCallResult FnCallFindfiles(EvalContext *ctx, ARG_UNUSED const Policy *p
         for (int pi = 0; pi < candidate_count; pi++)
         {
             char* expanded = starstar ? SearchAndReplace(pattern, "**", candidates[pi]) : (char*) pattern;
+
+#ifdef _WIN32
+            if (strchr(expanded, '\\'))
+            {
+                Log(LOG_LEVEL_VERBOSE, "Found backslash escape character in glob pattern '%s'. "
+                    "Was forward slash intended?", expanded);
+            }
+#endif
 
             if (0 == glob(expanded, globflags, NULL, &globbuf))
             {
@@ -3315,7 +3319,6 @@ static FnCallResult FnCallFindfiles(EvalContext *ctx, ARG_UNUSED const Policy *p
                 free(expanded);
             }
         }
-#endif /* __MINGW32__ */
     }
 
     // When no entries were found, mark the empty list
@@ -4266,7 +4269,7 @@ static FnCallResult FnCallFormat(EvalContext *ctx, ARG_UNUSED const Policy *poli
             {
                 if (SeqLength(s) >= 4)
                 {
-                    strncpy(check_buffer, SeqAt(s, 3), CF_BUFSIZE);
+                    strlcpy(check_buffer, SeqAt(s, 3), CF_BUFSIZE);
                     check = check_buffer;
                 }
                 else
@@ -6568,11 +6571,25 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
     case '^':
         content[0] = '\0';
 
+        pcre *context_name_rx = CompileRegex("[a-zA-Z0-9_]+"); // symbol ID without \200 to \377
         // Allow modules to set their variable context (up to 50 characters)
-        if (1 == sscanf(line + 1, "context=%50[a-z]", content) && content[0] != '\0')
+        if (1 == sscanf(line + 1, "context=%50[^\n]", content) && content[0] != '\0')
         {
-            Log(LOG_LEVEL_VERBOSE, "Module changed variable context from '%s' to '%s'", context, content);
-            strcpy(context, content);
+            if (!context_name_rx)
+            {
+                Log(LOG_LEVEL_ERR,
+                    "Internal error compiling module protocol context regex, aborting!!!");
+            }
+            else if (StringMatchFullWithPrecompiledRegex(context_name_rx, content))
+            {
+                Log(LOG_LEVEL_VERBOSE, "Module changed variable context from '%s' to '%s'", context, content);
+                strcpy(context, content);
+            }
+            else
+            {
+                Log(LOG_LEVEL_ERR,
+                    "Module protocol was given an unacceptable ^context directive '%s', skipping", content);
+            }
         }
         else if (1 == sscanf(line + 1, "meta=%1024[^\n]", content) && content[0] != '\0')
         {
@@ -6585,6 +6602,11 @@ void ModuleProtocol(EvalContext *ctx, char *command, const char *line, int print
         else
         {
             Log(LOG_LEVEL_INFO, "Unknown extended module command '%s'", line);
+        }
+
+        if (context_name_rx)
+        {
+            pcre_free(context_name_rx);
         }
         break;
 

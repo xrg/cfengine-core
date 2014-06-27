@@ -21,14 +21,6 @@ AM_LDFLAGS = \
 	$(MYSQL_LDFLAGS) \
 	$(LIBXML2_LDFLAGS)
 
-if !FREEBSD
-if HAVE_AVAHI_COMMON
-if HAVE_AVAHI_CLIENT
-AM_LDFLAGS += -ldl
-endif
-endif
-endif
-
 libcf_agent_la_LIBADD = ../libpromises/libpromises.la \
 	$(LIBVIRT_LIBS) \
 	$(POSTGRESQL_LIBS) \
@@ -45,6 +37,7 @@ libcf_agent_la_SOURCES = \
         comparray.c comparray.h \
         acl_posix.c acl_posix.h \
         cf_sql.c cf_sql.h \
+	files_changes.c files_changes.h \
         promiser_regex_resolver.c promiser_regex_resolver.h \
         match_scope.c match_scope.h \
         retcode.c retcode.h \
@@ -76,7 +69,7 @@ libcf_agent_la_SOURCES = \
 if !NT
 libcf_agent_la_SOURCES += nfs.c nfs.h
 
-if HAVE_PAM_USERPROGS
+if HAVE_USERS_PROMISE_DEPS
   libcf_agent_la_SOURCES += verify_users_pam.c
 else
   libcf_agent_la_SOURCES += verify_users_stub.c
