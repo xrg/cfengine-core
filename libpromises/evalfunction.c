@@ -1364,7 +1364,7 @@ static FnCallResult FnCallPackagesMatching(ARG_UNUSED EvalContext *ctx, ARG_UNUS
 
         if (strlen(line) > CF_BUFSIZE - 80)
         {
-            Log(LOG_LEVEL_ERR, "Line %d from package inventory '%s' is too long to be sensible", linenumber, filename);
+            Log(LOG_LEVEL_ERR, "Line %d from package inventory '%s' is too long (%d) to be sensible", linenumber, filename, strlen(line));
             break;
         }
 
