@@ -38,6 +38,7 @@
 #include <logging.h>
 
 #include <cfnet.h>                       /* ProtocolVersion, CF_BUFSIZE etc */
+#include <misc_lib.h>                    /* xsnprintf, ProgrammingError etc */
 
 
 /*******************************************************************/
@@ -274,32 +275,6 @@ typedef enum
     CONTEXT_STATE_POLICY_RESET,                    /* Policy when trying to add already defined persistent states */
     CONTEXT_STATE_POLICY_PRESERVE
 } PersistentClassPolicy;
-
-/*******************************************************************/
-
-typedef enum
-{
-    PLATFORM_CONTEXT_UNKNOWN,
-    PLATFORM_CONTEXT_OPENVZ,
-    PLATFORM_CONTEXT_HP,
-    PLATFORM_CONTEXT_AIX,
-    PLATFORM_CONTEXT_LINUX,
-    PLATFORM_CONTEXT_SOLARIS,
-    PLATFORM_CONTEXT_FREEBSD,
-    PLATFORM_CONTEXT_NETBSD,
-    PLATFORM_CONTEXT_CRAYOS,
-    PLATFORM_CONTEXT_WINDOWS_NT,
-    PLATFORM_CONTEXT_SYSTEMV,
-    PLATFORM_CONTEXT_OPENBSD,
-    PLATFORM_CONTEXT_CFSCO,
-    PLATFORM_CONTEXT_DARWIN,
-    PLATFORM_CONTEXT_QNX,
-    PLATFORM_CONTEXT_DRAGONFLY,
-    PLATFORM_CONTEXT_MINGW,
-    PLATFORM_CONTEXT_VMWARE,
-    PLATFORM_CONTEXT_ANDROID,
-    PLATFORM_CONTEXT_MAX
-} PlatformContext;
 
 /*******************************************************************/
 

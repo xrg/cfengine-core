@@ -22,28 +22,30 @@
   included file COSL.txt.
 */
 
-
-#ifndef CFENGINE_TLS_GENERIC_H
-#define CFENGINE_TLS_GENERIC_H
-
-
-#include <cfnet.h>
-
-#include <logging.h>                                            /* LogLevel */
+#ifndef CFENGINE_DEPRECATED_H
+#define CFENGINE_DEPRECATED_H
 
 
-extern int CONNECTIONINFO_SSL_IDX;
+#include <platform.h>
+#include <compiler.h>
 
 
-bool TLSGenericInitialize(void);
-int TLSVerifyCallback(X509_STORE_CTX *ctx, void *arg);
-int TLSVerifyPeer(ConnectionInfo *conn_info, const char *remoteip, const char *username);
-X509 *TLSGenerateCertFromPrivKey(RSA *privkey);
-void TLSLogError(SSL *ssl, LogLevel level, const char *prepend, int code);
-int TLSSend(SSL *ssl, const char *buffer, int length);
-int TLSRecv(SSL *ssl, char *buffer, int length);
-int TLSRecvLines(SSL *ssl, char *buf, size_t buf_size);
-void TLSSetDefaultOptions(SSL_CTX *ssl_ctx);
-const char *TLSErrorString(intmax_t errcode);
+/* Mark specific functions as deprecated so that we don't use them. Since the
+ * signature of the functions has to be exactly the same as in libc, we only
+ * do that for Linux, where main development happens. */
 
-#endif
+
+#if defined(__linux__) && defined(__GLIBC__)
+
+
+int sprintf(char *str, const char *format, ...) \
+    FUNC_DEPRECATED("Better use snprintf() or xsnprintf()");
+
+int setenv(const char *name, const char *value, int overwrite) \
+    FUNC_DEPRECATED("Always use putenv() in place of non-portable setenv()!");
+
+
+#endif  /* __linux__ && __GLIBC__ */
+
+
+#endif  /* CFENGINE_DEPRECATED_H */

@@ -6,6 +6,8 @@
 #include <sysinfo_priv.h>
 #include <loading.h>
 #include <file_lib.h>
+#include <misc_lib.h>                                          /* xsnprintf */
+
 
 void test_load_masterfiles(void)
 {
@@ -37,7 +39,7 @@ void test_resolve_non_anchored_base_path(void)
      * Can not use GetInputDir() because that will return the configured $(sys.inputdir) as
      * the environment variable CFENGINE_TEST_OVERRIDE_WORKDIR is not set.
     */
-    snprintf(inputdir, CF_BUFSIZE, "%s%cinputs", CFWORKDIR, FILE_SEPARATOR);
+    xsnprintf(inputdir, CF_BUFSIZE, "%s%cinputs", CFWORKDIR, FILE_SEPARATOR);
 
     GenericAgentConfig *config = GenericAgentConfigNewDefault(AGENT_TYPE_COMMON);
     GenericAgentConfigSetInputFile(config, inputdir, "promises.cf");

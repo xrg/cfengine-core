@@ -61,9 +61,11 @@ dnl Checks for programs.
 dnl ######################################################################
 
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_PROG_MKDIR_P
 AC_EXEEXT
+
+dnl GCC specific flags
+m4_include([m4/cf3_gcc_flags.m4])
 
 # Use either new LT_INIT or old AC_DISABLE_STATIC/AC_PROG_LIBTOOL macros
 m4_ifdef([LT_INIT],
@@ -113,11 +115,6 @@ ACX_PTHREAD([],
 CC="$PTHREAD_CC"
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 LIBS="$PTHREAD_LIBS $LIBS"
-
-dnl ######################################################################
-dnl Check for getloadavg()
-dnl ######################################################################
-AC_FUNC_GETLOADAVG
 
 dnl ######################################################################
 dnl Whether to build extensions as builtin extensions or a separate
@@ -628,9 +625,15 @@ AC_CHECK_DECLS(localtime_r, [], [], [[#include <time.h>]])
 AC_REPLACE_FUNCS(localtime_r)
 
 AC_CHECK_DECLS(fgetgrent, [], [], [[#include <grp.h>]])
+
+AC_CHECK_DECLS(isfinite, [], [], [[#include <math.h>]])
+
 AC_CHECK_FUNCS(getpwent setpwent endpwent)
 
 AC_CHECK_FUNCS(getspnam lckpwdf ulckpwdf)
+
+AC_CHECK_DECLS(getloadavg)
+AC_FUNC_GETLOADAVG
 
 CF3_PATH_ROOT_PROG([CHPASSWD], [chpasswd], [], [/sbin:/usr/sbin:/bin:/usr/bin:$PATH])
 AS_IF([test "x$CHPASSWD" != "x"],
@@ -944,6 +947,10 @@ AC_CHECK_HEADERS(sys/sysctl.h, [], [], [AC_INCLUDES_DEFAULT
 
 dnl Solaris uses kstat.h to get time-of-boot
 AC_CHECK_HEADERS(kstat.h)
+dnl SystemV way to get uptime, highly portable
+AC_CHECK_HEADERS(utmp.h)
+dnl POSIX way to get uptime
+AC_CHECK_HEADERS(utmpx.h)
 
 dnl #######################################################################
 dnl Newer BSD systems don't have a compatible rtentry - use ortentry
@@ -966,7 +973,7 @@ dnl Enable extended attributes. Used for SELinux and ACLs
 dnl #######################################################################
 
 AC_CHECK_FUNCS(listxattr, [AC_DEFINE(WITH_XATTR, 1, [Define if you have a libc that supports extended attributes])])
-AC_CHECK_HEADERS([attr/xattr.h, sys/xattr.h])
+AC_CHECK_HEADERS([attr/xattr.h sys/xattr.h])
 
 AC_MSG_CHECKING([whether xattr functions have extra arguments])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <sys/types.h>
@@ -1171,13 +1178,6 @@ AC_PATH_PROG(HOSTNAME, hostname, "", $PATH)
 
 AC_DEFINE_UNQUOTED(AUTOCONF_HOSTNAME, "`$HOSTNAME`", [Special CFEngine symbol])
 AC_DEFINE_UNQUOTED(AUTOCONF_SYSNAME, "$target_os", [Speial CFEngine symbol])
-
-
-dnl #####################################################################
-dnl GCC flags
-dnl #####################################################################
-
-m4_include([m4/cf3_gcc_flags.m4])
 
 
 dnl #####################################################################

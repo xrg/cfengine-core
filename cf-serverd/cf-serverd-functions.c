@@ -30,12 +30,13 @@
 #include <bootstrap.h>
 #include <scope.h>
 #include <signals.h>
+#include <systype.h>
 #include <mutex.h>
 #include <locks.h>
 #include <exec_tools.h>
 #include <unix.h>
 #include <man.h>
-#include <tls_server.h>                              /* ServerTLSInitialize */
+#include <server_tls.h>                              /* ServerTLSInitialize */
 #include <timeout.h>
 #include <unix_iface.h>
 #include <known_dirs.h>
@@ -439,7 +440,7 @@ static int OpenReceiverChannel(void)
     }
 
     char servname[PRINTSIZE(CFENGINE_PORT)];
-    sprintf(servname, "%d", CFENGINE_PORT);
+    xsnprintf(servname, sizeof(servname), "%d", CFENGINE_PORT);
 
     /* Resolve listening interface. */
     int gres;

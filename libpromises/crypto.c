@@ -57,6 +57,13 @@ LogLevel CryptoGetMissingKeyLogLevel();
 
 static bool crypto_initialized = false; /* GLOBAL_X */
 
+
+const char *CryptoLastErrorString()
+{
+    const char *errmsg = ERR_reason_error_string(ERR_get_error());
+    return (errmsg != NULL) ? errmsg : "no error message";
+}
+
 void CryptoInitialize()
 {
     if (!crypto_initialized)
@@ -135,10 +142,9 @@ bool LoadSecretKeys(void)
         if ((PRIVKEY = PEM_read_RSAPrivateKey(fp, (RSA **) NULL, NULL,
                                               (void *)priv_passphrase)) == NULL)
         {
-            unsigned long err = ERR_get_error();
             Log(LOG_LEVEL_ERR,
                 "Error reading private key. (PEM_read_RSAPrivateKey: %s)",
-                ERR_reason_error_string(err));
+                CryptoLastErrorString());
             PRIVKEY = NULL;
             fclose(fp);
             return false;
@@ -164,10 +170,9 @@ bool LoadSecretKeys(void)
         PUBKEY = PEM_read_RSAPublicKey(fp, NULL, NULL, (void *)priv_passphrase);
         if (NULL == PUBKEY)
         {
-            unsigned long err = ERR_get_error();
             Log(LOG_LEVEL_ERR,
                 "Error reading public key at '%s'. (PEM_read_RSAPublicKey: %s)",
-                pubkeyfile, ERR_reason_error_string(err));
+                pubkeyfile, CryptoLastErrorString());
             fclose(fp);
             free(pubkeyfile);
             return false;
@@ -197,13 +202,13 @@ void PolicyHubUpdateKeys(const char *policy_server)
 
         char dst_public_key_filename[CF_BUFSIZE] = "";
         {
-            char buffer[EVP_MAX_MD_SIZE * 4];
+            char buffer[CF_HOSTKEY_STRING_SIZE];
             HashPubKey(PUBKEY, digest, CF_DEFAULT_DIGEST);
-            snprintf(dst_public_key_filename, CF_MAXVARSIZE,
+            snprintf(dst_public_key_filename, sizeof(dst_public_key_filename),
                      "%s/ppkeys/%s-%s.pub",
-                     CFWORKDIR,
-                     "root",
-                     HashPrintSafe(CF_DEFAULT_DIGEST, true, digest, buffer));
+                     CFWORKDIR, "root",
+                     HashPrintSafe(buffer, sizeof(buffer), digest,
+                                   CF_DEFAULT_DIGEST, true));
             MapName(dst_public_key_filename);
         }
 
@@ -237,9 +242,9 @@ void PolicyHubUpdateKeys(const char *policy_server)
  */
 RSA *HavePublicKeyByIP(const char *username, const char *ipaddress)
 {
-    char hash[CF_MAXVARSIZE];
+    char hash[CF_HOSTKEY_STRING_SIZE];
 
-    bool found = Address2Hostkey(ipaddress, hash);
+    bool found = Address2Hostkey(hash, sizeof(hash), ipaddress);
     if (found)
     {
         return HavePublicKey(username, ipaddress, hash);
@@ -264,7 +269,6 @@ RSA *HavePublicKey(const char *username, const char *ipaddress, const char *dige
 {
     char keyname[CF_MAXVARSIZE], newname[CF_BUFSIZE], oldname[CF_BUFSIZE];
     struct stat statbuf;
-    unsigned long err;
     FILE *fp;
     RSA *newkey = NULL;
 
@@ -317,8 +321,9 @@ RSA *HavePublicKey(const char *username, const char *ipaddress, const char *dige
     if ((newkey = PEM_read_RSAPublicKey(fp, NULL, NULL,
                                         (void *)pub_passphrase)) == NULL)
     {
-        err = ERR_get_error();
-        Log(LOG_LEVEL_ERR, "Error reading public key. (PEM_read_RSAPublicKey: %s)", ERR_reason_error_string(err));
+        Log(LOG_LEVEL_ERR,
+            "Error reading public key. (PEM_read_RSAPublicKey: %s)",
+            CryptoLastErrorString());
         fclose(fp);
         return NULL;
     }
@@ -342,7 +347,7 @@ void SavePublicKey(const char *user, const char *digest, const RSA *key)
     char keyname[CF_MAXVARSIZE], filename[CF_BUFSIZE];
     struct stat statbuf;
     FILE *fp;
-    int err, ret;
+    int ret;
 
     ret = snprintf(keyname, sizeof(keyname), "%s-%s", user, digest);
     if (ret >= sizeof(keyname))
@@ -376,8 +381,9 @@ void SavePublicKey(const char *user, const char *digest, const RSA *key)
 
     if (!PEM_write_RSAPublicKey(fp, key))
     {
-        err = ERR_get_error();
-        Log(LOG_LEVEL_ERR, "Error saving public key to '%s'. (PEM_write_RSAPublicKey: %s)", filename, ERR_reason_error_string(err));
+        Log(LOG_LEVEL_ERR,
+            "Error saving public key to '%s'. (PEM_write_RSAPublicKey: %s)",
+            filename, CryptoLastErrorString());
     }
 
     fclose(fp);
@@ -469,7 +475,7 @@ void DebugBinOut(char *buffer, int len, char *comment)
 
     for (sp = buffer; sp < (unsigned char *) (buffer + len); sp++)
     {
-        snprintf(hexStr, sizeof(hexStr), "%2.2x", (int) *sp);
+        xsnprintf(hexStr, sizeof(hexStr), "%2.2x", (int) *sp);
         strcat(buf, hexStr);
     }
 

@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include <findhub.h>
+#include <misc_lib.h>                                          /* xsnprintf */
 
 #include <avahi-client/client.h>
 #include <avahi-client/lookup.h>
@@ -10,6 +11,7 @@
 #include <avahi-common/malloc.h>
 #include <avahi-common/error.h>
 #include <avahi-common/address.h>
+
 
 void (*avahi_simple_poll_quit_ptr)(AvahiSimplePoll *);
 char* (*avahi_address_snprint_ptr)(char *, size_t , const AvahiAddress *);
@@ -136,7 +138,7 @@ void avahi_simple_poll_quit(AvahiSimplePoll *poll)
 
 char *avahi_address_snprint(char *buffer, size_t size, const AvahiAddress *address)
 {
-    snprintf(buffer, size, "10.0.0.100");
+    xsnprintf(buffer, size, "10.0.0.100");
 
     return NULL;
 }

@@ -1,6 +1,6 @@
 #include <test.h>
-#include <sequence.h>
 
+#include <sequence.h>
 #include <alloc.h>
 
 static Seq *SequenceCreateRange(size_t initialCapacity, size_t start, size_t end)
@@ -44,7 +44,8 @@ static void test_append(void)
     SeqDestroy(seq);
 }
 
-static int CompareNumbers(const void *a, const void *b, void *_user_data)
+static int CompareNumbers(const void *a, const void *b,
+                          ARG_UNUSED void *_user_data)
 {
     return *(size_t *) a - *(size_t *) b;
 }

@@ -23,7 +23,7 @@
 */
 
 
-#include <tls_server.h>
+#include <server_tls.h>
 #include <server_common.h>
 
 #include <crypto.h>                                        /* DecryptString */
@@ -63,7 +63,7 @@ bool ServerTLSInitialize()
     if (SSLSERVERCONTEXT == NULL)
     {
         Log(LOG_LEVEL_ERR, "SSL_CTX_new: %s",
-            ERR_reason_error_string(ERR_get_error()));
+            TLSErrorString(ERR_get_error()));
         goto err1;
     }
 
@@ -113,7 +113,7 @@ bool ServerTLSInitialize()
     if (ret != 1)
     {
         Log(LOG_LEVEL_ERR, "Failed to use RSA private key: %s",
-            ERR_reason_error_string(ERR_get_error()));
+            TLSErrorString(ERR_get_error()));
         goto err3;
     }
 
@@ -122,7 +122,7 @@ bool ServerTLSInitialize()
     if (ret != 1)
     {
         Log(LOG_LEVEL_ERR, "Inconsistent key and TLS cert: %s",
-            ERR_reason_error_string(ERR_get_error()));
+            TLSErrorString(ERR_get_error()));
         goto err3;
     }
 
@@ -199,8 +199,8 @@ int ServerTLSPeek(ConnectionInfo *conn_info)
     else if (got < peek_size)
     {
         Log(LOG_LEVEL_INFO,
-            "Peer sent only %lld bytes! Considering the protocol as Classic",
-            (long long)got);
+            "Peer sent only %zd bytes! Considering the protocol as Classic",
+            got);
         ConnectionInfoSetProtocolVersion(conn_info, CF_PROTOCOL_CLASSIC);
     }
     else if (got == peek_size &&
@@ -406,7 +406,7 @@ int ServerTLSSessionEstablish(ServerConnectionState *conn)
         if (ssl == NULL)
         {
             Log(LOG_LEVEL_ERR, "SSL_new: %s",
-                ERR_reason_error_string(ERR_get_error()));
+                TLSErrorString(ERR_get_error()));
             return -1;
         }
         ConnectionInfoSetSSL(conn->conn_info, ssl);
