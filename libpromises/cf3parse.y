@@ -55,6 +55,12 @@ static void ParseErrorColumnOffset(int column_offset, const char *s, ...) FUNC_A
 static void ParseError(const char *s, ...) FUNC_ATTR_PRINTF(1, 2);
 static void ParseWarning(unsigned int warning, const char *s, ...) FUNC_ATTR_PRINTF(2, 3);
 
+/** 
+ * @brief Register a list of strings as future syntax
+ * @param list string list in Rvals
+ */
+static void ParserRegFutureSyntax( const Rlist* list);
+
 static void ValidateClassLiteral(const char *class_literal);
 
 static bool INSTALL_SKIP = false;
@@ -358,6 +364,8 @@ promise_type:          PROMISE_TYPE             /* BUNDLE ONLY */
                                    ParseWarning(PARSER_WARNING_REMOVED, "Removed promise type '%s' in bundle type '%s'", promise_type_syntax->promise_type, promise_type_syntax->bundle_type);
                                    INSTALL_SKIP = true;
                                    break;
+                               case SYNTAX_STATUS_FUTURE:
+                                   break;
                                }
                            }
                            else
@@ -606,6 +614,9 @@ constraint:            constraint_id                        /* BUNDLE ONLY */
                                    case SYNTAX_STATUS_REMOVED:
                                        ParseWarning(PARSER_WARNING_REMOVED, "Removed constraint '%s' in promise type '%s'", constraint_syntax->lval, promise_type_syntax->promise_type);
                                        break;
+                                   case SYNTAX_STATUS_FUTURE:
+                                       ParserDebug("Future constraint '%s' skipped in promise type '%s'", constraint_syntax->lval, promise_type_syntax->promise_type);
+                                       break;
                                    }
                                }
                                else
@@ -677,6 +688,9 @@ bodybody:              body_begin
                                case SYNTAX_STATUS_REMOVED:
                                    ParseWarning(PARSER_WARNING_REMOVED, "Removed body '%s' of type '%s'", P.blockid, body_syntax->body_type);
                                    INSTALL_SKIP = true;
+                                   break;
+                               case SYNTAX_STATUS_FUTURE:
+                                   ParserDebug("Future body %s skipped", P.blockid);
                                    break;
                                }
                            }
@@ -769,10 +783,18 @@ selection:             selection_id                         /* BODY ONLY */
                                            cp->offset.start = P.offsets.last_id;
                                            cp->offset.end = P.offsets.current;
                                            cp->offset.context = P.offsets.last_class_id;
+                                           if (!strcmp(P.blockid, "control") && !strcmp(P.lval, "future_syntax"))
+                                           {
+                                                /*TODO: classes, */
+                                               ParserRegFutureSyntax(RvalRlistValue(P.rval));
+                                           }
                                            break;
                                        }
                                    case SYNTAX_STATUS_REMOVED:
                                        ParseWarning(PARSER_WARNING_REMOVED, "Removed constraint '%s' in promise type '%s'", constraint_syntax->lval, body_syntax->body_type);
+                                       break;
+                                   case SYNTAX_STATUS_FUTURE:
+                                       ParserDebug("Future syntax: %s %s",  body_syntax->body_type, constraint_syntax->lval);
                                        break;
                                    }
                                }
@@ -812,8 +834,17 @@ selection_id:          IDSYNTAX
                            if (!INSTALL_SKIP)
                            {
                                const BodySyntax *body_syntax = BodySyntaxGet(P.currentbody->type);
+                               const ConstraintSyntax *constraint_syntax = NULL;
 
-                               if (!body_syntax || !BodySyntaxGetConstraintSyntax(body_syntax->constraints, P.currentid))
+                               if (body_syntax)
+                               {
+                                  constraint_syntax = BodySyntaxGetConstraintSyntax(body_syntax->constraints, P.currentid);
+                                  if (!constraint_syntax)
+                                  {
+                                    constraint_syntax = FutureGetConstraintSyntax(P.block, P.blocktype, P.blockid, P.currentid);
+                                  }
+                               }
+                               if (!constraint_syntax)
                                {
                                    ParseError("Unknown selection '%s' for body type '%s'", P.currentid, P.currentbody->type);
                                    INSTALL_SKIP = true;
@@ -1436,6 +1467,18 @@ static SyntaxTypeMatch CheckConstraint(const char *type, const char *lval, Rval 
     }
 
     return SYNTAX_TYPE_MATCH_OK;
+}
+
+void ParserRegFutureSyntax(const Rlist* list)
+{
+    const Rlist *v;
+    char *fs;
+    for (v=list; v; v=v->next)
+    {
+        fs = RvalScalarValue(v->val);
+        ParserDebug("Registering future syntax: %s\n", fs);
+        StringSetAdd(P.future_syntax_elems, xstrdup(fs));
+    }
 }
 
 static void ValidateClassLiteral(const char *class_literal)

@@ -97,12 +97,19 @@ static void ParserStateReset(ParserState *p, bool discard)
     p->blockid[0] = '\0';
     p->blocktype[0] = '\0';
     p->rval = RvalNew(NULL, RVAL_TYPE_NOPROMISEE);
+
+    if (p->future_syntax_elems)
+    {
+        StringSetClear(p->future_syntax_elems);
+    }
+    p->future_syntax_elems = StringSetNew();
 }
 
 static void ParserStateClean(ParserState *p)
 {
     free(p->current_namespace);
     p->current_namespace = NULL;
+    StringSetDestroy(p->future_syntax_elems);
 }
 
 Policy *ParserParseFile(AgentType agent_type, const char *path, unsigned int warnings, unsigned int warnings_error)
@@ -183,4 +190,23 @@ const char *ParserWarningToString(unsigned int warning)
     default:
         ProgrammingError("Invalid parser warning: %u", warning);
     }
+}
+
+static const ConstraintSyntax dummy_syntax = { NULL, CF_DATA_TYPE_NONE, .range.validation_string = NULL, .status = SYNTAX_STATUS_FUTURE };
+
+const ConstraintSyntax *FutureGetConstraintSyntax(const char* block, const char* btype, const char* blockid, const char* lval)
+{
+    char token[CF_MAXVARSIZE];
+    const char* element;
+    xsnprintf(token, CF_MAXVARSIZE, "%s.%s.%s.%s", block, btype, blockid, lval);
+    StringSetIterator it = StringSetIteratorInit(P.future_syntax_elems);
+
+    while ((element = StringSetIteratorNext(&it)))
+    {
+        if (!strcmp(element, token))
+        {
+            return &dummy_syntax;
+        }
+    }
+    return NULL;
 }

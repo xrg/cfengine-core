@@ -48,4 +48,6 @@ const char *ParserWarningToString(unsigned int warning);
  */
 Policy *ParserParseFile(AgentType agent_type, const char *path, unsigned int warnings, unsigned int warnings_error);
 
+const ConstraintSyntax *FutureGetConstraintSyntax(const char* block, const char* btype, const char* blockid, const char* lval);
+
 #endif

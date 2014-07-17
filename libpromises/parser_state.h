@@ -28,6 +28,7 @@
 #include <cf3.defs.h>
 #include <rlist.h>
 #include <fncall.h>
+#include <set.h>
 
 #define CF_MAX_NESTING 10
 
@@ -88,6 +89,8 @@ typedef struct
         size_t last_promise_type_id;
         size_t last_class_id;
     } offsets;
+
+    StringSet* future_syntax_elems;
 } ParserState;
 
 extern ParserState P;
