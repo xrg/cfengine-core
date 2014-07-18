@@ -5217,6 +5217,7 @@ static FnCallResult FnCallNow(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Poli
 /*********************************************************************/
 
 #ifdef __sun /* Lacks %P and */
+#define STRFTIME_F_HACK
 #define STRFTIME_s_HACK
 #define STRFTIME_R_HACK
 #endif /* http://www.unix.com/man-page/opensolaris/3c/strftime/ */
@@ -5268,7 +5269,7 @@ bool PortablyFormatTime(char *buffer, size_t bufsiz,
 
 #ifdef STRFTIME_s_HACK /* %s: seconds since epoch */
     char epoch[PRINTSIZE(when)];
-    xsnprintf(epoch, sizeof(epoch), "%j", (intmax_t) when);
+    xsnprintf(epoch, sizeof(epoch), "%jd", (intmax_t) when);
 #endif /* STRFTIME_s_HACK */
 
     typedef char * SearchReplacePair[2];

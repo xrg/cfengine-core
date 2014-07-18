@@ -25,6 +25,7 @@
 #include <verify_files_utils.h>
 
 #include <actuator.h>
+#include <attributes.h>
 #include <dir.h>
 #include <files_names.h>
 #include <files_links.h>
@@ -106,6 +107,9 @@ static int VerifyFinderType(EvalContext *ctx, const char *file, Attributes a, co
 static void VerifyFileChanges(const char *file, struct stat *sb, Attributes attr, const Promise *pp);
 static PromiseResult VerifyFileIntegrity(EvalContext *ctx, const char *file, Attributes attr, const Promise *pp);
 
+extern Attributes GetExpandedAttributes(EvalContext *ctx, const Promise *pp, const Attributes *attr);
+extern void ClearExpandedAttributes(Attributes *a);
+
 void SetFileAutoDefineList(const Rlist *auto_define_list)
 {
     AUTO_DEFINE_LIST = auto_define_list;
@@ -117,9 +121,11 @@ void VerifyFileLeaf(EvalContext *ctx, char *path, struct stat *sb, Attributes at
 
     Log(LOG_LEVEL_VERBOSE, "Handling file existence constraints on '%s'", path);
 
-/* We still need to augment the scope of context "this" for commands */
+    /* Update this.promiser again, and overwrite common attributes (classes, action) accordingly */
 
     EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "promiser", path, CF_DATA_TYPE_STRING, "source=promise");        // Parameters may only be scalars
+    Attributes org_attr = GetFilesAttributes(ctx, pp);
+    attr = GetExpandedAttributes(ctx, pp, &org_attr); 
 
     if (attr.transformer != NULL)
     {
@@ -158,6 +164,7 @@ void VerifyFileLeaf(EvalContext *ctx, char *path, struct stat *sb, Attributes at
             *result = PromiseResultUpdate(*result, VerifyFileAttributes(ctx, path, sb, attr, pp));
         }
     }
+    ClearExpandedAttributes(&attr);
 }
 
 /* Checks whether item matches a list of wildcards */
@@ -2434,7 +2441,9 @@ static PromiseResult VerifyCopiedFileAttributes(EvalContext *ctx, const char *sr
 
 static PromiseResult CopyFileSources(EvalContext *ctx, char *destination, Attributes attr, const Promise *pp, AgentConnection *conn)
 {
-    const char *source = attr.copy.source;
+    Buffer *source = BufferNew();
+    // Expand this.promiser
+    ExpandScalar(ctx, PromiseGetBundle(pp)->ns, PromiseGetBundle(pp)->name, attr.copy.source, source);
     char vbuff[CF_BUFSIZE];
     struct stat ssb, dsb;
     struct timespec start;
@@ -2444,14 +2453,17 @@ static PromiseResult CopyFileSources(EvalContext *ctx, char *destination, Attrib
     {
         cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, attr,
              "No authenticated source '%s' in files.copy_from promise",
-             source);
+             BufferData(source));
+        BufferDestroy(source);
         return PROMISE_RESULT_FAIL;
     }
 
-    if (cf_stat(attr.copy.source, &ssb, attr.copy, conn) == -1)
+    if (cf_stat(BufferData(source), &ssb, attr.copy, conn) == -1)
     {
         cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_FAIL, pp, attr,
-             "Can't stat file '%s' in files.copy_from promise", source);
+             "Can't stat file '%s' on '%s' in files.copy_from promise",
+             BufferData(source), conn ? conn->remoteip : "localhost");
+        BufferDestroy(source);
         return PROMISE_RESULT_FAIL;
     }
 
@@ -2470,6 +2482,7 @@ static PromiseResult CopyFileSources(EvalContext *ctx, char *destination, Attrib
         cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, attr,
              "Can't make directories for '%s' in files.copy_from promise",
              vbuff);
+        BufferDestroy(source);
         return PROMISE_RESULT_FAIL;
     }
 
@@ -2483,31 +2496,32 @@ static PromiseResult CopyFileSources(EvalContext *ctx, char *destination, Attrib
             Log(LOG_LEVEL_VERBOSE, "Destination purging enabled");
         }
 
-        Log(LOG_LEVEL_VERBOSE, "Entering directory '%s'", source);
+        Log(LOG_LEVEL_VERBOSE, "Entering directory '%s'", BufferData(source));
 
-        result = PromiseResultUpdate(result, SourceSearchAndCopy(ctx, source, destination, attr.recursion.depth,
+        result = PromiseResultUpdate(result, SourceSearchAndCopy(ctx, BufferData(source), destination, attr.recursion.depth,
                                                                  attr, pp, ssb.st_dev, &inode_cache, conn));
 
         if (stat(destination, &dsb) != -1)
         {
             if (attr.copy.check_root)
             {
-                result = PromiseResultUpdate(result, VerifyCopiedFileAttributes(ctx, source, destination, &ssb, &dsb, attr, pp));
+                result = PromiseResultUpdate(result, VerifyCopiedFileAttributes(ctx, BufferData(source), destination, &ssb, &dsb, attr, pp));
             }
         }
     }
     else
     {
-        result = PromiseResultUpdate(result, VerifyCopy(ctx, source, destination, attr, pp, &inode_cache, conn));
+        result = PromiseResultUpdate(result, VerifyCopy(ctx, BufferData(source), destination, attr, pp, &inode_cache, conn));
     }
 
     DeleteCompressedArray(inode_cache);
 
     snprintf(eventname, CF_BUFSIZE - 1, "Copy(%s:%s > %s)",
-             conn ? conn->this_server : "localhost", source, destination);
+             conn ? conn->this_server : "localhost", BufferData(source), destination);
 
     EndMeasure(eventname, start);
 
+    BufferDestroy(source);
     return result;
 }
 

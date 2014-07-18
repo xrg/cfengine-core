@@ -168,6 +168,12 @@ void GenericAgentDiscoverContext(EvalContext *ctx, GenericAgentConfig *config)
 
         WritePolicyServerFile(GetWorkDir(), config->agent_specific.agent.bootstrap_policy_server);
         SetPolicyServer(ctx, config->agent_specific.agent.bootstrap_policy_server);
+
+        if (am_policy_server) //It makes sense to check HA status only on policy hub.
+        {
+            CheckAndSetHAState(GetWorkDir(), ctx);
+        }
+
         /* FIXME: Why it is called here? Can't we move both invocations to before if? */
         UpdateLastPolicyUpdateTime(ctx);
         Log(LOG_LEVEL_INFO, "Bootstrapping to '%s'", POLICY_SERVER);
@@ -194,6 +200,8 @@ void GenericAgentDiscoverContext(EvalContext *ctx, GenericAgentConfig *config)
             Log(LOG_LEVEL_VERBOSE, "Additional class defined: am_policy_hub");
             EvalContextClassPutHard(ctx, "policy_server", "inventory,attribute_name=CFEngine roles,source=bootstrap");
             Log(LOG_LEVEL_VERBOSE, "Additional class defined: policy_server");
+
+            CheckAndSetHAState(GetWorkDir(), ctx);
         }
     }
 }
@@ -746,7 +754,7 @@ static bool MissingInputFile(const char *input_file)
 }
 
 // Git only.
-static bool GeneratePolicyReleaseIDFromGit(char *release_id_out, size_t out_size,
+static bool GeneratePolicyReleaseIDFromGit(char *release_id_out, ARG_UNUSED size_t out_size,
                                            const char *policy_dir)
 {
     char git_filename[PATH_MAX + 1];
