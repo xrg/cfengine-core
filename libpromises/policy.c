@@ -73,10 +73,14 @@ static const char *const POLICY_ERROR_CONSTRAINT_TYPE_MISMATCH =
 static const char *const POLICY_ERROR_EMPTY_VARREF =
     "Empty variable reference";
 
+static const char *const POLICY_ERROR_FUTURE_USED =
+    "Element %s is reserved for future use, incompatible with this version";
+
 //************************************************************************
 
 static void BundleDestroy(Bundle *bundle);
 static void BodyDestroy(Body *body);
+static void FutureDestroy(Future *fut);
 static SyntaxTypeMatch ConstraintCheckType(const Constraint *cp);
 static bool PromiseCheck(const Promise *pp, Seq *errors);
 
@@ -93,6 +97,7 @@ Policy *PolicyNew(void)
     policy->release_id = NULL;
     policy->bundles = SeqNew(100, BundleDestroy);
     policy->bodies = SeqNew(100, BodyDestroy);
+    policy->futures = SeqNew(20, FutureDestroy);
 
     return policy;
 }
@@ -1017,6 +1022,20 @@ bool PolicyCheckPartial(const Policy *policy, Seq *errors)
     return success;
 }
 
+void PolicyCheckFutures(const EvalContext *ctx, const Policy *policy, Seq *errors)
+{
+    for (size_t i = 0; i < SeqLength(policy->futures); i++)
+    {
+        const Future* fut = SeqAt(policy->futures,i);
+        if (IsDefinedClass(ctx, fut->classes))
+        {
+            SeqAppend(errors, PolicyErrorNew(POLICY_ELEMENT_TYPE_FUTURE, fut,
+                                                     POLICY_ERROR_FUTURE_USED,
+                                                     fut->name));
+        }
+    }
+}
+
 /*************************************************************************/
 
 PolicyError *PolicyErrorNew(PolicyElementType type, const void *subject, const char *error_msg, ...)
@@ -1084,6 +1103,11 @@ static SourceOffset PolicyElementSourceOffset(PolicyElementType type, const void
             const Constraint *constraint = (const Constraint *)element;
             return constraint->offset;
         }
+        case POLICY_ELEMENT_TYPE_FUTURE:
+        {
+            const Future *fut = (const Future*)element;
+            return fut->offset;
+        }
 
         default:
             assert(false && "Invalid policy element");
@@ -1141,6 +1165,12 @@ static const char *PolicyElementSourceFile(PolicyElementType type, const void *e
                     assert(false && "Constraint has invalid parent element type");
                     return NULL;
             }
+        }
+
+        case POLICY_ELEMENT_TYPE_FUTURE:
+        {
+            const Future *fut = (const Future*)element;
+            return fut->source_path;
         }
 
         default:
@@ -2894,4 +2924,30 @@ bool BundleTypeCheck(const char *name)
     }
 
     return false;
+}
+
+void FutureDestroy(Future *fut)
+{
+    if (fut)
+    {
+        free(fut->name);
+        free(fut->classes);
+        free(fut->source_path);
+        free(fut);
+    }
+}
+
+Future* PolicyAppendFuture(Policy *policy, PolicyElementType type, const char* name, const char* classes, const char* source_path)
+{
+    Future *fut = xcalloc(1, sizeof(Future));
+
+    fut->type = type;
+
+    SeqAppend(policy->futures, fut);
+
+    fut->name = xstrdup(name);
+    fut->classes = xstrdup(classes);
+    fut->source_path = SafeStringDuplicate(source_path);
+
+    return fut;
 }

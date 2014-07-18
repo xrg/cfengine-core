@@ -365,6 +365,12 @@ promise_type:          PROMISE_TYPE             /* BUNDLE ONLY */
                                    INSTALL_SKIP = true;
                                    break;
                                case SYNTAX_STATUS_FUTURE:
+                                    {
+                                        ParserDebug("Future promise type '%s'", P.currenttype);
+                                        Future *fut = PolicyAppendFuture(P.policy, POLICY_ELEMENT_TYPE_PROMISE, P.currenttype, P.currentclasses, P.filename);
+                                        fut->offset.line = P.line_no;
+                                        fut->offset.start = P.offsets.last_id;
+                                    }
                                    break;
                                }
                            }
@@ -615,7 +621,14 @@ constraint:            constraint_id                        /* BUNDLE ONLY */
                                        ParseWarning(PARSER_WARNING_REMOVED, "Removed constraint '%s' in promise type '%s'", constraint_syntax->lval, promise_type_syntax->promise_type);
                                        break;
                                    case SYNTAX_STATUS_FUTURE:
-                                       ParserDebug("Future constraint '%s' skipped in promise type '%s'", constraint_syntax->lval, promise_type_syntax->promise_type);
+                                        {
+                                            ParserDebug("Future constraint '%s' skipped in promise type '%s'", constraint_syntax->lval, promise_type_syntax->promise_type);
+                                            Future *fut = PolicyAppendFuture(P.policy, POLICY_ELEMENT_TYPE_CONSTRAINT, P.lval, P.currentclasses, P.filename);
+                                            fut->offset.line = P.line_no;
+                                            fut->offset.start = P.offsets.last_id;
+                                            fut->offset.end = P.offsets.current;
+                                            fut->offset.context = P.offsets.last_class_id;
+                                        }
                                        break;
                                    }
                                }
@@ -690,7 +703,12 @@ bodybody:              body_begin
                                    INSTALL_SKIP = true;
                                    break;
                                case SYNTAX_STATUS_FUTURE:
-                                   ParserDebug("Future body %s skipped", P.blockid);
+                                    {
+                                        ParserDebug("Future body %s skipped", P.blockid);
+                                        Future *fut = PolicyAppendFuture(P.policy, POLICY_ELEMENT_TYPE_BODY, P.blockid, P.currentclasses, P.filename);
+                                        fut->offset.line = P.line_no;
+                                        fut->offset.start = P.offsets.last_id;
+                                    }
                                    break;
                                }
                            }
@@ -794,7 +812,14 @@ selection:             selection_id                         /* BODY ONLY */
                                        ParseWarning(PARSER_WARNING_REMOVED, "Removed constraint '%s' in promise type '%s'", constraint_syntax->lval, body_syntax->body_type);
                                        break;
                                    case SYNTAX_STATUS_FUTURE:
-                                       ParserDebug("Future syntax: %s %s",  body_syntax->body_type, constraint_syntax->lval);
+                                        {
+                                            ParserDebug("Future syntax: %s %s",  body_syntax->body_type, P.lval);
+                                            Future *fut = PolicyAppendFuture(P.policy, POLICY_ELEMENT_TYPE_CONSTRAINT, P.lval, P.currentclasses, P.filename);
+                                            fut->offset.line = P.line_no;
+                                            fut->offset.start = P.offsets.last_id;
+                                            fut->offset.end = P.offsets.current;
+                                            fut->offset.context = P.offsets.last_class_id;
+                                        }
                                        break;
                                    }
                                }
@@ -842,6 +867,20 @@ selection_id:          IDSYNTAX
                                   if (!constraint_syntax)
                                   {
                                     constraint_syntax = FutureGetConstraintSyntax(P.block, P.blocktype, P.blockid, P.currentid);
+                                    if (constraint_syntax && !P.currentclasses)
+                                    {
+                                        ParseError("Future constraint '%s' cannot be used unconditionally in '%s %s'", P.currentid, P.blocktype, P.blockid);
+                                        INSTALL_SKIP = true;
+                                    }
+                                    else
+                                    {
+                                        /* store in list for lazy validation*/
+                                        Future *fut = PolicyAppendFuture(P.policy, POLICY_ELEMENT_TYPE_CONSTRAINT, P.currentid, P.currentclasses, P.filename);
+                                        fut->offset.line = P.line_no;
+                                        fut->offset.start = P.offsets.last_id;
+                                        fut->offset.end = P.offsets.current;
+                                        fut->offset.context = P.offsets.last_class_id;
+                                    }
                                   }
                                }
                                if (!constraint_syntax)

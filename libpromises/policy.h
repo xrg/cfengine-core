@@ -39,7 +39,8 @@ typedef enum
     POLICY_ELEMENT_TYPE_BODY,
     POLICY_ELEMENT_TYPE_PROMISE_TYPE,
     POLICY_ELEMENT_TYPE_PROMISE,
-    POLICY_ELEMENT_TYPE_CONSTRAINT
+    POLICY_ELEMENT_TYPE_CONSTRAINT,
+    POLICY_ELEMENT_TYPE_FUTURE
 } PolicyElementType;
 
 typedef struct
@@ -55,6 +56,7 @@ struct Policy_
 
     Seq *bundles;
     Seq *bodies;
+    Seq *futures;
 };
 
 typedef struct
@@ -138,6 +140,15 @@ struct Constraint_
     SourceOffset offset;
 };
 
+typedef struct
+{
+    PolicyElementType type;
+    char *name;
+    char *classes;
+    char *source_path;
+    SourceOffset offset;
+} Future;
+
 const char *NamespaceDefault(void);
 
 Policy *PolicyNew(void);
@@ -213,6 +224,18 @@ bool PolicyCheckRunnable(const EvalContext *ctx, const Policy *policy, Seq *erro
 
 Bundle *PolicyAppendBundle(Policy *policy, const char *ns, const char *name, const char *type, const Rlist *args, const char *source_path);
 Body *PolicyAppendBody(Policy *policy, const char *ns, const char *name, const char *type, Rlist *args, const char *source_path);
+
+/** 
+ * @brief Append a future element reference to policy, for lazy validation
+ * 
+ * Future elements can be enabled early, and pass the parser check. But they are
+ * not allowed to participate in promises/bundles/constraints that this version
+ * will actually use.
+ * 
+ * @param name of element, will only be used for the error message
+ * @param classes expression of hard-classes this element is contained to
+ */
+Future* PolicyAppendFuture(Policy *policy, PolicyElementType type, const char* name, const char* classes, const char* source_path);
 
 /**
  * @brief Serialize a policy as JSON
@@ -419,4 +442,8 @@ char *QualifiedNameScopeComponent(const char *qualified_name);
  */
 bool BundleTypeCheck(const char *name);
 
+/**
+ * @brief check that none of the futures mentioned in Policy match our classes
+ */
+void PolicyCheckFutures(const EvalContext *ctx, const Policy *policy, Seq *errors);
 #endif
