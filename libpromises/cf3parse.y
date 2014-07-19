@@ -872,7 +872,7 @@ selection_id:          IDSYNTAX
                                         ParseError("Future constraint '%s' cannot be used unconditionally in '%s %s'", P.currentid, P.blocktype, P.blockid);
                                         INSTALL_SKIP = true;
                                     }
-                                    else
+                                    else if (constraint_syntax)
                                     {
                                         /* store in list for lazy validation*/
                                         Future *fut = PolicyAppendFuture(P.policy, POLICY_ELEMENT_TYPE_CONSTRAINT, P.currentid, P.currentclasses, P.filename);
