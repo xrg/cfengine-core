@@ -498,6 +498,9 @@ const PromiseTypeSyntax CF_COMMON_PROMISE_TYPES[] =
     PromiseTypeSyntaxNewNull()
 };
 
+const PromiseTypeSyntax CF_FUTURE_PROMISE_TYPE =
+    PromiseTypeSyntaxNew("*", "*", CF_COMMON_BODIES, NULL, SYNTAX_STATUS_FUTURE);
+
 /*********************************************************/
 /* THIS IS WHERE TO ATTACH SYNTAX MODULES                */
 /*********************************************************/

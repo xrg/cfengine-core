@@ -63,6 +63,9 @@ static void ParserRegFutureSyntax( const Rlist* list);
 
 static void ValidateClassLiteral(const char *class_literal);
 
+static const PromiseTypeSyntax* PromiseTypeSyntaxGet_Future(const char *bundle_type, const char *promise_type);
+static const BodySyntax* BodySyntaxGet_Future(const char *body_type);
+
 static bool INSTALL_SKIP = false;
 static size_t CURRENT_BLOCKID_LINE = 0;
 static size_t CURRENT_PROMISER_LINE = 0;
@@ -126,7 +129,8 @@ bundletype_values:     typeid
                             * after-parsing step once we know how to deal with
                             * it */
 
-                           if (!BundleTypeCheck(P.blocktype))
+                           if (!BundleTypeCheck(P.blocktype)
+                                && !FutureBundleType(P.blocktype))
                            {
                                ParseError("Unknown bundle type '%s'", P.blocktype);
                                INSTALL_SKIP = true;
@@ -171,7 +175,7 @@ bodytype:              bodytype_values
 
 bodytype_values:       typeid
                        {
-                           if (!BodySyntaxGet(P.blocktype))
+                           if (!BodySyntaxGet_Future(P.blocktype))
                            {
                                ParseError("Unknown body type '%s'", P.blocktype);
                            }
@@ -336,8 +340,7 @@ promise_type:          PROMISE_TYPE             /* BUNDLE ONLY */
                        {
                            ParserDebug("\tP:%s:%s:%s promise_type = %s\n", P.block, P.blocktype, P.blockid, P.currenttype);
 
-                           const PromiseTypeSyntax *promise_type_syntax = PromiseTypeSyntaxGet(P.blocktype, P.currenttype);
-
+                           const PromiseTypeSyntax *promise_type_syntax = PromiseTypeSyntaxGet_Future(P.blocktype, P.currenttype);
                            if (promise_type_syntax)
                            {
                                switch (promise_type_syntax->status)
@@ -367,9 +370,7 @@ promise_type:          PROMISE_TYPE             /* BUNDLE ONLY */
                                case SYNTAX_STATUS_FUTURE:
                                     {
                                         ParserDebug("Future promise type '%s'", P.currenttype);
-                                        Future *fut = PolicyAppendFuture(P.policy, POLICY_ELEMENT_TYPE_PROMISE, P.currenttype, P.currentclasses, P.filename);
-                                        fut->offset.line = P.line_no;
-                                        fut->offset.start = P.offsets.last_id;
+                                        P.currentstype = NULL;
                                     }
                                    break;
                                }
@@ -437,13 +438,8 @@ promisee_statement:    promiser
 
                        rval
                        {
-                           if (!INSTALL_SKIP)
+                           if (!INSTALL_SKIP && P.currentstype)
                            {
-                               if (!P.currentstype)
-                               {
-                                   ParseError("Missing promise type declaration");
-                               }
-
                                P.currentpromise = PromiseTypeAppendPromise(P.currentstype, P.promiser,
                                                                            RvalCopy(P.rval),
                                                                            P.currentclasses ? P.currentclasses : "any");
@@ -464,13 +460,8 @@ promisee_statement:    promiser
 promiser_statement:    promiser
                        {
 
-                           if (!INSTALL_SKIP)
+                           if (!INSTALL_SKIP && P.currentstype)
                            {
-                               if (!P.currentstype)
-                               {
-                                   ParseError("Missing promise type declaration");
-                               }
-
                                P.currentpromise = PromiseTypeAppendPromise(P.currentstype, P.promiser,
                                                                 (Rval) { NULL, RVAL_TYPE_NOPROMISEE },
                                                                 P.currentclasses ? P.currentclasses : "any");
@@ -575,7 +566,7 @@ constraint:            constraint_id                        /* BUNDLE ONLY */
                        {
                            if (!INSTALL_SKIP)
                            {
-                               const PromiseTypeSyntax *promise_type_syntax = PromiseTypeSyntaxGet(P.blocktype, P.currenttype);
+                               const PromiseTypeSyntax *promise_type_syntax = PromiseTypeSyntaxGet_Future(P.blocktype, P.currenttype);
                                assert(promise_type_syntax);
 
                                const ConstraintSyntax *constraint_syntax = PromiseTypeSyntaxGetConstraintSyntax(promise_type_syntax, P.lval);
@@ -599,6 +590,16 @@ constraint:            constraint_id                        /* BUNDLE ONLY */
                                            if (P.rval.type == RVAL_TYPE_SCALAR && strcmp(P.lval, "ifvarclass") == 0)
                                            {
                                                ValidateClassLiteral(P.rval.item);
+                                           }
+                                           if (promise_type_syntax->status == SYNTAX_STATUS_FUTURE)
+                                           {
+                                                /* ignore all constraints of future promise types */
+                                                break;
+                                           }
+                                           else if (!P.currentpromise)
+                                           {
+                                                ParseError("Missing promise type declaration");
+                                                break;
                                            }
 
                                            Constraint *cp = PromiseAppendConstraint(P.currentpromise, P.lval, RvalCopy(P.rval), P.references_body);
@@ -656,7 +657,7 @@ constraint_id:         IDSYNTAX                        /* BUNDLE ONLY */
                        {
                            ParserDebug("\tP:%s:%s:%s:%s:%s:%s attribute = %s\n", P.block, P.blocktype, P.blockid, P.currenttype, P.currentclasses ? P.currentclasses : "any", P.promiser, P.currentid);
 
-                           const PromiseTypeSyntax *promise_type_syntax = PromiseTypeSyntaxGet(P.blocktype, P.currenttype);
+                           const PromiseTypeSyntax *promise_type_syntax = PromiseTypeSyntaxGet_Future(P.blocktype, P.currenttype);
                            if (!promise_type_syntax)
                            {
                                ParseError("Invalid promise type '%s' in bundle '%s' of type '%s'", P.currenttype, P.blockid, P.blocktype);
@@ -681,7 +682,7 @@ constraint_id:         IDSYNTAX                        /* BUNDLE ONLY */
 
 bodybody:              body_begin
                        {
-                           const BodySyntax *body_syntax = BodySyntaxGet(P.blocktype);
+                           const BodySyntax *body_syntax = BodySyntaxGet_Future(P.blocktype);
 
                            if (body_syntax)
                            {
@@ -705,9 +706,7 @@ bodybody:              body_begin
                                case SYNTAX_STATUS_FUTURE:
                                     {
                                         ParserDebug("Future body %s skipped", P.blockid);
-                                        Future *fut = PolicyAppendFuture(P.policy, POLICY_ELEMENT_TYPE_BODY, P.blockid, P.currentclasses, P.filename);
-                                        fut->offset.line = P.line_no;
-                                        fut->offset.start = P.offsets.last_id;
+                                        P.currentbody = NULL;
                                     }
                                    break;
                                }
@@ -764,10 +763,14 @@ selection:             selection_id                         /* BODY ONLY */
 
                            if (!INSTALL_SKIP)
                            {
-                               const BodySyntax *body_syntax = BodySyntaxGet(P.blocktype);
+                               const BodySyntax *body_syntax = BodySyntaxGet_Future(P.blocktype);
                                assert(body_syntax);
 
-                               const ConstraintSyntax *constraint_syntax = BodySyntaxGetConstraintSyntax(body_syntax->constraints, P.lval);
+                               const ConstraintSyntax *constraint_syntax = NULL;
+                               if (body_syntax->status != SYNTAX_STATUS_FUTURE)
+                               {
+                                    constraint_syntax = BodySyntaxGetConstraintSyntax(body_syntax->constraints, P.lval);
+                               }
                                if (constraint_syntax)
                                {
                                    switch (constraint_syntax->status)
@@ -856,9 +859,9 @@ selection_id:          IDSYNTAX
                        {
                            ParserDebug("\tP:%s:%s:%s:%s attribute = %s\n", P.block, P.blocktype, P.blockid, P.currentclasses ? P.currentclasses : "any", P.currentid);
 
-                           if (!INSTALL_SKIP)
+                           if (!INSTALL_SKIP && P.currentbody)
                            {
-                               const BodySyntax *body_syntax = BodySyntaxGet(P.currentbody->type);
+                               const BodySyntax *body_syntax = BodySyntaxGet_Future(P.currentbody->type);
                                const ConstraintSyntax *constraint_syntax = NULL;
 
                                if (body_syntax)
@@ -1530,4 +1533,24 @@ static void ValidateClassLiteral(const char *class_literal)
     }
 
     FreeExpression(res.result);
+}
+
+static const PromiseTypeSyntax* PromiseTypeSyntaxGet_Future(const char *bundle_type, const char *promise_type)
+{
+    const PromiseTypeSyntax *pts = PromiseTypeSyntaxGet(bundle_type, promise_type);
+    if (!pts)
+    {
+        pts = FutureGetPromiseTypeSyntax(bundle_type, promise_type);
+    }
+    return pts;
+}
+
+static const BodySyntax* BodySyntaxGet_Future(const char *body_type)
+{
+    const BodySyntax *bs = BodySyntaxGet(body_type);
+    if (!bs)
+    {
+        bs = FutureGetBodySyntax(body_type);
+    }
+    return bs;
 }

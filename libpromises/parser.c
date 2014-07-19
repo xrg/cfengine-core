@@ -210,3 +210,60 @@ const ConstraintSyntax *FutureGetConstraintSyntax(const char* block, const char*
     }
     return NULL;
 }
+
+static const BodySyntax future_body = { NULL, NULL, NULL, SYNTAX_STATUS_FUTURE };
+
+const BodySyntax *FutureGetBodySyntax(const char* btype)
+{
+    char token[CF_MAXVARSIZE];
+    const char* element;
+    xsnprintf(token, CF_MAXVARSIZE, "body.%s", btype);
+    StringSetIterator it = StringSetIteratorInit(P.future_syntax_elems);
+
+    while ((element = StringSetIteratorNext(&it)))
+    {
+        if (!strcmp(element, token))
+        {
+            return &future_body;
+        }
+    }
+    return NULL;
+}
+
+bool FutureBundleType(const char* btype)
+{
+    char token[CF_MAXVARSIZE];
+    const char* element;
+    xsnprintf(token, CF_MAXVARSIZE, "bundle.%s", btype);
+    StringSetIterator it = StringSetIteratorInit(P.future_syntax_elems);
+
+    while ((element = StringSetIteratorNext(&it)))
+    {
+        if (!strcmp(element, token))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+extern const PromiseTypeSyntax CF_FUTURE_PROMISE_TYPE;
+
+const PromiseTypeSyntax *FutureGetPromiseTypeSyntax(const char *bundle_type, const char *promise_type)
+{
+    char token[CF_MAXVARSIZE], token_star[CF_MAXVARSIZE];
+    const char* element;
+    xsnprintf(token, CF_MAXVARSIZE, "promise.%s.%s", bundle_type, promise_type);
+    xsnprintf(token_star, CF_MAXVARSIZE, "promise.*.%s", promise_type);
+    StringSetIterator it = StringSetIteratorInit(P.future_syntax_elems);
+
+    while ((element = StringSetIteratorNext(&it)))
+    {
+        if (!strcmp(element, token) || !strcmp(element, token_star))
+        {
+            return &CF_FUTURE_PROMISE_TYPE;
+        }
+    }
+    fprintf(stderr, "Failed to resolve %s or %s", token, token_star);
+    return NULL;
+}

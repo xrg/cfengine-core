@@ -49,5 +49,7 @@ const char *ParserWarningToString(unsigned int warning);
 Policy *ParserParseFile(AgentType agent_type, const char *path, unsigned int warnings, unsigned int warnings_error);
 
 const ConstraintSyntax *FutureGetConstraintSyntax(const char* block, const char* btype, const char* blockid, const char* lval);
-
+const BodySyntax *FutureGetBodySyntax(const char* btype);
+bool FutureBundleType(const char* btype);
+const PromiseTypeSyntax* FutureGetPromiseTypeSyntax(const char *bundle_type, const char *promise_type);
 #endif
