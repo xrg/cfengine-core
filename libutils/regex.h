@@ -20,19 +20,29 @@
   versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
-
 */
 
-#ifndef CFENGINE_UNIX_IFACE_H
-#define CFENGINE_UNIX_IFACE_H
+
+#ifndef CFENGINE_REGEX_H
+#define CFENGINE_REGEX_H
 
 
 #include <platform.h>
 
-/* TODO libpromises depends on libenv, the opposite should not happen! */
-#include <eval_context.h>
+#include <pcre_include.h>
+
+#include <sequence.h>                                           /* Seq */
 
 
-void GetInterfacesInfo(EvalContext *ctx);
+/* Try to use CompileRegex() and StringMatchWithPrecompiledRegex(). */
+pcre *CompileRegex(const char *regex);
+bool StringMatch(const char *regex, const char *str, int *start, int *end);
+bool StringMatchWithPrecompiledRegex(pcre *regex, const char *str,
+                                     int *start, int *end);
+bool StringMatchFull(const char *regex, const char *str);
+bool StringMatchFullWithPrecompiledRegex(pcre *regex, const char *str);
+Seq *StringMatchCaptures(const char *regex, const char *str);
+bool CompareStringOrRegex(const char *value, const char *compareTo, bool regex);
 
-#endif
+
+#endif  /* CFENGINE_REGEX_H */

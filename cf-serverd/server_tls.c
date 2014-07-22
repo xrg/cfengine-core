@@ -26,6 +26,8 @@
 #include <server_tls.h>
 #include <server_common.h>
 
+#include <openssl/err.h>                                   /* ERR_get_error */
+
 #include <crypto.h>                                        /* DecryptString */
 #include <conversion.h>
 #include <signals.h>
@@ -35,7 +37,7 @@
 #include <tls_generic.h>              /* TLSSend */
 #include <cf-serverd-enterprise-stubs.h>
 #include <connection_info.h>
-#include <string_lib.h>                                  /* StringMatchFull */
+#include <regex.h>                                       /* StringMatchFull */
 #include <known_dirs.h>
 #include <file_lib.h>                                           /* IsDirReal */
 
@@ -575,6 +577,7 @@ bool BusyWithNewProtocol(EvalContext *ctx, ServerConnectionState *conn)
     /* Don't process request if we're signalled to exit. */
     if (IsPendingTermination())
     {
+        Log(LOG_LEVEL_VERBOSE, "Server must exit, closing connection");
         return false;
     }
 
@@ -1045,6 +1048,6 @@ bool BusyWithNewProtocol(EvalContext *ctx, ServerConnectionState *conn)
 protocol_error:
     strcpy(sendbuffer, "BAD: Request denied");
     SendTransaction(conn->conn_info, sendbuffer, 0, CF_DONE);
-    Log(LOG_LEVEL_INFO, "Closing connection, due to request: '%s'", recvbuffer);
+    Log(LOG_LEVEL_INFO, "Closing connection due to request: %s", recvbuffer);
     return false;
 }

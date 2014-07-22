@@ -54,7 +54,6 @@ dnl Save environment CFLAGS before autoconf starts messing with it.
 dnl It is restored later.
 dnl
 ENV_CFLAGS="$CFLAGS"
-CFLAGS=
 
 dnl ######################################################################
 dnl Checks for programs.
@@ -80,21 +79,6 @@ AC_CONFIG_LIBOBJ_DIR(libcompat)
 AC_PATH_PROG(GETCONF, getconf, false, $PATH:$prefix/bin:/usr/bin:/usr/local/bin:/sw/bin)
 AM_CONDITIONAL(CROSS_COMPILING, test "x$cross_compiling" = "xyes")
 
-#
-# Add to the default list of places in CPPFLAGS to match LDFLAGS above
-# Don't add if cross-compiling (setting host), to avoid using native libs.
-#
-if test "x$cross_compiling" = "xno"; then
-  for x in /usr/local/include /usr/local/gnu/include /opt/dce/include /sw/include /usr/pkg/include /usr/X11R7/include
-  do
-    if test -d "$x"; then
-      y=`expr " $CPPFLAGS " : ".* -I$x "`
-      if test $y -eq 0; then
-        CPPFLAGS="$CPPFLAGS -I$x"
-      fi
-    fi
-  done
-fi
 
 dnl ######################################################################
 dnl Use pthreads if available
@@ -106,14 +90,14 @@ AC_ARG_WITH([pthreads],
 
 if test "x$with_pthreads" != x && test "x$with_pthreads" != "xyes" && test "x$with_pthreads" != "xno"; then
    LIBS="$LIBS -L$with_pthreads/lib"
-   CFLAGS="$CFLAGS -I$with_pthreads/include"
+   CPPFLAGS="-I$with_pthreads/include $CPPFLAGS"
 fi
 
 ACX_PTHREAD([],
             [AC_MSG_ERROR(pthread-compatible library is required to build CFEngine)])
 
 CC="$PTHREAD_CC"
-CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+CFLAGS="$PTHREAD_CFLAGS $CFLAGS"
 LIBS="$PTHREAD_LIBS $LIBS"
 
 dnl ######################################################################
@@ -187,6 +171,16 @@ AS_IF([test x"$enable_fhs" = xyes], [
 AC_SUBST(projlibdir)
 
 dnl ######################################################################
+dnl Platform specific compiler flags.
+dnl ######################################################################
+
+AS_CASE([${target_os}],
+  [mingw*],
+    # Disable printf format warnings, because our wrapper supports more
+    # flags than vanilla Windows version, so they are false positives.
+    [CFLAGS="$CFLAGS -Wno-format"])
+
+dnl ######################################################################
 dnl Enable debugging
 dnl ######################################################################
 
@@ -196,10 +190,16 @@ AC_ARG_ENABLE(debug,
               [debug=no])
 AM_CONDITIONAL([NDEBUG], [test x"$debug" = x"no"])
 
-if test x"$debug" = x"yes"; then
-   CFLAGS="$CFLAGS -g3 -O0 $ENV_CFLAGS"
+dnl Even though CFLAGS should contain the command-line CFLAGS
+dnl as last, some macro seem to messes the order up and insert
+dnl its own optimisation flags as well. So we append ENV_CFLAGS
+dnl at the end manually, causing a bit of flag duplication.
+
+if test x"$debug" = x"yes"
+then
+    CFLAGS="$CFLAGS -g3 -O0 $ENV_CFLAGS"
 else
-   CFLAGS="$CFLAGS -O2 -DNDEBUG $ENV_CFLAGS"
+    CFLAGS="$CFLAGS -O2 -DNDEBUG $ENV_CFLAGS"
 fi
 
 dnl ######################################################################
@@ -208,70 +208,111 @@ dnl ######################################################################
 
 dnl Now check for database connectors
 
+# TODO remove
 AC_ARG_WITH([sql],
-    [AS_HELP_STRING([--with-sql[[=PATH]]], [Enable SQL database connectors (deprecated, use --with[[out]]-postgresql and --with[[out]]-mysql instead)])],[with_postgresql=$with_sql; with_mysql=$with_sql],[])
+    [AS_HELP_STRING([--with-sql[[=PATH]]],
+        [Enable SQL database connectors (deprecated, use \
+        --with[[out]]-postgresql and --with[[out]]-mysql instead)])
+    ],
+    [with_postgresql=$with_sql; with_mysql=$with_sql],
+    [])
 
 dnl PostgreSQL
 
 AC_ARG_WITH([postgresql],
     [AS_HELP_STRING([--with-postgresql[[=PATH]]],
-                    [Enable PostgreSQL connector])], [], [with_postgresql=check])
+        [Enable PostgreSQL connector])
+    ],
+    [],
+    [with_postgresql=check])
 
-if test "x$with_postgresql" != "xno"; then
+if test "x$with_postgresql" != "xno"
+then
+    if test "x$with_postgresql" != xyes && test "x$with_postgresql" != xcheck
+    then
+        PG_CONFIG=$with_postgresql/bin/pg_config
+    else
+        PG_CONFIG=pg_config
+    fi
 
-   if test "x$with_postgresql" != xyes && test "x$with_postgresql" != xcheck; then
-      PG_CONFIG=$with_postgresql/bin/pg_config
-   else
-      PG_CONFIG=pg_config
-   fi
+    # pg_config is only for native builds
+    if test "x$cross_compiling" = "xno"
+    then
+        if test x`which $PG_CONFIG` != x
+        then
+            pg_include_dir=`$PG_CONFIG --includedir`
+            if test -n "$pg_include_dir"
+            then
+                POSTGRESQL_CPPFLAGS="-I$pg_include_dir"
+            fi
+        fi
+    fi
 
-   # pg_config is only for native builds
-   if test "x$cross_compiling" = "xno"; then
-      if test x`which $PG_CONFIG` != x ; then
-         pg_include_dir=`$PG_CONFIG --includedir`
-         if test -n "$pg_include_dir"; then
-            CPPFLAGS="$CPPFLAGS -I$pg_include_dir"
-         fi
-      fi
-   fi
-
-   CF3_WITH_LIBRARY(postgresql, [
-     AC_CHECK_LIB(pq, PQconnectdb, [], [if test "x$with_postgresql" != xcheck; then AC_MSG_ERROR(Cannot find PostgreSQL client library); fi])
-     AC_CHECK_HEADERS(libpq-fe.h, [], [if test "x$with_postgresql" != xcheck; then AC_MSG_ERROR(Cannot find PostgreSQL client library); fi])
-   ])
+    CF3_WITH_LIBRARY(postgresql,
+        [AC_CHECK_LIB(pq, PQconnectdb,
+            [],
+            [if test "x$with_postgresql" != xcheck; then
+                AC_MSG_ERROR(Cannot find PostgreSQL client library); fi]
+         )
+         AC_CHECK_HEADERS(libpq-fe.h,
+             [],
+             [if test "x$with_postgresql" != xcheck; then
+                 AC_MSG_ERROR(Cannot find PostgreSQL client library); fi]
+         )]
+    )
 fi
 
 dnl MySQL
 
 AC_ARG_WITH([mysql],
     [AS_HELP_STRING([--with-mysql[[=PATH]]],
-                    [Enable MySQL connector])], [], [with_mysql=check])
+        [Enable MySQL connector])
+    ],
+    [],
+    [with_mysql=check])
 
-if test "x$with_mysql" != "xno"; then
+if test "x$with_mysql" != "xno"
+then
+    if test "x$with_mysql" != xyes &&
+       test "x$with_mysql" != xcheck
+    then
+        MYSQL_CONFIG=$with_mysql/bin/mysql_config
+    else
+        MYSQL_CONFIG=mysql_config
+    fi
 
-   if test "x$with_mysql" != xyes && test "x$with_mysql" != xcheck; then
-      MYSQL_CONFIG=$with_mysql/bin/mysql_config
-   else
-      MYSQL_CONFIG=mysql_config
-   fi
+    # mysql_config is only for native builds
+    if test "x$cross_compiling" = "xno"
+    then
+        if test x`which $MYSQL_CONFIG` != x
+        then
+            mysql_include_dir=`$MYSQL_CONFIG --include`
+            if test -n "$mysql_include_dir"
+            then
+                MYSQL_CPPFLAGS="$mysql_include_dir"
+            fi
+        fi
+    fi
 
-   # mysql_config is only for native builds
-   if test "x$cross_compiling" = "xno"; then
-      if test x`which $MYSQL_CONFIG` != x ; then
-         mysql_include_dir=`$MYSQL_CONFIG --include`
-         if test -n "$mysql_include_dir"; then
-            CPPFLAGS="$CPPFLAGS $mysql_include_dir"
-         fi
-      fi
-   fi
-
-   CF3_WITH_LIBRARY(mysql, [
-     AC_CHECK_LIB(mysqlclient, mysql_real_connect, [], [if test "x$with_mysql" != xcheck; then AC_MSG_ERROR(Cannot find MySQL client library); fi])
-     AC_CHECK_HEADERS(mysql.h, [], [if test "x$with_mysql" != xcheck; then AC_MSG_ERROR(Cannot find MySQL client library); fi])
-
-     AC_CHECK_LIB(mysqlclient, EVP_CIPHER_CTX_init,
-                               [AC_MSG_ERROR([MySQL client library exports symbols clashing with OpenSSL. Get the update from distribution provider, recompile MySQL library or disable MySQL connector. See http://bugs.mysql.com/bug.php?id=65055 for details.])])
-   ])
+    CF3_WITH_LIBRARY(mysql,
+        [AC_CHECK_LIB(mysqlclient, mysql_real_connect,
+            [],
+            [if test "x$with_mysql" != xcheck; then
+                AC_MSG_ERROR(Cannot find MySQL client library); fi]
+        )
+        AC_CHECK_HEADERS(mysql.h,
+            [],
+            [if test "x$with_mysql" != xcheck; then
+                AC_MSG_ERROR(Cannot find MySQL clientlibrary); fi]
+        )
+        AC_CHECK_LIB(mysqlclient, EVP_CIPHER_CTX_init,
+            [AC_MSG_ERROR([MySQL client library exports symbols clashing \
+                with OpenSSL. Get the update from distribution provider, \
+                recompile MySQL library or disable MySQL connector. See \
+                http://bugs.mysql.com/bug.php?id=65055 for details.])
+            ]
+        )]
+    )
 fi
 
 dnl
@@ -410,38 +451,66 @@ dnl libxml2
 
 AC_ARG_WITH([libxml2],
     [AS_HELP_STRING([--with-libxml2[[=PATH]]],
-                    [Specify libxml2 path])], [], [with_libxml2=check])
+        [Specify libxml2 path])
+    ],
+    [],
+    [with_libxml2=check])
 
-if test "x$with_libxml2" != xno; then
+if test "x$with_libxml2" != xno
+then
+    if test "x$with_libxml2" != xyes &&
+       test "x$with_libxml2" != xcheck
+    then
+        XML2_CONFIG=$with_libxml2/bin/xml2-config
+    else
+        XML2_CONFIG=xml2-config
+    fi
 
-   if test "x$with_libxml2" != xyes && test "x$with_libxml2" != xcheck; then
-      XML2_CONFIG=$with_libxml2/bin/xml2-config
-   else
-      XML2_CONFIG=xml2-config
-   fi
+    # xml2-config is only for native builds
+    if test "x$cross_compiling" = "xno"
+    then
+        if test x`which $XML2_CONFIG` != x
+        then
+            xml2_include_dir=`$XML2_CONFIG --cflags`
+            if test -n "$xml2_include_dir"
+            then
+                LIBXML2_CPPFLAGS="$xml2_include_dir"
+            fi
+        else                # xml2-config not found
+            # if a path, e.g. /var/cfengine was given, then we
+            # must take into account that libxml2 includes are in
+            # /var/cfengine/include/libxml2
+            LIBXML2_CPPFLAGS=-I$with_libxml2/include/libxml2
+        fi
+    fi
 
-   # xml2-config is only for native builds
-   if test "x$cross_compiling" = "xno"; then
-      if test x`which $XML2_CONFIG` != x ; then
-         xml2_include_dir=`$XML2_CONFIG --cflags`
-         if test -n "$xml2_include_dir"; then
-            CPPFLAGS="$CPPFLAGS $xml2_include_dir"
-         fi
-      fi
-   fi
-
-    CF3_WITH_LIBRARY(libxml2, [
-      AC_CHECK_LIB(xml2, xmlFirstElementChild, [], [if test "x$with_libxml2" != xcheck; then AC_MSG_ERROR(Cannot find libxml2); fi])
-      AC_CHECK_HEADERS([libxml/xmlwriter.h], [break], [if test "x$with_libxml2" != xcheck; then AC_MSG_ERROR(Cannot find libxml2); fi])
-    ])
+    CF3_WITH_LIBRARY(libxml2,
+        [AC_CHECK_LIB(xml2, xmlFirstElementChild,
+            [],
+            [if test "x$with_libxml2" != xcheck; then
+                AC_MSG_ERROR(Cannotfind libxml2); fi]
+        )
+        AC_CHECK_HEADERS([libxml/xmlwriter.h], [break],
+            [if test "x$with_libxml2" != xcheck; then
+                AC_MSG_ERROR(Cannot find libxml2); fi]
+        )]
+    )
 fi
 
-AM_CONDITIONAL([HAVE_LIBXML2], [test "x$with_libxml2" != "xno" && test "x$ac_cv_lib_xml2_xmlFirstElementChild" = xyes])
+AM_CONDITIONAL([HAVE_LIBXML2],
+    [test "x$with_libxml2" != xno &&
+     test "x$ac_cv_lib_xml2_xmlFirstElementChild" = xyes])
 
 dnl avahi
 
-AC_CHECK_HEADERS(avahi-client/client.h, AM_CONDITIONAL(HAVE_AVAHI_CLIENT, true), AM_CONDITIONAL(HAVE_AVAHI_CLIENT, false), [])
-AC_CHECK_HEADERS(avahi-common/address.h, AM_CONDITIONAL(HAVE_AVAHI_COMMON, true), AM_CONDITIONAL(HAVE_AVAHI_COMMON, false),[])
+AC_CHECK_HEADERS(avahi-client/client.h,
+    AM_CONDITIONAL(HAVE_AVAHI_CLIENT, true),
+    AM_CONDITIONAL(HAVE_AVAHI_CLIENT, false),
+    [])
+AC_CHECK_HEADERS(avahi-common/address.h,
+    AM_CONDITIONAL(HAVE_AVAHI_COMMON, true),
+    AM_CONDITIONAL(HAVE_AVAHI_COMMON, false),
+    [])
 
 dnl
 
@@ -532,7 +601,7 @@ AC_TYPE_OFF_T
 # off_t, which causes a conflict.
 #
 if test "x$ac_cv_sys_large_files" = x1; then
-  CPPFLAGS="$CPPFLAGS -D_LARGE_FILES=1"
+  CPPFLAGS="-D_LARGE_FILES=1 $CPPFLAGS"
 fi
 
 dnl ######################################################################
@@ -617,7 +686,8 @@ AC_REPLACE_FUNCS(strsignal)
 AC_CHECK_DECLS(gmtime_r, [], [], [[#include <time.h>]])
 AC_REPLACE_FUNCS(gmtime_r)
 
-AC_CHECK_DECLS(getline, [], [], [[#include <stdio.h>]])
+AC_CHECK_DECLS(getline, [], [], [#define _GNU_SOURCE 1
+AC_INCLUDES_DEFAULT])
 AC_REPLACE_FUNCS(getline)
 
 AC_CHECK_DECLS(localtime_r, [], [], [[#include <time.h>]])
@@ -795,7 +865,7 @@ AC_EGREP_CPP([primacros_found],
   ],
   [AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
-   AC_MSG_RESULT(Unable to find out how to print intmax_t/uintmax_t types)])
+   AC_MSG_RESULT(Unable to find out how to scan intmax_t/uintmax_t types)])
 
 HW_FUNC_VSNPRINTF
 HW_FUNC_SNPRINTF
@@ -995,10 +1065,10 @@ dnl ######################################################################
 dnl Collect all the options
 dnl ######################################################################
 
-CORE_CPPFLAGS="$CPPFLAGS $LMDB_CPPFLAGS $TOKYOCABINET_CPPFLAGS $QDBM_CPPFLAGS $PCRE_CPPFLAGS $OPENSSL_CPPFLAGS $SQLITE3_CPPFLAGS $LIBACL_CPPFLAGS"
-CORE_CFLAGS="$CFLAGS $LMDB_CFLAGS $TOKYOCABINET_CFLAGS $QDBM_CFLAGS $PCRE_CFLAGS $OPENSSL_CFLAGS $SQLITE3_CFLAGS $LIBACL_CFLAGS"
-CORE_LDFLAGS="$LDFLAGS $LMDB_LDFLAGS $TOKYOCABINET_LDFLAGS $QDBM_LDFLAGS $PCRE_LDFLAGS $OPENSSL_LDFLAGS $SQLITE3_LDFLAGS $LIBACL_LDFLAGS"
-CORE_LIBS="$LIBS $LMDB_LIBS $TOKYOCABINET_LIBS $QDBM_LIBS $PCRE_LIBS $OPENSSL_LIBS $SQLITE3_LIBS $LIBACL_LIBS"
+CORE_CPPFLAGS="$LMDB_CPPFLAGS $TOKYOCABINET_CPPFLAGS $QDBM_CPPFLAGS $PCRE_CPPFLAGS $OPENSSL_CPPFLAGS $SQLITE3_CPPFLAGS $LIBACL_CPPFLAGS $POSTGRESQL_CPPFLAGS $MYSQL_CPPFLAGS $LIBXML2_CPPFLAGS $CPPFLAGS"
+CORE_CFLAGS="$LMDB_CFLAGS $TOKYOCABINET_CFLAGS $QDBM_CFLAGS $PCRE_CFLAGS $OPENSSL_CFLAGS $SQLITE3_CFLAGS $LIBACL_CFLAGS $POSTGRESQL_CFLAGS $MYSQL_CFLAGS $LIBXML2_CFLAGS $CFLAGS"
+CORE_LDFLAGS="$LMDB_LDFLAGS $TOKYOCABINET_LDFLAGS $QDBM_LDFLAGS $PCRE_LDFLAGS $OPENSSL_LDFLAGS $SQLITE3_LDFLAGS $LIBACL_LDFLAGS $POSTGRESQL_LDFLAGS $MYSQL_LDFLAGS $LIBXML2_LDFLAGS $LDFLAGS"
+CORE_LIBS="$LMDB_LIBS $TOKYOCABINET_LIBS $QDBM_LIBS $PCRE_LIBS $OPENSSL_LIBS $SQLITE3_LIBS $LIBACL_LIBS $POSTGRESQL_LIBS $MYSQL_LIBS $LIBXML2_LIBS $LIBS"
 
 dnl ######################################################################
 dnl Make them available to subprojects.
@@ -1009,16 +1079,6 @@ AC_SUBST([CORE_CFLAGS])
 AC_SUBST([CORE_LDFLAGS])
 AC_SUBST([CORE_LIBS])
 AC_CONFIG_FILES([configure_flags.env])
-
-dnl ######################################################################
-dnl TODO do not set all main flags here, but use them as needed in
-dnl subdirectories
-dnl ######################################################################
-
-CPPFLAGS="$CORE_CPPFLAGS"
-CFLAGS="$CORE_CFLAGS"
-LDFLAGS="$CORE_LDFLAGS"
-LIBS="$CORE_LIBS"
 
 dnl ######################################################################
 dnl OS specific stuff

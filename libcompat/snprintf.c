@@ -25,9 +25,13 @@
  *
  * 2014-04-03 Dimitrios Apostolou <jimis@gmx.net>:
  *
- *      Provided replacement functions for [v][f]printf().
- *      Fixed snprintf.m4 to always check for locale.h and other header files
- *      so that the tests in this file run correctly.
+ * 	snprintf.c: Provided replacement functions for [v][f]printf().
+ * 	snprintf.m4: Always check for locale.h and other header files
+ * 		so that the tests in this file run correctly.
+ * 	snprintf.m4: _HW_FUNC_XPRINTF_REPLACE was being skipped when configure
+ * 		was being re-run with cache enabled (-C). Now
+ * 		AC_LIBOBJ(snprintf) might be called multiple times but
+ * 		shouldn't matter.
  *
  * 2008-01-20 Holger Weiss <holger@jhweiss.de> for C99-snprintf 1.1:
  *
@@ -1654,7 +1658,15 @@ int rpl_printf(const char *format, ...)
 int main(void);
 #endif	/* !HAVE_SNPRINTF || !HAVE_VSNPRINTF || !HAVE_ASPRINTF || [...] */
 
+
 #if TEST_SNPRINTF
+
+/* sprintf() is marked as deprecated in CFEngine, but here we use it on
+ * purpose to compare this snprintf() implementation to the system's
+ * implementation. So avoid emitting the warning. */
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+
 static int snprintf_rigorous_test(void)
 {
 	const char *float_fmt[] = {

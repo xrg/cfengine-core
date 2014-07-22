@@ -20,19 +20,17 @@
   versions of CFEngine, the applicable Commercial Open Source License
   (COSL) may apply to this file if you as a licensee so wish it. See
   included file COSL.txt.
-
 */
 
-#ifndef CFENGINE_UNIX_IFACE_H
-#define CFENGINE_UNIX_IFACE_H
+
+#ifndef CFENGINE_ENCODE_H
+#define CFENGINE_ENCODE_H
 
 
 #include <platform.h>
 
-/* TODO libpromises depends on libenv, the opposite should not happen! */
-#include <eval_context.h>
+
+char *StringEncodeBase64(const char *str, size_t len);
 
 
-void GetInterfacesInfo(EvalContext *ctx);
-
-#endif
+#endif /* CFENGINE_ENCODE_H */

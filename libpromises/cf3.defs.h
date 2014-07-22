@@ -25,15 +25,14 @@
 #ifndef CFENGINE_CF3_DEFS_H
 #define CFENGINE_CF3_DEFS_H
 
+
+/* ALWAYS INCLUDE EITHER THIS FILE OR platform.h FIRST */
+
+
 #include <platform.h>
+
 #include <compiler.h>
-
-#ifdef HAVE_LIBXML2
-#include <libxml/parser.h>
-#include <libxml/xpathInternals.h>
-#endif
-
-#include <hash.h> /* Required for HashMethod */
+#include <hash_method.h>                                      /* HashMethod */
 #include <sequence.h>
 #include <logging.h>
 
@@ -813,16 +812,6 @@ typedef enum
 #define OVECCOUNT 30
 
 /*******************************************************************/
-
-typedef struct
-{
-    char *name;
-    RSA *key;
-    char *address;
-    time_t timestamp;
-} KeyBinding;
-
-/*************************************************************************/
 
 typedef struct
 {
