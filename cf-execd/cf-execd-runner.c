@@ -534,7 +534,7 @@ static void MailResult(const ExecConfig *config, const char *file)
     FILE *fp = fopen(file, "r");
     if (!fp)
     {
-        Log(LOG_LEVEL_INFO, "Couldn't open file '%s'. (fopen: %s)", file, GetErrorStr());
+        Log(LOG_LEVEL_ERR, "Couldn't open file '%s'. (fopen: %s)", file, GetErrorStr());
         return;
     }
 
@@ -560,7 +560,7 @@ static void MailResult(const ExecConfig *config, const char *file)
 
     if ((fp = fopen(file, "r")) == NULL)
     {
-        Log(LOG_LEVEL_INFO, "Couldn't open file '%s'. (fopen: %s)", file, GetErrorStr());
+        Log(LOG_LEVEL_ERR, "Couldn't open file '%s'. (fopen: %s)", file, GetErrorStr());
         return;
     }
 
@@ -576,7 +576,7 @@ static void MailResult(const ExecConfig *config, const char *file)
     struct servent *server = getservbyname("smtp", "tcp");
     if (!server)
     {
-        Log(LOG_LEVEL_INFO, "Unable to lookup smtp service. (getservbyname: %s)", GetErrorStr());
+        Log(LOG_LEVEL_ERR, "Unable to lookup smtp service. (getservbyname: %s)", GetErrorStr());
         fclose(fp);
         return;
     }
@@ -593,14 +593,14 @@ static void MailResult(const ExecConfig *config, const char *file)
     int sd = socket(AF_INET, SOCK_STREAM, 0);
     if (sd == -1)
     {
-        Log(LOG_LEVEL_INFO, "Couldn't open a socket. (socket: %s)", GetErrorStr());
+        Log(LOG_LEVEL_ERR, "Couldn't open a socket. (socket: %s)", GetErrorStr());
         fclose(fp);
         return;
     }
 
     if (connect(sd, (void *) &raddr, sizeof(raddr)) == -1)
     {
-        Log(LOG_LEVEL_INFO, "Couldn't connect to host '%s'. (connect: %s)",
+        Log(LOG_LEVEL_ERR, "Couldn't connect to host '%s'. (connect: %s)",
             config->mail_server, GetErrorStr());
         fclose(fp);
         cf_closesocket(sd);
@@ -765,7 +765,7 @@ static void MailResult(const ExecConfig *config, const char *file)
 
     fclose(fp);
     cf_closesocket(sd);
-    Log(LOG_LEVEL_INFO, "Cannot mail to %s.", config->mail_to_address);
+    Log(LOG_LEVEL_ERR, "Cannot mail to %s.", config->mail_to_address);
 }
 
 static int Dialogue(int sd, const char *s)
@@ -783,7 +783,7 @@ static int Dialogue(int sd, const char *s)
     int charpos = 0;
     int rfclinetype = ' ';
 
-    char ch, f = '\0';
+    char ch, f = '\0', linebuf[256];
     while (recv(sd, &ch, 1, 0))
     {
         charpos++;
@@ -798,8 +798,14 @@ static int Dialogue(int sd, const char *s)
             rfclinetype = ch;
         }
 
+        if (charpos < 255)
+        {
+            linebuf[charpos] = ch;
+        }
+
         if ((ch == '\n') || (ch == '\0'))
         {
+            linebuf[charpos] = '\0';
             charpos = 0;
 
             if (rfclinetype == ' ')
@@ -809,6 +815,17 @@ static int Dialogue(int sd, const char *s)
         }
     }
 
-    return ((f == '2') || (f == '3'));  /* return code 200 or 300 from smtp */
+    linebuf[255] = '\0';
+
+    if ((f == '2') || (f == '3'))  /* return code 200 or 300 from smtp */
+    {
+        Log(LOG_LEVEL_DEBUG, "RECVD(%d) -> '%s'", strlen(linebuf), linebuf);
+        return 1;
+    }
+    else
+    {
+        Log(LOG_LEVEL_ERR, "ERROR from smtp: '%s'", linebuf);
+        return 0;
+    }
 }
 
