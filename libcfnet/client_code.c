@@ -1279,15 +1279,8 @@ void MarkServerOffline(const char *server)
 void CacheServerConnection(AgentConnection *conn, const char *server)
 /* First time we open a connection, so store it */
 {
-    char ipaddr[CF_MAX_IP_LEN];
-    if (Hostname2IPString(ipaddr, server, sizeof(ipaddr)) == -1)
-    {
-        Log(LOG_LEVEL_ERR, "Failed to resolve: %s", server);
-        return;
-    }
-
     ServerItem *svp = xmalloc(sizeof(*svp));
-    svp->server = xstrdup(ipaddr);
+    svp->server = xstrdup(conn->remoteip);
     svp->busy = true;
     svp->conn = conn;
 
