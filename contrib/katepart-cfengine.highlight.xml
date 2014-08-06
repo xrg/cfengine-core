@@ -4,7 +4,7 @@
   This file is part of KDE's kate project.
 
   copyright   : (C) 2009, 2012 by Jessica Greer, John Coleman
-  copyright   : (C) 2012 Panos Christeas
+  copyright   : (C) 2012,2014 Panos Christeas
   email       : jessica.greer@yale.edu, xrg@linux.gr
 
  **********************************************************************
@@ -29,13 +29,15 @@
 
 
 <language name="CFEngine" section="Other"
-          version="0.1" kateversion="2.4"
+          version="0.2" kateversion="2.4"
           indenter="cstyle"
           extensions="*.cf"
           priority="10">
 <highlighting>
     <list name="bundle_promises">
+      <item> meta </item>
       <item> vars </item>
+      <item> defaults </item>
       <item> classes </item>
       <item> outputs </item>
       <item> interfaces </item>
@@ -50,6 +52,8 @@
       <item> databases </item>
       <item> reports </item>
       <item> access </item>
+      <item> users </item>
+      <item> roles </item>
     </list>
 
     <list name="edit_line_promises" >
@@ -64,10 +68,14 @@
 
     <list name="bundle_context">
         <item>common</item>
+        <item>file</item>
         <item>agent</item>
         <item>server</item>
-        <item>knowledge</item>
+        <item>executor</item>
         <item>monitor</item>
+        <item>runagent</item>
+        <item>knowledge</item>
+        <item>hub</item>
     </list>
 
     <list name="special_bundles">
@@ -75,8 +83,9 @@
     </list>
 
     <list name="all_promises">
-	<item> comment </item>
-	<item> handle </item>
+      <item> comment </item>
+      <item> handle </item>
+      <item> depends_on </item>
 	<!-- TODO -->
       <!-- common control promises -->
       <item> bundlesequence </item>
@@ -85,6 +94,19 @@
       <item> lastseenexpireafter </item>
       <item> output_prefix </item>
       <item> domain </item>
+      <item> goal_categories </item>
+      <item> goal_patterns </item>
+      <item> cache_system_functions </item>
+      <item> fips_mode </item>
+      <item> ignore_missing_bundles </item>
+      <item> ignore_missing_inputs </item>
+      <item> protocol_version </item>
+      <item> require_comments </item>
+      <item> site_classes </item>
+      <item> syslog_host </item>
+      <item> syslog_port </item>
+      <item> future_syntax </item>
+
       <!-- agent control promises -->
       <item> maxconnections </item>
       <item> abortclasses </item>
@@ -200,6 +222,7 @@
       <item> slist </item>
       <item> ilist </item>
       <item> policy </item>
+      <item> data </item>
     </list>
 
   <contexts>
@@ -236,7 +259,7 @@
               <DetectSpaces />
               <keyword attribute="Keyword" String="bundle_promises" />
 	    <RegExpr attribute="Class" context="#stay"
-		String="[\w\.!\|&amp;]+::" />
+		String="[\w\.!\|\(\)&amp;]+::" />
 
         <IncludeRules context="content" />
         <DetectChar attribute="RegionMarker" context="#pop#pop" endRegion="Bundle" char="}" />
