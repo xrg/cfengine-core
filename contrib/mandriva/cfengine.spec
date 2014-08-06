@@ -81,6 +81,17 @@ node "serves" the clients (cf-agents) with CFEngine configuration files.
 Install it on the box you want to act as the policy hub, controlling
 the other monitored boxes.
 
+%package cfupgrade
+Summary:    Configuration Engine upgrade helper
+Group:      Monitoring
+
+%description cfupgrade
+This is a statically-built upgrade helper for CFEngine
+
+In some cases, when eg. upgrading from official packages or pre-3.4 releases,
+you may want this helper in order to perform the upgrade in an atomic manner.
+
+
 %package pds
 Summary:	Policy Definition Server
 Group:		Monitoring
@@ -243,10 +254,13 @@ rm -rf %{buildroot}
 %cfprog cf-agent
 %cfprog cf-monitord
 %cfprog cf-execd
-%cfprog cf-upgrade
 %{_initrddir}/cf-execd
 %dir %{workdir}/inputs
 %dir %{workdir}/outputs
+
+%files cfupgrade
+%defattr(-,root,root)
+%cfprog cf-upgrade
 
 
 %files cfserver
