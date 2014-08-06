@@ -31,6 +31,7 @@ BuildRequires: tokyocabinet-devel
 BuildRequires: libldap-devel
 %endif
 BuildRequires: postgresql-devel
+BuildRequires: libpcre-devel
 Requires:       %{libname} = %{version}-%{release}
 Requires(pre):	rpm-helper
 Requires(preun):rpm-helper
