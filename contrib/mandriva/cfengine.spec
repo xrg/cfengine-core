@@ -25,7 +25,11 @@ BuildRequires:	bison
 BuildRequires:  texinfo
 BuildRequires:	openssl-devel
 BuildRequires:	db4-devel
+%if %{_target_cpu} == i586 && %{mgaver} == 1
 BuildRequires: tokyocabinet-devel
+%else
+BuildRequires: libldap-devel
+%endif
 BuildRequires: postgresql-devel
 Requires:       %{libname} = %{version}-%{release}
 Requires(pre):	rpm-helper
