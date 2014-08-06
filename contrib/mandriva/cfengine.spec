@@ -48,6 +48,9 @@ systems in the most economical way possible.
 
 This package contain the cfengine base files needed by all subpackages.
 
+Note: these packages use the Unix-standard "/var/lib" prefix, rather
+than the proprietary "/var/cfengine" path.
+
 %package cfagent
 Summary:	Configuration Client daemon
 Group:		Monitoring
