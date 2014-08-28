@@ -574,12 +574,12 @@ static bool PackageListInstalledFromCommand(EvalContext *ctx,
     if (LEGACY_OUTPUT)
     {
         Log(LOG_LEVEL_VERBOSE, " ???????????????????????????????????????????????????????????????");
-        Log(LOG_LEVEL_VERBOSE, "   Reading package list from %s", CommandArg0(a.packages.package_list_command));
+        Log(LOG_LEVEL_VERBOSE, "   Reading package list from %s", a.packages.package_list_command);
         Log(LOG_LEVEL_VERBOSE, " ???????????????????????????????????????????????????????????????");
     }
     else
     {
-        Log(LOG_LEVEL_VERBOSE, "Reading package list from '%s'", CommandArg0(a.packages.package_list_command));
+        Log(LOG_LEVEL_VERBOSE, "Reading package list from '%s'", a.packages.package_list_command);
     }
 
     FILE *fin;
@@ -869,7 +869,7 @@ static PackageItem *GetCachedPackageList(EvalContext *ctx, PackageManager *manag
 
 /* Max 2016 entries - at least a week */
 
-    snprintf(thismanager, CF_MAXVARSIZE - 1, "%s", ReadLastNode(CommandArg0(manager->manager)));
+    snprintf(thismanager, CF_MAXVARSIZE - 1, "%s", ReadLastNode(RealPackageManager(manager->manager)));
 
     int linenumber = 0;
     for(;;)
@@ -887,7 +887,7 @@ static PackageItem *GetCachedPackageList(EvalContext *ctx, PackageManager *manag
             }
         }
         ++linenumber;
-        int scancount = sscanf(line, "%250[^,],%250[^,],%250[^,],%250[^\n]", name, version, arch, mgr);
+        int scancount = sscanf(line, "%250[^,],%250[^,],%250[^,],%250[^\r\n]", name, version, arch, mgr);
         if (scancount != 4)
         {
             Log(LOG_LEVEL_VERBOSE, "Could only read %d values from line %d in '%s'", scancount, linenumber, name);
