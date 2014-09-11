@@ -12,6 +12,12 @@
 %define libname %mklibname %{name}
 %define develname %mklibname -d %{name}
 
+%if %{mgaver} >= 3
+%define _with_systemd 1
+%else
+%define _with_systemd 0
+%endif
+
 Name:		%{name}
 Version:	%{version}
 Release:	%mkrel %git_get_rel2
@@ -176,13 +182,19 @@ rm -rf %{buildroot}
 # install -d -m 755 %{buildroot}%{_sysconfdir}/%{name}
 install -d -m 755 %{buildroot}%{_sysconfdir}/cron.daily
 install -d -m 755 %{buildroot}%{_sysconfdir}/sysconfig
-install -d -m 755 %{buildroot}%{_initrddir}
 install -d -m 755 %{buildroot}%{workdir}
 install -d -m 755 %{buildroot}%{workdir}/lib
 install -d -m 755 %{buildroot}%{workdir}/reports
+%if %{_with_systemd}
+install -d -m 755 %{buildroot}%{_unitdir}
+install -m 755 contrib/systemd/*.service %{buildroot}%{_unitdir}/
+sed -i 's|/var/cfengine/bin/|%{_sbindir}/|' %{buildroot}%{_unitdir}/cf-*.service
+%else
+install -d -m 755 %{buildroot}%{_initrddir}
 install -m 755 contrib/mandriva/cfservd.init %{buildroot}%{_initrddir}/cf-serverd
 install -m 755 contrib/mandriva/cfexecd.init %{buildroot}%{_initrddir}/cf-execd
 install -m 755 contrib/mandriva/cf-monitord.init %{buildroot}%{_initrddir}/cf-monitord
+%endif
 
 pushd %{buildroot}%{workdir}
 install -d -m 755 ./bin
@@ -245,8 +257,13 @@ rm -rf %{buildroot}
 %{_sbindir}/rpmvercmp
 %{workdir}/bin/rpmvercmp
 # TODO: write a manpage and make rpmvercmp a "cfprog"
+%if %{_with_systemd}
+%{_unitdir}/cf-serverd.service
+%{_unitdir}/cf-monitord.service
+%else
 %{_initrddir}/cf-serverd
 %{_initrddir}/cf-monitord
+%endif
 
 
 %files cfagent
@@ -254,7 +271,11 @@ rm -rf %{buildroot}
 %cfprog cf-agent
 %cfprog cf-monitord
 %cfprog cf-execd
+%if %{_with_systemd}
+%{_unitdir}/cf-execd.service
+%else
 %{_initrddir}/cf-execd
+%endif
 %dir %{workdir}/inputs
 %dir %{workdir}/outputs
 
