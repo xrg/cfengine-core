@@ -25,7 +25,7 @@ dnl The version in the next line is the only one to set
 dnl
 
 _AM_SET_OPTION([tar-ustar])
-AM_INIT_AUTOMAKE(cfengine, 3.6.2.revision)
+AM_INIT_AUTOMAKE(cfengine, 3.6.2rc)
 AM_MAINTAINER_MODE([enable])
 
 AC_DEFINE(BUILD_YEAR, esyscmd([date +%Y | tr -d '\n']), "Software build year")
@@ -700,6 +700,10 @@ AC_CHECK_FUNCS(fgetspent lckpwdf ulckpwdf)
 
 AC_CHECK_DECLS(getloadavg)
 AC_FUNC_GETLOADAVG
+
+AC_C_BIGENDIAN
+AC_CHECK_HEADERS([endian.h])
+AC_CHECK_DECLS(le32toh, [], [], [[#include <endian.h>]])
 
 CF3_PATH_ROOT_PROG([CHPASSWD], [chpasswd], [], [/sbin:/usr/sbin:/bin:/usr/bin:$PATH])
 AS_IF([test "x$CHPASSWD" != "x"],
