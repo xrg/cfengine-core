@@ -11,6 +11,8 @@
 body common control
 {
       bundlesequence => { "cfe_internal_update", "cfe_internal_call_update" };
+    cfengine_bootstrap_latest_protocol::
+      protocol_version => "latest";
 }
 
 ################################################################################
@@ -202,6 +204,8 @@ body copy_from u_scp(from)
       source      => "$(from)";
       compare     => "digest";
       trustkey    => "true";
+    cfengine_internal_encrypt_transfers::
+      encrypt => "true";
     !am_policy_hub::
       servers => { "$(sys.policy_hub)" };
 }
