@@ -465,6 +465,8 @@ Policy *LoadPolicy(EvalContext *ctx, GenericAgentConfig *config)
                 Log(LOG_LEVEL_VERBOSE, "Running full policy integrity checks");
                 PolicyCheckRunnable(ctx, policy, errors, config->ignore_missing_bundles);
             }
+
+            PolicyCheckFutures(ctx, policy, errors);
         }
 
         if (SeqLength(errors) > 0)
@@ -479,6 +481,10 @@ Policy *LoadPolicy(EvalContext *ctx, GenericAgentConfig *config)
         }
 
         SeqDestroy(errors);
+        /* After we have written the errors (which may reference the futures),
+           that sequence can be freed
+        */
+        SeqClear(policy->futures);
     }
 
     if (LogGetGlobalLevel() >= LOG_LEVEL_VERBOSE)

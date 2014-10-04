@@ -260,6 +260,7 @@ const ConstraintSyntax CFG_CONTROLBODY[COMMON_CONTROL_MAX + 1] =
     ConstraintSyntaxNewReal("bwlimit", CF_VALRANGE, "Limit outgoing protocol bandwidth in Bytes per second", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewBool("cache_system_functions", "Cache the result of system functions. Default value: true", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewOption("protocol_version", "0,undefined,1,classic,2,latest", "CFEngine protocol version to use when connecting to the server. Default: classic", SYNTAX_STATUS_NORMAL),
+    ConstraintSyntaxNewStringList("future_syntax", ".*\\..*", "Future syntax keywords to accept", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewNull()
 };
 
@@ -496,6 +497,9 @@ const PromiseTypeSyntax CF_COMMON_PROMISE_TYPES[] =
     PromiseTypeSyntaxNew("*", "*", CF_COMMON_BODIES, NULL, SYNTAX_STATUS_NORMAL),
     PromiseTypeSyntaxNewNull()
 };
+
+const PromiseTypeSyntax CF_FUTURE_PROMISE_TYPE =
+    PromiseTypeSyntaxNew("*", "*", CF_COMMON_BODIES, NULL, SYNTAX_STATUS_FUTURE);
 
 /*********************************************************/
 /* THIS IS WHERE TO ATTACH SYNTAX MODULES                */

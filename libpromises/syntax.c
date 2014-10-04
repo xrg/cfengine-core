@@ -179,7 +179,8 @@ const char *SyntaxStatusToString(SyntaxStatus status)
     {
         [SYNTAX_STATUS_DEPRECATED] = "deprecated",
         [SYNTAX_STATUS_NORMAL] = "normal",
-        [SYNTAX_STATUS_REMOVED] = "removed"
+        [SYNTAX_STATUS_REMOVED] = "removed",
+        [SYNTAX_STATUS_FUTURE] = "future",
     };
     return status_strings[status];
 }
