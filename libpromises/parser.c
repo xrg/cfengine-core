@@ -98,10 +98,7 @@ static void ParserStateReset(ParserState *p, bool discard)
     p->blocktype[0] = '\0';
     p->rval = RvalNew(NULL, RVAL_TYPE_NOPROMISEE);
 
-    if (p->future_syntax_elems)
-    {
-        StringSetClear(p->future_syntax_elems);
-    }
+    StringSetDestroy(p->future_syntax_elems);
     p->future_syntax_elems = StringSetNew();
 }
 
@@ -110,6 +107,7 @@ static void ParserStateClean(ParserState *p)
     free(p->current_namespace);
     p->current_namespace = NULL;
     StringSetDestroy(p->future_syntax_elems);
+    p->future_syntax_elems = NULL;
 }
 
 Policy *ParserParseFile(AgentType agent_type, const char *path, unsigned int warnings, unsigned int warnings_error)
