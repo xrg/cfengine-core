@@ -583,7 +583,7 @@ void TLSLogError(SSL *ssl, LogLevel level, const char *prepend, int retcode)
     }
 }
 
-static void assert_SSLIsBlocking(const SSL *ssl)
+static void assert_SSLIsBlocking(ARG_UNUSED const SSL *ssl)
 {
 #if !defined(NDEBUG) && !defined(__MINGW32__)
     int fd = SSL_get_fd(ssl);

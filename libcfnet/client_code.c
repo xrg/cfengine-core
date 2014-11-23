@@ -1276,7 +1276,7 @@ void MarkServerOffline(const char *server)
 
 /*********************************************************************/
 
-void CacheServerConnection(AgentConnection *conn, const char *server)
+void CacheServerConnection(AgentConnection *conn, ARG_UNUSED const char *server)
 /* First time we open a connection, so store it */
 {
     ServerItem *svp = xmalloc(sizeof(*svp));

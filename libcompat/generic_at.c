@@ -69,7 +69,7 @@ int generic_at_function(int dirfd, int (*func)(void *data), void (*cleanup)(void
     int cwd;
     int mutex_err;
     int saved_errno;
-    int fchdir_ret;
+    int fchdir_ret = 0;
 
     mutex_err = pthread_mutex_lock(&CHDIR_LOCK);
     if (mutex_err)
