@@ -299,7 +299,7 @@ static int EvalClassExpression(EvalContext *ctx, Constraint *cp, const Promise *
 
     enum {
         c_or = 0, c_and, c_xor
-    } logic;
+    } logic = c_and;
 
     if (strcmp(cp->lval, "or") == 0)
     {

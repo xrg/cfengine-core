@@ -816,7 +816,7 @@ static int Dialogue(int sd, const char *s)
 
     if ((f == '2') || (f == '3'))  /* return code 200 or 300 from smtp */
     {
-        Log(LOG_LEVEL_DEBUG, "RECVD(%d) -> '%s'", strlen(linebuf), linebuf);
+        Log(LOG_LEVEL_DEBUG, "RECVD(%d) -> '%s'", (int) strlen(linebuf), linebuf);
         return 1;
     }
     else
