@@ -1,6 +1,6 @@
 #######################################################
 #
-# Set a class if a process does exist, more complex matches
+# Set a class if a process does exist
 #
 #######################################################
 
@@ -23,35 +23,24 @@ bundle agent init
 
 bundle agent test
 {
-  meta:
-      "test_suppress_fail" string => "sunos_5_11",
-        meta => { "redmine6343" };
   processes:
-      ".*"
-      process_count => test_range,
-      process_select => test_select_high_users;
+      "\bcf-agent\b"
+      process_count => test_no_such;
 }
 
-body process_count test_range
+body process_count test_no_such
 {
       in_range_define => { "found" };
       out_of_range_define => { "not_found" };
-      match_range => irange(0,0);
+      match_range => irange(1,"inf");
 }
-
-body process_select test_select_high_users
-{
-      ttime_range => irange(0, accumulated(9,0,0,0,0,0));        # Anything
-      process_result => "ttime";                                # Everything
-}
-
 
 #######################################################
 
 bundle agent check
 {
   classes:
-      "ok" expression => "!found.not_found";
+      "ok" expression => "found.!not_found";
 
   reports:
     ok::

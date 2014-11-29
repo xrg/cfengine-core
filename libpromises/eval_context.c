@@ -785,33 +785,20 @@ static void StackFrameDestroy(StackFrame *frame)
 
 EvalContext *EvalContextNew(void)
 {
-    EvalContext *ctx = xmalloc(sizeof(EvalContext));
+    EvalContext *ctx = xcalloc(1, sizeof(EvalContext));
 
     ctx->eval_options = EVAL_OPTION_FULL;
-    ctx->bundle_aborted = false;
-    ctx->checksum_updates_default = false;
-    ctx->ip_addresses = NULL;
-    ctx->ignore_locks = false;
-
-    ctx->heap_abort = NULL;
-    ctx->heap_abort_current_bundle = NULL;
-
     ctx->stack = SeqNew(10, StackFrameDestroy);
-
     ctx->global_classes = ClassTableNew();
-
     ctx->global_variables = VariableTableNew();
     ctx->match_variables = VariableTableNew();
-
     ctx->dependency_handles = StringSetNew();
 
     ctx->uid = getuid();
     ctx->gid = getgid();
     ctx->pid = getpid();
 
-#ifdef __MINGW32__
-    ctx->ppid = 0;
-#else
+#ifndef __MINGW32__
     ctx->ppid = getppid();
 #endif
 
@@ -829,8 +816,6 @@ EvalContext *EvalContextNew(void)
 
         LoggingPrivSetContext(pctx);
     }
-
-    ctx->launch_directory = NULL;
 
     return ctx;
 }
@@ -1898,6 +1883,14 @@ VariableTableIterator *EvalContextVariableTableIteratorNew(const EvalContext *ct
 {
     VariableTable *table = scope ? GetVariableTableForScope(ctx, ns, scope) : ctx->global_variables;
     return table ? VariableTableIteratorNew(table, ns, scope, lval) : NULL;
+}
+
+
+VariableTableIterator *EvalContextVariableTableFromRefIteratorNew(const EvalContext *ctx, const VarRef *ref)
+{
+    assert(ref);
+    VariableTable *table = ref->scope ? GetVariableTableForScope(ctx, ref->ns, ref->scope) : ctx->global_variables;
+    return table ? VariableTableIteratorNewFromVarRef(table, ref) : NULL;
 }
 
 const void *EvalContextVariableControlCommonGet(const EvalContext *ctx, CommonControl lval)

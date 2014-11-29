@@ -1,6 +1,7 @@
 #######################################################
 #
-# Set a class if a process does exist
+# Conflation of multi-index entries in arrays
+# Redmine#6674: Conflation of multi-index entries in arrays
 #
 #######################################################
 
@@ -23,20 +24,12 @@ bundle agent init
 
 bundle agent test
 {
-  meta:
-      "test_suppress_fail" string => "sunos_5_11",
-        meta => { "redmine6340" };
-        
-  processes:
-      "\bcf-agent\b"
-      process_count => test_no_such;
-}
+  vars:
+    "file[22][0]" string => "something";
+    "file[2][20]" string => "anything";
 
-body process_count test_no_such
-{
-      in_range_define => { "found" };
-      out_of_range_define => { "not_found" };
-      match_range => irange(1,"inf");
+    "a[10]" string => "a";
+    "a1[0]" string => "b";
 }
 
 #######################################################
@@ -44,14 +37,16 @@ body process_count test_no_such
 bundle agent check
 {
   classes:
-      "ok" expression => "found.!not_found";
+      "fail_1" expression => strcmp("${test.file[22][0]}", "${test.file[2][20]}");
+      "fail_2" expression => strcmp("${test.a[10]}", "${test.a1[0]}");
+
+      "failure" or => { "fail_1", "fail_2" };
 
   reports:
-    ok::
-      "$(this.promise_filename) Pass";
-    !ok::
+    failure::
       "$(this.promise_filename) FAIL";
+    !failure::
+      "$(this.promise_filename) Pass";
+
 }
 
-### PROJECT_ID: core
-### CATEGORY_ID: 30

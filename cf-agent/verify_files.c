@@ -419,7 +419,7 @@ static PromiseResult VerifyFilePromise(EvalContext *ctx, char *path, const Promi
         else
         {
             /* unless child nodes were repaired, set a promise kept class */
-            if (!IsDefinedClass(ctx, "repaired"))
+            if (result == PROMISE_RESULT_NOOP)
             {
                 cfPS(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_NOOP, pp, a, "Basedir '%s' not promising anything", path);
             }
@@ -599,17 +599,25 @@ static PromiseResult RenderTemplateMustache(EvalContext *ctx, const Promise *pp,
         HashString(BufferData(output_buffer), BufferSize(output_buffer), rendered_output_digest, CF_DEFAULT_DIGEST);
         if (!HashesMatch(existing_output_digest, rendered_output_digest, CF_DEFAULT_DIGEST))
         {
-            if (SaveAsFile(SaveBufferCallback, output_buffer, edcontext->filename, a, edcontext->new_line_mode))
+            if (a.transaction.action == cfa_warn || DONTDO)
             {
-                cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_CHANGE, pp, a, "Updated rendering of '%s' from template mustache template '%s'",
-                     pp->promiser, a.edit_template);
-                result = PromiseResultUpdate(result, PROMISE_RESULT_CHANGE);
+                Log(LOG_LEVEL_WARNING, "Need to render '%s' from mustache template '%s' but policy is dry-run", pp->promiser, a.edit_template);
+                result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
             }
             else
             {
-                cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_FAIL, pp, a, "Updated rendering of '%s' from template mustache template '%s'",
-                     pp->promiser, a.edit_template);
-                result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
+                if (SaveAsFile(SaveBufferCallback, output_buffer, edcontext->filename, a, edcontext->new_line_mode))
+                {
+                    cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_CHANGE, pp, a, "Updated rendering of '%s' from template mustache template '%s'",
+                         pp->promiser, a.edit_template);
+                    result = PromiseResultUpdate(result, PROMISE_RESULT_CHANGE);
+                }
+                else
+                {
+                    cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_FAIL, pp, a, "Updated rendering of '%s' from template mustache template '%s'",
+                         pp->promiser, a.edit_template);
+                    result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
+                }
             }
         }
 

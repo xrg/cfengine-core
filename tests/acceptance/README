@@ -105,6 +105,12 @@ Tests which need network connectivity should be placed to 'network'
 subdirectories. Those tests may be disabled by passing --no-network option to
 'testall'.
 
+Tests which cannot be run in parallel with other tests should be put in a
+'serial' subdirectory. This is necessary if the test depends on for example
+a certain number of cf-agent processes running, or to open a network port that
+may be shared with other tests. Unsafe tests are always carried out serially,
+and do not need to be in a 'serial' subdirectory.
+
 NOTE: Since the class 'ok' is used in most tests, never create a persistent
 class called 'ok' in any test. Persistent classes are cleaned up between test
 runs, but better safe than sorry.
@@ -164,11 +170,18 @@ possible variable names:
       Skips a test because the test itself is not adapted to the
       platform (even if the functionality exists).
 
+  - test_soft_fail
   - test_suppress_fail
       Runs the test, but will accept failure. Use this when there is a
       real failure, but it is acceptable for the time being. This
       variable requires a meta tag on the the variable set to
       "redmine<number>", where <number> is a Redmine issue number.
+      There is a subtle difference between the two. Soft failures will
+      not be reported as a failure in the XML output, and is
+      appropriate for test cases that document incoming bug reports.
+      Suppressed failures will count as a failure, but it won't block
+      the build, and is appropriate for regressions or platform
+      differences.
 
 In all cases, the variable is expected to be set to a class expression
 suitable for ifvarclass, where a positive match means that the test

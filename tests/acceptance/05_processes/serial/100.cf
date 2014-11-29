@@ -1,6 +1,6 @@
 #######################################################
 #
-# Set a class if a process does exist
+# Set a class if a process does exist, partial name
 #
 #######################################################
 
@@ -23,12 +23,8 @@ bundle agent init
 
 bundle agent test
 {
-  meta:
-      "test_suppress_fail" string => "sunos_5_11",
-        meta => { "redmine6341" };
-        
   processes:
-      "\bcf-agent\b"
+      "-agent"
       process_count => test_no_such;
 }
 
