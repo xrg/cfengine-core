@@ -30,7 +30,7 @@ BuildRequires:	flex
 BuildRequires:	bison
 BuildRequires:  texinfo
 BuildRequires:	openssl-devel
-BuildRequires:	db4-devel
+BuildRequires:	db-devel
 %if %{_target_cpu} == i586 && %{mgaver} == 1
 BuildRequires: tokyocabinet-devel
 %else
