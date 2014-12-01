@@ -203,5 +203,5 @@ CLEANFILES = *.gcno *.gcda $(BUILT_SOURCES)
 #
 MOSTLYCLEANFILES = *~ *.orig *.rej
 
-bootstrap.inc:
+bootstrap.inc: failsafe.cf
 	perl ./text2cstring.pl failsafe.cf > bootstrap.inc
