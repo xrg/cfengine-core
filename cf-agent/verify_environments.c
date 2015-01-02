@@ -52,6 +52,7 @@ enum cfhypervisors
     cfv_virt_kvm,
     cfv_virt_esx,
     cfv_virt_vbox,
+    cfv_virt_lxc,
     cfv_virt_test,
     cfv_virt_xen_net,
     cfv_virt_kvm_net,
@@ -186,7 +187,7 @@ static int EnvironmentsSanityChecks(Attributes a, const Promise *pp)
             || a.env.addresses)
         {
             Log(LOG_LEVEL_ERR, "Network environment promises computational resources (%d,%d,%d,%s)", a.env.cpus,
-                  a.env.memory, a.env.disk, a.env.name);
+                a.env.memory, a.env.disk, a.env.name);
             PromiseRef(LOG_LEVEL_ERR, pp);
         }
         break;
@@ -223,6 +224,11 @@ static PromiseResult VerifyEnvironments(EvalContext *ctx, Attributes a, const Pr
         envtype = cfv_virt_esx;
         break;
 
+    case cfv_virt_lxc:
+        snprintf(hyper_uri, CF_MAXVARSIZE - 1, "lxc:///");
+        envtype = cfv_virt_lxc;
+        break;
+
     case cfv_virt_test:
     case cfv_virt_test_net:
         snprintf(hyper_uri, CF_MAXVARSIZE - 1, "test:///default");
@@ -256,12 +262,12 @@ static PromiseResult VerifyEnvironments(EvalContext *ctx, Attributes a, const Pr
         case ENVIRONMENT_STATE_RUNNING:
             Log(LOG_LEVEL_VERBOSE,
                 "This host ''%s' is not the promised host for the environment '%s', so setting its intended state to 'down'",
-                  VFQNAME, a.env.host);
+                VFQNAME, a.env.host);
             a.env.state = ENVIRONMENT_STATE_DOWN;
             break;
         default:
             Log(LOG_LEVEL_VERBOSE,
-                  "This is not the promised host for the environment, but it does not promise a run state, so take promise as valid");
+                "This is not the promised host for the environment, but it does not promise a run state, so take promise as valid");
         }
     }
     ClassRefDestroy(environment_host_ref);
@@ -276,6 +282,7 @@ static PromiseResult VerifyEnvironments(EvalContext *ctx, Attributes a, const Pr
     case cfv_virt_kvm:
     case cfv_virt_esx:
     case cfv_virt_vbox:
+    case cfv_virt_lxc:
     case cfv_virt_test:
         result = PromiseResultUpdate(result, VerifyVirtDomain(ctx, hyper_uri, envtype, a, pp));
         break;
@@ -469,7 +476,7 @@ static PromiseResult CreateVirtDom(EvalContext *ctx, virConnectPtr vc, Attribute
         if (strcmp(CF_SUSPENDED[i], pp->promiser) == 0)
         {
             Log(LOG_LEVEL_INFO, "Found an existing, but suspended, environment id = %s, called '%s'",
-                  CF_SUSPENDED[i], CF_SUSPENDED[i]);
+                CF_SUSPENDED[i], CF_SUSPENDED[i]);
         }
     }
 
@@ -503,8 +510,8 @@ static PromiseResult CreateVirtDom(EvalContext *ctx, virConnectPtr vc, Attribute
                 if (a.env.cpus > maxcpus)
                 {
                     Log(LOG_LEVEL_INFO,
-                          "The promise to allocate %d CPUs in domain '%s' cannot be kept - only %d exist on the host",
-                          a.env.cpus, pp->promiser, maxcpus);
+                        "The promise to allocate %d CPUs in domain '%s' cannot be kept - only %d exist on the host",
+                        a.env.cpus, pp->promiser, maxcpus);
                 }
                 else if (virDomainSetVcpus(dom, (unsigned int) a.env.cpus) == -1)
                 {
@@ -638,7 +645,7 @@ static PromiseResult RunningVirt(EvalContext *ctx, virConnectPtr vc, Attributes 
             cfPS(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_INTERRUPTED, pp, a, "Virtual domain '%s' is shutting down", pp->promiser);
             result = PromiseResultUpdate(result, PROMISE_RESULT_INTERRUPTED);
             Log(LOG_LEVEL_VERBOSE,
-                  "It is currently impossible to know whether it will reboot or not - deferring promise check until it has completed its shutdown");
+                "It is currently impossible to know whether it will reboot or not - deferring promise check until it has completed its shutdown");
             break;
 
         case VIR_DOMAIN_PAUSED:
@@ -688,7 +695,7 @@ static PromiseResult RunningVirt(EvalContext *ctx, virConnectPtr vc, Attributes 
 
         default:
             Log(LOG_LEVEL_VERBOSE, "Virtual domain '%s' is reported as having no state, whatever that means",
-                  pp->promiser);
+                pp->promiser);
             break;
         }
 
@@ -777,7 +784,7 @@ static PromiseResult SuspendedVirt(EvalContext *ctx, virConnectPtr vc, Attribute
             cfPS(ctx, LOG_LEVEL_VERBOSE, PROMISE_RESULT_INTERRUPTED, pp, a, "Virtual domain '%s' is shutting down", pp->promiser);
             result = PromiseResultUpdate(result, PROMISE_RESULT_INTERRUPTED);
             Log(LOG_LEVEL_VERBOSE,
-                  "It is currently impossible to know whether it will reboot or not - deferring promise check until it has completed its shutdown");
+                "It is currently impossible to know whether it will reboot or not - deferring promise check until it has completed its shutdown");
             break;
 
         case VIR_DOMAIN_PAUSED:
@@ -807,7 +814,7 @@ static PromiseResult SuspendedVirt(EvalContext *ctx, virConnectPtr vc, Attribute
 
         default:
             Log(LOG_LEVEL_VERBOSE, "Virtual domain '%s' is reported as having no state, whatever that means",
-                  pp->promiser);
+                pp->promiser);
             break;
         }
 
@@ -887,7 +894,7 @@ static PromiseResult DownVirt(EvalContext *ctx, virConnectPtr vc, Attributes a, 
 
         default:
             Log(LOG_LEVEL_VERBOSE, "Virtual domain '%s' is reported as having no state, whatever that means",
-                  pp->promiser);
+                pp->promiser);
             break;
         }
 
@@ -1045,9 +1052,9 @@ static void ShowDormant(void)
 
 static enum cfhypervisors Str2Hypervisors(char *s)
 {
-    static char *names[] = { "xen", "kvm", "esx", "vbox", "test",
-        "xen_net", "kvm_net", "esx_net", "test_net",
-        "zone", "ec2", "eucalyptus", NULL
+    static char *names[] = { "xen", "kvm", "esx", "vbox", "lxc", "test",
+                             "xen_net", "kvm_net", "esx_net", "test_net",
+                             "zone", "ec2", "eucalyptus", NULL
     };
     int i;
 
