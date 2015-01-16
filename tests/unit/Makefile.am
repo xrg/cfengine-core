@@ -143,6 +143,7 @@ check_PROGRAMS = \
 	string_expressions_test \
 	var_expressions_test \
 	process_terminate_unix_test \
+	process_test \
 	exec-config-test \
 	generic_agent_test \
 	syntax_test \
@@ -180,6 +181,15 @@ check_SCRIPTS = dynamic_dependency_test.sh
 EXTRA_DIST   += dynamic_dependency_test.sh
 
 TESTS = $(check_PROGRAMS) $(check_SCRIPTS)
+
+if AIX
+XFAIL_TESTS = evalfunction_test     # Redmine 6318
+XFAIL_TESTS += set_domainname_test  # Redmine 6317
+endif
+
+if HPUX
+XFAIL_TESTS = mon_load_test # Redmine #3569
+endif
 
 #
 # OS X uses real system calls instead of our stubs unless this option is used
@@ -317,6 +327,8 @@ connection_management_test_LDADD = ../../libpromises/libpromises.la libtest.la .
 rlist_test_SOURCES = rlist_test.c \
        ../../libpromises/rlist.c ../../libutils/logging.c
 rlist_test_LDADD = libtest.la libstr.la ../../libpromises/libpromises.la
+
+process_test_LDADD = libtest.la ../../libpromises/libpromises.la
 
 if LINUX
 
