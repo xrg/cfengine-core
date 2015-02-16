@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Tests that the symbols in our static libraries do not occur twice in the
 # output binaries. Most platforms don't warn about this, but it has potential
@@ -29,7 +29,33 @@
 # the static libraries are undefined in the binaries, which means that they
 # will link to the shared library version, instead of using their own version.
 
+#
+# Detect and replace non-POSIX shell
+#
+try_exec() {
+  type "$1" > /dev/null 2>&1 && exec "$@"
+}
+
+unset foo
+(: ${foo%%bar}) 2> /dev/null
+T1="$?"
+
+if test "$T1" != 0; then
+  try_exec /usr/xpg4/bin/sh "$0" "$@"
+  echo "No compatible shell script interpreter found."
+  echo "Please find a POSIX shell for your system."
+  exit 42
+fi
+
+
 cd ../..
+
+# Sanity check that nm works.
+if ! which nm | grep '^/' >/dev/null; then
+    echo "Could not find nm"
+    exit 2
+fi
+
 #                libutils.a         libenv.a         libcfnet.a
 #                    v                 v                 v
 for symbol in LogSetGlobalLevel GetInterfacesInfo ConnectionInfoNew; do
