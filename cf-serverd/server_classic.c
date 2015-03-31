@@ -1152,7 +1152,10 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
     {
     case PROTOCOL_COMMAND_EXEC:
         memset(args, 0, CF_BUFSIZE);
-        sscanf(recvbuffer, "EXEC %255[^\n]", args);
+        if (sscanf(recvbuffer, "EXEC %255[^\n]", args) != 1)
+        {
+            goto protocol_error;
+        }
 
         if (!AllowedUser(conn->username))
         {
@@ -1188,7 +1191,10 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
 
     case PROTOCOL_COMMAND_GET:
         memset(filename, 0, CF_BUFSIZE);
-        sscanf(recvbuffer, "GET %d %[^\n]", &(get_args.buf_size), filename);
+        if (sscanf(recvbuffer, "GET %d %[^\n]", &(get_args.buf_size), filename) != 2)
+        {
+            goto protocol_error;
+        }
 
         if ((get_args.buf_size < 0) || (get_args.buf_size > CF_BUFSIZE))
         {
@@ -1222,7 +1228,10 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
 
     case PROTOCOL_COMMAND_GET_SECURE:
         memset(buffer, 0, CF_BUFSIZE);
-        sscanf(recvbuffer, "SGET %u %d", &len, &(get_args.buf_size));
+        if (sscanf(recvbuffer, "SGET %u %d", &len, &(get_args.buf_size)) != 2)
+        {
+            goto protocol_error;
+        }
 
         if (received != len + CF_PROTO_OFFSET)
         {
@@ -1276,7 +1285,10 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
 
     case PROTOCOL_COMMAND_OPENDIR_SECURE:
         memset(buffer, 0, CF_BUFSIZE);
-        sscanf(recvbuffer, "SOPENDIR %u", &len);
+        if (sscanf(recvbuffer, "SOPENDIR %u", &len) != 1)
+        {
+            goto protocol_error;
+        }
 
         if ((len >= sizeof(out)) || (received != (len + CF_PROTO_OFFSET)))
         {
@@ -1311,7 +1323,10 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
 
     case PROTOCOL_COMMAND_OPENDIR:
         memset(filename, 0, CF_BUFSIZE);
-        sscanf(recvbuffer, "OPENDIR %[^\n]", filename);
+        if (sscanf(recvbuffer, "OPENDIR %[^\n]", filename) != 1)
+        {
+            goto protocol_error;
+        }
 
         if (!AccessControl(ctx, filename, conn, true))        /* opendir don't care about privacy */
         {
@@ -1325,7 +1340,10 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
 
     case PROTOCOL_COMMAND_SYNC_SECURE:
         memset(buffer, 0, CF_BUFSIZE);
-        sscanf(recvbuffer, "SSYNCH %u", &len);
+        if (sscanf(recvbuffer, "SSYNCH %u", &len) != 1)
+        {
+            goto protocol_error;
+        }
 
         if ((len >= sizeof(out)) || (received != (len + CF_PROTO_OFFSET)))
         {
@@ -1355,7 +1373,10 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
 
     case PROTOCOL_COMMAND_SYNC:
         memset(filename, 0, CF_BUFSIZE);
-        sscanf(recvbuffer, "SYNCH %ld STAT %[^\n]", &time_no_see, filename);
+        if (sscanf(recvbuffer, "SYNCH %ld STAT %[^\n]", &time_no_see, filename) != 2)
+        {
+            goto protocol_error;
+        }
 
         trem = (time_t) time_no_see;
 
@@ -1397,7 +1418,10 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         return true;
 
     case PROTOCOL_COMMAND_MD5_SECURE:
-        sscanf(recvbuffer, "SMD5 %u", &len);
+        if (sscanf(recvbuffer, "SMD5 %u", &len) != 1)
+        {
+            goto protocol_error;
+        }
 
         if ((len >= sizeof(out)) || (received != (len + CF_PROTO_OFFSET)))
         {
@@ -1422,7 +1446,10 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
     case PROTOCOL_COMMAND_MD5:
 
         memset(filename, 0, sizeof(filename));
-        sscanf(recvbuffer, "MD5 %[^\n]", filename);
+        if (sscanf(recvbuffer, "MD5 %[^\n]", filename) != 1)
+        {
+            goto protocol_error;
+        }
 
         if (!AccessControl(ctx, filename, conn, encrypted))
         {
@@ -1445,7 +1472,10 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         return true;
 
     case PROTOCOL_COMMAND_VAR_SECURE:
-        sscanf(recvbuffer, "SVAR %u", &len);
+        if (sscanf(recvbuffer, "SVAR %u", &len) != 1)
+        {
+            goto protocol_error;
+        }
 
         if ((len >= sizeof(out)) || (received != (len + CF_PROTO_OFFSET)))
         {
@@ -1479,7 +1509,10 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         return true;
 
     case PROTOCOL_COMMAND_CONTEXT_SECURE:
-        sscanf(recvbuffer, "SCONTEXT %u", &len);
+        if (sscanf(recvbuffer, "SCONTEXT %u", &len) != 1)
+        {
+            goto protocol_error;
+        }
 
         if ((len >= sizeof(out)) || (received != (len + CF_PROTO_OFFSET)))
         {
@@ -1513,7 +1546,10 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         return true;
 
     case PROTOCOL_COMMAND_QUERY_SECURE:
-        sscanf(recvbuffer, "SQUERY %u", &len);
+        if (sscanf(recvbuffer, "SQUERY %u", &len) != 1)
+        {
+            goto protocol_error;
+        }
 
         if ((len >= sizeof(out)) || (received != (len + CF_PROTO_OFFSET)))
         {
@@ -1547,7 +1583,10 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
         break;
 
     case PROTOCOL_COMMAND_CALL_ME_BACK:
-        sscanf(recvbuffer, "SCALLBACK %u", &len);
+        if (sscanf(recvbuffer, "SCALLBACK %u", &len) != 1)
+        {
+            goto protocol_error;
+        }
 
         if ((len >= sizeof(out)) || (received != (len + CF_PROTO_OFFSET)))
         {
@@ -1587,5 +1626,12 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
     strcpy(sendbuffer, "BAD: Request denied");
     SendTransaction(conn->conn_info, sendbuffer, 0, CF_DONE);
     Log(LOG_LEVEL_INFO, "Closing connection due to request: %s", recvbuffer);
+    return false;
+
+protocol_error:
+    Log(LOG_LEVEL_ERR, "Command protocol error at %.20s:", recvbuffer);
+    strcpy(sendbuffer, "BAD: Protocol error");
+    SendTransaction(conn->conn_info, sendbuffer, 0, CF_DONE);
+    Terminate(conn->conn_info);
     return false;
 }
