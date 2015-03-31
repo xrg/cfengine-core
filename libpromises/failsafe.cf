@@ -80,6 +80,7 @@ bundle agent cfe_internal_update
       handle => "cfe_internal_bootstrap_update_files_sys_workdir_inputs_not_windows",
       copy_from => u_scp("$(sys.masterdir)"),
       depth_search => u_recurse("inf"),
+      move_obstructions => "true",
       classes => repaired("got_policy");
 
     windows.have_ppkeys::
