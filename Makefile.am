@@ -32,25 +32,16 @@ SUBDIRS = libcompat libutils libcfnet libenv libpromises \
 	cf-promises cf-runagent cf-serverd cf-upgrade ext examples \
 	tests
 
-# Hack around redmine #6925 issue with make dist.
-TAR_OPTIONS = --hard-dereference --owner=0 --group=0
+
+# Hide the buildsystem's username, at least with GNU tar.
+TAR_OPTIONS = --owner=0 --group=0
 export TAR_OPTIONS
 
-DIST_SUBDIRS = libcompat libutils libcfnet libenv libpromises cf-agent cf-execd	\
-	cf-key cf-monitord cf-promises cf-runagent cf-serverd cf-upgrade ext	        \
-	examples tests
-
-# Set explicitly to avoid picking up {nova}/*.m4
-
-DIST_COMMON = README.md Makefile.am Makefile.in configure AUTHORS aclocal.m4 \
-	ChangeLog INSTALL config.guess config.sub depcomp install-sh \
-	ltmain.sh missing ylwrap m4/acinclude.m4 m4/libtool.m4 m4/ltoptions.m4 \
-	m4/ltsugar.m4 m4/ltversion.m4 m4/lt~obsolete.m4 m4/cf3_with_library.m4 \
-	m4/snprintf.m4 m4/old-autoconf.m4 m4/adl_recursive_eval.m4 m4/strndup.m4 \
-	m4/cf3_check_proper_func.m4 m4/cf3_platforms.m4 m4/cf3_gcc_flags.m4 \
-	m4/cf3_path_root_prog.m4 configure.ac autogen.sh configure_flags.env.in
 
 EXTRA_DIST = ChangeLog INSTALL README.md LICENSE
+
+# Include all initscripts / systemd unit files
+EXTRA_DIST += misc
 
 docsdir = $(docdir)
 docs_DATA = README.md ChangeLog
