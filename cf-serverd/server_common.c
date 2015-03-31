@@ -679,8 +679,6 @@ void CfGetFile(ServerFileGetState *args)
 
     TranslatePath(filename, args->replyfile);
 
-    stat(filename, &sb);
-
     Log(LOG_LEVEL_DEBUG, "CfGetFile('%s'), size = %jd",
         filename, (intmax_t) sb.st_size);
 
@@ -702,8 +700,16 @@ void CfGetFile(ServerFileGetState *args)
     }
 
 /* File transfer */
+    if (stat(filename, &sb))
+    {
+        fd = -1;
+    }
+    else
+    {
+        fd = safe_open(filename, O_RDONLY);
+    }
 
-    if ((fd = safe_open(filename, O_RDONLY)) == -1)
+    if (fd == -1)
     {
         Log(LOG_LEVEL_ERR, "Open error of file '%s'. (open: %s)",
             filename, GetErrorStr());
@@ -838,8 +844,6 @@ void CfEncryptGetFile(ServerFileGetState *args)
 
     TranslatePath(filename, args->replyfile);
 
-    stat(filename, &sb);
-
     Log(LOG_LEVEL_DEBUG, "CfEncryptGetFile('%s'), size = %jd",
         filename, (intmax_t) sb.st_size);
 
@@ -853,7 +857,16 @@ void CfEncryptGetFile(ServerFileGetState *args)
 
     EVP_CIPHER_CTX_init(&ctx);
 
-    if ((fd = safe_open(filename, O_RDONLY)) == -1)
+    if (stat(filename, &sb))
+    {
+        fd = -1;
+    }
+    else
+    {
+        fd = safe_open(filename, O_RDONLY);
+    }
+
+    if (fd == -1)
     {
         Log(LOG_LEVEL_ERR, "Open error of file '%s'. (open: %s)", filename, GetErrorStr());
         FailedTransfer(conn_info);
