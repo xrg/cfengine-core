@@ -1125,7 +1125,7 @@ int StatFile(ServerConnectionState *conn, char *sendbuffer, char *ofilename)
     if (cfst.cf_readlink != NULL)
     {
         strcpy(sendbuffer, "OK:");
-        strcat(sendbuffer, cfst.cf_readlink);
+        strncat(sendbuffer, cfst.cf_readlink, CF_BUFSIZE-4);
     }
     else
     {
