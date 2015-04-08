@@ -80,6 +80,7 @@
             "      handle => \"cfe_internal_bootstrap_update_files_sys_workdir_inputs_not_windows\",\n"
             "      copy_from => u_scp(\"$(sys.masterdir)\"),\n"
             "      depth_search => u_recurse(\"inf\"),\n"
+            "      move_obstructions => \"true\",\n"
             "      classes => repaired(\"got_policy\");\n"
             "\n"
             "    windows.have_ppkeys::\n"
