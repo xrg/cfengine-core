@@ -271,6 +271,7 @@ rm -rf %{buildroot}
 %cfprog cf-agent
 %cfprog cf-monitord
 %cfprog cf-execd
+%cfprog cf-runagent
 %if %{_with_systemd}
 %{_unitdir}/cf-execd.service
 %else
@@ -286,7 +287,6 @@ rm -rf %{buildroot}
 
 %files cfserver
 %defattr(-,root,root)
-%cfprog cf-runagent
 %dir %{workdir}/masterfiles
 %dir %{workdir}/reports
 
