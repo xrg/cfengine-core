@@ -252,8 +252,7 @@ bool acl_CheckPath(const struct acl *acl, const char *reqpath,
                                 key,      "$(connection.key)");
 
     /* If there were special variables replaced */
-    if (mangled_path_len != 0 &&
-        mangled_path_len != (size_t) -1) /* Overflow, TODO handle separately. */
+    if (!access && (mangled_path_len > 0)) /* Overflow, TODO handle separately. */
     {
         size_t pos2 = StrList_SearchLongestPrefix(acl->resource_names,
                                                   mangled_path, mangled_path_len,
@@ -277,6 +276,21 @@ bool acl_CheckPath(const struct acl *acl, const char *reqpath,
                 mangled_path, acl->resource_names->list[pos2]->str,
                 ret == true ? "true" : "false");
         }
+    }
+    else if (!access && (mangled_path_len == 0) && (pos != (size_t) -1))
+    {
+        /* pos did match from CHECK 1, but no ACL rule matched
+         */
+        const struct resource_acl *racl = &acl->acls[pos];
+        bool ret = access_CheckResource(racl, ipaddr, hostname, "$(connection.key)");
+        if (ret == true)
+        {
+            access = true;
+        }
+        Log(LOG_LEVEL_DEBUG,
+            "acl_CheckPath: '%s' found in ACL entry '%s', admit=%s",
+            reqpath, acl->resource_names->list[pos]->str,
+            ret == true ? "true" : "false");
     }
 
     return access;
