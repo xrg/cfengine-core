@@ -44,7 +44,7 @@ AC_CHECK_PROG(MAKEINFO, makeinfo, makeinfo)
 define([revision], m4_esyscmd_s([git rev-list -1 --abbrev-commit HEAD]))
 
 _AM_SET_OPTION([tar-ustar])
-AM_INIT_AUTOMAKE(cfengine, 3.6.6.revision)
+AM_INIT_AUTOMAKE(cfengine, 3.6.6)
 AM_MAINTAINER_MODE([enable])
 
 AC_DEFINE(BUILD_YEAR, esyscmd([date +%Y | tr -d '\n']), "Software build year")
@@ -578,6 +578,8 @@ AC_CHECK_HEADERS(sys/jail.h, [], [], [AC_INCLUDES_DEFAULT
 # include <sys/param.h>
 #endif
 ])
+AC_CHECK_HEADERS(net/route.h netinet/in.h netinet/ip.h)
+
 
 AC_HEADER_STDC
 AC_HEADER_TIME
@@ -710,6 +712,10 @@ AC_REPLACE_FUNCS(gmtime_r)
 AC_CHECK_DECLS(getline, [], [], [#define _GNU_SOURCE 1
 AC_INCLUDES_DEFAULT])
 AC_REPLACE_FUNCS(getline)
+
+AC_CHECK_DECLS(strchrnul, [], [], [#define _GNU_SOURCE 1
+AC_INCLUDES_DEFAULT])
+AC_REPLACE_FUNCS(strchrnul)
 
 AC_CHECK_DECLS(localtime_r, [], [], [[#include <time.h>]])
 AC_REPLACE_FUNCS(localtime_r)

@@ -370,13 +370,21 @@ union mpinfou
 #endif
 
 #ifdef __linux__
-# if defined(__GLIBC__) || defined(__BIONIC__)
+# ifdef HAVE_NET_ROUTE_H
 #  include <net/route.h>
-#  include <netinet/in.h>
-#  include <netinet/ip.h>
 # else
 #  include <linux/route.h>
+# endif
+
+# ifdef HAVE_NETINET_IN_H
+#  include <netinet/in.h>
+# else
 #  include <linux/in.h>
+# endif
+
+# ifdef HAVE_NETINET_IP_H
+#  include <netinet/ip.h>
+# else
 #  include <linux/ip.h>
 # endif
 #endif
@@ -612,6 +620,9 @@ int rpl_asprintf(char **, const char *, ...);
 
 #if !HAVE_DECL_GETLINE
 ssize_t getline(char **lineptr, size_t *n, FILE *stream);
+#endif
+#if !HAVE_DECL_STRCHRNUL
+char *strchrnul(const char *s, int c);
 #endif
 #if !HAVE_DECL_GMTIME_R
 struct tm *gmtime_r(const time_t *timep, struct tm *result);
@@ -878,11 +889,6 @@ struct timespec
 # define S_IROTH 00004
 # define S_IWOTH 00002
 # define S_IXOTH 00001
-#endif
-
-/* Too bad we don't have FD_CLOEXEC -- but we can fake it */
-#ifndef FD_CLOEXEC
-# define FD_CLOEXEC 0
 #endif
 
 /* kill(2) on OS X returns ETIMEDOUT instead of ESRCH */
