@@ -220,7 +220,8 @@ EOF
 # bootstrap? Not yet, since our "failsafe.cf" is too generic
 
 %post cfagent
-%_post_service cf-execd
+#_post_service cf-execd    Do NOT restart cf-execd, because this may be the
+#                          parent process of this rpm upgrade command
 %_post_service cf-serverd
 # We are not going to start cf-monitord, because this can be done inside
 # some cf-execd->cf-agent check.
