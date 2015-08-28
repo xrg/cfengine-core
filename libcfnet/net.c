@@ -132,6 +132,9 @@ int ReceiveTransaction(const ConnectionInfo *conn_info, char *buffer, int *more,
         return -1;
     }
 
+    /* reset buffer */
+    buffer[0] = '\0';
+
     /* Get control channel. */
     switch(ConnectionInfoProtocolVersion(conn_info))
     {
@@ -158,7 +161,7 @@ int ReceiveTransaction(const ConnectionInfo *conn_info, char *buffer, int *more,
             "ReceiveTransaction: Bad packet -- bogus header: %s", proto);
         return -1;
     }
-    if (len > CF_BUFSIZE - CF_INBAND_OFFSET)
+    if (len > bufsize)
     {
         Log(LOG_LEVEL_ERR,
             "ReceiveTransaction: Bad packet -- too long (len=%d)", len);

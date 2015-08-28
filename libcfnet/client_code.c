@@ -420,7 +420,7 @@ int cf_remote_stat(const char *file, struct stat *buf, const char *stattype, boo
         return -1;
     }
 
-    if (ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1) == -1)
+    if (ReceiveTransaction(conn->conn_info, recvbuffer, NULL, -1) < 1)
     {
         /* TODO mark connection in the cache as closed. */
         return -1;
