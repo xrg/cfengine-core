@@ -679,6 +679,16 @@ void CfGetFile(ServerFileGetState *args)
 
     TranslatePath(filename, args->replyfile);
 
+    /* File transfer */
+    if (stat(filename, &sb))
+    {
+        fd = -1;
+    }
+    else
+    {
+       fd = 0;
+    }
+
     Log(LOG_LEVEL_DEBUG, "CfGetFile('%s'), size = %jd",
         filename, (intmax_t) sb.st_size);
 
@@ -699,12 +709,7 @@ void CfGetFile(ServerFileGetState *args)
         return;
     }
 
-/* File transfer */
-    if (stat(filename, &sb))
-    {
-        fd = -1;
-    }
-    else
+    if (fd == 0)
     {
         fd = safe_open(filename, O_RDONLY);
     }
@@ -844,24 +849,33 @@ void CfEncryptGetFile(ServerFileGetState *args)
 
     TranslatePath(filename, args->replyfile);
 
-    Log(LOG_LEVEL_DEBUG, "CfEncryptGetFile('%s'), size = %jd",
-        filename, (intmax_t) sb.st_size);
-
-/* Now check to see if we have remote permission */
-
-    if (!TransferRights(args->conn, filename, &sb))
-    {
-        RefuseAccess(args->conn, args->replyfile);
-        FailedTransfer(conn_info);
-    }
-
-    EVP_CIPHER_CTX_init(&ctx);
-
     if (stat(filename, &sb))
     {
         fd = -1;
     }
     else
+    {
+        fd = 0;
+    }
+
+    Log(LOG_LEVEL_DEBUG, "CfEncryptGetFile('%s'), size = %jd",
+        filename, (intmax_t) sb.st_size);
+
+    /* Now check to see if we have remote permission 
+     * Note: check is made even if stat() has failed, permission refusal
+     * will prevail over file existence.
+     */
+
+    if (!TransferRights(args->conn, filename, &sb))
+    {
+        RefuseAccess(args->conn, args->replyfile);
+        FailedTransfer(conn_info);
+        return;
+    }
+
+    EVP_CIPHER_CTX_init(&ctx);
+
+    if (fd == 0)
     {
         fd = safe_open(filename, O_RDONLY);
     }
