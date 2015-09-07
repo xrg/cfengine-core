@@ -284,7 +284,7 @@ void EnforceBwLimit(int tosend)
             bwlimit_next.tv_nsec -= u_10e9;
         }
 
-        if (bwlimit_next.tv_sec > 20)
+        if (clock_now.tv_sec > 20)
         {
             /* Upper limit of 20sec for penalty. This will avoid huge wait if
              * our clock has jumped >minutes back in time. Still, assuming that
@@ -295,7 +295,7 @@ void EnforceBwLimit(int tosend)
              * multiplied by num of clients, eg. 102.4kBytes/sec for 1000 reqs.
              * simultaneously.
              */
-            bwlimit_next.tv_sec = 20;
+            clock_now.tv_sec = 20;
         }
         pthread_mutex_unlock(&bwlimit_lock);
     }
