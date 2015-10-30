@@ -40,6 +40,7 @@ typedef struct
     char *mail_to_address;
     char *mail_subject;
     int mail_max_lines;
+    unsigned int mail_port;
 
     /*
      * Host information.

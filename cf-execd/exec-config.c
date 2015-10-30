@@ -61,6 +61,7 @@ ExecConfig *ExecConfigNew(bool scheduled_run, const EvalContext *ctx, const Poli
     exec_config->agent_expireafter = THREE_HOURS;
 
     exec_config->mail_server = xstrdup("");
+    exec_config->mail_port = 0;
     exec_config->mail_from_address = xstrdup("");
     exec_config->mail_to_address = xstrdup("");
     exec_config->mail_subject = xstrdup("");
@@ -117,8 +118,47 @@ ExecConfig *ExecConfigNew(bool scheduled_run, const EvalContext *ctx, const Poli
             else if (strcmp(cp->lval, CFEX_CONTROLBODY[EXEC_CONTROL_SMTPSERVER].lval) == 0)
             {
                 free(exec_config->mail_server);
+                char *c;
                 exec_config->mail_server = xstrdup(value);
-                Log(LOG_LEVEL_DEBUG, "smtpserver '%s'", exec_config->mail_server);
+                c = strrchr(exec_config->mail_server, ':');
+                if (c)
+                {
+                    /* Check that only numerical digits exist after last ':'
+                     * in mail_server.
+                     * This will allow "some.host:25", "[::1]:25"
+                     * but block "[::1]", "bad:host"
+                     */
+                    for(const char *ci=c+1; *ci; ci++)
+                       if (!isdigit(*ci))
+                       {
+                           c = NULL;
+                           break;
+                       }
+                }
+                if (c && *c)
+                {
+                    *(c++) = '\0'; /* terminate *copied* mail_server at colon, advance ptr */
+                    exec_config->mail_port = atoi(c);
+                    if ((exec_config->mail_port == 0) || (exec_config->mail_port >= 65535))
+                    {
+                        Log(LOG_LEVEL_ERR, "smtpserver invalid port: %s specified", c);
+                        exec_config->mail_port = 0;
+                    }
+                }
+                if (!exec_config->mail_port)
+                {  /* Obtain port from system services */
+                    struct servent *server = getservbyname("smtp", "tcp");
+                    if (server)
+                    {
+                        exec_config->mail_port = ntohs(server->s_port);
+                    }
+                    else
+                    {
+                        Log(LOG_LEVEL_ERR, "Unable to lookup smtp service. (getservbyname: %s)", GetErrorStr());
+                    }
+                }
+
+                Log(LOG_LEVEL_DEBUG, "smtpserver '%s':%d", exec_config->mail_server, exec_config->mail_port);
             }
             else if (strcmp(cp->lval, CFEX_CONTROLBODY[EXEC_CONTROL_EXECCOMMAND].lval) == 0)
             {
@@ -150,6 +190,7 @@ ExecConfig *ExecConfigCopy(const ExecConfig *config)
     copy->exec_command = xstrdup(config->exec_command);
     copy->agent_expireafter = config->agent_expireafter;
     copy->mail_server = xstrdup(config->mail_server);
+    copy->mail_port = config->mail_port;
     copy->mail_from_address = xstrdup(config->mail_from_address);
     copy->mail_to_address = xstrdup(config->mail_to_address);
     copy->mail_subject = xstrdup(config->mail_subject);

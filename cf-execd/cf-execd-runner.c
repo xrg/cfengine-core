@@ -509,7 +509,8 @@ static void MailResult(const ExecConfig *config, const char *file)
         }
     }
 
-    if ((strlen(config->mail_server) == 0) || (strlen(config->mail_to_address) == 0))
+    if ((strlen(config->mail_server) == 0) || (strlen(config->mail_to_address) == 0)
+        || (!config->mail_port) )
     {
         /* Syslog should have done this */
         Log(LOG_LEVEL_VERBOSE, "Empty mail server or address - skipping");
@@ -568,18 +569,10 @@ static void MailResult(const ExecConfig *config, const char *file)
         return;
     }
 
-    struct servent *server = getservbyname("smtp", "tcp");
-    if (!server)
-    {
-        Log(LOG_LEVEL_ERR, "Unable to lookup smtp service. (getservbyname: %s)", GetErrorStr());
-        fclose(fp);
-        return;
-    }
-
     struct sockaddr_in raddr;
     memset(&raddr, 0, sizeof(raddr));
 
-    raddr.sin_port = (unsigned int) server->s_port;
+    raddr.sin_port = (unsigned int) htons(config->mail_port);
     raddr.sin_addr.s_addr = ((struct in_addr *) (hp->h_addr))->s_addr;
     raddr.sin_family = AF_INET;
 
