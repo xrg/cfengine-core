@@ -4,7 +4,7 @@ After=syslog.target
 
 [Service]
 Type=forking
-ExecStart=/var/cfengine/bin/cf-serverd
+ExecStart=/var/cfengine/bin/cf-serverd -I
 
 [Install]
 WantedBy=multi-user.target
