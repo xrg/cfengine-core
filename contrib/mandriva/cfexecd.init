@@ -28,6 +28,10 @@ LOCKFILE=/var/lock/subsys/$NAME
 # load service configuration
 [ -f /etc/sysconfig/cfengine ] && . /etc/sysconfig/cfengine
 
+if [ -z "$HOME" ] || [ "$HOME" == "/" ] ; then
+        export HOME=/root
+fi
+
 start() {
     # Check if it is already running
     if [ ! -f $LOCKFILE ]; then
