@@ -178,6 +178,12 @@ int TLSClientIdentificationDialog(ConnectionInfo *conn_info,
     /* Receive CFE_v%d ... That's the first thing the server sends. */
     ret = TLSRecvLines(conn_info->ssl, line, sizeof(line));
 
+    if (ret == -1)
+    {
+        Log(LOG_LEVEL_ERR, "Connection failed before TLS identification");
+        return -1;
+    }
+
     ProtocolVersion wanted_version;
     if (conn_info->type == CF_PROTOCOL_UNDEFINED)
     {
