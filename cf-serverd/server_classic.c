@@ -1328,7 +1328,7 @@ int BusyWithClassicConnection(EvalContext *ctx, ServerConnectionState *conn)
             goto protocol_error;
         }
 
-        if (!AccessControl(ctx, filename, conn, true))        /* opendir don't care about privacy */
+        if (!AccessControl(ctx, filename, conn, false))        /* opendir don't care about privacy */
         {
             Log(LOG_LEVEL_INFO, "DIR access error");
             RefuseAccess(conn, recvbuffer);
