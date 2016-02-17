@@ -260,10 +260,8 @@ rm -rf %{buildroot}
 # TODO: write a manpage and make rpmvercmp a "cfprog"
 %if %{_with_systemd}
 %{_unitdir}/cf-serverd.service
-%{_unitdir}/cf-monitord.service
 %else
 %{_initrddir}/cf-serverd
-%{_initrddir}/cf-monitord
 %endif
 
 
@@ -275,8 +273,10 @@ rm -rf %{buildroot}
 %cfprog cf-runagent
 %if %{_with_systemd}
 %{_unitdir}/cf-execd.service
+%attr(0644,root,root)    %{_unitdir}/cf-monitord.service
 %else
 %{_initrddir}/cf-execd
+%{_initrddir}/cf-monitord
 %endif
 %dir %{workdir}/inputs
 %dir %{workdir}/outputs
