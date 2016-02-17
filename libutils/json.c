@@ -1544,6 +1544,8 @@ static JsonParseError JsonParseAsString(const char **data, char **str_out)
     }
 
     Writer *writer = StringWriter();
+    uint32_t wc;
+    int i;
 
     for (*data = *data + 1; **data != '\0'; *data = *data + 1)
     {
@@ -1577,6 +1579,37 @@ static JsonParseError JsonParseAsString(const char **data, char **str_out)
             case 't':
                 WriterWriteChar(writer, '\t');
                 continue;
+
+            case 'u':
+                /* see: https://www.ietf.org/rfc/rfc4627.txt */
+                wc = 0;
+                (*data) ++;
+                for (i=0;i<4;i++)
+                {
+                    wc <<= 4;
+                    if (((*data)[i] >= '0') && ( (*data)[i] <='9'))
+                        wc |= ((*data)[i] - '0');
+                    else if (((*data)[i] >= 'a') && ( (*data)[i] <='f'))
+                        wc |= ((*data)[i] - 87);
+                    else if (((*data)[i] >= 'A') && ( (*data)[i] <='F'))
+                        wc |= ((*data)[i] - 55);
+                    else
+                    {
+                        wc = 0;
+                        break;
+                    }
+                }
+                if (i == 4)
+                {
+                    if (WriterWriteUnicode(writer, wc) != (size_t) -1 )
+                    {
+                        (*data) += i-1;
+                        continue;
+                    }
+                    /* negative result denotes illegal unicode char */
+                }
+                Log(LOG_LEVEL_VERBOSE,"Bad unicode: 0x%lx %.6s", (long) wc, *data-1);
+                (*data)--; /* reset pos to 'u...' and fallback to default: */
 
             default:
                 /* Unrecognised escape sequence.

@@ -26,6 +26,7 @@
 
 #include <misc_lib.h>
 #include <alloc.h>
+#include <wchar.h>
 
 typedef enum
 {
@@ -48,6 +49,7 @@ struct Writer_
         StringWriterImpl string;
         FILE *file;
     };
+    mbstate_t ps;
 };
 
 /*********************************************************************/
@@ -200,6 +202,27 @@ size_t WriterWriteChar(Writer *writer, char c)
         char s[2] = { c, '\0' };
         return FileWriterWriteLen(writer, s, 1);
     }
+}
+
+size_t WriterWriteUnicode(Writer *writer, uint32_t wc) {
+    char s[MB_LEN_MAX+1] = {0};
+    size_t r;
+
+    r = wcrtomb(s,(wchar_t) wc, &writer->ps);
+    if (r != (size_t) -1)
+    {
+        /* `s` is NOT null-terminated here, len=r will limit that
+         */
+        WriterWriteLen(writer, s, r);
+    }
+
+    r = wcrtomb(s, 0L, &writer->ps);
+    if ((r != (size_t) -1) && (r > 1))
+    {
+        WriterWriteLen(writer, s, r);
+    }
+
+    return r;
 }
 
 /*********************************************************************/

@@ -47,6 +47,7 @@ size_t WriterWriteVF(Writer *writer, const char *fmt, va_list ap) FUNC_ATTR_PRIN
 size_t WriterWrite(Writer *writer, const char *str);
 size_t WriterWriteLen(Writer *writer, const char *str, size_t len);
 size_t WriterWriteChar(Writer *writer, char c);
+size_t WriterWriteUnicode(Writer *writer, uint32_t wc);
 
 size_t StringWriterLength(const Writer *writer);
 const char *StringWriterData(const Writer *writer);
