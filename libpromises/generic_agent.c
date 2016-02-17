@@ -60,6 +60,9 @@
 #include <time_classes.h>
 #include <unix_iface.h>
 #include <constants.h>
+#if HAVE_LOCALE_H
+#include <locale.h>
+#endif
 
 #include <cf-windows-functions.h>
 
@@ -95,6 +98,9 @@ static void SanitizeEnvironment()
     unsetenv("LANG");
     unsetenv("LANGUAGE");
     unsetenv("LC_MESSAGES");
+#if HAVE_LOCALE_H
+    setlocale(LC_CTYPE, "");
+#endif
 }
 
 /*****************************************************************************/
