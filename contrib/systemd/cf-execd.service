@@ -5,6 +5,7 @@ After=syslog.target
 [Service]
 Type=forking
 ExecStart=/var/cfengine/bin/cf-execd
+Nice=10
 
 [Install]
 WantedBy=multi-user.target
