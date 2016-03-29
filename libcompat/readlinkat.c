@@ -22,29 +22,42 @@
   included file COSL.txt.
 */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+#include <platform.h>
+#include <misc_lib.h>
+#include <logging.h>
+#include <generic_at.h>
 
-#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
-#if !HAVE_DECL_SETLINEBUF
-void setlinebuf(FILE *stream);
-#endif
+#ifndef __MINGW32__
 
-#ifdef _WIN32
-/*
-  Line buffered mode doesn't work on Windows, as documented here:
-  https://msdn.microsoft.com/en-us/library/86cebhfs.aspx (setvbuf)
-  It will fall back to block buffering, so in that case it is better to select
-  no buffering.
-*/
-# define IO_MODE _IONBF
-#else
-# define IO_MODE _IOLBF
-#endif
-
-void setlinebuf(FILE *stream)
+typedef struct
 {
-    setvbuf(stream, (char *) NULL, IO_MODE, 0);
+    const char *pathname;
+    char *buf;
+    size_t bufsize;
+} readlinkat_data;
+
+static int readlinkat_inner(void *generic_data)
+{
+    readlinkat_data *data = generic_data;
+    return readlink(data->pathname, data->buf, data->bufsize);
 }
+
+static void cleanup(ARG_UNUSED void *generic_data)
+{
+}
+
+int readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsize)
+{
+    readlinkat_data data;
+    data.pathname = pathname;
+    data.buf = buf;
+    data.bufsize = bufsize;
+
+    return generic_at_function(dirfd, &readlinkat_inner, &cleanup, &data);
+}
+
+#endif // !__MINGW32__

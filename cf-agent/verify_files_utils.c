@@ -761,6 +761,7 @@ static PromiseResult SourceSearchAndCopy(EvalContext *ctx, const char *from, cha
             {
                 cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_INTERRUPTED, pp,
                      attr, "connection error");
+                AbstractDirClose(dirh);
                 return PROMISE_RESULT_INTERRUPTED;
             }
             else
@@ -796,6 +797,7 @@ static PromiseResult SourceSearchAndCopy(EvalContext *ctx, const char *from, cha
                 {
                     cfPS(ctx, LOG_LEVEL_INFO, PROMISE_RESULT_INTERRUPTED, pp,
                          attr, "connection error");
+                    AbstractDirClose(dirh);
                     return PROMISE_RESULT_INTERRUPTED;
                 }
                 else
@@ -815,6 +817,7 @@ static PromiseResult SourceSearchAndCopy(EvalContext *ctx, const char *from, cha
                     cfPS(ctx, LOG_LEVEL_INFO,
                          PROMISE_RESULT_INTERRUPTED, pp, attr,
                          "connection error");
+                    AbstractDirClose(dirh);
                     return PROMISE_RESULT_INTERRUPTED;
                 }
                 else
@@ -1940,7 +1943,7 @@ static PromiseResult TouchFile(EvalContext *ctx, char *path, Attributes attr, co
     }
     else
     {
-        cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_WARN, pp, attr,
+        cfPS(ctx, LOG_LEVEL_WARNING, PROMISE_RESULT_WARN, pp, attr,
              "Need to touch (update time stamps) for '%s', but only a warning was promised!", path);
         result = PromiseResultUpdate(result, PROMISE_RESULT_WARN);
     }

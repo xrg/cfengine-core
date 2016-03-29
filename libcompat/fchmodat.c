@@ -22,29 +22,50 @@
   included file COSL.txt.
 */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+#include <platform.h>
+#include <misc_lib.h>
+#include <logging.h>
+#include <generic_at.h>
 
-#include <stdio.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#if !HAVE_DECL_SETLINEBUF
-void setlinebuf(FILE *stream);
-#endif
+#ifndef __MINGW32__
 
-#ifdef _WIN32
-/*
-  Line buffered mode doesn't work on Windows, as documented here:
-  https://msdn.microsoft.com/en-us/library/86cebhfs.aspx (setvbuf)
-  It will fall back to block buffering, so in that case it is better to select
-  no buffering.
-*/
-# define IO_MODE _IONBF
-#else
-# define IO_MODE _IOLBF
-#endif
-
-void setlinebuf(FILE *stream)
+typedef struct
 {
-    setvbuf(stream, (char *) NULL, IO_MODE, 0);
+    const char *pathname;
+    mode_t mode;
+    int flags;
+} fchmodat_data;
+
+static int fchmodat_inner(void *generic_data)
+{
+    fchmodat_data *data = generic_data;
+    if (data->flags & AT_SYMLINK_NOFOLLOW)
+    {
+        errno = ENOTSUP;
+        return -1;
+    }
+
+    return chmod(data->pathname, data->mode);
 }
+
+static void cleanup(ARG_UNUSED void *generic_data)
+{
+}
+
+int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags)
+{
+    fchmodat_data data = {
+        .pathname = pathname,
+        .mode = mode,
+        .flags = flags,
+    };
+
+    return generic_at_function(dirfd, &fchmodat_inner, &cleanup, &data);
+}
+
+#endif // !__MINGW32__

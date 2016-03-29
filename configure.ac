@@ -44,7 +44,7 @@ AC_CHECK_PROG(MAKEINFO, makeinfo, makeinfo)
 define([revision], m4_esyscmd_s([git rev-list -1 --abbrev-commit HEAD]))
 
 _AM_SET_OPTION([tar-ustar])
-AM_INIT_AUTOMAKE(cfengine, 3.6.6)
+AM_INIT_AUTOMAKE(cfengine, 3.6.7)
 AM_MAINTAINER_MODE([enable])
 
 AC_DEFINE(BUILD_YEAR, esyscmd([date +%Y | tr -d '\n']), "Software build year")
@@ -985,10 +985,16 @@ AC_REPLACE_FUNCS(pthread_attr_setstacksize)
 AC_CHECK_DECLS(pthread_sigmask, [], [], [[#include <signal.h>]])
 AC_REPLACE_FUNCS(pthread_sigmask)
 
-AC_CHECK_DECLS([openat], [], [], [[#include <fcntl.h>]])
-AC_CHECK_DECLS([fstatat], [], [], [[#include <sys/stat.h>]])
-AC_CHECK_DECLS([fchownat], [], [], [[#include <unistd.h>]])
-AC_REPLACE_FUNCS(openat fstatat fchownat)
+AC_CHECK_DECLS([openat], [], [], [[#define _GNU_SOURCE 1
+                                   #include <fcntl.h>]])
+AC_CHECK_DECLS([fstatat], [], [], [[#define _GNU_SOURCE 1
+                                    #include <sys/stat.h>]])
+AC_CHECK_DECLS([fchownat], [], [], [[#define _GNU_SOURCE 1
+                                     #include <unistd.h>]])
+AC_CHECK_DECLS([readlinkat], [], [], [[#define _GNU_SOURCE 1
+                                       #include <unistd.h>]])
+AC_REPLACE_FUNCS(openat fstatat fchownat readlinkat)
+cf3_FUNC_FCHMODAT
 
 AC_CHECK_DECLS([log2], [], [], [[#include <math.h>]])
 AC_REPLACE_FUNCS(log2)
@@ -1137,7 +1143,7 @@ case "$target_os" in
    aix*)
         CPPFLAGS="$CPPFLAGS -w"
         ;;
-   linux*|*bsd*gnu)
+   linux*|*bsd*|*gnu*)
         AC_CHECK_LIB(nss_nis, yp_get_default_domain)
         ;;
    freebsd*|dragonfly*)
@@ -1151,8 +1157,6 @@ case "$target_os" in
    qnx*)
         ;;
    openbsd*|obsd*)
-        ;;
-   gnu*)
         ;;
    sysv4.2MP|unix_sv*)
         ;;

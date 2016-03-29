@@ -23,10 +23,14 @@
 */
 
 #include <file_lib.h>
+#include <misc_lib.h>
 #include <dir.h>
 
 #include <alloc.h>
+#include <libgen.h>
 #include <logging.h>
+
+#define SYMLINK_MAX_DEPTH 32
 
 bool FileCanOpen(const char *path, const char *modes)
 {
@@ -465,6 +469,12 @@ int safe_open(const char *pathname, int flags, ...)
                 }
                 else
                 {
+                    if ((flags & O_CREAT) && (flags & O_EXCL))
+                    {
+                        close(currentfd);
+                        errno = EEXIST;
+                        return -1;
+                    }
                     // Already exists. Make sure we *don't* create it.
                     flags &= ~O_CREAT;
                 }
@@ -487,6 +497,10 @@ int safe_open(const char *pathname, int flags, ...)
                         else
                         {
                             // Too many attempts. Give up.
+                            // Most likely a link that is in the way of file creation, but can also
+                            // be a file that is constantly created and deleted (race condition).
+                            // It is not possible to separate between the two, so return EACCES to
+                            // signal that we denied access.
                             errno = EACCES;
                         }
                     }
@@ -517,7 +531,9 @@ int safe_open(const char *pathname, int flags, ...)
                 if (stat_before.st_uid != stat_after.st_uid || stat_before.st_gid != stat_after.st_gid)
                 {
                     close(currentfd);
-                    errno = EACCES;
+                    // Return ENOLINK to signal that the link cannot be followed
+                    // ('Link has been severed').
+                    errno = ENOLINK;
                     return -1;
                 }
             }
@@ -638,6 +654,160 @@ int safe_chdir(const char *path)
 #endif // !__MINGW32__
 }
 
+#ifndef __MINGW32__
+
+/**
+ * Opens the true parent dir of the file in the path given. The notable
+ * difference from doing it the naive way (open(dirname(path))) is that it
+ * can follow the symlinks of the path, ending up in the true parent dir of the
+ * path. It follows the same safe mechanisms as `safe_open()` to do so. If
+ * AT_SYMLINK_NOFOLLOW is given, it is equivalent to doing it the naive way (but
+ * still following "safe" semantics).
+ * @param path           Path to open parent directory of.
+ * @param flags          Flags to use for fchownat.
+ * @param link_user      If we have traversed a link already, which user was it.
+ * @param link_group     If we have traversed a link already, which group was it.
+ * @param traversed_link Whether we have traversed a link. If this is false the
+ *                       two previus arguments are ignored. This is used enforce
+ *                       the correct UID/GID combination when following links.
+ *                       Initially this is false, but will be set to true in
+ *                       sub invocations if we follow a link.
+ * @param loop_countdown Protection against infinite loop following.
+ * @return File descriptor pointing to the parent directory of path, or -1 on
+ *         error.
+ */
+static int safe_open_true_parent_dir(const char *path,
+                                     int flags,
+                                     uid_t link_user,
+                                     gid_t link_group,
+                                     bool traversed_link,
+                                     int loop_countdown)
+{
+    int dirfd = -1;
+    int ret = -1;
+
+    char *parent_dir_alloc = xstrdup(path);
+    char *leaf_alloc = xstrdup(path);
+    char *parent_dir = dirname(parent_dir_alloc);
+    char *leaf = basename(leaf_alloc);
+    struct stat statbuf;
+
+    if ((dirfd = safe_open(parent_dir, O_RDONLY)) == -1)
+    {
+        goto cleanup;
+    }
+
+    if ((ret = fstatat(dirfd, leaf, &statbuf, AT_SYMLINK_NOFOLLOW)) == -1)
+    {
+        goto cleanup;
+    }
+
+    if (traversed_link && (link_user != statbuf.st_uid || link_group != statbuf.st_gid))
+    {
+        errno = ENOLINK;
+        ret = -1;
+        goto cleanup;
+    }
+
+    if (S_ISLNK(statbuf.st_mode) && !(flags & AT_SYMLINK_NOFOLLOW))
+    {
+        if (--loop_countdown <= 0)
+        {
+            ret = -1;
+            errno = ELOOP;
+            goto cleanup;
+        }
+
+        // Add one byte for '\0', and one byte to make sure size doesn't change
+        // in between calls.
+        char *link = xmalloc(statbuf.st_size + 2);
+        ret = readlinkat(dirfd, leaf, link, statbuf.st_size + 1);
+        if (ret < 0 || ret > statbuf.st_size)
+        {
+            // Link either disappeared or was changed under our feet. Be safe
+            // and bail out.
+            free(link);
+            errno = ENOLINK;
+            ret = -1;
+            goto cleanup;
+        }
+        link[ret] = '\0';
+
+        char *resolved_link;
+        if (link[0] == FILE_SEPARATOR)
+        {
+            // Takes ownership of link's memory, so no free().
+            resolved_link = link;
+        }
+        else
+        {
+            xasprintf(&resolved_link, "%s%c%s", parent_dir,
+                      FILE_SEPARATOR, link);
+            free(link);
+        }
+
+        ret = safe_open_true_parent_dir(resolved_link, flags, statbuf.st_uid,
+                                        statbuf.st_gid, true, loop_countdown);
+
+        free(resolved_link);
+        goto cleanup;
+    }
+
+    // We now know it either isn't a link, or we don't want to follow it if it
+    // is. Return the parent dir.
+    ret = dirfd;
+    dirfd = -1;
+
+cleanup:
+    free(parent_dir_alloc);
+    free(leaf_alloc);
+
+    if (dirfd != -1)
+    {
+        close(dirfd);
+    }
+
+    return ret;
+}
+
+/**
+ * Implementation of safe_chown.
+ * @param path Path to chown.
+ * @param owner          Owner to set on path.
+ * @param group          Group to set on path.
+ * @param flags          Flags to use for fchownat.
+ * @param link_user      If we have traversed a link already, which user was it.
+ * @param link_group     If we have traversed a link already, which group was it.
+ * @param traversed_link Whether we have traversed a link. If this is false the
+ *                       two previus arguments are ignored. This is used enforce
+ *                       the correct UID/GID combination when following links.
+ *                       Initially this is false, but will be set to true in
+ *                       sub invocations if we follow a link.
+ * @param loop_countdown Protection against infinite loop following.
+ */
+int safe_chown_impl(const char *path, uid_t owner, gid_t group, int flags)
+{
+    int dirfd = safe_open_true_parent_dir(path, flags, 0, 0, false, SYMLINK_MAX_DEPTH);
+    if (dirfd < 0)
+    {
+        return -1;
+    }
+
+    char *leaf_alloc = xstrdup(path);
+    char *leaf = basename(leaf_alloc);
+
+    // We now know it either isn't a link, or we don't want to follow it if it
+    // is. In either case make sure we don't try to follow it.
+    flags |= AT_SYMLINK_NOFOLLOW;
+
+    int ret = fchownat(dirfd, leaf, owner, group, flags);
+    free(leaf_alloc);
+    close(dirfd);
+    return ret;
+}
+
+#endif // !__MINGW32__
+
 /**
  * Use this instead of chown(). It changes file owner safely, using safe_open().
  * @param path Path to operate on.
@@ -650,15 +820,7 @@ int safe_chown(const char *path, uid_t owner, gid_t group)
 #ifdef __MINGW32__
     return chown(path, owner, group);
 #else // !__MINGW32__
-    int fd = safe_open(path, 0);
-    if (fd < 0)
-    {
-        return -1;
-    }
-
-    int ret = fchown(fd, owner, group);
-    close(fd);
-    return ret;
+    return safe_chown_impl(path, owner, group, 0);
 #endif // !__MINGW32__
 }
 
@@ -672,44 +834,7 @@ int safe_chown(const char *path, uid_t owner, gid_t group)
 #ifndef __MINGW32__
 int safe_lchown(const char *path, uid_t owner, gid_t group)
 {
-    if (*path == '\0')
-    {
-        errno = EINVAL;
-        return -1;
-    }
-
-    size_t orig_size = strlen(path);
-    char parent_dir[orig_size + 1];
-    char *slash_pos = strrchr(path, '/');
-    const char *leaf;
-    if (slash_pos)
-    {
-        strcpy(parent_dir, path);
-        // Same value, but relative to parent_dir.
-        leaf = slash_pos = &parent_dir[slash_pos - path];
-        leaf++;
-        // Remove all superflous slashes, but not if it's the root slash.
-        while (*slash_pos == '/' && slash_pos != parent_dir)
-        {
-            *(slash_pos--) = '\0';
-        }
-    }
-    else
-    {
-        parent_dir[0] = '.';
-        parent_dir[1] = '\0';
-        leaf = path;
-    }
-
-    int parent_fd = safe_open(parent_dir, O_RDONLY);
-    if (parent_fd < 0)
-    {
-        return -1;
-    }
-
-    int ret = fchownat(parent_fd, leaf, owner, group, AT_SYMLINK_NOFOLLOW);
-    close(parent_fd);
-    return ret;
+    return safe_chown_impl(path, owner, group, AT_SYMLINK_NOFOLLOW);
 }
 #endif // !__MINGW32__
 
@@ -724,14 +849,86 @@ int safe_chmod(const char *path, mode_t mode)
 #ifdef __MINGW32__
     return chmod(path, mode);
 #else // !__MINGW32__
-    int fd = safe_open(path, 0);
-    if (fd < 0)
+    int dirfd = -1;
+    int ret = -1;
+
+    char *leaf_alloc = xstrdup(path);
+    char *leaf = basename(leaf_alloc);
+    struct stat statbuf;
+    uid_t olduid = 0;
+
+    if ((dirfd = safe_open_true_parent_dir(path, 0, 0, 0, false, SYMLINK_MAX_DEPTH)) == -1)
     {
-        return -1;
+        goto cleanup;
     }
 
-    int ret = fchmod(fd, mode);
-    close(fd);
+    if ((ret = fstatat(dirfd, leaf, &statbuf, AT_SYMLINK_NOFOLLOW)) == -1)
+    {
+        goto cleanup;
+    }
+
+    if (S_ISFIFO(statbuf.st_mode))
+    {
+        /* For FIFOs we cannot resort to the method of opening the file first,
+           since it might block. But we also cannot use chmod directly, because
+           the file may be switched with a symlink to a sensitive file under our
+           feet, and there is no way to avoid following it. So instead, switch
+           effective UID to the owner of the FIFO, and then use chmod.
+        */
+
+        /* save old euid */
+        olduid = geteuid();
+
+        if ((ret = seteuid(statbuf.st_uid)) == -1)
+        {
+            goto cleanup;
+        }
+
+        ret = fchmodat(dirfd, leaf, mode, 0);
+
+        // Make sure EUID is set back before we check error condition, so that we
+        // never return with lowered privileges.
+        if (seteuid(olduid) == -1)
+        {
+            ProgrammingError("safe_chmod: Could not set EUID back. Should never happen.");
+        }
+
+        goto cleanup;
+
+#ifndef CHMOD_SETEUID_HIGHBITS_WORK
+        if (mode & 07000 && statbuf.st_uid != 0)
+        {
+            /* If we get here, we are on a platform where the high bit flags (sticky
+               bit and suid) flags cannot be set by any other users than root. As the
+               file is a FIFO, we give up because opening it might block, in that
+               case it's not possible to do it securely. Setting the mentioned flags
+               on a FIFO should be extremely rare though.
+            */
+            errno = ENOTSUP;
+            ret = -1;
+            goto cleanup;
+        }
+#endif // !CHMOD_SETEUID_HIGHBITS_WORK
+    }
+
+    int file_fd = safe_open(path, 0);
+    if (file_fd < 0)
+    {
+        ret = -1;
+        goto cleanup;
+    }
+
+    ret = fchmod(file_fd, mode);
+    close(file_fd);
+
+cleanup:
+    free(leaf_alloc);
+
+    if (dirfd != -1)
+    {
+        close(dirfd);
+    }
+
     return ret;
 #endif // !__MINGW32__
 }

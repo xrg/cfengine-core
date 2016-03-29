@@ -585,6 +585,12 @@ void GenericAgentInitialize(EvalContext *ctx, GenericAgentConfig *config)
     InitializeWindows();
 #endif
 
+    /* Bug on HP-UX: Buffered output is discarded if you switch buffering mode
+       without flushing the buffered output first. This will happen anyway when
+       switching modes, so no performance is lost. */
+    fflush(stdout);
+    setlinebuf(stdout);
+
     DetermineCfenginePort();
 
     EvalContextClassPutHard(ctx, "any", "source=agent");
@@ -726,8 +732,6 @@ void GenericAgentInitialize(EvalContext *ctx, GenericAgentConfig *config)
         GenericAgentConfigSetInputFile(config, GetInputDir(), "promises.cf");
     }
 
-    setlinebuf(stdout);
-
     if (config->agent_specific.agent.bootstrap_policy_server)
     {
         snprintf(vbuff, CF_BUFSIZE, "%s%cfailsafe.cf", GetInputDir(), FILE_SEPARATOR);
@@ -821,7 +825,7 @@ static bool GeneratePolicyReleaseIDFromTree(char *release_id_out, size_t out_siz
     EVP_DigestInit(&crypto_ctx, EVP_get_digestbyname(HashNameFromId(GENERIC_AGENT_CHECKSUM_METHOD)));
 
     bool success = HashDirectoryTree(policy_dir,
-                                     (const char *[]) { ".cf", ".dat", ".txt", ".conf", NULL},
+                                     (const char *[]) { ".cf", ".dat", ".txt", ".conf", ".mustache", ".json", ".yaml", NULL},
                                      &crypto_ctx);
 
     int md_len;
