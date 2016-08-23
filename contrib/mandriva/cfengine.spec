@@ -34,7 +34,11 @@ BuildRequires:	db-devel
 %if %{_target_cpu} == i586 && %{mgaver} == 1
 BuildRequires: tokyocabinet-devel
 %else
+%if %{mgaver} >= 6
+BuildRequires: lmdb-devel
+%else
 BuildRequires: libldap-devel
+%endif
 %endif
 BuildRequires: postgresql-devel
 BuildRequires: libpcre-devel
