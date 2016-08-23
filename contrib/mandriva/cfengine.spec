@@ -241,7 +241,7 @@ rm -rf %{buildroot}
 
 %define cfprog(:)  %{_sbindir}/%1 \
 	%{workdir}/bin/%1 \
-	%()
+	%( )
 
 %files
 %defattr(-,root,root)
