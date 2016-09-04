@@ -1086,7 +1086,9 @@ void DeleteEnvironmentsContext(void)
 
 PromiseResult VerifyEnvironmentsPromise(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const Promise *pp)
 {
-    return PROMISE_RESULT_NOOP;
+    Log(LOG_LEVEL_ERR, "Cannot evaluate guest_environments promise, no libvirt support.");
+    PromiseRef(LOG_LEVEL_ERR, pp);
+    return PROMISE_RESULT_SKIPPED;
 }
 
 #endif
