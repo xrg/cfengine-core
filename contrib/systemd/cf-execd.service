@@ -5,6 +5,10 @@ After=syslog.target
 [Service]
 Type=forking
 ExecStart=/var/cfengine/bin/cf-execd
+Restart=always
+RestartSec=10s
+StartLimitInterval=5min
+StartLimitBurst=5
 Nice=10
 
 [Install]
