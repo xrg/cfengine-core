@@ -42,6 +42,7 @@ BuildRequires: libldap-devel
 %endif
 BuildRequires: postgresql-devel
 BuildRequires: libpcre-devel
+BuildRequires: libvirt-devel
 Requires:       %{libname} = %{version}-%{release}
 Requires(pre):	rpm-helper
 Requires(preun):rpm-helper
